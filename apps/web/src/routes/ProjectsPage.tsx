@@ -1,13 +1,19 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ApiError, api } from "../lib/api";
-import { useAuth } from "../lib/auth-context";
 
 export function ProjectsPage() {
-  const { user, logout } = useAuth();
   const queryClient = useQueryClient();
   const projectsQuery = useQuery({ queryKey: ["projects"], queryFn: api.listProjects });
+  const [searchParams] = useSearchParams();
+  const q = searchParams.get("q")?.trim().toLowerCase() ?? "";
+
+  const filtered = useMemo(() => {
+    const projects = projectsQuery.data ?? [];
+    if (!q) return projects;
+    return projects.filter((p) => p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q));
+  }, [projectsQuery.data, q]);
 
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
@@ -35,15 +41,7 @@ export function ProjectsPage() {
 
   return (
     <main className="projects-page">
-      <header className="projects-header">
-        <div>
-          <h1>Projets</h1>
-          <p>{user?.email}</p>
-        </div>
-        <button type="button" onClick={() => void logout()}>
-          Se déconnecter
-        </button>
-      </header>
+      <h1>Mes projets</h1>
 
       <section aria-labelledby="new-project-heading" className="panel">
         <h2 id="new-project-heading">Nouveau projet</h2>
@@ -67,13 +65,15 @@ export function ProjectsPage() {
       </section>
 
       <section aria-labelledby="project-list-heading">
-        <h2 id="project-list-heading">Vos projets</h2>
+        <h2 id="project-list-heading">{q ? `Résultats pour « ${searchParams.get("q")} »` : "Vos projets"}</h2>
         {projectsQuery.isLoading && <p role="status">Chargement…</p>}
         {projectsQuery.isError && <p role="alert">Impossible de charger vos projets.</p>}
-        {projectsQuery.data && projectsQuery.data.length === 0 && <p>Aucun projet pour l'instant.</p>}
-        {projectsQuery.data && projectsQuery.data.length > 0 && (
+        {projectsQuery.data && filtered.length === 0 && (
+          <p>{q ? "Aucun projet ne correspond à cette recherche." : "Aucun projet pour l'instant."}</p>
+        )}
+        {filtered.length > 0 && (
           <ul className="project-list">
-            {projectsQuery.data.map((p) => (
+            {filtered.map((p) => (
               <li key={p.id}>
                 <Link to={`/projets/${p.id}`}>
                   <strong>{p.code}</strong> — {p.name}

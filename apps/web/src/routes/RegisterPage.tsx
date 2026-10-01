@@ -11,7 +11,7 @@ export function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
 
   if (user) {
-    return <Navigate to="/projets" replace />;
+    return <Navigate to="/accueil" replace />;
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -24,7 +24,7 @@ export function RegisterPage() {
     setSubmitting(true);
     try {
       await register(email, password);
-      navigate("/projets");
+      navigate("/accueil");
     } catch (err) {
       setError(describeAuthError(err));
     } finally {

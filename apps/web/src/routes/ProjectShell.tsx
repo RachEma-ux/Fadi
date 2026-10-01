@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { MODULES } from "../modules/module-registry";
 import { AtelierPanel } from "../modules/atelier/AtelierPanel";
@@ -27,7 +27,11 @@ export function ProjectShell() {
   const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId) });
   const levelsQuery = useQuery({ queryKey: ["levels", projectId], queryFn: () => api.listLevels(projectId) });
 
-  const [activeModule, setActiveModule] = useState("parcours");
+  const [searchParams] = useSearchParams();
+  const requestedModule = searchParams.get("module");
+  const [activeModule, setActiveModule] = useState(
+    requestedModule && MODULES.some((m) => m.id === requestedModule) ? requestedModule : "parcours",
+  );
 
   const ensureGroundLevel = useMutation({
     mutationFn: () => api.createLevel(projectId, "RDC", 0, 0),
@@ -63,7 +67,6 @@ export function ProjectShell() {
   return (
     <div className="project-shell">
       <header className="project-header">
-        <Link to="/projets">← Projets</Link>
         <h1>
           {project.code} — {project.name}
         </h1>

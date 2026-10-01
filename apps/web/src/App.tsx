@@ -3,8 +3,12 @@ import { useAuth } from "./lib/auth-context";
 import { RequireAuth } from "./routes/RequireAuth";
 import { LoginPage } from "./routes/LoginPage";
 import { RegisterPage } from "./routes/RegisterPage";
+import { AppShell } from "./routes/AppShell";
+import { AccueilPage } from "./routes/AccueilPage";
 import { ProjectsPage } from "./routes/ProjectsPage";
 import { ProjectShell } from "./routes/ProjectShell";
+import { HarmoniePage } from "./routes/HarmoniePage";
+import { ParametresPage } from "./routes/ParametresPage";
 
 export function App() {
   const { loading } = useAuth();
@@ -19,26 +23,25 @@ export function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/projets" replace />} />
       <Route path="/connexion" element={<LoginPage />} />
       <Route path="/inscription" element={<RegisterPage />} />
+
       <Route
-        path="/projets"
         element={
           <RequireAuth>
-            <ProjectsPage />
+            <AppShell />
           </RequireAuth>
         }
-      />
-      <Route
-        path="/projets/:projectId"
-        element={
-          <RequireAuth>
-            <ProjectShell />
-          </RequireAuth>
-        }
-      />
-      <Route path="*" element={<Navigate to="/projets" replace />} />
+      >
+        <Route path="/accueil" element={<AccueilPage />} />
+        <Route path="/projets" element={<ProjectsPage />} />
+        <Route path="/projets/:projectId" element={<ProjectShell />} />
+        <Route path="/harmonie" element={<HarmoniePage />} />
+        <Route path="/parametres" element={<ParametresPage />} />
+      </Route>
+
+      <Route path="/" element={<Navigate to="/accueil" replace />} />
+      <Route path="*" element={<Navigate to="/accueil" replace />} />
     </Routes>
   );
 }
