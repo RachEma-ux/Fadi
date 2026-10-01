@@ -1,0 +1,241 @@
+name: Builder Deploy
+
+# Inspired by the "Builder Deploy" workflow pattern (run the app, publish a
+# temporary public URL via a Cloudflare quick tunnel, tear it down after a
+# fixed duration). Rewritten for what Fadi actually is: two apps (apps/web,
+# apps/api) talking to a real PostgreSQL+PostGIS database, with Fadi's own
+# auth — not Builder's WASM pack / OAuth portal / Ollama / OpenCode
+# machinery, which has no equivalent here and would just fail or do nothing
+# useful against this codebase.
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: "Combien de temps garder l'application accessible (minutes)"
+        required: true
+        default: "15"
+        type: choice
+        options:
+          - "5"
+          - "10"
+          - "15"
+          - "30"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: fadi
+          POSTGRES_PASSWORD: fadi_deploy_password
+          POSTGRES_DB: fadi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://fadi:fadi_deploy_password@localhost:5432/fadi
+      WEB_ORIGIN: http://localhost:4173
+      PORT: "3001"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Apply database schema
+        run: npm run db:migrate
+
+      - name: Typecheck, test, build
+        run: |
+          npm run typecheck
+          npm test
+          npm run build
+
+      - name: Reset the database before the live demo
+        # "npm test" truncates and repopulates tables with test fixtures
+        # (alice@example.com and friends). Clear that out so the person
+        # opening the tunnel URL in a moment starts from an empty app, not
+        # leftover test data.
+        env:
+          PGPASSWORD: fadi_deploy_password
+        run: |
+          psql -h localhost -U fadi -d fadi -c \
+            "TRUNCATE architectural_objects, levels, projects, sessions, users CASCADE;"
+
+      - name: Start the API
+        run: |
+          echo "🚀 Starting apps/api on :3001..."
+          node apps/api/dist/server.js > api.log 2>&1 &
+          echo $! > api.pid
+
+          for attempt in $(seq 1 18); do
+            if ! kill -0 "$(cat api.pid)" 2>/dev/null; then
+              echo "❌ API process exited before becoming healthy"
+              cat api.log
+              exit 1
+            fi
+            if curl -fsS http://localhost:3001/health > /dev/null 2>&1; then
+              echo "✅ API healthy on :3001"
+              break
+            fi
+            echo "⌛ Waiting for the API (attempt ${attempt}/18)..."
+            sleep 3
+          done
+          curl -fsS http://localhost:3001/health || { echo "❌ API never became healthy"; cat api.log; exit 1; }
+
+      - name: Start the web app (production build)
+        run: |
+          echo "🚀 Starting apps/web (vite preview) on :4173..."
+          npx --prefix apps/web vite preview --port 4173 --host 0.0.0.0 > web.log 2>&1 &
+          echo $! > web.pid
+
+          for attempt in $(seq 1 18); do
+            if ! kill -0 "$(cat web.pid)" 2>/dev/null; then
+              echo "❌ Web process exited before becoming healthy"
+              cat web.log
+              exit 1
+            fi
+            # /health is proxied through to the API (see apps/web/vite.config.ts) —
+            # a 200 here means both the static app AND the API behind it are reachable
+            # on this one port, which is the port we are about to tunnel.
+            if curl -fsS http://localhost:4173/health > /dev/null 2>&1; then
+              echo "✅ Web app healthy on :4173 (API reachable through its proxy)"
+              break
+            fi
+            echo "⌛ Waiting for the web app (attempt ${attempt}/18)..."
+            sleep 3
+          done
+          curl -fsS http://localhost:4173/health || { echo "❌ Web app never became healthy"; cat web.log; exit 1; }
+
+      - name: Install cloudflared
+        run: |
+          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+          chmod +x cloudflared
+
+      - name: Publish a public URL
+        run: |
+          set -uo pipefail
+
+          # The free Cloudflare quick-tunnel API is best-effort and
+          # occasionally returns a 500 that kills cloudflared before any URL
+          # is published. Retry the whole tunnel a few times rather than
+          # fail the deploy on one transient blip.
+          TUNNEL_URL=""
+          TUNNEL_PID=""
+          for outer in $(seq 1 3); do
+            echo "🌐 Starting Cloudflare tunnel (attempt ${outer}/3)..."
+            : > tunnel.log
+            ./cloudflared tunnel --url http://localhost:4173 >> tunnel.log 2>&1 &
+            TUNNEL_PID=$!
+
+            for attempt in $(seq 1 12); do
+              if ! kill -0 "$TUNNEL_PID" 2>/dev/null; then
+                echo "⚠️ cloudflared exited before publishing a URL on attempt ${outer}"
+                cat tunnel.log || true
+                break
+              fi
+              TUNNEL_URL=$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' tunnel.log | head -1 || true)
+              if [ -n "$TUNNEL_URL" ]; then
+                echo "✅ Tunnel URL published on outer ${outer}, inner ${attempt}"
+                break
+              fi
+              echo "⌛ Waiting for tunnel URL (outer ${outer}, inner ${attempt}/12)..."
+              sleep 5
+            done
+
+            if [ -n "$TUNNEL_URL" ]; then
+              break
+            fi
+            if [ -n "$TUNNEL_PID" ] && kill -0 "$TUNNEL_PID" 2>/dev/null; then
+              kill "$TUNNEL_PID" 2>/dev/null || true
+              wait "$TUNNEL_PID" 2>/dev/null || true
+            fi
+            [ "$outer" -lt 3 ] && { echo "🔁 Retrying cloudflared in 10s..."; sleep 10; }
+          done
+
+          if [ -z "$TUNNEL_URL" ]; then
+            echo "❌ Tunnel URL was not published after 3 attempts"
+            cat tunnel.log || true
+            exit 1
+          fi
+
+          echo "$TUNNEL_URL" > app_url.txt
+          echo "$TUNNEL_PID" > tunnel.pid
+
+          echo ""
+          echo "============================================"
+          echo "🎉 Fadi est en ligne"
+          echo "============================================"
+          echo "🌐 URL : $TUNNEL_URL"
+          echo "⏱️  Disponible ${{ github.event.inputs.duration }} minutes"
+          echo "============================================"
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "## 🚀 Fadi — Builder Deploy" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f app_url.txt ]; then
+            TUNNEL_URL=$(cat app_url.txt)
+            echo "### Application en ligne" >> "$GITHUB_STEP_SUMMARY"
+            echo "🌐 **[$TUNNEL_URL]($TUNNEL_URL)**" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Disponible pendant ${{ github.event.inputs.duration }} minutes à partir de cette étape." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "C'est une base de données PostgreSQL/PostGIS jetable (service du job) : créez un compte," >> "$GITHUB_STEP_SUMMARY"
+            echo "rien n'est conservé après la fin de ce run." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "❌ Le déploiement a échoué avant de publier une URL — voir les logs du job et les artefacts." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Keep the app running
+        if: always()
+        run: |
+          if [ -f app_url.txt ]; then
+            DURATION_SECONDS=$(( ${{ github.event.inputs.duration }} * 60 ))
+            echo "💤 Maintien en ligne pendant ${DURATION_SECONDS}s..."
+            sleep "$DURATION_SECONDS"
+          else
+            echo "Rien à maintenir en ligne : le déploiement a échoué plus haut."
+          fi
+
+      - name: Stop everything
+        if: always()
+        run: |
+          [ -f tunnel.pid ] && kill "$(cat tunnel.pid)" 2>/dev/null || true
+          [ -f web.pid ] && kill "$(cat web.pid)" 2>/dev/null || true
+          [ -f api.pid ] && kill "$(cat api.pid)" 2>/dev/null || true
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: builder-deploy-logs-${{ github.run_id }}
+          path: |
+            app_url.txt
+            api.log
+            web.log
+            tunnel.log
+          retention-days: 7
+          if-no-files-found: ignore
