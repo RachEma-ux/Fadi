@@ -25,6 +25,14 @@ export default defineConfig({
   },
   preview: {
     host: "0.0.0.0",
+    // Le worker builder-deploy.yml publie ce `vite preview` sous un
+    // sous-domaine *.trycloudflare.com différent à chaque run (nom aléatoire
+    // choisi par Cloudflare) ; la protection anti-DNS-rebinding de Vite
+    // rejette par défaut tout Host inconnu, donc sans ceci la page affiche
+    // "Blocked request" dès qu'on ouvre l'URL publiée. Un déploiement local
+    // (apps/web/README.md) n'est jamais exposé ainsi et reste protégé par
+    // le host-check par défaut sur localhost/réseau local.
+    allowedHosts: [".trycloudflare.com"],
     proxy: {
       "/auth": "http://localhost:3001",
       "/projects": "http://localhost:3001",
