@@ -1,0 +1,3052 @@
+{
+ "overviewTools": {
+  "headings": [
+   "H1: Étude du potentiel de la parcelle"
+  ],
+  "fields": [],
+  "buttons": [
+   "←",
+   "⌂",
+   "← Projets",
+   "Exemples",
+   "118_officiel.kmz",
+   "ZONE-I-5.pdf",
+   "01Comprendre le siteParcelle / Site existant",
+   "02Comprendre le siteRéglementation & constructibilité",
+   "03Comprendre le siteMarché & demande",
+   "04ProgrammerIdée & stratégie",
+   "05ProgrammerBesoins & concertation",
+   "06ProgrammerPMO — Programme du maître d’ouvrage",
+   "07ProgrammerPréprogramme fonctionnel",
+   "08ProgrammerExigences techniques & environnementales",
+   "09Concevoir / TesterCompatibilité Parcelle ↔ Programme",
+   "10Concevoir / TesterÉtude de capacité architecturale",
+   "11Concevoir / TesterEsquisse architecturale — Esquisser",
+   "12Concevoir / TesterScénarios de développement",
+   "13Prouver la faisabilitéFaisabilité technique",
+   "14Prouver la faisabilitéFaisabilité économique & financière",
+   "15Prouver la faisabilitéCoût global & sensibilités",
+   "16Prouver la faisabilitéVérifications / Due diligence",
+   "17ArbitrerÉvaluation multicritère",
+   "18ArbitrerBilan du potentiel de la parcelle",
+   "19ArbitrerDécision — GO / GO sous conditions / À reprendre /",
+   "20EngagerOrganisation des études — uniquement si GO",
+   "21EngagerTransfert vers développement / conception",
+   "Sauvegarder projet JSON",
+   "Importer projet JSON",
+   "Exporter la synthèse des choix Harmonie"
+  ],
+  "details": [
+   {
+    "summary": "Outils du projet",
+    "open": true
+   }
+  ],
+  "tables": [],
+  "kpis": []
+ },
+ "step2Expanded": {
+  "headings": [
+   "H1: Réglementation & constructibilité",
+   "H2: Préserver l’intention dans l’enveloppe admissible",
+   "H3: Pourquoi ce choix",
+   "H3: Intentions reçues et utilisées",
+   "H3: Choix déjà transmis",
+   "H2: Réponses renseignées · 02"
+  ],
+  "fields": [],
+  "buttons": [
+   "◈ Harmonie de l’étape",
+   "←",
+   "⌂",
+   "Voir le choix Harmonie et sa transmission",
+   "Essayer une variante en copie",
+   "Dossier complet de l’exemple",
+   "Choix illustré",
+   "Alternatives expliquées",
+   "Intentions reçues / transmises",
+   "01 · Parcelle / Site existant",
+   "06 · PMO — Programme du maître d’ouvrage",
+   "09 · Compatibilité Parcelle ↔ Programme",
+   "10 · Étude de capacité architecturale",
+   "16 · Vérifications / Due diligence",
+   "+ Importer des fichiers",
+   "← Précédente",
+   "Étape illustrée ✓",
+   "Suivante →"
+  ],
+  "details": [
+   {
+    "summary": "Harmonie · Site constructible · 1 choix retenu(s)",
+    "open": true
+   },
+   {
+    "summary": "Cadre de démonstration et hypothèses",
+    "open": true
+   },
+   {
+    "summary": "Alternatives et compromis",
+    "open": true
+   },
+   {
+    "summary": "Intentions reçues (1) et choix transmis",
+    "open": true
+   },
+   {
+    "summary": "Sources de l’étape",
+    "open": true
+   }
+  ],
+  "tables": [
+   {
+    "headers": [
+     "Origine",
+     "Choix transmis",
+     "État"
+    ],
+    "rows": 1
+   },
+   {
+    "headers": [
+     "Référence",
+     "Réponse retenue",
+     "Destinations"
+    ],
+    "rows": 1
+   }
+  ],
+  "kpis": []
+ },
+ "step14Expanded": {
+  "headings": [
+   "H1: Faisabilité économique & financière",
+   "H2: Financer d’abord les décisions structurantes",
+   "H3: Pourquoi ce choix",
+   "H3: Intentions reçues et utilisées",
+   "H3: Choix déjà transmis",
+   "H2: Réponses renseignées · 14"
+  ],
+  "fields": [],
+  "buttons": [
+   "◈ Harmonie de l’étape",
+   "←",
+   "⌂",
+   "Voir le choix Harmonie et sa transmission",
+   "Essayer une variante en copie",
+   "Dossier complet de l’exemple",
+   "Choix illustré",
+   "Alternatives expliquées",
+   "Intentions reçues / transmises",
+   "12 · Scénarios de développement",
+   "13 · Faisabilité technique",
+   "15 · Coût global & sensibilités",
+   "17 · Évaluation multicritère",
+   "19 · Décision — GO / GO sous conditions / À reprendre / NO G",
+   "+ Importer des fichiers",
+   "← Précédente",
+   "Étape illustrée ✓",
+   "Suivante →"
+  ],
+  "details": [
+   {
+    "summary": "Harmonie · Arbitrage d’investissement · 1 choix retenu(s)",
+    "open": true
+   },
+   {
+    "summary": "Cadre de démonstration et hypothèses",
+    "open": true
+   },
+   {
+    "summary": "Alternatives et compromis",
+    "open": true
+   },
+   {
+    "summary": "Intentions reçues (2) et choix transmis",
+    "open": true
+   },
+   {
+    "summary": "Sources de l’étape",
+    "open": true
+   }
+  ],
+  "tables": [
+   {
+    "headers": [
+     "Indicateur",
+     "Référence",
+     "Scénario défavorable"
+    ],
+    "rows": 6
+   },
+   {
+    "headers": [
+     "Origine",
+     "Choix transmis",
+     "État"
+    ],
+    "rows": 2
+   },
+   {
+    "headers": [
+     "Référence",
+     "Réponse retenue",
+     "Destinations"
+    ],
+    "rows": 1
+   },
+   {
+    "headers": [
+     "Indicateur",
+     "Référence",
+     "Scénario défavorable"
+    ],
+    "rows": 6
+   }
+  ],
+  "kpis": []
+ },
+ "step19Expanded": {
+  "headings": [
+   "H1: Décision — GO / GO sous conditions / À reprendre / NO GO",
+   "H2: GO sous conditions pour les études uniquement",
+   "H3: Pourquoi ce choix",
+   "H3: Intentions reçues et utilisées",
+   "H3: Choix déjà transmis",
+   "H2: Réponses renseignées · 19"
+  ],
+  "fields": [],
+  "buttons": [
+   "◈ Harmonie de l’étape",
+   "←",
+   "⌂",
+   "Voir le choix Harmonie et sa transmission",
+   "Essayer une variante en copie",
+   "Dossier complet de l’exemple",
+   "Choix illustré",
+   "Alternatives expliquées",
+   "Intentions reçues / transmises",
+   "12 · Scénarios de développement",
+   "13 · Faisabilité technique",
+   "14 · Faisabilité économique & financière",
+   "15 · Coût global & sensibilités",
+   "16 · Vérifications / Due diligence",
+   "17 · Évaluation multicritère",
+   "18 · Bilan du potentiel de la parcelle",
+   "20 · Organisation des études — uniquement si GO",
+   "21 · Transfert vers développement / conception",
+   "+ Importer des fichiers",
+   "← Précédente",
+   "Étape illustrée ✓",
+   "Suivante →"
+  ],
+  "details": [
+   {
+    "summary": "Harmonie · Décision du maître d’ouvrage · 1 choix retenu(s)",
+    "open": true
+   },
+   {
+    "summary": "Cadre de démonstration et hypothèses",
+    "open": true
+   },
+   {
+    "summary": "Alternatives et compromis",
+    "open": true
+   },
+   {
+    "summary": "Intentions reçues (7) et choix transmis",
+    "open": true
+   },
+   {
+    "summary": "Sources de l’étape",
+    "open": true
+   }
+  ],
+  "tables": [
+   {
+    "headers": [
+     "Origine",
+     "Choix transmis",
+     "État"
+    ],
+    "rows": 7
+   },
+   {
+    "headers": [
+     "Référence",
+     "Réponse retenue",
+     "Destinations"
+    ],
+    "rows": 1
+   }
+  ],
+  "kpis": []
+ },
+ "newOverview": {
+  "headings": [
+   "H1: Étude du potentiel de la parcelle"
+  ],
+  "fields": [],
+  "buttons": [
+   "←",
+   "⌂",
+   "← Projets",
+   "Exemples",
+   "01Comprendre le siteParcelle / Site existant",
+   "02Comprendre le siteRéglementation & constructibilité",
+   "03Comprendre le siteMarché & demande",
+   "04ProgrammerIdée & stratégie",
+   "05ProgrammerBesoins & concertation",
+   "06ProgrammerPMO — Programme du maître d’ouvrage",
+   "07ProgrammerPréprogramme fonctionnel",
+   "08ProgrammerExigences techniques & environnementales",
+   "09Concevoir / TesterCompatibilité Parcelle ↔ Programme",
+   "10Concevoir / TesterÉtude de capacité architecturale",
+   "11Concevoir / TesterEsquisse architecturale — Esquisser",
+   "12Concevoir / TesterScénarios de développement",
+   "13Prouver la faisabilitéFaisabilité technique",
+   "14Prouver la faisabilitéFaisabilité économique & financière",
+   "15Prouver la faisabilitéCoût global & sensibilités",
+   "16Prouver la faisabilitéVérifications / Due diligence",
+   "17ArbitrerÉvaluation multicritère",
+   "18ArbitrerBilan du potentiel de la parcelle",
+   "19ArbitrerDécision — GO / GO sous conditions / À reprendre /",
+   "20EngagerOrganisation des études — uniquement si GO",
+   "21EngagerTransfert vers développement / conception",
+   "Sauvegarder projet JSON",
+   "Importer projet JSON",
+   "Exporter la synthèse des choix Harmonie"
+  ],
+  "details": [
+   {
+    "summary": "Outils du projet",
+    "open": false
+   }
+  ],
+  "tables": [],
+  "kpis": []
+ },
+ "newSteps": {
+  "1": {
+   "headings": [
+    "H1: Parcelle / Site existant"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Explorer la bibliothèque",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Marquer terminée",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Exemples · qualités du site par type de bâtiment",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "kpis": []
+  },
+  "2": {
+   "headings": [
+    "H1: Réglementation & constructibilité",
+    "H2: Propositions pour cette étape",
+    "H3: Préserver l’intention, déplacer le dispositif",
+    "H3: Concentrer l’aménagement dans une zone moins contrainte",
+    "H3: Comparer un autre site ou un programme adapté",
+    "H2: Réglementation & constructibilité"
+   ],
+   "fields": [
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": "f1",
+     "label": "Zonage / règlement applicable",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f2",
+     "label": "Usages autorisés",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f3",
+     "label": "Emprise / COS / CES",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f4",
+     "label": "Hauteur maximale",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f5",
+     "label": "Reculs / alignements / prospects",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f6",
+     "label": "Stationnement",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f7",
+     "label": "Servitudes / contraintes",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f8",
+     "label": "Accès réglementaires",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f9",
+     "label": "Risques / environnement",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f10",
+     "label": "Autorisations / autorités compétentes",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f11",
+     "label": "Sources réglementaires",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f12",
+     "label": "Enveloppe constructible — conclusion",
+     "value": ""
+    }
+   ],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Actualiser les propositions",
+    "Rapport de cette étape",
+    "Proposer",
+    "Comparer",
+    "Choix & transmission",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Consigner une vérification",
+    "Explorer la bibliothèque",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Marquer terminée",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Site constructible · 0 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Données mobilisées et intentions reçues (0)",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Cadre de lecture et éléments antérieurs conservés",
+     "open": false
+    },
+    {
+     "summary": "Exemples · qualités du site par type de bâtiment",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "kpis": []
+  },
+  "6": {
+   "headings": [
+    "H1: PMO — Programme du maître d’ouvrage",
+    "H2: Propositions pour cette étape",
+    "H3: Inscrire trois intentions prioritaires",
+    "H3: Définir un socle et des options",
+    "H3: Programme évolutif à scénarios",
+    "H2: PMO — Programme du maître d’ouvrage",
+    "H2: Répartition programmatique par type de bâtiment"
+   ],
+   "fields": [
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": "f1",
+     "label": "Objectifs du maître d’ouvrage",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f2",
+     "label": "Fonctions attendues",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f3",
+     "label": "Capacités",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f4",
+     "label": "Surfaces recherchées",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f5",
+     "label": "Niveaux de service / performances",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f6",
+     "label": "Limites financières",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f7",
+     "label": "Calendrier",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f8",
+     "label": "Priorités",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f9",
+     "label": "Exigences non négociables",
+     "value": ""
+    },
+    {
+     "tag": "select",
+     "type": "select-one",
+     "id": "programme-type",
+     "biz": null,
+     "label": "Type de bâtimentTertiaire / bureauxRésidentielCommercialIndustriel / logistiqueP",
+     "value": "tertiaire",
+     "options": [
+      "Tertiaire / bureaux",
+      "Résidentiel",
+      "Commercial",
+      "Industriel / logistique",
+      "Public / institutionnel",
+      "Hôtellerie & hébergement · ratios à définir",
+      "Restauration · ratios à définir",
+      "Enseignement & formation · ratios à définir",
+      "Santé & soins · ratios à définir",
+      "Bâtiments mixtes · ratios à définir"
+     ]
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": "programme-area",
+     "biz": null,
+     "label": "Surface de référence (m²)",
+     "value": "673"
+    },
+    {
+     "tag": "select",
+     "type": "select-one",
+     "id": "programme-mode",
+     "biz": null,
+     "label": "Position dans la fourchetteBasseCibleHaute",
+     "value": "cible",
+     "options": [
+      "Basse",
+      "Cible",
+      "Haute"
+     ]
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "circulation",
+     "label": null,
+     "value": "15"
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "technique",
+     "label": null,
+     "value": "6"
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "sanitaires",
+     "label": null,
+     "value": "2"
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "convivialite",
+     "label": null,
+     "value": "5"
+    }
+   ],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Actualiser les propositions",
+    "Rapport de cette étape",
+    "Proposer",
+    "Comparer",
+    "Choix & transmission",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Consigner une vérification",
+    "Ouvrir la bibliothèque",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Marquer terminée",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Objectifs du maître d’ouvrage · 0 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Données mobilisées et intentions reçues (0)",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Cadre de lecture et éléments antérieurs conservés",
+     "open": false
+    },
+    {
+     "summary": "Bibliothèque d’exemples par type de bâtiment",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [
+    {
+     "headers": [
+      "Famille",
+      "Fourchette",
+      "Ratio projet",
+      "Surface"
+     ],
+     "rows": 4
+    }
+   ],
+   "kpis": [
+    "Surface référence673.0 m²",
+    "Fonctions support28.0 %",
+    "Support calculé188.4 m²",
+    "Solde programmable484.6 m²"
+   ]
+  },
+  "7": {
+   "headings": [
+    "H1: Préprogramme fonctionnel",
+    "H2: Propositions pour cette étape",
+    "H3: Regroupement par intensité d’usage",
+    "H3: Renforcer les supports sans augmenter le total",
+    "H3: Mutualisation maîtrisée",
+    "H2: Préprogramme fonctionnel",
+    "H2: Répartition programmatique par type de bâtiment"
+   ],
+   "fields": [
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": "f1",
+     "label": "Unités fonctionnelles",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f2",
+     "label": "Locaux / espaces",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f3",
+     "label": "Capacités",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f4",
+     "label": "Surfaces utiles",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f5",
+     "label": "Surfaces communes / techniques",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f6",
+     "label": "Relations de proximité",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f7",
+     "label": "Circulations",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f8",
+     "label": "Flux",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f9",
+     "label": "Mutualisations",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f10",
+     "label": "Évolutivité / extension",
+     "value": ""
+    },
+    {
+     "tag": "select",
+     "type": "select-one",
+     "id": "programme-type",
+     "biz": null,
+     "label": "Type de bâtimentTertiaire / bureauxRésidentielCommercialIndustriel / logistiqueP",
+     "value": "tertiaire",
+     "options": [
+      "Tertiaire / bureaux",
+      "Résidentiel",
+      "Commercial",
+      "Industriel / logistique",
+      "Public / institutionnel",
+      "Hôtellerie & hébergement · ratios à définir",
+      "Restauration · ratios à définir",
+      "Enseignement & formation · ratios à définir",
+      "Santé & soins · ratios à définir",
+      "Bâtiments mixtes · ratios à définir"
+     ]
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": "programme-area",
+     "biz": null,
+     "label": "Surface de référence (m²)",
+     "value": "673"
+    },
+    {
+     "tag": "select",
+     "type": "select-one",
+     "id": "programme-mode",
+     "biz": null,
+     "label": "Position dans la fourchetteBasseCibleHaute",
+     "value": "cible",
+     "options": [
+      "Basse",
+      "Cible",
+      "Haute"
+     ]
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "circulation",
+     "label": null,
+     "value": "15"
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "technique",
+     "label": null,
+     "value": "6"
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "sanitaires",
+     "label": null,
+     "value": "2"
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "convivialite",
+     "label": null,
+     "value": "5"
+    }
+   ],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Actualiser les propositions",
+    "Rapport de cette étape",
+    "Proposer",
+    "Comparer",
+    "Choix & transmission",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Consigner une vérification",
+    "Ouvrir la bibliothèque",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Marquer terminée",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Répartition et relations fonctionnelles · 0 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Données mobilisées et intentions reçues (0)",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Cadre de lecture et éléments antérieurs conservés",
+     "open": false
+    },
+    {
+     "summary": "Bibliothèque d’exemples par type de bâtiment",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [
+    {
+     "headers": [
+      "Famille",
+      "Fourchette",
+      "Ratio projet",
+      "Surface"
+     ],
+     "rows": 4
+    }
+   ],
+   "kpis": [
+    "Surface référence673.0 m²",
+    "Fonctions support28.0 %",
+    "Support calculé188.4 m²",
+    "Solde programmable484.6 m²"
+   ]
+  },
+  "10": {
+   "headings": [
+    "H3: Programme transmis à l’Atelier Architectural",
+    "H3: Aucune géométrie importée."
+   ],
+   "fields": [
+    {
+     "tag": "input",
+     "type": "range",
+     "id": "orbit-yaw",
+     "biz": null,
+     "label": "Est / Ouest 155°",
+     "value": "155"
+    },
+    {
+     "tag": "input",
+     "type": "range",
+     "id": "orbit-pitch",
+     "biz": null,
+     "label": "Nord / Sud 25°",
+     "value": "25"
+    },
+    {
+     "tag": "input",
+     "type": "range",
+     "id": "orbit-roll",
+     "biz": null,
+     "label": "Roll 0°",
+     "value": "0"
+    },
+    {
+     "tag": "select",
+     "type": "select-one",
+     "id": "render-style",
+     "biz": null,
+     "label": "Représentation",
+     "value": "envelope",
+     "options": [
+      "Enveloppe",
+      "Modèle dessiné",
+      "Plateaux ouverts",
+      "Filaire"
+     ]
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-basement",
+     "biz": null,
+     "label": "Niveaux sous 0",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-diagram",
+     "biz": null,
+     "label": "Objets / annotations",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-dimensions",
+     "biz": null,
+     "label": "Cotes et repères",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-cadastral",
+     "biz": null,
+     "label": "Parcelle",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-setback",
+     "biz": null,
+     "label": "Recul",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-building",
+     "biz": null,
+     "label": "Emprise",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-road",
+     "biz": null,
+     "label": "Voirie",
+     "value": "on"
+    }
+   ],
+   "buttons": [
+    "←",
+    "⌂",
+    "Modèle",
+    "Design",
+    "Concevoir",
+    "Analyser",
+    "Documenter",
+    "⋯",
+    "Niveau▾",
+    "Vue▾",
+    "Mode▾",
+    "Dessins techniques▾",
+    "↶",
+    "↷",
+    "⛶",
+    "⊙",
+    "⚙",
+    "N projet",
+    "−",
+    "Cadrer",
+    "+",
+    "↺",
+    "Importer projet / source",
+    "N",
+    "S",
+    "E",
+    "O",
+    "Dessus",
+    "Dessous",
+    "Enregistrer la vue",
+    "Emprise —",
+    "Parcelle —",
+    "Informations sur la voie ↗",
+    "Exporter PNG ↓",
+    "Plan SVG ↓",
+    "Sources projet ↗",
+    "Documents ↗",
+    "Projets ↗",
+    "Sources ↗",
+    "Aide aux commandes",
+    "Ouvrir la bibliothèque",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Marquer terminée",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Données du projet",
+     "open": false
+    },
+    {
+     "summary": "Étude de capacité architecturale",
+     "open": false
+    },
+    {
+     "summary": "Bibliothèque d’exemples par type de bâtiment",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "kpis": []
+  },
+  "14": {
+   "headings": [
+    "H1: Faisabilité économique & financière",
+    "H2: Propositions pour cette étape",
+    "H3: Financer d’abord les décisions difficiles à reprendre",
+    "H3: Comparer deux solutions au même service",
+    "H3: Phaser les aménagements réversibles",
+    "H2: Faisabilité économique & financière"
+   ],
+   "fields": [
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f1",
+     "label": "Foncier / acquisition",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f2",
+     "label": "Travaux",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f3",
+     "label": "Études / honoraires",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f4",
+     "label": "Raccordements / extérieurs",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f5",
+     "label": "Équipements",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f6",
+     "label": "Provisions / aléas",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f7",
+     "label": "Coûts annuels d’exploitation",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f8",
+     "label": "Recettes annuelles",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f9",
+     "label": "Fonds propres",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f10",
+     "label": "Dette",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f11",
+     "label": "Devise",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f12",
+     "label": "Hypothèses / exclusions",
+     "value": ""
+    }
+   ],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Actualiser les propositions",
+    "Rapport de cette étape",
+    "Proposer",
+    "Comparer",
+    "Choix & transmission",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Dessinée — référence requise",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Dessinée — référence requise",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Dessinée — référence requise",
+    "Consigner une vérification",
+    "Ouvrir la bibliothèque",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Marquer terminée",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Arbitrage d’investissement · 0 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Données mobilisées et intentions reçues (0)",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Cadre de lecture et éléments antérieurs conservés",
+     "open": false
+    },
+    {
+     "summary": "Bibliothèque d’exemples par type de bâtiment",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "kpis": []
+  },
+  "17": {
+   "headings": [
+    "H1: Évaluation multicritère",
+    "H2: Propositions pour cette étape",
+    "H3: Retenir le scénario le mieux étayé",
+    "H3: Combiner les solutions compatibles",
+    "H3: Demander un essai ciblé avant arbitrage",
+    "H2: Évaluation multicritère"
+   ],
+   "fields": [
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f1",
+     "label": "Vision — besoin & objectifs (1–5)",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f2",
+     "label": "Marché — demande & positionnement (1–5)",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f3",
+     "label": "Programme — adéquation (1–5)",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f4",
+     "label": "Technique — faisabilité (1–5)",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f5",
+     "label": "Finance — robustesse (1–5)",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f6",
+     "label": "Exploitation (1–5)",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f7",
+     "label": "Risques (1–5)",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "number",
+     "id": null,
+     "biz": "f8",
+     "label": "Niveau de preuve (1–5)",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f9",
+     "label": "Justification de l’évaluation",
+     "value": ""
+    }
+   ],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Actualiser les propositions",
+    "Rapport de cette étape",
+    "Proposer",
+    "Comparer",
+    "Choix & transmission",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Dessinée — référence requise",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Dessinée — référence requise",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Dessinée — référence requise",
+    "Consigner une vérification",
+    "Ouvrir la bibliothèque",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Marquer terminée",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Comparaison argumentée · 0 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Données mobilisées et intentions reçues (0)",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Cadre de lecture et éléments antérieurs conservés",
+     "open": false
+    },
+    {
+     "summary": "Bibliothèque d’exemples par type de bâtiment",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "kpis": [
+    "Note provisoire— / 50/8 critères",
+    "Due diligence—",
+    "DécisionNon prise"
+   ]
+  },
+  "19": {
+   "headings": [
+    "H1: Décision — GO / GO sous conditions / À reprendre / NO GO",
+    "H2: Propositions pour cette étape",
+    "H3: Poursuite conditionnée aux réserves nommées",
+    "H3: Reprise ciblée du scénario",
+    "H3: Conserver le scénario en attente",
+    "H2: Décision — GO / GO sous conditions / À reprendre / NO GO"
+   ],
+   "fields": [
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": "f1",
+     "label": "Scénario retenu",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f2",
+     "label": "Alternatives écartées",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f3",
+     "label": "Motifs",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f4",
+     "label": "Programme / budget autorisé",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f5",
+     "label": "Risques résiduels",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f6",
+     "label": "Conditions",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f7",
+     "label": "Décideur — nom et fonction",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "date",
+     "id": null,
+     "biz": "f8",
+     "label": "Date de décision",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "f9",
+     "label": "Version du dossier",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "date",
+     "id": null,
+     "biz": "f10",
+     "label": "Prochaine revue",
+     "value": ""
+    }
+   ],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Actualiser les propositions",
+    "Rapport de cette étape",
+    "Proposer",
+    "Comparer",
+    "Choix & transmission",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Dessinée — référence requise",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Dessinée — référence requise",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Dessinée — référence requise",
+    "Consigner une vérification",
+    "GO",
+    "GO sous conditions",
+    "À reprendre",
+    "NO GO",
+    "Ouvrir la bibliothèque",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Marquer terminée",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Décision du maître d’ouvrage · 0 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Données mobilisées et intentions reçues (0)",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Cadre de lecture et éléments antérieurs conservés",
+     "open": false
+    },
+    {
+     "summary": "Bibliothèque d’exemples par type de bâtiment",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "kpis": []
+  },
+  "21": {
+   "headings": [
+    "H1: Transfert vers développement / conception",
+    "H2: Propositions pour cette étape",
+    "H3: Dossier d’intentions lié au modèle",
+    "H3: Brief d’ambiance par usage",
+    "H3: Revue après mise en usage",
+    "H2: Transfert vers développement / conception"
+   ],
+   "fields": [
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Adaptation proposée ou motif",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Responsable",
+     "value": ""
+    },
+    {
+     "tag": "input",
+     "type": "text",
+     "id": null,
+     "biz": null,
+     "label": "Référence d’objet / fiche",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": null,
+     "label": "Preuve / référence de revue",
+     "value": ""
+    },
+    {
+     "tag": "textarea",
+     "type": "textarea",
+     "id": null,
+     "biz": "summary",
+     "label": "Synthèse / livrable",
+     "value": ""
+    }
+   ],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Actualiser les propositions",
+    "Rapport de cette étape",
+    "Proposer",
+    "Comparer",
+    "Choix & transmission",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Dessinée — référence requise",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Dessinée — référence requise",
+    "Consigner une vérification",
+    "Retenir",
+    "Adapter / motiver",
+    "Retenir l’adaptation",
+    "Écarter avec motif",
+    "Traduite au programme",
+    "Dessinée — référence requise",
+    "Consigner une vérification",
+    "Ouvrir la bibliothèque",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Marquer terminée",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Transfert et conception détaillée · 0 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Données mobilisées et intentions reçues (0)",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Arbitrage, responsable et preuve",
+     "open": false
+    },
+    {
+     "summary": "Cadre de lecture et éléments antérieurs conservés",
+     "open": false
+    },
+    {
+     "summary": "Bibliothèque d’exemples par type de bâtiment",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "kpis": []
+  }
+ },
+ "step14AfterInput": {
+  "headings": [
+   "H1: Faisabilité économique & financière",
+   "H2: Propositions pour cette étape",
+   "H3: Financer d’abord les décisions difficiles à reprendre",
+   "H3: Comparer deux solutions au même service",
+   "H3: Phaser les aménagements réversibles",
+   "H2: Faisabilité économique & financière"
+  ],
+  "fields": [
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": null,
+    "label": "Adaptation proposée ou motif",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "text",
+    "id": null,
+    "biz": null,
+    "label": "Responsable",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "text",
+    "id": null,
+    "biz": null,
+    "label": "Référence d’objet / fiche",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": null,
+    "label": "Preuve / référence de revue",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": null,
+    "label": "Adaptation proposée ou motif",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "text",
+    "id": null,
+    "biz": null,
+    "label": "Responsable",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "text",
+    "id": null,
+    "biz": null,
+    "label": "Référence d’objet / fiche",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": null,
+    "label": "Preuve / référence de revue",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": null,
+    "label": "Adaptation proposée ou motif",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "text",
+    "id": null,
+    "biz": null,
+    "label": "Responsable",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "text",
+    "id": null,
+    "biz": null,
+    "label": "Référence d’objet / fiche",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": null,
+    "label": "Preuve / référence de revue",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f1",
+    "label": "Foncier / acquisition",
+    "value": "1000"
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f2",
+    "label": "Travaux",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f3",
+    "label": "Études / honoraires",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f4",
+    "label": "Raccordements / extérieurs",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f5",
+    "label": "Équipements",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f6",
+    "label": "Provisions / aléas",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f7",
+    "label": "Coûts annuels d’exploitation",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f8",
+    "label": "Recettes annuelles",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f9",
+    "label": "Fonds propres",
+    "value": "400"
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f10",
+    "label": "Dette",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": "f11",
+    "label": "Devise",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": "f12",
+    "label": "Hypothèses / exclusions",
+    "value": ""
+   }
+  ],
+  "buttons": [
+   "◈ Harmonie de l’étape",
+   "←",
+   "⌂",
+   "Actualiser les propositions",
+   "Rapport de cette étape",
+   "Proposer",
+   "Comparer",
+   "Choix & transmission",
+   "Retenir",
+   "Adapter / motiver",
+   "Retenir l’adaptation",
+   "Écarter avec motif",
+   "Traduite au programme",
+   "Dessinée — référence requise",
+   "Consigner une vérification",
+   "Retenir",
+   "Adapter / motiver",
+   "Retenir l’adaptation",
+   "Écarter avec motif",
+   "Traduite au programme",
+   "Dessinée — référence requise",
+   "Consigner une vérification",
+   "Retenir",
+   "Adapter / motiver",
+   "Retenir l’adaptation",
+   "Écarter avec motif",
+   "Traduite au programme",
+   "Dessinée — référence requise",
+   "Consigner une vérification",
+   "Ouvrir la bibliothèque",
+   "+ Importer des fichiers",
+   "← Précédente",
+   "Marquer terminée",
+   "Suivante →"
+  ],
+  "details": [
+   {
+    "summary": "Harmonie · Arbitrage d’investissement · 0 choix retenu(s) · à réexaminer",
+    "open": false
+   },
+   {
+    "summary": "Données mobilisées et intentions reçues (0)",
+    "open": false
+   },
+   {
+    "summary": "Arbitrage, responsable et preuve",
+    "open": false
+   },
+   {
+    "summary": "Arbitrage, responsable et preuve",
+    "open": false
+   },
+   {
+    "summary": "Arbitrage, responsable et preuve",
+    "open": false
+   },
+   {
+    "summary": "Cadre de lecture et éléments antérieurs conservés",
+    "open": false
+   },
+   {
+    "summary": "Bibliothèque d’exemples par type de bâtiment",
+    "open": false
+   },
+   {
+    "summary": "Sources de l’étape",
+    "open": false
+   }
+  ],
+  "tables": [],
+  "kpis": []
+ },
+ "step14AfterReload": {
+  "headings": [
+   "H1: Faisabilité économique & financière",
+   "H2: Propositions pour cette étape",
+   "H3: Financer d’abord les décisions difficiles à reprendre",
+   "H3: Comparer deux solutions au même service",
+   "H3: Phaser les aménagements réversibles",
+   "H2: Faisabilité économique & financière"
+  ],
+  "fields": [
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": null,
+    "label": "Adaptation proposée ou motif",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "text",
+    "id": null,
+    "biz": null,
+    "label": "Responsable",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "text",
+    "id": null,
+    "biz": null,
+    "label": "Référence d’objet / fiche",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": null,
+    "label": "Preuve / référence de revue",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": null,
+    "label": "Adaptation proposée ou motif",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "text",
+    "id": null,
+    "biz": null,
+    "label": "Responsable",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "text",
+    "id": null,
+    "biz": null,
+    "label": "Référence d’objet / fiche",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": null,
+    "label": "Preuve / référence de revue",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": null,
+    "label": "Adaptation proposée ou motif",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "text",
+    "id": null,
+    "biz": null,
+    "label": "Responsable",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "text",
+    "id": null,
+    "biz": null,
+    "label": "Référence d’objet / fiche",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": null,
+    "label": "Preuve / référence de revue",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f1",
+    "label": "Foncier / acquisition",
+    "value": "1000"
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f2",
+    "label": "Travaux",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f3",
+    "label": "Études / honoraires",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f4",
+    "label": "Raccordements / extérieurs",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f5",
+    "label": "Équipements",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f6",
+    "label": "Provisions / aléas",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f7",
+    "label": "Coûts annuels d’exploitation",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f8",
+    "label": "Recettes annuelles",
+    "value": ""
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f9",
+    "label": "Fonds propres",
+    "value": "400"
+   },
+   {
+    "tag": "input",
+    "type": "number",
+    "id": null,
+    "biz": "f10",
+    "label": "Dette",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": "f11",
+    "label": "Devise",
+    "value": ""
+   },
+   {
+    "tag": "textarea",
+    "type": "textarea",
+    "id": null,
+    "biz": "f12",
+    "label": "Hypothèses / exclusions",
+    "value": ""
+   }
+  ],
+  "buttons": [
+   "◈ Harmonie de l’étape",
+   "←",
+   "⌂",
+   "Actualiser les propositions",
+   "Rapport de cette étape",
+   "Proposer",
+   "Comparer",
+   "Choix & transmission",
+   "Retenir",
+   "Adapter / motiver",
+   "Retenir l’adaptation",
+   "Écarter avec motif",
+   "Traduite au programme",
+   "Dessinée — référence requise",
+   "Consigner une vérification",
+   "Retenir",
+   "Adapter / motiver",
+   "Retenir l’adaptation",
+   "Écarter avec motif",
+   "Traduite au programme",
+   "Dessinée — référence requise",
+   "Consigner une vérification",
+   "Retenir",
+   "Adapter / motiver",
+   "Retenir l’adaptation",
+   "Écarter avec motif",
+   "Traduite au programme",
+   "Dessinée — référence requise",
+   "Consigner une vérification",
+   "Ouvrir la bibliothèque",
+   "+ Importer des fichiers",
+   "← Précédente",
+   "Marquer terminée",
+   "Suivante →"
+  ],
+  "details": [
+   {
+    "summary": "Harmonie · Arbitrage d’investissement · 0 choix retenu(s) · à réexaminer",
+    "open": false
+   },
+   {
+    "summary": "Données mobilisées et intentions reçues (0)",
+    "open": false
+   },
+   {
+    "summary": "Arbitrage, responsable et preuve",
+    "open": false
+   },
+   {
+    "summary": "Arbitrage, responsable et preuve",
+    "open": false
+   },
+   {
+    "summary": "Arbitrage, responsable et preuve",
+    "open": false
+   },
+   {
+    "summary": "Cadre de lecture et éléments antérieurs conservés",
+    "open": false
+   },
+   {
+    "summary": "Bibliothèque d’exemples par type de bâtiment",
+    "open": false
+   },
+   {
+    "summary": "Sources de l’étape",
+    "open": false
+   }
+  ],
+  "tables": [],
+  "kpis": []
+ },
+ "storageSnapshot": {
+  "id": "project-336209d5-3ece-405b-93e8-bea89ca4a216",
+  "name": "Étude test migration",
+  "dataKeys": [
+   "harmonieEtapesV7",
+   "harmony",
+   "transmissionV62",
+   "decision",
+   "frameStorageV62",
+   "parcelFrameLoadedV62",
+   "business",
+   "programmeRepartition",
+   "nativeProjectId",
+   "architecture"
+  ],
+  "business14": {
+   "f1": "1000",
+   "f9": "400"
+  },
+  "done": {
+   "9": false,
+   "10": false,
+   "11": false,
+   "12": false,
+   "13": false,
+   "15": false,
+   "16": false,
+   "17": false,
+   "18": false,
+   "19": false,
+   "20": false,
+   "21": false,
+   "22": false
+  }
+ }
+}
