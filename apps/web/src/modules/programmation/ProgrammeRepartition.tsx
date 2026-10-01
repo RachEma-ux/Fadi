@@ -223,6 +223,21 @@ export function ProgrammeTransfer({ projectId }: { projectId: string }) {
   const query = useQuery({ queryKey: ["programme", projectId], queryFn: () => api.getProgramme(projectId) });
   if (!query.data) return null;
   const v = query.data;
+  if (v.programmeCase) {
+    const c = v.programmeCase;
+    return (
+      <section className="programme-transfer">
+        <h3>Programme lié · {c.title}</h3>
+        <p>
+          {c.scenarioLabel ? <span className="programme-badge">{c.scenarioLabel}</span> : null}
+          {c.revision !== null ? <span className="programme-badge">révision {c.revision}</span> : null}
+          <span className="programme-badge">{c.spaceCount} lignes</span>
+          <span className="programme-badge">{m2(c.sums.programme)} hors parois</span>
+        </p>
+        <p>Objectifs de programme ≠ surfaces dessinées. Aucune modification géométrique automatique.</p>
+      </section>
+    );
+  }
   return (
     <section className="programme-transfer">
       <h3>{v.reference.transfer.title}</h3>

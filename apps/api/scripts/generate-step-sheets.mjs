@@ -40,7 +40,9 @@ function migrationStatus(n) {
   if (n === 19) rows.push(["Décision GO / GO sous conditions / À reprendre / NO GO ; rétrogradation en « À reprendre » sur intention amont modifiée", "✅", "parcours-steps.ts ; e2e"]);
   if (n === 6 || n === 7) rows.push(["Répartition programmatique (type, surface, fourchette, ratios, KPI, tableau, adjacences) ; « Répartition renseignée et liée au modèle » pour l'exemple", "✅", "ProgrammeRepartition.tsx ; PUT /projects/:id/programme ; domain-model/programme.ts (tests)"]);
   if (n === 10) rows.push(["Bloc « Programme transmis à l'Atelier »", "✅", "ProgrammeTransfer (ProgrammeRepartition.tsx)"]);
-  if (TOOLED[n]) rows.push([TOOLED[n], "⛔", n === 1 ? "Bornes et coordonnées P.118 importées avec le projet (pièce jointe) ; pas encore d'outil cartographique" : "Le module Atelier n'affiche que les murs ; moteur natif à porter (voir matrix.md)"]);
+  if (n === 1) rows.push([TOOLED[1], "⛔", "Bornes et coordonnées P.118 importées avec le projet (pièce jointe) ; pas encore d'outil cartographique"]);
+  if (n === 10 || n === 11) rows.push([TOOLED[n], "✅", "Moteur natif encapsulé tel quel (apps/web/src/modules/atelier/native, public/atelier-native) ; modèle persisté par clé avec révision (atelier_store), projection levels/objets dérivée ; e2e : dessin d'un mur → +1 objet, annulation → −1, rechargement"]);
+  if (n === 10 || n === 11) rows.push(["Propositions Harmonie LOCALES par local (analyse du modèle) et page Harmony de l'Atelier (V8.4)", "⛔", "flow-v62 / atelier-harmonie-page-app non portés"]);
   rows.push(["Bibliothèque d'exemples par type de bâtiment / « Exemples issus des fichiers sources »", "⛔", "building-library-data et SOURCE_EXAMPLES non portés"]);
   rows.push(["Sources de l'étape (pièces jointes, dépôt de fichiers)", "⛔", "FILE_DB (IndexedDB) non porté ; stockage serveur de fichiers à concevoir"]);
   if (example.steps[String(n)]) rows.push(["Exemple P.118 : récit du choix, réponses renseignées, choix retenu", "✅", "Import p118-exemple-complet ; test « imports an example… »"]);

@@ -46,11 +46,15 @@ commencé.
 
 | Fonction (HTML) | Décision | Emplacement | État | Preuve |
 |---|---|---|---|---|
-| Niveaux, élévations réelles (décimales) | Adapter | `levels` (`double precision`) | ✅ | `app.test.ts` (élévation −3,2 / 3,2 exactes) |
-| Modèle natif complet de P.118 : 220 murs, 120 poteaux, 84 portes, 126 fenêtres, 32 volées, 967 tracés, 64 cotes, 95 repères, 45 locaux, 6 niveaux ; relations porte/fenêtre → mur hôte | Extraire | `p118-native-architecture.json` → `architectural_objects` ; ids préfixés projet, relations remappées | 🟡 | Persisté et interrogeable (`app.test.ts`) ; **non visualisé** hors murs |
-| Dessin d'un mur (outil minimal actuel) | Conserver | `AtelierPanel.tsx` | 🟡 | Hérité, SVG par mur ; pas de plan |
-| Moteur natif : viewer 3D canvas, plan / coupe / façade SVG, dessins techniques, vues enregistrées, créateur de vue, couches parcelle / recul / emprise / voirie, exports PNG / SVG / DXF, études solaires, toit, « Éclaté » ; outils de dessin (tracés, guides, accrochage, ouvertures sur mur hôte, extrusion, pousser / tirer, dupliquer, décaler, annuler / rétablir) | Extraire (encapsuler, ne pas réécrire) | — | ⛔ | Localisé précisément (`reference.md` : scripts anonymes #1 et #2 + 246 Ko de CSS + markup) ; prochaine tranche |
-| Parcelle (01) : import KML/KMZ, carte, bornes, cotes, EPSG:26191 → WGS84 | — | bornes et WGS84 fournis par la source conservés (`p118-parcel.json`, pièce jointe du projet) | 🟡 | Outil Leaflet à porter ; `projects.parcel_footprint` reste null |
+| Moteur natif complet (Design Atelier V14-3) : viewer 3D canvas, Volume / Éclaté / Plan / Coupe N–S / E–O / façades, dessins techniques, vues enregistrées, créateur de vue (orientation, roll, N/S/E/O/Dessus/Dessous, représentation), couches Parcelle / Recul / Emprise / Voirie, exports PNG / SVG / DXF, études solaires, légende, niveau actif, barre d'outils V8 (Modèle / Design / Concevoir / Analyser / Documenter, menus Niveau / Vue / Mode / Dessins techniques, annuler / rétablir, plein écran) | **Extraire tel quel, encapsuler** (jamais réécrit) | `apps/web/scripts/extract-native-atelier.mjs` → `src/modules/atelier/native/{root.html,native.css}`, `public/atelier-native/{v14-viewer,v14-tools,v8-toolbar}.js` ; hôte `src/modules/atelier/native/engine.ts` (couture `window.ParcoursSession.storage`, montage / garage du sous-arbre comme `mountNativeDesigner()` / `parkNativeDesigner()`) ; `NativeAtelier.tsx` dans l'onglet Atelier et les étapes 10 / 11 | ✅ | e2e (géométrie EPSG:26191 · 1345.55 m², 6 niveaux, barre prête, étape 10) ; `captures/webapp/10-desktop.png`, `atelier-concevoir-wall-desktop.png` vs `captures/reference/10-desktop.png` |
+| Outils de dessin : sélection, effacer, rectangle, ligne, mur, porte, fenêtre, pousser, extruder, déplacer, rotation, pan, mètre, cotation, texte, copier, décalage, polygone, cercle, poteau, escalier, tourner, échelle, miroir, calques, métré, exporter ; accrochage 0,50 m ; grille ; autres étages | Extraire tel quel | idem (v14-tools.js) | ✅ | e2e : mur dessiné en Concevoir → persisté |
+| Persistance du modèle : chaque écriture du moteur (clé `design.v13.*`) enregistrée par l'API avec **révision par clé**, refus 409 si la révision lue n'est plus la courante, copie de secours `…backup.conflit-<date>` du travail en conflit, états « Enregistré localement / Synchronisation / Enregistré sur le serveur / Conflit / Échec » affichés | Adapter | table `atelier_store`, `routes/atelier.ts` (GET/PUT/DELETE), `engine.ts` (file d'écriture par clé, 350 ms) | ✅ | `app.test.ts` « magasin du moteur natif » (409 sur révision périmée, projection) ; e2e statut « Enregistré sur le serveur » |
+| Annuler / rétablir qui modifient l'état persistant | Conserver (moteur) + Adapter (persistance) | moteur `undoRedo` → écriture floorDesign → API | ✅ | e2e : 39 → 40 → 39 murs, révision 1 → 2 → 3 |
+| Révision contrôlée du modèle (`projects.modelRevision`) et projection dérivée `levels` / `architectural_objects` (identifiants préfixés projet, relations hôte remappées, tous les types d'objets) | Adapter | `lib/native-projection.ts`, régénérée à chaque écriture `levels` / `floorDesign` du projet natif actif | ✅ | `app.test.ts` ; e2e |
+| Modèle natif de P.118 verbatim (registre, 5 domaines : nativeParcel, levels, buildingFootprint, floorDesign avec méta / calques / surfaces, ui) | Extraire | `p118-native-model.json` → `atelier_store` à l'import | ✅ | `app.test.ts` (meta.architectureRevision, calques, aires) |
+| Niveaux, élévations réelles (décimales) | Adapter | `levels.elevation` double precision | ✅ | `app.test.ts` |
+| Page Harmony de l'Atelier (étape 10, V8.4) ; propositions LOCALES par local ; analyse du modèle (flow-v62 : locaux, densités) | — | — | ⛔ | atelier-harmonie-page-app, flow-v62 non portés |
+| Parcelle (01) : import KML/KMZ dans l'outil Parcelle, carte Leaflet, MapTiler | — | la parcelle P.118 est visible dans l'Atelier (couches Parcelle / Recul / Emprise) ; l'import KML/KMZ du moteur (« Importer projet / source ») fonctionne mais sans l'outil cartographique de l'étape 01 | 🟡 | — |
 
 ## 4. Analyses métier, Documents, Collaboration
 
@@ -73,11 +77,12 @@ métrés dérivés du modèle (flow-v62), bilan Harmony du bâtiment
 - **Serveur autoritaire** : les règles Harmonie (motif ≥ 8 caractères, responsable + preuve, « dessinée » ≥ étape 10, remplacement de variante, effets aval) et la validation des champs par type s'exécutent dans l'API ; le client affiche les refus tels quels (422, message en français du prototype).
 - **Profil « Type à préciser »** tant que la répartition n'a pas été réglée : le prototype ne crée `programmeRepartition` qu'au premier passage par l'étape 06 (ordre-dépendant) ; Fadi fixe la règle : le type pilote le profil dès qu'il est déclaré.
 - **Statuts d'étape** : `a-faire` → `en-cours` à la première saisie ou au premier arbitrage ; `termine` seulement par « Marquer terminée » (ou import d'un exemple illustré) ; une intention amont retenue ramène une cible terminée à `en-cours`.
+- **Atelier = moteur du prototype, non réécrit** : extrait par script (`apps/web/scripts/extract-native-atelier.mjs`, SHA-256 vérifié), servi en scripts classiques, monté sur un sous-arbre DOM persistant déplacé / garé comme dans le prototype ; la seule couture est `window.ParcoursSession.storage`, prévue par le moteur. Le magasin `atelier_store` conserve ses clés verbatim ; `levels` / `architectural_objects` en sont une projection dérivée.
 - **`levels.elevation` en `double precision`**, identifiants natifs préfixés par projet, import par lots, `modelRevision = 1` après import : voir sessions précédentes.
 
 ## Limites restantes
 
-1. Atelier : moteur natif non porté ; 87 % des objets P.118 persistés mais invisibles.
+1. Atelier : le moteur est encapsulé tel quel (scripts classiques, non typés) ; sa page Harmony (V8.4), les propositions locales par local et l'analyse du modèle (flow-v62) ne sont pas portées ; le moteur n'est pas encore chargé paresseusement (≈ 440 Ko de scripts servis à la première ouverture seulement, mais toujours présents dans `public/`).
 2. Étape 01 : pas d'outil Parcelle ; propositions de site A/B/C absentes.
 3. Étapes 10/11 : pas de propositions locales, pas d'analyse du modèle.
 4. Péremption des propositions (« À réexaminer »), « Actualiser les propositions », rapport d'étape : non portés.
@@ -89,9 +94,9 @@ métrés dérivés du modèle (flow-v62), bilan Harmony du bâtiment
 
 ## Prochaine action
 
-Porter l'Atelier natif en module encapsulé : extraire le markup, le CSS et
-les scripts anonymes #1/#2 du prototype dans `apps/web/src/modules/atelier/native/`,
-les monter derrière une interface stable (chargement / sauvegarde du modèle
-par l'API Fadi au lieu de `localStorage design.v13.*`), puis comparer
-l'affichage du modèle P.118 avec `captures/reference/10-desktop.png` et
-`11-desktop.png`.
+Étape 01 : porter l'outil Parcelle (document « Parcelle — Atelier satellite »
+embarqué, Leaflet + proj4 + import KML/KMZ) avec la même méthode que
+l'Atelier — extraction telle quelle, stockage par l'API — et brancher les
+propositions de site A/B/C de Harmonie (`siteOptions()`) sur la parcelle du
+projet. Puis « Sources de l'étape » (pièces jointes par étape, stockage
+serveur) et les bibliothèques (exemples sources, bâtiments).

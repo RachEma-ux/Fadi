@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep } from "../../lib/api";
+import { NativeAtelier } from "../atelier/NativeAtelier";
 import { ProgrammeRepartition, ProgrammeTransfer } from "../programmation/ProgrammeRepartition";
 import { HarmoniePanel } from "./HarmoniePanel";
 import { StepForm } from "./StepForm";
@@ -191,13 +192,13 @@ function StepDetail({
       />
 
       {step.number === 10 && <ProgrammeTransfer projectId={projectId} />}
-      {(step.number === 1 || step.number === 10 || step.number === 11) && (
+      {(step.number === 10 || step.number === 11) && <NativeAtelier projectId={projectId} stage={step.number} />}
+      {step.number === 1 && (
         <section className="biz-card tool-pending" aria-live="polite">
-          <h2>{step.number === 1 ? "Parcelle-1 · Import KML/KMZ + MapTiler" : "Atelier architectural"}</h2>
+          <h2>Parcelle-1 · Import KML/KMZ + MapTiler</h2>
           <p className="biz-sub">
-            {step.number === 1
-              ? "L’outil cartographique de la parcelle du prototype (bornes, cotes, fond satellite) n’est pas encore porté dans Fadi ; les bornes P.118 et leurs coordonnées sont conservées avec le projet importé."
-              : "Les outils de dessin de l’Atelier du prototype ne sont pas encore portés dans Fadi ; le module Atelier affiche pour l’instant les murs du modèle importé."}
+            L’outil cartographique de la parcelle du prototype (bornes, cotes, fond satellite) n’est pas encore porté dans Fadi ; les bornes P.118 et leurs
+            coordonnées sont conservées avec le projet importé, et la parcelle est visible dans l’Atelier (étape 10).
           </p>
         </section>
       )}

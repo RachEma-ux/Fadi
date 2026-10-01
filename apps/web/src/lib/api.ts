@@ -10,6 +10,8 @@ export class ApiError extends Error {
     public readonly code: string,
     /** Message lisible renvoyé par le serveur (règles Harmonie, validation), s'il existe. */
     public readonly serverMessage: string | null = null,
+    /** Corps complet de la réponse d'erreur (ex. valeur courante lors d'un conflit 409). */
+    public readonly body: unknown = null,
   ) {
     super(serverMessage ?? code);
   }
@@ -28,7 +30,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     const code = (body && typeof body === "object" && "error" in body ? String((body as { error: unknown }).error) : null) ?? `http_${res.status}`;
     const message = body && typeof body === "object" && "message" in body ? String((body as { message: unknown }).message) : null;
-    throw new ApiError(res.status, code, message);
+    throw new ApiError(res.status, code, message, body);
   }
   return body as T;
 }
@@ -248,6 +250,13 @@ export interface ParcoursExample {
   documentedDecisions: number;
 }
 
+/** Le magasin du moteur de l'Atelier natif : clés `design.v13.*` et leur révision par clé. */
+export interface AtelierStore {
+  entries: Record<string, unknown>;
+  revisions: Record<string, number>;
+  modelRevision: number;
+}
+
 export const api = {
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -277,6 +286,14 @@ export const api = {
       method: "POST",
       body: JSON.stringify(input),
     }),
+  getAtelierStore: (projectId: string) => request<AtelierStore>(`/projects/${projectId}/atelier/store`),
+  putAtelierStoreEntry: (projectId: string, key: string, value: unknown, expectedRevision: number | null) =>
+    request<{ key: string; revision: number; modelRevision: number }>(`/projects/${projectId}/atelier/store/${encodeURIComponent(key)}`, {
+      method: "PUT",
+      body: JSON.stringify({ value, expectedRevision }),
+    }),
+  deleteAtelierStoreEntry: (projectId: string, key: string) =>
+    request<void>(`/projects/${projectId}/atelier/store/${encodeURIComponent(key)}`, { method: "DELETE" }),
   getProgramme: (projectId: string) => request<ProgrammeView>(`/projects/${projectId}/programme`),
   putProgramme: (projectId: string, rep: { type: string; baseArea: number; mode: ProgrammeMode; custom: Record<string, number> }) =>
     request<ProgrammeView>(`/projects/${projectId}/programme`, { method: "PUT", body: JSON.stringify(rep) }),

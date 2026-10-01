@@ -35,7 +35,7 @@ export const MODULES: ModuleDescriptor[] = [
     id: "atelier",
     label: "Atelier architectural",
     implemented: true,
-    status: "Murs créés ici sont persistés sur le projet (révision du modèle incluse) et annulables/rétablissables.",
+    status: "Le moteur de l'Atelier du prototype (3D, plan, coupes, façades, niveaux, outils de dessin, exports) sur le modèle du projet, persisté avec révision contrôlée.",
   },
   {
     id: "analyses",

@@ -179,36 +179,31 @@ const programmeCase = readJson<ProgrammeCaseFile>("examples/p118-programme-case.
 const parcel = readJson<ParcelFile>("examples/p118-parcel.json");
 
 // ---------------------------------------------------------------------------
-// Modèle architectural natif de P.118 (niveaux + objets) — extraction directe
-// de native.domains.floorDesign dans le prototype, pas une illustration.
+// Modèle natif de P.118 — les domaines `design.v13` que le moteur de
+// l'Atelier lit et écrit tels quels (extraction verbatim de
+// p118-resolved-template.native). La projection vers les tables
+// `levels` / `architectural_objects` en est dérivée (lib/native-projection.ts).
 // ---------------------------------------------------------------------------
 
-interface NativeArchitectureObject {
-  id: string;
-  kind: string;
-  properties: Record<string, unknown>;
-  relations: { kind: string; targetId: string }[];
-}
-
-interface NativeArchitectureFile {
+interface NativeModelFile {
   sourceVersion: string;
-  sourceNativeId: string;
-  note: string;
-  levels: { id: string; label: string; elevation: number; position: number }[];
-  objectsByLevel: Record<string, NativeArchitectureObject[]>;
+  exampleId: string;
+  nativeId: string;
+  registry: { id: string; name: string; parcel: string; location: string };
+  domains: Record<string, unknown>;
 }
 
-const nativeArchitecture = readJson<NativeArchitectureFile>("examples/p118-native-architecture.json");
+const nativeModel = readJson<NativeModelFile>("examples/p118-native-model.json");
 
-/**
- * Le modèle architectural complet de P.118 (niveaux + ~1750 objets : murs,
- * poteaux, portes, fenêtres, escaliers, dalles/zones, cotations, repères,
- * locaux), ou `null` pour un exemple qui n'en a pas (le dossier antérieur
- * n'est qu'un dossier de zone, sans modèle de bâtiment).
- */
-export function exampleNativeArchitecture(exampleId: string): NativeArchitectureFile | null {
-  if (exampleId === exempleComplet.id) return nativeArchitecture;
-  return null;
+/** Les clés du magasin de l'Atelier à installer pour l'exemple : registre, projet actif, domaines. `null` pour un exemple sans modèle. */
+export function exampleAtelierStore(exampleId: string): { nativeId: string; entries: Record<string, unknown> } | null {
+  if (exampleId !== exempleComplet.id) return null;
+  const entries: Record<string, unknown> = {
+    "design.v13.registry": [nativeModel.registry],
+    "design.v13.activeProject": nativeModel.nativeId,
+  };
+  for (const [domain, value] of Object.entries(nativeModel.domains)) entries[`design.v13.project.${nativeModel.nativeId}.${domain}`] = value;
+  return { nativeId: nativeModel.nativeId, entries };
 }
 
 /** Le cas de programme (bibliothèque des bâtiments) et les 74 fiches d'espaces de l'exemple complet. */

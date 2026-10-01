@@ -11,7 +11,7 @@
  * typé par `@parcours/domain-model`. Mélanger les deux serait exactement
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
-import { customType, doublePrecision, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { customType, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
 const geography = customType<{ data: string; driverData: string }>({
@@ -86,6 +86,28 @@ export const programmeRepartitions = pgTable("programme_repartitions", {
   components: jsonb("components").notNull().$type<string[]>(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/**
+ * Magasin du moteur de l'Atelier natif (module Atelier, propriétaire du
+ * modèle du bâtiment) : les clés `design.v13.*` que le moteur lit et écrit
+ * telles quelles (registre, projet actif, domaines `levels`, `floorDesign`,
+ * `nativeParcel`, `buildingFootprint`, `ui`, `views`, `sources`…), une ligne
+ * par clé et par projet. `revision` est la révision contrôlée de la clé :
+ * une écriture doit annoncer la révision qu'elle a lue (détection de
+ * conflit). La projection vers `levels` / `architectural_objects` est
+ * dérivée de ce magasin (lib/native-projection.ts), jamais l'inverse.
+ */
+export const atelierStore = pgTable(
+  "atelier_store",
+  {
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    value: jsonb("value").notNull().$type<unknown>(),
+    revision: integer("revision").notNull().default(1),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.key] })],
+);
 
 export const levels = pgTable("levels", {
   id: text("id").primaryKey(),

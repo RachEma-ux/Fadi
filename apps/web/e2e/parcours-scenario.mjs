@@ -183,6 +183,52 @@ await page.goto(`${exampleUrl}?module=parcours&etape=14`);
 await page.waitForSelector(".biz-kpis");
 check("exemple étape 14 : KPI calculés depuis les montants importés", (await page.locator(".biz-kpis").textContent()).replace(/ | /g, " ").includes("24 000 000"));
 
+// 6b. Atelier natif sur l'exemple : moteur, niveaux, dessin d'un mur persisté (projection + révision), annulation persistée
+await page.goto(`${exampleUrl}?module=atelier`);
+await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+await page.waitForTimeout(600);
+const examplePid = exampleUrl.split("/").pop();
+const rdcWalls = async () =>
+  page.evaluate(async (pid) => {
+    const levels = await (await fetch(`/projects/${pid}/levels`, { credentials: "include" })).json();
+    const rdc = levels.find((l) => l.id.endsWith("_rdc"));
+    const objs = await (await fetch(`/projects/${pid}/levels/${rdc.id}/objects`, { credentials: "include" })).json();
+    const project = await (await fetch(`/projects/${pid}`, { credentials: "include" })).json();
+    return { walls: objs.filter((o) => o.kind === "wall").length, revision: project.modelRevision };
+  }, examplePid);
+check("atelier : géométrie P.118 chargée (EPSG:26191 · 1345.55 m²)", (await page.locator("#viewer-info").textContent()).includes("1345.55"));
+check("atelier : 6 niveaux", (await page.locator("#model-floors button").count()) === 6);
+check("atelier : barre d'outils V8 prête", (await page.locator("#atelier-toolbar").getAttribute("data-ready")) === "1");
+const before = await rdcWalls();
+check("atelier : 39 murs au RDC avant dessin, révision 1", before.walls === 39 && before.revision === 1, JSON.stringify(before));
+await page.locator("#model-floors button", { hasText: "RDC" }).first().click();
+await page.locator('#atelier-toolbar [data-atab="design"]').click();
+await page.waitForTimeout(600);
+await page.locator('button:has-text("Mur")').first().click();
+const box = await page.locator("#viewer-surface").boundingBox();
+await page.mouse.click(box.x + box.width * 0.45, box.y + box.height * 0.5);
+await page.waitForTimeout(200);
+await page.mouse.click(box.x + box.width * 0.55, box.y + box.height * 0.5);
+await page.keyboard.press("Enter");
+await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+await page.waitForTimeout(400);
+const afterDraw = await rdcWalls();
+check("atelier : un mur dessiné → 40 murs, révision 2 (projection régénérée)", afterDraw.walls === 40 && afterDraw.revision === 2, JSON.stringify(afterDraw));
+await page.screenshot({ path: `${OUT}/atelier-concevoir-wall-desktop.png`, fullPage: true });
+await page.locator('#atelier-toolbar [data-quick="undo"]').click();
+await page.waitForTimeout(800);
+await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+await page.waitForTimeout(400);
+const afterUndo = await rdcWalls();
+check("atelier : annuler → 39 murs, révision 3 (l'annulation modifie l'état persistant)", afterUndo.walls === 39 && afterUndo.revision === 3, JSON.stringify(afterUndo));
+await page.reload();
+await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+check("atelier : rechargement → modèle toujours là", (await page.locator("#model-floors button").count()) === 6);
+await page.goto(`${exampleUrl}?module=parcours&etape=10`);
+await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+check("étape 10 : l'Atelier est monté dans l'étape (même moteur)", (await page.locator(".native-atelier #viewer-info").count()) === 1);
+await page.screenshot({ path: `${OUT}/10-desktop.png`, fullPage: true });
+
 // 7. Téléphone
 await page.setViewportSize({ width: 390, height: 844 });
 await page.goto(`${projectUrl}?module=parcours`);

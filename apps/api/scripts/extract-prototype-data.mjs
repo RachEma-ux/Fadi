@@ -249,35 +249,20 @@ writeJson("examples/p118-parcel.json", {
   notice,
 });
 
-// --- 7. modèle architectural natif (déjà extrait ; regénéré à l'identique) --
+// --- 6b. modèle natif verbatim pour l'Atelier (format design.v13) --------------
 
-const levelOrder = template.native.domains.levels;
-const fd = template.native.domains.floorDesign.levels;
-const GROUPS = ["walls", "columns", "doors", "windows", "stairs", "paths", "dims", "texts", "rooms"];
-const SINGULAR = { walls: "wall", columns: "column", doors: "door", windows: "window", stairs: "stairs", paths: "path", dims: "dim", texts: "text", rooms: "room" };
-const objectsByLevel = {};
-const levels = levelOrder.map((lvl, i) => {
-  const objs = [];
-  for (const group of GROUPS) {
-    const arr = fd[lvl.id][group];
-    if (!Array.isArray(arr)) continue;
-    arr.forEach((item, idx) => {
-      const { id, kind, ...rest } = item;
-      const relations = item.hostWallId ? [{ kind: "hosted-by", targetId: item.hostWallId }] : [];
-      objs.push({ id: id || `EX118-${lvl.id}-${group}-${idx}`, kind: kind || SINGULAR[group], properties: { frame: "local", ...rest }, relations });
-    });
-  }
-  objectsByLevel[lvl.id] = objs;
-  return { id: lvl.id, label: lvl.name, elevation: lvl.elevation, position: i };
-});
+// Le moteur de l'Atelier natif lit et écrit ces domaines tels quels
+// (`design.v13.project.<id>.<domaine>`). On les conserve byte-à-byte : c'est
+// le format de travail du moteur, pas une projection.
 writeJson(
-  "examples/p118-native-architecture.json",
+  "examples/p118-native-model.json",
   {
     sourceVersion: SOURCE_VERSION,
-    sourceNativeId: template.native.registry.id,
-    note: "Extraction directe de native.domains.floorDesign (p118-resolved-template, dans Parcours_V8_19_Escalier_B_Mezzanine.html). Identifiants préservés tels quels. Repère local uniquement (mètres, origine du projet) — jamais le repère cadastral de native.domains.nativeParcel.",
-    levels,
-    objectsByLevel,
+    sourceBlock: "script p118-resolved-template → native (registry + domains nativeParcel, levels, buildingFootprint, floorDesign, ui)",
+    exampleId: exemple.id,
+    nativeId: template.native.id,
+    registry: template.native.registry,
+    domains: template.native.domains,
   },
   { pretty: false },
 );

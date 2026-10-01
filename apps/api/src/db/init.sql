@@ -62,6 +62,16 @@ CREATE TABLE IF NOT EXISTS programme_repartitions (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- Magasin du moteur de l'Atelier natif (clés design.v13.*), voir schema.ts.
+CREATE TABLE IF NOT EXISTS atelier_store (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  key text NOT NULL,
+  value jsonb NOT NULL,
+  revision integer NOT NULL DEFAULT 1,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (project_id, key)
+);
+
 CREATE TABLE IF NOT EXISTS levels (
   id text PRIMARY KEY,
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,

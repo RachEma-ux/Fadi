@@ -1395,6 +1395,43 @@ h3 {
 }
 
 /* ---------------------------------------------------------------------- */
+/* Atelier natif (moteur du prototype, scopé #nativeDesignerRoot)         */
+/* ---------------------------------------------------------------------- */
+.native-atelier {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 24px;
+}
+.native-atelier-status {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+}
+.native-atelier-status-saved {
+  color: var(--done);
+}
+.native-atelier-status-conflict,
+.native-atelier-status-error {
+  color: #a0351f;
+  background: #fbeeea;
+  border-color: #ecc9c0;
+}
+#nativeDesignerMount {
+  width: 100%;
+  min-width: 0;
+}
+#nativeDesignerParking.native-mounted {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------------------- */
 /* Responsive                                                              */
 /* ---------------------------------------------------------------------- */
 @media (max-width: 860px) {

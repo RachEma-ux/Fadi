@@ -15,7 +15,7 @@ const app = createApp();
 async function resetDb() {
   // L'ordre respecte les clés étrangères (CASCADE serait aussi suffisant,
   // mais l'ordre explicite documente les dépendances).
-  await pool.query("TRUNCATE architectural_objects, levels, programme_repartitions, project_steps, projects, sessions, users CASCADE");
+  await pool.query("TRUNCATE architectural_objects, atelier_store, levels, programme_repartitions, project_steps, projects, sessions, users CASCADE");
 }
 
 beforeAll(async () => {
@@ -426,5 +426,67 @@ describe("examples", () => {
     const imported2 = await client.post("/examples/p118-exemple-complet/import");
     expect(imported2.status).toBe(201);
     expect(imported2.body.id).not.toBe(projectId);
+  });
+});
+
+describe("Atelier — magasin du moteur natif", () => {
+  it("serves the imported native model keys with revisions, and keeps the derived projection in step with floorDesign writes", async () => {
+    const client = await registerAndLogin("atelier@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+
+    const store = await client.get(`/projects/${pid}/atelier/store`);
+    expect(store.status).toBe(200);
+    expect(store.body.entries["design.v13.activeProject"]).toBe("p118-demo-v819");
+    expect(store.body.entries["design.v13.registry"][0].name).toBe("EXEMPLE COMPLET · P.118 — Escalier B et mezzanine");
+    const fdKey = "design.v13.project.p118-demo-v819.floorDesign";
+    expect(Object.keys(store.body.entries).sort()).toEqual([
+      "design.v13.activeProject",
+      "design.v13.project.p118-demo-v819.buildingFootprint",
+      fdKey,
+      "design.v13.project.p118-demo-v819.levels",
+      "design.v13.project.p118-demo-v819.nativeParcel",
+      "design.v13.project.p118-demo-v819.ui",
+      "design.v13.registry",
+    ]);
+    expect(store.body.revisions[fdKey]).toBe(1);
+    expect(store.body.modelRevision).toBe(1);
+
+    // Le modèle natif est verbatim : métadonnées, calques et surfaces de niveau conservés (pas une projection aplatie).
+    const rdc = store.body.entries[fdKey].levels.rdc;
+    expect(rdc.meta.architectureRevision).toBe(3);
+    expect(Object.keys(rdc.layers)).toContain("Escaliers");
+    expect(rdc.areas.gross).toBeCloseTo(673, 0);
+
+    // Une écriture qui n'annonce pas la révision lue est refusée, avec la valeur courante.
+    const stale = await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: store.body.entries[fdKey], expectedRevision: 0 });
+    expect(stale.status).toBe(409);
+    expect(stale.body.revision).toBe(1);
+    expect(stale.body.value.levels.rdc.walls.length).toBe(39);
+
+    // Ajouter un mur au RDC via le domaine natif : révision du modèle avancée, projection régénérée (39 → 40 murs au RDC).
+    const fd = store.body.entries[fdKey];
+    fd.levels.rdc.walls.push({ id: "TEST-rdc-W-NEW", kind: "wall", a: [0, 0], b: [4, 0], thickness: 0.2, height: 3.2, layer: "Murs", type: "mur" });
+    const saved = await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: fd, expectedRevision: 1 });
+    expect(saved.status).toBe(200);
+    expect(saved.body.revision).toBe(2);
+    expect(saved.body.modelRevision).toBe(2);
+    const levelsRes = await client.get(`/projects/${pid}/levels`);
+    const rdcLevel = levelsRes.body.find((l: { id: string }) => l.id.endsWith("_rdc"));
+    const objects = await client.get(`/projects/${pid}/levels/${rdcLevel.id}/objects`);
+    expect(objects.body.filter((o: { kind: string }) => o.kind === "wall")).toHaveLength(40);
+    expect(objects.body.find((o: { id: string }) => o.id === `${pid}_TEST-rdc-W-NEW`).modelRevision).toBe(2);
+
+    // Une clé hors du magasin de l'Atelier est refusée.
+    const badKey = await client.put(`/projects/${pid}/atelier/store/potentiel-v3`).send({ value: {}, expectedRevision: null });
+    expect(badKey.status).toBe(400);
+
+    // Le magasin d'un projet vierge est vide ; un autre utilisateur n'y accède pas.
+    const blank = await client.post("/projects").send({ code: "P.906", name: "Vierge" });
+    const blankStore = await client.get(`/projects/${blank.body.id}/atelier/store`);
+    expect(blankStore.body.entries).toEqual({});
+    const intruder = await registerAndLogin("atelier-intruder@example.com");
+    expect((await intruder.get(`/projects/${pid}/atelier/store`)).status).toBe(404);
+    expect((await intruder.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: fd, expectedRevision: 2 })).status).toBe(404);
   });
 });
