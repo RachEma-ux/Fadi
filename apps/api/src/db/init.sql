@@ -54,9 +54,15 @@ CREATE TABLE IF NOT EXISTS levels (
   id text PRIMARY KEY,
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
   label text NOT NULL,
-  elevation integer NOT NULL DEFAULT 0,
+  -- double precision, pas integer : le modèle natif P.118 porte des altitudes
+  -- décimales (ex. -3.2 m, 3.2 m) — les arrondir à l'entier serait une perte
+  -- de donnée interdite par AGENTS.md (« N'arrondis pas les mètres en
+  -- nombres entiers »). Migration en place pour une base déjà créée avec
+  -- l'ancien type integer.
+  elevation double precision NOT NULL DEFAULT 0,
   "position" integer NOT NULL DEFAULT 0
 );
+ALTER TABLE levels ALTER COLUMN elevation TYPE double precision;
 CREATE INDEX IF NOT EXISTS levels_project_id_idx ON levels (project_id);
 
 CREATE TABLE IF NOT EXISTS architectural_objects (

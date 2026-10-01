@@ -117,7 +117,9 @@ projectsRouter.delete("/:projectId", async (req, res) => {
 
 const createLevelSchema = z.object({
   label: z.string().trim().min(1).max(100),
-  elevation: z.number().int().min(-50).max(500).default(0),
+  // Pas `.int()` : une élévation réelle (ex. modèle P.118) est décimale ;
+  // voir la justification dans db/schema.ts sur `levels.elevation`.
+  elevation: z.number().min(-50).max(500).default(0),
   position: z.number().int().min(0).max(1000).default(0),
 });
 

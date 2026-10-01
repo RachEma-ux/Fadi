@@ -236,4 +236,42 @@ describe("examples", () => {
     const listed = await client.get("/projects");
     expect(listed.body).toHaveLength(0);
   });
+
+  it("imports P.118's complete native architecture (levels, objects, elevation precision, relations) — not just the step text", async () => {
+    const client = await registerAndLogin("architecture@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    expect(imported.status).toBe(201);
+    const projectId = imported.body.id as string;
+
+    const levelsRes = await client.get(`/projects/${projectId}/levels`);
+    expect(levelsRes.status).toBe(200);
+    // Les 6 niveaux du modèle natif (sous-sol à R+3), jamais arrondis.
+    expect(levelsRes.body).toHaveLength(6);
+    const mezz = levelsRes.body.find((l: { id: string }) => l.id.endsWith("_mezz"));
+    expect(mezz.elevation).toBeCloseTo(3.2, 10);
+    const ss = levelsRes.body.find((l: { id: string }) => l.id.endsWith("_ss"));
+    expect(ss.elevation).toBeCloseTo(-3.2, 10);
+
+    const objectsRes = await client.get(`/projects/${projectId}/levels/${mezz.id}/objects`);
+    expect(objectsRes.status).toBe(200);
+    // La mezzanine (cœur de cet exemple) porte bien ses murs, poteaux, portes,
+    // fenêtres et escaliers réels — pas un sous-ensemble choisi pour la démo.
+    const kinds = new Set(objectsRes.body.map((o: { kind: string }) => o.kind));
+    for (const expected of ["wall", "column", "door", "window", "stairs", "room"]) {
+      expect(kinds.has(expected)).toBe(true);
+    }
+    // Les portes/fenêtres référencent leur mur hôte via une relation remappée
+    // vers l'id (préfixé projet) réellement inséré, pas l'id natif brut.
+    const door = objectsRes.body.find((o: { kind: string }) => o.kind === "door");
+    expect(door.relations).toEqual([{ kind: "hosted-by", targetId: expect.stringContaining(`${projectId}_`) }]);
+    const hostedWall = objectsRes.body.find((o: { id: string }) => o.id === door.relations[0].targetId);
+    expect(hostedWall).toBeDefined();
+    expect(hostedWall.kind).toBe("wall");
+
+    // Un deuxième import du même exemple ne doit pas entrer en collision
+    // d'identifiants avec le premier (ids natifs préfixés par projet).
+    const imported2 = await client.post("/examples/p118-exemple-complet/import");
+    expect(imported2.status).toBe(201);
+    expect(imported2.body.id).not.toBe(projectId);
+  });
 });

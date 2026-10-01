@@ -104,6 +104,41 @@ interface ArchiveDossierFile {
 const exempleComplet = readJson<ExampleCompletFile>("./examples/p118-exemple-complet.json");
 const dossierAnterieur = readJson<ArchiveDossierFile>("./examples/p118-dossier-anterieur.json");
 
+// ---------------------------------------------------------------------------
+// Modèle architectural natif de P.118 (niveaux + objets) — extraction directe
+// de native.domains.floorDesign dans le prototype, pas une illustration.
+// Voir apps/api/src/data/examples/p118-native-architecture.json pour la
+// provenance exacte.
+// ---------------------------------------------------------------------------
+
+interface NativeArchitectureObject {
+  id: string;
+  kind: string;
+  properties: Record<string, unknown>;
+  relations: { kind: string; targetId: string }[];
+}
+
+interface NativeArchitectureFile {
+  sourceVersion: string;
+  sourceNativeId: string;
+  note: string;
+  levels: { id: string; label: string; elevation: number; position: number }[];
+  objectsByLevel: Record<string, NativeArchitectureObject[]>;
+}
+
+const nativeArchitecture = readJson<NativeArchitectureFile>("./examples/p118-native-architecture.json");
+
+/**
+ * Le modèle architectural complet de P.118 (niveaux + ~1750 objets : murs,
+ * poteaux, portes, fenêtres, escaliers, dalles/zones, cotations, repères,
+ * locaux), ou `null` pour un exemple qui n'en a pas (le dossier antérieur
+ * n'est qu'un dossier de zone, sans modèle de bâtiment).
+ */
+export function exampleNativeArchitecture(exampleId: string): NativeArchitectureFile | null {
+  if (exampleId === exempleComplet.id) return nativeArchitecture;
+  return null;
+}
+
 export interface ParcoursExample {
   id: string;
   kind: "exemple-complet" | "archive";

@@ -11,7 +11,7 @@
  * typé par `@parcours/domain-model`. Mélanger les deux serait exactement
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
-import { customType, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { customType, doublePrecision, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
 const geography = customType<{ data: string; driverData: string }>({
@@ -73,8 +73,13 @@ export const levels = pgTable("levels", {
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   label: text("label").notNull(),
-  /** Élévation du niveau, mètres, repère local du bâtiment. */
-  elevation: integer("elevation").notNull().default(0),
+  /**
+   * Élévation du niveau, mètres, repère local du bâtiment. `double
+   * precision`, pas un entier : le modèle natif P.118 porte des altitudes
+   * décimales (ex. -3,2 m) et les arrondir perdrait de la donnée — interdit
+   * par AGENTS.md.
+   */
+  elevation: doublePrecision("elevation").notNull().default(0),
   position: integer("position").notNull().default(0),
 }, (t) => [index("levels_project_id_idx").on(t.projectId)]);
 
