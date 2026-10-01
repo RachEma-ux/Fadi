@@ -11,7 +11,7 @@ Initial development foundation, not a complete migration. The French interface c
 Use Node.js 22.12 or newer and npm.
 
 ```sh
-npm install
+npm ci
 npm run dev
 npm run typecheck
 npm test
@@ -27,4 +27,4 @@ The development URL is printed by Vite. Never put credentials in source files.
 - `docs`: architecture and migration scope.
 - `.github/workflows/ci.yml`: type checking, geometry tests and frontend build.
 
-The geometry package exports TypeScript source for consumption through the frontend bundler; it is not a published standalone Node package. Dependency installation and the full build must be verified in CI. A root lockfile is not yet generated; once installation succeeds, commit it and change CI to `npm ci`.
+The geometry package exports TypeScript source for consumption through the frontend bundler; it is not a published standalone Node package. A root lockfile pins dependencies. Initialization checks passed: TypeScript checks, all 19 geometry tests, and the production build. CI repeats these checks with `npm ci`.
