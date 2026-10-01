@@ -8,75 +8,168 @@ import { AtelierPanel } from "../modules/atelier/AtelierPanel";
 /**
  * Une étape, présentée en carte (conservé du Parcours d'origine — voir
  * AGENTS.md : « original phases, labels and mobile card presentation »).
- * Le contenu réel (décision retenue, justification, donnée vs hypothèse)
- * n'apparaît que si l'étape en a — vide par défaut, rempli par import
- * d'exemple. On ne fabrique jamais un contenu que l'étape n'a pas.
+ * La carte est un aperçu cliquable, pas le contenu complet : ouvrir l'étape
+ * mène à la vue détaillée (StepDetail) avec navigation précédent/suivant —
+ * c'est elle qui porte le contenu réel (décision, justification, donnée vs
+ * hypothèse), jamais fabriqué pour une étape qui n'en a pas.
  */
-function StepCard({ step }: { step: ParcoursStep }) {
-  const { content } = step;
-  const hasContent = step.status === "termine";
+function StepCard({ step, onOpen }: { step: ParcoursStep; onOpen: () => void }) {
   return (
     <article className={`step-card step-card-${step.status}`}>
-      <div className="step-card-head">
-        <strong>{String(step.number).padStart(2, "0")}</strong>
-        <div>
-          <span className="step-card-phase">{step.phase}</span>
-          <h3>{step.title}</h3>
+      <button type="button" className="step-card-open" onClick={onOpen}>
+        <div className="step-card-head">
+          <strong>{String(step.number).padStart(2, "0")}</strong>
+          <div>
+            <span className="step-card-phase">{step.phase}</span>
+            <h3>{step.title}</h3>
+          </div>
+          <span className={`step-dot step-dot-${step.status}`} aria-label={step.status === "termine" ? "Étape documentée" : "À faire"} />
         </div>
-        <span className={`step-dot step-dot-${step.status}`} aria-label={step.status === "termine" ? "Étape documentée" : "À faire"} />
+        {step.goal && <p className="step-card-goal">{step.goal}</p>}
+        {step.status === "termine" && step.content.headline && <p className="step-card-headline">{step.content.headline} →</p>}
+      </button>
+    </article>
+  );
+}
+
+/** Le contenu complet d'une étape — jamais fabriqué pour une étape qui n'en a pas (voir StepCard). */
+function StepContentBody({ content }: { content: ParcoursStep["content"] }) {
+  return (
+    <div className="step-detail-body">
+      {content.decision && (
+        <p>
+          <strong>Décision : </strong>
+          {content.decision}
+        </p>
+      )}
+      {content.why && (
+        <p>
+          <strong>Pourquoi : </strong>
+          {content.why}
+        </p>
+      )}
+      {content.alternatives && (
+        <p>
+          <strong>Non retenu : </strong>
+          {content.alternatives}
+        </p>
+      )}
+      {content.result?.donnee && (
+        <p className="step-card-donnee">
+          <strong>Donnée / calcul : </strong>
+          {content.result.donnee}
+        </p>
+      )}
+      {content.result?.hypothese && (
+        <p className="step-card-hypothese">
+          <strong>Hypothèse retenue : </strong>
+          {content.result.hypothese}
+        </p>
+      )}
+      {content.result?.raw && <p>{content.result.raw}</p>}
+      {content.owner && (
+        <p className="step-card-meta">
+          {content.owner}
+          {content.proof ? ` · ${content.proof}` : ""}
+        </p>
+      )}
+      {content.sourceStatus && <p className="step-card-source-status">{content.sourceStatus}</p>}
+      {!content.decision && !content.headline && !content.result && (
+        <p className="step-card-meta">Rien de documenté pour l'instant sur cette étape.</p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Vue d'une seule étape, avec navigation précédent/suivant — c'est le
+ * « passage d'étape en étape » du Parcours d'origine : un flux séquentiel,
+ * pas seulement une grille statique.
+ */
+function StepDetail({
+  step,
+  index,
+  total,
+  onBack,
+  onPrev,
+  onNext,
+}: {
+  step: ParcoursStep;
+  index: number;
+  total: number;
+  onBack: () => void;
+  onPrev: (() => void) | null;
+  onNext: (() => void) | null;
+}) {
+  return (
+    <div className="step-detail">
+      <div className="step-detail-top">
+        <button type="button" className="button-secondary" onClick={onBack}>
+          ← Vue d'ensemble
+        </button>
+        <div className="progress">
+          <i style={{ width: `${((index + 1) / total) * 100}%` }} />
+        </div>
+        <span className="step-detail-count">
+          {index + 1} / {total}
+        </span>
       </div>
+
+      <span className="eyebrow">{step.phase}</span>
+      <h3>
+        {String(step.number).padStart(2, "0")} — {step.title}
+      </h3>
       {step.goal && <p className="step-card-goal">{step.goal}</p>}
-      {hasContent && (
+      {step.deliverable && (
+        <p className="step-card-meta">
+          <strong>Livrable attendu : </strong>
+          {step.deliverable}
+        </p>
+      )}
+
+      <StepContentBody content={step.content} />
+
+      {step.harmonieOptions.length > 0 && (
         <details className="step-card-details">
-          <summary>{content.headline ?? "Voir la décision retenue"}</summary>
-          <div className="step-card-body">
-            {content.decision && (
-              <p>
-                <strong>Décision : </strong>
-                {content.decision}
-              </p>
-            )}
-            {content.why && (
-              <p>
-                <strong>Pourquoi : </strong>
-                {content.why}
-              </p>
-            )}
-            {content.alternatives && (
-              <p>
-                <strong>Non retenu : </strong>
-                {content.alternatives}
-              </p>
-            )}
-            {content.result?.donnee && (
-              <p className="step-card-donnee">
-                <strong>Donnée / calcul : </strong>
-                {content.result.donnee}
-              </p>
-            )}
-            {content.result?.hypothese && (
-              <p className="step-card-hypothese">
-                <strong>Hypothèse retenue : </strong>
-                {content.result.hypothese}
-              </p>
-            )}
-            {content.result?.raw && <p>{content.result.raw}</p>}
-            {content.owner && (
-              <p className="step-card-meta">
-                {content.owner}
-                {content.proof ? ` · ${content.proof}` : ""}
-              </p>
-            )}
-            {content.sourceStatus && <p className="step-card-source-status">{content.sourceStatus}</p>}
+          <summary>Propositions Harmonie pour cette étape ({step.harmonieOptions.length})</summary>
+          <div className="step-detail-body">
+            {step.harmonieOptions.map((opt, i) => (
+              <div key={i} className="harmonie-option">
+                <strong>{opt.title}</strong>
+                <p>{opt.proposal}</p>
+                <p className="step-card-meta">
+                  {opt.benefit} · {opt.tradeoff}
+                </p>
+              </div>
+            ))}
           </div>
         </details>
       )}
-    </article>
+
+      <nav className="step-detail-nav" aria-label="Navigation entre étapes">
+        <button type="button" className="button-secondary" onClick={onPrev ?? undefined} disabled={!onPrev}>
+          ← Étape précédente
+        </button>
+        <button type="button" className="button-primary" onClick={onNext ?? undefined} disabled={!onNext}>
+          Étape suivante →
+        </button>
+      </nav>
+    </div>
   );
 }
 
 function ParcoursSteps({ projectId }: { projectId: string }) {
   const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const etapeParam = searchParams.get("etape");
+  const openNumber = etapeParam ? Number(etapeParam) : null;
+
+  function openStep(number: number | null) {
+    const next = new URLSearchParams(searchParams);
+    if (number) next.set("etape", String(number));
+    else next.delete("etape");
+    setSearchParams(next, { replace: false });
+  }
 
   if (stepsQuery.isLoading) {
     return <p role="status">Chargement des étapes…</p>;
@@ -85,16 +178,34 @@ function ParcoursSteps({ projectId }: { projectId: string }) {
     return <p role="alert">Impossible de charger les étapes du Parcours.</p>;
   }
 
-  const done = stepsQuery.data.filter((s) => s.status === "termine").length;
+  const steps = stepsQuery.data;
+  const done = steps.filter((s) => s.status === "termine").length;
+
+  if (openNumber) {
+    const index = steps.findIndex((s) => s.number === openNumber);
+    const step = steps[index];
+    if (step) {
+      return (
+        <StepDetail
+          step={step}
+          index={index}
+          total={steps.length}
+          onBack={() => openStep(null)}
+          onPrev={index > 0 ? () => openStep(steps[index - 1]!.number) : null}
+          onNext={index < steps.length - 1 ? () => openStep(steps[index + 1]!.number) : null}
+        />
+      );
+    }
+  }
 
   return (
     <>
       <p className="parcours-steps-summary">
-        {done} / {stepsQuery.data.length} étapes documentées
+        {done} / {steps.length} étapes documentées
       </p>
       <section className="cards" aria-label="Les 21 étapes du Parcours">
-        {stepsQuery.data.map((step) => (
-          <StepCard key={step.number} step={step} />
+        {steps.map((step) => (
+          <StepCard key={step.number} step={step} onOpen={() => openStep(step.number)} />
         ))}
       </section>
     </>
