@@ -107,7 +107,12 @@ jobs:
       - name: Start the web app (production build)
         run: |
           echo "🚀 Starting apps/web (vite preview) on :4173..."
-          npx --prefix apps/web vite preview --port 4173 --host 0.0.0.0 > web.log 2>&1 &
+          # Must run with apps/web as cwd: vite preview resolves its config
+          # (and the preview.proxy it needs for /auth,/projects,/health)
+          # relative to where it's invoked from, not from --prefix — `npx
+          # --prefix apps/web vite preview` silently serves 404s for
+          # everything because it never finds apps/web/vite.config.ts.
+          (cd apps/web && npx vite preview --port 4173 --host 0.0.0.0) > web.log 2>&1 &
           echo $! > web.pid
 
           for attempt in $(seq 1 18); do
