@@ -43,9 +43,31 @@ export const projects = pgTable("projects", {
   modelRevision: integer("model_revision").notNull().default(0),
   /** Polygone de la parcelle en WGS84, nullable tant que la parcelle n'a pas été localisée. */
   parcelFootprint: geography("parcel_footprint"),
+  /** Identifiant de l'exemple importé (apps/api/src/data/examples), null pour un projet créé de toutes pièces. Traçabilité de la provenance, jamais effacée. */
+  sourceExampleId: text("source_example_id"),
+  /** Données annexes de l'exemple importé (faits, critères, hypothèses, données de zone) — non structurées dans le modèle de domaine, conservées telles quelles pour consultation. */
+  sourceAttachment: jsonb("source_attachment").$type<Record<string, unknown> | null>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("projects_owner_id_idx").on(t.ownerId)]);
+
+/**
+ * Contenu réel d'une étape du Parcours pour un projet donné. La définition
+ * générique de l'étape (titre, phase, propositions Harmonie) vit dans
+ * `apps/api/src/data/parcours-steps.json`, pas en base — seul ce qui est
+ * propre à CE projet (statut, décision retenue, justification) est persisté
+ * ici. Une ligne par étape et par projet, créée dès la création du projet
+ * (21 lignes, jamais plus, jamais moins).
+ */
+export const projectSteps = pgTable("project_steps", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  stepNumber: integer("step_number").notNull(),
+  status: text("status").notNull().default("a-faire"),
+  content: jsonb("content").notNull().$type<Record<string, unknown>>(),
+}, (t) => [
+  uniqueIndex("project_steps_project_id_step_number_unique").on(t.projectId, t.stepNumber),
+  index("project_steps_project_id_idx").on(t.projectId),
+]);
 
 export const levels = pgTable("levels", {
   id: text("id").primaryKey(),

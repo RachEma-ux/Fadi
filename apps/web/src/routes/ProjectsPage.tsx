@@ -1,7 +1,58 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, api } from "../lib/api";
+
+/**
+ * Exemples importables — une copie indépendante est créée dans le compte de
+ * l'utilisateur, jamais une référence partagée (voir apps/api/src/routes/examples.ts).
+ * Les chiffres affichés viennent du contenu réellement importé, pas d'un
+ * mécanisme de propositions Harmonie que Fadi n'a pas encore.
+ */
+function ExamplesSection() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const examplesQuery = useQuery({ queryKey: ["examples"], queryFn: api.listExamples });
+  const [importingId, setImportingId] = useState<string | null>(null);
+
+  const importExample = useMutation({
+    mutationFn: (exampleId: string) => api.importExample(exampleId),
+    onMutate: (exampleId) => setImportingId(exampleId),
+    onSuccess: (project) => {
+      void queryClient.invalidateQueries({ queryKey: ["projects"] });
+      navigate(`/projets/${project.id}`);
+    },
+    onSettled: () => setImportingId(null),
+  });
+
+  if (examplesQuery.isLoading || !examplesQuery.data || examplesQuery.data.length === 0) {
+    return null;
+  }
+
+  return (
+    <section aria-labelledby="examples-heading" className="panel examples-panel">
+      <h2 id="examples-heading">Exemples</h2>
+      <p className="panel-sub">
+        Des cas déjà travaillés, à importer comme point de départ. Chaque import crée votre propre copie ; l'exemple d'origine ne change pas.
+      </p>
+      <div className="examples-grid">
+        {examplesQuery.data.map((ex) => (
+          <article key={ex.id} className="example-card">
+            <span className="eyebrow">{ex.kind === "exemple-complet" ? "EXEMPLE COMPLET" : "ARCHIVE DE TRAVAIL"}</span>
+            <h3>{ex.name}</h3>
+            <p>{ex.summary}</p>
+            <p className="example-card-meta">
+              {ex.stepsWithContent} / 21 étapes avec contenu importé · {ex.documentedDecisions} décisions documentées
+            </p>
+            <button type="button" onClick={() => importExample.mutate(ex.id)} disabled={importingId === ex.id}>
+              {importingId === ex.id ? "Import…" : "Importer"}
+            </button>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export function ProjectsPage() {
   const queryClient = useQueryClient();
@@ -63,6 +114,8 @@ export function ProjectsPage() {
           </button>
         </form>
       </section>
+
+      <ExamplesSection />
 
       <section aria-labelledby="project-list-heading">
         <h2 id="project-list-heading">{q ? `Résultats pour « ${searchParams.get("q")} »` : "Vos projets"}</h2>

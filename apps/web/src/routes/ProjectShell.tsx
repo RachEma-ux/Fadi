@@ -1,21 +1,103 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { api } from "../lib/api";
+import { api, type ParcoursStep } from "../lib/api";
 import { MODULES } from "../modules/module-registry";
 import { AtelierPanel } from "../modules/atelier/AtelierPanel";
 
-function ParcoursSteps() {
+/**
+ * Une étape, présentée en carte (conservé du Parcours d'origine — voir
+ * AGENTS.md : « original phases, labels and mobile card presentation »).
+ * Le contenu réel (décision retenue, justification, donnée vs hypothèse)
+ * n'apparaît que si l'étape en a — vide par défaut, rempli par import
+ * d'exemple. On ne fabrique jamais un contenu que l'étape n'a pas.
+ */
+function StepCard({ step }: { step: ParcoursStep }) {
+  const { content } = step;
+  const hasContent = step.status === "termine";
   return (
-    <section className="cards" aria-label="Emplacements des 21 étapes">
-      {Array.from({ length: 21 }, (_, i) => (
-        <article key={i}>
-          <strong>{String(i + 1).padStart(2, "0")}</strong>
-          <p>Étape à migrer</p>
-          <small>Contenu métier non intégré</small>
-        </article>
-      ))}
-    </section>
+    <article className={`step-card step-card-${step.status}`}>
+      <div className="step-card-head">
+        <strong>{String(step.number).padStart(2, "0")}</strong>
+        <div>
+          <span className="step-card-phase">{step.phase}</span>
+          <h3>{step.title}</h3>
+        </div>
+        <span className={`step-dot step-dot-${step.status}`} aria-label={step.status === "termine" ? "Étape documentée" : "À faire"} />
+      </div>
+      {step.goal && <p className="step-card-goal">{step.goal}</p>}
+      {hasContent && (
+        <details className="step-card-details">
+          <summary>{content.headline ?? "Voir la décision retenue"}</summary>
+          <div className="step-card-body">
+            {content.decision && (
+              <p>
+                <strong>Décision : </strong>
+                {content.decision}
+              </p>
+            )}
+            {content.why && (
+              <p>
+                <strong>Pourquoi : </strong>
+                {content.why}
+              </p>
+            )}
+            {content.alternatives && (
+              <p>
+                <strong>Non retenu : </strong>
+                {content.alternatives}
+              </p>
+            )}
+            {content.result?.donnee && (
+              <p className="step-card-donnee">
+                <strong>Donnée / calcul : </strong>
+                {content.result.donnee}
+              </p>
+            )}
+            {content.result?.hypothese && (
+              <p className="step-card-hypothese">
+                <strong>Hypothèse retenue : </strong>
+                {content.result.hypothese}
+              </p>
+            )}
+            {content.result?.raw && <p>{content.result.raw}</p>}
+            {content.owner && (
+              <p className="step-card-meta">
+                {content.owner}
+                {content.proof ? ` · ${content.proof}` : ""}
+              </p>
+            )}
+            {content.sourceStatus && <p className="step-card-source-status">{content.sourceStatus}</p>}
+          </div>
+        </details>
+      )}
+    </article>
+  );
+}
+
+function ParcoursSteps({ projectId }: { projectId: string }) {
+  const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
+
+  if (stepsQuery.isLoading) {
+    return <p role="status">Chargement des étapes…</p>;
+  }
+  if (stepsQuery.isError || !stepsQuery.data) {
+    return <p role="alert">Impossible de charger les étapes du Parcours.</p>;
+  }
+
+  const done = stepsQuery.data.filter((s) => s.status === "termine").length;
+
+  return (
+    <>
+      <p className="parcours-steps-summary">
+        {done} / {stepsQuery.data.length} étapes documentées
+      </p>
+      <section className="cards" aria-label="Les 21 étapes du Parcours">
+        {stepsQuery.data.map((step) => (
+          <StepCard key={step.number} step={step} />
+        ))}
+      </section>
+    </>
   );
 }
 
@@ -90,7 +172,7 @@ export function ProjectShell() {
         {activeModule === "parcours" && (
           <>
             <h2>Étude du potentiel d’une parcelle</h2>
-            <ParcoursSteps />
+            <ParcoursSteps projectId={projectId} />
           </>
         )}
 

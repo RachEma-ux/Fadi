@@ -1,0 +1,726 @@
+{
+  "version": "8.19.0",
+  "phases": [
+    "Comprendre le site",
+    "Programmer",
+    "Concevoir / Tester",
+    "Prouver la faisabilité",
+    "Arbitrer",
+    "Engager"
+  ],
+  "steps": [
+    {
+      "number": 1,
+      "title": "Parcelle / Site existant",
+      "phase": "Comprendre le site",
+      "key": "site",
+      "scope": "Site et paysage",
+      "goal": "Choisir le lieu et composer le terrain, avant toute distribution intérieure.",
+      "inputs": "Contour cadastral, géolocalisation, approche, contexte cartographique et observations datées.",
+      "deliverable": "Schéma d’organisation du site et variante argumentée.",
+      "method": "Formes extérieures · Luan Tou ; ouverture, appuis, transitions et mouvements. Aucune carte natale du bâtiment à ce stade.",
+      "topic": "Organisation du site",
+      "harmonieOptions": []
+    },
+    {
+      "number": 2,
+      "title": "Réglementation & constructibilité",
+      "phase": "Comprendre le site",
+      "key": "rules",
+      "scope": "Site constructible",
+      "goal": "Adapter les intentions du site aux règles documentées, sans inventer un droit à construire.",
+      "inputs": "Schéma de site retenu, règlement, servitudes, accès et retraits renseignés.",
+      "deliverable": "Parti compatible à faire confirmer et solution de repli.",
+      "method": "Conserver l’intention d’accueil ou de protection par une solution réalisable ; l’interprétation traditionnelle ne prime pas sur les règles.",
+      "topic": "Adaptation aux contraintes",
+      "harmonieOptions": [
+        {
+          "title": "Préserver l’intention, déplacer le dispositif",
+          "proposal": "Déplacer parvis, filtre paysager ou desserte dans les espaces dont l’usage est admissible ; garder une transition extérieure lisible.",
+          "benefit": "Conserve le sens du projet sans imposer une forme unique.",
+          "tradeoff": "Implantation et dimensions restent à préciser.",
+          "validation": "Accès, plantations et ouvrages dans les retraits doivent être autorisés."
+        },
+        {
+          "title": "Concentrer l’aménagement dans une zone moins contrainte",
+          "proposal": "Regrouper les aménagements permanents dans le secteur admissible et réserver les secteurs incertains à des usages réversibles sous réserve.",
+          "benefit": "Réduit l’exposition aux incertitudes réglementaires.",
+          "tradeoff": "Peut réduire l’espace disponible pour l’accueil.",
+          "validation": "Ne pas qualifier d’aménageable une zone non vérifiée."
+        },
+        {
+          "title": "Comparer un autre site ou un programme adapté",
+          "proposal": "Lorsque l’intention principale est incompatible, comparer un autre site ou réduire le programme plutôt que forcer une implantation.",
+          "benefit": "Évite une conception fondée sur une dérogation supposée.",
+          "tradeoff": "Peut remettre en cause le choix foncier.",
+          "validation": "Confirmer l’incompatibilité auprès du concepteur et de l’autorité compétente."
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "title": "Marché & demande",
+      "phase": "Comprendre le site",
+      "key": "market",
+      "scope": "Attentes et usages recherchés",
+      "goal": "Proposer des qualités d’usage à confronter à la demande, sans prédire une rentabilité Feng Shui.",
+      "inputs": "Publics visés, observations de marché et accessibilité territoriale documentée.",
+      "deliverable": "Promesse d’usage testable auprès des futurs utilisateurs.",
+      "method": "Lecture de l’accueil et des transitions ; aucune promesse d’attraction, de santé ou de prospérité.",
+      "topic": "Qualités à tester",
+      "harmonieOptions": [
+        {
+          "title": "Accueil identifiable et arrivée sereine",
+          "proposal": "Tester auprès des usagers un accès compréhensible et une transition extérieure permettant de s’orienter sans conflit avec la desserte.",
+          "benefit": "Formule une valeur d’usage observable.",
+          "tradeoff": "Les réactions des usagers ne sont pas encore connues.",
+          "validation": "Entretiens ou visites comparatives à documenter."
+        },
+        {
+          "title": "Retrait et intimité",
+          "proposal": "Comparer l’intérêt d’un site plus protégé, d’une limite paysagère ou d’une séquence d’entrée moins exposée.",
+          "benefit": "Répond à une attente possible de tranquillité.",
+          "tradeoff": "Moins de visibilité directe selon le contexte.",
+          "validation": "Confirmer l’attente auprès du public cible, sans déduire le bruit du fond satellite."
+        },
+        {
+          "title": "Lien avec l’extérieur partagé",
+          "proposal": "Tester la valeur d’un espace extérieur collectif et les conditions d’usage aux heures de fréquentation.",
+          "benefit": "Explore une qualité autre que la seule surface.",
+          "tradeoff": "Entretien et gestion d’usage à prévoir.",
+          "validation": "Aucune hausse de valeur ou de demande n’est présumée."
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "title": "Idée & stratégie",
+      "phase": "Programmer",
+      "key": "strategy",
+      "scope": "Parti d’ensemble",
+      "goal": "Choisir un parti spatial reliant site, activités et identité du projet.",
+      "inputs": "Intentions du site, contraintes connues et besoins pressentis.",
+      "deliverable": "Parti directeur et compromis explicités.",
+      "method": "Forme et équilibre ouverture/protection à l’échelle de l’ensemble.",
+      "topic": "Parti spatial",
+      "harmonieOptions": [
+        {
+          "title": "Séquence ouverte et progressive",
+          "proposal": "Organiser une progression public → accueil → activités, en conservant un espace extérieur clairement identifiable.",
+          "benefit": "Parti lisible pour les nouveaux arrivants.",
+          "tradeoff": "Protection visuelle et contrôle des accès à préciser.",
+          "validation": "Ne pas confondre ouverture d’usage et absence de contrôle."
+        },
+        {
+          "title": "Ensemble protégé autour d’un extérieur",
+          "proposal": "Concevoir le projet autour d’un espace de retrait, avec une entrée visible mais non exposée de part en part.",
+          "benefit": "Donne une intention commune à l’implantation et au programme.",
+          "tradeoff": "Peut limiter certaines vues ou la compacité.",
+          "validation": "Confronter soleil, masques, circulation et constructibilité."
+        },
+        {
+          "title": "Pôles autonomes reliés",
+          "proposal": "Séparer les fonctions à horaires ou publics différents et les réunir par une transition commune.",
+          "benefit": "Permet plusieurs modes d’exploitation.",
+          "tradeoff": "Multiplie potentiellement les accès et supports.",
+          "validation": "Tester besoins réels et coûts avant de figer les pôles."
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "title": "Besoins & concertation",
+      "phase": "Programmer",
+      "key": "needs",
+      "scope": "Usagers et activités",
+      "goal": "Proposer des modalités d’usage et les confronter aux personnes concernées.",
+      "inputs": "Profils d’usagers, activités, horaires, fréquentations et besoins exprimés.",
+      "deliverable": "Scénario d’usage et besoins à intégrer au PMO.",
+      "method": "Yin–Yang comme lecture qualitative de l’activité et du retrait ; besoins déclarés distincts de l’interprétation.",
+      "topic": "Scénarios d’usage",
+      "harmonieOptions": [
+        {
+          "title": "Alternance activité et retrait",
+          "proposal": "Prévoir une possibilité de retrait à proximité des usages collectifs, sans placer cette zone dans un passage obligé.",
+          "benefit": "Répond à plusieurs rythmes dans le même projet.",
+          "tradeoff": "Surface et disponibilité à arbitrer.",
+          "validation": "Interroger les usagers sur la durée et la simultanéité des usages."
+        },
+        {
+          "title": "Séparation par horaires",
+          "proposal": "Partager certains lieux à des moments distincts et prévoir les transitions nécessaires au changement d’activité.",
+          "benefit": "Limite les duplications.",
+          "tradeoff": "Dépend de l’organisation quotidienne.",
+          "validation": "Éprouver un planning réaliste et les pointes de fréquentation."
+        },
+        {
+          "title": "Séparation par publics",
+          "proposal": "Prévoir des cheminements et espaces identifiables pour les usagers aux besoins incompatibles.",
+          "benefit": "Réduit les conflits d’usage possibles.",
+          "tradeoff": "Peut augmenter la surface de supports.",
+          "validation": "Documenter les incompatibilités plutôt que les présumer."
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "title": "PMO — Programme du maître d’ouvrage",
+      "phase": "Programmer",
+      "key": "pmo",
+      "scope": "Objectifs du maître d’ouvrage",
+      "goal": "Transformer les intentions retenues en exigences programmatiques compréhensibles.",
+      "inputs": "Choix du site, besoins exprimés, objectifs et arbitrages du maître d’ouvrage.",
+      "deliverable": "Exigences à transmettre à Répartition et à la conception.",
+      "method": "Traduire une intention traditionnelle en qualité spatiale observable, avec critère de revue explicite.",
+      "topic": "Engagements du programme",
+      "harmonieOptions": [
+        {
+          "title": "Inscrire trois intentions prioritaires",
+          "proposal": "Formaliser arrivée lisible, relation choisie à l’extérieur et séparation des mouvements incompatibles ; fixer pour chacune un responsable et un mode de vérification.",
+          "benefit": "Donne un cap utilisable par les concepteurs.",
+          "tradeoff": "Les arbitrages de surface restent ouverts.",
+          "validation": "Chaque exigence doit être confirmée par le maître d’ouvrage."
+        },
+        {
+          "title": "Définir un socle et des options",
+          "proposal": "Séparer les qualités indispensables des options d’ambiance et de personnalisation.",
+          "benefit": "Permet d’arbitrer sans perdre l’essentiel.",
+          "tradeoff": "Certaines options peuvent être reportées.",
+          "validation": "Ne pas classer un besoin de sécurité comme option de confort."
+        },
+        {
+          "title": "Programme évolutif à scénarios",
+          "proposal": "Décrire une situation de départ et une évolution, avec les intentions à préserver dans les deux cas.",
+          "benefit": "Protège l’adaptabilité des usages.",
+          "tradeoff": "Nécessite une réserve de conception.",
+          "validation": "Ne pas transformer l’évolution souhaitée en surface autorisée."
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "title": "Préprogramme fonctionnel",
+      "phase": "Programmer",
+      "key": "programme",
+      "scope": "Répartition et relations fonctionnelles",
+      "goal": "Proposer des allocations et regroupements du programme, distincts des surfaces dessinées.",
+      "inputs": "Fiches d’espaces, capacités, surfaces cibles, adjacences et choix du PMO.",
+      "deliverable": "Variante de Répartition argumentée, applicable seulement après arbitrage.",
+      "method": "Gradation actif/calme, proximité d’usage et transitions ; le secteur symbolique ne dicte pas seul un local.",
+      "topic": "Répartition du bâtiment",
+      "harmonieOptions": [
+        {
+          "title": "Regroupement par intensité d’usage",
+          "proposal": "Regrouper les activités fréquentes et l’accueil près des circulations identifiables ; préserver les fonctions de concentration et de retrait des traversées.",
+          "benefit": "Hiérarchie fonctionnelle lisible.",
+          "tradeoff": "Peut limiter certaines mutualisations.",
+          "validation": "Comparer les cibles aux besoins et aux possibilités du site."
+        },
+        {
+          "title": "Renforcer les supports sans augmenter le total",
+          "proposal": "Tester un transfert limité de surface des fonctions principales vers une transition ou un support réellement nécessaire.",
+          "benefit": "Met en évidence le coût surfacique d’un meilleur usage.",
+          "tradeoff": "Réduit une capacité ou une surface principale.",
+          "validation": "Les donneurs et bénéficiaires doivent être nommés ; aucun transfert implicite."
+        },
+        {
+          "title": "Mutualisation maîtrisée",
+          "proposal": "Partager les espaces compatibles et reporter la surface libérée vers un espace de retrait ou un besoin insuffisamment couvert.",
+          "benefit": "Favorise l’adaptabilité.",
+          "tradeoff": "Dépend des horaires et du fonctionnement.",
+          "validation": "Conserver les circulations et supports indispensables ; vérifier les simultanéités."
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "title": "Exigences techniques & environnementales",
+      "phase": "Programmer",
+      "key": "requirements",
+      "scope": "Qualités techniques à concevoir",
+      "goal": "Proposer des dispositifs de lumière, d’acoustique, de ventilation et de protection à instruire.",
+      "inputs": "Programme, orientations documentées, activités et objectifs techniques.",
+      "deliverable": "Solutions à dimensionner et critères de contrôle.",
+      "method": "Équilibre d’ambiance subordonné aux performances techniques documentées.",
+      "topic": "Réponses techniques",
+      "harmonieOptions": [
+        {
+          "title": "Protections et transitions passives",
+          "proposal": "Étudier protections solaires, seuils et transitions acoustiques en priorité, puis compléter par les équipements nécessaires.",
+          "benefit": "Peut traiter les causes spatiales d’un inconfort.",
+          "tradeoff": "Effets à démontrer par étude.",
+          "validation": "Aucune performance acoustique ou thermique déduite du schéma."
+        },
+        {
+          "title": "Dispositifs réglables par usage",
+          "proposal": "Proposer éclairage différencié, occultation et traitement acoustique ajustables aux activités.",
+          "benefit": "S’adapte aux variations d’usage.",
+          "tradeoff": "Entretien et pilotage à prévoir.",
+          "validation": "Les valeurs de dimensionnement viennent des études spécialisées."
+        },
+        {
+          "title": "Enveloppe et équipements dédiés",
+          "proposal": "Isoler les activités les plus exigeantes et prévoir une réponse spécifique plutôt qu’un traitement identique partout.",
+          "benefit": "Cible les besoins critiques.",
+          "tradeoff": "Coût et flexibilité à comparer.",
+          "validation": "Vérifier réseaux, exploitation et contraintes de sécurité."
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "title": "Compatibilité Parcelle ↔ Programme",
+      "phase": "Concevoir / Tester",
+      "key": "compatibility",
+      "scope": "Site ↔ programme",
+      "goal": "Proposer les compromis entre le terrain disponible et les besoins, sans confondre les deux répartitions.",
+      "inputs": "Schéma du site, contraintes, programme et surfaces cibles.",
+      "deliverable": "Scénario de compatibilité et ajustements proposés.",
+      "method": "Conserver les qualités d’arrivée, d’appui et d’ouverture lors de l’adaptation au programme.",
+      "topic": "Compromis site / usages",
+      "harmonieOptions": [
+        {
+          "title": "Préserver les qualités extérieures prioritaires",
+          "proposal": "Conserver l’espace d’arrivée et le retrait extérieur retenus ; ajuster le regroupement des fonctions pour les respecter.",
+          "benefit": "Maintient le lien avec la décision initiale du site.",
+          "tradeoff": "Peut contraindre la capacité recherchée.",
+          "validation": "Comparer capacité et constructibilité sans redimensionnement automatique."
+        },
+        {
+          "title": "Rééquilibrer terrain et programme",
+          "proposal": "Comparer une autre organisation du site conservant la même intention, avec un programme regroupé autrement.",
+          "benefit": "Évite de figer une première esquisse de site.",
+          "tradeoff": "Nécessite de rouvrir certains arbitrages.",
+          "validation": "Historiser la variante remplacée et vérifier les accès."
+        },
+        {
+          "title": "Réduire ou phaser le programme",
+          "proposal": "Proposer un programme réduit ou un phasage lorsque les besoins dépassent les possibilités documentées.",
+          "benefit": "Rend les limites explicites.",
+          "tradeoff": "Peut modifier la stratégie d’exploitation.",
+          "validation": "Le maître d’ouvrage doit accepter la capacité révisée."
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "title": "Étude de capacité architecturale",
+      "phase": "Concevoir / Tester",
+      "key": "architecture",
+      "scope": "Bâtiment dessiné",
+      "goal": "Proposer des améliorations localisées sur le modèle existant, sans le modifier à l’insu du concepteur.",
+      "inputs": "Implantation, niveaux, accès, ouvertures, zones et objets de l’Atelier.",
+      "deliverable": "Propositions liées à des objets et bilan de conception du modèle courant.",
+      "method": "Forme, entrée, positions d’usage ; Ba Zhai et Xuan Kong uniquement avec des références suffisantes, jamais comme certification.",
+      "topic": "Parti architectural",
+      "harmonieOptions": [
+        {
+          "title": "Corriger le seuil et les transitions",
+          "proposal": "Tester les changements localisés d’accueil, de passage et de rapport à l’extérieur avant d’envisager une redistribution générale.",
+          "benefit": "Limite les modifications du modèle.",
+          "tradeoff": "Peut ne pas résoudre un problème plus structurel.",
+          "validation": "Accès, visibilité, gabarits et évacuation restent à vérifier."
+        },
+        {
+          "title": "Recomposer la distribution",
+          "proposal": "Comparer une organisation séparant plus nettement les secteurs actifs, calmes et techniques, en conservant les contraintes du modèle.",
+          "benefit": "Traite les conflits d’usage à leur origine.",
+          "tradeoff": "Impact plus important sur surfaces et réseaux.",
+          "validation": "Aucun déplacement de noyau, poteau ou dalle sans étude."
+        },
+        {
+          "title": "Ajuster les usages dans la géométrie existante",
+          "proposal": "Réduire une densité excessive ou réaffecter certains usages, sans changer l’enveloppe ni les appuis.",
+          "benefit": "Préserve la géométrie et les éléments structuraux.",
+          "tradeoff": "Capacité ou exploitation à réarbitrer.",
+          "validation": "La capacité nouvelle doit être inscrite au programme puis testée sur plan."
+        }
+      ]
+    },
+    {
+      "number": 11,
+      "title": "Esquisse architecturale — Esquisser",
+      "phase": "Concevoir / Tester",
+      "key": "drawings",
+      "scope": "Plans, coupes et façades",
+      "goal": "Traduire les intentions retenues en dessins contrôlables.",
+      "inputs": "Même modèle que l’Atelier, propositions localisées et exigences retenues.",
+      "deliverable": "Plans annotés, points de coupe et réserves de façade.",
+      "method": "Le dessin apporte une preuve géométrique, pas une validation énergétique ou réglementaire universelle.",
+      "topic": "Traduction graphique",
+      "harmonieOptions": [
+        {
+          "title": "Vérifier la séquence d’arrivée sur plan",
+          "proposal": "Annoter la relation voie → limite → accès → accueil sur le plan de masse et le RDC.",
+          "benefit": "Relie intention du site et bâtiment dessiné.",
+          "tradeoff": "La voie extérieure peut rester non relevée.",
+          "validation": "Différencier tracé existant, projeté et hypothétique."
+        },
+        {
+          "title": "Documenter les transitions en coupe",
+          "proposal": "Placer les coupes aux changements de niveau, doubles hauteurs et interfaces entre activités.",
+          "benefit": "Met en évidence hauteur, lumière et relation visuelle.",
+          "tradeoff": "N’établit pas seul l’acoustique ni la stabilité.",
+          "validation": "Coter les éléments nécessaires et conserver les réserves techniques."
+        },
+        {
+          "title": "Comparer les façades selon les usages",
+          "proposal": "Proposer les protections et vues recherchées face aux usages réels, plutôt qu’une ouverture uniforme.",
+          "benefit": "Lie composition et programme.",
+          "tradeoff": "Peut modifier l’expression architecturale.",
+          "validation": "Vérifier apports, masques, entretien et performances par étude."
+        }
+      ]
+    },
+    {
+      "number": 12,
+      "title": "Scénarios de développement",
+      "phase": "Concevoir / Tester",
+      "key": "scenarios",
+      "scope": "Variantes de développement",
+      "goal": "Comparer des partis cohérents complets, à service rendu explicite.",
+      "inputs": "Programme, variantes spatiales, capacités, contraintes et choix déjà retenus.",
+      "deliverable": "Scénario privilégié et alternative.",
+      "method": "Comparer intentions et conséquences, sans attribuer de score énergétique arbitraire.",
+      "topic": "Variante à poursuivre",
+      "harmonieOptions": [
+        {
+          "title": "Conserver le socle, corriger les interfaces",
+          "proposal": "Maintenir la capacité de référence et concentrer les améliorations sur les interfaces problématiques.",
+          "benefit": "Périmètre de modification limité.",
+          "tradeoff": "Certaines limites peuvent rester.",
+          "validation": "Lister les réserves non résolues."
+        },
+        {
+          "title": "Confort d’usage prioritaire",
+          "proposal": "Comparer un scénario accordant davantage de place au retrait, à l’attente et aux transitions.",
+          "benefit": "Rend les qualités recherchées explicites.",
+          "tradeoff": "Surface principale ou budget peuvent diminuer.",
+          "validation": "Comparer à capacité et budget clairement indiqués."
+        },
+        {
+          "title": "Adaptabilité prioritaire",
+          "proposal": "Privilégier des espaces reconfigurables et des interventions réversibles.",
+          "benefit": "Permet plusieurs usages successifs.",
+          "tradeoff": "Certaines performances nécessitent des dispositifs complémentaires.",
+          "validation": "Vérifier exploitation, rangement et réseaux."
+        }
+      ]
+    },
+    {
+      "number": 13,
+      "title": "Faisabilité technique",
+      "phase": "Prouver la faisabilité",
+      "key": "technical",
+      "scope": "Faisabilité des solutions",
+      "goal": "Remplacer les propositions non démontrées par des variantes réalisables.",
+      "inputs": "Modèle, réserves de spécialistes, structure, accès, sol et réseaux.",
+      "deliverable": "Solutions à dimensionner avec responsables.",
+      "method": "Une correction symbolique ne remplace pas une solution constructive.",
+      "topic": "Réponse aux réserves techniques",
+      "harmonieOptions": [
+        {
+          "title": "Conserver l’intention par un dispositif simple",
+          "proposal": "Rechercher une réponse constructive directe pour le seuil, la protection ou la séparation demandée.",
+          "benefit": "Favorise la lisibilité et la maintenance.",
+          "tradeoff": "Peut modifier l’esthétique envisagée.",
+          "validation": "Dimensionnement et validation par les spécialistes concernés."
+        },
+        {
+          "title": "Déplacer l’usage plutôt que l’ouvrage",
+          "proposal": "Comparer une réaffectation lorsque déplacer un noyau, une structure ou un réseau est disproportionné.",
+          "benefit": "Peut éviter une intervention lourde.",
+          "tradeoff": "Programme et flux à reprendre.",
+          "validation": "Valider la compatibilité du nouvel usage."
+        },
+        {
+          "title": "Suspendre le dispositif incertain",
+          "proposal": "Conserver une solution de repli tant que sol, autorisation ou performance restent indéterminés.",
+          "benefit": "Évite une validation prématurée.",
+          "tradeoff": "Une décision demeure ouverte.",
+          "validation": "Identifier les études et la condition de levée de réserve."
+        }
+      ]
+    },
+    {
+      "number": 14,
+      "title": "Faisabilité économique & financière",
+      "phase": "Prouver la faisabilité",
+      "key": "finance",
+      "scope": "Arbitrage d’investissement",
+      "goal": "Comparer le coût des réponses proposées sans chiffrage fictif ni promesse de rendement.",
+      "inputs": "Solutions retenues, devis, budget et postes renseignés.",
+      "deliverable": "Priorisation à chiffrer et solution alternative.",
+      "method": "La dimension Harmonie éclaire la qualité d’usage ; elle ne prédit pas les recettes.",
+      "topic": "Priorité d’investissement",
+      "harmonieOptions": [
+        {
+          "title": "Financer d’abord les décisions difficiles à reprendre",
+          "proposal": "Prioriser implantation, accès et interfaces avant les finitions remplaçables.",
+          "benefit": "Protège les décisions structurantes.",
+          "tradeoff": "Finitions ou équipements peuvent être différés.",
+          "validation": "Aucun montant inventé ; devis et faisabilité nécessaires."
+        },
+        {
+          "title": "Comparer deux solutions au même service",
+          "proposal": "Demander le coût de deux dispositifs répondant à la même intention d’usage.",
+          "benefit": "Évite la comparaison d’options non équivalentes.",
+          "tradeoff": "Demande un cahier de comparaison précis.",
+          "validation": "Inclure équipements, travaux induits et études."
+        },
+        {
+          "title": "Phaser les aménagements réversibles",
+          "proposal": "Reporter les options pouvant évoluer sans compromettre l’usage de départ.",
+          "benefit": "Permet de distinguer socle et options.",
+          "tradeoff": "Travaux ultérieurs et perturbations à prévoir.",
+          "validation": "Aucun besoin obligatoire ne peut être reporté comme décoration."
+        }
+      ]
+    },
+    {
+      "number": 15,
+      "title": "Coût global & sensibilités",
+      "phase": "Prouver la faisabilité",
+      "key": "lifecycle",
+      "scope": "Coût global et exploitation",
+      "goal": "Proposer des solutions dont l’usage et l’entretien restent soutenables.",
+      "inputs": "Dispositifs envisagés, maintenance, exploitation et scénarios de durée de vie.",
+      "deliverable": "Choix de pérennité et conditions d’exploitation.",
+      "method": "Privilégier un équilibre réellement exploitable, pas une mise en scène impossible à entretenir.",
+      "topic": "Pérennité de l’aménagement",
+      "harmonieOptions": [
+        {
+          "title": "Matériaux et dispositifs sobres",
+          "proposal": "Comparer des finitions durables et des protections simples répondant à l’ambiance recherchée.",
+          "benefit": "Peut faciliter entretien et remplacement.",
+          "tradeoff": "Choix esthétique moins spécifique.",
+          "validation": "Coûts de cycle de vie à documenter."
+        },
+        {
+          "title": "Dispositifs ajustables et remplaçables",
+          "proposal": "Prévoir les réglages et remplacements à faible impact sur l’activité.",
+          "benefit": "Favorise l’évolution des usages.",
+          "tradeoff": "Nécessite pièces, procédures et accès de maintenance.",
+          "validation": "Vérifier disponibilité et coût d’entretien."
+        },
+        {
+          "title": "Gestion d’usage explicitée",
+          "proposal": "Associer aux aménagements un protocole d’exploitation : horaires, rangement et réglages.",
+          "benefit": "Rend le bénéfice d’usage plus crédible.",
+          "tradeoff": "Dépend de l’équipe d’exploitation.",
+          "validation": "Désigner les responsables et éviter les promesses non testées."
+        }
+      ]
+    },
+    {
+      "number": 16,
+      "title": "Vérifications / Due diligence",
+      "phase": "Prouver la faisabilité",
+      "key": "checks",
+      "scope": "Réserves et corrections",
+      "goal": "Proposer une correction pour chaque réserve pertinente, pas seulement la signaler.",
+      "inputs": "Constats, preuves, données manquantes et avis des intervenants.",
+      "deliverable": "Correction proposée, alternative et condition de validation.",
+      "method": "Les vérifications techniques et la lecture traditionnelle restent distinctes.",
+      "topic": "Levée de réserves",
+      "harmonieOptions": [
+        {
+          "title": "Corriger à la source",
+          "proposal": "Reprendre la décision spatiale à l’origine du conflit et documenter les conséquences sur le programme.",
+          "benefit": "Traite le problème plutôt que son apparence.",
+          "tradeoff": "Peut rouvrir plusieurs choix.",
+          "validation": "Avis du responsable et contrôle après correction."
+        },
+        {
+          "title": "Tester une alternative localisée",
+          "proposal": "Faire un essai de mobilier, une maquette ou un détail avant de modifier tout l’ensemble.",
+          "benefit": "Permet un retour concret.",
+          "tradeoff": "Essai parfois non représentatif de toutes les situations.",
+          "validation": "Décrire conditions et limites de l’essai."
+        },
+        {
+          "title": "Conserver une réserve avec condition explicite",
+          "proposal": "Lorsque la donnée manque, proposer l’étude ou le test décisif et une solution de repli.",
+          "benefit": "Empêche un avis favorable par défaut.",
+          "tradeoff": "Ne clôt pas la réserve.",
+          "validation": "Ne pas masquer un blocage de sécurité ou d’autorisation."
+        }
+      ]
+    },
+    {
+      "number": 17,
+      "title": "Évaluation multicritère",
+      "phase": "Arbitrer",
+      "key": "evaluation",
+      "scope": "Comparaison argumentée",
+      "goal": "Proposer un arbitrage clair entre bénéfices, contraintes et incertitudes.",
+      "inputs": "Scénarios, preuves, coûts et réserves.",
+      "deliverable": "Option argumentée et points restant à décider.",
+      "method": "Pas de note universelle de Qi ; données inconnues distinctes des avis défavorables.",
+      "topic": "Arbitrage de qualité d’usage",
+      "harmonieOptions": [
+        {
+          "title": "Retenir le scénario le mieux étayé",
+          "proposal": "Privilégier la solution répondant aux besoins documentés avec les réserves les plus explicitement traitées.",
+          "benefit": "Fonde le choix sur des éléments traçables.",
+          "tradeoff": "Peut différer d’une préférence esthétique initiale.",
+          "validation": "Aucun blocage obligatoire ne peut être compensé par une moyenne."
+        },
+        {
+          "title": "Combiner les solutions compatibles",
+          "proposal": "Assembler les qualités de variantes distinctes seulement si leur compatibilité est démontrée.",
+          "benefit": "Permet un compromis ciblé.",
+          "tradeoff": "Une combinaison constitue un scénario à revoir.",
+          "validation": "Recalculer les conséquences de la combinaison."
+        },
+        {
+          "title": "Demander un essai ciblé avant arbitrage",
+          "proposal": "Identifier la donnée ou l’essai qui départagera les variantes.",
+          "benefit": "Évite un choix fondé sur une précision fictive.",
+          "tradeoff": "Retarde la clôture de l’arbitrage.",
+          "validation": "Définir résultat attendu et responsable."
+        }
+      ]
+    },
+    {
+      "number": 18,
+      "title": "Bilan du potentiel de la parcelle",
+      "phase": "Arbitrer",
+      "key": "synthesis",
+      "scope": "Bilan du projet",
+      "goal": "Restituer les propositions retenues, réalisées et encore ouvertes dans leur ordre de décision.",
+      "inputs": "Historique par étape, programme et modèle courant.",
+      "deliverable": "Synthèse exportable, sans nouvelle étape Harmony.",
+      "method": "Le bilan résulte du parcours ; une intention retenue n’est pas une réalisation vérifiée.",
+      "topic": "Contenu du bilan",
+      "harmonieOptions": [
+        {
+          "title": "Synthèse des décisions et preuves",
+          "proposal": "Organiser le bilan par étape d’origine et état de traduction dans le projet.",
+          "benefit": "Lisibilité pour la décision.",
+          "tradeoff": "Nécessite des liaisons à jour.",
+          "validation": "Afficher les divergences entre intention, programme et dessin."
+        },
+        {
+          "title": "Synthèse centrée sur les écarts",
+          "proposal": "Présenter d’abord les choix non traduits, les réserves et les actions nécessaires.",
+          "benefit": "Concentre la revue sur les décisions ouvertes.",
+          "tradeoff": "Moins de place pour le récit de conception.",
+          "validation": "Conserver l’accès aux choix favorables et à leurs preuves."
+        },
+        {
+          "title": "Comparatif de variantes",
+          "proposal": "Conserver un tableau des solutions étudiées et des motifs d’abandon.",
+          "benefit": "Préserve la logique du projet.",
+          "tradeoff": "Rapport plus long.",
+          "validation": "Ne pas mélanger les données de variantes distinctes."
+        }
+      ]
+    },
+    {
+      "number": 19,
+      "title": "Décision — GO / GO sous conditions / À reprendre / NO GO",
+      "phase": "Arbitrer",
+      "key": "decision",
+      "scope": "Décision du maître d’ouvrage",
+      "goal": "Proposer les conditions de poursuite ; laisser la décision globale au maître d’ouvrage.",
+      "inputs": "Bilan, avis obligatoires, faisabilités et réserves.",
+      "deliverable": "Conditions proposées et solutions de repli.",
+      "method": "Aucun GO automatique fondé sur une appréciation Feng Shui.",
+      "topic": "Conditions de poursuite",
+      "harmonieOptions": [
+        {
+          "title": "Poursuite conditionnée aux réserves nommées",
+          "proposal": "Proposer les études et arbitrages à clore avant de figer la conception.",
+          "benefit": "Rend la poursuite explicite.",
+          "tradeoff": "Le projet reste conditionnel.",
+          "validation": "La décision GO reste une action distincte du maître d’ouvrage."
+        },
+        {
+          "title": "Reprise ciblée du scénario",
+          "proposal": "Proposer de rouvrir seulement les étapes ayant produit les incompatibilités majeures.",
+          "benefit": "Évite une remise à zéro générale.",
+          "tradeoff": "Certaines décisions aval devront être revues.",
+          "validation": "Identifier les dépendances concernées."
+        },
+        {
+          "title": "Conserver le scénario en attente",
+          "proposal": "Préserver les travaux déjà réalisés et préciser ce qui manque pour statuer.",
+          "benefit": "Évite de transformer une incertitude en validation.",
+          "tradeoff": "Ne lance pas les études suivantes.",
+          "validation": "Aucune action Harmonie ne doit forcer le GO."
+        }
+      ]
+    },
+    {
+      "number": 20,
+      "title": "Organisation des études — uniquement si GO",
+      "phase": "Engager",
+      "key": "studies",
+      "scope": "Organisation des études",
+      "goal": "Traduire les intentions retenues en missions et livrables, après décision favorable.",
+      "inputs": "Décision effective, conditions, propositions et responsables.",
+      "deliverable": "Brief de mission et jalons de revue.",
+      "method": "Séparer conseil traditionnel, conception architecturale et validation spécialisée.",
+      "topic": "Missions à engager",
+      "harmonieOptions": [
+        {
+          "title": "Mission intégrée par intentions",
+          "proposal": "Confier aux concepteurs une fiche de mission reliant chaque intention aux dessins et études attendus.",
+          "benefit": "Clarifie les responsabilités.",
+          "tradeoff": "Coordination nécessaire entre disciplines.",
+          "validation": "À engager uniquement selon la décision du maître d’ouvrage."
+        },
+        {
+          "title": "Revue ciblée des points sensibles",
+          "proposal": "Prioriser les missions nécessaires pour l’accès, la lumière, l’acoustique ou les interfaces non résolues.",
+          "benefit": "Concentre l’effort sur les incertitudes.",
+          "tradeoff": "Ne remplace pas les études obligatoires.",
+          "validation": "Préciser objet, source et livrable de chaque revue."
+        },
+        {
+          "title": "Prototypes et retours utilisateurs",
+          "proposal": "Organiser des essais pour les positions d’usage et les ambiances encore incertaines.",
+          "benefit": "Relie conception et expérience d’usage.",
+          "tradeoff": "Coût et représentativité des essais.",
+          "validation": "Ne pas présenter un essai comme certification générale."
+        }
+      ]
+    },
+    {
+      "number": 21,
+      "title": "Transfert vers développement / conception",
+      "phase": "Engager",
+      "key": "handover",
+      "scope": "Transfert et conception détaillée",
+      "goal": "Transmettre un dossier d’intentions exploitable et préparer l’aménagement, sans le déclarer déjà réalisé.",
+      "inputs": "Choix retenus, versions des dessins, actions, preuves et responsabilités.",
+      "deliverable": "Dossier de transmission et briefs d’aménagement par usage.",
+      "method": "Cinq Éléments et Yin–Yang comme cadre de composition contemporaine, subordonné aux usages et contraintes.",
+      "topic": "Continuité vers l’aménagement",
+      "harmonieOptions": [
+        {
+          "title": "Dossier d’intentions lié au modèle",
+          "proposal": "Transmettre les propositions retenues avec les références des espaces et les actions restant à dessiner ou vérifier.",
+          "benefit": "Conserve la continuité du projet.",
+          "tradeoff": "Le destinataire doit disposer des versions correctes.",
+          "validation": "Ne pas confondre transmission et validation finale."
+        },
+        {
+          "title": "Brief d’ambiance par usage",
+          "proposal": "Préparer les intentions de matériaux, lumière, textures et acoustique des espaces désormais définis.",
+          "benefit": "Relie l’ambiance à la fonction réelle.",
+          "tradeoff": "Échantillons et prescriptions restent à choisir.",
+          "validation": "Pas d’objets symboliques imposés ni d’équilibre des éléments à parts égales."
+        },
+        {
+          "title": "Revue après mise en usage",
+          "proposal": "Prévoir un retour sur orientation, repérage, confort perçu et fonctionnement, puis des ajustements réversibles.",
+          "benefit": "Permet de corriger selon l’usage constaté.",
+          "tradeoff": "Ne peut être réalisée avant occupation.",
+          "validation": "Les observations futures restent non renseignées."
+        }
+      ]
+    }
+  ]
+}

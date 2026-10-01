@@ -15,7 +15,7 @@ const app = createApp();
 async function resetDb() {
   // L'ordre respecte les clés étrangères (CASCADE serait aussi suffisant,
   // mais l'ordre explicite documente les dépendances).
-  await pool.query("TRUNCATE architectural_objects, levels, projects, sessions, users CASCADE");
+  await pool.query("TRUNCATE architectural_objects, levels, project_steps, projects, sessions, users CASCADE");
 }
 
 beforeAll(async () => {
@@ -176,5 +176,64 @@ describe("levels and architectural objects", () => {
 
     const res = await attacker.get(`/projects/${mine.projectId}/levels/${mine.levelId}/objects`);
     expect(res.status).toBe(404);
+  });
+});
+
+describe("Parcours steps", () => {
+  it("seeds the 21 real steps — numbered 01 to 21, all 'a-faire' — on every new project", async () => {
+    const client = await registerAndLogin("fresh-project@example.com");
+    const project = await client.post("/projects").send({ code: "P.900", name: "Nouveau" });
+
+    const steps = await client.get(`/projects/${project.body.id}/steps`);
+    expect(steps.status).toBe(200);
+    expect(steps.body).toHaveLength(21);
+    expect(steps.body.map((s: { number: number }) => s.number)).toEqual(Array.from({ length: 21 }, (_, i) => i + 1));
+    expect(steps.body.every((s: { status: string }) => s.status === "a-faire")).toBe(true);
+    // Chaque étape porte son vrai titre (pas de placeholder générique).
+    expect(steps.body[0].title).toBe("Parcelle / Site existant");
+  });
+
+  it("never lets one user read another user's steps", async () => {
+    const owner = await registerAndLogin("steps-owner@example.com");
+    const project = await owner.post("/projects").send({ code: "P.901", name: "Privé" });
+    const intruder = await registerAndLogin("steps-intruder@example.com");
+
+    const res = await intruder.get(`/projects/${project.body.id}/steps`);
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("examples", () => {
+  it("lists the importable examples with real, non-zero counts", async () => {
+    const client = await registerAndLogin("browser@example.com");
+    const res = await client.get("/examples");
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThanOrEqual(2);
+    const complet = res.body.find((e: { id: string }) => e.id === "p118-exemple-complet");
+    expect(complet.stepsWithContent).toBe(21);
+  });
+
+  it("imports an example into a new project the importing user owns, with real step content", async () => {
+    const client = await registerAndLogin("importer@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    expect(imported.status).toBe(201);
+    expect(imported.body.sourceExampleId).toBe("p118-exemple-complet");
+
+    // Le projet importé appartient bien à l'utilisateur (pas une référence partagée).
+    const listed = await client.get("/projects");
+    expect(listed.body.map((p: { id: string }) => p.id)).toContain(imported.body.id);
+
+    const steps = await client.get(`/projects/${imported.body.id}/steps`);
+    expect(steps.body).toHaveLength(21);
+    expect(steps.body.every((s: { status: string }) => s.status === "termine")).toBe(true);
+    expect(steps.body[0].content.decision).toContain("B.265");
+  });
+
+  it("404s on an unknown example id instead of silently creating an empty project", async () => {
+    const client = await registerAndLogin("badimport@example.com");
+    const res = await client.post("/examples/does-not-exist/import");
+    expect(res.status).toBe(404);
+    const listed = await client.get("/projects");
+    expect(listed.body).toHaveLength(0);
   });
 });

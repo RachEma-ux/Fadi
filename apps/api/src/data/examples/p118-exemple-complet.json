@@ -1,0 +1,501 @@
+{
+  "id": "p118-exemple-complet",
+  "kind": "exemple-complet",
+  "sourceId": "EXEMPLE-P118-V819-RESOLU",
+  "sourceVersion": "8.19.0",
+  "name": "P.118 — Escalier B et mezzanine",
+  "summary": "Cas pédagogique complet : 21 étapes du Parcours illustrées de bout en bout sur un projet-exemple (formation & bureaux, escalier B et mezzanine).",
+  "mode": "exemple pédagogique — aucune autorisation réelle",
+  "date": "2026-09-30",
+  "reviewDate": "2026-10-26",
+  "source": "V8.18 modifiée selon RezRDC2.png et Mezzanine.png ; modes V8.13 conservés.",
+  "criteria": [
+    "Préserver le contour S01 et l’emprise dessinée de 673 m².",
+    "Séparer l’arrivée du public, le travail concentré et la desserte technique.",
+    "Diminuer les densités avant de demander des surfaces supplémentaires.",
+    "Préférer les solutions réversibles et les exigences mesurables.",
+    "Autoriser seulement les études tant que les réserves critiques subsistent."
+  ],
+  "facts": {
+    "parcelArea": 1345.5475500009647,
+    "officialArea": 1346,
+    "footprint": 673.0000000000751,
+    "setbackArea": 689.2327627759523,
+    "setbacks": [
+      5.147740927449004,
+      5.147740927453261,
+      5.147740927396454,
+      5.147740927463421
+    ],
+    "inside": true,
+    "insideSetback": true,
+    "gross": 3743.7628415718177,
+    "net": 3558.9570550836943,
+    "roomArea": 2932.2573458814772,
+    "roomCount": 74,
+    "height": 16.599999999999998
+  },
+  "assumptions": [
+    {
+      "id": "H-CONTEXTE",
+      "title": "Contexte cartographique de travail",
+      "value": "Scénario A : approche latérale ouverte, arrière protégé par un filtre paysager projeté. Scénario B : voisin hypothétique de 12 m à 10 m pour l’étude des masques. Aucun de ces scénarios ne décrit une observation MapTiler réelle.",
+      "stages": "01–03",
+      "status": "Hypothèse / réponse de scénario — pas une preuve de terrain"
+    },
+    {
+      "id": "H-ACCES",
+      "title": "Approche du site",
+      "value": "Côté B.265–B.266 retenu pour la démonstration ; pas de droit d’accès prétendu acquis. Organisation du terrain distincte des locaux.",
+      "stages": "01–02",
+      "status": "Hypothèse / réponse de scénario — pas une preuve de terrain"
+    },
+    {
+      "id": "H-TOPO",
+      "title": "Relief / eau / sol",
+      "value": "Plan de sol horizontal pour le schéma ; aucune altitude réelle, pente, pollution, nappe ou absence de risque déduite. Choix arrêté : diagnostics avant travaux.",
+      "stages": "01,13,16",
+      "status": "Hypothèse / réponse de scénario — pas une preuve de terrain"
+    },
+    {
+      "id": "H-USAGE",
+      "title": "Capacité / simultanéité",
+      "value": "60 apprenants + 84 utilisateurs de postes de travail + 16 visiteurs + 4 agents de service = 164 personnes en pointe ; situation courante : 40 + 60 + 8 + 2 = 110. Les salles de réunion et de pause accueillent ces mêmes groupes et ne sont pas ajoutées à l’effectif.",
+      "stages": "05–11",
+      "status": "Hypothèse / réponse de scénario — pas une preuve de terrain"
+    },
+    {
+      "id": "H-DENSITE",
+      "title": "Jauges cibles",
+      "value": "M01 10 postes ; E02/R2 30 ; E03/R2 20. Ratio interne indicatif ≥ 6 m²/poste pour ces zones. Pas de seuil légal ; mobilier source non redessiné.",
+      "stages": "07–11",
+      "status": "Hypothèse / réponse de scénario — pas une preuve de terrain"
+    },
+    {
+      "id": "H-HAUTEURS",
+      "title": "Coupe du bâtiment",
+      "value": "Modèle 16,60 m hors sol et 3,20/3,40 m étage à étage ; incohérence avec 3,50 m libres cités au dossier. Réponse : mission de coupe, possible neutralisation de la mezzanine. Aucune conformité supposée.",
+      "stages": "08–21",
+      "status": "Hypothèse / réponse de scénario — pas une preuve de terrain"
+    },
+    {
+      "id": "H-MOBILITE",
+      "title": "Stationnement de programme",
+      "value": "12 autos (dont 2 adaptées à vérifier) + 20 vélos comme test ; aucun stationnement compté comme dessiné ou autorisé.",
+      "stages": "02,06,13",
+      "status": "Hypothèse / réponse de scénario — pas une preuve de terrain"
+    },
+    {
+      "id": "H-AMBIANCE",
+      "title": "Cibles d’étude",
+      "value": "Lumière 500/300/150 lux selon usages ; acoustique ciblée, surfaces mates, accès libres. Cibles pédagogiques non réglementaires ni mesurées.",
+      "stages": "08,10,21",
+      "status": "Hypothèse / réponse de scénario — pas une preuve de terrain"
+    },
+    {
+      "id": "H-COMPASS",
+      "title": "Lecture directionnelle",
+      "value": "Azimut de façade de travail ≈ 123,866° géographique depuis le modèle, non boussole. Déclinaison non utilisée ; pas de calcul Ba Zhai décisionnel dans ce cas collectif.",
+      "stages": "10–11",
+      "status": "Hypothèse / réponse de scénario — pas une preuve de terrain"
+    },
+    {
+      "id": "H-TEMPS",
+      "title": "Période / personnalisation",
+      "value": "Occupation de scénario septembre 2028 ; aucune date réelle. Carte natale Xuan Kong non établie : volontairement non utilisée pour choisir les espaces. Aucune date de naissance personnelle nécessaire pour cet exemple collectif.",
+      "stages": "10–11,21",
+      "status": "Hypothèse / réponse de scénario — pas une preuve de terrain"
+    },
+    {
+      "id": "H-FINANCE",
+      "title": "Montants / recettes",
+      "value": "24 M MAD d’investissement, recettes 3,60 M/an et OPEX 1,40 M/an : nombres fictifs pour démontrer les calculs. Aucun prix de marché, devis ou accord de financement.",
+      "stages": "14–19",
+      "status": "Hypothèse / réponse de scénario — pas une preuve de terrain"
+    },
+    {
+      "id": "H-MISSION",
+      "title": "Décision et calendrier",
+      "value": "GO fictif pour études seulement ; 0,60 M inclus dans 1,60 M d’honoraires ; aucune signature. Dates de démonstration J1 26/10, J2 23/11, J3 21/12/2026.",
+      "stages": "19–21",
+      "status": "Hypothèse / réponse de scénario — pas une preuve de terrain"
+    },
+    {
+      "id": "H-SANITAIRES-V817",
+      "title": "Sanitaires redessinés",
+      "value": "Scénario de pointe conservé à 164 personnes. Répartition H/F 50/50 choisie uniquement pour cette étude, à confirmer. Réunions, pauses et locaux support ne créent pas d’effectif supplémentaire ; les 4 agents alternent avec le sous-sol, les 4 formateurs sont retirés du R+3 pendant leur présence au R+1. Variante retenue : blocs H/F arrière superposés. RDC, R+1 et R+2 : deux WC par bloc, dont un adapté. Mezzanine et R+3 : une cabine adaptée par bloc et un espace de lavage séparé. Un urinoir par bloc H, protégé par un écran. L’option consistant à conserver deux pièces identiques partout est écartée pour différencier fréquentation, lavage et intimité.",
+      "status": "Sanitaires redessinés — étude coordonnée, conformité globale non évaluée"
+    },
+    {
+      "id": "H-ESC-A-V818",
+      "title": "Escalier A autour de l’ascenseur",
+      "value": "Escalier A tournant sur trois côtés de l’ascenseur recentré : montée à gauche, traversée arrière, arrivée à droite, suivant les flèches rouges. Deux paliers de rotation. La porte de l’ascenseur donne sur le palier d’étage avant. Les altitudes de V8.17 sont conservées : −3,20 / 0 / 3,20 / 6,40 / 9,80 / 13,20 m. Les conflits avec les anciens briefs restent ouverts.",
+      "status": "Étude architecturale ; structure, sécurité incendie et conformité globale non évaluées"
+    },
+    {
+      "id": "H-IMPLANTATION-V819",
+      "title": "Escalier B et mezzanine",
+      "value": "Escalier B bas déplacé à gauche du hall, dans la zone rouge. Mezzanine prolongée jusqu’au trait bleu par une galerie transversale, avec retour vers la galerie existante. Porte P-X sur la séparation hall / desserte principale. Liaisons SS → RDC → mezzanine déplacées ensemble. Les volées B mezzanine → étages restent à leur emplacement initial à droite ; la nouvelle galerie les relie. L’escalier A autour de l’ascenseur, les sanitaires et le monte-charge sont conservés.",
+      "status": "Modification architecturale d’étude ; structure, évacuation et accessibilité complète à valider"
+    }
+  ],
+  "steps": {
+    "1": {
+      "stage": 1,
+      "title": "Parcelle / Site existant",
+      "choice": "A",
+      "headline": "Accueil extérieur lisible et service latéral",
+      "decision": "Conserver une arrivée dégagée côté B.265–B.266 ; protéger un espace extérieur de pause ; étudier une desserte latérale séparée. Le schéma porte uniquement sur le terrain.",
+      "why": "La forme S01 et les accès pressentis appellent une organisation lisible sans inventer les voisins.",
+      "alternatives": "Un jardin prioritaire réduisant excessivement l’implantation ou des accès supplémentaires non acquis ne sont pas retenus.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-01 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": "P.118 — El Mansouria ; B.266 → B.267 → B.268 → B.265 ; contenance 1 346 m² ; aire calculée 1 345,55 m².",
+        "hypothese": "Accès étudié sur B.265–B.266 ; accueil dégagé, espace ouvert protégé et desserte latérale. Organisation du terrain seulement, sans distribution des bureaux. Le fond MapTiler est facultatif pour lire le cas ; scénario de contexte explicitement renseigné.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "2": {
+      "stage": 2,
+      "title": "Réglementation & constructibilité",
+      "choice": "A",
+      "headline": "Préserver l’intention dans l’enveloppe admissible",
+      "decision": "Conserver l’emprise de travail 673 m², contrôler l’accès et conditionner tout ouvrage dans le recul. Les hauteurs et la rampe restent des réserves critiques.",
+      "why": "La surface ne suffit pas à conclure à la constructibilité : le choix préserve l’intention sans promettre une dérogation.",
+      "alternatives": "Ni augmentation du droit à construire ni suppression de réserve pour simplifier la démonstration.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-02 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Retenir l’implantation de 673 m² comme base des études, non comme droit acquis. Poursuite limitée aux études ; hauteurs et rampe sont deux conditions bloquantes avant chantier.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "3": {
+      "stage": 3,
+      "title": "Marché & demande",
+      "choice": "A",
+      "headline": "Un accueil identifiable pour la formation et les bureaux",
+      "decision": "Retenir la clientèle adulte formation/PME et une promesse d’usage simple : se repérer, travailler au calme et partager les supports compatibles. Recettes explicitement fictives.",
+      "why": "Le positionnement illustre le raisonnement sans simuler une enquête de marché.",
+      "alternatives": "Ni prédiction de prospérité Feng Shui ni comparable immobilier inventé.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-03 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Choix arrêté pour montrer la démarche. Avant décision de construire : enquête auprès de trois opérateurs de formation et cinq entreprises, puis test des recettes au jalon J1 ; en cas d’insuffisance, réduire l’équipement initial.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "4": {
+      "stage": 4,
+      "title": "Idée & stratégie",
+      "choice": "C",
+      "headline": "Pôles fonctionnels distincts et supports communs",
+      "decision": "Séparer les intensités : arrivée collective au RDC, formation au R+1, concentration au R+2, direction au R+3 ; mezzanine administrative conditionnelle. Mutualiser l’accueil et les salles réservables.",
+      "why": "Une exploitation mixte nécessite des limites lisibles sans multiplier automatiquement les noyaux.",
+      "alternatives": "La distribution générale indifférenciée est écartée ; une autonomie physique totale n’est pas prétendue acquise.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-04 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "A — densité source conservée : écartée pour conflits d’usage ; B — recomposition lourde : réserve pour reprise des hauteurs ; R — densités réduites et études ciblées : retenue. Les alternatives sont déjà arbitrées dans cet exemple.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "5": {
+      "stage": 5,
+      "title": "Besoins & concertation",
+      "choice": "C",
+      "headline": "Groupes identifiés et horaires décalés",
+      "decision": "Choisir 110 personnes en situation courante et 164 en pointe de programme ; départs/pauses décalés de 15 minutes. Ces effectifs ne constituent pas un calcul incendie.",
+      "why": "Les jauges cibles et les simultanéités sont renseignées, au lieu d’attendre un questionnaire du lecteur.",
+      "alternatives": "Pas d’addition des mêmes salariés à leur poste, en réunion et en pause.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-05 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Décision de programme : séparer formation et concentration, échelonner les arrivées, mutualiser uniquement les supports compatibles. Réponses transmises au PMO et à Répartition, sans questionnaire obligatoire.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "6": {
+      "stage": 6,
+      "title": "PMO — Programme du maître d’ouvrage",
+      "choice": "A",
+      "headline": "Trois engagements prioritaires",
+      "decision": "Inscrire dans le PMO : accueil lisible, concentration protégée, service séparé du public. Conserver les surfaces ; adapter capacités et mobilier avant une transformation lourde.",
+      "why": "Ces engagements peuvent être contrôlés sur programme et dessin et transmis aux concepteurs.",
+      "alternatives": "Les options décoratives ne remplacent pas les exigences de sécurité, de hauteur ou d’accès.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-06 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": "Contour S01 ; emprise 673 m² ; demande de portée PT 20 m et charge 500 kg/m² conservée comme exigence à dimensionner. Aucun poteau central ajouté. Les quantités d’appuis présentes au modèle ne valent pas calcul structurel.",
+        "hypothese": null,
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "7": {
+      "stage": 7,
+      "title": "Préprogramme fonctionnel",
+      "choice": "A",
+      "headline": "Densités abaissées, surfaces conservées",
+      "decision": "Retenir M01 10 postes, R2/E02 30 et R2/E03 20 ; ne pas augmenter le total du programme. Toutes les fiches sont liées au polygone source et dotées d’une capacité de scénario.",
+      "why": "À surface constante, les trois zones disposent respectivement de 6,96, 7,25 et 7,60 m² par poste cible. Ces ratios sont des objectifs internes, pas des minima légaux.",
+      "alternatives": "Le transfert aveugle de surface vers des supports est écarté ; pas de donneur/bénéficiaire fictif lorsque la densité peut être réduite.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-07 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Évolution par cloisons légères et mobilier ; aucune extension foncière ou constructibilité supplémentaire présumée. Variante surfacique facultative, non exigée pour lire l’exemple.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "8": {
+      "stage": 8,
+      "title": "Exigences techniques & environnementales",
+      "choice": "A",
+      "headline": "Protections et transitions avant décoration",
+      "decision": "Retenir surfaces mates, commande de lumière par usage et séparation acoustique des interfaces. Prescrire une reprise de coupe pour la réserve de hauteur.",
+      "why": "On traite la cause spatiale et technique de l’inconfort plutôt qu’une correction symbolique.",
+      "alternatives": "Ni performances mesurées ni acoustique validée ne sont inventées à partir de la carte.",
+      "owner": "Architecte coordinateur / BET — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-08 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Plans/coupes : contrôle géométrique ; BET : stabilité/incendie/fluides ; acousticien : simulation et réception ; exploitant : essai d’usage. Les interprétations Feng Shui sont distinctes de ces preuves.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "9": {
+      "stage": 9,
+      "title": "Compatibilité Parcelle ↔ Programme",
+      "choice": "A",
+      "headline": "Maintenir l’emprise et réviser les usages",
+      "decision": "Conserver l’enveloppe dessinée de 673 m² ; ne pas absorber les espaces extérieurs pour augmenter le programme. Si la hauteur ne peut être régularisée, réaffecter ou neutraliser la mezzanine.",
+      "why": "La compatibilité se démontre par des compromis explicites, pas par l’effacement des écarts.",
+      "alternatives": "Une réduction des reculs ou une solution de structure non étudiée n’est pas retenue.",
+      "owner": "Architecte coordinateur / BET — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-09 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Scénario R retenu pour études ; pas de chantier. Deux replis déjà choisis : réaffecter une fonction plutôt que déplacer la structure ; réduire/neutraliser la mezzanine si la coupe l’impose.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "10": {
+      "stage": 10,
+      "title": "Étude de capacité architecturale",
+      "choice": "C",
+      "headline": "Escalier B à gauche et mezzanine prolongée",
+      "decision": "Escalier B bas déplacé à gauche du hall, dans la zone rouge. Mezzanine prolongée jusqu’au trait bleu par une galerie transversale, avec retour vers la galerie existante. Porte P-X sur la séparation hall / desserte principale. Liaisons SS → RDC → mezzanine déplacées ensemble. Les volées B mezzanine → étages restent à leur emplacement initial à droite ; la nouvelle galerie les relie. L’escalier A autour de l’ascenseur, les sanitaires et le monte-charge sont conservés.",
+      "why": "Le lecteur voit ce qui est choisi au programme et ce qui reste à traduire en dessin, avec une action déjà définie.",
+      "alternatives": "La reconstruction automatique du bâtiment et le déplacement non calculé de poteaux/noyaux sont écartés.",
+      "owner": "Architecte coordinateur / BET — rôles de démonstration",
+      "proof": "Modèle V8.19 partagé, dalles et circulations coordonnées ; revue intégrée au bilan.",
+      "result": {
+        "donnee": null,
+        "hypothese": null,
+        "raw": "Escalier B bas déplacé à gauche du hall, dans la zone rouge. Mezzanine prolongée jusqu’au trait bleu par une galerie transversale, avec retour vers la galerie existante. Porte P-X sur la séparation hall / desserte principale. Liaisons SS → RDC → mezzanine déplacées ensemble. Les volées B mezzanine → étages restent à leur emplacement initial à droite ; la nouvelle galerie les relie. L’escalier A autour de l’ascenseur, les sanitaires et le monte-charge sont conservés."
+      },
+      "sourceStatus": "Modification architecturale d’étude ; structure, évacuation et accessibilité complète à valider"
+    },
+    "11": {
+      "stage": 11,
+      "title": "Esquisse architecturale — Esquisser",
+      "choice": "B",
+      "headline": "La coupe de la mezzanine comme pièce décisive",
+      "decision": "Escalier B bas déplacé à gauche du hall, dans la zone rouge. Mezzanine prolongée jusqu’au trait bleu par une galerie transversale, avec retour vers la galerie existante. Porte P-X sur la séparation hall / desserte principale. Liaisons SS → RDC → mezzanine déplacées ensemble. Les volées B mezzanine → étages restent à leur emplacement initial à droite ; la nouvelle galerie les relie. L’escalier A autour de l’ascenseur, les sanitaires et le monte-charge sont conservés.",
+      "why": "La coupe met en évidence les hauteurs réelles du modèle, qui ne doivent pas être confondues avec la cible.",
+      "alternatives": "Aucune façade réputée performante ni hauteur libre déduite sans épaisseur de dalle et réseaux.",
+      "owner": "Architecte coordinateur / BET — rôles de démonstration",
+      "proof": "Modèle V8.19 partagé, dalles et circulations coordonnées ; revue intégrée au bilan.",
+      "result": {
+        "donnee": null,
+        "hypothese": null,
+        "raw": "Escalier B bas déplacé à gauche du hall, dans la zone rouge. Mezzanine prolongée jusqu’au trait bleu par une galerie transversale, avec retour vers la galerie existante. Porte P-X sur la séparation hall / desserte principale. Liaisons SS → RDC → mezzanine déplacées ensemble. Les volées B mezzanine → étages restent à leur emplacement initial à droite ; la nouvelle galerie les relie. L’escalier A autour de l’ascenseur, les sanitaires et le monte-charge sont conservés."
+      },
+      "sourceStatus": "Modification architecturale d’étude ; structure, évacuation et accessibilité complète à valider"
+    },
+    "12": {
+      "stage": 12,
+      "title": "Scénarios de développement",
+      "choice": "B",
+      "headline": "Confort d’usage avant capacité maximale",
+      "decision": "Retenir R : densités modérées et interfaces traitées. B (recomposition lourde) reste un repli pour la hauteur ; A (densité source) est écarté ; 0 (report) reste possible.",
+      "why": "Le scénario privilégié est cohérent avec le but d’usage et ne suppose pas que tous les points techniques sont acquis.",
+      "alternatives": "L’option maximisant le nombre de postes n’est pas assimilée automatiquement à l’optimum.",
+      "owner": "Architecte coordinateur / BET — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-12 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "R traite d’abord les conflits d’usage avec peu d’interventions ; B reste le repli pour la coupe ; A n’est pas retenu ; 0 reste possible. Le scénario R n’est pas déclaré optimal hors de ces critères et hypothèses.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "13": {
+      "stage": 13,
+      "title": "Faisabilité technique",
+      "choice": "A",
+      "headline": "Études ciblées avec solution de repli",
+      "decision": "Attribuer sol/PT au BET, coupe à l’architecte, rampe/accès au géomètre et concepteur. Si l’une des conditions ne peut être levée, réduire/réaffecter le programme plutôt que forcer le chantier.",
+      "why": "Chaque réserve a une réponse et un responsable pédagogique identifiés.",
+      "alternatives": "Un simple statut vert ou une cure Feng Shui ne remplace aucune justification technique.",
+      "owner": "Architecte coordinateur / BET — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-13 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Faisabilité non certifiée ; réponse arrêtée = poursuivre les études ciblées. Le bâtiment dessiné est une base d’esquisse, pas un plan exécutable tel quel.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "14": {
+      "stage": 14,
+      "title": "Faisabilité économique & financière",
+      "choice": "A",
+      "headline": "Financer d’abord les décisions structurantes",
+      "decision": "Retenir l’enveloppe-test 24,00 M MAD et 0,60 M d’études initiales incluses. Préserver accès, coupe et structure avant d’augmenter le budget de finitions.",
+      "why": "Tous les postes sont renseignés et le total vérifiable ; les valeurs ne sont pas présentées comme un devis réel.",
+      "alternatives": "Aucune dépense réelle n’est autorisée par le fichier ; la dette-test n’est pas un accord bancaire.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-14 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Investissement 24,00 M MAD = somme des six postes ; fonds propres 10,00 M + dette hypothétique 14,00 M = 24,00 M. Solde de financement-test 0. Recettes 1,80 M formation + 1,40 M bureaux + 0,40 M services. OPEX 1,40 M ; solde opérationnel 2,20 M avant dette, impôt et renouvellements non inclus. Études initiales 0,60 M comprises dans les honoraires. Pas de coût de financement ni de fiscalité inventés ; la dette est une hypothèse de source de fonds, pas une offre bancaire.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "15": {
+      "stage": 15,
+      "title": "Coût global & sensibilités",
+      "choice": "A",
+      "headline": "Sobriété et seuils de réexamen explicites",
+      "decision": "Choisir des matériaux entretenables et contrôler le scénario stressé : CAPEX 26,40 M, financement-test insuffisant de 2,40 M ; nouvelle décision requise.",
+      "why": "L’exemple montre aussi la réponse à une hypothèse défavorable plutôt qu’un budget artificiellement toujours équilibré.",
+      "alternatives": "Le résultat d’exploitation avant dette et impôt n’est pas assimilé à un bénéfice net.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-15 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Seuil de financement-test : besoin 2,40 M non couvert sous choc CAPEX, donc nouvel arbitrage obligatoire. Seuil d’exploitation simplifié : recettes ≥ OPEX ; ne vaut pas seuil de solvabilité après dette/impôts. Aucun GO travaux sur le scénario défavorable sans financement révisé.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "16": {
+      "stage": 16,
+      "title": "Vérifications / Due diligence",
+      "choice": "A",
+      "headline": "Corriger à la source, sans validation fictive",
+      "decision": "Pour chaque réserve, inscrire dispositif de correction, preuve attendue et décideur ; ne laisser aucun champ « que faire ? » au lecteur. Hauteurs et accès demeurent critiques.",
+      "why": "Un exemple complet peut conclure que la preuve reste à produire tout en donnant une réponse de projet complète.",
+      "alternatives": "Les réserves ne sont pas supprimées pour afficher une réussite artificielle.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-16 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Réserves critiques identifiées et assorties d’une réponse : HAUTEURS → reprise de coupe ; RAMPE → autorisation/drainage ; SOL/PT → investigations ; ACCÈS → pièces ; MARCHÉ/FINANCE → validation du scénario. Elles restent ouvertes techniquement, mais aucune réponse n’est laissée à inventer par le lecteur.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "17": {
+      "stage": 17,
+      "title": "Évaluation multicritère",
+      "choice": "A",
+      "headline": "Un arbitrage traçable, pas une note de Qi",
+      "decision": "Choisir la solution R au regard des critères documentés de l’exemple ; notes pédagogiques renseignées avec motifs ; réserves critiques prioritaires sur la moyenne.",
+      "why": "Le niveau de preuve est visible et différencié de l’intérêt du parti spatial.",
+      "alternatives": "Aucune note favorable n’efface un blocage technique ou une donnée absente.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-17 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Notes pédagogiques motivées, pas validation automatique : vision 4 (objectifs explicites) ; marché 2 (non enquêté) ; programme 4 (lié aux zones, jauges choisies) ; technique 2 (hauteurs/PT/rampe non justifiés) ; finance 3 (calcul complet mais fictif et sensible au stress) ; exploitation 4 (horaires et mutualisations définis) ; risques 2 (réserves critiques) ; preuve 2 (modèle disponible, avis manquants). Moyenne 2,875/5 illustrative. Les réserves bloquantes priment sur la moyenne ; pas de score Feng Shui.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "18": {
+      "stage": 18,
+      "title": "Bilan du potentiel de la parcelle",
+      "choice": "A",
+      "headline": "Synthèse décisions → programme → dessin",
+      "decision": "Rassembler les choix amont réellement retenus, les 62 réponses de zones, le budget-test et les écarts restant à traduire. Générer le bilan sans ajouter une étape Harmony.",
+      "why": "Le lecteur retrouve la même décision à son origine, au programme et dans l’Atelier.",
+      "alternatives": "Le bilan ne se limite ni à une liste de questions ni à une promesse de conformité.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-18 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Condition de poursuite retenue : études seulement ; nouvelle revue avec preuves techniques, accès et financement avant chantier. Étoiles Volantes non déterminantes pour arbitrer ce scénario collectif.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "19": {
+      "stage": 19,
+      "title": "Décision — GO / GO sous conditions / À reprendre / NO GO",
+      "choice": "A",
+      "headline": "GO sous conditions pour les études uniquement",
+      "decision": "Décision fictive : engager 0,60 M MAD d’études, aucune construction. Revue 26/10/2026 ; conditions coupe/PT/rampe/accès/financement. Échec d’une condition → reprise ou report.",
+      "why": "Cette décision permet de montrer les étapes 20/21 sans simuler une autorisation réglementaire ni un projet prêt à construire.",
+      "alternatives": "Le GO travaux est expressément exclu de cette démonstration.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-19 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": null,
+        "raw": "GO sous conditions"
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "20": {
+      "stage": 20,
+      "title": "Organisation des études — uniquement si GO",
+      "choice": "A",
+      "headline": "Missions et jalons déjà définis",
+      "decision": "Affecter 0,12 M géomètre/sol, 0,18 architecte, 0,16 BET, 0,05 acoustique, 0,05 marché/économie, 0,04 coordination ; livrables à J1/J2/J3.",
+      "why": "Les montants totalisent 0,60 M et montrent la transmission effective des conditions de décision.",
+      "alternatives": "Aucun prestataire réel n’est engagé ; les fonctions, dates et budgets sont des exemples.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-20 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "J1 valider les données ; J2 arbitrer la coupe et les interfaces ; J3 réviser financement et décider des travaux séparément. Les conditions non levées restent visibles dans le transfert.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    },
+    "21": {
+      "stage": 21,
+      "title": "Transfert vers développement / conception",
+      "choice": "A",
+      "headline": "Transfert exploitable et brief d’ambiance",
+      "decision": "Transmettre source S01, modèle, programme, 21 décisions, capacités cibles, registre des réponses et conditions d’études. Adapter matières/lumières aux usages et prévoir une revue après occupation.",
+      "why": "Le dossier explique quoi transmettre, à qui et avec quelles limites ; aucun élément essentiel à compléter pour comprendre le parcours.",
+      "alternatives": "Les études futures et le retour après occupation ne sont pas présentés comme déjà réalisés.",
+      "owner": "Maître d’ouvrage / programmiste — rôles de démonstration",
+      "proof": "Fiche de décision EX-P118-21 ; démonstration sur données du modèle et hypothèses, non avis signé.",
+      "result": {
+        "donnee": null,
+        "hypothese": "Dossier de transmission entièrement illustré : parcelle, programme, modèle source, écarts explicités, budget-test, 21 décisions Harmonie, 62 réponses par zone et conditions d’étude. Transfert n’est pas autorisation de travaux.",
+        "raw": null
+      },
+      "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
+    }
+  }
+}

@@ -63,6 +63,62 @@ export interface ArchitecturalObjectDto {
   createdAt: string;
 }
 
+/** Une proposition Harmonie pour une étape — jamais présentée comme acquise. */
+export interface HarmonieOption {
+  title: string;
+  proposal: string;
+  benefit: string;
+  tradeoff: string;
+  validation: string;
+}
+
+export type ParcoursStepStatus = "a-faire" | "en-cours" | "termine";
+
+export interface ParcoursStepResult {
+  donnee: string | null;
+  hypothese: string | null;
+  raw: string | null;
+}
+
+export interface ParcoursStepContent {
+  status: ParcoursStepStatus;
+  choice: string | null;
+  headline: string | null;
+  decision: string | null;
+  why: string | null;
+  alternatives: string | null;
+  owner: string | null;
+  proof: string | null;
+  result: ParcoursStepResult | null;
+  sourceStatus: string | null;
+}
+
+/** Une des 21 étapes du Parcours : définition générique + contenu propre au projet. */
+export interface ParcoursStep {
+  number: number;
+  title: string;
+  phase: string;
+  key: string | null;
+  scope: string | null;
+  goal: string | null;
+  inputs: string | null;
+  deliverable: string | null;
+  method: string | null;
+  topic: string | null;
+  harmonieOptions: HarmonieOption[];
+  status: ParcoursStepStatus;
+  content: ParcoursStepContent;
+}
+
+export interface ParcoursExample {
+  id: string;
+  kind: "exemple-complet" | "archive";
+  name: string;
+  summary: string;
+  stepsWithContent: number;
+  documentedDecisions: number;
+}
+
 export const api = {
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -83,6 +139,12 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ label, elevation, position }),
     }),
+
+  listSteps: (projectId: string) => request<ParcoursStep[]>(`/projects/${projectId}/steps`),
+
+  listExamples: () => request<ParcoursExample[]>("/examples"),
+  importExample: (exampleId: string) =>
+    request<Project>(`/examples/${exampleId}/import`, { method: "POST" }),
 
   listObjects: (projectId: string, levelId: string) =>
     request<ArchitecturalObjectDto[]>(`/projects/${projectId}/levels/${levelId}/objects`),

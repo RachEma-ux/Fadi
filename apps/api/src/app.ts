@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import { attachUser } from "./middleware/require-auth.js";
 import { authRouter } from "./routes/auth.js";
 import { projectsRouter } from "./routes/projects.js";
+import { examplesRouter } from "./routes/examples.js";
 
 export function createApp() {
   const app = express();
@@ -27,12 +28,18 @@ export function createApp() {
 
   // Les routes d'authentification sont la cible privilégiée du
   // bourrage d'identifiants (credential stuffing) — limite dédiée, plus
-  // stricte que le reste de l'API.
-  const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: true, legacyHeaders: false });
+  // stricte que le reste de l'API. `AUTH_RATE_LIMIT` ne sert qu'à desserrer
+  // cette limite pour les tests (chaque scénario d'autorisation enregistre
+  // son propre utilisateur, et ils finissent par dépasser 20 appels /auth
+  // dans un même fichier de test) ; en production la valeur par défaut
+  // (20) s'applique toujours.
+  const authLimit = Number(process.env["AUTH_RATE_LIMIT"] ?? 20);
+  const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: authLimit, standardHeaders: true, legacyHeaders: false });
   app.use("/auth", authLimiter, authRouter);
 
   const apiLimiter = rateLimit({ windowMs: 60 * 1000, limit: 300, standardHeaders: true, legacyHeaders: false });
   app.use("/projects", apiLimiter, projectsRouter);
+  app.use("/examples", apiLimiter, examplesRouter);
 
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });

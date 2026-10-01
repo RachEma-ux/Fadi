@@ -35,6 +35,20 @@ CREATE TABLE IF NOT EXISTS projects (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS projects_owner_id_idx ON projects (owner_id);
+-- Colonnes ajoutées après la création initiale de la table (import d'exemples
+-- Parcours) : IF NOT EXISTS les rend sûres à rejouer sur une base existante.
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS source_example_id text;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS source_attachment jsonb;
+
+-- Contenu réel des 21 étapes du Parcours, une ligne par étape et par projet.
+CREATE TABLE IF NOT EXISTS project_steps (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  step_number integer NOT NULL,
+  status text NOT NULL DEFAULT 'a-faire',
+  content jsonb NOT NULL DEFAULT '{}'::jsonb,
+  PRIMARY KEY (project_id, step_number)
+);
+CREATE INDEX IF NOT EXISTS project_steps_project_id_idx ON project_steps (project_id);
 
 CREATE TABLE IF NOT EXISTS levels (
   id text PRIMARY KEY,

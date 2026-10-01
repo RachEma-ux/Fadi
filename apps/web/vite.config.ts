@@ -20,6 +20,7 @@ export default defineConfig({
     proxy: {
       "/auth": "http://localhost:3001",
       "/projects": "http://localhost:3001",
+      "/examples": "http://localhost:3001",
       "/health": "http://localhost:3001",
     },
   },
@@ -36,6 +37,7 @@ export default defineConfig({
     proxy: {
       "/auth": "http://localhost:3001",
       "/projects": "http://localhost:3001",
+      "/examples": "http://localhost:3001",
       "/health": "http://localhost:3001",
     },
   },

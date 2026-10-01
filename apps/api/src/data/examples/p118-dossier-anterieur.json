@@ -1,0 +1,317 @@
+{
+  "id": "p118-dossier-anterieur",
+  "kind": "archive",
+  "sourceVersion": "6.2.0",
+  "name": "P.118 — dossier antérieur conservé",
+  "summary": "Données réglementaires de zone collectées avant le cas pédagogique complet. Conservé tel quel, non remplacé : aucune étape du Parcours n'a été travaillée sur cette base.",
+  "date": "2026-09-28",
+  "legacyBusiness": {
+    "2": {
+      "f1": "Zone I — secteur I5, d’après ZONE-I-5.pdf fourni.",
+      "f2": "Activités tertiaires, commerciales, d’enseignement et de recherche ; hôtellerie et équipements publics/privés de toute nature admis. Activités industrielles de 1re, 2e et 3e catégorie interdites ; logements interdits sauf locaux nécessaires au gardiennage.",
+      "f3": "Emprise maximale au sol : 50 % du terrain. Terrain 2 000 m² → plafond réglementaire théorique 1 000 m².",
+      "f4": "17,50 m, RDC + 3 étages. Hauteur sous plafond des locaux d’activité ≥ 3,50 m.",
+      "f5": "Recul sur alignement des voies : ≥ 5 m. Limites séparatives : distance horizontale ≥ 5 m ; adossement possible à un bâtiment existant en bon état selon le règlement.",
+      "f6": "À déterminer auprès de l’autorité compétente : le PDF fourni ne fixe pas ici un ratio de stationnement.",
+      "f7": "À vérifier : servitudes foncières, réseaux, alignements graphiques du plan d’aménagement, éventuelles prescriptions particulières.",
+      "f8": "Accès à confirmer sur plan d’aménagement et relevé de voirie. Le règlement impose 5 m minimum en retrait de l’alignement des voies.",
+      "f9": "À vérifier : pollution/sol, risques, nuisances, contraintes environnementales et servitudes. Aucun de ces points n’est établi par les 2 pages fournies.",
+      "f10": "Autorisation d’urbanisme et avis des autorités compétentes à confirmer. Sécurité incendie à instruire selon l’usage final et l’effectif.",
+      "f11": "ZONE-I-5.pdf, art. 42 à 48, pages 1–2. Vérifier également le plan d’aménagement graphique opposable et les prescriptions actualisées auprès de l’autorité.",
+      "f12": "Terrain 40 × 50 m. Avec 5 m de retrait sur les quatre côtés à titre conservatoire : rectangle géométrique 30 × 40 = 1 200 m² ; le plafond d’emprise I5 ramène l’emprise maximale à 1 000 m². Scénario retenu : 900 m² d’emprise pour conserver une marge d’aménagement extérieur."
+    },
+    "3": {
+      "f1": "Benchmark 2026 : Mohammedia / El Mansouria et environnement économique Casablanca-Settat. Données web consultées en septembre 2026.",
+      "f2": "PME, prestataires B2B, professions de services, équipes projet des filières industrielles/logistiques, organismes de formation et entreprises recherchant salles de réunion/formation.",
+      "f3": "La région Casablanca-Settat compte 7,69 M d’habitants (RGPH 2024) et concentre une part majeure de l’activité nationale. Mohammedia est présentée par le CRI comme pôle industriel et logistique entre Casablanca et Rabat. Cela soutient une hypothèse de demande B2B, sans démontrer à lui seul l’absorption du projet.",
+      "f4": "Offre à mesurer par enquête terrain. Benchmark web : 177 annonces de bureaux actives à Mohammedia selon esti.ma au 23/08/2026 ; médiane annoncée 104 MAD/m²/mois, fourchette courante 66–129. Ces données sont des annonces, pas des baux signés.",
+      "f5": "Bureaux Mohammedia : médiane 104 MAD/m²/mois (esti.ma, 177 annonces, 23/08/2026). Immobilier locatif général Mansouria : environ 68 MAD/m²/mois sur l’index Kaynly ; non directement comparable à des bureaux.",
+      "f6": "Référence : esti.ma bureaux Mohammedia ; compléter par 10–15 comparables géolocalisés et appels d’agences avant décision d’investissement.",
+      "f7": "Atout : proximité du bassin économique Mohammedia/Casablanca et des axes nationaux. L’accessibilité exacte de la parcelle 118 doit être validée sur voirie réelle.",
+      "f8": "Positionnement : petit campus tertiaire modulable orienté services aux entreprises + formation, plutôt qu’immeuble de bureaux premium. Modules 80–250 m², espaces partagés et salles de formation.",
+      "f9": "Absorption locale, loyers réellement signés, profondeur de demande à El Mansouria, stationnement et visibilité commerciale non démontrés. Enquête primaire obligatoire avant GO ferme."
+    },
+    "4": {
+      "f1": "Campus tertiaire modulable + centre de formation / innovation.",
+      "f2": "Construction neuve sur parcelle existante.",
+      "f3": "PME, prestataires industriels/logistiques, bureaux d’études, organismes de formation, entreprises en croissance.",
+      "f4": "Location multi-utilisateurs ; revenus locatifs bureaux + location ponctuelle de salles de formation/réunion. Hypothèse à valider par marché.",
+      "f5": "Conservation patrimoniale avec exploitation locative ; option de cession en bloc après stabilisation.",
+      "f6": "Gestion locative professionnelle ; accueil mutualisé ; maintenance et sécurité communes.",
+      "f7": "Option A : conservation 10 ans ; option B : cession après stabilisation 24–36 mois ; décision après étude financière et marché.",
+      "f8": "Créer un actif tertiaire flexible conforme I5, atteindre >80 % d’occupation stabilisée et un rendement opérationnel compatible avec le coût du capital.",
+      "f9": "Scénario 0 : ne pas construire ; A : 2 400 m² ; B retenu : 3 600 m² ; C : 4 000 m² au plafond théorique, sous réserve stationnement/technique."
+    },
+    "5": {
+      "f1": "Maître d’ouvrage ; futurs locataires PME ; organisme(s) de formation ; exploitant/gestionnaire ; commune/urbanisme ; sécurité incendie ; BET ; architecte ; riverains/voisins si impacts.",
+      "f2": "Employés tertiaires, visiteurs, stagiaires, formateurs, gestionnaire, maintenance, sécurité, livreurs.",
+      "f3": "Travail de bureau, réunions, formation, coworking, accueil clients, petite restauration/café, maintenance.",
+      "f4": "Capacité cible indicative : 180–220 postes/occupants quotidiens + pics formation de 80 personnes ; à recalibrer après étude flux/parking.",
+      "f5": "Occupation bureaux 8h–19h ; formation possible en journée/soirée ; événements ponctuels.",
+      "f6": "Séparer visiteurs/formation des zones de travail ; accessibilité universelle ; évacuation ; logistique légère ; contrôle d’accès.",
+      "f7": "Flexibilité des plateaux, lumière naturelle, connectivité, confort acoustique, stationnement, lisibilité des accès.",
+      "f8": "Conflit potentiel densité/parking ; coût/qualité ; maximisation surface/espaces extérieurs ; à arbitrer par scénario.",
+      "f9": "10 entretiens entreprises locales + 3 opérateurs de formation + 3 agents immobiliers + atelier MOA/exploitant ; questionnaire besoins surfaces/loyers/services.",
+      "f10": "Livrable : matrice besoins-priorités, verbatims anonymisés, arbitrages et validation MOA."
+    },
+    "6": {
+      "f1": "Développer sur la parcelle 118 un actif tertiaire I5 flexible, louable par modules, intégrant formation et services partagés.",
+      "f2": "Accueil ; bureaux privatifs et flexibles ; salles réunion ; salles formation ; coworking ; locaux support ; sanitaires ; circulations ; locaux techniques ; café/service léger.",
+      "f3": "Objectif 180–220 postes/occupants réguliers ; 4 salles de formation de 20 personnes ; salles réunion mutualisées.",
+      "f4": "Surface brute cible 3 600 m² sur RDC+3 ; emprise 900 m². Surface utile/locative cible à optimiser autour de 2 600–2 800 m² après conception.",
+      "f5": "Plateaux divisibles ; hauteur libre compatible locaux d’activité ≥3,50 m ; bonne lumière ; acoustique ; accessibilité ; sûreté ; connectivité.",
+      "f6": "Budget travaux initial d’étude : 7 500 MAD/m² brut, hypothèse de programmation non sourcée à remplacer par estimation économiste. Budget total hors foncier ≈ 36,4 M MAD selon hypothèses étape 14.",
+      "f7": "Études/autorisation 8–12 mois ; travaux 16–20 mois ; mise en location progressive 6–12 mois. À consolider.",
+      "f8": "Priorité 1 conformité/constructibilité ; 2 marché ; 3 flexibilité ; 4 robustesse financière ; 5 qualité architecturale.",
+      "f9": "Parcelle 118 : recul de travail minimal 5 m ; emprise du bâtiment 673,000 m². Implantation calculée à 5,14774 m des quatre limites cadastrales."
+    },
+    "7": {
+      "f1": "UF1 Accueil/services ; UF2 bureaux modulables ; UF3 formation/réunion ; UF4 coworking ; UF5 café/service ; UF6 support/technique.",
+      "f2": "RDC 673 m² ; mezzanine partielle 301.449 m² ; trois étages de 673 m² ; SS technique 673 m².",
+      "f3": "Mobilier indicatif éditable ; 24 postes sur mezzanine, 64 postes au R+2. Les effectifs réglementaires ne sont pas déduits de ce mobilier.",
+      "f4": "Planchers bruts hors sol 2993.449 m², trémies incluses. Vide sur RDC 371.551 m².",
+      "f5": "Circulations dédiées hors sol 345.602 m², hors noyaux et réserves périphériques. Voir tableaux liés au modèle.",
+      "f6": "A : escalier arrière ; B : escalier proche de l’accueil ; ascenseur arrière. Deux volées de 1,30 m et paliers 1,30 m ; 20 contremarches par niveau.",
+      "f7": "Entrée piétonne → accueil → axe de distribution 2 m → espaces / noyaux A et B. Mezzanine : galerie 1,80 m. Desserte de service latérale 3 m et sorties latérales distinctes.",
+      "f8": "Dalles post-tendues : portée de calcul 20 m ; charge 500 kg/m² (4,90 kN/m²) hors poids propre, nature à confirmer. Poteaux périphériques accolés aux murs. Épaisseur et appuis à dimensionner par le BET.",
+      "f9": "Trames modulables permettant fusion/division de lots ; réserves techniques et cloisons démontables ; conversion partielle bureaux/formation."
+    },
+    "8": {
+      "f1": "Structure régulière compatible plateaux modulables ; charges d’exploitation à fixer par BET selon usages bureaux/formation ; éviter poteaux gênants dans grands espaces.",
+      "f2": "Hauteur réglementaire max 17,50 m. Hauteur sous plafond des locaux d’activité ≥3,50 m selon art.45 ; vérifier compatibilité structure/MEP.",
+      "f3": "Cheminements accessibles, ascenseur, sanitaires adaptés, seuils et signalétique selon réglementation applicable à confirmer.",
+      "f4": "Étude sécurité incendie selon usages/effectifs ; compartimentage, dégagements, désenfumage, SSI et accès secours à dimensionner par spécialiste.",
+      "f5": "Objectifs : confort acoustique entre formation/bureaux ; confort thermique ; éblouissement maîtrisé.",
+      "f6": "Ventilation et qualité d’air adaptées aux densités ; éclairage naturel prioritaire ; protections solaires à étudier.",
+      "f7": "Réduire besoins énergétiques ; comptage par lot ; équipements efficients ; stratégie eau ; étude solaire/ombrage à l’étape conception.",
+      "f8": "Fibre/IT redondant si possible ; CFO/CFA ; eau/assainissement ; puissance électrique à confirmer auprès concessionnaires.",
+      "f9": "Accès maintenance indépendant ; équipements accessibles ; plan de maintenance et réserve renouvellement.",
+      "f10": "Chaque exigence doit avoir : cible chiffrée, norme/source, responsable et preuve (note BET, plan, calcul, essai, PV)."
+    },
+    "9": {
+      "f1": "Parcelle cadastrale : 1 346 m² adoptés ; 1 345,54755 m² calculés. Enveloppe de retrait 5 m : 689,23276 m². Emprise du bâtiment : 673 m². Hauteurs de l’esquisse conservées sous hypothèses documentées.",
+      "f2": "Planchers bruts hors sol 2983.45 m², dont mezzanine partielle 291,45 m² ; SS 673 m² séparés.",
+      "f3": "Stationnement ; accès pompiers ; réseaux ; géotechnique ; niveau réel des voies ; prescriptions graphiques du plan d’aménagement.",
+      "f4": "Tout besoin imposant industrie 1/2/3 catégorie serait incompatible I5. Aucun usage industriel n’est retenu.",
+      "f5": "Si parking insuffisant : réduire capacité/SDP, créer sous-sol si techniquement/économiquement faisable, ou revoir programme.",
+      "f6": "Les anciens scénarios 2 400 / 3 600 / 4 000 m² sont des variantes historiques, à comparer au modèle actualisé.",
+      "f7": "Gate avant conception détaillée : certificat/note urbanistique, levé topo, étude parking/mobilité, réseaux et enquête marché."
+    },
+    "12": {
+      "f1": "Scénario 0 — conserver le terrain sans construction pendant 24 mois ; coût d’opportunité à mesurer ; permet de lever les incertitudes.",
+      "f2": "Scénario A — 600 m² emprise × 4 = 2 400 m² brut. Risque marché/CAPEX plus faible, meilleure marge extérieure, revenus plus faibles.",
+      "f3": "Scénario architectural actualisé : emprise 673 m² ; planchers bruts hors sol 2983.45 m² avec mezzanine ; SS 673 m².",
+      "f4": "Scénario C — plafond 1 000 m² × 4 = 4 000 m² brut. Maximisation surface mais pression parking/flux/coûts ; non retenu sans preuve.",
+      "f5": "Comparer conformité, surface utile, parking, CAPEX, loyer, absorption, NOI, flexibilité, risques, calendrier et preuves.",
+      "f6": "Scénario architectural V4.23 issu des plans joints, sous hypothèses documentées.",
+      "f7": "Le terrain et les surfaces ont été actualisés avec la parcelle 118 ; les coûts, loyers et résultats des variantes historiques doivent être recalculés avant décision."
+    },
+    "13": {
+      "f1": "Structure : faisable en principe pour RDC+3, à confirmer par géotechnique et BET. Fondation inconnue. Charges bureaux/formation à définir.",
+      "f2": "Terrain supposé plat dans KMZ mais aucune topographie certifiée. Levé topographique obligatoire.",
+      "f3": "Disponibilité/capacité eau, assainissement, électricité, télécom non vérifiées. Demandes concessionnaires requises.",
+      "f4": "Accès réel et largeur de voie à relever. Manœuvres secours, livraison, dépose-minute et parking à simuler.",
+      "f5": "Notice incendie préliminaire requise selon classement et effectif ; dégagements et accès secours à intégrer dès esquisse.",
+      "f6": "Étude sol/pollution recommandée compte tenu du contexte économique/industriel régional ; aucun diagnostic disponible.",
+      "f7": "Chantier sur parcelle 2 000 m² : logistique serrée mais plausible ; phasage à prévoir après plan masse.",
+      "f8": "Maintenance : locaux techniques accessibles, comptage par lot, stratégie FM et nettoyage.",
+      "f9": "Priorité : topo, géotechnique G2 AVP, réseaux, mobilité/parking, incendie, étude environnementale/pollution si historique le justifie.",
+      "f10": "Faisabilité technique : PLAUSIBLE MAIS NON DÉMONTRÉE. Aucun blocage intrinsèque identifié dans les documents fournis ; plusieurs vérifications critiques restent ouvertes."
+    },
+    "14": {
+      "f1": "0",
+      "f2": "27000000",
+      "f3": "3240000",
+      "f4": "2000000",
+      "f5": "1500000",
+      "f6": "2700000",
+      "f7": "375000",
+      "f8": "2496000",
+      "f9": "14500000",
+      "f10": "22000000",
+      "f11": "MAD",
+      "f12": "Hypothèse de programmation : travaux 7 500 MAD/m² × 3 600 m² = 27,0 M MAD ; honoraires/études 12 % ; aléas 10 % ; extérieurs/raccordements 2,0 M ; équipements 1,5 M. Total hors foncier ≈36,44 M MAD. Ces coûts ne proviennent pas d’un devis et doivent être remplacés par économiste/entreprises. Recette prudente : 2 600 m² louables × 80 MAD/m²/mois = 2,496 M MAD/an ; OPEX arrondi 15 % ≈375 kMAD/an. Benchmark annonces Mohammedia = 104 MAD/m²/mois, mais non retenu comme loyer ferme."
+    },
+    "15": {
+      "f1": "10",
+      "f2": "10",
+      "f3": "15",
+      "f4": "15",
+      "f5": "2",
+      "f6": "6",
+      "f7": "Réserve renouvellement à budgéter séparément ; équipements, étanchéité, CVC, ascenseur, SSI, IT.",
+      "f8": "Stress : CAPEX +10 %, loyer −15 %, vacance 15 %, taux +2 pts, retard +6 mois. Recalcul détaillé requis dans modèle financier.",
+      "f9": "Seuils indicatifs à fixer : occupation stabilisée ≥80 % ; DSCR ≥1,20 si dette ; rendement sur coût et TRI conformes au mandat investisseur. Aucun seuil n’est validé par le MOA à ce stade."
+    },
+    "16": {
+      "f1": "PARCELLE 888 = géométrie virtuelle de travail, non cadastrale selon le KMZ. Titre, propriété, limites opposables : NON VÉRIFIÉS — blocage pour investissement réel.",
+      "f2": "Servitudes et droits d’accès non vérifiés. Reculs réglementaires issus PDF, mais alignement graphique à confirmer.",
+      "f3": "Règlement I5 fourni analysé ; conformité de l’usage tertiaire plausible. Plan graphique, certificat/note urbanistique et version opposable à obtenir.",
+      "f4": "Géotechnique, pollution, structure : non étudiés.",
+      "f5": "Réseaux et environnement : non vérifiés.",
+      "f6": "Marché : benchmark web disponible ; étude primaire et baux comparables signés manquants.",
+      "f7": "Budget : estimation de programmation seulement ; financement non engagé ; taux/conditions inconnus.",
+      "f8": "Contrats, assurances, fiscalité, montage juridique : non étudiés.",
+      "f9": "Planning préliminaire uniquement ; autorisations et raccordements peuvent modifier le chemin critique.",
+      "f10": "BLOCAGES : statut foncier virtuel/non cadastral ; stationnement non démontré ; accès/réseaux non démontrés ; coûts non devisés ; demande/loyers non prouvés par transactions."
+    },
+    "17": {
+      "f1": "4",
+      "f2": "3",
+      "f3": "4",
+      "f4": "3",
+      "f5": "2",
+      "f6": "3",
+      "f7": "2",
+      "f8": "3",
+      "f9": "Lecture multicritère : bonne cohérence réglementaire et programmatique ; marché plausible mais non prouvé ; technique encore à investiguer ; finance fragile au loyer prudent ; niveau de preuve insuffisant pour GO ferme. Les blocages de due diligence priment sur la note moyenne."
+    },
+    "18": {
+      "f1": "I5 autorise tertiaire/commerce/enseignement/recherche ; emprise ≤50 %, hauteur 17,50 m RDC+3, reculs ≥5 m.",
+      "f2": "Parcelle 2 000 m² ; enveloppe conservatoire après retraits 1 200 m², plafonnée par emprise à 1 000 m². Scénario : 900 m².",
+      "f3": "Campus tertiaire modulable + formation, sans activité industrielle.",
+      "f4": "3 600 m² brut cible ; environ 2 600–2 800 m² utiles/locatifs à optimiser.",
+      "f5": "Scénario B — 900 m² × 4 niveaux.",
+      "f6": "CAPEX programmation hors foncier ≈36,44 M MAD, à remplacer par chiffrage professionnel.",
+      "f7": "Recette prudente bureaux/espaces ≈2,496 M MAD/an avant vacance ; OPEX hypothèse 0,375 M/an. Financement indicatif 14,5 M equity +22 M dette, non engagé.",
+      "f8": "Études/autorisation 8–12 mois ; travaux 16–20 mois ; commercialisation 6–12 mois.",
+      "f9": "Foncier non opposable ; parking, accès, réseaux, géotechnique, pollution, marché et coût à démontrer.",
+      "f10": "Forces : conformité d’usage, géométrie simple, bassin économique. Faiblesses : parcelle virtuelle, profondeur de marché locale non prouvée, finance sensible.",
+      "f11": "Condition : aucune décision d’investissement irréversible avant levée des blocages de l’étape 16."
+    },
+    "19": {
+      "f1": "Scénario B — P.118, 3 600 m² brut.",
+      "f2": "Scénario 0 conservé comme option de report ; A 2 400 m² à réexaminer si marché/parking contraints ; C 4 000 m² écarté à ce stade.",
+      "f3": "Le potentiel réglementaire est réel sur la base du PDF, mais les preuves foncières, techniques, marché et coûts sont insuffisantes pour un GO ferme.",
+      "f4": "Autoriser uniquement les études de levée de risques et l’AVP ; aucun engagement travaux/acquisition/financement définitif.",
+      "f5": "Statut parcelle virtuelle ; parking ; accès/réseaux ; géotechnique ; marché ; CAPEX ; financement.",
+      "f6": "GO SOUS CONDITIONS : obtenir titre/plan opposable ou remplacer la parcelle virtuelle par une parcelle juridiquement vérifiée ; note urbanistique ; topo ; géotechnique ; réseaux ; parking/mobilité ; étude marché primaire ; estimation économiste ±10–15 % ; term sheet financement.",
+      "f7": "Comité d’investissement — exemple pédagogique",
+      "f8": "2026-09-26",
+      "f9": "Exemple V1.0",
+      "f10": "2026-12-15",
+      "decision": "GO sous conditions"
+    },
+    "20": {
+      "f1": "1 Foncier/topo ; 2 urbanisme ; 3 géotechnique ; 4 réseaux ; 5 mobilité/parking ; 6 marché ; 7 architecture AVP ; 8 structure/MEP/incendie ; 9 économie ; 10 finance/juridique.",
+      "f2": "Géomètre-topographe ; architecte ; urbaniste ; BET géotechnique ; BET structure/MEP ; spécialiste incendie ; économiste ; conseil immobilier ; juriste/notaire ; banque/conseil financier.",
+      "f3": "MOA décide ; programmiste coordonne exigences ; architecte synthèse conception ; BET valident technique ; économiste coût ; conseil marché valide demande.",
+      "f4": "KMZ 888, règlement I5, plan d’aménagement opposable, levé topo, programme V1, données marché, contraintes concessionnaires.",
+      "f5": "Revues Gate : G1 données fiables ; G2 capacité/AVP ; G3 budget/marché ; G4 investissement.",
+      "f6": "Note foncière ; topo ; note urbanistique ; G2 AVP ; notes réseaux/incendie ; étude marché ; AVP architectural ; estimation détaillée ; modèle financier ; registre risques ; dossier décision.",
+      "f7": "Budget études à consulter auprès de prestataires ; ne pas inventer. Prévoir provision d’études dans CAPEX après devis.",
+      "f8": "Objectif 12 semaines pour levée initiale des risques, sous réserve délais autorités/concessionnaires.",
+      "f9": "Topo → capacité ; géotechnique → structure/coût ; marché → programme/finance ; urbanisme → AVP ; AVP → coût.",
+      "f10": "Gate final : GO ferme uniquement si foncier et urbanisme sécurisés, parking/accessibilité démontrés, marché validé, CAPEX chiffré et financement compatible."
+    },
+    "21": {
+      "f1": "Transfert conditionnel vers développement : dossier P.118 V1, scénario B.",
+      "f2": "Livrer : données parcelle, règlement I5, sources web, programme, exigences, scénarios, risques, décision et plan d’études.",
+      "f3": "Ne pas considérer la parcelle 118 comme cadastrale : le KMZ la qualifie explicitement de géométrie virtuelle.",
+      "f4": "Le prochain jalon n’est pas le chantier : c’est la levée des conditions du GO.",
+      "f5": "Référence projet : P.118 — Pôle tertiaire & formation — Exemple professionnel pédagogique."
+    }
+  },
+  "georeference": {
+    "parcelVertices": [
+      [
+        321946.82,
+        347183.88
+      ],
+      [
+        321954.11,
+        347215.38
+      ],
+      [
+        321995.84,
+        347186.25
+      ],
+      [
+        321978.68,
+        347161.67
+      ]
+    ],
+    "latitude": 33.708221167915354,
+    "longitude": -7.319682410174416,
+    "projectNorth": 358.94606018541504,
+    "crs": "EPSG:26191",
+    "method": "Conversion PROJ / EPSG:26191 → WGS84 ; azimut géodésique du segment +Y de 100 m au centroïde. Le système source reste une hypothèse, non un relevé de boussole.",
+    "status": "hypothese de georeferencement",
+    "source": "Coordonnées S01 du modèle fourni ; conversion calculée pour préparer MapTiler, sans observation satellite en direct."
+  },
+  "assumptions": [
+    {
+      "id": "H-GEO",
+      "topic": "Cartographie",
+      "value": "EPSG:26191 retenu comme hypothèse de conversion des bornes S01 vers WGS84. Nord géographique approché par la convergence locale calculée ; pas une boussole.",
+      "source": "nativeParcel / bornes S01",
+      "validation": "Géomètre : système et points de contrôle sur terrain.",
+      "owner": "Géomètre",
+      "status": "À confirmer"
+    },
+    {
+      "id": "H-ENTREE",
+      "topic": "Façade de référence",
+      "value": "Retenir pour le scénario la façade portant la porte extérieure RDC P00, largeur dessinée 1,80 m. Le rôle de façade active doit être confirmé par le site et l’usage.",
+      "source": "EX118-rdc-doors-9 / EX118-rdc-EXT-2",
+      "validation": "Relevé de l’approche et de la voie ; validation de la façade.",
+      "owner": "Architecte / conseil Harmony",
+      "status": "Hypothèse de travail"
+    },
+    {
+      "id": "H-CAP",
+      "topic": "Usagers simultanés",
+      "value": "200 personnes = 80 apprenants + 88 administration/bureaux + 20 direction + 8 visiteurs + 4 maintenance ; groupes supposés distincts, à revoir pour la mezzanine.",
+      "source": "Capacités inscrites sur les pièces du modèle, complétées par scénario.",
+      "validation": "Planning, concertation, plan meublé et effectif de sécurité indépendant.",
+      "owner": "Programmiste / exploitant",
+      "status": "À tester"
+    },
+    {
+      "id": "H-MEZZ",
+      "topic": "Densité",
+      "value": "Tester 6 m² de local par poste comme référence de confort propre au scénario, non comme minimum légal. Les 24 postes source de M01 ne sont pas validés.",
+      "source": "M01 / surface polygonale et libellé 24 postes",
+      "validation": "Plan détaillé, espaces de recul, circulation et acoustique.",
+      "owner": "Programmiste / architecte",
+      "status": "À arbitrer"
+    },
+    {
+      "id": "H-TEMPS",
+      "topic": "Chronologie",
+      "value": "Construction envisagée en 2027 et première occupation en 2028, uniquement pour simuler la Période 9. Aucune date réelle et aucune carte natale montagne/eau déclarée.",
+      "source": "Hypothèse nouvelle faute de dates documentées.",
+      "validation": "Planning et convention temporelle validés par maître d’ouvrage / praticien.",
+      "owner": "Maître d’ouvrage",
+      "status": "Hypothèse de travail"
+    },
+    {
+      "id": "H-ENV-A",
+      "topic": "Contexte — cas de base",
+      "value": "Scénario de test : façade d’accueil sans masque majeur immédiat et arrivées diurnes. Ce n’est PAS un constat MapTiler ; le fond satellite n’a pas été interrogé dans le fichier livré.",
+      "source": "Configuration de l’entrée du modèle + repérage MapTiler à réaliser",
+      "validation": "Capture satellite datée, visites et relevé des voisins.",
+      "owner": "Architecte",
+      "status": "À observer"
+    },
+    {
+      "id": "H-ENV-B",
+      "topic": "Contexte — sensibilité",
+      "value": "Variante prudente : voisin hypothétique de 12 m à 10 m devant une baie et voie sollicitée aux pointes. Angle de masque théorique ≈50,2° ; ni hauteur ni distance existante affirmées.",
+      "source": "Essai paramétrique distinct du modèle réel",
+      "validation": "Comparer au contexte effectivement relevé ; ne pas dessiner ce masque comme ouvrage existant.",
+      "owner": "Architecte / acousticien",
+      "status": "Scénario de sensibilité"
+    },
+    {
+      "id": "H-SOL",
+      "topic": "Sol et eau",
+      "value": "Sol de la représentation horizontal ; altimétrie, ruissellement, nappe et pollution non renseignés. Examiner la rampe comme point sensible à l’eau, sans déduire son risque réel.",
+      "source": "Limites déclarées du moteur solaire et géométrie de rampe",
+      "validation": "Topographie, géotechnique et étude hydraulique.",
+      "owner": "BET / géomètre",
+      "status": "À documenter"
+    }
+  ],
+  "templateValuesResolvedFrom": "p118-exemple-complet.facts (même parcelle P.118)"
+}

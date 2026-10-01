@@ -2,9 +2,10 @@ import { Router } from "express";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { architecturalObjects, levels, projects } from "../db/schema.js";
+import { architecturalObjects, levels, projects, projectSteps } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
+import { EMPTY_STEP_CONTENT, PARCOURS_STEPS } from "../data/parcours.js";
 
 export const projectsRouter = Router();
 projectsRouter.use(requireAuth);
@@ -47,11 +48,50 @@ projectsRouter.post("/", async (req, res) => {
     return;
   }
   const id = newId("proj");
-  const [created] = await db
-    .insert(projects)
-    .values({ id, ownerId: req.user!.id, code: parsed.data.code, name: parsed.data.name })
-    .returning();
+  const created = await db.transaction(async (tx) => {
+    const [project] = await tx
+      .insert(projects)
+      .values({ id, ownerId: req.user!.id, code: parsed.data.code, name: parsed.data.name })
+      .returning();
+    if (!project) throw new Error("project insert returned nothing");
+    // Chaque projet, même vide, porte les 21 vraies étapes du Parcours dès
+    // sa création — jamais un placeholder générique côté frontend
+    // (AGENTS.md : « Preserve the authoritative Parcours workflow »).
+    await tx.insert(projectSteps).values(
+      PARCOURS_STEPS.map((def) => ({
+        projectId: id,
+        stepNumber: def.number,
+        status: EMPTY_STEP_CONTENT.status,
+        content: { ...EMPTY_STEP_CONTENT },
+      })),
+    );
+    return project;
+  });
   res.status(201).json(created);
+});
+
+// --- Étapes du Parcours --------------------------------------------------
+
+projectsRouter.get("/:projectId/steps", async (req, res) => {
+  const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);
+  if (!project) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  const rows = await db
+    .select()
+    .from(projectSteps)
+    .where(eq(projectSteps.projectId, project.id));
+  const byNumber = new Map(rows.map((r) => [r.stepNumber, r]));
+  const merged = PARCOURS_STEPS.map((def) => {
+    const row = byNumber.get(def.number);
+    return {
+      ...def,
+      status: row?.status ?? EMPTY_STEP_CONTENT.status,
+      content: row?.content ?? EMPTY_STEP_CONTENT,
+    };
+  });
+  res.json(merged);
 });
 
 projectsRouter.get("/:projectId", async (req, res) => {

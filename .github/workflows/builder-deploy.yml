@@ -49,6 +49,9 @@ jobs:
       DATABASE_URL: postgresql://fadi:fadi_deploy_password@localhost:5432/fadi
       WEB_ORIGIN: http://localhost:4173
       PORT: "3001"
+      # See apps/api/.env.test.example: app.test.ts's authorization scenarios
+      # outrun the production auth rate limit within a single test run.
+      AUTH_RATE_LIMIT: "500"
 
     steps:
       - name: Checkout repository

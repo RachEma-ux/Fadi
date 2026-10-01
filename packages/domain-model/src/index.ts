@@ -1,2 +1,3 @@
-export * from "./entities";
-export * from "./command-history";
+export * from "./entities.js";
+export * from "./command-history.js";
+export * from "./parcours.js";

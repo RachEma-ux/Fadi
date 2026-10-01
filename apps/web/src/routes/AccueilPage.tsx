@@ -62,7 +62,10 @@ export function AccueilPage() {
   ];
 
   const nextActions: { label: string; href: string }[] = !mostRecent
-    ? [{ label: "Créer votre premier projet", href: "/projets" }]
+    ? [
+        { label: "Créer votre premier projet", href: "/projets" },
+        { label: "Importer un exemple", href: "/projets#examples-heading" },
+      ]
     : !hasBuiltSomething
       ? [
           { label: "Ajouter un premier mur dans l'Atelier", href: moduleLink("atelier") },
@@ -92,10 +95,15 @@ export function AccueilPage() {
           {projectsQuery.data && !mostRecent && (
             <section className="panel home-empty-state">
               <h2>Aucun projet pour l'instant</h2>
-              <p>Créez votre premier projet pour commencer à structurer sa parcelle, son programme et sa conception.</p>
-              <Link to="/projets" className="button-primary">
-                Créer mon premier projet
-              </Link>
+              <p>Créez votre premier projet pour commencer à structurer sa parcelle, son programme et sa conception, ou importez un exemple déjà travaillé pour voir le Parcours rempli de bout en bout.</p>
+              <div className="resume-card-actions">
+                <Link to="/projets" className="button-primary">
+                  Créer mon premier projet
+                </Link>
+                <Link to="/projets#examples-heading" className="button-secondary">
+                  Importer un exemple
+                </Link>
+              </div>
             </section>
           )}
 

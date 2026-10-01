@@ -24,6 +24,10 @@ jobs:
     env:
       DATABASE_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_test
       WEB_ORIGIN: http://localhost:5173
+      # app.test.ts registers one user per authorization scenario against a
+      # single shared Express app (one in-memory rate limiter for the whole
+      # file) — see apps/api/.env.test.example for the full explanation.
+      AUTH_RATE_LIMIT: "500"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
