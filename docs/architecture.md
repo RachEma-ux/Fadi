@@ -1,21 +1,201 @@
 # Architecture and migration
 
-## Boundaries
+This document follows the objective brief "Parcours App : transformer le prototype en une plateforme
+professionnelle de programmation et de conception architecturale" (provided 2026-10-01). That brief is the
+authoritative target; this file translates it into repository structure and sequencing. Where this file and
+the brief disagree, the brief wins — fix this file, not the other way round.
 
-The UI lives in apps/web. Geometry lives in packages/core-geometry. Keep project state, persistence and regulatory checks outside rendering functions. The supplied geometry implementation is preserved for traceability; preserving it does not validate all its behaviours. Where the authoritative source turns out to be stateful glue rather than business logic (see milestone 3), the right move is a documented contract (`ProjectRepository`), not a mechanical port.
+## Product objective
 
-## First milestones
+An installable web application (desktop, tablet, phone) that durably manages several projects and several
+parcels, keeping continuity between site data, programme, architectural design, analyses and decisions. Every
+piece of information must be retrievable, editable, checkable and carried forward to later steps with its
+provenance. The current Parcours experience (`Parcours_V8_19_Escalier_B_Mezzanine.html`) is the functional
+reference, not a file to delete: the 21 numbered steps (01–21), their order, labels, phases and mobile card
+grid are preserved, Harmonie stays integrated in the relevant steps, and the Atelier Architectural keeps its
+drawing functions, levels, views and Volume/Exploded behaviours. P.118 becomes a fully-populated, duplicable
+example project used for testing — its characteristics are project data, never hard-coded defaults for other
+buildings.
 
-1. Foundation complete: root lockfile, reproducible CI, TypeScript checks, 19 passing geometry tests and production build.
-2. Add geometric input validation and regression tests for unknown levels, invalid dimensions and inverted openings.
-3. V14Bridge audited: it is a thin localStorage facade (`domainGet`/`domainSet`), not a business-logic module — see `packages/core-geometry/src/project-repository.ts` for the resulting `ProjectRepository` contract and `parcel-geometry.ts` for the genuinely pure functions extracted from the same source file (`inwardOffset`, `buildingFootprint`, `projectCode`, …). Still open: extract the actual column profile catalogue (`originalShapeData`, `columnShapeMeta`, `ensureColumnProps`) from the authoritative Parcours HTML.
-4. Migrate the actual 21 steps, numbered 01–21, preserving labels, phases and card layout. Integrate Harmonie within relevant steps.
-5. Introduce versioned project data and persistence with explicit migration rules.
-6. Extend the model with slabs, mezzanine, ramps, lift shaft and coordinated stairs.
-7. Validate P.118 end to end, including its 673 m² footprint, setbacks, levels, peripheral columns, basement access and coordinated views.
+## Shape: a modular monolith
 
-The authoritative HTML is not part of this initial repository. Do not invent its titles or claim feature parity. Confirm current structural load requirements from source data rather than assuming older values.
+One application, organised in modules with clearly separated responsibilities — not a premature microservice
+split. Shared, reusable calculations are extracted into modules independent of the UI; where a validation must
+run both in the browser and on the server, both use the same versioned business logic (this is why
+`packages/core-geometry` has zero runtime dependency on React or the DOM beyond `CanvasRenderingContext2D`'s
+type).
 
-## Known geometry limits
+| Module | Responsibility |
+| --- | --- |
+| Projets et sources | Projects, parcels, files, versions and provenance |
+| Parcours | Steps, progress, decisions and hand-offs |
+| Programmation | Needs, headcounts, spaces, areas and functional relationships |
+| Atelier Architectural | Building model, drawing, selection, editing and views |
+| Analyses métier | Quantities, constraints, checks and scenario comparison |
+| Documents | Plans, tables, schedules and reports |
+| Collaboration | Access, comments, revisions and synchronisation |
 
-Unknown levels resolve to elevation zero; dimensions lack runtime validation; out-of-wall windows can produce inverted surfaces; column extrusion needs an injected resolver; cuts are axis-aligned. Canvas rendering uses approximate depth sorting and mutates the face array. No slabs, arbitrary section planes or structural calculation are implemented. `inwardOffset` (parcel setback) has no self-intersection guard: a setback beyond half the polygon's width flips the polygon instead of failing — documented and tested, not fixed, because the source has the same behaviour.
+Scaffolded as `apps/web/src/modules/<module>/README.md` (one file per module stating its responsibility and
+current status) so the boundary exists in the repository before it exists in the UI, instead of emerging by
+accident from a single `main.tsx`.
+
+## Domain model
+
+The centre of the application is a shared, structured, versioned project model, not a collection of per-screen
+state. It brings together parcels, buildings, levels, rooms, constructive elements, equipment, requirements,
+source documents, scenarios and decisions. Programmed spaces (Programmation) and drawn rooms (Atelier) are
+recorded separately, then linked — this is what lets the app compare programme intent against what was
+actually designed, instead of silently conflating the two.
+
+| Information | Governance principle |
+| --- | --- |
+| Objet architectural | Stable identifier, properties, geometry and relations to other objects |
+| Donnée source | Origin document, date, unit and verification status |
+| Exigence | Regulatory, contractual or programmatic origin made explicit |
+| Hypothèse | Retained value, justification and expected validation |
+| Résultat calculé | Method, data used and model revision |
+| Décision | Choice made, justification, author and date |
+| Document produit | Project revision used and freshness state |
+
+An `Exigence` (requirement), a `Hypothèse` and a `Recommandation` are three distinct kinds of statement, never
+collapsed into one "note" field. Cadastral coordinates, geographic coordinates and the building's local frame
+are three distinct reference systems, explicitly tagged — never silently mixed in a calculation.
+
+`packages/domain-model` carries these entity types today (interfaces + the enumerations they need), with
+tests on their invariants. It intentionally does not yet carry persistence, validation rules or UI — those
+belong to Lot 2 onward, once the backend exists to enforce them server-side too.
+
+## Coherent, reversible operations
+
+A business command (e.g. "move this stair") can touch several objects at once — its position, its landings,
+the openings hosted by the walls it crosses. The whole set must be validated and undone/redone as one action,
+never as independent field edits that can be half-applied. After a command runs, dependent results (areas,
+reports, plans) are either recalculated or explicitly flagged as stale, and every plan/surface/report carries
+the model revision it was produced from, so two documents never silently disagree.
+
+Display parameters — camera, current selection, visible level, Volume/Exploded mode — stay separate from the
+building's physical data: panning the 3D view must never touch the model's revision number.
+
+`packages/domain-model` also carries a small, generic, tested `CommandHistory` (do/undo/redo over an
+application-defined `Command<TState>`) as the mechanical skeleton for this rule. It does not yet know about
+walls or stairs — wiring real Atelier commands (move a stair + its openings as one unit) is Atelier module
+work, not domain-model work, and is still open.
+
+## Technology choices
+
+| Layer | Choice |
+| --- | --- |
+| Interface | React, Vite, TypeScript |
+| Routing | React Router |
+| UI state | Zustand |
+| Server data loading/cache | TanStack Query |
+| Model changes | Reversible business commands + transactional validation |
+| Architectural rendering | Keep the existing Canvas/SVG engines initially |
+| Background computation | Web Workers |
+| Server | Node.js, TypeScript, Express, REST API |
+| Database | PostgreSQL + Drizzle |
+| Geographic data | PostGIS for the spatial operations actually needed |
+| Local storage | IndexedDB with Dexie |
+| Attachments and exports | File storage separate from the database |
+| Authentication | A maintained library, authorization enforced server-side |
+
+PostGIS is for parcels, footprints and spatial lookups; it needs real migrations and queries matched to the
+operations actually used, not a speculative schema. The building's own semantic relations (door hosted by a
+wall, stair connecting two levels, shaft tied to a slab) stay in the application's relational/semantic model —
+PostGIS is not asked to express those.
+
+Three.js is a possible evolution of the rendering layer, decided later from real measurements (fluidity, model
+size, the specific 3D features actually needed) — not a prerequisite for turning the prototype into an
+application. See `packages/core-geometry/README.md` for exactly which Canvas/SVG functions are kept as-is and
+why.
+
+## Code reuse: decided function by function
+
+Reuse is not estimated in advance; it is established by inventory, one function at a time, sorted into
+*keep*, *adapt* or *replace*. `packages/core-geometry` is this inventory in progress:
+
+- `geometry.ts` — `V14Geometry`, ported faithfully and tested (**keep**, behind a stable interface).
+- `parcel-geometry.ts` — the genuinely pure parcel functions found alongside `V14Bridge` (**keep**).
+- `project-repository.ts` — `V14Bridge` audited and found to be a `localStorage` facade, not business logic
+  (**replace**, by a real backend implementing the documented `ProjectRepository` contract).
+- Column profile catalogue (`originalShapeData`, `columnShapeMeta`, `ensureColumnProps`) — not yet located in
+  this pass (**pending inventory**).
+
+The reuse percentage and the resulting development effort are established once this inventory is complete, not
+assumed ahead of it.
+
+## Sync and offline, designed from the start
+
+Every operation recorded locally sits in a sync queue until the server confirms it. The interface distinguishes
+four states, visibly, per change:
+
+- saved locally
+- syncing
+- saved on the server
+- conflict requiring a decision
+
+Dexie handles the IndexedDB plumbing; the sync protocol, revision checks and conflict rules are a separate,
+still-open piece of work. A change based on a stale revision can never silently overwrite a newer one. For
+geometric conflicts, the application offers an explicit resolution or keeps the work in a variant rather than
+discarding it.
+
+The first version targets a single active editor per project, with read access and comments for everyone else.
+Offline work covers projects already available on the device; features that need a live service say so when
+they are unavailable. Server-side backups, restore drills and an exportable project archive complete this.
+
+## Business expertise as traceable functions
+
+The Programmiste and Dessin de bâtiment skills become structured inputs, methods, calculations, rules and
+checks — not prose embedded in the UI. Every check states its domain, its source, its version and its result;
+missing data produces an explicit "non évalué" state rather than a guess. A regulatory requirement stays
+distinct from a hypothesis or a recommendation (domain model, above).
+
+AI assistance may explain an anomaly, propose a variant, or prepare a change — but every change it prepares
+goes through the same controlled, reversible commands as a human-initiated one, and stays reversible. No
+AI-initiated write bypasses the command/undo system.
+
+## Delivery lots
+
+| Lot | Deliverable | Validation criterion |
+| --- | --- | --- |
+| 1. Audit et référence | Inventory of active code, dependencies, formats and initial measurements | Reference version identified, reproducible test cases |
+| 2. Modèle et commandes | Versioned schema, project import, editing and undo | Data preserved, business operations coherent |
+| 3. Application pilote | Modular interface, local + server save, rendering preserved | Full workflow usable on P.118 |
+| 4. Continuité du travail | Sync, conflicts, rights and restore | Network-loss and concurrent-edit scenarios handled |
+| 5. Mise en production | Remaining functions migrated, exports, monitoring, deployment | Functional, mobile and documentation sign-off |
+
+Budget and schedule are set after Lot 1, from identified tasks and verified dependencies — not guessed up
+front.
+
+### Where this repository stands
+
+Lot 1 is in progress: `packages/core-geometry` is the active-code inventory for the Atelier's rendering
+engine, with reproducible tests as its "cas de test reproductibles". The module boundaries above exist as
+scaffolding (`apps/web/src/modules/*/README.md`); their content is still the Lot 3 pilot's job. `packages/
+domain-model` starts Lot 2 (versioned schema skeleton + a generic reversible-command mechanism) without yet
+wiring real backend persistence, which needs the server from Lot 2/3.
+
+## Acceptance target: "Parcours App — Pilote P.118"
+
+The first real deliverable, per the brief: open P.118, find the 21 steps, modify an architectural element,
+undo then redo that change, save it, retrieve it on a second device, and produce a plan with surfaces that
+match the same revision. Reaching this, observably, is the gate before continuing the full migration — not an
+estimate, a demonstrated run.
+
+Acceptance also measures reliability, not only speed: preservation of identifiers, coordinates, levels,
+object relations and attachments; undo, restore, sync conflicts, and agreement between produced documents.
+Performance is measured on the same project, on a reference computer and an Android phone, covering opening,
+selection, moving an element, 3D navigation and saving — acceptance thresholds are set after the first
+measurements, not assumed.
+
+## Known geometry limits (packages/core-geometry)
+
+Unknown levels resolve to elevation zero; dimensions lack runtime validation; out-of-wall windows can produce
+inverted surfaces; column extrusion needs an injected resolver (profile catalogue not yet located); cuts are
+axis-aligned. Canvas rendering uses approximate depth sorting and mutates the face array. No slabs, arbitrary
+section planes or structural calculation are implemented. `inwardOffset` (parcel setback) has no
+self-intersection guard: a setback beyond half the polygon's width flips the polygon instead of failing —
+documented and tested, not fixed, because the source has the same behaviour.
+
+The authoritative HTML is not part of this repository. Do not invent its titles or claim feature parity.
+Confirm current structural load requirements from source data rather than assuming older values.

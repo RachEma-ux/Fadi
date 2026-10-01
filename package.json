@@ -14,6 +14,6 @@
     "dev": "npm run dev --workspace=@fadi/web",
     "build": "npm run build --workspace=@fadi/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspace=@parcours/core-geometry"
+    "test": "npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model"
   }
 }
