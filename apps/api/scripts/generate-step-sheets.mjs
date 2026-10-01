@@ -1,0 +1,165 @@
+#!/usr/bin/env node
+/**
+ * Génère les fiches de migration des 21 étapes (docs/migration/etapes/NN.md)
+ * à partir des données extraites du prototype (apps/api/src/data), de
+ * l'inventaire DOM relevé sur le prototype exécuté
+ * (docs/migration/captures/reference/inventory*.json) et de l'état de
+ * migration déclaré ci-dessous. Relancer après chaque tranche migrée :
+ *
+ *   node apps/api/scripts/generate-step-sheets.mjs
+ */
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const root = join(here, "..", "..", "..");
+const data = (name) => JSON.parse(readFileSync(join(here, "..", "src", "data", name), "utf8"));
+const steps = data("parcours-steps.json").steps;
+const forms = data("parcours-forms.json");
+const example = data("examples/p118-exemple-complet.json");
+const refDir = join(root, "docs/migration/captures/reference");
+const webDir = join(root, "docs/migration/captures/webapp");
+const inventory = JSON.parse(readFileSync(join(refDir, "inventory.json"), "utf8"));
+const inventory2 = JSON.parse(readFileSync(join(refDir, "inventory-2.json"), "utf8"));
+const outDir = join(root, "docs/migration/etapes");
+mkdirSync(outDir, { recursive: true });
+
+const pad2 = (n) => String(n).padStart(2, "0");
+const TOOLED = { 1: "Outil Parcelle (iframe « Parcelle — Atelier satellite » : Leaflet, proj4, import KML/KMZ, MapTiler optionnel)", 10: "Atelier natif (3D, niveaux, créateur de vue, couches, exports PNG/SVG)", 11: "Atelier natif en plan orienté nord (coupes A–A / B–B, affichage objets / cotes)" };
+
+/** État de migration par fonction, à la date de génération. */
+function migrationStatus(n) {
+  const rows = [];
+  rows.push(["Vue d'ensemble → étape, précédente / suivante, « Marquer terminée »", "✅", "ParcoursModule.tsx ; e2e parcours-scenario.mjs"]);
+  rows.push(["Harmonie · propositions A/B/C, Retenir / Adapter / Écarter / Traduire / Dessiner / Vérifier, intentions reçues, transmission", n === 1 ? "🟡" : "✅", n === 1 ? "Les 3 options de site A/B/C calculées sur la parcelle (zonage, mini-plan) ne sont pas portées ; aucune proposition n'est affichée à l'étape 01." : "HarmoniePanel.tsx ; règles serveur dans parcours-steps.ts (tests app.test.ts) ; moteur domain-model/harmonie.ts (tests)"]);
+  if (forms.schemas[String(n)]) rows.push([`Formulaire métier (${forms.schemas[String(n)].length} rubriques), sauvegarde, rechargement`, "✅", "StepForm.tsx ; PATCH /projects/:id/steps/:n (validation par type)"]);
+  if (n === 21) rows.push(["Synthèse / livrable", "✅", "StepForm.tsx (champ summary)"]);
+  if (n === 14) rows.push(["KPI Investissement / Financement / Solde et règle « Chiffrage incomplet »", "✅", "domain-model/kpis.ts (tests) ; e2e"]);
+  if (n === 17) rows.push(["Note provisoire, Due diligence, Décision", "✅", "domain-model/kpis.ts ; StepForm.tsx"]);
+  if (n === 19) rows.push(["Décision GO / GO sous conditions / À reprendre / NO GO ; rétrogradation en « À reprendre » sur intention amont modifiée", "✅", "parcours-steps.ts ; e2e"]);
+  if (n === 6 || n === 7) rows.push(["Répartition programmatique (type, surface, fourchette, ratios, KPI, tableau, adjacences) ; « Répartition renseignée et liée au modèle » pour l'exemple", "✅", "ProgrammeRepartition.tsx ; PUT /projects/:id/programme ; domain-model/programme.ts (tests)"]);
+  if (n === 10) rows.push(["Bloc « Programme transmis à l'Atelier »", "✅", "ProgrammeTransfer (ProgrammeRepartition.tsx)"]);
+  if (TOOLED[n]) rows.push([TOOLED[n], "⛔", n === 1 ? "Bornes et coordonnées P.118 importées avec le projet (pièce jointe) ; pas encore d'outil cartographique" : "Le module Atelier n'affiche que les murs ; moteur natif à porter (voir matrix.md)"]);
+  rows.push(["Bibliothèque d'exemples par type de bâtiment / « Exemples issus des fichiers sources »", "⛔", "building-library-data et SOURCE_EXAMPLES non portés"]);
+  rows.push(["Sources de l'étape (pièces jointes, dépôt de fichiers)", "⛔", "FILE_DB (IndexedDB) non porté ; stockage serveur de fichiers à concevoir"]);
+  if (example.steps[String(n)]) rows.push(["Exemple P.118 : récit du choix, réponses renseignées, choix retenu", "✅", "Import p118-exemple-complet ; test « imports an example… »"]);
+  return rows;
+}
+
+function listButtons(inv) {
+  return [...new Set(inv.buttons)].filter((b) => !["←", "⌂"].includes(b)).join(" · ");
+}
+
+for (const s of steps) {
+  const n = s.number;
+  const schema = forms.schemas[String(n)];
+  const refNew = inventory2.newSteps?.[String(n)];
+  const refResolved = inventory["steps-desktop"]?.[String(n)];
+  const exampleStep = example.steps[String(n)];
+  const business = example.business[String(n)] ?? {};
+  const webShots = ["desktop", "mobile"].map((v) => `${pad2(n)}-${v}.png`).filter((f) => existsSync(join(webDir, f)));
+  const webNewShots = [`new-${pad2(n)}-desktop.png`, `new-${pad2(n)}-desktop-harmonie.png`, `new-${pad2(n)}-desktop-after-input.png`, `new-${pad2(n)}-desktop-complete.png`, `new-${pad2(n)}-mobile.png`].filter((f) => existsSync(join(webDir, f)));
+
+  const md = [];
+  md.push(`# Étape ${pad2(n)} — ${s.title}`);
+  md.push("");
+  md.push(`**Phase :** ${s.phase} · **Périmètre Harmonie :** ${s.scope ?? "—"} · **Clé interne :** \`${s.key ?? "—"}\``);
+  md.push("");
+  md.push(`Fiche générée par \`apps/api/scripts/generate-step-sheets.mjs\` depuis les données extraites du prototype et l'inventaire DOM relevé sur le prototype exécuté (\`captures/reference/inventory*.json\`). Les valeurs citées sont celles du fichier de référence, pas des interprétations.`);
+  md.push("");
+  md.push("## Objet de l'étape (registre h7-stage-data)");
+  md.push("");
+  md.push(`- **Objectif :** ${s.goal ?? "—"}`);
+  md.push(`- **Entrées :** ${s.inputs ?? "—"}`);
+  md.push(`- **Livrable :** ${s.deliverable ?? "—"}`);
+  md.push(`- **Méthode :** ${s.method ?? "—"}`);
+  md.push(`- **Transmet ses intentions retenues aux étapes :** ${s.transmitsTo.map(pad2).join(", ") || "aucune (dernière étape)"}`);
+  md.push("");
+  md.push("## Écrans et sous-écrans");
+  md.push("");
+  md.push("1. Vue d'ensemble (grille des 21 étapes, 3 colonnes ; 1 colonne sur téléphone) → clic sur la carte.");
+  md.push(`2. Vue de l'étape (\`study()\`) : en-tête « ÉTAPE ${pad2(n)} / 21 · ${s.phase} », titre, phrase d'introduction, panneau Harmonie, ${TOOLED[n] ? TOOLED[n].split(" (")[0] : schema ? "formulaire métier" : "synthèse"}${n === 6 || n === 7 ? ", répartition programmatique" : ""}${n === 10 ? ", bloc « Programme transmis à l'Atelier »" : ""}, bibliothèque d'exemples, sources de l'étape, navigation.`);
+  if (n === 1) md.push("3. Sous-écrans de l'outil Parcelle : Mes parcelles, Données du fichier, Parcelle, Construction, Voirie, Distances réglementaires, Système de coordonnées, Export.");
+  if (n === 10 || n === 11) md.push("3. Sous-écrans de l'Atelier : menus Niveau / Vue / Mode / Dessins techniques, créateur de vue, affichage, couches, exports.");
+  md.push("");
+  md.push("## Données d'entrée et valeurs initiales");
+  md.push("");
+  if (schema) {
+    md.push(`Formulaire métier (\`BIZ_SCHEMAS[${n}]\`) — intro : « ${forms.intro[String(n)]} ». Valeur initiale : vide (placeholder « À documenter… »), jamais 0.`);
+    md.push("");
+    md.push("| Clé | Intitulé | Type | Réponse de l'exemple P.118 (début) |");
+    md.push("|---|---|---|---|");
+    for (const f of schema) md.push(`| \`${f.key}\` | ${f.label} | ${f.type} | ${String(business[f.key] ?? "—").replace(/\|/g, "\\|").slice(0, 90)}${String(business[f.key] ?? "").length > 90 ? "…" : ""} |`);
+    if (n === 19) md.push("| `decision` | Décision | choix | " + (business.decision ?? "—") + " |");
+  } else if (TOOLED[n]) {
+    md.push(`${TOOLED[n]}. ${n === 1 ? "Entrée : fichier KML/KMZ/JSON de parcelle ; P.118 : 4 bornes B.266 → B.267 → B.268 → B.265 (EPSG:26191), surface Lambert 1 345,55 m², contenance 1 346 m²." : "Entrée : le modèle natif du projet (6 niveaux, 1 753 objets pour P.118)."}`);
+    if (business.summary) md.push("", `Synthèse de l'exemple : ${business.summary.slice(0, 300)}…`);
+  } else {
+    md.push(`Champ « ${forms.summary.field.label} » (clé \`summary\`), intro : « ${forms.summary.intro} ».`);
+  }
+  if (n === 6 || n === 7) md.push("", "Répartition programmatique : type `tertiaire`, surface de référence 673 m², position « Cible », ratios circulation 15 % · technique 6 % · sanitaires 2 % · accueil/convivialité 5 % (fourchettes par type dans `programme-repartition.json`).");
+  md.push("");
+  md.push("## Composants visuels et actions (prototype exécuté)");
+  md.push("");
+  if (refNew) {
+    md.push(`Projet vierge (\`inventory-2.json\`, ${refNew.fields.length} champs, ${refNew.buttons.length} boutons, ${refNew.details.length} sections repliables, ${refNew.tables.length} tableau(x)) :`);
+    md.push("");
+    md.push(`- Titres : ${refNew.headings.join(" · ")}`);
+    md.push(`- Boutons : ${listButtons(refNew)}`);
+    md.push(`- Sections repliables : ${refNew.details.map((d) => d.summary).join(" · ")}`);
+    if (refNew.kpis?.length) md.push(`- Indicateurs : ${refNew.kpis.join(" · ")}`);
+    if (refNew.tables?.length) md.push(`- Tableaux : ${refNew.tables.map((t) => t.headers.join(" / ") + ` (${t.rows} lignes)`).join(" ; ")}`);
+  } else {
+    md.push("Projet vierge : même structure que les étapes capturées (`new-02`, `new-06`, `new-14`…) — Harmonie + formulaire métier ; pas de capture dédiée (déduit de `content()` et `BIZ_SCHEMAS`).");
+  }
+  if (refResolved) {
+    md.push("", `Exemple résolu (\`inventory.json\`) : titres ${refResolved.headings.join(" · ")} ; sections ${refResolved.details.map((d) => d.summary).join(" · ")}.`);
+  }
+  md.push("");
+  md.push("## Événements, validations, calculs");
+  md.push("");
+  md.push("- Saisie d'un champ → sauvegarde immédiate (`change` dans le prototype ; `blur` dans Fadi, PATCH validé par type côté serveur).");
+  md.push("- Harmonie : « Retenir » remplace toute autre variante retenue (« Variante remplacée par … ») ; « Adapter / motiver » et « Écarter avec motif » exigent 8 caractères ; traduire / dessiner / vérifier exigent responsable + preuve ; « Dessinée » seulement dès l'étape 10 ; une intention retenue remet à faire les étapes cibles et rétrograde un GO pris à l'étape 19.");
+  md.push("- « Marquer terminée » bascule l'état ; la progression (n / 21) ne compte que les étapes marquées terminées.");
+  if (n === 14) md.push("- KPI finance : Investissement = f1+…+f6 ; Financement = f9+f10 ; Solde = Financement − Investissement ; non calculés tant qu'un des huit postes manque (« Une valeur inconnue n'est pas zéro »).");
+  if (n === 17) md.push("- Note provisoire = moyenne des critères f1–f8 compris entre 1 et 5 ; « Due diligence » = Réserves si 16.f10 est rempli ; « Décision » = 19.decision ou « Non prise ».");
+  if (n === 19) md.push("- Décision parmi GO / GO sous conditions / À reprendre / NO GO.");
+  if (n === 6 || n === 7) md.push("- Répartition : ratio = valeur forcée ou fourchette[position] ; surface famille = référence × ratio ; support = Σ ratios ; solde programmable = max(0, 100 − support).");
+  md.push("");
+  md.push("## Données enregistrées");
+  md.push("");
+  md.push("- Prototype : `localStorage.potentiel-v3.projects[].data.business[" + n + "]`, `.harmonieEtapesV7.stages[" + n + "]`, `.done[" + n + "]`" + (n === 6 || n === 7 ? ", `.programmeRepartition`" : "") + ".");
+  md.push("- Fadi : table `project_steps` (`status`, `content.fields`, `content.harmonie`)" + (n === 6 || n === 7 ? ", table `programme_repartitions`" : "") + (TOOLED[n] && n !== 1 ? ", tables `levels` et `architectural_objects`" : "") + ".");
+  md.push("");
+  md.push("## Harmonie");
+  md.push("");
+  if (s.harmonieOptions.length) {
+    md.push(`Périmètre « ${s.scope} ». Propositions (texte intégral dans \`parcours-steps.json\`) :`);
+    md.push("");
+    s.harmonieOptions.forEach((o, i) => md.push(`- **${"ABC"[i]} · ${o.title}** — ${o.proposal}`));
+    if (exampleStep?.choice) md.push("", `Exemple P.118 : choix **${exampleStep.choice}** retenu — « ${exampleStep.headline} ».`);
+  } else {
+    md.push("Propositions de site A / B / C calculées sur la géométrie de la parcelle (`siteOptions()` de h7-app : accueil ouvert / extérieur protégé / arrivées dissociées, avec zonage dessiné) — non portées.");
+    if (exampleStep?.choice) md.push("", `Exemple P.118 : choix **${exampleStep.choice}** — « ${exampleStep.headline} ».`);
+  }
+  md.push("");
+  md.push("## Scénarios de test");
+  md.push("");
+  md.push("- `apps/api/src/app.test.ts` : « serves each step with the prototype's real form… », « stores form answers… », « applies the Harmonie rules server-side… », « exposes the programme repartition… », « imports an example… ».");
+  md.push("- `apps/web/e2e/parcours-scenario.mjs` : scénario rejoué sur le prototype puis sur Fadi (voir docs/migration/reference.md, « Écran d'étape réel »).");
+  md.push("");
+  md.push("## Captures");
+  md.push("");
+  md.push(`- Référence : \`captures/reference/${pad2(n)}-desktop.png\`, \`captures/reference/${pad2(n)}-mobile.png\`${existsSync(join(refDir, `new-${pad2(n)}-desktop.png`)) ? `, \`captures/reference/new-${pad2(n)}-desktop.png\`` : ""}${existsSync(join(refDir, `new-${pad2(n)}-desktop-expanded.png`)) ? `, \`captures/reference/new-${pad2(n)}-desktop-expanded.png\`` : ""}`);
+  md.push(`- Fadi : ${[...webShots, ...webNewShots].length ? [...webShots, ...webNewShots].map((f) => `\`captures/webapp/${f}\``).join(", ") : "pas de capture dédiée (parcours de l'e2e)"}`);
+  md.push("");
+  md.push("## État de migration");
+  md.push("");
+  md.push("| Fonction | État | Preuve / reste à faire |");
+  md.push("|---|---|---|");
+  for (const [f, st, note] of migrationStatus(n)) md.push(`| ${f} | ${st} | ${note} |`);
+  md.push("");
+  writeFileSync(join(outDir, `${pad2(n)}.md`), md.join("\n"));
+}
+console.log(`21 fiches écrites dans ${outDir}`);

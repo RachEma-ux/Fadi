@@ -1,0 +1,201 @@
+{
+  "sourceVersion": "8.19.0",
+  "sourceBlock": "script anonyme #3 (app hôte) — PROGRAMME_TYPES, PROGRAMME_LABELS, programmeStore(), programmeContent()",
+  "subtitle": "Pré-dimensionnement métier issu de Repartition.docx. Les valeurs sont des références de programmation, pas des minima réglementaires marocains certifiés.",
+  "defaults": {
+    "type": "tertiaire",
+    "baseArea": 673,
+    "mode": "cible"
+  },
+  "modes": [
+    {
+      "key": "min",
+      "label": "Basse"
+    },
+    {
+      "key": "cible",
+      "label": "Cible"
+    },
+    {
+      "key": "max",
+      "label": "Haute"
+    }
+  ],
+  "families": [
+    {
+      "key": "circulation",
+      "label": "Circulations"
+    },
+    {
+      "key": "technique",
+      "label": "Locaux techniques"
+    },
+    {
+      "key": "sanitaires",
+      "label": "Sanitaires"
+    },
+    {
+      "key": "convivialite",
+      "label": "Accueil / convivialité"
+    }
+  ],
+  "types": {
+    "tertiaire": {
+      "label": "Tertiaire / bureaux",
+      "ratios": {
+        "circulation": [
+          10,
+          15,
+          18
+        ],
+        "technique": [
+          4,
+          6,
+          7
+        ],
+        "sanitaires": [
+          1,
+          2,
+          2
+        ],
+        "convivialite": [
+          2,
+          5,
+          8
+        ]
+      }
+    },
+    "residentiel": {
+      "label": "Résidentiel",
+      "ratios": {
+        "circulation": [
+          8,
+          12,
+          15
+        ],
+        "technique": [
+          3,
+          5,
+          7
+        ],
+        "sanitaires": [
+          0,
+          0,
+          0
+        ],
+        "convivialite": [
+          0,
+          2,
+          5
+        ]
+      }
+    },
+    "commercial": {
+      "label": "Commercial",
+      "ratios": {
+        "circulation": [
+          12,
+          16,
+          20
+        ],
+        "technique": [
+          6,
+          8,
+          10
+        ],
+        "sanitaires": [
+          2,
+          3.5,
+          5
+        ],
+        "convivialite": [
+          3,
+          5,
+          8
+        ]
+      }
+    },
+    "industriel": {
+      "label": "Industriel / logistique",
+      "ratios": {
+        "circulation": [
+          8,
+          12,
+          16
+        ],
+        "technique": [
+          8,
+          10,
+          12
+        ],
+        "sanitaires": [
+          2,
+          3,
+          5
+        ],
+        "convivialite": [
+          2,
+          4,
+          6
+        ]
+      }
+    },
+    "public": {
+      "label": "Public / institutionnel",
+      "ratios": {
+        "circulation": [
+          15,
+          18,
+          20
+        ],
+        "technique": [
+          5,
+          6.5,
+          8
+        ],
+        "sanitaires": [
+          2,
+          3.5,
+          5
+        ],
+        "convivialite": [
+          3,
+          5,
+          8
+        ]
+      }
+    }
+  },
+  "adjacency": [
+    [
+      "Circulations ↔ Accueil",
+      "Essentielle · liaison directe"
+    ],
+    [
+      "Circulations ↔ Sanitaires",
+      "Essentielle · accès depuis circulation commune"
+    ],
+    [
+      "Accueil ↔ Sanitaires",
+      "Souhaitable · proche, avec filtre visuel/acoustique"
+    ],
+    [
+      "Accueil ↔ Technique",
+      "Éloignée / isolée pour les équipements nuisants"
+    ],
+    [
+      "Sanitaires ↔ Technique",
+      "Technique · adossée ou superposée pour les réseaux"
+    ],
+    [
+      "Technique ↔ Circulations",
+      "Importante · accès maintenance contrôlé"
+    ]
+  ],
+  "statusNote": "Statut : référence métier / hypothèse projet. Les exigences PMR, incendie, sanitaires et dimensions doivent être contrôlées séparément dans le cadre réglementaire applicable au projet.",
+  "transfer": {
+    "title": "Programme transmis à l’Atelier Architectural",
+    "rules": "Règles actives : accès sanitaires depuis circulation commune · accueil proche des circulations · technique isolé des espaces de convivialité · réseaux humides regroupés verticalement.",
+    "control": "Contrôle de conception : ces règles sont des objectifs programmatiques ; elles ne remplacent pas la vérification réglementaire et BET."
+  }
+}

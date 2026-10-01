@@ -6,24 +6,12 @@ import { architecturalObjects, levels, projects, projectSteps } from "../db/sche
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { EMPTY_STEP_CONTENT, PARCOURS_STEPS } from "../data/parcours.js";
+import { loadOwnedProject } from "../lib/owned-project.js";
+import { parcoursStepsRouter } from "./parcours-steps.js";
+import { programmeRouter } from "./programme.js";
 
 export const projectsRouter = Router();
 projectsRouter.use(requireAuth);
-
-/**
- * Charge le projet ET vérifie que `req.user` en est propriétaire, en une
- * seule requête. Toute route ci-dessous qui touche un projet passe par ici
- * d'abord — jamais seulement "l'utilisateur est connecté" (voir AGENTS.md
- * et la Definition of Done : autorisation vérifiée côté serveur par ressource).
- */
-async function loadOwnedProject(projectId: string, ownerId: string) {
-  const rows = await db
-    .select()
-    .from(projects)
-    .where(and(eq(projects.id, projectId), eq(projects.ownerId, ownerId)))
-    .limit(1);
-  return rows[0] ?? null;
-}
 
 const codePattern = /^[A-Za-z0-9._-]{1,64}$/;
 
@@ -70,29 +58,9 @@ projectsRouter.post("/", async (req, res) => {
   res.status(201).json(created);
 });
 
-// --- Étapes du Parcours --------------------------------------------------
-
-projectsRouter.get("/:projectId/steps", async (req, res) => {
-  const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
-  const rows = await db
-    .select()
-    .from(projectSteps)
-    .where(eq(projectSteps.projectId, project.id));
-  const byNumber = new Map(rows.map((r) => [r.stepNumber, r]));
-  const merged = PARCOURS_STEPS.map((def) => {
-    const row = byNumber.get(def.number);
-    return {
-      ...def,
-      status: row?.status ?? EMPTY_STEP_CONTENT.status,
-      content: row?.content ?? EMPTY_STEP_CONTENT,
-    };
-  });
-  res.json(merged);
-});
+// --- Étapes du Parcours (module Parcours) et répartition (module Programmation)
+projectsRouter.use("/:projectId/steps", parcoursStepsRouter);
+projectsRouter.use("/:projectId/programme", programmeRouter);
 
 projectsRouter.get("/:projectId", async (req, res) => {
   const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);

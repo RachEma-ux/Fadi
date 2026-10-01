@@ -69,6 +69,24 @@ export const projectSteps = pgTable("project_steps", {
   index("project_steps_project_id_idx").on(t.projectId),
 ]);
 
+/**
+ * Répartition programmatique du projet (module Programmation) : type de
+ * bâtiment, surface de référence, position dans la fourchette et ratios
+ * forcés — `programmeRepartition` du prototype, une ligne par projet,
+ * créée à la première modification (les valeurs par défaut viennent de
+ * `data/programme-repartition.json`, pas de la base). `components` porte
+ * les composantes déclarées d'un bâtiment mixte (profil Harmonie).
+ */
+export const programmeRepartitions = pgTable("programme_repartitions", {
+  projectId: text("project_id").primaryKey().references(() => projects.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  baseArea: doublePrecision("base_area").notNull(),
+  mode: text("mode").notNull(),
+  custom: jsonb("custom").notNull().$type<Record<string, number>>(),
+  components: jsonb("components").notNull().$type<string[]>(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const levels = pgTable("levels", {
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),

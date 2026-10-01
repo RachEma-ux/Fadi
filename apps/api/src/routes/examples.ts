@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { db } from "../db/client.js";
-import { architecturalObjects, levels, projects, projectSteps } from "../db/schema.js";
+import { architecturalObjects, levels, programmeRepartitions, projects, projectSteps } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import {
   PARCOURS_STEPS,
+  PROGRAMME_REPARTITION,
   exampleAttachment,
+  exampleBuildingType,
   exampleNativeArchitecture,
   exampleRegistryName,
   exampleStepContents,
@@ -50,6 +52,7 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
 
   const id = newId("proj");
   const nativeArchitecture = exampleNativeArchitecture(exampleId);
+  const buildingType = exampleBuildingType(exampleId);
 
   const created = await db.transaction(async (tx) => {
     const [project] = await tx
@@ -75,6 +78,19 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
         return { projectId: id, stepNumber: def.number, status: content.status, content: { ...content } };
       }),
     );
+
+    if (buildingType) {
+      // Type et composantes déclarés par l'exemple : c'est d'eux que dépend le
+      // profil Harmonie (« Formation & bureaux ») et la répartition par type.
+      await tx.insert(programmeRepartitions).values({
+        projectId: id,
+        type: buildingType.type,
+        baseArea: PROGRAMME_REPARTITION.defaults.baseArea,
+        mode: PROGRAMME_REPARTITION.defaults.mode,
+        custom: {},
+        components: buildingType.components,
+      });
+    }
 
     if (nativeArchitecture) {
       // Les identifiants natifs ("EX118-rdc-W-009"...) sont des clés

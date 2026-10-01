@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { api, type Project } from "../lib/api";
+import { api, type ParcoursStep, type ParcoursStepStatus, type Project } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { MassingIllustration } from "../components/MassingIllustration";
 
@@ -23,11 +23,25 @@ function relativeDate(iso: string): string {
   return `il y a ${days} j`;
 }
 
-type StepStatus = "a-faire" | "en-cours";
+type StepStatus = ParcoursStepStatus;
 
 function StatusDot({ status }: { status: StepStatus }) {
   return <span className={`step-dot step-dot-${status}`} aria-hidden="true" />;
 }
+
+/**
+ * État d'une phase du Parcours à partir de ses étapes : terminée si toutes
+ * le sont, en cours dès qu'une étape est entamée ou terminée, à faire sinon.
+ * La progression vient de l'état des étapes, jamais de la présence d'un
+ * texte ou d'un mur dessiné.
+ */
+function phaseStatus(steps: ParcoursStep[]): StepStatus {
+  if (steps.length && steps.every((s) => s.status === "termine")) return "termine";
+  if (steps.some((s) => s.status !== "a-faire")) return "en-cours";
+  return "a-faire";
+}
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
 
 export function AccueilPage() {
   const { user } = useAuth();
@@ -38,42 +52,38 @@ export function AccueilPage() {
     [projectsQuery.data],
   );
 
-  const levelsQuery = useQuery({
-    queryKey: ["levels", mostRecent?.id],
-    queryFn: () => api.listLevels(mostRecent!.id),
+  const stepsQuery = useQuery({
+    queryKey: ["steps", mostRecent?.id],
+    queryFn: () => api.listSteps(mostRecent!.id),
     enabled: !!mostRecent,
   });
-  const groundLevel = levelsQuery.data?.[0];
-  const objectsQuery = useQuery({
-    queryKey: ["objects", mostRecent?.id, groundLevel?.id],
-    queryFn: () => api.listObjects(mostRecent!.id, groundLevel!.id),
-    enabled: !!mostRecent && !!groundLevel,
-  });
-  const hasBuiltSomething = (objectsQuery.data?.length ?? 0) > 0;
+  const steps = stepsQuery.data ?? [];
+  const doneCount = steps.filter((s) => s.status === "termine").length;
+  const startedCount = steps.filter((s) => s.status !== "a-faire").length;
+  const nextStep = steps.find((s) => s.status !== "termine") ?? null;
 
   const moduleLink = (moduleId: string) => (mostRecent ? `/projets/${mostRecent.id}?module=${moduleId}` : "/projets");
+  const stepLink = (n: number) => (mostRecent ? `/projets/${mostRecent.id}?module=parcours&etape=${n}` : "/projets");
 
-  const parcoursSteps: { label: string; status: StepStatus; href: string }[] = [
-    { label: "Parcelle", status: "a-faire", href: moduleLink("projets-sources") },
-    { label: "Programme", status: "a-faire", href: moduleLink("programmation") },
-    { label: "Conception", status: hasBuiltSomething ? "en-cours" : "a-faire", href: moduleLink("atelier") },
-    { label: "Analyse", status: "a-faire", href: moduleLink("analyses") },
-    { label: "Documents", status: "a-faire", href: moduleLink("documents") },
-  ];
+  // Les six phases du Parcours d'origine, dans l'ordre, avec l'état réel de leurs étapes.
+  const phases = [...new Set(steps.map((s) => s.phase))].map((phase) => {
+    const own = steps.filter((s) => s.phase === phase);
+    return { label: phase, status: phaseStatus(own), href: stepLink(own.find((s) => s.status !== "termine")?.number ?? own[0]!.number), done: own.filter((s) => s.status === "termine").length, total: own.length };
+  });
 
   const nextActions: { label: string; href: string }[] = !mostRecent
     ? [
         { label: "Créer votre premier projet", href: "/projets" },
         { label: "Importer un exemple", href: "/projets#examples-heading" },
       ]
-    : !hasBuiltSomething
+    : nextStep
       ? [
-          { label: "Ajouter un premier mur dans l'Atelier", href: moduleLink("atelier") },
-          { label: "Explorer les étapes du Parcours", href: moduleLink("parcours") },
+          { label: `Poursuivre l'étape ${pad2(nextStep.number)} · ${nextStep.title}`, href: stepLink(nextStep.number) },
+          { label: "Ouvrir l'Atelier architectural", href: moduleLink("atelier") },
         ]
       : [
-          { label: "Poursuivre la conception dans l'Atelier", href: moduleLink("atelier") },
-          { label: "Revoir les étapes du Parcours", href: moduleLink("parcours") },
+          { label: "Les 21 étapes sont terminées — revoir le bilan (étape 18)", href: stepLink(18) },
+          { label: "Ouvrir l'Atelier architectural", href: moduleLink("atelier") },
         ];
 
   return (
@@ -114,12 +124,20 @@ export function AccueilPage() {
                 <h2>
                   {mostRecent.code} — {mostRecent.name}
                 </h2>
-                <span className="badge">{hasBuiltSomething ? "Étude en cours" : "Nouveau"}</span>
+                <span className="badge">{doneCount === 21 ? "Parcours terminé" : startedCount > 0 ? "Étude en cours" : "Nouveau"}</span>
               </div>
 
               <MassingIllustration />
 
-              <p className="resume-card-meta">Dernière modification {relativeDate(mostRecent.updatedAt)}</p>
+              <p className="resume-card-meta">
+                Dernière modification {relativeDate(mostRecent.updatedAt)}
+                {steps.length ? ` · ${doneCount} / ${steps.length} étapes terminées` : ""}
+              </p>
+              {steps.length > 0 && (
+                <div className="progress" aria-label={`${doneCount} étapes terminées sur ${steps.length}`}>
+                  <i style={{ width: `${(doneCount / steps.length) * 100}%` }} />
+                </div>
+              )}
 
               <div className="resume-card-actions">
                 <Link to={`/projets/${mostRecent.id}`} className="button-primary">
@@ -154,13 +172,18 @@ export function AccueilPage() {
         <aside className="home-side-column">
           <section className="panel" aria-labelledby="parcours-heading">
             <h2 id="parcours-heading">Mon parcours</h2>
-            <p className="panel-sub">5 grandes étapes du projet actif</p>
+            <p className="panel-sub">{mostRecent ? `Les 6 phases du projet actif · ${doneCount} / ${steps.length || 21} étapes terminées` : "Les 6 phases, de la parcelle à l'engagement"}</p>
+            {stepsQuery.isLoading && <p role="status">Chargement…</p>}
             <ul className="parcours-progress">
-              {parcoursSteps.map((step) => (
-                <li key={step.label}>
-                  <Link to={step.href}>
-                    <StatusDot status={step.status} />
-                    {step.label}
+              {(phases.length
+                ? phases
+                : ["Comprendre le site", "Programmer", "Concevoir / Tester", "Prouver la faisabilité", "Arbitrer", "Engager"].map((label) => ({ label, status: "a-faire" as StepStatus, href: "/projets", done: 0, total: 0 }))
+              ).map((phase) => (
+                <li key={phase.label}>
+                  <Link to={phase.href}>
+                    <StatusDot status={phase.status} />
+                    {phase.label}
+                    {phase.total ? <small> {phase.done}/{phase.total}</small> : null}
                   </Link>
                 </li>
               ))}

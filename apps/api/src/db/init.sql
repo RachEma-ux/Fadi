@@ -50,6 +50,18 @@ CREATE TABLE IF NOT EXISTS project_steps (
 );
 CREATE INDEX IF NOT EXISTS project_steps_project_id_idx ON project_steps (project_id);
 
+-- Répartition programmatique (module Programmation), une ligne par projet,
+-- créée à la première modification ; voir schema.ts.
+CREATE TABLE IF NOT EXISTS programme_repartitions (
+  project_id text PRIMARY KEY REFERENCES projects (id) ON DELETE CASCADE,
+  type text NOT NULL,
+  base_area double precision NOT NULL,
+  mode text NOT NULL,
+  custom jsonb NOT NULL DEFAULT '{}'::jsonb,
+  components jsonb NOT NULL DEFAULT '[]'::jsonb,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS levels (
   id text PRIMARY KEY,
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,

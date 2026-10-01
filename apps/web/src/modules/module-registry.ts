@@ -23,13 +23,13 @@ export const MODULES: ModuleDescriptor[] = [
     id: "parcours",
     label: "Parcours",
     implemented: true,
-    status: "Les 21 étapes sont listées comme emplacements ; leur contenu métier réel reste à migrer (Lot 3).",
+    status: "Les 21 étapes avec leur formulaire métier, leurs propositions Harmonie arbitrables, leurs indicateurs et leur transmission ; les outils Parcelle (01) et Atelier (10, 11) restent à porter.",
   },
   {
     id: "programmation",
     label: "Programmation",
-    implemented: false,
-    status: "Pas encore implémenté : exigences, hypothèses et recommandations de programme.",
+    implemented: true,
+    status: "Répartition programmatique par type de bâtiment (fourchettes, ratios, adjacences) et cas de programme importé ; bibliothèque des bâtiments à porter.",
   },
   {
     id: "atelier",

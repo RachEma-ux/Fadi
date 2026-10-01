@@ -20,7 +20,14 @@
       "deliverable": "Schéma d’organisation du site et variante argumentée.",
       "method": "Formes extérieures · Luan Tou ; ouverture, appuis, transitions et mouvements. Aucune carte natale du bâtiment à ce stade.",
       "topic": "Organisation du site",
-      "harmonieOptions": []
+      "harmonieOptions": [],
+      "transmitsTo": [
+        2,
+        4,
+        6,
+        9,
+        10
+      ]
     },
     {
       "number": 2,
@@ -55,6 +62,12 @@
           "tradeoff": "Peut remettre en cause le choix foncier.",
           "validation": "Confirmer l’incompatibilité auprès du concepteur et de l’autorité compétente."
         }
+      ],
+      "transmitsTo": [
+        6,
+        9,
+        10,
+        16
       ]
     },
     {
@@ -90,6 +103,12 @@
           "tradeoff": "Entretien et gestion d’usage à prévoir.",
           "validation": "Aucune hausse de valeur ou de demande n’est présumée."
         }
+      ],
+      "transmitsTo": [
+        4,
+        5,
+        6,
+        12
       ]
     },
     {
@@ -125,6 +144,13 @@
           "tradeoff": "Multiplie potentiellement les accès et supports.",
           "validation": "Tester besoins réels et coûts avant de figer les pôles."
         }
+      ],
+      "transmitsTo": [
+        5,
+        6,
+        7,
+        9,
+        10
       ]
     },
     {
@@ -160,6 +186,11 @@
           "tradeoff": "Peut augmenter la surface de supports.",
           "validation": "Documenter les incompatibilités plutôt que les présumer."
         }
+      ],
+      "transmitsTo": [
+        6,
+        7,
+        8
       ]
     },
     {
@@ -195,6 +226,12 @@
           "tradeoff": "Nécessite une réserve de conception.",
           "validation": "Ne pas transformer l’évolution souhaitée en surface autorisée."
         }
+      ],
+      "transmitsTo": [
+        7,
+        8,
+        9,
+        10
       ]
     },
     {
@@ -230,6 +267,13 @@
           "tradeoff": "Dépend des horaires et du fonctionnement.",
           "validation": "Conserver les circulations et supports indispensables ; vérifier les simultanéités."
         }
+      ],
+      "transmitsTo": [
+        8,
+        9,
+        10,
+        11,
+        12
       ]
     },
     {
@@ -265,6 +309,12 @@
           "tradeoff": "Coût et flexibilité à comparer.",
           "validation": "Vérifier réseaux, exploitation et contraintes de sécurité."
         }
+      ],
+      "transmitsTo": [
+        10,
+        11,
+        13,
+        16
       ]
     },
     {
@@ -300,6 +350,12 @@
           "tradeoff": "Peut modifier la stratégie d’exploitation.",
           "validation": "Le maître d’ouvrage doit accepter la capacité révisée."
         }
+      ],
+      "transmitsTo": [
+        10,
+        11,
+        12,
+        13
       ]
     },
     {
@@ -335,6 +391,13 @@
           "tradeoff": "Capacité ou exploitation à réarbitrer.",
           "validation": "La capacité nouvelle doit être inscrite au programme puis testée sur plan."
         }
+      ],
+      "transmitsTo": [
+        11,
+        12,
+        13,
+        16,
+        18
       ]
     },
     {
@@ -370,6 +433,12 @@
           "tradeoff": "Peut modifier l’expression architecturale.",
           "validation": "Vérifier apports, masques, entretien et performances par étude."
         }
+      ],
+      "transmitsTo": [
+        12,
+        13,
+        16,
+        18
       ]
     },
     {
@@ -405,6 +474,13 @@
           "tradeoff": "Certaines performances nécessitent des dispositifs complémentaires.",
           "validation": "Vérifier exploitation, rangement et réseaux."
         }
+      ],
+      "transmitsTo": [
+        13,
+        14,
+        15,
+        17,
+        19
       ]
     },
     {
@@ -440,6 +516,12 @@
           "tradeoff": "Une décision demeure ouverte.",
           "validation": "Identifier les études et la condition de levée de réserve."
         }
+      ],
+      "transmitsTo": [
+        14,
+        15,
+        16,
+        19
       ]
     },
     {
@@ -475,6 +557,11 @@
           "tradeoff": "Travaux ultérieurs et perturbations à prévoir.",
           "validation": "Aucun besoin obligatoire ne peut être reporté comme décoration."
         }
+      ],
+      "transmitsTo": [
+        15,
+        17,
+        19
       ]
     },
     {
@@ -510,6 +597,12 @@
           "tradeoff": "Dépend de l’équipe d’exploitation.",
           "validation": "Désigner les responsables et éviter les promesses non testées."
         }
+      ],
+      "transmitsTo": [
+        17,
+        19,
+        20,
+        21
       ]
     },
     {
@@ -545,6 +638,11 @@
           "tradeoff": "Ne clôt pas la réserve.",
           "validation": "Ne pas masquer un blocage de sécurité ou d’autorisation."
         }
+      ],
+      "transmitsTo": [
+        17,
+        18,
+        19
       ]
     },
     {
@@ -580,6 +678,10 @@
           "tradeoff": "Retarde la clôture de l’arbitrage.",
           "validation": "Définir résultat attendu et responsable."
         }
+      ],
+      "transmitsTo": [
+        18,
+        19
       ]
     },
     {
@@ -615,6 +717,11 @@
           "tradeoff": "Rapport plus long.",
           "validation": "Ne pas mélanger les données de variantes distinctes."
         }
+      ],
+      "transmitsTo": [
+        19,
+        20,
+        21
       ]
     },
     {
@@ -650,6 +757,10 @@
           "tradeoff": "Ne lance pas les études suivantes.",
           "validation": "Aucune action Harmonie ne doit forcer le GO."
         }
+      ],
+      "transmitsTo": [
+        20,
+        21
       ]
     },
     {
@@ -685,6 +796,9 @@
           "tradeoff": "Coût et représentativité des essais.",
           "validation": "Ne pas présenter un essai comme certification générale."
         }
+      ],
+      "transmitsTo": [
+        21
       ]
     },
     {
@@ -720,7 +834,8 @@
           "tradeoff": "Ne peut être réalisée avant occupation.",
           "validation": "Les observations futures restent non renseignées."
         }
-      ]
+      ],
+      "transmitsTo": []
     }
   ]
 }

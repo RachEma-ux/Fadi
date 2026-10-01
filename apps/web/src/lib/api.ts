@@ -8,8 +8,10 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     public readonly code: string,
+    /** Message lisible renvoyé par le serveur (règles Harmonie, validation), s'il existe. */
+    public readonly serverMessage: string | null = null,
   ) {
-    super(code);
+    super(serverMessage ?? code);
   }
 }
 
@@ -25,7 +27,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const body: unknown = await res.json().catch(() => null);
   if (!res.ok) {
     const code = (body && typeof body === "object" && "error" in body ? String((body as { error: unknown }).error) : null) ?? `http_${res.status}`;
-    throw new ApiError(res.status, code);
+    const message = body && typeof body === "object" && "message" in body ? String((body as { message: unknown }).message) : null;
+    throw new ApiError(res.status, code, message);
   }
   return body as T;
 }
@@ -80,6 +83,39 @@ export interface ParcoursStepResult {
   raw: string | null;
 }
 
+export type ParcoursFieldType = "text" | "textarea" | "number" | "date";
+export interface ParcoursFormField {
+  key: string;
+  label: string;
+  type: ParcoursFieldType;
+}
+export interface ParcoursStepForm {
+  intro: string | null;
+  fields: ParcoursFormField[];
+}
+
+export type ParcoursFieldValue = string | number | null;
+
+export type HarmonieProposalStatus = "proposed" | "retained" | "adapted" | "translated" | "drawn" | "verified" | "dismissed";
+
+export interface HarmonieProposalDecision {
+  status: HarmonieProposalStatus;
+  notes: string;
+  owner: string;
+  proof: string;
+  link: string;
+  adaptedText: string | null;
+  decisionVersion: number;
+  updatedAt: string | null;
+  history: { at: string; status: HarmonieProposalStatus; text: string | null; proof: string | null; owner: string | null; reason: string | null }[];
+}
+
+export interface HarmonieStepState {
+  revision: number;
+  generatedAt: string | null;
+  proposals: Record<string, HarmonieProposalDecision>;
+}
+
 export interface ParcoursStepContent {
   status: ParcoursStepStatus;
   choice: string | null;
@@ -91,9 +127,54 @@ export interface ParcoursStepContent {
   proof: string | null;
   result: ParcoursStepResult | null;
   sourceStatus: string | null;
+  fields: Record<string, ParcoursFieldValue>;
+  harmonie: HarmonieStepState;
 }
 
-/** Une des 21 étapes du Parcours : définition générique + contenu propre au projet. */
+/** Une proposition Harmonie telle que le serveur la calcule pour ce projet (définition × profil × arbitrages). */
+export interface HarmonieProposal {
+  id: string;
+  ref: string;
+  key: string;
+  stage: number;
+  scope: string;
+  group: "parti";
+  title: string;
+  text: string;
+  originalText: string;
+  benefit: string;
+  tradeoff: string;
+  conditions: string;
+  why: string;
+  source: string;
+  targets: number[];
+  recommended: boolean;
+  decision: HarmonieProposalDecision;
+  retained: boolean;
+  stateLabel: string;
+}
+
+export interface IncomingIntention {
+  origin: number;
+  originLabel: string;
+  id: string;
+  ref: string;
+  title: string;
+  text: string;
+  status: HarmonieProposalStatus;
+  stateLabel: string;
+}
+
+export interface HarmonieProfile {
+  key: string;
+  sourceType: string;
+  label: string;
+  site: string;
+  usage: string;
+  decor: string;
+}
+
+/** Une des 21 étapes du Parcours : définition générique + contenu propre au projet + vue Harmonie calculée par le serveur. */
 export interface ParcoursStep {
   number: number;
   title: string;
@@ -106,8 +187,56 @@ export interface ParcoursStep {
   method: string | null;
   topic: string | null;
   harmonieOptions: HarmonieOption[];
+  transmitsTo: number[];
+  form: ParcoursStepForm | null;
   status: ParcoursStepStatus;
   content: ParcoursStepContent;
+  proposals: HarmonieProposal[];
+  incoming: IncomingIntention[];
+  retainedCount: number;
+  profile: HarmonieProfile;
+}
+
+export interface HarmonieDecisionInput {
+  status: HarmonieProposalStatus;
+  notes?: string;
+  owner?: string;
+  proof?: string;
+  link?: string;
+}
+
+export type ProgrammeMode = "min" | "cible" | "max";
+
+export interface ProgrammeRepartition {
+  type: string;
+  baseArea: number;
+  mode: ProgrammeMode;
+  custom: Record<string, number>;
+  components: string[];
+  stored: boolean;
+}
+
+export interface ProgrammeView {
+  repartition: ProgrammeRepartition;
+  typeLabel: string;
+  rows: { key: string; label: string; range: [number, number]; ratio: number; area: number }[];
+  totals: { baseArea: number; supportPercent: number; supportArea: number; netPercent: number; netArea: number };
+  reference: {
+    subtitle: string;
+    modes: { key: ProgrammeMode; label: string }[];
+    types: { key: string; label: string }[];
+    adjacency: [string, string][];
+    statusNote: string;
+    transfer: { title: string; rules: string; control: string };
+  };
+  programmeCase: {
+    title: string | null;
+    scenarioLabel: string | null;
+    revision: number | null;
+    users: string | null;
+    spaceCount: number;
+    sums: Record<"principal" | "circulation" | "technique" | "sanitaires" | "convivialite" | "supportAutres" | "parois" | "support" | "programme" | "total", number>;
+  } | null;
 }
 
 export interface ParcoursExample {
@@ -141,6 +270,16 @@ export const api = {
     }),
 
   listSteps: (projectId: string) => request<ParcoursStep[]>(`/projects/${projectId}/steps`),
+  patchStep: (projectId: string, stepNumber: number, patch: { status?: ParcoursStepStatus; fields?: Record<string, ParcoursFieldValue> }) =>
+    request<ParcoursStep>(`/projects/${projectId}/steps/${stepNumber}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  decideHarmonie: (projectId: string, stepNumber: number, proposalId: string, input: HarmonieDecisionInput) =>
+    request<ParcoursStep>(`/projects/${projectId}/steps/${stepNumber}/harmonie/${encodeURIComponent(proposalId)}`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  getProgramme: (projectId: string) => request<ProgrammeView>(`/projects/${projectId}/programme`),
+  putProgramme: (projectId: string, rep: { type: string; baseArea: number; mode: ProgrammeMode; custom: Record<string, number> }) =>
+    request<ProgrammeView>(`/projects/${projectId}/programme`, { method: "PUT", body: JSON.stringify(rep) }),
 
   listExamples: () => request<ParcoursExample[]>("/examples"),
   importExample: (exampleId: string) =>

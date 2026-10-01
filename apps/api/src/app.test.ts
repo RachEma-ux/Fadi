@@ -15,7 +15,7 @@ const app = createApp();
 async function resetDb() {
   // L'ordre respecte les clés étrangères (CASCADE serait aussi suffisant,
   // mais l'ordre explicite documente les dépendances).
-  await pool.query("TRUNCATE architectural_objects, levels, project_steps, projects, sessions, users CASCADE");
+  await pool.query("TRUNCATE architectural_objects, levels, programme_repartitions, project_steps, projects, sessions, users CASCADE");
 }
 
 beforeAll(async () => {
@@ -200,6 +200,137 @@ describe("Parcours steps", () => {
 
     const res = await intruder.get(`/projects/${project.body.id}/steps`);
     expect(res.status).toBe(404);
+    const patch = await intruder.patch(`/projects/${project.body.id}/steps/2`).send({ fields: { f1: "x" } });
+    expect(patch.status).toBe(404);
+    const decide = await intruder.post(`/projects/${project.body.id}/steps/2/harmonie/H01-A`).send({ status: "retained" });
+    expect(decide.status).toBe(404);
+    const programme = await intruder.put(`/projects/${project.body.id}/programme`).send({ type: "tertiaire", baseArea: 1, mode: "cible", custom: {} });
+    expect(programme.status).toBe(404);
+  });
+
+  it("serves each step with the prototype's real form, transmission targets and three Harmonie proposals", async () => {
+    const client = await registerAndLogin("forms@example.com");
+    const project = await client.post("/projects").send({ code: "P.902", name: "Formulaires" });
+    const steps = (await client.get(`/projects/${project.body.id}/steps`)).body as Array<Record<string, any>>;
+    const byNumber = (n: number) => steps.find((s) => s.number === n)!;
+
+    // 17 étapes à formulaire métier, 1 synthèse (21), 3 étapes outillées sans formulaire (01, 10, 11).
+    expect(byNumber(2).form.fields.map((f: { key: string }) => f.key)).toEqual(["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12"]);
+    expect(byNumber(2).form.fields[0]).toEqual({ key: "f1", label: "Zonage / règlement applicable", type: "text" });
+    expect(byNumber(2).form.intro).toBe("Appliquer les règles à la parcelle réelle et produire une enveloppe constructible traçable.");
+    expect(byNumber(14).form.fields.filter((f: { type: string }) => f.type === "number")).toHaveLength(10);
+    expect(byNumber(19).form.fields.find((f: { key: string }) => f.key === "f8")).toEqual({ key: "f8", label: "Date de décision", type: "date" });
+    expect(byNumber(21).form.fields).toEqual([{ key: "summary", label: "Synthèse / livrable", type: "textarea" }]);
+    expect(byNumber(1).form).toBeNull();
+    expect(byNumber(10).form).toBeNull();
+    expect(byNumber(11).form).toBeNull();
+
+    expect(byNumber(2).transmitsTo).toEqual([6, 9, 10, 16]);
+    expect(byNumber(2).proposals.map((q: { id: string; ref: string }) => [q.id, q.ref])).toEqual([["H01-A", "H02-A"], ["H01-B", "H02-B"], ["H01-C", "H02-C"]]);
+    expect(byNumber(2).proposals[0].title).toBe("Préserver l’intention, déplacer le dispositif");
+    expect(byNumber(2).proposals[0].stateLabel).toBe("Proposée");
+    expect(byNumber(2).retainedCount).toBe(0);
+    // Sans type de bâtiment déclaré, le profil est « Type à préciser », comme dans le prototype.
+    expect(byNumber(2).profile.label).toBe("Type à préciser");
+    expect(byNumber(2).proposals[0].why).toBe("Comparer accueil extérieur, espace ouvert et desserte sans supposer un usage intérieur.");
+  });
+
+  it("stores form answers with the field's type, rejects unknown keys and bad numbers, and only marks 'termine' on request", async () => {
+    const client = await registerAndLogin("answers@example.com");
+    const project = await client.post("/projects").send({ code: "P.903", name: "Réponses" });
+    const url = `/projects/${project.body.id}/steps/14`;
+
+    const unknown = await client.patch(url).send({ fields: { zz: "x" } });
+    expect(unknown.status).toBe(400);
+    const notNumber = await client.patch(url).send({ fields: { f1: "mille" } });
+    expect(notNumber.status).toBe(400);
+
+    // Scénario rejoué du prototype : f1=1000, f9=400 saisis comme texte d'un <input type=number>.
+    const saved = await client.patch(url).send({ fields: { f1: "1000", f9: "400" } });
+    expect(saved.status).toBe(200);
+    expect(saved.body.content.fields).toEqual({ f1: 1000, f9: 400 });
+    // Une saisie fait passer l'étape « en cours », jamais « terminée » toute seule.
+    expect(saved.body.status).toBe("en-cours");
+
+    const reread = (await client.get(url)).body;
+    expect(reread.content.fields).toEqual({ f1: 1000, f9: 400 });
+
+    const cleared = await client.patch(url).send({ fields: { f9: null } });
+    expect(cleared.body.content.fields).toEqual({ f1: 1000 });
+
+    const done = await client.patch(url).send({ status: "termine" });
+    expect(done.body.status).toBe("termine");
+
+    // Étape 19 : seules les quatre issues du prototype sont acceptées.
+    const badDecision = await client.patch(`/projects/${project.body.id}/steps/19`).send({ fields: { decision: "Peut-être" } });
+    expect(badDecision.status).toBe(400);
+    const goodDecision = await client.patch(`/projects/${project.body.id}/steps/19`).send({ fields: { decision: "GO sous conditions", f8: "2026-10-01" } });
+    expect(goodDecision.body.content.fields).toEqual({ decision: "GO sous conditions", f8: "2026-10-01" });
+    const badDate = await client.patch(`/projects/${project.body.id}/steps/19`).send({ fields: { f8: "demain" } });
+    expect(badDate.status).toBe(400);
+  });
+
+  it("applies the Harmonie rules server-side: retain, replace the retained variant, refuse an unmotivated dismissal, reset downstream steps and a premature GO", async () => {
+    const client = await registerAndLogin("harmonie@example.com");
+    const project = await client.post("/projects").send({ code: "P.904", name: "Harmonie" });
+    const pid = project.body.id as string;
+
+    // Étape 6 (cible de l'étape 2) marquée terminée, et un GO déjà pris à l'étape 19.
+    await client.patch(`/projects/${pid}/steps/6`).send({ status: "termine" });
+    await client.patch(`/projects/${pid}/steps/19`).send({ fields: { decision: "GO" }, status: "termine" });
+
+    const retained = await client.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send({ status: "retained" });
+    expect(retained.status).toBe(200);
+    expect(retained.body.retainedCount).toBe(1);
+    expect(retained.body.proposals[0].stateLabel).toBe("Retenue");
+    expect(retained.body.status).toBe("en-cours");
+
+    const replaced = await client.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "retained" });
+    expect(replaced.body.retainedCount).toBe(1);
+    expect(replaced.body.proposals[0].decision.status).toBe("dismissed");
+    expect(replaced.body.proposals[0].decision.notes).toBe("Remplacée par H01-B");
+
+    const unmotivated = await client.post(`/projects/${pid}/steps/2/harmonie/H01-C`).send({ status: "dismissed", notes: "non" });
+    expect(unmotivated.status).toBe(422);
+    expect(unmotivated.body.message).toBe("Décrivez votre adaptation ou votre motif (8 caractères minimum).");
+
+    const drawnTooEarly = await client.post(`/projects/${pid}/steps/2/harmonie/H01-C`).send({ status: "drawn", owner: "X", proof: "plan de principe" });
+    expect(drawnTooEarly.status).toBe(422);
+
+    const steps = (await client.get(`/projects/${pid}/steps`)).body as Array<Record<string, any>>;
+    // L'étape 6 recevait l'intention : elle n'est plus « terminée ».
+    expect(steps.find((s) => s.number === 6)!.status).toBe("en-cours");
+    expect(steps.find((s) => s.number === 6)!.incoming.map((q: { ref: string }) => q.ref)).toEqual(["H02-B"]);
+    // Le GO pris avant une intention modifiée en amont est rétrogradé.
+    expect(steps.find((s) => s.number === 19)!.content.fields.decision).toBe("À reprendre");
+    expect(steps.find((s) => s.number === 19)!.status).toBe("en-cours");
+    // Une étape qui n'était pas ciblée reste intacte.
+    expect(steps.find((s) => s.number === 3)!.status).toBe("a-faire");
+  });
+
+  it("exposes the programme repartition with the prototype's defaults, recomputes on update and validates the type", async () => {
+    const client = await registerAndLogin("programme@example.com");
+    const project = await client.post("/projects").send({ code: "P.905", name: "Programme" });
+    const url = `/projects/${project.body.id}/programme`;
+
+    const defaults = (await client.get(url)).body;
+    expect(defaults.repartition).toMatchObject({ type: "tertiaire", baseArea: 673, mode: "cible", custom: {}, stored: false });
+    expect(defaults.totals.supportPercent).toBe(28);
+    expect(defaults.totals.supportArea).toBeCloseTo(188.44, 2);
+    expect(defaults.rows.map((r: { key: string; ratio: number }) => [r.key, r.ratio])).toEqual([["circulation", 15], ["technique", 6], ["sanitaires", 2], ["convivialite", 5]]);
+    expect(defaults.programmeCase).toBeNull();
+
+    const bad = await client.put(url).send({ type: "chalet", baseArea: 500, mode: "cible", custom: {} });
+    expect(bad.status).toBe(400);
+
+    const updated = await client.put(url).send({ type: "residentiel", baseArea: 500, mode: "max", custom: { circulation: 20 } });
+    expect(updated.status).toBe(200);
+    expect(updated.body.repartition.stored).toBe(true);
+    expect(updated.body.rows.find((r: { key: string }) => r.key === "circulation").ratio).toBe(20);
+    expect(updated.body.rows.find((r: { key: string }) => r.key === "sanitaires").ratio).toBe(0);
+    // Le type choisi ici pilote le profil Harmonie des étapes.
+    const step4 = (await client.get(`/projects/${project.body.id}/steps/4`)).body;
+    expect(step4.profile.label).toBe("Habitation");
   });
 });
 
@@ -227,6 +358,28 @@ describe("examples", () => {
     expect(steps.body).toHaveLength(21);
     expect(steps.body.every((s: { status: string }) => s.status === "termine")).toBe(true);
     expect(steps.body[0].content.decision).toContain("B.265");
+
+    // « Réponses renseignées » : les 12 rubriques de l'étape 02, chaque valeur nommant sa nature.
+    const step2 = steps.body.find((s: { number: number }) => s.number === 2);
+    expect(Object.keys(step2.content.fields)).toHaveLength(12);
+    expect(step2.content.fields.f1).toMatch(/^\[DONNÉE \/ CALCUL DU FICHIER SOURCE\]/);
+    expect(step2.content.fields.f2).toMatch(/^\[HYPOTHÈSE RETENUE POUR L’EXEMPLE\]/);
+    // Le choix Harmonie illustré (A) est retenu, avec le responsable déclaré par l'exemple.
+    expect(step2.retainedCount).toBe(1);
+    expect(step2.proposals[0].decision).toMatchObject({ status: "retained", owner: "Maître d’ouvrage / programmiste — rôles de démonstration" });
+    expect(step2.profile.label).toBe("Formation & bureaux");
+    // Étape 14 : les montants sont des nombres, le KPI finance est donc calculable (24 M = 24 M, solde 0).
+    const step14 = steps.body.find((s: { number: number }) => s.number === 14);
+    expect(step14.content.fields.f1).toBe(3200000);
+    expect(step14.content.fields.f10).toBe(14000000);
+
+    // Répartition liée au modèle : sommes calculées depuis les 74 fiches d'espaces, pas recopiées.
+    const programme = (await client.get(`/projects/${imported.body.id}/programme`)).body;
+    expect(programme.repartition.type).toBe("mixte");
+    expect(programme.programmeCase.spaceCount).toBe(74);
+    expect(programme.programmeCase.sums.principal).toBeCloseTo(1366.02, 1);
+    expect(programme.programmeCase.sums.circulation).toBeCloseTo(567.49, 1);
+    expect(programme.programmeCase.sums.programme).toBeCloseTo(2932.26, 1);
   });
 
   it("404s on an unknown example id instead of silently creating an empty project", async () => {

@@ -489,6 +489,13 @@ h3 {
 .next-actions a:hover {
   background: var(--cream);
 }
+.parcours-progress a small {
+  margin-left: auto;
+  font-size: 12px;
+}
+.resume-card .progress {
+  margin: 6px 0 10px;
+}
 .step-dot {
   width: 10px;
   height: 10px;
@@ -744,8 +751,44 @@ h3 {
   margin: 24px 0;
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  max-width: 1100px;
+}
+.step-detail-title {
+  margin: 4px 0 0;
+  font-size: 24px;
+  line-height: 1.25;
+}
+.step-detail-nav-right {
+  display: flex;
   gap: 10px;
-  max-width: 720px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.step-done {
+  border-color: var(--done);
+  color: var(--done);
+}
+.overview-progress {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 8px 0 0;
+}
+.overview-progress .parcours-steps-summary {
+  margin: 0;
+  white-space: nowrap;
+}
+.overview-phases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 14px 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
 }
 .step-detail-top {
   display: flex;
@@ -904,6 +947,454 @@ h3 {
 }
 
 /* ---------------------------------------------------------------------- */
+/* Étape : formulaire métier, indicateurs, décision (prototype : biz-*)    */
+/* ---------------------------------------------------------------------- */
+.biz-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.biz-card h2 {
+  margin: 0;
+  font-size: 19px;
+}
+.biz-sub {
+  margin: -6px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.biz-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+.biz-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.biz-field.wide {
+  grid-column: 1 / -1;
+}
+.biz-field label {
+  font-size: 13px;
+  font-weight: 700;
+}
+.biz-field input,
+.biz-field textarea,
+.programme-controls input,
+.programme-controls select,
+.h7-form input,
+.h7-form textarea,
+.programme-table input {
+  font: inherit;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #b7c9c0;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  width: 100%;
+}
+.biz-field textarea,
+.h7-form textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+.biz-field textarea::placeholder,
+.biz-field input::placeholder {
+  color: #93a59c;
+}
+.biz-kpis,
+.programme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.biz-kpi,
+.programme-kpi {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.biz-kpi span,
+.programme-kpi span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.biz-kpi b,
+.programme-kpi b {
+  font-size: 20px;
+  font-weight: 700;
+}
+.biz-kpi small {
+  font-size: 12px;
+}
+.status-ok {
+  color: var(--done);
+}
+.status-no {
+  color: #a0351f;
+}
+.v62-alert {
+  background: #fbf4e6;
+  border: 1px solid #e8d7ad;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+}
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+.decision-grid button,
+.h7-tabs button {
+  padding: 0.55rem 0.8rem;
+  font-weight: 600;
+}
+.decision-grid button.sel,
+.h7-tabs button.sel {
+  background: var(--forest-900);
+  color: white;
+  border-color: var(--forest-900);
+}
+.tool-pending {
+  border-style: dashed;
+}
+.table-scroll {
+  overflow: auto;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Harmonie par étape (prototype : h7-*)                                    */
+/* ---------------------------------------------------------------------- */
+.h7-panel {
+  background: #eef3ef;
+  border: 1px solid #cfdfd3;
+  border-radius: 10px;
+}
+.h7-panel > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 18px;
+  font-weight: 700;
+  font-size: 14.5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.h7-panel > summary::-webkit-details-marker {
+  display: none;
+}
+.h7-panel > summary::after {
+  content: "+";
+  font-size: 20px;
+  line-height: 1;
+  color: var(--forest-900);
+}
+.h7-panel[open] > summary::after {
+  content: "−";
+}
+.h7-content {
+  padding: 0 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.h7-content h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.h7-fold {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.h7-fold > summary {
+  cursor: pointer;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.h7-fold-body {
+  padding: 0 14px 12px;
+  font-size: 13.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.h7-fold-body p {
+  margin: 0;
+}
+.h7-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.h7-tabs button {
+  border-radius: 999px;
+}
+.h7-group {
+  margin: 0;
+  background: #e4ecd9;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+}
+.h7-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+.h7-proposal {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13.5px;
+}
+.h7-proposal.recommended {
+  border-color: var(--forest-900);
+  box-shadow: 0 0 0 1px var(--forest-900) inset;
+}
+.h7-proposal.retained {
+  background: #f3f8f4;
+}
+.h7-proposal h3 {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.3;
+}
+.h7-proposal p {
+  margin: 0;
+}
+.h7-proposal dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+}
+.h7-proposal dt {
+  font-weight: 700;
+  font-size: 12.5px;
+  margin-top: 6px;
+}
+.h7-proposal dd {
+  margin: 0;
+  color: var(--muted);
+}
+.h7-proposal-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.h7-kicker {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.h7-chip {
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 9px;
+  background: #e9eeea;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.h7-chip.ok {
+  background: #dcefe2;
+  color: var(--done);
+}
+.h7-chip.off {
+  background: #f1e3df;
+  color: #a0351f;
+}
+.h7-reco {
+  color: var(--forest-900);
+  font-weight: 600;
+  font-size: 12.5px;
+}
+.h7-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.h7-actions button {
+  padding: 0.45rem 0.7rem;
+  font-size: 13px;
+}
+.h7-editor {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.h7-editor > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+.h7-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+  margin-top: 8px;
+}
+.h7-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.h7-form label.wide,
+.h7-form .h7-actions,
+.h7-form .h7-muted {
+  grid-column: 1 / -1;
+}
+.h7-form label input,
+.h7-form label textarea {
+  font-weight: 400;
+}
+.h7-muted {
+  color: var(--muted);
+  font-size: 12.5px;
+  margin: 0;
+}
+.h7-error {
+  color: #a0351f;
+  background: #fbeeea;
+  border: 1px solid #ecc9c0;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  margin: 0;
+}
+.h7-table,
+.programme-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.h7-table th,
+.h7-table td,
+.programme-table th,
+.programme-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.h7-table th,
+.programme-table th {
+  background: var(--cream);
+  font-size: 12.5px;
+}
+.h7-footer {
+  color: var(--muted);
+  font-size: 12px;
+}
+.ex81-story h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+.ex81-story h3 {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+.ex81-story {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--forest-900);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Répartition programmatique (prototype : programme-*)                    */
+/* ---------------------------------------------------------------------- */
+.programme-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 14px;
+}
+.programme-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.programme-table input {
+  width: 80px;
+  padding: 0.35rem 0.5rem;
+}
+.programme-total td {
+  font-weight: 700;
+}
+.programme-panel {
+  background: var(--cream);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+}
+.programme-adj {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.programme-adj > div {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.programme-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  border-left: 3px solid var(--line);
+  padding-left: 10px;
+}
+.programme-transfer {
+  background: #eef3ef;
+  border: 1px solid #cfdfd3;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13.5px;
+}
+.programme-transfer h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+.programme-transfer p {
+  margin: 4px 0;
+}
+.programme-badge {
+  display: inline-block;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin: 0 6px 4px 0;
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+/* ---------------------------------------------------------------------- */
 /* Responsive                                                              */
 /* ---------------------------------------------------------------------- */
 @media (max-width: 860px) {
@@ -912,6 +1403,21 @@ h3 {
   }
 }
 @media (max-width: 700px) {
+  .biz-grid,
+  .h7-form {
+    grid-template-columns: 1fr;
+  }
+  .step-detail {
+    padding: 16px;
+  }
+  .step-detail-top {
+    flex-wrap: wrap;
+  }
+  .step-detail-nav,
+  .step-detail-nav-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
   .app-shell {
     grid-template-columns: 1fr;
   }
