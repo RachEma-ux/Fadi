@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "@parcours/core-geometry": "0.1.0",
+    "@parcours/domain-model": "0.1.0",
+    "@tanstack/react-query": "~5.104.0",
     "react": "~19.1.1",
-    "react-dom": "~19.1.1"
+    "react-dom": "~19.1.1",
+    "react-router-dom": "~7.18.4"
   },
   "devDependencies": {
     "@types/react": "~19.1.16",

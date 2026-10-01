@@ -170,10 +170,24 @@ front.
 ### Where this repository stands
 
 Lot 1 is in progress: `packages/core-geometry` is the active-code inventory for the Atelier's rendering
-engine, with reproducible tests as its "cas de test reproductibles". The module boundaries above exist as
-scaffolding (`apps/web/src/modules/*/README.md`); their content is still the Lot 3 pilot's job. `packages/
-domain-model` starts Lot 2 (versioned schema skeleton + a generic reversible-command mechanism) without yet
-wiring real backend persistence, which needs the server from Lot 2/3.
+engine, with reproducible tests as its "cas de test reproductibles".
+
+Lot 2 has a working slice, not just a skeleton: `apps/api` is a real Express + PostgreSQL/PostGIS server with
+registration/login/sessions and project/level/architectural-object persistence, every route re-checking
+ownership server-side. `packages/domain-model`'s `CommandHistory` is no longer theoretical — the Atelier module
+(`apps/web/src/modules/atelier/AtelierPanel.tsx`) uses it for undo/redo over walls that are actually written to
+the database, with `projects.model_revision` advancing atomically with each change (the mechanism
+`CalculatedResult`/`ProducedDocument`'s `modelRevision` field assumes). `architectural_objects.properties` is
+where `ArchitecturalObject`-shaped data is stored today; the other six domain-model entities (SourceDatum,
+Requirement, Hypothesis, Recommendation, CalculatedResult, Decision, ProducedDocument, BusinessCheck) exist as
+types and runtime-checked coordinate frames, but have no tables or routes yet — they belong to modules not yet
+built (Projets et sources, Programmation, Analyses, Documents).
+
+Lot 3 (the pilot itself) has one working module out of seven: Atelier, with a single object kind (wall). The
+21-step Parcours grid is still placeholder cards — their business content (and the other five modules) is not
+migrated. Auth is real but single-tenant per project (one owner, no sharing yet) — multi-user access control,
+comments and the sync protocol are Lot 4. No regulatory/business-check engine, document generation, or data
+import exists — those are Lot 3's remaining modules plus Lot 4/5.
 
 ## Acceptance target: "Parcours App — Pilote P.118"
 

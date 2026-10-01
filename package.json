@@ -12,8 +12,10 @@
   },
   "scripts": {
     "dev": "npm run dev --workspace=@fadi/web",
-    "build": "npm run build --workspace=@fadi/web",
+    "dev:api": "npm run dev --workspace=@fadi/api",
+    "build": "npm run build --workspace=@fadi/web --workspace=@fadi/api",
+    "db:migrate": "npm run db:migrate --workspace=@fadi/api",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model"
+    "test": "npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@fadi/api"
   }
 }

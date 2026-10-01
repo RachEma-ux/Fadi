@@ -10,6 +10,7 @@ d'une étape à la suivante avec provenance).
 
 ## Statut
 
-La grille des 21 étapes existe aujourd'hui comme un placeholder générique dans `apps/web/src/main.tsx` (cartes
-numérotées 01–21, sans contenu). Migrer leurs intitulés, phases et contenu réels depuis l'application de
-référence vers ce module est un travail du Lot 3, pas commencé — voir `docs/architecture.md`, « Delivery lots ».
+La grille des 21 étapes existe aujourd'hui comme un placeholder générique dans `apps/web/src/routes/ProjectShell.tsx`
+(cartes numérotées 01–21, sans contenu), affichée dans l'onglet « Parcours » d'un projet réel (créé, authentifié,
+persisté). Migrer leurs intitulés, phases et contenu réels depuis l'application de référence vers ce module est
+un travail du Lot 3, pas commencé — voir `docs/architecture.md`, « Delivery lots ».

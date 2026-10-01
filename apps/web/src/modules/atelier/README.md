@@ -13,6 +13,13 @@ fonction de géométrie localement.
 
 ## Statut
 
-Le fichier `apps/web/src/main.tsx` contient aujourd'hui une démonstration minimale (`wallPolygon` sur un mur de
-4 m, épaisseur ajustable) — un câblage de preuve, pas une vue de l'Atelier. La porter ici, avec les vraies
-vues et commandes métier réversibles (`packages/domain-model`), est un travail du Lot 3.
+`AtelierPanel.tsx` est fonctionnel pour un seul type d'objet (mur) : création, liste, suppression, persistées
+via l'API (`apps/api`) dans `architectural_objects`, avec `projects.model_revision` qui avance atomiquement à
+chaque commande — et annulation/rétablissement via `CommandHistory` (`packages/domain-model`). C'est une
+tranche verticale réelle, pas une démonstration : les données survivent à un rechargement de page.
+
+Ce qui manque encore pour que ce soit l'Atelier décrit ci-dessus : les autres types d'objets (porte, fenêtre,
+colonne, escalier), les vues plan/coupe/volume/éclaté (une seule vue en plan existe), la sélection et l'édition
+d'un objet existant (seule la suppression est possible, pas le déplacement), et les commandes métier réelles
+(aujourd'hui, `CommandHistory` ne connaît que « ajouter/supprimer un mur », pas une opération de domaine comme
+« déplacer un escalier »). Tout cela reste un travail du Lot 3.
