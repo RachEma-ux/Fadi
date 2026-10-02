@@ -209,10 +209,13 @@ the role on each request (404 without access, 403 with the reason otherwise) —
 be refused (read-only forms, Atelier in read-only mode, "Projets partagés avec vous"). Members work on the same
 project: every read-modify-write transaction first locks the project row (`FOR UPDATE`), so simultaneous
 writes are serialised instead of overwriting each other, then the per-field / per-version checks (409) apply.
-Still open: assisted conflict resolution, an optional "single active editor" lock (today concurrent editors are
-arbitrated by versions, never locked out), invitation notifications. Lot 5 items still open are listed under
-« Limites restantes » in the matrix (regulatory checks, MapTiler / altimetry, lazy loading of the Atelier
-engine, e2e in CI, deployment hardening).
+Conflicts are resolved explicitly: every 409 keeps what was attempted next to the server's state (field values,
+decision and version, model backup key) and offers to keep the server's version or to re-apply one's own on the
+current state — never an automatic merge. The service-worker cache is versioned per build and purged on
+activation, and the Playwright scenario runs in CI. Still open: an optional "single active editor" lock (today
+concurrent editors are arbitrated by versions, never locked out), ownership transfer, invitation notifications.
+Lot 5 items still open are listed under « Limites restantes » in the matrix (regulatory checks, MapTiler /
+altimetry, lazy loading of the Atelier engine, deployment hardening).
 
 ## Acceptance target: "Parcours App — Pilote P.118"
 

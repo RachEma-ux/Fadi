@@ -39,3 +39,62 @@ jobs:
       - run: npm run db:migrate
       - run: npm test
       - run: npm run build
+
+  # Scénario Playwright de bout en bout (apps/web/e2e/parcours-scenario.mjs) :
+  # le parcours complet sur P.118 — import, 21 étapes, Atelier, parcelle,
+  # Harmonie, bibliothèque, liaisons, documents, collaboration, hors-ligne,
+  # partage — contre l'API construite et le build servi par `vite preview`.
+  # Les captures (docs/migration/captures/webapp/) sont publiées en artefact.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: fadi
+          POSTGRES_PASSWORD: fadi_ci_password
+          POSTGRES_DB: fadi_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_e2e
+      WEB_ORIGIN: http://localhost:4173
+      PORT: "3001"
+      AUTH_RATE_LIMIT: "500"
+      API_RATE_LIMIT: "5000"
+      BASE_URL: http://localhost:4173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run db:migrate
+      - run: npm run build
+      - name: Démarrer l'API et le build servi
+        run: |
+          nohup node apps/api/dist/server.js > api.log 2>&1 &
+          nohup npm run preview --workspace=@fadi/web -- --port 4173 > web.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3001/health > /dev/null && curl -sf http://localhost:4173/ > /dev/null; then echo "prêts"; break; fi
+            sleep 1
+          done
+          curl -sf http://localhost:3001/health && curl -sf -o /dev/null http://localhost:4173/
+      - name: Scénario Playwright
+        run: node apps/web/e2e/parcours-scenario.mjs
+      - name: Journaux des serveurs
+        if: failure()
+        run: tail -n 100 api.log web.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: captures-webapp
+          path: docs/migration/captures/webapp/
+          retention-days: 14

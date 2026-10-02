@@ -39,6 +39,15 @@ export interface SyncState {
   message: string | null;
 }
 
+/** Un conflit du modèle en attente de décision : la version du serveur a repris la clé, la vôtre est conservée sous `backupKey`. */
+export interface ModelConflict {
+  key: string;
+  backupKey: string;
+  at: string;
+  /** Révision du serveur qui a repris la main. */
+  serverRevision: number;
+}
+
 const isOffline = () => typeof navigator !== "undefined" && navigator.onLine === false;
 /** Une erreur réseau (fetch rejeté) ou une coupure déclarée : la file attend, rien n'est perdu. */
 const isNetworkFailure = (err: unknown) => isOffline() || (err instanceof TypeError && !(err instanceof ApiError));
@@ -98,11 +107,15 @@ class AtelierStorageAdapter implements Storage {
   private queued = Promise.resolve();
   /** Projet partagé en lecture : le moteur dessine en mémoire, rien n'est mis en file ni envoyé (le serveur refuserait, 403). */
   private readOnly = false;
+  /** Conflits du modèle en attente de décision (copie de secours conservée), par projet ouvert. */
+  private conflicts: ModelConflict[] = [];
+  private conflictListeners = new Set<(c: ModelConflict[]) => void>();
 
   async bind(projectId: string, store: AtelierStore, readOnly = false): Promise<void> {
     this.flushTimers();
     this.projectId = projectId;
     this.readOnly = readOnly;
+    this.setConflicts([]);
     // Le moteur écrit du JSON pour ses domaines mais une chaîne brute pour
     // `design.v13.activeProject` : on lui rend exactement ce qu'il a écrit.
     this.values = new Map(Object.entries(store.entries).map(([k, v]) => [k, typeof v === "string" ? v : JSON.stringify(v)]));
@@ -135,6 +148,37 @@ class AtelierStorageAdapter implements Storage {
 
   isReadOnly(): boolean {
     return this.readOnly;
+  }
+
+  /** Les conflits du modèle en attente ; `fn` est appelé tout de suite puis à chaque changement. */
+  subscribeConflicts(fn: (c: ModelConflict[]) => void): () => void {
+    this.conflictListeners.add(fn);
+    fn(this.conflicts);
+    return () => this.conflictListeners.delete(fn);
+  }
+
+  private setConflicts(next: ModelConflict[]) {
+    this.conflicts = next;
+    for (const fn of this.conflictListeners) fn(next);
+  }
+
+  /**
+   * Résolution d'un conflit du modèle : « serveur » garde la version du
+   * serveur et retire la copie de secours ; « mienne » réécrit votre version
+   * sur la clé (à partir de la révision courante du serveur, donc acceptée
+   * sauf nouvelle écriture entre-temps) puis retire la copie. Dans les deux
+   * cas rien n'est perdu sans décision explicite.
+   */
+  resolveConflict(backupKey: string, choice: "serveur" | "mienne"): void {
+    const conflict = this.conflicts.find((c) => c.backupKey === backupKey);
+    if (!conflict) return;
+    if (choice === "mienne") {
+      const mine = this.values.get(backupKey);
+      if (mine !== undefined) this.setItem(conflict.key, mine);
+    }
+    this.removeItem(backupKey);
+    this.setConflicts(this.conflicts.filter((c) => c.backupKey !== backupKey));
+    window.V14Bridge?.render?.();
   }
 
   subscribe(fn: (s: SyncState) => void): () => void {
@@ -240,7 +284,9 @@ class AtelierStorageAdapter implements Storage {
         // puis la valeur du serveur reprend la main dans le moteur.
         const body = err.body as { revision: number; value: unknown };
         const backupKey = `${key}.backup.conflit-${Date.now()}`;
-        if (raw !== undefined) {
+        // L'état d'affichage (`.ui` : vue, caméra, onglet) n'est pas un travail : la version du serveur suffit, sans copie ni conflit à départager.
+        const viewState = /\.ui$/.test(key);
+        if (raw !== undefined && !viewState) {
           try {
             const saved = await api.putAtelierStoreEntry(projectId, backupKey, parseStored(raw), null);
             this.values.set(backupKey, raw);
@@ -253,10 +299,16 @@ class AtelierStorageAdapter implements Storage {
         this.revisions.set(key, body.revision);
         this.pendingKeys.delete(key);
         await localStore.acknowledge(projectId, key);
+        if (viewState) {
+          this.setState({ status: this.pendingKeys.size ? "local" : "saved", pending: this.pendingKeys.size, message: null });
+          window.V14Bridge?.render?.();
+          return;
+        }
+        if (raw !== undefined) this.setConflicts([...this.conflicts, { key, backupKey, at: new Date().toISOString(), serverRevision: body.revision }]);
         this.setState({
           status: "conflict",
           pending: this.pendingKeys.size,
-          message: `Conflit sur « ${key.split(".").pop()} » : la version du serveur a été rechargée ; votre version est conservée sous « ${backupKey} ».`,
+          message: `Conflit sur « ${key.split(".").pop()} » : la version du serveur a été rechargée ; votre version est conservée sous « ${backupKey} » — à départager dans le bandeau des conflits.`,
         });
         window.V14Bridge?.render?.();
         return;

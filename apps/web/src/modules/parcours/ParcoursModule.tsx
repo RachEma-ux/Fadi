@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { useMutation, useMutationState, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type SiteObservationsInput } from "../../lib/api";
+import { ApiError, api, type ParcoursStep, type SiteObservationsInput } from "../../lib/api";
 import { MUTATION_KEYS, adoptStep, recordConflict, type DecideVars, type StepPatchVars } from "../../lib/mutations";
 import { AtelierHarmonyPage } from "../atelier/AtelierHarmonyPage";
 import { DesignReviewFold } from "../atelier/DesignReview";
@@ -153,7 +153,7 @@ function StepDetail({
     mutationKey: MUTATION_KEYS.stepPatch,
     mutationFn: (v: StepPatchVars) => api.patchStep(v.projectId, v.stepNumber, v.body),
     onSuccess: adopt,
-    onError: (err) => recordConflict(queryClient, projectId, err, `Étape ${pad2(step.number)} · saisie`, step.number),
+    onError: (err, v) => recordConflict(queryClient, projectId, err, `Étape ${pad2(step.number)} · saisie`, step.number, { attempted: v.body.fields ?? {} }),
   });
   const decide = useMutation({
     mutationKey: MUTATION_KEYS.decide,
@@ -166,8 +166,9 @@ function StepDetail({
       adopt(updated);
       setToast("Choix enregistré et transmis comme intention ; aucun objet dessiné modifié.");
     },
-    onError: (err, { proposalId }) => {
-      if (recordConflict(queryClient, projectId, err, `Étape ${pad2(step.number)} · arbitrage ${proposalId}`, step.number)) return;
+    onError: (err, { proposalId, input }) => {
+      const { expectedVersion, ...rest } = input;
+      if (recordConflict(queryClient, projectId, err, `Étape ${pad2(step.number)} · arbitrage ${proposalId}`, step.number, { decision: { proposalId, input: rest, expectedVersion: expectedVersion ?? null } })) return;
       const message = err instanceof ApiError && err.serverMessage ? err.serverMessage : "L’arbitrage n’a pas pu être enregistré.";
       setHarmonieErrors((e) => ({ ...e, [proposalId]: message }));
     },

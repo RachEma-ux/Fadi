@@ -7,7 +7,10 @@
  * la valeur qu'elle avait lue (`baseline`), un arbitrage la version qu'il
  * avait lue (`expectedVersion`) : le serveur refuse (409) ce qui écraserait
  * une écriture plus récente, et le refus est conservé dans
- * `["sync-conflicts", projectId]` pour être montré et examiné.
+ * `["sync-conflicts", projectId]` avec ce qui avait été tenté, pour être
+ * montré côte à côte avec l'état du serveur et résolu : garder le serveur,
+ * ou reprendre sa saisie / son arbitrage sur l'état courant (relu, jamais
+ * écrasé en silence).
  */
 import type { QueryClient } from "@tanstack/react-query";
 import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type ParcoursStepStatus, type ProjectComment } from "./api";
@@ -45,6 +48,12 @@ export interface SyncConflict {
   /** Valeurs courantes du serveur quand il les renvoie (saisies). */
   current: Record<string, ParcoursFieldValue> | null;
   stepNumber: number | null;
+  /** Ce qui avait été tenté : une saisie (champs) ou un arbitrage (proposition, entrée, version lue). */
+  kind: "saisie" | "arbitrage";
+  attempted: Record<string, ParcoursFieldValue> | null;
+  decision: { proposalId: string; input: HarmonieDecisionInput; expectedVersion: number | null } | null;
+  /** Version d'arbitrage courante du serveur (arbitrage refusé). */
+  currentVersion: number | null;
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -54,9 +63,16 @@ export function conflictsKey(projectId: string) {
 }
 
 /** Enregistre un refus 409 pour l'écran (jamais perdu en silence) ; les autres erreurs restent à la charge de l'appelant. */
-export function recordConflict(queryClient: QueryClient, projectId: string, err: unknown, where: string, stepNumber: number | null): boolean {
+export function recordConflict(
+  queryClient: QueryClient,
+  projectId: string,
+  err: unknown,
+  where: string,
+  stepNumber: number | null,
+  tried: { attempted?: Record<string, ParcoursFieldValue>; decision?: SyncConflict["decision"] } = {},
+): boolean {
   if (!(err instanceof ApiError) || err.status !== 409) return false;
-  const body = (err.body ?? {}) as { current?: Record<string, ParcoursFieldValue> };
+  const body = (err.body ?? {}) as { current?: Record<string, ParcoursFieldValue>; currentVersion?: number };
   const conflict: SyncConflict = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     at: new Date().toISOString(),
@@ -64,6 +80,10 @@ export function recordConflict(queryClient: QueryClient, projectId: string, err:
     message: err.serverMessage ?? "Conflit avec une écriture plus récente.",
     current: body.current ?? null,
     stepNumber,
+    kind: tried.decision ? "arbitrage" : "saisie",
+    attempted: tried.attempted ?? null,
+    decision: tried.decision ?? null,
+    currentVersion: typeof body.currentVersion === "number" ? body.currentVersion : null,
   };
   queryClient.setQueryData<SyncConflict[]>(conflictsKey(projectId), (prev) => [...(prev ?? []), conflict]);
   void queryClient.invalidateQueries({ queryKey: ["steps", projectId] });
@@ -85,14 +105,15 @@ export function registerMutationDefaults(queryClient: QueryClient) {
     mutationFn: (v: StepPatchVars) => api.patchStep(v.projectId, v.stepNumber, v.body),
     onSuccess: (updated: ParcoursStep, v: StepPatchVars) => adoptStep(queryClient, v.projectId, updated),
     onError: (err: unknown, v: StepPatchVars) => {
-      recordConflict(queryClient, v.projectId, err, `Étape ${pad2(v.stepNumber)} · saisie`, v.stepNumber);
+      recordConflict(queryClient, v.projectId, err, `Étape ${pad2(v.stepNumber)} · saisie`, v.stepNumber, { attempted: v.body.fields ?? {} });
     },
   });
   queryClient.setMutationDefaults(MUTATION_KEYS.decide, {
     mutationFn: (v: DecideVars) => api.decideHarmonie(v.projectId, v.stepNumber, v.proposalId, v.input),
     onSuccess: (updated: ParcoursStep, v: DecideVars) => adoptStep(queryClient, v.projectId, updated),
     onError: (err: unknown, v: DecideVars) => {
-      recordConflict(queryClient, v.projectId, err, `Étape ${pad2(v.stepNumber)} · arbitrage ${v.proposalId}`, v.stepNumber);
+      const { expectedVersion, ...input } = v.input;
+      recordConflict(queryClient, v.projectId, err, `Étape ${pad2(v.stepNumber)} · arbitrage ${v.proposalId}`, v.stepNumber, { decision: { proposalId: v.proposalId, input, expectedVersion: expectedVersion ?? null } });
     },
   });
   queryClient.setMutationDefaults(MUTATION_KEYS.comment, {

@@ -52,6 +52,9 @@
  *   6l. file hors-ligne des saisies : mutation en pause persistée et
  *      restaurée après rechargement, rejouée au retour du réseau — refusée
  *      (409, bandeau de conflit) si le serveur a avancé, enregistrée sinon ;
+ *      résolution assistée : versions côte à côte, « Reprendre ma saisie »,
+ *      arbitrage réappliqué sur la version courante ; conflit du modèle
+ *      (6k) : copie de secours, « Reprendre ma version » ;
  *   6m. partage du projet : invitation d'un compte par son adresse, projet
  *      partagé listé, lecteur (lecture, commentaires, formulaires et
  *      Atelier inactifs, 403 motivé), passage éditeur (saisie enregistrée),
@@ -216,6 +219,7 @@ await page.waitForSelector("#ah84-open");
 await page.locator("#ah84-open").click();
 await page.locator("#ah84-programme > summary").click();
 await page.waitForSelector(".programme-transmission");
+await page.waitForFunction(() => /révision 2/.test(document.querySelector(".programme-transmission")?.textContent || ""), null, { timeout: 10000 }).catch(() => {}); // cache restauré périmé puis relu
 check("étape 10 : sous-page « Harmonie du bâtiment » → « Programme lié · Hôtel urbain … · révision 2 »", /Programme lié · Hôtel urbain.*révision 2/.test((await page.locator(".programme-transmission").first().textContent()).replace(/\s+/g, " ")));
 await page.goto(`${projectUrl}?module=parcours&etape=2`);
 await page.waitForSelector(".library-fold");
@@ -279,6 +283,7 @@ await page.locator(".h7-proposal").nth(0).locator('button:has-text("Retenir")').
 await page.waitForFunction(() => document.querySelector(".h7-panel > summary")?.textContent?.includes("1 choix retenu(s)"));
 await page.goto(`${projectUrl}?module=parcours&etape=19`);
 await page.waitForSelector(".decision-grid");
+await page.waitForFunction(() => document.querySelector('.decision-grid button[aria-pressed="true"]')?.textContent === "À reprendre", null, { timeout: 10000 }).catch(() => {}); // cache restauré périmé puis relu
 check("étape 12 retenue → étape 19 repasse « À reprendre » et n'est plus terminée", (await page.locator('.decision-grid button[aria-pressed="true"]').textContent()) === "À reprendre" && (await page.locator('button:has-text("Marquer terminée")').count()) === 1);
 
 // 6. Exemple P.118 importé
@@ -673,6 +678,28 @@ await ctx.setOffline(false);
 await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
 const wallsAfterOnline = await rdcWalls();
 check("retour du réseau : synchronisation automatique → « Enregistré sur le serveur », +1 mur et +1 révision sur le serveur, file vide", wallsAfterOnline.walls === wallsBeforeOffline.walls + 1 && wallsAfterOnline.revision === wallsBeforeOffline.revision + 1 && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify({ wallsBeforeOffline, wallsAfterOnline }));
+// Conflit du modèle : un autre appareil écrit la même clé pendant la coupure ; au retour, le rejeu est refusé (409), la version du
+// serveur reprend la clé, la vôtre est conservée en copie de secours, et le bandeau propose de la reprendre ou de garder le serveur.
+const storeBefore = await (await page.request.get(`${BASE}/projects/${examplePid}/atelier/store`)).json();
+const floorKey = Object.keys(storeBefore.entries).find((k) => k.endsWith(".floorDesign"));
+await ctx.setOffline(true);
+await drawWall(0.52);
+await page.waitForFunction(() => /Hors-ligne · enregistré localement/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 10000 });
+const otherModel = await page.request.put(`${BASE}/projects/${examplePid}/atelier/store/${encodeURIComponent(floorKey)}`, { data: { value: storeBefore.entries[floorKey], expectedRevision: storeBefore.revisions[floorKey] } });
+check("autre appareil : écriture du même floorDesign pendant la coupure (200)", otherModel.status() === 200, String(otherModel.status()));
+await ctx.setOffline(false);
+await page.waitForSelector('.conflict-banner li[data-kind="modele"]', { timeout: 20000 });
+const modelConflictText = (await page.locator('.conflict-banner li[data-kind="modele"]').textContent()).replace(/\s+/g, " ");
+check("retour du réseau : rejeu refusé (409) → « Conflit détecté », conflit du modèle listé (« Atelier · floorDesign », copie de secours), compté dans l'en-tête", /Atelier · floorDesign/.test(modelConflictText) && /conservée sous « .*backup\.conflit-/.test(modelConflictText) && /Conflit détecté/.test(await page.locator(".native-atelier-status").textContent()) && /1 conflit\(s\) à examiner/.test(await page.locator(".sync-indicator").textContent()), modelConflictText.slice(0, 160));
+const wallsDuringConflict = await rdcWalls();
+await page.locator('.conflict-banner li[data-kind="modele"] button:has-text("Reprendre ma version")').click();
+await page.waitForFunction(() => !document.querySelector(".conflict-banner") && /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || "") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 20000 });
+// La copie de secours est retirée du serveur par une seconde écriture (regroupée) : on attend qu'elle ait disparu.
+await page.waitForFunction(async (pid) => !Object.keys((await (await fetch(`/projects/${pid}/atelier/store`, { credentials: "include" })).json()).entries).some((k) => k.includes(".backup.conflit-")), examplePid, { timeout: 15000 }).catch(() => {});
+const wallsResolved = await rdcWalls();
+const storeResolved = await (await page.request.get(`${BASE}/projects/${examplePid}/atelier/store`)).json();
+const backupsLeft = Object.keys(storeResolved.entries).filter((k) => k.includes(".backup.conflit-"));
+check("« Reprendre ma version » : le dessin local est réécrit sur la clé à partir de la révision du serveur (+1 mur), la copie de secours est retirée, en-tête synchronisé", wallsDuringConflict.walls === wallsAfterOnline.walls && wallsResolved.walls === wallsAfterOnline.walls + 1 && backupsLeft.length === 0 && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify({ wallsAfterOnline, wallsDuringConflict, wallsResolved, backupsLeft, indicator: await page.locator(".sync-indicator").textContent() }));
 // Serveur injoignable (route bloquée) puis rechargement de la page : la file locale est rejouée à l'ouverture.
 await page.route(/\/atelier\/store\//, (route) => route.abort());
 await drawWall(0.6);
@@ -683,7 +710,7 @@ await page.reload();
 await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
 await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
 const wallsAfterReload = await rdcWalls();
-check("rechargement : la file locale est rejouée à l'ouverture → +1 mur et +1 révision sur le serveur", wallsAfterReload.walls === wallsAfterOnline.walls + 1 && wallsAfterReload.revision === wallsAfterOnline.revision + 1, JSON.stringify({ wallsAfterOnline, wallsAfterReload }));
+check("rechargement : la file locale est rejouée à l'ouverture → +1 mur et +1 révision sur le serveur", wallsAfterReload.walls === wallsResolved.walls + 1 && wallsAfterReload.revision === wallsResolved.revision + 1, JSON.stringify({ wallsResolved, wallsAfterReload }));
 // Rechargement complet hors-ligne : l'enveloppe (service worker) sert l'application, le cache persistant (IndexedDB) relit
 // les étapes déjà lues, l'Atelier s'ouvre depuis le cache local du modèle.
 await page.goto(`${exampleUrl}?module=parcours&etape=2`);
@@ -728,9 +755,30 @@ await page.waitForSelector(".conflict-banner", { timeout: 20000 });
 await page.waitForFunction(() => document.querySelector("#biz-f1")?.value === "Demande locale (autre appareil)", null, { timeout: 10000 }).catch(() => {});
 const conflictText = (await page.locator(".conflict-banner").textContent()).replace(/\s+/g, " ");
 check("retour du réseau : la saisie rejouée est refusée (409) — bandeau « écriture(s) refusée(s) », valeur courante du serveur affichée, rien d'écrasé", /1 écriture\(s\) refusée\(s\)/.test(conflictText) && /Étape 03 · saisie/.test(conflictText) && /modifié depuis votre lecture/.test(conflictText) && (await page.inputValue("#biz-f1")) === "Demande locale (autre appareil)" && /1 conflit\(s\) à examiner/.test(await page.locator(".sync-indicator").textContent()), conflictText.slice(0, 200));
-await page.locator('.conflict-banner button:has-text("Compris")').first().click();
+const conflictRow = (await page.locator(".conflict-table tbody tr").first().allTextContents()).join(" ").replace(/\s+/g, " ");
+check("résolution assistée : les deux versions côte à côte (champ, valeur du serveur, votre saisie)", /Demande locale \(autre appareil\)/.test(conflictRow) && /Demande locale \(saisie hors-ligne\)/.test(conflictRow) && (await page.locator(".conflict-table tbody tr td").first().textContent()) !== "f1", conflictRow);
+await page.locator(".conflict-banner").screenshot({ path: `${OUT}/conflit-saisie-desktop.png` });
+await page.locator('.conflict-banner button:has-text("Reprendre ma saisie")').first().click();
 await page.waitForFunction(() => document.querySelectorAll(".conflict-banner").length === 0, null, { timeout: 10000 });
-check("conflit examiné (« Compris ») → bandeau retiré, en-tête synchronisé", /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()));
+await page.waitForFunction(() => document.querySelector("#biz-f1")?.value === "Demande locale (saisie hors-ligne)", null, { timeout: 10000 }).catch(() => {});
+check("« Reprendre ma saisie » : renvoyée fondée sur la valeur courante → acceptée, bandeau retiré, en-tête synchronisé", (await page.inputValue("#biz-f1")) === "Demande locale (saisie hors-ligne)" && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()));
+// Arbitrage fondé sur une version périmée : un autre appareil arbitre pendant que l'écran garde l'ancienne version.
+await page.goto(`${projectUrl}?module=parcours&etape=3&harmonie=1`);
+await page.waitForSelector(".h7-proposal");
+// L'autre appareil arbitre la proposition B (version 1) ; l'écran, resté sur la version 0, retient B à son tour → refus.
+const otherDecision = await page.request.post(`${BASE}/projects/${testPid}/steps/3/harmonie/H02-B`, { data: { status: "adapted", notes: "Adaptation prise sur un autre appareil", owner: "Autre appareil" } });
+check("autre appareil : arbitrage de la proposition B de l'étape 03 (200)", otherDecision.status() === 200, String(otherDecision.status()));
+await page.locator(".h7-proposal").nth(1).locator('button:has-text("Retenir")').first().click();
+await page.waitForSelector('.conflict-banner li[data-kind="arbitrage"]', { timeout: 15000 });
+const decisionConflict = (await page.locator('.conflict-banner li[data-kind="arbitrage"]').textContent()).replace(/\s+/g, " ");
+check("arbitrage refusé (409) : votre arbitrage (retenue, version 0) face à la version courante du serveur (1), « Réappliquer sur la version courante » proposé", /Étape 03 · arbitrage H02-B/.test(decisionConflict) && /Votre arbitrage : retenue/.test(decisionConflict) && /fondé sur la version 0, le serveur est à la version 1/.test(decisionConflict), decisionConflict.slice(0, 220));
+await page.locator('.conflict-banner button:has-text("Réappliquer sur la version courante")').click();
+await page.waitForFunction(() => document.querySelectorAll(".conflict-banner").length === 0, null, { timeout: 10000 });
+await page.waitForFunction(async (pid) => (await (await fetch(`/projects/${pid}/steps/3`, { credentials: "include" })).json()).content.harmonie.proposals["H02-B"]?.decisionVersion === 2, testPid, { timeout: 10000 }).catch(() => {});
+const bDecision = (await (await page.request.get(`${BASE}/projects/${testPid}/steps/3`)).json()).content.harmonie.proposals["H02-B"];
+check("« Réappliquer » : B retenue sur la version courante (version 2, historique conservé), en-tête synchronisé", bDecision.status === "retained" && bDecision.decisionVersion === 2 && bDecision.history.some((h) => h.status === "adapted") && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify({ status: bDecision.status, version: bDecision.decisionVersion, history: bDecision.history.length }));
+await page.goto(`${projectUrl}?module=parcours&etape=3`);
+await page.waitForSelector("#biz-f1");
 // Sans concurrence, la saisie rejouée passe : même scénario, personne n'a écrit entre-temps.
 await ctx.setOffline(true);
 await page.locator("#biz-f2").fill("Offre concurrente (hors-ligne)");

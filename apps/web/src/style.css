@@ -2466,3 +2466,35 @@ fieldset.access-fieldset:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+/* Résolution assistée des conflits : les deux versions côte à côte */
+.conflict-table {
+  border-collapse: collapse;
+  margin: 6px 0;
+  font-size: 12.5px;
+}
+.conflict-table th,
+.conflict-table td {
+  text-align: left;
+  padding: 3px 10px 3px 0;
+  border-bottom: 1px solid #ecc9c0;
+  vertical-align: top;
+  max-width: 420px;
+  overflow-wrap: anywhere;
+}
+.conflict-table th {
+  font-weight: 600;
+  color: #5a4a44;
+}
+.conflict-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+.conflict-banner .button-primary {
+  padding: 2px 10px;
+  font-size: 12px;
+  min-height: 0;
+}

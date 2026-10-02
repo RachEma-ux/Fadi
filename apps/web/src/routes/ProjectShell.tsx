@@ -1,9 +1,9 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api, ROLE_LABEL } from "../lib/api";
 import { READ_ONLY_HINT, useProjectAccess } from "../lib/access";
-import { SyncIndicator, useOnline, useSyncConflicts } from "../components/SyncIndicator";
-import { clearConflict } from "../lib/mutations";
+import { ConflictPanel } from "../components/ConflictPanel";
+import { SyncIndicator, useOnline } from "../components/SyncIndicator";
 import { MODULES } from "../modules/module-registry";
 import { AnalysesModule } from "../modules/analyses/AnalysesModule";
 import { NativeAtelier } from "../modules/atelier/NativeAtelier";
@@ -21,8 +21,6 @@ export function ProjectShell() {
 
   const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId) });
   const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
-  const queryClient = useQueryClient();
-  const conflicts = useSyncConflicts(projectId);
   const online = useOnline();
   const access = useProjectAccess(projectId);
 
@@ -85,27 +83,7 @@ export function ProjectShell() {
         </p>
       )}
 
-      {conflicts.length > 0 && (
-        <section className="conflict-banner" role="alert" aria-label="Conflits de synchronisation">
-          <p>
-            <b>{conflicts.length} écriture(s) refusée(s)</b> : le serveur portait une version plus récente. Rien n’a été écrasé ; relisez la valeur courante et ressaisissez si besoin.
-          </p>
-          <ul>
-            {conflicts.map((c) => (
-              <li key={c.id} data-conflict={c.id}>
-                <b>{c.where}</b> · {new Date(c.at).toLocaleString("fr-FR")} — {c.message}
-                {c.current && Object.keys(c.current).length > 0 && <small> Valeur courante : {Object.entries(c.current).map(([k, v]) => `${k} = ${v === null ? "vide" : String(v)}`).join(" ; ")}</small>}{" "}
-                {c.stepNumber !== null && (
-                  <Link to={`/projets/${projectId}?module=parcours&etape=${c.stepNumber}`}>ouvrir l’étape</Link>
-                )}{" "}
-                <button type="button" className="button-secondary" onClick={() => clearConflict(queryClient, projectId, c.id)}>
-                  Compris
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <ConflictPanel projectId={projectId} />
 
       <nav aria-label="Modules du projet" className="module-nav">
         {MODULES.map((m) => (

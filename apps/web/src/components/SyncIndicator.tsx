@@ -41,7 +41,9 @@ export function SyncIndicator({ projectId }: { projectId: string }) {
   // Saisies, arbitrages et commentaires en pause (hors-ligne), persistés avec le cache.
   const pausedMutations = useMutationState({ filters: { status: "pending", predicate: (m) => m.state.isPaused }, select: (m) => m.mutationId });
   const conflicts = useSyncConflicts(projectId);
+  const [modelConflicts, setModelConflicts] = useState(0);
   useEffect(() => atelierStorage.subscribe(setSync), []);
+  useEffect(() => atelierStorage.subscribeConflicts((c) => setModelConflicts(c.length)), []);
   useEffect(() => {
     let alive = true;
     const read = () => void localStore.pendingCount(projectId).then((n) => alive && setQueued(n));
@@ -54,7 +56,7 @@ export function SyncIndicator({ projectId }: { projectId: string }) {
   }, [projectId, sync]);
 
   const pending = Math.max(sync.pending, queued) + pausedMutations.length;
-  const conflictCount = conflicts.length + (sync.status === "conflict" ? 1 : 0);
+  const conflictCount = conflicts.length + modelConflicts;
   const state = !online ? "offline" : conflictCount > 0 ? "conflict" : pending > 0 ? "pending" : "synced";
   const label = !online
     ? `Hors-ligne · ${pending} modification(s) enregistrée(s) localement`
