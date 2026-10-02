@@ -3,12 +3,15 @@ import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { atelierStore, parcels, programmeCases, programmeRepartitions, projects, projectSteps } from "../db/schema.js";
 import { hashOf, parcelSnapshotFromNative, summarize, type NativeParcelDomain } from "../lib/parcel-transmission.js";
-import { repartitionFromCase, type ProgrammeCase } from "@parcours/domain-model";
+import { buildHarmonieProposals, proposalSnapshot, repartitionFromCase, type HarmonieProposalDecision, type ProgrammeCase } from "@parcours/domain-model";
 import { randomUUID } from "node:crypto";
 import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replaceProjection } from "../lib/native-projection.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
+import { computationFor, loadStepContext } from "../lib/step-context.js";
+import { loadStepRows, upsertStep } from "../lib/step-rows.js";
 import {
+  HARMONIE_PROFILES,
   PARCOURS_STEPS,
   PROGRAMME_REPARTITION,
   exampleAttachment,
@@ -134,6 +137,26 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
           })
           .where(eq(projects.id, id));
       }
+    }
+
+    // Empreintes de péremption (« À réexaminer ») : les propositions générées
+    // et les choix retenus de l'exemple sont datés des données importées —
+    // site, programme, modèle, intentions — pour que seuls des changements
+    // ultérieurs les signalent. Les instantanés conservent ce que chaque choix
+    // disait au cas où sa proposition disparaîtrait (modèle remplacé).
+    const rows = await loadStepRows(tx, id);
+    const ctx = await loadStepContext(tx, { id, name: project.name, siteObservations: project.siteObservations }, rows);
+    for (const def of PARCOURS_STEPS) {
+      const row = rows.get(def.number);
+      if (!row) continue;
+      const fingerprint = ctx.dependencies.get(def.number)?.fingerprint ?? null;
+      const decisions: Record<string, HarmonieProposalDecision> = { ...row.content.harmonie.proposals };
+      for (const q of buildHarmonieProposals(HARMONIE_PROFILES, def, ctx.profile, row.content.harmonie, computationFor(ctx, def.number), fingerprint)) {
+        const d = decisions[q.id];
+        if (q.retained && d) decisions[q.id] = { ...d, acceptedHash: fingerprint, snapshot: proposalSnapshot(q) };
+      }
+      const harmonie = { ...row.content.harmonie, generatedHash: row.content.harmonie.revision > 0 ? fingerprint : null, proposals: decisions };
+      await upsertStep(tx, id, def.number, row.status, { ...row.content, harmonie });
     }
 
     return project;

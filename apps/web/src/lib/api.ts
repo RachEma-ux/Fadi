@@ -112,11 +112,17 @@ export interface HarmonieProposalDecision {
   decisionVersion: number;
   updatedAt: string | null;
   history: { at: string; status: HarmonieProposalStatus; text: string | null; proof: string | null; owner: string | null; reason: string | null }[];
+  /** Empreinte des données de l'étape quand le choix a été retenu (`acceptedHash`) ; `null` sans choix retenu. */
+  acceptedHash?: string | null;
+  /** Ce que la proposition disait à l'arbitrage (conserve un choix dont la proposition a disparu). */
+  snapshot?: { ref: string; key: string; group: "parti" | "local"; title: string; text: string; source: string; targets: number[]; roomId?: string; objectId?: string } | null;
 }
 
 export interface HarmonieStepState {
   revision: number;
   generatedAt: string | null;
+  /** Empreinte des données à la dernière génération (« Actualiser les propositions ») ; `null` tant que l'étape n'a pas été générée. */
+  generatedHash?: string | null;
   proposals: Record<string, HarmonieProposalDecision>;
 }
 
@@ -156,6 +162,9 @@ export interface HarmonieProposal {
   decision: HarmonieProposalDecision;
   retained: boolean;
   stateLabel: string;
+  /** « À réexaminer · choix conservé » : choix pris sur d'autres données, ou proposition disparue (`orphaned`). */
+  stale: boolean;
+  orphaned: boolean;
   /** Étape 01 : zonage calculé sur le contour de la parcelle (`null` sans contour exploitable). */
   zoning?: SiteZoning | null;
   /** Propositions localisées (étapes 10/11) : le local du modèle et l'objet natif. */
@@ -207,6 +216,9 @@ export interface IncomingIntention {
   text: string;
   status: HarmonieProposalStatus;
   stateLabel: string;
+  decisionVersion: number;
+  /** « Source à réexaminer » : l'étape d'origine est elle-même périmée. */
+  originStale: boolean;
 }
 
 export interface HarmonieProfile {
@@ -238,6 +250,10 @@ export interface ParcoursStep {
   proposals: HarmonieProposal[];
   incoming: IncomingIntention[];
   retainedCount: number;
+  /** « Données pertinentes modifiées » : propositions générées sur d'autres données (`isStageStale`). */
+  stale: boolean;
+  /** Choix retenus mais à réexaminer. */
+  staleRetainedCount: number;
   profile: HarmonieProfile;
   /** Étape 01 seulement ; `null` ailleurs. */
   site: SiteView | null;
@@ -245,6 +261,8 @@ export interface ParcoursStep {
   recommendation: { key: string; reason: string } | null;
   /** Étapes 10/11 : empreinte et niveaux du modèle lu ; `null` sans modèle. */
   model: { nativeHash: string; floors: { id: string; name: string; count: number; rooms: number }[]; roomCount: number } | null;
+  /** Étapes ≥ 07 avec cas de programme appliqué : « Programme : N fiches · X m² de cibles de travail ». */
+  programme: { spaceCount: number; total: number } | null;
 }
 
 export interface HarmonieDecisionInput {
@@ -453,6 +471,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify(input),
     }),
+  /** « Actualiser les propositions » : révision +1 sur les données courantes, choix conservés pour réexamen. */
+  generateHarmonie: (projectId: string, stepNumber: number) => request<ParcoursStep>(`/projects/${projectId}/steps/${stepNumber}/harmonie/generate`, { method: "POST" }),
+  /** « Rapport de cette étape » (`Harmonie_Etape_NN_V7.html`) ou, sans étape, la synthèse des choix du projet (`Harmonie_Choix_Parcours_V7.html`). */
+  harmonieReportUrl: (projectId: string, stepNumber: number | null) => (stepNumber === null ? `/projects/${projectId}/steps/harmonie/rapport` : `/projects/${projectId}/steps/${stepNumber}/harmonie/rapport`),
   getAtelierStore: (projectId: string) => request<AtelierStore>(`/projects/${projectId}/atelier/store`),
   putAtelierStoreEntry: (projectId: string, key: string, value: unknown, expectedRevision: number | null) =>
     request<{ key: string; revision: number; modelRevision: number }>(`/projects/${projectId}/atelier/store/${encodeURIComponent(key)}`, {

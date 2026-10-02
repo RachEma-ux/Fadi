@@ -873,3 +873,139 @@ describe("Étapes 10/11 — propositions localisées sur les locaux du modèle",
     expect(drawn.body.proposals.find((q: { id: string }) => q.id === hall.id).stateLabel).toBe("Dessinée · déclaration");
   });
 });
+
+describe("Péremption des propositions (« À réexaminer ») et rapports Harmonie", () => {
+  const S01 = [
+    { id: "B.266", x: 321946.82, y: 347183.88 },
+    { id: "B.267", x: 321954.11, y: 347215.38 },
+    { id: "B.268", x: 321995.84, y: 347186.25 },
+    { id: "B.265", x: 321978.68, y: 347161.67 },
+  ];
+
+  it("dates each retained choice and generated step with its data fingerprint; a site change flags them, 'Actualiser' clears the step, confirming clears the choice", async () => {
+    const client = await registerAndLogin("stale@example.com");
+    const project = await client.post("/projects").send({ code: "P.920", name: "Péremption" });
+    const pid = project.body.id as string;
+    const fresh = (await client.get(`/projects/${pid}/steps/2`)).body;
+    expect(fresh.stale).toBe(false);
+    expect(fresh.content.harmonie.generatedHash).toBeNull();
+
+    // Retenir B à l'étape 02 : empreinte de génération implicite et acceptedHash du choix.
+    const retained = await client.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "retained" });
+    expect(retained.status).toBe(200);
+    const hash = retained.body.content.harmonie.generatedHash as string;
+    expect(hash).toMatch(/^[0-9a-f]{8}$/);
+    expect(retained.body.content.harmonie.proposals["H01-B"].acceptedHash).toBe(hash);
+    expect(retained.body.content.harmonie.proposals["H01-B"].snapshot).toMatchObject({ ref: "H02-B", group: "parti", targets: expect.any(Array) });
+    expect(retained.body.stale).toBe(false);
+    expect(retained.body.staleRetainedCount).toBe(0);
+    // Un champ d'une autre étape (19) ne concerne pas l'étape 02.
+    await client.patch(`/projects/${pid}/steps/19`).send({ fields: { decision: "GO" } });
+    expect((await client.get(`/projects/${pid}/steps/2`)).body.stale).toBe(false);
+
+    // Le site change (parcelle transmise) : l'étape 02 lit le site → à réexaminer, choix conservé.
+    const id = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    await client.put(`/projects/${pid}/parcels/${id}`).send({ data: { name: "Lot 118", crs: "EPSG:26191", parcelNumber: "118", points: S01 }, revision: 0 });
+    await client.post(`/projects/${pid}/parcels/${id}/transmit`);
+    const stale = (await client.get(`/projects/${pid}/steps/2`)).body;
+    expect(stale.stale).toBe(true);
+    expect(stale.staleRetainedCount).toBe(1);
+    const b = stale.proposals.find((q: { id: string }) => q.id === "H01-B");
+    expect(b).toMatchObject({ retained: true, stale: true, orphaned: false });
+    expect(stale.retainedCount).toBe(1);
+    // L'étape 19 n'a pas été générée : rien à réexaminer malgré le champ saisi.
+    expect((await client.get(`/projects/${pid}/steps/19`)).body.stale).toBe(false);
+
+    // Une vérification est refusée tant que l'étape n'est pas actualisée (message du prototype).
+    const refused = await client.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "verified", owner: "Chef de projet", proof: "Compte rendu de revue n° 4" });
+    expect(refused.status).toBe(422);
+    expect(refused.body.message).toBe("Actualisez d’abord les propositions sur les données courantes.");
+
+    // « Actualiser les propositions » : révision +1, étape à jour, choix toujours à réexaminer.
+    const generated = await client.post(`/projects/${pid}/steps/2/harmonie/generate`);
+    expect(generated.status).toBe(200);
+    expect(generated.body.content.harmonie.revision).toBe(2); // 1 à la première génération implicite, 2 à l'actualisation
+    expect(generated.body.content.harmonie.generatedHash).not.toBe(hash);
+    expect(generated.body.stale).toBe(false);
+    expect(generated.body.proposals.find((q: { id: string }) => q.id === "H01-B").stale).toBe(true);
+    expect(generated.body.staleRetainedCount).toBe(1);
+
+    // « Confirmer ce choix » : version 2, empreinte courante — plus rien à réexaminer ; la vérification passe.
+    const confirmed = await client.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "retained" });
+    expect(confirmed.body.proposals.find((q: { id: string }) => q.id === "H01-B")).toMatchObject({ stale: false, decision: { decisionVersion: 2 } });
+    expect(confirmed.body.staleRetainedCount).toBe(0);
+    const verified = await client.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "verified", owner: "Chef de projet", proof: "Compte rendu de revue n° 4" });
+    expect(verified.status).toBe(200);
+
+    // Une intention amont périmée se signale à la cible (« Source à réexaminer »).
+    const retained1 = await client.post(`/projects/${pid}/steps/1/harmonie/H00-A`).send({ status: "retained" });
+    expect(retained1.status).toBe(200);
+    const step2 = (await client.get(`/projects/${pid}/steps/2`)).body;
+    expect(step2.incoming.find((q: { id: string }) => q.id === "H00-A")).toMatchObject({ originStale: false, decisionVersion: 1 });
+    expect(step2.stale).toBe(true); // nouvelle intention reçue depuis la génération
+    await client.put(`/projects/${pid}/steps/1/site`).send({ frontageEdge: 1, approachStatus: "hypothesis", priority: "balanced", frontContext: "open", backContext: "unknown", source: "", note: "" });
+    // `save-site` régénère l'étape 01 : à jour, mais son choix A reste daté de l'empreinte précédente.
+    const step1 = (await client.get(`/projects/${pid}/steps/1`)).body;
+    expect(step1.stale).toBe(false);
+    expect(step1.proposals[0].stale).toBe(true);
+    expect(step1.content.harmonie.revision).toBe(2);
+    // L'origine devient périmée seulement quand ses données changent après sa génération.
+    const moved = S01.map((q) => (q.id === "B.265" ? { ...q, y: q.y - 1 } : q));
+    await client.put(`/projects/${pid}/parcels/${id}`).send({ data: { name: "Lot 118", crs: "EPSG:26191", parcelNumber: "118", points: moved }, revision: 1 });
+    await client.post(`/projects/${pid}/parcels/${id}/transmit`);
+    const after = (await client.get(`/projects/${pid}/steps/2`)).body;
+    expect(after.incoming.find((q: { id: string }) => q.id === "H00-A").originStale).toBe(true);
+  });
+
+  it("keeps a retained choice whose proposal vanished with the model as an orphaned proposal to re-examine", async () => {
+    const client = await registerAndLogin("orphan@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    const step10 = (await client.get(`/projects/${pid}/steps/10`)).body;
+    const hall = step10.proposals.find((q: { group: string; title: string }) => q.group === "local" && /R01/.test(q.title));
+    await client.post(`/projects/${pid}/steps/10/harmonie/${encodeURIComponent(hall.id)}`).send({ status: "retained" });
+    // Le projet natif actif disparaît du magasin : plus de locaux calculés, le choix est conservé en orphelin.
+    const del = await client.delete(`/projects/${pid}/atelier/store/${encodeURIComponent("design.v13.activeProject")}`);
+    expect(del.status).toBe(204);
+    const without = (await client.get(`/projects/${pid}/steps/10`)).body;
+    expect(without.model).toBeNull();
+    const orphan = without.proposals.find((q: { id: string }) => q.id === hall.id);
+    expect(orphan).toMatchObject({ orphaned: true, stale: true, retained: true, group: "local", title: hall.title, ref: hall.ref, roomId: hall.roomId });
+    expect(without.retainedCount).toBe(2); // le parti C de l'exemple + le local orphelin
+    expect(without.staleRetainedCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it("imports P.118 with nothing to re-examine, and serves the step report and the project synthesis as downloadable HTML", async () => {
+    const client = await registerAndLogin("report@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    const steps = (await client.get(`/projects/${pid}/steps`)).body as { number: number; stale: boolean; staleRetainedCount: number; content: { harmonie: { generatedHash: string | null } } }[];
+    expect(steps).toHaveLength(21);
+    expect(steps.filter((s) => s.stale).map((s) => s.number)).toEqual([]);
+    expect(steps.filter((s) => s.staleRetainedCount > 0).map((s) => s.number)).toEqual([]);
+    expect(steps.every((s) => typeof s.content.harmonie.generatedHash === "string")).toBe(true);
+    const programme = steps.find((s) => s.number === 7) as unknown as { programme: { spaceCount: number; total: number } };
+    expect(programme.programme.spaceCount).toBe(74);
+    expect(programme.programme.total).toBeCloseTo(2932.26, 1); // `sums(spaces).total` du prototype : les fiches du cas résolu (sans ligne « parois »)
+
+    const one = await client.get(`/projects/${pid}/steps/1/harmonie/rapport`);
+    expect(one.status).toBe(200);
+    expect(one.headers["content-type"]).toMatch(/^text\/html/);
+    expect(one.headers["content-disposition"]).toBe('attachment; filename="Harmonie_Etape_01_V7.html"');
+    expect(one.text).toContain("<title>Harmonie · Escalier B et mezzanine · 01 · Parcelle / Site existant</title>");
+    expect(one.text).toContain("PARCOURS V7 · DIMENSION HARMONIE PAR ÉTAPE");
+    expect(one.text).toContain("Rapport limité à l’objet de cette étape.");
+    expect(one.text).toContain("Conversion EPSG:26191 → WGS84");
+    expect(one.text).toContain('<svg'); // schéma de la proposition zonée
+    expect(one.text).toContain(".h7-panel{border:1px solid #c8d9ce"); // h7-css du prototype
+    expect(one.text).not.toContain("<button");
+    const all = await client.get(`/projects/${pid}/steps/harmonie/rapport`);
+    expect(all.status).toBe(200);
+    expect(all.headers["content-disposition"]).toBe('attachment; filename="Harmonie_Choix_Parcours_V7.html"');
+    expect(all.text).toContain("Synthèse des étapes effectivement ouvertes");
+    expect(all.text.match(/<section><h2>/g)?.length).toBe(21);
+    // Jamais pour un autre utilisateur.
+    const other = await registerAndLogin("report-other@example.com");
+    expect((await other.get(`/projects/${pid}/steps/1/harmonie/rapport`)).status).toBe(404);
+  });
+});

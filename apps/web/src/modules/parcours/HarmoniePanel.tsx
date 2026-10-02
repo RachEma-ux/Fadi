@@ -4,12 +4,34 @@
  * intentions reçues, onglets Proposer / Comparer / Choix & transmission,
  * trois propositions A/B/C avec leurs arbitrages (retenir, adapter /
  * motiver, écarter avec motif, traduire au programme, dessiner, consigner
- * une vérification), cadre de lecture. Les règles s'exécutent côté serveur ;
- * ses refus sont affichés tels quels sous la proposition concernée.
+ * une vérification), « Actualiser les propositions », « Rapport de cette
+ * étape », péremption (« Données pertinentes modifiées », « À réexaminer ·
+ * choix conservé », « Source à réexaminer »), cadre de lecture. Les règles
+ * s'exécutent côté serveur ; ses refus sont affichés tels quels sous la
+ * proposition concernée.
  */
-import { useState, type FormEvent } from "react";
-import type { HarmonieDecisionInput, HarmonieProposal, ParcoursStep, SiteObservationsInput } from "../../lib/api";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { api, type HarmonieDecisionInput, type HarmonieProposal, type ParcoursStep, type SiteObservationsInput } from "../../lib/api";
 import { SiteDataFold, SiteHero } from "./SiteHarmonie";
+
+const fmt = (v: number) => v.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+
+/** `toast()` du prototype : un message d'état éphémère en bas de l'écran. */
+export function HarmonieToast({ text, onDone }: { text: string | null; onDone: () => void }) {
+  const done = useRef(onDone);
+  done.current = onDone;
+  useEffect(() => {
+    if (!text) return;
+    const t = setTimeout(() => done.current(), 3600);
+    return () => clearTimeout(t);
+  }, [text]);
+  if (!text) return null;
+  return (
+    <div className="h7-toast" role="status">
+      {text}
+    </div>
+  );
+}
 
 type Tab = "proposals" | "compare" | "transfer";
 
@@ -43,13 +65,16 @@ function ProposalCard({
   }
 
   return (
-    <article className={`h7-proposal${q.recommended ? " recommended" : ""}${q.retained ? " retained" : ""}`} aria-labelledby={`${q.id}-title`}>
+    <article className={`h7-proposal${q.recommended ? " recommended" : ""}${q.retained ? " retained" : ""}${q.stale ? " stale" : ""}`} aria-labelledby={`${q.id}-title`} data-proposal={q.id}>
       <div className="h7-proposal-top">
         <span className="h7-kicker">{q.group === "local" ? `${q.ref.split("-LOCAL-")[0]} · LOCAL` : `${q.ref} · ${q.key}`}</span>
-        <span className={`h7-chip${q.retained ? " ok" : ""}${q.decision.status === "dismissed" ? " off" : ""}`}>{q.stateLabel}</span>
+        <span className={`h7-chip${q.stale ? " warn" : q.retained ? " ok" : ""}${!q.stale && q.decision.status === "dismissed" ? " off" : ""}`}>
+          {q.stale ? "À réexaminer · choix conservé" : q.stateLabel}
+        </span>
       </div>
       <h3 id={`${q.id}-title`}>{q.title}</h3>
       {q.recommended && <p className="h7-reco">Proposition de départ privilégiée · à arbitrer</p>}
+      {q.orphaned && <p className="h7-muted">Proposition absente des données courantes (modèle modifié) : le choix est conservé tel qu'il a été pris.</p>}
       <p>{q.text}</p>
       <dl>
         <dt>Pourquoi ici</dt>
@@ -121,8 +146,7 @@ function ProposalCard({
             </button>
           </div>
           <p className="h7-muted">
-            « Retenue », « traduite », « dessinée » et « vérifiée » ne sont pas équivalents. Une vérification est une déclaration accompagnée de preuve,
-            pas une certification automatique.
+            « Retenue », « traduite », « dessinée » et « vérifiée » ne sont pas équivalents. Une vérification est une déclaration accompagnée de preuve, pas une certification automatique.
           </p>
         </form>
       </details>
@@ -143,18 +167,65 @@ function ProposalCard({
   );
 }
 
+/** `receivedHTML(id, p)` : les intentions reçues des étapes amont, « Source à réexaminer » quand l'origine est périmée, « Voir l’origine ». */
+function ReceivedTable({ incoming, onGoto }: { incoming: ParcoursStep["incoming"]; onGoto: (stepNumber: number) => void }) {
+  if (!incoming.length) {
+    return <p className="h7-muted">Aucune intention amont retenue n’est encore transmise à cette étape. Les propositions restent possibles à partir de ses données disponibles.</p>;
+  }
+  return (
+    <div className="h7-table-wrap">
+      <table className="h7-table h7-received">
+        <thead>
+          <tr>
+            <th>Origine</th>
+            <th>Intention reçue</th>
+            <th>État</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {incoming.map((q) => (
+            <tr key={q.id}>
+              <td>
+                {q.originLabel}
+                <br />
+                <small>{q.ref}</small>
+              </td>
+              <td>{q.text}</td>
+              <td>{q.originStale ? <span className="h7-chip warn">Source à réexaminer</span> : q.stateLabel}</td>
+              <td>
+                <button type="button" className="button-secondary" onClick={() => onGoto(q.origin)}>
+                  Voir l’origine
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function HarmoniePanel({
+  projectId,
   step,
   allSteps,
   onDecide,
+  onGenerate,
+  onGoto,
   pending,
   errors,
   onSaveSite = null,
   siteError = null,
 }: {
+  projectId: string;
   step: ParcoursStep;
   allSteps: ParcoursStep[];
   onDecide: (proposalId: string, input: HarmonieDecisionInput) => void;
+  /** « Actualiser les propositions » (`generate`). */
+  onGenerate: () => void;
+  /** « Voir l’origine » : ouvrir l'étape d'origine d'une intention reçue (`goto`). */
+  onGoto: (stepNumber: number) => void;
   pending: boolean;
   /** Dernier refus du serveur par proposition (message en français). */
   errors: Record<string, string>;
@@ -171,75 +242,82 @@ export function HarmoniePanel({
   const retained = step.proposals.filter((q) => q.retained);
   const partis = step.proposals.filter((q) => q.group === "parti");
   const locals = step.proposals.filter((q) => q.group === "local");
-  const stepTitle = (n: number) => allSteps.find((s) => s.number === n)?.title ?? `Étape ${n}`;
+  const stepScope = (n: number) => {
+    const d = allSteps.find((s) => s.number === n);
+    return d?.scope ?? d?.title ?? `Étape ${n}`;
+  };
   const site = step.number === 1 ? step.site : null;
   const activeSite = site ? (partis.find((q) => q.id === siteProposal) ?? partis.find((q) => q.retained) ?? partis[0] ?? null) : null;
-  const recommendation = site?.recommendation ?? step.recommendation ?? { key: "A", reason: "Parti de départ visant les intentions documentées et une intervention limitée ; à arbitrer avec les alternatives." };
+  const recommendation = site?.recommendation ??
+    step.recommendation ?? {
+      key: "A",
+      reason: "Parti de départ visant les intentions documentées et une intervention limitée ; à arbitrer avec les alternatives.",
+    };
   function viewSite(id: string) {
     setSiteProposal(id);
     document.querySelector(".h7-site-hero")?.scrollIntoView({ behavior: "smooth" });
   }
+  // Étape 20 : sans décision favorable à l'étape 19, les missions restent préparatoires.
+  const decision19 = allSteps.find((s) => s.number === 19)?.content.fields["decision"];
+  const missionsPreparatory = step.number === 20 && !["GO", "GO sous conditions"].includes(String(decision19 ?? ""));
 
   return (
     <details className="h7-panel" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
       <summary>
         Harmonie · {step.scope ?? step.title} · {step.retainedCount} choix retenu(s)
+        {step.stale ? " · à réexaminer" : ""}
       </summary>
       <div className="h7-content">
-        <span className="eyebrow">
-          Harmonie · Étape {pad2(step.number)} · {step.scope}
-        </span>
-        <h2>Propositions pour cette étape</h2>
-        {step.goal && <p className="h7-muted">{step.goal}</p>}
+        <header className="h7-head">
+          <div>
+            <span className="eyebrow">
+              Harmonie · Étape {pad2(step.number)} · {step.scope}
+            </span>
+            <h2>Propositions pour cette étape</h2>
+            {step.goal && <p className="h7-muted">{step.goal}</p>}
+          </div>
+          <div className="h7-actions">
+            <button type="button" className="button-secondary" disabled={pending} onClick={onGenerate}>
+              Actualiser les propositions
+            </button>
+            <a className="button-secondary h7-report" href={api.harmonieReportUrl(projectId, step.number)} download>
+              Rapport de cette étape
+            </a>
+          </div>
+        </header>
+        {step.stale && (
+          <div className="h7-callout warn h7-stale" role="status">
+            <b>Données pertinentes modifiées.</b> Les choix sont conservés, mais doivent être réexaminés. Actualisez les propositions avant de les confirmer.
+          </div>
+        )}
+        {missionsPreparatory && <div className="h7-callout warn">Les missions ci-dessous sont préparatoires. Aucune mission n’est engagée sans décision favorable.</div>}
 
         {site && onSaveSite ? (
           <SiteDataFold key={site.observations.observedAt ?? "initial"} step={step} onSave={onSaveSite} pending={pending} error={siteError} open={siteFoldOpen} onToggle={setSiteFoldOpen} />
         ) : (
-        <details className="h7-fold">
-          <summary>Données mobilisées et intentions reçues ({step.incoming.length})</summary>
-          <div className="h7-fold-body">
-            <p>
-              <b>Objet :</b> {step.scope}. {step.inputs}
-            </p>
-            <p>
-              <b>Type :</b> {step.profile.label}.
-            </p>
-            {step.model && (
+          <details className="h7-fold">
+            <summary>Données mobilisées et intentions reçues ({step.incoming.length})</summary>
+            <div className="h7-fold-body">
               <p>
-                Modèle courant : {step.model.floors.length} niveaux · {step.model.roomCount} zones · empreinte {step.model.nativeHash}.
+                <b>Objet :</b> {step.scope}. {step.inputs}
               </p>
-            )}
-            {step.incoming.length ? (
-              <table className="h7-table">
-                <thead>
-                  <tr>
-                    <th>Origine</th>
-                    <th>Intention reçue</th>
-                    <th>État</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {step.incoming.map((q) => (
-                    <tr key={q.id}>
-                      <td>
-                        {q.originLabel}
-                        <br />
-                        <small>{q.ref}</small>
-                      </td>
-                      <td>{q.text}</td>
-                      <td>{q.stateLabel}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="h7-muted">
-                Aucune intention amont retenue n’est encore transmise à cette étape. Les propositions restent possibles à partir de ses données disponibles.
+              <p>
+                <b>Type :</b> {step.profile.label}.
               </p>
-            )}
-            <p className="h7-muted">Les propositions utilisent seulement les données pertinentes à cette décision. Un changement de caméra ne modifie pas l’orientation du bâtiment.</p>
-          </div>
-        </details>
+              {step.programme && (
+                <p>
+                  Programme : {step.programme.spaceCount} fiches · {fmt(step.programme.total)} m² de cibles de travail, distincts de la géométrie.
+                </p>
+              )}
+              {step.model && (
+                <p>
+                  Modèle courant : {step.model.floors.length} niveaux · {step.model.roomCount} zones · empreinte {step.model.nativeHash}.
+                </p>
+              )}
+              <ReceivedTable incoming={step.incoming} onGoto={onGoto} />
+              <p className="h7-muted">Les propositions utilisent seulement les données pertinentes à cette décision. Un changement de caméra ne modifie pas l’orientation du bâtiment.</p>
+            </div>
+          </details>
         )}
 
         <nav className="h7-tabs" aria-label="Harmonie">
@@ -281,61 +359,82 @@ export function HarmoniePanel({
         )}
 
         {tab === "compare" && (
-          <table className="h7-table">
-            <thead>
-              <tr>
-                <th>Proposition</th>
-                <th>Intérêt</th>
-                <th>Compromis</th>
-                <th>Conditions</th>
-                <th>État</th>
-              </tr>
-            </thead>
-            <tbody>
-              {step.proposals.map((q) => (
-                <tr key={q.id}>
-                  <td>
-                    <b>{q.title}</b>
-                    <br />
-                    <small>{q.ref}</small>
-                  </td>
-                  <td>{q.benefit}</td>
-                  <td>{q.tradeoff}</td>
-                  <td>{q.conditions}</td>
-                  <td>{q.stateLabel}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        {tab === "transfer" &&
-          (retained.length ? (
+          <div className="h7-table-wrap">
             <table className="h7-table">
               <thead>
                 <tr>
-                  <th>Choix retenu</th>
+                  <th>Proposition</th>
+                  <th>Intérêt</th>
+                  <th>Compromis</th>
+                  <th>Conditions</th>
                   <th>État</th>
-                  <th>Transmis aux étapes</th>
                 </tr>
               </thead>
               <tbody>
-                {retained.map((q) => (
+                {step.proposals.map((q) => (
                   <tr key={q.id}>
                     <td>
                       <b>{q.title}</b>
                       <br />
                       <small>{q.ref}</small>
                     </td>
+                    <td>{q.benefit}</td>
+                    <td>{q.tradeoff}</td>
+                    <td>{q.conditions}</td>
                     <td>{q.stateLabel}</td>
-                    <td>{q.targets.map((n) => `${pad2(n)} · ${stepTitle(n)}`).join(" ; ")}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          ) : (
-            <p className="h7-muted">Aucun choix retenu à cette étape : rien n’est encore transmis.</p>
-          ))}
+          </div>
+        )}
+
+        {tab === "transfer" && (
+          <div className="h7-transfer">
+            <h3>Intentions reçues</h3>
+            <ReceivedTable incoming={step.incoming} onGoto={onGoto} />
+            <h3>Choix à transmettre</h3>
+            {retained.length ? (
+              <div className="h7-table-wrap">
+                <table className="h7-table">
+                  <thead>
+                    <tr>
+                      <th>Référence</th>
+                      <th>Choix retenu</th>
+                      <th>Destinations</th>
+                      <th>État</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {retained.map((q) => (
+                      <tr key={q.id}>
+                        <td>{q.ref}</td>
+                        <td>
+                          <b>{q.title}</b>
+                          <br />
+                          {q.text}
+                        </td>
+                        <td>
+                          {q.targets.length
+                            ? q.targets.map((n) => (
+                                <button key={n} type="button" className="h7-chip h7-goto" onClick={() => onGoto(n)}>
+                                  {pad2(n)} · {stepScope(n)}
+                                </button>
+                              ))
+                            : "Dossier de conception détaillée"}
+                        </td>
+                        <td>{q.stale ? "À réexaminer" : q.stateLabel}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p>Aucune proposition retenue à cette étape. Retenir ou adapter une proposition crée sa transmission.</p>
+            )}
+            <p className="h7-callout">La transmission ajoute une intention liée au dossier. Elle ne remplace pas vos textes manuels et ne dessine pas automatiquement un aménagement.</p>
+          </div>
+        )}
 
         <details className="h7-fold">
           <summary>Cadre de lecture et éléments antérieurs conservés</summary>
@@ -347,8 +446,7 @@ export function HarmoniePanel({
               </p>
             )}
             <p className="h7-muted">
-              Les archives générales Harmony sont conservées dans le dossier, hors navigation. Les interprétations traditionnelles ne certifient ni sécurité,
-              ni santé, ni prospérité.
+              Les archives générales Harmony sont conservées dans le dossier, hors navigation. Les interprétations traditionnelles ne certifient ni sécurité, ni santé, ni prospérité.
             </p>
           </div>
         </details>

@@ -1,39 +1,30 @@
 /**
  * Module Parcours — les 21 étapes d'un projet : lecture, formulaire métier,
- * statut (« Marquer terminée »), arbitrages Harmonie. Monté sous
- * `/projects/:projectId/steps` ; l'autorisation par projet est vérifiée ici
- * à chaque appel (jamais seulement « connecté »).
+ * statut (« Marquer terminée »), arbitrages Harmonie, actualisation des
+ * propositions et rapports. Monté sous `/projects/:projectId/steps` ;
+ * l'autorisation par projet est vérifiée ici à chaque appel (jamais
+ * seulement « connecté »).
  *
  * Le serveur fait autorité : les clés de formulaire acceptées sont celles
  * du schéma de l'étape, les valeurs sont typées, et les règles Harmonie
- * (`decideHarmonieProposal`) s'exécutent ici, pas seulement dans
- * l'interface.
+ * (`decideHarmonieProposal`, péremption « À réexaminer ») s'exécutent ici,
+ * pas seulement dans l'interface.
  */
 import { Router, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import {
-  EMPTY_HARMONIE_STEP_STATE,
   HarmonieError,
-  buildHarmonieProposals,
   decideHarmonieProposal,
-  harmonieProfile,
-  incomingIntentions,
+  harmonieReportFileName,
   isDecisionChoice,
-  localHarmonieOptions,
-  recommendedDesignOption,
-  recommendedSiteOption,
-  siteProposalComputation,
+  regenerateHarmonieStep,
   validateSiteObservations,
-  type HarmonieProposalComputation,
   type HarmonieProposalStatus,
-  type HarmonieStepState,
-  type ModelAnalysis,
   type ParcoursFieldValue,
   type ParcoursStepContent,
   type ParcoursStepDefinition,
   type ParcoursStepStatus,
-  type SiteContext,
   type SiteObservations,
 } from "@parcours/domain-model";
 import { db } from "../db/client.js";
@@ -41,104 +32,14 @@ import { projectSteps, projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS, parcoursStepDefinition } from "../data/parcours.js";
 import { loadOwnedProject, type OwnedProject } from "../lib/owned-project.js";
-import { loadSiteContext } from "../lib/site-context.js";
-import { loadModelAnalysis } from "../lib/model-context.js";
+import { computationFor, harmonieReport, loadStepContext, stepView, withRows } from "../lib/step-context.js";
 import { loadStepRows, upsertStep } from "../lib/step-rows.js";
-import { loadProgrammeRepartition } from "./programme.js";
 import { stepFilesRouter } from "./step-files.js";
 
 export const parcoursStepsRouter = Router({ mergeParams: true });
 parcoursStepsRouter.use(requireAuth);
 // Sources de l'étape (pièces jointes) : module Projets et sources, monté par étape.
 parcoursStepsRouter.use("/:stepNumber/files", stepFilesRouter);
-
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-/**
- * Profil Harmonie du projet : le type de bâtiment de la répartition
- * programmatique **une fois déclaré**. Tant que personne n'a touché à la
- * répartition, le profil reste « Type à préciser » — c'est ce que le
- * prototype affiche sur un projet vierge (capture new-02-desktop-expanded :
- * « Comparer accueil extérieur, espace ouvert et desserte sans supposer un
- * usage intérieur »), le réglage par défaut « tertiaire » n'y existant
- * qu'après un premier passage par l'étape 06.
- */
-async function projectProfile(projectId: string) {
-  const rep = await loadProgrammeRepartition(projectId);
-  return harmonieProfile(HARMONIE_PROFILES, rep.stored ? rep.type : null, rep.components);
-}
-
-/**
- * Le bloc « site » de l'étape 01 : faits de la parcelle, géolocalisation
- * (conversion explicite ou repère saisi), observations déclarées et
- * proposition de départ — ce que `siteDataHTML` et la recommandation du
- * prototype affichent. Le contour local sert au schéma SVG côté client.
- */
-function siteView(c: SiteContext) {
-  return {
-    parcel: {
-      parcelNumber: c.parcel.parcelNumber,
-      commune: c.parcel.commune,
-      crs: c.parcel.crs,
-      units: c.parcel.units,
-      vertexIds: c.parcel.vertexIds,
-      vertexCount: c.parcel.vertices.length,
-      officialArea: c.parcel.officialArea,
-      sourceFile: c.parcel.sourceFile,
-      area: c.area,
-      /** Contour dans le repère local (origine au centroïde) — jamais mélangé au repère cadastral. */
-      local: c.local,
-    },
-    geo: c.geo,
-    frontage: c.frontage,
-    observations: c.observations,
-    recommendation: recommendedSiteOption(c.observations),
-  };
-}
-
-/** La vue complète d'une étape telle que le client l'affiche : définition, contenu, propositions Harmonie calculées, intentions reçues. */
-function stepView(def: ParcoursStepDefinition, rows: Map<number, { status: ParcoursStepStatus; content: ParcoursStepContent }>, profile: ReturnType<typeof harmonieProfile>, site: SiteContext | null, model: ModelAnalysis | null = null) {
-  const row = rows.get(def.number);
-  const content = row?.content ?? EMPTY_STEP_CONTENT;
-  // Étape 01 : propositions de site calculées sur la parcelle du projet ;
-  // étapes 10/11 : propositions localisées sur les locaux du modèle. Elles
-  // sont aussi ce que les étapes aval reçoivent comme intentions.
-  const siteComputation = site ? siteProposalComputation(site) : null;
-  const computationFor = (n: number): HarmonieProposalComputation | null => {
-    if (n === 1) return siteComputation;
-    if ((n === 10 || n === 11) && model) {
-      return { options: null, recommendedKey: n === 10 ? recommendedDesignOption(model).key : "A", locals: localHarmonieOptions(model, n, profile.usage) };
-    }
-    return null;
-  };
-  const computed = computationFor(def.number);
-  const proposals = buildHarmonieProposals(HARMONIE_PROFILES, def, profile, content.harmonie, computed);
-  const incoming = incomingIntentions(
-    HARMONIE_PROFILES,
-    PARCOURS_STEPS.map((d) => ({ def: d, state: rows.get(d.number)?.content.harmonie ?? EMPTY_HARMONIE_STEP_STATE, computed: computationFor(d.number) })),
-    def.number,
-    profile,
-  );
-  return {
-    ...def,
-    status: row?.status ?? EMPTY_STEP_CONTENT.status,
-    content,
-    proposals,
-    incoming,
-    retainedCount: proposals.filter((q) => q.retained).length,
-    profile,
-    site: def.number === 1 && site ? siteView(site) : null,
-    /** Étapes 10/11 : la proposition de départ calculée sur le modèle (`recommended(10)`). */
-    recommendation: def.number === 10 && model ? recommendedDesignOption(model) : null,
-    /** Étapes 10/11 : l'empreinte du modèle lu (`nativeHash`) et ses niveaux. */
-    model: (def.number === 10 || def.number === 11) && model ? { nativeHash: model.nativeHash, floors: model.floors, roomCount: model.rooms.length } : null,
-  };
-}
-
-type Querier = Tx | typeof db;
-async function siteFor(q: Querier, project: OwnedProject, profile: ReturnType<typeof harmonieProfile>) {
-  return loadSiteContext(q, project, profile);
-}
 
 async function ownedProjectOr404(req: Request, res: Response): Promise<OwnedProject | null> {
   const project = await loadOwnedProject((req.params as Record<string, string>)["projectId"] ?? "", req.user!.id);
@@ -156,11 +57,19 @@ function stepOr404(raw: string, res: Response): ParcoursStepDefinition | null {
 parcoursStepsRouter.get("/", async (req, res) => {
   const project = await ownedProjectOr404(req, res);
   if (!project) return;
-  const rows = await loadStepRows(db, project.id);
-  const profile = await projectProfile(project.id);
-  const site = await siteFor(db, project, profile);
-  const model = await loadModelAnalysis(db, project.id);
-  res.json(PARCOURS_STEPS.map((def) => stepView(def, rows, profile, site, model)));
+  const ctx = await loadStepContext(db, project);
+  res.json(PARCOURS_STEPS.map((def) => stepView(def, ctx)));
+});
+
+/**
+ * « Exporter la synthèse des choix Harmonie » (`summary-export` du prototype,
+ * outils du projet) : les étapes effectivement ouvertes, en un document HTML
+ * téléchargeable — `Harmonie_Choix_Parcours_V7.html`.
+ */
+parcoursStepsRouter.get("/harmonie/rapport", async (req, res) => {
+  const project = await ownedProjectOr404(req, res);
+  if (!project) return;
+  sendReport(res, harmonieReport(await loadStepContext(db, project), null, new Date().toISOString()), null);
 });
 
 parcoursStepsRouter.get("/:stepNumber", async (req, res) => {
@@ -168,10 +77,24 @@ parcoursStepsRouter.get("/:stepNumber", async (req, res) => {
   if (!project) return;
   const def = stepOr404(req.params["stepNumber"] as string, res);
   if (!def) return;
-  const rows = await loadStepRows(db, project.id);
-  const profile = await projectProfile(project.id);
-  res.json(stepView(def, rows, profile, await siteFor(db, project, profile), await loadModelAnalysis(db, project.id)));
+  res.json(stepView(def, await loadStepContext(db, project)));
 });
+
+/** « Rapport de cette étape » (`stage-report`) : `Harmonie_Etape_NN_V7.html`. */
+parcoursStepsRouter.get("/:stepNumber/harmonie/rapport", async (req, res) => {
+  const project = await ownedProjectOr404(req, res);
+  if (!project) return;
+  const def = stepOr404(req.params["stepNumber"] as string, res);
+  if (!def) return;
+  sendReport(res, harmonieReport(await loadStepContext(db, project), def.number, new Date().toISOString()), def.number);
+});
+
+function sendReport(res: Response, html: string, stepNumber: number | null) {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${harmonieReportFileName(stepNumber)}"`);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.send(html);
+}
 
 // --- Données du site (étape 01) --------------------------------------------
 
@@ -193,7 +116,9 @@ const siteSchema = z.object({
  * `save-site` / `geographic` du prototype : enregistre les données du site
  * (côté d'approche, nature de l'approche, priorité, contextes, source,
  * note, repère géographique saisi) et recalcule les propositions de
- * l'étape 01 sous leurs hypothèses. Les arbitrages déjà pris sont conservés.
+ * l'étape 01 sous leurs hypothèses (`generate(1, p, true)`). Les arbitrages
+ * déjà pris sont conservés — datés de l'empreinte précédente, donc « à
+ * réexaminer » jusqu'à leur confirmation.
  */
 parcoursStepsRouter.put("/:stepNumber/site", async (req, res) => {
   const project = await ownedProjectOr404(req, res);
@@ -209,17 +134,16 @@ parcoursStepsRouter.put("/:stepNumber/site", async (req, res) => {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
     return;
   }
-  const profile = await projectProfile(project.id);
-  const current = await siteFor(db, project, profile);
+  const current = await loadStepContext(db, project);
   const now = new Date().toISOString();
   const next: SiteObservations = {
-    ...current.observations,
+    ...current.site.observations,
     ...parsed.data,
-    geographic: parsed.data.geographic === undefined ? current.observations.geographic : parsed.data.geographic,
+    geographic: parsed.data.geographic === undefined ? current.site.observations.geographic : parsed.data.geographic,
     observedAt: now,
   };
   try {
-    validateSiteObservations(next, current.parcel.vertices.length);
+    validateSiteObservations(next, current.site.parcel.vertices.length);
   } catch (err) {
     if (err instanceof HarmonieError) {
       res.status(422).json({ error: "harmonie_rule", message: err.message });
@@ -228,17 +152,18 @@ parcoursStepsRouter.put("/:stepNumber/site", async (req, res) => {
     throw err;
   }
   const result = await db.transaction(async (tx) => {
-    await tx.update(projects).set({ siteObservations: next as unknown as Record<string, unknown>, updatedAt: new Date() }).where(eq(projects.id, project.id));
+    const siteObservations = next as unknown as Record<string, unknown>;
+    await tx.update(projects).set({ siteObservations, updatedAt: new Date() }).where(eq(projects.id, project.id));
     const rows = await loadStepRows(tx, project.id);
+    // Le contexte sur les nouvelles observations : l'empreinte de l'étape 01 change avec elles.
+    const ctx = await loadStepContext(tx, { ...project, siteObservations }, rows);
     const current1 = rows.get(1) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
-    // Génération : la révision des propositions avance, les choix restent.
-    const harmonie: HarmonieStepState = { ...current1.content.harmonie, revision: current1.content.harmonie.revision + 1, generatedAt: now };
+    const harmonie = regenerateHarmonieStep(current1.content.harmonie, ctx.dependencies.get(1)?.fingerprint ?? null, now);
     const status: ParcoursStepStatus = current1.status === "a-faire" ? "en-cours" : current1.status;
     const content: ParcoursStepContent = { ...current1.content, status, harmonie };
     await upsertStep(tx, project.id, 1, status, content);
     rows.set(1, { status, content });
-    const site = await siteFor(tx, { ...project, siteObservations: next as unknown as Record<string, unknown> }, profile);
-    return stepView(def, rows, profile, site, await loadModelAnalysis(tx, project.id));
+    return stepView(def, withRows(ctx, rows));
   });
   res.json(result);
 });
@@ -317,8 +242,8 @@ parcoursStepsRouter.patch("/:stepNumber", async (req, res) => {
       .values({ projectId: project.id, stepNumber: def.number, status, content: { ...content } })
       .onConflictDoUpdate({ target: [projectSteps.projectId, projectSteps.stepNumber], set: { status, content: { ...content } } });
     rows.set(def.number, { status, content });
-    const profile = await projectProfile(project.id);
-    return stepView(def, rows, profile, await siteFor(tx, project, profile), await loadModelAnalysis(tx, project.id));
+    // Les empreintes des étapes qui lisent ce formulaire changent avec lui : péremption calculée à la lecture, rien n'est effacé.
+    return stepView(def, await loadStepContext(tx, project, rows));
   });
   res.json(result);
 });
@@ -331,6 +256,32 @@ const decisionSchema = z.object({
   owner: z.string().max(250).optional(),
   proof: z.string().max(3000).optional(),
   link: z.string().max(500).optional(),
+});
+
+/**
+ * « Actualiser les propositions » (`generate(id, p, true)`) : la révision
+ * avance et l'empreinte de génération devient l'empreinte courante ; les
+ * choix antérieurs sont conservés pour réexamen (leur `acceptedHash` ne
+ * change pas), les vérifications redeviennent possibles.
+ */
+parcoursStepsRouter.post("/:stepNumber/harmonie/generate", async (req, res) => {
+  const project = await ownedProjectOr404(req, res);
+  if (!project) return;
+  const def = stepOr404(req.params["stepNumber"] as string, res);
+  if (!def) return;
+  const now = new Date().toISOString();
+  const result = await db.transaction(async (tx) => {
+    const rows = await loadStepRows(tx, project.id);
+    const ctx = await loadStepContext(tx, project, rows);
+    const current = rows.get(def.number) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
+    const harmonie = regenerateHarmonieStep(current.content.harmonie, ctx.dependencies.get(def.number)?.fingerprint ?? null, now);
+    const status: ParcoursStepStatus = current.status === "a-faire" ? "en-cours" : current.status;
+    const content: ParcoursStepContent = { ...current.content, status, harmonie };
+    await upsertStep(tx, project.id, def.number, status, content);
+    rows.set(def.number, { status, content });
+    return stepView(def, withRows(ctx, rows));
+  });
+  res.json(result);
 });
 
 parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) => {
@@ -349,19 +300,25 @@ parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) =
   try {
     const result = await db.transaction(async (tx) => {
       const rows = await loadStepRows(tx, project.id);
+      const ctx = await loadStepContext(tx, project, rows);
       const current = rows.get(def.number) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
-      const profile = await projectProfile(project.id);
-      const site = await siteFor(tx, project, profile);
-      const model = await loadModelAnalysis(tx, project.id);
-      const computed: HarmonieProposalComputation | null =
-        def.number === 1
-          ? siteProposalComputation(site)
-          : (def.number === 10 || def.number === 11) && model
-            ? { options: null, recommendedKey: def.number === 10 ? recommendedDesignOption(model).key : "A", locals: localHarmonieOptions(model, def.number, profile.usage) }
-            : null;
-      const decided = decideHarmonieProposal(HARMONIE_PROFILES, def, current.content.harmonie, proposalId, parsed.data as { status: HarmonieProposalStatus; notes?: string; owner?: string; proof?: string; link?: string }, { now, computed });
+      const dep = ctx.dependencies.get(def.number);
+      const decided = decideHarmonieProposal(
+        HARMONIE_PROFILES,
+        def,
+        current.content.harmonie,
+        proposalId,
+        parsed.data as { status: HarmonieProposalStatus; notes?: string; owner?: string; proof?: string; link?: string },
+        { now, computed: computationFor(ctx, def.number), fingerprint: dep?.fingerprint ?? null, stale: dep?.stale ?? false },
+      );
+      // Première génération implicite (`generate(id)` à l'ouverture du
+      // panneau, révision 1) : une étape arbitrée sans empreinte reçoit celle
+      // de ses données courantes, pour que leurs changements la signalent.
+      const harmonie = decided.state.generatedHash
+        ? decided.state
+        : { ...decided.state, revision: Math.max(decided.state.revision, 1), generatedHash: dep?.fingerprint ?? null, generatedAt: decided.state.generatedAt ?? now };
       const status: ParcoursStepStatus = current.status === "a-faire" ? "en-cours" : current.status;
-      const content: ParcoursStepContent = { ...current.content, status, harmonie: decided.state };
+      const content: ParcoursStepContent = { ...current.content, status, harmonie };
       await upsertStep(tx, project.id, def.number, status, content);
       rows.set(def.number, { status, content });
 
@@ -391,7 +348,7 @@ parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) =
           }
         }
       }
-      return stepView(def, rows, profile, site, model);
+      return stepView(def, withRows(ctx, rows));
     });
     res.json(result);
   } catch (err) {
@@ -402,5 +359,3 @@ parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) =
     throw err;
   }
 });
-
-

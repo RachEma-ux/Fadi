@@ -1223,6 +1223,90 @@ h3 {
   background: #f1e3df;
   color: #a0351f;
 }
+/* « À réexaminer · choix conservé », « Source à réexaminer » (h7-css : .h7-chip.warn) */
+.h7-chip.warn {
+  background: #fff0d8;
+  color: #895f24;
+  white-space: normal;
+}
+.h7-proposal.stale {
+  border-color: #e3c58f;
+}
+button.h7-chip.h7-goto {
+  cursor: pointer;
+  border: 1px solid #c8d9ce;
+  margin: 2px 4px 2px 0;
+  padding: 3px 9px;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  min-height: 0;
+}
+button.h7-chip.h7-goto:hover {
+  background: #dcefe2;
+}
+/* En-tête du panneau : objet de l'étape à gauche, « Actualiser les propositions » / « Rapport de cette étape » à droite (h7-head) */
+.h7-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.h7-head > div:first-child {
+  max-width: 780px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.h7-head .h7-actions {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
+}
+@media (max-width: 720px) {
+  .h7-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .h7-head .h7-actions {
+    justify-content: flex-start;
+  }
+}
+/* Tableaux Harmonie : défilement horizontal sur téléphone (h7-table-wrap du prototype) */
+.h7-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.h7-head .h7-actions .button-secondary,
+.h7-head .h7-actions button {
+  padding: 0.45rem 0.7rem;
+  font-size: 13px;
+}
+.h7-received td:last-child button {
+  padding: 0.3rem 0.6rem;
+  font-size: 12.5px;
+}
+/* `toast()` du prototype (#h7-toast) */
+.h7-toast {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  max-width: calc(100vw - 32px);
+  width: max-content;
+  padding: 14px 20px;
+  background: #244f42;
+  color: #fff;
+  border-radius: 9px;
+  box-shadow: 0 4px 22px #0002;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.project-tools {
+  margin-top: 18px;
+}
 .h7-reco {
   color: var(--forest-900);
   font-weight: 600;

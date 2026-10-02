@@ -7,3 +7,5 @@ export * from "./programme.js";
 export * from "./site.js";
 export * from "./building-library.js";
 export * from "./model-analysis.js";
+export * from "./dependencies.js";
+export * from "./harmonie-report.js";

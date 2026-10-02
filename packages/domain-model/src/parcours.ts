@@ -97,10 +97,28 @@ export interface HarmonieHistoryEntry {
 }
 
 /**
+ * Ce que la proposition disait au moment de l'arbitrage. Sert à conserver un
+ * choix dont la proposition a disparu des données courantes (local supprimé
+ * du modèle, modèle remplacé) : le prototype garde alors la proposition
+ * « orpheline » avec son choix, à réexaminer — jamais effacée en silence.
+ */
+export interface HarmonieProposalSnapshot {
+  ref: string;
+  key: string;
+  group: "parti" | "local";
+  title: string;
+  text: string;
+  source: string;
+  targets: number[];
+  roomId?: string;
+  objectId?: string;
+}
+
+/**
  * L'arbitrage porté par le projet sur UNE proposition Harmonie d'une étape.
  * La proposition elle-même (titre, texte, intérêt, compromis, conditions)
  * vient de la définition de l'étape et du profil du projet — elle n'est pas
- * copiée ici, sauf son texte adapté.
+ * copiée ici, sauf son texte adapté et l'instantané pris à l'arbitrage.
  */
 export interface HarmonieProposalDecision {
   status: HarmonieProposalStatus;
@@ -117,12 +135,28 @@ export interface HarmonieProposalDecision {
   decisionVersion: number;
   updatedAt: string | null;
   history: HarmonieHistoryEntry[];
+  /**
+   * Empreinte des données pertinentes de l'étape quand ce choix a été retenu
+   * (`acceptedHash` du prototype) : si elle diffère de l'empreinte courante,
+   * le choix est conservé mais « à réexaminer ». `null` ou absent : choix
+   * pris sans empreinte (données antérieures), jamais signalé périmé.
+   */
+  acceptedHash?: string | null;
+  snapshot?: HarmonieProposalSnapshot | null;
 }
 
-/** État Harmonie d'une étape pour un projet : révision des propositions et arbitrages par identifiant de proposition (ex. « H01-A »). */
+/**
+ * État Harmonie d'une étape pour un projet : révision des propositions et
+ * arbitrages par identifiant de proposition (ex. « H01-A »). `generatedHash`
+ * est l'empreinte des données pertinentes à la dernière génération
+ * (« Actualiser les propositions ») : quand elle diffère de l'empreinte
+ * courante, l'étape est « à réexaminer » et aucune vérification ne peut y
+ * être consignée avant actualisation.
+ */
 export interface HarmonieStepState {
   revision: number;
   generatedAt: string | null;
+  generatedHash?: string | null;
   proposals: Record<string, HarmonieProposalDecision>;
 }
 
@@ -146,6 +180,7 @@ export interface ParcoursStepContent {
 export const EMPTY_HARMONIE_STEP_STATE: HarmonieStepState = {
   revision: 0,
   generatedAt: null,
+  generatedHash: null,
   proposals: {},
 };
 

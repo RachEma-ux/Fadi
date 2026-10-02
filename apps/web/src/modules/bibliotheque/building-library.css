@@ -17,4 +17,4 @@ a.bl-button{display:inline-flex;align-items:center;text-decoration:none;color:#1
 a.bl-button.primary{color:#fff}
 .library-fold .bl-button{margin-top:4px}
 /* Dans la colonne de l'application (flex), `margin:auto` empêcherait l'étirement : largeur pleine, le contenu large défile dans ses tableaux. */
-main.bl{width:100%}
+main.bl,.programme-case-editor{width:100%}

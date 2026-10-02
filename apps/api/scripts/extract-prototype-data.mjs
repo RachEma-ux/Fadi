@@ -44,6 +44,14 @@ function scriptById(id) {
   return html.slice(gt, html.indexOf("</script>", gt));
 }
 
+function styleById(id) {
+  const marker = `id="${id}"`;
+  const at = html.indexOf(marker);
+  if (at < 0) throw new Error(`bloc <style id="${id}"> introuvable`);
+  const gt = html.indexOf(">", at) + 1;
+  return html.slice(gt, html.indexOf("</style>", gt));
+}
+
 /** Le littéral objet/tableau qui commence au premier `{` ou `[` après `needle` (appariement des crochets, chaînes respectées). */
 function literalAfter(text, needle, open = "{") {
   const close = open === "{" ? "}" : "]";
@@ -276,6 +284,15 @@ writeJson(
   },
   { pretty: false },
 );
+
+// --- 7. feuille de style du panneau Harmonie (rapports HTML) ---------------
+// `reportHTML` du prototype embarque le contenu de <style id="h7-css"> dans
+// chaque rapport téléchargé : conservé tel quel, en-tête de traçabilité en plus.
+writeFileSync(
+  join(DATA, "harmonie-report.css"),
+  `/* Parcours ${SOURCE_VERSION} — <style id="h7-css"> (Harmonie par étape), extrait tel quel pour les rapports Harmonie_Etape_NN_V7.html / Harmonie_Choix_Parcours_V7.html. */\n` + styleById("h7-css").trim() + "\n",
+);
+console.log("écrit harmonie-report.css");
 
 console.log("extraction terminée — SHA-256 de la source :", sha256);
 

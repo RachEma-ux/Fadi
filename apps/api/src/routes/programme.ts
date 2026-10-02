@@ -39,9 +39,11 @@ export interface StoredRepartition extends ProgrammeRepartition {
   fromCase: boolean;
 }
 
+type Querier = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 /** Le réglage du projet, ou les valeurs par défaut du référentiel tant qu'il n'a jamais été modifié (`programmeStore()` du prototype). */
-export async function loadProgrammeRepartition(projectId: string): Promise<StoredRepartition> {
-  const rows = await db.select().from(programmeRepartitions).where(eq(programmeRepartitions.projectId, projectId)).limit(1);
+export async function loadProgrammeRepartition(projectId: string, q: Querier = db): Promise<StoredRepartition> {
+  const rows = await q.select().from(programmeRepartitions).where(eq(programmeRepartitions.projectId, projectId)).limit(1);
   const row = rows[0];
   if (!row) return { ...defaultProgrammeRepartition(PROGRAMME_REPARTITION), components: [], stored: false, fromCase: false };
   const mode = (PROGRAMME_MODES as readonly string[]).includes(row.mode) ? (row.mode as ProgrammeRepartition["mode"]) : "cible";

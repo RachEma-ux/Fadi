@@ -23,6 +23,10 @@
  *      d'une ligne, décision à réexaminer, programme lié à l'étape 10 ;
  *   6d. sources de l'étape : import d'un fichier, liste, téléchargement en
  *      pièce jointe, suppression avec confirmation ;
+ *   6e. péremption : données du site modifiées → étape 02 « à réexaminer »
+ *      (encart, chip « choix conservé », vérification refusée), « Actualiser
+ *      les propositions », « Confirmer ce choix », « Rapport de cette
+ *      étape », « Voir l’origine », synthèse des choix Harmonie ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
  *      docs/migration/captures/webapp/.
  *
@@ -367,6 +371,41 @@ await page.locator('.h7-proposal:nth-child(3) button:has-text("Voir le schéma")
 await page.waitForTimeout(300);
 check("étape 01 : « Voir le schéma » affiche la variante C", (await page.locator(".h7-site-hero h3").textContent()) === "Arrivées et desserte dissociées");
 
+// 6e. Péremption (« À réexaminer ») et rapports : les données du site viennent de changer → l'étape 02 de l'exemple, générée à l'import, est à réexaminer
+await page.goto(`${exampleUrl}?module=parcours&etape=2`);
+await page.waitForSelector(".h7-panel");
+await page.evaluate(() => { document.querySelector(".h7-panel").open = true; });
+check("étape 02 : « … · 1 choix retenu(s) · à réexaminer » après modification des données du site", (await page.locator(".h7-panel > summary").textContent()).includes("1 choix retenu(s) · à réexaminer"));
+check("étape 02 : encart « Données pertinentes modifiées. »", /Données pertinentes modifiées\. Les choix sont conservés, mais doivent être réexaminés\./.test(await page.locator(".h7-stale").textContent()));
+const staleCard = page.locator(".h7-proposal.stale").first();
+check("étape 02 : chip « À réexaminer · choix conservé » sur le choix de l'exemple", (await staleCard.locator(".h7-chip").first().textContent()) === "À réexaminer · choix conservé");
+await staleCard.locator('button:has-text("Adapter / motiver")').click();
+await staleCard.locator('input').nth(0).fill("Chef de projet");
+await staleCard.locator("textarea").nth(1).fill("Compte rendu de revue n° 4");
+await staleCard.locator('button:has-text("Consigner une vérification")').click();
+await staleCard.locator(".h7-error").waitFor({ timeout: 10000 });
+check("étape 02 : vérification refusée tant que les propositions ne sont pas actualisées (message du prototype)", (await staleCard.locator(".h7-error").textContent()) === "Actualisez d’abord les propositions sur les données courantes.");
+await page.screenshot({ path: `${OUT}/02-desktop-reexaminer.png`, fullPage: true });
+await page.locator('.h7-head button:has-text("Actualiser les propositions")').click();
+await page.waitForFunction(() => !document.querySelector(".h7-stale"), null, { timeout: 10000 });
+check("étape 02 : « Actualiser les propositions » → encart retiré, toast du prototype, choix toujours à réexaminer", (await page.locator(".h7-toast").textContent().catch(() => "")) === "Propositions actualisées ; les choix antérieurs sont conservés pour réexamen." && (await page.locator(".h7-proposal.stale").count()) === 1);
+await page.locator(".h7-proposal.stale").first().locator('button:has-text("Confirmer ce choix")').click();
+await page.waitForFunction(() => document.querySelectorAll(".h7-proposal.stale").length === 0, null, { timeout: 10000 });
+check("étape 02 : « Confirmer ce choix » → « Retenue », plus rien à réexaminer", (await page.locator(".h7-panel > summary").textContent()).includes("1 choix retenu(s)") && !(await page.locator(".h7-panel > summary").textContent()).includes("à réexaminer"));
+const [stageReport] = await Promise.all([page.waitForEvent("download"), page.locator('.h7-head a:has-text("Rapport de cette étape")').click()]);
+const stageReportHtml = await (await import("node:fs/promises")).readFile(await stageReport.path(), "utf8");
+check("étape 02 : « Rapport de cette étape » → Harmonie_Etape_02_V7.html, cartes et choix à transmettre", stageReport.suggestedFilename() === "Harmonie_Etape_02_V7.html" && stageReportHtml.includes("PARCOURS V7 · DIMENSION HARMONIE PAR ÉTAPE") && stageReportHtml.includes("<h3>Choix à transmettre</h3>") && /<title>Harmonie · Escalier B et mezzanine · 02 · /.test(stageReportHtml));
+await page.locator('.h7-tabs button:has-text("Choix & transmission")').click();
+check("étape 02 : onglet « Choix & transmission » — intentions reçues de l'étape 01, destinations", (await page.locator(".h7-transfer .h7-received").count()) === 1 && (await page.locator(".h7-transfer button.h7-goto").count()) >= 1);
+await page.locator(".h7-transfer .h7-received button:has-text('Voir l’origine')").first().click();
+await page.waitForURL(/etape=1/);
+check("étape 02 : « Voir l’origine » ouvre l'étape 01", /etape=1/.test(page.url()));
+await page.goto(`${exampleUrl}?module=parcours`);
+await page.waitForSelector("#parcours-project-tools");
+await page.locator("#parcours-project-tools > summary").click();
+const [synthesis] = await Promise.all([page.waitForEvent("download"), page.locator('#parcours-project-tools a:has-text("Exporter la synthèse des choix Harmonie")').click()]);
+check("outils du projet : « Exporter la synthèse des choix Harmonie » → Harmonie_Choix_Parcours_V7.html", synthesis.suggestedFilename() === "Harmonie_Choix_Parcours_V7.html");
+
 // 6d. Sources de l'étape (étape 03 de l'exemple) : import, liste, téléchargement, suppression
 await page.goto(`${exampleUrl}?module=parcours&etape=3`);
 await page.waitForSelector(".step-sources");
@@ -401,6 +440,7 @@ await page.screenshot({ path: `${OUT}/new-00-overview-mobile.png`, fullPage: tru
 await page.goto(`${projectUrl}?module=parcours&etape=6`);
 await page.waitForSelector(".programme-case-editor");
 await page.screenshot({ path: `${OUT}/new-06-mobile.png`, fullPage: true });
+check("téléphone : étape 06 avec programme appliqué sans défilement horizontal", await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 await page.goto(`${BASE}/bibliotheque/batiments/hotel?projet=${encodeURIComponent(projectUrl.split("/").pop())}`);
 await page.waitForSelector(".bl-scenario");
 await page.screenshot({ path: `${OUT}/bibliotheque-batiments-hotel-mobile.png`, fullPage: true });

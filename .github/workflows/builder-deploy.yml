@@ -84,7 +84,7 @@ jobs:
           PGPASSWORD: fadi_deploy_password
         run: |
           psql -h localhost -U fadi -d fadi -c \
-            "TRUNCATE architectural_objects, atelier_store, levels, parcels, programme_repartitions, project_steps, projects, sessions, users CASCADE;"
+            "TRUNCATE architectural_objects, atelier_store, levels, parcels, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE;"
 
       - name: Start the API
         run: |

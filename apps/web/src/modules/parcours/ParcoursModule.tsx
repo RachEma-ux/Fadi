@@ -15,7 +15,7 @@ import { ParcelleTool } from "../projets-sources/ParcelleTool";
 import { StepSources } from "../projets-sources/StepSources";
 import { ProgrammeRepartition, ProgrammeTransfer } from "../programmation/ProgrammeRepartition";
 import { LibraryFold, SiteQualitiesFold } from "../programmation/ProgrammeCase";
-import { HarmoniePanel } from "./HarmoniePanel";
+import { HarmoniePanel, HarmonieToast } from "./HarmoniePanel";
 import { StepForm } from "./StepForm";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -45,7 +45,11 @@ function StepCard({ step, onOpen }: { step: ParcoursStep; onOpen: () => void }) 
         </div>
         {step.goal && <p className="step-card-goal">{step.goal}</p>}
         {step.content.headline && <p className="step-card-headline">{step.content.headline} →</p>}
-        {step.retainedCount > 0 && <p className="step-card-meta">Harmonie · {step.retainedCount} choix retenu(s)</p>}
+        {step.retainedCount > 0 && (
+          <p className="step-card-meta">
+            Harmonie · {step.retainedCount} choix retenu(s){step.stale || step.staleRetainedCount > 0 ? " · à réexaminer" : ""}
+          </p>
+        )}
       </button>
     </article>
   );
@@ -111,6 +115,7 @@ function StepDetail({
   onBack,
   onPrev,
   onNext,
+  onOpen,
 }: {
   projectId: string;
   step: ParcoursStep;
@@ -120,9 +125,12 @@ function StepDetail({
   onBack: () => void;
   onPrev: (() => void) | null;
   onNext: (() => void) | null;
+  /** `goto` : ouvrir une autre étape (origine d'une intention, destination d'un choix). */
+  onOpen: (stepNumber: number) => void;
 }) {
   const queryClient = useQueryClient();
   const [harmonieErrors, setHarmonieErrors] = useState<Record<string, string>>({});
+  const [toast, setToast] = useState<string | null>(null);
 
   function adopt(updated: ParcoursStep) {
     queryClient.setQueryData<ParcoursStep[]>(["steps", projectId], (list) => (list ?? []).map((s) => (s.number === updated.number ? updated : s)));
@@ -142,11 +150,20 @@ function StepDetail({
         return rest;
       });
       adopt(updated);
+      setToast("Choix enregistré et transmis comme intention ; aucun objet dessiné modifié.");
     },
     onError: (err, { proposalId }) => {
       const message = err instanceof ApiError && err.serverMessage ? err.serverMessage : "L’arbitrage n’a pas pu être enregistré.";
       setHarmonieErrors((e) => ({ ...e, [proposalId]: message }));
     },
+  });
+  const generate = useMutation({
+    mutationFn: () => api.generateHarmonie(projectId, step.number),
+    onSuccess: (updated) => {
+      adopt(updated);
+      setToast("Propositions actualisées ; les choix antérieurs sont conservés pour réexamen.");
+    },
+    onError: () => setToast("Les propositions n’ont pas pu être actualisées."),
   });
 
   const [siteError, setSiteError] = useState<string | null>(null);
@@ -155,11 +172,12 @@ function StepDetail({
     onSuccess: (updated) => {
       setSiteError(null);
       adopt(updated);
+      setToast("Données du site enregistrées ; propositions actualisées sous leurs hypothèses.");
     },
     onError: (err) => setSiteError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "Les données du site n’ont pas pu être enregistrées."),
   });
 
-  const pending = patch.isPending || decide.isPending || saveSite.isPending;
+  const pending = patch.isPending || decide.isPending || generate.isPending || saveSite.isPending;
   const done = step.status === "termine";
   const intro =
     step.number === 1
@@ -199,14 +217,18 @@ function StepDetail({
       {/* Étape 01 : l'outil Parcelle d'abord, puis Harmonie (prototype : `module.after(panel)`). */}
       {step.number === 1 && <ParcelleTool projectId={projectId} />}
       <HarmoniePanel
+        projectId={projectId}
         step={step}
         allSteps={allSteps}
         pending={pending}
         errors={harmonieErrors}
         onDecide={(proposalId, input) => decide.mutate({ proposalId, input })}
+        onGenerate={() => generate.mutate()}
+        onGoto={onOpen}
         onSaveSite={step.number === 1 ? (input) => saveSite.mutate(input) : null}
         siteError={siteError}
       />
+      <HarmonieToast text={toast} onDone={() => setToast(null)} />
 
       {step.number === 10 && <ProgrammeTransfer projectId={projectId} />}
       {(step.number === 10 || step.number === 11) && <NativeAtelier projectId={projectId} stage={step.number} />}
@@ -287,6 +309,7 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
           onBack={() => openStep(null)}
           onPrev={index > 0 ? () => openStep(steps[index - 1]!.number) : null}
           onNext={index < steps.length - 1 ? () => openStep(steps[index + 1]!.number) : null}
+          onOpen={openStep}
         />
       );
     }
@@ -311,6 +334,17 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
           <StepCard key={step.number} step={step} onOpen={() => openStep(step.number)} />
         ))}
       </section>
+      {/* « Outils du projet » de la vue d'ensemble : la synthèse des choix Harmonie (sauvegarde / import JSON : module Projets et sources, à venir). */}
+      <details className="fold-card project-tools" id="parcours-project-tools">
+        <summary>Outils du projet</summary>
+        <div className="fold-card-body">
+          <div className="h7-actions">
+            <a className="button-secondary" href={api.harmonieReportUrl(projectId, null)} download>
+              Exporter la synthèse des choix Harmonie
+            </a>
+          </div>
+        </div>
+      </details>
     </>
   );
 }

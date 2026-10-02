@@ -10,17 +10,18 @@
  * paramètre — ce module ne les invente pas.
  *
  * Les propositions de site de l'étape 01, calculées sur la géométrie de la
- * parcelle (zonage A/B/C avec schéma), viennent de `site.ts` et sont passées
- * ici en `HarmonieProposalComputation`. Non porté (documenté dans
- * docs/migration/matrix.md) : les propositions LOCALES par local des étapes
- * 10 et 11 (analyse du modèle natif) et les empreintes de péremption
- * calculées sur les données amont (« À réexaminer »).
+ * parcelle (zonage A/B/C avec schéma), viennent de `site.ts` ; les
+ * propositions localisées des étapes 10 et 11, de `model-analysis.ts`. Les
+ * deux sont passées ici en `HarmonieProposalComputation`. La péremption
+ * (« À réexaminer » : empreintes par étape, `acceptedHash` par choix) est
+ * calculée dans `dependencies.ts` et reçue ici sous forme d'empreinte.
  */
 import type { SiteZoning } from "@parcours/core-geometry";
 import type {
   HarmonieHistoryEntry,
   HarmonieOption,
   HarmonieProposalDecision,
+  HarmonieProposalSnapshot,
   HarmonieProposalStatus,
   HarmonieStepState,
   ParcoursStepDefinition,
@@ -117,11 +118,29 @@ export interface HarmonieProposal {
   decision: HarmonieProposalDecision;
   retained: boolean;
   stateLabel: string;
+  /**
+   * « À réexaminer · choix conservé » : le choix a été retenu sur des données
+   * (`acceptedHash`) qui ne sont plus celles de l'étape (`proposalStale` du
+   * prototype), ou la proposition a disparu des données courantes (`orphaned`).
+   */
+  stale: boolean;
+  /** Proposition absente des données courantes mais dont le choix retenu est conservé (local disparu du modèle). */
+  orphaned: boolean;
   /** Étape 01 : zonage calculé sur le contour de la parcelle (`null` sans contour exploitable). */
   zoning?: SiteZoning | null;
   /** Propositions localisées : le local du modèle (`niveau|objet`) et l'objet natif. */
   roomId?: string;
   objectId?: string;
+}
+
+/** `proposalStale` du prototype : un choix pris sur une empreinte qui n'est plus l'empreinte courante. Sans empreinte courante, rien n'est signalé. */
+export function isProposalStale(decision: Pick<HarmonieProposalDecision, "acceptedHash">, fingerprint: string | null): boolean {
+  return !!decision.acceptedHash && fingerprint !== null && decision.acceptedHash !== fingerprint;
+}
+
+/** `isStageStale` du prototype : l'étape a été générée (`generatedHash`) sur des données qui ne sont plus les courantes. */
+export function isStageStale(state: Pick<HarmonieStepState, "generatedHash">, fingerprint: string | null): boolean {
+  return !!state.generatedHash && fingerprint !== null && state.generatedHash !== fingerprint;
 }
 
 /** Une proposition localisée sur un local du modèle courant (étapes 10/11, `buildProposals` de h7-app). */
@@ -171,10 +190,15 @@ export function harmonieWhy(stepNumber: number, profile: HarmonieProfile): strin
 /**
  * Les propositions d'une étape pour un projet : définition de l'étape ×
  * profil du projet × arbitrages déjà pris — ou, quand `computed` est
- * fourni (étape 01 : `siteProposalComputation`), les propositions calculées
- * sur les données du projet. Le point de départ privilégié est « A » sauf
- * recommandation calculée (le cas de l'étape 10 — densité d'un local — n'est
- * pas porté).
+ * fourni (étape 01 : `siteProposalComputation` ; étapes 10/11 : locaux du
+ * modèle), les propositions calculées sur les données du projet. Le point
+ * de départ privilégié est « A » sauf recommandation calculée.
+ *
+ * `fingerprint` est l'empreinte courante des données pertinentes de l'étape
+ * (`dependencies.ts`) : elle marque « à réexaminer » les choix pris sur
+ * d'autres données. Un choix retenu dont la proposition n'existe plus (local
+ * disparu du modèle) est conservé en proposition orpheline, à réexaminer —
+ * comme `generate()` du prototype, qui ne perd aucun choix.
  */
 export function buildHarmonieProposals(
   data: HarmonieProfilesData,
@@ -182,6 +206,7 @@ export function buildHarmonieProposals(
   profile: HarmonieProfile,
   state: HarmonieStepState,
   computed: HarmonieProposalComputation | null = null,
+  fingerprint: string | null = null,
 ): HarmonieProposal[] {
   const options: (HarmonieOption & Partial<ComputedHarmonieOption>)[] = computed?.options ?? def.harmonieOptions;
   const recommendedKey = computed?.recommendedKey ?? "A";
@@ -209,6 +234,8 @@ export function buildHarmonieProposals(
       decision,
       retained: isRetainedStatus(data, decision.status),
       stateLabel: data.states[decision.status],
+      stale: isProposalStale(decision, fingerprint),
+      orphaned: false,
       ...(opt.zoning !== undefined ? { zoning: opt.zoning } : {}),
     };
   });
@@ -235,15 +262,65 @@ export function buildHarmonieProposals(
       decision,
       retained: isRetainedStatus(data, decision.status),
       stateLabel: data.states[decision.status],
+      stale: isProposalStale(decision, fingerprint),
+      orphaned: false,
       roomId: opt.roomId,
       objectId: opt.objectId,
     };
   });
-  return [...partis, ...locals];
+  const known = new Set([...partis, ...locals].map((q) => q.id));
+  const orphans: HarmonieProposal[] = [];
+  for (const [id, stored] of Object.entries(state.proposals)) {
+    if (known.has(id) || !isRetainedStatus(data, stored.status)) continue;
+    const decision = { ...EMPTY_HARMONIE_DECISION, ...stored };
+    const snap = decision.snapshot ?? null;
+    const lastText = decision.adaptedText ?? snap?.text ?? [...decision.history].reverse().find((h) => h.text)?.text ?? "";
+    orphans.push({
+      id,
+      ref: snap?.ref ?? id,
+      key: snap?.key ?? id.split("-").slice(1).join("-"),
+      stage: def.number,
+      scope: snap?.group === "local" ? "Local du modèle courant" : (def.scope ?? ""),
+      group: snap?.group ?? "local",
+      title: snap?.title ?? `Proposition ${id}`,
+      text: lastText,
+      originalText: snap?.text ?? lastText,
+      benefit: "",
+      tradeoff: "",
+      conditions: "",
+      why: "Proposition absente des données courantes : son choix est conservé tel qu'il a été pris.",
+      source: snap?.source ?? "",
+      targets: snap?.targets?.slice() ?? def.transmitsTo.slice(),
+      recommended: false,
+      decision,
+      retained: true,
+      stateLabel: data.states[decision.status],
+      stale: true,
+      orphaned: true,
+      ...(snap?.roomId ? { roomId: snap.roomId } : {}),
+      ...(snap?.objectId ? { objectId: snap.objectId } : {}),
+    });
+  }
+  return [...partis, ...locals, ...orphans];
 }
 
 export function retainedCount(data: HarmonieProfilesData, def: ParcoursStepDefinition, state: HarmonieStepState, computed: HarmonieProposalComputation | null = null): number {
   return buildHarmonieProposals(data, def, harmonieProfile(data, null), state, computed).filter((q) => q.retained).length;
+}
+
+/** L'instantané conservé avec un arbitrage : ce que la proposition disait quand le choix a été pris. */
+export function proposalSnapshot(q: HarmonieProposal): HarmonieProposalSnapshot {
+  return {
+    ref: q.ref,
+    key: q.key,
+    group: q.group,
+    title: q.title,
+    text: q.text,
+    source: q.source,
+    targets: q.targets.slice(),
+    ...(q.roomId ? { roomId: q.roomId } : {}),
+    ...(q.objectId ? { objectId: q.objectId } : {}),
+  };
 }
 
 export class HarmonieError extends Error {
@@ -279,10 +356,18 @@ export function decideHarmonieProposal(
   state: HarmonieStepState,
   proposalId: string,
   input: HarmonieDecisionInput,
-  options: { now: string; stale?: boolean | undefined; computed?: HarmonieProposalComputation | null | undefined },
+  options: {
+    now: string;
+    /** `isStageStale` : une vérification est refusée tant que les propositions ne sont pas actualisées. */
+    stale?: boolean | undefined;
+    computed?: HarmonieProposalComputation | null | undefined;
+    /** Empreinte courante de l'étape, enregistrée comme `acceptedHash` du choix retenu. */
+    fingerprint?: string | null | undefined;
+  },
 ): HarmonieDecisionResult {
   if (!(input.status in data.states)) throw new HarmonieError("Statut invalide");
-  const proposals = buildHarmonieProposals(data, def, harmonieProfile(data, null), state, options.computed ?? null);
+  const fingerprint = options.fingerprint ?? null;
+  const proposals = buildHarmonieProposals(data, def, harmonieProfile(data, null), state, options.computed ?? null, fingerprint);
   const q = proposals.find((p) => p.id === proposalId);
   if (!q) throw new HarmonieError("Proposition absente");
   const status = input.status;
@@ -326,6 +411,7 @@ export function decideHarmonieProposal(
     }
   }
   const historyEntry: HarmonieHistoryEntry = { at: options.now, status: prev.status, text: q.text, proof: prev.proof, owner: prev.owner, reason: null };
+  const adaptedText = status === "adapted" ? notes : prev.adaptedText;
   nextProposals[q.id] = {
     ...prev,
     status,
@@ -333,10 +419,15 @@ export function decideHarmonieProposal(
     owner,
     proof,
     link,
-    adaptedText: status === "adapted" ? notes : prev.adaptedText,
+    adaptedText,
     decisionVersion: prev.decisionVersion + 1,
     updatedAt: options.now,
     history: [...prev.history, historyEntry],
+    // `if(retained(q)) q.acceptedHash = fingerprint(id,p)` : un choix retenu
+    // est daté des données sur lesquelles il a été pris ; un choix écarté ou
+    // remis à « proposée » n'a plus d'empreinte à réexaminer.
+    acceptedHash: retainedNow ? fingerprint : null,
+    snapshot: retainedNow ? proposalSnapshot({ ...q, text: adaptedText ?? q.originalText }) : (prev.snapshot ?? null),
   };
   return {
     state: { ...state, proposals: nextProposals },
@@ -344,6 +435,17 @@ export function decideHarmonieProposal(
     dismissed,
     targets: q.targets,
   };
+}
+
+/**
+ * « Actualiser les propositions » (`generate(id, p, true)` du prototype) :
+ * la révision avance, l'empreinte de génération devient l'empreinte
+ * courante ; les arbitrages — et leurs `acceptedHash` — sont conservés, donc
+ * un choix pris sur d'autres données reste « à réexaminer » jusqu'à ce qu'il
+ * soit confirmé.
+ */
+export function regenerateHarmonieStep(state: HarmonieStepState, fingerprint: string | null, now: string): HarmonieStepState {
+  return { ...state, revision: state.revision + 1, generatedAt: now, generatedHash: fingerprint };
 }
 
 export interface IncomingIntention {
@@ -355,24 +457,43 @@ export interface IncomingIntention {
   text: string;
   status: HarmonieProposalStatus;
   stateLabel: string;
+  /** Version de l'arbitrage à l'origine (entre dans l'empreinte des étapes cibles). */
+  decisionVersion: number;
+  /** « Source à réexaminer » : l'étape d'origine est elle-même périmée (`originStale` du prototype). */
+  originStale: boolean;
 }
 
 /**
  * `incoming()` du prototype : les intentions retenues aux étapes amont dont
- * les cibles incluent cette étape, dans l'ordre des étapes.
+ * les cibles incluent cette étape, dans l'ordre des étapes. `staleOf` dit si
+ * une étape amont est périmée (calculé par `dependencies.ts`) ; sans lui,
+ * aucune origine n'est signalée.
  */
 export function incomingIntentions(
   data: HarmonieProfilesData,
   steps: readonly { def: ParcoursStepDefinition; state: HarmonieStepState; computed?: HarmonieProposalComputation | null }[],
   target: number,
   profile: HarmonieProfile,
+  staleOf: ((stepNumber: number) => boolean) | null = null,
 ): IncomingIntention[] {
   const out: IncomingIntention[] = [];
   for (const { def, state, computed } of [...steps].sort((a, b) => a.def.number - b.def.number)) {
     if (def.number >= target) continue;
+    const originStale = staleOf ? staleOf(def.number) : false;
     for (const q of buildHarmonieProposals(data, def, profile, state, computed ?? null)) {
       if (!q.retained || !q.targets.includes(target)) continue;
-      out.push({ origin: def.number, originLabel: `${pad2(def.number)} · ${def.title}`, id: q.id, ref: q.ref, title: q.title, text: q.text, status: q.decision.status, stateLabel: q.stateLabel });
+      out.push({
+        origin: def.number,
+        originLabel: `${pad2(def.number)} · ${def.title}`,
+        id: q.id,
+        ref: q.ref,
+        title: q.title,
+        text: q.text,
+        status: q.decision.status,
+        stateLabel: q.stateLabel,
+        decisionVersion: q.decision.decisionVersion,
+        originStale,
+      });
     }
   }
   return out;

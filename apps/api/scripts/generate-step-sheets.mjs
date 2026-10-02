@@ -28,11 +28,25 @@ mkdirSync(outDir, { recursive: true });
 const pad2 = (n) => String(n).padStart(2, "0");
 const TOOLED = { 1: "Outil Parcelle (iframe « Parcelle — Atelier satellite » : Leaflet, proj4, import KML/KMZ, MapTiler optionnel)", 10: "Atelier natif (3D, niveaux, créateur de vue, couches, exports PNG/SVG)", 11: "Atelier natif en plan orienté nord (coupes A–A / B–B, affichage objets / cotes)" };
 
+/** Les données propres à chaque étape dans son empreinte de péremption (`fingerprintInner` de h7-app, porté dans `dependencies.ts`). */
+function fingerprintScope(n) {
+  if (n === 1) return "le site (parcelle, géolocalisation, données du site, type)";
+  if (n <= 3) return "le site et le formulaire de l'étape" + (n === 2 ? " et les règles d'implantation (`setback`) de la parcelle" : "");
+  if (n <= 6) return "le site, le type de bâtiment, le formulaire de l'étape et les besoins déclarés aux étapes 03–05";
+  if (n === 7) return "le type, le cas de programme appliqué (sinon la répartition programmatique) et le formulaire de l'étape 06";
+  if (n === 8) return "le cas de programme, le formulaire de l'étape et le site";
+  if (n === 9) return "le site, le cas de programme, les règles (02) et le formulaire de l'étape";
+  if (n === 10 || n === 11 || n === 13 || n === 16) return "le site, le cas de programme, le modèle dessiné (`floorDesign`, niveaux, emprise), les références directionnelles et le formulaire de l'étape";
+  return "le type, le formulaire de l'étape, le cas de programme" + (n >= 19 ? " et la décision de l'étape 19" : "");
+}
+const FINGERPRINT = Object.fromEntries(Array.from({ length: 21 }, (_, i) => [i + 1, fingerprintScope(i + 1)]));
+
 /** État de migration par fonction, à la date de génération. */
 function migrationStatus(n) {
   const rows = [];
   rows.push(["Vue d'ensemble → étape, précédente / suivante, « Marquer terminée »", "✅", "ParcoursModule.tsx ; e2e parcours-scenario.mjs"]);
   rows.push(["Harmonie · propositions A/B/C, Retenir / Adapter / Écarter / Traduire / Dessiner / Vérifier, intentions reçues, transmission", "✅", "HarmoniePanel.tsx ; règles serveur dans parcours-steps.ts (tests app.test.ts) ; moteur domain-model/harmonie.ts (tests)"]);
+  rows.push(["Péremption « À réexaminer » (empreinte des données pertinentes de l'étape et des intentions reçues ; encart « Données pertinentes modifiées », chip « À réexaminer · choix conservé », « Source à réexaminer »), « Actualiser les propositions », « Rapport de cette étape » (Harmonie_Etape_" + pad2(n) + "_V7.html)", "✅", "domain-model/dependencies.ts et harmonie-report.ts (tests) ; lib/step-context.ts ; POST …/harmonie/generate, GET …/harmonie/rapport ; e2e 6e"]);
   if (n === 1) rows.push(["Propositions de site A/B/C calculées sur la parcelle (zonage 15/50/25/10 · 10/45/35/10 · 12/43/20/25 %, schéma SVG, légende, export, « Voir le schéma »), proposition de départ selon la priorité déclarée, données du site (côté d'approche, nature, priorité, contextes, source, note, repère WGS84)", "✅", "core-geometry/site-zoning.ts, domain-model/site.ts (tests) ; GET …/steps/1 (site), PUT …/steps/1/site (422 « Pour une approche documentée… ») ; SiteHarmonie.tsx ; e2e étape 01"]);
   if (n === 1) rows.push(["Fond MapTiler / altimétrie depuis le panneau Harmonie", "🟡", "Boutons non repris ; la connexion MapTiler reste disponible dans l'outil Parcelle (« Configurer »)"]);
   if (forms.schemas[String(n)]) rows.push([`Formulaire métier (${forms.schemas[String(n)].length} rubriques), sauvegarde, rechargement`, "✅", "StepForm.tsx ; PATCH /projects/:id/steps/:n (validation par type)"]);
@@ -129,6 +143,7 @@ for (const s of steps) {
   md.push("");
   md.push("- Saisie d'un champ → sauvegarde immédiate (`change` dans le prototype ; `blur` dans Fadi, PATCH validé par type côté serveur).");
   md.push("- Harmonie : « Retenir » remplace toute autre variante retenue (« Variante remplacée par … ») ; « Adapter / motiver » et « Écarter avec motif » exigent 8 caractères ; traduire / dessiner / vérifier exigent responsable + preuve ; « Dessinée » seulement dès l'étape 10 ; une intention retenue remet à faire les étapes cibles et rétrograde un GO pris à l'étape 19.");
+  md.push("- Péremption : l'empreinte de l'étape couvre " + FINGERPRINT[n] + ", plus les intentions reçues (version d'arbitrage, péremption de l'origine) ; si elle change après la génération, l'étape est « à réexaminer » (choix conservés, vérification refusée jusqu'à « Actualiser les propositions ») et chaque choix retenu sur une autre empreinte affiche « À réexaminer · choix conservé » jusqu'à « Confirmer ce choix ».");
   md.push("- « Marquer terminée » bascule l'état ; la progression (n / 21) ne compte que les étapes marquées terminées.");
   if (n === 14) md.push("- KPI finance : Investissement = f1+…+f6 ; Financement = f9+f10 ; Solde = Financement − Investissement ; non calculés tant qu'un des huit postes manque (« Une valeur inconnue n'est pas zéro »).");
   if (n === 17) md.push("- Note provisoire = moyenne des critères f1–f8 compris entre 1 et 5 ; « Due diligence » = Réserves si 16.f10 est rempli ; « Décision » = 19.decision ou « Non prise ».");

@@ -85,6 +85,8 @@ export function parcoursStepDefinition(number: number): ParcoursStepDefinition |
 // ---------------------------------------------------------------------------
 
 export const HARMONIE_PROFILES: HarmonieProfilesData = readJson<HarmonieProfilesData>("harmonie-profiles.json");
+/** Feuille de style du panneau Harmonie (`<style id="h7-css">` du prototype, telle quelle) embarquée dans les rapports HTML téléchargés. */
+export const HARMONIE_REPORT_CSS: string = readFileSync(fileURLToPath(dataFileUrl("harmonie-report.css")), "utf8");
 export const PROGRAMME_REPARTITION: ProgrammeRepartitionData = readJson<ProgrammeRepartitionData>("programme-repartition.json");
 
 // ---------------------------------------------------------------------------
