@@ -2,7 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { MODULES } from "../modules/module-registry";
+import { AnalysesModule } from "../modules/analyses/AnalysesModule";
 import { NativeAtelier } from "../modules/atelier/NativeAtelier";
+import { CollaborationModule } from "../modules/collaboration/CollaborationModule";
+import { DocumentsModule } from "../modules/documents/DocumentsModule";
 import { ParcoursModule } from "../modules/parcours/ParcoursModule";
 import { ProgrammeHypothesesPage, ProgrammeModelLinksPage } from "../modules/programmation/ProgrammeLinks";
 import { ProgrammeRepartition, ProgrammeTransfer } from "../modules/programmation/ProgrammeRepartition";
@@ -105,7 +108,28 @@ export function ProjectShell() {
           </>
         )}
 
-        {activeModule !== "parcours" && activeModule !== "atelier" && activeModule !== "programmation" && activeModule !== "projets-sources" && descriptor && (
+        {activeModule === "analyses" && (
+          <>
+            <h2>Analyses métier</h2>
+            <AnalysesModule projectId={projectId} />
+          </>
+        )}
+
+        {activeModule === "documents" && (
+          <>
+            <h2>Documents</h2>
+            <DocumentsModule projectId={projectId} />
+          </>
+        )}
+
+        {activeModule === "collaboration" && (
+          <>
+            <h2>Collaboration</h2>
+            <CollaborationModule projectId={projectId} />
+          </>
+        )}
+
+        {!["parcours", "atelier", "programmation", "projets-sources", "analyses", "documents", "collaboration"].includes(activeModule) && descriptor && (
           <>
             <h2>{descriptor.label}</h2>
             <p>{descriptor.status}</p>

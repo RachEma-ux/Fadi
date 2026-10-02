@@ -38,26 +38,6 @@ function RatioInput({ family, value, onCommit }: { family: string; value: number
   );
 }
 
-function downloadText(name: string, mime: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: mime }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
-
-/** « Exporter les fiches CSV » de l'exemple résolu : ID ; niveau ; espace ; surface ; capacité cible ; source ; statut (BOM, `;`, CRLF). */
-function resolvedSpacesCsv(spaces: Record<string, unknown>[]): string {
-  const rows = [
-    ["ID", "Niveau", "Espace", "Surface m2", "Capacité cible", "Source capacité", "Statut"],
-    ...spaces.map((s) => [s["id"], s["level"], s["name"], s["unitArea"], s["capacityNumeric"], s["sourceCapacity"] ?? "Non mentionnée", "Capacité hypothétique ; surface calculée"]),
-  ];
-  return "\ufeff" + rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
-}
-
 /** Les fiches d'espaces de l'exemple (`roomsHTML`), chargées à l'ouverture du pli. */
 function ResolvedRoomsFold({ projectId, count }: { projectId: string; count: number }) {
   const [open, setOpen] = useState(false);
@@ -125,9 +105,9 @@ function CaseSummary({ projectId, view }: { projectId: string; view: ProgrammeVi
       {spaces && <ResolvedRoomsFold projectId={projectId} count={spaces.length} />}
       {spaces && (
         <div className="ex81-actions">
-          <button type="button" className="button-secondary" onClick={() => downloadText(`${String(view.programmeCase?.caseId ?? "programme").replace(/[^A-Za-z0-9]+/g, "_")}_Programme_Resolu_V8_19.csv`.replace(/^parcours_lot118_/, "P118_"), "text/csv;charset=utf-8", resolvedSpacesCsv(spaces))}>
+          <a className="button-secondary" href={api.documentUrl(projectId, "fiches")} download>
             Exporter les fiches CSV
-          </button>
+          </a>
           <button type="button" className="button-primary" disabled={copy.isPending} onClick={() => copy.mutate()}>
             Essayer une autre répartition en copie
           </button>

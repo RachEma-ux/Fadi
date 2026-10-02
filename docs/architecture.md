@@ -169,25 +169,32 @@ front.
 
 ### Where this repository stands
 
-Lot 1 is in progress: `packages/core-geometry` is the active-code inventory for the Atelier's rendering
-engine, with reproducible tests as its "cas de test reproductibles".
+Lot 1 is done for the active code: `docs/migration/reference.md` inventories the prototype's scripts, data
+blocks and formats (verified by execution, captures in `docs/migration/captures/reference/`), and
+`apps/api/scripts/extract-prototype-data.mjs` regenerates every extracted dataset from the reference HTML
+(SHA-256 checked). `packages/core-geometry` keeps the rendering engine's pure geometry, with reproducible tests.
 
-Lot 2 has a working slice, not just a skeleton: `apps/api` is a real Express + PostgreSQL/PostGIS server with
-registration/login/sessions and project/level/architectural-object persistence, every route re-checking
-ownership server-side. `packages/domain-model`'s `CommandHistory` is no longer theoretical — the Atelier module
-(`apps/web/src/modules/atelier/AtelierPanel.tsx`) uses it for undo/redo over walls that are actually written to
-the database, with `projects.model_revision` advancing atomically with each change (the mechanism
-`CalculatedResult`/`ProducedDocument`'s `modelRevision` field assumes). `architectural_objects.properties` is
-where `ArchitecturalObject`-shaped data is stored today; the other six domain-model entities (SourceDatum,
-Requirement, Hypothesis, Recommendation, CalculatedResult, Decision, ProducedDocument, BusinessCheck) exist as
-types and runtime-checked coordinate frames, but have no tables or routes yet — they belong to modules not yet
-built (Projets et sources, Programmation, Analyses, Documents).
+Lot 2 is in place: `apps/api` (Express + PostgreSQL/PostGIS) owns projects, the 21 steps and their Harmonie
+decisions, programme cases (revisioned), parcels, the Atelier's native store (revision per key, 409 on a stale
+write, derived `levels` / `architectural_objects` projection, `projects.model_revision` advancing with each
+write), step files, produced documents and comments. Project import covers the P.118 example and the
+prototype's own exports (archive module); undo/redo runs inside the native Atelier engine and is persisted.
+`packages/domain-model` carries the entity types, the frames, and the business logic as pure functions
+(Harmonie rules and staleness, site zoning, programme library, model analysis, design review, Harmony engine
+tables, business checks, documents) — the API executes them server-side, the client only renders.
 
-Lot 3 (the pilot itself) has one working module out of seven: Atelier, with a single object kind (wall). The
-21-step Parcours grid is still placeholder cards — their business content (and the other five modules) is not
-migrated. Auth is real but single-tenant per project (one owner, no sharing yet) — multi-user access control,
-comments and the sync protocol are Lot 4. No regulatory/business-check engine, document generation, or data
-import exists — those are Lot 3's remaining modules plus Lot 4/5.
+Lot 3 is the pilot as it stands: the seven modules have real screens (Projets et sources, Parcours with the 21
+real steps and tools, Programmation, Atelier — the prototype's engine, encapsulated unchanged —, Analyses
+métier, Documents, Collaboration). The conformity matrix (`docs/migration/matrix.md`) is the authoritative
+record of what is ported, with what decision, which proof (domain / API tests, the Playwright scenario,
+captures) and which limits remain. The e2e scenario runs the full workflow on P.118 (import, steps, Atelier
+drawing with undo, parcel tool, Harmonie arbitrations and staleness, library and programme, links to the drawn
+model, transfers, reports, archive, copy, analyses, documents, comments).
+
+Lot 4 is not started: a single owner per project (every route re-checks ownership), no sharing or rights, no
+offline queue — the Collaboration module says so instead of simulating it. Lot 5 items still open are listed
+under « Limites restantes » in the matrix (regulatory checks, MapTiler / altimetry, lazy loading of the Atelier
+engine, e2e in CI, deployment hardening).
 
 ## Acceptance target: "Parcours App — Pilote P.118"
 

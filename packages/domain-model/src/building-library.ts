@@ -552,7 +552,7 @@ export function roomSketchSvg(s: BuildingScenario, roomIndex: number, widthInput
 }
 
 /** `csv(c, s)` : programme d'une variante, séparateur « ; », BOM, cellules protégées contre l'injection de formules. */
-export function programmeCsv(c: BuildingCase, s: { label: string; spaces: LibrarySpace[] }): string {
+export function programmeCsv(c: Pick<BuildingCase, "title" | "type" | "subtype">, s: { label: string; spaces: LibrarySpace[] }): string {
   const safe = (x: unknown) => {
     let v = String(x ?? "");
     if (/^[=+@-]/.test(v)) v = "'" + v;

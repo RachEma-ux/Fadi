@@ -213,3 +213,42 @@ export const programmeCases = pgTable("programme_cases", {
   data: jsonb("data").notNull().$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [primaryKey({ columns: [t.projectId, t.revision] })]);
+
+/**
+ * Documents produits (module Documents) : la dernière production de chaque
+ * document du projet, avec la révision du modèle et l'empreinte des entrées
+ * dont il provient — c'est ce qui permet de dire « à jour » ou « périmé »
+ * sans relire le document (docs/architecture.md, « Document produit :
+ * révision du projet utilisée et état d'actualisation »). Les fichiers
+ * eux-mêmes sont régénérés à la demande, jamais stockés ici.
+ */
+export const producedDocuments = pgTable("produced_documents", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  /** Identifiant stable du document (`harmonie-etape-02`, `bilan-batiment`, `plan-lecture-rdc`, `archive-projet`…). */
+  kind: text("kind").notNull(),
+  label: text("label").notNull(),
+  fileName: text("file_name").notNull(),
+  modelRevision: integer("model_revision").notNull(),
+  /** Empreinte des entrées du document au moment de la production. */
+  inputHash: text("input_hash").notNull(),
+  stepNumber: integer("step_number"),
+  producedAt: timestamp("produced_at", { withTimezone: true }).defaultNow().notNull(),
+  /** Nombre de productions successives. */
+  count: integer("count").notNull().default(1),
+}, (t) => [primaryKey({ columns: [t.projectId, t.kind] })]);
+
+/**
+ * Commentaires de projet (module Collaboration) : un fil par projet, chaque
+ * commentaire pouvant viser une étape. L'auteur est enregistré (identifiant
+ * et courriel au moment de l'écriture) pour la traçabilité ; la suppression
+ * n'est permise qu'à l'auteur.
+ */
+export const projectComments = pgTable("project_comments", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  stepNumber: integer("step_number"),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  authorEmail: text("author_email").notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("project_comments_project_idx").on(t.projectId, t.createdAt)]);

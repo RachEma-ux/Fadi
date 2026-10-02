@@ -326,6 +326,22 @@ writeJson(
   { pretty: false },
 );
 
+// --- 6d. dossier d'étude de l'exemple : structure (exigences enregistrées, non calculées), circulations mesurées, sources web consultées ---
+// `project.data.structure`, `.circulation`, `.webSources` du template résolu : données déclarées de l'exemple,
+// lues par le module Analyses métier (hypothèses et exigences distinguées, jamais recalculées) et par Projets et sources.
+writeJson(
+  "examples/p118-study-dossier.json",
+  {
+    sourceVersion: SOURCE_VERSION,
+    sourceBlock: "script p118-resolved-template → project.data.structure, project.data.circulation, project.data.webSources",
+    exampleId: exemple.id,
+    structure: template.project.data.structure ?? null,
+    circulation: template.project.data.circulation ?? null,
+    webSources: template.project.data.webSources ?? [],
+  },
+  { pretty: false },
+);
+
 // --- 7. feuille de style du panneau Harmonie (rapports HTML) ---------------
 // `reportHTML` du prototype embarque le contenu de <style id="h7-css"> dans
 // chaque rapport téléchargé : conservé tel quel, en-tête de traçabilité en plus.

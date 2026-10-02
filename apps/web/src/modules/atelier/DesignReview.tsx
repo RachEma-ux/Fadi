@@ -28,17 +28,6 @@ const TABS: [Tab, string][] = [
 
 const fmt = (v: number | null | undefined, n = 2) => (Number.isFinite(v as number) ? (v as number).toLocaleString("fr-FR", { maximumFractionDigits: n }) : "Non renseigné");
 
-function download(name: string, mime: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: mime }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1500);
-}
-
 /** `compassHTML` : références directionnelles du bâtiment — saisie, enregistrement, état calculé par le moteur. */
 function CompassTools({ projectId, view, onSaved }: { projectId: string; view: DesignReviewView; onSaved: (next: DesignReviewView, text: string) => void }) {
   const c = view.compass.values;
@@ -227,9 +216,15 @@ function InlineReport({
                 <p className="v62-alert">Aucun contour exploitable : importez une parcelle et dessinez l’emprise dans l’Atelier.</p>
               )}
               <div className="v62-actions">
-                <button type="button" className="button-secondary" disabled={!plan} onClick={() => download(`Plan_lecture_${level}_V7.svg`, "image/svg+xml;charset=utf-8", plan)}>
-                  Plan de lecture SVG ↓
-                </button>
+                {plan ? (
+                  <a className="button-secondary" href={api.planUrl(projectId, level)} download>
+                    Plan de lecture SVG ↓
+                  </a>
+                ) : (
+                  <button type="button" className="button-secondary" disabled>
+                    Plan de lecture SVG ↓
+                  </button>
+                )}
                 <button type="button" className="button-secondary" onClick={() => onGoto(10)}>
                   Agrandir dans l’Atelier 10
                 </button>

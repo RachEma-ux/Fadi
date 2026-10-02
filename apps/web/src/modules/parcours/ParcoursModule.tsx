@@ -13,6 +13,7 @@ import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, typ
 import { AtelierHarmonyPage } from "../atelier/AtelierHarmonyPage";
 import { DesignReviewFold } from "../atelier/DesignReview";
 import { NativeAtelier } from "../atelier/NativeAtelier";
+import { StepComments } from "../collaboration/CollaborationModule";
 import { ImportProjectButton } from "../projets-sources/ImportProjectButton";
 import { ParcelleTool } from "../projets-sources/ParcelleTool";
 import { StepSources } from "../projets-sources/StepSources";
@@ -285,6 +286,7 @@ function StepDetail({
       {/* Bibliothèque des bâtiments : « Exemples · qualités du site » (01–03) ou « Bibliothèque d’exemples par type de bâtiment » / programme lié (≥ 04). */}
       {step.number <= 3 ? <SiteQualitiesFold projectId={projectId} siteText={step.profile.site} /> : <LibraryFold projectId={projectId} />}
       <StepSources projectId={projectId} stepNumber={step.number} />
+      <StepComments projectId={projectId} stepNumber={step.number} />
 
       {patch.isError && (
         <p role="alert" className="h7-error">

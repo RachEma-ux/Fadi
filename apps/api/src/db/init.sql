@@ -143,3 +143,27 @@ CREATE TABLE IF NOT EXISTS architectural_objects (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS architectural_objects_level_id_idx ON architectural_objects (level_id);
+
+CREATE TABLE IF NOT EXISTS produced_documents (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  kind text NOT NULL,
+  label text NOT NULL,
+  file_name text NOT NULL,
+  model_revision integer NOT NULL,
+  input_hash text NOT NULL,
+  step_number integer,
+  produced_at timestamptz NOT NULL DEFAULT now(),
+  count integer NOT NULL DEFAULT 1,
+  PRIMARY KEY (project_id, kind)
+);
+
+CREATE TABLE IF NOT EXISTS project_comments (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  step_number integer,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  author_email text NOT NULL,
+  body text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS project_comments_project_idx ON project_comments (project_id, created_at);

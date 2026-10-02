@@ -181,8 +181,8 @@ export interface ProducedDocument extends Revisioned {
 // Contrôles métier traçables (Analyses métier)
 // ---------------------------------------------------------------------------
 
-/** Absence de données → 'non-evalue', jamais une estimation silencieuse. */
-export type CheckStatus = "non-evalue" | "conforme" | "non-conforme" | "a-verifier";
+/** Absence de données → 'non-evalue', règle qui ne s'applique pas au dossier → 'sans-objet' ; jamais une estimation silencieuse. */
+export type CheckStatus = "non-evalue" | "conforme" | "non-conforme" | "a-verifier" | "sans-objet";
 
 /** Chaque contrôle précise son domaine d'application, sa source, sa version et son résultat. */
 export interface BusinessCheck {

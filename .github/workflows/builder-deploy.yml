@@ -52,6 +52,7 @@ jobs:
       # See apps/api/.env.test.example: app.test.ts's authorization scenarios
       # outrun the production auth rate limit within a single test run.
       AUTH_RATE_LIMIT: "500"
+      API_RATE_LIMIT: "5000"
 
     steps:
       - name: Checkout repository
@@ -84,7 +85,7 @@ jobs:
           PGPASSWORD: fadi_deploy_password
         run: |
           psql -h localhost -U fadi -d fadi -c \
-            "TRUNCATE architectural_objects, atelier_store, levels, parcels, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE;"
+            "TRUNCATE architectural_objects, atelier_store, levels, parcels, produced_documents, project_comments, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE;"
 
       - name: Start the API
         run: |

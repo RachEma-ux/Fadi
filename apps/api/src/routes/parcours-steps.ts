@@ -32,6 +32,7 @@ import { projectSteps, projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS, parcoursStepDefinition } from "../data/parcours.js";
 import { loadOwnedProject, type OwnedProject } from "../lib/owned-project.js";
+import { recordProducedDocument, stepReportHash, synthesisHash } from "../lib/documents.js";
 import { computationFor, harmonieReport, loadStepContext, stepView, withRows } from "../lib/step-context.js";
 import { loadStepRows, upsertStep } from "../lib/step-rows.js";
 import { stepFilesRouter } from "./step-files.js";
@@ -69,7 +70,10 @@ parcoursStepsRouter.get("/", async (req, res) => {
 parcoursStepsRouter.get("/harmonie/rapport", async (req, res) => {
   const project = await ownedProjectOr404(req, res);
   if (!project) return;
-  sendReport(res, harmonieReport(await loadStepContext(db, project), null, new Date().toISOString()), null);
+  const now = new Date();
+  const ctx = await loadStepContext(db, project);
+  await recordProducedDocument(db, project.id, { kind: "harmonie-synthese", label: "Synthèse des choix Harmonie (21 étapes)", fileName: harmonieReportFileName(null), modelRevision: project.modelRevision, inputHash: synthesisHash(ctx), stepNumber: null }, now);
+  sendReport(res, harmonieReport(ctx, null, now.toISOString()), null);
 });
 
 parcoursStepsRouter.get("/:stepNumber", async (req, res) => {
@@ -86,7 +90,10 @@ parcoursStepsRouter.get("/:stepNumber/harmonie/rapport", async (req, res) => {
   if (!project) return;
   const def = stepOr404(req.params["stepNumber"] as string, res);
   if (!def) return;
-  sendReport(res, harmonieReport(await loadStepContext(db, project), def.number, new Date().toISOString()), def.number);
+  const now = new Date();
+  const ctx = await loadStepContext(db, project);
+  await recordProducedDocument(db, project.id, { kind: `harmonie-etape-${String(def.number).padStart(2, "0")}`, label: `Rapport Harmonie de l'étape ${String(def.number).padStart(2, "0")} · ${def.title}`, fileName: harmonieReportFileName(def.number), modelRevision: project.modelRevision, inputHash: stepReportHash(ctx, def.number), stepNumber: def.number }, now);
+  sendReport(res, harmonieReport(ctx, def.number, now.toISOString()), def.number);
 });
 
 function sendReport(res: Response, html: string, stepNumber: number | null) {

@@ -42,7 +42,9 @@ export function createApp() {
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: authLimit, standardHeaders: true, legacyHeaders: false });
   app.use("/auth", authLimiter, authRouter);
 
-  const apiLimiter = rateLimit({ windowMs: 60 * 1000, limit: 300, standardHeaders: true, legacyHeaders: false });
+  // `API_RATE_LIMIT` ne sert, comme `AUTH_RATE_LIMIT`, qu'à desserrer la limite pour la suite de tests (une seule instance, des dizaines de scénarios) ; production : 300 requêtes / minute.
+  const apiLimit = Number(process.env["API_RATE_LIMIT"] ?? 300);
+  const apiLimiter = rateLimit({ windowMs: 60 * 1000, limit: apiLimit, standardHeaders: true, legacyHeaders: false });
   app.use("/projects", apiLimiter, projectsRouter);
   app.use("/examples", apiLimiter, examplesRouter);
   app.use("/library", apiLimiter, libraryRouter);

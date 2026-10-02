@@ -10,23 +10,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fmtLib, programmeCsv, type BuildingCase, type BuildingScenario, type LibrarySpace } from "@parcours/domain-model";
+import { fmtLib, type BuildingScenario, type LibrarySpace } from "@parcours/domain-model";
 import { api, ApiError, type ProgrammeCaseView, type ProgrammeView as ProgrammeViewData } from "../../lib/api";
 import { ProgrammeView } from "../bibliotheque/BuildingLibraryPage";
 import "../bibliotheque/building-library.css";
 
 const fmt = fmtLib;
-
-function download(name: string, mime: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: mime }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
 
 /** Le cas de programme appliqué, complet (jamais le cas en lecture seule d'une pièce jointe). */
 export function appliedCase(view: ProgrammeViewData | undefined): (ProgrammeCaseView & { spaces: LibrarySpace[]; caseId: string; scenarioId: string }) | null {
@@ -118,7 +107,6 @@ export function ProgrammeCaseEditor({ projectId, view }: { projectId: string; vi
   if (!c) return <p className="loading-notice">Chargement du programme…</p>;
   const base = c.scenarios.find((x) => x.id === a.scenarioId) ?? c.scenarios[0]!;
   const s: BuildingScenario = { ...base, spaces: a.spaces, label: a.scenarioLabel ?? base.label, note: a.scenarioNote ?? base.note };
-  const caseForCsv: BuildingCase = c;
   return (
     <section className="bl programme-case-editor" id="bl-programme-current" style={{ padding: 0, maxWidth: "none" }}>
       <section className="bl-card">
@@ -136,9 +124,9 @@ export function ProgrammeCaseEditor({ projectId, view }: { projectId: string; vi
           <Link className="bl-button" to={`/projets/${projectId}?module=programmation&vue=modele`}>
             Comparer au modèle dessiné
           </Link>
-          <button type="button" onClick={() => download(`Programme_projet_${a.caseId}.csv`, "text/csv;charset=utf-8", programmeCsv(caseForCsv, s))}>
+          <a className="bl-button" href={api.documentUrl(projectId, "programme")} download>
             Exporter le programme CSV
-          </button>
+          </a>
           <Link className="bl-button" to={`/projets/${projectId}?module=programmation&vue=hypotheses`}>
             Hypothèses et validation
           </Link>

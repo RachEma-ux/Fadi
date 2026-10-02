@@ -18,6 +18,7 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { DESIGN_REPORT_CSS } from "../data/parcours.js";
 import { designReportFor, designReviewView, loadDesignContext } from "../lib/design-context.js";
 import { loadOwnedProject, type OwnedProject } from "../lib/owned-project.js";
+import { designReportHash, recordProducedDocument } from "../lib/documents.js";
 
 export const designReviewRouter = Router({ mergeParams: true });
 designReviewRouter.use(requireAuth);
@@ -52,7 +53,10 @@ designReviewRouter.post("/review", async (req, res) => {
 designReviewRouter.get("/rapport", async (req, res) => {
   const project = await ownedProjectOr404(req, res);
   if (!project) return;
-  const html = designReportFor(await loadDesignContext(db, project, new Date().toISOString()), DESIGN_REPORT_CSS);
+  const now = new Date();
+  const dctx = await loadDesignContext(db, project, now.toISOString());
+  await recordProducedDocument(db, project.id, { kind: "bilan-batiment", label: "Bilan Harmonie du bâtiment conçu (HTML)", fileName: "Bilan_Harmonie_Batiment_V7.html", modelRevision: project.modelRevision, inputHash: designReportHash(dctx), stepNumber: 10 }, now);
+  const html = designReportFor(dctx, DESIGN_REPORT_CSS);
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Content-Disposition", 'attachment; filename="Bilan_Harmonie_Batiment_V7.html"');
   res.setHeader("X-Content-Type-Options", "nosniff");

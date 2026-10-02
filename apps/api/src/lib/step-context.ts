@@ -65,7 +65,7 @@ export function computationFor(ctx: Pick<StepContext, "site" | "model" | "profil
   return null;
 }
 
-function contentOf(rows: StepRows, n: number) {
+export function contentOf(rows: StepRows, n: number) {
   return rows.get(n)?.content ?? EMPTY_STEP_CONTENT;
 }
 

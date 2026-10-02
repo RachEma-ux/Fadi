@@ -9,5 +9,6 @@ toujours concorder (mêmes surfaces, mêmes quantités).
 
 ## Statut
 
-Pas encore implémenté. Dépend du modèle de domaine versionné (`packages/domain-model`, en cours) et des
-objets produits par l'Atelier et la Programmation.
+`DocumentsModule.tsx` présente le catalogue servi par `GET /projects/:id/documents` : chaque document productible (rapports Harmonie, bilan du bâtiment conçu, plans de lecture SVG, tableaux CSV, fiches de l'exemple, archive JSON) avec la révision du modèle et l'empreinte des entrées dont il serait produit, sa dernière production (`produced_documents`) et son actualité « à jour / périmé » (`documentFreshness`, `packages/domain-model/src/documents.ts`). « Produire ↓ » appelle la route de production, qui régénère le fichier et enregistre la trace ; les téléchargements des autres modules passent par les mêmes routes.
+
+Reste : les dessins techniques et exports PNG / SVG / DXF de l'Atelier (produits par le moteur natif, non catalogués), le rapport HTML d'un cas de la bibliothèque.

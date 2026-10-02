@@ -104,6 +104,20 @@ export function exampleHarmonyDossier(exampleId: string): HarmonyDossierFile | n
   return exampleId === harmonyDossierFile.exampleId ? harmonyDossierFile : null;
 }
 
+/** Dossier d'étude déclaré de l'exemple (`project.data.structure`, `.circulation`, `.webSources` du prototype, tels quels). */
+export interface StudyDossierFile {
+  exampleId: string;
+  structure: Record<string, unknown> | null;
+  circulation: { revision?: number; spaces?: { code: string; name: string; levels: string[]; area: number; dimension: string; use: string }[]; totals?: Record<string, number>; note?: string } | null;
+  webSources: { title: string; url: string; note: string }[];
+}
+const studyDossierFile = readJson<StudyDossierFile>("examples/p118-study-dossier.json");
+
+/** Exigences de structure, circulations mesurées et sources web de l'exemple P.118 — données déclarées, jamais recalculées. */
+export function exampleStudyDossier(exampleId: string | null): StudyDossierFile | null {
+  return exampleId !== null && exampleId === studyDossierFile.exampleId ? studyDossierFile : null;
+}
+
 /** Feuille de style du panneau Harmonie (`<style id="h7-css">` du prototype, telle quelle) embarquée dans les rapports HTML téléchargés. */
 export const HARMONIE_REPORT_CSS: string = readFileSync(fileURLToPath(dataFileUrl("harmonie-report.css")), "utf8");
 /** Feuille de style du bilan du bâtiment conçu (`<style id="flow-v62-css">`), telle quelle : rapport téléchargé et bilan en ligne. */
@@ -365,6 +379,10 @@ export function exampleAttachment(exampleId: string): Record<string, unknown> | 
       dossierV62: { georeference: harmonyDossierFile.georeference, assumptions: harmonyDossierFile.assumptions, stages: harmonyDossierFile.stages },
       programmeCase: programmeCase.programme,
       roomResponses: programmeCase.roomResponses,
+      /** Dossier d'étude déclaré (structure, circulations, sources web) : lu par Analyses métier et Projets et sources. */
+      structure: studyDossierFile.structure,
+      circulation: studyDossierFile.circulation,
+      webSources: studyDossierFile.webSources,
       parcel: {
         parcelNumber: parcel.parcelNumber,
         commune: parcel.commune,

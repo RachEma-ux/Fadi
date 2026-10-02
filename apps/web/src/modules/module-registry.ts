@@ -40,19 +40,19 @@ export const MODULES: ModuleDescriptor[] = [
   {
     id: "analyses",
     label: "Analyses métier",
-    implemented: false,
-    status: "Pas encore implémenté : contrôles traçables (accessibilité, incendie, structure…).",
+    implemented: true,
+    status: "Quantités dérivées du modèle, contrôles traçables (règles de flow-v62, transmissions, chiffrage, structure déclarée), résultats des étapes, variantes de programme ; contrôles réglementaires (accessibilité, incendie) non portés.",
   },
   {
     id: "documents",
     label: "Documents",
-    implemented: false,
-    status: "Pas encore implémenté : génération de plans, tableaux et rapports à partir du modèle.",
+    implemented: true,
+    status: "Catalogue des documents produits depuis la révision courante (rapports Harmonie, bilan du bâtiment, plans de lecture, tableaux, archive) avec leur actualité ; dessins techniques et exports DXF / PNG restent dans l'Atelier.",
   },
   {
     id: "collaboration",
     label: "Collaboration",
-    implemented: false,
-    status: "Pas encore implémenté : accès partagé, commentaires et synchronisation (Lot 4).",
+    implemented: true,
+    status: "Commentaires par projet et par étape, journal des révisions, état de synchronisation du modèle ; partage multi-utilisateur, droits et file hors-ligne non disponibles (Lot 4), annoncés tels quels.",
   },
 ];

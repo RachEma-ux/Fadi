@@ -38,6 +38,14 @@
  *      « Hypothèses et validation » (confirmation refusée sans preuve),
  *      transfert surfacique à total constant (comparaison, application,
  *      révision, décision à réexaminer) ; référence intacte ;
+ *   6h. Analyses métier : contrôles traçables (26, source et version),
+ *      quantités dérivées du modèle, structure et circulations déclarées,
+ *      variantes de programme ;
+ *   6i. Documents : catalogue (33 documents), actualité des productions
+ *      antérieures (à jour / périmé), production du tableau des surfaces ;
+ *   6j. Collaboration : commentaire depuis une étape, accès et
+ *      synchronisation annoncés, journal des révisions filtrable,
+ *      suppression par l'auteur ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
  *      docs/migration/captures/webapp/.
  *
@@ -357,7 +365,7 @@ check("bilan : « Bilan Harmony du bâtiment conçu », 5 onglets, intentions tr
 await page.locator('.v62-tabs button:has-text("Plans & niveaux")').click();
 check("bilan : plan de lecture SVG du RDC (parcelle, emprise, zones, entrée H-ENTREE, nord H-GEO) et tableau des niveaux", (await page.locator(".v62-plan svg").count()) === 1 && /Entrée H-ENTREE/.test(await page.locator(".v62-plan").innerHTML()) && /Nord géographique calculé \(H-GEO\)/.test(await page.locator(".v62-plan").innerHTML()) && (await page.locator(".v62-tab-content .v62-table tbody tr").count()) === 6);
 await page.locator("#v62-report-host").screenshot({ path: `${OUT}/10-desktop-bilan.png` });
-const [planDl] = await Promise.all([page.waitForEvent("download"), page.locator('button:has-text("Plan de lecture SVG ↓")').click()]);
+const [planDl] = await Promise.all([page.waitForEvent("download"), page.locator('a:has-text("Plan de lecture SVG ↓")').click()]);
 check("bilan : « Plan de lecture SVG ↓ » → Plan_lecture_rdc_V7.svg", planDl.suggestedFilename() === "Plan_lecture_rdc_V7.svg");
 await page.locator('.v62-tabs button:has-text("Locaux & Répartition")').click();
 check("bilan : tableau des 74 locaux (mesure, cible / écart, lecture)", (await page.locator(".v62-tab-content .v62-table tbody tr").count()) === 74);
@@ -494,7 +502,7 @@ const roomsBox = await page.locator(".programme-rooms-fold").evaluate((el) => { 
 await page.screenshot({ path: `${OUT}/07-desktop-fiches.png`, fullPage: true, clip: { x: roomsBox.x, y: roomsBox.y, width: roomsBox.width, height: Math.min(900, roomsBox.height) } });
 const roomsRow = (await page.locator(".programme-rooms-fold .v62-table tbody tr").first().textContent()).replace(/[  ]/g, " ");
 check("exemple étape 07 : 74 fiches (niveau / zone, gabarit calculé, capacité cible, réponse et ambiance retenues)", (await page.locator(".programme-rooms-fold .v62-table tbody tr").count()) === 74 && /Sous-sol technique · S01 · Archives sèches.*230,61 m².*9,26 × 27,35 m : enveloppe, non dimension libre.*2 personnes.*Ambiance choisie/s.test(roomsRow), roomsRow.slice(0, 160));
-const [csvDl] = await Promise.all([page.waitForEvent("download"), page.locator('button:has-text("Exporter les fiches CSV")').click()]);
+const [csvDl] = await Promise.all([page.waitForEvent("download"), page.locator('a:has-text("Exporter les fiches CSV")').click()]);
 const csvText = await (await import("node:fs/promises")).readFile(await csvDl.path(), "utf8");
 check("exemple étape 07 : « Exporter les fiches CSV » → P118_Programme_Resolu_V8_19.csv (BOM, « ; », 74 lignes)", csvDl.suggestedFilename() === "P118_Programme_Resolu_V8_19.csv" && csvText.startsWith('﻿"ID";"Niveau";"Espace";"Surface m2";"Capacité cible";"Source capacité";"Statut"') && csvText.split("\r\n").length === 75);
 await page.evaluate(() => { document.querySelector(".h7-panel").open = true; });
@@ -575,6 +583,53 @@ check("transfert : « Appliquer » → toast du prototype, révision 10 (deux ci
 await page.goto(`${exampleUrl}?module=parcours&etape=7`);
 await page.waitForSelector(".programme-case");
 check("la référence est intacte après la copie (révision 6, présentation protégée)", /révision 6/.test(await page.locator(".programme-case .step-card-meta").textContent()) && (await page.locator(".programme-case-editor").count()) === 0);
+
+// 6h. Analyses métier : contrôles traçables (domaine, source, version, résultat), quantités dérivées, dossier déclaré, variantes de programme
+await page.goto(`${exampleUrl}?module=analyses`);
+await page.waitForSelector(".analyses-checks tbody tr", { timeout: 30000 });
+const analysesSub = await page.locator(".analyses-module .biz-sub").first().textContent();
+check("analyses : en-tête tagué de la révision du modèle, des empreintes et du profil", /^Révision du modèle \d+ · empreinte [0-9a-f]{8} · entrées [0-9a-f]{8} · calculé le .* · profil Mixte \/ multi-usages$/.test(analysesSub), analysesSub);
+check("analyses : 26 contrôles traçables (10 règles de conception, 14 transmissions, chiffrage, structure), chacun avec sa source et sa version", (await page.locator(".analyses-checks tbody tr").count()) === 26 && (await page.locator(".analyses-checks tbody tr td:nth-child(5)").allTextContents()).every((t) => /· v\d/.test(t)));
+const checkStatus = async (id) => page.locator(`.analyses-checks tr[data-check="${id}"]`).getAttribute("data-status");
+check("analyses : HEIGHT « à vérifier » (réserve du dossier), IMPLANTATION « conforme », structure « non évalué » (non calculée), chiffrage « conforme »", (await checkStatus("design:HEIGHT")) === "a-verifier" && (await checkStatus("design:IMPLANTATION")) === "conforme" && (await checkStatus("structure:dimensionnement")) === "non-evalue" && (await checkStatus("finance:complet")) === "conforme");
+check("analyses : quantités dérivées — 6 niveaux, 74 zones, parcelle 1 345,55 m² (1 346 m² déclarés), 673 m² d'emprise dans le contour", (await page.locator(".analyses-levels tbody tr").count()) === 6 && /1 345,55 m²1 346 m² déclarés/.test((await page.locator(".biz-kpis").first().textContent()).replace(/[\u202f\u00a0]/g, " ")) && /673 m²dans le contour/.test((await page.locator(".biz-kpis").first().textContent()).replace(/[\u202f\u00a0]/g, " ")) && /74 zone\(s\)/.test(await page.locator(".biz-kpis").first().textContent()));
+check("analyses : structure déclarée (3 exigences, 1 hypothèse, 2 représentations, 1 état), 12 circulations mesurées, variante courante révision 6", (await page.locator('.analyses-structure tr[data-kind="exigence"]').count()) === 3 && (await page.locator('.analyses-structure tr[data-kind="hypothese"]').count()) === 1 && (await page.locator(".analyses-circulation tbody tr").count()) === 12 && /^6EXEMPLE COMPLET/.test(await page.locator(".analyses-scenarios tbody tr").first().textContent()));
+await page.locator(".analyses-module .biz-card").first().screenshot({ path: `${OUT}/analyses-desktop.png` });
+
+// 6i. Documents : catalogue des documents productibles, productions enregistrées et actualité (à jour / périmé)
+await page.goto(`${exampleUrl}?module=documents`);
+await page.waitForSelector(".documents-table tbody tr", { timeout: 30000 });
+const docFreshness = async (kind) => page.locator(`tr[data-document="${kind}"]`).getAttribute("data-freshness");
+check("documents : 33 documents productibles (synthèse, 21 rapports d'étape, bilan, 6 plans, tableau des surfaces, programme, fiches, archive)", (await page.locator(".documents-table tbody tr").count()) === 33 && /33 documents productibles/.test(await page.locator(".documents-module .biz-sub").first().textContent()));
+check("documents : productions antérieures reconnues — rapport de l'étape 02, synthèse et archive à jour ; bilan périmé (références directionnelles enregistrées après sa production)", (await docFreshness("harmonie-etape-02")) === "a-jour" && (await docFreshness("harmonie-synthese")) === "a-jour" && (await docFreshness("archive-projet")) === "a-jour" && (await docFreshness("bilan-batiment")) === "perime" && (await docFreshness("tableau-surfaces")) === "aucune");
+const [surfacesDl] = await Promise.all([page.waitForEvent("download"), page.locator('tr[data-document="tableau-surfaces"] a:has-text("Produire")').click()]);
+const surfacesCsv = await (await import("node:fs/promises")).readFile(await surfacesDl.path(), "utf8");
+await page.waitForFunction(() => document.querySelector('tr[data-document="tableau-surfaces"]')?.getAttribute("data-freshness") === "a-jour", null, { timeout: 10000 });
+check("documents : « Produire » le tableau des surfaces → Tableau_surfaces_V7.csv (74 zones + 6 totaux de niveau), production enregistrée « À jour · révision N »", surfacesDl.suggestedFilename() === "Tableau_surfaces_V7.csv" && surfacesCsv.split("\r\n").length === 82 && /^À jour · révision \d+$/.test(await page.locator('tr[data-document="tableau-surfaces"] .h7-chip').textContent()));
+await page.locator(".documents-module .biz-card").nth(2).screenshot({ path: `${OUT}/documents-desktop.png` });
+
+// 6j. Collaboration : commentaire depuis une étape, accès et synchronisation annoncés tels quels, journal des révisions, suppression par l'auteur
+await page.goto(`${exampleUrl}?module=parcours&etape=8`);
+await page.waitForSelector(".step-comments");
+await page.locator(".step-comments > summary").click();
+check("étape 08 : pli « Commentaires (0) » vide", /Commentaires \(0\)/.test(await page.locator(".step-comments > summary").textContent()) && /Aucun commentaire sur cette étape/.test(await page.locator(".step-comments").textContent()));
+await page.locator(".step-comments textarea").fill("Vérifier la hauteur sous plafond avec le BET.");
+await page.locator('.step-comments button:has-text("Publier le commentaire")').click();
+await page.waitForFunction(() => /Commentaires \(1\)/.test(document.querySelector(".step-comments > summary")?.textContent || ""), null, { timeout: 10000 });
+check("étape 08 : « Publier le commentaire » → « Commentaires (1) », auteur et date", (await page.locator(".step-comments .comment-meta").textContent()).includes(email) && (await page.locator(".step-comments .comment p").textContent()) === "Vérifier la hauteur sous plafond avec le BET.");
+await page.goto(`${exampleUrl}?module=collaboration`);
+await page.waitForSelector(".journal-table tbody tr", { timeout: 30000 });
+const collabKpis = (await page.locator(".collaboration-module .biz-kpis").textContent()).replace(/\s+/g, " ");
+check("collaboration : propriétaire = vous, partage et hors-ligne « Non disponible » (annoncés, pas simulés), révision du modèle et dernière écriture", collabKpis.includes(email) && collabKpis.includes("c'est vous") && (collabKpis.match(/Non disponible/g) || []).length === 2 && /Révision \d+dernière écriture/.test(collabKpis));
+check("collaboration : le commentaire de l'étape 08 apparaît avec son lien « étape 08 »", (await page.locator(".comment").count()) === 1 && (await page.locator('.comment a:has-text("étape 08")').count()) === 1);
+const journalKinds = new Set(await page.locator(".journal-table tbody tr").evaluateAll((rows) => rows.map((r) => r.getAttribute("data-kind"))));
+check("collaboration : journal des révisions relu des données (projet, Harmonie, programme, modèle, parcelle, revue, documents, commentaire), du plus récent au plus ancien", ["projet", "harmonie", "programme", "modele", "parcelle", "revue", "document", "commentaire"].every((k) => journalKinds.has(k)) && (await page.locator(".journal-table tbody tr").first().getAttribute("data-kind")) === "commentaire");
+await page.locator('.collaboration-module .h7-tabs button:has-text("Document")').click();
+check("collaboration : filtre « Document » → les productions enregistrées (rapport 02, synthèse, archive, bilan, tableau des surfaces)", (await page.locator(".journal-table tbody tr").count()) >= 5 && (await page.locator(".journal-table tbody tr").evaluateAll((rows) => rows.every((r) => r.getAttribute("data-kind") === "document"))));
+await page.locator(".collaboration-module .biz-card").first().screenshot({ path: `${OUT}/collaboration-desktop.png` });
+await page.locator(".comment-delete").first().click();
+await page.waitForFunction(() => document.querySelectorAll(".comment").length === 0, null, { timeout: 10000 });
+check("collaboration : « Supprimer » (auteur) → plus de commentaire", (await page.locator(".comment").count()) === 0);
 
 // 6d. Sources de l'étape (étape 03 de l'exemple) : import, liste, téléchargement, suppression
 await page.goto(`${exampleUrl}?module=parcours&etape=3`);

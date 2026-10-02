@@ -16,7 +16,7 @@ const app = createApp();
 async function resetDb() {
   // L'ordre respecte les clés étrangères (CASCADE serait aussi suffisant,
   // mais l'ordre explicite documente les dépendances).
-  await pool.query("TRUNCATE architectural_objects, atelier_store, levels, parcels, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE");
+  await pool.query("TRUNCATE architectural_objects, atelier_store, levels, parcels, produced_documents, project_comments, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE");
 }
 
 beforeAll(async () => {
@@ -1362,5 +1362,180 @@ describe("Programme ↔ modèle dessiné, hypothèses et transfert surfacique", 
     expect(stale.body.message).toBe("Le programme a changé. Recalculez la comparaison.");
     const project = (await client.get(`/projects/${pid}`)).body;
     expect(project.programmeState.transfers).toHaveLength(1);
+  });
+});
+
+describe("Analyses métier — quantités, contrôles traçables, scénarios", () => {
+  it("serves P.118's derived quantities, the traceable checks (domain, source, version, status) tagged with the model revision, the declared structure and circulation, and the programme variants", async () => {
+    const client = await registerAndLogin("analyses@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    const res = await client.get(`/projects/${pid}/analyses`);
+    expect(res.status).toBe(200);
+    const v = res.body;
+    expect(v).toMatchObject({ version: "1.0.0", modelRevision: 1, example: true, profileLabel: "Mixte / multi-usages" });
+    expect(v.nativeHash).toMatch(/^[0-9a-f]{8}$/);
+    // Quantités dérivées du modèle courant : 6 niveaux, 74 zones, parcelle 1 345,55 m² (1 346 m² déclarés).
+    expect(v.quantities.levels).toHaveLength(6);
+    expect(v.quantities.building.roomCount).toBe(74);
+    expect(v.quantities.parcel.area).toBeCloseTo(1345.55, 1);
+    expect(v.quantities.parcel.officialArea).toBe(1346);
+    expect(v.quantities.programme.linkedRooms).toBe(74);
+    // Contrôles : 10 règles de conception + 14 transmissions + chiffrage + structure = 26, chacun avec domaine / source / version.
+    expect(v.checks).toHaveLength(26);
+    expect(v.checks.every((c: { domain: string; source: string; version: string; status: string }) => c.domain && c.source && c.version && c.status)).toBe(true);
+    const byId = Object.fromEntries(v.checks.map((c: { id: string }) => [c.id, c]));
+    expect(byId["design:HEIGHT"]).toMatchObject({ status: "a-verifier", step: 8, priority: "prioritaire" });
+    expect(byId["design:IMPLANTATION"]).toMatchObject({ status: "conforme" });
+    expect(byId["design:CONTEXT"]).toMatchObject({ status: "non-evalue" });
+    expect(byId["finance:complet"]).toMatchObject({ status: "conforme" }); // l'exemple renseigne les huit postes
+    expect(byId["structure:dimensionnement"]).toMatchObject({ status: "non-evalue", detail: "Exigences enregistrées ; résistance, flèche, poinçonnement, pertes, ancrages et appuis non calculés" });
+    expect(v.totals).toMatchObject({ "non-conforme": 0 });
+    expect(v.totals.conforme + v.totals["non-conforme"] + v.totals["a-verifier"] + v.totals["non-evalue"] + v.totals["sans-objet"]).toBe(26);
+    // Résultats calculés des étapes et dossier déclaré (structure, circulations) de l'exemple.
+    expect(v.results.finance).toMatchObject({ investissement: 24000000, financement: 24000000, solde: 0 });
+    expect(v.results.decision).toBe("GO sous conditions");
+    expect(v.structure.statements.map((s: { kind: string }) => s.kind)).toEqual(["exigence", "exigence", "exigence", "hypothese", "representation", "representation", "etat"]);
+    expect(v.circulation).toMatchObject({ revision: 3, totals: { aboveGround: 345.602, basement: 53.067 } });
+    expect(v.circulation.spaces).toHaveLength(12);
+    // Variantes de programme : la variante courante (révision 6), sommée depuis ses fiches.
+    expect(v.scenarios).toHaveLength(1);
+    expect(v.scenarios[0]).toMatchObject({ revision: 6, current: true, deltaProgramme: 0 });
+    expect(v.scenarios[0].sums.programme).toBeCloseTo(2932.26, 2);
+    // Un projet vierge : rien n'est estimé.
+    const blank = await client.post("/projects").send({ code: "P.960", name: "Vide" });
+    const empty = (await client.get(`/projects/${blank.body.id}/analyses`)).body;
+    expect(empty.quantities.levels).toEqual([]);
+    expect(empty.quantities.programme).toBeNull();
+    expect(empty.structure).toBeNull();
+    expect(empty.circulation).toBeNull();
+    expect(empty.scenarios).toEqual([]);
+    const emptyIds = Object.fromEntries(empty.checks.map((c: { id: string; status: string }) => [c.id, c.status]));
+    expect(emptyIds["design:NO-MODEL"]).toBe("non-evalue");
+    expect(emptyIds["design:HEIGHT"]).toBe("sans-objet");
+    expect(emptyIds["finance:complet"]).toBe("non-evalue");
+    expect(emptyIds["structure:dimensionnement"]).toBe("non-evalue");
+    // Jamais pour un autre utilisateur.
+    const other = await registerAndLogin("analyses-other@example.com");
+    expect((await other.get(`/projects/${pid}/analyses`)).status).toBe(404);
+  });
+});
+
+describe("Documents — catalogue, productions et actualité", () => {
+  it("lists P.118's producible documents, records each production with the model revision and input hash, and flags a report as stale once its inputs change", async () => {
+    const client = await registerAndLogin("documents@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    const first = (await client.get(`/projects/${pid}/documents`)).body;
+    // 1 synthèse + 21 rapports d'étape + bilan + 6 plans + tableau des surfaces + programme CSV + fiches de l'exemple + archive.
+    expect(first.documents).toHaveLength(33);
+    expect(first.modelRevision).toBe(1);
+    expect(first.documents.every((d: { freshness: unknown; produced: unknown; current: { modelRevision: number; inputHash: string } }) => d.freshness === null && d.produced === null && d.current.modelRevision === 1 && /^[0-9a-f]{8}$/.test(d.current.inputHash))).toBe(true);
+    const kinds = first.documents.map((d: { kind: string }) => d.kind);
+    expect(kinds).toEqual(expect.arrayContaining(["harmonie-synthese", "harmonie-etape-02", "bilan-batiment", "plan-lecture-rdc", "tableau-surfaces", "programme-csv", "fiches-espaces-csv", "archive-projet"]));
+    // Produire le rapport de l'étape 02 : la production est enregistrée, à jour.
+    expect((await client.get(`/projects/${pid}/steps/2/harmonie/rapport`)).status).toBe(200);
+    const docOf = async (kind: string) => ((await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; freshness: string | null; produced: { count: number; modelRevision: number; inputHash: string } | null; fileName: string }[]).find((d) => d.kind === kind)!;
+    let d02 = await docOf("harmonie-etape-02");
+    expect(d02).toMatchObject({ freshness: "a-jour", fileName: "Harmonie_Etape_02_V7.html", produced: { count: 1, modelRevision: 1 } });
+    expect((await client.get(`/projects/${pid}/steps/2/harmonie/rapport`)).status).toBe(200);
+    expect((await docOf("harmonie-etape-02")).produced!.count).toBe(2);
+    // Un arbitrage à l'étape 02 change les entrées du rapport : périmé ; l'étape 03 n'est pas concernée (jamais produite).
+    await client.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "adapted", notes: "Adaptation pour le test des documents" });
+    d02 = await docOf("harmonie-etape-02");
+    expect(d02.freshness).toBe("perime");
+    expect((await docOf("harmonie-etape-03")).freshness).toBeNull();
+    // Plan de lecture SVG, tableau des surfaces, programme et fiches : pièces jointes nommées comme le prototype, productions enregistrées.
+    const plan = await client.get(`/projects/${pid}/documents/plan/rdc`);
+    expect(plan.status).toBe(200);
+    expect(plan.headers["content-disposition"]).toBe('attachment; filename="Plan_lecture_rdc_V7.svg"');
+    expect(plan.headers["content-type"]).toMatch(/^image\/svg\+xml/);
+    expect(plan.text ?? plan.body.toString()).toContain("<svg");
+    expect((await client.get(`/projects/${pid}/documents/plan/nope`)).status).toBe(404);
+    const surfaces = await client.get(`/projects/${pid}/documents/surfaces`);
+    expect(surfaces.headers["content-disposition"]).toBe('attachment; filename="Tableau_surfaces_V7.csv"');
+    const lines = surfaces.text.split("\r\n");
+    expect(lines[0]).toBe('﻿"Niveau";"Zone";"Identifiant";"Surface_zone_m2";"Usage";"Capacité_indiquée";"Cible_programme_m2";"Écart_m2";"Statut";"Lecture"');
+    expect(lines).toHaveLength(1 + 74 + 6 + 1);
+    expect(lines.filter((l) => l.includes('"TOTAL NIVEAU"'))).toHaveLength(6);
+    const programme = await client.get(`/projects/${pid}/documents/programme`);
+    expect(programme.headers["content-disposition"]).toBe('attachment; filename="Programme_projet_parcours_lot118.csv"');
+    expect(programme.text.split("\r\n")).toHaveLength(75);
+    const fiches = await client.get(`/projects/${pid}/documents/fiches`);
+    expect(fiches.headers["content-disposition"]).toBe('attachment; filename="P118_Programme_Resolu_V8_19.csv"');
+    expect(fiches.text.startsWith('﻿"ID";"Niveau";"Espace";"Surface m2";"Capacité cible";"Source capacité";"Statut"')).toBe(true);
+    expect((await docOf("tableau-surfaces")).freshness).toBe("a-jour");
+    expect((await docOf("plan-lecture-rdc")).freshness).toBe("a-jour");
+    // Le bilan et l'archive s'enregistrent aussi ; une révision du modèle (écriture de l'Atelier) périme les documents du modèle.
+    await client.get(`/projects/${pid}/design-review/rapport`);
+    await client.get(`/projects/${pid}/archive`);
+    expect((await docOf("bilan-batiment")).freshness).toBe("a-jour");
+    expect((await docOf("archive-projet")).freshness).toBe("a-jour");
+    const store = (await client.get(`/projects/${pid}/atelier/store`)).body;
+    const nativeId = store.entries["design.v13.activeProject"] as string;
+    const fdKey = `design.v13.project.${nativeId}.floorDesign`;
+    const fd = store.entries[fdKey];
+    fd.levels.rdc.walls.push({ id: "DOC-rdc-W-NEW", kind: "wall", a: [0, 0], b: [4, 0], thickness: 0.2, height: 3.2, layer: "Murs", type: "mur" });
+    const put = await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: fd, expectedRevision: (store.revisions as Record<string, number>)[fdKey] });
+    expect(put.status).toBe(200);
+    const after = (await client.get(`/projects/${pid}/documents`)).body;
+    expect(after.modelRevision).toBe(2);
+    expect(after.documents.find((d: { kind: string }) => d.kind === "archive-projet").freshness).toBe("perime");
+    expect(after.documents.find((d: { kind: string }) => d.kind === "tableau-surfaces").freshness).toBe("perime");
+    // Jamais pour un autre utilisateur ; un projet sans modèle n'offre ni plan ni tableau.
+    const other = await registerAndLogin("documents-other@example.com");
+    expect((await other.get(`/projects/${pid}/documents`)).status).toBe(404);
+    expect((await other.get(`/projects/${pid}/documents/surfaces`)).status).toBe(404);
+    const blank = await client.post("/projects").send({ code: "P.970", name: "Vide" });
+    const blankDocs = (await client.get(`/projects/${blank.body.id}/documents`)).body.documents as { kind: string }[];
+    expect(blankDocs.map((d) => d.kind).filter((k) => k.startsWith("plan-") || k === "tableau-surfaces" || k === "programme-csv")).toEqual([]);
+    expect((await client.get(`/projects/${blank.body.id}/documents/surfaces`)).status).toBe(404);
+  }, 30000);
+});
+
+describe("Collaboration — accès, synchronisation, journal des révisions, commentaires", () => {
+  it("states what is and is not available, rebuilds the revision journal from dated data, and keeps a per-project comment thread owned by its authors", async () => {
+    const client = await registerAndLogin("collab@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    // Un arbitrage, une production et un transfert pour alimenter le journal.
+    await client.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "adapted", notes: "Adaptation pour le journal des révisions", owner: "Chef de projet" });
+    await client.get(`/projects/${pid}/steps/2/harmonie/rapport`);
+    const v = (await client.get(`/projects/${pid}/collaboration`)).body;
+    expect(v.access).toMatchObject({ ownerEmail: "collab@example.com", you: "collab@example.com", sharing: { available: false } });
+    expect(v.sync).toMatchObject({ modelRevision: 1, offline: { available: false } });
+    expect(v.sync.nativeKeys).toBeGreaterThan(3);
+    expect(typeof v.sync.lastModelWrite).toBe("string");
+    const kinds = new Set(v.journal.map((e: { kind: string }) => e.kind));
+    expect([...kinds]).toEqual(expect.arrayContaining(["projet", "harmonie", "programme", "modele", "parcelle", "document", "revue"]));
+    expect(v.journal[0].at >= v.journal[v.journal.length - 1].at).toBe(true); // du plus récent au plus ancien
+    expect(v.journal.find((e: { label: string }) => e.label === "Étape 02 · proposition H01-B adaptée et retenue")).toMatchObject({ kind: "harmonie", stepNumber: 2, revision: 1, detail: expect.stringContaining("responsable Chef de projet") });
+    // A, retenue par l'exemple, est écartée par le remplacement : l'état antérieur reste dans le journal.
+    expect(v.journal.find((e: { label: string }) => e.label === "Étape 02 · proposition H01-A · état antérieur conservé (retenue)")).toMatchObject({ detail: expect.stringContaining("Variante remplacée par H01-B") });
+    expect(v.journal.find((e: { label: string }) => e.label === "Étape 02 · proposition H01-A écartée avec motif")).toBeDefined();
+    expect(v.journal.find((e: { kind: string }) => e.kind === "document")).toMatchObject({ label: "Document produit · Rapport Harmonie de l'étape 02 · Réglementation & constructibilité", stepNumber: 2, revision: 1 });
+    expect(v.journal.find((e: { kind: string }) => e.kind === "projet")).toMatchObject({ label: "Projet créé depuis l'exemple p118-exemple-complet", detail: "P.118 — Escalier B et mezzanine" });
+    expect(v.journal.find((e: { kind: string }) => e.kind === "programme")).toMatchObject({ label: "Programme · révision 6", stepNumber: 7 });
+    expect(v.comments).toEqual([]);
+    // Commentaires : création (projet, étape), lecture par étape, suppression par l'auteur seulement.
+    const empty = await client.post(`/projects/${pid}/collaboration/comments`).send({ body: "   " });
+    expect(empty.status).toBe(400);
+    const c1 = await client.post(`/projects/${pid}/collaboration/comments`).send({ body: "Vérifier la hauteur sous plafond avec le BET.", stepNumber: 8 });
+    expect(c1.status).toBe(201);
+    expect(c1.body).toMatchObject({ stepNumber: 8, authorEmail: "collab@example.com", mine: true, body: "Vérifier la hauteur sous plafond avec le BET." });
+    const c2 = await client.post(`/projects/${pid}/collaboration/comments`).send({ body: "Dossier à présenter en comité." });
+    expect(c2.body.stepNumber).toBeNull();
+    expect((await client.get(`/projects/${pid}/collaboration/comments?step=8`)).body.map((c: { id: string }) => c.id)).toEqual([c1.body.id]);
+    expect((await client.get(`/projects/${pid}/collaboration/comments`)).body).toHaveLength(2);
+    const journal = (await client.get(`/projects/${pid}/collaboration`)).body;
+    expect(journal.comments).toHaveLength(2);
+    expect(journal.journal[0]).toMatchObject({ kind: "commentaire", label: "Commentaire · collab@example.com" });
+    // Jamais pour un autre utilisateur ; l'auteur seul supprime.
+    const other = await registerAndLogin("collab-other@example.com");
+    expect((await other.get(`/projects/${pid}/collaboration`)).status).toBe(404);
+    expect((await other.delete(`/projects/${pid}/collaboration/comments/${c1.body.id}`)).status).toBe(404);
+    expect((await client.delete(`/projects/${pid}/collaboration/comments/${c1.body.id}`)).status).toBe(204);
+    expect((await client.get(`/projects/${pid}/collaboration/comments`)).body).toHaveLength(1);
+    expect((await client.delete(`/projects/${pid}/collaboration/comments/${c1.body.id}`)).status).toBe(404);
   });
 });

@@ -4,7 +4,23 @@
  * (surface XSS inutile pour une session qui peut vivre dans un cookie).
  */
 import type { Point2, SiteZoning } from "@parcours/core-geometry";
-import type { BuildingCase, BuildingHypothesis, BuildingReference, GeographicCoordinate, ProgrammeCase, ProgrammeFieldConflict, ProgrammeModelLinkRow, SiteObservations, SurfaceTransfer } from "@parcours/domain-model";
+import type {
+  BuildingCase,
+  BuildingHypothesis,
+  BuildingReference,
+  CheckStatus,
+  DerivedQuantities,
+  GeographicCoordinate,
+  ProgrammeCase,
+  ProgrammeFieldConflict,
+  ProgrammeModelLinkRow,
+  ProgrammeScenarioRow,
+  SiteObservations,
+  StepResults,
+  StructureStatement,
+  SurfaceTransfer,
+  TraceableCheck,
+} from "@parcours/domain-model";
 
 export class ApiError extends Error {
   constructor(
@@ -396,6 +412,70 @@ export interface ProgrammeHypothesesView {
 
 export type SurfaceTransferView = SurfaceTransfer;
 
+/** Module Analyses métier : tout est calculé à la lecture et tagué de la révision du modèle et des empreintes. */
+export interface AnalysesView {
+  version: string;
+  computedAt: string;
+  modelRevision: number;
+  nativeHash: string;
+  inputHash: string;
+  profileLabel: string;
+  example: boolean;
+  quantities: DerivedQuantities;
+  checks: TraceableCheck[];
+  totals: Record<CheckStatus, number>;
+  results: StepResults;
+  structure: { statements: StructureStatement[]; source: string } | null;
+  circulation: { revision: number | null; spaces: { code: string; name: string; levels: string[]; area: number; dimension: string; use: string }[]; totals: Record<string, number>; note: string; source: string } | null;
+  scenarios: ProgrammeScenarioRow[];
+}
+
+/** Module Documents : un document productible, sa dernière production et son actualité. */
+export interface DocumentDescriptor {
+  kind: string;
+  group: "harmonie" | "bilan" | "tableaux" | "archive";
+  label: string;
+  fileName: string;
+  href: string;
+  stepNumber: number | null;
+  current: { modelRevision: number; inputHash: string };
+  produced: { producedAt: string; modelRevision: number; inputHash: string; count: number } | null;
+  freshness: "a-jour" | "perime" | null;
+}
+
+export interface DocumentsView {
+  modelRevision: number;
+  nativeHash: string;
+  computedAt: string;
+  documents: DocumentDescriptor[];
+}
+
+/** Module Collaboration. */
+export interface ProjectComment {
+  id: string;
+  stepNumber: number | null;
+  authorEmail: string;
+  body: string;
+  createdAt: string;
+  mine: boolean;
+}
+
+export interface RevisionEvent {
+  at: string;
+  kind: string;
+  label: string;
+  detail: string;
+  stepNumber: number | null;
+  revision: number | null;
+}
+
+export interface CollaborationView {
+  access: { ownerEmail: string; you: string; sharing: { available: boolean; reason: string } };
+  sync: { modelRevision: number; nativeKeys: number; lastModelWrite: string | null; offline: { available: boolean; reason: string } };
+  journal: RevisionEvent[];
+  comments: ProjectComment[];
+}
+
 /** Bibliothèque des bâtiments : index et fiche d'un cas. */
 export interface BuildingLibraryIndex {
   version: string;
@@ -578,6 +658,16 @@ export const api = {
   },
   /** Bilan Harmonie du bâtiment conçu (étapes 10 / 11). */
   getDesignReview: (projectId: string) => request<DesignReviewView>(`/projects/${projectId}/design-review`),
+  getAnalyses: (projectId: string) => request<AnalysesView>(`/projects/${projectId}/analyses`),
+  getDocuments: (projectId: string) => request<DocumentsView>(`/projects/${projectId}/documents`),
+  getCollaboration: (projectId: string) => request<CollaborationView>(`/projects/${projectId}/collaboration`),
+  listComments: (projectId: string, stepNumber: number | null) => request<ProjectComment[]>(`/projects/${projectId}/collaboration/comments${stepNumber === null ? "" : `?step=${stepNumber}`}`),
+  addComment: (projectId: string, body: string, stepNumber: number | null) =>
+    request<ProjectComment>(`/projects/${projectId}/collaboration/comments`, { method: "POST", body: JSON.stringify({ body, stepNumber }) }),
+  deleteComment: (projectId: string, commentId: string) => request<void>(`/projects/${projectId}/collaboration/comments/${encodeURIComponent(commentId)}`, { method: "DELETE" }),
+  /** Documents produits par le serveur (production enregistrée) : plan de lecture d'un niveau, tableau des surfaces, programme, fiches de l'exemple. */
+  documentUrl: (projectId: string, doc: "surfaces" | "programme" | "fiches") => `/projects/${projectId}/documents/${doc}`,
+  planUrl: (projectId: string, levelId: string) => `/projects/${projectId}/documents/plan/${encodeURIComponent(levelId)}`,
   refreshDesignReview: (projectId: string) => request<DesignReviewView>(`/projects/${projectId}/design-review/review`, { method: "POST" }),
   designReportUrl: (projectId: string) => `/projects/${projectId}/design-review/rapport`,
   putCompass: (projectId: string, input: CompassInput) => request<DesignReviewView>(`/projects/${projectId}/design-review/compass`, { method: "PUT", body: JSON.stringify(input) }),

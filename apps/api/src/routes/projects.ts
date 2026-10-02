@@ -15,6 +15,11 @@ import { atelierRouter } from "./atelier.js";
 import { parcelsRouter } from "./parcels.js";
 import { projectFilesRouter } from "./step-files.js";
 import { designReviewRouter } from "./design-review.js";
+import { analysesRouter } from "./analyses.js";
+import { documentsRouter } from "./documents.js";
+import { collaborationRouter } from "./collaboration.js";
+import { archiveHash, recordProducedDocument } from "../lib/documents.js";
+import { loadStepContext } from "../lib/step-context.js";
 
 export const projectsRouter = Router();
 projectsRouter.use(requireAuth);
@@ -115,7 +120,9 @@ projectsRouter.get("/:projectId/archive", async (req, res) => {
     res.status(404).json({ error: "not_found" });
     return;
   }
-  const archive = await exportProjectArchive(db, project, new Date().toISOString());
+  const now = new Date();
+  const archive = await exportProjectArchive(db, project, now.toISOString());
+  await recordProducedDocument(db, project.id, { kind: "archive-projet", label: "Sauvegarde du projet (JSON)", fileName: archiveFileName(project.name), modelRevision: project.modelRevision, inputHash: archiveHash(project, await loadStepContext(db, project)), stepNumber: null }, now);
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="${archiveFileName(project.name)}"`);
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -159,6 +166,9 @@ projectsRouter.use("/:projectId/atelier", atelierRouter);
 projectsRouter.use("/:projectId/parcels", parcelsRouter);
 projectsRouter.use("/:projectId/files", projectFilesRouter);
 projectsRouter.use("/:projectId/design-review", designReviewRouter);
+projectsRouter.use("/:projectId/analyses", analysesRouter);
+projectsRouter.use("/:projectId/documents", documentsRouter);
+projectsRouter.use("/:projectId/collaboration", collaborationRouter);
 
 projectsRouter.get("/:projectId", async (req, res) => {
   const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);
