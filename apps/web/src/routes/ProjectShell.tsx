@@ -7,6 +7,8 @@ import { ConflictPanel } from "../components/ConflictPanel";
 import { EditingLockControl } from "../components/EditingLockControl";
 import { SyncIndicator, useOnline } from "../components/SyncIndicator";
 import { MODULES } from "../modules/module-registry";
+import { StageStrip } from "../modules/parcours/ParcoursModule";
+import { useImmersive } from "../lib/use-immersive";
 import { AnalysesModule } from "../modules/analyses/AnalysesModule";
 import { CollaborationModule } from "../modules/collaboration/CollaborationModule";
 import { DocumentsModule } from "../modules/documents/DocumentsModule";
@@ -40,6 +42,8 @@ export function ProjectShell() {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedModule = searchParams.get("module");
   const activeModule = requestedModule && MODULES.some((m) => m.id === requestedModule) ? requestedModule : "parcours";
+  // Module Atelier : page de l'Atelier Architectural (enveloppe effacée), comme aux étapes 10 / 11.
+  useImmersive(activeModule === "atelier");
   const programmeView = searchParams.get("vue");
   function selectModule(id: string) {
     const next = new URLSearchParams();
@@ -114,19 +118,16 @@ export function ProjectShell() {
         ))}
       </nav>
 
-      <main className="module-content">
-        {activeModule === "parcours" && (
-          <>
-            <h2>Étude du potentiel d’une parcelle</h2>
-            <ParcoursModule projectId={projectId} />
-          </>
-        )}
+      <main className={`module-content${activeModule === "parcours" || activeModule === "atelier" ? " module-content-parcours" : ""}`}>
+        {/* Le module Parcours porte son propre bandeau (« Parcours du projet », prototype) et sa mise en page : pas de titre de module. */}
+        {activeModule === "parcours" && <ParcoursModule projectId={projectId} />}
 
         {activeModule !== "parcours" && notice && <HarmonieToast text={notice} onDone={() => navigate(`${location.pathname}${location.search}`, { replace: true, state: null })} />}
 
         {activeModule === "atelier" && (
           <>
-            <h2>Atelier architectural</h2>
+            {/* Module Atelier : la page de l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; « ← » ramène au parcours. */}
+            <StageStrip title="Atelier Architectural" stage={null} subtitle={`${project.code} — ${project.name}`} onBack={() => selectModule("parcours")} onHome={() => navigate("/projets")} />
             <Suspense fallback={<p role="status">Chargement de l’Atelier…</p>}>
               <NativeAtelier projectId={projectId} readOnly={!access.canWrite} />
             </Suspense>

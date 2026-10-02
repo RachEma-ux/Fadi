@@ -100,8 +100,10 @@ export function NativeAtelier({ projectId, stage = null, readOnly = false }: { p
   if (storeQuery.isLoading || projectQuery.isLoading) return <p role="status">Chargement du modèle…</p>;
   if (!storeQuery.data) return <p role="alert">Impossible de charger le modèle de l’Atelier.</p>;
 
+  // Ordre du prototype : bandeau, barre d'outils et dessin d'abord ; l'état de synchronisation et la note de protection sous le dessin.
   return (
     <section className="native-atelier" aria-label="Atelier architectural">
+      <div id="nativeDesignerMount" ref={container} />
       <p className={`native-atelier-status native-atelier-status-${sync.status}`} role="status">
         {sync.status === "idle" && storeQuery.data.source === "cache"
           ? `Hors-ligne · modèle chargé depuis le cache local du ${new Date(storeQuery.data.fetchedAt).toLocaleString("fr-FR")}`
@@ -120,7 +122,6 @@ export function NativeAtelier({ projectId, stage = null, readOnly = false }: { p
           Le moteur de l’Atelier n’a pas pu démarrer : {mountError}
         </p>
       )}
-      <div id="nativeDesignerMount" ref={container} />
     </section>
   );
 }

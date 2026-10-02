@@ -278,7 +278,7 @@ export function HarmoniePanel({
     };
   function viewSite(id: string) {
     setSiteProposal(id);
-    document.querySelector(".h7-site-hero")?.scrollIntoView({ behavior: "smooth" });
+    panelRef.current?.querySelector(".h7-site-hero")?.scrollIntoView({ behavior: "smooth" });
   }
   // Étape 20 : sans décision favorable à l'étape 19, les missions restent préparatoires.
   const decision19 = allSteps.find((s) => s.number === 19)?.content.fields["decision"];

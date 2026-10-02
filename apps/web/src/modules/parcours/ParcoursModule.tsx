@@ -8,10 +8,10 @@
  */
 import { lazy, Suspense, useState } from "react";
 import { useMutation, useMutationState, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { EXAMPLE_BUDGET_NOTE, exampleBudget, exampleBudgetDecision, exampleBudgetMissing, exampleBudgetRows, exampleNum } from "@parcours/domain-model";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, api, type ParcoursStep, type Project, type SiteObservationsInput } from "../../lib/api";
-import { COMPLETE_EXAMPLE_ID } from "../../lib/use-import-example";
+import { ReferenceAnswers, ReferenceHarmoniePanel } from "./ReferenceExample";
+import { useImmersive } from "../../lib/use-immersive";
 import { MUTATION_KEYS, adoptStep, recordConflict, type DecideVars, type StepPatchVars } from "../../lib/mutations";
 import { AtelierHarmonyPage } from "../atelier/AtelierHarmonyPage";
 import { DesignReviewFold } from "../atelier/DesignReview";
@@ -38,189 +38,53 @@ const STATUS_LABEL: Record<ParcoursStep["status"], string> = {
 };
 
 /**
- * Une étape, présentée en carte (conservé du Parcours d'origine — voir
- * AGENTS.md : « original phases, labels and mobile card presentation »).
- * La carte est un aperçu cliquable ; la vue détaillée porte le contenu.
+ * Bandeau du prototype (`header.top.atelier-stage-header`) : titre
+ * « Parcours du projet » (« Atelier Architectural » aux étapes 10 / 11),
+ * « ÉTAPE NN / 21 · phase » dans une étape, et ses actions : « ◈ Harmonie
+ * de l’étape » (ouvre le panneau), « ← » (retour au parcours), « ⌂ »
+ * (accueil · projets). Même disposition sur ordinateur et téléphone.
+ */
+export function StageStrip({ title, stage, subtitle = null, onHarmonie = null, onBack, onHome }: { title: string; stage: { number: number; total: number; phase: string } | null; /** Sans étape : le projet (code — nom), lisible quand l'en-tête de Fadi est masqué (téléphone). */ subtitle?: string | null; onHarmonie?: (() => void) | null; onBack: () => void; onHome: () => void }) {
+  return (
+    <header className="top atelier-stage-header">
+      <div className="atelier-stage-titleblock">
+        <div className="atelier-stage-title">{title}</div>
+        {stage ? <div className="top-stage">{`ÉTAPE ${pad2(stage.number)} / ${stage.total} · ${stage.phase}`}</div> : subtitle ? <div className="top-stage top-stage-project">{subtitle}</div> : null}
+      </div>
+      <div className="atelier-stage-actions">
+        {onHarmonie && (
+          <button type="button" id="h7-shortcut" className="h7-btn on-dark" onClick={onHarmonie}>
+            ◈ Harmonie de l’étape
+          </button>
+        )}
+        <button type="button" className="stage-icon-btn workflow-back" aria-label="Retour au parcours" title="Retour au parcours" onClick={onBack}>
+          ←
+        </button>
+        <button type="button" className="stage-icon-btn" aria-label="Accueil · Projets" title="Accueil · Projets" onClick={onHome}>
+          ⌂
+        </button>
+      </div>
+    </header>
+  );
+}
+
+/**
+ * Une étape de la grille de la vue d'ensemble (`overview-step` du prototype,
+ * conservé — AGENTS.md : « original phases, labels and mobile card
+ * presentation ») : numéro, phase, intitulé (suffixe « · à réexaminer »
+ * quand l'étape ou un choix retenu est périmé), terminée = liseré haut.
  */
 function StepCard({ step, onOpen }: { step: ParcoursStep; onOpen: () => void }) {
+  const stale = step.stale || step.staleRetainedCount > 0;
   return (
-    <article className={`step-card step-card-${step.status}`}>
-      <button type="button" className="step-card-open" onClick={onOpen}>
-        <div className="step-card-head">
-          <strong>{pad2(step.number)}</strong>
-          <div>
-            <span className="step-card-phase">{step.phase}</span>
-            <h3>{step.title}</h3>
-          </div>
-          <span className={`step-dot step-dot-${step.status}`} aria-label={STATUS_LABEL[step.status]} />
-        </div>
-        {step.goal && <p className="step-card-goal">{step.goal}</p>}
-        {step.content.headline && <p className="step-card-headline">{step.content.headline} →</p>}
-        {step.retainedCount > 0 && (
-          <p className="step-card-meta">
-            Harmonie · {step.retainedCount} choix retenu(s){step.stale || step.staleRetainedCount > 0 ? " · à réexaminer" : ""}
-          </p>
-        )}
-      </button>
-    </article>
-  );
-}
-
-/**
- * Budget du scénario (`budgetHTML` de p118-resolved-app, étapes 14 / 15 de
- * l'exemple) : référence et scénario défavorable calculés sur les réponses
- * courantes des deux étapes — ils suivent donc les saisies d'une copie. Un
- * poste manquant est dit manquant, jamais compté pour zéro.
- */
-function ExampleBudget({ allSteps }: { allSteps: ParcoursStep[] }) {
-  const s14 = allSteps.find((s) => s.number === 14);
-  const s15 = allSteps.find((s) => s.number === 15);
-  if (!s14 || !s15) return null;
-  const budget = exampleBudget(s14.content.fields, s15.content.fields);
-  const label = (step: ParcoursStep, key: string) => step.form?.fields.find((f) => f.key === key)?.label ?? key;
-  return (
-    <div className="ex81-budget">
-      <p className="ex81-note">{EXAMPLE_BUDGET_NOTE}</p>
-      {budget ? (
-        <>
-          <div className="ex81-table table-scroll" tabIndex={0}>
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Indicateur</th>
-                  <th scope="col">Référence</th>
-                  <th scope="col">Scénario défavorable</th>
-                </tr>
-              </thead>
-              <tbody>
-                {exampleBudgetRows(budget).map(([k, a, b]) => (
-                  <tr key={k}>
-                    <td>{k}</td>
-                    <td>{exampleNum(a)} MAD</td>
-                    <td>{exampleNum(b)} MAD</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p>
-            <b>Décision du cas :</b> {exampleBudgetDecision(budget)}
-          </p>
-        </>
-      ) : (
-        <p>
-          Budget non calculé — postes manquants :{" "}
-          {exampleBudgetMissing(s14.content.fields, s15.content.fields)
-            .map((m) => `étape ${m.step} · ${label(m.step === 14 ? s14 : s15, m.key)}`)
-            .join(" ; ")}
-          . Une valeur inconnue n’est pas zéro.
-        </p>
-      )}
-    </div>
-  );
-}
-
-/**
- * Le récit de l'exemple importé (`storyHTML` + bloc « CHOIX X · DÉJÀ
- * ARBITRÉ » de p118-resolved-app) — jamais fabriqué pour une étape qui n'en
- * a pas. Ses actions sont celles du prototype : « Voir le choix Harmonie et
- * sa transmission » (panneau ouvert sur Choix & transmission), « Essayer une
- * variante en copie » (`copy()` : nouveau projet modifiable, l'original
- * intact), « Dossier complet de l’exemple » (`fullReport`, téléchargement).
- */
-function StepStory({
-  projectId,
-  step,
-  allSteps,
-  project,
-  onShowTransmission,
-}: {
-  projectId: string;
-  step: ParcoursStep;
-  allSteps: ParcoursStep[];
-  project: Project | null;
-  onShowTransmission: () => void;
-}) {
-  const content = step.content;
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const [copyError, setCopyError] = useState<string | null>(null);
-  const copy = useMutation({
-    mutationFn: () => api.copyProject(projectId),
-    onSuccess: (created) => {
-      setCopyError(null);
-      void queryClient.invalidateQueries({ queryKey: ["projects"] });
-      // `copy()` puis `overview()` : la vue d'ensemble de la copie ; l'original n'a pas changé.
-      navigate(`/projets/${created.id}?module=parcours`, { state: { notice: `Copie créée : « ${created.code} — ${created.name} ». L’exemple d’origine est conservé ; vous travaillez dans la copie.` } });
-    },
-    onError: (err) => setCopyError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "La copie n’a pas pu être créée (réseau indisponible ou serveur injoignable)."),
-  });
-  if (!content.decision && !content.headline && !content.result) return null;
-  const dossier = project?.sourceExampleId === COMPLETE_EXAMPLE_ID;
-  return (
-    <section className="ex81 ex81-story" aria-labelledby={`story-${step.number}`}>
-      <span className="ex81-tag">EXEMPLE RÉSOLU · {pad2(step.number)} / {allSteps.length}</span>
-      {content.headline && <h2 id={`story-${step.number}`}>{content.headline}</h2>}
-      {content.decision && <p className="ex81-decision">{content.decision}</p>}
-      <div className="ex81-actions">
-        <button type="button" className="button-primary" onClick={onShowTransmission}>
-          Voir le choix Harmonie et sa transmission
-        </button>
-        <button type="button" className="button-secondary" disabled={copy.isPending} onClick={() => copy.mutate()}>
-          {copy.isPending ? "Copie en cours…" : "Essayer une variante en copie"}
-        </button>
-        {dossier && (
-          <a className="button-secondary" href={api.exampleReportUrl(projectId)} download>
-            Dossier complet de l’exemple
-          </a>
-        )}
-      </div>
-      {copyError && (
-        <p className="ex81-note warn" role="alert">
-          Action non réalisée : {copyError}
-        </p>
-      )}
-      <details className="ex81-frame">
-        <summary>Cadre de démonstration et hypothèses</summary>
-        {content.sourceStatus && <p>{content.sourceStatus}</p>}
-        <p>Les 21 étapes sont renseignées ; « illustrée » ne signifie pas qu’une étude technique réelle a été réalisée.</p>
-        {content.owner && (
-          <p className="ex81-muted">
-            {content.owner}
-            {content.proof ? ` · ${content.proof}` : ""}
-          </p>
-        )}
-      </details>
-      <div className="ex81-selected step-detail-body">
-        {content.choice && <span className="ex81-tag">CHOIX {content.choice} · DÉJÀ ARBITRÉ</span>}
-        {content.why && (
-          <>
-            <h3>Pourquoi ce choix</h3>
-            <p>{content.why}</p>
-          </>
-        )}
-        {content.alternatives && (
-          <details className="ex81-fold">
-            <summary>Alternatives et compromis</summary>
-            <p>{content.alternatives}</p>
-          </details>
-        )}
-        {content.result?.donnee && (
-          <p className="step-card-donnee">
-            <strong>Donnée / calcul : </strong>
-            {content.result.donnee}
-          </p>
-        )}
-        {content.result?.hypothese && (
-          <p className="step-card-hypothese">
-            <strong>Hypothèse retenue : </strong>
-            {content.result.hypothese}
-          </p>
-        )}
-        {content.result?.raw && <p>{content.result.raw}</p>}
-      </div>
-      {(step.number === 14 || step.number === 15) && <ExampleBudget allSteps={allSteps} />}
-    </section>
+    <button type="button" className={`overview-step step-card step-card-${step.status}${step.status === "termine" ? " done" : ""}`} data-n={step.number} aria-label={`${pad2(step.number)} · ${step.title} · ${STATUS_LABEL[step.status]}`} onClick={onOpen}>
+      <span className="on">{pad2(step.number)}</span>
+      <span className="op">{step.phase}</span>
+      <span className="ot">
+        {step.title}
+        {stale ? " · à réexaminer" : ""}
+      </span>
+    </button>
   );
 }
 
@@ -236,6 +100,7 @@ function StepDetail({
   onOpen,
   harmonieOpen,
   project,
+  onHome,
 }: {
   projectId: string;
   step: ParcoursStep;
@@ -245,6 +110,8 @@ function StepDetail({
   index: number;
   total: number;
   onBack: () => void;
+  /** « ⌂ » du bandeau : accueil · projets. */
+  onHome: () => void;
   onPrev: (() => void) | null;
   onNext: (() => void) | null;
   /** `goto` : ouvrir une autre étape (origine d'une intention, destination d'un choix). */
@@ -263,8 +130,25 @@ function StepDetail({
     if (step.number === 10) setHarmonyPage(true);
     setHarmonieFocus((f) => ({ tab: "transfer", nonce: (f?.nonce ?? 0) + 1 }));
   }
-  // Référence protégée de l'exemple (`isRead(p)`) : les étapes illustrées le restent (« Étape illustrée ✓ », comme dans le prototype).
+  // Référence protégée de l'exemple (`isRead(p)`) : présentation du prototype — réponses en lecture, panneau Harmonie de l'exemple,
+  // « Étape illustrée ✓ » ; les copies (« Essayer une variante en copie ») ont les formulaires et le panneau modifiables.
   const reference = project?.exampleMode === "reference";
+  // Actions du panneau de l'exemple aux étapes 10 / 11 (« Lire le bilan du bâtiment conçu », « Voir les capacités et ambiances ») → bilan ouvert.
+  const [bilanRequest, setBilanRequest] = useState<{ action: "building" | "rooms"; nonce: number } | null>(null);
+  const bilanActions =
+    step.number === 10 || step.number === 11 ? (
+      <div className="ex81-actions">
+        <button type="button" className="button-primary" onClick={() => setBilanRequest((r) => ({ action: "building", nonce: (r?.nonce ?? 0) + 1 }))}>
+          Lire le bilan du bâtiment conçu
+        </button>
+        <button type="button" className="button-secondary" onClick={() => setBilanRequest((r) => ({ action: "rooms", nonce: (r?.nonce ?? 0) + 1 }))}>
+          Voir les capacités et ambiances des {step.model?.roomCount ?? 62} zones
+        </button>
+        <a className="button-secondary" href={api.designReportUrl(projectId)} download>
+          Exporter le bilan
+        </a>
+      </div>
+    ) : null;
 
   // Les arbitrages ont des effets sur d'autres étapes (cibles remises à faire, décision rétrogradée) : l'étape renvoyée remplace la sienne, le reste se relit.
   const adopt = (updated: ParcoursStep) => adoptStep(queryClient, projectId, updated);
@@ -338,79 +222,64 @@ function StepDetail({
   const intro =
     step.number === 1 ? "Point de départ autonome : importez directement la parcelle. Aucun PMO préalable n’est requis." : "Cette étape poursuit le dossier maître créé à partir de la parcelle.";
 
+  // « ◈ Harmonie de l’étape » du bandeau (`A.open(cur)`) : panneau ouvert sur « Proposer », amené à l'écran.
+  function openHarmonie() {
+    if (step.number === 10) setHarmonyPage(true);
+    setHarmonieFocus((f) => ({ tab: "proposals", nonce: (f?.nonce ?? 0) + 1 }));
+  }
+  const atelierStep = step.number === 10 || step.number === 11;
+  // Étapes 10 / 11 : la page est l'Atelier Architectural (prototype) — enveloppe de Fadi effacée, titre et intro repliés sous le dessin (`stage10-fold`).
+  useImmersive(atelierStep);
+
   return (
-    <div className={`step-detail${harmonyPage ? " ah84-active-work" : ""}`}>
-      <div className="step-detail-top">
-        <button type="button" className="button-secondary" onClick={onBack}>
-          ← Vue d'ensemble
-        </button>
-        <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={index + 1} aria-label={`Étape ${pad2(index + 1)} sur ${total}`}>
-          <i style={{ width: `${((index + 1) / total) * 100}%` }} />
-        </div>
-        <span className="step-detail-count">
-          Étape {pad2(index + 1)} / {total} · {step.phase}
-        </span>
-      </div>
-
-      <h3 className="step-detail-title">{step.title}</h3>
-      <p className="step-card-goal">{intro}</p>
-      {step.goal && (
-        <p className="step-card-meta">
-          <strong>Objectif : </strong>
-          {step.goal}
-          {step.deliverable ? (
-            <>
-              {" "}
-              <strong>Livrable : </strong>
-              {step.deliverable}
-            </>
-          ) : null}
-        </p>
+    <div className={`step-detail${atelierStep ? " step-detail-atelier" : ""}`}>
+      <StageStrip title={atelierStep ? "Atelier Architectural" : "Parcours du projet"} stage={{ number: index + 1, total, phase: step.phase }} onHarmonie={step.number === 10 ? null : openHarmonie} onBack={onBack} onHome={onHome} />
+      <div className={`work${harmonyPage ? " ah84-active-work" : ""}`}>
+      {!atelierStep && (
+        <>
+          <h1 className="step-detail-title">{step.title}</h1>
+          <p className="step-intro">{intro}</p>
+        </>
       )}
 
-      {/* Étape 01 : l'outil Parcelle d'abord, puis Harmonie (prototype : `module.after(panel)`). */}
-      {step.number === 1 && <ParcelleTool projectId={projectId} />}
-      {step.number === 10 ? (
-        /* Étape 10 : le panneau Harmonie, le programme lié et le bilan vivent dans la sous-page « Harmonie du bâtiment » de l'Atelier (bouton « Harmonie » de la barre d'outils, groupe Analyser). */
-        <AtelierHarmonyPage
-          projectName={project?.name ?? ""}
-          open={harmonyPage}
-          onOpenChange={setHarmonyPage}
-          choices={
-            <HarmoniePanel
-              projectId={projectId}
-              step={step}
-              allSteps={allSteps}
-              pending={pending}
-              errors={harmonieErrors}
-              onDecide={(proposalId, input) => decide.mutate({ projectId, stepNumber: step.number, proposalId, input })}
-              onGenerate={() => generate.mutate()}
-              onGoto={onOpen}
-              focus={harmonieFocus}
-            />
-          }
-          programme={<ProgrammeTransfer projectId={projectId} />}
-          bilan={<DesignReviewFold projectId={projectId} roomsAction />}
-        />
-      ) : (
-        <HarmoniePanel
-          projectId={projectId}
-          step={step}
-          allSteps={allSteps}
-          pending={pending}
-          errors={harmonieErrors}
-          onDecide={(proposalId, input) => decide.mutate({ projectId, stepNumber: step.number, proposalId, input })}
-          onGenerate={() => generate.mutate()}
-          onGoto={onOpen}
-          onSaveSite={step.number === 1 ? (input) => saveSite.mutate(input) : null}
-          siteError={siteError}
-          afterProposals={step.number === 7 ? <ProgrammeTransferFold projectId={projectId} onApplied={setToast} /> : null}
-          initialOpen={harmonieOpen ? true : null}
-          focus={harmonieFocus}
-        />
-      )}
+      {(() => {
+        const panel = reference ? (
+          <ReferenceHarmoniePanel projectId={projectId} step={step} allSteps={allSteps} project={project} onGoto={onOpen} focus={harmonieFocus} bilan={bilanActions} onShowTransmission={showTransmission} />
+        ) : (
+          <HarmoniePanel
+            projectId={projectId}
+            step={step}
+            allSteps={allSteps}
+            pending={pending}
+            errors={harmonieErrors}
+            onDecide={(proposalId, input) => decide.mutate({ projectId, stepNumber: step.number, proposalId, input })}
+            onGenerate={() => generate.mutate()}
+            onGoto={onOpen}
+            onSaveSite={step.number === 1 ? (input) => saveSite.mutate(input) : null}
+            siteError={siteError}
+            afterProposals={step.number === 7 ? <ProgrammeTransferFold projectId={projectId} onApplied={setToast} /> : null}
+            initialOpen={harmonieOpen ? true : null}
+            focus={harmonieFocus}
+          />
+        );
+        if (step.number === 1) {
+          /* Étape 01 : l'outil Parcelle, le panneau Harmonie dans sa colonne gauche (prototype : `ParcoursSectionsV82.place`). */
+          return <ParcelleTool projectId={projectId} harmonie={panel} />;
+        }
+        return step.number === 10 ? (
+          /* Étape 10 : le panneau Harmonie, le programme lié et le bilan vivent dans la sous-page « Harmonie du bâtiment » de l'Atelier (bouton « Harmonie » de la barre d'outils, groupe Analyser). */
+          <AtelierHarmonyPage projectName={project?.name ?? ""} open={harmonyPage} onOpenChange={setHarmonyPage} choices={panel} programme={<ProgrammeTransfer projectId={projectId} />} bilan={<DesignReviewFold projectId={projectId} roomsAction request={bilanRequest} />} />
+        ) : (
+          panel
+        );
+      })()}
       <HarmonieToast text={toast} onDone={() => setToast(null)} />
 
+      {(step.number === 10 || step.number === 11) && (
+        <Suspense fallback={<p role="status">Chargement de l’Atelier…</p>}>
+          <NativeAtelier projectId={projectId} stage={step.number} readOnly={!access.canWrite} />
+        </Suspense>
+      )}
       {step.number === 10 && !harmonyPage && (
         <p className="ah84-entry">
           <button type="button" className="button-secondary" id="ah84-open" aria-controls="atelier-harmonie-page" aria-expanded={harmonyPage} onClick={() => setHarmonyPage(true)}>
@@ -420,31 +289,37 @@ function StepDetail({
         </p>
       )}
       {/* Étape 11 : bilan Harmonie du bâtiment conçu (flow-v62 `designHTML`) dans le flux de l'étape. */}
-      {step.number === 11 && <DesignReviewFold projectId={projectId} />}
-      {(step.number === 10 || step.number === 11) && (
-        <Suspense fallback={<p role="status">Chargement de l’Atelier…</p>}>
-          <NativeAtelier projectId={projectId} stage={step.number} readOnly={!access.canWrite} />
-        </Suspense>
+      {step.number === 11 && <DesignReviewFold projectId={projectId} roomsAction={reference} request={bilanRequest} />}
+      {atelierStep && (
+        <details className="stage10-fold">
+          <summary>{step.title}</summary>
+          <div className="stage10-fold-body">
+            <p className="stage10-intro">{intro}</p>
+          </div>
+        </details>
       )}
-
-      <StepStory projectId={projectId} step={step} allSteps={allSteps} project={project} onShowTransmission={showTransmission} />
 
       {paused.length > 0 && (
         <p className="offline-banner offline-banner-inline" role="status">
           {paused.length} envoi(s) de cette étape en attente du réseau : enregistré(s) sur cet appareil, transmis au retour de la connexion (même après rechargement).
         </p>
       )}
-      <StepForm
-        step={step}
-        allSteps={allSteps}
-        pending={pending}
-        readOnly={!access.canWrite}
-        onCommit={(fields, baseline) => patch.mutate({ projectId, stepNumber: step.number, body: { fields, baseline } })}
-      />
+      {/* Référence de l'exemple : `bookBlock` (réponses en lecture) à la place du formulaire ; les étapes outillées (01, 10, 11) gardent leur outil. */}
+      {reference && !atelierStep && step.number !== 1 ? (
+        <ReferenceAnswers step={step} allSteps={allSteps} />
+      ) : (
+        <StepForm
+          step={step}
+          allSteps={allSteps}
+          pending={pending}
+          readOnly={!access.canWrite}
+          onCommit={(fields, baseline) => patch.mutate({ projectId, stepNumber: step.number, body: { fields, baseline } })}
+        />
+      )}
       {(step.number === 6 || step.number === 7) && <ProgrammeRepartition projectId={projectId} />}
 
-      {/* Bibliothèque des bâtiments : « Exemples · qualités du site » (01–03) ou « Bibliothèque d’exemples par type de bâtiment » / programme lié (≥ 04). */}
-      {step.number <= 3 ? <SiteQualitiesFold projectId={projectId} siteText={step.profile.site} /> : <LibraryFold projectId={projectId} />}
+      {/* Bibliothèque des bâtiments : « Exemples · qualités du site » (01–03) ou « Bibliothèque d’exemples par type de bâtiment » / programme lié (≥ 04) — absents de la référence (`exampleBlock` vide en mode référence). */}
+      {!reference && (step.number <= 3 ? <SiteQualitiesFold projectId={projectId} siteText={step.profile.site} /> : <LibraryFold projectId={projectId} />)}
       <StepSources projectId={projectId} stepNumber={step.number} />
       <StepComments projectId={projectId} stepNumber={step.number} />
 
@@ -473,31 +348,24 @@ function StepDetail({
           </button>
         </span>
       </nav>
+      </div>
     </div>
   );
 }
 
-/** « Documents de base intégrés » de la vue d'ensemble du projet d'exemple (prototype) : les fichiers du prototype, sources des étapes 01 et 02. */
-/** Sur téléphone, le pli est replié au départ pour que les cartes des 21 étapes arrivent dès le premier écran ; son contenu reste à un geste. */
-const narrowScreen = () => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(max-width: 720px)").matches;
-
-function BaseDocuments({ projectId }: { projectId: string }) {
-  const project = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId) });
-  const [open, setOpen] = useState(() => !narrowScreen());
-  const base = project.data?.baseDocuments;
+/** « Documents de base intégrés » de la vue d'ensemble du projet d'exemple (`seed888` du prototype) : les fichiers du prototype, sources des étapes 01 et 02. */
+function BaseDocuments({ project }: { project: Project | null }) {
+  const base = project?.baseDocuments;
   if (!base) return null;
   return (
-    <details className="seed888" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
-      <summary>
-        <strong>Documents de base intégrés</strong>
-        <span className="seed888-count">{base.files.length} fichier(s)</span>
-      </summary>
+    <div className="seed888">
+      <strong>Documents de base intégrés</strong>
       <div className="biz-actions">
         {base.files.map((f) => (
           <a
             key={f.id}
             className="button-secondary"
-            href={api.stepFileUrl(projectId, f.stepNumber, f.id)}
+            href={api.stepFileUrl(project!.id, f.stepNumber, f.id)}
             download={f.name}
             title={`${f.note} · source de l'étape ${String(f.stepNumber).padStart(2, "0")}`}
           >
@@ -506,7 +374,7 @@ function BaseDocuments({ projectId }: { projectId: string }) {
         ))}
       </div>
       <p>{base.caption}</p>
-    </details>
+    </div>
   );
 }
 
@@ -560,6 +428,7 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
             onOpen={openStep}
             harmonieOpen={harmonieOpen}
             project={project}
+            onHome={() => navigate("/projets")}
           />
         </>
       );
@@ -567,44 +436,61 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
   }
 
   const phases = [...new Set(steps.map((s) => s.phase))];
+  // Vue d'ensemble du prototype (`overview()`) : « ← Projets » / « Exemples », kicker, documents de base, titre, sous-titre, progression, phases, grille des 21 étapes.
   return (
     <>
       <HarmonieToast text={notice} onDone={() => navigate(`${location.pathname}${location.search}`, { replace: true, state: null })} />
-      <BaseDocuments projectId={projectId} />
-      <div className="overview-progress">
-        <span className="parcours-steps-summary">
-          {/* Référence de l'exemple entièrement illustrée : libellé du prototype (`stampUI`). */}
-          {project?.exampleMode === "reference" && done === steps.length ? `${done} / ${steps.length} étapes illustrées · réponses complètes, validations réelles distinctes` : `${done} / ${steps.length} étapes terminées`}
-        </span>
-        <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done} aria-label={`${done} étapes terminées sur ${steps.length}`}>
-          <i style={{ width: `${(done / steps.length) * 100}%` }} />
+      <StageStrip title="Parcours du projet" stage={null} subtitle={project ? `${project.code} — ${project.name}` : null} onBack={() => navigate("/projets")} onHome={() => navigate("/projets")} />
+      <main className="overview">
+        <div className="overview-actions">
+          <Link className="btn back-overview" to="/projets">
+            ← Projets
+          </Link>
+          <Link className="btn" to="/projets#exemples">
+            Exemples
+          </Link>
         </div>
-      </div>
-      <div className="overview-phases" aria-label="Phases">
-        {phases.map((p) => (
-          <span key={p}>{p}</span>
-        ))}
-      </div>
-      <section className="cards" aria-label="Les 21 étapes du Parcours">
-        {steps.map((step) => (
-          <StepCard key={step.number} step={step} onOpen={() => openStep(step.number)} />
-        ))}
-      </section>
-      {/* « Outils du projet » de la vue d'ensemble : sauvegarde / import JSON (module Projets et sources) et synthèse des choix Harmonie. */}
-      <details className="fold-card project-tools" id="parcours-project-tools">
-        <summary>Outils du projet</summary>
-        <div className="fold-card-body">
-          <div className="h7-actions">
-            <a className="button-secondary" href={api.projectArchiveUrl(projectId)} download>
-              Sauvegarder projet JSON
-            </a>
-            <ImportProjectButton />
-            <a className="button-secondary" href={api.harmonieReportUrl(projectId, null)} download>
-              Exporter la synthèse des choix Harmonie
-            </a>
+        <section className="overview-head">
+          <div className="overview-kicker">PARCOURS DU PROJET</div>
+          <BaseDocuments project={project} />
+          <h1>Étude du potentiel de la parcelle</h1>
+          <p className="overview-sub">Un flux métier unique, de la parcelle existante jusqu’à la décision puis à l’engagement du projet.</p>
+          <div className="overview-progress">
+            <span className="parcours-steps-summary">
+              {/* Référence de l'exemple entièrement illustrée : libellé du prototype (`stampUI`). */}
+              {project?.exampleMode === "reference" && done === steps.length ? `${done} / ${steps.length} étapes illustrées · réponses complètes, validations réelles distinctes` : `${done} / ${steps.length} étapes terminées`}
+            </span>
+            <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done} aria-label={`${done} étapes terminées sur ${steps.length}`}>
+              <i style={{ width: `${(done / steps.length) * 100}%` }} />
+            </div>
           </div>
-        </div>
-      </details>
+          <div className="overview-phases" aria-label="Phases" tabIndex={0}>
+            {phases.map((p) => (
+              <span key={p}>{p}</span>
+            ))}
+          </div>
+        </section>
+        <section className="overview-grid" aria-label="Les 21 étapes du Parcours">
+          {steps.map((step) => (
+            <StepCard key={step.number} step={step} onOpen={() => openStep(step.number)} />
+          ))}
+        </section>
+        {/* « Outils du projet » de la vue d'ensemble : sauvegarde / import JSON (module Projets et sources) et synthèse des choix Harmonie. */}
+        <details className="fold-card project-tools" id="parcours-project-tools">
+          <summary>Outils du projet</summary>
+          <div className="fold-card-body">
+            <div className="h7-actions">
+              <a className="button-secondary" href={api.projectArchiveUrl(projectId)} download>
+                Sauvegarder projet JSON
+              </a>
+              <ImportProjectButton />
+              <a className="button-secondary" href={api.harmonieReportUrl(projectId, null)} download>
+                Exporter la synthèse des choix Harmonie
+              </a>
+            </div>
+          </div>
+        </details>
+      </main>
     </>
   );
 }

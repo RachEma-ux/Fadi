@@ -501,13 +501,25 @@ function InlineReport({
 }
 
 /** `designHTML(p)` : le pli de l'étape, avec le bilan en ligne et les outils directionnels. */
-export function DesignReviewFold({ projectId, roomsAction = false }: { projectId: string; roomsAction?: boolean }) {
+export function DesignReviewFold({ projectId, roomsAction = false, request = null }: { projectId: string; roomsAction?: boolean; /** Demande venue du panneau de l'exemple (« Lire le bilan du bâtiment conçu », « Voir les capacités et ambiances ») : pli ouvert, bilan affiché sur l'onglet voulu. */ request?: { action: "building" | "rooms"; nonce: number } | null }) {
   const queryClient = useQueryClient();
   const [, setSearchParams] = useSearchParams();
   const query = useQuery({ queryKey: ["design-review", projectId], queryFn: () => api.getDesignReview(projectId) });
   const [open, setOpen] = useState(false);
   const [report, setReport] = useState(false);
   const [reportTab, setReportTab] = useState<Tab>("synthesis");
+  const foldRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (!request) return;
+    setOpen(true);
+    setReportTab(request.action === "rooms" ? "rooms" : "synthesis");
+    setReport(true);
+    // Dans la sous-page « Harmonie du bâtiment », le bilan vit dans un pli (`#ah84-bilan`) : il s'ouvre aussi.
+    const enclosing = foldRef.current?.closest<HTMLDetailsElement>("details.ah84-fold");
+    if (enclosing && !enclosing.open) enclosing.open = true;
+    const id = window.setTimeout(() => foldRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 50);
+    return () => window.clearTimeout(id);
+  }, [request]);
   const [compass, setCompass] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const refresh = useMutation({
@@ -535,7 +547,7 @@ export function DesignReviewFold({ projectId, roomsAction = false }: { projectId
   const r = v.analysis;
   return (
     <>
-      <details className="h7-fold design-review-fold" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <details className="h7-fold design-review-fold" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)} ref={foldRef}>
         <summary>Bilan Harmonie du bâtiment conçu · modèle {r.nativeHash}</summary>
         <div className="h7-fold-body">
           <p>

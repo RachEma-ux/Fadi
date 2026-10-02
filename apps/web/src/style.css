@@ -22,8 +22,9 @@
 }
 body {
   margin: 0;
-  font: 15px/1.5 system-ui, sans-serif;
-  background: var(--cream);
+  /* Police et fond du prototype (`body{font:15px Arial;background:#f4f6f2}`), pour que les écrans se lisent comme Parcours. */
+  font: 15px/1.5 Arial, "Helvetica Neue", Helvetica, sans-serif;
+  background: #f4f6f2;
   color: var(--ink);
 }
 button,
@@ -816,70 +817,383 @@ h3 {
 }
 
 /* ---------------------------------------------------------------------- */
-/* Étapes du Parcours (cartes) — AGENTS.md : mobile card presentation       */
+/* Parcours du projet — présentation du prototype (feuille principale,     */
+/* `.top`, `.overview*`, `.overview-step`, `.work`), reprise telle quelle   */
+/* à l'intérieur du module Parcours. AGENTS.md : « original phases, labels */
+/* and mobile card presentation ». Écart déclaré : les gris de texte du    */
+/* prototype (#6c7e7a, #7b8c88, #657a75) sont assombris d'un ton (4,5:1,   */
+/* WCAG 2.2 AA) ; teintes et tailles conservées.                           */
 /* ---------------------------------------------------------------------- */
-.parcours-steps-summary {
-  color: var(--muted);
-  font-size: 14px;
-  margin: -8px 0 0;
-}
-.cards:has(.step-card) {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-}
-.step-card {
+.module-content-parcours {
   padding: 0;
-  overflow: hidden;
 }
-.step-card-open {
-  width: 100%;
-  padding: 16px;
+/* Dans le module Parcours, l'étape n'est plus une carte : bandeau au bord, contenu dans `.work` (prototype). */
+.module-content-parcours .step-detail {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  max-width: none;
+  margin: 0;
+  gap: 0;
+}
+.work > * + * {
+  margin-top: 14px;
+}
+.top {
+  background: #153f3d;
+  color: white;
+  padding: 18px 26px;
+  display: flex;
+  justify-content: space-between;
+}
+.atelier-stage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 22px;
+  min-height: 82px;
+}
+.atelier-stage-titleblock {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: none;
-  border: none;
-  font: inherit;
-  color: inherit;
-  text-align: left;
+  gap: 4px;
+}
+.atelier-stage-title {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 750;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+}
+.atelier-stage-header .top-stage {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: #dce9e5;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+.atelier-stage-header .top-stage-project {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 851px) {
+  /* Sur ordinateur, l'en-tête de Fadi affiche déjà le projet. */
+  .atelier-stage-header .top-stage-project {
+    display: none;
+  }
+}
+.atelier-stage-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+}
+.stage-icon-btn {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  font: 700 23px/1 Arial, sans-serif;
   cursor: pointer;
-  border-radius: inherit;
 }
-.step-card-open:hover {
-  background: var(--cream);
+.stage-icon-btn:active {
+  background: rgba(255, 255, 255, 0.12);
 }
-.step-card-open:focus-visible {
-  outline: 2px solid var(--forest-900);
-  outline-offset: -2px;
+.stage-icon-btn:focus-visible,
+#h7-shortcut:focus-visible {
+  outline: 3px solid #8fd0bd;
+  outline-offset: 2px;
 }
+#h7-shortcut {
+  max-width: 190px;
+  border: 1px solid #8fac9d;
+  border-radius: 7px;
+  background: transparent;
+  color: #fff;
+  padding: 9px 12px;
+  font: 600 12px/1.35 Arial, sans-serif;
+  min-height: 40px;
+  cursor: pointer;
+  white-space: normal;
+}
+.overview {
+  max-width: 1450px;
+  margin: auto;
+  padding: 30px;
+}
+.overview-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.overview .btn,
+.work .btn {
+  border: 1px solid #d1dcd6;
+  background: white;
+  border-radius: 7px;
+  padding: 9px 13px;
+  font-weight: bold;
+  color: var(--ink);
+  text-decoration: none;
+  display: inline-block;
+}
+.overview-head {
+  margin-bottom: 22px;
+}
+.overview-kicker {
+  font-size: 11px;
+  color: #1e5a55;
+  font-weight: bold;
+}
+.overview-head h1 {
+  font-size: 38px;
+  margin: 8px 0;
+}
+.overview-sub {
+  color: #5c6f6b;
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+.overview-progress {
+  margin: 14px 0 26px;
+}
+.overview-progress .progress {
+  height: 5px;
+  background: #e0e7e2;
+  border-radius: 9px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.overview-progress .progress i {
+  display: block;
+  height: 100%;
+  background: #1e5a55;
+}
+.parcours-steps-summary {
+  color: var(--ink);
+  font-size: 15px;
+  margin: 0;
+}
+.overview-phases {
+  display: flex;
+  gap: 22px;
+  overflow: auto;
+  margin: 18px 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #56695f;
+}
+.overview-phases span {
+  white-space: nowrap;
+}
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid #d8e0db;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  gap: 0;
+  margin: 0;
+}
+.overview-step {
+  border: 0;
+  border-right: 1px solid #d8e0db;
+  border-bottom: 1px solid #d8e0db;
+  background: #fff;
+  padding: 20px;
+  text-align: left;
+  min-height: 160px;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+}
+.overview-step:hover {
+  background: #f3f7f4;
+}
+.overview-step:focus-visible {
+  outline: 3px solid #1e5a55;
+  outline-offset: -3px;
+}
+.overview-step .on {
+  font-size: 30px;
+  font-weight: 300;
+  color: #78918d;
+  display: block;
+}
+.overview-step .op {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #5d6e6a;
+  display: block;
+  margin: 12px 0 5px;
+}
+.overview-step .ot {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+  display: block;
+}
+.overview-step.done {
+  box-shadow: inset 0 4px #287054;
+}
+.overview .project-tools {
+  margin-top: 24px;
+}
+.work {
+  padding: 24px;
+  min-width: 0;
+}
+.work h1.step-detail-title {
+  margin: 4px 0 8px;
+  font-size: 28px;
+}
+.step-intro {
+  color: #5c6f6b;
+  margin: 0 0 14px;
+}
+@media (max-width: 850px) {
+  /* Sur téléphone, le bandeau du prototype tient lieu d'en-tête du projet : la barre de recherche et l'en-tête de projet de Fadi s'effacent (la navigation des modules reste). */
+  body:has(.module-content-parcours) .app-topbar,
+  body:has(.module-content-parcours) .project-header {
+    display: none;
+  }
+  .overview {
+    padding: 22px;
+  }
+  .overview-grid {
+    grid-template-columns: repeat(3, minmax(145px, 1fr));
+    overflow: auto;
+  }
+  .overview-step {
+    min-height: 180px;
+  }
+  .overview-head h1 {
+    font-size: 32px;
+  }
+}
+@media (max-width: 700px) {
+  .atelier-stage-header {
+    padding: 13px 15px;
+    min-height: 74px;
+    gap: 10px;
+  }
+  .atelier-stage-title {
+    font-size: 20px;
+  }
+  .atelier-stage-header .top-stage {
+    font-size: 11px;
+  }
+  .atelier-stage-actions {
+    gap: 7px;
+  }
+  .stage-icon-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    font-size: 21px;
+  }
+  #h7-shortcut {
+    max-width: 150px;
+    font-size: 10px;
+    padding: 6px;
+  }
+  .work {
+    padding: 18px 16px;
+  }
+}
+
+/* Mode Atelier (étapes 10 / 11, module Atelier) : la page est l'Atelier Architectural du prototype — enveloppe de Fadi effacée, toute la largeur au dessin. */
+body.atelier-immersive .app-shell {
+  grid-template-columns: minmax(0, 1fr);
+}
+body.atelier-immersive .app-sidebar,
+body.atelier-immersive .app-topbar,
+body.atelier-immersive .project-header,
+body.atelier-immersive .module-nav {
+  display: none;
+}
+body.atelier-immersive .module-content {
+  padding: 0;
+}
+body.atelier-immersive .step-detail {
+  max-width: none;
+}
+body.atelier-immersive .step-detail-atelier .work {
+  padding: 0 0 24px;
+}
+body.atelier-immersive .step-detail-atelier .work > :not(.native-atelier):not(.ah84-entry):not(#atelier-harmonie-page) {
+  margin-left: 24px;
+  margin-right: 24px;
+}
+body.atelier-immersive .native-atelier {
+  margin: 0 0 18px;
+}
+/* `stage10-fold` : titre et intro de l'étape, repliés sous le dessin (prototype). */
+.stage10-fold {
+  margin: 0 0 18px;
+  border: 1px solid #cfdad5;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+.stage10-fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 18px 20px;
+  font-size: clamp(22px, 5vw, 34px);
+  font-weight: 750;
+  line-height: 1.15;
+  color: #164c43;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.stage10-fold > summary::-webkit-details-marker {
+  display: none;
+}
+.stage10-fold > summary::after {
+  content: "⌄";
+  font-size: 24px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.stage10-fold[open] > summary::after {
+  transform: rotate(180deg);
+}
+.stage10-fold[open] > summary {
+  border-bottom: 1px solid #dce4e0;
+}
+.stage10-fold-body {
+  padding: 0 20px 20px;
+}
+.stage10-fold-body > .stage10-intro {
+  color: #5c6f6b;
+  margin: 18px 0;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Étapes du Parcours — récit de l'exemple dans la vue d'étape              */
+/* ---------------------------------------------------------------------- */
 .step-card-headline {
   margin: 2px 0 0;
   font-size: 13.5px;
   font-weight: 600;
   color: var(--forest-800);
-}
-.step-card-head {
-  display: grid;
-  grid-template-columns: 30px 1fr auto;
-  gap: 10px;
-  align-items: start;
-}
-.step-card-head strong {
-  font-size: 18px;
-  font-weight: 300;
-  color: var(--muted);
-}
-.step-card-head h3 {
-  margin: 2px 0 0;
-  font-size: 15.5px;
-  line-height: 1.3;
-}
-.step-card-phase {
-  display: block;
-  font-size: 11px;
-  color: var(--muted);
-}
-.step-card-head .step-dot {
-  margin-top: 6px;
 }
 .step-card-goal {
   margin: 0;
@@ -939,11 +1253,6 @@ h3 {
   gap: 12px;
   max-width: 1100px;
 }
-.step-detail-title {
-  margin: 4px 0 0;
-  font-size: 24px;
-  line-height: 1.25;
-}
 .step-detail-nav-right {
   display: flex;
   gap: 10px;
@@ -953,33 +1262,6 @@ h3 {
 .step-done {
   border-color: var(--done);
   color: var(--done);
-}
-.overview-progress {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: 8px 0 0;
-}
-.overview-progress .parcours-steps-summary {
-  margin: 0;
-  white-space: nowrap;
-}
-.overview-phases {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 18px;
-  margin: 14px 0 0;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--muted);
-}
-.step-detail-top {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 4px;
 }
 .progress {
   flex: 1;
@@ -994,11 +1276,6 @@ h3 {
   background: var(--forest-900);
   border-radius: inherit;
   transition: width 0.2s ease;
-}
-.step-detail-count {
-  color: var(--muted);
-  font-size: 13px;
-  white-space: nowrap;
 }
 .step-detail h3 {
   margin: 0;
@@ -2222,9 +2499,6 @@ button.h7-chip.h7-goto:hover {
   .step-detail {
     padding: 16px;
   }
-  .step-detail-top {
-    flex-wrap: wrap;
-  }
   .step-detail-nav,
   .step-detail-nav-right {
     flex-direction: column;
@@ -2431,6 +2705,118 @@ button.h7-chip.h7-goto:hover {
 }
 .ex81-budget {
   margin-top: 16px;
+}
+/* Présentation protégée de l'exemple (`ex81-css` du prototype) : réponses en lecture, indicateurs, en-tête intégré au panneau, liens des tableaux. */
+.ex81-answers {
+  margin: 0;
+}
+.ex81-answers > div {
+  padding: 15px 0;
+  border-bottom: 1px solid #dce4dc;
+}
+.ex81-answers dt {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.ex81-answers dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ex81-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.ex81-kpis > div {
+  padding: 14px;
+  background: #edf4e9;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.ex81-kpis b {
+  display: block;
+  font-size: 21px;
+}
+.ex81-table .btn,
+.ex81-table .ex81-goto {
+  font-size: 12px;
+  text-align: left;
+  display: block;
+  margin: 4px 0;
+  width: 100%;
+  border: 1px solid #215a4b;
+  background: #215a4b;
+  border-radius: 7px;
+  padding: 10px 13px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+}
+.ex81-table .ex81-goto:focus-visible {
+  outline: 3px solid #4387b3;
+  outline-offset: 2px;
+}
+.ex81-selected > details > summary {
+  font-weight: 700;
+  cursor: pointer;
+  padding: 9px 0;
+}
+.ex81-goto-list {
+  display: flex;
+  flex-direction: column;
+}
+.h7-panel-reference .h7-inner {
+  padding: 18px 20px;
+}
+.h7-panel-reference .ex83-example-head {
+  display: block;
+  margin: 0;
+  min-width: 0;
+}
+.h7-panel-reference .ex81-story.ex83-integrated {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.h7-panel-reference .ex83-integrated .ex81-actions {
+  margin: 16px 0;
+}
+.h7-panel-reference .h7-tabs {
+  margin-top: 12px;
+}
+.h7-panel-reference .h7-tab-content {
+  margin-top: 14px;
+}
+.h7-panel-reference .ex81-fold {
+  margin: 16px 0;
+}
+.h7-panel-reference .h7-site-hero {
+  margin-top: 16px;
+}
+.reference-answers h2 {
+  margin: 0 0 6px;
+}
+@media (max-width: 700px) {
+  .ex81-kpis {
+    grid-template-columns: 1fr;
+  }
+  .ex81-kpis > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .ex81-kpis b {
+    font-size: 20px;
+  }
+  .h7-panel-reference .h7-inner {
+    padding: 14px 12px;
+  }
 }
 .programme-rooms-fold .v62-tab-content {
   margin-top: 8px;
@@ -2918,30 +3304,6 @@ fieldset.access-fieldset:disabled {
   border-radius: 12px;
   padding: 18px;
   margin: 16px 0;
-}
-.seed888 > summary {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  list-style: none;
-}
-.seed888 > summary::-webkit-details-marker {
-  display: none;
-}
-.seed888 > summary::before {
-  content: "▸";
-  font-size: 12px;
-  color: var(--muted);
-}
-.seed888[open] > summary::before {
-  content: "▾";
-}
-.seed888-count {
-  margin-left: auto;
-  white-space: nowrap;
-  font-size: 12.5px;
-  color: var(--muted);
 }
 .seed888 .biz-actions {
   margin: 10px 0;

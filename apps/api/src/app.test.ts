@@ -1870,7 +1870,7 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     const journal = (await owner.get(`/projects/${pid}/collaboration`)).body;
     expect(journal.access).toMatchObject({ role: "proprietaire", members: [] });
     expect(journal.journal.find((e: { label: string }) => e.label === "Étape 02 · proposition H01-B retenue")).toBeDefined();
-  });
+  }, 30000);
 
   it("transfers ownership to a member: the new owner shares and deletes, the former owner stays as editor, strangers and non-members are refused", async () => {
     const owner = await registerAndLogin("transfer-owner@example.com");

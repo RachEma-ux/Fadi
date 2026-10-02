@@ -149,24 +149,29 @@ await page.locator('button[type="submit"]:has-text("Créer")').first().click();
 await page.locator('.project-list a:has-text("Étude test migration")').first().click();
 await page.waitForURL(/\/projets\/proj_/);
 const projectUrl = page.url().split("?")[0];
-await page.waitForSelector(".step-card-open");
-check("vue d'ensemble : 21 cartes", (await page.locator(".step-card-open").count()) === 21);
+await page.waitForSelector(".overview-step");
+check("vue d'ensemble : 21 cartes", (await page.locator(".overview-step").count()) === 21);
 check("progression initiale 0 / 21", (await page.locator(".parcours-steps-summary").textContent()).includes("0 / 21"));
 await page.screenshot({ path: `${OUT}/new-00-overview-desktop.png`, fullPage: true });
 
-// 1b. Étape 01 d'un projet vierge : outil Parcelle vide, trois propositions de site sans schéma
+// 1b. Étape 01 d'un projet vierge : outil Parcelle vide, trois propositions de site sans schéma.
+// Le panneau Harmonie vit dans la colonne gauche de l'outil (prototype : `ParcoursSectionsV82.place`) : on l'atteint dans le cadre.
+const parcelleHarmonie = async (p = page) => {
+  await p.waitForFunction(() => document.querySelector(".parcelle-tool iframe")?.contentWindow?.ParcoursParcel?.ready, null, { timeout: 30000 });
+  await p.waitForFunction(() => !!document.querySelector(".parcelle-tool iframe")?.contentDocument?.querySelector("#fadi-harmonie-slot .h7-panel"), null, { timeout: 20000 });
+  return p.frameLocator(".parcelle-tool iframe").locator("#fadi-harmonie-slot");
+};
 await page.goto(`${projectUrl}?module=parcours&etape=1`);
-await page.waitForSelector(".h7-panel");
-await page.waitForFunction(() => document.querySelector(".parcelle-tool iframe")?.contentWindow?.ParcoursParcel?.ready, null, { timeout: 30000 });
-check("étape 01 vierge : « Harmonie · Site et paysage · 0 choix retenu(s) », 3 propositions de site", (await page.locator(".h7-panel > summary").textContent()).includes("Site et paysage · 0 choix retenu(s)") && (await page.locator(".h7-proposal").count()) === 3);
-check("étape 01 vierge : aucun schéma sans contour (« Aucune parcelle rectangulaire de remplacement »)", (await page.locator(".h7-site-hero .h7-callout").textContent()).includes("Aucune parcelle rectangulaire de remplacement"));
-check("étape 01 vierge : proposition de départ A (approche non documentée)", (await page.locator(".h7-group").textContent()).startsWith("A · Proposition de départ"));
+let h01 = await parcelleHarmonie();
+check("étape 01 vierge : panneau Harmonie dans la colonne gauche de l'outil Parcelle (après « Construction »), « Harmonie · Site et paysage · 0 choix retenu(s) », 3 propositions de site", (await page.evaluate(() => { const d = document.querySelector(".parcelle-tool iframe").contentDocument; return d.getElementById("fold-construction")?.nextElementSibling?.id; })) === "fadi-harmonie-slot" && (await h01.locator(".h7-panel > summary").textContent()).includes("Site et paysage · 0 choix retenu(s)") && (await h01.locator(".h7-proposal").count()) === 3);
+check("étape 01 vierge : aucun schéma sans contour (« Aucune parcelle rectangulaire de remplacement »)", (await h01.locator(".h7-site-hero .h7-callout").textContent()).includes("Aucune parcelle rectangulaire de remplacement"));
+check("étape 01 vierge : proposition de départ A (approche non documentée)", (await h01.locator(".h7-group").textContent()).startsWith("A · Proposition de départ"));
 await page.screenshot({ path: `${OUT}/new-01-desktop.png`, fullPage: true });
-await page.locator('button:has-text("Vue d\'ensemble")').click();
-await page.waitForSelector(".step-card-open");
+await page.locator(".workflow-back").click();
+await page.waitForSelector(".overview-step");
 
 // 2. Étape 02 — Harmonie
-await page.locator(".step-card-open").nth(1).click();
+await page.locator(".overview-step").nth(1).click();
 await page.waitForSelector(".h7-panel");
 check("étape 02 : panneau Harmonie « 0 choix retenu(s) »", (await page.locator(".h7-panel > summary").textContent()).includes("0 choix retenu(s)"));
 check("étape 02 : 3 propositions", (await page.locator(".h7-proposal").count()) === 3);
@@ -367,24 +372,28 @@ await page.waitForSelector(".seed888", { timeout: 10000 });
 const [kmzDl] = await Promise.all([page.waitForEvent("download"), page.locator('.seed888 a:has-text("118_officiel.kmz")').click()]);
 const kmzBytes = await (await import("node:fs/promises")).readFile(await kmzDl.path());
 check("exemple : « Documents de base intégrés » (118_officiel.kmz, ZONE-I-5.pdf, scénario étudié) → KMZ téléchargé intact (881 142 octets, archive zip)", (await page.locator(".seed888 a").allTextContents()).join(",") === "118_officiel.kmz,ZONE-I-5.pdf" && /Scénario étudié : P\.118/.test(await page.locator(".seed888 p").textContent()) && kmzBytes.length === 881142 && kmzBytes.subarray(0, 2).toString("latin1") === "PK");
-await measure("ouverture de l'étape 02 de l'exemple (formulaire, panneau Harmonie)", async () => {
+await measure("ouverture de l'étape 02 de l'exemple (réponses renseignées, panneau Harmonie de l'exemple)", async () => {
   await page.goto(`${exampleUrl}?module=parcours&etape=2`);
-  await page.waitForSelector("#biz-f1");
-  await page.waitForSelector(".h7-panel");
+  await page.waitForSelector(".reference-answers");
+  await page.waitForSelector(".h7-panel-reference");
 });
-check("exemple étape 02 : « Harmonie · Site constructible · 1 choix retenu(s) »", (await page.locator(".h7-panel > summary").textContent()).includes("Site constructible · 1 choix retenu(s)"));
-check("exemple étape 02 : réponse f1 nommant sa nature", (await page.inputValue("#biz-f1")).startsWith("[DONNÉE / CALCUL DU FICHIER SOURCE]"));
-check("exemple étape 02 : profil « Formation & bureaux »", (await page.locator(".h7-fold-body").first().textContent()).includes("Formation & bureaux"));
-// Récit de l'exemple (`storyHTML` du prototype) : étiquette, titre, décision, trois actions, cadre de démonstration, choix déjà arbitré ; référence : « Étape illustrée ✓ ».
+check("exemple étape 02 : bandeau « Parcours du projet · ÉTAPE 02 / 21 · Comprendre le site » avec « ◈ Harmonie de l’étape », « ← », « ⌂ » ; « Harmonie · Site constructible · 1 choix retenu(s) »", (await page.locator(".atelier-stage-header .top-stage").textContent()) === "ÉTAPE 02 / 21 · Comprendre le site" && (await page.locator("#h7-shortcut").count()) === 1 && (await page.locator(".h7-panel > summary").textContent()).includes("Site constructible · 1 choix retenu(s)"));
+check("exemple étape 02 (référence) : « Réponses renseignées · 02 », 12 rubriques en lecture, f1 nommant sa nature (`bookBlock` du prototype)", (await page.locator(".reference-answers h2").textContent()) === "Réponses renseignées · 02" && (await page.locator(".reference-answers .ex81-answers > div").count()) === 12 && (await page.locator(".reference-answers dd").first().textContent()).startsWith("[DONNÉE / CALCUL DU FICHIER SOURCE]") && (await page.locator("#biz-f1").count()) === 0);
+await page.locator("#h7-shortcut").click();
+await page.waitForFunction(() => document.querySelector(".h7-panel-reference")?.open, null, { timeout: 5000 });
+check("« ◈ Harmonie de l’étape » → panneau de l'exemple ouvert : onglets « Choix illustré / Alternatives expliquées / Intentions reçues / transmises »", (await page.locator(".h7-panel-reference .h7-tabs button").allTextContents()).join("|") === "Choix illustré|Alternatives expliquées|Intentions reçues / transmises");
+// Récit de l'exemple (`storyHTML` du prototype, en-tête du panneau) : étiquette, titre, décision, trois actions, cadre de démonstration, choix déjà arbitré ; référence : « Étape illustrée ✓ ».
 const storyActions = await page.locator(".ex81-story .ex81-actions > *").allTextContents();
 check("exemple étape 02 : récit « EXEMPLE RÉSOLU · 02 / 21 », actions « Voir le choix Harmonie et sa transmission » / « Essayer une variante en copie » / « Dossier complet de l’exemple », pli « Cadre de démonstration et hypothèses », « CHOIX A · DÉJÀ ARBITRÉ »", (await page.locator(".ex81-story > .ex81-tag").textContent()) === "EXEMPLE RÉSOLU · 02 / 21" && storyActions.join("|") === "Voir le choix Harmonie et sa transmission|Essayer une variante en copie|Dossier complet de l’exemple" && (await page.locator(".ex81-frame > summary").textContent()) === "Cadre de démonstration et hypothèses" && (await page.locator(".ex81-selected .ex81-tag").textContent()) === "CHOIX A · DÉJÀ ARBITRÉ", storyActions.join("|"));
 check("exemple (référence) : « Étape illustrée ✓ », inactif", (await page.locator(".step-detail-nav .step-done").textContent()) === "Étape illustrée ✓" && (await page.locator(".step-detail-nav .step-done").isDisabled()));
 await page.screenshot({ path: `${OUT}/02-desktop.png`, fullPage: true });
-// Le parti illustré est « adapté » avec la décision du récit comme texte transmis (`makeProject` : decide 'adapted'), les autres partis écartés.
-check("exemple étape 02 : proposition A « Adaptée et retenue », texte transmis = décision du récit ; B « Écartée avec motif »", (await page.locator(".h7-proposal").nth(0).locator(".h7-chip").first().textContent()) === "Adaptée et retenue" && (await page.locator(".h7-proposal").nth(0).locator(".h7-text").textContent()).trim() === (await page.locator(".ex81-story .ex81-decision").textContent()).trim() && /Écartée/.test(await page.locator(".h7-proposal").nth(1).locator(".h7-chip").first().textContent()));
+// « Alternatives expliquées » : le parti illustré « Retenue dans l’exemple », les autres « Écartée pour cet exemple » avec les alternatives pour motif (arbitrages rejoués à l'import).
+await page.locator('.h7-panel-reference .h7-tabs button[data-tab="compare"]').click();
+const compareRows = await page.locator(".h7-panel-reference .h7-tab-content .ex81-table tbody tr").allTextContents();
+check("exemple étape 02 : « Alternatives expliquées » — A « Retenue dans l’exemple », B et C « Écartée pour cet exemple · Alternative non retenue dans ce scénario »", compareRows.length === 3 && /^A.*Retenue dans l’exemple/.test(compareRows[0]) && /Écartée pour cet exemple.*Alternative non retenue dans ce scénario/.test(compareRows[1]) && /Écartée pour cet exemple/.test(compareRows[2]), compareRows.map((r) => r.slice(0, 60)).join(" | "));
 await page.locator('.ex81-actions button:has-text("Voir le choix Harmonie et sa transmission")').click();
-await page.waitForFunction(() => document.querySelector(".h7-panel")?.open && document.querySelector('.h7-tabs button[data-tab="transfer"]')?.getAttribute("aria-pressed") === "true", null, { timeout: 5000 });
-check("« Voir le choix Harmonie et sa transmission » → panneau ouvert sur « Choix & transmission », onglet focalisé, choix H01-A à transmettre", (await page.evaluate(() => document.activeElement?.getAttribute("data-tab"))) === "transfer" && (await page.locator(".h7-panel").textContent()).includes("H01-A"));
+await page.waitForFunction(() => document.querySelector(".h7-panel")?.open && document.querySelector('.h7-tabs button[data-tab="transfer"]')?.getAttribute("aria-pressed") === "true" && document.activeElement?.getAttribute("data-tab") === "transfer", null, { timeout: 5000 }).catch(() => {});
+check("« Voir le choix Harmonie et sa transmission » → onglet « Intentions reçues / transmises » focalisé : intention de l'étape 01 (texte = décision du récit de 01, bouton d'origine), choix H01-A transmis avec ses destinations", (await page.evaluate(() => document.activeElement?.getAttribute("data-tab"))) === "transfer" && (await page.locator(".h7-panel-reference .h7-tab-content").textContent()).includes("H01-A") && (await page.locator('.h7-panel-reference .h7-tab-content .ex81-goto:has-text("01 · Parcelle / Site existant")').count()) >= 1);
 const [dossierDl] = await Promise.all([page.waitForEvent("download"), page.locator('.ex81-actions a:has-text("Dossier complet de l’exemple")').click()]);
 const dossierHtml = await (await import("node:fs/promises")).readFile(await dossierDl.path(), "utf8");
 check("« Dossier complet de l’exemple » → P118_Exemple_Resolu_V8_19.html : 21 étapes avec réponses et traces, budget, bilan du bâtiment dessiné, registre des hypothèses", dossierDl.suggestedFilename() === "P118_Exemple_Resolu_V8_19.html" && (dossierHtml.match(/<section class="ex81-report-step">/g) || []).length === 21 && /EXEMPLE ENTIÈREMENT RENSEIGNÉ/.test(dossierHtml) && /Scénario défavorable/.test(dossierHtml) && /BILAN HARMONIE · BÂTIMENT DESSINÉ/.test(dossierHtml) && /Registre des hypothèses/.test(dossierHtml), `${dossierDl.suggestedFilename()} · ${dossierHtml.length} caractères`);
@@ -393,22 +402,28 @@ await page.waitForSelector(".programme-case");
 check("exemple étape 06 : répartition liée au modèle (1 366,02 m²)", (await page.locator(".programme-case").textContent()).replace(/ | /g, " ").includes("1 366,02 m²"));
 await page.screenshot({ path: `${OUT}/06-desktop.png`, fullPage: true });
 await page.goto(`${exampleUrl}?module=parcours&etape=14`);
-await page.waitForSelector(".biz-kpis");
-check("exemple étape 14 : KPI calculés depuis les montants importés", (await page.locator(".biz-kpis").textContent()).replace(/ | /g, " ").includes("24 000 000"));
-// Budget du scénario (`budgetHTML`) : référence et scénario défavorable calculés sur les réponses des étapes 14 / 15 — les montants que l'exemple énonce lui-même.
-const budgetText = (await page.locator(".ex81-budget").textContent()).replace(/[\u202f\u00a0]/g, " ");
+await page.waitForSelector(".reference-answers .ex81-budget");
+// Référence : « Réponses renseignées · 14 » en lecture (pas de formulaire ni de KPI de saisie), avec le budget du scénario (`bookBlock` + `budgetHTML`) :
+// référence et scénario défavorable calculés sur les réponses des étapes 14 / 15 — les montants que l'exemple énonce lui-même.
+check("exemple étape 14 (référence) : réponses en lecture, montants importés (Foncier / acquisition : 3 200 000), pas de formulaire", (await page.locator(".reference-answers h2").textContent()) === "Réponses renseignées · 14" && (await page.locator(".reference-answers dd").first().textContent()).replace(/[\u202f\u00a0]/g, " ") === "3 200 000" && (await page.locator(".biz-kpis").count()) === 0);
+const budgetText = (await page.locator(".reference-answers .ex81-budget").textContent()).replace(/[\u202f\u00a0]/g, " ");
 check("exemple étape 14 : budget du scénario — Investissement 24 000 000 → 26 400 000 MAD (scénario défavorable), « Décision du cas : … 2 400 000 MAD de besoin additionnel »", /Investissement24 000 000 MAD26 400 000 MAD/.test(budgetText) && /Décision du cas : le stress de CAPEX crée 2 400 000 MAD de besoin additionnel/.test(budgetText), budgetText.slice(0, 160));
 await page.screenshot({ path: `${OUT}/14-desktop-exemple.png`, fullPage: true });
-// « Essayer une variante en copie » (`copy()` du prototype) : nouveau projet modifiable « P.118 — ma variante de l’exemple résolu », vue d'ensemble, l'original intact.
+// « Essayer une variante en copie » (`copy()` du prototype, action du récit dans le panneau de l'exemple) : nouveau projet modifiable « P.118 — ma variante de l’exemple résolu », vue d'ensemble, l'original intact.
+await page.locator("#h7-shortcut").click();
+await page.waitForFunction(() => document.querySelector(".h7-panel-reference")?.open, null, { timeout: 5000 });
 await page.locator('.ex81-actions button:has-text("Essayer une variante en copie")').click();
 await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().startsWith(exampleUrl), { timeout: 30000 });
 await page.waitForSelector(".parcours-steps-summary");
 const variantUrl = page.url().split("?")[0];
 const variantToast = await page.locator(".h7-toast").textContent().catch(() => "");
 check("« Essayer une variante en copie » → « P.118 — ma variante de l’exemple résolu » ouverte (21 / 21 étapes terminées), message de copie", (await page.locator(".project-header h1").textContent()) === "P.118 — ma variante de l’exemple résolu" && (await page.locator(".parcours-steps-summary").textContent()).includes("21 / 21 étapes terminées"), variantToast);
+await page.goto(`${variantUrl}?module=parcours&etape=14`);
+await page.waitForSelector(".biz-kpis");
+check("variante étape 14 : formulaire modifiable, KPI calculés depuis les montants importés (24 000 000)", (await page.locator(".biz-kpis").textContent()).replace(/[\u202f\u00a0]/g, " ").includes("24 000 000") && (await page.locator("#biz-f1").count()) === 1);
 await page.goto(`${variantUrl}?module=parcours&etape=2`);
-await page.waitForSelector(".ex81-story");
-check("variante : « Terminée ✓ » actif (copie modifiable), récit et actions conservés ; l'original reste la référence", (await page.locator(".step-detail-nav .step-done").textContent()) === "Terminée ✓" && !(await page.locator(".step-detail-nav .step-done").isDisabled()) && (await page.locator(".ex81-story .ex81-actions > *").count()) === 3 && (await page.evaluate(async (pid) => (await (await fetch(`/projects/${pid}`, { credentials: "include" })).json()).exampleMode, exampleUrl.split("/").pop())) === "reference");
+await page.waitForSelector("#biz-f1");
+check("variante : « Terminée ✓ » actif (copie modifiable), formulaire et panneau Harmonie générés — pas de récit (présentation du prototype pour une copie) ; l'original reste la référence", (await page.locator(".step-detail-nav .step-done").textContent()) === "Terminée ✓" && !(await page.locator(".step-detail-nav .step-done").isDisabled()) && (await page.locator(".ex81-story").count()) === 0 && (await page.locator(".h7-panel:not(.h7-panel-reference)").count()) === 1 && (await page.evaluate(async (pid) => (await (await fetch(`/projects/${pid}`, { credentials: "include" })).json()).exampleMode, exampleUrl.split("/").pop())) === "reference");
 
 // 6b. Atelier natif sur l'exemple : moteur, niveaux, dessin d'un mur persisté (projection + révision), annulation persistée
 await measure("ouverture de l'Atelier (moteur, modèle P.118, géométrie affichée)", async () => {
@@ -490,7 +505,24 @@ await measure("rechargement de la page de l'Atelier → géométrie affichée", 
   await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
 });
 check("copie de travail : rechargement → modèle toujours là", (await page.locator("#model-floors button").count()) === 6);
+// Référence, étape 10 : la page est l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; « Analyser → Harmonie » ouvre la sous-page avec le panneau de l'exemple
+// (récit, « Lire le bilan du bâtiment conçu » / « Voir les capacités et ambiances » / « Exporter le bilan »).
 await page.goto(`${exampleUrl}?module=parcours&etape=10`);
+await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+check("étape 10 (référence) : page « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », enveloppe de Fadi effacée, titre de l'étape replié sous le dessin", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && !(await page.locator(".app-sidebar").isVisible()) && (await page.locator(".stage10-fold > summary").textContent()) === "Étude de capacité architecturale");
+await page.locator('#atelier-toolbar [data-atab="analyse"]').click();
+await page.locator("#atelier-harmonie-button").click();
+await page.waitForFunction(() => !document.getElementById("atelier-harmonie-page")?.hidden);
+await page.evaluate(() => { document.querySelector(".h7-panel-reference").open = true; });
+await page.locator('.h7-panel-reference button:has-text("Lire le bilan du bâtiment conçu")').click();
+await page.waitForSelector(".design-review-fold[open] .v62-tabs, .v62-tabs", { timeout: 15000 });
+check("étape 10 (référence) : panneau de l'exemple dans la sous-page, « Lire le bilan du bâtiment conçu » ouvre le bilan en ligne ; « Voir les capacités et ambiances des N zones », « Exporter le bilan »", (await page.locator(".h7-panel-reference .ex81-story").count()) === 1 && (await page.locator(".v62-tabs").count()) >= 1 && /Voir les capacités et ambiances des \d+ zones/.test(await page.locator(".h7-panel-reference .ex81-actions").last().textContent()) && (await page.locator('.h7-panel-reference a:has-text("Exporter le bilan")').getAttribute("href")) === `/projects/${examplePid}/design-review/rapport`);
+await page.keyboard.press("Escape");
+await page.locator(".workflow-back").click();
+await page.waitForSelector(".overview-step");
+check("étape 10 : « ← » du bandeau → vue d'ensemble, enveloppe de Fadi de retour", !(await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && (await page.locator(".module-nav").isVisible()));
+// Variante (copie modifiable), étape 10 : propositions localisées sur les locaux du modèle (flow-v62 / h7-app), panneau Harmonie généré.
+await page.goto(`${variantUrl}?module=parcours&etape=10`);
 await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
 check("étape 10 : l'Atelier est monté dans l'étape (même moteur)", (await page.locator(".native-atelier #viewer-info").count()) === 1);
 // Sous-page « Harmonie du bâtiment » (V8.4) : depuis le bouton « Harmonie » du groupe Analyser de la barre d'outils native
@@ -602,19 +634,26 @@ await page.keyboard.press("Escape");
 await page.waitForFunction(() => document.getElementById("atelier-harmonie-page")?.hidden === true);
 check("sous-page : Échap → « Retour à l’Atelier », le dessin réapparaît", await page.locator(".native-atelier").isVisible());
 
-// 6c. Étape 01 de l'exemple : outil Parcelle (fichier P.118 servi par Fadi), transmission au modèle, propositions de site
+// 6c. Étape 01 de l'exemple : outil Parcelle (fichier P.118 servi par Fadi), panneau de l'exemple dans sa colonne gauche (lecture) ;
+//     puis, sur la variante (copie modifiable), transmission au modèle et propositions de site modifiables.
 await page.goto(`${exampleUrl}?module=parcours&etape=1`);
-await page.waitForSelector(".h7-panel");
-await page.waitForFunction(() => document.querySelector(".parcelle-tool iframe")?.contentWindow?.ParcoursParcel?.ready, null, { timeout: 30000 });
+let h01ref = await parcelleHarmonie();
 await page.waitForTimeout(800);
 const parcelFrame = page.frameLocator(".parcelle-tool iframe");
 check("étape 01 : l'outil Parcelle ouvre le fichier P.118 du projet (« Fichier enregistré », 4 bornes)", (await parcelFrame.locator("#file-status").textContent()) === "Fichier enregistré" && (await parcelFrame.locator("#points-body tr").count()) === 4);
 check("étape 01 : « Mes parcelles » liste 118_officiel.kmz · P.118 · El Mansouria · 1 345,55 m²", (await parcelFrame.locator("#parcel-list-body").textContent()).replace(/[\u202f\u00a0]/g, " ").includes("1 345,55 m²"));
 check("étape 01 : parcelle liée au modèle", (await page.locator(".parcelle-status").textContent()).includes("Parcelle liée au modèle"));
-await page.evaluate(() => { document.querySelector(".h7-panel").open = true; });
-check("étape 01 : « Harmonie · Site et paysage · 1 choix retenu(s) », schéma A, légende 15 / 50 / 25 / 10 %", (await page.locator(".h7-panel > summary").textContent()).includes("Site et paysage · 1 choix retenu(s)") && (await page.locator(".h7-site-svg svg").count()) === 1 && /15 %.*50 %.*25 %.*10 %/s.test((await page.locator(".h7-zones").textContent()).replace(/[\u202f\u00a0]/g, " ")));
-check("étape 01 : « Pourquoi ici » calculé sur la parcelle (approche B.265 → B.266, contexte arrière végétation)", (await page.locator(".h7-proposal").nth(0).locator("dd").nth(0).textContent()).includes("Approche étudiée depuis B.265 → B.266, hypothétique."));
+await h01ref.locator(".h7-panel > summary").click();
+await page.waitForTimeout(500);
+check("étape 01 (référence) : panneau de l'exemple dans la colonne de l'outil — « Harmonie · Site et paysage · 1 choix retenu(s) », schéma A, légende 15 / 50 / 25 / 10 %, tableau des zones, « Données de site déjà renseignées » (H-CONTEXTE…), carte MapTiler facultative", (await h01ref.locator(".h7-panel > summary").textContent()).includes("Site et paysage · 1 choix retenu(s)") && (await h01ref.locator(".h7-site-svg svg").count()) === 1 && /15 %.*50 %.*25 %.*10 %/s.test((await h01ref.locator(".h7-zones").textContent()).replace(/[\u202f\u00a0]/g, " ")) && (await h01ref.locator(".ex81-table").first().locator("tbody tr").count()) === 4 && /H-CONTEXTE/.test(await h01ref.locator(".ex81-fold").first().textContent()) && (await h01ref.locator('.h7-maptiler button:has-text("Afficher le fond MapTiler")').count()) === 1);
 await page.screenshot({ path: `${OUT}/01-desktop.png`, fullPage: true });
+// La variante (copie modifiable) : mêmes outils, panneau Harmonie généré (données du site, « Voir le schéma », MapTiler, arbitrages).
+const variantPid = variantUrl.split("/").pop();
+await page.goto(`${variantUrl}?module=parcours&etape=1`);
+h01 = await parcelleHarmonie();
+await page.waitForTimeout(800);
+await h01.locator(".h7-panel").evaluate((d) => { d.open = true; });
+check("variante étape 01 : « Harmonie · Site et paysage · 1 choix retenu(s) », schéma A, « Pourquoi ici » calculé sur la parcelle (approche B.265 → B.266, contexte arrière végétation)", (await h01.locator(".h7-panel > summary").textContent()).includes("Site et paysage · 1 choix retenu(s)") && (await h01.locator(".h7-site-svg svg").count()) === 1 && (await h01.locator(".h7-proposal").nth(0).locator("dd").nth(0).textContent()).includes("Approche étudiée depuis B.265 → B.266, hypothétique."));
 // Modifier une borne dans l'outil : l'outil enregistre, Fadi transmet → conflit (bâtiment déjà dessiné), modèle non déplacé
 await page.evaluate(() => document.querySelector(".parcelle-tool iframe").contentWindow.ParcelPanels.reveal("fold-vertices"));
 const borneX = parcelFrame.locator("#points-body tr").nth(0).locator('input[data-field="x"]');
@@ -622,75 +661,75 @@ const borneBefore = await borneX.inputValue();
 await borneX.fill(String(Number(borneBefore) + 2));
 await borneX.dispatchEvent("change");
 await page.waitForFunction(() => /Conflit avec le bâtiment dessiné/.test(document.querySelector(".parcelle-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
-check("étape 01 : borne déplacée → « Conflit avec le bâtiment dessiné » (motif du prototype)", (await page.locator(".v62-alert").textContent().catch(() => "")).includes("Les bornes diffèrent et un bâtiment est déjà dessiné"));
+check("variante étape 01 : borne déplacée → « Conflit avec le bâtiment dessiné » (motif du prototype)", (await page.locator(".v62-alert").textContent().catch(() => "")).includes("Les bornes diffèrent et un bâtiment est déjà dessiné"));
 const npAfterConflict = await page.evaluate(async (pid) => {
   const parcels = await (await fetch(`/projects/${pid}/parcels`, { credentials: "include" })).json();
   const store = await (await fetch(`/projects/${pid}/atelier/store`, { credentials: "include" })).json();
   return store.entries[`design.v13.project.${parcels.transmission.nativeId}.nativeParcel`]?.vertices?.[0]?.[0];
-}, examplePid);
-check("étape 01 : le modèle n'est pas déplacé par le conflit (B.266 inchangée)", Math.abs(npAfterConflict - 321946.82) < 1e-6, String(npAfterConflict));
+}, variantPid);
+check("variante étape 01 : le modèle n'est pas déplacé par le conflit (B.266 inchangée)", Math.abs(npAfterConflict - 321946.82) < 1e-6, String(npAfterConflict));
 await borneX.fill(borneBefore);
 await borneX.dispatchEvent("change");
 await page.waitForFunction(() => /Parcelle liée au modèle/.test(document.querySelector(".parcelle-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
-check("étape 01 : borne rétablie → parcelle de nouveau liée", (await page.locator(".parcelle-status").textContent()).includes("Parcelle liée au modèle") && (await page.locator(".v62-alert").count()) === 0);
+check("variante étape 01 : borne rétablie → parcelle de nouveau liée", (await page.locator(".parcelle-status").textContent()).includes("Parcelle liée au modèle") && (await page.locator(".v62-alert").count()) === 0);
 // Données du site : priorité « Séparation des mouvements » → proposition de départ C ; approche documentée sans source → refus
-await page.locator(".h7-panel details.h7-fold").first().locator("> summary").click();
-await page.locator(".h7-panel .h7-form select").nth(2).selectOption("service");
-await page.locator('.h7-panel button:has-text("Enregistrer ces données")').click();
-await page.waitForFunction(() => /^C · Proposition de départ/.test(document.querySelector(".h7-group")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
-check("étape 01 : priorité « Séparation des mouvements » → proposition de départ C", (await page.locator(".h7-group").textContent()).startsWith("C · Proposition de départ — Votre priorité déclarée est la séparation des mouvements."));
-await page.locator(".h7-panel .h7-form select").nth(1).selectOption("documented");
-await page.locator(".h7-panel .h7-form input").nth(0).fill("");
-await page.locator('.h7-panel button:has-text("Enregistrer ces données")').click();
-await page.locator(".h7-panel .h7-error").first().waitFor({ timeout: 10000 }).catch(() => {});
-check("étape 01 : approche documentée sans source → refus du prototype affiché", (await page.locator(".h7-panel .h7-error").first().textContent().catch(() => "")) === "Pour une approche documentée, choisissez son côté et indiquez sa source.");
-await page.locator('.h7-proposal:nth-child(3) button:has-text("Voir le schéma")').click();
+await h01.locator(".h7-panel details.h7-fold").first().locator("> summary").click();
+await h01.locator(".h7-panel .h7-form select").nth(2).selectOption("service");
+await h01.locator('.h7-panel button:has-text("Enregistrer ces données")').click();
+await page.waitForFunction(() => /^C · Proposition de départ/.test(document.querySelector(".parcelle-tool iframe")?.contentDocument?.querySelector(".h7-group")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
+check("variante étape 01 : priorité « Séparation des mouvements » → proposition de départ C", (await h01.locator(".h7-group").textContent()).startsWith("C · Proposition de départ — Votre priorité déclarée est la séparation des mouvements."));
+await h01.locator(".h7-panel .h7-form select").nth(1).selectOption("documented");
+await h01.locator(".h7-panel .h7-form input").nth(0).fill("");
+await h01.locator('.h7-panel button:has-text("Enregistrer ces données")').click();
+await h01.locator(".h7-panel .h7-error").first().waitFor({ timeout: 10000 }).catch(() => {});
+check("variante étape 01 : approche documentée sans source → refus du prototype affiché", (await h01.locator(".h7-panel .h7-error").first().textContent().catch(() => "")) === "Pour une approche documentée, choisissez son côté et indiquez sa source.");
+await h01.locator('.h7-proposal:nth-child(3) button:has-text("Voir le schéma")').click();
 await page.waitForTimeout(300);
-check("étape 01 : « Voir le schéma » affiche la variante C", (await page.locator(".h7-site-hero h3").textContent()) === "Arrivées et desserte dissociées");
+check("variante étape 01 : « Voir le schéma » affiche la variante C", (await h01.locator(".h7-site-hero h3").textContent()) === "Arrivées et desserte dissociées");
 // MapTiler à l'étape 01 : sans clé, puis clé de session saisie, fond satellite avec le contour source, altimétrie du centre et des sommets conservée comme donnée déclarée.
 await page.evaluate(() => sessionStorage.removeItem("fadi.maptiler.session-key"));
-await page.locator('.h7-maptiler button:has-text("Afficher le fond MapTiler")').click();
-await page.waitForFunction(() => /Clé MapTiler absente/.test(document.querySelector("#h7-map-status")?.textContent || ""), null, { timeout: 5000 });
-check("étape 01 : sans clé, « Afficher le fond MapTiler » → « Clé MapTiler absente … aucune image de contexte n’est inventée »", true);
-await page.locator('.h7-maptiler button:has-text("Connexion MapTiler")').click();
-await axeCheck(page, "dialogue « Connexion MapTiler »");
-await page.fill("#h7-map-key", "cle-de-test-scenario");
-await page.locator('.h7-dialog-inline button:has-text("Utiliser cette clé")').click();
-await page.waitForFunction(() => /Clé disponible/.test(document.querySelector("#h7-map-status")?.textContent || ""), null, { timeout: 5000 });
-await page.locator('.h7-maptiler button:has-text("Afficher le fond MapTiler")').click();
-await page.waitForSelector("#h7-map-host .h7-map-tiles img", { timeout: 10000 });
-check("étape 01 : « Afficher le fond MapTiler » → mosaïque de tuiles demandée au service (clé de l'utilisateur), contour source B.265… et variante de site C (4 zones, hypothèse) en superposition, crédit MapTiler", (await page.locator("#h7-map-host .h7-map-tiles img").count()) > 0 && (await page.locator("#h7-map-host polygon").count()) >= 5 && /B\.26/.test(await page.locator("#h7-map-host svg").textContent()) && /Hypothèse C · /.test(await page.locator("#h7-map-host svg").textContent()) && /© MapTiler.*Superposition : variante C hypothétique/.test(await page.locator(".h7-map-credit").textContent()) && maptilerLog.includes("/maps/satellite/256/tiles.json"), (await page.locator(".h7-map-credit").textContent()).slice(0, 160));
-await page.locator(".h7-maptiler").screenshot({ path: `${OUT}/01-desktop-maptiler.png` });
-await page.locator('.h7-maptiler button:has-text("Collecter centre + sommets")').click();
-await page.waitForFunction(() => /points reçus · amplitude/.test(document.querySelector("#h7-map-status")?.textContent || ""), null, { timeout: 10000 });
-const siteAfterCollect = (await (await page.request.get(`${BASE}/projects/${examplePid}/steps/1`)).json()).site;
-check("étape 01 : « Collecter centre + sommets » → 5 positions (centre + 4 bornes) conservées comme altimétrie de service (amplitude 4 m, non relevé topographique), « Pourquoi ici » cite l'amplitude", /^5 points reçus · amplitude 4 m/.test(await page.locator("#h7-map-status").textContent()) && siteAfterCollect.observations.elevation.points.length === 5 && siteAfterCollect.observations.elevation.status === "Modèle de terrain · non relevé topographique" && /Altimétrie de service : amplitude 4 m/.test(await page.locator(".h7-proposal").nth(0).locator("dd").nth(0).textContent()), await page.locator("#h7-map-status").textContent());
+const mapStatus = () => page.evaluate(() => document.querySelector(".parcelle-tool iframe")?.contentDocument?.querySelector("#h7-map-status")?.textContent || "");
+await h01.locator('.h7-maptiler button:has-text("Afficher le fond MapTiler")').click();
+await page.waitForFunction(() => /Clé MapTiler absente/.test(document.querySelector(".parcelle-tool iframe")?.contentDocument?.querySelector("#h7-map-status")?.textContent || ""), null, { timeout: 5000 });
+check("variante étape 01 : sans clé, « Afficher le fond MapTiler » → « Clé MapTiler absente … aucune image de contexte n’est inventée »", true);
+await h01.locator('.h7-maptiler button:has-text("Connexion MapTiler")').click();
+await h01.locator("#h7-map-key").fill("cle-de-test-scenario");
+await h01.locator('.h7-dialog-inline button:has-text("Utiliser cette clé")').click();
+await page.waitForFunction(() => /Clé disponible/.test(document.querySelector(".parcelle-tool iframe")?.contentDocument?.querySelector("#h7-map-status")?.textContent || ""), null, { timeout: 5000 });
+await h01.locator('.h7-maptiler button:has-text("Afficher le fond MapTiler")').click();
+await h01.locator("#h7-map-host .h7-map-tiles img").first().waitFor({ timeout: 10000 });
+check("variante étape 01 : « Afficher le fond MapTiler » → mosaïque de tuiles demandée au service (clé de l'utilisateur), contour source B.265… et variante de site C (4 zones, hypothèse) en superposition, crédit MapTiler", (await h01.locator("#h7-map-host .h7-map-tiles img").count()) > 0 && (await h01.locator("#h7-map-host polygon").count()) >= 5 && /B\.26/.test(await h01.locator("#h7-map-host svg").textContent()) && /Hypothèse C · /.test(await h01.locator("#h7-map-host svg").textContent()) && /© MapTiler.*Superposition : variante C hypothétique/.test(await h01.locator(".h7-map-credit").textContent()) && maptilerLog.includes("/maps/satellite/256/tiles.json"), (await h01.locator(".h7-map-credit").textContent()).slice(0, 160));
+await h01.locator(".h7-maptiler").screenshot({ path: `${OUT}/01-desktop-maptiler.png` });
+await h01.locator('.h7-maptiler button:has-text("Collecter centre + sommets")').click();
+await page.waitForFunction(() => /points reçus · amplitude/.test(document.querySelector(".parcelle-tool iframe")?.contentDocument?.querySelector("#h7-map-status")?.textContent || ""), null, { timeout: 10000 });
+const siteAfterCollect = (await (await page.request.get(`${BASE}/projects/${variantPid}/steps/1`)).json()).site;
+check("variante étape 01 : « Collecter centre + sommets » → 5 positions (centre + 4 bornes) conservées comme altimétrie de service (amplitude 4 m, non relevé topographique), « Pourquoi ici » cite l'amplitude", /^5 points reçus · amplitude 4 m/.test(await mapStatus()) && siteAfterCollect.observations.elevation.points.length === 5 && siteAfterCollect.observations.elevation.status === "Modèle de terrain · non relevé topographique" && /Altimétrie de service : amplitude 4 m/.test(await h01.locator(".h7-proposal").nth(0).locator("dd").nth(0).textContent()), await mapStatus());
 
-// 6e. Péremption (« À réexaminer ») et rapports : les données du site viennent de changer → l'étape 02 de l'exemple, générée à l'import, est à réexaminer
-await page.goto(`${exampleUrl}?module=parcours&etape=2`);
+// 6e. Péremption (« À réexaminer ») et rapports : les données du site de la variante viennent de changer → son étape 02, arbitrée à l'import, est à réexaminer
+await page.goto(`${variantUrl}?module=parcours&etape=2`);
 await page.waitForSelector(".h7-panel");
 await page.waitForFunction(() => /à réexaminer/.test(document.querySelector(".h7-panel > summary")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
 await page.evaluate(() => { document.querySelector(".h7-panel").open = true; });
-check("étape 02 : « … · 1 choix retenu(s) · à réexaminer » après modification des données du site", (await page.locator(".h7-panel > summary").textContent()).includes("1 choix retenu(s) · à réexaminer"));
-check("étape 02 : encart « Données pertinentes modifiées. »", /Données pertinentes modifiées\. Les choix sont conservés, mais doivent être réexaminés\./.test(await page.locator(".h7-stale").textContent()));
+check("variante étape 02 : « … · 1 choix retenu(s) · à réexaminer » après modification des données du site", (await page.locator(".h7-panel > summary").textContent()).includes("1 choix retenu(s) · à réexaminer"));
+check("variante étape 02 : encart « Données pertinentes modifiées. »", /Données pertinentes modifiées\. Les choix sont conservés, mais doivent être réexaminés\./.test(await page.locator(".h7-stale").textContent()));
 const staleCard = page.locator(".h7-proposal.stale").first();
-check("étape 02 : chip « À réexaminer · choix conservé » sur le choix de l'exemple", (await staleCard.locator(".h7-chip").first().textContent()) === "À réexaminer · choix conservé");
+check("variante étape 02 : chip « À réexaminer · choix conservé » sur le choix de l'exemple", (await staleCard.locator(".h7-chip").first().textContent()) === "À réexaminer · choix conservé");
 await staleCard.locator('button:has-text("Adapter / motiver")').click();
 await staleCard.locator('input').nth(0).fill("Chef de projet");
 await staleCard.locator("textarea").nth(1).fill("Compte rendu de revue n° 4");
 await staleCard.locator('button:has-text("Consigner une vérification")').click();
 await staleCard.locator(".h7-error").waitFor({ timeout: 10000 });
-check("étape 02 : vérification refusée tant que les propositions ne sont pas actualisées (message du prototype)", (await staleCard.locator(".h7-error").textContent()) === "Actualisez d’abord les propositions sur les données courantes.");
+check("variante étape 02 : vérification refusée tant que les propositions ne sont pas actualisées (message du prototype)", (await staleCard.locator(".h7-error").textContent()) === "Actualisez d’abord les propositions sur les données courantes.");
 await page.screenshot({ path: `${OUT}/02-desktop-reexaminer.png`, fullPage: true });
 await page.locator('.h7-head button:has-text("Actualiser les propositions")').click();
 await page.waitForFunction(() => !document.querySelector(".h7-stale"), null, { timeout: 10000 });
-check("étape 02 : « Actualiser les propositions » → encart retiré, toast du prototype, choix toujours à réexaminer", (await page.locator(".h7-toast").textContent().catch(() => "")) === "Propositions actualisées ; les choix antérieurs sont conservés pour réexamen." && (await page.locator(".h7-proposal.stale").count()) === 1);
+check("variante étape 02 : « Actualiser les propositions » → encart retiré, toast du prototype, choix toujours à réexaminer", (await page.locator(".h7-toast").textContent().catch(() => "")) === "Propositions actualisées ; les choix antérieurs sont conservés pour réexamen." && (await page.locator(".h7-proposal.stale").count()) === 1);
 await page.locator(".h7-proposal.stale").first().locator('button:has-text("Confirmer ce choix")').click();
 await page.waitForFunction(() => document.querySelectorAll(".h7-proposal.stale").length === 0, null, { timeout: 10000 });
-check("étape 02 : « Confirmer ce choix » → « Retenue », plus rien à réexaminer", (await page.locator(".h7-panel > summary").textContent()).includes("1 choix retenu(s)") && !(await page.locator(".h7-panel > summary").textContent()).includes("à réexaminer"));
+check("variante étape 02 : « Confirmer ce choix » → « Retenue », plus rien à réexaminer", (await page.locator(".h7-panel > summary").textContent()).includes("1 choix retenu(s)") && !(await page.locator(".h7-panel > summary").textContent()).includes("à réexaminer"));
 const [stageReport] = await Promise.all([page.waitForEvent("download"), page.locator('.h7-head a:has-text("Rapport de cette étape")').click()]);
 const stageReportHtml = await (await import("node:fs/promises")).readFile(await stageReport.path(), "utf8");
-check("étape 02 : « Rapport de cette étape » → Harmonie_Etape_02_V7.html, cartes et choix à transmettre", stageReport.suggestedFilename() === "Harmonie_Etape_02_V7.html" && stageReportHtml.includes("PARCOURS V7 · DIMENSION HARMONIE PAR ÉTAPE") && stageReportHtml.includes("<h3>Choix à transmettre</h3>") && /<title>Harmonie · Escalier B et mezzanine · 02 · /.test(stageReportHtml));
+check("variante étape 02 : « Rapport de cette étape » → Harmonie_Etape_02_V7.html, cartes et choix à transmettre", stageReport.suggestedFilename() === "Harmonie_Etape_02_V7.html" && stageReportHtml.includes("PARCOURS V7 · DIMENSION HARMONIE PAR ÉTAPE") && stageReportHtml.includes("<h3>Choix à transmettre</h3>") && /<title>Harmonie · ma variante de l’exemple résolu · 02 · /.test(stageReportHtml));
 await page.locator('.h7-tabs button:has-text("Choix & transmission")').click();
 check("étape 02 : onglet « Choix & transmission » — intentions reçues de l'étape 01, destinations", (await page.locator(".h7-transfer .h7-received").count()) === 1 && (await page.locator(".h7-transfer button.h7-goto").count()) >= 1);
 await page.locator(".h7-transfer .h7-received button:has-text('Voir l’origine')").first().click();
@@ -709,9 +748,9 @@ const archiveJson = JSON.parse(await (await import("node:fs/promises")).readFile
 check("outils du projet : « Sauvegarder projet JSON » → Parcours_V7_Escalier_B_et_mezzanine.json (21 étapes, modèle natif, cas de programme)", archiveDl.suggestedFilename() === "Parcours_V7_Escalier_B_et_mezzanine.json" && archiveJson.kind === "fadi-project-archive" && archiveJson.steps.length === 21 && !!archiveJson.native && archiveJson.programmeCases.length === 1);
 await page.locator('#parcours-project-tools input[type="file"]').setInputFiles({ name: "Parcours_V7_Escalier_B_et_mezzanine.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(archiveJson)) });
 await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid), { timeout: 20000 });
-await page.waitForSelector(".step-card-open");
+await page.waitForSelector(".overview-step");
 check("outils du projet : « Importer projet JSON » → nouveau dossier ouvert, toast du prototype", !page.url().includes(examplePid) && /Import créé dans un nouveau dossier/.test(await page.locator(".h7-toast").textContent().catch(() => "")));
-check("import : « Escalier B et mezzanine · import », 21 cartes", /Escalier B et mezzanine · import/.test(await page.locator("h1").first().textContent()) && (await page.locator(".step-card-open").count()) === 21);
+check("import : « Escalier B et mezzanine · import », 21 cartes", /Escalier B et mezzanine · import/.test(await page.locator("h1").first().textContent()) && (await page.locator(".overview-step").count()) === 21);
 await page.goto(`${BASE}/projets`);
 await page.waitForSelector(".project-list");
 check("page Projets : « Importer projet JSON » et « Bibliothèque des bâtiments » dans l'en-tête", (await page.locator('.projects-heading button:has-text("Importer projet JSON")').count()) === 1 && (await page.locator('.projects-heading a:has-text("Bibliothèque des bâtiments")').count()) === 1);
@@ -738,7 +777,7 @@ check("exemple étape 07 : la référence n'a pas de pli de transfert (panneau d
 const referenceDone = await page.evaluate(async (pid) => (await (await fetch(`/projects/${pid}/steps`, { credentials: "include" })).json()).filter((s) => s.status === "termine").length, examplePid);
 await page.locator('button:has-text("Essayer une autre répartition en copie")').click();
 await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid), { timeout: 30000 });
-await page.waitForSelector(".step-card-open");
+await page.waitForSelector(".overview-step");
 const copyUrl = page.url().split("?")[0];
 const copyToast = await page.locator(".h7-toast").textContent().catch(() => "");
 const copyTitle = await page.locator("h1").first().textContent();
@@ -828,8 +867,13 @@ await page.locator(".analyses-module .biz-card").first().screenshot({ path: `${O
 await page.goto(`${exampleUrl}?module=documents`);
 await page.waitForSelector(".documents-table tbody tr", { timeout: 30000 });
 const docFreshness = async (kind) => page.locator(`tr[data-document="${kind}"]`).getAttribute("data-freshness");
-check("documents : 34 documents productibles (synthèse, 21 rapports d'étape, bilan, 6 plans, tableau des surfaces, programme, fiches, dossier complet de l'exemple, archive)", (await page.locator(".documents-table tbody tr").count()) === 34 && /34 documents productibles/.test(await page.locator(".documents-module .biz-sub").first().textContent()) && (await page.locator('tr[data-document="dossier-exemple"]').count()) === 1);
-check("documents : productions antérieures reconnues — rapport de l'étape 02, synthèse et archive à jour ; bilan périmé (références directionnelles enregistrées après sa production)", (await docFreshness("harmonie-etape-02")) === "a-jour" && (await docFreshness("harmonie-synthese")) === "a-jour" && (await docFreshness("archive-projet")) === "a-jour" && (await docFreshness("bilan-batiment")) === "perime" && (await docFreshness("tableau-surfaces")) === "aucune");
+check("documents (référence) : 34 documents productibles (synthèse, 21 rapports d'étape, bilan, 6 plans, tableau des surfaces, programme, fiches, dossier complet de l'exemple, archive) ; synthèse, archive et dossier complet produits par le scénario, à jour", (await page.locator(".documents-table tbody tr").count()) === 34 && /34 documents productibles/.test(await page.locator(".documents-module .biz-sub").first().textContent()) && (await page.locator('tr[data-document="dossier-exemple"]').count()) === 1 && (await page.locator('tr[data-document="fiches-espaces-csv"]').count()) === 1 && (await docFreshness("archive-projet")) === "a-jour" && (await docFreshness("dossier-exemple")) === "a-jour" && (await docFreshness("harmonie-synthese")) === "a-jour");
+// Les productions du scénario (rapport de l'étape 02, synthèse, archive, bilan puis références directionnelles) ont eu lieu sur la variante : son catalogue (33 documents, sans les fiches de la référence) les reconnaît.
+await page.goto(`${variantUrl}?module=documents`);
+await page.waitForSelector(".documents-table tbody tr", { timeout: 30000 });
+check("documents (variante) : 33 documents productibles — pas de fiches de l'exemple résolu hors référence, dossier complet présent", (await page.locator(".documents-table tbody tr").count()) === 33 && (await page.locator('tr[data-document="fiches-espaces-csv"]').count()) === 0 && (await page.locator('tr[data-document="dossier-exemple"]').count()) === 1);
+const variantFreshness = { etape02: await docFreshness("harmonie-etape-02"), synthese: await docFreshness("harmonie-synthese"), archive: await docFreshness("archive-projet"), bilan: await docFreshness("bilan-batiment"), surfaces: await docFreshness("tableau-surfaces") };
+check("documents (variante) : productions antérieures reconnues — rapport de l'étape 02 à jour ; bilan périmé (références directionnelles enregistrées après sa production) ; synthèse, archive et tableau jamais produits ici", variantFreshness.etape02 === "a-jour" && variantFreshness.synthese === "aucune" && variantFreshness.archive === "aucune" && variantFreshness.bilan === "perime" && variantFreshness.surfaces === "aucune", JSON.stringify(variantFreshness));
 const [surfacesDl] = await Promise.all([page.waitForEvent("download"), page.locator('tr[data-document="tableau-surfaces"] a:has-text("Produire")').click()]);
 const surfacesCsv = await (await import("node:fs/promises")).readFile(await surfacesDl.path(), "utf8");
 await page.waitForFunction(() => document.querySelector('tr[data-document="tableau-surfaces"]')?.getAttribute("data-freshness") === "a-jour", null, { timeout: 10000 });
@@ -859,7 +903,7 @@ check("collaboration : le commentaire de l'étape 08 et sa réponse apparaissent
 const journalKinds = new Set(await page.locator(".journal-table tbody tr").evaluateAll((rows) => rows.map((r) => r.getAttribute("data-kind"))));
 check("collaboration : journal des révisions relu des données (projet, Harmonie, programme, modèle, parcelle, revue, documents, commentaire), du plus récent au plus ancien", ["projet", "harmonie", "programme", "modele", "parcelle", "revue", "document", "commentaire"].every((k) => journalKinds.has(k)) && (await page.locator(".journal-table tbody tr").first().getAttribute("data-kind")) === "commentaire");
 await page.locator('.collaboration-module .h7-tabs button:has-text("Document")').click();
-check("collaboration : filtre « Document » → les productions enregistrées (rapport 02, synthèse, archive, bilan, tableau des surfaces)", (await page.locator(".journal-table tbody tr").count()) >= 5 && (await page.locator(".journal-table tbody tr").evaluateAll((rows) => rows.every((r) => r.getAttribute("data-kind") === "document"))));
+check("collaboration : filtre « Document » → les productions enregistrées sur la référence (archive, dossier complet de l'exemple, KMZ…)", (await page.locator(".journal-table tbody tr").count()) >= 2 && (await page.locator(".journal-table tbody tr").evaluateAll((rows) => rows.every((r) => r.getAttribute("data-kind") === "document"))));
 await page.locator(".collaboration-module .biz-card").first().screenshot({ path: `${OUT}/collaboration-desktop.png` });
 await page.locator(".comment-delete").first().click();
 await page.waitForFunction(() => document.querySelectorAll(".comment").length === 0, null, { timeout: 10000 });
@@ -928,12 +972,12 @@ check("rechargement : la file locale est rejouée à l'ouverture → +1 mur et +
 // Rechargement complet hors-ligne : l'enveloppe (service worker) sert l'application, le cache persistant (IndexedDB) relit
 // les étapes déjà lues, l'Atelier s'ouvre depuis le cache local du modèle.
 await page.goto(`${exampleUrl}?module=parcours&etape=2`);
-await page.waitForSelector("#biz-f1");
+await page.waitForSelector(".reference-answers");
 await page.waitForTimeout(2500); // le cache des requêtes s'écrit avec un délai de regroupement
 check("hors-ligne : service worker actif et contrôlant la page", await page.evaluate(async () => !!navigator.serviceWorker.controller && !!(await navigator.serviceWorker.getRegistration())?.active));
 await ctx.setOffline(true);
 await page.reload();
-await page.waitForSelector("#biz-f1", { timeout: 20000 });
+await page.waitForSelector(".reference-answers", { timeout: 20000 });
 check("rechargement hors-ligne : l'étape 02 se relit depuis le cache persistant, bandeau « Lecture hors-ligne : données lues le … »", (await page.locator(".step-detail-title").textContent()) === "Réglementation & constructibilité" && /^Lecture hors-ligne : données lues le/.test(await page.locator(".offline-banner").textContent()) && /^Hors-ligne/.test(await page.locator(".sync-indicator").textContent()));
 await page.locator('.module-nav button:has-text("Atelier architectural")').click();
 await page.waitForFunction(() => /cache local|enregistré localement/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
@@ -941,7 +985,7 @@ await page.waitForFunction(() => document.querySelectorAll("#model-floors button
 check("rechargement hors-ligne : l'Atelier s'ouvre depuis le cache local du modèle, 6 niveaux", (await page.locator("#model-floors button").count()) === 6, await page.locator(".native-atelier-status").textContent());
 await ctx.setOffline(false);
 await page.goto(`${exampleUrl}?module=parcours`);
-await page.waitForSelector(".step-card-open");
+await page.waitForSelector(".overview-step");
 
 // 6l. File hors-ligne des saisies : mutation en pause, persistée et rejouée après rechargement ; refus 409 quand le serveur a avancé (jamais écrasé)
 const testPid = projectUrl.split("/").pop();
@@ -1155,6 +1199,7 @@ await page.waitForFunction(() => document.querySelector(".collab-role")?.textCon
 check("transfert de propriété : l'ancien propriétaire devient éditeur (plus de formulaire d'invitation), le membre devient propriétaire", (await page.locator(".collab-role").textContent()) === "éditeur" && (await page.locator(".members-invite").count()) === 0 && new RegExp(readerEmail).test(await page.locator('.members-table tr[data-member="owner"]').textContent()));
 await page2.goto(`${projectUrl}?module=collaboration`);
 await page2.waitForSelector(".members-invite", { timeout: 15000 });
+await page2.waitForFunction(() => document.querySelector(".collab-role")?.textContent === "propriétaire", null, { timeout: 10000 }).catch(() => {}); // cache persistant relu
 check("nouveau propriétaire : « Votre rôle · propriétaire », formulaire d'invitation, ancien propriétaire listé éditeur", (await page2.locator(".collab-role").textContent()) === "propriétaire" && (await page2.locator(`.members-table tr[data-member="${email}"] select`).inputValue()) === "editeur");
 page2.once("dialog", (d) => d.accept());
 await page2.locator(`.members-table tr[data-member="${email}"] button:has-text("Transférer la propriété")`).click();
@@ -1289,7 +1334,7 @@ await pageFresh.waitForSelector('.bl-hero button:has-text("Ouvrir le modèle P.1
 await pageFresh.locator('.bl-hero button:has-text("Ouvrir le modèle P.118")').click();
 await pageFresh.waitForURL(/\/projets\/proj_[^?]+\?module=parcours&etape=10/, { timeout: 60000 });
 const freshToast = await pageFresh.waitForFunction(() => /Exemple P\.118 importé/.test(document.querySelector(".h7-toast")?.textContent || ""), null, { timeout: 8000 }).then(() => true).catch(() => false); // s'efface de lui-même après 3,6 s
-await pageFresh.waitForSelector(".project-header h1", { timeout: 30000 });
+await pageFresh.waitForSelector(".project-header h1", { timeout: 30000, state: "attached" }); // étape 10 : page de l'Atelier, en-tête de Fadi effacé
 await pageFresh.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
 check("bibliothèque · cas P.118 sans l'exemple dans le compte : l'exemple est importé puis ouvert à l'étape 10, Atelier monté (toast « Exemple P.118 importé »)", (await pageFresh.locator(".project-header h1").textContent()) === "P.118 — Escalier B et mezzanine" && (await pageFresh.locator(".native-atelier #viewer-info").count()) === 1, freshToast ? "toast vu" : "toast non observé (effacé avant la lecture)");
 await ctxFresh.close();
@@ -1300,14 +1345,17 @@ const a11yScreens = [
   ["accueil", `${BASE}/accueil`, ".home-page"],
   ["harmonie", `${BASE}/harmonie`, "main"],
   ["paramètres", `${BASE}/parametres`, "main"],
-  ["vue d'ensemble", `${exampleUrl}?module=parcours`, ".step-card-open"],
+  ["vue d'ensemble", `${exampleUrl}?module=parcours`, ".overview-step"],
   ["étape 01", `${exampleUrl}?module=parcours&etape=1`, ".h7-site-hero"],
-  ["étape 02", `${exampleUrl}?module=parcours&etape=2`, "#biz-f1"],
+  ["étape 02", `${exampleUrl}?module=parcours&etape=2`, ".reference-answers"],
+  ["étape 02 (variante, formulaire)", `${variantUrl}?module=parcours&etape=2`, "#biz-f1"],
   ["étape 06", `${exampleUrl}?module=parcours&etape=6`, ".programme-case"],
   ["étape 10", `${exampleUrl}?module=parcours&etape=10`, '#atelier-toolbar[data-ready="1"]'],
-  ["étape 14", `${exampleUrl}?module=parcours&etape=14`, ".biz-kpis"],
-  ["étape 17", `${exampleUrl}?module=parcours&etape=17`, ".biz-kpi"],
-  ["étape 19", `${exampleUrl}?module=parcours&etape=19`, ".decision-grid"],
+  ["étape 14", `${exampleUrl}?module=parcours&etape=14`, ".reference-answers .ex81-budget"],
+  ["étape 14 (variante, formulaire)", `${variantUrl}?module=parcours&etape=14`, ".biz-kpis"],
+  ["étape 17 (variante)", `${variantUrl}?module=parcours&etape=17`, ".biz-kpi"],
+  ["étape 19", `${exampleUrl}?module=parcours&etape=19`, ".reference-answers"],
+  ["étape 19 (variante, décision)", `${variantUrl}?module=parcours&etape=19`, ".decision-grid"],
   ["programmation", `${exampleUrl}?module=programmation`, ".programme-case"],
   ["atelier", `${exampleUrl}?module=atelier`, '#atelier-toolbar[data-ready="1"]'],
   ["analyses", `${exampleUrl}?module=analyses`, ".analyses-checks"],
@@ -1348,8 +1396,10 @@ await ctxAnon.close();
 // 7. Téléphone
 await page.setViewportSize({ width: 390, height: 844 });
 await page.goto(`${projectUrl}?module=parcours`);
-await page.waitForSelector(".step-card-open");
+await page.waitForSelector(".overview-step");
 await page.screenshot({ path: `${OUT}/new-00-overview-mobile.png`, fullPage: true });
+// Présentation mobile du prototype : bandeau « Parcours du projet », grille des 21 étapes sur 3 colonnes qui défile horizontalement (`overview-grid`, 145 px minimum par colonne), en-tête de projet et recherche effacés.
+check("téléphone : bandeau « Parcours du projet » en tête, en-tête de projet et recherche effacés, grille 3 colonnes à défilement horizontal (cartes du prototype)", (await page.locator(".atelier-stage-header .atelier-stage-title").textContent()) === "Parcours du projet" && !(await page.locator(".project-header").isVisible()) && !(await page.locator(".app-topbar").isVisible()) && (await page.locator(".overview-grid").evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(" ").length === 3 && g.scrollWidth > g.clientWidth)) && (await page.locator(".overview-step").count()) === 21);
 await page.goto(`${projectUrl}?module=parcours&etape=6`);
 await page.waitForSelector(".programme-case-editor");
 await page.screenshot({ path: `${OUT}/new-06-mobile.png`, fullPage: true });
@@ -1359,7 +1409,7 @@ await page.waitForSelector(".bl-scenario");
 await page.screenshot({ path: `${OUT}/bibliotheque-batiments-hotel-mobile.png`, fullPage: true });
 check("téléphone : bibliothèque sans défilement horizontal", await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 await page.goto(`${exampleUrl}?module=parcours&etape=2`);
-await page.waitForSelector("#biz-f1");
+await page.waitForSelector(".reference-answers");
 await page.screenshot({ path: `${OUT}/02-mobile.png`, fullPage: true });
 await page.goto(`${exampleUrl}?module=parcours&etape=1`);
 await page.waitForFunction(() => document.querySelector(".parcelle-tool iframe")?.contentWindow?.ParcoursParcel?.ready, null, { timeout: 30000 });
@@ -1367,6 +1417,12 @@ await page.waitForTimeout(800);
 await page.screenshot({ path: `${OUT}/01-mobile.png`, fullPage: true });
 const noHorizontalScroll = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
 check("téléphone : pas de défilement horizontal", noHorizontalScroll);
+// Étape 10 sur téléphone : la page est l'Atelier Architectural (bandeau, barre d'outils, dessin), enveloppe effacée.
+await page.goto(`${exampleUrl}?module=parcours&etape=10`);
+await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+await page.waitForTimeout(600);
+await page.screenshot({ path: `${OUT}/10-mobile.png`, fullPage: false });
+check("téléphone étape 10 : bandeau « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », enveloppe effacée, dessin sur toute la largeur", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && !(await page.locator(".module-nav").isVisible()) && (await page.locator("#nativeDesignerRoot").evaluate((e) => Math.round(e.getBoundingClientRect().width))) >= 380);
 
 check("aucune erreur JavaScript", consoleErrors.length === 0, consoleErrors.join(" | "));
 console.log(`⏱ mesures indicatives (Chromium headless, cette machine) : ${measures.map((m) => `${m.label} = ${m.ms} ms`).join(" ; ")}`);
