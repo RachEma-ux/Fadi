@@ -4,17 +4,19 @@
  * variantes), fiche d'un cas avec ses cinq rubriques (Programme & surfaces,
  * Adjacences & flux, Exigences & dessin, Harmony & parcours, Sources &
  * hypothèses), schéma d'adjacences et gabarit d'essai dimensionnel (SVG),
- * exports (programme CSV, fiche JSON, schémas SVG) et « Utiliser ce
- * scénario » : application de la variante au projet courant ou à une
- * nouvelle étude isolée, cadre territorial déclaré, textes déjà saisis
+ * exports (rapport HTML du cas, programme CSV, fiche JSON, schémas SVG) et
+ * « Utiliser ce scénario » : application de la variante au projet courant ou
+ * à une nouvelle étude isolée, cadre territorial déclaré, textes déjà saisis
  * conservés par défaut.
  *
  * Les textes et la structure sont ceux du prototype ; les calculs (sommes,
  * schémas, CSV) viennent de `@parcours/domain-model`.
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryClientProvider, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import {
   LIBRARY_RELATION_LABELS,
   LIBRARY_SPACE_STATUS_LABELS,
@@ -33,8 +35,52 @@ import {
 } from "@parcours/domain-model";
 import { api, ApiError, type ApplyProgrammeCaseInput, type BuildingCaseDetail, type BuildingLibraryIndex } from "../../lib/api";
 import "./building-library.css";
+import libraryCss from "./building-library.css?raw";
 
 const fmt = fmtLib;
+const escHtml = (x: unknown) => String(x ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch] ?? ch);
+
+/** Rendu statique d'un arbre React par le moteur déjà chargé (sans `react-dom/server`) : le HTML tel que l'écran l'afficherait. */
+function staticMarkup(node: React.ReactNode): string {
+  const host = document.createElement("div");
+  const root = createRoot(host);
+  flushSync(() => root.render(node));
+  const html = host.innerHTML;
+  root.unmount();
+  return html;
+}
+
+/**
+ * `report(c, s)` du prototype : le dossier complet du cas en un seul HTML —
+ * les cinq rubriques (rendues par les mêmes vues que l'écran, plis ouverts,
+ * boutons et champs masqués), la feuille de style de la bibliothèque, l'en-tête
+ * « RAPPORT DE PROGRAMMATION » et la clôture du prototype.
+ */
+export async function caseReportHtml(queryClient: QueryClient, detail: BuildingCaseDetail, s: BuildingScenario, now = new Date().toISOString()): Promise<string> {
+  const c = detail.case;
+  // La rubrique Harmony lit l'index de la bibliothèque (les 21 étapes) : il doit être en cache avant le rendu statique.
+  await queryClient.ensureQueryData({ queryKey: ["building-library"], queryFn: api.getBuildingLibrary, staleTime: Infinity });
+  const sections = LIBRARY_TABS.map(([key]) =>
+    staticMarkup(
+      <QueryClientProvider client={queryClient}>
+        {key === "relations" ? (
+          <RelationsView c={c} />
+        ) : key === "technique" ? (
+          <TechniqueView c={c} s={s} />
+        ) : key === "harmony" ? (
+          <HarmonyView c={c} s={s} onApply={() => undefined} />
+        ) : key === "sources" ? (
+          <SourcesView detail={detail} />
+        ) : (
+          <ProgrammeView c={c} s={s} surfaceConvention={detail.surfaceConvention} />
+        )}
+      </QueryClientProvider>,
+    ),
+  )
+    .join("")
+    .replace(/<details /g, "<details open ");
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escHtml(c.title)} · programme V6.1</title><style>${libraryCss}</style><style>body{margin:0;font:14px Arial;background:#f5f7f3}button,input,select,.bl-screen-only{display:none!important}h2,h3{break-after:avoid}a{color:#245d4d}details>div{display:block!important}summary{font-weight:bold}</style></head><body><main class="bl"><section class="bl-hero"><div><span class="bl-kicker">PARCOURS V6.1 · RAPPORT DE PROGRAMMATION</span><h1>${escHtml(c.title)}</h1><p>${escHtml(s.label)} · export ${escHtml(now)}</p><p>${escHtml(c.profile.label)} → ${escHtml(c.subtype)}</p></div></section><div class="bl-note warn"><b>Statut des valeurs.</b> ${escHtml(c.provenanceNotice)} Aucune validation Feng Shui, dimensionnelle ou réglementaire automatique.</div>${sections}<p>Fin du dossier · hypothèses de travail, non dossier d’autorisation ou d’exécution.</p></main></body></html>`;
+}
 function download(name: string, mime: string, text: string) {
   const url = URL.createObjectURL(new Blob([text], { type: mime }));
   const a = document.createElement("a");
@@ -644,6 +690,7 @@ function ApplyDialog({
 
 export function BuildingCasePage() {
   const { id = "" } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
   const projectId = params.get("projet");
   const project = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId!), enabled: !!projectId });
@@ -693,6 +740,9 @@ export function BuildingCasePage() {
         <div className="bl-actions">
           <button type="button" className="primary" onClick={() => setApplying(true)}>
             Utiliser ce scénario
+          </button>
+          <button type="button" onClick={() => void caseReportHtml(queryClient, detail.data!, s).then((html) => download(`Programme_${c.id}_${s.id}_V6_1.html`, "text/html;charset=utf-8", html))}>
+            Rapport HTML
           </button>
           <button type="button" onClick={() => download(`Programme_${c.id}_${s.id}.csv`, "text/csv;charset=utf-8", programmeCsv(c, s))}>
             Programme CSV

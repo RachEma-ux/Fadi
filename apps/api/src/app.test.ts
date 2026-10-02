@@ -1566,6 +1566,23 @@ describe("Contrôle de concurrence des saisies et des arbitrages (rejeu hors-lig
     expect((await client.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send({ status: "dismissed", notes: "Motif suffisant ici", expectedVersion: 1 })).status).toBe(200);
   });
 
+  it("treats a replayed write as already applied: same value with a stale baseline, same decision one version later → 200, no conflict", async () => {
+    const client = await registerAndLogin("replay@example.com");
+    const pid = (await client.post("/projects").send({ code: "P.982", name: "Rejeu" })).body.id as string;
+    // Saisie rejouée après un rechargement : la valeur est déjà sur le serveur, la lecture (vide) est périmée → sans effet, pas refusée.
+    expect((await client.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Zone I5" }, baseline: { f1: null } })).status).toBe(200);
+    expect((await client.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Zone I5" }, baseline: { f1: null } })).status).toBe(200);
+    // Une autre valeur fondée sur la même lecture périmée reste refusée.
+    expect((await client.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Zone UA" }, baseline: { f1: null } })).status).toBe(409);
+    // Arbitrage rejoué : même statut, motif et responsable, une version après celle lue → sans effet ; différent → refusé.
+    const input = { status: "adapted", notes: "Adaptation suffisamment motivée", owner: "Chef de projet", expectedVersion: 0 };
+    expect((await client.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send(input)).status).toBe(200);
+    const replay = await client.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send(input);
+    expect(replay.status).toBe(200);
+    expect(replay.body.content.harmonie.proposals["H01-A"].decisionVersion).toBe(1); // pas une seconde version
+    expect((await client.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send({ ...input, notes: "Un autre motif, lui aussi suffisant" })).status).toBe(409);
+  });
+
   it("serialises simultaneous writes on the same step: two fields sent at once are both kept (no lost update)", async () => {
     const client = await registerAndLogin("concurrency-2@example.com");
     const pid = (await client.post("/projects").send({ code: "P.981", name: "Écritures simultanées" })).body.id as string;

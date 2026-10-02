@@ -58,9 +58,58 @@ export interface SyncConflict {
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-export function conflictsKey(projectId: string) {
-  return ["sync-conflicts", projectId] as const;
+/**
+ * Les refus conservés pour l'écran, par projet : un petit magasin synchrone
+ * (mémoire + localStorage) plutôt que le cache des requêtes — un conflit
+ * retiré ne doit pas réapparaître après une navigation parce que le cache
+ * persistant (écrit avec un délai) aurait gardé l'instantané d'avant.
+ */
+const CONFLICTS_PREFIX = "fadi.conflicts.";
+const conflictsMemory = new Map<string, SyncConflict[]>();
+const conflictListeners = new Set<() => void>();
+
+function readConflicts(projectId: string): SyncConflict[] {
+  const cached = conflictsMemory.get(projectId);
+  if (cached) return cached;
+  let list: SyncConflict[] = [];
+  try {
+    const raw = localStorage.getItem(CONFLICTS_PREFIX + projectId);
+    if (raw) list = JSON.parse(raw) as SyncConflict[];
+  } catch {
+    /* stockage indisponible : mémoire seulement */
+  }
+  conflictsMemory.set(projectId, list);
+  return list;
 }
+
+function writeConflicts(projectId: string, list: SyncConflict[]) {
+  conflictsMemory.set(projectId, list);
+  try {
+    if (list.length) localStorage.setItem(CONFLICTS_PREFIX + projectId, JSON.stringify(list));
+    else localStorage.removeItem(CONFLICTS_PREFIX + projectId);
+  } catch {
+    /* mémoire seulement */
+  }
+  for (const fn of conflictListeners) fn();
+}
+
+export const conflictsStore = {
+  get: readConflicts,
+  subscribe(fn: () => void): () => void {
+    conflictListeners.add(fn);
+    return () => conflictListeners.delete(fn);
+  },
+  /** Déconnexion ou changement d'utilisateur : les refus de l'autre compte ne sont pas montrés. */
+  clearAll() {
+    conflictsMemory.clear();
+    try {
+      for (const key of Object.keys(localStorage)) if (key.startsWith(CONFLICTS_PREFIX)) localStorage.removeItem(key);
+    } catch {
+      /* rien à vider */
+    }
+    for (const fn of conflictListeners) fn();
+  },
+};
 
 /** Enregistre un refus 409 pour l'écran (jamais perdu en silence) ; les autres erreurs restent à la charge de l'appelant. */
 export function recordConflict(
@@ -85,13 +134,13 @@ export function recordConflict(
     decision: tried.decision ?? null,
     currentVersion: typeof body.currentVersion === "number" ? body.currentVersion : null,
   };
-  queryClient.setQueryData<SyncConflict[]>(conflictsKey(projectId), (prev) => [...(prev ?? []), conflict]);
+  writeConflicts(projectId, [...readConflicts(projectId), conflict]);
   void queryClient.invalidateQueries({ queryKey: ["steps", projectId] });
   return true;
 }
 
-export function clearConflict(queryClient: QueryClient, projectId: string, id: string | null) {
-  queryClient.setQueryData<SyncConflict[]>(conflictsKey(projectId), (prev) => (id === null ? [] : (prev ?? []).filter((c) => c.id !== id)));
+export function clearConflict(_queryClient: QueryClient, projectId: string, id: string | null) {
+  writeConflicts(projectId, id === null ? [] : readConflicts(projectId).filter((c) => c.id !== id));
 }
 
 /** Une étape renvoyée par le serveur remplace la sienne dans la liste ; les effets amont / aval se relisent. */

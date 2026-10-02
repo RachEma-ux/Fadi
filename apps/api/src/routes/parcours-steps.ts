@@ -240,7 +240,10 @@ parcoursStepsRouter.patch("/:stepNumber", async (req, res) => {
     await lockProject(tx, project.id);
     const rows = await loadStepRows(tx, project.id);
     const current = rows.get(def.number) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
-    const conflicts = Object.entries(parsed.data.baseline ?? {}).filter(([k, v]) => !sameValue(current.content.fields[k], v));
+    // Une lecture périmée n'est pas un conflit quand le serveur porte déjà la valeur envoyée : la même saisie rejouée
+    // (file hors-ligne restaurée après un rechargement) est alors sans effet, pas refusée.
+    const alreadyApplied = (k: string) => k in updates && sameValue(current.content.fields[k], updates[k]);
+    const conflicts = Object.entries(parsed.data.baseline ?? {}).filter(([k, v]) => !sameValue(current.content.fields[k], v) && !alreadyApplied(k));
     if (conflicts.length) {
       const labelOf = (k: string) => def.form?.fields.find((f) => f.key === k)?.label ?? k;
       return { conflict: { fields: Object.fromEntries(conflicts.map(([k]) => [k, current.content.fields[k] ?? null])), message: `${conflicts.map(([k]) => `« ${labelOf(k)} »`).join(", ")} : modifié depuis votre lecture ; votre saisie n'a pas été appliquée.` } };
@@ -331,8 +334,19 @@ parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) =
       const current = rows.get(def.number) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
       const dep = ctx.dependencies.get(def.number);
       if (parsed.data.expectedVersion !== undefined) {
-        const currentVersion = current.content.harmonie.proposals[proposalId]?.decisionVersion ?? 0;
+        const existing = current.content.harmonie.proposals[proposalId];
+        const currentVersion = existing?.decisionVersion ?? 0;
         if (currentVersion !== parsed.data.expectedVersion) {
+          // Le même arbitrage, déjà appliqué juste après la version lue (rejeu d'une file restaurée) : sans effet, pas refusé.
+          const same =
+            existing &&
+            currentVersion === parsed.data.expectedVersion + 1 &&
+            existing.status === parsed.data.status &&
+            (existing.notes ?? "") === (parsed.data.notes ?? "") &&
+            (existing.owner ?? "") === (parsed.data.owner ?? "") &&
+            (existing.proof ?? "") === (parsed.data.proof ?? "") &&
+            (existing.link ?? "") === (parsed.data.link ?? "");
+          if (same) return { view: stepView(def, ctx) };
           return { conflict: { message: `La proposition ${proposalId} a été arbitrée depuis votre lecture (version ${currentVersion}) ; votre arbitrage n'a pas été appliqué.`, currentVersion } };
         }
       }

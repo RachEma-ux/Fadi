@@ -6,16 +6,15 @@
  * arbitrages, eux, exigent le réseau : leurs envois restent en pause pendant
  * une coupure (TanStack Query) et le disent dans leur écran.
  */
-import { useEffect, useState } from "react";
-import { useMutationState, useQuery } from "@tanstack/react-query";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { useMutationState } from "@tanstack/react-query";
 import { localStore } from "../lib/local-store";
-import { conflictsKey, type SyncConflict } from "../lib/mutations";
+import { conflictsStore, type SyncConflict } from "../lib/mutations";
 import { atelierStorage, type SyncState } from "../modules/atelier/native/storage";
 
-/** Les refus 409 conservés pour l'écran (`recordConflict`) ; jamais relus du serveur. */
+/** Les refus 409 conservés pour l'écran (`recordConflict`, magasin synchrone) ; jamais relus du serveur. */
 export function useSyncConflicts(projectId: string): SyncConflict[] {
-  const q = useQuery({ queryKey: conflictsKey(projectId), queryFn: () => [] as SyncConflict[], enabled: false, initialData: [] as SyncConflict[], staleTime: Infinity, gcTime: Infinity });
-  return q.data ?? [];
+  return useSyncExternalStore(conflictsStore.subscribe, () => conflictsStore.get(projectId));
 }
 
 /** L'état réseau du navigateur, suivi par les événements `online` / `offline`. */

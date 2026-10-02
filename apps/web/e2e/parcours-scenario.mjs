@@ -198,6 +198,10 @@ check("cas : gabarit d'essai dimensionnel SVG", /GABARIT D’ESSAI/.test(await p
 await page.locator('.bl-tabs button:has-text("Programme & surfaces")').click();
 await page.waitForTimeout(200);
 await page.screenshot({ path: `${OUT}/bibliotheque-batiments-hotel-desktop.png`, fullPage: true });
+// `report(c, s)` : le dossier complet du cas (cinq rubriques, plis ouverts, boutons masqués) en un HTML téléchargeable.
+const [caseReport] = await Promise.all([page.waitForEvent("download"), page.locator('.bl-hero button:has-text("Rapport HTML")').click()]);
+const caseReportHtml = await (await import("node:fs/promises")).readFile(await caseReport.path(), "utf8");
+check("cas : « Rapport HTML » → Programme_hotel_<variante>_V6_1.html (rapport de programmation : cinq rubriques, 21 étapes, plis ouverts, feuille de style)", /^Programme_hotel_[a-z0-9_-]+_V6_1\.html$/.test(caseReport.suggestedFilename()) && caseReportHtml.includes("PARCOURS V6.1 · RAPPORT DE PROGRAMMATION") && ["Espaces principaux", "Adjacences", "Dimensions minimales / recommandées", "Harmonie par étape, adaptée au type", "Références réglementaires", "21 · ", "Fin du dossier"].every((t) => caseReportHtml.includes(t)) && !caseReportHtml.includes("<details>") && caseReportHtml.includes("<details open") && caseReportHtml.includes(".bl-card{"), caseReport.suggestedFilename());
 await page.locator('.bl-hero button:has-text("Utiliser ce scénario")').click();
 await page.waitForSelector("dialog.bl-dialog[open]");
 check("« Utiliser ce scénario » : destination « Projet actuel » proposée", (await page.locator('dialog select[name="destination"]').inputValue()) === "current");
@@ -764,7 +768,6 @@ await page.waitForFunction(() => document.querySelectorAll(".conflict-banner").l
 await page.waitForFunction(() => document.querySelector("#biz-f1")?.value === "Demande locale (saisie hors-ligne)", null, { timeout: 10000 }).catch(() => {});
 check("« Reprendre ma saisie » : renvoyée fondée sur la valeur courante → acceptée, bandeau retiré, en-tête synchronisé", (await page.inputValue("#biz-f1")) === "Demande locale (saisie hors-ligne)" && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()));
 // Arbitrage fondé sur une version périmée : un autre appareil arbitre pendant que l'écran garde l'ancienne version.
-await page.waitForTimeout(1000); // le cache persistant écrit la fin des mutations rejouées avant la navigation
 await page.goto(`${projectUrl}?module=parcours&etape=3&harmonie=1`);
 await page.waitForSelector(".h7-proposal");
 // L'autre appareil arbitre la proposition B (version 1) ; l'écran, resté sur la version 0, retient B à son tour → refus.
@@ -787,7 +790,10 @@ await page.locator("#biz-f2").fill("Offre concurrente (hors-ligne)");
 await page.locator("#biz-f2").blur();
 await page.waitForSelector(".offline-banner-inline", { timeout: 10000 });
 await ctx.setOffline(false);
-await page.waitForFunction(() => !document.querySelector(".offline-banner-inline") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 20000 });
+await page.waitForFunction(() => !document.querySelector(".offline-banner-inline") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 20000 }).catch(async (err) => {
+  console.log(`diagnostic f2 : indicateur « ${await page.locator(".sync-indicator").textContent()} » · bandeau inline « ${(await page.locator(".offline-banner-inline").allTextContents()).join(" | ")} » · conflits « ${(await page.locator(".conflict-banner").allTextContents()).join(" | ").replace(/\s+/g, " ").slice(0, 400)} » · PATCH : ${patchLog.join(" ; ")} · erreurs : ${consoleErrors.join(" | ")}`);
+  throw err;
+});
 const readF2 = () => page.evaluate(async (pid) => (await (await fetch(`/projects/${pid}/steps/3`, { credentials: "include" })).json()).content.fields.f2, testPid);
 await page.waitForFunction(async (pid) => (await (await fetch(`/projects/${pid}/steps/3`, { credentials: "include" })).json()).content.fields.f2 === "Offre concurrente (hors-ligne)", testPid, { timeout: 10000 }).catch(() => {});
 const replayed = await readF2();

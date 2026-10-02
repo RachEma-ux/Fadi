@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ApiError, api, type CurrentUser } from "./api";
 import { localStore } from "./local-store";
 import { QUERY_CACHE_VERSION } from "./query-persister";
+import { conflictsStore } from "./mutations";
 
 interface AuthState {
   user: CurrentUser | null;
@@ -45,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const previous = readLastUser();
     if (previous && previous.id !== u.id) {
       queryClient.clear();
+      conflictsStore.clearAll();
       await localStore.removeValue(QUERY_CACHE_VERSION);
     }
     setUser(u);
@@ -89,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       writeLastUser(null);
       queryClient.clear();
+      conflictsStore.clearAll();
       await localStore.removeValue(QUERY_CACHE_VERSION);
     },
   };
