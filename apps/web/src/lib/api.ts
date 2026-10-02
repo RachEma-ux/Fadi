@@ -500,7 +500,7 @@ export interface AnalysesView {
 /** Module Documents : un document productible, sa dernière production et son actualité. */
 export interface DocumentDescriptor {
   kind: string;
-  group: "harmonie" | "bilan" | "tableaux" | "archive";
+  group: "harmonie" | "bilan" | "tableaux" | "exemple" | "archive";
   label: string;
   fileName: string;
   href: string;
@@ -755,7 +755,9 @@ export const api = {
   reserveEditing: (projectId: string) => request<{ lock: EditingLock; yours: true }>(`/projects/${projectId}/lock`, { method: "PUT" }),
   releaseEditing: (projectId: string) => request<void>(`/projects/${projectId}/lock`, { method: "DELETE" }),
   /** Documents produits par le serveur (production enregistrée) : plan de lecture d'un niveau, tableau des surfaces, programme, fiches de l'exemple. */
-  documentUrl: (projectId: string, doc: "surfaces" | "programme" | "fiches") => `/projects/${projectId}/documents/${doc}`,
+  documentUrl: (projectId: string, doc: "surfaces" | "programme" | "fiches" | "dossier-exemple") => `/projects/${projectId}/documents/${doc}`,
+  /** « Dossier complet de l’exemple » (`fullReport` de p118-resolved-app, `P118_Exemple_Resolu_V8_19.html`) — projets issus de l'exemple P.118. */
+  exampleReportUrl: (projectId: string) => `/projects/${projectId}/documents/dossier-exemple`,
   planUrl: (projectId: string, levelId: string) => `/projects/${projectId}/documents/plan/${encodeURIComponent(levelId)}`,
   refreshDesignReview: (projectId: string) => request<DesignReviewView>(`/projects/${projectId}/design-review/review`, { method: "POST" }),
   designReportUrl: (projectId: string) => `/projects/${projectId}/design-review/rapport`,

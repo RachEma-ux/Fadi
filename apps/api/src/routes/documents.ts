@@ -5,6 +5,7 @@
  *   GET /surfaces         → tableau des surfaces par niveau et par zone (CSV)
  *   GET /programme        → programme du projet (CSV, `csv` de building-library)
  *   GET /fiches           → fiches d'espaces de l'exemple résolu (CSV, `csv` de p118-resolved-app)
+ *   GET /dossier-exemple  → « Dossier complet de l’exemple » (HTML, `fullReport` de p118-resolved-app) — projets issus de l'exemple P.118
  * Chaque production est enregistrée avec la révision du modèle et
  * l'empreinte des entrées (`produced_documents`).
  */
@@ -15,7 +16,8 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { BUILDING_LIBRARY } from "../data/parcours.js";
 import { loadDesignContext } from "../lib/design-context.js";
 import { documentCatalogue, documentDescriptors, recordProducedDocument } from "../lib/documents.js";
-import { projectOr404 } from "../lib/owned-project.js";
+import { exampleReportFor } from "../lib/example-report.js";
+import { projectOr404, type OwnedProject } from "../lib/owned-project.js";
 
 export const documentsRouter = Router({ mergeParams: true });
 documentsRouter.use(requireAuth);
@@ -36,7 +38,7 @@ documentsRouter.get("/", async (req, res) => {
 });
 
 /** Produit un document du catalogue : le corps par `render`, la trace de production avec la révision et l'empreinte courantes. */
-async function produce(req: Request, res: Response, kind: string, render: (dctx: Awaited<ReturnType<typeof loadDesignContext>>) => { body: string; type: string } | null) {
+async function produce(req: Request, res: Response, kind: string, render: (dctx: Awaited<ReturnType<typeof loadDesignContext>>, project: OwnedProject) => { body: string; type: string } | null) {
   const project = await projectOr404(req, res, "read");
   if (!project) return;
   const now = new Date();
@@ -46,7 +48,7 @@ async function produce(req: Request, res: Response, kind: string, render: (dctx:
     res.status(404).json({ error: "not_found", message: "Ce document n'est pas productible pour ce projet." });
     return;
   }
-  const out = render(dctx);
+  const out = render(dctx, project);
   if (!out) {
     res.status(404).json({ error: "not_found" });
     return;
@@ -85,5 +87,12 @@ documentsRouter.get("/fiches", async (req, res) => {
   await produce(req, res, "fiches-espaces-csv", (dctx) => {
     const a = dctx.steps.programmeCase;
     return a ? { body: resolvedSpacesCsv(a.spaces as unknown as Record<string, unknown>[]), type: "text/csv; charset=utf-8" } : null;
+  });
+});
+
+documentsRouter.get("/dossier-exemple", async (req, res) => {
+  await produce(req, res, "dossier-exemple", (dctx, project) => {
+    const html = exampleReportFor(project, dctx);
+    return html ? { body: html, type: "text/html; charset=utf-8" } : null;
   });
 });

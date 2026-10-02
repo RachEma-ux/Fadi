@@ -233,7 +233,7 @@ export function buildHarmonieProposals(
       conditions: opt.validation,
       why: opt.why ?? harmonieWhy(def.number, profile),
       source: opt.source ?? def.inputs ?? "",
-      targets: def.transmitsTo.slice(),
+      targets: decision.targets?.slice() ?? def.transmitsTo.slice(),
       recommended: key === recommendedKey,
       decision,
       retained: isRetainedStatus(data, decision.status),

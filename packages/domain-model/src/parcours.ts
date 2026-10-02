@@ -143,6 +143,12 @@ export interface HarmonieProposalDecision {
    */
   acceptedHash?: string | null;
   snapshot?: HarmonieProposalSnapshot | null;
+  /**
+   * Destinations propres à ce choix quand elles diffèrent de celles de
+   * l'étape (`q.targets.push(3)` de l'exemple résolu : le choix du site est
+   * aussi transmis à l'étape 03). Absent : les destinations de l'étape.
+   */
+  targets?: number[];
 }
 
 /**

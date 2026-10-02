@@ -33,7 +33,7 @@ export function HarmonieToast({ text, onDone }: { text: string | null; onDone: (
   );
 }
 
-type Tab = "proposals" | "compare" | "transfer";
+export type HarmonieTab = "proposals" | "compare" | "transfer";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
@@ -76,7 +76,7 @@ function ProposalCard({
       <h3 id={`${q.id}-title`}>{q.title}</h3>
       {q.recommended && <p className="h7-reco">Proposition de départ privilégiée · à arbitrer</p>}
       {q.orphaned && <p className="h7-muted">Proposition absente des données courantes (modèle modifié) : le choix est conservé tel qu'il a été pris.</p>}
-      <p>{q.text}</p>
+      <p className="h7-text">{q.text}</p>
       <dl>
         <dt>Pourquoi ici</dt>
         <dd>{q.why}</dd>
@@ -220,6 +220,7 @@ export function HarmoniePanel({
   siteError = null,
   afterProposals = null,
   initialOpen = null,
+  focus = null,
 }: {
   projectId: string;
   step: ParcoursStep;
@@ -239,9 +240,24 @@ export function HarmoniePanel({
   afterProposals?: ReactNode;
   /** Panneau ouvert à l'arrivée (`H.open()` : liens « Ouvrir Harmony » des vues du programme). */
   initialOpen?: boolean | null;
+  /** Demande d'ouverture sur un onglet (« Voir le choix Harmonie et sa transmission » du récit de l'exemple) : panneau ouvert, onglet choisi et amené à l'écran ; `nonce` distingue deux demandes identiques. */
+  focus?: { tab: HarmonieTab; nonce: number } | null;
 }) {
-  const [tab, setTab] = useState<Tab>("proposals");
+  const [tab, setTab] = useState<HarmonieTab>("proposals");
   const [open, setOpen] = useState(initialOpen ?? (step.retainedCount === 0 && step.proposals.length > 0));
+  const panelRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (!focus) return;
+    setOpen(true);
+    setTab(focus.tab);
+    // Après le rendu : l'onglet demandé reçoit le focus et vient au centre de l'écran (`transmission` de p118-resolved-app).
+    const id = window.setTimeout(() => {
+      const target = panelRef.current?.querySelector<HTMLButtonElement>(`.h7-tabs button[data-tab="${focus.tab}"]`);
+      target?.focus({ preventScroll: true });
+      target?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 50);
+    return () => window.clearTimeout(id);
+  }, [focus]);
   // Étape 01 : la proposition dont le schéma est affiché (`ui.siteProposal` du prototype).
   const [siteProposal, setSiteProposal] = useState<string | null>(null);
   const [siteFoldOpen, setSiteFoldOpen] = useState(false);
@@ -269,7 +285,7 @@ export function HarmoniePanel({
   const missionsPreparatory = step.number === 20 && !["GO", "GO sous conditions"].includes(String(decision19 ?? ""));
 
   return (
-    <details className="h7-panel" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+    <details className="h7-panel" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)} ref={panelRef}>
       <summary>
         Harmonie · {step.scope ?? step.title} · {step.retainedCount} choix retenu(s)
         {step.stale ? " · à réexaminer" : ""}
@@ -333,9 +349,9 @@ export function HarmoniePanel({
               ["proposals", "Proposer"],
               ["compare", "Comparer"],
               ["transfer", "Choix & transmission"],
-            ] as [Tab, string][]
+            ] as [HarmonieTab, string][]
           ).map(([key, label]) => (
-            <button key={key} type="button" className={tab === key ? "sel" : ""} aria-pressed={tab === key} onClick={() => setTab(key)}>
+            <button key={key} type="button" className={tab === key ? "sel" : ""} aria-pressed={tab === key} data-tab={key} onClick={() => setTab(key)}>
               {label}
             </button>
           ))}

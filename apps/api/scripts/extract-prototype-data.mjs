@@ -238,6 +238,12 @@ exemple.business = resolved.business;
 const resolvedApp = scriptById("p118-resolved-app");
 const siteLiteral = literalAfter(resolvedApp, "Object.assign(dat.site,");
 exemple.siteObservations = vm.runInNewContext(`(${siteLiteral})`, { D: { assumptions: exemple.assumptions, date: exemple.date } }, { timeout: 1000 });
+// Réponses retenues aux réserves du modèle (`const issueAnswers={…}` de p118-resolved-app, posées
+// dans `harmony.actions` à l'initialisation de l'exemple — donc absentes du dossier Harmony du
+// template) et rôle de démonstration (`const role='…'`) : lus par le dossier complet de l'exemple
+// (`fullReport` → « Réserves du modèle : une réponse pour chacune »).
+exemple.issueAnswers = evalLiteral(literalAfter(resolvedApp, "const issueAnswers="));
+exemple.demoRole = evalLiteral(resolvedApp.slice(resolvedApp.indexOf("const role=") + "const role=".length, resolvedApp.indexOf(";", resolvedApp.indexOf("const role="))));
 writeJson("examples/p118-exemple-complet.json", exemple);
 
 writeJson(
@@ -377,6 +383,12 @@ writeFileSync(
   `/* Parcours ${SOURCE_VERSION} — <style id="flow-v62-css"> (bilan du bâtiment conçu), extrait tel quel pour Bilan_Harmonie_Batiment_V7.html et le bilan en ligne. */\n` + styleById("flow-v62-css").trim() + "\n",
 );
 console.log("écrit design-report.css");
+// `fullReport` de p118-resolved-app embarque <style id="ex81-css"> (exemple résolu) dans P118_Exemple_Resolu_V8_19.html ; conservé tel quel.
+writeFileSync(
+  join(DATA, "example-report.css"),
+  `/* Parcours ${SOURCE_VERSION} — <style id="ex81-css"> (exemple résolu P.118), extrait tel quel pour P118_Exemple_Resolu_V8_19.html. */\n` + styleById("ex81-css").trim() + "\n",
+);
+console.log("écrit example-report.css");
 
 console.log("extraction terminée — SHA-256 de la source :", sha256);
 

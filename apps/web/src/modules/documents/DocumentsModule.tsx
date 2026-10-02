@@ -16,6 +16,7 @@ const GROUPS: { id: DocumentDescriptor["group"]; title: string; note: string }[]
   { id: "harmonie", title: "Rapports Harmonie", note: "Documents HTML autonomes des choix par étape (feuille du prototype), produits depuis l'état courant des propositions et des arbitrages." },
   { id: "bilan", title: "Bilan du bâtiment conçu et plans de lecture", note: "Bilan HTML et plans SVG par niveau, produits depuis le modèle courant, la parcelle et le géoréférencement." },
   { id: "tableaux", title: "Tableaux", note: "Surfaces mesurées par niveau et par zone, programme appliqué, fiches de l'exemple — en CSV (séparateur « ; »)." },
+  { id: "exemple", title: "Exemple résolu", note: "Dossier complet de l'exemple P.118 (`fullReport` du prototype) : critères, complétude et transmission, réponses des 21 étapes, budget, bilan du bâtiment dessiné, registre des hypothèses — un seul HTML imprimable, produit sur l'état courant du projet." },
   { id: "archive", title: "Archive", note: "Sauvegarde complète du projet, réimportable (« Importer projet JSON »)." },
 ];
 

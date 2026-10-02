@@ -9,14 +9,15 @@
  */
 import { eq, sql } from "drizzle-orm";
 import { PARCOURS_STEPS } from "../data/parcours.js";
-import { archiveFileName, documentFreshness, fnv1a, harmonieReportFileName, resolvedSpacesFileName, type DocumentFreshness, type DocumentProduction } from "@parcours/domain-model";
+import { archiveFileName, documentFreshness, EXAMPLE_REPORT_FILE_NAME, fnv1a, harmonieReportFileName, resolvedSpacesFileName, type DocumentFreshness, type DocumentProduction } from "@parcours/domain-model";
 import { producedDocuments } from "../db/schema.js";
 import type { DesignContext } from "./design-context.js";
 import type { OwnedProject } from "./owned-project.js";
+import { ownsExampleDossier } from "./example-report.js";
 import { contentOf, type StepContext } from "./step-context.js";
 import type { Querier } from "./step-rows.js";
 
-export type DocumentGroup = "harmonie" | "bilan" | "tableaux" | "archive";
+export type DocumentGroup = "harmonie" | "bilan" | "tableaux" | "exemple" | "archive";
 
 export interface DocumentDescriptor {
   kind: string;
@@ -148,6 +149,18 @@ export function documentDescriptors(project: OwnedProject, dctx: DesignContext):
         current: { modelRevision: rev, inputHash: fnv1a({ r: a.revision, s: a.spaces }) },
       });
     }
+  }
+  // « Dossier complet de l’exemple » (`fullReport` de p118-resolved-app) : projets issus de l'exemple P.118, référence ou copie ; mêmes entrées que l'archive.
+  if (ownsExampleDossier(project)) {
+    out.push({
+      kind: "dossier-exemple",
+      group: "exemple",
+      label: "Dossier complet de l’exemple résolu (HTML)",
+      fileName: EXAMPLE_REPORT_FILE_NAME,
+      href: `${b}/documents/dossier-exemple`,
+      stepNumber: null,
+      current: { modelRevision: rev, inputHash: archiveHash(project, ctx) },
+    });
   }
   out.push({
     kind: "archive-projet",

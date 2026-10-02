@@ -732,5 +732,15 @@
       "source": "Conversion de travail EPSG:26191 depuis S01 — non relevé terrain",
       "at": "2026-09-30"
     }
-  }
+  },
+  "issueAnswers": {
+    "HEIGHT": "Reprise de coupe et étude de neutralisation/réaffectation de mezzanine si nécessaire ; jalon J2 ; aucun chantier avant solution.",
+    "DENSITY": "Capacités cibles abaissées au programme ; mobilier source à adapter sur copie de conception. Pas de surface supplémentaire.",
+    "MEZZ": "Réduire la densité, traiter bruit/intimité/rive ; aucune occupation autorisée avant résolution des hauteurs et sécurité.",
+    "RAMP": "Séparer service et public ; étudier accès autorisé, drainage et soutènement au jalon J2.",
+    "CONTEXT": "Utiliser les deux scénarios de contexte renseignés ; relevé/MapTiler/visite confiés au géomètre. Aucun lecteur obligé de fournir une observation pour lire le cas.",
+    "COMPASS": "Lecture de Forme et d’usage retenue ; approche directionnelle non décisionnelle dans cet exemple collectif.",
+    "FLYING": "Ne pas établir une carte natale fictive ; hypothèse temporelle renseignée et méthode non mobilisée pour cet arbitrage."
+  },
+  "demoRole": "Programmiste / architecte — rôles fictifs de démonstration"
 }

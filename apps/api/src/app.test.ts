@@ -385,9 +385,22 @@ describe("examples", () => {
     expect(Object.keys(step2.content.fields)).toHaveLength(12);
     expect(step2.content.fields.f1).toMatch(/^\[DONNÉE \/ CALCUL DU FICHIER SOURCE\]/);
     expect(step2.content.fields.f2).toMatch(/^\[HYPOTHÈSE RETENUE POUR L’EXEMPLE\]/);
-    // Le choix Harmonie illustré (A) est retenu, avec le responsable déclaré par l'exemple.
+    // Le choix Harmonie illustré (A) est « adapté » avec la décision du récit comme texte transmis, le responsable, la preuve et la
+    // fiche EX-P118-02 déclarés par l'exemple ; les autres partis sont écartés avec les alternatives comme motif (`makeProject` du prototype).
     expect(step2.retainedCount).toBe(1);
-    expect(step2.proposals[0].decision).toMatchObject({ status: "retained", owner: "Maître d’ouvrage / programmiste — rôles de démonstration" });
+    expect(step2.proposals[0].decision).toMatchObject({ status: "adapted", owner: "Maître d’ouvrage / programmiste — rôles de démonstration", link: "EX-P118-02", adaptedText: step2.content.decision });
+    expect(step2.proposals[0].text).toBe(step2.content.decision);
+    expect(step2.proposals[0].stateLabel).toBe("Adaptée et retenue");
+    expect(step2.proposals.slice(1).map((q: { decision: { status: string; notes: string } }) => [q.decision.status, q.decision.notes.startsWith("Alternative non retenue dans ce scénario. ")])).toEqual([
+      ["dismissed", true],
+      ["dismissed", true],
+    ]);
+    // L'étape 02 reçoit l'intention du site (01) telle que l'exemple la formule ; l'étape 03 aussi (`q.targets.push(3)` de l'exemple).
+    const step1 = steps.body.find((s: { number: number }) => s.number === 1);
+    expect(step2.incoming.map((q: { origin: number; text: string }) => [q.origin, q.text])).toContainEqual([1, step1.content.decision]);
+    const step3 = steps.body.find((s: { number: number }) => s.number === 3);
+    expect(step3.incoming.map((q: { origin: number }) => q.origin)).toContain(1);
+    expect(step1.proposals.find((q: { retained: boolean }) => q.retained).targets).toEqual([2, 4, 6, 9, 10, 3]);
     expect(step2.profile.label).toBe("Formation & bureaux");
     // Étape 14 : les montants sont des nombres, le KPI finance est donc calculable (24 M = 24 M, solde 0).
     const step14 = steps.body.find((s: { number: number }) => s.number === 14);
@@ -1013,7 +1026,8 @@ describe("Péremption des propositions (« À réexaminer ») et rapports Harmon
     expect(without.model).toBeNull();
     const orphan = without.proposals.find((q: { id: string }) => q.id === hall.id);
     expect(orphan).toMatchObject({ orphaned: true, stale: true, retained: true, group: "local", title: hall.title, ref: hall.ref, roomId: hall.roomId });
-    expect(without.retainedCount).toBe(2); // le parti C de l'exemple + le local orphelin
+    // Le parti C de l'exemple + les locaux adaptés par l'exemple (dont le hall), tous orphelins sans modèle.
+    expect(without.retainedCount).toBe(1 + step10.proposals.filter((q: { group: string }) => q.group === "local").length);
     expect(without.staleRetainedCount).toBeGreaterThanOrEqual(1);
   });
 
@@ -1508,12 +1522,12 @@ describe("Documents — catalogue, productions et actualité", () => {
     const imported = await client.post("/examples/p118-exemple-complet/import");
     const pid = imported.body.id as string;
     const first = (await client.get(`/projects/${pid}/documents`)).body;
-    // 1 synthèse + 21 rapports d'étape + bilan + 6 plans + tableau des surfaces + programme CSV + fiches de l'exemple + archive.
-    expect(first.documents).toHaveLength(33);
+    // 1 synthèse + 21 rapports d'étape + bilan + 6 plans + tableau des surfaces + programme CSV + fiches de l'exemple + dossier complet de l'exemple + archive.
+    expect(first.documents).toHaveLength(34);
     expect(first.modelRevision).toBe(1);
     expect(first.documents.every((d: { freshness: unknown; produced: unknown; current: { modelRevision: number; inputHash: string } }) => d.freshness === null && d.produced === null && d.current.modelRevision === 1 && /^[0-9a-f]{8}$/.test(d.current.inputHash))).toBe(true);
     const kinds = first.documents.map((d: { kind: string }) => d.kind);
-    expect(kinds).toEqual(expect.arrayContaining(["harmonie-synthese", "harmonie-etape-02", "bilan-batiment", "plan-lecture-rdc", "tableau-surfaces", "programme-csv", "fiches-espaces-csv", "archive-projet"]));
+    expect(kinds).toEqual(expect.arrayContaining(["harmonie-synthese", "harmonie-etape-02", "bilan-batiment", "plan-lecture-rdc", "tableau-surfaces", "programme-csv", "fiches-espaces-csv", "dossier-exemple", "archive-projet"]));
     // Produire le rapport de l'étape 02 : la production est enregistrée, à jour.
     expect((await client.get(`/projects/${pid}/steps/2/harmonie/rapport`)).status).toBe(200);
     const docOf = async (kind: string) => ((await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; freshness: string | null; produced: { count: number; modelRevision: number; inputHash: string } | null; fileName: string }[]).find((d) => d.kind === kind)!;
@@ -1569,8 +1583,72 @@ describe("Documents — catalogue, productions et actualité", () => {
     expect((await other.get(`/projects/${pid}/documents/surfaces`)).status).toBe(404);
     const blank = await client.post("/projects").send({ code: "P.970", name: "Vide" });
     const blankDocs = (await client.get(`/projects/${blank.body.id}/documents`)).body.documents as { kind: string }[];
-    expect(blankDocs.map((d) => d.kind).filter((k) => k.startsWith("plan-") || k === "tableau-surfaces" || k === "programme-csv")).toEqual([]);
+    expect(blankDocs.map((d) => d.kind).filter((k) => k.startsWith("plan-") || k === "tableau-surfaces" || k === "programme-csv" || k === "dossier-exemple")).toEqual([]);
     expect((await client.get(`/projects/${blank.body.id}/documents/surfaces`)).status).toBe(404);
+    expect((await client.get(`/projects/${blank.body.id}/documents/dossier-exemple`)).status).toBe(404);
+  }, 30000);
+
+  it("« Dossier complet de l’exemple » (`fullReport` de p118-resolved-app) : un HTML autonome sur l'état courant du projet importé, aussi pour sa copie, jamais pour un projet vierge", async () => {
+    const client = await registerAndLogin("dossier-exemple@example.com");
+    const pid = (await client.post("/examples/p118-exemple-complet/import")).body.id as string;
+    const docOf = async (id: string, kind: string) => ((await client.get(`/projects/${id}/documents`)).body.documents as { kind: string; freshness: string | null; fileName: string; group: string; stepNumber: number | null }[]).find((d) => d.kind === kind);
+    expect(await docOf(pid, "dossier-exemple")).toMatchObject({ group: "exemple", fileName: "P118_Exemple_Resolu_V8_19.html", stepNumber: null, freshness: null });
+    const r = await client.get(`/projects/${pid}/documents/dossier-exemple`);
+    expect(r.status).toBe(200);
+    expect(r.headers["content-disposition"]).toBe('attachment; filename="P118_Exemple_Resolu_V8_19.html"');
+    expect(r.headers["content-type"]).toMatch(/^text\/html/);
+    expect(r.headers["x-content-type-options"]).toBe("nosniff");
+    const html = r.text as string;
+    // En-tête, critères et complétude : l'exemple est entièrement renseigné (aucun champ métier manquant), 74 fiches liées, 21 étapes.
+    expect(html).toContain("<title>P.118 — Exemple résolu V8.1</title>");
+    expect(html).toContain("PARCOURS V8.19 · EXEMPLE ENTIÈREMENT RENSEIGNÉ");
+    expect(html).toContain("<h1>P.118 — Escalier B et mezzanine</h1>");
+    expect(html).toContain("<p>Préserver le contour S01 et l’emprise dessinée de 673 m².</p>");
+    const completeness = /(\d+)\/(\d+) champs métier renseignés ; (\d+) fiches liées ; 21 étapes ; écart programme\/polygones ([^ ]+) m²/.exec(html)!;
+    expect(completeness[1]).toBe(completeness[2]);
+    expect(Number(completeness[2])).toBeGreaterThan(100);
+    expect(completeness[3]).toBe("74");
+    // Écart programme / polygones : les fiches portent des surfaces arrondies au centième, les polygones non (0,000002 m²).
+    expect(Math.abs(Number(completeness[4]!.replace(",", ".")))).toBeLessThan(0.001);
+    expect(html.match(/<td>Scénario cohérent avec ses entrées<\/td>/g)).toHaveLength(21);
+    // Les 21 étapes : récit (choix, justification, compromis), réponses (schéma métier ou synthèse / transmissions), intentions reçues et choix transmis.
+    expect(html.match(/<section class="ex81-report-step">/g)).toHaveLength(21);
+    expect(html).toContain("<h2>02 · Réglementation &amp; constructibilité</h2>");
+    expect(html).toContain("<dt>Zonage / règlement applicable</dt>");
+    expect(html).toContain("<dt>Synthèse / réponse de l’exemple</dt>");
+    expect(html).toContain("<dt>Transmission 2</dt>"); // étape 21 : f1 après summary, comme le prototype
+    expect(html).toContain('<span class="ex81-report-link">01 · Parcelle / Site existant</span>');
+    expect(html).toContain("Point de départ : le choix du site ne reçoit pas une intention d’un bâtiment déjà distribué.");
+    // Budget : référence et scénario défavorable sur les réponses des étapes 14 / 15 (montants que l'exemple énonce lui-même).
+    expect(html).toMatch(/<tr><td>Investissement<\/td><td>24.000.000 MAD<\/td><td>26.400.000 MAD<\/td><\/tr>/);
+    expect(html).toMatch(/Décision du cas :<\/b> le stress de CAPEX crée 2.400.000 MAD de besoin additionnel/);
+    // Bilan du bâtiment dessiné : KPI du modèle, blocs V8.19 / V8.18 / V8.17, réserves avec les réponses retenues, 6 niveaux lus avec leur plan et leurs fiches, registre des 15 hypothèses.
+    expect(html).toContain("BILAN HARMONIE · BÂTIMENT DESSINÉ");
+    expect(html).toContain("<b>673 m²</b>Emprise du modèle");
+    expect(html).toContain("<b>74 zones</b>Liées au programme");
+    expect(html).toContain("Escalier B, mezzanine et porte X · V8.19");
+    expect(html).toContain("Escalier A autour de l’ascenseur · V8.18");
+    expect(html).toContain("Sanitaires redessinés · revue V8.17");
+    expect(html).toContain("<td>Reprise de coupe et étude de neutralisation/réaffectation de mezzanine si nécessaire ; jalon J2 ; aucun chantier avant solution.</td>");
+    expect(html.match(/m² de zones<\/summary><div class="ex81-plan"><svg/g)).toHaveLength(6);
+    expect(html.match(/<summary>Ambiance choisie<\/summary>/g)!.length).toBeGreaterThanOrEqual(74);
+    expect(html).toContain("<td><b>H-CONTEXTE</b><br>Contexte cartographique de travail</td>");
+    expect(html).not.toContain("<button");
+    expect(html).toContain("aucun chantier ni usage autorisé.</p></main>");
+    // Production enregistrée, à jour ; une réponse modifiée périme le dossier (mêmes entrées que l'archive).
+    expect(await docOf(pid, "dossier-exemple")).toMatchObject({ freshness: "a-jour" });
+    await client.patch(`/projects/${pid}/steps/14`).send({ fields: { f1: 3300000 } });
+    expect((await docOf(pid, "dossier-exemple"))!.freshness).toBe("perime");
+    // Après modification, le budget suit les réponses courantes (3,3 M au lieu de 3,2 M : investissement 24,1 M).
+    const again = (await client.get(`/projects/${pid}/documents/dossier-exemple`)).text as string;
+    expect(again).toMatch(/<tr><td>Investissement<\/td><td>24.100.000 MAD<\/td>/);
+    // La copie de travail (« Essayer une variante en copie ») a son propre dossier, nommé comme le prototype nomme la copie.
+    const copy = (await client.post(`/projects/${pid}/copies`).send({})).body as { id: string };
+    const copyHtml = (await client.get(`/projects/${copy.id}/documents/dossier-exemple`)).text as string;
+    expect(copyHtml).toContain("<h1>P.118 — ma variante de l’exemple résolu</h1>");
+    // Jamais pour un autre compte.
+    const other = await registerAndLogin("dossier-exemple-other@example.com");
+    expect((await other.get(`/projects/${pid}/documents/dossier-exemple`)).status).toBe(404);
   }, 30000);
 });
 
@@ -1590,9 +1668,10 @@ describe("Collaboration — accès, synchronisation, journal des révisions, com
     const kinds = new Set(v.journal.map((e: { kind: string }) => e.kind));
     expect([...kinds]).toEqual(expect.arrayContaining(["projet", "harmonie", "programme", "modele", "parcelle", "document", "revue"]));
     expect(v.journal[0].at >= v.journal[v.journal.length - 1].at).toBe(true); // du plus récent au plus ancien
-    expect(v.journal.find((e: { label: string }) => e.label === "Étape 02 · proposition H01-B adaptée et retenue")).toMatchObject({ kind: "harmonie", stepNumber: 2, revision: 1, detail: expect.stringContaining("responsable Chef de projet") });
-    // A, retenue par l'exemple, est écartée par le remplacement : l'état antérieur reste dans le journal.
-    expect(v.journal.find((e: { label: string }) => e.label === "Étape 02 · proposition H01-A · état antérieur conservé (retenue)")).toMatchObject({ detail: expect.stringContaining("Variante remplacée par H01-B") });
+    // B avait été écartée par l'exemple (version 1) : l'adaptation est sa version 2.
+    expect(v.journal.find((e: { label: string }) => e.label === "Étape 02 · proposition H01-B adaptée et retenue")).toMatchObject({ kind: "harmonie", stepNumber: 2, revision: 2, detail: expect.stringContaining("responsable Chef de projet") });
+    // A, adaptée et retenue par l'exemple, est écartée par le remplacement : l'état antérieur reste dans le journal.
+    expect(v.journal.find((e: { label: string }) => e.label === "Étape 02 · proposition H01-A · état antérieur conservé (adaptée et retenue)")).toMatchObject({ detail: expect.stringContaining("Variante remplacée par H01-B") });
     expect(v.journal.find((e: { label: string }) => e.label === "Étape 02 · proposition H01-A écartée avec motif")).toBeDefined();
     expect(v.journal.find((e: { kind: string }) => e.kind === "document")).toMatchObject({ label: "Document produit · Rapport Harmonie de l'étape 02 · Réglementation & constructibilité", stepNumber: 2, revision: 1 });
     expect(v.journal.find((e: { kind: string }) => e.kind === "projet")).toMatchObject({ label: "Projet créé depuis l'exemple p118-exemple-complet", detail: "P.118 — Escalier B et mezzanine" });
@@ -1766,7 +1845,8 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     const edited = await editor.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Zone UA (éditeur)" } });
     expect(edited.status).toBe(200);
     expect((await owner.get(`/projects/${pid}/steps/2`)).body.content.fields.f1).toBe("Zone UA (éditeur)");
-    expect((await editor.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "retained", expectedVersion: 0 })).status).toBe(200);
+    // B a été écartée par l'exemple à l'import (version 1) : l'éditeur arbitre sur cette version lue.
+    expect((await editor.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "retained", expectedVersion: 1 })).status).toBe(200);
     expect((await editor.delete(`/projects/${pid}`)).status).toBe(403);
     expect((await editor.patch(`/projects/${pid}/members/${invited.body.userId}`).send({ role: "editeur" })).status).toBe(403);
     // Concurrence entre membres : la lecture du propriétaire est périmée par l'écriture de l'éditeur → 409, rien d'écrasé.

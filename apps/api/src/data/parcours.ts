@@ -82,6 +82,14 @@ export function parcoursStepDefinition(number: number): ParcoursStepDefinition |
   return PARCOURS_STEPS.find((s) => s.number === number) ?? null;
 }
 
+/** `BIZ_SCHEMAS[n]` du prototype : le schéma métier d'une étape (02–09, 12–20), `null` pour les autres — distinct du formulaire de synthèse. */
+export function bizSchema(number: number): ParcoursFormField[] | null {
+  return formsFile.schemas[String(number)] ?? null;
+}
+
+/** Nombre total de champs des schémas métier (`audit(p).fields` du prototype). */
+export const BIZ_FIELD_COUNT: number = Object.values(formsFile.schemas).reduce((n, s) => n + s.length, 0);
+
 // ---------------------------------------------------------------------------
 // Référentiels : Harmonie, répartition programmatique
 // ---------------------------------------------------------------------------
@@ -148,6 +156,8 @@ export function exampleBaseDocumentContent(doc: ExampleBaseDocument): Buffer {
 export const HARMONIE_REPORT_CSS: string = readFileSync(fileURLToPath(dataFileUrl("harmonie-report.css")), "utf8");
 /** Feuille de style du bilan du bâtiment conçu (`<style id="flow-v62-css">`), telle quelle : rapport téléchargé et bilan en ligne. */
 export const DESIGN_REPORT_CSS: string = readFileSync(fileURLToPath(dataFileUrl("design-report.css")), "utf8");
+/** Feuille de style de l'exemple résolu (`<style id="ex81-css">`), telle quelle : « Dossier complet de l’exemple » (P118_Exemple_Resolu_V8_19.html). */
+export const EXAMPLE_REPORT_CSS: string = readFileSync(fileURLToPath(dataFileUrl("example-report.css")), "utf8");
 export const PROGRAMME_REPARTITION: ProgrammeRepartitionData = readJson<ProgrammeRepartitionData>("programme-repartition.json");
 
 // ---------------------------------------------------------------------------
@@ -187,6 +197,9 @@ interface ExampleCompletFile {
   business: Record<string, Record<string, ParcoursFieldValue>>;
   /** Données du site déclarées par l'exemple (étape 01, `harmonieEtapesV7.site` du prototype). */
   siteObservations?: Partial<SiteObservations> & { geographic?: (SiteManualGeographic & { at?: string }) | null };
+  /** Réponses retenues aux réserves du modèle (`issueAnswers` de p118-resolved-app) et rôle de démonstration. */
+  issueAnswers: Record<string, string>;
+  demoRole: string;
 }
 
 interface ArchiveDossierFile {
@@ -401,6 +414,8 @@ export function exampleAttachment(exampleId: string): Record<string, unknown> | 
       facts: exempleComplet.facts,
       criteria: exempleComplet.criteria,
       assumptions: exempleComplet.assumptions,
+      /** Réponses retenues aux réserves du modèle (« Réserves du modèle : une réponse pour chacune » du dossier complet). */
+      issueAnswers: exempleComplet.issueAnswers,
       /** Données V6.2 du dossier (flow-v62) : géoréférencement calculé et hypothèses de travail H-* du bilan du bâtiment conçu. */
       dossierV62: { georeference: harmonyDossierFile.georeference, assumptions: harmonyDossierFile.assumptions, stages: harmonyDossierFile.stages },
       programmeCase: programmeCase.programme,
@@ -434,6 +449,27 @@ export function exampleAttachment(exampleId: string): Record<string, unknown> | 
 function stripCodePrefix(code: string, name: string): string {
   const prefix = `${code} — `;
   return name.startsWith(prefix) ? name.slice(prefix.length) : name;
+}
+
+/** Les arbitrages de l'exemple résolu (`makeProject` de p118-resolved-app) : choix et textes par étape, réponses par local (`roomResponses`), rôle de démonstration. */
+export interface ExampleDecisionSources {
+  steps: Record<string, ExampleStepSource>;
+  roomResponses: { id: string; decision: string; name: string; level: string }[];
+  role: string;
+}
+export function exampleDecisionSources(exampleId: string | null): ExampleDecisionSources | null {
+  if (exampleId !== exempleComplet.id) return null;
+  return {
+    steps: exempleComplet.steps,
+    roomResponses: programmeCase.roomResponses.map((r) => ({ id: String(r["id"]), decision: String(r["decision"] ?? ""), name: String(r["name"] ?? ""), level: String(r["level"] ?? "") })),
+    role: exempleComplet.demoRole,
+  };
+}
+
+/** Critères, hypothèses et réponses aux réserves de l'exemple complet (repli quand la pièce jointe d'un projet importé avant leur extraction ne les porte pas). */
+export function exampleDossierData(exampleId: string | null): { criteria: string[]; assumptions: ExampleCompletFile["assumptions"]; issueAnswers: Record<string, string> } | null {
+  if (exampleId !== exempleComplet.id) return null;
+  return { criteria: exempleComplet.criteria, assumptions: exempleComplet.assumptions, issueAnswers: exempleComplet.issueAnswers };
 }
 
 export function exampleRegistryName(exampleId: string): { code: string; name: string } | null {

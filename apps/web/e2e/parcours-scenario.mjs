@@ -44,7 +44,7 @@
  *   6h. Analyses métier : contrôles traçables (26, source et version),
  *      quantités dérivées du modèle, structure et circulations déclarées,
  *      variantes de programme ;
- *   6i. Documents : catalogue (33 documents), actualité des productions
+ *   6i. Documents : catalogue (34 documents), actualité des productions
  *      antérieures (à jour / périmé), production du tableau des surfaces ;
  *   6j. Collaboration : commentaire depuis une étape, accès et
  *      synchronisation annoncés, journal des révisions filtrable,
@@ -375,7 +375,19 @@ await measure("ouverture de l'étape 02 de l'exemple (formulaire, panneau Harmon
 check("exemple étape 02 : « Harmonie · Site constructible · 1 choix retenu(s) »", (await page.locator(".h7-panel > summary").textContent()).includes("Site constructible · 1 choix retenu(s)"));
 check("exemple étape 02 : réponse f1 nommant sa nature", (await page.inputValue("#biz-f1")).startsWith("[DONNÉE / CALCUL DU FICHIER SOURCE]"));
 check("exemple étape 02 : profil « Formation & bureaux »", (await page.locator(".h7-fold-body").first().textContent()).includes("Formation & bureaux"));
+// Récit de l'exemple (`storyHTML` du prototype) : étiquette, titre, décision, trois actions, cadre de démonstration, choix déjà arbitré ; référence : « Étape illustrée ✓ ».
+const storyActions = await page.locator(".ex81-story .ex81-actions > *").allTextContents();
+check("exemple étape 02 : récit « EXEMPLE RÉSOLU · 02 / 21 », actions « Voir le choix Harmonie et sa transmission » / « Essayer une variante en copie » / « Dossier complet de l’exemple », pli « Cadre de démonstration et hypothèses », « CHOIX A · DÉJÀ ARBITRÉ »", (await page.locator(".ex81-story > .ex81-tag").textContent()) === "EXEMPLE RÉSOLU · 02 / 21" && storyActions.join("|") === "Voir le choix Harmonie et sa transmission|Essayer une variante en copie|Dossier complet de l’exemple" && (await page.locator(".ex81-frame > summary").textContent()) === "Cadre de démonstration et hypothèses" && (await page.locator(".ex81-selected .ex81-tag").textContent()) === "CHOIX A · DÉJÀ ARBITRÉ", storyActions.join("|"));
+check("exemple (référence) : « Étape illustrée ✓ », inactif", (await page.locator(".step-detail-nav .step-done").textContent()) === "Étape illustrée ✓" && (await page.locator(".step-detail-nav .step-done").isDisabled()));
 await page.screenshot({ path: `${OUT}/02-desktop.png`, fullPage: true });
+// Le parti illustré est « adapté » avec la décision du récit comme texte transmis (`makeProject` : decide 'adapted'), les autres partis écartés.
+check("exemple étape 02 : proposition A « Adaptée et retenue », texte transmis = décision du récit ; B « Écartée avec motif »", (await page.locator(".h7-proposal").nth(0).locator(".h7-chip").first().textContent()) === "Adaptée et retenue" && (await page.locator(".h7-proposal").nth(0).locator(".h7-text").textContent()).trim() === (await page.locator(".ex81-story .ex81-decision").textContent()).trim() && /Écartée/.test(await page.locator(".h7-proposal").nth(1).locator(".h7-chip").first().textContent()));
+await page.locator('.ex81-actions button:has-text("Voir le choix Harmonie et sa transmission")').click();
+await page.waitForFunction(() => document.querySelector(".h7-panel")?.open && document.querySelector('.h7-tabs button[data-tab="transfer"]')?.getAttribute("aria-pressed") === "true", null, { timeout: 5000 });
+check("« Voir le choix Harmonie et sa transmission » → panneau ouvert sur « Choix & transmission », onglet focalisé, choix H01-A à transmettre", (await page.evaluate(() => document.activeElement?.getAttribute("data-tab"))) === "transfer" && (await page.locator(".h7-panel").textContent()).includes("H01-A"));
+const [dossierDl] = await Promise.all([page.waitForEvent("download"), page.locator('.ex81-actions a:has-text("Dossier complet de l’exemple")').click()]);
+const dossierHtml = await (await import("node:fs/promises")).readFile(await dossierDl.path(), "utf8");
+check("« Dossier complet de l’exemple » → P118_Exemple_Resolu_V8_19.html : 21 étapes avec réponses et traces, budget, bilan du bâtiment dessiné, registre des hypothèses", dossierDl.suggestedFilename() === "P118_Exemple_Resolu_V8_19.html" && (dossierHtml.match(/<section class="ex81-report-step">/g) || []).length === 21 && /EXEMPLE ENTIÈREMENT RENSEIGNÉ/.test(dossierHtml) && /Scénario défavorable/.test(dossierHtml) && /BILAN HARMONIE · BÂTIMENT DESSINÉ/.test(dossierHtml) && /Registre des hypothèses/.test(dossierHtml), `${dossierDl.suggestedFilename()} · ${dossierHtml.length} caractères`);
 await page.goto(`${exampleUrl}?module=parcours&etape=6`);
 await page.waitForSelector(".programme-case");
 check("exemple étape 06 : répartition liée au modèle (1 366,02 m²)", (await page.locator(".programme-case").textContent()).replace(/ | /g, " ").includes("1 366,02 m²"));
@@ -383,6 +395,20 @@ await page.screenshot({ path: `${OUT}/06-desktop.png`, fullPage: true });
 await page.goto(`${exampleUrl}?module=parcours&etape=14`);
 await page.waitForSelector(".biz-kpis");
 check("exemple étape 14 : KPI calculés depuis les montants importés", (await page.locator(".biz-kpis").textContent()).replace(/ | /g, " ").includes("24 000 000"));
+// Budget du scénario (`budgetHTML`) : référence et scénario défavorable calculés sur les réponses des étapes 14 / 15 — les montants que l'exemple énonce lui-même.
+const budgetText = (await page.locator(".ex81-budget").textContent()).replace(/[\u202f\u00a0]/g, " ");
+check("exemple étape 14 : budget du scénario — Investissement 24 000 000 → 26 400 000 MAD (scénario défavorable), « Décision du cas : … 2 400 000 MAD de besoin additionnel »", /Investissement24 000 000 MAD26 400 000 MAD/.test(budgetText) && /Décision du cas : le stress de CAPEX crée 2 400 000 MAD de besoin additionnel/.test(budgetText), budgetText.slice(0, 160));
+await page.screenshot({ path: `${OUT}/14-desktop-exemple.png`, fullPage: true });
+// « Essayer une variante en copie » (`copy()` du prototype) : nouveau projet modifiable « P.118 — ma variante de l’exemple résolu », vue d'ensemble, l'original intact.
+await page.locator('.ex81-actions button:has-text("Essayer une variante en copie")').click();
+await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().startsWith(exampleUrl), { timeout: 30000 });
+await page.waitForSelector(".parcours-steps-summary");
+const variantUrl = page.url().split("?")[0];
+const variantToast = await page.locator(".h7-toast").textContent().catch(() => "");
+check("« Essayer une variante en copie » → « P.118 — ma variante de l’exemple résolu » ouverte (21 / 21 étapes terminées), message de copie", (await page.locator(".project-header h1").textContent()) === "P.118 — ma variante de l’exemple résolu" && (await page.locator(".parcours-steps-summary").textContent()).includes("21 / 21 étapes terminées"), variantToast);
+await page.goto(`${variantUrl}?module=parcours&etape=2`);
+await page.waitForSelector(".ex81-story");
+check("variante : « Terminée ✓ » actif (copie modifiable), récit et actions conservés ; l'original reste la référence", (await page.locator(".step-detail-nav .step-done").textContent()) === "Terminée ✓" && !(await page.locator(".step-detail-nav .step-done").isDisabled()) && (await page.locator(".ex81-story .ex81-actions > *").count()) === 3 && (await page.evaluate(async (pid) => (await (await fetch(`/projects/${pid}`, { credentials: "include" })).json()).exampleMode, exampleUrl.split("/").pop())) === "reference");
 
 // 6b. Atelier natif sur l'exemple : moteur, niveaux, dessin d'un mur persisté (projection + révision), annulation persistée
 await measure("ouverture de l'Atelier (moteur, modèle P.118, géométrie affichée)", async () => {
@@ -481,10 +507,13 @@ await page.evaluate(() => { document.querySelector(".h7-locals").open = true; })
 const localCard = page.locator(".h7-locals .h7-proposal").first();
 check("étape 10 : carte locale « H10 · LOCAL », pourquoi calculé sur le polygone, source « Modèle … · objet … »", (await localCard.locator(".h7-kicker").textContent()) === "H10 · LOCAL" && /m² calculés sur le polygone/.test(await localCard.locator("dd").first().textContent()) && /^Modèle [0-9a-f]{8} · objet /.test(await localCard.locator(".h7-source").textContent()));
 check("étape 10 : données mobilisées « Modèle courant : 6 niveaux · … zones · empreinte … »", /Modèle courant : 6 niveaux · \d+ zones · empreinte [0-9a-f]{8}\./.test(await page.locator(".h7-panel .h7-fold-body").first().textContent()));
-await localCard.locator('button:has-text("Retenir")').first().click();
-await page.waitForFunction(() => /Retenue/.test(document.querySelector(".h7-locals .h7-proposal .h7-chip")?.textContent || ""), null, { timeout: 10000 });
-// L'exemple retient le parti C ; le local retenu s'y ajoute sans le remplacer.
-check("étape 10 : local retenu, indépendant du parti retenu → « 2 choix retenu(s) »", (await page.locator(".h7-panel > summary").textContent()).includes("2 choix retenu(s)"));
+// L'exemple (`makeProject` du prototype) a adapté chaque local avec sa réponse retenue et le parti C : compteur = parti + locaux.
+const localCount = await page.locator(".h7-locals .h7-proposal").count();
+const localChip = await localCard.locator(".h7-chip").first().textContent();
+check("étape 10 : chaque local porte la réponse adaptée par l'exemple (« Adaptée et retenue »), compteur « 1 + N choix retenu(s) »", /Adaptée et retenue/.test(localChip) && (await page.locator(".h7-panel > summary").textContent()).includes(`${1 + localCount} choix retenu(s)`), `${localChip} · ${localCount} locaux`);
+await localCard.locator('button:has-text("Confirmer ce choix")').first().click();
+await page.waitForFunction(() => /^Retenue/.test(document.querySelector(".h7-locals .h7-proposal .h7-chip")?.textContent || ""), null, { timeout: 10000 });
+check("étape 10 : local confirmé (« Retenue »), indépendant du parti retenu → compteur inchangé", (await page.locator(".h7-panel > summary").textContent()).includes(`${1 + localCount} choix retenu(s)`));
 await page.screenshot({ path: `${OUT}/10-desktop.png`, fullPage: true });
 
 // 6b'. Bilan Harmonie du bâtiment conçu (flow-v62) : pli, bilan en ligne, plans, transmission, revue, rapport, références directionnelles
@@ -799,7 +828,7 @@ await page.locator(".analyses-module .biz-card").first().screenshot({ path: `${O
 await page.goto(`${exampleUrl}?module=documents`);
 await page.waitForSelector(".documents-table tbody tr", { timeout: 30000 });
 const docFreshness = async (kind) => page.locator(`tr[data-document="${kind}"]`).getAttribute("data-freshness");
-check("documents : 33 documents productibles (synthèse, 21 rapports d'étape, bilan, 6 plans, tableau des surfaces, programme, fiches, archive)", (await page.locator(".documents-table tbody tr").count()) === 33 && /33 documents productibles/.test(await page.locator(".documents-module .biz-sub").first().textContent()));
+check("documents : 34 documents productibles (synthèse, 21 rapports d'étape, bilan, 6 plans, tableau des surfaces, programme, fiches, dossier complet de l'exemple, archive)", (await page.locator(".documents-table tbody tr").count()) === 34 && /34 documents productibles/.test(await page.locator(".documents-module .biz-sub").first().textContent()) && (await page.locator('tr[data-document="dossier-exemple"]').count()) === 1);
 check("documents : productions antérieures reconnues — rapport de l'étape 02, synthèse et archive à jour ; bilan périmé (références directionnelles enregistrées après sa production)", (await docFreshness("harmonie-etape-02")) === "a-jour" && (await docFreshness("harmonie-synthese")) === "a-jour" && (await docFreshness("archive-projet")) === "a-jour" && (await docFreshness("bilan-batiment")) === "perime" && (await docFreshness("tableau-surfaces")) === "aucune");
 const [surfacesDl] = await Promise.all([page.waitForEvent("download"), page.locator('tr[data-document="tableau-surfaces"] a:has-text("Produire")').click()]);
 const surfacesCsv = await (await import("node:fs/promises")).readFile(await surfacesDl.path(), "utf8");

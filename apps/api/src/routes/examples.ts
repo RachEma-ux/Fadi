@@ -9,6 +9,7 @@ import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replacePro
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { stampStepFingerprints } from "../lib/project-archive.js";
+import { applyExampleDecisions } from "../lib/example-decisions.js";
 import {
   PARCOURS_STEPS,
   PROGRAMME_REPARTITION,
@@ -155,11 +156,15 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
       }
     }
 
+    // Arbitrages de l'exemple (`makeProject` du prototype) : parti illustré adapté avec la décision du récit, autres partis
+    // écartés, locaux des étapes 10 / 11 adaptés avec leurs réponses — sur les propositions calculées du modèle importé.
+    const stepProject = { id, name: project.name, siteObservations: project.siteObservations, harmony: project.harmony };
+    await applyExampleDecisions(tx, stepProject, exampleId);
     // Empreintes de péremption (« À réexaminer ») : les propositions générées
     // et les choix retenus de l'exemple sont datés des données importées —
     // site, programme, modèle, intentions — pour que seuls des changements
     // ultérieurs les signalent.
-    await stampStepFingerprints(tx, { id, name: project.name, siteObservations: project.siteObservations, harmony: project.harmony });
+    await stampStepFingerprints(tx, stepProject);
 
     return project;
   });
