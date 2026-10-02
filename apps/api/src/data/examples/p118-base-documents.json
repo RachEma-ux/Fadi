@@ -1,0 +1,26 @@
+{
+  "sourceVersion": "8.19.0",
+  "sourceBlock": "SEED888_FILES (dlSeed888) — « Documents de base intégrés » de la vue d'ensemble du projet d'exemple",
+  "exampleId": "p118-exemple-complet",
+  "caption": "Scénario étudié : P.118 — pôle tertiaire, services aux entreprises & formation.",
+  "files": [
+    {
+      "file": "118_officiel.kmz",
+      "name": "118_officiel.kmz",
+      "type": "application/vnd.google-earth.kmz",
+      "size": 881142,
+      "sha256": "0d3f9061d1954b6562282b00d2adb0dce21a624aa81f4e06edb486e3dff69a6e",
+      "stepNumber": 1,
+      "note": "Parcelle : doc.kml, bornes Lambert et WGS84 (CSV), tracés intérieurs, notice, document cadastral original (PDF), pages PNG"
+    },
+    {
+      "file": "ZONE-I-5.pdf",
+      "name": "ZONE-I-5.pdf",
+      "type": "application/pdf",
+      "size": 2271817,
+      "sha256": "5abc3e4fd3d304e62fe1ae0a0b1fe8560d5d49e43f39cdd971dbe0f34f60664c",
+      "stepNumber": 2,
+      "note": "Règlement de la zone I — secteur I5 (source des réponses de l'étape 02)"
+    }
+  ]
+}

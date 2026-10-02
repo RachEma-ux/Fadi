@@ -3,10 +3,10 @@ import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { ARCHIVE_IMPORT_LIMIT, ArchiveError, archiveFileName, normalizeImportedProjects } from "@parcours/domain-model";
 import { db } from "../db/client.js";
-import { architecturalObjects, levels, projectMembers, projects, projectSteps, users } from "../db/schema.js";
+import { architecturalObjects, levels, projectMembers, projects, projectSteps, stepFiles, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
-import { EMPTY_STEP_CONTENT, PARCOURS_STEPS } from "../data/parcours.js";
+import { EMPTY_STEP_CONTENT, PARCOURS_STEPS, exampleBaseDocuments } from "../data/parcours.js";
 import { activeLock, loadOwnedProject, projectOr404, type ProjectNeed } from "../lib/owned-project.js";
 import { APPLICATION_VERSION, SOURCE_VERSION, exportProjectArchive, importProjectArchive } from "../lib/project-archive.js";
 import { parcoursStepsRouter } from "./parcours-steps.js";
@@ -32,6 +32,24 @@ const createProjectSchema = z.object({
   code: z.string().regex(codePattern, "Code projet invalide"),
   name: z.string().trim().min(1).max(200),
 });
+
+/**
+ * « Documents de base intégrés » (vue d'ensemble du projet d'exemple dans le prototype) : les fichiers de l'exemple
+ * retrouvés parmi les sources des étapes du projet (nom, étape et taille identiques), avec leur téléchargement.
+ */
+async function baseDocumentsOf(project: { id: string; sourceExampleId: string | null }): Promise<{ caption: string; files: { id: string; stepNumber: number; name: string; type: string; size: number; note: string }[] } | null> {
+  const base = exampleBaseDocuments(project.sourceExampleId);
+  if (!base) return null;
+  const rows = await db
+    .select({ id: stepFiles.id, stepNumber: stepFiles.stepNumber, name: stepFiles.name, type: stepFiles.type, size: stepFiles.size })
+    .from(stepFiles)
+    .where(eq(stepFiles.projectId, project.id));
+  const files = base.files.flatMap((doc) => {
+    const row = rows.find((r) => r.stepNumber === doc.stepNumber && r.name === doc.name && r.size === doc.size);
+    return row ? [{ ...row, note: doc.note }] : [];
+  });
+  return files.length ? { caption: base.caption, files } : null;
+}
 
 /** Vos projets, puis ceux qui vous sont partagés (avec votre rôle et l'adresse du propriétaire). */
 projectsRouter.get("/", async (req, res) => {
@@ -184,7 +202,12 @@ projectsRouter.get("/:projectId", async (req, res) => {
   const project = await projectOr404(req, res, "read");
   if (!project) return;
   // Le verrou n'est renvoyé que s'il est encore valable ; `editingLock` brut n'est jamais exposé.
-  res.json({ ...project, editingLock: activeLock(project), ownerEmail: project.ownerId === req.user!.id ? req.user!.email : await ownerEmailOf(project.ownerId) });
+  res.json({
+    ...project,
+    editingLock: activeLock(project),
+    ownerEmail: project.ownerId === req.user!.id ? req.user!.email : await ownerEmailOf(project.ownerId),
+    baseDocuments: await baseDocumentsOf(project),
+  });
 });
 
 projectsRouter.delete("/:projectId", async (req, res) => {

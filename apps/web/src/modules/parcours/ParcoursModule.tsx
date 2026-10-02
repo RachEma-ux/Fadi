@@ -341,6 +341,26 @@ function StepDetail({
   );
 }
 
+/** « Documents de base intégrés » de la vue d'ensemble du projet d'exemple (prototype) : les fichiers du prototype, sources des étapes 01 et 02. */
+function BaseDocuments({ projectId }: { projectId: string }) {
+  const project = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId) });
+  const base = project.data?.baseDocuments;
+  if (!base) return null;
+  return (
+    <div className="seed888">
+      <strong>Documents de base intégrés</strong>
+      <div className="biz-actions">
+        {base.files.map((f) => (
+          <a key={f.id} className="button-secondary" href={api.stepFileUrl(projectId, f.stepNumber, f.id)} download={f.name} title={`${f.note} · source de l'étape ${String(f.stepNumber).padStart(2, "0")}`}>
+            {f.name}
+          </a>
+        ))}
+      </div>
+      <p>{base.caption}</p>
+    </div>
+  );
+}
+
 export function ParcoursModule({ projectId }: { projectId: string }) {
   const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
   const [searchParams, setSearchParams] = useSearchParams();
@@ -395,6 +415,7 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
   return (
     <>
       <HarmonieToast text={notice} onDone={() => navigate(`${location.pathname}${location.search}`, { replace: true, state: null })} />
+      <BaseDocuments projectId={projectId} />
       <div className="overview-progress">
         <span className="parcours-steps-summary">{done} / {steps.length} étapes terminées</span>
         <div className="progress">

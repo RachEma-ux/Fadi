@@ -118,6 +118,32 @@ export function exampleStudyDossier(exampleId: string | null): StudyDossierFile 
   return exampleId !== null && exampleId === studyDossierFile.exampleId ? studyDossierFile : null;
 }
 
+/** « Documents de base intégrés » de l'exemple (SEED888_FILES du prototype) : les deux fichiers, rattachés aux sources des étapes 01 et 02 à l'import. */
+export interface ExampleBaseDocument {
+  file: string;
+  name: string;
+  type: string;
+  size: number;
+  sha256: string;
+  stepNumber: number;
+  note: string;
+}
+interface BaseDocumentsFile {
+  exampleId: string;
+  caption: string;
+  files: ExampleBaseDocument[];
+}
+const baseDocumentsFile = readJson<BaseDocumentsFile>("examples/p118-base-documents.json");
+
+export function exampleBaseDocuments(exampleId: string | null): { caption: string; files: ExampleBaseDocument[] } | null {
+  return exampleId !== null && exampleId === baseDocumentsFile.exampleId ? { caption: baseDocumentsFile.caption, files: baseDocumentsFile.files } : null;
+}
+
+/** Les octets d'un document de base, tels qu'extraits du prototype (empreinte vérifiée dans `p118-base-documents.json`). */
+export function exampleBaseDocumentContent(doc: ExampleBaseDocument): Buffer {
+  return readFileSync(fileURLToPath(dataFileUrl(`examples/files/${doc.file}`)));
+}
+
 /** Feuille de style du panneau Harmonie (`<style id="h7-css">` du prototype, telle quelle) embarquée dans les rapports HTML téléchargés. */
 export const HARMONIE_REPORT_CSS: string = readFileSync(fileURLToPath(dataFileUrl("harmonie-report.css")), "utf8");
 /** Feuille de style du bilan du bâtiment conçu (`<style id="flow-v62-css">`), telle quelle : rapport téléchargé et bilan en ligne. */

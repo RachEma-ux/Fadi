@@ -355,6 +355,26 @@ describe("examples", () => {
     const listed = await client.get("/projects");
     expect(listed.body.map((p: { id: string }) => p.id)).toContain(imported.body.id);
 
+    // « Documents de base intégrés » (SEED888_FILES) : 118_officiel.kmz en source de l'étape 01, ZONE-I-5.pdf de l'étape 02,
+    // octets conservés (tailles du prototype), téléchargeables en pièce jointe, listés sur le projet.
+    const detail = (await client.get(`/projects/${imported.body.id}`)).body;
+    expect(detail.baseDocuments.caption).toBe("Scénario étudié : P.118 — pôle tertiaire, services aux entreprises & formation.");
+    expect(detail.baseDocuments.files.map((f: { name: string; stepNumber: number; size: number }) => [f.name, f.stepNumber, f.size])).toEqual([
+      ["118_officiel.kmz", 1, 881142],
+      ["ZONE-I-5.pdf", 2, 2271817],
+    ]);
+    const kmz = detail.baseDocuments.files[0];
+    const download = await client.get(`/projects/${imported.body.id}/steps/1/files/${kmz.id}`).buffer(true).parse((res, cb) => {
+      const chunks: Buffer[] = [];
+      res.on("data", (c: Buffer) => chunks.push(c));
+      res.on("end", () => cb(null, Buffer.concat(chunks)));
+    });
+    expect(download.status).toBe(200);
+    expect(download.headers["content-disposition"]).toMatch(/^attachment; filename="118_officiel.kmz"/);
+    expect((download.body as Buffer).length).toBe(881142);
+    expect((download.body as Buffer).subarray(0, 2).toString("latin1")).toBe("PK");
+    expect((await client.get(`/projects/${imported.body.id}/steps/2/files`)).body.map((f: { name: string }) => f.name)).toEqual(["ZONE-I-5.pdf"]);
+
     const steps = await client.get(`/projects/${imported.body.id}/steps`);
     expect(steps.body).toHaveLength(21);
     expect(steps.body.every((s: { status: string }) => s.status === "termine")).toBe(true);
@@ -1033,7 +1053,13 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     expect(archive.programmeRepartition.mode).toBe("cas");
     expect(archive.parcels).toHaveLength(1);
     expect(Object.keys(archive.native.entries)).toContain("design.v13.activeProject");
-    expect(archive.stageAttachments).toEqual([expect.objectContaining({ stepNumber: 3, name: "ZONE-I-5 règlement.pdf", type: "application/pdf", size: 21, dataUrl: expect.stringMatching(/^data:application\/pdf;base64,/) })]);
+    // Les pièces : les deux documents de base de l'exemple (étapes 01 / 02, octets conservés) et la pièce ajoutée.
+    expect(archive.stageAttachments.map((a: { stepNumber: number; name: string; size: number }) => [a.stepNumber, a.name, a.size])).toEqual([
+      [1, "118_officiel.kmz", 881142],
+      [2, "ZONE-I-5.pdf", 2271817],
+      [3, "ZONE-I-5 règlement.pdf", 21],
+    ]);
+    expect(archive.stageAttachments[2]).toMatchObject({ type: "application/pdf", dataUrl: expect.stringMatching(/^data:application\/pdf;base64,/) });
     expect(archive.warnings).toEqual([]);
     // Jamais pour un autre utilisateur.
     const other = await registerAndLogin("archive-other@example.com");

@@ -12,7 +12,7 @@
  * fichiers déjà présents sont enrichis (clés ajoutées), jamais réordonnés,
  * pour garder les diffs lisibles.
  */
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -290,6 +290,27 @@ writeJson("examples/p118-parcel.json", {
   sideLengths: nativeParcel.sideLengths,
   centroid: { frame: "cadastral", crs: "EPSG:26191", x: nativeParcel.centroid[0], y: nativeParcel.centroid[1] },
   notice,
+});
+
+// --- 6a. documents de base intégrés (SEED888_FILES) : les deux fichiers de l'exemple, octets conservés -----
+// Le prototype les proposait au téléchargement sur la vue d'ensemble du projet d'exemple
+// (« Documents de base intégrés » : 118_officiel.kmz, ZONE-I-5.pdf). Fadi les rattache aux
+// sources des étapes 01 (parcelle) et 02 (réglementation) à l'import de l'exemple.
+const seedFiles = literalAfter(host, "const SEED888_FILES=");
+const pdfB64 = seedFiles.match(/pdf:'([A-Za-z0-9+/=]+)'/)[1];
+const pdf = Buffer.from(pdfB64, "base64");
+mkdirSync(join(DATA, "examples/files"), { recursive: true });
+writeFileSync(join(DATA, "examples/files/118_officiel.kmz"), kmz);
+writeFileSync(join(DATA, "examples/files/ZONE-I-5.pdf"), pdf);
+writeJson("examples/p118-base-documents.json", {
+  sourceVersion: SOURCE_VERSION,
+  sourceBlock: "SEED888_FILES (dlSeed888) — « Documents de base intégrés » de la vue d'ensemble du projet d'exemple",
+  exampleId: exemple.id,
+  caption: "Scénario étudié : P.118 — pôle tertiaire, services aux entreprises & formation.",
+  files: [
+    { file: "118_officiel.kmz", name: "118_officiel.kmz", type: "application/vnd.google-earth.kmz", size: kmz.length, sha256: createHash("sha256").update(kmz).digest("hex"), stepNumber: 1, note: "Parcelle : doc.kml, bornes Lambert et WGS84 (CSV), tracés intérieurs, notice, document cadastral original (PDF), pages PNG" },
+    { file: "ZONE-I-5.pdf", name: "ZONE-I-5.pdf", type: "application/pdf", size: pdf.length, sha256: createHash("sha256").update(pdf).digest("hex"), stepNumber: 2, note: "Règlement de la zone I — secteur I5 (source des réponses de l'étape 02)" },
+  ],
 });
 
 // --- 6b. modèle natif verbatim pour l'Atelier (format design.v13) --------------

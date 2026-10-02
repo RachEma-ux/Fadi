@@ -2529,3 +2529,20 @@ fieldset.access-fieldset:disabled {
 .site-observation-status {
   font-size: 12.5px;
 }
+
+/* « Documents de base intégrés » (vue d'ensemble du projet d'exemple, prototype) */
+.seed888 {
+  background: #eef6f2;
+  border: 1px solid #c8ded4;
+  border-radius: 12px;
+  padding: 18px;
+  margin: 16px 0;
+}
+.seed888 .biz-actions {
+  margin: 10px 0;
+}
+.seed888 p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}

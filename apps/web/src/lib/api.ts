@@ -73,6 +73,8 @@ export interface Project {
   ownerEmail?: string;
   /** Réservation d'édition en cours (verrou optionnel « un seul éditeur actif »), null si libre ou expirée. */
   editingLock?: EditingLock | null;
+  /** « Documents de base intégrés » d'un projet issu de l'exemple : les fichiers du prototype retrouvés parmi les sources des étapes. */
+  baseDocuments?: { caption: string; files: { id: string; stepNumber: number; name: string; type: string; size: number; note: string }[] } | null;
   createdAt: string;
   updatedAt: string;
 }

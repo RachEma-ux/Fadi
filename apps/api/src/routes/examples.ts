@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { atelierStore, parcels, programmeCases, programmeRepartitions, projects, projectSteps } from "../db/schema.js";
+import { atelierStore, parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
 import { hashOf, parcelSnapshotFromNative, summarize, type NativeParcelDomain } from "../lib/parcel-transmission.js";
 import { repartitionFromCase, type ProgrammeCase } from "@parcours/domain-model";
 import { randomUUID } from "node:crypto";
@@ -13,6 +13,8 @@ import {
   PARCOURS_STEPS,
   PROGRAMME_REPARTITION,
   exampleAttachment,
+  exampleBaseDocumentContent,
+  exampleBaseDocuments,
   exampleBuildingType,
   exampleAtelierStore,
   exampleHarmonyDossier,
@@ -139,6 +141,17 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
             },
           })
           .where(eq(projects.id, id));
+      }
+    }
+
+    // « Documents de base intégrés » (SEED888_FILES) : les deux fichiers de l'exemple deviennent des sources
+    // des étapes 01 (118_officiel.kmz) et 02 (ZONE-I-5.pdf), octets conservés.
+    const base = exampleBaseDocuments(exampleId);
+    if (base) {
+      const addedAt = new Date();
+      for (const doc of base.files) {
+        const content = exampleBaseDocumentContent(doc);
+        await tx.insert(stepFiles).values({ id: randomUUID(), projectId: id, stepNumber: doc.stepNumber, name: doc.name, type: doc.type, size: content.length, content, addedAt });
       }
     }
 
