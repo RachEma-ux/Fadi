@@ -218,8 +218,15 @@ reservation (30 min, renewed while the holder keeps the project open, releasable
 read and comment while it lasts, their writes are refused with the reason and the deadline (423). Ownership can be transferred to a member (the former owner stays as editor). Still open: invitation notifications
 (no e-mail service).
 The app loads in pieces (shell, project, Atelier engine, library) and the service worker precaches every piece
-at install so offline opening does not depend on what was visited online. Lot 5 items still open are listed
-under « Limites restantes » in the matrix (regulatory checks, MapTiler / altimetry, deployment hardening).
+at install so offline opening does not depend on what was visited online. Around the modules, the navigation's
+Harmonie page shows the state of each project's choices (read from the steps already served) and the settings
+page what is really configurable (account, MapTiler key, data kept by the browser, build version); the
+protected P.118 reference behaves as in the prototype in the Atelier (the first committed modification goes
+to an automatic working copy through the engine's own `P118Resolved` seam). MapTiler (satellite background,
+altimetry) is called from the browser with the user's key, on request, and simulated in CI. The Playwright
+scenario also runs axe-core on every screen at desktop and phone widths (no critical or serious violation).
+Lot 5 items still open are listed under « Limites restantes » in the matrix (regulatory checks beyond the
+prototype's rules, e-mail notifications, deployment hardening).
 
 ## Acceptance target: "Parcours App — Pilote P.118"
 
