@@ -38,6 +38,8 @@ export interface CommentVars {
   projectId: string;
   body: string;
   stepNumber: number | null;
+  /** Réponse en fil : le commentaire d'origine. */
+  parentId?: string | null;
 }
 
 export interface SyncConflict {
@@ -166,7 +168,7 @@ export function registerMutationDefaults(queryClient: QueryClient) {
     },
   });
   queryClient.setMutationDefaults(MUTATION_KEYS.comment, {
-    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber),
+    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null),
     onSuccess: (_c: ProjectComment, v: CommentVars) => {
       void queryClient.invalidateQueries({ queryKey: ["collaboration", v.projectId] });
       void queryClient.invalidateQueries({ queryKey: ["comments", v.projectId] });

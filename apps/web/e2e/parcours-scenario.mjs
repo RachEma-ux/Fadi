@@ -699,12 +699,18 @@ check("étape 08 : pli « Commentaires (0) » vide", /Commentaires \(0\)/.test(a
 await page.locator(".step-comments textarea").fill("Vérifier la hauteur sous plafond avec le BET.");
 await page.locator('.step-comments button:has-text("Publier le commentaire")').click();
 await page.waitForFunction(() => /Commentaires \(1\)/.test(document.querySelector(".step-comments > summary")?.textContent || ""), null, { timeout: 10000 });
-check("étape 08 : « Publier le commentaire » → « Commentaires (1) », auteur et date", (await page.locator(".step-comments .comment-meta").textContent()).includes(email) && (await page.locator(".step-comments .comment p").textContent()) === "Vérifier la hauteur sous plafond avec le BET.");
+check("étape 08 : « Publier le commentaire » → « Commentaires (1) », auteur et date", (await page.locator(".step-comments .comment-meta").first().textContent()).includes(email) && (await page.locator(".step-comments .comment > p").first().textContent()) === "Vérifier la hauteur sous plafond avec le BET.");
+// Réponse en fil : rattachée au commentaire d'origine, comptée, affichée en retrait.
+await page.locator('.step-comments button:has-text("Répondre")').first().click();
+await page.locator(".step-comments .comment-reply-form textarea").fill("Vu avec le BET : 3,20 m confirmés.");
+await page.locator('.step-comments button:has-text("Publier la réponse")').click();
+await page.waitForFunction(() => document.querySelectorAll(".step-comments .comment-reply").length === 1, null, { timeout: 10000 });
+check("étape 08 : « Répondre » → réponse en fil sous le commentaire d'origine, « Commentaires (2) »", /Commentaires \(2\)/.test(await page.locator(".step-comments > summary").textContent()) && (await page.locator(".step-comments .comment-reply p").textContent()) === "Vu avec le BET : 3,20 m confirmés." && (await page.locator(".step-comments .comment-reply").getAttribute("data-parent")) === (await page.locator(".step-comments li.comment").first().getAttribute("data-comment")));
 await page.goto(`${exampleUrl}?module=collaboration`);
 await page.waitForSelector(".journal-table tbody tr", { timeout: 30000 });
 const collabKpis = (await page.locator(".collaboration-module .biz-kpis").textContent()).replace(/\s+/g, " ");
 check("collaboration : propriétaire = vous, « Votre rôle · propriétaire », partage « 0 membre(s) », hors-ligne « Atelier, saisies, lecture », révision du modèle et dernière écriture", collabKpis.includes(email) && collabKpis.includes("c'est vous") && /Votre rôlepropriétaire/.test(collabKpis) && /Partage0 membre\(s\)/.test(collabKpis) && /Hors-ligneAtelier, saisies, lecture/.test(collabKpis) && /Révision \d+dernière écriture/.test(collabKpis), collabKpis);
-check("collaboration : le commentaire de l'étape 08 apparaît avec son lien « étape 08 »", (await page.locator(".comment").count()) === 1 && (await page.locator('.comment a:has-text("étape 08")').count()) === 1);
+check("collaboration : le commentaire de l'étape 08 et sa réponse apparaissent, avec le lien « étape 08 »", (await page.locator("li.comment").count()) === 2 && (await page.locator(".comment-reply").count()) === 1 && (await page.locator('.comment a:has-text("étape 08")').count()) === 1);
 const journalKinds = new Set(await page.locator(".journal-table tbody tr").evaluateAll((rows) => rows.map((r) => r.getAttribute("data-kind"))));
 check("collaboration : journal des révisions relu des données (projet, Harmonie, programme, modèle, parcelle, revue, documents, commentaire), du plus récent au plus ancien", ["projet", "harmonie", "programme", "modele", "parcelle", "revue", "document", "commentaire"].every((k) => journalKinds.has(k)) && (await page.locator(".journal-table tbody tr").first().getAttribute("data-kind")) === "commentaire");
 await page.locator('.collaboration-module .h7-tabs button:has-text("Document")').click();
@@ -712,7 +718,7 @@ check("collaboration : filtre « Document » → les productions enregistrées (
 await page.locator(".collaboration-module .biz-card").first().screenshot({ path: `${OUT}/collaboration-desktop.png` });
 await page.locator(".comment-delete").first().click();
 await page.waitForFunction(() => document.querySelectorAll(".comment").length === 0, null, { timeout: 10000 });
-check("collaboration : « Supprimer » (auteur) → plus de commentaire", (await page.locator(".comment").count()) === 0);
+check("collaboration : « Supprimer » (auteur) le commentaire d'origine → sa réponse part avec lui, plus de commentaire", (await page.locator(".comment").count()) === 0);
 
 // 6k. Hors-ligne : file locale (IndexedDB) de l'Atelier, quatre états visibles, rejeu au retour du réseau et après rechargement, ouverture depuis le cache local
 await page.goto(`${exampleUrl}?module=atelier`);

@@ -10,7 +10,7 @@ seulement côté client.
 
 ## Statut
 
-`CollaborationModule.tsx` : commentaires du projet (`CommentThread`) et de chaque étape (`StepComments`, pli « Commentaires (n) » dans le Parcours), auteur enregistré et suppression réservée à l'auteur ; journal des révisions relu depuis les dates portées par les données (arbitrages Harmonie et états antérieurs conservés, variantes de programme, transferts, revues, écritures du modèle et des parcelles, documents produits, commentaires) ; accès réel (propriétaire, votre rôle, membres) et synchronisation annoncés tels quels — écritures serveur avec révision par clé (409 en cas de conflit).
+`CollaborationModule.tsx` : commentaires du projet (`CommentThread`) et de chaque étape (`StepComments`, pli « Commentaires (n) » dans le Parcours), réponses en fil (un niveau, rattachées au commentaire d'origine et supprimées avec lui), auteur enregistré et suppression réservée à l'auteur ; journal des révisions relu depuis les dates portées par les données (arbitrages Harmonie et états antérieurs conservés, variantes de programme, transferts, revues, écritures du modèle et des parcelles, documents produits, commentaires) ; accès réel (propriétaire, votre rôle, membres) et synchronisation annoncés tels quels — écritures serveur avec révision par clé (409 en cas de conflit).
 
 Partage (`MembersPanel`, API `routes/members.ts`, droits dans `lib/owned-project.ts`) : le propriétaire invite des comptes existants par leur adresse (aucun courriel envoyé, aucun compte créé), change leur rôle, les retire ; un membre peut quitter le projet. Un **lecteur** lit tout le dossier, commente, exporte et copie ; un **éditeur** modifie aussi ; le propriétaire seul partage et supprime. Chaque route déclare le besoin qu'elle a (`read` / `comment` / `write` / `owner`) et le serveur relit le rôle à chaque requête (404 sans accès, 403 motivé si le rôle ne suffit pas) ; l'écran ne fait que ne pas proposer ce qui serait refusé (`lib/access.ts` → `useProjectAccess`, `components/WriteFieldset.tsx`, Atelier en lecture seule, bandeau « Projet partagé en lecture », « Projets partagés avec vous » dans la liste). Les membres travaillent sur le même projet : chaque transaction de relecture-réécriture verrouille d'abord la ligne du projet (`lockProject`, `FOR UPDATE`) pour qu'aucune écriture simultanée ne s'efface, puis le contrôle de version (409) départage les lectures périmées.
 
@@ -22,4 +22,4 @@ Réservation d'édition (`components/EditingLockControl.tsx`, API `routes/lock.t
 
 Le propriétaire peut transférer la propriété à un membre (`POST …/members/:userId/propriete`) : le membre devient propriétaire, lui-même reste éditeur ; données, membres et réservation ne changent pas.
 
-Reste (Lot 4) : notifications d'invitation (pas de courriel).
+Reste (Lot 4) : notifications d'invitation et de commentaire (pas de courriel).

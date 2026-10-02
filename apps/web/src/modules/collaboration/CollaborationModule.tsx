@@ -25,10 +25,12 @@ const KIND_LABEL: Record<string, string> = {
   commentaire: "Commentaire",
 };
 
-/** Fil de commentaires (projet entier ou une étape) : liste, ajout, suppression par l'auteur. */
+/** Fil de commentaires (projet entier ou une étape) : liste en fils (réponses rattachées à leur commentaire d'origine), ajout, réponse, suppression par l'auteur. */
 export function CommentThread({ projectId, stepNumber, comments, compact = false }: { projectId: string; stepNumber: number | null; comments: ProjectComment[]; compact?: boolean }) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyDraft, setReplyDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["collaboration", projectId] });
@@ -36,9 +38,12 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
   };
   const add = useMutation({
     mutationKey: MUTATION_KEYS.comment,
-    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber),
-    onSuccess: () => {
-      setDraft("");
+    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null),
+    onSuccess: (_c, v) => {
+      if (v.parentId) {
+        setReplyDraft("");
+        setReplyTo(null);
+      } else setDraft("");
       setError(null);
       refresh();
     },
@@ -49,27 +54,69 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
     onSuccess: refresh,
     onError: (err) => setError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "Suppression refusée."),
   });
+  // Fils : les commentaires de premier niveau (ordre reçu), leurs réponses par ordre chronologique.
+  const roots = comments.filter((c) => !c.parentId || !comments.some((x) => x.id === c.parentId));
+  const repliesOf = (id: string) => comments.filter((c) => c.parentId === id).sort((x, y) => (x.createdAt < y.createdAt ? -1 : x.createdAt > y.createdAt ? 1 : 0));
+  const meta = (c: ProjectComment) => (
+    <div className="comment-meta">
+      <b>{c.authorEmail}</b> · {new Date(c.createdAt).toLocaleString("fr-FR")}
+      {c.stepNumber !== null && stepNumber === null && !c.parentId && (
+        <>
+          {" · "}
+          <Link to={`/projets/${projectId}?module=parcours&etape=${c.stepNumber}`}>étape {pad2(c.stepNumber)}</Link>
+        </>
+      )}
+      {c.mine && (
+        <button type="button" className="comment-delete" disabled={remove.isPending} onClick={() => remove.mutate(c.id)}>
+          Supprimer
+        </button>
+      )}
+    </div>
+  );
   return (
     <div className={`comment-thread${compact ? " compact" : ""}`}>
       {comments.length ? (
         <ul className="comment-list">
-          {comments.map((c) => (
+          {roots.map((c) => (
             <li key={c.id} className="comment" data-comment={c.id}>
-              <div className="comment-meta">
-                <b>{c.authorEmail}</b> · {new Date(c.createdAt).toLocaleString("fr-FR")}
-                {c.stepNumber !== null && stepNumber === null && (
-                  <>
-                    {" · "}
-                    <Link to={`/projets/${projectId}?module=parcours&etape=${c.stepNumber}`}>étape {pad2(c.stepNumber)}</Link>
-                  </>
-                )}
-                {c.mine && (
-                  <button type="button" className="comment-delete" disabled={remove.isPending} onClick={() => remove.mutate(c.id)}>
-                    Supprimer
-                  </button>
-                )}
-              </div>
+              {meta(c)}
               <p>{c.body}</p>
+              {repliesOf(c.id).length > 0 && (
+                <ul className="comment-replies">
+                  {repliesOf(c.id).map((r) => (
+                    <li key={r.id} className="comment comment-reply" data-comment={r.id} data-parent={c.id}>
+                      {meta(r)}
+                      <p>{r.body}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {replyTo === c.id ? (
+                <form
+                  className="comment-form comment-reply-form"
+                  onSubmit={(e: FormEvent) => {
+                    e.preventDefault();
+                    if (replyDraft.trim()) add.mutate({ projectId, body: replyDraft.trim(), stepNumber: c.stepNumber, parentId: c.id });
+                  }}
+                >
+                  <label>
+                    Répondre à {c.authorEmail}
+                    <textarea value={replyDraft} maxLength={4000} rows={2} autoFocus onChange={(e) => setReplyDraft(e.target.value)} />
+                  </label>
+                  <div className="h7-actions">
+                    <button type="submit" className="button-primary" disabled={(add.isPending && !add.isPaused) || !replyDraft.trim()}>
+                      Publier la réponse
+                    </button>
+                    <button type="button" className="button-secondary" onClick={() => setReplyTo(null)}>
+                      Annuler
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <button type="button" className="comment-reply-button" onClick={() => setReplyTo(c.id)}>
+                  Répondre
+                </button>
+              )}
             </li>
           ))}
         </ul>

@@ -2,7 +2,7 @@
  * Module Collaboration — monté sous `/projects/:projectId/collaboration` :
  *   GET    /                   → accès (propriétaire, votre rôle, membres), état de synchronisation, journal des révisions, commentaires
  *   GET    /comments[?step=N]  → commentaires du projet (ou d'une étape)
- *   POST   /comments           → { body, stepNumber? } : nouveau commentaire de l'utilisateur connecté
+ *   POST   /comments           → { body, stepNumber?, parentId? } : nouveau commentaire (ou réponse en fil) de l'utilisateur connecté
  *   DELETE /comments/:id       → suppression par son auteur seulement
  *
  * Le journal des révisions n'invente rien : il relit les dates portées par
@@ -179,7 +179,7 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
 }
 
 function commentView(c: typeof projectComments.$inferSelect, userId: string) {
-  return { id: c.id, stepNumber: c.stepNumber, authorEmail: c.authorEmail, body: c.body, createdAt: c.createdAt.toISOString(), mine: c.authorId === userId };
+  return { id: c.id, stepNumber: c.stepNumber, parentId: c.parentId ?? null, authorEmail: c.authorEmail, body: c.body, createdAt: c.createdAt.toISOString(), mine: c.authorId === userId };
 }
 
 collaborationRouter.get("/", async (req, res) => {
@@ -229,7 +229,12 @@ collaborationRouter.get("/comments", async (req, res) => {
   res.json(rows.map((c) => commentView(c, req.user!.id)));
 });
 
-const commentSchema = z.object({ body: z.string().trim().min(1, "Commentaire vide").max(4000), stepNumber: z.number().int().min(1).max(21).nullable().optional() });
+const commentSchema = z.object({
+  body: z.string().trim().min(1, "Commentaire vide").max(4000),
+  stepNumber: z.number().int().min(1).max(21).nullable().optional(),
+  /** Réponse en fil : le commentaire auquel on répond (même projet) ; l'étape de la réponse est celle du commentaire parent. */
+  parentId: z.string().min(1).max(64).nullable().optional(),
+});
 
 collaborationRouter.post("/comments", async (req, res) => {
   const project = await projectOr404(req, res, "comment");
@@ -239,9 +244,25 @@ collaborationRouter.post("/comments", async (req, res) => {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
     return;
   }
+  let stepNumber = parsed.data.stepNumber ?? null;
+  let parentId: string | null = null;
+  if (parsed.data.parentId) {
+    const [parent] = await db
+      .select({ id: projectComments.id, stepNumber: projectComments.stepNumber, parentId: projectComments.parentId })
+      .from(projectComments)
+      .where(and(eq(projectComments.projectId, project.id), eq(projectComments.id, parsed.data.parentId)))
+      .limit(1);
+    if (!parent) {
+      res.status(404).json({ error: "not_found", message: "Le commentaire auquel vous répondez n'existe plus." });
+      return;
+    }
+    // Un seul niveau de fil (comme un fil de discussion lisible) : répondre à une réponse rattache au commentaire d'origine.
+    parentId = parent.parentId ?? parent.id;
+    stepNumber = parent.stepNumber;
+  }
   const [created] = await db
     .insert(projectComments)
-    .values({ id: newId("com"), projectId: project.id, stepNumber: parsed.data.stepNumber ?? null, authorId: req.user!.id, authorEmail: req.user!.email, body: parsed.data.body })
+    .values({ id: newId("com"), projectId: project.id, stepNumber, parentId, authorId: req.user!.id, authorEmail: req.user!.email, body: parsed.data.body })
     .returning();
   res.status(201).json(commentView(created!, req.user!.id));
 });

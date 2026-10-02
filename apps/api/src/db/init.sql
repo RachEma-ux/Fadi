@@ -171,6 +171,8 @@ CREATE TABLE IF NOT EXISTS project_comments (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS project_comments_project_idx ON project_comments (project_id, created_at);
+-- Réponses en fil : le commentaire auquel on répond (même projet) ; null pour un commentaire de premier niveau.
+ALTER TABLE project_comments ADD COLUMN IF NOT EXISTS parent_id text REFERENCES project_comments (id) ON DELETE CASCADE;
 
 CREATE TABLE IF NOT EXISTS project_members (
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,

@@ -499,6 +499,8 @@ export interface DocumentsView {
 export interface ProjectComment {
   id: string;
   stepNumber: number | null;
+  /** Réponse en fil : le commentaire d'origine ; null au premier niveau. */
+  parentId: string | null;
   authorEmail: string;
   body: string;
   createdAt: string;
@@ -711,8 +713,8 @@ export const api = {
   getDocuments: (projectId: string) => request<DocumentsView>(`/projects/${projectId}/documents`),
   getCollaboration: (projectId: string) => request<CollaborationView>(`/projects/${projectId}/collaboration`),
   listComments: (projectId: string, stepNumber: number | null) => request<ProjectComment[]>(`/projects/${projectId}/collaboration/comments${stepNumber === null ? "" : `?step=${stepNumber}`}`),
-  addComment: (projectId: string, body: string, stepNumber: number | null) =>
-    request<ProjectComment>(`/projects/${projectId}/collaboration/comments`, { method: "POST", body: JSON.stringify({ body, stepNumber }) }),
+  addComment: (projectId: string, body: string, stepNumber: number | null, parentId: string | null = null) =>
+    request<ProjectComment>(`/projects/${projectId}/collaboration/comments`, { method: "POST", body: JSON.stringify({ body, stepNumber, parentId }) }),
   deleteComment: (projectId: string, commentId: string) => request<void>(`/projects/${projectId}/collaboration/comments/${encodeURIComponent(commentId)}`, { method: "DELETE" }),
   /** Partage : membres et rôles (propriétaire seulement pour inviter, changer, retirer ; un membre peut se retirer lui-même). */
   listMembers: (projectId: string) => request<MembersView>(`/projects/${projectId}/members`),

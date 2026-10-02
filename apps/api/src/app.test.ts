@@ -1588,7 +1588,15 @@ describe("Collaboration — accès, synchronisation, journal des révisions, com
     const journal = (await client.get(`/projects/${pid}/collaboration`)).body;
     expect(journal.comments).toHaveLength(2);
     expect(journal.journal[0]).toMatchObject({ kind: "commentaire", label: "Commentaire · collab@example.com" });
-    // Jamais pour un autre utilisateur ; l'auteur seul supprime.
+    // Réponses en fil : rattachées au commentaire d'origine (un seul niveau), même étape ; parent inconnu refusé.
+    const reply = await client.post(`/projects/${pid}/collaboration/comments`).send({ body: "Vu avec le BET : 3,20 m confirmés.", parentId: c1.body.id });
+    expect(reply.status).toBe(201);
+    expect(reply.body).toMatchObject({ parentId: c1.body.id, stepNumber: 8 });
+    const replyToReply = await client.post(`/projects/${pid}/collaboration/comments`).send({ body: "Merci, je note.", parentId: reply.body.id });
+    expect(replyToReply.body.parentId).toBe(c1.body.id);
+    expect((await client.post(`/projects/${pid}/collaboration/comments`).send({ body: "Réponse à rien", parentId: "com_inconnu" })).status).toBe(404);
+    expect((await client.get(`/projects/${pid}/collaboration/comments?step=8`)).body.map((c: { parentId: string | null }) => c.parentId)).toEqual([null, c1.body.id, c1.body.id]);
+    // Jamais pour un autre utilisateur ; l'auteur seul supprime ; supprimer le commentaire d'origine emporte ses réponses.
     const other = await registerAndLogin("collab-other@example.com");
     expect((await other.get(`/projects/${pid}/collaboration`)).status).toBe(404);
     expect((await other.delete(`/projects/${pid}/collaboration/comments/${c1.body.id}`)).status).toBe(404);

@@ -263,6 +263,8 @@ export const projectComments = pgTable("project_comments", {
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   authorEmail: text("author_email").notNull(),
   body: text("body").notNull(),
+  /** Réponse en fil : identifiant du commentaire auquel elle répond (même projet), null au premier niveau. */
+  parentId: text("parent_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("project_comments_project_idx").on(t.projectId, t.createdAt)]);
 
