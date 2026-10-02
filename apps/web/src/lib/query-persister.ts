@@ -13,12 +13,14 @@ export const QUERY_CACHE_VERSION = "fadi-queries-1";
 
 export const queryPersister = createAsyncStoragePersister({
   key: QUERY_CACHE_VERSION,
+  // Écriture regroupée mais rapide : une mutation qui vient d'aboutir ne doit pas rester « en pause » dans le cache
+  // persistant le temps d'un rechargement immédiat (elle serait rejouée une seconde fois).
+  throttleTime: 200,
   storage: {
     getItem: (key) => localStore.getValue(key),
     setItem: (key, value) => localStore.setValue(key, value),
     removeItem: (key) => localStore.removeValue(key),
   },
-  throttleTime: 1500,
 });
 
 /** Le cache est propre à l'utilisateur connu de l'appareil : un autre utilisateur le fait tomber (`buster`). */

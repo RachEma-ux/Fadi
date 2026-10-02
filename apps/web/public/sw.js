@@ -5,15 +5,28 @@
  * Les appels à l'API (/projects, /auth, /examples, /library) ne sont jamais
  * mis en cache ici : les données viennent du serveur, ou du cache persistant
  * de l'application (IndexedDB) quand il est hors-ligne. Le cache porte
- * l'identifiant du build et les caches des builds précédents sont supprimés
- * à l'activation.
+ * l'identifiant du build, est rempli dès l'installation (morceaux de
+ * l'application, moteurs) et les caches des builds précédents sont
+ * supprimés à l'activation.
  */
-// Le marqueur ci-dessous est remplacé au build par l'identifiant du commit (vite.config.ts) : un cache par build.
+// Les marqueurs ci-dessous sont remplacés au build (vite.config.ts) : l'identifiant du commit (un cache par build) et la
+// liste des fichiers à mettre en cache dès l'installation (application, morceaux chargés paresseusement, moteurs).
 const BUILD = "__FADI_BUILD__";
+const PRECACHE = "__FADI_ASSETS__";
 const CACHE = `fadi-shell-${BUILD}`;
 const STATIC = /^\/(assets|atelier-native|parcelle)\//;
 
-self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("install", (event) =>
+  event.waitUntil(
+    (async () => {
+      // Mise en cache anticipée, fichier par fichier (un fichier manquant n'empêche pas l'installation).
+      const cache = await caches.open(CACHE);
+      const list = Array.isArray(PRECACHE) ? PRECACHE : [];
+      await Promise.all(list.map((path) => cache.add(path).catch(() => undefined)));
+      await self.skipWaiting();
+    })(),
+  ),
+);
 self.addEventListener("activate", (event) =>
   event.waitUntil(
     (async () => {

@@ -20,8 +20,8 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api, type HarmonieProposalStatus, type ParcoursFieldValue } from "../lib/api";
-import { clearConflict, MUTATION_KEYS, type DecideVars, type StepPatchVars, type SyncConflict } from "../lib/mutations";
-import { atelierStorage, type ModelConflict } from "../modules/atelier/native/engine";
+import { adoptStep, clearConflict, MUTATION_KEYS, recordConflict, type DecideVars, type StepPatchVars, type SyncConflict } from "../lib/mutations";
+import { atelierStorage, type ModelConflict } from "../modules/atelier/native/storage";
 import { useSyncConflicts } from "./SyncIndicator";
 
 const STATUS_LABEL: Record<HarmonieProposalStatus, string> = {
@@ -43,9 +43,24 @@ export function useModelConflicts(): ModelConflict[] {
   return conflicts;
 }
 
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
 function FieldConflict({ projectId, c, labelOf }: { projectId: string; c: SyncConflict; labelOf: (stepNumber: number | null, key: string) => string }) {
   const queryClient = useQueryClient();
-  const retry = useMutation<unknown, unknown, StepPatchVars>({ mutationKey: MUTATION_KEYS.stepPatch });
+  // Les suites (adopter l'étape, enregistrer un nouveau refus, retirer ce conflit) sont posées sur la mutation elle-même :
+  // elles s'exécutent même si ce bandeau a été démonté entre-temps.
+  const retry = useMutation({
+    mutationKey: MUTATION_KEYS.stepPatch,
+    mutationFn: (v: StepPatchVars) => api.patchStep(v.projectId, v.stepNumber, v.body),
+    onSuccess: (updated, v) => {
+      adoptStep(queryClient, v.projectId, updated);
+      clearConflict(queryClient, v.projectId, c.id);
+    },
+    onError: (err, v) => {
+      clearConflict(queryClient, v.projectId, c.id);
+      recordConflict(queryClient, v.projectId, err, `Étape ${pad2(v.stepNumber)} · saisie`, v.stepNumber, { attempted: v.body.fields ?? {} });
+    },
+  });
   const keys = [...new Set([...Object.keys(c.attempted ?? {}), ...Object.keys(c.current ?? {})])];
   const canRetry = c.stepNumber !== null && c.attempted !== null && Object.keys(c.attempted).length > 0;
   return (
@@ -80,12 +95,7 @@ function FieldConflict({ projectId, c, labelOf }: { projectId: string; c: SyncCo
             type="button"
             className="button-primary"
             disabled={retry.isPending}
-            onClick={() =>
-              retry.mutate(
-                { projectId, stepNumber: c.stepNumber!, body: { fields: c.attempted!, baseline: c.current ?? {} } },
-                { onSuccess: () => clearConflict(queryClient, projectId, c.id), onError: () => clearConflict(queryClient, projectId, c.id) },
-              )
-            }
+            onClick={() => retry.mutate({ projectId, stepNumber: c.stepNumber!, body: { fields: c.attempted!, baseline: c.current ?? {} } })}
           >
             Reprendre ma saisie
           </button>
@@ -98,7 +108,21 @@ function FieldConflict({ projectId, c, labelOf }: { projectId: string; c: SyncCo
 
 function DecisionConflict({ projectId, c }: { projectId: string; c: SyncConflict }) {
   const queryClient = useQueryClient();
-  const retry = useMutation<unknown, unknown, DecideVars>({ mutationKey: MUTATION_KEYS.decide });
+  const retry = useMutation({
+    mutationKey: MUTATION_KEYS.decide,
+    mutationFn: (v: DecideVars) => api.decideHarmonie(v.projectId, v.stepNumber, v.proposalId, v.input),
+    onSuccess: (updated, v) => {
+      adoptStep(queryClient, v.projectId, updated);
+      clearConflict(queryClient, v.projectId, c.id);
+    },
+    onError: (err, v) => {
+      clearConflict(queryClient, v.projectId, c.id);
+      const { expectedVersion, ...input } = v.input;
+      recordConflict(queryClient, v.projectId, err, `Étape ${pad2(v.stepNumber)} · arbitrage ${v.proposalId}`, v.stepNumber, {
+        decision: { proposalId: v.proposalId, input, expectedVersion: expectedVersion ?? null },
+      });
+    },
+  });
   const d = c.decision!;
   return (
     <li data-conflict={c.id} data-kind="arbitrage">
@@ -119,12 +143,7 @@ function DecisionConflict({ projectId, c }: { projectId: string; c: SyncConflict
             type="button"
             className="button-primary"
             disabled={retry.isPending}
-            onClick={() =>
-              retry.mutate(
-                { projectId, stepNumber: c.stepNumber!, proposalId: d.proposalId, input: { ...d.input, expectedVersion: c.currentVersion! } },
-                { onSuccess: () => clearConflict(queryClient, projectId, c.id), onError: () => clearConflict(queryClient, projectId, c.id) },
-              )
-            }
+            onClick={() => retry.mutate({ projectId, stepNumber: c.stepNumber!, proposalId: d.proposalId, input: { ...d.input, expectedVersion: c.currentVersion! } })}
           >
             Réappliquer sur la version courante
           </button>

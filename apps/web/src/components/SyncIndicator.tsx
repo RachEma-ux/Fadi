@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { useMutationState, useQuery } from "@tanstack/react-query";
 import { localStore } from "../lib/local-store";
 import { conflictsKey, type SyncConflict } from "../lib/mutations";
-import { atelierStorage, type SyncState } from "../modules/atelier/native/engine";
+import { atelierStorage, type SyncState } from "../modules/atelier/native/storage";
 
 /** Les refus 409 conservés pour l'écran (`recordConflict`) ; jamais relus du serveur. */
 export function useSyncConflicts(projectId: string): SyncConflict[] {

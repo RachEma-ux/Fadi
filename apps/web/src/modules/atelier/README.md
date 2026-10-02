@@ -17,4 +17,6 @@ Le moteur de l'Atelier du prototype (Design Atelier V14-3 : viewer 3D, plan, cou
 
 `AtelierHarmonyPage.tsx` porte la sous-page « Harmonie du bâtiment » de l'étape 10 (V8.4) ; `DesignReview.tsx` le bilan Harmonie du bâtiment conçu (flow-v62 : analyse du modèle, réserves, plans, audit des transmissions, revue, rapport, références directionnelles), calculé côté serveur à partir de `packages/domain-model/src/design-review.ts`.
 
-Reste : chargement paresseux du moteur, copie automatique de la référence au premier dessin, fond MapTiler et observation déclarée du bilan (voir « Limites restantes » de la matrice).
+Le moteur (scripts, markup, feuille de style — `native/engine.ts`) n'est chargé qu'à la première ouverture de l'Atelier ou des étapes 10 / 11 ; le magasin et l'état de synchronisation (`native/storage.ts`) restent dans l'enveloppe pour l'en-tête et le bandeau des conflits. Le service worker met tous les morceaux en cache dès son installation : l'Atelier s'ouvre hors-ligne même s'il n'a jamais été visité en ligne.
+
+Reste : copie automatique de la référence au premier dessin, fond MapTiler et observation déclarée du bilan (voir « Limites restantes » de la matrice).

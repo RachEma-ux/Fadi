@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api, ROLE_LABEL } from "../lib/api";
@@ -8,7 +8,6 @@ import { EditingLockControl } from "../components/EditingLockControl";
 import { SyncIndicator, useOnline } from "../components/SyncIndicator";
 import { MODULES } from "../modules/module-registry";
 import { AnalysesModule } from "../modules/analyses/AnalysesModule";
-import { NativeAtelier } from "../modules/atelier/NativeAtelier";
 import { CollaborationModule } from "../modules/collaboration/CollaborationModule";
 import { DocumentsModule } from "../modules/documents/DocumentsModule";
 import { ParcoursModule } from "../modules/parcours/ParcoursModule";
@@ -16,6 +15,9 @@ import { ProgrammeHypothesesPage, ProgrammeModelLinksPage } from "../modules/pro
 import { ProgrammeRepartition, ProgrammeTransfer } from "../modules/programmation/ProgrammeRepartition";
 import { ParcelleTool } from "../modules/projets-sources/ParcelleTool";
 import { ProjectSources } from "../modules/projets-sources/StepSources";
+
+// Le moteur de l'Atelier (scripts, markup, feuille de style) n'est chargé qu'à la première ouverture de l'Atelier.
+const NativeAtelier = lazy(() => import("../modules/atelier/NativeAtelier").then((m) => ({ default: m.NativeAtelier })));
 
 export function ProjectShell() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -120,7 +122,9 @@ export function ProjectShell() {
         {activeModule === "atelier" && (
           <>
             <h2>Atelier architectural</h2>
-            <NativeAtelier projectId={projectId} readOnly={!access.canWrite} />
+            <Suspense fallback={<p role="status">Chargement de l’Atelier…</p>}>
+              <NativeAtelier projectId={projectId} readOnly={!access.canWrite} />
+            </Suspense>
           </>
         )}
 

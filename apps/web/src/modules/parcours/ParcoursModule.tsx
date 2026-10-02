@@ -6,14 +6,13 @@
  * Suivante. L'étape ouverte vit dans l'URL (`?etape=N`) pour survivre à un
  * rechargement et aux boutons Précédent/Suivant du navigateur.
  */
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useMutation, useMutationState, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, api, type ParcoursStep, type SiteObservationsInput } from "../../lib/api";
 import { MUTATION_KEYS, adoptStep, recordConflict, type DecideVars, type StepPatchVars } from "../../lib/mutations";
 import { AtelierHarmonyPage } from "../atelier/AtelierHarmonyPage";
 import { DesignReviewFold } from "../atelier/DesignReview";
-import { NativeAtelier } from "../atelier/NativeAtelier";
 import { useProjectAccess } from "../../lib/access";
 import { StepComments } from "../collaboration/CollaborationModule";
 import { ImportProjectButton } from "../projets-sources/ImportProjectButton";
@@ -24,6 +23,9 @@ import { LibraryFold, SiteQualitiesFold } from "../programmation/ProgrammeCase";
 import { ProgrammeTransferFold } from "../programmation/ProgrammeTransferFold";
 import { HarmoniePanel, HarmonieToast } from "./HarmoniePanel";
 import { StepForm } from "./StepForm";
+
+// Le moteur de l'Atelier (scripts, markup, feuille de style) n'est chargé qu'à la première ouverture des étapes 10 / 11 ou de l'Atelier.
+const NativeAtelier = lazy(() => import("../atelier/NativeAtelier").then((m) => ({ default: m.NativeAtelier })));
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
@@ -289,7 +291,11 @@ function StepDetail({
       )}
       {/* Étape 11 : bilan Harmonie du bâtiment conçu (flow-v62 `designHTML`) dans le flux de l'étape. */}
       {step.number === 11 && <DesignReviewFold projectId={projectId} />}
-      {(step.number === 10 || step.number === 11) && <NativeAtelier projectId={projectId} stage={step.number} readOnly={!access.canWrite} />}
+      {(step.number === 10 || step.number === 11) && (
+        <Suspense fallback={<p role="status">Chargement de l’Atelier…</p>}>
+          <NativeAtelier projectId={projectId} stage={step.number} readOnly={!access.canWrite} />
+        </Suspense>
+      )}
 
       <StepStory step={step} />
 

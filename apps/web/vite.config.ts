@@ -1,21 +1,37 @@
 import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { defineConfig, type Plugin } from "vite";
 
 /**
- * Identifiant du build écrit dans le service worker (`public/sw.js`,
- * marqueur `__FADI_BUILD__`) : chaque build ouvre son propre cache
- * (`fadi-shell-<build>`) et, à l'activation, supprime ceux des builds
- * précédents — le moteur de l'Atelier et l'outil Parcelle (fichiers non
- * empreints, servis cache d'abord) ne restent donc jamais périmés après une
- * mise à jour. L'identifiant est le commit courant, sinon l'instant du build.
+ * Service worker (`public/sw.js`) complété au build :
+ * - `__FADI_BUILD__` : identifiant du build — chaque build ouvre son propre
+ *   cache (`fadi-shell-<build>`) et, à l'activation, supprime ceux des
+ *   builds précédents ; le moteur de l'Atelier et l'outil Parcelle
+ *   (fichiers non empreints) ne restent donc jamais périmés ;
+ * - `__FADI_ASSETS__` : la liste des fichiers à mettre en cache dès
+ *   l'installation — morceaux de l'application (y compris ceux chargés
+ *   paresseusement : projet, Atelier, bibliothèque), moteur de l'Atelier,
+ *   outil Parcelle — pour qu'un projet déjà ouvert s'ouvre entièrement sans
+ *   réseau, même dans un écran jamais visité en ligne.
+ * L'identifiant est le commit courant, sinon l'instant du build.
  */
 function buildId(): string {
   try {
     return execSync("git rev-parse --short=12 HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim() || Date.now().toString(36);
   } catch {
     return Date.now().toString(36);
+  }
+}
+
+/** Fichiers d'un dossier de `public/`, en chemins servis (`/parcelle/index.html`…), README exclus. */
+function publicFiles(dir: string): string[] {
+  try {
+    return readdirSync(join("public", dir), { withFileTypes: true })
+      .filter((e) => e.isFile() && !/^readme\.md$/i.test(e.name))
+      .map((e) => `/${dir}/${e.name}`);
+  } catch {
+    return [];
   }
 }
 
@@ -27,10 +43,11 @@ function serviceWorkerBuildId(): Plugin {
     configResolved(config) {
       outDir = config.build.outDir;
     },
-    writeBundle() {
+    writeBundle(_options, bundle) {
       const file = join(outDir, "sw.js");
+      const assets = [...new Set(["/index.html", ...Object.keys(bundle).map((name) => `/${name}`), ...publicFiles("atelier-native"), ...publicFiles("parcelle")])].filter((p) => /\.(js|css|html|svg|woff2?|png|json)$/.test(p));
       try {
-        writeFileSync(file, readFileSync(file, "utf8").replaceAll("__FADI_BUILD__", buildId()));
+        writeFileSync(file, readFileSync(file, "utf8").replaceAll("__FADI_BUILD__", buildId()).replace('"__FADI_ASSETS__"', JSON.stringify(assets)));
       } catch (err) {
         console.warn(`[fadi-sw-build-id] ${file} non réécrit : ${err instanceof Error ? err.message : String(err)}`);
       }

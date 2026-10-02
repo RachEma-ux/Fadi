@@ -764,6 +764,7 @@ await page.waitForFunction(() => document.querySelectorAll(".conflict-banner").l
 await page.waitForFunction(() => document.querySelector("#biz-f1")?.value === "Demande locale (saisie hors-ligne)", null, { timeout: 10000 }).catch(() => {});
 check("« Reprendre ma saisie » : renvoyée fondée sur la valeur courante → acceptée, bandeau retiré, en-tête synchronisé", (await page.inputValue("#biz-f1")) === "Demande locale (saisie hors-ligne)" && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()));
 // Arbitrage fondé sur une version périmée : un autre appareil arbitre pendant que l'écran garde l'ancienne version.
+await page.waitForTimeout(1000); // le cache persistant écrit la fin des mutations rejouées avant la navigation
 await page.goto(`${projectUrl}?module=parcours&etape=3&harmonie=1`);
 await page.waitForSelector(".h7-proposal");
 // L'autre appareil arbitre la proposition B (version 1) ; l'écran, resté sur la version 0, retient B à son tour → refus.
