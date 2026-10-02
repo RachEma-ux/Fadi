@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import {
   DEFAULT_SITE_OBSERVATIONS,
   EMPTY_PARCOURS_STEP_CONTENT,
+  type BuildingLibraryData,
   type HarmonieProfilesData,
   type ParcoursFieldValue,
   type ParcoursFormField,
@@ -24,7 +25,6 @@ import {
   type ProgrammeSpace,
   type SiteManualGeographic,
   type SiteObservations,
-  type SourceExamplesData,
 } from "@parcours/domain-model";
 import { dataFileUrl } from "../runtime-paths.js";
 
@@ -54,8 +54,8 @@ interface ParcoursFormsFile {
 }
 
 const stepsFile = readJson<ParcoursStepsFile>("parcours-steps.json");
-/** Exemples issus des fichiers sources (10 cas pédagogiques) et leur affectation par étape. */
-export const SOURCE_EXAMPLES = readJson<SourceExamplesData & { sourceVersion: string }>("source-examples.json");
+/** Bibliothèque des bâtiments (10 types, 21 cas, 3 variantes chacun, références) — `building-library-data` du prototype, tel quel. */
+export const BUILDING_LIBRARY = readJson<BuildingLibraryData>("building-library.json");
 const formsFile = readJson<ParcoursFormsFile>("parcours-forms.json");
 
 /**

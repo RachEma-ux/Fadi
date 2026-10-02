@@ -53,6 +53,8 @@ export const projects = pgTable("projects", {
   parcelTransmission: jsonb("parcel_transmission").$type<Record<string, unknown> | null>(),
   /** Données du site déclarées à l'étape 01 (côté d'approche, priorité, contextes, source, note…) — `harmonieEtapesV7.site` du prototype, voir `SiteObservations`. */
   siteObservations: jsonb("site_observations").$type<Record<string, unknown> | null>(),
+  /** État du programme appliqué (bibliothèque des bâtiments) : textes générés par étape, écarts conservés, décision à réexaminer et son historique. */
+  programmeState: jsonb("programme_state").$type<Record<string, unknown> | null>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("projects_owner_id_idx").on(t.ownerId)]);
@@ -191,3 +193,19 @@ export const stepFiles = pgTable("step_files", {
   content: bytea("content").notNull(),
   addedAt: timestamp("added_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("step_files_project_step_idx").on(t.projectId, t.stepNumber)]);
+
+/**
+ * Cas de programme appliqués à un projet (bibliothèque des bâtiments,
+ * `Parcours.ProgrammeCase`) : une ligne par révision, la révision courante
+ * est la plus haute ; les précédentes sont l'historique des variantes
+ * appliquées (`programmeHistory` du prototype, borné à 12 par le routeur).
+ * Les cas sources restent immuables dans `data/building-library.json`.
+ */
+export const programmeCases = pgTable("programme_cases", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  revision: integer("revision").notNull(),
+  caseId: text("case_id").notNull(),
+  scenarioId: text("scenario_id").notNull(),
+  data: jsonb("data").notNull().$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [primaryKey({ columns: [t.projectId, t.revision] })]);

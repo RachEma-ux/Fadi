@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ProgrammeMode, type ProgrammeView } from "../../lib/api";
+import { ProgrammeCaseEditor, ProgrammeTransmission, appliedCase } from "./ProgrammeCase";
 
 const m2 = (v: number) => `${v.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m²`;
 const m2cents = (v: number) => `${v.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²`;
@@ -99,7 +100,8 @@ export function ProgrammeRepartition({ projectId }: { projectId: string }) {
   if (query.isLoading) return <p role="status">Chargement de la répartition…</p>;
   if (query.isError || !query.data) return <p role="alert">Impossible de charger la répartition programmatique.</p>;
   const view = query.data;
-  if (view.programmeCase) return <CaseSummary view={view} />;
+  if (view.programmeCase && (view.resolvedExample || view.programmeCase.readOnly)) return <CaseSummary view={view} />;
+  if (appliedCase(view)) return <ProgrammeCaseEditor projectId={projectId} view={view} />;
 
   const rep = view.repartition;
   const commit = (patch: Partial<{ type: string; baseArea: number; mode: ProgrammeMode; custom: Record<string, number> }>) =>
@@ -223,6 +225,7 @@ export function ProgrammeTransfer({ projectId }: { projectId: string }) {
   const query = useQuery({ queryKey: ["programme", projectId], queryFn: () => api.getProgramme(projectId) });
   if (!query.data) return null;
   const v = query.data;
+  if (appliedCase(v) && !v.resolvedExample) return <ProgrammeTransmission projectId={projectId} view={v} />;
   if (v.programmeCase) {
     const c = v.programmeCase;
     return (

@@ -5,4 +5,4 @@ export * from "./harmonie.js";
 export * from "./kpis.js";
 export * from "./programme.js";
 export * from "./site.js";
-export * from "./source-examples.js";
+export * from "./building-library.js";

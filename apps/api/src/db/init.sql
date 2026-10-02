@@ -42,6 +42,7 @@ ALTER TABLE projects ADD COLUMN IF NOT EXISTS source_attachment jsonb;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS parcels_initialized boolean NOT NULL DEFAULT false;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS parcel_transmission jsonb;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS site_observations jsonb;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS programme_state jsonb;
 
 -- Contenu réel des 21 étapes du Parcours, une ligne par étape et par projet.
 CREATE TABLE IF NOT EXISTS project_steps (
@@ -87,6 +88,17 @@ CREATE TABLE IF NOT EXISTS parcels (
   revision integer NOT NULL,
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (project_id, id)
+);
+
+-- Cas de programme appliqués (bibliothèque des bâtiments) : une ligne par révision, la plus haute est courante.
+CREATE TABLE IF NOT EXISTS programme_cases (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  revision integer NOT NULL,
+  case_id text NOT NULL,
+  scenario_id text NOT NULL,
+  data jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (project_id, revision)
 );
 
 -- Sources de l'étape : pièces jointes par étape et par projet (FILE_DB du prototype, côté serveur).

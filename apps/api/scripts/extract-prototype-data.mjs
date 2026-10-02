@@ -121,18 +121,10 @@ const forms = {
 };
 writeJson("parcours-forms.json", forms);
 
-// --- 2b. exemples issus des fichiers sources (SOURCE_EXAMPLES / EXAMPLE_STAGE_MAP)
+// --- 2b. bibliothèque des bâtiments (building-library-data) ------------------
 
-const sourceExamples = JSON.parse(literalAfter(host, "const SOURCE_EXAMPLES=", "["));
-const exampleStageMap = JSON.parse(literalAfter(host, "EXAMPLE_STAGE_MAP="));
-writeJson("source-examples.json", {
-  sourceVersion: SOURCE_VERSION,
-  sourceBlock: "script anonyme #3 (app hôte) — SOURCE_EXAMPLES, EXAMPLE_STAGE_MAP, exampleOrigin(), exampleText(), fillFromExample()",
-  note: "Cas pédagogiques à adapter — jamais considérés comme données réelles du projet (texte du prototype). Origine : opportunity_atlas → « Opportunité », parcours_lot118 → « Parcours V14-3 », autres → « Atelier Programmiste V2.1 ».",
-  origins: { opportunity_atlas: "Opportunité", parcours_lot118: "Parcours V14-3", default: "Atelier Programmiste V2.1" },
-  stageMap: exampleStageMap,
-  examples: sourceExamples,
-});
+const buildingLibrary = JSON.parse(scriptById("building-library-data"));
+writeJson("building-library.json", buildingLibrary, { pretty: false });
 
 // --- 3. répartition programmatique (PROGRAMME_TYPES / LABELS) ---------------
 

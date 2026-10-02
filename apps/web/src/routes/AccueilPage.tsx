@@ -1,3 +1,4 @@
+import "../modules/bibliotheque/building-library.css";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -164,6 +165,17 @@ export function AccueilPage() {
               <Link to={moduleLink("atelier")} className="quick-link-card">
                 <span className="quick-link-title">Concevoir dans l'Atelier</span>
                 <span className="quick-link-sub">Plans, volumes et détails</span>
+              </Link>
+            </div>
+          </section>
+
+          {/* `enhance()` de building-library-app : l'entrée de la bibliothèque sur la page d'accueil. */}
+          <section className="bl-summary-insert" id="bl-home-library">
+            <b>Bibliothèque des bâtiments · 10 types / 21 cas</b>
+            <span>Programme, dimensions, flux, références et scénarios reliés à Harmony et Répartition.</span>
+            <div className="bl-actions">
+              <Link className="bl-button" to="/bibliotheque/batiments">
+                Explorer les exemples par type
               </Link>
             </div>
           </section>

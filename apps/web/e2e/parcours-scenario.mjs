@@ -17,8 +17,10 @@
  *      Parcelle (fichier P.118, modification d'une borne → conflit avec le
  *      bâtiment dessiné, retour → parcelle liée) et propositions de site
  *      Harmonie (schéma, légende, données du site, proposition de départ) ;
- *   3b. étape 04 : exemples issus des fichiers sources (choix mémorisé,
- *      contenu pertinent, aide au remplissage, bibliothèque et fiche d'un cas) ;
+ *   3b. bibliothèque des bâtiments : pli des étapes, recherche et filtre,
+ *      fiche d'un cas (variantes, rubriques), « Utiliser ce scénario » sur le
+ *      projet → répartition du dossier maître, textes générés, adaptation
+ *      d'une ligne, décision à réexaminer, programme lié à l'étape 10 ;
  *   6d. sources de l'étape : import d'un fichier, liste, téléchargement en
  *      pièce jointe, suppression avec confirmation ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
@@ -124,35 +126,63 @@ await page.waitForFunction(() => document.querySelector(".h7-fold-body")?.textCo
 check("étape 06 : profil Harmonie suit le type (Habitation)", (await page.locator(".h7-fold-body").first().textContent()).includes("Habitation"));
 await page.screenshot({ path: `${OUT}/new-06-desktop.png`, fullPage: true });
 
-// 3b. Étape 04 — exemples issus des fichiers sources
-await page.goto(`${projectUrl}?module=parcours&etape=4`);
-await page.waitForSelector(".source-examples");
-await page.evaluate(() => { document.querySelector(".source-examples").open = true; });
-await page.waitForSelector(".example-select");
-check("étape 04 : 9 exemples proposés, « office » affiché par défaut", (await page.locator(".example-select option").count()) === 9 && (await page.locator(".example-select").inputValue()) === "office");
-await page.locator(".example-select").selectOption("hotel");
-await page.waitForFunction(() => /^Hôtel urbain de 32 chambres/.test(document.querySelector(".example-body strong")?.textContent || ""), null, { timeout: 10000 });
-await page.reload();
-await page.waitForSelector(".source-examples");
-await page.evaluate(() => { document.querySelector(".source-examples").open = true; });
-await page.waitForSelector(".example-select");
-check("étape 04 : exemple choisi mémorisé après rechargement (hotel)", (await page.locator(".example-select").inputValue()) === "hotel");
-await page.locator(".example-body > details > summary").click();
-check("étape 04 : contenu pertinent de l'étape (objectif du cas)", (await page.locator(".example-pre").textContent()).startsWith("Préparer en 4 mois un préprogramme de 32 chambres"));
-check("étape 04 : rubrique f1 vide avant l'aide", (await page.inputValue("#biz-f1")) === "");
-await page.locator('button:has-text("Utiliser comme aide au remplissage")').click();
-await page.waitForFunction(() => (document.querySelector("#biz-f1")?.value || "").startsWith("Préparer en 4 mois"), null, { timeout: 10000 });
-check("étape 04 : aide au remplissage → rubriques vides renseignées, usage tracé « Exemple fictif à adapter »", /Exemple fictif à adapter/.test(await page.locator(".example-body").textContent()));
-await page.screenshot({ path: `${OUT}/new-04-desktop-exemples.png`, fullPage: true });
-await page.locator('a:has-text("Bibliothèque complète")').click();
-await page.waitForURL(/bibliotheque\/exemples$/);
-await page.waitForSelector(".example-grid .example-card");
-check("bibliothèque d'exemples : 10 cas", (await page.locator(".example-grid .example-card").count()) === 10);
-await page.locator('.example-card a:has-text("Ouvrir le cas")').first().click();
-await page.waitForURL(/bibliotheque\/exemples\/office/);
-await page.waitForSelector(".example-detail");
-check("fiche d'un cas : Campus Atlas, tableaux Espaces et Scénarios", (await page.locator(".example-bar h1").textContent()).startsWith("Campus Atlas") && (await page.locator(".example-table").count()) === 2);
-await page.screenshot({ path: `${OUT}/bibliotheque-exemples-office-desktop.png`, fullPage: true });
+// 3b. Bibliothèque des bâtiments — depuis le pli de l'étape 06 du projet vierge
+await page.goto(`${projectUrl}?module=parcours&etape=6`);
+await page.waitForSelector(".library-fold");
+check("étape 06 : pli « Bibliothèque d’exemples par type de bâtiment »", (await page.locator(".library-fold > summary").textContent()) === "Bibliothèque d’exemples par type de bâtiment");
+await page.evaluate(() => { document.querySelector(".library-fold").open = true; });
+await page.locator('.library-fold a:has-text("Ouvrir la bibliothèque")').click();
+await page.waitForURL(/bibliotheque\/batiments\?projet=/);
+await page.waitForSelector(".bl-case-card");
+check("bibliothèque : 10 types, 21 cas", (await page.locator(".bl-type").count()) === 10 && (await page.locator(".bl-case-card").count()) === 21);
+await page.fill("#bl-search", "hôtel");
+await page.waitForTimeout(300);
+check("bibliothèque : recherche « hôtel » → 2 cas", (await page.locator(".bl-case-card").count()) === 2);
+await page.locator('.bl-type-links button:has-text("Santé")').first().click();
+await page.waitForTimeout(200);
+check("bibliothèque : type Santé + « hôtel » → « Aucun cas correspondant »", (await page.locator(".bl-empty").count()) === 1);
+await page.fill("#bl-search", "");
+await page.locator('.bl-type-links button:has-text("Tous")').click();
+await page.waitForTimeout(200);
+await page.screenshot({ path: `${OUT}/bibliotheque-batiments-desktop.png`, fullPage: true });
+await page.locator('.bl-case-card:has-text("Hôtel urbain") a:has-text("Ouvrir le cas")').first().click();
+await page.waitForURL(/bibliotheque\/batiments\/hotel/);
+await page.waitForSelector(".bl-scenario");
+check("cas Hôtel urbain : 3 variantes, 5 rubriques, totaux calculés", (await page.locator(".bl-scenario").count()) === 3 && (await page.locator(".bl-tabs button").count()) === 5 && /Programme hors parois/.test(await page.locator(".bl-stats").first().textContent()));
+await page.locator(".bl-scenario button").nth(1).click();
+await page.waitForTimeout(200);
+check("cas : variante B affichée", (await page.locator(".bl-scenario.selected b").textContent()).startsWith("B ·"));
+await page.locator('.bl-tabs button:has-text("Adjacences & flux")').click();
+await page.waitForTimeout(200);
+check("cas : schéma d'adjacences SVG", (await page.locator("section[role=tabpanel] svg").count()) === 1);
+await page.locator('.bl-tabs button:has-text("Exigences & dessin")').click();
+await page.waitForTimeout(200);
+check("cas : gabarit d'essai dimensionnel SVG", /GABARIT D’ESSAI/.test(await page.locator("section[role=tabpanel]").innerHTML()));
+await page.locator('.bl-tabs button:has-text("Programme & surfaces")').click();
+await page.waitForTimeout(200);
+await page.screenshot({ path: `${OUT}/bibliotheque-batiments-hotel-desktop.png`, fullPage: true });
+await page.locator('.bl-hero button:has-text("Utiliser ce scénario")').click();
+await page.waitForSelector("dialog.bl-dialog[open]");
+check("« Utiliser ce scénario » : destination « Projet actuel » proposée", (await page.locator('dialog select[name="destination"]').inputValue()) === "current");
+await page.locator('dialog button:has-text("Appliquer le scénario")').click();
+await page.waitForURL(/etape=7/);
+await page.waitForSelector(".programme-case-editor");
+check("programme appliqué : « RÉPARTITION · DOSSIER MAÎTRE · RÉVISION 1 », Hôtellerie & hébergement → Hôtel urbain", /RÉVISION 1/.test(await page.locator(".programme-case-editor .bl-kicker").first().textContent()) && (await page.locator(".programme-case-editor h2").first().textContent()) === "Hôtellerie & hébergement → Hôtel urbain");
+check("programme appliqué : textes générés dans l'étape 07 avec l'en-tête du prototype", (await page.inputValue("#biz-f2")).startsWith("[EXEMPLE / HYPOTHÈSE · Hôtel urbain de 32 chambres"));
+check("programme appliqué : bloc « Programme lié » dans l'étape", (await page.locator(".programme-transmission").count()) === 1);
+await page.screenshot({ path: `${OUT}/new-07-desktop-programme-applique.png`, fullPage: true });
+const qtyInput = page.locator('.programme-case-editor input[aria-label^="Quantité"]').first();
+const qtyBefore = await qtyInput.inputValue();
+await qtyInput.fill(String(Number(qtyBefore) + 1));
+await qtyInput.blur();
+await page.waitForFunction(() => /RÉVISION 2/.test(document.querySelector(".programme-case-editor .bl-kicker")?.textContent || ""), null, { timeout: 10000 });
+check("adaptation d'une ligne → révision 2, « Décision à réexaminer »", (await page.locator('.programme-case-editor h2:has-text("Décision à réexaminer")').count()) === 1);
+await page.goto(`${projectUrl}?module=parcours&etape=10`);
+await page.waitForSelector(".programme-transmission");
+check("étape 10 : « Programme lié · Hôtel urbain … · révision 2 »", /Programme lié · Hôtel urbain.*révision 2/.test((await page.locator(".programme-transmission").first().textContent()).replace(/\s+/g, " ")));
+await page.goto(`${projectUrl}?module=parcours&etape=2`);
+await page.waitForSelector(".library-fold");
+check("étape 02 : pli « Exemples · qualités du site par type de bâtiment »", (await page.locator(".library-fold > summary").textContent()) === "Exemples · qualités du site par type de bâtiment");
 
 // 4. Étape 14 — finance
 await page.goto(`${projectUrl}?module=parcours&etape=14`);
@@ -356,8 +386,12 @@ await page.goto(`${projectUrl}?module=parcours`);
 await page.waitForSelector(".step-card-open");
 await page.screenshot({ path: `${OUT}/new-00-overview-mobile.png`, fullPage: true });
 await page.goto(`${projectUrl}?module=parcours&etape=6`);
-await page.waitForSelector("#programme-type");
+await page.waitForSelector(".programme-case-editor");
 await page.screenshot({ path: `${OUT}/new-06-mobile.png`, fullPage: true });
+await page.goto(`${BASE}/bibliotheque/batiments/hotel?projet=${encodeURIComponent(projectUrl.split("/").pop())}`);
+await page.waitForSelector(".bl-scenario");
+await page.screenshot({ path: `${OUT}/bibliotheque-batiments-hotel-mobile.png`, fullPage: true });
+check("téléphone : bibliothèque sans défilement horizontal", await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 await page.goto(`${exampleUrl}?module=parcours&etape=2`);
 await page.waitForSelector("#biz-f1");
 await page.screenshot({ path: `${OUT}/02-mobile.png`, fullPage: true });

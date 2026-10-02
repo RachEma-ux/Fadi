@@ -4,7 +4,7 @@
  * (surface XSS inutile pour une session qui peut vivre dans un cookie).
  */
 import type { Point2, SiteZoning } from "@parcours/core-geometry";
-import type { GeographicCoordinate, SiteObservations, SourceExample } from "@parcours/domain-model";
+import type { BuildingCase, BuildingReference, GeographicCoordinate, ProgrammeCase, ProgrammeFieldConflict, SiteObservations } from "@parcours/domain-model";
 
 export class ApiError extends Error {
   constructor(
@@ -133,8 +133,6 @@ export interface ParcoursStepContent {
   sourceStatus: string | null;
   fields: Record<string, ParcoursFieldValue>;
   harmonie: HarmonieStepState;
-  exampleSelection?: string | null;
-  exampleUsed?: { key: string; at: string; warning: string } | null;
 }
 
 /** Une proposition Harmonie telle que le serveur la calcule pour ce projet (définition × profil × arbitrages). */
@@ -187,24 +185,6 @@ export interface SiteView {
 export type SiteObservationsInput = Pick<SiteObservations, "frontageEdge" | "approachStatus" | "priority" | "frontContext" | "backContext" | "source" | "note"> & {
   geographic?: SiteObservations["geographic"];
 };
-
-/** Un cas de la bibliothèque d'exemples sources, en résumé. */
-export interface SourceExampleSummary {
-  key: string;
-  title: string;
-  origin: string;
-  location: string;
-  summary: string;
-  capacity: number | string | null;
-  unit: string;
-}
-
-/** Un cas proposé à une étape, avec son contenu pertinent (`exampleText`). */
-export interface SourceExampleStepItem extends SourceExampleSummary {
-  text: string;
-}
-
-export type SourceExampleDetail = SourceExample & { origin: string };
 
 /** Une pièce jointe d'une étape (« Sources de l'étape »). */
 export interface StepFile {
@@ -292,14 +272,70 @@ export interface ProgrammeView {
     statusNote: string;
     transfer: { title: string; rules: string; control: string };
   };
-  programmeCase: {
-    title: string | null;
-    scenarioLabel: string | null;
-    revision: number | null;
-    users: string | null;
+  programmeCase: ProgrammeCaseView | null;
+  resolvedExample: boolean;
+}
+
+export type ProgrammeSumsView = Record<"principal" | "circulation" | "technique" | "sanitaires" | "convivialite" | "supportAutres" | "parois" | "support" | "programme" | "total", number>;
+
+/** Le cas de programme appliqué au projet, tel que le module Programmation le sert ; `readOnly` pour le cas d'un exemple conservé en pièce jointe. */
+export type ProgrammeCaseView = {
+  title: string | null;
+  scenarioLabel: string | null;
+  revision: number | null;
+  users: string | null;
+  spaceCount: number;
+  sums: ProgrammeSumsView;
+  readOnly?: boolean;
+} & Partial<
+  Omit<ProgrammeCase, "title" | "scenarioLabel" | "revision" | "users"> & {
+    profileLabel: string;
+    libraryCaseExists: boolean;
+    conflicts: ProgrammeFieldConflict[];
+    decisionReview: { required: boolean; reason: string; at: string } | null;
+    decisionHistoryCount: number;
+    history: { revision: number; title: string; scenarioLabel: string; updated: string; archived: string }[];
+  }
+>;
+
+/** Bibliothèque des bâtiments : index et fiche d'un cas. */
+export interface BuildingLibraryIndex {
+  version: string;
+  date: string;
+  surfaceConvention: string;
+  profiles: { id: string; label: string; tags: string }[];
+  /** Les 21 étapes et ce que chacune reçoit du cas (`routeNames` du prototype). */
+  steps: { number: number; title: string; route: string }[];
+  cases: {
+    id: string;
+    type: string;
+    subtype: string;
+    title: string;
+    capacity: number | null;
+    unit: string;
+    users: string;
+    summary: string;
+    origin: string;
+    sourceKey: string | null;
     spaceCount: number;
-    sums: Record<"principal" | "circulation" | "technique" | "sanitaires" | "convivialite" | "supportAutres" | "parois" | "support" | "programme" | "total", number>;
-  } | null;
+    scenarioCount: number;
+    programmeArea: number;
+    paroisArea: number;
+  }[];
+}
+
+export interface BuildingCaseDetail {
+  case: BuildingCase;
+  references: BuildingReference[];
+  surfaceConvention: string;
+  version: string;
+}
+
+export interface ApplyProgrammeCaseInput {
+  caseId: string;
+  scenarioId: string;
+  jurisdiction: "Maroc" | "France" | "Suisse" | "Autre / à préciser";
+  replaceText: boolean;
 }
 
 export interface ParcoursExample {
@@ -374,14 +410,8 @@ export const api = {
     }),
 
   listSteps: (projectId: string) => request<ParcoursStep[]>(`/projects/${projectId}/steps`),
-  patchStep: (projectId: string, stepNumber: number, patch: { status?: ParcoursStepStatus; fields?: Record<string, ParcoursFieldValue>; exampleSelection?: string | null }) =>
+  patchStep: (projectId: string, stepNumber: number, patch: { status?: ParcoursStepStatus; fields?: Record<string, ParcoursFieldValue> }) =>
     request<ParcoursStep>(`/projects/${projectId}/steps/${stepNumber}`, { method: "PATCH", body: JSON.stringify(patch) }),
-  /** Exemples issus des fichiers sources (SOURCE_EXAMPLES) : bibliothèque, cas, cas d'une étape avec leur contenu pertinent, aide au remplissage. */
-  listSourceExamples: () => request<SourceExampleSummary[]>("/examples/sources"),
-  getSourceExample: (key: string) => request<SourceExampleDetail>(`/examples/sources/${encodeURIComponent(key)}`),
-  sourceExamplesForStep: (stepNumber: number) => request<SourceExampleStepItem[]>(`/examples/sources/step/${stepNumber}`),
-  fillFromExample: (projectId: string, stepNumber: number, key: string) =>
-    request<{ step: ParcoursStep; filled: string[] }>(`/projects/${projectId}/steps/${stepNumber}/fill-from-example`, { method: "POST", body: JSON.stringify({ key }) }),
   /** Sources de l'étape (pièces jointes) — module Projets et sources. */
   listStepFiles: (projectId: string, stepNumber: number) => request<StepFile[]>(`/projects/${projectId}/steps/${stepNumber}/files`),
   listProjectFiles: (projectId: string) => request<(StepFile & { stepNumber: number })[]>(`/projects/${projectId}/files`),
@@ -402,6 +432,13 @@ export const api = {
   },
   stepFileUrl: (projectId: string, stepNumber: number, fileId: string) => `/projects/${projectId}/steps/${stepNumber}/files/${encodeURIComponent(fileId)}`,
   deleteStepFile: (projectId: string, stepNumber: number, fileId: string) => request<void>(`/projects/${projectId}/steps/${stepNumber}/files/${encodeURIComponent(fileId)}`, { method: "DELETE" }),
+  /** Bibliothèque des bâtiments et cas de programme appliqué. */
+  getBuildingLibrary: () => request<BuildingLibraryIndex>("/library/buildings"),
+  getBuildingCase: (id: string) => request<BuildingCaseDetail>(`/library/buildings/${encodeURIComponent(id)}`),
+  applyProgrammeCase: (projectId: string, input: ApplyProgrammeCaseInput) =>
+    request<ProgrammeView & { applied: { revision: number; conflicts: number } }>(`/projects/${projectId}/programme/case`, { method: "POST", body: JSON.stringify(input) }),
+  patchProgrammeSpace: (projectId: string, spaceId: string, patch: { quantity?: number | string; unitArea?: number | string }) =>
+    request<ProgrammeView>(`/projects/${projectId}/programme/case/spaces/${encodeURIComponent(spaceId)}`, { method: "PATCH", body: JSON.stringify(patch) }),
   putSiteObservations: (projectId: string, input: SiteObservationsInput) =>
     request<ParcoursStep>(`/projects/${projectId}/steps/1/site`, { method: "PUT", body: JSON.stringify(input) }),
   decideHarmonie: (projectId: string, stepNumber: number, proposalId: string, input: HarmonieDecisionInput) =>

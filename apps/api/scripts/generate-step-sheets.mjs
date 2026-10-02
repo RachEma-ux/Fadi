@@ -17,7 +17,6 @@ const root = join(here, "..", "..", "..");
 const data = (name) => JSON.parse(readFileSync(join(here, "..", "src", "data", name), "utf8"));
 const steps = data("parcours-steps.json").steps;
 const forms = data("parcours-forms.json");
-const sourceExamples = data("source-examples.json");
 const example = data("examples/p118-exemple-complet.json");
 const refDir = join(root, "docs/migration/captures/reference");
 const webDir = join(root, "docs/migration/captures/webapp");
@@ -47,8 +46,9 @@ function migrationStatus(n) {
   if (n === 1) rows.push(["Transmission parcelle → modèle (acceptParcel : lié / incomplet / invalide / conflit / conflit d'emprise / recul à recalculer)", "✅", "lib/parcel-transmission.ts ; POST …/parcels/:id/transmit ; e2e : borne déplacée → « Conflit avec le bâtiment dessiné », modèle non déplacé, retour → liée"]);
   if (n === 10 || n === 11) rows.push([TOOLED[n], "✅", "Moteur natif encapsulé tel quel (apps/web/src/modules/atelier/native, public/atelier-native) ; modèle persisté par clé avec révision (atelier_store), projection levels/objets dérivée ; e2e : dessin d'un mur → +1 objet, annulation → −1, rechargement"]);
   if (n === 10 || n === 11) rows.push(["Propositions Harmonie LOCALES par local (analyse du modèle) et page Harmony de l'Atelier (V8.4)", "⛔", "flow-v62 / atelier-harmonie-page-app non portés"]);
-  if (n <= 3) rows.push(["« Exemples · qualités du site par type de bâtiment » (phrase de site du profil, « Explorer la bibliothèque »)", "🟡", "SourceExamples.tsx ; le bouton renvoie à la bibliothèque d'exemples, la bibliothèque des bâtiments n'est pas portée"]);
-  else rows.push(["« Exemples issus des fichiers sources » (exemple affiché mémorisé, contenu pertinent, « Utiliser comme aide au remplissage », « Bibliothèque complète »)", "✅", "SourceExamples.tsx ; POST …/fill-from-example (domain-model/source-examples.ts, tests) ; e2e étape 04"]);
+  if (n <= 3) rows.push(["« Exemples · qualités du site par type de bâtiment » (phrase de site du profil, « Explorer la bibliothèque »)", "✅", "ProgrammeCase.tsx (SiteQualitiesFold) → /bibliotheque/batiments"]);
+  else rows.push(["« Bibliothèque d’exemples par type de bâtiment » / « Programme lié » quand un cas est appliqué (textes générés dans cette étape, revues à reprendre)", "✅", "ProgrammeCase.tsx (LibraryFold, ProgrammeTransmission) ; POST …/programme/case ; e2e « étape 06 : pli… », « programme appliqué… »"]);
+  if (n === 6 || n === 7) rows.push(["Répartition du dossier maître quand un cas est appliqué (révision, lignes modifiables, ratios par famille, décision à réexaminer, écarts, historique)", "✅", "ProgrammeCaseEditor (ProgrammeCase.tsx) ; PATCH …/programme/case/spaces/:id ; test « applies a variant… »"]);
   rows.push(["Sources de l'étape (importer, déposer, lister, télécharger, supprimer)", "✅", "StepSources.tsx ; routes/step-files.ts (table step_files, pièce jointe nosniff) ; e2e « sources : … »"]);
   if (example.steps[String(n)]) rows.push(["Exemple P.118 : récit du choix, réponses renseignées, choix retenu", "✅", "Import p118-exemple-complet ; test « imports an example… »"]);
   return rows;
@@ -86,7 +86,7 @@ for (const s of steps) {
   md.push("## Écrans et sous-écrans");
   md.push("");
   md.push("1. Vue d'ensemble (grille des 21 étapes, 3 colonnes ; 1 colonne sur téléphone) → clic sur la carte.");
-  md.push(`2. Vue de l'étape (\`study()\`) : en-tête « ÉTAPE ${pad2(n)} / 21 · ${s.phase} », titre, phrase d'introduction, panneau Harmonie, ${TOOLED[n] ? TOOLED[n].split(" (")[0] : schema ? "formulaire métier" : "synthèse"}${n === 6 || n === 7 ? ", répartition programmatique" : ""}${n === 10 ? ", bloc « Programme transmis à l'Atelier »" : ""}, ${n <= 3 ? "pli « Exemples · qualités du site par type de bâtiment »" : "pli « Exemples issus des fichiers sources » (" + (sourceExamples.stageMap[String(n)] ?? []).length + " cas)"}, sources de l'étape, navigation.`);
+  md.push(`2. Vue de l'étape (\`study()\`) : en-tête « ÉTAPE ${pad2(n)} / 21 · ${s.phase} », titre, phrase d'introduction, panneau Harmonie, ${TOOLED[n] ? TOOLED[n].split(" (")[0] : schema ? "formulaire métier" : "synthèse"}${n === 6 || n === 7 ? ", répartition programmatique (ou répartition du dossier maître quand un cas de la bibliothèque est appliqué)" : ""}${n === 10 ? ", bloc « Programme transmis à l'Atelier » / « Programme lié »" : ""}, ${n <= 3 ? "pli « Exemples · qualités du site par type de bâtiment »" : "pli « Bibliothèque d’exemples par type de bâtiment » (ou bloc « Programme lié »)"}, sources de l'étape, navigation.`);
   if (n === 1) md.push("3. Sous-écrans de l'outil Parcelle : Mes parcelles, Données du fichier, Parcelle, Construction, Voirie, Distances réglementaires, Système de coordonnées, Export.");
   if (n === 10 || n === 11) md.push("3. Sous-écrans de l'Atelier : menus Niveau / Vue / Mode / Dessins techniques, créateur de vue, affichage, couches, exports.");
   md.push("");

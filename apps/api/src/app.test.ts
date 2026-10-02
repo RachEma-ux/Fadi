@@ -15,7 +15,7 @@ const app = createApp();
 async function resetDb() {
   // L'ordre respecte les clés étrangères (CASCADE serait aussi suffisant,
   // mais l'ordre explicite documente les dépendances).
-  await pool.query("TRUNCATE architectural_objects, atelier_store, levels, parcels, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE");
+  await pool.query("TRUNCATE architectural_objects, atelier_store, levels, parcels, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE");
 }
 
 beforeAll(async () => {
@@ -742,43 +742,88 @@ describe("Sources de l'étape — pièces jointes par étape", () => {
   });
 });
 
-describe("Exemples issus des fichiers sources (SOURCE_EXAMPLES)", () => {
-  it("serves the library, the per-step cases with their relevant text, remembers the selection and fills empty fields server-side", async () => {
-    const client = await registerAndLogin("sources-examples@example.com");
-    const library = await client.get("/examples/sources");
-    expect(library.body).toHaveLength(10);
-    expect(library.body[0]).toMatchObject({ key: "office", origin: "Atelier Programmiste V2.1", capacity: 120 });
-    expect(library.body.find((e: { key: string }) => e.key === "opportunity_atlas").origin).toBe("Opportunité");
-    const detail = await client.get("/examples/sources/office");
-    expect(detail.body.title).toMatch(/^Campus Atlas/);
-    expect((await client.get("/examples/sources/nope")).status).toBe(404);
+describe("Bibliothèque des bâtiments — cas de programme appliqué", () => {
+  it("serves the library and a case, applies a variant to a project (repartition from the spaces, drafted texts, conflicts kept), adapts a line and reopens the decision", async () => {
+    const client = await registerAndLogin("bibliotheque@example.com");
+    const index = await client.get("/library/buildings");
+    expect(index.status).toBe(200);
+    expect(index.body.profiles).toHaveLength(10);
+    expect(index.body.cases).toHaveLength(21);
+    expect(index.body.steps).toHaveLength(21);
+    expect(index.body.cases.find((c: { id: string }) => c.id === "office")).toMatchObject({ type: "tertiaire", capacity: 120, scenarioCount: 3 });
+    const detail = await client.get("/library/buildings/hotel");
+    expect(detail.status).toBe(200);
+    expect(detail.body.case.scenarios.map((s: { id: string }) => s.id)).toHaveLength(3);
+    expect(detail.body.references.length).toBeGreaterThan(0);
+    expect((await client.get("/library/buildings/nope")).status).toBe(404);
 
-    const step3 = await client.get("/examples/sources/step/3");
-    expect(step3.body.map((e: { key: string }) => e.key)).toEqual(["office", "housing", "industry", "logistics", "hotel", "retail", "health", "education", "opportunity_atlas"]);
-    expect(step3.body[0].text).toContain(detail.body.marketStudy);
-    expect((await client.get("/examples/sources/step/1")).body.map((e: { key: string }) => e.key)).toEqual(["parcours_lot118"]);
-
-    const project = await client.post("/projects").send({ code: "P.912", name: "Exemples" });
+    const project = await client.post("/projects").send({ code: "P.913", name: "Programme" });
     const pid = project.body.id as string;
-    const selected = await client.patch(`/projects/${pid}/steps/3`).send({ exampleSelection: "hotel" });
-    expect(selected.status).toBe(200);
-    expect(selected.body.content.exampleSelection).toBe("hotel");
-    expect(selected.body.status).toBe("a-faire"); // choisir un exemple n'est pas une saisie
-    expect((await client.patch(`/projects/${pid}/steps/3`).send({ exampleSelection: "parcours_lot118" })).status).toBe(400);
+    // Une réponse saisie à la main à l'étape 04 est conservée et signalée.
+    await client.patch(`/projects/${pid}/steps/4`).send({ fields: { f1: "Mon positionnement, saisi à la main" } });
+    const scenario = detail.body.case.scenarios[0];
+    const applied = await client.post(`/projects/${pid}/programme/case`).send({ caseId: "hotel", scenarioId: scenario.id, jurisdiction: "Maroc", replaceText: false });
+    expect(applied.status).toBe(201);
+    expect(applied.body.applied).toMatchObject({ revision: 1, conflicts: 1 });
+    const pc = applied.body.programmeCase;
+    expect(pc).toMatchObject({ schema: "Parcours.ProgrammeCase", caseId: "hotel", scenarioId: scenario.id, revision: 1, jurisdiction: "Maroc", type: "hotelier", profileLabel: detail.body.case.profile.label });
+    expect(pc.spaces).toHaveLength(scenario.spaces.length);
+    expect(pc.conflicts).toEqual([{ stage: 4, field: "f1", current: "Mon positionnement, saisi à la main", proposed: expect.stringMatching(/^\[EXEMPLE \/ HYPOTHÈSE/) }]);
+    // Répartition chargée depuis les fiches espaces (mode « cas »), totaux = sommes du cas.
+    expect(applied.body.repartition.fromCase).toBe(true);
+    expect(applied.body.repartition.type).toBe("hotelier");
+    expect(applied.body.totals.baseArea).toBeCloseTo(pc.sums.total, 6);
+    expect(applied.body.totals.supportPercent).toBeCloseTo((pc.sums.support / pc.sums.total) * 100, 6);
+    // Textes générés dans les étapes : rubriques vides seulement, en-tête du prototype ; l'étape 19 ne reçoit aucun GO.
+    const step4 = (await client.get(`/projects/${pid}/steps/4`)).body;
+    expect(step4.content.fields.f1).toBe("Mon positionnement, saisi à la main");
+    expect(step4.content.fields.f2).toMatch(/^\[EXEMPLE \/ HYPOTHÈSE · /);
+    expect(step4.status).toBe("en-cours");
+    const step19 = (await client.get(`/projects/${pid}/steps/19`)).body;
+    expect(step19.content.fields.decision).toBeUndefined();
+    expect(step19.content.fields.f3).toMatch(/aucune conclusion GO importée/);
+    const step7 = (await client.get(`/projects/${pid}/steps/7`)).body;
+    expect(step7.content.fields.f2).toContain(scenario.spaces[0].id);
+    // Le profil Harmonie suit le type du cas.
+    expect(step4.profile.key).toBe("hotel"); // « hotelier » → alias « hotel » du profil Harmonie
 
-    // Une réponse déjà saisie est conservée ; les autres rubriques reçoivent les paragraphes dans l'ordre.
-    await client.patch(`/projects/${pid}/steps/3`).send({ fields: { f1: "Ma propre étude de marché" } });
-    const filled = await client.post(`/projects/${pid}/steps/3/fill-from-example`).send({ key: "office" });
-    expect(filled.status).toBe(200);
-    expect(filled.body.filled).not.toContain("f1");
-    expect(filled.body.filled.length).toBeGreaterThan(0);
-    expect(filled.body.step.content.fields.f1).toBe("Ma propre étude de marché");
-    expect(filled.body.step.content.fields.f2).toBe(detail.body.benchmark);
-    expect(filled.body.step.content.exampleUsed).toMatchObject({ key: "office", warning: "Exemple fictif à adapter" });
-    expect(filled.body.step.status).toBe("en-cours");
-    // Étape 19 : jamais de GO par l'exemple — « À reprendre ».
-    const decided = await client.post(`/projects/${pid}/steps/19/fill-from-example`).send({ key: "office" });
-    expect(decided.body.step.content.fields.decision).toBe("À reprendre");
-    expect((await client.post(`/projects/${pid}/steps/3/fill-from-example`).send({ key: "nope" })).status).toBe(400);
+    // Décision prise, puis adaptation d'une ligne → décision « À reprendre », revues à reprendre, révision 2, conflits de variante inconnue refusés.
+    await client.patch(`/projects/${pid}/steps/19`).send({ fields: { decision: "GO" }, status: "termine" });
+    const spaceId = pc.spaces[0].id as string;
+    const bad = await client.patch(`/projects/${pid}/programme/case/spaces/${spaceId}`).send({ quantity: "2.5" });
+    expect(bad.status).toBe(422);
+    expect(bad.body.message).toMatch(/Quantité entière/);
+    const edited = await client.patch(`/projects/${pid}/programme/case/spaces/${spaceId}`).send({ quantity: 3 });
+    expect(edited.status).toBe(200);
+    expect(edited.body.programmeCase.revision).toBe(2);
+    expect(edited.body.programmeCase.spaces[0]).toMatchObject({ quantity: 3, status: "hypothese" });
+    expect(edited.body.programmeCase.scenarioLabel).toBe(`Adaptation projet · ${scenario.id}`);
+    expect(edited.body.programmeCase.decisionReview).toMatchObject({ required: true, reason: "Quantités ou surfaces du programme modifiées : décision à réexaminer." });
+    expect(edited.body.programmeCase.decisionHistoryCount).toBe(1);
+    const after19 = (await client.get(`/projects/${pid}/steps/19`)).body;
+    expect(after19.content.fields.decision).toBe("À reprendre");
+    expect(after19.status).toBe("en-cours");
+    // Appliquer une autre variante : révision 3, historique de 2 révisions archivées.
+    const again = await client.post(`/projects/${pid}/programme/case`).send({ caseId: "hotel", scenarioId: detail.body.case.scenarios[1].id, jurisdiction: "France", replaceText: true });
+    expect(again.body.programmeCase.revision).toBe(3);
+    expect(again.body.programmeCase.history.map((h: { revision: number }) => h.revision)).toEqual([2]); // l’adaptation avance la révision en place, seule la variante appliquée est archivée
+    expect(again.body.programmeCase.conflicts).toEqual([]);
+    expect((await client.get(`/projects/${pid}/steps/4`)).body.content.fields.f1).toMatch(/^\[EXEMPLE \/ HYPOTHÈSE/);
+    expect((await client.post(`/projects/${pid}/programme/case`).send({ caseId: "hotel", scenarioId: "nope", jurisdiction: "Maroc", replaceText: false })).status).toBe(400);
+    // Un autre utilisateur ne voit rien.
+    const other = await registerAndLogin("bibliotheque-other@example.com");
+    expect((await other.post(`/projects/${pid}/programme/case`).send({ caseId: "hotel", scenarioId: scenario.id, jurisdiction: "Maroc", replaceText: false })).status).toBe(404);
+  });
+
+  it("gives the imported P.118 project its resolved programme case (74 fiches, revision 6) with the repartition loaded from it", async () => {
+    const client = await registerAndLogin("bibliotheque-p118@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const view = (await client.get(`/projects/${imported.body.id}/programme`)).body;
+    expect(view.resolvedExample).toBe(true);
+    expect(view.programmeCase).toMatchObject({ caseId: "parcours_lot118", revision: 6, spaceCount: 74 });
+    expect(view.repartition.fromCase).toBe(true);
+    expect(view.totals.baseArea).toBeCloseTo(view.programmeCase.sums.total, 6);
+    expect(view.programmeCase.sums.principal).toBeCloseTo(1366.02, 1);
+    expect(view.programmeCase.sums.programme).toBeCloseTo(2932.26, 1);
   });
 });
