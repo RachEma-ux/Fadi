@@ -237,6 +237,9 @@ await page.screenshot({ path: `${OUT}/bibliotheque-batiments-hotel-desktop.png`,
 const [caseReport] = await Promise.all([page.waitForEvent("download"), page.locator('.bl-hero button:has-text("Rapport HTML")').click()]);
 const caseReportHtml = await (await import("node:fs/promises")).readFile(await caseReport.path(), "utf8");
 check("cas : « Rapport HTML » → Programme_hotel_<variante>_V6_1.html (rapport de programmation : cinq rubriques, 21 étapes, plis ouverts, feuille de style)", /^Programme_hotel_[a-z0-9_-]+_V6_1\.html$/.test(caseReport.suggestedFilename()) && caseReportHtml.includes("PARCOURS V6.1 · RAPPORT DE PROGRAMMATION") && ["Espaces principaux", "Adjacences", "Dimensions minimales / recommandées", "Harmonie par étape, adaptée au type", "Références réglementaires", "21 · ", "Fin du dossier"].every((t) => caseReportHtml.includes(t)) && !caseReportHtml.includes("<details>") && caseReportHtml.includes("<details open") && caseReportHtml.includes(".bl-card{"), caseReport.suggestedFilename());
+// Un champ texte déjà saisi (étape 04, f1) : l'application du scénario ne l'écrase pas, l'écart est conservé (« Écarts entre import et textes conservés »).
+const testPidEarly = projectUrl.split("/").pop();
+await page.request.patch(`${BASE}/projects/${testPidEarly}/steps/4`, { data: { fields: { f1: "Positionnement saisi à la main (avant le scénario)" } } });
 await page.locator('.bl-hero button:has-text("Utiliser ce scénario")').click();
 await page.waitForSelector("dialog.bl-dialog[open]");
 check("« Utiliser ce scénario » : destination « Projet actuel » proposée", (await page.locator('dialog select[name="destination"]').inputValue()) === "current");
@@ -249,6 +252,15 @@ await page.waitForFunction(() => (document.querySelector("#biz-f2")?.value || ""
 check("programme appliqué : textes générés dans l'étape 07 avec l'en-tête du prototype", (await page.inputValue("#biz-f2")).startsWith("[EXEMPLE / HYPOTHÈSE · Hôtel urbain de 32 chambres"));
 check("programme appliqué : bloc « Programme lié » dans l'étape", (await page.locator(".programme-transmission").count()) === 1);
 await page.screenshot({ path: `${OUT}/new-07-desktop-programme-applique.png`, fullPage: true });
+// « Écarts entre import et textes conservés » : le champ saisi est conservé, la proposition visible ; « Adopter cette proposition » ne remplace que ce champ, l'ancien texte est archivé.
+const conflictsText = (await page.locator(".programme-case-editor").textContent()).match(/\d+ champ\(s\) déjà saisi\(s\) conservé\(s\)/)?.[0] ?? "(aucun compteur)";
+check("programme appliqué : « N champ(s) déjà saisi(s) conservé(s) » dont l'étape 04 · f1, proposition de programme en face", /^\d+ champ/.test(conflictsText) && (await page.locator('.text-conflicts tr[data-conflict="4:f1"]').count()) === 1 && /Positionnement saisi à la main/.test(await page.locator('.text-conflicts tr[data-conflict="4:f1"] td:nth-child(2)').textContent()) && /^\[EXEMPLE \/ HYPOTHÈSE/.test(await page.locator('.text-conflicts tr[data-conflict="4:f1"] td:nth-child(3)').textContent()), conflictsText);
+await page.locator('.programme-case-editor details.bl-fold > summary:has-text("Consulter les différences")').click();
+await page.locator('.text-conflicts tr[data-conflict="4:f1"] button:has-text("Adopter cette proposition")').click();
+await page.waitForFunction(() => !document.querySelector('.text-conflicts tr[data-conflict="4:f1"]'), null, { timeout: 10000 });
+const adoptedStep4 = (await (await page.request.get(`${BASE}/projects/${testPidEarly}/steps/4`)).json()).content.fields.f1;
+const adoptedArchive = (await (await page.request.get(`${BASE}/projects/${testPidEarly}/archive`)).json()).project.programmeState.fieldHistory;
+check("« Adopter cette proposition » → étape 04 · f1 prend le texte proposé, l'ancien texte archivé (fieldHistory), l'écart disparaît", /^\[EXEMPLE \/ HYPOTHÈSE/.test(adoptedStep4) && adoptedArchive.length === 1 && adoptedArchive[0].current === "Positionnement saisi à la main (avant le scénario)" && (await page.locator('.text-conflicts tr[data-conflict="4:f1"]').count()) === 0, JSON.stringify({ adoptedStep4: adoptedStep4.slice(0, 40), archived: adoptedArchive.length }));
 const qtyInput = page.locator('.programme-case-editor input[aria-label^="Quantité"]').first();
 const qtyBefore = await qtyInput.inputValue();
 await qtyInput.fill(String(Number(qtyBefore) + 1));

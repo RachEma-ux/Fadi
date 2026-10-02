@@ -49,9 +49,11 @@ export interface ProgrammeState {
   conflicts: ProgrammeFieldConflict[];
   decisionReview: { required: boolean; reason: string; at: string } | null;
   decisionHistory: { decision: string; fields: Record<string, ParcoursFieldValue>; date: string; reason: string }[];
+  /** « Adopter cette proposition » (`p118FieldHistoryV62` du prototype) : le texte conservé qu'une proposition a remplacé, daté — rien n'est perdu. */
+  fieldHistory?: (ProgrammeFieldConflict & { at: string })[];
 }
 
-export const EMPTY_PROGRAMME_STATE: ProgrammeState = { generated: {}, conflicts: [], decisionReview: null, decisionHistory: [] };
+export const EMPTY_PROGRAMME_STATE: ProgrammeState = { generated: {}, conflicts: [], decisionReview: null, decisionHistory: [], fieldHistory: [] };
 
 export function programmeStateOf(project: { programmeState: Record<string, unknown> | null }): ProgrammeState {
   return { ...EMPTY_PROGRAMME_STATE, ...((project.programmeState ?? {}) as Partial<ProgrammeState>) };
@@ -128,7 +130,12 @@ export interface ApplyInput {
 }
 
 /** `saveProgramme` : applique une variante au projet et renvoie le cas, les écarts et les champs générés. */
-export async function applyProgrammeCase(tx: Tx, project: { id: string; programmeState: Record<string, unknown> | null }, input: ApplyInput, now: string): Promise<{ programmeCase: ProgrammeCase; conflicts: ProgrammeFieldConflict[] }> {
+export async function applyProgrammeCase(
+  tx: Tx,
+  project: { id: string; programmeState: Record<string, unknown> | null },
+  input: ApplyInput,
+  now: string,
+): Promise<{ programmeCase: ProgrammeCase; conflicts: ProgrammeFieldConflict[] }> {
   const c = buildingCase(BUILDING_LIBRARY, input.caseId);
   if (!c) throw new Error("Cas inconnu");
   const s = buildingScenario(c, input.scenarioId);
@@ -150,8 +157,36 @@ export async function applyProgrammeCase(tx: Tx, project: { id: string; programm
     if (existing && existing.components.length === 0) await tx.update(programmeRepartitions).set({ components: c.components.slice() }).where(eq(programmeRepartitions.projectId, project.id));
   }
   const nextState: ProgrammeState = { ...state, generated: merged.generated, conflicts: merged.conflicts };
-  await tx.update(projects).set({ programmeState: nextState as unknown as Record<string, unknown>, updatedAt: new Date() }).where(eq(projects.id, project.id));
+  await tx
+    .update(projects)
+    .set({ programmeState: nextState as unknown as Record<string, unknown>, updatedAt: new Date() })
+    .where(eq(projects.id, project.id));
   return { programmeCase: a, conflicts: merged.conflicts };
+}
+
+/**
+ * « Adopter cette proposition » (flow-v62 `data-v62-accept`) : le champ conservé prend le texte proposé par le programme,
+ * l'ancien texte rejoint l'historique daté, l'écart disparaît de la liste. Seul le champ choisi change ; `null` si l'écart
+ * n'existe plus (liste déjà arbitrée ou périmée).
+ */
+export async function adoptProgrammeConflict(tx: Tx, project: { id: string; programmeState: Record<string, unknown> | null }, index: number, now: string): Promise<ProgrammeFieldConflict | null> {
+  const state = programmeStateOf(project);
+  const conflict = state.conflicts[index];
+  if (!conflict) return null;
+  const rows = await loadStepRows(tx, project.id);
+  await writeStepTexts(tx, project.id, { [conflict.stage]: { [conflict.field]: conflict.proposed } }, rows);
+  const generated = { ...state.generated, [conflict.stage]: { ...(state.generated[conflict.stage] ?? {}), [conflict.field]: conflict.proposed } };
+  const nextState: ProgrammeState = {
+    ...state,
+    generated,
+    conflicts: state.conflicts.filter((_, i) => i !== index),
+    fieldHistory: [...(state.fieldHistory ?? []), { ...conflict, at: now }],
+  };
+  await tx
+    .update(projects)
+    .set({ programmeState: nextState as unknown as Record<string, unknown>, updatedAt: new Date() })
+    .where(eq(projects.id, project.id));
+  return conflict;
 }
 
 /** `invalidateDecision` : une décision prise repasse « À reprendre », l'ancienne est archivée ; l'étape 19 n'est plus terminée. */
@@ -170,7 +205,14 @@ async function invalidateDecision(tx: Tx, projectId: string, state: ProgrammeSta
 }
 
 /** `editSpace` : adapte une ligne du programme appliqué ; textes générés actualisés, revues à reprendre, décision à réexaminer. */
-export async function editProgrammeCaseSpace(tx: Tx, project: { id: string; programmeState: Record<string, unknown> | null }, spaceId: string, key: "quantity" | "unitArea", value: unknown, now: string): Promise<ProgrammeCase> {
+export async function editProgrammeCaseSpace(
+  tx: Tx,
+  project: { id: string; programmeState: Record<string, unknown> | null },
+  spaceId: string,
+  key: "quantity" | "unitArea",
+  value: unknown,
+  now: string,
+): Promise<ProgrammeCase> {
   const prev = await loadActiveProgrammeCase(tx, project.id);
   if (!prev) throw new Error("Aucun programme appliqué.");
   const a = editProgrammeSpace(prev, spaceId, key, value, now);
@@ -209,7 +251,10 @@ export async function editProgrammeCaseSpace(tx: Tx, project: { id: string; prog
     }
   }
   state = await invalidateDecision(tx, project.id, state, "Quantités ou surfaces du programme modifiées : décision à réexaminer.", now, rows);
-  await tx.update(projects).set({ programmeState: state as unknown as Record<string, unknown>, updatedAt: new Date() }).where(eq(projects.id, project.id));
+  await tx
+    .update(projects)
+    .set({ programmeState: state as unknown as Record<string, unknown>, updatedAt: new Date() })
+    .where(eq(projects.id, project.id));
   return a;
 }
 
@@ -217,7 +262,10 @@ export async function editProgrammeCaseSpace(tx: Tx, project: { id: string; prog
 async function replaceActiveCase(tx: Tx, projectId: string, prev: ProgrammeCase, next: ProgrammeCase, withRepartition: boolean) {
   await tx.delete(programmeCases).where(and(eq(programmeCases.projectId, projectId), eq(programmeCases.revision, prev.revision)));
   if (withRepartition) await storeCase(tx, projectId, next);
-  else await tx.insert(programmeCases).values({ projectId, revision: next.revision, caseId: next.caseId, scenarioId: next.scenarioId, data: next as unknown as Record<string, unknown>, createdAt: new Date() });
+  else
+    await tx
+      .insert(programmeCases)
+      .values({ projectId, revision: next.revision, caseId: next.caseId, scenarioId: next.scenarioId, data: next as unknown as Record<string, unknown>, createdAt: new Date() });
 }
 
 /**
@@ -226,7 +274,15 @@ async function replaceActiveCase(tx: Tx, projectId: string, prev: ProgrammeCase,
  * (`harmony.roomData`) reçoit type et cible ; la répartition est recalculée.
  * `rooms` : les zones du modèle courant (`loadModelAnalysis`).
  */
-export async function linkProgrammeCaseRoom(tx: Tx, project: { id: string; harmony: Record<string, unknown> | null }, spaceId: string, roomId: string, remove: boolean, rooms: readonly { id: string }[], now: string): Promise<ProgrammeCase> {
+export async function linkProgrammeCaseRoom(
+  tx: Tx,
+  project: { id: string; harmony: Record<string, unknown> | null },
+  spaceId: string,
+  roomId: string,
+  remove: boolean,
+  rooms: readonly { id: string }[],
+  now: string,
+): Promise<ProgrammeCase> {
   const prev = await loadActiveProgrammeCase(tx, project.id);
   if (!prev) throw new Error("Appliquez d’abord un programme.");
   const dossier = harmonyDossier(project.harmony, now);
@@ -238,7 +294,13 @@ export async function linkProgrammeCaseRoom(tx: Tx, project: { id: string; harmo
 }
 
 /** `hypothesisView` : statut, responsable ou preuve d'une hypothèse du cas appliqué (révision inchangée). */
-export async function editProgrammeCaseHypothesis(tx: Tx, projectId: string, hypothesisId: string, patch: { status?: string | undefined; owner?: string | undefined; proof?: string | undefined }, now: string): Promise<ProgrammeCase> {
+export async function editProgrammeCaseHypothesis(
+  tx: Tx,
+  projectId: string,
+  hypothesisId: string,
+  patch: { status?: string | undefined; owner?: string | undefined; proof?: string | undefined },
+  now: string,
+): Promise<ProgrammeCase> {
   const prev = await loadActiveProgrammeCase(tx, projectId);
   if (!prev) throw new Error("Appliquez d’abord un programme.");
   let next = prev;
@@ -252,7 +314,12 @@ export async function editProgrammeCaseHypothesis(tx: Tx, projectId: string, hyp
 }
 
 /** `applyTransfer` : deux adaptations de ligne (`editProgrammeCaseSpace`, avec textes, revues et décision), puis le transfert consigné dans l'état du programme. */
-export async function applyProgrammeTransfer(tx: Tx, project: { id: string; programmeState: Record<string, unknown> | null }, transfer: SurfaceTransfer, now: string): Promise<{ programmeCase: ProgrammeCase; total: number }> {
+export async function applyProgrammeTransfer(
+  tx: Tx,
+  project: { id: string; programmeState: Record<string, unknown> | null },
+  transfer: SurfaceTransfer,
+  now: string,
+): Promise<{ programmeCase: ProgrammeCase; total: number }> {
   const prev = await loadActiveProgrammeCase(tx, project.id);
   if (!prev) throw new Error("Appliquez d’abord un programme.");
   const { programmeCase } = applySurfaceTransfer(prev, project.id, transfer, fnv1a, now);
@@ -264,6 +331,9 @@ export async function applyProgrammeTransfer(tx: Tx, project: { id: string; prog
   const latest = (await tx.select().from(projects).where(eq(projects.id, project.id)).limit(1))[0]!;
   const state = programmeStateOf(latest) as ProgrammeState & { transfers?: unknown[] };
   const transfers = [...(state.transfers ?? []), { ...transfer, at: now }];
-  await tx.update(projects).set({ programmeState: { ...state, transfers } as unknown as Record<string, unknown>, updatedAt: new Date() }).where(eq(projects.id, project.id));
+  await tx
+    .update(projects)
+    .set({ programmeState: { ...state, transfers } as unknown as Record<string, unknown>, updatedAt: new Date() })
+    .where(eq(projects.id, project.id));
   return { programmeCase: after, total: programmeCaseSums(after.spaces).total };
 }

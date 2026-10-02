@@ -31,7 +31,17 @@ import { programmeRepartitions } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { BUILDING_LIBRARY, HARMONIE_PROFILES, PROGRAMME_REPARTITION } from "../data/parcours.js";
 import { loadOwnedProject, projectOr404, type OwnedProject } from "../lib/owned-project.js";
-import { applyProgrammeCase, applyProgrammeTransfer, editProgrammeCaseHypothesis, editProgrammeCaseSpace, linkProgrammeCaseRoom, loadActiveProgrammeCase, loadProgrammeHistory, programmeStateOf } from "../lib/programme-case.js";
+import {
+  adoptProgrammeConflict,
+  applyProgrammeCase,
+  applyProgrammeTransfer,
+  editProgrammeCaseHypothesis,
+  editProgrammeCaseSpace,
+  linkProgrammeCaseRoom,
+  loadActiveProgrammeCase,
+  loadProgrammeHistory,
+  programmeStateOf,
+} from "../lib/programme-case.js";
 import { loadModelAnalysis } from "../lib/model-context.js";
 import { lockProject } from "../lib/step-rows.js";
 
@@ -69,16 +79,24 @@ async function repartitionView(project: OwnedProject) {
   const attachmentCase = project.sourceAttachment?.["programmeCase"] as { title?: string; scenarioLabel?: string; revision?: number; spaces?: ProgrammeSpace[]; users?: string } | undefined;
   const a: ProgrammeCase | null = active ?? null;
   const caseSums = a ? programmeCaseSums(a.spaces) : attachmentCase?.spaces ? programmeCaseSums(attachmentCase.spaces) : null;
-  const rows = a && caseSums
-    ? PROGRAMME_REPARTITION.families.map((f) => {
-        const range = PROGRAMME_REPARTITION.types[rep.type]?.ratios[f.key] ?? [0, 0, 0];
-        const ratio = caseSums.total ? ((caseSums[f.key as keyof typeof caseSums] as number) / caseSums.total) * 100 : 0;
-        return { key: f.key, label: f.label, range: [range[0], range[2]] as [number, number], ratio, area: (caseSums[f.key as keyof typeof caseSums] as number) ?? 0 };
-      })
-    : programmeRows(PROGRAMME_REPARTITION, rep);
-  const totals = a && caseSums
-    ? { baseArea: caseSums.total, supportPercent: caseSums.total ? (caseSums.support / caseSums.total) * 100 : 0, supportArea: caseSums.support, netPercent: caseSums.total ? (caseSums.principal / caseSums.total) * 100 : 0, netArea: caseSums.principal }
-    : programmeTotals(PROGRAMME_REPARTITION, rep);
+  const rows =
+    a && caseSums
+      ? PROGRAMME_REPARTITION.families.map((f) => {
+          const range = PROGRAMME_REPARTITION.types[rep.type]?.ratios[f.key] ?? [0, 0, 0];
+          const ratio = caseSums.total ? ((caseSums[f.key as keyof typeof caseSums] as number) / caseSums.total) * 100 : 0;
+          return { key: f.key, label: f.label, range: [range[0], range[2]] as [number, number], ratio, area: (caseSums[f.key as keyof typeof caseSums] as number) ?? 0 };
+        })
+      : programmeRows(PROGRAMME_REPARTITION, rep);
+  const totals =
+    a && caseSums
+      ? {
+          baseArea: caseSums.total,
+          supportPercent: caseSums.total ? (caseSums.support / caseSums.total) * 100 : 0,
+          supportArea: caseSums.support,
+          netPercent: caseSums.total ? (caseSums.principal / caseSums.total) * 100 : 0,
+          netArea: caseSums.principal,
+        }
+      : programmeTotals(PROGRAMME_REPARTITION, rep);
   const state = programmeStateOf(project);
   const libraryCase = a ? buildingCase(BUILDING_LIBRARY, a.caseId) : null;
   return {
@@ -97,24 +115,32 @@ async function repartitionView(project: OwnedProject) {
       statusNote: PROGRAMME_REPARTITION.statusNote,
       transfer: PROGRAMME_REPARTITION.transfer,
     },
-    programmeCase: a && caseSums
-      ? {
-          ...a,
-          profileLabel: libraryCase?.profile.label ?? harmonieProfile(HARMONIE_PROFILES, a.type, rep.components).label,
-          libraryCaseExists: !!libraryCase,
-          spaceCount: a.spaces.length,
-          sums: caseSums,
-          conflicts: state.conflicts,
-          decisionReview: state.decisionReview,
-          decisionHistoryCount: state.decisionHistory.length,
-          history: await loadProgrammeHistory(db, project.id),
-        }
-      : attachmentCase && caseSums
-        ? { title: attachmentCase.title ?? null, scenarioLabel: attachmentCase.scenarioLabel ?? null, revision: attachmentCase.revision ?? null, users: attachmentCase.users ?? null, spaceCount: attachmentCase.spaces?.length ?? 0, sums: caseSums, readOnly: true }
-        : null,
+    programmeCase:
+      a && caseSums
+        ? {
+            ...a,
+            profileLabel: libraryCase?.profile.label ?? harmonieProfile(HARMONIE_PROFILES, a.type, rep.components).label,
+            libraryCaseExists: !!libraryCase,
+            spaceCount: a.spaces.length,
+            sums: caseSums,
+            conflicts: state.conflicts,
+            decisionReview: state.decisionReview,
+            decisionHistoryCount: state.decisionHistory.length,
+            history: await loadProgrammeHistory(db, project.id),
+          }
+        : attachmentCase && caseSums
+          ? {
+              title: attachmentCase.title ?? null,
+              scenarioLabel: attachmentCase.scenarioLabel ?? null,
+              revision: attachmentCase.revision ?? null,
+              users: attachmentCase.users ?? null,
+              spaceCount: attachmentCase.spaces?.length ?? 0,
+              sums: caseSums,
+              readOnly: true,
+            }
+          : null,
   };
 }
-
 
 programmeRouter.get("/", async (req, res) => {
   const project = await projectOr404(req, res, "read");
@@ -149,6 +175,24 @@ programmeRouter.post("/case", async (req, res) => {
   const result = await db.transaction(async (tx) => (await lockProject(tx, project.id), applyProgrammeCase(tx, project, parsed.data, now)));
   const refreshed = await loadOwnedProject(project.id, req.user!.id, "write");
   res.status(201).json({ ...(await repartitionView(refreshed ?? project)), applied: { revision: result.programmeCase.revision, conflicts: result.conflicts.length } });
+});
+
+/** « Adopter cette proposition » : l'écart n° `index` de la liste courante ; le champ conservé prend le texte proposé, l'ancien est archivé. */
+programmeRouter.post("/conflicts/:index/adopt", async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const index = Number(req.params["index"]);
+  if (!Number.isInteger(index) || index < 0) {
+    res.status(400).json({ error: "invalid_input", details: { index: "entier attendu" } });
+    return;
+  }
+  const adopted = await db.transaction(async (tx) => (await lockProject(tx, project.id), adoptProgrammeConflict(tx, project, index, new Date().toISOString())));
+  if (!adopted) {
+    res.status(404).json({ error: "not_found", message: "Cet écart n’existe plus : la liste a été arbitrée entre-temps." });
+    return;
+  }
+  const refreshed = await loadOwnedProject(project.id, req.user!.id, "write");
+  res.json({ ...(await repartitionView(refreshed ?? project)), adopted });
 });
 
 const spaceSchema = z.object({ quantity: z.union([z.number(), z.string()]).optional(), unitArea: z.union([z.number(), z.string()]).optional() });
@@ -242,7 +286,9 @@ programmeRouter.patch("/case/hypotheses/:hypothesisId", async (req, res) => {
     return;
   }
   try {
-    const next = await db.transaction(async (tx) => (await lockProject(tx, project.id), editProgrammeCaseHypothesis(tx, project.id, req.params["hypothesisId"] as string, parsed.data, new Date().toISOString())));
+    const next = await db.transaction(
+      async (tx) => (await lockProject(tx, project.id), editProgrammeCaseHypothesis(tx, project.id, req.params["hypothesisId"] as string, parsed.data, new Date().toISOString())),
+    );
     res.json({ hypotheses: next.hypotheses, revision: next.revision });
   } catch (err) {
     res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Modification refusée." });
@@ -331,9 +377,6 @@ programmeRouter.put("/", async (req, res) => {
     components: parsed.data.components ?? current.components,
     updatedAt: new Date(),
   };
-  await db
-    .insert(programmeRepartitions)
-    .values(next)
-    .onConflictDoUpdate({ target: programmeRepartitions.projectId, set: next });
+  await db.insert(programmeRepartitions).values(next).onConflictDoUpdate({ target: programmeRepartitions.projectId, set: next });
   res.json(await repartitionView(project));
 });

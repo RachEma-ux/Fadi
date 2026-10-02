@@ -11,6 +11,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { WriteFieldset } from "../../components/WriteFieldset";
+import { TextConflictsTable } from "./TextConflicts";
 import { fmtLib, type BuildingScenario, type LibrarySpace } from "@parcours/domain-model";
 import { api, ApiError, type ProgrammeCaseView, type ProgrammeView as ProgrammeViewData } from "../../lib/api";
 import { ProgrammeView } from "../bibliotheque/BuildingLibraryPage";
@@ -133,8 +134,8 @@ export function ProgrammeCaseEditor({ projectId, view }: { projectId: string; vi
           </Link>
         </div>
         <p className="bl-small">
-          Modifier quantité ou surface ci-dessous actualise les ratios et signale les revues à reprendre. Les textes modifiés manuellement ne sont pas écrasés. Une quantité nulle retire une allocation ; une
-          surface nulle ne signifie pas besoin satisfait.
+          Modifier quantité ou surface ci-dessous actualise les ratios et signale les revues à reprendre. Les textes modifiés manuellement ne sont pas écrasés. Une quantité nulle retire une allocation
+          ; une surface nulle ne signifie pas besoin satisfait.
         </p>
         {notice && (
           <p className="bl-note" role="status">
@@ -168,29 +169,7 @@ export function ProgrammeCaseEditor({ projectId, view }: { projectId: string; vi
             <details className="bl-fold">
               <summary>Consulter les différences</summary>
               <div>
-                <div className="bl-table-wrap" tabIndex={0}>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Étape</th>
-                        <th>Champ / valeur conservée</th>
-                        <th>Proposition de programme</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {a.conflicts.map((x, i) => (
-                        <tr key={i}>
-                          <td>{String(x.stage).padStart(2, "0")}</td>
-                          <td>
-                            <b>{x.field}</b>
-                            <small>{x.current}</small>
-                          </td>
-                          <td>{x.proposed}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <TextConflictsTable projectId={projectId} conflicts={a.conflicts} />
               </div>
             </details>
           </>

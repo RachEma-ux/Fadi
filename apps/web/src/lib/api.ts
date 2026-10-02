@@ -380,6 +380,8 @@ export interface DesignReviewView {
   html: { synthesis: string; metrics: string; levelTable: string; rooms: Record<string, string>; exampleRooms: string | null; issues: string; audit: string; assumptions: string; sources: string; designTrace: string };
   /** « Derniers événements » de l'onglet Transmission : les 10 derniers du journal daté (modèle, programme, parcelle, revue, MapTiler). */
   events: { at: string; kind: string; label: string; detail: string }[];
+  /** « Textes manuels préservés » : les champs conservés face aux textes proposés par le programme (« Adopter cette proposition »). */
+  conflicts: ProgrammeFieldConflict[];
   css: string;
 }
 
@@ -685,6 +687,8 @@ export const api = {
   getBuildingCase: (id: string) => request<BuildingCaseDetail>(`/library/buildings/${encodeURIComponent(id)}`),
   applyProgrammeCase: (projectId: string, input: ApplyProgrammeCaseInput) =>
     request<ProgrammeView & { applied: { revision: number; conflicts: number } }>(`/projects/${projectId}/programme/case`, { method: "POST", body: JSON.stringify(input) }),
+  /** « Adopter cette proposition » : l'écart n° `index` — le champ conservé prend le texte proposé, l'ancien est archivé. */
+  adoptProgrammeConflict: (projectId: string, index: number) => request<ProgrammeView & { adopted: ProgrammeFieldConflict }>(`/projects/${projectId}/programme/conflicts/${index}/adopt`, { method: "POST" }),
   patchProgrammeSpace: (projectId: string, spaceId: string, patch: { quantity?: number | string; unitArea?: number | string }) =>
     request<ProgrammeView>(`/projects/${projectId}/programme/case/spaces/${encodeURIComponent(spaceId)}`, { method: "PATCH", body: JSON.stringify(patch) }),
   /** « Comparer au modèle dessiné » : liaisons ligne ↔ zone par identifiant (`modelView` / `linkRoom`). */

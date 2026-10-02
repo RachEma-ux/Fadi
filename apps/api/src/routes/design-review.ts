@@ -23,6 +23,7 @@ import { projectOr404, type OwnedProject } from "../lib/owned-project.js";
 import { designReportHash, recordProducedDocument } from "../lib/documents.js";
 import { lockProject } from "../lib/step-rows.js";
 import { revisionJournal } from "./collaboration.js";
+import { programmeStateOf } from "../lib/programme-case.js";
 
 export const designReviewRouter = Router({ mergeParams: true });
 designReviewRouter.use(requireAuth);
@@ -39,7 +40,12 @@ async function transmissionEvents(project: OwnedProject): Promise<{ at: string; 
 designReviewRouter.get("/", async (req, res) => {
   const project = await projectOr404(req, res, "read");
   if (!project) return;
-  res.json({ ...designReviewView(await loadDesignContext(db, project, new Date().toISOString())), events: await transmissionEvents(project), css: DESIGN_REPORT_CSS });
+  res.json({
+    ...designReviewView(await loadDesignContext(db, project, new Date().toISOString())),
+    events: await transmissionEvents(project),
+    conflicts: programmeStateOf(project).conflicts,
+    css: DESIGN_REPORT_CSS,
+  });
 });
 
 /**
@@ -60,7 +66,7 @@ designReviewRouter.post("/review", async (req, res) => {
     await tx.update(projects).set({ harmony, updatedAt: new Date() }).where(eq(projects.id, project.id));
     return designReviewView(await loadDesignContext(tx, { ...project, harmony }, now));
   });
-  res.json({ ...result, events: await transmissionEvents(project) });
+  res.json({ ...result, events: await transmissionEvents(project), conflicts: programmeStateOf(project).conflicts });
 });
 
 designReviewRouter.get("/rapport", async (req, res) => {
@@ -119,7 +125,7 @@ designReviewRouter.put("/compass", async (req, res) => {
     await tx.update(projects).set({ harmony, updatedAt: new Date() }).where(eq(projects.id, project.id));
     return designReviewView(await loadDesignContext(tx, { ...project, harmony }, now));
   });
-  res.json({ ...result, events: await transmissionEvents(project) });
+  res.json({ ...result, events: await transmissionEvents(project), conflicts: programmeStateOf(project).conflicts });
 });
 
 const observationSchema = z.object({ note: z.string().max(4000) });
@@ -156,7 +162,7 @@ designReviewRouter.put("/observation", async (req, res) => {
     await tx.update(projects).set({ siteContext, updatedAt: new Date() }).where(eq(projects.id, project.id));
     return designReviewView(await loadDesignContext(tx, { ...project, siteContext }, now));
   });
-  res.json({ ...result, events: await transmissionEvents({ ...project, siteContext }) });
+  res.json({ ...result, events: await transmissionEvents({ ...project, siteContext }), conflicts: programmeStateOf(project).conflicts });
 });
 
 const centerElevationSchema = z.object({ point: z.tuple([z.number(), z.number(), z.number()]) });
@@ -191,5 +197,5 @@ designReviewRouter.put("/elevation", async (req, res) => {
     await tx.update(projects).set({ siteContext, updatedAt: new Date() }).where(eq(projects.id, project.id));
     return designReviewView(await loadDesignContext(tx, { ...project, siteContext }, now));
   });
-  res.json({ ...result, events: await transmissionEvents({ ...project, siteContext }) });
+  res.json({ ...result, events: await transmissionEvents({ ...project, siteContext }), conflicts: programmeStateOf(project).conflicts });
 });

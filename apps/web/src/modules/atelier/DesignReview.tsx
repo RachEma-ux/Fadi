@@ -19,6 +19,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ApiError, api, type CompassInput, type DesignReviewView } from "../../lib/api";
 import { maptilerKey, satellitePreview, type SatellitePreview } from "../../lib/maptiler";
 import { HarmonieToast } from "../parcours/HarmoniePanel";
+import { TextConflictsTable } from "../programmation/TextConflicts";
 
 type Tab = "synthesis" | "levels" | "rooms" | "assumptions" | "flow";
 const TABS: [Tab, string][] = [
@@ -455,6 +456,13 @@ function InlineReport({
                   Revue archivée : {view.review.name} · {new Date(view.review.at).toLocaleString("fr-FR")} · modèle {view.review.modelSignature} · {view.review.counts.rooms} zones ·{" "}
                   {view.history.length} revue(s) antérieure(s).
                 </p>
+              )}
+              {view.conflicts.length > 0 && (
+                <>
+                  <h3>Textes manuels préservés</h3>
+                  <p>Comparez les propositions et les champs conservés. L’acceptation remplace uniquement le champ choisi, avec archive.</p>
+                  <TextConflictsTable projectId={projectId} conflicts={view.conflicts} />
+                </>
               )}
               <h3>Derniers événements</h3>
               {view.events.length ? (

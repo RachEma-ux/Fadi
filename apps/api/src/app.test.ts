@@ -819,6 +819,16 @@ describe("Bibliothèque des bâtiments — cas de programme appliqué", () => {
     // Le profil Harmonie suit le type du cas.
     expect(step4.profile.key).toBe("hotel"); // « hotelier » → alias « hotel » du profil Harmonie
 
+    // « Adopter cette proposition » : le champ conservé prend le texte proposé, l'ancien est archivé, l'écart disparaît ; un index périmé → 404.
+    const adopted = await client.post(`/projects/${pid}/programme/conflicts/0/adopt`);
+    expect(adopted.status).toBe(200);
+    expect(adopted.body.adopted).toMatchObject({ stage: 4, field: "f1", current: "Mon positionnement, saisi à la main" });
+    expect(adopted.body.programmeCase.conflicts).toEqual([]);
+    expect((await client.get(`/projects/${pid}/steps/4`)).body.content.fields.f1).toMatch(/^\[EXEMPLE \/ HYPOTHÈSE/);
+    expect((await client.post(`/projects/${pid}/programme/conflicts/0/adopt`)).status).toBe(404);
+    expect((await client.post(`/projects/${pid}/programme/conflicts/x/adopt`)).status).toBe(400);
+    expect(((await client.get(`/projects/${pid}/archive`)).body.project.programmeState.fieldHistory as unknown[]).length).toBe(1);
+
     // Décision prise, puis adaptation d'une ligne → décision « À reprendre », revues à reprendre, révision 2, conflits de variante inconnue refusés.
     await client.patch(`/projects/${pid}/steps/19`).send({ fields: { decision: "GO" }, status: "termine" });
     const spaceId = pc.spaces[0].id as string;
