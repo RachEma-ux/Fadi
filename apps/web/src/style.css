@@ -1527,6 +1527,110 @@ h3 {
 }
 
 /* ---------------------------------------------------------------------- */
+/* Sources de l'étape (fold-card, sources-card : valeurs du prototype)      */
+/* ---------------------------------------------------------------------- */
+.fold-card {
+  margin: 18px 0 0;
+  border: 1px solid #d3ddd8;
+  border-radius: 14px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.fold-card > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 18px 20px;
+  font-size: clamp(21px, 4.6vw, 30px);
+  font-weight: 750;
+  line-height: 1.15;
+  color: #164c43;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.fold-card > summary::-webkit-details-marker {
+  display: none;
+}
+.fold-card > summary::after {
+  content: "⌄";
+  font-size: 23px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.fold-card[open] > summary::after {
+  transform: rotate(180deg);
+}
+.fold-card[open] > summary {
+  border-bottom: 1px solid #dce4e0;
+}
+.fold-card-body {
+  padding: 18px 20px 20px;
+}
+.module-subtitle {
+  margin: 22px 0 10px;
+  font-size: 18px;
+}
+.project-sources .sources-list + .sources-list {
+  margin-top: 18px;
+}
+.sources-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.sources-drop {
+  margin-top: 14px;
+  border: 1.5px dashed #aebfb8;
+  border-radius: 10px;
+  padding: 18px;
+  text-align: center;
+  background: #f8faf8;
+  font-size: 14px;
+}
+.sources-drop.drag {
+  background: #e9f3ee;
+  border-color: #1e5a55;
+}
+.sources-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+}
+.source-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid #e2e8e4;
+  padding-top: 10px;
+}
+.source-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.source-meta {
+  font-size: 12px;
+  color: #6c7e7a;
+  margin-top: 3px;
+}
+.source-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.source-actions .button-secondary {
+  padding: 7px 9px;
+  text-decoration: none;
+}
+.source-actions .danger {
+  color: #a23b2a;
+  border-color: #e3c2bb;
+}
+
+/* ---------------------------------------------------------------------- */
 /* Outil Parcelle (étape 01, iframe du prototype)                           */
 /* ---------------------------------------------------------------------- */
 .parcelle-tool {
@@ -1590,6 +1694,16 @@ h3 {
   }
   .h7-zones {
     gap: 14px 8px;
+  }
+  .fold-card > summary {
+    padding: 16px;
+    font-size: 24px;
+  }
+  .fold-card-body {
+    padding: 16px;
+  }
+  .source-row {
+    grid-template-columns: 1fr;
   }
   .step-detail {
     padding: 16px;

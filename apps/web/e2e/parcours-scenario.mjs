@@ -17,6 +17,8 @@
  *      Parcelle (fichier P.118, modification d'une borne → conflit avec le
  *      bâtiment dessiné, retour → parcelle liée) et propositions de site
  *      Harmonie (schéma, légende, données du site, proposition de départ) ;
+ *   6d. sources de l'étape : import d'un fichier, liste, téléchargement en
+ *      pièce jointe, suppression avec confirmation ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
  *      docs/migration/captures/webapp/.
  *
@@ -289,6 +291,32 @@ check("étape 01 : approche documentée sans source → refus du prototype affic
 await page.locator('.h7-proposal:nth-child(3) button:has-text("Voir le schéma")').click();
 await page.waitForTimeout(300);
 check("étape 01 : « Voir le schéma » affiche la variante C", (await page.locator(".h7-site-hero h3").textContent()) === "Arrivées et desserte dissociées");
+
+// 6d. Sources de l'étape (étape 03 de l'exemple) : import, liste, téléchargement, suppression
+await page.goto(`${exampleUrl}?module=parcours&etape=3`);
+await page.waitForSelector(".step-sources");
+await page.evaluate(() => { document.querySelector(".step-sources").open = true; });
+await page.waitForFunction(() => /Aucune source importée/.test(document.querySelector(".sources-list")?.textContent || ""));
+check("sources : « Aucune source importée pour cette étape. » au départ", true);
+await page.locator('.step-sources input[type="file"]').setInputFiles({ name: "ZONE-I-5 règlement.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n% pièce de démonstration\n") });
+await page.waitForFunction(() => /ZONE-I-5 règlement\.pdf/.test(document.querySelector(".sources-list")?.textContent || ""), null, { timeout: 10000 });
+const sourceRow = (await page.locator(".source-row").first().textContent()).replace(/\s+/g, " ");
+check("sources : fichier listé avec taille · type · date", /ZONE-I-5 règlement\.pdf.*36 o · application\/pdf · ajouté le/.test(sourceRow), sourceRow);
+const dlHref = await page.locator(".source-row a").first().getAttribute("href");
+const dlResponse = await page.request.get(`${BASE}${dlHref}`);
+check("sources : téléchargement servi en pièce jointe (attachment, nosniff)", dlResponse.status() === 200 && /^attachment/.test(dlResponse.headers()["content-disposition"] || "") && dlResponse.headers()["x-content-type-options"] === "nosniff");
+await page.screenshot({ path: `${OUT}/03-desktop-sources.png`, fullPage: true });
+await page.goto(`${exampleUrl}?module=projets-sources`);
+await page.waitForFunction(() => /ZONE-I-5 règlement\.pdf/.test(document.querySelector(".project-sources")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+check("module Projets et sources : la pièce apparaît sous « Étape 03 »", /Étape 03 · .*ZONE-I-5 règlement\.pdf/s.test((await page.locator(".project-sources").textContent()).replace(/\s+/g, " ")));
+await page.goto(`${exampleUrl}?module=parcours&etape=3`);
+await page.waitForSelector(".step-sources");
+await page.evaluate(() => { document.querySelector(".step-sources").open = true; });
+await page.waitForFunction(() => /ZONE-I-5 règlement\.pdf/.test(document.querySelector(".sources-list")?.textContent || ""), null, { timeout: 10000 });
+page.once("dialog", (d) => d.accept());
+await page.locator('.source-row button:has-text("Supprimer")').first().click();
+await page.waitForFunction(() => /Aucune source importée/.test(document.querySelector(".sources-list")?.textContent || ""), null, { timeout: 10000 });
+check("sources : suppression confirmée → liste vide", true);
 
 // 7. Téléphone
 await page.setViewportSize({ width: 390, height: 844 });

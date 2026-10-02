@@ -12,6 +12,7 @@ import { useSearchParams } from "react-router-dom";
 import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type SiteObservationsInput } from "../../lib/api";
 import { NativeAtelier } from "../atelier/NativeAtelier";
 import { ParcelleTool } from "../projets-sources/ParcelleTool";
+import { StepSources } from "../projets-sources/StepSources";
 import { ProgrammeRepartition, ProgrammeTransfer } from "../programmation/ProgrammeRepartition";
 import { HarmoniePanel } from "./HarmoniePanel";
 import { StepForm } from "./StepForm";
@@ -213,6 +214,8 @@ function StepDetail({
 
       <StepForm step={step} allSteps={allSteps} pending={pending} onCommit={(fields) => patch.mutate({ fields })} />
       {(step.number === 6 || step.number === 7) && <ProgrammeRepartition projectId={projectId} />}
+
+      <StepSources projectId={projectId} stepNumber={step.number} />
 
       {patch.isError && (
         <p role="alert" className="h7-error">

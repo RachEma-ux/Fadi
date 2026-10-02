@@ -11,6 +11,7 @@ import { parcoursStepsRouter } from "./parcours-steps.js";
 import { programmeRouter } from "./programme.js";
 import { atelierRouter } from "./atelier.js";
 import { parcelsRouter } from "./parcels.js";
+import { projectFilesRouter } from "./step-files.js";
 
 export const projectsRouter = Router();
 projectsRouter.use(requireAuth);
@@ -65,6 +66,7 @@ projectsRouter.use("/:projectId/steps", parcoursStepsRouter);
 projectsRouter.use("/:projectId/programme", programmeRouter);
 projectsRouter.use("/:projectId/atelier", atelierRouter);
 projectsRouter.use("/:projectId/parcels", parcelsRouter);
+projectsRouter.use("/:projectId/files", projectFilesRouter);
 
 projectsRouter.get("/:projectId", async (req, res) => {
   const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);

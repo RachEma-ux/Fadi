@@ -7,12 +7,14 @@ import { NativeAtelier } from "../modules/atelier/NativeAtelier";
 import { ParcoursModule } from "../modules/parcours/ParcoursModule";
 import { ProgrammeRepartition, ProgrammeTransfer } from "../modules/programmation/ProgrammeRepartition";
 import { ParcelleTool } from "../modules/projets-sources/ParcelleTool";
+import { ProjectSources } from "../modules/projets-sources/StepSources";
 
 export function ProjectShell() {
   const { projectId } = useParams<{ projectId: string }>();
   if (!projectId) throw new Error("projectId manquant dans l'URL");
 
   const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId) });
+  const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
 
   const [searchParams] = useSearchParams();
   const requestedModule = searchParams.get("module");
@@ -76,6 +78,8 @@ export function ProjectShell() {
           <>
             <h2>Projets et sources</h2>
             <ParcelleTool projectId={projectId} />
+            <h3 className="module-subtitle">Sources des étapes</h3>
+            <ProjectSources projectId={projectId} stepTitle={(n) => stepsQuery.data?.find((s) => s.number === n)?.title ?? ""} />
           </>
         )}
 

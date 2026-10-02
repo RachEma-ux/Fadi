@@ -15,7 +15,7 @@ const app = createApp();
 async function resetDb() {
   // L'ordre respecte les clés étrangères (CASCADE serait aussi suffisant,
   // mais l'ordre explicite documente les dépendances).
-  await pool.query("TRUNCATE architectural_objects, atelier_store, levels, parcels, programme_repartitions, project_steps, projects, sessions, users CASCADE");
+  await pool.query("TRUNCATE architectural_objects, atelier_store, levels, parcels, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE");
 }
 
 beforeAll(async () => {
@@ -682,5 +682,62 @@ describe("Étape 01 — propositions de site Harmonie calculées sur la parcelle
     expect(step1.proposals[0].retained).toBe(true);
     expect(step1.retainedCount).toBe(1);
     expect(step1.proposals[0].zoning.zones[0].area / step1.site.parcel.area).toBeCloseTo(0.15, 3);
+  });
+});
+
+describe("Sources de l'étape — pièces jointes par étape", () => {
+  it("uploads, lists, downloads as attachment and deletes a file of a step, only for the project's owner", async () => {
+    const client = await registerAndLogin("sources@example.com");
+    const project = await client.post("/projects").send({ code: "P.911", name: "Sources" });
+    const pid = project.body.id as string;
+    const base = `/projects/${pid}/steps/3/files`;
+    expect((await client.get(base)).body).toEqual([]);
+
+    const content = Buffer.from("%PDF-1.4\n% Note de zone I-5 (démonstration)\n");
+    const up = await client.post(base).set("Content-Type", "application/octet-stream").set("X-File-Name", encodeURIComponent("ZONE-I-5 règlement.pdf")).set("X-File-Type", "application/pdf").send(content);
+    expect(up.status).toBe(201);
+    expect(up.body.file).toMatchObject({ name: "ZONE-I-5 règlement.pdf", type: "application/pdf", size: content.length });
+    const id = up.body.file.id as string;
+    // Un fichier dont le navigateur annonce du JSON passe tel quel (octets bruts, pas d'analyse JSON côté serveur).
+    const json = await client.post(base).set("Content-Type", "application/octet-stream").set("X-File-Name", "notes.json").set("X-File-Type", "application/json").send(Buffer.from('{"a":1}'));
+    expect(json.status).toBe(201);
+    const list = await client.get(base);
+    expect(list.body.map((f: { name: string }) => f.name)).toEqual(["ZONE-I-5 règlement.pdf", "notes.json"]);
+    expect((await client.get(`/projects/${pid}/steps/4/files`)).body).toEqual([]);
+
+    const dl = await client.get(`${base}/${id}`).buffer(true).parse((res, cb) => {
+      const chunks: Buffer[] = [];
+      res.on("data", (c: Buffer) => chunks.push(c));
+      res.on("end", () => cb(null, Buffer.concat(chunks)));
+    });
+    expect(dl.status).toBe(200);
+    expect(dl.headers["content-disposition"]).toMatch(/^attachment; filename="ZONE-I-5 r.glement.pdf"; filename\*=UTF-8''ZONE-I-5%20r%C3%A8glement\.pdf$/);
+    expect(dl.headers["x-content-type-options"]).toBe("nosniff");
+    expect(Buffer.from(dl.body).equals(content)).toBe(true);
+    // Une pièce HTML n'est jamais servie comme page.
+    const html = await client.post(base).set("Content-Type", "application/octet-stream").set("X-File-Name", "piege.html").set("X-File-Type", "text/html").send(Buffer.from("<script>alert(1)</script>"));
+    const dlHtml = await client.get(`${base}/${html.body.file.id}`);
+    expect(dlHtml.headers["content-type"]).toMatch(/^application\/octet-stream/);
+    expect(dlHtml.headers["content-disposition"]).toMatch(/^attachment/);
+
+    const missingName = await client.post(base).set("Content-Type", "application/octet-stream").send(Buffer.from("x"));
+    expect(missingName.status).toBe(400);
+    const empty = await client.post(base).set("Content-Type", "application/octet-stream").set("X-File-Name", "vide.txt").send(Buffer.alloc(0));
+    expect(empty.status).toBe(400);
+
+    const other = await registerAndLogin("sources-other@example.com");
+    expect((await other.get(base)).status).toBe(404);
+    expect((await other.get(`${base}/${id}`)).status).toBe(404);
+    expect((await other.delete(`${base}/${id}`)).status).toBe(404);
+
+    expect((await client.delete(`${base}/${id}`)).status).toBe(204);
+    expect((await client.get(base)).body.map((f: { name: string }) => f.name)).toEqual(["notes.json", "piege.html"]);
+    expect((await client.get(`${base}/${id}`)).status).toBe(404);
+
+    // Vue d'ensemble du module Projets et sources : toutes les pièces, par étape.
+    await client.post(`/projects/${pid}/steps/1/files`).set("Content-Type", "application/octet-stream").set("X-File-Name", "118_officiel.kmz").set("X-File-Type", "application/vnd.google-earth.kmz").send(Buffer.from("PK"));
+    const all = await client.get(`/projects/${pid}/files`);
+    expect(all.body.map((f: { stepNumber: number; name: string }) => `${f.stepNumber}:${f.name}`)).toEqual(["1:118_officiel.kmz", "3:notes.json", "3:piege.html"]);
+    expect((await other.get(`/projects/${pid}/files`)).status).toBe(404);
   });
 });

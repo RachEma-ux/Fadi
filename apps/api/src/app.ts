@@ -26,7 +26,8 @@ export function createApp() {
   // Limite générale de 256 ko ; le magasin de l'Atelier (modèle natif, ~1 Mo
   // pour P.118) a son propre analyseur JSON borné dans routes/atelier.ts.
   const jsonBody = express.json({ limit: "256kb" });
-  app.use((req, res, next) => (/\/atelier\/store(\/|$)/.test(req.path) ? next() : jsonBody(req, res, next)));
+  // Le magasin de l'Atelier et les pièces jointes des étapes ont leur propre lecture de corps (limite dédiée, octets bruts).
+  app.use((req, res, next) => (/\/atelier\/store(\/|$)|\/steps\/\d+\/files(\/|$)/.test(req.path) ? next() : jsonBody(req, res, next)));
   app.use(attachUser);
 
   // Les routes d'authentification sont la cible privilégiée du

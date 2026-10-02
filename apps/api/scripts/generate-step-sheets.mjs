@@ -47,7 +47,7 @@ function migrationStatus(n) {
   if (n === 10 || n === 11) rows.push([TOOLED[n], "✅", "Moteur natif encapsulé tel quel (apps/web/src/modules/atelier/native, public/atelier-native) ; modèle persisté par clé avec révision (atelier_store), projection levels/objets dérivée ; e2e : dessin d'un mur → +1 objet, annulation → −1, rechargement"]);
   if (n === 10 || n === 11) rows.push(["Propositions Harmonie LOCALES par local (analyse du modèle) et page Harmony de l'Atelier (V8.4)", "⛔", "flow-v62 / atelier-harmonie-page-app non portés"]);
   rows.push(["Bibliothèque d'exemples par type de bâtiment / « Exemples issus des fichiers sources »", "⛔", "building-library-data et SOURCE_EXAMPLES non portés"]);
-  rows.push(["Sources de l'étape (pièces jointes, dépôt de fichiers)", "⛔", "FILE_DB (IndexedDB) non porté ; stockage serveur de fichiers à concevoir"]);
+  rows.push(["Sources de l'étape (importer, déposer, lister, télécharger, supprimer)", "✅", "StepSources.tsx ; routes/step-files.ts (table step_files, pièce jointe nosniff) ; e2e « sources : … »"]);
   if (example.steps[String(n)]) rows.push(["Exemple P.118 : récit du choix, réponses renseignées, choix retenu", "✅", "Import p118-exemple-complet ; test « imports an example… »"]);
   return rows;
 }

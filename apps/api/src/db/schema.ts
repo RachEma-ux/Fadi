@@ -166,3 +166,28 @@ export const architecturalObjects = pgTable("architectural_objects", {
   modelRevision: integer("model_revision").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("architectural_objects_level_id_idx").on(t.levelId)]);
+
+/** Contenu binaire tel quel (bytea) : pièces jointes des étapes. */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
+
+/**
+ * Sources de l'étape (module Projets et sources) : les fichiers rattachés à
+ * une étape d'un projet — `FILE_DB` (IndexedDB) du prototype, ici sur le
+ * serveur, propriété du projet. Le contenu est conservé tel quel ; le type
+ * déclaré par le navigateur est enregistré mais jamais utilisé pour servir
+ * le fichier autrement qu'en pièce jointe.
+ */
+export const stepFiles = pgTable("step_files", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  stepNumber: integer("step_number").notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  size: integer("size").notNull(),
+  content: bytea("content").notNull(),
+  addedAt: timestamp("added_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("step_files_project_step_idx").on(t.projectId, t.stepNumber)]);

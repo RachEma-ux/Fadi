@@ -39,9 +39,12 @@ import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS, parcoursStepDefi
 import { loadOwnedProject, type OwnedProject } from "../lib/owned-project.js";
 import { loadSiteContext } from "../lib/site-context.js";
 import { loadProgrammeRepartition } from "./programme.js";
+import { stepFilesRouter } from "./step-files.js";
 
 export const parcoursStepsRouter = Router({ mergeParams: true });
 parcoursStepsRouter.use(requireAuth);
+// Sources de l'étape (pièces jointes) : module Projets et sources, monté par étape.
+parcoursStepsRouter.use("/:stepNumber/files", stepFilesRouter);
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 

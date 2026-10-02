@@ -186,6 +186,15 @@ export type SiteObservationsInput = Pick<SiteObservations, "frontageEdge" | "app
   geographic?: SiteObservations["geographic"];
 };
 
+/** Une pièce jointe d'une étape (« Sources de l'étape »). */
+export interface StepFile {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  addedAt: string;
+}
+
 export interface IncomingIntention {
   origin: number;
   originLabel: string;
@@ -347,6 +356,26 @@ export const api = {
   listSteps: (projectId: string) => request<ParcoursStep[]>(`/projects/${projectId}/steps`),
   patchStep: (projectId: string, stepNumber: number, patch: { status?: ParcoursStepStatus; fields?: Record<string, ParcoursFieldValue> }) =>
     request<ParcoursStep>(`/projects/${projectId}/steps/${stepNumber}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  /** Sources de l'étape (pièces jointes) — module Projets et sources. */
+  listStepFiles: (projectId: string, stepNumber: number) => request<StepFile[]>(`/projects/${projectId}/steps/${stepNumber}/files`),
+  listProjectFiles: (projectId: string) => request<(StepFile & { stepNumber: number })[]>(`/projects/${projectId}/files`),
+  uploadStepFile: async (projectId: string, stepNumber: number, file: File): Promise<StepFile> => {
+    // Octets bruts + nom et type dans les en-têtes : aucun fichier n'est interprété par le serveur.
+    const res = await fetch(`/projects/${projectId}/steps/${stepNumber}/files`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/octet-stream", "X-File-Name": encodeURIComponent(file.name), "X-File-Type": file.type || "application/octet-stream" },
+      body: file,
+    });
+    const body: unknown = await res.json().catch(() => null);
+    if (!res.ok) {
+      const code = (body && typeof body === "object" && "error" in body ? String((body as { error: unknown }).error) : null) ?? `http_${res.status}`;
+      throw new ApiError(res.status, code, res.status === 413 ? "Fichier trop volumineux (25 Mo maximum)." : null, body);
+    }
+    return (body as { file: StepFile }).file;
+  },
+  stepFileUrl: (projectId: string, stepNumber: number, fileId: string) => `/projects/${projectId}/steps/${stepNumber}/files/${encodeURIComponent(fileId)}`,
+  deleteStepFile: (projectId: string, stepNumber: number, fileId: string) => request<void>(`/projects/${projectId}/steps/${stepNumber}/files/${encodeURIComponent(fileId)}`, { method: "DELETE" }),
   putSiteObservations: (projectId: string, input: SiteObservationsInput) =>
     request<ParcoursStep>(`/projects/${projectId}/steps/1/site`, { method: "PUT", body: JSON.stringify(input) }),
   decideHarmonie: (projectId: string, stepNumber: number, proposalId: string, input: HarmonieDecisionInput) =>

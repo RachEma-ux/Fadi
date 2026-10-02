@@ -89,6 +89,19 @@ CREATE TABLE IF NOT EXISTS parcels (
   PRIMARY KEY (project_id, id)
 );
 
+-- Sources de l'étape : pièces jointes par étape et par projet (FILE_DB du prototype, côté serveur).
+CREATE TABLE IF NOT EXISTS step_files (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  step_number integer NOT NULL,
+  name text NOT NULL,
+  type text NOT NULL,
+  size integer NOT NULL,
+  content bytea NOT NULL,
+  added_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS step_files_project_step_idx ON step_files (project_id, step_number);
+
 CREATE TABLE IF NOT EXISTS levels (
   id text PRIMARY KEY,
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
