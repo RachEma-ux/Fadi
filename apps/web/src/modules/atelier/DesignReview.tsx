@@ -135,6 +135,7 @@ function CompassTools({ projectId, view, onSaved }: { projectId: string; view: D
 function InlineReport({
   projectId,
   view,
+  initialTab = "synthesis",
   onClose,
   onRefresh,
   refreshing,
@@ -142,12 +143,13 @@ function InlineReport({
 }: {
   projectId: string;
   view: DesignReviewView;
+  initialTab?: Tab;
   onClose: () => void;
   onRefresh: () => void;
   refreshing: boolean;
   onGoto: (step: number) => void;
 }) {
-  const [tab, setTab] = useState<Tab>("synthesis");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const r = view.analysis;
   const [level, setLevel] = useState<string>(r.floors.some((f) => f.id === "rdc") ? "rdc" : (r.floors[0]?.id ?? ""));
   const [roomLevel, setRoomLevel] = useState<string>("");
@@ -301,12 +303,13 @@ function InlineReport({
 }
 
 /** `designHTML(p)` : le pli de l'étape, avec le bilan en ligne et les outils directionnels. */
-export function DesignReviewFold({ projectId }: { projectId: string }) {
+export function DesignReviewFold({ projectId, roomsAction = false }: { projectId: string; roomsAction?: boolean }) {
   const queryClient = useQueryClient();
   const [, setSearchParams] = useSearchParams();
   const query = useQuery({ queryKey: ["design-review", projectId], queryFn: () => api.getDesignReview(projectId) });
   const [open, setOpen] = useState(false);
   const [report, setReport] = useState(false);
+  const [reportTab, setReportTab] = useState<Tab>("synthesis");
   const [compass, setCompass] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const refresh = useMutation({
@@ -343,9 +346,29 @@ export function DesignReviewFold({ projectId }: { projectId: string }) {
           </p>
           {r.stale && <p className="v62-alert">Une donnée analysée a changé depuis la revue archivée : revue à actualiser.</p>}
           <div className="h7-actions">
-            <button type="button" className="button-secondary" aria-pressed={report} onClick={() => setReport((o) => !o)}>
+            <button
+              type="button"
+              className="button-secondary"
+              aria-pressed={report}
+              onClick={() => {
+                setReportTab("synthesis");
+                setReport((o) => !o);
+              }}
+            >
               Lire le bilan du bâtiment
             </button>
+            {roomsAction && (
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={() => {
+                  setReportTab("rooms");
+                  setReport(true);
+                }}
+              >
+                Capacités & ambiances des espaces
+              </button>
+            )}
             <a className="button-secondary" href={api.designReportUrl(projectId)} download>
               Exporter le bilan HTML
             </a>
@@ -359,7 +382,7 @@ export function DesignReviewFold({ projectId }: { projectId: string }) {
           {compass && <CompassTools projectId={projectId} view={v} onSaved={adopt} />}
         </div>
       </details>
-      {report && <InlineReport projectId={projectId} view={v} onClose={() => setReport(false)} onRefresh={() => refresh.mutate()} refreshing={refresh.isPending} onGoto={goto} />}
+      {report && <InlineReport key={reportTab} projectId={projectId} view={v} initialTab={reportTab} onClose={() => setReport(false)} onRefresh={() => refresh.mutate()} refreshing={refresh.isPending} onGoto={goto} />}
       <style>{v.css}</style>
       <HarmonieToast text={toast} onDone={() => setToast(null)} />
     </>

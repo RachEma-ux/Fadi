@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type SiteObservationsInput } from "../../lib/api";
+import { AtelierHarmonyPage } from "../atelier/AtelierHarmonyPage";
 import { DesignReviewFold } from "../atelier/DesignReview";
 import { NativeAtelier } from "../atelier/NativeAtelier";
 import { ImportProjectButton } from "../projets-sources/ImportProjectButton";
@@ -133,6 +134,9 @@ function StepDetail({
   const queryClient = useQueryClient();
   const [harmonieErrors, setHarmonieErrors] = useState<Record<string, string>>({});
   const [toast, setToast] = useState<string | null>(null);
+  // Étape 10 : la sous-page « Harmonie du bâtiment » de l'Atelier (V8.4) réunit le panneau Harmonie, le programme lié et le bilan.
+  const [harmonyPage, setHarmonyPage] = useState(false);
+  const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), enabled: step.number === 10 });
 
   function adopt(updated: ParcoursStep) {
     queryClient.setQueryData<ParcoursStep[]>(["steps", projectId], (list) => (list ?? []).map((s) => (s.number === updated.number ? updated : s)));
@@ -187,7 +191,7 @@ function StepDetail({
       : "Cette étape poursuit le dossier maître créé à partir de la parcelle.";
 
   return (
-    <div className="step-detail">
+    <div className={`step-detail${harmonyPage ? " ah84-active-work" : ""}`}>
       <div className="step-detail-top">
         <button type="button" className="button-secondary" onClick={onBack}>
           ← Vue d'ensemble
@@ -218,23 +222,53 @@ function StepDetail({
 
       {/* Étape 01 : l'outil Parcelle d'abord, puis Harmonie (prototype : `module.after(panel)`). */}
       {step.number === 1 && <ParcelleTool projectId={projectId} />}
-      <HarmoniePanel
-        projectId={projectId}
-        step={step}
-        allSteps={allSteps}
-        pending={pending}
-        errors={harmonieErrors}
-        onDecide={(proposalId, input) => decide.mutate({ proposalId, input })}
-        onGenerate={() => generate.mutate()}
-        onGoto={onOpen}
-        onSaveSite={step.number === 1 ? (input) => saveSite.mutate(input) : null}
-        siteError={siteError}
-      />
+      {step.number === 10 ? (
+        /* Étape 10 : le panneau Harmonie, le programme lié et le bilan vivent dans la sous-page « Harmonie du bâtiment » de l'Atelier (bouton « Harmonie » de la barre d'outils, groupe Analyser). */
+        <AtelierHarmonyPage
+          projectName={projectQuery.data?.name ?? ""}
+          open={harmonyPage}
+          onOpenChange={setHarmonyPage}
+          choices={
+            <HarmoniePanel
+              projectId={projectId}
+              step={step}
+              allSteps={allSteps}
+              pending={pending}
+              errors={harmonieErrors}
+              onDecide={(proposalId, input) => decide.mutate({ proposalId, input })}
+              onGenerate={() => generate.mutate()}
+              onGoto={onOpen}
+            />
+          }
+          programme={<ProgrammeTransfer projectId={projectId} />}
+          bilan={<DesignReviewFold projectId={projectId} roomsAction />}
+        />
+      ) : (
+        <HarmoniePanel
+          projectId={projectId}
+          step={step}
+          allSteps={allSteps}
+          pending={pending}
+          errors={harmonieErrors}
+          onDecide={(proposalId, input) => decide.mutate({ proposalId, input })}
+          onGenerate={() => generate.mutate()}
+          onGoto={onOpen}
+          onSaveSite={step.number === 1 ? (input) => saveSite.mutate(input) : null}
+          siteError={siteError}
+        />
+      )}
       <HarmonieToast text={toast} onDone={() => setToast(null)} />
 
-      {step.number === 10 && <ProgrammeTransfer projectId={projectId} />}
-      {/* Bilan Harmonie du bâtiment conçu (flow-v62 `designHTML`) : lecture du modèle courant, revue archivée, références directionnelles. */}
-      {(step.number === 10 || step.number === 11) && <DesignReviewFold projectId={projectId} />}
+      {step.number === 10 && !harmonyPage && (
+        <p className="ah84-entry">
+          <button type="button" className="button-secondary" id="ah84-open" aria-controls="atelier-harmonie-page" aria-expanded={harmonyPage} onClick={() => setHarmonyPage(true)}>
+            ◈ Harmonie du bâtiment
+          </button>
+          <span className="h7-muted">Choix & intentions, programme lié et bilan du bâtiment — aussi depuis « Analyser → Harmonie » dans l’Atelier.</span>
+        </p>
+      )}
+      {/* Étape 11 : bilan Harmonie du bâtiment conçu (flow-v62 `designHTML`) dans le flux de l'étape. */}
+      {step.number === 11 && <DesignReviewFold projectId={projectId} />}
       {(step.number === 10 || step.number === 11) && <NativeAtelier projectId={projectId} stage={step.number} />}
 
       <StepStory step={step} />

@@ -188,8 +188,11 @@ await qtyInput.blur();
 await page.waitForFunction(() => /RÉVISION 2/.test(document.querySelector(".programme-case-editor .bl-kicker")?.textContent || ""), null, { timeout: 10000 });
 check("adaptation d'une ligne → révision 2, « Décision à réexaminer »", (await page.locator('.programme-case-editor h2:has-text("Décision à réexaminer")').count()) === 1);
 await page.goto(`${projectUrl}?module=parcours&etape=10`);
+await page.waitForSelector("#ah84-open");
+await page.locator("#ah84-open").click();
+await page.locator("#ah84-programme > summary").click();
 await page.waitForSelector(".programme-transmission");
-check("étape 10 : « Programme lié · Hôtel urbain … · révision 2 »", /Programme lié · Hôtel urbain.*révision 2/.test((await page.locator(".programme-transmission").first().textContent()).replace(/\s+/g, " ")));
+check("étape 10 : sous-page « Harmonie du bâtiment » → « Programme lié · Hôtel urbain … · révision 2 »", /Programme lié · Hôtel urbain.*révision 2/.test((await page.locator(".programme-transmission").first().textContent()).replace(/\s+/g, " ")));
 await page.goto(`${projectUrl}?module=parcours&etape=2`);
 await page.waitForSelector(".library-fold");
 check("étape 02 : pli « Exemples · qualités du site par type de bâtiment »", (await page.locator(".library-fold > summary").textContent()) === "Exemples · qualités du site par type de bâtiment");
@@ -317,6 +320,11 @@ check("atelier : rechargement → modèle toujours là", (await page.locator("#m
 await page.goto(`${exampleUrl}?module=parcours&etape=10`);
 await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
 check("étape 10 : l'Atelier est monté dans l'étape (même moteur)", (await page.locator(".native-atelier #viewer-info").count()) === 1);
+// Sous-page « Harmonie du bâtiment » (V8.4) : depuis le bouton « Harmonie » du groupe Analyser de la barre d'outils native
+await page.locator('#atelier-toolbar [data-atab="analyse"]').click();
+await page.locator("#atelier-harmonie-button").click();
+await page.waitForFunction(() => !document.getElementById("atelier-harmonie-page")?.hidden);
+check("étape 10 : « Analyser → Harmonie » ouvre la sous-page « Harmonie du bâtiment » (en-tête, 3 rubriques, Atelier masqué)", (await page.locator("#ah84-title").textContent()) === "Harmonie du bâtiment" && (await page.locator(".ah84-links button").count()) === 3 && !(await page.locator(".native-atelier").isVisible()));
 // Propositions localisées sur les locaux du modèle (flow-v62 / h7-app)
 await page.evaluate(() => { document.querySelector(".h7-panel").open = true; });
 await page.waitForSelector(".h7-locals");
@@ -333,6 +341,8 @@ check("étape 10 : local retenu, indépendant du parti retenu → « 2 choix ret
 await page.screenshot({ path: `${OUT}/10-desktop.png`, fullPage: true });
 
 // 6b'. Bilan Harmonie du bâtiment conçu (flow-v62) : pli, bilan en ligne, plans, transmission, revue, rapport, références directionnelles
+await page.locator(".ah84-links button:has-text('Bilan & espaces')").click();
+check("sous-page : « Bilan & espaces » ouvre le pli « Bilan du bâtiment, plans et ambiances » avec « Capacités & ambiances des espaces »", (await page.locator("#ah84-bilan").evaluate((d) => d.open)) === true && (await page.locator('button:has-text("Capacités & ambiances des espaces")').count()) === 1);
 await page.locator(".design-review-fold > summary").click();
 check("étape 10 : pli « Bilan Harmonie du bâtiment conçu · modèle … », 6 niveaux et 74 zones", /^Bilan Harmonie du bâtiment conçu · modèle [0-9a-f]{8}$/.test((await page.locator(".design-review-fold > summary").textContent()).trim()) && /6 niveaux et 74 zones analysables/.test(await page.locator(".design-review-fold .h7-fold-body").textContent()));
 await page.locator('.design-review-fold button:has-text("Lire le bilan du bâtiment")').click();
@@ -366,6 +376,9 @@ await page.waitForFunction(() => /"ready": true/.test(document.querySelector(".d
 check("références directionnelles : « Enregistrer les références » → prêtes (Gua calculé sous hypothèse), étape 10 à réexaminer", /"name": "Qian"/.test(await page.locator(".design-compass .h7-json").textContent()));
 await page.waitForFunction(() => /à réexaminer/.test(document.querySelector(".h7-panel > summary")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
 check("références directionnelles : l'empreinte de l'étape 10 change → « … · à réexaminer »", /à réexaminer/.test(await page.locator(".h7-panel > summary").textContent()));
+await page.keyboard.press("Escape");
+await page.waitForFunction(() => document.getElementById("atelier-harmonie-page")?.hidden === true);
+check("sous-page : Échap → « Retour à l’Atelier », le dessin réapparaît", await page.locator(".native-atelier").isVisible());
 
 // 6c. Étape 01 de l'exemple : outil Parcelle (fichier P.118 servi par Fadi), transmission au modèle, propositions de site
 await page.goto(`${exampleUrl}?module=parcours&etape=1`);

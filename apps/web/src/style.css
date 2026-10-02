@@ -1317,6 +1317,87 @@ button.h7-chip.h7-goto:hover {
 .project-tools {
   margin-top: 18px;
 }
+/* « Harmonie du bâtiment » — sous-page de l'Atelier à l'étape 10 (V8.4) : seule la page reste visible quand elle est ouverte. */
+.ah84-active-work > :not(#atelier-harmonie-page) {
+  display: none !important;
+}
+.ah84-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 0 20px;
+  border-bottom: 1px solid #d3ddd8;
+}
+.ah84-page-head > div {
+  min-width: 0;
+}
+.ah84-page-head h1 {
+  margin: 6px 0 0;
+  font-size: clamp(24px, 4vw, 32px);
+}
+.ah84-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #5b786b;
+}
+.ah84-project {
+  font-weight: 700;
+}
+.ah84-page-head p {
+  margin: 10px 0 0;
+}
+.ah84-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+  min-width: 0;
+}
+.ah84-links .button-secondary,
+.ah84-back {
+  min-height: 44px;
+  white-space: normal;
+  line-height: 1.4;
+}
+.ah84-back {
+  flex-shrink: 0;
+}
+.ah84-fold {
+  margin: 18px 0;
+}
+.ah84-fold > summary {
+  font-size: 20px;
+  line-height: 1.35;
+  min-height: 62px;
+}
+.ah84-page-footer {
+  padding: 12px 0 24px;
+}
+.ah84-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+@media (max-width: 720px) {
+  .ah84-page-head {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .ah84-back {
+    align-self: stretch;
+  }
+  .ah84-links .button-secondary {
+    flex: 1 1 130px;
+  }
+  .ah84-fold > summary {
+    font-size: 18px;
+    padding: 16px;
+  }
+}
 /* Bilan Harmonie du bâtiment conçu (flow-v62) : pli de l'étape et bilan en ligne ; la feuille `flow-v62-css` du prototype est servie avec le bilan. */
 .design-review-fold {
   margin: 12px 0;
