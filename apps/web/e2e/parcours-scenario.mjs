@@ -352,12 +352,16 @@ check("étape 12 retenue → étape 19 repasse « À reprendre » et n'est plus 
 // 6. Exemple P.118 importé
 await page.goto(`${BASE}/projets`);
 await page.waitForSelector('.example-card button:has-text("Importer")');
+let importProgressSeen = false;
 await measure("import de l'exemple P.118 → vue d'ensemble affichée", async () => {
   await page.locator('.example-card button:has-text("Importer")').first().click();
+  importProgressSeen = await page.waitForSelector(".example-card-progress", { timeout: 3000 }).then(() => true).catch(() => false);
   await page.waitForURL(/\/projets\/proj_/);
   await page.waitForSelector(".parcours-steps-summary");
 });
 const exampleUrl = page.url().split("?")[0];
+const importToastSeen = await page.waitForFunction(() => /Exemple importé : votre copie/.test(document.querySelector(".h7-toast")?.textContent || ""), null, { timeout: 5000 }).then(() => true).catch(() => false);
+check("import de l'exemple : état « Import en cours… » visible sur la carte pendant la copie, puis message « Exemple importé : votre copie … est prête »", importProgressSeen, importToastSeen ? "toast vu" : "toast non observé (effacé avant la lecture)");
 check("exemple : 21 / 21 étapes terminées", (await page.locator(".parcours-steps-summary").textContent()).includes("21 / 21"));
 await page.waitForSelector(".seed888", { timeout: 10000 });
 const [kmzDl] = await Promise.all([page.waitForEvent("download"), page.locator('.seed888 a:has-text("118_officiel.kmz")').click()]);
@@ -1247,6 +1251,10 @@ await pageFresh.fill('input[name="email"]', `fresh-${Date.now()}@example.com`);
 await pageFresh.fill('input[name="password"]', "scenario-pass-123");
 await pageFresh.click('button[type="submit"]');
 await pageFresh.waitForURL(/\/(projets|accueil)/);
+// Accueil d'un compte sans projet : l'exemple P.118 s'importe d'un geste (bouton avec suivi), avant « Créer mon premier projet ».
+await pageFresh.goto(`${BASE}/accueil`);
+await pageFresh.waitForSelector(".home-empty-state", { timeout: 20000 });
+check("accueil sans projet : « Importer l’exemple P.118 et l’ouvrir » proposé en premier, puis « Créer mon premier projet »", (await pageFresh.locator('.home-empty-state button:has-text("Importer l’exemple P.118 et l’ouvrir")').count()) === 1 && (await pageFresh.locator('.home-empty-state a:has-text("Créer mon premier projet")').count()) === 1);
 await pageFresh.goto(`${BASE}/bibliotheque/batiments/parcours_lot118`);
 await pageFresh.waitForSelector('.bl-hero button:has-text("Ouvrir le modèle P.118")', { timeout: 30000 });
 await pageFresh.locator('.bl-hero button:has-text("Ouvrir le modèle P.118")').click();

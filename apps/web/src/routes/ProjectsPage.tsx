@@ -1,8 +1,9 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ApiError, api, ROLE_LABEL } from "../lib/api";
 import { ImportProjectButton } from "../modules/projets-sources/ImportProjectButton";
+import { IMPORT_PROGRESS_TEXT, useImportExample } from "../lib/use-import-example";
 
 /**
  * Exemples importables — une copie indépendante est créée dans le compte de
@@ -11,20 +12,10 @@ import { ImportProjectButton } from "../modules/projets-sources/ImportProjectBut
  * mécanisme de propositions Harmonie que Fadi n'a pas encore.
  */
 function ExamplesSection() {
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const examplesQuery = useQuery({ queryKey: ["examples"], queryFn: api.listExamples });
-  const [importingId, setImportingId] = useState<string | null>(null);
-
-  const importExample = useMutation({
-    mutationFn: (exampleId: string) => api.importExample(exampleId),
-    onMutate: (exampleId) => setImportingId(exampleId),
-    onSuccess: (project) => {
-      void queryClient.invalidateQueries({ queryKey: ["projects"] });
-      navigate(`/projets/${project.id}`);
-    },
-    onSettled: () => setImportingId(null),
-  });
+  // L'import copie 21 étapes, le modèle natif (≈ 1 Mo), la parcelle et les documents de base : plusieurs secondes.
+  // Toute la carte le déclenche (pas seulement le bouton), l'état est visible, un échec est dit et se retente.
+  const { importingId, error: importError, start } = useImportExample();
 
   if (examplesQuery.isLoading || !examplesQuery.data || examplesQuery.data.length === 0) {
     return null;
@@ -37,19 +28,43 @@ function ExamplesSection() {
         Des cas déjà travaillés, à importer comme point de départ. Chaque import crée votre propre copie ; l'exemple d'origine ne change pas.
       </p>
       <div className="examples-grid">
-        {examplesQuery.data.map((ex) => (
-          <article key={ex.id} className="example-card">
-            <span className="eyebrow">{ex.kind === "exemple-complet" ? "EXEMPLE COMPLET" : "ARCHIVE DE TRAVAIL"}</span>
-            <h3>{ex.name}</h3>
-            <p>{ex.summary}</p>
-            <p className="example-card-meta">
-              {ex.stepsWithContent} / 21 étapes avec contenu importé · {ex.documentedDecisions} décisions documentées
-            </p>
-            <button type="button" onClick={() => importExample.mutate(ex.id)} disabled={importingId === ex.id}>
-              {importingId === ex.id ? "Import…" : "Importer"}
-            </button>
-          </article>
-        ))}
+        {examplesQuery.data.map((ex) => {
+          const importing = importingId === ex.id;
+          const error = importError?.id === ex.id ? importError.message : null;
+          return (
+            <article
+              key={ex.id}
+              className={`example-card${importing ? " example-card-importing" : ""}`}
+              data-example={ex.id}
+              aria-busy={importing}
+              onClick={(e) => {
+                // Un lien ou un bouton de la carte garde son propre comportement ; ailleurs, la carte entière importe.
+                if ((e.target as HTMLElement).closest("button, a")) return;
+                start(ex.id);
+              }}
+            >
+              <span className="eyebrow">{ex.kind === "exemple-complet" ? "EXEMPLE COMPLET" : "ARCHIVE DE TRAVAIL"}</span>
+              <h3>{ex.name}</h3>
+              <p>{ex.summary}</p>
+              <p className="example-card-meta">
+                {ex.stepsWithContent} / 21 étapes avec contenu importé · {ex.documentedDecisions} décisions documentées
+              </p>
+              <button type="button" className="button-primary" onClick={() => start(ex.id)} disabled={importingId !== null}>
+                {importing ? "Import en cours…" : "Importer et ouvrir"}
+              </button>
+              {importing && (
+                <p className="example-card-progress" role="status">
+                  <span className="example-card-spinner" aria-hidden="true" /> {IMPORT_PROGRESS_TEXT}
+                </p>
+              )}
+              {error && (
+                <p className="h7-error" role="alert">
+                  {error}
+                </p>
+              )}
+            </article>
+          );
+        })}
       </div>
     </section>
   );

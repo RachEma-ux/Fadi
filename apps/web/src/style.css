@@ -1099,6 +1099,49 @@ h3 {
 .example-card button:disabled {
   opacity: 0.6;
 }
+/* Toute la carte importe : curseur, retour au survol, état « en cours » visible (téléphone compris). */
+.example-card {
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.example-card:hover {
+  border-color: #9fb8aa;
+  box-shadow: 0 4px 14px rgba(23, 63, 53, 0.08);
+}
+.example-card-importing {
+  border-color: var(--forest-900);
+  cursor: progress;
+}
+.example-card-progress {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--ink) !important;
+  font-size: 13px !important;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #e4efe7;
+}
+.example-card-spinner {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 2px solid #b9d0c3;
+  border-top-color: var(--forest-900);
+  animation: example-spin 0.9s linear infinite;
+}
+@keyframes example-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .example-card-spinner {
+    animation: none;
+  }
+}
 
 .atelier-panel form {
   display: flex;
@@ -2232,6 +2275,39 @@ button.h7-chip.h7-goto:hover {
   .module-nav {
     padding: 14px 16px;
   }
+  /* Téléphone : en-tête compact (titre, méta sur une ligne) et modules sur une seule rangée défilante,
+     pour que les cartes des 21 étapes arrivent dès le premier écran. */
+  .project-header {
+    padding: 12px 16px;
+    gap: 6px;
+  }
+  .project-header h1 {
+    font-size: 20px;
+    line-height: 1.25;
+    margin: 0;
+  }
+  .project-header-meta {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    font-size: 12.5px;
+  }
+  .module-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 10px 16px;
+    scroll-snap-type: x proximity;
+  }
+  .module-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .module-nav button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
   .module-content {
     padding: 16px;
   }
@@ -2550,11 +2626,6 @@ button.h7-chip.h7-goto:hover {
   background: #fbeeea;
   border-color: #ecc9c0;
 }
-@media (max-width: 720px) {
-  .project-header-meta {
-    align-items: flex-start;
-  }
-}
 .offline-banner {
   margin: 0;
   padding: 10px 28px;
@@ -2773,6 +2844,30 @@ fieldset.access-fieldset:disabled {
   padding: 18px;
   margin: 16px 0;
 }
+.seed888 > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  list-style: none;
+}
+.seed888 > summary::-webkit-details-marker {
+  display: none;
+}
+.seed888 > summary::before {
+  content: "▸";
+  font-size: 12px;
+  color: var(--muted);
+}
+.seed888[open] > summary::before {
+  content: "▾";
+}
+.seed888-count {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--muted);
+}
 .seed888 .biz-actions {
   margin: 10px 0;
 }
@@ -2879,4 +2974,25 @@ fieldset.access-fieldset:disabled {
 }
 .comment-reply-form {
   margin-top: 8px;
+}
+
+/* Téléphone (≤ 720 px) : les méta de l'en-tête sur une ligne, titre de module plus court, pli des documents de base compact — posés en fin de feuille pour primer sur les règles de base. */
+@media (max-width: 720px) {
+  .project-header-meta {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px 12px;
+    font-size: 12.5px;
+    width: 100%;
+  }
+  .module-content > h2 {
+    font-size: 20px;
+    margin: 0 0 10px;
+  }
+  .seed888 {
+    padding: 12px 14px;
+    margin: 10px 0;
+  }
 }

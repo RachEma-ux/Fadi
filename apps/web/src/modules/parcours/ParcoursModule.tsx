@@ -358,13 +358,20 @@ function StepDetail({
 }
 
 /** « Documents de base intégrés » de la vue d'ensemble du projet d'exemple (prototype) : les fichiers du prototype, sources des étapes 01 et 02. */
+/** Sur téléphone, le pli est replié au départ pour que les cartes des 21 étapes arrivent dès le premier écran ; son contenu reste à un geste. */
+const narrowScreen = () => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(max-width: 720px)").matches;
+
 function BaseDocuments({ projectId }: { projectId: string }) {
   const project = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId) });
+  const [open, setOpen] = useState(() => !narrowScreen());
   const base = project.data?.baseDocuments;
   if (!base) return null;
   return (
-    <div className="seed888">
-      <strong>Documents de base intégrés</strong>
+    <details className="seed888" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>
+        <strong>Documents de base intégrés</strong>
+        <span className="seed888-count">{base.files.length} fichier(s)</span>
+      </summary>
       <div className="biz-actions">
         {base.files.map((f) => (
           <a
@@ -379,7 +386,7 @@ function BaseDocuments({ projectId }: { projectId: string }) {
         ))}
       </div>
       <p>{base.caption}</p>
-    </div>
+    </details>
   );
 }
 

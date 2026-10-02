@@ -64,8 +64,15 @@ End-to-end scenario (Playwright, Chromium), against the built API and `vite prev
 ```sh
 node apps/api/dist/server.js &                       # DATABASE_URL, WEB_ORIGIN=http://localhost:4173, PORT=3001
 npm run preview --workspace=@fadi/web -- --port 4173 &
-node apps/web/e2e/parcours-scenario.mjs              # ~250 checks incl. axe-core; writes docs/migration/captures/webapp/
+node apps/web/e2e/parcours-scenario.mjs              # ~270 checks incl. axe-core; writes docs/migration/captures/webapp/
 ```
+
+Temporary public instance (`.github/workflows/builder-deploy.yml`, "Builder Deploy"): launched by hand from
+GitHub → Actions → Builder Deploy → *Run workflow* (pick the branch and the duration, 5–30 min). The run builds
+**the branch as it is at launch time**, migrates a fresh PostGIS service (data is truncated at each run), starts
+the API and `vite preview`, and publishes a Cloudflare quick-tunnel URL (`*.trycloudflare.com`) as a job
+annotation ("Fadi en ligne") and in the logs. A running instance never picks up later commits — relaunch the
+workflow after pushing to see the current build.
 
 Never put credentials in source files — `apps/api/.env` is gitignored; only `.env.example` /
 `.env.test.example` (placeholder values) are committed. The reference HTML itself is not committed either

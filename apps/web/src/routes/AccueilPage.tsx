@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api, type ParcoursStep, type ParcoursStepStatus, type Project } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
+import { COMPLETE_EXAMPLE_ID, IMPORT_PROGRESS_TEXT, useImportExample } from "../lib/use-import-example";
 import { MassingIllustration } from "../components/MassingIllustration";
 
 /** Dérivé de l'adresse e-mail (aucun prénom n'est collecté à l'inscription) : la partie alphabétique avant le premier chiffre ou séparateur, mise en majuscule initiale. Pas un prénom inventé — littéralement ce que la personne a tapé. */
@@ -47,6 +48,8 @@ const pad2 = (n: number) => String(n).padStart(2, "0");
 export function AccueilPage() {
   const { user } = useAuth();
   const projectsQuery = useQuery({ queryKey: ["projects"], queryFn: api.listProjects });
+  // Premier contact : l'exemple P.118 s'importe d'un geste depuis l'accueil, avec le même suivi que la carte de « Mes projets ».
+  const importExample = useImportExample();
 
   const mostRecent: Project | undefined = useMemo(
     () => [...(projectsQuery.data ?? [])].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0],
@@ -104,17 +107,27 @@ export function AccueilPage() {
           {projectsQuery.isLoading && <p role="status">Chargement…</p>}
 
           {projectsQuery.data && !mostRecent && (
-            <section className="panel home-empty-state">
+            <section className="panel home-empty-state" aria-busy={importExample.importingId !== null}>
               <h2>Aucun projet pour l'instant</h2>
-              <p>Créez votre premier projet pour commencer à structurer sa parcelle, son programme et sa conception, ou importez un exemple déjà travaillé pour voir le Parcours rempli de bout en bout.</p>
+              <p>Créez votre premier projet pour commencer à structurer sa parcelle, son programme et sa conception, ou importez l’exemple P.118 (21 étapes illustrées, modèle de l’Atelier, parcelle) pour voir le Parcours rempli de bout en bout.</p>
               <div className="resume-card-actions">
-                <Link to="/projets" className="button-primary">
+                <button type="button" className="button-primary" disabled={importExample.importingId !== null} onClick={() => importExample.start(COMPLETE_EXAMPLE_ID)}>
+                  {importExample.importingId ? "Import en cours…" : "Importer l’exemple P.118 et l’ouvrir"}
+                </button>
+                <Link to="/projets" className="button-secondary">
                   Créer mon premier projet
                 </Link>
-                <Link to="/projets#examples-heading" className="button-secondary">
-                  Importer un exemple
-                </Link>
               </div>
+              {importExample.importingId && (
+                <p className="example-card-progress" role="status">
+                  <span className="example-card-spinner" aria-hidden="true" /> {IMPORT_PROGRESS_TEXT}
+                </p>
+              )}
+              {importExample.error && (
+                <p className="h7-error" role="alert">
+                  {importExample.error.message}
+                </p>
+              )}
             </section>
           )}
 
