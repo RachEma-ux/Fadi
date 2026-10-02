@@ -72,15 +72,39 @@ export interface SiteContextDeclaration {
   observationStatus: string;
   observedAt: string;
   satelliteObserved: boolean;
+  /** Altitude indicative du centre (`collectElevation` de flow-v62), collectée à la demande ; jamais inventée. */
+  elevation?: SiteContextElevation | null;
+}
+
+export interface SiteContextElevation {
+  value: number;
+  unit: "m";
+  coordinates: [number, number];
+  at: string;
+  source: string;
+  /** Toujours « service numérique, non relevé topographique » (prototype). */
+  quality: string;
+}
+
+/** `collectElevation` de flow-v62 : l'altitude du centre reçue du service, posée sur le contexte (observation conservée). */
+export function withCenterElevation(current: SiteContextDeclaration | null, point: readonly [number, number, number], now: string): SiteContextDeclaration {
+  if (point.length < 3 || !point.slice(0, 3).every(Number.isFinite)) throw new HarmonieError("Coordonnées ou altitude de réponse incohérentes");
+  return {
+    observation: current?.observation ?? "",
+    observationStatus: current?.observationStatus ?? "",
+    observedAt: current?.observedAt ?? "",
+    satelliteObserved: current?.satelliteObserved === true,
+    elevation: { value: point[2], unit: "m", coordinates: [point[0], point[1]], at: now, source: "MapTiler Elevation API", quality: "service numérique, non relevé topographique" },
+  };
 }
 
 /** Règle du prototype : une observation déclarée décrit la source, la date et ce qui a été observé (20 caractères minimum). */
 export const SITE_OBSERVATION_MIN = 20;
 export const SITE_OBSERVATION_STATUS = "Déclaration utilisateur, non contrôle indépendant";
-export function declareSiteObservation(note: string, now: string): SiteContextDeclaration {
+export function declareSiteObservation(note: string, now: string, current: SiteContextDeclaration | null = null): SiteContextDeclaration {
   const observation = note.trim();
   if (observation.length < SITE_OBSERVATION_MIN) throw new HarmonieError("Décrivez la source, la date et ce qui a été observé (20 caractères minimum).");
-  return { observation, observationStatus: SITE_OBSERVATION_STATUS, observedAt: now, satelliteObserved: true };
+  return { observation, observationStatus: SITE_OBSERVATION_STATUS, observedAt: now, satelliteObserved: true, elevation: current?.elevation ?? null };
 }
 
 export interface DesignReviewInput {

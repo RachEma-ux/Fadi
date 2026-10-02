@@ -271,12 +271,20 @@ function attachmentsOf(raw: unknown, mapStep: (f: Record<string, unknown>) => nu
 /** `demoP118V81.mode` du prototype : la référence protégée de l'exemple résolu, ou sa copie modifiable. */
 /** Le contexte extérieur déclaré d'un export (Fadi ou prototype `siteContextV62`) : seule une observation consignée est reprise, jamais une collecte. */
 export function siteContextOf(raw: unknown): Record<string, unknown> | null {
-  if (!isRecord(raw) || typeof raw["observation"] !== "string" || !raw["observation"].trim()) return null;
+  if (!isRecord(raw)) return null;
+  const observation = typeof raw["observation"] === "string" ? raw["observation"].trim() : "";
+  const e = raw["elevation"];
+  const elevation =
+    isRecord(e) && typeof e["value"] === "number" && Number.isFinite(e["value"]) && Array.isArray(e["coordinates"]) && e["coordinates"].length >= 2 && e["coordinates"].slice(0, 2).every((v) => typeof v === "number")
+      ? { value: e["value"], unit: "m", coordinates: [e["coordinates"][0], e["coordinates"][1]], at: typeof e["at"] === "string" ? e["at"] : "", source: typeof e["source"] === "string" ? e["source"] : "MapTiler Elevation API", quality: typeof e["quality"] === "string" ? e["quality"] : "service numérique, non relevé topographique" }
+      : null;
+  if (!observation && !elevation) return null;
   return {
-    observation: raw["observation"].trim(),
-    observationStatus: typeof raw["observationStatus"] === "string" ? raw["observationStatus"] : "Déclaration utilisateur, non contrôle indépendant",
-    observedAt: typeof raw["observedAt"] === "string" ? raw["observedAt"] : "",
-    satelliteObserved: raw["satelliteObserved"] === true,
+    observation,
+    observationStatus: observation ? (typeof raw["observationStatus"] === "string" ? raw["observationStatus"] : "Déclaration utilisateur, non contrôle indépendant") : "",
+    observedAt: observation ? (typeof raw["observedAt"] === "string" ? raw["observedAt"] : "") : "",
+    satelliteObserved: !!observation && raw["satelliteObserved"] === true,
+    elevation,
   };
 }
 

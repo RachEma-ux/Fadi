@@ -8,11 +8,12 @@
  *   GET  /rapport     → « Exporter le bilan HTML » (Bilan_Harmonie_Batiment_V7.html, pièce jointe)
  *   PUT  /compass     → « Enregistrer les références » directionnelles (save-compass)
  *   PUT  /observation → « Enregistrer comme observation déclarée » (site-note : contexte extérieur, 20 caractères minimum)
+ *   PUT  /elevation   → « Collecter l'altitude indicative du centre » (altitude reçue du service par le navigateur)
  */
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { declareSiteObservation, designReviewSnapshot, HarmonieError } from "@parcours/domain-model";
+import { declareSiteObservation, designReviewSnapshot, HarmonieError, withCenterElevation } from "@parcours/domain-model";
 import { db } from "../db/client.js";
 import { projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -115,7 +116,42 @@ designReviewRouter.put("/observation", async (req, res) => {
   const now = new Date().toISOString();
   let siteContext;
   try {
-    siteContext = declareSiteObservation(parsed.data.note, now);
+    siteContext = declareSiteObservation(parsed.data.note, now, project.siteContext ?? null);
+  } catch (err) {
+    if (err instanceof HarmonieError) {
+      res.status(422).json({ error: "harmonie_rule", message: err.message });
+      return;
+    }
+    throw err;
+  }
+  const result = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
+    await tx.update(projects).set({ siteContext, updatedAt: new Date() }).where(eq(projects.id, project.id));
+    return designReviewView(await loadDesignContext(tx, { ...project, siteContext }, now));
+  });
+  res.json(result);
+});
+
+const centerElevationSchema = z.object({ point: z.tuple([z.number(), z.number(), z.number()]) });
+
+/**
+ * « Collecter l'altitude indicative du centre » (`collectElevation` de
+ * flow-v62) : l'altitude reçue du service par le navigateur est posée sur le
+ * contexte extérieur (« service numérique, non relevé topographique ») ;
+ * l'observation déclarée est conservée, l'empreinte du bilan change.
+ */
+designReviewRouter.put("/elevation", async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const parsed = centerElevationSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+    return;
+  }
+  const now = new Date().toISOString();
+  let siteContext;
+  try {
+    siteContext = withCenterElevation(project.siteContext ?? null, parsed.data.point, now);
   } catch (err) {
     if (err instanceof HarmonieError) {
       res.status(422).json({ error: "harmonie_rule", message: err.message });

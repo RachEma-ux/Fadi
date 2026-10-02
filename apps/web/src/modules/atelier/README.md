@@ -21,4 +21,6 @@ Le moteur (scripts, markup, feuille de style — `native/engine.ts`) n'est charg
 
 L'onglet « Hypothèses & MapTiler » du bilan reçoit l'observation déclarée du contexte extérieur (`SiteObservationForm` → `PUT …/design-review/observation`, 20 caractères minimum, statut du prototype) ; elle lève la réserve « Contexte extérieur non observé » avec un géoréférencement et périme le bilan produit avant elle.
 
-Reste : copie automatique de la référence au premier dessin, fond satellite et altimétrie MapTiler (voir « Limites restantes » de la matrice).
+« Collecter l'altitude indicative du centre » appelle le service MapTiler depuis le navigateur avec la clé de l'utilisateur (`lib/maptiler.ts`) et pose l'altitude reçue sur le contexte (`PUT …/design-review/elevation`).
+
+Reste : copie automatique de la référence au premier dessin, « Afficher le satellite » dans le bilan (le fond se consulte à l'étape 01).

@@ -348,7 +348,7 @@ export interface DesignReviewView {
   assumptions: { id: string; topic: string; value: string; source: string; validation: string; owner: string; status: string }[];
   georeference: { latitude: number; longitude: number; projectNorth: number | null; source: string; hypothesis: boolean } | null;
   /** Observation déclarée du contexte extérieur (`site-note` du prototype), null tant que rien n'est déclaré. */
-  siteContext: { observation: string; observationStatus: string; observedAt: string; satelliteObserved: boolean } | null;
+  siteContext: { observation: string; observationStatus: string; observedAt: string; satelliteObserved: boolean; elevation?: { value: number; unit: "m"; coordinates: [number, number]; at: string; source: string; quality: string } | null } | null;
   profileLabel: string;
   example: boolean;
   compass: { values: Record<string, unknown>; status: { ready: boolean; missing: string[]; facing: number | null; sitting: number | null; gua: { n: number; name: string; element: string; group: string; direction: string } | null } };
@@ -678,6 +678,10 @@ export const api = {
     request<{ id: string; code: string; name: string; warnings: string[] }>(`/projects/${projectId}/copies`, { method: "POST", body: JSON.stringify(name ? { name } : {}) }),
   putSiteObservations: (projectId: string, input: SiteObservationsInput) =>
     request<ParcoursStep>(`/projects/${projectId}/steps/1/site`, { method: "PUT", body: JSON.stringify(input) }),
+  /** « Collecter centre + sommets » : les altitudes reçues du service (contrôlées par le navigateur) deviennent l'altimétrie du site. */
+  putSiteElevation: (projectId: string, points: [number, number, number][]) => request<ParcoursStep>(`/projects/${projectId}/steps/1/site/elevation`, { method: "PUT", body: JSON.stringify({ points }) }),
+  /** « Collecter l'altitude indicative du centre » (bilan du bâtiment). */
+  putCenterElevation: (projectId: string, point: [number, number, number]) => request<DesignReviewView>(`/projects/${projectId}/design-review/elevation`, { method: "PUT", body: JSON.stringify({ point }) }),
   decideHarmonie: (projectId: string, stepNumber: number, proposalId: string, input: HarmonieDecisionInput & { expectedVersion?: number }) =>
     request<ParcoursStep>(`/projects/${projectId}/steps/${stepNumber}/harmonie/${encodeURIComponent(proposalId)}`, {
       method: "POST",

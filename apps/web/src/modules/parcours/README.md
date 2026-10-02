@@ -14,7 +14,7 @@ Porté depuis le prototype V8.19 (voir `docs/migration/matrix.md`, section 1, et
 
 - `ParcoursModule.tsx` : vue d'ensemble (21 cartes, phases, progression), vue d'une étape (`?etape=N`), Précédente / Suivante, « Marquer terminée », outils du projet (archive JSON, import, synthèse Harmonie) ;
 - `StepForm.tsx` : les formulaires métier `BIZ_SCHEMAS` (17 étapes) avec leurs indicateurs (14, 17, 19), validés et persistés par l'API ;
-- `HarmoniePanel.tsx` + `SiteHarmonie.tsx` : le panneau Harmonie de chaque étape (propositions A/B/C, arbitrages, péremption « à réexaminer », onglets, rapports) et les propositions de site de l'étape 01 ; à l'étape 07, le pli « Proposer un transfert surfacique à total constant » (`modules/programmation/ProgrammeTransferFold.tsx`) ;
+- `HarmoniePanel.tsx` + `SiteHarmonie.tsx` : le panneau Harmonie de chaque étape (propositions A/B/C, arbitrages, péremption « à réexaminer », onglets, rapports) et les propositions de site de l'étape 01 ; `MapTilerCard.tsx` (avec `lib/maptiler.ts`) : fond satellite, altimétrie du centre et des sommets et connexion MapTiler du pli « Données du site », appels depuis le navigateur avec la clé de l'utilisateur, résultats enregistrés comme données déclarées de l'étape ; à l'étape 07, le pli « Proposer un transfert surfacique à total constant » (`modules/programmation/ProgrammeTransferFold.tsx`) ;
 - les outils des étapes outillées : outil Parcelle (01, `modules/projets-sources/ParcelleTool.tsx`), Atelier natif et sous-page « Harmonie du bâtiment » (10, 11, `modules/atelier`), bilan du bâtiment conçu ;
 - le récit de l'exemple P.118 importé, jamais fabriqué pour une étape qui n'en a pas.
 

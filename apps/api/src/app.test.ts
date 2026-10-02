@@ -682,6 +682,17 @@ describe("Étape 01 — propositions de site Harmonie calculées sur la parcelle
     expect(saved.body.content.harmonie.revision).toBe(1);
     expect(saved.body.status).toBe("en-cours");
 
+    // « Collecter centre + sommets » : les altitudes reçues du service (contrôlées par le navigateur) deviennent l'altimétrie du
+    // site — modèle de terrain, non relevé —, l'empreinte change et les propositions citent l'amplitude ; forme contrôlée.
+    expect((await client.put(`/projects/${pid}/steps/1/site/elevation`).send({ points: [] })).status).toBe(400);
+    expect((await client.put(`/projects/${pid}/steps/1/site/elevation`).send({ points: [[-7.3, 33.7, 10], [200, 33.7, 11]] })).status).toBe(422); // hors plage du service
+    const collected = await client.put(`/projects/${pid}/steps/1/site/elevation`).send({ points: [[-7.3196824, 33.7082212, 42.5], [-7.3198, 33.708, 40.1], [-7.3195, 33.7084, 44.9]] });
+    expect(collected.status).toBe(200);
+    expect(collected.body.site.observations.elevation).toMatchObject({ source: "MapTiler Elevation API", status: "Modèle de terrain · non relevé topographique", points: [[-7.3196824, 33.7082212, 42.5], [-7.3198, 33.708, 40.1], [-7.3195, 33.7084, 44.9]] });
+    expect(collected.body.site.observations.elevation.range).toBeCloseTo(4.8, 9);
+    expect(collected.body.proposals[0].why).toContain("Altimétrie de service : amplitude 4,8 m sur les points reçus");
+    expect((await client.get(`/projects/${pid}/steps/1`)).body.site.observations.source).toBe("Relevé photo du 12/03/2026"); // le reste des données du site est conservé
+
     // Retenir B → intention reçue par l'étape 02 (cible de l'étape 01).
     const retained = await client.post(`/projects/${pid}/steps/1/harmonie/H00-B`).send({ status: "retained" });
     expect(retained.status).toBe(200);
@@ -1272,8 +1283,13 @@ describe("Bilan Harmonie du bâtiment conçu (flow-v62) et références directio
     expect(declared.body.audit.find((x: { id: string }) => x.id === "external")).toMatchObject({ status: "OK" });
     expect((await client.get(`/projects/${pid}/documents`)).body.documents.find((d: { kind: string }) => d.kind === "bilan-batiment").freshness).toBe("perime");
     expect((await client.get(`/projects/${pid}/analyses`)).body.checks.find((c: { id: string }) => c.id === "design:CONTEXT")).toMatchObject({ status: "conforme" });
+    // « Collecter l'altitude indicative du centre » : posée sur le contexte, l'observation conservée, valeur incohérente refusée.
+    expect((await client.put(`/projects/${pid}/design-review/elevation`).send({ point: [-7.3196824, 33.7082212, "x"] })).status).toBe(400);
+    const centre = await client.put(`/projects/${pid}/design-review/elevation`).send({ point: [-7.3196824, 33.7082212, 42.5] });
+    expect(centre.status).toBe(200);
+    expect(centre.body.siteContext).toMatchObject({ satelliteObserved: true, elevation: { value: 42.5, unit: "m", coordinates: [-7.3196824, 33.7082212], source: "MapTiler Elevation API", quality: "service numérique, non relevé topographique" } });
     const archived = (await client.get(`/projects/${pid}/archive`)).body;
-    expect(archived.project.siteContext).toMatchObject({ satelliteObserved: true });
+    expect(archived.project.siteContext).toMatchObject({ satelliteObserved: true, elevation: { value: 42.5 } });
     // Jamais pour un autre utilisateur.
     const other = await registerAndLogin("design-other@example.com");
     expect((await other.get(`/projects/${pid}/design-review`)).status).toBe(404);

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { containment, declareSiteObservation, designAnalysis, designAudit, designPlanSvg, designReportHtml, designReviewSnapshot, designTraceHtml, toLocal, validPolygon, type DesignReviewInput } from "./design-review";
+import { containment, declareSiteObservation, withCenterElevation, designAnalysis, designAudit, designPlanSvg, designReportHtml, designReviewSnapshot, designTraceHtml, toLocal, validPolygon, type DesignReviewInput } from "./design-review";
 import { baseStars, compassStatus, harmonyAssess, harmonyDossier, harmonyFullAssessment, harmonyProfile, harmonyRecordStatus, harmonySector, natalStatus, type HarmonyEngineData } from "./harmony-engine";
 import type { NativeFloorDesignLike, NativeLevelLike } from "./model-analysis";
 import { programmeCaseSums } from "./programme";
@@ -138,7 +138,12 @@ describe("bilan du bâtiment conçu (flow-v62 analyse / audit / plan / rapport)"
   it("observation déclarée du contexte extérieur : règle des 20 caractères, statut du prototype, réserve CONTEXT levée avec un géoréférencement, empreinte des entrées modifiée", () => {
     expect(() => declareSiteObservation("trop court", NOW)).toThrow("Décrivez la source, la date et ce qui a été observé (20 caractères minimum).");
     const declared = declareSiteObservation("  Voie en T au nord-est, masse voisine R+3 à l'ouest ; relevé sur place le 12/09/2026.  ", NOW);
-    expect(declared).toEqual({ observation: "Voie en T au nord-est, masse voisine R+3 à l'ouest ; relevé sur place le 12/09/2026.", observationStatus: "Déclaration utilisateur, non contrôle indépendant", observedAt: NOW, satelliteObserved: true });
+    expect(declared).toEqual({ observation: "Voie en T au nord-est, masse voisine R+3 à l'ouest ; relevé sur place le 12/09/2026.", observationStatus: "Déclaration utilisateur, non contrôle indépendant", observedAt: NOW, satelliteObserved: true, elevation: null });
+    // Altitude indicative du centre (collectée à la demande) : posée sur le contexte, l'observation conservée ; valeurs incohérentes refusées.
+    const withElevation = withCenterElevation(declared, [-7.3196824, 33.7082212, 42.5], NOW);
+    expect(withElevation).toMatchObject({ observation: declared.observation, satelliteObserved: true, elevation: { value: 42.5, unit: "m", coordinates: [-7.3196824, 33.7082212], source: "MapTiler Elevation API", quality: "service numérique, non relevé topographique" } });
+    expect(() => withCenterElevation(null, [-7.3, 33.7, Number.NaN], NOW)).toThrow("Coordonnées ou altitude de réponse incohérentes");
+    expect(declareSiteObservation("Observation ultérieure, assez longue pour passer.", NOW, withElevation).elevation).toEqual(withElevation.elevation);
     const before = designAnalysis(input({}));
     const after = designAnalysis(input({ siteContext: declared }));
     expect(before.issues.some((x) => x.id === "CONTEXT")).toBe(true);

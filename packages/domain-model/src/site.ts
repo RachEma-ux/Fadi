@@ -34,9 +34,24 @@ export interface SiteManualGeographic {
 
 /** Altimétrie collectée (service externe, à la demande) — conservée telle quelle quand elle existe. */
 export interface SiteElevation {
+  /** `[longitude, latitude, altitude]` du centre puis des sommets (MapTiler Elevation API, 50 positions au plus). */
   points: unknown[];
   range: number;
   at: string;
+  source?: string;
+  /** Toujours « Modèle de terrain · non relevé topographique » (prototype). */
+  status?: string;
+}
+
+export const SITE_ELEVATION_SOURCE = "MapTiler Elevation API";
+export const SITE_ELEVATION_STATUS = "Modèle de terrain · non relevé topographique";
+
+/** `collectElevation` de h7-app : les points reçus (contrôlés par le client) deviennent l'altimétrie du site ; amplitude calculée ici. */
+export function siteElevationFromPoints(points: readonly (readonly [number, number, number])[], now: string): SiteElevation {
+  if (!points.length || points.length > 50) throw new HarmonieError("Collecte altimétrique invalide : 1 à 50 positions attendues.");
+  for (const p of points) if (p.length < 3 || !p.slice(0, 3).every(Number.isFinite) || p[0] <= -180 || p[0] >= 180 || p[1] < -85 || p[1] > 85) throw new HarmonieError("Collecte altimétrique invalide : coordonnées ou altitude manquantes.");
+  const zs = points.map((p) => p[2]);
+  return { at: now, source: SITE_ELEVATION_SOURCE, status: SITE_ELEVATION_STATUS, points: points.map((p) => [p[0], p[1], p[2]]), range: Math.max(...zs) - Math.min(...zs) };
 }
 
 /** `harmonieEtapesV7.site` du prototype : les données du site déclarées par le projet. */

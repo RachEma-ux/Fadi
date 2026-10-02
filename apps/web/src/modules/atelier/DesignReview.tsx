@@ -14,7 +14,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { WriteFieldset } from "../../components/WriteFieldset";
-import { useSearchParams } from "react-router-dom";
+import { CenterElevationButton } from "../parcours/MapTilerCard";
+import { Link, useSearchParams } from "react-router-dom";
 import { ApiError, api, type CompassInput, type DesignReviewView } from "../../lib/api";
 import { HarmonieToast } from "../parcours/HarmoniePanel";
 
@@ -30,6 +31,40 @@ const TABS: [Tab, string][] = [
 const fmt = (v: number | null | undefined, n = 2) => (Number.isFinite(v as number) ? (v as number).toLocaleString("fr-FR", { maximumFractionDigits: n }) : "Non renseigné");
 
 /** `compassHTML` : références directionnelles du bâtiment — saisie, enregistrement, état calculé par le moteur. */
+/** `mapCard` de flow-v62 : « Collecter l'altitude indicative du centre » (clé de l'utilisateur, 1 position) et l'état de la collecte. */
+function MapCollect({ projectId, view, onSaved }: { projectId: string; view: DesignReviewView; onSaved: (next: DesignReviewView, text: string) => void }) {
+  const e = view.siteContext?.elevation ?? null;
+  const [status, setStatus] = useState<string | null>(null);
+  const center: [number, number] | null = view.georeference ? [view.georeference.longitude, view.georeference.latitude] : null;
+  return (
+    <>
+      <div className="v62-actions">
+        <CenterElevationButton
+          projectId={projectId}
+          center={center}
+          onStatus={setStatus}
+          onSaved={(next) => {
+            setStatus(null);
+            onSaved(next, "Altitude indicative du centre enregistrée (service numérique, non relevé topographique).");
+          }}
+        />
+        <Link className="button-secondary" to={`/projets/${projectId}?module=parcours&etape=1`}>
+          Connexion / Parcelle 00
+        </Link>
+      </div>
+      <p id="v62-map-status" role="status" className="h7-muted">
+        {status ??
+          (e
+            ? `Altitude de service : ${fmt(e.value)} m · ${new Date(e.at).toLocaleString("fr-FR")} · précision topographique non garantie.`
+            : "Aucune collecte externe effectuée dans ce fichier. La clé configurée dans Parcelle sera utilisée à votre demande.")}
+      </p>
+      <p className="h7-muted">
+        Fond satellite : depuis l’outil Parcelle (étape 01) ou « Afficher le fond MapTiler » du pli « Données du site ». Le service d’altimétrie ne détermine ni pente locale détaillée ni nappe.
+      </p>
+    </>
+  );
+}
+
 /**
  * `site-note` de flow-v62 : « Observation utilisateur, distincte de la simple collecte » — voies, masses voisines, date,
  * source, limites — enregistrée comme observation déclarée (20 caractères minimum, refus du serveur sinon). Elle lève
@@ -57,7 +92,7 @@ function SiteObservationForm({ projectId, view, onSaved }: { projectId: string; 
           <button type="button" className="button-primary" disabled={save.isPending} onClick={() => save.mutate()}>
             Enregistrer comme observation déclarée
           </button>
-          {view.siteContext && (
+          {view.siteContext?.observation && (
             <span className="h7-muted site-observation-status">
               {view.siteContext.observationStatus} · {new Date(view.siteContext.observedAt).toLocaleString("fr-FR")}
             </span>
@@ -321,10 +356,7 @@ function InlineReport({
                 ) : (
                   <p>Géoréférencement à documenter dans Parcelle ou l’étude solaire.</p>
                 )}
-                <p className="h7-muted">
-                  Fond satellite et altimétrie MapTiler : la connexion reste celle de l’outil Parcelle (étape 01) ; aucune collecte externe n’est effectuée depuis ce bilan. Pour les voisins, routes et
-                  masques, consigner une observation datée et faire contrôler sur place.
-                </p>
+                <MapCollect projectId={projectId} view={view} onSaved={onSaved} />
                 <SiteObservationForm projectId={projectId} view={view} onSaved={onSaved} />
               </section>
               <div dangerouslySetInnerHTML={{ __html: view.html.sources }} />

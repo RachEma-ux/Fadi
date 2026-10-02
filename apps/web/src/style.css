@@ -2546,3 +2546,77 @@ fieldset.access-fieldset:disabled {
   color: var(--muted);
   font-size: 13px;
 }
+
+/* Fond MapTiler et altimétrie (pli « Données du site », étape 01) — styles h7 du prototype */
+.h7-maptiler {
+  margin-top: 12px;
+}
+.h7-map-viewport {
+  aspect-ratio: 900 / 560;
+  position: relative;
+  overflow: hidden;
+  background: #e7eddf;
+  border: 1px solid #c7d7c4;
+  border-radius: 8px;
+  margin-top: 15px;
+}
+.h7-map-tiles,
+.h7-map-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.h7-map-tiles img {
+  position: absolute;
+  max-width: none;
+}
+.h7-map-overlay {
+  pointer-events: none;
+}
+.h7-map-north {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #ffffffe6;
+  color: #254f40;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 13px;
+}
+.h7-map-credit {
+  font-size: 10px;
+  color: #667b6b;
+}
+.h7-dialog-inline {
+  margin: 12px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.h7-dialog-inline .h7-dialog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.h7-dialog-inline h2 {
+  margin: 0;
+  font-size: 17px;
+}
+.h7-dialog-inline label {
+  display: block;
+  margin: 10px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.h7-dialog-inline input[type="password"] {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}

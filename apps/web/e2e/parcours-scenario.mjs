@@ -382,6 +382,22 @@ check("étape 10 : local retenu, indépendant du parti retenu → « 2 choix ret
 await page.screenshot({ path: `${OUT}/10-desktop.png`, fullPage: true });
 
 // 6b'. Bilan Harmonie du bâtiment conçu (flow-v62) : pli, bilan en ligne, plans, transmission, revue, rapport, références directionnelles
+// Service MapTiler simulé pour tout le scénario (descripteur de tuiles, tuiles 1 × 1, altimétrie = 40 m + rang) ; clé de session posée pour le bilan.
+const PNG_1X1 = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
+const maptilerLog = [];
+await page.route(/^https:\/\/api\.maptiler\.com\//, (route) => {
+  const url = new URL(route.request().url());
+  maptilerLog.push(url.pathname);
+  if (url.pathname === "/maps/satellite/256/tiles.json") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ tiles: ["https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg"], maxzoom: 19, attribution: "© MapTiler © OpenStreetMap contributors" }) });
+  if (url.pathname.startsWith("/tiles/")) return route.fulfill({ status: 200, contentType: "image/png", body: PNG_1X1 });
+  const m = url.pathname.match(/^\/elevation\/(.+)\.json$/);
+  if (m) {
+    const points = m[1].split(";").map((p) => p.split(",").map(Number));
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(points.map(([lon, lat], i) => [lon, lat, 40 + i])) });
+  }
+  return route.fulfill({ status: 404, body: "" });
+});
+await page.evaluate(() => sessionStorage.setItem("fadi.maptiler.session-key", "cle-de-test-scenario"));
 await page.locator(".ah84-links button:has-text('Bilan & espaces')").click();
 check("sous-page : « Bilan & espaces » ouvre le pli « Bilan du bâtiment, plans et ambiances » avec « Capacités & ambiances des espaces »", (await page.locator("#ah84-bilan").evaluate((d) => d.open)) === true && (await page.locator('button:has-text("Capacités & ambiances des espaces")').count()) === 1);
 await page.locator(".design-review-fold > summary").click();
@@ -404,13 +420,16 @@ check("bilan : « Actualiser la revue de conception » → revue rattachée aux 
 // Observation déclarée du contexte extérieur (site-note) : refus en dessous de 20 caractères, puis réserve « Contexte extérieur non observé » levée.
 await page.locator('.v62-tabs button:has-text("Hypothèses & MapTiler")').click();
 await page.waitForSelector("#v62-site-note");
+await page.locator('button:has-text("Collecter l’altitude indicative du centre")').click();
+await page.waitForFunction(() => /Altitude de service : 40 m/.test(document.querySelector("#v62-map-status")?.textContent || ""), null, { timeout: 10000 });
+check("bilan · Hypothèses & MapTiler : « Collecter l’altitude indicative du centre » → « Altitude de service : 40 m · … · précision topographique non garantie »", /précision topographique non garantie/.test(await page.locator("#v62-map-status").textContent()));
 await page.fill("#v62-site-note", "trop court");
 await page.locator('button:has-text("Enregistrer comme observation déclarée")').click();
 await page.waitForSelector(".site-observation .h7-error", { timeout: 10000 });
 check("bilan · Hypothèses & MapTiler : observation trop courte refusée par le serveur (« 20 caractères minimum »)", /20 caractères minimum/.test(await page.locator(".site-observation .h7-error").textContent()));
 await page.fill("#v62-site-note", "Voie en T au nord-est, masse voisine R+3 à l'ouest ; relevé sur place le 12/09/2026.");
 await page.locator('button:has-text("Enregistrer comme observation déclarée")').click();
-await page.waitForSelector(".site-observation-status", { timeout: 10000 });
+await page.waitForFunction(() => /Déclaration utilisateur/.test(document.querySelector(".site-observation-status")?.textContent || ""), null, { timeout: 10000 });
 check("bilan : « Enregistrer comme observation déclarée » → statut « Déclaration utilisateur, non contrôle indépendant », daté", /^Déclaration utilisateur, non contrôle indépendant · \d{2}\/\d{2}\/\d{4}/.test(await page.locator(".site-observation-status").textContent()));
 await page.locator('.v62-tabs button:has-text("Bilan du bâtiment")').click();
 await page.waitForFunction(() => document.querySelectorAll("#v62-report .v62-issue").length === 6, null, { timeout: 10000 }).catch(() => {});
@@ -484,6 +503,23 @@ check("étape 01 : approche documentée sans source → refus du prototype affic
 await page.locator('.h7-proposal:nth-child(3) button:has-text("Voir le schéma")').click();
 await page.waitForTimeout(300);
 check("étape 01 : « Voir le schéma » affiche la variante C", (await page.locator(".h7-site-hero h3").textContent()) === "Arrivées et desserte dissociées");
+// MapTiler à l'étape 01 : sans clé, puis clé de session saisie, fond satellite avec le contour source, altimétrie du centre et des sommets conservée comme donnée déclarée.
+await page.evaluate(() => sessionStorage.removeItem("fadi.maptiler.session-key"));
+await page.locator('.h7-maptiler button:has-text("Afficher le fond MapTiler")').click();
+await page.waitForFunction(() => /Clé MapTiler absente/.test(document.querySelector("#h7-map-status")?.textContent || ""), null, { timeout: 5000 });
+check("étape 01 : sans clé, « Afficher le fond MapTiler » → « Clé MapTiler absente … aucune image de contexte n’est inventée »", true);
+await page.locator('.h7-maptiler button:has-text("Connexion MapTiler")').click();
+await page.fill("#h7-map-key", "cle-de-test-scenario");
+await page.locator('.h7-dialog-inline button:has-text("Utiliser cette clé")').click();
+await page.waitForFunction(() => /Clé disponible/.test(document.querySelector("#h7-map-status")?.textContent || ""), null, { timeout: 5000 });
+await page.locator('.h7-maptiler button:has-text("Afficher le fond MapTiler")').click();
+await page.waitForSelector("#h7-map-host .h7-map-tiles img", { timeout: 10000 });
+check("étape 01 : « Afficher le fond MapTiler » → mosaïque de tuiles demandée au service (clé de l'utilisateur), contour source B.265… en superposition, crédit MapTiler", (await page.locator("#h7-map-host .h7-map-tiles img").count()) > 0 && (await page.locator("#h7-map-host polygon").count()) === 1 && /B\.26/.test(await page.locator("#h7-map-host svg").textContent()) && /© MapTiler/.test(await page.locator(".h7-map-credit").textContent()) && maptilerLog.includes("/maps/satellite/256/tiles.json"), maptilerLog.slice(0, 3).join(" "));
+await page.locator(".h7-maptiler").screenshot({ path: `${OUT}/01-desktop-maptiler.png` });
+await page.locator('.h7-maptiler button:has-text("Collecter centre + sommets")').click();
+await page.waitForFunction(() => /points reçus · amplitude/.test(document.querySelector("#h7-map-status")?.textContent || ""), null, { timeout: 10000 });
+const siteAfterCollect = (await (await page.request.get(`${BASE}/projects/${examplePid}/steps/1`)).json()).site;
+check("étape 01 : « Collecter centre + sommets » → 5 positions (centre + 4 bornes) conservées comme altimétrie de service (amplitude 4 m, non relevé topographique), « Pourquoi ici » cite l'amplitude", /^5 points reçus · amplitude 4 m/.test(await page.locator("#h7-map-status").textContent()) && siteAfterCollect.observations.elevation.points.length === 5 && siteAfterCollect.observations.elevation.status === "Modèle de terrain · non relevé topographique" && /Altimétrie de service : amplitude 4 m/.test(await page.locator(".h7-proposal").nth(0).locator("dd").nth(0).textContent()), await page.locator("#h7-map-status").textContent());
 
 // 6e. Péremption (« À réexaminer ») et rapports : les données du site viennent de changer → l'étape 02 de l'exemple, générée à l'import, est à réexaminer
 await page.goto(`${exampleUrl}?module=parcours&etape=2`);

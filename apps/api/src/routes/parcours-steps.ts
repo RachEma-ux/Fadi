@@ -15,6 +15,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import {
   HarmonieError,
+  siteElevationFromPoints,
   decideHarmonieProposal,
   harmonieReportFileName,
   isDecisionChoice,
@@ -158,6 +159,60 @@ parcoursStepsRouter.put("/:stepNumber/site", async (req, res) => {
     await tx.update(projects).set({ siteObservations, updatedAt: new Date() }).where(eq(projects.id, project.id));
     const rows = await loadStepRows(tx, project.id);
     // Le contexte sur les nouvelles observations : l'empreinte de l'étape 01 change avec elles.
+    const ctx = await loadStepContext(tx, { ...project, siteObservations }, rows);
+    const current1 = rows.get(1) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
+    const harmonie = regenerateHarmonieStep(current1.content.harmonie, ctx.dependencies.get(1)?.fingerprint ?? null, now);
+    const status: ParcoursStepStatus = current1.status === "a-faire" ? "en-cours" : current1.status;
+    const content: ParcoursStepContent = { ...current1.content, status, harmonie };
+    await upsertStep(tx, project.id, 1, status, content);
+    rows.set(1, { status, content });
+    return stepView(def, withRows(ctx, rows));
+  });
+  res.json(result);
+});
+
+const elevationSchema = z.object({ points: z.array(z.tuple([z.number(), z.number(), z.number()])).min(1).max(50) });
+
+/**
+ * « Collecter centre + sommets » (`collectElevation` de h7-app) : les
+ * altitudes reçues du service par le navigateur (clé de l'utilisateur, jamais
+ * transmise ici) deviennent l'altimétrie du site — « Modèle de terrain · non
+ * relevé topographique » —, l'empreinte de l'étape 01 change et ses
+ * propositions sont régénérées (« Altimétrie de service : amplitude … »).
+ * Le serveur contrôle la forme et la plage des valeurs, pas leur origine :
+ * c'est une donnée déclarée par le client, datée et sourcée.
+ */
+parcoursStepsRouter.put("/:stepNumber/site/elevation", async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const def = stepOr404(req.params["stepNumber"] as string, res);
+  if (!def) return;
+  if (def.number !== 1) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  const parsed = elevationSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+    return;
+  }
+  const now = new Date().toISOString();
+  let elevation;
+  try {
+    elevation = siteElevationFromPoints(parsed.data.points, now);
+  } catch (err) {
+    if (err instanceof HarmonieError) {
+      res.status(422).json({ error: "harmonie_rule", message: err.message });
+      return;
+    }
+    throw err;
+  }
+  const result = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
+    const current = await loadStepContext(tx, project);
+    const siteObservations = { ...current.site.observations, elevation } as unknown as Record<string, unknown>;
+    await tx.update(projects).set({ siteObservations, updatedAt: new Date() }).where(eq(projects.id, project.id));
+    const rows = await loadStepRows(tx, project.id);
     const ctx = await loadStepContext(tx, { ...project, siteObservations }, rows);
     const current1 = rows.get(1) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
     const harmonie = regenerateHarmonieStep(current1.content.harmonie, ctx.dependencies.get(1)?.fingerprint ?? null, now);

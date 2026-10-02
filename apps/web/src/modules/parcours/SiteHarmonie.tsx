@@ -14,6 +14,7 @@
 import { useState, type FormEvent } from "react";
 import { SITE_OBSERVATION_LABELS, SITE_SVG_EMPTY, fmtFr, siteLegend, siteSvg } from "@parcours/domain-model";
 import type { HarmonieProposal, ParcoursStep, SiteObservationsInput, SiteView } from "../../lib/api";
+import { MapTilerCard } from "./MapTilerCard";
 
 function download(name: string, type: string, text: string) {
   const url = URL.createObjectURL(new Blob([text], { type }));
@@ -79,6 +80,7 @@ export function SiteHero({ site, active }: { site: SiteView; active: HarmoniePro
 }
 
 export function SiteDataFold({
+  projectId,
   step,
   onSave,
   pending,
@@ -86,6 +88,7 @@ export function SiteDataFold({
   open,
   onToggle,
 }: {
+  projectId: string;
   step: ParcoursStep;
   onSave: (input: SiteObservationsInput) => void;
   pending: boolean;
@@ -223,12 +226,8 @@ export function SiteDataFold({
               {error}
             </p>
           )}
-          <p className="h7-muted" role="status">
-            {s.elevation
-              ? `Altimétrie conservée : ${s.elevation.points.length} points de modèle de terrain · ${s.elevation.at}. Ce n’est pas un relevé de géomètre.`
-              : "Aucune observation de terrain n’est inventée. Les services externes sont appelés seulement à votre demande. Fond MapTiler et altimétrie : à connecter dans l’outil Parcelle ci-dessus."}
-          </p>
         </form>
+        <MapTilerCard projectId={projectId} step={step} />
         <details className="h7-fold">
           <summary>Repère géographique du centre — si la conversion manque</summary>
           <div className="h7-form">
