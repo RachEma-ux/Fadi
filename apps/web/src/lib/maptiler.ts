@@ -104,7 +104,7 @@ export async function collectCenterElevation(center: LonLat, key: string): Promi
 }
 
 /** Projection Web Mercator en pixels de tuile (256 px) au zoom `z`, comme `mercator(ll, z)` du prototype. */
-export function mercator(ll: LonLat, z: number): [number, number] {
+export function mercator(ll: readonly [number, number], z: number): [number, number] {
   const n = 256 * 2 ** z;
   return [((ll[0] + 180) / 360) * n, ((1 - Math.asinh(Math.tan((ll[1] * Math.PI) / 180)) / Math.PI) / 2) * n];
 }
@@ -115,6 +115,8 @@ export interface SatelliteMosaic {
   /** Sommets du contour dans la fenêtre (px), ou null quand seul le centre est connu. */
   polygon: [number, number][] | null;
   zoom: number;
+  /** Origine de la fenêtre en pixels Mercator au zoom retenu (pour projeter d'autres points). */
+  origin: [number, number];
   attribution: string;
 }
 
@@ -159,5 +161,5 @@ export async function satelliteMosaic(center: LonLat, vertices: LonLat[] | null,
     : null;
   const tmp = typeof document !== "undefined" ? document.createElement("div") : null;
   if (tmp) tmp.innerHTML = String(meta.attribution ?? "© MapTiler");
-  return { tiles, polygon, zoom: z, attribution: (tmp?.textContent || "© MapTiler").trim() };
+  return { tiles, polygon, zoom: z, origin, attribution: (tmp?.textContent || "© MapTiler").trim() };
 }

@@ -16,7 +16,7 @@
  * qu'à l'affichage et vient d'une conversion explicite fournie par
  * l'appelant, jamais d'un mélange de repères.
  */
-import { polygonArea, siteZoning, sumArea, vertexCentroid, type Point2, type SiteVariant, type SiteZoning } from "@parcours/core-geometry";
+import { polygonArea, siteZoning, sumArea, vertexCentroid, type Point2, type SiteVariant, type SiteZone, type SiteZoning } from "@parcours/core-geometry";
 import type { GeographicCoordinate } from "./entities.js";
 import { HarmonieError, type HarmonieProfile, type HarmonieProposalComputation } from "./harmonie.js";
 
@@ -139,6 +139,13 @@ export interface SiteContext {
   geo: SiteGeographic;
   observations: SiteObservations;
   profile: HarmonieProfile;
+  /** Conversion repère local (origine au centroïde) → WGS84 `[lon, lat]` pour la superposition des zonages ; absente sans CRS connu. */
+  toGeographic?: (local: Point2) => Point2 | null;
+}
+
+/** Un zonage projeté en WGS84 (superposition sur un fond de carte) : mêmes zones, polygones en `[lon, lat]`. */
+export interface SiteZoningGeographic {
+  zones: { id: SiteZone["id"]; name: string; color: string; polys: Point2[][] }[];
 }
 
 /** Conversion explicite CRS déclaré → WGS84 (`[longitude, latitude]`), fournie par l'appelant ; `null` quand le CRS est inconnu. */
@@ -179,7 +186,11 @@ export function siteContext(parcel: SiteParcel | null, observations: SiteObserva
   const local = poly.map((q): Point2 => [q[0] - origin[0], q[1] - origin[1]]);
   const edge = observations.frontageEdge;
   const frontage = Number.isInteger(edge) && (edge as number) >= 0 && (edge as number) < poly.length ? (edge as number) : null;
-  return { parcel: { ...p, vertices: poly }, local, origin, area: polygonArea(local), frontage, geo: siteGeographic(p, observations, convert), observations, profile };
+  const geo = siteGeographic(p, observations, convert);
+  const ctx: SiteContext = { parcel: { ...p, vertices: poly }, local, origin, area: polygonArea(local), frontage, geo, observations, profile };
+  // Superposition des zonages sur un fond de carte : seulement quand le contour lui-même se convertit (même CRS, même conversion).
+  if (geo.points && p.crs && convert) ctx.toGeographic = (q) => convert(p.crs, [q[0] + origin[0], q[1] + origin[1]]);
+  return ctx;
 }
 
 export const fmtFr = (v: number | null | undefined, digits = 2): string => (Number.isFinite(v as number) ? (v as number).toLocaleString("fr-FR", { maximumFractionDigits: digits }) : "—");
@@ -194,6 +205,27 @@ export interface SiteOption {
   conditions: string;
   source: string;
   zoning: SiteZoning | null;
+  /** Le même zonage en WGS84 quand la parcelle est géoréférencée, pour la superposition sur le fond MapTiler (hypothèse, non constat). */
+  zoningGeographic: SiteZoningGeographic | null;
+}
+
+/** Projette un zonage (repère local) en WGS84 avec la conversion de la parcelle ; `null` dès qu'un point ne se convertit pas. */
+export function zoningToGeographic(zoning: SiteZoning, toGeographic: (local: Point2) => Point2 | null): SiteZoningGeographic | null {
+  const zones: SiteZoningGeographic["zones"] = [];
+  for (const zone of zoning.zones) {
+    const polys: Point2[][] = [];
+    for (const poly of zone.polys) {
+      const out: Point2[] = [];
+      for (const q of poly) {
+        const ll = toGeographic(q);
+        if (!ll) return null;
+        out.push(ll);
+      }
+      polys.push(out);
+    }
+    zones.push({ id: zone.id, name: zone.name, color: zone.color, polys });
+  }
+  return { zones };
 }
 
 const SITE_OPTION_TEXTS: [SiteVariant, string, string, string, string][] = [
@@ -248,6 +280,7 @@ export function siteOptions(c: SiteContext): SiteOption[] {
       conditions: "Ratios illustratifs d’organisation du sol, pas des droits à construire. Accès, relief, limites, usages admissibles et dimensionnement à confirmer.",
       source: "Contour source + scénario de programmation ; contexte réel non déduit sans observation.",
       zoning,
+      zoningGeographic: zoning && c.toGeographic ? zoningToGeographic(zoning, c.toGeographic) : null,
     };
   });
 }
@@ -255,7 +288,7 @@ export function siteOptions(c: SiteContext): SiteOption[] {
 /** Les propositions de l'étape 01 sous la forme que `buildHarmonieProposals` consomme. */
 export function siteProposalComputation(c: SiteContext): HarmonieProposalComputation {
   return {
-    options: siteOptions(c).map((o) => ({ key: o.key, title: o.title, proposal: o.text, benefit: o.benefit, tradeoff: o.tradeoff, validation: o.conditions, why: o.why, source: o.source, zoning: o.zoning })),
+    options: siteOptions(c).map((o) => ({ key: o.key, title: o.title, proposal: o.text, benefit: o.benefit, tradeoff: o.tradeoff, validation: o.conditions, why: o.why, source: o.source, zoning: o.zoning, zoningGeographic: o.zoningGeographic })),
     recommendedKey: recommendedSiteOption(c.observations).key,
   };
 }

@@ -10,9 +10,9 @@
  */
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, ApiError, type ParcoursStep, type SiteView } from "../../lib/api";
+import { api, ApiError, type HarmonieProposal, type ParcoursStep, type SiteView } from "../../lib/api";
 import { adoptStep } from "../../lib/mutations";
-import { collectCenterElevation, collectElevationPoints, maptilerKey, satelliteMosaic, useMaptilerKey, type LonLat, type SatelliteMosaic } from "../../lib/maptiler";
+import { collectCenterElevation, collectElevationPoints, maptilerKey, mercator, satelliteMosaic, useMaptilerKey, type LonLat, type SatelliteMosaic } from "../../lib/maptiler";
 import { useProjectAccess } from "../../lib/access";
 
 const fmt = (x: number) => x.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
@@ -67,9 +67,15 @@ export function MapTilerKeyDialog({ onClose, onReady }: { onClose: () => void; o
   );
 }
 
-/** Mosaïque satellite rendue comme le prototype (`#h7-map-host`) : tuiles positionnées, contour et sommets, crédit. */
-function MapView({ mosaic, site }: { mosaic: SatelliteMosaic; site: SiteView }) {
+/** Mosaïque satellite rendue comme le prototype (`#h7-map-host`) : tuiles positionnées, contour et sommets, variante de site superposée (hypothèse), crédit. */
+function MapView({ mosaic, site, proposal }: { mosaic: SatelliteMosaic; site: SiteView; proposal: HarmonieProposal | null }) {
   const poly = mosaic.polygon;
+  // Superposition de la variante de site retenue (ou affichée, ou la première) : toutes les surfaces restent des hypothèses.
+  const overlay = poly && proposal?.zoningGeographic ? proposal.zoningGeographic.zones : null;
+  const project = (ll: readonly [number, number]): [number, number] => {
+    const pt = mercator(ll, mosaic.zoom);
+    return [pt[0] - mosaic.origin[0], pt[1] - mosaic.origin[1]];
+  };
   return (
     <div id="h7-map-host">
       <div className="h7-map-viewport">
@@ -79,6 +85,15 @@ function MapView({ mosaic, site }: { mosaic: SatelliteMosaic; site: SiteView }) 
           ))}
         </div>
         <svg viewBox="0 0 900 560" className="h7-map-overlay" aria-label="Contour source sur fond MapTiler">
+          {overlay?.map((zone) =>
+            zone.polys.map((part, i) => (
+              <polygon key={`${zone.id}-${i}`} points={part.map((q) => project(q).join(",")).join(" ")} fill={zone.color} fillOpacity={0.28} stroke={zone.color} strokeWidth={1}>
+                <title>
+                  Hypothèse {proposal!.key} · {zone.name}
+                </title>
+              </polygon>
+            )),
+          )}
           {poly ? (
             <>
               <polygon points={poly.map((p) => p.join(",")).join(" ")} fill="#e9c66c" fillOpacity={0.13} stroke="#ffe578" strokeWidth={3} />
@@ -102,12 +117,15 @@ function MapView({ mosaic, site }: { mosaic: SatelliteMosaic; site: SiteView }) 
         </svg>
         <span className="h7-map-north">N ↑ · carte</span>
       </div>
-      <p className="h7-map-credit">{mosaic.attribution} · image reçue à la demande ; date de prise de vue à vérifier. Limites non certifiées.</p>
+      <p className="h7-map-credit">
+        {mosaic.attribution} · image reçue à la demande ; date de prise de vue à vérifier. Limites non certifiées.
+        {overlay ? ` Superposition : variante ${proposal!.key} hypothétique, non constat cartographique.` : ""}
+      </p>
     </div>
   );
 }
 
-export function MapTilerCard({ projectId, step }: { projectId: string; step: ParcoursStep }) {
+export function MapTilerCard({ projectId, step, active = null }: { projectId: string; step: ParcoursStep; active?: HarmonieProposal | null }) {
   const queryClient = useQueryClient();
   const access = useProjectAccess(projectId);
   const site = step.site!;
@@ -205,7 +223,7 @@ export function MapTilerCard({ projectId, step }: { projectId: string; step: Par
           }}
         />
       )}
-      {mosaic && <MapView mosaic={mosaic} site={site} />}
+      {mosaic && <MapView mosaic={mosaic} site={site} proposal={active ?? step.proposals.find((q) => q.retained) ?? step.proposals[0] ?? null} />}
     </div>
   );
 }

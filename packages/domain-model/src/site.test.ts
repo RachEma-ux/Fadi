@@ -85,6 +85,17 @@ describe("site (étape 01 Harmonie)", () => {
     expect(manual.center).toEqual({ frame: "geographic", lon: -7.31, lat: 33.7 });
     expect(manual.source).toBe("Repérage saisi, sans calage du contour");
     expect(siteGeographic({ ...P118, crs: "EPSG:9999" }, DEFAULT_SITE_OBSERVATIONS, convert).center).toBeNull();
+    // Zonages projetés en WGS84 pour la superposition sur un fond de carte : mêmes zones, points convertis par la même
+    // conversion que le contour (repère local → cadastral → géographique) ; rien sans CRS converti.
+    const c = siteContext(P118, DEFAULT_SITE_OBSERVATIONS, PROFILE, convert);
+    const option = siteOptions(c)[0]!;
+    expect(option.zoningGeographic?.zones.map((z) => z.id)).toEqual(option.zoning!.zones.map((z) => z.id));
+    const first = option.zoning!.zones[0]!.polys[0]![0]!;
+    const projected = option.zoningGeographic!.zones[0]!.polys[0]![0]!;
+    expect(projected[0]).toBeCloseTo(-7.3 + (first[0] + c.origin[0] - 321970) * 1e-5, 9);
+    expect(projected[1]).toBeCloseTo(33.7 + (first[1] + c.origin[1] - 347190) * 1e-5, 9);
+    expect(siteOptions(siteContext(P118, DEFAULT_SITE_OBSERVATIONS, PROFILE))[0]!.zoningGeographic).toBeNull();
+    expect(siteOptions(siteContext({ ...P118, crs: "EPSG:9999" }, DEFAULT_SITE_OBSERVATIONS, PROFILE, convert))[0]!.zoningGeographic).toBeNull();
   });
 
   it("draws the site sketch with the variant, the computed area, the bornes and the approach edge", () => {

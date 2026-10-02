@@ -65,10 +65,7 @@ export function SiteHero({ site, active }: { site: SiteView; active: HarmoniePro
                 </div>
               ))}
             </div>
-            <p className="h7-muted">
-              Ces surfaces décrivent des zones d’intention. Le « secteur d’implantation à étudier » n’est ni une emprise autorisée, ni une dalle, ni une surface
-              intérieure.
-            </p>
+            <p className="h7-muted">Ces surfaces décrivent des zones d’intention. Le « secteur d’implantation à étudier » n’est ni une emprise autorisée, ni une dalle, ni une surface intérieure.</p>
           </>
         )}
         <button type="button" className="button-secondary" disabled={!svg} onClick={() => svg && active && download(`Harmonie_Site_${active.key}_V7.svg`, "image/svg+xml", svg)}>
@@ -82,6 +79,7 @@ export function SiteHero({ site, active }: { site: SiteView; active: HarmoniePro
 export function SiteDataFold({
   projectId,
   step,
+  active = null,
   onSave,
   pending,
   error,
@@ -90,6 +88,8 @@ export function SiteDataFold({
 }: {
   projectId: string;
   step: ParcoursStep;
+  /** Variante de site affichée (« Voir le schéma »), superposée au fond MapTiler. */
+  active?: HarmonieProposal | null;
   onSave: (input: SiteObservationsInput) => void;
   pending: boolean;
   error: string | null;
@@ -213,8 +213,7 @@ export function SiteDataFold({
             <textarea value={note} maxLength={6000} rows={3} onChange={(e) => setNote(e.target.value)} />
           </label>
           <p className="h7-callout">
-            Un scénario saisi n’est pas une observation. Ni bruit, ni vents, ni sol, ni risque d’inondation ne sont déduits d’une simple image. L’eau éventuelle ne
-            justifie aucun bassin automatique.
+            Un scénario saisi n’est pas une observation. Ni bruit, ni vents, ni sol, ni risque d’inondation ne sont déduits d’une simple image. L’eau éventuelle ne justifie aucun bassin automatique.
           </p>
           <div className="h7-actions">
             <button type="submit" className="button-primary" disabled={pending}>
@@ -227,7 +226,7 @@ export function SiteDataFold({
             </p>
           )}
         </form>
-        <MapTilerCard projectId={projectId} step={step} />
+        <MapTilerCard projectId={projectId} step={step} active={active} />
         <details className="h7-fold">
           <summary>Repère géographique du centre — si la conversion manque</summary>
           <div className="h7-form">

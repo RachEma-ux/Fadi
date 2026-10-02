@@ -16,6 +16,7 @@ import type {
   ProgrammeModelLinkRow,
   ProgrammeScenarioRow,
   SiteObservations,
+  SiteZoningGeographic,
   StepResults,
   StructureStatement,
   SurfaceTransfer,
@@ -226,6 +227,8 @@ export interface HarmonieProposal {
   orphaned: boolean;
   /** Étape 01 : zonage calculé sur le contour de la parcelle (`null` sans contour exploitable). */
   zoning?: SiteZoning | null;
+  /** Étape 01 : le zonage en WGS84 quand la parcelle est géoréférencée (superposition sur le fond MapTiler, hypothèse). */
+  zoningGeographic?: SiteZoningGeographic | null;
   /** Propositions localisées (étapes 10/11) : le local du modèle et l'objet natif. */
   roomId?: string;
   objectId?: string;

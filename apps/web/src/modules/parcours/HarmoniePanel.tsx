@@ -300,7 +300,7 @@ export function HarmoniePanel({
         {missionsPreparatory && <div className="h7-callout warn">Les missions ci-dessous sont préparatoires. Aucune mission n’est engagée sans décision favorable.</div>}
 
         {site && onSaveSite ? (
-          <SiteDataFold key={site.observations.observedAt ?? "initial"} projectId={projectId} step={step} onSave={onSaveSite} pending={pending} error={siteError} open={siteFoldOpen} onToggle={setSiteFoldOpen} />
+          <SiteDataFold key={site.observations.observedAt ?? "initial"} projectId={projectId} step={step} active={activeSite} onSave={onSaveSite} pending={pending} error={siteError} open={siteFoldOpen} onToggle={setSiteFoldOpen} />
         ) : (
           <details className="h7-fold">
             <summary>Données mobilisées et intentions reçues ({step.incoming.length})</summary>

@@ -17,6 +17,7 @@
  * calculée dans `dependencies.ts` et reçue ici sous forme d'empreinte.
  */
 import type { SiteZoning } from "@parcours/core-geometry";
+import type { SiteZoningGeographic } from "./site.js";
 import type {
   HarmonieHistoryEntry,
   HarmonieOption,
@@ -128,6 +129,8 @@ export interface HarmonieProposal {
   orphaned: boolean;
   /** Étape 01 : zonage calculé sur le contour de la parcelle (`null` sans contour exploitable). */
   zoning?: SiteZoning | null;
+  /** Étape 01 : le zonage en WGS84 quand la parcelle est géoréférencée (superposition sur le fond MapTiler). */
+  zoningGeographic?: SiteZoningGeographic | null;
   /** Propositions localisées : le local du modèle (`niveau|objet`) et l'objet natif. */
   roomId?: string;
   objectId?: string;
@@ -168,6 +171,7 @@ export interface ComputedHarmonieOption extends HarmonieOption {
   why: string;
   source: string;
   zoning?: SiteZoning | null;
+  zoningGeographic?: SiteZoningGeographic | null;
 }
 
 export interface HarmonieProposalComputation {
@@ -237,6 +241,7 @@ export function buildHarmonieProposals(
       stale: isProposalStale(decision, fingerprint),
       orphaned: false,
       ...(opt.zoning !== undefined ? { zoning: opt.zoning } : {}),
+      ...(opt.zoningGeographic !== undefined ? { zoningGeographic: opt.zoningGeographic } : {}),
     };
   });
   const locals: HarmonieProposal[] = (computed?.locals ?? []).map((opt) => {
