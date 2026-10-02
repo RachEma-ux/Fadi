@@ -416,7 +416,8 @@ await page.locator('.v62-tabs button:has-text("Transmission")').click();
 check("bilan : audit des transmissions, 14 contrôles, « Revue de conception » à actualiser", (await page.locator(".v62-tab-content .v62-table tbody tr").count()) === 14 && /revue à actualiser/.test(await page.locator(".v62-tab-content .v62-table").textContent()));
 await page.locator('button:has-text("Actualiser la revue de conception")').click();
 await page.waitForFunction(() => /Lecture documentaire courante/.test(document.querySelector("#v62-report header p")?.textContent || ""), null, { timeout: 10000 });
-check("bilan : « Actualiser la revue de conception » → revue rattachée aux entrées courantes, toast", /Revue rattachée aux entrées actuelles/.test(await page.locator(".v62-tab-content .v62-table").textContent()) && (await page.locator(".h7-toast").textContent().catch(() => "")) === "Bilan de conception actualisé sans lever les réserves.");
+await page.waitForFunction(() => /Revue rattachée aux entrées actuelles/.test(document.querySelector(".v62-tab-content .v62-table")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
+check("bilan : « Actualiser la revue de conception » → revue rattachée aux entrées courantes (le toast « Bilan de conception actualisé sans lever les réserves. » s'efface de lui-même)", /Revue rattachée aux entrées actuelles/.test(await page.locator(".v62-tab-content .v62-table").textContent()), `toast : ${await page.locator(".h7-toast").textContent().catch(() => "(déjà effacé)")}`);
 // Observation déclarée du contexte extérieur (site-note) : refus en dessous de 20 caractères, puis réserve « Contexte extérieur non observé » levée.
 await page.locator('.v62-tabs button:has-text("Hypothèses & MapTiler")').click();
 await page.waitForSelector("#v62-site-note");
