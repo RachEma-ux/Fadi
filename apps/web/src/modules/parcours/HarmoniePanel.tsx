@@ -10,7 +10,7 @@
  * s'exécutent côté serveur ; ses refus sont affichés tels quels sous la
  * proposition concernée.
  */
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { api, type HarmonieDecisionInput, type HarmonieProposal, type ParcoursStep, type SiteObservationsInput } from "../../lib/api";
 import { SiteDataFold, SiteHero } from "./SiteHarmonie";
 
@@ -217,6 +217,8 @@ export function HarmoniePanel({
   errors,
   onSaveSite = null,
   siteError = null,
+  afterProposals = null,
+  initialOpen = null,
 }: {
   projectId: string;
   step: ParcoursStep;
@@ -232,9 +234,13 @@ export function HarmoniePanel({
   /** Étape 01 : enregistrement des données du site (`save-site`). */
   onSaveSite?: ((input: SiteObservationsInput) => void) | null;
   siteError?: string | null;
+  /** Étape 07 : le pli « Proposer un transfert surfacique à total constant » (`programmeTransferHTML`), sous les propositions. */
+  afterProposals?: ReactNode;
+  /** Panneau ouvert à l'arrivée (`H.open()` : liens « Ouvrir Harmony » des vues du programme). */
+  initialOpen?: boolean | null;
 }) {
   const [tab, setTab] = useState<Tab>("proposals");
-  const [open, setOpen] = useState(step.retainedCount === 0 && step.proposals.length > 0);
+  const [open, setOpen] = useState(initialOpen ?? (step.retainedCount === 0 && step.proposals.length > 0));
   // Étape 01 : la proposition dont le schéma est affiché (`ui.siteProposal` du prototype).
   const [siteProposal, setSiteProposal] = useState<string | null>(null);
   const [siteFoldOpen, setSiteFoldOpen] = useState(false);
@@ -355,6 +361,7 @@ export function HarmoniePanel({
                 </div>
               </details>
             )}
+            {afterProposals}
           </>
         )}
 

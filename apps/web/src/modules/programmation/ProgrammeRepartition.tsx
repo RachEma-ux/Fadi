@@ -8,8 +8,9 @@
  * sommes calculées depuis les fiches d'espaces, jamais recopiées.
  */
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type ProgrammeMode, type ProgrammeView } from "../../lib/api";
+import { api, ApiError, type ProgrammeMode, type ProgrammeView } from "../../lib/api";
 import { ProgrammeCaseEditor, ProgrammeTransmission, appliedCase } from "./ProgrammeCase";
 
 const m2 = (v: number) => `${v.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m²`;
@@ -37,8 +38,54 @@ function RatioInput({ family, value, onCommit }: { family: string; value: number
   );
 }
 
-function CaseSummary({ view }: { view: ProgrammeView }) {
+function downloadText(name: string, mime: string, text: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: mime }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/** « Exporter les fiches CSV » de l'exemple résolu : ID ; niveau ; espace ; surface ; capacité cible ; source ; statut (BOM, `;`, CRLF). */
+function resolvedSpacesCsv(spaces: Record<string, unknown>[]): string {
+  const rows = [
+    ["ID", "Niveau", "Espace", "Surface m2", "Capacité cible", "Source capacité", "Statut"],
+    ...spaces.map((s) => [s["id"], s["level"], s["name"], s["unitArea"], s["capacityNumeric"], s["sourceCapacity"] ?? "Non mentionnée", "Capacité hypothétique ; surface calculée"]),
+  ];
+  return "\ufeff" + rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
+}
+
+/** Les fiches d'espaces de l'exemple (`roomsHTML`), chargées à l'ouverture du pli. */
+function ResolvedRoomsFold({ projectId, count }: { projectId: string; count: number }) {
+  const [open, setOpen] = useState(false);
+  const review = useQuery({ queryKey: ["design-review", projectId], queryFn: () => api.getDesignReview(projectId), enabled: open });
+  return (
+    <details className="ex81-fold programme-rooms-fold" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>{count} fiches d’espaces — capacités, dimensions et ambiances choisies</summary>
+      {open && (review.data?.html.exampleRooms ? <div className="v62-tab-content" dangerouslySetInnerHTML={{ __html: review.data.html.exampleRooms }} /> : review.isLoading ? <p className="loading-notice">Chargement des fiches…</p> : <p className="ex81-note">Fiches d’espaces indisponibles pour ce dossier.</p>)}
+    </details>
+  );
+}
+
+/**
+ * `projectProgramme(p)` de p118-resolved-app : la présentation protégée de
+ * la référence d'un exemple résolu — sommes calculées depuis les fiches,
+ * fiches d'espaces, export CSV et « Essayer une autre répartition en copie »
+ * (`copy()` : un nouveau projet modifiable, la référence intacte).
+ */
+function CaseSummary({ projectId, view }: { projectId: string; view: ProgrammeView }) {
+  const navigate = useNavigate();
   const c = view.programmeCase!;
+  const spaces = (Array.isArray(c.spaces) ? c.spaces : null) as Record<string, unknown>[] | null;
+  const [error, setError] = useState<string | null>(null);
+  const copy = useMutation({
+    mutationFn: () => api.copyProject(projectId),
+    onSuccess: (created) => navigate(`/projets/${created.id}?module=parcours`, { state: { notice: `Copie modifiable créée · ${created.name}` } }),
+    onError: (err) => setError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "La copie n’a pas pu être créée."),
+  });
   const rows: [string, number][] = [
     ["Espaces principaux", c.sums.principal],
     ["Circulation", c.sums.circulation],
@@ -48,7 +95,7 @@ function CaseSummary({ view }: { view: ProgrammeView }) {
     ["Autres supports / bandes", c.sums.supportAutres],
   ];
   return (
-    <section className="biz-card programme-case" aria-labelledby="programme-case-title">
+    <section className="biz-card programme-case ex81-block" aria-labelledby="programme-case-title">
       <h2 id="programme-case-title">Répartition renseignée et liée au modèle</h2>
       {c.users && <p>{c.users}</p>}
       <table className="programme-table">
@@ -75,6 +122,22 @@ function CaseSummary({ view }: { view: ProgrammeView }) {
         Pas de provision fictive de parois : le modèle conserve ses noyaux, vides et parois hors des zones décrites. Ne pas additionner la parcelle, les
         dalles et le programme.
       </p>
+      {spaces && <ResolvedRoomsFold projectId={projectId} count={spaces.length} />}
+      {spaces && (
+        <div className="ex81-actions">
+          <button type="button" className="button-secondary" onClick={() => downloadText(`${String(view.programmeCase?.caseId ?? "programme").replace(/[^A-Za-z0-9]+/g, "_")}_Programme_Resolu_V8_19.csv`.replace(/^parcours_lot118_/, "P118_"), "text/csv;charset=utf-8", resolvedSpacesCsv(spaces))}>
+            Exporter les fiches CSV
+          </button>
+          <button type="button" className="button-primary" disabled={copy.isPending} onClick={() => copy.mutate()}>
+            Essayer une autre répartition en copie
+          </button>
+        </div>
+      )}
+      {error && (
+        <p className="ex81-note warn" role="alert">
+          Action non réalisée : {error}
+        </p>
+      )}
       <p className="step-card-meta">
         {c.title}
         {c.scenarioLabel ? ` · ${c.scenarioLabel}` : ""}
@@ -100,7 +163,7 @@ export function ProgrammeRepartition({ projectId }: { projectId: string }) {
   if (query.isLoading) return <p role="status">Chargement de la répartition…</p>;
   if (query.isError || !query.data) return <p role="alert">Impossible de charger la répartition programmatique.</p>;
   const view = query.data;
-  if (view.programmeCase && (view.resolvedExample || view.programmeCase.readOnly)) return <CaseSummary view={view} />;
+  if (view.programmeCase && (view.resolvedExample || view.programmeCase.readOnly)) return <CaseSummary projectId={projectId} view={view} />;
   if (appliedCase(view)) return <ProgrammeCaseEditor projectId={projectId} view={view} />;
 
   const rep = view.repartition;

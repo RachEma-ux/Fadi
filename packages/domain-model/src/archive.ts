@@ -81,6 +81,8 @@ export interface ProjectArchive {
     name: string;
     modelRevision: number;
     sourceExampleId: string | null;
+    /** Exemple résolu : `reference` (présentation protégée du prototype) ou `editable` (copie de travail, `copy()` de p118-resolved-app) ; `null` pour un projet ordinaire. */
+    exampleMode: "reference" | "editable" | null;
     sourceAttachment: Record<string, unknown> | null;
     siteObservations: Record<string, unknown> | null;
     programmeState: Record<string, unknown> | null;
@@ -264,6 +266,12 @@ function attachmentsOf(raw: unknown, mapStep: (f: Record<string, unknown>) => nu
   return out;
 }
 
+/** `demoP118V81.mode` du prototype : la référence protégée de l'exemple résolu, ou sa copie modifiable. */
+function exampleModeOf(demo: unknown): "reference" | "editable" | null {
+  if (!isRecord(demo)) return null;
+  return demo["mode"] === "reference" ? "reference" : "editable";
+}
+
 function validStep(n: unknown, count: number): n is number {
   return Number.isInteger(n) && (n as number) >= 1 && (n as number) <= count;
 }
@@ -314,6 +322,7 @@ function fromPrototypeProject(p: unknown, native: unknown, files: unknown, defin
       name,
       modelRevision: nativeEntries ? 1 : 0,
       sourceExampleId: null,
+      exampleMode: exampleModeOf(data["demoP118V81"]),
       sourceAttachment: null,
       siteObservations: site,
       programmeState: null,
@@ -411,6 +420,7 @@ function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly Par
       name: `${project["name"]} · import`,
       modelRevision: native ? 1 : 0,
       sourceExampleId: typeof project["sourceExampleId"] === "string" ? project["sourceExampleId"] : null,
+      exampleMode: project["exampleMode"] === "reference" || project["exampleMode"] === "editable" ? project["exampleMode"] : typeof project["sourceExampleId"] === "string" ? "reference" : null,
       sourceAttachment: isRecord(project["sourceAttachment"]) ? project["sourceAttachment"] : null,
       siteObservations: isRecord(project["siteObservations"]) ? project["siteObservations"] : null,
       programmeState: isRecord(project["programmeState"]) ? project["programmeState"] : null,

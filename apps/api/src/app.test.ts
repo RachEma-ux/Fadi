@@ -1071,6 +1071,38 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     expect(parcelsRes.transmission.status).toBe("linked");
   });
 
+  it("« Essayer une autre répartition en copie » : copies the protected P.118 reference into an editable project, reference intact", async () => {
+    const client = await registerAndLogin("copie@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    expect((await client.get(`/projects/${pid}`)).body.exampleMode).toBe("reference");
+    expect((await client.get(`/projects/${pid}/programme`)).body.resolvedExample).toBe(true);
+    const res = await client.post(`/projects/${pid}/copies`).send({});
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ code: "P.118", name: "ma variante de l’exemple résolu", warnings: [] }); // affiché « P.118 — ma variante de l’exemple résolu »
+    expect(res.body.id).not.toBe(pid);
+    const copy = (await client.get(`/projects/${res.body.id}`)).body;
+    // Provenance conservée, mode modifiable, modèle et programme présents.
+    expect(copy).toMatchObject({ sourceExampleId: "p118-exemple-complet", exampleMode: "editable", modelRevision: 1 });
+    const programme = (await client.get(`/projects/${copy.id}/programme`)).body;
+    expect(programme.resolvedExample).toBe(false);
+    expect(programme.programmeCase).toMatchObject({ caseId: "parcours_lot118", revision: 6, spaceCount: 74 });
+    expect((await client.get(`/projects/${copy.id}/levels`)).body).toHaveLength(6);
+    const steps = (await client.get(`/projects/${copy.id}/steps`)).body as { status: string; stale: boolean; staleRetainedCount: number }[];
+    expect(steps.filter((s) => s.status === "termine")).toHaveLength(21);
+    expect(steps.filter((s) => s.stale || s.staleRetainedCount > 0)).toHaveLength(0);
+    // La référence n'a pas bougé ; un nom explicite est accepté ; jamais pour un autre utilisateur.
+    expect((await client.get(`/projects/${pid}/programme`)).body.resolvedExample).toBe(true);
+    expect((await client.post(`/projects/${pid}/copies`).send({ name: "Variante B" })).body.name).toBe("Variante B");
+    const other = await registerAndLogin("copie-other@example.com");
+    expect((await other.post(`/projects/${pid}/copies`).send({})).status).toBe(404);
+    // Un projet ordinaire se copie aussi (« — copie »), sans mode d'exemple.
+    const blank = await client.post("/projects").send({ code: "P.950", name: "Dossier" });
+    const blankCopy = await client.post(`/projects/${blank.body.id}/copies`).send({});
+    expect(blankCopy.body.name).toBe("Dossier — copie");
+    expect((await client.get(`/projects/${blankCopy.body.id}`)).body.exampleMode).toBeNull();
+  });
+
   it("imports an export of the existing software (parcours-v6-project: workflow + native + stageAttachments) as a new project with its answers, choices, model and attachment", async () => {
     const client = await registerAndLogin("archive-proto@example.com");
     // Le modèle natif de l'exemple sert de `native` du prototype (registry + domains).
@@ -1235,5 +1267,100 @@ describe("Bilan Harmonie du bâtiment conçu (flow-v62) et références directio
     expect(report.status).toBe(200);
     expect(report.text).toContain("<title>Sans modèle — Bilan Harmonie du bâtiment conçu · V7</title>");
     expect(report.text).not.toContain("Le scénario de référence réunit formation");
+  });
+});
+
+describe("Programme ↔ modèle dessiné, hypothèses et transfert surfacique", () => {
+  it("links programme lines to the model's rooms by id (one room, one line), updates the Harmony room record, and unlinks", async () => {
+    const client = await registerAndLogin("links@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    const before = (await client.get(`/projects/${pid}/programme/model-links`)).body;
+    expect(before.applied).toBe(true);
+    expect(before.hasModel).toBe(true);
+    expect(before.roomCount).toBe(74);
+    expect(before.rows.length).toBeGreaterThan(60);
+    // Le cas résolu relie chaque ligne à sa zone : surfaces dessinées comparées, écarts calculés.
+    const linkedRow = before.rows.find((r: { linked: unknown[] }) => r.linked.length > 0);
+    expect(linkedRow).toBeDefined();
+    expect(linkedRow.drawnArea).toBeGreaterThan(0);
+    expect(typeof linkedRow.delta).toBe("number");
+    // Délier puis relier : la zone redevient disponible pour une autre ligne ; une zone déjà affectée est refusée.
+    const roomId = linkedRow.linked[0].id as string;
+    const spaceId = linkedRow.space.id as string;
+    const del = await client.delete(`/projects/${pid}/programme/case/links/${encodeURIComponent(spaceId)}/${encodeURIComponent(roomId)}`);
+    expect(del.status).toBe(204);
+    const afterUnlink = (await client.get(`/projects/${pid}/programme/model-links`)).body;
+    const row = afterUnlink.rows.find((r: { space: { id: string } }) => r.space.id === spaceId);
+    expect(row.linked).toEqual([]);
+    expect(row.drawnArea).toBeNull();
+    expect(row.options.map((o: { id: string }) => o.id)).toContain(roomId);
+    const otherRow = afterUnlink.rows.find((r: { space: { id: string }; linked: { id: string }[] }) => r.space.id !== spaceId && r.linked.length > 0);
+    const taken = otherRow.linked[0].id as string;
+    const refused = await client.post(`/projects/${pid}/programme/case/links`).send({ spaceId, roomId: taken });
+    expect(refused.status).toBe(422);
+    expect(refused.body.message).toBe("Zone déjà affectée à une autre ligne");
+    const absent = await client.post(`/projects/${pid}/programme/case/links`).send({ spaceId, roomId: "rdc|nope" });
+    expect(absent.body.message).toBe("Zone absente du modèle");
+    const relink = await client.post(`/projects/${pid}/programme/case/links`).send({ spaceId, roomId });
+    expect(relink.status).toBe(201);
+    const after = (await client.get(`/projects/${pid}/programme/model-links`)).body;
+    expect(after.rows.find((r: { space: { id: string } }) => r.space.id === spaceId).linked.map((l: { id: string }) => l.id)).toEqual([roomId]);
+    expect(after.revision).toBe(before.revision + 2);
+    // La fiche Harmony du local porte la cible de la ligne ; le bilan la compare.
+    const review = (await client.get(`/projects/${pid}/design-review`)).body;
+    expect(review.audit.find((x: { id: string }) => x.id === "room-links").status).toBe("OK");
+    // Un projet sans programme : rien à relier.
+    const blank = await client.post("/projects").send({ code: "P.940", name: "Vide" });
+    expect((await client.get(`/projects/${blank.body.id}/programme/model-links`)).body).toMatchObject({ applied: false, rows: [], hasModel: false });
+  });
+
+  it("edits the applied case's hypotheses with the prototype's rule, and previews / applies a surface transfer at constant total", async () => {
+    const client = await registerAndLogin("transfer@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    const programme = (await client.get(`/projects/${pid}/programme`)).body;
+    const hyp = programme.programmeCase.hypotheses[0];
+    // Le cas résolu porte déjà responsable et preuve (statut brut « hypothesis » du prototype) ; une preuve effacée bloque la confirmation.
+    expect(hyp).toMatchObject({ id: "H-USAGE", status: "hypothesis", owner: "Programmiste — rôle de démonstration" });
+    const cleared = await client.patch(`/projects/${pid}/programme/case/hypotheses/${encodeURIComponent(hyp.id)}`).send({ proof: "" });
+    expect(cleared.status).toBe(200);
+    expect(cleared.body.hypotheses[0].proof).toBe("");
+    const refused = await client.patch(`/projects/${pid}/programme/case/hypotheses/${encodeURIComponent(hyp.id)}`).send({ status: "Confirmée par preuve" });
+    expect(refused.status).toBe(422);
+    expect(refused.body.message).toBe("Renseignez d’abord responsable et preuve / motif.");
+    expect((await client.get(`/projects/${pid}/programme`)).body.programmeCase.hypotheses[0].status).toBe("hypothesis");
+    const badStatus = await client.patch(`/projects/${pid}/programme/case/hypotheses/${encodeURIComponent(hyp.id)}`).send({ status: "Validée" });
+    expect(badStatus.status).toBe(400);
+    const ok = await client.patch(`/projects/${pid}/programme/case/hypotheses/${encodeURIComponent(hyp.id)}`).send({ owner: "Chef de projet", proof: "Note de renseignements du 12/03", status: "Confirmée par preuve" });
+    expect(ok.status).toBe(200);
+    expect(ok.body.hypotheses[0]).toMatchObject({ owner: "Chef de projet", proof: "Note de renseignements du 12/03", status: "Confirmée par preuve" });
+    expect(ok.body.revision).toBe(programme.programmeCase.revision); // révision inchangée
+    const unknown = await client.patch(`/projects/${pid}/programme/case/hypotheses/H-zzz`).send({ owner: "x" });
+    expect(unknown.status).toBe(422);
+
+    const spaces = programme.programmeCase.spaces.filter((s: { quantity: number }) => s.quantity > 0);
+    const [from, to] = [spaces[0], spaces[1]];
+    const totalBefore = programme.programmeCase.sums.total;
+    const bad = await client.post(`/projects/${pid}/programme/case/transfer/preview`).send({ from: from.id, to: to.id, amount: 5, reason: "court" });
+    expect(bad.status).toBe(422);
+    expect(bad.body.message).toBe("Justifiez le transfert et ses conséquences.");
+    const preview = await client.post(`/projects/${pid}/programme/case/transfer/preview`).send({ from: from.id, to: to.id, amount: "5", reason: "Besoin de place pour la formation ; capacité inchangée." });
+    expect(preview.status).toBe(200);
+    expect(preview.body).toMatchObject({ projectId: pid, from: from.id, to: to.id, amount: 5 });
+    expect(preview.body.after.total).toBeCloseTo(totalBefore, 6);
+    const applied = await client.post(`/projects/${pid}/programme/case/transfer`).send(preview.body);
+    expect(applied.status).toBe(200);
+    expect(applied.body.transfer.total).toBeCloseTo(totalBefore, 6);
+    expect(applied.body.programmeCase.revision).toBe(programme.programmeCase.revision + 2);
+    const sFrom = applied.body.programmeCase.spaces.find((s: { id: string }) => s.id === from.id);
+    expect(sFrom.quantity * sFrom.unitArea).toBeCloseTo(preview.body.after.from, 6);
+    expect(applied.body.programmeCase.decisionReview.required).toBe(true);
+    // Une comparaison périmée est refusée.
+    const stale = await client.post(`/projects/${pid}/programme/case/transfer`).send(preview.body);
+    expect(stale.status).toBe(422);
+    expect(stale.body.message).toBe("Le programme a changé. Recalculez la comparaison.");
+    const project = (await client.get(`/projects/${pid}`)).body;
+    expect(project.programmeState.transfers).toHaveLength(1);
   });
 });

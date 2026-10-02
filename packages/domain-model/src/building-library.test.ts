@@ -2,7 +2,12 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   adjacencyGraphSvg,
+  applySurfaceTransfer,
   buildProgrammeCase,
+  linkProgrammeRoom,
+  previewSurfaceTransfer,
+  programmeModelLinks,
+  setProgrammeHypothesis,
   buildingCase,
   buildingScenario,
   draftProgrammeTexts,
@@ -14,6 +19,7 @@ import {
   searchBuildingCases,
   type BuildingLibraryData,
 } from "./building-library";
+import { fnv1a } from "./model-analysis";
 import { programmeCaseSums } from "./programme";
 
 // La bibliothèque extraite telle quelle du prototype (apps/api/src/data).
@@ -102,5 +108,72 @@ describe("bibliothèque des bâtiments", () => {
     const csv = programmeCsv(c, { label: "A", spaces: [{ ...c.scenarios[0]!.spaces[0]!, name: "=cmd()" }] });
     expect(csv.startsWith("﻿\"Cas\";")).toBe(true);
     expect(csv).toContain("\"'=cmd()\"");
+  });
+
+  it("links programme lines to drawn rooms by identifier (one room, one line), feeds the Harmony room record, and reports drawn vs target", () => {
+    const c = buildingCase(DATA, "office")!;
+    const a = buildProgrammeCase(DATA, c, buildingScenario(c, "base")!, "Maroc", null, NOW);
+    const rooms = [
+      { id: "rdc|R01", levelName: "RDC", name: "R01 · Accueil", area: 140.7 },
+      { id: "rdc|R02", levelName: "RDC", name: "R02 · Bureau", area: 173 },
+    ];
+    const s0 = a.spaces.find((x) => x.role !== "parois")!;
+    const s1 = a.spaces.filter((x) => x.role !== "parois")[1]!;
+    const first = linkProgrammeRoom(a, {}, s0.id, "rdc|R01", { roomExists: true, now: NOW });
+    expect(first.programmeCase.roomLinks[s0.id]).toEqual(["rdc|R01"]);
+    expect(first.programmeCase.revision).toBe(a.revision + 1);
+    expect(first.roomData["rdc|R01"]).toMatchObject({ programmeSpaceId: s0.id, programmeTargetArea: s0.quantity * s0.unitArea, programmeCaseId: "office" });
+    expect(() => linkProgrammeRoom(first.programmeCase, first.roomData, s1.id, "rdc|R01", { roomExists: true, now: NOW })).toThrow("Zone déjà affectée à une autre ligne");
+    expect(() => linkProgrammeRoom(a, {}, s0.id, "rdc|R99", { roomExists: false, now: NOW })).toThrow("Zone absente du modèle");
+    expect(() => linkProgrammeRoom(a, {}, "nope", "rdc|R01", { roomExists: true, now: NOW })).toThrow("Espace inconnu");
+    const rows = programmeModelLinks(first.programmeCase, rooms);
+    const row0 = rows.find((r) => r.space.id === s0.id)!;
+    expect(row0.linked.map((r) => r.id)).toEqual(["rdc|R01"]);
+    expect(row0.drawnArea).toBeCloseTo(140.7, 6);
+    expect(row0.delta).toBeCloseTo(140.7 - s0.quantity * s0.unitArea, 6);
+    expect(row0.options.map((r) => r.id)).toEqual(["rdc|R02"]); // la zone déjà liée à cette ligne n'est plus proposée
+    const row1 = rows.find((r) => r.space.id === s1.id)!;
+    expect(row1.drawnArea).toBeNull();
+    expect(row1.options.map((r) => r.id)).toEqual(["rdc|R02"]); // R01 est affectée à une autre ligne
+    expect(rows.some((r) => r.space.role === "parois")).toBe(false);
+    // Liaison devenue absente du modèle : signalée, jamais effacée.
+    expect(programmeModelLinks(first.programmeCase, []).find((r) => r.space.id === s0.id)!.missing).toEqual(["rdc|R01"]);
+    const removed = linkProgrammeRoom(first.programmeCase, first.roomData, s0.id, "rdc|R01", { remove: true, roomExists: true, now: NOW });
+    expect(removed.programmeCase.roomLinks[s0.id]).toEqual([]);
+    expect(removed.roomData["rdc|R01"]!.programmeSpaceId).toBeUndefined();
+  });
+
+  it("edits a hypothesis of the applied case; confirming or dismissing requires owner and proof", () => {
+    const c = buildingCase(DATA, "office")!;
+    const a = buildProgrammeCase(DATA, c, buildingScenario(c, "base")!, "Maroc", null, NOW);
+    const h = a.hypotheses[0]!;
+    expect(() => setProgrammeHypothesis(a, h.id, "status", "Confirmée par preuve", NOW)).toThrow("Renseignez d’abord responsable et preuve / motif.");
+    const withOwner = setProgrammeHypothesis(a, h.id, "owner", "Chef de projet", NOW);
+    const withProof = setProgrammeHypothesis(withOwner, h.id, "proof", "Note de renseignements du 12/03", NOW);
+    const confirmed = setProgrammeHypothesis(withProof, h.id, "status", "Confirmée par preuve", NOW);
+    expect(confirmed.hypotheses[0]).toMatchObject({ owner: "Chef de projet", proof: "Note de renseignements du 12/03", status: "Confirmée par preuve", updated: NOW });
+    expect(() => setProgrammeHypothesis(a, h.id, "status", "Validée", NOW)).toThrow("Statut d’hypothèse inconnu");
+    expect(() => setProgrammeHypothesis(a, "H-zzz", "owner", "x", NOW)).toThrow("Hypothèse inconnue");
+  });
+
+  it("previews and applies a surface transfer at constant total, refusing stale previews", () => {
+    const c = buildingCase(DATA, "office")!;
+    const a = buildProgrammeCase(DATA, c, buildingScenario(c, "base")!, "Maroc", null, NOW);
+    const [s, t] = a.spaces.filter((x) => x.quantity > 0);
+    const before = programmeCaseSums(a.spaces).total;
+    expect(() => previewSurfaceTransfer(a, "p", s!.id, s!.id, 10, "Justification suffisante", fnv1a)).toThrow("Deux fiches distinctes et une surface positive disponible sont nécessaires.");
+    expect(() => previewSurfaceTransfer(a, "p", s!.id, t!.id, 10, "court", fnv1a)).toThrow("Justifiez le transfert et ses conséquences.");
+    expect(() => previewSurfaceTransfer(a, "p", s!.id, t!.id, s!.quantity * s!.unitArea + 1, "Justification suffisante", fnv1a)).toThrow("Deux fiches distinctes");
+    const tr = previewSurfaceTransfer(a, "p", s!.id, t!.id, 10, "Justification suffisante", fnv1a);
+    expect(tr).toMatchObject({ projectId: "p", revision: a.revision, from: s!.id, to: t!.id, amount: 10, before: { total: before }, after: { total: before } });
+    expect(tr.after.from).toBeCloseTo(tr.before.from - 10, 6);
+    expect(tr.after.to).toBeCloseTo(tr.before.to + 10, 6);
+    const applied = applySurfaceTransfer(a, "p", tr, fnv1a, NOW);
+    expect(applied.total).toBeCloseTo(before, 6);
+    expect(applied.programmeCase.revision).toBe(a.revision + 2); // deux `editSpace`
+    const sa = applied.programmeCase.spaces.find((x) => x.id === s!.id)!;
+    expect(sa.quantity * sa.unitArea).toBeCloseTo(tr.after.from, 6);
+    expect(() => applySurfaceTransfer(applied.programmeCase, "p", tr, fnv1a, NOW)).toThrow("Le programme a changé. Recalculez la comparaison.");
+    expect(() => applySurfaceTransfer(a, "autre", tr, fnv1a, NOW)).toThrow("Le programme a changé.");
   });
 });

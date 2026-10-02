@@ -45,6 +45,8 @@ export const projects = pgTable("projects", {
   parcelFootprint: geography("parcel_footprint"),
   /** Identifiant de l'exemple importé (apps/api/src/data/examples), null pour un projet créé de toutes pièces. Traçabilité de la provenance, jamais effacée. */
   sourceExampleId: text("source_example_id"),
+  /** Exemple résolu importé : `reference` (présentation protégée du prototype, « Essayer une autre répartition en copie ») ou `editable` (copie de travail). Null pour un projet ordinaire. */
+  exampleMode: text("example_mode").$type<"reference" | "editable" | null>(),
   /** Données annexes de l'exemple importé (faits, critères, hypothèses, données de zone) — non structurées dans le modèle de domaine, conservées telles quelles pour consultation. */
   sourceAttachment: jsonb("source_attachment").$type<Record<string, unknown> | null>(),
   /** L'outil Parcelle a-t-il déjà enregistré (ou supprimé) une parcelle ? (`initialized` de son API : sans parcelle ET non initialisé, il propose sa parcelle d'exemple.) */

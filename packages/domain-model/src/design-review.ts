@@ -477,6 +477,32 @@ export function designRoomTableHtml(r: DesignAnalysis, level: string | null = nu
   );
 }
 
+/**
+ * `roomsHTML(p)` de p118-resolved-app — « fiches d’espaces — capacités,
+ * dimensions et ambiances choisies » de l'exemple résolu : géométrie du
+ * modèle courant, gabarit et capacité cible de la fiche de programme reliée
+ * par `sourceRoomId`, réponse retenue et ambiance choisie du dossier Harmony.
+ * Les valeurs absentes sont « Non applicable », jamais inventées.
+ */
+export function exampleRoomsHtml(input: DesignReviewInput, r: DesignAnalysis, level: string | null = null): string {
+  const rooms = level ? r.rooms.filter((x) => x.level === level) : r.rooms;
+  const num = (v: unknown, d = 2) => (Number.isFinite(Number(v)) && v !== null && v !== "" ? Number(v).toLocaleString("fr-FR", { maximumFractionDigits: d }) : "Non applicable");
+  const by = new Map<string, Record<string, unknown>>();
+  for (const s of input.programmeCase?.spaces ?? []) if (typeof s["sourceRoomId"] === "string") by.set(s["sourceRoomId"], s);
+  const rows = rooms.map((x) => {
+    const s = by.get(x.id);
+    const amb = input.harmony.ambiences[x.id] ?? null;
+    const capacity = s?.["capacityNumeric"];
+    return [
+      `<b>${esc(`${x.levelName} · ${typeof s?.["name"] === "string" ? s["name"] : x.name}`)}</b><small>${esc(x.id)}</small>`,
+      `${num(x.area)} m²<br>${num(s?.["width"])} × ${num(s?.["length"])} m : enveloppe, non dimension libre`,
+      `${Number(capacity) > 0 ? `${num(capacity, 0)} personnes` : "Sans poste permanent"}${x.capacity ? `<small>Dessin source : ${esc(x.capacity)} ; cible : ${esc(capacity ?? "non applicable")}</small>` : ""}`,
+      `${esc(typeof s?.["performance"] === "string" && s["performance"] ? s["performance"] : x.reading)}<details><summary>Ambiance choisie</summary><p>${esc(amb?.["materials"])}</p><p>${esc(amb?.["palette"])}</p><p>${esc(amb?.["light"])}</p><p>${esc(amb?.["sound"])}</p></details>`,
+    ];
+  });
+  return `<p class="ex81-note">Géométrie du modèle courant ; capacités cibles du programme. Une cible retenue n’efface pas le mobilier du dessin source.</p>${table(["Niveau / zone", "Surface / gabarit calculés", "Capacité cible", "Réponse retenue"], rows)}`;
+}
+
 export function designIssuesHtml(r: DesignAnalysis, withButtons = false): string {
   return r.issues.map((x) => `<article class="v62-issue"><span class="v62-tag">${esc(x.priority)}</span><h3>${esc(x.title)}</h3><p>${esc(x.body)}</p>${withButtons ? `<button class="h-button" data-v62-go="${x.step}">Étape ${String(x.step).padStart(2, "0")} ↗</button>` : `<small>Étape ${String(x.step).padStart(2, "0")}</small>`}</article>`).join("");
 }

@@ -52,7 +52,7 @@ export function ProgrammeTransmission({ projectId, view }: { projectId: string; 
         <Link className="bl-button" to={`/projets/${projectId}?module=parcours&etape=6`}>
           Harmony
         </Link>
-        <Link className="bl-button" to={`/projets/${projectId}?module=atelier`}>
+        <Link className="bl-button" to={`/projets/${projectId}?module=programmation&vue=modele`}>
           Comparer au modèle
         </Link>
         <Link className="bl-button" to={`/bibliotheque/batiments?projet=${encodeURIComponent(projectId)}`}>
@@ -133,13 +133,13 @@ export function ProgrammeCaseEditor({ projectId, view }: { projectId: string; vi
           <Link className="bl-button" to={`/bibliotheque/batiments/${encodeURIComponent(c.id)}?projet=${encodeURIComponent(projectId)}`}>
             Changer de cas / variante
           </Link>
-          <Link className="bl-button" to={`/projets/${projectId}?module=atelier`}>
+          <Link className="bl-button" to={`/projets/${projectId}?module=programmation&vue=modele`}>
             Comparer au modèle dessiné
           </Link>
           <button type="button" onClick={() => download(`Programme_projet_${a.caseId}.csv`, "text/csv;charset=utf-8", programmeCsv(caseForCsv, s))}>
             Exporter le programme CSV
           </button>
-          <Link className="bl-button" to={`/bibliotheque/batiments/${encodeURIComponent(c.id)}?projet=${encodeURIComponent(projectId)}&rubrique=sources`}>
+          <Link className="bl-button" to={`/projets/${projectId}?module=programmation&vue=hypotheses`}>
             Hypothèses et validation
           </Link>
         </div>

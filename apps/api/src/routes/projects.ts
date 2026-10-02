@@ -122,6 +122,36 @@ projectsRouter.get("/:projectId/archive", async (req, res) => {
   res.send(JSON.stringify(archive, null, 2));
 });
 
+const copySchema = z.object({ name: z.string().trim().min(1).max(200).optional() });
+
+/**
+ * `copy()` de p118-resolved-app : « Essayer une autre répartition en copie »
+ * — un NOUVEAU projet modifiable, copie intégrale du dossier (étapes et
+ * choix Harmonie, programme et son historique, parcelles, modèle natif,
+ * pièces jointes, dossier Harmony), empreintes de péremption reposées. La
+ * référence reste intacte ; la provenance (`sourceExampleId`) est conservée.
+ */
+projectsRouter.post("/:projectId/copies", async (req, res) => {
+  const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);
+  if (!project) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  const parsed = copySchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+    return;
+  }
+  const now = new Date().toISOString();
+  // Le prototype nomme la copie « P.118 — ma variante de l’exemple résolu » ; l'application affiche « code — nom », le code n'est donc pas répété.
+  const name = parsed.data.name ?? (project.exampleMode === "reference" ? "ma variante de l’exemple résolu" : `${project.name} — copie`);
+  const created = await db.transaction(async (tx) => {
+    const archive = await exportProjectArchive(tx, project, now);
+    return importProjectArchive(tx, req.user!.id, { ...archive, project: { ...archive.project, name, exampleMode: project.exampleMode ? "editable" : null } }, now);
+  });
+  res.status(201).json({ id: created.project.id, code: created.project.code, name: created.project.name, warnings: created.warnings });
+});
+
 // --- Étapes du Parcours (module Parcours) et répartition (module Programmation)
 projectsRouter.use("/:projectId/steps", parcoursStepsRouter);
 projectsRouter.use("/:projectId/programme", programmeRouter);

@@ -13,13 +13,8 @@ fonction de géométrie localement.
 
 ## Statut
 
-`AtelierPanel.tsx` est fonctionnel pour un seul type d'objet (mur) : création, liste, suppression, persistées
-via l'API (`apps/api`) dans `architectural_objects`, avec `projects.model_revision` qui avance atomiquement à
-chaque commande — et annulation/rétablissement via `CommandHistory` (`packages/domain-model`). C'est une
-tranche verticale réelle, pas une démonstration : les données survivent à un rechargement de page.
+Le moteur de l'Atelier du prototype (Design Atelier V14-3 : viewer 3D, plan, coupes, façades, niveaux, outils de dessin, exports, études solaires, barre d'outils V8) est **extrait tel quel** par `apps/web/scripts/extract-native-atelier.mjs` et encapsulé, jamais réécrit (`native/engine.ts`, `NativeAtelier.tsx`) ; sa persistance passe par `window.ParcoursSession.storage` → `atelier_store` (révision par clé, 409 en cas de conflit) et une projection dérivée `levels` / `architectural_objects` — voir `docs/migration/matrix.md`, section 3.
 
-Ce qui manque encore pour que ce soit l'Atelier décrit ci-dessus : les autres types d'objets (porte, fenêtre,
-colonne, escalier), les vues plan/coupe/volume/éclaté (une seule vue en plan existe), la sélection et l'édition
-d'un objet existant (seule la suppression est possible, pas le déplacement), et les commandes métier réelles
-(aujourd'hui, `CommandHistory` ne connaît que « ajouter/supprimer un mur », pas une opération de domaine comme
-« déplacer un escalier »). Tout cela reste un travail du Lot 3.
+`AtelierHarmonyPage.tsx` porte la sous-page « Harmonie du bâtiment » de l'étape 10 (V8.4) ; `DesignReview.tsx` le bilan Harmonie du bâtiment conçu (flow-v62 : analyse du modèle, réserves, plans, audit des transmissions, revue, rapport, références directionnelles), calculé côté serveur à partir de `packages/domain-model/src/design-review.ts`.
+
+Reste : chargement paresseux du moteur, copie automatique de la référence au premier dessin, fond MapTiler et observation déclarée du bilan (voir « Limites restantes » de la matrice).

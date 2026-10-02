@@ -101,6 +101,13 @@ describe("archive — export du prototype → archive Fadi", () => {
     expect(a.steps.find((s) => s.stepNumber === 5)!.status).toBe("a-faire");
     expect(a.programmeRepartition).toEqual({ type: "tertiaire", baseArea: 900, mode: "max", custom: { circulation: 17 }, components: ["enseignement", "tertiaire"] });
     expect(a.project.harmony).toEqual({ config: { components: ["enseignement", "tertiaire"] } }); // le dossier Harmony du prototype voyage tel quel
+    expect(a.project.exampleMode).toBeNull(); // projet ordinaire du prototype
+    // `demoP118V81.mode` : la référence protégée de l'exemple résolu, ou sa copie modifiable (`copy()`).
+    const demo = prototypeExport() as { workflow: { data: Record<string, unknown> } };
+    demo.workflow.data["demoP118V81"] = { mode: "reference" };
+    expect(normalizeImportedProjects(demo, DEFS, OPTIONS)[0]!.archive.project.exampleMode).toBe("reference");
+    demo.workflow.data["demoP118V81"] = { mode: "editable", copiedAt: "2026-09-30" };
+    expect(normalizeImportedProjects(demo, DEFS, OPTIONS)[0]!.archive.project.exampleMode).toBe("editable");
     expect(a.programmeCases).toEqual([{ revision: 2, caseId: "hotel", scenarioId: "B", data: expect.objectContaining({ caseId: "hotel" }) }]);
     expect(a.native!.entries["design.v13.activeProject"]).toBe("native-1");
     expect(a.native!.entries["design.v13.project.native-1.levels"]).toEqual([{ id: "rdc" }]);
@@ -144,7 +151,10 @@ describe("archive — export du prototype → archive Fadi", () => {
     const back = normalizeImportedProjects(JSON.parse(JSON.stringify({ ...exported, steps: [...exported.steps, { stepNumber: 40, status: "termine", content: {} }] })), DEFS, OPTIONS);
     expect(back[0]!.origin).toBe("fadi");
     const a = back[0]!.archive;
-    expect(a.project).toMatchObject({ name: "Étude Bellevue · import", code: "P.1", modelRevision: 1 });
+    expect(a.project).toMatchObject({ name: "Étude Bellevue · import", code: "P.1", modelRevision: 1, exampleMode: null });
+    expect(normalizeImportedProjects({ ...exported, project: { ...exported.project, exampleMode: "editable" } }, DEFS, OPTIONS)[0]!.archive.project.exampleMode).toBe("editable");
+    // Une archive antérieure (sans mode) d'un exemple importé reste une référence protégée.
+    expect(normalizeImportedProjects({ ...exported, project: { ...exported.project, sourceExampleId: "p118-exemple-complet", exampleMode: undefined } }, DEFS, OPTIONS)[0]!.archive.project.exampleMode).toBe("reference");
     expect(a.steps).toHaveLength(21);
     expect(a.steps[1]!.content.harmonie.generatedHash).toBeNull();
     expect(a.steps[1]!.content.harmonie.proposals["H01-B"]).toMatchObject({ status: "adapted", acceptedHash: null, snapshot: { ref: "H02-B" } });

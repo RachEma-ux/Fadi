@@ -18,6 +18,7 @@ import { ParcelleTool } from "../projets-sources/ParcelleTool";
 import { StepSources } from "../projets-sources/StepSources";
 import { ProgrammeRepartition, ProgrammeTransfer } from "../programmation/ProgrammeRepartition";
 import { LibraryFold, SiteQualitiesFold } from "../programmation/ProgrammeCase";
+import { ProgrammeTransferFold } from "../programmation/ProgrammeTransferFold";
 import { HarmoniePanel, HarmonieToast } from "./HarmoniePanel";
 import { StepForm } from "./StepForm";
 
@@ -119,6 +120,7 @@ function StepDetail({
   onPrev,
   onNext,
   onOpen,
+  harmonieOpen,
 }: {
   projectId: string;
   step: ParcoursStep;
@@ -130,6 +132,8 @@ function StepDetail({
   onNext: (() => void) | null;
   /** `goto` : ouvrir une autre étape (origine d'une intention, destination d'un choix). */
   onOpen: (stepNumber: number) => void;
+  /** `?harmonie=1` : arriver panneau Harmonie ouvert (« Ouvrir Harmony » depuis les vues du programme). */
+  harmonieOpen: boolean;
 }) {
   const queryClient = useQueryClient();
   const [harmonieErrors, setHarmonieErrors] = useState<Record<string, string>>({});
@@ -255,6 +259,8 @@ function StepDetail({
           onGoto={onOpen}
           onSaveSite={step.number === 1 ? (input) => saveSite.mutate(input) : null}
           siteError={siteError}
+          afterProposals={step.number === 7 ? <ProgrammeTransferFold projectId={projectId} onApplied={setToast} /> : null}
+          initialOpen={harmonieOpen ? true : null}
         />
       )}
       <HarmonieToast text={toast} onDone={() => setToast(null)} />
@@ -318,6 +324,7 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
   const notice = (location.state as { notice?: string } | null)?.notice ?? null;
   const etapeParam = searchParams.get("etape");
   const openNumber = etapeParam ? Number(etapeParam) : null;
+  const harmonieOpen = searchParams.get("harmonie") === "1";
 
   function openStep(number: number | null) {
     const next = new URLSearchParams(searchParams);
@@ -352,6 +359,7 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
           onPrev={index > 0 ? () => openStep(steps[index - 1]!.number) : null}
           onNext={index < steps.length - 1 ? () => openStep(steps[index + 1]!.number) : null}
           onOpen={openStep}
+          harmonieOpen={harmonieOpen}
         />
       );
     }

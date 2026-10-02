@@ -17,19 +17,19 @@ export const MODULES: ModuleDescriptor[] = [
     id: "projets-sources",
     label: "Projets et sources",
     implemented: true,
-    status: "La parcelle du projet dans l'outil Parcelle du prototype (import KML/KMZ, bornes, cotes, dossier), transmise au modèle de l'Atelier ; pièces jointes à venir.",
+    status: "La parcelle du projet dans l'outil Parcelle du prototype (import KML/KMZ, bornes, cotes, dossier), transmise au modèle de l'Atelier ; sources des étapes ; archive de projet (sauvegarde, import, copie).",
   },
   {
     id: "parcours",
     label: "Parcours",
     implemented: true,
-    status: "Les 21 étapes avec leur formulaire métier, leurs propositions Harmonie arbitrables, leurs indicateurs et leur transmission ; les outils Parcelle (01) et Atelier (10, 11) restent à porter.",
+    status: "Les 21 étapes avec leur formulaire métier, leurs propositions Harmonie arbitrables (péremption, rapports), leurs indicateurs, leur transmission, l'outil Parcelle (01), l'Atelier et la sous-page « Harmonie du bâtiment » (10, 11), les sources de l'étape.",
   },
   {
     id: "programmation",
     label: "Programmation",
     implemented: true,
-    status: "Répartition programmatique par type de bâtiment (fourchettes, ratios, adjacences) et cas de programme importé ; bibliothèque des bâtiments à porter.",
+    status: "Répartition programmatique par type de bâtiment (fourchettes, ratios, adjacences), bibliothèque des bâtiments et cas de programme appliqué (fiches, liaison au modèle dessiné, registre des hypothèses, transfert surfacique à total constant).",
   },
   {
     id: "atelier",

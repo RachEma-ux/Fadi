@@ -11,8 +11,12 @@ import { Router, type Request } from "express";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import {
+  HYPOTHESIS_STATUSES,
   PROGRAMME_MODES,
   buildingCase,
+  fnv1a,
+  previewSurfaceTransfer,
+  programmeModelLinks,
   defaultProgrammeRepartition,
   harmonieProfile,
   programmeCaseSums,
@@ -27,7 +31,8 @@ import { programmeRepartitions } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { BUILDING_LIBRARY, HARMONIE_PROFILES, PROGRAMME_REPARTITION } from "../data/parcours.js";
 import { loadOwnedProject, type OwnedProject } from "../lib/owned-project.js";
-import { applyProgrammeCase, editProgrammeCaseSpace, loadActiveProgrammeCase, loadProgrammeHistory, programmeStateOf } from "../lib/programme-case.js";
+import { applyProgrammeCase, applyProgrammeTransfer, editProgrammeCaseHypothesis, editProgrammeCaseSpace, linkProgrammeCaseRoom, loadActiveProgrammeCase, loadProgrammeHistory, programmeStateOf } from "../lib/programme-case.js";
+import { loadModelAnalysis } from "../lib/model-context.js";
 
 export const programmeRouter = Router({ mergeParams: true });
 programmeRouter.use(requireAuth);
@@ -81,8 +86,8 @@ async function repartitionView(project: OwnedProject) {
     typeLabel: typeInfo?.label ?? harmonieProfile(HARMONIE_PROFILES, rep.type, rep.components).label,
     rows,
     totals,
-    /** Projet importé depuis un exemple résolu : présentation « Répartition renseignée et liée au modèle » du prototype. */
-    resolvedExample: project.sourceExampleId !== null,
+    /** Référence protégée d'un exemple résolu : présentation « Répartition renseignée et liée au modèle » du prototype (`projectProgramme`), modifiable dans une copie. */
+    resolvedExample: project.exampleMode === "reference",
     reference: {
       subtitle: PROGRAMME_REPARTITION.subtitle,
       modes: PROGRAMME_REPARTITION.modes,
@@ -176,6 +181,150 @@ programmeRouter.patch("/case/spaces/:spaceId", async (req, res) => {
   }
   const refreshed = await loadOwnedProject(project.id, req.user!.id);
   res.json(await repartitionView(refreshed ?? project));
+});
+
+// --- Programme ↔ modèle dessiné (`modelView` / `linkRoom`) -------------------
+
+/** Les lignes du programme appliqué avec leurs zones liées, la surface dessinée, l'écart et les zones encore libres. */
+programmeRouter.get("/model-links", async (req, res) => {
+  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
+  if (!project) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  const a = await loadActiveProgrammeCase(db, project.id);
+  if (!a) {
+    res.json({ applied: false, rows: [], roomCount: 0, hasModel: false, revision: null });
+    return;
+  }
+  const model = await loadModelAnalysis(db, project.id);
+  const rooms = (model?.rooms ?? []).map((r) => ({ id: r.id, levelName: r.levelName, name: r.name, area: r.area }));
+  res.json({ applied: true, revision: a.revision, title: a.title, scenarioLabel: a.scenarioLabel, rows: programmeModelLinks(a, rooms), roomCount: rooms.length, hasModel: !!model });
+});
+
+const linkSchema = z.object({ spaceId: z.string().min(1).max(120), roomId: z.string().min(1).max(200) });
+
+programmeRouter.post("/case/links", async (req, res) => {
+  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
+  if (!project) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  const parsed = linkSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+    return;
+  }
+  try {
+    await db.transaction(async (tx) => {
+      const model = await loadModelAnalysis(tx, project.id);
+      await linkProgrammeCaseRoom(tx, project, parsed.data.spaceId, parsed.data.roomId, false, model?.rooms ?? [], new Date().toISOString());
+    });
+  } catch (err) {
+    res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Liaison refusée." });
+    return;
+  }
+  res.status(201).json({ ok: true });
+});
+
+programmeRouter.delete("/case/links/:spaceId/:roomId", async (req, res) => {
+  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
+  if (!project) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  try {
+    await db.transaction(async (tx) => {
+      const model = await loadModelAnalysis(tx, project.id);
+      await linkProgrammeCaseRoom(tx, project, req.params["spaceId"] as string, req.params["roomId"] as string, true, model?.rooms ?? [], new Date().toISOString());
+    });
+  } catch (err) {
+    res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Liaison refusée." });
+    return;
+  }
+  res.status(204).end();
+});
+
+// --- Registre des hypothèses (`hypothesisView`) ------------------------------
+
+const hypothesisSchema = z.object({ status: z.enum(HYPOTHESIS_STATUSES).optional(), owner: z.string().max(250).optional(), proof: z.string().max(3000).optional() });
+
+programmeRouter.patch("/case/hypotheses/:hypothesisId", async (req, res) => {
+  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
+  if (!project) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  const parsed = hypothesisSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+    return;
+  }
+  try {
+    const next = await db.transaction((tx) => editProgrammeCaseHypothesis(tx, project.id, req.params["hypothesisId"] as string, parsed.data, new Date().toISOString()));
+    res.json({ hypotheses: next.hypotheses, revision: next.revision });
+  } catch (err) {
+    res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Modification refusée." });
+  }
+});
+
+// --- Transfert surfacique à total constant (étape 07) -----------------------
+
+const transferPreviewSchema = z.object({ from: z.string().min(1).max(120), to: z.string().min(1).max(120), amount: z.union([z.number(), z.string()]), reason: z.string().max(700) });
+
+programmeRouter.post("/case/transfer/preview", async (req, res) => {
+  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
+  if (!project) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  const parsed = transferPreviewSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+    return;
+  }
+  const a = await loadActiveProgrammeCase(db, project.id);
+  if (!a) {
+    res.status(422).json({ error: "programme_rule", message: "Appliquez un cas de la bibliothèque pour proposer un transfert chiffré entre ses fiches d’espaces." });
+    return;
+  }
+  try {
+    res.json(previewSurfaceTransfer(a, project.id, parsed.data.from, parsed.data.to, parsed.data.amount, parsed.data.reason, fnv1a));
+  } catch (err) {
+    res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Transfert refusé." });
+  }
+});
+
+const transferSchema = z.object({
+  projectId: z.string(),
+  revision: z.number().int(),
+  hash: z.string().max(16),
+  from: z.string().max(120),
+  to: z.string().max(120),
+  amount: z.number().finite().positive(),
+  reason: z.string().max(700),
+  before: z.object({ from: z.number(), to: z.number(), total: z.number() }),
+  after: z.object({ from: z.number(), to: z.number(), total: z.number() }),
+});
+
+programmeRouter.post("/case/transfer", async (req, res) => {
+  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
+  if (!project) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  const parsed = transferSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+    return;
+  }
+  try {
+    const result = await db.transaction((tx) => applyProgrammeTransfer(tx, project, parsed.data, new Date().toISOString()));
+    const refreshed = await loadOwnedProject(project.id, req.user!.id);
+    res.json({ ...(await repartitionView(refreshed ?? project)), transfer: { total: result.total, revision: result.programmeCase.revision } });
+  } catch (err) {
+    res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Transfert refusé." });
+  }
 });
 
 const putSchema = z.object({

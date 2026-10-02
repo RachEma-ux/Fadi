@@ -60,6 +60,8 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
         code: registry.code,
         name: registry.name,
         sourceExampleId: exampleId,
+        // Présentation protégée de l'exemple résolu (prototype `demoP118V81.mode = "reference"`) : une copie de travail s'obtient par « Essayer une autre répartition en copie ».
+        exampleMode: "reference",
         sourceAttachment: exampleAttachment(exampleId) ?? null,
         // Le modèle architectural importé compte comme une première révision
         // du projet (pas une révision par objet : ce n'est pas une suite de

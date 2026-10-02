@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { MODULES } from "../modules/module-registry";
 import { NativeAtelier } from "../modules/atelier/NativeAtelier";
 import { ParcoursModule } from "../modules/parcours/ParcoursModule";
+import { ProgrammeHypothesesPage, ProgrammeModelLinksPage } from "../modules/programmation/ProgrammeLinks";
 import { ProgrammeRepartition, ProgrammeTransfer } from "../modules/programmation/ProgrammeRepartition";
 import { ParcelleTool } from "../modules/projets-sources/ParcelleTool";
 import { ProjectSources } from "../modules/projets-sources/StepSources";
@@ -16,11 +16,17 @@ export function ProjectShell() {
   const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId) });
   const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
 
-  const [searchParams] = useSearchParams();
+  // Le module ouvert vit dans l'URL (`?module=`), comme l'étape (`?etape=`) et la vue (`?vue=`) : les liens
+  // entre modules (« Comparer au modèle dessiné », « Ouvrir l’Atelier »…) et le rechargement le respectent.
+  const [searchParams, setSearchParams] = useSearchParams();
   const requestedModule = searchParams.get("module");
-  const [activeModule, setActiveModule] = useState(
-    requestedModule && MODULES.some((m) => m.id === requestedModule) ? requestedModule : "parcours",
-  );
+  const activeModule = requestedModule && MODULES.some((m) => m.id === requestedModule) ? requestedModule : "parcours";
+  const programmeView = searchParams.get("vue");
+  function selectModule(id: string) {
+    const next = new URLSearchParams();
+    next.set("module", id);
+    setSearchParams(next);
+  }
 
   if (projectQuery.isLoading) {
     return <p role="status">Chargement du projet…</p>;
@@ -52,7 +58,7 @@ export function ProjectShell() {
             key={m.id}
             type="button"
             aria-current={m.id === activeModule ? "page" : undefined}
-            onClick={() => setActiveModule(m.id)}
+            onClick={() => selectModule(m.id)}
           >
             {m.label}
           </button>
@@ -86,8 +92,16 @@ export function ProjectShell() {
         {activeModule === "programmation" && (
           <>
             <h2>Programmation</h2>
-            <ProgrammeRepartition projectId={projectId} />
-            <ProgrammeTransfer projectId={projectId} />
+            {programmeView === "modele" ? (
+              <ProgrammeModelLinksPage projectId={projectId} />
+            ) : programmeView === "hypotheses" ? (
+              <ProgrammeHypothesesPage projectId={projectId} />
+            ) : (
+              <>
+                <ProgrammeRepartition projectId={projectId} />
+                <ProgrammeTransfer projectId={projectId} />
+              </>
+            )}
           </>
         )}
 

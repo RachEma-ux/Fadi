@@ -564,3 +564,149 @@ export function programmeCsv(c: BuildingCase, s: { label: string; spaces: Librar
   ];
   return "﻿" + rows.map((r) => r.map(safe).join(";")).join("\r\n");
 }
+
+// --- Programme ↔ modèle dessiné (`modelView` / `linkRoom`) ------------------
+
+/** La fiche Harmony d'un local (`h.roomData[roomId]`) : type et cible de programme posés par la liaison. */
+export interface HarmonyRoomRecord {
+  type?: string;
+  programmeSpaceId?: string;
+  programmeTargetArea?: number;
+  programmeCaseId?: string;
+  [k: string]: unknown;
+}
+
+export const HYPOTHESIS_STATUSES = ["À confirmer", "À documenter", "À chiffrer", "En étude", "Confirmée par preuve", "Écartée avec motif"] as const;
+
+/**
+ * `linkRoom(spaceId, roomId, remove)` : une liaison se fait par identifiant,
+ * jamais par ressemblance du nom ; une même zone ne peut pas être affectée à
+ * deux lignes ; la fiche Harmony du local reçoit le type et la cible de
+ * surface de la ligne. La révision du cas avance en place.
+ */
+export function linkProgrammeRoom(
+  a: ProgrammeCase,
+  roomData: Record<string, HarmonyRoomRecord>,
+  spaceId: string,
+  roomId: string,
+  options: { remove?: boolean; roomExists: boolean; now: string },
+): { programmeCase: ProgrammeCase; roomData: Record<string, HarmonyRoomRecord> } {
+  const space = a.spaces.find((s) => s.id === spaceId);
+  if (!space) throw new Error("Espace inconnu");
+  const next = clone(a);
+  next.roomLinks ??= {};
+  const rooms = clone(roomData);
+  if (options.remove) {
+    next.roomLinks[spaceId] = (next.roomLinks[spaceId] ?? []).filter((x) => x !== roomId);
+    const rd = rooms[roomId];
+    if (rd?.programmeSpaceId === spaceId) {
+      delete rd.programmeSpaceId;
+      delete rd.programmeTargetArea;
+      delete rd.programmeCaseId;
+    }
+  } else {
+    if (!options.roomExists) throw new Error("Zone absente du modèle");
+    if (Object.entries(next.roomLinks).some(([id, arr]) => id !== spaceId && arr.includes(roomId))) throw new Error("Zone déjà affectée à une autre ligne");
+    next.roomLinks[spaceId] = [...new Set([...(next.roomLinks[spaceId] ?? []), roomId])];
+    const rd = (rooms[roomId] ??= {});
+    if ((!rd.type || rd.type === "auto") && space.harmonyType) rd.type = space.harmonyType;
+    rd.programmeSpaceId = spaceId;
+    rd.programmeTargetArea = space.quantity * space.unitArea;
+    rd.programmeCaseId = a.caseId;
+  }
+  next.updated = options.now;
+  next.revision += 1;
+  return { programmeCase: next, roomData: rooms };
+}
+
+/** Une ligne du tableau « Programme ↔ modèle dessiné » : zones liées, surface dessinée, écart, zones encore disponibles. */
+export interface ProgrammeModelLinkRow {
+  space: { id: string; name: string; target: number; role: string };
+  linked: { id: string; levelName: string; name: string; area: number }[];
+  /** Liaisons dont la zone n'est plus dans le modèle (jamais effacées en silence). */
+  missing: string[];
+  drawnArea: number | null;
+  delta: number | null;
+  options: { id: string; levelName: string; name: string; area: number }[];
+}
+
+/** `modelView()` : les lignes (hors parois) avec leurs zones liées et les zones encore libres. */
+export function programmeModelLinks(a: ProgrammeCase, rooms: readonly { id: string; levelName: string; name: string; area: number }[]): ProgrammeModelLinkRow[] {
+  const links = a.roomLinks ?? {};
+  return a.spaces
+    .filter((s) => s.role !== "parois")
+    .map((s) => {
+      const ids = links[s.id] ?? [];
+      const linked = ids.map((id) => rooms.find((r) => r.id === id)).filter((r): r is (typeof rooms)[number] => !!r).map((r) => ({ id: r.id, levelName: r.levelName, name: r.name, area: r.area }));
+      const area = linked.reduce((n, r) => n + r.area, 0);
+      const options = rooms.filter((r) => !Object.entries(links).some(([sid, arr]) => sid !== s.id && arr.includes(r.id)) && !ids.includes(r.id)).map((r) => ({ id: r.id, levelName: r.levelName, name: r.name, area: r.area }));
+      const target = s.unitArea * s.quantity;
+      return { space: { id: s.id, name: s.name, target, role: s.role }, linked, missing: ids.filter((id) => !rooms.some((r) => r.id === id)), drawnArea: linked.length ? area : null, delta: linked.length ? area - target : null, options };
+    });
+}
+
+/** `hypothesisView` : une confirmation ou un écart exige responsable et preuve / motif. */
+export function setProgrammeHypothesis(a: ProgrammeCase, hypothesisId: string, key: "status" | "owner" | "proof", value: string, now: string): ProgrammeCase {
+  const next = clone(a);
+  const h = next.hypotheses.find((x) => x.id === hypothesisId) as (BuildingHypothesis & { updated?: string }) | undefined;
+  if (!h) throw new Error("Hypothèse inconnue");
+  if (key === "status" && !(HYPOTHESIS_STATUSES as readonly string[]).includes(value)) throw new Error("Statut d’hypothèse inconnu");
+  if (key === "status" && (value === "Confirmée par preuve" || value === "Écartée avec motif") && (!(h.proof ?? "").trim() || !(h.owner ?? "").trim())) {
+    throw new Error("Renseignez d’abord responsable et preuve / motif.");
+  }
+  h[key] = value;
+  h.updated = now;
+  return next;
+}
+
+// --- Transfert surfacique à total constant (h7-app, étape 07) ---------------
+
+export interface SurfaceTransfer {
+  projectId: string;
+  revision: number;
+  /** Empreinte des fiches au moment de la comparaison : l'application est refusée si le programme a changé. */
+  hash: string;
+  from: string;
+  to: string;
+  amount: number;
+  reason: string;
+  before: { from: number; to: number; total: number };
+  after: { from: number; to: number; total: number };
+}
+
+/** `previewTransfer` : deux fiches distinctes, une surface positive disponible, une justification (8 caractères). */
+export function previewSurfaceTransfer(a: ProgrammeCase, projectId: string, from: string, to: string, amount: unknown, reason: unknown, hashOf: (v: unknown) => string): SurfaceTransfer {
+  const s = a.spaces.find((x) => x.id === from);
+  const t = a.spaces.find((x) => x.id === to);
+  const n = Number(amount);
+  if (!s || !t || from === to || !(s.quantity > 0) || !(t.quantity > 0) || !Number.isFinite(n) || n <= 0 || n > s.quantity * s.unitArea) {
+    throw new Error("Deux fiches distinctes et une surface positive disponible sont nécessaires.");
+  }
+  if (String(reason ?? "").trim().length < 8) throw new Error("Justifiez le transfert et ses conséquences.");
+  const total = programmeCaseSums(a.spaces).total;
+  return {
+    projectId,
+    revision: a.revision,
+    hash: hashOf(a.spaces),
+    from,
+    to,
+    amount: n,
+    reason: String(reason).trim(),
+    before: { from: s.quantity * s.unitArea, to: t.quantity * t.unitArea, total },
+    after: { from: s.quantity * s.unitArea - n, to: t.quantity * t.unitArea + n, total },
+  };
+}
+
+/** `applyTransfer` : les deux surfaces unitaires sont recalculées (`editSpace`), le total du programme est inchangé, la géométrie aussi. */
+export function applySurfaceTransfer(a: ProgrammeCase, projectId: string, t: SurfaceTransfer, hashOf: (v: unknown) => string, now: string): { programmeCase: ProgrammeCase; total: number } {
+  if (!t || t.projectId !== projectId || t.hash !== hashOf(a.spaces)) throw new Error("Le programme a changé. Recalculez la comparaison.");
+  const s = a.spaces.find((x) => x.id === t.from);
+  const r = a.spaces.find((x) => x.id === t.to);
+  if (!s || !r) throw new Error("Deux fiches distinctes et une surface positive disponible sont nécessaires.");
+  const sArea = t.after.from / s.quantity;
+  const tArea = t.after.to / r.quantity;
+  const step1 = editProgrammeSpace(a, s.id, "unitArea", sArea, now);
+  // `editSpace` avance la révision à chaque appel : deux appels, comme le prototype.
+  const step2 = editProgrammeSpace(step1, r.id, "unitArea", tArea, now);
+  return { programmeCase: step2, total: programmeCaseSums(step2.spaces).total };
+}

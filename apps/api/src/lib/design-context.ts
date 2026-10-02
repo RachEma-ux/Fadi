@@ -24,6 +24,7 @@ import {
   designSourcesHtml,
   designSynthesisHtml,
   designTraceHtml,
+  exampleRoomsHtml,
   harmonyDossier,
   harmonyProfile,
   natalStatus,
@@ -163,6 +164,8 @@ export function designReviewView(ctx: DesignContext) {
       metrics: designMetricsHtml(r),
       levelTable: designLevelTableHtml(r),
       rooms: Object.fromEntries([["", designRoomTableHtml(r)], ...r.floors.map((f) => [f.id, designRoomTableHtml(r, f.id)])]),
+      /** Fiches d'espaces de l'exemple résolu (`roomsHTML` de p118-resolved-app) ; `null` hors du dossier P.118. */
+      exampleRooms: input.example ? exampleRoomsHtml(input, r) : null,
       issues: designIssuesHtml(r),
       audit: designAuditHtml(ctx.audit),
       assumptions: designAssumptionsHtml(input.assumptions),

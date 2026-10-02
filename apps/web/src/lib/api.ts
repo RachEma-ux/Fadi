@@ -4,7 +4,7 @@
  * (surface XSS inutile pour une session qui peut vivre dans un cookie).
  */
 import type { Point2, SiteZoning } from "@parcours/core-geometry";
-import type { BuildingCase, BuildingReference, GeographicCoordinate, ProgrammeCase, ProgrammeFieldConflict, SiteObservations } from "@parcours/domain-model";
+import type { BuildingCase, BuildingHypothesis, BuildingReference, GeographicCoordinate, ProgrammeCase, ProgrammeFieldConflict, ProgrammeModelLinkRow, SiteObservations, SurfaceTransfer } from "@parcours/domain-model";
 
 export class ApiError extends Error {
   constructor(
@@ -48,6 +48,9 @@ export interface Project {
   code: string;
   name: string;
   modelRevision: number;
+  /** Provenance d'un exemple importé (jamais effacée) et son mode : référence protégée ou copie de travail. */
+  sourceExampleId?: string | null;
+  exampleMode?: "reference" | "editable" | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -295,7 +298,7 @@ export interface DesignReviewView {
   /** Plans de lecture SVG par niveau (composés par le serveur depuis les polygones réels). */
   plans: Record<string, string>;
   /** Fragments HTML du bilan (mêmes fonctions que le rapport téléchargé). */
-  html: { synthesis: string; metrics: string; levelTable: string; rooms: Record<string, string>; issues: string; audit: string; assumptions: string; sources: string; designTrace: string };
+  html: { synthesis: string; metrics: string; levelTable: string; rooms: Record<string, string>; exampleRooms: string | null; issues: string; audit: string; assumptions: string; sources: string; designTrace: string };
   css: string;
 }
 
@@ -373,6 +376,25 @@ export type ProgrammeCaseView = {
     history: { revision: number; title: string; scenarioLabel: string; updated: string; archived: string }[];
   }
 >;
+
+/** « Programme ↔ modèle dessiné » (`modelView`) : lignes du programme appliqué, zones liées et disponibles. */
+export interface ProgrammeModelLinksView {
+  applied: boolean;
+  revision: number | null;
+  title?: string;
+  scenarioLabel?: string;
+  rows: ProgrammeModelLinkRow[];
+  roomCount: number;
+  hasModel: boolean;
+}
+
+/** Registre des hypothèses (`hypothesisView`) après modification. */
+export interface ProgrammeHypothesesView {
+  hypotheses: (BuildingHypothesis & { updated?: string })[];
+  revision: number;
+}
+
+export type SurfaceTransferView = SurfaceTransfer;
 
 /** Bibliothèque des bâtiments : index et fiche d'un cas. */
 export interface BuildingLibraryIndex {
@@ -515,6 +537,23 @@ export const api = {
     request<ProgrammeView & { applied: { revision: number; conflicts: number } }>(`/projects/${projectId}/programme/case`, { method: "POST", body: JSON.stringify(input) }),
   patchProgrammeSpace: (projectId: string, spaceId: string, patch: { quantity?: number | string; unitArea?: number | string }) =>
     request<ProgrammeView>(`/projects/${projectId}/programme/case/spaces/${encodeURIComponent(spaceId)}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  /** « Comparer au modèle dessiné » : liaisons ligne ↔ zone par identifiant (`modelView` / `linkRoom`). */
+  getProgrammeModelLinks: (projectId: string) => request<ProgrammeModelLinksView>(`/projects/${projectId}/programme/model-links`),
+  linkProgrammeRoom: (projectId: string, spaceId: string, roomId: string) =>
+    request<{ ok: true }>(`/projects/${projectId}/programme/case/links`, { method: "POST", body: JSON.stringify({ spaceId, roomId }) }),
+  unlinkProgrammeRoom: (projectId: string, spaceId: string, roomId: string) =>
+    request<void>(`/projects/${projectId}/programme/case/links/${encodeURIComponent(spaceId)}/${encodeURIComponent(roomId)}`, { method: "DELETE" }),
+  /** Registre des hypothèses : statut, responsable, preuve / motif (`hypothesisView`). */
+  patchProgrammeHypothesis: (projectId: string, hypothesisId: string, patch: { status?: string; owner?: string; proof?: string }) =>
+    request<ProgrammeHypothesesView>(`/projects/${projectId}/programme/case/hypotheses/${encodeURIComponent(hypothesisId)}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  /** Transfert surfacique à total constant (étape 07) : comparaison avant / après, puis application sur la même empreinte. */
+  previewProgrammeTransfer: (projectId: string, input: { from: string; to: string; amount: string | number; reason: string }) =>
+    request<SurfaceTransferView>(`/projects/${projectId}/programme/case/transfer/preview`, { method: "POST", body: JSON.stringify(input) }),
+  applyProgrammeTransfer: (projectId: string, transfer: SurfaceTransferView) =>
+    request<ProgrammeView & { transfer: { total: number; revision: number } }>(`/projects/${projectId}/programme/case/transfer`, { method: "POST", body: JSON.stringify(transfer) }),
+  /** « Essayer une autre répartition en copie » (`copy()` de l'exemple résolu) : un nouveau projet modifiable, la référence intacte. */
+  copyProject: (projectId: string, name?: string) =>
+    request<{ id: string; code: string; name: string; warnings: string[] }>(`/projects/${projectId}/copies`, { method: "POST", body: JSON.stringify(name ? { name } : {}) }),
   putSiteObservations: (projectId: string, input: SiteObservationsInput) =>
     request<ParcoursStep>(`/projects/${projectId}/steps/1/site`, { method: "PUT", body: JSON.stringify(input) }),
   decideHarmonie: (projectId: string, stepNumber: number, proposalId: string, input: HarmonieDecisionInput) =>

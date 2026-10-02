@@ -2019,3 +2019,118 @@ button.h7-chip.h7-goto:hover {
     padding: 12px;
   }
 }
+
+/* ---------------------------------------------------------------------- */
+/* Exemple résolu — présentation protégée (prototype : ex81-*)             */
+/* ---------------------------------------------------------------------- */
+.ex81-fold {
+  margin: 16px 0;
+  padding: 15px;
+  border: 1px solid #d3ded2;
+  border-radius: 8px;
+  background: #fff;
+}
+.ex81-fold > summary {
+  font-weight: 700;
+  cursor: pointer;
+  padding: 9px 0;
+}
+.ex81-note {
+  padding: 14px 16px;
+  border-left: 4px solid #789785;
+  background: #eef4e8;
+  border-radius: 0 7px 7px 0;
+  line-height: 1.6;
+  margin: 14px 0;
+  color: #31564a;
+}
+.ex81-note.warn {
+  background: #fff3dc;
+  border-left-color: #a57928;
+  color: #755728;
+}
+.ex81-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+.programme-rooms-fold .v62-tab-content {
+  margin-top: 8px;
+}
+.programme-rooms-fold small {
+  display: block;
+  font-size: 12px;
+  color: #64756f;
+  overflow-wrap: anywhere;
+}
+.programme-rooms-fold .v62-table td:nth-child(2) {
+  min-width: 150px;
+}
+.programme-rooms-fold details summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Programme ↔ modèle dessiné et registre des hypothèses (building-library-app) */
+.bl .bl-links td:nth-child(2) {
+  min-width: 260px;
+}
+.bl .bl-links select {
+  min-width: 220px;
+}
+.bl button.bl-unlink {
+  min-height: 28px;
+  padding: 2px 9px;
+  margin-left: 4px;
+  font-size: 14px;
+  line-height: 1;
+  vertical-align: middle;
+}
+.bl .bl-hypotheses td:first-child {
+  min-width: 260px;
+  width: 40%;
+}
+.bl .bl-hypotheses td:nth-child(2) {
+  min-width: 240px;
+}
+.bl .bl-hypotheses td:nth-child(3) {
+  min-width: 260px;
+}
+.bl .bl-hypotheses select,
+.bl .bl-hypotheses input,
+.bl .bl-hypotheses textarea {
+  width: 100%;
+  min-width: 180px;
+  margin: 4px 0;
+}
+.bl .bl-hypotheses textarea {
+  min-height: 72px;
+}
+.bl .bl-hypotheses {
+  min-width: 760px;
+}
+@media (max-width: 720px) {
+  .ex81-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .ex81-actions button {
+    width: 100%;
+  }
+  .ex81-fold {
+    padding: 10px;
+  }
+}
+
+/* Transfert surfacique à total constant (h7-app, étape 07) */
+.h7-transfer-fold .h7-form {
+  margin: 10px 0 12px;
+}
+.h7-transfer-fold .h7-fold-body > button,
+#h7-transfer-preview > button {
+  align-self: flex-start;
+}
+#h7-transfer-preview {
+  margin-top: 12px;
+}

@@ -32,6 +32,12 @@
  *   6b'. bilan du bâtiment conçu (étape 10) : pli, bilan en ligne (5 onglets,
  *      plan SVG, locaux, audit des transmissions), revue actualisée, rapport
  *      HTML, références directionnelles enregistrées → étape à réexaminer ;
+ *   6g. référence protégée de l'exemple (étape 07) : fiches d'espaces, CSV,
+ *      « Essayer une autre répartition en copie » ; dans la copie :
+ *      « Comparer au modèle dessiné » (délier / relier par identifiant),
+ *      « Hypothèses et validation » (confirmation refusée sans preuve),
+ *      transfert surfacique à total constant (comparaison, application,
+ *      révision, décision à réexaminer) ; référence intacte ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
  *      docs/migration/captures/webapp/.
  *
@@ -474,6 +480,101 @@ check("import : « Escalier B et mezzanine · import », 21 cartes", /Escalier B
 await page.goto(`${BASE}/projets`);
 await page.waitForSelector(".project-list");
 check("page Projets : « Importer projet JSON » et « Bibliothèque des bâtiments » dans l'en-tête", (await page.locator('.projects-heading button:has-text("Importer projet JSON")').count()) === 1 && (await page.locator('.projects-heading a:has-text("Bibliothèque des bâtiments")').count()) === 1);
+
+// 6g. Référence protégée de l'exemple (étape 07) : fiches d'espaces, CSV, « Essayer une autre répartition en copie » ;
+//     dans la copie : « Comparer au modèle dessiné » (liaisons par identifiant), « Hypothèses et validation » (règle du
+//     prototype), transfert surfacique à total constant depuis le panneau Harmonie de l'étape 07.
+await page.goto(`${exampleUrl}?module=parcours&etape=7`);
+await page.waitForSelector(".programme-case");
+check("exemple étape 07 : présentation protégée « Répartition renseignée et liée au modèle », pli « 74 fiches d’espaces — capacités, dimensions et ambiances choisies »", (await page.locator(".programme-rooms-fold > summary").textContent()) === "74 fiches d’espaces — capacités, dimensions et ambiances choisies");
+await page.locator(".programme-case").screenshot({ path: `${OUT}/07-desktop.png` });
+await page.locator(".programme-rooms-fold > summary").click();
+await page.waitForSelector(".programme-rooms-fold .v62-table tbody tr", { timeout: 20000 });
+const roomsBox = await page.locator(".programme-rooms-fold").evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.left + window.scrollX, y: r.top + window.scrollY, width: r.width, height: r.height }; });
+await page.screenshot({ path: `${OUT}/07-desktop-fiches.png`, fullPage: true, clip: { x: roomsBox.x, y: roomsBox.y, width: roomsBox.width, height: Math.min(900, roomsBox.height) } });
+const roomsRow = (await page.locator(".programme-rooms-fold .v62-table tbody tr").first().textContent()).replace(/[  ]/g, " ");
+check("exemple étape 07 : 74 fiches (niveau / zone, gabarit calculé, capacité cible, réponse et ambiance retenues)", (await page.locator(".programme-rooms-fold .v62-table tbody tr").count()) === 74 && /Sous-sol technique · S01 · Archives sèches.*230,61 m².*9,26 × 27,35 m : enveloppe, non dimension libre.*2 personnes.*Ambiance choisie/s.test(roomsRow), roomsRow.slice(0, 160));
+const [csvDl] = await Promise.all([page.waitForEvent("download"), page.locator('button:has-text("Exporter les fiches CSV")').click()]);
+const csvText = await (await import("node:fs/promises")).readFile(await csvDl.path(), "utf8");
+check("exemple étape 07 : « Exporter les fiches CSV » → P118_Programme_Resolu_V8_19.csv (BOM, « ; », 74 lignes)", csvDl.suggestedFilename() === "P118_Programme_Resolu_V8_19.csv" && csvText.startsWith('﻿"ID";"Niveau";"Espace";"Surface m2";"Capacité cible";"Source capacité";"Statut"') && csvText.split("\r\n").length === 75);
+await page.evaluate(() => { document.querySelector(".h7-panel").open = true; });
+check("exemple étape 07 : la référence n'a pas de pli de transfert (panneau du prototype)", (await page.locator(".h7-transfer-fold").count()) === 0);
+// La copie reflète l'état courant de la référence (étapes remises « en cours » par les arbitrages précédents du scénario).
+const referenceDone = await page.evaluate(async (pid) => (await (await fetch(`/projects/${pid}/steps`, { credentials: "include" })).json()).filter((s) => s.status === "termine").length, examplePid);
+await page.locator('button:has-text("Essayer une autre répartition en copie")').click();
+await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid), { timeout: 30000 });
+await page.waitForSelector(".step-card-open");
+const copyUrl = page.url().split("?")[0];
+const copyToast = await page.locator(".h7-toast").textContent().catch(() => "");
+const copyTitle = await page.locator("h1").first().textContent();
+const copySummary = await page.locator(".parcours-steps-summary").textContent();
+check("« Essayer une autre répartition en copie » → nouveau dossier « P.118 — ma variante de l’exemple résolu », mêmes étapes terminées que la référence, toast", copyTitle === "P.118 — ma variante de l’exemple résolu" && copySummary.includes(`${referenceDone} / 21`) && /Copie modifiable créée/.test(copyToast), `${copyTitle} | ${copySummary} (référence ${referenceDone}) | ${copyToast}`);
+await page.goto(`${copyUrl}?module=parcours&etape=7`);
+await page.waitForSelector(".programme-case-editor");
+check("copie étape 07 : répartition du dossier maître modifiable (« RÉVISION 6 »), 4 actions du prototype", /RÉVISION 6/.test(await page.locator(".programme-case-editor .bl-kicker").textContent()) && (await page.locator('.programme-case-editor a:has-text("Comparer au modèle dessiné")').count()) === 1 && (await page.locator('.programme-case-editor a:has-text("Hypothèses et validation")').count()) === 1);
+await page.locator('.programme-case-editor a:has-text("Comparer au modèle dessiné")').click();
+await page.waitForSelector("#bl-model-links");
+check("« Comparer au modèle dessiné » → module Programmation, vue « Programme ↔ modèle dessiné », 74 lignes liées à 74 zones", /module=programmation&vue=modele/.test(page.url()) && (await page.locator('.module-nav button[aria-current="page"]').textContent()) === "Programmation" && (await page.locator("#bl-model-links tbody tr").count()) === 74 && /74 zones du modèle/.test(await page.locator("#bl-model-links .bl-small").textContent()));
+const linkRow = page.locator("#bl-model-links tbody tr").first();
+const linkSpace = await linkRow.getAttribute("data-space");
+check("liaison : S01 · 230,614 m² programmés ↔ Sous-sol technique · S01 (230,614 m² calculés, écart 0 m²)", /S01 · Archives sèches230,614 m² programmésSous-sol technique · S01 · Archives sèches ×230,614 m² calculés0 m²/.test((await linkRow.textContent()).replace(/[  ]/g, " ")));
+await page.screenshot({ path: `${OUT}/07-desktop-modele.png`, fullPage: false });
+await linkRow.locator("button.bl-unlink").first().click();
+await page.waitForFunction((id) => document.querySelector(`#bl-model-links tr[data-space="${id}"] button.bl-unlink`) === null, linkSpace, { timeout: 10000 });
+const unlinkedRow = page.locator(`#bl-model-links tr[data-space="${linkSpace}"]`);
+check("délier → « Non lié », « Non calculable », la zone redevient disponible dans « Choisir une zone… »", /Non lié—Non calculable/.test(await unlinkedRow.textContent()) && (await unlinkedRow.locator("select option").count()) === 2);
+const freeRoom = await unlinkedRow.locator("select option").nth(1).getAttribute("value");
+await unlinkedRow.locator("select").selectOption(freeRoom);
+await page.waitForFunction((id) => document.querySelector(`#bl-model-links tr[data-space="${id}"] button.bl-unlink`) !== null, linkSpace, { timeout: 10000 });
+check("relier par identifiant → zone liée, surface calculée, écart recalculé", /230,614 m² calculés0 m²/.test((await unlinkedRow.textContent()).replace(/[  ]/g, " ")));
+await page.locator('#bl-model-links a:has-text("← Répartition")').click();
+await page.waitForSelector(".programme-case-editor");
+await page.waitForFunction(() => /RÉVISION 8/.test(document.querySelector(".programme-case-editor .bl-kicker")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
+check("« ← Répartition » → étape 07, révision 8 (délier + relier)", /etape=7/.test(page.url()) && /RÉVISION 8/.test(await page.locator(".programme-case-editor .bl-kicker").textContent()), await page.locator(".programme-case-editor .bl-kicker").textContent());
+await page.locator('.programme-case-editor a:has-text("Hypothèses et validation")').click();
+await page.waitForSelector("#bl-hypotheses");
+const hypStatus = page.locator('#bl-hypotheses select[aria-label="Statut H-USAGE"]');
+check("« Hypothèses et validation » → « Registre des hypothèses », 2 hypothèses du cas, statut d'origine « hypothesis » et 6 statuts", /vue=hypotheses/.test(page.url()) && (await page.locator("#bl-hypotheses tbody tr").count()) === 2 && (await hypStatus.inputValue()) === "hypothesis" && (await hypStatus.locator("option").count()) === 7);
+const hypProof = page.locator('#bl-hypotheses textarea[aria-label="Preuve ou motif H-USAGE"]');
+await hypProof.fill("");
+await hypProof.blur();
+await page.waitForTimeout(500);
+await hypStatus.selectOption("Confirmée par preuve");
+await page.waitForSelector("#bl-hypotheses .bl-note.danger", { timeout: 10000 });
+check("hypothèse sans preuve → confirmation refusée (message du prototype), statut rétabli", (await page.locator("#bl-hypotheses .bl-note.danger").textContent()) === "Renseignez d’abord responsable et preuve / motif." && (await hypStatus.inputValue()) === "hypothesis");
+await hypProof.fill("Note de renseignements du 12/03");
+await hypProof.blur();
+await page.waitForTimeout(500);
+await hypStatus.selectOption("Confirmée par preuve");
+await page.waitForFunction(() => !document.querySelector("#bl-hypotheses .bl-note.danger") && document.querySelector('#bl-hypotheses select[aria-label="Statut H-USAGE"]')?.value === "Confirmée par preuve" && !document.querySelector('#bl-hypotheses select[aria-label="Statut H-USAGE"]')?.disabled, null, { timeout: 10000 });
+await page.screenshot({ path: `${OUT}/07-desktop-hypotheses.png`, fullPage: false });
+await page.reload();
+await page.waitForSelector("#bl-hypotheses");
+check("preuve renseignée → « Confirmée par preuve », conservée après rechargement", (await page.locator('#bl-hypotheses select[aria-label="Statut H-USAGE"]').inputValue()) === "Confirmée par preuve" && (await page.locator('#bl-hypotheses textarea[aria-label="Preuve ou motif H-USAGE"]').inputValue()) === "Note de renseignements du 12/03");
+await page.locator('#bl-hypotheses a:has-text("Harmony")').click();
+await page.waitForSelector(".h7-transfer-fold");
+check("« Harmony » → étape 07, panneau Harmonie ouvert, pli « Proposer un transfert surfacique à total constant »", /etape=7&harmonie=1/.test(page.url()) && (await page.locator(".h7-panel").evaluate((d) => d.open)) === true);
+await page.locator(".h7-transfer-fold > summary").click();
+check("transfert : 74 fiches donneuses « nom · m² », bénéficiaire « Choisir »", (await page.locator("#h7-from option").count()) === 74 && (await page.locator("#h7-from option").first().textContent()).replace(/[  ]/g, " ") === "S01 · Archives sèches · 230,61 m²" && (await page.locator("#h7-to option").first().textContent()) === "Choisir");
+await page.locator("#h7-to").selectOption(await page.locator("#h7-to option").nth(2).getAttribute("value"));
+await page.fill("#h7-transfer-area", "5");
+await page.fill("#h7-transfer-reason", "court");
+await page.locator('.h7-transfer-fold button:has-text("Comparer avant / après")').click();
+await page.waitForSelector(".h7-transfer-fold .h7-error");
+check("transfert : justification trop courte → refus du prototype", (await page.locator(".h7-transfer-fold .h7-error").textContent()) === "Justifiez le transfert et ses conséquences.");
+await page.fill("#h7-transfer-reason", "Besoin de place pour la formation ; capacité inchangée.");
+await page.locator('.h7-transfer-fold button:has-text("Comparer avant / après")').click();
+await page.waitForSelector("#h7-transfer-preview table");
+const previewText = (await page.locator("#h7-transfer-preview").textContent()).replace(/[  ]/g, " ");
+check("transfert : « Comparer avant / après » → Donneur 230,61 → 225,61 m², Bénéficiaire +5 m², total programme 2 932,26 m² inchangé", /Donneur230,61 m²225,61 m²/.test(previewText) && /Total programme2 932,26 m²2 932,26 m²/.test(previewText) && /L’application modifie deux cibles programmatiques, pas le dessin\./.test(previewText));
+await page.locator(".h7-transfer-fold").screenshot({ path: `${OUT}/07-desktop-transfert.png` });
+await page.locator('button:has-text("Appliquer ce transfert au programme")').click();
+await page.waitForFunction(() => /Transfert appliqué/.test(document.querySelector(".h7-toast")?.textContent || ""), null, { timeout: 10000 });
+await page.waitForFunction(() => /RÉVISION 10/.test(document.querySelector(".programme-case-editor .bl-kicker")?.textContent || ""), null, { timeout: 10000 });
+check("transfert : « Appliquer » → toast du prototype, révision 10 (deux cibles modifiées), décision à réexaminer, comparaison effacée", (await page.locator(".h7-toast").textContent()) === "Transfert appliqué au programme à total constant. Géométrie conservée." && (await page.locator('.programme-case-editor h2:has-text("Décision à réexaminer")').count()) === 1 && (await page.locator("#h7-transfer-preview table").count()) === 0);
+await page.goto(`${exampleUrl}?module=parcours&etape=7`);
+await page.waitForSelector(".programme-case");
+check("la référence est intacte après la copie (révision 6, présentation protégée)", /révision 6/.test(await page.locator(".programme-case .step-card-meta").textContent()) && (await page.locator(".programme-case-editor").count()) === 0);
 
 // 6d. Sources de l'étape (étape 03 de l'exemple) : import, liste, téléchargement, suppression
 await page.goto(`${exampleUrl}?module=parcours&etape=3`);

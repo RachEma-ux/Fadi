@@ -15,18 +15,26 @@
 import { and, desc, eq } from "drizzle-orm";
 import {
   PROGRAMME_REVIEW_STEPS,
+  applySurfaceTransfer,
   buildProgrammeCase,
   buildingCase,
   buildingScenario,
   draftProgrammeTexts,
   editProgrammeSpace,
+  fnv1a,
+  harmonyDossier,
+  linkProgrammeRoom,
   mergeGeneratedTexts,
+  programmeCaseSums,
   repartitionFromCase,
+  setProgrammeHypothesis,
   type BuildingScenario,
+  type HarmonyRoomRecord,
   type ParcoursFieldValue,
   type ParcoursStepContent,
   type ProgrammeCase,
   type ProgrammeFieldConflict,
+  type SurfaceTransfer,
 } from "@parcours/domain-model";
 import type { db } from "../db/client.js";
 import { programmeCases, programmeRepartitions, projects } from "../db/schema.js";
@@ -203,4 +211,59 @@ export async function editProgrammeCaseSpace(tx: Tx, project: { id: string; prog
   state = await invalidateDecision(tx, project.id, state, "Quantités ou surfaces du programme modifiées : décision à réexaminer.", now, rows);
   await tx.update(projects).set({ programmeState: state as unknown as Record<string, unknown>, updatedAt: new Date() }).where(eq(projects.id, project.id));
   return a;
+}
+
+/** Remplace la révision courante en place (même ligne d'historique) : liaison de local, hypothèse. */
+async function replaceActiveCase(tx: Tx, projectId: string, prev: ProgrammeCase, next: ProgrammeCase, withRepartition: boolean) {
+  await tx.delete(programmeCases).where(and(eq(programmeCases.projectId, projectId), eq(programmeCases.revision, prev.revision)));
+  if (withRepartition) await storeCase(tx, projectId, next);
+  else await tx.insert(programmeCases).values({ projectId, revision: next.revision, caseId: next.caseId, scenarioId: next.scenarioId, data: next as unknown as Record<string, unknown>, createdAt: new Date() });
+}
+
+/**
+ * `linkRoom(spaceId, roomId, remove)` : la liaison par identifiant d'une
+ * ligne du programme à une zone dessinée ; la fiche Harmony du local
+ * (`harmony.roomData`) reçoit type et cible ; la répartition est recalculée.
+ * `rooms` : les zones du modèle courant (`loadModelAnalysis`).
+ */
+export async function linkProgrammeCaseRoom(tx: Tx, project: { id: string; harmony: Record<string, unknown> | null }, spaceId: string, roomId: string, remove: boolean, rooms: readonly { id: string }[], now: string): Promise<ProgrammeCase> {
+  const prev = await loadActiveProgrammeCase(tx, project.id);
+  if (!prev) throw new Error("Appliquez d’abord un programme.");
+  const dossier = harmonyDossier(project.harmony, now);
+  const { programmeCase, roomData } = linkProgrammeRoom(prev, dossier.roomData as Record<string, HarmonyRoomRecord>, spaceId, roomId, { remove, roomExists: rooms.some((r) => r.id === roomId), now });
+  await replaceActiveCase(tx, project.id, prev, programmeCase, true);
+  const harmony = { ...dossier, roomData, updated: now } as unknown as Record<string, unknown>;
+  await tx.update(projects).set({ harmony, updatedAt: new Date() }).where(eq(projects.id, project.id));
+  return programmeCase;
+}
+
+/** `hypothesisView` : statut, responsable ou preuve d'une hypothèse du cas appliqué (révision inchangée). */
+export async function editProgrammeCaseHypothesis(tx: Tx, projectId: string, hypothesisId: string, patch: { status?: string | undefined; owner?: string | undefined; proof?: string | undefined }, now: string): Promise<ProgrammeCase> {
+  const prev = await loadActiveProgrammeCase(tx, projectId);
+  if (!prev) throw new Error("Appliquez d’abord un programme.");
+  let next = prev;
+  // Responsable et preuve d'abord : un statut qui les exige peut être envoyé dans la même requête.
+  for (const key of ["owner", "proof", "status"] as const) {
+    const value = patch[key];
+    if (value !== undefined) next = setProgrammeHypothesis(next, hypothesisId, key, value, now);
+  }
+  await replaceActiveCase(tx, projectId, prev, next, false);
+  return next;
+}
+
+/** `applyTransfer` : deux adaptations de ligne (`editProgrammeCaseSpace`, avec textes, revues et décision), puis le transfert consigné dans l'état du programme. */
+export async function applyProgrammeTransfer(tx: Tx, project: { id: string; programmeState: Record<string, unknown> | null }, transfer: SurfaceTransfer, now: string): Promise<{ programmeCase: ProgrammeCase; total: number }> {
+  const prev = await loadActiveProgrammeCase(tx, project.id);
+  if (!prev) throw new Error("Appliquez d’abord un programme.");
+  const { programmeCase } = applySurfaceTransfer(prev, project.id, transfer, fnv1a, now);
+  const s = programmeCase.spaces.find((x) => x.id === transfer.from)!;
+  const r = programmeCase.spaces.find((x) => x.id === transfer.to)!;
+  await editProgrammeCaseSpace(tx, project, s.id, "unitArea", s.unitArea, now);
+  const refreshed = (await tx.select().from(projects).where(eq(projects.id, project.id)).limit(1))[0]!;
+  const after = await editProgrammeCaseSpace(tx, { id: project.id, programmeState: refreshed.programmeState }, r.id, "unitArea", r.unitArea, now);
+  const latest = (await tx.select().from(projects).where(eq(projects.id, project.id)).limit(1))[0]!;
+  const state = programmeStateOf(latest) as ProgrammeState & { transfers?: unknown[] };
+  const transfers = [...(state.transfers ?? []), { ...transfer, at: now }];
+  await tx.update(projects).set({ programmeState: { ...state, transfers } as unknown as Record<string, unknown>, updatedAt: new Date() }).where(eq(projects.id, project.id));
+  return { programmeCase: after, total: programmeCaseSums(after.spaces).total };
 }
