@@ -27,6 +27,8 @@
  *      (encart, chip « choix conservé », vérification refusée), « Actualiser
  *      les propositions », « Confirmer ce choix », « Rapport de cette
  *      étape », « Voir l’origine », synthèse des choix Harmonie ;
+ *   6f. archive : « Sauvegarder projet JSON » puis « Importer projet JSON »
+ *      → nouveau dossier « · import » ; page Projets ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
  *      docs/migration/captures/webapp/.
  *
@@ -172,6 +174,7 @@ await page.locator('dialog button:has-text("Appliquer le scénario")').click();
 await page.waitForURL(/etape=7/);
 await page.waitForSelector(".programme-case-editor");
 check("programme appliqué : « RÉPARTITION · DOSSIER MAÎTRE · RÉVISION 1 », Hôtellerie & hébergement → Hôtel urbain", /RÉVISION 1/.test(await page.locator(".programme-case-editor .bl-kicker").first().textContent()) && (await page.locator(".programme-case-editor h2").first().textContent()) === "Hôtellerie & hébergement → Hôtel urbain");
+await page.waitForFunction(() => (document.querySelector("#biz-f2")?.value || "").startsWith("[EXEMPLE / HYPOTHÈSE"), null, { timeout: 10000 }).catch(() => {});
 check("programme appliqué : textes générés dans l'étape 07 avec l'en-tête du prototype", (await page.inputValue("#biz-f2")).startsWith("[EXEMPLE / HYPOTHÈSE · Hôtel urbain de 32 chambres"));
 check("programme appliqué : bloc « Programme lié » dans l'étape", (await page.locator(".programme-transmission").count()) === 1);
 await page.screenshot({ path: `${OUT}/new-07-desktop-programme-applique.png`, fullPage: true });
@@ -246,8 +249,8 @@ check("étape 12 retenue → étape 19 repasse « À reprendre » et n'est plus 
 
 // 6. Exemple P.118 importé
 await page.goto(`${BASE}/projets`);
-await page.waitForSelector('button:has-text("Importer")');
-await page.locator('button:has-text("Importer")').first().click();
+await page.waitForSelector('.example-card button:has-text("Importer")');
+await page.locator('.example-card button:has-text("Importer")').first().click();
 await page.waitForURL(/\/projets\/proj_/);
 const exampleUrl = page.url().split("?")[0];
 await page.waitForSelector(".parcours-steps-summary");
@@ -405,6 +408,20 @@ await page.waitForSelector("#parcours-project-tools");
 await page.locator("#parcours-project-tools > summary").click();
 const [synthesis] = await Promise.all([page.waitForEvent("download"), page.locator('#parcours-project-tools a:has-text("Exporter la synthèse des choix Harmonie")').click()]);
 check("outils du projet : « Exporter la synthèse des choix Harmonie » → Harmonie_Choix_Parcours_V7.html", synthesis.suggestedFilename() === "Harmonie_Choix_Parcours_V7.html");
+
+// 6f. Archive de projet : « Sauvegarder projet JSON » puis « Importer projet JSON » → nouveau dossier « · import »
+const [archiveDl] = await Promise.all([page.waitForEvent("download"), page.locator('#parcours-project-tools a:has-text("Sauvegarder projet JSON")').click()]);
+const archivePath = await archiveDl.path();
+const archiveJson = JSON.parse(await (await import("node:fs/promises")).readFile(archivePath, "utf8"));
+check("outils du projet : « Sauvegarder projet JSON » → Parcours_V7_Escalier_B_et_mezzanine.json (21 étapes, modèle natif, cas de programme)", archiveDl.suggestedFilename() === "Parcours_V7_Escalier_B_et_mezzanine.json" && archiveJson.kind === "fadi-project-archive" && archiveJson.steps.length === 21 && !!archiveJson.native && archiveJson.programmeCases.length === 1);
+await page.locator('#parcours-project-tools input[type="file"]').setInputFiles({ name: "Parcours_V7_Escalier_B_et_mezzanine.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(archiveJson)) });
+await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid), { timeout: 20000 });
+await page.waitForSelector(".step-card-open");
+check("outils du projet : « Importer projet JSON » → nouveau dossier ouvert, toast du prototype", !page.url().includes(examplePid) && /Import créé dans un nouveau dossier/.test(await page.locator(".h7-toast").textContent().catch(() => "")));
+check("import : « Escalier B et mezzanine · import », 21 cartes", /Escalier B et mezzanine · import/.test(await page.locator("h1").first().textContent()) && (await page.locator(".step-card-open").count()) === 21);
+await page.goto(`${BASE}/projets`);
+await page.waitForSelector(".project-list");
+check("page Projets : « Importer projet JSON » et « Bibliothèque des bâtiments » dans l'en-tête", (await page.locator('.projects-heading button:has-text("Importer projet JSON")').count()) === 1 && (await page.locator('.projects-heading a:has-text("Bibliothèque des bâtiments")').count()) === 1);
 
 // 6d. Sources de l'étape (étape 03 de l'exemple) : import, liste, téléchargement, suppression
 await page.goto(`${exampleUrl}?module=parcours&etape=3`);

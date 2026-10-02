@@ -265,6 +265,11 @@ export interface ParcoursStep {
   programme: { spaceCount: number; total: number } | null;
 }
 
+/** Résultat de « Importer projet JSON » : les projets créés (une base V5 peut en contenir plusieurs) et leurs réserves. */
+export interface ImportedProjects {
+  projects: { id: string; code: string; name: string; origin: "fadi" | "parcours-v7" | "parcours-v6" | "parcours-v5"; warnings: string[] }[];
+}
+
 export interface HarmonieDecisionInput {
   status: HarmonieProposalStatus;
   notes?: string;
@@ -473,6 +478,19 @@ export const api = {
     }),
   /** « Actualiser les propositions » : révision +1 sur les données courantes, choix conservés pour réexamen. */
   generateHarmonie: (projectId: string, stepNumber: number) => request<ParcoursStep>(`/projects/${projectId}/steps/${stepNumber}/harmonie/generate`, { method: "POST" }),
+  /** « Sauvegarder projet JSON » (`Parcours_V7_<nom>.json`). */
+  projectArchiveUrl: (projectId: string) => `/projects/${projectId}/archive`,
+  /** « Importer projet JSON » : archive Fadi ou export du logiciel existant (Parcours V6 / V7, base V5) → nouveaux projets. */
+  importProjectArchive: async (file: File): Promise<ImportedProjects> => {
+    const res = await fetch("/projects/import", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: file });
+    const body: unknown = await res.json().catch(() => null);
+    if (!res.ok) {
+      const code = (body && typeof body === "object" && "error" in body ? String((body as { error: unknown }).error) : null) ?? `http_${res.status}`;
+      const message = body && typeof body === "object" && "message" in body ? String((body as { message: unknown }).message) : null;
+      throw new ApiError(res.status, code, message, body);
+    }
+    return body as ImportedProjects;
+  },
   /** « Rapport de cette étape » (`Harmonie_Etape_NN_V7.html`) ou, sans étape, la synthèse des choix du projet (`Harmonie_Choix_Parcours_V7.html`). */
   harmonieReportUrl: (projectId: string, stepNumber: number | null) => (stepNumber === null ? `/projects/${projectId}/steps/harmonie/rapport` : `/projects/${projectId}/steps/${stepNumber}/harmonie/rapport`),
   getAtelierStore: (projectId: string) => request<AtelierStore>(`/projects/${projectId}/atelier/store`),

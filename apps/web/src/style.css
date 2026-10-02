@@ -539,6 +539,16 @@ h3 {
   margin: auto;
   padding: 28px;
 }
+.projects-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.projects-heading h1 {
+  margin: 0;
+}
 .projects-page form {
   display: flex;
   flex-wrap: wrap;

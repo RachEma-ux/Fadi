@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, api } from "../lib/api";
+import { ImportProjectButton } from "../modules/projets-sources/ImportProjectButton";
 
 /**
  * Exemples importables — une copie indépendante est créée dans le compte de
@@ -92,7 +93,16 @@ export function ProjectsPage() {
 
   return (
     <main className="projects-page">
-      <h1>Mes projets</h1>
+      <div className="projects-heading">
+        <h1>Mes projets</h1>
+        {/* Page Projets du prototype : « + Nouveau projet », « Importer projet JSON », « Bibliothèque des bâtiments ». */}
+        <div className="h7-actions">
+          <ImportProjectButton />
+          <Link className="button-secondary" to="/bibliotheque/batiments">
+            Bibliothèque des bâtiments
+          </Link>
+        </div>
+      </div>
 
       <section aria-labelledby="new-project-heading" className="panel">
         <h2 id="new-project-heading">Nouveau projet</h2>

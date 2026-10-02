@@ -1009,3 +1009,136 @@ describe("Péremption des propositions (« À réexaminer ») et rapports Harmon
     expect((await other.get(`/projects/${pid}/steps/1/harmonie/rapport`)).status).toBe(404);
   });
 });
+
+describe("Archive de projet — « Sauvegarder projet JSON » / « Importer projet JSON »", () => {
+  it("exports P.118 as one JSON (steps, programme, parcel, native model, attachments) and re-imports it as a new equivalent project", async () => {
+    const client = await registerAndLogin("archive@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    // Une pièce jointe et un arbitrage propre à ce projet, pour vérifier qu'ils voyagent.
+    await client.post(`/projects/${pid}/steps/3/files`).set("Content-Type", "application/octet-stream").set("X-File-Name", encodeURIComponent("ZONE-I-5 règlement.pdf")).set("X-File-Type", "application/pdf").send(Buffer.from("%PDF-1.4 test archive"));
+    await client.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "adapted", notes: "Adaptation portée par l'archive" });
+
+    const exported = await client.get(`/projects/${pid}/archive`);
+    expect(exported.status).toBe(200);
+    expect(exported.headers["content-disposition"]).toBe('attachment; filename="Parcours_V7_Escalier_B_et_mezzanine.json"');
+    expect(exported.headers["content-type"]).toMatch(/^application\/json/);
+    const archive = JSON.parse(exported.text);
+    expect(archive).toMatchObject({ kind: "fadi-project-archive", version: 1, sourceVersion: "8.19.0", project: { code: "P.118", name: "Escalier B et mezzanine", modelRevision: 1 } });
+    expect(archive.stageMapping).toHaveLength(21);
+    expect(archive.steps).toHaveLength(21);
+    expect(archive.programmeCases).toHaveLength(1);
+    expect(archive.programmeCases[0].data.spaces).toHaveLength(74);
+    expect(archive.programmeRepartition.mode).toBe("cas");
+    expect(archive.parcels).toHaveLength(1);
+    expect(Object.keys(archive.native.entries)).toContain("design.v13.activeProject");
+    expect(archive.stageAttachments).toEqual([expect.objectContaining({ stepNumber: 3, name: "ZONE-I-5 règlement.pdf", type: "application/pdf", size: 21, dataUrl: expect.stringMatching(/^data:application\/pdf;base64,/) })]);
+    expect(archive.warnings).toEqual([]);
+    // Jamais pour un autre utilisateur.
+    const other = await registerAndLogin("archive-other@example.com");
+    expect((await other.get(`/projects/${pid}/archive`)).status).toBe(404);
+
+    // Import de l'archive : un NOUVEAU projet, l'original intact.
+    const res = await client.post("/projects/import").set("Content-Type", "application/json").send(exported.text);
+    expect(res.status).toBe(201);
+    expect(res.body.projects).toHaveLength(1);
+    const copy = res.body.projects[0];
+    expect(copy).toMatchObject({ origin: "fadi", name: "Escalier B et mezzanine · import", code: "P.118", warnings: [] });
+    expect(copy.id).not.toBe(pid);
+    const list = (await client.get("/projects")).body as { id: string }[];
+    expect(list.map((p) => p.id)).toEqual(expect.arrayContaining([pid, copy.id]));
+    type StepRow = { number: number; status: string; stale: boolean; staleRetainedCount: number; retainedCount: number; proposals: { id: string; decision: { status: string; adaptedText: string | null } }[]; model: unknown };
+    const original = (await client.get(`/projects/${pid}/steps`)).body as StepRow[];
+    const steps = (await client.get(`/projects/${copy.id}/steps`)).body as StepRow[];
+    // Mêmes statuts (l'arbitrage pris sur l'original a remis ses cibles « en cours » : la copie le reflète), mêmes choix retenus.
+    expect(steps.map((s) => [s.number, s.status, s.retainedCount])).toEqual(original.map((s) => [s.number, s.status, s.retainedCount]));
+    expect(original.filter((s) => s.status === "termine").length).toBeLessThan(21);
+    expect(steps.find((s) => s.number === 2)!.proposals.find((q) => q.id === "H01-B")!.decision).toMatchObject({ status: "adapted", adaptedText: "Adaptation portée par l'archive" });
+    expect(steps.filter((s) => s.stale || s.staleRetainedCount > 0).map((s) => s.number)).toEqual([]);
+    const step10 = steps.find((s) => s.number === 10)!;
+    expect(step10.model).not.toBeNull();
+    expect(step10.proposals.filter((q) => q.id.includes("LOCAL")).length).toBeGreaterThan(10);
+    expect((await client.get(`/projects/${copy.id}/levels`)).body).toHaveLength(6);
+    const programme = (await client.get(`/projects/${copy.id}/programme`)).body;
+    expect(programme.programmeCase.spaces).toHaveLength(74);
+    const files = (await client.get(`/projects/${copy.id}/steps/3/files`)).body as { name: string; size: number; id: string }[];
+    expect(files).toEqual([expect.objectContaining({ name: "ZONE-I-5 règlement.pdf", size: 21 })]);
+    const dl = await client.get(`/projects/${copy.id}/steps/3/files/${encodeURIComponent(files[0]!.id)}`);
+    expect(dl.text ?? dl.body.toString()).toContain("%PDF-1.4 test archive");
+    const parcelsRes = (await client.get(`/projects/${copy.id}/parcels`)).body;
+    expect(parcelsRes.files).toHaveLength(1);
+    expect(parcelsRes.transmission.status).toBe("linked");
+  });
+
+  it("imports an export of the existing software (parcours-v6-project: workflow + native + stageAttachments) as a new project with its answers, choices, model and attachment", async () => {
+    const client = await registerAndLogin("archive-proto@example.com");
+    // Le modèle natif de l'exemple sert de `native` du prototype (registry + domains).
+    const example = await client.post("/examples/p118-exemple-complet/import");
+    const store = (await client.get(`/projects/${example.body.id}/atelier/store`)).body.entries as Record<string, unknown>;
+    const nativeId = store["design.v13.activeProject"] as string;
+    const domains: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(store)) if (k.startsWith(`design.v13.project.${nativeId}.`)) domains[k.slice(`design.v13.project.${nativeId}.`.length)] = v;
+    const payload = {
+      kind: "parcours-v6-project",
+      version: 7,
+      applicationVersion: "7.0.0",
+      exported: "2026-09-30T10:00:00.000Z",
+      workflow: {
+        id: "p-proto",
+        name: "Dossier prototype",
+        data: {
+          business: { "2": { f1: "Zone I — secteur I5", f3: 12.5 }, "19": { decision: "GO" } },
+          harmonieEtapesV7: {
+            site: { frontageEdge: 3, approachStatus: "hypothesis", priority: "service", frontContext: "open", backContext: "vegetation", source: "", note: "" },
+            stages: {
+              "2": { revision: 2, generatedAt: "2026-09-29T08:00:00.000Z", generatedHash: "deadbeef", proposals: [{ id: "H01-C", key: "C", group: "parti", stage: 2, title: "C", text: "Texte C", source: "", targets: [4], status: "retained", decisionVersion: 1, acceptedHash: "cafebabe" }] },
+            },
+          },
+          programmeRepartition: { type: "mixte", baseArea: 900, mode: "cible", custom: {} },
+          harmony: { config: { components: ["enseignement", "tertiaire"] } },
+        },
+        done: { "2": true },
+      },
+      native: { id: nativeId, registry: { id: nativeId, name: "P.118" }, domains },
+      stageAttachments: [{ id: "a1", projectId: "p-proto", stage: 3, name: "note.txt", type: "text/plain", size: 7, added: "2026-09-28T00:00:00.000Z", dataUrl: `data:text/plain;base64,${Buffer.from("bonjour").toString("base64")}` }],
+      warnings: [],
+    };
+    const res = await client.post("/projects/import").send(payload);
+    expect(res.status).toBe(201);
+    const p = res.body.projects[0];
+    expect(p).toMatchObject({ origin: "parcours-v7", name: "Dossier prototype · import", code: "Dossier_prototype", warnings: [] });
+    const steps = (await client.get(`/projects/${p.id}/steps`)).body as { number: number; status: string; stale: boolean; content: { fields: Record<string, unknown>; harmonie: { revision: number; generatedHash: string | null } }; proposals: { id: string; retained: boolean; stale: boolean }[]; profile: { label: string }; site: { observations: { priority: string } } | null; model: unknown }[];
+    const s2 = steps.find((s) => s.number === 2)!;
+    expect(s2.status).toBe("termine");
+    expect(s2.content.fields).toEqual({ f1: "Zone I — secteur I5", f3: 12.5 });
+    expect(s2.proposals.find((q) => q.id === "H01-C")).toMatchObject({ retained: true, stale: false });
+    expect(s2.content.harmonie.revision).toBe(2);
+    expect(s2.content.harmonie.generatedHash).toMatch(/^[0-9a-f]{8}$/); // recalculée sur les données importées, pas « deadbeef »
+    expect(s2.stale).toBe(false);
+    expect(s2.profile.label).toBe("Formation & bureaux");
+    expect(steps.find((s) => s.number === 1)!.site!.observations.priority).toBe("service");
+    expect(steps.find((s) => s.number === 19)!.content.fields).toEqual({ decision: "GO" });
+    expect(steps.find((s) => s.number === 10)!.model).not.toBeNull();
+    expect((await client.get(`/projects/${p.id}/levels`)).body).toHaveLength(6);
+    const files = (await client.get(`/projects/${p.id}/steps/3/files`)).body as { name: string; size: number }[];
+    expect(files).toEqual([expect.objectContaining({ name: "note.txt", size: 7 })]);
+    // Refus avec les messages du prototype ; aucun projet créé.
+    const before = ((await client.get("/projects")).body as unknown[]).length;
+    const bad = await client.post("/projects/import").send({ hello: "world" });
+    expect(bad.status).toBe(422);
+    expect(bad.body.message).toBe("Format attendu : export Parcours V6 / V7 ou base projets V5.");
+    const invalid = await client.post("/projects/import").send({ kind: "parcours-v6-project", workflow: { name: 4, data: {} } });
+    expect(invalid.status).toBe(422);
+    expect(invalid.body.message).toBe("Structure de projet invalide.");
+    const notJson = await client.post("/projects/import").set("Content-Type", "application/json").send("{not json");
+    expect(notJson.status).toBe(422);
+    expect(((await client.get("/projects")).body as unknown[]).length).toBe(before);
+    // Une base V5 à deux projets crée deux dossiers.
+    const v5 = await client.post("/projects/import").send({ projects: [{ id: "a", name: "A", data: {} }, { id: "b", name: "B", data: {} }] });
+    expect(v5.status).toBe(201);
+    expect(v5.body.projects.map((x: { name: string; origin: string }) => [x.origin, x.name])).toEqual([
+      ["parcours-v5", "A · import"],
+      ["parcours-v5", "B · import"],
+    ]);
+  });
+});

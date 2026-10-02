@@ -8,9 +8,10 @@
  */
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type SiteObservationsInput } from "../../lib/api";
 import { NativeAtelier } from "../atelier/NativeAtelier";
+import { ImportProjectButton } from "../projets-sources/ImportProjectButton";
 import { ParcelleTool } from "../projets-sources/ParcelleTool";
 import { StepSources } from "../projets-sources/StepSources";
 import { ProgrammeRepartition, ProgrammeTransfer } from "../programmation/ProgrammeRepartition";
@@ -274,6 +275,10 @@ function StepDetail({
 export function ParcoursModule({ projectId }: { projectId: string }) {
   const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
   const [searchParams, setSearchParams] = useSearchParams();
+  // Message transmis par la page précédente (« Import créé dans un nouveau dossier… »), affiché une fois.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const notice = (location.state as { notice?: string } | null)?.notice ?? null;
   const etapeParam = searchParams.get("etape");
   const openNumber = etapeParam ? Number(etapeParam) : null;
 
@@ -318,6 +323,7 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
   const phases = [...new Set(steps.map((s) => s.phase))];
   return (
     <>
+      <HarmonieToast text={notice} onDone={() => navigate(`${location.pathname}${location.search}`, { replace: true, state: null })} />
       <div className="overview-progress">
         <span className="parcours-steps-summary">{done} / {steps.length} étapes terminées</span>
         <div className="progress">
@@ -334,11 +340,15 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
           <StepCard key={step.number} step={step} onOpen={() => openStep(step.number)} />
         ))}
       </section>
-      {/* « Outils du projet » de la vue d'ensemble : la synthèse des choix Harmonie (sauvegarde / import JSON : module Projets et sources, à venir). */}
+      {/* « Outils du projet » de la vue d'ensemble : sauvegarde / import JSON (module Projets et sources) et synthèse des choix Harmonie. */}
       <details className="fold-card project-tools" id="parcours-project-tools">
         <summary>Outils du projet</summary>
         <div className="fold-card-body">
           <div className="h7-actions">
+            <a className="button-secondary" href={api.projectArchiveUrl(projectId)} download>
+              Sauvegarder projet JSON
+            </a>
+            <ImportProjectButton />
             <a className="button-secondary" href={api.harmonieReportUrl(projectId, null)} download>
               Exporter la synthèse des choix Harmonie
             </a>

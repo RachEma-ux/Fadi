@@ -1,12 +1,14 @@
-import { Router } from "express";
+import express, { Router, type ErrorRequestHandler, type Request, type Response } from "express";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
+import { ARCHIVE_IMPORT_LIMIT, ArchiveError, archiveFileName, normalizeImportedProjects } from "@parcours/domain-model";
 import { db } from "../db/client.js";
 import { architecturalObjects, levels, projects, projectSteps } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { EMPTY_STEP_CONTENT, PARCOURS_STEPS } from "../data/parcours.js";
 import { loadOwnedProject } from "../lib/owned-project.js";
+import { APPLICATION_VERSION, SOURCE_VERSION, exportProjectArchive, importProjectArchive } from "../lib/project-archive.js";
 import { parcoursStepsRouter } from "./parcours-steps.js";
 import { programmeRouter } from "./programme.js";
 import { atelierRouter } from "./atelier.js";
@@ -59,6 +61,64 @@ projectsRouter.post("/", async (req, res) => {
     return project;
   });
   res.status(201).json(created);
+});
+
+// --- Archive de projet : « Importer projet JSON » / « Sauvegarder projet JSON »
+
+const archiveBody = express.json({ limit: ARCHIVE_IMPORT_LIMIT, type: () => true });
+const archiveBodyError: ErrorRequestHandler = (err, _req, res, next) => {
+  const e = err as { type?: string; status?: number } | null;
+  if (e?.type === "entity.too.large") {
+    res.status(413).json({ error: "archive_rule", message: "Le fichier dépasse 32 Mo." });
+    return;
+  }
+  if (e?.type === "entity.parse.failed" || e?.status === 400) {
+    res.status(422).json({ error: "archive_rule", message: "Format attendu : export Parcours V6 / V7 ou base projets V5." });
+    return;
+  }
+  next(err);
+};
+
+/**
+ * `importBundle` : une archive Fadi, un export Parcours V6 / V7 (`workflow`,
+ * `native`, `stageAttachments`) ou une base projets V5 → un ou plusieurs
+ * NOUVEAUX projets de l'utilisateur ; les projets existants sont conservés.
+ * Refus avec les messages du prototype (422), fichier > 32 Mo (413).
+ */
+projectsRouter.post("/import", archiveBody, archiveBodyError, async (req: Request, res: Response) => {
+  const now = new Date().toISOString();
+  try {
+    const imports = normalizeImportedProjects(req.body, PARCOURS_STEPS, { now, applicationVersion: APPLICATION_VERSION, sourceVersion: SOURCE_VERSION });
+    const created = await db.transaction(async (tx) => {
+      const out = [];
+      for (const { origin, archive } of imports) {
+        const r = await importProjectArchive(tx, req.user!.id, archive, now);
+        out.push({ id: r.project.id, code: r.project.code, name: r.project.name, origin, warnings: r.warnings });
+      }
+      return out;
+    });
+    res.status(201).json({ projects: created });
+  } catch (err) {
+    if (err instanceof ArchiveError) {
+      res.status(422).json({ error: "archive_rule", message: err.message });
+      return;
+    }
+    throw err;
+  }
+});
+
+/** `backup()` : tout le projet en un JSON téléchargeable (`Parcours_V7_<nom>.json`). */
+projectsRouter.get("/:projectId/archive", async (req, res) => {
+  const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);
+  if (!project) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  const archive = await exportProjectArchive(db, project, new Date().toISOString());
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${archiveFileName(project.name)}"`);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.send(JSON.stringify(archive, null, 2));
 });
 
 // --- Étapes du Parcours (module Parcours) et répartition (module Programmation)
