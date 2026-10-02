@@ -57,8 +57,9 @@
  *      (6k) : copie de secours, « Reprendre ma version » ;
  *   6m. partage du projet : invitation d'un compte par son adresse, projet
  *      partagé listé, lecteur (lecture, commentaires, formulaires et
- *      Atelier inactifs, 403 motivé), passage éditeur (saisie enregistrée),
- *      départ du projet ;
+ *      Atelier inactifs, 403 motivé), réservation d'édition (verrou
+ *      optionnel : éditeur en lecture et commentaires, 423 motivé, puis
+ *      main rendue), passage éditeur (saisie enregistrée), départ du projet ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
  *      docs/migration/captures/webapp/.
  *
@@ -872,6 +873,29 @@ check("lecteur : Atelier en lecture seule (rien n'est enregistré)", /^Lecture s
 // Le propriétaire passe le lecteur éditeur : la saisie devient possible et visible par le propriétaire.
 await page.selectOption(`.members-table tr[data-member="${readerEmail}"] select`, "editeur");
 await page.waitForFunction((e) => /est maintenant éditeur/.test(document.querySelector(".members-notice")?.textContent || ""), null, { timeout: 10000 });
+// Réservation d'édition (verrou optionnel) : le propriétaire réserve, l'éditeur lit et commente seulement (423 côté serveur) ; rendue, l'éditeur écrit.
+await page.goto(`${projectUrl}?module=parcours&etape=2`);
+await page.waitForSelector(".editing-lock-free");
+await page.locator('.editing-lock button:has-text("Réserver l’édition")').click();
+await page.waitForSelector(".editing-lock-mine", { timeout: 10000 });
+check("propriétaire : « Réserver l’édition » → « Édition réservée par vous jusqu’à HH:MM », Prolonger / Rendre la main", /Édition réservée par vous jusqu’à \d{2}:\d{2}/.test(await page.locator(".editing-lock-mine").textContent()) && (await page.locator('.editing-lock button:has-text("Rendre la main")').count()) === 1);
+await page2.goto(`${projectUrl}?module=parcours&etape=2`);
+await page2.waitForSelector(".editing-lock-other", { timeout: 15000 });
+await page2.waitForFunction(() => document.querySelector("#biz-f1")?.disabled, null, { timeout: 10000 }).catch(() => {});
+check("éditeur pendant la réservation : « Édition réservée par … », bandeau, saisies et arbitrages inactifs", new RegExp(`Édition réservée par ${email} jusqu’à`).test(await page2.locator(".editing-lock-other").textContent()) && /Édition réservée par .* lecture et commentaires seulement/.test(await page2.locator(".access-banner").textContent()) && (await page2.locator("#biz-f1").isDisabled()) && (await page2.locator('.h7-proposal button:has-text("Retenir")').first().isDisabled()));
+const lockedPatch = await page2.request.patch(`${BASE}/projects/${testPid}/steps/2`, { data: { fields: { f1: "tentative pendant la réservation" } } });
+check("éditeur pendant la réservation : une écriture forcée est refusée (423, motif et échéance)", lockedPatch.status() === 423 && /^Édition réservée par .* jusqu'à \d{2}:\d{2}/.test(((await lockedPatch.json()).message) || ""), String(lockedPatch.status()));
+await page2.evaluate(() => { document.querySelector(".step-comments").open = true; });
+await page2.fill(".step-comments textarea", "Je relis pendant la réservation.");
+await page2.locator('.step-comments button:has-text("Publier le commentaire")').click();
+await page2.waitForFunction(() => /Je relis pendant la réservation\./.test(document.querySelector(".step-comments")?.textContent || ""), null, { timeout: 10000 });
+check("éditeur pendant la réservation : commentaire toujours possible", true);
+await page2.evaluate(() => window.scrollTo(0, 0));
+await page2.waitForTimeout(300);
+await page2.screenshot({ path: `${OUT}/partage-edition-reservee-desktop.png`, fullPage: false });
+await page.locator('.editing-lock button:has-text("Rendre la main")').click();
+await page.waitForSelector(".editing-lock-free", { timeout: 10000 });
+check("propriétaire : « Rendre la main » → édition libre", true);
 await page2.goto(`${projectUrl}?module=parcours&etape=2`);
 await page2.waitForFunction(() => document.querySelector(".project-role")?.textContent?.startsWith("éditeur") && !document.querySelector("#biz-f1")?.disabled, null, { timeout: 15000 });
 await page2.fill("#biz-f1", "Zone UA (saisie de l'éditeur)");
@@ -888,6 +912,7 @@ check("éditeur : « Votre rôle · éditeur », pas de formulaire d'invitation"
 await page2.locator('.members-table button:has-text("Quitter le projet")').click();
 await page2.waitForURL(/\/projets$/, { timeout: 10000 });
 await page2.waitForSelector("#project-list-heading");
+await page2.waitForFunction(() => !document.querySelector(".shared-projects"), null, { timeout: 10000 }).catch(() => {}); // liste restaurée du cache puis relue
 check("quitter le projet : retour à « Mes projets » sans projet partagé, accès retiré (404)", (await page2.locator(".shared-projects").count()) === 0 && (await page2.request.get(`${BASE}/projects/${testPid}`)).status() === 404);
 await page.reload();
 await page.waitForFunction(() => /Aucun membre invité/.test(document.querySelector(".members-table")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});

@@ -2498,3 +2498,19 @@ fieldset.access-fieldset:disabled {
   font-size: 12px;
   min-height: 0;
 }
+
+/* Réservation d'édition (verrou optionnel) */
+.editing-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.editing-lock-mine {
+  color: #2f6b3a;
+}
+.editing-lock-other {
+  color: #895f24;
+}

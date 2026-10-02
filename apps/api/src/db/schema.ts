@@ -34,6 +34,13 @@ export const sessions = pgTable("sessions", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("sessions_user_id_idx").on(t.userId)]);
 
+export interface EditingLock {
+  userId: string;
+  email: string;
+  since: string;
+  expiresAt: string;
+}
+
 export const projects = pgTable("projects", {
   id: text("id").primaryKey(),
   ownerId: text("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -47,6 +54,8 @@ export const projects = pgTable("projects", {
   sourceExampleId: text("source_example_id"),
   /** Exemple résolu importé : `reference` (présentation protégée du prototype, « Essayer une autre répartition en copie ») ou `editable` (copie de travail). Null pour un projet ordinaire. */
   exampleMode: text("example_mode").$type<"reference" | "editable" | null>(),
+  /** Verrou d'édition optionnel (« un seul éditeur actif ») : qui l'a réservé et jusqu'à quand ; null = libre. Expiré, il est ignoré. */
+  editingLock: jsonb("editing_lock").$type<EditingLock | null>(),
   /** Données annexes de l'exemple importé (faits, critères, hypothèses, données de zone) — non structurées dans le modèle de domaine, conservées telles quelles pour consultation. */
   sourceAttachment: jsonb("source_attachment").$type<Record<string, unknown> | null>(),
   /** L'outil Parcelle a-t-il déjà enregistré (ou supprimé) une parcelle ? (`initialized` de son API : sans parcelle ET non initialisé, il propose sa parcelle d'exemple.) */

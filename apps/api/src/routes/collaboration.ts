@@ -20,7 +20,7 @@ import { db } from "../db/client.js";
 import { atelierStore, parcels, producedDocuments, programmeCases, projectComments } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
-import { projectOr404, type OwnedProject } from "../lib/owned-project.js";
+import { activeLock, projectOr404, type OwnedProject } from "../lib/owned-project.js";
 import { loadStepRows } from "../lib/step-rows.js";
 import { listMembers, ownerEmailOf } from "./members.js";
 import { contentOf } from "../lib/step-context.js";
@@ -195,11 +195,13 @@ collaborationRouter.get("/", async (req, res) => {
       /** Votre rôle sur ce projet, vérifié par le serveur à chaque requête. */
       role: project.role,
       members: await listMembers(project.id),
-      /** Partage par le propriétaire (lecteur : lit et commente ; éditeur : modifie) ; un seul éditeur actif à la fois n'est pas imposé — les écritures concurrentes sont départagées par le contrôle de version (409). */
+      /** Réservation d'édition en cours (verrou optionnel), null si libre. */
+      lock: activeLock(project),
+      /** Partage par le propriétaire (lecteur : lit et commente ; éditeur : modifie) ; verrou d'édition optionnel (« un seul éditeur actif »), sinon contrôle de version (409). */
       sharing: {
         available: true,
         reason:
-          "Le propriétaire invite des comptes existants par leur adresse : un lecteur lit tout et commente, un éditeur modifie aussi (saisies, arbitrages, programme, Atelier, sources). Les droits sont vérifiés par le serveur à chaque requête ; deux éditeurs travaillant en même temps sont départagés par le contrôle de version (409), sans verrou d'édition.",
+          "Le propriétaire invite des comptes existants par leur adresse : un lecteur lit tout et commente, un éditeur modifie aussi (saisies, arbitrages, programme, Atelier, sources). Les droits sont vérifiés par le serveur à chaque requête. Un éditeur peut réserver l'édition (30 minutes, prolongeables) : les autres lisent et commentent jusqu'à ce qu'il rende la main ; sans réservation, les écritures simultanées sont sérialisées puis départagées par le contrôle de version (409).",
       },
     },
     sync: {

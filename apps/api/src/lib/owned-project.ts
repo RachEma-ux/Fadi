@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { db } from "../db/client.js";
-import { projectMembers, projects } from "../db/schema.js";
+import { projectMembers, projects, type EditingLock } from "../db/schema.js";
 
 /**
  * Accès à un projet, vérifié côté serveur à chaque route — jamais seulement
@@ -37,6 +37,22 @@ export const FORBIDDEN_MESSAGE: Record<ProjectNeed, string> = {
 type ProjectRow = typeof projects.$inferSelect;
 export type AccessibleProject = ProjectRow & { role: ProjectRole };
 
+/** Durée d'une réservation d'édition ; renouvelable tant que l'éditeur travaille. */
+export const EDITING_LOCK_MINUTES = 30;
+
+/** Le verrou d'édition du projet s'il est encore valable, sinon null (un verrou expiré n'existe plus). */
+export function activeLock(project: Pick<ProjectRow, "editingLock">, now = new Date()): EditingLock | null {
+  const lock = project.editingLock;
+  if (!lock || !lock.expiresAt) return null;
+  return new Date(lock.expiresAt).getTime() > now.getTime() ? lock : null;
+}
+
+const hhmm = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: process.env["FADI_TZ"] ?? "Europe/Paris" });
+
+export function lockedMessage(lock: EditingLock): string {
+  return `Édition réservée par ${lock.email} jusqu'à ${hhmm(lock.expiresAt)} : lecture et commentaires seulement ; demandez-lui de rendre la main, ou attendez l'échéance.`;
+}
+
 /** Le projet et le rôle de l'utilisateur, en une requête ; `null` quand il n'y a aucun accès. */
 export async function loadProjectAccess(projectId: string, userId: string): Promise<AccessibleProject | null> {
   const rows = await db
@@ -65,7 +81,12 @@ export async function loadOwnedProject(projectId: string, userId: string, need: 
 
 export type OwnedProject = AccessibleProject;
 
-/** Aide commune des routeurs : 404 sans accès, 403 (avec motif) si le rôle ne suffit pas, sinon le projet avec le rôle. */
+/**
+ * Aide commune des routeurs : 404 sans accès, 403 (avec motif) si le rôle ne
+ * suffit pas, 423 si l'édition est réservée par quelqu'un d'autre (verrou
+ * optionnel, « un seul éditeur actif » ; les lectures et commentaires
+ * passent), sinon le projet avec le rôle.
+ */
 export async function projectOr404(req: Request, res: Response, need: ProjectNeed): Promise<AccessibleProject | null> {
   const projectId = (req.params as Record<string, string>)["projectId"] ?? "";
   const access = await loadProjectAccess(projectId, req.user!.id);
@@ -76,6 +97,13 @@ export async function projectOr404(req: Request, res: Response, need: ProjectNee
   if (!roleAllows(access.role, need)) {
     res.status(403).json({ error: "forbidden", message: FORBIDDEN_MESSAGE[need], role: access.role });
     return null;
+  }
+  if (need === "write") {
+    const lock = activeLock(access);
+    if (lock && lock.userId !== req.user!.id) {
+      res.status(423).json({ error: "locked", message: lockedMessage(lock), lock });
+      return null;
+    }
   }
   return access;
 }

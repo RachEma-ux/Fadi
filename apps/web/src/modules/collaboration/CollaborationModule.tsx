@@ -303,6 +303,11 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
             <small>{v.access.role === "proprietaire" ? "partage, édition, suppression" : v.access.role === "editeur" ? "lecture, commentaires, édition" : "lecture et commentaires"}</small>
           </div>
           <div className="biz-kpi">
+            <span>Édition</span>
+            <b className="collab-lock">{v.access.lock ? `réservée par ${v.access.lock.email === v.access.you ? "vous" : v.access.lock.email}` : "libre"}</b>
+            <small>{v.access.lock ? `jusqu’à ${new Date(v.access.lock.expiresAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · depuis ${new Date(v.access.lock.since).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}` : "réservation optionnelle, 30 min prolongeables"}</small>
+          </div>
+          <div className="biz-kpi">
             <span>Partage</span>
             <b>{v.access.members.length} membre(s)</b>
             <small>

@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api, ROLE_LABEL } from "../lib/api";
-import { READ_ONLY_HINT, useProjectAccess } from "../lib/access";
+import { lockedHint, READ_ONLY_HINT, useProjectAccess } from "../lib/access";
 import { ConflictPanel } from "../components/ConflictPanel";
+import { EditingLockControl } from "../components/EditingLockControl";
 import { SyncIndicator, useOnline } from "../components/SyncIndicator";
 import { MODULES } from "../modules/module-registry";
 import { AnalysesModule } from "../modules/analyses/AnalysesModule";
@@ -19,7 +21,9 @@ export function ProjectShell() {
   const { projectId } = useParams<{ projectId: string }>();
   if (!projectId) throw new Error("projectId manquant dans l'URL");
 
-  const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId) });
+  // Relu toutes les minutes : une réservation d'édition posée ou rendue par quelqu'un d'autre se voit sans recharger.
+  const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), refetchInterval: 60_000 });
+  const [lockMessage, setLockMessage] = useState<string | null>(null);
   const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
   const online = useOnline();
   const access = useProjectAccess(projectId);
@@ -64,12 +68,19 @@ export function ProjectShell() {
             {project.role && project.role !== "proprietaire" && project.ownerEmail ? ` · partagé par ${project.ownerEmail}` : ""}
           </span>
           <SyncIndicator projectId={projectId} />
+          <EditingLockControl projectId={projectId} onMessage={setLockMessage} />
         </span>
       </header>
 
+      {lockMessage && (
+        <p className="access-banner" role="alert">
+          {lockMessage}
+        </p>
+      )}
+
       {!access.canWrite && (
         <p className="access-banner" role="status">
-          {READ_ONLY_HINT}{" "}
+          {access.lock && !access.holdsLock && access.mayEdit ? lockedHint(access.lock) : READ_ONLY_HINT}{" "}
           <button type="button" className="link-button" onClick={() => selectModule("collaboration")}>
             Voir le partage
           </button>

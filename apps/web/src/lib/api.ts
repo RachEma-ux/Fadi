@@ -71,8 +71,17 @@ export interface Project {
   role?: ProjectRole;
   /** Adresse du propriétaire (liste des projets : distingue les projets partagés). */
   ownerEmail?: string;
+  /** Réservation d'édition en cours (verrou optionnel « un seul éditeur actif »), null si libre ou expirée. */
+  editingLock?: EditingLock | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface EditingLock {
+  userId: string;
+  email: string;
+  since: string;
+  expiresAt: string;
 }
 
 /** Rôles du partage (`lib/owned-project.ts` de l'API) : lecteur lit et commente, éditeur modifie, propriétaire partage et supprime. */
@@ -499,7 +508,7 @@ export interface RevisionEvent {
 }
 
 export interface CollaborationView {
-  access: { ownerEmail: string; you: string; role: ProjectRole; members: ProjectMember[]; sharing: { available: boolean; reason: string } };
+  access: { ownerEmail: string; you: string; role: ProjectRole; members: ProjectMember[]; lock: EditingLock | null; sharing: { available: boolean; reason: string } };
   sync: { modelRevision: number; nativeKeys: number; lastModelWrite: string | null; offline: { available: boolean; reason: string } };
   journal: RevisionEvent[];
   comments: ProjectComment[];
@@ -699,6 +708,10 @@ export const api = {
   inviteMember: (projectId: string, email: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify({ email, role }) }),
   setMemberRole: (projectId: string, userId: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ role }) }),
   removeMember: (projectId: string, userId: string) => request<void>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "DELETE" }),
+  /** Verrou d'édition optionnel : réserver / prolonger (423 si quelqu'un d'autre le détient), rendre la main (ou libérer, propriétaire). */
+  getLock: (projectId: string) => request<{ lock: EditingLock | null; yours: boolean }>(`/projects/${projectId}/lock`),
+  reserveEditing: (projectId: string) => request<{ lock: EditingLock; yours: true }>(`/projects/${projectId}/lock`, { method: "PUT" }),
+  releaseEditing: (projectId: string) => request<void>(`/projects/${projectId}/lock`, { method: "DELETE" }),
   /** Documents produits par le serveur (production enregistrée) : plan de lecture d'un niveau, tableau des surfaces, programme, fiches de l'exemple. */
   documentUrl: (projectId: string, doc: "surfaces" | "programme" | "fiches") => `/projects/${projectId}/documents/${doc}`,
   planUrl: (projectId: string, levelId: string) => `/projects/${projectId}/documents/plan/${encodeURIComponent(levelId)}`,

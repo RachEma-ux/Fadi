@@ -7,7 +7,7 @@ import { architecturalObjects, levels, projectMembers, projects, projectSteps, u
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { EMPTY_STEP_CONTENT, PARCOURS_STEPS } from "../data/parcours.js";
-import { loadOwnedProject, projectOr404, type ProjectNeed } from "../lib/owned-project.js";
+import { activeLock, loadOwnedProject, projectOr404, type ProjectNeed } from "../lib/owned-project.js";
 import { APPLICATION_VERSION, SOURCE_VERSION, exportProjectArchive, importProjectArchive } from "../lib/project-archive.js";
 import { parcoursStepsRouter } from "./parcours-steps.js";
 import { programmeRouter } from "./programme.js";
@@ -19,6 +19,7 @@ import { analysesRouter } from "./analyses.js";
 import { documentsRouter } from "./documents.js";
 import { collaborationRouter } from "./collaboration.js";
 import { membersRouter, ownerEmailOf } from "./members.js";
+import { lockRouter } from "./lock.js";
 import { archiveHash, recordProducedDocument } from "../lib/documents.js";
 import { loadStepContext } from "../lib/step-context.js";
 
@@ -47,8 +48,8 @@ projectsRouter.get("/", async (req, res) => {
     .where(eq(projectMembers.userId, req.user!.id))
     .orderBy(asc(projects.createdAt));
   res.json([
-    ...owned.map((p) => ({ ...p, role: "proprietaire" as const, ownerEmail: req.user!.email })),
-    ...shared.map((r) => ({ ...r.project, role: r.role, ownerEmail: r.ownerEmail })),
+    ...owned.map((p) => ({ ...p, editingLock: activeLock(p), role: "proprietaire" as const, ownerEmail: req.user!.email })),
+    ...shared.map((r) => ({ ...r.project, editingLock: activeLock(r.project), role: r.role, ownerEmail: r.ownerEmail })),
   ]);
 });
 
@@ -177,11 +178,13 @@ projectsRouter.use("/:projectId/analyses", analysesRouter);
 projectsRouter.use("/:projectId/documents", documentsRouter);
 projectsRouter.use("/:projectId/collaboration", collaborationRouter);
 projectsRouter.use("/:projectId/members", membersRouter);
+projectsRouter.use("/:projectId/lock", lockRouter);
 
 projectsRouter.get("/:projectId", async (req, res) => {
   const project = await projectOr404(req, res, "read");
   if (!project) return;
-  res.json({ ...project, ownerEmail: project.ownerId === req.user!.id ? req.user!.email : await ownerEmailOf(project.ownerId) });
+  // Le verrou n'est renvoyé que s'il est encore valable ; `editingLock` brut n'est jamais exposé.
+  res.json({ ...project, editingLock: activeLock(project), ownerEmail: project.ownerId === req.user!.id ? req.user!.email : await ownerEmailOf(project.ownerId) });
 });
 
 projectsRouter.delete("/:projectId", async (req, res) => {

@@ -313,8 +313,8 @@ class AtelierStorageAdapter implements Storage {
         window.V14Bridge?.render?.();
         return;
       }
-      if (err instanceof ApiError && err.status === 403) {
-        // Droit retiré entre-temps (projet partagé en lecture) : l'écriture ne sera jamais acceptée, elle sort de la file ; le travail reste en mémoire.
+      if (err instanceof ApiError && (err.status === 403 || err.status === 423)) {
+        // Droit retiré entre-temps (projet partagé en lecture) ou édition réservée par quelqu'un d'autre : l'écriture ne sera pas acceptée, elle sort de la file ; le travail reste en mémoire.
         this.pendingKeys.delete(key);
         await localStore.acknowledge(projectId, key);
         this.readOnly = true;

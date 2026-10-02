@@ -1674,3 +1674,58 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     expect(journal.journal.find((e: { label: string }) => e.label === "Étape 02 · proposition H01-B retenue")).toBeDefined();
   });
 });
+
+describe("Verrou d'édition optionnel — un seul éditeur actif", () => {
+  it("reserves editing for one account, refuses other writers with the reason and the deadline (423), keeps reads and comments, expires, and lets the owner release", async () => {
+    const owner = await registerAndLogin("lock-owner@example.com");
+    const editor = await registerAndLogin("lock-editor@example.com");
+    const reader = await registerAndLogin("lock-reader@example.com");
+    const pid = (await owner.post("/projects").send({ code: "P.LOCK", name: "Verrou" })).body.id as string;
+    const editorId = (await owner.post(`/projects/${pid}/members`).send({ email: "lock-editor@example.com", role: "editeur" })).body.userId as string;
+    await owner.post(`/projects/${pid}/members`).send({ email: "lock-reader@example.com", role: "lecteur" });
+    expect((await owner.get(`/projects/${pid}/lock`)).body).toEqual({ lock: null, yours: false });
+    expect((await owner.get(`/projects/${pid}`)).body.editingLock).toBeNull();
+    // Sans réservation, les deux éditeurs écrivent.
+    expect((await editor.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Éditeur, sans verrou" } })).status).toBe(200);
+    // L'éditeur réserve ; le propriétaire ne peut plus écrire (423, motif et échéance) mais lit et commente ; le lecteur ne peut pas réserver.
+    const reserved = await editor.put(`/projects/${pid}/lock`);
+    expect(reserved.status).toBe(200);
+    expect(reserved.body.lock).toMatchObject({ userId: editorId, email: "lock-editor@example.com" });
+    expect(reserved.body.yours).toBe(true);
+    expect(new Date(reserved.body.lock.expiresAt).getTime() - Date.now()).toBeGreaterThan(29 * 60_000);
+    expect((await reader.put(`/projects/${pid}/lock`)).status).toBe(403);
+    const refused = await owner.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Propriétaire pendant la réservation" } });
+    expect(refused.status).toBe(423);
+    expect(refused.body).toMatchObject({ error: "locked", lock: { email: "lock-editor@example.com" } });
+    expect(refused.body.message).toMatch(/^Édition réservée par lock-editor@example\.com jusqu'à \d{2}:\d{2} : lecture et commentaires seulement/);
+    expect((await owner.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send({ status: "retained" })).status).toBe(423);
+    expect((await owner.put(`/projects/${pid}/atelier/store/design.v13.registry`).send({ value: [], expectedRevision: null })).status).toBe(423);
+    expect((await owner.put(`/projects/${pid}/lock`)).status).toBe(423);
+    expect((await owner.get(`/projects/${pid}/steps/2`)).body.content.fields.f1).toBe("Éditeur, sans verrou");
+    expect((await owner.post(`/projects/${pid}/collaboration/comments`).send({ body: "Je relis pendant que tu édites." })).status).toBe(201);
+    expect((await owner.get(`/projects/${pid}`)).body.editingLock).toMatchObject({ email: "lock-editor@example.com" });
+    expect((await owner.get(`/projects/${pid}/collaboration`)).body.access.lock).toMatchObject({ email: "lock-editor@example.com" });
+    // Le détenteur écrit et prolonge (même début, nouvelle échéance) ; le lecteur ne peut pas libérer.
+    expect((await editor.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Éditeur, avec verrou" } })).status).toBe(200);
+    const renewed = await editor.put(`/projects/${pid}/lock`);
+    expect(renewed.status).toBe(200);
+    expect(renewed.body.lock.since).toBe(reserved.body.lock.since);
+    expect(renewed.body.lock.expiresAt >= reserved.body.lock.expiresAt).toBe(true);
+    expect((await reader.delete(`/projects/${pid}/lock`)).status).toBe(403);
+    // Un verrou expiré n'existe plus : l'écriture passe et une nouvelle réservation est possible.
+    await pool.query("UPDATE projects SET editing_lock = jsonb_set(editing_lock, '{expiresAt}', to_jsonb(($1)::text)) WHERE id = $2", [new Date(Date.now() - 60_000).toISOString(), pid]);
+    expect((await owner.get(`/projects/${pid}/lock`)).body.lock).toBeNull();
+    expect((await owner.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Propriétaire après expiration" } })).status).toBe(200);
+    expect((await owner.put(`/projects/${pid}/lock`)).body.lock).toMatchObject({ email: "lock-owner@example.com" });
+    // Le propriétaire libère sa réservation ; il peut aussi libérer celle d'un autre.
+    expect((await owner.delete(`/projects/${pid}/lock`)).status).toBe(204);
+    expect((await editor.put(`/projects/${pid}/lock`)).status).toBe(200);
+    expect((await owner.delete(`/projects/${pid}/lock`)).status).toBe(204);
+    expect((await owner.get(`/projects/${pid}/lock`)).body.lock).toBeNull();
+    expect((await owner.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Libre" } })).status).toBe(200);
+    // Le détenteur rend la main lui-même.
+    expect((await editor.put(`/projects/${pid}/lock`)).status).toBe(200);
+    expect((await editor.delete(`/projects/${pid}/lock`)).status).toBe(204);
+    expect((await owner.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Libre à nouveau" } })).status).toBe(200);
+  });
+});

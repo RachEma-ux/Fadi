@@ -143,8 +143,9 @@ Sharing has three roles decided by the server on every request: the owner (share
 and readers (read everything, comment, export, copy). The plan first targeted a single active editor per
 project; the migration kept the simpler rule because the server already serialises writes per project (row
 lock in every read-modify-write transaction) and arbitrates stale writes by field and by version (409): several
-editors can work on the same project without losing each other's work, and a "single active editor" lock
-remains an optional, later addition rather than a prerequisite (decision recorded in `docs/migration/matrix.md`).
+editors can work on the same project without losing each other's work; the "single active editor" rule is
+offered as an optional, expiring reservation rather than imposed at opening (decision recorded in
+`docs/migration/matrix.md`).
 Offline work covers projects already available on the device; features that need a live service say so when
 they are unavailable. Server-side backups, restore drills and an exportable project archive complete this.
 
@@ -212,8 +213,10 @@ writes are serialised instead of overwriting each other, then the per-field / pe
 Conflicts are resolved explicitly: every 409 keeps what was attempted next to the server's state (field values,
 decision and version, model backup key) and offers to keep the server's version or to re-apply one's own on the
 current state — never an automatic merge. The service-worker cache is versioned per build and purged on
-activation, and the Playwright scenario runs in CI. Still open: an optional "single active editor" lock (today
-concurrent editors are arbitrated by versions, never locked out), ownership transfer, invitation notifications.
+activation, and the Playwright scenario runs in CI. The "single active editor" rule is an optional, expiring
+reservation (30 min, renewed while the holder keeps the project open, releasable by the owner): other accounts
+read and comment while it lasts, their writes are refused with the reason and the deadline (423). Still open:
+ownership transfer, invitation notifications.
 Lot 5 items still open are listed under « Limites restantes » in the matrix (regulatory checks, MapTiler /
 altimetry, lazy loading of the Atelier engine, deployment hardening).
 

@@ -18,4 +18,6 @@ Hors-ligne (`lib/local-store.ts`, `lib/query-persister.ts`, `lib/mutations.ts`, 
 
 Conflits (`components/ConflictPanel.tsx`) : chaque refus 409 est montré côte à côte avec l'état du serveur — saisie (champ, valeur du serveur, votre saisie : « Garder le serveur » / « Reprendre ma saisie »), arbitrage (votre arbitrage face à la version courante : « Réappliquer sur la version courante »), modèle de l'Atelier (copie de secours : « Garder le serveur » / « Reprendre ma version »). Reprendre renvoie la même écriture fondée sur l'état courant ; rien n'est fusionné automatiquement, rien n'est écrasé sans décision.
 
-Reste (Lot 4) : verrou d'édition optionnel (« un seul éditeur actif » — aujourd'hui deux éditeurs simultanés sont départagés par le contrôle de version, jamais perdus), notifications d'invitation, transfert de propriété.
+Réservation d'édition (`components/EditingLockControl.tsx`, API `routes/lock.ts`, `projects.editing_lock`) : un éditeur ou le propriétaire réserve l'édition pour 30 minutes (prolongée d'elle-même tant que le projet reste ouvert), la prolonge ou rend la main ; le propriétaire peut libérer. Pendant la réservation, les autres comptes lisent et commentent — leurs écritures sont refusées par le serveur (423, motif et échéance) et leurs formulaires, arbitrages et Atelier sont inactifs. Sans réservation, les écritures simultanées sont sérialisées puis départagées par version.
+
+Reste (Lot 4) : notifications d'invitation, transfert de propriété.

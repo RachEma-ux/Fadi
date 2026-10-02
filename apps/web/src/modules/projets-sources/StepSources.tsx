@@ -72,7 +72,7 @@ export function StepSources({ projectId, stepNumber }: { projectId: string; step
                 + Importer des fichiers
               </button>
             ) : (
-              <span className="source-meta">Lecture seule : téléchargement possible, import et suppression réservés au propriétaire et aux éditeurs.</span>
+              <span className="source-meta">{access.lock && !access.holdsLock && access.mayEdit ? "Édition réservée par quelqu’un d’autre : téléchargement possible, import et suppression plus tard." : "Lecture seule : téléchargement possible, import et suppression réservés au propriétaire et aux éditeurs."}</span>
             )}
           </div>
           <input
