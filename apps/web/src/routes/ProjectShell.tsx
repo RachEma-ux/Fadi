@@ -6,6 +6,7 @@ import { MODULES } from "../modules/module-registry";
 import { NativeAtelier } from "../modules/atelier/NativeAtelier";
 import { ParcoursModule } from "../modules/parcours/ParcoursModule";
 import { ProgrammeRepartition, ProgrammeTransfer } from "../modules/programmation/ProgrammeRepartition";
+import { ParcelleTool } from "../modules/projets-sources/ParcelleTool";
 
 export function ProjectShell() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -71,6 +72,13 @@ export function ProjectShell() {
           </>
         )}
 
+        {activeModule === "projets-sources" && (
+          <>
+            <h2>Projets et sources</h2>
+            <ParcelleTool projectId={projectId} />
+          </>
+        )}
+
         {activeModule === "programmation" && (
           <>
             <h2>Programmation</h2>
@@ -79,7 +87,7 @@ export function ProjectShell() {
           </>
         )}
 
-        {activeModule !== "parcours" && activeModule !== "atelier" && activeModule !== "programmation" && descriptor && (
+        {activeModule !== "parcours" && activeModule !== "atelier" && activeModule !== "programmation" && activeModule !== "projets-sources" && descriptor && (
           <>
             <h2>{descriptor.label}</h2>
             <p>{descriptor.status}</p>

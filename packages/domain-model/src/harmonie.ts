@@ -9,14 +9,17 @@
  * extraits dans `apps/api/src/data/harmonie-profiles.json` et passés en
  * paramètre — ce module ne les invente pas.
  *
- * Non porté ici (documenté dans docs/migration/matrix.md) : les propositions
- * de site de l'étape 01 calculées sur la géométrie de la parcelle (zonage
- * A/B/C avec mini-plan), les propositions LOCALES par local des étapes 10 et
- * 11 (analyse du modèle natif) et les empreintes de péremption calculées sur
- * les données amont (« À réexaminer »).
+ * Les propositions de site de l'étape 01, calculées sur la géométrie de la
+ * parcelle (zonage A/B/C avec schéma), viennent de `site.ts` et sont passées
+ * ici en `HarmonieProposalComputation`. Non porté (documenté dans
+ * docs/migration/matrix.md) : les propositions LOCALES par local des étapes
+ * 10 et 11 (analyse du modèle natif) et les empreintes de péremption
+ * calculées sur les données amont (« À réexaminer »).
  */
+import type { SiteZoning } from "@parcours/core-geometry";
 import type {
   HarmonieHistoryEntry,
+  HarmonieOption,
   HarmonieProposalDecision,
   HarmonieProposalStatus,
   HarmonieStepState,
@@ -113,6 +116,26 @@ export interface HarmonieProposal {
   decision: HarmonieProposalDecision;
   retained: boolean;
   stateLabel: string;
+  /** Étape 01 : zonage calculé sur le contour de la parcelle (`null` sans contour exploitable). */
+  zoning?: SiteZoning | null;
+}
+
+/**
+ * Une proposition calculée sur les données du projet (étape 01 : `siteOptions`)
+ * plutôt que lue dans la définition de l'étape : elle apporte son propre
+ * « pourquoi ici », sa source et, le cas échéant, son zonage.
+ */
+export interface ComputedHarmonieOption extends HarmonieOption {
+  key: string;
+  why: string;
+  source: string;
+  zoning?: SiteZoning | null;
+}
+
+export interface HarmonieProposalComputation {
+  options: ComputedHarmonieOption[];
+  /** Proposition de départ (`recommended()` du prototype) ; « A » par défaut. */
+  recommendedKey: string;
 }
 
 /** « Pourquoi ici » : la phrase du profil choisie par position de l'étape (règle de `buildProposals`). */
@@ -125,19 +148,23 @@ export function harmonieWhy(stepNumber: number, profile: HarmonieProfile): strin
 
 /**
  * Les propositions d'une étape pour un projet : définition de l'étape ×
- * profil du projet × arbitrages déjà pris. Le point de départ privilégié est
- * « A » (règle générale du prototype ; les cas particuliers de l'étape 01 —
- * priorité de site déclarée — et de l'étape 10 — densité d'un local — ne
- * sont pas portés).
+ * profil du projet × arbitrages déjà pris — ou, quand `computed` est
+ * fourni (étape 01 : `siteProposalComputation`), les propositions calculées
+ * sur les données du projet. Le point de départ privilégié est « A » sauf
+ * recommandation calculée (le cas de l'étape 10 — densité d'un local — n'est
+ * pas porté).
  */
 export function buildHarmonieProposals(
   data: HarmonieProfilesData,
   def: ParcoursStepDefinition,
   profile: HarmonieProfile,
   state: HarmonieStepState,
+  computed: HarmonieProposalComputation | null = null,
 ): HarmonieProposal[] {
-  return def.harmonieOptions.map((opt, i) => {
-    const key = "ABC"[i] ?? String.fromCharCode(65 + i);
+  const options: (HarmonieOption & Partial<ComputedHarmonieOption>)[] = computed ? computed.options : def.harmonieOptions;
+  const recommendedKey = computed?.recommendedKey ?? "A";
+  return options.map((opt, i) => {
+    const key = opt.key ?? "ABC"[i] ?? String.fromCharCode(65 + i);
     const id = harmonieProposalId(def.number, key);
     const decision = { ...EMPTY_HARMONIE_DECISION, ...(state.proposals[id] ?? {}) };
     return {
@@ -153,19 +180,20 @@ export function buildHarmonieProposals(
       benefit: opt.benefit,
       tradeoff: opt.tradeoff,
       conditions: opt.validation,
-      why: harmonieWhy(def.number, profile),
-      source: def.inputs ?? "",
+      why: opt.why ?? harmonieWhy(def.number, profile),
+      source: opt.source ?? def.inputs ?? "",
       targets: def.transmitsTo.slice(),
-      recommended: key === "A",
+      recommended: key === recommendedKey,
       decision,
       retained: isRetainedStatus(data, decision.status),
       stateLabel: data.states[decision.status],
+      ...(opt.zoning !== undefined ? { zoning: opt.zoning } : {}),
     };
   });
 }
 
-export function retainedCount(data: HarmonieProfilesData, def: ParcoursStepDefinition, state: HarmonieStepState): number {
-  return buildHarmonieProposals(data, def, harmonieProfile(data, null), state).filter((q) => q.retained).length;
+export function retainedCount(data: HarmonieProfilesData, def: ParcoursStepDefinition, state: HarmonieStepState, computed: HarmonieProposalComputation | null = null): number {
+  return buildHarmonieProposals(data, def, harmonieProfile(data, null), state, computed).filter((q) => q.retained).length;
 }
 
 export class HarmonieError extends Error {
@@ -201,10 +229,10 @@ export function decideHarmonieProposal(
   state: HarmonieStepState,
   proposalId: string,
   input: HarmonieDecisionInput,
-  options: { now: string; stale?: boolean | undefined },
+  options: { now: string; stale?: boolean | undefined; computed?: HarmonieProposalComputation | null | undefined },
 ): HarmonieDecisionResult {
   if (!(input.status in data.states)) throw new HarmonieError("Statut invalide");
-  const proposals = buildHarmonieProposals(data, def, harmonieProfile(data, null), state);
+  const proposals = buildHarmonieProposals(data, def, harmonieProfile(data, null), state, options.computed ?? null);
   const q = proposals.find((p) => p.id === proposalId);
   if (!q) throw new HarmonieError("Proposition absente");
   const status = input.status;
@@ -283,14 +311,14 @@ export interface IncomingIntention {
  */
 export function incomingIntentions(
   data: HarmonieProfilesData,
-  steps: readonly { def: ParcoursStepDefinition; state: HarmonieStepState }[],
+  steps: readonly { def: ParcoursStepDefinition; state: HarmonieStepState; computed?: HarmonieProposalComputation | null }[],
   target: number,
   profile: HarmonieProfile,
 ): IncomingIntention[] {
   const out: IncomingIntention[] = [];
-  for (const { def, state } of [...steps].sort((a, b) => a.def.number - b.def.number)) {
+  for (const { def, state, computed } of [...steps].sort((a, b) => a.def.number - b.def.number)) {
     if (def.number >= target) continue;
-    for (const q of buildHarmonieProposals(data, def, profile, state)) {
+    for (const q of buildHarmonieProposals(data, def, profile, state, computed ?? null)) {
       if (!q.retained || !q.targets.includes(target)) continue;
       out.push({ origin: def.number, originLabel: `${pad2(def.number)} · ${def.title}`, id: q.id, ref: q.ref, title: q.title, text: q.text, status: q.decision.status, stateLabel: q.stateLabel });
     }

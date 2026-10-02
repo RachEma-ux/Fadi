@@ -32,7 +32,9 @@ const TOOLED = { 1: "Outil Parcelle (iframe « Parcelle — Atelier satellite »
 function migrationStatus(n) {
   const rows = [];
   rows.push(["Vue d'ensemble → étape, précédente / suivante, « Marquer terminée »", "✅", "ParcoursModule.tsx ; e2e parcours-scenario.mjs"]);
-  rows.push(["Harmonie · propositions A/B/C, Retenir / Adapter / Écarter / Traduire / Dessiner / Vérifier, intentions reçues, transmission", n === 1 ? "🟡" : "✅", n === 1 ? "Les 3 options de site A/B/C calculées sur la parcelle (zonage, mini-plan) ne sont pas portées ; aucune proposition n'est affichée à l'étape 01." : "HarmoniePanel.tsx ; règles serveur dans parcours-steps.ts (tests app.test.ts) ; moteur domain-model/harmonie.ts (tests)"]);
+  rows.push(["Harmonie · propositions A/B/C, Retenir / Adapter / Écarter / Traduire / Dessiner / Vérifier, intentions reçues, transmission", "✅", "HarmoniePanel.tsx ; règles serveur dans parcours-steps.ts (tests app.test.ts) ; moteur domain-model/harmonie.ts (tests)"]);
+  if (n === 1) rows.push(["Propositions de site A/B/C calculées sur la parcelle (zonage 15/50/25/10 · 10/45/35/10 · 12/43/20/25 %, schéma SVG, légende, export, « Voir le schéma »), proposition de départ selon la priorité déclarée, données du site (côté d'approche, nature, priorité, contextes, source, note, repère WGS84)", "✅", "core-geometry/site-zoning.ts, domain-model/site.ts (tests) ; GET …/steps/1 (site), PUT …/steps/1/site (422 « Pour une approche documentée… ») ; SiteHarmonie.tsx ; e2e étape 01"]);
+  if (n === 1) rows.push(["Fond MapTiler / altimétrie depuis le panneau Harmonie", "🟡", "Boutons non repris ; la connexion MapTiler reste disponible dans l'outil Parcelle (« Configurer »)"]);
   if (forms.schemas[String(n)]) rows.push([`Formulaire métier (${forms.schemas[String(n)].length} rubriques), sauvegarde, rechargement`, "✅", "StepForm.tsx ; PATCH /projects/:id/steps/:n (validation par type)"]);
   if (n === 21) rows.push(["Synthèse / livrable", "✅", "StepForm.tsx (champ summary)"]);
   if (n === 14) rows.push(["KPI Investissement / Financement / Solde et règle « Chiffrage incomplet »", "✅", "domain-model/kpis.ts (tests) ; e2e"]);
@@ -40,7 +42,8 @@ function migrationStatus(n) {
   if (n === 19) rows.push(["Décision GO / GO sous conditions / À reprendre / NO GO ; rétrogradation en « À reprendre » sur intention amont modifiée", "✅", "parcours-steps.ts ; e2e"]);
   if (n === 6 || n === 7) rows.push(["Répartition programmatique (type, surface, fourchette, ratios, KPI, tableau, adjacences) ; « Répartition renseignée et liée au modèle » pour l'exemple", "✅", "ProgrammeRepartition.tsx ; PUT /projects/:id/programme ; domain-model/programme.ts (tests)"]);
   if (n === 10) rows.push(["Bloc « Programme transmis à l'Atelier »", "✅", "ProgrammeTransfer (ProgrammeRepartition.tsx)"]);
-  if (n === 1) rows.push([TOOLED[1], "⛔", "Bornes et coordonnées P.118 importées avec le projet (pièce jointe) ; pas encore d'outil cartographique"]);
+  if (n === 1) rows.push([TOOLED[1], "✅", "Document du prototype extrait tel quel (apps/web/scripts/extract-parcelle.mjs → public/parcelle), fichiers servis par Fadi au contrat natif de l'outil (routes/parcels.ts, révision par fichier, 409) ; e2e : fichier P.118 ouvert, « Mes parcelles » 1 345,55 m², borne modifiée"]);
+  if (n === 1) rows.push(["Transmission parcelle → modèle (acceptParcel : lié / incomplet / invalide / conflit / conflit d'emprise / recul à recalculer)", "✅", "lib/parcel-transmission.ts ; POST …/parcels/:id/transmit ; e2e : borne déplacée → « Conflit avec le bâtiment dessiné », modèle non déplacé, retour → liée"]);
   if (n === 10 || n === 11) rows.push([TOOLED[n], "✅", "Moteur natif encapsulé tel quel (apps/web/src/modules/atelier/native, public/atelier-native) ; modèle persisté par clé avec révision (atelier_store), projection levels/objets dérivée ; e2e : dessin d'un mur → +1 objet, annulation → −1, rechargement"]);
   if (n === 10 || n === 11) rows.push(["Propositions Harmonie LOCALES par local (analyse du modèle) et page Harmony de l'Atelier (V8.4)", "⛔", "flow-v62 / atelier-harmonie-page-app non portés"]);
   rows.push(["Bibliothèque d'exemples par type de bâtiment / « Exemples issus des fichiers sources »", "⛔", "building-library-data et SOURCE_EXAMPLES non portés"]);
@@ -142,14 +145,21 @@ for (const s of steps) {
     s.harmonieOptions.forEach((o, i) => md.push(`- **${"ABC"[i]} · ${o.title}** — ${o.proposal}`));
     if (exampleStep?.choice) md.push("", `Exemple P.118 : choix **${exampleStep.choice}** retenu — « ${exampleStep.headline} ».`);
   } else {
-    md.push("Propositions de site A / B / C calculées sur la géométrie de la parcelle (`siteOptions()` de h7-app : accueil ouvert / extérieur protégé / arrivées dissociées, avec zonage dessiné) — non portées.");
-    if (exampleStep?.choice) md.push("", `Exemple P.118 : choix **${exampleStep.choice}** — « ${exampleStep.headline} ».`);
+    md.push("Périmètre « Site et paysage ». Propositions de site A / B / C calculées sur la géométrie de la parcelle (`siteOptions()` de h7-app, porté dans `packages/domain-model/src/site.ts`) :");
+    md.push("");
+    md.push("- **A · Accueil ouvert, jardin en retrait** — zonage 15 % accueil / 50 % secteur d'implantation à étudier / 25 % espace ouvert / 10 % desserte.");
+    md.push("- **B · Extérieur protégé prioritaire** — 10 / 45 / 35 / 10 %.");
+    md.push("- **C · Arrivées et desserte dissociées** — 12 / 43 / 20 / 25 %.");
+    md.push("");
+    md.push("Le côté d'approche (choisi dans « Données du site », sinon premier côté en repère provisoire), le contexte arrière et l'altimétrie alimentent « Pourquoi ici » ; la proposition de départ suit la priorité déclarée (équilibrée → A, retrait ou façade exposée → B, séparation des mouvements → C). Sans contour polygonal valide en mètres : aucun schéma, aucune parcelle de remplacement.");
+    if (exampleStep?.choice) md.push("", `Exemple P.118 : choix **${exampleStep.choice}** retenu — « ${exampleStep.headline} » ; données du site importées (approche B.265 → B.266 hypothétique, contexte avant ouvert, arrière végétation).`);
   }
   md.push("");
   md.push("## Scénarios de test");
   md.push("");
   md.push("- `apps/api/src/app.test.ts` : « serves each step with the prototype's real form… », « stores form answers… », « applies the Harmonie rules server-side… », « exposes the programme repartition… », « imports an example… ».");
   md.push("- `apps/web/e2e/parcours-scenario.mjs` : scénario rejoué sur le prototype puis sur Fadi (voir docs/migration/reference.md, « Écran d'étape réel »).");
+  if (n === 1) md.push("- Étape 01 (e2e) : projet vierge → 3 propositions sans schéma ; exemple → fichier P.118 ouvert dans l'outil, « Mes parcelles » 1 345,55 m², schéma A et légende 15/50/25/10 %, borne déplacée → « Conflit avec le bâtiment dessiné » sans déplacer le modèle, borne rétablie → liée, priorité « Séparation des mouvements » → départ C, approche documentée sans source → refus, « Voir le schéma » C.");
   md.push("");
   md.push("## Captures");
   md.push("");

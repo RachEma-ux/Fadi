@@ -11,6 +11,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
+  DEFAULT_SITE_OBSERVATIONS,
   EMPTY_PARCOURS_STEP_CONTENT,
   type HarmonieProfilesData,
   type ParcoursFieldValue,
@@ -21,6 +22,8 @@ import {
   type ParcoursStepResult,
   type ProgrammeRepartitionData,
   type ProgrammeSpace,
+  type SiteManualGeographic,
+  type SiteObservations,
 } from "@parcours/domain-model";
 import { dataFileUrl } from "../runtime-paths.js";
 
@@ -116,6 +119,8 @@ interface ExampleCompletFile {
   steps: Record<string, ExampleStepSource>;
   /** Réponses des formulaires métier par étape (p118-resolved-data.business). */
   business: Record<string, Record<string, ParcoursFieldValue>>;
+  /** Données du site déclarées par l'exemple (étape 01, `harmonieEtapesV7.site` du prototype). */
+  siteObservations?: Partial<SiteObservations> & { geographic?: (SiteManualGeographic & { at?: string }) | null };
 }
 
 interface ArchiveDossierFile {
@@ -240,9 +245,11 @@ function stepContentFromExample(number: number, source: ExampleStepSource | unde
   // déclare — rien n'est ajouté : sans choix, aucune proposition retenue.
   const proposals: ParcoursStepContent["harmonie"]["proposals"] = {};
   const def = parcoursStepDefinition(number);
-  if (source.choice && def && def.harmonieOptions.length > 0) {
+  // L'étape 01 a toujours ses trois propositions de site (calculées sur la parcelle du projet).
+  const optionCount = number === 1 ? 3 : (def?.harmonieOptions.length ?? 0);
+  if (source.choice && def && optionCount > 0) {
     const index = "ABC".indexOf(source.choice);
-    if (index >= 0 && index < def.harmonieOptions.length) {
+    if (index >= 0 && index < optionCount) {
       const id = `H${String(number - 1).padStart(2, "0")}-${source.choice}`;
       proposals[id] = {
         status: "retained",
@@ -362,6 +369,13 @@ export function exampleRegistryName(exampleId: string): { code: string; name: st
   if (exampleId === dossierAnterieur.id)
     return { code: "P.118-ARCH", name: stripCodePrefix("P.118", dossierAnterieur.name) };
   return null;
+}
+
+/** Données du site déclarées par l'exemple (côté d'approche, contextes, source, repère) — `null` quand l'exemple n'en déclare pas. */
+export function exampleSiteObservations(exampleId: string): SiteObservations | null {
+  if (exampleId !== exempleComplet.id || !exempleComplet.siteObservations) return null;
+  const { geographic, ...rest } = exempleComplet.siteObservations;
+  return { ...DEFAULT_SITE_OBSERVATIONS, ...rest, geographic: geographic ? { longitude: geographic.longitude, latitude: geographic.latitude, source: geographic.source } : null };
 }
 
 /** Type de bâtiment et composantes déclarés par l'exemple lui-même (`harmony.config` du prototype) — `null` sans cas de programme. */

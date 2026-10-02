@@ -3,6 +3,8 @@
  * (cookie de session httpOnly) ; jamais de jeton stocké en `localStorage`
  * (surface XSS inutile pour une session qui peut vivre dans un cookie).
  */
+import type { Point2, SiteZoning } from "@parcours/core-geometry";
+import type { GeographicCoordinate, SiteObservations } from "@parcours/domain-model";
 
 export class ApiError extends Error {
   constructor(
@@ -154,7 +156,35 @@ export interface HarmonieProposal {
   decision: HarmonieProposalDecision;
   retained: boolean;
   stateLabel: string;
+  /** Étape 01 : zonage calculé sur le contour de la parcelle (`null` sans contour exploitable). */
+  zoning?: SiteZoning | null;
 }
+
+/** Étape 01 — le bloc « site » servi avec l'étape : parcelle, géolocalisation, observations déclarées, proposition de départ. */
+export interface SiteView {
+  parcel: {
+    parcelNumber: string;
+    commune: string;
+    crs: string;
+    units: string;
+    vertexIds: string[];
+    vertexCount: number;
+    officialArea: number | null;
+    sourceFile: string;
+    area: number;
+    /** Contour dans le repère local (origine au centroïde, mètres). */
+    local: Point2[];
+  };
+  geo: { center: GeographicCoordinate | null; points: GeographicCoordinate[] | null; source: string; hypothesis: boolean };
+  frontage: number | null;
+  observations: SiteObservations;
+  recommendation: { key: "A" | "B" | "C"; reason: string };
+}
+
+/** Ce que « Enregistrer ces données » envoie (`save-site` du prototype). */
+export type SiteObservationsInput = Pick<SiteObservations, "frontageEdge" | "approachStatus" | "priority" | "frontContext" | "backContext" | "source" | "note"> & {
+  geographic?: SiteObservations["geographic"];
+};
 
 export interface IncomingIntention {
   origin: number;
@@ -197,6 +227,8 @@ export interface ParcoursStep {
   incoming: IncomingIntention[];
   retainedCount: number;
   profile: HarmonieProfile;
+  /** Étape 01 seulement ; `null` ailleurs. */
+  site: SiteView | null;
 }
 
 export interface HarmonieDecisionInput {
@@ -257,6 +289,40 @@ export interface AtelierStore {
   modelRevision: number;
 }
 
+export interface ParcelFileMeta {
+  id: string;
+  number: number;
+  parcelNumber: string;
+  sourceFilename: string;
+  name: string;
+  crs: string;
+  revision: number;
+  updated_at: string;
+  area: number | null;
+  perimeter: number | null;
+  boundaryCount: number;
+}
+
+export interface ParcelSummary {
+  name: string;
+  crs: string;
+  parcelNumber: string;
+  area: number | null;
+  perimeter: number | null;
+  boundaryCount: number;
+}
+
+export interface ParcelTransmission {
+  status: "linked" | "incomplete" | "invalid" | "conflict" | "design-conflict" | "setback-pending";
+  reason: string;
+  at: string;
+  signature: string | null;
+  nativeId: string | null;
+  parcelId?: string;
+  /** La parcelle telle qu'elle a été transmise (mesures dans le plan du CRS). */
+  parcel?: ParcelSummary;
+}
+
 export const api = {
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -281,6 +347,8 @@ export const api = {
   listSteps: (projectId: string) => request<ParcoursStep[]>(`/projects/${projectId}/steps`),
   patchStep: (projectId: string, stepNumber: number, patch: { status?: ParcoursStepStatus; fields?: Record<string, ParcoursFieldValue> }) =>
     request<ParcoursStep>(`/projects/${projectId}/steps/${stepNumber}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  putSiteObservations: (projectId: string, input: SiteObservationsInput) =>
+    request<ParcoursStep>(`/projects/${projectId}/steps/1/site`, { method: "PUT", body: JSON.stringify(input) }),
   decideHarmonie: (projectId: string, stepNumber: number, proposalId: string, input: HarmonieDecisionInput) =>
     request<ParcoursStep>(`/projects/${projectId}/steps/${stepNumber}/harmonie/${encodeURIComponent(proposalId)}`, {
       method: "POST",
@@ -294,6 +362,13 @@ export const api = {
     }),
   deleteAtelierStoreEntry: (projectId: string, key: string) =>
     request<void>(`/projects/${projectId}/atelier/store/${encodeURIComponent(key)}`, { method: "DELETE" }),
+  listParcels: (projectId: string) => request<{ files: ParcelFileMeta[]; initialized: boolean; transmission: ParcelTransmission | null }>(`/projects/${projectId}/parcels`),
+  /** Transmet la parcelle capturée dans l'outil (ou, sans `data`, le fichier enregistré) au modèle ; `keepalive` pour la transmission avant de quitter l'étape. */
+  transmitParcel: (projectId: string, parcelId: string, data?: unknown) => {
+    const body = JSON.stringify(data === undefined ? {} : { data });
+    // `keepalive` est plafonné à 64 ko par les navigateurs (même seuil que l'outil Parcelle).
+    return request<{ transmission: ParcelTransmission }>(`/projects/${projectId}/parcels/${encodeURIComponent(parcelId)}/transmit`, { method: "POST", body, keepalive: body.length < 60000 });
+  },
   getProgramme: (projectId: string) => request<ProgrammeView>(`/projects/${projectId}/programme`),
   putProgramme: (projectId: string, rep: { type: string; baseArea: number; mode: ProgrammeMode; custom: Record<string, number> }) =>
     request<ProgrammeView>(`/projects/${projectId}/programme`, { method: "PUT", body: JSON.stringify(rep) }),

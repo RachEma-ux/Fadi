@@ -1,6 +1,9 @@
 import { Router } from "express";
+import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { atelierStore, programmeRepartitions, projects, projectSteps } from "../db/schema.js";
+import { atelierStore, parcels, programmeRepartitions, projects, projectSteps } from "../db/schema.js";
+import { hashOf, parcelSnapshotFromNative, summarize, type NativeParcelDomain } from "../lib/parcel-transmission.js";
+import { randomUUID } from "node:crypto";
 import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replaceProjection } from "../lib/native-projection.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
@@ -11,6 +14,7 @@ import {
   exampleBuildingType,
   exampleAtelierStore,
   exampleRegistryName,
+  exampleSiteObservations,
   exampleStepContents,
   listParcoursExamples,
 } from "../data/parcours.js";
@@ -58,6 +62,8 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
         // commandes utilisateur, voir docs/architecture.md — « le chargement
         // initial n'est pas une action utilisateur annulable »).
         modelRevision: atelier ? 1 : 0,
+        // Données du site de l'exemple (étape 01) : côté d'approche, contextes, source, repère de travail.
+        siteObservations: (exampleSiteObservations(exampleId) as unknown as Record<string, unknown> | null) ?? null,
       })
       .returning();
     if (!project) throw new Error("project insert returned nothing");
@@ -91,6 +97,30 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
       const floorDesign = atelier.entries[`design.v13.project.${atelier.nativeId}.floorDesign`];
       if (isNativeLevelArray(nativeLevels) && isNativeFloorDesign(floorDesign)) {
         await replaceProjection(tx, id, projectNativeModel(id, nativeLevels, floorDesign, 1));
+      }
+      // La parcelle de l'exemple ouverte dans l'outil Parcelle (étape 01) :
+      // le fichier que `parcelSnapshot()` du prototype dérivait du modèle natif.
+      const np = atelier.entries[`design.v13.project.${atelier.nativeId}.nativeParcel`] as NativeParcelDomain | undefined;
+      const footprint = (atelier.entries[`design.v13.project.${atelier.nativeId}.buildingFootprint`] as { vertices?: [number, number][] } | undefined)?.vertices ?? null;
+      if (np) {
+        const snapshot = parcelSnapshotFromNative(np, registry.name, { footprint, workingFootprintArea: "673" });
+        const parcelId = randomUUID();
+        await tx.insert(parcels).values({ projectId: id, id: parcelId, number: 1, name: snapshot.name, crs: snapshot.crs, parcelNumber: snapshot.parcelNumber ?? "", data: snapshot as Record<string, unknown>, revision: 1 });
+        await tx
+          .update(projects)
+          .set({
+            parcelsInitialized: true,
+            parcelTransmission: {
+              status: "linked",
+              reason: "Parcelle liée au modèle ; bornes / contexte transmis, aucune capacité ni autorisation inventée.",
+              at: new Date().toISOString(),
+              signature: hashOf(snapshot),
+              nativeId: atelier.nativeId,
+              parcelId,
+              parcel: summarize(snapshot),
+            },
+          })
+          .where(eq(projects.id, id));
       }
     }
 

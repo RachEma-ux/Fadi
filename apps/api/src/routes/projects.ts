@@ -10,6 +10,7 @@ import { loadOwnedProject } from "../lib/owned-project.js";
 import { parcoursStepsRouter } from "./parcours-steps.js";
 import { programmeRouter } from "./programme.js";
 import { atelierRouter } from "./atelier.js";
+import { parcelsRouter } from "./parcels.js";
 
 export const projectsRouter = Router();
 projectsRouter.use(requireAuth);
@@ -63,6 +64,7 @@ projectsRouter.post("/", async (req, res) => {
 projectsRouter.use("/:projectId/steps", parcoursStepsRouter);
 projectsRouter.use("/:projectId/programme", programmeRouter);
 projectsRouter.use("/:projectId/atelier", atelierRouter);
+projectsRouter.use("/:projectId/parcels", parcelsRouter);
 
 projectsRouter.get("/:projectId", async (req, res) => {
   const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);

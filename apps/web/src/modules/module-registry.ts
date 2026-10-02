@@ -16,8 +16,8 @@ export const MODULES: ModuleDescriptor[] = [
   {
     id: "projets-sources",
     label: "Projets et sources",
-    implemented: false,
-    status: "Pas encore implémenté : import et suivi des données sources (relevés, PLU, documents).",
+    implemented: true,
+    status: "La parcelle du projet dans l'outil Parcelle du prototype (import KML/KMZ, bornes, cotes, dossier), transmise au modèle de l'Atelier ; pièces jointes à venir.",
   },
   {
     id: "parcours",

@@ -11,7 +11,7 @@
  * typé par `@parcours/domain-model`. Mélanger les deux serait exactement
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
-import { customType, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, customType, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
 const geography = customType<{ data: string; driverData: string }>({
@@ -47,6 +47,12 @@ export const projects = pgTable("projects", {
   sourceExampleId: text("source_example_id"),
   /** Données annexes de l'exemple importé (faits, critères, hypothèses, données de zone) — non structurées dans le modèle de domaine, conservées telles quelles pour consultation. */
   sourceAttachment: jsonb("source_attachment").$type<Record<string, unknown> | null>(),
+  /** L'outil Parcelle a-t-il déjà enregistré (ou supprimé) une parcelle ? (`initialized` de son API : sans parcelle ET non initialisé, il propose sa parcelle d'exemple.) */
+  parcelsInitialized: boolean("parcels_initialized").notNull().default(false),
+  /** Dernière transmission de la parcelle (étape 01) vers le modèle : statut, motif, signature — voir lib/parcel-transmission.ts. */
+  parcelTransmission: jsonb("parcel_transmission").$type<Record<string, unknown> | null>(),
+  /** Données du site déclarées à l'étape 01 (côté d'approche, priorité, contextes, source, note…) — `harmonieEtapesV7.site` du prototype, voir `SiteObservations`. */
+  siteObservations: jsonb("site_observations").$type<Record<string, unknown> | null>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("projects_owner_id_idx").on(t.ownerId)]);
@@ -107,6 +113,28 @@ export const atelierStore = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [primaryKey({ columns: [t.projectId, t.key] })],
+);
+
+/**
+ * Fichiers de parcelle de l'outil Parcelle (étape 01), un par ligne : le
+ * contrat `/api/parcels` de l'outil (`project-files.js`), scopé par projet.
+ * `data` est le fichier tel que l'outil le capture (`ParcelFileData.clean`),
+ * `revision` la révision contrôlée que chaque écriture doit annoncer.
+ */
+export const parcels = pgTable(
+  "parcels",
+  {
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    id: text("id").notNull(),
+    number: integer("number").notNull(),
+    name: text("name").notNull(),
+    crs: text("crs").notNull(),
+    parcelNumber: text("parcel_number").notNull().default(""),
+    data: jsonb("data").notNull().$type<Record<string, unknown>>(),
+    revision: integer("revision").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.id] })],
 );
 
 export const levels = pgTable("levels", {

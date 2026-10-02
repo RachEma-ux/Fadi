@@ -23,6 +23,7 @@ import { atelierStore, projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { loadOwnedProject } from "../lib/owned-project.js";
 import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replaceProjection } from "../lib/native-projection.js";
+import { MODEL_DOMAINS, domainOf } from "../lib/atelier-store.js";
 
 export const atelierRouter = Router({ mergeParams: true });
 atelierRouter.use(requireAuth);
@@ -31,14 +32,8 @@ atelierRouter.use(requireAuth);
 atelierRouter.use(json({ limit: "8mb" }));
 
 const KEY_PATTERN = /^design\.v13\.(registry|activeProject|project\.[A-Za-z0-9_.:-]{1,80}\.[A-Za-z0-9_-]{1,40}(\.backup\.[A-Za-z0-9_.-]{1,40})?)$/;
-export const MODEL_DOMAINS = new Set(["levels", "floorDesign", "nativeParcel", "buildingFootprint"]);
 
 const projectIdOf = (req: Request) => (req.params as Record<string, string>)["projectId"] ?? "";
-
-function domainOf(key: string): { nativeId: string; domain: string } | null {
-  const m = /^design\.v13\.project\.(.+)\.([A-Za-z0-9_-]+)$/.exec(key);
-  return m ? { nativeId: m[1]!, domain: m[2]! } : null;
-}
 
 atelierRouter.get("/store", async (req, res) => {
   const project = await loadOwnedProject(projectIdOf(req), req.user!.id);

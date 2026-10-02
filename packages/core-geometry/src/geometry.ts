@@ -337,11 +337,28 @@ export function prismFaces(prism: Prism): Face[] {
 }
 
 /**
+ * Le sous-ensemble d'un contexte 2D que `drawFaces` utilise — structurel, pour
+ * que ce paquet reste utilisable (et vérifiable) hors navigateur : un
+ * `CanvasRenderingContext2D` le satisfait, un contexte de test aussi.
+ */
+export interface FaceCanvas {
+  beginPath(): void;
+  moveTo(x: number, y: number): void;
+  lineTo(x: number, y: number): void;
+  closePath(): void;
+  fill(rule?: "nonzero" | "evenodd"): void;
+  stroke(): void;
+  fillStyle: unknown;
+  strokeStyle: unknown;
+  lineWidth: number;
+}
+
+/**
  * Peint les faces triées par profondeur moyenne projetée (peintre naïf) — identique à `drawFaces`.
- * Dépend de `CanvasRenderingContext2D` : reste côté rendu, pas un calcul pur, mais sans dépendance DOM globale.
+ * Reste côté rendu, pas un calcul pur, mais sans dépendance DOM globale (voir `FaceCanvas`).
  */
 export function drawFaces(
-  ctx: CanvasRenderingContext2D,
+  ctx: FaceCanvas,
   faces: Face[],
   project: (p: Point3) => Point3,
 ): void {

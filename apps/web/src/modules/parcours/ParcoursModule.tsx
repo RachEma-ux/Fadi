@@ -9,8 +9,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep } from "../../lib/api";
+import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type SiteObservationsInput } from "../../lib/api";
 import { NativeAtelier } from "../atelier/NativeAtelier";
+import { ParcelleTool } from "../projets-sources/ParcelleTool";
 import { ProgrammeRepartition, ProgrammeTransfer } from "../programmation/ProgrammeRepartition";
 import { HarmoniePanel } from "./HarmoniePanel";
 import { StepForm } from "./StepForm";
@@ -146,7 +147,17 @@ function StepDetail({
     },
   });
 
-  const pending = patch.isPending || decide.isPending;
+  const [siteError, setSiteError] = useState<string | null>(null);
+  const saveSite = useMutation({
+    mutationFn: (input: SiteObservationsInput) => api.putSiteObservations(projectId, input),
+    onSuccess: (updated) => {
+      setSiteError(null);
+      adopt(updated);
+    },
+    onError: (err) => setSiteError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "Les données du site n’ont pas pu être enregistrées."),
+  });
+
+  const pending = patch.isPending || decide.isPending || saveSite.isPending;
   const done = step.status === "termine";
   const intro =
     step.number === 1
@@ -183,25 +194,20 @@ function StepDetail({
         </p>
       )}
 
+      {/* Étape 01 : l'outil Parcelle d'abord, puis Harmonie (prototype : `module.after(panel)`). */}
+      {step.number === 1 && <ParcelleTool projectId={projectId} />}
       <HarmoniePanel
         step={step}
         allSteps={allSteps}
         pending={pending}
         errors={harmonieErrors}
         onDecide={(proposalId, input) => decide.mutate({ proposalId, input })}
+        onSaveSite={step.number === 1 ? (input) => saveSite.mutate(input) : null}
+        siteError={siteError}
       />
 
       {step.number === 10 && <ProgrammeTransfer projectId={projectId} />}
       {(step.number === 10 || step.number === 11) && <NativeAtelier projectId={projectId} stage={step.number} />}
-      {step.number === 1 && (
-        <section className="biz-card tool-pending" aria-live="polite">
-          <h2>Parcelle-1 · Import KML/KMZ + MapTiler</h2>
-          <p className="biz-sub">
-            L’outil cartographique de la parcelle du prototype (bornes, cotes, fond satellite) n’est pas encore porté dans Fadi ; les bornes P.118 et leurs
-            coordonnées sont conservées avec le projet importé, et la parcelle est visible dans l’Atelier (étape 10).
-          </p>
-        </section>
-      )}
 
       <StepStory step={step} />
 

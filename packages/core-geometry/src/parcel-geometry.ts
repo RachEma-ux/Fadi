@@ -14,7 +14,7 @@
  * pour le contrat qui, côté app, doit fournir ces données.
  */
 
-import type { Point2 } from "./geometry";
+import type { Point2 } from "./geometry.js";
 
 /** Aire signée (positive si le polygone est orienté anti-horaire) — identique à `signedArea`. */
 export function signedArea(poly: readonly Point2[]): number {

@@ -33,7 +33,10 @@ await build({
   external,
   // Les paquets de l'espace de travail sont des sources TypeScript : on les
   // résout vers leur fichier d'entrée pour qu'esbuild les compile.
-  alias: { "@parcours/domain-model": join(root, "../../packages/domain-model/src/index.ts") },
+  alias: {
+    "@parcours/domain-model": join(root, "../../packages/domain-model/src/index.ts"),
+    "@parcours/core-geometry": join(root, "../../packages/core-geometry/src/index.ts"),
+  },
   logLevel: "info",
 });
 

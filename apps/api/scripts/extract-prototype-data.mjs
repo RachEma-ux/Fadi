@@ -195,6 +195,11 @@ const resolved = JSON.parse(scriptById("p118-resolved-data"));
 const template = JSON.parse(scriptById("p118-resolved-template"));
 const exemple = readJson("examples/p118-exemple-complet.json");
 exemple.business = resolved.business;
+// Données du site de l'exemple (étape 01) : `Object.assign(dat.site, {...})`
+// de p118-resolved-app — `D` y est l'objet de données de l'exemple.
+const resolvedApp = scriptById("p118-resolved-app");
+const siteLiteral = literalAfter(resolvedApp, "Object.assign(dat.site,");
+exemple.siteObservations = vm.runInNewContext(`(${siteLiteral})`, { D: { assumptions: exemple.assumptions, date: exemple.date } }, { timeout: 1000 });
 writeJson("examples/p118-exemple-complet.json", exemple);
 
 writeJson(

@@ -716,5 +716,21 @@
       "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Reprise acceptée seulement après contrôle des versions et pièces. Aucun champ « validé » inventé ; les avis spécialistes seront des livrables réels dans un vrai projet.",
       "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Conception détaillée puis aménagement : matériaux mats et ambiances adaptées à l’usage ; retour utilisateurs après occupation, traité comme mission future et non comme un résultat observé."
     }
+  },
+  "siteObservations": {
+    "frontageEdge": 3,
+    "approachStatus": "hypothesis",
+    "priority": "balanced",
+    "frontContext": "open",
+    "backContext": "vegetation",
+    "source": "S01 / géoréférencement du dossier ; H-ACCES et H-CONTEXTE. Aucune observation MapTiler en direct.",
+    "note": "Scénario A : approche latérale ouverte, arrière protégé par un filtre paysager projeté. Scénario B : voisin hypothétique de 12 m à 10 m pour l’étude des masques. Aucun de ces scénarios ne décrit une observation MapTiler réelle.",
+    "observedAt": null,
+    "geographic": {
+      "longitude": -7.319682410174416,
+      "latitude": 33.708221167915354,
+      "source": "Conversion de travail EPSG:26191 depuis S01 — non relevé terrain",
+      "at": "2026-09-30"
+    }
   }
 }

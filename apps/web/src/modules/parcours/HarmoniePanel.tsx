@@ -8,7 +8,8 @@
  * ses refus sont affichés tels quels sous la proposition concernée.
  */
 import { useState, type FormEvent } from "react";
-import type { HarmonieDecisionInput, HarmonieProposal, ParcoursStep } from "../../lib/api";
+import type { HarmonieDecisionInput, HarmonieProposal, ParcoursStep, SiteObservationsInput } from "../../lib/api";
+import { SiteDataFold, SiteHero } from "./SiteHarmonie";
 
 type Tab = "proposals" | "compare" | "transfer";
 
@@ -18,12 +19,15 @@ function ProposalCard({
   q,
   stepNumber,
   onDecide,
+  onView,
   pending,
   error,
 }: {
   q: HarmonieProposal;
   stepNumber: number;
   onDecide: (proposalId: string, input: HarmonieDecisionInput) => void;
+  /** Étape 01 : afficher le schéma de cette proposition (`view-site`). */
+  onView: ((proposalId: string) => void) | null;
   pending: boolean;
   error: string | null;
 }) {
@@ -66,6 +70,11 @@ function ProposalCard({
         <button type="button" className="button-secondary" aria-expanded={open} aria-controls={editorId} onClick={() => setOpen((o) => !o)}>
           Adapter / motiver
         </button>
+        {onView && (
+          <button type="button" className="button-secondary" onClick={() => onView(q.id)}>
+            Voir le schéma
+          </button>
+        )}
       </div>
       <details className="h7-editor" id={editorId} open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
         <summary>Arbitrage, responsable et preuve</summary>
@@ -141,6 +150,8 @@ export function HarmoniePanel({
   onDecide,
   pending,
   errors,
+  onSaveSite = null,
+  siteError = null,
 }: {
   step: ParcoursStep;
   allSteps: ParcoursStep[];
@@ -148,12 +159,25 @@ export function HarmoniePanel({
   pending: boolean;
   /** Dernier refus du serveur par proposition (message en français). */
   errors: Record<string, string>;
+  /** Étape 01 : enregistrement des données du site (`save-site`). */
+  onSaveSite?: ((input: SiteObservationsInput) => void) | null;
+  siteError?: string | null;
 }) {
   const [tab, setTab] = useState<Tab>("proposals");
   const [open, setOpen] = useState(step.retainedCount === 0 && step.proposals.length > 0);
+  // Étape 01 : la proposition dont le schéma est affiché (`ui.siteProposal` du prototype).
+  const [siteProposal, setSiteProposal] = useState<string | null>(null);
+  const [siteFoldOpen, setSiteFoldOpen] = useState(false);
   if (step.proposals.length === 0) return null;
   const retained = step.proposals.filter((q) => q.retained);
   const stepTitle = (n: number) => allSteps.find((s) => s.number === n)?.title ?? `Étape ${n}`;
+  const site = step.number === 1 ? step.site : null;
+  const activeSite = site ? (step.proposals.find((q) => q.id === siteProposal) ?? retained[0] ?? step.proposals[0] ?? null) : null;
+  const recommendation = site?.recommendation ?? { key: "A", reason: "Parti de départ visant les intentions documentées et une intervention limitée ; à arbitrer avec les alternatives." };
+  function viewSite(id: string) {
+    setSiteProposal(id);
+    document.querySelector(".h7-site-hero")?.scrollIntoView({ behavior: "smooth" });
+  }
 
   return (
     <details className="h7-panel" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
@@ -167,6 +191,9 @@ export function HarmoniePanel({
         <h2>Propositions pour cette étape</h2>
         {step.goal && <p className="h7-muted">{step.goal}</p>}
 
+        {site && onSaveSite ? (
+          <SiteDataFold key={site.observations.observedAt ?? "initial"} step={step} onSave={onSaveSite} pending={pending} error={siteError} open={siteFoldOpen} onToggle={setSiteFoldOpen} />
+        ) : (
         <details className="h7-fold">
           <summary>Données mobilisées et intentions reçues ({step.incoming.length})</summary>
           <div className="h7-fold-body">
@@ -207,6 +234,7 @@ export function HarmoniePanel({
             <p className="h7-muted">Les propositions utilisent seulement les données pertinentes à cette décision. Un changement de caméra ne modifie pas l’orientation du bâtiment.</p>
           </div>
         </details>
+        )}
 
         <nav className="h7-tabs" aria-label="Harmonie">
           {(
@@ -224,13 +252,13 @@ export function HarmoniePanel({
 
         {tab === "proposals" && (
           <>
+            {site && <SiteHero site={site} active={activeSite} />}
             <p className="h7-group">
-              <b>A · Proposition de départ</b> — Parti de départ visant les intentions documentées et une intervention limitée ; à arbitrer avec les
-              alternatives.
+              <b>{recommendation.key} · Proposition de départ</b> — {recommendation.reason}
             </p>
             <div className="h7-grid">
               {step.proposals.map((q) => (
-                <ProposalCard key={q.id} q={q} stepNumber={step.number} onDecide={onDecide} pending={pending} error={errors[q.id] ?? null} />
+                <ProposalCard key={q.id} q={q} stepNumber={step.number} onDecide={onDecide} onView={site ? viewSite : null} pending={pending} error={errors[q.id] ?? null} />
               ))}
             </div>
           </>

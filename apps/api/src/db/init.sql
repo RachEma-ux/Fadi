@@ -39,6 +39,9 @@ CREATE INDEX IF NOT EXISTS projects_owner_id_idx ON projects (owner_id);
 -- Parcours) : IF NOT EXISTS les rend sûres à rejouer sur une base existante.
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS source_example_id text;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS source_attachment jsonb;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS parcels_initialized boolean NOT NULL DEFAULT false;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS parcel_transmission jsonb;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS site_observations jsonb;
 
 -- Contenu réel des 21 étapes du Parcours, une ligne par étape et par projet.
 CREATE TABLE IF NOT EXISTS project_steps (
@@ -70,6 +73,20 @@ CREATE TABLE IF NOT EXISTS atelier_store (
   revision integer NOT NULL DEFAULT 1,
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (project_id, key)
+);
+
+-- Fichiers de l'outil Parcelle (étape 01), contrat /api/parcels scopé par projet.
+CREATE TABLE IF NOT EXISTS parcels (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  number integer NOT NULL,
+  name text NOT NULL,
+  crs text NOT NULL,
+  parcel_number text NOT NULL DEFAULT '',
+  data jsonb NOT NULL,
+  revision integer NOT NULL,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (project_id, id)
 );
 
 CREATE TABLE IF NOT EXISTS levels (
