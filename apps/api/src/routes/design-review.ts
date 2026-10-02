@@ -13,11 +13,11 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { declareSiteObservation, designReviewSnapshot, HarmonieError, withCenterElevation } from "@parcours/domain-model";
+import { declareSiteObservation, designReviewSnapshot, harmonyFullAssessment, HarmonieError, withCenterElevation } from "@parcours/domain-model";
 import { db } from "../db/client.js";
 import { projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { DESIGN_REPORT_CSS } from "../data/parcours.js";
+import { DESIGN_REPORT_CSS, HARMONY_ENGINE } from "../data/parcours.js";
 import { designReportFor, designReviewView, loadDesignContext } from "../lib/design-context.js";
 import { projectOr404 } from "../lib/owned-project.js";
 import { designReportHash, recordProducedDocument } from "../lib/documents.js";
@@ -32,7 +32,11 @@ designReviewRouter.get("/", async (req, res) => {
   res.json({ ...designReviewView(await loadDesignContext(db, project, new Date().toISOString())), css: DESIGN_REPORT_CSS });
 });
 
-/** `review(p)` : la revue de conception archivée est rattachée aux entrées courantes ; l'ancienne rejoint l'historique. Aucune réserve n'est levée. */
+/**
+ * `review(p)` : la revue de conception archivée est rattachée aux entrées courantes ; l'ancienne rejoint l'historique ;
+ * une revue documentaire (analyse automatique, validation humaine non acquise) s'ajoute au dossier Harmony. Aucune
+ * réserve n'est levée.
+ */
 designReviewRouter.post("/review", async (req, res) => {
   const project = await projectOr404(req, res, "write");
   if (!project) return;
@@ -40,7 +44,8 @@ designReviewRouter.post("/review", async (req, res) => {
   const result = await db.transaction(async (tx) => {
     await lockProject(tx, project.id);
     const ctx = await loadDesignContext(tx, project, now);
-    const snap = designReviewSnapshot(ctx.harmony, ctx.analysis, now, false);
+    const assessment = harmonyFullAssessment(HARMONY_ENGINE, ctx.harmony, ctx.input.programmeCase?.type ? { type: ctx.input.programmeCase.type } : null, ctx.input.example, ctx.analysis.nativeHash);
+    const snap = designReviewSnapshot(ctx.harmony, ctx.analysis, now, false, assessment);
     const harmony = { ...ctx.harmony, ...snap, updated: now } as unknown as Record<string, unknown>;
     await tx.update(projects).set({ harmony, updatedAt: new Date() }).where(eq(projects.id, project.id));
     return designReviewView(await loadDesignContext(tx, { ...project, harmony }, now));

@@ -1290,6 +1290,12 @@ describe("Bilan Harmonie du bâtiment conçu (flow-v62) et références directio
     expect(centre.body.siteContext).toMatchObject({ satelliteObserved: true, elevation: { value: 42.5, unit: "m", coordinates: [-7.3196824, 33.7082212], source: "MapTiler Elevation API", quality: "service numérique, non relevé topographique" } });
     const archived = (await client.get(`/projects/${pid}/archive`)).body;
     expect(archived.project.siteContext).toMatchObject({ satelliteObserved: true, elevation: { value: 42.5 } });
+    // La revue actualisée a aussi versé une revue documentaire au dossier Harmony (comme `review(p)` du prototype), exportée avec lui.
+    const reviews = archived.project.harmony.reviews as { name: string; author: string; signature: string; sourceHash: string; html?: unknown }[];
+    expect(reviews.length).toBeGreaterThanOrEqual(1);
+    const lastReview = reviews[reviews.length - 1]!;
+    expect(lastReview).toMatchObject({ name: "Actualisation de la lecture du modèle", author: "Analyse documentaire automatique ; validation humaine non acquise", sourceHash: reviewed.body.analysis.nativeHash });
+    expect(lastReview.html).toBeUndefined();
     // Jamais pour un autre utilisateur.
     const other = await registerAndLogin("design-other@example.com");
     expect((await other.get(`/projects/${pid}/design-review`)).status).toBe(404);

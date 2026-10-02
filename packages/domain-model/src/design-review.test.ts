@@ -207,8 +207,21 @@ describe("bilan du bâtiment conçu (flow-v62 analyse / audit / plan / rapport)"
     const snap = designReviewSnapshot(i.harmony, r, NOW, false);
     expect(snap.designReviewV62).toMatchObject({ version: "6.2.0", name: "Escalier B et mezzanine — bilan du bâtiment conçu", signature: r.inputHash, modelSignature: r.nativeHash, status: "Conception sous hypothèses — réserves non levées", automatic: false, counts: { levels: 6, rooms: 74, issues: 7 } });
     expect(snap.designReviewHistoryV62).toHaveLength(1); // l'ancienne revue de l'exemple est archivée
+    expect(snap.reviews).toEqual(i.harmony.reviews); // sans bilan documentaire, le dossier Harmony n'est pas touché
     const fresh = designAnalysis(input({ harmony: { ...i.harmony, designReviewV62: snap.designReviewV62 } }));
     expect(fresh.stale).toBe(false);
+    // Comme `review(p)` du prototype : une revue documentaire datée de l'empreinte complète du dossier rejoint `h.reviews`
+    // (« Analyse documentaire automatique ; validation humaine non acquise »), et la revue suivante n'est plus « à actualiser ».
+    const assessment = harmonyFullAssessment(ENGINE, i.harmony, { type: "mixte" }, true, r.nativeHash);
+    const withReview = designReviewSnapshot(i.harmony, r, NOW, false, assessment);
+    expect(withReview.reviews).toHaveLength(i.harmony.reviews.length + 1);
+    const last = withReview.reviews[withReview.reviews.length - 1]!;
+    expect(last).toMatchObject({ name: "Actualisation de la lecture du modèle", author: "Analyse documentaire automatique ; validation humaine non acquise", signature: assessment.fullHash, sourceHash: r.nativeHash, phase: assessment.phase, profile: assessment.profile.label, documented: assessment.documented, active: assessment.active, note: r.sourceSummary });
+    expect(last).not.toHaveProperty("html");
+    expect(harmonyFullAssessment(ENGINE, { ...i.harmony, reviews: withReview.reviews }, { type: "mixte" }, true, r.nativeHash).stale).toBe(false);
+    const many = designReviewSnapshot({ ...i.harmony, reviews: Array.from({ length: 24 }, (_, k) => ({ id: `r${k}` })) }, r, NOW, true, assessment);
+    expect(many.reviews).toHaveLength(24);
+    expect(many.reviews[23]).toMatchObject({ name: "Revue initiale Escalier B et mezzanine · modèle conçu" });
     const html = designReportHtml(i, r, { css: ".v62{}", audit: designAudit(i, r, "Mixte / multi-usages"), designTrace: designTraceHtml([{ originLabel: "07 · Programme", text: "Intention", originStale: false }], []) });
     expect(html).toContain("<title>P.118 — Bilan Harmonie du bâtiment conçu · V7</title>");
     expect(html).toContain("PARCOURS V7 · ANALYSE DOCUMENTAIRE ET GÉOMÉTRIQUE");

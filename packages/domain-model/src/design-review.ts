@@ -459,11 +459,45 @@ export function designPlanSvg(input: DesignReviewInput, r: DesignAnalysis, level
 
 // --- Revue de conception ---------------------------------------------------
 
-/** `review(p)` : la revue archivée (signature des entrées, empreinte du modèle, compteurs), l'ancienne versée dans l'historique (12 au plus). */
-export function designReviewSnapshot(h: HarmonyDossier, r: DesignAnalysis, now: string, automatic: boolean): { designReviewV62: DesignReviewSnapshot; designReviewHistoryV62: DesignReviewSnapshot[] } {
+/**
+ * `review(p)` : la revue archivée (signature des entrées, empreinte du modèle, compteurs), l'ancienne versée dans
+ * l'historique (12 au plus) ; et, comme le prototype, une revue documentaire ajoutée au dossier Harmony (`h.reviews`,
+ * 24 au plus) — « Analyse documentaire automatique ; validation humaine non acquise », datée de l'empreinte complète du
+ * dossier (`fullHash`) et de celle du modèle. Le rapport HTML que le prototype y copiait (`hr.html`) n'est pas stocké :
+ * Fadi le produit à la demande.
+ */
+export function designReviewSnapshot(
+  h: HarmonyDossier,
+  r: DesignAnalysis,
+  now: string,
+  automatic: boolean,
+  assessment: { fullHash: string; documented: number; active: number; counts: Record<string, number>; phase: number; profile: { label: string } } | null = null,
+): { designReviewV62: DesignReviewSnapshot; designReviewHistoryV62: DesignReviewSnapshot[]; reviews: Record<string, unknown>[] } {
   const history = [...(h.designReviewHistoryV62 ?? [])];
   if (h.designReviewV62) history.push(h.designReviewV62);
   while (history.length > 12) history.shift();
+  const reviews = [...(h.reviews ?? [])];
+  if (assessment) {
+    reviews.push({
+      id: `v62-review-${Date.parse(now) || 0}`,
+      name: automatic ? `Revue initiale ${r.name} · modèle conçu` : "Actualisation de la lecture du modèle",
+      created: now,
+      date: now,
+      author: "Analyse documentaire automatique ; validation humaine non acquise",
+      reviewer: "Analyse documentaire automatique",
+      signature: assessment.fullHash,
+      sourceHash: r.nativeHash,
+      phase: assessment.phase,
+      profile: assessment.profile.label,
+      documented: assessment.documented,
+      active: assessment.active,
+      conflicts: assessment.counts["conflict"] ?? 0,
+      unknown: assessment.active - assessment.documented,
+      counts: { ...assessment.counts },
+      note: r.sourceSummary,
+    });
+    while (reviews.length > 24) reviews.shift();
+  }
   return {
     designReviewV62: {
       version: DESIGN_REVIEW_VERSION,
@@ -477,6 +511,7 @@ export function designReviewSnapshot(h: HarmonyDossier, r: DesignAnalysis, now: 
       counts: { levels: r.floors.length, rooms: r.rooms.length, issues: r.issues.length },
     },
     designReviewHistoryV62: history,
+    reviews,
   };
 }
 

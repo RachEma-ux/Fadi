@@ -450,6 +450,10 @@ check("bilan : « Actualiser la revue de conception » → revue rattachée aux 
 // Observation déclarée du contexte extérieur (site-note) : refus en dessous de 20 caractères, puis réserve « Contexte extérieur non observé » levée.
 await page.locator('.v62-tabs button:has-text("Hypothèses & MapTiler")').click();
 await page.waitForSelector("#v62-site-note");
+await page.locator('.v62-actions button:has-text("Afficher le satellite")').click();
+await page.waitForFunction(() => /9 \/ 9 tuiles reçues/.test(document.querySelector("#v62-map-status")?.textContent || ""), null, { timeout: 10000 });
+check("bilan · Hypothèses & MapTiler : « Afficher le satellite » → 9 tuiles autour du centre (zoom 18), marqueur « Centre H-GEO », crédit « repérage calculé, non bornage », « 9 / 9 tuiles reçues ; 0 erreur(s) »", (await page.locator("#v62-map-preview .v62-tiles img").count()) === 9 && (await page.locator("#v62-map-preview .v62-marker").textContent()) === "Centre H-GEO" && /© MapTiler.*repérage calculé, non bornage/.test(await page.locator("#v62-map-preview .v62-map-credit").textContent()) && maptilerLog.some((p) => /^\/tiles\/satellite-v2\/18\//.test(p)) && /9 \/ 9 tuiles reçues ; 0 erreur\(s\)\. Une observation datée doit être consignée séparément\./.test(await page.locator("#v62-map-status").textContent()), await page.locator("#v62-map-status").textContent());
+await page.locator("#v62-map-preview").screenshot({ path: `${OUT}/10-desktop-bilan-satellite.png` });
 await page.locator('button:has-text("Collecter l’altitude indicative du centre")').click();
 await page.waitForFunction(() => /Altitude de service : 40 m/.test(document.querySelector("#v62-map-status")?.textContent || ""), null, { timeout: 10000 });
 check("bilan · Hypothèses & MapTiler : « Collecter l’altitude indicative du centre » → « Altitude de service : 40 m · … · précision topographique non garantie »", /précision topographique non garantie/.test(await page.locator("#v62-map-status").textContent()));

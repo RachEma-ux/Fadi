@@ -11,12 +11,13 @@
  * et les plans SVG sont ceux du rapport (mêmes fonctions), composés avec
  * échappement côté moteur.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { WriteFieldset } from "../../components/WriteFieldset";
 import { CenterElevationButton } from "../parcours/MapTilerCard";
 import { Link, useSearchParams } from "react-router-dom";
 import { ApiError, api, type CompassInput, type DesignReviewView } from "../../lib/api";
+import { maptilerKey, satellitePreview, type SatellitePreview } from "../../lib/maptiler";
 import { HarmonieToast } from "../parcours/HarmoniePanel";
 
 type Tab = "synthesis" | "levels" | "rooms" | "assumptions" | "flow";
@@ -31,14 +32,77 @@ const TABS: [Tab, string][] = [
 const fmt = (v: number | null | undefined, n = 2) => (Number.isFinite(v as number) ? (v as number).toLocaleString("fr-FR", { maximumFractionDigits: n }) : "Non renseigné");
 
 /** `compassHTML` : références directionnelles du bâtiment — saisie, enregistrement, état calculé par le moteur. */
-/** `mapCard` de flow-v62 : « Collecter l'altitude indicative du centre » (clé de l'utilisateur, 1 position) et l'état de la collecte. */
+/**
+ * `satellite()` de flow-v62 : les 3 × 3 tuiles autour du centre calculé (zoom ≤ 18), le centre marqué « Centre H-GEO »,
+ * le crédit du service ; les messages d'état sont ceux du prototype, comptés tuile par tuile. Rien n'est déduit de l'image.
+ */
+function SatelliteButton({ center, onStatus, onPreview }: { center: [number, number] | null; onStatus: (text: string) => void; onPreview: (preview: SatellitePreview | null) => void }) {
+  const [busy, setBusy] = useState(false);
+  async function run() {
+    if (!center) return;
+    const key = maptilerKey();
+    if (!key) {
+      onStatus("Clé MapTiler absente : utilisez Connexion / Parcelle 00. Aucun fond satellite préchargé.");
+      return;
+    }
+    setBusy(true);
+    onStatus("Lecture du descripteur MapTiler…");
+    try {
+      onPreview(await satellitePreview(center, key));
+    } catch (err) {
+      onPreview(null);
+      onStatus(`Satellite indisponible : ${err instanceof Error ? err.message : String(err)}. Aucune observation de contexte déduite.`);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button type="button" className="button-secondary" disabled={busy || !center} onClick={() => void run()}>
+      Afficher le satellite
+    </button>
+  );
+}
+
+function SatelliteTiles({ preview, onStatus }: { preview: SatellitePreview; onStatus: (text: string) => void }) {
+  const [counts, setCounts] = useState({ loaded: 0, failed: 0 });
+  const frame = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // Comme le prototype : le cadre est centré sur la tuile du milieu.
+    const el = frame.current;
+    if (el) {
+      el.scrollLeft = Math.max(0, 384 - el.clientWidth / 2);
+      el.scrollTop = Math.max(0, 384 - el.clientHeight / 2);
+    }
+  }, []);
+  useEffect(() => {
+    if (!counts.loaded && !counts.failed) return;
+    onStatus(counts.failed ? `Fond incomplet : ${counts.failed} tuile(s) indisponible(s). Aucune observation favorable déduite.` : `${counts.loaded} / 9 tuiles reçues ; ${counts.failed} erreur(s). Une observation datée doit être consignée séparément.`);
+  }, [counts, onStatus]);
+  return (
+    <div id="v62-map-preview">
+      <div className="v62-tiles" role="img" aria-label="Fond satellite de contexte autour du centre calculé" ref={frame}>
+        {preview.tiles.map((t) => (
+          <img key={t.url} src={t.url} width={256} height={256} alt="" referrerPolicy="no-referrer" style={{ left: t.left, top: t.top }} onLoad={() => setCounts((c) => ({ ...c, loaded: c.loaded + 1 }))} onError={() => setCounts((c) => ({ ...c, failed: c.failed + 1 }))} />
+        ))}
+        <span className="v62-marker" style={{ left: preview.marker[0], top: preview.marker[1] }}>
+          Centre H-GEO
+        </span>
+      </div>
+      <small className="v62-map-credit">{preview.attribution} · repérage calculé, non bornage. Date de prise de vue à vérifier.</small>
+    </div>
+  );
+}
+
+/** `mapCard` de flow-v62 : « Afficher le satellite », « Collecter l'altitude indicative du centre » (clé de l'utilisateur, 1 position) et l'état de la collecte. */
 function MapCollect({ projectId, view, onSaved }: { projectId: string; view: DesignReviewView; onSaved: (next: DesignReviewView, text: string) => void }) {
   const e = view.siteContext?.elevation ?? null;
   const [status, setStatus] = useState<string | null>(null);
+  const [preview, setPreview] = useState<SatellitePreview | null>(null);
   const center: [number, number] | null = view.georeference ? [view.georeference.longitude, view.georeference.latitude] : null;
   return (
     <>
       <div className="v62-actions">
+        <SatelliteButton center={center} onStatus={setStatus} onPreview={setPreview} />
         <CenterElevationButton
           projectId={projectId}
           center={center}
@@ -52,15 +116,14 @@ function MapCollect({ projectId, view, onSaved }: { projectId: string; view: Des
           Connexion / Parcelle 00
         </Link>
       </div>
+      {preview && <SatelliteTiles key={preview.tiles[0]?.url} preview={preview} onStatus={setStatus} />}
       <p id="v62-map-status" role="status" className="h7-muted">
         {status ??
           (e
             ? `Altitude de service : ${fmt(e.value)} m · ${new Date(e.at).toLocaleString("fr-FR")} · précision topographique non garantie.`
             : "Aucune collecte externe effectuée dans ce fichier. La clé configurée dans Parcelle sera utilisée à votre demande.")}
       </p>
-      <p className="h7-muted">
-        Fond satellite : depuis l’outil Parcelle (étape 01) ou « Afficher le fond MapTiler » du pli « Données du site ». Le service d’altimétrie ne détermine ni pente locale détaillée ni nappe.
-      </p>
+      <p className="h7-muted">Le fond satellite avec le contour source se consulte aussi à l’étape 01 (« Afficher le fond MapTiler » du pli « Données du site »). Le service d’altimétrie ne détermine ni pente locale détaillée ni nappe.</p>
     </>
   );
 }

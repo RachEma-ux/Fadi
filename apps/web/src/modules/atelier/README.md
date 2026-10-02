@@ -25,4 +25,4 @@ L'onglet « Hypothèses & MapTiler » du bilan reçoit l'observation déclarée 
 
 « Collecter l'altitude indicative du centre » appelle le service MapTiler depuis le navigateur avec la clé de l'utilisateur (`lib/maptiler.ts`) et pose l'altitude reçue sur le contexte (`PUT …/design-review/elevation`).
 
-Reste : copie automatique de la référence au premier dessin, « Afficher le satellite » dans le bilan (le fond se consulte à l'étape 01).
+Reste : copie automatique de la référence au premier dessin ; la page Harmony V6 (superseded) qui lisait les revues documentaires du dossier.

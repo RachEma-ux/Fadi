@@ -109,6 +109,42 @@ export function mercator(ll: readonly [number, number], z: number): [number, num
   return [((ll[0] + 180) / 360) * n, ((1 - Math.asinh(Math.tan((ll[1] * Math.PI) / 180)) / Math.PI) / 2) * n];
 }
 
+export interface SatellitePreview {
+  /** Neuf tuiles (3 × 3) autour du centre, position en px dans un cadre de 768 × 768, adresse signée. */
+  tiles: { left: number; top: number; url: string }[];
+  /** Position du centre dans le cadre (px). */
+  marker: [number, number];
+  zoom: number;
+  attribution: string;
+}
+
+/**
+ * `satellite()` du bilan (flow-v62) : les 3 × 3 tuiles satellite autour du
+ * centre calculé au zoom min(18, maxzoom), le centre marqué « Centre H-GEO ».
+ * Le descripteur et les adresses de tuiles sont vérifiés (service autorisé).
+ */
+export async function satellitePreview(center: LonLat, key: string): Promise<SatellitePreview> {
+  const meta = (await fetchMaptilerJson(`https://${HOST}/maps/satellite/256/tiles.json?key=${encodeURIComponent(key)}`)) as { tiles?: unknown; maxzoom?: unknown; attribution?: unknown };
+  const template = Array.isArray(meta.tiles) ? meta.tiles[0] : undefined;
+  if (typeof template !== "string") throw new Error("Descripteur sans adresse de tuile");
+  const probe = new URL(template.replace("{z}", "0").replace("{x}", "0").replace("{y}", "0"));
+  if (probe.protocol !== "https:" || probe.hostname !== HOST) throw new Error("Hôte de tuiles inattendu");
+  const z = Math.min(18, Number(meta.maxzoom) || 18);
+  const [xf, yf] = mercator(center, z).map((v) => v / 256) as [number, number];
+  const cx = Math.floor(xf);
+  const cy = Math.floor(yf);
+  const tiles: SatellitePreview["tiles"] = [];
+  for (let dy = -1; dy <= 1; dy++)
+    for (let dx = -1; dx <= 1; dx++) {
+      const url = allowed(template.replace("{z}", String(z)).replace("{x}", String(cx + dx)).replace("{y}", String(cy + dy)));
+      url.searchParams.set("key", key);
+      tiles.push({ left: (dx + 1) * 256, top: (dy + 1) * 256, url: url.href });
+    }
+  const tmp = typeof document !== "undefined" ? document.createElement("div") : null;
+  if (tmp) tmp.innerHTML = String(meta.attribution ?? "© MapTiler");
+  return { tiles, marker: [(1 + xf - cx) * 256, (1 + yf - cy) * 256], zoom: z, attribution: (tmp?.textContent || "© MapTiler").trim() };
+}
+
 export interface SatelliteMosaic {
   /** Tuiles à afficher : position et taille en % de la fenêtre 900 × 560, adresse signée. */
   tiles: { left: number; top: number; width: number; height: number; url: string }[];
