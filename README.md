@@ -64,7 +64,7 @@ End-to-end scenario (Playwright, Chromium), against the built API and `vite prev
 ```sh
 node apps/api/dist/server.js &                       # DATABASE_URL, WEB_ORIGIN=http://localhost:4173, PORT=3001
 npm run preview --workspace=@fadi/web -- --port 4173 &
-node apps/web/e2e/parcours-scenario.mjs              # ~270 checks incl. axe-core; writes docs/migration/captures/webapp/
+node apps/web/e2e/parcours-scenario.mjs              # ~290 checks incl. axe-core; writes docs/migration/captures/webapp/
 ```
 
 Temporary public instance (`.github/workflows/builder-deploy.yml`, "Builder Deploy"): launched by hand from
