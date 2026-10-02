@@ -458,11 +458,13 @@ check("bilan : « Plan de lecture SVG ↓ » → Plan_lecture_rdc_V7.svg", planD
 await page.locator('.v62-tabs button:has-text("Locaux & Répartition")').click();
 check("bilan : tableau des 74 locaux (mesure, cible / écart, lecture)", (await page.locator(".v62-tab-content .v62-table tbody tr").count()) === 74);
 await page.locator('.v62-tabs button:has-text("Transmission")').click();
-check("bilan : audit des transmissions, 14 contrôles, « Revue de conception » à actualiser", (await page.locator(".v62-tab-content .v62-table tbody tr").count()) === 14 && /revue à actualiser/.test(await page.locator(".v62-tab-content .v62-table").textContent()));
+check("bilan : audit des transmissions, 14 contrôles, « Revue de conception » à actualiser", (await page.locator(".v62-tab-content .v62-table:not(.v62-events) tbody tr").count()) === 14 && /revue à actualiser/.test(await page.locator(".v62-tab-content .v62-table:not(.v62-events)").textContent()));
+const eventsBefore = (await page.locator(".v62-events tbody tr").allTextContents()).map((t) => t.replace(/\s+/g, " "));
+check("bilan · Transmission : « Derniers événements » (10 au plus) relus du journal daté : modèle importé, programme", eventsBefore.length > 0 && eventsBefore.length <= 10 && eventsBefore.some((t) => /modèle/.test(t)) && eventsBefore.some((t) => /programme/.test(t)), eventsBefore.slice(0, 3).join(" | "));
 await page.locator('button:has-text("Actualiser la revue de conception")').click();
 await page.waitForFunction(() => /Lecture documentaire courante/.test(document.querySelector("#v62-report header p")?.textContent || ""), null, { timeout: 10000 });
-await page.waitForFunction(() => /Revue rattachée aux entrées actuelles/.test(document.querySelector(".v62-tab-content .v62-table")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
-check("bilan : « Actualiser la revue de conception » → revue rattachée aux entrées courantes (le toast « Bilan de conception actualisé sans lever les réserves. » s'efface de lui-même)", /Revue rattachée aux entrées actuelles/.test(await page.locator(".v62-tab-content .v62-table").textContent()), `toast : ${await page.locator(".h7-toast").textContent().catch(() => "(déjà effacé)")}`);
+await page.waitForFunction(() => /Revue rattachée aux entrées actuelles/.test(document.querySelector(".v62-tab-content .v62-table:not(.v62-events)")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
+check("bilan : « Actualiser la revue de conception » → revue rattachée aux entrées courantes (le toast « Bilan de conception actualisé sans lever les réserves. » s'efface de lui-même)", /Revue rattachée aux entrées actuelles/.test(await page.locator(".v62-tab-content .v62-table:not(.v62-events)").textContent()), `toast : ${await page.locator(".h7-toast").textContent().catch(() => "(déjà effacé)")}`);
 // Observation déclarée du contexte extérieur (site-note) : refus en dessous de 20 caractères, puis réserve « Contexte extérieur non observé » levée.
 await page.locator('.v62-tabs button:has-text("Hypothèses & MapTiler")').click();
 await page.waitForSelector("#v62-site-note");
@@ -486,6 +488,8 @@ await page.waitForFunction(() => document.querySelectorAll("#v62-report .v62-iss
 check("bilan : la réserve « Contexte extérieur non observé » est levée (6 réserves au lieu de 7), la revue archivée devient à actualiser", (await page.locator("#v62-report .v62-issue").count()) === 6 && !/Contexte extérieur non observé/.test(await page.locator("#v62-report").textContent()));
 await page.locator('.v62-tabs button:has-text("Transmission")').click();
 check("bilan · Transmission : « Preuves de contexte extérieur » OK (observation consignée par utilisateur)", /Preuves de contexte extérieur.{0,80}OK/.test((await page.locator(".v62-tab-content").textContent()).replace(/\s+/g, " ")));
+const eventsAfter = (await page.locator(".v62-events tbody tr").allTextContents()).map((t) => t.replace(/\s+/g, " "));
+check("bilan · Transmission : les événements datés du bilan y figurent (revue rattachée, altitude MapTiler du centre, observation déclarée)", eventsAfter.some((t) => /Revue de conception rattachée/.test(t)) && eventsAfter.some((t) => /MapTiler.*Altitude indicative du centre/.test(t)) && eventsAfter.some((t) => /Observation déclarée du contexte extérieur/.test(t)), eventsAfter.slice(0, 4).join(" | "));
 await page.locator('button:has-text("Actualiser la revue de conception")').click();
 await page.waitForFunction(() => /Lecture documentaire courante/.test(document.querySelector("#v62-report header p")?.textContent || ""), null, { timeout: 10000 });
 const [bilanDl] = await Promise.all([page.waitForEvent("download"), page.locator('#v62-report a:has-text("Rapport HTML ↓")').click()]);

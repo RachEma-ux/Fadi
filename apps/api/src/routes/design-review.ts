@@ -19,17 +19,27 @@ import { projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { DESIGN_REPORT_CSS, HARMONY_ENGINE } from "../data/parcours.js";
 import { designReportFor, designReviewView, loadDesignContext } from "../lib/design-context.js";
-import { projectOr404 } from "../lib/owned-project.js";
+import { projectOr404, type OwnedProject } from "../lib/owned-project.js";
 import { designReportHash, recordProducedDocument } from "../lib/documents.js";
 import { lockProject } from "../lib/step-rows.js";
+import { revisionJournal } from "./collaboration.js";
 
 export const designReviewRouter = Router({ mergeParams: true });
 designReviewRouter.use(requireAuth);
 
+/** « Derniers événements » de l'onglet Transmission (flow-v62 : `transmissionV62.events`, 10 derniers) : relus du journal daté du projet (modèle, programme, parcelle, revue, MapTiler), jamais d'un journal séparé. */
+const TRANSMISSION_KINDS = new Set(["modele", "programme", "parcelle", "revue", "maptiler"]);
+async function transmissionEvents(project: OwnedProject): Promise<{ at: string; kind: string; label: string; detail: string }[]> {
+  return (await revisionJournal(project))
+    .filter((e) => TRANSMISSION_KINDS.has(e.kind))
+    .slice(0, 10)
+    .map((e) => ({ at: e.at, kind: e.kind, label: e.label, detail: e.detail }));
+}
+
 designReviewRouter.get("/", async (req, res) => {
   const project = await projectOr404(req, res, "read");
   if (!project) return;
-  res.json({ ...designReviewView(await loadDesignContext(db, project, new Date().toISOString())), css: DESIGN_REPORT_CSS });
+  res.json({ ...designReviewView(await loadDesignContext(db, project, new Date().toISOString())), events: await transmissionEvents(project), css: DESIGN_REPORT_CSS });
 });
 
 /**
@@ -50,7 +60,7 @@ designReviewRouter.post("/review", async (req, res) => {
     await tx.update(projects).set({ harmony, updatedAt: new Date() }).where(eq(projects.id, project.id));
     return designReviewView(await loadDesignContext(tx, { ...project, harmony }, now));
   });
-  res.json(result);
+  res.json({ ...result, events: await transmissionEvents(project) });
 });
 
 designReviewRouter.get("/rapport", async (req, res) => {
@@ -58,7 +68,19 @@ designReviewRouter.get("/rapport", async (req, res) => {
   if (!project) return;
   const now = new Date();
   const dctx = await loadDesignContext(db, project, now.toISOString());
-  await recordProducedDocument(db, project.id, { kind: "bilan-batiment", label: "Bilan Harmonie du bâtiment conçu (HTML)", fileName: "Bilan_Harmonie_Batiment_V7.html", modelRevision: project.modelRevision, inputHash: designReportHash(dctx), stepNumber: 10 }, now);
+  await recordProducedDocument(
+    db,
+    project.id,
+    {
+      kind: "bilan-batiment",
+      label: "Bilan Harmonie du bâtiment conçu (HTML)",
+      fileName: "Bilan_Harmonie_Batiment_V7.html",
+      modelRevision: project.modelRevision,
+      inputHash: designReportHash(dctx),
+      stepNumber: 10,
+    },
+    now,
+  );
   const html = designReportFor(dctx, DESIGN_REPORT_CSS);
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Content-Disposition", 'attachment; filename="Bilan_Harmonie_Batiment_V7.html"');
@@ -97,7 +119,7 @@ designReviewRouter.put("/compass", async (req, res) => {
     await tx.update(projects).set({ harmony, updatedAt: new Date() }).where(eq(projects.id, project.id));
     return designReviewView(await loadDesignContext(tx, { ...project, harmony }, now));
   });
-  res.json(result);
+  res.json({ ...result, events: await transmissionEvents(project) });
 });
 
 const observationSchema = z.object({ note: z.string().max(4000) });
@@ -134,7 +156,7 @@ designReviewRouter.put("/observation", async (req, res) => {
     await tx.update(projects).set({ siteContext, updatedAt: new Date() }).where(eq(projects.id, project.id));
     return designReviewView(await loadDesignContext(tx, { ...project, siteContext }, now));
   });
-  res.json(result);
+  res.json({ ...result, events: await transmissionEvents({ ...project, siteContext }) });
 });
 
 const centerElevationSchema = z.object({ point: z.tuple([z.number(), z.number(), z.number()]) });
@@ -169,5 +191,5 @@ designReviewRouter.put("/elevation", async (req, res) => {
     await tx.update(projects).set({ siteContext, updatedAt: new Date() }).where(eq(projects.id, project.id));
     return designReviewView(await loadDesignContext(tx, { ...project, siteContext }, now));
   });
-  res.json(result);
+  res.json({ ...result, events: await transmissionEvents({ ...project, siteContext }) });
 });

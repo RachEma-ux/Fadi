@@ -21,6 +21,7 @@ const KIND_LABEL: Record<string, string> = {
   modele: "Modèle",
   parcelle: "Parcelle",
   revue: "Revue",
+  maptiler: "MapTiler",
   document: "Document",
   commentaire: "Commentaire",
 };

@@ -1250,6 +1250,12 @@ describe("Bilan Harmonie du bâtiment conçu (flow-v62) et références directio
     expect(reviewed.body.review).toMatchObject({ name: "Escalier B et mezzanine — bilan du bâtiment conçu", automatic: false, counts: { levels: 6, rooms: 74, issues: 7 } });
     expect(reviewed.body.history).toHaveLength(1);
     expect(reviewed.body.audit.find((x: { id: string }) => x.id === "review").status).toBe("OK");
+    // « Derniers événements » (transmissionV62.events du prototype) : relus du journal daté — la revue qui vient d'être rattachée, le modèle importé.
+    const eventKinds = (reviewed.body.events as { kind: string; label: string }[]).map((e) => e.kind);
+    expect(reviewed.body.events.length).toBeLessThanOrEqual(10);
+    expect(eventKinds).toContain("revue");
+    expect(eventKinds).toContain("modele");
+    expect(eventKinds.every((k) => ["modele", "programme", "parcelle", "revue", "maptiler"].includes(k))).toBe(true);
 
     const report = await client.get(`/projects/${pid}/design-review/rapport`);
     expect(report.status).toBe(200);
@@ -1288,6 +1294,7 @@ describe("Bilan Harmonie du bâtiment conçu (flow-v62) et références directio
     const centre = await client.put(`/projects/${pid}/design-review/elevation`).send({ point: [-7.3196824, 33.7082212, 42.5] });
     expect(centre.status).toBe(200);
     expect(centre.body.siteContext).toMatchObject({ satelliteObserved: true, elevation: { value: 42.5, unit: "m", coordinates: [-7.3196824, 33.7082212], source: "MapTiler Elevation API", quality: "service numérique, non relevé topographique" } });
+    expect((centre.body.events as { kind: string; label: string }[])[0]).toMatchObject({ kind: "maptiler", label: "Altitude indicative du centre collectée (service MapTiler)" });
     const archived = (await client.get(`/projects/${pid}/archive`)).body;
     expect(archived.project.siteContext).toMatchObject({ satelliteObserved: true, elevation: { value: 42.5 } });
     // La revue actualisée a aussi versé une revue documentaire au dossier Harmony (comme `review(p)` du prototype), exportée avec lui.

@@ -29,6 +29,9 @@ const TABS: [Tab, string][] = [
   ["flow", "Transmission"],
 ];
 
+/** Sources des événements de transmission, comme `log(p, kind, …)` du prototype (modèle, programme, parcelle, revue, MapTiler). */
+const EVENT_SOURCE: Record<string, string> = { modele: "modèle", programme: "programme", parcelle: "parcelle", revue: "revue", maptiler: "MapTiler" };
+
 const fmt = (v: number | null | undefined, n = 2) => (Number.isFinite(v as number) ? (v as number).toLocaleString("fr-FR", { maximumFractionDigits: n }) : "Non renseigné");
 
 /** `compassHTML` : références directionnelles du bâtiment — saisie, enregistrement, état calculé par le moteur. */
@@ -452,6 +455,34 @@ function InlineReport({
                   Revue archivée : {view.review.name} · {new Date(view.review.at).toLocaleString("fr-FR")} · modèle {view.review.modelSignature} · {view.review.counts.rooms} zones ·{" "}
                   {view.history.length} revue(s) antérieure(s).
                 </p>
+              )}
+              <h3>Derniers événements</h3>
+              {view.events.length ? (
+                <div className="v62-table-wrap">
+                  <table className="v62-table v62-events">
+                    <thead>
+                      <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Source</th>
+                        <th scope="col">Transmission</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {view.events.map((e, i) => (
+                        <tr key={`${e.at}-${i}`}>
+                          <td>{new Date(e.at).toLocaleString("fr-FR")}</td>
+                          <td>{EVENT_SOURCE[e.kind] ?? e.kind}</td>
+                          <td>
+                            {e.label}
+                            <small className="h7-muted"> · {e.detail}</small>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="h7-muted">Aucun événement daté de transmission pour ce dossier.</p>
               )}
             </section>
           )}

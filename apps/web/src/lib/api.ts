@@ -360,6 +360,8 @@ export interface DesignReviewView {
   plans: Record<string, string>;
   /** Fragments HTML du bilan (mêmes fonctions que le rapport téléchargé). */
   html: { synthesis: string; metrics: string; levelTable: string; rooms: Record<string, string>; exampleRooms: string | null; issues: string; audit: string; assumptions: string; sources: string; designTrace: string };
+  /** « Derniers événements » de l'onglet Transmission : les 10 derniers du journal daté (modèle, programme, parcelle, revue, MapTiler). */
+  events: { at: string; kind: string; label: string; detail: string }[];
   css: string;
 }
 

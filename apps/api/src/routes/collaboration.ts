@@ -30,7 +30,7 @@ collaborationRouter.use(requireAuth);
 
 export interface RevisionEvent {
   at: string;
-  /** `harmonie` · `programme` · `modele` · `parcelle` · `revue` · `document` · `commentaire` · `projet` */
+  /** `harmonie` · `programme` · `modele` · `parcelle` · `revue` · `maptiler` · `document` · `commentaire` · `projet` */
   kind: string;
   label: string;
   detail: string;
@@ -162,6 +162,37 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
       detail: `${d.fileName} · révision du modèle ${d.modelRevision} · ${d.count} production(s)`,
       stepNumber: d.stepNumber,
       revision: d.modelRevision,
+    });
+
+  // Collectes et observations du contexte (flow-v62 : `log(p,'MapTiler',…)`, `site-note`) : datées par les données déclarées elles-mêmes.
+  const siteElevation = (project.siteObservations as { elevation?: { at?: string; points?: unknown[]; range?: number } | null } | null)?.elevation ?? null;
+  if (siteElevation?.at)
+    events.push({
+      at: siteElevation.at,
+      kind: "maptiler",
+      label: "Altimétrie du site collectée (service MapTiler)",
+      detail: `${Array.isArray(siteElevation.points) ? siteElevation.points.length : 0} point(s) de modèle de terrain · amplitude ${Number(siteElevation.range ?? 0).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} m · non relevé topographique`,
+      stepNumber: 1,
+      revision: null,
+    });
+  const siteContext = (project.siteContext ?? null) as { elevation?: { at?: string; value?: number } | null; observedAt?: string | null; observationStatus?: string } | null;
+  if (siteContext?.elevation?.at)
+    events.push({
+      at: siteContext.elevation.at,
+      kind: "maptiler",
+      label: "Altitude indicative du centre collectée (service MapTiler)",
+      detail: `${Number(siteContext.elevation.value ?? 0).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} m · service numérique, non relevé topographique`,
+      stepNumber: 10,
+      revision: null,
+    });
+  if (siteContext?.observedAt)
+    events.push({
+      at: siteContext.observedAt,
+      kind: "revue",
+      label: "Observation déclarée du contexte extérieur",
+      detail: siteContext.observationStatus ?? "Déclaration utilisateur, non contrôle indépendant",
+      stepNumber: 10,
+      revision: null,
     });
 
   const comments = await db.select().from(projectComments).where(eq(projectComments.projectId, project.id));
