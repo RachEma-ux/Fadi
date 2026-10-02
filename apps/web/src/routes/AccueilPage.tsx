@@ -135,7 +135,7 @@ export function AccueilPage() {
                 {steps.length ? ` · ${doneCount} / ${steps.length} étapes terminées` : ""}
               </p>
               {steps.length > 0 && (
-                <div className="progress" aria-label={`${doneCount} étapes terminées sur ${steps.length}`}>
+                <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={doneCount} aria-label={`${doneCount} étapes terminées sur ${steps.length}`}>
                   <i style={{ width: `${(doneCount / steps.length) * 100}%` }} />
                 </div>
               )}

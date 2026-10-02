@@ -213,7 +213,7 @@ export function ProgrammeRepartition({ projectId }: { projectId: string }) {
           <b>{m2(view.totals.netArea)}</b>
         </div>
       </div>
-      <div className="table-scroll">
+      <div className="table-scroll" tabIndex={0}>
         <table className="programme-table">
           <thead>
             <tr>

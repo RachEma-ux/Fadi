@@ -102,7 +102,7 @@ const isNum = (cell: Cell): cell is { num: React.ReactNode } => typeof cell === 
 
 function Table({ headers, rows, cls = "" }: { headers: string[]; rows: Cell[][]; cls?: string }) {
   return (
-    <div className="bl-table-wrap">
+    <div className="bl-table-wrap" tabIndex={0}>
       <table className={cls}>
         <thead>
           <tr>
@@ -237,7 +237,7 @@ export function ProgrammeView({ c, s, surfaceConvention, onEdit }: { c: Building
         <h2>Ratios surfaciques</h2>
         <p>{surfaceConvention}</p>
         {!t.parois && <div className="bl-note">Aucune provision de parois / gaines distincte n’est chiffrée. Les 0 m² alloués ne prouvent pas l’absence de parois ; le total reste partiel et ne dimensionne pas le bâtiment.</div>}
-        <div className="bl-table-wrap">
+        <div className="bl-table-wrap" tabIndex={0}>
           <table>
             <thead>
               <tr>

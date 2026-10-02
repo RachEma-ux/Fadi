@@ -11,7 +11,7 @@ export function WriteFieldset({ projectId, children, className, hint = true }: {
   const access = useProjectAccess(projectId);
   if (access.canWrite) return <>{children}</>;
   return (
-    <fieldset className={`access-fieldset${className ? ` ${className}` : ""}`} disabled aria-readonly="true">
+    <fieldset className={`access-fieldset${className ? ` ${className}` : ""}`} disabled>
       {hint && <p className="h7-muted access-readonly-hint">{access.lock && !access.holdsLock && access.mayEdit ? lockedHint(access.lock) : READ_ONLY_HINT}</p>}
       {children}
     </fieldset>

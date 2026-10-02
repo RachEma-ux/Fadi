@@ -71,6 +71,8 @@ function serviceWorkerBuildId(): Plugin {
  */
 export default defineConfig({
   plugins: [serviceWorkerBuildId()],
+  // Le même identifiant de build, lisible par l'application (page Paramètres : « Version »).
+  define: { __FADI_BUILD__: JSON.stringify(buildId()) },
   server: {
     host: "0.0.0.0",
     proxy: {

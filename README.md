@@ -33,6 +33,11 @@ server-owned data:
   reservation, ownership transfer), offline work (local queues replayed on reconnection, persisted query
   cache, service worker, per-field / per-version concurrency control with side-by-side conflict resolution).
 
+Around the modules: a home page, the Harmonie page (state of the choices per project, read from the steps
+already served, with links to the step where each decision is taken), a settings page (account, MapTiler key,
+data kept by the browser, build version), and an accessibility pass (axe-core, WCAG 2.2 AA) run by the
+end-to-end scenario on every screen at desktop and phone widths — no critical or serious violation.
+
 `docs/migration/matrix.md` is the authoritative conformity matrix: every prototype function, its migration
 decision (Conserver / Extraire / Adapter / Remplacer), its location in Fadi, its proof and the remaining
 limits. `docs/migration/etapes/NN.md` are the per-step sheets (generated), `docs/migration/reference.md` the
@@ -59,7 +64,7 @@ End-to-end scenario (Playwright, Chromium), against the built API and `vite prev
 ```sh
 node apps/api/dist/server.js &                       # DATABASE_URL, WEB_ORIGIN=http://localhost:4173, PORT=3001
 npm run preview --workspace=@fadi/web -- --port 4173 &
-node apps/web/e2e/parcours-scenario.mjs              # ~190 checks; writes docs/migration/captures/webapp/
+node apps/web/e2e/parcours-scenario.mjs              # ~250 checks incl. axe-core; writes docs/migration/captures/webapp/
 ```
 
 Never put credentials in source files — `apps/api/.env` is gitignored; only `.env.example` /

@@ -168,7 +168,7 @@ export function ProgrammeCaseEditor({ projectId, view }: { projectId: string; vi
             <details className="bl-fold">
               <summary>Consulter les différences</summary>
               <div>
-                <div className="bl-table-wrap">
+                <div className="bl-table-wrap" tabIndex={0}>
                   <table>
                     <thead>
                       <tr>
@@ -200,7 +200,7 @@ export function ProgrammeCaseEditor({ projectId, view }: { projectId: string; vi
       </section>
       <section className="bl-card">
         <h2>Historique des variantes appliquées</h2>
-        <div className="bl-table-wrap">
+        <div className="bl-table-wrap" tabIndex={0}>
           <table>
             <thead>
               <tr>

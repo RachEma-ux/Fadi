@@ -19,6 +19,8 @@ Le moteur de l'Atelier du prototype (Design Atelier V14-3 : viewer 3D, plan, cou
 
 Le moteur (scripts, markup, feuille de style — `native/engine.ts`) n'est chargé qu'à la première ouverture de l'Atelier ou des étapes 10 / 11 ; le magasin et l'état de synchronisation (`native/storage.ts`) restent dans l'enveloppe pour l'en-tête et le bandeau des conflits. Le service worker met tous les morceaux en cache dès son installation : l'Atelier s'ouvre hors-ligne même s'il n'a jamais été visité en ligne.
 
+Accessibilité du moteur extrait : la barre d'outils V8 déclare `role="tablist"` sans onglets ; au chargement, `engine.ts` (`accessibleToolTabs`) pose `role="tab"` sur ses boutons, reflète `aria-selected` depuis la classe `active` que le script extrait bascule (observateur de mutations) et ajoute les flèches gauche / droite — sans modifier les fichiers générés par le script d'extraction. La ligne d'information du viewer est surchargée en CSS (`style.css`) pour le contraste 4,5:1. Le scénario e2e passe axe-core sur l'Atelier monté (ordinateur et téléphone) ; les outils de dessin sur canvas ne sont pas audités.
+
 L'onglet « Hypothèses & MapTiler » du bilan reçoit l'observation déclarée du contexte extérieur (`SiteObservationForm` → `PUT …/design-review/observation`, 20 caractères minimum, statut du prototype) ; elle lève la réserve « Contexte extérieur non observé » avec un géoréférencement et périme le bilan produit avant elle.
 
 « Collecter l'altitude indicative du centre » appelle le service MapTiler depuis le navigateur avec la clé de l'utilisateur (`lib/maptiler.ts`) et pose l'altitude reçue sur le contexte (`PUT …/design-review/elevation`).

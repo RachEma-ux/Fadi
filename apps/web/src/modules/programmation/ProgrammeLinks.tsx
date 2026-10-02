@@ -102,7 +102,7 @@ export function ProgrammeModelLinksPage({ projectId }: { projectId: string }) {
             {notice}
           </p>
         )}
-        <div className="bl-table-wrap">
+        <div className="bl-table-wrap" tabIndex={0}>
           <table className="bl-spaces bl-links">
             <thead>
               <tr>
@@ -287,7 +287,7 @@ export function ProgrammeHypothesesPage({ projectId }: { projectId: string }) {
             {error}
           </p>
         )}
-        <div className="bl-table-wrap">
+        <div className="bl-table-wrap" tabIndex={0}>
           <table className="bl-hypotheses">
             <thead>
               <tr>

@@ -216,7 +216,7 @@ function StepDetail({
         <button type="button" className="button-secondary" onClick={onBack}>
           ← Vue d'ensemble
         </button>
-        <div className="progress">
+        <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={index + 1} aria-label={`Étape ${pad2(index + 1)} sur ${total}`}>
           <i style={{ width: `${((index + 1) / total) * 100}%` }} />
         </div>
         <span className="step-detail-count">
@@ -418,7 +418,7 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
       <BaseDocuments projectId={projectId} />
       <div className="overview-progress">
         <span className="parcours-steps-summary">{done} / {steps.length} étapes terminées</span>
-        <div className="progress">
+        <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done} aria-label={`${done} étapes terminées sur ${steps.length}`}>
           <i style={{ width: `${(done / steps.length) * 100}%` }} />
         </div>
       </div>

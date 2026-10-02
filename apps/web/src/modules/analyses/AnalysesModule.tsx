@@ -26,7 +26,7 @@ function StatusChip({ status }: { status: CheckStatus }) {
 function ChecksTable({ projectId, checks }: { projectId: string; checks: TraceableCheck[] }) {
   const sorted = [...checks].sort((a, b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) || a.step - b.step);
   return (
-    <div className="table-scroll">
+    <div className="table-scroll" tabIndex={0}>
       <table className="programme-table analyses-checks">
         <thead>
           <tr>
@@ -146,7 +146,7 @@ export function AnalysesModule({ projectId }: { projectId: string }) {
           </div>
         </div>
         {q.levels.length ? (
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="programme-table analyses-levels">
               <thead>
                 <tr>
@@ -220,7 +220,7 @@ export function AnalysesModule({ projectId }: { projectId: string }) {
         <section className="biz-card" aria-labelledby="analyses-structure">
           <h2 id="analyses-structure">Structure — exigences et hypothèses enregistrées</h2>
           <p className="biz-sub">{v.structure.source}</p>
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="programme-table analyses-structure">
               <thead>
                 <tr>
@@ -249,7 +249,7 @@ export function AnalysesModule({ projectId }: { projectId: string }) {
         <section className="biz-card" aria-labelledby="analyses-circulation">
           <h2 id="analyses-circulation">Circulations mesurées</h2>
           <p className="biz-sub">{v.circulation.source}</p>
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="programme-table analyses-circulation">
               <thead>
                 <tr>
@@ -288,7 +288,7 @@ export function AnalysesModule({ projectId }: { projectId: string }) {
       <section className="biz-card" aria-labelledby="analyses-scenarios">
         <h2 id="analyses-scenarios">Variantes de programme</h2>
         {v.scenarios.length ? (
-          <div className="table-scroll">
+          <div className="table-scroll" tabIndex={0}>
             <table className="programme-table analyses-scenarios">
               <thead>
                 <tr>

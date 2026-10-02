@@ -173,7 +173,7 @@ export function StepForm({
       {step.number === 17 && <ScoreKpis step={step} allSteps={allSteps} />}
       {step.number === 19 && <DecisionPanel value={fields["decision"]} onChoose={(c) => onCommit({ decision: c }, { decision: fields["decision"] ?? null })} pending={pending} />}
       {readOnly && <p className="h7-muted access-readonly-hint">Lecture seule : les valeurs saisies par le propriétaire ou les éditeurs sont affichées, sans modification possible.</p>}
-      <fieldset className="biz-grid" disabled={readOnly} aria-readonly={readOnly}>
+      <fieldset className="biz-grid" disabled={readOnly}>
         {form.fields.map((f) => (
           <Field key={f.key} field={f} value={fields[f.key]} onCommit={(key, value) => onCommit({ [key]: value }, { [key]: fields[key] ?? null })} />
         ))}

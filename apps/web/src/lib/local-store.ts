@@ -114,4 +114,17 @@ export const localStore = {
   setValue: (key: string, value: string) => safe((d) => d.keyValue.put({ key, value, updatedAt: new Date().toISOString() }).then(() => undefined), undefined),
   removeValue: (key: string) => safe((d) => d.keyValue.delete(key), undefined),
   readModelCache: (projectId: string) => safe((d) => d.modelCache.get(projectId).then((v) => v ?? null), null as ModelCacheEntry | null),
+  /** Page Paramètres : ce que ce navigateur conserve (écritures de l'Atelier en attente, tous projets ; modèles mis en cache). */
+  summary: () =>
+    safe(
+      async (d) => {
+        const queued = await d.outbox.toArray();
+        const pendingByProject: Record<string, number> = {};
+        for (const e of queued) pendingByProject[e.projectId] = (pendingByProject[e.projectId] ?? 0) + 1;
+        return { available: true, pendingWrites: queued.length, pendingByProject, cachedModels: await d.modelCache.count() };
+      },
+      { available: false, pendingWrites: 0, pendingByProject: {} as Record<string, number>, cachedModels: 0 },
+    ),
+  /** « Vider les caches locaux » : les modèles mis en cache ; la file des écritures en attente n'est jamais supprimée (elle repart au retour du réseau). Le cache des requêtes se vide par le client de requêtes, qui le réécrit. */
+  clearModelCache: () => safe((d) => d.modelCache.clear(), undefined),
 };

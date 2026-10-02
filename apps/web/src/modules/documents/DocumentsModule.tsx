@@ -91,7 +91,7 @@ export function DocumentsModule({ projectId }: { projectId: string }) {
           <section className="biz-card" key={g.id} aria-labelledby={`documents-${g.id}`}>
             <h2 id={`documents-${g.id}`}>{g.title}</h2>
             <p className="biz-sub">{g.note}</p>
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0}>
               <table className="programme-table documents-table">
                 <thead>
                   <tr>
@@ -115,7 +115,7 @@ export function DocumentsModule({ projectId }: { projectId: string }) {
                   {steps.length} rapports d'étape · {steps.filter((d) => d.produced).length} produit(s)
                 </summary>
                 <div className="fold-card-body">
-                  <div className="table-scroll">
+                  <div className="table-scroll" tabIndex={0}>
                     <table className="programme-table documents-table">
                       <thead>
                         <tr>

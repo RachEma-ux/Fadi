@@ -23,6 +23,7 @@
   "devDependencies": {
     "@types/react": "~19.1.16",
     "@types/react-dom": "~19.1.9",
+    "axe-core": "4.10.3",
     "playwright": "1.56.0",
     "typescript": "~5.9.3",
     "vite": "~6.4.1"

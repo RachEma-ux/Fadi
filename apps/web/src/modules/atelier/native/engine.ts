@@ -72,8 +72,42 @@ export function ensureEngineLoaded(): Promise<void> {
     parking.hidden = true;
     document.body.appendChild(parking);
     for (const src of SCRIPTS) await loadScript(src);
+    accessibleToolTabs(parking);
   })();
   return loading;
+}
+
+/**
+ * Accessibilité de la barre d'outils V8 (markup extrait tel quel) : son
+ * `role="tablist"` contient des boutons sans rôle `tab` (WCAG 4.1.2,
+ * critique pour axe). Fadi pose le rôle et reflète la sélection depuis la
+ * classe `active` que le script extrait bascule, sans le modifier.
+ */
+function accessibleToolTabs(root: HTMLElement): void {
+  const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".atelier-toolbar-main [data-atab]"));
+  const reflect = () => {
+    for (const tab of tabs) {
+      const selected = tab.classList.contains("active");
+      tab.setAttribute("aria-selected", selected ? "true" : "false");
+      tab.tabIndex = selected ? 0 : -1;
+    }
+  };
+  for (const tab of tabs) tab.setAttribute("role", "tab");
+  reflect();
+  const observer = new MutationObserver(reflect);
+  for (const tab of tabs) observer.observe(tab, { attributes: true, attributeFilter: ["class"] });
+  // Flèches gauche / droite entre onglets, comme le motif ARIA « tabs » ; le clic natif du script extrait fait le reste.
+  root.querySelector(".atelier-toolbar-main")?.addEventListener("keydown", (event) => {
+    const e = event as KeyboardEvent;
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const i = tabs.findIndex((t) => t === document.activeElement);
+    if (i < 0) return;
+    const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    if (!next) return;
+    e.preventDefault();
+    next.focus();
+    next.click();
+  });
 }
 
 export interface MountOptions {

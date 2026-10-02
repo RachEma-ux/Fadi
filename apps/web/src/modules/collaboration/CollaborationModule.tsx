@@ -432,7 +432,7 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
             </button>
           ))}
         </nav>
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0}>
           <table className="programme-table journal-table">
             <thead>
               <tr>

@@ -60,6 +60,15 @@
  *      Atelier inactifs, 403 motivé), réservation d'édition (verrou
  *      optionnel : éditeur en lecture et commentaires, 423 motivé, puis
  *      main rendue), passage éditeur (saisie enregistrée), départ du projet ;
+ *   6o. Harmonie, page transversale : état des choix du projet choisi (lu
+ *      des étapes servies), 21 lignes, renvoi vers l'étape, synthèse ;
+ *   6p. Paramètres : compte, clé MapTiler (session / locale / oubliée),
+ *      données conservées par le navigateur (compteurs conformes à
+ *      IndexedDB, caches vidés sans toucher aux écritures en attente),
+ *      version du build ;
+ *   6n. accessibilité (axe-core, WCAG 2.2 AA) : chaque écran, ordinateur et
+ *      téléphone, plus les dialogues, le conflit et la lecture seule —
+ *      aucune violation critique ou sérieuse ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
  *      docs/migration/captures/webapp/.
  *
@@ -69,6 +78,7 @@
  */
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -76,11 +86,29 @@ const BASE = process.env.BASE_URL ?? "http://localhost:4173";
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "../../../docs/migration/captures/webapp");
 mkdirSync(OUT, { recursive: true });
 const launch = { executablePath: process.env.CHROMIUM_PATH ?? undefined };
+const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 
 let failures = 0;
 function check(label, ok, detail = "") {
   console.log(`${ok ? "✓" : "✗"} ${label}${detail ? " — " + detail : ""}`);
   if (!ok) failures++;
+}
+
+/**
+ * Accessibilité (WCAG 2.2 AA, règles axe-core des balises wcag2a/aa,
+ * wcag21a/aa, wcag22aa) sur le document courant, cadres exclus : l'outil
+ * Parcelle est le document du prototype, conservé tel quel. Aucune
+ * violation critique ni sérieuse n'est tolérée ; les autres sont listées.
+ */
+async function axeCheck(target, label) {
+  await target.addScriptTag({ path: AXE_SCRIPT });
+  const violations = await target.evaluate(async () => {
+    const r = await window.axe.run(document, { iframes: false, runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } });
+    return r.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, sample: v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ") }));
+  });
+  const blocking = violations.filter((v) => v.impact === "critical" || v.impact === "serious");
+  const describe = (v) => `${v.impact} ${v.id} ×${v.nodes} (${v.sample})`;
+  check(`accessibilité · ${label} : aucune violation critique ou sérieuse`, blocking.length === 0, violations.map(describe).join(" ; "));
 }
 
 const browser = await chromium.launch(launch);
@@ -205,6 +233,7 @@ check("cas : « Rapport HTML » → Programme_hotel_<variante>_V6_1.html (rappor
 await page.locator('.bl-hero button:has-text("Utiliser ce scénario")').click();
 await page.waitForSelector("dialog.bl-dialog[open]");
 check("« Utiliser ce scénario » : destination « Projet actuel » proposée", (await page.locator('dialog select[name="destination"]').inputValue()) === "current");
+await axeCheck(page, "boîte de dialogue « Utiliser ce scénario »");
 await page.locator('dialog button:has-text("Appliquer le scénario")').click();
 await page.waitForURL(/etape=7/);
 await page.waitForSelector(".programme-case-editor");
@@ -510,6 +539,7 @@ await page.locator('.h7-maptiler button:has-text("Afficher le fond MapTiler")').
 await page.waitForFunction(() => /Clé MapTiler absente/.test(document.querySelector("#h7-map-status")?.textContent || ""), null, { timeout: 5000 });
 check("étape 01 : sans clé, « Afficher le fond MapTiler » → « Clé MapTiler absente … aucune image de contexte n’est inventée »", true);
 await page.locator('.h7-maptiler button:has-text("Connexion MapTiler")').click();
+await axeCheck(page, "dialogue « Connexion MapTiler »");
 await page.fill("#h7-map-key", "cle-de-test-scenario");
 await page.locator('.h7-dialog-inline button:has-text("Utiliser cette clé")').click();
 await page.waitForFunction(() => /Clé disponible/.test(document.querySelector("#h7-map-status")?.textContent || ""), null, { timeout: 5000 });
@@ -828,6 +858,7 @@ check("retour du réseau : la saisie rejouée est refusée (409) — bandeau « 
 const conflictRow = (await page.locator(".conflict-table tbody tr").first().allTextContents()).join(" ").replace(/\s+/g, " ");
 check("résolution assistée : les deux versions côte à côte (champ, valeur du serveur, votre saisie)", /Demande locale \(autre appareil\)/.test(conflictRow) && /Demande locale \(saisie hors-ligne\)/.test(conflictRow) && (await page.locator(".conflict-table tbody tr td").first().textContent()) !== "f1", conflictRow);
 await page.locator(".conflict-banner").screenshot({ path: `${OUT}/conflit-saisie-desktop.png` });
+await axeCheck(page, "bandeau de conflit avec versions côte à côte");
 await page.locator('.conflict-banner button:has-text("Reprendre ma saisie")').first().click();
 await page.waitForFunction(() => document.querySelectorAll(".conflict-banner").length === 0, null, { timeout: 10000 });
 await page.waitForFunction(() => document.querySelector("#biz-f1")?.value === "Demande locale (saisie hors-ligne)", null, { timeout: 10000 }).catch(() => {});
@@ -931,6 +962,7 @@ await page2.goto(`${projectUrl}?module=parcours&etape=2`);
 await page2.waitForSelector("#biz-f1");
 check("lecteur : saisies désactivées (fieldset), « Retenir » inactif, « Marquer terminée » inactif, pas d'import de sources", (await page2.locator("fieldset.biz-grid[disabled]").count()) === 1 && (await page2.locator("#biz-f1").isDisabled()) && (await page2.locator('.h7-proposal button:has-text("Retenir")').first().isDisabled()) && (await page2.locator('button:has-text("Marquer terminée")').isDisabled()) && (await page2.locator('.step-sources button:has-text("Importer des fichiers")').count()) === 0);
 check("lecteur : la valeur saisie par le propriétaire reste lisible", (await page2.inputValue("#biz-f1")).length > 0);
+await axeCheck(page2, "étape 02 en lecture seule (lecteur)");
 await page2.evaluate(() => { document.querySelector(".step-comments").open = true; });
 await page2.fill(".step-comments textarea", "Lecture faite : à confirmer avec le BET.");
 await page2.locator('.step-comments button:has-text("Publier le commentaire")').click();
@@ -1008,6 +1040,146 @@ await page.reload();
 await page.waitForFunction(() => /Aucun membre invité/.test(document.querySelector(".members-table")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
 check("propriétaire : plus aucun membre invité", /Aucun membre invité/.test(await page.locator(".members-table").textContent()));
 await ctx2.close();
+
+// 6o. Harmonie, page transversale : l'état des choix du projet choisi, lu des étapes déjà servies, et le renvoi vers l'étape.
+await page.setViewportSize({ width: 1280, height: 900 });
+await page.goto(`${BASE}/harmonie?projet=${examplePid}`);
+await page.waitForSelector(".harmonie-table tbody tr", { timeout: 30000 });
+await page.waitForFunction(() => document.querySelectorAll(".harmonie-table tbody tr").length === 21, null, { timeout: 15000 });
+const harmonieKpis = (await page.locator(".harmonie-project .biz-kpis").textContent()).replace(/\s+/g, " ");
+check("Harmonie : projet choisi dans la liste, 21 lignes, choix retenus de l'exemple comptés, « Étapes avec un choix N / 21 »", (await page.locator(".harmonie-project-pick select").inputValue()) === examplePid && /Choix retenus\s*\d+/.test(harmonieKpis) && Number(harmonieKpis.match(/Choix retenus\s*(\d+)/)?.[1]) > 0 && /Étapes avec un choix\s*\d+ \/ 21/.test(harmonieKpis), harmonieKpis);
+check("Harmonie : étape 02 de l'exemple « Choix retenu » (ou conservé à réexaminer) avec la proposition retenue et son état", /Choix retenu|choix conservé/.test(await page.locator('.harmonie-table tr[data-step="2"] .h7-chip').textContent()) && (await page.locator('.harmonie-table tr[data-step="2"] .harmonie-chosen li').count()) >= 1);
+check("Harmonie : « Exporter la synthèse des choix Harmonie » pointe vers le rapport du projet", (await page.locator('.harmonie-project a:has-text("Exporter la synthèse")').getAttribute("href")) === `/projects/${examplePid}/steps/harmonie/rapport`);
+await page.locator('.harmonie-table tr[data-step="2"] a:has-text("Ouvrir l’étape")').click();
+await page.waitForURL(/etape=2/);
+await page.waitForSelector(".h7-panel");
+check("Harmonie : « Ouvrir l’étape » → étape 02 du projet, panneau Harmonie en place", true);
+await page.goto(`${BASE}/harmonie`);
+await page.waitForSelector(".harmonie-table tbody tr", { timeout: 30000 });
+await page.selectOption(".harmonie-project-pick select", testPid);
+await page.waitForFunction((pid) => new URLSearchParams(location.search).get("projet") === pid, testPid, { timeout: 10000 });
+await page.waitForFunction(() => /Étapes à réexaminer/.test(document.querySelector(".harmonie-project .biz-kpis")?.textContent || ""), null, { timeout: 15000 });
+check("Harmonie : changement de projet par la liste → adresse ?projet=… et état du projet test", (await page.locator(".harmonie-project h2").textContent()).includes("P.TEST"));
+await page.screenshot({ path: `${OUT}/harmonie-desktop.png`, fullPage: true });
+
+// 6p. Paramètres : compte, clé MapTiler (de session depuis 6c), données locales, version.
+await page.goto(`${BASE}/parametres`);
+await page.waitForSelector(".settings-page", { timeout: 30000 });
+check("Paramètres : adresse du compte, clé MapTiler de session (6c) reconnue", (await page.locator(".settings-page").textContent()).includes(email) && (await page.locator(".settings-state").getAttribute("data-key-state")) === "session");
+await page.locator('button:has-text("Oublier la clé")').click();
+check("Paramètres : « Oublier la clé » → aucune clé", (await page.locator(".settings-state").getAttribute("data-key-state")) === "absente" && (await page.evaluate(() => sessionStorage.getItem("fadi.maptiler.session-key"))) === null);
+await page.fill("#settings-maptiler-key", "cle-parametres-test");
+await page.locator('.settings-form button:has-text("Utiliser cette clé")').click();
+check("Paramètres : clé saisie sans conservation → session (jamais dans le stockage local)", (await page.locator(".settings-state").getAttribute("data-key-state")) === "session" && (await page.evaluate(() => localStorage.getItem("parcelle-maptiler-key-v1"))) === null);
+await page.waitForFunction(() => /Version/.test(document.querySelector(".settings-page")?.textContent || "") && !/Écritures de l’Atelier en attente\s*…/.test(document.querySelector(".settings-page")?.textContent || ""), null, { timeout: 10000 });
+// Les compteurs affichés sont ceux d'IndexedDB : file des écritures de l'Atelier, modèles mis en cache, lectures déshydratées et saisies en pause du cache persistant.
+const localCounts = () =>
+  page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const req = indexedDB.open("fadi-local");
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction(["outbox", "modelCache", "keyValue"], "readonly");
+          const out = { outbox: 0, modelCache: 0, queries: 0, paused: 0, outboxKeys: [], outboxProjects: 0 };
+          const o = tx.objectStore("outbox").getAll();
+          o.onsuccess = () => {
+            out.outbox = o.result.length;
+            out.outboxKeys = o.result.map((e) => `${e.key} (${e.attempts} essai(s)${e.lastError ? ` · ${e.lastError}` : ""})`);
+            out.outboxProjects = new Set(o.result.map((e) => e.projectId)).size;
+          };
+          const m = tx.objectStore("modelCache").count();
+          m.onsuccess = () => (out.modelCache = m.result);
+          const k = tx.objectStore("keyValue").get("fadi-queries-1");
+          k.onsuccess = () => {
+            try {
+              const state = JSON.parse(k.result?.value ?? "null")?.clientState;
+              out.queries = state?.queries?.length ?? 0;
+              out.paused = (state?.mutations ?? []).filter((x) => x.state?.isPaused).length;
+            } catch {
+              /* vide */
+            }
+          };
+          tx.oncomplete = () => {
+            db.close();
+            resolve(out);
+          };
+        };
+        req.onerror = () => resolve(null);
+      }),
+  );
+const countsBefore = await localCounts();
+const settingsText = (await page.locator(".settings-facts-local").textContent()).replace(/\s+/g, " ");
+check(
+  "Paramètres : compteurs des données locales conformes à IndexedDB (écritures de l'Atelier en attente, saisies en pause, modèles, lectures), version du build affichée",
+  countsBefore !== null &&
+    new RegExp(`Écritures de l’Atelier en attente\\s*${countsBefore.outbox}(?!\\d)`).test(settingsText) &&
+    new RegExp(`Saisies en attente de réseau\\s*${countsBefore.paused}(?!\\d)`).test(settingsText) &&
+    new RegExp(`Modèles mis en cache\\s*${countsBefore.modelCache}(?!\\d)`).test(settingsText) &&
+    new RegExp(`Écrans mis en cache\\s*${countsBefore.queries} lecture`).test(settingsText) &&
+    countsBefore.modelCache > 0 &&
+    countsBefore.queries > 0 &&
+    (countsBefore.outbox === 0 || (await page.locator(".settings-pending a").count()) === countsBefore.outboxProjects) &&
+    (await page.locator(".settings-facts code").textContent()).trim().length >= 6,
+  `${settingsText} // ${JSON.stringify(countsBefore)}`,
+);
+await page.locator('button:has-text("Vider les caches locaux")').click();
+await page.waitForFunction(() => /Caches vidés/.test(document.querySelector(".settings-page")?.textContent || ""), null, { timeout: 10000 });
+await page.waitForFunction(() => /Modèles mis en cache\s*0(?!\d)/.test(document.querySelector(".settings-facts-local")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
+const countsAfter = await localCounts();
+check("Paramètres : « Vider les caches locaux » → modèles retirés, lectures réduites à celles de l'écran courant, file des écritures et saisies en pause intactes", countsAfter.modelCache === 0 && countsAfter.queries <= 2 && countsAfter.queries < countsBefore.queries && countsAfter.outbox === countsBefore.outbox && countsAfter.paused === countsBefore.paused && /Modèles mis en cache\s*0(?!\d)/.test(await page.locator(".settings-facts-local").textContent()), JSON.stringify(countsAfter));
+await page.screenshot({ path: `${OUT}/parametres-desktop.png`, fullPage: true });
+
+// 6n. Accessibilité : chaque écran de l'application, ordinateur puis téléphone (axe-core, WCAG 2.2 AA).
+const a11yScreens = [
+  ["projets", `${BASE}/projets`, "#project-list-heading"],
+  ["accueil", `${BASE}/accueil`, ".home-page"],
+  ["harmonie", `${BASE}/harmonie`, "main"],
+  ["paramètres", `${BASE}/parametres`, "main"],
+  ["vue d'ensemble", `${exampleUrl}?module=parcours`, ".step-card-open"],
+  ["étape 01", `${exampleUrl}?module=parcours&etape=1`, ".h7-site-hero"],
+  ["étape 02", `${exampleUrl}?module=parcours&etape=2`, "#biz-f1"],
+  ["étape 06", `${exampleUrl}?module=parcours&etape=6`, ".programme-case"],
+  ["étape 10", `${exampleUrl}?module=parcours&etape=10`, '#atelier-toolbar[data-ready="1"]'],
+  ["étape 14", `${exampleUrl}?module=parcours&etape=14`, ".biz-kpis"],
+  ["étape 17", `${exampleUrl}?module=parcours&etape=17`, ".biz-kpi"],
+  ["étape 19", `${exampleUrl}?module=parcours&etape=19`, ".decision-grid"],
+  ["programmation", `${exampleUrl}?module=programmation`, ".programme-case"],
+  ["atelier", `${exampleUrl}?module=atelier`, '#atelier-toolbar[data-ready="1"]'],
+  ["analyses", `${exampleUrl}?module=analyses`, ".analyses-checks"],
+  ["documents", `${exampleUrl}?module=documents`, ".documents-table"],
+  ["collaboration", `${exampleUrl}?module=collaboration`, ".members-panel"],
+  ["bibliothèque", `${BASE}/bibliotheque/batiments`, ".bl-case-card"],
+  ["cas Hôtel urbain", `${BASE}/bibliotheque/batiments/hotel`, ".bl-scenario"],
+];
+const viewports = [
+  [1280, 900, "ordinateur"],
+  [390, 844, "téléphone"],
+];
+for (const [width, height, device] of viewports) {
+  await page.setViewportSize({ width, height });
+  for (const [name, url, ready] of a11yScreens) {
+    await page.goto(url);
+    await page.waitForSelector(ready, { state: "attached", timeout: 30000 });
+    await page.waitForTimeout(400);
+    await axeCheck(page, `${name} (${device})`);
+  }
+}
+// Pages publiques (hors session) : connexion et inscription.
+const ctxAnon = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const pageAnon = await ctxAnon.newPage();
+for (const [width, height, device] of viewports) {
+  await pageAnon.setViewportSize({ width, height });
+  for (const [name, url] of [
+    ["connexion", `${BASE}/connexion`],
+    ["inscription", `${BASE}/inscription`],
+  ]) {
+    await pageAnon.goto(url);
+    await pageAnon.waitForSelector('.auth-page button[type="submit"]', { timeout: 30000 });
+    await axeCheck(pageAnon, `${name} (${device})`);
+  }
+}
+await ctxAnon.close();
 
 // 7. Téléphone
 await page.setViewportSize({ width: 390, height: 844 });
