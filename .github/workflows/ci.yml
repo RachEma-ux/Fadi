@@ -88,7 +88,15 @@ jobs:
           done
           curl -sf http://localhost:3001/health && curl -sf -o /dev/null http://localhost:4173/
       - name: Scénario Playwright
-        run: node apps/web/e2e/parcours-scenario.mjs
+        run: |
+          set -o pipefail
+          node apps/web/e2e/parcours-scenario.mjs 2>&1 | tee e2e.log
+      - name: Résumé de l'échec (annotations lisibles depuis l'API)
+        if: failure()
+        run: |
+          grep -n "^✗" e2e.log | head -n 8 | while IFS= read -r l; do echo "::error title=e2e::${l:0:900}"; done
+          echo "::error title=e2e-fin::$(tail -n 30 e2e.log | tr '\n' '|' | cut -c1-900)"
+          echo "::error title=api-log::$(tail -n 15 api.log | tr '\n' '|' | cut -c1-900)"
       - name: Journaux des serveurs
         if: failure()
         run: tail -n 100 api.log web.log
