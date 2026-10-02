@@ -20,4 +20,6 @@ Conflits (`components/ConflictPanel.tsx`) : chaque refus 409 est montré côte �
 
 Réservation d'édition (`components/EditingLockControl.tsx`, API `routes/lock.ts`, `projects.editing_lock`) : un éditeur ou le propriétaire réserve l'édition pour 30 minutes (prolongée d'elle-même tant que le projet reste ouvert), la prolonge ou rend la main ; le propriétaire peut libérer. Pendant la réservation, les autres comptes lisent et commentent — leurs écritures sont refusées par le serveur (423, motif et échéance) et leurs formulaires, arbitrages et Atelier sont inactifs. Sans réservation, les écritures simultanées sont sérialisées puis départagées par version.
 
-Reste (Lot 4) : notifications d'invitation, transfert de propriété.
+Le propriétaire peut transférer la propriété à un membre (`POST …/members/:userId/propriete`) : le membre devient propriétaire, lui-même reste éditeur ; données, membres et réservation ne changent pas.
+
+Reste (Lot 4) : notifications d'invitation (pas de courriel).

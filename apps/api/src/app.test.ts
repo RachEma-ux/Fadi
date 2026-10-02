@@ -1706,6 +1706,31 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     expect(journal.access).toMatchObject({ role: "proprietaire", members: [] });
     expect(journal.journal.find((e: { label: string }) => e.label === "Étape 02 · proposition H01-B retenue")).toBeDefined();
   });
+
+  it("transfers ownership to a member: the new owner shares and deletes, the former owner stays as editor, strangers and non-members are refused", async () => {
+    const owner = await registerAndLogin("transfer-owner@example.com");
+    const next = await registerAndLogin("transfer-next@example.com");
+    const stranger = await registerAndLogin("transfer-stranger@example.com");
+    const pid = (await owner.post("/projects").send({ code: "P.OWN", name: "Transfert" })).body.id as string;
+    const nextId = (await next.get("/auth/me")).body.id as string;
+    expect((await owner.post(`/projects/${pid}/members/${nextId}/propriete`)).status).toBe(404); // pas encore membre
+    await owner.post(`/projects/${pid}/members`).send({ email: "transfer-next@example.com", role: "lecteur" });
+    expect((await next.post(`/projects/${pid}/members/${nextId}/propriete`)).status).toBe(403); // propriétaire seulement
+    expect((await stranger.post(`/projects/${pid}/members/${nextId}/propriete`)).status).toBe(404);
+    const transferred = await owner.post(`/projects/${pid}/members/${nextId}/propriete`);
+    expect(transferred.status).toBe(200);
+    expect(transferred.body).toMatchObject({ owner: { email: "transfer-next@example.com" }, you: { role: "editeur" } });
+    expect(transferred.body.members.map((m: { email: string; role: string }) => [m.email, m.role])).toEqual([["transfer-owner@example.com", "editeur"]]);
+    expect((await next.get(`/projects/${pid}`)).body).toMatchObject({ role: "proprietaire", ownerEmail: "transfer-next@example.com" });
+    expect((await owner.get(`/projects/${pid}`)).body).toMatchObject({ role: "editeur", ownerEmail: "transfer-next@example.com" });
+    expect((await owner.get("/projects")).body[0]).toMatchObject({ id: pid, role: "editeur" });
+    // L'ancien propriétaire modifie encore, mais ne partage ni ne supprime plus ; le nouveau fait les deux.
+    expect((await owner.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Après transfert" } })).status).toBe(200);
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "transfer-stranger@example.com", role: "lecteur" })).status).toBe(403);
+    expect((await owner.delete(`/projects/${pid}`)).status).toBe(403);
+    expect((await next.post(`/projects/${pid}/members`).send({ email: "transfer-stranger@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await next.delete(`/projects/${pid}`)).status).toBe(204);
+  });
 });
 
 describe("Verrou d'édition optionnel — un seul éditeur actif", () => {

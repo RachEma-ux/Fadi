@@ -5,6 +5,8 @@
  *   POST   /          { email, role } → 201 : invitation (ou changement de rôle) d'un compte existant — propriétaire seulement
  *   PATCH  /:userId   { role } → le rôle d'un membre — propriétaire seulement
  *   DELETE /:userId   → 204 : retrait d'un membre par le propriétaire, ou départ du membre lui-même
+ *   POST   /:userId/propriete → transfert de la propriété à ce membre (propriétaire seulement) : l'ancien propriétaire
+ *                      devient éditeur, le nouveau quitte la liste des membres ; rien d'autre ne change (réservation, données)
  *
  * Rôles (`lib/owned-project.ts`) : `lecteur` lit tout et commente ;
  * `editeur` lit, commente et modifie (saisies, arbitrages, programme,
@@ -21,9 +23,10 @@ import { Router } from "express";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { projectMembers, users } from "../db/schema.js";
+import { projectMembers, projects, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { projectOr404, type ProjectRole } from "../lib/owned-project.js";
+import { lockProject } from "../lib/step-rows.js";
 
 export const membersRouter = Router({ mergeParams: true });
 membersRouter.use(requireAuth);
@@ -129,4 +132,35 @@ membersRouter.delete("/:userId", async (req, res) => {
     return;
   }
   res.status(204).end();
+});
+
+/**
+ * Transfert de propriété : le membre désigné devient propriétaire (il partage,
+ * libère et supprime désormais), l'ancien propriétaire reste éditeur. Le
+ * projet, ses données, ses membres et une éventuelle réservation d'édition
+ * ne changent pas ; la provenance et l'historique non plus.
+ */
+membersRouter.post("/:userId/propriete", async (req, res) => {
+  const project = await projectOr404(req, res, "owner");
+  if (!project) return;
+  const userId = req.params["userId"] as string;
+  const result = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
+    const [member] = await tx
+      .select({ userId: projectMembers.userId, email: users.email })
+      .from(projectMembers)
+      .innerJoin(users, eq(users.id, projectMembers.userId))
+      .where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)))
+      .limit(1);
+    if (!member) return null;
+    await tx.delete(projectMembers).where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)));
+    await tx.insert(projectMembers).values({ projectId: project.id, userId: project.ownerId, role: "editeur", invitedBy: member.email });
+    await tx.update(projects).set({ ownerId: userId, updatedAt: new Date() }).where(eq(projects.id, project.id));
+    return member;
+  });
+  if (!result) {
+    res.status(404).json({ error: "not_found", message: "La propriété ne peut être transférée qu'à un membre du projet : invitez d'abord ce compte." });
+    return;
+  }
+  res.json({ owner: { userId: result.userId, email: result.email }, you: { userId: req.user!.id, role: "editeur" as ProjectRole }, members: await listMembers(project.id) });
 });

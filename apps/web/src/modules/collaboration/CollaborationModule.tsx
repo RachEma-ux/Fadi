@@ -157,6 +157,17 @@ export function MembersPanel({ projectId }: { projectId: string }) {
     },
     onError: (err) => setError(errorText(err, "Le rôle n’a pas pu être modifié.")),
   });
+  const transfer = useMutation({
+    mutationFn: (userId: string) => api.transferOwnership(projectId, userId),
+    onSuccess: (v) => {
+      setError(null);
+      setNotice(`${v.owner.email} est maintenant propriétaire du projet ; vous en restez éditeur.`);
+      refresh();
+      void queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      void queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+    onError: (err) => setError(errorText(err, "Le transfert n’a pas pu être enregistré.")),
+  });
   const remove = useMutation({
     mutationFn: (userId: string) => api.removeMember(projectId, userId),
     onSuccess: (_v, userId) => {
@@ -176,7 +187,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
   if (!query.data) return <p role="alert">Impossible de lire les membres du projet.</p>;
   const v = query.data;
   const isOwner = v.you.role === "proprietaire";
-  const busy = invite.isPending || change.isPending || remove.isPending;
+  const busy = invite.isPending || change.isPending || remove.isPending || transfer.isPending;
   return (
     <div className="members-panel">
       <table className="programme-table members-table">
@@ -218,9 +229,22 @@ export function MembersPanel({ projectId }: { projectId: string }) {
               <td>{new Date(m.createdAt).toLocaleDateString("fr-FR")}</td>
               <td>
                 {isOwner ? (
-                  <button type="button" className="button-secondary" disabled={busy} onClick={() => remove.mutate(m.userId)}>
-                    Retirer
-                  </button>
+                  <>
+                    <button type="button" className="button-secondary" disabled={busy} onClick={() => remove.mutate(m.userId)}>
+                      Retirer
+                    </button>{" "}
+                    <button
+                      type="button"
+                      className="button-secondary"
+                      disabled={busy}
+                      title="Ce compte devient propriétaire (partage, libération, suppression) ; vous restez éditeur."
+                      onClick={() => {
+                        if (confirm(`Transférer la propriété du projet à ${m.email} ? Vous en resterez éditeur.`)) transfer.mutate(m.userId);
+                      }}
+                    >
+                      Transférer la propriété
+                    </button>
+                  </>
                 ) : m.userId === v.you.userId ? (
                   <button type="button" className="button-secondary" disabled={busy} onClick={() => remove.mutate(m.userId)}>
                     Quitter le projet
@@ -305,7 +329,11 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
           <div className="biz-kpi">
             <span>Édition</span>
             <b className="collab-lock">{v.access.lock ? `réservée par ${v.access.lock.email === v.access.you ? "vous" : v.access.lock.email}` : "libre"}</b>
-            <small>{v.access.lock ? `jusqu’à ${new Date(v.access.lock.expiresAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · depuis ${new Date(v.access.lock.since).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}` : "réservation optionnelle, 30 min prolongeables"}</small>
+            <small>
+              {v.access.lock
+                ? `jusqu’à ${new Date(v.access.lock.expiresAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · depuis ${new Date(v.access.lock.since).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
+                : "réservation optionnelle, 30 min prolongeables"}
+            </small>
           </div>
           <div className="biz-kpi">
             <span>Partage</span>

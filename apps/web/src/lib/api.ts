@@ -710,6 +710,8 @@ export const api = {
   inviteMember: (projectId: string, email: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify({ email, role }) }),
   setMemberRole: (projectId: string, userId: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ role }) }),
   removeMember: (projectId: string, userId: string) => request<void>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "DELETE" }),
+  /** Transfert de propriété à un membre (propriétaire seulement) : vous restez éditeur. */
+  transferOwnership: (projectId: string, userId: string) => request<MembersView>(`/projects/${projectId}/members/${encodeURIComponent(userId)}/propriete`, { method: "POST" }),
   /** Verrou d'édition optionnel : réserver / prolonger (423 si quelqu'un d'autre le détient), rendre la main (ou libérer, propriétaire). */
   getLock: (projectId: string) => request<{ lock: EditingLock | null; yours: boolean }>(`/projects/${projectId}/lock`),
   reserveEditing: (projectId: string) => request<{ lock: EditingLock; yours: true }>(`/projects/${projectId}/lock`, { method: "PUT" }),

@@ -934,6 +934,24 @@ check("journal : le commentaire du lecteur est daté et attribué", new RegExp(`
 await page2.goto(`${projectUrl}?module=collaboration`);
 await page2.waitForSelector(".members-panel");
 check("éditeur : « Votre rôle · éditeur », pas de formulaire d'invitation", (await page2.locator(".collab-role").textContent()) === "éditeur" && (await page2.locator(".members-invite").count()) === 0);
+// Transfert de propriété puis retour : l'éditeur devient propriétaire (il voit le formulaire d'invitation), l'ancien reste éditeur, et inversement.
+await page.goto(`${projectUrl}?module=collaboration`);
+await page.waitForSelector(`.members-table tr[data-member="${readerEmail}"]`);
+page.once("dialog", (d) => d.accept());
+await page.locator(`.members-table tr[data-member="${readerEmail}"] button:has-text("Transférer la propriété")`).click();
+await page.waitForFunction(() => /est maintenant propriétaire/.test(document.querySelector(".members-notice")?.textContent || ""), null, { timeout: 10000 });
+await page.waitForFunction(() => document.querySelector(".collab-role")?.textContent === "éditeur", null, { timeout: 10000 }).catch(() => {});
+check("transfert de propriété : l'ancien propriétaire devient éditeur (plus de formulaire d'invitation), le membre devient propriétaire", (await page.locator(".collab-role").textContent()) === "éditeur" && (await page.locator(".members-invite").count()) === 0 && new RegExp(readerEmail).test(await page.locator('.members-table tr[data-member="owner"]').textContent()));
+await page2.goto(`${projectUrl}?module=collaboration`);
+await page2.waitForSelector(".members-invite", { timeout: 15000 });
+check("nouveau propriétaire : « Votre rôle · propriétaire », formulaire d'invitation, ancien propriétaire listé éditeur", (await page2.locator(".collab-role").textContent()) === "propriétaire" && (await page2.locator(`.members-table tr[data-member="${email}"] select`).inputValue()) === "editeur");
+page2.once("dialog", (d) => d.accept());
+await page2.locator(`.members-table tr[data-member="${email}"] button:has-text("Transférer la propriété")`).click();
+await page2.waitForFunction(() => /est maintenant propriétaire/.test(document.querySelector(".members-notice")?.textContent || ""), null, { timeout: 10000 });
+await page2.waitForFunction(() => document.querySelector(".collab-role")?.textContent === "éditeur", null, { timeout: 10000 }).catch(() => {});
+check("transfert retour : la propriété revient au premier compte, le second redevient éditeur", (await page2.locator(".collab-role").textContent()) === "éditeur");
+await page2.goto(`${projectUrl}?module=collaboration`);
+await page2.waitForSelector('.members-table button:has-text("Quitter le projet")', { timeout: 15000 });
 await page2.locator('.members-table button:has-text("Quitter le projet")').click();
 await page2.waitForURL(/\/projets$/, { timeout: 10000 });
 await page2.waitForSelector("#project-list-heading");
