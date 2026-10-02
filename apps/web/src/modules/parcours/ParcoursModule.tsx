@@ -70,6 +70,7 @@ function StepStory({ step }: { step: ParcoursStep }) {
   if (!content.decision && !content.headline && !content.result) return null;
   return (
     <section className="ex81 ex81-story" aria-labelledby={`story-${step.number}`}>
+      {content.choice && <span className="ex81-tag">CHOIX {content.choice} · DÉJÀ ARBITRÉ</span>}
       {content.headline && <h2 id={`story-${step.number}`}>{content.headline}</h2>}
       <div className="step-detail-body">
         {content.decision && (
@@ -85,10 +86,10 @@ function StepStory({ step }: { step: ParcoursStep }) {
           </>
         )}
         {content.alternatives && (
-          <p>
-            <strong>Non retenu : </strong>
-            {content.alternatives}
-          </p>
+          <details className="ex81-fold">
+            <summary>Alternatives et compromis</summary>
+            <p>{content.alternatives}</p>
+          </details>
         )}
         {content.result?.donnee && (
           <p className="step-card-donnee">

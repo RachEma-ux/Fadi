@@ -2247,6 +2247,17 @@ button.h7-chip.h7-goto:hover {
 /* ---------------------------------------------------------------------- */
 /* Exemple résolu — présentation protégée (prototype : ex81-*)             */
 /* ---------------------------------------------------------------------- */
+.ex81-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #e4efe7;
+  color: #1f4d3b;
+  margin-bottom: 8px;
+}
 .ex81-fold {
   margin: 16px 0;
   padding: 15px;
