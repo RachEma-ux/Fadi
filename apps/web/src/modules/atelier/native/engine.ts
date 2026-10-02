@@ -29,7 +29,7 @@ import "./native.css";
 import type { AtelierStore } from "../../../lib/api";
 import { atelierStorage } from "./storage";
 
-export { atelierStorage, READ_ONLY_MESSAGE } from "./storage";
+export { atelierStorage, DRAWING_COPY_NAME, PROTECTED_REFERENCE_MESSAGE, READ_ONLY_MESSAGE } from "./storage";
 export type { ModelConflict, SyncState, SyncStatus } from "./storage";
 
 const SCRIPTS = ["/atelier-native/v14-viewer.js", "/atelier-native/v14-tools.js", "/atelier-native/v8-toolbar.js"];
@@ -113,6 +113,9 @@ function accessibleToolTabs(root: HTMLElement): void {
 export interface MountOptions {
   /** Projet partagé en lecture : rien n'est enregistré. */
   readOnly?: boolean;
+  /** Référence protégée d'un exemple : la première modification validée crée une copie de travail (`ensureDrawingCopy`). */
+  protectedReference?: boolean;
+  onDrawingCopy?: (copy: { id: string; name: string }) => void;
   projectId: string;
   stage: number | null;
   store: AtelierStore;
@@ -127,7 +130,9 @@ export async function mountEngine(container: HTMLElement, options: MountOptions)
   await ensureEngineLoaded();
   if (!parking) throw new Error("moteur non chargé");
   const readOnly = options.readOnly ?? false;
-  if (window.AtelierHost?.projectId !== options.projectId || readOnly !== atelierStorage.isReadOnly()) await atelierStorage.bind(options.projectId, options.store, readOnly);
+  const protectedReference = !readOnly && (options.protectedReference ?? false);
+  if (window.AtelierHost?.projectId !== options.projectId || readOnly !== atelierStorage.isReadOnly() || protectedReference !== atelierStorage.isProtectedReference())
+    await atelierStorage.bind(options.projectId, options.store, { readOnly, protectedReference, onDrawingCopy: options.onDrawingCopy });
   window.AtelierHost = { stage: options.stage, projectId: options.projectId };
   const root = parking.querySelector<HTMLElement>("#nativeDesignerRoot");
   container.appendChild(parking);

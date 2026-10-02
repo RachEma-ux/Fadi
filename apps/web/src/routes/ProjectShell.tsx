@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, ROLE_LABEL } from "../lib/api";
 import { lockedHint, READ_ONLY_HINT, useProjectAccess } from "../lib/access";
 import { ConflictPanel } from "../components/ConflictPanel";
@@ -10,6 +10,7 @@ import { MODULES } from "../modules/module-registry";
 import { AnalysesModule } from "../modules/analyses/AnalysesModule";
 import { CollaborationModule } from "../modules/collaboration/CollaborationModule";
 import { DocumentsModule } from "../modules/documents/DocumentsModule";
+import { HarmonieToast } from "../modules/parcours/HarmoniePanel";
 import { ParcoursModule } from "../modules/parcours/ParcoursModule";
 import { ProgrammeHypothesesPage, ProgrammeModelLinksPage } from "../modules/programmation/ProgrammeLinks";
 import { ProgrammeRepartition, ProgrammeTransfer } from "../modules/programmation/ProgrammeRepartition";
@@ -29,6 +30,10 @@ export function ProjectShell() {
   const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
   const online = useOnline();
   const access = useProjectAccess(projectId);
+  // Un message porté par la navigation (copie de travail créée, projet importé…) : le Parcours affiche le sien, les autres modules celui-ci.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const notice = (location.state as { notice?: string } | null)?.notice ?? null;
 
   // Le module ouvert vit dans l'URL (`?module=`), comme l'étape (`?etape=`) et la vue (`?vue=`) : les liens
   // entre modules (« Comparer au modèle dessiné », « Ouvrir l’Atelier »…) et le rechargement le respectent.
@@ -65,7 +70,10 @@ export function ProjectShell() {
         </h1>
         <span className="project-header-meta">
           <span>Révision du modèle : {project.modelRevision}</span>
-          <span className={`project-role project-role-${access.role}`} title={project.role === "proprietaire" || !project.role ? "Votre projet" : `Partagé par ${project.ownerEmail ?? "son propriétaire"}`}>
+          <span
+            className={`project-role project-role-${access.role}`}
+            title={project.role === "proprietaire" || !project.role ? "Votre projet" : `Partagé par ${project.ownerEmail ?? "son propriétaire"}`}
+          >
             {ROLE_LABEL[access.role]}
             {project.role && project.role !== "proprietaire" && project.ownerEmail ? ` · partagé par ${project.ownerEmail}` : ""}
           </span>
@@ -91,8 +99,8 @@ export function ProjectShell() {
 
       {(!online || projectQuery.isError) && (
         <p className="offline-banner" role="status">
-          Lecture hors-ligne : données lues le {new Date(projectQuery.dataUpdatedAt).toLocaleString("fr-FR")}. Le dessin de l’Atelier s’enregistre localement ; les formulaires et arbitrages attendront le retour
-          du réseau.
+          Lecture hors-ligne : données lues le {new Date(projectQuery.dataUpdatedAt).toLocaleString("fr-FR")}. Le dessin de l’Atelier s’enregistre localement ; les formulaires et arbitrages attendront
+          le retour du réseau.
         </p>
       )}
 
@@ -100,12 +108,7 @@ export function ProjectShell() {
 
       <nav aria-label="Modules du projet" className="module-nav">
         {MODULES.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            aria-current={m.id === activeModule ? "page" : undefined}
-            onClick={() => selectModule(m.id)}
-          >
+          <button key={m.id} type="button" aria-current={m.id === activeModule ? "page" : undefined} onClick={() => selectModule(m.id)}>
             {m.label}
           </button>
         ))}
@@ -118,6 +121,8 @@ export function ProjectShell() {
             <ParcoursModule projectId={projectId} />
           </>
         )}
+
+        {activeModule !== "parcours" && notice && <HarmonieToast text={notice} onDone={() => navigate(`${location.pathname}${location.search}`, { replace: true, state: null })} />}
 
         {activeModule === "atelier" && (
           <>

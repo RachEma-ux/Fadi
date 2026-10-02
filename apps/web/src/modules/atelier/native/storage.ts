@@ -18,6 +18,9 @@ import { localStore } from "../../../lib/local-store";
 export type SyncStatus = "idle" | "local" | "syncing" | "saved" | "conflict" | "error" | "offline" | "readonly";
 
 export const READ_ONLY_MESSAGE = "Lecture seule : ce projet vous est partagé en lecture ; vous pouvez explorer le modèle, mais vos modifications dans l’Atelier ne sont pas enregistrées.";
+/** Nom de la copie créée automatiquement (prototype : `copy('P.118 — copie de travail · Atelier', …)` ; Fadi affiche « code — nom », le code n'est pas répété). */
+export const DRAWING_COPY_NAME = "copie de travail · Atelier";
+export const PROTECTED_REFERENCE_MESSAGE = "Exemple protégé : première modification dans une copie automatique.";
 
 export interface SyncState {
   status: SyncStatus;
@@ -58,7 +61,18 @@ declare global {
     AtelierTools?: AtelierTools;
     initAtelierToolbar?: () => void;
     AtelierHost?: { stage: number | null; projectId: string | null };
+    /** Couture du prototype (`P118Resolved`) que les outils de dessin extraits appellent avant de valider une modification. */
+    P118Resolved?: { isRead: (p?: unknown) => boolean; ensureDrawingCopy: () => boolean };
   }
+}
+
+export interface BindOptions {
+  /** Projet partagé en lecture : le moteur dessine en mémoire, rien n'est enregistré. */
+  readOnly?: boolean;
+  /** Référence protégée d'un exemple : la première modification validée crée une copie de travail et s'y enregistre. */
+  protectedReference?: boolean;
+  /** Appelé une fois la copie de travail créée et les écritures en attente transférées (l'écran bascule sur la copie). */
+  onDrawingCopy?: (copy: { id: string; name: string }) => void;
 }
 
 /** Une valeur du magasin telle que le moteur l'a écrite : du JSON (domaines, registre) ou une chaîne brute (projet actif). */
@@ -92,14 +106,23 @@ class AtelierStorageAdapter implements Storage {
   private queued = Promise.resolve();
   /** Projet partagé en lecture : le moteur dessine en mémoire, rien n'est mis en file ni envoyé (le serveur refuserait, 403). */
   private readOnly = false;
+  /** Référence protégée : la prochaine modification validée du dessin passe par `ensureDrawingCopy`. */
+  private protectedReference = false;
+  /** Copie de travail en cours de création : les écritures attendent son identifiant avant d'être mises en file et envoyées. */
+  private copying: Promise<string> | null = null;
+  private onDrawingCopy: ((copy: { id: string; name: string }) => void) | null = null;
   /** Conflits du modèle en attente de décision (copie de secours conservée), par projet ouvert. */
   private conflicts: ModelConflict[] = [];
   private conflictListeners = new Set<(c: ModelConflict[]) => void>();
 
-  async bind(projectId: string, store: AtelierStore, readOnly = false): Promise<void> {
+  async bind(projectId: string, store: AtelierStore, options: BindOptions = {}): Promise<void> {
+    const readOnly = options.readOnly ?? false;
     this.flushTimers();
     this.projectId = projectId;
     this.readOnly = readOnly;
+    this.protectedReference = !readOnly && (options.protectedReference ?? false);
+    this.onDrawingCopy = options.onDrawingCopy ?? null;
+    this.copying = null;
     this.setConflicts([]);
     // Le moteur écrit du JSON pour ses domaines mais une chaîne brute pour
     // `design.v13.activeProject` : on lui rend exactement ce qu'il a écrit.
@@ -133,6 +156,57 @@ class AtelierStorageAdapter implements Storage {
 
   isReadOnly(): boolean {
     return this.readOnly;
+  }
+
+  /** `P118Resolved.isRead(p)` : le projet ouvert est la référence protégée (l'aide des outils l'annonce). */
+  isProtectedReference(): boolean {
+    return this.protectedReference;
+  }
+
+  /**
+   * `ensureDrawingCopy()` du prototype, appelé par `fdCommit` avant de valider
+   * une modification du dessin dans la référence protégée : la copie de
+   * travail est demandée au serveur (`POST /projects/:id/copies`, mêmes clés
+   * natives, révisions à 1) et, dès cet instant, les écritures du moteur lui
+   * sont destinées — elles attendent son identifiant dans la file locale puis
+   * repartent vers elle ; l'original n'est jamais écrit. Renvoie `true` quand
+   * la copie est engagée (le moteur valide la modification), `false` sinon.
+   */
+  ensureDrawingCopy(): boolean {
+    if (!this.projectId || this.readOnly || !this.protectedReference) return false;
+    const source = this.projectId;
+    this.protectedReference = false;
+    this.setState({ status: "syncing", pending: this.pendingKeys.size, message: "Exemple protégé : création de la copie de travail…" });
+    this.copying = api
+      .copyProject(source, DRAWING_COPY_NAME)
+      .then(async (created) => {
+        // Les écritures déjà en file sous la référence passent à la copie, dont chaque clé existante est en révision 1.
+        for (const q of await localStore.pending(source)) {
+          await localStore.queue(created.id, q.key, q.value, q.expectedRevision === null ? null : 1);
+          await localStore.acknowledge(source, q.key);
+        }
+        this.projectId = created.id;
+        this.revisions = new Map([...this.revisions.keys()].map((k) => [k, 1]));
+        this.copying = null;
+        this.setState({ status: this.pendingKeys.size ? "local" : "saved", pending: this.pendingKeys.size, message: "Copie de travail créée automatiquement · exemple original conservé." });
+        this.onDrawingCopy?.(created);
+        return created.id;
+      })
+      .catch(async (err: unknown) => {
+        // Sans copie, rien ne doit atteindre l'original : la modification reste affichée, retirée de la file, et l'Atelier passe en lecture seule.
+        this.copying = null;
+        this.readOnly = true;
+        for (const q of await localStore.pending(source)) await localStore.acknowledge(source, q.key);
+        this.pendingKeys.clear();
+        this.flushTimers();
+        this.setState({
+          status: "error",
+          pending: 0,
+          message: `Copie de travail impossible : ${err instanceof ApiError && err.serverMessage ? err.serverMessage : err instanceof Error ? err.message : String(err)}. La modification reste affichée mais n’est pas enregistrée ; l’exemple original est intact.`,
+        });
+        throw err;
+      });
+    return true;
   }
 
   /** Les conflits du modèle en attente ; `fn` est appelé tout de suite puis à chaque changement. */
@@ -218,10 +292,13 @@ class AtelierStorageAdapter implements Storage {
     }
     this.pendingKeys.add(key);
     // Enregistré localement d'abord (IndexedDB), avec la révision lue : rien n'est perdu si le réseau ou l'onglet disparaît.
-    const projectId = this.projectId;
+    // Pendant la création d'une copie de travail, l'écriture attend l'identifiant de la copie (jamais celui de l'original).
     const value = this.values.get(key) ?? null;
-    const revision = this.revisions.get(key) ?? null;
-    this.queued = this.queued.then(() => localStore.queue(projectId, key, value, revision));
+    this.queued = this.queued.then(async () => {
+      if (this.copying) await this.copying.catch(() => undefined);
+      if (!this.projectId || this.readOnly) return;
+      await localStore.queue(this.projectId, key, value, this.revisions.get(key) ?? null);
+    });
     this.setState({
       status: isOffline() ? "offline" : "local",
       pending: this.pendingKeys.size,
@@ -239,8 +316,9 @@ class AtelierStorageAdapter implements Storage {
   }
 
   private async persist(key: string): Promise<void> {
+    if (this.copying) await this.copying.catch(() => undefined);
     const projectId = this.projectId;
-    if (!projectId || !this.pendingKeys.has(key)) return;
+    if (!projectId || this.readOnly || !this.pendingKeys.has(key)) return;
     if (isOffline()) {
       this.setState({ status: "offline", pending: this.pendingKeys.size, message: "Hors-ligne : les modifications sont enregistrées localement et seront synchronisées au retour du réseau." });
       return;
@@ -356,4 +434,6 @@ export const atelierStorage = new AtelierStorageAdapter();
 
 if (typeof window !== "undefined") {
   window.addEventListener("online", () => void atelierStorage.retryPending());
+  // Couture `P118Resolved` du moteur extrait : l'aide des outils et la copie de travail automatique de la référence protégée.
+  window.P118Resolved = { isRead: () => atelierStorage.isProtectedReference(), ensureDrawingCopy: () => atelierStorage.ensureDrawingCopy() };
 }

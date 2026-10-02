@@ -13,7 +13,10 @@
  *   5. étape 17 : notes → moyenne ; étape 19 : décision ; « Marquer
  *      terminée » → progression 1 / 21 ;
  *   6. exemple P.118 importé : réponses renseignées et choix retenus ;
- *      Atelier natif (dessin, annulation, rechargement) ; étape 01 : outil
+ *      Atelier natif de la référence protégée (note, aide de l'outil, premier
+ *      mur → copie de travail automatique « P.118 — copie de travail ·
+ *      Atelier », original intact), puis sur la copie : annulation,
+ *      rechargement ; étape 01 : outil
  *      Parcelle (fichier P.118, modification d'une borne → conflit avec le
  *      bâtiment dessiné, retour → parcelle liée) et propositions de site
  *      Harmonie (schéma, légende, données du site, proposition de départ) ;
@@ -351,42 +354,55 @@ await page.goto(`${exampleUrl}?module=atelier`);
 await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
 await page.waitForTimeout(600);
 const examplePid = exampleUrl.split("/").pop();
-const rdcWalls = async () =>
+const rdcWallsOf = async (pid) =>
   page.evaluate(async (pid) => {
     const levels = await (await fetch(`/projects/${pid}/levels`, { credentials: "include" })).json();
     const rdc = levels.find((l) => l.id.endsWith("_rdc"));
     const objs = await (await fetch(`/projects/${pid}/levels/${rdc.id}/objects`, { credentials: "include" })).json();
     const project = await (await fetch(`/projects/${pid}`, { credentials: "include" })).json();
     return { walls: objs.filter((o) => o.kind === "wall").length, revision: project.modelRevision };
-  }, examplePid);
+  }, pid);
+const rdcWalls = () => rdcWallsOf(examplePid);
 check("atelier : géométrie P.118 chargée (EPSG:26191 · 1345.55 m²)", (await page.locator("#viewer-info").textContent()).includes("1345.55"));
 check("atelier : 6 niveaux", (await page.locator("#model-floors button").count()) === 6);
 check("atelier : barre d'outils V8 prête", (await page.locator("#atelier-toolbar").getAttribute("data-ready")) === "1");
 const before = await rdcWalls();
 check("atelier : 39 murs au RDC avant dessin, révision 1", before.walls === 39 && before.revision === 1, JSON.stringify(before));
+// Référence protégée de l'exemple (`demoP118V81.mode = "reference"`) : la note l'annonce, l'aide de l'outil aussi, et la première
+// modification validée crée la copie de travail automatiquement (`ensureDrawingCopy` → `copy('P.118 — copie de travail · Atelier')`).
+check("atelier de la référence : note « Exemple protégé : première modification dans une copie automatique. »", /Exemple protégé : première modification dans une copie automatique\./.test(await page.locator(".native-atelier-reference").textContent()));
 await page.locator("#model-floors button", { hasText: "RDC" }).first().click();
 await page.locator('#atelier-toolbar [data-atab="design"]').click();
 await page.waitForTimeout(600);
 await page.locator('button:has-text("Mur")').first().click();
+check("atelier de la référence : l'aide de l'outil ajoute « Exemple protégé : première modification dans une copie automatique »", /Exemple protégé : première modification dans une copie automatique/.test(await page.evaluate(() => document.querySelector("#nativeDesignerRoot")?.textContent || "")));
 const box = await page.locator("#viewer-surface").boundingBox();
 await page.mouse.click(box.x + box.width * 0.45, box.y + box.height * 0.5);
 await page.waitForTimeout(200);
 await page.mouse.click(box.x + box.width * 0.55, box.y + box.height * 0.5);
 await page.keyboard.press("Enter");
-await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid) && /module=atelier/.test(u.toString()), { timeout: 30000 });
+const atelierUrl = page.url().split("?")[0];
+const atelierPid = atelierUrl.split("/").pop();
+await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
+await page.waitForFunction(() => /Enregistré sur le serveur|Modèle chargé depuis le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
 await page.waitForTimeout(400);
-const afterDraw = await rdcWalls();
-check("atelier : un mur dessiné → 40 murs, révision 2 (projection régénérée)", afterDraw.walls === 40 && afterDraw.revision === 2, JSON.stringify(afterDraw));
+const copyProject = await (await page.request.get(`${BASE}/projects/${atelierPid}`)).json();
+const afterDraw = await rdcWallsOf(atelierPid);
+const referenceAfter = await rdcWalls();
+check("atelier de la référence : un mur dessiné → copie de travail créée automatiquement (« P.118 — copie de travail · Atelier », mode modifiable), écran basculé sur la copie, même module", copyProject.code === "P.118" && copyProject.name === "copie de travail · Atelier" && copyProject.exampleMode === "editable" && copyProject.sourceExampleId === "p118-exemple-complet" && page.url().includes("module=atelier") && (await page.locator(".project-header h1").textContent()) === "P.118 — copie de travail · Atelier", JSON.stringify({ name: copyProject.name, mode: copyProject.exampleMode, title: await page.locator(".project-header h1").textContent() }));
+check("copie de travail : le mur dessiné y est enregistré → 40 murs, révision 2 (projection régénérée) ; la référence reste à 39 murs, révision 1", afterDraw.walls === 40 && afterDraw.revision === 2 && referenceAfter.walls === 39 && referenceAfter.revision === 1, JSON.stringify({ afterDraw, referenceAfter }));
+check("copie de travail : plus de note « Exemple protégé », toast « Copie de travail créée automatiquement · exemple original conservé. »", (await page.locator(".native-atelier-reference").count()) === 0 && /Copie de travail créée automatiquement · exemple original conservé\./.test((await page.locator(".h7-toast").allTextContents()).join(" ")) && /Copie de travail active · modification enregistrée ; exemple original conservé\./.test(await page.evaluate(() => document.querySelector("#nativeDesignerRoot")?.textContent || "")), (await page.locator(".h7-toast").allTextContents()).join(" | "));
 await page.screenshot({ path: `${OUT}/atelier-concevoir-wall-desktop.png`, fullPage: true });
 await page.locator('#atelier-toolbar [data-quick="undo"]').click();
 await page.waitForTimeout(800);
 await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
 await page.waitForTimeout(400);
-const afterUndo = await rdcWalls();
-check("atelier : annuler → 39 murs, révision 3 (l'annulation modifie l'état persistant)", afterUndo.walls === 39 && afterUndo.revision === 3, JSON.stringify(afterUndo));
+const afterUndo = await rdcWallsOf(atelierPid);
+check("copie de travail : annuler → 39 murs, révision 3 (l'annulation modifie l'état persistant)", afterUndo.walls === 39 && afterUndo.revision === 3, JSON.stringify(afterUndo));
 await page.reload();
 await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
-check("atelier : rechargement → modèle toujours là", (await page.locator("#model-floors button").count()) === 6);
+check("copie de travail : rechargement → modèle toujours là", (await page.locator("#model-floors button").count()) === 6);
 await page.goto(`${exampleUrl}?module=parcours&etape=10`);
 await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
 check("étape 10 : l'Atelier est monté dans l'étape (même moteur)", (await page.locator(".native-atelier #viewer-info").count()) === 1);
@@ -755,8 +771,8 @@ await page.locator(".comment-delete").first().click();
 await page.waitForFunction(() => document.querySelectorAll(".comment").length === 0, null, { timeout: 10000 });
 check("collaboration : « Supprimer » (auteur) le commentaire d'origine → sa réponse part avec lui, plus de commentaire", (await page.locator(".comment").count()) === 0);
 
-// 6k. Hors-ligne : file locale (IndexedDB) de l'Atelier, quatre états visibles, rejeu au retour du réseau et après rechargement, ouverture depuis le cache local
-await page.goto(`${exampleUrl}?module=atelier`);
+// 6k. Hors-ligne (sur la copie de travail) : file locale (IndexedDB) de l'Atelier, quatre états visibles, rejeu au retour du réseau et après rechargement, ouverture depuis le cache local
+await page.goto(`${atelierUrl}?module=atelier`);
 await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
 await page.waitForFunction(() => /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
 const drawWall = async (fx) => {
@@ -770,7 +786,7 @@ const drawWall = async (fx) => {
   await page.mouse.click(b.x + b.width * (fx + 0.08), b.y + b.height * 0.5);
   await page.keyboard.press("Enter");
 };
-const wallsBeforeOffline = await rdcWalls();
+const wallsBeforeOffline = await rdcWallsOf(atelierPid);
 await ctx.setOffline(true);
 await page.waitForFunction(() => /Hors-ligne/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 5000 }).catch(() => {});
 check("hors-ligne : l'en-tête du projet passe « Hors-ligne »", /^Hors-ligne/.test(await page.locator(".sync-indicator").textContent()));
@@ -780,28 +796,28 @@ const outbox = await page.evaluate(() => new Promise((resolve) => { const req = 
 check("hors-ligne : un mur dessiné → « Hors-ligne · enregistré localement », écriture conservée dans la file IndexedDB (floorDesign)", /enregistré localement \(\d+\)/.test(await page.locator(".native-atelier-status").textContent()) && outbox.includes("floorDesign") && /modification\(s\) enregistrée\(s\) localement/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify(outbox));
 await ctx.setOffline(false);
 await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
-const wallsAfterOnline = await rdcWalls();
+const wallsAfterOnline = await rdcWallsOf(atelierPid);
 check("retour du réseau : synchronisation automatique → « Enregistré sur le serveur », +1 mur et +1 révision sur le serveur, file vide", wallsAfterOnline.walls === wallsBeforeOffline.walls + 1 && wallsAfterOnline.revision === wallsBeforeOffline.revision + 1 && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify({ wallsBeforeOffline, wallsAfterOnline }));
 // Conflit du modèle : un autre appareil écrit la même clé pendant la coupure ; au retour, le rejeu est refusé (409), la version du
 // serveur reprend la clé, la vôtre est conservée en copie de secours, et le bandeau propose de la reprendre ou de garder le serveur.
-const storeBefore = await (await page.request.get(`${BASE}/projects/${examplePid}/atelier/store`)).json();
+const storeBefore = await (await page.request.get(`${BASE}/projects/${atelierPid}/atelier/store`)).json();
 const floorKey = Object.keys(storeBefore.entries).find((k) => k.endsWith(".floorDesign"));
 await ctx.setOffline(true);
 await drawWall(0.52);
 await page.waitForFunction(() => /Hors-ligne · enregistré localement/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 10000 });
-const otherModel = await page.request.put(`${BASE}/projects/${examplePid}/atelier/store/${encodeURIComponent(floorKey)}`, { data: { value: storeBefore.entries[floorKey], expectedRevision: storeBefore.revisions[floorKey] } });
+const otherModel = await page.request.put(`${BASE}/projects/${atelierPid}/atelier/store/${encodeURIComponent(floorKey)}`, { data: { value: storeBefore.entries[floorKey], expectedRevision: storeBefore.revisions[floorKey] } });
 check("autre appareil : écriture du même floorDesign pendant la coupure (200)", otherModel.status() === 200, String(otherModel.status()));
 await ctx.setOffline(false);
 await page.waitForSelector('.conflict-banner li[data-kind="modele"]', { timeout: 20000 });
 const modelConflictText = (await page.locator('.conflict-banner li[data-kind="modele"]').textContent()).replace(/\s+/g, " ");
 check("retour du réseau : rejeu refusé (409) → « Conflit détecté », conflit du modèle listé (« Atelier · floorDesign », copie de secours), compté dans l'en-tête", /Atelier · floorDesign/.test(modelConflictText) && /conservée sous « .*backup\.conflit-/.test(modelConflictText) && /Conflit détecté/.test(await page.locator(".native-atelier-status").textContent()) && /1 conflit\(s\) à examiner/.test(await page.locator(".sync-indicator").textContent()), modelConflictText.slice(0, 160));
-const wallsDuringConflict = await rdcWalls();
+const wallsDuringConflict = await rdcWallsOf(atelierPid);
 await page.locator('.conflict-banner li[data-kind="modele"] button:has-text("Reprendre ma version")').click();
 await page.waitForFunction(() => !document.querySelector(".conflict-banner") && /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || "") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 20000 });
 // La copie de secours est retirée du serveur par une seconde écriture (regroupée) : on attend qu'elle ait disparu.
-await page.waitForFunction(async (pid) => !Object.keys((await (await fetch(`/projects/${pid}/atelier/store`, { credentials: "include" })).json()).entries).some((k) => k.includes(".backup.conflit-")), examplePid, { timeout: 15000 }).catch(() => {});
-const wallsResolved = await rdcWalls();
-const storeResolved = await (await page.request.get(`${BASE}/projects/${examplePid}/atelier/store`)).json();
+await page.waitForFunction(async (pid) => !Object.keys((await (await fetch(`/projects/${pid}/atelier/store`, { credentials: "include" })).json()).entries).some((k) => k.includes(".backup.conflit-")), atelierPid, { timeout: 15000 }).catch(() => {});
+const wallsResolved = await rdcWallsOf(atelierPid);
+const storeResolved = await (await page.request.get(`${BASE}/projects/${atelierPid}/atelier/store`)).json();
 const backupsLeft = Object.keys(storeResolved.entries).filter((k) => k.includes(".backup.conflit-"));
 check("« Reprendre ma version » : le dessin local est réécrit sur la clé à partir de la révision du serveur (+1 mur), la copie de secours est retirée, en-tête synchronisé", wallsDuringConflict.walls === wallsAfterOnline.walls && wallsResolved.walls === wallsAfterOnline.walls + 1 && backupsLeft.length === 0 && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify({ wallsAfterOnline, wallsDuringConflict, wallsResolved, backupsLeft, indicator: await page.locator(".sync-indicator").textContent() }));
 // Serveur injoignable (route bloquée) puis rechargement de la page : la file locale est rejouée à l'ouverture.
@@ -813,7 +829,7 @@ await page.unroute(/\/atelier\/store\//);
 await page.reload();
 await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
 await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
-const wallsAfterReload = await rdcWalls();
+const wallsAfterReload = await rdcWallsOf(atelierPid);
 check("rechargement : la file locale est rejouée à l'ouverture → +1 mur et +1 révision sur le serveur", wallsAfterReload.walls === wallsResolved.walls + 1 && wallsAfterReload.revision === wallsResolved.revision + 1, JSON.stringify({ wallsResolved, wallsAfterReload }));
 // Rechargement complet hors-ligne : l'enveloppe (service worker) sert l'application, le cache persistant (IndexedDB) relit
 // les étapes déjà lues, l'Atelier s'ouvre depuis le cache local du modèle.

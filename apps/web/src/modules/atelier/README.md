@@ -25,4 +25,6 @@ L'onglet « Hypothèses & MapTiler » du bilan reçoit l'observation déclarée 
 
 « Collecter l'altitude indicative du centre » appelle le service MapTiler depuis le navigateur avec la clé de l'utilisateur (`lib/maptiler.ts`) et pose l'altitude reçue sur le contexte (`PUT …/design-review/elevation`).
 
-Reste : copie automatique de la référence au premier dessin ; la page Harmony V6 (superseded) qui lisait les revues documentaires du dossier.
+Référence protégée de l'exemple : le moteur extrait appelle `window.P118Resolved.ensureDrawingCopy()` avant de valider une modification du dessin (`fdCommit`) ; Fadi y répond en demandant la copie de travail au serveur (`POST /projects/:id/copies`, mêmes clés natives) et en destinant dès cet instant les écritures du moteur à la copie (file locale puis envoi) — l'original n'est jamais écrit ; une fois les écritures envoyées, l'écran bascule sur la copie, même module et même étape. Sans copie possible, la modification reste affichée, rien n'atteint l'original et l'Atelier passe en lecture seule avec le motif.
+
+Reste : la page Harmony V6 (superseded) qui lisait les revues documentaires du dossier.

@@ -6,9 +6,10 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, type AtelierStore } from "../../lib/api";
 import { localStore } from "../../lib/local-store";
-import { atelierStorage, mountEngine, unmountEngine, type SyncState } from "./native/engine";
+import { atelierStorage, DRAWING_COPY_NAME, mountEngine, PROTECTED_REFERENCE_MESSAGE, unmountEngine, type SyncState } from "./native/engine";
 
 const STATUS_LABEL: Record<SyncState["status"], string> = {
   idle: "Modèle chargé depuis le serveur",
@@ -39,11 +40,20 @@ async function loadStore(projectId: string): Promise<LoadedStore> {
 
 export function NativeAtelier({ projectId, stage = null, readOnly = false }: { projectId: string; stage?: number | null; readOnly?: boolean }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const location = useLocation();
   // `networkMode: "always"` : sans réseau, la requête s'exécute quand même pour tomber sur le cache local.
   const storeQuery = useQuery({ queryKey: ["atelier-store", projectId], queryFn: () => loadStore(projectId), staleTime: Infinity, networkMode: "always" });
+  const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId) });
+  // Référence protégée de l'exemple (`demoP118V81.mode = "reference"`) : la première modification validée du dessin crée une copie de travail.
+  const protectedReference = !readOnly && projectQuery.data?.exampleMode === "reference";
+  const projectKnown = !!projectQuery.data;
   const container = useRef<HTMLDivElement>(null);
   const [mountError, setMountError] = useState<string | null>(null);
   const [sync, setSync] = useState<SyncState>({ status: "idle", pending: 0, message: null });
+  // L'adresse courante (module, étape) est lue au moment de la copie, sans remonter le moteur à chaque changement.
+  const search = useRef(location.search);
+  search.current = location.search;
 
   useEffect(
     () =>
@@ -61,9 +71,19 @@ export function NativeAtelier({ projectId, stage = null, readOnly = false }: { p
   useEffect(() => {
     const el = container.current;
     const store = storeQuery.data;
-    if (!el || !store) return;
+    if (!el || !store || !projectKnown) return;
     let cancelled = false;
-    mountEngine(el, { projectId, stage, store, readOnly }).catch((err: unknown) => {
+    // Copie de travail créée automatiquement (prototype : `copy(…, { stayInAtelier: true, automatic: true })`) : une fois ses
+    // écritures envoyées, l'écran bascule sur la copie, même module et même étape, l'original intact.
+    const onDrawingCopy = (copy: { id: string; name: string }) => {
+      void atelierStorage.flush().then(() => {
+        if (cancelled) return;
+        void queryClient.invalidateQueries({ queryKey: ["projects"] });
+        const params = new URLSearchParams(search.current);
+        navigate(`/projets/${copy.id}?${params.toString()}`, { state: { notice: "Copie de travail créée automatiquement · exemple original conservé." } });
+      });
+    };
+    mountEngine(el, { projectId, stage, store, readOnly, protectedReference, onDrawingCopy }).catch((err: unknown) => {
       if (!cancelled) setMountError(err instanceof Error ? err.message : String(err));
     });
     return () => {
@@ -75,18 +95,26 @@ export function NativeAtelier({ projectId, stage = null, readOnly = false }: { p
         void queryClient.invalidateQueries({ queryKey: ["levels", projectId] });
       });
     };
-  }, [projectId, stage, storeQuery.data, queryClient, readOnly]);
+  }, [projectId, stage, storeQuery.data, projectKnown, queryClient, readOnly, protectedReference, navigate]);
 
-  if (storeQuery.isLoading) return <p role="status">Chargement du modèle…</p>;
+  if (storeQuery.isLoading || projectQuery.isLoading) return <p role="status">Chargement du modèle…</p>;
   if (!storeQuery.data) return <p role="alert">Impossible de charger le modèle de l’Atelier.</p>;
 
   return (
     <section className="native-atelier" aria-label="Atelier architectural">
       <p className={`native-atelier-status native-atelier-status-${sync.status}`} role="status">
-        {sync.status === "idle" && storeQuery.data.source === "cache" ? `Hors-ligne · modèle chargé depuis le cache local du ${new Date(storeQuery.data.fetchedAt).toLocaleString("fr-FR")}` : STATUS_LABEL[sync.status]}
+        {sync.status === "idle" && storeQuery.data.source === "cache"
+          ? `Hors-ligne · modèle chargé depuis le cache local du ${new Date(storeQuery.data.fetchedAt).toLocaleString("fr-FR")}`
+          : STATUS_LABEL[sync.status]}
         {sync.pending > 0 ? ` (${sync.pending})` : ""}
         {sync.message ? ` — ${sync.message}` : ""}
       </p>
+      {protectedReference && (
+        <p className="native-atelier-reference h7-muted" role="note">
+          {PROTECTED_REFERENCE_MESSAGE} La référence reste intacte : votre première modification validée ouvre une copie de travail (« {projectQuery.data?.code} — {DRAWING_COPY_NAME} ») et s’y
+          enregistre.
+        </p>
+      )}
       {mountError && (
         <p role="alert" className="h7-error">
           Le moteur de l’Atelier n’a pas pu démarrer : {mountError}
