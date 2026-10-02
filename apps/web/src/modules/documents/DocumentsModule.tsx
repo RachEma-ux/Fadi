@@ -66,7 +66,7 @@ export function DocumentsModule({ projectId }: { projectId: string }) {
   // Le téléchargement est pris en charge par le navigateur : la production est relue peu après.
   const onProduced = () => setTimeout(() => void queryClient.invalidateQueries({ queryKey: ["documents", projectId] }), 1500);
   if (query.isLoading) return <p role="status">Lecture des documents…</p>;
-  if (query.isError || !query.data) return <p role="alert">Impossible de lire les documents du projet.</p>;
+  if (!query.data) return <p role="alert">Impossible de lire les documents du projet.</p>;
   const v: DocumentsView = query.data;
   const produced = v.documents.filter((d) => d.produced);
   const stale = produced.filter((d) => d.freshness === "perime");

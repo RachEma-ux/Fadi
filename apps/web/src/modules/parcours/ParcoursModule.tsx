@@ -338,7 +338,7 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
   if (stepsQuery.isLoading) {
     return <p role="status">Chargement des étapes…</p>;
   }
-  if (stepsQuery.isError || !stepsQuery.data) {
+  if (!stepsQuery.data) {
     return <p role="alert">Impossible de charger les étapes du Parcours.</p>;
   }
 

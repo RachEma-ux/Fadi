@@ -85,7 +85,7 @@ function ChecksTable({ projectId, checks }: { projectId: string; checks: Traceab
 export function AnalysesModule({ projectId }: { projectId: string }) {
   const query = useQuery({ queryKey: ["analyses", projectId], queryFn: () => api.getAnalyses(projectId) });
   if (query.isLoading) return <p role="status">Calcul des analyses…</p>;
-  if (query.isError || !query.data) return <p role="alert">Impossible de calculer les analyses du projet.</p>;
+  if (!query.data) return <p role="alert">Impossible de calculer les analyses du projet.</p>;
   const v: AnalysesView = query.data;
   const q = v.quantities;
   const base = `/projets/${projectId}`;

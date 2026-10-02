@@ -53,6 +53,6 @@ export const MODULES: ModuleDescriptor[] = [
     id: "collaboration",
     label: "Collaboration",
     implemented: true,
-    status: "Commentaires par projet et par étape, journal des révisions, état de synchronisation du modèle ; partage multi-utilisateur, droits et file hors-ligne non disponibles (Lot 4), annoncés tels quels.",
+    status: "Commentaires par projet et par étape, journal des révisions, synchronisation hors-ligne de l'Atelier (file locale rejouée) et lecture hors-ligne ; partage multi-utilisateur et droits non disponibles (Lot 4), annoncés tels quels.",
   },
 ];

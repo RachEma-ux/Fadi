@@ -208,11 +208,11 @@ collaborationRouter.get("/", async (req, res) => {
       modelRevision: project.modelRevision,
       nativeKeys: store.length,
       lastModelWrite: lastWrite,
-      /** La persistance locale et la file de synchronisation hors-ligne ne sont pas disponibles : les écritures vont directement au serveur, avec révision par clé (409 en cas de conflit). */
+      /** File locale de l'Atelier (IndexedDB) et cache de lecture : disponibles ; pas encore de file pour les formulaires, arbitrages et commentaires. */
       offline: {
-        available: false,
+        available: true,
         reason:
-          "Chaque écriture de l'Atelier est enregistrée sur le serveur avec sa révision ; sans réseau, le travail reste dans la page et le conflit est signalé au retour. La file hors-ligne n'est pas encore disponible.",
+          "Les écritures de l'Atelier sont enregistrées localement (IndexedDB) avec leur révision, puis synchronisées au retour du réseau (409 en cas de conflit, copie de secours conservée) ; les pages déjà lues se relisent sans réseau. Les formulaires, arbitrages et commentaires exigent le réseau : envois en pause pendant la coupure, perdus au rechargement.",
       },
     },
     journal: await revisionJournal(project),

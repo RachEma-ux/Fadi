@@ -64,7 +64,7 @@ export function ProgrammeModelLinksPage({ projectId }: { projectId: string }) {
     </div>
   );
   if (links.isLoading) return <p className="loading-notice">Chargement des liaisons…</p>;
-  if (links.isError || !links.data) return <p role="alert">Impossible de charger les liaisons programme ↔ modèle.</p>;
+  if (!links.data) return <p role="alert">Impossible de charger les liaisons programme ↔ modèle.</p>;
   const v = links.data;
   if (!v.applied) {
     return (

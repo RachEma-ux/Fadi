@@ -14,7 +14,11 @@
  * Interface stable entre Fadi et le moteur :
  * - `window.ParcoursSession.storage` (couture prévue par le moteur) : ici un
  *   magasin en mémoire lié au projet Fadi courant, dont chaque écriture est
- *   envoyée à l'API avec la révision lue (détection de conflit) ;
+ *   d'abord conservée dans la file locale (IndexedDB, `lib/local-store.ts`)
+ *   puis envoyée à l'API avec la révision lue (détection de conflit) ; sans
+ *   réseau, elle attend dans la file et est rejouée au retour du réseau ou
+ *   à la prochaine ouverture du projet — quatre états visibles : enregistré
+ *   localement, synchronisation, enregistré sur le serveur, conflit ;
  * - `window.V14Bridge` (ouvrir un projet natif, modèle, rendu) et
  *   `window.AtelierTools` (outils de dessin) côté moteur ;
  * - `window.AtelierHost.stage` (numéro d'étape du Parcours affichée) côté
@@ -23,14 +27,19 @@
 import rootMarkup from "./root.html?raw";
 import "./native.css";
 import { ApiError, api, type AtelierStore } from "../../../lib/api";
+import { localStore } from "../../../lib/local-store";
 
-export type SyncStatus = "idle" | "local" | "syncing" | "saved" | "conflict" | "error";
+export type SyncStatus = "idle" | "local" | "syncing" | "saved" | "conflict" | "error" | "offline";
 
 export interface SyncState {
   status: SyncStatus;
   pending: number;
   message: string | null;
 }
+
+const isOffline = () => typeof navigator !== "undefined" && navigator.onLine === false;
+/** Une erreur réseau (fetch rejeté) ou une coupure déclarée : la file attend, rien n'est perdu. */
+const isNetworkFailure = (err: unknown) => isOffline() || (err instanceof TypeError && !(err instanceof ApiError));
 
 interface V14Bridge {
   openProject(id: string): void;
@@ -83,8 +92,10 @@ class AtelierStorageAdapter implements Storage {
   private pendingKeys = new Set<string>();
   private listeners = new Set<(s: SyncState) => void>();
   private state: SyncState = { status: "idle", pending: 0, message: null };
+  /** Écritures dans la file locale, dans l'ordre : `persist` attend qu'elles soient posées avant de lire la file. */
+  private queued = Promise.resolve();
 
-  bind(projectId: string, store: AtelierStore): void {
+  async bind(projectId: string, store: AtelierStore): Promise<void> {
     this.flushTimers();
     this.projectId = projectId;
     // Le moteur écrit du JSON pour ses domaines mais une chaîne brute pour
@@ -92,7 +103,25 @@ class AtelierStorageAdapter implements Storage {
     this.values = new Map(Object.entries(store.entries).map(([k, v]) => [k, typeof v === "string" ? v : JSON.stringify(v)]));
     this.revisions = new Map(Object.entries(store.revisions));
     this.pendingKeys.clear();
-    this.setState({ status: "idle", pending: 0, message: null });
+    // Écritures restées dans la file locale (coupure réseau, page quittée) : elles reprennent la main en
+    // mémoire et repartent vers le serveur avec la révision sur laquelle elles s'appuyaient.
+    const queued = await localStore.pending(projectId);
+    for (const q of queued) {
+      if (q.value === null) this.values.delete(q.key);
+      else this.values.set(q.key, q.value);
+      this.pendingKeys.add(q.key);
+    }
+    this.setState(
+      queued.length
+        ? {
+            status: isOffline() ? "offline" : "local",
+            pending: queued.length,
+            message: `${queued.length} modification(s) enregistrée(s) localement lors d'une session précédente : synchronisation en cours.`,
+          }
+        : { status: "idle", pending: 0, message: null },
+    );
+    for (const q of queued) this.inflight = this.inflight.then(() => this.persist(q.key)).catch(() => undefined);
+    if (queued.length && !isOffline()) void this.inflight;
   }
 
   subscribe(fn: (s: SyncState) => void): () => void {
@@ -142,7 +171,16 @@ class AtelierStorageAdapter implements Storage {
   private schedule(key: string) {
     if (!this.projectId) return;
     this.pendingKeys.add(key);
-    this.setState({ status: "local", pending: this.pendingKeys.size, message: null });
+    // Enregistré localement d'abord (IndexedDB), avec la révision lue : rien n'est perdu si le réseau ou l'onglet disparaît.
+    const projectId = this.projectId;
+    const value = this.values.get(key) ?? null;
+    const revision = this.revisions.get(key) ?? null;
+    this.queued = this.queued.then(() => localStore.queue(projectId, key, value, revision));
+    this.setState({
+      status: isOffline() ? "offline" : "local",
+      pending: this.pendingKeys.size,
+      message: isOffline() ? "Hors-ligne : les modifications sont enregistrées localement et seront synchronisées au retour du réseau." : null,
+    });
     const existing = this.timers.get(key);
     if (existing) clearTimeout(existing);
     this.timers.set(
@@ -156,18 +194,27 @@ class AtelierStorageAdapter implements Storage {
 
   private async persist(key: string): Promise<void> {
     const projectId = this.projectId;
-    if (!projectId) return;
+    if (!projectId || !this.pendingKeys.has(key)) return;
+    if (isOffline()) {
+      this.setState({ status: "offline", pending: this.pendingKeys.size, message: "Hors-ligne : les modifications sont enregistrées localement et seront synchronisées au retour du réseau." });
+      return;
+    }
     const raw = this.values.get(key);
+    await this.queued;
+    // La révision attendue est celle de la première modification locale (file), sinon celle lue.
+    const queued = (await localStore.pending(projectId)).find((q) => q.key === key);
+    const expectedRevision = queued ? queued.expectedRevision : (this.revisions.get(key) ?? null);
     this.setState({ status: "syncing", pending: this.pendingKeys.size, message: null });
     try {
       if (raw === undefined) {
         await api.deleteAtelierStoreEntry(projectId, key);
         this.revisions.delete(key);
       } else {
-        const res = await api.putAtelierStoreEntry(projectId, key, parseStored(raw), this.revisions.get(key) ?? null);
+        const res = await api.putAtelierStoreEntry(projectId, key, parseStored(raw), expectedRevision);
         this.revisions.set(key, res.revision);
       }
       this.pendingKeys.delete(key);
+      await localStore.acknowledge(projectId, key);
       this.setState({ status: this.pendingKeys.size ? "local" : "saved", pending: this.pendingKeys.size, message: null });
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -188,12 +235,48 @@ class AtelierStorageAdapter implements Storage {
         this.values.set(key, typeof body.value === "string" ? body.value : JSON.stringify(body.value));
         this.revisions.set(key, body.revision);
         this.pendingKeys.delete(key);
-        this.setState({ status: "conflict", pending: this.pendingKeys.size, message: `Conflit sur « ${key.split(".").pop()} » : la version du serveur a été rechargée ; votre version est conservée sous « ${backupKey} ».` });
+        await localStore.acknowledge(projectId, key);
+        this.setState({
+          status: "conflict",
+          pending: this.pendingKeys.size,
+          message: `Conflit sur « ${key.split(".").pop()} » : la version du serveur a été rechargée ; votre version est conservée sous « ${backupKey} ».`,
+        });
         window.V14Bridge?.render?.();
         return;
       }
-      this.setState({ status: "error", pending: this.pendingKeys.size, message: "Échec de l’enregistrement sur le serveur ; le travail reste en mémoire dans cet onglet. Nouvelle tentative à la prochaine modification." });
+      if (isNetworkFailure(err)) {
+        await localStore.failed(projectId, key, "réseau indisponible");
+        this.setState({
+          status: "offline",
+          pending: this.pendingKeys.size,
+          message: isOffline()
+            ? "Hors-ligne : les modifications sont enregistrées localement et seront synchronisées au retour du réseau."
+            : "Serveur injoignable : les modifications sont enregistrées localement ; nouvelle tentative au retour du réseau, à la prochaine modification ou à la prochaine ouverture du projet.",
+        });
+        return;
+      }
+      await localStore.failed(projectId, key, err instanceof Error ? err.message : String(err));
+      this.setState({
+        status: "error",
+        pending: this.pendingKeys.size,
+        message: "Échec de l’enregistrement sur le serveur ; le travail reste enregistré localement. Nouvelle tentative à la prochaine modification ou au retour du réseau.",
+      });
     }
+  }
+
+  /** Retour du réseau (ou demande explicite) : rejoue tout ce qui attend dans la file. */
+  async retryPending(): Promise<void> {
+    if (!this.projectId) return;
+    for (const key of [...this.pendingKeys]) {
+      if (this.timers.has(key)) continue; // une écriture encore en attente de regroupement part d'elle-même
+      this.inflight = this.inflight.then(() => this.persist(key)).catch(() => undefined);
+    }
+    await this.inflight;
+  }
+
+  /** Nombre d'écritures en attente (file locale). */
+  pendingCount(): number {
+    return this.pendingKeys.size;
   }
 
   /** Attend la fin des écritures en cours (utilisé avant de changer de projet ou de quitter l'écran). */
@@ -208,6 +291,10 @@ class AtelierStorageAdapter implements Storage {
 }
 
 export const atelierStorage = new AtelierStorageAdapter();
+
+if (typeof window !== "undefined") {
+  window.addEventListener("online", () => void atelierStorage.retryPending());
+}
 
 let parking: HTMLDivElement | null = null;
 let loading: Promise<void> | null = null;
@@ -266,7 +353,7 @@ export interface MountOptions {
 export async function mountEngine(container: HTMLElement, options: MountOptions): Promise<void> {
   await ensureEngineLoaded();
   if (!parking) throw new Error("moteur non chargé");
-  if (window.AtelierHost?.projectId !== options.projectId) atelierStorage.bind(options.projectId, options.store);
+  if (window.AtelierHost?.projectId !== options.projectId) await atelierStorage.bind(options.projectId, options.store);
   window.AtelierHost = { stage: options.stage, projectId: options.projectId };
   const root = parking.querySelector<HTMLElement>("#nativeDesignerRoot");
   container.appendChild(parking);

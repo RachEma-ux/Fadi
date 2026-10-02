@@ -6,7 +6,8 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../lib/api";
+import { api, type AtelierStore } from "../../lib/api";
+import { localStore } from "../../lib/local-store";
 import { atelierStorage, mountEngine, unmountEngine, type SyncState } from "./native/engine";
 
 const STATUS_LABEL: Record<SyncState["status"], string> = {
@@ -16,11 +17,29 @@ const STATUS_LABEL: Record<SyncState["status"], string> = {
   saved: "Enregistré sur le serveur",
   conflict: "Conflit détecté",
   error: "Échec de la synchronisation",
+  offline: "Hors-ligne · enregistré localement",
 };
+
+type LoadedStore = AtelierStore & { source: "serveur" | "cache"; fetchedAt: string };
+
+/** Le magasin du modèle : depuis le serveur (et mis en cache local), sinon depuis le cache local quand le réseau manque. */
+async function loadStore(projectId: string): Promise<LoadedStore> {
+  try {
+    const store = await api.getAtelierStore(projectId);
+    const fetchedAt = new Date().toISOString();
+    await localStore.cacheModel({ projectId, entries: store.entries, revisions: store.revisions, modelRevision: store.modelRevision, fetchedAt });
+    return { ...store, source: "serveur", fetchedAt };
+  } catch (err) {
+    const cached = await localStore.readModelCache(projectId);
+    if (cached) return { entries: cached.entries, revisions: cached.revisions, modelRevision: cached.modelRevision, source: "cache", fetchedAt: cached.fetchedAt };
+    throw err;
+  }
+}
 
 export function NativeAtelier({ projectId, stage = null }: { projectId: string; stage?: number | null }) {
   const queryClient = useQueryClient();
-  const storeQuery = useQuery({ queryKey: ["atelier-store", projectId], queryFn: () => api.getAtelierStore(projectId), staleTime: Infinity });
+  // `networkMode: "always"` : sans réseau, la requête s'exécute quand même pour tomber sur le cache local.
+  const storeQuery = useQuery({ queryKey: ["atelier-store", projectId], queryFn: () => loadStore(projectId), staleTime: Infinity, networkMode: "always" });
   const container = useRef<HTMLDivElement>(null);
   const [mountError, setMountError] = useState<string | null>(null);
   const [sync, setSync] = useState<SyncState>({ status: "idle", pending: 0, message: null });
@@ -58,12 +77,12 @@ export function NativeAtelier({ projectId, stage = null }: { projectId: string; 
   }, [projectId, stage, storeQuery.data, queryClient]);
 
   if (storeQuery.isLoading) return <p role="status">Chargement du modèle…</p>;
-  if (storeQuery.isError || !storeQuery.data) return <p role="alert">Impossible de charger le modèle de l’Atelier.</p>;
+  if (!storeQuery.data) return <p role="alert">Impossible de charger le modèle de l’Atelier.</p>;
 
   return (
     <section className="native-atelier" aria-label="Atelier architectural">
       <p className={`native-atelier-status native-atelier-status-${sync.status}`} role="status">
-        {STATUS_LABEL[sync.status]}
+        {sync.status === "idle" && storeQuery.data.source === "cache" ? `Hors-ligne · modèle chargé depuis le cache local du ${new Date(storeQuery.data.fetchedAt).toLocaleString("fr-FR")}` : STATUS_LABEL[sync.status]}
         {sync.pending > 0 ? ` (${sync.pending})` : ""}
         {sync.message ? ` — ${sync.message}` : ""}
       </p>

@@ -117,7 +117,7 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
   const query = useQuery({ queryKey: ["collaboration", projectId], queryFn: () => api.getCollaboration(projectId) });
   const [filter, setFilter] = useState("tous");
   if (query.isLoading) return <p role="status">Lecture du journal…</p>;
-  if (query.isError || !query.data) return <p role="alert">Impossible de lire la collaboration du projet.</p>;
+  if (!query.data) return <p role="alert">Impossible de lire la collaboration du projet.</p>;
   const v = query.data;
   const kinds = [...new Set(v.journal.map((e) => e.kind))];
   const journal = filter === "tous" ? v.journal : v.journal.filter((e) => e.kind === filter);
@@ -145,8 +145,8 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
           </div>
           <div className="biz-kpi">
             <span>Hors-ligne</span>
-            <b>{v.sync.offline.available ? "Disponible" : "Non disponible"}</b>
-            <small>file de synchronisation</small>
+            <b>{v.sync.offline.available ? "Atelier et lecture" : "Non disponible"}</b>
+            <small>file locale et cache (IndexedDB)</small>
           </div>
         </div>
         <p className="programme-note">{v.access.sharing.reason}</p>

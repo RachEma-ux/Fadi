@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { SyncIndicator } from "../components/SyncIndicator";
 import { MODULES } from "../modules/module-registry";
 import { AnalysesModule } from "../modules/analyses/AnalysesModule";
 import { NativeAtelier } from "../modules/atelier/NativeAtelier";
@@ -34,7 +35,7 @@ export function ProjectShell() {
   if (projectQuery.isLoading) {
     return <p role="status">Chargement du projet…</p>;
   }
-  if (projectQuery.isError || !projectQuery.data) {
+  if (!projectQuery.data) {
     return (
       <main>
         <p role="alert">Projet introuvable, ou vous n'y avez pas accès.</p>
@@ -52,8 +53,18 @@ export function ProjectShell() {
         <h1>
           {project.code} — {project.name}
         </h1>
-        <span>Révision du modèle : {project.modelRevision}</span>
+        <span className="project-header-meta">
+          <span>Révision du modèle : {project.modelRevision}</span>
+          <SyncIndicator projectId={projectId} />
+        </span>
       </header>
+
+      {projectQuery.isError && (
+        <p className="offline-banner" role="status">
+          Lecture hors-ligne : données lues le {new Date(projectQuery.dataUpdatedAt).toLocaleString("fr-FR")}. Le dessin de l’Atelier s’enregistre localement ; les formulaires et arbitrages attendront le retour
+          du réseau.
+        </p>
+      )}
 
       <nav aria-label="Modules du projet" className="module-nav">
         {MODULES.map((m) => (

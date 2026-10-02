@@ -1503,7 +1503,7 @@ describe("Collaboration — accès, synchronisation, journal des révisions, com
     await client.get(`/projects/${pid}/steps/2/harmonie/rapport`);
     const v = (await client.get(`/projects/${pid}/collaboration`)).body;
     expect(v.access).toMatchObject({ ownerEmail: "collab@example.com", you: "collab@example.com", sharing: { available: false } });
-    expect(v.sync).toMatchObject({ modelRevision: 1, offline: { available: false } });
+    expect(v.sync).toMatchObject({ modelRevision: 1, offline: { available: true } });
     expect(v.sync.nativeKeys).toBeGreaterThan(3);
     expect(typeof v.sync.lastModelWrite).toBe("string");
     const kinds = new Set(v.journal.map((e: { kind: string }) => e.kind));

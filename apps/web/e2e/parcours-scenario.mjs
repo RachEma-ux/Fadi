@@ -46,6 +46,9 @@
  *   6j. Collaboration : commentaire depuis une étape, accès et
  *      synchronisation annoncés, journal des révisions filtrable,
  *      suppression par l'auteur ;
+ *   6k. hors-ligne : file locale IndexedDB de l'Atelier (dessin hors-ligne,
+ *      synchronisation au retour du réseau, rejeu après rechargement),
+ *      ouverture depuis le cache local ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
  *      docs/migration/captures/webapp/.
  *
@@ -237,6 +240,8 @@ check("étape 14 : KPI investissement 24 000 000 / financement 24 000 000 / sold
 await page.screenshot({ path: `${OUT}/new-14-desktop-complete.png`, fullPage: true });
 await page.reload();
 await page.waitForSelector("#biz-f2");
+// Le cache persistant réhydrate d'abord la lecture précédente, puis le serveur répond.
+await page.waitForFunction(() => document.querySelector("#biz-f2")?.value === "13500000" && document.querySelectorAll(".biz-kpis").length === 1, null, { timeout: 10000 }).catch(() => {});
 check("étape 14 : valeurs conservées après rechargement", (await page.inputValue("#biz-f2")) === "13500000" && (await page.locator(".biz-kpis").count()) === 1);
 
 // 5. Étape 17 et 19, marquer terminée
@@ -258,6 +263,7 @@ await page.waitForSelector('button:has-text("Terminée ✓")');
 await page.screenshot({ path: `${OUT}/new-19-desktop.png`, fullPage: true });
 await page.goto(`${projectUrl}?module=parcours`);
 await page.waitForSelector(".parcours-steps-summary");
+await page.waitForFunction(() => /1 \/ 21/.test(document.querySelector(".parcours-steps-summary")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
 check("vue d'ensemble : 1 / 21 étapes terminées", (await page.locator(".parcours-steps-summary").textContent()).includes("1 / 21"));
 // Une intention retenue en amont rétrograde le GO (règle du prototype)
 await page.goto(`${projectUrl}?module=parcours&etape=12`);
@@ -443,6 +449,7 @@ check("étape 01 : « Voir le schéma » affiche la variante C", (await page.loc
 // 6e. Péremption (« À réexaminer ») et rapports : les données du site viennent de changer → l'étape 02 de l'exemple, générée à l'import, est à réexaminer
 await page.goto(`${exampleUrl}?module=parcours&etape=2`);
 await page.waitForSelector(".h7-panel");
+await page.waitForFunction(() => /à réexaminer/.test(document.querySelector(".h7-panel > summary")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
 await page.evaluate(() => { document.querySelector(".h7-panel").open = true; });
 check("étape 02 : « … · 1 choix retenu(s) · à réexaminer » après modification des données du site", (await page.locator(".h7-panel > summary").textContent()).includes("1 choix retenu(s) · à réexaminer"));
 check("étape 02 : encart « Données pertinentes modifiées. »", /Données pertinentes modifiées\. Les choix sont conservés, mais doivent être réexaminés\./.test(await page.locator(".h7-stale").textContent()));
@@ -558,6 +565,7 @@ await page.waitForFunction(() => !document.querySelector("#bl-hypotheses .bl-not
 await page.screenshot({ path: `${OUT}/07-desktop-hypotheses.png`, fullPage: false });
 await page.reload();
 await page.waitForSelector("#bl-hypotheses");
+await page.waitForFunction(() => document.querySelector('#bl-hypotheses select[aria-label="Statut H-USAGE"]')?.value === "Confirmée par preuve", null, { timeout: 10000 }).catch(() => {});
 check("preuve renseignée → « Confirmée par preuve », conservée après rechargement", (await page.locator('#bl-hypotheses select[aria-label="Statut H-USAGE"]').inputValue()) === "Confirmée par preuve" && (await page.locator('#bl-hypotheses textarea[aria-label="Preuve ou motif H-USAGE"]').inputValue()) === "Note de renseignements du 12/03");
 await page.locator('#bl-hypotheses a:has-text("Harmony")').click();
 await page.waitForSelector(".h7-transfer-fold");
@@ -620,7 +628,7 @@ check("étape 08 : « Publier le commentaire » → « Commentaires (1) », aute
 await page.goto(`${exampleUrl}?module=collaboration`);
 await page.waitForSelector(".journal-table tbody tr", { timeout: 30000 });
 const collabKpis = (await page.locator(".collaboration-module .biz-kpis").textContent()).replace(/\s+/g, " ");
-check("collaboration : propriétaire = vous, partage et hors-ligne « Non disponible » (annoncés, pas simulés), révision du modèle et dernière écriture", collabKpis.includes(email) && collabKpis.includes("c'est vous") && (collabKpis.match(/Non disponible/g) || []).length === 2 && /Révision \d+dernière écriture/.test(collabKpis));
+check("collaboration : propriétaire = vous, partage « Non disponible » (annoncé, pas simulé), hors-ligne « Atelier et lecture », révision du modèle et dernière écriture", collabKpis.includes(email) && collabKpis.includes("c'est vous") && /PartageNon disponible/.test(collabKpis) && /Hors-ligneAtelier et lecture/.test(collabKpis) && /Révision \d+dernière écriture/.test(collabKpis), collabKpis);
 check("collaboration : le commentaire de l'étape 08 apparaît avec son lien « étape 08 »", (await page.locator(".comment").count()) === 1 && (await page.locator('.comment a:has-text("étape 08")').count()) === 1);
 const journalKinds = new Set(await page.locator(".journal-table tbody tr").evaluateAll((rows) => rows.map((r) => r.getAttribute("data-kind"))));
 check("collaboration : journal des révisions relu des données (projet, Harmonie, programme, modèle, parcelle, revue, documents, commentaire), du plus récent au plus ancien", ["projet", "harmonie", "programme", "modele", "parcelle", "revue", "document", "commentaire"].every((k) => journalKinds.has(k)) && (await page.locator(".journal-table tbody tr").first().getAttribute("data-kind")) === "commentaire");
@@ -630,6 +638,62 @@ await page.locator(".collaboration-module .biz-card").first().screenshot({ path:
 await page.locator(".comment-delete").first().click();
 await page.waitForFunction(() => document.querySelectorAll(".comment").length === 0, null, { timeout: 10000 });
 check("collaboration : « Supprimer » (auteur) → plus de commentaire", (await page.locator(".comment").count()) === 0);
+
+// 6k. Hors-ligne : file locale (IndexedDB) de l'Atelier, quatre états visibles, rejeu au retour du réseau et après rechargement, ouverture depuis le cache local
+await page.goto(`${exampleUrl}?module=atelier`);
+await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
+await page.waitForFunction(() => /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+const drawWall = async (fx) => {
+  await page.locator("#model-floors button", { hasText: "RDC" }).first().click();
+  await page.locator('#atelier-toolbar [data-atab="design"]').click();
+  await page.waitForTimeout(500);
+  await page.locator('button:has-text("Mur")').first().click();
+  const b = await page.locator("#viewer-surface").boundingBox();
+  await page.mouse.click(b.x + b.width * fx, b.y + b.height * 0.5);
+  await page.waitForTimeout(200);
+  await page.mouse.click(b.x + b.width * (fx + 0.08), b.y + b.height * 0.5);
+  await page.keyboard.press("Enter");
+};
+const wallsBeforeOffline = await rdcWalls();
+await ctx.setOffline(true);
+await page.waitForFunction(() => /Hors-ligne/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 5000 }).catch(() => {});
+check("hors-ligne : l'en-tête du projet passe « Hors-ligne »", /^Hors-ligne/.test(await page.locator(".sync-indicator").textContent()));
+await drawWall(0.45);
+await page.waitForFunction(() => /Hors-ligne · enregistré localement/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 10000 });
+const outbox = await page.evaluate(() => new Promise((resolve) => { const req = indexedDB.open("fadi-local"); req.onsuccess = () => { const tx = req.result.transaction("outbox"); const all = tx.objectStore("outbox").getAll(); all.onsuccess = () => resolve(all.result.map((e) => e.key.split(".").pop())); }; }));
+check("hors-ligne : un mur dessiné → « Hors-ligne · enregistré localement », écriture conservée dans la file IndexedDB (floorDesign)", /enregistré localement \(\d+\)/.test(await page.locator(".native-atelier-status").textContent()) && outbox.includes("floorDesign") && /modification\(s\) enregistrée\(s\) localement/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify(outbox));
+await ctx.setOffline(false);
+await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
+const wallsAfterOnline = await rdcWalls();
+check("retour du réseau : synchronisation automatique → « Enregistré sur le serveur », +1 mur et +1 révision sur le serveur, file vide", wallsAfterOnline.walls === wallsBeforeOffline.walls + 1 && wallsAfterOnline.revision === wallsBeforeOffline.revision + 1 && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify({ wallsBeforeOffline, wallsAfterOnline }));
+// Serveur injoignable (route bloquée) puis rechargement de la page : la file locale est rejouée à l'ouverture.
+await page.route(/\/atelier\/store\//, (route) => route.abort());
+await drawWall(0.6);
+await page.waitForFunction(() => /Serveur injoignable/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 });
+check("serveur injoignable : « Serveur injoignable : les modifications sont enregistrées localement… »", true);
+await page.unroute(/\/atelier\/store\//);
+await page.reload();
+await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
+await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
+const wallsAfterReload = await rdcWalls();
+check("rechargement : la file locale est rejouée à l'ouverture → +1 mur et +1 révision sur le serveur", wallsAfterReload.walls === wallsAfterOnline.walls + 1 && wallsAfterReload.revision === wallsAfterOnline.revision + 1, JSON.stringify({ wallsAfterOnline, wallsAfterReload }));
+// Rechargement complet hors-ligne : l'enveloppe (service worker) sert l'application, le cache persistant (IndexedDB) relit
+// les étapes déjà lues, l'Atelier s'ouvre depuis le cache local du modèle.
+await page.goto(`${exampleUrl}?module=parcours&etape=2`);
+await page.waitForSelector("#biz-f1");
+await page.waitForTimeout(2500); // le cache des requêtes s'écrit avec un délai de regroupement
+check("hors-ligne : service worker actif et contrôlant la page", await page.evaluate(async () => !!navigator.serviceWorker.controller && !!(await navigator.serviceWorker.getRegistration())?.active));
+await ctx.setOffline(true);
+await page.reload();
+await page.waitForSelector("#biz-f1", { timeout: 20000 });
+check("rechargement hors-ligne : l'étape 02 se relit depuis le cache persistant, bandeau « Lecture hors-ligne : données lues le … »", (await page.locator(".step-detail-title").textContent()) === "Réglementation & constructibilité" && /^Lecture hors-ligne : données lues le/.test(await page.locator(".offline-banner").textContent()) && /^Hors-ligne/.test(await page.locator(".sync-indicator").textContent()));
+await page.locator('.module-nav button:has-text("Atelier architectural")').click();
+await page.waitForFunction(() => /cache local|enregistré localement/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
+await page.waitForFunction(() => document.querySelectorAll("#model-floors button").length === 6, null, { timeout: 20000 }).catch(() => {});
+check("rechargement hors-ligne : l'Atelier s'ouvre depuis le cache local du modèle, 6 niveaux", (await page.locator("#model-floors button").count()) === 6, await page.locator(".native-atelier-status").textContent());
+await ctx.setOffline(false);
+await page.goto(`${exampleUrl}?module=parcours`);
+await page.waitForSelector(".step-card-open");
 
 // 6d. Sources de l'étape (étape 03 de l'exemple) : import, liste, téléchargement, suppression
 await page.goto(`${exampleUrl}?module=parcours&etape=3`);

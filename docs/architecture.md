@@ -191,8 +191,12 @@ captures) and which limits remain. The e2e scenario runs the full workflow on P.
 drawing with undo, parcel tool, Harmonie arbitrations and staleness, library and programme, links to the drawn
 model, transfers, reports, archive, copy, analyses, documents, comments).
 
-Lot 4 is not started: a single owner per project (every route re-checks ownership), no sharing or rights, no
-offline queue — the Collaboration module says so instead of simulating it. Lot 5 items still open are listed
+Lot 4 has its first slice: the Atelier's writes go through a local IndexedDB queue (Dexie) replayed on
+reconnection and on the next opening, with the four visible states and a conflict backup; the query cache is
+persisted (read-only offline reading of what was already read), a service worker serves the app shell and the
+engines offline, and the project header shows the sync state. Still open: a queue for form, decision and
+comment mutations, sharing and rights (a single owner per project — every route re-checks ownership) — the
+Collaboration module says so instead of simulating it. Lot 5 items still open are listed
 under « Limites restantes » in the matrix (regulatory checks, MapTiler / altimetry, lazy loading of the Atelier
 engine, e2e in CI, deployment hardening).
 
