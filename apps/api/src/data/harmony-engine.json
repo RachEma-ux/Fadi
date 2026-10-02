@@ -1,0 +1,1072 @@
+{
+  "sourceVersion": "8.19.0",
+  "sourceBlock": "script harmony-engine-v6 (HarmonyEngine) — VERSION, RULE_VERSION, TYPES, PHASES, READINGS, RULES, DIRS, GUA, SOURCES, FLIGHT",
+  "version": "6.0.0",
+  "ruleVersion": "H-2026.09.28-1",
+  "types": {
+    "tertiaire": {
+      "label": "Tertiaire / bureaux",
+      "focus": "Accueil, postes de travail, concentration, réunions et espaces de pause.",
+      "yin": "Concentration calme et échanges actifs, séparés sans isoler les équipes."
+    },
+    "residentiel": {
+      "label": "Résidentiel",
+      "focus": "Entrée, intimité, lit principal et cuisine ; personnalisation facultative.",
+      "yin": "Repos des chambres, sociabilité des pièces de vie et transitions progressives."
+    },
+    "commercial": {
+      "label": "Commerce / retail",
+      "focus": "Seuil lisible, parcours client, présentation, caisse et livraisons.",
+      "yin": "Un parcours actif ponctué de zones de pause, sans surstimulation."
+    },
+    "hotelier": {
+      "label": "Hôtellerie / hébergement",
+      "focus": "Arrivée, réception, intimité des chambres, repos et circuits de service.",
+      "yin": "Accueil vivant, chambres reposantes, seuils acoustiques entre les deux."
+    },
+    "restauration": {
+      "label": "Restauration",
+      "focus": "Accueil, salle, cuisine, attentes et séparation des circuits propres/sales.",
+      "yin": "Convivialité de la salle et confort de parole ; cuisine organisée selon son fonctionnement."
+    },
+    "industriel": {
+      "label": "Activités / industriel / logistique",
+      "focus": "Flux piétons et véhicules, postes, maintenance et locaux sociaux.",
+      "yin": "Activité maîtrisée et espaces de récupération protégés des nuisances."
+    },
+    "public": {
+      "label": "Public / institutionnel",
+      "focus": "Orientation du public, accueil inclusif, confidentialité et espaces d’attente.",
+      "yin": "Lisibilité des espaces collectifs et possibilité de retrait."
+    },
+    "enseignement": {
+      "label": "Enseignement / formation",
+      "focus": "Accueil, visibilité pédagogique, concentration, travail en groupe et pauses.",
+      "yin": "Alternance d’apprentissage concentré, d’échanges et de récupération."
+    },
+    "sante": {
+      "label": "Santé / soins",
+      "focus": "Intimité, attente, repérage et séparation des circuits ; priorité absolue aux protocoles de soins.",
+      "yin": "Ambiances apaisées, contrôle individuel et contraintes cliniques prioritaires."
+    },
+    "mixte": {
+      "label": "Mixte / multi-usages",
+      "focus": "Analyse par composante et contrôle des interfaces entre usages.",
+      "yin": "Gradation par zone, et non une ambiance unique pour tout l’immeuble."
+    }
+  },
+  "phases": {
+    "1": "Choix du site",
+    "2": "Implantation & architecture",
+    "3": "Organisation intérieure",
+    "4": "Ambiances & décoration"
+  },
+  "readings": {
+    "observation": "Observation / usage",
+    "forme": "Forme · Luan Tou",
+    "compas": "Compas · méthode",
+    "elements": "Cinq Éléments / Yin–Yang"
+  },
+  "rules": [
+    {
+      "id": "S01",
+      "phase": 1,
+      "section": "site",
+      "types": [],
+      "reading": "forme",
+      "title": "Approche et espace d’accueil",
+      "prompt": "L’approche permet-elle de voir le lieu et de marquer une transition avant l’entrée ?",
+      "advice": "Rechercher un espace de transition lisible, sans encombrer l’accès. Considérer le Ming Tang comme une lecture traditionnelle de l’ouverture avant.",
+      "guard": "Distinguer cette lecture des exigences de visibilité et d’accès.",
+      "step": 1
+    },
+    {
+      "id": "S02",
+      "phase": 1,
+      "section": "site",
+      "types": [],
+      "reading": "forme",
+      "title": "Appuis et protections",
+      "prompt": "Les masses arrière et latérales sont-elles documentées, sans effet d’écrasement identifié ?",
+      "advice": "Comparer les appuis bâtis ou paysagers, les vues et les protections ; adapter l’implantation à la situation réelle.",
+      "guard": "Ne pas inventer une montagne, une protection ou une menace absente des relevés.",
+      "step": 1
+    },
+    {
+      "id": "S03",
+      "phase": 1,
+      "section": "site",
+      "types": [],
+      "reading": "forme",
+      "title": "Voies dirigées vers le site",
+      "prompt": "Les voies en T, virages et accès dirigés vers le site ont-ils été examinés et les conflits traités ?",
+      "advice": "Étudier le décalage de l’entrée ou une transition paysagère hors trajectoires et dégagements.",
+      "guard": "Sha Qi est une interprétation traditionnelle ; circulation, phares et risques de choc se vérifient séparément.",
+      "step": 1
+    },
+    {
+      "id": "S04",
+      "phase": 1,
+      "section": "site",
+      "types": [],
+      "reading": "forme",
+      "title": "Angles et masses voisines",
+      "prompt": "Les angles saillants, façades proches et équipements visibles sont-ils relevés ?",
+      "advice": "Localiser les expositions depuis les espaces réellement occupés ; tester écrans, vues alternatives ou implantation.",
+      "guard": "Un angle représenté ne prouve ni nocivité ni effet sur la santé.",
+      "step": 1
+    },
+    {
+      "id": "S05",
+      "phase": 1,
+      "section": "site",
+      "types": [],
+      "reading": "observation",
+      "title": "Relief et cheminement de l’eau",
+      "prompt": "Le relief, les pentes, l’écoulement et les points bas sont-ils documentés ?",
+      "advice": "Compléter par un relevé topographique et une étude d’écoulement avant de positionner les accès bas.",
+      "guard": "Aucun sol plat, risque d’inondation ou drainage efficace n’est déduit d’une carte 2D.",
+      "step": 1
+    },
+    {
+      "id": "S06",
+      "phase": 1,
+      "section": "site",
+      "types": [],
+      "reading": "forme",
+      "title": "Forme réelle de la parcelle",
+      "prompt": "Le projet exploite-t-il le contour réel, y compris les angles et les parties irrégulières ?",
+      "advice": "Évaluer les zones utilisables et les transitions ; distinguer terrain et bâtiment au lieu de condamner une forme trapézoïdale.",
+      "guard": "Ne pas remplacer la parcelle par un rectangle ni inventer des secteurs manquants.",
+      "step": 1
+    },
+    {
+      "id": "S07",
+      "phase": 1,
+      "section": "site",
+      "types": [],
+      "reading": "observation",
+      "title": "Historique et état du terrain",
+      "prompt": "L’usage antérieur, les remblais et l’état du sol sont-ils documentés ?",
+      "advice": "Consigner les faits et commander les investigations adaptées lorsque les informations manquent.",
+      "guard": "La « vitalité » traditionnelle ne remplace ni diagnostic de pollution ni géotechnique.",
+      "step": 1
+    },
+    {
+      "id": "S08",
+      "phase": 1,
+      "section": "site",
+      "types": [],
+      "reading": "observation",
+      "title": "Expositions sensibles",
+      "prompt": "Bruit, odeurs, poussières, vent et vues sont-ils examinés aux périodes d’usage ?",
+      "advice": "Observer les expositions et orienter les espaces sensibles en conséquence.",
+      "guard": "Les voisins et le relief ne sont pas inclus dans le calcul solaire existant.",
+      "step": 1
+    },
+    {
+      "id": "S09",
+      "phase": 1,
+      "section": "site",
+      "types": [],
+      "reading": "forme",
+      "title": "Eau et paysage",
+      "prompt": "Les éléments d’eau existants et leur relation au lieu sont-ils identifiés ?",
+      "advice": "Documenter leur position et leur comportement avant toute interprétation ou nouvel aménagement.",
+      "guard": "Aucun ajout de bassin automatique ; entretien, sécurité, ressources et nuisances priment.",
+      "step": 1
+    },
+    {
+      "id": "S10",
+      "phase": 1,
+      "section": "site",
+      "types": [],
+      "reading": "observation",
+      "title": "Options d’implantation",
+      "prompt": "Plusieurs implantations ou sites ont-ils été comparés selon le même programme ?",
+      "advice": "Comparer des options nommées, leurs contraintes et leurs données manquantes, sans score énergétique.",
+      "guard": "L’avis Harmony ne rend pas constructible un usage non autorisé.",
+      "step": 1
+    },
+    {
+      "id": "B01",
+      "phase": 2,
+      "section": "building",
+      "types": [],
+      "reading": "forme",
+      "title": "Entrée principale identifiable",
+      "prompt": "L’entrée principale est-elle explicitement identifiée, visible et reliée aux flux attendus ?",
+      "advice": "Hiérarchiser les accès et clarifier le seuil, sa signalétique et son espace d’accueil.",
+      "guard": "Ne pas assimiler automatiquement porte principale et façade de référence.",
+      "step": 10
+    },
+    {
+      "id": "B02",
+      "phase": 2,
+      "section": "building",
+      "types": [],
+      "reading": "forme",
+      "title": "Transition entrée–intérieur",
+      "prompt": "Le seuil évite-t-il un passage brutal entre l’extérieur et les espaces sensibles ?",
+      "advice": "Tester un sas, un décalage ou un filtre compatible avec les dégagements.",
+      "guard": "Aucun écran ne doit gêner les issues, l’accessibilité ou l’exploitation.",
+      "step": 10
+    },
+    {
+      "id": "B03",
+      "phase": 2,
+      "section": "building",
+      "types": [],
+      "reading": "observation",
+      "title": "Centre et périmètre étudiés",
+      "prompt": "Le périmètre du bâtiment ou de l’unité et la convention de centre sont-ils explicités ?",
+      "advice": "Documenter bâtiment entier, unité ou niveau ; examiner patios, retraits et volumes indépendants.",
+      "guard": "Un centre géométrique calculé est un repère, pas une validation traditionnelle automatique.",
+      "step": 10
+    },
+    {
+      "id": "B04",
+      "phase": 2,
+      "section": "building",
+      "types": [],
+      "reading": "compas",
+      "title": "Orientation documentée",
+      "prompt": "La façade de référence, l’assise, la base du nord et la mesure sont-elles justifiées ?",
+      "advice": "Relever plusieurs mesures hors perturbations et consigner source, date et incertitude.",
+      "guard": "La rotation de la caméra n’est pas une orientation du bâtiment.",
+      "step": 10
+    },
+    {
+      "id": "B05",
+      "phase": 2,
+      "section": "building",
+      "types": [],
+      "reading": "forme",
+      "title": "Retraits et volumes",
+      "prompt": "Les retraits, creux et angles du bâtiment ont-ils été étudiés dans leur contexte ?",
+      "advice": "Privilégier une organisation claire des espaces ; envisager paysage et mobilier avant toute modification lourde.",
+      "guard": "Une indentation n’entraîne pas automatiquement une perte de secteur ou une conséquence personnelle.",
+      "step": 10
+    },
+    {
+      "id": "B06",
+      "phase": 2,
+      "section": "building",
+      "types": [],
+      "reading": "observation",
+      "title": "Hiérarchie des circulations",
+      "prompt": "Les parcours public, personnel et service sont-ils cohérents avec le programme ?",
+      "advice": "Repérer les croisements et hiérarchiser les accès plutôt que multiplier les obstacles décoratifs.",
+      "guard": "Les contrôles d’évacuation et d’accessibilité restent du ressort des études techniques.",
+      "step": 10
+    },
+    {
+      "id": "B07",
+      "phase": 2,
+      "section": "building",
+      "types": [],
+      "reading": "forme",
+      "title": "Cœur et noyaux du bâtiment",
+      "prompt": "Les noyaux et le cœur du bâtiment conservent-ils une organisation lisible ?",
+      "advice": "Vérifier les accès aux noyaux et les espaces de transition ; documenter les choix existants.",
+      "guard": "Ne pas déplacer escaliers, ascenseur ou structure pour un simple secteur traditionnel.",
+      "step": 10
+    },
+    {
+      "id": "B08",
+      "phase": 2,
+      "section": "building",
+      "types": [],
+      "reading": "observation",
+      "title": "Lumière et espaces occupés",
+      "prompt": "La lumière naturelle et l’éblouissement ont-ils été examinés selon les usages ?",
+      "advice": "Croiser ouvertures, positions des occupants et étude solaire ; documenter les masques externes.",
+      "guard": "La présence d’une fenêtre ou d’une trajectoire solaire ne vaut pas calcul d’éclairement.",
+      "step": 10
+    },
+    {
+      "id": "B09",
+      "phase": 2,
+      "section": "building",
+      "types": [],
+      "reading": "compas",
+      "title": "Référence temporelle du bâtiment",
+      "prompt": "Construction, occupation et rénovations sont-elles distinguées pour l’étude temporelle ?",
+      "advice": "Conserver les dates, la convention retenue et la justification de la période.",
+      "guard": "La période actuelle n’est pas automatiquement la période natale du bâtiment.",
+      "step": 10
+    },
+    {
+      "id": "B10",
+      "phase": 2,
+      "section": "building",
+      "types": [],
+      "reading": "observation",
+      "title": "Contraintes techniques préservées",
+      "prompt": "Les recommandations respectent-elles l’emprise de travail, les appuis, les issues et les contraintes techniques ?",
+      "advice": "Soumettre les modifications de volumes, d’eau ou de charges à l’équipe de conception.",
+      "guard": "Aucun arbitrage Feng Shui ne vaut validation administrative, structurelle ou incendie.",
+      "step": 16
+    },
+    {
+      "id": "U01",
+      "phase": 3,
+      "section": "usage",
+      "types": [],
+      "reading": "observation",
+      "title": "Actif et calme",
+      "prompt": "Les activités bruyantes et les usages de concentration ou de repos sont-ils séparés de façon adaptée ?",
+      "advice": "Créer des transitions et des tampons acoustiques en fonction des horaires réels.",
+      "guard": "Les degrés Yin–Yang sont qualitatifs et ne remplacent pas les objectifs acoustiques.",
+      "step": 7
+    },
+    {
+      "id": "U02",
+      "phase": 3,
+      "section": "usage",
+      "types": [],
+      "reading": "forme",
+      "title": "Positions d’usage principales",
+      "prompt": "Les places durables permettent-elles une perception de l’arrivée et un appui arrière adapté ?",
+      "advice": "Étudier la position de commande du siège ou du lit sans imposer un face-à-face axial avec la porte.",
+      "guard": "Vérifier l’usage réel et l’orientation de la personne ; un rectangle de mobilier ne suffit pas.",
+      "step": 7
+    },
+    {
+      "id": "U03",
+      "phase": 3,
+      "section": "usage",
+      "types": [],
+      "reading": "observation",
+      "title": "Intimité et visibilité",
+      "prompt": "Le public et les voisins ne voient-ils pas directement les usages confidentiels ?",
+      "advice": "Introduire une transition visuelle ou revoir la distribution avec les usagers.",
+      "guard": "Préserver lumière, surveillance nécessaire et accès.",
+      "step": 7
+    },
+    {
+      "id": "U04",
+      "phase": 3,
+      "section": "usage",
+      "types": [],
+      "reading": "observation",
+      "title": "Relations entre locaux",
+      "prompt": "Les proximités et séparations nécessaires sont-elles discutées avec le programme ?",
+      "advice": "Mettre en regard la matrice de Répartition, les locaux réels et les trajectoires.",
+      "guard": "Ne pas transformer un ratio indicatif de programmation en minimum réglementaire.",
+      "step": 7
+    },
+    {
+      "id": "U05",
+      "phase": 3,
+      "section": "usage",
+      "types": [],
+      "reading": "observation",
+      "title": "Sanitaires et maintenance",
+      "prompt": "Les sanitaires et locaux techniques restent-ils accessibles, discrets et entretenables ?",
+      "advice": "Vérifier accès depuis les circulations, filtre visuel, ventilation et maintenance.",
+      "guard": "Ne pas placer un sanitaire uniquement pour « neutraliser » une étoile.",
+      "step": 7
+    },
+    {
+      "id": "R01",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "residentiel"
+      ],
+      "reading": "forme",
+      "title": "Porte et intimité du logement",
+      "prompt": "L’entrée ménage-t-elle une transition avant les pièces privées ?",
+      "advice": "Tester un rangement ou un retour visuel qui protège l’intimité sans étrangler l’entrée.",
+      "guard": "Dégagements et usage quotidien prioritaires.",
+      "step": 7
+    },
+    {
+      "id": "R02",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "residentiel",
+        "hotelier"
+      ],
+      "reading": "forme",
+      "title": "Position du lit",
+      "prompt": "Le lit dispose-t-il d’un appui de tête et d’une vue oblique sur l’accès ?",
+      "advice": "Comparer les positions du lit et l’accès aux côtés utilisés ; éviter un passage traversant au pied.",
+      "guard": "N’affirmer aucun effet de santé ou de couple ; vérifier prises, ouvrants et accessibilité.",
+      "step": 7
+    },
+    {
+      "id": "R03",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "residentiel"
+      ],
+      "reading": "forme",
+      "title": "Cuisine : cuisson et eau",
+      "prompt": "Les postes de cuisson, lavage et préparation sont-ils identifiés et organisés sans conflit d’usage ?",
+      "advice": "Prévoir une transition de préparation lorsque pertinente, en lisant séparément l’opposition symbolique Feu/Eau.",
+      "guard": "Respecter les prescriptions des appareils, de ventilation et de sécurité ; aucune distance Feng Shui inventée.",
+      "step": 7
+    },
+    {
+      "id": "R04",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "residentiel"
+      ],
+      "reading": "observation",
+      "title": "Vie commune et retrait",
+      "prompt": "Les pièces communes n’obligent-elles pas à traverser les espaces de repos ?",
+      "advice": "Clarifier les zones jour/nuit et prévoir un espace de retrait.",
+      "guard": "Adapter aux habitudes du foyer sans stéréotype familial.",
+      "step": 7
+    },
+    {
+      "id": "R05",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "residentiel"
+      ],
+      "reading": "compas",
+      "title": "Personnalisation facultative",
+      "prompt": "Les préférences des occupants ont-elles été distinguées des secteurs propres au bâtiment ?",
+      "advice": "Documenter un éventuel Gua personnel déjà établi, séparément de celui du bâtiment.",
+      "guard": "Pas de données de naissance requises pour étudier le site ; pas d’attribution automatique.",
+      "step": 7
+    },
+    {
+      "id": "O01",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "tertiaire"
+      ],
+      "reading": "forme",
+      "title": "Bureau de direction",
+      "prompt": "La place principale présente-t-elle un appui et une perception de l’entrée sans passage immédiat derrière ?",
+      "advice": "Comparer bureau et siège dans leur contexte, avec confidentialité et lumière latérale.",
+      "guard": "La position de commande n’est pas une promesse de leadership ou de performance.",
+      "step": 7
+    },
+    {
+      "id": "O02",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "tertiaire"
+      ],
+      "reading": "observation",
+      "title": "Postes et concentration",
+      "prompt": "Les écrans, reflets, passages et besoins de concentration sont-ils pris en compte ?",
+      "advice": "Distinguer passages, postes durables et échanges spontanés ; tester le mobilier avec les usagers.",
+      "guard": "Ne pas déduire l’éblouissement d’une orientation seule.",
+      "step": 7
+    },
+    {
+      "id": "O03",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "tertiaire"
+      ],
+      "reading": "forme",
+      "title": "Réception et attente",
+      "prompt": "L’accueil voit-il l’arrivée tout en préservant une attente hors du cheminement ?",
+      "advice": "Séparer accueil, files et assises ; conserver une arrivée lisible.",
+      "guard": "Confidentialité, accueil inclusif et dégagements priment.",
+      "step": 7
+    },
+    {
+      "id": "O04",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "tertiaire"
+      ],
+      "reading": "observation",
+      "title": "Salles de réunion",
+      "prompt": "La disposition permet-elle de voir interlocuteurs, écran et accès sans conflit majeur ?",
+      "advice": "Comparer les configurations et ménager les circulations autour de la table.",
+      "guard": "Adapter le dispositif aux usages, pas à une hiérarchie symbolique unique.",
+      "step": 7
+    },
+    {
+      "id": "O05",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "tertiaire"
+      ],
+      "reading": "elements",
+      "title": "Pause et sociabilité",
+      "prompt": "Les espaces de pause proposent-ils un changement d’ambiance sans perturber les postes ?",
+      "advice": "Associer textures plus souples et lumière modulable à une zone séparée des usages silencieux.",
+      "guard": "Ne pas masquer les exigences d’acoustique ou de ventilation par la décoration.",
+      "step": 7
+    },
+    {
+      "id": "C01",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "commercial"
+      ],
+      "reading": "forme",
+      "title": "Seuil commercial",
+      "prompt": "L’entrée est-elle identifiable sans obstruction ni effet de saturation ?",
+      "advice": "Hiérarchiser vitrine, signalétique et seuil ; tester la perception depuis l’approche réelle.",
+      "guard": "Aucune garantie de fréquentation ou de vente.",
+      "step": 7
+    },
+    {
+      "id": "C02",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "commercial"
+      ],
+      "reading": "observation",
+      "title": "Parcours client",
+      "prompt": "Le parcours évite-t-il impasses involontaires, croisements de files et zones difficiles à comprendre ?",
+      "advice": "Tracer arrivée, exploration, essai, paiement et sortie ; vérifier les parcours accessibles.",
+      "guard": "Une circulation fluide ne remplace pas une étude commerciale.",
+      "step": 7
+    },
+    {
+      "id": "C03",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "commercial"
+      ],
+      "reading": "forme",
+      "title": "Caisse et point d’encaissement",
+      "prompt": "Le personnel à la caisse voit-il l’arrivée avec un appui et sans gêner la sortie ?",
+      "advice": "Comparer caisse, attente et retour produits en préservant surveillance et confort.",
+      "guard": "Ne pas confondre « conservation de richesse » traditionnelle et protection financière réelle.",
+      "step": 7
+    },
+    {
+      "id": "C04",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "commercial"
+      ],
+      "reading": "observation",
+      "title": "Livraisons et clientèle",
+      "prompt": "Les réassorts et livraisons évitent-ils les conflits avec les clients ?",
+      "advice": "Prévoir circuit ou horaires adaptés, stockage transitoire et accès contrôlé.",
+      "guard": "La sécurité des manutentions prime sur l’orientation traditionnelle.",
+      "step": 7
+    },
+    {
+      "id": "H01",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "hotelier"
+      ],
+      "reading": "forme",
+      "title": "Séquence d’arrivée",
+      "prompt": "La réception et les espaces d’attente forment-ils une arrivée lisible et non exposée ?",
+      "advice": "Créer une transition entre dépose, hall, accueil et accès aux chambres.",
+      "guard": "Contrôler files, bagages et accès inclusif.",
+      "step": 7
+    },
+    {
+      "id": "H02",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "hotelier"
+      ],
+      "reading": "observation",
+      "title": "Chambres et service",
+      "prompt": "Les chambres sont-elles protégées des nuisances des ascenseurs, offices et locaux actifs ?",
+      "advice": "Documenter les sources et examiner les distributions ou tampons.",
+      "guard": "Pas de conclusion acoustique sur la seule base d’un plan.",
+      "step": 7
+    },
+    {
+      "id": "H03",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "hotelier"
+      ],
+      "reading": "forme",
+      "title": "Intimité de la chambre",
+      "prompt": "L’ouverture de la porte évite-t-elle une exposition excessive du lit et de la salle d’eau ?",
+      "advice": "Tester un décalage ou un filtre compatible avec l’accès et l’évacuation.",
+      "guard": "La convention du logement entier n’est pas appliquée mécaniquement à chaque chambre.",
+      "step": 7
+    },
+    {
+      "id": "H04",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "hotelier"
+      ],
+      "reading": "observation",
+      "title": "Usagers temporaires",
+      "prompt": "Le projet reste-t-il adaptable à des occupants inconnus sans personnalisation nominative ?",
+      "advice": "Privilégier qualité du bâtiment, confort et réglages individuels.",
+      "guard": "Ne pas collecter les dates de naissance de la clientèle.",
+      "step": 7
+    },
+    {
+      "id": "F01",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "restauration"
+      ],
+      "reading": "forme",
+      "title": "Tables et accueil",
+      "prompt": "L’implantation offre-t-elle des assises protégées sans multiplier les passages derrière ?",
+      "advice": "Diversifier les configurations et distinguer attente, service et repas.",
+      "guard": "Vérifier les dégagements et les besoins de service avant tout filtre.",
+      "step": 7
+    },
+    {
+      "id": "F02",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "restauration"
+      ],
+      "reading": "observation",
+      "title": "Cuisine et circuits",
+      "prompt": "Les flux propre/sale, cuisson, lavage et livraisons sont-ils documentés ?",
+      "advice": "Organiser les postes à partir des processus métier, puis examiner la lecture symbolique Feu/Eau.",
+      "guard": "Hygiène, ventilation, protection incendie et prescriptions professionnelles priment.",
+      "step": 7
+    },
+    {
+      "id": "F03",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "restauration"
+      ],
+      "reading": "elements",
+      "title": "Confort de la salle",
+      "prompt": "Éclairage, son, odeurs et textures servent-ils l’ambiance visée sans surcharge ?",
+      "advice": "Tester une gradation lumineuse et une absorption compatibles avec l’entretien.",
+      "guard": "L’ambiance ne garantit ni panier moyen ni rétention clientèle.",
+      "step": 7
+    },
+    {
+      "id": "I01",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "industriel"
+      ],
+      "reading": "observation",
+      "title": "Piétons et véhicules",
+      "prompt": "Les déplacements piétons sont-ils séparés des engins et des quais ?",
+      "advice": "Repérer les croisements, accès et attentes avec l’exploitant.",
+      "guard": "Priorité à l’analyse de risques professionnelle ; pas de validation automatique.",
+      "step": 7
+    },
+    {
+      "id": "I02",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "industriel"
+      ],
+      "reading": "forme",
+      "title": "Postes durables",
+      "prompt": "Les postes de travail durables permettent-ils une perception des approches utiles ?",
+      "advice": "Adapter les postes à la tâche et aux protections nécessaires, avec visibilité maîtrisée.",
+      "guard": "L’ergonomie et les protections machines priment sur la position de commande.",
+      "step": 7
+    },
+    {
+      "id": "I03",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "industriel"
+      ],
+      "reading": "elements",
+      "title": "Locaux sociaux et récupération",
+      "prompt": "Les espaces de pause sont-ils protégés des nuisances de production ?",
+      "advice": "Créer une transition entre activité et récupération par implantation, acoustique et ambiance.",
+      "guard": "Ne pas appliquer les règles du lit ou de la caisse aux zones logistiques.",
+      "step": 7
+    },
+    {
+      "id": "I04",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "industriel"
+      ],
+      "reading": "observation",
+      "title": "Stockage et maintenance",
+      "prompt": "Les réserves et équipements techniques disposent-ils de leurs propres accès ?",
+      "advice": "Vérifier maintenance, renouvellement et stockages intermédiaires.",
+      "guard": "Ne pas choisir un emplacement de stockage pour une seule étoile réputée défavorable.",
+      "step": 7
+    },
+    {
+      "id": "P01",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "public"
+      ],
+      "reading": "observation",
+      "title": "Repérage et accueil inclusif",
+      "prompt": "Les destinations, files et accueils sont-ils compréhensibles pour les différents usagers ?",
+      "advice": "Hiérarchiser les repères et prévoir des possibilités de retrait ou d’accompagnement.",
+      "guard": "Accessibilité et équité d’usage prioritaires.",
+      "step": 7
+    },
+    {
+      "id": "P02",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "public"
+      ],
+      "reading": "forme",
+      "title": "Entretiens confidentiels",
+      "prompt": "Les places d’entretien associent-elles appui, perception de l’accès et confidentialité ?",
+      "advice": "Revoir la disposition des sièges et les transitions entre attente et entretien.",
+      "guard": "Ne pas imposer une direction personnelle à tous les usagers.",
+      "step": 7
+    },
+    {
+      "id": "P03",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "public"
+      ],
+      "reading": "elements",
+      "title": "Attentes différenciées",
+      "prompt": "Les espaces collectifs offrent-ils un choix entre animation et calme ?",
+      "advice": "Différencier les zones par éclairage, textures et traitement acoustique.",
+      "guard": "Privilégier entretien, durabilité et lisibilité du service.",
+      "step": 7
+    },
+    {
+      "id": "E01",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "enseignement"
+      ],
+      "reading": "observation",
+      "title": "Visibilité pédagogique",
+      "prompt": "Les places permettent-elles de voir les supports et l’intervenant sans gêne identifiée ?",
+      "advice": "Comparer tableau, écrans, fenêtres et positions d’apprentissage.",
+      "guard": "La position du formateur ne suffit pas à valider la qualité pédagogique.",
+      "step": 7
+    },
+    {
+      "id": "E02",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "enseignement"
+      ],
+      "reading": "forme",
+      "title": "Place du formateur",
+      "prompt": "La place principale conserve-t-elle une perception de la classe et de l’entrée ?",
+      "advice": "Tester une position de commande compatible avec échanges, écrans et circulations.",
+      "guard": "Ne pas privilégier une orientation au détriment des apprenants.",
+      "step": 7
+    },
+    {
+      "id": "E03",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "enseignement"
+      ],
+      "reading": "elements",
+      "title": "Alternance des activités",
+      "prompt": "Les espaces distinguent-ils travail calme, groupe et pause ?",
+      "advice": "Prévoir modularité, gradation d’ambiance et zones de retrait.",
+      "guard": "Les capacités et les circulations se vérifient indépendamment.",
+      "step": 7
+    },
+    {
+      "id": "E04",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "enseignement"
+      ],
+      "reading": "observation",
+      "title": "Sécurité des transitions",
+      "prompt": "Les arrivées, pauses et changements de salle évitent-ils des conflits de flux ?",
+      "advice": "Étudier les temps de pointe et les attentes devant les salles.",
+      "guard": "Effectifs et évacuation à vérifier par l’équipe compétente.",
+      "step": 7
+    },
+    {
+      "id": "M01",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "sante"
+      ],
+      "reading": "observation",
+      "title": "Confidentialité des soins",
+      "prompt": "Les espaces préservent-ils la confidentialité des échanges et de l’examen ?",
+      "advice": "Revoir les vues et transmissions sonores entre attente, consultation et service.",
+      "guard": "Les protocoles cliniques et besoins des patients sont prioritaires.",
+      "step": 7
+    },
+    {
+      "id": "M02",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "sante"
+      ],
+      "reading": "observation",
+      "title": "Circuits et hygiène",
+      "prompt": "Les circuits, l’entretien et les équipements suivent-ils les exigences de l’établissement ?",
+      "advice": "Consigner le contrôle métier avant d’examiner les options d’ambiance.",
+      "guard": "Aucun objet d’eau, textile ou végétal imposé par le Feng Shui dans un espace de soins.",
+      "step": 7
+    },
+    {
+      "id": "M03",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "sante"
+      ],
+      "reading": "elements",
+      "title": "Contrôle de l’ambiance",
+      "prompt": "L’occupant peut-il bénéficier d’un éclairage et d’un environnement adaptés à son usage ?",
+      "advice": "Rechercher une ambiance apaisée compatible avec les soins, les tâches et l’entretien.",
+      "guard": "Aucune promesse de guérison ou de prévention par l’aménagement.",
+      "step": 7
+    },
+    {
+      "id": "X01",
+      "phase": 2,
+      "section": "building",
+      "types": [
+        "mixte"
+      ],
+      "reading": "observation",
+      "title": "Interfaces entre typologies",
+      "prompt": "Les composantes et leurs accès, horaires et contraintes sont-ils explicités ?",
+      "advice": "Analyser chaque composante puis les interfaces : bruit, public, service, confidentialité.",
+      "guard": "Un bâtiment mixte ne doit pas recevoir un verdict unique basé sur la seule dominante.",
+      "step": 10
+    },
+    {
+      "id": "X02",
+      "phase": 3,
+      "section": "usage",
+      "types": [
+        "mixte"
+      ],
+      "reading": "elements",
+      "title": "Transitions entre usages",
+      "prompt": "Les seuils entre fonctions actives et fonctions de repos sont-ils traités ?",
+      "advice": "Conserver des ambiances différenciées et des circulations compréhensibles.",
+      "guard": "Respecter séparations techniques et conditions d’exploitation.",
+      "step": 7
+    },
+    {
+      "id": "D01",
+      "phase": 4,
+      "section": "decor",
+      "types": [],
+      "reading": "elements",
+      "title": "Palette et matériaux",
+      "prompt": "Les matériaux, textures et couleurs forment-ils une composition adaptée à l’usage ?",
+      "advice": "Composer les Cinq Éléments par matières et sensations, sans exiger cinq parts égales ou des objets symboliques.",
+      "guard": "La couleur seule n’est pas une correction universelle.",
+      "step": 21
+    },
+    {
+      "id": "D02",
+      "phase": 4,
+      "section": "decor",
+      "types": [],
+      "reading": "elements",
+      "title": "Équilibre lumineux",
+      "prompt": "La lumière peut-elle accompagner les temps actifs et les temps de repos ?",
+      "advice": "Prévoir une gradation et des commandes utiles, selon la fonction de l’espace.",
+      "guard": "Les objectifs d’éclairement et d’éblouissement nécessitent leurs propres vérifications.",
+      "step": 21
+    },
+    {
+      "id": "D03",
+      "phase": 4,
+      "section": "decor",
+      "types": [],
+      "reading": "elements",
+      "title": "Acoustique et textures",
+      "prompt": "Les textures et traitements participent-ils à l’ambiance sans gêner l’entretien ?",
+      "advice": "Choisir les surfaces et textiles selon usage, durabilité et contraintes de nettoyage.",
+      "guard": "Les performances acoustiques ne se déduisent pas d’un code couleur Yin–Yang.",
+      "step": 21
+    },
+    {
+      "id": "D04",
+      "phase": 4,
+      "section": "decor",
+      "types": [],
+      "reading": "forme",
+      "title": "Mobilier et passages",
+      "prompt": "Le mobilier, les plantes et les objets laissent-ils des parcours clairs ?",
+      "advice": "Alléger les zones de transition et vérifier les positions depuis l’entrée et depuis les sièges.",
+      "guard": "Ne pas ajouter d’écran ou de bassin dans une issue ou une zone de service.",
+      "step": 21
+    },
+    {
+      "id": "D05",
+      "phase": 4,
+      "section": "decor",
+      "types": [],
+      "reading": "elements",
+      "title": "Reflets et miroirs",
+      "prompt": "Les reflets sont-ils examinés depuis les positions réellement occupées ?",
+      "advice": "Orienter ou limiter les miroirs selon intimité, lumière et confort perçu.",
+      "guard": "Aucun miroir prescrit comme cure automatique d’un « secteur manquant ».",
+      "step": 21
+    },
+    {
+      "id": "D06",
+      "phase": 4,
+      "section": "decor",
+      "types": [],
+      "reading": "elements",
+      "title": "Eau, feu et végétation",
+      "prompt": "Les choix d’eau, de lumière chaude et de végétation restent-ils compatibles avec le lieu ?",
+      "advice": "Documenter entretien, contraintes techniques et préférence des usagers ; préférer une composition réversible.",
+      "guard": "Pas de fontaine, flamme, aquarium ou plante obligatoire.",
+      "step": 21
+    },
+    {
+      "id": "D07",
+      "phase": 4,
+      "section": "decor",
+      "types": [],
+      "reading": "observation",
+      "title": "Validation avec les usagers",
+      "prompt": "La proposition d’ambiance a-t-elle été examinée avec les personnes concernées ?",
+      "advice": "Tester un échantillon, une implantation ou un prototype ; conserver les retours et arbitrages.",
+      "guard": "Les préférences et le confort ne sont pas imposés par une grille traditionnelle.",
+      "step": 21
+    }
+  ],
+  "dirs": [
+    "N",
+    "NE",
+    "E",
+    "SE",
+    "S",
+    "SO",
+    "O",
+    "NO"
+  ],
+  "gua": [
+    {
+      "n": 1,
+      "name": "Kan",
+      "element": "Eau",
+      "group": "Est"
+    },
+    {
+      "n": 8,
+      "name": "Gen",
+      "element": "Terre",
+      "group": "Ouest"
+    },
+    {
+      "n": 3,
+      "name": "Zhen",
+      "element": "Bois",
+      "group": "Est"
+    },
+    {
+      "n": 4,
+      "name": "Xun",
+      "element": "Bois",
+      "group": "Est"
+    },
+    {
+      "n": 9,
+      "name": "Li",
+      "element": "Feu",
+      "group": "Est"
+    },
+    {
+      "n": 2,
+      "name": "Kun",
+      "element": "Terre",
+      "group": "Ouest"
+    },
+    {
+      "n": 7,
+      "name": "Dui",
+      "element": "Métal",
+      "group": "Ouest"
+    },
+    {
+      "n": 6,
+      "name": "Qian",
+      "element": "Métal",
+      "group": "Ouest"
+    }
+  ],
+  "sources": [
+    {
+      "id": "FS1",
+      "title": "Joseph Yu · Feng Shui 101, leçon 20",
+      "url": "https://www.astro-fengshui.com/courses/fengshui101/fengshui020.html",
+      "scope": "Centre, directions, distinction grille de calcul / plan réel. Source de méthode traditionnelle, pas preuve d’effets."
+    },
+    {
+      "id": "FS2",
+      "title": "FSRC Greece · Ba Zhai",
+      "url": "https://astrofengshui.gr/ba-zhai-feng-shui/",
+      "scope": "Gua de bâtiment par l’assise ; distinction porte/façade et Gua personnel."
+    },
+    {
+      "id": "FS3",
+      "title": "Joey Yap · Lecture des formes du site",
+      "url": "https://home.joeyyap.com/article/city-readings/feng-shui-reading-of-a-city-austin/",
+      "scope": "Priorité de Luan Tou et adaptation au contexte d’usage. Les affirmations de prospérité ne sont pas reprises comme faits."
+    },
+    {
+      "id": "FS4",
+      "title": "Joey Yap · Références des cartes des périodes 6 à 9",
+      "url": "https://home.joeyyap.com/resources/joey-yaps-definitive-guide-to-flying-star-feng-shui-period-6-to-9-charts/",
+      "scope": "Référence externe pour établir une carte complète ; aucune carte protégée reproduite."
+    }
+  ],
+  "flight": [
+    "C",
+    "NO",
+    "O",
+    "NE",
+    "S",
+    "N",
+    "SO",
+    "E",
+    "SE"
+  ]
+}

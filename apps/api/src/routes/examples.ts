@@ -15,6 +15,7 @@ import {
   exampleAttachment,
   exampleBuildingType,
   exampleAtelierStore,
+  exampleHarmonyDossier,
   exampleProgrammeCase,
   exampleRegistryName,
   exampleSiteObservations,
@@ -67,6 +68,8 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
         modelRevision: atelier ? 1 : 0,
         // Données du site de l'exemple (étape 01) : côté d'approche, contextes, source, repère de travail.
         siteObservations: (exampleSiteObservations(exampleId) as unknown as Record<string, unknown> | null) ?? null,
+        // Dossier Harmony de l'exemple (observations, références directionnelles, fiches de locaux, revue de conception), tel quel.
+        harmony: exampleHarmonyDossier(exampleId)?.harmony ?? null,
       })
       .returning();
     if (!project) throw new Error("project insert returned nothing");
@@ -141,7 +144,7 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
     // et les choix retenus de l'exemple sont datés des données importées —
     // site, programme, modèle, intentions — pour que seuls des changements
     // ultérieurs les signalent.
-    await stampStepFingerprints(tx, { id, name: project.name, siteObservations: project.siteObservations });
+    await stampStepFingerprints(tx, { id, name: project.name, siteObservations: project.siteObservations, harmony: project.harmony });
 
     return project;
   });

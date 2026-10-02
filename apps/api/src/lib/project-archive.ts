@@ -26,7 +26,7 @@ import { atelierStore, parcels, programmeCases, programmeRepartitions, projects,
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS } from "../data/parcours.js";
 import { newId } from "./ids.js";
 import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replaceProjection } from "./native-projection.js";
-import { computationFor, loadStepContext } from "./step-context.js";
+import { computationFor, loadStepContext, type StepContextProject } from "./step-context.js";
 import { loadStepRows, upsertStep, type Querier, type Tx } from "./step-rows.js";
 
 /** Version de l'application écrite dans l'archive (traçabilité, pas une compatibilité). */
@@ -77,6 +77,7 @@ export async function exportProjectArchive(q: Querier, project: ProjectRow, now:
       programmeState: project.programmeState ?? null,
       parcelTransmission: project.parcelTransmission ?? null,
       parcelsInitialized: project.parcelsInitialized,
+      harmony: project.harmony ?? null,
     },
     steps: PARCOURS_STEPS.map((def) => {
       const r = rows.get(def.number);
@@ -98,7 +99,7 @@ export async function exportProjectArchive(q: Querier, project: ProjectRow, now:
  * rien n'est « à réexaminer » à l'ouverture, seuls les changements
  * ultérieurs le seront. Les instantanés manquants sont complétés.
  */
-export async function stampStepFingerprints(tx: Tx, project: { id: string; name: string; siteObservations: Record<string, unknown> | null }): Promise<void> {
+export async function stampStepFingerprints(tx: Tx, project: StepContextProject): Promise<void> {
   const rows = await loadStepRows(tx, project.id);
   const ctx = await loadStepContext(tx, project, rows);
   for (const def of PARCOURS_STEPS) {
@@ -138,6 +139,7 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
       programmeState: archive.project.programmeState,
       parcelTransmission: archive.project.parcelTransmission,
       parcelsInitialized: archive.project.parcelsInitialized,
+      harmony: archive.project.harmony,
     })
     .returning();
   if (!project) throw new Error("project insert returned nothing");
@@ -178,6 +180,6 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
     await tx.insert(stepFiles).values({ id: randomUUID(), projectId: id, stepNumber: f.stepNumber, name: f.name, type: f.type || decoded.type, size: content.length, content, addedAt: f.addedAt ? new Date(f.addedAt) : new Date(now) });
   }
 
-  await stampStepFingerprints(tx, { id, name: project.name, siteObservations: project.siteObservations });
+  await stampStepFingerprints(tx, { id, name: project.name, siteObservations: project.siteObservations, harmony: project.harmony });
   return { project, warnings };
 }

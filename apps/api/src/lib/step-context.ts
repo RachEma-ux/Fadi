@@ -12,6 +12,7 @@ import {
   computeStepDependencies,
   harmonieProfile,
   harmonieReportHtml,
+  harmonyDossier,
   localHarmonieOptions,
   programmeCaseSums,
   recommendedDesignOption,
@@ -39,6 +40,8 @@ export interface StepContextProject {
   id: string;
   name: string;
   siteObservations: Record<string, unknown> | null;
+  /** Dossier Harmony (références directionnelles dans l'empreinte des étapes de conception). */
+  harmony?: Record<string, unknown> | null;
 }
 
 export interface StepContext {
@@ -75,8 +78,8 @@ function dependenciesOf(base: Omit<StepContext, "dependencies" | "sources">, row
     programmeRepartition,
     parcelSetback: (base.domains?.parcel as { setback?: unknown } | null)?.setback ?? null,
     model: base.domains ? { floor: base.domains.floor, levels: base.domains.levels, footprint: base.domains.footprint } : null,
-    // Références directionnelles (`harmony.compass`) : non portées, jamais inventées.
-    compass: null,
+    // Références directionnelles du bâtiment (`harmony.compass`), telles que saisies.
+    compass: harmonyDossier(base.project.harmony ?? null, "").compass,
   };
   const dependencies = computeStepDependencies(
     HARMONIE_PROFILES,

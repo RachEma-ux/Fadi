@@ -86,6 +86,8 @@ export interface ProjectArchive {
     programmeState: Record<string, unknown> | null;
     parcelTransmission: Record<string, unknown> | null;
     parcelsInitialized: boolean;
+    /** Dossier Harmony (`p.data.harmony` du prototype), tel quel. */
+    harmony: Record<string, unknown> | null;
   };
   steps: ArchiveStep[];
   programmeRepartition: ArchiveRepartition | null;
@@ -317,6 +319,7 @@ function fromPrototypeProject(p: unknown, native: unknown, files: unknown, defin
       programmeState: null,
       parcelTransmission: null,
       parcelsInitialized: false,
+      harmony: isRecord(data["harmony"]) ? data["harmony"] : null,
     },
     steps,
     programmeRepartition: repartitionOf(data["programmeRepartition"], componentList),
@@ -413,6 +416,7 @@ function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly Par
       programmeState: isRecord(project["programmeState"]) ? project["programmeState"] : null,
       parcelTransmission: isRecord(project["parcelTransmission"]) ? project["parcelTransmission"] : null,
       parcelsInitialized: project["parcelsInitialized"] === true,
+      harmony: isRecord(project["harmony"]) ? project["harmony"] : null,
     },
     steps,
     programmeRepartition: repartitionOf(raw["programmeRepartition"], components),

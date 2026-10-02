@@ -1317,6 +1317,66 @@ button.h7-chip.h7-goto:hover {
 .project-tools {
   margin-top: 18px;
 }
+/* Bilan Harmonie du bâtiment conçu (flow-v62) : pli de l'étape et bilan en ligne ; la feuille `flow-v62-css` du prototype est servie avec le bilan. */
+.design-review-fold {
+  margin: 12px 0;
+}
+.h7-inline-building-report {
+  margin: 12px 0 18px;
+  border: 1px solid #c8d9ce;
+  border-radius: 12px;
+  background: #f4f6f1;
+  overflow: hidden;
+}
+.h7-inline-building-report .v62 {
+  max-width: none;
+  padding: 18px;
+}
+.h7-inline-building-report .v62-actions .button-secondary {
+  padding: 0.45rem 0.7rem;
+  font-size: 13px;
+}
+.v62-plan svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid #d0dbd0;
+  border-radius: 8px;
+  background: #fffef9;
+}
+.v62-table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+  margin: 12px 0;
+}
+.design-compass .h7-form {
+  margin-top: 8px;
+}
+.design-compass .h7-form label.h7-checkbox {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 400;
+}
+.h7-json {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  background: #f4f7f2;
+  border: 1px solid #d3ddd8;
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 320px;
+  overflow: auto;
+}
+@media (max-width: 720px) {
+  .v62-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .v62-issues {
+    grid-template-columns: 1fr;
+  }
+}
 .h7-reco {
   color: var(--forest-900);
   font-weight: 600;

@@ -202,6 +202,31 @@ writeJson("harmonie-profiles.json", {
   ],
 });
 
+// --- 4b. moteur Harmony V6 : référentiel des règles, types, phases, lectures, directions, Gua, sources ---
+// Le script `harmony-engine-v6` s'exécute sans DOM (IIFE sur `globalThis`) :
+// évalué dans un bac à sable pour en lire les tables telles quelles.
+{
+  const sandbox = { globalThis: null };
+  sandbox.globalThis = sandbox;
+  vm.runInNewContext(scriptById("harmony-engine-v6"), sandbox, { timeout: 2000 });
+  const E = sandbox.HarmonyEngine;
+  if (!E?.RULES?.length) throw new Error("harmony-engine-v6 : tables introuvables");
+  writeJson("harmony-engine.json", {
+    sourceVersion: SOURCE_VERSION,
+    sourceBlock: "script harmony-engine-v6 (HarmonyEngine) — VERSION, RULE_VERSION, TYPES, PHASES, READINGS, RULES, DIRS, GUA, SOURCES, FLIGHT",
+    version: E.VERSION,
+    ruleVersion: E.RULE_VERSION,
+    types: E.TYPES,
+    phases: E.PHASES,
+    readings: E.READINGS,
+    rules: E.RULES,
+    dirs: E.DIRS,
+    gua: E.GUA,
+    sources: E.SOURCES,
+    flight: E.FLIGHT,
+  });
+}
+
 // --- 5. exemple complet : réponses des formulaires + cas de programme -------
 
 const resolved = JSON.parse(scriptById("p118-resolved-data"));
@@ -285,6 +310,22 @@ writeJson(
   { pretty: false },
 );
 
+// --- 6c. dossier Harmony de l'exemple (Parcours.Harmony V6 : observations, repères directionnels, locaux, ambiances, revue) et données V6.2 (géoréférencement, hypothèses H-*) ---
+const dossierV62 = JSON.parse(scriptById("p118-dossier-v62"));
+writeJson(
+  "examples/p118-harmony-dossier.json",
+  {
+    sourceVersion: SOURCE_VERSION,
+    sourceBlock: "script p118-resolved-template → project.data.harmony (Parcours.Harmony, schéma 1) ; script p118-dossier-v62 → georeference, assumptions, stages",
+    exampleId: exemple.id,
+    harmony: template.project.data.harmony,
+    georeference: dossierV62.georeference,
+    assumptions: dossierV62.assumptions,
+    stages: dossierV62.stages,
+  },
+  { pretty: false },
+);
+
 // --- 7. feuille de style du panneau Harmonie (rapports HTML) ---------------
 // `reportHTML` du prototype embarque le contenu de <style id="h7-css"> dans
 // chaque rapport téléchargé : conservé tel quel, en-tête de traçabilité en plus.
@@ -293,6 +334,12 @@ writeFileSync(
   `/* Parcours ${SOURCE_VERSION} — <style id="h7-css"> (Harmonie par étape), extrait tel quel pour les rapports Harmonie_Etape_NN_V7.html / Harmonie_Choix_Parcours_V7.html. */\n` + styleById("h7-css").trim() + "\n",
 );
 console.log("écrit harmonie-report.css");
+// `reportHTML` de flow-v62 embarque <style id="flow-v62-css"> (bilan du bâtiment conçu) ; conservé tel quel.
+writeFileSync(
+  join(DATA, "design-report.css"),
+  `/* Parcours ${SOURCE_VERSION} — <style id="flow-v62-css"> (bilan du bâtiment conçu), extrait tel quel pour Bilan_Harmonie_Batiment_V7.html et le bilan en ligne. */\n` + styleById("flow-v62-css").trim() + "\n",
+);
+console.log("écrit design-report.css");
 
 console.log("extraction terminée — SHA-256 de la source :", sha256);
 

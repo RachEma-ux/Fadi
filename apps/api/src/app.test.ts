@@ -9,6 +9,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "./app.js";
 import { pool } from "./db/client.js";
+import { georeferenceFromParcel } from "./lib/site-context.js";
 
 const app = createApp();
 
@@ -1140,5 +1141,99 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
       ["parcours-v5", "A · import"],
       ["parcours-v5", "B · import"],
     ]);
+  });
+});
+
+describe("Bilan Harmonie du bâtiment conçu (flow-v62) et références directionnelles", () => {
+  it("analyses the imported P.118 model like the prototype (74 zones, 6 levels, entry at 123.87°, 7 issues), audits transmissions, serves plans and the HTML report, and archives the review", async () => {
+    const client = await registerAndLogin("design@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    const res = await client.get(`/projects/${pid}/design-review`);
+    expect(res.status).toBe(200);
+    const v = res.body;
+    expect(v.example).toBe(true);
+    expect(v.analysis.floors).toHaveLength(6);
+    expect(v.analysis.rooms).toHaveLength(74);
+    expect(v.analysis.rooms[0].points).toBeUndefined(); // les polygones restent côté serveur (plans SVG)
+    expect(v.analysis.facts.parcelArea).toBeCloseTo(1345.5476, 3);
+    expect(v.analysis.facts.inside).toBe(true);
+    expect(v.analysis.entry.trueBearing).toBeCloseTo(123.866, 2);
+    expect(v.georeference).toMatchObject({ latitude: expect.closeTo(33.70822, 4), longitude: expect.closeTo(-7.31968, 4), projectNorth: expect.closeTo(358.946, 2), hypothesis: true });
+    expect(v.analysis.issues.map((x: { id: string }) => x.id)).toEqual(["HEIGHT", "DENSITY", "MEZZ", "RAMP", "CONTEXT", "COMPASS", "FLYING"]);
+    expect(v.analysis.stale).toBe(true); // la revue archivée de l'exemple porte une autre signature
+    expect(v.review).toMatchObject({ version: "6.2.0", name: "P.118 — bilan du bâtiment conçu", counts: { levels: 6, rooms: 62, issues: 7 } });
+    expect(v.audit.map((x: { id: string }) => x.id)).toHaveLength(14);
+    const audit = Object.fromEntries(v.audit.map((x: { id: string; status: string }) => [x.id, x.status]));
+    expect(audit).toMatchObject({ link: "OK", parcel: "OK", "parcel-state": "OK", program: "OK", "room-links": "OK", geometry: "OK", review: "À documenter", decision: "OK", geo: "OK", external: "À documenter", text: "OK" });
+    expect(v.assumptions.map((a: { id: string }) => a.id)).toEqual(["H-GEO", "H-ENTREE", "H-CAP", "H-MEZZ", "H-TEMPS", "H-ENV-A", "H-ENV-B", "H-SOL"]);
+    expect(v.profileLabel).toBe("Mixte / multi-usages");
+    expect(Object.keys(v.plans)).toEqual(["ss", "rdc", "mezz", "r1", "r2", "r3"]);
+    expect(v.plans.rdc).toContain("Entrée H-ENTREE");
+    expect(v.compass.status.ready).toBe(false);
+    expect(v.compass.values.facing).toBeCloseTo(123.866, 2);
+    expect(v.natal.ready).toBe(false);
+
+    // « Actualiser la revue de conception » : rattachée aux entrées courantes, l'ancienne archivée.
+    const reviewed = await client.post(`/projects/${pid}/design-review/review`);
+    expect(reviewed.status).toBe(200);
+    expect(reviewed.body.analysis.stale).toBe(false);
+    expect(reviewed.body.review).toMatchObject({ name: "Escalier B et mezzanine — bilan du bâtiment conçu", automatic: false, counts: { levels: 6, rooms: 74, issues: 7 } });
+    expect(reviewed.body.history).toHaveLength(1);
+    expect(reviewed.body.audit.find((x: { id: string }) => x.id === "review").status).toBe("OK");
+
+    const report = await client.get(`/projects/${pid}/design-review/rapport`);
+    expect(report.status).toBe(200);
+    expect(report.headers["content-disposition"]).toBe('attachment; filename="Bilan_Harmonie_Batiment_V7.html"');
+    expect(report.text).toContain("<title>P.118 — Bilan Harmonie du bâtiment conçu · V7</title>");
+    expect(report.text).toContain("Lecture des 74 zones");
+    expect(report.text).toContain("Transmission des données");
+    expect(report.text).toContain("Intentions transmises et propositions de conception");
+    expect(report.text).toContain("<svg");
+
+    // « Enregistrer les références » : la référence directionnelle devient exploitable, la réserve COMPASS disparaît et l'étape 10 est à réexaminer.
+    const step10Before = (await client.get(`/projects/${pid}/steps/10`)).body;
+    expect(step10Before.stale).toBe(false);
+    const saved = await client.put(`/projects/${pid}/design-review/compass`).send({ basis: "magnetic", facing: 124, date: "2026-10-02", uncertainty: 2, source: "Boussole de chantier", facadeReason: "Façade de la porte P00", confirmed: true });
+    expect(saved.status).toBe(200);
+    expect(saved.body.compass.status).toMatchObject({ ready: true, missing: [], gua: { name: "Qian", direction: "NO" } });
+    expect(saved.body.analysis.issues.map((x: { id: string }) => x.id)).not.toContain("COMPASS");
+    expect(saved.body.analysis.stale).toBe(true); // les références font partie des entrées de la revue
+    const step10After = (await client.get(`/projects/${pid}/steps/10`)).body;
+    expect(step10After.stale).toBe(true);
+    // Jamais pour un autre utilisateur.
+    const other = await registerAndLogin("design-other@example.com");
+    expect((await other.get(`/projects/${pid}/design-review`)).status).toBe(404);
+    expect((await other.post(`/projects/${pid}/design-review/review`)).status).toBe(404);
+  });
+
+  it("computes a parcel georeference like the prototype's data (EPSG:26191 → WGS84, project north 358.946°)", () => {
+    const g = georeferenceFromParcel({ vertices: [[321946.82, 347183.88], [321954.11, 347215.38], [321995.84, 347186.25], [321978.68, 347161.67]], crs: "EPSG:26191", centroid: [321969.1332212173, 347187.4245213032] });
+    expect(g).not.toBeNull();
+    expect(g!.latitude).toBeCloseTo(33.708221167915354, 5);
+    expect(g!.longitude).toBeCloseTo(-7.319682410174416, 5);
+    expect(g!.projectNorth).toBeCloseTo(358.94606, 3);
+    expect(g!.hypothesis).toBe(true);
+    expect(georeferenceFromParcel({ vertices: [[1, 2], [3, 4], [5, 6]], crs: "EPSG:9999" })).toBeNull();
+  });
+
+  it("a project without a model has no zones, no plans, and only the documentary reserves", async () => {
+    const client = await registerAndLogin("design-blank@example.com");
+    const project = await client.post("/projects").send({ code: "P.930", name: "Sans modèle" });
+    const v = (await client.get(`/projects/${project.body.id}/design-review`)).body;
+    expect(v.example).toBe(false);
+    expect(v.analysis.rooms).toHaveLength(0);
+    expect(v.analysis.nativeId).toBeNull();
+    expect(v.analysis.issues.map((x: { id: string }) => x.id)).toEqual(["CONTEXT", "COMPASS", "FLYING"]);
+    expect(v.plans).toEqual({});
+    expect(v.review).toBeNull();
+    expect(v.assumptions).toEqual([]);
+    expect(v.georeference).toBeNull();
+    const audit = Object.fromEntries(v.audit.map((x: { id: string; status: string }) => [x.id, x.status]));
+    expect(audit).toMatchObject({ link: "À documenter", parcel: "À documenter", program: "À documenter", geometry: "À documenter", review: "À documenter", decision: "À documenter", geo: "À documenter" });
+    const report = await client.get(`/projects/${project.body.id}/design-review/rapport`);
+    expect(report.status).toBe(200);
+    expect(report.text).toContain("<title>Sans modèle — Bilan Harmonie du bâtiment conçu · V7</title>");
+    expect(report.text).not.toContain("Le scénario de référence réunit formation");
   });
 });

@@ -14,13 +14,14 @@ import { eq } from "drizzle-orm";
 import {
   DEFAULT_SITE_OBSERVATIONS,
   siteContext,
+  type DesignGeoreference,
   type GeographicConverter,
   type HarmonieProfile,
   type SiteContext,
   type SiteObservations,
   type SiteParcel,
 } from "@parcours/domain-model";
-import type { Point2 } from "@parcours/core-geometry";
+import { vertexCentroid, type Point2 } from "@parcours/core-geometry";
 import { db } from "../db/client.js";
 import { atelierStore } from "../db/schema.js";
 import type { NativeParcelDomain } from "./parcel-transmission.js";
@@ -71,4 +72,41 @@ export function siteObservationsOf(project: { siteObservations: Record<string, u
 export async function loadSiteContext(q: Querier, project: { id: string; siteObservations: Record<string, unknown> | null }, profile: HarmonieProfile): Promise<SiteContext> {
   const parcel = await loadSiteParcel(q, project.id);
   return siteContext(parcel, siteObservationsOf(project), profile, toWgs84);
+}
+
+/**
+ * Géoréférencement d'une parcelle (`D.georeference` du prototype, méthode
+ * décrite dans ses données) : centroïde converti en WGS84 et azimut
+ * géodésique du segment +Y de 100 m au centroïde — le nord géographique par
+ * rapport au +Y de la grille du modèle (`projectNorth`). `null` quand le CRS
+ * n'est pas défini : rien n'est approximé.
+ */
+export function georeferenceFromParcel(parcel: { vertices: readonly Point2[]; crs: string; centroid?: Point2 | null }): DesignGeoreference | null {
+  if (!parcel.vertices.length || !SITE_CRS_DEFINITIONS[parcel.crs]) return null;
+  const c = parcel.centroid ?? vertexCentroid(parcel.vertices);
+  const center = toWgs84(parcel.crs, c);
+  const north = toWgs84(parcel.crs, [c[0], c[1] + 100]);
+  if (!center || !north) return null;
+  // Azimut géodésique sur l'ellipsoïde WGS84, par le plan tangent au centroïde (segment de 100 m : l'écart avec une géodésique complète est négligeable).
+  const rad = Math.PI / 180;
+  const a = 6378137;
+  const f = 1 / 298.257223563;
+  const e2 = f * (2 - f);
+  const lat = center[1] * rad;
+  const sinLat = Math.sin(lat);
+  const nRadius = a / Math.sqrt(1 - e2 * sinLat * sinLat);
+  const mRadius = (a * (1 - e2)) / Math.pow(1 - e2 * sinLat * sinLat, 1.5);
+  const dx = (north[0] - center[0]) * rad * nRadius * Math.cos(lat);
+  const dy = (north[1] - center[1]) * rad * mRadius;
+  const projectNorth = ((Math.atan2(dx, dy) / rad) % 360 + 360) % 360;
+  return {
+    latitude: center[1],
+    longitude: center[0],
+    projectNorth,
+    crs: parcel.crs,
+    method: `Conversion PROJ / ${parcel.crs} → WGS84 ; azimut géodésique du segment +Y de 100 m au centroïde. Le système source reste une hypothèse, non un relevé de boussole.`,
+    status: "hypothese de georeferencement",
+    source: `Bornes de la parcelle du modèle ; conversion calculée pour préparer MapTiler, sans observation satellite en direct.`,
+    hypothesis: true,
+  };
 }

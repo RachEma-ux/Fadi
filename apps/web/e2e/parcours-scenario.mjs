@@ -29,6 +29,9 @@
  *      étape », « Voir l’origine », synthèse des choix Harmonie ;
  *   6f. archive : « Sauvegarder projet JSON » puis « Importer projet JSON »
  *      → nouveau dossier « · import » ; page Projets ;
+ *   6b'. bilan du bâtiment conçu (étape 10) : pli, bilan en ligne (5 onglets,
+ *      plan SVG, locaux, audit des transmissions), revue actualisée, rapport
+ *      HTML, références directionnelles enregistrées → étape à réexaminer ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
  *      docs/migration/captures/webapp/.
  *
@@ -210,7 +213,8 @@ await page.locator("#biz-f1").fill("3200000");
 await page.locator("#biz-f1").blur();
 await page.locator("#biz-f9").fill("10000000");
 await page.locator("#biz-f9").blur();
-await page.waitForFunction(() => document.querySelector(".biz-kpis")?.textContent?.replace(/\u202f|\u00a0/g, " ").includes("Financement24 000 000"), null, { timeout: 10000 }).catch(() => {});
+// Deux enregistrements concurrents (f1 puis f9) : l'état final arrive avec le rechargement qui suit la dernière réponse.
+await page.waitForFunction(() => { const t = document.querySelector(".biz-kpis")?.textContent?.replace(/\u202f|\u00a0/g, " ") || ""; return t.includes("Financement24 000 000") && t.includes("Investissement24 000 000"); }, null, { timeout: 15000 }).catch(() => {});
 const kpiText = (await page.locator(".biz-kpis").textContent()).replace(/ | /g, " ");
 check("étape 14 : KPI investissement 24 000 000 / financement 24 000 000 / solde 0", /Investissement24 000 000/.test(kpiText) && /Financement24 000 000/.test(kpiText) && /Solde0/.test(kpiText), kpiText);
 await page.screenshot({ path: `${OUT}/new-14-desktop-complete.png`, fullPage: true });
@@ -327,6 +331,41 @@ await page.waitForFunction(() => /Retenue/.test(document.querySelector(".h7-loca
 // L'exemple retient le parti C ; le local retenu s'y ajoute sans le remplacer.
 check("étape 10 : local retenu, indépendant du parti retenu → « 2 choix retenu(s) »", (await page.locator(".h7-panel > summary").textContent()).includes("2 choix retenu(s)"));
 await page.screenshot({ path: `${OUT}/10-desktop.png`, fullPage: true });
+
+// 6b'. Bilan Harmonie du bâtiment conçu (flow-v62) : pli, bilan en ligne, plans, transmission, revue, rapport, références directionnelles
+await page.locator(".design-review-fold > summary").click();
+check("étape 10 : pli « Bilan Harmonie du bâtiment conçu · modèle … », 6 niveaux et 74 zones", /^Bilan Harmonie du bâtiment conçu · modèle [0-9a-f]{8}$/.test((await page.locator(".design-review-fold > summary").textContent()).trim()) && /6 niveaux et 74 zones analysables/.test(await page.locator(".design-review-fold .h7-fold-body").textContent()));
+await page.locator('.design-review-fold button:has-text("Lire le bilan du bâtiment")').click();
+await page.waitForSelector("#v62-report");
+check("bilan : « Bilan Harmony du bâtiment conçu », 5 onglets, intentions transmises, actions prioritaires (7 réserves)", (await page.locator("#v62-report h1").textContent()) === "Bilan Harmony du bâtiment conçu" && (await page.locator(".v62-tabs button").count()) === 5 && (await page.locator("#v62-report h2").first().textContent()) === "Intentions transmises et propositions de conception" && (await page.locator("#v62-report .v62-issue").count()) === 7);
+await page.locator('.v62-tabs button:has-text("Plans & niveaux")').click();
+check("bilan : plan de lecture SVG du RDC (parcelle, emprise, zones, entrée H-ENTREE, nord H-GEO) et tableau des niveaux", (await page.locator(".v62-plan svg").count()) === 1 && /Entrée H-ENTREE/.test(await page.locator(".v62-plan").innerHTML()) && /Nord géographique calculé \(H-GEO\)/.test(await page.locator(".v62-plan").innerHTML()) && (await page.locator(".v62-tab-content .v62-table tbody tr").count()) === 6);
+await page.locator("#v62-report-host").screenshot({ path: `${OUT}/10-desktop-bilan.png` });
+const [planDl] = await Promise.all([page.waitForEvent("download"), page.locator('button:has-text("Plan de lecture SVG ↓")').click()]);
+check("bilan : « Plan de lecture SVG ↓ » → Plan_lecture_rdc_V7.svg", planDl.suggestedFilename() === "Plan_lecture_rdc_V7.svg");
+await page.locator('.v62-tabs button:has-text("Locaux & Répartition")').click();
+check("bilan : tableau des 74 locaux (mesure, cible / écart, lecture)", (await page.locator(".v62-tab-content .v62-table tbody tr").count()) === 74);
+await page.locator('.v62-tabs button:has-text("Transmission")').click();
+check("bilan : audit des transmissions, 14 contrôles, « Revue de conception » à actualiser", (await page.locator(".v62-tab-content .v62-table tbody tr").count()) === 14 && /revue à actualiser/.test(await page.locator(".v62-tab-content .v62-table").textContent()));
+await page.locator('button:has-text("Actualiser la revue de conception")').click();
+await page.waitForFunction(() => /Lecture documentaire courante/.test(document.querySelector("#v62-report header p")?.textContent || ""), null, { timeout: 10000 });
+check("bilan : « Actualiser la revue de conception » → revue rattachée aux entrées courantes, toast", /Revue rattachée aux entrées actuelles/.test(await page.locator(".v62-tab-content .v62-table").textContent()) && (await page.locator(".h7-toast").textContent().catch(() => "")) === "Bilan de conception actualisé sans lever les réserves.");
+const [bilanDl] = await Promise.all([page.waitForEvent("download"), page.locator('#v62-report a:has-text("Rapport HTML ↓")').click()]);
+const bilanHtml = await (await import("node:fs/promises")).readFile(await bilanDl.path(), "utf8");
+check("bilan : « Rapport HTML ↓ » → Bilan_Harmonie_Batiment_V7.html (synthèse, plan, 74 zones, transmission)", bilanDl.suggestedFilename() === "Bilan_Harmonie_Batiment_V7.html" && bilanHtml.includes("<title>P.118 — Bilan Harmonie du bâtiment conçu · V7</title>") && bilanHtml.includes("Lecture des 74 zones") && bilanHtml.includes("<svg"));
+await page.locator('.design-review-fold button:has-text("Outils directionnels documentés")').click();
+await page.waitForSelector(".design-compass");
+check("références directionnelles : azimut 123,87° hérité de H-GEO + H-ENTREE, statut non prêt (références manquantes)", /^123\.866/.test(await page.locator('.design-compass input[type="number"]').first().inputValue()) && /"ready": false/.test(await page.locator(".design-compass .h7-json").textContent()));
+await page.locator('.design-compass input[type="date"]').fill("2026-10-02");
+await page.locator('.design-compass input[type="number"]').nth(1).fill("2");
+await page.locator('.design-compass input[type="number"]').nth(2).fill("1.5");
+await page.locator('.design-compass input[type="text"]').nth(2).fill("Modèle IGRF 2026 — hypothèse");
+await page.locator('.design-compass input[type="checkbox"]').check();
+await page.locator('button:has-text("Enregistrer les références")').click();
+await page.waitForFunction(() => /"ready": true/.test(document.querySelector(".design-compass .h7-json")?.textContent || ""), null, { timeout: 10000 });
+check("références directionnelles : « Enregistrer les références » → prêtes (Gua calculé sous hypothèse), étape 10 à réexaminer", /"name": "Qian"/.test(await page.locator(".design-compass .h7-json").textContent()));
+await page.waitForFunction(() => /à réexaminer/.test(document.querySelector(".h7-panel > summary")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
+check("références directionnelles : l'empreinte de l'étape 10 change → « … · à réexaminer »", /à réexaminer/.test(await page.locator(".h7-panel > summary").textContent()));
 
 // 6c. Étape 01 de l'exemple : outil Parcelle (fichier P.118 servi par Fadi), transmission au modèle, propositions de site
 await page.goto(`${exampleUrl}?module=parcours&etape=1`);

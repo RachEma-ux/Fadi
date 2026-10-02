@@ -43,6 +43,8 @@ ALTER TABLE projects ADD COLUMN IF NOT EXISTS parcels_initialized boolean NOT NU
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS parcel_transmission jsonb;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS site_observations jsonb;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS programme_state jsonb;
+-- Dossier Harmony du projet (Parcours.Harmony, schéma 1 : observations, références directionnelles, locaux, ambiances, revues, revue de conception).
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS harmony jsonb;
 
 -- Contenu réel des 21 étapes du Parcours, une ligne par étape et par projet.
 CREATE TABLE IF NOT EXISTS project_steps (

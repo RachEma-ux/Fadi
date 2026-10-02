@@ -14,7 +14,9 @@ import {
   DEFAULT_SITE_OBSERVATIONS,
   EMPTY_PARCOURS_STEP_CONTENT,
   type BuildingLibraryData,
+  type DesignAssumption,
   type HarmonieProfilesData,
+  type HarmonyEngineData,
   type ParcoursFieldValue,
   type ParcoursFormField,
   type ParcoursStepContent,
@@ -85,8 +87,27 @@ export function parcoursStepDefinition(number: number): ParcoursStepDefinition |
 // ---------------------------------------------------------------------------
 
 export const HARMONIE_PROFILES: HarmonieProfilesData = readJson<HarmonieProfilesData>("harmonie-profiles.json");
+/** Moteur Harmony V6 : types, phases, lectures, 69 règles, directions, Gua, sources (`harmony-engine-v6` du prototype, tables telles quelles). */
+export const HARMONY_ENGINE: HarmonyEngineData = readJson<HarmonyEngineData>("harmony-engine.json");
+
+interface HarmonyDossierFile {
+  exampleId: string;
+  harmony: Record<string, unknown>;
+  georeference: { parcelVertices: [number, number][]; latitude: number; longitude: number; projectNorth: number; crs: string; method: string; status: string; source: string };
+  assumptions: DesignAssumption[];
+  stages: Record<string, Record<string, string>>;
+}
+const harmonyDossierFile = readJson<HarmonyDossierFile>("examples/p118-harmony-dossier.json");
+
+/** Le dossier Harmony de l'exemple P.118 (`p.data.harmony` du prototype, tel quel) et ses données V6.2 (géoréférencement, hypothèses H-*). */
+export function exampleHarmonyDossier(exampleId: string): HarmonyDossierFile | null {
+  return exampleId === harmonyDossierFile.exampleId ? harmonyDossierFile : null;
+}
+
 /** Feuille de style du panneau Harmonie (`<style id="h7-css">` du prototype, telle quelle) embarquée dans les rapports HTML téléchargés. */
 export const HARMONIE_REPORT_CSS: string = readFileSync(fileURLToPath(dataFileUrl("harmonie-report.css")), "utf8");
+/** Feuille de style du bilan du bâtiment conçu (`<style id="flow-v62-css">`), telle quelle : rapport téléchargé et bilan en ligne. */
+export const DESIGN_REPORT_CSS: string = readFileSync(fileURLToPath(dataFileUrl("design-report.css")), "utf8");
 export const PROGRAMME_REPARTITION: ProgrammeRepartitionData = readJson<ProgrammeRepartitionData>("programme-repartition.json");
 
 // ---------------------------------------------------------------------------
@@ -340,6 +361,8 @@ export function exampleAttachment(exampleId: string): Record<string, unknown> | 
       facts: exempleComplet.facts,
       criteria: exempleComplet.criteria,
       assumptions: exempleComplet.assumptions,
+      /** Données V6.2 du dossier (flow-v62) : géoréférencement calculé et hypothèses de travail H-* du bilan du bâtiment conçu. */
+      dossierV62: { georeference: harmonyDossierFile.georeference, assumptions: harmonyDossierFile.assumptions, stages: harmonyDossierFile.stages },
       programmeCase: programmeCase.programme,
       roomResponses: programmeCase.roomResponses,
       parcel: {

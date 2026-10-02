@@ -85,6 +85,11 @@ export interface ModelRoom {
   delta: number | null;
   reading: string;
   status: string;
+  /** Contour et trous du local dans le repère local du modèle (origine : centroïde de la parcelle), tels que dessinés. */
+  points: Point2[];
+  holes: Point2[][];
+  /** Centroïde du contour (repère local). */
+  center: Point2;
 }
 
 export interface ModelFloor {
@@ -300,6 +305,9 @@ export function analyseRooms(levels: readonly NativeLevelLike[], floor: NativeFl
         target,
         delta: target === null ? null : area - target,
         reading: ROOM_READINGS[u],
+        points: path.points.map((q): Point2 => [q[0], q[1]]),
+        holes,
+        center: polygonCenter(path.points),
         status:
           u === "bureau" && capacity && area / capacity < 6
             ? "Densité à tester (H-MEZZ)"

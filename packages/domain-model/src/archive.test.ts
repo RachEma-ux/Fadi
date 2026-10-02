@@ -100,6 +100,7 @@ describe("archive — export du prototype → archive Fadi", () => {
     expect(a.steps.find((s) => s.stepNumber === 19)!.content.fields).toEqual({ decision: "GO sous conditions" });
     expect(a.steps.find((s) => s.stepNumber === 5)!.status).toBe("a-faire");
     expect(a.programmeRepartition).toEqual({ type: "tertiaire", baseArea: 900, mode: "max", custom: { circulation: 17 }, components: ["enseignement", "tertiaire"] });
+    expect(a.project.harmony).toEqual({ config: { components: ["enseignement", "tertiaire"] } }); // le dossier Harmony du prototype voyage tel quel
     expect(a.programmeCases).toEqual([{ revision: 2, caseId: "hotel", scenarioId: "B", data: expect.objectContaining({ caseId: "hotel" }) }]);
     expect(a.native!.entries["design.v13.activeProject"]).toBe("native-1");
     expect(a.native!.entries["design.v13.project.native-1.levels"]).toEqual([{ id: "rdc" }]);

@@ -10,3 +10,5 @@ export * from "./model-analysis.js";
 export * from "./dependencies.js";
 export * from "./harmonie-report.js";
 export * from "./archive.js";
+export * from "./harmony-engine.js";
+export * from "./design-review.js";

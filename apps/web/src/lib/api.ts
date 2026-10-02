@@ -265,6 +265,52 @@ export interface ParcoursStep {
   programme: { spaceCount: number; total: number } | null;
 }
 
+/** Bilan Harmonie du bâtiment conçu (flow-v62) tel que le serveur le calcule sur le modèle courant. */
+export interface DesignReviewView {
+  analysis: {
+    version: string;
+    name: string;
+    nativeId: string | null;
+    nativeHash: string;
+    inputHash: string;
+    facts: { parcelArea: number | null; officialArea: number | null; footprint: number | null; setbackArea: number | null; setbacks: number[]; inside: boolean | null; insideSetback: boolean | null; gross: number | null; net: number | null; roomArea: number; roomCount: number; height: number | null };
+    floors: { id: string; name: string; elevation: number | null; height: number | null; gross: number | null; slabNet: number | null; rooms: number; count: number; columns: number; stairs: number; voidArea: number | null }[];
+    rooms: { id: string; objectId: string; level: string; levelName: string; name: string; area: number; usage: string; capacity: number | null; ratio: number | null; width: number | null; doors: number; windows: number; furniture: number; target: number | null; delta: number | null; reading: string; status: string; sector: string }[];
+    entry: { id: string; width: number | null; height: number | null; wallId: string; gridBearing: number; trueBearing: number | null; source: string } | null;
+    totals: { programme: number; total: number } | null;
+    issues: { id: string; priority: string; title: string; body: string; refs: string[]; step: number }[];
+    sourceSummary: string;
+    generatedAt: string;
+    stale: boolean;
+  };
+  audit: { id: string; name: string; status: "OK" | "À documenter" | "Écart"; detail: string }[];
+  review: { version: string; name: string; at: string; signature: string; modelSignature: string; status: string; automatic: boolean; summary: string; counts: { levels: number; rooms: number; issues: number } } | null;
+  history: DesignReviewView["review"][];
+  assumptions: { id: string; topic: string; value: string; source: string; validation: string; owner: string; status: string }[];
+  georeference: { latitude: number; longitude: number; projectNorth: number | null; source: string; hypothesis: boolean } | null;
+  profileLabel: string;
+  example: boolean;
+  compass: { values: Record<string, unknown>; status: { ready: boolean; missing: string[]; facing: number | null; sitting: number | null; gua: { n: number; name: string; element: string; group: string; direction: string } | null } };
+  natal: { ready: boolean; missing: string[]; base: Record<string, number> | null };
+  /** Plans de lecture SVG par niveau (composés par le serveur depuis les polygones réels). */
+  plans: Record<string, string>;
+  /** Fragments HTML du bilan (mêmes fonctions que le rapport téléchargé). */
+  html: { synthesis: string; metrics: string; levelTable: string; rooms: Record<string, string>; issues: string; audit: string; assumptions: string; sources: string; designTrace: string };
+  css: string;
+}
+
+export interface CompassInput {
+  facing?: number | string | null;
+  source?: string;
+  facadeReason?: string;
+  date?: string;
+  uncertainty?: number | string | null;
+  declination?: number | string | null;
+  declinationSource?: string;
+  basis?: "" | "magnetic" | "geographic" | "grid";
+  confirmed?: boolean;
+}
+
 /** Résultat de « Importer projet JSON » : les projets créés (une base V5 peut en contenir plusieurs) et leurs réserves. */
 export interface ImportedProjects {
   projects: { id: string; code: string; name: string; origin: "fadi" | "parcours-v7" | "parcours-v6" | "parcours-v5"; warnings: string[] }[];
@@ -491,6 +537,11 @@ export const api = {
     }
     return body as ImportedProjects;
   },
+  /** Bilan Harmonie du bâtiment conçu (étapes 10 / 11). */
+  getDesignReview: (projectId: string) => request<DesignReviewView>(`/projects/${projectId}/design-review`),
+  refreshDesignReview: (projectId: string) => request<DesignReviewView>(`/projects/${projectId}/design-review/review`, { method: "POST" }),
+  designReportUrl: (projectId: string) => `/projects/${projectId}/design-review/rapport`,
+  putCompass: (projectId: string, input: CompassInput) => request<DesignReviewView>(`/projects/${projectId}/design-review/compass`, { method: "PUT", body: JSON.stringify(input) }),
   /** « Rapport de cette étape » (`Harmonie_Etape_NN_V7.html`) ou, sans étape, la synthèse des choix du projet (`Harmonie_Choix_Parcours_V7.html`). */
   harmonieReportUrl: (projectId: string, stepNumber: number | null) => (stepNumber === null ? `/projects/${projectId}/steps/harmonie/rapport` : `/projects/${projectId}/steps/${stepNumber}/harmonie/rapport`),
   getAtelierStore: (projectId: string) => request<AtelierStore>(`/projects/${projectId}/atelier/store`),

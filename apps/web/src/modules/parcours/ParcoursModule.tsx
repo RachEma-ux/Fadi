@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type SiteObservationsInput } from "../../lib/api";
+import { DesignReviewFold } from "../atelier/DesignReview";
 import { NativeAtelier } from "../atelier/NativeAtelier";
 import { ImportProjectButton } from "../projets-sources/ImportProjectButton";
 import { ParcelleTool } from "../projets-sources/ParcelleTool";
@@ -232,6 +233,8 @@ function StepDetail({
       <HarmonieToast text={toast} onDone={() => setToast(null)} />
 
       {step.number === 10 && <ProgrammeTransfer projectId={projectId} />}
+      {/* Bilan Harmonie du bâtiment conçu (flow-v62 `designHTML`) : lecture du modèle courant, revue archivée, références directionnelles. */}
+      {(step.number === 10 || step.number === 11) && <DesignReviewFold projectId={projectId} />}
       {(step.number === 10 || step.number === 11) && <NativeAtelier projectId={projectId} stage={step.number} />}
 
       <StepStory step={step} />
