@@ -827,3 +827,49 @@ describe("Bibliothèque des bâtiments — cas de programme appliqué", () => {
     expect(view.programmeCase.sums.programme).toBeCloseTo(2932.26, 1);
   });
 });
+
+describe("Étapes 10/11 — propositions localisées sur les locaux du modèle", () => {
+  it("adds one local proposal per usable room of the imported P.118 model, retained independently of the partis, received by step 11", async () => {
+    const client = await registerAndLogin("locals@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    const step10 = (await client.get(`/projects/${pid}/steps/10`)).body;
+    const partis = step10.proposals.filter((q: { group: string }) => q.group === "parti");
+    const locals = step10.proposals.filter((q: { group: string }) => q.group === "local");
+    expect(partis).toHaveLength(3);
+    expect(locals.length).toBeGreaterThan(10);
+    expect(step10.model.roomCount).toBeGreaterThanOrEqual(locals.length);
+    expect(step10.model.floors.map((f: { id: string }) => f.id)).toEqual(["ss", "rdc", "mezz", "r1", "r2", "r3"]);
+    const hall = locals.find((q: { title: string }) => /R01/.test(q.title));
+    expect(hall).toBeDefined();
+    expect(hall.id).toBe(`H09-LOCAL-${hall.roomId}`);
+    expect(hall.ref).toBe(`H10-LOCAL-${hall.roomId}`);
+    expect(hall.scope).toBe("Local du modèle courant");
+    expect(hall.why).toMatch(/m² calculés sur le polygone/);
+    expect(hall.source).toBe(`Modèle ${step10.model.nativeHash} · objet ${hall.objectId}`);
+    expect(hall.targets).toEqual([11, 13, 16]);
+    expect(step10.recommendation.key).toMatch(/^[AC]$/);
+    // Un projet sans modèle n'a aucune proposition localisée.
+    const blank = await client.post("/projects").send({ code: "P.914", name: "Sans modèle" });
+    const blank10 = (await client.get(`/projects/${blank.body.id}/steps/10`)).body;
+    expect(blank10.proposals.filter((q: { group: string }) => q.group === "local")).toHaveLength(0);
+    expect(blank10.model).toBeNull();
+
+    // Retenir le local (lien = identifiant du local), puis un parti : les deux restent retenus ; l'étape 11 reçoit l'intention.
+    const retainedLocal = await client.post(`/projects/${pid}/steps/10/harmonie/${encodeURIComponent(hall.id)}`).send({ status: "retained" });
+    expect(retainedLocal.status).toBe(200);
+    const l = retainedLocal.body.proposals.find((q: { id: string }) => q.id === hall.id);
+    expect(l.retained).toBe(true);
+    expect(l.decision.link).toBe(hall.roomId);
+    const retainedParti = await client.post(`/projects/${pid}/steps/10/harmonie/H09-B`).send({ status: "retained" });
+    expect(retainedParti.body.proposals.find((q: { id: string }) => q.id === hall.id).retained).toBe(true);
+    expect(retainedParti.body.proposals.find((q: { id: string }) => q.id === "H09-C").decision.status).toBe("dismissed"); // l'exemple retenait C
+    const step11 = (await client.get(`/projects/${pid}/steps/11`)).body;
+    expect(step11.incoming.map((q: { id: string }) => q.id)).toContain(hall.id);
+    expect(step11.proposals.filter((q: { group: string }) => q.group === "local").length).toBe(locals.length);
+    // « Dessinée » est admise à l'étape 10 avec responsable et preuve.
+    const drawn = await client.post(`/projects/${pid}/steps/10/harmonie/${encodeURIComponent(hall.id)}`).send({ status: "drawn", owner: "Architecte", proof: "Plan RDC indice B" });
+    expect(drawn.status).toBe(200);
+    expect(drawn.body.proposals.find((q: { id: string }) => q.id === hall.id).stateLabel).toBe("Dessinée · déclaration");
+  });
+});

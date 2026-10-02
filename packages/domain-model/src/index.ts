@@ -6,3 +6,4 @@ export * from "./kpis.js";
 export * from "./programme.js";
 export * from "./site.js";
 export * from "./building-library.js";
+export * from "./model-analysis.js";

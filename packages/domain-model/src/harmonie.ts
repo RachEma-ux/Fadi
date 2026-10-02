@@ -101,7 +101,8 @@ export interface HarmonieProposal {
   key: string;
   stage: number;
   scope: string;
-  group: "parti";
+  /** « parti » : A/B/C de l'étape ; « local » : proposition localisée sur un local du modèle (étapes 10/11). */
+  group: "parti" | "local";
   title: string;
   /** Texte affiché : l'adaptation retenue si elle existe, sinon la proposition d'origine. */
   text: string;
@@ -118,6 +119,24 @@ export interface HarmonieProposal {
   stateLabel: string;
   /** Étape 01 : zonage calculé sur le contour de la parcelle (`null` sans contour exploitable). */
   zoning?: SiteZoning | null;
+  /** Propositions localisées : le local du modèle (`niveau|objet`) et l'objet natif. */
+  roomId?: string;
+  objectId?: string;
+}
+
+/** Une proposition localisée sur un local du modèle courant (étapes 10/11, `buildProposals` de h7-app). */
+export interface LocalHarmonieOption {
+  key: string;
+  roomId: string;
+  objectId: string;
+  title: string;
+  text: string;
+  why: string;
+  benefit: string;
+  tradeoff: string;
+  conditions: string;
+  source: string;
+  targets: number[];
 }
 
 /**
@@ -133,9 +152,12 @@ export interface ComputedHarmonieOption extends HarmonieOption {
 }
 
 export interface HarmonieProposalComputation {
-  options: ComputedHarmonieOption[];
+  /** Propositions de parti calculées ; `null` pour garder celles de la définition de l'étape. */
+  options: ComputedHarmonieOption[] | null;
   /** Proposition de départ (`recommended()` du prototype) ; « A » par défaut. */
   recommendedKey: string;
+  /** Propositions localisées (groupe « local »), ajoutées après les partis. */
+  locals?: LocalHarmonieOption[];
 }
 
 /** « Pourquoi ici » : la phrase du profil choisie par position de l'étape (règle de `buildProposals`). */
@@ -161,9 +183,9 @@ export function buildHarmonieProposals(
   state: HarmonieStepState,
   computed: HarmonieProposalComputation | null = null,
 ): HarmonieProposal[] {
-  const options: (HarmonieOption & Partial<ComputedHarmonieOption>)[] = computed ? computed.options : def.harmonieOptions;
+  const options: (HarmonieOption & Partial<ComputedHarmonieOption>)[] = computed?.options ?? def.harmonieOptions;
   const recommendedKey = computed?.recommendedKey ?? "A";
-  return options.map((opt, i) => {
+  const partis: HarmonieProposal[] = options.map((opt, i) => {
     const key = opt.key ?? "ABC"[i] ?? String.fromCharCode(65 + i);
     const id = harmonieProposalId(def.number, key);
     const decision = { ...EMPTY_HARMONIE_DECISION, ...(state.proposals[id] ?? {}) };
@@ -190,6 +212,34 @@ export function buildHarmonieProposals(
       ...(opt.zoning !== undefined ? { zoning: opt.zoning } : {}),
     };
   });
+  const locals: HarmonieProposal[] = (computed?.locals ?? []).map((opt) => {
+    const id = `${harmonieProposalId(def.number, "LOCAL")}-${opt.roomId}`;
+    const decision = { ...EMPTY_HARMONIE_DECISION, ...(state.proposals[id] ?? {}) };
+    return {
+      id,
+      ref: `${harmonieVisibleRef(def.number, "LOCAL")}-${opt.roomId}`,
+      key: opt.key,
+      stage: def.number,
+      scope: "Local du modèle courant",
+      group: "local",
+      title: opt.title,
+      text: decision.adaptedText ?? opt.text,
+      originalText: opt.text,
+      benefit: opt.benefit,
+      tradeoff: opt.tradeoff,
+      conditions: opt.conditions,
+      why: opt.why,
+      source: opt.source,
+      targets: opt.targets.slice(),
+      recommended: false,
+      decision,
+      retained: isRetainedStatus(data, decision.status),
+      stateLabel: data.states[decision.status],
+      roomId: opt.roomId,
+      objectId: opt.objectId,
+    };
+  });
+  return [...partis, ...locals];
 }
 
 export function retainedCount(data: HarmonieProfilesData, def: ParcoursStepDefinition, state: HarmonieStepState, computed: HarmonieProposalComputation | null = null): number {
@@ -240,7 +290,8 @@ export function decideHarmonieProposal(
   const notes = String(input.notes ?? prev.notes ?? "").trim();
   const owner = String(input.owner ?? prev.owner ?? "").trim();
   const proof = String(input.proof ?? prev.proof ?? "").trim();
-  const link = String(input.link ?? prev.link ?? "").trim();
+  // Une proposition localisée référence son local par défaut (`link: room.id` du prototype).
+  const link = String(input.link ?? (prev.link || (q.group === "local" ? (q.roomId ?? "") : ""))).trim();
   if ((status === "adapted" || status === "dismissed") && notes.length < 8) {
     throw new HarmonieError("Décrivez votre adaptation ou votre motif (8 caractères minimum).");
   }
@@ -257,9 +308,10 @@ export function decideHarmonieProposal(
   const nextProposals: Record<string, HarmonieProposalDecision> = { ...state.proposals };
   const dismissed: string[] = [];
   const retainedNow = isRetainedStatus(data, status);
-  if (retainedNow) {
+  // Retenir un parti écarte les autres partis retenus ; les propositions localisées sont indépendantes.
+  if (retainedNow && q.group === "parti") {
     for (const other of proposals) {
-      if (other.id === q.id || !other.retained) continue;
+      if (other.id === q.id || other.group !== "parti" || !other.retained) continue;
       const od = other.decision;
       const entry: HarmonieHistoryEntry = { at: options.now, status: od.status, text: other.text, proof: od.proof, owner: od.owner, reason: `Variante remplacée par ${q.id}` };
       nextProposals[other.id] = {

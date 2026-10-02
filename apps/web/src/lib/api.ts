@@ -142,7 +142,7 @@ export interface HarmonieProposal {
   key: string;
   stage: number;
   scope: string;
-  group: "parti";
+  group: "parti" | "local";
   title: string;
   text: string;
   originalText: string;
@@ -158,6 +158,9 @@ export interface HarmonieProposal {
   stateLabel: string;
   /** Étape 01 : zonage calculé sur le contour de la parcelle (`null` sans contour exploitable). */
   zoning?: SiteZoning | null;
+  /** Propositions localisées (étapes 10/11) : le local du modèle et l'objet natif. */
+  roomId?: string;
+  objectId?: string;
 }
 
 /** Étape 01 — le bloc « site » servi avec l'étape : parcelle, géolocalisation, observations déclarées, proposition de départ. */
@@ -238,6 +241,10 @@ export interface ParcoursStep {
   profile: HarmonieProfile;
   /** Étape 01 seulement ; `null` ailleurs. */
   site: SiteView | null;
+  /** Étape 10 : proposition de départ calculée sur le modèle ; `null` ailleurs. */
+  recommendation: { key: string; reason: string } | null;
+  /** Étapes 10/11 : empreinte et niveaux du modèle lu ; `null` sans modèle. */
+  model: { nativeHash: string; floors: { id: string; name: string; count: number; rooms: number }[]; roomCount: number } | null;
 }
 
 export interface HarmonieDecisionInput {

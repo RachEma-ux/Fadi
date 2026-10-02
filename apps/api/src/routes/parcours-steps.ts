@@ -20,11 +20,15 @@ import {
   harmonieProfile,
   incomingIntentions,
   isDecisionChoice,
+  localHarmonieOptions,
+  recommendedDesignOption,
   recommendedSiteOption,
   siteProposalComputation,
   validateSiteObservations,
+  type HarmonieProposalComputation,
   type HarmonieProposalStatus,
   type HarmonieStepState,
+  type ModelAnalysis,
   type ParcoursFieldValue,
   type ParcoursStepContent,
   type ParcoursStepDefinition,
@@ -38,6 +42,7 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS, parcoursStepDefinition } from "../data/parcours.js";
 import { loadOwnedProject, type OwnedProject } from "../lib/owned-project.js";
 import { loadSiteContext } from "../lib/site-context.js";
+import { loadModelAnalysis } from "../lib/model-context.js";
 import { loadStepRows, upsertStep } from "../lib/step-rows.js";
 import { loadProgrammeRepartition } from "./programme.js";
 import { stepFilesRouter } from "./step-files.js";
@@ -92,17 +97,25 @@ function siteView(c: SiteContext) {
 }
 
 /** La vue complète d'une étape telle que le client l'affiche : définition, contenu, propositions Harmonie calculées, intentions reçues. */
-function stepView(def: ParcoursStepDefinition, rows: Map<number, { status: ParcoursStepStatus; content: ParcoursStepContent }>, profile: ReturnType<typeof harmonieProfile>, site: SiteContext | null) {
+function stepView(def: ParcoursStepDefinition, rows: Map<number, { status: ParcoursStepStatus; content: ParcoursStepContent }>, profile: ReturnType<typeof harmonieProfile>, site: SiteContext | null, model: ModelAnalysis | null = null) {
   const row = rows.get(def.number);
   const content = row?.content ?? EMPTY_STEP_CONTENT;
   // Étape 01 : propositions de site calculées sur la parcelle du projet ;
-  // elles sont aussi ce que les étapes aval reçoivent comme intentions.
+  // étapes 10/11 : propositions localisées sur les locaux du modèle. Elles
+  // sont aussi ce que les étapes aval reçoivent comme intentions.
   const siteComputation = site ? siteProposalComputation(site) : null;
-  const computed = def.number === 1 ? siteComputation : null;
+  const computationFor = (n: number): HarmonieProposalComputation | null => {
+    if (n === 1) return siteComputation;
+    if ((n === 10 || n === 11) && model) {
+      return { options: null, recommendedKey: n === 10 ? recommendedDesignOption(model).key : "A", locals: localHarmonieOptions(model, n, profile.usage) };
+    }
+    return null;
+  };
+  const computed = computationFor(def.number);
   const proposals = buildHarmonieProposals(HARMONIE_PROFILES, def, profile, content.harmonie, computed);
   const incoming = incomingIntentions(
     HARMONIE_PROFILES,
-    PARCOURS_STEPS.map((d) => ({ def: d, state: rows.get(d.number)?.content.harmonie ?? EMPTY_HARMONIE_STEP_STATE, computed: d.number === 1 ? siteComputation : null })),
+    PARCOURS_STEPS.map((d) => ({ def: d, state: rows.get(d.number)?.content.harmonie ?? EMPTY_HARMONIE_STEP_STATE, computed: computationFor(d.number) })),
     def.number,
     profile,
   );
@@ -115,6 +128,10 @@ function stepView(def: ParcoursStepDefinition, rows: Map<number, { status: Parco
     retainedCount: proposals.filter((q) => q.retained).length,
     profile,
     site: def.number === 1 && site ? siteView(site) : null,
+    /** Étapes 10/11 : la proposition de départ calculée sur le modèle (`recommended(10)`). */
+    recommendation: def.number === 10 && model ? recommendedDesignOption(model) : null,
+    /** Étapes 10/11 : l'empreinte du modèle lu (`nativeHash`) et ses niveaux. */
+    model: (def.number === 10 || def.number === 11) && model ? { nativeHash: model.nativeHash, floors: model.floors, roomCount: model.rooms.length } : null,
   };
 }
 
@@ -142,7 +159,8 @@ parcoursStepsRouter.get("/", async (req, res) => {
   const rows = await loadStepRows(db, project.id);
   const profile = await projectProfile(project.id);
   const site = await siteFor(db, project, profile);
-  res.json(PARCOURS_STEPS.map((def) => stepView(def, rows, profile, site)));
+  const model = await loadModelAnalysis(db, project.id);
+  res.json(PARCOURS_STEPS.map((def) => stepView(def, rows, profile, site, model)));
 });
 
 parcoursStepsRouter.get("/:stepNumber", async (req, res) => {
@@ -152,7 +170,7 @@ parcoursStepsRouter.get("/:stepNumber", async (req, res) => {
   if (!def) return;
   const rows = await loadStepRows(db, project.id);
   const profile = await projectProfile(project.id);
-  res.json(stepView(def, rows, profile, await siteFor(db, project, profile)));
+  res.json(stepView(def, rows, profile, await siteFor(db, project, profile), await loadModelAnalysis(db, project.id)));
 });
 
 // --- Données du site (étape 01) --------------------------------------------
@@ -220,7 +238,7 @@ parcoursStepsRouter.put("/:stepNumber/site", async (req, res) => {
     await upsertStep(tx, project.id, 1, status, content);
     rows.set(1, { status, content });
     const site = await siteFor(tx, { ...project, siteObservations: next as unknown as Record<string, unknown> }, profile);
-    return stepView(def, rows, profile, site);
+    return stepView(def, rows, profile, site, await loadModelAnalysis(tx, project.id));
   });
   res.json(result);
 });
@@ -300,7 +318,7 @@ parcoursStepsRouter.patch("/:stepNumber", async (req, res) => {
       .onConflictDoUpdate({ target: [projectSteps.projectId, projectSteps.stepNumber], set: { status, content: { ...content } } });
     rows.set(def.number, { status, content });
     const profile = await projectProfile(project.id);
-    return stepView(def, rows, profile, await siteFor(tx, project, profile));
+    return stepView(def, rows, profile, await siteFor(tx, project, profile), await loadModelAnalysis(tx, project.id));
   });
   res.json(result);
 });
@@ -334,10 +352,14 @@ parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) =
       const current = rows.get(def.number) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
       const profile = await projectProfile(project.id);
       const site = await siteFor(tx, project, profile);
-      const decided = decideHarmonieProposal(HARMONIE_PROFILES, def, current.content.harmonie, proposalId, parsed.data as { status: HarmonieProposalStatus; notes?: string; owner?: string; proof?: string; link?: string }, {
-        now,
-        computed: def.number === 1 ? siteProposalComputation(site) : null,
-      });
+      const model = await loadModelAnalysis(tx, project.id);
+      const computed: HarmonieProposalComputation | null =
+        def.number === 1
+          ? siteProposalComputation(site)
+          : (def.number === 10 || def.number === 11) && model
+            ? { options: null, recommendedKey: def.number === 10 ? recommendedDesignOption(model).key : "A", locals: localHarmonieOptions(model, def.number, profile.usage) }
+            : null;
+      const decided = decideHarmonieProposal(HARMONIE_PROFILES, def, current.content.harmonie, proposalId, parsed.data as { status: HarmonieProposalStatus; notes?: string; owner?: string; proof?: string; link?: string }, { now, computed });
       const status: ParcoursStepStatus = current.status === "a-faire" ? "en-cours" : current.status;
       const content: ParcoursStepContent = { ...current.content, status, harmonie: decided.state };
       await upsertStep(tx, project.id, def.number, status, content);
@@ -369,7 +391,7 @@ parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) =
           }
         }
       }
-      return stepView(def, rows, profile, site);
+      return stepView(def, rows, profile, site, model);
     });
     res.json(result);
   } catch (err) {

@@ -45,9 +45,7 @@ function ProposalCard({
   return (
     <article className={`h7-proposal${q.recommended ? " recommended" : ""}${q.retained ? " retained" : ""}`} aria-labelledby={`${q.id}-title`}>
       <div className="h7-proposal-top">
-        <span className="h7-kicker">
-          {q.ref} · {q.key}
-        </span>
+        <span className="h7-kicker">{q.group === "local" ? `${q.ref.split("-LOCAL-")[0]} · LOCAL` : `${q.ref} · ${q.key}`}</span>
         <span className={`h7-chip${q.retained ? " ok" : ""}${q.decision.status === "dismissed" ? " off" : ""}`}>{q.stateLabel}</span>
       </div>
       <h3 id={`${q.id}-title`}>{q.title}</h3>
@@ -64,8 +62,8 @@ function ProposalCard({
         <dd>{q.conditions}</dd>
       </dl>
       <div className="h7-actions">
-        <button type="button" className="button-primary" disabled={pending || q.decision.status === "retained"} onClick={() => submit("retained")}>
-          Retenir
+        <button type="button" className="button-primary" disabled={pending} onClick={() => submit("retained")}>
+          {q.retained ? "Confirmer ce choix" : "Retenir"}
         </button>
         <button type="button" className="button-secondary" aria-expanded={open} aria-controls={editorId} onClick={() => setOpen((o) => !o)}>
           Adapter / motiver
@@ -140,6 +138,7 @@ function ProposalCard({
           {q.decision.owner ? ` · ${q.decision.owner}` : ""}
         </small>
       )}
+      <small className="h7-muted h7-source">{q.source}</small>
     </article>
   );
 }
@@ -170,10 +169,12 @@ export function HarmoniePanel({
   const [siteFoldOpen, setSiteFoldOpen] = useState(false);
   if (step.proposals.length === 0) return null;
   const retained = step.proposals.filter((q) => q.retained);
+  const partis = step.proposals.filter((q) => q.group === "parti");
+  const locals = step.proposals.filter((q) => q.group === "local");
   const stepTitle = (n: number) => allSteps.find((s) => s.number === n)?.title ?? `Étape ${n}`;
   const site = step.number === 1 ? step.site : null;
-  const activeSite = site ? (step.proposals.find((q) => q.id === siteProposal) ?? retained[0] ?? step.proposals[0] ?? null) : null;
-  const recommendation = site?.recommendation ?? { key: "A", reason: "Parti de départ visant les intentions documentées et une intervention limitée ; à arbitrer avec les alternatives." };
+  const activeSite = site ? (partis.find((q) => q.id === siteProposal) ?? partis.find((q) => q.retained) ?? partis[0] ?? null) : null;
+  const recommendation = site?.recommendation ?? step.recommendation ?? { key: "A", reason: "Parti de départ visant les intentions documentées et une intervention limitée ; à arbitrer avec les alternatives." };
   function viewSite(id: string) {
     setSiteProposal(id);
     document.querySelector(".h7-site-hero")?.scrollIntoView({ behavior: "smooth" });
@@ -203,6 +204,11 @@ export function HarmoniePanel({
             <p>
               <b>Type :</b> {step.profile.label}.
             </p>
+            {step.model && (
+              <p>
+                Modèle courant : {step.model.floors.length} niveaux · {step.model.roomCount} zones · empreinte {step.model.nativeHash}.
+              </p>
+            )}
             {step.incoming.length ? (
               <table className="h7-table">
                 <thead>
@@ -257,10 +263,20 @@ export function HarmoniePanel({
               <b>{recommendation.key} · Proposition de départ</b> — {recommendation.reason}
             </p>
             <div className="h7-grid">
-              {step.proposals.map((q) => (
+              {partis.map((q) => (
                 <ProposalCard key={q.id} q={q} stepNumber={step.number} onDecide={onDecide} onView={site ? viewSite : null} pending={pending} error={errors[q.id] ?? null} />
               ))}
             </div>
+            {locals.length > 0 && (
+              <details className="h7-fold h7-locals">
+                <summary>{locals.length} propositions localisées sur les usages du modèle</summary>
+                <div className="h7-fold-body h7-grid">
+                  {locals.map((q) => (
+                    <ProposalCard key={q.id} q={q} stepNumber={step.number} onDecide={onDecide} onView={null} pending={pending} error={errors[q.id] ?? null} />
+                  ))}
+                </div>
+              </details>
+            )}
           </>
         )}
 

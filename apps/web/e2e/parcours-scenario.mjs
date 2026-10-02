@@ -306,6 +306,19 @@ check("atelier : rechargement → modèle toujours là", (await page.locator("#m
 await page.goto(`${exampleUrl}?module=parcours&etape=10`);
 await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
 check("étape 10 : l'Atelier est monté dans l'étape (même moteur)", (await page.locator(".native-atelier #viewer-info").count()) === 1);
+// Propositions localisées sur les locaux du modèle (flow-v62 / h7-app)
+await page.evaluate(() => { document.querySelector(".h7-panel").open = true; });
+await page.waitForSelector(".h7-locals");
+const localsSummary = await page.locator(".h7-locals > summary").textContent();
+check("étape 10 : pli « N propositions localisées sur les usages du modèle »", /^\d+ propositions localisées sur les usages du modèle$/.test(localsSummary), localsSummary);
+await page.evaluate(() => { document.querySelector(".h7-locals").open = true; });
+const localCard = page.locator(".h7-locals .h7-proposal").first();
+check("étape 10 : carte locale « H10 · LOCAL », pourquoi calculé sur le polygone, source « Modèle … · objet … »", (await localCard.locator(".h7-kicker").textContent()) === "H10 · LOCAL" && /m² calculés sur le polygone/.test(await localCard.locator("dd").first().textContent()) && /^Modèle [0-9a-f]{8} · objet /.test(await localCard.locator(".h7-source").textContent()));
+check("étape 10 : données mobilisées « Modèle courant : 6 niveaux · … zones · empreinte … »", /Modèle courant : 6 niveaux · \d+ zones · empreinte [0-9a-f]{8}\./.test(await page.locator(".h7-panel .h7-fold-body").first().textContent()));
+await localCard.locator('button:has-text("Retenir")').first().click();
+await page.waitForFunction(() => /Retenue/.test(document.querySelector(".h7-locals .h7-proposal .h7-chip")?.textContent || ""), null, { timeout: 10000 });
+// L'exemple retient le parti C ; le local retenu s'y ajoute sans le remplacer.
+check("étape 10 : local retenu, indépendant du parti retenu → « 2 choix retenu(s) »", (await page.locator(".h7-panel > summary").textContent()).includes("2 choix retenu(s)"));
 await page.screenshot({ path: `${OUT}/10-desktop.png`, fullPage: true });
 
 // 6c. Étape 01 de l'exemple : outil Parcelle (fichier P.118 servi par Fadi), transmission au modèle, propositions de site
