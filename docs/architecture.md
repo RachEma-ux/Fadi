@@ -242,6 +242,14 @@ Performance is measured on the same project, on a reference computer and an Andr
 selection, moving an element, 3D navigation and saving — acceptance thresholds are set after the first
 measurements, not assumed.
 
+First indicative measurements (the scenario prints them as `⏱` lines; headless Chromium, the development
+sandbox, API and PostgreSQL on the same machine — the GitHub runner is faster): import of the P.118 example
+to the overview ≈ 2.3 s; opening step 02 (form and Harmonie panel) ≈ 0.7 s; opening the Atelier (engine,
+P.118 model, geometry drawn) ≈ 3.2 s; undoing a wall until the server confirms the write (350 ms
+debounce included) ≈ 1.6 s; reloading the Atelier page ≈ 3.2 s. The measurements on a reference computer
+and an Android phone, with selection, moving an element and 3D navigation, remain to be taken on real
+devices before any threshold is set.
+
 ## Known geometry limits (packages/core-geometry)
 
 Unknown levels resolve to elevation zero; dimensions lack runtime validation; out-of-wall windows can produce

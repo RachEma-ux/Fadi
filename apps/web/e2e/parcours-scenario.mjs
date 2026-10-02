@@ -100,6 +100,16 @@ function check(label, ok, detail = "") {
   console.log(`${ok ? "✓" : "✗"} ${label}${detail ? " — " + detail : ""}`);
   if (!ok) failures++;
 }
+/** Mesures indicatives (cible d'acceptation : ouverture, modification, enregistrement) — relevées, jamais des seuils ; elles dépendent de la machine. */
+const measures = [];
+async function measure(label, fn) {
+  const t0 = Date.now();
+  const out = await fn();
+  const ms = Date.now() - t0;
+  measures.push({ label, ms });
+  console.log(`⏱ ${label} : ${ms} ms`);
+  return out;
+}
 
 /**
  * Accessibilité (WCAG 2.2 AA, règles axe-core des balises wcag2a/aa,
@@ -342,17 +352,22 @@ check("étape 12 retenue → étape 19 repasse « À reprendre » et n'est plus 
 // 6. Exemple P.118 importé
 await page.goto(`${BASE}/projets`);
 await page.waitForSelector('.example-card button:has-text("Importer")');
-await page.locator('.example-card button:has-text("Importer")').first().click();
-await page.waitForURL(/\/projets\/proj_/);
+await measure("import de l'exemple P.118 → vue d'ensemble affichée", async () => {
+  await page.locator('.example-card button:has-text("Importer")').first().click();
+  await page.waitForURL(/\/projets\/proj_/);
+  await page.waitForSelector(".parcours-steps-summary");
+});
 const exampleUrl = page.url().split("?")[0];
-await page.waitForSelector(".parcours-steps-summary");
 check("exemple : 21 / 21 étapes terminées", (await page.locator(".parcours-steps-summary").textContent()).includes("21 / 21"));
 await page.waitForSelector(".seed888", { timeout: 10000 });
 const [kmzDl] = await Promise.all([page.waitForEvent("download"), page.locator('.seed888 a:has-text("118_officiel.kmz")').click()]);
 const kmzBytes = await (await import("node:fs/promises")).readFile(await kmzDl.path());
 check("exemple : « Documents de base intégrés » (118_officiel.kmz, ZONE-I-5.pdf, scénario étudié) → KMZ téléchargé intact (881 142 octets, archive zip)", (await page.locator(".seed888 a").allTextContents()).join(",") === "118_officiel.kmz,ZONE-I-5.pdf" && /Scénario étudié : P\.118/.test(await page.locator(".seed888 p").textContent()) && kmzBytes.length === 881142 && kmzBytes.subarray(0, 2).toString("latin1") === "PK");
-await page.goto(`${exampleUrl}?module=parcours&etape=2`);
-await page.waitForSelector("#biz-f1");
+await measure("ouverture de l'étape 02 de l'exemple (formulaire, panneau Harmonie)", async () => {
+  await page.goto(`${exampleUrl}?module=parcours&etape=2`);
+  await page.waitForSelector("#biz-f1");
+  await page.waitForSelector(".h7-panel");
+});
 check("exemple étape 02 : « Harmonie · Site constructible · 1 choix retenu(s) »", (await page.locator(".h7-panel > summary").textContent()).includes("Site constructible · 1 choix retenu(s)"));
 check("exemple étape 02 : réponse f1 nommant sa nature", (await page.inputValue("#biz-f1")).startsWith("[DONNÉE / CALCUL DU FICHIER SOURCE]"));
 check("exemple étape 02 : profil « Formation & bureaux »", (await page.locator(".h7-fold-body").first().textContent()).includes("Formation & bureaux"));
@@ -366,8 +381,10 @@ await page.waitForSelector(".biz-kpis");
 check("exemple étape 14 : KPI calculés depuis les montants importés", (await page.locator(".biz-kpis").textContent()).replace(/ | /g, " ").includes("24 000 000"));
 
 // 6b. Atelier natif sur l'exemple : moteur, niveaux, dessin d'un mur persisté (projection + révision), annulation persistée
-await page.goto(`${exampleUrl}?module=atelier`);
-await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+await measure("ouverture de l'Atelier (moteur, modèle P.118, géométrie affichée)", async () => {
+  await page.goto(`${exampleUrl}?module=atelier`);
+  await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+});
 await page.waitForTimeout(600);
 const examplePid = exampleUrl.split("/").pop();
 const rdcWallsOf = async (pid) =>
@@ -410,14 +427,17 @@ check("atelier de la référence : un mur dessiné → copie de travail créée 
 check("copie de travail : le mur dessiné y est enregistré → 40 murs, révision 2 (projection régénérée) ; la référence reste à 39 murs, révision 1", afterDraw.walls === 40 && afterDraw.revision === 2 && referenceAfter.walls === 39 && referenceAfter.revision === 1, JSON.stringify({ afterDraw, referenceAfter }));
 check("copie de travail : plus de note « Exemple protégé », toast « Copie de travail créée automatiquement · exemple original conservé. »", (await page.locator(".native-atelier-reference").count()) === 0 && /Copie de travail créée automatiquement · exemple original conservé\./.test((await page.locator(".h7-toast").allTextContents()).join(" ")) && /Copie de travail active · modification enregistrée ; exemple original conservé\./.test(await page.evaluate(() => document.querySelector("#nativeDesignerRoot")?.textContent || "")), (await page.locator(".h7-toast").allTextContents()).join(" | "));
 await page.screenshot({ path: `${OUT}/atelier-concevoir-wall-desktop.png`, fullPage: true });
-await page.locator('#atelier-toolbar [data-quick="undo"]').click();
-await page.waitForTimeout(800);
-await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+await measure("annulation d'un mur → enregistrée sur le serveur (révision avancée)", async () => {
+  await page.locator('#atelier-toolbar [data-quick="undo"]').click();
+  await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+});
 await page.waitForTimeout(400);
 const afterUndo = await rdcWallsOf(atelierPid);
 check("copie de travail : annuler → 39 murs, révision 3 (l'annulation modifie l'état persistant)", afterUndo.walls === 39 && afterUndo.revision === 3, JSON.stringify(afterUndo));
-await page.reload();
-await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+await measure("rechargement de la page de l'Atelier → géométrie affichée", async () => {
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+});
 check("copie de travail : rechargement → modèle toujours là", (await page.locator("#model-floors button").count()) === 6);
 await page.goto(`${exampleUrl}?module=parcours&etape=10`);
 await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
@@ -1291,6 +1311,7 @@ const noHorizontalScroll = await page.evaluate(() => document.documentElement.sc
 check("téléphone : pas de défilement horizontal", noHorizontalScroll);
 
 check("aucune erreur JavaScript", consoleErrors.length === 0, consoleErrors.join(" | "));
+console.log(`⏱ mesures indicatives (Chromium headless, cette machine) : ${measures.map((m) => `${m.label} = ${m.ms} ms`).join(" ; ")}`);
 await browser.close();
 console.log(failures ? `${failures} vérification(s) en échec` : "Scénario conforme.");
 process.exit(failures ? 1 : 0);
