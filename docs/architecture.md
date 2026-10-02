@@ -234,7 +234,10 @@ prototype's rules, e-mail notifications, deployment hardening).
 The first real deliverable, per the brief: open P.118, find the 21 steps, modify an architectural element,
 undo then redo that change, save it, retrieve it on a second device, and produce a plan with surfaces that
 match the same revision. Reaching this, observably, is the gate before continuing the full migration — not an
-estimate, a demonstrated run.
+estimate, a demonstrated run. The Playwright scenario replays it on every CI run: the P.118 example imported
+(21 steps), a wall drawn in the Atelier (into the automatic working copy), undone and redone with each state
+persisted (revisions 2, 3, 4), the model re-read from a second browser context at the same key revision, and
+the reading plan (SVG) and the surfaces table produced from the current revision in the Documents module.
 
 Acceptance also measures reliability, not only speed: preservation of identifiers, coordinates, levels,
 object relations and attachments; undo, restore, sync conflicts, and agreement between produced documents.

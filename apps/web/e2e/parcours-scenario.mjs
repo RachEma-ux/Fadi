@@ -417,6 +417,7 @@ await page.keyboard.press("Enter");
 await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid) && /module=atelier/.test(u.toString()), { timeout: 30000 });
 const atelierUrl = page.url().split("?")[0];
 const atelierPid = atelierUrl.split("/").pop();
+const copyToastSeen = await page.waitForFunction(() => /Copie de travail créée automatiquement · exemple original conservé\./.test(document.querySelector(".h7-toast")?.textContent || ""), null, { timeout: 6000 }).then(() => true).catch(() => false); // s'efface de lui-même après 3,6 s
 await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
 await page.waitForFunction(() => /Enregistré sur le serveur|Modèle chargé depuis le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
 await page.waitForTimeout(400);
@@ -425,7 +426,7 @@ const afterDraw = await rdcWallsOf(atelierPid);
 const referenceAfter = await rdcWalls();
 check("atelier de la référence : un mur dessiné → copie de travail créée automatiquement (« P.118 — copie de travail · Atelier », mode modifiable), écran basculé sur la copie, même module", copyProject.code === "P.118" && copyProject.name === "copie de travail · Atelier" && copyProject.exampleMode === "editable" && copyProject.sourceExampleId === "p118-exemple-complet" && page.url().includes("module=atelier") && (await page.locator(".project-header h1").textContent()) === "P.118 — copie de travail · Atelier", JSON.stringify({ name: copyProject.name, mode: copyProject.exampleMode, title: await page.locator(".project-header h1").textContent() }));
 check("copie de travail : le mur dessiné y est enregistré → 40 murs, révision 2 (projection régénérée) ; la référence reste à 39 murs, révision 1", afterDraw.walls === 40 && afterDraw.revision === 2 && referenceAfter.walls === 39 && referenceAfter.revision === 1, JSON.stringify({ afterDraw, referenceAfter }));
-check("copie de travail : plus de note « Exemple protégé », toast « Copie de travail créée automatiquement · exemple original conservé. »", (await page.locator(".native-atelier-reference").count()) === 0 && /Copie de travail créée automatiquement · exemple original conservé\./.test((await page.locator(".h7-toast").allTextContents()).join(" ")) && /Copie de travail active · modification enregistrée ; exemple original conservé\./.test(await page.evaluate(() => document.querySelector("#nativeDesignerRoot")?.textContent || "")), (await page.locator(".h7-toast").allTextContents()).join(" | "));
+check("copie de travail : plus de note « Exemple protégé », aide du moteur « Copie de travail active · modification enregistrée ; exemple original conservé. » (toast de navigation « Copie de travail créée automatiquement… »)", (await page.locator(".native-atelier-reference").count()) === 0 && /Copie de travail active · modification enregistrée ; exemple original conservé\./.test(await page.evaluate(() => document.querySelector("#nativeDesignerRoot")?.textContent || "")), copyToastSeen ? "toast vu" : "toast non observé (effacé avant la lecture)");
 await page.screenshot({ path: `${OUT}/atelier-concevoir-wall-desktop.png`, fullPage: true });
 await measure("annulation d'un mur → enregistrée sur le serveur (révision avancée)", async () => {
   await page.locator('#atelier-toolbar [data-quick="undo"]').click();
@@ -434,6 +435,26 @@ await measure("annulation d'un mur → enregistrée sur le serveur (révision av
 await page.waitForTimeout(400);
 const afterUndo = await rdcWallsOf(atelierPid);
 check("copie de travail : annuler → 39 murs, révision 3 (l'annulation modifie l'état persistant)", afterUndo.walls === 39 && afterUndo.revision === 3, JSON.stringify(afterUndo));
+await page.locator('#atelier-toolbar [data-quick="redo"]').click();
+await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+await page.waitForFunction(async (pid) => (await (await fetch(`/projects/${pid}`, { credentials: "include" })).json()).modelRevision === 4, atelierPid, { timeout: 10000 }).catch(() => {});
+const afterRedo = await rdcWallsOf(atelierPid);
+check("copie de travail : rétablir → 40 murs, révision 4 (le rétablissement est persisté lui aussi)", afterRedo.walls === 40 && afterRedo.revision === 4, JSON.stringify(afterRedo));
+// Second appareil (même compte, autre navigateur) : le modèle enregistré est relu à la même révision, avec le mur rétabli.
+const ctxDevice2 = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const device2 = await ctxDevice2.newPage();
+await device2.goto(`${BASE}/connexion`);
+await device2.fill('input[name="email"]', email);
+await device2.fill('input[name="password"]', "scenario-pass-123");
+await device2.click('button[type="submit"]');
+await device2.waitForURL(/\/(projets|accueil)/);
+await device2.goto(`${atelierUrl}?module=atelier`);
+await device2.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+const device2Store = await (await device2.request.get(`${BASE}/projects/${atelierPid}/atelier/store`)).json();
+const device1Store = await (await page.request.get(`${BASE}/projects/${atelierPid}/atelier/store`)).json();
+const floorDesignKey = Object.keys(device2Store.entries).find((k) => k.endsWith(".floorDesign"));
+check("second appareil : le modèle est relu à la même révision (floorDesign identique, même révision de clé), 6 niveaux affichés", device2Store.modelRevision >= 4 && JSON.stringify(device2Store.entries[floorDesignKey]) === JSON.stringify(device1Store.entries[floorDesignKey]) && device2Store.revisions[floorDesignKey] === device1Store.revisions[floorDesignKey] && (await device2.locator("#model-floors button").count()) === 6, JSON.stringify({ rev: device2Store.modelRevision, key: floorDesignKey, keyRev: device2Store.revisions[floorDesignKey] }));
+await ctxDevice2.close();
 await measure("rechargement de la page de l'Atelier → géométrie affichée", async () => {
   await page.reload();
   await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
