@@ -25,6 +25,8 @@ export const users = pgTable("users", {
   email: text("email").notNull(),
   passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  /** Dernière consultation des notifications dans l'application (les plus récentes sont « non lues ») ; null tant qu'aucune n'a été consultée. */
+  notificationsSeenAt: timestamp("notifications_seen_at", { withTimezone: true }),
 }, (t) => [uniqueIndex("users_email_unique").on(t.email)]);
 
 export const sessions = pgTable("sessions", {

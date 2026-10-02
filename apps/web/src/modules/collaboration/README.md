@@ -22,4 +22,4 @@ Réservation d'édition (`components/EditingLockControl.tsx`, API `routes/lock.t
 
 Le propriétaire peut transférer la propriété à un membre (`POST …/members/:userId/propriete`) : le membre devient propriétaire, lui-même reste éditeur ; données, membres et réservation ne changent pas.
 
-Reste (Lot 4) : notifications d'invitation et de commentaire (pas de courriel).
+Notifications dans l'application (`components/NotificationBell.tsx`, `GET /notifications`) : accès reçus, commentaires des autres, réservations en cours — relues des données datées, compteur des non lues par compte. Reste (Lot 4) : courriels d'invitation et de commentaire (service externe).

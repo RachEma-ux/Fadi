@@ -59,7 +59,9 @@
  *      arbitrage réappliqué sur la version courante ; conflit du modèle
  *      (6k) : copie de secours, « Reprendre ma version » ;
  *   6m. partage du projet : invitation d'un compte par son adresse, projet
- *      partagé listé, lecteur (lecture, commentaires, formulaires et
+ *      partagé listé, notifications dans l'application (accès reçu,
+ *      commentaire du lecteur chez le propriétaire ; aucun courriel),
+ *      lecteur (lecture, commentaires, formulaires et
  *      Atelier inactifs, 403 motivé), réservation d'édition (verrou
  *      optionnel : éditeur en lecture et commentaires, 423 motivé, puis
  *      main rendue), passage éditeur (saisie enregistrée), départ du projet ;
@@ -981,6 +983,17 @@ await page.screenshot({ path: `${OUT}/collaboration-partage-desktop.png`, fullPa
 await page2.goto(`${BASE}/projets`);
 await page2.waitForSelector(".shared-projects", { timeout: 10000 });
 check("partage : « Projets partagés avec vous » — P.TEST, lecteur, partagé par le propriétaire", new RegExp(`P\\.TEST.*lecteur · partagé par ${email}`).test((await page2.locator(".shared-projects").textContent()).replace(/\s+/g, " ")));
+// Notifications dans l'application : l'accès reçu est signalé au second compte (cloche, compteur), consulté à l'ouverture ; aucun courriel.
+await page2.waitForSelector(".notification-count", { timeout: 15000 });
+check("notifications : la cloche du second compte compte 1 non lue (accès reçu)", (await page2.locator(".notification-count").textContent()) === "1" && /1 non lue/.test(await page2.locator(".notification-bell > button").getAttribute("aria-label")));
+await page2.locator(".notification-bell > button").click();
+await page2.waitForSelector(".notification-list li", { timeout: 10000 });
+check("notifications : « X vous a donné accès à P.TEST — Étude test migration (lecteur) », mention « aucun courriel n’est envoyé »", new RegExp(`${email} vous a donné accès à P\\.TEST — Étude test migration \\(lecteur\\)\\.`).test(await page2.locator('.notification-list li[data-kind="acces"]').textContent()) && /aucun courriel n’est envoyé/.test(await page2.locator(".notification-popover").textContent()), await page2.locator(".notification-list").textContent());
+await page2.waitForFunction(() => !document.querySelector(".notification-count"), null, { timeout: 10000 });
+const popoverBox = await page2.locator(".notification-popover").boundingBox();
+if (popoverBox) await page2.screenshot({ path: `${OUT}/notifications-desktop.png`, clip: { x: Math.max(0, popoverBox.x - 60), y: 0, width: Math.min(1280 - Math.max(0, popoverBox.x - 60), popoverBox.width + 120), height: popoverBox.y + popoverBox.height + 16 } });
+check("notifications : consultées → plus de compteur (date de consultation conservée par compte)", (await page2.locator(".notification-count").count()) === 0);
+await page2.keyboard.press("Escape");
 await page2.locator('.shared-projects a:has-text("Étude test migration")').click();
 await page2.waitForSelector(".access-banner", { timeout: 15000 });
 check("lecteur : en-tête « lecteur · partagé par … » et bandeau « Projet partagé en lecture »", new RegExp(`lecteur · partagé par ${email}`).test(await page2.locator(".project-role").textContent()) && /Projet partagé en lecture/.test(await page2.locator(".access-banner").textContent()));
@@ -994,6 +1007,13 @@ await page2.fill(".step-comments textarea", "Lecture faite : à confirmer avec l
 await page2.locator('.step-comments button:has-text("Publier le commentaire")').click();
 await page2.waitForFunction(() => /Lecture faite : à confirmer avec le BET\./.test(document.querySelector(".step-comments")?.textContent || ""), null, { timeout: 10000 });
 check("lecteur : commentaire publié sur l'étape", true);
+// … et signalé au propriétaire dans sa cloche (relue à la navigation).
+await page.goto(`${projectUrl}?module=collaboration`);
+await page.waitForSelector(".notification-count", { timeout: 15000 });
+await page.locator(".notification-bell > button").click();
+await page.waitForSelector(".notification-list li", { timeout: 10000 });
+check("notifications : le propriétaire voit le commentaire du lecteur (« … a commenté P.TEST · étape 02 : « Lecture faite … » »), lien vers l'étape", new RegExp(`${readerEmail} a commenté P\\.TEST · étape 02 : « Lecture faite : à confirmer avec le BET\\. »`).test(await page.locator('.notification-list li[data-kind="commentaire"]').first().textContent()) && /etape=2$/.test((await page.locator('.notification-list li[data-kind="commentaire"] a').first().getAttribute("href")) || ""), await page.locator(".notification-list").textContent());
+await page.keyboard.press("Escape");
 const readerPatch = await page2.request.patch(`${BASE}/projects/${testPid}/steps/2`, { data: { fields: { f1: "tentative lecteur" } } });
 check("lecteur : une écriture forcée est refusée par le serveur (403 avec motif)", readerPatch.status() === 403 && /partagé en lecture/.test(((await readerPatch.json()).message) || ""));
 await page2.screenshot({ path: `${OUT}/partage-lecteur-02-desktop.png`, fullPage: true });

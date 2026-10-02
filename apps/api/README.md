@@ -31,7 +31,7 @@ npm run dev --workspace=@fadi/api   # écoute sur :3001
 ```
 
 Le frontend (`npm run dev` à la racine) relaie `/auth`, `/projects`,
-`/examples`, `/library` et `/health` vers `:3001` via le proxy Vite (voir
+`/examples`, `/library`, `/notifications` et `/health` vers `:3001` via le proxy Vite (voir
 `apps/web/vite.config.ts`) — pas de configuration CORS à faire en local.
 `npm run build` produit `dist/server.js` (esbuild) avec `dist/data/**` et
 `dist/db/init.sql` ; `node dist/server.js` lit `DATABASE_URL`, `WEB_ORIGIN`,

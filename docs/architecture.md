@@ -215,8 +215,9 @@ decision and version, model backup key) and offers to keep the server's version 
 current state — never an automatic merge. The service-worker cache is versioned per build and purged on
 activation, and the Playwright scenario runs in CI. The "single active editor" rule is an optional, expiring
 reservation (30 min, renewed while the holder keeps the project open, releasable by the owner): other accounts
-read and comment while it lasts, their writes are refused with the reason and the deadline (423). Ownership can be transferred to a member (the former owner stays as editor). Still open: invitation notifications
-(no e-mail service).
+read and comment while it lasts, their writes are refused with the reason and the deadline (423). Ownership can be transferred to a member (the former owner stays as editor). Notifications exist in the
+application (access received, comments by others, editing reservations — read from dated data, with an
+unread count per account); e-mail remains an external service, absent.
 The app loads in pieces (shell, project, Atelier engine, library) and the service worker precaches every piece
 at install so offline opening does not depend on what was visited online. Around the modules, the navigation's
 Harmonie page shows the state of each project's choices (read from the steps already served) and the settings

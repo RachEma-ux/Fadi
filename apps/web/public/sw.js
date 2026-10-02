@@ -2,7 +2,7 @@
  * Enveloppe hors-ligne de Fadi (service worker) : sert l'application
  * (document, scripts et styles du build), le moteur de l'Atelier natif et
  * l'outil Parcelle depuis le cache du navigateur quand le réseau manque.
- * Les appels à l'API (/projects, /auth, /examples, /library) ne sont jamais
+ * Les appels à l'API (/projects, /auth, /examples, /library, /notifications) ne sont jamais
  * mis en cache ici : les données viennent du serveur, ou du cache persistant
  * de l'application (IndexedDB) quand il est hors-ligne. Le cache porte
  * l'identifiant du build, est rempli dès l'installation (morceaux de

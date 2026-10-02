@@ -7,6 +7,7 @@ import { authRouter } from "./routes/auth.js";
 import { projectsRouter } from "./routes/projects.js";
 import { examplesRouter } from "./routes/examples.js";
 import { libraryRouter } from "./routes/library.js";
+import { notificationsRouter } from "./routes/notifications.js";
 
 export function createApp() {
   const app = express();
@@ -48,6 +49,7 @@ export function createApp() {
   app.use("/projects", apiLimiter, projectsRouter);
   app.use("/examples", apiLimiter, examplesRouter);
   app.use("/library", apiLimiter, libraryRouter);
+  app.use("/notifications", apiLimiter, notificationsRouter);
 
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });

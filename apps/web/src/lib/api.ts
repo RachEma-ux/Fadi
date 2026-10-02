@@ -80,6 +80,24 @@ export interface Project {
   updatedAt: string;
 }
 
+export interface NotificationItem {
+  id: string;
+  at: string;
+  kind: "acces" | "commentaire" | "reservation";
+  projectId: string;
+  projectCode: string;
+  projectName: string;
+  stepNumber: number | null;
+  text: string;
+  /** Postérieure à votre dernière consultation. */
+  unread: boolean;
+}
+
+export interface NotificationsView {
+  seenAt: string | null;
+  items: NotificationItem[];
+}
+
 export interface EditingLock {
   userId: string;
   email: string;
@@ -624,6 +642,9 @@ export const api = {
   me: () => request<CurrentUser>("/auth/me"),
 
   listProjects: () => request<Project[]>("/projects"),
+  /** Notifications dans l'application (accès reçus, commentaires des autres, réservations d'édition), relues des données datées. */
+  listNotifications: () => request<NotificationsView>("/notifications"),
+  markNotificationsSeen: () => request<{ seenAt: string }>("/notifications/seen", { method: "POST" }),
   createProject: (code: string, name: string) =>
     request<Project>("/projects", { method: "POST", body: JSON.stringify({ code, name }) }),
   getProject: (id: string) => request<Project>(`/projects/${id}`),

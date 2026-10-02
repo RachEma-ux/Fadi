@@ -30,7 +30,7 @@ server-owned data:
   périmé »).
 - **Collaboration** — comments with threaded replies, revision journal read from dated data, sharing
   (owner / editor / reader roles enforced by the server on every request, optional expiring editing
-  reservation, ownership transfer), offline work (local queues replayed on reconnection, persisted query
+  reservation, ownership transfer), in-app notifications (access received, comments, reservations), offline work (local queues replayed on reconnection, persisted query
   cache, service worker, per-field / per-version concurrency control with side-by-side conflict resolution).
 
 Around the modules: a home page, the Harmonie page (state of the choices per project, read from the steps
@@ -56,7 +56,7 @@ npm test
 npm run build
 
 npm run dev:api      # terminal 1 — API on :3001
-npm run dev          # terminal 2 — web app on :5173, proxies /auth, /projects, /examples, /library to the API
+npm run dev          # terminal 2 — web app on :5173, proxies /auth, /projects, /examples, /library, /notifications to the API
 ```
 
 End-to-end scenario (Playwright, Chromium), against the built API and `vite preview` on :4173:
@@ -94,5 +94,5 @@ regenerates every extracted dataset from it.
   the full Playwright scenario against a PostGIS service (captures published as an artifact).
 
 Checks that cannot run here are stated rather than assumed: the MapTiler service is simulated in the scenario
-(no real call from CI), e-mail notifications do not exist (no mail service), and regulatory checks beyond the
+(no real call from CI), notifications exist in the application only (no mail service), and regulatory checks beyond the
 prototype's own rules are not invented.

@@ -1737,6 +1737,18 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     expect((await owner.get(`/projects/${fork.body.id}`)).status).toBe(404);
     const comment = await reader.post(`/projects/${pid}/collaboration/comments`).send({ body: "Lecture faite : la hauteur de la mezzanine est à confirmer.", stepNumber: 8 });
     expect(comment.status).toBe(201);
+    // Notifications dans l'application (aucun courriel) : le lecteur voit l'accès reçu, le propriétaire le commentaire du lecteur ; consulter marque lu ; un étranger ne voit rien.
+    const readerNotifications = await reader.get("/notifications");
+    expect(readerNotifications.status).toBe(200);
+    expect(readerNotifications.body.seenAt).toBeNull();
+    expect(readerNotifications.body.items).toEqual([expect.objectContaining({ kind: "acces", projectId: pid, projectCode: "P.118", unread: true, text: "share-owner@example.com vous a donné accès à P.118 — Escalier B et mezzanine (lecteur)." })]);
+    const ownerNotifications = (await owner.get("/notifications")).body;
+    expect(ownerNotifications.items[0]).toMatchObject({ kind: "commentaire", projectId: pid, stepNumber: 8, unread: true, text: "share-reader@example.com a commenté P.118 · étape 08 : « Lecture faite : la hauteur de la mezzanine est à confirmer. »" });
+    expect(ownerNotifications.items.some((n: { kind: string }) => n.kind === "acces")).toBe(false); // ses propres projets ne sont pas des accès reçus
+    expect((await owner.post("/notifications/seen")).status).toBe(200);
+    expect((await owner.get("/notifications")).body.items[0].unread).toBe(false);
+    expect((await stranger.get("/notifications")).body.items).toEqual([]);
+    expect((await request(app).get("/notifications")).status).toBe(401);
     expect((await owner.delete(`/projects/${pid}/collaboration/comments/${comment.body.id}`)).status).toBe(403); // l'auteur seul
     expect((await reader.delete(`/projects/${pid}/collaboration/comments/${comment.body.id}`)).status).toBe(204);
 
@@ -1819,6 +1831,10 @@ describe("Verrou d'édition optionnel — un seul éditeur actif", () => {
     expect(refused.status).toBe(423);
     expect(refused.body).toMatchObject({ error: "locked", lock: { email: "lock-editor@example.com" } });
     expect(refused.body.message).toMatch(/^Édition réservée par lock-editor@example\.com jusqu'à \d{2}:\d{2} : lecture et commentaires seulement/);
+    // La réservation en cours est une notification pour les autres (propriétaire, lecteur), pas pour son détenteur.
+    expect((await owner.get("/notifications")).body.items[0]).toMatchObject({ kind: "reservation", projectId: pid, unread: true });
+    expect((await owner.get("/notifications")).body.items[0].text).toMatch(/^lock-editor@example\.com a réservé l’édition de P\.LOCK — Verrou jusqu’à \d{2}:\d{2} : lecture et commentaires seulement d’ici là\.$/);
+    expect((await editor.get("/notifications")).body.items.some((n: { kind: string }) => n.kind === "reservation")).toBe(false);
     expect((await owner.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send({ status: "retained" })).status).toBe(423);
     expect((await owner.put(`/projects/${pid}/atelier/store/design.v13.registry`).send({ value: [], expectedRevision: null })).status).toBe(423);
     expect((await owner.put(`/projects/${pid}/lock`)).status).toBe(423);

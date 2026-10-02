@@ -330,18 +330,69 @@ h3 {
 .notification-bell > button:hover {
   background: var(--cream);
 }
+.notification-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #a0351f;
+  color: white;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+}
 .notification-popover {
   position: absolute;
   right: 0;
   top: calc(100% + 6px);
+  z-index: 20;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 12px 14px;
   min-width: 220px;
+  width: min(420px, calc(100vw - 32px));
+  max-height: 70vh;
+  overflow: auto;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   font-size: 13.5px;
   color: var(--muted);
+}
+.notification-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.notification-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+.notification-list li.notification-unread {
+  background: #fff7e6;
+  border-color: #ecd9b0;
+}
+.notification-list li a {
+  color: var(--ink);
+}
+.notification-list li small {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.notification-foot {
+  margin: 10px 0 0;
+  font-size: 11.5px;
 }
 
 /* ---------------------------------------------------------------------- */
