@@ -192,6 +192,9 @@ jobs:
 
           echo "$TUNNEL_URL" > app_url.txt
           echo "$TUNNEL_PID" > tunnel.pid
+          # Annotation du job : l'URL est lisible par l'API GitHub (check-runs) dès cette étape,
+          # sans attendre la fin du run ni ouvrir les journaux.
+          echo "::notice title=Fadi en ligne::$TUNNEL_URL (disponible ${{ github.event.inputs.duration }} minutes)"
 
           echo ""
           echo "============================================"
