@@ -17,6 +17,8 @@
  *      Parcelle (fichier P.118, modification d'une borne → conflit avec le
  *      bâtiment dessiné, retour → parcelle liée) et propositions de site
  *      Harmonie (schéma, légende, données du site, proposition de départ) ;
+ *   3b. étape 04 : exemples issus des fichiers sources (choix mémorisé,
+ *      contenu pertinent, aide au remplissage, bibliothèque et fiche d'un cas) ;
  *   6d. sources de l'étape : import d'un fichier, liste, téléchargement en
  *      pièce jointe, suppression avec confirmation ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
@@ -121,6 +123,36 @@ check("type résidentiel haute → 27,0 % (15+7+0+5)", true);
 await page.waitForFunction(() => document.querySelector(".h7-fold-body")?.textContent?.includes("Habitation"), null, { timeout: 10000 }).catch(() => {});
 check("étape 06 : profil Harmonie suit le type (Habitation)", (await page.locator(".h7-fold-body").first().textContent()).includes("Habitation"));
 await page.screenshot({ path: `${OUT}/new-06-desktop.png`, fullPage: true });
+
+// 3b. Étape 04 — exemples issus des fichiers sources
+await page.goto(`${projectUrl}?module=parcours&etape=4`);
+await page.waitForSelector(".source-examples");
+await page.evaluate(() => { document.querySelector(".source-examples").open = true; });
+await page.waitForSelector(".example-select");
+check("étape 04 : 9 exemples proposés, « office » affiché par défaut", (await page.locator(".example-select option").count()) === 9 && (await page.locator(".example-select").inputValue()) === "office");
+await page.locator(".example-select").selectOption("hotel");
+await page.waitForFunction(() => /^Hôtel urbain de 32 chambres/.test(document.querySelector(".example-body strong")?.textContent || ""), null, { timeout: 10000 });
+await page.reload();
+await page.waitForSelector(".source-examples");
+await page.evaluate(() => { document.querySelector(".source-examples").open = true; });
+await page.waitForSelector(".example-select");
+check("étape 04 : exemple choisi mémorisé après rechargement (hotel)", (await page.locator(".example-select").inputValue()) === "hotel");
+await page.locator(".example-body > details > summary").click();
+check("étape 04 : contenu pertinent de l'étape (objectif du cas)", (await page.locator(".example-pre").textContent()).startsWith("Préparer en 4 mois un préprogramme de 32 chambres"));
+check("étape 04 : rubrique f1 vide avant l'aide", (await page.inputValue("#biz-f1")) === "");
+await page.locator('button:has-text("Utiliser comme aide au remplissage")').click();
+await page.waitForFunction(() => (document.querySelector("#biz-f1")?.value || "").startsWith("Préparer en 4 mois"), null, { timeout: 10000 });
+check("étape 04 : aide au remplissage → rubriques vides renseignées, usage tracé « Exemple fictif à adapter »", /Exemple fictif à adapter/.test(await page.locator(".example-body").textContent()));
+await page.screenshot({ path: `${OUT}/new-04-desktop-exemples.png`, fullPage: true });
+await page.locator('a:has-text("Bibliothèque complète")').click();
+await page.waitForURL(/bibliotheque\/exemples$/);
+await page.waitForSelector(".example-grid .example-card");
+check("bibliothèque d'exemples : 10 cas", (await page.locator(".example-grid .example-card").count()) === 10);
+await page.locator('.example-card a:has-text("Ouvrir le cas")').first().click();
+await page.waitForURL(/bibliotheque\/exemples\/office/);
+await page.waitForSelector(".example-detail");
+check("fiche d'un cas : Campus Atlas, tableaux Espaces et Scénarios", (await page.locator(".example-bar h1").textContent()).startsWith("Campus Atlas") && (await page.locator(".example-table").count()) === 2);
+await page.screenshot({ path: `${OUT}/bibliotheque-exemples-office-desktop.png`, fullPage: true });
 
 // 4. Étape 14 — finance
 await page.goto(`${projectUrl}?module=parcours&etape=14`);

@@ -32,7 +32,8 @@ commencé.
 | Propositions LOCALES par local (étapes 10/11, analyse du modèle natif), péremption « À réexaminer » par empreinte des données amont, « Actualiser les propositions », « Rapport de cette étape » | — | — | ⛔ | Dépend de l'analyse du modèle (flow-v62) et de l'Atelier |
 | Exemple P.118 résolu : récit du choix (« Pourquoi ce choix »), réponses renseignées (12 rubriques nommant donnée / hypothèse), choix retenu avec responsable et preuve, 21/21 illustrées | Extraire | `p118-exemple-complet.json` (+ `business`) ; import `POST /examples/:id/import` | ✅ | `app.test.ts` « imports an example… » ; e2e ; `captures/webapp/02-desktop.png` |
 | « Créer une copie pour essayer » | Adapter | l'import crée toujours une copie éditable appartenant à l'utilisateur | ✅ | `app.test.ts` |
-| Bibliothèque d'exemples (SOURCE_EXAMPLES, 10 cas ; « Utiliser comme aide au remplissage ») et bibliothèque des bâtiments (21 cas) | — | — | ⛔ | `SOURCE_EXAMPLES`, `building-library-data` non extraits |
+| Exemples issus des fichiers sources (`SOURCE_EXAMPLES`, 10 cas ; pli par étape avec exemple affiché mémorisé, origine, résumé, « Voir le contenu pertinent pour cette étape », avertissement, « Utiliser comme aide au remplissage », « Bibliothèque complète ») ; bibliothèque (grille des 10 cas) et fiche d'un cas ; étapes 01–03 : « Exemples · qualités du site par type de bâtiment » (phrase de site du profil) | Extraire + Adapter (aide au remplissage côté serveur, types conservés) | `apps/api/src/data/source-examples.json` ; `packages/domain-model/src/source-examples.ts` (`exampleText`, `fillFromExample`) ; `GET /examples/sources[/step/:n|/:key]`, `PATCH …/steps/:n {exampleSelection}`, `POST …/steps/:n/fill-from-example` ; `modules/parcours/SourceExamples.tsx`, `routes/ExamplesLibraryPage.tsx` (`/bibliotheque/exemples[/:key]`) | ✅ | `source-examples.test.ts` ; `app.test.ts` « serves the library, the per-step cases… » ; e2e étape 04 (choix mémorisé, contenu, remplissage, bibliothèque, fiche) ; `captures/webapp/new-04-desktop-exemples.png`, `bibliotheque-exemples-office-desktop.png` |
+| Bibliothèque des bâtiments (building-library, 21 cas : programme & surfaces, adjacences, exigences & dessin, Harmony & parcours, sources ; « Appliquer au projet » → cas de programme) | — | — | ⛔ | `building-library-app` / `building-library-data` (1,8 Mo) non portés ; « Explorer la bibliothèque » des étapes 01–03 renvoie pour l'instant à la bibliothèque d'exemples |
 | Sources de l'étape (« + Importer des fichiers », zone de dépôt, liste nom · taille · type · date, Télécharger, Supprimer avec confirmation — `FILE_DB` IndexedDB) | Adapter (stockage serveur, propriété du projet) | table `step_files` (contenu bytea, 25 Mo max) ; `routes/step-files.ts` (`GET/POST …/steps/:n/files`, `GET/DELETE …/files/:id`, toujours servi en pièce jointe `nosniff` ; `GET /projects/:id/files` pour le module) ; `modules/projets-sources/StepSources.tsx` (pli dans chaque étape) et `ProjectSources` (onglet Projets et sources) | ✅ | `app.test.ts` « uploads, lists, downloads as attachment and deletes… » (isolation par propriétaire, HTML jamais servi comme page) ; e2e « sources : … » ; `captures/webapp/03-desktop-sources.png` |
 | Documents de base intégrés (118_officiel.kmz, ZONE-I-5.pdf) | 🟡 | KMZ décodé : bornes, CSV, notice → `p118-parcel.json` ; PDF non repris | 🟡 | `reference.md` |
 
@@ -86,6 +87,7 @@ métrés dérivés du modèle (flow-v62), bilan Harmony du bâtiment
 - **`levels.elevation` en `double precision`**, identifiants natifs préfixés par projet, import par lots, `modelRevision = 1` après import : voir sessions précédentes.
 - **Outil Parcelle = document du prototype, non réécrit** : extrait par script (SHA-256 vérifié), chargé dans une iframe de même origine comme le prototype le faisait ; sa persistance `local-files.js` (localStorage) est remplacée par le contrat `/api/parcels` que l'outil parle nativement (`project-files.js`), servi par Fadi par projet avec révision par fichier. La transmission au modèle reprend `acceptParcel` à l'identique (statuts et motifs), s'exécute côté serveur sur la **capture** de l'outil (comme `frameReady` / `flushParcel`), et n'écrit rien quand la signature est déjà transmise.
 - **Propositions de site calculées, pas figées** : le zonage (`triangulate` / `cutArea`), les textes « Pourquoi ici » et la proposition de départ sont recalculés à chaque lecture sur la parcelle courante et les données du site ; le domaine (`site.ts`) et la géométrie (`site-zoning.ts`) sont purs, l'API les exécute (autorité), le client ne fait que dessiner le SVG avec la même fonction.
+- **Aide au remplissage côté serveur** : `fillFromExample` du prototype s'exécute dans l'API (rubriques vides seulement, décision « À reprendre » à l'étape 19, usage tracé « Exemple fictif à adapter ») ; adaptation : une rubrique numérique ou date n'est renseignée que par une valeur de son type, là où le prototype y écrivait du texte invisible dans un champ numérique.
 - **Pièces jointes servies uniquement en pièce jointe** : un fichier déposé (y compris HTML / SVG) est renvoyé `Content-Disposition: attachment` + `X-Content-Type-Options: nosniff`, en `application/octet-stream` sauf images, audio, vidéo, PDF et texte brut — jamais rendu dans l'origine de Fadi. Les octets sont transmis bruts (`application/octet-stream`, nom et type dans des en-têtes) : le serveur n'interprète aucun fichier.
 - **Panneau Harmonie de l'étape 01 placé sous l'outil Parcelle** (le prototype l'insérait dans la colonne gauche du document Parcelle via `ParcoursSectionsV82.place`) : même contenu, même ordre module → Harmonie, emplacement visuel différent ; documenté comme écart de présentation.
 
@@ -95,7 +97,7 @@ métrés dérivés du modèle (flow-v62), bilan Harmony du bâtiment
 2. Étape 01 : fond MapTiler et altimétrie du panneau Harmonie non repris (la connexion MapTiler reste possible dans l'outil Parcelle) ; panneau Harmonie sous l'outil plutôt que dans sa colonne gauche ; pli « Exemples · qualités du site par type de bâtiment » (bibliothèque) absent.
 3. Étapes 10/11 : pas de propositions locales, pas d'analyse du modèle.
 4. Péremption des propositions (« À réexaminer »), « Actualiser les propositions », rapport d'étape : non portés.
-5. Bibliothèques (exemples sources, bâtiments) et fiches d'espaces : données partiellement importées, aucun écran.
+5. Bibliothèque des bâtiments (21 cas, « Appliquer au projet ») et fiches d'espaces : non portées ; « Explorer la bibliothèque » (étapes 01–03) renvoie à la bibliothèque d'exemples.
 6. Documents de base (PDF), export / import de projet JSON, synthèse des choix Harmonie : non portés (les sources de l'étape le sont désormais).
 7. Persistance locale / synchronisation hors-ligne, export d'archive complète : non commencés.
 8. Analyses métier, Documents, Collaboration : non portés.
@@ -103,8 +105,8 @@ métrés dérivés du modèle (flow-v62), bilan Harmony du bâtiment
 
 ## Prochaine action
 
-Bibliothèques : exemples sources `SOURCE_EXAMPLES` (10 cas, « Utiliser
-comme aide au remplissage ») et bibliothèque des bâtiments (21 cas), avec le
-pli « Exemples · qualités du site par type de bâtiment » de l'étape 01.
-Ensuite : propositions locales des étapes 10/11 et analyse du modèle
-(flow-v62), puis export / import de projet (archive).
+Bibliothèque des bâtiments (building-library : 21 cas, onglets programme /
+adjacences / exigences / Harmony / sources, « Appliquer au projet » → cas de
+programme versionné transmis à la répartition et à l'Atelier). Ensuite :
+propositions locales des étapes 10/11 et analyse du modèle (flow-v62), puis
+export / import de projet (archive).

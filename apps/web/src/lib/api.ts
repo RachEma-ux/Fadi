@@ -4,7 +4,7 @@
  * (surface XSS inutile pour une session qui peut vivre dans un cookie).
  */
 import type { Point2, SiteZoning } from "@parcours/core-geometry";
-import type { GeographicCoordinate, SiteObservations } from "@parcours/domain-model";
+import type { GeographicCoordinate, SiteObservations, SourceExample } from "@parcours/domain-model";
 
 export class ApiError extends Error {
   constructor(
@@ -133,6 +133,8 @@ export interface ParcoursStepContent {
   sourceStatus: string | null;
   fields: Record<string, ParcoursFieldValue>;
   harmonie: HarmonieStepState;
+  exampleSelection?: string | null;
+  exampleUsed?: { key: string; at: string; warning: string } | null;
 }
 
 /** Une proposition Harmonie telle que le serveur la calcule pour ce projet (définition × profil × arbitrages). */
@@ -185,6 +187,24 @@ export interface SiteView {
 export type SiteObservationsInput = Pick<SiteObservations, "frontageEdge" | "approachStatus" | "priority" | "frontContext" | "backContext" | "source" | "note"> & {
   geographic?: SiteObservations["geographic"];
 };
+
+/** Un cas de la bibliothèque d'exemples sources, en résumé. */
+export interface SourceExampleSummary {
+  key: string;
+  title: string;
+  origin: string;
+  location: string;
+  summary: string;
+  capacity: number | string | null;
+  unit: string;
+}
+
+/** Un cas proposé à une étape, avec son contenu pertinent (`exampleText`). */
+export interface SourceExampleStepItem extends SourceExampleSummary {
+  text: string;
+}
+
+export type SourceExampleDetail = SourceExample & { origin: string };
 
 /** Une pièce jointe d'une étape (« Sources de l'étape »). */
 export interface StepFile {
@@ -354,8 +374,14 @@ export const api = {
     }),
 
   listSteps: (projectId: string) => request<ParcoursStep[]>(`/projects/${projectId}/steps`),
-  patchStep: (projectId: string, stepNumber: number, patch: { status?: ParcoursStepStatus; fields?: Record<string, ParcoursFieldValue> }) =>
+  patchStep: (projectId: string, stepNumber: number, patch: { status?: ParcoursStepStatus; fields?: Record<string, ParcoursFieldValue>; exampleSelection?: string | null }) =>
     request<ParcoursStep>(`/projects/${projectId}/steps/${stepNumber}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  /** Exemples issus des fichiers sources (SOURCE_EXAMPLES) : bibliothèque, cas, cas d'une étape avec leur contenu pertinent, aide au remplissage. */
+  listSourceExamples: () => request<SourceExampleSummary[]>("/examples/sources"),
+  getSourceExample: (key: string) => request<SourceExampleDetail>(`/examples/sources/${encodeURIComponent(key)}`),
+  sourceExamplesForStep: (stepNumber: number) => request<SourceExampleStepItem[]>(`/examples/sources/step/${stepNumber}`),
+  fillFromExample: (projectId: string, stepNumber: number, key: string) =>
+    request<{ step: ParcoursStep; filled: string[] }>(`/projects/${projectId}/steps/${stepNumber}/fill-from-example`, { method: "POST", body: JSON.stringify({ key }) }),
   /** Sources de l'étape (pièces jointes) — module Projets et sources. */
   listStepFiles: (projectId: string, stepNumber: number) => request<StepFile[]>(`/projects/${projectId}/steps/${stepNumber}/files`),
   listProjectFiles: (projectId: string) => request<(StepFile & { stepNumber: number })[]>(`/projects/${projectId}/files`),

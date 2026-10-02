@@ -15,6 +15,7 @@ import { ParcelleTool } from "../projets-sources/ParcelleTool";
 import { StepSources } from "../projets-sources/StepSources";
 import { ProgrammeRepartition, ProgrammeTransfer } from "../programmation/ProgrammeRepartition";
 import { HarmoniePanel } from "./HarmoniePanel";
+import { SourceExamplesFold } from "./SourceExamples";
 import { StepForm } from "./StepForm";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -215,6 +216,7 @@ function StepDetail({
       <StepForm step={step} allSteps={allSteps} pending={pending} onCommit={(fields) => patch.mutate({ fields })} />
       {(step.number === 6 || step.number === 7) && <ProgrammeRepartition projectId={projectId} />}
 
+      <SourceExamplesFold projectId={projectId} step={step} onStepUpdated={adopt} />
       <StepSources projectId={projectId} stepNumber={step.number} />
 
       {patch.isError && (

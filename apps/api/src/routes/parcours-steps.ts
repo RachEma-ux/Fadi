@@ -20,8 +20,10 @@ import {
   harmonieProfile,
   incomingIntentions,
   isDecisionChoice,
+  fillFromSourceExample,
   recommendedSiteOption,
   siteProposalComputation,
+  sourceExamplesForStep,
   validateSiteObservations,
   type HarmonieProposalStatus,
   type HarmonieStepState,
@@ -35,7 +37,7 @@ import {
 import { db } from "../db/client.js";
 import { projectSteps, projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS, parcoursStepDefinition } from "../data/parcours.js";
+import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS, SOURCE_EXAMPLES, parcoursStepDefinition } from "../data/parcours.js";
 import { loadOwnedProject, type OwnedProject } from "../lib/owned-project.js";
 import { loadSiteContext } from "../lib/site-context.js";
 import { loadProgrammeRepartition } from "./programme.js";
@@ -247,6 +249,8 @@ const fieldValueSchema = z.union([z.string().max(10000), z.number().finite(), z.
 const patchSchema = z.object({
   status: z.enum(["a-faire", "en-cours", "termine"]).optional(),
   fields: z.record(z.string().max(32), fieldValueSchema).optional(),
+  /** Exemple source affiché à cette étape (clé de `SOURCE_EXAMPLES`), `null` pour revenir au premier. */
+  exampleSelection: z.string().max(40).nullable().optional(),
 });
 
 /**
@@ -309,6 +313,13 @@ parcoursStepsRouter.patch("/:stepNumber", async (req, res) => {
     let status = parsed.data.status ?? current.status;
     if (!parsed.data.status && status === "a-faire" && Object.keys(updates).length > 0) status = "en-cours";
     const content: ParcoursStepContent = { ...current.content, status, fields };
+    if (parsed.data.exampleSelection !== undefined) {
+      const key = parsed.data.exampleSelection;
+      if (key !== null && !sourceExamplesForStep(SOURCE_EXAMPLES, def.number).some((e) => e.key === key)) {
+        return { invalid: "Exemple inconnu pour cette étape" as const };
+      }
+      content.exampleSelection = key;
+    }
     await tx
       .insert(projectSteps)
       .values({ projectId: project.id, stepNumber: def.number, status, content: { ...content } })
@@ -316,6 +327,45 @@ parcoursStepsRouter.patch("/:stepNumber", async (req, res) => {
     rows.set(def.number, { status, content });
     const profile = await projectProfile(project.id);
     return stepView(def, rows, profile, await siteFor(tx, project, profile));
+  });
+  if ("invalid" in result) {
+    res.status(400).json({ error: "invalid_input", details: { exampleSelection: result.invalid } });
+    return;
+  }
+  res.json(result);
+});
+
+// --- Exemples issus des fichiers sources : aide au remplissage --------------
+
+/**
+ * `fillFromExample(e)` du prototype, côté serveur : les rubriques vides du
+ * formulaire reçoivent le contenu pertinent de l'exemple ; les réponses déjà
+ * saisies sont conservées ; l'usage est tracé (`exampleUsed`, « Exemple
+ * fictif à adapter »). Jamais de GO : à l'étape 19 la décision absente devient
+ * « À reprendre ».
+ */
+parcoursStepsRouter.post("/:stepNumber/fill-from-example", async (req, res) => {
+  const project = await ownedProjectOr404(req, res);
+  if (!project) return;
+  const def = stepOr404(req.params["stepNumber"] as string, res);
+  if (!def) return;
+  const parsed = z.object({ key: z.string().max(40) }).safeParse(req.body);
+  const example = parsed.success ? sourceExamplesForStep(SOURCE_EXAMPLES, def.number).find((e) => e.key === parsed.data.key) : undefined;
+  if (!example) {
+    res.status(400).json({ error: "invalid_input", details: { key: "Exemple inconnu pour cette étape" } });
+    return;
+  }
+  const now = new Date().toISOString();
+  const result = await db.transaction(async (tx) => {
+    const rows = await loadStepRows(tx, project.id);
+    const current = rows.get(def.number) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
+    const filled = fillFromSourceExample(current.content.fields, def.form?.fields ?? [], example, def.number);
+    const status: ParcoursStepStatus = current.status === "a-faire" && filled.filled.length > 0 ? "en-cours" : current.status;
+    const content: ParcoursStepContent = { ...current.content, status, fields: filled.fields, exampleUsed: { key: example.key, at: now, warning: "Exemple fictif à adapter" } };
+    await upsertStep(tx, project.id, def.number, status, content);
+    rows.set(def.number, { status, content });
+    const profile = await projectProfile(project.id);
+    return { step: stepView(def, rows, profile, await siteFor(tx, project, profile)), filled: filled.filled };
   });
   res.json(result);
 });

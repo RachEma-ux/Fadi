@@ -141,6 +141,10 @@ export interface ParcoursStepContent {
   /** Réponses du formulaire métier (clés `f1`…, `summary`, `decision` pour l'étape 19). */
   fields: Record<string, ParcoursFieldValue>;
   harmonie: HarmonieStepState;
+  /** Exemple source affiché à cette étape (`exampleSelection` du prototype) ; `null` = premier de la liste. */
+  exampleSelection?: string | null;
+  /** Dernier exemple utilisé comme aide au remplissage (`exampleUsed` du prototype) — traçabilité, jamais une preuve. */
+  exampleUsed?: { key: string; at: string; warning: string } | null;
 }
 
 export const EMPTY_HARMONIE_STEP_STATE: HarmonieStepState = {
@@ -162,6 +166,8 @@ export const EMPTY_PARCOURS_STEP_CONTENT: ParcoursStepContent = {
   sourceStatus: null,
   fields: {},
   harmonie: EMPTY_HARMONIE_STEP_STATE,
+  exampleSelection: null,
+  exampleUsed: null,
 };
 
 /** Une étape telle que l'API la sert : sa définition et son contenu pour le projet. */

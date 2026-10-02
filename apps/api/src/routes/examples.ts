@@ -7,9 +7,11 @@ import { randomUUID } from "node:crypto";
 import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replaceProjection } from "../lib/native-projection.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
+import { sourceExampleOrigin, sourceExampleText, sourceExamplesForStep, type SourceExample } from "@parcours/domain-model";
 import {
   PARCOURS_STEPS,
   PROGRAMME_REPARTITION,
+  SOURCE_EXAMPLES,
   exampleAttachment,
   exampleBuildingType,
   exampleAtelierStore,
@@ -32,6 +34,38 @@ examplesRouter.use(requireAuth);
  */
 examplesRouter.get("/", (_req, res) => {
   res.json(listParcoursExamples());
+});
+
+/**
+ * Exemples issus des fichiers sources (`SOURCE_EXAMPLES` du prototype) :
+ * la bibliothèque complète (10 cas), un cas, et les cas proposés à une
+ * étape avec leur contenu pertinent (`exampleText`). Cas pédagogiques à
+ * adapter — jamais considérés comme données réelles du projet.
+ */
+function sourceSummary(e: SourceExample) {
+  return { key: e.key, title: e.title, origin: sourceExampleOrigin(SOURCE_EXAMPLES, e), location: e.location ?? "", summary: e.summary ?? "", capacity: e.capacity ?? null, unit: e.unit ?? e.capacityUnit ?? "" };
+}
+
+examplesRouter.get("/sources", (_req, res) => {
+  res.json(SOURCE_EXAMPLES.examples.map(sourceSummary));
+});
+
+examplesRouter.get("/sources/step/:stepNumber", (req, res) => {
+  const n = Number(req.params["stepNumber"]);
+  if (!Number.isInteger(n) || n < 1 || n > 21) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  res.json(sourceExamplesForStep(SOURCE_EXAMPLES, n).map((e) => ({ ...sourceSummary(e), text: sourceExampleText(e, n) })));
+});
+
+examplesRouter.get("/sources/:key", (req, res) => {
+  const e = SOURCE_EXAMPLES.examples.find((x) => x.key === req.params["key"]);
+  if (!e) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  res.json({ ...e, origin: sourceExampleOrigin(SOURCE_EXAMPLES, e) });
 });
 
 examplesRouter.post("/:exampleId/import", async (req, res) => {

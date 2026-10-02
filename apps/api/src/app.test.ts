@@ -741,3 +741,44 @@ describe("Sources de l'étape — pièces jointes par étape", () => {
     expect((await other.get(`/projects/${pid}/files`)).status).toBe(404);
   });
 });
+
+describe("Exemples issus des fichiers sources (SOURCE_EXAMPLES)", () => {
+  it("serves the library, the per-step cases with their relevant text, remembers the selection and fills empty fields server-side", async () => {
+    const client = await registerAndLogin("sources-examples@example.com");
+    const library = await client.get("/examples/sources");
+    expect(library.body).toHaveLength(10);
+    expect(library.body[0]).toMatchObject({ key: "office", origin: "Atelier Programmiste V2.1", capacity: 120 });
+    expect(library.body.find((e: { key: string }) => e.key === "opportunity_atlas").origin).toBe("Opportunité");
+    const detail = await client.get("/examples/sources/office");
+    expect(detail.body.title).toMatch(/^Campus Atlas/);
+    expect((await client.get("/examples/sources/nope")).status).toBe(404);
+
+    const step3 = await client.get("/examples/sources/step/3");
+    expect(step3.body.map((e: { key: string }) => e.key)).toEqual(["office", "housing", "industry", "logistics", "hotel", "retail", "health", "education", "opportunity_atlas"]);
+    expect(step3.body[0].text).toContain(detail.body.marketStudy);
+    expect((await client.get("/examples/sources/step/1")).body.map((e: { key: string }) => e.key)).toEqual(["parcours_lot118"]);
+
+    const project = await client.post("/projects").send({ code: "P.912", name: "Exemples" });
+    const pid = project.body.id as string;
+    const selected = await client.patch(`/projects/${pid}/steps/3`).send({ exampleSelection: "hotel" });
+    expect(selected.status).toBe(200);
+    expect(selected.body.content.exampleSelection).toBe("hotel");
+    expect(selected.body.status).toBe("a-faire"); // choisir un exemple n'est pas une saisie
+    expect((await client.patch(`/projects/${pid}/steps/3`).send({ exampleSelection: "parcours_lot118" })).status).toBe(400);
+
+    // Une réponse déjà saisie est conservée ; les autres rubriques reçoivent les paragraphes dans l'ordre.
+    await client.patch(`/projects/${pid}/steps/3`).send({ fields: { f1: "Ma propre étude de marché" } });
+    const filled = await client.post(`/projects/${pid}/steps/3/fill-from-example`).send({ key: "office" });
+    expect(filled.status).toBe(200);
+    expect(filled.body.filled).not.toContain("f1");
+    expect(filled.body.filled.length).toBeGreaterThan(0);
+    expect(filled.body.step.content.fields.f1).toBe("Ma propre étude de marché");
+    expect(filled.body.step.content.fields.f2).toBe(detail.body.benchmark);
+    expect(filled.body.step.content.exampleUsed).toMatchObject({ key: "office", warning: "Exemple fictif à adapter" });
+    expect(filled.body.step.status).toBe("en-cours");
+    // Étape 19 : jamais de GO par l'exemple — « À reprendre ».
+    const decided = await client.post(`/projects/${pid}/steps/19/fill-from-example`).send({ key: "office" });
+    expect(decided.body.step.content.fields.decision).toBe("À reprendre");
+    expect((await client.post(`/projects/${pid}/steps/3/fill-from-example`).send({ key: "nope" })).status).toBe(400);
+  });
+});

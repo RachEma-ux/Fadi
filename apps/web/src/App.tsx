@@ -9,6 +9,7 @@ import { ProjectsPage } from "./routes/ProjectsPage";
 import { ProjectShell } from "./routes/ProjectShell";
 import { HarmoniePage } from "./routes/HarmoniePage";
 import { ParametresPage } from "./routes/ParametresPage";
+import { ExampleDetailPage, ExamplesLibraryPage } from "./routes/ExamplesLibraryPage";
 
 export function App() {
   const { loading } = useAuth();
@@ -37,6 +38,8 @@ export function App() {
         <Route path="/projets" element={<ProjectsPage />} />
         <Route path="/projets/:projectId" element={<ProjectShell />} />
         <Route path="/harmonie" element={<HarmoniePage />} />
+        <Route path="/bibliotheque/exemples" element={<ExamplesLibraryPage />} />
+        <Route path="/bibliotheque/exemples/:key" element={<ExampleDetailPage />} />
         <Route path="/parametres" element={<ParametresPage />} />
       </Route>
 
