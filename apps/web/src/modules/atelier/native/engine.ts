@@ -29,7 +29,9 @@ import "./native.css";
 import { ApiError, api, type AtelierStore } from "../../../lib/api";
 import { localStore } from "../../../lib/local-store";
 
-export type SyncStatus = "idle" | "local" | "syncing" | "saved" | "conflict" | "error" | "offline";
+export type SyncStatus = "idle" | "local" | "syncing" | "saved" | "conflict" | "error" | "offline" | "readonly";
+
+export const READ_ONLY_MESSAGE = "Lecture seule : ce projet vous est partagé en lecture ; vous pouvez explorer le modèle, mais vos modifications dans l’Atelier ne sont pas enregistrées.";
 
 export interface SyncState {
   status: SyncStatus;
@@ -94,15 +96,22 @@ class AtelierStorageAdapter implements Storage {
   private state: SyncState = { status: "idle", pending: 0, message: null };
   /** Écritures dans la file locale, dans l'ordre : `persist` attend qu'elles soient posées avant de lire la file. */
   private queued = Promise.resolve();
+  /** Projet partagé en lecture : le moteur dessine en mémoire, rien n'est mis en file ni envoyé (le serveur refuserait, 403). */
+  private readOnly = false;
 
-  async bind(projectId: string, store: AtelierStore): Promise<void> {
+  async bind(projectId: string, store: AtelierStore, readOnly = false): Promise<void> {
     this.flushTimers();
     this.projectId = projectId;
+    this.readOnly = readOnly;
     // Le moteur écrit du JSON pour ses domaines mais une chaîne brute pour
     // `design.v13.activeProject` : on lui rend exactement ce qu'il a écrit.
     this.values = new Map(Object.entries(store.entries).map(([k, v]) => [k, typeof v === "string" ? v : JSON.stringify(v)]));
     this.revisions = new Map(Object.entries(store.revisions));
     this.pendingKeys.clear();
+    if (readOnly) {
+      this.setState({ status: "readonly", pending: 0, message: READ_ONLY_MESSAGE });
+      return;
+    }
     // Écritures restées dans la file locale (coupure réseau, page quittée) : elles reprennent la main en
     // mémoire et repartent vers le serveur avec la révision sur laquelle elles s'appuyaient.
     const queued = await localStore.pending(projectId);
@@ -122,6 +131,10 @@ class AtelierStorageAdapter implements Storage {
     );
     for (const q of queued) this.inflight = this.inflight.then(() => this.persist(q.key)).catch(() => undefined);
     if (queued.length && !isOffline()) void this.inflight;
+  }
+
+  isReadOnly(): boolean {
+    return this.readOnly;
   }
 
   subscribe(fn: (s: SyncState) => void): () => void {
@@ -170,6 +183,10 @@ class AtelierStorageAdapter implements Storage {
   // --- persistance ---------------------------------------------------------
   private schedule(key: string) {
     if (!this.projectId) return;
+    if (this.readOnly) {
+      this.setState({ status: "readonly", pending: 0, message: READ_ONLY_MESSAGE });
+      return;
+    }
     this.pendingKeys.add(key);
     // Enregistré localement d'abord (IndexedDB), avec la révision lue : rien n'est perdu si le réseau ou l'onglet disparaît.
     const projectId = this.projectId;
@@ -242,6 +259,14 @@ class AtelierStorageAdapter implements Storage {
           message: `Conflit sur « ${key.split(".").pop()} » : la version du serveur a été rechargée ; votre version est conservée sous « ${backupKey} ».`,
         });
         window.V14Bridge?.render?.();
+        return;
+      }
+      if (err instanceof ApiError && err.status === 403) {
+        // Droit retiré entre-temps (projet partagé en lecture) : l'écriture ne sera jamais acceptée, elle sort de la file ; le travail reste en mémoire.
+        this.pendingKeys.delete(key);
+        await localStore.acknowledge(projectId, key);
+        this.readOnly = true;
+        this.setState({ status: "readonly", pending: this.pendingKeys.size, message: err.serverMessage ?? READ_ONLY_MESSAGE });
         return;
       }
       if (isNetworkFailure(err)) {
@@ -340,6 +365,8 @@ export function ensureEngineLoaded(): Promise<void> {
 }
 
 export interface MountOptions {
+  /** Projet partagé en lecture : rien n'est enregistré. */
+  readOnly?: boolean;
   projectId: string;
   stage: number | null;
   store: AtelierStore;
@@ -353,7 +380,8 @@ export interface MountOptions {
 export async function mountEngine(container: HTMLElement, options: MountOptions): Promise<void> {
   await ensureEngineLoaded();
   if (!parking) throw new Error("moteur non chargé");
-  if (window.AtelierHost?.projectId !== options.projectId) await atelierStorage.bind(options.projectId, options.store);
+  const readOnly = options.readOnly ?? false;
+  if (window.AtelierHost?.projectId !== options.projectId || readOnly !== atelierStorage.isReadOnly()) await atelierStorage.bind(options.projectId, options.store, readOnly);
   window.AtelierHost = { stage: options.stage, projectId: options.projectId };
   const root = parking.querySelector<HTMLElement>("#nativeDesignerRoot");
   container.appendChild(parking);

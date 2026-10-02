@@ -15,6 +15,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { WriteFieldset } from "../../components/WriteFieldset";
 import { HYPOTHESIS_STATUSES, fmtLib, type BuildingHypothesis } from "@parcours/domain-model";
 import { api, ApiError, type ProgrammeModelLinksView } from "../../lib/api";
 import { appliedCase } from "./ProgrammeCase";
@@ -80,6 +81,7 @@ export function ProgrammeModelLinksPage({ projectId }: { projectId: string }) {
   return (
     <section className="bl programme-model-links" id="bl-model-links" style={{ padding: 0, maxWidth: "none" }}>
       {actions}
+      <WriteFieldset projectId={projectId}>
       <section className="bl-card">
         <h1>Programme ↔ modèle dessiné</h1>
         <p>Reliez une ligne du programme à une zone dessinée. Une liaison se fait par identifiant, jamais par ressemblance du nom. Les surfaces sont comparées, pas certifiées.</p>
@@ -164,6 +166,7 @@ export function ProgrammeModelLinksPage({ projectId }: { projectId: string }) {
           </table>
         </div>
       </section>
+      </WriteFieldset>
     </section>
   );
 }
@@ -273,6 +276,7 @@ export function ProgrammeHypothesesPage({ projectId }: { projectId: string }) {
   return (
     <section className="bl programme-hypotheses" id="bl-hypotheses" style={{ padding: 0, maxWidth: "none" }}>
       {actions}
+      <WriteFieldset projectId={projectId}>
       <section className="bl-card">
         <h1>Registre des hypothèses</h1>
         <p>
@@ -301,6 +305,7 @@ export function ProgrammeHypothesesPage({ projectId }: { projectId: string }) {
         </div>
         <div className="bl-note">Une confirmation exige une preuve ou un motif et un responsable. Elle ne vaut pas validation des contrôles Harmony ou techniques non examinés.</div>
       </section>
+      </WriteFieldset>
     </section>
   );
 }

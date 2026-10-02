@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { api } from "../lib/api";
+import { api, ROLE_LABEL } from "../lib/api";
+import { READ_ONLY_HINT, useProjectAccess } from "../lib/access";
 import { SyncIndicator, useOnline, useSyncConflicts } from "../components/SyncIndicator";
 import { clearConflict } from "../lib/mutations";
 import { MODULES } from "../modules/module-registry";
@@ -23,6 +24,7 @@ export function ProjectShell() {
   const queryClient = useQueryClient();
   const conflicts = useSyncConflicts(projectId);
   const online = useOnline();
+  const access = useProjectAccess(projectId);
 
   // Le module ouvert vit dans l'URL (`?module=`), comme l'étape (`?etape=`) et la vue (`?vue=`) : les liens
   // entre modules (« Comparer au modèle dessiné », « Ouvrir l’Atelier »…) et le rechargement le respectent.
@@ -59,9 +61,22 @@ export function ProjectShell() {
         </h1>
         <span className="project-header-meta">
           <span>Révision du modèle : {project.modelRevision}</span>
+          <span className={`project-role project-role-${access.role}`} title={project.role === "proprietaire" || !project.role ? "Votre projet" : `Partagé par ${project.ownerEmail ?? "son propriétaire"}`}>
+            {ROLE_LABEL[access.role]}
+            {project.role && project.role !== "proprietaire" && project.ownerEmail ? ` · partagé par ${project.ownerEmail}` : ""}
+          </span>
           <SyncIndicator projectId={projectId} />
         </span>
       </header>
+
+      {!access.canWrite && (
+        <p className="access-banner" role="status">
+          {READ_ONLY_HINT}{" "}
+          <button type="button" className="link-button" onClick={() => selectModule("collaboration")}>
+            Voir le partage
+          </button>
+        </p>
+      )}
 
       {(!online || projectQuery.isError) && (
         <p className="offline-banner" role="status">
@@ -116,7 +131,7 @@ export function ProjectShell() {
         {activeModule === "atelier" && (
           <>
             <h2>Atelier architectural</h2>
-            <NativeAtelier projectId={projectId} />
+            <NativeAtelier projectId={projectId} readOnly={!access.canWrite} />
           </>
         )}
 

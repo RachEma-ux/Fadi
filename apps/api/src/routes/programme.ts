@@ -7,7 +7,7 @@
  * sont ceux de `@parcours/domain-model` et sont renvoyés avec le réglage
  * pour que l'affichage ne recalcule rien de son côté.
  */
-import { Router, type Request } from "express";
+import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -30,9 +30,10 @@ import { db } from "../db/client.js";
 import { programmeRepartitions } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { BUILDING_LIBRARY, HARMONIE_PROFILES, PROGRAMME_REPARTITION } from "../data/parcours.js";
-import { loadOwnedProject, type OwnedProject } from "../lib/owned-project.js";
+import { loadOwnedProject, projectOr404, type OwnedProject } from "../lib/owned-project.js";
 import { applyProgrammeCase, applyProgrammeTransfer, editProgrammeCaseHypothesis, editProgrammeCaseSpace, linkProgrammeCaseRoom, loadActiveProgrammeCase, loadProgrammeHistory, programmeStateOf } from "../lib/programme-case.js";
 import { loadModelAnalysis } from "../lib/model-context.js";
+import { lockProject } from "../lib/step-rows.js";
 
 export const programmeRouter = Router({ mergeParams: true });
 programmeRouter.use(requireAuth);
@@ -114,14 +115,10 @@ async function repartitionView(project: OwnedProject) {
   };
 }
 
-const projectIdOf = (req: Request) => (req.params as Record<string, string>)["projectId"] ?? "";
 
 programmeRouter.get("/", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
   res.json(await repartitionView(project));
 });
 
@@ -136,11 +133,8 @@ const applySchema = z.object({
 
 /** « Appliquer le scénario » : la variante devient le programme du projet (répartition, textes, Harmony) ; parcelle et Atelier inchangés. */
 programmeRouter.post("/case", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const parsed = applySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
@@ -152,8 +146,8 @@ programmeRouter.post("/case", async (req, res) => {
     return;
   }
   const now = new Date().toISOString();
-  const result = await db.transaction((tx) => applyProgrammeCase(tx, project, parsed.data, now));
-  const refreshed = await loadOwnedProject(project.id, req.user!.id);
+  const result = await db.transaction(async (tx) => (await lockProject(tx, project.id), applyProgrammeCase(tx, project, parsed.data, now)));
+  const refreshed = await loadOwnedProject(project.id, req.user!.id, "write");
   res.status(201).json({ ...(await repartitionView(refreshed ?? project)), applied: { revision: result.programmeCase.revision, conflicts: result.conflicts.length } });
 });
 
@@ -161,11 +155,8 @@ const spaceSchema = z.object({ quantity: z.union([z.number(), z.string()]).optio
 
 /** Adaptation d'une ligne du programme appliqué (quantité ou surface unitaire) ; surfaces et répartition recalculées, revues à reprendre. */
 programmeRouter.patch("/case/spaces/:spaceId", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const parsed = spaceSchema.safeParse(req.body);
   const key = parsed.success ? (parsed.data.quantity !== undefined ? "quantity" : parsed.data.unitArea !== undefined ? "unitArea" : null) : null;
   if (!parsed.success || !key) {
@@ -174,12 +165,12 @@ programmeRouter.patch("/case/spaces/:spaceId", async (req, res) => {
   }
   const value = key === "quantity" ? parsed.data.quantity : parsed.data.unitArea;
   try {
-    await db.transaction((tx) => editProgrammeCaseSpace(tx, project, req.params["spaceId"] as string, key, value, new Date().toISOString()));
+    await db.transaction(async (tx) => (await lockProject(tx, project.id), editProgrammeCaseSpace(tx, project, req.params["spaceId"] as string, key, value, new Date().toISOString())));
   } catch (err) {
     res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Modification refusée." });
     return;
   }
-  const refreshed = await loadOwnedProject(project.id, req.user!.id);
+  const refreshed = await loadOwnedProject(project.id, req.user!.id, "write");
   res.json(await repartitionView(refreshed ?? project));
 });
 
@@ -187,11 +178,8 @@ programmeRouter.patch("/case/spaces/:spaceId", async (req, res) => {
 
 /** Les lignes du programme appliqué avec leurs zones liées, la surface dessinée, l'écart et les zones encore libres. */
 programmeRouter.get("/model-links", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
   const a = await loadActiveProgrammeCase(db, project.id);
   if (!a) {
     res.json({ applied: false, rows: [], roomCount: 0, hasModel: false, revision: null });
@@ -205,11 +193,8 @@ programmeRouter.get("/model-links", async (req, res) => {
 const linkSchema = z.object({ spaceId: z.string().min(1).max(120), roomId: z.string().min(1).max(200) });
 
 programmeRouter.post("/case/links", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const parsed = linkSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
@@ -217,6 +202,7 @@ programmeRouter.post("/case/links", async (req, res) => {
   }
   try {
     await db.transaction(async (tx) => {
+      await lockProject(tx, project.id);
       const model = await loadModelAnalysis(tx, project.id);
       await linkProgrammeCaseRoom(tx, project, parsed.data.spaceId, parsed.data.roomId, false, model?.rooms ?? [], new Date().toISOString());
     });
@@ -228,13 +214,11 @@ programmeRouter.post("/case/links", async (req, res) => {
 });
 
 programmeRouter.delete("/case/links/:spaceId/:roomId", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   try {
     await db.transaction(async (tx) => {
+      await lockProject(tx, project.id);
       const model = await loadModelAnalysis(tx, project.id);
       await linkProgrammeCaseRoom(tx, project, req.params["spaceId"] as string, req.params["roomId"] as string, true, model?.rooms ?? [], new Date().toISOString());
     });
@@ -250,18 +234,15 @@ programmeRouter.delete("/case/links/:spaceId/:roomId", async (req, res) => {
 const hypothesisSchema = z.object({ status: z.enum(HYPOTHESIS_STATUSES).optional(), owner: z.string().max(250).optional(), proof: z.string().max(3000).optional() });
 
 programmeRouter.patch("/case/hypotheses/:hypothesisId", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const parsed = hypothesisSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
     return;
   }
   try {
-    const next = await db.transaction((tx) => editProgrammeCaseHypothesis(tx, project.id, req.params["hypothesisId"] as string, parsed.data, new Date().toISOString()));
+    const next = await db.transaction(async (tx) => (await lockProject(tx, project.id), editProgrammeCaseHypothesis(tx, project.id, req.params["hypothesisId"] as string, parsed.data, new Date().toISOString())));
     res.json({ hypotheses: next.hypotheses, revision: next.revision });
   } catch (err) {
     res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Modification refusée." });
@@ -273,11 +254,8 @@ programmeRouter.patch("/case/hypotheses/:hypothesisId", async (req, res) => {
 const transferPreviewSchema = z.object({ from: z.string().min(1).max(120), to: z.string().min(1).max(120), amount: z.union([z.number(), z.string()]), reason: z.string().max(700) });
 
 programmeRouter.post("/case/transfer/preview", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const parsed = transferPreviewSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
@@ -308,19 +286,16 @@ const transferSchema = z.object({
 });
 
 programmeRouter.post("/case/transfer", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const parsed = transferSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
     return;
   }
   try {
-    const result = await db.transaction((tx) => applyProgrammeTransfer(tx, project, parsed.data, new Date().toISOString()));
-    const refreshed = await loadOwnedProject(project.id, req.user!.id);
+    const result = await db.transaction(async (tx) => (await lockProject(tx, project.id), applyProgrammeTransfer(tx, project, parsed.data, new Date().toISOString())));
+    const refreshed = await loadOwnedProject(project.id, req.user!.id, "write");
     res.json({ ...(await repartitionView(refreshed ?? project)), transfer: { total: result.total, revision: result.programmeCase.revision } });
   } catch (err) {
     res.status(422).json({ error: "programme_rule", message: err instanceof Error ? err.message : "Transfert refusé." });
@@ -339,11 +314,8 @@ const putSchema = z.object({
 });
 
 programmeRouter.put("/", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const parsed = putSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });

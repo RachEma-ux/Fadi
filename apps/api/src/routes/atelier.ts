@@ -15,15 +15,16 @@
  * `floorDesign`) avance `projects.modelRevision` et régénère la projection
  * `levels` / `architectural_objects` du projet natif actif.
  */
-import { Router, json, type Request } from "express";
+import { Router, json } from "express";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { atelierStore, projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { loadOwnedProject } from "../lib/owned-project.js";
+import { projectOr404 } from "../lib/owned-project.js";
 import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replaceProjection } from "../lib/native-projection.js";
 import { MODEL_DOMAINS, domainOf } from "../lib/atelier-store.js";
+import { lockProject } from "../lib/step-rows.js";
 
 export const atelierRouter = Router({ mergeParams: true });
 atelierRouter.use(requireAuth);
@@ -33,14 +34,10 @@ atelierRouter.use(json({ limit: "8mb" }));
 
 const KEY_PATTERN = /^design\.v13\.(registry|activeProject|project\.[A-Za-z0-9_.:-]{1,80}\.[A-Za-z0-9_-]{1,40}(\.backup\.[A-Za-z0-9_.-]{1,40})?)$/;
 
-const projectIdOf = (req: Request) => (req.params as Record<string, string>)["projectId"] ?? "";
 
 atelierRouter.get("/store", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
   const rows = await db.select().from(atelierStore).where(eq(atelierStore.projectId, project.id));
   const entries: Record<string, unknown> = {};
   const revisions: Record<string, number> = {};
@@ -57,11 +54,8 @@ const putSchema = z.object({
 });
 
 atelierRouter.put("/store/:key", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const key = req.params["key"] as string;
   if (!KEY_PATTERN.test(key)) {
     res.status(400).json({ error: "invalid_input", details: { key: "Clé hors du magasin de l'Atelier" } });
@@ -76,6 +70,7 @@ atelierRouter.put("/store/:key", async (req, res) => {
   const expected = parsed.data.expectedRevision;
 
   const result = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
     const existing = (await tx.select().from(atelierStore).where(and(eq(atelierStore.projectId, project.id), eq(atelierStore.key, key))).limit(1))[0];
     const current = existing?.revision ?? 0;
     if ((expected ?? 0) !== current) {
@@ -118,11 +113,8 @@ atelierRouter.put("/store/:key", async (req, res) => {
 });
 
 atelierRouter.delete("/store/:key", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const key = req.params["key"] as string;
   await db.delete(atelierStore).where(and(eq(atelierStore.projectId, project.id), eq(atelierStore.key, key)));
   res.status(204).end();

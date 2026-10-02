@@ -139,7 +139,12 @@ still-open piece of work. A change based on a stale revision can never silently 
 geometric conflicts, the application offers an explicit resolution or keeps the work in a variant rather than
 discarding it.
 
-The first version targets a single active editor per project, with read access and comments for everyone else.
+Sharing has three roles decided by the server on every request: the owner (shares, deletes), editors (write)
+and readers (read everything, comment, export, copy). The plan first targeted a single active editor per
+project; the migration kept the simpler rule because the server already serialises writes per project (row
+lock in every read-modify-write transaction) and arbitrates stale writes by field and by version (409): several
+editors can work on the same project without losing each other's work, and a "single active editor" lock
+remains an optional, later addition rather than a prerequisite (decision recorded in `docs/migration/matrix.md`).
 Offline work covers projects already available on the device; features that need a live service say so when
 they are unavailable. Server-side backups, restore drills and an exportable project archive complete this.
 
@@ -197,9 +202,16 @@ Harmonie decisions and comments are keyed mutations paused offline, persisted, r
 replayed with the value or version they were based on (the server refuses a replay that would overwrite a
 newer write — 409 shown, never silent); the query cache is persisted (offline reading of what was already
 read), a service worker serves the app shell and the engines offline, and the project header shows the sync
-state and conflicts. Still open: assisted conflict resolution, sharing and rights (a single owner per project —
-every route re-checks ownership) — the Collaboration module says so instead of simulating it. Lot 5 items still open are listed
-under « Limites restantes » in the matrix (regulatory checks, MapTiler / altimetry, lazy loading of the Atelier
+state and conflicts. Sharing is in place: the owner invites existing accounts by e-mail as `lecteur` (reads
+everything, comments, exports, copies) or `editeur` (also writes), can change or remove them, and a member can
+leave; every route declares the access it needs (`read` / `comment` / `write` / `owner`) and the server re-reads
+the role on each request (404 without access, 403 with the reason otherwise) — the client only hides what would
+be refused (read-only forms, Atelier in read-only mode, "Projets partagés avec vous"). Members work on the same
+project: every read-modify-write transaction first locks the project row (`FOR UPDATE`), so simultaneous
+writes are serialised instead of overwriting each other, then the per-field / per-version checks (409) apply.
+Still open: assisted conflict resolution, an optional "single active editor" lock (today concurrent editors are
+arbitrated by versions, never locked out), invitation notifications. Lot 5 items still open are listed under
+« Limites restantes » in the matrix (regulatory checks, MapTiler / altimetry, lazy loading of the Atelier
 engine, e2e in CI, deployment hardening).
 
 ## Acceptance target: "Parcours App — Pilote P.118"

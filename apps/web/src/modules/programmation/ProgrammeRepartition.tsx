@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { WriteFieldset } from "../../components/WriteFieldset";
 import { api, ApiError, type ProgrammeMode, type ProgrammeView } from "../../lib/api";
 import { ProgrammeCaseEditor, ProgrammeTransmission, appliedCase } from "./ProgrammeCase";
 
@@ -154,6 +155,7 @@ export function ProgrammeRepartition({ projectId }: { projectId: string }) {
     <section className="biz-card" aria-labelledby="programme-title">
       <h2 id="programme-title">Répartition programmatique par type de bâtiment</h2>
       <p className="biz-sub">{view.reference.subtitle}</p>
+      <WriteFieldset projectId={projectId}>
       <div className="programme-controls">
         <label>
           Type de bâtiment
@@ -254,9 +256,10 @@ export function ProgrammeRepartition({ projectId }: { projectId: string }) {
       <p className="programme-note">
         <b>Statut :</b> {view.reference.statusNote.replace(/^Statut : /, "")}
       </p>
+      </WriteFieldset>
       {save.isError && (
         <p role="alert" className="h7-error">
-          La répartition n’a pas pu être enregistrée.
+          {save.error instanceof ApiError && save.error.serverMessage ? save.error.serverMessage : "La répartition n’a pas pu être enregistrée."}
         </p>
       )}
     </section>

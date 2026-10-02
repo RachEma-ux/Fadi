@@ -1,14 +1,16 @@
 /**
- * Module Collaboration — accès (propriétaire ; partage non disponible, dit
- * tel quel), état de synchronisation du modèle (révision, écritures), journal
- * des révisions relu depuis les dates portées par les données, et fil de
- * commentaires du projet (par étape ou général). Rien n'est simulé : ce qui
- * n'existe pas encore (partage, droits, file hors-ligne) est annoncé.
+ * Module Collaboration — accès et partage (propriétaire, votre rôle, membres
+ * invités par leur adresse : lecteur ou éditeur, droits vérifiés par le
+ * serveur à chaque requête), état de synchronisation du modèle (révision,
+ * écritures), journal des révisions relu depuis les dates portées par les
+ * données, et fil de commentaires du projet (par étape ou général). Rien
+ * n'est simulé : ce qui n'existe pas (verrou d'édition, résolution assistée
+ * des conflits) est annoncé tel quel.
  */
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-import { api, ApiError, type ProjectComment } from "../../lib/api";
+import { Link, useNavigate } from "react-router-dom";
+import { api, ApiError, ROLE_LABEL, type MemberRole, type ProjectComment } from "../../lib/api";
 import { MUTATION_KEYS, type CommentVars } from "../../lib/mutations";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -116,6 +118,165 @@ export function StepComments({ projectId, stepNumber }: { projectId: string; ste
   );
 }
 
+const ROLE_HELP: Record<MemberRole, string> = {
+  lecteur: "lit tout le dossier et commente",
+  editeur: "lit, commente et modifie (saisies, arbitrages, programme, Atelier, sources)",
+};
+
+const errorText = (err: unknown, fallback: string) => (err instanceof ApiError && err.serverMessage ? err.serverMessage : fallback);
+
+/** Partage du projet : membres et rôles. Le propriétaire invite, change, retire ; un membre peut quitter le projet. */
+export function MembersPanel({ projectId }: { projectId: string }) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const query = useQuery({ queryKey: ["members", projectId], queryFn: () => api.listMembers(projectId) });
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<MemberRole>("lecteur");
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ["members", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["collaboration", projectId] });
+  };
+  const invite = useMutation({
+    mutationFn: () => api.inviteMember(projectId, email.trim(), role),
+    onSuccess: (m) => {
+      setEmail("");
+      setError(null);
+      setNotice(`${m.email} a maintenant accès au projet comme ${ROLE_LABEL[m.role]}.`);
+      refresh();
+    },
+    onError: (err) => setError(errorText(err, "L’invitation n’a pas pu être enregistrée.")),
+  });
+  const change = useMutation({
+    mutationFn: ({ userId, next }: { userId: string; next: MemberRole }) => api.setMemberRole(projectId, userId, next),
+    onSuccess: (m) => {
+      setError(null);
+      setNotice(`${m.email} est maintenant ${ROLE_LABEL[m.role]}.`);
+      refresh();
+    },
+    onError: (err) => setError(errorText(err, "Le rôle n’a pas pu être modifié.")),
+  });
+  const remove = useMutation({
+    mutationFn: (userId: string) => api.removeMember(projectId, userId),
+    onSuccess: (_v, userId) => {
+      setError(null);
+      if (userId === query.data?.you.userId) {
+        // Vous avez quitté le projet : il n'est plus accessible.
+        void queryClient.invalidateQueries({ queryKey: ["projects"] });
+        void navigate("/projets", { state: { notice: "Vous avez quitté le projet partagé." } });
+        return;
+      }
+      setNotice("Accès retiré.");
+      refresh();
+    },
+    onError: (err) => setError(errorText(err, "Le retrait n’a pas pu être enregistré.")),
+  });
+  if (query.isLoading) return <p role="status">Lecture des membres…</p>;
+  if (!query.data) return <p role="alert">Impossible de lire les membres du projet.</p>;
+  const v = query.data;
+  const isOwner = v.you.role === "proprietaire";
+  const busy = invite.isPending || change.isPending || remove.isPending;
+  return (
+    <div className="members-panel">
+      <table className="programme-table members-table">
+        <thead>
+          <tr>
+            <th>Compte</th>
+            <th>Rôle</th>
+            <th>Depuis</th>
+            <th>{isOwner ? "Action" : ""}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-member="owner">
+            <td>
+              <b className="collab-email">{v.owner.email}</b>
+              {v.owner.userId === v.you.userId ? " (vous)" : ""}
+            </td>
+            <td>propriétaire</td>
+            <td>—</td>
+            <td />
+          </tr>
+          {v.members.map((m) => (
+            <tr key={m.userId} data-member={m.email}>
+              <td>
+                <span className="collab-email">{m.email}</span>
+                {m.userId === v.you.userId ? " (vous)" : ""}
+                <small className="h7-muted"> · invité par {m.invitedBy}</small>
+              </td>
+              <td>
+                {isOwner ? (
+                  <select aria-label={`Rôle de ${m.email}`} value={m.role} disabled={busy} onChange={(e) => change.mutate({ userId: m.userId, next: e.target.value as MemberRole })}>
+                    <option value="lecteur">lecteur</option>
+                    <option value="editeur">éditeur</option>
+                  </select>
+                ) : (
+                  ROLE_LABEL[m.role]
+                )}
+              </td>
+              <td>{new Date(m.createdAt).toLocaleDateString("fr-FR")}</td>
+              <td>
+                {isOwner ? (
+                  <button type="button" className="button-secondary" disabled={busy} onClick={() => remove.mutate(m.userId)}>
+                    Retirer
+                  </button>
+                ) : m.userId === v.you.userId ? (
+                  <button type="button" className="button-secondary" disabled={busy} onClick={() => remove.mutate(m.userId)}>
+                    Quitter le projet
+                  </button>
+                ) : null}
+              </td>
+            </tr>
+          ))}
+          {v.members.length === 0 && (
+            <tr>
+              <td colSpan={4} className="h7-muted">
+                Aucun membre invité : ce projet n’est visible que par son propriétaire.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+      {isOwner && (
+        <form
+          className="members-invite"
+          onSubmit={(e: FormEvent) => {
+            e.preventDefault();
+            if (email.trim()) invite.mutate();
+          }}
+        >
+          <label>
+            Adresse du compte à inviter
+            <input type="email" value={email} required maxLength={254} placeholder="prenom.nom@exemple.fr" onChange={(e) => setEmail(e.target.value)} />
+          </label>
+          <label>
+            Rôle
+            <select value={role} onChange={(e) => setRole(e.target.value as MemberRole)}>
+              <option value="lecteur">lecteur — {ROLE_HELP.lecteur}</option>
+              <option value="editeur">éditeur — {ROLE_HELP.editeur}</option>
+            </select>
+          </label>
+          <button type="submit" className="button-primary" disabled={busy || !email.trim()}>
+            Inviter
+          </button>
+          <p className="h7-muted">La personne doit déjà avoir un compte Fadi avec cette adresse ; aucun courriel n’est envoyé.</p>
+        </form>
+      )}
+      {notice && (
+        <p className="h7-muted members-notice" role="status">
+          {notice}
+        </p>
+      )}
+      {error && (
+        <p className="h7-error" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function CollaborationModule({ projectId }: { projectId: string }) {
   const query = useQuery({ queryKey: ["collaboration", projectId], queryFn: () => api.getCollaboration(projectId) });
   const [filter, setFilter] = useState("tous");
@@ -135,9 +296,18 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
             <small>{v.access.you === v.access.ownerEmail ? "c'est vous" : `vous : ${v.access.you}`}</small>
           </div>
           <div className="biz-kpi">
+            <span>Votre rôle</span>
+            <b className="collab-role" data-role={v.access.role}>
+              {ROLE_LABEL[v.access.role]}
+            </b>
+            <small>{v.access.role === "proprietaire" ? "partage, édition, suppression" : v.access.role === "editeur" ? "lecture, commentaires, édition" : "lecture et commentaires"}</small>
+          </div>
+          <div className="biz-kpi">
             <span>Partage</span>
-            <b>{v.access.sharing.available ? "Disponible" : "Non disponible"}</b>
-            <small>lecture, commentaires, édition</small>
+            <b>{v.access.members.length} membre(s)</b>
+            <small>
+              {v.access.members.filter((m) => m.role === "editeur").length} éditeur(s) · {v.access.members.filter((m) => m.role === "lecteur").length} lecteur(s)
+            </small>
           </div>
           <div className="biz-kpi">
             <span>Modèle</span>
@@ -154,6 +324,11 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
         </div>
         <p className="programme-note">{v.access.sharing.reason}</p>
         <p className="programme-note">{v.sync.offline.reason}</p>
+      </section>
+
+      <section className="biz-card" aria-labelledby="collab-members">
+        <h2 id="collab-members">Membres du projet</h2>
+        <MembersPanel projectId={projectId} />
       </section>
 
       <section className="biz-card" aria-labelledby="collab-comments">

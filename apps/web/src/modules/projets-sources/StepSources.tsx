@@ -8,6 +8,7 @@
  */
 import { useRef, useState, type DragEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useProjectAccess } from "../../lib/access";
 import { api, ApiError, type StepFile } from "../../lib/api";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -58,6 +59,7 @@ export function StepSources({ projectId, stepNumber }: { projectId: string; step
   }
 
   const rows = files.data ?? [];
+  const access = useProjectAccess(projectId);
   return (
     <details className="fold-card step-sources" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
       <summary>Sources de l’étape</summary>
@@ -65,9 +67,13 @@ export function StepSources({ projectId, stepNumber }: { projectId: string; step
         <section className="sources-card" aria-label="Sources de l’étape">
           <div className="sources-head">
             <div className="source-meta">Fichiers rattachés à l’étape {pad2(stepNumber)} de ce projet.</div>
-            <button type="button" className="button-primary" disabled={upload.isPending} onClick={() => input.current?.click()}>
-              + Importer des fichiers
-            </button>
+            {access.canWrite ? (
+              <button type="button" className="button-primary" disabled={upload.isPending} onClick={() => input.current?.click()}>
+                + Importer des fichiers
+              </button>
+            ) : (
+              <span className="source-meta">Lecture seule : téléchargement possible, import et suppression réservés au propriétaire et aux éditeurs.</span>
+            )}
           </div>
           <input
             ref={input}
@@ -79,19 +85,21 @@ export function StepSources({ projectId, stepNumber }: { projectId: string; step
               e.target.value = "";
             }}
           />
-          <div
-            className={`sources-drop${drag ? " drag" : ""}`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDrag(true);
-            }}
-            onDragLeave={() => setDrag(false)}
-            onDrop={onDrop}
-          >
-            Déposez des fichiers ici ou utilisez « Importer des fichiers »
-            <br />
-            <small>PDF, DOCX, XLSX, images, KML/KMZ, JSON et autres pièces du dossier.</small>
-          </div>
+          {access.canWrite && (
+            <div
+              className={`sources-drop${drag ? " drag" : ""}`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDrag(true);
+              }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={onDrop}
+            >
+              Déposez des fichiers ici ou utilisez « Importer des fichiers »
+              <br />
+              <small>PDF, DOCX, XLSX, images, KML/KMZ, JSON et autres pièces du dossier.</small>
+            </div>
+          )}
           {error && (
             <p className="h7-error" role="alert">
               {error}
@@ -117,16 +125,18 @@ export function StepSources({ projectId, stepNumber }: { projectId: string; step
                     <a className="button-secondary" href={api.stepFileUrl(projectId, stepNumber, r.id)} download={r.name}>
                       Télécharger
                     </a>
-                    <button
-                      type="button"
-                      className="button-secondary danger"
-                      disabled={remove.isPending}
-                      onClick={() => {
-                        if (confirm("Supprimer ce fichier de l’étape ?")) remove.mutate(r);
-                      }}
-                    >
-                      Supprimer
-                    </button>
+                    {access.canWrite && (
+                      <button
+                        type="button"
+                        className="button-secondary danger"
+                        disabled={remove.isPending}
+                        onClick={() => {
+                          if (confirm("Supprimer ce fichier de l’étape ?")) remove.mutate(r);
+                        }}
+                      >
+                        Supprimer
+                      </button>
+                    )}
                   </div>
                 </div>
               ))

@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ParcelTransmission } from "../../lib/api";
+import { useProjectAccess } from "../../lib/access";
 
 interface ParcelFrameWindow extends Window {
   ParcoursParcel?: {
@@ -39,6 +40,7 @@ export function ParcelleTool({ projectId }: { projectId: string }) {
   const [frameError, setFrameError] = useState<string | null>(null);
   const [transmitting, setTransmitting] = useState(false);
   const parcelsQuery = useQuery({ queryKey: ["parcels", projectId], queryFn: () => api.listParcels(projectId) });
+  const access = useProjectAccess(projectId);
 
   // Prêt / erreur signalés par l'outil (postMessage, même origine).
   useEffect(() => {
@@ -142,6 +144,7 @@ export function ParcelleTool({ projectId }: { projectId: string }) {
           {frameError}
         </p>
       )}
+      {!access.canWrite && <p className="h7-muted access-readonly-hint">Lecture seule : la parcelle se consulte et s’exporte ; son enregistrement est réservé au propriétaire et aux éditeurs (le serveur refuse toute écriture).</p>}
       <div className="module">
         <div className="module-head">
           <b>Parcelle-1 · Import KML/KMZ + MapTiler</b>

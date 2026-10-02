@@ -14,20 +14,20 @@
  *
  *   POST   /:id/transmit → { transmission, nativeId }
  */
-import { Router, type Request } from "express";
+import { Router } from "express";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { parcels, projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { loadOwnedProject } from "../lib/owned-project.js";
+import { projectOr404 } from "../lib/owned-project.js";
 import { acceptParcel, hashOf, measure, summarize, type NativeParcelDomain, type ParcelSnapshot, type ParcelTransmission, SUPPORTED_CRS } from "../lib/parcel-transmission.js";
 import { ensureNativeProject, projectKey, readStoreEntry, writeStoreEntry } from "../lib/atelier-store.js";
+import { lockProject } from "../lib/step-rows.js";
 
 export const parcelsRouter = Router({ mergeParams: true });
 parcelsRouter.use(requireAuth);
 
-const projectIdOf = (req: Request) => (req.params as Record<string, string>)["projectId"] ?? "";
 const ID_PATTERN = /^[a-zA-Z0-9_-]{1,120}$/;
 
 const coordinate = z.union([z.string().max(24), z.number().finite().refine((n) => Math.abs(n) <= 2e7)]);
@@ -71,21 +71,15 @@ async function listRows(projectId: string): Promise<ParcelRow[]> {
 }
 
 parcelsRouter.get("/", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
   const rows = await listRows(project.id);
   res.json({ files: rows.map(metadata), initialized: project.parcelsInitialized || rows.length > 0, transmission: project.parcelTransmission });
 });
 
 parcelsRouter.get("/:parcelId", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
   const id = req.params["parcelId"] as string;
   const row = (await db.select().from(parcels).where(and(eq(parcels.projectId, project.id), eq(parcels.id, id))).limit(1))[0];
   if (!row) {
@@ -96,11 +90,8 @@ parcelsRouter.get("/:parcelId", async (req, res) => {
 });
 
 parcelsRouter.put("/:parcelId", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const id = req.params["parcelId"] as string;
   if (!ID_PATTERN.test(id)) {
     res.status(400).json({ error: "Identifiant invalide." });
@@ -112,6 +103,7 @@ parcelsRouter.put("/:parcelId", async (req, res) => {
     return;
   }
   const result = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
     const old = (await tx.select().from(parcels).where(and(eq(parcels.projectId, project.id), eq(parcels.id, id))).limit(1))[0];
     if ((old?.revision ?? 0) !== parsed.data.revision) {
       return { conflict: true as const };
@@ -141,11 +133,8 @@ parcelsRouter.put("/:parcelId", async (req, res) => {
 });
 
 parcelsRouter.delete("/:parcelId", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const id = req.params["parcelId"] as string;
   const parsed = deleteSchema.safeParse(req.body ?? {});
   if (!parsed.success) {
@@ -153,6 +142,7 @@ parcelsRouter.delete("/:parcelId", async (req, res) => {
     return;
   }
   const result = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
     const old = (await tx.select().from(parcels).where(and(eq(parcels.projectId, project.id), eq(parcels.id, id))).limit(1))[0];
     if (!old) return { status: 404 as const };
     if (old.revision !== parsed.data.revision) return { status: 409 as const };
@@ -185,11 +175,8 @@ const transmitSchema = z.object({ data: snapshotSchema.optional() });
  * provoque aucune écriture (rechargement de la page, clics sans saisie).
  */
 parcelsRouter.post("/:parcelId/transmit", async (req, res) => {
-  const project = await loadOwnedProject(projectIdOf(req), req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const id = req.params["parcelId"] as string;
   if (!ID_PATTERN.test(id)) {
     res.status(400).json({ error: "Identifiant invalide." });
@@ -201,6 +188,7 @@ parcelsRouter.post("/:parcelId/transmit", async (req, res) => {
     return;
   }
   const outcome = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
     let snapshot = parsed.data.data as ParcelSnapshot | undefined;
     if (!snapshot) {
       const row = (await tx.select().from(parcels).where(and(eq(parcels.projectId, project.id), eq(parcels.id, id))).limit(1))[0];

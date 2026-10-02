@@ -16,7 +16,7 @@ const app = createApp();
 async function resetDb() {
   // L'ordre respecte les clés étrangères (CASCADE serait aussi suffisant,
   // mais l'ordre explicite documente les dépendances).
-  await pool.query("TRUNCATE architectural_objects, atelier_store, levels, parcels, produced_documents, project_comments, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE");
+  await pool.query("TRUNCATE architectural_objects, atelier_store, levels, parcels, produced_documents, project_comments, project_members, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE");
 }
 
 beforeAll(async () => {
@@ -1502,7 +1502,7 @@ describe("Collaboration — accès, synchronisation, journal des révisions, com
     await client.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "adapted", notes: "Adaptation pour le journal des révisions", owner: "Chef de projet" });
     await client.get(`/projects/${pid}/steps/2/harmonie/rapport`);
     const v = (await client.get(`/projects/${pid}/collaboration`)).body;
-    expect(v.access).toMatchObject({ ownerEmail: "collab@example.com", you: "collab@example.com", sharing: { available: false } });
+    expect(v.access).toMatchObject({ ownerEmail: "collab@example.com", you: "collab@example.com", role: "proprietaire", members: [], sharing: { available: true } });
     expect(v.sync).toMatchObject({ modelRevision: 1, offline: { available: true } });
     expect(v.sync.nativeKeys).toBeGreaterThan(3);
     expect(typeof v.sync.lastModelWrite).toBe("string");
@@ -1564,5 +1564,113 @@ describe("Contrôle de concurrence des saisies et des arbitrages (rejeu hors-lig
     expect(replay.body).toMatchObject({ error: "conflict", currentVersion: 1 });
     expect((await client.get(`/projects/${pid}/steps/2`)).body.retainedCount).toBe(1); // A reste retenue
     expect((await client.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send({ status: "dismissed", notes: "Motif suffisant ici", expectedVersion: 1 })).status).toBe(200);
+  });
+
+  it("serialises simultaneous writes on the same step: two fields sent at once are both kept (no lost update)", async () => {
+    const client = await registerAndLogin("concurrency-2@example.com");
+    const pid = (await client.post("/projects").send({ code: "P.981", name: "Écritures simultanées" })).body.id as string;
+    for (let round = 0; round < 5; round++) {
+      const [a, b, c] = await Promise.all([
+        client.patch(`/projects/${pid}/steps/14`).send({ fields: { f1: 3200000 + round } }),
+        client.patch(`/projects/${pid}/steps/14`).send({ fields: { f9: 10000000 + round } }),
+        client.post(`/projects/${pid}/steps/14/harmonie/H13-A`).send({ status: "retained" }),
+      ]);
+      expect([a.status, b.status, c.status]).toEqual([200, 200, 200]);
+      const step = (await client.get(`/projects/${pid}/steps/14`)).body;
+      expect(step.content.fields).toMatchObject({ f1: 3200000 + round, f9: 10000000 + round });
+      expect(step.retainedCount).toBe(1);
+    }
+  });
+});
+
+describe("Partage du projet — membres, rôles vérifiés côté serveur", () => {
+  it("lets the owner invite existing accounts, lists shared projects with their role, and limits a lecteur to reading and commenting", async () => {
+    const owner = await registerAndLogin("share-owner@example.com");
+    const reader = await registerAndLogin("share-reader@example.com");
+    const editor = await registerAndLogin("share-editor@example.com");
+    const stranger = await registerAndLogin("share-stranger@example.com");
+    const pid = (await owner.post("/examples/p118-exemple-complet/import")).body.id as string;
+
+    // Invitation : compte inexistant, propriétaire lui-même, adresse normalisée, rôle inconnu.
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "nobody@example.com", role: "lecteur" })).status).toBe(404);
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "share-owner@example.com", role: "lecteur" })).body).toMatchObject({ error: "sharing_rule" });
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "share-reader@example.com", role: "chef" })).status).toBe(400);
+    const invited = await owner.post(`/projects/${pid}/members`).send({ email: "  Share-Reader@Example.com ", role: "lecteur" });
+    expect(invited.status).toBe(201);
+    expect(invited.body).toMatchObject({ email: "share-reader@example.com", role: "lecteur", invitedBy: "share-owner@example.com" });
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "share-editor@example.com", role: "editeur" })).status).toBe(201);
+    // Seul le propriétaire partage ; un étranger ne voit même pas le projet.
+    expect((await reader.post(`/projects/${pid}/members`).send({ email: "share-stranger@example.com", role: "lecteur" })).status).toBe(403);
+    expect((await editor.post(`/projects/${pid}/members`).send({ email: "share-stranger@example.com", role: "lecteur" })).status).toBe(403);
+    expect((await stranger.get(`/projects/${pid}/members`)).status).toBe(404);
+    expect((await stranger.get(`/projects/${pid}/steps`)).status).toBe(404);
+
+    // Liste des projets : le projet partagé apparaît avec le rôle et le propriétaire ; le détail porte le rôle.
+    const readerList = (await reader.get("/projects")).body as { id: string; role: string; ownerEmail: string }[];
+    expect(readerList).toHaveLength(1);
+    expect(readerList[0]).toMatchObject({ id: pid, role: "lecteur", ownerEmail: "share-owner@example.com" });
+    expect((await owner.get("/projects")).body[0]).toMatchObject({ id: pid, role: "proprietaire", ownerEmail: "share-owner@example.com" });
+    expect((await reader.get(`/projects/${pid}`)).body).toMatchObject({ role: "lecteur", ownerEmail: "share-owner@example.com" });
+    expect((await editor.get(`/projects/${pid}`)).body.role).toBe("editeur");
+    const members = (await reader.get(`/projects/${pid}/members`)).body;
+    expect(members).toMatchObject({ owner: { email: "share-owner@example.com" }, you: { role: "lecteur" } });
+    expect(members.members.map((m: { email: string; role: string }) => [m.email, m.role])).toEqual([
+      ["share-reader@example.com", "lecteur"],
+      ["share-editor@example.com", "editeur"],
+    ]);
+
+    // Lecteur : lit tout (étapes, programme, Atelier, analyses, documents, pièces), commente, mais ne modifie rien — 403 avec le motif, jamais 404.
+    expect((await reader.get(`/projects/${pid}/steps/7`)).status).toBe(200);
+    expect((await reader.get(`/projects/${pid}/programme`)).status).toBe(200);
+    expect((await reader.get(`/projects/${pid}/atelier/store`)).status).toBe(200);
+    expect((await reader.get(`/projects/${pid}/analyses`)).status).toBe(200);
+    expect((await reader.get(`/projects/${pid}/documents`)).status).toBe(200);
+    expect((await reader.get(`/projects/${pid}/steps/2/files`)).status).toBe(200);
+    const refused = await reader.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Zone UA" } });
+    expect(refused.status).toBe(403);
+    expect(refused.body).toMatchObject({ error: "forbidden", role: "lecteur", message: "Ce projet vous est partagé en lecture : les modifications sont réservées à son propriétaire et à ses éditeurs." });
+    expect((await reader.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "retained" })).status).toBe(403);
+    expect((await reader.put(`/projects/${pid}/atelier/store/design.v13.test`).send({ value: "x" })).status).toBe(403);
+    expect((await reader.post(`/projects/${pid}/steps/2/files`).set("X-File-Name", "note.txt").set("Content-Type", "text/plain").send("abc")).status).toBe(403);
+    expect((await reader.delete(`/projects/${pid}`)).status).toBe(403);
+    // Copier = exporter puis importer : un lecteur obtient sa propre copie modifiable, l'original reste intact.
+    const fork = await reader.post(`/projects/${pid}/copies`).send({ name: "Ma variante" });
+    expect(fork.status).toBe(201);
+    expect((await reader.get(`/projects/${fork.body.id}`)).body).toMatchObject({ role: "proprietaire", name: "Ma variante", sourceExampleId: "p118-exemple-complet" });
+    expect((await reader.get("/projects")).body.map((p: { role: string }) => p.role).sort()).toEqual(["lecteur", "proprietaire"]);
+    expect((await owner.get(`/projects/${fork.body.id}`)).status).toBe(404);
+    const comment = await reader.post(`/projects/${pid}/collaboration/comments`).send({ body: "Lecture faite : la hauteur de la mezzanine est à confirmer.", stepNumber: 8 });
+    expect(comment.status).toBe(201);
+    expect((await owner.delete(`/projects/${pid}/collaboration/comments/${comment.body.id}`)).status).toBe(403); // l'auteur seul
+    expect((await reader.delete(`/projects/${pid}/collaboration/comments/${comment.body.id}`)).status).toBe(204);
+
+    // Éditeur : modifie (saisie, arbitrage, programme) sur le même projet ; le propriétaire voit l'écriture, le journal la date ; pas de suppression ni de partage.
+    const edited = await editor.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Zone UA (éditeur)" } });
+    expect(edited.status).toBe(200);
+    expect((await owner.get(`/projects/${pid}/steps/2`)).body.content.fields.f1).toBe("Zone UA (éditeur)");
+    expect((await editor.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "retained", expectedVersion: 0 })).status).toBe(200);
+    expect((await editor.delete(`/projects/${pid}`)).status).toBe(403);
+    expect((await editor.patch(`/projects/${pid}/members/${invited.body.userId}`).send({ role: "editeur" })).status).toBe(403);
+    // Concurrence entre membres : la lecture du propriétaire est périmée par l'écriture de l'éditeur → 409, rien d'écrasé.
+    const stale = await owner.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Zone UB" }, baseline: { f1: null } });
+    expect(stale.status).toBe(409);
+    expect((await editor.get(`/projects/${pid}/steps/2`)).body.content.fields.f1).toBe("Zone UA (éditeur)");
+
+    // Changement de rôle, départ volontaire, retrait par le propriétaire ; l'accès cesse aussitôt.
+    expect((await owner.patch(`/projects/${pid}/members/${invited.body.userId}`).send({ role: "editeur" })).body.role).toBe("editeur");
+    expect((await reader.patch(`/projects/${pid}/steps/2`).send({ fields: { f2: "Devenu éditeur" } })).status).toBe(200);
+    const editorId = members.members[1].userId as string;
+    expect((await reader.delete(`/projects/${pid}/members/${editorId}`)).status).toBe(403); // retirer un autre membre : propriétaire seulement
+    expect((await editor.delete(`/projects/${pid}/members/${editorId}`)).status).toBe(204); // se retirer soi-même
+    expect((await editor.get(`/projects/${pid}`)).status).toBe(404);
+    expect((await owner.delete(`/projects/${pid}/members/${invited.body.userId}`)).status).toBe(204);
+    expect((await reader.get(`/projects/${pid}`)).status).toBe(404);
+    expect((await reader.get("/projects")).body.map((p: { id: string }) => p.id)).toEqual([fork.body.id]);
+    expect((await owner.get(`/projects/${pid}/members`)).body.members).toEqual([]);
+    expect((await owner.delete(`/projects/${pid}/members/${invited.body.userId}`)).status).toBe(404);
+    // Le journal garde les écritures de l'éditeur retiré.
+    const journal = (await owner.get(`/projects/${pid}/collaboration`)).body;
+    expect(journal.access).toMatchObject({ role: "proprietaire", members: [] });
+    expect(journal.journal.find((e: { label: string }) => e.label === "Étape 02 · proposition H01-B retenue")).toBeDefined();
   });
 });

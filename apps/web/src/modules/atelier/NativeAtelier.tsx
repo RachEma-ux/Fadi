@@ -18,6 +18,7 @@ const STATUS_LABEL: Record<SyncState["status"], string> = {
   conflict: "Conflit détecté",
   error: "Échec de la synchronisation",
   offline: "Hors-ligne · enregistré localement",
+  readonly: "Lecture seule",
 };
 
 type LoadedStore = AtelierStore & { source: "serveur" | "cache"; fetchedAt: string };
@@ -36,7 +37,7 @@ async function loadStore(projectId: string): Promise<LoadedStore> {
   }
 }
 
-export function NativeAtelier({ projectId, stage = null }: { projectId: string; stage?: number | null }) {
+export function NativeAtelier({ projectId, stage = null, readOnly = false }: { projectId: string; stage?: number | null; readOnly?: boolean }) {
   const queryClient = useQueryClient();
   // `networkMode: "always"` : sans réseau, la requête s'exécute quand même pour tomber sur le cache local.
   const storeQuery = useQuery({ queryKey: ["atelier-store", projectId], queryFn: () => loadStore(projectId), staleTime: Infinity, networkMode: "always" });
@@ -62,7 +63,7 @@ export function NativeAtelier({ projectId, stage = null }: { projectId: string; 
     const store = storeQuery.data;
     if (!el || !store) return;
     let cancelled = false;
-    mountEngine(el, { projectId, stage, store }).catch((err: unknown) => {
+    mountEngine(el, { projectId, stage, store, readOnly }).catch((err: unknown) => {
       if (!cancelled) setMountError(err instanceof Error ? err.message : String(err));
     });
     return () => {
@@ -74,7 +75,7 @@ export function NativeAtelier({ projectId, stage = null }: { projectId: string; 
         void queryClient.invalidateQueries({ queryKey: ["levels", projectId] });
       });
     };
-  }, [projectId, stage, storeQuery.data, queryClient]);
+  }, [projectId, stage, storeQuery.data, queryClient, readOnly]);
 
   if (storeQuery.isLoading) return <p role="status">Chargement du modèle…</p>;
   if (!storeQuery.data) return <p role="alert">Impossible de charger le modèle de l’Atelier.</p>;

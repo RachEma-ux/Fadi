@@ -14,13 +14,13 @@
  * que soit son type, pour qu'une pièce HTML ou SVG déposée ne s'exécute
  * jamais dans l'origine de Fadi.
  */
-import { Router, raw, type Request } from "express";
+import { Router, raw, type Request, type Response } from "express";
 import { and, asc, eq } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "../db/client.js";
 import { projects, stepFiles } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { loadOwnedProject } from "../lib/owned-project.js";
+import { projectOr404, type ProjectNeed } from "../lib/owned-project.js";
 import { parcoursStepDefinition } from "../data/parcours.js";
 
 export const stepFilesRouter = Router({ mergeParams: true });
@@ -32,10 +32,15 @@ const FILE_ID = /^[a-f0-9-]{36}$/;
 
 const params = (req: Request) => req.params as Record<string, string>;
 
-async function ownedStep(req: Request): Promise<{ projectId: string; stepNumber: number } | null> {
-  const project = await loadOwnedProject(params(req)["projectId"] ?? "", req.user!.id);
+/** Le projet (404 sans accès, 403 si le rôle ne suffit pas — déjà répondu) et l'étape ; `null` quand la réponse est partie ou l'étape inconnue. */
+async function ownedStep(req: Request, res: Response, need: ProjectNeed): Promise<{ projectId: string; stepNumber: number } | null> {
+  const project = await projectOr404(req, res, need);
+  if (!project) return null;
   const stepNumber = Number(params(req)["stepNumber"]);
-  if (!project || !Number.isInteger(stepNumber) || !parcoursStepDefinition(stepNumber)) return null;
+  if (!Number.isInteger(stepNumber) || !parcoursStepDefinition(stepNumber)) {
+    res.status(404).json({ error: "not_found" });
+    return null;
+  }
   return { projectId: project.id, stepNumber };
 }
 
@@ -58,11 +63,8 @@ function fileNameOf(req: Request): string | null {
 }
 
 stepFilesRouter.get("/", async (req, res) => {
-  const scope = await ownedStep(req);
-  if (!scope) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const scope = await ownedStep(req, res, "read");
+  if (!scope) return;
   const rows = await db
     .select({ id: stepFiles.id, name: stepFiles.name, type: stepFiles.type, size: stepFiles.size, addedAt: stepFiles.addedAt })
     .from(stepFiles)
@@ -72,11 +74,8 @@ stepFilesRouter.get("/", async (req, res) => {
 });
 
 stepFilesRouter.post("/", raw({ type: () => true, limit: STEP_FILE_LIMIT }), async (req, res) => {
-  const scope = await ownedStep(req);
-  if (!scope) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const scope = await ownedStep(req, res, "write");
+  if (!scope) return;
   const name = fileNameOf(req);
   if (!name) {
     res.status(400).json({ error: "invalid_input", details: { name: "Nom de fichier requis (en-tête X-File-Name)" } });
@@ -97,9 +96,10 @@ stepFilesRouter.post("/", raw({ type: () => true, limit: STEP_FILE_LIMIT }), asy
 });
 
 stepFilesRouter.get("/:fileId", async (req, res) => {
-  const scope = await ownedStep(req);
+  const scope = await ownedStep(req, res, "read");
+  if (!scope) return;
   const id = params(req)["fileId"] ?? "";
-  if (!scope || !FILE_ID.test(id)) {
+  if (!FILE_ID.test(id)) {
     res.status(404).json({ error: "not_found" });
     return;
   }
@@ -118,9 +118,10 @@ stepFilesRouter.get("/:fileId", async (req, res) => {
 });
 
 stepFilesRouter.delete("/:fileId", async (req, res) => {
-  const scope = await ownedStep(req);
+  const scope = await ownedStep(req, res, "write");
+  if (!scope) return;
   const id = params(req)["fileId"] ?? "";
-  if (!scope || !FILE_ID.test(id)) {
+  if (!FILE_ID.test(id)) {
     res.status(404).json({ error: "not_found" });
     return;
   }
@@ -143,11 +144,8 @@ stepFilesRouter.delete("/:fileId", async (req, res) => {
 export const projectFilesRouter = Router({ mergeParams: true });
 projectFilesRouter.use(requireAuth);
 projectFilesRouter.get("/", async (req, res) => {
-  const project = await loadOwnedProject(params(req)["projectId"] ?? "", req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
   const rows = await db
     .select({ id: stepFiles.id, stepNumber: stepFiles.stepNumber, name: stepFiles.name, type: stepFiles.type, size: stepFiles.size, addedAt: stepFiles.addedAt })
     .from(stepFiles)

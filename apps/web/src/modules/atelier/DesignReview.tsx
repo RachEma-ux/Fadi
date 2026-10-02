@@ -13,6 +13,7 @@
  */
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { WriteFieldset } from "../../components/WriteFieldset";
 import { useSearchParams } from "react-router-dom";
 import { ApiError, api, type CompassInput, type DesignReviewView } from "../../lib/api";
 import { HarmonieToast } from "../parcours/HarmoniePanel";
@@ -80,6 +81,7 @@ function CompassTools({ projectId, view, onSaved }: { projectId: string; view: D
       <p className="h7-callout">
         La rotation de la caméra ne change pas la référence spatiale. Les valeurs héritées restent des hypothèses tant que leurs sources ne sont pas confirmées. Aucun déplacement automatique de local.
       </p>
+      <WriteFieldset projectId={projectId}>
       <div className="h7-form">
         {fields.map(([k, label, type, attrs]) => (
           <label key={k}>
@@ -106,6 +108,7 @@ function CompassTools({ projectId, view, onSaved }: { projectId: string; view: D
           Enregistrer les références
         </button>
       </div>
+      </WriteFieldset>
       {error && (
         <p className="h7-error" role="alert">
           {error}

@@ -9,6 +9,7 @@
  */
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { WriteFieldset } from "../../components/WriteFieldset";
 import { api, ApiError, type SurfaceTransferView } from "../../lib/api";
 import { appliedCase } from "./ProgrammeCase";
 
@@ -65,6 +66,7 @@ export function ProgrammeTransferFold({ projectId, onApplied }: { projectId: str
       <summary>Proposer un transfert surfacique à total constant</summary>
       <div className="h7-fold-body">
         <p>Le transfert concerne uniquement le programme ; il ne change pas le terrain, l’emprise, les pièces dessinées ni la capacité déclarée.</p>
+        <WriteFieldset projectId={projectId}>
         <div className="h7-form">
           <label>
             Fiche donneuse
@@ -99,6 +101,7 @@ export function ProgrammeTransferFold({ projectId, onApplied }: { projectId: str
         <button type="button" className="button-primary" disabled={busy} onClick={() => preview.mutate({ from: fromId, to, amount, reason })}>
           Comparer avant / après
         </button>
+        </WriteFieldset>
         {error && (
           <p className="h7-error" role="alert">
             {error}

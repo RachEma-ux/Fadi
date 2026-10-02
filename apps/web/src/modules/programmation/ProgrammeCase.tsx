@@ -10,6 +10,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { WriteFieldset } from "../../components/WriteFieldset";
 import { fmtLib, type BuildingScenario, type LibrarySpace } from "@parcours/domain-model";
 import { api, ApiError, type ProgrammeCaseView, type ProgrammeView as ProgrammeViewData } from "../../lib/api";
 import { ProgrammeView } from "../bibliotheque/BuildingLibraryPage";
@@ -146,7 +147,9 @@ export function ProgrammeCaseEditor({ projectId, view }: { projectId: string; vi
           </p>
         )}
       </section>
-      <ProgrammeView c={c} s={s} surfaceConvention={libraryCase.data!.surfaceConvention} onEdit={(spaceId, key, value) => edit.mutate({ spaceId, key, value })} />
+      <WriteFieldset projectId={projectId}>
+        <ProgrammeView c={c} s={s} surfaceConvention={libraryCase.data!.surfaceConvention} onEdit={(spaceId, key, value) => edit.mutate({ spaceId, key, value })} />
+      </WriteFieldset>
       {a.decisionReview?.required && (
         <section className="bl-card">
           <h2>Décision à réexaminer</h2>

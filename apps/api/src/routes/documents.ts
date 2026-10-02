@@ -15,16 +15,10 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { BUILDING_LIBRARY } from "../data/parcours.js";
 import { loadDesignContext } from "../lib/design-context.js";
 import { documentCatalogue, documentDescriptors, recordProducedDocument } from "../lib/documents.js";
-import { loadOwnedProject, type OwnedProject } from "../lib/owned-project.js";
+import { projectOr404 } from "../lib/owned-project.js";
 
 export const documentsRouter = Router({ mergeParams: true });
 documentsRouter.use(requireAuth);
-
-async function ownedProjectOr404(req: Request, res: Response): Promise<OwnedProject | null> {
-  const project = await loadOwnedProject((req.params as Record<string, string>)["projectId"] ?? "", req.user!.id);
-  if (!project) res.status(404).json({ error: "not_found" });
-  return project;
-}
 
 function attachment(res: Response, fileName: string, type: string, body: string) {
   res.setHeader("Content-Type", type);
@@ -34,7 +28,7 @@ function attachment(res: Response, fileName: string, type: string, body: string)
 }
 
 documentsRouter.get("/", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "read");
   if (!project) return;
   const now = new Date().toISOString();
   const dctx = await loadDesignContext(db, project, now);
@@ -43,7 +37,7 @@ documentsRouter.get("/", async (req, res) => {
 
 /** Produit un document du catalogue : le corps par `render`, la trace de production avec la révision et l'empreinte courantes. */
 async function produce(req: Request, res: Response, kind: string, render: (dctx: Awaited<ReturnType<typeof loadDesignContext>>) => { body: string; type: string } | null) {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "read");
   if (!project) return;
   const now = new Date();
   const dctx = await loadDesignContext(db, project, now.toISOString());

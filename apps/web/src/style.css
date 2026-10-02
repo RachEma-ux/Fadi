@@ -2361,3 +2361,108 @@ button.h7-chip.h7-goto:hover {
   font-size: 12px;
   min-height: 0;
 }
+
+/* ---------------------------------------------------------------------- */
+/* Partage du projet : rôle, lecture seule, membres                        */
+/* ---------------------------------------------------------------------- */
+.project-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.project-role::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--done);
+}
+.project-role-editeur::before {
+  background: #c99a3a;
+}
+.project-role-lecteur::before {
+  background: #5b7fa6;
+}
+.access-banner {
+  margin: 0;
+  padding: 10px 28px;
+  background: #e9f0f8;
+  color: #2f4f73;
+  border-bottom: 1px solid #c9d8ea;
+  font-size: 13px;
+}
+.link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+fieldset.biz-grid,
+fieldset.access-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+fieldset.access-fieldset:disabled {
+  opacity: 0.92;
+}
+.access-readonly-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+.members-table td,
+.members-table th {
+  vertical-align: middle;
+}
+.members-table select {
+  font: inherit;
+  padding: 4px 6px;
+}
+.members-invite {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto;
+  gap: 12px 16px;
+  align-items: end;
+  margin-top: 14px;
+}
+.members-invite label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.members-invite input,
+.members-invite select {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.members-invite p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.members-notice {
+  margin: 10px 0 0;
+}
+.shared-projects {
+  margin-top: 24px;
+}
+.collab-role {
+  text-transform: capitalize;
+}
+@media (max-width: 720px) {
+  .members-invite {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,6 +1,6 @@
 /**
  * Module Collaboration — monté sous `/projects/:projectId/collaboration` :
- *   GET    /                   → accès (propriétaire, partage non disponible), état de synchronisation, journal des révisions, commentaires
+ *   GET    /                   → accès (propriétaire, votre rôle, membres), état de synchronisation, journal des révisions, commentaires
  *   GET    /comments[?step=N]  → commentaires du projet (ou d'une étape)
  *   POST   /comments           → { body, stepNumber? } : nouveau commentaire de l'utilisateur connecté
  *   DELETE /comments/:id       → suppression par son auteur seulement
@@ -9,29 +9,24 @@
  * les données elles-mêmes (arbitrages Harmonie et leurs historiques,
  * actualisations, variantes de programme, transferts, revues de conception,
  * écritures du modèle natif et des parcelles, productions de documents,
- * commentaires). Le partage multi-utilisateur, les droits et la
- * synchronisation hors-ligne ne sont pas disponibles : l'écran le dit.
+ * commentaires). Le partage (membres et rôles) est dans `members.ts` ; tout
+ * membre peut commenter, un lecteur ne peut rien modifier d'autre.
  */
-import { Router, type Request, type Response } from "express";
+import { Router } from "express";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { PARCOURS_STEPS } from "../data/parcours.js";
 import { db } from "../db/client.js";
-import { atelierStore, parcels, producedDocuments, programmeCases, projectComments, users } from "../db/schema.js";
+import { atelierStore, parcels, producedDocuments, programmeCases, projectComments } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
-import { loadOwnedProject, type OwnedProject } from "../lib/owned-project.js";
+import { projectOr404, type OwnedProject } from "../lib/owned-project.js";
 import { loadStepRows } from "../lib/step-rows.js";
+import { listMembers, ownerEmailOf } from "./members.js";
 import { contentOf } from "../lib/step-context.js";
 
 export const collaborationRouter = Router({ mergeParams: true });
 collaborationRouter.use(requireAuth);
-
-async function ownedProjectOr404(req: Request, res: Response): Promise<OwnedProject | null> {
-  const project = await loadOwnedProject((req.params as Record<string, string>)["projectId"] ?? "", req.user!.id);
-  if (!project) res.status(404).json({ error: "not_found" });
-  return project;
-}
 
 export interface RevisionEvent {
   at: string;
@@ -188,20 +183,23 @@ function commentView(c: typeof projectComments.$inferSelect, userId: string) {
 }
 
 collaborationRouter.get("/", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "read");
   if (!project) return;
-  const [owner] = await db.select({ email: users.email }).from(users).where(eq(users.id, project.ownerId)).limit(1);
   const store = await db.select({ key: atelierStore.key, revision: atelierStore.revision, updatedAt: atelierStore.updatedAt }).from(atelierStore).where(eq(atelierStore.projectId, project.id));
   const lastWrite = store.reduce<string | null>((acc, r) => (acc === null || r.updatedAt.toISOString() > acc ? r.updatedAt.toISOString() : acc), null);
   const comments = await db.select().from(projectComments).where(eq(projectComments.projectId, project.id)).orderBy(desc(projectComments.createdAt));
   res.json({
     access: {
-      ownerEmail: owner?.email ?? "",
+      ownerEmail: await ownerEmailOf(project.ownerId),
       you: req.user!.email,
-      /** Partage, droits et édition concurrente : non disponibles (Lot 4) ; l'écran le dit au lieu de le simuler. */
+      /** Votre rôle sur ce projet, vérifié par le serveur à chaque requête. */
+      role: project.role,
+      members: await listMembers(project.id),
+      /** Partage par le propriétaire (lecteur : lit et commente ; éditeur : modifie) ; un seul éditeur actif à la fois n'est pas imposé — les écritures concurrentes sont départagées par le contrôle de version (409). */
       sharing: {
-        available: false,
-        reason: "Le partage du projet (lecture, commentaires, édition) n'est pas encore disponible : un seul propriétaire par projet, chaque requête vérifie la propriété côté serveur.",
+        available: true,
+        reason:
+          "Le propriétaire invite des comptes existants par leur adresse : un lecteur lit tout et commente, un éditeur modifie aussi (saisies, arbitrages, programme, Atelier, sources). Les droits sont vérifiés par le serveur à chaque requête ; deux éditeurs travaillant en même temps sont départagés par le contrôle de version (409), sans verrou d'édition.",
       },
     },
     sync: {
@@ -221,7 +219,7 @@ collaborationRouter.get("/", async (req, res) => {
 });
 
 collaborationRouter.get("/comments", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "read");
   if (!project) return;
   const step = typeof req.query["step"] === "string" ? Number(req.query["step"]) : null;
   const where = step !== null && Number.isInteger(step) ? and(eq(projectComments.projectId, project.id), eq(projectComments.stepNumber, step)) : eq(projectComments.projectId, project.id);
@@ -232,7 +230,7 @@ collaborationRouter.get("/comments", async (req, res) => {
 const commentSchema = z.object({ body: z.string().trim().min(1, "Commentaire vide").max(4000), stepNumber: z.number().int().min(1).max(21).nullable().optional() });
 
 collaborationRouter.post("/comments", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "comment");
   if (!project) return;
   const parsed = commentSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -247,7 +245,7 @@ collaborationRouter.post("/comments", async (req, res) => {
 });
 
 collaborationRouter.delete("/comments/:commentId", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "comment");
   if (!project) return;
   const id = req.params["commentId"] as string;
   const [existing] = await db

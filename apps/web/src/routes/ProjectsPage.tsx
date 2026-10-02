@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ApiError, api } from "../lib/api";
+import { ApiError, api, ROLE_LABEL } from "../lib/api";
 import { ImportProjectButton } from "../modules/projets-sources/ImportProjectButton";
 
 /**
@@ -134,19 +134,42 @@ export function ProjectsPage() {
         {projectsQuery.data && filtered.length === 0 && (
           <p>{q ? "Aucun projet ne correspond à cette recherche." : "Aucun projet pour l'instant."}</p>
         )}
-        {filtered.length > 0 && (
+        {filtered.some((p) => !p.role || p.role === "proprietaire") && (
           <ul className="project-list">
-            {filtered.map((p) => (
-              <li key={p.id}>
-                <Link to={`/projets/${p.id}`}>
-                  <strong>{p.code}</strong> — {p.name}
-                </Link>
-                <small>Révision du modèle : {p.modelRevision}</small>
-              </li>
-            ))}
+            {filtered
+              .filter((p) => !p.role || p.role === "proprietaire")
+              .map((p) => (
+                <li key={p.id}>
+                  <Link to={`/projets/${p.id}`}>
+                    <strong>{p.code}</strong> — {p.name}
+                  </Link>
+                  <small>Révision du modèle : {p.modelRevision}</small>
+                </li>
+              ))}
           </ul>
         )}
       </section>
+
+      {/* Projets que d'autres comptes vous ont partagés : le rôle (lecteur / éditeur) est décidé par le serveur. */}
+      {filtered.some((p) => p.role && p.role !== "proprietaire") && (
+        <section aria-labelledby="shared-list-heading" className="shared-projects">
+          <h2 id="shared-list-heading">Projets partagés avec vous</h2>
+          <ul className="project-list">
+            {filtered
+              .filter((p) => p.role && p.role !== "proprietaire")
+              .map((p) => (
+                <li key={p.id} data-role={p.role}>
+                  <Link to={`/projets/${p.id}`}>
+                    <strong>{p.code}</strong> — {p.name}
+                  </Link>
+                  <small>
+                    {ROLE_LABEL[p.role ?? "lecteur"]} · partagé par {p.ownerEmail ?? "son propriétaire"} · révision du modèle : {p.modelRevision}
+                  </small>
+                </li>
+              ))}
+          </ul>
+        </section>
+      )}
     </main>
   );
 }

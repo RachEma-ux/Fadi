@@ -8,7 +8,7 @@
  * des entrées — un résultat porte toujours la révision dont il provient
  * (docs/architecture.md, « Coherent, reversible operations »).
  */
-import { Router, type Request, type Response } from "express";
+import { Router } from "express";
 import { asc, eq } from "drizzle-orm";
 import {
   BUSINESS_CHECKS_VERSION,
@@ -31,16 +31,10 @@ import { programmeCases } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { exampleStudyDossier, type StudyDossierFile } from "../data/parcours.js";
 import { loadDesignContext } from "../lib/design-context.js";
-import { loadOwnedProject, type OwnedProject } from "../lib/owned-project.js";
+import { projectOr404, type OwnedProject } from "../lib/owned-project.js";
 
 export const analysesRouter = Router({ mergeParams: true });
 analysesRouter.use(requireAuth);
-
-async function ownedProjectOr404(req: Request, res: Response): Promise<OwnedProject | null> {
-  const project = await loadOwnedProject((req.params as Record<string, string>)["projectId"] ?? "", req.user!.id);
-  if (!project) res.status(404).json({ error: "not_found" });
-  return project;
-}
 
 /** Le dossier d'étude déclaré : pièce jointe du projet (import), sinon celui de l'exemple d'origine ; jamais inventé. */
 function studyDossier(project: OwnedProject): { structure: DeclaredStructure | null; circulation: StudyDossierFile["circulation"]; webSources: StudyDossierFile["webSources"] } {
@@ -107,7 +101,7 @@ export async function analysesView(project: OwnedProject, now: string) {
 }
 
 analysesRouter.get("/", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "read");
   if (!project) return;
   res.json(await analysesView(project, new Date().toISOString()));
 });

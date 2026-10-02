@@ -252,3 +252,18 @@ export const projectComments = pgTable("project_comments", {
   body: text("body").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("project_comments_project_idx").on(t.projectId, t.createdAt)]);
+
+/**
+ * Membres d'un projet (module Collaboration, Lot 4) : le propriétaire reste
+ * `projects.owner_id` ; un membre est lecteur (lecture et commentaires) ou
+ * éditeur (modifications). Chaque route re-vérifie le rôle côté serveur
+ * (`lib/owned-project.ts`) ; la gestion des membres est réservée au
+ * propriétaire.
+ */
+export const projectMembers = pgTable("project_members", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: text("role").notNull().$type<"lecteur" | "editeur">(),
+  invitedBy: text("invited_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [primaryKey({ columns: [t.projectId, t.userId] }), index("project_members_user_idx").on(t.userId)]);

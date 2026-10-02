@@ -67,8 +67,37 @@ export interface Project {
   /** Provenance d'un exemple importé (jamais effacée) et son mode : référence protégée ou copie de travail. */
   sourceExampleId?: string | null;
   exampleMode?: "reference" | "editable" | null;
+  /** Votre rôle sur ce projet, décidé par le serveur à chaque requête (`proprietaire` pour vos projets). */
+  role?: ProjectRole;
+  /** Adresse du propriétaire (liste des projets : distingue les projets partagés). */
+  ownerEmail?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Rôles du partage (`lib/owned-project.ts` de l'API) : lecteur lit et commente, éditeur modifie, propriétaire partage et supprime. */
+export type ProjectRole = "proprietaire" | "editeur" | "lecteur";
+export type MemberRole = Exclude<ProjectRole, "proprietaire">;
+
+export const ROLE_LABEL: Record<ProjectRole, string> = { proprietaire: "propriétaire", editeur: "éditeur", lecteur: "lecteur" };
+
+/** Le rôle permet-il de modifier le projet ? (`undefined` = projet lu avant le partage : propriétaire.) */
+export function canWrite(role: ProjectRole | undefined): boolean {
+  return role === undefined || role === "proprietaire" || role === "editeur";
+}
+
+export interface ProjectMember {
+  userId: string;
+  email: string;
+  role: MemberRole;
+  invitedBy: string;
+  createdAt: string;
+}
+
+export interface MembersView {
+  owner: { userId: string; email: string };
+  you: { userId: string; role: ProjectRole };
+  members: ProjectMember[];
 }
 
 export interface Level {
@@ -470,7 +499,7 @@ export interface RevisionEvent {
 }
 
 export interface CollaborationView {
-  access: { ownerEmail: string; you: string; sharing: { available: boolean; reason: string } };
+  access: { ownerEmail: string; you: string; role: ProjectRole; members: ProjectMember[]; sharing: { available: boolean; reason: string } };
   sync: { modelRevision: number; nativeKeys: number; lastModelWrite: string | null; offline: { available: boolean; reason: string } };
   journal: RevisionEvent[];
   comments: ProjectComment[];
@@ -665,6 +694,11 @@ export const api = {
   addComment: (projectId: string, body: string, stepNumber: number | null) =>
     request<ProjectComment>(`/projects/${projectId}/collaboration/comments`, { method: "POST", body: JSON.stringify({ body, stepNumber }) }),
   deleteComment: (projectId: string, commentId: string) => request<void>(`/projects/${projectId}/collaboration/comments/${encodeURIComponent(commentId)}`, { method: "DELETE" }),
+  /** Partage : membres et rôles (propriétaire seulement pour inviter, changer, retirer ; un membre peut se retirer lui-même). */
+  listMembers: (projectId: string) => request<MembersView>(`/projects/${projectId}/members`),
+  inviteMember: (projectId: string, email: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify({ email, role }) }),
+  setMemberRole: (projectId: string, userId: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ role }) }),
+  removeMember: (projectId: string, userId: string) => request<void>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "DELETE" }),
   /** Documents produits par le serveur (production enregistrée) : plan de lecture d'un niveau, tableau des surfaces, programme, fiches de l'exemple. */
   documentUrl: (projectId: string, doc: "surfaces" | "programme" | "fiches") => `/projects/${projectId}/documents/${doc}`,
   planUrl: (projectId: string, levelId: string) => `/projects/${projectId}/documents/plan/${encodeURIComponent(levelId)}`,

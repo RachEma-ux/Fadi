@@ -10,7 +10,7 @@
  * (`decideHarmonieProposal`, péremption « À réexaminer ») s'exécutent ici,
  * pas seulement dans l'interface.
  */
-import { Router, type Request, type Response } from "express";
+import { Router, type Response } from "express";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -31,22 +31,16 @@ import { db } from "../db/client.js";
 import { projectSteps, projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS, parcoursStepDefinition } from "../data/parcours.js";
-import { loadOwnedProject, type OwnedProject } from "../lib/owned-project.js";
+import { projectOr404 } from "../lib/owned-project.js";
 import { recordProducedDocument, stepReportHash, synthesisHash } from "../lib/documents.js";
 import { computationFor, harmonieReport, loadStepContext, stepView, withRows } from "../lib/step-context.js";
-import { loadStepRows, upsertStep } from "../lib/step-rows.js";
+import { loadStepRows, upsertStep, lockProject } from "../lib/step-rows.js";
 import { stepFilesRouter } from "./step-files.js";
 
 export const parcoursStepsRouter = Router({ mergeParams: true });
 parcoursStepsRouter.use(requireAuth);
 // Sources de l'étape (pièces jointes) : module Projets et sources, monté par étape.
 parcoursStepsRouter.use("/:stepNumber/files", stepFilesRouter);
-
-async function ownedProjectOr404(req: Request, res: Response): Promise<OwnedProject | null> {
-  const project = await loadOwnedProject((req.params as Record<string, string>)["projectId"] ?? "", req.user!.id);
-  if (!project) res.status(404).json({ error: "not_found" });
-  return project;
-}
 
 function stepOr404(raw: string, res: Response): ParcoursStepDefinition | null {
   const number = Number(raw);
@@ -56,7 +50,7 @@ function stepOr404(raw: string, res: Response): ParcoursStepDefinition | null {
 }
 
 parcoursStepsRouter.get("/", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "read");
   if (!project) return;
   const ctx = await loadStepContext(db, project);
   res.json(PARCOURS_STEPS.map((def) => stepView(def, ctx)));
@@ -68,7 +62,7 @@ parcoursStepsRouter.get("/", async (req, res) => {
  * téléchargeable — `Harmonie_Choix_Parcours_V7.html`.
  */
 parcoursStepsRouter.get("/harmonie/rapport", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "read");
   if (!project) return;
   const now = new Date();
   const ctx = await loadStepContext(db, project);
@@ -77,7 +71,7 @@ parcoursStepsRouter.get("/harmonie/rapport", async (req, res) => {
 });
 
 parcoursStepsRouter.get("/:stepNumber", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "read");
   if (!project) return;
   const def = stepOr404(req.params["stepNumber"] as string, res);
   if (!def) return;
@@ -86,7 +80,7 @@ parcoursStepsRouter.get("/:stepNumber", async (req, res) => {
 
 /** « Rapport de cette étape » (`stage-report`) : `Harmonie_Etape_NN_V7.html`. */
 parcoursStepsRouter.get("/:stepNumber/harmonie/rapport", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "read");
   if (!project) return;
   const def = stepOr404(req.params["stepNumber"] as string, res);
   if (!def) return;
@@ -128,7 +122,7 @@ const siteSchema = z.object({
  * réexaminer » jusqu'à leur confirmation.
  */
 parcoursStepsRouter.put("/:stepNumber/site", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "write");
   if (!project) return;
   const def = stepOr404(req.params["stepNumber"] as string, res);
   if (!def) return;
@@ -159,6 +153,7 @@ parcoursStepsRouter.put("/:stepNumber/site", async (req, res) => {
     throw err;
   }
   const result = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
     const siteObservations = next as unknown as Record<string, unknown>;
     await tx.update(projects).set({ siteObservations, updatedAt: new Date() }).where(eq(projects.id, project.id));
     const rows = await loadStepRows(tx, project.id);
@@ -222,7 +217,7 @@ function validateField(def: ParcoursStepDefinition, key: string, value: Parcours
 }
 
 parcoursStepsRouter.patch("/:stepNumber", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "write");
   if (!project) return;
   const def = stepOr404(req.params["stepNumber"] as string, res);
   if (!def) return;
@@ -242,6 +237,7 @@ parcoursStepsRouter.patch("/:stepNumber", async (req, res) => {
   }
 
   const result = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
     const rows = await loadStepRows(tx, project.id);
     const current = rows.get(def.number) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
     const conflicts = Object.entries(parsed.data.baseline ?? {}).filter(([k, v]) => !sameValue(current.content.fields[k], v));
@@ -294,12 +290,13 @@ const decisionSchema = z.object({
  * change pas), les vérifications redeviennent possibles.
  */
 parcoursStepsRouter.post("/:stepNumber/harmonie/generate", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "write");
   if (!project) return;
   const def = stepOr404(req.params["stepNumber"] as string, res);
   if (!def) return;
   const now = new Date().toISOString();
   const result = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
     const rows = await loadStepRows(tx, project.id);
     const ctx = await loadStepContext(tx, project, rows);
     const current = rows.get(def.number) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
@@ -314,7 +311,7 @@ parcoursStepsRouter.post("/:stepNumber/harmonie/generate", async (req, res) => {
 });
 
 parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) => {
-  const project = await ownedProjectOr404(req, res);
+  const project = await projectOr404(req, res, "write");
   if (!project) return;
   const def = stepOr404(req.params["stepNumber"] as string, res);
   if (!def) return;
@@ -328,6 +325,7 @@ parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) =
 
   try {
     const result = await db.transaction(async (tx) => {
+      await lockProject(tx, project.id);
       const rows = await loadStepRows(tx, project.id);
       const ctx = await loadStepContext(tx, project, rows);
       const current = rows.get(def.number) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };

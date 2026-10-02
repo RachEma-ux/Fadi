@@ -14,6 +14,7 @@ import { MUTATION_KEYS, adoptStep, recordConflict, type DecideVars, type StepPat
 import { AtelierHarmonyPage } from "../atelier/AtelierHarmonyPage";
 import { DesignReviewFold } from "../atelier/DesignReview";
 import { NativeAtelier } from "../atelier/NativeAtelier";
+import { useProjectAccess } from "../../lib/access";
 import { StepComments } from "../collaboration/CollaborationModule";
 import { ImportProjectButton } from "../projets-sources/ImportProjectButton";
 import { ParcelleTool } from "../projets-sources/ParcelleTool";
@@ -197,7 +198,9 @@ function StepDetail({
   });
 
   // Un envoi en pause (hors-ligne) ne bloque pas la suite du travail : il attend le réseau.
-  const pending = (patch.isPending && !patch.isPaused) || (decide.isPending && !decide.isPaused) || generate.isPending || saveSite.isPending;
+  // Projet partagé en lecture : les commandes d'écriture sont désactivées (le serveur les refuserait, 403).
+  const access = useProjectAccess(projectId);
+  const pending = !access.canWrite || (patch.isPending && !patch.isPaused) || (decide.isPending && !decide.isPaused) || generate.isPending || saveSite.isPending;
   const done = step.status === "termine";
   const intro =
     step.number === 1
@@ -285,7 +288,7 @@ function StepDetail({
       )}
       {/* Étape 11 : bilan Harmonie du bâtiment conçu (flow-v62 `designHTML`) dans le flux de l'étape. */}
       {step.number === 11 && <DesignReviewFold projectId={projectId} />}
-      {(step.number === 10 || step.number === 11) && <NativeAtelier projectId={projectId} stage={step.number} />}
+      {(step.number === 10 || step.number === 11) && <NativeAtelier projectId={projectId} stage={step.number} readOnly={!access.canWrite} />}
 
       <StepStory step={step} />
 
@@ -294,7 +297,7 @@ function StepDetail({
           {paused.length} envoi(s) de cette étape en attente du réseau : enregistré(s) sur cet appareil, transmis au retour de la connexion (même après rechargement).
         </p>
       )}
-      <StepForm step={step} allSteps={allSteps} pending={pending} onCommit={(fields, baseline) => patch.mutate({ projectId, stepNumber: step.number, body: { fields, baseline } })} />
+      <StepForm step={step} allSteps={allSteps} pending={pending} readOnly={!access.canWrite} onCommit={(fields, baseline) => patch.mutate({ projectId, stepNumber: step.number, body: { fields, baseline } })} />
       {(step.number === 6 || step.number === 7) && <ProgrammeRepartition projectId={projectId} />}
 
       {/* Bibliothèque des bâtiments : « Exemples · qualités du site » (01–03) ou « Bibliothèque d’exemples par type de bâtiment » / programme lié (≥ 04). */}

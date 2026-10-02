@@ -3,11 +3,11 @@ import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { ARCHIVE_IMPORT_LIMIT, ArchiveError, archiveFileName, normalizeImportedProjects } from "@parcours/domain-model";
 import { db } from "../db/client.js";
-import { architecturalObjects, levels, projects, projectSteps } from "../db/schema.js";
+import { architecturalObjects, levels, projectMembers, projects, projectSteps, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { EMPTY_STEP_CONTENT, PARCOURS_STEPS } from "../data/parcours.js";
-import { loadOwnedProject } from "../lib/owned-project.js";
+import { loadOwnedProject, projectOr404, type ProjectNeed } from "../lib/owned-project.js";
 import { APPLICATION_VERSION, SOURCE_VERSION, exportProjectArchive, importProjectArchive } from "../lib/project-archive.js";
 import { parcoursStepsRouter } from "./parcours-steps.js";
 import { programmeRouter } from "./programme.js";
@@ -18,6 +18,7 @@ import { designReviewRouter } from "./design-review.js";
 import { analysesRouter } from "./analyses.js";
 import { documentsRouter } from "./documents.js";
 import { collaborationRouter } from "./collaboration.js";
+import { membersRouter, ownerEmailOf } from "./members.js";
 import { archiveHash, recordProducedDocument } from "../lib/documents.js";
 import { loadStepContext } from "../lib/step-context.js";
 
@@ -31,13 +32,24 @@ const createProjectSchema = z.object({
   name: z.string().trim().min(1).max(200),
 });
 
+/** Vos projets, puis ceux qui vous sont partagés (avec votre rôle et l'adresse du propriétaire). */
 projectsRouter.get("/", async (req, res) => {
-  const rows = await db
+  const owned = await db
     .select()
     .from(projects)
     .where(eq(projects.ownerId, req.user!.id))
     .orderBy(asc(projects.createdAt));
-  res.json(rows);
+  const shared = await db
+    .select({ project: projects, role: projectMembers.role, ownerEmail: users.email })
+    .from(projectMembers)
+    .innerJoin(projects, eq(projects.id, projectMembers.projectId))
+    .innerJoin(users, eq(users.id, projects.ownerId))
+    .where(eq(projectMembers.userId, req.user!.id))
+    .orderBy(asc(projects.createdAt));
+  res.json([
+    ...owned.map((p) => ({ ...p, role: "proprietaire" as const, ownerEmail: req.user!.email })),
+    ...shared.map((r) => ({ ...r.project, role: r.role, ownerEmail: r.ownerEmail })),
+  ]);
 });
 
 projectsRouter.post("/", async (req, res) => {
@@ -115,11 +127,8 @@ projectsRouter.post("/import", archiveBody, archiveBodyError, async (req: Reques
 
 /** `backup()` : tout le projet en un JSON téléchargeable (`Parcours_V7_<nom>.json`). */
 projectsRouter.get("/:projectId/archive", async (req, res) => {
-  const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
   const now = new Date();
   const archive = await exportProjectArchive(db, project, now.toISOString());
   await recordProducedDocument(db, project.id, { kind: "archive-projet", label: "Sauvegarde du projet (JSON)", fileName: archiveFileName(project.name), modelRevision: project.modelRevision, inputHash: archiveHash(project, await loadStepContext(db, project)), stepNumber: null }, now);
@@ -139,11 +148,9 @@ const copySchema = z.object({ name: z.string().trim().min(1).max(200).optional()
  * référence reste intacte ; la provenance (`sourceExampleId`) est conservée.
  */
 projectsRouter.post("/:projectId/copies", async (req, res) => {
-  const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  // Lire suffit : la copie devient un nouveau projet de l'utilisateur (comme exporter puis importer l'archive), l'original n'est pas touché.
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
   const parsed = copySchema.safeParse(req.body ?? {});
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
@@ -169,22 +176,17 @@ projectsRouter.use("/:projectId/design-review", designReviewRouter);
 projectsRouter.use("/:projectId/analyses", analysesRouter);
 projectsRouter.use("/:projectId/documents", documentsRouter);
 projectsRouter.use("/:projectId/collaboration", collaborationRouter);
+projectsRouter.use("/:projectId/members", membersRouter);
 
 projectsRouter.get("/:projectId", async (req, res) => {
-  const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
-  res.json(project);
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  res.json({ ...project, ownerEmail: project.ownerId === req.user!.id ? req.user!.email : await ownerEmailOf(project.ownerId) });
 });
 
 projectsRouter.delete("/:projectId", async (req, res) => {
-  const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "owner");
+  if (!project) return;
   await db.delete(projects).where(eq(projects.id, project.id));
   res.status(204).end();
 });
@@ -200,21 +202,15 @@ const createLevelSchema = z.object({
 });
 
 projectsRouter.get("/:projectId/levels", async (req, res) => {
-  const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
   const rows = await db.select().from(levels).where(eq(levels.projectId, project.id)).orderBy(asc(levels.position));
   res.json(rows);
 });
 
 projectsRouter.post("/:projectId/levels", async (req, res) => {
-  const project = await loadOwnedProject(req.params.projectId as string, req.user!.id);
-  if (!project) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
   const parsed = createLevelSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
@@ -238,8 +234,8 @@ const createObjectSchema = z.object({
   relations: z.array(relationSchema).default([]),
 });
 
-async function loadOwnedLevel(projectId: string, levelId: string, ownerId: string) {
-  const project = await loadOwnedProject(projectId, ownerId);
+async function loadOwnedLevel(projectId: string, levelId: string, ownerId: string, need: ProjectNeed = "write") {
+  const project = await loadOwnedProject(projectId, ownerId, need);
   if (!project) return null;
   const rows = await db
     .select()
@@ -251,7 +247,7 @@ async function loadOwnedLevel(projectId: string, levelId: string, ownerId: strin
 }
 
 projectsRouter.get("/:projectId/levels/:levelId/objects", async (req, res) => {
-  const found = await loadOwnedLevel(req.params.projectId as string, req.params.levelId as string, req.user!.id);
+  const found = await loadOwnedLevel(req.params.projectId as string, req.params.levelId as string, req.user!.id, "read");
   if (!found) {
     res.status(404).json({ error: "not_found" });
     return;

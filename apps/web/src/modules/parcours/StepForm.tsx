@@ -152,12 +152,15 @@ export function StepForm({
   allSteps,
   onCommit,
   pending,
+  readOnly = false,
 }: {
   step: ParcoursStep;
   allSteps: ParcoursStep[];
   /** `baseline` : la valeur que l'écran affichait pour chaque champ modifié (contrôle de concurrence côté serveur). */
   onCommit: (fields: Record<string, ParcoursFieldValue>, baseline: Record<string, ParcoursFieldValue>) => void;
   pending: boolean;
+  /** Projet partagé en lecture : les champs restent lisibles, aucune saisie n'est envoyée. */
+  readOnly?: boolean;
 }) {
   const form = step.form;
   if (!form) return null;
@@ -169,11 +172,12 @@ export function StepForm({
       {step.number === 14 && <FinanceKpis fields={fields} />}
       {step.number === 17 && <ScoreKpis step={step} allSteps={allSteps} />}
       {step.number === 19 && <DecisionPanel value={fields["decision"]} onChoose={(c) => onCommit({ decision: c }, { decision: fields["decision"] ?? null })} pending={pending} />}
-      <div className="biz-grid">
+      {readOnly && <p className="h7-muted access-readonly-hint">Lecture seule : les valeurs saisies par le propriétaire ou les éditeurs sont affichées, sans modification possible.</p>}
+      <fieldset className="biz-grid" disabled={readOnly} aria-readonly={readOnly}>
         {form.fields.map((f) => (
           <Field key={f.key} field={f} value={fields[f.key]} onCommit={(key, value) => onCommit({ [key]: value }, { [key]: fields[key] ?? null })} />
         ))}
-      </div>
+      </fieldset>
     </section>
   );
 }

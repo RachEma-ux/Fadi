@@ -52,6 +52,10 @@
  *   6l. file hors-ligne des saisies : mutation en pause persistée et
  *      restaurée après rechargement, rejouée au retour du réseau — refusée
  *      (409, bandeau de conflit) si le serveur a avancé, enregistrée sinon ;
+ *   6m. partage du projet : invitation d'un compte par son adresse, projet
+ *      partagé listé, lecteur (lecture, commentaires, formulaires et
+ *      Atelier inactifs, 403 motivé), passage éditeur (saisie enregistrée),
+ *      départ du projet ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
  *      docs/migration/captures/webapp/.
  *
@@ -631,7 +635,7 @@ check("étape 08 : « Publier le commentaire » → « Commentaires (1) », aute
 await page.goto(`${exampleUrl}?module=collaboration`);
 await page.waitForSelector(".journal-table tbody tr", { timeout: 30000 });
 const collabKpis = (await page.locator(".collaboration-module .biz-kpis").textContent()).replace(/\s+/g, " ");
-check("collaboration : propriétaire = vous, partage « Non disponible » (annoncé, pas simulé), hors-ligne « Atelier, saisies, lecture », révision du modèle et dernière écriture", collabKpis.includes(email) && collabKpis.includes("c'est vous") && /PartageNon disponible/.test(collabKpis) && /Hors-ligneAtelier, saisies, lecture/.test(collabKpis) && /Révision \d+dernière écriture/.test(collabKpis), collabKpis);
+check("collaboration : propriétaire = vous, « Votre rôle · propriétaire », partage « 0 membre(s) », hors-ligne « Atelier, saisies, lecture », révision du modèle et dernière écriture", collabKpis.includes(email) && collabKpis.includes("c'est vous") && /Votre rôlepropriétaire/.test(collabKpis) && /Partage0 membre\(s\)/.test(collabKpis) && /Hors-ligneAtelier, saisies, lecture/.test(collabKpis) && /Révision \d+dernière écriture/.test(collabKpis), collabKpis);
 check("collaboration : le commentaire de l'étape 08 apparaît avec son lien « étape 08 »", (await page.locator(".comment").count()) === 1 && (await page.locator('.comment a:has-text("étape 08")').count()) === 1);
 const journalKinds = new Set(await page.locator(".journal-table tbody tr").evaluateAll((rows) => rows.map((r) => r.getAttribute("data-kind"))));
 check("collaboration : journal des révisions relu des données (projet, Harmonie, programme, modèle, parcelle, revue, documents, commentaire), du plus récent au plus ancien", ["projet", "harmonie", "programme", "modele", "parcelle", "revue", "document", "commentaire"].every((k) => journalKinds.has(k)) && (await page.locator(".journal-table tbody tr").first().getAttribute("data-kind")) === "commentaire");
@@ -765,6 +769,82 @@ page.once("dialog", (d) => d.accept());
 await page.locator('.source-row button:has-text("Supprimer")').first().click();
 await page.waitForFunction(() => /Aucune source importée/.test(document.querySelector(".sources-list")?.textContent || ""), null, { timeout: 10000 });
 check("sources : suppression confirmée → liste vide", true);
+
+// 6m. Partage du projet : invitation par adresse, rôle vérifié côté serveur (lecteur : lecture et commentaires ; éditeur : modifications), départ
+const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const page2 = await ctx2.newPage();
+page2.on("pageerror", (e) => consoleErrors.push(e.message));
+const readerEmail = `lecteur-${Date.now()}@example.com`;
+await page2.goto(`${BASE}/inscription`);
+await page2.fill('input[name="email"]', readerEmail);
+await page2.fill('input[name="password"]', "scenario-pass-123");
+await page2.click('button[type="submit"]');
+await page2.waitForURL(/\/(projets|accueil)/);
+await page2.goto(`${BASE}/projets`);
+await page2.waitForSelector("#project-list-heading");
+check("partage : avant l'invitation, le second compte ne voit aucun projet partagé", (await page2.locator(".shared-projects").count()) === 0);
+check("partage : le second compte n'a pas accès au projet (404)", (await page2.request.get(`${BASE}/projects/${testPid}`)).status() === 404);
+// Le propriétaire invite depuis le module Collaboration.
+await page.goto(`${projectUrl}?module=collaboration`);
+await page.waitForSelector(".members-panel");
+check("collaboration : « Votre rôle · propriétaire », aucun membre invité", (await page.locator(".collab-role").textContent()) === "propriétaire" && /Aucun membre invité/.test(await page.locator(".members-table").textContent()));
+await page.fill('.members-invite input[type="email"]', "personne@example.com");
+await page.locator('.members-invite button:has-text("Inviter")').click();
+await page.waitForSelector(".members-panel .h7-error", { timeout: 10000 });
+check("collaboration : inviter une adresse sans compte → refus expliqué (« Aucun compte Fadi n'a cette adresse »)", /Aucun compte Fadi n’a cette adresse/.test(await page.locator(".members-panel .h7-error").textContent()));
+await page.fill('.members-invite input[type="email"]', readerEmail);
+await page.selectOption(".members-invite select", "lecteur");
+await page.locator('.members-invite button:has-text("Inviter")').click();
+await page.waitForSelector(`.members-table tr[data-member="${readerEmail}"]`, { timeout: 10000 });
+check("collaboration : membre invité listé comme lecteur, invité par le propriétaire", (await page.locator(`.members-table tr[data-member="${readerEmail}"] select`).inputValue()) === "lecteur" && new RegExp(`invité par ${email}`).test(await page.locator(`.members-table tr[data-member="${readerEmail}"]`).textContent()));
+await page.waitForFunction(() => /1 membre\(s\)/.test(document.querySelector(".biz-kpis")?.textContent || ""), null, { timeout: 10000 });
+await page.screenshot({ path: `${OUT}/collaboration-partage-desktop.png`, fullPage: true });
+// Le lecteur : projet partagé listé, bandeau de lecture seule, formulaires et arbitrages inactifs, commentaire possible, Atelier en lecture seule.
+await page2.goto(`${BASE}/projets`);
+await page2.waitForSelector(".shared-projects", { timeout: 10000 });
+check("partage : « Projets partagés avec vous » — P.TEST, lecteur, partagé par le propriétaire", new RegExp(`P\\.TEST.*lecteur · partagé par ${email}`).test((await page2.locator(".shared-projects").textContent()).replace(/\s+/g, " ")));
+await page2.locator('.shared-projects a:has-text("Étude test migration")').click();
+await page2.waitForSelector(".access-banner", { timeout: 15000 });
+check("lecteur : en-tête « lecteur · partagé par … » et bandeau « Projet partagé en lecture »", new RegExp(`lecteur · partagé par ${email}`).test(await page2.locator(".project-role").textContent()) && /Projet partagé en lecture/.test(await page2.locator(".access-banner").textContent()));
+await page2.goto(`${projectUrl}?module=parcours&etape=2`);
+await page2.waitForSelector("#biz-f1");
+check("lecteur : saisies désactivées (fieldset), « Retenir » inactif, « Marquer terminée » inactif, pas d'import de sources", (await page2.locator("fieldset.biz-grid[disabled]").count()) === 1 && (await page2.locator("#biz-f1").isDisabled()) && (await page2.locator('.h7-proposal button:has-text("Retenir")').first().isDisabled()) && (await page2.locator('button:has-text("Marquer terminée")').isDisabled()) && (await page2.locator('.step-sources button:has-text("Importer des fichiers")').count()) === 0);
+check("lecteur : la valeur saisie par le propriétaire reste lisible", (await page2.inputValue("#biz-f1")).length > 0);
+await page2.evaluate(() => { document.querySelector(".step-comments").open = true; });
+await page2.fill(".step-comments textarea", "Lecture faite : à confirmer avec le BET.");
+await page2.locator('.step-comments button:has-text("Publier le commentaire")').click();
+await page2.waitForFunction(() => /Lecture faite : à confirmer avec le BET\./.test(document.querySelector(".step-comments")?.textContent || ""), null, { timeout: 10000 });
+check("lecteur : commentaire publié sur l'étape", true);
+const readerPatch = await page2.request.patch(`${BASE}/projects/${testPid}/steps/2`, { data: { fields: { f1: "tentative lecteur" } } });
+check("lecteur : une écriture forcée est refusée par le serveur (403 avec motif)", readerPatch.status() === 403 && /partagé en lecture/.test(((await readerPatch.json()).message) || ""));
+await page2.screenshot({ path: `${OUT}/partage-lecteur-02-desktop.png`, fullPage: true });
+await page2.goto(`${projectUrl}?module=atelier`);
+await page2.waitForSelector(".native-atelier-status-readonly", { timeout: 30000 });
+check("lecteur : Atelier en lecture seule (rien n'est enregistré)", /^Lecture seule/.test(await page2.locator(".native-atelier-status").textContent()));
+// Le propriétaire passe le lecteur éditeur : la saisie devient possible et visible par le propriétaire.
+await page.selectOption(`.members-table tr[data-member="${readerEmail}"] select`, "editeur");
+await page.waitForFunction((e) => /est maintenant éditeur/.test(document.querySelector(".members-notice")?.textContent || ""), null, { timeout: 10000 });
+await page2.goto(`${projectUrl}?module=parcours&etape=2`);
+await page2.waitForFunction(() => document.querySelector(".project-role")?.textContent?.startsWith("éditeur") && !document.querySelector("#biz-f1")?.disabled, null, { timeout: 15000 });
+await page2.fill("#biz-f1", "Zone UA (saisie de l'éditeur)");
+await page2.locator("#biz-f1").blur();
+await page.waitForFunction(async (pid) => (await (await fetch(`/projects/${pid}/steps/2`, { credentials: "include" })).json()).content.fields.f1 === "Zone UA (saisie de l'éditeur)", testPid, { timeout: 10000 }).catch(() => {});
+check("éditeur : la saisie est enregistrée sur le projet partagé et lue par le propriétaire", (await (await page.request.get(`${BASE}/projects/${testPid}/steps/2`)).json()).content.fields.f1 === "Zone UA (saisie de l'éditeur)");
+await page.goto(`${projectUrl}?module=collaboration`);
+await page.waitForFunction((e) => new RegExp(`Commentaire · ${e}`).test(document.querySelector(".journal-table")?.textContent || ""), readerEmail, { timeout: 15000 }).catch(() => {});
+check("journal : le commentaire du lecteur est daté et attribué", new RegExp(`Commentaire · ${readerEmail}`).test(await page.locator(".journal-table").textContent()));
+// L'éditeur quitte le projet : il disparaît de sa liste, le propriétaire ne voit plus de membre.
+await page2.goto(`${projectUrl}?module=collaboration`);
+await page2.waitForSelector(".members-panel");
+check("éditeur : « Votre rôle · éditeur », pas de formulaire d'invitation", (await page2.locator(".collab-role").textContent()) === "éditeur" && (await page2.locator(".members-invite").count()) === 0);
+await page2.locator('.members-table button:has-text("Quitter le projet")').click();
+await page2.waitForURL(/\/projets$/, { timeout: 10000 });
+await page2.waitForSelector("#project-list-heading");
+check("quitter le projet : retour à « Mes projets » sans projet partagé, accès retiré (404)", (await page2.locator(".shared-projects").count()) === 0 && (await page2.request.get(`${BASE}/projects/${testPid}`)).status() === 404);
+await page.reload();
+await page.waitForFunction(() => /Aucun membre invité/.test(document.querySelector(".members-table")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+check("propriétaire : plus aucun membre invité", /Aucun membre invité/.test(await page.locator(".members-table").textContent()));
+await ctx2.close();
 
 // 7. Téléphone
 await page.setViewportSize({ width: 390, height: 844 });
