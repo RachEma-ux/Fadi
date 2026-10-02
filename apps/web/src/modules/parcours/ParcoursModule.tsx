@@ -170,14 +170,25 @@ function StepDetail({
     },
     onError: (err, { proposalId, input }) => {
       const { expectedVersion, ...rest } = input;
-      if (recordConflict(queryClient, projectId, err, `Étape ${pad2(step.number)} · arbitrage ${proposalId}`, step.number, { decision: { proposalId, input: rest, expectedVersion: expectedVersion ?? null } })) return;
+      if (
+        recordConflict(queryClient, projectId, err, `Étape ${pad2(step.number)} · arbitrage ${proposalId}`, step.number, {
+          decision: { proposalId, input: rest, expectedVersion: expectedVersion ?? null },
+        })
+      )
+        return;
       const message = err instanceof ApiError && err.serverMessage ? err.serverMessage : "L’arbitrage n’a pas pu être enregistré.";
       setHarmonieErrors((e) => ({ ...e, [proposalId]: message }));
     },
   });
   // Envois de cette étape en pause (hors-ligne) : visibles, jamais perdus en silence.
   const paused = useMutationState({
-    filters: { status: "pending", predicate: (m) => m.state.isPaused && (m.state.variables as { projectId?: string; stepNumber?: number } | undefined)?.projectId === projectId && (m.state.variables as { stepNumber?: number } | undefined)?.stepNumber === step.number },
+    filters: {
+      status: "pending",
+      predicate: (m) =>
+        m.state.isPaused &&
+        (m.state.variables as { projectId?: string; stepNumber?: number } | undefined)?.projectId === projectId &&
+        (m.state.variables as { stepNumber?: number } | undefined)?.stepNumber === step.number,
+    },
     select: (m) => m.mutationId,
   });
   const generate = useMutation({
@@ -206,9 +217,7 @@ function StepDetail({
   const pending = !access.canWrite || (patch.isPending && !patch.isPaused) || (decide.isPending && !decide.isPaused) || generate.isPending || saveSite.isPending;
   const done = step.status === "termine";
   const intro =
-    step.number === 1
-      ? "Point de départ autonome : importez directement la parcelle. Aucun PMO préalable n’est requis."
-      : "Cette étape poursuit le dossier maître créé à partir de la parcelle.";
+    step.number === 1 ? "Point de départ autonome : importez directement la parcelle. Aucun PMO préalable n’est requis." : "Cette étape poursuit le dossier maître créé à partir de la parcelle.";
 
   return (
     <div className={`step-detail${harmonyPage ? " ah84-active-work" : ""}`}>
@@ -304,7 +313,13 @@ function StepDetail({
           {paused.length} envoi(s) de cette étape en attente du réseau : enregistré(s) sur cet appareil, transmis au retour de la connexion (même après rechargement).
         </p>
       )}
-      <StepForm step={step} allSteps={allSteps} pending={pending} readOnly={!access.canWrite} onCommit={(fields, baseline) => patch.mutate({ projectId, stepNumber: step.number, body: { fields, baseline } })} />
+      <StepForm
+        step={step}
+        allSteps={allSteps}
+        pending={pending}
+        readOnly={!access.canWrite}
+        onCommit={(fields, baseline) => patch.mutate({ projectId, stepNumber: step.number, body: { fields, baseline } })}
+      />
       {(step.number === 6 || step.number === 7) && <ProgrammeRepartition projectId={projectId} />}
 
       {/* Bibliothèque des bâtiments : « Exemples · qualités du site » (01–03) ou « Bibliothèque d’exemples par type de bâtiment » / programme lié (≥ 04). */}
@@ -351,7 +366,13 @@ function BaseDocuments({ projectId }: { projectId: string }) {
       <strong>Documents de base intégrés</strong>
       <div className="biz-actions">
         {base.files.map((f) => (
-          <a key={f.id} className="button-secondary" href={api.stepFileUrl(projectId, f.stepNumber, f.id)} download={f.name} title={`${f.note} · source de l'étape ${String(f.stepNumber).padStart(2, "0")}`}>
+          <a
+            key={f.id}
+            className="button-secondary"
+            href={api.stepFileUrl(projectId, f.stepNumber, f.id)}
+            download={f.name}
+            title={`${f.note} · source de l'étape ${String(f.stepNumber).padStart(2, "0")}`}
+          >
             {f.name}
           </a>
         ))}
@@ -394,19 +415,22 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
     const step = steps[index];
     if (step) {
       return (
-        <StepDetail
-          key={step.number}
-          projectId={projectId}
-          step={step}
-          allSteps={steps}
-          index={index}
-          total={steps.length}
-          onBack={() => openStep(null)}
-          onPrev={index > 0 ? () => openStep(steps[index - 1]!.number) : null}
-          onNext={index < steps.length - 1 ? () => openStep(steps[index + 1]!.number) : null}
-          onOpen={openStep}
-          harmonieOpen={harmonieOpen}
-        />
+        <>
+          <HarmonieToast text={notice} onDone={() => navigate(`${location.pathname}${location.search}`, { replace: true, state: null })} />
+          <StepDetail
+            key={step.number}
+            projectId={projectId}
+            step={step}
+            allSteps={steps}
+            index={index}
+            total={steps.length}
+            onBack={() => openStep(null)}
+            onPrev={index > 0 ? () => openStep(steps[index - 1]!.number) : null}
+            onNext={index < steps.length - 1 ? () => openStep(steps[index + 1]!.number) : null}
+            onOpen={openStep}
+            harmonieOpen={harmonieOpen}
+          />
+        </>
       );
     }
   }
@@ -417,7 +441,9 @@ export function ParcoursModule({ projectId }: { projectId: string }) {
       <HarmonieToast text={notice} onDone={() => navigate(`${location.pathname}${location.search}`, { replace: true, state: null })} />
       <BaseDocuments projectId={projectId} />
       <div className="overview-progress">
-        <span className="parcours-steps-summary">{done} / {steps.length} étapes terminées</span>
+        <span className="parcours-steps-summary">
+          {done} / {steps.length} étapes terminées
+        </span>
         <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done} aria-label={`${done} étapes terminées sur ${steps.length}`}>
           <i style={{ width: `${(done / steps.length) * 100}%` }} />
         </div>

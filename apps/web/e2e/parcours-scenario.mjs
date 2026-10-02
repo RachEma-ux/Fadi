@@ -69,6 +69,8 @@
  *      données conservées par le navigateur (compteurs conformes à
  *      IndexedDB, caches vidés sans toucher aux écritures en attente),
  *      version du build ;
+ *   6q. bibliothèque, cas P.118 : « Ouvrir le modèle P.118 » → référence du
+ *      compte à l'étape 10 ; compte sans l'exemple → import puis ouverture ;
  *   6n. accessibilité (axe-core, WCAG 2.2 AA) : chaque écran, ordinateur et
  *      téléphone, plus les dialogues, le conflit et la lecture seule —
  *      aucune violation critique ou sérieuse ;
@@ -1153,6 +1155,34 @@ await page.waitForFunction(() => /Modèles mis en cache\s*0(?!\d)/.test(document
 const countsAfter = await localCounts();
 check("Paramètres : « Vider les caches locaux » → modèles retirés, lectures réduites à celles de l'écran courant, file des écritures et saisies en pause intactes", countsAfter.modelCache === 0 && countsAfter.queries <= 2 && countsAfter.queries < countsBefore.queries && countsAfter.outbox === countsBefore.outbox && countsAfter.paused === countsBefore.paused && /Modèles mis en cache\s*0(?!\d)/.test(await page.locator(".settings-facts-local").textContent()), JSON.stringify(countsAfter));
 await page.screenshot({ path: `${OUT}/parametres-desktop.png`, fullPage: true });
+
+// 6q. Bibliothèque, cas P.118 : « Ouvrir le modèle P.118 » (`openP118()`) ouvre le dossier source à l'étape 10 — la référence du compte, ou l'exemple importé d'abord.
+await page.goto(`${BASE}/bibliotheque/batiments/parcours_lot118`);
+await page.waitForSelector('.bl-hero button:has-text("Ouvrir le modèle P.118")', { timeout: 30000 });
+await page.locator('.bl-hero button:has-text("Ouvrir le modèle P.118")').click();
+await page.waitForURL((u) => u.toString().startsWith(`${exampleUrl}?module=parcours&etape=10`), { timeout: 20000 });
+await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
+check("bibliothèque · cas P.118 : « Ouvrir le modèle P.118 » → référence de l'exemple du compte, étape 10, Atelier monté", page.url().startsWith(`${exampleUrl}?module=parcours&etape=10`) && (await page.locator(".native-atelier #viewer-info").count()) === 1);
+await page.goto(`${BASE}/bibliotheque/batiments/parcours_lot118?rubrique=technique`);
+await page.waitForSelector('section[role=tabpanel] button:has-text("Ouvrir le modèle P.118")', { timeout: 30000 });
+check("bibliothèque · cas P.118, rubrique Technique : « P.118 conserve ses polygones réels » et « Ouvrir le modèle P.118 » à la place du gabarit", /P\.118 conserve ses polygones réels/.test(await page.locator("section[role=tabpanel]").textContent()) && (await page.locator("section[role=tabpanel] svg").count()) === 0);
+// Un compte sans l'exemple : l'exemple est importé puis ouvert (« Dossier source absent » n'arrive pas).
+const ctxFresh = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const pageFresh = await ctxFresh.newPage();
+await pageFresh.goto(`${BASE}/inscription`);
+await pageFresh.fill('input[name="email"]', `fresh-${Date.now()}@example.com`);
+await pageFresh.fill('input[name="password"]', "scenario-pass-123");
+await pageFresh.click('button[type="submit"]');
+await pageFresh.waitForURL(/\/(projets|accueil)/);
+await pageFresh.goto(`${BASE}/bibliotheque/batiments/parcours_lot118`);
+await pageFresh.waitForSelector('.bl-hero button:has-text("Ouvrir le modèle P.118")', { timeout: 30000 });
+await pageFresh.locator('.bl-hero button:has-text("Ouvrir le modèle P.118")').click();
+await pageFresh.waitForURL(/\/projets\/proj_[^?]+\?module=parcours&etape=10/, { timeout: 60000 });
+const freshToast = await pageFresh.waitForFunction(() => /Exemple P\.118 importé/.test(document.querySelector(".h7-toast")?.textContent || ""), null, { timeout: 8000 }).then(() => true).catch(() => false); // s'efface de lui-même après 3,6 s
+await pageFresh.waitForSelector(".project-header h1", { timeout: 30000 });
+await pageFresh.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
+check("bibliothèque · cas P.118 sans l'exemple dans le compte : l'exemple est importé puis ouvert à l'étape 10, Atelier monté (toast « Exemple P.118 importé »)", (await pageFresh.locator(".project-header h1").textContent()) === "P.118 — Escalier B et mezzanine" && (await pageFresh.locator(".native-atelier #viewer-info").count()) === 1, freshToast ? "toast vu" : "toast non observé (effacé avant la lecture)");
+await ctxFresh.close();
 
 // 6n. Accessibilité : chaque écran de l'application, ordinateur puis téléphone (axe-core, WCAG 2.2 AA).
 const a11yScreens = [

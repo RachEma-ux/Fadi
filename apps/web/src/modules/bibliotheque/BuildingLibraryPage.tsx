@@ -167,12 +167,26 @@ export function SpaceTable({ spaces, onEdit }: { spaces: LibrarySpace[]; onEdit?
           </small>
         </>,
         onEdit ? (
-          <input aria-label={`Quantité ${s.name}`} type="number" min={0} step={1} defaultValue={s.quantity} onBlur={(e) => e.target.value !== String(s.quantity) && onEdit(s.id, "quantity", e.target.value)} />
+          <input
+            aria-label={`Quantité ${s.name}`}
+            type="number"
+            min={0}
+            step={1}
+            defaultValue={s.quantity}
+            onBlur={(e) => e.target.value !== String(s.quantity) && onEdit(s.id, "quantity", e.target.value)}
+          />
         ) : (
           { num: fmt(s.quantity, 0) }
         ),
         onEdit ? (
-          <input aria-label={`Surface ${s.name}`} type="number" min={0} step={0.01} defaultValue={s.unitArea} onBlur={(e) => e.target.value !== String(s.unitArea) && onEdit(s.id, "unitArea", e.target.value)} />
+          <input
+            aria-label={`Surface ${s.name}`}
+            type="number"
+            min={0}
+            step={0.01}
+            defaultValue={s.unitArea}
+            onBlur={(e) => e.target.value !== String(s.unitArea) && onEdit(s.id, "unitArea", e.target.value)}
+          />
         ) : (
           { num: fmt(s.unitArea, 3) }
         ),
@@ -190,7 +204,17 @@ export function SpaceTable({ spaces, onEdit }: { spaces: LibrarySpace[]; onEdit?
   );
 }
 
-export function ProgrammeView({ c, s, surfaceConvention, onEdit }: { c: BuildingCase; s: BuildingScenario; surfaceConvention: string; onEdit?: ((spaceId: string, key: "quantity" | "unitArea", value: string) => void) | undefined }) {
+export function ProgrammeView({
+  c,
+  s,
+  surfaceConvention,
+  onEdit,
+}: {
+  c: BuildingCase;
+  s: BuildingScenario;
+  surfaceConvention: string;
+  onEdit?: ((spaceId: string, key: "quantity" | "unitArea", value: string) => void) | undefined;
+}) {
   const t = programmeCaseSums(s.spaces);
   return (
     <>
@@ -213,8 +237,8 @@ export function ProgrammeView({ c, s, surfaceConvention, onEdit }: { c: Building
           </div>
         </div>
         <div className="bl-note">
-          Les places dans plusieurs salles utilisées successivement ne s’additionnent pas automatiquement. « Visites/jour », « lits », « postes », « palettes » et « personnes présentes »
-          sont des unités différentes.
+          Les places dans plusieurs salles utilisées successivement ne s’additionnent pas automatiquement. « Visites/jour », « lits », « postes », « palettes » et « personnes présentes » sont des
+          unités différentes.
         </div>
       </section>
       <Stats spaces={s.spaces} />
@@ -224,7 +248,9 @@ export function ProgrammeView({ c, s, surfaceConvention, onEdit }: { c: Building
       </section>
       <section className="bl-card">
         <h2>Espaces support</h2>
-        <p className="bl-small">Accueil, sanitaires, locaux techniques, autres supports et circulation sont distingués. Les surfaces privatives déjà comprises ne sont pas ajoutées une seconde fois.</p>
+        <p className="bl-small">
+          Accueil, sanitaires, locaux techniques, autres supports et circulation sont distingués. Les surfaces privatives déjà comprises ne sont pas ajoutées une seconde fois.
+        </p>
         <SpaceTable spaces={s.spaces.filter((x) => x.role === "support")} onEdit={onEdit} />
         {s.spaces.some((x) => x.role === "parois") && (
           <>
@@ -236,7 +262,11 @@ export function ProgrammeView({ c, s, surfaceConvention, onEdit }: { c: Building
       <section className="bl-card">
         <h2>Ratios surfaciques</h2>
         <p>{surfaceConvention}</p>
-        {!t.parois && <div className="bl-note">Aucune provision de parois / gaines distincte n’est chiffrée. Les 0 m² alloués ne prouvent pas l’absence de parois ; le total reste partiel et ne dimensionne pas le bâtiment.</div>}
+        {!t.parois && (
+          <div className="bl-note">
+            Aucune provision de parois / gaines distincte n’est chiffrée. Les 0 m² alloués ne prouvent pas l’absence de parois ; le total reste partiel et ne dimensionne pas le bâtiment.
+          </div>
+        )}
         <div className="bl-table-wrap" tabIndex={0}>
           <table>
             <thead>
@@ -264,7 +294,8 @@ export function ProgrammeView({ c, s, surfaceConvention, onEdit }: { c: Building
         </div>
         <p>
           <b>Ratio calculé par unité de capacité :</b>{" "}
-          {c.capacity && c.capacity > 0 ? `${fmt(t.programme / c.capacity, 2)} m² de programme / unité (« ${c.unit} »).` : "Non calculé : effectif non documenté."} Ce ratio décrit ce cas ; ce n’est pas une norme.
+          {c.capacity && c.capacity > 0 ? `${fmt(t.programme / c.capacity, 2)} m² de programme / unité (« ${c.unit} »).` : "Non calculé : effectif non documenté."} Ce ratio décrit ce cas ; ce n’est
+          pas une norme.
         </p>
         {c.sourceConvention && (
           <div className="bl-note">
@@ -315,7 +346,7 @@ function RelationsView({ c }: { c: BuildingCase }) {
   );
 }
 
-function TechniqueView({ c, s }: { c: BuildingCase; s: BuildingScenario }) {
+function TechniqueView({ c, s, openP118 }: { c: BuildingCase; s: BuildingScenario; openP118?: () => void }) {
   const p = c.profile;
   const rooms = s.spaces.filter((x) => x.role === "principal");
   const [room, setRoom] = useState(0);
@@ -327,8 +358,8 @@ function TechniqueView({ c, s }: { c: BuildingCase; s: BuildingScenario }) {
       <section className="bl-card">
         <h2>Dimensions minimales / recommandées</h2>
         <div className="bl-note warn">
-          « Minimum projet » ci-dessous = seuil de travail proposé, pas minimum légal. La référence réglementaire, la largeur libre réelle, les portes ouvertes et les équipements doivent être vérifiés. Une
-          dimension inconnue n’est jamais remplacée silencieusement par une cote inventée.
+          « Minimum projet » ci-dessous = seuil de travail proposé, pas minimum légal. La référence réglementaire, la largeur libre réelle, les portes ouvertes et les équipements doivent être
+          vérifiés. Une dimension inconnue n’est jamais remplacée silencieusement par une cote inventée.
         </div>
         <Table
           headers={["Élément", "Minimum projet proposé", "Recommandé pour test", "Hauteur libre cible", "Minimum réglementaire", "Base / réserve"]}
@@ -386,7 +417,14 @@ function TechniqueView({ c, s }: { c: BuildingCase; s: BuildingScenario }) {
       <section className="bl-card">
         <h2>Gabarit d’essai dimensionnel</h2>
         {c.fixedGeometry ? (
-          <div className="bl-note">P.118 conserve ses polygones réels. Aucun rectangle n’est généré à la place d’un local ou de la parcelle.</div>
+          <>
+            <div className="bl-note">P.118 conserve ses polygones réels. Aucun rectangle n’est généré à la place d’un local ou de la parcelle.</div>
+            {openP118 && (
+              <button type="button" onClick={openP118}>
+                Ouvrir le modèle P.118
+              </button>
+            )}
+          </>
         ) : (
           <>
             <p>
@@ -467,7 +505,10 @@ function HarmonyView({ c, s, onApply }: { c: BuildingCase; s: BuildingScenario; 
       </section>
       <section className="bl-card">
         <h2>Répartition reliée au programme</h2>
-        <p>La variante charge les surfaces par famille depuis les fiches espaces, non un pourcentage arbitraire. Principaux, circulation, technique, sanitaires, accueil, autres supports et parois restent distincts.</p>
+        <p>
+          La variante charge les surfaces par famille depuis les fiches espaces, non un pourcentage arbitraire. Principaux, circulation, technique, sanitaires, accueil, autres supports et parois
+          restent distincts.
+        </p>
         <Stats spaces={s.spaces} />
         <button type="button" className="primary" onClick={onApply}>
           Utiliser cette variante dans le parcours
@@ -517,7 +558,9 @@ function SourcesView({ detail }: { detail: BuildingCaseDetail }) {
             r.scope,
           ])}
         />
-        <div className="bl-note warn">{c.regulatory.foreignScope} Les liens identifient des textes ou démarches ; aucune certification de l’applicabilité ni revue juridique exhaustive n’est incluse.</div>
+        <div className="bl-note warn">
+          {c.regulatory.foreignScope} Les liens identifient des textes ou démarches ; aucune certification de l’applicabilité ni revue juridique exhaustive n’est incluse.
+        </div>
         <h3>Documents locaux manquants</h3>
         {c.regulatory.localDocuments.map((x, i) => (
           <p key={i}>{x}</p>
@@ -576,19 +619,7 @@ function SourcesView({ detail }: { detail: BuildingCaseDetail }) {
 }
 
 /** Boîte « Utiliser le programme de ce cas » (`showApply` du prototype). */
-function ApplyDialog({
-  detail,
-  s,
-  projectId,
-  projectName,
-  onClose,
-}: {
-  detail: BuildingCaseDetail;
-  s: BuildingScenario;
-  projectId: string | null;
-  projectName: string | null;
-  onClose: () => void;
-}) {
+function ApplyDialog({ detail, s, projectId, projectName, onClose }: { detail: BuildingCaseDetail; s: BuildingScenario; projectId: string | null; projectName: string | null; onClose: () => void }) {
   const c = detail.case;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -695,6 +726,25 @@ export function BuildingCasePage() {
   const projectId = params.get("projet");
   const project = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId!), enabled: !!projectId });
   const detail = useQuery({ queryKey: ["building-case", id], queryFn: () => api.getBuildingCase(id), staleTime: Infinity, enabled: id !== "" });
+  // `openP118()` du prototype : ouvre le dossier source P.118 à l'étape 10 (Atelier) — le projet courant s'il en est issu, sinon la
+  // référence de l'exemple du compte, sinon l'exemple est importé d'abord (« Dossier source absent » n'arrive donc pas).
+  const projects = useQuery({ queryKey: ["projects"], queryFn: api.listProjects, enabled: id === "parcours_lot118" });
+  const navigate = useNavigate();
+  const importP118 = useMutation({
+    mutationFn: () => api.importExample("p118-exemple-complet"),
+    onSuccess: (created) => {
+      void queryClient.invalidateQueries({ queryKey: ["projects"] });
+      navigate(`/projets/${created.id}?module=parcours&etape=10`, { state: { notice: "Exemple P.118 importé : dossier source ouvert à l’étape 10." } });
+    },
+  });
+  function openP118() {
+    const fromCurrent = project.data?.sourceExampleId === "p118-exemple-complet" ? project.data : null;
+    // Le dossier source canonique : la première référence importée (comme `SEED888.id`), sinon la plus ancienne copie.
+    const candidates = (projects.data ?? []).filter((p) => p.sourceExampleId === "p118-exemple-complet").sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    const target = fromCurrent ?? candidates.find((p) => p.exampleMode === "reference") ?? candidates[0] ?? null;
+    if (target) navigate(`/projets/${target.id}?module=parcours&etape=10`);
+    else if (!importP118.isPending) importP118.mutate();
+  }
   const tab = params.get("rubrique") ?? "programme";
   const scenarioId = params.get("variante") ?? "base";
   const [applying, setApplying] = useState(false);
@@ -747,13 +797,18 @@ export function BuildingCasePage() {
           <button type="button" onClick={() => download(`Programme_${c.id}_${s.id}.csv`, "text/csv;charset=utf-8", programmeCsv(c, s))}>
             Programme CSV
           </button>
-          <button type="button" onClick={() => download(`Fiche_${c.id}_${s.id}.json`, "application/json", JSON.stringify({ schema: "Parcours.BuildingCase", version: detail.data!.version, case: c, selectedScenario: s.id }, null, 2))}>
+          <button
+            type="button"
+            onClick={() =>
+              download(`Fiche_${c.id}_${s.id}.json`, "application/json", JSON.stringify({ schema: "Parcours.BuildingCase", version: detail.data!.version, case: c, selectedScenario: s.id }, null, 2))
+            }
+          >
             Fiche JSON
           </button>
-          {c.id === "parcours_lot118" && projectId && (
-            <Link className="bl-button" to={`/projets/${projectId}?module=atelier`}>
-              Ouvrir le modèle P.118
-            </Link>
+          {c.id === "parcours_lot118" && (
+            <button type="button" disabled={importP118.isPending} onClick={openP118}>
+              {importP118.isPending ? "Import de l’exemple…" : "Ouvrir le modèle P.118"}
+            </button>
           )}
         </div>
       </section>
@@ -788,7 +843,7 @@ export function BuildingCasePage() {
         {tab === "relations" ? (
           <RelationsView c={c} />
         ) : tab === "technique" ? (
-          <TechniqueView c={c} s={s} />
+          <TechniqueView c={c} s={s} openP118={c.id === "parcours_lot118" ? openP118 : undefined} />
         ) : tab === "harmony" ? (
           <HarmonyView c={c} s={s} onApply={() => setApplying(true)} />
         ) : tab === "sources" ? (
@@ -866,7 +921,9 @@ export function BuildingLibraryPage() {
           </button>
         ))}
       </div>
-      <div className="bl-note">Les programmes n’imposent ni terrain ni implantation. Les dimensions non documentées restent inconnues ; les minima de travail proposés sont clairement distincts des minima réglementaires.</div>
+      <div className="bl-note">
+        Les programmes n’imposent ni terrain ni implantation. Les dimensions non documentées restent inconnues ; les minima de travail proposés sont clairement distincts des minima réglementaires.
+      </div>
       <div id="bl-results">
         {library.isPending && <p className="bl-small">Chargement de la bibliothèque…</p>}
         {data && groups.length === 0 && <div className="bl-empty">Aucun cas correspondant. Modifiez la recherche ou le type.</div>}
