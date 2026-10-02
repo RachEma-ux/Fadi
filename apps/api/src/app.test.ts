@@ -1539,3 +1539,30 @@ describe("Collaboration — accès, synchronisation, journal des révisions, com
     expect((await client.delete(`/projects/${pid}/collaboration/comments/${c1.body.id}`)).status).toBe(404);
   });
 });
+
+describe("Contrôle de concurrence des saisies et des arbitrages (rejeu hors-ligne)", () => {
+  it("refuses a field write whose baseline no longer matches the server, and a decision whose version moved — never a silent overwrite", async () => {
+    const client = await registerAndLogin("concurrency@example.com");
+    const created = await client.post("/projects").send({ code: "P.980", name: "Concurrence" });
+    const pid = created.body.id as string;
+    // Lecture : f1 vide. Un autre appareil écrit f1 = "Zone I5" ; une saisie fondée sur la lecture vide est refusée.
+    expect((await client.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Zone I5" } })).status).toBe(200);
+    const stale = await client.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Zone UA" }, baseline: { f1: null } });
+    expect(stale.status).toBe(409);
+    expect(stale.body).toMatchObject({ error: "conflict", current: { f1: "Zone I5" } });
+    expect(stale.body.message).toBe("« Zonage / règlement applicable » : modifié depuis votre lecture ; votre saisie n'a pas été appliquée.");
+    expect((await client.get(`/projects/${pid}/steps/2`)).body.content.fields.f1).toBe("Zone I5"); // rien d'écrasé
+    // La même saisie avec la bonne lecture passe ; un nombre lu comme chaîne vaut le nombre.
+    expect((await client.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Zone UA" }, baseline: { f1: "Zone I5" } })).status).toBe(200);
+    expect((await client.patch(`/projects/${pid}/steps/2`).send({ fields: { f3: 12.5 } })).status).toBe(200);
+    expect((await client.patch(`/projects/${pid}/steps/2`).send({ fields: { f3: 13 }, baseline: { f3: "12.5" } })).status).toBe(200);
+    // Arbitrage : version attendue 0 (jamais arbitrée) → accepté ; rejouer le même arbitrage avec la version 0 → refusé (version 1 désormais).
+    const first = await client.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send({ status: "retained", expectedVersion: 0 });
+    expect(first.status).toBe(200);
+    const replay = await client.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send({ status: "dismissed", notes: "Motif suffisant ici", expectedVersion: 0 });
+    expect(replay.status).toBe(409);
+    expect(replay.body).toMatchObject({ error: "conflict", currentVersion: 1 });
+    expect((await client.get(`/projects/${pid}/steps/2`)).body.retainedCount).toBe(1); // A reste retenue
+    expect((await client.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send({ status: "dismissed", notes: "Motif suffisant ici", expectedVersion: 1 })).status).toBe(200);
+  });
+});

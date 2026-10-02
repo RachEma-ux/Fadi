@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
-import { SyncIndicator } from "../components/SyncIndicator";
+import { SyncIndicator, useOnline, useSyncConflicts } from "../components/SyncIndicator";
+import { clearConflict } from "../lib/mutations";
 import { MODULES } from "../modules/module-registry";
 import { AnalysesModule } from "../modules/analyses/AnalysesModule";
 import { NativeAtelier } from "../modules/atelier/NativeAtelier";
@@ -19,6 +20,9 @@ export function ProjectShell() {
 
   const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId) });
   const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
+  const queryClient = useQueryClient();
+  const conflicts = useSyncConflicts(projectId);
+  const online = useOnline();
 
   // Le module ouvert vit dans l'URL (`?module=`), comme l'étape (`?etape=`) et la vue (`?vue=`) : les liens
   // entre modules (« Comparer au modèle dessiné », « Ouvrir l’Atelier »…) et le rechargement le respectent.
@@ -59,11 +63,33 @@ export function ProjectShell() {
         </span>
       </header>
 
-      {projectQuery.isError && (
+      {(!online || projectQuery.isError) && (
         <p className="offline-banner" role="status">
           Lecture hors-ligne : données lues le {new Date(projectQuery.dataUpdatedAt).toLocaleString("fr-FR")}. Le dessin de l’Atelier s’enregistre localement ; les formulaires et arbitrages attendront le retour
           du réseau.
         </p>
+      )}
+
+      {conflicts.length > 0 && (
+        <section className="conflict-banner" role="alert" aria-label="Conflits de synchronisation">
+          <p>
+            <b>{conflicts.length} écriture(s) refusée(s)</b> : le serveur portait une version plus récente. Rien n’a été écrasé ; relisez la valeur courante et ressaisissez si besoin.
+          </p>
+          <ul>
+            {conflicts.map((c) => (
+              <li key={c.id} data-conflict={c.id}>
+                <b>{c.where}</b> · {new Date(c.at).toLocaleString("fr-FR")} — {c.message}
+                {c.current && Object.keys(c.current).length > 0 && <small> Valeur courante : {Object.entries(c.current).map(([k, v]) => `${k} = ${v === null ? "vide" : String(v)}`).join(" ; ")}</small>}{" "}
+                {c.stepNumber !== null && (
+                  <Link to={`/projets/${projectId}?module=parcours&etape=${c.stepNumber}`}>ouvrir l’étape</Link>
+                )}{" "}
+                <button type="button" className="button-secondary" onClick={() => clearConflict(queryClient, projectId, c.id)}>
+                  Compris
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <nav aria-label="Modules du projet" className="module-nav">

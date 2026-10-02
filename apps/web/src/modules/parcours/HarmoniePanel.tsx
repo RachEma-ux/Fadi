@@ -47,7 +47,7 @@ function ProposalCard({
 }: {
   q: HarmonieProposal;
   stepNumber: number;
-  onDecide: (proposalId: string, input: HarmonieDecisionInput) => void;
+  onDecide: (proposalId: string, input: HarmonieDecisionInput & { expectedVersion?: number }) => void;
   /** Étape 01 : afficher le schéma de cette proposition (`view-site`). */
   onView: ((proposalId: string) => void) | null;
   pending: boolean;
@@ -61,7 +61,8 @@ function ProposalCard({
   const editorId = `editor-${q.id}`;
 
   function submit(status: HarmonieDecisionInput["status"]) {
-    onDecide(q.id, { status, notes, owner, link, proof });
+    // La version lue accompagne l'arbitrage : le serveur refuse d'écraser un arbitrage plus récent (409).
+    onDecide(q.id, { status, notes, owner, link, proof, expectedVersion: q.decision.decisionVersion });
   }
 
   return (
@@ -223,7 +224,7 @@ export function HarmoniePanel({
   projectId: string;
   step: ParcoursStep;
   allSteps: ParcoursStep[];
-  onDecide: (proposalId: string, input: HarmonieDecisionInput) => void;
+  onDecide: (proposalId: string, input: HarmonieDecisionInput & { expectedVersion?: number }) => void;
   /** « Actualiser les propositions » (`generate`). */
   onGenerate: () => void;
   /** « Voir l’origine » : ouvrir l'étape d'origine d'une intention reçue (`goto`). */

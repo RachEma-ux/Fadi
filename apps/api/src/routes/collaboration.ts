@@ -208,11 +208,11 @@ collaborationRouter.get("/", async (req, res) => {
       modelRevision: project.modelRevision,
       nativeKeys: store.length,
       lastModelWrite: lastWrite,
-      /** File locale de l'Atelier (IndexedDB) et cache de lecture : disponibles ; pas encore de file pour les formulaires, arbitrages et commentaires. */
+      /** File locale de l'Atelier (IndexedDB), file des saisies / arbitrages / commentaires (cache persistant) et cache de lecture : disponibles. */
       offline: {
         available: true,
         reason:
-          "Les écritures de l'Atelier sont enregistrées localement (IndexedDB) avec leur révision, puis synchronisées au retour du réseau (409 en cas de conflit, copie de secours conservée) ; les pages déjà lues se relisent sans réseau. Les formulaires, arbitrages et commentaires exigent le réseau : envois en pause pendant la coupure, perdus au rechargement.",
+          "Les écritures de l'Atelier sont enregistrées localement (IndexedDB) avec leur révision, puis synchronisées au retour du réseau (409 en cas de conflit, copie de secours conservée) ; les saisies, arbitrages et commentaires faits sans réseau attendent sur l'appareil, même après rechargement, et sont rejoués avec la valeur ou la version lue (refus 409 si le serveur a avancé, jamais écrasé) ; les pages déjà lues se relisent sans réseau. Les autres actions (programme, liaisons, sources…) exigent le réseau.",
       },
     },
     journal: await revisionJournal(project),

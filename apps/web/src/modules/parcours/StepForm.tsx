@@ -155,7 +155,8 @@ export function StepForm({
 }: {
   step: ParcoursStep;
   allSteps: ParcoursStep[];
-  onCommit: (fields: Record<string, ParcoursFieldValue>) => void;
+  /** `baseline` : la valeur que l'écran affichait pour chaque champ modifié (contrôle de concurrence côté serveur). */
+  onCommit: (fields: Record<string, ParcoursFieldValue>, baseline: Record<string, ParcoursFieldValue>) => void;
   pending: boolean;
 }) {
   const form = step.form;
@@ -167,10 +168,10 @@ export function StepForm({
       {form.intro && <p className="biz-sub">{form.intro}</p>}
       {step.number === 14 && <FinanceKpis fields={fields} />}
       {step.number === 17 && <ScoreKpis step={step} allSteps={allSteps} />}
-      {step.number === 19 && <DecisionPanel value={fields["decision"]} onChoose={(c) => onCommit({ decision: c })} pending={pending} />}
+      {step.number === 19 && <DecisionPanel value={fields["decision"]} onChoose={(c) => onCommit({ decision: c }, { decision: fields["decision"] ?? null })} pending={pending} />}
       <div className="biz-grid">
         {form.fields.map((f) => (
-          <Field key={f.key} field={f} value={fields[f.key]} onCommit={(key, value) => onCommit({ [key]: value })} />
+          <Field key={f.key} field={f} value={fields[f.key]} onCommit={(key, value) => onCommit({ [key]: value }, { [key]: fields[key] ?? null })} />
         ))}
       </div>
     </section>

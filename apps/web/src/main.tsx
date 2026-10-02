@@ -1,10 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, onlineManager } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import { AuthProvider } from "./lib/auth-context";
+import { registerMutationDefaults } from "./lib/mutations";
 import { persistOptions } from "./lib/query-persister";
 import "./style.css";
 
@@ -20,6 +21,12 @@ const queryClient = new QueryClient({
   },
 });
 
+// Saisies, arbitrages et commentaires rejouables : valeurs par défaut des mutations mises en pause hors-ligne et persistées.
+registerMutationDefaults(queryClient);
+// TanStack Query se croit en ligne au démarrage : après un rechargement hors-ligne, les mutations restaurées
+// repartiraient aussitôt et échoueraient. L'état réel du navigateur fait foi.
+onlineManager.setOnline(navigator.onLine);
+
 // Enveloppe hors-ligne (production) : l'application, le moteur de l'Atelier et l'outil Parcelle sont servis
 // depuis le cache du navigateur quand le réseau manque ; les appels à l'API, jamais.
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
@@ -33,7 +40,14 @@ if (!root) throw new Error("Application root missing");
 
 createRoot(root).render(
   <StrictMode>
-    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={persistOptions}
+      onSuccess={() => {
+        // Cache relu : les mutations restées en pause (coupure, rechargement) repartent, puis tout est relu.
+        void queryClient.resumePausedMutations().then(() => queryClient.invalidateQueries());
+      }}
+    >
       <BrowserRouter>
         <AuthProvider>
           <App />

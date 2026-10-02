@@ -182,7 +182,18 @@ const fieldValueSchema = z.union([z.string().max(10000), z.number().finite(), z.
 const patchSchema = z.object({
   status: z.enum(["a-faire", "en-cours", "termine"]).optional(),
   fields: z.record(z.string().max(32), fieldValueSchema).optional(),
+  /**
+   * Valeur que le client avait lue pour chaque champ qu'il modifie (contrôle de
+   * concurrence par champ) : si le serveur porte autre chose, la saisie est
+   * refusée (409) avec la valeur courante — une écriture fondée sur une
+   * lecture périmée n'écrase jamais en silence une plus récente
+   * (docs/architecture.md, « Sync and offline »). Sans `baseline`, dernier
+   * écrit gagne, comme le prototype.
+   */
+  baseline: z.record(z.string().max(32), fieldValueSchema).optional(),
 });
+
+const sameValue = (a: ParcoursFieldValue | undefined, b: ParcoursFieldValue | undefined) => (a ?? null) === (b ?? null) || (typeof a === "number" && typeof b === "string" && a === Number(b)) || (typeof a === "string" && typeof b === "number" && Number(a) === b);
 
 /**
  * Valide une réponse contre le champ du formulaire : nombre fini ou null
@@ -233,6 +244,11 @@ parcoursStepsRouter.patch("/:stepNumber", async (req, res) => {
   const result = await db.transaction(async (tx) => {
     const rows = await loadStepRows(tx, project.id);
     const current = rows.get(def.number) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
+    const conflicts = Object.entries(parsed.data.baseline ?? {}).filter(([k, v]) => !sameValue(current.content.fields[k], v));
+    if (conflicts.length) {
+      const labelOf = (k: string) => def.form?.fields.find((f) => f.key === k)?.label ?? k;
+      return { conflict: { fields: Object.fromEntries(conflicts.map(([k]) => [k, current.content.fields[k] ?? null])), message: `${conflicts.map(([k]) => `« ${labelOf(k)} »`).join(", ")} : modifié depuis votre lecture ; votre saisie n'a pas été appliquée.` } };
+    }
     const fields = { ...current.content.fields };
     for (const [k, v] of Object.entries(updates)) {
       if (v === null) delete fields[k];
@@ -250,9 +266,13 @@ parcoursStepsRouter.patch("/:stepNumber", async (req, res) => {
       .onConflictDoUpdate({ target: [projectSteps.projectId, projectSteps.stepNumber], set: { status, content: { ...content } } });
     rows.set(def.number, { status, content });
     // Les empreintes des étapes qui lisent ce formulaire changent avec lui : péremption calculée à la lecture, rien n'est effacé.
-    return stepView(def, await loadStepContext(tx, project, rows));
+    return { view: stepView(def, await loadStepContext(tx, project, rows)) };
   });
-  res.json(result);
+  if ("conflict" in result) {
+    res.status(409).json({ error: "conflict", message: result.conflict.message, current: result.conflict.fields });
+    return;
+  }
+  res.json(result.view);
 });
 
 // --- Arbitrages Harmonie ---------------------------------------------------
@@ -263,6 +283,8 @@ const decisionSchema = z.object({
   owner: z.string().max(250).optional(),
   proof: z.string().max(3000).optional(),
   link: z.string().max(500).optional(),
+  /** Version d'arbitrage lue par le client : si elle a avancé entre-temps (autre appareil, rejeu hors-ligne), refus 409 avec l'état courant. */
+  expectedVersion: z.number().int().min(0).optional(),
 });
 
 /**
@@ -310,6 +332,12 @@ parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) =
       const ctx = await loadStepContext(tx, project, rows);
       const current = rows.get(def.number) ?? { status: EMPTY_STEP_CONTENT.status, content: EMPTY_STEP_CONTENT };
       const dep = ctx.dependencies.get(def.number);
+      if (parsed.data.expectedVersion !== undefined) {
+        const currentVersion = current.content.harmonie.proposals[proposalId]?.decisionVersion ?? 0;
+        if (currentVersion !== parsed.data.expectedVersion) {
+          return { conflict: { message: `La proposition ${proposalId} a été arbitrée depuis votre lecture (version ${currentVersion}) ; votre arbitrage n'a pas été appliqué.`, currentVersion } };
+        }
+      }
       const decided = decideHarmonieProposal(
         HARMONIE_PROFILES,
         def,
@@ -355,9 +383,13 @@ parcoursStepsRouter.post("/:stepNumber/harmonie/:proposalId", async (req, res) =
           }
         }
       }
-      return stepView(def, withRows(ctx, rows));
+      return { view: stepView(def, withRows(ctx, rows)) };
     });
-    res.json(result);
+    if ("conflict" in result) {
+      res.status(409).json({ error: "conflict", message: result.conflict.message, currentVersion: result.conflict.currentVersion });
+      return;
+    }
+    res.json(result.view);
   } catch (err) {
     if (err instanceof HarmonieError) {
       res.status(422).json({ error: "harmonie_rule", message: err.message });

@@ -9,6 +9,7 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api, ApiError, type ProjectComment } from "../../lib/api";
+import { MUTATION_KEYS, type CommentVars } from "../../lib/mutations";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const KIND_LABEL: Record<string, string> = {
@@ -32,7 +33,8 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
     void queryClient.invalidateQueries({ queryKey: ["comments", projectId] });
   };
   const add = useMutation({
-    mutationFn: (body: string) => api.addComment(projectId, body, stepNumber),
+    mutationKey: MUTATION_KEYS.comment,
+    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber),
     onSuccess: () => {
       setDraft("");
       setError(null);
@@ -76,7 +78,7 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
         className="comment-form"
         onSubmit={(e: FormEvent) => {
           e.preventDefault();
-          if (draft.trim()) add.mutate(draft.trim());
+          if (draft.trim()) add.mutate({ projectId, body: draft.trim(), stepNumber });
         }}
       >
         <label>
@@ -84,9 +86,10 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
           <textarea value={draft} maxLength={4000} rows={compact ? 2 : 3} placeholder="Question, remarque, décision à tracer…" onChange={(e) => setDraft(e.target.value)} />
         </label>
         <div className="h7-actions">
-          <button type="submit" className="button-primary" disabled={add.isPending || !draft.trim()}>
+          <button type="submit" className="button-primary" disabled={(add.isPending && !add.isPaused) || !draft.trim()}>
             Publier le commentaire
           </button>
+          {add.isPaused && <span className="h7-muted">Commentaire en attente du réseau : il sera publié au retour de la connexion.</span>}
         </div>
       </form>
       {error && (
@@ -145,8 +148,8 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
           </div>
           <div className="biz-kpi">
             <span>Hors-ligne</span>
-            <b>{v.sync.offline.available ? "Atelier et lecture" : "Non disponible"}</b>
-            <small>file locale et cache (IndexedDB)</small>
+            <b>{v.sync.offline.available ? "Atelier, saisies, lecture" : "Non disponible"}</b>
+            <small>files locales et cache (IndexedDB)</small>
           </div>
         </div>
         <p className="programme-note">{v.access.sharing.reason}</p>

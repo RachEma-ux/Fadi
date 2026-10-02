@@ -49,6 +49,9 @@
  *   6k. hors-ligne : file locale IndexedDB de l'Atelier (dessin hors-ligne,
  *      synchronisation au retour du réseau, rejeu après rechargement),
  *      ouverture depuis le cache local ;
+ *   6l. file hors-ligne des saisies : mutation en pause persistée et
+ *      restaurée après rechargement, rejouée au retour du réseau — refusée
+ *      (409, bandeau de conflit) si le serveur a avancé, enregistrée sinon ;
  *   7. captures ordinateur (1280) et téléphone (390) dans
  *      docs/migration/captures/webapp/.
  *
@@ -628,7 +631,7 @@ check("étape 08 : « Publier le commentaire » → « Commentaires (1) », aute
 await page.goto(`${exampleUrl}?module=collaboration`);
 await page.waitForSelector(".journal-table tbody tr", { timeout: 30000 });
 const collabKpis = (await page.locator(".collaboration-module .biz-kpis").textContent()).replace(/\s+/g, " ");
-check("collaboration : propriétaire = vous, partage « Non disponible » (annoncé, pas simulé), hors-ligne « Atelier et lecture », révision du modèle et dernière écriture", collabKpis.includes(email) && collabKpis.includes("c'est vous") && /PartageNon disponible/.test(collabKpis) && /Hors-ligneAtelier et lecture/.test(collabKpis) && /Révision \d+dernière écriture/.test(collabKpis), collabKpis);
+check("collaboration : propriétaire = vous, partage « Non disponible » (annoncé, pas simulé), hors-ligne « Atelier, saisies, lecture », révision du modèle et dernière écriture", collabKpis.includes(email) && collabKpis.includes("c'est vous") && /PartageNon disponible/.test(collabKpis) && /Hors-ligneAtelier, saisies, lecture/.test(collabKpis) && /Révision \d+dernière écriture/.test(collabKpis), collabKpis);
 check("collaboration : le commentaire de l'étape 08 apparaît avec son lien « étape 08 »", (await page.locator(".comment").count()) === 1 && (await page.locator('.comment a:has-text("étape 08")').count()) === 1);
 const journalKinds = new Set(await page.locator(".journal-table tbody tr").evaluateAll((rows) => rows.map((r) => r.getAttribute("data-kind"))));
 check("collaboration : journal des révisions relu des données (projet, Harmonie, programme, modèle, parcelle, revue, documents, commentaire), du plus récent au plus ancien", ["projet", "harmonie", "programme", "modele", "parcelle", "revue", "document", "commentaire"].every((k) => journalKinds.has(k)) && (await page.locator(".journal-table tbody tr").first().getAttribute("data-kind")) === "commentaire");
@@ -694,6 +697,48 @@ check("rechargement hors-ligne : l'Atelier s'ouvre depuis le cache local du mod�
 await ctx.setOffline(false);
 await page.goto(`${exampleUrl}?module=parcours`);
 await page.waitForSelector(".step-card-open");
+
+// 6l. File hors-ligne des saisies : mutation en pause, persistée et rejouée après rechargement ; refus 409 quand le serveur a avancé (jamais écrasé)
+const testPid = projectUrl.split("/").pop();
+const patchLog = [];
+const logPatch = (r) => { if (r.request().method() === "PATCH") patchLog.push(`${r.status()} ${r.request().postData()?.slice(0, 80)}`); };
+page.on("response", logPatch);
+await page.goto(`${projectUrl}?module=parcours&etape=3`);
+await page.waitForSelector("#biz-f1");
+await page.waitForTimeout(2500); // cache des requêtes persisté
+await ctx.setOffline(true);
+await page.locator("#biz-f1").fill("Demande locale (saisie hors-ligne)");
+await page.locator("#biz-f1").blur();
+await page.waitForSelector(".offline-banner-inline", { timeout: 10000 });
+check("hors-ligne : une saisie d'étape est mise en attente (« 1 envoi(s) de cette étape en attente du réseau »), comptée dans l'en-tête", /^1 envoi\(s\) de cette étape en attente du réseau/.test(await page.locator(".offline-banner-inline").textContent()) && /Hors-ligne · 1 modification/.test(await page.locator(".sync-indicator").textContent()));
+await page.waitForTimeout(2500); // la mutation en pause est persistée avec le cache
+await page.reload();
+await page.waitForSelector("#biz-f1", { timeout: 20000 });
+await page.waitForSelector(".offline-banner-inline", { timeout: 10000 }).catch(() => {});
+check("rechargement hors-ligne : la saisie en attente est restaurée (toujours en pause)", (await page.locator(".offline-banner-inline").count()) === 1);
+// Un autre appareil écrit le même champ pendant la coupure.
+const otherDevice = await page.request.patch(`${BASE}/projects/${testPid}/steps/3`, { data: { fields: { f1: "Demande locale (autre appareil)" } } });
+check("autre appareil : écriture du même champ pendant la coupure (200)", otherDevice.status() === 200);
+await ctx.setOffline(false);
+await page.waitForSelector(".conflict-banner", { timeout: 20000 });
+await page.waitForFunction(() => document.querySelector("#biz-f1")?.value === "Demande locale (autre appareil)", null, { timeout: 10000 }).catch(() => {});
+const conflictText = (await page.locator(".conflict-banner").textContent()).replace(/\s+/g, " ");
+check("retour du réseau : la saisie rejouée est refusée (409) — bandeau « écriture(s) refusée(s) », valeur courante du serveur affichée, rien d'écrasé", /1 écriture\(s\) refusée\(s\)/.test(conflictText) && /Étape 03 · saisie/.test(conflictText) && /modifié depuis votre lecture/.test(conflictText) && (await page.inputValue("#biz-f1")) === "Demande locale (autre appareil)" && /1 conflit\(s\) à examiner/.test(await page.locator(".sync-indicator").textContent()), conflictText.slice(0, 200));
+await page.locator('.conflict-banner button:has-text("Compris")').first().click();
+await page.waitForFunction(() => document.querySelectorAll(".conflict-banner").length === 0, null, { timeout: 10000 });
+check("conflit examiné (« Compris ») → bandeau retiré, en-tête synchronisé", /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()));
+// Sans concurrence, la saisie rejouée passe : même scénario, personne n'a écrit entre-temps.
+await ctx.setOffline(true);
+await page.locator("#biz-f2").fill("Offre concurrente (hors-ligne)");
+await page.locator("#biz-f2").blur();
+await page.waitForSelector(".offline-banner-inline", { timeout: 10000 });
+await ctx.setOffline(false);
+await page.waitForFunction(() => !document.querySelector(".offline-banner-inline") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 20000 });
+const readF2 = () => page.evaluate(async (pid) => (await (await fetch(`/projects/${pid}/steps/3`, { credentials: "include" })).json()).content.fields.f2, testPid);
+await page.waitForFunction(async (pid) => (await (await fetch(`/projects/${pid}/steps/3`, { credentials: "include" })).json()).content.fields.f2 === "Offre concurrente (hors-ligne)", testPid, { timeout: 10000 }).catch(() => {});
+const replayed = await readF2();
+page.off("response", logPatch);
+check("retour du réseau sans concurrence : la saisie en attente est enregistrée sur le serveur", replayed === "Offre concurrente (hors-ligne)", `${String(replayed).slice(0, 60)} | PATCH : ${patchLog.join(" ; ")}`);
 
 // 6d. Sources de l'étape (étape 03 de l'exemple) : import, liste, téléchargement, suppression
 await page.goto(`${exampleUrl}?module=parcours&etape=3`);

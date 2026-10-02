@@ -7,9 +7,10 @@
  * rechargement et aux boutons Précédent/Suivant du navigateur.
  */
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useMutationState, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type SiteObservationsInput } from "../../lib/api";
+import { MUTATION_KEYS, adoptStep, recordConflict, type DecideVars, type StepPatchVars } from "../../lib/mutations";
 import { AtelierHarmonyPage } from "../atelier/AtelierHarmonyPage";
 import { DesignReviewFold } from "../atelier/DesignReview";
 import { NativeAtelier } from "../atelier/NativeAtelier";
@@ -143,18 +144,19 @@ function StepDetail({
   const [harmonyPage, setHarmonyPage] = useState(false);
   const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), enabled: step.number === 10 });
 
-  function adopt(updated: ParcoursStep) {
-    queryClient.setQueryData<ParcoursStep[]>(["steps", projectId], (list) => (list ?? []).map((s) => (s.number === updated.number ? updated : s)));
-    // Les arbitrages ont des effets sur d'autres étapes (cibles remises à faire, décision rétrogradée).
-    void queryClient.invalidateQueries({ queryKey: ["steps", projectId] });
-  }
+  // Les arbitrages ont des effets sur d'autres étapes (cibles remises à faire, décision rétrogradée) : l'étape renvoyée remplace la sienne, le reste se relit.
+  const adopt = (updated: ParcoursStep) => adoptStep(queryClient, projectId, updated);
 
+  // Mutations à clé : mises en pause sans réseau, persistées et rejouées après rechargement (`lib/mutations.ts`).
   const patch = useMutation({
-    mutationFn: (body: { status?: ParcoursStep["status"]; fields?: Record<string, ParcoursFieldValue> }) => api.patchStep(projectId, step.number, body),
+    mutationKey: MUTATION_KEYS.stepPatch,
+    mutationFn: (v: StepPatchVars) => api.patchStep(v.projectId, v.stepNumber, v.body),
     onSuccess: adopt,
+    onError: (err) => recordConflict(queryClient, projectId, err, `Étape ${pad2(step.number)} · saisie`, step.number),
   });
   const decide = useMutation({
-    mutationFn: ({ proposalId, input }: { proposalId: string; input: HarmonieDecisionInput }) => api.decideHarmonie(projectId, step.number, proposalId, input),
+    mutationKey: MUTATION_KEYS.decide,
+    mutationFn: (v: DecideVars) => api.decideHarmonie(v.projectId, v.stepNumber, v.proposalId, v.input),
     onSuccess: (updated, { proposalId }) => {
       setHarmonieErrors((e) => {
         const { [proposalId]: _dropped, ...rest } = e;
@@ -164,9 +166,15 @@ function StepDetail({
       setToast("Choix enregistré et transmis comme intention ; aucun objet dessiné modifié.");
     },
     onError: (err, { proposalId }) => {
+      if (recordConflict(queryClient, projectId, err, `Étape ${pad2(step.number)} · arbitrage ${proposalId}`, step.number)) return;
       const message = err instanceof ApiError && err.serverMessage ? err.serverMessage : "L’arbitrage n’a pas pu être enregistré.";
       setHarmonieErrors((e) => ({ ...e, [proposalId]: message }));
     },
+  });
+  // Envois de cette étape en pause (hors-ligne) : visibles, jamais perdus en silence.
+  const paused = useMutationState({
+    filters: { status: "pending", predicate: (m) => m.state.isPaused && (m.state.variables as { projectId?: string; stepNumber?: number } | undefined)?.projectId === projectId && (m.state.variables as { stepNumber?: number } | undefined)?.stepNumber === step.number },
+    select: (m) => m.mutationId,
   });
   const generate = useMutation({
     mutationFn: () => api.generateHarmonie(projectId, step.number),
@@ -188,7 +196,8 @@ function StepDetail({
     onError: (err) => setSiteError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "Les données du site n’ont pas pu être enregistrées."),
   });
 
-  const pending = patch.isPending || decide.isPending || generate.isPending || saveSite.isPending;
+  // Un envoi en pause (hors-ligne) ne bloque pas la suite du travail : il attend le réseau.
+  const pending = (patch.isPending && !patch.isPaused) || (decide.isPending && !decide.isPaused) || generate.isPending || saveSite.isPending;
   const done = step.status === "termine";
   const intro =
     step.number === 1
@@ -240,7 +249,7 @@ function StepDetail({
               allSteps={allSteps}
               pending={pending}
               errors={harmonieErrors}
-              onDecide={(proposalId, input) => decide.mutate({ proposalId, input })}
+              onDecide={(proposalId, input) => decide.mutate({ projectId, stepNumber: step.number, proposalId, input })}
               onGenerate={() => generate.mutate()}
               onGoto={onOpen}
             />
@@ -255,7 +264,7 @@ function StepDetail({
           allSteps={allSteps}
           pending={pending}
           errors={harmonieErrors}
-          onDecide={(proposalId, input) => decide.mutate({ proposalId, input })}
+          onDecide={(proposalId, input) => decide.mutate({ projectId, stepNumber: step.number, proposalId, input })}
           onGenerate={() => generate.mutate()}
           onGoto={onOpen}
           onSaveSite={step.number === 1 ? (input) => saveSite.mutate(input) : null}
@@ -280,7 +289,12 @@ function StepDetail({
 
       <StepStory step={step} />
 
-      <StepForm step={step} allSteps={allSteps} pending={pending} onCommit={(fields) => patch.mutate({ fields })} />
+      {paused.length > 0 && (
+        <p className="offline-banner offline-banner-inline" role="status">
+          {paused.length} envoi(s) de cette étape en attente du réseau : enregistré(s) sur cet appareil, transmis au retour de la connexion (même après rechargement).
+        </p>
+      )}
+      <StepForm step={step} allSteps={allSteps} pending={pending} onCommit={(fields, baseline) => patch.mutate({ projectId, stepNumber: step.number, body: { fields, baseline } })} />
       {(step.number === 6 || step.number === 7) && <ProgrammeRepartition projectId={projectId} />}
 
       {/* Bibliothèque des bâtiments : « Exemples · qualités du site » (01–03) ou « Bibliothèque d’exemples par type de bâtiment » / programme lié (≥ 04). */}
@@ -288,7 +302,7 @@ function StepDetail({
       <StepSources projectId={projectId} stepNumber={step.number} />
       <StepComments projectId={projectId} stepNumber={step.number} />
 
-      {patch.isError && (
+      {patch.isError && !(patch.error instanceof ApiError && patch.error.status === 409) && (
         <p role="alert" className="h7-error">
           {patch.error instanceof ApiError && patch.error.serverMessage ? patch.error.serverMessage : "La saisie n’a pas pu être enregistrée."}
         </p>
@@ -304,7 +318,7 @@ function StepDetail({
             className={done ? "button-secondary step-done" : "button-secondary"}
             aria-pressed={done}
             disabled={pending}
-            onClick={() => patch.mutate({ status: done ? "en-cours" : "termine" })}
+            onClick={() => patch.mutate({ projectId, stepNumber: step.number, body: { status: done ? "en-cours" : "termine" } })}
           >
             {done ? "Terminée ✓" : "Marquer terminée"}
           </button>
