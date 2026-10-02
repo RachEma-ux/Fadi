@@ -112,7 +112,8 @@ jobs:
         run: |
           echo "🚀 Starting apps/web (vite preview) on :4173..."
           # Must run with apps/web as cwd: vite preview resolves its config
-          # (and the preview.proxy it needs for /auth,/projects,/health)
+          # (and the preview.proxy it needs for /auth, /projects, /examples,
+          # /library, /notifications and /health — the same list as the dev proxy)
           # relative to where it's invoked from, not from --prefix — `npx
           # --prefix apps/web vite preview` silently serves 404s for
           # everything because it never finds apps/web/vite.config.ts.
