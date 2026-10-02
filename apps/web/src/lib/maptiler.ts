@@ -136,7 +136,12 @@ export async function satellitePreview(center: LonLat, key: string): Promise<Sat
   const tiles: SatellitePreview["tiles"] = [];
   for (let dy = -1; dy <= 1; dy++)
     for (let dx = -1; dx <= 1; dx++) {
-      const url = allowed(template.replace("{z}", String(z)).replace("{x}", String(cx + dx)).replace("{y}", String(cy + dy)));
+      const url = allowed(
+        template
+          .replace("{z}", String(z))
+          .replace("{x}", String(cx + dx))
+          .replace("{y}", String(cy + dy)),
+      );
       url.searchParams.set("key", key);
       tiles.push({ left: (dx + 1) * 256, top: (dy + 1) * 256, url: url.href });
     }

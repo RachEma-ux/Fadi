@@ -76,13 +76,27 @@ function SatelliteTiles({ preview, onStatus }: { preview: SatellitePreview; onSt
   }, []);
   useEffect(() => {
     if (!counts.loaded && !counts.failed) return;
-    onStatus(counts.failed ? `Fond incomplet : ${counts.failed} tuile(s) indisponible(s). Aucune observation favorable déduite.` : `${counts.loaded} / 9 tuiles reçues ; ${counts.failed} erreur(s). Une observation datée doit être consignée séparément.`);
+    onStatus(
+      counts.failed
+        ? `Fond incomplet : ${counts.failed} tuile(s) indisponible(s). Aucune observation favorable déduite.`
+        : `${counts.loaded} / 9 tuiles reçues ; ${counts.failed} erreur(s). Une observation datée doit être consignée séparément.`,
+    );
   }, [counts, onStatus]);
   return (
     <div id="v62-map-preview">
       <div className="v62-tiles" role="img" aria-label="Fond satellite de contexte autour du centre calculé" ref={frame}>
         {preview.tiles.map((t) => (
-          <img key={t.url} src={t.url} width={256} height={256} alt="" referrerPolicy="no-referrer" style={{ left: t.left, top: t.top }} onLoad={() => setCounts((c) => ({ ...c, loaded: c.loaded + 1 }))} onError={() => setCounts((c) => ({ ...c, failed: c.failed + 1 }))} />
+          <img
+            key={t.url}
+            src={t.url}
+            width={256}
+            height={256}
+            alt=""
+            referrerPolicy="no-referrer"
+            style={{ left: t.left, top: t.top }}
+            onLoad={() => setCounts((c) => ({ ...c, loaded: c.loaded + 1 }))}
+            onError={() => setCounts((c) => ({ ...c, failed: c.failed + 1 }))}
+          />
         ))}
         <span className="v62-marker" style={{ left: preview.marker[0], top: preview.marker[1] }}>
           Centre H-GEO
@@ -123,7 +137,10 @@ function MapCollect({ projectId, view, onSaved }: { projectId: string; view: Des
             ? `Altitude de service : ${fmt(e.value)} m · ${new Date(e.at).toLocaleString("fr-FR")} · précision topographique non garantie.`
             : "Aucune collecte externe effectuée dans ce fichier. La clé configurée dans Parcelle sera utilisée à votre demande.")}
       </p>
-      <p className="h7-muted">Le fond satellite avec le contour source se consulte aussi à l’étape 01 (« Afficher le fond MapTiler » du pli « Données du site »). Le service d’altimétrie ne détermine ni pente locale détaillée ni nappe.</p>
+      <p className="h7-muted">
+        Le fond satellite avec le contour source se consulte aussi à l’étape 01 (« Afficher le fond MapTiler » du pli « Données du site »). Le service d’altimétrie ne détermine ni pente locale
+        détaillée ni nappe.
+      </p>
     </>
   );
 }
