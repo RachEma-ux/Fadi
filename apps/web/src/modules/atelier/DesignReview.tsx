@@ -30,6 +30,52 @@ const TABS: [Tab, string][] = [
 const fmt = (v: number | null | undefined, n = 2) => (Number.isFinite(v as number) ? (v as number).toLocaleString("fr-FR", { maximumFractionDigits: n }) : "Non renseigné");
 
 /** `compassHTML` : références directionnelles du bâtiment — saisie, enregistrement, état calculé par le moteur. */
+/**
+ * `site-note` de flow-v62 : « Observation utilisateur, distincte de la simple collecte » — voies, masses voisines, date,
+ * source, limites — enregistrée comme observation déclarée (20 caractères minimum, refus du serveur sinon). Elle lève
+ * la réserve « Contexte extérieur non observé » avec un géoréférencement ; jamais une collecte automatique.
+ */
+function SiteObservationForm({ projectId, view, onSaved }: { projectId: string; view: DesignReviewView; onSaved: (next: DesignReviewView, text: string) => void }) {
+  const [note, setNote] = useState(view.siteContext?.observation ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const save = useMutation({
+    mutationFn: () => api.putSiteObservation(projectId, note),
+    onSuccess: (next) => {
+      setError(null);
+      onSaved(next, "Observation déclarée enregistrée ; la réserve « Contexte extérieur » est levée si le site est géoréférencé.");
+    },
+    onError: (err) => setError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "L’observation n’a pas pu être enregistrée."),
+  });
+  return (
+    <WriteFieldset projectId={projectId}>
+      <div className="site-observation">
+        <label className="v62-select">
+          Observation utilisateur, distincte de la simple collecte
+          <textarea id="v62-site-note" value={note} rows={3} maxLength={4000} placeholder="Voies, masses voisines, date, source, limites de l’observation…" onChange={(e) => setNote(e.target.value)} />
+        </label>
+        <div className="h7-actions">
+          <button type="button" className="button-primary" disabled={save.isPending} onClick={() => save.mutate()}>
+            Enregistrer comme observation déclarée
+          </button>
+          {view.siteContext && (
+            <span className="h7-muted site-observation-status">
+              {view.siteContext.observationStatus} · {new Date(view.siteContext.observedAt).toLocaleString("fr-FR")}
+            </span>
+          )}
+        </div>
+        {error && (
+          <p className="h7-error" role="alert">
+            {error}
+          </p>
+        )}
+        <p className="h7-muted">
+          Le service d’altimétrie ne détermine ni pente locale détaillée ni nappe. Pour les voisins, routes et masques, consigner une observation datée et faire contrôler sur place.
+        </p>
+      </div>
+    </WriteFieldset>
+  );
+}
+
 function CompassTools({ projectId, view, onSaved }: { projectId: string; view: DesignReviewView; onSaved: (next: DesignReviewView, text: string) => void }) {
   const c = view.compass.values;
   const str = (k: string) => (c[k] === null || c[k] === undefined ? "" : String(c[k]));
@@ -82,32 +128,32 @@ function CompassTools({ projectId, view, onSaved }: { projectId: string; view: D
         La rotation de la caméra ne change pas la référence spatiale. Les valeurs héritées restent des hypothèses tant que leurs sources ne sont pas confirmées. Aucun déplacement automatique de local.
       </p>
       <WriteFieldset projectId={projectId}>
-      <div className="h7-form">
-        {fields.map(([k, label, type, attrs]) => (
-          <label key={k}>
-            {label}
-            <input type={type} value={form[k] ?? ""} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))} {...attrs} />
+        <div className="h7-form">
+          {fields.map(([k, label, type, attrs]) => (
+            <label key={k}>
+              {label}
+              <input type={type} value={form[k] ?? ""} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))} {...attrs} />
+            </label>
+          ))}
+          <label>
+            Référence du nord
+            <select value={form["basis"] ?? ""} onChange={(e) => setForm((f) => ({ ...f, basis: e.target.value }))}>
+              <option value="">À préciser</option>
+              <option value="magnetic">Magnétique</option>
+              <option value="geographic">Géographique</option>
+              <option value="grid">Grille / projet</option>
+            </select>
           </label>
-        ))}
-        <label>
-          Référence du nord
-          <select value={form["basis"] ?? ""} onChange={(e) => setForm((f) => ({ ...f, basis: e.target.value }))}>
-            <option value="">À préciser</option>
-            <option value="magnetic">Magnétique</option>
-            <option value="geographic">Géographique</option>
-            <option value="grid">Grille / projet</option>
-          </select>
-        </label>
-        <label className="h7-checkbox wide">
-          <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} /> Je confirme la référence de façade et les sources saisies — ce n’est pas une certification
-          technique.
-        </label>
-      </div>
-      <div className="h7-actions">
-        <button type="button" className="button-primary" disabled={save.isPending} onClick={() => save.mutate()}>
-          Enregistrer les références
-        </button>
-      </div>
+          <label className="h7-checkbox wide">
+            <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} /> Je confirme la référence de façade et les sources saisies — ce n’est pas une certification
+            technique.
+          </label>
+        </div>
+        <div className="h7-actions">
+          <button type="button" className="button-primary" disabled={save.isPending} onClick={() => save.mutate()}>
+            Enregistrer les références
+          </button>
+        </div>
       </WriteFieldset>
       {error && (
         <p className="h7-error" role="alert">
@@ -132,6 +178,7 @@ function InlineReport({
   onRefresh,
   refreshing,
   onGoto,
+  onSaved,
 }: {
   projectId: string;
   view: DesignReviewView;
@@ -140,6 +187,7 @@ function InlineReport({
   onRefresh: () => void;
   refreshing: boolean;
   onGoto: (step: number) => void;
+  onSaved: (next: DesignReviewView, text: string) => void;
 }) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const r = view.analysis;
@@ -277,6 +325,7 @@ function InlineReport({
                   Fond satellite et altimétrie MapTiler : la connexion reste celle de l’outil Parcelle (étape 01) ; aucune collecte externe n’est effectuée depuis ce bilan. Pour les voisins, routes et
                   masques, consigner une observation datée et faire contrôler sur place.
                 </p>
+                <SiteObservationForm projectId={projectId} view={view} onSaved={onSaved} />
               </section>
               <div dangerouslySetInnerHTML={{ __html: view.html.sources }} />
             </>
@@ -380,7 +429,19 @@ export function DesignReviewFold({ projectId, roomsAction = false }: { projectId
           {compass && <CompassTools projectId={projectId} view={v} onSaved={adopt} />}
         </div>
       </details>
-      {report && <InlineReport key={reportTab} projectId={projectId} view={v} initialTab={reportTab} onClose={() => setReport(false)} onRefresh={() => refresh.mutate()} refreshing={refresh.isPending} onGoto={goto} />}
+      {report && (
+        <InlineReport
+          key={reportTab}
+          projectId={projectId}
+          view={v}
+          initialTab={reportTab}
+          onClose={() => setReport(false)}
+          onRefresh={() => refresh.mutate()}
+          refreshing={refresh.isPending}
+          onGoto={goto}
+          onSaved={adopt}
+        />
+      )}
       <style>{v.css}</style>
       <HarmonieToast text={toast} onDone={() => setToast(null)} />
     </>

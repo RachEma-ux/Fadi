@@ -85,6 +85,8 @@ export interface ProjectArchive {
     exampleMode: "reference" | "editable" | null;
     sourceAttachment: Record<string, unknown> | null;
     siteObservations: Record<string, unknown> | null;
+    /** Contexte extérieur déclaré (`siteContextV62` du prototype : observation, statut, date, `satelliteObserved`). */
+    siteContext: Record<string, unknown> | null;
     programmeState: Record<string, unknown> | null;
     parcelTransmission: Record<string, unknown> | null;
     parcelsInitialized: boolean;
@@ -267,6 +269,17 @@ function attachmentsOf(raw: unknown, mapStep: (f: Record<string, unknown>) => nu
 }
 
 /** `demoP118V81.mode` du prototype : la référence protégée de l'exemple résolu, ou sa copie modifiable. */
+/** Le contexte extérieur déclaré d'un export (Fadi ou prototype `siteContextV62`) : seule une observation consignée est reprise, jamais une collecte. */
+export function siteContextOf(raw: unknown): Record<string, unknown> | null {
+  if (!isRecord(raw) || typeof raw["observation"] !== "string" || !raw["observation"].trim()) return null;
+  return {
+    observation: raw["observation"].trim(),
+    observationStatus: typeof raw["observationStatus"] === "string" ? raw["observationStatus"] : "Déclaration utilisateur, non contrôle indépendant",
+    observedAt: typeof raw["observedAt"] === "string" ? raw["observedAt"] : "",
+    satelliteObserved: raw["satelliteObserved"] === true,
+  };
+}
+
 function exampleModeOf(demo: unknown): "reference" | "editable" | null {
   if (!isRecord(demo)) return null;
   return demo["mode"] === "reference" ? "reference" : "editable";
@@ -325,6 +338,7 @@ function fromPrototypeProject(p: unknown, native: unknown, files: unknown, defin
       exampleMode: exampleModeOf(data["demoP118V81"]),
       sourceAttachment: null,
       siteObservations: site,
+      siteContext: siteContextOf(data["siteContextV62"]),
       programmeState: null,
       parcelTransmission: null,
       parcelsInitialized: false,
@@ -423,6 +437,7 @@ function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly Par
       exampleMode: project["exampleMode"] === "reference" || project["exampleMode"] === "editable" ? project["exampleMode"] : typeof project["sourceExampleId"] === "string" ? "reference" : null,
       sourceAttachment: isRecord(project["sourceAttachment"]) ? project["sourceAttachment"] : null,
       siteObservations: isRecord(project["siteObservations"]) ? project["siteObservations"] : null,
+      siteContext: siteContextOf(project["siteContext"]),
       programmeState: isRecord(project["programmeState"]) ? project["programmeState"] : null,
       parcelTransmission: isRecord(project["parcelTransmission"]) ? project["parcelTransmission"] : null,
       parcelsInitialized: project["parcelsInitialized"] === true,

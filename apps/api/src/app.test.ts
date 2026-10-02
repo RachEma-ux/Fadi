@@ -1177,7 +1177,7 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
 });
 
 describe("Bilan Harmonie du bâtiment conçu (flow-v62) et références directionnelles", () => {
-  it("analyses the imported P.118 model like the prototype (74 zones, 6 levels, entry at 123.87°, 7 issues), audits transmissions, serves plans and the HTML report, and archives the review", async () => {
+  it("analyses the imported P.118 model like the prototype (74 zones, 6 levels, entry at 123.87°, 7 issues), audits transmissions, serves plans and the HTML report, archives the review, and records a declared site observation", async () => {
     const client = await registerAndLogin("design@example.com");
     const imported = await client.post("/examples/p118-exemple-complet/import");
     const pid = imported.body.id as string;
@@ -1233,11 +1233,27 @@ describe("Bilan Harmonie du bâtiment conçu (flow-v62) et références directio
     expect(saved.body.analysis.stale).toBe(true); // les références font partie des entrées de la revue
     const step10After = (await client.get(`/projects/${pid}/steps/10`)).body;
     expect(step10After.stale).toBe(true);
+    // Observation déclarée du contexte extérieur (site-note) : règle des 20 caractères, statut du prototype, réserve CONTEXT levée,
+    // audit « Preuves de contexte extérieur » OK, bilan produit avant elle périmé, conservée dans l'archive.
+    const short = await client.put(`/projects/${pid}/design-review/observation`).send({ note: "trop court" });
+    expect(short.status).toBe(422);
+    expect(short.body.message).toBe("Décrivez la source, la date et ce qui a été observé (20 caractères minimum).");
+    await client.get(`/projects/${pid}/design-review/rapport`);
+    const declared = await client.put(`/projects/${pid}/design-review/observation`).send({ note: "Voie en T au nord-est, masse voisine R+3 à l'ouest ; relevé sur place le 12/09/2026." });
+    expect(declared.status).toBe(200);
+    expect(declared.body.siteContext).toMatchObject({ observation: "Voie en T au nord-est, masse voisine R+3 à l'ouest ; relevé sur place le 12/09/2026.", observationStatus: "Déclaration utilisateur, non contrôle indépendant", satelliteObserved: true });
+    expect(declared.body.analysis.issues.map((x: { id: string }) => x.id)).not.toContain("CONTEXT");
+    expect(declared.body.audit.find((x: { id: string }) => x.id === "external")).toMatchObject({ status: "OK" });
+    expect((await client.get(`/projects/${pid}/documents`)).body.documents.find((d: { kind: string }) => d.kind === "bilan-batiment").freshness).toBe("perime");
+    expect((await client.get(`/projects/${pid}/analyses`)).body.checks.find((c: { id: string }) => c.id === "design:CONTEXT")).toMatchObject({ status: "conforme" });
+    const archived = (await client.get(`/projects/${pid}/archive`)).body;
+    expect(archived.project.siteContext).toMatchObject({ satelliteObserved: true });
     // Jamais pour un autre utilisateur.
     const other = await registerAndLogin("design-other@example.com");
     expect((await other.get(`/projects/${pid}/design-review`)).status).toBe(404);
     expect((await other.post(`/projects/${pid}/design-review/review`)).status).toBe(404);
-  });
+    expect((await other.put(`/projects/${pid}/design-review/observation`).send({ note: "Observation d'un intrus, assez longue pour passer." })).status).toBe(404);
+  }, 30000);
 
   it("computes a parcel georeference like the prototype's data (EPSG:26191 → WGS84, project north 358.946°)", () => {
     const g = georeferenceFromParcel({ vertices: [[321946.82, 347183.88], [321954.11, 347215.38], [321995.84, 347186.25], [321978.68, 347161.67]], crs: "EPSG:26191", centroid: [321969.1332212173, 347187.4245213032] });

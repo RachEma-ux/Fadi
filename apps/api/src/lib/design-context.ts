@@ -121,7 +121,7 @@ export async function loadDesignContext(q: Querier, project: ProjectRow, now: st
     programmeCase: programmeCase ? { caseId: programmeCase.caseId, type: programmeCase.type, spaces: programmeCase.spaces, roomLinks: programmeCase.roomLinks ?? {}, hypotheses: programmeCase.hypotheses ?? null, revision: programmeCase.revision } : null,
     repartitionCaseTotals: programmeCase && rep.fromCase ? programmeCaseSums(programmeCase.spaces) : null,
     siteObservations: project.siteObservations,
-    satelliteObserved: false,
+    siteContext: project.siteContext ?? null,
     business: steps.sources.business,
     generatedTexts: Object.fromEntries(Object.entries(programmeState.generated).map(([k, v]) => [String(k), v])),
     harmony: h,
@@ -153,6 +153,8 @@ export function designReviewView(ctx: DesignContext) {
     history: ctx.harmony.designReviewHistoryV62 ?? [],
     assumptions: input.assumptions,
     georeference: input.georeference,
+    /** Observation déclarée du contexte extérieur (null tant que rien n'est déclaré). */
+    siteContext: input.siteContext,
     profileLabel: ctx.profileLabel,
     example: input.example,
     compass: { values: ctx.harmony.compass, status: compassStatus(input.engine, ctx.harmony.compass) },

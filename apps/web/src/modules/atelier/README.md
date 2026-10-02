@@ -19,4 +19,6 @@ Le moteur de l'Atelier du prototype (Design Atelier V14-3 : viewer 3D, plan, cou
 
 Le moteur (scripts, markup, feuille de style — `native/engine.ts`) n'est chargé qu'à la première ouverture de l'Atelier ou des étapes 10 / 11 ; le magasin et l'état de synchronisation (`native/storage.ts`) restent dans l'enveloppe pour l'en-tête et le bandeau des conflits. Le service worker met tous les morceaux en cache dès son installation : l'Atelier s'ouvre hors-ligne même s'il n'a jamais été visité en ligne.
 
-Reste : copie automatique de la référence au premier dessin, fond MapTiler et observation déclarée du bilan (voir « Limites restantes » de la matrice).
+L'onglet « Hypothèses & MapTiler » du bilan reçoit l'observation déclarée du contexte extérieur (`SiteObservationForm` → `PUT …/design-review/observation`, 20 caractères minimum, statut du prototype) ; elle lève la réserve « Contexte extérieur non observé » avec un géoréférencement et périme le bilan produit avant elle.
+
+Reste : copie automatique de la référence au premier dessin, fond satellite et altimétrie MapTiler (voir « Limites restantes » de la matrice).

@@ -345,6 +345,8 @@ export interface DesignReviewView {
   history: DesignReviewView["review"][];
   assumptions: { id: string; topic: string; value: string; source: string; validation: string; owner: string; status: string }[];
   georeference: { latitude: number; longitude: number; projectNorth: number | null; source: string; hypothesis: boolean } | null;
+  /** Observation déclarée du contexte extérieur (`site-note` du prototype), null tant que rien n'est déclaré. */
+  siteContext: { observation: string; observationStatus: string; observedAt: string; satelliteObserved: boolean } | null;
   profileLabel: string;
   example: boolean;
   compass: { values: Record<string, unknown>; status: { ready: boolean; missing: string[]; facing: number | null; sitting: number | null; gua: { n: number; name: string; element: string; group: string; direction: string } | null } };
@@ -718,6 +720,8 @@ export const api = {
   refreshDesignReview: (projectId: string) => request<DesignReviewView>(`/projects/${projectId}/design-review/review`, { method: "POST" }),
   designReportUrl: (projectId: string) => `/projects/${projectId}/design-review/rapport`,
   putCompass: (projectId: string, input: CompassInput) => request<DesignReviewView>(`/projects/${projectId}/design-review/compass`, { method: "PUT", body: JSON.stringify(input) }),
+  /** « Enregistrer comme observation déclarée » (contexte extérieur, 20 caractères minimum ; 422 sinon). */
+  putSiteObservation: (projectId: string, note: string) => request<DesignReviewView>(`/projects/${projectId}/design-review/observation`, { method: "PUT", body: JSON.stringify({ note }) }),
   /** « Rapport de cette étape » (`Harmonie_Etape_NN_V7.html`) ou, sans étape, la synthèse des choix du projet (`Harmonie_Choix_Parcours_V7.html`). */
   harmonieReportUrl: (projectId: string, stepNumber: number | null) => (stepNumber === null ? `/projects/${projectId}/steps/harmonie/rapport` : `/projects/${projectId}/steps/${stepNumber}/harmonie/rapport`),
   getAtelierStore: (projectId: string) => request<AtelierStore>(`/projects/${projectId}/atelier/store`),

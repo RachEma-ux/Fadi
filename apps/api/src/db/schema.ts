@@ -34,6 +34,8 @@ export const sessions = pgTable("sessions", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("sessions_user_id_idx").on(t.userId)]);
 
+import type { SiteContextDeclaration } from "@parcours/domain-model";
+
 export interface EditingLock {
   userId: string;
   email: string;
@@ -64,6 +66,8 @@ export const projects = pgTable("projects", {
   parcelTransmission: jsonb("parcel_transmission").$type<Record<string, unknown> | null>(),
   /** Données du site déclarées à l'étape 01 (côté d'approche, priorité, contextes, source, note…) — `harmonieEtapesV7.site` du prototype, voir `SiteObservations`. */
   siteObservations: jsonb("site_observations").$type<Record<string, unknown> | null>(),
+  /** Contexte extérieur déclaré par l'utilisateur pour le bilan du bâtiment (`siteContextV62` du prototype : observation, statut, date) ; null tant que rien n'est déclaré. */
+  siteContext: jsonb("site_context").$type<SiteContextDeclaration | null>(),
   /** État du programme appliqué (bibliothèque des bâtiments) : textes générés par étape, écarts conservés, décision à réexaminer et son historique. */
   programmeState: jsonb("programme_state").$type<Record<string, unknown> | null>(),
   /** Dossier Harmony du projet (`p.data.harmony` du prototype, schéma `Parcours.Harmony` 1) : observations par règle, références directionnelles, carte temporelle, fiches de locaux, ambiances, actions, revues, revue de conception archivée. Conservé tel quel ; lu par `@parcours/domain-model` (`harmony-engine.ts`, `design-review.ts`). */

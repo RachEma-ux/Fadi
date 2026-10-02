@@ -28,7 +28,7 @@ function input(over: Partial<DesignReviewInput> = {}): DesignReviewInput {
     programmeCase: CASE,
     repartitionCaseTotals: null,
     siteObservations: null,
-    satelliteObserved: false,
+    siteContext: null,
     business: new Map(),
     generatedTexts: {},
     harmony: harmonyDossier(DOSSIER.harmony, NOW),

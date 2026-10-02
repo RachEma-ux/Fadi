@@ -28,6 +28,7 @@ import { newId } from "./ids.js";
 import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replaceProjection } from "./native-projection.js";
 import { computationFor, loadStepContext, type StepContextProject } from "./step-context.js";
 import { loadStepRows, upsertStep, type Querier, type Tx } from "./step-rows.js";
+import type { SiteContextDeclaration } from "@parcours/domain-model";
 
 /** Version de l'application écrite dans l'archive (traçabilité, pas une compatibilité). */
 export const APPLICATION_VERSION = "fadi 0.1.0";
@@ -75,6 +76,7 @@ export async function exportProjectArchive(q: Querier, project: ProjectRow, now:
       exampleMode: project.exampleMode ?? null,
       sourceAttachment: project.sourceAttachment ?? null,
       siteObservations: project.siteObservations ?? null,
+      siteContext: (project.siteContext as Record<string, unknown> | null) ?? null,
       programmeState: project.programmeState ?? null,
       parcelTransmission: project.parcelTransmission ?? null,
       parcelsInitialized: project.parcelsInitialized,
@@ -138,6 +140,7 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
       exampleMode: archive.project.exampleMode,
       sourceAttachment: archive.project.sourceAttachment,
       siteObservations: archive.project.siteObservations,
+      siteContext: archive.project.siteContext as SiteContextDeclaration | null,
       programmeState: archive.project.programmeState,
       parcelTransmission: archive.project.parcelTransmission,
       parcelsInitialized: archive.project.parcelsInitialized,

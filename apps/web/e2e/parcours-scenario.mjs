@@ -397,6 +397,24 @@ check("bilan : audit des transmissions, 14 contrôles, « Revue de conception »
 await page.locator('button:has-text("Actualiser la revue de conception")').click();
 await page.waitForFunction(() => /Lecture documentaire courante/.test(document.querySelector("#v62-report header p")?.textContent || ""), null, { timeout: 10000 });
 check("bilan : « Actualiser la revue de conception » → revue rattachée aux entrées courantes, toast", /Revue rattachée aux entrées actuelles/.test(await page.locator(".v62-tab-content .v62-table").textContent()) && (await page.locator(".h7-toast").textContent().catch(() => "")) === "Bilan de conception actualisé sans lever les réserves.");
+// Observation déclarée du contexte extérieur (site-note) : refus en dessous de 20 caractères, puis réserve « Contexte extérieur non observé » levée.
+await page.locator('.v62-tabs button:has-text("Hypothèses & MapTiler")').click();
+await page.waitForSelector("#v62-site-note");
+await page.fill("#v62-site-note", "trop court");
+await page.locator('button:has-text("Enregistrer comme observation déclarée")').click();
+await page.waitForSelector(".site-observation .h7-error", { timeout: 10000 });
+check("bilan · Hypothèses & MapTiler : observation trop courte refusée par le serveur (« 20 caractères minimum »)", /20 caractères minimum/.test(await page.locator(".site-observation .h7-error").textContent()));
+await page.fill("#v62-site-note", "Voie en T au nord-est, masse voisine R+3 à l'ouest ; relevé sur place le 12/09/2026.");
+await page.locator('button:has-text("Enregistrer comme observation déclarée")').click();
+await page.waitForSelector(".site-observation-status", { timeout: 10000 });
+check("bilan : « Enregistrer comme observation déclarée » → statut « Déclaration utilisateur, non contrôle indépendant », daté", /^Déclaration utilisateur, non contrôle indépendant · \d{2}\/\d{2}\/\d{4}/.test(await page.locator(".site-observation-status").textContent()));
+await page.locator('.v62-tabs button:has-text("Bilan du bâtiment")').click();
+await page.waitForFunction(() => document.querySelectorAll("#v62-report .v62-issue").length === 6, null, { timeout: 10000 }).catch(() => {});
+check("bilan : la réserve « Contexte extérieur non observé » est levée (6 réserves au lieu de 7), la revue archivée devient à actualiser", (await page.locator("#v62-report .v62-issue").count()) === 6 && !/Contexte extérieur non observé/.test(await page.locator("#v62-report").textContent()));
+await page.locator('.v62-tabs button:has-text("Transmission")').click();
+check("bilan · Transmission : « Preuves de contexte extérieur » OK (observation consignée par utilisateur)", /Preuves de contexte extérieur.{0,80}OK/.test((await page.locator(".v62-tab-content").textContent()).replace(/\s+/g, " ")));
+await page.locator('button:has-text("Actualiser la revue de conception")').click();
+await page.waitForFunction(() => /Lecture documentaire courante/.test(document.querySelector("#v62-report header p")?.textContent || ""), null, { timeout: 10000 });
 const [bilanDl] = await Promise.all([page.waitForEvent("download"), page.locator('#v62-report a:has-text("Rapport HTML ↓")').click()]);
 const bilanHtml = await (await import("node:fs/promises")).readFile(await bilanDl.path(), "utf8");
 check("bilan : « Rapport HTML ↓ » → Bilan_Harmonie_Batiment_V7.html (synthèse, plan, 74 zones, transmission)", bilanDl.suggestedFilename() === "Bilan_Harmonie_Batiment_V7.html" && bilanHtml.includes("<title>P.118 — Bilan Harmonie du bâtiment conçu · V7</title>") && bilanHtml.includes("Lecture des 74 zones") && bilanHtml.includes("<svg"));

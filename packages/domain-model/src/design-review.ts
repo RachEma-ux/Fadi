@@ -17,6 +17,7 @@
 import type { Point2 } from "@parcours/core-geometry";
 import { cardinalOf, compassStatus, natalStatus, normDeg, type DesignReviewSnapshot, type HarmonyDossier, type HarmonyEngineData } from "./harmony-engine.js";
 import { analyseFloors, analyseRooms, fnv1a, polygonCenter, pointInPolygon, semantic, stableArea, type ModelFloor, type ModelRoom, type NativeFloorDesignLike, type NativeLevelLike, type RoomLinkTargets } from "./model-analysis.js";
+import { HarmonieError } from "./harmonie.js";
 import type { ParcoursFieldValue } from "./parcours.js";
 import { programmeCaseSums, type ProgrammeSums } from "./programme.js";
 
@@ -64,6 +65,24 @@ export interface DesignProgrammeCase {
   revision?: number;
 }
 
+/** Observation du contexte extérieur déclarée par l'utilisateur (voies, masses voisines, date, source, limites). */
+export interface SiteContextDeclaration {
+  observation: string;
+  /** Toujours « Déclaration utilisateur, non contrôle indépendant » (prototype). */
+  observationStatus: string;
+  observedAt: string;
+  satelliteObserved: boolean;
+}
+
+/** Règle du prototype : une observation déclarée décrit la source, la date et ce qui a été observé (20 caractères minimum). */
+export const SITE_OBSERVATION_MIN = 20;
+export const SITE_OBSERVATION_STATUS = "Déclaration utilisateur, non contrôle indépendant";
+export function declareSiteObservation(note: string, now: string): SiteContextDeclaration {
+  const observation = note.trim();
+  if (observation.length < SITE_OBSERVATION_MIN) throw new HarmonieError("Décrivez la source, la date et ce qui a été observé (20 caractères minimum).");
+  return { observation, observationStatus: SITE_OBSERVATION_STATUS, observedAt: now, satelliteObserved: true };
+}
+
 export interface DesignReviewInput {
   projectId: string;
   projectName: string;
@@ -79,8 +98,11 @@ export interface DesignReviewInput {
   repartitionCaseTotals: unknown;
   /** Observations du site (étape 01) : contexte extérieur, repère géographique saisi. */
   siteObservations: Record<string, unknown> | null;
-  /** Observation extérieure consignée par l'utilisateur (`siteContextV62.satelliteObserved`) : non portée → `false`. */
-  satelliteObserved: boolean;
+  /**
+   * Contexte extérieur déclaré (`siteContextV62` du prototype, sans la collecte MapTiler) : une observation datée,
+   * consignée par l'utilisateur — jamais une collecte automatique ni un contrôle indépendant.
+   */
+  siteContext: SiteContextDeclaration | null;
   business: ReadonlyMap<number, Record<string, ParcoursFieldValue>>;
   /** Textes générés par le programme appliqué, exclus de l'empreinte des entrées manuelles. */
   generatedTexts: Record<string, Record<string, string>>;
@@ -247,7 +269,7 @@ export function designAnalysis(input: DesignReviewInput): DesignAnalysis {
   const inputHash = fnv1a({
     nativeHash,
     case: a ? { id: a.caseId, type: a.type, spaces: a.spaces, links: a.roomLinks, hypotheses: a.hypotheses } : null,
-    context: input.siteObservations,
+    context: { site: input.siteObservations, exterior: input.siteContext },
     manualBrief,
     ambiences: h.ambiences,
     workingAssumptions: h.workingAssumptionsV62 ?? null,
@@ -295,7 +317,8 @@ export function designAnalysis(input: DesignReviewInput): DesignAnalysis {
   if (mezz) issue("MEZZ", "à étudier", "Mezzanine et RDC : acoustique / transitions", `Mezzanine partielle : ${fmtFr(mezz.gross)} m² de contour de dalle. Étudier l’effet de l’ouverture sur bruit, intimité et sécurité de rive ; ne pas l’interpréter comme un secteur manquant du bâtiment entier.`, rooms.filter((r) => r.level === "mezz").map((r) => r.id));
   const ramp = ((levelsMap["ss"]?.["meta"] as Record<string, unknown> | undefined)?.["basementAccess"] ?? (input.floor["meta"] as Record<string, unknown> | undefined)?.["basementAccess"]) as Record<string, unknown> | undefined;
   if (ramp) issue("RAMP", "prioritaire", "Accès technique et rampe dans le recul", `Largeur libre ${fmtFr(Number(ramp["clearWidthM"]))} m ; pente centrale ${fmtFr(Number(ramp["mainSlopePercent"]))} % ; palier bas ${fmtFr(Number(ramp["endLevelM"]))} m. Autorisation, drainage, soutènement, visibilité et séparation piétons / véhicules restent à valider.`, ["ss|EX118-RAMP-PORTAL"], 13);
-  if (!g || !input.satelliteObserved) issue("CONTEXT", "à documenter", "Contexte extérieur non observé", "Les coordonnées préparent MapTiler mais ne constituent pas une observation satellite. H-ENV-A/B et H-SOL servent de scénarios de sensibilité. Ne pas conclure à l’absence de nuisances, de T-junction ou de masques.", [], 1);
+  const observed = input.siteContext?.satelliteObserved === true;
+  if (!g || !observed) issue("CONTEXT", "à documenter", "Contexte extérieur non observé", "Les coordonnées préparent MapTiler mais ne constituent pas une observation satellite. H-ENV-A/B et H-SOL servent de scénarios de sensibilité. Ne pas conclure à l’absence de nuisances, de T-junction ou de masques.", [], 1);
   if (!compassStatus(input.engine, h.compass).ready) issue("COMPASS", "à documenter", "Lecture directionnelle conditionnelle", "Façade calculée depuis le modèle ; nord source et déclinaison / mesure magnétique non confirmés. Ba Zhai reste une lecture de scénario, non une validation de secteurs.", [], 10);
   if (!natalStatus(input.engine, h).ready) issue("FLYING", "à documenter", "Étoiles Volantes : carte natale non établie", "H-TEMPS propose la Période 9 pour un scénario futur. Aucune carte montagne/eau ni effet d’auspice n’est inventé.", [], 10);
   const sourceSummary = `Bilan de conception sous hypothèses : ${issues.map((x) => x.title).join(" ; ")}.`;
@@ -355,7 +378,8 @@ export function designAudit(input: DesignReviewInput, r: DesignAnalysis, profile
   row("text", "Dossier → champs et synthèses", input.textConflicts === 0, `${input.textConflicts} conflit(s) de texte manuel conservé(s)`);
   row("decision", "Décision unique → transfert", !!input.decision19, `Décision source : ${input.decision19 || "non prise"} ; les modifications appellent une révision`, !input.decision19);
   row("geo", "Géoréférencement → contexte MapTiler", !!r.geo, r.geo ? "Coordonnées calculées disponibles, hypothèse source visible" : "Localisation à fournir", true);
-  row("external", "Preuves de contexte extérieur", input.satelliteObserved, `Observation satellite ${input.satelliteObserved ? "consignée par utilisateur" : "non consignée"} ; la collecte ne certifie pas les accès ni le sol`, true);
+  const observed = input.siteContext?.satelliteObserved === true;
+  row("external", "Preuves de contexte extérieur", observed, `Observation satellite ${observed ? "consignée par utilisateur" : "non consignée"} ; la collecte ne certifie pas les accès ni le sol`, true);
   return out;
 }
 

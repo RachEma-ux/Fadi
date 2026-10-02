@@ -7,11 +7,12 @@
  *   POST /review      → « Actualiser la revue de conception » (revue archivée sur les entrées courantes, historique de 12)
  *   GET  /rapport     → « Exporter le bilan HTML » (Bilan_Harmonie_Batiment_V7.html, pièce jointe)
  *   PUT  /compass     → « Enregistrer les références » directionnelles (save-compass)
+ *   PUT  /observation → « Enregistrer comme observation déclarée » (site-note : contexte extérieur, 20 caractères minimum)
  */
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { designReviewSnapshot } from "@parcours/domain-model";
+import { declareSiteObservation, designReviewSnapshot, HarmonieError } from "@parcours/domain-model";
 import { db } from "../db/client.js";
 import { projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -89,6 +90,43 @@ designReviewRouter.put("/compass", async (req, res) => {
     const harmony = { ...ctx.harmony, compass, updated: now } as unknown as Record<string, unknown>;
     await tx.update(projects).set({ harmony, updatedAt: new Date() }).where(eq(projects.id, project.id));
     return designReviewView(await loadDesignContext(tx, { ...project, harmony }, now));
+  });
+  res.json(result);
+});
+
+const observationSchema = z.object({ note: z.string().max(4000) });
+
+/**
+ * `site-note` de flow-v62 : l'observation du contexte extérieur, distincte de
+ * la simple collecte — voies, masses voisines, date, source, limites. Elle
+ * lève la réserve « Contexte extérieur non observé » (avec un
+ * géoréférencement) et périme le bilan produit avant elle. Statut toujours
+ * « Déclaration utilisateur, non contrôle indépendant » ; aucune collecte
+ * MapTiler n'est faite ici.
+ */
+designReviewRouter.put("/observation", async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const parsed = observationSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+    return;
+  }
+  const now = new Date().toISOString();
+  let siteContext;
+  try {
+    siteContext = declareSiteObservation(parsed.data.note, now);
+  } catch (err) {
+    if (err instanceof HarmonieError) {
+      res.status(422).json({ error: "harmonie_rule", message: err.message });
+      return;
+    }
+    throw err;
+  }
+  const result = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
+    await tx.update(projects).set({ siteContext, updatedAt: new Date() }).where(eq(projects.id, project.id));
+    return designReviewView(await loadDesignContext(tx, { ...project, siteContext }, now));
   });
   res.json(result);
 });

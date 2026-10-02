@@ -2514,3 +2514,18 @@ fieldset.access-fieldset:disabled {
 .editing-lock-other {
   color: #895f24;
 }
+
+/* Observation déclarée du contexte extérieur (bilan du bâtiment) */
+.site-observation textarea {
+  width: 100%;
+  min-height: 72px;
+  font: inherit;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.site-observation-status {
+  font-size: 12.5px;
+}

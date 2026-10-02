@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { containment, designAnalysis, designAudit, designPlanSvg, designReportHtml, designReviewSnapshot, designTraceHtml, toLocal, validPolygon, type DesignReviewInput } from "./design-review";
+import { containment, declareSiteObservation, designAnalysis, designAudit, designPlanSvg, designReportHtml, designReviewSnapshot, designTraceHtml, toLocal, validPolygon, type DesignReviewInput } from "./design-review";
 import { baseStars, compassStatus, harmonyAssess, harmonyDossier, harmonyFullAssessment, harmonyProfile, harmonyRecordStatus, harmonySector, natalStatus, type HarmonyEngineData } from "./harmony-engine";
 import type { NativeFloorDesignLike, NativeLevelLike } from "./model-analysis";
 import { programmeCaseSums } from "./programme";
@@ -26,7 +26,7 @@ function input(over: Partial<DesignReviewInput> = {}): DesignReviewInput {
     programmeCase: CASE,
     repartitionCaseTotals: null,
     siteObservations: null,
-    satelliteObserved: false,
+    siteContext: null,
     business: new Map(),
     generatedTexts: {},
     harmony: harmonyDossier(DOSSIER.harmony, NOW),
@@ -133,6 +133,21 @@ describe("bilan du bâtiment conçu (flow-v62 analyse / audit / plan / rapport)"
     expect(empty.issues[0]).toMatchObject({ id: "NO-MODEL", title: "Modèle non dessiné" });
     expect(empty.rooms).toHaveLength(0);
     expect(empty.facts.height).toBeNull();
+  });
+
+  it("observation déclarée du contexte extérieur : règle des 20 caractères, statut du prototype, réserve CONTEXT levée avec un géoréférencement, empreinte des entrées modifiée", () => {
+    expect(() => declareSiteObservation("trop court", NOW)).toThrow("Décrivez la source, la date et ce qui a été observé (20 caractères minimum).");
+    const declared = declareSiteObservation("  Voie en T au nord-est, masse voisine R+3 à l'ouest ; relevé sur place le 12/09/2026.  ", NOW);
+    expect(declared).toEqual({ observation: "Voie en T au nord-est, masse voisine R+3 à l'ouest ; relevé sur place le 12/09/2026.", observationStatus: "Déclaration utilisateur, non contrôle indépendant", observedAt: NOW, satelliteObserved: true });
+    const before = designAnalysis(input({}));
+    const after = designAnalysis(input({ siteContext: declared }));
+    expect(before.issues.some((x) => x.id === "CONTEXT")).toBe(true);
+    expect(after.issues.some((x) => x.id === "CONTEXT")).toBe(false);
+    expect(after.inputHash).not.toBe(before.inputHash);
+    // Sans géoréférencement, l'observation ne suffit pas : la réserve reste.
+    expect(designAnalysis(input({ siteContext: declared, georeference: null })).issues.some((x) => x.id === "CONTEXT")).toBe(true);
+    const audit = designAudit(input({ siteContext: declared }), after, "Formation & bureaux");
+    expect(audit.find((x) => x.id === "external")).toMatchObject({ status: "OK", detail: expect.stringContaining("consignée par utilisateur") });
   });
 
   it("audit des transmissions : OK / À documenter / Écart avec les contrôles du prototype", () => {
