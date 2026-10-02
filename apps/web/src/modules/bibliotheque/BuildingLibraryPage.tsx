@@ -33,7 +33,7 @@ import {
   type LibrarySpace,
   type ProgrammeBucket,
 } from "@parcours/domain-model";
-import { api, ApiError, type ApplyProgrammeCaseInput, type BuildingCaseDetail, type BuildingLibraryIndex } from "../../lib/api";
+import { api, ApiError, type ApplyProgrammeCaseInput, type BuildingCaseDetail } from "../../lib/api";
 import "./building-library.css";
 import libraryCss from "./building-library.css?raw";
 
