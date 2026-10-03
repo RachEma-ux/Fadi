@@ -31,6 +31,7 @@
         <li><a href="ordinateur.html?palette=push">O5 · Palette <kbd>Ctrl</kbd> <kbd>K</kbd></a> — « push » trouve « Pousser / tirer » par synonyme</li>
         <li><a href="ordinateur.html?mode=3d&amp;niveau=complet">O6 · Vue 3D</a> — volume des six niveaux, RDC actif</li>
         <li><a href="ordinateur.html?niveau=contextuel">O7 · Contextuel</a> — propositions selon la sélection</li>
+        <li><a href="ordinateur.html?niveau=complet&amp;famille=modifier">O8 · Complet · Modifier</a> — chaque famille (Créer, Modifier, Connecter, Analyser, Documenter, Partager) montre tous ses outils</li>
       </ul>
     </section>
     <section class="carte">
@@ -39,6 +40,7 @@
         <li><a href="telephone.html">T1 · Plan</a> — puce d'outil actif, niveau actif, onglets des repères</li>
         <li><a href="telephone.html?feuille=projet">T2 · Projet</a> — navigateur en feuille</li>
         <li><a href="telephone.html?feuille=outils">T3 · Outils</a> — favoris épinglés (Essentiel)</li>
+        <li><a href="telephone.html?feuille=outils&amp;niveau=complet">T3b · Outils, niveau Complet</a> — les six familles, tous les outils</li>
         <li><a href="telephone.html?feuille=inspecteur">T4 · Inspecteur</a> — porte P-X, Essentiel</li>
         <li><a href="telephone.html?feuille=inspecteur&amp;niveau=complet">T5 · Inspecteur complet</a> — provenance, statut, position <i>t</i></li>
         <li><a href="telephone.html?feuille=problemes&amp;niveau=complet">T6 · Problèmes</a> — réserves Harmonie, valeurs à confirmer, journal</li>
@@ -91,6 +93,111 @@
   <p class="muet">Régénérer après une modification de la source : <code>python3 docs/atelier/maquette/outils/extraire-p118.py</code>
     (option <code>--verifier</code> : contrôle sans écrire, utilisé par le workflow).</p>
 
+  <h2 id="exhaustivite">Exhaustivité des outils</h2>
+  <p>Tous les outils sont rangés dans les six familles du niveau <b>Complet</b> (onglets de la barre sur ordinateur,
+    feuille « Outils » sur téléphone) et retrouvables dans la palette <kbd>Ctrl</kbd> <kbd>K</kbd> par leur nom ou un
+    synonyme. Une étiquette <span class="lot">lot n</span> marque un outil prévu après le lot 3 ; une étiquette
+    <span class="lot trou">lot 5</span> marque un outil <b>que le prototype offre aujourd'hui</b> et qui serait absent du
+    produit entre la bascule (lot 4) et le lot 5. Tableaux générés par <code>outils/outils.py</code>.</p>
+  <!-- OUTILS:CORRESPONDANCE --><h3>Les 27 outils du prototype actuel</h3>
+  <p class="muet">Liste lue dans <code>apps/web/public/atelier-native/v14-tools.js</code> (<code>TOOLS</code>). 27 / 27 ont une place dans la maquette.</p>
+  <table class="corresp"><tr><th>Outil du prototype</th><th>Dans la maquette</th><th>Fiche</th><th>Lot</th></tr>
+  <tr><td>Sélection</td><td>Créer › Architecture › <b>Sélection</b></td><td>L3a.2</td><td>3a</td></tr>
+  <tr><td>Mur</td><td>Créer › Architecture › <b>Mur</b></td><td>DA-07-01</td><td>3a</td></tr>
+  <tr><td>Porte</td><td>Créer › Architecture › <b>Porte</b></td><td>DA-07-02</td><td>3a</td></tr>
+  <tr><td>Fenêtre</td><td>Créer › Architecture › <b>Fenêtre</b></td><td>DA-07-03</td><td>3a</td></tr>
+  <tr><td>Escalier</td><td>Créer › Architecture › <b>Escalier</b></td><td>DA-07-10</td><td>3a</td></tr>
+  <tr><td>Poteau</td><td>Créer › Architecture › <b>Poteau</b></td><td>DA-03-13</td><td>3a</td></tr>
+  <tr><td>Ligne</td><td>Créer › Esquisse › <b>Ligne</b></td><td>DA-01-02</td><td>3a</td></tr>
+  <tr><td>Cercle</td><td>Créer › Esquisse › <b>Cercle</b></td><td>DA-01-03</td><td>3a</td></tr>
+  <tr><td>Rectangle</td><td>Créer › Esquisse › <b>Rectangle</b></td><td>DA-01-04</td><td>3a</td></tr>
+  <tr><td>Polygone</td><td>Créer › Esquisse › <b>Polygone</b></td><td>DA-01-04</td><td>3a</td></tr>
+  <tr><td>Déplacer</td><td>Modifier › Transformer › <b>Déplacer</b></td><td>DA-02-01</td><td>3a</td></tr>
+  <tr><td>Copier</td><td>Modifier › Transformer › <b>Copier</b></td><td>DA-02-02</td><td>3a</td></tr>
+  <tr><td>Tourner objet</td><td>Modifier › Transformer › <b>Tourner</b></td><td>DA-02-03</td><td>3a</td></tr>
+  <tr><td>Miroir</td><td>Modifier › Transformer › <b>Miroir</b></td><td>DA-02-04</td><td>3a</td></tr>
+  <tr><td>Échelle</td><td>Modifier › Transformer › <b>Échelle</b></td><td>DA-02-05</td><td>3a</td></tr>
+  <tr><td>Décalage</td><td>Modifier › Ajuster les tracés › <b>Décaler</b></td><td>DA-02-09</td><td>3a</td></tr>
+  <tr><td>Effacer</td><td>Modifier › Ajuster les tracés › <b>Effacer</b></td><td>annexe B</td><td>3a</td></tr>
+  <tr><td>Pousser/Tirer</td><td>Modifier › 3D › <b>Pousser / tirer</b></td><td>DA-04-07</td><td>3b</td></tr>
+  <tr><td>Extruder</td><td>Modifier › 3D › <b>Extruder</b></td><td>DA-04-01</td><td>3b</td></tr>
+  <tr><td>Calques</td><td>Connecter › Organisation › <b>Calques</b></td><td>DA-05-01</td><td>3a</td></tr>
+  <tr><td>Mètre</td><td>Analyser › Analyser › <b>Mètre</b></td><td>DA-15-01</td><td>5 <span class="lot trou">absent entre lot 4 et lot 5</span></td></tr>
+  <tr><td>Métré</td><td>Analyser › Analyser › <b>Métré</b></td><td>DA-16-10</td><td>5 <span class="lot trou">absent entre lot 4 et lot 5</span></td></tr>
+  <tr><td>Cotation</td><td>Documenter › Annotations › <b>Cotation</b></td><td>DA-15-02</td><td>5 <span class="lot trou">absent entre lot 4 et lot 5</span></td></tr>
+  <tr><td>Texte</td><td>Documenter › Annotations › <b>Texte</b></td><td>DA-15-04</td><td>5 <span class="lot trou">absent entre lot 4 et lot 5</span></td></tr>
+  <tr><td>Exporter</td><td>Partager › Partager › <b>Exporter (PNG, SVG, DXF, PDF)</b></td><td>DA-14 / DA-22-03</td><td>5 <span class="lot trou">absent entre lot 4 et lot 5</span></td></tr>
+  <tr><td>Pan</td><td>Navigation de la vue › <b>Pan</b></td><td>DA-18-04 (3D) · L3a.2 (2D)</td><td>3a / 3b</td></tr>
+  <tr><td>Rotation vue</td><td>Navigation de la vue › <b>Orbite (rotation de la vue)</b></td><td>DA-18-04</td><td>3b</td></tr>
+  </table>
+  <h3>Les entrées DA retenues pour les lots 1 à 3</h3>
+  <p class="muet">Une ligne par fiche de <code>docs/atelier/fiches/</code> (63 fiches).</p>
+  <table class="corresp"><tr><th>Fiche</th><th>Où la voir</th></tr>
+  <tr><td><a href="#DA-01-01" id="DA-01-01">DA-01-01</a></td><td>Saisie de précision, grille 0,50 m, unités (O3, T8)</td></tr>
+  <tr><td><a href="#DA-01-02" id="DA-01-02">DA-01-02</a></td><td>Créer › <b>Ligne</b> ; Créer › <b>Polyligne</b></td></tr>
+  <tr><td><a href="#DA-01-03" id="DA-01-03">DA-01-03</a></td><td>Créer › <b>Arc</b> ; Créer › <b>Cercle</b></td></tr>
+  <tr><td><a href="#DA-01-04" id="DA-01-04">DA-01-04</a></td><td>Créer › <b>Rectangle</b> ; Créer › <b>Polygone</b></td></tr>
+  <tr><td><a href="#DA-01-05" id="DA-01-05">DA-01-05</a></td><td>Créer › <b>Courbe</b></td></tr>
+  <tr><td><a href="#DA-01-06" id="DA-01-06">DA-01-06</a></td><td>Créer › <b>Main levée</b></td></tr>
+  <tr><td><a href="#DA-01-09" id="DA-01-09">DA-01-09</a></td><td>Créer › <b>Éditeur d&#x27;esquisse</b></td></tr>
+  <tr><td><a href="#DA-01-10" id="DA-01-10">DA-01-10</a></td><td>Créer › <b>Ligne d&#x27;axe</b></td></tr>
+  <tr><td><a href="#DA-01-11" id="DA-01-11">DA-01-11</a></td><td>Créer › <b>Hachure</b></td></tr>
+  <tr><td><a href="#DA-02-01" id="DA-02-01">DA-02-01</a></td><td>Modifier › <b>Déplacer</b></td></tr>
+  <tr><td><a href="#DA-02-02" id="DA-02-02">DA-02-02</a></td><td>Modifier › <b>Copier</b></td></tr>
+  <tr><td><a href="#DA-02-03" id="DA-02-03">DA-02-03</a></td><td>Modifier › <b>Tourner</b></td></tr>
+  <tr><td><a href="#DA-02-04" id="DA-02-04">DA-02-04</a></td><td>Modifier › <b>Miroir</b></td></tr>
+  <tr><td><a href="#DA-02-05" id="DA-02-05">DA-02-05</a></td><td>Modifier › <b>Échelle</b></td></tr>
+  <tr><td><a href="#DA-02-06" id="DA-02-06">DA-02-06</a></td><td>Modifier › <b>Étirer</b></td></tr>
+  <tr><td><a href="#DA-02-07" id="DA-02-07">DA-02-07</a></td><td>Modifier › <b>Ajuster</b></td></tr>
+  <tr><td><a href="#DA-02-08" id="DA-02-08">DA-02-08</a></td><td>Modifier › <b>Prolonger</b></td></tr>
+  <tr><td><a href="#DA-02-09" id="DA-02-09">DA-02-09</a></td><td>Modifier › <b>Décaler</b></td></tr>
+  <tr><td><a href="#DA-02-10" id="DA-02-10">DA-02-10</a></td><td>Modifier › <b>Raccorder</b></td></tr>
+  <tr><td><a href="#DA-02-11" id="DA-02-11">DA-02-11</a></td><td>Modifier › <b>Chanfreiner</b></td></tr>
+  <tr><td><a href="#DA-02-12" id="DA-02-12">DA-02-12</a></td><td>Modifier › <b>Répéter</b></td></tr>
+  <tr><td><a href="#DA-02-13" id="DA-02-13">DA-02-13</a></td><td>Modifier › <b>Décomposer</b></td></tr>
+  <tr><td><a href="#DA-02-14" id="DA-02-14">DA-02-14</a></td><td>Modifier › <b>Points de contrôle</b></td></tr>
+  <tr><td><a href="#DA-02-15" id="DA-02-15">DA-02-15</a></td><td>Barre des accrochages sous le plan (O1, O3)</td></tr>
+  <tr><td><a href="#DA-02-16" id="DA-02-16">DA-02-16</a></td><td>Saisie de précision longueur / angle (O3, T8)</td></tr>
+  <tr><td><a href="#DA-02-17" id="DA-02-17">DA-02-17</a></td><td>Modifier › <b>Manipulateur</b></td></tr>
+  <tr><td><a href="#DA-03-01" id="DA-03-01">DA-03-01</a></td><td>Solides : Extruder, Pousser / tirer (famille Modifier · 3D)</td></tr>
+  <tr><td><a href="#DA-03-09" id="DA-03-09">DA-03-09</a></td><td>Inspecteur typé : paramètres nommés et unités (O1, O2, T4, T5)</td></tr>
+  <tr><td><a href="#DA-03-10" id="DA-03-10">DA-03-10</a></td><td>Pousser / tirer, points de contrôle (famille Modifier)</td></tr>
+  <tr><td><a href="#DA-03-12" id="DA-03-12">DA-03-12</a></td><td>Solides multicorps : Extruder (famille Modifier · 3D)</td></tr>
+  <tr><td><a href="#DA-03-13" id="DA-03-13">DA-03-13</a></td><td>Créer › <b>Poteau</b></td></tr>
+  <tr><td><a href="#DA-03-15" id="DA-03-15">DA-03-15</a></td><td>Changer de type (famille Connecter)</td></tr>
+  <tr><td><a href="#DA-04-01" id="DA-04-01">DA-04-01</a></td><td>Modifier › <b>Extruder</b></td></tr>
+  <tr><td><a href="#DA-04-07" id="DA-04-07">DA-04-07</a></td><td>Modifier › <b>Pousser / tirer</b></td></tr>
+  <tr><td><a href="#DA-05-01" id="DA-05-01">DA-05-01</a></td><td>Connecter › <b>Calques</b></td></tr>
+  <tr><td><a href="#DA-05-02" id="DA-05-02">DA-05-02</a></td><td>Connecter › <b>Classe</b></td></tr>
+  <tr><td><a href="#DA-05-03" id="DA-05-03">DA-05-03</a></td><td>Calques du navigateur (O1, T2)</td></tr>
+  <tr><td><a href="#DA-05-04" id="DA-05-04">DA-05-04</a></td><td>Niveaux du navigateur, niveau actif (O1, T2)</td></tr>
+  <tr><td><a href="#DA-05-05" id="DA-05-05">DA-05-05</a></td><td>Connecter › <b>Grouper</b> ; Connecter › <b>Dissoudre le groupe</b></td></tr>
+  <tr><td><a href="#DA-05-12" id="DA-05-12">DA-05-12</a></td><td>Objets par classe du navigateur, inspecteur (O1, O2)</td></tr>
+  <tr><td><a href="#DA-05-14" id="DA-05-14">DA-05-14</a></td><td>Changer de type (famille Connecter), type dans l&#x27;inspecteur</td></tr>
+  <tr><td><a href="#DA-05-15" id="DA-05-15">DA-05-15</a></td><td>Connecter › <b>Changer de type</b></td></tr>
+  <tr><td><a href="#DA-06-07" id="DA-06-07">DA-06-07</a></td><td>Connecter › <b>Propriétés BIM</b></td></tr>
+  <tr><td><a href="#DA-06-08" id="DA-06-08">DA-06-08</a></td><td>Connecter › <b>Classification</b></td></tr>
+  <tr><td><a href="#DA-07-01" id="DA-07-01">DA-07-01</a></td><td>Créer › <b>Mur</b> ; Connecter › <b>Joindre les murs</b> ; Connecter › <b>Scinder un mur</b></td></tr>
+  <tr><td><a href="#DA-07-02" id="DA-07-02">DA-07-02</a></td><td>Créer › <b>Porte</b></td></tr>
+  <tr><td><a href="#DA-07-03" id="DA-07-03">DA-07-03</a></td><td>Créer › <b>Fenêtre</b></td></tr>
+  <tr><td><a href="#DA-07-04" id="DA-07-04">DA-07-04</a></td><td>Créer › <b>Ouverture</b></td></tr>
+  <tr><td><a href="#DA-07-05" id="DA-07-05">DA-07-05</a></td><td>Créer › <b>Plancher</b></td></tr>
+  <tr><td><a href="#DA-07-06" id="DA-07-06">DA-07-06</a></td><td>Créer › <b>Dalle</b></td></tr>
+  <tr><td><a href="#DA-07-10" id="DA-07-10">DA-07-10</a></td><td>Créer › <b>Escalier</b></td></tr>
+  <tr><td><a href="#DA-07-15" id="DA-07-15">DA-07-15</a></td><td>Créer › <b>Pièce</b> ; Analyser › <b>Détecter les pièces</b></td></tr>
+  <tr><td><a href="#DA-07-16" id="DA-07-16">DA-07-16</a></td><td>Créer › <b>Espace</b></td></tr>
+  <tr><td><a href="#DA-07-17" id="DA-07-17">DA-07-17</a></td><td>Créer › <b>Zone</b></td></tr>
+  <tr><td><a href="#DA-17-16" id="DA-17-16">DA-17-16</a></td><td>Analyser › <b>Revue de la maquette</b></td></tr>
+  <tr><td><a href="#DA-18-03" id="DA-18-03">DA-18-03</a></td><td>Vue 3D (O6, T9)</td></tr>
+  <tr><td><a href="#DA-18-04" id="DA-18-04">DA-18-04</a></td><td>Vue 3D, orbite / pan / zoom (O6, T9)</td></tr>
+  <tr><td><a href="#DA-21-01" id="DA-21-01">DA-21-01</a></td><td>Journal et états local / synchronisé / conflit (O2, T6)</td></tr>
+  <tr><td><a href="#DA-21-02" id="DA-21-02">DA-21-02</a></td><td>État « conflit » et résolution dans le panneau (O2)</td></tr>
+  <tr><td><a href="#DA-21-04" id="DA-21-04">DA-21-04</a></td><td>Révision du modèle dans le bandeau ; journal (O2)</td></tr>
+  <tr><td><a href="#DA-21-05" id="DA-21-05">DA-21-05</a></td><td>Annuler / rétablir (bandeau, palette)</td></tr>
+  <tr><td><a href="#DA-21-06" id="DA-21-06">DA-21-06</a></td><td>États local / synchronisé, hors ligne (O2, T6)</td></tr>
+  <tr><td><a href="#DA-21-07" id="DA-21-07">DA-21-07</a></td><td>Problèmes et réserves du panneau (O2, T6)</td></tr>
+  </table><!-- /OUTILS:CORRESPONDANCE -->
+
   <h2>Points à trancher par le maître d'ouvrage</h2>
   <ol>
     <li><b>Validation de la maquette</b> (cahier §10.1, point 1) : le lot 3a ne commence pas sans elle.</li>
@@ -99,6 +206,10 @@
     <li><b>Essentiel</b> = outils du prototype à plat (Sélection, Mur, Porte, Fenêtre, Pièce, Cotation, Pousser, Déplacer) ; les familles n'apparaissent qu'en Complet. À confirmer.</li>
     <li><b>Téléphone</b> : cinq onglets en bas (Projet, Outils, Inspecteur, Problèmes, Affichage) ouvrant des feuilles, plutôt que des panneaux latéraux.</li>
     <li><b>Réserves Harmonie</b> listées dans le panneau avec un lien « Ouvrir » vers le bilan de l'étape 10 ; elles ne se traitent pas dans l'Atelier.</li>
+    <li><b>Outils du prototype prévus au lot 5</b> (Cotation, Texte, Mètre, Métré, Exporter) : la bascule du lot 4
+      supprime l'ancien Atelier avant leur arrivée. Au choix : les avancer au lot 3 dans une version simple (cotation et
+      texte libres, mesure, export PNG / SVG de la vue), accepter leur absence entre les lots 4 et 5, ou placer le lot 5
+      avant la bascule (§10.1, point 6).</li>
     <li><b>Orientation du plan</b> : vue tournée pour la lecture (comme ici) ou repère local brut ; le nord de P.118 n'étant pas confirmé (H11), aucune flèche nord n'est proposée.</li>
   </ol>
 </main>
