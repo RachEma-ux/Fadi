@@ -101,7 +101,8 @@ rouverte au lot 7).
 **Suppressions de fonctions visibles et périmètre** (points 6 et 8) :
 
 6 bis. ~~Outils du prototype prévus au lot 5~~ — **tranché (D-018)** : Cotation, Texte, Mètre, Métré et Exporter
-   (PNG / SVG) sont avancés au lot 3a en version simple (L3a.5) ; aucun outil visible ne disparaît à la bascule.
+   (PNG / SVG) sont avancés au lot 3a en version simple (L3a.5) ; D-019 y ajoute le DXF du plan et l'impression.
+   Seule perte temporaire acceptée : une cote posée entre les lots 4 et 5 ne suit pas l'objet (rattachement au lot 5).
 
 7. « Extruder » du prototype fait en réalité une coque ou un percement : ces fonctions disparaissent au lot 4
    sans figurer au §5.5. Les garder au lot 3, ou les renvoyer à DA-04-09 / 10 (optionnel) ?
