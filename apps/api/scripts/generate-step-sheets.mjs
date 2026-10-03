@@ -44,7 +44,7 @@ const FINGERPRINT = Object.fromEntries(Array.from({ length: 21 }, (_, i) => [i +
 /** État de migration par fonction, à la date de génération. */
 function migrationStatus(n) {
   const rows = [];
-  rows.push(["Vue d'ensemble → étape, précédente / suivante, « Marquer terminée »", "✅", "ParcoursModule.tsx ; e2e parcours-scenario.mjs"]);
+  rows.push(["Vue d'ensemble → étape, précédente / suivante, « Marquer terminée »", "✅", "ParcoursModule.tsx ; e2e scenarios/02-parcours-etapes.mjs"]);
   rows.push(["Harmonie · propositions A/B/C, Retenir / Adapter / Écarter / Traduire / Dessiner / Vérifier, intentions reçues, transmission", "✅", "HarmoniePanel.tsx ; règles serveur dans parcours-steps.ts (tests app.test.ts) ; moteur domain-model/harmonie.ts (tests)"]);
   rows.push(["Péremption « À réexaminer » (empreinte des données pertinentes de l'étape et des intentions reçues ; encart « Données pertinentes modifiées », chip « À réexaminer · choix conservé », « Source à réexaminer »), « Actualiser les propositions », « Rapport de cette étape » (Harmonie_Etape_" + pad2(n) + "_V7.html)", "✅", "domain-model/dependencies.ts et harmonie-report.ts (tests) ; lib/step-context.ts ; POST …/harmonie/generate, GET …/harmonie/rapport ; e2e 6e"]);
   if (n === 1) rows.push(["Propositions de site A/B/C calculées sur la parcelle (zonage 15/50/25/10 · 10/45/35/10 · 12/43/20/25 %, schéma SVG, légende, export, « Voir le schéma »), proposition de départ selon la priorité déclarée, données du site (côté d'approche, nature, priorité, contextes, source, note, repère WGS84)", "✅", "core-geometry/site-zoning.ts, domain-model/site.ts (tests) ; GET …/steps/1 (site), PUT …/steps/1/site (422 « Pour une approche documentée… ») ; SiteHarmonie.tsx ; e2e étape 01"]);
@@ -186,7 +186,7 @@ for (const s of steps) {
   md.push("## Scénarios de test");
   md.push("");
   md.push("- `apps/api/src/app.test.ts` : « serves each step with the prototype's real form… », « stores form answers… », « applies the Harmonie rules server-side… », « exposes the programme repartition… », « imports an example… ».");
-  md.push("- `apps/web/e2e/parcours-scenario.mjs` : scénario rejoué sur le prototype puis sur Fadi (voir docs/migration/reference.md, « Écran d'étape réel »).");
+  md.push("- `apps/web/e2e/run.mjs` (scénarios par module, `apps/web/e2e/scenarios/`) : scénario rejoué sur le prototype puis sur Fadi (voir docs/migration/reference.md, « Écran d'étape réel »).");
   if (n === 1) md.push("- Étape 01 (e2e) : projet vierge → 3 propositions sans schéma ; exemple → fichier P.118 ouvert dans l'outil, « Mes parcelles » 1 345,55 m², schéma A et légende 15/50/25/10 %, borne déplacée → « Conflit avec le bâtiment dessiné » sans déplacer le modèle, borne rétablie → liée, priorité « Séparation des mouvements » → départ C, approche documentée sans source → refus, « Voir le schéma » C.");
   md.push("");
   md.push("## Captures");
