@@ -110,7 +110,7 @@ const TRANSFORMATIONS: Readonly<Record<FamilleImport, readonly string[]>> = {
   ],
   traces: [
     "`floor-slab` → `dalle` : `epaisseur` = `height` 0,25 m « à vérifier », `thickness` 0,10 m en `import.thickness`",
-    "`roof-slab` → `toiture` plate : `epaisseur` = `height` « à vérifier », `pente` « non évaluée »",
+    "`roof-slab` → `toiture` plate : `epaisseur` = `height` « à vérifier », `pente` « non évaluée » ; `roof-slab` annulaire (contour + trou, acrotère) → `solide`, rôle conservé (D-025)",
     "`room` → `piece.polygones` si le code correspond, sinon `espace` ; `core-zone` → `zone` ; `plan-reference` → `reference-plan`",
     "autres rôles → `solide`, `role` conservé tel quel ; `vertexOffsets`, `topOffsets`, hauteurs nulles conservés",
   ],
@@ -648,7 +648,10 @@ export const importerP118: ImporterP118 = (dataset: JeuDonneesP118, options) => 
         const cal = calqueDe(src, n, id);
         const techniques = [proprieteImporteur("rang", rang), ...(metaTrous ? [proprieteImporteur("trous", metaTrous)] : [])];
         const commun = { id, niveauId: n.id, ...(cal.calqueId ? { calqueId: cal.calqueId } : {}) };
-        if (role === "floor-slab" || role === "roof-slab") {
+        // D-025 : un `roof-slab` annulaire (contour + trou, ex. acrotère) est une paroi périphérique, pas une
+        // toiture : importé comme `solide` (contour, trous, hauteur, décalage tels quels), rôle conservé.
+        const anneauToiture = role === "roof-slab" && poly.trous.length > 0;
+        if ((role === "floor-slab" || role === "roof-slab") && !anneauToiture) {
           const epaisseur = exiger(src.height, estNombre, "height");
           const annotations = {
             epaisseur: {
@@ -719,7 +722,9 @@ export const importerP118: ImporterP118 = (dataset: JeuDonneesP118, options) => 
               ],
             }),
           );
-          if (!(ROLES_SOLIDES_CONNUS as readonly string[]).includes(role)) {
+          if (anneauToiture) {
+            ctx.probleme("valeur-a-verifier", "information", `Tracé ${id} « ${String(src.name)} » : « roof-slab » annulaire importé comme solide (acrotère, D-025), rôle conservé.`, [id], { niveauId: n.id });
+          } else if (!(ROLES_SOLIDES_CONNUS as readonly string[]).includes(role)) {
             ctx.roles.set(role, [...(ctx.roles.get(role) ?? []), id]);
             ctx.probleme("role-inconnu", "avertissement", `Tracé ${id} : rôle « ${role} » inconnu, importé comme solide avec son rôle conservé.`, [id], { niveauId: n.id });
           }
@@ -1026,19 +1031,12 @@ export const importerP118: ImporterP118 = (dataset: JeuDonneesP118, options) => 
   }
 
   // --- Questions ouvertes ---------------------------------------------------
-  const toitures = [...ctx.objets.values()].filter((o): o is ObjetDe<"toiture"> => o.classe === "toiture");
-  const epaisses = toitures.filter((t) => t.params.epaisseur.value !== 0.25);
-  if (epaisses.length) {
-    ctx.questions.push(
-      `Tracés « roof-slab » importés comme toitures plates dont l'épaisseur (height) n'est pas 0,25 m : ${epaisses.map((t) => `${t.id} « ${String(nomImport(t))} » (${t.params.epaisseur.value} m)`).join(", ")} — un acrotère doit-il rester une toiture ou devenir un solide / un mur ?`,
-    );
-  }
   const sansTrace = [...ctx.objets.values()].filter((o): o is ObjetDe<"piece"> => o.classe === "piece" && o.params.polygones.length === 0);
-  if (sansTrace.length) ctx.questions.push(`Pièces sans tracé courant (${sansTrace.length}) conservées sans géométrie : ${sansTrace.map((p) => p.id).join(", ")} — les garder ou les retirer (§10.1, point 8 du lot 0) ?`);
+  if (sansTrace.length) ctx.questions.push(`Pièces sans tracé courant (${sansTrace.length}) conservées sans géométrie (D-025 : gardées, problème listé) : ${sansTrace.map((p) => p.id).join(", ")}.`);
   const alignes = [...ctx.objets.values()].filter((o) => o.classe === "mur" && o.annotations?.alignement !== undefined);
-  if (alignes.length) ctx.questions.push(`${alignes.length} murs sans lineRef (murs de façade) : alignement « axe » retenu par règle, à confirmer.`);
+  if (alignes.length) ctx.questions.push(`${alignes.length} murs sans lineRef (murs de façade) : alignement « axe » retenu par règle (D-025), statut « à vérifier » conservé.`);
   const sansRef = [...ctx.objets.values()].filter((o) => o.classe === "escalier" && o.annotations?.referencePlanSeulement !== undefined);
-  if (sansRef.length) ctx.questions.push(`${sansRef.length} volées sans planReferenceOnly (${sansRef.map((o) => o.id).join(", ")}) : referencePlanSeulement = false retenu par règle, à confirmer.`);
+  if (sansRef.length) ctx.questions.push(`${sansRef.length} volées sans planReferenceOnly (${sansRef.map((o) => o.id).join(", ")}) : referencePlanSeulement = false « à vérifier » en attendant l’amendement D-024 qui le rendra « non évaluée » (D-025).`);
 
   // --- Assemblage -----------------------------------------------------------
   const ordreFamilles = (FAMILLES_IMPORT as readonly FamilleImport[]).slice();
@@ -1078,10 +1076,6 @@ export const importerP118: ImporterP118 = (dataset: JeuDonneesP118, options) => 
   };
   return { modele, rapport };
 };
-
-function nomImport(o: ObjetModele): unknown {
-  return o.proprietes.find((p) => p.nom === "import.name")?.valeur;
-}
 
 function ajouterPropriete(ctx: Import, id: IdObjet, p: Propriete): void {
   const o = ctx.objets.get(id);

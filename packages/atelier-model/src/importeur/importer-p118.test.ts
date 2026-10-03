@@ -32,7 +32,7 @@ describe("importerP118 — effectifs (R7)", () => {
       expect(ligne(f).effectifCible, f).toBe(n);
     }
     expect(ligne("structure")).toMatchObject({ effectifSource: 1, effectifCible: 2, parClasseCible: { structureDeclaree: 1, hypothese: 1 } });
-    expect(ligne("traces").parClasseCible).toEqual({ solide: 870, "piece.polygones": 41, espace: 33, zone: 13, dalle: 6, toiture: 2, "reference-plan": 2 });
+    expect(ligne("traces").parClasseCible).toEqual({ solide: 871, "piece.polygones": 41, espace: 33, zone: 13, dalle: 6, toiture: 1, "reference-plan": 2 });
     for (const l of rapport.lignes) expect(l.effectifCible, l.famille).toBeGreaterThanOrEqual(l.effectifSource);
   });
 
@@ -63,11 +63,11 @@ describe("importerP118 — effectifs (R7)", () => {
       fenetre: 126,
       escalier: 32,
       dalle: 6,
-      toiture: 2,
+      toiture: 1,
       espace: 33,
       zone: 13,
       "reference-plan": 2,
-      solide: 870,
+      solide: 871,
       piece: 45,
       cotation: 64,
       texte: 95,
@@ -146,8 +146,11 @@ describe("importerP118 — valeurs bit à bit, repères, relations", () => {
     }
     expect(deClasse("toiture").map((t) => [t.id, t.params.type, t.params.epaisseur.value])).toEqual([
       ["EX118-roof", "plate", 0.25],
-      ["EX118-parapet", "plate", 0.9],
     ]);
+    // D-025 : l'acrotère (roof-slab annulaire) est un solide, géométrie et rôle conservés.
+    const acrotere = deClasse("solide").find((o) => o.id === "EX118-parapet");
+    expect(acrotere?.params).toMatchObject({ role: "roof-slab", hauteur: { value: 0.9, unit: "m" }, decalageBase: { value: 3.4, unit: "m" } });
+    expect(acrotere?.params.trous).toHaveLength(1);
   });
 
   it("pièces : 41 tracés rattachés, 7 pièces sans tracé, 33 espaces, repères jamais mélangés (D-021, R5)", () => {

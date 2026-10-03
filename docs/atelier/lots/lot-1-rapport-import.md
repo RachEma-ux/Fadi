@@ -8,7 +8,7 @@ Règles appliquées : cahier §6, D-021 (confirmées par D-022). Aucune valeur i
 | exampleId | p118-exemple-complet |
 | sourceVersion | 8.19.0 |
 | Empreinte de la source | `sha256-ca235ca090d0fcb178c65a4ea2cdb8fe4f47947045f464a0ccf9b44c2092a8e7` |
-| Empreinte du modèle produit | `sha256-d9695e46c17651664b1d1a8e6b4e1ee7c9d298fc8d945b8239a8434ff1f60147` |
+| Empreinte du modèle produit | `sha256-cd894180f0a6464b298bcf492b4fa6fccf9cd3f7609154b673a07e58914f3b07` |
 
 ## Effectifs par famille
 
@@ -21,7 +21,7 @@ Règles appliquées : cahier §6, D-021 (confirmées par D-022). Aucune valeur i
 | escaliers | 32 | 32 | escalier 32 |
 | poteaux | 120 | 120 | poteau 120 |
 | pieces | 45 | 45 | piece 45 |
-| traces | 967 | 967 | zone 13, piece.polygones 41, solide 870, dalle 6, espace 33, toiture 2, reference-plan 2 |
+| traces | 967 | 967 | zone 13, piece.polygones 41, solide 871, dalle 6, espace 33, toiture 1, reference-plan 2 |
 | cotations | 64 | 64 | cotation 64 |
 | textes | 95 | 95 | texte 95 |
 | calques | 22 | 22 | calque 22 |
@@ -75,7 +75,7 @@ Règles appliquées : cahier §6, D-021 (confirmées par D-022). Aucune valeur i
   - géométrie courante `polygones` = tracés `room` de même code ; pièce sans tracé : `polygones` vide + problème
 - **traces**
   - `floor-slab` → `dalle` : `epaisseur` = `height` 0,25 m « à vérifier », `thickness` 0,10 m en `import.thickness`
-  - `roof-slab` → `toiture` plate : `epaisseur` = `height` « à vérifier », `pente` « non évaluée »
+  - `roof-slab` → `toiture` plate : `epaisseur` = `height` « à vérifier », `pente` « non évaluée » ; `roof-slab` annulaire (contour + trou, acrotère) → `solide`, rôle conservé (D-025)
   - `room` → `piece.polygones` si le code correspond, sinon `espace` ; `core-zone` → `zone` ; `plan-reference` → `reference-plan`
   - autres rôles → `solide`, `role` conservé tel quel ; `vertexOffsets`, `topOffsets`, hauteurs nulles conservés
 - **cotations**
@@ -118,9 +118,9 @@ Aucun : tous les rôles de tracés rencontrés sont ceux du §6.
 
 | Code | Gravité | Nombre |
 | --- | --- | ---: |
-| valeur-a-verifier | information | 32 |
+| valeur-a-verifier | information | 33 |
 | niveaux-relies-absents | information | 6 |
-| valeur-a-verifier | avertissement | 8 |
+| valeur-a-verifier | avertissement | 7 |
 | trace-piece-sans-code | information | 33 |
 | aire-ecart | information | 17 |
 | piece-libelle-divergent | information | 7 |
@@ -169,7 +169,7 @@ Aucun : tous les rôles de tracés rencontrés sont ceux du §6.
 - Escalier EX118-r3-S-004 : planReferenceOnly absent, referencePlanSeulement = false à vérifier.
 - Dalle EX118-r3-SLAB-0 : épaisseur 0.25 m (représentation) à vérifier ; thickness 0.1 m conservé.
 - Toiture EX118-roof : épaisseur 0.25 m (représentation) à vérifier ; thickness 0.1 m conservé.
-- Toiture EX118-parapet : épaisseur 0.9 m (représentation) à vérifier ; thickness 0.1 m conservé.
+- Tracé EX118-parapet « Acrotère » : « roof-slab » annulaire importé comme solide (acrotère, D-025), rôle conservé.
 
 ### niveaux-relies-absents
 
@@ -277,10 +277,9 @@ Aucun : tous les rôles de tracés rencontrés sont ceux du §6.
 
 ## Questions ouvertes
 
-- Tracés « roof-slab » importés comme toitures plates dont l'épaisseur (height) n'est pas 0,25 m : EX118-parapet « Acrotère » (0.9 m) — un acrotère doit-il rester une toiture ou devenir un solide / un mur ?
-- Pièces sans tracé courant (7) conservées sans géométrie : piece-rdc-R05, piece-rdc-R07, piece-mezz-M04, piece-mezz-M06, piece-r1-E07, piece-r2-E07, piece-r3-E07 — les garder ou les retirer (§10.1, point 8 du lot 0) ?
-- 24 murs sans lineRef (murs de façade) : alignement « axe » retenu par règle, à confirmer.
-- 8 volées sans planReferenceOnly (EX118-mezz-S-003, EX118-mezz-S-004, EX118-r1-S-003, EX118-r1-S-004, EX118-r2-S-003, EX118-r2-S-004, EX118-r3-S-003, EX118-r3-S-004) : referencePlanSeulement = false retenu par règle, à confirmer.
+- Pièces sans tracé courant (7) conservées sans géométrie (D-025 : gardées, problème listé) : piece-rdc-R05, piece-rdc-R07, piece-mezz-M04, piece-mezz-M06, piece-r1-E07, piece-r2-E07, piece-r3-E07.
+- 24 murs sans lineRef (murs de façade) : alignement « axe » retenu par règle (D-025), statut « à vérifier » conservé.
+- 8 volées sans planReferenceOnly (EX118-mezz-S-003, EX118-mezz-S-004, EX118-r1-S-003, EX118-r1-S-004, EX118-r2-S-003, EX118-r2-S-004, EX118-r3-S-003, EX118-r3-S-004) : referencePlanSeulement = false « à vérifier » en attendant l’amendement D-024 qui le rendra « non évaluée » (D-025).
 
 ## Projection modèle typé → entrée d'analyse (§5.6)
 
@@ -290,4 +289,4 @@ Aucun : tous les rôles de tracés rencontrés sont ceux du §6.
 - Racine (`sourceVersion`, `exampleId`, `nativeId`, `registry`…) : **identique**.
 - Objets non représentables dans la forme native : aucun.
 - `analyseModel` : `floors` (6) **identiques** ; `rooms` (74) **identiques** (aires, usages, ouvertures, mobilier, contours, centres, ordre).
-- `nativeHash` : **différent** (c7a9f564 → b8df9cc6) — empreinte FNV-1a de la sérialisation JSON : l'ordre des clés des objets n'est pas conservé par le modèle typé et `activeLayer` (état d'affichage, R10) n'est plus présent. Conséquence au lot 4 : les documents et étapes datés par `nativeHash` seront marqués « à recalculer » une fois, à la bascule.
+- `nativeHash` : **différent** (c7a9f564 → b0ce8a96) — empreinte FNV-1a de la sérialisation JSON : l'ordre des clés des objets n'est pas conservé par le modèle typé et `activeLayer` (état d'affichage, R10) n'est plus présent. Conséquence au lot 4 : les documents et étapes datés par `nativeHash` seront marqués « à recalculer » une fois, à la bascule.
