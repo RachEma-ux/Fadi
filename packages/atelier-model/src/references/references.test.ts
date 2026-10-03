@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ReferenceTopologique, ResolutionReference } from "../contrats/references.js";
 import type { EtatModele } from "../contrats/etat.js";
-import { cmd, m, ok, P, projetDeBase } from "../commandes/__tests__/aides.js";
+import { allerRetour, cmd, m, ok, P, projetDeBase } from "../commandes/__tests__/aides.js";
 import type { ObjetCotation } from "../ontologie/classes.js";
 import { problemesReferences, recalculerCotation, recalculerCotationsRattachees, resoudreCotation } from "./cotations.js";
 import { resoudreReference, resoudreReferenceDans, LIBELLE_DETACHER } from "./resoudre.js";
@@ -105,11 +105,42 @@ describe("à réparer après une commande (appliquerLot)", () => {
     expect(pbs[0]?.propositions?.at(-1)?.cible).toBeNull();
   });
 
-  it("détacher : la cote devient libre, plus aucun problème", () => {
+  it("détacher : la cote devient libre, la référence détachée est gardée (état `detachee`, D-026), plus aucun problème", () => {
     const r = ok(avecCote, cmd("mur.supprimer", {}, ["M1"]));
-    const d = ok(r.etat, cmd("reference.reparer", { ancienne: ref("M1", "mur:face-gauche"), nouvelle: null }, ["K1"]));
-    expect(resoudreCotation(d.etat, cotation(d.etat, "K1"))).toEqual({ a: { etat: "libre" }, b: { etat: "libre" } });
+    const d = allerRetour(r.etat, cmd("reference.reparer", { ancienne: ref("M1", "mur:face-gauche"), nouvelle: null }, ["K1"]));
+    const k = cotation(d.etat, "K1");
+    expect(k.params.etat).toBe("libre");
+    expect(k.params.references).toEqual([]);
+    expect(k.params.referencesDetachees).toEqual([{ extremite: "a", objetId: "M1", caracteristique: "mur:face-gauche" }]);
+    expect(resoudreCotation(d.etat, k)).toEqual({ a: { etat: "detachee", ancienne: ref("M1", "mur:face-gauche") }, b: { etat: "libre" } });
     expect(problemesReferences(d.etat)).toEqual([]);
+    // Rattacher de nouveau l'extrémité retire la référence détachée.
+    const re = ok(d.etat, cmd("cotation.rattacher", { references: [{ extremite: "a", objetId: "MV", caracteristique: "mur:face-droite" }] }, ["K1"]));
+    expect(cotation(re.etat, "K1").params.referencesDetachees).toBeUndefined();
+    expect(cotation(re.etat, "K1").params.etat).toBe("rattachee");
+    // `referencesDetachees` ne se modifie pas par cotation.modifier.
+    expect(ok(d.etat, cmd("cotation.modifier", { modifications: { decalage: m(1) } }, ["K1"])).etat.objets.K1).toBeDefined();
+  });
+
+  it("lignée (Effets.remplacements, D-026) : la scission rend la lignée, le résolveur l'utilise même sans position connue", () => {
+    const r = ok(avecCote, cmd("mur.scinder", { point: P(3, 0), nouveauxIds: ["M1a", "M1b"] }, ["M1"]));
+    expect(r.effets.remplacements).toEqual([{ ancienId: "M1", nouveauxIds: ["M1a", "M1b"] }]);
+    const sans = aReparer(resoudreReference(r.etat, ref("M1", "mur:arete-debut"), { remplacements: r.effets.remplacements }));
+    expect(sans.motif).toBe("objet-scinde");
+    // Sans lignée ni position : seulement « détacher » ; avec lignée : les morceaux, puis « détacher ».
+    const nu = aReparer(resoudreReferenceDans(r.etat, ref("M1", "mur:axe"), { niveauId: "rdc" }));
+    expect(nu.propositions.map((p) => p.cible?.objetId ?? null)).toEqual([null]);
+    const lignee = aReparer(resoudreReferenceDans({ objets: r.etat.objets }, ref("M1", "mur:axe"), { remplacements: r.effets.remplacements }));
+    expect(lignee.propositions.map((p) => p.cible?.objetId ?? null).slice(0, 2)).toEqual(["M1a", "M1b"]);
+    const j = ok(r.etat, cmd("mur.joindre", { nouvelId: "M1c" }, ["M1a", "M1b"]));
+    expect(j.effets.remplacements).toEqual([
+      { ancienId: "M1a", nouveauxIds: ["M1c"] },
+      { ancienId: "M1b", nouveauxIds: ["M1c"] },
+    ]);
+    // Lignée transitive : M1 → M1a, M1b → M1c.
+    const t = aReparer(resoudreReferenceDans(j.etat, ref("M1", "mur:face-gauche"), { point: P(1, 0.1), remplacements: [...r.effets.remplacements, ...j.effets.remplacements] }));
+    expect(t.propositions[0]?.cible).toEqual(ref("M1c", "mur:face-gauche"));
+    expect(t.motif).toBe("objet-supprime");
   });
 });
 
@@ -137,19 +168,28 @@ describe("recalcul des extrémités des cotations rattachées", () => {
   });
 
   it("mur déplacé et épaissi, poteau déplacé : les extrémités suivent (projection sur la face, centre du poteau)", () => {
-    const e1 = ok(e0, cmd("mur.modifier", { modifications: { axe: { a: P(0, 1), b: P(6, 1) }, epaisseur: m(0.4) } }, ["M1"])).etat;
-    const r1 = recalculerCotationsRattachees(e1, ["M1"]);
+    // Fonction pure, sur un état modifié à la main (sans passer par le moteur).
+    const m1 = e0.objets.M1;
+    if (m1?.classe !== "mur") throw new Error("mur attendu");
+    const manuel: EtatModele = { ...e0, objets: { ...e0.objets, M1: { ...m1, params: { ...m1.params, axe: { a: P(0, 1), b: P(6, 1) }, epaisseur: m(0.4) } } } };
+    const r1 = recalculerCotationsRattachees(manuel, ["M1"]);
     expect(r1).toHaveLength(1);
     expect(r1[0]).toMatchObject({ cotationId: "K1", a: P(1, 1.2), b: P(4, 3), etat: "rattachee", change: true });
-    const e2 = ok(e1, cmd("poteau.modifier", { modifications: { point: P(5, 2) } }, ["X1"])).etat;
-    expect(recalculerCotationsRattachees(e2, ["X1"])[0]).toMatchObject({ a: P(1, 1.2), b: P(5, 2) });
     // Objet non concerné : rien.
-    expect(recalculerCotationsRattachees(e2, ["D1"])).toEqual([]);
-    // La mise à jour proposée s'applique par cotation.modifier (a, b) : ensuite plus rien à recalculer.
-    const k = recalculerCotationsRattachees(e2)[0];
-    if (!k) throw new Error("recalcul attendu");
-    const e3 = ok(e2, cmd("cotation.modifier", { modifications: { a: k.a, b: k.b } }, ["K1"])).etat;
-    expect(recalculerCotationsRattachees(e3)).toEqual([]);
+    expect(recalculerCotationsRattachees(manuel, ["D1"])).toEqual([]);
+    // Par le moteur (L1.6) : le recalcul est fait dans la commande, inverse exact, rien ne reste à recalculer.
+    const l1 = allerRetour(e0, cmd("mur.modifier", { modifications: { axe: { a: P(0, 1), b: P(6, 1) }, epaisseur: m(0.4) } }, ["M1"]));
+    expect(cotation(l1.etat, "K1").params).toMatchObject({ a: P(1, 1.2), b: P(4, 3), etat: "rattachee" });
+    expect(l1.effets.objetsModifies).toEqual(expect.arrayContaining(["M1", "K1"]));
+    const l2 = allerRetour(l1.etat, cmd("poteau.modifier", { modifications: { point: P(5, 2) } }, ["X1"]));
+    expect(cotation(l2.etat, "K1").params).toMatchObject({ a: P(1, 1.2), b: P(5, 2) });
+    expect(recalculerCotationsRattachees(l2.etat)).toEqual([]);
+  });
+
+  it("par le moteur : une référence devenue « à réparer » par le recalcul est signalée une fois", () => {
+    const r = ok(e0, cmd("poteau.supprimer", {}, ["X1"]));
+    expect(cotation(r.etat, "K1").params.etat).toBe("a-reparer");
+    expect(r.effets.problemes.filter((p) => p.code === "reference-a-reparer")).toHaveLength(1);
   });
 
   it("référence à réparer : l'extrémité garde sa dernière position, la cotation est « à réparer » avec problème", () => {

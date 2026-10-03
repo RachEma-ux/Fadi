@@ -8,4 +8,4 @@ export { HistoriqueAtelier, ErreurHistorique } from "./historique.js";
 export { detecterPieces, type PieceProposee } from "./detection.js";
 export { commandeCreationDe } from "./inverses.js";
 export { CLASSES_TRANSFORMABLES } from "./transformations.js";
-export { VERSION_RESTAURATION, restaurationDe, sansRestauration, relationsDerivees, type Restauration, type RestaurationObjet, type CommandeRestauratrice } from "./transaction.js";
+export { restaurationDe, sansRestauration, relationsDerivees, motif, erreurCommande, type Motif, type CommandeRestauratrice } from "./transaction.js";

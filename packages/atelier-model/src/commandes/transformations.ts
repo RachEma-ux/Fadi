@@ -108,7 +108,8 @@ export function imageParams(o: ObjetModele, t: Transfo): Record<string, unknown>
   switch (o.classe) {
     case "mur": {
       const p = o.params;
-      const alignement = t.retourne && p.alignement !== "axe" ? (p.alignement === "gauche" ? "droite" : "gauche") : p.alignement;
+      // Miroir : gauche ↔ droite ; « axe » et « non évaluée » inchangés.
+      const alignement = t.retourne && (p.alignement === "gauche" || p.alignement === "droite") ? (p.alignement === "gauche" ? "droite" : "gauche") : p.alignement;
       return { ...p, axe: { a: pointImage(t, p.axe.a), b: pointImage(t, p.axe.b) }, alignement };
     }
     case "dalle":
@@ -346,7 +347,7 @@ function copierSelection(tx: Transaction, objs: readonly ObjetModele[], ids: rea
     if (n.classe === "mur") controlerEmprise(tx, n.id, chemin);
     if (n.classe === "piece" && n.params.code !== undefined) {
       tx.signaler({
-        code: "valeur-a-verifier",
+        code: "doublon",
         gravite: "avertissement",
         message: `${nomObjet(n)} : code de pièce « ${n.params.code} » dupliqué par la copie.`,
         objetIds: [n.id],
@@ -358,7 +359,7 @@ function copierSelection(tx: Transaction, objs: readonly ObjetModele[], ids: rea
 
 function superposition(tx: Transaction, v: Vecteur, objs: readonly ObjetModele[]): void {
   if (Math.hypot(v.dx, v.dy) < TOLERANCES.tolCoincidence) {
-    tx.signaler({ code: "valeur-a-verifier", gravite: "avertissement", message: "Copie à vecteur nul : objets superposés.", objetIds: objs.map((o) => o.id) });
+    tx.signaler({ code: "doublon", gravite: "avertissement", message: "Copie à vecteur nul : objets superposés.", objetIds: objs.map((o) => o.id) });
   }
 }
 

@@ -89,6 +89,8 @@ describe("catalogue de l'ontologie", () => {
     expect(relationAdmise("relie", "escalier", "niveau")).toBe(true);
     expect(relationAdmise("contient", "zone", "piece")).toBe(true);
     expect(relationAdmise("contient", "zone", "mur")).toBe(false);
+    // D-024 : pas de relation « contient » niveau → objets (le niveau est porté par `niveauId`).
+    expect(relationAdmise("contient", "niveau", "mur")).toBe(false);
   });
 });
 

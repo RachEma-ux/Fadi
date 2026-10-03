@@ -2,8 +2,8 @@
  * Détection de pièces (`piece.detecter`, annexe B) : **proposition seulement, jamais imposée**. Les axes des murs
  * du niveau forment un graphe plan (coupé aux intersections) ; chaque face bornée est un contour proposé.
  * Rien n'est créé : la création passe par `piece.creer`. Les propositions sont rendues par `detecterPieces`
- * et résumées dans les effets (problèmes de gravité « information »), le contrat `Effets` n'ayant pas de champ
- * pour des contours proposés (voir rapport L1.2).
+ * et dans `Effets.propositions` (D-024, nature `contour-piece`, provenance `calcul`, statut `a-verifier`).
+ * Un lot qui ne contient que `piece.detecter` ne change pas le modèle : ni révision ni empreinte nouvelles.
  *
  * Limites connues : graphe construit sur les axes (pas sur les faces des murs) ; fusion des sommets à
  * `longueurMin` près. Ce sont des propositions à vérifier par l'utilisateur.
@@ -12,6 +12,7 @@ import type { EtatModele } from "../contrats/etat.js";
 import { TOLERANCES } from "../contrats/tolerances.js";
 import type { IdObjet } from "../ontologie/classes.js";
 import { estPointLocal, REPERE_LOCAL_PROJET, type PointLocal } from "../ontologie/reperes.js";
+import { aire } from "../ontologie/unites.js";
 import { controlerNiveau, type Corps } from "./communs.js";
 import { aireSignee, distance, intersectionDroites, pointDansPolygone, pt, sous, type Vec } from "./geometrie.js";
 import { motif } from "./transaction.js";
@@ -117,17 +118,7 @@ export const detecter: Corps<"piece.detecter"> = (tx, c) => {
   const objets: Record<IdObjet, ReturnType<typeof tx.objets>[number]> = {};
   for (const o of tx.objets()) objets[o.id] = o;
   const propositions = detecterPieces({ objets }, n.id, p);
-  if (propositions.length === 0) {
-    tx.signaler({ code: "valeur-non-evaluee", gravite: "information", message: `Niveau ${n.id} : aucun contour fermé détecté par les axes des murs${p ? " autour du point" : ""} ; aucune pièce proposée.`, objetIds: [], niveauId: n.id });
-    return;
+  for (const f of propositions) {
+    tx.proposer({ nature: "contour-piece", niveauId: n.id, contour: f.contour, aire: aire(f.aire), provenance: "calcul", statut: "a-verifier" });
   }
-  propositions.forEach((f, i) => {
-    tx.signaler({
-      code: "valeur-a-verifier",
-      gravite: "information",
-      message: `Niveau ${n.id} : proposition de pièce ${i + 1} — contour de ${f.contour.length} sommets (${f.contour.map((q) => `(${q.x} ; ${q.y})`).join(" ")}), aire calculée ${f.aire} m². Rien n'est créé : piece.creer si elle convient.`,
-      objetIds: [],
-      niveauId: n.id,
-    });
-  });
 };

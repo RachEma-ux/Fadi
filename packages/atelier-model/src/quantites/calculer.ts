@@ -30,23 +30,23 @@
  * `volume-dalle`, `volume-poteau`, `volume-solide` ; `aire-pieces-niveau` (par niveau seulement) ; effectifs
  * `effectif-portes`, `effectif-fenetres`, `effectif-ouvertures` (classe `ouverture` seule), `effectif-poteaux`,
  * `effectif-escaliers` (toutes les occurrences, sans fusion par `groupe`) et
- * `effectif-escaliers-reference-plan` (occurrences `referencePlanSeulement`).
+ * `effectif-escaliers-reference-plan` (occurrences `referencePlanSeulement`) ; une occurrence dont le drapeau
+ * est « non évaluée » (D-024) rend cet effectif partiel (non évalué, compte des occurrences sûres en `partiel`).
  *
  * Non évaluée (jamais 0 inventé) : paramètre absent, non fini, nul ou négatif là où il doit être positif ;
  * paramètre annoté `non-evaluee` ; hauteur de mur non résolvable ; contour de moins de 3 sommets,
  * auto-sécant, d'aire < `aireMin` (D-012) ou hors du repère local du projet ; pièce sans tracé courant.
  * Un agrégat dont une entrée est non évaluée est non évalué, motif « partiel » (somme des évaluées et liste
- * des non évaluées dans le motif ; champ `partiel` dans la forme étendue).
- * Paramètre annoté `a-verifier` (ex. épaisseur de dalle importée de P.118, D-021) : valeur calculée, statut
- * « à vérifier » dans la forme étendue ; dans la forme du contrat (qui n'a pas de statut), « non évaluée »
- * avec la valeur indicative dans le motif.
+ * des non évaluées dans le motif et dans le champ `partiel`, D-026).
+ * Paramètre annoté `a-verifier` (ex. épaisseur de dalle importée de P.118, D-021) : valeur calculée et rendue,
+ * statut `a-verifier` (D-026, parité DA-16-10 : jamais masquée).
  *
- * Ordre : nature (contrat puis complémentaires), niveau (`ordre`, puis identifiant ; niveaux inconnus ensuite,
+ * Ordre : nature (ordre de `NATURES_QUANTITE`), niveau (`ordre`, puis identifiant ; niveaux inconnus ensuite,
  * projet en dernier), agrégat avant objets, identifiant d'objet (ordre des unités de code). Les sommes sont
  * faites dans l'ordre des identifiants.
  */
 import type { EtatModele } from "../contrats/etat.js";
-import { NATURES_QUANTITE, REGLE_QUANTITES, type CalculerQuantites, type NatureQuantite, type Quantite, type UniteQuantite } from "../contrats/quantites.js";
+import { NATURES_QUANTITE, REGLE_QUANTITES, type CalculerQuantites, type NatureQuantite, type Quantite, type QuantitePartielle, type UniteQuantite } from "../contrats/quantites.js";
 import { TOLERANCES } from "../contrats/tolerances.js";
 import { contourAutoSecant } from "../commandes/communs.js";
 import { calculerEmpreinte } from "../commandes/empreinte.js";
@@ -55,41 +55,12 @@ import type { IdObjet, ObjetBaie, ObjetModele, ObjetMur } from "../ontologie/cla
 import { estNonEvaluee, nonEvaluee, type NonEvaluee } from "../ontologie/provenance.js";
 import { estPointLocal, REPERE_LOCAL_PROJET, type PointLocal, type PolygoneAvecTrous, type TrouPolygone } from "../ontologie/reperes.js";
 
-/** Natures complémentaires de `quantites/1`, hors contrat figé (voir le rapport L1.3). */
-export const NATURES_QUANTITE_COMPLEMENTAIRES = [
-  "aire-mur-brute",
-  "aire-baies-mur",
-  "volume-mur",
-  "aire-baie",
-  "aire-dalle",
-  "volume-dalle",
-  "effectif-poteaux",
-  "volume-poteau",
-  "effectif-escaliers",
-  "effectif-escaliers-reference-plan",
-  "volume-solide",
-  "aire-piece-declaree",
-  "ecart-aire-piece",
-] as const;
-export type NatureQuantiteComplementaire = (typeof NATURES_QUANTITE_COMPLEMENTAIRES)[number];
-export type NatureQuantiteEtendue = NatureQuantite | NatureQuantiteComplementaire;
-export const NATURES_QUANTITE_ETENDUES: readonly NatureQuantiteEtendue[] = [...NATURES_QUANTITE, ...NATURES_QUANTITE_COMPLEMENTAIRES];
-
 /** Formes de poteau dont la section est définie par `quantites/1` (largeur × profondeur). */
 export const FORMES_POTEAU_RECTANGULAIRES = ["basic-square"] as const;
 
-/** Quantité de la forme étendue : toutes les natures, statut, agrégat partiel. */
-export interface QuantiteEtendue extends Omit<Quantite, "nature"> {
-  readonly nature: NatureQuantiteEtendue;
-  /** `a-verifier` : une entrée porte le statut « à vérifier » ; la valeur n'est pas présentée comme sûre. */
-  readonly statut: "calculee" | "a-verifier";
-  /** Agrégat partiel : somme des entrées évaluées et entrées non évaluées (la valeur est alors non évaluée). */
-  readonly partiel?: { readonly somme: number; readonly nonEvalues: readonly IdObjet[] };
-}
-
 export interface FiltreQuantites {
   readonly niveauId?: IdObjet;
-  readonly natures?: readonly NatureQuantiteEtendue[];
+  readonly natures?: readonly NatureQuantite[];
 }
 
 // --- Valeurs évaluées ---------------------------------------------------------------
@@ -159,7 +130,7 @@ function hauteurMur(objets: EtatModele["objets"], m: ObjetMur): Val {
 // --- Calcul -------------------------------------------------------------------------
 
 interface Brute {
-  readonly nature: NatureQuantiteEtendue;
+  readonly nature: NatureQuantite;
   readonly valeur: Val;
   readonly unite: UniteQuantite;
   readonly objetId: IdObjet;
@@ -167,7 +138,7 @@ interface Brute {
   readonly entrees: readonly IdObjet[];
 }
 
-const UNITE: Readonly<Record<NatureQuantiteEtendue, UniteQuantite>> = {
+const UNITE: Readonly<Record<NatureQuantite, UniteQuantite>> = {
   "aire-piece": "m²",
   "aire-pieces-niveau": "m²",
   "aire-espace": "m²",
@@ -193,7 +164,7 @@ const UNITE: Readonly<Record<NatureQuantiteEtendue, UniteQuantite>> = {
 };
 
 /** Sommes par niveau et projet : nature de l'agrégat (par objet → agrégat), projet inclus ou non. */
-const SOMMES: readonly { readonly de: NatureQuantiteEtendue; readonly vers: NatureQuantiteEtendue; readonly projet: boolean }[] = [
+const SOMMES: readonly { readonly de: NatureQuantite; readonly vers: NatureQuantite; readonly projet: boolean }[] = [
   { de: "longueur-mur", vers: "longueur-mur", projet: true },
   { de: "aire-mur", vers: "aire-mur", projet: true },
   { de: "aire-mur-brute", vers: "aire-mur-brute", projet: true },
@@ -207,14 +178,14 @@ const SOMMES: readonly { readonly de: NatureQuantiteEtendue; readonly vers: Natu
   { de: "aire-piece", vers: "aire-pieces-niveau", projet: false },
 ];
 
-/** Effectifs : nature → prédicat sur l'objet. */
-const EFFECTIFS: readonly { readonly nature: NatureQuantiteEtendue; readonly compte: (o: ObjetModele) => boolean }[] = [
+/** Effectifs : nature → prédicat sur l'objet (`null` = l'objet relève de l'effectif mais son critère est non évalué). */
+const EFFECTIFS: readonly { readonly nature: NatureQuantite; readonly compte: (o: ObjetModele) => boolean | null }[] = [
   { nature: "effectif-portes", compte: (o) => o.classe === "porte" },
   { nature: "effectif-fenetres", compte: (o) => o.classe === "fenetre" },
   { nature: "effectif-ouvertures", compte: (o) => o.classe === "ouverture" },
   { nature: "effectif-poteaux", compte: (o) => o.classe === "poteau" },
   { nature: "effectif-escaliers", compte: (o) => o.classe === "escalier" },
-  { nature: "effectif-escaliers-reference-plan", compte: (o) => o.classe === "escalier" && o.params.referencePlanSeulement === true },
+  { nature: "effectif-escaliers-reference-plan", compte: (o) => (o.classe !== "escalier" ? false : estNonEvaluee(o.params.referencePlanSeulement) ? null : o.params.referencePlanSeulement === true) },
 ];
 
 const comparer = (x: string, y: string): number => (x < y ? -1 : x > y ? 1 : 0);
@@ -230,7 +201,7 @@ function quantitesParObjet(etat: EtatModele, ids: readonly IdObjet[]): Brute[] {
       if (hote?.classe === "mur") baiesParMur.set(hote.id, [...(baiesParMur.get(hote.id) ?? []), o]);
     }
   }
-  const ajouter = (o: ObjetModele, nature: NatureQuantiteEtendue, valeur: Val, entrees: readonly IdObjet[] = [o.id]) =>
+  const ajouter = (o: ObjetModele, nature: NatureQuantite, valeur: Val, entrees: readonly IdObjet[] = [o.id]) =>
     res.push({ nature, valeur, unite: UNITE[nature], objetId: o.id, niveauId: o.niveauId, entrees });
   for (const id of ids) {
     const o = objets[id];
@@ -307,14 +278,14 @@ function quantitesParObjet(etat: EtatModele, ids: readonly IdObjet[]): Brute[] {
 }
 
 interface Agregat {
-  readonly nature: NatureQuantiteEtendue;
+  readonly nature: NatureQuantite;
   readonly niveauId: IdObjet | undefined;
   readonly valeur: Val;
-  readonly partiel?: { readonly somme: number; readonly nonEvalues: readonly IdObjet[] };
+  readonly partiel?: QuantitePartielle;
   readonly entrees: readonly IdObjet[];
 }
 
-function sommer(nature: NatureQuantiteEtendue, niveauId: IdObjet | undefined, xs: readonly Brute[]): Agregat {
+function sommer(nature: NatureQuantite, niveauId: IdObjet | undefined, xs: readonly Brute[]): Agregat {
   const tries = [...xs].sort((p, q) => comparer(p.objetId, q.objetId));
   let somme = 0;
   let aVerifier = false;
@@ -346,23 +317,32 @@ function agregats(etat: EtatModele, ids: readonly IdObjet[], parObjet: readonly 
     if (s.projet && xs.length > 0) res.push(sommer(s.vers, undefined, xs));
   }
   for (const e of EFFECTIFS) {
-    const objs = ids.map((id) => etat.objets[id]).filter((o): o is ObjetModele => o !== undefined && e.compte(o));
-    for (const n of niveauxDe(objs)) {
-      const du = objs.filter((o) => o.niveauId === n).map((o) => o.id);
-      res.push({ nature: e.nature, niveauId: n, valeur: val(du.length), entrees: du });
-    }
-    if (objs.length > 0) res.push({ nature: e.nature, niveauId: undefined, valeur: val(objs.length), entrees: objs.map((o) => o.id) });
+    const objs = ids.map((id) => etat.objets[id]).filter((o): o is ObjetModele => o !== undefined && e.compte(o) !== false);
+    const effectif = (niveauId: IdObjet | undefined, xs: readonly ObjetModele[]): Agregat => {
+      const comptes = xs.filter((o) => e.compte(o) === true).map((o) => o.id);
+      const nonEvalues = xs.filter((o) => e.compte(o) === null).map((o) => o.id);
+      if (nonEvalues.length === 0) return { nature: e.nature, niveauId, valeur: val(comptes.length), entrees: comptes };
+      return {
+        nature: e.nature,
+        niveauId,
+        valeur: nonEvaluee(`partiel : critère non évalué pour ${nonEvalues.length} objet(s) (${nonEvalues.join(", ")}) ; ${comptes.length} compté(s)`),
+        partiel: { somme: comptes.length, nonEvalues },
+        entrees: xs.map((o) => o.id),
+      };
+    };
+    for (const n of niveauxDe(objs)) res.push(effectif(n, objs.filter((o) => o.niveauId === n)));
+    if (objs.length > 0) res.push(effectif(undefined, objs));
   }
   return res;
 }
 
-/** Forme étendue de `quantites/1` : toutes les natures, statut « à vérifier », agrégats partiels. */
-export function calculerQuantitesEtendues(etat: EtatModele, filtre?: FiltreQuantites): readonly QuantiteEtendue[] {
+/** Calcul du contrat `CalculerQuantites` (pur) : toutes les natures de `quantites/1`, statut, agrégats partiels. */
+export const calculerQuantites: CalculerQuantites = (etat: EtatModele, filtre?: FiltreQuantites): readonly Quantite[] => {
   const ids = Object.keys(etat.objets).sort(comparer);
   const parObjet = quantitesParObjet(etat, ids);
   const empreinte = calculerEmpreinte(etat);
   const base = { regle: REGLE_QUANTITES, revision: etat.revision, empreinte } as const;
-  const sortie = (nature: NatureQuantiteEtendue, v: Val, niveauId: IdObjet | undefined, objetId: IdObjet | undefined, entrees: readonly IdObjet[], partiel?: Agregat["partiel"]): QuantiteEtendue => ({
+  const sortie = (nature: NatureQuantite, v: Val, niveauId: IdObjet | undefined, objetId: IdObjet | undefined, entrees: readonly IdObjet[], partiel?: QuantitePartielle): Quantite => ({
     nature,
     valeur: estNE(v) ? v : v.v,
     unite: UNITE[nature],
@@ -370,14 +350,14 @@ export function calculerQuantitesEtendues(etat: EtatModele, filtre?: FiltreQuant
     ...(objetId !== undefined ? { objetId } : {}),
     ...(niveauId !== undefined ? { niveauId } : {}),
     entrees: [...entrees],
-    statut: !estNE(v) && v.aVerifier ? "a-verifier" : "calculee",
+    statut: estNE(v) ? "non-evaluee" : v.aVerifier ? "a-verifier" : "calculee",
     ...(partiel !== undefined ? { partiel } : {}),
   });
-  const toutes: QuantiteEtendue[] = [
+  const toutes: Quantite[] = [
     ...agregats(etat, ids, parObjet).map((a) => sortie(a.nature, a.valeur, a.niveauId, undefined, a.entrees, a.partiel)),
     ...parObjet.map((q) => sortie(q.nature, q.valeur, q.niveauId, q.objetId, q.entrees)),
   ];
-  const rangNature = new Map(NATURES_QUANTITE_ETENDUES.map((n, i) => [n, i]));
+  const rangNature = new Map(NATURES_QUANTITE.map((n, i) => [n, i]));
   const niveaux = ids
     .map((id) => etat.objets[id])
     .filter((o): o is Extract<ObjetModele, { classe: "niveau" }> => o?.classe === "niveau")
@@ -396,31 +376,4 @@ export function calculerQuantitesEtendues(etat: EtatModele, filtre?: FiltreQuant
       comparer(p.objetId ?? "", q.objetId ?? "")
     );
   });
-}
-
-const estNatureContrat = (n: NatureQuantiteEtendue): n is NatureQuantite => (NATURES_QUANTITE as readonly string[]).includes(n);
-
-/** Projection d'une quantité étendue sur le contrat (`statut` et `partiel` n'y existent pas). */
-export function versContrat(q: QuantiteEtendue): Quantite | null {
-  if (!estNatureContrat(q.nature)) return null;
-  const valeur = q.statut === "a-verifier" && typeof q.valeur === "number" ? nonEvaluee(`entrée « à vérifier » ; valeur indicative ${q.valeur} ${q.unite}`) : q.valeur;
-  return {
-    nature: q.nature,
-    valeur,
-    unite: q.unite,
-    regle: q.regle,
-    revision: q.revision,
-    empreinte: q.empreinte,
-    ...(q.objetId !== undefined ? { objetId: q.objetId } : {}),
-    ...(q.niveauId !== undefined ? { niveauId: q.niveauId } : {}),
-    entrees: q.entrees,
-  };
-}
-
-/** Calcul du contrat `CalculerQuantites` (pur, natures du contrat seulement). */
-export const calculerQuantites: CalculerQuantites = (etat, filtre) => {
-  const natures = filtre?.natures ?? NATURES_QUANTITE;
-  return calculerQuantitesEtendues(etat, { ...(filtre?.niveauId !== undefined ? { niveauId: filtre.niveauId } : {}), natures })
-    .map(versContrat)
-    .filter((q): q is Quantite => q !== null);
 };

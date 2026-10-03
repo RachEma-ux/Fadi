@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { EtatModele } from "../contrats/etat.js";
-import { REGLE_QUANTITES, type Quantite } from "../contrats/quantites.js";
+import { NATURES_QUANTITE, REGLE_QUANTITES, type Quantite } from "../contrats/quantites.js";
 import { cmd, deg, m, ok, P } from "../commandes/__tests__/aides.js";
 import { calculerEmpreinte, jsonCanonique } from "../commandes/empreinte.js";
 import { etatVide } from "../commandes/moteur.js";
 import type { ObjetModele } from "../ontologie/classes.js";
 import { VERSION_ONTOLOGIE } from "../ontologie/descripteurs.js";
 import { estNonEvaluee } from "../ontologie/provenance.js";
-import { calculerQuantites, calculerQuantitesEtendues, type QuantiteEtendue } from "./calculer.js";
+import { calculerQuantites } from "./calculer.js";
 
 /**
  * Petit projet fait à la main :
@@ -43,9 +43,9 @@ function projet(): EtatModele {
 }
 
 const etat = projet();
-const tout = calculerQuantitesEtendues(etat);
+const tout = calculerQuantites(etat);
 
-function q(nature: string, objetId?: string, niveauId?: string, liste: readonly QuantiteEtendue[] | readonly Quantite[] = tout): QuantiteEtendue | Quantite {
+function q(nature: string, objetId?: string, niveauId?: string, liste: readonly Quantite[] = tout): Quantite {
   const r = liste.find((x) => x.nature === nature && x.objetId === objetId && x.niveauId === niveauId);
   if (!r) throw new Error(`quantité ${nature} ${objetId ?? "-"} ${niveauId ?? "projet"} absente`);
   return r;
@@ -116,7 +116,7 @@ describe("quantites/1 : valeurs exactes sur un petit projet fait à la main", ()
 
 describe("quantites/1 : reproductibilité, ordre, filtre", () => {
   it("même état → mêmes quantités, bit à bit, même ordre, quel que soit l'ordre d'insertion des objets", () => {
-    expect(jsonCanonique(calculerQuantitesEtendues(etat))).toBe(jsonCanonique(tout));
+    expect(jsonCanonique(calculerQuantites(etat))).toBe(jsonCanonique(tout));
     const inverse: EtatModele = { ...etat, objets: Object.fromEntries(Object.entries(etat.objets).reverse()) };
     expect(JSON.stringify(calculerQuantites(inverse))).toBe(JSON.stringify(calculerQuantites(etat)));
   });
@@ -127,13 +127,15 @@ describe("quantites/1 : reproductibilité, ordre, filtre", () => {
     expect(calculerQuantites(etat)[0]?.nature).toBe("aire-piece");
   });
 
-  it("filtre par niveau ; le contrat ne rend que ses natures", () => {
-    const r1 = calculerQuantitesEtendues(etat, { niveauId: "r1" });
+  it("filtre par niveau ; toutes les natures du contrat (D-026 : volumes, dalles, poteaux, escaliers, solides…)", () => {
+    const r1 = calculerQuantites(etat, { niveauId: "r1" });
     expect(r1.length).toBeGreaterThan(0);
     expect(r1.every((x) => x.niveauId === "r1")).toBe(true);
     const natures = new Set(calculerQuantites(etat).map((x) => x.nature));
     expect(natures.has("aire-mur")).toBe(true);
-    expect([...natures].some((n) => n.startsWith("volume"))).toBe(false);
+    for (const n of ["volume-mur", "aire-dalle", "volume-dalle", "volume-poteau", "effectif-escaliers", "volume-solide", "aire-piece-declaree", "ecart-aire-piece"]) expect(natures.has(n as (typeof NATURES_QUANTITE)[number])).toBe(true);
+    expect([...natures].every((n) => (NATURES_QUANTITE as readonly string[]).includes(n))).toBe(true);
+    expect(calculerQuantites(etat, { natures: ["volume-dalle"] }).map((x) => x.nature)).toEqual(["volume-dalle", "volume-dalle", "volume-dalle"]);
   });
 
   it("une commande sur le modèle → nouvelle révision, nouvelle empreinte, valeur mise à jour", () => {
@@ -152,12 +154,14 @@ describe("quantites/1 : non évaluée, jamais 0 inventé", () => {
     const { hauteur: _h, ...params } = w1.params;
     void _h;
     const e = avec(etat, { ...w1, params });
-    const r = calculerQuantitesEtendues(e);
+    const r = calculerQuantites(e);
     expect(q("longueur-mur", "W1", "rdc", r).valeur).toBe(4);
-    const aire = q("aire-mur", "W1", "rdc", r).valeur;
-    expect(estNonEvaluee(aire)).toBe(true);
-    const total = q("aire-mur", undefined, "rdc", r) as QuantiteEtendue;
+    const aire = q("aire-mur", "W1", "rdc", r);
+    expect(estNonEvaluee(aire.valeur)).toBe(true);
+    expect(aire.statut).toBe("non-evaluee");
+    const total = q("aire-mur", undefined, "rdc", r);
     expect(estNonEvaluee(total.valeur)).toBe(true);
+    expect(total.statut).toBe("non-evaluee");
     expect(total.partiel).toEqual({ somme: 5, nonEvalues: ["W1"] });
     expect(estNonEvaluee(total.valeur) && total.valeur.motif).toMatch(/partiel : 1 objet\(s\) non évalué\(s\) sur 2 \(W1\)/);
   });
@@ -170,7 +174,7 @@ describe("quantites/1 : non évaluée, jamais 0 inventé", () => {
     let e = avec(etat, { ...s1, params: { ...s1.params, polygones: [] } });
     e = avec(e, { ...x1, params: { ...x1.params, formeId: "circulaire" } });
     e = avec(e, { ...so, params: { ...so.params, contour: [P(0, 0), P(4, 3), P(4, 0), P(0, 4)] } });
-    const r = calculerQuantitesEtendues(e);
+    const r = calculerQuantites(e);
     for (const [nature, id] of [["aire-piece", "S1"], ["ecart-aire-piece", "S1"], ["volume-poteau", "X1"], ["volume-solide", "SO1"]] as const) {
       const x = q(nature, id, "rdc", r).valeur;
       expect(estNonEvaluee(x), `${nature} ${id}`).toBe(true);
@@ -179,19 +183,29 @@ describe("quantites/1 : non évaluée, jamais 0 inventé", () => {
     expect(estNonEvaluee(q("aire-pieces-niveau", undefined, "rdc", r).valeur)).toBe(true);
   });
 
-  it("épaisseur « à vérifier » (D-021) : forme étendue calculée et marquée, contrat « non évaluée » avec valeur indicative", () => {
+  it("valeur « à vérifier » (D-021, D-026) : rendue avec statut `a-verifier`, jamais masquée (parité DA-16-10)", () => {
     const d1 = etat.objets.D1;
     if (d1?.classe !== "dalle") throw new Error("dalle attendue");
     const e = avec(etat, { ...d1, annotations: { epaisseur: { provenance: "import", statut: "a-verifier", note: "représentation" } } });
-    const ext = q("volume-dalle", "D1", "rdc", calculerQuantitesEtendues(e)) as QuantiteEtendue;
-    expect(ext).toMatchObject({ valeur: 19, statut: "a-verifier" });
-    expect(q("volume-dalle", undefined, "rdc", calculerQuantitesEtendues(e))).toMatchObject({ valeur: 19, statut: "a-verifier" });
-    expect(q("aire-dalle", "D1", "rdc", calculerQuantitesEtendues(e))).toMatchObject({ valeur: 76, statut: "calculee" });
-    // Natures du contrat : un mur dont l'épaisseur est « à vérifier » n'affecte pas l'aire ; la hauteur, si.
+    const r = calculerQuantites(e);
+    expect(q("volume-dalle", "D1", "rdc", r)).toMatchObject({ valeur: 19, statut: "a-verifier" });
+    expect(q("volume-dalle", undefined, "rdc", r)).toMatchObject({ valeur: 19, statut: "a-verifier" });
+    expect(q("aire-dalle", "D1", "rdc", r)).toMatchObject({ valeur: 76, statut: "calculee" });
+    // Un mur dont l'épaisseur est « à vérifier » n'affecte pas l'aire ; la hauteur, si.
     const w1 = etat.objets.W1;
     if (w1?.classe !== "mur") throw new Error("mur attendu");
     const e2 = avec(etat, { ...w1, annotations: { hauteur: { provenance: "import", statut: "a-verifier" } } });
-    const aire = q("aire-mur", "W1", "rdc", calculerQuantites(e2)).valeur;
-    expect(estNonEvaluee(aire) && aire.motif).toMatch(/à vérifier.*valeur indicative 10\.1/);
+    expect(q("aire-mur", "W1", "rdc", calculerQuantites(e2))).toMatchObject({ valeur: 10.11, statut: "a-verifier" });
+  });
+
+  it("escalier dont `referencePlanSeulement` est « non évaluée » (D-024) : effectif de référence de plan partiel", () => {
+    const e2 = etat.objets.E2;
+    if (e2?.classe !== "escalier") throw new Error("escalier attendu");
+    const e = avec(etat, { ...e2, params: { ...e2.params, referencePlanSeulement: { nonEvaluee: true, motif: "drapeau absent" } } });
+    const r = calculerQuantites(e);
+    const total = q("effectif-escaliers-reference-plan", undefined, undefined, r);
+    expect(total.statut).toBe("non-evaluee");
+    expect(total.partiel).toEqual({ somme: 0, nonEvalues: ["E2"] });
+    expect(q("effectif-escaliers", undefined, undefined, r).valeur).toBe(2);
   });
 });

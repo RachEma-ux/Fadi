@@ -54,6 +54,10 @@ function sommetsPolygoneAvecTrous(x: unknown, chemin: string, erreurs: ErreurVal
 }
 
 function controlerParametre(decl: DeclarationParametre, v: unknown, chemin: string, erreurs: ErreurValidation[]): void {
+  if (decl.evaluable === true && estNonEvaluee(v)) {
+    if (typeof v.motif !== "string" || v.motif.trim() === "") erreurs.push({ chemin, message: "« non évaluée » sans motif" });
+    return;
+  }
   const libre = decl.repereLocalLibre === true;
   const longueurSignee = (x: unknown, unite: Unite) => {
     const e = controlerGrandeur(x, unite);

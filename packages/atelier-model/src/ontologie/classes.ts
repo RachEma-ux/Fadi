@@ -93,7 +93,12 @@ export interface ParamsMur {
   /** L'un de `hauteur` ou `niveauHaut` est obligatoire (DA-07-01), jamais deviné. */
   readonly hauteur?: Longueur;
   readonly niveauHaut?: IdObjet;
-  readonly alignement: AlignementMur;
+  /**
+   * Position de l'axe tracé a→b par rapport au mur (DA-02-07) : normale gauche n = (−dy, dx) / L ; « gauche » =
+   * l'axe tracé est la face gauche (le corps du mur est du côté −n) ; « droite » = l'axe est la face droite (corps
+   * côté +n) ; « axe » = faces à ±e/2. « non évaluée » admise (D-024).
+   */
+  readonly alignement: Evaluable<AlignementMur>;
   /** Définition du catalogue (`cloison`, `mur`, `non-type`…), voir `definitions.ts`. */
   readonly typeId: string;
   /** D'après `exteriorWallIds` à l'import. */
@@ -156,8 +161,8 @@ export interface ParamsEscalier {
   readonly niveauDepartId?: IdObjet;
   readonly niveauArriveeId?: IdObjet;
   readonly groupe?: string;
-  /** Occurrence de vue en plan d'un escalier physique (P.118 : 32 occurrences). */
-  readonly referencePlanSeulement: boolean;
+  /** Occurrence de vue en plan d'un escalier physique (P.118 : 32 occurrences) ; « non évaluée » admise (D-024). */
+  readonly referencePlanSeulement: Evaluable<boolean>;
   readonly nom?: string;
 }
 
@@ -309,6 +314,12 @@ export interface ParamsCotation {
   readonly references: readonly ReferenceExtremite[];
   readonly etat: EtatCotation;
   readonly texteRemplacement?: string;
+  /**
+   * Références détachées par l'utilisateur (`reference.reparer` avec `nouvelle: null`), une au plus par
+   * extrémité, sans référence active sur la même extrémité : gardées pour la traçabilité, la résolution de
+   * l'extrémité est alors `detachee` (D-026). Un nouveau rattachement de l'extrémité les retire.
+   */
+  readonly referencesDetachees?: readonly ReferenceExtremite[];
 }
 
 export interface ParamsTexte {

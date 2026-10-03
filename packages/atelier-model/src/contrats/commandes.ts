@@ -6,7 +6,9 @@
  * - `cibles` : objets existants visés (modifier, supprimer, transformer…) ; vide pour une création ;
  * - création : `params.id` fourni par le client (identifiant stable, permet l'aperçu hors ligne et
  *   l'idempotence — hypothèse DA-05-12, à confirmer par L1.2), `niveauId` et `calqueId` explicites ;
- * - modification : `params.modifications` = sous-ensemble des paramètres canoniques de la classe ;
+ * - modification : `params.modifications` = sous-ensemble des paramètres canoniques de la classe ; un paramètre
+ *   facultatif se retire par `null` (D-024) ; un paramètre obligatoire ne se retire pas (`null` refusé) ;
+ * - inverse : une commande produite comme inverse porte le champ `restauration` (D-024, `restauration.ts`) ;
  * - toute grandeur `{ value, unit }`, toute coordonnée taguée (`frame: "local"`) ; aucune valeur par défaut
  *   n'est ajoutée par un réducteur (R3).
  * Les noms marqués « proposé » viennent des fiches et ne sont pas dans l'annexe B : D-013, figés en L1.2.
@@ -49,12 +51,15 @@ import type { Classification, ValeurPropriete } from "../ontologie/proprietes.js
 import type { PointLocal, Polygone } from "../ontologie/reperes.js";
 import type { Angle, Longueur, Unite } from "../ontologie/unites.js";
 import type { ReferenceTopologique } from "./references.js";
+import type { Restauration } from "./restauration.js";
 
 /** Forme commune d'une commande. */
 export interface CommandeDe<T extends string, P> {
   readonly type: T;
   readonly params: P;
   readonly cibles: readonly IdObjet[];
+  /** Présent seulement sur un inverse produit par un réducteur (D-024) : restauration exacte vérifiée. */
+  readonly restauration?: Restauration;
 }
 
 /** En-tête d'une création d'objet de niveau. */
@@ -64,8 +69,19 @@ export interface EnTeteCreation {
   readonly calqueId: IdObjet;
 }
 
+/** Clés facultatives de `P` (propriétés optionnelles). */
+export type ClesFacultatives<P> = { [K in keyof P]-?: Record<never, never> extends Pick<P, K> ? K : never }[keyof P];
+
+/**
+ * Sous-ensemble des paramètres à changer (D-024) : une clé absente est inchangée ; un paramètre facultatif
+ * se retire par `null` ; un paramètre obligatoire reçoit une valeur (jamais `null`).
+ */
+export type Modifications<P> = {
+  readonly [K in keyof P]?: K extends ClesFacultatives<P> ? Exclude<P[K], undefined> | null : P[K];
+};
+
 export interface Modification<P> {
-  readonly modifications: Partial<P>;
+  readonly modifications: Modifications<P>;
 }
 
 type Vide = Readonly<Record<string, never>>;
@@ -143,6 +159,7 @@ export type CommandeEsquisse =
   | CommandeDe<"esquisse.spline", EnTeteCreation & ParamsEsquisseSpline>
   | CommandeDe<"esquisse.construction", EnTeteCreation & ParamsEsquisseConstruction>
   | CommandeDe<"esquisse.hachure", EnTeteCreation & ParamsEsquisseHachure>
+  /** `modifications` : paramètres de la classe `classe` ; `null` retire un paramètre facultatif (D-024). */
   | CommandeDe<"esquisse.modifier", { readonly classe: ClasseEsquisse; readonly modifications: Readonly<Record<string, unknown>> }>
   | CommandeDe<"esquisse.supprimer", Vide>;
 
@@ -197,7 +214,7 @@ export type CommandeOrganisation =
   /** Lot 5. */
   | CommandeDe<"bloc.placer", EnTeteCreation & { readonly blocId: IdObjet; readonly position: PointLocal; readonly angle: Angle }>
   | CommandeDe<"type.definir", { readonly definition: Omit<DefinitionType, "versionCatalogue" | "classeIfc"> }>
-  | CommandeDe<"type.modifier", { readonly classe: ClasseTypee; readonly id: string; readonly modifications: Partial<Pick<DefinitionType, "nom" | "categorie" | "dimensionsProposees" | "proprietes">> }>
+  | CommandeDe<"type.modifier", { readonly classe: ClasseTypee; readonly id: string; readonly modifications: Modifications<Pick<DefinitionType, "nom" | "categorie" | "dimensionsProposees" | "proprietes">> }>
   /** Cibles = objets ; `valeur: undefined` n'existe pas : retirer une propriété = `propriete.definir` avec `retirer: true`. */
   | CommandeDe<
       "propriete.definir",

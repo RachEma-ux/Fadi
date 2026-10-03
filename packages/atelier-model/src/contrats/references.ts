@@ -4,11 +4,13 @@
  * Une référence vise une caractéristique nommée d'un objet (`mur:face-gauche`, `dalle:contour[2]`…).
  * Résolution : `resolue` (géométrie retrouvée), `a-reparer` (objet scindé, supprimé, caractéristique
  * disparue : propositions, jamais de rattachement silencieux, R12), `libre` (pas de référence : cote du
- * prototype, D-019), `detachee` (l'utilisateur a choisi de détacher).
+ * prototype, D-019), `detachee` (l'utilisateur a choisi de détacher : la référence détachée reste portée par la
+ * cotation, `ParamsCotation.referencesDetachees`, D-026).
  */
 import type { CaracteristiqueNommee } from "../ontologie/caracteristiques.js";
 import type { IdObjet } from "../ontologie/classes.js";
 import type { PointLocal, Segment } from "../ontologie/reperes.js";
+import type { Remplacement } from "./effets.js";
 import type { EtatModele } from "./etat.js";
 
 export interface ReferenceTopologique {
@@ -38,5 +40,16 @@ export type ResolutionReference =
   | { readonly etat: "libre" }
   | { readonly etat: "detachee"; readonly ancienne: ReferenceTopologique };
 
-/** Signature du résolveur (pur) : `src/references/resoudre.ts` (L1.3). */
-export type ResoudreReference = (etat: EtatModele, reference: ReferenceTopologique) => ResolutionReference;
+/**
+ * Contexte facultatif de résolution (D-026) : position connue de l'extrémité qui porte la référence, niveau du
+ * porteur, lignée des objets remplacés (`Effets.remplacements` : scission, jonction). Sans contexte, le
+ * résolveur le déduit des porteurs de la référence dans l'état (la lignée n'est pas conservée dans l'état).
+ */
+export interface ContexteResolution {
+  readonly point?: PointLocal;
+  readonly niveauId?: IdObjet;
+  readonly remplacements?: readonly Remplacement[];
+}
+
+/** Signature du résolveur (pur) : `src/references/resoudre.ts` (L1.3, contexte : D-026). */
+export type ResoudreReference = (etat: EtatModele, reference: ReferenceTopologique, contexte?: ContexteResolution) => ResolutionReference;

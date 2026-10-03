@@ -120,7 +120,8 @@ export function teteInverse(c: Commande, tx: Transaction): Commande {
       const anciens: Record<string, unknown> = {};
       for (const k of Object.keys(mods)) {
         const v = (o.params as unknown as Record<string, unknown>)[k];
-        if (v !== undefined) anciens[k] = v;
+        // Paramètre absent avant : l'inverse le retire (`null`, D-024).
+        anciens[k] = v === undefined ? null : v;
       }
       return commande(c.type, { ...(c.params as object), modifications: anciens }, c.cibles);
     }

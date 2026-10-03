@@ -22,7 +22,7 @@ import { MOTIF_COULEUR } from "../ontologie/classes.js";
 import { cleDefinition, definitionNonType, ID_NON_TYPE, type CatalogueTypes, type ClasseTypee, type DefinitionType } from "../ontologie/definitions.js";
 import { ONTOLOGIE, VERSION_ONTOLOGIE } from "../ontologie/descripteurs.js";
 import { CLASSES_IFC } from "../ontologie/ifc.js";
-import { nonEvaluee, type Tracabilite } from "../ontologie/provenance.js";
+import { nonEvaluee, type Evaluable, type Tracabilite } from "../ontologie/provenance.js";
 import type { Propriete } from "../ontologie/proprietes.js";
 import { pointCadastral, type PointLocal, type PolygoneAvecTrous } from "../ontologie/reperes.js";
 import type { Relation } from "../ontologie/relations.js";
@@ -100,7 +100,7 @@ const TRANSFORMATIONS: Readonly<Record<FamilleImport, readonly string[]>> = {
   escaliers: [
     "chaque occurrence conservée (vue par niveau) ; `stairGroup` → `groupe`, sans fusion",
     "`sourceLevel` / `targetLevel` → `niveauDepartId` / `niveauArriveeId` + relation `relie` (rôle `depart` / `arrivee`) ; absents → pas de relation, problème",
-    "`risers`, `waistThickness` absents → « non évaluée » ; `planReferenceOnly` absent → `false` « à vérifier » (règle)",
+    "`risers`, `waistThickness` absents → « non évaluée » ; `planReferenceOnly` absent → `referencePlanSeulement` « non évaluée » (D-024, D-025)",
   ],
   poteaux: ["`p` → `point` ; `shapeId` → `formeId` ; `depth` → `profondeur` ; `angle` en degrés ; `designStatus` → `statutConception` (texte)"],
   pieces: [
@@ -544,7 +544,6 @@ export const importerP118: ImporterP118 = (dataset: JeuDonneesP118, options) => 
         const id = ctx.id(exiger(src.id, estTexte, "id"));
         const cal = calqueDe(src, n, id);
         const consommes = ["id", "name", "a", "b", "width", "baseOffset", "stairGroup", "planReferenceOnly", ...cal.consommes, ...kindConsomme(src, "stairs")];
-        const absents: string[] = [];
         const evalNombre = (cle: string, entier: boolean) => {
           const v = src[cle];
           if (v === undefined) return nonEvaluee(`« ${cle} » absent de la source`);
@@ -561,13 +560,13 @@ export const importerP118: ImporterP118 = (dataset: JeuDonneesP118, options) => 
         const nonEval = [["height", hauteurV], ["steps", marches], ["risers", contremarches], ["waistThickness", paillasse]].filter(([, v]) => typeof v !== "number").map(([k]) => k);
         if (nonEval.length) ctx.probleme("valeur-non-evaluee", "information", `Escalier ${id} : ${nonEval.join(", ")} absent(s) de la source → « non évaluée ».`, [id], { niveauId: n.id });
         const annotations: Record<string, Tracabilite> = {};
-        let refPlan = false;
+        // D-024 / D-025 : drapeau absent (ou mal formé) → « non évaluée », jamais `false` par règle.
+        let refPlan: Evaluable<boolean>;
         if (typeof src.planReferenceOnly === "boolean") refPlan = src.planReferenceOnly;
         else {
-          absents.push("planReferenceOnly");
           if (src.planReferenceOnly !== undefined) consommes.splice(consommes.indexOf("planReferenceOnly"), 1);
-          annotations.referencePlanSeulement = { provenance: "regle", statut: "a-verifier", note: "planReferenceOnly absent de la source : false par règle" };
-          ctx.probleme("valeur-a-verifier", "information", `Escalier ${id} : planReferenceOnly absent, referencePlanSeulement = false à vérifier.`, [id], { niveauId: n.id });
+          refPlan = nonEvaluee(src.planReferenceOnly === undefined ? "planReferenceOnly absent de la source" : "planReferenceOnly mal formé dans la source (conservé en import.planReferenceOnly)");
+          ctx.probleme("valeur-non-evaluee", "information", `Escalier ${id} : planReferenceOnly ${src.planReferenceOnly === undefined ? "absent" : "mal formé"} → referencePlanSeulement « non évaluée ».`, [id], { niveauId: n.id });
         }
         const niveauLie = (cle: "sourceLevel" | "targetLevel"): IdObjet | undefined => {
           const v = src[cle];
@@ -607,7 +606,6 @@ export const importerP118: ImporterP118 = (dataset: JeuDonneesP118, options) => 
             proprietes: [
               ...reste(src, consommes.filter((k) => k !== "stairGroup" || estTexte(src.stairGroup)).filter((k) => k !== "name" || estTexte(src.name))),
               proprieteImporteur("rang", rang),
-              ...(absents.length ? [proprieteImporteur("absents", absents)] : []),
             ],
           }),
         );
@@ -1035,8 +1033,6 @@ export const importerP118: ImporterP118 = (dataset: JeuDonneesP118, options) => 
   if (sansTrace.length) ctx.questions.push(`Pièces sans tracé courant (${sansTrace.length}) conservées sans géométrie (D-025 : gardées, problème listé) : ${sansTrace.map((p) => p.id).join(", ")}.`);
   const alignes = [...ctx.objets.values()].filter((o) => o.classe === "mur" && o.annotations?.alignement !== undefined);
   if (alignes.length) ctx.questions.push(`${alignes.length} murs sans lineRef (murs de façade) : alignement « axe » retenu par règle (D-025), statut « à vérifier » conservé.`);
-  const sansRef = [...ctx.objets.values()].filter((o) => o.classe === "escalier" && o.annotations?.referencePlanSeulement !== undefined);
-  if (sansRef.length) ctx.questions.push(`${sansRef.length} volées sans planReferenceOnly (${sansRef.map((o) => o.id).join(", ")}) : referencePlanSeulement = false « à vérifier » en attendant l’amendement D-024 qui le rendra « non évaluée » (D-025).`);
 
   // --- Assemblage -----------------------------------------------------------
   const ordreFamilles = (FAMILLES_IMPORT as readonly FamilleImport[]).slice();

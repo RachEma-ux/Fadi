@@ -15,7 +15,7 @@ export const TYPES_RELATION = [
   "heberge",
   /** escalier → niveau (rôle `depart` ou `arrivee`) */
   "relie",
-  /** niveau → objets du niveau ; zone → pièces / espaces */
+  /** zone → pièces / espaces (le niveau d'un objet est porté par `niveauId`, une seule source : D-024) */
   "contient",
   /** pièce → murs (dérivée) */
   "delimitee-par",
@@ -85,7 +85,7 @@ export const RELATIONS_ADMISES: Readonly<Partial<Record<TypeRelation, { readonly
 
 /** Vrai si la relation est admise entre ces classes. `contient`, `porte`, `programme` : contrôlés par leur réducteur. */
 export function relationAdmise(type: TypeRelation, source: ClasseObjet, cible: ClasseObjet): boolean {
-  if (type === "contient") return (source === "niveau") || (source === "zone" && (cible === "piece" || cible === "espace"));
+  if (type === "contient") return source === "zone" && (cible === "piece" || cible === "espace");
   if (type === "porte") return source === "dalle";
   if (type === "programme") return source === "piece";
   const regle = RELATIONS_ADMISES[type];

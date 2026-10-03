@@ -172,8 +172,16 @@ describe("pièces, espaces, zones", () => {
     expect(props[0]?.aire).toBeCloseTo(24, 9);
     const r = ok(e, cmd("piece.detecter", { niveauId: "rdc", point: P(1, 1) }));
     expect(r.effets.objetsCrees).toEqual([]);
-    expect(r.effets.problemes[0]?.message).toMatch(/proposition de pièce/);
+    expect(r.effets.problemes).toEqual([]);
+    expect(r.effets.propositions).toHaveLength(1);
+    expect(r.effets.propositions[0]).toMatchObject({ nature: "contour-piece", niveauId: "rdc", provenance: "calcul", statut: "a-verifier", aire: { unit: "m²" } });
+    expect(r.effets.propositions[0]?.aire.value).toBeCloseTo(24, 9);
+    expect(r.effets.propositions[0]?.contour).toHaveLength(4);
     expect(r.inverse).toEqual([]);
+    // D-024 : lot sans changement du modèle → ni révision ni empreinte nouvelles.
+    expect(r.etat).toBe(e);
+    expect(r.etat.revision).toBe(e.revision);
+    expect(r.etat.empreinte).toBe(e.empreinte);
   });
 });
 

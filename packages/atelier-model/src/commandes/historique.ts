@@ -5,7 +5,7 @@
  * `undo` applique l'inverse du lot (restauration exacte). Annuler et rétablir sont de nouvelles microversions
  * (révision + 1, comme `POST /commands/annuler` et `/retablir`) ; l'empreinte revient à celle d'avant.
  *
- * Un lot refusé n'entre pas dans l'historique. `CommandHistory` dépile une commande avant de l'appliquer :
+ * Un lot refusé, ou qui ne change pas le modèle (D-024), n'entre pas dans l'historique. `CommandHistory` dépile une commande avant de l'appliquer :
  * pour qu'un échec (état divergé) ne la perde pas, l'annulation et le rétablissement sont d'abord préparés
  * (calcul pur), puis seulement confiés à `CommandHistory`, qui réutilise le résultat préparé. En cas d'échec,
  * `ErreurHistorique` est levée avec les erreurs motivées et rien ne change.
@@ -100,6 +100,8 @@ export class HistoriqueAtelier {
     const entree = this.etat();
     const resultat = appliquerLot(entree, lot);
     if (!resultat.ok) return resultat;
+    // Lot sans changement du modèle (D-024) : rien à annuler, il n'entre pas dans l'historique.
+    if (resultat.inverse.length === 0) return resultat;
     const c = new CommandeLot(lot, entree, resultat);
     this.historique.do(c);
     this.annulables.push(c);

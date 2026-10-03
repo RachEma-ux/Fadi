@@ -8,11 +8,14 @@
  *   de sa position actuelle sur le segment, bornée à ses extrémités (une cote entre deux faces suit leur
  *   déplacement perpendiculaire sans glisser le long de la face) ;
  * - référence à réparer → l'extrémité ne bouge pas (dernière position connue) et la cotation est « à réparer » ;
+ * - référence détachée (`referencesDetachees`, D-026) → résolution `detachee`, l'extrémité ne bouge pas ;
  * - si les deux extrémités recalculées sont à moins de `longueurMin` l'une de l'autre, rien ne bouge et la
  *   cotation est « à réparer » (géométrie dégénérée) — jamais une cote de longueur nulle en silence.
  *
- * Fonctions pures, appelables par les réducteurs (voir le rapport L1.3 pour le branchement proposé).
+ * Fonctions pures ; le moteur des commandes appelle `recalculerCotationsRattachees` après chaque réducteur
+ * (avec la lignée `remplacements` de la commande), avant les contrôles communs (L1.6).
  */
+import type { Remplacement } from "../contrats/effets.js";
 import type { Probleme } from "../contrats/probleme.js";
 import type { ReferenceTopologique, ResolutionReference } from "../contrats/references.js";
 import { TOLERANCES } from "../contrats/tolerances.js";
@@ -28,19 +31,25 @@ export interface ResolutionCotation {
   readonly b: ResolutionReference;
 }
 
-/** Résolution de chaque extrémité : `libre` sans référence, sinon résolution avec la position connue. */
-export function resoudreCotation(vue: VueObjets, cotation: ObjetCotation): ResolutionCotation {
+/**
+ * Résolution de chaque extrémité : `libre` sans référence, `detachee` si la référence a été détachée (D-026),
+ * sinon résolution avec la position connue (et la lignée éventuelle).
+ */
+export function resoudreCotation(vue: VueObjets, cotation: Pick<ObjetCotation, "params" | "niveauId">, remplacements?: readonly Remplacement[]): ResolutionCotation {
   const une = (ext: "a" | "b"): ResolutionReference => {
     const r = cotation.params.references.find((x) => x.extremite === ext);
-    if (!r) return { etat: "libre" };
+    if (!r) {
+      const d = (cotation.params.referencesDetachees ?? []).find((x) => x.extremite === ext);
+      return d ? { etat: "detachee", ancienne: { objetId: d.objetId, caracteristique: d.caracteristique as ReferenceTopologique["caracteristique"] } } : { etat: "libre" };
+    }
     const ref: ReferenceTopologique = { objetId: r.objetId, caracteristique: r.caracteristique as ReferenceTopologique["caracteristique"] };
     if (!estCaracteristiqueNommee(r.caracteristique)) return { etat: "a-reparer", reference: ref, motif: "caracteristique-absente", propositions: [{ cible: null, libelle: LIBELLE_DETACHER }] };
-    return resoudreReferenceDans(vue, ref, { point: cotation.params[ext], ...(cotation.niveauId !== undefined ? { niveauId: cotation.niveauId } : {}) });
+    return resoudreReferenceDans(vue, ref, { point: cotation.params[ext], ...(cotation.niveauId !== undefined ? { niveauId: cotation.niveauId } : {}), ...(remplacements && remplacements.length > 0 ? { remplacements } : {}) });
   };
   return { a: une("a"), b: une("b") };
 }
 
-/** État d'une cotation d'après la résolution de ses extrémités. */
+/** État d'une cotation d'après la résolution de ses extrémités (une extrémité détachée compte comme libre). */
 export function etatDeResolution(r: ResolutionCotation): EtatCotation {
   if (r.a.etat === "a-reparer" || r.b.etat === "a-reparer") return "a-reparer";
   if (r.a.etat === "resolue" || r.b.etat === "resolue") return "rattachee";
@@ -83,8 +92,8 @@ function problemesDe(porteurId: IdObjet, niveauId: IdObjet | undefined, r: Resol
 }
 
 /** Recalcule les extrémités d'une cotation d'après ses références (pur). */
-export function recalculerCotation(vue: VueObjets, cotation: ObjetCotation): RecalculCotation {
-  const resolution = resoudreCotation(vue, cotation);
+export function recalculerCotation(vue: VueObjets, cotation: ObjetCotation, remplacements?: readonly Remplacement[]): RecalculCotation {
+  const resolution = resoudreCotation(vue, cotation, remplacements);
   const { a: a0, b: b0 } = cotation.params;
   let a = positionRecalculee(resolution.a, a0);
   let b = positionRecalculee(resolution.b, b0);
@@ -109,16 +118,16 @@ export function recalculerCotation(vue: VueObjets, cotation: ObjetCotation): Rec
 /**
  * Cotations à mettre à jour après un changement : celles dont une référence vise un objet de `objetsTouches`
  * (toutes les cotations rattachées si `objetsTouches` est absent). Seules celles qui changent sont rendues,
- * triées par identifiant.
+ * triées par identifiant. `remplacements` : lignée de la commande (D-026), pour les propositions.
  */
-export function recalculerCotationsRattachees(vue: VueObjets, objetsTouches?: readonly IdObjet[]): readonly RecalculCotation[] {
+export function recalculerCotationsRattachees(vue: VueObjets, objetsTouches?: readonly IdObjet[], remplacements?: readonly Remplacement[]): readonly RecalculCotation[] {
   const touches = objetsTouches ? new Set(objetsTouches) : null;
   const res: RecalculCotation[] = [];
   for (const id of Object.keys(vue.objets).sort()) {
     const o = vue.objets[id];
     if (o?.classe !== "cotation" || o.params.references.length === 0) continue;
     if (touches && !o.params.references.some((r) => touches.has(r.objetId))) continue;
-    const r = recalculerCotation(vue, o);
+    const r = recalculerCotation(vue, o, remplacements);
     if (r.change) res.push(r);
   }
   return res;

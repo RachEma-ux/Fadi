@@ -7,9 +7,10 @@
  *
  * Motifs :
  * - `objet-supprime` : l'objet n'existe plus (supprimé, ou identité inconnue) ;
- * - `objet-scinde` : l'objet n'existe plus et deux murs du même niveau, contigus, colinéaires, de mêmes
- *   paramètres hors axe, portent la caractéristique à moins de `longueurMin` de la position connue
- *   (empreinte d'une scission ; l'état ne garde pas la lignée, voir le rapport L1.3) ;
+ * - `objet-scinde` : l'objet n'existe plus et la lignée du contexte (`contexte.remplacements`, tirée de
+ *   `Effets.remplacements`, D-026) le remplace par au moins deux objets ; sans lignée (l'état ne la garde pas),
+ *   repli géométrique : deux murs du même niveau, contigus, colinéaires, de mêmes paramètres hors axe, portent
+ *   la caractéristique à moins de `longueurMin` de la position connue ;
  * - `caracteristique-absente` : caractéristique inconnue, ou indice de contour de dalle hors du contour ;
  * - `classe-incompatible` : caractéristique nommée, mais d'une autre classe que l'objet ;
  * - `geometrie-degeneree` : géométrie inexploitable (axe trop court, épaisseur nulle, hôte introuvable…).
@@ -18,11 +19,12 @@
  * cotation ou étiquette, par identifiant, qui porte la référence), écart (m) entre cette position et la
  * géométrie proposée ; tri par écart croissant, puis identifiant, puis caractéristique ; au plus
  * `NOMBRE_MAX_PROPOSITIONS` cibles (borne d'interface, pas une donnée de projet), morceaux d'une scission en
- * tête ; « détacher » toujours en dernier. Sans position connue, aucune cible n'est classable : seule la
- * proposition « détacher » est faite (rien n'est deviné).
+ * tête ; « détacher » toujours en dernier. Sans position connue, aucune cible n'est classable : seuls les
+ * objets de la lignée (s'il y en a, dans l'ordre de la lignée) et « détacher » sont proposés (rien n'est deviné).
  */
 import type { EtatModele } from "../contrats/etat.js";
-import type { GeometrieCaracteristique, MotifAReparer, PropositionReparation, ReferenceTopologique, ResolutionReference, ResoudreReference } from "../contrats/references.js";
+import type { Remplacement } from "../contrats/effets.js";
+import type { ContexteResolution, GeometrieCaracteristique, MotifAReparer, PropositionReparation, ReferenceTopologique, ResolutionReference, ResoudreReference } from "../contrats/references.js";
 import { TOLERANCES } from "../contrats/tolerances.js";
 import { distance, distanceDroite, scalaire, sous } from "../commandes/geometrie.js";
 import { jsonCanonique } from "../commandes/empreinte.js";
@@ -37,11 +39,6 @@ export const NOMBRE_MAX_PROPOSITIONS = 5;
 /** Libellé de la proposition « détacher ». */
 export const LIBELLE_DETACHER = "détacher (la cote devient libre)";
 
-/** Contexte facultatif : position connue de l'extrémité qui porte la référence et niveau du porteur. */
-export interface ContexteResolution {
-  readonly point?: PointLocal;
-  readonly niveauId?: IdObjet;
-}
 
 const comparer = (x: string, y: string): number => (x < y ? -1 : x > y ? 1 : 0);
 const memeReference = (r: { objetId: IdObjet; caracteristique?: string | undefined }, ref: ReferenceTopologique) => r.objetId === ref.objetId && r.caracteristique === ref.caracteristique;
@@ -118,23 +115,48 @@ function pairesScission(murs: readonly ObjetMur[]): [ObjetMur, ObjetMur][] {
   return paires;
 }
 
+/** Objets existants qui remplacent `id` d'après la lignée (transitive, ordre de la lignée), `null` sans lignée. */
+function descendants(vue: VueObjets, id: IdObjet, remplacements: readonly Remplacement[] | undefined): IdObjet[] | null {
+  if (!remplacements || remplacements.length === 0) return null;
+  const res: IdObjet[] = [];
+  const vus = new Set<IdObjet>([id]);
+  const suivre = (x: IdObjet) => {
+    for (const r of remplacements) {
+      if (r.ancienId !== x) continue;
+      for (const n of r.nouveauxIds) {
+        if (vus.has(n)) continue;
+        vus.add(n);
+        if (Object.prototype.hasOwnProperty.call(vue.objets, n)) res.push(n);
+        else suivre(n);
+      }
+    }
+  };
+  suivre(id);
+  return res.length > 0 ? res : null;
+}
+
 function resoudreDisparu(vue: VueObjets, ref: ReferenceTopologique, ctx: ContexteResolution): ResolutionReference {
   const p = ctx.point;
+  const lignee = descendants(vue, ref.objetId, ctx.remplacements);
+  if (lignee) {
+    // Lignée connue (D-026) : les remplaçants qui portent la caractéristique, en tête ; motif objet-scinde si ≥ 2.
+    const tete: Candidat[] = [];
+    for (const id of lignee) {
+      const o = vue.objets[id];
+      if (!o) continue;
+      const g = geometrieCaracteristique(vue, o, ref.caracteristique);
+      if (g.ok) tete.push(p ? { objetId: id, caracteristique: ref.caracteristique, ecart: ecart(g.geometrie, p) } : { objetId: id, caracteristique: ref.caracteristique });
+    }
+    const triee = p ? trierCandidats(tete) : tete;
+    const motif: MotifAReparer = lignee.length >= 2 ? "objet-scinde" : "objet-supprime";
+    if (!p) return { etat: "a-reparer", reference: ref, motif, propositions: [...versPropositions(triee), DETACHER] };
+    const autres = candidatsDisparu(vue, ref, ctx, p).filter((c) => !triee.some((t) => t.objetId === c.objetId && t.caracteristique === c.caracteristique));
+    const choisis = [...triee, ...autres].slice(0, Math.max(NOMBRE_MAX_PROPOSITIONS, triee.length));
+    return { etat: "a-reparer", reference: ref, motif, propositions: [...versPropositions(choisis), DETACHER] };
+  }
   if (!p) return { etat: "a-reparer", reference: ref, motif: "objet-supprime", propositions: [DETACHER] };
   const classes = classesPortant(ref.caracteristique);
-  const dalle = classes.includes("dalle");
-  const candidats: Candidat[] = [];
-  for (const id of Object.keys(vue.objets).sort(comparer)) {
-    const o = vue.objets[id];
-    if (!o || !classes.includes(o.classe)) continue;
-    if (ctx.niveauId !== undefined && o.niveauId !== ctx.niveauId) continue;
-    // Une dalle disparue : toutes les arêtes des dalles du niveau sont candidates (l'indice n'a plus de sens).
-    for (const c of dalle ? caracteristiquesDe(o) : [ref.caracteristique]) {
-      const g = geometrieCaracteristique(vue, o, c);
-      if (g.ok) candidats.push({ objetId: o.id, caracteristique: c, ecart: ecart(g.geometrie, p) });
-    }
-  }
-  trierCandidats(candidats);
+  const candidats = candidatsDisparu(vue, ref, ctx, p);
   let motif: MotifAReparer = "objet-supprime";
   let tete: Candidat[] = [];
   if (classes.includes("mur")) {
@@ -158,12 +180,31 @@ function resoudreDisparu(vue: VueObjets, ref: ReferenceTopologique, ctx: Context
   return { etat: "a-reparer", reference: ref, motif, propositions: [...versPropositions(choisis), DETACHER] };
 }
 
+/** Candidats pour une référence dont l'objet a disparu : même caractéristique, même niveau, par écart. */
+function candidatsDisparu(vue: VueObjets, ref: ReferenceTopologique, ctx: ContexteResolution, p: PointLocal): Candidat[] {
+  const classes = classesPortant(ref.caracteristique);
+  const dalle = classes.includes("dalle");
+  const candidats: Candidat[] = [];
+  for (const id of Object.keys(vue.objets).sort(comparer)) {
+    const o = vue.objets[id];
+    if (!o || !classes.includes(o.classe)) continue;
+    if (ctx.niveauId !== undefined && o.niveauId !== ctx.niveauId) continue;
+    // Une dalle disparue : toutes les arêtes des dalles du niveau sont candidates (l'indice n'a plus de sens).
+    for (const c of dalle ? caracteristiquesDe(o) : [ref.caracteristique]) {
+      const g = geometrieCaracteristique(vue, o, c);
+      if (g.ok) candidats.push({ objetId: o.id, caracteristique: c, ecart: ecart(g.geometrie, p) });
+    }
+  }
+  return trierCandidats(candidats);
+}
+
 /**
- * Résolution avec contexte explicite (position connue de l'extrémité, niveau du porteur). Sans contexte, le
- * contexte est déduit des porteurs de la référence dans l'état.
+ * Résolution avec contexte explicite (position connue de l'extrémité, niveau du porteur, lignée). Sans position
+ * ni niveau dans le contexte, ils sont déduits des porteurs de la référence dans l'état.
  */
 export function resoudreReferenceDans(vue: VueObjets, ref: ReferenceTopologique, contexte?: ContexteResolution): ResolutionReference {
-  const ctx = contexte ?? contexteDesPorteurs(vue, ref);
+  const ctx: ContexteResolution =
+    contexte === undefined || (contexte.point === undefined && contexte.niveauId === undefined) ? { ...contexteDesPorteurs(vue, ref), ...(contexte?.remplacements ? { remplacements: contexte.remplacements } : {}) } : contexte;
   const o = Object.prototype.hasOwnProperty.call(vue.objets, ref.objetId) ? vue.objets[ref.objetId] : undefined;
   if (!o) return resoudreDisparu(vue, ref, ctx);
   const g = geometrieCaracteristique(vue, o, ref.caracteristique);
@@ -173,7 +214,7 @@ export function resoudreReferenceDans(vue: VueObjets, ref: ReferenceTopologique,
 }
 
 /** Résolveur du contrat `ResoudreReference` (pur). */
-export const resoudreReference: ResoudreReference = (etat: EtatModele, reference: ReferenceTopologique) => resoudreReferenceDans(etat, reference);
+export const resoudreReference: ResoudreReference = (etat: EtatModele, reference: ReferenceTopologique, contexte?: ContexteResolution) => resoudreReferenceDans(etat, reference, contexte);
 
 /** Géométrie d'une résolution, ou `null` si la référence n'est pas résolue. */
 export function geometrieResolue(r: ResolutionReference): GeometrieCaracteristique | null {

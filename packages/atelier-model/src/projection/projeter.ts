@@ -181,7 +181,8 @@ export function projeterDomainesNatifs(modele: EtatModele): DomainesNatifs {
             ...(p.groupe !== undefined ? { stairGroup: p.groupe } : {}),
             ...(p.niveauDepartId !== undefined ? { sourceLevel: lidDe.get(p.niveauDepartId) ?? sid(p.niveauDepartId) } : {}),
             ...(p.niveauArriveeId !== undefined ? { targetLevel: lidDe.get(p.niveauArriveeId) ?? sid(p.niveauArriveeId) } : {}),
-            ...(absents(o).includes("planReferenceOnly") ? {} : { planReferenceOnly: p.referencePlanSeulement }),
+            // « non évaluée » (D-024) : drapeau absent de la source, il reste absent (sans perte).
+            ...(estNonEvaluee(p.referencePlanSeulement) ? {} : { planReferenceOnly: p.referencePlanSeulement }),
             ...reste,
           });
           break;
