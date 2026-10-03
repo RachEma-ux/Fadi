@@ -98,7 +98,7 @@ O = [
     ("etiquette", "Étiquette", "⌑", "documenter", "Annotations", "etiquette.creer", "DA-15-05", "5", "label, tag", "Place une étiquette liée à un objet.", ""),
     ("vues", "Vues et feuilles", "▦", "documenter", "Documents", "—", "DA-14-01", "5", "views, sheets, layout, plan, coupe, façade", "Plans, coupes, façades et feuilles dérivés du modèle.", ""),
     # Partager
-    ("exporter", "Exporter (PNG, SVG)", "⤓", "partager", "Partager", "— (opération serveur)", "DA-14 / DA-22-03", "3a", "export, dxf, pdf, svg, png", "Exporte la vue courante en PNG ou SVG (DXF et PDF au lot 5).", "Exporter"),
+    ("exporter", "Exporter (PNG, SVG, DXF, impression)", "⤓", "partager", "Partager", "— (opération serveur)", "DA-14-01", "3a", "export, dxf, pdf, svg, png, imprimer, print", "Exporte la vue courante en PNG, SVG, DXF du plan, ou l'imprime (PDF par le navigateur).", "Exporter"),
     ("ifc", "Exporter en IFC 4.3", "⇪", "partager", "Partager", "— (opération serveur)", "DA-22-01", "6", "ifc, bim export", "Exporte le sous-ensemble IFC 4.3 avec rapport.", ""),
     ("publier", "Publier une version", "⚑", "partager", "Partager", "— (version figée)", "DA-21", "7", "publish, version", "Fige et publie une version du modèle.", ""),
 ]
