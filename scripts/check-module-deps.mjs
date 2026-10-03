@@ -5,7 +5,7 @@
  *
  * Règles :
  * - chaque paquet de `packages/` a un `manifest.json` (`name`, `version`, `contracts`, `allowedDependencies`)
- *   cohérent avec son `package.json` ; `packages/atelier-model` peut ne pas exister encore (créé au lot 1) ;
+ *   cohérent avec son `package.json` ; `packages/atelier-model` (créé au lot 1) déclare le contrat `atelier-commands` ;
  * - un paquet pur n'importe que ce que son manifeste autorise (`allowedDependencies`), jamais `react`, `three`,
  *   `express`, `drizzle-orm` (ni leurs voisins d'interface ou de serveur), jamais un fichier hors de son dossier
  *   (donc jamais un module de `apps/web`), jamais une API navigateur (`window`, `document`, `localStorage`…)
@@ -26,11 +26,15 @@ const PACKAGES_DIR = join(ROOT, "packages");
 const EXPECTED = [
   { dir: "core-geometry", name: "@parcours/core-geometry", optional: false },
   { dir: "domain-model", name: "@parcours/domain-model", optional: false },
-  { dir: "atelier-model", name: "@parcours/atelier-model", optional: true },
+  { dir: "atelier-model", name: "@parcours/atelier-model", optional: false },
 ];
 /** Plafond fixé par le cahier des charges (§5.1) : un manifeste ne peut pas l'élargir. */
 const CEILING = {
   "@parcours/atelier-model": ["@parcours/domain-model", "@parcours/core-geometry"],
+};
+/** Contrats que le manifeste doit déclarer (§5.1). */
+const REQUIRED_CONTRACTS = {
+  "@parcours/atelier-model": ["atelier-commands"],
 };
 /** Interdits à tout paquet pur, quel que soit son manifeste (préfixes de nom de paquet). */
 const FORBIDDEN = ["react", "react-dom", "react/", "three", "three/", "@react-three/", "express", "drizzle-orm", "drizzle-orm/", "pg", "dexie", "@tanstack/", "vite", "playwright"];
@@ -154,6 +158,9 @@ for (const dir of present) {
   if (manifest.version !== pkg.version) fail(`${where} : version « ${manifest.version} » ≠ package.json « ${pkg.version} »`);
   if (!manifest.contracts || typeof manifest.contracts !== "object" || Array.isArray(manifest.contracts) || !Object.values(manifest.contracts).every((v) => Number.isInteger(v) && v >= 1)) {
     fail(`${where} : contracts doit être un objet { contrat: version entière ≥ 1 } (vide s'il n'y en a pas)`);
+  }
+  for (const c of REQUIRED_CONTRACTS[pkg.name] ?? []) {
+    if (!manifest.contracts || !Object.hasOwn(manifest.contracts, c)) fail(`${where} : contrat « ${c} » non déclaré (§5.1)`);
   }
   if (!Array.isArray(manifest.allowedDependencies) || !manifest.allowedDependencies.every((d) => typeof d === "string")) {
     fail(`${where} : allowedDependencies doit être une liste de noms de paquets`);
