@@ -26,7 +26,7 @@ L'ancien Atelier (`routes/atelier.ts`, `lib/atelier-store.ts`, `lib/api/atelier.
 
 | Tâche | Issue | État |
 | --- | --- | --- |
-| L2.1 tables, `VolumeStore`, migration | #36 | en cours (phase 1) |
+| L2.1 tables, `VolumeStore`, migration | #36 | fusionnée (PR #44) ; 9 tests PostgreSQL + aller-retour P.118 ; D-030 |
 | L2.2 service de commandes | #37 | après L2.1 |
 | L2.3 événements | #38 | après L2.1 |
 | L2.4 client : bus, file Dexie, conflits | #39 | fusionnée (PR #43) ; 17 tests ; détails d'API figés (D-029) |
