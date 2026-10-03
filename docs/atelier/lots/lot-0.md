@@ -13,9 +13,9 @@ point 1), sans laquelle le lot 3a ne commence pas.
 | L0.1 | `docs/architecture.md` amendé (six amendements de `docs/atelier-drawall.md` §10) ; `CLAUDE.md`, `docs/atelier/README.md`, `decisions.md`, gabarit de fiche (déjà sur `main`, 9297c57) | #8 / #2 | CI verte (validate, e2e, image) |
 | L0.2 | 63 fiches de capacité à l'état « spécifiée » dans `docs/atelier/fiches/` : DA-01 (01–06, 09–11), DA-02 (01–17), DA-03 (01, 09, 10, 12, 13, 15), DA-04 (01, 07), DA-05 (01–05, 12, 14, 15), DA-06 (07, 08), DA-07 (01–06, 10, 15–17), DA-17-16, DA-18 (03, 04), DA-21 (01, 02, 04–07) | #9, #11 / #3 | Champs du gabarit présents dans chaque fiche ; CI verte |
 | L0.3 | Maquette HTML statique `docs/atelier/maquette/` (ouvrir `index.html`, sans serveur ni CDN) : 7 écrans ordinateur 1536 px, 9 écrans téléphone 390 px, niveaux Essentiel / Contextuel / Complet, palette, inspecteur, panneau problèmes ; données extraites de `p118-native-model.json` (`outils/extraire-p118.py --verifier`) ; 18 captures dans `captures/` | #10 / #4 | Workflow « Atelier — maquette » vert : aucune requête externe, aucune erreur JavaScript, pas de défilement horizontal ; CI verte |
-| L0.4 | Banc de mesures `docs/atelier/banc/` et `docs/atelier/p0-mesures.md` | voir §4 / #5 | voir §4 |
+| L0.4 | Banc de mesures isolé `docs/atelier/banc/` + workflow `atelier-banc.yml` ; `docs/atelier/p0-mesures.md` avec bancs déclarés ; résultats bruts dans `docs/atelier/banc/resultats-publies/` | #15 / #5 | Banc vert en CI (run 37145845850) ; mesures Node sur le poste local |
 | L0.5 | `apps/web/e2e/run.mjs` + `scenarios/00…12-*.mjs` + `attendu.json` ; `init.sql` en sections par module (`atelier` réservée) ; `apps/web/src/lib/api/*.ts` par module (`atelier.ts` réservé) ; `scripts/check-module-deps.mjs` + `manifest.json` en tête de `npm run typecheck` ; hooks `TaskCompleted` / `TeammateIdle` dans `.claude/settings.json` ; bases et port par équipier (`apps/api/README.md`) | #12 / #6 | **327 contrôles avant et après, conformes à `attendu.json`** ; migration rejouée et restauration vérifiée en CI ; CI verte |
-| L0.6 | Ce compte rendu ; décisions D-010 à D-015 ; références à l'ancien `parcours-scenario.mjs` mises à jour dans `docs/migration/` | #7 | — |
+| L0.6 | Ce compte rendu ; décisions D-010 à D-017 ; références à l'ancien `parcours-scenario.mjs` mises à jour dans `docs/migration/` | #7 | — |
 
 ## 2. Ce qui n'est pas fait, ou pas vérifié
 
@@ -25,6 +25,9 @@ point 1), sans laquelle le lot 3a ne commence pas.
   de l'API, la migration, le scénario e2e, les captures et le banc n'ont tourné **qu'en GitHub Actions** ;
   localement, seuls `npm run typecheck`, `npm run build` et les tests `core-geometry` (47) et `domain-model`
   (93) ont tourné (L0.5).
+- Contrôle e2e instable : sur le commit intermédiaire 391e3bf de `lot/0-cadrage` (fusion de fiches, documentation
+  seule), deux contrôles de la page d'accueil (« reprendre mon projet », « Mon parcours ») ont échoué une fois ;
+  ils passent sur la PR et sur les commits suivants. À surveiller ; non corrigé au lot 0.
 - `docs/migration/matrix.md` §3 (Atelier) n'est pas réécrit : il décrit toujours l'Atelier extrait, qui reste
   le seul Atelier du produit jusqu'à la bascule (lot 4).
 
@@ -41,7 +44,20 @@ point 1), sans laquelle le lot 3a ne commence pas.
 
 ## 4. Mesures (L0.4)
 
-<!-- L0.4 : complété à l'intégration du banc. -->
+Détail et bancs déclarés : `docs/atelier/p0-mesures.md`. Essentiel :
+
+| Mesure | Résultat | Banc |
+| --- | --- | --- |
+| web-ifc 0.0.78 (MPL-2.0) | 0,65 Mo brotli ; init 487 ms (Node), 143 ms (navigateur) ; schéma IFC 4.3 présent | poste local / CI |
+| manifold-3d 3.5.4 (Apache-2.0) | 0,18 Mo brotli ; init 17–37 ms ; P.118 percé (220 murs, 210 ouvertures) en 74–167 ms, 0 non-conforme ; 24 / 24 cas limites conformes | poste local / CI |
+| OCCT (occt-wasm 5.5.0 ; opencascade.js 1.1.1) — banc seulement, licence non arbitrée | 4,7 Mo et 9,5 Mo brotli ; init 94 ms et 575 ms (navigateur) | poste local / CI |
+| Yjs 13.6.33 | mises à jour de 11 à 63 octets ; 10 000 éditions à deux clients convergentes | poste local |
+| Écriture IFC 4.3 de P.118 | directe : 19 ms ; web-ifc : 376 ms ; même fichier relu (220 murs, 210 vides, 120 poteaux, 6 niveaux) | poste local |
+| Rendu three.js WebGL2, scène P.118 (60 176 triangles) | ouverture 116–238 ms ; sélection p95 ≤ 0,5 ms ; fusion par matériau 1 098 → 120 appels ; trame p95 ≈ 66–70 ms **en rendu logiciel** | CI, SwiftShader |
+| Budget de trame sur GPU réel, Firefox, Safari | **non mesuré** (pas de banc GPU ni de Chromium sur le poste) | — |
+
+Le premier passage CI dépassait la limite du job (300 trames × 12 rendus en rendu logiciel) : trames et rayons
+sont devenus réglables (60 / 100 en CI).
 
 ## 5. Constats sur les données P.118 (à traiter au lot 1)
 
@@ -63,9 +79,11 @@ point 1), sans laquelle le lot 3a ne commence pas.
 
 ## 6. Décisions prises par le chef de projet (§10.2)
 
-D-010 à D-015 dans `docs/atelier/decisions.md` : organisation PR + CI GitHub ; ordre historique du scénario
+D-010 à D-017 dans `docs/atelier/decisions.md` : organisation PR + CI GitHub ; ordre historique du scénario
 découpé ; tolérances numériques provisoires ; commandes hors annexe B = propositions à figer en L1.2 ; règle
-d'échelle des objets paramétriques ; 409 strict conservé au lot 2. Choix web-ifc / écriture directe et Yjs : §4.
+d'échelle des objets paramétriques ; 409 strict conservé au lot 2 ; D-016 export IFC par écriture directe et
+web-ifc pour l'import et la validation ; D-017 Yjs non retenu au lot 0 (annotations = commandes, question
+rouverte au lot 7).
 
 ## 7. Décisions qui appartiennent au maître d'ouvrage (§10.1)
 
@@ -118,6 +136,6 @@ d'échelle des objets paramétriques ; 409 strict conservé au lot 2. Choix web-
 
 - [x] Fiches à l'état « spécifiée » pour tout le périmètre du lot 3 (63 fiches).
 - [ ] Maquette validée par le maître d'ouvrage — **en attente**.
-- [ ] Mesures publiées avec banc déclaré — voir §4.
+- [x] Mesures publiées avec banc déclaré (`p0-mesures.md`) ; budget GPU déclaré non mesuré.
 - [x] Scénario découpé passant à l'identique : 327 contrôles, CI verte.
 - [x] `check-module-deps` en place (`npm run typecheck`).
