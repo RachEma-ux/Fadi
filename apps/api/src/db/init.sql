@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users (email);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS notifications_seen_at timestamptz;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name text;
 
 CREATE TABLE IF NOT EXISTS sessions (
   id text PRIMARY KEY,

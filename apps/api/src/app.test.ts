@@ -55,6 +55,21 @@ describe("auth", () => {
     expect(me.body.email).toBe("alice@example.com");
   });
 
+  it("stores an optional display name (Paramètres → Compte), returned by /auth/me and login, cleared with an empty value, never derived from the address", async () => {
+    const client = await registerAndLogin("roch.d@example.com");
+    expect((await client.get("/auth/me")).body.displayName).toBeNull();
+    const saved = await client.patch("/auth/me").send({ displayName: "  Roch  " });
+    expect(saved.status).toBe(200);
+    expect(saved.body).toMatchObject({ email: "roch.d@example.com", displayName: "Roch" });
+    expect((await client.get("/auth/me")).body.displayName).toBe("Roch");
+    const relogin = await agent().post("/auth/login").send({ email: "roch.d@example.com", password: "correct-horse-battery" });
+    expect(relogin.body.displayName).toBe("Roch");
+    expect((await client.patch("/auth/me").send({ displayName: "x".repeat(61) })).status).toBe(400);
+    expect((await client.patch("/auth/me").send({})).status).toBe(400);
+    expect((await client.patch("/auth/me").send({ displayName: "" })).body.displayName).toBeNull();
+    expect((await agent().patch("/auth/me").send({ displayName: "Roch" })).status).toBe(401);
+  });
+
   it("rejects a duplicate registration with a generic error", async () => {
     await registerAndLogin("bob@example.com");
     const res = await agent().post("/auth/register").send({ email: "bob@example.com", password: "whatever123" });
@@ -1248,6 +1263,20 @@ describe("Bilan Harmonie du bâtiment conçu (flow-v62) et références directio
     expect(v.example).toBe(true);
     expect(v.analysis.floors).toHaveLength(6);
     expect(v.analysis.rooms).toHaveLength(74);
+    // Aperçu conceptuel (accueil, Atelier) : axonométrie éclatée dessinée depuis les mêmes polygones ; vide sur un projet sans modèle.
+    const preview = await client.get(`/projects/${pid}/design-review/apercu`);
+    expect(preview.status).toBe(200);
+    expect(preview.body).toMatchObject({ levels: 6, rooms: 74, nativeHash: v.analysis.nativeHash, planLevel: "RDC" });
+    expect(String(preview.body.plan)).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 320 240"/);
+    expect(preview.body.walls).toBeGreaterThan(0);
+    expect(String(preview.body.svg)).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 960 \d+"/);
+    expect((String(preview.body.svg).match(/<g data-level="/g) ?? []).length).toBe(6);
+    const blank = await client.post("/projects").send({ code: "P.VIDE", name: "Sans modèle" });
+    const blankPreview = await client.get(`/projects/${blank.body.id}/design-review/apercu`);
+    expect(blankPreview.status).toBe(200);
+    expect(blankPreview.body.svg).toBeNull();
+    const stranger = await registerAndLogin("stranger-apercu@example.com");
+    expect((await stranger.get(`/projects/${pid}/design-review/apercu`)).status).toBe(404);
     expect(v.analysis.rooms[0].points).toBeUndefined(); // les polygones restent côté serveur (plans SVG)
     expect(v.analysis.facts.parcelArea).toBeCloseTo(1345.5476, 3);
     expect(v.analysis.facts.inside).toBe(true);

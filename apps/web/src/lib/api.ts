@@ -57,6 +57,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export interface CurrentUser {
   id: string;
   email: string;
+  /** Nom affiché choisi dans Paramètres (« Bonjour … », initiales) ; null tant que rien n'est saisi. */
+  displayName: string | null;
+}
+
+/** Aperçu conceptuel (`GET …/design-review/apercu`) : axonométrie éclatée dessinée depuis les polygones réels ; `svg` null sans modèle. */
+export interface ConceptPreview {
+  svg: string | null;
+  /** Plan compact du niveau de référence (RDC ou premier niveau), sans texte ; null sans modèle. */
+  plan: string | null;
+  planLevel: string | null;
+  levels: number;
+  rooms: number;
+  walls: number;
+  nativeHash: string;
+  generatedAt: string;
 }
 
 export interface Project {
@@ -642,6 +657,7 @@ export const api = {
     request<CurrentUser>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
   me: () => request<CurrentUser>("/auth/me"),
+  updateProfile: (displayName: string | null) => request<CurrentUser>("/auth/me", { method: "PATCH", body: JSON.stringify({ displayName }) }),
 
   listProjects: () => request<Project[]>("/projects"),
   /** Notifications dans l'application (accès reçus, commentaires des autres, réservations d'édition), relues des données datées. */
@@ -736,6 +752,7 @@ export const api = {
   },
   /** Bilan Harmonie du bâtiment conçu (étapes 10 / 11). */
   getDesignReview: (projectId: string) => request<DesignReviewView>(`/projects/${projectId}/design-review`),
+  getConceptPreview: (projectId: string) => request<ConceptPreview>(`/projects/${projectId}/design-review/apercu`),
   getAnalyses: (projectId: string) => request<AnalysesView>(`/projects/${projectId}/analyses`),
   getDocuments: (projectId: string) => request<DocumentsView>(`/projects/${projectId}/documents`),
   getCollaboration: (projectId: string) => request<CollaborationView>(`/projects/${projectId}/collaboration`),

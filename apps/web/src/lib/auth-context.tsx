@@ -12,6 +12,8 @@ interface AuthState {
   login(email: string, password: string): Promise<void>;
   register(email: string, password: string): Promise<void>;
   logout(): Promise<void>;
+  /** Nom affiché (Paramètres → Compte) ; null pour l'effacer. */
+  updateProfile(displayName: string | null): Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -85,6 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     async register(email, password) {
       await adopt(await api.register(email, password));
+    },
+    async updateProfile(displayName) {
+      const u = await api.updateProfile(displayName);
+      setUser(u);
+      writeLastUser(u);
     },
     async logout() {
       await api.logout();

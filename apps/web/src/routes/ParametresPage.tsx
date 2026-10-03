@@ -6,7 +6,7 @@
  * travail hors-ligne, et la version de l'application. Les droits d'accès
  * d'un projet se règlent dans son module Collaboration, pas ici.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth-context";
@@ -236,6 +236,38 @@ function AppSettings() {
   );
 }
 
+/** « Nom affiché » : le prénom ou le nom sous lequel l'accueil et la barre latérale vous saluent ; facultatif, effaçable. */
+function DisplayNameForm() {
+  const { user, updateProfile } = useAuth();
+  const [value, setValue] = useState(user?.displayName ?? "");
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  useEffect(() => setValue(user?.displayName ?? ""), [user?.displayName]);
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setState("saving");
+    try {
+      await updateProfile(value.trim() || null);
+      setState("saved");
+    } catch {
+      setState("error");
+    }
+  }
+  return (
+    <form className="settings-name-form" onSubmit={(e) => void onSubmit(e)}>
+      <label htmlFor="display-name">Nom affiché</label>
+      <div className="settings-name-row">
+        <input id="display-name" name="displayName" type="text" maxLength={60} value={value} onChange={(e) => setValue(e.target.value)} placeholder="Prénom ou nom (facultatif)" autoComplete="name" />
+        <button type="submit" className="button-primary" disabled={state === "saving" || (value.trim() || "") === (user?.displayName ?? "")}>
+          {state === "saving" ? "Enregistrement…" : "Enregistrer"}
+        </button>
+      </div>
+      <small>
+        {state === "saved" ? "Nom enregistré : l’accueil vous salue par ce nom." : state === "error" ? "Le nom n’a pas pu être enregistré (serveur injoignable ou refus)." : "Sans nom, l’application reprend le début de votre adresse. Rien d’autre n’est déduit."}
+      </small>
+    </form>
+  );
+}
+
 export function ParametresPage() {
   const { user, logout } = useAuth();
   return (
@@ -254,6 +286,7 @@ export function ParametresPage() {
             <dd>{user?.email}</dd>
           </div>
         </dl>
+        <DisplayNameForm />
         <div className="h7-actions">
           <button type="button" className="button-secondary" onClick={() => void logout()}>
             Se déconnecter

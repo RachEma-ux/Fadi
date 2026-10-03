@@ -30,6 +30,8 @@ export async function verifyPassword(hashValue: string, password: string): Promi
 export interface SessionUser {
   id: string;
   email: string;
+  /** Nom affiché choisi dans Paramètres ; null tant que rien n'est saisi. */
+  displayName: string | null;
 }
 
 /** Crée une session serveur et renvoie son identifiant (à poser en cookie httpOnly). */
@@ -52,7 +54,7 @@ export async function destroySession(sessionId: string): Promise<void> {
 export async function resolveSession(sessionId: string | undefined): Promise<SessionUser | null> {
   if (!sessionId) return null;
   const rows = await db
-    .select({ userId: sessions.userId, expiresAt: sessions.expiresAt, email: users.email, id: users.id })
+    .select({ userId: sessions.userId, expiresAt: sessions.expiresAt, email: users.email, id: users.id, displayName: users.displayName })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
     .where(eq(sessions.id, sessionId))
@@ -63,5 +65,5 @@ export async function resolveSession(sessionId: string | undefined): Promise<Ses
     await destroySession(sessionId);
     return null;
   }
-  return { id: row.id, email: row.email };
+  return { id: row.id, email: row.email, displayName: row.displayName ?? null };
 }

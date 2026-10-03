@@ -4,6 +4,7 @@
  * de flow-v62 et h7-app. Monté sous `/projects/:projectId/design-review`.
  *
  *   GET  /            → analyse vivante du modèle, audit des transmissions, revue archivée, hypothèses, références directionnelles, plans SVG
+ *   GET  /apercu      → aperçu conceptuel (axonométrie éclatée SVG dessinée depuis les polygones réels ; `svg: null` sans modèle)
  *   POST /review      → « Actualiser la revue de conception » (revue archivée sur les entrées courantes, historique de 12)
  *   GET  /rapport     → « Exporter le bilan HTML » (Bilan_Harmonie_Batiment_V7.html, pièce jointe)
  *   PUT  /compass     → « Enregistrer les références » directionnelles (save-compass)
@@ -13,7 +14,7 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { declareSiteObservation, designReviewSnapshot, harmonyFullAssessment, HarmonieError, withCenterElevation } from "@parcours/domain-model";
+import { conceptAxonometricSvg, declareSiteObservation, designReviewSnapshot, harmonyFullAssessment, HarmonieError, withCenterElevation } from "@parcours/domain-model";
 import { db } from "../db/client.js";
 import { projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -46,6 +47,14 @@ designReviewRouter.get("/", async (req, res) => {
     conflicts: programmeStateOf(project).conflicts,
     css: DESIGN_REPORT_CSS,
   });
+});
+
+/** Aperçu conceptuel de la page d'accueil et du module Atelier : proportions calculées depuis le modèle réel, jamais un rendu. */
+designReviewRouter.get("/apercu", async (req, res) => {
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  const ctx = await loadDesignContext(db, project, new Date().toISOString());
+  res.json({ ...conceptAxonometricSvg(ctx.input, ctx.analysis), generatedAt: ctx.analysis.generatedAt });
 });
 
 /**

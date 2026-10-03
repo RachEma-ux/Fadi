@@ -368,6 +368,31 @@ const exampleUrl = page.url().split("?")[0];
 const importToastSeen = await page.waitForFunction(() => /Exemple importé : votre copie/.test(document.querySelector(".h7-toast")?.textContent || ""), null, { timeout: 5000 }).then(() => true).catch(() => false);
 check("import de l'exemple : état « Import en cours… » visible sur la carte pendant la copie, puis message « Exemple importé : votre copie … est prête »", importProgressSeen, importToastSeen ? "toast vu" : "toast non observé (effacé avant la lecture)");
 check("exemple : 21 / 21 étapes terminées", (await page.locator(".parcours-steps-summary").textContent()).includes("21 / 21"));
+// Accueil (maquette) : enveloppe à icônes, « Espace de travail », « Importer » / « + Nouveau projet », carte « Reprendre mon projet » avec
+// l'aperçu conceptuel dessiné depuis le modèle réel, Mon parcours (6 phases, état réel), À poursuivre, « Voir les étapes », accès rapides
+// illustrés par les données du projet (parcelle transmise, répartition du programme, plan du RDC).
+await page.goto(`${BASE}/accueil`);
+await page.waitForSelector(".resume-preview-svg svg", { timeout: 30000 });
+check("accueil : barre latérale à icônes (Accueil, Mes projets, Parcours, Atelier, Documents, Bibliothèque ; Harmonie « Votre assistant de projet », Paramètres), « Espace de travail », recherche « un projet, un document », cloche et avatar", (await page.locator(".app-nav a").allTextContents()).map((t) => t.trim()).join("|") === "Accueil|Mes projets|Parcours|Atelier|Documents|Bibliothèque" && (await page.locator(".app-nav a svg").count()) === 6 && (await page.locator(".app-nav-secondary").textContent()).includes("Votre assistant de projet") && (await page.locator(".app-topbar-title").textContent()) === "Espace de travail" && (await page.locator("#global-search").getAttribute("placeholder")) === "Rechercher un projet, un document…" && (await page.locator(".app-topbar-avatar").count()) === 1);
+check("accueil : « Bonjour … », « Importer » et « + Nouveau projet » en tête", /^Bonjour .+,$/.test((await page.locator(".home-greeting h1").textContent()).trim()) && (await page.locator('.home-greeting-actions button:has-text("Importer")').count()) === 1 && (await page.locator('.home-greeting-actions a:has-text("Nouveau projet")').count()) === 1);
+const homePreviewCaption = await page.locator(".resume-preview figcaption").textContent();
+check("accueil · reprendre mon projet : « P.118 — Escalier B et mezzanine », badge « Parcours terminé », aperçu conceptuel = axonométrie éclatée du modèle réel (6 niveaux, 74 zones, empreinte du modèle), « Reprendre le projet », « Ouvrir l’Atelier »", (await page.locator(".resume-card h2").textContent()) === "P.118 — Escalier B et mezzanine" && (await page.locator(".resume-card .badge").textContent()).includes("Parcours terminé") && /Aperçu conceptuel · 6 niveaux · 74 zones · modèle [0-9a-f]{8}/.test(homePreviewCaption) && (await page.locator('.resume-preview-svg svg g[data-level]').count()) === 6 && (await page.locator('.resume-card-actions a:has-text("Reprendre le projet")').count()) === 1 && (await page.locator('.resume-card-actions a:has-text("Ouvrir l’Atelier")').count()) === 1, homePreviewCaption);
+check("accueil · Mon parcours : les 6 phases du prototype, toutes terminées pour l'exemple (3/3, 5/5, 4/4, 4/4, 3/3, 2/2), « À poursuivre » et « Voir les étapes »", (await page.locator(".parcours-phase").count()) === 6 && (await page.locator(".parcours-phase-termine").count()) === 6 && (await page.locator(".parcours-phase-link small").allTextContents()).join(" ") === "3/3 5/5 4/4 4/4 3/3 2/2" && (await page.locator(".home-pursue a").count()) >= 1 && (await page.locator('.home-see-steps').count()) === 1);
+await page.locator('.parcours-phase-toggle').nth(1).click();
+check("accueil · Mon parcours : déplier « Programmer » → ses 5 étapes (04 à 08) avec leur état", (await page.locator(".parcours-phase-steps li").count()) === 5 && (await page.locator(".parcours-phase-steps .parcours-step-number").allTextContents()).join(" ") === "04 05 06 07 08");
+check("accueil · accès rapides illustrés par les données : parcelle 118 transmise (4 sommets), 4 familles de surfaces du programme, plan du RDC du modèle", (await page.locator(".quick-link-card").count()) === 3 && /Parcelle 118 : contour transmis, 4 sommets/.test(await page.locator(".quick-link-card").nth(0).locator(".quick-thumb").getAttribute("aria-label")) && /Programme : 4 familles de surfaces/.test(await page.locator(".quick-link-card").nth(1).locator(".quick-thumb").getAttribute("aria-label")) && (await page.locator(".quick-link-card").nth(2).locator(".quick-thumb svg").count()) === 1);
+await page.setViewportSize({ width: 1536, height: 960 });
+await page.screenshot({ path: `${OUT}/00-accueil-desktop.png`, fullPage: true });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(300);
+await page.screenshot({ path: `${OUT}/00-accueil-mobile.png`, fullPage: true });
+check("accueil (téléphone) : une colonne, sans défilement horizontal", await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+await page.setViewportSize({ width: 1280, height: 900 });
+await page.locator(".home-see-steps").click();
+await page.waitForSelector(".overview-step");
+check("accueil : « Voir les étapes » → vue d'ensemble du projet", page.url().startsWith(exampleUrl) && (await page.locator(".overview-step").count()) === 21);
+await page.goto(exampleUrl);
+await page.waitForSelector(".parcours-steps-summary");
 await page.waitForSelector(".seed888", { timeout: 10000 });
 const [kmzDl] = await Promise.all([page.waitForEvent("download"), page.locator('.seed888 a:has-text("118_officiel.kmz")').click()]);
 const kmzBytes = await (await import("node:fs/promises")).readFile(await kmzDl.path());
@@ -1240,6 +1265,15 @@ check("Harmonie : changement de projet par la liste → adresse ?projet=… et �
 await page.screenshot({ path: `${OUT}/harmonie-desktop.png`, fullPage: true });
 
 // 6p. Paramètres : compte, clé MapTiler (de session depuis 6c), données locales, version.
+await page.goto(`${BASE}/parametres`);
+await page.waitForSelector(".settings-page", { timeout: 30000 });
+// Nom affiché : saisi ici seulement (jamais déduit) ; l'accueil et la barre latérale le reprennent, initiales de l'avatar comprises.
+await page.fill("#display-name", "Roch Démo");
+await page.locator('.settings-name-form button[type="submit"]').click();
+await page.waitForFunction(() => /Nom enregistré/.test(document.querySelector(".settings-name-form small")?.textContent || ""), null, { timeout: 10000 });
+await page.goto(`${BASE}/accueil`);
+await page.waitForSelector(".home-greeting h1");
+check("Paramètres · nom affiché « Roch Démo » → accueil « Bonjour Roch Démo, », avatar « RD », barre latérale au nom", (await page.locator(".home-greeting h1").textContent()).trim() === "Bonjour Roch Démo," && (await page.locator(".app-topbar-avatar").textContent()) === "RD" && (await page.locator(".app-user-name").textContent()).startsWith("Roch Démo"));
 await page.goto(`${BASE}/parametres`);
 await page.waitForSelector(".settings-page", { timeout: 30000 });
 check("Paramètres : adresse du compte, clé MapTiler de session (6c) reconnue", (await page.locator(".settings-page").textContent()).includes(email) && (await page.locator(".settings-state").getAttribute("data-key-state")) === "session");

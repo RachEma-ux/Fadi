@@ -27,6 +27,8 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   /** Dernière consultation des notifications dans l'application (les plus récentes sont « non lues ») ; null tant qu'aucune n'a été consultée. */
   notificationsSeenAt: timestamp("notifications_seen_at", { withTimezone: true }),
+  /** Nom affiché (accueil « Bonjour … », initiales de l'avatar) ; facultatif, saisi dans Paramètres — jamais déduit d'ailleurs que de la saisie. */
+  displayName: text("display_name"),
 }, (t) => [uniqueIndex("users_email_unique").on(t.email)]);
 
 export const sessions = pgTable("sessions", {

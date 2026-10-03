@@ -5,7 +5,7 @@
  * plusieurs NOUVEAUX projets ; les projets existants sont conservés. Le
  * serveur fait la conversion et refuse avec les messages du prototype.
  */
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError, api, type ImportedProjects } from "../../lib/api";
@@ -13,7 +13,7 @@ import { HarmonieToast } from "../parcours/HarmoniePanel";
 
 const IMPORT_LIMIT = 32 * 1024 * 1024;
 
-export function ImportProjectButton({ className = "button-secondary", label = "Importer projet JSON" }: { className?: string; label?: string }) {
+export function ImportProjectButton({ className = "button-secondary", label = "Importer projet JSON" }: { className?: string; label?: ReactNode }) {
   const input = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();

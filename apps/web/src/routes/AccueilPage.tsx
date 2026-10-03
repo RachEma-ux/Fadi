@@ -1,18 +1,21 @@
+/**
+ * Accueil : « Bonjour … », reprendre mon projet (aperçu conceptuel dessiné
+ * depuis le modèle réel), Mon parcours (les 6 phases et leurs 21 étapes,
+ * état réel), À poursuivre (étapes à réexaminer puis à faire), accès rapides
+ * illustrés par les données du projet (parcelle, programme, plan du modèle).
+ * Rien n'est inventé : sans modèle, sans parcelle ou sans programme, la
+ * vignette le dit.
+ */
 import "../modules/bibliotheque/building-library.css";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api, type ParcoursStep, type ParcoursStepStatus, type Project } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { COMPLETE_EXAMPLE_ID, IMPORT_PROGRESS_TEXT, useImportExample } from "../lib/use-import-example";
-import { MassingIllustration } from "../components/MassingIllustration";
-
-/** Dérivé de l'adresse e-mail (aucun prénom n'est collecté à l'inscription) : la partie alphabétique avant le premier chiffre ou séparateur, mise en majuscule initiale. Pas un prénom inventé — littéralement ce que la personne a tapé. */
-function greetingName(email: string): string {
-  const local = email.split("@")[0] ?? email;
-  const alpha = local.match(/^[a-zA-Z]+/)?.[0] ?? local;
-  return alpha.charAt(0).toUpperCase() + alpha.slice(1);
-}
+import { ImportProjectButton } from "../modules/projets-sources/ImportProjectButton";
+import { Icon, type IconName } from "../components/Icon";
+import { shownName } from "./AppShell";
 
 function relativeDate(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -27,10 +30,6 @@ function relativeDate(iso: string): string {
 
 type StepStatus = ParcoursStepStatus;
 
-function StatusDot({ status }: { status: StepStatus }) {
-  return <span className={`step-dot step-dot-${status}`} aria-hidden="true" />;
-}
-
 /**
  * État d'une phase du Parcours à partir de ses étapes : terminée si toutes
  * le sont, en cours dès qu'une étape est entamée ou terminée, à faire sinon.
@@ -44,6 +43,101 @@ function phaseStatus(steps: ParcoursStep[]): StepStatus {
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** Les six phases du Parcours d'origine (ordre et libellés du prototype), avec leur icône. */
+const PHASES: { label: string; icon: IconName }[] = [
+  { label: "Comprendre le site", icon: "site" },
+  { label: "Programmer", icon: "programme" },
+  { label: "Concevoir / Tester", icon: "design" },
+  { label: "Prouver la faisabilité", icon: "proof" },
+  { label: "Arbitrer", icon: "scale" },
+  { label: "Engager", icon: "flag" },
+];
+const phaseIcon = (phase: string): IconName => PHASES.find((p) => p.label === phase)?.icon ?? "route";
+
+const STATUS_LABEL: Record<StepStatus, string> = { "a-faire": "à faire", "en-cours": "en cours", termine: "terminée" };
+
+function StatusMark({ status, current }: { status: StepStatus; current: boolean }) {
+  return (
+    <span className={`phase-mark phase-mark-${status}${current ? " phase-mark-current" : ""}`} aria-hidden="true">
+      {status === "termine" ? <Icon name="check" size={13} /> : null}
+    </span>
+  );
+}
+
+/** Vignette « Explorer la parcelle » : le contour réel transmis à l'étape 01 (repère local), sinon l'absence est dite. */
+function ParcelThumb({ step }: { step: ParcoursStep | undefined }) {
+  const local = step?.site?.parcel.local;
+  if (!local || local.length < 3) return <ThumbEmpty text="Aucune parcelle transmise" />;
+  const xs = local.map((p) => p[0]);
+  const ys = local.map((p) => p[1]);
+  const xmin = Math.min(...xs);
+  const xmax = Math.max(...xs);
+  const ymin = Math.min(...ys);
+  const ymax = Math.max(...ys);
+  const W = 160;
+  const H = 120;
+  const pad = 12;
+  const k = Math.min((W - 2 * pad) / Math.max(1e-6, xmax - xmin), (H - 2 * pad) / Math.max(1e-6, ymax - ymin));
+  const ox = pad + ((W - 2 * pad) - (xmax - xmin) * k) / 2;
+  const oy = pad + ((H - 2 * pad) - (ymax - ymin) * k) / 2;
+  const pt = (p: readonly [number, number]) => [ox + (p[0] - xmin) * k, H - oy - (p[1] - ymin) * k] as const;
+  const points = local.map((p) => pt(p).map((v) => v.toFixed(1)).join(",")).join(" ");
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="quick-thumb" role="img" aria-label={`Parcelle ${step?.site?.parcel.parcelNumber ?? ""} : contour transmis, ${local.length} sommets`}>
+      <rect width={W} height={H} fill="#eef3ec" />
+      <polygon points={points} fill="#dbe7d9" stroke="#2f4a40" strokeWidth="1.4" />
+      {local.map((p, i) => {
+        const [x, y] = pt(p);
+        return <circle key={i} cx={x} cy={y} r="2.2" fill="#2f4a40" />;
+      })}
+    </svg>
+  );
+}
+
+/** Vignette « Organiser le programme » : les surfaces par famille de la répartition courante (barres proportionnelles). */
+function ProgrammeThumb({ projectId }: { projectId: string }) {
+  const programme = useQuery({ queryKey: ["programme", projectId], queryFn: () => api.getProgramme(projectId) });
+  const rows = programme.data?.rows ?? [];
+  const total = rows.reduce((n, r) => n + r.area, 0);
+  if (!rows.length || total <= 0) return <ThumbEmpty text={programme.isLoading ? "Chargement…" : "Aucune répartition"} />;
+  const W = 160;
+  const H = 120;
+  const barH = Math.min(14, (H - 24) / rows.length - 4);
+  const maxArea = Math.max(...rows.map((r) => r.area));
+  const PALETTE = ["#2f6b55", "#5f9478", "#9bbd9f", "#c9d9c3", "#b3872f", "#d8c48a", "#8aa5b5", "#c5d2db"];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="quick-thumb" role="img" aria-label={`Programme : ${rows.length} familles de surfaces, ${Math.round(total)} m² au total`}>
+      <rect width={W} height={H} fill="#eef3ec" />
+      {rows.map((r, i) => {
+        const y = 12 + i * ((H - 24) / rows.length);
+        const w = Math.max(3, ((W - 56) * r.area) / maxArea);
+        return (
+          <g key={r.key}>
+            <rect x="12" y={y} width={w} height={barH} rx="2" fill={PALETTE[i % PALETTE.length]} />
+            <text x={16 + w} y={y + barH - 3} fontSize="8" fill="#41584f">
+              {Math.round(r.area)}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function ThumbEmpty({ text }: { text: string }) {
+  return (
+    <span className="quick-thumb quick-thumb-empty" role="img" aria-label={text}>
+      <span>{text}</span>
+    </span>
+  );
+}
+
+/** Vignette « Concevoir dans l'Atelier » : le plan compact du niveau de référence, depuis les polygones réels. */
+function PlanThumb({ plan, level, loading }: { plan: string | null | undefined; level: string | null | undefined; loading: boolean }) {
+  if (!plan) return <ThumbEmpty text={loading ? "Chargement…" : "Aucun modèle dessiné"} />;
+  return <span className="quick-thumb quick-thumb-svg" role="img" aria-label={`Plan du niveau ${level ?? ""} du modèle`} dangerouslySetInnerHTML={{ __html: plan }} />;
+}
 
 export function AccueilPage() {
   const { user } = useAuth();
@@ -61,45 +155,65 @@ export function AccueilPage() {
     queryFn: () => api.listSteps(mostRecent!.id),
     enabled: !!mostRecent,
   });
+  // Aperçu conceptuel : relu quand le projet change (date de mise à jour dans la clé), gardé hors-ligne par le cache persistant.
+  const previewQuery = useQuery({
+    queryKey: ["concept-preview", mostRecent?.id, mostRecent?.updatedAt],
+    queryFn: () => api.getConceptPreview(mostRecent!.id),
+    enabled: !!mostRecent,
+    staleTime: 5 * 60_000,
+  });
   const steps = stepsQuery.data ?? [];
   const doneCount = steps.filter((s) => s.status === "termine").length;
   const startedCount = steps.filter((s) => s.status !== "a-faire").length;
   const nextStep = steps.find((s) => s.status !== "termine") ?? null;
+  const staleSteps = steps.filter((s) => s.stale || s.staleRetainedCount > 0);
+  const [openPhase, setOpenPhase] = useState<string | null>(null);
 
   const moduleLink = (moduleId: string) => (mostRecent ? `/projets/${mostRecent.id}?module=${moduleId}` : "/projets");
   const stepLink = (n: number) => (mostRecent ? `/projets/${mostRecent.id}?module=parcours&etape=${n}` : "/projets");
 
   // Les six phases du Parcours d'origine, dans l'ordre, avec l'état réel de leurs étapes.
-  const phases = [...new Set(steps.map((s) => s.phase))].map((phase) => {
-    const own = steps.filter((s) => s.phase === phase);
-    return { label: phase, status: phaseStatus(own), href: stepLink(own.find((s) => s.status !== "termine")?.number ?? own[0]!.number), done: own.filter((s) => s.status === "termine").length, total: own.length };
+  const phases = PHASES.map((phase) => {
+    const own = steps.filter((s) => s.phase === phase.label);
+    const next = own.find((s) => s.status !== "termine") ?? own[0];
+    return { ...phase, status: own.length ? phaseStatus(own) : ("a-faire" as StepStatus), href: next ? stepLink(next.number) : "/projets", done: own.filter((s) => s.status === "termine").length, total: own.length, steps: own };
   });
+  const currentPhase = phases.find((p) => p.status !== "termine")?.label ?? null;
 
-  const nextActions: { label: string; href: string }[] = !mostRecent
-    ? [
-        { label: "Créer votre premier projet", href: "/projets" },
-        { label: "Importer un exemple", href: "/projets#examples-heading" },
-      ]
-    : nextStep
-      ? [
-          { label: `Poursuivre l'étape ${pad2(nextStep.number)} · ${nextStep.title}`, href: stepLink(nextStep.number) },
-          { label: "Ouvrir l'Atelier architectural", href: moduleLink("atelier") },
-        ]
-      : [
-          { label: "Les 21 étapes sont terminées — revoir le bilan (étape 18)", href: stepLink(18) },
-          { label: "Ouvrir l'Atelier architectural", href: moduleLink("atelier") },
-        ];
+  // « À poursuivre » : d'abord les étapes à réexaminer (une donnée amont a changé), puis les prochaines étapes à faire ; trois au plus.
+  const toPursue: { key: string; label: string; detail: string; icon: IconName; href: string }[] = [];
+  for (const s of staleSteps) toPursue.push({ key: `stale-${s.number}`, label: s.title, detail: `Étape ${pad2(s.number)} · à réexaminer`, icon: phaseIcon(s.phase), href: stepLink(s.number) });
+  for (const s of steps.filter((s) => s.status !== "termine" && !staleSteps.includes(s))) {
+    if (toPursue.length >= 3) break;
+    toPursue.push({ key: `next-${s.number}`, label: s.title, detail: `Étape ${pad2(s.number)} · ${STATUS_LABEL[s.status]}`, icon: phaseIcon(s.phase), href: stepLink(s.number) });
+  }
+  if (mostRecent && steps.length && toPursue.length === 0) {
+    toPursue.push({ key: "docs", label: "Produire les documents", detail: "Dossier, bilan, tableaux", icon: "file", href: moduleLink("documents") });
+    toPursue.push({ key: "atelier", label: "Revoir le bâtiment conçu", detail: "Bilan Harmonie de l'Atelier", icon: "atelier", href: stepLink(18) });
+  }
+  const preview = previewQuery.data;
+  const stage = nextStep ? `${nextStep.phase} • Étape ${pad2(nextStep.number)} — ${nextStep.title}` : steps.length ? `Parcours terminé • ${doneCount} / ${steps.length} étapes` : "";
 
   return (
     <main className="home-page">
       <div className="home-greeting">
         <div>
-          <h1>Bonjour{user ? ` ${greetingName(user.email)}` : ""},</h1>
+          <h1>Bonjour{user ? ` ${shownName(user)}` : ""},</h1>
           <p>Donnons forme à votre prochain projet.</p>
         </div>
-        <Link to="/projets" className="button-primary">
-          + Nouveau projet
-        </Link>
+        <div className="home-greeting-actions">
+          <ImportProjectButton
+            className="button-secondary"
+            label={
+              <>
+                <Icon name="upload" size={18} /> Importer
+              </>
+            }
+          />
+          <Link to="/projets" className="button-primary">
+            <Icon name="plus" size={18} /> Nouveau projet
+          </Link>
+        </div>
       </div>
 
       <div className="home-grid">
@@ -132,52 +246,79 @@ export function AccueilPage() {
           )}
 
           {mostRecent && (
-            <section className="panel resume-card">
+            <section className="panel resume-card" aria-labelledby="resume-heading">
               <span className="eyebrow">Reprendre mon projet</span>
               <div className="resume-card-top">
-                <h2>
+                <h2 id="resume-heading">
                   {mostRecent.code} — {mostRecent.name}
                 </h2>
-                <span className="badge">{doneCount === 21 ? "Parcours terminé" : startedCount > 0 ? "Étude en cours" : "Nouveau"}</span>
+                <span className={`badge badge-${doneCount === steps.length && steps.length ? "done" : startedCount > 0 ? "active" : "new"}`}>
+                  <i aria-hidden="true" />
+                  {steps.length && doneCount === steps.length ? "Parcours terminé" : startedCount > 0 ? "Étude en cours" : "Nouveau projet"}
+                </span>
               </div>
 
-              <MassingIllustration />
+              <figure className={`resume-preview${preview?.svg ? "" : " resume-preview-empty"}`}>
+                {preview?.svg ? (
+                  <div className="resume-preview-svg" dangerouslySetInnerHTML={{ __html: preview.svg }} />
+                ) : (
+                  <div className="resume-preview-placeholder">
+                    <Icon name="cube" size={34} />
+                    <p>{previewQuery.isLoading ? "Lecture du modèle…" : previewQuery.isError ? "Aperçu indisponible (serveur injoignable)." : "Aucun modèle dessiné pour l’instant : l’aperçu apparaîtra dès les premiers murs dans l’Atelier."}</p>
+                  </div>
+                )}
+                <figcaption>{preview?.svg ? `Aperçu conceptuel · ${preview.levels} niveau${preview.levels > 1 ? "x" : ""} · ${preview.rooms} zones · modèle ${preview.nativeHash}` : "Aperçu conceptuel"}</figcaption>
+              </figure>
 
-              <p className="resume-card-meta">
-                Dernière modification {relativeDate(mostRecent.updatedAt)}
-                {steps.length ? ` · ${doneCount} / ${steps.length} étapes terminées` : ""}
-              </p>
-              {steps.length > 0 && (
-                <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={doneCount} aria-label={`${doneCount} étapes terminées sur ${steps.length}`}>
-                  <i style={{ width: `${(doneCount / steps.length) * 100}%` }} />
+              <div className="resume-card-foot">
+                <p className="resume-card-meta">
+                  {stage ? <span className="resume-stage">{stage}</span> : null}
+                  <span className="resume-updated">Modifié {relativeDate(mostRecent.updatedAt)}</span>
+                </p>
+                <div className="resume-card-actions">
+                  <Link to={nextStep ? stepLink(nextStep.number) : `/projets/${mostRecent.id}`} className="button-primary">
+                    Reprendre le projet <Icon name="arrow-right" size={18} />
+                  </Link>
+                  <Link to={moduleLink("atelier")} className="button-secondary">
+                    <Icon name="cube" size={18} /> Ouvrir l’Atelier
+                  </Link>
                 </div>
-              )}
-
-              <div className="resume-card-actions">
-                <Link to={`/projets/${mostRecent.id}`} className="button-primary">
-                  Reprendre le projet →
-                </Link>
-                <Link to={moduleLink("atelier")} className="button-secondary">
-                  Ouvrir l'Atelier
-                </Link>
               </div>
             </section>
           )}
 
-          <section aria-labelledby="quick-links-heading">
+          <section aria-labelledby="quick-links-heading" className="quick-access">
             <h2 id="quick-links-heading">Accès rapides</h2>
             <div className="quick-links">
-              <Link to={moduleLink("projets-sources")} className="quick-link-card">
-                <span className="quick-link-title">Explorer la parcelle</span>
-                <span className="quick-link-sub">Site, limites et contexte</span>
+              <Link to={mostRecent ? stepLink(1) : "/projets"} className="quick-link-card">
+                <ParcelThumb step={steps.find((s) => s.number === 1)} />
+                <span className="quick-link-text">
+                  <span className="quick-link-title">Explorer la parcelle</span>
+                  <span className="quick-link-sub">Site, limites et contexte</span>
+                </span>
+                <span className="quick-link-arrow" aria-hidden="true">
+                  <Icon name="arrow-right" size={18} />
+                </span>
               </Link>
               <Link to={moduleLink("programmation")} className="quick-link-card">
-                <span className="quick-link-title">Organiser le programme</span>
-                <span className="quick-link-sub">Espaces, surfaces et besoins</span>
+                {mostRecent ? <ProgrammeThumb projectId={mostRecent.id} /> : <ThumbEmpty text="Aucun projet" />}
+                <span className="quick-link-text">
+                  <span className="quick-link-title">Organiser le programme</span>
+                  <span className="quick-link-sub">Espaces, surfaces et besoins</span>
+                </span>
+                <span className="quick-link-arrow" aria-hidden="true">
+                  <Icon name="arrow-right" size={18} />
+                </span>
               </Link>
               <Link to={moduleLink("atelier")} className="quick-link-card">
-                <span className="quick-link-title">Concevoir dans l'Atelier</span>
-                <span className="quick-link-sub">Plans, volumes et détails</span>
+                {mostRecent ? <PlanThumb plan={preview?.plan} level={preview?.planLevel} loading={previewQuery.isLoading} /> : <ThumbEmpty text="Aucun projet" />}
+                <span className="quick-link-text">
+                  <span className="quick-link-title">Concevoir dans l’Atelier</span>
+                  <span className="quick-link-sub">Plans, volumes et détails</span>
+                </span>
+                <span className="quick-link-arrow" aria-hidden="true">
+                  <Icon name="arrow-right" size={18} />
+                </span>
               </Link>
             </div>
           </section>
@@ -195,35 +336,82 @@ export function AccueilPage() {
         </div>
 
         <aside className="home-side-column">
-          <section className="panel" aria-labelledby="parcours-heading">
+          <section className="panel home-parcours" aria-labelledby="parcours-heading">
             <h2 id="parcours-heading">Mon parcours</h2>
-            <p className="panel-sub">{mostRecent ? `Les 6 phases du projet actif · ${doneCount} / ${steps.length || 21} étapes terminées` : "Les 6 phases, de la parcelle à l'engagement"}</p>
+            <p className="panel-sub">{mostRecent && steps.length ? `21 étapes pour structurer le projet · ${doneCount} terminée${doneCount > 1 ? "s" : ""}` : "21 étapes pour structurer le projet"}</p>
             {stepsQuery.isLoading && <p role="status">Chargement…</p>}
-            <ul className="parcours-progress">
-              {(phases.length
-                ? phases
-                : ["Comprendre le site", "Programmer", "Concevoir / Tester", "Prouver la faisabilité", "Arbitrer", "Engager"].map((label) => ({ label, status: "a-faire" as StepStatus, href: "/projets", done: 0, total: 0 }))
-              ).map((phase) => (
-                <li key={phase.label}>
-                  <Link to={phase.href}>
-                    <StatusDot status={phase.status} />
-                    {phase.label}
-                    {phase.total ? <small> {phase.done}/{phase.total}</small> : null}
+            <ol className="parcours-phases">
+              {phases.map((phase) => {
+                const current = phase.label === currentPhase;
+                const open = openPhase === phase.label;
+                return (
+                  <li key={phase.label} className={`parcours-phase parcours-phase-${phase.status}${current ? " parcours-phase-current" : ""}`}>
+                    <div className="parcours-phase-row">
+                      <Link to={phase.href} className="parcours-phase-link">
+                        <StatusMark status={phase.status} current={current} />
+                        <span className="parcours-phase-label">{phase.label}</span>
+                        {phase.total ? <small>{`${phase.done}/${phase.total}`}</small> : null}
+                      </Link>
+                      <button type="button" className="parcours-phase-toggle" aria-expanded={open} aria-controls={`phase-steps-${phase.icon}`} aria-label={`${open ? "Replier" : "Déplier"} les étapes de la phase ${phase.label}`} onClick={() => setOpenPhase(open ? null : phase.label)} disabled={!phase.total}>
+                        <Icon name={current && !open ? "chevron-right" : "chevron-down"} size={18} />
+                      </button>
+                    </div>
+                    {open && phase.total > 0 && (
+                      <ul className="parcours-phase-steps" id={`phase-steps-${phase.icon}`}>
+                        {phase.steps.map((s) => (
+                          <li key={s.number}>
+                            <Link to={stepLink(s.number)}>
+                              <span className={`step-dot step-dot-${s.status}`} aria-hidden="true" />
+                              <span className="parcours-step-number">{pad2(s.number)}</span>
+                              <span className="parcours-step-title">{s.title}</span>
+                              {s.stale || s.staleRetainedCount > 0 ? <small>à réexaminer</small> : null}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+
+            <h3 className="home-pursue-heading">À poursuivre</h3>
+            {toPursue.length ? (
+              <ul className="home-pursue">
+                {toPursue.map((item) => (
+                  <li key={item.key}>
+                    <Link to={item.href}>
+                      <span className="home-pursue-icon" aria-hidden="true">
+                        <Icon name={item.icon} size={18} />
+                      </span>
+                      <span className="home-pursue-text">
+                        <span className="home-pursue-label">{item.label}</span>
+                        <small>{item.detail}</small>
+                      </span>
+                      <Icon name="chevron-right" size={18} className="home-pursue-chevron" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <ul className="home-pursue">
+                <li>
+                  <Link to="/projets">
+                    <span className="home-pursue-icon" aria-hidden="true">
+                      <Icon name="folder" size={18} />
+                    </span>
+                    <span className="home-pursue-text">
+                      <span className="home-pursue-label">Créer votre premier projet</span>
+                      <small>ou importer l’exemple P.118</small>
+                    </span>
+                    <Icon name="chevron-right" size={18} className="home-pursue-chevron" />
                   </Link>
                 </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="panel" aria-labelledby="next-actions-heading">
-            <h2 id="next-actions-heading">Prochaines actions</h2>
-            <ul className="next-actions">
-              {nextActions.map((action) => (
-                <li key={action.label}>
-                  <Link to={action.href}>{action.label}</Link>
-                </li>
-              ))}
-            </ul>
+              </ul>
+            )}
+            <Link className="home-see-steps" to={mostRecent ? `/projets/${mostRecent.id}?module=parcours` : "/projets"}>
+              Voir les étapes <Icon name="arrow-right" size={16} />
+            </Link>
           </section>
         </aside>
       </div>

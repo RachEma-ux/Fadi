@@ -106,6 +106,30 @@ h3 {
   border-color: var(--forest-900);
 }
 
+.settings-name-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 14px 0 16px;
+  max-width: 520px;
+}
+.settings-name-form label {
+  font-weight: 600;
+  font-size: 14px;
+}
+.settings-name-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.settings-name-row input {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
 /* ---------------------------------------------------------------------- */
 /* Auth pages                                                              */
 /* ---------------------------------------------------------------------- */
@@ -146,7 +170,7 @@ h3 {
 /* ---------------------------------------------------------------------- */
 .app-shell {
   display: grid;
-  grid-template-columns: 252px minmax(0, 1fr);
+  grid-template-columns: 272px minmax(0, 1fr);
   min-height: 100vh;
 }
 .app-sidebar {
@@ -154,103 +178,125 @@ h3 {
   color: white;
   display: flex;
   flex-direction: column;
-  padding: 20px 16px;
+  padding: 22px 14px 18px;
 }
 .app-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding-bottom: 18px;
-  margin-bottom: 18px;
+  gap: 12px;
+  padding: 2px 10px 22px;
+  margin-bottom: 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
 }
 .app-brand-mark {
   color: white;
   flex-shrink: 0;
+  display: flex;
 }
 .app-brand-text {
   font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1.3;
+  font-size: 18px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1.2;
 }
 .app-brand-text small {
   display: block;
   font-weight: 400;
   font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: rgba(255, 255, 255, 0.72);
+  margin-top: 2px;
 }
 .app-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 .app-nav a,
 .app-nav-secondary a {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: rgba(255, 255, 255, 0.82);
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.86);
   text-decoration: none;
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-size: 14.5px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+}
+.app-nav a svg,
+.app-nav-secondary a svg {
+  flex-shrink: 0;
+  opacity: 0.9;
 }
 .app-nav a:hover,
 .app-nav-secondary a:hover {
   background: rgba(255, 255, 255, 0.08);
   color: white;
 }
-.app-nav a.active {
+.app-nav a.active,
+.app-nav-secondary a.active {
   background: rgba(255, 255, 255, 0.14);
   color: white;
   font-weight: 600;
 }
+/* Repère de l'entrée active : trait clair sur le bord gauche, comme la maquette. */
+.app-nav a.active::before,
+.app-nav-secondary a.active::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 10px;
+  bottom: 10px;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: #d8e868;
+}
 .app-nav-secondary {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-top: 20px;
+  gap: 4px;
+  margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.14);
 }
-.app-nav-secondary a {
-  flex-wrap: wrap;
-}
-.app-nav-secondary a.active {
-  background: rgba(255, 255, 255, 0.14);
-}
 .app-nav-secondary small {
-  flex-basis: 100%;
+  display: block;
   color: rgba(255, 255, 255, 0.75); /* 5,2:1 sur l'entrée active, 7,3:1 sur le fond (WCAG AA) */
   font-size: 11.5px;
-  margin-left: 24px;
+  font-weight: 400;
+  line-height: 1.3;
 }
 .sparkle {
-  color: var(--gold);
+  color: #e2d26a;
+  display: flex;
 }
 .app-user {
   position: relative;
-  margin-top: auto;
-  padding-top: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.14);
 }
 .app-user > button {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   background: none;
   border: none;
-  padding: 8px;
-  border-radius: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
   color: white;
+  text-align: left;
 }
 .app-user > button:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 .avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.16);
@@ -258,10 +304,20 @@ h3 {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+}
+.app-user-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 14.5px;
+  font-weight: 600;
 }
 .app-user-email {
-  font-size: 13.5px;
+  font-weight: 400;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.72);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -277,6 +333,7 @@ h3 {
   border-radius: 8px;
   padding: 4px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 20;
 }
 .app-user-menu button {
   display: block;
@@ -301,21 +358,53 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 16px 32px;
+  gap: 20px;
+  padding: 12px 32px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
+  min-height: 62px;
+}
+.app-topbar-title {
+  font-size: 14.5px;
+  color: var(--ink);
+  white-space: nowrap;
 }
 .app-topbar form[role="search"] {
+  position: relative;
   flex: 1;
-  max-width: 420px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.app-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  display: flex;
+  pointer-events: none;
 }
 .app-topbar form[role="search"] input {
   width: 100%;
-  padding: 0.55rem 0.8rem;
+  padding: 0.6rem 0.8rem 0.6rem 2.4rem;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--cream);
+}
+.app-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.app-topbar-avatar {
+  background: var(--forest-900);
+  color: white;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.app-topbar-avatar:hover {
+  background: var(--forest-800);
 }
 .notification-bell {
   position: relative;
@@ -400,9 +489,9 @@ h3 {
 /* Accueil (home / dashboard)                                              */
 /* ---------------------------------------------------------------------- */
 .home-page {
-  max-width: 1180px;
+  max-width: 1240px;
   margin: auto;
-  padding: 32px;
+  padding: 30px 36px 40px;
   width: 100%;
 }
 .home-greeting {
@@ -411,32 +500,49 @@ h3 {
   align-items: flex-end;
   flex-wrap: wrap;
   gap: 16px;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 .home-greeting h1 {
-  font-size: 32px;
-  margin: 0 0 4px;
+  font-size: 36px;
+  margin: 0 0 2px;
+  letter-spacing: -0.01em;
 }
 .home-greeting p {
   margin: 0;
   color: var(--muted);
+  font-size: 20px;
+}
+.home-greeting-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.home-greeting-actions .button-primary,
+.home-greeting-actions .button-secondary {
+  padding: 0.7rem 1.2rem;
+  font-size: 15px;
+  border-radius: 10px;
 }
 .home-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 22px;
   align-items: start;
 }
 .home-main-column {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 26px;
   min-width: 0;
 }
 .home-side-column {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+.home-page .panel {
+  border-radius: 14px;
+  padding: 22px 24px;
 }
 .home-empty-state h2 {
   margin-top: 0;
@@ -445,106 +551,485 @@ h3 {
   margin-top: 12px;
 }
 
+/* Reprendre mon projet */
+.resume-card .eyebrow {
+  margin-bottom: 4px;
+}
 .resume-card-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
-  margin: 6px 0 14px;
+  margin: 0 0 14px;
 }
 .resume-card-top h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 26px;
+  letter-spacing: -0.01em;
 }
 .badge {
-  background: #eaf2ec;
-  color: var(--done);
-  font-size: 12.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #e9f1ea;
+  color: #245d4d;
+  font-size: 13px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
   white-space: nowrap;
 }
-.massing-illustration {
-  width: 100%;
-  border-radius: 8px;
+.badge i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--done);
+}
+.badge-new i {
+  background: var(--gold);
+}
+.resume-preview {
+  position: relative;
+  margin: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f6f8f3;
+  border: 1px solid #e3e9e1;
+}
+.resume-preview-svg svg {
   display: block;
-  margin: 4px 0 14px;
+  width: 100%;
+  height: auto;
+  max-height: 460px;
+}
+.resume-preview-empty {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.resume-preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 36px 24px;
+  color: var(--muted);
+  text-align: center;
+  max-width: 420px;
+}
+.resume-preview-placeholder p {
+  margin: 0;
+  font-size: 14px;
+}
+.resume-preview figcaption {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #41584f;
+  font-size: 12.5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.resume-card-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 16px;
 }
 .resume-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
   color: var(--muted);
   font-size: 13.5px;
-  margin: 0 0 16px;
+  min-width: 0;
+}
+.resume-stage {
+  color: var(--ink);
+  font-size: 15px;
 }
 .resume-card-actions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
 }
+.resume-card-actions .button-primary,
+.resume-card-actions .button-secondary {
+  padding: 0.7rem 1.15rem;
+  border-radius: 10px;
+}
 
+/* Accès rapides : vignettes issues des données du projet */
+.quick-access h2 {
+  font-size: 24px;
+  margin: 0 0 14px;
+  letter-spacing: -0.01em;
+}
+.quick-access {
+  container-type: inline-size;
+}
 .quick-links {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
-  margin-top: 14px;
 }
-.quick-link-card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+/* Colonne étroite (côté du panneau « Mon parcours ») : vignette au-dessus du texte, flèche à droite du titre. */
+@container (max-width: 980px) {
+  .quick-link-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "thumb thumb"
+      "text arrow";
+    padding: 10px 14px 14px 10px;
+  }
+  .quick-link-card .quick-thumb {
+    grid-area: thumb;
+    width: 100%;
+    height: 118px;
+  }
+  .quick-link-card .quick-link-text {
+    grid-area: text;
+    padding-left: 4px;
+  }
+  .quick-link-card .quick-link-arrow {
+    grid-area: arrow;
+  }
+}
+@container (max-width: 560px) {
+  .quick-links {
+    grid-template-columns: 1fr;
+  }
+  .quick-link-card {
+    grid-template-columns: 112px minmax(0, 1fr) auto;
+    grid-template-areas: none;
+  }
+  .quick-link-card .quick-thumb,
+  .quick-link-card .quick-link-text,
+  .quick-link-card .quick-link-arrow {
+    grid-area: auto;
+  }
+  .quick-link-card .quick-thumb {
+    width: 112px;
+    height: 96px;
+  }
+}
+/* L'entrée de la bibliothèque (`enhance()` du prototype), présentée comme les autres cartes de l'accueil. */
+.home-page .bl-summary-insert {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin: 0;
+  font: inherit;
+  font-size: 14px;
+}
+.home-page .bl-summary-insert b {
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+.quick-link-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 14px 10px 10px;
   text-decoration: none;
   color: var(--ink);
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .quick-link-card:hover {
-  border-color: var(--forest-900);
+  border-color: #9fb3a6;
+  box-shadow: 0 6px 18px rgba(23, 63, 53, 0.08);
+}
+.quick-thumb {
+  display: block;
+  width: 112px;
+  height: 96px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #eef3ec;
+  overflow: hidden;
+}
+.quick-thumb-svg svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.quick-thumb-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  border: 1px dashed #c6d3c9;
+}
+.quick-link-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 .quick-link-title {
   font-weight: 650;
-  font-size: 15px;
+  font-size: 16px;
 }
 .quick-link-sub {
   color: var(--muted);
   font-size: 13px;
 }
-
-.panel-sub {
-  margin: -6px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-}
-.parcours-progress,
-.next-actions {
-  list-style: none;
-  padding: 0;
-  margin: 12px 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.parcours-progress a,
-.next-actions a {
+.quick-link-arrow {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 6px;
+  justify-content: center;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.quick-link-card:hover .quick-link-arrow {
+  background: var(--forest-900);
+  color: white;
+  border-color: var(--forest-900);
+}
+
+/* Mon parcours */
+.home-parcours h2 {
+  font-size: 24px;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.panel-sub {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.parcours-phases {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: flex;
+  flex-direction: column;
+}
+.parcours-phase {
+  position: relative;
+}
+/* Fil vertical entre les repères des phases. */
+.parcours-phase:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 21px;
+  top: 32px;
+  bottom: -6px;
+  width: 2px;
+  background: #dfe7e1;
+}
+.parcours-phase-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 10px;
+}
+.parcours-phase-current > .parcours-phase-row {
+  background: #ebf3ec;
+}
+.parcours-phase-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 15px;
+  min-width: 0;
+}
+.parcours-phase-link:hover {
+  background: var(--cream);
+}
+.parcours-phase-current .parcours-phase-label {
+  font-weight: 650;
+}
+.parcours-phase-link small {
+  margin-left: auto;
+  font-size: 12px;
+  color: #4f6560; /* 4,6:1 sur le fond de la phase en cours (#ebf3ec) */
+}
+.phase-mark {
+  position: relative;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--todo);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: white;
+}
+.phase-mark-termine {
+  background: var(--done);
+  border-color: var(--done);
+}
+.phase-mark-en-cours {
+  border-color: var(--done);
+}
+.phase-mark-en-cours::after,
+.phase-mark-current::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--done);
+}
+.phase-mark-current {
+  border-color: var(--done);
+  box-shadow: 0 0 0 4px #d9e8dc;
+}
+.phase-mark-termine::after {
+  display: none;
+}
+.parcours-phase-toggle {
+  border: none;
+  background: none;
+  padding: 6px;
+  border-radius: 8px;
+  color: var(--muted);
+  display: flex;
+}
+.parcours-phase-toggle:hover:not(:disabled) {
+  background: var(--cream);
+  color: var(--ink);
+}
+.parcours-phase-toggle:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.parcours-phase-steps {
+  list-style: none;
+  padding: 2px 0 6px 44px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.parcours-phase-steps a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
   border-radius: 8px;
   text-decoration: none;
   color: var(--ink);
-  font-size: 14.5px;
+  font-size: 13.5px;
 }
-.parcours-progress a:hover,
-.next-actions a:hover {
+.parcours-phase-steps a:hover {
   background: var(--cream);
 }
-.parcours-progress a small {
+.parcours-step-number {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.parcours-step-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.parcours-phase-steps small {
   margin-left: auto;
+  font-size: 11.5px;
+  color: #8a5a1f;
+}
+
+/* À poursuivre */
+.home-pursue-heading {
+  font-size: 17px;
+  margin: 20px 0 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.home-pursue {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.home-pursue a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--surface);
+}
+.home-pursue a:hover {
+  border-color: #9fb3a6;
+  background: #fafcf9;
+}
+.home-pursue-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #eef3ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--forest-900);
+  flex-shrink: 0;
+}
+.home-pursue-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.home-pursue-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-pursue-text small {
+  font-weight: 400;
   font-size: 12px;
 }
+.home-pursue-chevron {
+  margin-left: auto;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.home-see-steps {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  color: var(--forest-900);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .resume-card .progress {
   margin: 6px 0 10px;
 }
@@ -2466,7 +2951,10 @@ button.h7-chip.h7-goto:hover {
 /* ---------------------------------------------------------------------- */
 @media (max-width: 860px) {
   .home-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .resume-card-top {
+    flex-wrap: wrap;
   }
 }
 @media (max-width: 700px) {
@@ -2529,6 +3017,18 @@ button.h7-chip.h7-goto:hover {
   }
   .app-nav {
     flex-direction: row;
+    gap: 2px;
+  }
+  .app-nav a {
+    padding: 9px 10px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .app-nav a.active::before {
+    display: none;
+  }
+  .app-nav a svg {
+    display: none;
   }
   .app-nav-secondary {
     display: none;
@@ -2537,16 +3037,44 @@ button.h7-chip.h7-goto:hover {
     margin-top: 0;
     padding-top: 0;
     border-top: none;
+    margin-left: auto;
   }
-  .app-user-email {
+  .app-user-name {
     display: none;
   }
   .app-topbar {
-    padding: 12px 16px;
+    padding: 10px 16px;
+    gap: 10px;
+  }
+  .app-topbar-title {
+    display: none;
+  }
+  .app-topbar-avatar {
+    display: none;
   }
   .home-page,
   .projects-page {
     padding: 16px;
+  }
+  .home-greeting h1 {
+    font-size: 28px;
+  }
+  .home-greeting p {
+    font-size: 16px;
+  }
+  .home-page .panel {
+    padding: 16px;
+  }
+  .resume-card-top h2 {
+    font-size: 21px;
+  }
+  .quick-link-card {
+    grid-template-columns: 112px minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+  .quick-thumb {
+    width: 112px;
+    height: 88px;
   }
   .project-header,
   .module-nav {

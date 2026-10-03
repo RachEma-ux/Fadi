@@ -50,7 +50,7 @@ authRouter.post("/register", async (req, res) => {
 
   const session = await createSession(id);
   setSessionCookie(res, session.id, session.expiresAt);
-  res.status(201).json({ id, email });
+  res.status(201).json({ id, email, displayName: null });
 });
 
 authRouter.post("/login", async (req, res) => {
@@ -78,7 +78,7 @@ authRouter.post("/login", async (req, res) => {
 
   const session = await createSession(user.id);
   setSessionCookie(res, session.id, session.expiresAt);
-  res.status(200).json({ id: user.id, email: user.email });
+  res.status(200).json({ id: user.id, email: user.email, displayName: user.displayName ?? null });
 });
 
 authRouter.post("/logout", async (req, res) => {
@@ -102,4 +102,22 @@ authRouter.get("/me", (req, res) => {
     return;
   }
   res.status(200).json(req.user);
+});
+
+/** Nom affiché (Paramètres → Compte) : 1 à 60 caractères, ou vide pour l'effacer ; jamais déduit de l'adresse côté serveur. */
+const profileSchema = z.object({ displayName: z.string().trim().max(60).nullable() });
+
+authRouter.patch("/me", async (req, res) => {
+  if (!req.user) {
+    res.status(401).json({ error: "authentication_required" });
+    return;
+  }
+  const parsed = profileSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+    return;
+  }
+  const displayName = parsed.data.displayName || null;
+  await db.update(users).set({ displayName }).where(eq(users.id, req.user.id));
+  res.status(200).json({ id: req.user.id, email: req.user.email, displayName });
 });

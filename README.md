@@ -33,7 +33,9 @@ server-owned data:
   reservation, ownership transfer), in-app notifications (access received, comments, reservations), offline work (local queues replayed on reconnection, persisted query
   cache, service worker, per-field / per-version concurrency control with side-by-side conflict resolution).
 
-Around the modules: a home page, the Harmonie page (state of the choices per project, read from the steps
+Around the modules: a home page (after the supplied mockup: sidebar with icons, « Reprendre mon projet » with a
+conceptual preview computed from the real model — an exploded axonometric of the drawn levels, never a rendering —,
+« Mon parcours » with the six phases and their steps, « À poursuivre », illustrated quick access), the Harmonie page (state of the choices per project, read from the steps
 already served, with links to the step where each decision is taken), a settings page (account, MapTiler key,
 data kept by the browser, build version), and an accessibility pass (axe-core, WCAG 2.2 AA) run by the
 end-to-end scenario on every screen at desktop and phone widths — no critical or serious violation.
@@ -64,7 +66,7 @@ End-to-end scenario (Playwright, Chromium), against the built API and `vite prev
 ```sh
 node apps/api/dist/server.js &                       # DATABASE_URL, WEB_ORIGIN=http://localhost:4173, PORT=3001
 npm run preview --workspace=@fadi/web -- --port 4173 &
-node apps/web/e2e/parcours-scenario.mjs              # ~290 checks incl. axe-core; writes docs/migration/captures/webapp/
+node apps/web/e2e/parcours-scenario.mjs              # ~300 checks incl. axe-core; writes docs/migration/captures/webapp/
 ```
 
 Temporary public instance (`.github/workflows/builder-deploy.yml`, "Builder Deploy"): launched by hand from

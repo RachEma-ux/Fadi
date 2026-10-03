@@ -12,6 +12,7 @@ export * from "./harmonie-report.js";
 export * from "./archive.js";
 export * from "./harmony-engine.js";
 export * from "./design-review.js";
+export * from "./concept-preview.js";
 export * from "./business-checks.js";
 export * from "./documents.js";
 export * from "./example-report.js";
