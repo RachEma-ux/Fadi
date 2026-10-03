@@ -11,3 +11,4 @@
  */
 export * from "./ontologie/index.js";
 export * from "./contrats/index.js";
+export * from "./commandes/index.js";
