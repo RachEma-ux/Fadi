@@ -179,11 +179,13 @@ AI-initiated write bypasses the command/undo system.
 Budget and schedule are set after Lot 1, from identified tasks and verified dependencies — not guessed up
 front.
 
-A proposal to rebuild the Atelier Architectural on the DrawAll V4.1 contracts (typed transactional commands,
+The Atelier Architectural is being rebuilt on the DrawAll V4.1 contracts (typed transactional commands,
 definition / occurrence / representation identities, `building.architecture` ontology, WebGL2 rendering, named
-versions and variants, IFC 4.3 exchange matrix) with its own lots and time estimate is recorded in
-`docs/atelier-drawall.md`. It is **awaiting decision**: until it is accepted, the plan above stands unchanged,
-and the amendments it would require are listed in its section 10.
+versions and variants, IFC 4.3 exchange matrix): `docs/atelier-drawall.md` is the accepted proposal (clean
+rebuild in a new module, one Atelier in the product, the extracted engine deleted at the switch, P.118 imported
+one way) and `docs/atelier-cahier-des-charges.md` the execution specification. The amendments to this plan listed
+in the proposal's section 10 are applied by its lot 0; until then the sections above describe the repository as
+it stands.
 
 ### Where this repository stands
 

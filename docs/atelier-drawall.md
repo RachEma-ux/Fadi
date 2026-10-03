@@ -10,6 +10,9 @@ principale, après deux précisions : il n'existe **aucun projet à migrer** en 
 le produit final doit contenir **un seul Atelier**, sans mode « classique ». La première rédaction prévoyait une
 cohabitation avec pont (conversion aller-retour, bascule par projet) ; elle n'est plus proposée.
 
+**Document d'exécution :** `docs/atelier-cahier-des-charges.md` (règles, contrats techniques, tâches par lot,
+critères d'acceptation, organisation en équipe) ; les trois documents DrawAll sont versionnés dans `docs/drawall/`.
+
 ## 1. En bref
 
 **Ce qui est proposé.** Reconstruire l'Atelier Architectural de Fadi comme la *lecture bâtiment* de DrawAll —
@@ -33,8 +36,8 @@ les cartes mobiles et Harmonie dans les étapes 10 / 11 ne bougent pas. Le seul 
 `packages/core-geometry` (géométrie pure portée du prototype, ≈ 500 lignes testées), relu fonction par fonction
 au lot 1.
 
-**Combien de temps (mon travail).** **20 à 24 journées de travail** pour les lots 0 à 9 (section 6), dont
-**12,5 journées** jusqu'à la bascule : un seul Atelier dans le produit, neuf — modèle typé, commandes
+**Combien de temps (mon travail).** **20 à 25 journées de travail** pour les lots 0 à 9 (section 6), dont
+**13 journées** jusqu'à la bascule : un seul Atelier dans le produit, neuf — modèle typé, commandes
 transactionnelles, interface UX1–UX4, dessin 2D de précision, objets d'architecture, vue 3D WebGL2 — avec le
 moteur extrait retiré. Le lot optionnel « noyau exact OCCT » demande 2 à 3 journées de plus et ne peut commencer
 qu'après votre arbitrage de licence (décision D.3, bloquante). Une journée de travail = une session continue de
@@ -404,7 +407,7 @@ l'utilisateur, sans accès direct aux tables (§3 « Extensions »).
 | **2 — API transactionnelle et synchronisation** | Tables neuves, `POST …/atelier/commands`, journal, boîte de sortie, 409 détaillé, annuler / rétablir par commandes inverses, documents marqués, file Dexie de commandes, états, périmètre local, résolution de conflits | Tests API (T03, T06, T07, T08, T10) ; scénario hors ligne sur l'API ; l'Atelier visible est encore l'ancien | 2 |
 | **3a — Nouvel Atelier : socle d'interface, dessin 2D, objets d'architecture** | Cinq repères selon la maquette validée, niveaux d'affichage, palette, inspecteur, panneau des problèmes avec Harmonie ; éditeur de plan (accrochages, saisie de précision, primitives, transformations, calques) ; murs avec jonctions et scission, portes / fenêtres / ouvertures hébergées, dalles, escalier droit, pièces détectées (proposées, jamais imposées), espaces, zones, étages, propriétés BIM et classification, catalogue de types. Esquisse contrainte, blocs, toitures et garde-corps reportés au lot 5 pour livrer un premier Atelier **fini** plutôt que large | Nouveau module accessible à côté de l'ancien, sur P.118 réimporté : dessiner un mur, y poser une porte, obtenir la pièce, modifier le type ; téléphone et clavier | 3 |
 | **3b — Nouvel Atelier : 3D WebGL2, pousser / tirer, mobile, accessibilité** | three.js : volume, éclaté, coupe, sélection, manipulateur, pousser / tirer, extrusion d'esquisse, chargement par niveau, instanciation, WebGPU optionnel ; toucher ; axe-core ; mesures `⏱` | Mêmes niveaux × modes que le scénario d'acceptation actuel, sans vue vide ni erreur ; budget de trame affiché | 2,5 |
-| **4 — Bascule** | Le nouvel Atelier devient l'Atelier des étapes 10 / 11 et du module ; scénario d'acceptation rejoué sur lui (les contrôles de son périmètre, plus les essais §12 applicables) ; **suppression** du moteur extrait (`apps/web/public/atelier-native/`, `native/`, `atelier_store`, projection), de ses routes et de ses tests ; captures et matrice de conformité ; retour arrière = commit précédent (il n'y a pas de données utilisateur à préserver) | **Un seul Atelier** dans le produit, CI verte, P.118 réimporté et exercé de bout en bout | 1 |
+| **4 — Bascule** | Rebranchement des consommateurs du modèle (analyse, bilan Harmonie, étapes, aperçu conceptuel, documents, transmission de la parcelle, archive) sur la projection du modèle typé ; le nouvel Atelier devient l'Atelier des étapes 10 / 11 et du module ; scénario d'acceptation rejoué sur lui (les contrôles de son périmètre, plus les essais §12 applicables) ; **suppression** du moteur extrait (`apps/web/public/atelier-native/`, `native/`, `atelier_store`, projection), de ses routes et de ses tests ; captures et matrice de conformité ; retour arrière = commit précédent (il n'y a pas de données utilisateur à préserver) | **Un seul Atelier** dans le produit, CI verte, P.118 réimporté et exercé de bout en bout | 1,5 |
 | **5 — Documents dérivés, quantités, et objets reportés** | Plans, coupes, façades, plan de masse, détails ; annotations par références ; cadres, feuilles, jeux ; tableaux, quantités, rapports ; exports SVG / DXF / PDF / CSV au catalogue ; fraîcheur par vue ; esquisse contrainte bornée, blocs et composants, toitures simples, garde-corps simple | Un plan et un tableau des surfaces reproduits à la révision courante ; une cotation « à réparer » après scission ; PDF d'une feuille | 3,5 |
 | **6 — Échanges** | IFC 4.3 export / import + rapport de fidélité + validation CI sur corpus ; `IfcMapConversion` ; DXF import 2D ; manifeste du paquet natif ; matrice d'échanges | Exporter P.118 en IFC, le réimporter, lire le rapport ; ouvrir le fichier dans un visualiseur IFC de votre choix | 2,5 |
 | **7 — Versions, variantes, publication, collaboration** | Versions nommées, variantes et fusion par rejeu validé avec différences 3D, publication figée, verrous logiques, comparaison de vues entre révisions, collisions d'architecture (ouvertures hors mur, escalier contre dalle) ; Yjs pour les annotations si retenu au lot 0 | Créer une variante, la fusionner, publier ; conflit explicite entre deux comptes | 2 |
@@ -412,8 +415,8 @@ l'utilisateur, sans accès direct aux tables (§3 « Extensions »).
 | **9 — Recette finale** | Scénario d'acceptation complet (tous les contrôles, tous les essais §12), captures, matrice, protocole T17 / T18 pour vos mesures, documentation utilisateur située (aide par commande) relue | CI verte sur l'ensemble ; dossier de recette | 1 |
 | **Optionnel — Noyau exact OCCT** (après arbitrage de licence) | OCCT WASM en Web Worker derrière l'interface de moteur ; révolution, balayage, lissage, booléens, trous, coques ; représentation `brep` ; fiches DA-04 restantes et DA-03-01 / 12 | Un solide libre créé, booléen avec un mur, exporté | 2 à 3 |
 
-**Total lots 0 à 9 : 23 journées, soit 20 à 24 avec la marge** ; bascule — un seul Atelier, neuf — à la fin du
-lot 4 (**12,5 journées**). Les lots 5 à 8 sont indépendants entre eux et peuvent être réordonnés selon votre
+**Total lots 0 à 9 : 23,5 journées, soit 20 à 25 avec la marge** ; bascule — un seul Atelier, neuf — à la fin du
+lot 4 (**13 journées**). Les lots 5 à 8 sont indépendants entre eux et peuvent être réordonnés selon votre
 priorité (documents d'abord est l'ordre que je recommande pour un atelier d'architecture) ; le lot 9 ferme.
 
 ### 6.2 Ce que vaut cette estimation

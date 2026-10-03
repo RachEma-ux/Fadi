@@ -74,8 +74,10 @@ Permanent hosting (stable URL, persistent PostGIS database, daily backups, verif
 `scripts/verify-restore.sh` (also run by CI on the scenario's database). What the repository cannot contain is a
 machine or hosting account and a domain name.
 
-Proposal awaiting decision: `docs/atelier-drawall.md` — the Atelier Architectural rebuilt on the DrawAll V4.1
-contracts, lot by lot, with the implementation-time estimate and the decisions it needs.
+Atelier rebuild (DrawAll V4.1): `docs/atelier-drawall.md` is the accepted proposal (clean rebuild, one Atelier, P.118
+imported one way), `docs/atelier-cahier-des-charges.md` the execution specification for Claude Code (rules, contracts,
+lots, acceptance, team organisation), `docs/drawall/` the DrawAll V4.1 reference documents and `docs/atelier/` the
+follow-up folder (capability sheets, decisions, measurements, lot reports). `CLAUDE.md` is the entry point for Claude Code.
 
 Temporary public instance (`.github/workflows/builder-deploy.yml`, "Builder Deploy"): launched by hand from
 GitHub → Actions → Builder Deploy → *Run workflow* (pick the branch and the duration, 5–30 min). The run builds
