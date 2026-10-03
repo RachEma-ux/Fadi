@@ -348,7 +348,11 @@ describe.skipIf(!URL_BASE)("service de commandes du nouvel Atelier (§5.4, L2.2 
     const serveur = app.listen(0);
     try {
       const port = (serveur.address() as AddressInfo).port;
-      const { stdout } = await promisify(execFile)(process.execPath, [new URL("../scripts/demo-atelier.mjs", import.meta.url).pathname], { env: { ...process.env, API_URL: `http://127.0.0.1:${port}` } });
+      const { stdout } = await promisify(execFile)(process.execPath, [new URL("../scripts/demo-atelier.mjs", import.meta.url).pathname], { env: { ...process.env, API_URL: `http://127.0.0.1:${port}` } }).catch((err: { stdout?: string; stderr?: string }) => {
+        // Sortie complète au journal de la CI pour diagnostiquer un échec du script.
+        console.log(`demo-atelier.mjs en échec\n${err.stdout ?? ""}\n${err.stderr ?? ""}`);
+        throw err;
+      });
       // Sortie publiée dans le journal de la CI (preuve du compte rendu).
       console.log(stdout);
       expect(stdout).toContain("Démonstration conforme.");

@@ -33,7 +33,13 @@ async function compte(email) {
     const sc = r.headers.get("set-cookie");
     if (sc) cookie = sc.split(";")[0];
     const texte = await r.text();
-    return { status: r.status, body: texte ? JSON.parse(texte) : null };
+    let body = null;
+    try {
+      body = texte ? JSON.parse(texte) : null;
+    } catch {
+      throw new Error(`${methode} ${chemin} : HTTP ${r.status}, réponse non JSON : ${texte.slice(0, 200)}`);
+    }
+    return { status: r.status, body };
   };
   const r = await appel("POST", "/auth/register", { email, password: "correct-horse-battery" });
   if (r.status !== 201) throw new Error(`inscription de ${email} : ${r.status} ${JSON.stringify(r.body)}`);
