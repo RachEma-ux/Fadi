@@ -24,11 +24,11 @@ de références et de quantités sous forme de types. Phase 2 — en parallèle,
 | Tâche | Issue | État |
 | --- | --- | --- |
 | L1.1 ontologie et contrats figés (`atelier-commands/1`, `quantites/1`) | #23 | fusionnée (PR #29) ; 37 tests |
-| L1.2 commandes et réducteurs | #24 | en cours (vague 1) |
-| L1.5 relecture de `core-geometry` | #27 | en cours (vague 1) |
-| L1.3 références et quantités | #25 | à lancer (vague 2) |
-| L1.4 importeur P.118 et projection | #26 | à lancer (vague 2) |
-| L1.6 manifeste, `check-module-deps`, compte rendu | #28 | en cours : `atelier-model` obligatoire, contrat `atelier-commands` exigé |
+| L1.2 commandes et réducteurs | #24 | PR #32 ; 86 types de commande, 93 tests |
+| L1.5 relecture de `core-geometry` | #27 | PR #31 ; 81 tests (47 conservés) |
+| L1.3 références et quantités | #25 | en cours (vague 2) |
+| L1.4 importeur P.118 et projection | #26 | PR #33 (après #32) ; P.118 importé sans perte, 115 tests du paquet |
+| L1.6 manifeste, `check-module-deps`, compte rendu | #28 | en cours : `atelier-model` obligatoire, contrat `atelier-commands` exigé ; D-023, D-024 ; amendement des contrats à faire |
 
 Exécution en deux vagues de deux équipiers : le poste (téléphone, 7 Go) a saturé lors d'un `npm run typecheck`
 racine pendant la phase 1 ; les équipiers ne contrôlent que leur paquet, la CI contrôle l'ensemble.
