@@ -3,8 +3,8 @@
 Branche du lot : `lot/0-cadrage`. Cahier des charges : `docs/atelier-cahier-des-charges.md` §7 (lot 0).
 Organisation : une issue et une PR par tâche, intégrées par le chef de projet après CI verte (décision D-010).
 
-**État : en attente d'acceptation du maître d'ouvrage** — en particulier la validation de la maquette (§10.1,
-point 1), sans laquelle le lot 3a ne commence pas.
+**État : accepté** — maquette validée et suite du travail autorisée par le maître d'ouvrage (D-022) ; ligne de
+référence `atelier/principal` (D-020).
 
 ## 1. Ce qui est fait
 
@@ -139,7 +139,7 @@ rouverte au lot 7).
 ## 9. Definition of Done du lot 0 (§7, acceptation)
 
 - [x] Fiches à l'état « spécifiée » pour tout le périmètre du lot 3 (63 fiches).
-- [ ] Maquette validée par le maître d'ouvrage — **en attente**.
+- [x] Maquette validée par le maître d'ouvrage (D-022, 2026-10-03).
 - [x] Mesures publiées avec banc déclaré (`p0-mesures.md`) ; budget GPU déclaré non mesuré.
 - [x] Scénario découpé passant à l'identique : 327 contrôles, CI verte.
 - [x] `check-module-deps` en place (`npm run typecheck`).
