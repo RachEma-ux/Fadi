@@ -1,0 +1,9 @@
+{
+  "name": "@parcours/atelier-model",
+  "version": "0.1.0",
+  "contracts": {
+    "atelier-commands": 1,
+    "quantites": 1
+  },
+  "allowedDependencies": ["@parcours/core-geometry", "@parcours/domain-model"]
+}
