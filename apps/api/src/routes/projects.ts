@@ -12,6 +12,7 @@ import { APPLICATION_VERSION, SOURCE_VERSION, exportProjectArchive, importProjec
 import { parcoursStepsRouter } from "./parcours-steps.js";
 import { programmeRouter } from "./programme.js";
 import { atelierRouter } from "./atelier.js";
+import { atelierCommandsRouter } from "./atelier-commands.js";
 import { parcelsRouter } from "./parcels.js";
 import { projectFilesRouter } from "./step-files.js";
 import { designReviewRouter } from "./design-review.js";
@@ -188,6 +189,7 @@ projectsRouter.post("/:projectId/copies", async (req, res) => {
 // --- Étapes du Parcours (module Parcours) et répartition (module Programmation)
 projectsRouter.use("/:projectId/steps", parcoursStepsRouter);
 projectsRouter.use("/:projectId/programme", programmeRouter);
+projectsRouter.use("/:projectId/atelier", atelierCommandsRouter);
 projectsRouter.use("/:projectId/atelier", atelierRouter);
 projectsRouter.use("/:projectId/parcels", parcelsRouter);
 projectsRouter.use("/:projectId/files", projectFilesRouter);

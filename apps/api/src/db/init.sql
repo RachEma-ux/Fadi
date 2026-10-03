@@ -203,3 +203,140 @@ CREATE TABLE IF NOT EXISTS project_members (
   PRIMARY KEY (project_id, user_id)
 );
 CREATE INDEX IF NOT EXISTS project_members_user_idx ON project_members (user_id);
+
+-- ---------------------------------------------------------------------------
+-- Modèle typé de l'Atelier (chantier DrawAll V4.1, cahier des charges §5.5).
+-- Section « atelier » : propriété du module Atelier ; miroir de schema.ts.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS atelier_niveaux (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  nom text NOT NULL,
+  elevation double precision NOT NULL,
+  hauteur double precision,
+  ordre integer NOT NULL,
+  PRIMARY KEY (project_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS atelier_objets (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  classe text NOT NULL,
+  niveau_id text,
+  definition_id text,
+  calque_id text,
+  groupe_id text,
+  phase text,
+  params jsonb NOT NULL,
+  proprietes jsonb NOT NULL DEFAULT '{}'::jsonb,
+  model_revision integer NOT NULL,
+  PRIMARY KEY (project_id, id)
+);
+CREATE INDEX IF NOT EXISTS atelier_objets_niveau_idx ON atelier_objets (project_id, niveau_id);
+CREATE INDEX IF NOT EXISTS atelier_objets_classe_idx ON atelier_objets (project_id, classe);
+
+CREATE TABLE IF NOT EXISTS atelier_relations (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  kind text NOT NULL,
+  source_id text NOT NULL,
+  target_id text NOT NULL,
+  params jsonb NOT NULL DEFAULT '{}'::jsonb,
+  PRIMARY KEY (project_id, id)
+);
+CREATE INDEX IF NOT EXISTS atelier_relations_source_idx ON atelier_relations (project_id, source_id);
+CREATE INDEX IF NOT EXISTS atelier_relations_target_idx ON atelier_relations (project_id, target_id);
+
+CREATE TABLE IF NOT EXISTS atelier_definitions (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  classe text NOT NULL,
+  nom text NOT NULL,
+  params jsonb NOT NULL DEFAULT '{}'::jsonb,
+  version integer NOT NULL DEFAULT 1,
+  PRIMARY KEY (project_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS atelier_calques (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  nom text NOT NULL,
+  couleur text,
+  remplissage text,
+  visible boolean NOT NULL DEFAULT true,
+  verrouille boolean NOT NULL DEFAULT false,
+  ordre integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (project_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS atelier_groupes (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  nom text NOT NULL,
+  PRIMARY KEY (project_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS atelier_references (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  proprietaire_id text NOT NULL,
+  objet_id text,
+  caracteristique text,
+  etat text NOT NULL,
+  propositions jsonb NOT NULL DEFAULT '[]'::jsonb,
+  PRIMARY KEY (project_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS atelier_problemes (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  type text NOT NULL,
+  objet_id text,
+  message text NOT NULL,
+  PRIMARY KEY (project_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS atelier_site (
+  project_id text PRIMARY KEY REFERENCES projects (id) ON DELETE CASCADE,
+  parcelle jsonb,
+  emprise jsonb,
+  hypotheses jsonb NOT NULL DEFAULT '[]'::jsonb,
+  sources jsonb NOT NULL DEFAULT '[]'::jsonb,
+  structure jsonb,
+  proprietes jsonb NOT NULL DEFAULT '{}'::jsonb,
+  native_id text NOT NULL DEFAULT 'modele-type',
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS atelier_commands (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  request_id text NOT NULL,
+  kind text NOT NULL DEFAULT 'commande',
+  contract text NOT NULL,
+  label text NOT NULL,
+  base_revision integer NOT NULL,
+  result_revision integer NOT NULL,
+  commands jsonb NOT NULL,
+  inverse jsonb NOT NULL,
+  effets jsonb NOT NULL,
+  reponse jsonb NOT NULL,
+  inverse_of text,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS atelier_commands_request_unique ON atelier_commands (project_id, request_id);
+CREATE INDEX IF NOT EXISTS atelier_commands_project_rev_idx ON atelier_commands (project_id, result_revision);
+
+CREATE TABLE IF NOT EXISTS atelier_outbox (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  event_type text NOT NULL,
+  version integer NOT NULL DEFAULT 1,
+  payload jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  processed_at timestamptz,
+  attempts integer NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS atelier_outbox_pending_idx ON atelier_outbox (project_id, processed_at);

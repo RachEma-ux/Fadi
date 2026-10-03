@@ -131,6 +131,8 @@ export function appliquerCommande(etat: ModeleAtelier, commande: Commande, ctx: 
 export interface ResultatLot {
   etat: ModeleAtelier;
   effets: Effets;
+  /** Effets de chaque commande du lot, dans l'ordre. */
+  parCommande: Effets[];
   /** Commande inverse (instantané différentiel) : l'appliquer revient à l'état de départ. */
   inverse: Commande;
 }
@@ -143,17 +145,34 @@ export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): Resulta
   const ctx: ContexteCommande = { ids: generateurIds(enveloppe.requestId) };
   let courant = etat;
   let effets = effetsVides();
+  const parCommande: Effets[] = [];
   enveloppe.commands.forEach((commande, i) => {
     try {
       const r = appliquerCommande(courant, commande, ctx);
       courant = r.etat;
       effets = fusionnerEffets(effets, r.effets);
+      parCommande.push(r.effets);
     } catch (err) {
       if (err instanceof ErreurCommande) throw new ErreurCommande(err.code, `commands[${i}].${err.chemin}`, `commands[${i}].${err.chemin} : ${err.message}`);
       throw err;
     }
   });
-  return { etat: courant, effets, inverse: commandeInverse(differentiel(etat, courant)) };
+  return { etat: courant, effets, parCommande, inverse: commandeInverse(differentiel(etat, courant)) };
+}
+
+/** Identifiants d'objets qu'un lot cible explicitement (pour le calcul des conflits côté serveur). */
+export function identifiantsCibles(enveloppe: Enveloppe): string[] {
+  const ids = new Set<string>();
+  for (const c of enveloppe.commands) {
+    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId"]) {
+      const v = c.params[k];
+      if (typeof v === "string") ids.add(v);
+    }
+    for (const v of c.cibles ?? []) ids.add(v);
+    const cibles = c.params["cibles"];
+    if (Array.isArray(cibles)) for (const v of cibles) if (typeof v === "string") ids.add(v);
+  }
+  return [...ids];
 }
 
 export { CONTRAT_COMMANDES, ErreurCommande, TYPE_RESTAURER, generateurIds, differentiel, appliquerDifferentiel, commandeInverse };

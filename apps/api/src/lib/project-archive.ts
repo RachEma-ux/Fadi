@@ -22,7 +22,9 @@ import {
   type ProgrammeMode,
   type ProjectArchive,
 } from "@parcours/domain-model";
-import { atelierStore, parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
+import { atelierCommands, atelierStore, parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
+import { CONTRAT_COMMANDES, TYPE_RESTAURER, importerModeleNatif } from "@parcours/atelier-model";
+import { remplacerModele } from "../lib/atelier-modele.js";
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS } from "../data/parcours.js";
 import { newId } from "./ids.js";
 import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replaceProjection } from "./native-projection.js";
@@ -173,6 +175,13 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
       } else {
         warnings.push("Modèle natif importé sans niveaux ou plan exploitables : aucune projection dérivée.");
       }
+      // Modèle typé (chantier DrawAll, D-002) : même import à sens unique que pour l'exemple — copies, archives
+      // et exports du prototype arrivent par ici. Au lot 4, l'archive portera le modèle typé lui-même.
+      const registry = (entries["design.v13.registry"] as { id: string }[] | undefined)?.find((p) => p.id === active);
+      const { modele, rapport } = importerModeleNatif({ nativeId: active, registry: registry as never, domains: { levels: nativeLevels, floorDesign, nativeParcel: entries[`design.v13.project.${active}.nativeParcel`], buildingFootprint: entries[`design.v13.project.${active}.buildingFootprint`], ui: entries[`design.v13.project.${active}.ui`] } });
+      await remplacerModele(tx, id, modele, active, project.modelRevision);
+      const journalId = randomUUID();
+      await tx.insert(atelierCommands).values({ id: journalId, projectId: id, requestId: `import-archive-${journalId}`, kind: "commande", contract: CONTRAT_COMMANDES, label: "Import du modèle (archive)", baseRevision: Math.max(0, project.modelRevision - 1), resultRevision: project.modelRevision, commands: [{ type: "interne.import-natif", params: { nativeId: active } }], inverse: { type: TYPE_RESTAURER, params: { diff: { avant: {}, crees: {} } } }, effets: { crees: Object.keys(modele.objets), modifies: [], supprimes: [], problemes: rapport.problemes, referencesAReparer: [], niveauxTouches: Object.keys(modele.niveaux) }, reponse: { revision: project.modelRevision, journalId, rapport }, inverseOf: null, authorId: ownerId, createdAt: new Date() });
     }
   }
   for (const f of archive.stageAttachments) {

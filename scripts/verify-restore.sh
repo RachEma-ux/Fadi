@@ -10,7 +10,7 @@ sh "$(dirname "$0")/backup.sh" "$HOST" "$USER" "$SRC" "$DIR"
 FILE="$(ls "$DIR"/fadi-*.dump | head -1)"
 psql -h "$HOST" -U "$USER" -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS \"$DST\";" -c "CREATE DATABASE \"$DST\";"
 sh "$(dirname "$0")/restore.sh" "$HOST" "$USER" "$DST" "$FILE"
-TABLES="users projects project_steps levels architectural_objects atelier_store parcels programme_cases programme_repartitions project_members project_comments produced_documents step_files"
+TABLES="users projects project_steps levels architectural_objects atelier_store atelier_niveaux atelier_objets atelier_relations atelier_definitions atelier_calques atelier_groupes atelier_references atelier_problemes atelier_site atelier_commands atelier_outbox parcels programme_cases programme_repartitions project_members project_comments produced_documents step_files drawing_exports"
 for t in $TABLES; do
   a="$(psql -h "$HOST" -U "$USER" -d "$SRC" -tAc "SELECT count(*) FROM $t")"
   b="$(psql -h "$HOST" -U "$USER" -d "$DST" -tAc "SELECT count(*) FROM $t")"
@@ -18,7 +18,7 @@ for t in $TABLES; do
   echo "✓ $t : $a lignes"
 done
 # Empreinte de contenu des étapes (le gros du dossier) et du magasin de l'Atelier : identiques avant / après.
-for q in "SELECT coalesce(md5(string_agg(project_id || ':' || step_number || ':' || status || ':' || md5(content::text), ',' ORDER BY project_id, step_number)), 'vide') FROM project_steps" "SELECT coalesce(md5(string_agg(project_id || ':' || key || ':' || revision || ':' || md5(value::text), ',' ORDER BY project_id, key)), 'vide') FROM atelier_store"; do
+for q in "SELECT coalesce(md5(string_agg(project_id || ':' || step_number || ':' || status || ':' || md5(content::text), ',' ORDER BY project_id, step_number)), 'vide') FROM project_steps" "SELECT coalesce(md5(string_agg(project_id || ':' || key || ':' || revision || ':' || md5(value::text), ',' ORDER BY project_id, key)), 'vide') FROM atelier_store" "SELECT coalesce(md5(string_agg(project_id || ':' || id || ':' || classe || ':' || model_revision || ':' || md5(params::text), ',' ORDER BY project_id, id)), 'vide') FROM atelier_objets" "SELECT coalesce(md5(string_agg(project_id || ':' || request_id || ':' || result_revision || ':' || md5(inverse::text), ',' ORDER BY project_id, result_revision)), 'vide') FROM atelier_commands"; do
   a="$(psql -h "$HOST" -U "$USER" -d "$SRC" -tAc "$q")"
   b="$(psql -h "$HOST" -U "$USER" -d "$DST" -tAc "$q")"
   if [ "$a" != "$b" ]; then echo "❌ empreinte différente : $q"; exit 1; fi

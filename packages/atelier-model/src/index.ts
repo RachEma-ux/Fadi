@@ -7,3 +7,4 @@ export * from "./quantites.js";
 export * from "./commandes/index.js";
 export * from "./import/natif.js";
 export * from "./projection/analyse.js";
+export * from "./sync.js";

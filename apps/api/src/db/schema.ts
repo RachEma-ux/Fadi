@@ -310,3 +310,177 @@ export const projectMembers = pgTable("project_members", {
   invitedBy: text("invited_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [primaryKey({ columns: [t.projectId, t.userId] }), index("project_members_user_idx").on(t.userId)]);
+
+// ---------------------------------------------------------------------------
+// Modèle typé de l'Atelier (chantier DrawAll V4.1, cahier des charges §5.5) —
+// propriété du module Atelier. Une ligne par entité du modèle
+// (`@parcours/atelier-model`, contrat `modele-atelier/1`), toutes scopées par
+// projet ; les paramètres canoniques restent du JSON typé (repère local, mètres),
+// jamais une géométrie PostGIS. Le journal `atelier_commands` est append-only :
+// chaque lot validé (ou son annulation) est une microversion, `projects.model_revision`
+// avance d'un à chaque entrée.
+// ---------------------------------------------------------------------------
+
+export const atelierNiveaux = pgTable(
+  "atelier_niveaux",
+  {
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    id: text("id").notNull(),
+    nom: text("nom").notNull(),
+    elevation: doublePrecision("elevation").notNull(),
+    hauteur: doublePrecision("hauteur"),
+    ordre: integer("ordre").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.id] })],
+);
+
+export const atelierObjets = pgTable(
+  "atelier_objets",
+  {
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    id: text("id").notNull(),
+    classe: text("classe").notNull(),
+    niveauId: text("niveau_id"),
+    definitionId: text("definition_id"),
+    calqueId: text("calque_id"),
+    groupeId: text("groupe_id"),
+    phase: text("phase"),
+    params: jsonb("params").$type<Record<string, unknown>>().notNull(),
+    proprietes: jsonb("proprietes").$type<Record<string, unknown>>().notNull().default({}),
+    modelRevision: integer("model_revision").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.id] }), index("atelier_objets_niveau_idx").on(t.projectId, t.niveauId), index("atelier_objets_classe_idx").on(t.projectId, t.classe)],
+);
+
+export const atelierRelations = pgTable(
+  "atelier_relations",
+  {
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    id: text("id").notNull(),
+    kind: text("kind").notNull(),
+    sourceId: text("source_id").notNull(),
+    targetId: text("target_id").notNull(),
+    params: jsonb("params").$type<Record<string, unknown>>().notNull().default({}),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.id] }), index("atelier_relations_source_idx").on(t.projectId, t.sourceId), index("atelier_relations_target_idx").on(t.projectId, t.targetId)],
+);
+
+export const atelierDefinitions = pgTable(
+  "atelier_definitions",
+  {
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    id: text("id").notNull(),
+    classe: text("classe").notNull(),
+    nom: text("nom").notNull(),
+    params: jsonb("params").$type<Record<string, unknown>>().notNull().default({}),
+    version: integer("version").notNull().default(1),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.id] })],
+);
+
+export const atelierCalques = pgTable(
+  "atelier_calques",
+  {
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    id: text("id").notNull(),
+    nom: text("nom").notNull(),
+    couleur: text("couleur"),
+    remplissage: text("remplissage"),
+    visible: boolean("visible").notNull().default(true),
+    verrouille: boolean("verrouille").notNull().default(false),
+    ordre: integer("ordre").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.id] })],
+);
+
+export const atelierGroupes = pgTable(
+  "atelier_groupes",
+  {
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    id: text("id").notNull(),
+    nom: text("nom").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.id] })],
+);
+
+export const atelierReferences = pgTable(
+  "atelier_references",
+  {
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    id: text("id").notNull(),
+    proprietaireId: text("proprietaire_id").notNull(),
+    objetId: text("objet_id"),
+    caracteristique: text("caracteristique"),
+    etat: text("etat").notNull(),
+    propositions: jsonb("propositions").$type<unknown[]>().notNull().default([]),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.id] })],
+);
+
+export const atelierProblemes = pgTable(
+  "atelier_problemes",
+  {
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    id: text("id").notNull(),
+    type: text("type").notNull(),
+    objetId: text("objet_id"),
+    message: text("message").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.projectId, t.id] })],
+);
+
+/** Site et propriétés de projet du modèle typé ; la présence de la ligne dit qu'un modèle typé existe pour le projet. */
+export const atelierSite = pgTable("atelier_site", {
+  projectId: text("project_id").primaryKey().references(() => projects.id, { onDelete: "cascade" }),
+  parcelle: jsonb("parcelle").$type<Record<string, unknown> | null>(),
+  emprise: jsonb("emprise").$type<Record<string, unknown> | null>(),
+  hypotheses: jsonb("hypotheses").$type<unknown[]>().notNull().default([]),
+  sources: jsonb("sources").$type<unknown[]>().notNull().default([]),
+  structure: jsonb("structure").$type<Record<string, unknown> | null>(),
+  proprietes: jsonb("proprietes").$type<Record<string, unknown>>().notNull().default({}),
+  /** Identifiant natif conservé pour les consommateurs de l'analyse (liaisons, empreintes). */
+  nativeId: text("native_id").notNull().default("modele-type"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type JournalKind = "commande" | "annulation" | "retablissement";
+
+/** Journal des lots validés (append-only) : `request_id` unique par projet = idempotence (T06). */
+export const atelierCommands = pgTable(
+  "atelier_commands",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    requestId: text("request_id").notNull(),
+    kind: text("kind").$type<JournalKind>().notNull().default("commande"),
+    contract: text("contract").notNull(),
+    label: text("label").notNull(),
+    baseRevision: integer("base_revision").notNull(),
+    resultRevision: integer("result_revision").notNull(),
+    commands: jsonb("commands").$type<unknown[]>().notNull(),
+    inverse: jsonb("inverse").$type<Record<string, unknown>>().notNull(),
+    effets: jsonb("effets").$type<Record<string, unknown>>().notNull(),
+    /** Réponse renvoyée au client, rejouée telle quelle pour une requête répétée. */
+    reponse: jsonb("reponse").$type<Record<string, unknown>>().notNull(),
+    inverseOf: text("inverse_of"),
+    authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("atelier_commands_request_unique").on(t.projectId, t.requestId), index("atelier_commands_project_rev_idx").on(t.projectId, t.resultRevision)],
+);
+
+/** Boîte de sortie transactionnelle : événements versionnés, traités de façon idempotente après validation. */
+export const atelierOutbox = pgTable(
+  "atelier_outbox",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    eventType: text("event_type").notNull(),
+    version: integer("version").notNull().default(1),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    attempts: integer("attempts").notNull().default(0),
+  },
+  (t) => [index("atelier_outbox_pending_idx").on(t.projectId, t.processedAt)],
+);

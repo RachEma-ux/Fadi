@@ -46,15 +46,32 @@ export interface ModelCacheEntry {
   fetchedAt: string;
 }
 
+/** Lot de commandes de l'Atelier typé en attente d'envoi (cahier des charges §5.7) : une entrée par `requestId`. */
+export interface LotEntry {
+  /** `${projectId}|${requestId}` */
+  id: string;
+  projectId: string;
+  requestId: string;
+  /** Enveloppe sérialisée (`atelier-commands/1`). */
+  enveloppe: string;
+  label: string;
+  etat: "local" | "synchronisation" | "synchronise" | "conflit" | "refuse";
+  detail: string | null;
+  creeA: string;
+  ordre: number;
+}
+
 class FadiLocalDb extends Dexie {
   outbox!: EntityTable<OutboxEntry, "id">;
   modelCache!: EntityTable<ModelCacheEntry, "projectId">;
   keyValue!: EntityTable<KeyValueEntry, "key">;
+  lots!: EntityTable<LotEntry, "id">;
 
   constructor() {
     super("fadi-local");
     this.version(1).stores({ outbox: "id, projectId", modelCache: "projectId" });
     this.version(2).stores({ outbox: "id, projectId", modelCache: "projectId", keyValue: "key" });
+    this.version(3).stores({ outbox: "id, projectId", modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre" });
   }
 }
 
@@ -127,4 +144,19 @@ export const localStore = {
     ),
   /** « Vider les caches locaux » : les modèles mis en cache ; la file des écritures en attente n'est jamais supprimée (elle repart au retour du réseau). Le cache des requêtes se vide par le client de requêtes, qui le réécrit. */
   clearModelCache: () => safe((d) => d.modelCache.clear(), undefined),
+  // --- Lots de commandes de l'Atelier typé ---
+  lots: (projectId: string) => safe((d) => d.lots.where("projectId").equals(projectId).sortBy("ordre"), [] as LotEntry[]),
+  putLot: (entry: LotEntry) => safe((d) => d.lots.put(entry).then(() => undefined), undefined),
+  removeLot: (projectId: string, requestId: string) => safe((d) => d.lots.delete(`${projectId}|${requestId}`), undefined),
+  lotsCount: (projectId: string) => safe((d) => d.lots.where("projectId").equals(projectId).count(), 0),
+  lotsSummary: () =>
+    safe(
+      async (d) => {
+        const all = await d.lots.toArray();
+        const parProjet: Record<string, number> = {};
+        for (const l of all) parProjet[l.projectId] = (parProjet[l.projectId] ?? 0) + 1;
+        return { total: all.length, parProjet };
+      },
+      { total: 0, parProjet: {} as Record<string, number> },
+    ),
 };

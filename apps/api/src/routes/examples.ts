@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { atelierStore, parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
+import { atelierCommands, atelierStore, parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
 import { hashOf, parcelSnapshotFromNative, summarize, type NativeParcelDomain } from "../lib/parcel-transmission.js";
 import { repartitionFromCase, type ProgrammeCase } from "@parcours/domain-model";
 import { randomUUID } from "node:crypto";
 import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replaceProjection } from "../lib/native-projection.js";
+import { CONTRAT_COMMANDES, TYPE_RESTAURER, importerModeleNatif } from "@parcours/atelier-model";
+import { remplacerModele } from "../lib/atelier-modele.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { stampStepFingerprints } from "../lib/project-archive.js";
@@ -118,6 +120,15 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
       const floorDesign = atelier.entries[`design.v13.project.${atelier.nativeId}.floorDesign`];
       if (isNativeLevelArray(nativeLevels) && isNativeFloorDesign(floorDesign)) {
         await replaceProjection(tx, id, projectNativeModel(id, nativeLevels, floorDesign, 1));
+      }
+      // Le modèle typé (chantier DrawAll, D-002) : import à sens unique du même jeu de données, sans arrondi,
+      // à la même révision ; le rapport d'import est conservé dans le journal des commandes.
+      {
+        const domaine = (d: string) => atelier.entries[`design.v13.project.${atelier.nativeId}.${d}`];
+        const { modele, rapport } = importerModeleNatif({ nativeId: atelier.nativeId, registry: registry as never, domains: { levels: domaine("levels"), floorDesign: domaine("floorDesign"), nativeParcel: domaine("nativeParcel"), buildingFootprint: domaine("buildingFootprint"), ui: domaine("ui") } });
+        await remplacerModele(tx, id, modele, atelier.nativeId, 1);
+        const journalId = randomUUID();
+        await tx.insert(atelierCommands).values({ id: journalId, projectId: id, requestId: `import-exemple-${journalId}`, kind: "commande", contract: CONTRAT_COMMANDES, label: "Import de l'exemple P.118", baseRevision: 0, resultRevision: 1, commands: [{ type: "interne.import-natif", params: { nativeId: atelier.nativeId } }], inverse: { type: TYPE_RESTAURER, params: { diff: { avant: {}, crees: {} } } }, effets: { crees: Object.keys(modele.objets), modifies: [], supprimes: [], problemes: rapport.problemes, referencesAReparer: [], niveauxTouches: Object.keys(modele.niveaux) }, reponse: { revision: 1, journalId, rapport }, inverseOf: null, authorId: req.user!.id, createdAt: new Date() });
       }
       // La parcelle de l'exemple ouverte dans l'outil Parcelle (étape 01) :
       // le fichier que `parcelSnapshot()` du prototype dérivait du modèle natif.

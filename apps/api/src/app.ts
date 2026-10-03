@@ -37,7 +37,7 @@ export function createApp() {
   // pour P.118) a son propre analyseur JSON borné dans routes/atelier.ts.
   const jsonBody = express.json({ limit: "256kb" });
   // Le magasin de l'Atelier, les pièces jointes des étapes, les exports de l'Atelier et l'import d'archive ont leur propre lecture de corps (limite dédiée).
-  app.use((req, res, next) => (/\/atelier\/store(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$/.test(req.path) ? next() : jsonBody(req, res, next)));
+  app.use((req, res, next) => (/\/atelier\/store(\/|$)|\/atelier\/commands(\/|$)|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$/.test(req.path) ? next() : jsonBody(req, res, next)));
   app.use(attachUser);
 
   // Les routes d'authentification sont la cible privilégiée du

@@ -873,4 +873,74 @@ export const api = {
     }),
   deleteObject: (projectId: string, levelId: string, objectId: string) =>
     request<void>(`/projects/${projectId}/levels/${levelId}/objects/${objectId}`, { method: "DELETE" }),
+  // --- Atelier typé (chantier DrawAll, cahier des charges §5.4) ---
+  getAtelierModel: (projectId: string) => request<AtelierModelResponse>(`/projects/${projectId}/atelier/model`),
+  getAtelierJournal: (projectId: string, apres: number) => request<AtelierJournalResponse>(`/projects/${projectId}/atelier/journal?apres=${apres}`),
+  getAtelierProblemes: (projectId: string) => request<AtelierProblemesResponse>(`/projects/${projectId}/atelier/problemes`),
+  postAtelierCommands: (projectId: string, enveloppe: AtelierEnveloppe) =>
+    request<AtelierCommandsResponse>(`/projects/${projectId}/atelier/commands`, { method: "POST", body: JSON.stringify(enveloppe) }),
+  postAtelierEssai: (projectId: string, enveloppe: AtelierEnveloppe) =>
+    request<AtelierEssaiResponse>(`/projects/${projectId}/atelier/commands/essai`, { method: "POST", body: JSON.stringify(enveloppe) }),
+  postAtelierAnnuler: (projectId: string, body: { requestId: string; baseRevision: number; journalId?: string }) =>
+    request<AtelierCommandsResponse>(`/projects/${projectId}/atelier/commands/annuler`, { method: "POST", body: JSON.stringify(body) }),
+  postAtelierRetablir: (projectId: string, body: { requestId: string; baseRevision: number; journalId?: string }) =>
+    request<AtelierCommandsResponse>(`/projects/${projectId}/atelier/commands/retablir`, { method: "POST", body: JSON.stringify(body) }),
+  importerModeleNatif: (projectId: string, remplacer = false) =>
+    request<{ revision: number; journalId: string; rapport: unknown }>(`/projects/${projectId}/atelier/model/importer-natif`, { method: "POST", body: JSON.stringify({ remplacer }) }),
 };
+
+// Types du service de commandes (le modèle lui-même est typé par @parcours/atelier-model).
+export interface AtelierEnveloppe {
+  requestId: string;
+  baseRevision: number;
+  contract: "atelier-commands/1";
+  label: string;
+  commands: { type: string; params: Record<string, unknown>; cibles?: string[] }[];
+}
+export interface AtelierModelResponse {
+  revision: number;
+  nativeId: string;
+  modele: import("@parcours/atelier-model").ModeleAtelier;
+}
+export interface AtelierJournalEntry {
+  id: string;
+  kind: "commande" | "annulation" | "retablissement";
+  requestId: string;
+  label: string;
+  baseRevision: number;
+  resultRevision: number;
+  commands: unknown[];
+  effets: import("@parcours/atelier-model").Effets;
+  inverse: import("@parcours/atelier-model").Commande;
+  inverseOf: string | null;
+  authorId: string;
+  createdAt: string;
+}
+export interface AtelierJournalResponse {
+  revision: number;
+  entrees: AtelierJournalEntry[];
+}
+export interface AtelierCommandsResponse {
+  revision: number;
+  journalId: string;
+  applique: { type: string; objetIds: string[] }[];
+  effets: import("@parcours/atelier-model").Effets;
+  problemes: import("@parcours/atelier-model").Probleme[];
+  referencesAReparer: string[];
+  rejouee?: boolean;
+}
+export interface AtelierEssaiResponse {
+  ok: boolean;
+  revision: number;
+  effets: import("@parcours/atelier-model").Effets;
+  parCommande: import("@parcours/atelier-model").Effets[];
+  problemes: import("@parcours/atelier-model").Probleme[];
+  referencesAReparer: string[];
+}
+export interface AtelierProblemesResponse {
+  revision: number;
+  references: import("@parcours/atelier-model").Reference[];
+  problemes: import("@parcours/atelier-model").Probleme[];
+  documentsPerimes: { kind: string; label: string }[];
+  bilan: { reviewStale: boolean; reserves: number; reservesPrioritaires: number; ecartsAudit: number };
+}
