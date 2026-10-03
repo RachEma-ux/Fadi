@@ -1,0 +1,51 @@
+# Captures de la maquette de l'Atelier (lot 0, tâche L0.3).
+# La maquette est du HTML statique (docs/atelier/maquette/) ; ce workflow vérifie qu'elle est à jour avec
+# l'exemple P.118, l'ouvre dans Chromium (Playwright) à 1536 px et 390 px et publie les PNG en artefact
+# « captures-maquette ». Le chef de projet télécharge l'artefact et versionne les captures.
+name: Atelier — maquette
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "tache/L0.3-*"
+      - "lot/0-*"
+    paths:
+      - "docs/atelier/maquette/**"
+      - ".github/workflows/atelier-maquette.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atelier-maquette-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  captures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Maquette à jour avec la source P.118
+        run: python3 docs/atelier/maquette/outils/extraire-p118.py --verifier
+      - run: npm ci --no-audit --no-fund
+      - name: Installer Chromium (Playwright)
+        run: npx playwright install --with-deps chromium
+      - name: Produire les captures
+        run: node docs/atelier/maquette/outils/captures.mjs
+      - name: Publier les captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: captures-maquette
+          path: docs/atelier/maquette/captures/*.png
+          if-no-files-found: error
+          retention-days: 30
