@@ -73,8 +73,11 @@ Temporary public instance (`.github/workflows/builder-deploy.yml`, "Builder Depl
 GitHub → Actions → Builder Deploy → *Run workflow* (pick the branch and the duration, 5–30 min). The run builds
 **the branch as it is at launch time**, migrates a fresh PostGIS service (data is truncated at each run), starts
 the API and `vite preview`, and publishes a Cloudflare quick-tunnel URL (`*.trycloudflare.com`) as a job
-annotation ("Fadi en ligne") and in the logs. A running instance never picks up later commits — relaunch the
-workflow after pushing to see the current build.
+annotation ("Fadi en ligne") and in the logs, once the new hostname resolves on public resolvers and the app answers
+through the tunnel (up to 150 s; the chosen duration starts then). A phone that opens the URL within the first minute
+may still see "DNS_PROBE_FINISHED_NXDOMAIN" (negative DNS cache): wait a minute and reload, or switch between Wi-Fi and
+mobile data. A running instance never picks up later commits — relaunch the workflow after pushing to see the current
+build.
 
 Never put credentials in source files — `apps/api/.env` is gitignored; only `.env.example` /
 `.env.test.example` (placeholder values) are committed. The reference HTML itself is not committed either

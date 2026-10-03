@@ -192,16 +192,44 @@ jobs:
 
           echo "$TUNNEL_URL" > app_url.txt
           echo "$TUNNEL_PID" > tunnel.pid
+
+          # Le nom *.trycloudflare.com vient d'être créé : un téléphone qui l'ouvre dans la foulée reçoit
+          # souvent « DNS_PROBE_FINISHED_NXDOMAIN » (propagation + cache négatif du résolveur). On attend que
+          # le nom réponde sur des résolveurs publics et que l'application réponde à travers le tunnel avant
+          # d'annoncer l'URL — la durée demandée court à partir de ce moment-là.
+          HOST="${TUNNEL_URL#https://}"
+          READY=""
+          for attempt in $(seq 1 30); do
+            DNS_OK=""
+            if command -v dig >/dev/null 2>&1; then
+              [ -n "$(dig +short +time=3 +tries=1 "$HOST" @1.1.1.1 2>/dev/null)" ] && [ -n "$(dig +short +time=3 +tries=1 "$HOST" @8.8.8.8 2>/dev/null)" ] && DNS_OK=1
+            else
+              getent hosts "$HOST" >/dev/null 2>&1 && DNS_OK=1
+            fi
+            HTTP_CODE=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "$TUNNEL_URL/" 2>/dev/null || echo 000)
+            if [ -n "$DNS_OK" ] && [ "$HTTP_CODE" = "200" ]; then
+              READY=1
+              echo "✅ Nom résolu sur 1.1.1.1 et 8.8.8.8, application servie à travers le tunnel (HTTP ${HTTP_CODE}) après ${attempt} essai(s)"
+              break
+            fi
+            echo "⌛ Propagation DNS / tunnel (essai ${attempt}/30) : dns=${DNS_OK:-non} http=${HTTP_CODE}"
+            sleep 5
+          done
+          [ -n "$READY" ] || echo "⚠️ Le nom ou le tunnel ne répond pas encore depuis le runner après 150 s : l'URL est publiée quand même, réessayez après une minute."
+
           # Annotation du job : l'URL est lisible par l'API GitHub (check-runs) dès cette étape,
           # sans attendre la fin du run ni ouvrir les journaux.
-          echo "::notice title=Fadi en ligne::$TUNNEL_URL (disponible ${{ github.event.inputs.duration }} minutes)"
+          echo "::notice title=Fadi en ligne::$TUNNEL_URL (disponible ${{ github.event.inputs.duration }} minutes à partir de maintenant). Si le navigateur dit « site inaccessible » / DNS_PROBE_FINISHED_NXDOMAIN : attendez une minute et rechargez, ou passez du Wi-Fi aux données mobiles (le nom vient d'être créé)."
 
           echo ""
           echo "============================================"
           echo "🎉 Fadi est en ligne"
           echo "============================================"
           echo "🌐 URL : $TUNNEL_URL"
-          echo "⏱️  Disponible ${{ github.event.inputs.duration }} minutes"
+          echo "⏱️  Disponible ${{ github.event.inputs.duration }} minutes à partir de maintenant"
+          echo "ℹ️  « Site inaccessible » / DNS_PROBE_FINISHED_NXDOMAIN sur le téléphone : attendez une minute et rechargez,"
+          echo "    ou passez du Wi-Fi aux données mobiles — le nom vient d'être créé et certains résolveurs gardent"
+          echo "    quelques minutes une première réponse négative."
           echo "============================================"
 
       - name: Deployment summary
@@ -215,6 +243,8 @@ jobs:
             echo "🌐 **[$TUNNEL_URL]($TUNNEL_URL)**" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "Disponible pendant ${{ github.event.inputs.duration }} minutes à partir de cette étape." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "**« Site inaccessible » / DNS_PROBE_FINISHED_NXDOMAIN ?** Le nom vient d'être créé : attendez une minute et rechargez, ou passez du Wi-Fi aux données mobiles (certains résolveurs gardent quelques minutes une première réponse négative)." >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "C'est une base de données PostgreSQL/PostGIS jetable (service du job) : créez un compte," >> "$GITHUB_STEP_SUMMARY"
             echo "rien n'est conservé après la fin de ce run." >> "$GITHUB_STEP_SUMMARY"
