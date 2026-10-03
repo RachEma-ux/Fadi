@@ -179,7 +179,7 @@ describe.skipIf(!URL_BASE)("boîte de sortie de l'Atelier (atelier_outbox)", () 
     // 3. Aperçu conceptuel invalidé : la date de mise à jour (clé de cache client) avance.
     expect(project.updatedAt.getTime()).toBeGreaterThan(majAvant.getTime());
     // 4. Notification aux autres membres (pas à l'auteur), avec révision et auteur.
-    let n = (await notificationsFor("u1", "a@example.com", db)).items.filter((i) => i.kind === "modele");
+    let n = (await notificationsFor("u1", "a@example.com", db)).items.filter((i) => i.kind === "modele" && i.projectId === "px");
     expect(n).toEqual([expect.objectContaining({ id: "modele:px:1", projectId: "px", unread: true, text: "b@example.com a modifié le modèle de PX — Projet px dans l’Atelier : révision 1. Les documents produits avant sont périmés." })]);
     expect((await notificationsFor("u2", "b@example.com", db)).items.some((i) => i.kind === "modele")).toBe(false);
     expect((await notificationsFor("u3", "c@example.com", db)).items).toEqual([]); // sans accès au projet
@@ -188,10 +188,10 @@ describe.skipIf(!URL_BASE)("boîte de sortie de l'Atelier (atelier_outbox)", () 
     await valider("px", 2);
     await valider("px", 3, "u1");
     expect(await traiterBoiteDeSortie(db, "px")).toBe(2);
-    n = (await notificationsFor("u1", "a@example.com", db)).items.filter((i) => i.kind === "modele");
+    n = (await notificationsFor("u1", "a@example.com", db)).items.filter((i) => i.kind === "modele" && i.projectId === "px");
     expect(n).toHaveLength(1);
     expect(n[0]).toMatchObject({ id: "modele:px:2", text: "b@example.com a modifié le modèle de PX — Projet px dans l’Atelier (2 lots) : révision 2. Les documents produits avant sont périmés." });
-    n = (await notificationsFor("u2", "b@example.com", db)).items.filter((i) => i.kind === "modele");
+    n = (await notificationsFor("u2", "b@example.com", db)).items.filter((i) => i.kind === "modele" && i.projectId === "px");
     expect(n).toEqual([expect.objectContaining({ id: "modele:px:3", text: expect.stringContaining("a@example.com a modifié le modèle de PX") })]);
     // La marque garde la révision la plus haute.
     ({ dctx } = await charger());
