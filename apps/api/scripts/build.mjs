@@ -36,6 +36,8 @@ await build({
   alias: {
     "@parcours/domain-model": join(root, "../../packages/domain-model/src/index.ts"),
     "@parcours/core-geometry": join(root, "../../packages/core-geometry/src/index.ts"),
+    // Service de commandes du nouvel Atelier (L2.2) : réducteurs, empreinte, importeur exécutés côté serveur.
+    "@parcours/atelier-model": join(root, "../../packages/atelier-model/src/index.ts"),
   },
   logLevel: "info",
 });

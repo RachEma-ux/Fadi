@@ -9,6 +9,7 @@ COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY packages/domain-model/package.json packages/domain-model/
 COPY packages/core-geometry/package.json packages/core-geometry/
+COPY packages/atelier-model/package.json packages/atelier-model/
 RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
@@ -20,6 +21,7 @@ COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY packages/domain-model/package.json packages/domain-model/
 COPY packages/core-geometry/package.json packages/core-geometry/
+COPY packages/atelier-model/package.json packages/atelier-model/
 # Dépendances d'exécution de l'API seulement (le bundle garde les paquets npm externes ; @node-rs/argon2 est natif).
 RUN npm ci --omit=dev --no-audit --no-fund --ignore-scripts
 
