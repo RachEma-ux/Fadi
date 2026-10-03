@@ -7,6 +7,7 @@ import { App } from "./App";
 import { AuthProvider } from "./lib/auth-context";
 import { registerMutationDefaults } from "./lib/mutations";
 import { persistOptions } from "./lib/query-persister";
+import { reachability } from "./lib/reachability";
 import "./style.css";
 
 const queryClient = new QueryClient({
@@ -24,8 +25,18 @@ const queryClient = new QueryClient({
 // Saisies, arbitrages et commentaires rejouables : valeurs par défaut des mutations mises en pause hors-ligne et persistées.
 registerMutationDefaults(queryClient);
 // TanStack Query se croit en ligne au démarrage : après un rechargement hors-ligne, les mutations restaurées
-// repartiraient aussitôt et échoueraient. L'état réel du navigateur fait foi.
-onlineManager.setOnline(navigator.onLine);
+// repartiraient aussitôt et échoueraient. L'état réel du navigateur fait foi — et le serveur doit répondre
+// (`lib/reachability.ts`) : un serveur injoignable met les écritures en attente comme une coupure réseau.
+onlineManager.setEventListener(() => {
+  const handler = () => reachability.browserOnlineChanged();
+  window.addEventListener("online", handler);
+  window.addEventListener("offline", handler);
+  return () => {
+    window.removeEventListener("online", handler);
+    window.removeEventListener("offline", handler);
+  };
+});
+reachability.browserOnlineChanged();
 
 // Enveloppe hors-ligne (production) : l'application, le moteur de l'Atelier et l'outil Parcelle sont servis
 // depuis le cache du navigateur quand le réseau manque ; les appels à l'API, jamais.

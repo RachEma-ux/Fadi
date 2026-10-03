@@ -623,3 +623,10 @@
 #nativeDesignerRoot[data-atelier-workspace="home"] #atelier-drawing-tools,
 #nativeDesignerRoot[data-atelier-workspace="home"] #atelier-tool-options,
 #nativeDesignerRoot[data-atelier-workspace="home"] #atelier-tool-status{display:none!important}
+/* Fadi — Atelier sur téléphone : rangées défilantes signalées (voile de bord quand le contenu dépasse, accroche au défilement) et indicateur permanent de l'outil actif. */
+.atelier-toolbar-main.is-scrollable,.atelier-toolbar-context.is-scrollable{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 34px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 34px),transparent)}
+.atelier-toolbar-main,.atelier-toolbar-context{scroll-snap-type:x proximity;scroll-padding-inline:10px}
+.atelier-toolbar-main>*,.atelier-toolbar-context>*{scroll-snap-align:start}
+.fadi-active-tool{display:inline-flex;align-items:center;gap:6px;flex:none;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 10px;border-radius:999px;background:#174d43;color:#fff;font:600 12px/1.2 Arial,sans-serif}
+.fadi-active-tool[hidden]{display:none}
+.fadi-active-tool::before{content:"";width:7px;height:7px;border-radius:50%;background:#d8e868;flex:none}

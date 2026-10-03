@@ -7,7 +7,7 @@
  * Les fichiers sont régénérés à la demande par le serveur ; le téléchargement
  * enregistre la production.
  */
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api, type DocumentDescriptor, type DocumentsView } from "../../lib/api";
@@ -15,6 +15,7 @@ import { api, type DocumentDescriptor, type DocumentsView } from "../../lib/api"
 const GROUPS: { id: DocumentDescriptor["group"]; title: string; note: string }[] = [
   { id: "harmonie", title: "Rapports Harmonie", note: "Documents HTML autonomes des choix par étape (feuille du prototype), produits depuis l'état courant des propositions et des arbitrages." },
   { id: "bilan", title: "Bilan du bâtiment conçu et plans de lecture", note: "Bilan HTML et plans SVG par niveau, produits depuis le modèle courant, la parcelle et le géoréférencement." },
+  { id: "dessins", title: "Dessins techniques et exports de l'Atelier", note: "Fichiers DXF, SVG, PNG, CSV et JSON produits par le moteur de l'Atelier, enregistrés ici au moment de l'export avec leur niveau, leur vue et la révision du modèle : à jour tant que le modèle n'a pas changé, périmés ensuite (le fichier reste tel quel)." },
   { id: "tableaux", title: "Tableaux", note: "Surfaces mesurées par niveau et par zone, programme appliqué, fiches de l'exemple — en CSV (séparateur « ; »)." },
   { id: "exemple", title: "Exemple résolu", note: "Dossier complet de l'exemple P.118 (`fullReport` du prototype) : critères, complétude et transmission, réponses des 21 étapes, budget, bilan du bâtiment dessiné, registre des hypothèses — un seul HTML imprimable, produit sur l'état courant du projet." },
   { id: "archive", title: "Archive", note: "Sauvegarde complète du projet, réimportable (« Importer projet JSON »)." },
@@ -27,6 +28,12 @@ function Freshness({ d }: { d: DocumentDescriptor }) {
 }
 
 function DocumentRow({ projectId, d, onProduced }: { projectId: string; d: DocumentDescriptor; onProduced: () => void }) {
+  const queryClient = useQueryClient();
+  const isExport = d.kind.startsWith("dessin:");
+  const remove = useMutation({
+    mutationFn: () => api.deleteDrawingExport(projectId, d.kind.slice("dessin:".length)),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["documents", projectId] }),
+  });
   return (
     <tr data-document={d.kind} data-freshness={d.freshness ?? "aucune"}>
       <td>
@@ -52,9 +59,14 @@ function DocumentRow({ projectId, d, onProduced }: { projectId: string; d: Docum
       </td>
       <td>{d.stepNumber !== null ? <Link to={`/projets/${projectId}?module=parcours&etape=${d.stepNumber}`}>{String(d.stepNumber).padStart(2, "0")}</Link> : "—"}</td>
       <td>
-        <a className="button-secondary" href={d.href} download onClick={onProduced}>
-          Produire ↓
+        <a className="button-secondary" href={d.href} download onClick={isExport ? undefined : onProduced}>
+          {isExport ? "Télécharger ↓" : "Produire ↓"}
         </a>
+        {isExport && (
+          <button type="button" className="button-secondary documents-remove" disabled={remove.isPending} onClick={() => remove.mutate()}>
+            Retirer
+          </button>
+        )}
       </td>
     </tr>
   );

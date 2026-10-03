@@ -7,17 +7,17 @@
  * fichiers sont régénérés à la demande par leurs routes ; seule la trace
  * de production est conservée (`produced_documents`).
  */
-import { eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { PARCOURS_STEPS } from "../data/parcours.js";
 import { archiveFileName, documentFreshness, EXAMPLE_REPORT_FILE_NAME, fnv1a, harmonieReportFileName, resolvedSpacesFileName, type DocumentFreshness, type DocumentProduction } from "@parcours/domain-model";
-import { producedDocuments } from "../db/schema.js";
+import { drawingExports, producedDocuments } from "../db/schema.js";
 import type { DesignContext } from "./design-context.js";
 import type { OwnedProject } from "./owned-project.js";
 import { ownsExampleDossier } from "./example-report.js";
 import { contentOf, type StepContext } from "./step-context.js";
 import type { Querier } from "./step-rows.js";
 
-export type DocumentGroup = "harmonie" | "bilan" | "tableaux" | "exemple" | "archive";
+export type DocumentGroup = "harmonie" | "bilan" | "dessins" | "tableaux" | "exemple" | "archive";
 
 export interface DocumentDescriptor {
   kind: string;
@@ -179,12 +179,53 @@ export async function loadProductions(q: Querier, projectId: string): Promise<Ma
   return new Map(rows.map((r) => [r.kind, { producedAt: r.producedAt.toISOString(), modelRevision: r.modelRevision, inputHash: r.inputHash, count: r.count }]));
 }
 
+const DRAWING_KIND_LABEL: Record<string, string> = { dxf: "Dessin technique DXF", svg: "Plan SVG", png: "Image PNG", csv: "Métrés CSV", json: "Modèle JSON" };
+
+/** Libellé de la vue du moteur au moment de l'export (`captureView` : `tech` = plan / coupe / façade…, `mode` = volume / filaire…). */
+function drawingViewLabel(view: Record<string, unknown>): string {
+  const tech = typeof view["tech"] === "string" && view["tech"] ? String(view["tech"]) : null;
+  const mode = typeof view["mode"] === "string" ? String(view["mode"]) : null;
+  const scope = typeof view["levelScope"] === "string" ? String(view["levelScope"]) : null;
+  const parts = [tech ? `dessin ${tech}` : mode ? `vue ${mode}` : null, scope === "building" ? "bâtiment" : scope === "roof" ? "toiture" : null].filter(Boolean);
+  return parts.join(" · ");
+}
+
+/**
+ * Les dessins techniques et exports de l'Atelier enregistrés (`drawing_exports`) : un document chacun, produit une fois à sa
+ * révision — à jour tant que la révision et l'empreinte du modèle n'ont pas bougé, périmé ensuite (le fichier reste
+ * téléchargeable tel quel).
+ */
+export async function drawingExportDescriptors(q: Querier, project: OwnedProject, dctx: DesignContext): Promise<DocumentDescriptor[]> {
+  const rows = await q
+    .select({ id: drawingExports.id, kind: drawingExports.kind, fileName: drawingExports.fileName, levelId: drawingExports.levelId, levelName: drawingExports.levelName, view: drawingExports.view, modelRevision: drawingExports.modelRevision, nativeHash: drawingExports.nativeHash, createdAt: drawingExports.createdAt, size: drawingExports.size })
+    .from(drawingExports)
+    .where(eq(drawingExports.projectId, project.id))
+    .orderBy(desc(drawingExports.createdAt));
+  const current = { modelRevision: project.modelRevision, inputHash: dctx.analysis.nativeHash };
+  return rows.map((r) => {
+    const produced: DocumentProduction = { producedAt: r.createdAt.toISOString(), modelRevision: r.modelRevision, inputHash: r.nativeHash, count: 1 };
+    const where = [r.levelName ?? r.levelId ?? null, drawingViewLabel(r.view)].filter(Boolean).join(" · ");
+    return {
+      kind: `dessin:${r.id}`,
+      group: "dessins",
+      label: `${DRAWING_KIND_LABEL[r.kind] ?? r.kind.toUpperCase()}${where ? ` · ${where}` : ""} · révision ${r.modelRevision}`,
+      fileName: r.fileName,
+      href: `/projects/${project.id}/documents/dessins/${r.id}`,
+      stepNumber: 10,
+      current,
+      produced,
+      freshness: documentFreshness(current, produced),
+    };
+  });
+}
+
 export async function documentCatalogue(q: Querier, project: OwnedProject, dctx: DesignContext): Promise<DocumentDescriptor[]> {
   const productions = await loadProductions(q, project.id);
-  return documentDescriptors(project, dctx).map((d) => {
+  const generated = documentDescriptors(project, dctx).map((d) => {
     const produced = productions.get(d.kind) ?? null;
     return { ...d, produced, freshness: documentFreshness(d.current, produced) };
   });
+  return [...generated, ...(await drawingExportDescriptors(q, project, dctx))];
 }
 
 /** Enregistre une production : dernière date, révision et empreinte, compteur incrémenté. */

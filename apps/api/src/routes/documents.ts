@@ -6,10 +6,19 @@
  *   GET /programme        → programme du projet (CSV, `csv` de building-library)
  *   GET /fiches           → fiches d'espaces de l'exemple résolu (CSV, `csv` de p118-resolved-app)
  *   GET /dossier-exemple  → « Dossier complet de l’exemple » (HTML, `fullReport` de p118-resolved-app) — projets issus de l'exemple P.118
+ *   POST /dessins         → enregistre un dessin technique / export de l'Atelier (DXF, SVG, PNG, CSV, JSON) avec son niveau,
+ *                           sa vue et la révision du modèle courante (corps brut ; en-têtes X-File-Name, X-File-Type, X-Export-Kind,
+ *                           X-Export-Level, X-Export-Level-Name, X-Export-View)
+ *   GET /dessins/:id      → le fichier enregistré, pièce jointe
+ *   DELETE /dessins/:id   → retrait du catalogue
  * Chaque production est enregistrée avec la révision du modèle et
  * l'empreinte des entrées (`produced_documents`).
  */
-import { Router, type Request, type Response } from "express";
+import { randomUUID } from "node:crypto";
+import { raw, Router, type Request, type Response } from "express";
+import { and, eq } from "drizzle-orm";
+import { drawingExports, projects } from "../db/schema.js";
+import { lockProject } from "../lib/step-rows.js";
 import { buildingCase, designPlanSvg, programmeCsv, resolvedSpacesCsv, surfacesCsv, type LibrarySpace } from "@parcours/domain-model";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -95,4 +104,99 @@ documentsRouter.get("/dossier-exemple", async (req, res) => {
     const html = exampleReportFor(project, dctx);
     return html ? { body: html, type: "text/html; charset=utf-8" } : null;
   });
+});
+
+// --- Dessins techniques et exports de l'Atelier -------------------------------------------------------------------
+
+/** 25 Mo : un PNG 2000 × 1360 ou un DXF du modèle complet tiennent largement. */
+const DRAWING_LIMIT = 25 * 1024 * 1024;
+const DRAWING_KINDS = new Set(["dxf", "svg", "png", "csv", "json"]);
+const EXPORT_ID = /^[0-9a-f-]{36}$/;
+
+function headerText(req: Request, name: string, max: number): string | null {
+  const v = req.get(name);
+  if (!v) return null;
+  const decoded = decodeURIComponent(v).replace(/[\\/\u0000-\u001f]/g, "_").trim();
+  return decoded.length ? decoded.slice(0, max) : null;
+}
+
+documentsRouter.post("/dessins", raw({ type: () => true, limit: DRAWING_LIMIT }), async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const fileName = headerText(req, "x-file-name", 255);
+  const kind = (headerText(req, "x-export-kind", 10) ?? fileName?.split(".").pop() ?? "").toLowerCase();
+  if (!fileName || !DRAWING_KINDS.has(kind)) {
+    res.status(400).json({ error: "invalid_input", details: { kind: "Export attendu : dxf, svg, png, csv ou json (en-têtes X-File-Name / X-Export-Kind)" } });
+    return;
+  }
+  const content = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+  if (content.length === 0) {
+    res.status(400).json({ error: "invalid_input", details: { content: "Fichier vide" } });
+    return;
+  }
+  let view: Record<string, unknown> = {};
+  const rawView = req.get("x-export-view");
+  if (rawView) {
+    try {
+      const parsed: unknown = JSON.parse(decodeURIComponent(rawView));
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) view = parsed as Record<string, unknown>;
+    } catch {
+      /* vue illisible : ignorée, l'export reste enregistré */
+    }
+  }
+  const now = new Date();
+  const dctx = await loadDesignContext(db, project, now.toISOString());
+  const row = {
+    id: randomUUID(),
+    projectId: project.id,
+    kind,
+    fileName,
+    mime: (req.get("x-file-type") ?? "").replace(/[^\w./+;=-]/g, "").slice(0, 120) || "application/octet-stream",
+    content,
+    size: content.length,
+    levelId: headerText(req, "x-export-level", 80),
+    levelName: headerText(req, "x-export-level-name", 120),
+    view,
+    modelRevision: project.modelRevision,
+    nativeHash: dctx.analysis.nativeHash,
+    createdBy: req.user!.id,
+    createdAt: now,
+  };
+  await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
+    await tx.insert(drawingExports).values(row);
+    await tx.update(projects).set({ updatedAt: now }).where(eq(projects.id, project.id));
+  });
+  res.status(201).json({ id: row.id, kind, fileName, size: row.size, levelId: row.levelId, levelName: row.levelName, modelRevision: row.modelRevision, nativeHash: row.nativeHash, createdAt: now.toISOString() });
+});
+
+documentsRouter.get("/dessins/:exportId", async (req, res) => {
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  const id = String((req.params as Record<string, string>)["exportId"] ?? "");
+  const row = EXPORT_ID.test(id) ? (await db.select().from(drawingExports).where(and(eq(drawingExports.id, id), eq(drawingExports.projectId, project.id))).limit(1))[0] : undefined;
+  if (!row) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  res.setHeader("Content-Type", row.mime);
+  res.setHeader("Content-Disposition", `attachment; filename="${row.fileName.replace(/"/g, "")}"`);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.send(row.content);
+});
+
+documentsRouter.delete("/dessins/:exportId", async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const id = String((req.params as Record<string, string>)["exportId"] ?? "");
+  if (!EXPORT_ID.test(id)) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  const deleted = await db.delete(drawingExports).where(and(eq(drawingExports.id, id), eq(drawingExports.projectId, project.id))).returning({ id: drawingExports.id });
+  if (!deleted.length) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  res.status(204).end();
 });

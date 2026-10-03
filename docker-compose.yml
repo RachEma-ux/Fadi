@@ -1,0 +1,70 @@
+# Fadi — hébergement durable sur une machine (VPS, serveur de l'agence) : application + base PostGIS persistante +
+# sauvegardes quotidiennes + relais HTTPS automatique. Voir docs/deploiement.md (mise en route, restauration).
+#
+#   cp .env.deploy.example .env.deploy   # puis renseigner FADI_DOMAIN et POSTGRES_PASSWORD
+#   docker compose --env-file .env.deploy up -d --build
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fadi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant (.env.deploy)}
+      POSTGRES_DB: fadi
+    volumes:
+      - fadi-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fadi -d fadi"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://fadi:${POSTGRES_PASSWORD}@db:5432/fadi
+      WEB_ORIGIN: https://${FADI_DOMAIN:?FADI_DOMAIN manquant (.env.deploy)}
+      NODE_ENV: production
+      TRUST_PROXY: "1"
+      MIGRATE_ON_START: "1"
+    expose:
+      - "3001"
+
+  # HTTPS automatique (Let's Encrypt) et relais vers l'application : le domaine doit pointer sur cette machine (ports 80 / 443).
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    command: caddy reverse-proxy --from ${FADI_DOMAIN} --to app:3001
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - fadi-caddy:/data
+
+  # Sauvegarde quotidienne de la base (format pg_dump « custom », 14 jours conservés) dans un volume dédié ;
+  # copier ce volume hors de la machine (rclone, rsync, S3…) fait partie de la procédure (docs/deploiement.md).
+  backup:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - fadi-backups:/backups
+      - ./scripts/backup.sh:/usr/local/bin/fadi-backup:ro
+    entrypoint: ["sh", "-c", "while true; do fadi-backup db fadi fadi /backups; sleep 86400; done"]
+
+volumes:
+  fadi-db:
+  fadi-backups:
+  fadi-caddy:

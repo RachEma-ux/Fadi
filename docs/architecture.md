@@ -147,7 +147,13 @@ editors can work on the same project without losing each other's work; the "sing
 offered as an optional, expiring reservation rather than imposed at opening (decision recorded in
 `docs/migration/matrix.md`).
 Offline work covers projects already available on the device; features that need a live service say so when
-they are unavailable. Server-side backups, restore drills and an exportable project archive complete this.
+they are unavailable. Server reachability is tracked apart from the browser's network state: the first request
+without an answer (network, 502/503/504) pauses every keyed write as if offline, a `/health` probe retries with
+backoff, and the paused writes resume by themselves when the server answers; only a 401 from `/auth/me` forgets
+the remembered user. Server-side backups (daily `pg_dump`, rotation), a restore procedure verified on every CI
+run (`scripts/verify-restore.sh`) and an exportable project archive complete this; `docs/deploiement.md`
+describes the permanent hosting (the API serves the web build; Docker image and compose file with a persistent
+PostGIS volume and HTTPS).
 
 ## Business expertise as traceable functions
 
@@ -238,6 +244,12 @@ estimate, a demonstrated run. The Playwright scenario replays it on every CI run
 (21 steps), a wall drawn in the Atelier (into the automatic working copy), undone and redone with each state
 persisted (revisions 2, 3, 4), the model re-read from a second browser context at the same key revision, and
 the reading plan (SVG) and the surfaces table produced from the current revision in the Documents module.
+The acceptance block of the scenario then exercises the working copy further: every level × view mode (volume,
+exploded, plan = 2D, section) and every technical drawing rendered without an empty view or a JavaScript
+error, the mezzanine edited in plan and re-read in volume and exploded views, a wall height changed through
+the properties panel, push/pull activated, undo and redo persisted, the copy reopened from a third browser
+context at the same revision, and DXF / SVG / CSV / PNG exports registered in the documents catalogue at that
+revision together with the surfaces table.
 
 Acceptance also measures reliability, not only speed: preservation of identifiers, coordinates, levels,
 object relations and attachments; undo, restore, sync conflicts, and agreement between produced documents.

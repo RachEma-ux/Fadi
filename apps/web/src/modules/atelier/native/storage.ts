@@ -46,6 +46,11 @@ interface V14Bridge {
   projectId(): string;
   render(): void;
   store: Storage;
+  /** Niveau actif du moteur (objet du domaine `levels`), null sans niveau. */
+  activeLevel?(): { id: string; name?: string } | null;
+  /** Vue courante du moteur (`captureView` : mode, tech, portée, angles…). */
+  capture?(): Record<string, unknown>;
+  toast?(message: string): void;
 }
 
 interface AtelierTools {
@@ -61,6 +66,8 @@ declare global {
     AtelierTools?: AtelierTools;
     initAtelierToolbar?: () => void;
     AtelierHost?: { stage: number | null; projectId: string | null };
+    /** Exports de l'Atelier enregistrés au catalogue depuis cette page (trace de diagnostic). */
+    __fadiExports?: { id: string; kind: string; fileName: string; modelRevision: number }[];
     /** Couture du prototype (`P118Resolved`) que les outils de dessin extraits appellent avant de valider une modification. */
     P118Resolved?: { isRead: (p?: unknown) => boolean; ensureDrawingCopy: () => boolean };
   }

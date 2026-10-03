@@ -25,6 +25,7 @@ import { LibraryFold, SiteQualitiesFold } from "../programmation/ProgrammeCase";
 import { ProgrammeTransferFold } from "../programmation/ProgrammeTransferFold";
 import { HarmoniePanel, HarmonieToast, type HarmonieTab } from "./HarmoniePanel";
 import { StepForm } from "./StepForm";
+import { useReachable } from "../../components/SyncIndicator";
 
 // Le moteur de l'Atelier (scripts, markup, feuille de style) n'est chargé qu'à la première ouverture des étapes 10 / 11 ou de l'Atelier.
 const NativeAtelier = lazy(() => import("../atelier/NativeAtelier").then((m) => ({ default: m.NativeAtelier })));
@@ -183,7 +184,8 @@ function StepDetail({
       setHarmonieErrors((e) => ({ ...e, [proposalId]: message }));
     },
   });
-  // Envois de cette étape en pause (hors-ligne) : visibles, jamais perdus en silence.
+  // Envois de cette étape en pause (hors-ligne ou serveur injoignable) : visibles, jamais perdus en silence.
+  const reachable = useReachable();
   const paused = useMutationState({
     filters: {
       status: "pending",
@@ -301,7 +303,7 @@ function StepDetail({
 
       {paused.length > 0 && (
         <p className="offline-banner offline-banner-inline" role="status">
-          {paused.length} envoi(s) de cette étape en attente du réseau : enregistré(s) sur cet appareil, transmis au retour de la connexion (même après rechargement).
+          {paused.length} envoi(s) de cette étape en attente {reachable ? "du réseau" : "du serveur (injoignable pour l’instant)"} : enregistré(s) sur cet appareil, transmis dès que le serveur répond (même après rechargement).
         </p>
       )}
       {/* Référence de l'exemple : `bookBlock` (réponses en lecture) à la place du formulaire ; les étapes outillées (01, 10, 11) gardent leur outil. */}

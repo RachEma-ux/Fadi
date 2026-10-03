@@ -16,6 +16,7 @@ import { COMPLETE_EXAMPLE_ID, IMPORT_PROGRESS_TEXT, useImportExample } from "../
 import { ImportProjectButton } from "../modules/projets-sources/ImportProjectButton";
 import { Icon, type IconName } from "../components/Icon";
 import { shownName } from "./AppShell";
+import { SyncIndicator } from "../components/SyncIndicator";
 
 function relativeDate(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -220,6 +221,19 @@ export function AccueilPage() {
     toPursue.push({ key: "atelier", label: "Revoir le bâtiment conçu", detail: "Bilan Harmonie de l'Atelier", icon: "atelier", href: stepLink(18) });
   }
   const preview = previewQuery.data;
+  // Validation technique (bilan du bâtiment conçu), à part de l'avancement : réserves calculées, écarts d'audit, revue à actualiser.
+  const validation = preview?.validation ?? null;
+  const openReservations = validation ? validation.issues + validation.auditGaps : 0;
+  const validationState = !validation ? "none" : openReservations > 0 ? "open" : validation.reviewStale ? "stale" : "ok";
+  const validationLabel = !validation
+    ? ""
+    : openReservations > 0
+      ? `${openReservations} réserve${openReservations > 1 ? "s" : ""} technique${openReservations > 1 ? "s" : ""} ouverte${openReservations > 1 ? "s" : ""}`
+      : validation.reviewStale
+        ? "Revue technique à actualiser"
+        : validation.reviewedAt
+          ? "Validation technique : aucune réserve calculée"
+          : "Validation technique : revue non établie";
   const stage = nextStep ? `${nextStep.phase} • Étape ${pad2(nextStep.number)} — ${nextStep.title}` : steps.length ? `Parcours terminé • ${doneCount} / ${steps.length} étapes` : "";
 
   return (
@@ -308,9 +322,18 @@ export function AccueilPage() {
                 <h2 id="resume-heading">
                   {mostRecent.code} — {mostRecent.name}
                 </h2>
-                <span className={`badge badge-${doneCount === steps.length && steps.length ? "done" : startedCount > 0 ? "active" : "new"}`}>
-                  <i aria-hidden="true" />
-                  {steps.length && doneCount === steps.length ? "Parcours terminé" : startedCount > 0 ? "Étude en cours" : "Nouveau projet"}
+                <span className="resume-badges">
+                  <span className={`badge badge-${doneCount === steps.length && steps.length ? "done" : startedCount > 0 ? "active" : "new"}`} title="Avancement du Parcours : état des 21 étapes">
+                    <i aria-hidden="true" />
+                    {steps.length && doneCount === steps.length ? "Parcours terminé" : startedCount > 0 ? "Étude en cours" : "Nouveau projet"}
+                  </span>
+                  {/* Validation technique, à part de l'avancement : les réserves calculées du bilan du bâtiment conçu (jamais confondues avec « terminé »). */}
+                  {validation && (
+                    <Link to={stepLink(18)} className={`badge badge-validation badge-validation-${validationState}`} title="Validation technique : réserves du bilan Harmonie du bâtiment conçu (étape 18)">
+                      <i aria-hidden="true" />
+                      {validationLabel}
+                    </Link>
+                  )}
                 </span>
               </div>
 
@@ -329,15 +352,15 @@ export function AccueilPage() {
                     </p>
                   </div>
                 )}
-                <figcaption>
-                  {preview?.svg ? `Aperçu conceptuel · ${preview.levels} niveau${preview.levels > 1 ? "x" : ""} · ${preview.rooms} zones · modèle ${preview.nativeHash}` : "Aperçu conceptuel"}
-                </figcaption>
+                <figcaption>{preview?.svg ? `Aperçu conceptuel · ${preview.levels} niveau${preview.levels > 1 ? "x" : ""} · ${preview.rooms} zones` : "Aperçu conceptuel"}</figcaption>
               </figure>
 
               <div className="resume-card-foot">
                 <p className="resume-card-meta">
                   {stage ? <span className="resume-stage">{stage}</span> : null}
-                  <span className="resume-updated">Modifié {relativeDate(mostRecent.updatedAt)}</span>
+                  <span className="resume-updated">
+                    Modifié {relativeDate(mostRecent.updatedAt)} · <SyncIndicator projectId={mostRecent.id} />
+                  </span>
                 </p>
                 <div className="resume-card-actions">
                   <Link to={nextStep ? stepLink(nextStep.number) : `/projets/${mostRecent.id}`} className="button-primary">

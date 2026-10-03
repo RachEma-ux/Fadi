@@ -649,6 +649,39 @@ h3 {
 .badge-new i {
   background: var(--gold);
 }
+.resume-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+/* Validation technique : réserves ouvertes (ambre), revue à actualiser (gris), aucune réserve (vert) — jamais confondue avec l'avancement. */
+.badge-validation {
+  text-decoration: none;
+}
+.badge-validation-open {
+  background: #fbf1dc;
+  color: #7a4e12;
+}
+.badge-validation-open i {
+  background: #c98b2a;
+}
+.badge-validation-stale,
+.badge-validation-none {
+  background: #eef0ee;
+  color: #4f6560;
+}
+.badge-validation-stale i,
+.badge-validation-none i {
+  background: #8a9a93;
+}
+.badge-validation:hover {
+  outline: 1px solid currentColor;
+}
+.resume-updated .sync-indicator {
+  display: inline-flex;
+  font-size: 12.5px;
+}
 .resume-preview {
   position: relative;
   margin: 0;
@@ -3657,10 +3690,12 @@ button.h7-chip.h7-goto:hover {
   background: #c99a3a;
 }
 .sync-indicator-offline i,
+.sync-indicator-unreachable i,
 .sync-indicator-conflict i {
   background: #a0351f;
 }
 .sync-indicator-offline,
+.sync-indicator-unreachable,
 .sync-indicator-conflict {
   color: #a0351f;
 }

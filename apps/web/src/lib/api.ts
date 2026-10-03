@@ -23,6 +23,8 @@ import type {
   TraceableCheck,
 } from "@parcours/domain-model";
 
+import { GATEWAY_STATUSES, isNetworkError, reachability } from "./reachability";
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -37,11 +39,24 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    ...init,
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...init?.headers },
-  });
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      ...init,
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...init?.headers },
+    });
+  } catch (err) {
+    // Pas de réponse du tout : le serveur est déclaré injoignable (les écritures passent en attente, une sonde relit /health).
+    if (isNetworkError(err)) reachability.markUnreachable();
+    throw err;
+  }
+  if (GATEWAY_STATUSES.has(res.status)) {
+    // Un relais répond à la place du serveur (tunnel fermé, API arrêtée) : même traitement qu'une absence de réponse.
+    reachability.markUnreachable();
+    throw new TypeError(`Serveur injoignable (${res.status})`);
+  }
+  reachability.markReachable();
   if (res.status === 204) {
     return undefined as T;
   }
@@ -72,6 +87,8 @@ export interface ConceptPreview {
   walls: number;
   nativeHash: string;
   generatedAt: string;
+  /** Validation technique, distincte de l'avancement du Parcours (bilan du bâtiment conçu). */
+  validation: { issues: number; priorityIssues: number; auditGaps: number; auditToDocument: number; reviewedAt: string | null; reviewStale: boolean; modelRevision: number };
 }
 
 export interface Project {
@@ -515,7 +532,7 @@ export interface AnalysesView {
 /** Module Documents : un document productible, sa dernière production et son actualité. */
 export interface DocumentDescriptor {
   kind: string;
-  group: "harmonie" | "bilan" | "tableaux" | "exemple" | "archive";
+  group: "harmonie" | "bilan" | "dessins" | "tableaux" | "exemple" | "archive";
   label: string;
   fileName: string;
   href: string;
@@ -523,6 +540,18 @@ export interface DocumentDescriptor {
   current: { modelRevision: number; inputHash: string };
   produced: { producedAt: string; modelRevision: number; inputHash: string; count: number } | null;
   freshness: "a-jour" | "perime" | null;
+}
+
+export interface DrawingExportRecord {
+  id: string;
+  kind: string;
+  fileName: string;
+  size: number;
+  levelId: string | null;
+  levelName: string | null;
+  modelRevision: number;
+  nativeHash: string;
+  createdAt: string;
 }
 
 export interface DocumentsView {
@@ -696,6 +725,30 @@ export const api = {
     }
     return (body as { file: StepFile }).file;
   },
+  /** Dessin technique / export de l'Atelier enregistré au catalogue des documents (niveau, vue, révision du modèle stampés par le serveur). */
+  registerDrawingExport: async (projectId: string, input: { blob: Blob; fileName: string; kind: string; levelId: string | null; levelName: string | null; view: Record<string, unknown> }): Promise<DrawingExportRecord> => {
+    const res = await fetch(`/projects/${projectId}/documents/dessins`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "X-File-Name": encodeURIComponent(input.fileName),
+        "X-File-Type": input.blob.type || "application/octet-stream",
+        "X-Export-Kind": input.kind,
+        ...(input.levelId ? { "X-Export-Level": encodeURIComponent(input.levelId) } : {}),
+        ...(input.levelName ? { "X-Export-Level-Name": encodeURIComponent(input.levelName) } : {}),
+        "X-Export-View": encodeURIComponent(JSON.stringify(input.view)),
+      },
+      body: input.blob,
+    });
+    const body: unknown = await res.json().catch(() => null);
+    if (!res.ok) {
+      const code = (body && typeof body === "object" && "error" in body ? String((body as { error: unknown }).error) : null) ?? `http_${res.status}`;
+      throw new ApiError(res.status, code, null, body);
+    }
+    return body as DrawingExportRecord;
+  },
+  deleteDrawingExport: (projectId: string, exportId: string) => request<void>(`/projects/${projectId}/documents/dessins/${encodeURIComponent(exportId)}`, { method: "DELETE" }),
   stepFileUrl: (projectId: string, stepNumber: number, fileId: string) => `/projects/${projectId}/steps/${stepNumber}/files/${encodeURIComponent(fileId)}`,
   deleteStepFile: (projectId: string, stepNumber: number, fileId: string) => request<void>(`/projects/${projectId}/steps/${stepNumber}/files/${encodeURIComponent(fileId)}`, { method: "DELETE" }),
   /** Bibliothèque des bâtiments et cas de programme appliqué. */

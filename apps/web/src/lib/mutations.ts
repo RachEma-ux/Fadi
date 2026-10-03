@@ -14,6 +14,7 @@
  */
 import type { QueryClient } from "@tanstack/react-query";
 import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type ParcoursStepStatus, type ProjectComment } from "./api";
+import { isNetworkError } from "./reachability";
 
 export const MUTATION_KEYS = {
   stepPatch: ["step-patch"] as const,
@@ -151,8 +152,16 @@ export function adoptStep(queryClient: QueryClient, projectId: string, updated: 
   void queryClient.invalidateQueries({ queryKey: ["steps", projectId] });
 }
 
+/**
+ * Un échec sans réponse du serveur n'est pas un refus : la mutation réessaie, et comme le client HTTP vient de
+ * déclarer le serveur injoignable (`reachability`), TanStack la met en pause au lieu de l'abandonner — elle
+ * repart dès que la sonde `/health` répond. Un refus applicatif (4xx, 409) n'est jamais réessayé.
+ */
+const RETRY_NETWORK = { retry: (count: number, err: unknown) => isNetworkError(err) && count < 5, retryDelay: (count: number) => Math.min(8000, 1000 * 2 ** count) };
+
 export function registerMutationDefaults(queryClient: QueryClient) {
   queryClient.setMutationDefaults(MUTATION_KEYS.stepPatch, {
+    ...RETRY_NETWORK,
     mutationFn: (v: StepPatchVars) => api.patchStep(v.projectId, v.stepNumber, v.body),
     onSuccess: (updated: ParcoursStep, v: StepPatchVars) => adoptStep(queryClient, v.projectId, updated),
     onError: (err: unknown, v: StepPatchVars) => {
@@ -160,6 +169,7 @@ export function registerMutationDefaults(queryClient: QueryClient) {
     },
   });
   queryClient.setMutationDefaults(MUTATION_KEYS.decide, {
+    ...RETRY_NETWORK,
     mutationFn: (v: DecideVars) => api.decideHarmonie(v.projectId, v.stepNumber, v.proposalId, v.input),
     onSuccess: (updated: ParcoursStep, v: DecideVars) => adoptStep(queryClient, v.projectId, updated),
     onError: (err: unknown, v: DecideVars) => {
@@ -168,6 +178,7 @@ export function registerMutationDefaults(queryClient: QueryClient) {
     },
   });
   queryClient.setMutationDefaults(MUTATION_KEYS.comment, {
+    ...RETRY_NETWORK,
     mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null),
     onSuccess: (_c: ProjectComment, v: CommentVars) => {
       void queryClient.invalidateQueries({ queryKey: ["collaboration", v.projectId] });

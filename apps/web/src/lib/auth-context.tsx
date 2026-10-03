@@ -38,6 +38,11 @@ function writeLastUser(u: CurrentUser | null) {
   }
 }
 
+/** Une erreur de `/auth/me` ne vaut « plus de session » que si le serveur l'a dit (401) ; une panne ou une limitation n'efface rien. */
+export function forgetsSession(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 401;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<CurrentUser | null>(null);
@@ -65,11 +70,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         writeLastUser(u);
       })
       .catch((err: unknown) => {
-        // Pas de session valide : état normal pour un visiteur non connecté, pas une erreur à afficher.
-        // Réseau indisponible (pas de réponse du serveur) : on garde le dernier utilisateur connu pour relire
-        // hors-ligne ; toute requête au serveur re-vérifiera la session.
-        if (!cancelled && !(err instanceof ApiError)) setUser(readLastUser());
-        if (!cancelled && err instanceof ApiError) writeLastUser(null);
+        if (cancelled) return;
+        // Seule une réponse 401 dit « pas de session » (expirée, déconnectée) : état normal pour un visiteur,
+        // l'utilisateur mémorisé est oublié. Tout le reste — pas de réponse (réseau), serveur en erreur (5xx),
+        // limitation (429) — est « serveur indisponible pour l'instant » : on garde le dernier utilisateur
+        // connu pour relire ce qui a déjà été lu et conserver le travail en attente ; chaque requête au
+        // serveur re-vérifiera la session, et un 401 réel ramènera à la connexion.
+        if (forgetsSession(err)) {
+          writeLastUser(null);
+          return;
+        }
+        setUser(readLastUser());
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

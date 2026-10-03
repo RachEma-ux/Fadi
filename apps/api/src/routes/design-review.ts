@@ -54,7 +54,22 @@ designReviewRouter.get("/apercu", async (req, res) => {
   const project = await projectOr404(req, res, "read");
   if (!project) return;
   const ctx = await loadDesignContext(db, project, new Date().toISOString());
-  res.json({ ...conceptAxonometricSvg(ctx.input, ctx.analysis), generatedAt: ctx.analysis.generatedAt });
+  const r = ctx.analysis;
+  const review = ctx.harmony.designReviewV62 ?? null;
+  res.json({
+    ...conceptAxonometricSvg(ctx.input, r),
+    generatedAt: r.generatedAt,
+    /** Validation technique, distincte de l'avancement du Parcours : réserves calculées du bilan, écarts d'audit, revue archivée. */
+    validation: {
+      issues: r.issues.length,
+      priorityIssues: r.issues.filter((x) => x.priority === "prioritaire").length,
+      auditGaps: ctx.audit.filter((a) => a.status === "Écart").length,
+      auditToDocument: ctx.audit.filter((a) => a.status === "À documenter").length,
+      reviewedAt: review?.at ?? null,
+      reviewStale: review ? r.stale : false,
+      modelRevision: project.modelRevision,
+    },
+  });
 });
 
 /**

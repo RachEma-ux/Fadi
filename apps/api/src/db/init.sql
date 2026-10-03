@@ -150,6 +150,24 @@ CREATE TABLE IF NOT EXISTS architectural_objects (
 );
 CREATE INDEX IF NOT EXISTS architectural_objects_level_id_idx ON architectural_objects (level_id);
 
+CREATE TABLE IF NOT EXISTS drawing_exports (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  kind text NOT NULL,
+  file_name text NOT NULL,
+  mime text NOT NULL,
+  content bytea NOT NULL,
+  size integer NOT NULL,
+  level_id text,
+  level_name text,
+  view jsonb NOT NULL DEFAULT '{}'::jsonb,
+  model_revision integer NOT NULL,
+  native_hash text NOT NULL,
+  created_by text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS drawing_exports_project_idx ON drawing_exports (project_id);
+
 CREATE TABLE IF NOT EXISTS produced_documents (
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
   kind text NOT NULL,

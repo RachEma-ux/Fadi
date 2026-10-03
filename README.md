@@ -61,18 +61,23 @@ npm run dev:api      # terminal 1 — API on :3001
 npm run dev          # terminal 2 — web app on :5173, proxies /auth, /projects, /examples, /library, /notifications to the API
 ```
 
-End-to-end scenario (Playwright, Chromium), against the built API and `vite preview` on :4173:
+End-to-end scenario (Playwright, Chromium), against the built API serving the built web app itself (production mode —
+`WEB_DIST`; `vite preview` is no longer needed):
 
 ```sh
-node apps/api/dist/server.js &                       # DATABASE_URL, WEB_ORIGIN=http://localhost:4173, PORT=3001
-npm run preview --workspace=@fadi/web -- --port 4173 &
-node apps/web/e2e/parcours-scenario.mjs              # ~300 checks incl. axe-core; writes docs/migration/captures/webapp/
+WEB_DIST=apps/web/dist node apps/api/dist/server.js &   # DATABASE_URL, WEB_ORIGIN=http://localhost:3001, PORT=3001
+BASE_URL=http://localhost:3001 node apps/web/e2e/parcours-scenario.mjs   # ~330 checks incl. axe-core and the P.118 Atelier acceptance; writes docs/migration/captures/webapp/
 ```
+
+Permanent hosting (stable URL, persistent PostGIS database, daily backups, verified restore procedure, HTTPS):
+`docs/deploiement.md` — `Dockerfile`, `docker-compose.yml`, `scripts/backup.sh`, `scripts/restore.sh`,
+`scripts/verify-restore.sh` (also run by CI on the scenario's database). What the repository cannot contain is a
+machine or hosting account and a domain name.
 
 Temporary public instance (`.github/workflows/builder-deploy.yml`, "Builder Deploy"): launched by hand from
 GitHub → Actions → Builder Deploy → *Run workflow* (pick the branch and the duration, 5–30 min). The run builds
 **the branch as it is at launch time**, migrates a fresh PostGIS service (data is truncated at each run), starts
-the API and `vite preview`, and publishes a Cloudflare quick-tunnel URL (`*.trycloudflare.com`) as a job
+the API (which serves the web build), and publishes a Cloudflare quick-tunnel URL (`*.trycloudflare.com`) as a job
 annotation ("Fadi en ligne") and in the logs, once the new hostname resolves on public resolvers and the app answers
 through the tunnel (up to 150 s; the chosen duration starts then). A phone that opens the URL within the first minute
 may still see "DNS_PROBE_FINISHED_NXDOMAIN" (negative DNS cache): wait a minute and reload, or switch between Wi-Fi and
@@ -102,8 +107,9 @@ regenerates every extracted dataset from it.
 - `packages/core-geometry` — the supplied geometry extraction (preserved, tested) plus the site zoning geometry.
 - `docs` — `architecture.md` (the plan and where the repository stands), `migration/` (matrix, step sheets,
   reference inventory, captures).
-- `.github/workflows/ci.yml` — typecheck, migrations, 184 tests across the workspaces, production build, and
-  the full Playwright scenario against a PostGIS service (captures published as an artifact).
+- `.github/workflows/ci.yml` — typecheck, migrations, ~200 tests across the workspaces, production build, the full
+  Playwright scenario against a PostGIS service in production serving mode (captures published as an artifact), the
+  backup → restore verification on the scenario's database, and the Docker image built and probed.
 
 Checks that cannot run here are stated rather than assumed: the MapTiler service is simulated in the scenario
 (no real call from CI), notifications exist in the application only (no mail service), and regulatory checks beyond the

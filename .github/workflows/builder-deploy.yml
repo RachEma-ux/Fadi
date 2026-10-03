@@ -47,7 +47,9 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://fadi:fadi_deploy_password@localhost:5432/fadi
-      WEB_ORIGIN: http://localhost:4173
+      # Mode de production : l'API sert le build de l'application (WEB_DIST) — un seul port à tunneliser, pas de vite preview.
+      WEB_ORIGIN: http://localhost:3001
+      WEB_DIST: apps/web/dist
       PORT: "3001"
       # See apps/api/.env.test.example: app.test.ts's authorization scenarios
       # outrun the production auth rate limit within a single test run.
@@ -108,35 +110,11 @@ jobs:
           done
           curl -fsS http://localhost:3001/health || { echo "❌ API never became healthy"; cat api.log; exit 1; }
 
-      - name: Start the web app (production build)
+      - name: Check the application is served by the API
         run: |
-          echo "🚀 Starting apps/web (vite preview) on :4173..."
-          # Must run with apps/web as cwd: vite preview resolves its config
-          # (and the preview.proxy it needs for /auth, /projects, /examples,
-          # /library, /notifications and /health — the same list as the dev proxy)
-          # relative to where it's invoked from, not from --prefix — `npx
-          # --prefix apps/web vite preview` silently serves 404s for
-          # everything because it never finds apps/web/vite.config.ts.
-          (cd apps/web && npx vite preview --port 4173 --host 0.0.0.0) > web.log 2>&1 &
-          echo $! > web.pid
-
-          for attempt in $(seq 1 18); do
-            if ! kill -0 "$(cat web.pid)" 2>/dev/null; then
-              echo "❌ Web process exited before becoming healthy"
-              cat web.log
-              exit 1
-            fi
-            # /health is proxied through to the API (see apps/web/vite.config.ts) —
-            # a 200 here means both the static app AND the API behind it are reachable
-            # on this one port, which is the port we are about to tunnel.
-            if curl -fsS http://localhost:4173/health > /dev/null 2>&1; then
-              echo "✅ Web app healthy on :4173 (API reachable through its proxy)"
-              break
-            fi
-            echo "⌛ Waiting for the web app (attempt ${attempt}/18)..."
-            sleep 3
-          done
-          curl -fsS http://localhost:4173/health || { echo "❌ Web app never became healthy"; cat web.log; exit 1; }
+          # /accueil est une route du client : l'API renvoie index.html (repli SPA) ; /health répond en JSON.
+          curl -fsS -H "Accept: text/html" http://localhost:3001/accueil | grep -q '<div id="root"' || { echo "❌ L'API ne sert pas l'application (WEB_DIST)"; cat api.log; exit 1; }
+          echo "✅ Application servie par l'API sur :3001"
 
       - name: Install cloudflared
         run: |
@@ -156,7 +134,7 @@ jobs:
           for outer in $(seq 1 3); do
             echo "🌐 Starting Cloudflare tunnel (attempt ${outer}/3)..."
             : > tunnel.log
-            ./cloudflared tunnel --url http://localhost:4173 >> tunnel.log 2>&1 &
+            ./cloudflared tunnel --url http://localhost:3001 >> tunnel.log 2>&1 &
             TUNNEL_PID=$!
 
             for attempt in $(seq 1 12); do

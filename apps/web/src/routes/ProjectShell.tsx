@@ -30,6 +30,8 @@ export function ProjectShell() {
   const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), refetchInterval: 60_000 });
   const [lockMessage, setLockMessage] = useState<string | null>(null);
   const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
+  // Empreinte du modèle dessiné (détail technique, montré ici plutôt que sur l'accueil) : même lecture que l'aperçu conceptuel.
+  const previewQuery = useQuery({ queryKey: ["concept-preview", projectId, projectQuery.data?.updatedAt], queryFn: () => api.getConceptPreview(projectId), enabled: !!projectQuery.data, staleTime: 5 * 60_000 });
   const online = useOnline();
   const access = useProjectAccess(projectId);
   // Un message porté par la navigation (copie de travail créée, projet importé…) : le Parcours affiche le sien, les autres modules celui-ci.
@@ -73,7 +75,10 @@ export function ProjectShell() {
           {project.code} — {project.name}
         </h1>
         <span className="project-header-meta">
-          <span>Révision du modèle : {project.modelRevision}</span>
+          <span title={previewQuery.data?.nativeHash ? `Empreinte du modèle dessiné (révision ${project.modelRevision})` : undefined}>
+            Révision du modèle : {project.modelRevision}
+            {previewQuery.data?.nativeHash ? ` · empreinte ${previewQuery.data.nativeHash}` : ""}
+          </span>
           <span
             className={`project-role project-role-${access.role}`}
             title={project.role === "proprietaire" || !project.role ? "Votre projet" : `Partagé par ${project.ownerEmail ?? "son propriétaire"}`}

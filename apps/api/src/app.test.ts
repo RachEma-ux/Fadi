@@ -42,6 +42,49 @@ async function registerAndLogin(email: string) {
   return client;
 }
 
+describe("hébergement : l'API sert l'application construite (WEB_DIST)", () => {
+  it("serves index.html for client routes (no-cache), hashed assets as immutable, keeps API prefixes JSON, and 404s unknown files", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const dist = mkdtempSync(join(tmpdir(), "fadi-web-"));
+    mkdirSync(join(dist, "assets"));
+    writeFileSync(join(dist, "index.html"), "<!doctype html><title>Fadi</title><div id=root></div>");
+    writeFileSync(join(dist, "assets", "index-abc123.js"), "console.log(1)");
+    writeFileSync(join(dist, "sw.js"), "self.addEventListener('install', () => {})");
+    const previous = process.env["WEB_DIST"];
+    process.env["WEB_DIST"] = dist;
+    try {
+      const served = createApp();
+      const home = await request(served).get("/accueil").set("Accept", "text/html");
+      expect(home.status).toBe(200);
+      expect(home.headers["content-type"]).toMatch(/text\/html/);
+      expect(home.headers["cache-control"]).toBe("no-cache");
+      expect(home.text).toContain('<div id=root>');
+      const deep = await request(served).get("/projets/proj_x?module=parcours&etape=2").set("Accept", "text/html");
+      expect(deep.status).toBe(200);
+      expect(deep.text).toContain("<title>Fadi</title>");
+      const asset = await request(served).get("/assets/index-abc123.js");
+      expect(asset.status).toBe(200);
+      expect(asset.headers["cache-control"]).toBe("public, max-age=31536000, immutable");
+      const sw = await request(served).get("/sw.js");
+      expect(sw.status).toBe(200);
+      expect(sw.headers["cache-control"]).toBe("no-cache");
+      const api = await request(served).get("/projects").set("Accept", "text/html");
+      expect(api.status).toBe(401);
+      expect(api.headers["content-type"]).toMatch(/application\/json/);
+      expect((await request(served).get("/health")).body.status).toBe("ok");
+      const missing = await request(served).get("/missing.png").set("Accept", "image/png");
+      expect(missing.status).toBe(404);
+      // Un fichier manquant demandé avec Accept */* (balise script) reste un 404, jamais index.html.
+      expect((await request(served).get("/atelier-native/absent.js").set("Accept", "*/*")).status).toBe(404);
+    } finally {
+      if (previous === undefined) delete process.env["WEB_DIST"];
+      else process.env["WEB_DIST"] = previous;
+    }
+  });
+});
+
 describe("auth", () => {
   it("rejects a password shorter than 8 characters", async () => {
     const res = await agent().post("/auth/register").send({ email: "a@example.com", password: "short" });
@@ -1269,6 +1312,11 @@ describe("Bilan Harmonie du bâtiment conçu (flow-v62) et références directio
     expect(preview.body).toMatchObject({ levels: 6, rooms: 74, nativeHash: v.analysis.nativeHash, planLevel: "RDC" });
     expect(String(preview.body.plan)).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 320 240"/);
     expect(preview.body.walls).toBeGreaterThan(0);
+    // Validation technique distincte de l'avancement : les 7 réserves calculées de l'exemple, l'audit, la revue archivée.
+    expect(preview.body.validation).toMatchObject({ issues: 7, modelRevision: 1 });
+    expect(preview.body.validation.priorityIssues).toBeGreaterThanOrEqual(1);
+    expect(typeof preview.body.validation.auditGaps).toBe("number");
+    expect(preview.body.validation.reviewedAt === null || typeof preview.body.validation.reviewedAt === "string").toBe(true);
     expect(String(preview.body.svg)).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 960 \d+"/);
     expect((String(preview.body.svg).match(/<g data-level="/g) ?? []).length).toBe(6);
     const blank = await client.post("/projects").send({ code: "P.VIDE", name: "Sans modèle" });
@@ -1542,6 +1590,60 @@ describe("Analyses métier — quantités, contrôles traçables, scénarios", (
     // Jamais pour un autre utilisateur.
     const other = await registerAndLogin("analyses-other@example.com");
     expect((await other.get(`/projects/${pid}/analyses`)).status).toBe(404);
+  });
+});
+
+describe("Dessins techniques et exports de l'Atelier au catalogue des documents", () => {
+  it("registers a DXF export with its level, view and model revision, lists it as up to date, flags it stale after a model write, serves and deletes it, and enforces access", async () => {
+    const client = await registerAndLogin("dessins@example.com");
+    const pid = (await client.post("/examples/p118-exemple-complet/import")).body.id as string;
+    const dxf = "0\nSECTION\n2\nENTITIES\n0\nLINE\n8\nMurs\n10\n0\n20\n0\n30\n0\n11\n4\n21\n0\n31\n0\n0\nENDSEC\n0\nEOF\n";
+    const view = { schema: 14, mode: "volume", tech: "plan", levelScope: "level", activeLevel: "rdc" };
+    const created = await client
+      .post(`/projects/${pid}/documents/dessins`)
+      .set("Content-Type", "application/octet-stream")
+      .set("X-File-Name", encodeURIComponent("Atelier_P.118.dxf"))
+      .set("X-File-Type", "application/dxf")
+      .set("X-Export-Kind", "dxf")
+      .set("X-Export-Level", "rdc")
+      .set("X-Export-Level-Name", encodeURIComponent("RDC"))
+      .set("X-Export-View", encodeURIComponent(JSON.stringify(view)))
+      .send(Buffer.from(dxf));
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({ kind: "dxf", fileName: "Atelier_P.118.dxf", levelId: "rdc", levelName: "RDC", modelRevision: 1, size: Buffer.byteLength(dxf) });
+    expect(created.body.nativeHash).toMatch(/^[0-9a-f]{8}$/);
+    const id = created.body.id as string;
+    // Au catalogue, groupe « dessins », à jour à la révision 1, avec niveau et vue.
+    let docs = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; group: string; label: string; href: string; freshness: string | null; stepNumber: number | null; produced: { modelRevision: number } }[];
+    let entry = docs.find((d) => d.kind === `dessin:${id}`)!;
+    expect(entry).toMatchObject({ group: "dessins", label: "Dessin technique DXF · RDC · dessin plan · révision 1", href: `/projects/${pid}/documents/dessins/${id}`, freshness: "a-jour", stepNumber: 10, produced: { modelRevision: 1 } });
+    expect(docs).toHaveLength(35);
+    // Le fichier est servi tel quel, en pièce jointe.
+    const file = await client.get(`/projects/${pid}/documents/dessins/${id}`);
+    expect(file.status).toBe(200);
+    expect(file.headers["content-type"]).toMatch(/application\/dxf/);
+    expect(file.headers["content-disposition"]).toContain("Atelier_P.118.dxf");
+    expect(file.text ?? file.body.toString()).toBe(dxf);
+    // Un mur ajouté au modèle (révision 2) : l'export de la révision 1 est périmé, le fichier reste téléchargeable.
+    const fdKey = "design.v13.project.p118-demo-v819.floorDesign";
+    const store = await client.get(`/projects/${pid}/atelier/store`);
+    const fd = store.body.entries[fdKey];
+    fd.levels.rdc.walls.push({ id: "TEST-rdc-W-EXPORT", kind: "wall", a: [0, 0], b: [4, 0], thickness: 0.2, height: 3.2, layer: "Murs", type: "mur" });
+    expect((await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: fd, expectedRevision: 1 })).status).toBe(200);
+    docs = (await client.get(`/projects/${pid}/documents`)).body.documents;
+    entry = docs.find((d) => d.kind === `dessin:${id}`)!;
+    expect(entry.freshness).toBe("perime");
+    expect((await client.get(`/projects/${pid}/documents/dessins/${id}`)).status).toBe(200);
+    // Refus : type inconnu, fichier vide, lecteur / étranger.
+    expect((await client.post(`/projects/${pid}/documents/dessins`).set("Content-Type", "application/octet-stream").set("X-File-Name", "x.exe").send(Buffer.from("x"))).status).toBe(400);
+    expect((await client.post(`/projects/${pid}/documents/dessins`).set("Content-Type", "application/octet-stream").set("X-File-Name", "x.svg").send(Buffer.alloc(0))).status).toBe(400);
+    const stranger = await registerAndLogin("stranger-dessins@example.com");
+    expect((await stranger.get(`/projects/${pid}/documents/dessins/${id}`)).status).toBe(404);
+    expect((await stranger.delete(`/projects/${pid}/documents/dessins/${id}`)).status).toBe(404);
+    // Retrait du catalogue.
+    expect((await client.delete(`/projects/${pid}/documents/dessins/${id}`)).status).toBe(204);
+    expect((await client.get(`/projects/${pid}/documents/dessins/${id}`)).status).toBe(404);
+    expect(((await client.get(`/projects/${pid}/documents`)).body.documents as unknown[]).length).toBe(34);
   });
 });
 

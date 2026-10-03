@@ -239,6 +239,30 @@ export const programmeCases = pgTable("programme_cases", {
  * révision du projet utilisée et état d'actualisation »). Les fichiers
  * eux-mêmes sont régénérés à la demande, jamais stockés ici.
  */
+/**
+ * Dessins techniques et exports de l'Atelier (DXF, SVG, PNG, CSV, JSON) : chaque fichier produit par le moteur est
+ * enregistré avec son projet, son niveau, sa vue et la révision du modèle dont il vient — le catalogue des documents
+ * dit ensuite s'il est à jour ou périmé (révision / empreinte du modèle courantes).
+ */
+export const drawingExports = pgTable("drawing_exports", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  /** dxf | svg | png | csv | json. */
+  kind: text("kind").notNull(),
+  fileName: text("file_name").notNull(),
+  mime: text("mime").notNull(),
+  content: bytea("content").notNull(),
+  size: integer("size").notNull(),
+  levelId: text("level_id"),
+  levelName: text("level_name"),
+  /** Vue du moteur au moment de l'export (`captureView` : mode, tech, portée, angles…). */
+  view: jsonb("view").$type<Record<string, unknown>>().notNull().default({}),
+  modelRevision: integer("model_revision").notNull(),
+  nativeHash: text("native_hash").notNull(),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("drawing_exports_project_idx").on(t.projectId)]);
+
 export const producedDocuments = pgTable("produced_documents", {
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   /** Identifiant stable du document (`harmonie-etape-02`, `bilan-batiment`, `plan-lecture-rdc`, `archive-projet`…). */

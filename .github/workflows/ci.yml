@@ -43,7 +43,7 @@ jobs:
   # Scénario Playwright de bout en bout (apps/web/e2e/parcours-scenario.mjs) :
   # le parcours complet sur P.118 — import, 21 étapes, Atelier, parcelle,
   # Harmonie, bibliothèque, liaisons, documents, collaboration, hors-ligne,
-  # partage — contre l'API construite et le build servi par `vite preview`.
+  # partage — contre l'API construite, qui sert elle-même le build de l'application (mode de production).
   # Les captures (docs/migration/captures/webapp/) sont publiées en artefact.
   e2e:
     runs-on: ubuntu-latest
@@ -64,11 +64,13 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_e2e
-      WEB_ORIGIN: http://localhost:4173
+      # Mode de production : l'API sert le build de l'application (WEB_DIST) — un seul port, même origine, pas de vite preview.
+      WEB_ORIGIN: http://localhost:3001
+      WEB_DIST: apps/web/dist
       PORT: "3001"
       AUTH_RATE_LIMIT: "500"
       API_RATE_LIMIT: "5000"
-      BASE_URL: http://localhost:4173
+      BASE_URL: http://localhost:3001
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -78,19 +80,23 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run db:migrate
       - run: npm run build
-      - name: Démarrer l'API et le build servi
+      - name: Démarrer l'API qui sert aussi l'application (WEB_DIST)
         run: |
           nohup node apps/api/dist/server.js > api.log 2>&1 &
-          nohup npm run preview --workspace=@fadi/web -- --port 4173 > web.log 2>&1 &
           for i in $(seq 1 60); do
-            if curl -sf http://localhost:3001/health > /dev/null && curl -sf http://localhost:4173/ > /dev/null; then echo "prêts"; break; fi
+            if curl -sf http://localhost:3001/health > /dev/null && curl -sf -H "Accept: text/html" http://localhost:3001/accueil | grep -q "<div id=\"root\""; then echo "prêts"; break; fi
             sleep 1
           done
-          curl -sf http://localhost:3001/health && curl -sf -o /dev/null http://localhost:4173/
+          curl -sf http://localhost:3001/health && curl -sf -o /dev/null -H "Accept: text/html" http://localhost:3001/accueil
+          : > web.log
       - name: Scénario Playwright
         run: |
           set -o pipefail
           node apps/web/e2e/parcours-scenario.mjs 2>&1 | tee e2e.log
+      - name: Sauvegarde puis restauration vérifiées (scripts/verify-restore.sh) sur la base du scénario
+        env:
+          PGPASSWORD: fadi_ci_password
+        run: sh scripts/verify-restore.sh localhost fadi fadi_e2e fadi_restore_check
       - name: Résumé de l'échec (annotations lisibles depuis l'API)
         if: failure()
         run: |
@@ -106,3 +112,41 @@ jobs:
           name: captures-webapp
           path: docs/migration/captures/webapp/
           retention-days: 14
+
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: fadi
+          POSTGRES_PASSWORD: fadi_ci_password
+          POSTGRES_DB: fadi_image
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construire l'image de production (Dockerfile)
+        run: docker build -t fadi:ci .
+      - name: Démarrer le conteneur (schéma appliqué au démarrage) et sonder /health, /accueil, /projects
+        run: |
+          docker run -d --name fadi --network host \
+            -e DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_image \
+            -e WEB_ORIGIN=http://localhost:3001 -e TRUST_PROXY=0 fadi:ci
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3001/health | grep -q '"db":"ok"'; then echo "conteneur prêt"; break; fi
+            sleep 1
+          done
+          curl -sf http://localhost:3001/health | grep -q '"db":"ok"'
+          curl -sf -H "Accept: text/html" http://localhost:3001/accueil | grep -q '<div id="root"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/projects)" = "401"
+          curl -sf -o /dev/null -X POST -H "Content-Type: application/json" -d '{"email":"image@example.com","password":"correct-horse-battery"}' http://localhost:3001/auth/register
+      - name: Journal du conteneur
+        if: always()
+        run: docker logs fadi 2>&1 | tail -n 50
