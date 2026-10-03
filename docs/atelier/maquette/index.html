@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette de l'Atelier (L0.3)</title>
+<link rel="stylesheet" href="atelier.css">
+</head>
+<body data-niveau="complet" data-etape="repos">
+<main class="sommaire">
+  <span class="eyebrow">Fadi · chantier Atelier DrawAll V4.1 · lot 0 · tâche L0.3</span>
+  <h1>Maquette de l'Atelier — à valider par le maître d'ouvrage</h1>
+  <p>Maquette <b>statique</b> du nouvel Atelier : les cinq repères permanents (navigateur du projet, zone de travail,
+    commandes, inspecteur, panneau des modifications et problèmes), sur ordinateur (1536 px) et téléphone (390 px), aux
+    niveaux d'affichage Essentiel et Complet. Elle fixe la disposition avant tout code d'interface (lot 3a) ; elle ne
+    contient aucun modèle et n'exécute aucune commande.</p>
+  <p class="note"><b>Ouvrir :</b> double-cliquer sur ce fichier <code>index.html</code>, puis suivre les liens. Aucun
+    serveur, aucune installation, aucune connexion : tout est dans ce dossier. Chaque écran a sa propre adresse ; les
+    boutons de l'écran (niveau d'affichage, 2D / 3D, outils, <kbd>Ctrl</kbd> <kbd>K</kbd>, onglets du téléphone)
+    changent l'état sur place.</p>
+
+  <h2>Écrans</h2>
+  <div class="cartes">
+    <section class="carte">
+      <h3>Ordinateur · 1536 px</h3>
+      <ul>
+        <li><a href="ordinateur.html">O1 · Essentiel</a> — plan du RDC, façade sélectionnée, inspecteur, panneau replié</li>
+        <li><a href="ordinateur.html?niveau=complet&amp;panneau=ouvert">O2 · Complet</a> — familles de commandes, hypothèses et sources, relations, panneau ouvert</li>
+        <li><a href="ordinateur.html?etape=apercu">O3 · Geste « tracer un mur » : aperçu</a> — accrochage, saisie de précision, objet affecté</li>
+        <li><a href="ordinateur.html?niveau=complet&amp;etape=controle">O4 · Contrôle refusé</a> — message « objet, cause, action »</li>
+        <li><a href="ordinateur.html?palette=push">O5 · Palette <kbd>Ctrl</kbd> <kbd>K</kbd></a> — « push » trouve « Pousser / tirer » par synonyme</li>
+        <li><a href="ordinateur.html?mode=3d&amp;niveau=complet">O6 · Vue 3D</a> — volume des six niveaux, RDC actif</li>
+        <li><a href="ordinateur.html?niveau=contextuel">O7 · Contextuel</a> — propositions selon la sélection</li>
+      </ul>
+    </section>
+    <section class="carte">
+      <h3>Téléphone · 390 px</h3>
+      <ul>
+        <li><a href="telephone.html">T1 · Plan</a> — puce d'outil actif, niveau actif, onglets des repères</li>
+        <li><a href="telephone.html?feuille=projet">T2 · Projet</a> — navigateur en feuille</li>
+        <li><a href="telephone.html?feuille=outils">T3 · Outils</a> — favoris épinglés (Essentiel)</li>
+        <li><a href="telephone.html?feuille=inspecteur">T4 · Inspecteur</a> — porte P-X, Essentiel</li>
+        <li><a href="telephone.html?feuille=inspecteur&amp;niveau=complet">T5 · Inspecteur complet</a> — provenance, statut, position <i>t</i></li>
+        <li><a href="telephone.html?feuille=problemes&amp;niveau=complet">T6 · Problèmes</a> — réserves Harmonie, valeurs à confirmer, journal</li>
+        <li><a href="telephone.html?palette=offset">T7 · Palette</a> — « offset » trouve « Décaler »</li>
+        <li><a href="telephone.html?etape=apercu">T8 · Geste : aperçu</a> — saisie de précision, Valider / Annuler</li>
+        <li><a href="telephone.html?mode=3d">T9 · Vue 3D</a></li>
+      </ul>
+    </section>
+    <section class="carte">
+      <h3>Captures</h3>
+      <p>Les images PNG de chaque écran (ordinateur à 1536 px, téléphone à 390 px, ce sommaire aux deux largeurs) sont
+        produites par <code>outils/captures.mjs</code> (Playwright) dans le workflow GitHub « Atelier — maquette »,
+        artefact <code>captures-maquette</code>, puis versionnées dans <a href="captures/">captures/</a>.</p>
+      <p class="muet">Noms : <code>O1-essentiel.png</code> … <code>O7-contextuel.png</code>,
+        <code>T1-plan.png</code> … <code>T9-vue-3d.png</code>, <code>index-1536.png</code>, <code>index-390.png</code>.</p>
+    </section>
+  </div>
+
+  <h2>Conventions de lecture</h2>
+  <table class="corresp">
+    <tr><th>Marque</th><th>Signification</th></tr>
+    <tr><td><span class="nonev">non évaluée</span></td><td>Valeur absente de la source ou non encore calculée (longueur, aire calculée, distance le long du mur, fraîcheur des documents, révision du nouveau modèle). Jamais devinée (R3).</td></tr>
+    <tr><td><span class="ex"></span></td><td>Valeur saisie pendant un geste de démonstration (longueur 5,00 m, épaisseur 0,15 m, lignes du journal). Ce n'est pas une donnée de P.118.</td></tr>
+    <tr><td><span class="etiq-statut">hypothèse</span> · « à confirmer »</td><td>Hypothèses H01… et structure déclarée de P.118 : importées comme hypothèses, jamais comme exigences (R4).</td></tr>
+    <tr><td>Tout le reste</td><td>Lu dans <code>apps/api/src/data/examples/p118-native-model.json</code> par <code>outils/extraire-p118.py</code>, ou repris du cahier des charges (commandes, familles, états).</td></tr>
+  </table>
+
+  <h2>Ce que la maquette montre, exigence par exigence</h2>
+  <table class="corresp">
+    <tr><th>Exigence (cahier §5.8, Concept V4 §5)</th><th>Où la voir</th></tr>
+    <tr><td>Cinq repères permanents</td><td>O1 : navigateur à gauche, zone de travail au centre, barre de commandes et palette en haut, inspecteur à droite, panneau en bas. T1–T6 : zone de travail plein écran, les quatre autres repères en feuilles depuis les onglets du bas.</td></tr>
+    <tr><td>Niveaux Essentiel / Contextuel / Complet, favoris épinglés</td><td>O1 / O7 / O2 (sélecteur dans le bandeau) ; ★ sur les favoris, qui ne bougent pas d'un niveau à l'autre ; T3 / T5.</td></tr>
+    <tr><td>Palette avec synonymes et termes d'autres logiciels ; action, conditions, exemple</td><td>O5 (« push »), T7 (« offset ») ; essayer aussi « trim », « wall », « undo », « ifc ».</td></tr>
+    <tr><td>Cycle sélection → paramètres → aperçu → contrôle → validation ; accrochages ; saisie de précision</td><td>O3, O4, T8 ; les étapes du cycle sont cliquables.</td></tr>
+    <tr><td>Erreurs « objet, cause, action »</td><td>O4 (unité refusée, T03) ; problèmes du panneau (O2, T6).</td></tr>
+    <tr><td>Aide située, familles Créer / Modifier / Connecter / Analyser / Documenter / Partager</td><td>Encadré d'aide de l'inspecteur ; familles en O2.</td></tr>
+    <tr><td>Panneau : journal, états local / synchronisé / conflit, références à réparer, documents à recalculer, réserves Harmonie</td><td>O2, T6.</td></tr>
+    <tr><td>Téléphone : puce d'outil actif, mode immersif, cibles de 44 px</td><td>T1, T8.</td></tr>
+    <tr><td>Paramètres d'affichage hors modèle (R10)</td><td>Feuille « Affichage » du téléphone ; le niveau actif et la vue ne touchent pas la révision.</td></tr>
+  </table>
+
+  <h2>Données de P.118 utilisées</h2>
+  <p>Effectifs lus dans la source (contrôle R7) : <!-- P118:EFFECTIFS -->220 murs, 120 poteaux, 84 portes, 126 fenêtres, 32 escaliers, 967 tracés, 64 cotations, 95 textes, 45 pièces, 6 niveaux, 20 calques au RDC<!-- /P118:EFFECTIFS -->.</p>
+  <ul>
+    <li>Plan : murs, cloisons, noyaux (avec leur épaisseur), poteaux, escaliers, portes et fenêtres (à leur position <i>t</i> sur le mur hôte) et espaces du calque « Espaces » du niveau RDC. Le plan est <b>tourné</b> pour mettre la façade EX118-rdc-EXT-1 à l'horizontale ; aucune coordonnée n'est affichée ; le nord n'est pas dessiné (non confirmé, H11).</li>
+    <li>Vue 3D : murs extérieurs (<code>exteriorWallIds</code>) des six niveaux aux altitudes et hauteurs déclarées (−3,2 m à 13,2 m).</li>
+    <li>Inspecteur : façade EX118-rdc-EXT-1 (ordinateur) et porte EX118-rdc-V819-P-X-HALL (téléphone), valeurs de la source.</li>
+    <li>Problèmes : portes à passage utile non vérifié (<code>clearWidthVerified: false</code>), monte-charge MC-01 sans capacité, structure déclarée « à confirmer », et les titres des quatre réserves que les règles du bilan Harmonie existant (<code>design-review.ts</code> : HEIGHT, RAMP, MEZZ, CONTEXT) produisent sur ces données. Le bilan n'est pas exécuté par la maquette.</li>
+  </ul>
+  <p class="muet">Régénérer après une modification de la source : <code>python3 docs/atelier/maquette/outils/extraire-p118.py</code>
+    (option <code>--verifier</code> : contrôle sans écrire, utilisé par le workflow).</p>
+
+  <h2>Points à trancher par le maître d'ouvrage</h2>
+  <ol>
+    <li><b>Validation de la maquette</b> (cahier §10.1, point 1) : le lot 3a ne commence pas sans elle.</li>
+    <li><b>Disposition sur ordinateur</b> : navigateur à gauche, inspecteur à droite, panneau des problèmes en bas, replié par défaut avec ses compteurs visibles.</li>
+    <li><b>Niveau d'affichage à l'ouverture</b> : Essentiel proposé, puis le dernier choix de l'utilisateur.</li>
+    <li><b>Essentiel</b> = outils du prototype à plat (Sélection, Mur, Porte, Fenêtre, Pièce, Cotation, Pousser, Déplacer) ; les familles n'apparaissent qu'en Complet. À confirmer.</li>
+    <li><b>Téléphone</b> : cinq onglets en bas (Projet, Outils, Inspecteur, Problèmes, Affichage) ouvrant des feuilles, plutôt que des panneaux latéraux.</li>
+    <li><b>Réserves Harmonie</b> listées dans le panneau avec un lien « Ouvrir » vers le bilan de l'étape 10 ; elles ne se traitent pas dans l'Atelier.</li>
+    <li><b>Orientation du plan</b> : vue tournée pour la lecture (comme ici) ou repère local brut ; le nord de P.118 n'étant pas confirmé (H11), aucune flèche nord n'est proposée.</li>
+  </ol>
+</main>
+</body>
+</html>

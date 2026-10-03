@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier · maquette ordinateur (L0.3)</title>
+<link rel="stylesheet" href="atelier.css">
+</head>
+<body data-niveau="essentiel" data-etape="repos" data-mode="2d" data-sel="mur">
+<a class="evitement" href="#zone-travail">Aller à la zone de travail</a>
+
+<div class="bandeau-maquette" role="note">
+  <span><b>Maquette L0.3 — ordinateur 1536 px.</b> Rien n'est exécuté. Données : exemple P.118 du dépôt ; un
+    badge <span class="ex"></span> signale une valeur de démonstration d'un geste.</span>
+  <a href="index.html">Sommaire</a>
+  <nav class="etats" aria-label="Écrans de la maquette">
+    <a href="ordinateur.html">O1 Essentiel</a>
+    <a href="ordinateur.html?niveau=complet&amp;panneau=ouvert">O2 Complet</a>
+    <a href="ordinateur.html?etape=apercu">O3 Geste : aperçu</a>
+    <a href="ordinateur.html?niveau=complet&amp;etape=controle">O4 Contrôle refusé</a>
+    <a href="ordinateur.html?palette=push">O5 Palette</a>
+    <a href="ordinateur.html?mode=3d&amp;niveau=complet">O6 Vue 3D</a>
+    <a href="ordinateur.html?niveau=contextuel">O7 Contextuel</a>
+  </nav>
+</div>
+
+<div class="atelier-pc">
+  <!-- Bandeau d'étape (StageStrip, mode immersif des étapes 10 / 11 conservé) -->
+  <header class="strip">
+    <div>
+      <span class="sous">Étape 10 · Atelier · mode immersif</span>
+      <h1>EXEMPLE COMPLET · P.118 — Escalier B et mezzanine</h1>
+      <span class="sous">El Mansouria · parcelle 118 · EPSG:26191 · 6 niveaux</span>
+    </div>
+    <div class="actions">
+      <button type="button" class="recherche" data-palette-ouvrir aria-haspopup="dialog">
+        <span aria-hidden="true">⌕</span><span class="txt">Rechercher une commande, un objet, une aide…</span>
+        <kbd>Ctrl</kbd><kbd>K</kbd>
+      </button>
+      <div class="segment" role="radiogroup" aria-label="Niveau d'affichage">
+        <button type="button" role="radio" data-regle="niveau" data-valeur="essentiel">Essentiel</button>
+        <button type="button" role="radio" data-regle="niveau" data-valeur="contextuel">Contextuel</button>
+        <button type="button" role="radio" data-regle="niveau" data-valeur="complet">Complet</button>
+      </div>
+      <span class="sync" data-etat="local" title="Le nouveau modèle et sa révision arrivent aux lots 1 et 2">Révision du modèle : non évaluée</span>
+      <button type="button" class="on-dark" aria-label="Annuler (Ctrl Z)" data-demo="Maquette : annuler n'est pas exécuté.">↶</button>
+      <button type="button" class="on-dark" aria-label="Rétablir (Ctrl Maj Z)" data-demo="Maquette : rétablir n'est pas exécuté.">↷</button>
+      <button type="button" class="on-dark" aria-label="Quitter le mode immersif" data-demo="Maquette : retour à l'étape 10.">✕</button>
+    </div>
+  </header>
+
+  <!-- Commandes : familles (Complet) et barre -->
+  <div class="familles seul-complet" role="tablist" aria-label="Familles de commandes">
+    <button type="button" role="tab" aria-selected="true">Créer</button>
+    <button type="button" role="tab" aria-selected="false">Modifier</button>
+    <button type="button" role="tab" aria-selected="false">Connecter</button>
+    <button type="button" role="tab" aria-selected="false">Analyser</button>
+    <button type="button" role="tab" aria-selected="false">Documenter</button>
+    <button type="button" role="tab" aria-selected="false">Partager</button>
+  </div>
+  <div class="barre" role="toolbar" aria-label="Commandes">
+    <span class="titre-groupe sauf-complet">Outils</span>
+    <span class="titre-groupe seul-complet">Créer</span>
+    <button type="button" class="outil favori" aria-pressed="false" data-regle="etape" data-valeur="repos"><span class="ico" aria-hidden="true">↖</span>Sélection</button>
+    <button type="button" class="outil favori" aria-pressed="false" data-regle="etape" data-valeur="parametres" data-outil-geste><span class="ico" aria-hidden="true">▭</span>Mur</button>
+    <button type="button" class="outil favori" aria-pressed="false" data-demo="Maquette : poser une porte (ouverture.poser)."><span class="ico" aria-hidden="true">◫</span>Porte</button>
+    <button type="button" class="outil" aria-pressed="false" data-demo="Maquette : poser une fenêtre (ouverture.poser)."><span class="ico" aria-hidden="true">⊞</span>Fenêtre</button>
+    <button type="button" class="outil seul-complet" aria-pressed="false" data-demo="Maquette : ouverture.poser (ouverture)."><span class="ico" aria-hidden="true">▯</span>Ouverture</button>
+    <button type="button" class="outil seul-complet" aria-pressed="false" data-demo="Maquette : dalle.creer."><span class="ico" aria-hidden="true">▱</span>Dalle</button>
+    <button type="button" class="outil seul-complet" aria-pressed="false" data-demo="Maquette : escalier.creer (escalier droit, fiche DA-07-10)."><span class="ico" aria-hidden="true">≡</span>Escalier</button>
+    <button type="button" class="outil seul-complet" aria-pressed="false" data-demo="Maquette : poteau.creer."><span class="ico" aria-hidden="true">■</span>Poteau</button>
+    <button type="button" class="outil" aria-pressed="false" data-demo="Maquette : piece.detecter propose, ne crée rien."><span class="ico" aria-hidden="true">⬚</span>Pièce</button>
+    <button type="button" class="outil seul-complet" aria-pressed="false" data-demo="Maquette : espace / zone."><span class="ico" aria-hidden="true">◌</span>Espace, zone</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="outil seul-complet" aria-pressed="false" data-demo="Maquette : esquisse.ligne."><span class="ico" aria-hidden="true">╱</span>Ligne</button>
+    <button type="button" class="outil seul-complet" aria-pressed="false" data-demo="Maquette : esquisse.polyligne."><span class="ico" aria-hidden="true">⌇</span>Polyligne</button>
+    <button type="button" class="outil seul-complet" aria-pressed="false" data-demo="Maquette : esquisse.rectangle."><span class="ico" aria-hidden="true">▢</span>Rectangle</button>
+    <button type="button" class="outil seul-complet" aria-pressed="false" data-demo="Maquette : esquisse.cercle."><span class="ico" aria-hidden="true">○</span>Cercle</button>
+    <button type="button" class="outil" aria-pressed="false" data-demo="Maquette : cotation.creer."><span class="ico" aria-hidden="true">↔</span>Cotation</button>
+    <button type="button" class="outil sauf-complet" aria-pressed="false" data-demo="Maquette : pousser / tirer (vue 3D)."><span class="ico" aria-hidden="true">⇕</span>Pousser</button>
+    <button type="button" class="outil sauf-complet" aria-pressed="false" data-demo="Maquette : transformer.deplacer."><span class="ico" aria-hidden="true">✥</span>Déplacer</button>
+    <div class="droite">
+      <span class="plus-palette">Toutes les commandes : <kbd>Ctrl</kbd> <kbd>K</kbd></span>
+      <span class="muet seul-complet">★ favori épinglé</span>
+    </div>
+  </div>
+  <div class="contextuel" role="region" aria-label="Propositions selon la sélection">
+    <b>Façade P.118 sélectionnée</b> <span class="muet">— propositions :</span>
+    <button type="button" data-demo="Maquette : ouverture.poser sur ce mur.">Poser une porte</button>
+    <button type="button" data-demo="Maquette : ouverture.poser sur ce mur.">Poser une fenêtre</button>
+    <button type="button" data-demo="Maquette : mur.scinder (les cotations rattachées passeraient « à réparer »).">Scinder</button>
+    <button type="button" data-demo="Maquette : pousser / tirer la hauteur.">Pousser / tirer la hauteur</button>
+    <span class="muet">Les favoris et la barre ne bougent pas ; seules les propositions changent.</span>
+  </div>
+
+  <div class="corps">
+    <!-- 1. Navigateur du projet -->
+    <nav class="navigateur" aria-label="Navigateur du projet">
+      <h2>Projet</h2>
+      <input class="filtre" type="search" placeholder="Filtrer niveaux, calques, objets…" aria-label="Filtrer le navigateur">
+      <section class="bloc" aria-labelledby="nav-niveaux">
+        <h3 id="nav-niveaux">Niveaux</h3>
+        <!-- P118:NIVEAUX --><ul class="liste"><li><button type="button" class="ligne"><span>Sous-sol technique</span><span class="fin muet">−3,2 m · h 3,2 m</span></button><span class="sr-only">174 objets</span></li><li><button type="button" class="ligne" aria-current="true"><span>RDC</span><span class="fin muet">0 m · h 3,2 m</span></button><span class="sr-only">293 objets</span></li><li><button type="button" class="ligne"><span>Mezzanine</span><span class="fin muet">3,2 m · h 3,2 m</span></button><span class="sr-only">298 objets</span></li><li><button type="button" class="ligne"><span>R+1 · Formation</span><span class="fin muet">6,4 m · h 3,4 m</span></button><span class="sr-only">334 objets</span></li><li><button type="button" class="ligne"><span>R+2 · Bureaux</span><span class="fin muet">9,8 m · h 3,4 m</span></button><span class="sr-only">365 objets</span></li><li><button type="button" class="ligne"><span>R+3 · Direction</span><span class="fin muet">13,2 m · h 3,4 m</span></button><span class="sr-only">244 objets</span></li></ul><!-- /P118:NIVEAUX -->
+      </section>
+      <section class="bloc" aria-labelledby="nav-objets">
+        <h3 id="nav-objets">Objets par classe <span class="muet">(RDC / bâtiment)</span></h3>
+        <!-- P118:CLASSES --><ul class="liste"><li><button type="button" class="ligne"><span>Murs</span><span class="fin"><b>39</b><span class="muet"> / 220</span></span></button></li><li><button type="button" class="ligne"><span>Portes</span><span class="fin"><b>16</b><span class="muet"> / 84</span></span></button></li><li><button type="button" class="ligne"><span>Fenêtres</span><span class="fin"><b>22</b><span class="muet"> / 126</span></span></button></li><li><button type="button" class="ligne"><span>Poteaux</span><span class="fin"><b>20</b><span class="muet"> / 120</span></span></button></li><li><button type="button" class="ligne"><span>Escaliers</span><span class="fin"><b>5</b><span class="muet"> / 32</span></span></button></li><li><button type="button" class="ligne"><span>Pièces</span><span class="fin"><b>8</b><span class="muet"> / 45</span></span></button></li><li><button type="button" class="ligne"><span>Tracés et solides</span><span class="fin"><b>162</b><span class="muet"> / 967</span></span></button></li><li><button type="button" class="ligne"><span>Cotations</span><span class="fin"><b>11</b><span class="muet"> / 64</span></span></button></li><li><button type="button" class="ligne"><span>Textes</span><span class="fin"><b>18</b><span class="muet"> / 95</span></span></button></li></ul><!-- /P118:CLASSES -->
+      </section>
+      <section class="bloc" aria-labelledby="nav-calques">
+        <h3 id="nav-calques">Calques du RDC <span class="muet">(objets)</span></h3>
+        <!-- P118:CALQUES --><ul class="liste"><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Murs</span><span class="fin muet">4</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Cloisons</span><span class="fin muet">18</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Ouvertures</span><span class="fin muet">38</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Poteaux</span><span class="fin muet">20</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Noyaux</span><span class="fin muet">21</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Dalles</span><span class="fin muet">1</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Escaliers</span><span class="fin muet">50</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Garde-corps</span><span class="fin muet">0</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Mobilier</span><span class="fin muet">85</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Espaces</span><span class="fin muet">13</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Zones noyaux</span><span class="fin muet">2</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Repères exemple</span><span class="fin muet">12</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Cotations</span><span class="fin muet">5</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Extérieurs</span><span class="fin muet">0</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Façade</span><span class="fin muet">1</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Gabarits accès</span><span class="fin muet">7</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Cotes sanitaires</span><span class="fin muet">3</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Réseaux sanitaires</span><span class="fin muet">4</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Repères sanitaires</span><span class="fin muet">6</span></button></li><li><button type="button" class="ligne" aria-pressed="true"><span class="oeil" aria-hidden="true">●</span><span>Cotes escalier A</span><span class="fin muet">3</span></button></li></ul><!-- /P118:CALQUES -->
+      </section>
+      <section class="bloc" aria-labelledby="nav-docs">
+        <h3 id="nav-docs">Documents</h3>
+        <p class="muet">Vues, feuilles et tableaux dérivés : lot 5. Fraîcheur : <span class="nonev">non évaluée</span></p>
+      </section>
+      <section class="bloc seul-complet" aria-labelledby="nav-hyp">
+        <h3 id="nav-hyp">Hypothèses (<!-- P118:NB-HYP -->17<!-- /P118:NB-HYP -->)</h3>
+        <!-- P118:HYPOTHESES --><ul class="liste"><li><button type="button" class="ligne"><span><b>H01</b> · Implantation</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H02</b> · Niveaux</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H03</b> · Adaptation des plans</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H04</b> · Ouvertures</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H05</b> · Coordination des noyaux</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H06</b> · Escaliers</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H07</b> · Programme</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H08</b> · Surfaces</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H09</b> · Design</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H10</b> · Étude</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H11</b> · Référentiel</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H12</b> · Structure demandée</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H13</b> · Rampe sous-sol</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H14</b> · Services V8.15</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H15</b> · Sanitaires V8.17</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H16</b> · Escalier A V8.18</span><span class="fin etiq-statut">hypothèse</span></button></li><li><button type="button" class="ligne"><span><b>H17</b> · Implantation V8.19</span><span class="fin etiq-statut">hypothèse</span></button></li></ul><!-- /P118:HYPOTHESES -->
+      </section>
+      <section class="bloc seul-complet" aria-labelledby="nav-src">
+        <h3 id="nav-src">Sources (<!-- P118:NB-SOURCES -->9<!-- /P118:NB-SOURCES -->)</h3>
+        <!-- P118:SOURCES --><ul class="liste"><li><span class="ligne"><b>CAD-S01</b><span class="muet">Parcelle cadastrale 118</span></span></li><li><span class="ligne"><b>S01</b><span class="muet">RDC / implantation</span></span></li><li><span class="ligne"><b>S02</b><span class="muet">Mezzanine</span></span></li><li><span class="ligne"><b>S03</b><span class="muet">Étage courant</span></span></li><li><span class="ligne"><b>REQ-PT</b><span class="muet">Portée et charge</span></span></li><li><span class="ligne"><b>RAMPE-REF</b><span class="muet">Rampe latérale vers sous-sol</span></span></li><li><span class="ligne"><b>REF-ESC-A</b><span class="muet">1000049694.jpg</span></span></li><li><span class="ligne"><b>ANN-RDC-V819</b><span class="muet">RezRDC2.png</span></span></li><li><span class="ligne"><b>REF-MEZZ-V819</b><span class="muet">Mezzanine.png</span></span></li></ul><!-- /P118:SOURCES -->
+      </section>
+    </nav>
+
+    <!-- 2. Zone de travail -->
+    <main class="zone" id="zone-travail" tabindex="-1" aria-label="Zone de travail">
+      <div class="zone-barre">
+        <span class="niveau-actif">RDC <span class="muet">0 m · h 3,2 m</span></span>
+        <div class="segment clair" role="radiogroup" aria-label="Vue">
+          <button type="button" role="radio" data-regle="mode" data-valeur="2d">Plan 2D</button>
+          <button type="button" role="radio" data-regle="mode" data-valeur="3d">3D</button>
+        </div>
+        <span class="si-repos muet">Sélection : clic, lasso ou filtre par classe · <b>Façade P.118</b> sélectionnée</span>
+        <ol class="cycle si-geste" aria-label="Cycle du geste">
+          <li><a href="#" data-regle="etape" data-valeur="selection">Sélection</a></li>
+          <li><a href="#" data-regle="etape" data-valeur="parametres">Paramètres</a></li>
+          <li><a href="#" data-regle="etape" data-valeur="apercu">Aperçu</a></li>
+          <li><a href="#" data-regle="etape" data-valeur="controle">Contrôle</a></li>
+          <li><a href="#" data-regle="etape" data-valeur="validation">Validation</a></li>
+        </ol>
+      </div>
+      <div class="toile">
+        <div class="legende-plan seul-2d" aria-hidden="true">
+          <span><i style="background:#315b4b"></i>murs</span><span><i style="background:#6c8a7d"></i>cloisons</span>
+          <span><i style="background:#a8572a"></i>portes</span><span><i style="background:#7fb3d5"></i>fenêtres</span>
+          <span><i style="background:#d9cfb6"></i>escaliers</span><span>plan tourné pour la présentation, nord non dessiné (H11)</span>
+        </div>
+        <div class="pile seul-2d">
+          <!-- P118:PLAN-RDC --><svg class="plan" viewBox="0 0 897 493" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="plan-titre"><title id="plan-titre">Plan du niveau RDC de P.118 : murs, cloisons, noyaux, poteaux, escaliers, ouvertures et espaces (données de p118-native-model.json)</title>
+<g class="espaces">
+<polygon id="esp-R01" class="espace" points="860.5,42.8 860.5,456.8 669.5,456.8 669.5,117.6 668.5,117.6 668.5,42.8 687.7,42.8 687.7,42.8"><title>R01 · Accueil, attente et hall</title></polygon>
+<text class="lbl" x="722" y="165">R01</text>
+<polygon id="esp-R02" class="espace" points="663.1,249.8 663.1,456.8 258.7,456.8 258.7,249.8"><title>R02 · Plateau polyvalent</title></polygon>
+<text class="lbl" x="461" y="353">R02</text>
+<polygon id="esp-R03" class="espace" points="663.1,207.1 347.3,207.1 347.3,178.5 401.8,178.5 401.9,42.8 553.2,42.8 553.2,42.8 664.1,42.8 664.1,117.6 663.1,117.6"><title>R03 · Ateliers / formation</title></polygon>
+<text class="lbl" x="526" y="118">R03</text>
+<polygon id="esp-R04" class="espace circ" points="663.1,207.1 663.1,249.8 258.7,249.8 258.7,243.2 265.2,243.2 265.2,207.1"><title>R04 · Desserte principale · 2 m</title></polygon>
+<text class="lbl" x="396" y="233">R04</text>
+<polygon id="esp-R06" class="espace" points="165.9,249.8 255.5,249.8 255.5,318.1 211.8,318.1 165.9,318.1"><title>R06 · Office / pause · 2 places</title></polygon>
+<text class="lbl" x="211" y="291">R06</text>
+<polygon id="esp-R08" class="espace circ" points="260.6,42.8 260.6,178.5 260.6,181.6 226.8,181.6 224.6,181.6 224.6,175.1 224.6,42.8 226.8,42.8 226.8,42.8"><title>R08 · Dégagement arrière</title></polygon>
+<text class="lbl" x="237" y="119">R08</text>
+<polygon class="espace circ" points="260.6,246.5 258.7,246.5 258.7,249.8 224.6,249.8 224.6,243.2 226.8,243.2 260.6,243.2"><title>R08 · Dégagement arrière</title></polygon>
+<polygon class="espace" points="153.7,324.5 205.4,324.5 205.4,453.2"><title>Adaptation périphérique</title></polygon>
+<polygon class="espace" points="96.7,175.1 97.2,176.0 98.7,175.1 98.7,177.3 148.8,177.3 148.8,312.5 93.6,175.1"><title>Adaptation périphérique</title></polygon>
+<polygon class="espace" points="92.3,36.4 92.3,171.7 37.9,36.3 860.3,36.3 860.3,36.4"><title>Adaptation périphérique</title></polygon>
+<polygon class="espace" points="265.2,181.6 220.1,181.6 220.1,243.2 265.2,243.2"><title>MC · Palier de manutention</title></polygon>
+<polygon class="espace" points="399.2,175.9 372.6,175.9 345.3,175.9 345.3,149.0 344.0,149.0 344.0,149.0 326.2,149.0 326.2,151.7 342.7,151.7 342.7,175.9 303.9,175.9 303.9,151.7 308.6,151.7 308.6,149.0 302.6,149.0 302.6,150.4 301.3,150.4 301.3,175.9 263.2,175.9 263.2,126.4 263.2,126.4 263.2,111.2 324.6,111.2 324.6,120.9 337.8,120.9 337.8,111.2 342.7,111.2 342.7,127.0 345.3,127.0 345.3,111.2 399.2,111.2"><title>Sanitaires Femmes · 2 WC dont 1 adapté · 3 lavabos</title></polygon>
+<polygon class="espace" points="324.6,44.3 324.6,54.0 337.8,54.0 337.8,44.3 342.7,44.3 342.7,59.7 345.3,59.7 345.3,44.3 399.2,44.3 399.2,108.0 399.2,108.6 345.3,108.6 345.3,81.7 344.0,81.7 344.0,81.7 326.2,81.7 326.2,84.4 342.7,84.4 342.7,108.6 332.2,108.6 303.9,108.6 304.0,84.4 308.6,84.4 308.6,81.7 302.6,81.7 302.6,83.0 301.3,83.0 301.3,108.6 280.0,108.6 280.0,81.3 278.2,81.3 278.2,108.6 263.2,108.6 263.3,85.5 263.3,85.5 263.3,63.5 263.3,63.5 263.3,44.3 301.4,44.3"><title>Sanitaires Hommes · 2 WC dont 1 adapté · 3 lavabos · 1 urinoir</title></polygon>
+</g><g class="escaliers">
+<line x1="171.7" y1="153.0" x2="129.5" y2="152.9" stroke-width="28.6"><title>A · Ouest · montée · 7 contremarches · largeur 1,3 m</title></line>
+<line x1="113.0" y1="136.4" x2="113.0" y2="81.4" stroke-width="28.6"><title>A · Nord · traversée · 9 contremarches · largeur 1,3 m</title></line>
+<line x1="129.5" y1="64.9" x2="171.7" y2="65.0" stroke-width="28.6"><title>A · Est · arrivée · 7 contremarches · largeur 1,3 m</title></line>
+<line x1="726.1" y1="398.3" x2="796.5" y2="398.3" stroke-width="28.6"><title>B · volée 1 · 11 contremarches · largeur 1,3 m</title></line>
+<line x1="796.5" y1="433.5" x2="726.1" y2="433.5" stroke-width="28.6"><title>B · volée 2 · 11 contremarches · largeur 1,3 m</title></line>
+</g><g class="murs">
+<line class="noyau" x1="224.6" y1="175.1" x2="224.6" y2="42.8" stroke-width="4.4"><title>Noyau A · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="noyau" x1="224.6" y1="175.1" x2="98.7" y2="175.1" stroke-width="4.4"><title>Noyau A · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="noyau" x1="184.7" y1="132.4" x2="184.7" y2="85.5" stroke-width="4.4"><title>Gaine ascenseur · recentrée · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="noyau" x1="184.7" y1="85.5" x2="133.5" y2="85.5" stroke-width="4.4"><title>Gaine ascenseur · recentrée · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="noyau" x1="133.5" y1="85.5" x2="133.5" y2="132.4" stroke-width="4.4"><title>Gaine ascenseur · recentrée · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="noyau" x1="133.5" y1="132.4" x2="184.7" y2="132.4" stroke-width="4.4"><title>Gaine ascenseur · recentrée · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="cloison" x1="666.3" y1="456.8" x2="666.3" y2="36.3" stroke-width="3.3"><title>Sas accueil / activités · épaisseur 0,15 m · calque Cloisons</title></line>
+<line class="cloison" x1="257.1" y1="319.7" x2="257.1" y2="248.2" stroke-width="3.3"><title>Cuisine · épaisseur 0,15 m · calque Cloisons</title></line>
+<line class="cloison" x1="257.1" y1="248.2" x2="164.3" y2="248.2" stroke-width="3.3"><title>Cuisine · épaisseur 0,15 m · calque Cloisons</title></line>
+<line class="cloison" x1="164.3" y1="248.2" x2="164.3" y2="319.7" stroke-width="3.3"><title>Cuisine · épaisseur 0,15 m · calque Cloisons</title></line>
+<line class="cloison" x1="164.3" y1="319.7" x2="257.1" y2="319.7" stroke-width="3.3"><title>Cuisine · épaisseur 0,15 m · calque Cloisons</title></line>
+<line class="mur" x1="204.5" y1="459.9" x2="33.0" y2="33.0" stroke-width="6.6"><title>Façade P.118 · épaisseur 0,3 m · calque Murs</title></line>
+<line id="mur-selection" class="mur" x1="33.0" y1="33.0" x2="863.6" y2="33.0" stroke-width="6.6"><title>Façade P.118 · épaisseur 0,3 m · calque Murs</title></line>
+<line class="mur" x1="863.6" y1="33.0" x2="863.6" y2="459.5" stroke-width="6.6"><title>Façade P.118 · épaisseur 0,3 m · calque Murs</title></line>
+<line class="mur" x1="863.6" y1="459.5" x2="204.5" y2="459.9" stroke-width="6.6"><title>Façade P.118 · épaisseur 0,3 m · calque Murs</title></line>
+<line class="noyau" x1="217.9" y1="241.0" x2="217.9" y2="183.8" stroke-width="4.4"><title>MC · gaine proposée · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="noyau" x1="217.9" y1="183.8" x2="151.9" y2="183.8" stroke-width="4.4"><title>MC · gaine proposée · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="noyau" x1="151.9" y1="183.8" x2="151.9" y2="241.0" stroke-width="4.4"><title>MC · gaine proposée · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="noyau" x1="151.9" y1="241.0" x2="217.9" y2="241.0" stroke-width="4.4"><title>MC · gaine proposée · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="cloison" x1="400.5" y1="177.2" x2="400.5" y2="43.0" stroke-width="2.6"><title>Sanitaires · cloison toute hauteur · épaisseur 0,12 m · calque Cloisons</title></line>
+<line class="cloison" x1="400.5" y1="177.2" x2="261.9" y2="177.2" stroke-width="2.6"><title>Sanitaires · cloison toute hauteur · épaisseur 0,12 m · calque Cloisons</title></line>
+<line class="cloison" x1="400.5" y1="43.0" x2="261.9" y2="43.0" stroke-width="2.6"><title>Sanitaires · cloison toute hauteur · épaisseur 0,12 m · calque Cloisons</title></line>
+<line class="cloison" x1="400.5" y1="109.9" x2="261.9" y2="109.9" stroke-width="2.6"><title>Sanitaires · cloison toute hauteur · épaisseur 0,12 m · calque Cloisons</title></line>
+<line class="cloison" x1="261.9" y1="177.2" x2="261.9" y2="109.9" stroke-width="2.6"><title>Sanitaires · cloison toute hauteur · épaisseur 0,12 m · calque Cloisons</title></line>
+<line class="cloison" x1="344.0" y1="177.2" x2="344.0" y2="109.9" stroke-width="2.6"><title>Sanitaires · cloison toute hauteur · épaisseur 0,12 m · calque Cloisons</title></line>
+<line class="cloison" x1="344.0" y1="150.4" x2="302.6" y2="150.4" stroke-width="2.6"><title>Sanitaires · cloison toute hauteur · épaisseur 0,12 m · calque Cloisons</title></line>
+<line class="cloison" x1="302.6" y1="177.2" x2="302.6" y2="150.4" stroke-width="2.6"><title>Sanitaires · cloison toute hauteur · épaisseur 0,12 m · calque Cloisons</title></line>
+<line class="cloison" x1="261.9" y1="109.9" x2="261.9" y2="43.0" stroke-width="2.6"><title>Sanitaires · cloison toute hauteur · épaisseur 0,12 m · calque Cloisons</title></line>
+<line class="cloison" x1="344.0" y1="109.9" x2="344.0" y2="43.0" stroke-width="2.6"><title>Sanitaires · cloison toute hauteur · épaisseur 0,12 m · calque Cloisons</title></line>
+<line class="cloison" x1="344.0" y1="83.0" x2="302.6" y2="83.0" stroke-width="2.6"><title>Sanitaires · cloison toute hauteur · épaisseur 0,12 m · calque Cloisons</title></line>
+<line class="cloison" x1="302.6" y1="109.9" x2="302.6" y2="83.0" stroke-width="2.6"><title>Sanitaires · cloison toute hauteur · épaisseur 0,12 m · calque Cloisons</title></line>
+<line class="cloison" x1="279.1" y1="109.9" x2="279.1" y2="81.3" stroke-width="1.8"><title>Sanitaires H · écran d’intimité · épaisseur 0,08 m · calque Cloisons</title></line>
+<line class="noyau" x1="94.3" y1="167.3" x2="94.3" y2="42.8" stroke-width="3.5"><title>Noyau A · enceinte · épaisseur 0,16 m · calque Noyaux</title></line>
+<line class="noyau" x1="94.3" y1="42.8" x2="224.6" y2="42.8" stroke-width="3.5"><title>Noyau A · enceinte · épaisseur 0,16 m · calque Noyaux</title></line>
+<line class="noyau" x1="98.7" y1="175.1" x2="94.3" y2="167.3" stroke-width="3.5"><title>Noyau A · enceinte · épaisseur 0,16 m · calque Noyaux</title></line>
+<line class="noyau" x1="831.7" y1="451.1" x2="831.7" y2="380.7" stroke-width="4.4"><title>Noyau B · nouvel emplacement · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="noyau" x1="831.7" y1="380.7" x2="688.7" y2="380.7" stroke-width="4.4"><title>Noyau B · nouvel emplacement · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="noyau" x1="688.7" y1="380.7" x2="688.7" y2="451.1" stroke-width="4.4"><title>Noyau B · nouvel emplacement · épaisseur 0,2 m · calque Noyaux</title></line>
+<line class="noyau" x1="688.7" y1="451.1" x2="831.7" y2="451.1" stroke-width="4.4"><title>Noyau B · nouvel emplacement · épaisseur 0,2 m · calque Noyaux</title></line>
+</g><g class="ouvertures">
+<line class="porte" x1="224.6" y1="124.4" x2="224.6" y2="93.6" stroke-width="6.4"><title>P02 · largeur 1,4 m</title></line>
+<line class="porte" x1="184.7" y1="118.9" x2="184.7" y2="99.1" stroke-width="6.4"><title>Ascenseur · porte palière coulissante · largeur 0,9 m</title></line>
+<line class="porte" x1="251.4" y1="248.2" x2="229.4" y2="248.2" stroke-width="5.3"><title>P01 · largeur 1 m</title></line>
+<line class="porte" x1="863.6" y1="230.0" x2="863.6" y2="269.6" stroke-width="8.6"><title>P00 · largeur 1,8 m</title></line>
+<line class="porte" x1="607.3" y1="459.6" x2="576.5" y2="459.7" stroke-width="8.6"><title>P02 · largeur 1,4 m</title></line>
+<line class="porte" x1="565.5" y1="33.0" x2="596.3" y2="33.0" stroke-width="8.6"><title>P02 · largeur 1,4 m</title></line>
+<line class="porte" x1="68.6" y1="121.5" x2="57.1" y2="92.9" stroke-width="8.6"><title>P02 · largeur 1,4 m</title></line>
+<line class="porte" x1="217.9" y1="227.8" x2="217.9" y2="197.0" stroke-width="6.4"><title>Porte palière coulissante MC · largeur 1,4 m</title></line>
+<line class="porte" x1="261.9" y1="148.4" x2="261.9" y2="126.4" stroke-width="4.6"><title>Porte coulissante · passage utile à confirmer · largeur 1 m</title></line>
+<line class="porte" x1="344.0" y1="149.0" x2="344.0" y2="127.0" stroke-width="4.6"><title>Porte coulissante · passage utile à confirmer · largeur 1 m</title></line>
+<line class="porte" x1="326.2" y1="150.4" x2="308.6" y2="150.4" stroke-width="4.6"><title>Porte coulissante · passage utile à confirmer · largeur 0,8 m</title></line>
+<line class="porte" x1="261.9" y1="85.5" x2="261.9" y2="63.5" stroke-width="4.6"><title>Porte coulissante · passage utile à confirmer · largeur 1 m</title></line>
+<line class="porte" x1="344.0" y1="81.7" x2="344.0" y2="59.7" stroke-width="4.6"><title>Porte coulissante · passage utile à confirmer · largeur 1 m</title></line>
+<line class="porte" x1="326.2" y1="83.0" x2="308.6" y2="83.0" stroke-width="4.6"><title>Porte coulissante · passage utile à confirmer · largeur 0,8 m</title></line>
+<line id="porte-selection" class="porte" x1="666.3" y1="243.9" x2="666.3" y2="213.1" stroke-width="5.3"><title>P-X · Hall / desserte principale · largeur 1,4 m</title></line>
+<line class="porte" x1="721.7" y1="380.7" x2="690.9" y2="380.7" stroke-width="6.4"><title>P-B-ENTREE · largeur 1,4 m</title></line>
+<line class="fenetre" x1="197.2" y1="441.7" x2="177.5" y2="392.7" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="162.9" y1="356.3" x2="143.2" y2="307.3" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="128.6" y1="270.9" x2="108.9" y2="222.0" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="94.3" y1="185.6" x2="74.6" y2="136.6" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="52.7" y1="33.0" x2="105.5" y2="33.0" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="145.0" y1="33.0" x2="197.8" y2="33.0" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="237.3" y1="33.0" x2="290.1" y2="33.0" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="329.6" y1="33.0" x2="382.4" y2="33.0" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="421.9" y1="33.0" x2="474.7" y2="33.0" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="606.5" y1="33.0" x2="659.3" y2="33.0" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="698.8" y1="33.0" x2="751.6" y2="33.0" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="791.1" y1="33.0" x2="843.9" y2="33.0" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="863.6" y1="49.2" x2="863.6" y2="102.0" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="863.6" y1="134.5" x2="863.6" y2="187.3" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="863.6" y1="305.1" x2="863.6" y2="357.9" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="863.6" y1="390.4" x2="863.6" y2="443.2" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="842.9" y1="459.5" x2="790.1" y2="459.5" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="748.8" y1="459.5" x2="696.0" y2="459.6" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="560.5" y1="459.7" x2="507.7" y2="459.7" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="466.3" y1="459.7" x2="413.5" y2="459.8" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="372.1" y1="459.8" x2="319.3" y2="459.8" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+<line class="fenetre" x1="278.0" y1="459.8" x2="225.2" y2="459.9" stroke-width="8.6"><title>F02 · largeur 2,4 m</title></line>
+</g><g class="poteaux">
+<rect x="202.9" y="452.7" width="7.7" height="7.7"><title>Poteau périphérique 01 · section indicative BET</title></rect>
+<rect x="164.2" y="356.5" width="7.7" height="7.7"><title>Poteau périphérique 02 · section indicative BET</title></rect>
+<rect x="129.9" y="271.2" width="7.7" height="7.7"><title>Poteau périphérique 03 · section indicative BET</title></rect>
+<rect x="71.7" y="126.2" width="7.7" height="7.7"><title>Poteau périphérique 04 · section indicative BET</title></rect>
+<rect x="34.0" y="32.4" width="7.7" height="7.7"><title>Poteau périphérique 05 · section indicative BET</title></rect>
+<rect x="135.2" y="32.5" width="7.7" height="7.7"><title>Poteau périphérique 06 · section indicative BET</title></rect>
+<rect x="292.3" y="32.5" width="7.7" height="7.7"><title>Poteau périphérique 07 · section indicative BET</title></rect>
+<rect x="386.9" y="32.5" width="7.7" height="7.7"><title>Poteau périphérique 08 · section indicative BET</title></rect>
+<rect x="503.7" y="32.5" width="7.7" height="7.7"><title>Poteau périphérique 09 · section indicative BET</title></rect>
+<rect x="661.6" y="32.5" width="7.7" height="7.7"><title>Poteau périphérique 10 · section indicative BET</title></rect>
+<rect x="753.7" y="32.5" width="7.7" height="7.7"><title>Poteau périphérique 11 · section indicative BET</title></rect>
+<rect x="856.5" y="32.5" width="7.7" height="7.7"><title>Poteau périphérique 12 · section indicative BET</title></rect>
+<rect x="856.5" y="124.8" width="7.7" height="7.7"><title>Poteau périphérique 13 · section indicative BET</title></rect>
+<rect x="856.5" y="274.3" width="7.7" height="7.7"><title>Poteau périphérique 14 · section indicative BET</title></rect>
+<rect x="856.5" y="360.0" width="7.7" height="7.7"><title>Poteau périphérique 15 · section indicative BET</title></rect>
+<rect x="856.5" y="452.3" width="7.7" height="7.7"><title>Poteau périphérique 16 · section indicative BET</title></rect>
+<rect x="750.6" y="452.4" width="7.7" height="7.7"><title>Poteau périphérique 17 · section indicative BET</title></rect>
+<rect x="566.9" y="452.5" width="7.7" height="7.7"><title>Poteau périphérique 18 · section indicative BET</title></rect>
+<rect x="468.2" y="452.6" width="7.7" height="7.7"><title>Poteau périphérique 19 · section indicative BET</title></rect>
+<rect x="309.4" y="452.7" width="7.7" height="7.7"><title>Poteau périphérique 20 · section indicative BET</title></rect>
+</g></svg><!-- /P118:PLAN-RDC -->
+          <svg class="surcouche" viewBox="0 0 897 493" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <circle class="accroche" cx="440" cy="459.6" r="6" data-etape-vis="parametres"/>
+            <line class="guide" x1="440" y1="470" x2="440" y2="40" data-etape-vis="apercu controle"/>
+            <line class="ep-apercu" x1="440" y1="459.6" x2="440" y2="349.6" data-etape-vis="apercu controle"/>
+            <line class="apercu" x1="440" y1="459.6" x2="440" y2="349.6" data-etape-vis="apercu controle"/>
+            <circle class="accroche" cx="440" cy="459.6" r="6" data-etape-vis="apercu controle"/>
+            <g data-etape-vis="apercu controle">
+              <rect class="etiq" x="452" y="392" width="78" height="22" rx="4"/>
+              <text class="etiq-txt" x="460" y="408">5,00 m</text>
+              <text class="ex-txt" x="452" y="428">exemple de geste</text>
+              <rect class="etiq" x="452" y="432" width="196" height="22" rx="4"/>
+              <text class="etiq-txt" x="460" y="448">Perpendiculaire · Façade P.118</text>
+            </g>
+            <line class="mur-nouveau" x1="440" y1="459.6" x2="440" y2="349.6" data-etape-vis="validation"/>
+          </svg>
+        </div>
+        <div class="pile seul-3d">
+          <!-- P118:VUE3D --><svg class="vue3d" viewBox="0 0 758 653" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="v3-titre"><title id="v3-titre">Volume de P.118 : murs extérieurs des six niveaux aux altitudes déclarées, RDC actif</title>
+<polygon class="dalle" points="12.0,464.0 142.7,640.8 567.8,395.4 349.5,269.4"/>
+<polygon class="paroi" points="567.8,395.4 349.5,269.4 349.5,227.8 567.8,353.8"/>
+<polygon class="paroi" points="349.5,269.4 12.0,464.0 12.0,422.4 349.5,227.8"/>
+<polygon class="paroi" points="142.7,640.8 567.8,395.4 567.8,353.8 142.7,599.2"/>
+<polygon class="paroi" points="12.0,464.0 142.7,640.8 142.7,599.2 12.0,422.4"/>
+<polygon class="dalle actif" points="12.0,422.4 142.7,599.2 567.8,353.8 349.5,227.8"/>
+<polygon class="paroi actif" points="567.8,353.8 349.5,227.8 349.5,186.2 567.8,312.2"/>
+<polygon class="paroi actif" points="349.5,227.8 12.0,422.4 12.0,380.8 349.5,186.2"/>
+<polygon class="paroi actif" points="142.7,599.2 567.8,353.8 567.8,312.2 142.7,557.6"/>
+<polygon class="paroi actif" points="12.0,422.4 142.7,599.2 142.7,557.6 12.0,380.8"/>
+<polygon class="dalle" points="12.0,380.8 142.7,557.6 567.8,312.2 349.5,186.2"/>
+<polygon class="paroi" points="567.8,312.2 349.5,186.2 349.5,144.6 567.8,270.6"/>
+<polygon class="paroi" points="349.5,186.2 12.0,380.8 12.0,339.2 349.5,144.6"/>
+<polygon class="paroi" points="142.7,557.6 567.8,312.2 567.8,270.6 142.7,516.0"/>
+<polygon class="paroi" points="12.0,380.8 142.7,557.6 142.7,516.0 12.0,339.2"/>
+<polygon class="dalle" points="12.0,339.2 142.7,516.0 567.8,270.6 349.5,144.6"/>
+<polygon class="paroi" points="567.8,270.6 349.5,144.6 349.5,100.4 567.8,226.4"/>
+<polygon class="paroi" points="349.5,144.6 12.0,339.2 12.0,295.0 349.5,100.4"/>
+<polygon class="paroi" points="142.7,516.0 567.8,270.6 567.8,226.4 142.7,471.8"/>
+<polygon class="paroi" points="12.0,339.2 142.7,516.0 142.7,471.8 12.0,295.0"/>
+<polygon class="dalle" points="12.0,295.0 142.7,471.8 567.8,226.4 349.5,100.4"/>
+<polygon class="paroi" points="567.8,226.4 349.5,100.4 349.5,56.2 567.8,182.2"/>
+<polygon class="paroi" points="349.5,100.4 12.0,295.0 12.0,250.8 349.5,56.2"/>
+<polygon class="paroi" points="142.7,471.8 567.8,226.4 567.8,182.2 142.7,427.6"/>
+<polygon class="paroi" points="12.0,295.0 142.7,471.8 142.7,427.6 12.0,250.8"/>
+<polygon class="dalle" points="12.0,250.8 142.7,427.6 567.8,182.2 349.5,56.2"/>
+<polygon class="paroi" points="567.8,182.2 349.5,56.2 349.5,12.0 567.8,138.0"/>
+<polygon class="paroi" points="349.5,56.2 12.0,250.8 12.0,206.6 349.5,12.0"/>
+<polygon class="paroi" points="142.7,427.6 567.8,182.2 567.8,138.0 142.7,383.4"/>
+<polygon class="paroi" points="12.0,250.8 142.7,427.6 142.7,383.4 12.0,206.6"/>
+<text class="niv" x="578" y="379">Sous-sol technique · −3,2 m</text>
+<text class="niv actif" x="578" y="337">RDC · 0 m</text>
+<text class="niv" x="578" y="295">Mezzanine · 3,2 m</text>
+<text class="niv" x="578" y="252">R+1 · Formation · 6,4 m</text>
+<text class="niv" x="578" y="208">R+2 · Bureaux · 9,8 m</text>
+<text class="niv" x="578" y="164">R+3 · Direction · 13,2 m</text>
+</svg><!-- /P118:VUE3D -->
+        </div>
+        <div class="flottant aide-geste" data-etape-vis="parametres apercu" role="note">
+          <b>Tracer un mur</b> — cliquez le point de départ, puis l'arrivée ; ou tapez la longueur et l'angle.
+          <p class="muet">Exemple : départ sur une façade (accrochage perpendiculaire), 5 m vers l'intérieur. <kbd>Entrée</kbd> valide, <kbd>Échap</kbd> annule.</p>
+        </div>
+        <div class="flottant precision" data-etape-vis="apercu controle" role="group" aria-label="Saisie de précision">
+          <label>Longueur<input value="5,00 m"></label>
+          <label>Angle<input value="90°"></label>
+          <span class="ex"></span>
+        </div>
+      </div>
+      <div class="accrochages seul-2d" role="group" aria-label="Accrochages">
+        <b>Accrochages</b>
+        <button type="button" class="chip" aria-pressed="true">Extrémité</button>
+        <button type="button" class="chip" aria-pressed="true">Milieu</button>
+        <button type="button" class="chip actif-maintenant" aria-pressed="true">Perpendiculaire</button>
+        <button type="button" class="chip" aria-pressed="true">Intersection</button>
+        <button type="button" class="chip" aria-pressed="true">Orthogonal</button>
+        <button type="button" class="chip" aria-pressed="true">Grille 0,50 m</button>
+        <span class="etat-geste si-geste">Commande <code>mur.tracer</code> · aperçu local, rien n'est enregistré avant validation</span>
+      </div>
+    </main>
+
+    <!-- 4. Inspecteur -->
+    <aside class="inspecteur" aria-label="Inspecteur">
+      <h2>Inspecteur</h2>
+      <div class="si-repos">
+        <!-- P118:INSP-MUR --><p class="objet-titre"><b>Façade P.118</b> <span class="muet">· mur · niveau RDC</span></p>
+<div class="prop seul-complet"><span class="cle">Identifiant</span><span class="lu"><code>EX118-rdc-EXT-1</code></span></div>
+<div class="prop"><span class="cle">Épaisseur</span><span class="val"><input value="0,3" aria-label="Épaisseur"><span class="unite">m</span></span><span class="lien seul-complet">provenance <b>import</b> · statut <b>déclarée</b></span></div>
+<div class="prop"><span class="cle">Hauteur</span><span class="val"><input value="3,2" aria-label="Hauteur"><span class="unite">m</span></span><span class="lien seul-complet">provenance <b>import</b> · statut <b>déclarée</b></span></div>
+<div class="prop"><span class="cle">Type</span><span class="lu">non typé <span class="muet">(source sans type)</span></span><span class="lien seul-complet">provenance <b>import</b> · statut <b>déclarée</b></span></div>
+<div class="prop"><span class="cle">Calque</span><span class="lu">Murs</span></div>
+<div class="prop"><span class="cle">Extérieur</span><span class="lu">oui <span class="muet">(exteriorWallIds)</span></span><span class="lien seul-complet">provenance <b>import</b> · statut <b>déclarée</b></span></div>
+<div class="prop"><span class="cle">Longueur</span><span class="lu"><span class="nonev">non évaluée</span></span><span class="lien seul-complet">provenance <b>calcul (lot 1)</b> · statut <b>—</b></span></div>
+<div class="prop"><span class="cle">Ouvertures hébergées</span><span class="lu">9 <span class="muet">(1 porte, 8 fenêtres)</span></span></div>
+<div class="prop seul-complet"><span class="cle">Alignement</span><span class="lu"><span class="nonev">non évaluée</span> <span class="muet">(source : lineRef absent)</span></span></div>
+<div class="prop seul-complet"><span class="cle">Couleur (provenance)</span><span class="lu"><code>#d8cfba</code></span><span class="lien seul-complet">provenance <b>import</b> · statut <b>déclarée</b></span></div>
+<div class="prop seul-complet"><span class="cle">Classe IFC</span><span class="lu"><code>IfcWall</code> <span class="muet">(annexe C, lot 6)</span></span></div><!-- /P118:INSP-MUR -->
+        <section class="bloc seul-complet" aria-label="Relations">
+          <h3 class="eyebrow">Relations</h3>
+          <ul class="controles">
+            <li class="ok">héberge 9 ouvertures (relation <code>heberge</code>)</li>
+            <li class="attente">délimite des pièces : dérivée, <span class="nonev">non évaluée</span></li>
+            <li class="attente">joint-à d'autres murs : dérivée, <span class="nonev">non évaluée</span></li>
+          </ul>
+        </section>
+        <div class="aide-située">
+          <b>Mur</b> · famille Créer
+          <p><b>Épaisseur</b> : distance entre les deux faces, en mètres ; l'axe reste en place.</p>
+          <p class="muet">Exemple : sélectionnez le mur, tapez la nouvelle épaisseur, <kbd>Entrée</kbd>. Annulable.</p>
+        </div>
+      </div>
+
+      <div class="si-geste">
+        <p class="objet-titre"><b>Nouveau mur</b> <span class="muet">· aperçu · niveau RDC</span></p>
+        <p class="muet seul-complet">Commande <code>mur.tracer</code> · contrat <code>atelier-commands/1</code></p>
+        <div class="prop"><label for="g-type">Type</label><span class="val"><select id="g-type"><option>cloison</option><option>mur</option><option>non typé</option></select></span></div>
+        <div class="prop"><label for="g-ep">Épaisseur</label><span class="val"><input id="g-ep" value="0,15"><span class="unite">m</span></span><span class="lien"><span class="ex"></span></span></div>
+        <div class="prop" data-etape-vis="parametres apercu validation"><label for="g-h">Hauteur</label><span class="val"><input id="g-h" value="3,2"><span class="unite">m</span></span><span class="lien">hauteur du niveau RDC (source)</span></div>
+        <div class="prop invalide" data-etape-vis="controle"><label for="g-h2">Hauteur</label><span class="val"><input id="g-h2" value="3,2" aria-invalid="true" aria-describedby="err-h"><span class="unite">m²</span></span></div>
+        <div class="prop"><span class="cle">Alignement</span><span class="lu">axe</span></div>
+        <div class="prop"><span class="cle">Calque</span><span class="lu">Cloisons</span></div>
+
+        <div class="message erreur" id="err-h" role="alert" data-etape-vis="controle">
+          <h3>Commande refusée — rien n'a été modifié</h3>
+          <dl class="oca">
+            <dt>Objet</dt><dd>Nouveau mur, paramètre « Hauteur »</dd>
+            <dt>Cause</dt><dd>Grandeur incompatible : une hauteur attend une longueur (m), la saisie est une aire (m²).</dd>
+            <dt>Action</dt><dd>Changer l'unité en m, ou reprendre la hauteur du niveau.</dd>
+          </dl>
+          <div class="boutons"><button type="button" class="primaire" data-regle="etape" data-valeur="apercu">Corriger l'unité</button><button type="button" data-regle="etape" data-valeur="apercu">Hauteur du niveau</button></div>
+        </div>
+
+        <section class="bloc" data-etape-vis="apercu controle validation" aria-label="Contrôles légers">
+          <h3 class="eyebrow">Contrôles</h3>
+          <ul class="controles">
+            <li class="ok">Départ accroché perpendiculairement à la façade (EXT-3)</li>
+            <li class="ok" data-etape-vis="apercu validation">Unités : longueurs en m</li>
+            <li class="warn" data-etape-vis="controle">Hauteur : unité incompatible (m²)</li>
+            <li class="attente">Jonction avec la façade : <span class="nonev">non évaluée</span></li>
+            <li class="attente">Objet affecté : espace R02 · Plateau polyvalent</li>
+          </ul>
+          <div class="proposition seul-complet">Après validation, <b>détecter les pièces</b> proposera de scinder R02 ; rien n'est imposé.</div>
+        </section>
+        <div class="validation" data-etape-vis="parametres apercu controle">
+          <button type="button" class="primaire" data-regle="etape" data-valeur="validation">Valider <kbd>Entrée</kbd></button>
+          <button type="button" data-regle="etape" data-valeur="repos">Annuler <kbd>Échap</kbd></button>
+        </div>
+        <div class="message ok" data-etape-vis="validation" role="status">
+          <h3>Mur tracé — état « local »</h3>
+          Envoyé au serveur dès que possible ; l'état passera à « synchronisé ». <kbd>Ctrl</kbd> <kbd>Z</kbd> annule.
+          <span class="ex"></span>
+        </div>
+        <div class="aide-située">
+          <b>Tracer un mur</b> · famille Créer · <code>mur.tracer</code>
+          <p><b>Alignement</b> : la ligne tracée est l'axe du mur, ou sa face gauche ou droite.</p>
+          <p class="muet">Synonymes : wall, cloison. Accrochages et grille de 0,50 m actifs.</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- 5. Panneau des modifications et problèmes -->
+  <section class="panneau" data-ouvert="false" aria-labelledby="pan-titre">
+    <div class="panneau-resume">
+      <h2 id="pan-titre">Modifications et problèmes</h2>
+      <span class="compte h">4 réserves Harmonie</span>
+      <span class="compte a">À confirmer : structure, <!-- P118:NB-PASSAGE -->32<!-- /P118:NB-PASSAGE --> passages de porte, monte-charge</span>
+      <span class="compte i">0 référence à réparer · <!-- P118:NB-COTES -->64<!-- /P118:NB-COTES --> cotations libres</span>
+      <span class="compte i">Conflits : aucun</span>
+      <span class="compte i">Documents à recalculer : non évalué</span>
+      <button type="button" class="bascule" data-panneau-bascule aria-expanded="false" aria-controls="pan-corps">Détail</button>
+    </div>
+    <div class="panneau-corps" id="pan-corps">
+      <div class="colonne">
+        <h3>Problèmes et réserves</h3>
+        <div class="pb"><span class="type compte h">Harmonie</span><span class="titre">Hauteurs : conflit avec la référence du dossier <span class="muet">· prioritaire</span></span><span class="act"><button type="button" data-demo="Maquette : ouvre le bilan Harmonie de l'étape 10.">Ouvrir</button></span><span class="det">Règle HEIGHT du bilan existant (design-review.ts), déclenchée par les hauteurs de 3,2 / 3,4 m de P.118.</span></div>
+        <div class="pb"><span class="type compte h">Harmonie</span><span class="titre">Accès technique et rampe dans le recul <span class="muet">· prioritaire</span></span><span class="act"><button type="button" data-demo="Maquette : ouvre le bilan Harmonie de l'étape 10.">Ouvrir</button></span><span class="det">Règle RAMP, déclenchée par <code>basementAccess</code> (EX118-RAMP).</span></div>
+        <div class="pb"><span class="type compte h">Harmonie</span><span class="titre">Mezzanine et RDC : acoustique / transitions <span class="muet">· à étudier</span></span><span class="act"><button type="button" data-demo="Maquette : ouvre le bilan Harmonie de l'étape 10.">Ouvrir</button></span><span class="det">Règle MEZZ, déclenchée par le niveau « Mezzanine ».</span></div>
+        <div class="pb"><span class="type compte h">Harmonie</span><span class="titre">Contexte extérieur non observé <span class="muet">· à documenter</span></span><span class="act"><button type="button" data-demo="Maquette : ouvre l'observation du contexte (étape 10).">Ouvrir</button></span><span class="det">Règle CONTEXT, tant qu'aucune observation n'est déclarée.</span></div>
+        <div class="pb"><span class="type compte a">À confirmer</span><!-- P118:PORTES-PASSAGE --><span class="titre">Passage utile non vérifié · 32 portes <span class="muet">(dont 7 au RDC)</span></span><span class="det">Objet : P05, V817-SAN-F-ENTRY, V817-SAN-F-PMR-DOOR, V817-SAN-F-STD-DOOR, V817-SAN-H-ENTRY, V817-SAN-H-PMR-DOOR, V817-SAN-H-STD-DOOR (RDC). Cause : la source déclare <code>clearWidthVerified: false</code>. Action : renseigner le passage utile mesuré ou laisser « à vérifier ».</span><!-- /P118:PORTES-PASSAGE --><span class="act"><button type="button" data-demo="Maquette : sélectionne les portes concernées.">Voir</button></span></div>
+        <div class="pb"><span class="type compte a">Hypothèse</span><span class="titre">Structure déclarée, à confirmer (R4)</span><span class="act"><button type="button" data-demo="Maquette : ouvre la structure déclarée.">Voir</button></span><span class="det"><!-- P118:STRUCTURE --><p><b>Dalles en béton post-tendu</b></p><ul class="controles"><li class="attente">Charge d’exploitation supposée, à confirmer</li><li class="attente">Épaisseur BET non définie ; 0,25 m conservé uniquement pour la représentation</li><li class="attente">Exigences enregistrées ; résistance, flèche, poinçonnement, pertes, ancrages et appuis non calculés</li></ul><!-- /P118:STRUCTURE --></span></div>
+        <div class="pb"><span class="type compte a">À confirmer</span><!-- P118:MONTE-CHARGE --><span class="titre">Monte-charge MC-01 · capacité non évaluée</span><span class="det">Objet : gaine MC-01, 6 arrêts. Cause : la source déclare la capacité absente (<code>capacityKg: null</code>) — « Implantation proposée ; charge, cabine, fosse et hauteur de tête à définir avec le fournisseur. » Action : renseigner avec le fournisseur, valeur sourcée.</span><!-- /P118:MONTE-CHARGE --><span class="act"><button type="button" data-demo="Maquette : sélectionne la gaine MC-01.">Voir</button></span></div>
+        <div class="pb"><span class="type compte i">Info</span><span class="titre">Aires des <!-- P118:NB-PIECES -->45<!-- /P118:NB-PIECES --> pièces : déclarées (prototype), calculées <span class="nonev">non évaluées</span></span><span class="act"></span><span class="det">L'écart déclaré / calculé sera listé par l'import du lot 1.</span></div>
+        <p class="muet">Les quatre réserves Harmonie : titres et priorités tels que codés dans <code>packages/domain-model/src/design-review.ts</code> ; le bilan n'est pas exécuté par la maquette.</p>
+      </div>
+      <div class="colonne">
+        <h3>Journal <span class="ex"></span></h3>
+        <ul class="journal">
+          <li><span class="rev">—</span><span>Import de l'exemple P.118 <span class="muet">(lot 1)</span></span><span class="nonev">non évalué</span></li>
+          <li><span class="rev">r+1</span><span><code>mur.tracer</code> · Cloison 5,00 m · RDC</span><span class="etat local">local</span></li>
+          <li><span class="rev">r+2</span><span><code>mur.modifier</code> · Hauteur · Façade P.118</span><span class="etat sync">synchronisé</span></li>
+          <li><span class="rev">r+3</span><span><code>ouverture.poser</code> · Porte · RDC</span><span class="etat conflit">conflit</span></li>
+        </ul>
+        <p class="muet">Annuler / rétablir agissent sur vos commandes ; chaque ligne garde sa révision.</p>
+      </div>
+      <div class="colonne">
+        <h3>États</h3>
+        <div class="legende-etats">
+          <div><span class="etat local">local</span> appliqué ici, pas encore reçu par le serveur</div>
+          <div><span class="etat sync">synchronisé</span> reçu et validé par le serveur</div>
+          <div><span class="etat conflit">conflit</span> refusé (409) : garder le serveur, réappliquer, ou variante (lot 7)</div>
+          <div><span class="nonev">non évalué</span> valeur absente ou non calculée — jamais devinée</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- 3. Commandes : palette Ctrl/⌘ K -->
+<div class="voile" data-ouvert="false"></div>
+<div class="palette" role="dialog" aria-modal="true" aria-labelledby="pal-titre" data-ouvert="false">
+  <div class="palette-tete">
+    <h2 id="pal-titre" class="sr-only">Rechercher une commande</h2>
+    <input type="search" role="combobox" aria-expanded="true" aria-controls="pal-liste" aria-autocomplete="list" placeholder="Outil, objet, paramètre, aide… (synonymes et termes d'autres logiciels acceptés)">
+    <button type="button" data-palette-fermer aria-label="Fermer la palette">Échap</button>
+  </div>
+  <div class="palette-filtres" aria-hidden="true">
+    <span class="chip" aria-pressed="true">Tout</span><span class="chip">Outils</span><span class="chip">Objets</span><span class="chip">Paramètres</span><span class="chip">Aides</span>
+  </div>
+  <ul id="pal-liste" role="listbox" aria-label="Résultats">
+    <li class="res" role="option" id="r-pousser" data-mots="push/pull, push pull, presspull, tirer, extruder une hauteur">
+      <span class="nom">Pousser / tirer</span><span class="fam">Modifier · outil</span><span class="via" hidden></span>
+      <dl><dt>Action</dt><dd>Change la hauteur d'un mur ou l'épaisseur d'une dalle en tirant une face, avec aperçu.</dd><dt>Conditions</dt><dd>Un mur, une dalle ou un solide sélectionné ; vue 3D.</dd><dt>Exemple</dt><dd>Sélectionner la façade, tirer sa face haute, taper la hauteur, <kbd>Entrée</kbd>.</dd></dl>
+    </li>
+    <li class="res" role="option" id="r-decaler" data-mots="offset, décalage, parallèle, copie parallèle">
+      <span class="nom">Décaler</span><span class="fam">Modifier · outil</span><span class="via" hidden></span>
+      <dl><dt>Action</dt><dd>Crée une copie parallèle d'un tracé ou d'un mur à une distance donnée.</dd><dt>Conditions</dt><dd>Un tracé, un contour ou un mur sélectionné.</dd><dt>Exemple</dt><dd>Sélectionner un contour, taper la distance, cliquer le côté.</dd></dl>
+    </li>
+    <li class="res" role="option" id="r-ajuster" data-mots="trim, couper, rogner, raccourcir">
+      <span class="nom">Ajuster</span><span class="fam">Modifier · outil</span><span class="via" hidden></span>
+      <dl><dt>Action</dt><dd>Coupe un tracé à son intersection avec une limite.</dd><dt>Conditions</dt><dd>Deux tracés qui se croisent.</dd><dt>Exemple</dt><dd>Choisir la limite, puis cliquer la partie à retirer.</dd></dl>
+    </li>
+    <li class="res" role="option" id="r-prolonger" data-mots="extend, allonger, étendre">
+      <span class="nom">Prolonger</span><span class="fam">Modifier · outil</span><span class="via" hidden></span>
+      <dl><dt>Action</dt><dd>Allonge un tracé ou un mur jusqu'à une limite.</dd><dt>Conditions</dt><dd>Une limite atteignable dans le prolongement.</dd><dt>Exemple</dt><dd>Choisir la limite, puis cliquer l'extrémité à prolonger.</dd></dl>
+    </li>
+    <li class="res" role="option" id="r-mur" data-mots="wall, cloison, paroi">
+      <span class="nom">Tracer un mur</span><span class="fam">Créer · outil</span><span class="via" hidden></span>
+      <dl><dt>Action</dt><dd>Trace un mur par son axe, avec type, épaisseur et hauteur.</dd><dt>Conditions</dt><dd>Un niveau actif.</dd><dt>Exemple</dt><dd>Cliquer le départ sur une façade, taper la longueur, <kbd>Entrée</kbd>.</dd></dl>
+    </li>
+    <li class="res" role="option" id="r-porte" data-mots="door, ouverture, baie">
+      <span class="nom">Poser une porte</span><span class="fam">Créer · outil</span><span class="via" hidden></span>
+      <dl><dt>Action</dt><dd>Pose une porte hébergée par un mur ; elle se déplace le long de ce mur.</dd><dt>Conditions</dt><dd>Un mur assez long pour la largeur choisie.</dd><dt>Exemple</dt><dd>Survoler un mur, cliquer la position, ajuster la largeur dans l'inspecteur.</dd></dl>
+    </li>
+    <li class="res" role="option" id="r-pieces" data-mots="room, rooms, local, espace, détection">
+      <span class="nom">Détecter les pièces</span><span class="fam">Créer · proposition</span><span class="via" hidden></span>
+      <dl><dt>Action</dt><dd>Propose les pièces fermées par des murs ; vous acceptez ou non chaque proposition.</dd><dt>Conditions</dt><dd>Des murs qui ferment un contour sur le niveau actif.</dd><dt>Exemple</dt><dd>Après un nouveau mur, accepter la pièce proposée.</dd></dl>
+    </li>
+    <li class="res" role="option" id="r-niveau" data-mots="étage, level, storey, plancher">
+      <span class="nom">Changer de niveau</span><span class="fam">Navigation · paramètre d'affichage</span><span class="via" hidden></span>
+      <dl><dt>Action</dt><dd>Change le niveau actif ; ne modifie pas le modèle.</dd><dt>Conditions</dt><dd>Aucune.</dd><dt>Exemple</dt><dd><kbd>Page suivante</kbd> monte d'un niveau.</dd></dl>
+    </li>
+    <li class="res" role="option" id="r-epaisseur" data-mots="thickness, épaisseur, largeur du mur">
+      <span class="nom">Épaisseur du mur</span><span class="fam">Paramètre · mur</span><span class="via" hidden></span>
+      <dl><dt>Action</dt><dd>Ouvre le champ « Épaisseur » de l'inspecteur pour la sélection.</dd><dt>Conditions</dt><dd>Un ou plusieurs murs sélectionnés.</dd><dt>Exemple</dt><dd>Taper la valeur en m, <kbd>Entrée</kbd>.</dd></dl>
+    </li>
+    <li class="res" role="option" id="r-accroche" data-mots="snap, aimanter, accrocher, osnap">
+      <span class="nom">Accrochages</span><span class="fam">Aide</span><span class="via" hidden></span>
+      <dl><dt>Action</dt><dd>Explique les accrochages : extrémité, milieu, perpendiculaire, intersection, orthogonal, grille 0,50 m.</dd><dt>Conditions</dt><dd>Aucune.</dd><dt>Exemple</dt><dd>Maintenir <kbd>Maj</kbd> pour forcer l'orthogonal.</dd></dl>
+    </li>
+    <li class="res" role="option" id="r-annuler" data-mots="undo, défaire, retour arrière">
+      <span class="nom">Annuler</span><span class="fam">Modifier · commande</span><span class="via" hidden></span>
+      <dl><dt>Action</dt><dd>Annule votre dernière commande enregistrée.</dd><dt>Conditions</dt><dd>Une commande à vous dans le journal.</dd><dt>Exemple</dt><dd><kbd>Ctrl</kbd> <kbd>Z</kbd>.</dd></dl>
+    </li>
+    <li class="res indispo" role="option" id="r-exporter" data-mots="export, ifc, pdf, dxf, enregistrer sous">
+      <span class="nom">Exporter (IFC, PDF, DXF)</span><span class="fam">Partager · indisponible</span><span class="via" hidden></span>
+      <dl><dt>Action</dt><dd>Exporte le modèle ou une feuille.</dd><dt>Conditions</dt><dd>Indisponible : documents au lot 5, IFC au lot 6 ; opération serveur, impossible hors ligne.</dd><dt>Exemple</dt><dd>—</dd></dl>
+    </li>
+  </ul>
+  <p class="vide" hidden>Aucune commande ne correspond. Essayez un synonyme (« offset », « trim », « push/pull »…).</p>
+  <div class="palette-pied"><span><kbd>↑</kbd> <kbd>↓</kbd> choisir</span><span><kbd>Entrée</kbd> lancer</span><span><kbd>Échap</kbd> fermer</span><span>Les mêmes commandes que la barre et le clavier.</span></div>
+</div>
+<div class="toast" role="status" aria-live="polite" data-ouvert="false"></div>
+<script src="atelier.js"></script>
+</body>
+</html>
