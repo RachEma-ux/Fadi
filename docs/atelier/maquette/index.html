@@ -96,9 +96,9 @@
   <h2 id="exhaustivite">Exhaustivité des outils</h2>
   <p>Tous les outils sont rangés dans les six familles du niveau <b>Complet</b> (onglets de la barre sur ordinateur,
     feuille « Outils » sur téléphone) et retrouvables dans la palette <kbd>Ctrl</kbd> <kbd>K</kbd> par leur nom ou un
-    synonyme. Une étiquette <span class="lot">lot n</span> marque un outil prévu après le lot 3 ; une étiquette
-    <span class="lot trou">lot 5</span> marque un outil <b>que le prototype offre aujourd'hui</b> et qui serait absent du
-    produit entre la bascule (lot 4) et le lot 5. Tableaux générés par <code>outils/outils.py</code>.</p>
+    synonyme. Une étiquette <span class="lot">lot n</span> marque un outil prévu après le lot 3. Tous les outils
+    que le prototype offre aujourd'hui sont disponibles dès le lot 3 : Cotation, Texte, Mètre, Métré et Exporter y
+    sont avancés en version simple (décision D-018). Tableaux générés par <code>outils/outils.py</code>.</p>
   <!-- OUTILS:CORRESPONDANCE --><h3>Les 27 outils du prototype actuel</h3>
   <p class="muet">Liste lue dans <code>apps/web/public/atelier-native/v14-tools.js</code> (<code>TOOLS</code>). 27 / 27 ont une place dans la maquette.</p>
   <div class="defile"><table class="corresp"><tr><th>Outil du prototype</th><th>Dans la maquette</th><th>Fiche</th><th>Lot</th></tr>
@@ -122,11 +122,11 @@
   <tr><td>Pousser/Tirer</td><td>Modifier › 3D › <b>Pousser / tirer</b></td><td>DA-04-07</td><td>3b</td></tr>
   <tr><td>Extruder</td><td>Modifier › 3D › <b>Extruder</b></td><td>DA-04-01</td><td>3b</td></tr>
   <tr><td>Calques</td><td>Connecter › Organisation › <b>Calques</b></td><td>DA-05-01</td><td>3a</td></tr>
-  <tr><td>Mètre</td><td>Analyser › Analyser › <b>Mètre</b></td><td>DA-15-01</td><td>5 <span class="lot trou">absent entre lot 4 et lot 5</span></td></tr>
-  <tr><td>Métré</td><td>Analyser › Analyser › <b>Métré</b></td><td>DA-16-10</td><td>5 <span class="lot trou">absent entre lot 4 et lot 5</span></td></tr>
-  <tr><td>Cotation</td><td>Documenter › Annotations › <b>Cotation</b></td><td>DA-15-02</td><td>5 <span class="lot trou">absent entre lot 4 et lot 5</span></td></tr>
-  <tr><td>Texte</td><td>Documenter › Annotations › <b>Texte</b></td><td>DA-15-04</td><td>5 <span class="lot trou">absent entre lot 4 et lot 5</span></td></tr>
-  <tr><td>Exporter</td><td>Partager › Partager › <b>Exporter (PNG, SVG, DXF, PDF)</b></td><td>DA-14 / DA-22-03</td><td>5 <span class="lot trou">absent entre lot 4 et lot 5</span></td></tr>
+  <tr><td>Mètre</td><td>Analyser › Analyser › <b>Mètre</b></td><td>DA-15-01</td><td>3a</td></tr>
+  <tr><td>Métré</td><td>Analyser › Analyser › <b>Métré</b></td><td>DA-16-10</td><td>3a</td></tr>
+  <tr><td>Cotation</td><td>Documenter › Annotations › <b>Cotation</b></td><td>DA-15-02</td><td>3a</td></tr>
+  <tr><td>Texte</td><td>Documenter › Annotations › <b>Texte</b></td><td>DA-15-04</td><td>3a</td></tr>
+  <tr><td>Exporter</td><td>Partager › Partager › <b>Exporter (PNG, SVG)</b></td><td>DA-14 / DA-22-03</td><td>3a</td></tr>
   <tr><td>Pan</td><td>Navigation de la vue › <b>Pan</b></td><td>DA-18-04 (3D) · L3a.2 (2D)</td><td>3a / 3b</td></tr>
   <tr><td>Rotation vue</td><td>Navigation de la vue › <b>Orbite (rotation de la vue)</b></td><td>DA-18-04</td><td>3b</td></tr>
   </table></div>
@@ -206,10 +206,8 @@
     <li><b>Essentiel</b> = outils du prototype à plat (Sélection, Mur, Porte, Fenêtre, Pièce, Cotation, Pousser, Déplacer) ; les familles n'apparaissent qu'en Complet. À confirmer.</li>
     <li><b>Téléphone</b> : cinq onglets en bas (Projet, Outils, Inspecteur, Problèmes, Affichage) ouvrant des feuilles, plutôt que des panneaux latéraux.</li>
     <li><b>Réserves Harmonie</b> listées dans le panneau avec un lien « Ouvrir » vers le bilan de l'étape 10 ; elles ne se traitent pas dans l'Atelier.</li>
-    <li><b>Outils du prototype prévus au lot 5</b> (Cotation, Texte, Mètre, Métré, Exporter) : la bascule du lot 4
-      supprime l'ancien Atelier avant leur arrivée. Au choix : les avancer au lot 3 dans une version simple (cotation et
-      texte libres, mesure, export PNG / SVG de la vue), accepter leur absence entre les lots 4 et 5, ou placer le lot 5
-      avant la bascule (§10.1, point 6).</li>
+    <li><b>Outils du prototype prévus au lot 5</b> — <i>tranché (D-018)</i> : avancés au lot 3a en version simple
+      (cotation et texte libres, mesure, métré du niveau actif, export PNG / SVG de la vue).</li>
     <li><b>Orientation du plan</b> : vue tournée pour la lecture (comme ici) ou repère local brut ; le nord de P.118 n'étant pas confirmé (H11), aucune flèche nord n'est proposée.</li>
   </ol>
 </main>
