@@ -253,7 +253,7 @@ Catalogue initial : annexe B.
 | --- | --- | --- |
 | `GET /model?revision=n` | Instantané typé complet (niveaux, objets, relations, définitions, calques, site, hypothèses, sources) à la révision courante ou demandée | 200 ; 404 |
 | `GET /model/niveaux/:niveauId` | Instantané d'un niveau (chargement par niveau) | 200 |
-| `POST /commands` | Lot de commandes (enveloppe 5.3) | 200 `{ revision, applique: [{type, objetIds}], effets: { vues, documents, problemes }, journalId }` ; 400 `{ erreur: "invalide", details: [{chemin, message}] }` ; 403 ; 404 ; 409 `{ erreur: "conflit", baseRevision, revisionCourante, conflits: [{objetId, motif, etatServeur}] }` ; 423 réservation d'autrui |
+| `POST /commands` | Lot de commandes (enveloppe 5.3) | 200 `{ revision, applique: [{type, objetIds}], effets: { vues, documents, problemes, propositions, remplacements }, journalId }` (lot sans changement : révision inchangée) ; 400 `{ erreur: "invalide", details: [{chemin, objet, cause, action, message}] }` (D-024) ; 403 ; 404 ; 409 `{ erreur: "conflit", baseRevision, revisionCourante, conflits: [{objetId, motif, etatServeur}] }` ; 423 réservation d'autrui |
 | `POST /commands/annuler`, `POST /commands/retablir` | Inverse d'une entrée du journal (nouvelle microversion, `inverseDe`) | comme `/commands` |
 | `GET /journal?apres=n` | Entrées du journal depuis une révision (synchronisation incrémentale) | 200 |
 | `GET /problemes` | Références à réparer, conflits en attente, documents périmés, réserves Harmonie | 200 |
