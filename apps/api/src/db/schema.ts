@@ -310,3 +310,205 @@ export const projectMembers = pgTable("project_members", {
   invitedBy: text("invited_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [primaryKey({ columns: [t.projectId, t.userId] }), index("project_members_user_idx").on(t.userId)]);
+
+// >>> module: atelier
+// Nouvel Atelier (cahier des charges §5.5 ; propriétaire : équipier « base », §9). Miroir de la section `atelier`
+// de init.sql (qui fait autorité, contraintes comprises) ; figé pour la phase 2 du lot 2. Le passage
+// EtatModele ⇄ lignes est dans lib/atelier-rows.ts : seul écrivain des tables de modèle (R9).
+
+import type {
+  Classification,
+  ClasseObjet,
+  Commande,
+  ContratCommandes,
+  DefinitionType,
+  Effets,
+  ObjetModele,
+  Ontologie,
+  Provenance,
+  Representation,
+  Statut,
+  Tracabilite,
+  TypeRelation,
+  ValeurPropriete,
+} from "@parcours/atelier-model";
+import { bigint } from "drizzle-orm/pg-core";
+
+/** Tête du modèle typé d'un projet (absente = pas encore de modèle). La révision qui fait autorité reste `projects.model_revision`. */
+export const atelierModels = pgTable("atelier_models", {
+  projectId: text("project_id").primaryKey().references(() => projects.id, { onDelete: "cascade" }),
+  /** Révision à laquelle `fingerprint` a été écrite. */
+  modelRevision: integer("model_revision").notNull(),
+  /** Empreinte `atelier-empreinte/1` (`sha256-…`) du modèle courant. */
+  fingerprint: text("fingerprint").notNull(),
+  fingerprintAlgorithm: text("fingerprint_algorithm").notNull().default("atelier-empreinte/1"),
+  ontologyVersion: integer("ontology_version").notNull(),
+  catalogueVersion: integer("catalogue_version").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** Définitions de types du catalogue : `key` = `${classe}:${id}`, `content` = `DefinitionType` entière. */
+export const atelierDefinitions = pgTable("atelier_definitions", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  key: text("key").notNull(),
+  definitionId: text("definition_id").notNull(),
+  class: text("class").notNull(),
+  catalogueVersion: integer("catalogue_version").notNull(),
+  content: jsonb("content").notNull().$type<DefinitionType>(),
+  modelRevision: integer("model_revision").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [primaryKey({ columns: [t.projectId, t.key] })]);
+
+/** Colonnes communes aux trois tables d'objets (atelier_objects, atelier_layers, atelier_site). */
+function colonnesObjet() {
+  return {
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    id: text("id").notNull(),
+    ontology: text("ontology").$type<Ontologie>(),
+    class: text("class").$type<ClasseObjet>(),
+    levelId: text("level_id"),
+    definitionId: text("definition_id"),
+    params: jsonb("params").$type<ObjetModele["params"]>(),
+    layerId: text("layer_id"),
+    groupId: text("group_id"),
+    /** Réservée (phases existant / projet / démoli) : toujours nulle au lot 2. */
+    phase: text("phase"),
+    provenance: text("provenance").$type<Provenance>(),
+    status: text("status").$type<Statut>(),
+    sourceId: text("source_id"),
+    note: text("note"),
+    classifications: jsonb("classifications").$type<readonly Classification[]>(),
+    annotations: jsonb("annotations").$type<Readonly<Partial<Record<string, Tracabilite>>>>(),
+    /** Champs d'objet non portés par une colonne (rien n'est perdu). */
+    extra: jsonb("extra").$type<Record<string, unknown>>(),
+    modelRevision: integer("model_revision").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    /** Objet supprimé (identité réservée, `EtatModele.supprimes`). */
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    /** Ordre dans `EtatModele.supprimes` (croissant) ; nul si non supprimé. */
+    deletedRank: integer("deleted_rank"),
+  };
+}
+
+/**
+ * Objets placés hors calques et site. Seule table qui admet une trace de suppression sans contenu (`class`,
+ * `params`… nuls, `deleted_at` posé) ; coordonnées `local` seulement (contrainte SQL).
+ */
+export const atelierObjects = pgTable("atelier_objects", colonnesObjet(), (t) => [
+  primaryKey({ columns: [t.projectId, t.id] }),
+  index("atelier_objects_project_level_idx").on(t.projectId, t.levelId),
+  index("atelier_objects_project_revision_idx").on(t.projectId, t.modelRevision),
+  index("atelier_objects_project_class_idx").on(t.projectId, t.class),
+]);
+
+/** Calques (classe `calque`) ; contenu toujours présent. */
+export const atelierLayers = pgTable("atelier_layers", colonnesObjet(), (t) => [
+  primaryKey({ columns: [t.projectId, t.id] }),
+  index("atelier_layers_project_revision_idx").on(t.projectId, t.modelRevision),
+]);
+
+/** Site et données de projet (parcelle, emprise, hypothèses, sources, structure déclarée) : seuls repères cadastral / géographique admis. */
+export const atelierSite = pgTable("atelier_site", colonnesObjet(), (t) => [
+  primaryKey({ columns: [t.projectId, t.id] }),
+  index("atelier_site_project_revision_idx").on(t.projectId, t.modelRevision),
+]);
+
+/** Propriétés typées d'un objet, ou du projet quand `objectId` est nul ; ordre = `position`. Unicité (projet, coalesce(objet, ''), position) dans init.sql. */
+export const atelierProperties = pgTable("atelier_properties", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  objectId: text("object_id"),
+  position: integer("position").notNull(),
+  name: text("name").notNull(),
+  /** Valeur JSON (JSON `null` admis). */
+  value: jsonb("value").notNull().$type<ValeurPropriete>(),
+  unit: text("unit"),
+  provenance: text("provenance").notNull().$type<Provenance>(),
+  status: text("status").notNull().$type<Statut>(),
+  sourceId: text("source_id"),
+  note: text("note"),
+  extra: jsonb("extra").$type<Record<string, unknown>>(),
+  modelRevision: integer("model_revision").notNull(),
+}, (t) => [index("atelier_properties_project_name_idx").on(t.projectId, t.name)]);
+
+/** Relations orientées ; unicité (projet, type, source, cible, coalesce(rôle, '')) dans init.sql. */
+export const atelierRelations = pgTable("atelier_relations", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  type: text("type").notNull().$type<TypeRelation>(),
+  sourceId: text("source_id").notNull(),
+  targetId: text("target_id").notNull(),
+  role: text("role"),
+  derived: boolean("derived").notNull(),
+  extra: jsonb("extra").$type<Record<string, unknown>>(),
+  modelRevision: integer("model_revision").notNull(),
+}, (t) => [index("atelier_relations_project_target_idx").on(t.projectId, t.targetId)]);
+
+/** Représentations d'un objet, dans leur ordre. */
+export const atelierRepresentations = pgTable("atelier_representations", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  objectId: text("object_id").notNull(),
+  position: integer("position").notNull(),
+  usage: text("usage").notNull().$type<Representation["usage"]>(),
+  authority: text("authority").notNull().$type<Representation["autorite"]>(),
+  engine: text("engine").notNull(),
+  engineVersion: text("engine_version").notNull(),
+  inputsHash: text("inputs_hash").notNull(),
+  extra: jsonb("extra").$type<Record<string, unknown>>(),
+  modelRevision: integer("model_revision").notNull(),
+}, (t) => [primaryKey({ columns: [t.projectId, t.objectId, t.position] })]);
+
+export type NatureJournal = "commande" | "annulation" | "retablissement" | "import";
+
+/**
+ * Journal des lots de commandes (§5.4). Idempotence : unicité (projet, request_id) ; `response` = réponse
+ * enregistrée, renvoyée telle quelle à une requête répétée. `inverse` : commandes inverses produites par le
+ * serveur (seules restaurations admises, D-024). `inverseOf` : entrée annulée (nature `annulation`) ou annulation
+ * rétablie (`retablissement`) ; unique : une entrée ne s'inverse qu'une fois. `resultRevision` = `baseRevision`
+ * (lot sans changement, D-024) ou `baseRevision + 1`.
+ */
+export const atelierCommands = pgTable("atelier_commands", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  requestId: text("request_id").notNull(),
+  contract: text("contract").notNull().$type<ContratCommandes>(),
+  nature: text("nature").notNull().default("commande").$type<NatureJournal>(),
+  label: text("label").notNull(),
+  baseRevision: integer("base_revision").notNull(),
+  resultRevision: integer("result_revision").notNull(),
+  commands: jsonb("commands").notNull().$type<readonly Commande[]>(),
+  inverse: jsonb("inverse").notNull().$type<readonly Commande[]>(),
+  effets: jsonb("effets").notNull().$type<Effets>(),
+  response: jsonb("response").notNull().$type<unknown>(),
+  baseFingerprint: text("base_fingerprint").notNull(),
+  resultFingerprint: text("result_fingerprint").notNull(),
+  authorId: text("author_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  inverseOf: text("inverse_of"),
+}, (t) => [
+  uniqueIndex("atelier_commands_request_unique").on(t.projectId, t.requestId),
+  index("atelier_commands_project_revision_idx").on(t.projectId, t.resultRevision),
+]);
+
+/** Boîte de sortie : événements écrits dans la transaction du lot, traités après validation (idempotents). */
+export const atelierOutbox = pgTable("atelier_outbox", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  commandId: text("command_id").notNull().references(() => atelierCommands.id, { onDelete: "cascade" }),
+  event: text("event").notNull(),
+  payload: jsonb("payload").notNull().$type<Record<string, unknown>>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+  attempts: integer("attempts").notNull().default(0),
+  lastError: text("last_error"),
+}, (t) => [uniqueIndex("atelier_outbox_command_event_unique").on(t.commandId, t.event)]);
+
+/** Volumes immuables adressés par contenu : `id` = SHA-256 hexadécimal du contenu (vérifié par la base). */
+export const volumes = pgTable("volumes", {
+  id: text("id").primaryKey(),
+  mime: text("mime").notNull(),
+  size: bigint("size", { mode: "number" }).notNull(),
+  content: bytea("content").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+// <<< module: atelier
