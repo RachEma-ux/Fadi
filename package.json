@@ -18,6 +18,6 @@
     "typecheck": "node scripts/check-module-deps.mjs && npm run typecheck --workspaces --if-present",
     "check:modules": "node scripts/check-module-deps.mjs",
     "e2e": "node apps/web/e2e/run.mjs",
-    "test": "npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@fadi/api"
+    "test": "npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@fadi/api --workspace=@fadi/web"
   }
 }

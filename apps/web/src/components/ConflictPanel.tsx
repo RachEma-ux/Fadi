@@ -11,12 +11,15 @@
  * - modèle (Atelier) : la version du serveur a repris la clé, la vôtre est
  *   conservée en copie de secours ; « Garder le serveur » retire la copie,
  *   « Reprendre ma version » la réécrit sur la clé à partir de la révision
- *   courante.
+ *   courante ;
+ * - lot de commandes du nouvel Atelier (prop facultative `atelier`, lot 2, non branchée avant le lot 3a) :
+ *   objets en cause champ par champ ; « Garder le serveur » abandonne le lot, « Rejouer mes commandes » les
+ *   revalide sur l'état courant du serveur et les renvoie.
  *
  * Rien n'est écrasé sans décision explicite ; une reprise refusée à nouveau
  * revient ici avec l'état relu.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api, type HarmonieProposalStatus, type ParcoursFieldValue } from "../lib/api";
@@ -172,12 +175,83 @@ function ModelConflictItem({ projectId, c }: { projectId: string; c: ModelConfli
   );
 }
 
-export function ConflictPanel({ projectId }: { projectId: string }) {
+/**
+ * Conflit d'un lot de commandes du nouvel Atelier (409 détaillé, §5.4), fourni par un adaptateur
+ * (`modules/atelier/bus/adaptateurs.ts`, lot 2) : objets en cause, champ par champ, version du serveur et la vôtre.
+ */
+export interface ConflitAtelierAffiche {
+  readonly id: string;
+  readonly at: string;
+  readonly libelle: string;
+  readonly message: string;
+  readonly lignes: readonly { readonly objet: string; readonly champ: string; readonly serveur: string; readonly local: string }[];
+  /** Erreurs d'une tentative « rejouer » refusée par la revalidation locale. */
+  readonly erreurs: readonly string[];
+}
+
+export interface SourceConflitsAtelier {
+  subscribe(fn: () => void): () => void;
+  /** Même tableau tant que rien ne change (`useSyncExternalStore`). */
+  get(): readonly ConflitAtelierAffiche[];
+  garderServeur(id: string): Promise<unknown>;
+  rejouer(id: string): Promise<unknown>;
+}
+
+const AUCUN_CONFLIT_ATELIER: readonly ConflitAtelierAffiche[] = [];
+const sansAbonnement = () => () => {};
+
+function AtelierConflictItem({ projectId, c, source }: { projectId: string; c: ConflitAtelierAffiche; source: SourceConflitsAtelier }) {
+  const [busy, setBusy] = useState(false);
+  const run = (fn: () => Promise<unknown>) => {
+    setBusy(true);
+    void fn().finally(() => setBusy(false));
+  };
+  return (
+    <li data-conflict={c.id} data-kind="commandes">
+      <b>Atelier · {c.libelle}</b> · {new Date(c.at).toLocaleString("fr-FR")} — {c.message}
+      {c.lignes.length > 0 && (
+        <table className="conflict-table">
+          <thead>
+            <tr>
+              <th>Objet</th>
+              <th>Champ</th>
+              <th>Valeur du serveur</th>
+              <th>Votre version</th>
+            </tr>
+          </thead>
+          <tbody>
+            {c.lignes.map((l, i) => (
+              <tr key={`${l.objet}-${l.champ}-${i}`}>
+                <td>{l.objet}</td>
+                <td>{l.champ}</td>
+                <td>{l.serveur}</td>
+                <td>{l.local}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {c.erreurs.length > 0 && <small>{c.erreurs.join(" ")}</small>}
+      <span className="conflict-actions">
+        <button type="button" className="button-secondary" disabled={busy} onClick={() => run(() => source.garderServeur(c.id))}>
+          Garder le serveur
+        </button>
+        <button type="button" className="button-primary" disabled={busy} onClick={() => run(() => source.rejouer(c.id))}>
+          Rejouer mes commandes
+        </button>
+        <Link to={`/projets/${projectId}?module=atelier`}>ouvrir l’Atelier</Link>
+      </span>
+    </li>
+  );
+}
+
+export function ConflictPanel({ projectId, atelier }: { projectId: string; atelier?: SourceConflitsAtelier }) {
   const conflicts = useSyncConflicts(projectId);
   const model = useModelConflicts();
+  const commandes = useSyncExternalStore(atelier ? atelier.subscribe : sansAbonnement, () => (atelier ? atelier.get() : AUCUN_CONFLIT_ATELIER));
   const steps = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
   const labelOf = (stepNumber: number | null, key: string) => steps.data?.find((s) => s.number === stepNumber)?.form?.fields.find((f) => f.key === key)?.label ?? key;
-  const total = conflicts.length + model.length;
+  const total = conflicts.length + model.length + commandes.length;
   if (total === 0) return null;
   return (
     <section className="conflict-banner" role="alert" aria-label="Conflits de synchronisation">
@@ -192,6 +266,10 @@ export function ConflictPanel({ projectId }: { projectId: string }) {
         {model.map((c) => (
           <ModelConflictItem key={c.backupKey} projectId={projectId} c={c} />
         ))}
+        {atelier &&
+          commandes.map((c) => (
+            <AtelierConflictItem key={c.id} projectId={projectId} c={c} source={atelier} />
+          ))}
       </ul>
     </section>
   );
