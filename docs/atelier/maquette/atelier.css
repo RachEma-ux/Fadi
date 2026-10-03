@@ -470,3 +470,7 @@ body[data-famille="partager"] .groupe-fam:not([data-famille="partager"]) { displ
 .outil .lot { margin-top: 1px; }
 .navigation-vue { display: inline-flex; gap: 6px; flex-wrap: wrap; }
 .grille-outils .outil { font-size: 11.5px; }
+/* Tableaux d'exhaustivité : jamais de défilement horizontal de la page à 390 px. */
+.defile { overflow-x: auto; max-width: 100%; }
+table.corresp td .lot { white-space: normal; }
+table.corresp td, table.corresp th { overflow-wrap: anywhere; }

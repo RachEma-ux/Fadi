@@ -250,18 +250,18 @@ def correspondance():
     l = ['<h3>Les 27 outils du prototype actuel</h3>',
          '<p class="muet">Liste lue dans <code>apps/web/public/atelier-native/v14-tools.js</code> (<code>TOOLS</code>). '
          f'{len(proto) + len(navp)} / 27 ont une place dans la maquette.</p>',
-         '<table class="corresp"><tr><th>Outil du prototype</th><th>Dans la maquette</th><th>Fiche</th><th>Lot</th></tr>']
+         '<div class="defile"><table class="corresp"><tr><th>Outil du prototype</th><th>Dans la maquette</th><th>Fiche</th><th>Lot</th></tr>']
     for o in proto:
         alerte = ' <span class="lot trou">absent entre lot 4 et lot 5</span>' if o[7] in TROU else ""
         l.append(f'<tr><td>{e(o[10])}</td><td>{e(FAM_NOM[o[3]])} › {e(o[4])} › <b>{e(o[1])}</b></td><td>{e(o[6])}</td><td>{e(o[7])}{alerte}</td></tr>')
     for n in navp:
         l.append(f'<tr><td>{e(n[5])}</td><td>Navigation de la vue › <b>{e(n[1])}</b></td><td>{e(n[3])}</td><td>{e(n[4])}</td></tr>')
-    l.append('</table>')
+    l.append('</table></div>')
     # 2. Entrées DA retenues pour les lots 1 à 3 (fiches L0.2).
     fiches = sorted(p.stem for p in (ICI.parent / "fiches").glob("DA-*.md"))
     l.append('<h3>Les entrées DA retenues pour les lots 1 à 3</h3>')
     l.append(f'<p class="muet">Une ligne par fiche de <code>docs/atelier/fiches/</code> ({len(fiches)} fiches).</p>')
-    l.append('<table class="corresp"><tr><th>Fiche</th><th>Où la voir</th></tr>')
+    l.append('<div class="defile"><table class="corresp"><tr><th>Fiche</th><th>Où la voir</th></tr>')
     manquantes = []
     for f in fiches:
         outils = [o for o in O if f in o[6]]
@@ -273,7 +273,7 @@ def correspondance():
             ou = '<span class="nonev">non représentée</span>'
             manquantes.append(f)
         l.append(f'<tr><td><a href="#{f}" id="{f}">{f}</a></td><td>{ou}</td></tr>')
-    l.append('</table>')
+    l.append('</table></div>')
     if manquantes:
         print("Fiches sans emplacement :", ", ".join(manquantes), file=sys.stderr)
     return "\n  ".join(l), manquantes
