@@ -7,7 +7,8 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@parcours/atelier-model": "0.1.0",
@@ -19,14 +20,17 @@
     "dexie": "~4.4.6",
     "react": "~19.1.1",
     "react-dom": "~19.1.1",
-    "react-router-dom": "~7.18.4"
+    "react-router-dom": "~7.18.4",
+    "three": "0.186.1"
   },
   "devDependencies": {
     "@types/react": "~19.1.16",
     "@types/react-dom": "~19.1.9",
+    "@types/three": "0.186.0",
     "axe-core": "4.10.3",
     "playwright": "1.56.0",
     "typescript": "~5.9.3",
-    "vite": "~6.4.1"
+    "vite": "~6.4.1",
+    "vitest": "5.0.3"
   }
 }

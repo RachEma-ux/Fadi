@@ -68,6 +68,9 @@ export class AtelierClient {
   private minuterie: ReturnType<typeof setInterval> | null = null;
   private desabonnerJoignabilite: (() => void) | null = null;
   private envoi: Promise<void> | null = null;
+  private relancer = false;
+  /** Lots retirés de la file par « Annuler » avant d'avoir été envoyés : « Rétablir » les rejoue (pile vidée par toute nouvelle action). */
+  private refaireLocal: { commands: Commande[]; label: string }[] = [];
 
   constructor(
     public readonly projectId: string,
@@ -128,8 +131,9 @@ export class AtelierClient {
    * Applique un lot localement (aperçu immédiat, identifiants déterministes) puis le met en file. Une erreur du
    * réducteur est renvoyée telle quelle (objet, cause, action) : rien n'entre dans la file.
    */
-  async executer(commands: Commande[], label: string): Promise<{ effets: Effets; requestId: string }> {
+  async executer(commands: Commande[], label: string, options: { conserverRefaire?: boolean } = {}): Promise<{ effets: Effets; requestId: string }> {
     if (this.instantane.readOnly) throw new ErreurCommande("precondition", "", "Projet en lecture seule");
+    if (!options.conserverRefaire) this.refaireLocal = [];
     const enveloppe: Enveloppe = { requestId: nouvelId(), baseRevision: this.instantane.revision, contract: CONTRAT_COMMANDES, label, commands };
     const r = appliquerLot(this.instantane.etat, enveloppe);
     const lot: LotEnAttente = { enveloppe, etat: "local", creeA: new Date().toISOString(), detail: null };
@@ -155,13 +159,21 @@ export class AtelierClient {
     if (this.instantane.readOnly) return false;
     const dernierLocal = [...this.instantane.lots].reverse().find((l) => l.etat === "local");
     if (dernierLocal) {
-      const restants = this.instantane.lots.filter((l) => l !== dernierLocal);
-      const rejeu = rejouerLots(await this.etatServeurLocal(), this.instantane.revisionServeur, restants);
+      // Retrait immédiat (sans attente) : l'envoi en cours ne doit plus pouvoir prendre ce lot.
+      const id = dernierLocal.enveloppe.requestId;
+      this.emettre({ lots: this.instantane.lots.filter((l) => l.enveloppe.requestId !== id) });
+      this.refaireLocal.push({ commands: dernierLocal.enveloppe.commands, label: dernierLocal.enveloppe.label });
+      await localStore.removeLot(this.projectId, id);
+      const base = await this.etatServeurLocal();
+      const rejeu = rejouerLots(base, this.instantane.revisionServeur, this.instantane.lots);
       this.emettre({ etat: rejeu.etat, revision: this.instantane.revisionServeur + rejeu.rejoues.length, lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
-      await localStore.removeLot(this.projectId, dernierLocal.enveloppe.requestId);
       await this.persisterLots();
       return true;
     }
+    // Le journal local peut être en retard d'un lot qui vient d'être validé : on finit l'envoi et on le relit
+    // avant de choisir la cible, sinon on annulerait une entrée plus ancienne.
+    await this.envoyer();
+    await this.chargerJournal();
     const cible = cibleAnnulation(this.instantane.journal);
     if (!cible || !cible.inverse) return false;
     return this.inverser("annuler", cible);
@@ -169,6 +181,18 @@ export class AtelierClient {
 
   async retablir(): Promise<boolean> {
     if (this.instantane.readOnly) return false;
+    const local = this.refaireLocal.pop();
+    if (local) {
+      try {
+        await this.executer(local.commands, local.label, { conserverRefaire: true });
+        return true;
+      } catch {
+        this.refaireLocal = [];
+        return false;
+      }
+    }
+    await this.envoyer();
+    await this.chargerJournal();
     const cible = cibleRetablissement(this.instantane.journal);
     if (!cible || !cible.inverse) return false;
     return this.inverser("retablir", cible);
@@ -200,15 +224,16 @@ export class AtelierClient {
     if (!lot) return;
     if (decision === "abandonner") {
       await localStore.removeLot(this.projectId, requestId);
-      const restants = this.instantane.lots.filter((l) => l !== lot);
-      const rejeu = rejouerLots(await this.etatServeurLocal(), this.instantane.revisionServeur, restants);
+      const base = await this.etatServeurLocal();
+      const restants = this.instantane.lots.filter((l) => l.enveloppe.requestId !== requestId);
+      const rejeu = rejouerLots(base, this.instantane.revisionServeur, restants);
       this.emettre({ etat: rejeu.etat, revision: this.instantane.revisionServeur + rejeu.rejoues.length, lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
       await this.persisterLots();
       return;
     }
-    const relance: LotEnAttente = { ...lot, etat: "local", detail: null };
-    const restants = this.instantane.lots.map((l) => (l === lot ? relance : l));
-    const rejeu = rejouerLots(await this.etatServeurLocal(), this.instantane.revisionServeur, restants);
+    const base = await this.etatServeurLocal();
+    const restants = this.instantane.lots.map((l) => (l.enveloppe.requestId === requestId ? { ...l, etat: "local" as const, detail: null } : l));
+    const rejeu = rejouerLots(base, this.instantane.revisionServeur, restants);
     this.emettre({ etat: rejeu.etat, revision: this.instantane.revisionServeur + rejeu.rejoues.length, lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
     await this.persisterLots();
     void this.envoyer();
@@ -237,8 +262,17 @@ export class AtelierClient {
   }
 
   async envoyer(): Promise<void> {
-    if (this.envoi) return this.envoi;
-    this.envoi = this.envoyerSequence().finally(() => {
+    // Un lot ajouté pendant la fin d'une séquence d'envoi ne doit pas attendre le prochain déclencheur : on relance.
+    if (this.envoi) {
+      this.relancer = true;
+      return this.envoi;
+    }
+    this.envoi = (async () => {
+      do {
+        this.relancer = false;
+        await this.envoyerSequence();
+      } while (this.relancer && reachability.get());
+    })().finally(() => {
       this.envoi = null;
     });
     return this.envoi;
@@ -247,6 +281,7 @@ export class AtelierClient {
   private async envoyerSequence(): Promise<void> {
     if (!reachability.get() || this.instantane.readOnly) return;
     this.emettre({ envoiEnCours: true });
+    let valides = 0;
     try {
       let garde = 0;
       while (garde++ < 1000) {
@@ -257,7 +292,6 @@ export class AtelierClient {
         try {
           const reponse = await api.postAtelierCommands(this.projectId, enveloppe);
           await localStore.removeLot(this.projectId, lot.enveloppe.requestId);
-          const restants = this.instantane.lots.filter((l) => l.enveloppe.requestId !== lot.enveloppe.requestId);
           // L'état serveur local avance du lot validé : on l'applique au cache serveur.
           const base = await this.etatServeurLocal();
           try {
@@ -265,7 +299,10 @@ export class AtelierClient {
           } catch {
             this.etatServeurCache = null;
           }
+          // La file est relue après les attentes : un lot ajouté pendant l'envoi ne doit pas être perdu.
+          const restants = this.instantane.lots.filter((l) => l.enveloppe.requestId !== lot.enveloppe.requestId);
           this.emettre({ revisionServeur: reponse.revision, revision: reponse.revision + restants.filter((l) => l.etat === "local").length, lots: restants, dernierEffets: reponse.effets });
+          valides += 1;
         } catch (err) {
           if (err instanceof ApiError && err.status === 409) {
             const corps = err.body as { motif?: string } | null;
@@ -290,6 +327,8 @@ export class AtelierClient {
       }
     } finally {
       await this.persisterLots();
+      // Le journal suit les lots validés (annuler / rétablir s'y réfèrent).
+      if (valides > 0) await this.chargerJournal();
       this.emettre({ envoiEnCours: false });
     }
   }

@@ -71,7 +71,12 @@ specification `docs/atelier-cahier-des-charges.md`): `packages/atelier-model` is
 zones; the column of `building.structure`; sketches, generic solids and annotations), the identities
 definition / occurrence / representation, typed properties with units and provenance, the typed commands and
 their pure reducers, the topological references with the « référence à réparer » state, the quantities, the
-one-way P.118 importer and the projection to the analysis input used by the other modules. A capability sheet
+one-way P.118 importer, the projection to the analysis input used by the other modules and the pure 3D meshes
+(`projection/maillage.ts`, copied as is by the renderer). The new Atelier UI lives in
+`apps/web/src/modules/atelier/nouveau/` (display state `etat-ui.ts` kept out of the model, SVG plan editor
+`plan2d/`, three.js view `vue3d/` loaded on demand, panels) and talks to the model only through the command bus
+`modules/atelier/bus/atelier-client.ts`; until the switch (lot 4) it opens with `?module=atelier&version=nouveau`.
+A capability sheet
 (`docs/atelier/fiches/DA-XX-YY.md`) is written and in state « spécifiée » before any function of the Atelier
 is coded, and no function is called « disponible » without its linked proof and the owner's acceptance.
 

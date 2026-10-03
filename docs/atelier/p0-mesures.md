@@ -240,3 +240,20 @@ maître d'ouvrage (§10.1).
 
 Voir `scripts/bench/README.md`. Résultats bruts de ce banc (JSON) conservés hors dépôt dans le dossier de travail
 (`…/scratchpad/bench/out/`).
+
+## Lots 3a et 3b — nouvel Atelier (recette `apps/web/e2e/atelier-nouveau.mjs`)
+
+Banc : Chromium headless de Playwright, rendu WebGL logiciel (SwiftShader), API construite servant l'application,
+PostgreSQL local, compte neuf, exemple P.118 importé (1 753 objets). Trois passages consécutifs ; fourchettes.
+
+| Mesure | Valeur |
+| --- | --- |
+| Ouverture du nouvel Atelier → plan 2D affiché | 1,1 – 2,2 s |
+| Tracer un mur (clic, saisie 4, Entrée) → affiché | 93 – 193 ms |
+| Sélection d'un mur au clic → inspecteur | 43 – 62 ms |
+| Glisser un mur d'un mètre → enregistré par le serveur | 340 – 390 ms |
+| Passage en 3D (chargement de three.js, maillage du P.118) → première image | 1,7 – 2,0 s |
+| Orbite P.118 complet : temps CPU de rendu par image | médiane 2,8 – 3,2 ms ; p95 4,5 – 6,5 ms |
+| Appels de dessin, P.118 complet | < 400 (tampons groupés par niveau et matériau) |
+| Pousser / tirer d'un mur (geste de 10 pas compris) → enregistré | 1,8 – 2,0 s |
+| WebGPU | non mesuré : aucun adaptateur dans ce Chromium |

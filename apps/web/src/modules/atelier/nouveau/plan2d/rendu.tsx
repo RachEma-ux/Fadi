@@ -1,0 +1,276 @@
+/**
+ * Rendu SVG d'un niveau du modèle typé (plan de travail, cahier §5.7) : chaque classe a son dessin, calculé
+ * depuis les paramètres canoniques (`polygoneMur`, contours, arcs, splines). Les calques masqués ne sont pas
+ * dessinés ; la sélection et le survol sont des états d'affichage.
+ */
+import { memo } from "react";
+import { centroide, facesMur, pointsArc, pointsSpline, polygoneMur, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { chemin, type Projecteur } from "./projecteur";
+
+export interface PropsObjet {
+  o: OccurrenceQuelconque;
+  etat: ModeleAtelier;
+  pr: Projecteur;
+  selectionne: boolean;
+  survole: boolean;
+}
+
+const COULEURS: Record<string, string> = {
+  mur: "#315b4b",
+  cloison: "#5a7b6d",
+  dalle: "#c9b99a",
+  toiture: "#a6ad91",
+  piece: "#ead9b4",
+  espace: "#d9e5dc",
+  zone: "#b7c9d4",
+  solide: "#9fb3a8",
+  poteau: "#2d4a40",
+  escalier: "#6b8f7f",
+  esquisse: "#355e52",
+  cotation: "#8a6a2a",
+  texte: "#183d32",
+};
+
+function classes(base: string, selectionne: boolean, survole: boolean): string {
+  return `${base}${selectionne ? " est-selectionne" : ""}${survole ? " est-survole" : ""}`;
+}
+
+export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole }: PropsObjet) {
+  switch (o.classe) {
+    case "mur":
+      return <Mur2D o={o} etat={etat} pr={pr} selectionne={selectionne} survole={survole} />;
+    case "porte":
+    case "fenetre":
+    case "ouverture":
+      return <Ouverture2D o={o} etat={etat} pr={pr} selectionne={selectionne} survole={survole} />;
+    case "dalle":
+    case "toiture":
+    case "zone":
+    case "reference-plan": {
+      const d = chemin(pr, o.params.contour) + o.params.trous.map((t) => " " + chemin(pr, t)).join("");
+      return <path d={d} className={classes(`obj-${o.classe}`, selectionne, survole)} fill={o.classe === "zone" || o.classe === "reference-plan" ? "none" : COULEURS[o.classe]} fillOpacity={0.25} fillRule="evenodd" stroke={COULEURS[o.classe] ?? "#666"} strokeDasharray={o.classe === "dalle" ? "6 4" : o.classe === "zone" ? "2 3" : undefined} strokeWidth={selectionne ? 2.5 : 1} data-objet={o.id} />;
+    }
+    case "piece": {
+      const d = chemin(pr, o.params.contour) + o.params.trous.map((t) => " " + chemin(pr, t)).join("");
+      const c = pr.vers(o.params.etiquette ?? centroide(o.params.contour));
+      const taille = Math.max(9, Math.min(14, pr.echelle * 0.45));
+      return (
+        <g className={classes("obj-piece", selectionne, survole)} data-objet={o.id}>
+          <path d={d} fill={COULEURS["piece"]} fillOpacity={selectionne ? 0.6 : 0.35} fillRule="evenodd" stroke="#b89a5a" strokeWidth={selectionne ? 2 : 0.8} />
+          {pr.echelle >= 6 && (
+            <text x={c.x} y={c.y} fontSize={taille} textAnchor="middle" fill="#5a4a20" pointerEvents="none">
+              {o.params.code ? `${o.params.code} · ${o.params.nom}` : o.params.nom}
+            </text>
+          )}
+        </g>
+      );
+    }
+    case "espace":
+      return (
+        <g className={classes("obj-espace", selectionne, survole)} data-objet={o.id}>
+          {o.params.polygones.map((pg, i) => (
+            <path key={i} d={chemin(pr, pg.contour) + pg.trous.map((t) => " " + chemin(pr, t)).join("")} fill="none" stroke="#5b7468" strokeDasharray="4 3" strokeWidth={selectionne ? 2 : 0.8} fillRule="evenodd" />
+          ))}
+        </g>
+      );
+    case "solide": {
+      const d = chemin(pr, o.params.contour, o.params.ferme) + o.params.trous.map((t) => " " + chemin(pr, t)).join("");
+      return <path d={d} className={classes("obj-solide", selectionne, survole)} fill={o.params.ferme ? (o.params.couleur ?? COULEURS["solide"]) : "none"} fillOpacity={0.35} fillRule="evenodd" stroke={o.params.couleur ?? COULEURS["solide"]} strokeWidth={selectionne ? 2 : 0.8} data-objet={o.id} />;
+    }
+    case "poteau": {
+      const c = pr.vers(o.params.point);
+      const w = o.params.largeur.value * pr.echelle;
+      const h = o.params.profondeur.value * pr.echelle;
+      return <rect x={c.x - w / 2} y={c.y - h / 2} width={w} height={h} transform={`rotate(${-o.params.angle.value} ${c.x} ${c.y})`} className={classes("obj-poteau", selectionne, survole)} fill={COULEURS["poteau"]} stroke={selectionne ? "#b3872f" : COULEURS["poteau"]} strokeWidth={selectionne ? 2.5 : 1} data-objet={o.id} />;
+    }
+    case "escalier": {
+      const { a, b, largeur } = o.params;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const l = Math.hypot(dx, dy) || 1;
+      const nx = (-dy / l) * (largeur.value / 2);
+      const ny = (dx / l) * (largeur.value / 2);
+      const quad = [{ x: a.x + nx, y: a.y + ny }, { x: b.x + nx, y: b.y + ny }, { x: b.x - nx, y: b.y - ny }, { x: a.x - nx, y: a.y - ny }];
+      const n = Math.max(2, o.params.contremarches ?? o.params.marches ?? 10);
+      const marches: string[] = [];
+      for (let i = 1; i < n; i++) {
+        const t = i / n;
+        const p1 = pr.vers({ x: a.x + dx * t + nx, y: a.y + dy * t + ny });
+        const p2 = pr.vers({ x: a.x + dx * t - nx, y: a.y + dy * t - ny });
+        marches.push(`M${p1.x.toFixed(1)} ${p1.y.toFixed(1)} L${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`);
+      }
+      const fa = pr.vers(a);
+      const fb = pr.vers(b);
+      return (
+        <g className={classes("obj-escalier", selectionne, survole)} data-objet={o.id} opacity={o.params.referencePlanSeulement ? 0.5 : 1}>
+          <path d={chemin(pr, quad)} fill="#eef3ee" stroke={COULEURS["escalier"]} strokeWidth={selectionne ? 2.5 : 1} />
+          <path d={marches.join(" ")} stroke={COULEURS["escalier"]} strokeWidth={0.7} fill="none" />
+          <line x1={fa.x} y1={fa.y} x2={fb.x} y2={fb.y} stroke={COULEURS["escalier"]} strokeWidth={1} markerEnd="url(#fleche-escalier)" />
+        </g>
+      );
+    }
+    case "esquisse":
+      return <Esquisse2D o={o} pr={pr} selectionne={selectionne} survole={survole} />;
+    case "cotation": {
+      const { a, b, decalage } = o.params;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const l = Math.hypot(dx, dy) || 1;
+      const nx = (-dy / l) * decalage.value;
+      const ny = (dx / l) * decalage.value;
+      const a2 = { x: a.x + nx, y: a.y + ny };
+      const b2 = { x: b.x + nx, y: b.y + ny };
+      const sa = pr.vers(a);
+      const sb = pr.vers(b);
+      const sa2 = pr.vers(a2);
+      const sb2 = pr.vers(b2);
+      const mid = { x: (sa2.x + sb2.x) / 2, y: (sa2.y + sb2.y) / 2 };
+      const angle = (Math.atan2(sb2.y - sa2.y, sb2.x - sa2.x) * 180) / Math.PI;
+      const texte = `${l.toFixed(2).replace(".", ",")} m`;
+      return (
+        <g className={classes("obj-cotation", selectionne, survole)} data-objet={o.id} stroke={COULEURS["cotation"]} strokeWidth={selectionne ? 2 : 0.8} fill="none">
+          <line x1={sa.x} y1={sa.y} x2={sa2.x} y2={sa2.y} />
+          <line x1={sb.x} y1={sb.y} x2={sb2.x} y2={sb2.y} />
+          <line x1={sa2.x} y1={sa2.y} x2={sb2.x} y2={sb2.y} />
+          <text x={mid.x} y={mid.y - 3} fontSize={10} textAnchor="middle" fill={COULEURS["cotation"]} stroke="none" transform={`rotate(${angle > 90 || angle < -90 ? angle + 180 : angle} ${mid.x} ${mid.y})`}>
+            {texte}
+          </text>
+        </g>
+      );
+    }
+    case "texte":
+    case "etiquette": {
+      const p = pr.vers(o.params.position);
+      return (
+        <text x={p.x} y={p.y} fontSize={Math.max(9, Math.min(14, pr.echelle * 0.4))} className={classes("obj-texte", selectionne, survole)} fill={selectionne ? "#b3872f" : COULEURS["texte"]} data-objet={o.id}>
+          {o.params.texte}
+        </text>
+      );
+    }
+    case "bloc-occurrence": {
+      const p = pr.vers(o.params.position);
+      return <circle cx={p.x} cy={p.y} r={4} className={classes("obj-bloc", selectionne, survole)} fill="#fff" stroke="#355e52" data-objet={o.id} />;
+    }
+  }
+});
+
+function Mur2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"mur">; etat: ModeleAtelier; pr: Projecteur; selectionne: boolean; survole: boolean }) {
+  const { a, b, epaisseur, alignement } = o.params;
+  const poly = polygoneMur(a, b, epaisseur.value, alignement);
+  const type = o.definitionId === "cloison" ? "cloison" : "mur";
+  const fill = o.params.hauteur ? COULEURS[type] : "#fff";
+  // Ouvertures : vides dans le mur (rectangle de la largeur, sur toute l'épaisseur).
+  const ouvertures = Object.values(etat.objets).filter((x): x is Occurrence<"porte" | "fenetre" | "ouverture"> => (x.classe === "porte" || x.classe === "fenetre" || x.classe === "ouverture") && x.params.murHoteId === o.id);
+  const f = facesMur(a, b, epaisseur.value, alignement);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const l = Math.hypot(dx, dy) || 1;
+  const ux = dx / l;
+  const uy = dy / l;
+  const nx = f.gauche[0].x - f.droite[0].x;
+  const ny = f.gauche[0].y - f.droite[0].y;
+  return (
+    <g className={classes(`obj-mur obj-mur-${type}`, selectionne, survole)} data-objet={o.id}>
+      <path d={chemin(pr, poly)} fill={fill} fillOpacity={selectionne ? 0.85 : 0.75} stroke={selectionne ? "#b3872f" : o.params.exterieur ? "#11302a" : COULEURS[type]} strokeWidth={selectionne ? 2.5 : o.params.exterieur ? 1.4 : 0.9} />
+      {ouvertures.map((ouv) => {
+        const c = { x: a.x + dx * ouv.params.position, y: a.y + dy * ouv.params.position };
+        const w = ouv.params.largeur.value / 2;
+        const p1 = { x: c.x - ux * w, y: c.y - uy * w };
+        const p2 = { x: c.x + ux * w, y: c.y + uy * w };
+        const quad = [{ x: p1.x + (f.droite[0].x - a.x), y: p1.y + (f.droite[0].y - a.y) }, { x: p2.x + (f.droite[0].x - a.x), y: p2.y + (f.droite[0].y - a.y) }, { x: p2.x + (f.droite[0].x - a.x) + nx, y: p2.y + (f.droite[0].y - a.y) + ny }, { x: p1.x + (f.droite[0].x - a.x) + nx, y: p1.y + (f.droite[0].y - a.y) + ny }];
+        return <path key={ouv.id} d={chemin(pr, quad)} fill="#fff" stroke="none" />;
+      })}
+    </g>
+  );
+}
+
+function Ouverture2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"porte" | "fenetre" | "ouverture">; etat: ModeleAtelier; pr: Projecteur; selectionne: boolean; survole: boolean }) {
+  const hote = etat.objets[o.params.murHoteId];
+  if (!hote || hote.classe !== "mur") return null;
+  const { a, b, epaisseur, alignement } = hote.params;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const l = Math.hypot(dx, dy) || 1;
+  const ux = dx / l;
+  const uy = dy / l;
+  const f = facesMur(a, b, epaisseur.value, alignement);
+  const c = { x: a.x + dx * o.params.position, y: a.y + dy * o.params.position };
+  const w = o.params.largeur.value;
+  const p1 = { x: c.x - ux * (w / 2), y: c.y - uy * (w / 2) };
+  const p2 = { x: c.x + ux * (w / 2), y: c.y + uy * (w / 2) };
+  const dec = (p: { x: number; y: number }, k: number) => ({ x: p.x + (f.gauche[0].x - a.x) * k + (f.droite[0].x - a.x) * (1 - k), y: p.y + (f.gauche[0].y - a.y) * k + (f.droite[0].y - a.y) * (1 - k) });
+  const couleur = selectionne ? "#b3872f" : survole ? "#8a6a2a" : "#2d4a40";
+  if (o.classe === "fenetre") {
+    const l1 = [dec(p1, 0.35), dec(p2, 0.35)];
+    const l2 = [dec(p1, 0.65), dec(p2, 0.65)];
+    return (
+      <g className={classes("obj-fenetre", selectionne, survole)} data-objet={o.id} stroke={couleur} strokeWidth={selectionne ? 2 : 1} fill="none">
+        <path d={chemin(pr, l1, false)} />
+        <path d={chemin(pr, l2, false)} />
+        <path d={chemin(pr, [dec(p1, 0), dec(p1, 1)], false)} />
+        <path d={chemin(pr, [dec(p2, 0), dec(p2, 1)], false)} />
+      </g>
+    );
+  }
+  if (o.classe === "porte") {
+    // Battant ouvert à 90° côté gauche du mur, avec son arc de débattement.
+    const charniere = dec(p1, 1);
+    const bout = { x: charniere.x + (f.gauche[0].x - f.droite[0].x) * 0 + (-uy) * w * 1, y: charniere.y + ux * w * 1 };
+    const sc = pr.vers(charniere);
+    const sb = pr.vers(bout);
+    const sp2 = pr.vers(dec(p2, 1));
+    const r = w * pr.echelle;
+    return (
+      <g className={classes("obj-porte", selectionne, survole)} data-objet={o.id} stroke={couleur} strokeWidth={selectionne ? 2 : 1} fill="none">
+        <line x1={sc.x} y1={sc.y} x2={sb.x} y2={sb.y} />
+        <path d={`M${sb.x.toFixed(1)} ${sb.y.toFixed(1)} A${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 ${sp2.x.toFixed(1)} ${sp2.y.toFixed(1)}`} strokeDasharray="2 2" />
+      </g>
+    );
+  }
+  return <path d={chemin(pr, [dec(p1, 0), dec(p2, 0), dec(p2, 1), dec(p1, 1)])} className={classes("obj-ouverture", selectionne, survole)} fill="#fff" stroke={couleur} strokeDasharray="3 2" strokeWidth={selectionne ? 2 : 1} data-objet={o.id} />;
+}
+
+function Esquisse2D({ o, pr, selectionne, survole }: { o: Occurrence<"esquisse">; pr: Projecteur; selectionne: boolean; survole: boolean }) {
+  const p = o.params;
+  const couleur = selectionne ? "#b3872f" : COULEURS["esquisse"];
+  const commun = { className: classes(`obj-esquisse obj-esquisse-${p.forme}`, selectionne, survole), "data-objet": o.id, stroke: couleur, strokeWidth: selectionne ? 2 : 1, fill: "none" as const };
+  switch (p.forme) {
+    case "cercle": {
+      if (!p.centre || !p.rayon) return null;
+      const c = pr.vers(p.centre);
+      return <circle cx={c.x} cy={c.y} r={p.rayon.value * pr.echelle} {...commun} />;
+    }
+    case "arc": {
+      if (!p.centre || !p.rayon) return null;
+      const pts = pointsArc(p.centre, p.rayon.value, p.angleDebut?.value ?? 0, p.angleFin?.value ?? 360);
+      return <path d={chemin(pr, pts, false)} {...commun} />;
+    }
+    case "spline":
+      return <path d={chemin(pr, pointsSpline(p.points, 8, p.ferme), p.ferme)} {...commun} />;
+    case "construction":
+      return <path d={chemin(pr, p.points, false)} {...commun} strokeDasharray="8 4 2 4" strokeWidth={0.8} />;
+    case "hachure": {
+      return <path d={chemin(pr, p.points)} {...commun} fill="url(#hachure-motif)" />;
+    }
+    case "rectangle": {
+      const pts = p.points.length === 2 ? [p.points[0]!, { x: p.points[1]!.x, y: p.points[0]!.y }, p.points[1]!, { x: p.points[0]!.x, y: p.points[1]!.y }] : p.points;
+      return <path d={chemin(pr, pts)} {...commun} />;
+    }
+    default:
+      return <path d={chemin(pr, p.points, p.ferme)} {...commun} />;
+  }
+}
+
+/** Définitions SVG partagées (marqueurs, motifs). */
+export function Definitions2D() {
+  return (
+    <defs>
+      <marker id="fleche-escalier" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0 0 L8 4 L0 8 Z" fill="#6b8f7f" />
+      </marker>
+      <pattern id="hachure-motif" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="6" stroke="#355e52" strokeWidth="1" />
+      </pattern>
+    </defs>
+  );
+}

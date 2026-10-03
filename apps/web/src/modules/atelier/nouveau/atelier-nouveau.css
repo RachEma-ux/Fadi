@@ -1,0 +1,948 @@
+/* Nouvel Atelier (lot 3a) : cinq repères stables, grille CSS ; à 390 px, un panneau à la fois avec onglets. */
+.atelier-n {
+  --plan-fond: #fbfcfa;
+  --plan-grille: #e3eae5;
+  --atelier-accent: var(--gold, #b3872f);
+  --atelier-ligne: var(--line, #dce5df);
+  --atelier-encre: var(--ink, #183d32);
+  --atelier-doux: var(--muted, #5b7468);
+  display: grid;
+  grid-template-columns: minmax(200px, 250px) minmax(0, 1fr) minmax(250px, 320px);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "barre barre barre"
+    "outils outils outils"
+    "gauche travail droite"
+    "etat etat etat";
+  height: calc(100dvh - 120px);
+  min-height: 520px;
+  background: var(--surface, #fff);
+  color: var(--atelier-encre);
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 0.9rem;
+}
+.atelier-n button,
+.atelier-n select,
+.atelier-n input {
+  font: inherit;
+}
+.atelier-n :focus-visible {
+  outline: 2px solid var(--atelier-accent);
+  outline-offset: 1px;
+}
+
+.atelier-n-barre {
+  grid-area: barre;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--atelier-ligne);
+}
+.atelier-n-barre button,
+.atelier-n-barre select,
+.barre-accrochages > summary {
+  min-height: 34px;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+}
+.palette-court {
+  display: none;
+}
+.barre-groupe {
+  display: inline-flex;
+  gap: 2px;
+}
+.barre-palette {
+  min-width: 14rem;
+  text-align: left;
+  color: var(--atelier-doux) !important;
+  display: inline-flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.atelier-n kbd {
+  font-family: inherit;
+  font-size: 0.75em;
+  padding: 0 0.3em;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 3px;
+  color: var(--atelier-doux);
+}
+.barre-affichage {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.barre-accrochages {
+  position: relative;
+}
+.barre-accrochages > summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+}
+.accrochages-liste {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.6rem;
+  min-width: 13rem;
+  background: #fff;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(24, 61, 50, 0.12);
+}
+.accrochages-liste input[type="number"] {
+  width: 5rem;
+  margin-left: 0.4rem;
+}
+.barre-sync {
+  margin-left: auto;
+  color: var(--atelier-doux);
+  font-size: 0.85em;
+}
+.sync-attente {
+  color: var(--atelier-accent);
+}
+.sync-alerte {
+  color: #a33a2b;
+  font-weight: 600;
+}
+
+.atelier-n-outils {
+  grid-area: outils;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.6rem;
+  border-bottom: 1px solid var(--atelier-ligne);
+  background: #f8faf8;
+}
+.atelier-n .outil {
+  min-height: 34px;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.atelier-n .outil:hover {
+  border-color: var(--atelier-ligne);
+  background: #fff;
+}
+.atelier-n .outil.est-actif {
+  border-color: var(--atelier-encre);
+  background: var(--atelier-encre);
+  color: #fff;
+}
+.atelier-n .outil.est-indisponible {
+  opacity: 0.5;
+}
+.outils-famille {
+  position: relative;
+}
+.outils-famille > summary {
+  list-style: none;
+  cursor: pointer;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.55rem;
+  border-radius: 4px;
+  color: var(--atelier-doux);
+}
+.outils-famille > summary::after {
+  content: " ▾";
+}
+.outils-famille[open] > summary {
+  background: #fff;
+  color: var(--atelier-encre);
+}
+.outils-famille-liste {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(9rem, 1fr));
+  gap: 2px;
+  padding: 0.4rem;
+  background: #fff;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(24, 61, 50, 0.12);
+}
+.outils-famille-liste .outil {
+  text-align: left;
+}
+
+.atelier-n-gauche,
+.atelier-n-droite {
+  overflow: auto;
+  min-height: 0;
+}
+.atelier-n-gauche {
+  grid-area: gauche;
+  border-right: 1px solid var(--atelier-ligne);
+}
+.atelier-n-droite {
+  grid-area: droite;
+  border-left: 1px solid var(--atelier-ligne);
+  display: flex;
+  flex-direction: column;
+}
+.droite-inspecteur {
+  border-bottom: 1px solid var(--atelier-ligne);
+}
+.atelier-n h3 {
+  margin: 0.8rem 0.7rem 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--atelier-doux);
+}
+.atelier-n h4 {
+  margin: 0.6rem 0 0.3rem;
+  font-size: 0.85rem;
+}
+
+/* Navigateur */
+.navigateur section {
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--atelier-ligne);
+}
+.nav-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.3rem;
+}
+.nav-liste button {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 30px;
+  padding: 0.15rem 0.45rem;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-liste button:hover {
+  background: #eef3ef;
+}
+.nav-liste button.est-actif {
+  background: #e3ece6;
+  font-weight: 600;
+}
+.nav-liste button.est-actif .nav-detail {
+  color: #3d5649;
+}
+.nav-detail {
+  color: var(--atelier-doux);
+  font-weight: 400;
+  font-size: 0.85em;
+}
+.nav-calques li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 30px;
+  padding: 0 0.4rem;
+}
+.nav-calques .nav-nom {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-pastille {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid var(--atelier-ligne);
+}
+.nav-bascule {
+  width: 30px !important;
+  min-height: 28px;
+  justify-content: center !important;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.nav-ajout,
+.nav-filtre {
+  margin: 0.3rem 0.7rem;
+  width: calc(100% - 1.4rem);
+  min-height: 30px;
+}
+.nav-filtre {
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+}
+.nav-objets details {
+  padding: 0 0.3rem;
+}
+.nav-objets summary {
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+}
+.nav-vide {
+  margin: 0.3rem 0.7rem;
+  color: var(--atelier-doux);
+  font-size: 0.85em;
+}
+.nav-formulaire {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.4rem 0.7rem;
+}
+.nav-formulaire label {
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.85em;
+}
+.nav-formulaire input {
+  min-height: 32px;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+}
+.nav-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* Zone de travail */
+.atelier-n-travail {
+  grid-area: travail;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background: var(--plan-fond);
+}
+.plan2d {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  cursor: crosshair;
+}
+.plan2d.outil-selection {
+  cursor: default;
+}
+.plan2d .est-selectionne {
+  stroke: var(--atelier-accent) !important;
+}
+.plan2d .est-survole {
+  filter: drop-shadow(0 0 2px rgba(179, 135, 47, 0.8));
+}
+.plan-apercu-mur {
+  fill: rgba(49, 91, 75, 0.25);
+  stroke: #315b4b;
+  stroke-dasharray: 5 3;
+}
+.plan-apercu-trait {
+  fill: none;
+  stroke: var(--atelier-accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}
+.plan-point {
+  fill: var(--atelier-accent);
+}
+.plan-cote-apercu {
+  font-size: 12px;
+  fill: var(--atelier-encre);
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+.plan-accroche {
+  fill: none;
+  stroke: #b3521f;
+  stroke-width: 1.6;
+}
+.plan-accroche text {
+  fill: #b3521f;
+  stroke: #fff;
+  stroke-width: 3px;
+  paint-order: stroke;
+  font-size: 11px;
+}
+.plan-cadre {
+  fill: rgba(179, 135, 47, 0.08);
+  stroke: var(--atelier-accent);
+  stroke-dasharray: 4 3;
+}
+.plan-echelle path {
+  fill: none;
+  stroke: var(--atelier-encre);
+  stroke-width: 1.5;
+}
+.plan-echelle text {
+  font-size: 11px;
+  fill: var(--atelier-encre);
+}
+.saisie-precision {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  background: #fff;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(24, 61, 50, 0.12);
+}
+.saisie-precision input {
+  width: 7rem;
+  min-height: 32px;
+  padding: 0 0.4rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 3px;
+}
+
+/* Inspecteur */
+.inspecteur {
+  padding: 0 0 0.6rem;
+}
+.inspecteur-tete h3 {
+  color: var(--atelier-encre);
+  font-size: 0.95rem;
+}
+.inspecteur-meta,
+.inspecteur-aide,
+.inspecteur-exemple,
+.inspecteur-niveau {
+  margin: 0 0.7rem 0.4rem;
+  color: var(--atelier-doux);
+  font-size: 0.85em;
+}
+.inspecteur-alerte {
+  margin: 0.3rem 0.7rem;
+  padding: 0.3rem 0.5rem;
+  background: #fbf2e1;
+  border-radius: 3px;
+}
+.inspecteur-champs {
+  margin: 0;
+  padding: 0 0.7rem;
+}
+.atelier-n .champ {
+  display: grid;
+  grid-template-columns: 42% 1fr;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 32px;
+  padding: 0 0.7rem;
+}
+.inspecteur-champs .champ {
+  padding: 0;
+}
+.champ dt,
+.champ dd {
+  margin: 0;
+}
+.champ dt {
+  color: var(--atelier-doux);
+  font-size: 0.85em;
+}
+.champ dd {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.champ input[type="text"],
+.champ input[type="number"],
+.champ select {
+  width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 0.35rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 3px;
+  background: #fff;
+}
+.champ-lecture dd {
+  color: var(--atelier-doux);
+}
+.unite {
+  color: var(--atelier-doux);
+  font-size: 0.85em;
+}
+.inspecteur-proprietes,
+.inspecteur-references,
+.inspecteur-problemes,
+.inspecteur-compte {
+  margin: 0.4rem 0.7rem;
+}
+.inspecteur-proprietes .champ {
+  padding: 0;
+}
+.statut {
+  font-size: 0.75em;
+  color: var(--atelier-doux);
+}
+.statut-a-verifier {
+  color: #a3631f;
+}
+.reference-a-reparer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+}
+.inspecteur-problemes {
+  padding-left: 1.1rem;
+  color: #a3631f;
+}
+
+/* Modifications */
+.modifications {
+  padding-bottom: 1rem;
+}
+.mod-revision {
+  margin: 0 0.7rem 0.3rem;
+  color: var(--atelier-doux);
+  font-size: 0.85em;
+}
+.mod-lots {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.7rem;
+}
+.lot {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.2rem 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px dotted var(--atelier-ligne);
+}
+.lot-etat {
+  font-size: 0.8em;
+  color: var(--atelier-doux);
+}
+.lot-conflit .lot-etat,
+.lot-refuse .lot-etat {
+  color: #a33a2b;
+  font-weight: 600;
+}
+.lot-detail,
+.lot-actions {
+  grid-column: 1 / -1;
+  font-size: 0.85em;
+}
+.lot-actions {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.mod-journal,
+.mod-problemes,
+.mod-bilan {
+  margin: 0.4rem 0.7rem;
+}
+.mod-journal ol,
+.mod-problemes ul,
+.mod-bilan ul {
+  margin: 0.3rem 0;
+  padding-left: 1.1rem;
+  font-size: 0.85em;
+}
+.mod-alerte {
+  color: #a3631f;
+}
+.atelier-n button.lien {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--atelier-encre);
+  text-decoration: underline;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Ligne d'état */
+.atelier-n-etat {
+  grid-area: etat;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  min-height: 30px;
+  padding: 0.2rem 0.7rem;
+  border-top: 1px solid var(--atelier-ligne);
+  font-size: 0.85em;
+  color: var(--atelier-doux);
+}
+.etat-aide,
+.etat-erreur {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.etat-erreur,
+.atelier-n-erreur {
+  color: #a33a2b;
+}
+.atelier-n-onglets {
+  display: none;
+}
+
+/* Palette */
+.palette-fond {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 12vh;
+  background: rgba(24, 61, 50, 0.25);
+}
+.palette {
+  width: min(640px, calc(100vw - 32px));
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 18px 50px rgba(24, 61, 50, 0.3);
+  overflow: hidden;
+}
+.palette-champ {
+  min-height: 48px;
+  padding: 0 1rem;
+  border: 0;
+  border-bottom: 1px solid var(--atelier-ligne);
+  font-size: 1rem;
+}
+.palette-resultats {
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem;
+  overflow: auto;
+}
+.palette-resultats li {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.palette-resultats li.est-actif {
+  background: #eef3ef;
+}
+.palette-resultats li.est-indisponible {
+  opacity: 0.6;
+}
+.palette-picto {
+  font-size: 1.2rem;
+  text-align: center;
+}
+.palette-texte {
+  display: grid;
+  min-width: 0;
+}
+.palette-famille {
+  color: var(--atelier-doux);
+  font-size: 0.8em;
+  font-weight: 400;
+}
+.palette-aide {
+  color: var(--atelier-doux);
+  font-size: 0.85em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.palette-favori {
+  border: 0;
+  background: none;
+  font-size: 1.1rem;
+  color: var(--atelier-accent);
+  cursor: pointer;
+  min-width: 32px;
+  min-height: 32px;
+}
+.palette-vide {
+  padding: 1rem;
+  color: var(--atelier-doux);
+}
+
+/* Accueil */
+.atelier-n-vide {
+  display: block;
+  height: auto;
+  min-height: 0;
+}
+.atelier-n-accueil {
+  max-width: 34rem;
+  padding: 1.5rem;
+}
+.atelier-n-accueil h2 {
+  margin-top: 0;
+}
+.atelier-n-accueil .nav-formulaire {
+  margin: 1rem 0;
+  max-width: 20rem;
+}
+.atelier-n-chargement {
+  padding: 1rem;
+}
+
+/* Affichage essentiel : les panneaux secondaires se replient. */
+.atelier-n[data-affichage="essentiel"] .mod-journal {
+  display: none;
+}
+
+/* Tablette : l'inspecteur passe sous le navigateur. */
+@media (max-width: 1100px) {
+  .atelier-n {
+    grid-template-columns: minmax(190px, 230px) minmax(0, 1fr);
+    grid-template-areas:
+      "barre barre"
+      "outils outils"
+      "gauche travail"
+      "droite travail"
+      "etat etat";
+    grid-template-rows: auto auto minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+  .atelier-n-droite {
+    border-left: 0;
+    border-right: 1px solid var(--atelier-ligne);
+    border-top: 1px solid var(--atelier-ligne);
+  }
+}
+
+/* Téléphone (390 px) : un panneau à la fois, onglets en bas, cibles de 44 px. */
+@media (max-width: 760px) {
+  .atelier-n {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "barre" "outils" "panneau" "etat" "onglets";
+    height: calc(100dvh - 90px);
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+  .atelier-n-gauche,
+  .atelier-n-droite,
+  .atelier-n-travail {
+    grid-area: panneau;
+    display: none;
+    border: 0;
+  }
+  .panneau-travail .atelier-n-travail,
+  .panneau-objets .atelier-n-gauche,
+  .panneau-inspecteur .atelier-n-droite,
+  .panneau-problemes .atelier-n-droite {
+    display: block;
+  }
+  .panneau-inspecteur .droite-modifications,
+  .panneau-problemes .droite-inspecteur {
+    display: none;
+  }
+  .atelier-n-barre {
+    gap: 0.3rem;
+  }
+  .barre-palette {
+    min-width: 0;
+    flex: 1;
+  }
+  .palette-long {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .palette-court {
+    display: inline;
+  }
+  .barre-palette kbd,
+  .barre-affichage span,
+  .etat-echelle,
+  .etat-selection {
+    display: none;
+  }
+  .atelier-n-outils {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .atelier-n .outil {
+    min-height: 44px;
+  }
+  .atelier-n .outil-libelle {
+    font-size: 0.85em;
+  }
+  .outils-famille-liste {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    top: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .atelier-n-onglets {
+    grid-area: onglets;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--atelier-ligne);
+  }
+  .atelier-n-onglets button {
+    min-height: 48px;
+    border: 0;
+    background: #fff;
+    color: var(--atelier-doux);
+    position: relative;
+  }
+  .atelier-n-onglets button[aria-pressed="true"] {
+    color: var(--atelier-encre);
+    font-weight: 600;
+    box-shadow: inset 0 3px 0 var(--atelier-accent);
+  }
+  .pastille {
+    display: inline-block;
+    min-width: 1.2em;
+    margin-left: 0.3em;
+    border-radius: 999px;
+    background: #a33a2b;
+    color: #fff;
+    font-size: 0.75em;
+  }
+  .atelier-n .champ,
+  .nav-liste button {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atelier-n * {
+    transition: none !important;
+  }
+}
+
+.bouton-mini {
+  flex: none;
+  min-width: 30px;
+  min-height: 30px;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* Manipulation directe : la sélection suit le pointeur, en transparence. */
+.plan-deplacement {
+  opacity: 0.6;
+}
+
+.barre-mode button[aria-pressed="true"] {
+  background: var(--atelier-encre);
+  color: #fff;
+  border-color: var(--atelier-encre);
+}
+
+/* Vue 3D */
+.vue3d {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.vue3d-canevas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+}
+.vue3d-canevas.outil-pousser {
+  cursor: ns-resize;
+}
+.vue3d-commandes {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  pointer-events: none;
+}
+.vue3d-commandes > * {
+  pointer-events: auto;
+}
+.vue3d-commandes select,
+.vue3d-commandes button,
+.vue3d-case,
+.vue3d-curseur {
+  min-height: 32px;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.94);
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85em;
+}
+.vue3d-curseur input {
+  width: 8rem;
+}
+.vue3d-etat {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  margin: 0;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.8em;
+  color: var(--atelier-doux);
+}
+@media (max-width: 760px) {
+  .vue3d-commandes {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    pointer-events: auto;
+    padding-bottom: 2px;
+  }
+  .vue3d-commandes > * {
+    flex: none;
+  }
+  .vue3d-commandes select,
+  .vue3d-commandes button,
+  .vue3d-case,
+  .vue3d-curseur {
+    min-height: 40px;
+  }
+}
