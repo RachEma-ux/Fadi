@@ -2,6 +2,13 @@
 
 Phase 1 de la migration (voir le document de proposition) : isoler les fonctions de géométrie et leurs dépendances réelles, hors DOM, testées, avant toute réécriture d'interface.
 
+## Relecture du lot 1 (L1.5)
+
+Voir [`RELECTURE.md`](RELECTURE.md) : décision fonction par fonction (garder / adapter / typer), repères marqués au
+niveau du type (`src/reperes.ts` : `Point2Local`, `Point2Cadastral`), tolérances D-012 reçues en paramètre
+facultatif (`src/tolerances.ts`, seuils historiques par défaut), cas dégénérés de `buildModelGeometry` signalés dans
+`diagnostics`. Tests : `src/relecture.test.ts`.
+
 ## `geometry.ts` — noyau géométrique (`V14Geometry`)
 
 Toutes les fonctions ci-dessous sont un portage fidèle — pas une réécriture — du code trouvé dans `EMB.designer` (module `designer` / Atelier) de `Parcours_V8_19_Escalier_B_Mezzanine.html`, assignées dans le source à `window.V14Geometry` :
@@ -57,8 +64,8 @@ En localisant la définition réelle de `window.V14Bridge` dans le source, il s'
 
 ```bash
 npm install
-npm test        # vitest run — 41 tests
+npm test        # vitest run — 81 tests (47 d'origine + 34 de la relecture L1.5)
 npm run typecheck
 ```
 
-Zéro dépendance runtime : ce paquet n'importe que le DOM `CanvasRenderingContext2D` (type uniquement, pour `drawFaces`), aucune bibliothèque tierce.
+Zéro dépendance runtime, aucune bibliothèque tierce, aucune API navigateur (R6) : `tsconfig.json` n'inclut pas la bibliothèque `DOM` ; `drawFaces` dépend de l'interface structurelle `FaceCanvas`, qu'un `CanvasRenderingContext2D` satisfait.
