@@ -149,4 +149,6 @@ jobs:
           curl -sf -o /dev/null -X POST -H "Content-Type: application/json" -d '{"email":"image@example.com","password":"correct-horse-battery"}' http://localhost:3001/auth/register
       - name: Journal du conteneur
         if: always()
-        run: docker logs fadi 2>&1 | tail -n 50
+        run: |
+          docker logs fadi 2>&1 | tail -n 50
+          if [ "${{ job.status }}" != "success" ]; then echo "::error title=image-log::$(docker logs fadi 2>&1 | tail -n 20 | tr '\n' '|' | cut -c1-900)"; fi

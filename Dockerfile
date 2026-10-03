@@ -26,15 +26,17 @@ RUN npm ci --omit=dev --no-audit --no-fund --ignore-scripts
 FROM node:22-bookworm-slim
 ENV NODE_ENV=production \
     PORT=3001 \
-    WEB_DIST=/app/web \
+    WEB_DIST=/app/apps/web/dist \
     MIGRATE_ON_START=1 \
     TRUST_PROXY=1
 WORKDIR /app
+# Même disposition que le dépôt : certaines dépendances de l'API ne sont pas hissées (apps/api/node_modules).
 COPY --from=deps /src/node_modules ./node_modules
-COPY --from=build /src/apps/api/package.json ./api/package.json
-COPY --from=build /src/apps/api/dist ./api
-COPY --from=build /src/apps/web/dist ./web
+COPY --from=deps /src/apps/api/node_modules ./apps/api/node_modules
+COPY --from=build /src/apps/api/package.json ./apps/api/package.json
+COPY --from=build /src/apps/api/dist ./apps/api/dist
+COPY --from=build /src/apps/web/dist ./apps/web/dist
 USER node
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD ["node", "-e", "fetch('http://localhost:3001/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
-CMD ["node", "api/server.js"]
+CMD ["node", "apps/api/dist/server.js"]
