@@ -94,8 +94,9 @@ export interface ParamsMur {
   readonly hauteur?: Longueur;
   readonly niveauHaut?: IdObjet;
   /**
-   * Position de l'axe tracé a→b par rapport au mur (DA-02-07) : « gauche » = l'axe est la face gauche, le mur
-   * s'étend du côté de la normale (−dy, dx) ; « non évaluée » admise (D-024).
+   * Position de l'axe tracé a→b par rapport au mur (DA-02-07) : normale gauche n = (−dy, dx) / L ; « gauche » =
+   * l'axe tracé est la face gauche (le corps du mur est du côté −n) ; « droite » = l'axe est la face droite (corps
+   * côté +n) ; « axe » = faces à ±e/2. « non évaluée » admise (D-024).
    */
   readonly alignement: Evaluable<AlignementMur>;
   /** Définition du catalogue (`cloison`, `mur`, `non-type`…), voir `definitions.ts`. */
@@ -313,6 +314,12 @@ export interface ParamsCotation {
   readonly references: readonly ReferenceExtremite[];
   readonly etat: EtatCotation;
   readonly texteRemplacement?: string;
+  /**
+   * Références détachées par l'utilisateur (`reference.reparer` avec `nouvelle: null`), une au plus par
+   * extrémité, sans référence active sur la même extrémité : gardées pour la traçabilité, la résolution de
+   * l'extrémité est alors `detachee` (D-026). Un nouveau rattachement de l'extrémité les retire.
+   */
+  readonly referencesDetachees?: readonly ReferenceExtremite[];
 }
 
 export interface ParamsTexte {

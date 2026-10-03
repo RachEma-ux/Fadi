@@ -137,6 +137,7 @@ export const scinder: Corps<"mur.scinder"> = (tx, c) => {
   reposerBaies(tx, m, "absolu", "params.point", (centre) => (scalaire(sous(centre, axe.a), sous(axe.b, axe.a)) / (L * L) <= t ? m1 : m2));
   controlerEmprise(tx, id1, "params.point");
   controlerEmprise(tx, id2, "params.point");
+  tx.remplacer(m.id, [id1, id2]);
   supprimerObjet(
     tx,
     m.id,
@@ -192,6 +193,8 @@ export const joindre: Corps<"mur.joindre"> = (tx, c) => {
   const props = propositionsPour((ref) =>
     (ref.objetId === premier.id && ref.caracteristique === "mur:arete-fin") || (ref.objetId === second.id && ref.caracteristique === "mur:arete-debut") ? [] : [nouvelId],
   );
+  tx.remplacer(m1.id, [nouvelId]);
+  tx.remplacer(m2.id, [nouvelId]);
   supprimerObjet(tx, m1.id, props);
   supprimerObjet(tx, m2.id, props);
   heriterGroupe(tx, premier.groupeId, [nouvelId]);

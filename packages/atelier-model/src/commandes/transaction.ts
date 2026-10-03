@@ -11,7 +11,7 @@
  * commande du catalogue (type et paramètres lisibles) qui porte la restauration exacte.
  */
 import type { Commande } from "../contrats/commandes.js";
-import type { Proposition } from "../contrats/effets.js";
+import type { Proposition, Remplacement } from "../contrats/effets.js";
 import type { ReferenceTopologique } from "../contrats/references.js";
 import { composerMessageErreur, type ErreurCommande } from "../contrats/reducteurs.js";
 import { VERSION_RESTAURATION, type Restauration } from "../contrats/restauration.js";
@@ -111,6 +111,7 @@ export class Transaction {
   readonly erreurs: ErreurCommande[] = [];
   readonly problemes: Probleme[] = [];
   readonly propositions: Proposition[] = [];
+  readonly remplacements: Remplacement[] = [];
   readonly referencesTouchees: { readonly porteurId: IdObjet; readonly reference: ReferenceTopologique }[] = [];
 
   constructor(readonly base: EtatModele) {}
@@ -224,6 +225,11 @@ export class Transaction {
 
   refuser(code: CodeProbleme, chemin: string, m: Motif, objetIds?: readonly IdObjet[]): void {
     this.erreurs.push(erreurCommande(code, chemin, m, objetIds));
+  }
+
+  /** Lignée : `ancienId` est remplacé par `nouveauxIds` (scission, jonction ; D-026). */
+  remplacer(ancienId: IdObjet, nouveauxIds: readonly IdObjet[]): void {
+    this.remplacements.push({ ancienId, nouveauxIds: [...nouveauxIds] });
   }
 
   /** Proposition rendue dans les effets, jamais appliquée (D-024). */

@@ -12,7 +12,7 @@
  * modèle (D-024).
  */
 import type { Commande, CommandeDeType, TypeCommande } from "../contrats/commandes.js";
-import type { Effets, EffetVue, Proposition } from "../contrats/effets.js";
+import type { Effets, EffetVue, Proposition, Remplacement } from "../contrats/effets.js";
 import { CONTRAT_COMMANDES, TYPES_COMMANDE, type EnveloppeCommandes } from "../contrats/enveloppe.js";
 import type { EtatModele } from "../contrats/etat.js";
 import type { CodeProbleme, Probleme } from "../contrats/probleme.js";
@@ -22,6 +22,7 @@ import { descripteur } from "../ontologie/descripteurs.js";
 import type { Relation } from "../ontologie/relations.js";
 import { relationAdmise } from "../ontologie/relations.js";
 import { validerObjet } from "../ontologie/validation.js";
+import { recalculerCotationsRattachees } from "../references/cotations.js";
 import * as annotations from "./annotations.js";
 import { nomObjet, type Corps } from "./communs.js";
 import { detecter } from "./detection.js";
@@ -127,6 +128,30 @@ const CORPS: { readonly [T in TypeCommande]: Corps<T> } = {
   "site.parcelle.definir": site.parcelleDefinir,
   "site.emprise.definir": site.empriseDefinir,
 };
+
+// --- Cotations rattachées -------------------------------------------------------
+
+/**
+ * Après le corps d'un réducteur (jamais après une restauration, qui est exacte) : les cotations dont une
+ * référence vise un objet changé suivent sa géométrie (`recalculerCotationsRattachees`, L1.3). Une cotation qui
+ * devient « à réparer » par ce recalcul est signalée (problème avec propositions) ; si le réducteur l'a déjà
+ * mise « à réparer », rien n'est signalé deux fois. Le changement entre dans la restauration : inverse exact.
+ */
+function recalculerCotations(tx: Transaction): void {
+  const touches = tx.changements().map((x) => x.id);
+  if (touches.length === 0) return;
+  const objets: Record<IdObjet, ObjetModele> = {};
+  for (const o of tx.objets()) objets[o.id] = o;
+  for (const r of recalculerCotationsRattachees({ objets }, touches, tx.remplacements)) {
+    const o = tx.objet(r.cotationId);
+    if (o?.classe !== "cotation") continue;
+    const dejaAReparer = o.params.etat === "a-reparer";
+    tx.mettre({ ...o, params: { ...o.params, a: r.a, b: r.b, etat: r.etat } });
+    if (r.etat !== "a-reparer" || dejaAReparer) continue;
+    for (const p of r.problemes) tx.signaler(p);
+    for (const x of [r.resolution.a, r.resolution.b]) if (x.etat === "a-reparer") tx.referencesTouchees.push({ porteurId: o.id, reference: x.reference });
+  }
+}
 
 // --- Contrôles communs ----------------------------------------------------------
 
@@ -256,6 +281,7 @@ function construireEffets(
   problemes: readonly Probleme[],
   referencesTouchees: Effets["referencesTouchees"],
   propositions: readonly Proposition[],
+  remplacements: readonly Remplacement[],
 ): Effets {
   const vues = new Map<string, EffetVue>();
   const vue = (nature: EffetVue["nature"], niveauId?: IdObjet) => vues.set(`${nature}|${niveauId ?? ""}`, niveauId === undefined ? { nature, etat: "a-recalculer" } : { nature, niveauId, etat: "a-recalculer" });
@@ -290,6 +316,7 @@ function construireEffets(
     documents: change ? [{ nature: "documents-derives", etat: "perime" }] : [],
     problemes: [...problemes],
     propositions: [...propositions],
+    remplacements: [...remplacements],
   };
 }
 
@@ -313,7 +340,10 @@ function executer(etat: EtatModele, c: Commande): ResultatInterne {
   const restauration = restaurationDe(c);
   try {
     if (restauration !== undefined) appliquerRestauration(tx, restauration);
-    else (CORPS[c.type] as Corps<TypeCommande>)(tx, c as CommandeDeType<TypeCommande>);
+    else {
+      (CORPS[c.type] as Corps<TypeCommande>)(tx, c as CommandeDeType<TypeCommande>);
+      if (!tx.refusee) recalculerCotations(tx);
+    }
   } catch (e) {
     // Données reçues mal formées au point de faire échouer un calcul : refus motivé, jamais d'état partiel.
     tx.refuser("parametre-invalide", "params", motif(`Commande ${c.type}`, `données inexploitables (${e instanceof Error ? e.message : String(e)})`, "vérifier la forme des paramètres"));
@@ -323,7 +353,7 @@ function executer(etat: EtatModele, c: Commande): ResultatInterne {
   const { etat: suivant, restauration: r } = tx.conclure(c);
   const changements = tx.changements();
   const inverse: Commande[] = tx.estVide() ? [] : [{ ...(restauration !== undefined ? restauration.origine : teteInverse(sansRestauration(c), tx)), restauration: r }];
-  const effets = construireEffets(changements, tx.relationsAjoutees(), tx.relationsRetirees(), tx.catalogueChange(), tx.problemes, tx.referencesTouchees, tx.propositions);
+  const effets = construireEffets(changements, tx.relationsAjoutees(), tx.relationsRetirees(), tx.catalogueChange(), tx.problemes, tx.referencesTouchees, tx.propositions, tx.remplacements);
   return { ok: true, etat: suivant, inverse, effets, changements };
 }
 
@@ -378,6 +408,7 @@ export function appliquerLot(etat: EtatModele, enveloppe: EnveloppeCommandes): R
   const problemes: Probleme[] = [];
   const references: Effets["referencesTouchees"][number][] = [];
   const propositions: Proposition[] = [];
+  const remplacements: Remplacement[] = [];
   const touches = new Set<IdObjet>();
   for (let i = 0; i < e.commands.length; i++) {
     const r = executer(courant, e.commands[i] as Commande);
@@ -388,6 +419,7 @@ export function appliquerLot(etat: EtatModele, enveloppe: EnveloppeCommandes): R
     problemes.push(...r.effets.problemes.map((p) => (p.chemin === undefined ? p : { ...p, chemin: `commands[${i}].${p.chemin}` })));
     references.push(...r.effets.referencesTouchees);
     propositions.push(...r.effets.propositions);
+    remplacements.push(...r.effets.remplacements);
   }
   // Changement net du lot (un objet créé puis supprimé dans le même lot n'apparaît pas).
   const changements: Changement[] = [];
@@ -403,7 +435,7 @@ export function appliquerLot(etat: EtatModele, enveloppe: EnveloppeCommandes): R
   const ajoutees = [...finales].filter(([k]) => !initiales.has(k)).map(([, r]) => r);
   const retirees = [...initiales].filter(([k]) => !finales.has(k)).map(([, r]) => r);
   const catalogueChange = empreinteValeur(etat.catalogue) !== empreinteValeur(courant.catalogue);
-  const effets = construireEffets(changements, ajoutees, retirees, catalogueChange, problemes, references, propositions);
+  const effets = construireEffets(changements, ajoutees, retirees, catalogueChange, problemes, references, propositions, remplacements);
   const inverse = inverses.reverse().flat();
   // Lot sans changement du modèle (`piece.detecter` seul…) : ni révision ni empreinte nouvelles (D-024).
   if (inverse.length === 0) return { ok: true, etat, inverse, effets };

@@ -42,6 +42,15 @@ export interface PropositionContourPiece extends Tracabilite {
 /** Proposition rendue par une commande, jamais appliquée d'office (D-024). */
 export type Proposition = PropositionContourPiece;
 
+/**
+ * Lignée d'un objet remplacé par d'autres (D-026) : scission (`mur.scinder` : un ancien, deux nouveaux), jonction
+ * (`mur.joindre` : chaque ancien → le nouveau). Sert au résolveur de références (motif `objet-scinde`).
+ */
+export interface Remplacement {
+  readonly ancienId: IdObjet;
+  readonly nouveauxIds: readonly IdObjet[];
+}
+
 export interface Effets {
   readonly objetsCrees: readonly IdObjet[];
   readonly objetsModifies: readonly IdObjet[];
@@ -55,6 +64,8 @@ export interface Effets {
   readonly problemes: readonly Probleme[];
   /** Propositions (contours de pièces détectés…) ; rien n'est créé tant qu'une commande ne l'applique pas. */
   readonly propositions: readonly Proposition[];
+  /** Lignée des objets remplacés (D-026). */
+  readonly remplacements: readonly Remplacement[];
 }
 
 /** Effets vides (constante de contrat, utile aux réducteurs qui n'ont rien à signaler). */
@@ -69,4 +80,5 @@ export const EFFETS_VIDES: Effets = {
   documents: [],
   problemes: [],
   propositions: [],
+  remplacements: [],
 };

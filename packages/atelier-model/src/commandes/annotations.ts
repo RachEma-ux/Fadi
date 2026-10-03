@@ -2,13 +2,15 @@
  * Annotations (annexe B) : `cotation.creer`, `.modifier`, `.rattacher`, `.supprimer`, `texte.*`, `etiquette.*`,
  * et `reference.reparer` (choisir une nouvelle cible ou détacher, jamais de rattachement silencieux, R12).
  *
- * Une cotation est `libre` sans référence, `rattachee` avec des références valides, `a-reparer` si l'une de
- * ses références vise un objet disparu. Les extrémités `a` / `b` ne sont pas recalculées ici : leur
- * résolution géométrique est le travail du résolveur de références (L1.3).
+ * L'état d'une cotation est déduit de la résolution de ses extrémités (`etatDeResolution(resoudreCotation(…))`,
+ * L1.3) : `libre` sans référence active, `rattachee` si une référence est résolue, `a-reparer` si l'une ne l'est
+ * pas. Le recalcul des extrémités après un changement est fait par le moteur (`recalculerCotationsRattachees`).
+ * Détacher (`reference.reparer`, `nouvelle: null`) garde la référence dans `referencesDetachees` (D-026).
  */
 import type { ReferenceTopologique } from "../contrats/references.js";
 import { caracteristiqueAdmise, estCaracteristiqueNommee } from "../ontologie/caracteristiques.js";
-import type { EtatCotation, IdObjet, ObjetCotation, ReferenceExtremite } from "../ontologie/classes.js";
+import type { EtatCotation, IdObjet, ObjetCotation, ObjetModele, ReferenceExtremite } from "../ontologie/classes.js";
+import { etatDeResolution, resoudreCotation } from "../references/cotations.js";
 import { relationAdmise } from "../ontologie/relations.js";
 import { controlerLongueurMin, exigerCibles, fabriqueCreation, fabriqueModification, fabriqueSuppression, nomObjet, avecParams, controlerEnTete, nouvelObjet, sansCles, type ControleObjet, type Corps } from "./communs.js";
 import { motif, type Transaction } from "./transaction.js";
@@ -61,17 +63,32 @@ function controlerReferences(tx: Transaction, refs: unknown, chemin: string): re
   return ok;
 }
 
-/** État d'une cotation d'après ses références. */
-export function etatCotation(tx: Transaction, refs: readonly ReferenceExtremite[]): EtatCotation {
-  if (refs.length === 0) return "libre";
-  return refs.every((r) => tx.objet(r.objetId) !== undefined) ? "rattachee" : "a-reparer";
+/** État d'une cotation d'après la résolution de ses extrémités dans l'état courant de la transaction. */
+export function etatCotation(tx: Transaction, params: Omit<ObjetCotation["params"], "etat">, niveauId: IdObjet | undefined): EtatCotation {
+  const objets: Record<IdObjet, ObjetModele> = {};
+  for (const o of tx.objets()) objets[o.id] = o;
+  const cotation = { params: { ...params, etat: "libre" as const }, ...(niveauId !== undefined ? { niveauId } : {}) };
+  return etatDeResolution(resoudreCotation({ objets }, cotation));
+}
+
+/** Retire les références détachées des extrémités qui reçoivent une référence active. */
+function detacheesRestantes(o: ObjetCotation, refs: readonly ReferenceExtremite[]): readonly ReferenceExtremite[] {
+  return (o.params.referencesDetachees ?? []).filter((d) => !refs.some((r) => r.extremite === d.extremite));
+}
+
+function avecReferences(o: ObjetCotation, refs: readonly ReferenceExtremite[], detachees: readonly ReferenceExtremite[], etat: EtatCotation): ObjetCotation {
+  const { referencesDetachees: _d, ...reste } = o.params;
+  void _d;
+  const params = detachees.length > 0 ? { ...reste, references: refs, referencesDetachees: detachees, etat } : { ...reste, references: refs, etat };
+  return avecParams({ ...o, params }, {}, ["references", "etat", "referencesDetachees"]);
 }
 
 export const cotationCreer: Corps<"cotation.creer"> = (tx, c) => {
   const p = c.params;
   if (!controlerEnTete(tx, p)) return;
   if (!controlerReferences(tx, p.references, "params.references")) return;
-  const params = { ...sansCles(p, ["id", "niveauId", "calqueId"]), etat: etatCotation(tx, p.references) } as unknown as ObjetCotation["params"];
+  const sans = sansCles(p, ["id", "niveauId", "calqueId"]) as unknown as Omit<ObjetCotation["params"], "etat">;
+  const params = { ...sans, etat: etatCotation(tx, sans, p.niveauId) } as ObjetCotation["params"];
   const o = nouvelObjet("cotation", p.id, params, { niveauId: p.niveauId, calqueId: p.calqueId });
   controlerLongueurMin(tx, p.a, p.b, "params.b", nomObjet(o));
   tx.mettre(o);
@@ -81,7 +98,7 @@ const controleCotation: ControleObjet = (tx, o, chemin, cles) => {
   if (o.classe === "cotation" && (cles === null || cles.includes("a") || cles.includes("b"))) controlerLongueurMin(tx, o.params.a, o.params.b, `${chemin}.b`, nomObjet(o));
 };
 
-export const cotationModifier = fabriqueModification<"cotation.modifier">(["cotation"], controleCotation, ["etat", "references"]);
+export const cotationModifier = fabriqueModification<"cotation.modifier">(["cotation"], controleCotation, ["etat", "references", "referencesDetachees"]);
 
 export const cotationRattacher: Corps<"cotation.rattacher"> = (tx, c) => {
   const cibles = exigerCibles(tx, c.cibles, ["cotation"], { min: 1, max: 1 });
@@ -89,7 +106,8 @@ export const cotationRattacher: Corps<"cotation.rattacher"> = (tx, c) => {
   if (!o || o.classe !== "cotation") return;
   if (!controlerReferences(tx, c.params.references, "params.references")) return;
   const refs = c.params.references;
-  tx.mettre(avecParams(o, { references: refs, etat: etatCotation(tx, refs) }, ["references", "etat"]));
+  const detachees = detacheesRestantes(o, refs);
+  tx.mettre(avecReferences(o, refs, detachees, etatCotation(tx, { ...o.params, references: refs, referencesDetachees: detachees }, o.niveauId)));
   for (const r of refs) if (estCaracteristiqueNommee(r.caracteristique)) tx.referencesTouchees.push({ porteurId: o.id, reference: { objetId: r.objetId, caracteristique: r.caracteristique } });
 };
 
@@ -145,8 +163,12 @@ export const reparer: Corps<"reference.reparer"> = (tx, c) => {
       tx.refuser("precondition", "params.ancienne", motif(nomObjet(o), `ne porte pas la référence ${ancienne.objetId} (${ancienne.caracteristique})`, "recharger la cotation"), [o.id]);
       return;
     }
+    const ancienneRef = o.params.references[i] as ReferenceExtremite;
     const refs = o.params.references.flatMap((r, j) => (j !== i ? [r] : nouvelle === null ? [] : [{ extremite: r.extremite, objetId: nouvelle.objetId, caracteristique: nouvelle.caracteristique }]));
-    tx.mettre(avecParams(o, { references: refs, etat: etatCotation(tx, refs) }, ["references", "etat"]));
+    // Détacher garde la référence (D-026) ; rattacher l'extrémité retire une éventuelle référence détachée.
+    const autres = (o.params.referencesDetachees ?? []).filter((d) => d.extremite !== ancienneRef.extremite);
+    const detachees = nouvelle === null ? [...autres, ancienneRef] : detacheesRestantes(o, refs);
+    tx.mettre(avecReferences(o, refs, detachees, etatCotation(tx, { ...o.params, references: refs, referencesDetachees: detachees }, o.niveauId)));
   } else if (o.classe === "etiquette") {
     if (!memeRef({ objetId: o.params.objetId ?? "", caracteristique: o.params.caracteristique }, ancienne)) {
       tx.refuser("precondition", "params.ancienne", motif(nomObjet(o), `ne porte pas la référence ${ancienne.objetId} (${ancienne.caracteristique})`, "recharger l'étiquette"), [o.id]);

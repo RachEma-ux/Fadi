@@ -32,8 +32,14 @@ Modèle typé de l'Atelier (cahier des charges §5.1–5.3, lot 1). Paquet pur :
     restauration fabriquée par un client est refusée) ;
   - `Effets` (vues, documents, problèmes, `propositions` : contours de pièces détectés, jamais appliqués
     d'office, D-024), `Probleme`, `CODES_PROBLEME` (dont `doublon` : code répété, copie superposée, D-024) ;
-  - `ReferenceTopologique` `{ objetId, caracteristique }`, `ETATS_RESOLUTION`, `ResoudreReference` ;
-  - `Quantite` (valeur, unité, règle `quantites/1`, révision, empreinte), `CalculerQuantites` ;
+  - `Effets.remplacements` : lignée d'une scission ou d'une jonction (ancien id → nouveaux ids, D-026) ;
+  - `ReferenceTopologique` `{ objetId, caracteristique }`, `ETATS_RESOLUTION`, `ResoudreReference`
+    `(etat, reference, contexte?)` avec `ContexteResolution` (position connue, niveau, lignée ; D-026) ; une
+    cotation garde ses références détachées (`ParamsCotation.referencesDetachees`, état `detachee` déductible) ;
+  - `Quantite` (valeur, unité, règle `quantites/1`, révision, empreinte, `statut` `calculee` / `a-verifier` /
+    `non-evaluee`, `partiel` : somme partielle et objets non évalués ; D-026), `NATURES_QUANTITE` (volumes,
+    dalles, poteaux, escaliers, solides, aire déclarée et écart inclus, D-026), `CalculerQuantites`. Une valeur
+    « à vérifier » (épaisseur 0,25 m des dalles P.118) est rendue avec le statut `a-verifier`, jamais masquée ;
   - `ImporterP118` : `(dataset) → { modele, rapport }`, `RapportImport` ;
   - `EtatModele` (objets par id, relations, révision, empreinte `atelier-empreinte/1`) ;
   - `TOLERANCES` (D-012).
@@ -43,6 +49,9 @@ Modèle typé de l'Atelier (cahier des charges §5.1–5.3, lot 1). Paquet pur :
 - `src/importeur/` — `importerP118` (rapport : `docs/atelier/lots/lot-1-rapport-import.md`, régénéré par
   `ECRIRE_RAPPORT=1 npx vitest run src/importeur`).
 - `src/projection/` — projection sans perte du modèle typé vers les domaines natifs et l'entrée d'analyse.
+- `src/references/` — résolveur des références topologiques, géométrie des caractéristiques nommées, recalcul
+  des cotations rattachées (branché dans le moteur : après chaque réducteur, jamais après une restauration).
+- `src/quantites/` — `calculerQuantites`, règle `quantites/1` (en-tête de `calculer.ts`).
 
 ## Valeurs « non évaluée »
 
@@ -52,8 +61,9 @@ D-024 : `mur.alignement` et `escalier.referencePlanSeulement`. À l'import de P.
 `planReferenceOnly` ont `referencePlanSeulement` « non évaluée » (D-025) et la projection n'écrit pas le drapeau
 (sans perte) ; les 24 murs sans `lineRef` gardent `alignement: "axe"` « à vérifier » (D-025).
 
-Convention d'alignement (DA-02-07) : « gauche » = l'axe tracé a→b est la face gauche du mur, qui s'étend du côté
-de la normale (−dy, dx) ; « droite » à l'opposé ; « axe » centré.
+Convention d'alignement (DA-02-07), figée par un test : normale gauche de l'axe a→b n = (−dy, dx) / L ;
+« gauche » = l'axe tracé est la face gauche (corps du mur du côté −n) ; « droite » = l'axe tracé est la face
+droite (corps du côté +n) ; « axe » = faces à ±e/2. Un miroir permute gauche et droite.
 
 ## Versions des contrats
 
@@ -63,8 +73,8 @@ de la normale (−dy, dx) ; « droite » à l'opposé ; « axe » centré.
 | `quantites` | 1 |
 
 Toute modification incompatible d'un contrat change sa version et passe par une décision `D-0xx`. Exception :
-l'amendement D-024 (lot 1, contrat encore non publié hors du lot) complète `atelier-commands/1` sans changer sa
-version.
+les amendements D-024 et D-026 (lot 1, contrats encore non publiés hors du lot) complètent `atelier-commands/1`
+et `quantites/1` sans changer leur version.
 
 ## Contrôles
 

@@ -4,7 +4,8 @@
  * - `ontologie/` : classes, paramètres canoniques et unités, repères tagués, provenance et statut,
  *   relations, caractéristiques nommées, classes IFC, définitions de types et catalogue versionné, validation ;
  * - `contrats/` : interfaces figées de la phase 2 (enveloppe `atelier-commands/1`, commandes, réducteurs,
- *   effets, problèmes, références, quantités `quantites/1`, importeur P.118, état du modèle, tolérances).
+ *   effets, problèmes, références, quantités `quantites/1`, importeur P.118, état du modèle, tolérances) ;
+ * - `commandes/`, `importeur/`, `projection/`, `references/`, `quantites/` : implémentations (L1.2 à L1.4, L1.3).
  *
  * Paquet pur : ni React, ni DOM, ni API Node (R6) ; dépendances : `@parcours/domain-model`,
  * `@parcours/core-geometry` seulement (§5.1).
@@ -14,3 +15,5 @@ export * from "./contrats/index.js";
 export * from "./commandes/index.js";
 export * from "./importeur/index.js";
 export * from "./projection/index.js";
+export * from "./references/index.js";
+export * from "./quantites/index.js";

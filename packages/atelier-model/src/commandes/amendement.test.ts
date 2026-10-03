@@ -7,10 +7,11 @@ import { describe, expect, it } from "vitest";
 import type { Commande } from "../contrats/commandes.js";
 import { CODES_PROBLEME } from "../contrats/probleme.js";
 import { composerMessageErreur } from "../contrats/reducteurs.js";
-import type { ObjetModele } from "../ontologie/classes.js";
+import type { ObjetModele, ObjetMur } from "../ontologie/classes.js";
 import { nonEvaluee } from "../ontologie/provenance.js";
 import { allerRetour, cmd, enveloppe, m, ok, P, projetDeBase, refus } from "./__tests__/aides.js";
 import { HistoriqueAtelier } from "./historique.js";
+import { decalagesFaces, geometrieCaracteristique } from "../references/geometrie.js";
 import { appliquerLot } from "./moteur.js";
 
 const base = projetDeBase();
@@ -171,15 +172,28 @@ describe("D-024 (7) « non évaluée » admise pour alignement et referencePlanS
 });
 
 describe("convention d'alignement (DA-02-07)", () => {
-  it("« gauche » : l'axe tracé a→b est la face gauche, le mur s'étend du côté de la normale (−dy, dx)", () => {
-    // Fige la convention dans le contrat de type (documentation exécutable) : pour a = (0,0), b = (6,0),
-    // la normale (−dy, dx) = (0, 6) pointe vers y > 0 ; un mur « gauche » d'épaisseur e occupe y ∈ [0, e].
-    const a = { x: 0, y: 0 };
-    const b = { x: 6, y: 0 };
-    const normale = { x: -(b.y - a.y), y: b.x - a.x };
-    expect(normale).toEqual({ x: -0, y: 6 });
-    const r = ok(base, cmd("mur.modifier", { modifications: { alignement: "gauche" } }, ["M1"]));
-    const mur = objet(r.etat, "M1");
-    expect(mur.classe === "mur" && mur.params.alignement).toBe("gauche");
+  it("« gauche » : l'axe tracé a→b est la face gauche ; normale gauche (−dy, dx) ; corps du mur côté −n", () => {
+    // Mur vertical montant a = (5, 0) → b = (5, 4), épaisseur 0,20 : n = (−dy, dx) / L = (−1, 0).
+    const trace = (id: string, alignement: "gauche" | "droite" | "axe", x: number) =>
+      cmd("mur.tracer", { id, niveauId: "rdc", calqueId: "C1", a: P(x, 10), b: P(x, 14), epaisseur: m(0.2), hauteur: m(3), alignement, typeId: "non-type", exterieur: false });
+    const e = ok(base, trace("G", "gauche", 5), trace("D", "droite", 8), trace("A", "axe", 11)).etat;
+    const face = (id: string, c: "mur:face-gauche" | "mur:face-droite") => {
+      const o = objet(e, id);
+      const g = geometrieCaracteristique(e, o, c);
+      if (!g.ok || g.geometrie.nature !== "segment") throw new Error("segment attendu");
+      return g.geometrie.segment.a.x;
+    };
+    // « gauche » : face gauche = axe tracé (x = 5), face droite du côté −n (x = 5,2).
+    expect(face("G", "mur:face-gauche")).toBe(5);
+    expect(face("G", "mur:face-droite")).toBeCloseTo(5.2, 12);
+    // « droite » : face droite = axe tracé (x = 8), face gauche du côté +n (x = 7,8).
+    expect(face("D", "mur:face-droite")).toBe(8);
+    expect(face("D", "mur:face-gauche")).toBeCloseTo(7.8, 12);
+    // « axe » : faces à ±e/2 ; face gauche du côté +n = (−1, 0), soit x = 10,9 (DA-02-07 : 4,90 pour x = 5).
+    expect(face("A", "mur:face-gauche")).toBeCloseTo(10.9, 12);
+    expect(decalagesFaces(objet(e, "G") as ObjetMur)).toEqual({ gauche: 0, droite: -0.2 });
+    // « non évaluée » : faces inexploitables (géométrie dégénérée), jamais devinées.
+    const ne = ok(e, cmd("mur.modifier", { modifications: { alignement: nonEvaluee("inconnu") } }, ["G"])).etat;
+    expect(geometrieCaracteristique(ne, objet(ne, "G"), "mur:face-gauche")).toMatchObject({ ok: false, motif: "geometrie-degeneree" });
   });
 });

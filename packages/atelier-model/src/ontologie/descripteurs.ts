@@ -351,6 +351,7 @@ const PARAMETRES: Readonly<Record<ClasseObjet, { ontologie: Ontologie; libelle: 
       p("references", "references-extremites"),
       p("etat", "enum", true, { valeurs: ["libre", "rattachee", "a-reparer"] }),
       p("texteRemplacement", "texte", false),
+      p("referencesDetachees", "references-extremites", false),
     ],
   },
   texte: { ontologie: "annotation", libelle: "Texte", porteNiveau: true, admetCalque: true, parametres: [p("position", "point-local"), p("texte", "texte")] },
