@@ -1,0 +1,4324 @@
+{
+ "overview-desktop": {
+  "url": "",
+  "headings": [
+   "H1: Étude du potentiel de la parcelle"
+  ],
+  "fields": [],
+  "buttons": [
+   "←",
+   "⌂",
+   "← Projets",
+   "Exemples",
+   "118_officiel.kmz",
+   "ZONE-I-5.pdf",
+   "01Comprendre le siteParcelle / Site existant",
+   "02Comprendre le siteRéglementation & constructibilité",
+   "03Comprendre le siteMarché & demande",
+   "04ProgrammerIdée & stratégie",
+   "05ProgrammerBesoins & concertation",
+   "06ProgrammerPMO — Programme du maître d’ouvrage",
+   "07ProgrammerPréprogramme fonctionnel",
+   "08ProgrammerExigences techniques & environnementales",
+   "09Concevoir / TesterCompatibilité Parcelle ↔ Programme",
+   "10Concevoir / TesterÉtude de capacité architecturale",
+   "11Concevoir / TesterEsquisse architecturale — Esquisser",
+   "12Concevoir / TesterScénarios de développement",
+   "13Prouver la faisabilitéFaisabilité technique",
+   "14Prouver la faisabilitéFaisabilité économique & financière",
+   "15Prouver la faisabilitéCoût global & sensibilités",
+   "16Prouver la faisabilitéVérifications / Due diligence",
+   "17ArbitrerÉvaluation multicritère",
+   "18ArbitrerBilan du potentiel de la parcelle",
+   "19ArbitrerDécision — GO / GO sous conditions / À reprendre /",
+   "20EngagerOrganisation des études — uniquement si GO",
+   "21EngagerTransfert vers développement / conception",
+   "Sauvegarder projet JSON",
+   "Importer projet JSON",
+   "Exporter la synthèse des choix Harmonie"
+  ],
+  "details": [
+   {
+    "summary": "Outils du projet",
+    "open": false
+   }
+  ],
+  "tables": [],
+  "iframes": [],
+  "canvases": 1,
+  "svgs": 5,
+  "sections": [
+   "overview-head",
+   "overview-grid"
+  ],
+  "textLength": 17991036
+ },
+ "steps-desktop": {
+  "1": {
+   "url": "",
+   "headings": [
+    "H1: Parcelle / Site existant"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [
+    {
+     "id": "frame",
+     "visible": true,
+     "srcdocLength": 970057
+    }
+   ],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "sources-card"
+   ],
+   "textLength": 17989977,
+   "errors": [],
+   "frameInventories": [
+    {
+     "title": "Parcelle — Atelier satellite",
+     "headings": [
+      "H2: Mes parcelles",
+      "H2: Informations du site · MapTiler",
+      "H2: Préparer l’export Design Parcel 2.0",
+      "H2: Système de coordonnées",
+      "H1: Bornes de la parcelle",
+      "H2: Voirie",
+      "H2: Distances réglementaires",
+      "H3: Coordonnées Lambert de l’axe calculé",
+      "H2: Tracé de la parcelle",
+      "H2: Affichage",
+      "H3: Largeur de chaussée",
+      "H2: Parcelle",
+      "H3: Contenance",
+      "H3: Contraintes",
+      "H3: Sources",
+      "H2: Construction",
+      "H3: Dimensions autorisées",
+      "H3: Sources",
+      "H2: Accueil extérieur lisible et service latéral",
+      "H3: Pourquoi ce choix",
+      "H3: Intentions reçues et utilisées",
+      "H3: Choix déjà transmis",
+      "H2: Connecter la vue satellite",
+      "H2: Importer une parcelle",
+      "H2: Exporter la parcelle",
+      "H2: Une géométrie traçable",
+      "H3: Exemple Lot 118",
+      "H3: Référentiel et position",
+      "H3: Utilisation",
+      "H2: Créer une nouvelle parcelle",
+      "H2: Ajouter une voie"
+     ],
+     "buttons": [
+      "Repères",
+      "Exporter",
+      "Télécharger ce fichier",
+      "Importer",
+      "Réessayer",
+      "Nouveau",
+      "118Lot 118 · El Mansouria",
+      "Collecter les données",
+      "Annuler la collecte",
+      "Actualiser uniquement l’adresse",
+      "Reporter dans Préparer l’export",
+      "Ajouter une voie",
+      "Reprendre les propositions de Voirie",
+      "Vérifier les données",
+      "Ajouter une borne",
+      "↑",
+      "↓",
+      "Ajouter une voie",
+      "Rechercher les voies sur la carte",
+      "Ajouter une distance",
+      "Tracer et centrer la parcelle",
+      "Mesurer la largeur",
+      "Voir la mesure",
+      "Effacer la mesure",
+      "Voir les voies",
+      "Réessayer",
+      "Configurer MapTiler",
+      "Ajouter une contrainte",
+      "Supprimer",
+      "Ajouter une source",
+      "Supprimer",
+      "Supprimer",
+      "Ajouter une dimension",
+      "Supprimer",
+      "Ajouter une source",
+      "Voir le choix Harmonie et sa transmissio",
+      "Essayer une variante en copie",
+      "Dossier complet de l’exemple",
+      "Choix illustré",
+      "Alternatives expliquées",
+      "Intentions reçues / transmises",
+      "Carte MapTiler (connexion facultative)",
+      "02 · Réglementation & constructibilité",
+      "04 · Idée & stratégie",
+      "06 · PMO — Programme du maître d’ouvrage",
+      "09 · Compatibilité Parcelle ↔ Programme",
+      "10 · Étude de capacité architecturale",
+      "03 · Marché & demande",
+      "Configurer",
+      "Placer au centre",
+      "Valider la mesure",
+      "Recommencer",
+      "Annuler",
+      "Ajouter le fond satelliteConnectez votre",
+      "Afficher les images satellite",
+      "Déconnecter et oublier la clé",
+      "Importer la parcelle",
+      "Compléter les données sources",
+      "Modèle Atelier KMLFichier .kml selon le ",
+      "Design Parcel 2.0 KMLExport complet cont",
+      "Design Parcel 2.0 KMZKML, données JSON e",
+      "Design Parcel 2.0 JSONContrat structuré ",
+      "Brouillon à compléter KMLConserve les ch",
+      "Brouillon à compléter JSONChamps et stat",
+      "Rapport des contrôles JSONValeurs PROVID",
+      "Sauvegarde de la parcelle JSONRéouvrir i",
+      "Contour et contrat GeoJSONContour WGS84 ",
+      "Présentation cartographique KML / KMZCot",
+      "Bornes seulement CSVExtrait tabulaire de",
+      "Annuler",
+      "Créer le fichier",
+      "Annuler",
+      "Ajouter la voie"
+     ],
+     "inputs": [
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "site-info-address",
+       "label": "Localisation / adresse"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "site-info-commune",
+       "label": "Commune / localité"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "site-info-region",
+       "label": "Région / subdivision"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "site-info-country",
+       "label": "Pays"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "site-info-lng",
+       "label": "Longitude centre"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "site-info-lat",
+       "label": "Latitude centre"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-number",
+       "label": "N° Parcelle"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-commune",
+       "label": "Commune"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-project",
+       "label": "Nom du projet"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-source-crs",
+       "label": "CRS sourceÀ confirmerWGS84 · EPSG:4326 (longitude / latitude"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-reference",
+       "label": "Référence des données sources"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-confidence",
+       "label": "Confiance des donnéesDéclaréesOfficiellesMesuréesEstimées"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-official-confidence",
+       "label": "Confiance de la surface administrativeDéclaréeOfficielleMesu"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "design-confirm-crs",
+       "label": "Je confirme le référentiel métrique choisi dans « Système de"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-setback-mode",
+       "label": "ModeNon renseignéUniformePar côtéAucun recul selon une règle"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-setback-value",
+       "label": "Recul uniforme (m)"
+      },
+      {
+       "tag": "textarea",
+       "type": "textarea",
+       "id": "design-setback-rule",
+       "label": "Règle et référence"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-building-status",
+       "label": "ÉtatNon définieDéfinie par une géométrie"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-building-id",
+       "label": "Identifiant bâtiment"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-building-mode",
+       "label": "ModeEmprise fournieProposition à calculer par V13"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-target-coverage",
+       "label": "Couverture cible (ratio de 0 à 1)"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-preferred-axis",
+       "label": "Axe préféré"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-shape-policy",
+       "label": "Politique de forme"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "design-respect-setback",
+       "label": "Respecter les reculs"
+      },
+      {
+       "tag": "textarea",
+       "type": "textarea",
+       "id": null,
+       "label": "Emprise fournie · X ; Y en mètres"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-dimension-offset",
+       "label": "Décalage extérieur (m)"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-dimension-precision",
+       "label": "Décimales0123456"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "design-dimension-extension",
+       "label": "Lignes d’attache à générer"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "design-dimension-labels",
+       "label": "Afficher les noms des bornes"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "crs",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "labels",
+       "label": "Noms des bornes à l’extérieur et repères"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "shapes",
+       "label": "Formes géométriques"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "dimensions",
+       "label": "Cotes extérieures et lignes de rappel"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "lambertArea",
+       "label": "Surface Lambert"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "roadAxis",
+       "label": "Axe de la Route"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "roads",
+       "label": "Routes et chemins"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "width-measured",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "width-entered",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "draggable",
+       "label": "Déplacer les bornes sur la carte"
+      },
+      {
+       "tag": "input",
+       "type": "range",
+       "id": "opacity",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "parcel-official-area",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-parcelSources-0-label",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-parcelSources-0-reference",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-parcelSources-0-url",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-dimensions-0-label",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-dimensions-0-value",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-dimensions-0-unit",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-dimensions-1-label",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-dimensions-1-value",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-dimensions-1-unit",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-constructionSources-0-label",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-constructionSources-0-reference",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-constructionSources-0-url",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "password",
+       "id": "api-key",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "remember-key",
+       "label": "Mémoriser sur cet appareil"
+      },
+      {
+       "tag": "input",
+       "type": "file",
+       "id": "import-file",
+       "label": null
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "earth-contour",
+       "label": null
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "earth-crs",
+       "label": null
+      },
+      {
+       "tag": "textarea",
+       "type": "textarea",
+       "id": "import-text",
+       "label": null
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "atelier-road",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "new-file-name",
+       "label": null
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "new-file-crs",
+       "label": null
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "frontage-candidate",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "frontage-name",
+       "label": null
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "frontage-edge",
+       "label": null
+      }
+     ],
+     "canvases": 0,
+     "svgs": 55,
+     "scripts": [],
+     "storageKeys": [
+      "length",
+      "key",
+      "getItem",
+      "setItem",
+      "removeItem",
+      "clear"
+     ]
+    }
+   ]
+  },
+  "2": {
+   "url": "",
+   "headings": [
+    "H1: Réglementation & constructibilité",
+    "H2: Préserver l’intention dans l’enveloppe admissible",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 02"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Site constructible · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (1) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17994898,
+   "errors": [],
+   "frameInventories": []
+  },
+  "3": {
+   "url": "",
+   "headings": [
+    "H1: Marché & demande",
+    "H2: Un accueil identifiable pour la formation et les bureaux",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 03"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Attentes et usages recherchés · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (1) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17994103,
+   "errors": [],
+   "frameInventories": []
+  },
+  "4": {
+   "url": "",
+   "headings": [
+    "H1: Idée & stratégie",
+    "H2: Pôles fonctionnels distincts et supports communs",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 04"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Parti d’ensemble · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (2) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17994149,
+   "errors": [],
+   "frameInventories": []
+  },
+  "5": {
+   "url": "",
+   "headings": [
+    "H1: Besoins & concertation",
+    "H2: Groupes identifiés et horaires décalés",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 05"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Usagers et activités · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (2) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17995719,
+   "errors": [],
+   "frameInventories": []
+  },
+  "6": {
+   "url": "",
+   "headings": [
+    "H1: PMO — Programme du maître d’ouvrage",
+    "H2: Trois engagements prioritaires",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 06",
+    "H2: Répartition renseignée et liée au modèle"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "Exporter les fiches CSV",
+    "Essayer une autre répartition en copie",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Objectifs du maître d’ouvrage · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (5) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "74 fiches d’espaces — capacités, dimensions et ambiances choisies",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [
+    {
+     "headers": [
+      "Catégorie",
+      "Surface de programme"
+     ],
+     "rows": 7
+    }
+   ],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "ex81 ex81-block",
+    "sources-card"
+   ],
+   "textLength": 18055009,
+   "errors": [],
+   "frameInventories": []
+  },
+  "7": {
+   "url": "",
+   "headings": [
+    "H1: Préprogramme fonctionnel",
+    "H2: Densités abaissées, surfaces conservées",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 07",
+    "H2: Répartition renseignée et liée au modèle"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "Exporter les fiches CSV",
+    "Essayer une autre répartition en copie",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Répartition et relations fonctionnelles · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (3) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "74 fiches d’espaces — capacités, dimensions et ambiances choisies",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [
+    {
+     "headers": [
+      "Catégorie",
+      "Surface de programme"
+     ],
+     "rows": 7
+    }
+   ],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "ex81 ex81-block",
+    "sources-card"
+   ],
+   "textLength": 18061550,
+   "errors": [],
+   "frameInventories": []
+  },
+  "8": {
+   "url": "",
+   "headings": [
+    "H1: Exigences techniques & environnementales",
+    "H2: Protections et transitions avant décoration",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 08"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Qualités techniques à concevoir · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (3) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17995184,
+   "errors": [],
+   "frameInventories": []
+  },
+  "9": {
+   "url": "",
+   "headings": [
+    "H1: Compatibilité Parcelle ↔ Programme",
+    "H2: Maintenir l’emprise et réviser les usages",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 09"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Site ↔ programme · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (5) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17994594,
+   "errors": [],
+   "frameInventories": []
+  },
+  "10": {
+   "url": "",
+   "headings": [],
+   "fields": [
+    {
+     "tag": "input",
+     "type": "range",
+     "id": "orbit-yaw",
+     "name": null,
+     "biz": null,
+     "label": "Est / Ouest 155°",
+     "value": "155"
+    },
+    {
+     "tag": "input",
+     "type": "range",
+     "id": "orbit-pitch",
+     "name": null,
+     "biz": null,
+     "label": "Nord / Sud 25°",
+     "value": "25"
+    },
+    {
+     "tag": "input",
+     "type": "range",
+     "id": "orbit-roll",
+     "name": null,
+     "biz": null,
+     "label": "Roll 0°",
+     "value": "0"
+    },
+    {
+     "tag": "select",
+     "type": "select-one",
+     "id": "render-style",
+     "name": null,
+     "biz": null,
+     "label": "Représentation",
+     "value": "envelope",
+     "options": 4
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-basement",
+     "name": null,
+     "biz": null,
+     "label": "Niveaux sous 0",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-diagram",
+     "name": null,
+     "biz": null,
+     "label": "Objets / annotations",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-dimensions",
+     "name": null,
+     "biz": null,
+     "label": "Cotes et repères",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-cadastral",
+     "name": null,
+     "biz": null,
+     "label": "Parcelle",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-setback",
+     "name": null,
+     "biz": null,
+     "label": "Recul",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-building",
+     "name": null,
+     "biz": null,
+     "label": "Emprise",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-road",
+     "name": null,
+     "biz": null,
+     "label": "Voirie",
+     "value": "on"
+    }
+   ],
+   "buttons": [
+    "←",
+    "⌂",
+    "Modèle",
+    "Design",
+    "Concevoir",
+    "Analyser",
+    "Documenter",
+    "⋯",
+    "Niveau▾",
+    "Vue▾",
+    "Mode▾",
+    "Dessins techniques▾",
+    "↶",
+    "↷",
+    "⛶",
+    "⊙",
+    "⚙",
+    "N projet",
+    "−",
+    "Cadrer",
+    "+",
+    "↺",
+    "Sous-sol technique",
+    "RDC",
+    "Mezzanine",
+    "R+1 · Formation",
+    "R+2 · Bureaux",
+    "R+3 · Direction",
+    "N",
+    "S",
+    "E",
+    "O",
+    "Dessus",
+    "Dessous",
+    "Enregistrer la vue",
+    "Emprise 673 m²",
+    "Parcelle 1346 m²",
+    "Informations sur la voie ↗",
+    "Exporter PNG ↓",
+    "Plan SVG ↓",
+    "Sources projet ↗",
+    "Documents ↗",
+    "Projets ↗",
+    "Sources ↗",
+    "Aide aux commandes",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Données du projet",
+     "open": false
+    },
+    {
+     "summary": "Étude de capacité architecturale",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "sources-card"
+   ],
+   "textLength": 17995661,
+   "errors": [],
+   "frameInventories": []
+  },
+  "11": {
+   "url": "",
+   "headings": [
+    "H1: Esquisse architecturale — Esquisser",
+    "H2: La coupe de la mezzanine comme pièce décisive",
+    "H3: Pourquoi ce choix"
+   ],
+   "fields": [
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-basement",
+     "name": null,
+     "biz": null,
+     "label": "Niveaux sous 0",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-diagram",
+     "name": null,
+     "biz": null,
+     "label": "Objets / annotations",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-dimensions",
+     "name": null,
+     "biz": null,
+     "label": "Cotes et repères",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-cadastral",
+     "name": null,
+     "biz": null,
+     "label": "Parcelle",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-setback",
+     "name": null,
+     "biz": null,
+     "label": "Recul",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-building",
+     "name": null,
+     "biz": null,
+     "label": "Emprise",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-road",
+     "name": null,
+     "biz": null,
+     "label": "Voirie",
+     "value": "on"
+    }
+   ],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "Lire le bilan du bâtiment conçu",
+    "Voir les capacités et ambiances des 62 zones",
+    "Exporter le bilan",
+    "Répartition / fiches espaces",
+    "Harmony",
+    "Comparer au modèle",
+    "Bibliothèque par types",
+    "Modèle",
+    "Design",
+    "Concevoir",
+    "Analyser",
+    "Documenter",
+    "⋯",
+    "Niveau▾",
+    "Vue▾",
+    "Mode▾",
+    "Dessins techniques▾",
+    "↶",
+    "↷",
+    "⛶",
+    "⊙",
+    "⚙",
+    "N projet",
+    "−",
+    "Cadrer",
+    "+",
+    "↺",
+    "Sous-sol technique",
+    "RDC",
+    "Mezzanine",
+    "R+1 · Formation",
+    "R+2 · Bureaux",
+    "R+3 · Direction",
+    "Voir A–A",
+    "Voir B–B",
+    "Emprise 673 m²",
+    "Parcelle 1346 m²",
+    "Informations sur la voie ↗",
+    "Exporter PNG ↓",
+    "Plan SVG ↓",
+    "Sources projet ↗",
+    "Documents ↗",
+    "Projets ↗",
+    "Sources ↗",
+    "Aide aux commandes",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Plans, coupes et façades · 34 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (37) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Données du projet",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "bl-summary-insert",
+    "sources-card"
+   ],
+   "textLength": 18016816,
+   "errors": [],
+   "frameInventories": []
+  },
+  "12": {
+   "url": "",
+   "headings": [
+    "H1: Scénarios de développement",
+    "H2: Confort d’usage avant capacité maximale",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 12"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Variantes de développement · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (5) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17996151,
+   "errors": [],
+   "frameInventories": []
+  },
+  "13": {
+   "url": "",
+   "headings": [
+    "H1: Faisabilité technique",
+    "H2: Études ciblées avec solution de repli",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 13"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Faisabilité des solutions · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (71) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 18039388,
+   "errors": [],
+   "frameInventories": []
+  },
+  "14": {
+   "url": "",
+   "headings": [
+    "H1: Faisabilité économique & financière",
+    "H2: Financer d’abord les décisions structurantes",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 14"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Arbitrage d’investissement · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (2) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [
+    {
+     "headers": [
+      "Indicateur",
+      "Référence",
+      "Scénario défavorable"
+     ],
+     "rows": 6
+    },
+    {
+     "headers": [
+      "Indicateur",
+      "Référence",
+      "Scénario défavorable"
+     ],
+     "rows": 6
+    }
+   ],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17995464,
+   "errors": [],
+   "frameInventories": []
+  },
+  "15": {
+   "url": "",
+   "headings": [
+    "H1: Coût global & sensibilités",
+    "H2: Sobriété et seuils de réexamen explicites",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 15"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Coût global et exploitation · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (3) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [
+    {
+     "headers": [
+      "Indicateur",
+      "Référence",
+      "Scénario défavorable"
+     ],
+     "rows": 6
+    },
+    {
+     "headers": [
+      "Indicateur",
+      "Référence",
+      "Scénario défavorable"
+     ],
+     "rows": 6
+    }
+   ],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17995895,
+   "errors": [],
+   "frameInventories": []
+  },
+  "16": {
+   "url": "",
+   "headings": [
+    "H1: Vérifications / Due diligence",
+    "H2: Corriger à la source, sans validation fictive",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 16"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Réserves et corrections · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (71) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 18039391,
+   "errors": [],
+   "frameInventories": []
+  },
+  "17": {
+   "url": "",
+   "headings": [
+    "H1: Évaluation multicritère",
+    "H2: Un arbitrage traçable, pas une note de Qi",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 17"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Comparaison argumentée · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (4) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17994320,
+   "errors": [],
+   "frameInventories": []
+  },
+  "18": {
+   "url": "",
+   "headings": [
+    "H1: Bilan du potentiel de la parcelle",
+    "H2: Synthèse décisions → programme → dessin",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 18"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Bilan du projet · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (37) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 18018135,
+   "errors": [],
+   "frameInventories": []
+  },
+  "19": {
+   "url": "",
+   "headings": [
+    "H1: Décision — GO / GO sous conditions / À reprendre / NO GO",
+    "H2: GO sous conditions pour les études uniquement",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 19"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Décision du maître d’ouvrage · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (7) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17996082,
+   "errors": [],
+   "frameInventories": []
+  },
+  "20": {
+   "url": "",
+   "headings": [
+    "H1: Organisation des études — uniquement si GO",
+    "H2: Missions et jalons déjà définis",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 20"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Organisation des études · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (3) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17995485,
+   "errors": [],
+   "frameInventories": []
+  },
+  "21": {
+   "url": "",
+   "headings": [
+    "H1: Transfert vers développement / conception",
+    "H2: Transfert exploitable et brief d’ambiance",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 21"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Transfert et conception détaillée · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (4) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17995057,
+   "errors": [],
+   "frameInventories": []
+  }
+ },
+ "overview-mobile": {
+  "url": "",
+  "headings": [
+   "H1: Étude du potentiel de la parcelle"
+  ],
+  "fields": [],
+  "buttons": [
+   "←",
+   "⌂",
+   "← Projets",
+   "Exemples",
+   "118_officiel.kmz",
+   "ZONE-I-5.pdf",
+   "01Comprendre le siteParcelle / Site existant",
+   "02Comprendre le siteRéglementation & constructibilité",
+   "03Comprendre le siteMarché & demande",
+   "04ProgrammerIdée & stratégie",
+   "05ProgrammerBesoins & concertation",
+   "06ProgrammerPMO — Programme du maître d’ouvrage",
+   "07ProgrammerPréprogramme fonctionnel",
+   "08ProgrammerExigences techniques & environnementales",
+   "09Concevoir / TesterCompatibilité Parcelle ↔ Programme",
+   "10Concevoir / TesterÉtude de capacité architecturale",
+   "11Concevoir / TesterEsquisse architecturale — Esquisser",
+   "12Concevoir / TesterScénarios de développement",
+   "13Prouver la faisabilitéFaisabilité technique",
+   "14Prouver la faisabilitéFaisabilité économique & financière",
+   "15Prouver la faisabilitéCoût global & sensibilités",
+   "16Prouver la faisabilitéVérifications / Due diligence",
+   "17ArbitrerÉvaluation multicritère",
+   "18ArbitrerBilan du potentiel de la parcelle",
+   "19ArbitrerDécision — GO / GO sous conditions / À reprendre /",
+   "20EngagerOrganisation des études — uniquement si GO",
+   "21EngagerTransfert vers développement / conception",
+   "Sauvegarder projet JSON",
+   "Importer projet JSON",
+   "Exporter la synthèse des choix Harmonie"
+  ],
+  "details": [
+   {
+    "summary": "Outils du projet",
+    "open": false
+   }
+  ],
+  "tables": [],
+  "iframes": [],
+  "canvases": 1,
+  "svgs": 5,
+  "sections": [
+   "overview-head",
+   "overview-grid"
+  ],
+  "textLength": 17991036
+ },
+ "steps-mobile": {
+  "1": {
+   "url": "",
+   "headings": [
+    "H1: Parcelle / Site existant"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [
+    {
+     "id": "frame",
+     "visible": true,
+     "srcdocLength": 970057
+    }
+   ],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "sources-card"
+   ],
+   "textLength": 17989977,
+   "errors": [],
+   "frameInventories": [
+    {
+     "title": "Parcelle — Atelier satellite",
+     "headings": [
+      "H2: Mes parcelles",
+      "H2: Informations du site · MapTiler",
+      "H2: Préparer l’export Design Parcel 2.0",
+      "H2: Système de coordonnées",
+      "H1: Bornes de la parcelle",
+      "H2: Voirie",
+      "H2: Distances réglementaires",
+      "H3: Coordonnées Lambert de l’axe calculé",
+      "H2: Tracé de la parcelle",
+      "H2: Affichage",
+      "H3: Largeur de chaussée",
+      "H2: Parcelle",
+      "H3: Contenance",
+      "H3: Contraintes",
+      "H3: Sources",
+      "H2: Construction",
+      "H3: Dimensions autorisées",
+      "H3: Sources",
+      "H2: Accueil extérieur lisible et service latéral",
+      "H3: Pourquoi ce choix",
+      "H3: Intentions reçues et utilisées",
+      "H3: Choix déjà transmis",
+      "H2: Connecter la vue satellite",
+      "H2: Importer une parcelle",
+      "H2: Exporter la parcelle",
+      "H2: Une géométrie traçable",
+      "H3: Exemple Lot 118",
+      "H3: Référentiel et position",
+      "H3: Utilisation",
+      "H2: Créer une nouvelle parcelle",
+      "H2: Ajouter une voie"
+     ],
+     "buttons": [
+      "Repères",
+      "Exporter",
+      "Télécharger ce fichier",
+      "Importer",
+      "Réessayer",
+      "Nouveau",
+      "118Lot 118 · El Mansouria",
+      "Collecter les données",
+      "Annuler la collecte",
+      "Actualiser uniquement l’adresse",
+      "Reporter dans Préparer l’export",
+      "Ajouter une voie",
+      "Reprendre les propositions de Voirie",
+      "Vérifier les données",
+      "Ajouter une borne",
+      "↑",
+      "↓",
+      "Ajouter une voie",
+      "Rechercher les voies sur la carte",
+      "Ajouter une distance",
+      "Tracer et centrer la parcelle",
+      "Mesurer la largeur",
+      "Voir la mesure",
+      "Effacer la mesure",
+      "Voir les voies",
+      "Réessayer",
+      "Configurer MapTiler",
+      "Ajouter une contrainte",
+      "Supprimer",
+      "Ajouter une source",
+      "Supprimer",
+      "Supprimer",
+      "Ajouter une dimension",
+      "Supprimer",
+      "Ajouter une source",
+      "Voir le choix Harmonie et sa transmissio",
+      "Essayer une variante en copie",
+      "Dossier complet de l’exemple",
+      "Choix illustré",
+      "Alternatives expliquées",
+      "Intentions reçues / transmises",
+      "Carte MapTiler (connexion facultative)",
+      "02 · Réglementation & constructibilité",
+      "04 · Idée & stratégie",
+      "06 · PMO — Programme du maître d’ouvrage",
+      "09 · Compatibilité Parcelle ↔ Programme",
+      "10 · Étude de capacité architecturale",
+      "03 · Marché & demande",
+      "Configurer",
+      "Placer au centre",
+      "Valider la mesure",
+      "Recommencer",
+      "Annuler",
+      "Ajouter le fond satelliteConnectez votre",
+      "Afficher les images satellite",
+      "Déconnecter et oublier la clé",
+      "Importer la parcelle",
+      "Compléter les données sources",
+      "Modèle Atelier KMLFichier .kml selon le ",
+      "Design Parcel 2.0 KMLExport complet cont",
+      "Design Parcel 2.0 KMZKML, données JSON e",
+      "Design Parcel 2.0 JSONContrat structuré ",
+      "Brouillon à compléter KMLConserve les ch",
+      "Brouillon à compléter JSONChamps et stat",
+      "Rapport des contrôles JSONValeurs PROVID",
+      "Sauvegarde de la parcelle JSONRéouvrir i",
+      "Contour et contrat GeoJSONContour WGS84 ",
+      "Présentation cartographique KML / KMZCot",
+      "Bornes seulement CSVExtrait tabulaire de",
+      "Annuler",
+      "Créer le fichier",
+      "Annuler",
+      "Ajouter la voie"
+     ],
+     "inputs": [
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "site-info-address",
+       "label": "Localisation / adresse"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "site-info-commune",
+       "label": "Commune / localité"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "site-info-region",
+       "label": "Région / subdivision"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "site-info-country",
+       "label": "Pays"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "site-info-lng",
+       "label": "Longitude centre"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "site-info-lat",
+       "label": "Latitude centre"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-number",
+       "label": "N° Parcelle"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-commune",
+       "label": "Commune"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-project",
+       "label": "Nom du projet"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-source-crs",
+       "label": "CRS sourceÀ confirmerWGS84 · EPSG:4326 (longitude / latitude"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-reference",
+       "label": "Référence des données sources"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-confidence",
+       "label": "Confiance des donnéesDéclaréesOfficiellesMesuréesEstimées"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-official-confidence",
+       "label": "Confiance de la surface administrativeDéclaréeOfficielleMesu"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "design-confirm-crs",
+       "label": "Je confirme le référentiel métrique choisi dans « Système de"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-setback-mode",
+       "label": "ModeNon renseignéUniformePar côtéAucun recul selon une règle"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-setback-value",
+       "label": "Recul uniforme (m)"
+      },
+      {
+       "tag": "textarea",
+       "type": "textarea",
+       "id": "design-setback-rule",
+       "label": "Règle et référence"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-building-status",
+       "label": "ÉtatNon définieDéfinie par une géométrie"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-building-id",
+       "label": "Identifiant bâtiment"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-building-mode",
+       "label": "ModeEmprise fournieProposition à calculer par V13"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-target-coverage",
+       "label": "Couverture cible (ratio de 0 à 1)"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-preferred-axis",
+       "label": "Axe préféré"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-shape-policy",
+       "label": "Politique de forme"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "design-respect-setback",
+       "label": "Respecter les reculs"
+      },
+      {
+       "tag": "textarea",
+       "type": "textarea",
+       "id": null,
+       "label": "Emprise fournie · X ; Y en mètres"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "design-dimension-offset",
+       "label": "Décalage extérieur (m)"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "design-dimension-precision",
+       "label": "Décimales0123456"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "design-dimension-extension",
+       "label": "Lignes d’attache à générer"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "design-dimension-labels",
+       "label": "Afficher les noms des bornes"
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "crs",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": null,
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "labels",
+       "label": "Noms des bornes à l’extérieur et repères"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "shapes",
+       "label": "Formes géométriques"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "dimensions",
+       "label": "Cotes extérieures et lignes de rappel"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "lambertArea",
+       "label": "Surface Lambert"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "roadAxis",
+       "label": "Axe de la Route"
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "roads",
+       "label": "Routes et chemins"
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "width-measured",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "width-entered",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "draggable",
+       "label": "Déplacer les bornes sur la carte"
+      },
+      {
+       "tag": "input",
+       "type": "range",
+       "id": "opacity",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "parcel-official-area",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-parcelSources-0-label",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-parcelSources-0-reference",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-parcelSources-0-url",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-dimensions-0-label",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-dimensions-0-value",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-dimensions-0-unit",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-dimensions-1-label",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-dimensions-1-value",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-dimensions-1-unit",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-constructionSources-0-label",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-constructionSources-0-reference",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "dossier-constructionSources-0-url",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "password",
+       "id": "api-key",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "checkbox",
+       "id": "remember-key",
+       "label": "Mémoriser sur cet appareil"
+      },
+      {
+       "tag": "input",
+       "type": "file",
+       "id": "import-file",
+       "label": null
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "earth-contour",
+       "label": null
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "earth-crs",
+       "label": null
+      },
+      {
+       "tag": "textarea",
+       "type": "textarea",
+       "id": "import-text",
+       "label": null
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "atelier-road",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "new-file-name",
+       "label": null
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "new-file-crs",
+       "label": null
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "frontage-candidate",
+       "label": null
+      },
+      {
+       "tag": "input",
+       "type": "text",
+       "id": "frontage-name",
+       "label": null
+      },
+      {
+       "tag": "select",
+       "type": "select-one",
+       "id": "frontage-edge",
+       "label": null
+      }
+     ],
+     "canvases": 0,
+     "svgs": 55,
+     "scripts": [],
+     "storageKeys": [
+      "length",
+      "key",
+      "getItem",
+      "setItem",
+      "removeItem",
+      "clear"
+     ]
+    }
+   ]
+  },
+  "2": {
+   "url": "",
+   "headings": [
+    "H1: Réglementation & constructibilité",
+    "H2: Préserver l’intention dans l’enveloppe admissible",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 02"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Site constructible · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (1) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17994898,
+   "errors": [],
+   "frameInventories": []
+  },
+  "3": {
+   "url": "",
+   "headings": [
+    "H1: Marché & demande",
+    "H2: Un accueil identifiable pour la formation et les bureaux",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 03"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Attentes et usages recherchés · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (1) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17994103,
+   "errors": [],
+   "frameInventories": []
+  },
+  "4": {
+   "url": "",
+   "headings": [
+    "H1: Idée & stratégie",
+    "H2: Pôles fonctionnels distincts et supports communs",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 04"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Parti d’ensemble · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (2) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17994149,
+   "errors": [],
+   "frameInventories": []
+  },
+  "5": {
+   "url": "",
+   "headings": [
+    "H1: Besoins & concertation",
+    "H2: Groupes identifiés et horaires décalés",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 05"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Usagers et activités · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (2) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17995719,
+   "errors": [],
+   "frameInventories": []
+  },
+  "6": {
+   "url": "",
+   "headings": [
+    "H1: PMO — Programme du maître d’ouvrage",
+    "H2: Trois engagements prioritaires",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 06",
+    "H2: Répartition renseignée et liée au modèle"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "Exporter les fiches CSV",
+    "Essayer une autre répartition en copie",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Objectifs du maître d’ouvrage · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (5) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "74 fiches d’espaces — capacités, dimensions et ambiances choisies",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [
+    {
+     "headers": [
+      "Catégorie",
+      "Surface de programme"
+     ],
+     "rows": 7
+    }
+   ],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "ex81 ex81-block",
+    "sources-card"
+   ],
+   "textLength": 18055009,
+   "errors": [],
+   "frameInventories": []
+  },
+  "7": {
+   "url": "",
+   "headings": [
+    "H1: Préprogramme fonctionnel",
+    "H2: Densités abaissées, surfaces conservées",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 07",
+    "H2: Répartition renseignée et liée au modèle"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "Exporter les fiches CSV",
+    "Essayer une autre répartition en copie",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Répartition et relations fonctionnelles · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (3) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "74 fiches d’espaces — capacités, dimensions et ambiances choisies",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [
+    {
+     "headers": [
+      "Catégorie",
+      "Surface de programme"
+     ],
+     "rows": 7
+    }
+   ],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "ex81 ex81-block",
+    "sources-card"
+   ],
+   "textLength": 18061550,
+   "errors": [],
+   "frameInventories": []
+  },
+  "8": {
+   "url": "",
+   "headings": [
+    "H1: Exigences techniques & environnementales",
+    "H2: Protections et transitions avant décoration",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 08"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Qualités techniques à concevoir · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (3) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17995184,
+   "errors": [],
+   "frameInventories": []
+  },
+  "9": {
+   "url": "",
+   "headings": [
+    "H1: Compatibilité Parcelle ↔ Programme",
+    "H2: Maintenir l’emprise et réviser les usages",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 09"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Site ↔ programme · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (5) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17994594,
+   "errors": [],
+   "frameInventories": []
+  },
+  "10": {
+   "url": "",
+   "headings": [],
+   "fields": [
+    {
+     "tag": "input",
+     "type": "range",
+     "id": "orbit-yaw",
+     "name": null,
+     "biz": null,
+     "label": "Est / Ouest 155°",
+     "value": "155"
+    },
+    {
+     "tag": "input",
+     "type": "range",
+     "id": "orbit-pitch",
+     "name": null,
+     "biz": null,
+     "label": "Nord / Sud 25°",
+     "value": "25"
+    },
+    {
+     "tag": "input",
+     "type": "range",
+     "id": "orbit-roll",
+     "name": null,
+     "biz": null,
+     "label": "Roll 0°",
+     "value": "0"
+    },
+    {
+     "tag": "select",
+     "type": "select-one",
+     "id": "render-style",
+     "name": null,
+     "biz": null,
+     "label": "Représentation",
+     "value": "envelope",
+     "options": 4
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-basement",
+     "name": null,
+     "biz": null,
+     "label": "Niveaux sous 0",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-diagram",
+     "name": null,
+     "biz": null,
+     "label": "Objets / annotations",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-dimensions",
+     "name": null,
+     "biz": null,
+     "label": "Cotes et repères",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-cadastral",
+     "name": null,
+     "biz": null,
+     "label": "Parcelle",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-setback",
+     "name": null,
+     "biz": null,
+     "label": "Recul",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-building",
+     "name": null,
+     "biz": null,
+     "label": "Emprise",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-road",
+     "name": null,
+     "biz": null,
+     "label": "Voirie",
+     "value": "on"
+    }
+   ],
+   "buttons": [
+    "←",
+    "⌂",
+    "Modèle",
+    "Design",
+    "Concevoir",
+    "Analyser",
+    "Documenter",
+    "⋯",
+    "Niveau▾",
+    "Vue▾",
+    "Mode▾",
+    "Dessins techniques▾",
+    "↶",
+    "↷",
+    "⛶",
+    "⊙",
+    "⚙",
+    "N projet",
+    "−",
+    "Cadrer",
+    "+",
+    "↺",
+    "Sous-sol technique",
+    "RDC",
+    "Mezzanine",
+    "R+1 · Formation",
+    "R+2 · Bureaux",
+    "R+3 · Direction",
+    "N",
+    "S",
+    "E",
+    "O",
+    "Dessus",
+    "Dessous",
+    "Enregistrer la vue",
+    "Emprise 673 m²",
+    "Parcelle 1346 m²",
+    "Informations sur la voie ↗",
+    "Exporter PNG ↓",
+    "Plan SVG ↓",
+    "Sources projet ↗",
+    "Documents ↗",
+    "Projets ↗",
+    "Sources ↗",
+    "Aide aux commandes",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Données du projet",
+     "open": false
+    },
+    {
+     "summary": "Étude de capacité architecturale",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 5,
+   "sections": [
+    "sources-card"
+   ],
+   "textLength": 17995661,
+   "errors": [],
+   "frameInventories": []
+  },
+  "11": {
+   "url": "",
+   "headings": [
+    "H1: Esquisse architecturale — Esquisser",
+    "H2: La coupe de la mezzanine comme pièce décisive",
+    "H3: Pourquoi ce choix"
+   ],
+   "fields": [
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-basement",
+     "name": null,
+     "biz": null,
+     "label": "Niveaux sous 0",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-diagram",
+     "name": null,
+     "biz": null,
+     "label": "Objets / annotations",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "show-dimensions",
+     "name": null,
+     "biz": null,
+     "label": "Cotes et repères",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-cadastral",
+     "name": null,
+     "biz": null,
+     "label": "Parcelle",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-setback",
+     "name": null,
+     "biz": null,
+     "label": "Recul",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-building",
+     "name": null,
+     "biz": null,
+     "label": "Emprise",
+     "value": "on"
+    },
+    {
+     "tag": "input",
+     "type": "checkbox",
+     "id": "model-layer-road",
+     "name": null,
+     "biz": null,
+     "label": "Voirie",
+     "value": "on"
+    }
+   ],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "Lire le bilan du bâtiment conçu",
+    "Voir les capacités et ambiances des 62 zones",
+    "Exporter le bilan",
+    "Répartition / fiches espaces",
+    "Harmony",
+    "Comparer au modèle",
+    "Bibliothèque par types",
+    "Modèle",
+    "Design",
+    "Concevoir",
+    "Analyser",
+    "Documenter",
+    "⋯",
+    "Niveau▾",
+    "Vue▾",
+    "Mode▾",
+    "Dessins techniques▾",
+    "↶",
+    "↷",
+    "⛶",
+    "⊙",
+    "⚙",
+    "N projet",
+    "−",
+    "Cadrer",
+    "+",
+    "↺",
+    "Sous-sol technique",
+    "RDC",
+    "Mezzanine",
+    "R+1 · Formation",
+    "R+2 · Bureaux",
+    "R+3 · Direction",
+    "Voir A–A",
+    "Voir B–B",
+    "Emprise 673 m²",
+    "Parcelle 1346 m²",
+    "Informations sur la voie ↗",
+    "Exporter PNG ↓",
+    "Plan SVG ↓",
+    "Sources projet ↗",
+    "Documents ↗",
+    "Projets ↗",
+    "Sources ↗",
+    "Aide aux commandes",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Plans, coupes et façades · 34 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (37) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Données du projet",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "bl-summary-insert",
+    "sources-card"
+   ],
+   "textLength": 18016816,
+   "errors": [],
+   "frameInventories": []
+  },
+  "12": {
+   "url": "",
+   "headings": [
+    "H1: Scénarios de développement",
+    "H2: Confort d’usage avant capacité maximale",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 12"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Variantes de développement · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (5) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17996151,
+   "errors": [],
+   "frameInventories": []
+  },
+  "13": {
+   "url": "",
+   "headings": [
+    "H1: Faisabilité technique",
+    "H2: Études ciblées avec solution de repli",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 13"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Faisabilité des solutions · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (71) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 18039388,
+   "errors": [],
+   "frameInventories": []
+  },
+  "14": {
+   "url": "",
+   "headings": [
+    "H1: Faisabilité économique & financière",
+    "H2: Financer d’abord les décisions structurantes",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 14"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Arbitrage d’investissement · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (2) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [
+    {
+     "headers": [
+      "Indicateur",
+      "Référence",
+      "Scénario défavorable"
+     ],
+     "rows": 6
+    },
+    {
+     "headers": [
+      "Indicateur",
+      "Référence",
+      "Scénario défavorable"
+     ],
+     "rows": 6
+    }
+   ],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17995464,
+   "errors": [],
+   "frameInventories": []
+  },
+  "15": {
+   "url": "",
+   "headings": [
+    "H1: Coût global & sensibilités",
+    "H2: Sobriété et seuils de réexamen explicites",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 15"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Coût global et exploitation · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (3) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [
+    {
+     "headers": [
+      "Indicateur",
+      "Référence",
+      "Scénario défavorable"
+     ],
+     "rows": 6
+    },
+    {
+     "headers": [
+      "Indicateur",
+      "Référence",
+      "Scénario défavorable"
+     ],
+     "rows": 6
+    }
+   ],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17995895,
+   "errors": [],
+   "frameInventories": []
+  },
+  "16": {
+   "url": "",
+   "headings": [
+    "H1: Vérifications / Due diligence",
+    "H2: Corriger à la source, sans validation fictive",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 16"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Réserves et corrections · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (71) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 18039391,
+   "errors": [],
+   "frameInventories": []
+  },
+  "17": {
+   "url": "",
+   "headings": [
+    "H1: Évaluation multicritère",
+    "H2: Un arbitrage traçable, pas une note de Qi",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 17"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Comparaison argumentée · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (4) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17994320,
+   "errors": [],
+   "frameInventories": []
+  },
+  "18": {
+   "url": "",
+   "headings": [
+    "H1: Bilan du potentiel de la parcelle",
+    "H2: Synthèse décisions → programme → dessin",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 18"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Bilan du projet · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (37) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 18018135,
+   "errors": [],
+   "frameInventories": []
+  },
+  "19": {
+   "url": "",
+   "headings": [
+    "H1: Décision — GO / GO sous conditions / À reprendre / NO GO",
+    "H2: GO sous conditions pour les études uniquement",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 19"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Décision du maître d’ouvrage · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (7) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17996082,
+   "errors": [],
+   "frameInventories": []
+  },
+  "20": {
+   "url": "",
+   "headings": [
+    "H1: Organisation des études — uniquement si GO",
+    "H2: Missions et jalons déjà définis",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 20"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Organisation des études · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (3) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17995485,
+   "errors": [],
+   "frameInventories": []
+  },
+  "21": {
+   "url": "",
+   "headings": [
+    "H1: Transfert vers développement / conception",
+    "H2: Transfert exploitable et brief d’ambiance",
+    "H3: Pourquoi ce choix",
+    "H2: Réponses renseignées · 21"
+   ],
+   "fields": [],
+   "buttons": [
+    "◈ Harmonie de l’étape",
+    "←",
+    "⌂",
+    "Voir le choix Harmonie et sa transmission",
+    "Essayer une variante en copie",
+    "Dossier complet de l’exemple",
+    "Choix illustré",
+    "Alternatives expliquées",
+    "Intentions reçues / transmises",
+    "+ Importer des fichiers",
+    "← Précédente",
+    "Étape illustrée ✓",
+    "Suivante →"
+   ],
+   "details": [
+    {
+     "summary": "Harmonie · Transfert et conception détaillée · 1 choix retenu(s)",
+     "open": false
+    },
+    {
+     "summary": "Cadre de démonstration et hypothèses",
+     "open": false
+    },
+    {
+     "summary": "Alternatives et compromis",
+     "open": false
+    },
+    {
+     "summary": "Intentions reçues (4) et choix transmis",
+     "open": false
+    },
+    {
+     "summary": "Sources de l’étape",
+     "open": false
+    }
+   ],
+   "tables": [],
+   "iframes": [],
+   "canvases": 1,
+   "svgs": 7,
+   "sections": [
+    "ex81 ex81-story ex83-integrated",
+    "biz-card ex81",
+    "sources-card"
+   ],
+   "textLength": 17995057,
+   "errors": [],
+   "frameInventories": []
+  }
+ }
+}

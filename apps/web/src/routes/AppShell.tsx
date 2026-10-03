@@ -78,7 +78,7 @@ export function AppShell() {
         </div>
 
         <div className="app-user">
-          <button type="button" onClick={() => setMenuOpen((o) => !o)} aria-haspopup="true" aria-expanded={menuOpen}>
+          <button type="button" onClick={() => setMenuOpen((o) => !o)} aria-haspopup="true" aria-expanded={menuOpen} aria-label={user ? `Compte ${user.email}` : "Compte"}>
             <span className="avatar" aria-hidden="true">
               {user ? initialsFrom(user.email) : ""}
             </span>

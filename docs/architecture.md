@@ -139,7 +139,13 @@ still-open piece of work. A change based on a stale revision can never silently 
 geometric conflicts, the application offers an explicit resolution or keeps the work in a variant rather than
 discarding it.
 
-The first version targets a single active editor per project, with read access and comments for everyone else.
+Sharing has three roles decided by the server on every request: the owner (shares, deletes), editors (write)
+and readers (read everything, comment, export, copy). The plan first targeted a single active editor per
+project; the migration kept the simpler rule because the server already serialises writes per project (row
+lock in every read-modify-write transaction) and arbitrates stale writes by field and by version (409): several
+editors can work on the same project without losing each other's work; the "single active editor" rule is
+offered as an optional, expiring reservation rather than imposed at opening (decision recorded in
+`docs/migration/matrix.md`).
 Offline work covers projects already available on the device; features that need a live service say so when
 they are unavailable. Server-side backups, restore drills and an exportable project archive complete this.
 
@@ -169,38 +175,83 @@ front.
 
 ### Where this repository stands
 
-Lot 1 is in progress: `packages/core-geometry` is the active-code inventory for the Atelier's rendering
-engine, with reproducible tests as its "cas de test reproductibles".
+Lot 1 is done for the active code: `docs/migration/reference.md` inventories the prototype's scripts, data
+blocks and formats (verified by execution, captures in `docs/migration/captures/reference/`), and
+`apps/api/scripts/extract-prototype-data.mjs` regenerates every extracted dataset from the reference HTML
+(SHA-256 checked). `packages/core-geometry` keeps the rendering engine's pure geometry, with reproducible tests.
 
-Lot 2 has a working slice, not just a skeleton: `apps/api` is a real Express + PostgreSQL/PostGIS server with
-registration/login/sessions and project/level/architectural-object persistence, every route re-checking
-ownership server-side. `packages/domain-model`'s `CommandHistory` is no longer theoretical — the Atelier module
-(`apps/web/src/modules/atelier/AtelierPanel.tsx`) uses it for undo/redo over walls that are actually written to
-the database, with `projects.model_revision` advancing atomically with each change (the mechanism
-`CalculatedResult`/`ProducedDocument`'s `modelRevision` field assumes). `architectural_objects.properties` is
-where `ArchitecturalObject`-shaped data is stored today; the other six domain-model entities (SourceDatum,
-Requirement, Hypothesis, Recommendation, CalculatedResult, Decision, ProducedDocument, BusinessCheck) exist as
-types and runtime-checked coordinate frames, but have no tables or routes yet — they belong to modules not yet
-built (Projets et sources, Programmation, Analyses, Documents).
+Lot 2 is in place: `apps/api` (Express + PostgreSQL/PostGIS) owns projects, the 21 steps and their Harmonie
+decisions, programme cases (revisioned), parcels, the Atelier's native store (revision per key, 409 on a stale
+write, derived `levels` / `architectural_objects` projection, `projects.model_revision` advancing with each
+write), step files, produced documents and comments. Project import covers the P.118 example and the
+prototype's own exports (archive module); undo/redo runs inside the native Atelier engine and is persisted.
+`packages/domain-model` carries the entity types, the frames, and the business logic as pure functions
+(Harmonie rules and staleness, site zoning, programme library, model analysis, design review, Harmony engine
+tables, business checks, documents) — the API executes them server-side, the client only renders.
 
-Lot 3 (the pilot itself) has one working module out of seven: Atelier, with a single object kind (wall). The
-21-step Parcours grid is still placeholder cards — their business content (and the other five modules) is not
-migrated. Auth is real but single-tenant per project (one owner, no sharing yet) — multi-user access control,
-comments and the sync protocol are Lot 4. No regulatory/business-check engine, document generation, or data
-import exists — those are Lot 3's remaining modules plus Lot 4/5.
+Lot 3 is the pilot as it stands: the seven modules have real screens (Projets et sources, Parcours with the 21
+real steps and tools, Programmation, Atelier — the prototype's engine, encapsulated unchanged —, Analyses
+métier, Documents, Collaboration). The conformity matrix (`docs/migration/matrix.md`) is the authoritative
+record of what is ported, with what decision, which proof (domain / API tests, the Playwright scenario,
+captures) and which limits remain. The e2e scenario runs the full workflow on P.118 (import, steps, Atelier
+drawing with undo, parcel tool, Harmonie arbitrations and staleness, library and programme, links to the drawn
+model, transfers, reports, archive, copy, analyses, documents, comments).
+
+Lot 4 has its first slices: the Atelier's writes go through a local IndexedDB queue (Dexie) replayed on
+reconnection and on the next opening, with the four visible states and a conflict backup; form answers,
+Harmonie decisions and comments are keyed mutations paused offline, persisted, restored after a reload and
+replayed with the value or version they were based on (the server refuses a replay that would overwrite a
+newer write — 409 shown, never silent); the query cache is persisted (offline reading of what was already
+read), a service worker serves the app shell and the engines offline, and the project header shows the sync
+state and conflicts. Sharing is in place: the owner invites existing accounts by e-mail as `lecteur` (reads
+everything, comments, exports, copies) or `editeur` (also writes), can change or remove them, and a member can
+leave; every route declares the access it needs (`read` / `comment` / `write` / `owner`) and the server re-reads
+the role on each request (404 without access, 403 with the reason otherwise) — the client only hides what would
+be refused (read-only forms, Atelier in read-only mode, "Projets partagés avec vous"). Members work on the same
+project: every read-modify-write transaction first locks the project row (`FOR UPDATE`), so simultaneous
+writes are serialised instead of overwriting each other, then the per-field / per-version checks (409) apply.
+Conflicts are resolved explicitly: every 409 keeps what was attempted next to the server's state (field values,
+decision and version, model backup key) and offers to keep the server's version or to re-apply one's own on the
+current state — never an automatic merge. The service-worker cache is versioned per build and purged on
+activation, and the Playwright scenario runs in CI. The "single active editor" rule is an optional, expiring
+reservation (30 min, renewed while the holder keeps the project open, releasable by the owner): other accounts
+read and comment while it lasts, their writes are refused with the reason and the deadline (423). Ownership can be transferred to a member (the former owner stays as editor). Notifications exist in the
+application (access received, comments by others, editing reservations — read from dated data, with an
+unread count per account); e-mail remains an external service, absent.
+The app loads in pieces (shell, project, Atelier engine, library) and the service worker precaches every piece
+at install so offline opening does not depend on what was visited online. Around the modules, the navigation's
+Harmonie page shows the state of each project's choices (read from the steps already served) and the settings
+page what is really configurable (account, MapTiler key, data kept by the browser, build version); the
+protected P.118 reference behaves as in the prototype in the Atelier (the first committed modification goes
+to an automatic working copy through the engine's own `P118Resolved` seam). MapTiler (satellite background,
+altimetry) is called from the browser with the user's key, on request, and simulated in CI. The Playwright
+scenario also runs axe-core on every screen at desktop and phone widths (no critical or serious violation).
+Lot 5 items still open are listed under « Limites restantes » in the matrix (regulatory checks beyond the
+prototype's rules, e-mail notifications, deployment hardening).
 
 ## Acceptance target: "Parcours App — Pilote P.118"
 
 The first real deliverable, per the brief: open P.118, find the 21 steps, modify an architectural element,
 undo then redo that change, save it, retrieve it on a second device, and produce a plan with surfaces that
 match the same revision. Reaching this, observably, is the gate before continuing the full migration — not an
-estimate, a demonstrated run.
+estimate, a demonstrated run. The Playwright scenario replays it on every CI run: the P.118 example imported
+(21 steps), a wall drawn in the Atelier (into the automatic working copy), undone and redone with each state
+persisted (revisions 2, 3, 4), the model re-read from a second browser context at the same key revision, and
+the reading plan (SVG) and the surfaces table produced from the current revision in the Documents module.
 
 Acceptance also measures reliability, not only speed: preservation of identifiers, coordinates, levels,
 object relations and attachments; undo, restore, sync conflicts, and agreement between produced documents.
 Performance is measured on the same project, on a reference computer and an Android phone, covering opening,
 selection, moving an element, 3D navigation and saving — acceptance thresholds are set after the first
 measurements, not assumed.
+
+First indicative measurements (the scenario prints them as `⏱` lines; headless Chromium, the development
+sandbox, API and PostgreSQL on the same machine — the GitHub runner is faster): import of the P.118 example
+to the overview ≈ 2.3 s; opening step 02 (form and Harmonie panel) ≈ 0.7 s; opening the Atelier (engine,
+P.118 model, geometry drawn) ≈ 3.2 s; undoing a wall until the server confirms the write (350 ms
+debounce included) ≈ 1.6 s; reloading the Atelier page ≈ 3.2 s. The measurements on a reference computer
+and an Android phone, with selection, moving an element and 3D navigation, remain to be taken on real
+devices before any threshold is set.
 
 ## Known geometry limits (packages/core-geometry)
 

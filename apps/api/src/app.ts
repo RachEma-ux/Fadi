@@ -6,6 +6,8 @@ import { attachUser } from "./middleware/require-auth.js";
 import { authRouter } from "./routes/auth.js";
 import { projectsRouter } from "./routes/projects.js";
 import { examplesRouter } from "./routes/examples.js";
+import { libraryRouter } from "./routes/library.js";
+import { notificationsRouter } from "./routes/notifications.js";
 
 export function createApp() {
   const app = express();
@@ -23,7 +25,11 @@ export function createApp() {
     }),
   );
 
-  app.use(express.json({ limit: "256kb" }));
+  // Limite générale de 256 ko ; le magasin de l'Atelier (modèle natif, ~1 Mo
+  // pour P.118) a son propre analyseur JSON borné dans routes/atelier.ts.
+  const jsonBody = express.json({ limit: "256kb" });
+  // Le magasin de l'Atelier, les pièces jointes des étapes et l'import d'archive ont leur propre lecture de corps (limite dédiée).
+  app.use((req, res, next) => (/\/atelier\/store(\/|$)|\/steps\/\d+\/files(\/|$)|^\/projects\/import$/.test(req.path) ? next() : jsonBody(req, res, next)));
   app.use(attachUser);
 
   // Les routes d'authentification sont la cible privilégiée du
@@ -37,9 +43,13 @@ export function createApp() {
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: authLimit, standardHeaders: true, legacyHeaders: false });
   app.use("/auth", authLimiter, authRouter);
 
-  const apiLimiter = rateLimit({ windowMs: 60 * 1000, limit: 300, standardHeaders: true, legacyHeaders: false });
+  // `API_RATE_LIMIT` ne sert, comme `AUTH_RATE_LIMIT`, qu'à desserrer la limite pour la suite de tests (une seule instance, des dizaines de scénarios) ; production : 300 requêtes / minute.
+  const apiLimit = Number(process.env["API_RATE_LIMIT"] ?? 300);
+  const apiLimiter = rateLimit({ windowMs: 60 * 1000, limit: apiLimit, standardHeaders: true, legacyHeaders: false });
   app.use("/projects", apiLimiter, projectsRouter);
   app.use("/examples", apiLimiter, examplesRouter);
+  app.use("/library", apiLimiter, libraryRouter);
+  app.use("/notifications", apiLimiter, notificationsRouter);
 
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });

@@ -497,5 +497,250 @@
       },
       "sourceStatus": "Données du fichier + hypothèses explicites. Aucun relevé terrain, avis officiel ou engagement réel simulé."
     }
-  }
+  },
+  "business": {
+    "1": {
+      "summary": "[DONNÉE / CALCUL DU FICHIER SOURCE] P.118 — El Mansouria ; B.266 → B.267 → B.268 → B.265 ; contenance 1 346 m² ; aire calculée 1 345,55 m².\n[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Accès étudié sur B.265–B.266 ; accueil dégagé, espace ouvert protégé et desserte latérale. Organisation du terrain seulement, sans distribution des bureaux. Le fond MapTiler est facultatif pour lire le cas ; scénario de contexte explicitement renseigné."
+    },
+    "2": {
+      "f1": "[DONNÉE / CALCUL DU FICHIER SOURCE] Référence I5 incluse au dossier ; son application au site n’est pas une autorisation obtenue.",
+      "f2": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Retenir formation continue, bureaux et services. Exclure logement, industrie et hébergement de ce programme. Le passage aux études suppose confirmation de ces destinations.",
+      "f3": "[DONNÉE / CALCUL DU FICHIER SOURCE] 1 346 × 50 % = 673 m² de plafond arithmétique de travail ; emprise dessinée 673 m². Aucun COS complémentaire n’est inventé.",
+      "f4": "[DONNÉE / CALCUL DU FICHIER SOURCE] Le dossier cite 17,50 m hors sol et 3,50 m sous plafond pour les locaux concernés. Le modèle atteint 16,60 m hors sol, mais présente 3,20/3,40 m étage à étage : réserve H-HAUTEURS non levée.",
+      "f5": "[DONNÉE / CALCUL DU FICHIER SOURCE] Décalage de travail 5 m : enveloppe calculée 689,23 m² ; distances de l’emprise aux limites ≈ 5,148 m. Autorisation de la rampe distincte du contrôle du contour.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Prévoir une étude de 12 places automobiles, dont 2 emplacements adaptés à vérifier, et 20 vélos ; privilégier accès collectif. Aucun emplacement sur voie publique n’est compté acquis. Ces nombres sont un programme-test, pas un ratio réglementaire.",
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Tester l’absence de servitude incompatible pour étudier la variante ; exiger état foncier, plans réseaux et alignement avant engagement des travaux. Repli : déplacer le dispositif dans la zone admissible.",
+      "f8": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Accès public côté B.265–B.266 ; desserte technique latérale hors parvis. Aucun droit d’accès supplémentaire considéré acquis. Géomètre/architecte : vérification au jalon J1.",
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Sol sans anomalie seulement dans le scénario de calcul ; pas constat. Diagnostics sol, eau, historique et nuisances prescrits ; la réserve financière ne prouve pas la constructibilité.",
+      "f10": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Mandater l’architecte pour identifier autorité instructrice, destination recevable et pièces à déposer. Aucun numéro de permis fictif, aucun avis favorable simulé.",
+      "f11": "[DONNÉE / CALCUL DU FICHIER SOURCE] Document ZONE-I-5.pdf intégré au fichier de départ ; S01 / 118_officiel.kmz. Références conservées comme pièces sources, portée territoriale et actualité à confirmer par l’équipe de projet.",
+      "f12": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Retenir l’implantation de 673 m² comme base des études, non comme droit acquis. Poursuite limitée aux études ; hauteurs et rampe sont deux conditions bloquantes avant chantier."
+    },
+    "3": {
+      "f1": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Exercice de positionnement P.118, El Mansouria ; scénario arrêté au 28/09/2026, sans enquête réelle.",
+      "f2": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Formation continue pour adultes et équipes de PME ; usagers réguliers de bureaux, visiteurs sur rendez-vous, maintenance.",
+      "f3": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Cible de 60 apprenants simultanés, 84 postes de travail proposés ; recette stabilisée de scénario 3,60 M MAD/an. Aucune précommercialisation ou solvabilité démontrée.",
+      "f4": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Concurrence supposée présente ; modèle stressé par 10 % de vacance et 15 % de réduction des recettes unitaires. Aucune vacance locale mesurée n’est avancée.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Budget de recettes : formation 1,80 M + bureaux 1,40 M + services 0,40 M MAD/an. Valeurs de démonstration choisies pour tester le calcul, pas relevé de prix ni conseil d’investissement.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Comparer trois offres-types anonymes : bureau seul, centre de formation seul, ensemble mixte. Retenir le mixte pour la mutualisation et la diversité d’usage ; ce ne sont pas des transactions observées.",
+      "f7": "[DONNÉE / CALCUL DU FICHIER SOURCE] Coordonnées de travail WGS84 ≈ -7,319682 ; 33,708221, dérivées du S01 sous hypothèse EPSG:26191. Temps de trajet et desserte réelle non mesurés ; stratégie retenue : arrivées groupées et horaires décalés.",
+      "f8": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Un lieu de formation lisible et des bureaux protégés des pointes d’affluence ; partager réunion, accueil et supports compatibles, pas les postes individuels par défaut.",
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Choix arrêté pour montrer la démarche. Avant décision de construire : enquête auprès de trois opérateurs de formation et cinq entreprises, puis test des recettes au jalon J1 ; en cas d’insuffisance, réduire l’équipement initial."
+    },
+    "4": {
+      "f1": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Bâtiment mixte : formation continue, bureaux et services partagés.",
+      "f2": "[DONNÉE / CALCUL DU FICHIER SOURCE] Construction neuve représentée par un modèle d’esquisse ; aucun bâtiment achevé ni diagnostic d’existant certifié.",
+      "f3": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Public adulte ; PME de services ; exploitant de formation ; visiteurs accompagnés. Pas d’hébergement ni de public scolaire mineur dans le scénario.",
+      "f4": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Exploitation unifiée, recettes de formation + bureaux + services ; espaces partagés gérés par réservation. Calculs financiers illustratifs détaillés aux étapes 14/15.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Conserver l’actif, maîtriser les interfaces et prévoir des interventions réversibles plutôt qu’une division immédiate en lots autonomes.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Exploitant unique ; plages formation 08:30–17:30, bureaux 09:00–18:00 ; maintenance et livraison avant 08:00/après 18:00.",
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Préparer une location par ensembles fonctionnels si l’exploitation unique évolue ; aucune valeur de revente postulée.",
+      "f8": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Pointe de programme 164 personnes ; budget-test 24,00 M MAD ; conservation de l’emprise ; pas d’augmentation de densité sur la mezzanine ; relevés obligatoires avant réalisation.",
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] A — densité source conservée : écartée pour conflits d’usage ; B — recomposition lourde : réserve pour reprise des hauteurs ; R — densités réduites et études ciblées : retenue. Les alternatives sont déjà arbitrées dans cet exemple."
+    },
+    "5": {
+      "f1": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Maître d’ouvrage fictif P.118 ; programmiste ; architecte ; exploitant ; BET structure/fluides/incendie ; géomètre ; acousticien. Ce sont des rôles, pas des missions attribuées à des personnes réelles.",
+      "f2": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] 60 apprenants, 84 utilisateurs des postes, 16 visiteurs, 4 agents de service en pointe ; les salariés en réunion ne sont pas additionnés une seconde fois. Les 84 titulaires de postes incluent les formateurs et personnels de contrôle ; leurs postes sont libérés lorsqu’ils enseignent ou utilisent E06. Les locaux E06, réunions, pauses, archives et réserve sont occupés en rotation par ces mêmes personnes, pas par des effectifs additionnels. Exemple de créneau de pointe : 20 apprenants en Formation A, 20 en Formation B et 20 au plateau polyvalent RDC ; les autres ateliers ne reçoivent pas simultanément un quatrième groupe.",
+      "f3": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Apprendre, travailler individuellement et en équipe, recevoir, se réunir, faire une pause, entretenir ; pas de restauration de production ni d’activité industrielle.",
+      "f4": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] 60 apprenants + 84 utilisateurs de postes de travail + 16 visiteurs + 4 agents de service = 164 personnes en pointe ; situation courante : 40 + 60 + 8 + 2 = 110. Les salles de réunion et de pause accueillent ces mêmes groupes et ne sont pas ajoutées à l’effectif. Les 84 titulaires de postes incluent les formateurs et personnels de contrôle ; leurs postes sont libérés lorsqu’ils enseignent ou utilisent E06. Les locaux E06, réunions, pauses, archives et réserve sont occupés en rotation par ces mêmes personnes, pas par des effectifs additionnels. Exemple de créneau de pointe : 20 apprenants en Formation A, 20 en Formation B et 20 au plateau polyvalent RDC ; les autres ateliers ne reçoivent pas simultanément un quatrième groupe.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Arrivée formation 08:30 ; bureaux 09:00 ; deux vagues de pause espacées de 15 min ; livraisons 07:00–08:00 / 18:00–19:00. Occupation annuelle financière simplifiée, non calendrier de réservations réel.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Pas de stockage dans les dégagements ; attente sur le côté du hall ; pas de réunion debout dans les passages ; accès technique réservé à l’exploitant.",
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] 1. Repérage et accès ; 2. séparation des intensités ; 3. confort de travail ; 4. flexibilité. Sécurité et accessibilité sont des conditions, jamais des options d’ambiance.",
+      "f8": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Réduire M01 de 24 à 10 postes ; R2/E02 de 40 à 30 ; R2/E03 de 24 à 20. La réduction de capacité prime sur l’augmentation de l’emprise. Mobilier source à reprendre, sans faire croire qu’il a déjà été redessiné.",
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Restitution pédagogique remplie : usagers fictifs demandant calme, repérage, rangement et pauses ; aucun entretien réel n’est revendiqué. Le scénario montre ce que produirait une concertation documentée.",
+      "f10": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Décision de programme : séparer formation et concentration, échelonner les arrivées, mutualiser uniquement les supports compatibles. Réponses transmises au PMO et à Répartition, sans questionnaire obligatoire."
+    },
+    "6": {
+      "f1": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Retenir le scénario R : pôle Formation & bureaux sobre, lisible et adaptable, sans augmenter l’emprise.",
+      "f2": "Sous-sol technique : 530,16 m² de zones.\nRDC : 530,62 m² de zones.\nMezzanine : 194,87 m² de zones.\nR+1 · Formation : 541,78 m² de zones.\nR+2 · Bureaux : 544,47 m² de zones.\nR+3 · Direction : 542,85 m² de zones.",
+      "f3": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] 60 apprenants + 84 utilisateurs de postes de travail + 16 visiteurs + 4 agents de service = 164 personnes en pointe ; situation courante : 40 + 60 + 8 + 2 = 110. Les salles de réunion et de pause accueillent ces mêmes groupes et ne sont pas ajoutées à l’effectif. Les 84 titulaires de postes incluent les formateurs et personnels de contrôle ; leurs postes sont libérés lorsqu’ils enseignent ou utilisent E06. Les locaux E06, réunions, pauses, archives et réserve sont occupés en rotation par ces mêmes personnes, pas par des effectifs additionnels. Exemple de créneau de pointe : 20 apprenants en Formation A, 20 en Formation B et 20 au plateau polyvalent RDC ; les autres ateliers ne reçoivent pas simultanément un quatrième groupe.",
+      "f4": "[MODÈLE V8.19] Emprise 673 m² conservée ; dalle mezzanine nette 340.85 m² ; gain 75.72 m². Surfaces géométriques d’étude.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Programme-test : densités cibles modérées ; ambiances différenciées ; séparations acoustiques ; éclairage de tâche réglable ; accueil et parcours sans obstacles à dimensionner par les concepteurs.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Enveloppe totale de calcul : 24,00 M MAD ; autorisation fictive limitée à 0,60 M MAD d’études, incluse dans les 1,60 M d’études/honoraires, non ajoutée au budget.",
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Études préparatoires octobre–décembre 2026 ; études et autorisations au 1er semestre 2027 ; chantier seulement après nouveau GO ; ouverture-test septembre 2028, non engagement réel.",
+      "f8": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Préserver les décisions irréversibles (site, structure, accès) ; ajuster d’abord usages et mobilier ; travaux décoratifs non prioritaires devant les réserves techniques.",
+      "f9": "[DONNÉE / CALCUL DU FICHIER SOURCE] Contour S01 ; emprise 673 m² ; demande de portée PT 20 m et charge 500 kg/m² conservée comme exigence à dimensionner. Aucun poteau central ajouté. Les quantités d’appuis présentes au modèle ne valent pas calcul structurel."
+    },
+    "7": {
+      "f1": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] RDC accueil/formation ; mezzanine administration conditionnelle ; R+1 formation ; R+2 bureaux ; R+3 direction/coworking ; SS technique.",
+      "f2": "parcours_lot118-E001 · S01 · Archives sèches : 253,39 m² ; 2 places de programme.\nparcours_lot118-E002 · S02 · Locaux techniques / maintenance : 180,19 m² ; 2 places de programme.\nparcours_lot118-E003 · S03 · Desserte technique : 52,58 m² ; 0 places de programme.\nparcours_lot118-E004 · S04 · Réserve : 15,52 m² ; 1 places de programme.\nP118-V815-5 · S04 · Réserve : 0,46 m² ; 0 places de programme.\nparcours_lot118-E005 · Adaptation périphérique : 6,88 m² ; 0 places de programme.\nparcours_lot118-E006 · Adaptation périphérique : 7,60 m² ; 0 places de programme.\nparcours_lot118-E007 · Adaptation périphérique : 7,79 m² ; 0 places de programme.\nP118-V815-9 · MC · Palier de manutention : 5,74 m² ; 0 places de programme.\nparcours_lot118-E008 · R01 · Accueil, attente et hall : 160,65 m² ; 16 places de programme.\nparcours_lot118-E009 · R02 · Plateau polyvalent : 172,95 m² ; 32 places de programme.\nparcours_lot118-E010 · R03 · Ateliers / formation : 75,77 m² ; 12 places de programme.\nparcours_lot118-E011 · R04 · Desserte principale · 2 m : 35,18 m² ; 0 places de programme.\nparcours_lot118-E013 · R06 · Office / pause · 2 places : 12,65 m² ; 2 places de programme.\nparcours_lot118-E015 · R08 · Dégagement arrière : 10,33 m² ; 0 places de programme.\nP118-V815-16 · R08 · Dégagement arrière : 0,48 m² ; 0 places de programme.\nparcours_lot118-E016 · Adaptation périphérique : 6,88 m² ; 0 places de programme.\nparcours_lot118-E017 · Adaptation périphérique : 7,60 m² ; 0 places de programme.\nparcours_lot118-E018 · Adaptation périphérique : 7,79 m² ; 0 places de programme.\nP118-V815-20 · MC · Palier de manutention : 5,74 m² ; 0 places de programme.\nP118-V815-21 · Sanitaires Femmes · 2 WC dont 1 adapté · 3 lavabos : 17,41 m² ; 0 places de programme.\nP118-V815-22 · Sanitaires Hommes · 2 WC dont 1 adapté · 3 lavabos · 1 urinoir : 17,19 m² ; 0 places de programme.\nparcours_lot118-E019 · M01 · Administration : 65,36 m² ; 10 places de programme.\nparcours_lot118-E020 · M02 · Réunion : 20,71 m² ; 8 places de programme.\nparcours_lot118-E021 · M03 · Galerie · 1,80 m : 22,80 m² ; 0 places de programme.\nparcours_lot118-E023 · M05 · Office / pause · 2 places : 12,65 m² ; 2 places de programme.\nparcours_lot118-E025 · M07 · Liaison vers noyau A : 15,02 m² ; 0 places de programme.\nP118-V815-28 · M07 · Liaison vers noyau A : 0,48 m² ; 0 places de programme.\nparcours_lot118-E026 · M08 · Dégagement réunion / escalier B : 14,06 m² ; 0 places de programme.\nparcours_lot118-E027 · Adaptation périphérique : 5,73 m² ; 0 places de programme.\nparcours_lot118-E028 · Adaptation périphérique : 7,74 m² ; 0 places de programme.\nP118-V815-32 · MC · Palier de manutention : 5,74 m² ; 0 places de programme.\nP118-V815-33 · Sanitaires Femmes · 1 WC dont 1 adapté · 2 lavabos : 12,38 m² ; 0 places de programme.\nP118-V815-34 · Sanitaires Hommes · 1 WC dont 1 adapté · 2 lavabos · 1 urinoir : 12,20 m² ; 0 places de programme.\nparcours_lot118-E029 · E01 · Desserte principale · 2 m : 45,54 m² ; 0 places de programme.\nparcours_lot118-E030 · E02 · Formation A : 71,44 m² ; 20 places de programme.\nparcours_lot118-E031 · E03 · Formation B : 70,99 m² ; 20 places de programme.\nparcours_lot118-E032 · E04 · Atelier projet : 72,33 m² ; 8 places de programme.\nparcours_lot118-E033 · E05 · Travail collaboratif : 135,88 m² ; 16 places de programme.\nparcours_lot118-E034 · E06 · Salle de contrôle / support : 53,85 m² ; 4 places de programme.\nparcours_lot118-E036 · E08 · Distribution arrière : 22,06 m² ; 0 places de programme.\nparcours_lot118-E037 · E09 · Local technique : 7,08 m² ; 0 places de programme.\nparcours_lot118-E038 · Adaptation périphérique : 6,88 m² ; 0 places de programme.\nparcours_lot118-E039 · Adaptation périphérique : 7,60 m² ; 0 places de programme.\nparcours_lot118-E040 · Adaptation périphérique : 7,79 m² ; 0 places de programme.\nP118-V815-46 · MC · Palier de manutention : 5,74 m² ; 0 places de programme.\nP118-V815-47 · Sanitaires Femmes · 2 WC dont 1 adapté · 3 lavabos : 17,41 m² ; 0 places de programme.\nP118-V815-48 · Sanitaires Hommes · 2 WC dont 1 adapté · 3 lavabos · 1 urinoir : 17,19 m² ; 0 places de programme.\nparcours_lot118-E041 · E01 · Desserte principale · 2 m : 45,54 m² ; 0 places de programme.\nparcours_lot118-E042 · E02 · Bureaux ouverts : 217,45 m² ; 30 places de programme.\nparcours_lot118-E043 · E03 · Équipe projets : 135,88 m² ; 20 places de programme.\nparcours_lot118-E044 · E06 · Salle de contrôle / support : 53,85 m² ; 4 places de programme.\nparcours_lot118-E046 · E08 · Distribution arrière : 22,06 m² ; 0 places de programme.\nparcours_lot118-E047 · E09 · Local technique : 7,08 m² ; 0 places de programme.\nparcours_lot118-E048 · Adaptation périphérique : 6,88 m² ; 0 places de programme.\nparcours_lot118-E049 · Adaptation périphérique : 7,60 m² ; 0 places de programme.\nparcours_lot118-E050 · Adaptation périphérique : 7,79 m² ; 0 places de programme.\nP118-V815-58 · MC · Palier de manutention : 5,74 m² ; 0 places de programme.\nP118-V815-59 · Sanitaires Femmes · 2 WC dont 1 adapté · 5 lavabos : 17,41 m² ; 0 places de programme.\nP118-V815-60 · Sanitaires Hommes · 2 WC dont 1 adapté · 5 lavabos · 1 urinoir : 17,19 m² ; 0 places de programme.\nparcours_lot118-E051 · E01 · Desserte principale · 2 m : 45,54 m² ; 0 places de programme.\nparcours_lot118-E052 · E02 · Direction : 71,44 m² ; 4 places de programme.\nparcours_lot118-E053 · E03 · Réunion conseil : 70,99 m² ; 14 places de programme.\nparcours_lot118-E054 · E04 · Équipe de direction : 72,33 m² ; 8 places de programme.\nparcours_lot118-E055 · E05 · Salon / coworking : 146,99 m² ; 12 places de programme.\nparcours_lot118-E056 · E06 · Salle de contrôle / support : 53,85 m² ; 4 places de programme.\nparcours_lot118-E058 · E08 · Distribution arrière : 22,06 m² ; 0 places de programme.\nparcours_lot118-E059 · E09 · Local technique : 7,08 m² ; 0 places de programme.\nparcours_lot118-E060 · Adaptation périphérique : 6,88 m² ; 0 places de programme.\nparcours_lot118-E061 · Adaptation périphérique : 7,60 m² ; 0 places de programme.\nparcours_lot118-E062 · Adaptation périphérique : 7,79 m² ; 0 places de programme.\nP118-V815-72 · MC · Palier de manutention : 5,74 m² ; 0 places de programme.\nP118-V815-73 · Sanitaires Femmes · 1 WC dont 1 adapté · 2 lavabos : 12,38 m² ; 0 places de programme.\nP118-V815-74 · Sanitaires Hommes · 1 WC dont 1 adapté · 2 lavabos · 1 urinoir : 12,20 m² ; 0 places de programme.",
+      "f3": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] 60 apprenants + 84 utilisateurs de postes de travail + 16 visiteurs + 4 agents de service = 164 personnes en pointe ; situation courante : 40 + 60 + 8 + 2 = 110. Les salles de réunion et de pause accueillent ces mêmes groupes et ne sont pas ajoutées à l’effectif.\n[HYPOTHÈSE RETENUE POUR L’EXEMPLE] M01 : 10 postes / 69,55 m² ; R2 E02 : 30 / 217,45 m² ; R2 E03 : 20 / 152,08 m². Ce sont des jauges choisies, pas une certification.",
+      "f4": "[MODÈLE V8.19] Emprise 673 m² conservée ; dalle mezzanine nette 340.85 m² ; gain 75.72 m². Surfaces géométriques d’étude.",
+      "f5": "[DONNÉE / CALCUL DU FICHIER SOURCE] Aucune affectation des vides/noyaux/parois aux pièces. Toutes les bandes résiduelles sont identifiées comme support sans poste ; ventilation par catégorie calculée depuis les 74 fiches.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Accueil proche des noyaux ; formation proche des pauses mais séparée acoustiquement ; bureaux hors traversées ; réunion proche des équipes ; livraison séparée du public.",
+      "f7": "Variante retenue : blocs H/F arrière superposés. RDC, R+1 et R+2 : deux WC par bloc, dont un adapté. Mezzanine et R+3 : une cabine adaptée par bloc et un espace de lavage séparé. Un urinoir par bloc H, protégé par un écran. L’option consistant à conserver deux pièces identiques partout est écartée pour différencier fréquentation, lavage et intimité. Surfaces utiles calculées hors cloisons et gaines, cabines et sas de lavage compris. Ratio rapporté à la dalle nette du niveau. Les agrandissements reprennent une partie des locaux voisins et de la distribution ; emprise et dalles conservées.",
+      "f8": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Public par hall ; employés vers leur étage ; service hors arrivée publique. Les transitions verticales sont communes avec signalétique et horaires, pas réputées indépendantes physiquement.",
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Partager les réunions et espaces projet par réservation. Aucun double compte des personnes. Pas de transfert de surface retenu : les densités peuvent être abaissées sans modifier les polygones.",
+      "f10": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Évolution par cloisons légères et mobilier ; aucune extension foncière ou constructibilité supplémentaire présumée. Variante surfacique facultative, non exigée pour lire l’exemple."
+    },
+    "8": {
+      "f1": "[DONNÉE / CALCUL DU FICHIER SOURCE] Portée demandée 20 m ; charge 500 kg/m² ≈ 4,903325 kN/m² selon le dossier. Distinguer charges d’exploitation, cloisons et poids propre. Aucun dimensionnement PT n’est ajouté fictivement. Les nouvelles réservations du MC imposent une étude BET des dalles post-tendues.",
+      "f2": "[DONNÉE / CALCUL DU FICHIER SOURCE] Source : SS -3,20 m ; RDC 0 ; mezzanine +3,20 ; R1 +6,40 ; R2 +9,80 ; R3 +13,20 ; haut +16,60. Réserve avec l’indication de 3,50 m sous plafond du dossier. Choix : mission de recomposition en coupe ; aucun chantier avant résolution.",
+      "f3": "V8.17 : une cabine adaptée dans chaque bloc H/F ; manœuvre libre 1,50 × 1,50 m, transfert latéral 0,90 × 1,50 m en hypothèse, lavabo et barres d’appui dessinés. Largeur utile des portes et parcours complet à confirmer.",
+      "f4": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Faire dimensionner effectifs, dégagements, désenfumage et compartimentage selon classement réel. Conserver les noyaux du dessin pour l’étude seulement ; aucune certification de leurs largeurs ou de leur nombre.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Cibles d’étude : formation ≤ 0,8 s de réverbération ; calme visé 35–40 dB(A) en salles calmes ; séparation acoustique entre formation, bureaux et mezzanine. Valeurs internes de scénario, non mesures ni prescriptions réglementaires.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Cibles d’étude : 500 lux sur tâches, 300 lux zones de réunion, 150 lux circulations ; éclairage réglable, contrôle de l’éblouissement, ventilation à calculer sur jauges cibles. Pas de valeur mesurée.",
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Comparer protections solaires passives et systèmes réglables ; équipements économes en eau ; aucune économie chiffrée ni performance énergétique certifiée. Pas de bassin décoratif comme correction Feng Shui.",
+      "f8": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Réseaux séparés courant fort/faible ; Wi-Fi bureaux/visiteurs distinct ; réservations verticales regroupées ; points d’eau proches des zones techniques ; aucune implantation définitive de gaine inventée.",
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Nettoyage quotidien ; accès de maintenance hors passages publics ; contrôle mensuel des protections/éclairage ; renouvellements documentés dans OPEX-test 1,40 M MAD/an.",
+      "f10": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Plans/coupes : contrôle géométrique ; BET : stabilité/incendie/fluides ; acousticien : simulation et réception ; exploitant : essai d’usage. Les interprétations Feng Shui sont distinctes de ces preuves."
+    },
+    "9": {
+      "f1": "[DONNÉE / CALCUL DU FICHIER SOURCE] L’emprise calculée reste dans la parcelle et l’enveloppe de recul de travail. Le programme est lié aux 74 zones du même modèle.",
+      "f2": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Adapter capacité, mobilier et horaires ; traiter seuil, protections et interfaces. Aucun déplacement de poteau, noyau ou dalle sans étude.",
+      "f3": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Mandats attribués dans l’exemple : géomètre pour contexte/voirie ; architecte pour hauteurs/autorisation ; BET pour structure, rampe, évacuation ; acousticien pour mezzanine.",
+      "f4": "[DONNÉE / CALCUL DU FICHIER SOURCE] Les hauteurs actuelles 3,20/3,40 m étage à étage ne permettent pas de démontrer 3,50 m libres. Réponse retenue : étude en coupe, avec possibilité de modifier/supprimer l’usage régulier de la mezzanine si nécessaire.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Jauges de programme abaissées, mêmes surfaces. Pas de revendication d’une capacité légale de 164 personnes. Gel de l’exploitation réelle tant que les réserves critiques subsistent.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Ne pas vendre la capacité avant validation ; 2,50 M MAD de provision pour aléas ne garantissent aucune solution technique. Nouvelle décision budgétaire en cas de dépassement.",
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Scénario R retenu pour études ; pas de chantier. Deux replis déjà choisis : réaffecter une fonction plutôt que déplacer la structure ; réduire/neutraliser la mezzanine si la coupe l’impose."
+    },
+    "10": {
+      "summary": "Escalier B bas déplacé à gauche du hall, dans la zone rouge. Mezzanine prolongée jusqu’au trait bleu par une galerie transversale, avec retour vers la galerie existante. Porte P-X sur la séparation hall / desserte principale. Liaisons SS → RDC → mezzanine déplacées ensemble. Les volées B mezzanine → étages restent à leur emplacement initial à droite ; la nouvelle galerie les relie. L’escalier A autour de l’ascenseur, les sanitaires et le monte-charge sont conservés."
+    },
+    "11": {
+      "summary": "Escalier B bas déplacé à gauche du hall, dans la zone rouge. Mezzanine prolongée jusqu’au trait bleu par une galerie transversale, avec retour vers la galerie existante. Porte P-X sur la séparation hall / desserte principale. Liaisons SS → RDC → mezzanine déplacées ensemble. Les volées B mezzanine → étages restent à leur emplacement initial à droite ; la nouvelle galerie les relie. L’escalier A autour de l’ascenseur, les sanitaires et le monte-charge sont conservés."
+    },
+    "12": {
+      "f1": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] 0 — Report : conserver le terrain et financer seulement la documentation ; repli si l’usage I5 ou la solution de hauteur se révèle incompatible.",
+      "f2": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] A — Densité source conservée : M01 24 postes, R2 40+24. Écarté dans le scénario de démonstration : confort et transitions insuffisamment étayés.",
+      "f3": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] B — Recomposition lourde : modifier la coupe et/ou la mezzanine, puis redistribution. Réserve technique si aucune solution conservant la structure ne répond au programme ; coût non réputé couvert.",
+      "f4": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] R — Confort d’usage : M01 10, R2 30+20, horaires décalés, supports existants. Choix privilégié pour poursuivre les études, avec correction des hauteurs comme condition impérative.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Contour et emprise constants ; même périmètre financier ; capacités, effets sur flux, impacts travaux et niveau de preuve explicites. Pas de note universelle de Qi.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] R — confort d’usage, jauges modérées, fonctions distinctes et supports mutualisés sous conditions.",
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] R traite d’abord les conflits d’usage avec peu d’interventions ; B reste le repli pour la coupe ; A n’est pas retenu ; 0 reste possible. Le scénario R n’est pas déclaré optimal hors de ces critères et hypothèses."
+    },
+    "13": {
+      "f1": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Confier géotechnique, fondations et PT à un BET ; hypothèse de sol ordinaire uniquement pour le budget. Aucun ferraillage, câble ou section réputé calculé.",
+      "f2": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Terrain horizontal utilisé pour démonstration graphique ; relevé à produire avant terrassements. Aucun mètre cube ni pente réelle déduit d’un fond satellite.",
+      "f3": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Provision raccordements/extérieurs 1,20 M MAD ; demander capacité des réseaux et tracés. Repli : équipement par phases, pas branchement présumé autorisé.",
+      "f4": "[DONNÉE / CALCUL DU FICHIER SOURCE] Rampe source : largeur libre 4 m, pente centrale ≈ 14,55 %, palier -3,20 m. Choix : desserte technique séparée, drainage à étudier et autorisation explicite avant réalisation.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Mission sécurité indépendante ; jauges opérationnelles de l’exemple non équivalentes aux effectifs réglementaires. Démonstration d’évacuation nécessaire avant ouverture.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Diagnostics sol/eau/pollution et examen du contexte commandés au jalon J1. Pas de certificat d’absence de risque créé pour combler un champ.",
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] J0 programme ; J1 site/sol ; J2 coupe/PT/incendie ; J3 budget actualisé ; J4 éventuel GO travaux. Aucun lot travaux attribué dans cet exemple.",
+      "f8": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Exploitation technique hors horaires d’accueil ; interventions sur rampe et sous-sol isolées des circulations publiques ; planning de maintenance préparé.",
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Livrables définis : relevé topo et accès, diagnostic de sol, coupe justifiée, note PT, étude incendie/accessibilité, avant-projet acoustique, estimation actualisée. Responsables aux étapes 20/21.",
+      "f10": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Faisabilité non certifiée ; réponse arrêtée = poursuivre les études ciblées. Le bâtiment dessiné est une base d’esquisse, pas un plan exécutable tel quel."
+    },
+    "14": {
+      "f1": 3200000,
+      "f2": 13500000,
+      "f3": 1600000,
+      "f4": 1200000,
+      "f5": 2000000,
+      "f6": 2500000,
+      "f7": 1400000,
+      "f8": 3600000,
+      "f9": 10000000,
+      "f10": 14000000,
+      "f11": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] MAD ; tous les montants sont un jeu de données fictif de démonstration, pas un devis ou une cotation locale.",
+      "f12": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Investissement 24,00 M MAD = somme des six postes ; fonds propres 10,00 M + dette hypothétique 14,00 M = 24,00 M. Solde de financement-test 0. Recettes 1,80 M formation + 1,40 M bureaux + 0,40 M services. OPEX 1,40 M ; solde opérationnel 2,20 M avant dette, impôt et renouvellements non inclus. Études initiales 0,60 M comprises dans les honoraires. Pas de coût de financement ni de fiscalité inventés ; la dette est une hypothèse de source de fonds, pas une offre bancaire. V8.15 : incidence financière du monte-charge et des sanitaires non chiffrée ; budget à réviser."
+    },
+    "15": {
+      "f1": 10,
+      "f2": 10,
+      "f3": 15,
+      "f4": 10,
+      "f5": 2,
+      "f6": 6,
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Scénario : provision de renouvellement suivie séparément dans les études ; entretien inclus dans les 1,40 M MAD d’OPEX-test. Aucun cycle de vie certifié par ces montants.",
+      "f8": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] CAPEX +10 % = 26,40 M, besoin additionnel 2,40 M si financement inchangé. Recettes 3,60 M × 0,85 × 0,90 = 2,754 M ; OPEX ×1,10 = 1,540 M ; solde opérationnel-test 1,214 M avant dette/impôt. Choc de taux +2 points sur 14 M : majorant simplifié +0,280 M/an avant amortissement. Retard 6 mois : décalage de recettes, pas cumul arbitraire des postes.",
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Seuil de financement-test : besoin 2,40 M non couvert sous choc CAPEX, donc nouvel arbitrage obligatoire. Seuil d’exploitation simplifié : recettes ≥ OPEX ; ne vaut pas seuil de solvabilité après dette/impôts. Aucun GO travaux sur le scénario défavorable sans financement révisé. V8.15 : incidence financière du monte-charge et des sanitaires non chiffrée ; budget à réviser."
+    },
+    "16": {
+      "f1": "[DONNÉE / CALCUL DU FICHIER SOURCE] Contour S01 disponible ; sa présence permet la géométrie, pas la confirmation du titre. Mandat géomètre/notaire fictif : pièces opposables au jalon J1.",
+      "f2": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Accès par B.265–B.266 retenu comme scénario ; servitudes et raccordement à la voirie à instruire. Sans droit d’accès confirmé, suspendre le scénario plutôt que le déclarer valide.",
+      "f3": "[DONNÉE / CALCUL DU FICHIER SOURCE] I5 du dossier conservé ; vérifier note site, destinations, hauteur et rampe avant permis. Aucun avis administratif réputé acquis.",
+      "f4": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] BET et laboratoire : dossier sol et justification PT ; incohérence de hauteur portée en réserve critique. Aucun sondage ou essai fictivement réussi.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Capacité réseaux et contexte extérieur à relever. Hypothèses MapTiler distinguées des observations, capture ou altimétrie réelle non disponible.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Enquête future de positionnement et promesses éventuelles avant lancement ; données financières seulement illustratives.",
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Budget-test complet 24 M ; stress à 26,4 M non couvert ; condition de financement explicitement portée à la décision.",
+      "f8": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Mandats et assurances à contractualiser dans un projet réel ; l’exemple fournit objets et responsabilités, pas de signature ni contrat fictivement exécutoire.",
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Ordre retenu : géomètre/sol avant coupe définitive ; coupe avant note PT et coûts ; retour budget avant GO travaux ; pas de rétroplanning présenté comme une réservation réelle.",
+      "f10": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Réserves critiques identifiées et assorties d’une réponse : HAUTEURS → reprise de coupe ; RAMPE → autorisation/drainage ; SOL/PT → investigations ; ACCÈS → pièces ; MARCHÉ/FINANCE → validation du scénario. Elles restent ouvertes techniquement, mais aucune réponse n’est laissée à inventer par le lecteur."
+    },
+    "17": {
+      "f1": 4,
+      "f2": 2,
+      "f3": 4,
+      "f4": 2,
+      "f5": 3,
+      "f6": 4,
+      "f7": 2,
+      "f8": 2,
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Notes pédagogiques motivées, pas validation automatique : vision 4 (objectifs explicites) ; marché 2 (non enquêté) ; programme 4 (lié aux zones, jauges choisies) ; technique 2 (hauteurs/PT/rampe non justifiés) ; finance 3 (calcul complet mais fictif et sensible au stress) ; exploitation 4 (horaires et mutualisations définis) ; risques 2 (réserves critiques) ; preuve 2 (modèle disponible, avis manquants). Moyenne 2,875/5 illustrative. Les réserves bloquantes priment sur la moyenne ; pas de score Feng Shui."
+    },
+    "18": {
+      "f1": "[DONNÉE / CALCUL DU FICHIER SOURCE] Base de travail 673 m² issue de 50 % de 1 346 m² ; l’autorisation reste conditionnelle.",
+      "f2": "[DONNÉE / CALCUL DU FICHIER SOURCE] Contenance source : 1 346 m² ; contour calculé : 1 345,55 m² ; emprise dessinée : 673,00 m² ; contours de dalles cumulés : 3 666,45 m² ; dalles après trémies : 3 503,46 m² ; zones du programme : 2 953,51 m². Ces mesures ont des périmètres différents et ne sont pas des surfaces réglementaires certifiées.",
+      "f3": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Scénario R : 60 apprenants, 84 utilisateurs des postes, 16 visiteurs et 4 agents en pointe, non certification réglementaire.",
+      "f4": "[DONNÉE / CALCUL DU FICHIER SOURCE] Sous-sol technique : 537,97 m² de zones ; 7 zones.\nRDC : 548,00 m² de zones ; 11 zones.\nMezzanine : 207,10 m² de zones ; 10 zones.\nR+1 · Formation : 552,58 m² de zones ; 12 zones.\nR+2 · Bureaux : 555,28 m² de zones ; 10 zones.\nR+3 · Direction : 552,58 m² de zones ; 12 zones.\n[DONNÉE / CALCUL DU FICHIER SOURCE] Haut modèle +16,60 m ; mezzanine partielle 301,45 m² de dalle. Géométrie source non corrigée silencieusement.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] R — confort d’usage, jauges modérées, fonctions distinctes et supports mutualisés sous conditions.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Investissement de démonstration 24,00 M MAD ; enveloppe études initiales 0,60 M comprise ; pas de devis.",
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Recettes-test 3,60 M/an ; OPEX 1,40 M ; fonds propres 10,00 M + dette hypothétique 14,00 M. Stress : besoin additionnel 2,40 M.",
+      "f8": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] J1 octobre 2026, J2 novembre 2026, J3 décembre 2026 ; cible d’ouverture de scénario septembre 2028, subordonnée aux décisions réelles.",
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Hauteurs, structure/PT, rampe, accès, sol et réalité du marché. Le bilan n’en masque aucune ; réponse et responsable fixés à l’étape 20.",
+      "f10": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Forces : géométrie reliée, surfaces traçables, usages séparés et jauges réduites. Faiblesses : conformité non démontrée, mobilier source encore dense, contexte non observé et budget fictif.",
+      "f11": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Condition de poursuite retenue : études seulement ; nouvelle revue avec preuves techniques, accès et financement avant chantier. Étoiles Volantes non déterminantes pour arbitrer ce scénario collectif."
+    },
+    "19": {
+      "f1": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] R — confort d’usage, jauges modérées, fonctions distinctes et supports mutualisés sous conditions.",
+      "f2": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] A densité source : écartée ; B travaux lourds : repli conditionnel ; 0 report : conservé si refus des destinations, hauteurs non résolues ou budget non soutenable.",
+      "f3": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Autoriser la production des preuves plutôt que simuler une autorisation de construire. Scénario choisi au regard des critères de confort, lisibilité, réversibilité et maintien de l’emprise.",
+      "f4": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Décision fictive : GO sous conditions pour 0,60 M MAD d’études initiales seulement, incluse dans les 1,60 M d’honoraires ; aucun chantier, aucun recrutement d’exploitant et aucune ouverture autorisés.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Hauteurs source, rampe, sol/PT, accès, marché et financement : réserves assumées et explicites.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] J1 documentation site et sol ; J2 coupe/structure/incendie/accessibilité ; J3 budget et recettes vérifiés. Si échec d’une condition bloquante : report ou reprise B, pas GO automatique.",
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Comité du maître d’ouvrage P.118 — rôle fictif de démonstration ; aucune identité ni signature réelle.",
+      "f8": "2026-09-28",
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Parcours V8.1 · exemple résolu P.118 · géométrie source V8 inchangée ; registre des choix 01 à 21.",
+      "f10": "2026-10-26",
+      "decision": "GO sous conditions"
+    },
+    "20": {
+      "f1": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Lot études initiales : géomètre/sol, architecte, BET PT/incendie/fluides, acoustique, économie et marché. Engagement seulement fictif pour illustrer le parcours.",
+      "f2": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Rôles attribués : géomètre (site) ; architecte (coupe et coordination) ; BET structure (PT), BET sécurité/fluides, acousticien, économiste ; maître d’ouvrage arbitre.",
+      "f3": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Programmiste : exigences ; architecte : synthèse ; BET : notes signées de leur discipline dans un vrai projet ; MOA : acceptation et budget. Aucune validation ne revient au score Harmony.",
+      "f4": "[DONNÉE / CALCUL DU FICHIER SOURCE] S01, I5 source, modèle de l’Atelier, 74 fiches, intentions Harmonie, budget-test et registre des réserves.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Relevé et visite avant conception définitive ; variantes en coupe ; calculs spécialistes ; test de circulation/mobilier ; revue économique. Les cartes directionnelles non établies ne bloquent pas la lecture du cas.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Topo/contextes, rapport sol, coupe justifiée, note PT, stratégie incendie/accessibilité, note acoustique, chiffrage et étude de demande. Chaque livrable est relié à une réserve identifiée.",
+      "f7": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Répartition des 0,60 M MAD d’études initiales : géomètre/sol 0,12 ; architecte 0,18 ; BET 0,16 ; acoustique 0,05 ; marché/économie 0,05 ; coordination 0,04. Somme 0,60 ; montants fictifs inclus dans le poste études.",
+      "f8": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] J1 : 26/10/2026 ; J2 : 23/11/2026 ; J3 : 21/12/2026. Dates de démonstration, sans réservation de ressources réelles.",
+      "f9": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Pas de dimensionnement fondations avant sol ; pas de budget définitif avant coupe/PT ; pas de GO travaux avant accès, autorisations et financement.",
+      "f10": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] J1 valider les données ; J2 arbitrer la coupe et les interfaces ; J3 réviser financement et décider des travaux séparément. Les conditions non levées restent visibles dans le transfert."
+    },
+    "21": {
+      "summary": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Dossier de transmission entièrement illustré : parcelle, programme, modèle source, écarts explicités, budget-test, 21 décisions Harmonie, 62 réponses par zone et conditions d’étude. Transfert n’est pas autorisation de travaux.",
+      "f1": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Transmettre au coordinateur architecte et à la MOA fictive le dossier V8.1 ; décision limitée aux études.",
+      "f2": "[DONNÉE / CALCUL DU FICHIER SOURCE] S01 / I5 source / modèle natif / 74 fiches / géométrie et surfaces. Aucun relevé MapTiler réel ajouté.",
+      "f3": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Priorités : hauteurs, rampe, PT/sol, séparation des flux et jauges cibles ; réserves avec réponse affectée à chaque métier.",
+      "f4": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Budgets et jalons de l’étape 20, tous pédagogiques ; prochaine revue 26/10/2026.",
+      "f5": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Reprise acceptée seulement après contrôle des versions et pièces. Aucun champ « validé » inventé ; les avis spécialistes seront des livrables réels dans un vrai projet.",
+      "f6": "[HYPOTHÈSE RETENUE POUR L’EXEMPLE] Conception détaillée puis aménagement : matériaux mats et ambiances adaptées à l’usage ; retour utilisateurs après occupation, traité comme mission future et non comme un résultat observé."
+    }
+  },
+  "siteObservations": {
+    "frontageEdge": 3,
+    "approachStatus": "hypothesis",
+    "priority": "balanced",
+    "frontContext": "open",
+    "backContext": "vegetation",
+    "source": "S01 / géoréférencement du dossier ; H-ACCES et H-CONTEXTE. Aucune observation MapTiler en direct.",
+    "note": "Scénario A : approche latérale ouverte, arrière protégé par un filtre paysager projeté. Scénario B : voisin hypothétique de 12 m à 10 m pour l’étude des masques. Aucun de ces scénarios ne décrit une observation MapTiler réelle.",
+    "observedAt": null,
+    "geographic": {
+      "longitude": -7.319682410174416,
+      "latitude": 33.708221167915354,
+      "source": "Conversion de travail EPSG:26191 depuis S01 — non relevé terrain",
+      "at": "2026-09-30"
+    }
+  },
+  "issueAnswers": {
+    "HEIGHT": "Reprise de coupe et étude de neutralisation/réaffectation de mezzanine si nécessaire ; jalon J2 ; aucun chantier avant solution.",
+    "DENSITY": "Capacités cibles abaissées au programme ; mobilier source à adapter sur copie de conception. Pas de surface supplémentaire.",
+    "MEZZ": "Réduire la densité, traiter bruit/intimité/rive ; aucune occupation autorisée avant résolution des hauteurs et sécurité.",
+    "RAMP": "Séparer service et public ; étudier accès autorisé, drainage et soutènement au jalon J2.",
+    "CONTEXT": "Utiliser les deux scénarios de contexte renseignés ; relevé/MapTiler/visite confiés au géomètre. Aucun lecteur obligé de fournir une observation pour lire le cas.",
+    "COMPASS": "Lecture de Forme et d’usage retenue ; approche directionnelle non décisionnelle dans cet exemple collectif.",
+    "FLYING": "Ne pas établir une carte natale fictive ; hypothèse temporelle renseignée et méthode non mobilisée pour cet arbitrage."
+  },
+  "demoRole": "Programmiste / architecte — rôles fictifs de démonstration"
 }

@@ -22,8 +22,9 @@
 }
 body {
   margin: 0;
-  font: 15px/1.5 system-ui, sans-serif;
-  background: var(--cream);
+  /* Police et fond du prototype (`body{font:15px Arial;background:#f4f6f2}`), pour que les écrans se lisent comme Parcours. */
+  font: 15px/1.5 Arial, "Helvetica Neue", Helvetica, sans-serif;
+  background: #f4f6f2;
   color: var(--ink);
 }
 button,
@@ -220,7 +221,7 @@ h3 {
 }
 .app-nav-secondary small {
   flex-basis: 100%;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.75); /* 5,2:1 sur l'entrée active, 7,3:1 sur le fond (WCAG AA) */
   font-size: 11.5px;
   margin-left: 24px;
 }
@@ -330,18 +331,69 @@ h3 {
 .notification-bell > button:hover {
   background: var(--cream);
 }
+.notification-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #a0351f;
+  color: white;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+}
 .notification-popover {
   position: absolute;
   right: 0;
   top: calc(100% + 6px);
+  z-index: 20;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 12px 14px;
   min-width: 220px;
+  width: min(420px, calc(100vw - 32px));
+  max-height: 70vh;
+  overflow: auto;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   font-size: 13.5px;
   color: var(--muted);
+}
+.notification-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.notification-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+.notification-list li.notification-unread {
+  background: #fff7e6;
+  border-color: #ecd9b0;
+}
+.notification-list li a {
+  color: var(--ink);
+}
+.notification-list li small {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.notification-foot {
+  margin: 10px 0 0;
+  font-size: 11.5px;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -489,6 +541,13 @@ h3 {
 .next-actions a:hover {
   background: var(--cream);
 }
+.parcours-progress a small {
+  margin-left: auto;
+  font-size: 12px;
+}
+.resume-card .progress {
+  margin: 6px 0 10px;
+}
 .step-dot {
   width: 10px;
   height: 10px;
@@ -507,17 +566,141 @@ h3 {
 }
 
 /* ---------------------------------------------------------------------- */
-/* Stub pages (Harmonie, Paramètres)                                       */
+/* Harmonie (état des choix par projet) et Paramètres                       */
 /* ---------------------------------------------------------------------- */
-.stub-page {
-  max-width: 720px;
-  margin: auto;
-  padding: 48px 32px;
+.harmonie-page,
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
-.stub-page .eyebrow {
-  color: var(--gold);
+.harmonie-page .home-greeting,
+.settings-page .home-greeting {
+  margin-bottom: 4px;
 }
-.stub-page code {
+.harmonie-page .home-greeting p,
+.settings-page .home-greeting p {
+  max-width: 78ch;
+}
+.harmonie-project-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.harmonie-project-top h2 {
+  margin: 4px 0 12px;
+}
+.harmonie-project-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+  min-width: 260px;
+}
+.harmonie-project-pick select {
+  font: inherit;
+  color: var(--ink);
+  padding: 8px 10px;
+  border: 1px solid #b7c9c0;
+  border-radius: 6px;
+  background: var(--surface);
+  max-width: 100%;
+}
+.harmonie-table th[scope="row"] {
+  font-weight: 600;
+}
+.harmonie-table th[scope="row"] small,
+.harmonie-chosen small {
+  display: block;
+  font-weight: 400;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.harmonie-chosen {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.harmonie-table .h7-chip {
+  white-space: normal;
+  display: inline-block;
+}
+.harmonie-table td:last-child {
+  white-space: nowrap;
+}
+.settings-section h2 {
+  margin: 0 0 6px;
+}
+.settings-section .panel-sub {
+  margin: 0 0 12px;
+  max-width: 78ch;
+}
+.settings-state {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  font-size: 13.5px;
+}
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 480px;
+}
+.settings-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13.5px;
+}
+.settings-form label.h7-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.settings-form input[type="password"] {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid #b7c9c0;
+  border-radius: 6px;
+}
+.settings-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 18px;
+  margin: 0 0 12px;
+}
+.settings-facts > div {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--cream);
+}
+.settings-facts dt {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.settings-facts dd {
+  margin: 3px 0 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.settings-pending {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+}
+.settings-facts code {
   background: #eef3ef;
   padding: 1px 5px;
   border-radius: 4px;
@@ -531,6 +714,16 @@ h3 {
   max-width: 900px;
   margin: auto;
   padding: 28px;
+}
+.projects-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.projects-heading h1 {
+  margin: 0;
 }
 .projects-page form {
   display: flex;
@@ -624,70 +817,383 @@ h3 {
 }
 
 /* ---------------------------------------------------------------------- */
-/* Étapes du Parcours (cartes) — AGENTS.md : mobile card presentation       */
+/* Parcours du projet — présentation du prototype (feuille principale,     */
+/* `.top`, `.overview*`, `.overview-step`, `.work`), reprise telle quelle   */
+/* à l'intérieur du module Parcours. AGENTS.md : « original phases, labels */
+/* and mobile card presentation ». Écart déclaré : les gris de texte du    */
+/* prototype (#6c7e7a, #7b8c88, #657a75) sont assombris d'un ton (4,5:1,   */
+/* WCAG 2.2 AA) ; teintes et tailles conservées.                           */
 /* ---------------------------------------------------------------------- */
-.parcours-steps-summary {
-  color: var(--muted);
-  font-size: 14px;
-  margin: -8px 0 0;
-}
-.cards:has(.step-card) {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-}
-.step-card {
+.module-content-parcours {
   padding: 0;
-  overflow: hidden;
 }
-.step-card-open {
-  width: 100%;
-  padding: 16px;
+/* Dans le module Parcours, l'étape n'est plus une carte : bandeau au bord, contenu dans `.work` (prototype). */
+.module-content-parcours .step-detail {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  max-width: none;
+  margin: 0;
+  gap: 0;
+}
+.work > * + * {
+  margin-top: 14px;
+}
+.top {
+  background: #153f3d;
+  color: white;
+  padding: 18px 26px;
+  display: flex;
+  justify-content: space-between;
+}
+.atelier-stage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 22px;
+  min-height: 82px;
+}
+.atelier-stage-titleblock {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: none;
-  border: none;
-  font: inherit;
-  color: inherit;
-  text-align: left;
+  gap: 4px;
+}
+.atelier-stage-title {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 750;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+}
+.atelier-stage-header .top-stage {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: #dce9e5;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+.atelier-stage-header .top-stage-project {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 851px) {
+  /* Sur ordinateur, l'en-tête de Fadi affiche déjà le projet. */
+  .atelier-stage-header .top-stage-project {
+    display: none;
+  }
+}
+.atelier-stage-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+}
+.stage-icon-btn {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  font: 700 23px/1 Arial, sans-serif;
   cursor: pointer;
-  border-radius: inherit;
 }
-.step-card-open:hover {
-  background: var(--cream);
+.stage-icon-btn:active {
+  background: rgba(255, 255, 255, 0.12);
 }
-.step-card-open:focus-visible {
-  outline: 2px solid var(--forest-900);
-  outline-offset: -2px;
+.stage-icon-btn:focus-visible,
+#h7-shortcut:focus-visible {
+  outline: 3px solid #8fd0bd;
+  outline-offset: 2px;
 }
+#h7-shortcut {
+  max-width: 190px;
+  border: 1px solid #8fac9d;
+  border-radius: 7px;
+  background: transparent;
+  color: #fff;
+  padding: 9px 12px;
+  font: 600 12px/1.35 Arial, sans-serif;
+  min-height: 40px;
+  cursor: pointer;
+  white-space: normal;
+}
+.overview {
+  max-width: 1450px;
+  margin: auto;
+  padding: 30px;
+}
+.overview-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.overview .btn,
+.work .btn {
+  border: 1px solid #d1dcd6;
+  background: white;
+  border-radius: 7px;
+  padding: 9px 13px;
+  font-weight: bold;
+  color: var(--ink);
+  text-decoration: none;
+  display: inline-block;
+}
+.overview-head {
+  margin-bottom: 22px;
+}
+.overview-kicker {
+  font-size: 11px;
+  color: #1e5a55;
+  font-weight: bold;
+}
+.overview-head h1 {
+  font-size: 38px;
+  margin: 8px 0;
+}
+.overview-sub {
+  color: #5c6f6b;
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+.overview-progress {
+  margin: 14px 0 26px;
+}
+.overview-progress .progress {
+  height: 5px;
+  background: #e0e7e2;
+  border-radius: 9px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.overview-progress .progress i {
+  display: block;
+  height: 100%;
+  background: #1e5a55;
+}
+.parcours-steps-summary {
+  color: var(--ink);
+  font-size: 15px;
+  margin: 0;
+}
+.overview-phases {
+  display: flex;
+  gap: 22px;
+  overflow: auto;
+  margin: 18px 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #56695f;
+}
+.overview-phases span {
+  white-space: nowrap;
+}
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid #d8e0db;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  gap: 0;
+  margin: 0;
+}
+.overview-step {
+  border: 0;
+  border-right: 1px solid #d8e0db;
+  border-bottom: 1px solid #d8e0db;
+  background: #fff;
+  padding: 20px;
+  text-align: left;
+  min-height: 160px;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+}
+.overview-step:hover {
+  background: #f3f7f4;
+}
+.overview-step:focus-visible {
+  outline: 3px solid #1e5a55;
+  outline-offset: -3px;
+}
+.overview-step .on {
+  font-size: 30px;
+  font-weight: 300;
+  color: #78918d;
+  display: block;
+}
+.overview-step .op {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #5d6e6a;
+  display: block;
+  margin: 12px 0 5px;
+}
+.overview-step .ot {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+  display: block;
+}
+.overview-step.done {
+  box-shadow: inset 0 4px #287054;
+}
+.overview .project-tools {
+  margin-top: 24px;
+}
+.work {
+  padding: 24px;
+  min-width: 0;
+}
+.work h1.step-detail-title {
+  margin: 4px 0 8px;
+  font-size: 28px;
+}
+.step-intro {
+  color: #5c6f6b;
+  margin: 0 0 14px;
+}
+@media (max-width: 850px) {
+  /* Sur téléphone, le bandeau du prototype tient lieu d'en-tête du projet : la barre de recherche et l'en-tête de projet de Fadi s'effacent (la navigation des modules reste). */
+  body:has(.module-content-parcours) .app-topbar,
+  body:has(.module-content-parcours) .project-header {
+    display: none;
+  }
+  .overview {
+    padding: 22px;
+  }
+  .overview-grid {
+    grid-template-columns: repeat(3, minmax(145px, 1fr));
+    overflow: auto;
+  }
+  .overview-step {
+    min-height: 180px;
+  }
+  .overview-head h1 {
+    font-size: 32px;
+  }
+}
+@media (max-width: 700px) {
+  .atelier-stage-header {
+    padding: 13px 15px;
+    min-height: 74px;
+    gap: 10px;
+  }
+  .atelier-stage-title {
+    font-size: 20px;
+  }
+  .atelier-stage-header .top-stage {
+    font-size: 11px;
+  }
+  .atelier-stage-actions {
+    gap: 7px;
+  }
+  .stage-icon-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    font-size: 21px;
+  }
+  #h7-shortcut {
+    max-width: 150px;
+    font-size: 10px;
+    padding: 6px;
+  }
+  .work {
+    padding: 18px 16px;
+  }
+}
+
+/* Mode Atelier (étapes 10 / 11, module Atelier) : la page est l'Atelier Architectural du prototype — enveloppe de Fadi effacée, toute la largeur au dessin. */
+body.atelier-immersive .app-shell {
+  grid-template-columns: minmax(0, 1fr);
+}
+body.atelier-immersive .app-sidebar,
+body.atelier-immersive .app-topbar,
+body.atelier-immersive .project-header,
+body.atelier-immersive .module-nav {
+  display: none;
+}
+body.atelier-immersive .module-content {
+  padding: 0;
+}
+body.atelier-immersive .step-detail {
+  max-width: none;
+}
+body.atelier-immersive .step-detail-atelier .work {
+  padding: 0 0 24px;
+}
+body.atelier-immersive .step-detail-atelier .work > :not(.native-atelier):not(.ah84-entry):not(#atelier-harmonie-page) {
+  margin-left: 24px;
+  margin-right: 24px;
+}
+body.atelier-immersive .native-atelier {
+  margin: 0 0 18px;
+}
+/* `stage10-fold` : titre et intro de l'étape, repliés sous le dessin (prototype). */
+.stage10-fold {
+  margin: 0 0 18px;
+  border: 1px solid #cfdad5;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+.stage10-fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 18px 20px;
+  font-size: clamp(22px, 5vw, 34px);
+  font-weight: 750;
+  line-height: 1.15;
+  color: #164c43;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.stage10-fold > summary::-webkit-details-marker {
+  display: none;
+}
+.stage10-fold > summary::after {
+  content: "⌄";
+  font-size: 24px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.stage10-fold[open] > summary::after {
+  transform: rotate(180deg);
+}
+.stage10-fold[open] > summary {
+  border-bottom: 1px solid #dce4e0;
+}
+.stage10-fold-body {
+  padding: 0 20px 20px;
+}
+.stage10-fold-body > .stage10-intro {
+  color: #5c6f6b;
+  margin: 18px 0;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Étapes du Parcours — récit de l'exemple dans la vue d'étape              */
+/* ---------------------------------------------------------------------- */
 .step-card-headline {
   margin: 2px 0 0;
   font-size: 13.5px;
   font-weight: 600;
   color: var(--forest-800);
-}
-.step-card-head {
-  display: grid;
-  grid-template-columns: 30px 1fr auto;
-  gap: 10px;
-  align-items: start;
-}
-.step-card-head strong {
-  font-size: 18px;
-  font-weight: 300;
-  color: var(--muted);
-}
-.step-card-head h3 {
-  margin: 2px 0 0;
-  font-size: 15.5px;
-  line-height: 1.3;
-}
-.step-card-phase {
-  display: block;
-  font-size: 11px;
-  color: var(--muted);
-}
-.step-card-head .step-dot {
-  margin-top: 6px;
 }
 .step-card-goal {
   margin: 0;
@@ -744,14 +1250,18 @@ h3 {
   margin: 24px 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-width: 720px;
+  gap: 12px;
+  max-width: 1100px;
 }
-.step-detail-top {
+.step-detail-nav-right {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 4px;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.step-done {
+  border-color: var(--done);
+  color: var(--done);
 }
 .progress {
   flex: 1;
@@ -766,11 +1276,6 @@ h3 {
   background: var(--forest-900);
   border-radius: inherit;
   transition: width 0.2s ease;
-}
-.step-detail-count {
-  color: var(--muted);
-  font-size: 13px;
-  white-space: nowrap;
 }
 .step-detail h3 {
   margin: 0;
@@ -871,6 +1376,49 @@ h3 {
 .example-card button:disabled {
   opacity: 0.6;
 }
+/* Toute la carte importe : curseur, retour au survol, état « en cours » visible (téléphone compris). */
+.example-card {
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.example-card:hover {
+  border-color: #9fb8aa;
+  box-shadow: 0 4px 14px rgba(23, 63, 53, 0.08);
+}
+.example-card-importing {
+  border-color: var(--forest-900);
+  cursor: progress;
+}
+.example-card-progress {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--ink) !important;
+  font-size: 13px !important;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #e4efe7;
+}
+.example-card-spinner {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 2px solid #b9d0c3;
+  border-top-color: var(--forest-900);
+  animation: example-spin 0.9s linear infinite;
+}
+@keyframes example-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .example-card-spinner {
+    animation: none;
+  }
+}
 
 .atelier-panel form {
   display: flex;
@@ -904,6 +1452,1013 @@ h3 {
 }
 
 /* ---------------------------------------------------------------------- */
+/* Étape : formulaire métier, indicateurs, décision (prototype : biz-*)    */
+/* ---------------------------------------------------------------------- */
+.biz-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.biz-card h2 {
+  margin: 0;
+  font-size: 19px;
+}
+.biz-sub {
+  margin: -6px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.biz-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+.biz-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.biz-field.wide {
+  grid-column: 1 / -1;
+}
+.biz-field label {
+  font-size: 13px;
+  font-weight: 700;
+}
+.biz-field input,
+.biz-field textarea,
+.programme-controls input,
+.programme-controls select,
+.h7-form input,
+.h7-form textarea,
+.programme-table input {
+  font: inherit;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #b7c9c0;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  width: 100%;
+}
+.biz-field textarea,
+.h7-form textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+.biz-field textarea::placeholder,
+.biz-field input::placeholder {
+  color: #93a59c;
+}
+.biz-kpis,
+.programme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.biz-kpi,
+.programme-kpi {
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.biz-kpi span,
+.programme-kpi span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.biz-kpi b,
+.programme-kpi b {
+  font-size: 20px;
+  font-weight: 700;
+}
+.biz-kpi small {
+  font-size: 12px;
+}
+.status-ok {
+  color: var(--done);
+}
+.status-no {
+  color: #a0351f;
+}
+.v62-alert {
+  background: #fbf4e6;
+  border: 1px solid #e8d7ad;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+}
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+.decision-grid button,
+.h7-tabs button {
+  padding: 0.55rem 0.8rem;
+  font-weight: 600;
+}
+.decision-grid button.sel,
+.h7-tabs button.sel {
+  background: var(--forest-900);
+  color: white;
+  border-color: var(--forest-900);
+}
+.tool-pending {
+  border-style: dashed;
+}
+.table-scroll {
+  overflow: auto;
+}
+/* Les tableaux défilants sont atteignables au clavier (tabindex 0) : focus visible, comme les boutons. */
+.table-scroll:focus-visible,
+.bl-table-wrap:focus-visible {
+  outline: 2px solid var(--forest-900);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Harmonie par étape (prototype : h7-*)                                    */
+/* ---------------------------------------------------------------------- */
+.h7-panel {
+  background: #eef3ef;
+  border: 1px solid #cfdfd3;
+  border-radius: 10px;
+}
+.h7-panel > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 18px;
+  font-weight: 700;
+  font-size: 14.5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.h7-panel > summary::-webkit-details-marker {
+  display: none;
+}
+.h7-panel > summary::after {
+  content: "+";
+  font-size: 20px;
+  line-height: 1;
+  color: var(--forest-900);
+}
+.h7-panel[open] > summary::after {
+  content: "−";
+}
+.h7-content {
+  padding: 0 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.h7-content h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.h7-fold {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.h7-fold > summary {
+  cursor: pointer;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.h7-fold-body {
+  padding: 0 14px 12px;
+  font-size: 13.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.h7-fold-body p {
+  margin: 0;
+}
+.h7-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.h7-tabs button {
+  border-radius: 999px;
+}
+.h7-group {
+  margin: 0;
+  background: #e4ecd9;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+}
+.h7-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+.h7-proposal {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13.5px;
+}
+.h7-proposal.recommended {
+  border-color: var(--forest-900);
+  box-shadow: 0 0 0 1px var(--forest-900) inset;
+}
+.h7-proposal.retained {
+  background: #f3f8f4;
+}
+.h7-proposal h3 {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.3;
+}
+.h7-proposal p {
+  margin: 0;
+}
+.h7-proposal dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+}
+.h7-proposal dt {
+  font-weight: 700;
+  font-size: 12.5px;
+  margin-top: 6px;
+}
+.h7-proposal dd {
+  margin: 0;
+  color: var(--muted);
+}
+.h7-proposal-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.h7-kicker {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+/* Pastilles d'état (h7-css : .h7-chip) — texte assombri d'un ton par rapport à --muted / --done pour tenir le contraste 4,5:1 sur leur fond teinté (WCAG 2.2 AA) */
+.h7-chip {
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 9px;
+  background: #e9eeea;
+  color: #4a6256;
+  white-space: nowrap;
+}
+.h7-chip.ok {
+  background: #dcefe2;
+  color: #256640;
+}
+.h7-chip.off {
+  background: #f1e3df;
+  color: #a0351f;
+}
+/* « À réexaminer · choix conservé », « Source à réexaminer » (h7-css : .h7-chip.warn) */
+.h7-chip.warn {
+  background: #fff0d8;
+  color: #895f24;
+  white-space: normal;
+}
+.h7-proposal.stale {
+  border-color: #e3c58f;
+}
+button.h7-chip.h7-goto {
+  cursor: pointer;
+  border: 1px solid #c8d9ce;
+  margin: 2px 4px 2px 0;
+  padding: 3px 9px;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  min-height: 0;
+}
+button.h7-chip.h7-goto:hover {
+  background: #dcefe2;
+}
+/* En-tête du panneau : objet de l'étape à gauche, « Actualiser les propositions » / « Rapport de cette étape » à droite (h7-head) */
+.h7-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.h7-head > div:first-child {
+  max-width: 780px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.h7-head .h7-actions {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
+}
+@media (max-width: 720px) {
+  .h7-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .h7-head .h7-actions {
+    justify-content: flex-start;
+  }
+}
+/* Tableaux Harmonie : défilement horizontal sur téléphone (h7-table-wrap du prototype) */
+.h7-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.h7-head .h7-actions .button-secondary,
+.h7-head .h7-actions button {
+  padding: 0.45rem 0.7rem;
+  font-size: 13px;
+}
+.h7-received td:last-child button {
+  padding: 0.3rem 0.6rem;
+  font-size: 12.5px;
+}
+/* `toast()` du prototype (#h7-toast) */
+.h7-toast {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  max-width: calc(100vw - 32px);
+  width: max-content;
+  padding: 14px 20px;
+  background: #244f42;
+  color: #fff;
+  border-radius: 9px;
+  box-shadow: 0 4px 22px #0002;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.project-tools {
+  margin-top: 18px;
+}
+/* « Harmonie du bâtiment » — sous-page de l'Atelier à l'étape 10 (V8.4) : seule la page reste visible quand elle est ouverte. */
+.ah84-active-work > :not(#atelier-harmonie-page) {
+  display: none !important;
+}
+.ah84-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 0 20px;
+  border-bottom: 1px solid #d3ddd8;
+}
+.ah84-page-head > div {
+  min-width: 0;
+}
+.ah84-page-head h1 {
+  margin: 6px 0 0;
+  font-size: clamp(24px, 4vw, 32px);
+}
+.ah84-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #5b786b;
+}
+.ah84-project {
+  font-weight: 700;
+}
+.ah84-page-head p {
+  margin: 10px 0 0;
+}
+.ah84-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+  min-width: 0;
+}
+.ah84-links .button-secondary,
+.ah84-back {
+  min-height: 44px;
+  white-space: normal;
+  line-height: 1.4;
+}
+.ah84-back {
+  flex-shrink: 0;
+}
+.ah84-fold {
+  margin: 18px 0;
+}
+.ah84-fold > summary {
+  font-size: 20px;
+  line-height: 1.35;
+  min-height: 62px;
+}
+.ah84-page-footer {
+  padding: 12px 0 24px;
+}
+.ah84-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+@media (max-width: 720px) {
+  .ah84-page-head {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .ah84-back {
+    align-self: stretch;
+  }
+  .ah84-links .button-secondary {
+    flex: 1 1 130px;
+  }
+  .ah84-fold > summary {
+    font-size: 18px;
+    padding: 16px;
+  }
+}
+/* Bilan Harmonie du bâtiment conçu (flow-v62) : pli de l'étape et bilan en ligne ; la feuille `flow-v62-css` du prototype est servie avec le bilan. */
+.design-review-fold {
+  margin: 12px 0;
+}
+.h7-inline-building-report {
+  margin: 12px 0 18px;
+  border: 1px solid #c8d9ce;
+  border-radius: 12px;
+  background: #f4f6f1;
+  overflow: hidden;
+}
+.h7-inline-building-report .v62 {
+  max-width: none;
+  padding: 18px;
+}
+.h7-inline-building-report .v62-actions .button-secondary {
+  padding: 0.45rem 0.7rem;
+  font-size: 13px;
+}
+.v62-plan svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid #d0dbd0;
+  border-radius: 8px;
+  background: #fffef9;
+}
+/* « Afficher le satellite » du bilan (flow-v62 : .v62-tiles / .v62-marker, valeurs du prototype) */
+.v62-tiles {
+  position: relative;
+  width: min(100%, 768px);
+  height: 440px;
+  overflow: auto;
+  margin-top: 12px;
+  background: #edf1e6;
+}
+.v62-tiles img {
+  position: absolute;
+  max-width: none;
+}
+.v62-marker {
+  position: absolute;
+  z-index: 3;
+  background: #fff5d6;
+  color: #782f21;
+  padding: 6px 9px;
+  border: 2px solid #ac5738;
+  border-radius: 8px;
+  transform: translate(-50%, -50%);
+  font-weight: bold;
+  font-size: 12px;
+}
+.v62-map-credit {
+  display: block;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.v62-table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+  margin: 12px 0;
+}
+.design-compass .h7-form {
+  margin-top: 8px;
+}
+.design-compass .h7-form label.h7-checkbox {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 400;
+}
+.h7-json {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  background: #f4f7f2;
+  border: 1px solid #d3ddd8;
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 320px;
+  overflow: auto;
+}
+@media (max-width: 720px) {
+  .v62-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .v62-issues {
+    grid-template-columns: 1fr;
+  }
+}
+.h7-reco {
+  color: var(--forest-900);
+  font-weight: 600;
+  font-size: 12.5px;
+}
+.h7-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.h7-actions button {
+  padding: 0.45rem 0.7rem;
+  font-size: 13px;
+}
+.h7-editor {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.h7-editor > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+.h7-source {
+  display: block;
+  margin-top: 8px;
+  font-size: 11.5px;
+}
+.h7-locals {
+  margin-top: 12px;
+}
+.h7-locals > .h7-fold-body.h7-grid {
+  padding-top: 12px;
+}
+/* Étape 01 — organisation du terrain (h7-site-hero, zones, faits du site : valeurs du prototype) */
+.h7-site-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(230px, 0.65fr);
+  gap: 23px;
+  align-items: center;
+  margin: 15px 0 24px;
+}
+.h7-site-hero h3 {
+  margin: 6px 0 0;
+}
+.h7-site-svg {
+  border: 1px solid #dce4d6;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fafbf7;
+}
+.h7-site-svg svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.h7-site-svg .h7-callout {
+  margin: 0;
+  border-radius: 0;
+}
+.h7-zones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 15px 0;
+}
+.h7-zones > div {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 12px;
+}
+.h7-zones strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+}
+.h7-zone-key {
+  background: var(--zone);
+  width: 25px;
+  height: 25px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.h7-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.h7-facts > div {
+  background: #f2f6ed;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.h7-facts strong {
+  display: block;
+  font-size: 17px;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+}
+.h7-callout {
+  padding: 13px 16px;
+  border-left: 3px solid #6d997b;
+  background: #f0f5ea;
+  border-radius: 0 7px 7px 0;
+  margin: 15px 0;
+  line-height: 1.6;
+  font-size: 13px;
+}
+.h7-callout.warn {
+  border-color: #bd873d;
+  background: #fff7e8;
+}
+.h7-form .h7-callout {
+  grid-column: 1 / -1;
+}
+.h7-form select {
+  font: inherit;
+  font-weight: 400;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.h7-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+  margin-top: 8px;
+}
+.h7-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.h7-form label.wide,
+.h7-form .h7-actions,
+.h7-form .h7-muted {
+  grid-column: 1 / -1;
+}
+.h7-form label input,
+.h7-form label textarea {
+  font-weight: 400;
+}
+.h7-muted {
+  color: var(--muted);
+  font-size: 12.5px;
+  margin: 0;
+}
+.h7-error {
+  color: #a0351f;
+  background: #fbeeea;
+  border: 1px solid #ecc9c0;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  margin: 0;
+}
+.h7-table,
+.programme-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.h7-table th,
+.h7-table td,
+.programme-table th,
+.programme-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.h7-table th,
+.programme-table th {
+  background: var(--cream);
+  font-size: 12.5px;
+}
+.h7-footer {
+  color: var(--muted);
+  font-size: 12px;
+}
+.ex81-story h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+.ex81-story h3 {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+.ex81-story {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--forest-900);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Répartition programmatique (prototype : programme-*)                    */
+/* ---------------------------------------------------------------------- */
+.programme-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 14px;
+}
+.programme-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.programme-table input {
+  width: 80px;
+  padding: 0.35rem 0.5rem;
+}
+.programme-total td {
+  font-weight: 700;
+}
+.programme-panel {
+  background: var(--cream);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+}
+.programme-adj {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.programme-adj > div {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.programme-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  border-left: 3px solid var(--line);
+  padding-left: 10px;
+}
+.programme-transfer {
+  background: #eef3ef;
+  border: 1px solid #cfdfd3;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 13.5px;
+}
+.programme-transfer h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+.programme-transfer p {
+  margin: 4px 0;
+}
+.programme-badge {
+  display: inline-block;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin: 0 6px 4px 0;
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Atelier natif (moteur du prototype, scopé #nativeDesignerRoot)         */
+/* ---------------------------------------------------------------------- */
+.native-atelier {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 24px;
+}
+.native-atelier-status {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+}
+.native-atelier-status-saved {
+  color: var(--done);
+}
+.native-atelier-status-conflict,
+.native-atelier-status-error {
+  color: #a0351f;
+  background: #fbeeea;
+  border-color: #ecc9c0;
+}
+.native-atelier-reference {
+  margin: 0;
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #fff7e6;
+  border: 1px solid #ecd9b0;
+}
+#nativeDesignerMount {
+  width: 100%;
+  min-width: 0;
+}
+#nativeDesignerParking.native-mounted {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+/* Accessibilité : la ligne d'information du viewer (« EPSG… · surface ») du moteur extrait est à 4,48:1 sur son fond ; Fadi la surcharge d'un ton (5,7:1) sans toucher au fichier extrait. */
+#nativeDesignerRoot .v7-info-line > p {
+  color: #56634d;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Sources de l'étape (fold-card, sources-card : valeurs du prototype)      */
+/* ---------------------------------------------------------------------- */
+.fold-card {
+  margin: 18px 0 0;
+  border: 1px solid #d3ddd8;
+  border-radius: 14px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.fold-card > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 18px 20px;
+  font-size: clamp(21px, 4.6vw, 30px);
+  font-weight: 750;
+  line-height: 1.15;
+  color: #164c43;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.fold-card > summary::-webkit-details-marker {
+  display: none;
+}
+.fold-card > summary::after {
+  content: "⌄";
+  font-size: 23px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.fold-card[open] > summary::after {
+  transform: rotate(180deg);
+}
+.fold-card[open] > summary {
+  border-bottom: 1px solid #dce4e0;
+}
+.fold-card-body {
+  padding: 18px 20px 20px;
+}
+.module-subtitle {
+  margin: 22px 0 10px;
+  font-size: 18px;
+}
+.project-sources .sources-list + .sources-list {
+  margin-top: 18px;
+}
+.sources-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.sources-drop {
+  margin-top: 14px;
+  border: 1.5px dashed #aebfb8;
+  border-radius: 10px;
+  padding: 18px;
+  text-align: center;
+  background: #f8faf8;
+  font-size: 14px;
+}
+.sources-drop.drag {
+  background: #e9f3ee;
+  border-color: #1e5a55;
+}
+.sources-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+}
+.source-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid #e2e8e4;
+  padding-top: 10px;
+}
+.source-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.source-meta {
+  font-size: 12px;
+  color: #6c7e7a;
+  margin-top: 3px;
+}
+.source-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.source-actions .button-secondary {
+  padding: 7px 9px;
+  text-decoration: none;
+}
+.source-actions .danger {
+  color: #a23b2a;
+  border-color: #e3c2bb;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Outil Parcelle (étape 01, iframe du prototype)                           */
+/* ---------------------------------------------------------------------- */
+.parcelle-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.parcelle-tool .module {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.parcelle-tool .module-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.parcelle-tool .parcelle-status {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+}
+.parcelle-tool iframe {
+  display: block;
+  width: 100%;
+  height: 760px;
+  border: 0;
+  background: #fff;
+}
+
+/* ---------------------------------------------------------------------- */
 /* Responsive                                                              */
 /* ---------------------------------------------------------------------- */
 @media (max-width: 860px) {
@@ -912,8 +2467,45 @@ h3 {
   }
 }
 @media (max-width: 700px) {
-  .app-shell {
+  .parcelle-tool iframe {
+    height: 620px;
+  }
+  .biz-grid,
+  .h7-form {
     grid-template-columns: 1fr;
+  }
+  .h7-site-hero {
+    grid-template-columns: 1fr;
+  }
+  .h7-facts {
+    grid-template-columns: 1fr 1fr;
+  }
+  .h7-facts strong {
+    font-size: 15px;
+  }
+  .h7-zones {
+    gap: 14px 8px;
+  }
+  .fold-card > summary {
+    padding: 16px;
+    font-size: 24px;
+  }
+  .fold-card-body {
+    padding: 16px;
+  }
+  .source-row {
+    grid-template-columns: 1fr;
+  }
+  .step-detail {
+    padding: 16px;
+  }
+  .step-detail-nav,
+  .step-detail-nav-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
   }
   .app-sidebar {
     position: sticky;
@@ -950,13 +2542,45 @@ h3 {
     padding: 12px 16px;
   }
   .home-page,
-  .projects-page,
-  .stub-page {
+  .projects-page {
     padding: 16px;
   }
   .project-header,
   .module-nav {
     padding: 14px 16px;
+  }
+  /* Téléphone : en-tête compact (titre, méta sur une ligne) et modules sur une seule rangée défilante,
+     pour que les cartes des 21 étapes arrivent dès le premier écran. */
+  .project-header {
+    padding: 12px 16px;
+    gap: 6px;
+  }
+  .project-header h1 {
+    font-size: 20px;
+    line-height: 1.25;
+    margin: 0;
+  }
+  .project-header-meta {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    font-size: 12.5px;
+  }
+  .module-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 10px 16px;
+    scroll-snap-type: x proximity;
+  }
+  .module-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .module-nav button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    scroll-snap-align: start;
   }
   .module-content {
     padding: 16px;
@@ -967,5 +2591,845 @@ h3 {
   }
   .cards article {
     padding: 12px;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Exemple résolu — présentation protégée (prototype : ex81-*)             */
+/* ---------------------------------------------------------------------- */
+.ex81-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #e4efe7;
+  color: #1f4d3b;
+  margin-bottom: 8px;
+}
+.ex81-fold {
+  margin: 16px 0;
+  padding: 15px;
+  border: 1px solid #d3ded2;
+  border-radius: 8px;
+  background: #fff;
+}
+.ex81-fold > summary {
+  font-weight: 700;
+  cursor: pointer;
+  padding: 9px 0;
+}
+.ex81-note {
+  padding: 14px 16px;
+  border-left: 4px solid #789785;
+  background: #eef4e8;
+  border-radius: 0 7px 7px 0;
+  line-height: 1.6;
+  margin: 14px 0;
+  color: #31564a;
+}
+.ex81-note.warn {
+  background: #fff3dc;
+  border-left-color: #a57928;
+  color: #755728;
+}
+.ex81-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+/* Récit de l'exemple (`storyHTML` + bloc « CHOIX X · DÉJÀ ARBITRÉ ») : décision, cadre de démonstration, choix arbitré, budget. */
+.ex81-story .ex81-decision {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+.ex81-frame {
+  margin: 12px 0 0;
+  border-top: 1px solid #dce4dc;
+  padding: 6px 0 0;
+}
+.ex81-frame > summary {
+  font-weight: 700;
+  cursor: pointer;
+  padding: 9px 0;
+}
+.ex81-frame p {
+  margin: 8px 0;
+}
+.ex81-muted {
+  font-size: 12px;
+  color: #5f7169;
+}
+.ex81-selected {
+  padding: 16px 18px;
+  border: 1px solid #b8d1be;
+  border-radius: 9px;
+  background: #f5f8ee;
+  margin: 16px 0 0;
+}
+.ex81-selected h3 {
+  margin: 10px 0 4px;
+}
+.ex81-table {
+  width: 100%;
+  overflow-x: auto;
+  margin: 14px 0;
+  border: 1px solid #d5dfd5;
+  border-radius: 7px;
+  -webkit-overflow-scrolling: touch;
+}
+.ex81-table table {
+  border-collapse: collapse;
+  min-width: 520px;
+  width: 100%;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ex81-table th {
+  text-align: left;
+  font-weight: 700;
+  background: #edf3e8;
+  padding: 12px;
+  vertical-align: top;
+}
+.ex81-table td {
+  padding: 12px;
+  border-top: 1px solid #d8e2d5;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.ex81-table tbody tr:nth-child(even) {
+  background: #f9fbf6;
+}
+.ex81-budget {
+  margin-top: 16px;
+}
+/* Présentation protégée de l'exemple (`ex81-css` du prototype) : réponses en lecture, indicateurs, en-tête intégré au panneau, liens des tableaux. */
+.ex81-answers {
+  margin: 0;
+}
+.ex81-answers > div {
+  padding: 15px 0;
+  border-bottom: 1px solid #dce4dc;
+}
+.ex81-answers dt {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.ex81-answers dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ex81-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.ex81-kpis > div {
+  padding: 14px;
+  background: #edf4e9;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.ex81-kpis b {
+  display: block;
+  font-size: 21px;
+}
+.ex81-table .btn,
+.ex81-table .ex81-goto {
+  font-size: 12px;
+  text-align: left;
+  display: block;
+  margin: 4px 0;
+  width: 100%;
+  border: 1px solid #215a4b;
+  background: #215a4b;
+  border-radius: 7px;
+  padding: 10px 13px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+}
+.ex81-table .ex81-goto:focus-visible {
+  outline: 3px solid #4387b3;
+  outline-offset: 2px;
+}
+.ex81-selected > details > summary {
+  font-weight: 700;
+  cursor: pointer;
+  padding: 9px 0;
+}
+.ex81-goto-list {
+  display: flex;
+  flex-direction: column;
+}
+.h7-panel-reference .h7-inner {
+  padding: 18px 20px;
+}
+.h7-panel-reference .ex83-example-head {
+  display: block;
+  margin: 0;
+  min-width: 0;
+}
+.h7-panel-reference .ex81-story.ex83-integrated {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.h7-panel-reference .ex83-integrated .ex81-actions {
+  margin: 16px 0;
+}
+.h7-panel-reference .h7-tabs {
+  margin-top: 12px;
+}
+.h7-panel-reference .h7-tab-content {
+  margin-top: 14px;
+}
+.h7-panel-reference .ex81-fold {
+  margin: 16px 0;
+}
+.h7-panel-reference .h7-site-hero {
+  margin-top: 16px;
+}
+.reference-answers h2 {
+  margin: 0 0 6px;
+}
+@media (max-width: 700px) {
+  .ex81-kpis {
+    grid-template-columns: 1fr;
+  }
+  .ex81-kpis > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .ex81-kpis b {
+    font-size: 20px;
+  }
+  .h7-panel-reference .h7-inner {
+    padding: 14px 12px;
+  }
+}
+.programme-rooms-fold .v62-tab-content {
+  margin-top: 8px;
+}
+.programme-rooms-fold small {
+  display: block;
+  font-size: 12px;
+  color: #64756f;
+  overflow-wrap: anywhere;
+}
+.programme-rooms-fold .v62-table td:nth-child(2) {
+  min-width: 150px;
+}
+.programme-rooms-fold details summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Programme ↔ modèle dessiné et registre des hypothèses (building-library-app) */
+.bl .bl-links td:nth-child(2) {
+  min-width: 260px;
+}
+.bl .bl-links select {
+  min-width: 220px;
+}
+.bl button.bl-unlink {
+  min-height: 28px;
+  padding: 2px 9px;
+  margin-left: 4px;
+  font-size: 14px;
+  line-height: 1;
+  vertical-align: middle;
+}
+.bl .bl-hypotheses td:first-child {
+  min-width: 260px;
+  width: 40%;
+}
+.bl .bl-hypotheses td:nth-child(2) {
+  min-width: 240px;
+}
+.bl .bl-hypotheses td:nth-child(3) {
+  min-width: 260px;
+}
+.bl .bl-hypotheses select,
+.bl .bl-hypotheses input,
+.bl .bl-hypotheses textarea {
+  width: 100%;
+  min-width: 180px;
+  margin: 4px 0;
+}
+.bl .bl-hypotheses textarea {
+  min-height: 72px;
+}
+.bl .bl-hypotheses {
+  min-width: 760px;
+}
+@media (max-width: 720px) {
+  .ex81-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .ex81-actions button,
+  .ex81-actions a {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  .ex81-fold {
+    padding: 10px;
+  }
+  .ex81-selected {
+    padding: 12px 14px;
+  }
+  .ex81-table table {
+    font-size: 13px;
+  }
+}
+
+/* Transfert surfacique à total constant (h7-app, étape 07) */
+.h7-transfer-fold .h7-form {
+  margin: 10px 0 12px;
+}
+.h7-transfer-fold .h7-fold-body > button,
+#h7-transfer-preview > button {
+  align-self: flex-start;
+}
+#h7-transfer-preview {
+  margin-top: 12px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Analyses métier                                                         */
+/* ---------------------------------------------------------------------- */
+.analyses-module {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.analyses-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+.analyses-checks td:nth-child(4) {
+  min-width: 260px;
+}
+.analyses-checks td:nth-child(5) {
+  min-width: 220px;
+  color: var(--muted);
+}
+.analyses-checks small,
+.analyses-levels small {
+  display: block;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.analyses-checks .h7-chip {
+  white-space: normal;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Documents                                                               */
+/* ---------------------------------------------------------------------- */
+.documents-module {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.documents-table small {
+  display: block;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.documents-table .h7-chip {
+  white-space: normal;
+}
+.documents-table td:last-child {
+  white-space: nowrap;
+}
+.documents-steps {
+  margin-top: 12px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Collaboration                                                           */
+/* ---------------------------------------------------------------------- */
+.collaboration-module {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.collab-email {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.comment-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.comment {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--forest-900);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--surface);
+}
+.comment p {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.comment-meta {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.comment-delete {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: #a0351f;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.comment-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.comment-form textarea {
+  font: inherit;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #b7c9c0;
+  border-radius: 6px;
+  width: 100%;
+}
+.comment-form .h7-actions {
+  margin-top: 8px;
+}
+.journal-table td:nth-child(4) {
+  min-width: 260px;
+  color: var(--muted);
+}
+.step-comments {
+  margin-top: 12px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* État de synchronisation (en-tête du projet)                             */
+/* ---------------------------------------------------------------------- */
+.project-header-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.sync-indicator i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--done);
+  flex: none;
+}
+.sync-indicator-pending i {
+  background: #c99a3a;
+}
+.sync-indicator-offline i,
+.sync-indicator-conflict i {
+  background: #a0351f;
+}
+.sync-indicator-offline,
+.sync-indicator-conflict {
+  color: #a0351f;
+}
+.sync-indicator-retry {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.native-atelier-status-offline {
+  color: #a0351f;
+  background: #fbeeea;
+  border-color: #ecc9c0;
+}
+.offline-banner {
+  margin: 0;
+  padding: 10px 28px;
+  background: #fff0d8;
+  color: #895f24;
+  border-bottom: 1px solid #ecd9b5;
+  font-size: 13px;
+}
+.offline-banner-inline {
+  border: 1px solid #ecd9b5;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 12px 0;
+}
+.conflict-banner {
+  margin: 0;
+  padding: 12px 28px;
+  background: #fbeeea;
+  color: #7a2a17;
+  border-bottom: 1px solid #ecc9c0;
+  font-size: 13px;
+}
+.conflict-banner p {
+  margin: 0 0 6px;
+}
+.conflict-banner ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.conflict-banner small {
+  display: block;
+  color: #5a4a44;
+}
+.conflict-banner .button-secondary {
+  padding: 2px 10px;
+  font-size: 12px;
+  min-height: 0;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Partage du projet : rôle, lecture seule, membres                        */
+/* ---------------------------------------------------------------------- */
+.project-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.project-role::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--done);
+}
+.project-role-editeur::before {
+  background: #c99a3a;
+}
+.project-role-lecteur::before {
+  background: #5b7fa6;
+}
+.access-banner {
+  margin: 0;
+  padding: 10px 28px;
+  background: #e9f0f8;
+  color: #2f4f73;
+  border-bottom: 1px solid #c9d8ea;
+  font-size: 13px;
+}
+.link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+fieldset.biz-grid,
+fieldset.access-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+fieldset.access-fieldset:disabled {
+  opacity: 0.92;
+}
+.access-readonly-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+.members-table td,
+.members-table th {
+  vertical-align: middle;
+}
+.members-table select {
+  font: inherit;
+  padding: 4px 6px;
+}
+.members-invite {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto;
+  gap: 12px 16px;
+  align-items: end;
+  margin-top: 14px;
+}
+.members-invite label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.members-invite input,
+.members-invite select {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.members-invite p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.members-notice {
+  margin: 10px 0 0;
+}
+.shared-projects {
+  margin-top: 24px;
+}
+.collab-role {
+  text-transform: capitalize;
+}
+@media (max-width: 720px) {
+  .members-invite {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Résolution assistée des conflits : les deux versions côte à côte */
+.conflict-table {
+  border-collapse: collapse;
+  margin: 6px 0;
+  font-size: 12.5px;
+}
+.conflict-table th,
+.conflict-table td {
+  text-align: left;
+  padding: 3px 10px 3px 0;
+  border-bottom: 1px solid #ecc9c0;
+  vertical-align: top;
+  max-width: 420px;
+  overflow-wrap: anywhere;
+}
+.conflict-table th {
+  font-weight: 600;
+  color: #5a4a44;
+}
+.conflict-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+.conflict-banner .button-primary {
+  padding: 2px 10px;
+  font-size: 12px;
+  min-height: 0;
+}
+
+/* Réservation d'édition (verrou optionnel) */
+.editing-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.editing-lock-mine {
+  color: #2f6b3a;
+}
+.editing-lock-other {
+  color: #895f24;
+}
+
+/* Observation déclarée du contexte extérieur (bilan du bâtiment) */
+.site-observation textarea {
+  width: 100%;
+  min-height: 72px;
+  font: inherit;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.site-observation-status {
+  font-size: 12.5px;
+}
+
+/* « Documents de base intégrés » (vue d'ensemble du projet d'exemple, prototype) */
+.seed888 {
+  background: #eef6f2;
+  border: 1px solid #c8ded4;
+  border-radius: 12px;
+  padding: 18px;
+  margin: 16px 0;
+}
+.seed888 .biz-actions {
+  margin: 10px 0;
+}
+.seed888 p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Fond MapTiler et altimétrie (pli « Données du site », étape 01) — styles h7 du prototype */
+.h7-maptiler {
+  margin-top: 12px;
+}
+.h7-map-viewport {
+  aspect-ratio: 900 / 560;
+  position: relative;
+  overflow: hidden;
+  background: #e7eddf;
+  border: 1px solid #c7d7c4;
+  border-radius: 8px;
+  margin-top: 15px;
+}
+.h7-map-tiles,
+.h7-map-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.h7-map-tiles img {
+  position: absolute;
+  max-width: none;
+}
+.h7-map-overlay {
+  pointer-events: none;
+}
+.h7-map-north {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #ffffffe6;
+  color: #254f40;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 13px;
+}
+.h7-map-credit {
+  font-size: 10px;
+  color: #667b6b;
+}
+.h7-dialog-inline {
+  margin: 12px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.h7-dialog-inline .h7-dialog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.h7-dialog-inline h2 {
+  margin: 0;
+  font-size: 17px;
+}
+.h7-dialog-inline label {
+  display: block;
+  margin: 10px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.h7-dialog-inline input[type="password"] {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+/* Réponses en fil aux commentaires */
+.comment-replies {
+  list-style: none;
+  margin: 8px 0 0 18px;
+  padding: 0 0 0 12px;
+  border-left: 2px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.comment-reply-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  margin-top: 6px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--done);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.comment-reply-form {
+  margin-top: 8px;
+}
+
+/* Téléphone (≤ 720 px) : les méta de l'en-tête sur une ligne, titre de module plus court, pli des documents de base compact — posés en fin de feuille pour primer sur les règles de base. */
+@media (max-width: 720px) {
+  .project-header-meta {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px 12px;
+    font-size: 12.5px;
+    width: 100%;
+  }
+  .module-content > h2 {
+    font-size: 20px;
+    margin: 0 0 10px;
+  }
+  .seed888 {
+    padding: 12px 14px;
+    margin: 10px 0;
   }
 }

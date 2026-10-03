@@ -1,0 +1,894 @@
+{
+  "sourceVersion": "8.19.0",
+  "sourceBlock": "script anonyme #3 (app hôte) — BIZ_SCHEMAS, BIZ_INTRO, content()",
+  "note": "Chaque étape sans formulaire (01, 10, 11, 21) porte un seul champ « Synthèse / livrable » (clé summary), comme content() du prototype. L'étape 19 ajoute la décision GO / GO sous conditions / À reprendre / NO GO (clé decision).",
+  "summary": {
+    "intro": "Synthèse et transmission du dossier maître.",
+    "field": {
+      "key": "summary",
+      "label": "Synthèse / livrable",
+      "type": "textarea"
+    }
+  },
+  "decisionChoices": [
+    "GO",
+    "GO sous conditions",
+    "À reprendre",
+    "NO GO"
+  ],
+  "intro": {
+    "2": "Appliquer les règles à la parcelle réelle et produire une enveloppe constructible traçable.",
+    "3": "Tester l’adéquation entre la demande, le produit immobilier et cet emplacement. Dater les références.",
+    "4": "Transformer Parcelle + Réglementation + Marché en hypothèses de développement explicites.",
+    "5": "Organiser l’expression des besoins, les contradictions et les arbitrages.",
+    "6": "Formaliser ce que le maître d’ouvrage veut obtenir et ses limites.",
+    "7": "Traduire le PMO en unités fonctionnelles, capacités, surfaces, proximités et flux.",
+    "8": "Associer chaque besoin à une performance cible, une méthode de vérification et une preuve.",
+    "9": "Confronter le programme à la capacité réelle du site avant la conception.",
+    "12": "Comparer des options répondant au même besoin et au même niveau de service.",
+    "13": "Vérifier les hypothèses techniques critiques et identifier les investigations nécessaires.",
+    "14": "Rapprocher programme, coût complet et ressources disponibles.",
+    "15": "Tester la robustesse face aux variations de coûts, recettes, vacance, taux et délais.",
+    "16": "Consolider les preuves critiques. Une pièce importée ne vaut pas validation.",
+    "17": "Comparer les scénarios. Une condition bloquante prime sur la note.",
+    "18": "Produire le bilan consolidé du potentiel de la parcelle.",
+    "19": "Décider sur un scénario, une version du programme, un budget et un calendrier.",
+    "20": "Après GO, transformer le scénario et les réserves en plan d’études pilotable."
+  },
+  "schemas": {
+    "2": [
+      {
+        "key": "f1",
+        "label": "Zonage / règlement applicable",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Usages autorisés",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Emprise / COS / CES",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Hauteur maximale",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Reculs / alignements / prospects",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Stationnement",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Servitudes / contraintes",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Accès réglementaires",
+        "type": "textarea"
+      },
+      {
+        "key": "f9",
+        "label": "Risques / environnement",
+        "type": "textarea"
+      },
+      {
+        "key": "f10",
+        "label": "Autorisations / autorités compétentes",
+        "type": "textarea"
+      },
+      {
+        "key": "f11",
+        "label": "Sources réglementaires",
+        "type": "textarea"
+      },
+      {
+        "key": "f12",
+        "label": "Enveloppe constructible — conclusion",
+        "type": "textarea"
+      }
+    ],
+    "3": [
+      {
+        "key": "f1",
+        "label": "Périmètre et date de l’étude",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Utilisateurs / clientèle cible",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Demande et capacité de paiement",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Offre concurrente / vacance",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Prix / loyers / transactions",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Comparables",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Accessibilité / infrastructures",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Positionnement proposé",
+        "type": "textarea"
+      },
+      {
+        "key": "f9",
+        "label": "Incertitudes / validation complémentaire",
+        "type": "textarea"
+      }
+    ],
+    "4": [
+      {
+        "key": "f1",
+        "label": "Typologie",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Type d’intervention",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Client / utilisateur cible",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Modèle économique",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Stratégie patrimoniale",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Mode d’exploitation",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Stratégie de sortie",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Objectifs mesurables",
+        "type": "textarea"
+      },
+      {
+        "key": "f9",
+        "label": "Alternatives à étudier",
+        "type": "textarea"
+      }
+    ],
+    "5": [
+      {
+        "key": "f1",
+        "label": "Parties prenantes",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Utilisateurs / groupes d’usagers",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Activités",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Capacités normales et de pointe",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Horaires / fréquences",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Contraintes opérationnelles",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Besoins prioritaires",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Contradictions / arbitrages",
+        "type": "textarea"
+      },
+      {
+        "key": "f9",
+        "label": "Entretiens / ateliers / questionnaires / benchmarking",
+        "type": "textarea"
+      },
+      {
+        "key": "f10",
+        "label": "Restitution",
+        "type": "textarea"
+      }
+    ],
+    "6": [
+      {
+        "key": "f1",
+        "label": "Objectifs du maître d’ouvrage",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Fonctions attendues",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Capacités",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Surfaces recherchées",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Niveaux de service / performances",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Limites financières",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Calendrier",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Priorités",
+        "type": "textarea"
+      },
+      {
+        "key": "f9",
+        "label": "Exigences non négociables",
+        "type": "textarea"
+      }
+    ],
+    "7": [
+      {
+        "key": "f1",
+        "label": "Unités fonctionnelles",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Locaux / espaces",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Capacités",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Surfaces utiles",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Surfaces communes / techniques",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Relations de proximité",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Circulations",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Flux",
+        "type": "textarea"
+      },
+      {
+        "key": "f9",
+        "label": "Mutualisations",
+        "type": "textarea"
+      },
+      {
+        "key": "f10",
+        "label": "Évolutivité / extension",
+        "type": "textarea"
+      }
+    ],
+    "8": [
+      {
+        "key": "f1",
+        "label": "Structure / charges / portées",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Hauteurs / gabarits",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Accessibilité",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Sécurité / incendie",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Acoustique / confort",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Éclairage / ventilation / qualité de l’air",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Énergie / eau / carbone",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Réseaux",
+        "type": "textarea"
+      },
+      {
+        "key": "f9",
+        "label": "Maintenance / exploitation",
+        "type": "textarea"
+      },
+      {
+        "key": "f10",
+        "label": "Méthodes et critères de vérification",
+        "type": "textarea"
+      }
+    ],
+    "9": [
+      {
+        "key": "f1",
+        "label": "Exigences satisfaites",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Adaptables",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "À démontrer",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Incompatibles",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Impact sur le programme",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Impact sur le modèle économique",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Arbitrages requis",
+        "type": "textarea"
+      }
+    ],
+    "12": [
+      {
+        "key": "f1",
+        "label": "Scénario 0 — maintien / report",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Scénario A",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Scénario B",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Scénario C",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Critères communs de comparaison",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Scénario privilégié",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Motifs de sélection / exclusion",
+        "type": "textarea"
+      }
+    ],
+    "13": [
+      {
+        "key": "f1",
+        "label": "Structure / fondations / géotechnique",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Topographie / terrassements",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Réseaux / raccordements",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Accès / logistique",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Sécurité / incendie",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Environnement / pollution / aléas",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Construction / phasage",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Exploitation / maintenance",
+        "type": "textarea"
+      },
+      {
+        "key": "f9",
+        "label": "Investigations nécessaires",
+        "type": "textarea"
+      },
+      {
+        "key": "f10",
+        "label": "Conclusion technique",
+        "type": "textarea"
+      }
+    ],
+    "14": [
+      {
+        "key": "f1",
+        "label": "Foncier / acquisition",
+        "type": "number"
+      },
+      {
+        "key": "f2",
+        "label": "Travaux",
+        "type": "number"
+      },
+      {
+        "key": "f3",
+        "label": "Études / honoraires",
+        "type": "number"
+      },
+      {
+        "key": "f4",
+        "label": "Raccordements / extérieurs",
+        "type": "number"
+      },
+      {
+        "key": "f5",
+        "label": "Équipements",
+        "type": "number"
+      },
+      {
+        "key": "f6",
+        "label": "Provisions / aléas",
+        "type": "number"
+      },
+      {
+        "key": "f7",
+        "label": "Coûts annuels d’exploitation",
+        "type": "number"
+      },
+      {
+        "key": "f8",
+        "label": "Recettes annuelles",
+        "type": "number"
+      },
+      {
+        "key": "f9",
+        "label": "Fonds propres",
+        "type": "number"
+      },
+      {
+        "key": "f10",
+        "label": "Dette",
+        "type": "number"
+      },
+      {
+        "key": "f11",
+        "label": "Devise",
+        "type": "textarea"
+      },
+      {
+        "key": "f12",
+        "label": "Hypothèses / exclusions",
+        "type": "textarea"
+      }
+    ],
+    "15": [
+      {
+        "key": "f1",
+        "label": "Hausse CAPEX testée (%)",
+        "type": "number"
+      },
+      {
+        "key": "f2",
+        "label": "Variation OPEX (%)",
+        "type": "number"
+      },
+      {
+        "key": "f3",
+        "label": "Baisse loyers / prix (%)",
+        "type": "number"
+      },
+      {
+        "key": "f4",
+        "label": "Vacance testée (%)",
+        "type": "number"
+      },
+      {
+        "key": "f5",
+        "label": "Hausse taux (points)",
+        "type": "number"
+      },
+      {
+        "key": "f6",
+        "label": "Retard (mois)",
+        "type": "number"
+      },
+      {
+        "key": "f7",
+        "label": "Maintenance / renouvellements",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Scénario défavorable combiné",
+        "type": "textarea"
+      },
+      {
+        "key": "f9",
+        "label": "Seuils de rupture",
+        "type": "textarea"
+      }
+    ],
+    "16": [
+      {
+        "key": "f1",
+        "label": "Foncier / propriété / limites",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Servitudes / accès",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Urbanisme / autorisations",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Sol / pollution / structure",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Réseaux / environnement",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Marché / exploitation",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Budget / financement",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Contrats / assurances",
+        "type": "textarea"
+      },
+      {
+        "key": "f9",
+        "label": "Planning / dépendances",
+        "type": "textarea"
+      },
+      {
+        "key": "f10",
+        "label": "Blocages / réserves",
+        "type": "textarea"
+      }
+    ],
+    "17": [
+      {
+        "key": "f1",
+        "label": "Vision — besoin & objectifs (1–5)",
+        "type": "number"
+      },
+      {
+        "key": "f2",
+        "label": "Marché — demande & positionnement (1–5)",
+        "type": "number"
+      },
+      {
+        "key": "f3",
+        "label": "Programme — adéquation (1–5)",
+        "type": "number"
+      },
+      {
+        "key": "f4",
+        "label": "Technique — faisabilité (1–5)",
+        "type": "number"
+      },
+      {
+        "key": "f5",
+        "label": "Finance — robustesse (1–5)",
+        "type": "number"
+      },
+      {
+        "key": "f6",
+        "label": "Exploitation (1–5)",
+        "type": "number"
+      },
+      {
+        "key": "f7",
+        "label": "Risques (1–5)",
+        "type": "number"
+      },
+      {
+        "key": "f8",
+        "label": "Niveau de preuve (1–5)",
+        "type": "number"
+      },
+      {
+        "key": "f9",
+        "label": "Justification de l’évaluation",
+        "type": "textarea"
+      }
+    ],
+    "18": [
+      {
+        "key": "f1",
+        "label": "Potentiel réglementaire",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Capacité constructible",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Programme possible",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Surfaces / volumétrie",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Scénario retenu",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Investissement",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Recettes / financement",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Calendrier",
+        "type": "textarea"
+      },
+      {
+        "key": "f9",
+        "label": "Risques résiduels",
+        "type": "textarea"
+      },
+      {
+        "key": "f10",
+        "label": "Forces / faiblesses",
+        "type": "textarea"
+      },
+      {
+        "key": "f11",
+        "label": "Conditions restantes",
+        "type": "textarea"
+      }
+    ],
+    "19": [
+      {
+        "key": "f1",
+        "label": "Scénario retenu",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Alternatives écartées",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Motifs",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Programme / budget autorisé",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Risques résiduels",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Conditions",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Décideur — nom et fonction",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Date de décision",
+        "type": "date"
+      },
+      {
+        "key": "f9",
+        "label": "Version du dossier",
+        "type": "textarea"
+      },
+      {
+        "key": "f10",
+        "label": "Prochaine revue",
+        "type": "date"
+      }
+    ],
+    "20": [
+      {
+        "key": "f1",
+        "label": "Missions à lancer",
+        "type": "text"
+      },
+      {
+        "key": "f2",
+        "label": "Intervenants / consultants",
+        "type": "textarea"
+      },
+      {
+        "key": "f3",
+        "label": "Responsabilités / valideurs",
+        "type": "textarea"
+      },
+      {
+        "key": "f4",
+        "label": "Données d’entrée",
+        "type": "textarea"
+      },
+      {
+        "key": "f5",
+        "label": "Méthodes",
+        "type": "textarea"
+      },
+      {
+        "key": "f6",
+        "label": "Livrables",
+        "type": "textarea"
+      },
+      {
+        "key": "f7",
+        "label": "Budgets",
+        "type": "textarea"
+      },
+      {
+        "key": "f8",
+        "label": "Échéances",
+        "type": "textarea"
+      },
+      {
+        "key": "f9",
+        "label": "Dépendances",
+        "type": "textarea"
+      },
+      {
+        "key": "f10",
+        "label": "Jalons de validation",
+        "type": "textarea"
+      }
+    ]
+  }
+}

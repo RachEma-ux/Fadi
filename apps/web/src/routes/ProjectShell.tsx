@@ -1,250 +1,60 @@
-import { useEffect, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams, useSearchParams } from "react-router-dom";
-import { api, type ParcoursStep } from "../lib/api";
+import { lazy, Suspense, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { api, ROLE_LABEL } from "../lib/api";
+import { lockedHint, READ_ONLY_HINT, useProjectAccess } from "../lib/access";
+import { ConflictPanel } from "../components/ConflictPanel";
+import { EditingLockControl } from "../components/EditingLockControl";
+import { SyncIndicator, useOnline } from "../components/SyncIndicator";
 import { MODULES } from "../modules/module-registry";
-import { AtelierPanel } from "../modules/atelier/AtelierPanel";
+import { StageStrip } from "../modules/parcours/ParcoursModule";
+import { useImmersive } from "../lib/use-immersive";
+import { AnalysesModule } from "../modules/analyses/AnalysesModule";
+import { CollaborationModule } from "../modules/collaboration/CollaborationModule";
+import { DocumentsModule } from "../modules/documents/DocumentsModule";
+import { HarmonieToast } from "../modules/parcours/HarmoniePanel";
+import { ParcoursModule } from "../modules/parcours/ParcoursModule";
+import { ProgrammeHypothesesPage, ProgrammeModelLinksPage } from "../modules/programmation/ProgrammeLinks";
+import { ProgrammeRepartition, ProgrammeTransfer } from "../modules/programmation/ProgrammeRepartition";
+import { ParcelleTool } from "../modules/projets-sources/ParcelleTool";
+import { ProjectSources } from "../modules/projets-sources/StepSources";
 
-/**
- * Une étape, présentée en carte (conservé du Parcours d'origine — voir
- * AGENTS.md : « original phases, labels and mobile card presentation »).
- * La carte est un aperçu cliquable, pas le contenu complet : ouvrir l'étape
- * mène à la vue détaillée (StepDetail) avec navigation précédent/suivant —
- * c'est elle qui porte le contenu réel (décision, justification, donnée vs
- * hypothèse), jamais fabriqué pour une étape qui n'en a pas.
- */
-function StepCard({ step, onOpen }: { step: ParcoursStep; onOpen: () => void }) {
-  return (
-    <article className={`step-card step-card-${step.status}`}>
-      <button type="button" className="step-card-open" onClick={onOpen}>
-        <div className="step-card-head">
-          <strong>{String(step.number).padStart(2, "0")}</strong>
-          <div>
-            <span className="step-card-phase">{step.phase}</span>
-            <h3>{step.title}</h3>
-          </div>
-          <span className={`step-dot step-dot-${step.status}`} aria-label={step.status === "termine" ? "Étape documentée" : "À faire"} />
-        </div>
-        {step.goal && <p className="step-card-goal">{step.goal}</p>}
-        {step.status === "termine" && step.content.headline && <p className="step-card-headline">{step.content.headline} →</p>}
-      </button>
-    </article>
-  );
-}
-
-/** Le contenu complet d'une étape — jamais fabriqué pour une étape qui n'en a pas (voir StepCard). */
-function StepContentBody({ content }: { content: ParcoursStep["content"] }) {
-  return (
-    <div className="step-detail-body">
-      {content.decision && (
-        <p>
-          <strong>Décision : </strong>
-          {content.decision}
-        </p>
-      )}
-      {content.why && (
-        <p>
-          <strong>Pourquoi : </strong>
-          {content.why}
-        </p>
-      )}
-      {content.alternatives && (
-        <p>
-          <strong>Non retenu : </strong>
-          {content.alternatives}
-        </p>
-      )}
-      {content.result?.donnee && (
-        <p className="step-card-donnee">
-          <strong>Donnée / calcul : </strong>
-          {content.result.donnee}
-        </p>
-      )}
-      {content.result?.hypothese && (
-        <p className="step-card-hypothese">
-          <strong>Hypothèse retenue : </strong>
-          {content.result.hypothese}
-        </p>
-      )}
-      {content.result?.raw && <p>{content.result.raw}</p>}
-      {content.owner && (
-        <p className="step-card-meta">
-          {content.owner}
-          {content.proof ? ` · ${content.proof}` : ""}
-        </p>
-      )}
-      {content.sourceStatus && <p className="step-card-source-status">{content.sourceStatus}</p>}
-      {!content.decision && !content.headline && !content.result && (
-        <p className="step-card-meta">Rien de documenté pour l'instant sur cette étape.</p>
-      )}
-    </div>
-  );
-}
-
-/**
- * Vue d'une seule étape, avec navigation précédent/suivant — c'est le
- * « passage d'étape en étape » du Parcours d'origine : un flux séquentiel,
- * pas seulement une grille statique.
- */
-function StepDetail({
-  step,
-  index,
-  total,
-  onBack,
-  onPrev,
-  onNext,
-}: {
-  step: ParcoursStep;
-  index: number;
-  total: number;
-  onBack: () => void;
-  onPrev: (() => void) | null;
-  onNext: (() => void) | null;
-}) {
-  return (
-    <div className="step-detail">
-      <div className="step-detail-top">
-        <button type="button" className="button-secondary" onClick={onBack}>
-          ← Vue d'ensemble
-        </button>
-        <div className="progress">
-          <i style={{ width: `${((index + 1) / total) * 100}%` }} />
-        </div>
-        <span className="step-detail-count">
-          {index + 1} / {total}
-        </span>
-      </div>
-
-      <span className="eyebrow">{step.phase}</span>
-      <h3>
-        {String(step.number).padStart(2, "0")} — {step.title}
-      </h3>
-      {step.goal && <p className="step-card-goal">{step.goal}</p>}
-      {step.deliverable && (
-        <p className="step-card-meta">
-          <strong>Livrable attendu : </strong>
-          {step.deliverable}
-        </p>
-      )}
-
-      <StepContentBody content={step.content} />
-
-      {step.harmonieOptions.length > 0 && (
-        <details className="step-card-details">
-          <summary>Propositions Harmonie pour cette étape ({step.harmonieOptions.length})</summary>
-          <div className="step-detail-body">
-            {step.harmonieOptions.map((opt, i) => (
-              <div key={i} className="harmonie-option">
-                <strong>{opt.title}</strong>
-                <p>{opt.proposal}</p>
-                <p className="step-card-meta">
-                  {opt.benefit} · {opt.tradeoff}
-                </p>
-              </div>
-            ))}
-          </div>
-        </details>
-      )}
-
-      <nav className="step-detail-nav" aria-label="Navigation entre étapes">
-        <button type="button" className="button-secondary" onClick={onPrev ?? undefined} disabled={!onPrev}>
-          ← Étape précédente
-        </button>
-        <button type="button" className="button-primary" onClick={onNext ?? undefined} disabled={!onNext}>
-          Étape suivante →
-        </button>
-      </nav>
-    </div>
-  );
-}
-
-function ParcoursSteps({ projectId }: { projectId: string }) {
-  const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
-  const [searchParams, setSearchParams] = useSearchParams();
-  const etapeParam = searchParams.get("etape");
-  const openNumber = etapeParam ? Number(etapeParam) : null;
-
-  function openStep(number: number | null) {
-    const next = new URLSearchParams(searchParams);
-    if (number) next.set("etape", String(number));
-    else next.delete("etape");
-    setSearchParams(next, { replace: false });
-  }
-
-  if (stepsQuery.isLoading) {
-    return <p role="status">Chargement des étapes…</p>;
-  }
-  if (stepsQuery.isError || !stepsQuery.data) {
-    return <p role="alert">Impossible de charger les étapes du Parcours.</p>;
-  }
-
-  const steps = stepsQuery.data;
-  const done = steps.filter((s) => s.status === "termine").length;
-
-  if (openNumber) {
-    const index = steps.findIndex((s) => s.number === openNumber);
-    const step = steps[index];
-    if (step) {
-      return (
-        <StepDetail
-          step={step}
-          index={index}
-          total={steps.length}
-          onBack={() => openStep(null)}
-          onPrev={index > 0 ? () => openStep(steps[index - 1]!.number) : null}
-          onNext={index < steps.length - 1 ? () => openStep(steps[index + 1]!.number) : null}
-        />
-      );
-    }
-  }
-
-  return (
-    <>
-      <p className="parcours-steps-summary">
-        {done} / {steps.length} étapes documentées
-      </p>
-      <section className="cards" aria-label="Les 21 étapes du Parcours">
-        {steps.map((step) => (
-          <StepCard key={step.number} step={step} onOpen={() => openStep(step.number)} />
-        ))}
-      </section>
-    </>
-  );
-}
+// Le moteur de l'Atelier (scripts, markup, feuille de style) n'est chargé qu'à la première ouverture de l'Atelier.
+const NativeAtelier = lazy(() => import("../modules/atelier/NativeAtelier").then((m) => ({ default: m.NativeAtelier })));
 
 export function ProjectShell() {
   const { projectId } = useParams<{ projectId: string }>();
   if (!projectId) throw new Error("projectId manquant dans l'URL");
 
-  const queryClient = useQueryClient();
-  const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId) });
-  const levelsQuery = useQuery({ queryKey: ["levels", projectId], queryFn: () => api.listLevels(projectId) });
+  // Relu toutes les minutes : une réservation d'édition posée ou rendue par quelqu'un d'autre se voit sans recharger.
+  const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), refetchInterval: 60_000 });
+  const [lockMessage, setLockMessage] = useState<string | null>(null);
+  const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
+  const online = useOnline();
+  const access = useProjectAccess(projectId);
+  // Un message porté par la navigation (copie de travail créée, projet importé…) : le Parcours affiche le sien, les autres modules celui-ci.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const notice = (location.state as { notice?: string } | null)?.notice ?? null;
 
-  const [searchParams] = useSearchParams();
+  // Le module ouvert vit dans l'URL (`?module=`), comme l'étape (`?etape=`) et la vue (`?vue=`) : les liens
+  // entre modules (« Comparer au modèle dessiné », « Ouvrir l’Atelier »…) et le rechargement le respectent.
+  const [searchParams, setSearchParams] = useSearchParams();
   const requestedModule = searchParams.get("module");
-  const [activeModule, setActiveModule] = useState(
-    requestedModule && MODULES.some((m) => m.id === requestedModule) ? requestedModule : "parcours",
-  );
-
-  const ensureGroundLevel = useMutation({
-    mutationFn: () => api.createLevel(projectId, "RDC", 0, 0),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["levels", projectId] }),
-  });
-
-  // Chaque projet a besoin d'au moins un niveau pour que l'Atelier ait un
-  // endroit où poser un mur. On en crée un par défaut s'il n'en existe
-  // aucun, plutôt que de bloquer l'utilisateur sur un écran de configuration.
-  useEffect(() => {
-    if (levelsQuery.data && levelsQuery.data.length === 0 && !ensureGroundLevel.isPending) {
-      ensureGroundLevel.mutate();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [levelsQuery.data]);
+  const activeModule = requestedModule && MODULES.some((m) => m.id === requestedModule) ? requestedModule : "parcours";
+  // Module Atelier : page de l'Atelier Architectural (enveloppe effacée), comme aux étapes 10 / 11.
+  useImmersive(activeModule === "atelier");
+  const programmeView = searchParams.get("vue");
+  function selectModule(id: string) {
+    const next = new URLSearchParams();
+    next.set("module", id);
+    setSearchParams(next);
+  }
 
   if (projectQuery.isLoading) {
     return <p role="status">Chargement du projet…</p>;
   }
-  if (projectQuery.isError || !projectQuery.data) {
+  if (!projectQuery.data) {
     return (
       <main>
         <p role="alert">Projet introuvable, ou vous n'y avez pas accès.</p>
@@ -254,7 +64,6 @@ export function ProjectShell() {
   }
 
   const project = projectQuery.data;
-  const groundLevel = levelsQuery.data?.[0];
   const descriptor = MODULES.find((m) => m.id === activeModule);
 
   return (
@@ -263,42 +72,115 @@ export function ProjectShell() {
         <h1>
           {project.code} — {project.name}
         </h1>
-        <span>Révision du modèle : {project.modelRevision}</span>
+        <span className="project-header-meta">
+          <span>Révision du modèle : {project.modelRevision}</span>
+          <span
+            className={`project-role project-role-${access.role}`}
+            title={project.role === "proprietaire" || !project.role ? "Votre projet" : `Partagé par ${project.ownerEmail ?? "son propriétaire"}`}
+          >
+            {ROLE_LABEL[access.role]}
+            {project.role && project.role !== "proprietaire" && project.ownerEmail ? ` · partagé par ${project.ownerEmail}` : ""}
+          </span>
+          <SyncIndicator projectId={projectId} />
+          <EditingLockControl projectId={projectId} onMessage={setLockMessage} />
+        </span>
       </header>
+
+      {lockMessage && (
+        <p className="access-banner" role="alert">
+          {lockMessage}
+        </p>
+      )}
+
+      {!access.canWrite && (
+        <p className="access-banner" role="status">
+          {access.lock && !access.holdsLock && access.mayEdit ? lockedHint(access.lock) : READ_ONLY_HINT}{" "}
+          <button type="button" className="link-button" onClick={() => selectModule("collaboration")}>
+            Voir le partage
+          </button>
+        </p>
+      )}
+
+      {(!online || projectQuery.isError) && (
+        <p className="offline-banner" role="status">
+          Lecture hors-ligne : données lues le {new Date(projectQuery.dataUpdatedAt).toLocaleString("fr-FR")}. Le dessin de l’Atelier s’enregistre localement ; les formulaires et arbitrages attendront
+          le retour du réseau.
+        </p>
+      )}
+
+      <ConflictPanel projectId={projectId} />
 
       <nav aria-label="Modules du projet" className="module-nav">
         {MODULES.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            aria-current={m.id === activeModule ? "page" : undefined}
-            onClick={() => setActiveModule(m.id)}
-          >
+          <button key={m.id} type="button" aria-current={m.id === activeModule ? "page" : undefined} onClick={() => selectModule(m.id)}>
             {m.label}
           </button>
         ))}
       </nav>
 
-      <main className="module-content">
-        {activeModule === "parcours" && (
-          <>
-            <h2>Étude du potentiel d’une parcelle</h2>
-            <ParcoursSteps projectId={projectId} />
-          </>
-        )}
+      <main className={`module-content${activeModule === "parcours" || activeModule === "atelier" ? " module-content-parcours" : ""}`}>
+        {/* Le module Parcours porte son propre bandeau (« Parcours du projet », prototype) et sa mise en page : pas de titre de module. */}
+        {activeModule === "parcours" && <ParcoursModule projectId={projectId} />}
+
+        {activeModule !== "parcours" && notice && <HarmonieToast text={notice} onDone={() => navigate(`${location.pathname}${location.search}`, { replace: true, state: null })} />}
 
         {activeModule === "atelier" && (
           <>
-            <h2>Atelier architectural</h2>
-            {groundLevel ? (
-              <AtelierPanel projectId={projectId} levelId={groundLevel.id} />
+            {/* Module Atelier : la page de l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; « ← » ramène au parcours. */}
+            <StageStrip title="Atelier Architectural" stage={null} subtitle={`${project.code} — ${project.name}`} onBack={() => selectModule("parcours")} onHome={() => navigate("/projets")} />
+            <Suspense fallback={<p role="status">Chargement de l’Atelier…</p>}>
+              <NativeAtelier projectId={projectId} readOnly={!access.canWrite} />
+            </Suspense>
+          </>
+        )}
+
+        {activeModule === "projets-sources" && (
+          <>
+            <h2>Projets et sources</h2>
+            <ParcelleTool projectId={projectId} />
+            <h3 className="module-subtitle">Sources des étapes</h3>
+            <ProjectSources projectId={projectId} stepTitle={(n) => stepsQuery.data?.find((s) => s.number === n)?.title ?? ""} />
+          </>
+        )}
+
+        {activeModule === "programmation" && (
+          <>
+            <h2>Programmation</h2>
+            {programmeView === "modele" ? (
+              <ProgrammeModelLinksPage projectId={projectId} />
+            ) : programmeView === "hypotheses" ? (
+              <ProgrammeHypothesesPage projectId={projectId} />
             ) : (
-              <p role="status">Préparation du niveau…</p>
+              <>
+                <ProgrammeRepartition projectId={projectId} />
+                <ProgrammeTransfer projectId={projectId} />
+              </>
             )}
           </>
         )}
 
-        {activeModule !== "parcours" && activeModule !== "atelier" && descriptor && (
+        {activeModule === "analyses" && (
+          <>
+            <h2>Analyses métier</h2>
+            <AnalysesModule projectId={projectId} />
+          </>
+        )}
+
+        {activeModule === "documents" && (
+          <>
+            <h2>Documents</h2>
+            <DocumentsModule projectId={projectId} />
+          </>
+        )}
+
+        {activeModule === "collaboration" && (
+          <>
+            <h2>Collaboration</h2>
+            <CollaborationModule projectId={projectId} />
+          </>
+        )}
+
+        {!["parcours", "atelier", "programmation", "projets-sources", "analyses", "documents", "collaboration"].includes(activeModule) && descriptor && (
           <>
             <h2>{descriptor.label}</h2>
             <p>{descriptor.status}</p>

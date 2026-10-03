@@ -1,0 +1,116 @@
+{
+  "sourceVersion": "8.19.0",
+  "sourceBlock": "script h7-app (Parcours V7 · Harmonie par étape) — STATES, PROFILES, profile(), buildProposals(), decide(), retained",
+  "states": {
+    "proposed": "Proposée",
+    "retained": "Retenue",
+    "adapted": "Adaptée et retenue",
+    "translated": "Traduite dans le programme",
+    "drawn": "Dessinée · déclaration",
+    "verified": "Vérifiée · preuve déclarée",
+    "dismissed": "Écartée avec motif"
+  },
+  "retainedStates": [
+    "retained",
+    "adapted",
+    "translated",
+    "drawn",
+    "verified"
+  ],
+  "aliases": {
+    "commercial": "commerce",
+    "hotelier": "hotel",
+    "hotellerie": "hotel",
+    "hospitality": "hotel",
+    "industriel": "industrie",
+    "logistique": "industrie",
+    "equipement": "public",
+    "bureau": "tertiaire"
+  },
+  "defaultProfile": {
+    "label": "Type à préciser",
+    "site": "Comparer accueil extérieur, espace ouvert et desserte sans supposer un usage intérieur.",
+    "usage": "Définir les usages avant de distribuer des locaux.",
+    "decor": "Définir les fonctions avant de choisir les ambiances."
+  },
+  "mixedTrainingOffices": {
+    "requires": [
+      "enseignement",
+      "tertiaire"
+    ],
+    "label": "Formation & bureaux",
+    "site": "Étudier une arrivée groupée pour la formation, un accès quotidien lisible et une pause extérieure protégée de la desserte.",
+    "usage": "Séparer les périodes d’affluence de la formation et la concentration des bureaux ; mutualiser seulement les supports compatibles."
+  },
+  "profiles": {
+    "tertiaire": {
+      "label": "Bureaux",
+      "site": "Privilégier une arrivée lisible et une pause extérieure à l’écart des mouvements de service.",
+      "usage": "Distinguer accueil, échanges et concentration ; ménager des positions de travail hors des traversées.",
+      "decor": "Bois et textures mates pour les zones de travail ; métal en détails ; lumière réglable et absorption acoustique."
+    },
+    "residentiel": {
+      "label": "Habitation",
+      "site": "Comparer une arrivée identifiable, l’intimité du jardin et la relation aux voisins.",
+      "usage": "Distinguer vie commune, repos et services ; examiner intimité et accès sans imposer une direction de couchage.",
+      "decor": "Textures et lumières graduées ; palettes calmes pour le repos, plus actives pour la vie commune."
+    },
+    "commerce": {
+      "label": "Commerce",
+      "site": "Comparer visibilité de l’arrivée, espace extérieur de transition et desserte des livraisons.",
+      "usage": "Proposer un parcours lisible, une attente hors du passage et une caisse percevant les arrivées.",
+      "decor": "Éclairage hiérarchisé, matériaux cohérents avec l’offre, contrôle des reflets ; pas de promesse de fréquentation."
+    },
+    "hotel": {
+      "label": "Hôtellerie",
+      "site": "Distinguer séquence d’arrivée, extérieurs protégés et desserte de service.",
+      "usage": "Organiser accueil, séjour et repos en séparant les trajets de service.",
+      "decor": "Matériaux de contact, éclairage d’accueil puis lumière plus douce au repos ; entretien intégré."
+    },
+    "restauration": {
+      "label": "Restauration",
+      "site": "Comparer arrivée du public, éventuelle terrasse et accès de livraison, sans présumer d’autorisations.",
+      "usage": "Séparer public, personnel, préparation, propre/sale et déchets selon les exigences applicables.",
+      "decor": "Lumière et textures adaptées au repas ; acoustique, nettoyabilité et sécurité priment."
+    },
+    "industrie": {
+      "label": "Industrie et logistique",
+      "site": "Dissocier arrivée piétonne et desserte lourde ; conserver les emprises de manœuvre à vérifier.",
+      "usage": "Séparer production, logistique, personnel et retrait ; ne pas déduire une zone sûre d’un symbole.",
+      "decor": "Lisibilité fonctionnelle, surfaces entretenables, lumière de tâche ; aucune décoration dans les dégagements."
+    },
+    "public": {
+      "label": "Équipement public",
+      "site": "Étudier une arrivée collective compréhensible, l’attente extérieure et la desserte de service.",
+      "usage": "Préserver repérage, accueil inclusif, confidentialité et flexibilité des activités.",
+      "decor": "Repères visuels lisibles et matériaux durables ; ambiance adaptée aux intensités d’usage."
+    },
+    "enseignement": {
+      "label": "Enseignement / formation",
+      "site": "Prévoir des arrivées groupées, des transitions extérieures et une pause séparée de la desserte.",
+      "usage": "Distinguer apprentissage, échanges et retrait ; examiner visibilité des supports et orientation des postes.",
+      "decor": "Textures mates, lumière ajustable et absorption acoustique ; éviter surcharge visuelle et reflets."
+    },
+    "sante": {
+      "label": "Santé",
+      "site": "Comparer approche lisible, accès accompagnés, intimité extérieure et séparation des services.",
+      "usage": "Préserver confidentialité, repérage, circuits et conditions d’hygiène ; aucune promesse thérapeutique.",
+      "decor": "Matériaux compatibles avec l’hygiène et l’entretien ; repérage, calme visuel et acoustique à vérifier."
+    },
+    "mixte": {
+      "label": "Bâtiment mixte",
+      "site": "Séparer les arrivées incompatibles et préserver un extérieur partagé ou protégé selon les usages.",
+      "usage": "Identifier les composantes, leurs horaires et les interfaces pouvant être partagées sans conflit.",
+      "decor": "Une identité commune avec des intensités adaptées à chaque usage ; ne pas appliquer une ambiance uniforme."
+    }
+  },
+  "whyRule": "id<=4 → profil.site ; id<12 → profil.usage ; id===21 → profil.decor ; sinon « Préserver les intentions retenues tout en explicitant les réserves et responsabilités. »",
+  "decideRules": [
+    "adapted / dismissed : motif d'au moins 8 caractères",
+    "translated / drawn / verified : responsable requis et preuve d'au moins 8 caractères",
+    "drawn : étape >= 10 seulement (« L’état dessiné se renseigne dans l’Atelier ou dans l’Esquisse. »)",
+    "verified : refusé si l'étape est à réexaminer (données courantes changées)",
+    "retenir une proposition de parti écarte les autres propositions de parti retenues (« Variante remplacée par … »)",
+    "toute intention retenue remet à faire les étapes cibles ; avant l'étape 19, elle rétrograde un GO / GO sous conditions en « À reprendre »"
+  ]
+}

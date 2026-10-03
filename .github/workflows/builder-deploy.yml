@@ -52,6 +52,7 @@ jobs:
       # See apps/api/.env.test.example: app.test.ts's authorization scenarios
       # outrun the production auth rate limit within a single test run.
       AUTH_RATE_LIMIT: "500"
+      API_RATE_LIMIT: "5000"
 
     steps:
       - name: Checkout repository
@@ -84,7 +85,7 @@ jobs:
           PGPASSWORD: fadi_deploy_password
         run: |
           psql -h localhost -U fadi -d fadi -c \
-            "TRUNCATE architectural_objects, levels, project_steps, projects, sessions, users CASCADE;"
+            "TRUNCATE architectural_objects, atelier_store, levels, parcels, produced_documents, project_comments, project_members, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE;"
 
       - name: Start the API
         run: |
@@ -111,7 +112,8 @@ jobs:
         run: |
           echo "🚀 Starting apps/web (vite preview) on :4173..."
           # Must run with apps/web as cwd: vite preview resolves its config
-          # (and the preview.proxy it needs for /auth,/projects,/health)
+          # (and the preview.proxy it needs for /auth, /projects, /examples,
+          # /library, /notifications and /health — the same list as the dev proxy)
           # relative to where it's invoked from, not from --prefix — `npx
           # --prefix apps/web vite preview` silently serves 404s for
           # everything because it never finds apps/web/vite.config.ts.
@@ -190,6 +192,9 @@ jobs:
 
           echo "$TUNNEL_URL" > app_url.txt
           echo "$TUNNEL_PID" > tunnel.pid
+          # Annotation du job : l'URL est lisible par l'API GitHub (check-runs) dès cette étape,
+          # sans attendre la fin du run ni ouvrir les journaux.
+          echo "::notice title=Fadi en ligne::$TUNNEL_URL (disponible ${{ github.event.inputs.duration }} minutes)"
 
           echo ""
           echo "============================================"

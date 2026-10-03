@@ -34,8 +34,8 @@
  *    interchangeables derrière la même interface pendant la migration.
  */
 
-import type { Level, Point2 } from "./geometry";
-import type { FloorDesignLevel, ParcelLike } from "./parcel-geometry";
+import type { Level, Point2 } from "./geometry.js";
+import type { FloorDesignLevel, ParcelLike } from "./parcel-geometry.js";
 
 export interface ProjectSummary {
   id: string;
