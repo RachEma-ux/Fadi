@@ -1,0 +1,89 @@
+# Banc de mesures du lot 0 de l'Atelier (tâche L0.4, issue #5).
+# Paquet isolé docs/atelier/banc (hors workspaces, dépendances jamais dans le produit).
+# Chromium headless sur l'exécuteur GitHub sans GPU : le rendu WebGL2 passe par SwiftShader (rendu LOGICIEL,
+# ANGLE/Vulkan sur CPU). C'est le banc déclaré, pas un GPU réel ; la chaîne exacte du renderer est relevée
+# dans le JSON (WEBGL_debug_renderer_info). Résultats publiés en artefact « mesures-banc ».
+name: Atelier — banc de mesures (L0.4)
+
+on:
+  workflow_dispatch:
+    inputs:
+      repetitions:
+        description: "Nombre de répétitions par mesure"
+        required: false
+        default: "3"
+      trames:
+        description: "Trames d'orbite par rendu (rendu logiciel en CI : 60 suffit pour un p95)"
+        required: false
+        default: "60"
+      rayons:
+        description: "Rayons de sélection par rendu"
+        required: false
+        default: "100"
+  push:
+    branches:
+      - "tache/L0.4-*"
+    paths:
+      - "docs/atelier/banc/**"
+      - ".github/workflows/atelier-banc.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atelier-banc-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  banc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: docs/atelier/banc
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: docs/atelier/banc/package-lock.json
+
+      - name: Installer le banc (paquet isolé)
+        run: npm ci --no-audit --no-fund
+
+      - name: Installer Chromium (Playwright)
+        run: npx playwright install --with-deps chromium
+
+      - name: Lancer le banc
+        env:
+          REPETITIONS: ${{ github.event.inputs.repetitions || '3' }}
+          TRAMES: ${{ github.event.inputs.trames || '60' }}
+          RAYONS: ${{ github.event.inputs.rayons || '100' }}
+        run: node --expose-gc run.mjs --repetitions="$REPETITIONS" --trames="$TRAMES" --rayons="$RAYONS"
+
+      - name: Résumé
+        if: always()
+        run: |
+          node -e '
+            const fs = require("fs");
+            const f = "resultats/mesures-banc.json";
+            if (!fs.existsSync(f)) { console.log("Aucun résultat produit."); process.exit(0); }
+            const r = JSON.parse(fs.readFileSync(f, "utf8"));
+            const l = ["## Banc L0.4 — banc déclaré", ""];
+            for (const [k, v] of Object.entries(r.bancDeclare ?? {})) l.push(`- **${k}** : ${v}`);
+            const s = r.navigateur?.rendu?.synthese;
+            if (s) { l.push("", "| variante | ouverture (ms) | trame synchronisée p95 (ms) | rAF p95 (ms) | sélection p95 (ms) | triangles | appels |", "|---|---|---|---|---|---|---|");
+              for (const [k, v] of Object.entries(s)) l.push(`| ${k} | ${v.ouvertureTotaleMsMediane} | ${v.trameSynchroniseeP95MsMediane} | ${v.intervalleRafP95MsMediane} | ${v.selectionP95MsMediane} | ${v.triangles} | ${v.appelsDessin} |`); }
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, l.join("\n") + "\n");
+          '
+
+      - name: Publier les mesures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mesures-banc
+          path: docs/atelier/banc/resultats/*.json
+          if-no-files-found: warn
+          retention-days: 90
