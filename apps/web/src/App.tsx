@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./lib/auth-context";
+import { ScrollReset } from "./lib/scroll-reset";
 import { RequireAuth } from "./routes/RequireAuth";
 import { LoginPage } from "./routes/LoginPage";
 import { RegisterPage } from "./routes/RegisterPage";
@@ -34,49 +35,53 @@ export function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/connexion" element={<LoginPage />} />
-      <Route path="/inscription" element={<RegisterPage />} />
+    <>
+      {/* Avant les routes : sa remise à zéro (effet de mise en page) précède les effets des écrans qui ciblent un panneau. */}
+      <ScrollReset />
+      <Routes>
+        <Route path="/connexion" element={<LoginPage />} />
+        <Route path="/inscription" element={<RegisterPage />} />
 
-      <Route
-        element={
-          <RequireAuth>
-            <AppShell />
-          </RequireAuth>
-        }
-      >
-        <Route path="/accueil" element={<AccueilPage />} />
-        <Route path="/projets" element={<ProjectsPage />} />
         <Route
-          path="/projets/:projectId"
           element={
-            <Suspense fallback={<Loading />}>
-              <ProjectShell />
-            </Suspense>
+            <RequireAuth>
+              <AppShell />
+            </RequireAuth>
           }
-        />
-        <Route path="/harmonie" element={<HarmoniePage />} />
-        <Route
-          path="/bibliotheque/batiments"
-          element={
-            <Suspense fallback={<Loading />}>
-              <BuildingLibraryPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/bibliotheque/batiments/:id"
-          element={
-            <Suspense fallback={<Loading />}>
-              <BuildingCasePage />
-            </Suspense>
-          }
-        />
-        <Route path="/parametres" element={<ParametresPage />} />
-      </Route>
+        >
+          <Route path="/accueil" element={<AccueilPage />} />
+          <Route path="/projets" element={<ProjectsPage />} />
+          <Route
+            path="/projets/:projectId"
+            element={
+              <Suspense fallback={<Loading />}>
+                <ProjectShell />
+              </Suspense>
+            }
+          />
+          <Route path="/harmonie" element={<HarmoniePage />} />
+          <Route
+            path="/bibliotheque/batiments"
+            element={
+              <Suspense fallback={<Loading />}>
+                <BuildingLibraryPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/bibliotheque/batiments/:id"
+            element={
+              <Suspense fallback={<Loading />}>
+                <BuildingCasePage />
+              </Suspense>
+            }
+          />
+          <Route path="/parametres" element={<ParametresPage />} />
+        </Route>
 
-      <Route path="/" element={<Navigate to="/accueil" replace />} />
-      <Route path="*" element={<Navigate to="/accueil" replace />} />
-    </Routes>
+        <Route path="/" element={<Navigate to="/accueil" replace />} />
+        <Route path="*" element={<Navigate to="/accueil" replace />} />
+      </Routes>
+    </>
   );
 }

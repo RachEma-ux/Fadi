@@ -1399,7 +1399,27 @@ await page.goto(`${projectUrl}?module=parcours`);
 await page.waitForSelector(".overview-step");
 await page.screenshot({ path: `${OUT}/new-00-overview-mobile.png`, fullPage: true });
 // Présentation mobile du prototype : bandeau « Parcours du projet », grille des 21 étapes sur 3 colonnes qui défile horizontalement (`overview-grid`, 145 px minimum par colonne), en-tête de projet et recherche effacés.
-check("téléphone : bandeau « Parcours du projet » en tête, en-tête de projet et recherche effacés, grille 3 colonnes à défilement horizontal (cartes du prototype)", (await page.locator(".atelier-stage-header .atelier-stage-title").textContent()) === "Parcours du projet" && !(await page.locator(".project-header").isVisible()) && !(await page.locator(".app-topbar").isVisible()) && (await page.locator(".overview-grid").evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(" ").length === 3 && g.scrollWidth > g.clientWidth)) && (await page.locator(".overview-step").count()) === 21);
+check("téléphone : bandeau « Parcours du projet » en tête, barre de navigation, en-tête de projet et recherche de Fadi effacés (rangée des modules conservée), grille 3 colonnes à défilement horizontal (cartes du prototype)", (await page.locator(".atelier-stage-header .atelier-stage-title").textContent()) === "Parcours du projet" && !(await page.locator(".project-header").isVisible()) && !(await page.locator(".app-topbar").isVisible()) && !(await page.locator(".app-sidebar").isVisible()) && (await page.locator(".module-nav").isVisible()) && (await page.locator(".overview-grid").evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(" ").length === 3 && g.scrollWidth > g.clientWidth)) && (await page.locator(".overview-step").count()) === 21);
+// Remontée en haut de page à chaque changement de vue, comme `goto()` / `study()` / `overview()` du prototype : une étape ouverte depuis
+// le bas de la grille, « Suivante → » et « ← » repartent du bandeau (sans cela, la page restait au défilement de la grille).
+const atTop = () => page.evaluate(() => window.scrollY === 0 && document.querySelector(".atelier-stage-header").getBoundingClientRect().top >= 0);
+const card17 = page.locator(".overview-step").nth(16);
+await card17.scrollIntoViewIfNeeded();
+const scrolledBeforeTap = await page.evaluate(() => window.scrollY > 300);
+await card17.click();
+await page.waitForFunction(() => document.querySelector(".top-stage")?.textContent?.includes("ÉTAPE 17"));
+await page.waitForTimeout(200);
+const topAfterCard = await atTop();
+await page.evaluate(() => window.scrollTo(0, 800));
+await page.locator('button:has-text("Suivante →")').first().click();
+await page.waitForFunction(() => document.querySelector(".top-stage")?.textContent?.includes("ÉTAPE 18"));
+await page.waitForTimeout(200);
+const topAfterNext = await atTop();
+await page.evaluate(() => window.scrollTo(0, 800));
+await page.locator(".workflow-back").click();
+await page.waitForSelector(".overview-step");
+await page.waitForTimeout(200);
+check("téléphone : étape ouverte depuis le bas de la grille, « Suivante → », « ← » → page remontée en haut, bandeau visible (goto() / study() / overview() du prototype)", scrolledBeforeTap && topAfterCard && topAfterNext && (await atTop()), `grille défilée : ${scrolledBeforeTap}, étape : ${topAfterCard}, suivante : ${topAfterNext}`);
 await page.goto(`${projectUrl}?module=parcours&etape=6`);
 await page.waitForSelector(".programme-case-editor");
 await page.screenshot({ path: `${OUT}/new-06-mobile.png`, fullPage: true });

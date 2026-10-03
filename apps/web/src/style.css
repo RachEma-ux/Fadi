@@ -1066,7 +1066,10 @@ h3 {
   margin: 0 0 14px;
 }
 @media (max-width: 850px) {
-  /* Sur téléphone, le bandeau du prototype tient lieu d'en-tête du projet : la barre de recherche et l'en-tête de projet de Fadi s'effacent (la navigation des modules reste). */
+  /* Sur téléphone, le bandeau du prototype tient lieu d'en-tête : la barre de navigation de Fadi (repliée en haut sur téléphone),
+     la recherche et l'en-tête de projet s'effacent ; « ⌂ » et « ← » du bandeau ramènent aux projets et à la vue d'ensemble, comme
+     dans le prototype. Seule la rangée des modules reste, pour atteindre les six autres modules. */
+  body:has(.module-content-parcours) .app-sidebar,
   body:has(.module-content-parcours) .app-topbar,
   body:has(.module-content-parcours) .project-header {
     display: none;
