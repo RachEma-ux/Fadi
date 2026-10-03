@@ -35,6 +35,15 @@ type).
 | Documents | Plans, tables, schedules and reports |
 | Collaboration | Access, comments, revisions and synchronisation |
 
+Pure packages, independent of React, the DOM and the server framework: `packages/domain-model` (frames,
+requirements / hypotheses / recommendations, documents, `CommandHistory`), `packages/core-geometry` (pure
+geometry) and `packages/atelier-model` (the Atelier's typed model: `building.architecture` ontology, typed
+commands and their pure reducers, topological references, quantities, P.118 importer, projection to the
+analysis input, IFC mapping). `atelier-model` may depend on the other two packages only; `apps/api` and
+`apps/web` may depend on all three. Each package declares its contracts and allowed dependencies in a
+`manifest.json`, enforced by `scripts/check-module-deps.mjs` as part of `npm run typecheck`
+(`docs/atelier-cahier-des-charges.md` §5.1).
+
 Scaffolded as `apps/web/src/modules/<module>/README.md` (one file per module stating its responsibility and
 current status) so the boundary exists in the repository before it exists in the UI, instead of emerging by
 accident from a single `main.tsx`.
@@ -81,6 +90,17 @@ application-defined `Command<TState>`) as the mechanical skeleton for this rule.
 walls or stairs — wiring real Atelier commands (move a stair + its openings as one unit) is Atelier module
 work, not domain-model work, and is still open.
 
+**Transactional command cycle (Atelier, DrawAll V4.1 Architecture §6).** Every Atelier model change is a typed
+command envelope (`atelier-commands/1`: `requestId`, `baseRevision`, `label`, `commands[]`). Reducers are pure
+functions `(state, command) → { state, inverse, effects }` in `packages/atelier-model`, run identically in the
+browser (preview, offline) and on the server (validation). The server applies a batch atomically: rights
+re-read, project row locked, `baseRevision` checked (otherwise a detailed 409), journal and outbox written in
+the same transaction, `model_revision + 1`; a repeated `requestId` returns the recorded response without
+re-applying. Scripts and the assistant use the same commands; there is no other write path. Objects and
+commands carry an explicit state: `local` → `synchronisé` | `conflit`; derived documents are `à recalculer`
+after a command touches their sources; `publié` marks a published version. Specification:
+`docs/atelier-cahier-des-charges.md` §5.3–5.4.
+
 ## Technology choices
 
 | Layer | Choice |
@@ -90,7 +110,7 @@ work, not domain-model work, and is still open.
 | UI state | Zustand |
 | Server data loading/cache | TanStack Query |
 | Model changes | Reversible business commands + transactional validation |
-| Architectural rendering | Keep the existing Canvas/SVG engines initially |
+| Architectural rendering | 3D: three.js `WebGLRenderer` (WebGL2) — decided; WebGPU only behind a setting with automatic fallback. 2D plans and technical views: SVG / Canvas 2D from `core-geometry` |
 | Background computation | Web Workers |
 | Server | Node.js, TypeScript, Express, REST API |
 | Database | PostgreSQL + Drizzle |
@@ -104,9 +124,13 @@ operations actually used, not a speculative schema. The building's own semantic 
 wall, stair connecting two levels, shaft tied to a slab) stay in the application's relational/semantic model —
 PostGIS is not asked to express those.
 
-Three.js is a possible evolution of the rendering layer, decided later from real measurements (fluidity, model
-size, the specific 3D features actually needed) — not a prerequisite for turning the prototype into an
-application. See `packages/core-geometry/README.md` for exactly which Canvas/SVG functions are kept as-is and
+Three.js (WebGL2) is the Atelier's 3D renderer — a decision of the DrawAll V4.1 rebuild (normative decision D2),
+no longer an option. No performance figure is announced before it is measured: lot 0 publishes the bench
+(`docs/atelier/p0-mesures.md`) and the end-to-end scenario prints its timings (`⏱`). The canonical geometry of
+building objects is parametric (D1); solids, symbols and meshes are derived by an identified, versioned engine,
+and no object has two canonical geometries. An exact B-Rep kernel (OCCT) stays out of the repository until its
+licence is decided by the owner. The extracted prototype engine keeps rendering the current Atelier until the
+switch (lot 4). See `packages/core-geometry/README.md` for exactly which Canvas/SVG functions are kept as-is and
 why.
 
 ## Code reuse: decided function by function
@@ -155,6 +179,28 @@ run (`scripts/verify-restore.sh`) and an exportable project archive complete thi
 describes the permanent hosting (the API serves the web build; Docker image and compose file with a persistent
 PostGIS volume and HTTPS).
 
+### Named versions, variants, publication (Atelier)
+
+On top of microversions (one per validated command batch), the Atelier gets named versions, variants and
+publications (lot 7): a variant is a branch of the typed model; merging is a validated replay of its commands
+on the current state, never an automatic geometric merge. There is no CRDT on geometry (decision D3): editing
+reservations (423 for someone else's reservation), variants and replay instead; Yjs at most for annotation
+text, and only if lot 0 retains it.
+
+### Exchanges (Atelier)
+
+IFC 4.3 (ISO 16739-1:2024) export and import of a defined subset, with `IfcMapConversion` from the parcel's CRS,
+a per-exchange report (kept / transformed / omitted / to repair) and validation in CI against a fixed corpus —
+tested conformance, never "certified" (D5). DXF for views and 2D reference import, PDF for sheets, and the native
+package (JSON archive + versioned manifest). The exchange matrix lives in `docs/atelier/matrice-echanges.md`
+(lot 6); the class mapping is in `docs/atelier-cahier-des-charges.md`, annex C.
+
+### Capacity sheets before code (Atelier)
+
+No Atelier function is coded before its capacity sheet (`docs/atelier/fiches/DA-XX-YY.md`, template
+`_gabarit.md`) reaches the « spécifiée » state; « disponible » is set only with a linked proof (test, scenario,
+capture) and the owner's acceptance. States: à spécifier → spécifiée → prototype → vérifiée → disponible.
+
 ## Business expertise as traceable functions
 
 The Programmiste and Dessin de bâtiment skills become structured inputs, methods, calculations, rules and
@@ -184,8 +230,10 @@ definition / occurrence / representation identities, `building.architecture` ont
 versions and variants, IFC 4.3 exchange matrix): `docs/atelier-drawall.md` is the accepted proposal (clean
 rebuild in a new module, one Atelier in the product, the extracted engine deleted at the switch, P.118 imported
 one way) and `docs/atelier-cahier-des-charges.md` the execution specification. The amendments to this plan listed
-in the proposal's section 10 are applied by its lot 0; until then the sections above describe the repository as
-it stands.
+in the proposal's section 10 were applied in lot 0 (WebGL2 rendering decided, `packages/atelier-model`, the
+transactional command cycle and its states, named versions / variants / publication, the IFC 4.3 exchange matrix,
+capacity sheets before code). Where those sections describe the Atelier's target, the rebuild is in progress lot
+by lot (`docs/atelier/lots/`); the current Atelier remains the extracted engine until the switch (lot 4).
 
 ### Where this repository stands
 
