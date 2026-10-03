@@ -54,6 +54,46 @@ d'édition) et la sérialisation des écritures sont justement ce qui doit
 `postgis/postgis` dédié, puis le scénario Playwright complet contre l'API
 construite.
 
+## Bases et port par équipier (travail en équipe, worktrees)
+
+Chaque équipier travaille dans son worktree Git avec **ses propres bases**
+(`fadi_<equipier>` pour le développement, `fadi_<equipier>_test` pour
+`npm test`) et **son propre port** — jamais deux équipiers sur la même base
+(cahier des charges §4 et §9). `<equipier>` : minuscules, chiffres et `_`
+(ex. `outillage`, `base`, `client`).
+
+```sh
+EQUIPIER=outillage            # nom de l'équipier
+PORT_API=3011                 # port propre : 3001 + 10 × n (3011, 3021, 3031…), jamais 3001 (réservé au chef de projet)
+# Une fois, avec un rôle autorisé à créer des bases (ici le rôle « fadi » des sections précédentes) :
+sudo -u postgres createdb -O fadi "fadi_${EQUIPIER}"
+sudo -u postgres createdb -O fadi "fadi_${EQUIPIER}_test"
+sudo -u postgres psql -d "fadi_${EQUIPIER}" -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+sudo -u postgres psql -d "fadi_${EQUIPIER}_test" -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+
+# Dans le worktree de l'équipier (apps/api/.env et .env.test ne sont jamais commités) :
+cp apps/api/.env.example apps/api/.env
+cp apps/api/.env.test.example apps/api/.env.test
+#   .env      : DATABASE_URL=postgresql://fadi:<mot de passe>@localhost:5432/fadi_${EQUIPIER}
+#               PORT=${PORT_API}   WEB_ORIGIN=http://localhost:${PORT_API}
+#   .env.test : DATABASE_URL=postgresql://fadi:<mot de passe>@localhost:5432/fadi_${EQUIPIER}_test
+npm run db:migrate                                    # base de développement (lit .env)
+DATABASE_URL=postgresql://fadi:<mot de passe>@localhost:5432/fadi_${EQUIPIER}_test npm run db:migrate
+npm test                                              # les tests de l'API lisent .env.test
+```
+
+L'extension PostGIS est créée par `init.sql` si le rôle en a le droit ; la
+créer à l'avance avec un rôle administrateur évite d'avoir à donner ce droit
+au rôle `fadi`. Une variable d'environnement prime sur `.env` / `.env.test`
+(dotenv ne les écrase pas) : `DATABASE_URL=… npm test` vise une autre base
+sans toucher aux fichiers. Le serveur web de développement (`npm run dev`)
+relaie vers `:3001` ; un équipier sur un autre port lance l'API construite
+qui sert elle-même l'application (`WEB_DIST=apps/web/dist`, `WEB_ORIGIN`
+= `PORT`), ou le scénario de bout en bout avec
+`BASE_URL=http://localhost:${PORT_API}` (README racine, « End-to-end
+scenario »). En fin de tâche : `dropdb fadi_${EQUIPIER}_test` si la base
+n'est plus utile.
+
 ## Modèle de sécurité (voir aussi `references/security.md` de la skill)
 
 - Mots de passe : Argon2id (`@node-rs/argon2`), paramètres alignés sur les

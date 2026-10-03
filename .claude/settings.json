@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 1200,
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{let cwd=process.cwd();try{cwd=JSON.parse(d).cwd||cwd}catch{}const r=require('child_process').spawnSync('npm run typecheck && npm test',{cwd,shell:true,encoding:'utf8',maxBuffer:67108864});if(r.status===0)process.exit(0);const out=((r.stdout||'')+(r.stderr||'')).trim().split('\\n').slice(-60).join('\\n');console.error(out+'\\n\\nTâche refusée (hook TaskCompleted, cahier des charges §9) : npm run typecheck ou npm test échoue dans '+cwd+'. Corriger, relancer, puis clore la tâche ; un contrôle qui ne peut pas tourner (base absente…) est déclaré dans le compte rendu.');process.exit(2)})\""
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 30,
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{let cwd=process.cwd();try{cwd=JSON.parse(d).cwd||cwd}catch{}const r=require('child_process').spawnSync('git',['status','--porcelain'],{cwd,encoding:'utf8'});if(r.status!==0||!r.stdout.trim())process.exit(0);console.error('Équipier inactif avec des modifications non commitées dans '+cwd+' (hook TeammateIdle, cahier des charges §9) :\\n'+r.stdout.split('\\n').slice(0,20).join('\\n')+'\\nTerminer la tâche (un commit [Lx.y] sur la branche de la tâche) et envoyer le compte rendu au chef de projet : fait, non fait, tests, fichiers, questions.');process.exit(2)})\""
+          }
+        ]
+      }
+    ]
+  }
+}
