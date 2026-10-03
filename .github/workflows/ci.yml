@@ -40,7 +40,8 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  # Scénario Playwright de bout en bout (apps/web/e2e/parcours-scenario.mjs) :
+  # Scénario Playwright de bout en bout (apps/web/e2e/run.mjs, découpé par module dans apps/web/e2e/scenarios/,
+  # total des contrôles comparé à apps/web/e2e/attendu.json) :
   # le parcours complet sur P.118 — import, 21 étapes, Atelier, parcelle,
   # Harmonie, bibliothèque, liaisons, documents, collaboration, hors-ligne,
   # partage — contre l'API construite, qui sert elle-même le build de l'application (mode de production).
@@ -92,7 +93,7 @@ jobs:
       - name: Scénario Playwright
         run: |
           set -o pipefail
-          node apps/web/e2e/parcours-scenario.mjs 2>&1 | tee e2e.log
+          node apps/web/e2e/run.mjs 2>&1 | tee e2e.log
       - name: Sauvegarde puis restauration vérifiées (scripts/verify-restore.sh) sur la base du scénario
         env:
           PGPASSWORD: fadi_ci_password

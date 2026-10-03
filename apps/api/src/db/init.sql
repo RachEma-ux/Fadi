@@ -6,7 +6,20 @@
 -- versionnées — à l'échelle de l'équipe, Drizzle Kit (ou équivalent) devra
 -- prendre le relais dès que le schéma évolue après le premier déploiement.
 
+-- Sections par module (L0.5) : chaque module possède le bloc délimité par
+-- « -- >>> module: <nom> » et « -- <<< module: <nom> » ; on n'écrit que dans
+-- sa section. L'ordre des sections respecte les clés étrangères (comptes et
+-- projets d'abord) ; chaque instruction reste idempotente (IF NOT EXISTS).
+
+-- >>> module: socle
+-- Extensions communes à tous les modules.
+
 CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- <<< module: socle
+
+-- >>> module: comptes
+-- Comptes et sessions (routes auth, notifications).
 
 CREATE TABLE IF NOT EXISTS users (
   id text PRIMARY KEY,
@@ -25,6 +38,11 @@ CREATE TABLE IF NOT EXISTS sessions (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions (user_id);
+
+-- <<< module: comptes
+
+-- >>> module: projets
+-- Projets et sources : projets (colonnes Harmony, verrou d'édition, contexte du site comprises), parcelles, sources des étapes.
 
 CREATE TABLE IF NOT EXISTS projects (
   id text PRIMARY KEY,
@@ -54,38 +72,6 @@ ALTER TABLE projects ADD COLUMN IF NOT EXISTS editing_lock jsonb;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS site_context jsonb;
 UPDATE projects SET example_mode = 'reference' WHERE source_example_id IS NOT NULL AND example_mode IS NULL;
 
--- Contenu réel des 21 étapes du Parcours, une ligne par étape et par projet.
-CREATE TABLE IF NOT EXISTS project_steps (
-  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
-  step_number integer NOT NULL,
-  status text NOT NULL DEFAULT 'a-faire',
-  content jsonb NOT NULL DEFAULT '{}'::jsonb,
-  PRIMARY KEY (project_id, step_number)
-);
-CREATE INDEX IF NOT EXISTS project_steps_project_id_idx ON project_steps (project_id);
-
--- Répartition programmatique (module Programmation), une ligne par projet,
--- créée à la première modification ; voir schema.ts.
-CREATE TABLE IF NOT EXISTS programme_repartitions (
-  project_id text PRIMARY KEY REFERENCES projects (id) ON DELETE CASCADE,
-  type text NOT NULL,
-  base_area double precision NOT NULL,
-  mode text NOT NULL,
-  custom jsonb NOT NULL DEFAULT '{}'::jsonb,
-  components jsonb NOT NULL DEFAULT '[]'::jsonb,
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-
--- Magasin du moteur de l'Atelier natif (clés design.v13.*), voir schema.ts.
-CREATE TABLE IF NOT EXISTS atelier_store (
-  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
-  key text NOT NULL,
-  value jsonb NOT NULL,
-  revision integer NOT NULL DEFAULT 1,
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (project_id, key)
-);
-
 -- Fichiers de l'outil Parcelle (étape 01), contrat /api/parcels scopé par projet.
 CREATE TABLE IF NOT EXISTS parcels (
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
@@ -100,17 +86,6 @@ CREATE TABLE IF NOT EXISTS parcels (
   PRIMARY KEY (project_id, id)
 );
 
--- Cas de programme appliqués (bibliothèque des bâtiments) : une ligne par révision, la plus haute est courante.
-CREATE TABLE IF NOT EXISTS programme_cases (
-  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
-  revision integer NOT NULL,
-  case_id text NOT NULL,
-  scenario_id text NOT NULL,
-  data jsonb NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (project_id, revision)
-);
-
 -- Sources de l'étape : pièces jointes par étape et par projet (FILE_DB du prototype, côté serveur).
 CREATE TABLE IF NOT EXISTS step_files (
   id text PRIMARY KEY,
@@ -123,6 +98,64 @@ CREATE TABLE IF NOT EXISTS step_files (
   added_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS step_files_project_step_idx ON step_files (project_id, step_number);
+
+-- <<< module: projets
+
+-- >>> module: parcours
+-- Parcours : contenu des 21 étapes.
+
+-- Contenu réel des 21 étapes du Parcours, une ligne par étape et par projet.
+CREATE TABLE IF NOT EXISTS project_steps (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  step_number integer NOT NULL,
+  status text NOT NULL DEFAULT 'a-faire',
+  content jsonb NOT NULL DEFAULT '{}'::jsonb,
+  PRIMARY KEY (project_id, step_number)
+);
+CREATE INDEX IF NOT EXISTS project_steps_project_id_idx ON project_steps (project_id);
+
+-- <<< module: parcours
+
+-- >>> module: programmation
+-- Programmation : répartition et cas de programme appliqués.
+
+-- Répartition programmatique (module Programmation), une ligne par projet,
+-- créée à la première modification ; voir schema.ts.
+CREATE TABLE IF NOT EXISTS programme_repartitions (
+  project_id text PRIMARY KEY REFERENCES projects (id) ON DELETE CASCADE,
+  type text NOT NULL,
+  base_area double precision NOT NULL,
+  mode text NOT NULL,
+  custom jsonb NOT NULL DEFAULT '{}'::jsonb,
+  components jsonb NOT NULL DEFAULT '[]'::jsonb,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Cas de programme appliqués (bibliothèque des bâtiments) : une ligne par révision, la plus haute est courante.
+CREATE TABLE IF NOT EXISTS programme_cases (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  revision integer NOT NULL,
+  case_id text NOT NULL,
+  scenario_id text NOT NULL,
+  data jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (project_id, revision)
+);
+
+-- <<< module: programmation
+
+-- >>> module: atelier-natif
+-- Atelier natif actuel (moteur extrait du prototype) : magasin, niveaux, objets. Tables à supprimer au lot 4 (bascule, cahier des charges §5.5).
+
+-- Magasin du moteur de l'Atelier natif (clés design.v13.*), voir schema.ts.
+CREATE TABLE IF NOT EXISTS atelier_store (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  key text NOT NULL,
+  value jsonb NOT NULL,
+  revision integer NOT NULL DEFAULT 1,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (project_id, key)
+);
 
 CREATE TABLE IF NOT EXISTS levels (
   id text PRIMARY KEY,
@@ -149,6 +182,16 @@ CREATE TABLE IF NOT EXISTS architectural_objects (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS architectural_objects_level_id_idx ON architectural_objects (level_id);
+
+-- <<< module: atelier-natif
+
+-- >>> module: atelier
+-- Réservée au nouvel Atelier (tables atelier_*, cahier des charges §5.5 ; propriétaire : équipier « base », §9). Vide au lot 0.
+
+-- <<< module: atelier
+
+-- >>> module: documents
+-- Documents : exports de dessins et productions enregistrées.
 
 CREATE TABLE IF NOT EXISTS drawing_exports (
   id text PRIMARY KEY,
@@ -181,6 +224,11 @@ CREATE TABLE IF NOT EXISTS produced_documents (
   PRIMARY KEY (project_id, kind)
 );
 
+-- <<< module: documents
+
+-- >>> module: collaboration
+-- Collaboration : commentaires et membres.
+
 CREATE TABLE IF NOT EXISTS project_comments (
   id text PRIMARY KEY,
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
@@ -203,3 +251,5 @@ CREATE TABLE IF NOT EXISTS project_members (
   PRIMARY KEY (project_id, user_id)
 );
 CREATE INDEX IF NOT EXISTS project_members_user_idx ON project_members (user_id);
+
+-- <<< module: collaboration

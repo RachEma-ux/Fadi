@@ -8,3 +8,7 @@ coverage/
 !.env.deploy.example
 *.tsbuildinfo
 .DS_Store
+
+# Worktrees Git des équipiers Claude Code (un par tâche, jamais commités)
+.claude/worktrees/
+.claude/settings.local.json

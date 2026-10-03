@@ -15,7 +15,9 @@
     "dev:api": "npm run dev --workspace=@fadi/api",
     "build": "npm run build --workspace=@fadi/web --workspace=@fadi/api",
     "db:migrate": "npm run db:migrate --workspace=@fadi/api",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "node scripts/check-module-deps.mjs && npm run typecheck --workspaces --if-present",
+    "check:modules": "node scripts/check-module-deps.mjs",
+    "e2e": "node apps/web/e2e/run.mjs",
     "test": "npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@fadi/api"
   }
 }

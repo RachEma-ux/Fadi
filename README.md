@@ -66,8 +66,16 @@ End-to-end scenario (Playwright, Chromium), against the built API serving the bu
 
 ```sh
 WEB_DIST=apps/web/dist node apps/api/dist/server.js &   # DATABASE_URL, WEB_ORIGIN=http://localhost:3001, PORT=3001
-BASE_URL=http://localhost:3001 node apps/web/e2e/parcours-scenario.mjs   # ~330 checks incl. axe-core and the P.118 Atelier acceptance; writes docs/migration/captures/webapp/
+BASE_URL=http://localhost:3001 node apps/web/e2e/run.mjs   # 327 checks incl. axe-core and the P.118 Atelier acceptance; writes docs/migration/captures/webapp/
+BASE_URL=http://localhost:3001 node apps/web/e2e/run.mjs --only 05-atelier   # one module file, preceded by the segments it depends on
+node apps/web/e2e/run.mjs --plan [--only 05-atelier]   # list the segments that would run, without a browser
 ```
+
+The scenario is split by module (`docs/atelier-cahier-des-charges.md`, annex D): `apps/web/e2e/scenarios/00-compte.mjs` …
+`12-mesures.mjs`, one owner per file, shared helpers in `apps/web/e2e/lib/`. `run.mjs` chains their segments in the
+historical order of the walk-through, with the same database, browser and page, prints the number of checks (total and
+per file) and compares it with `apps/web/e2e/attendu.json`: a drop fails unless the reference is lowered in the same
+commit with its reason in `historique`. `--only` is a development aid; only the full chain (CI) is authoritative.
 
 Permanent hosting (stable URL, persistent PostGIS database, daily backups, verified restore procedure, HTTPS):
 `docs/deploiement.md` — `Dockerfile`, `docker-compose.yml`, `scripts/backup.sh`, `scripts/restore.sh`,
