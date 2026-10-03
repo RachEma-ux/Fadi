@@ -35,7 +35,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Maquette à jour avec la source P.118
-        run: python3 docs/atelier/maquette/outils/extraire-p118.py --verifier
+        run: |
+          python3 docs/atelier/maquette/outils/extraire-p118.py --verifier
+          python3 docs/atelier/maquette/outils/outils.py --verifier
       - run: npm ci --no-audit --no-fund
       - name: Installer Chromium (Playwright)
         run: npx playwright install --with-deps chromium

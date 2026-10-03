@@ -100,6 +100,13 @@ rouverte au lot 7).
 
 **Suppressions de fonctions visibles et périmètre** (points 6 et 8) :
 
+6 bis. **Outils du prototype prévus au lot 5** — Cotation, Texte, Mètre, Métré, Exporter (PNG / SVG / DXF) existent
+   dans l'Atelier actuel, mais leurs entrées (DA-15-01 / 02 / 04, DA-16-10, DA-14 / DA-22-03) sont au lot 5, après
+   la bascule du lot 4 qui supprime cet Atelier : ils disparaîtraient entre les deux. Au choix : les avancer au
+   lot 3 en version simple (cotation et texte libres, mesure, export PNG / SVG de la vue), accepter le trou, ou
+   placer le lot 5 avant la bascule. Les 27 outils du prototype et les 63 fiches ont chacun leur place dans la
+   maquette (tableau « Exhaustivité des outils » du sommaire).
+
 7. « Extruder » du prototype fait en réalité une coque ou un percement : ces fonctions disparaissent au lot 4
    sans figurer au §5.5. Les garder au lot 3, ou les renvoyer à DA-04-09 / 10 (optionnel) ?
 8. Les 7 pièces de P.118 sans géométrie courante : les garder ou les retirer ?

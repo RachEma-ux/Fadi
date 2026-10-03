@@ -14,6 +14,7 @@
     tous('[data-regle="' + cle + '"]').forEach(function (b) {
       var actif = b.getAttribute("data-valeur") === valeur;
       if (b.getAttribute("role") === "radio") b.setAttribute("aria-checked", String(actif));
+      else if (b.getAttribute("role") === "tab") b.setAttribute("aria-selected", String(actif));
       else b.setAttribute("aria-pressed", String(actif));
     });
     if (cle === "etape") {
@@ -30,7 +31,7 @@
   }
 
   // Valeurs par défaut, puis adresse.
-  var defauts = { niveau: "essentiel", etape: "repos", mode: "2d", sel: "mur" };
+  var defauts = { niveau: "essentiel", etape: "repos", mode: "2d", sel: "mur", famille: "creer" };
   Object.keys(defauts).forEach(function (cle) { etat(cle, params.get(cle) || body.getAttribute("data-" + cle) || defauts[cle]); });
 
   tous("[data-regle]").forEach(function (b) {

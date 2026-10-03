@@ -451,3 +451,26 @@ table.corresp { table-layout: fixed; }
 .tel .strip h1 { font-size: 17px; }
 .tel-geste { align-items: center; }
 .tel .segment.clair button { min-height: var(--cible); }
+
+/* Familles du niveau Complet : un groupe d'outils par onglet (outils/outils.py) --------------------------- */
+.groupe-fam { display: contents; }
+body[data-famille="creer"] .groupe-fam:not([data-famille="creer"]),
+body[data-famille="modifier"] .groupe-fam:not([data-famille="modifier"]),
+body[data-famille="connecter"] .groupe-fam:not([data-famille="connecter"]),
+body[data-famille="analyser"] .groupe-fam:not([data-famille="analyser"]),
+body[data-famille="documenter"] .groupe-fam:not([data-famille="documenter"]),
+body[data-famille="partager"] .groupe-fam:not([data-famille="partager"]) { display: none !important; }
+.familles .nb { font-size: 11px; font-weight: 700; padding: 0 6px; border-radius: 999px; background: rgba(255, 255, 255, .2); margin-left: 4px; }
+.familles button[aria-selected="true"] .nb { background: var(--line); }
+.lot {
+  display: inline-block; font-size: 10px; font-weight: 700; line-height: 1.3; padding: 0 5px; border-radius: 999px;
+  background: var(--info-fond); color: #12417a; border: 1px solid #b4cde9; white-space: nowrap;
+}
+.lot.trou { background: var(--alerte-fond); color: #7a3d0c; border: 1px dashed #c97a2a; }
+.outil .lot { margin-top: 1px; }
+.navigation-vue { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.grille-outils .outil { font-size: 11.5px; }
+/* Tableaux d'exhaustivité : jamais de défilement horizontal de la page à 390 px. */
+.defile { overflow-x: auto; max-width: 100%; }
+table.corresp td .lot { white-space: normal; }
+table.corresp td, table.corresp th { overflow-wrap: anywhere; }
