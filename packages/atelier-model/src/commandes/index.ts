@@ -1,0 +1,163 @@
+/**
+ * Registre des commandes du contrat `atelier-commands/1` (annexe B du cahier des charges) et application
+ * atomique d'un lot : même code dans le navigateur (aperçu) et sur le serveur (validation). L'inverse d'un lot
+ * est un instantané différentiel (`interne.restaurer`), appliqué par annuler / rétablir comme une nouvelle
+ * microversion.
+ */
+import type { ModeleAtelier } from "../modele.js";
+import type { Classe } from "../ontologie.js";
+import {
+  appliquerDifferentiel,
+  commandeInverse,
+  CONTRAT_COMMANDES,
+  differentiel,
+  effetsVides,
+  ErreurCommande,
+  fusionnerEffets,
+  generateurIds,
+  TYPE_RESTAURER,
+  type Commande,
+  type ContexteCommande,
+  type Effets,
+  type Enveloppe,
+  type InstantaneDiff,
+  type Reducteur,
+} from "./base.js";
+import { joindreMurs, scinderMur } from "./mur.js";
+import { creerOccurrence, modifierOccurrence, supprimerOccurrence } from "./objets.js";
+import { affecterClassification, definirPropriete, rattacherReference, reducteursCalque, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
+import { reducteursTransformer } from "./transformer.js";
+
+const triplet = (classe: Classe, prefixe: string, creer = "creer"): Record<string, Reducteur> => ({
+  [`${prefixe}.${creer}`]: (etat, p, ctx) => creerOccurrence(etat, p, ctx, classe),
+  [`${prefixe}.modifier`]: (etat, p, ctx) => modifierOccurrence(etat, p, ctx, classe),
+  [`${prefixe}.supprimer`]: (etat, p, ctx) => supprimerOccurrence(etat, p, ctx, classe),
+});
+
+const FORMES = ["ligne", "polyligne", "arc", "cercle", "rectangle", "polygone", "spline", "construction", "hachure"] as const;
+
+export const REDUCTEURS: Record<string, Reducteur> = {
+  // Objets, générique
+  "objet.creer": (etat, p, ctx) => creerOccurrence(etat, p, ctx),
+  "objet.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx),
+  "objet.supprimer": (etat, p, ctx) => supprimerOccurrence(etat, p, ctx),
+  // Niveaux
+  "niveau.creer": (etat, p, ctx) => reducteursNiveau.creer(etat, p, ctx),
+  "niveau.modifier": (etat, p) => reducteursNiveau.modifier(etat, p),
+  "niveau.supprimer": (etat, p, ctx) => reducteursNiveau.supprimer(etat, p, ctx),
+  // Murs
+  ...triplet("mur", "mur", "tracer"),
+  "mur.scinder": (etat, p, ctx) => scinderMur(etat, p, ctx),
+  "mur.joindre": (etat, p, ctx) => joindreMurs(etat, p, ctx),
+  // Ouvertures (classe choisie par `classe` : porte / fenetre / ouverture)
+  "ouverture.poser": (etat, p, ctx) => {
+    const classe = (p["classe"] as Classe | undefined) ?? "ouverture";
+    if (classe !== "porte" && classe !== "fenetre" && classe !== "ouverture") throw new ErreurCommande("invalide", "classe", "classe d'ouverture : porte / fenetre / ouverture");
+    return creerOccurrence(etat, p, ctx, classe);
+  },
+  "ouverture.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "ouverture"),
+  "ouverture.deplacer": (etat, p, ctx) => modifierOccurrence(etat, { id: p["id"], params: { position: p["position"] } }, ctx, "ouverture"),
+  "ouverture.supprimer": (etat, p, ctx) => supprimerOccurrence(etat, p, ctx, "ouverture"),
+  // Dalles, toitures, escaliers, pièces, espaces, zones, poteaux, solides
+  ...triplet("dalle", "dalle"),
+  ...triplet("toiture", "toiture"),
+  ...triplet("escalier", "escalier"),
+  ...triplet("piece", "piece"),
+  ...triplet("espace", "espace"),
+  ...triplet("zone", "zone"),
+  ...triplet("poteau", "poteau"),
+  ...triplet("solide", "solide", "extruder"),
+  ...triplet("reference-plan", "referencePlan"),
+  // Esquisse : une commande par forme + modifier / supprimer
+  ...Object.fromEntries(FORMES.map((forme) => [`esquisse.${forme}`, ((etat, p, ctx) => creerOccurrence(etat, { ...p, params: { ...((p["params"] as Record<string, unknown> | undefined) ?? p), forme } }, ctx, "esquisse")) as Reducteur])),
+  "esquisse.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "esquisse"),
+  "esquisse.supprimer": (etat, p, ctx) => supprimerOccurrence(etat, p, ctx, "esquisse"),
+  // Transformations
+  "transformer.deplacer": reducteursTransformer.deplacer,
+  "transformer.copier": reducteursTransformer.copier,
+  "transformer.tourner": reducteursTransformer.tourner,
+  "transformer.miroir": reducteursTransformer.miroir,
+  "transformer.echelle": reducteursTransformer.echelle,
+  "transformer.etirer": reducteursTransformer.etirer,
+  "transformer.ajuster": reducteursTransformer.ajuster,
+  "transformer.prolonger": reducteursTransformer.prolonger,
+  "transformer.decaler": reducteursTransformer.decaler,
+  "transformer.repeter": reducteursTransformer.repeter,
+  "transformer.decomposer": reducteursTransformer.decomposer,
+  "transformer.pointsDeControle": reducteursTransformer.pointsDeControle,
+  "transformer.raccorder": reducteursTransformer.raccorder,
+  "transformer.chanfreiner": reducteursTransformer.chanfreiner,
+  // Annotations
+  ...triplet("cotation", "cotation"),
+  "cotation.rattacher": (etat, p, ctx) => rattacherReference(etat, p, ctx),
+  ...triplet("texte", "texte"),
+  ...triplet("etiquette", "etiquette"),
+  // Organisation
+  "calque.creer": (etat, p, ctx) => reducteursCalque.creer(etat, p, ctx),
+  "calque.modifier": (etat, p) => reducteursCalque.modifier(etat, p),
+  "calque.supprimer": (etat, p) => reducteursCalque.supprimer(etat, p),
+  "calque.affecter": (etat, p, ctx, c) => reducteursCalque.affecter(etat, p, ctx, c),
+  "groupe.creer": (etat, p, ctx, c) => reducteursGroupe.creer(etat, p, ctx, c),
+  "groupe.dissoudre": (etat, p) => reducteursGroupe.dissoudre(etat, p),
+  "type.definir": (etat, p, ctx) => reducteursType.definir(etat, p, ctx),
+  "type.modifier": (etat, p) => reducteursType.modifier(etat, p),
+  "propriete.definir": (etat, p) => definirPropriete(etat, p),
+  "classification.affecter": (etat, p) => affecterClassification(etat, p),
+  "reference.reparer": (etat, p) => reparerReference(etat, p),
+  // Site
+  "site.parcelle.definir": (etat, p) => reducteursSite.parcelle(etat, p),
+  "site.emprise.definir": (etat, p) => reducteursSite.emprise(etat, p),
+  // Inverse
+  [TYPE_RESTAURER]: (etat, p) => {
+    const diff = p["diff"] as InstantaneDiff | undefined;
+    if (!diff) throw new ErreurCommande("invalide", "diff", "instantané différentiel requis");
+    const suivant = appliquerDifferentiel(etat, diff);
+    const effets = effetsVides();
+    for (const cle of Object.keys(diff.avant) as (keyof InstantaneDiff["avant"])[]) effets.modifies.push(...Object.keys(diff.avant[cle] ?? {}));
+    for (const cle of Object.keys(diff.crees) as (keyof InstantaneDiff["crees"])[]) effets.supprimes.push(...(diff.crees[cle] ?? []));
+    return { etat: suivant, effets };
+  },
+};
+
+export const TYPES_COMMANDES: readonly string[] = Object.keys(REDUCTEURS);
+
+export function appliquerCommande(etat: ModeleAtelier, commande: Commande, ctx: ContexteCommande): { etat: ModeleAtelier; effets: Effets } {
+  const reducteur = REDUCTEURS[commande.type];
+  if (!reducteur) throw new ErreurCommande("inconnue", "type", `commande inconnue : ${commande.type}`);
+  if (typeof commande.params !== "object" || commande.params === null) throw new ErreurCommande("invalide", "params", "paramètres requis");
+  return reducteur(etat, commande.params, ctx, commande.cibles ?? []);
+}
+
+export interface ResultatLot {
+  etat: ModeleAtelier;
+  effets: Effets;
+  /** Commande inverse (instantané différentiel) : l'appliquer revient à l'état de départ. */
+  inverse: Commande;
+}
+
+/** Applique un lot de commandes de façon atomique : une erreur laisse l'état de départ intact (immuable). */
+export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): ResultatLot {
+  if (enveloppe.contract !== CONTRAT_COMMANDES) throw new ErreurCommande("invalide", "contract", `contrat non pris en charge : ${enveloppe.contract} (attendu ${CONTRAT_COMMANDES})`);
+  if (!Array.isArray(enveloppe.commands) || enveloppe.commands.length === 0) throw new ErreurCommande("invalide", "commands", "lot vide");
+  if (enveloppe.commands.length > 500) throw new ErreurCommande("invalide", "commands", "lot trop grand (500 commandes maximum)");
+  const ctx: ContexteCommande = { ids: generateurIds(enveloppe.requestId) };
+  let courant = etat;
+  let effets = effetsVides();
+  enveloppe.commands.forEach((commande, i) => {
+    try {
+      const r = appliquerCommande(courant, commande, ctx);
+      courant = r.etat;
+      effets = fusionnerEffets(effets, r.effets);
+    } catch (err) {
+      if (err instanceof ErreurCommande) throw new ErreurCommande(err.code, `commands[${i}].${err.chemin}`, `commands[${i}].${err.chemin} : ${err.message}`);
+      throw err;
+    }
+  });
+  return { etat: courant, effets, inverse: commandeInverse(differentiel(etat, courant)) };
+}
+
+export { CONTRAT_COMMANDES, ErreurCommande, TYPE_RESTAURER, generateurIds, differentiel, appliquerDifferentiel, commandeInverse };
+export type { Commande, Enveloppe, Effets, ContexteCommande, InstantaneDiff, Reducteur };
+export { detecterPieces, type PropositionPiece } from "./organisation.js";
+export { transformerOccurrence } from "./transformer.js";
+export { validerParams } from "./validation.js";

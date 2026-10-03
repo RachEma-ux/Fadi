@@ -407,16 +407,16 @@ liste chaque famille avec effectif source, effectif cible et transformations.
 | `doors[]`, `windows[]` (`hostWallId`, `t`, `width`, `height`, `sill`, `mark`) | `porte`, `fenetre` + relation `heberge-par` | `t` conservé ; `distance` dérivée ; hôte absent → objet créé **et** problème « hôte introuvable » (jamais supprimé) |
 | `stairs[]` (`a`, `b`, `width`, `height`, `baseOffset`, `steps`, `risers`, `waistThickness`, `stairGroup`, `sourceLevel`, `targetLevel`, `planReferenceOnly`, `designRevision`) | `escalier` + relation `relie` | Les 32 occurrences sont des vues par niveau d'escaliers physiques : conserver chaque occurrence avec `referencePlanSeulement` ; regrouper par `stairGroup` en propriété, sans fusion silencieuse |
 | `columns[]` (`p`, `shapeId`, `width`, `depth`, `height`, `angle`, `designStatus`) | `poteau` (building.structure) | — |
-| `rooms[]` (`polygons`, `code`, `name`, `area`, `category`, `notes`, `label`) | `piece` | `area` → `aireDeclaree` (provenance `prototype`) ; aire calculée dérivée ; écart > tolérance → problème listé |
+| `rooms[]` (`polygons`, `code`, `name`, `area`, `category`, `notes`, `label`) | `espace` (déclaré) | `area` → `aireDeclaree` ; aire des pièces correspondantes calculée ; écart > tolérance → problème `aire-ecart` listé |
 | `paths[]` `role = floor-slab` | `dalle` | `thickness`, `baseOffset`, `holes` conservés |
 | `paths[]` `role = roof-slab` | `toiture` type `plate` | — |
-| `paths[]` `role = room` | relation `piece.polygones` si le code correspond, sinon `espace` | Jamais une pièce créée en double |
+| `paths[]` `role = room` (74) | `piece` (identifiant du tracé conservé : les liaisons Programmation `niveau|idPiece` restent valides) ; `name` « CODE · nom » → `code`, `nom` | Les métadonnées `rooms[]` (45) deviennent des `espace` déclarés (aire, catégorie, notes) reliés par `correspond-a` aux pièces de même code et niveau ; un écart d'aire au-delà de la tolérance ou une absence de correspondance est un problème listé, jamais une fusion (D-014) |
 | `paths[]` `role = core-zone` | `zone` | — |
 | `paths[]` `role = plan-reference` | `reference-plan` | — |
 | `paths[]` `role ∈ {solid, clearance, ramp-retaining-wall, ramp-guard, basement-ramp, ramp-direction, ramp-drain}` et tout rôle inconnu | `solide` avec `role` conservé | Calques `Mobilier`, `Escaliers`, `Noyaux`, `Réseaux sanitaires`, `Gabarits accès`, `Rampe sous-sol` conservés ; un rôle inconnu est listé dans le rapport |
 | `dims[]` (`a`, `b`, `offset`) | `cotation` **sans référence** (état « libre », pas « à réparer ») | Une cote du prototype n'est pas rattachée : la fiche DA-15-02 décrit le rattachement à la demande |
 | `texts[]` | `texte` | — |
-| `floorDesign.layers` (20 calques : couleur, remplissage, visible, verrouillé) | `calque` | Ordre conservé |
+| `levels[id].layers` (20 calques par niveau, 22 au total : couleur, remplissage, visible, verrouillé) | `calque` | Union des calques déclarés par niveau ; `activeLayer` = état d'affichage, hors modèle |
 | `nativeParcel` (sommets, `vertexIds`, `crs` EPSG:26191, `sourceCrs`, aires) | `parcelle` | Sommets tagués `cadastral` + `local` ; `officialArea`, `correctedAreaPrinted`, `area` conservés séparément |
 | `buildingFootprint` (`vertices`, `architectureRevision`) | `emprise` | — |
 | `meta.structure` | `structureDeclaree` + hypothèses | `loadNature: "supposée, à confirmer"` → hypothèse, statut « à confirmer » (R4) |
