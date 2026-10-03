@@ -476,6 +476,7 @@ l'ancien. **Vérifiable :** CI verte ; démonstration en ligne de commande dans 
 | L3a.2 | Éditeur de plan 2D (SVG / Canvas, pointer events) : accrochages, saisie de précision, grille, calques, sélection (clic, lasso, filtre par classe), primitives d'esquisse (DA-01-01…06, 09, 10, 11), transformations (DA-02-01…15, 17) comme commandes avec aperçu | équipier « 2D » |
 | L3a.3 | Objets d'architecture : murs (types, jonctions, scission, alignement), portes / fenêtres / ouvertures hébergées (déplacement le long du mur, contrôle d'emprise), dalles, escalier droit paramétrique (fiche DA-07-10), pièces détectées depuis les murs fermés (proposition → commande), espaces, zones, étages, propriétés BIM et classification, catalogue de types | équipier « architecture » |
 | L3a.4 | Intégration : route `?module=atelier` à côté de l'ancien (`?module=atelier&version=nouveau` jusqu'à la bascule), P.118 importé dans le nouveau modèle à l'import de l'exemple, mode immersif, puce d'outil actif, clavier, axe-core | chef de projet |
+| L3a.5 | Continuité des outils du prototype (décision D-018) : cotation et texte **libres** (`cotation.creer`, `texte.creer`, sans référence persistante), mètre (mesure sans création d'objet), métré du niveau actif (quantités dérivées, marquées de leur révision), export PNG / SVG de la vue courante côté client — fiches DA-15-01 / 02 / 04, DA-16-10, DA-14-01 (part lot 3a) | équipier « documents simples » |
 
 **Acceptation :** sur P.118 importé, dessiner un mur, y poser une porte, obtenir la pièce, modifier le type, annuler
 et rétablir avec révisions persistées, relire depuis un second navigateur ; téléphone 390 px et clavier ; aucune
@@ -510,7 +511,7 @@ le bilan Harmonie, l'accueil (aperçu conceptuel), les documents.
 
 ### Lot 5 — Documents dérivés, quantités, objets reportés (3,5 j)
 
-Tâches : vues (plans, coupes, façades, plan de masse, détails) avec fraîcheur ; annotations attachées par
+Tâches (en complément de la version simple livrée en L3a.5, D-018) : vues (plans, coupes, façades, plan de masse, détails) avec fraîcheur ; annotations attachées par
 références (cotations, textes, étiquettes), cadres, feuilles et jeux ; tableaux, quantités, rapports ; exports
 SVG / DXF / PDF / CSV au catalogue ; esquisse contrainte bornée (DA-01-07 / 08, DA-06-01 / 02), blocs et composants
 (DA-05-06 / 07 / 09), toitures simples, garde-corps simple, phases. Propriétaires : « vues », « annotations »,

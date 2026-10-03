@@ -90,15 +90,15 @@ O = [
     # Analyser
     ("detecter", "Détecter les pièces", "⬚", "analyser", "Analyser", "piece.detecter (proposition)", "DA-07-15", "3a", "room detection, détection", "Propose les pièces fermées par des murs ; rien n'est imposé.", ""),
     ("revue", "Revue de la maquette", "◉", "analyser", "Analyser", "—", "DA-17-16", "3a", "review, revue, contrôle", "Parcourt les problèmes et réserves du panneau.", ""),
-    ("metre", "Mètre", "↔", "analyser", "Analyser", "— (mesure, hors modèle)", "DA-15-01", "5", "measure, tape, distance", "Mesure une distance sans rien créer.", "Mètre"),
-    ("metrage", "Métré", "Σ", "analyser", "Analyser", "— (quantités dérivées)", "DA-16-10", "5", "quantities, takeoff, surfaces, volumes", "Affiche les quantités du niveau actif.", "Métré"),
+    ("metre", "Mètre", "↔", "analyser", "Analyser", "— (mesure, hors modèle)", "DA-15-01", "3a", "measure, tape, distance", "Mesure une distance sans rien créer.", "Mètre"),
+    ("metrage", "Métré", "Σ", "analyser", "Analyser", "— (quantités dérivées)", "DA-16-10", "3a", "quantities, takeoff, surfaces, volumes", "Affiche les quantités du niveau actif.", "Métré"),
     # Documenter
-    ("cotation", "Cotation", "⟷", "documenter", "Annotations", "cotation.creer", "DA-15-02", "5", "dimension, cote", "Crée une cote, rattachée aux objets (références).", "Cotation"),
-    ("texte", "Texte", "T", "documenter", "Annotations", "texte.creer", "DA-15-04", "5", "text, note, annotation", "Place un texte.", "Texte"),
+    ("cotation", "Cotation", "⟷", "documenter", "Annotations", "cotation.creer", "DA-15-02", "3a", "dimension, cote", "Crée une cote libre (rattachement aux objets au lot 5).", "Cotation"),
+    ("texte", "Texte", "T", "documenter", "Annotations", "texte.creer", "DA-15-04", "3a", "text, note, annotation", "Place un texte.", "Texte"),
     ("etiquette", "Étiquette", "⌑", "documenter", "Annotations", "etiquette.creer", "DA-15-05", "5", "label, tag", "Place une étiquette liée à un objet.", ""),
     ("vues", "Vues et feuilles", "▦", "documenter", "Documents", "—", "DA-14-01", "5", "views, sheets, layout, plan, coupe, façade", "Plans, coupes, façades et feuilles dérivés du modèle.", ""),
     # Partager
-    ("exporter", "Exporter (PNG, SVG, DXF, PDF)", "⤓", "partager", "Partager", "— (opération serveur)", "DA-14 / DA-22-03", "5", "export, dxf, pdf, svg, png", "Exporte une vue ou une feuille.", "Exporter"),
+    ("exporter", "Exporter (PNG, SVG)", "⤓", "partager", "Partager", "— (opération serveur)", "DA-14 / DA-22-03", "3a", "export, dxf, pdf, svg, png", "Exporte la vue courante en PNG ou SVG (DXF et PDF au lot 5).", "Exporter"),
     ("ifc", "Exporter en IFC 4.3", "⇪", "partager", "Partager", "— (opération serveur)", "DA-22-01", "6", "ifc, bim export", "Exporte le sous-ensemble IFC 4.3 avec rapport.", ""),
     ("publier", "Publier une version", "⚑", "partager", "Partager", "— (version figée)", "DA-21", "7", "publish, version", "Fige et publie une version du modèle.", ""),
 ]
@@ -196,7 +196,7 @@ def barre_pc():
         l.append('    </div>')
     l.append('    <div class="droite">')
     l.append('      <span class="plus-palette">Toutes les commandes : <kbd>Ctrl</kbd> <kbd>K</kbd></span>')
-    l.append('      <span class="muet seul-complet">★ favori épinglé · <span class="lot">lot n</span> prévu plus tard · <span class="lot trou">lot 5</span> outil du prototype absent entre la bascule et le lot 5</span>')
+    l.append('      <span class="muet seul-complet">★ favori épinglé · <span class="lot">lot n</span> prévu plus tard</span>')
     l.append('    </div>')
     l.append('  </div>')
     return "\n  ".join(l)
