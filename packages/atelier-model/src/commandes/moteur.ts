@@ -8,10 +8,11 @@
  * - niveau et calque cités existants ; aucun objet touché sur un calque verrouillé (DA-05-01) ;
  * - toute relation ajoutée est admise entre les classes de ses extrémités (`relationAdmise`).
  * Un réducteur ne touche jamais `revision` ; ceux de `REDUCTEURS` recalculent l'empreinte de l'état rendu ;
- * `appliquerLot` la calcule une fois, en fin de lot, et incrémente la révision d'une unité.
+ * `appliquerLot` la calcule une fois, en fin de lot, et incrémente la révision d'une unité si le lot change le
+ * modèle (D-024).
  */
 import type { Commande, CommandeDeType, TypeCommande } from "../contrats/commandes.js";
-import type { Effets, EffetVue } from "../contrats/effets.js";
+import type { Effets, EffetVue, Proposition } from "../contrats/effets.js";
 import { CONTRAT_COMMANDES, TYPES_COMMANDE, type EnveloppeCommandes } from "../contrats/enveloppe.js";
 import type { EtatModele } from "../contrats/etat.js";
 import type { CodeProbleme, Probleme } from "../contrats/probleme.js";
@@ -34,7 +35,8 @@ import * as organisation from "./organisation.js";
 import * as ouvertures from "./ouvertures.js";
 import * as site from "./site.js";
 import * as tr from "./transformations.js";
-import { cleRelation, motif, restaurationDe, sansRestauration, Transaction, VERSION_RESTAURATION, type Restauration } from "./transaction.js";
+import { VERSION_RESTAURATION, type Restauration } from "../contrats/restauration.js";
+import { cleRelation, erreurCommande, motif, restaurationDe, sansRestauration, Transaction } from "./transaction.js";
 
 /** Corps de réducteur par type de commande (exhaustif à la compilation). */
 const CORPS: { readonly [T in TypeCommande]: Corps<T> } = {
@@ -170,24 +172,61 @@ function controlesCommuns(tx: Transaction): void {
 
 // --- Restauration ------------------------------------------------------------------
 
+/**
+ * Vérifie puis applique une restauration (D-024) : toutes les conditions (empreinte de chaque objet, présence
+ * des relations à retirer, absence de celles à rajouter, traces de suppression, catalogue) sont contrôlées
+ * avant toute écriture. Appliquée une fois, une restauration ne vérifie plus ses conditions : la double
+ * restauration est refusée, dans le même lot comme dans un lot suivant.
+ */
 function appliquerRestauration(tx: Transaction, r: Restauration): void {
-  if (typeof r !== "object" || r === null || r.version !== VERSION_RESTAURATION || !Array.isArray(r.objets) || !Array.isArray(r.relationsARetirer) || !Array.isArray(r.relationsARajouter)) {
-    tx.refuser("parametre-invalide", "restauration", motif("Annulation", "restauration mal formée ou de version inconnue", "régénérer l'inverse depuis la commande d'origine"));
+  const mal = (cause: string) => tx.refuser("parametre-invalide", "restauration", motif("Annulation", cause, "régénérer l'inverse depuis la commande d'origine"));
+  if (
+    typeof r !== "object" ||
+    r === null ||
+    r.version !== VERSION_RESTAURATION ||
+    !Array.isArray(r.objets) ||
+    !Array.isArray(r.relationsARetirer) ||
+    !Array.isArray(r.relationsARajouter) ||
+    !Array.isArray(r.supprimesARetirer) ||
+    !Array.isArray(r.supprimesARajouter) ||
+    typeof r.origine !== "object" ||
+    r.origine === null
+  ) {
+    mal("restauration mal formée ou de version inconnue");
     return;
   }
+  if (r.origine.restauration !== undefined) {
+    mal("restauration imbriquée (la commande d'origine porte elle-même une restauration)");
+    return;
+  }
+  if (r.objets.length === 0 && r.relationsARetirer.length === 0 && r.relationsARajouter.length === 0 && r.supprimesARetirer.length === 0 && r.supprimesARajouter.length === 0 && r.catalogue === undefined) {
+    mal("restauration vide (aucune condition vérifiable)");
+    return;
+  }
+  const changeDepuis = "annuler d'abord les commandes plus récentes, ou recharger le modèle";
+  const vus = new Set<IdObjet>();
   r.objets.forEach((x, i) => {
+    if (vus.has(x.id)) tx.refuser("parametre-invalide", `restauration.objets[${i}]`, motif(`Objet ${x.id}`, "cité deux fois dans la restauration", "régénérer l'inverse"), [x.id]);
+    vus.add(x.id);
     const actuel = tx.objet(x.id);
     const empreinte = actuel ? empreinteValeur(actuel) : null;
-    if (empreinte !== x.apres) {
-      tx.refuser("precondition", `restauration.objets[${i}]`, motif(`Objet ${x.id}`, "modifié depuis la commande d'origine", "annuler d'abord les commandes plus récentes, ou recharger le modèle"), [x.id]);
-    }
+    if (empreinte !== x.apres) tx.refuser("precondition", `restauration.objets[${i}]`, motif(`Objet ${x.id}`, "modifié depuis la commande d'origine (ou déjà restauré)", changeDepuis), [x.id]);
     if (x.avant !== null && x.avant.id !== x.id) tx.refuser("parametre-invalide", `restauration.objets[${i}]`, motif(`Objet ${x.id}`, "identifiant incohérent dans la restauration", "régénérer l'inverse"), [x.id]);
   });
-  for (const rel of r.relationsARetirer) {
-    if (!tx.aRelation(rel)) tx.refuser("precondition", "restauration.relations", motif(`Relation ${rel.type} ${rel.sourceId} → ${rel.cibleId}`, "absente", "recharger le modèle"), [rel.sourceId, rel.cibleId]);
-  }
+  r.relationsARetirer.forEach((rel, i) => {
+    if (!tx.aRelation(rel)) tx.refuser("precondition", `restauration.relationsARetirer[${i}]`, motif(`Relation ${rel.type} ${rel.sourceId} → ${rel.cibleId}`, "absente (déjà restaurée ou modifiée)", changeDepuis), [rel.sourceId, rel.cibleId]);
+  });
+  r.relationsARajouter.forEach((rel, i) => {
+    if (tx.aRelation(rel)) tx.refuser("precondition", `restauration.relationsARajouter[${i}]`, motif(`Relation ${rel.type} ${rel.sourceId} → ${rel.cibleId}`, "déjà présente (déjà restaurée ou modifiée)", changeDepuis), [rel.sourceId, rel.cibleId]);
+  });
+  r.supprimesARetirer.forEach((id, i) => {
+    if (!tx.estSupprime(id)) tx.refuser("precondition", `restauration.supprimesARetirer[${i}]`, motif(`Identifiant ${id}`, "absent des objets supprimés (déjà restauré ?)", changeDepuis), [id]);
+  });
+  r.supprimesARajouter.forEach((id, i) => {
+    if (tx.estSupprime(id)) tx.refuser("precondition", `restauration.supprimesARajouter[${i}]`, motif(`Identifiant ${id}`, "déjà parmi les objets supprimés (déjà restauré ?)", changeDepuis), [id]);
+  });
   if (r.catalogue && empreinteValeur(tx.catalogue()) !== r.catalogue.apres) {
-    tx.refuser("precondition", "restauration.catalogue", motif("Catalogue de types", "modifié depuis la commande d'origine", "annuler d'abord les commandes plus récentes"));
+    tx.refuser("precondition", "restauration.catalogue", motif("Catalogue de types", "modifié depuis la commande d'origine (ou déjà restauré)", changeDepuis));
   }
   if (tx.refusee) return;
   for (const x of r.objets) tx.poserBrut(x.id, x.avant);
@@ -216,6 +255,7 @@ function construireEffets(
   catalogueChange: boolean,
   problemes: readonly Probleme[],
   referencesTouchees: Effets["referencesTouchees"],
+  propositions: readonly Proposition[],
 ): Effets {
   const vues = new Map<string, EffetVue>();
   const vue = (nature: EffetVue["nature"], niveauId?: IdObjet) => vues.set(`${nature}|${niveauId ?? ""}`, niveauId === undefined ? { nature, etat: "a-recalculer" } : { nature, niveauId, etat: "a-recalculer" });
@@ -249,6 +289,7 @@ function construireEffets(
     vues: [...vues.values()],
     documents: change ? [{ nature: "documents-derives", etat: "perime" }] : [],
     problemes: [...problemes],
+    propositions: [...propositions],
   };
 }
 
@@ -263,10 +304,10 @@ function estTypeCommande(t: unknown): t is TypeCommande {
 
 function executer(etat: EtatModele, c: Commande): ResultatInterne {
   if (typeof c !== "object" || c === null || !estTypeCommande((c as { type?: unknown }).type)) {
-    return { ok: false, erreurs: [{ code: "parametre-invalide", chemin: "type", message: motif("Commande", `type « ${String((c as { type?: unknown } | null)?.type)} » absent du contrat atelier-commands/1`, "utiliser un type du catalogue") }] };
+    return { ok: false, erreurs: [erreurCommande("parametre-invalide", "type", motif("Commande", `type « ${String((c as { type?: unknown } | null)?.type)} » absent du contrat atelier-commands/1`, "utiliser un type du catalogue"))] };
   }
   if (typeof c.params !== "object" || c.params === null || !Array.isArray(c.cibles)) {
-    return { ok: false, erreurs: [{ code: "parametre-invalide", chemin: "params", message: motif(`Commande ${c.type}`, "params (objet) et cibles (liste) obligatoires", "compléter la commande") }] };
+    return { ok: false, erreurs: [erreurCommande("parametre-invalide", "params", motif(`Commande ${c.type}`, "params (objet) et cibles (liste) obligatoires", "compléter la commande"))] };
   }
   const tx = new Transaction(etat);
   const restauration = restaurationDe(c);
@@ -281,8 +322,8 @@ function executer(etat: EtatModele, c: Commande): ResultatInterne {
   if (tx.refusee) return { ok: false, erreurs: tx.erreurs };
   const { etat: suivant, restauration: r } = tx.conclure(c);
   const changements = tx.changements();
-  const inverse: Commande[] = tx.estVide() ? [] : [{ ...(restauration !== undefined ? restauration.origine : teteInverse(sansRestauration(c), tx)), restauration: r } as unknown as Commande];
-  const effets = construireEffets(changements, tx.relationsAjoutees(), tx.relationsRetirees(), tx.catalogueChange(), tx.problemes, tx.referencesTouchees);
+  const inverse: Commande[] = tx.estVide() ? [] : [{ ...(restauration !== undefined ? restauration.origine : teteInverse(sansRestauration(c), tx)), restauration: r }];
+  const effets = construireEffets(changements, tx.relationsAjoutees(), tx.relationsRetirees(), tx.catalogueChange(), tx.problemes, tx.referencesTouchees, tx.propositions);
   return { ok: true, etat: suivant, inverse, effets, changements };
 }
 
@@ -310,32 +351,33 @@ function prefixer(erreurs: readonly ErreurCommande[], i: number): ErreurCommande
 
 /**
  * Applique une enveloppe : contrat et `baseRevision` contrôlés, commandes appliquées dans l'ordre, tout ou
- * rien ; révision + 1 ; empreinte recalculée ; inverse du lot (inverses des commandes, ordre inverse) ;
+ * rien ; révision + 1 et empreinte recalculée si le modèle change (sinon état rendu tel quel, D-024) ; inverse du lot (inverses des commandes, ordre inverse) ;
  * effets agrégés (changement net du lot).
  */
 export function appliquerLot(etat: EtatModele, enveloppe: EnveloppeCommandes): ResultatLot {
   const e = enveloppe as Partial<EnveloppeCommandes> | null;
-  if (typeof e !== "object" || e === null) return { ok: false, erreurs: [{ code: "parametre-invalide", chemin: "", message: motif("Enveloppe", "objet attendu", "envoyer une enveloppe atelier-commands/1") }] };
+  if (typeof e !== "object" || e === null) return { ok: false, erreurs: [erreurCommande("parametre-invalide", "", motif("Enveloppe", "objet attendu", "envoyer une enveloppe atelier-commands/1"))] };
   if (e.contract !== CONTRAT_COMMANDES) {
-    return { ok: false, erreurs: [{ code: "parametre-invalide", chemin: "contract", message: motif("Enveloppe", `contrat « ${String(e.contract)} » non pris en charge`, `envoyer « ${CONTRAT_COMMANDES} »`) }] };
+    return { ok: false, erreurs: [erreurCommande("parametre-invalide", "contract", motif("Enveloppe", `contrat « ${String(e.contract)} » non pris en charge`, `envoyer « ${CONTRAT_COMMANDES} »`))] };
   }
   if (typeof e.requestId !== "string" || e.requestId.trim() === "") {
-    return { ok: false, erreurs: [{ code: "parametre-invalide", chemin: "requestId", message: motif("Enveloppe", "requestId absent", "fournir un identifiant de requête (UUID)") }] };
+    return { ok: false, erreurs: [erreurCommande("parametre-invalide", "requestId", motif("Enveloppe", "requestId absent", "fournir un identifiant de requête (UUID)"))] };
   }
-  if (typeof e.label !== "string") return { ok: false, erreurs: [{ code: "parametre-invalide", chemin: "label", message: motif("Enveloppe", "libellé absent", "fournir un libellé d'historique") }] };
+  if (typeof e.label !== "string") return { ok: false, erreurs: [erreurCommande("parametre-invalide", "label", motif("Enveloppe", "libellé absent", "fournir un libellé d'historique"))] };
   if (e.baseRevision !== etat.revision) {
     return {
       ok: false,
-      erreurs: [{ code: "conflit-revision", chemin: "baseRevision", message: motif("Enveloppe", `révision de base ${String(e.baseRevision)} périmée (révision courante ${etat.revision})`, "recharger le modèle et rejouer les commandes") }],
+      erreurs: [erreurCommande("conflit-revision", "baseRevision", motif("Enveloppe", `révision de base ${String(e.baseRevision)} périmée (révision courante ${etat.revision})`, "recharger le modèle et rejouer les commandes"))],
     };
   }
   if (!Array.isArray(e.commands) || e.commands.length === 0) {
-    return { ok: false, erreurs: [{ code: "parametre-invalide", chemin: "commands", message: motif("Enveloppe", "aucune commande", "envoyer au moins une commande") }] };
+    return { ok: false, erreurs: [erreurCommande("parametre-invalide", "commands", motif("Enveloppe", "aucune commande", "envoyer au moins une commande"))] };
   }
   let courant = etat;
   const inverses: Commande[][] = [];
   const problemes: Probleme[] = [];
   const references: Effets["referencesTouchees"][number][] = [];
+  const propositions: Proposition[] = [];
   const touches = new Set<IdObjet>();
   for (let i = 0; i < e.commands.length; i++) {
     const r = executer(courant, e.commands[i] as Commande);
@@ -345,6 +387,7 @@ export function appliquerLot(etat: EtatModele, enveloppe: EnveloppeCommandes): R
     for (const x of r.changements) touches.add(x.id);
     problemes.push(...r.effets.problemes.map((p) => (p.chemin === undefined ? p : { ...p, chemin: `commands[${i}].${p.chemin}` })));
     references.push(...r.effets.referencesTouchees);
+    propositions.push(...r.effets.propositions);
   }
   // Changement net du lot (un objet créé puis supprimé dans le même lot n'apparaît pas).
   const changements: Changement[] = [];
@@ -360,9 +403,12 @@ export function appliquerLot(etat: EtatModele, enveloppe: EnveloppeCommandes): R
   const ajoutees = [...finales].filter(([k]) => !initiales.has(k)).map(([, r]) => r);
   const retirees = [...initiales].filter(([k]) => !finales.has(k)).map(([, r]) => r);
   const catalogueChange = empreinteValeur(etat.catalogue) !== empreinteValeur(courant.catalogue);
-  const effets = construireEffets(changements, ajoutees, retirees, catalogueChange, problemes, references);
+  const effets = construireEffets(changements, ajoutees, retirees, catalogueChange, problemes, references, propositions);
+  const inverse = inverses.reverse().flat();
+  // Lot sans changement du modèle (`piece.detecter` seul…) : ni révision ni empreinte nouvelles (D-024).
+  if (inverse.length === 0) return { ok: true, etat, inverse, effets };
   const final: EtatModele = { ...courant, revision: etat.revision + 1, empreinte: calculerEmpreinte(courant) };
-  return { ok: true, etat: final, inverse: inverses.reverse().flat(), effets };
+  return { ok: true, etat: final, inverse, effets };
 }
 
 /** Enveloppe d'annulation d'un lot appliqué : inverse du lot, sur la révision produite. */

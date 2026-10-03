@@ -93,7 +93,11 @@ export interface ParamsMur {
   /** L'un de `hauteur` ou `niveauHaut` est obligatoire (DA-07-01), jamais deviné. */
   readonly hauteur?: Longueur;
   readonly niveauHaut?: IdObjet;
-  readonly alignement: AlignementMur;
+  /**
+   * Position de l'axe tracé a→b par rapport au mur (DA-02-07) : « gauche » = l'axe est la face gauche, le mur
+   * s'étend du côté de la normale (−dy, dx) ; « non évaluée » admise (D-024).
+   */
+  readonly alignement: Evaluable<AlignementMur>;
   /** Définition du catalogue (`cloison`, `mur`, `non-type`…), voir `definitions.ts`. */
   readonly typeId: string;
   /** D'après `exteriorWallIds` à l'import. */
@@ -156,8 +160,8 @@ export interface ParamsEscalier {
   readonly niveauDepartId?: IdObjet;
   readonly niveauArriveeId?: IdObjet;
   readonly groupe?: string;
-  /** Occurrence de vue en plan d'un escalier physique (P.118 : 32 occurrences). */
-  readonly referencePlanSeulement: boolean;
+  /** Occurrence de vue en plan d'un escalier physique (P.118 : 32 occurrences) ; « non évaluée » admise (D-024). */
+  readonly referencePlanSeulement: Evaluable<boolean>;
   readonly nom?: string;
 }
 

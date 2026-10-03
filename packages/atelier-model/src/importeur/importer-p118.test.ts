@@ -133,7 +133,16 @@ describe("importerP118 — valeurs bit à bit, repères, relations", () => {
     const b1 = modele.objets["EX118-mezz-S-003"] as ObjetDe<"escalier">;
     expect(b1.params.contremarches).toEqual({ nonEvaluee: true, motif: "« risers » absent de la source" });
     expect(b1.params.epaisseurPaillasse).toMatchObject({ nonEvaluee: true });
-    expect(b1.annotations?.referencePlanSeulement?.statut).toBe("a-verifier");
+    // D-024 / D-025 : drapeau absent → « non évaluée » (plus de `false` par règle).
+    expect(b1.params.referencePlanSeulement).toEqual({ nonEvaluee: true, motif: "planReferenceOnly absent de la source" });
+    expect(b1.annotations?.referencePlanSeulement).toBeUndefined();
+    const nonEvaluees = esc.filter((e) => typeof e.params.referencePlanSeulement !== "boolean").map((e) => e.id);
+    expect(nonEvaluees).toHaveLength(8);
+    expect(rapport.questions.some((q) => q.includes("planReferenceOnly"))).toBe(false);
+    // D-025 : alignement « axe » « à vérifier » conservé pour les 24 murs sans lineRef.
+    const aVerifier = deClasse("mur").filter((w) => w.annotations?.alignement?.statut === "a-verifier");
+    expect(aVerifier).toHaveLength(24);
+    expect(aVerifier.every((w) => w.params.alignement === "axe")).toBe(true);
   });
 
   it("dalles : épaisseur 0,25 m « à vérifier », thickness 0,10 m conservé en propriété (D-021)", () => {

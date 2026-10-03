@@ -168,6 +168,16 @@ export function marquerSaisie<O extends ObjetModele>(o: O, cles: readonly string
   return (Object.keys(annotations).length > 0 ? { ...reste, annotations } : reste) as O;
 }
 
+/** Un paramètre retiré ne garde pas d'annotation de traçabilité (il n'a plus de valeur). */
+function retirerAnnotations<O extends ObjetModele>(o: O, retraits: readonly string[]): O {
+  if (retraits.length === 0 || o.annotations === undefined) return o;
+  const annotations: Record<string, Tracabilite> = {};
+  for (const [k, v] of Object.entries(o.annotations)) if (v !== undefined && !retraits.includes(k)) annotations[k] = v;
+  const { annotations: _a, ...reste } = o;
+  void _a;
+  return (Object.keys(annotations).length > 0 ? { ...reste, annotations } : reste) as O;
+}
+
 /** Remplace des paramètres d'un objet (sans contrôle) et marque la saisie. */
 export function avecParams<O extends ObjetModele>(o: O, params: Partial<O["params"]>, cles?: readonly string[]): O {
   const nouveau = { ...o, params: { ...o.params, ...params } } as O;
@@ -175,7 +185,8 @@ export function avecParams<O extends ObjetModele>(o: O, params: Partial<O["param
 }
 
 /**
- * Fusionne `modifications` dans les paramètres : clés inconnues, dérivées ou interdites refusées.
+ * Fusionne `modifications` dans les paramètres : clés inconnues, dérivées ou interdites refusées ; `null`
+ * retire un paramètre facultatif, refusé pour un paramètre obligatoire (D-024).
  * Retourne l'objet modifié, ou `null` (refus enregistré).
  */
 export function fusionnerModifications<O extends ObjetModele>(tx: Transaction, o: O, modifications: unknown, chemin: string, interdits: readonly string[] = []): O | null {
@@ -186,9 +197,18 @@ export function fusionnerModifications<O extends ObjetModele>(tx: Transaction, o
   const decls = new Map(descripteur(o.classe).parametres.map((d) => [d.nom, d]));
   let ok = true;
   const cles: string[] = [];
+  const retraits: string[] = [];
   for (const [k, v] of Object.entries(modifications)) {
     if (v === undefined) continue;
     const d = decls.get(k);
+    if (d && !d.derive && !interdits.includes(k) && v === null) {
+      // D-024 : `null` retire un paramètre facultatif ; un paramètre obligatoire ne se retire pas.
+      if (d.obligatoire) {
+        ok = false;
+        tx.refuser("parametre-invalide", `${chemin}.${k}`, motif(nomObjet(o), `« ${k} » est obligatoire et ne peut pas être retiré`, "donner une valeur (ou « non évaluée » si le paramètre l'admet)"), [o.id]);
+      } else retraits.push(k);
+      continue;
+    }
     if (!d) {
       ok = false;
       tx.refuser("parametre-invalide", `${chemin}.${k}`, motif(nomObjet(o), `paramètre « ${k} » inconnu pour la classe ${o.classe}`, "retirer ce paramètre"), [o.id]);
@@ -203,7 +223,8 @@ export function fusionnerModifications<O extends ObjetModele>(tx: Transaction, o
   if (!ok) return null;
   const params: Record<string, unknown> = { ...(o.params as object) };
   for (const k of cles) params[k] = modifications[k];
-  return marquerSaisie({ ...o, params } as O, cles);
+  for (const k of retraits) delete params[k];
+  return marquerSaisie(retirerAnnotations({ ...o, params } as O, retraits), cles);
 }
 
 // --- Murs et baies ----------------------------------------------------------
@@ -223,14 +244,14 @@ export function hauteurMur(tx: Transaction, mur: ObjetMur): number | null {
 
 /**
  * Contrôle d'emprise des baies d'un mur (DA-07-02) : `[distance − largeur/2, distance + largeur/2]` dans
- * `[0, longueur]`, aucun recouvrement, `allège + hauteur` ≤ hauteur du mur ; tolérance `tolCoincidence`.
+ * `[0, longueur]`, aucun recouvrement, `allège + hauteur` ≤ hauteur du mur ; tolérance `longueurMin` (D-024).
  */
 export function controlerEmprise(tx: Transaction, murId: IdObjet, chemin: string): void {
   const mur = tx.objet(murId);
   if (!mur || mur.classe !== "mur") return;
   const L = longueurSegment(mur.params.axe);
   const H = hauteurMur(tx, mur);
-  const tol = TOLERANCES.tolCoincidence;
+  const tol = TOLERANCES.longueurMin;
   const intervalles = baiesDuMur(tx, murId).map((b) => {
     const centre = b.params.position.t * L;
     return { b, debut: centre - b.params.largeur.value / 2, fin: centre + b.params.largeur.value / 2 };

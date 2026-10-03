@@ -6,5 +6,6 @@ export * from "./effets.js";
 export * from "./commandes.js";
 export * from "./enveloppe.js";
 export * from "./reducteurs.js";
+export * from "./restauration.js";
 export * from "./quantites.js";
 export * from "./import.js";

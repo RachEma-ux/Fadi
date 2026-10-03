@@ -266,9 +266,20 @@ export const typeModifier: Corps<"type.modifier"> = (tx, c) => {
     tx.refuser("parametre-invalide", `params.modifications.${inconnues[0] ?? ""}`, motif(`Type ${id}`, `champ(s) non modifiable(s) : ${inconnues.join(", ")}`, "modifier nom, categorie, dimensionsProposees ou proprietes"));
     return;
   }
-  if (!controlerDefinition(tx, { id, ...modifications }, "params.modifications")) return;
+  // D-024 : `null` retire un champ facultatif (`categorie`, `dimensionsProposees`) ; `nom` et `proprietes` sont obligatoires.
+  const nuls = Object.keys(modifications).filter((k) => modifications[k as keyof typeof modifications] === null);
+  const obligatoiresNuls = nuls.filter((k) => k === "nom" || k === "proprietes");
+  if (obligatoiresNuls.length > 0) {
+    tx.refuser("parametre-invalide", `params.modifications.${obligatoiresNuls[0] ?? ""}`, motif(`Type ${id}`, `« ${obligatoiresNuls.join(", ")} » obligatoire(s), ne se retire(nt) pas`, "donner une valeur"));
+    return;
+  }
+  const valeurs: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(modifications)) if (v !== null && v !== undefined) valeurs[k] = v;
+  if (!controlerDefinition(tx, { id, ...valeurs }, "params.modifications")) return;
   const version = cat.version + 1;
-  tx.definirCatalogue({ version, definitions: { ...cat.definitions, [cle]: { ...d, ...modifications, versionCatalogue: version } as DefinitionType } });
+  const nouvelle: Record<string, unknown> = { ...d, ...valeurs, versionCatalogue: version };
+  for (const k of nuls) delete nouvelle[k];
+  tx.definirCatalogue({ version, definitions: { ...cat.definitions, [cle]: nouvelle as unknown as DefinitionType } });
 };
 
 // --- Propriétés et classification ----------------------------------------------

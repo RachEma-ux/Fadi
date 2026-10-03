@@ -8,7 +8,7 @@ Règles appliquées : cahier §6, D-021 (confirmées par D-022). Aucune valeur i
 | exampleId | p118-exemple-complet |
 | sourceVersion | 8.19.0 |
 | Empreinte de la source | `sha256-ca235ca090d0fcb178c65a4ea2cdb8fe4f47947045f464a0ccf9b44c2092a8e7` |
-| Empreinte du modèle produit | `sha256-cd894180f0a6464b298bcf492b4fa6fccf9cd3f7609154b673a07e58914f3b07` |
+| Empreinte du modèle produit | `sha256-549d52016d9334565116823ea860f4055cadaad364e1b40ed77d307889226439` |
 
 ## Effectifs par famille
 
@@ -66,7 +66,7 @@ Règles appliquées : cahier §6, D-021 (confirmées par D-022). Aucune valeur i
 - **escaliers**
   - chaque occurrence conservée (vue par niveau) ; `stairGroup` → `groupe`, sans fusion
   - `sourceLevel` / `targetLevel` → `niveauDepartId` / `niveauArriveeId` + relation `relie` (rôle `depart` / `arrivee`) ; absents → pas de relation, problème
-  - `risers`, `waistThickness` absents → « non évaluée » ; `planReferenceOnly` absent → `false` « à vérifier » (règle)
+  - `risers`, `waistThickness` absents → « non évaluée » ; `planReferenceOnly` absent → `referencePlanSeulement` « non évaluée » (D-024, D-025)
 - **poteaux**
   - `p` → `point` ; `shapeId` → `formeId` ; `depth` → `profondeur` ; `angle` en degrés ; `designStatus` → `statutConception` (texte)
 - **pieces**
@@ -118,14 +118,14 @@ Aucun : tous les rôles de tracés rencontrés sont ceux du §6.
 
 | Code | Gravité | Nombre |
 | --- | --- | ---: |
-| valeur-a-verifier | information | 33 |
+| valeur-a-verifier | information | 25 |
 | niveaux-relies-absents | information | 6 |
 | valeur-a-verifier | avertissement | 7 |
 | trace-piece-sans-code | information | 33 |
 | aire-ecart | information | 17 |
 | piece-libelle-divergent | information | 7 |
 | piece-sans-trace | avertissement | 7 |
-| valeur-non-evaluee | information | 8 |
+| valeur-non-evaluee | information | 16 |
 | niveaux-relies-absents | avertissement | 8 |
 
 ### valeur-a-verifier
@@ -144,29 +144,21 @@ Aucun : tous les rôles de tracés rencontrés sont ceux du §6.
 - Mur EX118-mezz-EXT-1 : lineRef absent, alignement « axe » à vérifier.
 - Mur EX118-mezz-EXT-2 : lineRef absent, alignement « axe » à vérifier.
 - Mur EX118-mezz-EXT-3 : lineRef absent, alignement « axe » à vérifier.
-- Escalier EX118-mezz-S-003 : planReferenceOnly absent, referencePlanSeulement = false à vérifier.
-- Escalier EX118-mezz-S-004 : planReferenceOnly absent, referencePlanSeulement = false à vérifier.
 - Dalle EX118-mezz-SLAB-0 : épaisseur 0.25 m (représentation) à vérifier ; thickness 0.1 m conservé.
 - Mur EX118-r1-EXT-0 : lineRef absent, alignement « axe » à vérifier.
 - Mur EX118-r1-EXT-1 : lineRef absent, alignement « axe » à vérifier.
 - Mur EX118-r1-EXT-2 : lineRef absent, alignement « axe » à vérifier.
 - Mur EX118-r1-EXT-3 : lineRef absent, alignement « axe » à vérifier.
-- Escalier EX118-r1-S-003 : planReferenceOnly absent, referencePlanSeulement = false à vérifier.
-- Escalier EX118-r1-S-004 : planReferenceOnly absent, referencePlanSeulement = false à vérifier.
 - Dalle EX118-r1-SLAB-0 : épaisseur 0.25 m (représentation) à vérifier ; thickness 0.1 m conservé.
 - Mur EX118-r2-EXT-0 : lineRef absent, alignement « axe » à vérifier.
 - Mur EX118-r2-EXT-1 : lineRef absent, alignement « axe » à vérifier.
 - Mur EX118-r2-EXT-2 : lineRef absent, alignement « axe » à vérifier.
 - Mur EX118-r2-EXT-3 : lineRef absent, alignement « axe » à vérifier.
-- Escalier EX118-r2-S-003 : planReferenceOnly absent, referencePlanSeulement = false à vérifier.
-- Escalier EX118-r2-S-004 : planReferenceOnly absent, referencePlanSeulement = false à vérifier.
 - Dalle EX118-r2-SLAB-0 : épaisseur 0.25 m (représentation) à vérifier ; thickness 0.1 m conservé.
 - Mur EX118-r3-EXT-0 : lineRef absent, alignement « axe » à vérifier.
 - Mur EX118-r3-EXT-1 : lineRef absent, alignement « axe » à vérifier.
 - Mur EX118-r3-EXT-2 : lineRef absent, alignement « axe » à vérifier.
 - Mur EX118-r3-EXT-3 : lineRef absent, alignement « axe » à vérifier.
-- Escalier EX118-r3-S-003 : planReferenceOnly absent, referencePlanSeulement = false à vérifier.
-- Escalier EX118-r3-S-004 : planReferenceOnly absent, referencePlanSeulement = false à vérifier.
 - Dalle EX118-r3-SLAB-0 : épaisseur 0.25 m (représentation) à vérifier ; thickness 0.1 m conservé.
 - Toiture EX118-roof : épaisseur 0.25 m (représentation) à vérifier ; thickness 0.1 m conservé.
 - Tracé EX118-parapet « Acrotère » : « roof-slab » annulaire importé comme solide (acrotère, D-025), rôle conservé.
@@ -267,19 +259,26 @@ Aucun : tous les rôles de tracés rencontrés sont ceux du §6.
 ### valeur-non-evaluee
 
 - Escalier EX118-mezz-S-003 : risers, waistThickness absent(s) de la source → « non évaluée ».
+- Escalier EX118-mezz-S-003 : planReferenceOnly absent → referencePlanSeulement « non évaluée ».
 - Escalier EX118-mezz-S-004 : risers, waistThickness absent(s) de la source → « non évaluée ».
+- Escalier EX118-mezz-S-004 : planReferenceOnly absent → referencePlanSeulement « non évaluée ».
 - Escalier EX118-r1-S-003 : risers, waistThickness absent(s) de la source → « non évaluée ».
+- Escalier EX118-r1-S-003 : planReferenceOnly absent → referencePlanSeulement « non évaluée ».
 - Escalier EX118-r1-S-004 : risers, waistThickness absent(s) de la source → « non évaluée ».
+- Escalier EX118-r1-S-004 : planReferenceOnly absent → referencePlanSeulement « non évaluée ».
 - Escalier EX118-r2-S-003 : risers, waistThickness absent(s) de la source → « non évaluée ».
+- Escalier EX118-r2-S-003 : planReferenceOnly absent → referencePlanSeulement « non évaluée ».
 - Escalier EX118-r2-S-004 : risers, waistThickness absent(s) de la source → « non évaluée ».
+- Escalier EX118-r2-S-004 : planReferenceOnly absent → referencePlanSeulement « non évaluée ».
 - Escalier EX118-r3-S-003 : risers, waistThickness absent(s) de la source → « non évaluée ».
+- Escalier EX118-r3-S-003 : planReferenceOnly absent → referencePlanSeulement « non évaluée ».
 - Escalier EX118-r3-S-004 : risers, waistThickness absent(s) de la source → « non évaluée ».
+- Escalier EX118-r3-S-004 : planReferenceOnly absent → referencePlanSeulement « non évaluée ».
 
 ## Questions ouvertes
 
 - Pièces sans tracé courant (7) conservées sans géométrie (D-025 : gardées, problème listé) : piece-rdc-R05, piece-rdc-R07, piece-mezz-M04, piece-mezz-M06, piece-r1-E07, piece-r2-E07, piece-r3-E07.
 - 24 murs sans lineRef (murs de façade) : alignement « axe » retenu par règle (D-025), statut « à vérifier » conservé.
-- 8 volées sans planReferenceOnly (EX118-mezz-S-003, EX118-mezz-S-004, EX118-r1-S-003, EX118-r1-S-004, EX118-r2-S-003, EX118-r2-S-004, EX118-r3-S-003, EX118-r3-S-004) : referencePlanSeulement = false « à vérifier » en attendant l’amendement D-024 qui le rendra « non évaluée » (D-025).
 
 ## Projection modèle typé → entrée d'analyse (§5.6)
 

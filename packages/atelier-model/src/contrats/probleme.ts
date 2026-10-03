@@ -19,6 +19,8 @@ export const CODES_PROBLEME = [
   "niveaux-relies-absents",
   "valeur-non-evaluee",
   "valeur-a-verifier",
+  /** Doublon ou superposition (code de pièce répété, copie à vecteur nul…) : signalé, jamais fusionné (D-024). */
+  "doublon",
   "donnee-hors-modele",
   // Validation
   "classe-inconnue",

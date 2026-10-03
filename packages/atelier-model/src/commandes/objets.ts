@@ -129,7 +129,7 @@ const controlePiece: ControleObjet = (tx, o, chemin, cles) => {
     const doublon = tx.objets().find((x) => x.id !== o.id && x.classe === "piece" && x.niveauId === o.niveauId && x.params.code === o.params.code);
     if (doublon) {
       tx.signaler({
-        code: "valeur-a-verifier",
+        code: "doublon",
         gravite: "avertissement",
         message: `${nomObjet(o)} : code « ${o.params.code} » déjà porté par ${nomObjet(doublon)} sur le niveau ${String(o.niveauId)}.`,
         objetIds: [o.id, doublon.id],

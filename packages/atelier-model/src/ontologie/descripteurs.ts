@@ -54,6 +54,8 @@ export interface DeclarationParametre {
    * (D-021 : `piece.polygonesSource`). Sinon, toute coordonnée locale doit être dans le repère du projet.
    */
   readonly repereLocalLibre?: boolean;
+  /** Vrai si la valeur « non évaluée » (`NonEvaluee`) est admise en plus de la nature déclarée (D-024). */
+  readonly evaluable?: boolean;
   /** Paramètre dérivé (jamais saisi). */
   readonly derive?: boolean;
 }
@@ -114,7 +116,7 @@ const PARAMETRES: Readonly<Record<ClasseObjet, { ontologie: Ontologie; libelle: 
       p("epaisseur", "longueur", true, { signe: ">0" }),
       p("hauteur", "longueur", false, { signe: ">0" }),
       p("niveauHaut", "identifiant", false),
-      p("alignement", "enum", true, { valeurs: ["gauche", "axe", "droite"] }),
+      p("alignement", "enum", true, { valeurs: ["gauche", "axe", "droite"], evaluable: true }),
       p("typeId", "identifiant"),
       p("exterieur", "booleen"),
       p("nom", "texte", false),
@@ -168,7 +170,7 @@ const PARAMETRES: Readonly<Record<ClasseObjet, { ontologie: Ontologie; libelle: 
       p("niveauDepartId", "identifiant", false),
       p("niveauArriveeId", "identifiant", false),
       p("groupe", "texte", false),
-      p("referencePlanSeulement", "booleen"),
+      p("referencePlanSeulement", "booleen", true, { evaluable: true }),
       p("nom", "texte", false),
     ],
   },

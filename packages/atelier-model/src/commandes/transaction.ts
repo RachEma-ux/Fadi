@@ -7,16 +7,14 @@
  *   escalier, `reference` d'une cotation ou d'une étiquette) sont tenues à jour à chaque pose ;
  * - `conclure` produit l'état suivant et la **restauration** exacte (avant / après) qui sert d'inverse.
  *
- * Restauration : le contrat `atelier-commands/1` ne contient pas de commande capable de redonner un objet
- * tel qu'il était (provenance `import`, propriétés, annotations, représentations, trace `supprimes`…), et un
- * inverse arithmétique (vecteur opposé, angle opposé) ne redonne pas les mêmes nombres flottants. L'inverse
- * d'une commande est donc une commande du catalogue (type et paramètres lisibles) qui porte en plus un champ
- * `restauration` : l'état avant de chaque objet touché et l'empreinte attendue de son état après. Voir le
- * rapport de L1.2 (contrat à compléter).
+ * Restauration : champ officiel du contrat (`contrats/restauration.ts`, D-024). L'inverse d'une commande est une
+ * commande du catalogue (type et paramètres lisibles) qui porte la restauration exacte.
  */
 import type { Commande } from "../contrats/commandes.js";
+import type { Proposition } from "../contrats/effets.js";
 import type { ReferenceTopologique } from "../contrats/references.js";
-import type { ErreurCommande } from "../contrats/reducteurs.js";
+import { composerMessageErreur, type ErreurCommande } from "../contrats/reducteurs.js";
+import { VERSION_RESTAURATION, type Restauration } from "../contrats/restauration.js";
 import type { EtatModele } from "../contrats/etat.js";
 import type { CodeProbleme, Probleme } from "../contrats/probleme.js";
 import type { IdObjet, ObjetModele } from "../ontologie/classes.js";
@@ -24,41 +22,17 @@ import type { CatalogueTypes } from "../ontologie/definitions.js";
 import type { Relation } from "../ontologie/relations.js";
 import { empreinteValeur, jsonCanonique } from "./empreinte.js";
 
-export const VERSION_RESTAURATION = 1;
-
-export interface RestaurationObjet {
-  readonly id: IdObjet;
-  /** Objet à rétablir ; `null` = l'objet n'existait pas. */
-  readonly avant: ObjetModele | null;
-  /** Empreinte de l'objet attendu au moment de la restauration ; `null` = l'objet doit être absent. */
-  readonly apres: string | null;
-}
-
-/** Restauration exacte portée par une commande inverse. */
-export interface Restauration {
-  readonly version: typeof VERSION_RESTAURATION;
-  /** Commande dont cette restauration annule les effets (sans sa propre restauration). */
-  readonly origine: Commande;
-  readonly objets: readonly RestaurationObjet[];
-  readonly relationsARetirer: readonly Relation[];
-  readonly relationsARajouter: readonly Relation[];
-  readonly supprimesARetirer: readonly IdObjet[];
-  readonly supprimesARajouter: readonly IdObjet[];
-  readonly catalogue?: { readonly avant: CatalogueTypes; readonly apres: string };
-}
-
 /** Commande du catalogue portant une restauration (inverse produit par un réducteur). */
 export type CommandeRestauratrice = Commande & { readonly restauration: Restauration };
 
 export function restaurationDe(c: Commande): Restauration | undefined {
-  const r = (c as { restauration?: unknown }).restauration;
-  return r === undefined ? undefined : (r as Restauration);
+  return c.restauration;
 }
 
 /** Commande sans son éventuelle restauration. */
 export function sansRestauration(c: Commande): Commande {
-  if (restaurationDe(c) === undefined) return c;
-  const { restauration: _ignoree, ...reste } = c as Commande & { restauration?: unknown };
+  if (c.restauration === undefined) return c;
+  const { restauration: _ignoree, ...reste } = c;
   void _ignoree;
   return reste as Commande;
 }
@@ -108,9 +82,21 @@ export function relationsDerivees(o: ObjetModele): Relation[] {
   }
 }
 
-/** Message « objet, cause, action » (DA-05-12-f). */
-export function motif(objet: string, cause: string, action: string): string {
-  return `${objet} : ${cause}. Action : ${action}.`;
+/** Motif d'un refus : objet, cause, action (DA-05-12-f), champs séparés de `ErreurCommande` (D-024). */
+export interface Motif {
+  readonly objet: string;
+  readonly cause: string;
+  readonly action: string;
+}
+
+export function motif(objet: string, cause: string, action: string): Motif {
+  return { objet, cause, action };
+}
+
+/** Erreur de commande complète (champs séparés + message composé pour l'affichage). */
+export function erreurCommande(code: CodeProbleme, chemin: string, m: Motif, objetIds?: readonly IdObjet[]): ErreurCommande {
+  const base = { code, chemin, objet: m.objet, cause: m.cause, action: m.action, message: composerMessageErreur(m.objet, m.cause, m.action) };
+  return objetIds && objetIds.length > 0 ? { ...base, objetIds } : base;
 }
 
 export class Transaction {
@@ -124,6 +110,7 @@ export class Transaction {
   private catalogueCourant: CatalogueTypes | null = null;
   readonly erreurs: ErreurCommande[] = [];
   readonly problemes: Probleme[] = [];
+  readonly propositions: Proposition[] = [];
   readonly referencesTouchees: { readonly porteurId: IdObjet; readonly reference: ReferenceTopologique }[] = [];
 
   constructor(readonly base: EtatModele) {}
@@ -235,8 +222,13 @@ export class Transaction {
     this.catalogueCourant = c;
   }
 
-  refuser(code: CodeProbleme, chemin: string, message: string, objetIds?: readonly IdObjet[]): void {
-    this.erreurs.push(objetIds && objetIds.length > 0 ? { code, chemin, message, objetIds } : { code, chemin, message });
+  refuser(code: CodeProbleme, chemin: string, m: Motif, objetIds?: readonly IdObjet[]): void {
+    this.erreurs.push(erreurCommande(code, chemin, m, objetIds));
+  }
+
+  /** Proposition rendue dans les effets, jamais appliquée (D-024). */
+  proposer(p: Proposition): void {
+    this.propositions.push(p);
   }
 
   signaler(p: Probleme): void {
