@@ -11,7 +11,9 @@
  *
  * Seules les signatures ci-dessous sont figées ; les corps sont écrits en L2.3.
  */
+import { sql } from "drizzle-orm";
 import type { Executeur } from "./atelier-rows.js";
+import { newId } from "./ids.js";
 
 export const EVENEMENT_COMMANDE_VALIDEE = "atelier.commande.validee";
 
@@ -33,10 +35,11 @@ export interface EvenementAtelier {
 
 /** Écrit l'événement dans `atelier_outbox` (à appeler dans la transaction du journal). */
 export async function ecrireEvenement(ex: Executeur, commandId: string, evenement: EvenementAtelier): Promise<void> {
-  void ex;
-  void commandId;
-  void evenement;
-  throw new Error("atelier-events : ecrireEvenement à implémenter en L2.3");
+  // Version minimale du chef de projet (débloque L2.2) ; L2.3 peut la réécrire sans changer la signature.
+  await ex.execute(sql`
+    INSERT INTO atelier_outbox (id, project_id, command_id, event, payload)
+    VALUES (${newId("evt")}, ${evenement.payload.projectId}, ${commandId}, ${evenement.event}, ${JSON.stringify(evenement.payload)}::jsonb)
+    ON CONFLICT (command_id, event) DO NOTHING`);
 }
 
 /**
