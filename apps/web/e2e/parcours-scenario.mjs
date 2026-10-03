@@ -381,8 +381,21 @@ check("accueil · Mon parcours : les 6 phases du prototype, toutes terminées po
 await page.locator('.parcours-phase-toggle').nth(1).click();
 check("accueil · Mon parcours : déplier « Programmer » → ses 5 étapes (04 à 08) avec leur état", (await page.locator(".parcours-phase-steps li").count()) === 5 && (await page.locator(".parcours-phase-steps .parcours-step-number").allTextContents()).join(" ") === "04 05 06 07 08");
 check("accueil · accès rapides illustrés par les données : parcelle 118 transmise (4 sommets), 4 familles de surfaces du programme, plan du RDC du modèle", (await page.locator(".quick-link-card").count()) === 3 && /Parcelle 118 : contour transmis, 4 sommets/.test(await page.locator(".quick-link-card").nth(0).locator(".quick-thumb").getAttribute("aria-label")) && /Programme : 4 familles de surfaces/.test(await page.locator(".quick-link-card").nth(1).locator(".quick-thumb").getAttribute("aria-label")) && (await page.locator(".quick-link-card").nth(2).locator(".quick-thumb svg").count()) === 1);
+// Disposition de la maquette : carte et « Mon parcours » côte à côte, « Accès rapides » sur toute la largeur (3 cartes en ligne).
 await page.setViewportSize({ width: 1536, height: 960 });
+await page.waitForTimeout(300);
+check("accueil (1536 px) : « Accès rapides » sous les deux colonnes, sur toute la largeur, 3 cartes en ligne ; rien ne centre la page verticalement", await page.evaluate(() => { const grid = document.querySelector(".home-grid").getBoundingClientRect(); const quick = document.querySelector(".quick-access").getBoundingClientRect(); const side = document.querySelector(".home-side-column").getBoundingClientRect(); const cols = getComputedStyle(document.querySelector(".quick-links")).gridTemplateColumns.split(" ").length; return Math.abs(quick.width - grid.width) < 2 && quick.top >= side.top && cols === 3 && document.querySelector(".home-greeting").getBoundingClientRect().top < 140; }));
 await page.screenshot({ path: `${OUT}/00-accueil-desktop.png`, fullPage: true });
+// « Site ordinateur » de Chrome sur téléphone (980 px, fenêtre très haute) : une colonne, salut en haut (pas de centrage vertical), 3 accès rapides en ligne.
+await page.setViewportSize({ width: 980, height: 2000 });
+await page.waitForTimeout(300);
+check("accueil (980 px, site ordinateur sur téléphone) : salut en haut de page, une colonne (carte, Mon parcours, accès rapides en 3 colonnes)", await page.evaluate(() => { const g = document.querySelector(".home-greeting").getBoundingClientRect(); const hero = document.querySelector(".resume-card").getBoundingClientRect(); const side = document.querySelector(".home-side-column").getBoundingClientRect(); const cols = getComputedStyle(document.querySelector(".quick-links")).gridTemplateColumns.split(" ").length; return g.top < 140 && side.top >= hero.bottom && cols === 3 && document.documentElement.scrollWidth <= window.innerWidth + 1; }));
+// Nom du salut modifiable sur place (même réglage que Paramètres → Compte).
+await page.locator(".home-name-edit").click();
+await page.fill("#home-display-name", "Roch");
+await page.locator('.home-name-form button[type="submit"]').click();
+await page.waitForFunction(() => document.querySelector(".home-greeting h1")?.textContent?.includes("Bonjour Roch,"), null, { timeout: 10000 });
+check("accueil : crayon à côté du salut → « Comment vous appeler ? » → « Bonjour Roch, », avatar « RO », barre latérale au nom", (await page.locator(".home-greeting h1").textContent()).trim() === "Bonjour Roch," && (await page.locator(".app-topbar-avatar").textContent()) === "RO" && (await page.locator(".app-user-name").textContent()).startsWith("Roch"));
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(300);
 await page.screenshot({ path: `${OUT}/00-accueil-mobile.png`, fullPage: true });

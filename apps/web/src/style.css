@@ -490,7 +490,7 @@ h3 {
 /* ---------------------------------------------------------------------- */
 .home-page {
   max-width: 1240px;
-  margin: auto;
+  margin: 0 auto; /* pas de centrage vertical dans la colonne flex de .app-main */
   padding: 30px 36px 40px;
   width: 100%;
 }
@@ -523,22 +523,83 @@ h3 {
   font-size: 15px;
   border-radius: 10px;
 }
+/* Maquette : carte « Reprendre mon projet » et « Mon parcours » côte à côte, puis « Accès rapides » sur toute la largeur. */
 .home-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-areas:
+    "hero side"
+    "quick quick"
+    "lib lib";
   gap: 22px;
   align-items: start;
 }
 .home-main-column {
+  grid-area: hero;
   display: flex;
   flex-direction: column;
   gap: 26px;
   min-width: 0;
 }
 .home-side-column {
+  grid-area: side;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
+}
+.home-grid > .quick-access {
+  grid-area: quick;
+  min-width: 0;
+}
+.home-grid > .bl-summary-insert {
+  grid-area: lib;
+}
+@media (max-width: 1100px) {
+  .home-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "hero"
+      "side"
+      "quick"
+      "lib";
+  }
+}
+/* Nom du salut modifiable sur place */
+.home-name-edit {
+  vertical-align: middle;
+  margin-left: 10px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  display: inline-flex;
+}
+.home-name-edit:hover {
+  color: var(--ink);
+  border-color: var(--forest-900);
+}
+.home-name-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.home-name-form label {
+  color: var(--muted);
+  font-size: 15px;
+}
+.home-name-form input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-width: 200px;
+}
+.home-name-form .button-primary,
+.home-name-form .button-secondary {
+  padding: 0.5rem 0.9rem;
 }
 .home-page .panel {
   border-radius: 14px;
@@ -679,8 +740,8 @@ h3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
-/* Colonne étroite (côté du panneau « Mon parcours ») : vignette au-dessus du texte, flèche à droite du titre. */
-@container (max-width: 980px) {
+/* Rangée étroite (site « ordinateur » sur téléphone, fenêtre réduite) : vignette au-dessus du texte, flèche à droite du titre. */
+@container (max-width: 900px) {
   .quick-link-card {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
@@ -1197,7 +1258,7 @@ h3 {
 /* ---------------------------------------------------------------------- */
 .projects-page {
   max-width: 900px;
-  margin: auto;
+  margin: 0 auto; /* pas de centrage vertical dans la colonne flex de .app-main */
   padding: 28px;
 }
 .projects-heading {
@@ -1256,7 +1317,7 @@ h3 {
 /* ---------------------------------------------------------------------- */
 .project-shell {
   max-width: 1200px;
-  margin: auto;
+  margin: 0 auto; /* pas de centrage vertical dans la colonne flex de .app-main */
   padding: 0 0 40px;
   width: 100%;
 }
