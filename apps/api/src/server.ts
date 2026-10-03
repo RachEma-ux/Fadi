@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createApp } from "./app.js";
 import { pool } from "./db/client.js";
+import { rattraperBoiteDeSortie } from "./lib/atelier-events.js";
 
 const port = Number(process.env["PORT"] ?? 3001);
 
@@ -25,6 +26,8 @@ migrateOnStart()
     app.listen(port, () => {
       // eslint-disable-next-line no-console
       console.log(`Fadi API listening on :${port}${process.env["WEB_DIST"] ? " (sert aussi l'application)" : ""}`);
+      // Événements du nouvel Atelier restés non traités (arrêt pendant un traitement, échec) : rattrapés au démarrage.
+      rattraperBoiteDeSortie();
     });
   })
   .catch((err: unknown) => {
