@@ -210,7 +210,19 @@ coordonnée est `{ x, y, frame: "local", unit: "m" }` (ou `cadastral` / `geograp
   optionnel).
 - **Caractéristiques nommées** (pour les références) : `mur:face-gauche`, `mur:face-droite`, `mur:arete-debut`,
   `mur:arete-fin`, `mur:axe`, `dalle:contour[i]`, `ouverture:centre`, `escalier:depart`, `escalier:arrivee`,
-  `poteau:centre`. Stables tant que l'objet existe ; une scission crée de nouveaux objets → références à réparer.
+  `poteau:centre`, `esquisse:sommet[i]`, `esquisse:segment[i]`, `esquisse:centre`. Stables tant que l'objet
+  existe ; une scission crée de nouveaux objets → références à réparer ; un miroir en place échange
+  `face-gauche` / `face-droite` → références à réparer.
+- **Calque et groupe** : toute occurrence porte un `calqueId` (P.118 associe un calque aux murs, portes, fenêtres,
+  poteaux, escaliers, dalles, solides, cotations et textes) ; une ouverture sans calque suit celui de son mur
+  hôte. `visible` et `verrouille` d'un calque sont dans le modèle (ils viennent du prototype, sont partagés et
+  conditionnent les documents) ; la caméra, la sélection, le calque actif et les filtres d'affichage n'y sont
+  pas (R10). Entités d'organisation : `groupe` (ensemble nommé d'occurrences, dissoluble), `bloc` (définition
+  de dessin réutilisable) et `composant` (bloc avec propriétés, classification et comptage), placés comme
+  occurrences `bloc-occurrence` (lot 5) ; `reference-externe` (version nommée d'un autre projet en fond, lot 7).
+- **Tolérances par défaut** (documentées dans les fiches, révisables par décision) : 0,001 m pour les réducteurs
+  (coïncidence, longueur nulle), 0,01 m pour le geste (accrochage de tracé), 12 px pour le rayon d'accrochage à
+  l'écran ; accrochages : extrémité, milieu, centre, perpendiculaire, intersection, orthogonal, grille.
 
 ### 5.3 Commandes
 
@@ -363,8 +375,9 @@ empreinte.
 
 IFC 4.3 (ISO 16739-1:2024) export et import du sous-ensemble (annexe C) ; `IfcMapConversion` depuis le CRS de
 la parcelle ; rapport par échange (conservé / transformé / omis / à réparer) ; validation en CI avec IfcOpenShell
-sur un corpus fixé (`apps/api/test-corpus/ifc/`) ; bibliothèque : web-ifc (MPL-2.0) si le lot 0 confirme la
-prise en charge du schéma 4.3 en écriture, sinon écriture directe du fichier depuis `atelier-model`. DXF :
+sur un corpus fixé (`apps/api/test-corpus/ifc/`) ; bibliothèque (décision D-013 d'après les mesures du lot 0) : **écriture directe** du fichier IFC 4.3 depuis
+`atelier-model` (sous-ensemble petit et spécifié, représentations géométriques maîtrisées), **web-ifc** (MPL-2.0,
+schéma IFC4X3 lu et écrit en Node, wasm 0,44 Mo brotli) pour l'import et la relecture de contrôle. DXF :
 export des vues (existant à reprendre), import 2D de base en `reference-plan`. PDF : feuilles (pdf-lib ou jsPDF,
 MIT). Paquet natif : archive JSON existante + manifeste versionné (schémas, unités, repères, identités, versions
 de catalogues). Matrice d'échanges `docs/atelier/matrice-echanges.md`.
@@ -473,7 +486,7 @@ l'ancien. **Vérifiable :** CI verte ; démonstration en ligne de commande dans 
 | Tâche | Contenu | Propriétaire |
 | --- | --- | --- |
 | L3a.1 | Socle selon la maquette validée : cinq repères, niveaux d'affichage, favoris, palette avec synonymes, inspecteur typé, panneau des problèmes intégrant les réserves Harmonie | équipier « interface » |
-| L3a.2 | Éditeur de plan 2D (SVG / Canvas, pointer events) : accrochages, saisie de précision, grille, calques, sélection (clic, lasso, filtre par classe), primitives d'esquisse (DA-01-01…06, 09, 10, 11), transformations (DA-02-01…15, 17) comme commandes avec aperçu | équipier « 2D » |
+| L3a.2 | Éditeur de plan 2D (SVG / Canvas, pointer events) : accrochages, saisie de précision, grille, calques, sélection (clic, lasso, filtre par classe), primitives d'esquisse (DA-01-01…06, 09, 10, 11), transformations et saisie de précision (DA-02-01…17) comme commandes avec aperçu | équipier « 2D » |
 | L3a.3 | Objets d'architecture : murs (types, jonctions, scission, alignement), portes / fenêtres / ouvertures hébergées (déplacement le long du mur, contrôle d'emprise), dalles, escalier droit paramétrique (fiche DA-07-10), pièces détectées depuis les murs fermés (proposition → commande), espaces, zones, étages, propriétés BIM et classification, catalogue de types | équipier « architecture » |
 | L3a.4 | Intégration : route `?module=atelier` à côté de l'ancien (`?module=atelier&version=nouveau` jusqu'à la bascule), P.118 importé dans le nouveau modèle à l'import de l'exemple, mode immersif, puce d'outil actif, clavier, axe-core | chef de projet |
 
@@ -686,9 +699,10 @@ prototype → vérifiée → disponible (ce dernier par le maître d'ouvrage).
 | Pièces, espaces, zones | `piece.detecter` (proposition), `piece.creer`, `piece.modifier`, `piece.supprimer`, `espace.*`, `zone.*` | détection jamais imposée |
 | Poteaux, solides | `poteau.*`, `solide.extruder`, `solide.modifier`, `solide.supprimer` | — |
 | Esquisse | `esquisse.ligne`, `.polyligne`, `.arc`, `.cercle`, `.rectangle`, `.polygone`, `.spline`, `.construction`, `.hachure`, `esquisse.modifier`, `esquisse.supprimer` | contraintes : lot 5 (`contrainte.*`) |
-| Transformations | `transformer.deplacer`, `.copier`, `.tourner`, `.miroir`, `.echelle`, `.etirer`, `.ajuster`, `.prolonger`, `.decaler`, `.repeter`, `.decomposer`, `.pointsDeControle` | sur une sélection typée ; chaque commande déclare les classes admises |
+| Transformations | `transformer.deplacer`, `.copier`, `.tourner`, `.miroir`, `.echelle`, `.etirer`, `.ajuster`, `.prolonger`, `.decaler`, `.repeter`, `.decomposer`, `.pointsDeControle`, `.raccorder`, `.chanfreiner` | sur une sélection typée ; chaque commande déclare les classes admises ; copier / répéter / décaler un mur emporte des copies de ses ouvertures (comportement du prototype), sans `repere`, `exterieur` ni `statutConception` ; l'échelle est uniforme et ne touche pas aux dimensions typées (un escalier est refusé) |
+| Contraintes (lot 5) | `contrainte.ajouter`, `contrainte.modifier`, `contrainte.supprimer` | coïncidence, parallélisme, perpendicularité, distance, horizontal / vertical |
 | Annotations | `cotation.creer`, `.modifier`, `.rattacher`, `.supprimer`, `texte.*`, `etiquette.*` | rattacher = références à des caractéristiques |
-| Organisation | `calque.*`, `groupe.creer`, `groupe.dissoudre`, `bloc.definir`, `bloc.placer` (lot 5), `type.definir`, `type.modifier`, `propriete.definir`, `classification.affecter` | — |
+| Organisation | `calque.creer`, `calque.modifier`, `calque.supprimer`, `calque.affecter`, `groupe.creer`, `groupe.dissoudre`, `bloc.definir` (paramètre `nature` : bloc ou composant), `bloc.placer` (lot 5), `refexterne.rattacher`, `refexterne.detacher` (lot 7), `type.definir`, `type.modifier`, `propriete.definir`, `classification.affecter` | `calqueId` ne change que par `calque.affecter` ; une classification n'est jamais devinée (« non classé » par défaut) |
 | Références | `reference.reparer` | choisit une proposition ou détache |
 | Site | `site.parcelle.definir`, `site.emprise.definir` | émises par la transmission de l'outil Parcelle |
 

@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Banc three.js — scène équivalente P.118</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#fff}canvas{display:block}</style>
+<script type="importmap">
+{"imports":{
+  "three":"/node_modules/three/build/three.module.js",
+  "three/webgpu":"/node_modules/three/build/three.webgpu.js",
+  "three/tsl":"/node_modules/three/build/three.tsl.js",
+  "three/addons/":"/node_modules/three/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<script type="module">
+// Banc L0.4 — scène équivalente à P.118 : 6 niveaux, 220 murs, 210 ouvertures, 120 poteaux, 967 solides.
+// Paramètres d'URL : variant=A|B, backend=webgl2|webgpu, frames=300, picks=100, sync=readpixels|none
+//   A : murs et solides en Mesh individuels (une BoxGeometry chacun), ouvertures et poteaux en InstancedMesh par niveau.
+//   B : InstancedMesh pour toute classe d'objets, par niveau (6 niveaux × 4 classes = 24 maillages).
+const params = new URLSearchParams(location.search);
+const variant = params.get('variant') || 'A';
+const backend = params.get('backend') || 'webgl2';
+const FRAMES = Number(params.get('frames') || 300);
+const PICKS = Number(params.get('picks') || 100);
+const SYNC = params.get('sync') || 'readpixels'; // readpixels : attend la fin du rendu ; none : coût CPU de render() seul (sans attendre le GPU)
+const t0 = performance.now(); // ms depuis le début de la navigation
+window.__benchResult = null;
+window.__benchError = null;
+
+const pct = (arr, p) => { if (!arr.length) return null; const s = [...arr].sort((a, b) => a - b); return s[Math.min(s.length - 1, Math.floor(p / 100 * s.length))]; };
+const stats = (arr) => ({ n: arr.length, p50: pct(arr, 50), p95: pct(arr, 95), max: arr.length ? Math.max(...arr) : null, mean: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null });
+
+try {
+  const THREE = backend === 'webgpu' ? await import('three/webgpu') : await import('three');
+  const tImport = performance.now();
+
+  const LEVELS = 6, LEVEL_H = 3.2, FOOT_X = 40, FOOT_Y = 30;
+  const COUNTS = { wall: 220, opening: 210, column: 120, solid: 967 };
+  // Générateur pseudo-aléatoire déterministe (mulberry32) : même scène à chaque exécution.
+  let seed = 118;
+  const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xffffff);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(30, 50, 20); scene.add(sun);
+  const mats = {
+    wall: new THREE.MeshStandardMaterial({ color: 0xd9d4c7 }),
+    opening: new THREE.MeshStandardMaterial({ color: 0x7fb3d5 }),
+    column: new THREE.MeshStandardMaterial({ color: 0x8d8d8d }),
+    solid: new THREE.MeshStandardMaterial({ color: 0xc7b299 }),
+  };
+  // Dimensions (x, y = hauteur, z) en mètres et placement par niveau.
+  const classes = [
+    { name: 'wall', size: () => [4, 3, 0.2], y: (l) => l * LEVEL_H + 1.5, rot: () => Math.round(rnd()) * Math.PI / 2 },
+    { name: 'opening', size: () => [1, 2.1, 0.3], y: (l) => l * LEVEL_H + 1.05, rot: () => Math.round(rnd()) * Math.PI / 2 },
+    { name: 'column', size: () => [0.3, 3, 0.3], y: (l) => l * LEVEL_H + 1.5, rot: () => 0 },
+    { name: 'solid', size: () => [0.5 + rnd() * 1.5, 0.3 + rnd() * 1.2, 0.5 + rnd() * 1.5], y: (l) => l * LEVEL_H + 0.5 + rnd() * 2, rot: () => rnd() * Math.PI },
+  ];
+  const unitBox = new THREE.BoxGeometry(1, 1, 1);
+  const dummy = new THREE.Object3D();
+  const levelGroups = [];
+  for (let l = 0; l < LEVELS; l++) { const g = new THREE.Group(); g.name = 'niveau-' + l; scene.add(g); levelGroups.push(g); }
+  let meshCount = 0, instancedMeshCount = 0, instanceCount = 0, objectCount = 0, geometryCount = 1;
+  for (const c of classes) {
+    const total = COUNTS[c.name];
+    const instanced = variant === 'B' || c.name === 'opening' || c.name === 'column';
+    for (let l = 0; l < LEVELS; l++) {
+      const n = Math.floor(total / LEVELS) + (l < total % LEVELS ? 1 : 0);
+      if (instanced) {
+        const im = new THREE.InstancedMesh(unitBox, mats[c.name], n);
+        for (let i = 0; i < n; i++) {
+          const s = c.size();
+          dummy.position.set(rnd() * FOOT_X, c.y(l), rnd() * FOOT_Y);
+          dummy.rotation.set(0, c.rot(), 0);
+          dummy.scale.set(s[0], s[1], s[2]);
+          dummy.updateMatrix();
+          im.setMatrixAt(i, dummy.matrix);
+        }
+        im.instanceMatrix.needsUpdate = true;
+        im.name = c.name + '-' + l;
+        im.userData.kind = c.name;
+        levelGroups[l].add(im);
+        meshCount++; instancedMeshCount++; instanceCount += n; objectCount += n;
+      } else {
+        for (let i = 0; i < n; i++) {
+          const s = c.size();
+          const m = new THREE.Mesh(new THREE.BoxGeometry(s[0], s[1], s[2]), mats[c.name]);
+          geometryCount++;
+          m.position.set(rnd() * FOOT_X, c.y(l), rnd() * FOOT_Y);
+          m.rotation.y = c.rot();
+          m.name = c.name + '-' + l + '-' + i;
+          m.userData.kind = c.name;
+          levelGroups[l].add(m);
+          meshCount++; objectCount++;
+        }
+      }
+    }
+  }
+  const tScene = performance.now();
+
+  const canvas = document.createElement('canvas');
+  document.body.appendChild(canvas);
+  const W = innerWidth, H = innerHeight;
+  let renderer, gl = null, glInfo = null;
+  if (backend === 'webgpu') {
+    renderer = new THREE.WebGPURenderer({ canvas, antialias: true });
+    await renderer.init();
+    glInfo = { backend: renderer.backend && renderer.backend.constructor ? renderer.backend.constructor.name : null, isWebGPUBackend: !!(renderer.backend && renderer.backend.isWebGPUBackend) };
+  } else {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    gl = renderer.getContext();
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    glInfo = {
+      webgl2: typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext,
+      vendor: dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : null,
+      renderer: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : null,
+      version: gl.getParameter(gl.VERSION),
+    };
+  }
+  renderer.setPixelRatio(1);
+  renderer.setSize(W, H);
+  const camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 500);
+  const center = new THREE.Vector3(FOOT_X / 2, LEVELS * LEVEL_H / 2, FOOT_Y / 2);
+  const radius = 70;
+  const setCam = (angle) => { camera.position.set(center.x + radius * Math.cos(angle), center.y + 25, center.z + radius * Math.sin(angle)); camera.lookAt(center); };
+  // Synchronisation : dans Chromium, gl.finish() est volontairement un simple flush (la rastérisation n'est pas
+  // attendue) ; un readPixels 1×1 bloque jusqu'à ce que le processus GPU ait terminé la trame.
+  const px = new Uint8Array(4);
+  const doRender = async () => {
+    if (backend === 'webgpu') { await renderer.renderAsync(scene, camera); if (renderer.backend?.device) await renderer.backend.device.queue.onSubmittedWorkDone(); }
+    else { renderer.render(scene, camera); if (SYNC !== 'none') gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); }
+  };
+  setCam(0);
+  const tRenderer = performance.now();
+  await doRender();
+  const tFirst = performance.now();
+  const firstInfo = { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles };
+
+  // Orbite : FRAMES trames, une par requestAnimationFrame.
+  const renderMs = [], intervalMs = [];
+  let last = null;
+  for (let f = 0; f < FRAMES; f++) {
+    const now = await new Promise((r) => requestAnimationFrame(r));
+    if (last !== null) intervalMs.push(now - last);
+    last = now;
+    setCam(f / FRAMES * Math.PI * 2);
+    const a = performance.now();
+    await doRender();
+    renderMs.push(performance.now() - a);
+  }
+  const tOrbit = performance.now();
+  const lastInfo = { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, programs: renderer.info.programs ? renderer.info.programs.length : null };
+
+  // Sélection : PICKS lancers de rayon depuis des points d'écran aléatoires (toute la scène).
+  const ray = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  const pickMs = [];
+  let hits = 0;
+  for (let i = 0; i < PICKS; i++) {
+    pointer.set(rnd() * 2 - 1, rnd() * 2 - 1);
+    const a = performance.now();
+    ray.setFromCamera(pointer, camera);
+    const r = ray.intersectObjects(scene.children, true);
+    pickMs.push(performance.now() - a);
+    if (r.length) hits++;
+  }
+
+  const mem = performance.memory ? { usedJSHeapSize: performance.memory.usedJSHeapSize, totalJSHeapSize: performance.memory.totalJSHeapSize, jsHeapSizeLimit: performance.memory.jsHeapSizeLimit } : null;
+  window.__benchResult = {
+    variant, backend, frames: FRAMES, viewport: [W, H], pixelRatio: renderer.getPixelRatio(),
+    threeRevision: THREE.REVISION, glInfo,
+    scene: { levels: LEVELS, counts: COUNTS, objects: objectCount, meshes: meshCount, instancedMeshes: instancedMeshCount, instances: instanceCount, geometries: geometryCount },
+    timingsMs: {
+      navigationToScriptStart: t0, importThree: tImport - t0, buildScene: tScene - tImport, createRenderer: tRenderer - tScene,
+      firstRender: tFirst - tRenderer, firstFrameSinceNavigation: tFirst, orbitTotal: tOrbit - tFirst,
+    },
+    frame: { syncMethod: backend === 'webgpu' ? 'queue.onSubmittedWorkDone' : (SYNC === 'none' ? 'aucune (render() seul, GPU non attendu)' : 'readPixels 1x1 après render()'), renderPlusSync: stats(renderMs), rafInterval: stats(intervalMs) },
+    drawCalls: { firstFrame: firstInfo, lastFrame: lastInfo },
+    pick: { ...stats(pickMs), hits },
+    memory: mem,
+    userAgent: navigator.userAgent, hardwareConcurrency: navigator.hardwareConcurrency, deviceMemory: navigator.deviceMemory ?? null,
+  };
+} catch (e) {
+  window.__benchError = String(e && e.stack ? e.stack : e);
+}
+</script>
+</body>
+</html>

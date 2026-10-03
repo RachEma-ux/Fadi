@@ -65,6 +65,16 @@ are three distinct reference systems, explicitly tagged — never silently mixed
 tests on their invariants. It intentionally does not yet carry persistence, validation rules or UI — those
 belong to Lot 2 onward, once the backend exists to enforce them server-side too.
 
+The building model itself is being rebuilt on the DrawAll V4.1 contracts (`docs/drawall/`, decisions D1–D6;
+specification `docs/atelier-cahier-des-charges.md`): `packages/atelier-model` is the pure package that owns the
+`building.architecture` ontology (storeys, walls, doors, windows, openings, slabs, roofs, stairs, rooms, spaces,
+zones; the column of `building.structure`; sketches, generic solids and annotations), the identities
+definition / occurrence / representation, typed properties with units and provenance, the typed commands and
+their pure reducers, the topological references with the « référence à réparer » state, the quantities, the
+one-way P.118 importer and the projection to the analysis input used by the other modules. A capability sheet
+(`docs/atelier/fiches/DA-XX-YY.md`) is written and in state « spécifiée » before any function of the Atelier
+is coded, and no function is called « disponible » without its linked proof and the owner's acceptance.
+
 ## Coherent, reversible operations
 
 A business command (e.g. "move this stair") can touch several objects at once — its position, its landings,
@@ -77,9 +87,15 @@ Display parameters — camera, current selection, visible level, Volume/Exploded
 building's physical data: panning the 3D view must never touch the model's revision number.
 
 `packages/domain-model` also carries a small, generic, tested `CommandHistory` (do/undo/redo over an
-application-defined `Command<TState>`) as the mechanical skeleton for this rule. It does not yet know about
-walls or stairs — wiring real Atelier commands (move a stair + its openings as one unit) is Atelier module
-work, not domain-model work, and is still open.
+application-defined `Command<TState>`) as the mechanical skeleton for this rule. The Atelier commands
+themselves follow the transactional cycle of the DrawAll Architecture V4 §6: the client sends an intention
+(contract version, commands, targets, `requestId`, `baseRevision`); the server re-reads the role, validates
+units, types and preconditions, applies the same pure reducers on a consistent snapshot under the project row
+lock, records the business changes, the journal entry (with its inverse) and the outbox events in one
+transaction, then advances `projects.model_revision`. A repeated `requestId` returns the recorded answer and
+never applies twice; a stale `baseRevision` is a detailed 409, never a silent merge; undo and redo are new
+journal entries (microversions), never a rewrite of history; every validated command marks the dependent
+views, documents and the Harmonie review « à recalculer ».
 
 ## Technology choices
 
@@ -90,7 +106,7 @@ work, not domain-model work, and is still open.
 | UI state | Zustand |
 | Server data loading/cache | TanStack Query |
 | Model changes | Reversible business commands + transactional validation |
-| Architectural rendering | Keep the existing Canvas/SVG engines initially |
+| Architectural rendering | 3D: three.js on WebGL2 by default (DrawAll decision D2), WebGPU only behind a setting with automatic fallback, frame budget measured and published, never promised; 2D plan and technical views: SVG / Canvas 2D in TypeScript from `core-geometry` |
 | Background computation | Web Workers |
 | Server | Node.js, TypeScript, Express, REST API |
 | Database | PostgreSQL + Drizzle |
@@ -104,10 +120,12 @@ operations actually used, not a speculative schema. The building's own semantic 
 wall, stair connecting two levels, shaft tied to a slab) stay in the application's relational/semantic model —
 PostGIS is not asked to express those.
 
-Three.js is a possible evolution of the rendering layer, decided later from real measurements (fluidity, model
-size, the specific 3D features actually needed) — not a prerequisite for turning the prototype into an
-application. See `packages/core-geometry/README.md` for exactly which Canvas/SVG functions are kept as-is and
-why.
+The prototype's extracted engine (Canvas 2D) stays in place, untouched, only until the new Atelier passes the
+acceptance scenario on P.118; it is then deleted from the product (one Atelier, no « classic » mode). The
+canonical geometry of building objects is parametric; solids, symbols and display meshes are derived by an
+identified, versioned engine (`core-geometry` today). No B-Rep kernel (OCCT) enters the repository before the
+owner's licence decision; it would serve free-form shape operations only, behind the same engine interface.
+See `packages/core-geometry/README.md` for exactly which Canvas/SVG functions are kept and why.
 
 ## Code reuse: decided function by function
 
@@ -133,6 +151,14 @@ four states, visibly, per change:
 - syncing
 - saved on the server
 - conflict requiring a decision
+
+and, for the Atelier's objects and documents, « à recalculer » (a dependent result is stale after a command)
+and « publié » (frozen in a publication). The Atelier also keeps named versions (immutable snapshots of a
+revision), variants (a fork of the command journal, merged by validated replay with an explicit list of
+affected objects — never an automatic merge) and publications (a revision, the catalogue versions and the
+documents frozen together, restorable with their dependencies). Exchanges (IFC 4.3, DXF, PDF, native package)
+follow a published exchange matrix and produce a fidelity report per transfer; IFC conformity is tested on a
+corpus in CI, never called « certified ».
 
 Dexie handles the IndexedDB plumbing; the sync protocol, revision checks and conflict rules are a separate,
 still-open piece of work. A change based on a stale revision can never silently overwrite a newer one. For
@@ -175,6 +201,7 @@ AI-initiated write bypasses the command/undo system.
 | 3. Application pilote | Modular interface, local + server save, rendering preserved | Full workflow usable on P.118 |
 | 4. Continuité du travail | Sync, conflicts, rights and restore | Network-loss and concurrent-edit scenarios handled |
 | 5. Mise en production | Remaining functions migrated, exports, monitoring, deployment | Functional, mobile and documentation sign-off |
+| 6. Atelier DrawAll V4.1 | Lots 0–9 of `docs/atelier-cahier-des-charges.md`: capability sheets and measurements, typed model, transactional command API, new Atelier (2D, architecture objects, 3D WebGL2), switch (old engine deleted), derived documents and quantities, IFC / DXF / PDF exchanges, versions / variants / publications, scripts and controlled-loop assistant, final acceptance | Each lot accepted by the owner on its verifiable points; one Atelier in the product after the switch |
 
 Budget and schedule are set after Lot 1, from identified tasks and verified dependencies — not guessed up
 front.

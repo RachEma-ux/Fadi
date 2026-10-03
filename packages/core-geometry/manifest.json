@@ -1,0 +1,7 @@
+{
+  "name": "@parcours/core-geometry",
+  "version": "0.1.0",
+  "description": "Géométrie pure (solides par extrusion, projections, coupes, parcelle) — aucune dépendance d'interface.",
+  "contracts": {},
+  "allowedDependencies": []
+}

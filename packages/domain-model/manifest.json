@@ -1,0 +1,7 @@
+{
+  "name": "@parcours/domain-model",
+  "version": "0.1.0",
+  "description": "Entités, repères, exigences / hypothèses / recommandations, documents, CommandHistory, règles métier pures.",
+  "contracts": {},
+  "allowedDependencies": ["@parcours/core-geometry"]
+}
