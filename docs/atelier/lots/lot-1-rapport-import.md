@@ -8,7 +8,7 @@ Règles appliquées : cahier §6, D-021 (confirmées par D-022). Aucune valeur i
 | exampleId | p118-exemple-complet |
 | sourceVersion | 8.19.0 |
 | Empreinte de la source | `sha256-ca235ca090d0fcb178c65a4ea2cdb8fe4f47947045f464a0ccf9b44c2092a8e7` |
-| Empreinte du modèle produit | `sha256-629f5ba88611c4c34c48f4ab8279777e7f9eb400869bd200a6d2a59dbe0e4373` |
+| Empreinte du modèle produit | `sha256-d9695e46c17651664b1d1a8e6b4e1ee7c9d298fc8d945b8239a8434ff1f60147` |
 
 ## Effectifs par famille
 

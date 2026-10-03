@@ -28,7 +28,7 @@ import { pointCadastral, type PointLocal, type PolygoneAvecTrous } from "../onto
 import type { Relation } from "../ontologie/relations.js";
 import { aire, angle, longueur, type ChargeSurfacique } from "../ontologie/unites.js";
 import { validerObjet } from "../ontologie/validation.js";
-import { empreinteModele, jsonCanonique, sha256Hex } from "./empreinte.js";
+import { empreinteModele, empreinteSource, jsonCanonique } from "./empreinte.js";
 import {
   aireAvecTrous,
   cloner,
@@ -1067,7 +1067,7 @@ export const importerP118: ImporterP118 = (dataset: JeuDonneesP118, options) => 
     source: {
       ...(estTexte(dataset.exampleId) ? { exampleId: dataset.exampleId } : {}),
       ...(estTexte(dataset.sourceVersion) ? { sourceVersion: dataset.sourceVersion } : {}),
-      empreinteSource: `sha256-${sha256Hex(jsonCanonique(dataset))}`,
+      empreinteSource: empreinteSource(dataset),
     },
     lignes,
     rolesInconnus,
