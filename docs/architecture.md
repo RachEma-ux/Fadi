@@ -179,6 +179,12 @@ AI-initiated write bypasses the command/undo system.
 Budget and schedule are set after Lot 1, from identified tasks and verified dependencies — not guessed up
 front.
 
+A proposal to rebuild the Atelier Architectural on the DrawAll V4.1 contracts (typed transactional commands,
+definition / occurrence / representation identities, `building.architecture` ontology, WebGL2 rendering, named
+versions and variants, IFC 4.3 exchange matrix) with its own lots and time estimate is recorded in
+`docs/atelier-drawall.md`. It is **awaiting decision**: until it is accepted, the plan above stands unchanged,
+and the amendments it would require are listed in its section 10.
+
 ### Where this repository stands
 
 Lot 1 is done for the active code: `docs/migration/reference.md` inventories the prototype's scripts, data

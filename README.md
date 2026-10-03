@@ -74,6 +74,9 @@ Permanent hosting (stable URL, persistent PostGIS database, daily backups, verif
 `scripts/verify-restore.sh` (also run by CI on the scenario's database). What the repository cannot contain is a
 machine or hosting account and a domain name.
 
+Proposal awaiting decision: `docs/atelier-drawall.md` — the Atelier Architectural rebuilt on the DrawAll V4.1
+contracts, lot by lot, with the implementation-time estimate and the decisions it needs.
+
 Temporary public instance (`.github/workflows/builder-deploy.yml`, "Builder Deploy"): launched by hand from
 GitHub → Actions → Builder Deploy → *Run workflow* (pick the branch and the duration, 5–30 min). The run builds
 **the branch as it is at launch time**, migrates a fresh PostGIS service (data is truncated at each run), starts
