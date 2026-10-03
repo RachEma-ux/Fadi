@@ -21,6 +21,9 @@ import { CANDIDATS } from "./lib/wasm.mjs";
 const ici = dirname(fileURLToPath(import.meta.url));
 const arg = (nom, defaut) => { const a = process.argv.find((x) => x === `--${nom}` || x.startsWith(`--${nom}=`)); return a == null ? defaut : a.includes("=") ? a.split("=").slice(1).join("=") : true; };
 const REPETITIONS = Number(arg("repetitions", 3));
+// Trames d'orbite et rayons de sélection par rendu (réduits en CI : rendu logiciel SwiftShader).
+const TRAMES = Number(arg("trames", 300));
+const RAYONS = Number(arg("rayons", 200));
 const SORTIE = join(ici, arg("sortie", "resultats/mesures-banc.json"));
 const VIEWPORT = { width: 1536, height: 864 };
 const DRAPEAUX_DEFAUT = ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"];
@@ -77,18 +80,20 @@ async function mesuresNavigateur(base) {
 
     // Rendu three.js : chaque répétition dans un contexte neuf (cache HTTP vide, aucun programme GPU compilé),
     // puis une 2e ouverture dans la même page (programmes déjà compilés, modules JS en mémoire).
-    res.rendu = { protocole: { viewport: VIEWPORT, deviceScaleFactor: 1, tramesOrbite: 300, rayons: 200, repetitions: REPETITIONS }, essais: [] };
+    res.rendu = { protocole: { viewport: VIEWPORT, deviceScaleFactor: 1, tramesOrbite: TRAMES, rayons: RAYONS, repetitions: REPETITIONS }, essais: [] };
     for (const variante of ["objets", "fusionne"]) {
       for (let i = 0; i < REPETITIONS; i++) {
         const ctx = await nouveauContexte();
         const page = await ouvrirPage(ctx, base, journal);
         page.setDefaultTimeout(300_000);
-        const froid = await page.evaluate((v) => window.__banc.mesurerRendu({ variante: v }), variante);
-        const chaud = await page.evaluate((v) => window.__banc.mesurerRendu({ variante: v }), variante);
+        const t0 = performance.now();
+        const params = { variante, tramesOrbite: TRAMES, rayons: RAYONS };
+        const froid = await page.evaluate((p) => window.__banc.mesurerRendu(p), params);
+        const chaud = await page.evaluate((p) => window.__banc.mesurerRendu(p), params);
         res.rendu.essais.push({ ...froid, repetition: i + 1, cache: "froid (contexte neuf)" });
         res.rendu.essais.push({ ...chaud, repetition: i + 1, cache: "chaud (même page, programmes GPU compilés)" });
         await ctx.close();
-        console.error(`  ✓ rendu ${variante} #${i + 1}`);
+        console.error(`  ✓ rendu ${variante} #${i + 1} (${((performance.now() - t0) / 1000).toFixed(1)} s)`);
       }
     }
     res.rendu.synthese = {};

@@ -12,6 +12,14 @@ on:
         description: "Nombre de répétitions par mesure"
         required: false
         default: "3"
+      trames:
+        description: "Trames d'orbite par rendu (rendu logiciel en CI : 60 suffit pour un p95)"
+        required: false
+        default: "60"
+      rayons:
+        description: "Rayons de sélection par rendu"
+        required: false
+        default: "100"
   push:
     branches:
       - "tache/L0.4-*"
@@ -51,7 +59,9 @@ jobs:
       - name: Lancer le banc
         env:
           REPETITIONS: ${{ github.event.inputs.repetitions || '3' }}
-        run: node --expose-gc run.mjs --repetitions="$REPETITIONS"
+          TRAMES: ${{ github.event.inputs.trames || '60' }}
+          RAYONS: ${{ github.event.inputs.rayons || '100' }}
+        run: node --expose-gc run.mjs --repetitions="$REPETITIONS" --trames="$TRAMES" --rayons="$RAYONS"
 
       - name: Résumé
         if: always()
