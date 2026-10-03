@@ -31,4 +31,4 @@ L'ancien Atelier (`routes/atelier.ts`, `lib/atelier-store.ts`, `lib/api/atelier.
 | L2.3 événements | #38 | après L2.1 |
 | L2.4 client : bus, file Dexie, conflits | #39 | fusionnée (PR #43) ; 17 tests ; détails d'API figés (D-029) |
 | L2.5 tests API, scénario hors ligne | #40 | avec L2.2 |
-| L2.6 décisions, compte rendu | #41 | en cours |
+| L2.6 décisions, compte rendu, matrice | #41 | en cours ; interface `atelier-events.ts` figée ; `docs/migration/matrix.md` §3 complétée |
