@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Banc L0.4</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #f4f2ee; color: #1f2328; font: 14px system-ui, sans-serif; }
+    #vue { display: block; width: 100vw; height: 100vh; }
+    #etat { position: fixed; left: 8px; top: 8px; background: #fffc; padding: 4px 8px; border-radius: 4px; }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/node_modules/three/build/three.module.js",
+        "three/addons/": "/node_modules/three/examples/jsm/",
+        "comlink": "/node_modules/comlink/dist/esm/comlink.mjs"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="vue"></canvas>
+  <div id="etat">Banc de mesures L0.4 — piloté par run.mjs (Playwright).</div>
+  <script type="module" src="./banc.mjs"></script>
+</body>
+</html>

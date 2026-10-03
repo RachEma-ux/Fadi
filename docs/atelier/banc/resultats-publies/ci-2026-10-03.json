@@ -1,0 +1,2466 @@
+{
+  "banc": "Fadi — Atelier DrawAll V4.1 — lot 0, tâche L0.4 (issue #5)",
+  "debut": "2026-10-03T18:53:14.995Z",
+  "machine": {
+    "lieu": "GitHub Actions",
+    "detailLieu": {
+      "runnerOs": "Linux",
+      "runnerArch": "X64",
+      "runnerName": "GitHub Actions 1000026472",
+      "imageOs": "ubuntu24",
+      "imageVersion": "20260927.320.1",
+      "workflow": "Atelier — banc de mesures (L0.4)",
+      "runId": "37145845850",
+      "sha": "884d99001f41824eacb429a7a0a7101a23355df5"
+    },
+    "os": "Linux 6.17.0-1022-azure",
+    "arch": "x64",
+    "cpu": {
+      "modele": "AMD EPYC 9V45 96-Core Processor",
+      "coeurs": 4
+    },
+    "memoireTotaleMo": 15990,
+    "memoireLibreMo": 14488,
+    "node": "v22.23.3",
+    "v8": "12.4.254.21-node.57",
+    "date": "2026-10-03T18:53:15.010Z"
+  },
+  "modele": {
+    "source": {
+      "chemin": "apps/api/src/data/examples/p118-native-model.json",
+      "sha256": "590d8713f76528a63ef7e822047980332c1cce8d4974e2730be3dd740a4d6285",
+      "octets": 1144023,
+      "version": "8.19.0",
+      "crs": "EPSG:26191"
+    },
+    "sceneOctets": 664001,
+    "comptes": {
+      "niveaux": 6,
+      "murs": 220,
+      "portes": 84,
+      "fenetres": 126,
+      "ouvertures": 210,
+      "poteaux": 120,
+      "escaliers": 32,
+      "traces": 967,
+      "tracesSolides": 967,
+      "tracesAvecHauteur": 843,
+      "textes": 95,
+      "cotations": 64,
+      "pieces": 45
+    }
+  },
+  "versions": {
+    "three": "0.186.1",
+    "web-ifc": "0.0.78",
+    "manifold-3d": "3.5.4",
+    "yjs": "13.6.33",
+    "occt-wasm": "5.5.0",
+    "opencascade.js": "1.1.1",
+    "playwright": "1.56.0"
+  },
+  "node": {
+    "machine": {
+      "lieu": "GitHub Actions",
+      "detailLieu": {
+        "runnerOs": "Linux",
+        "runnerArch": "X64",
+        "runnerName": "GitHub Actions 1000026472",
+        "imageOs": "ubuntu24",
+        "imageVersion": "20260927.320.1",
+        "workflow": "Atelier — banc de mesures (L0.4)",
+        "runId": "37145845850",
+        "sha": "884d99001f41824eacb429a7a0a7101a23355df5"
+      },
+      "os": "Linux 6.17.0-1022-azure",
+      "arch": "x64",
+      "cpu": {
+        "modele": "AMD EPYC 9V45 96-Core Processor",
+        "coeurs": 4
+      },
+      "memoireTotaleMo": 15990,
+      "memoireLibreMo": 14488,
+      "node": "v22.23.3",
+      "v8": "12.4.254.21-node.57",
+      "date": "2026-10-03T18:53:15.017Z"
+    },
+    "scene": {
+      "source": {
+        "chemin": "apps/api/src/data/examples/p118-native-model.json",
+        "sha256": "590d8713f76528a63ef7e822047980332c1cce8d4974e2730be3dd740a4d6285",
+        "octets": 1144023,
+        "version": "8.19.0",
+        "crs": "EPSG:26191"
+      },
+      "comptes": {
+        "niveaux": 6,
+        "murs": 220,
+        "portes": 84,
+        "fenetres": 126,
+        "ouvertures": 210,
+        "poteaux": 120,
+        "escaliers": 32,
+        "traces": 967,
+        "tracesSolides": 967,
+        "tracesAvecHauteur": 843,
+        "textes": 95,
+        "cotations": 64,
+        "pieces": 45
+      }
+    },
+    "wasmTailles": [
+      {
+        "id": "web-ifc",
+        "version": "0.0.78",
+        "licence": "MPL-2.0",
+        "note": "Variante navigateur mono-fil (web-ifc.wasm + API ESM). web-ifc-mt.wasm (multi-fil) et web-ifc-node.wasm non comptés.",
+        "fichiers": [
+          {
+            "fichier": "web-ifc/web-ifc.wasm",
+            "brut": 1595268,
+            "gzip": 577884,
+            "brotli": 439717
+          },
+          {
+            "fichier": "web-ifc/web-ifc-api.js",
+            "brut": 5909050,
+            "gzip": 487161,
+            "brotli": 209592
+          }
+        ],
+        "total": {
+          "brut": 7504318,
+          "gzip": 1065045,
+          "brotli": 649309
+        }
+      },
+      {
+        "id": "manifold-3d",
+        "version": "3.5.4",
+        "licence": "Apache-2.0",
+        "note": "",
+        "fichiers": [
+          {
+            "fichier": "manifold-3d/manifold.wasm",
+            "brut": 541470,
+            "gzip": 205699,
+            "brotli": 158724
+          },
+          {
+            "fichier": "manifold-3d/manifold.js",
+            "brut": 82371,
+            "gzip": 19200,
+            "brotli": 17223
+          }
+        ],
+        "total": {
+          "brut": 623841,
+          "gzip": 224899,
+          "brotli": 175947
+        }
+      },
+      {
+        "id": "occt-wasm",
+        "version": "5.5.0",
+        "licence": "Enveloppe MIT OR Apache-2.0 ; binaire OCCT LGPL-2.1 + exception OCCT (non arbitré, D-003)",
+        "note": "Banc uniquement.",
+        "fichiers": [
+          {
+            "fichier": "occt-wasm/dist/occt-wasm.wasm",
+            "brut": 21173108,
+            "gzip": 6770967,
+            "brotli": 4686832
+          },
+          {
+            "fichier": "occt-wasm/dist/occt-wasm.js",
+            "brut": 112960,
+            "gzip": 30174,
+            "brotli": 26676
+          },
+          {
+            "fichier": "occt-wasm/dist/index.js",
+            "brut": 78538,
+            "gzip": 17437,
+            "brotli": 14802
+          }
+        ],
+        "total": {
+          "brut": 21364606,
+          "gzip": 6818578,
+          "brotli": 4728310
+        }
+      },
+      {
+        "id": "opencascade.js",
+        "version": "1.1.1",
+        "licence": "LGPL-2.1-only (non arbitré, D-003)",
+        "note": "Version 1.1.1 (dernière stable npm, construction complète). Banc uniquement.",
+        "fichiers": [
+          {
+            "fichier": "opencascade.js/dist/opencascade.wasm.wasm",
+            "brut": 65864037,
+            "gzip": 13834575,
+            "brotli": 9465008
+          },
+          {
+            "fichier": "opencascade.js/dist/opencascade.wasm.js",
+            "brut": 330809,
+            "gzip": 52371,
+            "brotli": 44927
+          }
+        ],
+        "total": {
+          "brut": 66194846,
+          "gzip": 13886946,
+          "brotli": 9509935
+        }
+      }
+    ],
+    "wasmInitNode": [
+      {
+        "id": "web-ifc",
+        "version": "0.0.78",
+        "essais": 3,
+        "initMs": {
+          "n": 3,
+          "min": 184.16,
+          "p50": 190.04,
+          "p95": 196.42,
+          "max": 196.42,
+          "moyenne": 190.21
+        },
+        "rssDeltaMo": {
+          "n": 3,
+          "min": 100.6,
+          "p50": 104.5,
+          "p95": 107.3,
+          "max": 107.3,
+          "moyenne": 104.1
+        },
+        "verification": {
+          "modeleCree": true,
+          "schemaIFC4X3Present": true,
+          "apresInitMs": 2.9324629999999843
+        },
+        "erreur": null
+      },
+      {
+        "id": "manifold-3d",
+        "version": "3.5.4",
+        "essais": 3,
+        "initMs": {
+          "n": 3,
+          "min": 13.71,
+          "p50": 14.32,
+          "p95": 14.58,
+          "max": 14.58,
+          "moyenne": 14.2
+        },
+        "rssDeltaMo": {
+          "n": 3,
+          "min": 12.4,
+          "p50": 12.4,
+          "p95": 12.5,
+          "max": 12.5,
+          "moyenne": 12.4
+        },
+        "verification": {
+          "volumeCube123": 6
+        },
+        "erreur": null
+      },
+      {
+        "id": "occt-wasm",
+        "version": "5.5.0",
+        "essais": 3,
+        "initMs": {
+          "n": 3,
+          "min": 62.2,
+          "p50": 63.11,
+          "p95": 66.84,
+          "max": 66.84,
+          "moyenne": 64.05
+        },
+        "rssDeltaMo": {
+          "n": 3,
+          "min": 83.5,
+          "p50": 83.6,
+          "p95": 83.8,
+          "max": 83.8,
+          "moyenne": 83.6
+        },
+        "verification": {
+          "volumeBoite123": 6
+        },
+        "erreur": null
+      },
+      {
+        "id": "opencascade.js",
+        "version": "1.1.1",
+        "essais": 3,
+        "initMs": {
+          "n": 3,
+          "min": 542.09,
+          "p50": 549.95,
+          "p95": 562,
+          "max": 562,
+          "moyenne": 551.35
+        },
+        "rssDeltaMo": {
+          "n": 3,
+          "min": 376.6,
+          "p50": 390.5,
+          "p95": 391.1,
+          "max": 391.1,
+          "moyenne": 386.1
+        },
+        "verification": {
+          "pointGpPnt": [
+            1,
+            2,
+            3
+          ],
+          "classeMakeBoxPresente": true
+        },
+        "erreur": null
+      }
+    ],
+    "manifold": {
+      "version": "3.5.4",
+      "initMs": 8.85,
+      "p118": {
+        "sansMarges": {
+          "murs": 220,
+          "ouvertures": 210,
+          "totalMs": 63.42,
+          "parMurMs": {
+            "n": 220,
+            "min": 0.017,
+            "p50": 0.037,
+            "p95": 1.112,
+            "max": 5.095,
+            "moyenne": 0.265
+          },
+          "triangles": 6504,
+          "nonConformes": 0,
+          "detailNonConformes": []
+        },
+        "avecMarges": {
+          "murs": 220,
+          "ouvertures": 210,
+          "totalMs": 34.79,
+          "parMurMs": {
+            "n": 220,
+            "min": 0.011,
+            "p50": 0.023,
+            "p95": 0.756,
+            "max": 1.395,
+            "moyenne": 0.151
+          },
+          "triangles": 6504,
+          "nonConformes": 0,
+          "detailNonConformes": []
+        }
+      },
+      "observations": {
+        "ouverturesSansMurHote": 0,
+        "ouverturesDebordantLeMur": 0,
+        "mursAvecOuvertures": 93,
+        "exemplesDebordants": []
+      },
+      "robustesse": [
+        {
+          "cas": "fenêtre centrée (nominal)",
+          "marges": false,
+          "statut": "NoError",
+          "msBool": 0.259,
+          "volume": 2.712,
+          "attendu": 2.7119999999999997,
+          "erreurRel": 1.6374970864677827e-16,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 32,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "porte allège 0 (face basse coplanaire)",
+          "marges": false,
+          "statut": "NoError",
+          "msBool": 0.217,
+          "volume": 2.6220000000000003,
+          "attendu": 2.622,
+          "erreurRel": 1.693704080282466e-16,
+          "genre": 0,
+          "genreAttendu": 0,
+          "triangles": 28,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "découpe d'épaisseur exacte (faces avant/arrière coplanaires)",
+          "marges": false,
+          "statut": "NoError",
+          "msBool": 0.152,
+          "volume": 2.8000000000000003,
+          "attendu": 2.8,
+          "erreurRel": 1.5860328923216522e-16,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 32,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "découpe quasi coplanaire (1e-9 m)",
+          "marges": false,
+          "statut": "NoError",
+          "msBool": 0.136,
+          "volume": 2.8000000000000003,
+          "attendu": 2.8,
+          "erreurRel": 1.5860328923216522e-16,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 32,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "ouverture affleurant l'extrémité du mur",
+          "marges": false,
+          "statut": "NoError",
+          "msBool": 0.144,
+          "volume": 2.8,
+          "attendu": 2.8,
+          "erreurRel": 0,
+          "genre": 0,
+          "genreAttendu": 0,
+          "triangles": 28,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "ouverture dépassant l'extrémité du mur",
+          "marges": false,
+          "statut": "NoError",
+          "msBool": 0.121,
+          "volume": 2.9,
+          "attendu": 2.9,
+          "erreurRel": 0,
+          "genre": 0,
+          "genreAttendu": 0,
+          "triangles": 28,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "deux ouvertures qui se chevauchent (un seul trou)",
+          "marges": false,
+          "statut": "NoError",
+          "msBool": 0.733,
+          "volume": 2.45,
+          "attendu": 2.45,
+          "erreurRel": 0,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 48,
+          "conforme": true,
+          "note": "chevauchement : volume attendu par inclusion-exclusion"
+        },
+        {
+          "cas": "deux ouvertures accolées (face commune, un seul trou)",
+          "marges": false,
+          "statut": "NoError",
+          "msBool": 0.345,
+          "volume": 2.6,
+          "attendu": 2.6,
+          "erreurRel": 0,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 40,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "ouverture de largeur nulle (dégénérée)",
+          "marges": false,
+          "statut": "NoError",
+          "msBool": 0.015,
+          "volume": 3,
+          "attendu": 3,
+          "erreurRel": 0,
+          "genre": 0,
+          "genreAttendu": 0,
+          "triangles": 12,
+          "conforme": true,
+          "note": "1 découpe(s) dégénérée(s) ignorée(s)"
+        },
+        {
+          "cas": "mur oblique 37°",
+          "marges": false,
+          "statut": "NoError",
+          "msBool": 0.145,
+          "volume": 2.7120000000000015,
+          "attendu": 2.7119999999999997,
+          "erreurRel": 6.549988345871131e-16,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 32,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "mur en coordonnées cadastrales (≈ 3,2e5 ; 3,47e5 m)",
+          "marges": false,
+          "statut": "NoError",
+          "msBool": 0.124,
+          "volume": 2.7120000000001623,
+          "attendu": 2.7119999999999997,
+          "erreurRel": 5.993239336472085e-14,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 32,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "mur fin 0,05 m, 20 ouvertures",
+          "marges": false,
+          "statut": "NoError",
+          "msBool": 2.554,
+          "volume": 3.240000000000001,
+          "attendu": 3.24,
+          "erreurRel": 2.741291418827547e-16,
+          "genre": 20,
+          "genreAttendu": 20,
+          "triangles": 412,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "fenêtre centrée (nominal)",
+          "marges": true,
+          "statut": "NoError",
+          "msBool": 0.22,
+          "volume": 2.712,
+          "attendu": 2.7119999999999997,
+          "erreurRel": 1.6374970864677827e-16,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 32,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "porte allège 0 (face basse coplanaire)",
+          "marges": true,
+          "statut": "NoError",
+          "msBool": 0.162,
+          "volume": 2.6220000000000003,
+          "attendu": 2.622,
+          "erreurRel": 1.693704080282466e-16,
+          "genre": 0,
+          "genreAttendu": 0,
+          "triangles": 28,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "découpe d'épaisseur exacte (faces avant/arrière coplanaires)",
+          "marges": true,
+          "statut": "NoError",
+          "msBool": 0.14,
+          "volume": 2.8000000000000003,
+          "attendu": 2.8,
+          "erreurRel": 1.5860328923216522e-16,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 32,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "découpe quasi coplanaire (1e-9 m)",
+          "marges": true,
+          "statut": "NoError",
+          "msBool": 0.137,
+          "volume": 2.8000000000000003,
+          "attendu": 2.8,
+          "erreurRel": 1.5860328923216522e-16,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 32,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "ouverture affleurant l'extrémité du mur",
+          "marges": true,
+          "statut": "NoError",
+          "msBool": 0.193,
+          "volume": 2.8,
+          "attendu": 2.8,
+          "erreurRel": 0,
+          "genre": 0,
+          "genreAttendu": 0,
+          "triangles": 28,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "ouverture dépassant l'extrémité du mur",
+          "marges": true,
+          "statut": "NoError",
+          "msBool": 0.177,
+          "volume": 2.9,
+          "attendu": 2.9,
+          "erreurRel": 0,
+          "genre": 0,
+          "genreAttendu": 0,
+          "triangles": 28,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "deux ouvertures qui se chevauchent (un seul trou)",
+          "marges": true,
+          "statut": "NoError",
+          "msBool": 0.408,
+          "volume": 2.45,
+          "attendu": 2.45,
+          "erreurRel": 0,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 48,
+          "conforme": true,
+          "note": "chevauchement : volume attendu par inclusion-exclusion"
+        },
+        {
+          "cas": "deux ouvertures accolées (face commune, un seul trou)",
+          "marges": true,
+          "statut": "NoError",
+          "msBool": 0.342,
+          "volume": 2.6,
+          "attendu": 2.6,
+          "erreurRel": 0,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 40,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "ouverture de largeur nulle (dégénérée)",
+          "marges": true,
+          "statut": "NoError",
+          "msBool": 0.113,
+          "volume": 3,
+          "attendu": 3,
+          "erreurRel": 0,
+          "genre": 0,
+          "genreAttendu": 0,
+          "triangles": 12,
+          "conforme": true,
+          "note": "1 découpe(s) dégénérée(s) ignorée(s)"
+        },
+        {
+          "cas": "mur oblique 37°",
+          "marges": true,
+          "statut": "NoError",
+          "msBool": 0.157,
+          "volume": 2.7120000000000015,
+          "attendu": 2.7119999999999997,
+          "erreurRel": 6.549988345871131e-16,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 32,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "mur en coordonnées cadastrales (≈ 3,2e5 ; 3,47e5 m)",
+          "marges": true,
+          "statut": "NoError",
+          "msBool": 0.128,
+          "volume": 2.7120000000001623,
+          "attendu": 2.7119999999999997,
+          "erreurRel": 5.993239336472085e-14,
+          "genre": 1,
+          "genreAttendu": 1,
+          "triangles": 32,
+          "conforme": true,
+          "note": ""
+        },
+        {
+          "cas": "mur fin 0,05 m, 20 ouvertures",
+          "marges": true,
+          "statut": "NoError",
+          "msBool": 2.14,
+          "volume": 3.240000000000001,
+          "attendu": 3.24,
+          "erreurRel": 2.741291418827547e-16,
+          "genre": 20,
+          "genreAttendu": 20,
+          "triangles": 412,
+          "conforme": true,
+          "note": ""
+        }
+      ]
+    },
+    "yjs": {
+      "version": "13.6.33",
+      "texteSource": {
+        "annotations": 95,
+        "octets": 281
+      },
+      "charge": [
+        {
+          "annotations": 95,
+          "octetsTexteBrut": 281,
+          "etatEncodeOctets": 4405,
+          "tasDeltaKo": -113.1,
+          "creationMs": 2.85,
+          "chargementEtatMs": 1.37
+        },
+        {
+          "annotations": 9500,
+          "octetsTexteBrut": 28100,
+          "etatEncodeOctets": 475537,
+          "tasDeltaKo": 9519.8,
+          "creationMs": 36.15,
+          "chargementEtatMs": 30.87
+        }
+      ],
+      "granularite": [
+        {
+          "edition": "insertion d'un caractère",
+          "majYjsOctets": 19,
+          "commandeJsonOctets": 159
+        },
+        {
+          "edition": "insertion d'un mot (6 car.)",
+          "majYjsOctets": 24,
+          "commandeJsonOctets": 165
+        },
+        {
+          "edition": "suppression d'un caractère",
+          "majYjsOctets": 11,
+          "commandeJsonOctets": 164
+        },
+        {
+          "edition": "remplacement complet du texte",
+          "majYjsOctets": 63,
+          "commandeJsonOctets": 180
+        }
+      ],
+      "session": {
+        "editions": 10000,
+        "dureeMs": 211.22,
+        "convergence": true,
+        "longueurTexteFinal": 3942,
+        "etatEncodeOctets": 66482,
+        "majParEditionOctets": {
+          "n": 10000,
+          "min": 6,
+          "p50": 15,
+          "p95": 15,
+          "max": 16,
+          "moyenne": 12
+        },
+        "synchronisationMs": {
+          "n": 500,
+          "min": 0.074,
+          "p50": 0.162,
+          "p95": 0.235,
+          "max": 0.756,
+          "moyenne": 0.17
+        },
+        "tasDeltaDeuxClientsKo": 3395.2
+      }
+    },
+    "ifc": {
+      "version": "0.0.78",
+      "note": "IfcMapConversion : Eastings/Northings/OrthogonalHeight = 0 (valeurs de test, pas une donnée de projet). Validation IfcOpenShell non exécutée.",
+      "webIfc": {
+        "constructionMs": 146.79,
+        "serialisationMs": 9.98,
+        "octets": 407176,
+        "entete": [
+          "FILE_DESCRIPTION(('ViewDefinition [ReferenceView]'),'2;1');",
+          "FILE_NAME('P118-banc','2026-10-03T18:55:09',('banc L0.4'),('Fadi'),'thatopen/web-ifc-api','thatopen/web-ifc-api',$);",
+          "FILE_SCHEMA(('IFC4X3_ADD2'));"
+        ],
+        "relecture": {
+          "ouvertureMs": 5.59,
+          "schema": "IFC4X3_ADD2",
+          "murs": 220,
+          "ouvertures": 210,
+          "videsRel": 210,
+          "poteaux": 120,
+          "niveaux": 6,
+          "mapConversion": 1,
+          "projectedCRS": 1,
+          "lignes": 7973,
+          "maillagesMs": 149.35,
+          "maillages": 340,
+          "triangles": 7944
+        }
+      },
+      "direct": {
+        "constructionMs": 5.78,
+        "serialisationMs": 0.13,
+        "octets": 406825,
+        "entete": [
+          "FILE_DESCRIPTION(('ViewDefinition [ReferenceView]'),'2;1');",
+          "FILE_NAME('P118-banc.ifc','2026-01-01T00:00:00',('banc L0.4'),('Fadi'),'banc L0.4','banc L0.4','');",
+          "FILE_SCHEMA(('IFC4X3_ADD2'));"
+        ],
+        "relecture": {
+          "ouvertureMs": 3.48,
+          "schema": "IFC4X3_ADD2",
+          "murs": 220,
+          "ouvertures": 210,
+          "videsRel": 210,
+          "poteaux": 120,
+          "niveaux": 6,
+          "mapConversion": 1,
+          "projectedCRS": 1,
+          "lignes": 7973,
+          "maillagesMs": 100.7,
+          "maillages": 340,
+          "triangles": 7944
+        }
+      }
+    }
+  },
+  "navigateur": {
+    "lancement": {
+      "headless": true,
+      "drapeaux": [
+        "--use-angle=swiftshader",
+        "--enable-unsafe-swiftshader",
+        "--ignore-gpu-blocklist"
+      ],
+      "playwright": "1.56.0",
+      "version": "141.0.7390.37"
+    },
+    "journalConsole": [
+      "[warning] [.WebGL-0x2acc00138e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "[warning] [.WebGL-0x2acc00138e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "[warning] [.WebGL-0x2acc00138e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "[warning] [.WebGL-0x2acc00138e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+    ],
+    "infos": {
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+      "hardwareConcurrency": 4,
+      "deviceMemory": 8,
+      "devicePixelRatio": 1,
+      "viewport": {
+        "largeur": 1536,
+        "hauteur": 864
+      },
+      "crossOriginIsolated": false,
+      "webgpu": true,
+      "gpu": {
+        "webgl2": true,
+        "vendor": "WebKit",
+        "renderer": "WebKit WebGL",
+        "unmaskedVendor": "Google Inc. (Google)",
+        "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "glsl": "WebGL GLSL ES 3.00 (OpenGL ES GLSL ES 3.0 Chromium)",
+        "maxTextureSize": 8192
+      }
+    },
+    "rendu3d": {
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "logiciel": true
+    },
+    "rendu": {
+      "protocole": {
+        "viewport": {
+          "width": 1536,
+          "height": 864
+        },
+        "deviceScaleFactor": 1,
+        "tramesOrbite": 60,
+        "rayons": 100,
+        "repetitions": 3
+      },
+      "essais": [
+        {
+          "variante": "objets",
+          "canevas": {
+            "largeur": 1536,
+            "hauteur": 864,
+            "dpr": 1,
+            "antialias": true
+          },
+          "sceneOctets": 663993,
+          "ouvertureMs": {
+            "telechargement": 7.2,
+            "analyseJson": 2.4,
+            "construction": 72.3,
+            "premiereTrameSynchronisee": 160.7,
+            "total": 242.6
+          },
+          "info": {
+            "appelsDessin": 1098,
+            "triangles": 60176,
+            "geometries": 1096,
+            "programmes": 3
+          },
+          "compteurs": {
+            "mursDegeneres": 0,
+            "ouverturesChevauchantes": 0,
+            "tracesSansVolume": 124,
+            "tracesDegeneres": 0,
+            "maillages": 1098,
+            "instances": 330
+          },
+          "tramesOrbite": {
+            "intervallesRafMs": {
+              "n": 59,
+              "min": 0,
+              "p50": 66.6,
+              "p95": 100,
+              "max": 166.7,
+              "moyenne": 52.54
+            },
+            "coutSynchroniseMs": {
+              "n": 60,
+              "min": 56.1,
+              "p50": 83.1,
+              "p95": 90.5,
+              "max": 1448.3,
+              "moyenne": 105.597
+            }
+          },
+          "selection": {
+            "rayons": 100,
+            "touches": 7,
+            "msParRayon": {
+              "n": 100,
+              "min": 0,
+              "p50": 0.1,
+              "p95": 0.6,
+              "max": 2,
+              "moyenne": 0.14
+            },
+            "methode": "THREE.Raycaster.intersectObjects, sans BVH"
+          },
+          "repetition": 1,
+          "cache": "froid (contexte neuf)"
+        },
+        {
+          "variante": "objets",
+          "canevas": {
+            "largeur": 1536,
+            "hauteur": 864,
+            "dpr": 1,
+            "antialias": true
+          },
+          "sceneOctets": 663993,
+          "ouvertureMs": {
+            "telechargement": 9.8,
+            "analyseJson": 1.2,
+            "construction": 47.9,
+            "premiereTrameSynchronisee": 84.9,
+            "total": 143.8
+          },
+          "info": {
+            "appelsDessin": 1098,
+            "triangles": 60176,
+            "geometries": 1096,
+            "programmes": 3
+          },
+          "compteurs": {
+            "mursDegeneres": 0,
+            "ouverturesChevauchantes": 0,
+            "tracesSansVolume": 124,
+            "tracesDegeneres": 0,
+            "maillages": 1098,
+            "instances": 330
+          },
+          "tramesOrbite": {
+            "intervallesRafMs": {
+              "n": 59,
+              "min": 16.5,
+              "p50": 50,
+              "p95": 66.8,
+              "max": 116.7,
+              "moyenne": 45.196
+            },
+            "coutSynchroniseMs": {
+              "n": 60,
+              "min": 55.1,
+              "p50": 64,
+              "p95": 75.5,
+              "max": 1101.8,
+              "moyenne": 81.727
+            }
+          },
+          "selection": {
+            "rayons": 100,
+            "touches": 7,
+            "msParRayon": {
+              "n": 100,
+              "min": 0,
+              "p50": 0,
+              "p95": 0.2,
+              "max": 0.9,
+              "moyenne": 0.058
+            },
+            "methode": "THREE.Raycaster.intersectObjects, sans BVH"
+          },
+          "repetition": 1,
+          "cache": "chaud (même page, programmes GPU compilés)"
+        },
+        {
+          "variante": "objets",
+          "canevas": {
+            "largeur": 1536,
+            "hauteur": 864,
+            "dpr": 1,
+            "antialias": true
+          },
+          "sceneOctets": 663993,
+          "ouvertureMs": {
+            "telechargement": 8.1,
+            "analyseJson": 2,
+            "construction": 68.9,
+            "premiereTrameSynchronisee": 153.3,
+            "total": 232.3
+          },
+          "info": {
+            "appelsDessin": 1098,
+            "triangles": 60176,
+            "geometries": 1096,
+            "programmes": 3
+          },
+          "compteurs": {
+            "mursDegeneres": 0,
+            "ouverturesChevauchantes": 0,
+            "tracesSansVolume": 124,
+            "tracesDegeneres": 0,
+            "maillages": 1098,
+            "instances": 330
+          },
+          "tramesOrbite": {
+            "intervallesRafMs": {
+              "n": 59,
+              "min": 0,
+              "p50": 50.1,
+              "p95": 66.8,
+              "max": 116.6,
+              "moyenne": 44.63
+            },
+            "coutSynchroniseMs": {
+              "n": 60,
+              "min": 54.7,
+              "p50": 62.8,
+              "p95": 68.3,
+              "max": 1067.9,
+              "moyenne": 79.302
+            }
+          },
+          "selection": {
+            "rayons": 100,
+            "touches": 7,
+            "msParRayon": {
+              "n": 100,
+              "min": 0,
+              "p50": 0.1,
+              "p95": 0.5,
+              "max": 1.3,
+              "moyenne": 0.117
+            },
+            "methode": "THREE.Raycaster.intersectObjects, sans BVH"
+          },
+          "repetition": 2,
+          "cache": "froid (contexte neuf)"
+        },
+        {
+          "variante": "objets",
+          "canevas": {
+            "largeur": 1536,
+            "hauteur": 864,
+            "dpr": 1,
+            "antialias": true
+          },
+          "sceneOctets": 663993,
+          "ouvertureMs": {
+            "telechargement": 12.4,
+            "analyseJson": 1.2,
+            "construction": 52.8,
+            "premiereTrameSynchronisee": 77.1,
+            "total": 143.5
+          },
+          "info": {
+            "appelsDessin": 1098,
+            "triangles": 60176,
+            "geometries": 1096,
+            "programmes": 3
+          },
+          "compteurs": {
+            "mursDegeneres": 0,
+            "ouverturesChevauchantes": 0,
+            "tracesSansVolume": 124,
+            "tracesDegeneres": 0,
+            "maillages": 1098,
+            "instances": 330
+          },
+          "tramesOrbite": {
+            "intervallesRafMs": {
+              "n": 59,
+              "min": 16.5,
+              "p50": 50,
+              "p95": 66.7,
+              "max": 116.7,
+              "moyenne": 44.348
+            },
+            "coutSynchroniseMs": {
+              "n": 60,
+              "min": 54.1,
+              "p50": 61.9,
+              "p95": 69.2,
+              "max": 1076.9,
+              "moyenne": 79.16
+            }
+          },
+          "selection": {
+            "rayons": 100,
+            "touches": 7,
+            "msParRayon": {
+              "n": 100,
+              "min": 0,
+              "p50": 0,
+              "p95": 0.2,
+              "max": 0.3,
+              "moyenne": 0.059
+            },
+            "methode": "THREE.Raycaster.intersectObjects, sans BVH"
+          },
+          "repetition": 2,
+          "cache": "chaud (même page, programmes GPU compilés)"
+        },
+        {
+          "variante": "objets",
+          "canevas": {
+            "largeur": 1536,
+            "hauteur": 864,
+            "dpr": 1,
+            "antialias": true
+          },
+          "sceneOctets": 663993,
+          "ouvertureMs": {
+            "telechargement": 8.4,
+            "analyseJson": 2,
+            "construction": 72.2,
+            "premiereTrameSynchronisee": 155.6,
+            "total": 238.2
+          },
+          "info": {
+            "appelsDessin": 1098,
+            "triangles": 60176,
+            "geometries": 1096,
+            "programmes": 3
+          },
+          "compteurs": {
+            "mursDegeneres": 0,
+            "ouverturesChevauchantes": 0,
+            "tracesSansVolume": 124,
+            "tracesDegeneres": 0,
+            "maillages": 1098,
+            "instances": 330
+          },
+          "tramesOrbite": {
+            "intervallesRafMs": {
+              "n": 59,
+              "min": 16.6,
+              "p50": 50,
+              "p95": 100,
+              "max": 116.6,
+              "moyenne": 45.762
+            },
+            "coutSynchroniseMs": {
+              "n": 60,
+              "min": 55.3,
+              "p50": 62.6,
+              "p95": 67.9,
+              "max": 1072.4,
+              "moyenne": 79.543
+            }
+          },
+          "selection": {
+            "rayons": 100,
+            "touches": 7,
+            "msParRayon": {
+              "n": 100,
+              "min": 0,
+              "p50": 0.1,
+              "p95": 0.3,
+              "max": 1.3,
+              "moyenne": 0.114
+            },
+            "methode": "THREE.Raycaster.intersectObjects, sans BVH"
+          },
+          "repetition": 3,
+          "cache": "froid (contexte neuf)"
+        },
+        {
+          "variante": "objets",
+          "canevas": {
+            "largeur": 1536,
+            "hauteur": 864,
+            "dpr": 1,
+            "antialias": true
+          },
+          "sceneOctets": 663993,
+          "ouvertureMs": {
+            "telechargement": 8.3,
+            "analyseJson": 1.5,
+            "construction": 53.5,
+            "premiereTrameSynchronisee": 80.6,
+            "total": 143.9
+          },
+          "info": {
+            "appelsDessin": 1098,
+            "triangles": 60176,
+            "geometries": 1096,
+            "programmes": 3
+          },
+          "compteurs": {
+            "mursDegeneres": 0,
+            "ouverturesChevauchantes": 0,
+            "tracesSansVolume": 124,
+            "tracesDegeneres": 0,
+            "maillages": 1098,
+            "instances": 330
+          },
+          "tramesOrbite": {
+            "intervallesRafMs": {
+              "n": 59,
+              "min": 0,
+              "p50": 50,
+              "p95": 66.7,
+              "max": 116.8,
+              "moyenne": 44.349
+            },
+            "coutSynchroniseMs": {
+              "n": 60,
+              "min": 54.8,
+              "p50": 61.9,
+              "p95": 69.6,
+              "max": 1064.3,
+              "moyenne": 79.198
+            }
+          },
+          "selection": {
+            "rayons": 100,
+            "touches": 7,
+            "msParRayon": {
+              "n": 100,
+              "min": 0,
+              "p50": 0,
+              "p95": 0.2,
+              "max": 1.6,
+              "moyenne": 0.07
+            },
+            "methode": "THREE.Raycaster.intersectObjects, sans BVH"
+          },
+          "repetition": 3,
+          "cache": "chaud (même page, programmes GPU compilés)"
+        },
+        {
+          "variante": "fusionne",
+          "canevas": {
+            "largeur": 1536,
+            "hauteur": 864,
+            "dpr": 1,
+            "antialias": true
+          },
+          "sceneOctets": 663993,
+          "ouvertureMs": {
+            "telechargement": 7.2,
+            "analyseJson": 2.2,
+            "construction": 68.7,
+            "premiereTrameSynchronisee": 142.1,
+            "total": 220.2
+          },
+          "info": {
+            "appelsDessin": 120,
+            "triangles": 60176,
+            "geometries": 118,
+            "programmes": 3
+          },
+          "compteurs": {
+            "mursDegeneres": 0,
+            "ouverturesChevauchantes": 0,
+            "tracesSansVolume": 124,
+            "tracesDegeneres": 0,
+            "maillages": 120,
+            "instances": 330
+          },
+          "tramesOrbite": {
+            "intervallesRafMs": {
+              "n": 59,
+              "min": 0.042,
+              "p50": 50,
+              "p95": 66.7,
+              "max": 116.7,
+              "moyenne": 42.653
+            },
+            "coutSynchroniseMs": {
+              "n": 60,
+              "min": 50.6,
+              "p50": 60.3,
+              "p95": 67.5,
+              "max": 1052.2,
+              "moyenne": 76.775
+            }
+          },
+          "selection": {
+            "rayons": 100,
+            "touches": 7,
+            "msParRayon": {
+              "n": 100,
+              "min": 0,
+              "p50": 0,
+              "p95": 0.6,
+              "max": 2.7,
+              "moyenne": 0.12
+            },
+            "methode": "THREE.Raycaster.intersectObjects, sans BVH"
+          },
+          "repetition": 1,
+          "cache": "froid (contexte neuf)"
+        },
+        {
+          "variante": "fusionne",
+          "canevas": {
+            "largeur": 1536,
+            "hauteur": 864,
+            "dpr": 1,
+            "antialias": true
+          },
+          "sceneOctets": 663993,
+          "ouvertureMs": {
+            "telechargement": 7.6,
+            "analyseJson": 1.2,
+            "construction": 43,
+            "premiereTrameSynchronisee": 63.8,
+            "total": 115.6
+          },
+          "info": {
+            "appelsDessin": 120,
+            "triangles": 60176,
+            "geometries": 118,
+            "programmes": 3
+          },
+          "compteurs": {
+            "mursDegeneres": 0,
+            "ouverturesChevauchantes": 0,
+            "tracesSansVolume": 124,
+            "tracesDegeneres": 0,
+            "maillages": 120,
+            "instances": 330
+          },
+          "tramesOrbite": {
+            "intervallesRafMs": {
+              "n": 59,
+              "min": 0,
+              "p50": 49.9,
+              "p95": 66.8,
+              "max": 116.7,
+              "moyenne": 42.37
+            },
+            "coutSynchroniseMs": {
+              "n": 60,
+              "min": 50.6,
+              "p50": 59.7,
+              "p95": 67.3,
+              "max": 1060.5,
+              "moyenne": 76.897
+            }
+          },
+          "selection": {
+            "rayons": 100,
+            "touches": 7,
+            "msParRayon": {
+              "n": 100,
+              "min": 0,
+              "p50": 0,
+              "p95": 0.4,
+              "max": 0.7,
+              "moyenne": 0.065
+            },
+            "methode": "THREE.Raycaster.intersectObjects, sans BVH"
+          },
+          "repetition": 1,
+          "cache": "chaud (même page, programmes GPU compilés)"
+        },
+        {
+          "variante": "fusionne",
+          "canevas": {
+            "largeur": 1536,
+            "hauteur": 864,
+            "dpr": 1,
+            "antialias": true
+          },
+          "sceneOctets": 663993,
+          "ouvertureMs": {
+            "telechargement": 8.6,
+            "analyseJson": 2.6,
+            "construction": 68.9,
+            "premiereTrameSynchronisee": 137.3,
+            "total": 217.4
+          },
+          "info": {
+            "appelsDessin": 120,
+            "triangles": 60176,
+            "geometries": 118,
+            "programmes": 3
+          },
+          "compteurs": {
+            "mursDegeneres": 0,
+            "ouverturesChevauchantes": 0,
+            "tracesSansVolume": 124,
+            "tracesDegeneres": 0,
+            "maillages": 120,
+            "instances": 330
+          },
+          "tramesOrbite": {
+            "intervallesRafMs": {
+              "n": 59,
+              "min": 16.6,
+              "p50": 33.3,
+              "p95": 83.3,
+              "max": 116.7,
+              "moyenne": 40.112
+            },
+            "coutSynchroniseMs": {
+              "n": 60,
+              "min": 47.9,
+              "p50": 57.6,
+              "p95": 67.3,
+              "max": 1051.7,
+              "moyenne": 74.258
+            }
+          },
+          "selection": {
+            "rayons": 100,
+            "touches": 7,
+            "msParRayon": {
+              "n": 100,
+              "min": 0,
+              "p50": 0,
+              "p95": 0.5,
+              "max": 2.4,
+              "moyenne": 0.109
+            },
+            "methode": "THREE.Raycaster.intersectObjects, sans BVH"
+          },
+          "repetition": 2,
+          "cache": "froid (contexte neuf)"
+        },
+        {
+          "variante": "fusionne",
+          "canevas": {
+            "largeur": 1536,
+            "hauteur": 864,
+            "dpr": 1,
+            "antialias": true
+          },
+          "sceneOctets": 663993,
+          "ouvertureMs": {
+            "telechargement": 6.7,
+            "analyseJson": 1.2,
+            "construction": 43.2,
+            "premiereTrameSynchronisee": 61.5,
+            "total": 112.6
+          },
+          "info": {
+            "appelsDessin": 120,
+            "triangles": 60176,
+            "geometries": 118,
+            "programmes": 3
+          },
+          "compteurs": {
+            "mursDegeneres": 0,
+            "ouverturesChevauchantes": 0,
+            "tracesSansVolume": 124,
+            "tracesDegeneres": 0,
+            "maillages": 120,
+            "instances": 330
+          },
+          "tramesOrbite": {
+            "intervallesRafMs": {
+              "n": 59,
+              "min": 0.074,
+              "p50": 49.9,
+              "p95": 66.7,
+              "max": 100,
+              "moyenne": 40.676
+            },
+            "coutSynchroniseMs": {
+              "n": 60,
+              "min": 46.3,
+              "p50": 57.2,
+              "p95": 63.6,
+              "max": 1006.3,
+              "moyenne": 73.193
+            }
+          },
+          "selection": {
+            "rayons": 100,
+            "touches": 7,
+            "msParRayon": {
+              "n": 100,
+              "min": 0,
+              "p50": 0,
+              "p95": 0.3,
+              "max": 0.6,
+              "moyenne": 0.048
+            },
+            "methode": "THREE.Raycaster.intersectObjects, sans BVH"
+          },
+          "repetition": 2,
+          "cache": "chaud (même page, programmes GPU compilés)"
+        },
+        {
+          "variante": "fusionne",
+          "canevas": {
+            "largeur": 1536,
+            "hauteur": 864,
+            "dpr": 1,
+            "antialias": true
+          },
+          "sceneOctets": 663993,
+          "ouvertureMs": {
+            "telechargement": 7.5,
+            "analyseJson": 2.2,
+            "construction": 68.7,
+            "premiereTrameSynchronisee": 133.5,
+            "total": 211.9
+          },
+          "info": {
+            "appelsDessin": 120,
+            "triangles": 60176,
+            "geometries": 118,
+            "programmes": 3
+          },
+          "compteurs": {
+            "mursDegeneres": 0,
+            "ouverturesChevauchantes": 0,
+            "tracesSansVolume": 124,
+            "tracesDegeneres": 0,
+            "maillages": 120,
+            "instances": 330
+          },
+          "tramesOrbite": {
+            "intervallesRafMs": {
+              "n": 59,
+              "min": 16.5,
+              "p50": 49.9,
+              "p95": 66.7,
+              "max": 116.6,
+              "moyenne": 40.675
+            },
+            "coutSynchroniseMs": {
+              "n": 60,
+              "min": 46.2,
+              "p50": 58,
+              "p95": 66.9,
+              "max": 1042.7,
+              "moyenne": 75.408
+            }
+          },
+          "selection": {
+            "rayons": 100,
+            "touches": 7,
+            "msParRayon": {
+              "n": 100,
+              "min": 0,
+              "p50": 0,
+              "p95": 0.4,
+              "max": 2.1,
+              "moyenne": 0.105
+            },
+            "methode": "THREE.Raycaster.intersectObjects, sans BVH"
+          },
+          "repetition": 3,
+          "cache": "froid (contexte neuf)"
+        },
+        {
+          "variante": "fusionne",
+          "canevas": {
+            "largeur": 1536,
+            "hauteur": 864,
+            "dpr": 1,
+            "antialias": true
+          },
+          "sceneOctets": 663993,
+          "ouvertureMs": {
+            "telechargement": 7.6,
+            "analyseJson": 1.2,
+            "construction": 45.2,
+            "premiereTrameSynchronisee": 63.4,
+            "total": 117.4
+          },
+          "info": {
+            "appelsDessin": 120,
+            "triangles": 60176,
+            "geometries": 118,
+            "programmes": 3
+          },
+          "compteurs": {
+            "mursDegeneres": 0,
+            "ouverturesChevauchantes": 0,
+            "tracesSansVolume": 124,
+            "tracesDegeneres": 0,
+            "maillages": 120,
+            "instances": 330
+          },
+          "tramesOrbite": {
+            "intervallesRafMs": {
+              "n": 59,
+              "min": 0,
+              "p50": 49.9,
+              "p95": 100,
+              "max": 116.7,
+              "moyenne": 41.523
+            },
+            "coutSynchroniseMs": {
+              "n": 60,
+              "min": 43.3,
+              "p50": 58.4,
+              "p95": 66.1,
+              "max": 1033.7,
+              "moyenne": 74.232
+            }
+          },
+          "selection": {
+            "rayons": 100,
+            "touches": 7,
+            "msParRayon": {
+              "n": 100,
+              "min": 0,
+              "p50": 0,
+              "p95": 0.3,
+              "max": 0.7,
+              "moyenne": 0.054
+            },
+            "methode": "THREE.Raycaster.intersectObjects, sans BVH"
+          },
+          "repetition": 3,
+          "cache": "chaud (même page, programmes GPU compilés)"
+        }
+      ],
+      "synthese": {
+        "objets-froid": {
+          "essais": 3,
+          "ouvertureTotaleMsMediane": 238.2,
+          "constructionMsMediane": 72.2,
+          "premiereTrameMsMediane": 155.6,
+          "trameSynchroniseeP95MsMediane": 68.3,
+          "trameSynchroniseeP50MsMediane": 62.8,
+          "intervalleRafP95MsMediane": 100,
+          "selectionP95MsMediane": 0.5,
+          "selectionP50MsMediane": 0.1,
+          "triangles": 60176,
+          "appelsDessin": 1098
+        },
+        "objets-chaud": {
+          "essais": 3,
+          "ouvertureTotaleMsMediane": 143.8,
+          "constructionMsMediane": 52.8,
+          "premiereTrameMsMediane": 80.6,
+          "trameSynchroniseeP95MsMediane": 69.6,
+          "trameSynchroniseeP50MsMediane": 61.9,
+          "intervalleRafP95MsMediane": 66.7,
+          "selectionP95MsMediane": 0.2,
+          "selectionP50MsMediane": 0,
+          "triangles": 60176,
+          "appelsDessin": 1098
+        },
+        "fusionne-froid": {
+          "essais": 3,
+          "ouvertureTotaleMsMediane": 217.4,
+          "constructionMsMediane": 68.7,
+          "premiereTrameMsMediane": 137.3,
+          "trameSynchroniseeP95MsMediane": 67.3,
+          "trameSynchroniseeP50MsMediane": 58,
+          "intervalleRafP95MsMediane": 66.7,
+          "selectionP95MsMediane": 0.5,
+          "selectionP50MsMediane": 0,
+          "triangles": 60176,
+          "appelsDessin": 120
+        },
+        "fusionne-chaud": {
+          "essais": 3,
+          "ouvertureTotaleMsMediane": 115.6,
+          "constructionMsMediane": 43.2,
+          "premiereTrameMsMediane": 63.4,
+          "trameSynchroniseeP95MsMediane": 66.1,
+          "trameSynchroniseeP50MsMediane": 58.4,
+          "intervalleRafP95MsMediane": 66.8,
+          "selectionP95MsMediane": 0.3,
+          "selectionP50MsMediane": 0,
+          "triangles": 60176,
+          "appelsDessin": 120
+        }
+      }
+    },
+    "wasmNavigateur": [
+      {
+        "id": "web-ifc",
+        "version": "0.0.78",
+        "essais": [
+          {
+            "id": "web-ifc",
+            "initMs": 142.5,
+            "verification": {
+              "modeleCree": true
+            },
+            "ressources": [
+              {
+                "url": "/node_modules/three/build/three.module.js",
+                "transfertOctets": 663072,
+                "corpsOctets": 662772,
+                "ms": 4
+              },
+              {
+                "url": "/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+                "transfertOctets": 38012,
+                "corpsOctets": 37712,
+                "ms": 1.9
+              },
+              {
+                "url": "/node_modules/three/build/three.core.js",
+                "transfertOctets": 1458413,
+                "corpsOctets": 1458113,
+                "ms": 6.5
+              },
+              {
+                "url": "/node_modules/web-ifc/web-ifc-api.js",
+                "transfertOctets": 5909350,
+                "corpsOctets": 5909050,
+                "ms": 26.7
+              },
+              {
+                "url": "/node_modules/web-ifc/web-ifc.wasm",
+                "transfertOctets": 1595568,
+                "corpsOctets": 1595268,
+                "ms": 5.4
+              }
+            ],
+            "tasJsMo": 92.9
+          },
+          {
+            "id": "web-ifc",
+            "initMs": 142.5,
+            "verification": {
+              "modeleCree": true
+            },
+            "ressources": [
+              {
+                "url": "/node_modules/three/build/three.module.js",
+                "transfertOctets": 663072,
+                "corpsOctets": 662772,
+                "ms": 3.9
+              },
+              {
+                "url": "/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+                "transfertOctets": 38012,
+                "corpsOctets": 37712,
+                "ms": 2
+              },
+              {
+                "url": "/node_modules/three/build/three.core.js",
+                "transfertOctets": 1458413,
+                "corpsOctets": 1458113,
+                "ms": 4.5
+              },
+              {
+                "url": "/node_modules/web-ifc/web-ifc-api.js",
+                "transfertOctets": 5909350,
+                "corpsOctets": 5909050,
+                "ms": 26.8
+              },
+              {
+                "url": "/node_modules/web-ifc/web-ifc.wasm",
+                "transfertOctets": 1595568,
+                "corpsOctets": 1595268,
+                "ms": 5.9
+              }
+            ],
+            "tasJsMo": 92.9
+          },
+          {
+            "id": "web-ifc",
+            "initMs": 139.4,
+            "verification": {
+              "modeleCree": true
+            },
+            "ressources": [
+              {
+                "url": "/node_modules/three/build/three.module.js",
+                "transfertOctets": 663072,
+                "corpsOctets": 662772,
+                "ms": 4
+              },
+              {
+                "url": "/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+                "transfertOctets": 38012,
+                "corpsOctets": 37712,
+                "ms": 2.4
+              },
+              {
+                "url": "/node_modules/three/build/three.core.js",
+                "transfertOctets": 1458413,
+                "corpsOctets": 1458113,
+                "ms": 4.3
+              },
+              {
+                "url": "/node_modules/web-ifc/web-ifc-api.js",
+                "transfertOctets": 5909350,
+                "corpsOctets": 5909050,
+                "ms": 26.3
+              },
+              {
+                "url": "/node_modules/web-ifc/web-ifc.wasm",
+                "transfertOctets": 1595568,
+                "corpsOctets": 1595268,
+                "ms": 5.3
+              }
+            ],
+            "tasJsMo": 92.9
+          }
+        ],
+        "initMsMediane": 142.5,
+        "erreur": null
+      },
+      {
+        "id": "manifold-3d",
+        "version": "3.5.4",
+        "essais": [
+          {
+            "id": "manifold-3d",
+            "initMs": 17.9,
+            "verification": {
+              "volumeCube123": 6
+            },
+            "ressources": [
+              {
+                "url": "/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+                "transfertOctets": 38012,
+                "corpsOctets": 37712,
+                "ms": 2.2
+              },
+              {
+                "url": "/node_modules/three/build/three.module.js",
+                "transfertOctets": 663072,
+                "corpsOctets": 662772,
+                "ms": 4.6
+              },
+              {
+                "url": "/node_modules/three/build/three.core.js",
+                "transfertOctets": 1458413,
+                "corpsOctets": 1458113,
+                "ms": 4.1
+              },
+              {
+                "url": "/node_modules/manifold-3d/manifold.js",
+                "transfertOctets": 82671,
+                "corpsOctets": 82371,
+                "ms": 1.6
+              },
+              {
+                "url": "/node_modules/manifold-3d/manifold.wasm",
+                "transfertOctets": 541770,
+                "corpsOctets": 541470,
+                "ms": 2.4
+              }
+            ],
+            "tasJsMo": 23.4
+          },
+          {
+            "id": "manifold-3d",
+            "initMs": 16.8,
+            "verification": {
+              "volumeCube123": 6
+            },
+            "ressources": [
+              {
+                "url": "/node_modules/three/build/three.module.js",
+                "transfertOctets": 663072,
+                "corpsOctets": 662772,
+                "ms": 5.4
+              },
+              {
+                "url": "/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+                "transfertOctets": 38012,
+                "corpsOctets": 37712,
+                "ms": 2.7
+              },
+              {
+                "url": "/node_modules/three/build/three.core.js",
+                "transfertOctets": 1458413,
+                "corpsOctets": 1458113,
+                "ms": 6.1
+              },
+              {
+                "url": "/node_modules/manifold-3d/manifold.js",
+                "transfertOctets": 82671,
+                "corpsOctets": 82371,
+                "ms": 1.8
+              },
+              {
+                "url": "/node_modules/manifold-3d/manifold.wasm",
+                "transfertOctets": 541770,
+                "corpsOctets": 541470,
+                "ms": 3.3
+              }
+            ],
+            "tasJsMo": 23.4
+          },
+          {
+            "id": "manifold-3d",
+            "initMs": 15.1,
+            "verification": {
+              "volumeCube123": 6
+            },
+            "ressources": [
+              {
+                "url": "/node_modules/three/build/three.module.js",
+                "transfertOctets": 663072,
+                "corpsOctets": 662772,
+                "ms": 3.3
+              },
+              {
+                "url": "/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+                "transfertOctets": 38012,
+                "corpsOctets": 37712,
+                "ms": 1.8
+              },
+              {
+                "url": "/node_modules/three/build/three.core.js",
+                "transfertOctets": 1458413,
+                "corpsOctets": 1458113,
+                "ms": 6.4
+              },
+              {
+                "url": "/node_modules/manifold-3d/manifold.js",
+                "transfertOctets": 82671,
+                "corpsOctets": 82371,
+                "ms": 1.5
+              },
+              {
+                "url": "/node_modules/manifold-3d/manifold.wasm",
+                "transfertOctets": 541770,
+                "corpsOctets": 541470,
+                "ms": 2.6
+              }
+            ],
+            "tasJsMo": 23.4
+          }
+        ],
+        "initMsMediane": 16.8,
+        "erreur": null
+      },
+      {
+        "id": "occt-wasm",
+        "version": "5.5.0",
+        "essais": [
+          {
+            "id": "occt-wasm",
+            "initMs": 93.9,
+            "verification": {
+              "volumeBoite123": 6
+            },
+            "ressources": [
+              {
+                "url": "/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+                "transfertOctets": 38012,
+                "corpsOctets": 37712,
+                "ms": 2.6
+              },
+              {
+                "url": "/node_modules/three/build/three.module.js",
+                "transfertOctets": 663072,
+                "corpsOctets": 662772,
+                "ms": 3.9
+              },
+              {
+                "url": "/node_modules/three/build/three.core.js",
+                "transfertOctets": 1458413,
+                "corpsOctets": 1458113,
+                "ms": 4.5
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/index.js",
+                "transfertOctets": 78838,
+                "corpsOctets": 78538,
+                "ms": 1.4
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/types.js",
+                "transfertOctets": 11989,
+                "corpsOctets": 11689,
+                "ms": 1.4
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/xcaf-document.js",
+                "transfertOctets": 9828,
+                "corpsOctets": 9528,
+                "ms": 1.8
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/png.js",
+                "transfertOctets": 16668,
+                "corpsOctets": 16368,
+                "ms": 2.1
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/svg.js",
+                "transfertOctets": 5450,
+                "corpsOctets": 5150,
+                "ms": 1.9
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/views.js",
+                "transfertOctets": 9672,
+                "corpsOctets": 9372,
+                "ms": 1.1
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/font5x7.js",
+                "transfertOctets": 4423,
+                "corpsOctets": 4123,
+                "ms": 1.1
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/occt-wasm.js",
+                "transfertOctets": 113260,
+                "corpsOctets": 112960,
+                "ms": 1.1
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/occt-wasm.wasm",
+                "transfertOctets": 21173408,
+                "corpsOctets": 21173108,
+                "ms": 60.9
+              }
+            ],
+            "tasJsMo": 141.1
+          },
+          {
+            "id": "occt-wasm",
+            "initMs": 94.2,
+            "verification": {
+              "volumeBoite123": 6
+            },
+            "ressources": [
+              {
+                "url": "/node_modules/three/build/three.module.js",
+                "transfertOctets": 663072,
+                "corpsOctets": 662772,
+                "ms": 4.1
+              },
+              {
+                "url": "/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+                "transfertOctets": 38012,
+                "corpsOctets": 37712,
+                "ms": 2
+              },
+              {
+                "url": "/node_modules/three/build/three.core.js",
+                "transfertOctets": 1458413,
+                "corpsOctets": 1458113,
+                "ms": 4.3
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/index.js",
+                "transfertOctets": 78838,
+                "corpsOctets": 78538,
+                "ms": 1.5
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/types.js",
+                "transfertOctets": 11989,
+                "corpsOctets": 11689,
+                "ms": 2.4
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/svg.js",
+                "transfertOctets": 5450,
+                "corpsOctets": 5150,
+                "ms": 2.4
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/xcaf-document.js",
+                "transfertOctets": 9828,
+                "corpsOctets": 9528,
+                "ms": 2.4
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/png.js",
+                "transfertOctets": 16668,
+                "corpsOctets": 16368,
+                "ms": 2.4
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/views.js",
+                "transfertOctets": 9672,
+                "corpsOctets": 9372,
+                "ms": 1.1
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/font5x7.js",
+                "transfertOctets": 4423,
+                "corpsOctets": 4123,
+                "ms": 0.9
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/occt-wasm.js",
+                "transfertOctets": 113260,
+                "corpsOctets": 112960,
+                "ms": 0.9
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/occt-wasm.wasm",
+                "transfertOctets": 21173408,
+                "corpsOctets": 21173108,
+                "ms": 58.2
+              }
+            ],
+            "tasJsMo": 141.1
+          },
+          {
+            "id": "occt-wasm",
+            "initMs": 103.4,
+            "verification": {
+              "volumeBoite123": 6
+            },
+            "ressources": [
+              {
+                "url": "/node_modules/three/build/three.module.js",
+                "transfertOctets": 663072,
+                "corpsOctets": 662772,
+                "ms": 3.5
+              },
+              {
+                "url": "/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+                "transfertOctets": 38012,
+                "corpsOctets": 37712,
+                "ms": 1.9
+              },
+              {
+                "url": "/node_modules/three/build/three.core.js",
+                "transfertOctets": 1458413,
+                "corpsOctets": 1458113,
+                "ms": 4.6
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/index.js",
+                "transfertOctets": 78838,
+                "corpsOctets": 78538,
+                "ms": 1.5
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/types.js",
+                "transfertOctets": 11989,
+                "corpsOctets": 11689,
+                "ms": 2.5
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/xcaf-document.js",
+                "transfertOctets": 9828,
+                "corpsOctets": 9528,
+                "ms": 2.4
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/png.js",
+                "transfertOctets": 16668,
+                "corpsOctets": 16368,
+                "ms": 2.4
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/svg.js",
+                "transfertOctets": 5450,
+                "corpsOctets": 5150,
+                "ms": 2.4
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/font5x7.js",
+                "transfertOctets": 4423,
+                "corpsOctets": 4123,
+                "ms": 3.8
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/views.js",
+                "transfertOctets": 9672,
+                "corpsOctets": 9372,
+                "ms": 3.7
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/occt-wasm.js",
+                "transfertOctets": 113260,
+                "corpsOctets": 112960,
+                "ms": 1.1
+              },
+              {
+                "url": "/node_modules/occt-wasm/dist/occt-wasm.wasm",
+                "transfertOctets": 21173408,
+                "corpsOctets": 21173108,
+                "ms": 65.1
+              }
+            ],
+            "tasJsMo": 141.1
+          }
+        ],
+        "initMsMediane": 94.2,
+        "erreur": null
+      },
+      {
+        "id": "opencascade.js",
+        "version": "1.1.1",
+        "essais": [
+          {
+            "id": "opencascade.js",
+            "initMs": 575,
+            "verification": {
+              "pointGpPnt": [
+                1,
+                2,
+                3
+              ]
+            },
+            "ressources": [
+              {
+                "url": "/node_modules/three/build/three.module.js",
+                "transfertOctets": 663072,
+                "corpsOctets": 662772,
+                "ms": 4
+              },
+              {
+                "url": "/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+                "transfertOctets": 38012,
+                "corpsOctets": 37712,
+                "ms": 3
+              },
+              {
+                "url": "/node_modules/three/build/three.core.js",
+                "transfertOctets": 1458413,
+                "corpsOctets": 1458113,
+                "ms": 19
+              },
+              {
+                "url": "/node_modules/opencascade.js/dist/opencascade.wasm.js",
+                "transfertOctets": 331109,
+                "corpsOctets": 330809,
+                "ms": 2
+              },
+              {
+                "url": "/node_modules/opencascade.js/dist/opencascade.wasm.wasm",
+                "transfertOctets": 65864337,
+                "corpsOctets": 65864037,
+                "ms": 159.9
+              }
+            ],
+            "tasJsMo": 179.3
+          },
+          {
+            "id": "opencascade.js",
+            "initMs": 587.9,
+            "verification": {
+              "pointGpPnt": [
+                1,
+                2,
+                3
+              ]
+            },
+            "ressources": [
+              {
+                "url": "/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+                "transfertOctets": 38012,
+                "corpsOctets": 37712,
+                "ms": 1.5
+              },
+              {
+                "url": "/node_modules/three/build/three.module.js",
+                "transfertOctets": 663072,
+                "corpsOctets": 662772,
+                "ms": 3.2
+              },
+              {
+                "url": "/node_modules/three/build/three.core.js",
+                "transfertOctets": 1458413,
+                "corpsOctets": 1458113,
+                "ms": 6.8
+              },
+              {
+                "url": "/node_modules/opencascade.js/dist/opencascade.wasm.js",
+                "transfertOctets": 331109,
+                "corpsOctets": 330809,
+                "ms": 2
+              },
+              {
+                "url": "/node_modules/opencascade.js/dist/opencascade.wasm.wasm",
+                "transfertOctets": 65864337,
+                "corpsOctets": 65864037,
+                "ms": 152.2
+              }
+            ],
+            "tasJsMo": 179.3
+          },
+          {
+            "id": "opencascade.js",
+            "initMs": 555.1,
+            "verification": {
+              "pointGpPnt": [
+                1,
+                2,
+                3
+              ]
+            },
+            "ressources": [
+              {
+                "url": "/node_modules/three/build/three.module.js",
+                "transfertOctets": 663072,
+                "corpsOctets": 662772,
+                "ms": 3.3
+              },
+              {
+                "url": "/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+                "transfertOctets": 38012,
+                "corpsOctets": 37712,
+                "ms": 1.5
+              },
+              {
+                "url": "/node_modules/three/build/three.core.js",
+                "transfertOctets": 1458413,
+                "corpsOctets": 1458113,
+                "ms": 4.6
+              },
+              {
+                "url": "/node_modules/opencascade.js/dist/opencascade.wasm.js",
+                "transfertOctets": 331109,
+                "corpsOctets": 330809,
+                "ms": 2.3
+              },
+              {
+                "url": "/node_modules/opencascade.js/dist/opencascade.wasm.wasm",
+                "transfertOctets": 65864337,
+                "corpsOctets": 65864037,
+                "ms": 138.1
+              }
+            ],
+            "tasJsMo": 179.3
+          }
+        ],
+        "initMsMediane": 575,
+        "erreur": null
+      }
+    ],
+    "quotas": {
+      "contexteEphemere": {
+        "storageApi": true,
+        "avant": {
+          "quotaOctets": 989716507,
+          "usageOctets": 0,
+          "details": {}
+        },
+        "persisted": false,
+        "persistAccorde": false,
+        "sceneP118": {
+          "octets": 663993,
+          "ecritureMs": 2.7,
+          "lectureMs": 3,
+          "identique": true
+        },
+        "blocs1Mo": {
+          "demandes": 50,
+          "ecrits": 50,
+          "erreur": null,
+          "msParBloc": {
+            "n": 50,
+            "min": 1.8,
+            "p50": 2,
+            "p95": 2.1,
+            "max": 3,
+            "moyenne": 2.006
+          }
+        },
+        "apres": {
+          "quotaOctets": 989716507,
+          "usageOctets": 8852122,
+          "details": {
+            "indexedDB": 8852122
+          }
+        },
+        "apresNettoyage": {
+          "quotaOctets": 989716507,
+          "usageOctets": 8852122,
+          "details": {
+            "indexedDB": 8852122
+          }
+        }
+      },
+      "profilPersistant": {
+        "storageApi": true,
+        "avant": {
+          "quotaOctets": 92936513126,
+          "usageOctets": 0,
+          "details": {}
+        },
+        "persisted": false,
+        "persistAccorde": false,
+        "sceneP118": {
+          "octets": 663993,
+          "ecritureMs": 4.7,
+          "lectureMs": 2.9,
+          "identique": true
+        },
+        "blocs1Mo": {
+          "demandes": 50,
+          "ecrits": 50,
+          "erreur": null,
+          "msParBloc": {
+            "n": 50,
+            "min": 2.5,
+            "p50": 2.7,
+            "p95": 3.4,
+            "max": 5.1,
+            "moyenne": 2.818
+          }
+        },
+        "apres": {
+          "quotaOctets": 92936513126,
+          "usageOctets": 8881957,
+          "details": {
+            "indexedDB": 8881957
+          }
+        },
+        "apresNettoyage": {
+          "quotaOctets": 92936513126,
+          "usageOctets": 16152,
+          "details": {
+            "indexedDB": 16152
+          }
+        }
+      }
+    }
+  },
+  "bancDeclare": {
+    "lieu": "GitHub Actions",
+    "machine": "Linux 6.17.0-1022-azure, x64, 4 cœurs (AMD EPYC 9V45 96-Core Processor), 15990 Mo",
+    "navigateur": "Chromium 141.0.7390.37 (Playwright 1.56.0), headless, drapeaux : --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist",
+    "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver) — RENDU LOGICIEL (pas un GPU réel)",
+    "modele": "P.118 (apps/api/src/data/examples/p118-native-model.json, sha256 590d8713f765…) : 220 murs, 210 ouvertures, 120 poteaux, 967 tracés dont 843 extrudés, 32 escaliers, 6 niveaux ; scène 664001 octets",
+    "triangles": 60176,
+    "cache": "rendu : froid = contexte navigateur neuf (cache HTTP vide, shaders non compilés) ; chaud = 2e ouverture dans la même page ; WASM navigateur : contexte neuf par essai ; WASM Node : processus neuf par essai"
+  },
+  "fin": "2026-10-03T18:56:46.885Z"
+}
