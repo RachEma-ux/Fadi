@@ -215,7 +215,8 @@ describe("import DXF 2D", () => {
       // Radiale : centre (300 ; 0), point (302 ; 0) ; diamétrale de (400 ; 0) à (406 ; 0) ; ordonnée ignorée.
       "0\nDIMENSION\n8\nCotes\n70\n36\n10\n300\n20\n0\n15\n302\n25\n0",
       "0\nDIMENSION\n8\nCotes\n70\n35\n15\n400\n25\n0\n10\n406\n20\n0",
-      "0\nDIMENSION\n8\nCotes\n70\n38\n10\n0\n20\n0",
+      // Ordonnée en x (bit 64) : origine (500 ; 0), point repéré (503,5 ; 1), rappel jusqu'en (503,5 ; 4) → x = 3,5 m.
+      "0\nDIMENSION\n8\nCotes\n70\n102\n10\n500\n20\n0\n13\n503.5\n23\n1\n14\n503.5\n24\n4",
     ].join("\n");
     const texte = ["0", "SECTION", "2", "HEADER", "9", "$INSUNITS", "70", "6", "0", "ENDSEC", blocs, "0", "SECTION", "2", "ENTITIES", entites, "0", "ENDSEC", "0", "EOF"].join("\n");
     const r = commandesImportDxf(base(), texte, { source: "blocs.dxf", niveauId: "rdc", repere: "local", uniteSiAbsente: "m" });
@@ -257,9 +258,9 @@ describe("import DXF 2D", () => {
     const obtus = arcs.find((a) => Math.abs(a.params.centre!.x - 200) < 1e-6)!;
     expect(obtus.params.angleFin!.value - obtus.params.angleDebut!.value).toBeCloseTo(135, 6);
     expect(obtus.params.angleDebut!.value).toBeCloseTo(45, 6);
-    expect(objetsDeClasse(e, "texte").map((t) => t.params.texte)).toEqual(expect.arrayContaining(["90,0°", "135,0°"]));
+    expect(objetsDeClasse(e, "texte").map((t) => t.params.texte)).toEqual(expect.arrayContaining(["90,0°", "135,0°", "x = 3,500 m"]));
     const dim = r.rapport.entites.find((x) => x.type === "DIMENSION")!;
-    expect(dim).toMatchObject({ lues: 8, importees: 6 });
+    expect(dim).toMatchObject({ lues: 8, importees: 7 });
     expect(dim.remarque).toMatch(/angulaires/);
     expect(r.rapport.remarques.some((x) => /4 insertion/.test(x) || /insertion\(s\) de bloc/.test(x))).toBe(true);
   });

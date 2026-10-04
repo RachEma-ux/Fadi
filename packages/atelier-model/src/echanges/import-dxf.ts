@@ -8,8 +8,8 @@
  * MTEXT (texte brut), ATTRIB ; INSERT (blocs décomposés : point de base, échelles, rotation, réseaux ; blocs imbriqués
  * jusqu'à 8 niveaux) ; HATCH (contours extérieurs en hachures, motif nommé) ; DIMENSION linéaires et alignées (cotes),
  * radiales et diamétrales (cotes linéaires dont la valeur est le rayon ou le diamètre), angulaires (arc et texte de
- * l'angle mesuré, D-031). Les autres entités (XREF — fichier externe non fourni —, cotes d'ordonnée, splines, 3D…)
- * sont comptées et signalées, jamais devinées.
+ * l'angle mesuré, D-031), d'ordonnée (ligne de rappel et texte de la valeur). Les autres entités (XREF — fichier
+ * externe non fourni —, splines, 3D…) sont comptées et signalées, jamais devinées.
  *
  * Unités : `$INSUNITS` de l'en-tête ; quand il est absent ou « sans unité », l'unité est celle que l'utilisateur
  * choisit (`uniteSiAbsente`) et le rapport l'écrit comme une hypothèse. Repère (R5) : `local` (les coordonnées sont
@@ -516,7 +516,19 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
           const type = (num(e, 70, 0) ?? 0) & 7;
           const texteImpose = (txt(e, 1) ?? "").trim();
           if (type === 6) {
-            compter("DIMENSION", false, "cotes d'ordonnée non importées (pas d'objet équivalent dans l'Atelier)");
+            // Ordonnée (10 = origine, 13 = point repéré, 14 = fin de la ligne de rappel ; bit 64 : abscisse, sinon
+            // ordonnée) : reprise en ligne de rappel et texte de la valeur mesurée sur le fichier (m, non associative).
+            const origine = { x: num(e, 10, 0)!, y: num(e, 20, 0)! };
+            const repere = { x: num(e, 13, 0)!, y: num(e, 23, 0)! };
+            const fin = { x: num(e, 14, 0)!, y: num(e, 24, 0)! };
+            const enX = ((num(e, 70, 0) ?? 0) & 64) === 64;
+            const valeur = Math.round((enX ? repere.x - origine.x : repere.y - origine.y) * f * 1000) / 1000;
+            const A = P(repere.x, repere.y);
+            const B = P(fin.x, fin.y);
+            if (Math.hypot(B.x - A.x, B.y - A.y) > 1e-6) poser("esquisse.ligne", { points: [A, B], calqueId: calqueDe(e) });
+            poser("texte.creer", { position: B, texte: `${enX ? "x" : "y"} = ${valeur.toFixed(3).replace(".", ",")} m`, calqueId: calqueDe(e) });
+            const r = "cotes d'ordonnée reprises en ligne de rappel et texte de la valeur mesurée sur le fichier (repère de la cote, non associatives)";
+            compter("DIMENSION", true, texteImpose && texteImpose !== "<>" ? `${r} ; texte imposé « ${texteImpose.slice(0, 40)} » non repris` : r);
             break;
           }
           if (type === 3 || type === 4) {
