@@ -234,7 +234,10 @@ describe.skipIf(!URL_BASE)("service de commandes du nouvel Atelier (§5.4, L2.2 
     // Notification au propriétaire (pas à l'auteur).
     const n = (await proprio.get("/notifications")).body.items.filter((i: { kind: string; projectId: string }) => i.kind === "modele" && i.projectId === id);
     expect(n).toEqual([expect.objectContaining({ text: expect.stringContaining("t07l23-b@atelier.test a modifié le modèle") })]);
-    expect((await editeur.get("/notifications")).body.items.some((i: { kind: string; projectId: string }) => i.kind === "modele" && i.projectId === id)).toBe(false);
+    // L'éditeur n'est notifié que du lot « Préparer » du propriétaire, jamais du sien.
+    const ne = (await editeur.get("/notifications")).body.items.filter((i: { kind: string; projectId: string }) => i.kind === "modele" && i.projectId === id);
+    expect(ne).toEqual([expect.objectContaining({ text: expect.stringContaining("t07l23-a@atelier.test a modifié le modèle") })]);
+    expect(ne[0].text).not.toContain("t07l23-b@atelier.test");
   });
 
   it("T08 : conflit entre deux comptes → 409 détaillé { baseRevision, revisionCourante, conflits: [{ objetId, motif, etatServeur }] }", async () => {
