@@ -25,7 +25,8 @@
  * (`importerP118` + `ecrireEtat`) pour un projet issu de l'exemple (`source_example_id = p118-exemple-complet`,
  * copies comprises), modèle vide (`etatVide`) sinon. Le modèle naît à la révision courante du projet (sans
  * l'avancer : l'ancien Atelier partage `model_revision` jusqu'au lot 4, D-030) ; l'initialisation est journalisée
- * (nature `import`, `request_id` = `initialisation`, inverse vide) et borne la reconstruction des révisions passées.
+ * (nature `import`, `request_id` = `initialisation`, inverse vide), sans événement (révision inchangée), et borne la
+ * reconstruction des révisions passées.
  *
  * Révisions passées (`GET /model?revision=n`, D-030) : état courant, puis inverses du journal appliqués de la plus
  * récente à la plus ancienne entrée de révision > n ; l'empreinte obtenue est contrôlée contre l'empreinte de base
@@ -199,10 +200,8 @@ async function initialiserModele(ex: Executeur, p: LigneProjet): Promise<EtatMod
     INSERT INTO atelier_commands (id, project_id, request_id, contract, nature, label, base_revision, result_revision, commands, inverse, effets, response, base_fingerprint, result_fingerprint, author_id, inverse_of)
     VALUES (${journalId}, ${p.id}, ${REQUETE_INITIALISATION}, ${CONTRAT_COMMANDES}, 'import', ${label}, ${etat.revision}, ${etat.revision}, '[]'::jsonb, '[]'::jsonb, ${json(EFFETS_VIDES)},
       ${json(reponse)}, ${etat.empreinte}, ${etat.empreinte}, NULL, NULL)`);
-  await ecrireEvenement(ex, journalId, {
-    event: EVENEMENT_COMMANDE_VALIDEE,
-    payload: { projectId: p.id, revision: etat.revision, objetIds: [], types: [], auteur: null, nature: "import" },
-  });
+  // Aucun événement : révision inchangée, comme un lot sans changement (D-024). Un événement périmerait le bilan
+  // Harmonie et notifierait les membres à la simple première lecture.
   return etat;
 }
 
@@ -215,14 +214,11 @@ async function etatSousVerrou(ex: Executeur, p: LigneProjet): Promise<EtatModele
 async function assurerModele(projetId: string): Promise<void> {
   const tete = await lignes<{ n: number }>(db, sql`SELECT 1 AS n FROM atelier_models WHERE project_id = ${projetId}`);
   if (tete.length > 0) return;
-  let cree = false;
   await db.transaction(async (tx) => {
     const p = await verrouillerProjet(tx, projetId);
     if ((await lignes(tx, sql`SELECT 1 FROM atelier_models WHERE project_id = ${projetId}`)).length > 0) return;
     await initialiserModele(tx, p);
-    cree = true;
   });
-  if (cree) declencherTraitement(projetId);
 }
 
 /** Lecture cohérente (instantané unique, aucune écriture). */

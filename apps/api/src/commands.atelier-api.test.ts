@@ -107,6 +107,9 @@ describe.skipIf(!URL_BASE)("service de commandes du nouvel Atelier (§5.4, L2.2 
     expect(j.body.revisionCourante).toBe(0);
     expect(j.body.entrees).toHaveLength(1);
     expect(j.body.entrees[0]).toMatchObject({ nature: "import", revision: 0, baseRevision: 0, inverseDe: null });
+    // Aucun événement : la première lecture ne périme rien et ne notifie personne.
+    const evt = await poolApp.query("SELECT count(*)::int AS n FROM atelier_outbox WHERE project_id = $1", [id]);
+    expect(evt.rows[0].n).toBe(0);
   });
 
   it("T03 : une unité ou une précondition refusée rend 400 détaillé { chemin, objet, cause, action, message }, rien n'est écrit", async () => {
