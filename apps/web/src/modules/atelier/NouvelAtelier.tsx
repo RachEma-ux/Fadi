@@ -10,13 +10,18 @@ import { useEffect, useMemo, useState } from "react";
 import { atelierCommandesApi } from "../../lib/api/atelier-commandes";
 import { READ_ONLY_HINT } from "../../lib/access";
 import { BusAtelier, joignabiliteNavigateur, stockageNavigateur } from "./bus";
+import { installer as installerDocuments } from "./documents/installer";
+import { installer as installerObjets } from "./objets/installer";
 import { installer as installerPlan2d } from "./plan2d/installer";
 import { ZonePlan } from "./plan2d/ZonePlan";
 import { creerContexte, creerEtatInterface, creerPilote, creerRegistres, creerSelection, type InstallationModule } from "./socle";
 import { AtelierInterface } from "./ui/AtelierInterface";
 
-/** Modules qui enregistrent leurs outils, dessinateurs et descripteurs (une classe n'est prise qu'une fois). */
-export const MODULES_ATELIER: readonly InstallationModule[] = [installerPlan2d];
+/**
+ * Modules qui enregistrent leurs outils, dessinateurs et descripteurs (une classe n'est prise qu'une fois, un
+ * raccourci aussi, D-037) : plan 2D (L A C R), architecture (M P F O S E), documents simples (K T U).
+ */
+export const MODULES_ATELIER: readonly InstallationModule[] = [installerPlan2d, installerObjets, installerDocuments];
 
 /** Relecture des révisions distantes (second navigateur, autre membre) : au retour sur l'onglet et périodiquement. */
 const RELECTURE_MS = 30_000;
