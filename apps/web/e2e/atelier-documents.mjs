@@ -270,10 +270,17 @@ await poignee.scrollIntoViewIfNeeded();
 const bp = await poignee.boundingBox();
 await page.mouse.move(bp.x + bp.width / 2, bp.y + bp.height / 2);
 const sousPointeur = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute("class")} ${e?.getAttribute("data-poignee-vue") ?? e?.getAttribute("data-tableau") ?? ""}`; }, [bp.x + bp.width / 2, bp.y + bp.height / 2]);
-await page.mouse.down();
-for (let k = 1; k <= 8; k++) await page.mouse.move(bp.x + bp.width / 2 + k * 5, bp.y + bp.height / 2 + k * 2);
-await page.mouse.up();
-await page.waitForFunction(([nom, avant]) => [...document.querySelectorAll("[data-centre-vue]")].find((e) => e.getAttribute("data-centre-vue") === nom)?.value !== avant, [nomVue, centreAvant], { timeout: 30000 }).catch(() => {});
+// Un glissement peut tomber pendant un recalcul de la composition (banc chargé) : une seconde tentative au besoin.
+for (let essai = 0; essai < 2; essai++) {
+  const b = essai === 0 ? bp : ((await poignee.boundingBox()) ?? bp);
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  for (let k = 1; k <= 8; k++) await page.mouse.move(b.x + b.width / 2 + k * 5, b.y + b.height / 2 + k * 2);
+  await page.mouse.up();
+  const bouge = await page.waitForFunction(([nom, avant]) => [...document.querySelectorAll("[data-centre-vue]")].find((e) => e.getAttribute("data-centre-vue") === nom)?.value !== avant, [nomVue, centreAvant], { timeout: 30000 }).then(() => true, () => false);
+  if (bouge) break;
+  await page.waitForFunction(() => !document.querySelector('[data-detail="feuille"] [aria-busy="true"]'), null, { timeout: 30000 }).catch(() => {});
+}
 const centreApres = await page.locator(`[data-centre-vue="${nomVue}"]`).inputValue();
 const [xa, ya] = centreAvant.split(";").map((t) => Number(t.trim().replace(",", ".")));
 const [xb, yb] = centreApres.split(";").map((t) => Number(t.trim().replace(",", ".")));
