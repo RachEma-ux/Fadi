@@ -71,12 +71,36 @@ export async function atelierExemple(sc) {
   check("atelier de la référence : note « Exemple protégé » sous le bandeau, outils disponibles", /Exemple protégé/.test((await page.locator('[data-testid="atl-note"]').textContent()) ?? "") && (await page.locator('[data-testid="atl-refus-outil"]').count()) === 0);
 
   const { toile, poserPoint } = outilsPlan(page);
+  await page.waitForFunction(() => /Sous-sol technique/.test(document.querySelector('[data-testid="atl-niveau-actif"]')?.textContent ?? ""), null, { timeout: 10000 }).catch(() => null);
+  const journalConsole = [];
+  const surConsole = (msg) => journalConsole.push(`${msg.type()}: ${msg.text()}`.slice(0, 300));
+  const surReponse = (r) => /\/(copies|atelier\/commands)/.test(r.url()) && journalConsole.push(`${r.request().method()} ${new URL(r.url()).pathname} → ${r.status()}`);
+  page.on("console", surConsole);
+  page.on("response", surReponse);
   await toile.focus();
   await page.keyboard.press("m");
   await page.waitForFunction(() => document.querySelector('[data-testid="atl-puce-outil"]')?.textContent?.includes("Mur"), null, { timeout: 5000 }).catch(() => null);
+  for (const [champ, valeur] of [["epaisseur", "0,2"], ["hauteur", "2,5"]]) {
+    const c = page.locator(`[data-testid="atl-precision-${champ}"]`);
+    if (await c.count()) {
+      await c.fill(valeur);
+      await c.press("Enter");
+    }
+  }
   await poserPoint(40, 40);
   await poserPoint(44, 40);
-  await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid) && /module=atelier/.test(u.toString()), { timeout: 30000 });
+  try {
+    await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid) && /module=atelier/.test(u.toString()), { timeout: 30000 });
+  } catch (e) {
+    // Diagnostic : ce que l'écran et le réseau montrent quand la copie de travail n'arrive pas.
+    await page.screenshot({ path: `${OUT}/atelier-copie-echec-desktop.png`, fullPage: true }).catch(() => {});
+    const texte = async (sel) => (await page.locator(sel).first().textContent().catch(() => null))?.replace(/\s+/g, " ").slice(0, 300) ?? "absent";
+    console.log(`ℹ diagnostic copie de travail : outil « ${await texte('[data-testid="atl-puce-outil"]')} » · refus « ${await texte('[data-testid="atl-refus-outil"]')} » · file « ${await texte('[data-testid="atl-compte-attente"]')} » · journal « ${await texte('[data-testid="atl-repere-panneau"]')} » · réseau / console : ${journalConsole.join(" | ") || "rien"}`);
+    throw e;
+  } finally {
+    page.off("console", surConsole);
+    page.off("response", surReponse);
+  }
   const atelierUrl = page.url().split("?")[0];
   const atelierPid = atelierUrl.split("/").pop();
   const copyToastSeen = await page.waitForFunction(() => /Copie de travail créée automatiquement · exemple original conservé\./.test(document.querySelector(".h7-toast")?.textContent || ""), null, { timeout: 6000 }).then(() => true).catch(() => false);
