@@ -336,3 +336,98 @@ export async function gestes(sc) {
   );
   check("nouvel atelier : aucune erreur JavaScript pendant les gestes (deux navigateurs)", consoleErrors.length === erreursAvant, consoleErrors.slice(erreursAvant).join(" | "));
 }
+
+/**
+ * Vue 3D (lot 3b, L3b.1) sur la copie de travail de P.118 : bascule Plan 2D → 3D (WebGL2), puis chaque niveau ×
+ * chaque mode (volume, éclaté, coupe) rendu sans vue vide (triangles dessinés > 0, lus dans `atl-3d-etat`) ni
+ * erreur JavaScript ; plan de coupe réglable ; navigation au clavier ; axe-core ordinateur et téléphone.
+ */
+export async function vue3d(sc) {
+  const { OUT, page, consoleErrors, check, measure, axeCheck } = sc;
+  const { atelierUrl } = sc;
+  const erreursAvant = consoleErrors.length;
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${atelierUrl}?module=atelier&version=nouveau`);
+  await page.waitForSelector('[data-testid="atelier-interface"]', { timeout: 30000 });
+  const etat = page.locator('[data-testid="atl-3d-etat"]');
+  const lire = async () => ({
+    mode: await etat.getAttribute("data-mode"),
+    moteur: await etat.getAttribute("data-moteur"),
+    niveaux: await etat.getAttribute("data-niveaux"),
+    triangles: Number(await etat.getAttribute("data-triangles")),
+    objets: Number(await etat.getAttribute("data-objets")),
+  });
+  /** Attend que l'état du rendu corresponde (mode, niveaux) avec des triangles dessinés. */
+  const attendreRendu = (mode, niveaux) =>
+    page
+      .waitForFunction(
+        ({ mode, niveaux }) => {
+          const el = document.querySelector('[data-testid="atl-3d-etat"]');
+          return !!el && el.getAttribute("data-mode") === mode && (niveaux === null || el.getAttribute("data-niveaux") === niveaux) && Number(el.getAttribute("data-triangles")) > 0;
+        },
+        { mode, niveaux },
+        { timeout: 30000 },
+      )
+      .then(() => true)
+      .catch(() => false);
+
+  await measure("ouverture de la vue 3D (WebGL2, tous les niveaux de P.118)", async () => {
+    await page.locator('[data-testid="atl-vue-3d"]').click();
+    await page.waitForSelector('[data-testid="atl-3d-toile"]', { timeout: 30000 });
+    await attendreRendu("volume", null);
+  });
+  const ouverte = await lire();
+  check(
+    "nouvel atelier 3D : bascule Plan 2D → 3D, rendu WebGL2 de tous les niveaux (triangles dessinés, aucun échec de moteur)",
+    ouverte.moteur === "webgl2" && ouverte.triangles > 0 && ouverte.objets > 0 && ouverte.niveaux?.split(",").length === 6 && (await page.locator('[data-testid="atl-3d-echec"]').count()) === 0,
+    JSON.stringify(ouverte),
+  );
+
+  // Chaque niveau × chaque mode, niveau actif seul.
+  await page.locator('[data-testid="atl-3d-niveaux-actif"]').click();
+  const ids = await page.locator('[data-testid^="atl-niveau-"]:not([data-testid="atl-niveau-actif"])').evaluateAll((els) => els.map((e) => e.getAttribute("data-testid").slice("atl-niveau-".length)));
+  const vides = [];
+  for (const id of ids) {
+    await page.locator(`[data-testid="atl-niveau-${id}"]`).click();
+    for (const mode of ["volume", "eclate", "coupe"]) {
+      await page.locator(`[data-testid="atl-3d-mode-${mode}"]`).click();
+      if (!(await attendreRendu(mode, id))) vides.push(`${id}/${mode} ${JSON.stringify(await lire())}`);
+    }
+  }
+  check(`nouvel atelier 3D : ${ids.length} niveaux × 3 modes (volume, éclaté, coupe) rendus sans vue vide`, ids.length === 6 && vides.length === 0, vides.join(" | ") || `${ids.length * 3} rendus`);
+
+  // Plan de coupe réglable (mode coupe, dernier niveau) : le libellé suit le curseur.
+  const curseur = page.locator('[data-testid="atl-3d-coupe"]');
+  const avantCoupe = await curseur.inputValue();
+  await curseur.evaluate((el) => {
+    const v = String(Number(el.min) + (Number(el.max) - Number(el.min)) / 2);
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(el, v);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  const apresCoupe = await curseur.inputValue();
+  const libelleCoupe = (await page.locator(".atl-3d-coupe").textContent()) ?? "";
+  check(
+    "nouvel atelier 3D : plan de coupe réglable (curseur), hauteur affichée mise à jour, rendu non vide",
+    apresCoupe !== avantCoupe && libelleCoupe.includes(Number(apresCoupe).toFixed(2).replace(".", ",")) && (await attendreRendu("coupe", null)),
+    `${avantCoupe} → ${apresCoupe} · ${libelleCoupe}`,
+  );
+
+  // Clavier : orbite (flèches), panoramique (Maj+flèches), zoom (+ / −), toujours rendu.
+  await page.locator('[data-testid="atl-3d-mode-volume"]').click();
+  await page.locator('[data-testid="atl-3d-niveaux-tous"]').click();
+  await page.locator('[data-testid="atl-3d-toile"]').focus();
+  for (const k of ["ArrowLeft", "ArrowUp", "Shift+ArrowRight", "+", "-", "Escape"]) await page.keyboard.press(k);
+  check("nouvel atelier 3D : orbite, panoramique et zoom au clavier sur la vue focalisée, rendu toujours non vide", (await attendreRendu("volume", null)) && (await page.evaluate(() => document.activeElement?.getAttribute("data-testid"))) === "atl-3d-toile");
+
+  await axeCheck(page, "nouvel atelier, vue 3D (ordinateur)");
+  await page.screenshot({ path: `${OUT}/nouvel-atelier-3d-desktop.png` });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(400);
+  await attendreRendu("volume", null);
+  await axeCheck(page, "nouvel atelier, vue 3D (téléphone)");
+  await page.screenshot({ path: `${OUT}/nouvel-atelier-3d-mobile.png` });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.waitForTimeout(400);
+  await page.locator('[data-testid="atl-vue-plan"]').click();
+  check("nouvel atelier 3D : aucune erreur JavaScript pendant la vue 3D, retour au plan 2D", consoleErrors.length === erreursAvant && (await page.locator('[data-testid="plan2d-zone"]').isVisible()), consoleErrors.slice(erreursAvant).join(" | "));
+}

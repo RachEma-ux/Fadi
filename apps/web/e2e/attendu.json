@@ -1,5 +1,5 @@
 {
-  "controles": 357,
+  "controles": 364,
   "parFichier": {
     "00-compte.mjs": 0,
     "01-import-exemple.mjs": 17,
@@ -14,7 +14,7 @@
     "10-accueil-parametres.mjs": 19,
     "11-accessibilite.mjs": 49,
     "12-mesures.mjs": 1,
-    "14-nouvel-atelier.mjs": 30
+    "14-nouvel-atelier.mjs": 37
   },
   "historique": [
     {
@@ -36,6 +36,11 @@
       "date": "2026-10-04",
       "controles": 357,
       "motif": "L3b.0 (D-045) : 14-nouvel-atelier.mjs#gestes, suppression du mur bas par la touche Suppr (porte hébergée listée avant l'accord), Entrée, annuler puis rétablir avec révisions persistées, panneau Métré monté, périmé puis recalculé (+5)."
+    },
+    {
+      "date": "2026-10-04",
+      "controles": 364,
+      "motif": "L3b.1 (#67) : 14-nouvel-atelier.mjs#vue3d, vue 3D WebGL2 de P.118 — ouverture, 6 niveaux × 3 modes sans vue vide, plan de coupe réglable, clavier, aucune erreur JavaScript (5 appels à check) et axe-core ordinateur + téléphone (+7)."
     }
   ]
 }

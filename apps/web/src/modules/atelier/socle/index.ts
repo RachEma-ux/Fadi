@@ -5,5 +5,5 @@ export { creerSelection } from "./selection";
 export { creerEtatInterface, VUE_INITIALE } from "./interface";
 export { creerRegistre, normaliser } from "./registre";
 export { creerRegistreDessinateurs, creerRegistreInspecteur, creerRegistres } from "./dessin";
-export { APERCU_VIDE, creerPilote } from "./pilote";
+export { APERCU_VIDE, creerPilote, motifVue } from "./pilote";
 export { creerContexte, erreurLisible, type OptionsContexte } from "./contexte";
