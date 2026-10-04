@@ -296,7 +296,11 @@ await mesurer("sélection d'un mur au clic → inspecteur affiché", async () =>
   if (!(await selectionne().then(() => true, () => false))) {
     await page.waitForTimeout(500);
     await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);
-    await selectionne();
+    if (!(await selectionne().then(() => true, () => false))) {
+      const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute("class") ?? ""} objet=${e?.closest("[data-objet]")?.getAttribute("data-objet") ?? "-"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);
+      check("sélection d'un mur au clic", false, `sous le pointeur : ${sous} ; boîte ${JSON.stringify(bMur)} ; inspecteur : ${(await page.locator(".inspecteur").textContent())?.slice(0, 160)}`);
+      await page.screenshot({ path: `${OUT}/3b-selection-echec.png` });
+    }
   }
 });
 const avantDeplacement = await page.locator(".inspecteur .champ-lecture").first().textContent();
