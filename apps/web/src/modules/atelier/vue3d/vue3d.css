@@ -44,8 +44,11 @@
   outline: 3px solid #1f6feb;
   outline-offset: -3px;
 }
-.atl-3d-etat {
+/* Texte d'état sur le fond de la zone (#eef2ec) : encre pleine, le gris « muet » n'y atteint pas 4,5:1 (axe-core). */
+.atl-3d-etat,
+.atl-3d-repli {
   margin: 0;
+  color: var(--atl-encre, #183d32);
 }
 .atl-3d-diagnostics ul {
   max-height: 10rem;

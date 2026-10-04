@@ -348,7 +348,7 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
           Vue 3D indisponible : {echec}. Le plan 2D reste utilisable (bouton « Plan 2D »).
         </p>
       ) : null}
-      {rendu.current?.repli && <p className="atl-muet atl-petit" data-testid="atl-3d-repli">{rendu.current.repli} : rendu WebGL2.</p>}
+      {rendu.current?.repli && <p className="atl-3d-repli atl-petit" data-testid="atl-3d-repli">{rendu.current.repli} : rendu WebGL2.</p>}
       <Erreurs erreurs={erreurs} titre="Déplacement refusé — rien n'a été modifié" testId="atl-3d-erreurs" />
       <div className="atl-3d-cadre" ref={cadre}>
         <canvas
@@ -369,7 +369,7 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
         />
       </div>
       <p
-        className="atl-3d-etat atl-muet atl-petit"
+        className="atl-3d-etat atl-petit"
         data-testid="atl-3d-etat"
         data-mode={mode}
         data-portee={portee}
