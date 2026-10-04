@@ -230,6 +230,32 @@ const dirApres = Math.atan2(apresRot.b.y - apresRot.a.y, apresRot.b.x - apresRot
 const tour = Math.abs((((dirApres - dirAvant) * 180) / Math.PI + 540) % 360 - 180);
 const journalRot = (await api("get", `/projects/${pid}/atelier/journal`)).body.entrees.at(-1)?.label ?? "";
 check("manipulateur 3D : l'anneau tourne la sélection autour de son centre, un lot enregistré", !!anneau && tour > 20 && /Tourner .* \(manipulateur 3D\)/.test(journalRot), `${tour.toFixed(1)}° · ${journalRot}`);
+// Flèche Z : seulement pour un objet à décalage de base (une dalle s'élève) ; un mur suit son niveau.
+await page.waitForTimeout(400);
+const poigneesMur = await page.evaluate(() => window.fadiMesures3D?.poignees ?? 0);
+const modeleZ = (await modele(pid)).modele;
+const dalle = Object.values(modeleZ.objets).find((o) => o.classe === "dalle" && !(o.calqueId && modeleZ.calques[o.calqueId]?.verrouille));
+let elevation = null;
+let journalZ = "";
+if (dalle) {
+  await selectionner(dalle.id);
+  await page.waitForFunction(() => (window.fadiMesures3D?.poignees ?? 0) === 4, null, { timeout: 20000 }).catch(() => {});
+  await page.waitForTimeout(400);
+  const fz = await page.evaluate(() => window.fadiMesures3D?.localiserPoignee?.("z") ?? null);
+  const cz = await page.evaluate(() => window.fadiMesures3D?.localiserPoignee?.("c") ?? null);
+  if (fz && cz && cadre3d) {
+    const l = Math.hypot(fz.x - cz.x, fz.y - cz.y) || 1;
+    const [ux, uy] = [(fz.x - cz.x) / l, (fz.y - cz.y) / l];
+    await page.mouse.move(cadre3d.x + fz.x, cadre3d.y + fz.y);
+    await page.mouse.down();
+    for (let k = 1; k <= 10; k++) await page.mouse.move(cadre3d.x + fz.x + ux * k * 6, cadre3d.y + fz.y + uy * k * 6);
+    await page.mouse.up();
+  }
+  await attendreEnregistre().catch(() => {});
+  elevation = (await modele(pid)).modele.objets[dalle.id].params.decalageBase.value - dalle.params.decalageBase.value;
+  journalZ = (await api("get", `/projects/${pid}/atelier/journal`)).body.entrees.at(-1)?.label ?? "";
+}
+check("manipulateur 3D : flèche Z pour une dalle (décalage de base modifié, un lot), absente pour un mur", poigneesMur === 3 && elevation !== null && elevation > 0.01 && /Élever .* \(Z, manipulateur 3D\)/.test(journalZ), `${poigneesMur} poignées sur le mur · ${elevation} m · ${journalZ}`);
 await page.keyboard.press("Escape");
 const chapeaux = {};
 for (const vue of ["Coupe nord–sud", "Plan (dessus)"]) {

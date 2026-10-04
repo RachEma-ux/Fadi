@@ -104,3 +104,4 @@ par IfcOpenShell). DXF : cotes radiales, diamétrales et angulaires (`echanges.t
 famille « définitions » de la reprise (`reprise.test.ts`, test API, e2e `atelier-complements.mjs`). Réparation d'une
 référence externe par repointage explicite (`refexterne.test.ts`, test API, bouton « Réparer… »).
 Raccords des nœuds sans paire alignée unique (Y, croisement de quatre murs) : `raccords.test.ts` (D-032).
+Flèche Z du manipulateur 3D pour les objets à décalage de base (e2e `atelier-complements.mjs`, D-033).

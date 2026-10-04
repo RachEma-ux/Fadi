@@ -45,7 +45,7 @@ export interface MesuresRendu {
   externes?: number;
   /** Poignées du manipulateur affichées (0 ou 2) et position écran d'une flèche (instrumentation de la recette). */
   poignees?: number;
-  localiserPoignee?: (axe: "x" | "y" | "r" | "c") => { x: number; y: number } | null;
+  localiserPoignee?: (axe: "x" | "y" | "z" | "r" | "c") => { x: number; y: number } | null;
 }
 
 const ECART_ECLATE = 4;
@@ -517,14 +517,19 @@ export class Scene3D {
 
   // ---------------------------------------------------------------------------------------------------------------
   // Manipulateur à poignées : deux flèches (X rouge, Y verte) au-dessus de la sélection ; glisser une flèche déplace
-  // la sélection le long de cet axe (aperçu), le relâcher produit un lot `transformer.deplacer`.
+  // la sélection le long de cet axe (aperçu), le relâcher produit un lot `transformer.deplacer`. Flèche Z (violette)
+  // quand la sélection a un décalage de base : `objet.modifier` du décalage ; anneau bleu : rotation.
   // ---------------------------------------------------------------------------------------------------------------
   private poignees = new THREE.Group();
   private centrePoignees: THREE.Vector3 | null = null;
-  private matPoignee = { x: new THREE.MeshBasicMaterial({ color: "#c0392b", depthTest: false }), y: new THREE.MeshBasicMaterial({ color: "#2e8b57", depthTest: false }), r: new THREE.MeshBasicMaterial({ color: "#2f6fb3", depthTest: false }) };
+  private matPoignee = { x: new THREE.MeshBasicMaterial({ color: "#c0392b", depthTest: false }), y: new THREE.MeshBasicMaterial({ color: "#2e8b57", depthTest: false }), r: new THREE.MeshBasicMaterial({ color: "#2f6fb3", depthTest: false }), z: new THREE.MeshBasicMaterial({ color: "#7a4fa3", depthTest: false }) };
 
-  /** Place les poignées au-dessus du centre de la sélection (null : les retirer). */
-  majPoignees(actif: boolean): void {
+  /**
+   * Place les poignées au-dessus du centre de la sélection (null : les retirer). `avecZ` : flèche verticale, offerte
+   * seulement quand tous les objets sélectionnés portent un décalage de base (dalles, toitures, escaliers, solides,
+   * garde-corps) — un mur ou un poteau suit son niveau et n'a pas de translation verticale.
+   */
+  majPoignees(actif: boolean, avecZ = false): void {
     for (const c of [...this.poignees.children]) {
       c.traverse((x) => (x as THREE.Mesh).geometry?.dispose());
       this.poignees.remove(c);
@@ -544,7 +549,7 @@ export class Scene3D {
     this.centrePoignees = c;
     // Flèches de longueur unité, mises à l'échelle de l'écran (taille constante quel que soit le zoom).
     const longueur = 1;
-    for (const axe of ["x", "y"] as const) {
+    for (const axe of avecZ ? (["x", "y", "z"] as const) : (["x", "y"] as const)) {
       const fleche = new THREE.Group();
       const tige = new THREE.Mesh(new THREE.CylinderGeometry(longueur * 0.025, longueur * 0.025, longueur, 10), this.matPoignee[axe]);
       tige.position.y = longueur / 2;
@@ -553,6 +558,7 @@ export class Scene3D {
       fleche.add(tige, pointe);
       // Le cylindre de three.js suit Y : la flèche X est tournée de −90° autour de Z.
       if (axe === "x") fleche.rotation.z = -Math.PI / 2;
+      if (axe === "z") fleche.rotation.x = Math.PI / 2;
       fleche.position.copy(c);
       fleche.userData["axe"] = axe;
       fleche.renderOrder = 10;
@@ -571,11 +577,11 @@ export class Scene3D {
     anneau.position.copy(c);
     anneau.userData["axe"] = "r";
     this.poignees.add(anneau);
-    this.mesures.poignees = 3;
+    this.mesures.poignees = avecZ ? 4 : 3;
     this.mesures.localiserPoignee = (axe) => {
       if (!this.centrePoignees) return null;
       const k = this.echellePoignees();
-      const d = axe === "x" ? new THREE.Vector3(k * 0.8, 0, 0) : axe === "y" ? new THREE.Vector3(0, k * 0.8, 0) : axe === "r" ? new THREE.Vector3(-k * 0.55 * Math.SQRT1_2, -k * 0.55 * Math.SQRT1_2, 0) : new THREE.Vector3(0, 0, 0);
+      const d = axe === "x" ? new THREE.Vector3(k * 0.8, 0, 0) : axe === "y" ? new THREE.Vector3(0, k * 0.8, 0) : axe === "z" ? new THREE.Vector3(0, 0, k * 0.8) : axe === "r" ? new THREE.Vector3(-k * 0.55 * Math.SQRT1_2, -k * 0.55 * Math.SQRT1_2, 0) : new THREE.Vector3(0, 0, 0);
       const p = this.centrePoignees.clone().add(this.poignees.position).add(d).project(this.camera);
       return { x: ((p.x + 1) / 2) * this.largeur, y: ((1 - p.y) / 2) * this.hauteur };
     };
@@ -601,21 +607,21 @@ export class Scene3D {
   }
 
   /** Poignée sous le pointeur (coordonnées relatives au canevas). */
-  poigneeSous(x: number, y: number): "x" | "y" | "r" | null {
+  poigneeSous(x: number, y: number): "x" | "y" | "z" | "r" | null {
     if (!this.poignees.children.length) return null;
     const rc = new THREE.Raycaster();
     rc.setFromCamera(new THREE.Vector2((x / this.largeur) * 2 - 1, -(y / this.hauteur) * 2 + 1), this.camera);
     const h = rc.intersectObjects(this.poignees.children, true)[0];
-    return (h?.object.userData["axe"] as "x" | "y" | "r" | undefined) ?? null;
+    return (h?.object.userData["axe"] as "x" | "y" | "z" | "r" | undefined) ?? null;
   }
 
   /** Abscisse, le long de l'axe passant par le centre des poignées, du point de l'axe le plus proche du rayon du pointeur. */
-  abscisseSurAxe(axe: "x" | "y", x: number, y: number): number | null {
+  abscisseSurAxe(axe: "x" | "y" | "z", x: number, y: number): number | null {
     const c = this.centrePoignees;
     if (!c) return null;
     const rc = new THREE.Raycaster();
     rc.setFromCamera(new THREE.Vector2((x / this.largeur) * 2 - 1, -(y / this.hauteur) * 2 + 1), this.camera);
-    const d1 = axe === "x" ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+    const d1 = axe === "x" ? new THREE.Vector3(1, 0, 0) : axe === "y" ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, 0, 1);
     const d2 = rc.ray.direction;
     const w = c.clone().sub(rc.ray.origin);
     const b = d1.dot(d2);
@@ -653,10 +659,10 @@ export class Scene3D {
   }
 
   /** Aperçu du déplacement : la sélection et les poignées suivent le décalage. */
-  apercuDeplacement(dx: number, dy: number): void {
+  apercuDeplacement(dx: number, dy: number, dz = 0): void {
     this.selection.rotation.z = 0;
-    this.selection.position.set(dx, dy, 0);
-    this.poignees.position.set(dx, dy, 0);
+    this.selection.position.set(dx, dy, dz);
+    this.poignees.position.set(dx, dy, dz);
     this.rendre();
   }
 

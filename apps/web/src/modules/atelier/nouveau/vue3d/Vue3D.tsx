@@ -76,8 +76,8 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
   const options: OptionsScene = useMemo(() => ({ ...reglages, niveauActif: ui.niveauId }), [reglages, ui.niveauId]);
   const setOptions = (patch: Partial<Omit<OptionsScene, "niveauActif">>) => setReglages((r) => ({ ...r, ...patch }));
   const [pousse, setPousse] = useState<{ valeur: number; cle: string } | null>(null);
-  const geste = useRef<{ x: number; y: number; bouge: boolean; pousser: null | { o: OccurrenceQuelconque; cle: "hauteur" | "epaisseur"; depart: number; ppm: number; valeur: number }; poignee?: { axe: "x" | "y"; t0: number; d: number }; rotation?: { a0: number; angle: number; centre: { x: number; y: number } } } | null>(null);
-  const [deplace, setDeplace] = useState<{ axe: "x" | "y" | "r"; d: number } | null>(null);
+  const geste = useRef<{ x: number; y: number; bouge: boolean; pousser: null | { o: OccurrenceQuelconque; cle: "hauteur" | "epaisseur"; depart: number; ppm: number; valeur: number }; poignee?: { axe: "x" | "y" | "z"; t0: number; d: number }; rotation?: { a0: number; angle: number; centre: { x: number; y: number } } } | null>(null);
+  const [deplace, setDeplace] = useState<{ axe: "x" | "y" | "z" | "r"; d: number } | null>(null);
   const webgpuDisponible = typeof navigator !== "undefined" && "gpu" in navigator;
 
   // Création / recréation du moteur.
@@ -133,9 +133,11 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
   const pousserActif = ui.outil === "pousser";
   // Manipulateur à poignées : outil Sélection, sélection modifiable (calques non verrouillés).
   const poigneesActives = pret && ui.outil === "selection" && !readOnly && ui.selection.length > 0 && ui.selection.every((id) => { const o = etat.objets[id]; return o && !(o.calqueId && etat.calques[o.calqueId]?.verrouille); });
+  // Flèche verticale : seulement si chaque objet sélectionné porte un décalage de base (sinon il suit son niveau).
+  const avecZ = poigneesActives && ui.selection.every((id) => { const p = etat.objets[id]?.params as { decalageBase?: { value: number } } | undefined; return typeof p?.decalageBase?.value === "number"; });
   useEffect(() => {
-    if (pret) sceneRef.current?.majPoignees(poigneesActives);
-  }, [poigneesActives, ui.selection, pret, etat, options]);
+    if (pret) sceneRef.current?.majPoignees(poigneesActives, avecZ);
+  }, [poigneesActives, avecZ, ui.selection, pret, etat, options]);
 
   function relatif(e: React.PointerEvent): { x: number; y: number } {
     const r = canvasRef.current!.getBoundingClientRect();
@@ -213,7 +215,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
       const d = Math.round((t - g.poignee.t0) / pas) * pas;
       g.poignee.d = Math.round(d * 1000) / 1000;
       setDeplace({ axe: g.poignee.axe, d: g.poignee.d });
-      sceneRef.current?.apercuDeplacement(g.poignee.axe === "x" ? g.poignee.d : 0, g.poignee.axe === "y" ? g.poignee.d : 0);
+      sceneRef.current?.apercuDeplacement(g.poignee.axe === "x" ? g.poignee.d : 0, g.poignee.axe === "y" ? g.poignee.d : 0, g.poignee.axe === "z" ? g.poignee.d : 0);
       return;
     }
     if (!g.pousser) return;
@@ -247,7 +249,14 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
       const { axe, d } = g.poignee;
       if (Math.abs(d) >= 0.005) {
         const n = ui.selection.length;
-        onCommandes([{ type: "transformer.deplacer", params: { dx: axe === "x" ? d : 0, dy: axe === "y" ? d : 0 }, cibles: ui.selection }], `Déplacer ${n} objet${n > 1 ? "s" : ""} de ${fmt(d)} m (${axe.toUpperCase()}, manipulateur 3D)`);
+        if (axe === "z") {
+          // Translation verticale : le décalage de base de chaque objet, modifié dans un seul lot.
+          const commandes = ui.selection.map((id) => {
+            const actuel = (etat.objets[id]!.params as unknown as { decalageBase: { value: number } }).decalageBase.value;
+            return { type: "objet.modifier", params: { id, params: { decalageBase: { value: Math.round((actuel + d) * 1000) / 1000, unit: "m" } } } };
+          });
+          onCommandes(commandes, `Élever ${n} objet${n > 1 ? "s" : ""} de ${fmt(d)} m (Z, manipulateur 3D)`);
+        } else onCommandes([{ type: "transformer.deplacer", params: { dx: axe === "x" ? d : 0, dy: axe === "y" ? d : 0 }, cibles: ui.selection }], `Déplacer ${n} objet${n > 1 ? "s" : ""} de ${fmt(d)} m (${axe.toUpperCase()}, manipulateur 3D)`);
       }
       return;
     }
