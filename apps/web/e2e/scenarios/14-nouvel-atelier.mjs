@@ -490,9 +490,16 @@ export async function pousserTirer(sc) {
   );
 
   // Glisser vertical vers le haut au centre de la vue : aperçu puis validation au relâcher.
-  const boite = await page.locator('[data-testid="atl-3d-toile"]').boundingBox();
+  // page.mouse ne fait pas défiler : le canevas est amené à l'écran et le geste vise le centre de sa partie visible.
+  const toile3d = page.locator('[data-testid="atl-3d-toile"]');
+  await toile3d.scrollIntoViewIfNeeded();
+  const boite = await toile3d.boundingBox();
+  const vp = page.viewportSize();
+  const haut = Math.max(boite.y, 0);
+  const bas = Math.min(boite.y + boite.height, vp.height);
   const cx = boite.x + boite.width / 2;
-  const cy = boite.y + boite.height / 2;
+  const cy = Math.max(haut + 90, (haut + bas) / 2);
+  const sousPointeur = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.getAttribute("data-testid") ?? document.elementFromPoint(x, y)?.tagName ?? "rien", [cx, cy]);
   await page.mouse.move(cx, cy);
   await page.mouse.down();
   for (let i = 1; i <= 8; i++) await page.mouse.move(cx, cy - i * 10);
@@ -504,7 +511,7 @@ export async function pousserTirer(sc) {
   check(
     "nouvel atelier 3D : pousser / tirer — glisser vers le haut augmente la hauteur du mur, persistée sur le serveur (nouvelle révision)",
     h1 > h0 && apresGlisser.revision > avant.revision,
-    `hauteur ${h0} → ${h1} m, révision ${avant.revision} → ${apresGlisser.revision} · consigne pendant : ${consignePendant} · erreurs : ${erreursGeste.slice(0, 300)}`,
+    `hauteur ${h0} → ${h1} m, révision ${avant.revision} → ${apresGlisser.revision} · sous le pointeur : ${sousPointeur} · consigne pendant : ${consignePendant} · erreurs : ${erreursGeste.slice(0, 300)}`,
   );
 
   // L'outil se ferme après une validation ; s'il est resté actif (refus), un nouveau clic le désactiverait.
