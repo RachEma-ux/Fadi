@@ -87,8 +87,10 @@ export async function atelierExemple(sc) {
       await c.press("Enter");
     }
   }
-  await poserPoint(40, 40);
-  await poserPoint(44, 40);
+  // À 3 m au-dessus du carré 40–44 m de `14-nouvel-atelier.mjs` (même copie, même niveau) : la porte de 14 s'accroche
+  // à son propre mur, et l'emprise de la copie (cadrage de la vue 3D) reste celle du carré.
+  await poserPoint(40, 47);
+  await poserPoint(44, 47);
   try {
     await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid) && /module=atelier/.test(u.toString()), { timeout: 30000 });
   } catch (e) {

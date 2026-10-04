@@ -1,9 +1,9 @@
 /**
  * Stockage IndexedDB (Dexie) de la file du bus du nouvel Atelier.
  *
- * Base distincte de `fadi-local` (`lib/local-store.ts`, file de l'ancien Atelier, inchangée) : `fadi-atelier`,
- * tables `file` (clé `requestId`, index `projectId`) et `modeles` (clé `projectId`). Les deux files coexistent
- * jusqu'à la bascule (lot 4), où l'ancienne disparaît avec l'ancien Atelier.
+ * Base `fadi-atelier`, distincte de `fadi-local` (`lib/local-store.ts`, cache des requêtes) : tables `file`
+ * (clé `requestId`, index `projectId`) et `modeles` (clé `projectId`). La file de l'ancien Atelier a disparu
+ * avec lui à la bascule (lot 4, D-053) ; la page Paramètres lit et vide celle-ci (`resumeStockageAtelier`).
  *
  * IndexedDB indisponible (navigation privée, quota) : `stockageNavigateur` rend un stockage en mémoire et le
  * signale (`persistant: false`) — la file vit alors le temps de l'onglet, rien n'est écrit en silence ailleurs.
@@ -46,4 +46,44 @@ export function stockageNavigateur(): { readonly stockage: StockageFile; readonl
     /* IndexedDB inutilisable : mémoire */
   }
   return { stockage: stockageMemoire(), persistant: false };
+}
+
+/** Page Paramètres : écritures de l'Atelier en attente (tous projets, par projet) et modèles mis en cache. */
+export interface ResumeStockageAtelier {
+  readonly disponible: boolean;
+  readonly enAttente: number;
+  readonly enAttenteParProjet: Readonly<Record<string, number>>;
+  readonly modeles: number;
+}
+
+export async function resumeStockageAtelier(): Promise<ResumeStockageAtelier> {
+  try {
+    if (typeof indexedDB === "undefined") throw new Error("IndexedDB indisponible");
+    const base = new BaseAtelier();
+    try {
+      const file = await base.file.toArray();
+      const enAttenteParProjet: Record<string, number> = {};
+      for (const e of file) enAttenteParProjet[e.projectId] = (enAttenteParProjet[e.projectId] ?? 0) + 1;
+      return { disponible: true, enAttente: file.length, enAttenteParProjet, modeles: await base.modeles.count() };
+    } finally {
+      base.close();
+    }
+  } catch {
+    return { disponible: false, enAttente: 0, enAttenteParProjet: {}, modeles: 0 };
+  }
+}
+
+/** « Vider les caches locaux » : les modèles mis en cache seulement ; la file des écritures n'est jamais vidée ici. */
+export async function viderModelesAtelier(): Promise<void> {
+  try {
+    if (typeof indexedDB === "undefined") return;
+    const base = new BaseAtelier();
+    try {
+      await base.modeles.clear();
+    } finally {
+      base.close();
+    }
+  } catch {
+    /* IndexedDB inutilisable : rien à vider */
+  }
 }

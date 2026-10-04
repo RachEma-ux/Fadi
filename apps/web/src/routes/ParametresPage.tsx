@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth-context";
 import { localStore } from "../lib/local-store";
+import { resumeStockageAtelier, viderModelesAtelier } from "../modules/atelier/bus";
 import { QUERY_CACHE_VERSION } from "../lib/query-persister";
 import { forgetMaptilerKey, maptilerKey, MAPTILER_KEY_STORAGE, useMaptilerKey } from "../lib/maptiler";
 import { useOnline } from "../components/SyncIndicator";
@@ -108,7 +109,8 @@ interface LocalSummary {
 }
 
 async function readLocalSummary(): Promise<LocalSummary> {
-  const base = await localStore.summary();
+  const atelier = await resumeStockageAtelier();
+  const base = { available: atelier.disponible, pendingWrites: atelier.enAttente, pendingByProject: { ...atelier.enAttenteParProjet }, cachedModels: atelier.modeles };
   let cachedQueries = 0;
   let pausedMutations = 0;
   try {
@@ -172,7 +174,7 @@ function LocalDataSettings() {
           className="button-secondary"
           onClick={async () => {
             // Les écritures et saisies en attente ne sont jamais retirées : seules les lectures (requêtes, modèles) le sont.
-            await localStore.clearModelCache();
+            await viderModelesAtelier();
             queryClient.getQueryCache().clear();
             await new Promise((r) => setTimeout(r, 400)); // le cache persistant est réécrit (regroupement 200 ms)
             refresh();

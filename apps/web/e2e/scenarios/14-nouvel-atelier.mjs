@@ -613,18 +613,31 @@ export async function mesures3d(sc) {
   const b = await toile.boundingBox();
   let selectionMs = null;
   const pt = { x: 0, y: 0 };
-  for (const [fx, fy] of [[0.5, 0.5], [0.45, 0.55], [0.55, 0.45], [0.4, 0.5], [0.6, 0.5], [0.5, 0.6], [0.5, 0.4]]) {
+  // Points proches du centre d'abord (attente 3 s), puis une grille plus large (attente 1 s) : l'emprise de la copie
+  // dépend des scénarios précédents (05, gestes), le centre peut tomber entre deux objets.
+  const proches = [[0.5, 0.5], [0.45, 0.55], [0.55, 0.45], [0.4, 0.5], [0.6, 0.5], [0.5, 0.6], [0.5, 0.4]];
+  const grille = [];
+  for (let gy = 0.3; gy <= 0.701; gy += 0.05) for (let gx = 0.25; gx <= 0.751; gx += 0.05) grille.push([gx, gy]);
+  for (const [i, [fx, fy]] of [...proches, ...grille].entries()) {
     pt.x = b.x + b.width * fx;
     pt.y = b.y + b.height * fy;
     const t0 = Date.now();
     await page.mouse.click(pt.x, pt.y);
-    const ok = await page.waitForFunction(() => Number(document.querySelector('[data-testid="atl-3d-etat"]')?.getAttribute("data-selection")) > 0, null, { timeout: 3000 }).then(() => true).catch(() => false);
+    const ok = await page.waitForFunction(() => Number(document.querySelector('[data-testid="atl-3d-etat"]')?.getAttribute("data-selection")) > 0, null, { timeout: i < proches.length ? 3000 : 1000 }).then(() => true).catch(() => false);
     if (ok) {
       selectionMs = Date.now() - t0;
       break;
     }
   }
   if (selectionMs !== null) publier("vue 3D : sélection au clic (jusqu'à la surbrillance)", selectionMs);
+  // Diagnostic si aucun clic ne sélectionne : élément sous le centre de la toile, état de la vue 3D.
+  const diagSelection =
+    selectionMs !== null
+      ? ""
+      : ` · sous le centre : ${await page.evaluate(([x, y]) => {
+          const el = document.elementFromPoint(x, y);
+          return el ? el.getAttribute("data-testid") || el.tagName : "rien";
+        }, [b.x + b.width / 2, b.y + b.height / 2])} · état ${JSON.stringify(await page.locator('[data-testid="atl-3d-etat"]').evaluate((e) => ({ ...e.dataset })))}`;
   const choisi = await page.locator('[data-testid="atl-inspecteur-objet"]').getAttribute("data-objet").catch(() => null);
 
   // Déplacement par le manipulateur (objet sélectionné, glisser de 40 px), jusqu'à la révision serveur ; annulé ensuite.
@@ -701,7 +714,7 @@ export async function mesures3d(sc) {
   check(
     "nouvel atelier 3D : mesures imprimées — ouverture, scène, sélection, déplacement, orbite p95 (images et rendu), enregistrement",
     p95Images !== null && tri.length >= 60 && nTrames >= 60 && Number.isFinite(p95Rendu) && selectionMs !== null && enregistrementMs !== null,
-    `sélection ${selectionMs} ms, déplacement ${deplacementMs ?? "non mesuré"} ms, orbite p95 ${p95Images} ms / rendu ${p95Rendu} ms (${nTrames} trames), enregistrement ${enregistrementMs} ms`,
+    `sélection ${selectionMs} ms${diagSelection}, déplacement ${deplacementMs ?? "non mesuré"} ms, orbite p95 ${p95Images} ms / rendu ${p95Rendu} ms (${nTrames} trames), enregistrement ${enregistrementMs} ms`,
   );
   await page.locator('[data-testid="atl-vue-plan"]').click();
 

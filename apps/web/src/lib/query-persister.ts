@@ -3,7 +3,7 @@
  * données déjà lues d'un projet (projet, étapes, programme, analyses,
  * documents…) restent lisibles sans réseau et après rechargement, marquées
  * périmées jusqu'à la prochaine lecture serveur. Le magasin du modèle de
- * l'Atelier a son propre cache (`modelCache`) et n'est pas déshydraté ici.
+ * l'Atelier a son propre cache (base `fadi-atelier`, table `modeles`) et n'est pas déshydraté ici.
  */
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import type { PersistQueryClientOptions } from "@tanstack/react-query-persist-client";

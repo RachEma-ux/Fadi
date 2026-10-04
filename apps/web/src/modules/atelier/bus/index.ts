@@ -16,6 +16,6 @@ export { donneesConflit, ecartsObjet, valeurLisible, type DonneesConflit, type E
 export { Emetteur } from "./evenements";
 export { joignabiliteManuelle, joignabiliteNavigateur, type SourceJoignabilite } from "./joignabilite";
 export { stockageMemoire, type StockageFile } from "./stockage";
-export { stockageDexie, stockageNavigateur } from "./stockage-dexie";
+export { resumeStockageAtelier, stockageDexie, stockageNavigateur, viderModelesAtelier, type ResumeStockageAtelier } from "./stockage-dexie";
 export { conflitAffiche, sourceConflits, sourceSynchro } from "./adaptateurs";
 export type * from "./types";

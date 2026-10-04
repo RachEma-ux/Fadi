@@ -78,41 +78,46 @@ export async function parametres(sc) {
   check("Paramètres : clé saisie sans conservation → session (jamais dans le stockage local)", (await page.locator(".settings-state").getAttribute("data-key-state")) === "session" && (await page.evaluate(() => localStorage.getItem("parcelle-maptiler-key-v1"))) === null);
   await page.waitForFunction(() => /Version/.test(document.querySelector(".settings-page")?.textContent || "") && !/Écritures de l’Atelier en attente\s*…/.test(document.querySelector(".settings-page")?.textContent || ""), null, { timeout: 10000 });
   // Les compteurs affichés sont ceux d'IndexedDB : file des écritures de l'Atelier, modèles mis en cache, lectures déshydratées et saisies en pause du cache persistant.
+  // File et modèles du nouvel Atelier : base `fadi-atelier` (tables `file`, `modeles`) ; lectures déshydratées : `fadi-local`.
   const localCounts = () =>
-    page.evaluate(
-      () =>
+    page.evaluate(async () => {
+      const ouvrir = (nom) =>
         new Promise((resolve) => {
-          const req = indexedDB.open("fadi-local");
-          req.onsuccess = () => {
-            const db = req.result;
-            const tx = db.transaction(["outbox", "modelCache", "keyValue"], "readonly");
-            const out = { outbox: 0, modelCache: 0, queries: 0, paused: 0, outboxKeys: [], outboxProjects: 0 };
-            const o = tx.objectStore("outbox").getAll();
-            o.onsuccess = () => {
-              out.outbox = o.result.length;
-              out.outboxKeys = o.result.map((e) => `${e.key} (${e.attempts} essai(s)${e.lastError ? ` · ${e.lastError}` : ""})`);
-              out.outboxProjects = new Set(o.result.map((e) => e.projectId)).size;
-            };
-            const m = tx.objectStore("modelCache").count();
-            m.onsuccess = () => (out.modelCache = m.result);
-            const k = tx.objectStore("keyValue").get("fadi-queries-1");
-            k.onsuccess = () => {
-              try {
-                const state = JSON.parse(k.result?.value ?? "null")?.clientState;
-                out.queries = state?.queries?.length ?? 0;
-                out.paused = (state?.mutations ?? []).filter((x) => x.state?.isPaused).length;
-              } catch {
-                /* vide */
-              }
-            };
-            tx.oncomplete = () => {
-              db.close();
-              resolve(out);
-            };
-          };
+          const req = indexedDB.open(nom);
+          req.onsuccess = () => resolve(req.result);
           req.onerror = () => resolve(null);
-        }),
-    );
+        });
+      const lire = (db, magasin, fn) =>
+        new Promise((resolve) => {
+          if (!db || !db.objectStoreNames.contains(magasin)) return resolve(undefined);
+          const r = fn(db.transaction(magasin, "readonly").objectStore(magasin));
+          r.onsuccess = () => resolve(r.result);
+          r.onerror = () => resolve(undefined);
+        });
+      const atelier = await ouvrir("fadi-atelier");
+      const local = await ouvrir("fadi-local");
+      if (!atelier || !local) return null;
+      const file = (await lire(atelier, "file", (st) => st.getAll())) ?? [];
+      const out = {
+        outbox: file.length,
+        outboxKeys: file.map((e) => `${e.requestId} (${e.tentatives} essai(s)${e.derniereErreur ? ` · ${e.derniereErreur}` : ""})`),
+        outboxProjects: new Set(file.map((e) => e.projectId)).size,
+        modelCache: (await lire(atelier, "modeles", (st) => st.count())) ?? 0,
+        queries: 0,
+        paused: 0,
+      };
+      const kv = await lire(local, "keyValue", (st) => st.get("fadi-queries-1"));
+      try {
+        const state = JSON.parse(kv?.value ?? "null")?.clientState;
+        out.queries = state?.queries?.length ?? 0;
+        out.paused = (state?.mutations ?? []).filter((x) => x.state?.isPaused).length;
+      } catch {
+        /* vide */
+      }
+      atelier.close();
+      local.close();
+      return out;
+    });
   const countsBefore = await localCounts();
   const settingsText = (await page.locator(".settings-facts-local").textContent()).replace(/\s+/g, " ");
   check(
