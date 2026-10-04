@@ -51,6 +51,7 @@ const FICHIERS = [
   "10-accueil-parametres.mjs",
   "11-accessibilite.mjs",
   "12-mesures.mjs",
+  "14-nouvel-atelier.mjs",
 ];
 
 /**
@@ -90,6 +91,7 @@ const PLAN = [
   { fichier: "04-programmation.mjs", segment: "bibliothequeP118", lit: ["exampleUrl"], produit: [] },
   { fichier: "11-accessibilite.mjs", segment: "ecrans", lit: ["exampleUrl", "variantUrl", "atelierUrl"], produit: [] },
   { fichier: "02-parcours-etapes.mjs", segment: "telephone", lit: ["projectUrl", "exampleUrl"], produit: [] },
+  { fichier: "14-nouvel-atelier.mjs", segment: "ouverture", lit: ["exampleUrl"], produit: [] },
   { fichier: "12-mesures.mjs", segment: "bilan", lit: [], produit: [] },
 ];
 

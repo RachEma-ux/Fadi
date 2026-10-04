@@ -1,5 +1,5 @@
 {
-  "controles": 327,
+  "controles": 333,
   "parFichier": {
     "00-compte.mjs": 0,
     "01-import-exemple.mjs": 17,
@@ -13,13 +13,19 @@
     "09-hors-ligne.mjs": 26,
     "10-accueil-parametres.mjs": 19,
     "11-accessibilite.mjs": 49,
-    "12-mesures.mjs": 1
+    "12-mesures.mjs": 1,
+    "14-nouvel-atelier.mjs": 6
   },
   "historique": [
     {
       "date": "2026-10-03",
       "controles": 327,
       "motif": "L0.5 (#6) : découpage de parcours-scenario.mjs par module, déplacement à l'identique (276 appels à check, 3 axeCheck isolés, 44 axeCheck sur 22 écrans × 2 tailles, 4 sur les pages publiques)."
+    },
+    {
+      "date": "2026-10-04",
+      "controles": 333,
+      "motif": "L3a.4 (#54) : 14-nouvel-atelier.mjs, ouverture du nouvel Atelier sur P.118 (interface, 6 niveaux, zone de plan, ancien Atelier absent) et axe-core ordinateur + téléphone (+6)."
     }
   ]
 }
