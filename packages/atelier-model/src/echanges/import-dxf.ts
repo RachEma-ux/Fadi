@@ -8,8 +8,9 @@
  * MTEXT (texte brut), ATTRIB ; INSERT (blocs décomposés : point de base, échelles, rotation, réseaux ; blocs imbriqués
  * jusqu'à 8 niveaux) ; HATCH (contours extérieurs en hachures, motif nommé) ; DIMENSION linéaires et alignées (cotes),
  * radiales et diamétrales (cotes linéaires dont la valeur est le rayon ou le diamètre), angulaires (arc et texte de
- * l'angle mesuré, D-031), d'ordonnée (ligne de rappel et texte de la valeur). Les autres entités (XREF — fichier
- * externe non fourni —, splines, 3D…) sont comptées et signalées, jamais devinées.
+ * l'angle mesuré, D-031), d'ordonnée (ligne de rappel et texte de la valeur). Une XREF est résolue par un fichier
+ * joint de même nom (D-036), sinon signalée. Les autres entités (splines, 3D…) sont comptées et signalées, jamais
+ * devinées.
  *
  * Unités : `$INSUNITS` de l'en-tête ; quand il est absent ou « sans unité », l'unité est celle que l'utilisateur
  * choisit (`uniteSiAbsente`) et le rapport l'écrit comme une hypothèse. Repère (R5) : `local` (les coordonnées sont
@@ -31,7 +32,15 @@ export interface OptionsImportDxf {
   uniteSiAbsente: UniteDxf;
   prefixe?: string;
   tailleLot?: number;
+  /**
+   * Fichiers joints pour résoudre les références externes (XREF, D-036) : texte DXF par nom de fichier. Une XREF
+   * « voisin.dwg » est résolue par un fichier joint de même nom sans extension (« voisin.dxf »).
+   */
+  xrefs?: Readonly<Record<string, string>>;
 }
+
+/** Nom d'appariement d'une XREF : nom de fichier sans dossier ni extension, en minuscules. */
+export const cleXref = (chemin: string) => (chemin.split(/[\\/]/).pop() ?? chemin).replace(/\.[^.]*$/, "").trim().toLowerCase();
 
 export interface RapportImportDxf {
   format: "DXF";
@@ -265,8 +274,15 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
   const distincts = (pts: Point2[]) => pts.filter((p, i) => i === 0 || Math.hypot(p.x - pts[i - 1]!.x, p.y - pts[i - 1]!.y) > 1e-6);
 
   let decomposes = 0;
-  /** Une liste d'entités (le dessin, ou le contenu d'un bloc) sous une transformation (blocs insérés). */
-  const importer = (liste: Entite[], M: Affine, chemin: string[], calqueParent: string | null): void => {
+  // Fichiers joints (XREF) : lus à la demande, une fois.
+  const joints = new Map<string, { source: string; texte: string }>();
+  for (const [nom, t] of Object.entries(options.xrefs ?? {})) joints.set(cleXref(nom), { source: nom, texte: t });
+  const xrefsLues = new Map<string, ReturnType<typeof lire>>();
+  /**
+   * Une liste d'entités (le dessin, le contenu d'un bloc ou d'une XREF résolue) sous une transformation ; `table` :
+   * les blocs du fichier d'où viennent ces entités ; `prefixeCalque` : calques d'une XREF nommés « xref|calque ».
+   */
+  const importer = (liste: Entite[], M: Affine, chemin: string[], calqueParent: string | null, table: Map<string, Bloc> = blocs, prefixeCalque = ""): void => {
     const P = (x: number, y: number): Point2 => {
       const q = appliquerAffine(M, x, y);
       return P0(q.x, q.y);
@@ -275,7 +291,7 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
     // Une entité de bloc sur le calque « 0 » prend le calque de l'insertion (convention DXF).
     const nomDe = (x: Entite) => {
       const nom = nomCalque(txt(x, 8));
-      return nom === "0" && calqueParent ? calqueParent : nom;
+      return nom === "0" && calqueParent ? calqueParent : `${prefixeCalque}${nom}`;
     };
     const calqueDe = (x: Entite) => calqueNomme(nomDe(x));
     /** Cercle ou arc sous une transformation quelconque : polyligne (≤ 11,25° par segment). */
@@ -391,15 +407,16 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
         }
         case "INSERT": {
           const nom = txt(e, 2) ?? "";
-          const b = blocs.get(nom);
+          const b = table.get(nom);
           if (!b) {
             const message = `Bloc « ${nom} » inséré mais absent de la section BLOCKS : non décomposé.`;
             if (!remarques.includes(message)) remarques.push(message);
             compter("INSERT", false, "blocs absents du fichier : voir les remarques");
             break;
           }
-          if (b.externe) {
-            const message = `Référence externe XREF « ${b.chemin ?? nom} » : fichier non fourni avec le dessin, non résolue (à importer séparément).`;
+          const joint = b.externe ? joints.get(cleXref(b.chemin ?? nom)) : undefined;
+          if (b.externe && !joint) {
+            const message = `Référence externe XREF « ${b.chemin ?? nom} » : fichier non fourni avec le dessin, non résolue (joindre « ${cleXref(b.chemin ?? nom)}.dxf » pour la résoudre).`;
             if (!remarques.includes(message)) remarques.push(message);
             compter("INSERT", false, "références externes (XREF) non résolues : voir les remarques");
             break;
@@ -408,8 +425,35 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
             compter("INSERT", false, "blocs imbriqués au-delà de 8 niveaux, ou récursifs : non décomposés");
             break;
           }
-          const sx = num(e, 41, 1)!;
-          const sy = num(e, 42, 1)!;
+          // XREF résolue : le contenu du fichier joint, converti de son unité vers celle du dessin hôte.
+          let contenu = b.entites;
+          let tableContenu = table;
+          let k = 1;
+          let prefixeContenu = prefixeCalque;
+          if (joint) {
+            const cle = cleXref(b.chemin ?? nom);
+            let lu = xrefsLues.get(cle);
+            if (!lu) {
+              try {
+                lu = lire(joint.texte);
+              } catch (err) {
+                const message = `Référence externe XREF « ${b.chemin ?? nom} » : fichier joint « ${joint.source} » illisible (${err instanceof Error ? err.message : String(err)}).`;
+                if (!remarques.includes(message)) remarques.push(message);
+                compter("INSERT", false, "références externes (XREF) non résolues : voir les remarques");
+                break;
+              }
+              xrefsLues.set(cle, lu);
+              const uX = lu.insunits !== null ? INSUNITS[lu.insunits] : undefined;
+              remarques.push(uX ? `Référence externe XREF « ${b.chemin ?? nom} » résolue par le fichier joint « ${joint.source} » (unité ${uX}, convertie vers ${unite.valeur}).` : `Référence externe XREF « ${b.chemin ?? nom} » résolue par le fichier joint « ${joint.source} » : unité non déclarée, celle du dessin hôte (${unite.valeur}) est retenue (hypothèse, à vérifier).`);
+            }
+            const uX = lu.insunits !== null ? INSUNITS[lu.insunits] : undefined;
+            k = uX ? FACTEURS[uX] / f : 1;
+            contenu = lu.entites;
+            tableContenu = lu.blocs;
+            prefixeContenu = `${cleXref(b.chemin ?? nom)}|`;
+          }
+          const sx = num(e, 41, 1)! * k;
+          const sy = num(e, 42, 1)! * k;
           const rot = ((num(e, 50, 0) ?? 0) * Math.PI) / 180;
           const colonnes = Math.max(1, Math.min(100, num(e, 70, 1)!));
           const rangees = Math.max(1, Math.min(100, num(e, 71, 1)!));
@@ -423,11 +467,11 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
               const ix = num(e, 10, 0)! + cos * c * dc - sin * r * dr;
               const iy = num(e, 20, 0)! + sin * c * dc + cos * r * dr;
               const local: Affine = { a: cos * sx, b: sin * sx, c: -sin * sy, d: cos * sy, e: ix - (cos * sx * b.base.x - sin * sy * b.base.y), f: iy - (sin * sx * b.base.x + cos * sy * b.base.y) };
-              importer(b.entites, composer(M, local), [...chemin, nom], nomDe(e));
+              importer(contenu, composer(M, local), [...chemin, nom], joint ? null : nomDe(e), tableContenu, prefixeContenu);
             }
           }
           decomposes += colonnes * rangees;
-          compter("INSERT", true, "bloc décomposé en esquisses et textes (point de base, échelles, rotation, réseau)");
+          compter("INSERT", true, joint ? "références externes (XREF) résolues par les fichiers joints, décomposées" : "bloc décomposé en esquisses et textes (point de base, échelles, rotation, réseau)");
           break;
         }
         case "HATCH": {

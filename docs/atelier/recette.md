@@ -20,7 +20,7 @@ déclaré « disponible » : cet état n'est posé qu'après votre acceptation (
 | 9 | Recette : essai « calcul tardif » ajouté, aide située relue et testée, fiches mises à jour, protocole T17 / T18, documentation | `lots/lot-9.md`, ce dossier, `protocole-mesures.md` |
 | + | Compléments : historique d'un objet, consultation d'un état passé, réutilisation de modèle, références externes ; raccords de murs, coupes remplies en 3D, lasso, fusions successives, vues et nomenclatures déplaçables sur feuille, annotations des coupes et façades | `lots/complements.md` |
 
-Décisions du chef de projet : D-001 à D-035 (`decisions.md`). Fiches : les 71 à l'état « prototype » (code présent,
+Décisions du chef de projet : D-001 à D-036 (`decisions.md`). Fiches : les 71 à l'état « prototype » (code présent,
 preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leurs écarts déclarés.
 
 ## 2. Contrôles automatiques (état au 4 octobre 2026)
@@ -28,7 +28,7 @@ preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leur
 | Contrôle | Résultat |
 | --- | --- |
 | `npm run typecheck` (dont `scripts/check-module-deps.mjs`, T14) | ✅ |
-| `npm test` | ✅ core-geometry 47 · domain-model 95 · **atelier-model 129** · **API 79** · web 22 |
+| `npm test` | ✅ core-geometry 47 · domain-model 95 · **atelier-model 130** · **API 79** · web 22 |
 | `npm run build` | ✅ |
 | Scénario complet `apps/web/e2e/parcours-scenario.mjs` | ✅ 326 contrôles, « Scénario conforme. » |
 | Recette Atelier `atelier-nouveau.mjs` (lots 3–4) | ✅ 41 contrôles |
@@ -117,7 +117,7 @@ Toutes ces étapes tournent dans `.github/workflows/ci.yml` (jobs `validate`, `e
 - Atelier : manipulateur 3D — pas de translation verticale pour les murs et poteaux (ils suivent leur niveau ; la
   hauteur passe par Pousser / tirer) ; murs qui se traversent : dessin d'un seul tenant (plan, documents), mais solides
   superposés en 3D et en IFC (pas de découpe).
-- Échanges : `XREF` DXF (fichier non fourni, signalé) ; DWG (format fermé, aucune
-  bibliothèque libre retenue).
+- Échanges : `XREF` DXF dont le fichier n'est pas joint (signalée, avec le nom du fichier à joindre) ; DWG (format
+  fermé, aucune bibliothèque libre retenue).
 - Automatisation : génération libre (fournisseur de modèle de langage non choisi, §10.1).
 - Mesures T17 / T18 sur utilisateurs et appareils réels : protocole fourni, mesure à faire.

@@ -143,6 +143,7 @@ function ImportDxf({ client, etat, niveauId, onFermer, onRapport, onAide }: { cl
   const [unite, setUnite] = useState<UniteDxf>("m");
   const [repere, setRepere] = useState<"local" | "cadastral">("local");
   const [fichier, setFichier] = useState<File | null>(null);
+  const [joints, setJoints] = useState<File[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
   useEffect(() => {
@@ -157,7 +158,9 @@ function ImportDxf({ client, etat, niveauId, onFermer, onRapport, onAide }: { cl
     setErreur(null);
     try {
       const texte = await fichier.text();
-      const { lots, rapport } = commandesImportDxf(client.getSnapshot().etat, texte, { source: fichier.name, niveauId: niveau, repere, uniteSiAbsente: unite });
+      // Références externes (XREF) : fichiers DXF joints, appariés par leur nom (D-036).
+      const xrefs = Object.fromEntries(await Promise.all(joints.map(async (j) => [j.name, await j.text()] as const)));
+      const { lots, rapport } = commandesImportDxf(client.getSnapshot().etat, texte, { source: fichier.name, niveauId: niveau, repere, uniteSiAbsente: unite, xrefs });
       for (const l of lots) await client.executer(l.commands, l.label);
       const n = rapport.entites.reduce((s, x) => s + x.importees, 0);
       onAide(`${n} entité(s) importée(s) de ${fichier.name} sur ${etat.niveaux[niveau]?.nom ?? niveau}.`);
@@ -172,10 +175,14 @@ function ImportDxf({ client, etat, niveauId, onFermer, onRapport, onAide }: { cl
   return (
     <dialog ref={ref} className="atelier-dialogue echanges-dxf" aria-labelledby="dxf-titre" onClose={onFermer}>
       <h2 id="dxf-titre">Importer un plan DXF (2D)</h2>
-      <p className="dialogue-note">Lignes, polylignes, cercles, arcs et textes deviennent des esquisses sur un calque « DXF · … » par calque du fichier, regroupées. Blocs, hachures et cotes sont signalés, pas devinés.</p>
+      <p className="dialogue-note">Lignes, polylignes, cercles, arcs et textes deviennent des esquisses sur un calque « DXF · … » par calque du fichier, regroupées. Blocs décomposés, hachures et cotes repris ; une référence externe (XREF) est résolue si son fichier DXF est joint, sinon signalée.</p>
       <label>
         Fichier DXF (ASCII)
         <input type="file" accept=".dxf" data-entree="dxf" onChange={(e) => setFichier(e.currentTarget.files?.[0] ?? null)} />
+      </label>
+      <label>
+        Références externes (XREF) jointes, facultatif — un DXF par référence, même nom que le fichier référencé
+        <input type="file" accept=".dxf" multiple data-entree="dxf-xref" onChange={(e) => setJoints([...(e.currentTarget.files ?? [])])} />
       </label>
       <label>
         Niveau d'accueil

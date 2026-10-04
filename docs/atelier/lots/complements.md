@@ -106,3 +106,4 @@ référence externe par repointage explicite (`refexterne.test.ts`, test API, bo
 Raccords des nœuds sans paire alignée unique (Y, croisement de quatre murs) : `raccords.test.ts` (D-032).
 Flèche Z du manipulateur 3D pour les objets à décalage de base (e2e `atelier-complements.mjs`, D-033).
 Croisements de murs peints d'un seul tenant dans le plan (`raccords.test.ts`, e2e `atelier-complements.mjs`, D-034).
+DXF : cotes d'ordonnée (D-035) ; XREF résolues par les fichiers joints (D-036) — `echanges.test.ts`.

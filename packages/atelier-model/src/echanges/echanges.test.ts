@@ -265,6 +265,29 @@ describe("import DXF 2D", () => {
     expect(r.rapport.remarques.some((x) => /4 insertion/.test(x) || /insertion\(s\) de bloc/.test(x))).toBe(true);
   });
 
+  it("XREF résolue par un fichier joint de même nom (D-036) : unité convertie, calques « xref|calque », blocs du fichier joint", () => {
+    const hote = ["0", "SECTION", "2", "HEADER", "9", "$INSUNITS", "70", "6", "0", "ENDSEC",
+      "0\nSECTION\n2\nBLOCKS\n0\nBLOCK\n8\n0\n2\nVOISIN\n70\n4\n1\nC:\\plans\\Voisin.dwg\n10\n0\n20\n0\n0\nENDBLK\n8\n0\n0\nENDSEC",
+      "0", "SECTION", "2", "ENTITIES", "0\nINSERT\n8\n0\n2\nVOISIN\n10\n10\n20\n0", "0\nLINE\n8\nMurs\n10\n0\n20\n5\n11\n1\n21\n5", "0", "ENDSEC", "0", "EOF"].join("\n");
+    const voisin = ["0", "SECTION", "2", "HEADER", "9", "$INSUNITS", "70", "4", "0", "ENDSEC",
+      "0\nSECTION\n2\nBLOCKS\n0\nBLOCK\n8\n0\n2\nPOTEAU\n70\n0\n10\n0\n20\n0\n0\nCIRCLE\n8\nStructure\n10\n0\n20\n0\n40\n100\n0\nENDBLK\n8\n0\n0\nENDSEC",
+      "0", "SECTION", "2", "ENTITIES", "0\nLINE\n8\nMurs\n10\n0\n20\n0\n11\n1000\n21\n0", "0\nINSERT\n8\n0\n2\nPOTEAU\n10\n2000\n20\n0", "0", "ENDSEC", "0", "EOF"].join("\n");
+    const sans = commandesImportDxf(base(), hote, { source: "hote.dxf", niveauId: "rdc", repere: "local", uniteSiAbsente: "m" });
+    expect(sans.rapport.remarques.some((x) => /non résolue \(joindre « voisin\.dxf »/.test(x))).toBe(true);
+    const r = commandesImportDxf(base(), hote, { source: "hote.dxf", niveauId: "rdc", repere: "local", uniteSiAbsente: "m", xrefs: { "voisin.dxf": voisin } });
+    const e = appliquer(base(), r.lots);
+    const esq = objetsDeClasse(e, "esquisse");
+    const ligne = esq.find((o) => o.params.forme === "ligne" && o.params.points[0]!.y === 0)!;
+    expect(ligne.params.points.map((p) => [p.x, p.y])).toEqual([[10, 0], [11, 0]]);
+    expect(e.calques[ligne.calqueId!]!.nom).toBe("DXF · voisin|Murs");
+    const cercle = esq.find((o) => o.params.forme === "cercle")!;
+    expect(cercle.params.centre).toMatchObject({ x: 12, y: 0 });
+    expect(cercle.params.rayon).toEqual({ value: 0.1, unit: "m" });
+    expect(e.calques[cercle.calqueId!]!.nom).toBe("DXF · voisin|Structure");
+    expect(r.rapport.remarques.some((x) => /résolue par le fichier joint « voisin\.dxf » \(unité mm/.test(x))).toBe(true);
+    expect(r.rapport.entites.find((x) => x.type === "INSERT")?.remarque).toMatch(/XREF\) résolues/);
+  });
+
   it("unités du fichier ($INSUNITS 4 = mm), un calque par calque DXF, groupe ; INSERT signalé, jamais deviné", () => {
     const r = commandesImportDxf(base(), dxf(4, ENTITES), { source: "plan.dxf", niveauId: "rdc", repere: "local", uniteSiAbsente: "m" });
     const e = appliquer(base(), r.lots);

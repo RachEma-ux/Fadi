@@ -33,7 +33,7 @@ Légende : **C** conservé · **T** transformé (dit au rapport) · **O** omis (
 | zone | T `IfcZone` sans géométrie, membres par `IfcRelAssignsToGroup` | O (pas de géométrie) | T : contour | — | C |
 | solide | C `IfcBuildingElementProxy`, rôle en `ObjectType` et `Fadi_Solide.Role` (jamais reclassé) | T : représentation importée | T | — | C |
 | garde-corps | C `IfcRailing` `GUARDRAIL`, `Fadi_GardeCorps` | T : représentation importée | T | — | C |
-| bloc (occurrence) | composant : C `IfcBuildingElementProxy` + `Fadi_Composant` ; bloc 2D : O | — | T : contenu dessiné à chaque occurrence | T : `INSERT` décomposé en esquisses et textes (point de base, échelles, rotation, réseau, blocs imbriqués ; le bloc n'est pas recréé) ; `XREF` : O (fichier non fourni) | C |
+| bloc (occurrence) | composant : C `IfcBuildingElementProxy` + `Fadi_Composant` ; bloc 2D : O | — | T : contenu dessiné à chaque occurrence | T : `INSERT` décomposé en esquisses et textes (point de base, échelles, rotation, réseau, blocs imbriqués ; le bloc n'est pas recréé) ; `XREF` : T si son fichier DXF est joint (unité convertie, calques « xref|calque »), sinon O signalée (D-036) | C |
 | objet importé | T `IfcBuildingElementProxy`, GlobalId d'origine, classe d'origine en `ObjectType` et `Fadi_Import` | C : maillage, classe, GlobalId ; type, matériaux et propriétés simples en propriétés importées ; O si GlobalId déjà présent (pas de doublon) | T : coupé et vu comme toute matière | — | C |
 | cotation | T `IfcAnnotation` `DIMENSION` (export seulement ; valeur et rattachements non portés) | T : `IfcAnnotation` → traits (esquisses) et textes, non associatifs | C | T : `DIMENSION` linéaires et alignées → cotes non associatives (texte imposé non repris) ; radiales et diamétrales → cotes linéaires (rayon, diamètre) ; angulaires → arc et texte de l'angle (D-031) ; d'ordonnée → ligne de rappel et texte de la valeur (D-035) | C |
 | texte, étiquette | T `IfcAnnotation` `TEXT` | T `IfcTextLiteral` → `texte` (position, contenu) | C | C `TEXT`, `MTEXT`, `ATTRIB` → `texte` (position, contenu ; hauteur, rotation, style non portés) | C |
@@ -66,8 +66,8 @@ Légende : **C** conservé · **T** transformé (dit au rapport) · **O** omis (
 ## Hors périmètre (déclaré)
 
 `IfcStairFlight`, bibliothèques
-(`IfcProjectLibrary`), calques IFC (`IfcPresentationLayerWithStyle`), `XREF` DXF (le fichier référencé n'est pas fourni :
-signalé au rapport), DWG. À l'import IFC, le type, les matériaux (couches et épaisseurs) et les propriétés simples sont
+(`IfcProjectLibrary`), calques IFC (`IfcPresentationLayerWithStyle`), `XREF` DXF dont le fichier n'est pas joint
+(signalée au rapport), DWG. À l'import IFC, le type, les matériaux (couches et épaisseurs) et les propriétés simples sont
 repris en propriétés importées « déclarées » des représentations, jamais réinterprétés.
 Conformité IFC **testée**, jamais « certifiée » (D-006) ; l'ouverture dans un visualiseur tiers est un constat du
 maître d'ouvrage (acceptation du lot 6).
