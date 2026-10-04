@@ -101,7 +101,6 @@ describe.skipIf(!URL_BASE)("base de l'Atelier (tables atelier_*, volumes)", () =
         "atelier_relations",
         "atelier_representations",
         "atelier_site",
-        "atelier_store",
         "volumes",
       ].sort(),
     );

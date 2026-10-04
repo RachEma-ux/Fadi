@@ -35,7 +35,7 @@ export const MODULES: ModuleDescriptor[] = [
     id: "atelier",
     label: "Atelier architectural",
     implemented: true,
-    status: "Le moteur de l'Atelier du prototype (3D, plan, coupes, façades, niveaux, outils de dessin, exports) sur le modèle du projet, persisté avec révision contrôlée.",
+    status: "L'Atelier DrawAll (plan, 3D, niveaux, murs, baies, pièces, dalles, escaliers, cotations, vues techniques, métré) sur le modèle typé du projet, écrit par commandes journalisées avec annuler / rétablir, révision contrôlée et file hors-ligne.",
   },
   {
     id: "analyses",
@@ -53,6 +53,6 @@ export const MODULES: ModuleDescriptor[] = [
     id: "collaboration",
     label: "Collaboration",
     implemented: true,
-    status: "Commentaires par projet et par étape, journal des révisions, synchronisation hors-ligne de l'Atelier (file locale rejouée) et lecture hors-ligne ; partage multi-utilisateur et droits non disponibles (Lot 4), annoncés tels quels.",
+    status: "Commentaires par projet et par étape, journal des révisions, synchronisation hors-ligne de l'Atelier (file de commandes rejouée) et lecture hors-ligne ; partage multi-utilisateur et droits non disponibles (Lot 4), annoncés tels quels.",
   },
 ];

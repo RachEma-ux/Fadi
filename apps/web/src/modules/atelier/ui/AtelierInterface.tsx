@@ -47,6 +47,12 @@ export interface ProprietesAtelierInterface {
    * actif : le métré du niveau (`documents/PanneauMetre.tsx`, D-045).
    */
   readonly panneauxProjet?: () => ReactNode;
+  /** Étape du Parcours qui ouvre l'Atelier (10, 11) : bandeau « Atelier Architectural · ÉTAPE n / 21 » (D-052). */
+  readonly etape?: number | null;
+  /** Actions ajoutées au bandeau (ex. « Harmonie » à l'étape 10, D-052). */
+  readonly actionsEntete?: ReactNode;
+  /** Note sous le bandeau (ex. référence protégée de l'exemple). */
+  readonly note?: ReactNode;
 }
 
 /** Outil ouvert par la touche Suppr hors outil actif, sélection non vide (D-045). */
@@ -96,7 +102,7 @@ const CIBLES_REPERE: Readonly<Record<Extract<ActionPalette, { type: "repere" }>[
   inspecteur: { onglet: "inspecteur", focus: "atl-inspecteur-titre" },
 };
 
-export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, projet, zoneTravail, zoneTravail3d, panneauxProjet }: ProprietesAtelierInterface) {
+export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, projet, zoneTravail, zoneTravail3d, panneauxProjet, etape = null, actionsEntete, note }: ProprietesAtelierInterface) {
   const etatVue = useVue(vue);
   const sel = useSelection(ctx.selection);
   usePilote(pilote);
@@ -338,7 +344,7 @@ export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, pro
       </a>
       <header className="atl-strip">
         <div className="atl-titre">
-          <span className="atl-sous">Atelier · nouvel Atelier</span>
+          <span className="atl-sous" data-testid="atl-bandeau">{etape ? `Atelier Architectural · ÉTAPE ${String(etape).padStart(2, "0")} / 21` : "Atelier Architectural"}</span>
           <h1>
             {projet.code ? `${projet.code} — ` : ""}
             {projet.nom}
@@ -358,6 +364,7 @@ export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, pro
           <button type="button" className="atl-sur-fonce" onClick={() => void historique("retablir")} disabled={enCoursHistorique} aria-label="Rétablir (Ctrl/⌘ Maj Z)" title="Rétablir (Ctrl/⌘ Maj Z)" data-testid="atl-retablir">
             <span aria-hidden="true">↷</span>
           </button>
+          {actionsEntete}
           {!telephone && (
             <button type="button" className="atl-sur-fonce atl-texte" aria-pressed={etatVue.immersif} onClick={() => vue.modifier({ immersif: !etatVue.immersif })} data-testid="atl-immersif">
               Plein cadre
@@ -365,6 +372,11 @@ export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, pro
           )}
         </div>
       </header>
+      {note && (
+        <p className="atl-note" role="note" data-testid="atl-note">
+          {note}
+        </p>
+      )}
 
       {telephone ? (
         <div className="atl-tel-outils">

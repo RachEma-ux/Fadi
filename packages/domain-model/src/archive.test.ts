@@ -166,18 +166,18 @@ describe("archive — export du prototype → archive Fadi", () => {
     expect(v2.atelier).toEqual({ modele });
     expect(v2.native).toBeNull();
     expect(v2.project.modelRevision).toBe(1);
-    // Version 1 : magasin de l'ancien Atelier (clés reconnues par motif) → domaines du projet natif actif.
+    // Version 1 : magasin de l'ancien Atelier, clés reconnues par motif (`design.v<n>.…`, toute version) → domaines du projet natif actif.
     const legacy = {
-      "design.v13.registry": [{ id: "autre" }, { id: "n-1", name: "Modèle" }],
-      "design.v13.activeProject": "n-1",
-      "design.v13.project.n-1.levels": [{ id: "rdc" }],
-      "design.v13.project.autre.levels": [],
+      "design.v14.registry": [{ id: "autre" }, { id: "n-1", name: "Modèle" }],
+      "design.v14.activeProject": "n-1",
+      "design.v14.project.n-1.levels": [{ id: "rdc" }],
+      "design.v14.project.autre.levels": [],
     };
     const v1 = normalizeImportedProjects({ ...exported, version: 1, atelier: undefined, native: { entries: legacy } }, DEFS, OPTIONS)[0]!.archive;
     expect(v1.native).toEqual({ nativeId: "n-1", registry: { id: "n-1", name: "Modèle" }, domains: { levels: [{ id: "rdc" }] } });
     expect(v1.atelier).toBeNull();
     expect(normalizeImportedProjects({ ...exported, version: 1, native: { entries: { "design.v12.registry": [] } } }, DEFS, OPTIONS)[0]!.archive.native).toBeNull();
-    expect(() => normalizeImportedProjects({ ...exported, version: 1, native: { entries: { "design.v13.project.x.levels": [], "pwned": 1 } } }, DEFS, OPTIONS)).toThrow("Domaine natif invalide.");
+    expect(() => normalizeImportedProjects({ ...exported, version: 1, native: { entries: { "design.v14.project.x.levels": [], "pwned": 1 } } }, DEFS, OPTIONS)).toThrow("Domaine natif invalide.");
     expect(() => normalizeImportedProjects({ ...exported, version: 99 }, DEFS, OPTIONS)).toThrow("Version d'archive non prise en charge : 99.");
   });
 

@@ -1,17 +1,14 @@
 /**
  * État de synchronisation du projet, visible en permanence dans l'en-tête :
- * réseau (en ligne / hors-ligne), écritures du modèle en attente dans la
- * file locale, dernier état de l'Atelier (enregistré localement,
- * synchronisation, enregistré sur le serveur, conflit). Les formulaires et
+ * réseau (en ligne / hors-ligne), lots de commandes de l'Atelier en attente
+ * dans la file locale du bus et conflits. Les formulaires et
  * arbitrages, eux, exigent le réseau : leurs envois restent en pause pendant
  * une coupure (TanStack Query) et le disent dans leur écran.
  */
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useMutationState } from "@tanstack/react-query";
-import { localStore } from "../lib/local-store";
 import { conflictsStore, type SyncConflict } from "../lib/mutations";
 import { reachability } from "../lib/reachability";
-import { atelierStorage, type SyncState } from "../modules/atelier/native/storage";
 
 /** Les refus 409 conservés pour l'écran (`recordConflict`, magasin synchrone) ; jamais relus du serveur. */
 export function useSyncConflicts(projectId: string): SyncConflict[] {
@@ -40,8 +37,8 @@ export function useReachable(): boolean {
 }
 
 /**
- * Source facultative de file supplémentaire (nouvel Atelier, `modules/atelier/bus/adaptateurs.ts`, lot 2) :
- * ses lots en attente et ses conflits s'ajoutent aux compteurs ; « Synchroniser maintenant » la relance aussi.
+ * File de l'Atelier (`modules/atelier/bus/adaptateurs.ts`), quand l'Atelier est ouvert : ses lots en attente et
+ * ses conflits s'ajoutent aux compteurs ; « Synchroniser maintenant » la relance.
  * `get()` doit rendre le même objet tant que rien ne change (`useSyncExternalStore`).
  */
 export interface SourceSynchroAtelier {
@@ -57,27 +54,12 @@ export function SyncIndicator({ projectId, atelier }: { projectId: string; ateli
   const online = useOnline();
   const bus = useSyncExternalStore(atelier ? atelier.subscribe : sansAbonnement, () => (atelier ? atelier.get() : SANS_SOURCE));
   const reachable = useReachable();
-  const [sync, setSync] = useState<SyncState>({ status: "idle", pending: 0, message: null });
-  const [queued, setQueued] = useState(0);
   // Saisies, arbitrages et commentaires en pause (hors-ligne), persistés avec le cache.
   const pausedMutations = useMutationState({ filters: { status: "pending", predicate: (m) => m.state.isPaused }, select: (m) => m.mutationId });
   const conflicts = useSyncConflicts(projectId);
-  const [modelConflicts, setModelConflicts] = useState(0);
-  useEffect(() => atelierStorage.subscribe(setSync), []);
-  useEffect(() => atelierStorage.subscribeConflicts((c) => setModelConflicts(c.length)), []);
-  useEffect(() => {
-    let alive = true;
-    const read = () => void localStore.pendingCount(projectId).then((n) => alive && setQueued(n));
-    read();
-    const t = setInterval(read, 5000);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
-  }, [projectId, sync]);
 
-  const pending = Math.max(sync.pending, queued) + pausedMutations.length + bus.enAttente;
-  const conflictCount = conflicts.length + modelConflicts + bus.conflits;
+  const pending = pausedMutations.length + bus.enAttente;
+  const conflictCount = conflicts.length + bus.conflits;
   const state = !online ? "offline" : !reachable ? "unreachable" : conflictCount > 0 ? "conflict" : pending > 0 ? "pending" : "synced";
   const label = !online
     ? `Hors-ligne · ${pending} modification(s) enregistrée(s) localement`
@@ -98,10 +80,7 @@ export function SyncIndicator({ projectId, atelier }: { projectId: string; ateli
           className="sync-indicator-retry"
           onClick={() =>
             void reachability.probeNow().then((ok) => {
-              if (ok) {
-                void atelierStorage.retryPending();
-                void atelier?.synchroniser();
-              }
+              if (ok) void atelier?.synchroniser();
             })
           }
         >
@@ -112,10 +91,7 @@ export function SyncIndicator({ projectId, atelier }: { projectId: string; ateli
         <button
           type="button"
           className="sync-indicator-retry"
-          onClick={() => {
-            void atelierStorage.retryPending();
-            void atelier?.synchroniser();
-          }}
+          onClick={() => void atelier?.synchroniser()}
         >
           Synchroniser maintenant
         </button>

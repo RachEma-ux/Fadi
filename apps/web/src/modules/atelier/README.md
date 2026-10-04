@@ -13,13 +13,22 @@ fonction de géométrie localement.
 
 ## Statut
 
-Le moteur de l'Atelier du prototype (Design Atelier V14-3 : viewer 3D, plan, coupes, façades, niveaux, outils de dessin, exports, études solaires, barre d'outils V8) est **extrait tel quel** par `apps/web/scripts/extract-native-atelier.mjs` et encapsulé, jamais réécrit (`native/engine.ts`, `NativeAtelier.tsx`) ; sa persistance passe par `window.ParcoursSession.storage` → `atelier_store` (révision par clé, 409 en cas de conflit) et une projection dérivée `levels` / `architectural_objects` — voir `docs/migration/matrix.md`, section 3.
+Depuis la bascule du lot 4 (D-052), un seul Atelier : celui de DrawAll V4.1 (lots 1 à 3b). `NouvelAtelier.tsx` monte
+le bus local (`bus/`, file hors-ligne et synchronisation par révision), les registres d'outils, de dessinateurs et
+d'inspecteurs alimentés par les modules installés (`plan2d/`, `objets/`, `documents/`, `vue3d/`), le contexte et le
+pilote (`socle/`), puis l'interface (`ui/`). Le modèle est le modèle typé de `@parcours/atelier-model`, écrit
+uniquement par des commandes journalisées (`/projects/:id/atelier/commands`, §5.4) ; chaque écriture validée avance
+la révision du projet.
 
-`AtelierHarmonyPage.tsx` porte la sous-page « Harmonie du bâtiment » de l'étape 10 (V8.4) ; `DesignReview.tsx` le bilan Harmonie du bâtiment conçu (flow-v62 : analyse du modèle, réserves, plans, audit des transmissions, revue, rapport, références directionnelles), calculé côté serveur à partir de `packages/domain-model/src/design-review.ts`.
+L'Atelier sert le module `atelier` et les étapes 10 et 11 du Parcours : bandeau « Atelier Architectural · ÉTAPE n /
+21 » et, à l'étape 10, le bouton « Harmonie » (`#atelier-harmonie-button`) qui ouvre la sous-page « Harmonie du
+bâtiment ». Il n'est chargé qu'à sa première ouverture.
 
-Le moteur (scripts, markup, feuille de style — `native/engine.ts`) n'est chargé qu'à la première ouverture de l'Atelier ou des étapes 10 / 11 ; le magasin et l'état de synchronisation (`native/storage.ts`) restent dans l'enveloppe pour l'en-tête et le bandeau des conflits. Le service worker met tous les morceaux en cache dès son installation : l'Atelier s'ouvre hors-ligne même s'il n'a jamais été visité en ligne.
+`AtelierHarmonyPage.tsx` porte la sous-page « Harmonie du bâtiment » de l'étape 10 (V8.4) ; `DesignReview.tsx` le bilan Harmonie du bâtiment conçu (flow-v62 : analyse du modèle, réserves, plans, audit des transmissions, revue, rapport, références directionnelles), calculé côté serveur à partir de `packages/domain-model/src/design-review.ts` sur la projection du modèle typé.
 
-Accessibilité du moteur extrait : la barre d'outils V8 déclare `role="tablist"` sans onglets ; au chargement, `engine.ts` (`accessibleToolTabs`) pose `role="tab"` sur ses boutons, reflète `aria-selected` depuis la classe `active` que le script extrait bascule (observateur de mutations) et ajoute les flèches gauche / droite — sans modifier les fichiers générés par le script d'extraction. La ligne d'information du viewer est surchargée en CSS (`style.css`) pour le contraste 4,5:1. Le scénario e2e passe axe-core sur l'Atelier monté (ordinateur et téléphone) ; les outils de dessin sur canvas ne sont pas audités.
+Référence protégée de l'exemple (D-052 §7) : sur un projet en mode « référence », la première commande demande la
+copie de travail au serveur (`POST /projects/:id/copies`, modèle typé repris à l'identique), y est envoyée, puis
+l'écran bascule sur la copie, même module et même étape (`transportReference`) ; la référence n'est jamais écrite.
 
 L'onglet « Hypothèses & MapTiler » du bilan reçoit l'observation déclarée du contexte extérieur (`SiteObservationForm` → `PUT …/design-review/observation`, 20 caractères minimum, statut du prototype) ; elle lève la réserve « Contexte extérieur non observé » avec un géoréférencement et périme le bilan produit avant elle.
 

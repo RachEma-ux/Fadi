@@ -27,8 +27,8 @@ import { HarmoniePanel, HarmonieToast, type HarmonieTab } from "./HarmoniePanel"
 import { StepForm } from "./StepForm";
 import { useReachable } from "../../components/SyncIndicator";
 
-// Le moteur de l'Atelier (scripts, markup, feuille de style) n'est chargé qu'à la première ouverture des étapes 10 / 11 ou de l'Atelier.
-const NativeAtelier = lazy(() => import("../atelier/NativeAtelier").then((m) => ({ default: m.NativeAtelier })));
+// L'Atelier n'est chargé qu'à la première ouverture des étapes 10 / 11 ou du module Atelier.
+const NouvelAtelier = lazy(() => import("../atelier/NouvelAtelier").then((m) => ({ default: m.NouvelAtelier })));
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
@@ -269,7 +269,7 @@ function StepDetail({
           return <ParcelleTool projectId={projectId} harmonie={panel} />;
         }
         return step.number === 10 ? (
-          /* Étape 10 : le panneau Harmonie, le programme lié et le bilan vivent dans la sous-page « Harmonie du bâtiment » de l'Atelier (bouton « Harmonie » de la barre d'outils, groupe Analyser). */
+          /* Étape 10 : le panneau Harmonie, le programme lié et le bilan vivent dans la sous-page « Harmonie du bâtiment » de l'Atelier (bouton « Harmonie » du bandeau de l'Atelier). */
           <AtelierHarmonyPage projectName={project?.name ?? ""} open={harmonyPage} onOpenChange={setHarmonyPage} choices={panel} programme={<ProgrammeTransfer projectId={projectId} />} bilan={<DesignReviewFold projectId={projectId} roomsAction request={bilanRequest} />} />
         ) : (
           panel
@@ -279,7 +279,20 @@ function StepDetail({
 
       {(step.number === 10 || step.number === 11) && (
         <Suspense fallback={<p role="status">Chargement de l’Atelier…</p>}>
-          <NativeAtelier projectId={projectId} stage={step.number} readOnly={!access.canWrite} />
+          {project && (
+            <NouvelAtelier
+              projet={{ id: projectId, code: project.code, nom: project.name, exampleMode: project.exampleMode ?? null }}
+              etape={step.number}
+              readOnly={!access.canWrite}
+              actionsEntete={
+                step.number === 10 ? (
+                  <button type="button" id="atelier-harmonie-button" className="atl-sur-fonce atl-texte" aria-controls="atelier-harmonie-page" aria-expanded={harmonyPage} onClick={() => setHarmonyPage(true)} data-testid="atl-harmonie">
+                    ◈ Harmonie
+                  </button>
+                ) : null
+              }
+            />
+          )}
         </Suspense>
       )}
       {step.number === 10 && !harmonyPage && (
@@ -287,7 +300,7 @@ function StepDetail({
           <button type="button" className="button-secondary" id="ah84-open" aria-controls="atelier-harmonie-page" aria-expanded={harmonyPage} onClick={() => setHarmonyPage(true)}>
             ◈ Harmonie du bâtiment
           </button>
-          <span className="h7-muted">Choix & intentions, programme lié et bilan du bâtiment — aussi depuis « Analyser → Harmonie » dans l’Atelier.</span>
+          <span className="h7-muted">Choix & intentions, programme lié et bilan du bâtiment — aussi depuis le bouton « Harmonie » du bandeau de l’Atelier.</span>
         </p>
       )}
       {/* Étape 11 : bilan Harmonie du bâtiment conçu (flow-v62 `designHTML`) dans le flux de l'étape. */}

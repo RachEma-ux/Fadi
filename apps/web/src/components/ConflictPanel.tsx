@@ -8,23 +8,18 @@
  * - arbitrage : votre arbitrage (statut, motif, responsable) face à la
  *   version courante ; « Réappliquer sur la version courante » le renvoie
  *   avec cette version ;
- * - modèle (Atelier) : la version du serveur a repris la clé, la vôtre est
- *   conservée en copie de secours ; « Garder le serveur » retire la copie,
- *   « Reprendre ma version » la réécrit sur la clé à partir de la révision
- *   courante ;
- * - lot de commandes du nouvel Atelier (prop facultative `atelier`, lot 2, non branchée avant le lot 3a) :
+ * - lot de commandes de l'Atelier (prop facultative `atelier`, quand l'Atelier est ouvert) :
  *   objets en cause champ par champ ; « Garder le serveur » abandonne le lot, « Rejouer mes commandes » les
  *   revalide sur l'état courant du serveur et les renvoie.
  *
  * Rien n'est écrasé sans décision explicite ; une reprise refusée à nouveau
  * revient ici avec l'état relu.
  */
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api, type HarmonieProposalStatus, type ParcoursFieldValue } from "../lib/api";
 import { adoptStep, clearConflict, MUTATION_KEYS, recordConflict, type DecideVars, type StepPatchVars, type SyncConflict } from "../lib/mutations";
-import { atelierStorage, type ModelConflict } from "../modules/atelier/native/storage";
 import { useSyncConflicts } from "./SyncIndicator";
 
 const STATUS_LABEL: Record<HarmonieProposalStatus, string> = {
@@ -38,13 +33,6 @@ const STATUS_LABEL: Record<HarmonieProposalStatus, string> = {
 };
 
 const show = (v: ParcoursFieldValue | undefined) => (v === null || v === undefined || v === "" ? "vide" : String(v));
-
-/** Les conflits du modèle en attente dans le moteur de l'Atelier. */
-export function useModelConflicts(): ModelConflict[] {
-  const [conflicts, setConflicts] = useState<ModelConflict[]>([]);
-  useEffect(() => atelierStorage.subscribeConflicts(setConflicts), []);
-  return conflicts;
-}
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
@@ -157,26 +145,8 @@ function DecisionConflict({ projectId, c }: { projectId: string; c: SyncConflict
   );
 }
 
-function ModelConflictItem({ projectId, c }: { projectId: string; c: ModelConflict }) {
-  return (
-    <li data-conflict={c.backupKey} data-kind="modele">
-      <b>Atelier · {c.key.split(".").pop()}</b> · {new Date(c.at).toLocaleString("fr-FR")} — la version du serveur (révision {c.serverRevision}) a repris cette clé ; votre version est conservée sous «{" "}
-      {c.backupKey} ».
-      <span className="conflict-actions">
-        <button type="button" className="button-secondary" onClick={() => atelierStorage.resolveConflict(c.backupKey, "serveur")}>
-          Garder le serveur
-        </button>
-        <button type="button" className="button-primary" onClick={() => atelierStorage.resolveConflict(c.backupKey, "mienne")}>
-          Reprendre ma version
-        </button>
-        <Link to={`/projets/${projectId}?module=atelier`}>ouvrir l’Atelier</Link>
-      </span>
-    </li>
-  );
-}
-
 /**
- * Conflit d'un lot de commandes du nouvel Atelier (409 détaillé, §5.4), fourni par un adaptateur
+ * Conflit d'un lot de commandes de l'Atelier (409 détaillé, §5.4), fourni par un adaptateur
  * (`modules/atelier/bus/adaptateurs.ts`, lot 2) : objets en cause, champ par champ, version du serveur et la vôtre.
  */
 export interface ConflitAtelierAffiche {
@@ -247,11 +217,10 @@ function AtelierConflictItem({ projectId, c, source }: { projectId: string; c: C
 
 export function ConflictPanel({ projectId, atelier }: { projectId: string; atelier?: SourceConflitsAtelier }) {
   const conflicts = useSyncConflicts(projectId);
-  const model = useModelConflicts();
   const commandes = useSyncExternalStore(atelier ? atelier.subscribe : sansAbonnement, () => (atelier ? atelier.get() : AUCUN_CONFLIT_ATELIER));
   const steps = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
   const labelOf = (stepNumber: number | null, key: string) => steps.data?.find((s) => s.number === stepNumber)?.form?.fields.find((f) => f.key === key)?.label ?? key;
-  const total = conflicts.length + model.length + commandes.length;
+  const total = conflicts.length + commandes.length;
   if (total === 0) return null;
   return (
     <section className="conflict-banner" role="alert" aria-label="Conflits de synchronisation">
@@ -263,9 +232,6 @@ export function ConflictPanel({ projectId, atelier }: { projectId: string; ateli
         {conflicts.map((c) =>
           c.kind === "arbitrage" && c.decision ? <DecisionConflict key={c.id} projectId={projectId} c={c} /> : <FieldConflict key={c.id} projectId={projectId} c={c} labelOf={labelOf} />,
         )}
-        {model.map((c) => (
-          <ModelConflictItem key={c.backupKey} projectId={projectId} c={c} />
-        ))}
         {atelier &&
           commandes.map((c) => (
             <AtelierConflictItem key={c.id} projectId={projectId} c={c} source={atelier} />

@@ -45,7 +45,7 @@ function serviceWorkerBuildId(): Plugin {
     },
     writeBundle(_options, bundle) {
       const file = join(outDir, "sw.js");
-      const assets = [...new Set(["/index.html", ...Object.keys(bundle).map((name) => `/${name}`), ...publicFiles("atelier-native"), ...publicFiles("parcelle")])].filter((p) => /\.(js|css|html|svg|woff2?|png|json)$/.test(p));
+      const assets = [...new Set(["/index.html", ...Object.keys(bundle).map((name) => `/${name}`), ...publicFiles("parcelle")])].filter((p) => /\.(js|css|html|svg|woff2?|png|json)$/.test(p));
       try {
         writeFileSync(file, readFileSync(file, "utf8").replaceAll("__FADI_BUILD__", buildId()).replace('"__FADI_ASSETS__"', JSON.stringify(assets)));
       } catch (err) {

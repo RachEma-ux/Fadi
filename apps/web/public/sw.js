@@ -14,7 +14,7 @@
 const BUILD = "__FADI_BUILD__";
 const PRECACHE = "__FADI_ASSETS__";
 const CACHE = `fadi-shell-${BUILD}`;
-const STATIC = /^\/(assets|atelier-native|parcelle)\//;
+const STATIC = /^\/(assets|parcelle)\//;
 
 self.addEventListener("install", (event) =>
   event.waitUntil(

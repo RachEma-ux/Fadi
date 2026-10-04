@@ -4,9 +4,7 @@
  * Routes, sous le préfixe `/projects/:projectId/atelier` :
  * `GET /model?revision=n`, `GET /model/niveaux/:niveauId`, `POST /commands`, `POST /commands/annuler`,
  * `POST /commands/retablir`, `POST /commands/essai`, `GET /journal?apres=n`, `GET /problemes`.
- * L'ancien Atelier garde son propre client (`atelier-natif.ts`) jusqu'à la bascule (lot 4) ; ce fichier n'est
- * branché à aucun écran au lot 2 (le nouvel Atelier arrive au lot 3a) : seul le bus local
- * (`modules/atelier/bus`) l'utilise.
+ * Utilisé par le bus local de l'Atelier (`modules/atelier/bus`) et par ses panneaux (journal, problèmes).
  *
  * Réponses d'écriture (§5.4, figées) — rendues comme une union discriminée `ResultatEcriture`, jamais levées :
  * - 200 `{ revision, applique: [{ type, objetIds }], effets: { vues, documents, problemes, propositions,

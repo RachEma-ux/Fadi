@@ -34,11 +34,10 @@ export function createApp() {
     }),
   );
 
-  // Limite générale de 256 ko ; le magasin de l'Atelier (modèle natif, ~1 Mo
-  // pour P.118) a son propre analyseur JSON borné dans routes/atelier.ts.
+  // Limite générale de 256 ko (les commandes de l'Atelier tiennent dans cette limite).
   const jsonBody = express.json({ limit: "256kb" });
-  // Le magasin de l'Atelier, les pièces jointes des étapes, les exports de l'Atelier et l'import d'archive ont leur propre lecture de corps (limite dédiée).
-  app.use((req, res, next) => (/\/atelier\/store(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$/.test(req.path) ? next() : jsonBody(req, res, next)));
+  // Les pièces jointes des étapes, les exports de l'Atelier et l'import d'archive ont leur propre lecture de corps (limite dédiée).
+  app.use((req, res, next) => (/\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$/.test(req.path) ? next() : jsonBody(req, res, next)));
   app.use(attachUser);
 
   // Les routes d'authentification sont la cible privilégiée du
@@ -56,7 +55,7 @@ export function createApp() {
   const apiLimit = Number(process.env["API_RATE_LIMIT"] ?? 300);
   const apiLimiter = rateLimit({ windowMs: 60 * 1000, limit: apiLimit, standardHeaders: true, legacyHeaders: false });
   app.use("/projects", apiLimiter, projectsRouter);
-  // Nouvel Atelier (§5.4) : après projectsRouter, dont la limite couvre déjà `/projects` ; l'ancien `/atelier/store` y reste servi.
+  // Atelier (§5.4) : après projectsRouter, dont la limite couvre déjà `/projects`.
   app.use("/projects/:projectId/atelier", atelierCommandsRouter);
   app.use("/examples", apiLimiter, examplesRouter);
   app.use("/library", apiLimiter, libraryRouter);

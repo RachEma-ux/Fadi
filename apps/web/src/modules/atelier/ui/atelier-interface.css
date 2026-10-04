@@ -58,6 +58,7 @@
 .atl-strip h1 { font-size: 20px; line-height: 1.2; overflow-wrap: anywhere; }
 .atl-sous { display: block; font-size: 12.5px; font-weight: 700; color: #d9e6df; }
 .atl-actions { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.atl-note { margin: 0; padding: 8px 20px; font-size: 13.5px; background: #fdf6e3; color: #5c4a12; border-bottom: 1px solid #eadcae; }
 .atl .atl-sur-fonce { min-height: var(--atl-cible); min-width: var(--atl-cible); background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, .55); border-radius: 10px; font-size: 18px; }
 .atl .atl-sur-fonce.atl-texte { font-size: 14px; }
 .atl .atl-sur-fonce[aria-pressed="true"] { background: var(--atl-accent); color: var(--atl-fonce); }

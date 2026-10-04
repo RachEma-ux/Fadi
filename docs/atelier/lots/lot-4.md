@@ -24,7 +24,7 @@ e2e dans la CI.
 | Tâche | Issue | Contenu | État |
 | --- | --- | --- | --- |
 | L4.1 | #78 | Consommateurs (§5.6) sur la projection du modèle typé ; parcelle en commandes ; archive version 2 ; exemple importé dans le modèle typé | fait (commit L4.1) |
-| L4.2 | #79 | Le nouvel Atelier devient le module `atelier` et l'Atelier des étapes 10 / 11 ; suppressions §5.5 ; registre, README, matrice | à faire |
+| L4.2 | #79 | Le nouvel Atelier devient le module `atelier` et l'Atelier des étapes 10 / 11 ; suppressions §5.5 ; registre, README, matrice | fait (commit L4.2 ; `DROP TABLE` laissé au propriétaire, D-052 §13) |
 | L4.3 | #80 | Scénario d'acceptation réécrit pour le nouvel Atelier (annexe D), captures | à faire |
 | L4.4 | #81 | Restauration vérifiée sur la nouvelle base, image sondée, `docs/architecture.md` | à faire |
 | L4.5 | — | Clôture : fiches, ce compte rendu, acceptation | à faire |

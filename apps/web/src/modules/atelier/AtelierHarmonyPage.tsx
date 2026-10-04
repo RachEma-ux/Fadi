@@ -3,20 +3,11 @@
  * (`atelier-harmonie-page-app`, V8.4 du prototype) : choix et intentions
  * (le panneau Harmonie de l'étape), programme lié, bilan du bâtiment et
  * espaces, réunis sur une page que l'on ouvre depuis le bouton « Harmonie »
- * de la barre d'outils de l'Atelier (groupe Analyser) ou depuis l'étape, et
+ * du bandeau de l'Atelier (`#atelier-harmonie-button`) ou depuis l'étape, et
  * que l'on quitte par « ← Retour à l’Atelier » ou Échap. Le dessin reste
  * monté pendant l'affichage ; aucune donnée n'est copiée.
- *
- * La barre d'outils native appelle `window.AtelierHarmonyPage.open()` : cet
- * objet est enregistré ici tant que la page de l'étape 10 est affichée.
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
-
-declare global {
-  interface Window {
-    AtelierHarmonyPage?: { version: string; open: (options?: { section?: "choices" | "programme" | "bilan" }) => boolean; close: () => void; isOpen: () => boolean };
-  }
-}
 
 export type HarmonySection = "choices" | "programme" | "bilan";
 
@@ -50,23 +41,9 @@ export function AtelierHarmonyPage({
     el.scrollIntoView({ block: "start", behavior: "instant" as ScrollBehavior });
   }
 
-  // `window.AtelierHarmonyPage` : ce que la barre d'outils native de l'Atelier appelle (bouton « Harmonie » du groupe Analyser).
   useEffect(() => {
-    window.AtelierHarmonyPage = {
-      version: "8.4.0",
-      open: (options = {}) => {
-        onOpenChange(true);
-        if (options.section) setPendingSection(options.section);
-        return true;
-      },
-      close: () => onOpenChange(false),
-      isOpen: () => open,
-    };
     document.getElementById("atelier-harmonie-button")?.setAttribute("aria-expanded", String(open));
-    return () => {
-      delete window.AtelierHarmonyPage;
-    };
-  }, [open, onOpenChange]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

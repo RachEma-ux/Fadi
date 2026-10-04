@@ -3,15 +3,15 @@
  *
  * Provenance : fonctions trouvées dans le même fichier décodé que `V14Geometry`
  * (`EMB.designer` de `Parcours_V8_19_Escalier_B_Mezzanine.html`), utilisées par
- * `window.V14Bridge.inset` (= `inwardOffset`) et par le calcul du centre local
+ * la façade de stockage du prototype (`inset` = `inwardOffset`) et par le calcul du centre local
  * (`localCenter`) et de l'emprise bâtie (`buildingFootprint`).
  *
  * Contrairement aux fonctions de `geometry.ts`, celles-ci lisaient à l'origine
  * leurs entrées via des fermetures sur l'état global de l'app (`parcel()`,
  * `domainGet(...)`). Portage fidèle de la LOGIQUE, mais signature modifiée pour
  * recevoir ces données en paramètre plutôt que de les lire d'un état caché —
- * c'est précisément ce qui les rend pures et testables. Voir `project-repository.ts`
- * pour le contrat qui, côté app, doit fournir ces données.
+ * c'est précisément ce qui les rend pures et testables. Côté application, ces
+ * données viennent du modèle typé de l'Atelier (`@parcours/atelier-model`).
  *
  * Repères (relecture L1.5) : les fonctions de calcul (aire, convexité, intersection, décalage) sont valables dans
  * tout repère plan métrique et rendent leurs points dans le repère de l'entrée (type générique `P`) ; elles

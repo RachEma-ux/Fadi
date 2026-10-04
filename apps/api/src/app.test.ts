@@ -17,7 +17,7 @@ const app = createApp();
 async function resetDb() {
   // L'ordre respecte les clés étrangères (CASCADE serait aussi suffisant,
   // mais l'ordre explicite documente les dépendances).
-  await pool.query("TRUNCATE architectural_objects, atelier_store, levels, parcels, produced_documents, project_comments, project_members, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE");
+  await pool.query("TRUNCATE parcels, produced_documents, project_comments, project_members, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE");
 }
 
 beforeAll(async () => {
@@ -136,7 +136,7 @@ describe("hébergement : l'API sert l'application construite (WEB_DIST)", () => 
       const missing = await request(served).get("/missing.png").set("Accept", "image/png");
       expect(missing.status).toBe(404);
       // Un fichier manquant demandé avec Accept */* (balise script) reste un 404, jamais index.html.
-      expect((await request(served).get("/atelier-native/absent.js").set("Accept", "*/*")).status).toBe(404);
+      expect((await request(served).get("/parcelle/absent.js").set("Accept", "*/*")).status).toBe(404);
     } finally {
       if (previous === undefined) delete process.env["WEB_DIST"];
       else process.env["WEB_DIST"] = previous;
@@ -240,60 +240,6 @@ describe("projects", () => {
     // Confirms the delete attempt truly did nothing (not a 404-but-still-deleted bug).
     const ownerStillSeesIt = await owner.get(`/projects/${projectId}`);
     expect(ownerStillSeesIt.status).toBe(200);
-  });
-});
-
-describe("levels and architectural objects", () => {
-  async function setupProjectWithLevel(email: string) {
-    const client = await registerAndLogin(email);
-    const project = await client.post("/projects").send({ code: "P.118", name: "Pilote" });
-    const level = await client.post(`/projects/${project.body.id}/levels`).send({ label: "RDC", elevation: 0, position: 0 });
-    return { client, projectId: project.body.id as string, levelId: level.body.id as string };
-  }
-
-  it("creates an architectural object and advances the project's modelRevision atomically", async () => {
-    const { client, projectId, levelId } = await setupProjectWithLevel("modeler@example.com");
-
-    const before = await client.get(`/projects/${projectId}`);
-    expect(before.body.modelRevision).toBe(0);
-
-    const wall = await client
-      .post(`/projects/${projectId}/levels/${levelId}/objects`)
-      .send({ kind: "wall", properties: { a: [0, 0], b: [4, 0], thickness: 0.2 }, relations: [] });
-    expect(wall.status).toBe(201);
-    expect(wall.body.modelRevision).toBe(1);
-
-    const after = await client.get(`/projects/${projectId}`);
-    expect(after.body.modelRevision).toBe(1);
-
-    const listed = await client.get(`/projects/${projectId}/levels/${levelId}/objects`);
-    expect(listed.body).toHaveLength(1);
-  });
-
-  it("advances modelRevision again on delete, and only while something was actually deleted", async () => {
-    const { client, projectId, levelId } = await setupProjectWithLevel("deleter@example.com");
-    const wall = await client
-      .post(`/projects/${projectId}/levels/${levelId}/objects`)
-      .send({ kind: "wall", properties: {}, relations: [] });
-
-    const del = await client.delete(`/projects/${projectId}/levels/${levelId}/objects/${wall.body.id}`);
-    expect(del.status).toBe(204);
-    const afterDelete = await client.get(`/projects/${projectId}`);
-    expect(afterDelete.body.modelRevision).toBe(2);
-
-    // Deleting an object that no longer exists must not bump the revision again.
-    const delAgain = await client.delete(`/projects/${projectId}/levels/${levelId}/objects/${wall.body.id}`);
-    expect(delAgain.status).toBe(204);
-    const stillTwo = await client.get(`/projects/${projectId}`);
-    expect(stillTwo.body.modelRevision).toBe(2);
-  });
-
-  it("404s on a level or object that belongs to someone else's project", async () => {
-    const mine = await setupProjectWithLevel("victim@example.com");
-    const attacker = await registerAndLogin("attacker@example.com");
-
-    const res = await attacker.get(`/projects/${mine.projectId}/levels/${mine.levelId}/objects`);
-    expect(res.status).toBe(404);
   });
 });
 
@@ -1979,7 +1925,7 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     // Lecteur : lit tout (étapes, programme, Atelier, analyses, documents, pièces), commente, mais ne modifie rien — 403 avec le motif, jamais 404.
     expect((await reader.get(`/projects/${pid}/steps/7`)).status).toBe(200);
     expect((await reader.get(`/projects/${pid}/programme`)).status).toBe(200);
-    expect((await reader.get(`/projects/${pid}/atelier/store`)).status).toBe(200);
+    expect((await reader.get(`/projects/${pid}/atelier/model`)).status).toBe(200);
     expect((await reader.get(`/projects/${pid}/analyses`)).status).toBe(200);
     expect((await reader.get(`/projects/${pid}/documents`)).status).toBe(200);
     expect((await reader.get(`/projects/${pid}/steps/2/files`)).status).toBe(200);
@@ -1987,7 +1933,7 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     expect(refused.status).toBe(403);
     expect(refused.body).toMatchObject({ error: "forbidden", role: "lecteur", message: "Ce projet vous est partagé en lecture : les modifications sont réservées à son propriétaire et à ses éditeurs." });
     expect((await reader.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "retained" })).status).toBe(403);
-    expect((await reader.put(`/projects/${pid}/atelier/store/design.v13.test`).send({ value: "x" })).status).toBe(403);
+    expect((await sendCommands(reader, pid, [{ type: "niveau.creer", cibles: [], params: { id: `${pid}_rdc`, nom: "Rez", elevation: longueur(0), hauteur: longueur(3), ordre: 0 } }])).status).toBe(403);
     expect((await reader.post(`/projects/${pid}/steps/2/files`).set("X-File-Name", "note.txt").set("Content-Type", "text/plain").send("abc")).status).toBe(403);
     expect((await reader.delete(`/projects/${pid}`)).status).toBe(403);
     // Copier = exporter puis importer : un lecteur obtient sa propre copie modifiable, l'original reste intact.
@@ -2098,7 +2044,7 @@ describe("Verrou d'édition optionnel — un seul éditeur actif", () => {
     expect((await owner.get("/notifications")).body.items[0].text).toMatch(/^lock-editor@example\.com a réservé l’édition de P\.LOCK — Verrou jusqu’à \d{2}:\d{2} : lecture et commentaires seulement d’ici là\.$/);
     expect((await editor.get("/notifications")).body.items.some((n: { kind: string }) => n.kind === "reservation")).toBe(false);
     expect((await owner.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send({ status: "retained" })).status).toBe(423);
-    expect((await owner.put(`/projects/${pid}/atelier/store/design.v13.registry`).send({ value: [], expectedRevision: null })).status).toBe(423);
+    expect((await sendCommands(owner, pid, [{ type: "niveau.creer", cibles: [], params: { id: `${pid}_rdc`, nom: "Rez", elevation: longueur(0), hauteur: longueur(3), ordre: 0 } }])).status).toBe(423);
     expect((await owner.put(`/projects/${pid}/lock`)).status).toBe(423);
     expect((await owner.get(`/projects/${pid}/steps/2`)).body.content.fields.f1).toBe("Éditeur, sans verrou");
     expect((await owner.post(`/projects/${pid}/collaboration/comments`).send({ body: "Je relis pendant que tu édites." })).status).toBe(201);

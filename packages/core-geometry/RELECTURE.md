@@ -56,7 +56,7 @@ D-012.
 | `ParcelLike`, `FloorDesignLevel` | parcel-geometry.ts | typer | Points des tracés de niveau marqués `Point2Local`. | Repère de `ParcelLike` non marqué (question 3). |
 | `buildingFootprint` | parcel-geometry.ts | garder | Fidèle ; repères documentés : résultat dans le repère de la parcelle, conversion local → parcelle par ajout du centre. | Sans centroïde, le repli rend des coordonnées **locales** sous le même type : mélange possible (question 3). |
 | `projectCode` | parcel-geometry.ts | garder | Fidèle (libellé d'interface). | « V14 » sans projet : libellé hérité du prototype. |
-| `ProjectRepository`, `ProjectSummary`, `LevelModel`, `NotImplementedYetError` | project-repository.ts | garder | Contrat documentaire, sans implémentation ; aucun appelant. | `LevelModel` en `unknown[]` : remplacé de fait par le modèle typé d'`atelier-model` ; à retirer ou relier au lot 4. |
+| `ProjectRepository`, `ProjectSummary`, `LevelModel`, `NotImplementedYetError` | project-repository.ts | retiré | Contrat documentaire sans appelant, remplacé par le modèle typé d'`atelier-model`. | Supprimé au lot 4 (L4.2, cahier §5.5). |
 | `cross` (interne) | site-zoning.ts | garder | Produit vectoriel. | Aucun. |
 | `triangulate` | site-zoning.ts | typer | Générique sur le repère ; cas < 3, > 2000 sommets, 3 sommets alignés (triangle d'aire nulle rendu) et garde-fou inatteignable documentés. Seuil 1e-9 m² nommé mais **non paramétrable**. | Contour auto-intersecté → erreur (voulu). |
 | `clipHalfPlane` | site-zoning.ts | adapter + typer | Générique ; `tol.tolCoincidence` (marge de côté, historique 1e-9 m), `tol.aireMin` (historique 1e-8 m²). | Exact pour un convexe seulement (documenté ; l'appelant lui donne des triangles). |

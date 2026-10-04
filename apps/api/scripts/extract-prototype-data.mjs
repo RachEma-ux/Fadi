@@ -319,11 +319,11 @@ writeJson("examples/p118-base-documents.json", {
   ],
 });
 
-// --- 6b. modèle natif verbatim pour l'Atelier (format design.v13) --------------
+// --- 6b. modèle natif verbatim de P.118 (source de l'importeur du lot 1) -------
 
-// Le moteur de l'Atelier natif lit et écrit ces domaines tels quels
-// (`design.v13.project.<id>.<domaine>`). On les conserve byte-à-byte : c'est
-// le format de travail du moteur, pas une projection.
+// Les domaines natifs du prototype (registre, parcelle, niveaux, emprise, plan),
+// conservés byte-à-byte : `importerP118` (@parcours/atelier-model) les écrit
+// dans le modèle typé de l'Atelier à l'import de l'exemple (D-052).
 writeJson(
   "examples/p118-native-model.json",
   {
