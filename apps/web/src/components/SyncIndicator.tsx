@@ -39,8 +39,23 @@ export function useReachable(): boolean {
   return useSyncExternalStore(reachability.subscribe, () => reachability.get() === "reachable");
 }
 
-export function SyncIndicator({ projectId }: { projectId: string }) {
+/**
+ * Source facultative de file supplémentaire (nouvel Atelier, `modules/atelier/bus/adaptateurs.ts`, lot 2) :
+ * ses lots en attente et ses conflits s'ajoutent aux compteurs ; « Synchroniser maintenant » la relance aussi.
+ * `get()` doit rendre le même objet tant que rien ne change (`useSyncExternalStore`).
+ */
+export interface SourceSynchroAtelier {
+  subscribe(fn: () => void): () => void;
+  get(): { readonly enAttente: number; readonly conflits: number };
+  synchroniser(): Promise<unknown>;
+}
+
+const SANS_SOURCE = { enAttente: 0, conflits: 0 } as const;
+const sansAbonnement = () => () => {};
+
+export function SyncIndicator({ projectId, atelier }: { projectId: string; atelier?: SourceSynchroAtelier }) {
   const online = useOnline();
+  const bus = useSyncExternalStore(atelier ? atelier.subscribe : sansAbonnement, () => (atelier ? atelier.get() : SANS_SOURCE));
   const reachable = useReachable();
   const [sync, setSync] = useState<SyncState>({ status: "idle", pending: 0, message: null });
   const [queued, setQueued] = useState(0);
@@ -61,8 +76,8 @@ export function SyncIndicator({ projectId }: { projectId: string }) {
     };
   }, [projectId, sync]);
 
-  const pending = Math.max(sync.pending, queued) + pausedMutations.length;
-  const conflictCount = conflicts.length + modelConflicts;
+  const pending = Math.max(sync.pending, queued) + pausedMutations.length + bus.enAttente;
+  const conflictCount = conflicts.length + modelConflicts + bus.conflits;
   const state = !online ? "offline" : !reachable ? "unreachable" : conflictCount > 0 ? "conflict" : pending > 0 ? "pending" : "synced";
   const label = !online
     ? `Hors-ligne · ${pending} modification(s) enregistrée(s) localement`
@@ -78,12 +93,30 @@ export function SyncIndicator({ projectId }: { projectId: string }) {
       <i aria-hidden="true" />
       {label}
       {online && !reachable && (
-        <button type="button" className="sync-indicator-retry" onClick={() => void reachability.probeNow().then((ok) => { if (ok) void atelierStorage.retryPending(); })}>
+        <button
+          type="button"
+          className="sync-indicator-retry"
+          onClick={() =>
+            void reachability.probeNow().then((ok) => {
+              if (ok) {
+                void atelierStorage.retryPending();
+                void atelier?.synchroniser();
+              }
+            })
+          }
+        >
           Réessayer
         </button>
       )}
       {online && reachable && pending > 0 && (
-        <button type="button" className="sync-indicator-retry" onClick={() => void atelierStorage.retryPending()}>
+        <button
+          type="button"
+          className="sync-indicator-retry"
+          onClick={() => {
+            void atelierStorage.retryPending();
+            void atelier?.synchroniser();
+          }}
+        >
           Synchroniser maintenant
         </button>
       )}

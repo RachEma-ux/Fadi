@@ -186,7 +186,253 @@ CREATE INDEX IF NOT EXISTS architectural_objects_level_id_idx ON architectural_o
 -- <<< module: atelier-natif
 
 -- >>> module: atelier
--- Réservée au nouvel Atelier (tables atelier_*, cahier des charges §5.5 ; propriétaire : équipier « base », §9). Vide au lot 0.
+-- Nouvel Atelier (tables atelier_*, cahier des charges §5.5 ; propriétaire : équipier « base », §9). Lot 2 (L2.1).
+--
+-- Passage EtatModele (@parcours/atelier-model) ⇄ lignes : apps/api/src/lib/atelier-rows.ts (seul écrivain du
+-- modèle, appelé par le service de commandes ; aucune route n'écrit ici directement, R9).
+-- - Révision : `projects.model_revision` (colonne existante) fait autorité, verrouillée par `SELECT … FOR UPDATE`
+--   sur la ligne du projet ; `atelier_models.model_revision` est la révision à laquelle l'empreinte a été écrite.
+-- - Objets : une ligne par objet du modèle, répartie selon la classe : `atelier_layers` (calque), `atelier_site`
+--   (parcelle, emprise, hypothèse, source, structure déclarée), `atelier_objects` (toutes les autres classes).
+--   Identité jamais réutilisée : un objet supprimé garde sa ligne (`deleted_at`, `deleted_rank` = ordre dans
+--   `EtatModele.supprimes`) ; un identifiant supprimé dont le contenu n'a jamais été écrit (créé puis supprimé dans
+--   le même lot) est une trace sans contenu dans `atelier_objects`.
+-- - Repères (R5) : `atelier_objects` et `atelier_layers` n'admettent que des coordonnées `local` ; `atelier_site`
+--   admet `cadastral`, `geographic`, `local`, chacune dans son champ (sommets cadastraux, sommets locaux).
+-- - JSON : `jsonb` conserve les nombres sans arrondi (numeric) ; l'ordre des clés n'est pas une donnée
+--   (empreinte `atelier-empreinte/1` à clés triées), l'ordre des tableaux l'est et il est conservé.
+
+-- Tête du modèle d'un projet : empreinte `atelier-empreinte/1`, versions d'ontologie et du catalogue de types.
+-- Absente = le projet n'a pas encore de modèle typé.
+CREATE TABLE IF NOT EXISTS atelier_models (
+  project_id text PRIMARY KEY REFERENCES projects (id) ON DELETE CASCADE,
+  model_revision integer NOT NULL CHECK (model_revision >= 0),
+  fingerprint text NOT NULL CHECK (fingerprint ~ '^sha256-[0-9a-f]{64}$'),
+  fingerprint_algorithm text NOT NULL DEFAULT 'atelier-empreinte/1' CHECK (fingerprint_algorithm = 'atelier-empreinte/1'),
+  ontology_version integer NOT NULL CHECK (ontology_version >= 1),
+  catalogue_version integer NOT NULL DEFAULT 0 CHECK (catalogue_version >= 0),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Définitions de types (catalogue versionné, DA-05-14) : `key` = `${classe}:${id}`, `content` = DefinitionType entière.
+CREATE TABLE IF NOT EXISTS atelier_definitions (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  key text NOT NULL,
+  definition_id text NOT NULL,
+  "class" text NOT NULL,
+  catalogue_version integer NOT NULL,
+  content jsonb NOT NULL CHECK (jsonb_typeof(content) = 'object'),
+  model_revision integer NOT NULL,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (project_id, key),
+  CHECK (key = "class" || ':' || definition_id)
+);
+
+-- Objets placés (occurrences) hors calques et site. `params` = paramètres canoniques de la classe ; `phase` réservée
+-- (phases existant / projet / démoli, après le lot 2 : toujours nulle aujourd'hui) ; `extra` = champs d'objet non
+-- portés par une colonne (rien n'est perdu).
+CREATE TABLE IF NOT EXISTS atelier_objects (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  ontology text CHECK (ontology IN ('building.architecture', 'building.structure', 'drawing', 'annotation', 'projet')),
+  "class" text CHECK ("class" NOT IN ('calque', 'parcelle', 'emprise', 'hypothese', 'source', 'structureDeclaree')),
+  level_id text,
+  definition_id text,
+  params jsonb CHECK (params IS NULL OR NOT jsonb_path_exists(params, 'lax $.**.frame ? (@ != "local")')),
+  layer_id text,
+  group_id text,
+  phase text,
+  provenance text CHECK (provenance IN ('import', 'prototype', 'calcul', 'saisie', 'regle')),
+  status text CHECK (status IN ('declaree', 'verifiee', 'a-verifier', 'a-confirmer', 'non-evaluee')),
+  source_id text,
+  note text,
+  classifications jsonb,
+  annotations jsonb,
+  extra jsonb,
+  model_revision integer NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  deleted_at timestamptz,
+  deleted_rank integer,
+  PRIMARY KEY (project_id, id),
+  CHECK ((deleted_at IS NULL) = (deleted_rank IS NULL)),
+  -- Seule une trace de suppression peut être sans contenu.
+  CHECK (deleted_at IS NOT NULL OR (ontology IS NOT NULL AND "class" IS NOT NULL AND params IS NOT NULL AND provenance IS NOT NULL AND status IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS atelier_objects_project_level_idx ON atelier_objects (project_id, level_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS atelier_objects_project_revision_idx ON atelier_objects (project_id, model_revision);
+CREATE INDEX IF NOT EXISTS atelier_objects_project_class_idx ON atelier_objects (project_id, "class");
+
+-- Calques (classe `calque`) : mêmes colonnes que atelier_objects, contenu toujours présent.
+CREATE TABLE IF NOT EXISTS atelier_layers (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  ontology text NOT NULL CHECK (ontology IN ('building.architecture', 'building.structure', 'drawing', 'annotation', 'projet')),
+  "class" text NOT NULL CHECK ("class" IN ('calque')),
+  level_id text,
+  definition_id text,
+  params jsonb NOT NULL CHECK (NOT jsonb_path_exists(params, 'lax $.**.frame ? (@ != "local")')),
+  layer_id text,
+  group_id text,
+  phase text,
+  provenance text NOT NULL CHECK (provenance IN ('import', 'prototype', 'calcul', 'saisie', 'regle')),
+  status text NOT NULL CHECK (status IN ('declaree', 'verifiee', 'a-verifier', 'a-confirmer', 'non-evaluee')),
+  source_id text,
+  note text,
+  classifications jsonb,
+  annotations jsonb,
+  extra jsonb,
+  model_revision integer NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  deleted_at timestamptz,
+  deleted_rank integer,
+  PRIMARY KEY (project_id, id),
+  CHECK ((deleted_at IS NULL) = (deleted_rank IS NULL))
+);
+CREATE INDEX IF NOT EXISTS atelier_layers_project_revision_idx ON atelier_layers (project_id, model_revision);
+
+-- Site et données de projet (classes `parcelle`, `emprise`, `hypothese`, `source`, `structureDeclaree`) : les seules
+-- lignes qui portent des coordonnées cadastrales ou géographiques, chacune dans son champ, jamais mélangées (R5).
+CREATE TABLE IF NOT EXISTS atelier_site (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  id text NOT NULL,
+  ontology text NOT NULL CHECK (ontology IN ('building.architecture', 'building.structure', 'drawing', 'annotation', 'projet')),
+  "class" text NOT NULL CHECK ("class" IN ('parcelle', 'emprise', 'hypothese', 'source', 'structureDeclaree')),
+  level_id text,
+  definition_id text,
+  params jsonb NOT NULL CHECK (
+    NOT jsonb_path_exists(params, 'lax $.**.frame ? (@ != "local" && @ != "cadastral" && @ != "geographic")')
+    AND NOT jsonb_path_exists(params, 'lax $.sommetsCadastraux[*].frame ? (@ != "cadastral")')
+    AND NOT jsonb_path_exists(params, 'lax $.enveloppeRecul[*].frame ? (@ != "cadastral")')
+    AND NOT jsonb_path_exists(params, 'lax $.sommetsLocaux[*].frame ? (@ != "local")')
+  ),
+  layer_id text,
+  group_id text,
+  phase text,
+  provenance text NOT NULL CHECK (provenance IN ('import', 'prototype', 'calcul', 'saisie', 'regle')),
+  status text NOT NULL CHECK (status IN ('declaree', 'verifiee', 'a-verifier', 'a-confirmer', 'non-evaluee')),
+  source_id text,
+  note text,
+  classifications jsonb,
+  annotations jsonb,
+  extra jsonb,
+  model_revision integer NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  deleted_at timestamptz,
+  deleted_rank integer,
+  PRIMARY KEY (project_id, id),
+  CHECK ((deleted_at IS NULL) = (deleted_rank IS NULL))
+);
+CREATE INDEX IF NOT EXISTS atelier_site_project_revision_idx ON atelier_site (project_id, model_revision);
+
+-- Propriétés typées (DA-06-07) d'un objet (`object_id`) ou du projet (`object_id` nul : `EtatModele.proprietesProjet`),
+-- dans leur ordre (`position`). `value` est la valeur JSON (JSON `null` admis, jamais une absence SQL).
+CREATE TABLE IF NOT EXISTS atelier_properties (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  object_id text,
+  "position" integer NOT NULL CHECK ("position" >= 0),
+  name text NOT NULL,
+  value jsonb NOT NULL,
+  unit text,
+  provenance text NOT NULL CHECK (provenance IN ('import', 'prototype', 'calcul', 'saisie', 'regle')),
+  status text NOT NULL CHECK (status IN ('declaree', 'verifiee', 'a-verifier', 'a-confirmer', 'non-evaluee')),
+  source_id text,
+  note text,
+  extra jsonb,
+  model_revision integer NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS atelier_properties_owner_position_unique ON atelier_properties (project_id, coalesce(object_id, ''), "position");
+CREATE INDEX IF NOT EXISTS atelier_properties_project_name_idx ON atelier_properties (project_id, name);
+
+-- Relations orientées source → cible (ontologie/relations.ts). L'ordre n'est pas une donnée (empreinte triée).
+CREATE TABLE IF NOT EXISTS atelier_relations (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  type text NOT NULL,
+  source_id text NOT NULL,
+  target_id text NOT NULL,
+  role text,
+  derived boolean NOT NULL,
+  extra jsonb,
+  model_revision integer NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS atelier_relations_unique ON atelier_relations (project_id, type, source_id, target_id, coalesce(role, ''));
+CREATE INDEX IF NOT EXISTS atelier_relations_project_target_idx ON atelier_relations (project_id, target_id);
+
+-- Représentations dérivées ou importées d'un objet (cahier §5.2 « Identités »), dans leur ordre.
+CREATE TABLE IF NOT EXISTS atelier_representations (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  object_id text NOT NULL,
+  "position" integer NOT NULL CHECK ("position" >= 0),
+  usage text NOT NULL CHECK (usage IN ('plan-2d', 'solide-3d', 'symbole', 'brep')),
+  authority text NOT NULL CHECK (authority IN ('parametrique', 'derivee', 'importee')),
+  engine text NOT NULL,
+  engine_version text NOT NULL,
+  inputs_hash text NOT NULL,
+  extra jsonb,
+  model_revision integer NOT NULL,
+  PRIMARY KEY (project_id, object_id, "position")
+);
+
+-- Journal des lots de commandes (contrat atelier-commands/1, cahier §5.4) : idempotence par (projet, request_id),
+-- réponse enregistrée renvoyée telle quelle, inverse produit par le serveur (seule source admise d'une
+-- `restauration`, D-024), empreintes avant / après. `inverse_of` : entrée annulée (annulation) ou annulation
+-- rétablie (rétablissement) ; une entrée ne peut être inversée qu'une fois (double restauration refusée).
+CREATE TABLE IF NOT EXISTS atelier_commands (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  request_id text NOT NULL,
+  contract text NOT NULL CHECK (contract = 'atelier-commands/1'),
+  nature text NOT NULL DEFAULT 'commande' CHECK (nature IN ('commande', 'annulation', 'retablissement', 'import')),
+  label text NOT NULL,
+  base_revision integer NOT NULL CHECK (base_revision >= 0),
+  result_revision integer NOT NULL,
+  commands jsonb NOT NULL CHECK (jsonb_typeof(commands) = 'array'),
+  inverse jsonb NOT NULL CHECK (jsonb_typeof(inverse) = 'array'),
+  effets jsonb NOT NULL CHECK (jsonb_typeof(effets) = 'object'),
+  response jsonb NOT NULL,
+  base_fingerprint text NOT NULL CHECK (base_fingerprint ~ '^sha256-[0-9a-f]{64}$'),
+  result_fingerprint text NOT NULL CHECK (result_fingerprint ~ '^sha256-[0-9a-f]{64}$'),
+  author_id text REFERENCES users (id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  inverse_of text REFERENCES atelier_commands (id),
+  -- Lot sans changement du modèle : révision inchangée (D-024) ; sinon +1.
+  CHECK (result_revision = base_revision OR result_revision = base_revision + 1),
+  CHECK ((nature IN ('annulation', 'retablissement')) = (inverse_of IS NOT NULL))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS atelier_commands_request_unique ON atelier_commands (project_id, request_id);
+CREATE UNIQUE INDEX IF NOT EXISTS atelier_commands_inverse_of_unique ON atelier_commands (inverse_of) WHERE inverse_of IS NOT NULL;
+CREATE INDEX IF NOT EXISTS atelier_commands_project_revision_idx ON atelier_commands (project_id, result_revision);
+
+-- Boîte de sortie (événements `atelier.commande.validee`…) écrite dans la transaction du lot, traitée après
+-- validation ; idempotente par identifiant et par (commande, événement).
+CREATE TABLE IF NOT EXISTS atelier_outbox (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  command_id text NOT NULL REFERENCES atelier_commands (id) ON DELETE CASCADE,
+  event text NOT NULL,
+  payload jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  processed_at timestamptz,
+  attempts integer NOT NULL DEFAULT 0,
+  last_error text
+);
+CREATE UNIQUE INDEX IF NOT EXISTS atelier_outbox_command_event_unique ON atelier_outbox (command_id, event);
+CREATE INDEX IF NOT EXISTS atelier_outbox_pending_idx ON atelier_outbox (created_at) WHERE processed_at IS NULL;
+
+-- Volumes immuables adressés par contenu (`id` = SHA-256 hexadécimal du contenu), derrière `VolumeStore`
+-- (apps/api/src/lib/volume-store.ts) ; stockage objet plus tard, hors dépôt (§10.1, point 4).
+CREATE TABLE IF NOT EXISTS volumes (
+  id text PRIMARY KEY CHECK (id ~ '^[0-9a-f]{64}$'),
+  mime text NOT NULL CHECK (mime <> ''),
+  size bigint NOT NULL CHECK (size >= 0),
+  content bytea NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CHECK (size = octet_length(content)),
+  CHECK (id = encode(sha256(content), 'hex'))
+);
 
 -- <<< module: atelier
 
