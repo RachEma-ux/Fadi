@@ -604,8 +604,8 @@ avant code ; aucune dépendance OCCT ajoutée au dépôt avant la décision écr
   intégrées par le chef de projet (rebase ou merge sans fast-forward, CI obligatoire). Pas de force-push sur
   `main`.
 - **Commits :** en français, un commit par tâche, préfixe `[Lx.y]`, référence aux fiches touchées.
-- **Hooks de qualité :** `TaskCompleted` refuse la clôture si `npm run typecheck` ou `npm test` échouent dans le
-  worktree ; `TeammateIdle` renvoie l'équipier au compte rendu de sa tâche s'il manque.
+- **Hooks de qualité :** `TeammateIdle` renvoie l'équipier au compte rendu de sa tâche s'il manque. Le hook
+  `TaskCompleted` (typecheck + tests complets à la clôture) est retiré (D-043) : la CI fait foi.
 - **Taille des tâches :** 2 à 6 heures ; une tâche = un livrable vérifiable (un réducteur et ses tests, une
   route et ses tests, un panneau et son contrôle e2e).
 - **Communication :** chaque équipier termine sa tâche par un message au chef de projet : fait, non fait, tests,
