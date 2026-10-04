@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Démonstration en ligne de commande du service de commandes du nouvel Atelier (lot 2, L2.5) :
- * idempotence (T06) et conflit entre deux comptes (T08), contre une API locale déjà démarrée.
+ * idempotence (T06), conflit entre deux comptes (T08) et rejeu d'une file après coupure, contre une API locale déjà démarrée.
  *
  *   npm run dev:api                                  # ou : node apps/api/dist/server.js
  *   node apps/api/scripts/demo-atelier.mjs           # API_URL=http://localhost:3001 par défaut
@@ -9,7 +9,9 @@
  * Crée deux comptes jetables (Alice propriétaire, Bruno éditeur) et un projet, puis :
  * 1. envoie deux fois la même enveloppe (même requestId) → même réponse, une seule révision ;
  * 2. Alice et Bruno partent de la même révision ; Bruno arrive second → 409 détaillé ;
- * 3. Bruno recharge et rejoue avec un nouveau requestId → accepté.
+ * 3. Bruno recharge et rejoue avec un nouveau requestId → accepté ;
+ * 4. coupure et rejeu : A acceptée mais réponse perdue, B et C en file hors ligne (bases chaînées), rejeu dans
+ *    l'ordre → A rend la réponse enregistrée, B et C s'appliquent.
  * Code de sortie 0 si tout est conforme, 1 sinon.
  */
 const API = (process.env.API_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -94,6 +96,25 @@ verifier(rb.body.revisionCourante === base + 1 && rb.body.conflits?.some((c) => 
 const rejeu = await bruno("POST", `${A}/commands`, enveloppe(`b2-${suffixe}`, rb.body.revisionCourante, "Mur de Bruno", [mur("MB", 5)]));
 console.log(`Bruno rejoue sur la révision ${rb.body.revisionCourante} (nouveau requestId) : HTTP ${rejeu.status} → révision ${rejeu.body.revision}`);
 verifier(rejeu.status === 200, "le rejeu sur la révision courante est accepté");
+
+console.log("\n— Coupure et rejeu (file hors ligne) —");
+const rc = rejeu.body.revision;
+const envA = enveloppe(`hl-a-${suffixe}`, rc, "Mur A (réponse perdue)", [mur("HA", 7)]);
+await alice("POST", `${A}/commands`, envA); // le serveur l'applique ; la réponse est « perdue » : on l'ignore
+console.log(`A envoyée sur la révision ${rc}, réponse perdue (coupure) : A reste en file`);
+// Hors ligne : B et C en file, bases chaînées localement (A optimiste comprise), exactement comme le bus.
+const file = [envA, enveloppe(`hl-b-${suffixe}`, rc + 1, "Mur B (hors ligne)", [mur("HB", 9)]), enveloppe(`hl-c-${suffixe}`, rc + 2, "Mur C (hors ligne)", [mur("HC", 11)])];
+console.log(`File hors ligne : ${file.map((e) => `${e.label.split(" (")[0]} base ${e.baseRevision}`).join(", ")}`);
+const rejoues = [];
+for (const e of file) {
+  const r = await alice("POST", `${A}/commands`, e);
+  rejoues.push(r);
+  console.log(`Rejeu ${e.label.split(" (")[0]} : HTTP ${r.status} → révision ${r.body.revision} journal ${r.body.journalId}`);
+}
+verifier(rejoues.every((r) => r.status === 200), "les trois rejeux sont acceptés (200)");
+verifier(rejoues[0].body.revision === rc + 1, "A rend la réponse enregistrée (aucune nouvelle révision)");
+const jh = (await alice("GET", `${A}/journal?apres=${rc}`)).body;
+verifier(jh.revisionCourante === rc + 3 && jh.entrees.length === 3 && jh.entrees.filter((e) => e.requestId === envA.requestId).length === 1, `révision finale ${jh.revisionCourante}, trois entrées au journal (A une seule fois)`);
 
 console.log(echecs === 0 ? "\nDémonstration conforme." : `\n${echecs} contrôle(s) en échec.`);
 process.exit(echecs === 0 ? 0 : 1);
