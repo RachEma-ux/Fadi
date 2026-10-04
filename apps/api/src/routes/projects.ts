@@ -12,6 +12,7 @@ import { APPLICATION_VERSION, ArchiveModeleError, SOURCE_VERSION, exportProjectA
 import { parcoursStepsRouter } from "./parcours-steps.js";
 import { programmeRouter } from "./programme.js";
 import { atelierCommandsRouter } from "./atelier-commands.js";
+import { atelierVersionsRouter } from "./atelier-versions.js";
 import { parcelsRouter } from "./parcels.js";
 import { projectFilesRouter } from "./step-files.js";
 import { designReviewRouter } from "./design-review.js";
@@ -193,6 +194,7 @@ projectsRouter.post("/:projectId/copies", async (req, res) => {
 projectsRouter.use("/:projectId/steps", parcoursStepsRouter);
 projectsRouter.use("/:projectId/programme", programmeRouter);
 projectsRouter.use("/:projectId/atelier", atelierCommandsRouter);
+projectsRouter.use("/:projectId/atelier", atelierVersionsRouter);
 projectsRouter.use("/:projectId/parcels", parcelsRouter);
 projectsRouter.use("/:projectId/files", projectFilesRouter);
 projectsRouter.use("/:projectId/design-review", designReviewRouter);

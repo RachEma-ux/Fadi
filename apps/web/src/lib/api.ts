@@ -833,6 +833,23 @@ export const api = {
   // --- Atelier typé (chantier DrawAll, cahier des charges §5.4) ---
   getAtelierModel: (projectId: string) => request<AtelierModelResponse>(`/projects/${projectId}/atelier/model`),
   getAtelierJournal: (projectId: string, apres: number) => request<AtelierJournalResponse>(`/projects/${projectId}/atelier/journal?apres=${apres}`),
+  // --- Lot 7 : versions, variantes, publications, verrous, collisions ---
+  getAtelierVersions: (projectId: string) => request<{ revision: number; versions: AtelierVersion[] }>(`/projects/${projectId}/atelier/versions`),
+  postAtelierVersion: (projectId: string, body: { nom: string; description?: string; revision?: number }) => request<AtelierVersion>(`/projects/${projectId}/atelier/versions`, { method: "POST", body: JSON.stringify(body) }),
+  getAtelierVersion: (projectId: string, versionId: string) => request<AtelierVersion & { modele: import("@parcours/atelier-model").ModeleAtelier }>(`/projects/${projectId}/atelier/versions/${encodeURIComponent(versionId)}`),
+  restaurerAtelierVersion: (projectId: string, versionId: string, body: { requestId: string; baseRevision: number }) => request<{ revision: number; inchange?: boolean }>(`/projects/${projectId}/atelier/versions/${encodeURIComponent(versionId)}/restaurer`, { method: "POST", body: JSON.stringify(body) }),
+  comparerAtelier: (projectId: string, de: string, a = "courante") => request<{ de: { libelle: string; revision: number }; a: { libelle: string; revision: number }; difference: import("@parcours/atelier-model").DifferenceModeles }>(`/projects/${projectId}/atelier/comparer?de=${encodeURIComponent(de)}&a=${encodeURIComponent(a)}`),
+  getAtelierVariantes: (projectId: string) => request<AtelierVariantes>(`/projects/${projectId}/atelier/variantes`),
+  postAtelierVariante: (projectId: string, nom: string) => request<{ id: string; name: string; nom: string; forkRevision: number }>(`/projects/${projectId}/atelier/variantes`, { method: "POST", body: JSON.stringify({ nom }) }),
+  getAtelierFusion: (troncId: string, varianteId: string) => request<AtelierFusionEssai>(`/projects/${troncId}/atelier/variantes/${encodeURIComponent(varianteId)}/fusion`),
+  postAtelierFusion: (troncId: string, varianteId: string, body: { baseRevision: number; strategie: "refuser-conflits" | "variante-prioritaire" }) => request<{ revision: number; lots: number }>(`/projects/${troncId}/atelier/variantes/${encodeURIComponent(varianteId)}/fusion`, { method: "POST", body: JSON.stringify(body) }),
+  getAtelierPublications: (projectId: string) => request<{ publications: AtelierPublicationResume[] }>(`/projects/${projectId}/atelier/publications`),
+  postAtelierPublication: (projectId: string, body: { nom: string; versionId?: string }) => request<AtelierPublication>(`/projects/${projectId}/atelier/publications`, { method: "POST", body: JSON.stringify(body) }),
+  getAtelierPublication: (projectId: string, publicationId: string) => request<AtelierPublication & { base: string; ecarts: { catalogue: string; publie: string; actuel: string }[]; version: { nom: string; revision: number; empreinte: string } }>(`/projects/${projectId}/atelier/publications/${encodeURIComponent(publicationId)}`),
+  restaurerAtelierPublication: (projectId: string, publicationId: string, body: { requestId: string; baseRevision: number }) => request<{ revision: number; inchange?: boolean; ecartsCatalogues?: { catalogue: string }[] }>(`/projects/${projectId}/atelier/publications/${encodeURIComponent(publicationId)}/restaurer`, { method: "POST", body: JSON.stringify(body) }),
+  getAtelierVerrous: (projectId: string) => request<{ verrous: AtelierVerrou[] }>(`/projects/${projectId}/atelier/verrous`),
+  postAtelierVerrous: (projectId: string, body: { cles: string[]; motif?: string; minutes?: number }) => request<{ cles: string[]; expiresAt: string }>(`/projects/${projectId}/atelier/verrous`, { method: "POST", body: JSON.stringify(body) }),
+  deleteAtelierVerrou: (projectId: string, cle: string) => request<void>(`/projects/${projectId}/atelier/verrous/${encodeURIComponent(cle)}`, { method: "DELETE" }),
   getAtelierProblemes: (projectId: string) => request<AtelierProblemesResponse>(`/projects/${projectId}/atelier/problemes`),
   postAtelierCommands: (projectId: string, enveloppe: AtelierEnveloppe) =>
     request<AtelierCommandsResponse>(`/projects/${projectId}/atelier/commands`, { method: "POST", body: JSON.stringify(enveloppe) }),
@@ -892,8 +909,58 @@ export interface AtelierEssaiResponse {
   problemes: import("@parcours/atelier-model").Probleme[];
   referencesAReparer: string[];
 }
+export interface AtelierVersion {
+  id: string;
+  nom: string;
+  description: string;
+  revision: number;
+  empreinte: string;
+  auteur?: string | null;
+  createdAt: string;
+}
+export interface AtelierVariantes {
+  revision: number;
+  tronc: { id: string; name: string | null; accessible: boolean; nom: string; forkRevision: number; baseRevision: number; statut: string; fusionRevision: number | null } | null;
+  variantes: { id: string; name: string; nom: string; forkRevision: number; baseRevision: number; statut: string; fusionRevision: number | null; revision: number; modifications: number; createdAt: string }[];
+}
+export interface AtelierFusionEssai {
+  variante: { id: string; nom: string; statut: string; forkRevision: number; revision: number };
+  tronc: { id: string; revision: number; lotsDepuisBifurcation: number };
+  lots: { label: string; revision: number }[];
+  affectes: { crees: string[]; modifies: string[]; supprimes: string[] };
+  conflits: { objetId: string; tronc: { label: string; revision: number }; variante: { label: string; revision: number } }[];
+  rejeu: { ok: true } | { ok: false; lot: string; message: string };
+}
+export interface AtelierPublicationResume {
+  id: string;
+  nom: string;
+  versionId: string;
+  revision: number;
+  empreinte: string;
+  documents: number;
+  auteur: string | null;
+  createdAt: string;
+}
+export interface AtelierPublication {
+  id: string;
+  nom: string;
+  versionId: string;
+  revision: number;
+  empreinte: string;
+  catalogues: Record<string, string>;
+  documents: { kind: string; label: string; fileName: string; volumeId: string; mime: string; size: number; inputHash: string }[];
+  createdAt: string;
+}
+export interface AtelierVerrou {
+  cle: string;
+  motif: string;
+  auteur: string;
+  moi: boolean;
+  expiresAt: string;
+}
 export interface AtelierProblemesResponse {
   revision: number;
+  collisions?: import("@parcours/atelier-model").Collision[];
   references: import("@parcours/atelier-model").Reference[];
   problemes: import("@parcours/atelier-model").Probleme[];
   documentsPerimes: { kind: string; label: string }[];

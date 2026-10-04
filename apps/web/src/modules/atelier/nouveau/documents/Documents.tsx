@@ -22,6 +22,7 @@ import {
   PHASES,
   positionLibre,
   pt,
+  svgComparaisonVues,
   svgFeuille,
   svgVue,
   TABLEAUX,
@@ -34,6 +35,7 @@ import {
   type ModeleAtelier,
   type Orientation,
   type ParamsFeuille,
+  type ParamsVue,
   type TypeTableau,
   type TypeVue,
   type VueGeneree,
@@ -248,7 +250,7 @@ export function Documents({ projectId, code, nomProjet, etat, revision, readOnly
       <div className="docs-contenu">
         {erreur && <p className="docs-erreur" role="alert">{erreur}</p>}
         {choix?.type === "vue" && etat.definitions[choix.id] && (
-          <VueDetail key={choix.id} def={etat.definitions[choix.id]!} etat={etat} revision={revision} readOnly={readOnly} catalogue={catalogue.data?.documents} base={base} onProduit={produit} onCommandes={executer} feuilles={feuilles} />
+          <VueDetail key={choix.id} projectId={projectId} def={etat.definitions[choix.id]!} etat={etat} revision={revision} readOnly={readOnly} catalogue={catalogue.data?.documents} base={base} onProduit={produit} onCommandes={executer} feuilles={feuilles} />
         )}
         {choix?.type === "feuille" && etat.definitions[choix.id] && (
           <FeuilleDetail key={choix.id} def={etat.definitions[choix.id]!} etat={etat} revision={revision} readOnly={readOnly} projet={projet} catalogue={catalogue.data?.documents} base={base} onProduit={produit} onCommandes={executer} vues={vues} />
@@ -271,7 +273,46 @@ const nombre = (t: string) => {
   return Number.isFinite(v) && t.trim() !== "" ? v : null;
 };
 
-function VueDetail({ def, etat, revision, readOnly, catalogue, base, onProduit, onCommandes, feuilles }: { def: Definition; etat: ModeleAtelier; revision: number; readOnly: boolean; catalogue: DocumentDescriptor[] | undefined; base: string; onProduit: () => void; onCommandes: (c: Commande[], label: string, apres?: Choix) => Promise<void>; feuilles: Definition[] }) {
+/** Comparaison de la vue avec son dessin dans une version nommée (lot 7) : traits retirés / ajoutés. */
+function ComparaisonVue({ projectId, p, defId, vue, revision }: { projectId: string; p: ParamsVue; defId: string; vue: VueGeneree | null; revision: number }) {
+  const versions = useQuery({ queryKey: ["atelier-versions", projectId, revision], queryFn: () => api.getAtelierVersions(projectId), retry: false });
+  const [versionId, setVersionId] = useState("");
+  const version = useQuery({ queryKey: ["atelier-version", projectId, versionId], queryFn: () => api.getAtelierVersion(projectId, versionId), enabled: !!versionId, retry: false, staleTime: Infinity });
+  // Paramètres relus à chaque rendu : la clé sérialisée évite de régénérer la vue de la version pour rien.
+  const cleParams = JSON.stringify(p);
+  const cmp = useMemo(() => {
+    if (!vue || !version.data) return null;
+    const avant = genererVue(version.data.modele, JSON.parse(cleParams) as ParamsVue, defId);
+    return svgComparaisonVues(avant, vue, revision, `version « ${version.data.nom} » (r${version.data.revision})`);
+  }, [vue, version.data, cleParams, defId, revision]);
+  if (!versions.data?.versions.length) return null;
+  return (
+    <div className="docs-comparaison">
+      <label>
+        Comparer avec une version
+        <select value={versionId} onChange={(e) => setVersionId(e.target.value)} data-comparer="version">
+          <option value="">—</option>
+          {versions.data.versions.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.nom} (r{v.revision})
+            </option>
+          ))}
+        </select>
+      </label>
+      {version.isLoading && <p role="status">Chargement de la version…</p>}
+      {cmp && (
+        <>
+          <p className="docs-meta" data-comparaison-resultat={`${cmp.retirees}:${cmp.ajoutees}`}>
+            {cmp.retirees || cmp.ajoutees ? `${cmp.retirees} trait(s) retiré(s) (rouge), ${cmp.ajoutees} ajouté(s) (vert) depuis cette version.` : "Dessin identique à celui de cette version."}
+          </p>
+          <div className="docs-svg docs-svg-comparaison" aria-label="Comparaison de la vue" dangerouslySetInnerHTML={{ __html: cmp.svg }} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function VueDetail({ projectId, def, etat, revision, readOnly, catalogue, base, onProduit, onCommandes, feuilles }: { projectId: string; def: Definition; etat: ModeleAtelier; revision: number; readOnly: boolean; catalogue: DocumentDescriptor[] | undefined; base: string; onProduit: () => void; onCommandes: (c: Commande[], label: string, apres?: Choix) => Promise<void>; feuilles: Definition[] }) {
   const p = paramsDeDefinition(def);
   const empreinte = empreinteVue(etat, p);
   const { valeur: vue, enCours } = useGeneration<VueGeneree>(`${def.id}:${empreinte}`, () => genererVue(etat, p, def.id));
@@ -338,6 +379,7 @@ function VueDetail({ def, etat, revision, readOnly, catalogue, base, onProduit, 
         {enCours && <p role="status" className="docs-generation">Génération de la vue…</p>}
         {!enCours && vue && <div className="docs-svg" dangerouslySetInnerHTML={{ __html: svg }} />}
       </div>
+      <ComparaisonVue projectId={projectId} p={p} defId={def.id} vue={vue} revision={revision} />
       {vue && vue.avertissements.length > 0 && (
         <ul className="docs-avertissements" aria-label="Conventions et limites de la vue">
           {vue.avertissements.map((a) => <li key={a}>{a}</li>)}

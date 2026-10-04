@@ -18,7 +18,9 @@ import { and, desc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 import {
   appliquerLot,
+  collisions,
   commandesImportIfc,
+  etatARevision,
   CONTRAT_COMMANDES,
   ErreurCommande,
   referencesAReparer,
@@ -36,6 +38,7 @@ import { projectOr404, type AccessibleProject } from "../lib/owned-project.js";
 import { lockProject } from "../lib/step-rows.js";
 import { EchecLot, appliquerCommandesInternes, validerDansTransaction, type ResultatValidation } from "../lib/atelier-validation.js";
 import { lireIfc } from "../lib/atelier-ifc.js";
+import { journalDepuis } from "../lib/atelier-versions.js";
 
 export const atelierCommandsRouter = Router({ mergeParams: true });
 atelierCommandsRouter.use(requireAuth);
@@ -107,6 +110,26 @@ atelierCommandsRouter.get("/model", async (req, res) => {
     res.status(404).json({ erreur: "aucun-modele", revision: project.modelRevision, message: "Ce projet n'a pas encore de modèle typé." });
     return;
   }
+  // `?revision=n` (lot 7) : l'état exact à une révision passée, reconstitué par les inverses du journal (lecture seule).
+  const demandee = req.query["revision"];
+  if (demandee !== undefined && Number(demandee) !== project.modelRevision) {
+    const n = Number(demandee);
+    if (!Number.isInteger(n) || n < 0) {
+      invalide(res, "révision entière positive attendue", "revision");
+      return;
+    }
+    try {
+      const etat = etatARevision(charge.etat, project.modelRevision, await journalDepuis(db, project.id, n), n);
+      res.json({ revision: n, revisionCourante: project.modelRevision, lectureSeule: true, nativeId: charge.nativeId, modele: etat });
+    } catch (err) {
+      if (err instanceof ErreurCommande) {
+        res.status(404).json({ erreur: "revision-inaccessible", message: err.message, revisionCourante: project.modelRevision });
+        return;
+      }
+      throw err;
+    }
+    return;
+  }
   res.json({ revision: project.modelRevision, nativeId: charge.nativeId, modele: charge.etat });
 });
 
@@ -152,6 +175,7 @@ atelierCommandsRouter.get("/problemes", async (req, res) => {
     revision: project.modelRevision,
     references: charge ? referencesAReparer(charge.etat) : [],
     problemes: charge ? Object.values(charge.etat.problemes) : [],
+    collisions: charge ? collisions(charge.etat) : [],
     documentsPerimes: documents,
     bilan: {
       reviewStale: dctx.harmony.designReviewV62 ? dctx.analysis.stale : false,

@@ -383,6 +383,11 @@ check("accueil · validation technique distincte : badge « N réserves techniqu
 check("accueil · Mon parcours : les 6 phases du prototype, toutes terminées pour l'exemple (3/3, 5/5, 4/4, 4/4, 3/3, 2/2), « À poursuivre » et « Voir les étapes »", (await page.locator(".parcours-phase").count()) === 6 && (await page.locator(".parcours-phase-termine").count()) === 6 && (await page.locator(".parcours-phase-link small").allTextContents()).join(" ") === "3/3 5/5 4/4 4/4 3/3 2/2" && (await page.locator(".home-pursue a").count()) >= 1 && (await page.locator('.home-see-steps').count()) === 1);
 await page.locator('.parcours-phase-toggle').nth(1).click();
 check("accueil · Mon parcours : déplier « Programmer » → ses 5 étapes (04 à 08) avec leur état", (await page.locator(".parcours-phase-steps li").count()) === 5 && (await page.locator(".parcours-phase-steps .parcours-step-number").allTextContents()).join(" ") === "04 05 06 07 08");
+// Les vignettes se remplissent à l'arrivée de leurs données (parcelle, programme, plan) : on les attend.
+await page.waitForFunction(() => {
+  const c = [...document.querySelectorAll(".quick-link-card .quick-thumb")];
+  return c.length === 3 && /4 sommets/.test(c[0].getAttribute("aria-label") ?? "") && /4 familles/.test(c[1].getAttribute("aria-label") ?? "") && !!c[2].querySelector("svg");
+}, null, { timeout: 20000 }).catch(() => {});
 check("accueil · accès rapides illustrés par les données : parcelle 118 transmise (4 sommets), 4 familles de surfaces du programme, plan du RDC du modèle", (await page.locator(".quick-link-card").count()) === 3 && /Parcelle 118 : contour transmis, 4 sommets/.test(await page.locator(".quick-link-card").nth(0).locator(".quick-thumb").getAttribute("aria-label")) && /Programme : 4 familles de surfaces/.test(await page.locator(".quick-link-card").nth(1).locator(".quick-thumb").getAttribute("aria-label")) && (await page.locator(".quick-link-card").nth(2).locator(".quick-thumb svg").count()) === 1);
 // Disposition de la maquette : carte et « Mon parcours » côte à côte, « Accès rapides » sur toute la largeur (3 cartes en ligne).
 await page.setViewportSize({ width: 1536, height: 960 });

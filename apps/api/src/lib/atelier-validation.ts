@@ -4,11 +4,11 @@
  * révision de base, mêmes réducteurs que le navigateur, différentiel + journal + boîte de sortie +
  * `projects.model_revision + 1`, dans la transaction de l'appelant (verrou de ligne déjà pris).
  */
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, inArray, ne } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { appliquerLot, CONTRAT_COMMANDES, ErreurCommande, identifiantsCibles, type Commande, type Effets, type Enveloppe, type ModeleAtelier } from "@parcours/atelier-model";
 import type { db } from "../db/client.js";
-import { atelierCommands, projects, type JournalKind } from "../db/schema.js";
+import { atelierCommands, atelierLocks, projects, users, type JournalKind } from "../db/schema.js";
 import { EVENEMENT_COMMANDE_VALIDEE, enregistrerEvenement } from "./atelier-events.js";
 import { chargerModele, creerModeleVide, persisterDifferentiel } from "./atelier-modele.js";
 
@@ -65,6 +65,24 @@ export async function validerDansTransaction(tx: Tx, projectId: string, auteurId
       });
     }
     throw err;
+  }
+  // Verrous logiques fins (lot 7) : un objet ou un niveau réservé par un autre compte refuse le lot entier (423).
+  const touches = [...resultat.effets.crees, ...resultat.effets.modifies, ...resultat.effets.supprimes];
+  if (touches.length) {
+    const cles = new Set(touches);
+    for (const id of touches) for (const n of [charge.etat.objets[id]?.niveauId, resultat.etat.objets[id]?.niveauId]) if (n) cles.add(`niveau:${n}`);
+    const tenus = await tx
+      .select({ cle: atelierLocks.cle, motif: atelierLocks.motif, expiresAt: atelierLocks.expiresAt, authorId: atelierLocks.authorId, email: users.email })
+      .from(atelierLocks)
+      .innerJoin(users, eq(users.id, atelierLocks.authorId))
+      .where(and(eq(atelierLocks.projectId, projectId), gt(atelierLocks.expiresAt, new Date()), ne(atelierLocks.authorId, auteurId), inArray(atelierLocks.cle, [...cles])));
+    if (tenus.length) {
+      throw new EchecLot({
+        status: 423,
+        revision: courant.modelRevision,
+        reponse: { erreur: "verrou", message: `Verrouillé par ${tenus[0]!.email} jusqu'à ${tenus[0]!.expiresAt.toISOString()}${tenus[0]!.motif ? ` (${tenus[0]!.motif})` : ""}.`, verrous: tenus.map((t) => ({ cle: t.cle, motif: t.motif, auteur: t.email, expiresAt: t.expiresAt.toISOString() })) },
+      });
+    }
   }
   const revision = courant.modelRevision + 1;
   await persisterDifferentiel(tx, projectId, charge.etat, resultat.etat, revision);

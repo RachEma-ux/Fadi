@@ -99,6 +99,20 @@ export function Modifications({ projectId, instantane, readOnly, onDecider, onAl
           </details>
         ))
       )}
+      {!!bilan.data?.collisions?.length && (
+        <details className="mod-problemes mod-collisions" open>
+          <summary>
+            Collisions d'architecture <span className="nav-detail">{bilan.data.collisions.length}</span>
+          </summary>
+          <ul>
+            {bilan.data.collisions.slice(0, 100).map((c) => (
+              <li key={`${c.type}:${c.objets.join(",")}`} data-collision={c.type}>
+                {etat.objets[c.objets[0]!] ? <button type="button" className="lien" onClick={() => onAller(c.objets[0]!)}>{c.message}</button> : c.message}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       {bilan.data && (
         <div className="mod-bilan">
           <h4>Revue et documents</h4>

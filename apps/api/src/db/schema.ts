@@ -432,3 +432,76 @@ export const atelierOutbox = pgTable(
   },
   (t) => [index("atelier_outbox_pending_idx").on(t.projectId, t.processedAt)],
 );
+
+/** Version nommée (lot 7) : instantané immuable du modèle à une révision, avec son empreinte. */
+export const atelierVersions = pgTable("atelier_versions", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  nom: text("nom").notNull(),
+  description: text("description").notNull().default(""),
+  revision: integer("revision").notNull(),
+  empreinte: text("empreinte").notNull(),
+  modele: jsonb("modele").$type<Record<string, unknown>>().notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** Variante (lot 7) : un projet bifurqué d'un autre à une révision ; fusion par rejeu validé de son journal. */
+export const atelierVariants = pgTable("atelier_variants", {
+  projectId: text("project_id").primaryKey().references(() => projects.id, { onDelete: "cascade" }),
+  parentId: text("parent_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  nom: text("nom").notNull(),
+  /** Révision du tronc au moment de la bifurcation. */
+  forkRevision: integer("fork_revision").notNull(),
+  /** Révision de la variante juste après la bifurcation (son journal propre commence après). */
+  baseRevision: integer("base_revision").notNull(),
+  forkEmpreinte: text("fork_empreinte").notNull(),
+  statut: text("statut").$type<"ouverte" | "fusionnee">().notNull().default("ouverte"),
+  fusionRevision: integer("fusion_revision"),
+  fusionAt: timestamp("fusion_at", { withTimezone: true }),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** Volume immuable adressé par son contenu (SHA-256) : fichiers figés des publications. */
+export const volumes = pgTable("volumes", {
+  id: text("id").primaryKey(),
+  mime: text("mime").notNull(),
+  size: integer("size").notNull(),
+  content: bytea("content").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export interface DocumentPublie {
+  kind: string;
+  label: string;
+  fileName: string;
+  volumeId: string;
+  mime: string;
+  size: number;
+  inputHash: string;
+}
+
+/** Publication figée (lot 7) : version, versions des catalogues et documents produits à sa révision. */
+export const atelierPublications = pgTable("atelier_publications", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  versionId: text("version_id").notNull().references(() => atelierVersions.id, { onDelete: "restrict" }),
+  nom: text("nom").notNull(),
+  revision: integer("revision").notNull(),
+  empreinte: text("empreinte").notNull(),
+  catalogues: jsonb("catalogues").$type<Record<string, string>>().notNull(),
+  documents: jsonb("documents").$type<DocumentPublie[]>().notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** Verrou logique fin (lot 7) : objet (`<id>`) ou niveau (`niveau:<id>`) réservé par un compte jusqu'à une échéance. */
+export const atelierLocks = pgTable("atelier_locks", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  cle: text("cle").notNull(),
+  motif: text("motif").notNull().default(""),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [primaryKey({ columns: [t.projectId, t.cle] })]);

@@ -271,3 +271,12 @@ Deux à trois passages ; fourchettes.
 | Export IFC depuis l'Atelier (serveur, téléchargement, rapport) | 0,9 – 1,1 s |
 | Import IFC du P.118 depuis l'Atelier (envoi, lecture, 4 lots en transaction, relecture du modèle) | 3,4 – 3,9 s |
 | Validation IfcOpenShell 0.9.0 du P.118 (schéma, règles EXPRESS, échantillon géométrique) | quelques secondes en local ; 0 erreur |
+
+## Lot 7 — versions, variantes, publications (recette `apps/web/e2e/atelier-versions.mjs`)
+
+Banc : Chromium headless de Playwright, API construite servant l'application, PostgreSQL local, P.118 (1 753 objets).
+
+| Mesure | Valeur |
+| --- | --- |
+| Créer une variante du P.118 (copie intégrale reliée au tronc) → Atelier de la variante | 1,2 s |
+| Publier (version figée + 8 documents produits et rangés en volumes, dont la maquette IFC) | 3,1 s |

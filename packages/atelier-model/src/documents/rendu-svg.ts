@@ -5,6 +5,7 @@
 import type { Vec } from "../geometrie.js";
 import { EPAISSEUR_MM, GRIS_REMPLISSAGE, GRIS_TRAIT, ROUGE_A_REPARER, TIRETS_MM, type Primitive, type Trait } from "./dessin.js";
 import type { VueGeneree } from "./vues.js";
+import { comparerDessins } from "../versions.js";
 
 const n2 = (v: number) => {
   const r = Math.round(v * 100) / 100;
@@ -117,4 +118,36 @@ export function svgFeuille(f: import("./feuilles.js").FeuilleComposee): string {
     `</svg>`,
     "",
   ].join("\n");
+}
+
+/**
+ * Comparaison d'une vue entre deux états (lot 7) : le dessin courant en grisé, les traits disparus en rouge, les
+ * traits nouveaux en vert, sur les bornes réunies des deux dessins (même repère, même échelle).
+ */
+export function svgComparaisonVues(avant: VueGeneree, apres: VueGeneree, revision: number, libelleAvant: string): { svg: string; retirees: number; ajoutees: number } {
+  const d = comparerDessins(avant, apres);
+  const ba = avant.bornes;
+  const bb = apres.bornes;
+  const bornes = ba && bb ? { min: { x: Math.min(ba.min.x, bb.min.x), y: Math.min(ba.min.y, bb.min.y) }, max: { x: Math.max(ba.max.x, bb.max.x), y: Math.max(ba.max.y, bb.max.y) } } : (ba ?? bb);
+  const vue: VueGeneree = { ...apres, bornes };
+  const { largeur, hauteur } = tailleVueMm(vue);
+  const k = 1000 / vue.params.echelle;
+  const b = bornes ?? { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } };
+  const vers: VersFeuille = (p) => ({ x: MARGE + (p.x - b.min.x) * k, y: MARGE + (b.max.y - p.y) * k });
+  const H = hauteur + 12;
+  const legende = `Comparaison : ${libelleAvant} → révision ${revision} · ${d.retirees.length} trait(s) retiré(s) en rouge, ${d.ajoutees.length} ajouté(s) en vert`;
+  const svg = [
+    `<?xml version="1.0" encoding="UTF-8"?>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${n2(largeur)}mm" height="${n2(H)}mm" viewBox="0 0 ${n2(largeur)} ${n2(H)}" data-comparaison="${d.retirees.length}:${d.ajoutees.length}">`,
+    `<title>${echapperXml(`${vue.params.titre} · comparaison`)}</title>`,
+    `<style>.cmp-retire *{stroke:#b3261e!important;stroke-width:0.7!important;fill:none!important}.cmp-retire text{fill:#b3261e!important;stroke:none!important}.cmp-ajoute *{stroke:#1d7a46!important;stroke-width:0.7!important}.cmp-ajoute text{fill:#1d7a46!important;stroke:none!important}</style>`,
+    `<rect x="0" y="0" width="${n2(largeur)}" height="${n2(H)}" fill="#ffffff"/>`,
+    `<g opacity="0.3">${elementsSvg(apres.primitives, vers)}</g>`,
+    `<g class="cmp-retire">${elementsSvg(d.retirees, vers)}</g>`,
+    `<g class="cmp-ajoute">${elementsSvg(d.ajoutees, vers)}</g>`,
+    `<text x="${MARGE}" y="${n2(hauteur + 6)}" font-family="Helvetica, Arial, sans-serif" font-size="3" fill="#1a1a1a">${echapperXml(legende)}</text>`,
+    `</svg>`,
+    "",
+  ].join("\n");
+  return { svg, retirees: d.retirees.length, ajoutees: d.ajoutees.length };
 }

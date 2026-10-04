@@ -308,3 +308,65 @@ CREATE TABLE IF NOT EXISTS atelier_outbox (
   attempts integer NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS atelier_outbox_pending_idx ON atelier_outbox (project_id, processed_at);
+
+-- Lot 7 : versions nommées (instantanés immuables), variantes (projets bifurqués), publications figées, verrous
+-- logiques fins, volumes immuables (contenu adressé par SHA-256).
+CREATE TABLE IF NOT EXISTS atelier_versions (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  nom text NOT NULL,
+  description text NOT NULL DEFAULT '',
+  revision integer NOT NULL,
+  empreinte text NOT NULL,
+  modele jsonb NOT NULL,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS atelier_versions_nom_unique ON atelier_versions (project_id, lower(nom));
+
+CREATE TABLE IF NOT EXISTS atelier_variants (
+  project_id text PRIMARY KEY REFERENCES projects (id) ON DELETE CASCADE,
+  parent_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  nom text NOT NULL,
+  fork_revision integer NOT NULL,
+  base_revision integer NOT NULL,
+  fork_empreinte text NOT NULL,
+  statut text NOT NULL DEFAULT 'ouverte',
+  fusion_revision integer,
+  fusion_at timestamptz,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS atelier_variants_parent_idx ON atelier_variants (parent_id);
+
+CREATE TABLE IF NOT EXISTS volumes (
+  id text PRIMARY KEY,
+  mime text NOT NULL,
+  size integer NOT NULL,
+  content bytea NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS atelier_publications (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  version_id text NOT NULL REFERENCES atelier_versions (id) ON DELETE RESTRICT,
+  nom text NOT NULL,
+  revision integer NOT NULL,
+  empreinte text NOT NULL,
+  catalogues jsonb NOT NULL,
+  documents jsonb NOT NULL,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS atelier_publications_project_idx ON atelier_publications (project_id, created_at);
+
+CREATE TABLE IF NOT EXISTS atelier_locks (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  cle text NOT NULL,
+  motif text NOT NULL DEFAULT '',
+  author_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (project_id, cle)
+);

@@ -40,6 +40,13 @@ supprimés ; les projets qui n'avaient que lui ont été repris dans le modèle 
   DXF (2D)… » (lu ici en commandes : fond de plan `reference-plan` + esquisses et textes groupés, unité et repère
   explicites). Chaque échange affiche son rapport : lus, écrits ou importés, remarques, pertes. Matrice :
   `docs/atelier/matrice-echanges.md`.
+- `nouveau/panneaux/Versions.tsx` — versions, variantes, publications et verrous (lot 7) : version nommée (instantané
+  immuable, comparée à l'état courant avec mise en évidence 3D, restaurée en une nouvelle révision), variante (projet
+  bifurqué ; essai de fusion : objets affectés, conflits, rejeu à blanc ; fusion par rejeu validé, « la variante
+  prévaut » seulement sur choix explicite), publication figée (version, catalogues, documents en volumes SHA-256,
+  restaurable), verrous fins de la sélection ou du niveau. Le mode Documents compare une vue à son dessin dans une
+  version (traits retirés en rouge, ajoutés en vert) ; le panneau des modifications liste les collisions
+  d'architecture.
 - `AtelierHarmonyPage.tsx` — sous-page « Harmonie du bâtiment » de l'étape 10 (V8.4) ; `DesignReview.tsx` — bilan
   Harmonie du bâtiment conçu (flow-v62), calculé côté serveur depuis la projection du modèle typé.
 

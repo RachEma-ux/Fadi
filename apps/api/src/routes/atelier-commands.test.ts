@@ -17,7 +17,7 @@ const pt = (x: number, y: number) => ({ x, y, frame: "local", unit: "m" });
 
 async function resetDb() {
   await pool.query(
-    "TRUNCATE atelier_outbox, atelier_commands, atelier_site, atelier_problemes, atelier_references, atelier_groupes, atelier_calques, atelier_definitions, atelier_relations, atelier_objets, atelier_niveaux, parcels, produced_documents, project_comments, project_members, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE",
+    "TRUNCATE volumes, atelier_outbox, atelier_commands, atelier_site, atelier_problemes, atelier_references, atelier_groupes, atelier_calques, atelier_definitions, atelier_relations, atelier_objets, atelier_niveaux, parcels, produced_documents, project_comments, project_members, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE",
   );
 }
 beforeAll(resetDb);
@@ -375,4 +375,146 @@ describe("échanges IFC (lot 6)", () => {
     const apres = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; freshness: string | null }[];
     expect(apres.find((d) => d.kind === "atelier-ifc")!.freshness).toBe("perime");
   }, 60_000);
+});
+
+describe("versions, variantes, publications, verrous (lot 7)", () => {
+  const modele = async (client: ReturnType<typeof request.agent>, pid: string, revision?: number) => (await client.get(`/projects/${pid}/atelier/model${revision === undefined ? "" : `?revision=${revision}`}`)).body;
+  const envoyer = async (client: ReturnType<typeof request.agent>, pid: string, id: string, base: number, commands: unknown[]) => client.post(`/projects/${pid}/atelier/commands`).send(enveloppe(id, base, commands, id));
+
+  it("révision passée reconstituée exactement ; version nommée immuable, comparée, restaurée en une nouvelle révision", async () => {
+    const client = await registerAndLogin("versions@example.com");
+    const pid = await projetVide(client);
+    expect((await envoyer(client, pid, "v1", 0, [niveau, mur("m1"), mur("m2", 6)])).status).toBe(200);
+    const r1 = (await modele(client, pid)).modele;
+    expect((await envoyer(client, pid, "v2", 1, [{ type: "objet.modifier", params: { id: "m1", params: { epaisseur: m(0.3) } } }])).status).toBe(200);
+    expect((await envoyer(client, pid, "v3", 2, [{ type: "objet.supprimer", params: { id: "m2" } }])).status).toBe(200);
+    const passe = await modele(client, pid, 1);
+    expect(passe).toMatchObject({ revision: 1, revisionCourante: 3, lectureSeule: true });
+    expect(passe.modele).toEqual(r1);
+    expect((await modele(client, pid, 0)).modele.objets).toEqual({});
+    expect((await client.get(`/projects/${pid}/atelier/model?revision=9`)).status).toBe(404);
+    expect((await client.get(`/projects/${pid}/atelier/model?revision=-1`)).status).toBe(400);
+    // Version nommée à la révision 1, nom unique (casse ignorée).
+    const v = await client.post(`/projects/${pid}/atelier/versions`).send({ nom: "Esquisse", revision: 1 });
+    expect(v.status).toBe(201);
+    expect(v.body).toMatchObject({ nom: "Esquisse", revision: 1 });
+    expect((await client.post(`/projects/${pid}/atelier/versions`).send({ nom: "esquisse" })).status).toBe(409);
+    expect((await client.get(`/projects/${pid}/atelier/versions/${v.body.id}`)).body.modele).toEqual(r1);
+    const cmp = await client.get(`/projects/${pid}/atelier/comparer?de=v:${v.body.id}&a=courante`);
+    expect(cmp.body.difference).toMatchObject({ ajoutes: [], supprimes: [{ id: "m2" }], modifies: [{ id: "m1", champs: ["epaisseur"] }] });
+    // Restaurer : nouvelle révision, état identique à la version ; l'historique reste.
+    const rest = await client.post(`/projects/${pid}/atelier/versions/${v.body.id}/restaurer`).send({ requestId: "rest-1", baseRevision: 3 });
+    expect(rest.status).toBe(200);
+    expect(rest.body.revision).toBe(4);
+    expect((await modele(client, pid)).modele).toEqual(r1);
+    expect((await client.get(`/projects/${pid}/atelier/comparer?de=v:${v.body.id}`)).body.difference.identiques).toBe(true);
+    expect((await client.post(`/projects/${pid}/atelier/versions/${v.body.id}/restaurer`).send({ requestId: "rest-2", baseRevision: 4 })).body).toMatchObject({ revision: 4, inchange: true });
+    // Lecteur : consulter oui, créer non.
+    const lecteur = await registerAndLogin("versions-lecteur@example.com");
+    expect((await client.post(`/projects/${pid}/members`).send({ email: "versions-lecteur@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await lecteur.get(`/projects/${pid}/atelier/versions`)).body.versions).toHaveLength(1);
+    expect((await lecteur.post(`/projects/${pid}/atelier/versions`).send({ nom: "X" })).status).toBe(403);
+  });
+
+  it("variante créée, modifiée, fusionnée par rejeu validé ; conflit explicite entre deux comptes, fusion refusée puis acceptée « variante prioritaire »", async () => {
+    const owner = await registerAndLogin("variante@example.com");
+    const pid = await projetVide(owner);
+    expect((await envoyer(owner, pid, "t1", 0, [niveau, mur("m1"), mur("m2", 6)])).status).toBe(200);
+    const cree = await owner.post(`/projects/${pid}/atelier/variantes`).send({ nom: "Façade ouverte" });
+    expect(cree.status).toBe(201);
+    const vid = cree.body.id as string;
+    const infos = (await owner.get(`/projects/${vid}/atelier/variantes`)).body;
+    expect(infos.tronc).toMatchObject({ id: pid, nom: "Façade ouverte", forkRevision: 1, statut: "ouverte" });
+    const base = infos.tronc.baseRevision as number;
+    // Dans la variante : une porte sur m1, un nouveau mur créé sans identifiant (identifiant engendré), puis modifié.
+    expect((await envoyer(owner, vid, "var-1", base, [{ type: "ouverture.poser", params: { id: "p1", classe: "porte", murHoteId: "m1", position: 0.5, largeur: m(0.9), hauteur: m(2.1) } }, { type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 3), b: pt(4, 3), epaisseur: m(0.2), hauteur: m(3) } }])).status).toBe(200);
+    const nouveau = Object.keys((await modele(owner, vid)).modele.objets).find((k) => !["m1", "m2", "p1"].includes(k))!;
+    expect((await envoyer(owner, vid, "var-2", base + 1, [{ type: "objet.modifier", params: { id: nouveau, params: { epaisseur: m(0.25) } } }, { type: "objet.modifier", params: { id: "m2", params: { hauteur: m(2.8) } } }])).status).toBe(200);
+    let essai = (await owner.get(`/projects/${pid}/atelier/variantes/${vid}/fusion`)).body;
+    expect(essai.affectes).toEqual({ crees: [nouveau, "p1"].sort(), modifies: ["m2"], supprimes: [] });
+    expect(essai.conflits).toEqual([]);
+    expect(essai.rejeu).toEqual({ ok: true });
+    // Un second compte modifie m2 dans le tronc : conflit explicite.
+    const editeur = await registerAndLogin("variante-editeur@example.com");
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "variante-editeur@example.com", role: "editeur" })).status).toBe(201);
+    expect((await envoyer(editeur, pid, "t2", 1, [{ type: "objet.modifier", params: { id: "m2", params: { hauteur: m(3.5) } } }])).status).toBe(200);
+    essai = (await owner.get(`/projects/${pid}/atelier/variantes/${vid}/fusion`)).body;
+    expect(essai.conflits).toEqual([{ objetId: "m2", tronc: { label: "t2", revision: 2 }, variante: { label: "var-2", revision: base + 2 } }]);
+    const refus = await owner.post(`/projects/${pid}/atelier/variantes/${vid}/fusion`).send({ baseRevision: 2 });
+    expect(refus.status).toBe(409);
+    expect(refus.body).toMatchObject({ motif: "fusion", conflits: [{ objetId: "m2" }] });
+    const ok = await owner.post(`/projects/${pid}/atelier/variantes/${vid}/fusion`).send({ baseRevision: 2, strategie: "variante-prioritaire" });
+    expect(ok.status).toBe(200);
+    expect(ok.body).toMatchObject({ revision: 4, lots: 2 });
+    const tronc = (await modele(owner, pid)).modele;
+    const variante = (await modele(owner, vid)).modele;
+    expect(tronc.objets).toEqual(variante.objets);
+    expect((await owner.get(`/projects/${pid}/atelier/variantes`)).body.variantes[0]).toMatchObject({ id: vid, statut: "fusionnee", fusionRevision: 4 });
+    expect((await owner.post(`/projects/${pid}/atelier/variantes/${vid}/fusion`).send({ baseRevision: 4 })).status).toBe(409);
+    // Un étranger ne voit pas la variante.
+    const etranger = await registerAndLogin("variante-etranger@example.com");
+    expect((await etranger.get(`/projects/${pid}/atelier/variantes/${vid}/fusion`)).status).toBe(404);
+  });
+
+  it("publication figée (T12) : version, catalogues et documents retrouvés exactement ; restaurable après des modifications", async () => {
+    const client = await registerAndLogin("publication@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    const avant = (await modele(client, pid)).modele;
+    const pub = await client.post(`/projects/${pid}/atelier/publications`).send({ nom: "Permis de construire" });
+    expect(pub.status).toBe(201);
+    expect(pub.body).toMatchObject({ nom: "Permis de construire", revision: 1, catalogues: { contratCommandes: CONTRAT, schemaIfc: "IFC4X3_ADD2" } });
+    const kinds = (pub.body.documents as { kind: string }[]).map((d) => d.kind);
+    expect(kinds).toEqual(expect.arrayContaining(["atelier-ifc", "atelier-quantites", "atelier-tableau-pieces"]));
+    const detail = (await client.get(`/projects/${pid}/atelier/publications/${pub.body.id}`)).body;
+    expect(detail).toMatchObject({ revision: 1, version: { revision: 1 }, ecarts: [] });
+    // Chaque fichier est restitué tel qu'il a été figé (SHA-256 du contenu = identifiant du volume).
+    const crypto = await import("node:crypto");
+    for (const d of detail.documents as { volumeId: string; kind: string }[]) {
+      const f = await client.get(`/projects/${pid}/atelier/publications/${pub.body.id}/fichiers/${d.volumeId}`).buffer(true).parse((res, cb) => {
+        const parts: Buffer[] = [];
+        res.on("data", (c: Buffer) => parts.push(c));
+        res.on("end", () => cb(null, Buffer.concat(parts)));
+      });
+      expect(f.status).toBe(200);
+      expect(crypto.createHash("sha256").update(f.body as Buffer).digest("hex")).toBe(d.volumeId);
+    }
+    // Le tableau des pièces publié est celui que le catalogue produit à la même révision.
+    const csvPublie = detail.documents.find((d: { kind: string }) => d.kind === "atelier-tableau-pieces");
+    const csvCatalogue = await client.get(`/projects/${pid}/documents/atelier/tableaux/pieces.csv`);
+    expect(crypto.createHash("sha256").update(csvCatalogue.text).digest("hex")).toBe(csvPublie.volumeId);
+    // La conception continue ; la publication se restaure avec sa version.
+    const premierMur = Object.keys(avant.objets).find((k) => avant.objets[k].classe === "mur")!;
+    expect((await envoyer(client, pid, "apres-pub", 1, [{ type: "objet.supprimer", params: { id: premierMur, avecHeberges: true } }])).status).toBe(200);
+    const rest = await client.post(`/projects/${pid}/atelier/publications/${pub.body.id}/restaurer`).send({ requestId: "rest-pub", baseRevision: 2 });
+    expect(rest.status).toBe(200);
+    expect(rest.body).toMatchObject({ revision: 3, publication: pub.body.id, ecartsCatalogues: [] });
+    expect((await modele(client, pid)).modele.objets).toEqual(avant.objets);
+    expect((await client.get(`/projects/${pid}/atelier/publications`)).body.publications).toHaveLength(1);
+  }, 60_000);
+
+  it("verrous logiques fins : objet et niveau réservés refusent les lots d'un autre compte (423), levés par l'auteur ou le propriétaire", async () => {
+    const owner = await registerAndLogin("verrous@example.com");
+    const pid = await projetVide(owner);
+    expect((await envoyer(owner, pid, "l1", 0, [niveau, mur("m1"), mur("m2", 6)])).status).toBe(200);
+    const editeur = await registerAndLogin("verrous-editeur@example.com");
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "verrous-editeur@example.com", role: "editeur" })).status).toBe(201);
+    expect((await owner.post(`/projects/${pid}/atelier/verrous`).send({ cles: ["m1"], motif: "Reprise structurelle" })).status).toBe(201);
+    expect((await owner.post(`/projects/${pid}/atelier/verrous`).send({ cles: ["inconnu"] })).status).toBe(404);
+    const refus = await envoyer(editeur, pid, "e1", 1, [{ type: "objet.modifier", params: { id: "m1", params: { epaisseur: m(0.3) } } }]);
+    expect(refus.status).toBe(423);
+    expect(refus.body).toMatchObject({ erreur: "verrou", verrous: [{ cle: "m1", auteur: "verrous@example.com", motif: "Reprise structurelle" }] });
+    expect((await envoyer(editeur, pid, "e2", 1, [{ type: "objet.modifier", params: { id: "m2", params: { epaisseur: m(0.3) } } }])).status).toBe(200);
+    expect((await envoyer(owner, pid, "o1", 2, [{ type: "objet.modifier", params: { id: "m1", params: { epaisseur: m(0.25) } } }])).status).toBe(200);
+    expect((await editeur.post(`/projects/${pid}/atelier/verrous`).send({ cles: ["m1"] })).status).toBe(423);
+    expect((await editeur.delete(`/projects/${pid}/atelier/verrous/m1`)).status).toBe(403);
+    // Niveau entier : aucun objet créé ni modifié dessus par autrui.
+    expect((await editeur.post(`/projects/${pid}/atelier/verrous`).send({ cles: ["niveau:rdc"], minutes: 5 })).status).toBe(201);
+    expect((await envoyer(owner, pid, "o2", 3, [mur("m3", 12)])).status).toBe(423);
+    const liste = (await owner.get(`/projects/${pid}/atelier/verrous`)).body.verrous;
+    expect(liste.map((v: { cle: string; moi: boolean }) => [v.cle, v.moi])).toEqual([["m1", true], ["niveau:rdc", false]]);
+    expect((await owner.delete(`/projects/${pid}/atelier/verrous/niveau%3Ardc`)).status).toBe(204);
+    expect((await envoyer(owner, pid, "o3", 3, [mur("m3", 12)])).status).toBe(200);
+    expect((await owner.get(`/projects/${pid}/atelier/collisions`)).body.collisions).toEqual([]);
+  });
 });
