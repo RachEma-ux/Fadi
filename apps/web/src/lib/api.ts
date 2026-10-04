@@ -831,6 +831,20 @@ export const api = {
     request<Project>(`/examples/${exampleId}/import`, { method: "POST" }),
 
   // --- Atelier typé (chantier DrawAll, cahier des charges §5.4) ---
+  getAtelierModelARevision: (projectId: string, revision: number) => request<AtelierModelResponse & { revisionCourante: number; lectureSeule: true }>(`/projects/${projectId}/atelier/model?revision=${revision}`),
+  getAtelierHistoriqueObjet: (projectId: string, objetId: string) => request<{ objetId: string; existe: boolean; classe: string | null; entrees: { journalId: string; revision: number; kind: string; label: string; action: "cree" | "modifie" | "supprime"; auteur: string | null; date: string; successeurs: string[] }[] }>(`/projects/${projectId}/atelier/objets/${encodeURIComponent(objetId)}/historique`),
+  getAtelierReferencesExternes: (projectId: string, traits = true) => request<{ revision: number; references: ReferenceExterneEtat[] }>(`/projects/${projectId}/atelier/references-externes${traits ? "" : "?traits=non"}`),
+  getAtelierMiseAJourReference: (projectId: string, refId: string) =>
+    request<{
+      epinglee: { id: string; nom: string; revision: number; empreinte: string };
+      derniere: { id: string; nom: string; revision: number; empreinte: string };
+      niveauSourcePresent: boolean;
+      identique: boolean;
+      differences: { ajoutes: number; supprimes: number; modifies: number; site: boolean; niveaux: { ajoutes: string[]; supprimes: string[]; modifies: string[] }; objets: { id: string; classe: string; niveauId: string | null; action: string; champs?: string[] }[] };
+      representation: { avant: string; apres: string; change: boolean; traitsAvant: number; traitsApres: number };
+    }>(`/projects/${projectId}/atelier/references-externes/${encodeURIComponent(refId)}/mise-a-jour`),
+  apercuRepriseAtelier: (projectId: string, body: RepriseDemande) => request<{ rapport: import("@parcours/atelier-model").RapportReprise; vide: boolean; ajouts: Record<string, number> }>(`/projects/${projectId}/atelier/reprise/apercu`, { method: "POST", body: JSON.stringify(body) }),
+  repriseAtelier: (projectId: string, body: RepriseDemande & { empreinteSource: string; requestId: string; baseRevision: number }) => request<{ revision: number }>(`/projects/${projectId}/atelier/reprise`, { method: "POST", body: JSON.stringify(body) }),
   getAtelierModel: (projectId: string) => request<AtelierModelResponse>(`/projects/${projectId}/atelier/model`),
   getAtelierJournal: (projectId: string, apres: number) => request<AtelierJournalResponse>(`/projects/${projectId}/atelier/journal?apres=${apres}`),
   // --- Lot 7 : versions, variantes, publications, verrous, collisions ---
@@ -845,7 +859,7 @@ export const api = {
   postAtelierFusion: (troncId: string, varianteId: string, body: { baseRevision: number; strategie: "refuser-conflits" | "variante-prioritaire" }) => request<{ revision: number; lots: number }>(`/projects/${troncId}/atelier/variantes/${encodeURIComponent(varianteId)}/fusion`, { method: "POST", body: JSON.stringify(body) }),
   getAtelierPublications: (projectId: string) => request<{ publications: AtelierPublicationResume[] }>(`/projects/${projectId}/atelier/publications`),
   postAtelierPublication: (projectId: string, body: { nom: string; versionId?: string }) => request<AtelierPublication>(`/projects/${projectId}/atelier/publications`, { method: "POST", body: JSON.stringify(body) }),
-  getAtelierPublication: (projectId: string, publicationId: string) => request<AtelierPublication & { base: string; ecarts: { catalogue: string; publie: string; actuel: string }[]; version: { nom: string; revision: number; empreinte: string } }>(`/projects/${projectId}/atelier/publications/${encodeURIComponent(publicationId)}`),
+  getAtelierPublication: (projectId: string, publicationId: string) => request<AtelierPublication & { base: string; ecarts: { catalogue: string; publie: string; actuel: string }[]; version: { nom: string; revision: number; empreinte: string }; niveaux?: { id: string; nom: string }[] }>(`/projects/${projectId}/atelier/publications/${encodeURIComponent(publicationId)}`),
   restaurerAtelierPublication: (projectId: string, publicationId: string, body: { requestId: string; baseRevision: number }) => request<{ revision: number; inchange?: boolean; ecartsCatalogues?: { catalogue: string }[] }>(`/projects/${projectId}/atelier/publications/${encodeURIComponent(publicationId)}/restaurer`, { method: "POST", body: JSON.stringify(body) }),
   getAtelierVerrous: (projectId: string) => request<{ verrous: AtelierVerrou[] }>(`/projects/${projectId}/atelier/verrous`),
   postAtelierVerrous: (projectId: string, body: { cles: string[]; motif?: string; minutes?: number }) => request<{ cles: string[]; expiresAt: string }>(`/projects/${projectId}/atelier/verrous`, { method: "POST", body: JSON.stringify(body) }),
@@ -935,6 +949,10 @@ export interface AtelierProposition {
   revisionResultat: number | null;
   createdAt: string;
 }
+export interface RepriseDemande {
+  source: { projectId: string; versionId?: string };
+  options: { familles: ("architecture" | "espaces" | "dessin" | "documents")[]; niveaux?: string[]; site?: boolean; hypotheses?: boolean; sources?: boolean; structure?: boolean; homonymes?: "reutiliser" | "renommer" };
+}
 export interface AtelierVersion {
   id: string;
   nom: string;
@@ -991,4 +1009,15 @@ export interface AtelierProblemesResponse {
   problemes: import("@parcours/atelier-model").Probleme[];
   documentsPerimes: { kind: string; label: string }[];
   bilan: { reviewStale: boolean; reserves: number; reservesPrioritaires: number; ecartsAudit: number };
+}
+
+/** Référence externe (DA-05-11) telle que l'API la décrit : paramètres épinglés, état, traits dans le repère du projet. */
+export interface ReferenceExterneEtat {
+  id: string;
+  nom: string;
+  params: { nom: string; projetSourceId: string; publicationId: string; revisionSource: number; empreinteSource: string; niveauSourceId: string; niveauId: string; position: { x: number; y: number }; angle: { value: number; unit: string }; calqueId: string | null };
+  etat: "a-jour" | "plus-recente" | "inaccessible";
+  source: { nom: string } | null;
+  derniere: { id: string; nom: string; revision: number; empreinte: string; createdAt: string } | null;
+  representation: { traits: { a: { x: number; y: number }; b: { x: number; y: number }; coupe: boolean }[]; empreinte: string; niveauSourceNom: string | null } | null;
 }

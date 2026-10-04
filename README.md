@@ -72,6 +72,7 @@ BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-documents.mjs   # deriv
 BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-echanges.mjs    # IFC 4.3 export / import, DXF import, exchange reports
 BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-versions.mjs    # named versions, variants and merge, publications, fine locks
 BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-automatisation.mjs # scripts and the controlled-loop assistant
+BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-complements.mjs    # object history, past states, model reuse, external references
 ```
 
 IFC corpus (lot 6), validated with IfcOpenShell (`pip install ifcopenshell==0.9.0 pytest`), as in CI:

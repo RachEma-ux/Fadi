@@ -226,6 +226,11 @@ browser (preview) and on the server (files, checks), and every write goes throug
   user's rights and refusals; the assistant runs a controlled loop (proposal → dry run → bounded self-correction,
   at most 3 iterations → preview → explicit approval) and writes nothing before approval. Without a language-model
   provider (an owner decision), proposals come from Fadi's deterministic rules, including Harmonie's reserves.
+- **Complements (after lot 9)** — per-object history read from the journal; past revisions and named versions shown
+  read-only in the Atelier; model reuse (`modele.reprendre`: remapped additions planned by a pure function,
+  fingerprint of the previewed source required); external references pin a *publication* of another project and are
+  drawn as derived, read-only strokes (never copied into the model), with access, fingerprint and cycle checks inside
+  the command transaction.
 
 Lots, decisions and acceptance records: `docs/atelier/lots/`, `docs/atelier/decisions.md`, `docs/atelier/recette.md`.
 

@@ -18,16 +18,17 @@ déclaré « disponible » : cet état n'est posé qu'après votre acceptation (
 | 7 | Versions nommées, variantes et fusion par rejeu validé, publications figées, verrous fins, collisions, comparaison de vues | `lots/lot-7.md` |
 | 8 | Scripts versionnés (mêmes commandes, mêmes refus), assistant à boucle contrôlée (règles de Fadi, accord explicite) | `lots/lot-8.md` |
 | 9 | Recette : essai « calcul tardif » ajouté, aide située relue et testée, fiches mises à jour, protocole T17 / T18, documentation | `lots/lot-9.md`, ce dossier, `protocole-mesures.md` |
+| + | Compléments : historique d'un objet, consultation d'un état passé, réutilisation de modèle, références externes | `lots/complements.md` |
 
-Décisions du chef de projet : D-001 à D-021 (`decisions.md`). Fiches : 69 à l'état « prototype » (code présent,
-preuve liée), 2 « spécifiées » non réalisées (DA-05-11 références externes, DA-21-09 réutilisation sélective).
+Décisions du chef de projet : D-001 à D-022 (`decisions.md`). Fiches : les 71 à l'état « prototype » (code présent,
+preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leurs écarts déclarés.
 
 ## 2. Contrôles automatiques (état au 4 octobre 2026)
 
 | Contrôle | Résultat |
 | --- | --- |
 | `npm run typecheck` (dont `scripts/check-module-deps.mjs`, T14) | ✅ |
-| `npm test` | ✅ core-geometry 47 · domain-model 95 · **atelier-model 102** · **API 76** · web 21 |
+| `npm test` | ✅ core-geometry 47 · domain-model 95 · **atelier-model 107** · **API 79** · web 21 |
 | `npm run build` | ✅ |
 | Scénario complet `apps/web/e2e/parcours-scenario.mjs` | ✅ 326 contrôles, « Scénario conforme. » |
 | Recette Atelier `atelier-nouveau.mjs` (lots 3–4) | ✅ 41 contrôles |
@@ -35,6 +36,7 @@ preuve liée), 2 « spécifiées » non réalisées (DA-05-11 références exter
 | Recette échanges `atelier-echanges.mjs` (lot 6) | ✅ 17 contrôles |
 | Recette versions `atelier-versions.mjs` (lot 7) | ✅ 24 contrôles |
 | Recette automatisation `atelier-automatisation.mjs` (lot 8) | ✅ 14 contrôles |
+| Recette compléments `atelier-complements.mjs` | ✅ 21 contrôles (captures `10-reprise.png`, `10-reference-externe.png`) |
 | Corpus IFC validé par IfcOpenShell 0.9.0 (`apps/api/test-corpus/ifc/`) | ✅ petit modèle (référence octet pour octet), P.118, P.118 réimporté puis réexporté |
 | Sauvegarde puis restauration vérifiées (`scripts/verify-restore.sh`, T11) | ✅ en CI ; en local sur la base de développement (journal, versions, publications, volumes) |
 | axe-core (aucune violation critique ou sérieuse) | ✅ à chaque écran des recettes, ordinateur et téléphone |
@@ -118,7 +120,8 @@ Toutes ces étapes tournent dans `.github/workflows/ci.yml` (jobs `validate`, `e
   aux coupes et façades.
 - Échanges : annotations, matériaux et types IFC à l'import ; `IfcMaterialLayerSet` ; blocs DXF, `XREF`, hachures,
   cotes ; DWG.
-- Versions : consultation plein écran d'une révision passée (l'API la sert) ; seconde fusion d'une même variante ;
-  réutilisation sélective d'un modèle (DA-21-09) ; références externes (DA-05-11) ; historique d'un objet (DA-21-06 -d).
+- Versions : seconde fusion d'une même variante.
+- Références externes : accrochage sur la source, représentation dans les documents et la 3D, cache hors ligne
+  persistant, réparation d'une référence inaccessible. Réutilisation : sélection spatiale, bibliothèques partagées.
 - Automatisation : génération libre (fournisseur non choisi) ; éditeur guidé de scripts.
 - Mesures T17 / T18 sur utilisateurs et appareils réels : protocole fourni, mesure à faire.

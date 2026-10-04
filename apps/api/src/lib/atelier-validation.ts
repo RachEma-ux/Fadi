@@ -11,6 +11,7 @@ import type { db } from "../db/client.js";
 import { atelierCommands, atelierLocks, projects, users, type JournalKind } from "../db/schema.js";
 import { EVENEMENT_COMMANDE_VALIDEE, enregistrerEvenement } from "./atelier-events.js";
 import { chargerModele, creerModeleVide, persisterDifferentiel } from "./atelier-modele.js";
+import { controlerRattachements } from "./atelier-refexterne.js";
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -52,6 +53,11 @@ export async function validerDansTransaction(tx: Tx, projectId: string, auteurId
   if (enveloppe.baseRevision !== courant.modelRevision) {
     const conflits = await conflitsDepuis(tx, projectId, enveloppe.baseRevision, identifiantsCibles(enveloppe), charge.etat);
     throw new EchecLot({ reponse: { erreur: "conflit", motif: "revision", baseRevision: enveloppe.baseRevision, revisionCourante: courant.modelRevision, conflits }, status: 409, revision: courant.modelRevision });
+  }
+  // Références externes (DA-05-11) : droits sur la source, publication épinglée, absence de cycle.
+  if (enveloppe.commands.some((c) => c.type === "refexterne.rattacher")) {
+    const refus = await controlerRattachements(tx, projectId, auteurId, enveloppe.commands);
+    if (refus) throw new EchecLot({ ...refus, revision: courant.modelRevision });
   }
   let resultat;
   try {

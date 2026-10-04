@@ -20,6 +20,8 @@ export interface PropsPlan2D {
   onTerminer: () => void;
   /** Manipulation directe (glisser la sélection) : un lot `transformer.deplacer`. */
   onCommandes: (commandes: Commande[], label: string) => void;
+  /** Références externes (DA-05-11) : traits déjà convertis dans le repère local du projet, en gris, non sélectionnables. */
+  externes?: readonly { id: string; niveauId: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number }; coupe: boolean }[] }[];
 }
 
 /** Ordre de dessin : surfaces d'abord, puis structure, puis annotations. */
@@ -30,7 +32,7 @@ const LIBELLE_ACCROCHE: Record<string, string> = { extremite: "Extrémité", mil
 const OUTILS_CONTOUR = new Set(["dalle", "toiture", "zone", "espace", "solide", "polygone", "hachure", "polyligne", "spline", "garde-corps"]);
 const OUTILS_SEGMENT = new Set(["mur", "escalier", "ligne", "construction", "cotation", "mesurer", "deplacer", "copier", "miroir", "etirer", "rectangle", "cercle", "arc", "tourner", "echelle"]);
 
-export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes }: PropsPlan2D) {
+export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes, externes = [] }: PropsPlan2D) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [taille, setTaille] = useState({ w: 800, h: 600 });
   const [accroche, setAccroche] = useState<Accroche | null>(null);
@@ -286,6 +288,15 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
           </defs>
           <rect x={0} y={0} width={taille.w} height={taille.h} fill="url(#grille-plan)" pointerEvents="none" />
         </>
+      )}
+      {externes.some((x) => x.niveauId === ui.niveauId) && (
+        <g className="plan-externes" pointerEvents="none" aria-hidden="true">
+          {externes
+            .filter((x) => x.niveauId === ui.niveauId)
+            .map((x) => (
+              <path key={x.id} data-reference-externe={x.id} d={x.traits.map((t) => { const a = pr.vers(t.a); const b = pr.vers(t.b); return `M${a.x.toFixed(1)} ${a.y.toFixed(1)}L${b.x.toFixed(1)} ${b.y.toFixed(1)}`; }).join("")} />
+            ))}
+        </g>
       )}
       <g className="plan-objets">
         {objets.map((o) => (

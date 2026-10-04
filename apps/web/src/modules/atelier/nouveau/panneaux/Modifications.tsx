@@ -15,6 +15,8 @@ export interface PropsModifications {
   readOnly: boolean;
   onDecider: (requestId: string, decision: "rejouer" | "abandonner") => void;
   onAller: (objetId: string) => void;
+  /** Ouvre l'état du modèle à une révision passée, en lecture seule. */
+  onConsulterRevision?: (revision: number) => void;
 }
 
 const ETATS_LOT: Record<string, string> = { local: "En attente d'envoi", synchronisation: "Envoi…", synchronise: "Enregistré", conflit: "Conflit", refuse: "Refusé" };
@@ -29,7 +31,7 @@ const TYPES: Record<TypeProbleme, string> = {
   import: "Import",
 };
 
-export function Modifications({ projectId, instantane, readOnly, onDecider, onAller }: PropsModifications) {
+export function Modifications({ projectId, instantane, readOnly, onDecider, onAller, onConsulterRevision }: PropsModifications) {
   const etat: ModeleAtelier = instantane.etat;
   const bilan = useQuery({ queryKey: ["atelier-problemes", projectId, instantane.revisionServeur], queryFn: () => api.getAtelierProblemes(projectId), retry: false, enabled: instantane.chargement === "pret" });
   const lots = [...instantane.lots].reverse();
@@ -71,6 +73,11 @@ export function Modifications({ projectId, instantane, readOnly, onDecider, onAl
           {journal.map((j) => (
             <li key={j.id}>
               <span className={`journal-kind journal-${j.kind}`}>{j.kind === "annulation" ? "Annulé" : j.kind === "retablissement" ? "Rétabli" : "Fait"}</span> {j.label} <span className="nav-detail">r{j.resultRevision}</span>
+              {onConsulterRevision && j.resultRevision < instantane.revisionServeur && (
+                <button type="button" className="lien journal-consulter" data-consulter-revision={j.resultRevision} onClick={() => onConsulterRevision(j.resultRevision)}>
+                  Consulter
+                </button>
+              )}
             </li>
           ))}
         </ol>

@@ -52,6 +52,11 @@ supprimés ; les projets qui n'avaient que lui ont été repris dans le modèle 
   hypothèses, essais, aperçu des objets affectés et des documents à recalculer → accord explicite) ; scripts de la
   bibliothèque versionnée (intégrés et du projet) essayés à blanc puis exécutés par les mêmes commandes et les mêmes
   refus qu'un geste.
+- `nouveau/panneaux/Reprise.tsx` — réutilisation d'une partie d'un autre modèle (familles, niveaux, données de projet
+  cochées, homonymes) : aperçu sans écriture, puis reprise en une révision (compléments, D-022).
+- `nouveau/panneaux/ReferencesExternes.tsx` — références externes : publication d'un autre projet superposée en gris
+  sur un niveau (`plan2d` `.plan-externes`), état, différences, épinglage, détachement. L'inspecteur montre
+  l'historique de l'objet sélectionné ; journal et versions offrent « Consulter » (état passé en lecture seule).
 - `AtelierHarmonyPage.tsx` — sous-page « Harmonie du bâtiment » de l'étape 10 (V8.4) ; `DesignReview.tsx` — bilan
   Harmonie du bâtiment conçu (flow-v62), calculé côté serveur depuis la projection du modèle typé.
 

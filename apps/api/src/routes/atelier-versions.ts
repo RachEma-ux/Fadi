@@ -11,7 +11,10 @@
  * - `GET /publications`, `POST /publications`, `GET /publications/:id`, `GET /publications/:id/fichiers/:volume`,
  *   `POST /publications/:id/restaurer` : publications figées (version, catalogues, documents en volumes) ;
  * - `GET /verrous`, `POST /verrous`, `DELETE /verrous/:cle` : verrous logiques fins (objet ou `niveau:<id>`) ;
- * - `GET /collisions` : contrôles d'architecture du modèle courant.
+ * - `GET /collisions` : contrôles d'architecture du modèle courant ;
+ * - `GET /objets/:id/historique` : historique d'un objet (journal) ;
+ * - `POST /reprise/apercu`, `POST /reprise` : réutilisation d'une partie d'un autre modèle (DA-21-09) ;
+ * - `GET /references-externes`, `GET /references-externes/:id/mise-a-jour` : références externes (DA-05-11).
  */
 import { randomUUID } from "node:crypto";
 import { Router, type Request, type Response } from "express";
@@ -26,19 +29,25 @@ import {
   commandeRestaurerVers,
   comparerModeles,
   empreinteDe,
+  modeleVide,
+  planifierReprise,
+  REFERENCE_EXTERNE,
+  representationReferenceExterne,
   type Enveloppe,
+  type ParamsReferenceExterne,
   type ModeleAtelier,
 } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { atelierLocks, atelierPublications, atelierVariants, atelierVersions, projects, users, volumes } from "../db/schema.js";
+import { atelierCommands, atelierLocks, atelierPublications, atelierVariants, atelierVersions, projects, users, volumes } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { traiterEvenements } from "../lib/atelier-events.js";
-import { chargerModele } from "../lib/atelier-modele.js";
+import { chargerModele, creerModeleVide } from "../lib/atelier-modele.js";
 import { EchecLot, validerDansTransaction, type ResultatValidation } from "../lib/atelier-validation.js";
 import { cataloguesActuels, creerVersion, effetsJournal, journalDepuis, modeleARevision, produireDocumentsPublies } from "../lib/atelier-versions.js";
 import { loadProjectAccess, projectOr404, roleAllows, type AccessibleProject } from "../lib/owned-project.js";
 import { exportProjectArchive, importProjectArchive } from "../lib/project-archive.js";
 import { lockProject } from "../lib/step-rows.js";
+import { etatReferences, modelesPourMiseAJour } from "../lib/atelier-refexterne.js";
 
 export const atelierVersionsRouter = Router({ mergeParams: true });
 atelierVersionsRouter.use(requireAuth);
@@ -374,7 +383,9 @@ atelierVersionsRouter.get("/publications/:publicationId", async (req, res) => {
   const version = (await db.select({ nom: atelierVersions.nom, revision: atelierVersions.revision, empreinte: atelierVersions.empreinte }).from(atelierVersions).where(eq(atelierVersions.id, pub.versionId)))[0];
   const actuels = cataloguesActuels(null);
   const ecarts = Object.keys(pub.catalogues).filter((k) => k !== "modeleAtelier" && actuels[k] !== undefined && actuels[k] !== pub.catalogues[k]).map((k) => ({ catalogue: k, publie: pub.catalogues[k], actuel: actuels[k] }));
-  res.json({ ...pub, createdAt: pub.createdAt.toISOString(), version, cataloguesActuels: actuels, ecarts, base: `/projects/${project.id}/atelier/publications/${pub.id}/fichiers` });
+  const instantane = (await db.select({ modele: atelierVersions.modele }).from(atelierVersions).where(eq(atelierVersions.id, pub.versionId)))[0]?.modele as unknown as ModeleAtelier | undefined;
+  const niveaux = Object.values(instantane?.niveaux ?? {}).sort((a, b) => a.elevation - b.elevation).map((n) => ({ id: n.id, nom: n.nom }));
+  res.json({ ...pub, createdAt: pub.createdAt.toISOString(), version, niveaux, cataloguesActuels: actuels, ecarts, base: `/projects/${project.id}/atelier/publications/${pub.id}/fichiers` });
 });
 
 atelierVersionsRouter.get("/publications/:publicationId/fichiers/:volumeId", async (req, res) => {
@@ -473,4 +484,137 @@ atelierVersionsRouter.get("/collisions", async (req, res) => {
   if (!project) return;
   const charge = await chargerModele(db, project.id);
   res.json({ revision: project.modelRevision, collisions: charge ? collisions(charge.etat) : [] });
+});
+
+// ---------------------------------------------------------------------------
+// Historique d'un objet (DA-21-06 -d)
+// ---------------------------------------------------------------------------
+
+atelierVersionsRouter.get("/objets/:objetId/historique", async (req, res) => {
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  const id = req.params["objetId"] as string;
+  const motif = JSON.stringify([id]);
+  const rows = await db
+    .select({ id: atelierCommands.id, kind: atelierCommands.kind, label: atelierCommands.label, resultRevision: atelierCommands.resultRevision, effets: atelierCommands.effets, authorId: atelierCommands.authorId, createdAt: atelierCommands.createdAt, inverseOf: atelierCommands.inverseOf })
+    .from(atelierCommands)
+    .where(and(eq(atelierCommands.projectId, project.id), sql`(${atelierCommands.effets}->'crees' @> ${motif}::jsonb OR ${atelierCommands.effets}->'modifies' @> ${motif}::jsonb OR ${atelierCommands.effets}->'supprimes' @> ${motif}::jsonb)`))
+    .orderBy(asc(atelierCommands.resultRevision));
+  const noms = await auteurs(rows.map((r) => r.authorId));
+  const charge = await chargerModele(db, project.id);
+  const entrees = rows.map((r) => {
+    const ef = r.effets as { crees?: string[]; modifies?: string[]; supprimes?: string[] };
+    const action = ef.crees?.includes(id) ? "cree" : ef.supprimes?.includes(id) ? "supprime" : "modifie";
+    // Une suppression qui crée d'autres objets dans le même lot (scission, décomposition) relie l'objet à ses successeurs.
+    const successeurs = action === "supprime" ? (ef.crees ?? []).slice(0, 50) : [];
+    return { journalId: r.id, revision: r.resultRevision, kind: r.kind, label: r.label, action, auteur: noms.get(r.authorId) ?? null, date: r.createdAt.toISOString(), successeurs };
+  });
+  res.json({ objetId: id, existe: !!charge?.etat.objets[id], classe: charge?.etat.objets[id]?.classe ?? null, entrees });
+});
+
+// ---------------------------------------------------------------------------
+// Réutilisation de modèle (DA-21-09)
+// ---------------------------------------------------------------------------
+
+const repriseSchema = z.object({
+  source: z.object({ projectId: z.string().min(1).max(64), versionId: z.string().max(64).optional() }),
+  options: z.object({
+    familles: z.array(z.enum(["architecture", "espaces", "dessin", "documents"])).max(4),
+    niveaux: z.array(z.string().max(200)).max(200).optional(),
+    site: z.boolean().optional(),
+    hypotheses: z.boolean().optional(),
+    sources: z.boolean().optional(),
+    structure: z.boolean().optional(),
+    homonymes: z.enum(["reutiliser", "renommer"]).optional(),
+  }),
+  empreinteSource: z.string().max(64).optional(),
+  requestId: z.string().min(1).max(64).optional(),
+  baseRevision: z.number().int().min(0).optional(),
+});
+
+type Refus = { status: number; reponse: Record<string, unknown> };
+
+async function planDeReprise(req: Request, cible: AccessibleProject, corps: z.infer<typeof repriseSchema>, etatCible: ModeleAtelier): Promise<ReturnType<typeof planifierReprise> | Refus> {
+  // Lire suffit sur la source (R13) ; un projet inaccessible est inconnu (404).
+  const source = await loadProjectAccess(corps.source.projectId, req.user!.id);
+  if (!source || source.id === cible.id) return { status: 404, reponse: { erreur: "source-inconnue", message: source ? "La source doit être un autre projet." : "Projet source inconnu." } };
+  let etat: ModeleAtelier | null = null;
+  let revision = source.modelRevision;
+  let nom = source.name;
+  if (corps.source.versionId) {
+    const v = await versionDe(source.id, corps.source.versionId);
+    if (!v) return { status: 404, reponse: { erreur: "version-inconnue" } };
+    etat = v.modele as unknown as ModeleAtelier;
+    revision = v.revision;
+    nom = `${source.name} · version « ${v.nom} »`;
+  } else etat = (await chargerModele(db, source.id))?.etat ?? null;
+  if (!etat || (!Object.keys(etat.objets).length && !etat.site.parcelle)) return { status: 409, reponse: { erreur: "conflit", motif: "source-vide", message: "Le modèle source est vide." } };
+  return planifierReprise(etat, etatCible, { ...corps.options, origine: { projet: source.id, nom, revision } });
+}
+
+atelierVersionsRouter.post("/reprise/apercu", async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const p = repriseSchema.safeParse(req.body ?? {});
+  if (!p.success) return void invalide(res, "source, options (familles, niveaux, site…) attendus");
+  const charge = (await chargerModele(db, project.id)) ?? null;
+  const plan = await planDeReprise(req, project, p.data, charge?.etat ?? modeleVide());
+  if ("status" in plan) return void res.status(plan.status).json(plan.reponse);
+  const ajouts = (plan.commande?.params["ajouts"] ?? {}) as Record<string, Record<string, unknown>>;
+  res.json({ rapport: plan.rapport, vide: !plan.commande, ajouts: Object.fromEntries(Object.entries(ajouts).map(([k, t]) => [k, Object.keys(t).length])) });
+});
+
+atelierVersionsRouter.post("/reprise", async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const p = repriseSchema.safeParse(req.body ?? {});
+  if (!p.success || !p.data.requestId || p.data.baseRevision === undefined || !p.data.empreinteSource) return void invalide(res, "source, options, empreinteSource, requestId et baseRevision requis");
+  await repondreLot(res, project.id, () =>
+    db.transaction(async (tx) => {
+      await lockProject(tx, project.id);
+      const charge = (await chargerModele(tx, project.id)) ?? (await creerModeleVide(tx, project.id, `fadi-${project.id}`));
+      const plan = await planDeReprise(req, project, p.data, charge.etat);
+      if ("status" in plan) return plan;
+      if (plan.rapport.source.empreinte !== p.data.empreinteSource) return { status: 409, reponse: { erreur: "conflit", motif: "source-modifiee", message: "Le modèle source a changé depuis l'aperçu : refaites l'aperçu." } };
+      if (!plan.commande) return { status: 409, reponse: { erreur: "conflit", motif: "rien-a-reprendre", message: "Rien à reprendre avec ces choix." } };
+      const label = `Reprise depuis « ${plan.rapport.source.nom} » (révision ${plan.rapport.source.revision})`.slice(0, 200);
+      const r = await validerDansTransaction(tx, project.id, req.user!.id, { requestId: p.data.requestId!, baseRevision: p.data.baseRevision!, contract: CONTRAT_COMMANDES, label, commands: [plan.commande] }, "commande", null, label);
+      return { ...r, reponse: { ...r.reponse, rapport: plan.rapport } };
+    }),
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Références externes (DA-05-11)
+// ---------------------------------------------------------------------------
+
+atelierVersionsRouter.get("/references-externes", async (req, res) => {
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  const charge = await chargerModele(db, project.id);
+  const traits = req.query["traits"] !== "non";
+  res.json({ revision: project.modelRevision, references: charge ? await etatReferences(req.user!.id, charge.etat, traits) : [] });
+});
+
+/** Ce que changerait l'épinglage de la dernière publication de la source : différences de modèle et de représentation. */
+atelierVersionsRouter.get("/references-externes/:refId/mise-a-jour", async (req, res) => {
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  const charge = await chargerModele(db, project.id);
+  const def = charge?.etat.definitions[req.params["refId"] as string];
+  if (!def || def.classe !== REFERENCE_EXTERNE) return void res.status(404).json({ erreur: "reference-inconnue" });
+  const p = def.params as unknown as ParamsReferenceExterne;
+  const m = await modelesPourMiseAJour(req.user!.id, p);
+  if (!m) return void res.status(404).json({ erreur: "source-inaccessible", message: "Source ou publication inaccessible." });
+  const diff = comparerModeles(m.epinglee.modele, m.neuve.modele);
+  const avant = representationReferenceExterne(m.epinglee.modele, p);
+  const apres = representationReferenceExterne(m.neuve.modele, p);
+  res.json({
+    epinglee: { id: m.epinglee.pub.id, nom: m.epinglee.pub.nom, revision: m.epinglee.pub.revision, empreinte: m.epinglee.pub.empreinte },
+    derniere: { id: m.neuve.pub.id, nom: m.neuve.pub.nom, revision: m.neuve.pub.revision, empreinte: m.neuve.pub.empreinte },
+    niveauSourcePresent: !!m.neuve.modele.niveaux[p.niveauSourceId],
+    identique: m.epinglee.pub.id === m.neuve.pub.id,
+    differences: { ajoutes: diff.ajoutes.length, supprimes: diff.supprimes.length, modifies: diff.modifies.length, niveaux: diff.niveaux, site: diff.site, objets: [...diff.ajoutes.map((o) => ({ ...o, action: "ajoute" })), ...diff.supprimes.map((o) => ({ ...o, action: "supprime" })), ...diff.modifies.map((o) => ({ id: o.id, classe: o.classe, niveauId: o.niveauId, action: "modifie", champs: o.champs }))].slice(0, 200) },
+    representation: { avant: avant.empreinte, apres: apres.empreinte, change: avant.empreinte !== apres.empreinte, traitsAvant: avant.traits.length, traitsApres: apres.traits.length },
+  });
 });

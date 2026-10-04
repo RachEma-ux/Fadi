@@ -329,7 +329,9 @@ export class AtelierClient {
             await this.relireServeur();
             continue;
           }
-          if (err instanceof ApiError && (err.status === 400 || err.status === 403 || err.status === 423)) {
+          // 404 d'une source de référence externe (DA-05-11) : refus définitif, pas une panne réseau.
+          const sourceInconnue = err instanceof ApiError && err.status === 404 && ["source-inconnue", "publication-inconnue"].includes(String((err.body as { erreur?: string } | null)?.erreur));
+          if (err instanceof ApiError && (err.status === 400 || err.status === 403 || err.status === 423 || sourceInconnue)) {
             this.majLot(lot.enveloppe.requestId, { etat: "refuse", detail: (err.body as Record<string, unknown>) ?? { message: err.serverMessage ?? `refusé (${err.status})` } });
             await this.relireServeur();
             continue;

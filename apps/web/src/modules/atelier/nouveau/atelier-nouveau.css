@@ -1718,3 +1718,83 @@
   font-family: ui-monospace, monospace;
   font-size: 0.8rem;
 }
+
+/* Consultation d'un état passé (lecture seule). */
+.barre-consultation {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: #fbf4e4;
+  color: #6b4a12;
+  font-size: 0.85rem;
+}
+.journal-consulter {
+  margin-left: 0.3rem;
+  font-size: 0.8rem;
+}
+.inspecteur-historique ol {
+  margin: 0.2rem 0;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+}
+.reprise,
+.refext {
+  margin: 0 0.8rem 0.6rem;
+  font-size: 0.88rem;
+}
+.reprise > summary,
+.refext > summary {
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.4rem 0;
+}
+.reprise-choix {
+  margin: 0.4rem 0;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+}
+.reprise-choix label {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+  margin: 0.2rem 0;
+}
+.reprise .ver-actions .primaire {
+  background: var(--atelier-encre);
+  border-color: var(--atelier-encre);
+  color: #fff;
+}
+
+/* Références externes (DA-05-11) : superposition grise, en lecture seule, sous les objets du projet. */
+.plan2d .plan-externes path {
+  fill: none;
+  stroke: var(--plan-externe, #8a8f98);
+  stroke-width: 1;
+  stroke-dasharray: 5 3;
+  opacity: 0.8;
+}
+.refext-liste {
+  list-style: none;
+  margin: 0.4rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+.refext-liste li {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.35rem 0.5rem;
+  border-left: 3px solid var(--plan-externe, #8a8f98);
+}
+.refext-liste li[data-etat="plus-recente"] {
+  border-left-color: #b7791f;
+}
+.refext-liste li[data-etat="inaccessible"] {
+  border-left-color: #c53030;
+}
+.refext-liste span {
+  font-size: 0.85em;
+}

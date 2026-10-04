@@ -30,6 +30,8 @@ import { joindreMurs, scinderMur } from "./mur.js";
 import { creerOccurrence, modifierOccurrence, supprimerOccurrence } from "./objets.js";
 import { affecterClassification, affecterPhase, definirPropriete, rattacherReference, reducteursCalque, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
 import { reducteursTransformer } from "./transformer.js";
+import { verifierModele } from "../archive.js";
+import { reducteursRefExterne } from "./refexterne.js";
 
 const triplet = (classe: Classe, prefixe: string, creer = "creer"): Record<string, Reducteur> => ({
   [`${prefixe}.${creer}`]: (etat, p, ctx) => creerOccurrence(etat, p, ctx, classe),
@@ -121,6 +123,10 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   // Site
   "site.parcelle.definir": (etat, p) => reducteursSite.parcelle(etat, p),
   "site.emprise.definir": (etat, p) => reducteursSite.emprise(etat, p),
+  // Références externes (DA-05-11)
+  ...reducteursRefExterne,
+  // Réutilisation de modèle (DA-21-09) : ajouts préparés par `planifierReprise`, revalidés comme une archive.
+  "modele.reprendre": (etat, p) => reprendreModele(etat, p),
   // Inverse
   [TYPE_RESTAURER]: (etat, p) => {
     const diff = p["diff"] as InstantaneDiff | undefined;
@@ -132,6 +138,39 @@ export const REDUCTEURS: Record<string, Reducteur> = {
     return { etat: suivant, effets };
   },
 };
+
+const TABLES_REPRISE = ["niveaux", "objets", "relations", "definitions", "calques", "groupes", "references"] as const;
+
+function reprendreModele(etat: ModeleAtelier, p: Record<string, unknown>): { etat: ModeleAtelier; effets: Effets } {
+  const ajouts = (p["ajouts"] ?? {}) as Partial<Record<(typeof TABLES_REPRISE)[number], Record<string, unknown>>>;
+  const site = (p["site"] ?? {}) as Partial<ModeleAtelier["site"]>;
+  const fusion = { ...etat, site: { ...etat.site, ...site } } as unknown as Record<string, unknown>;
+  const crees: string[] = [];
+  for (const cle of TABLES_REPRISE) {
+    const t = ajouts[cle] ?? {};
+    if (typeof t !== "object" || Array.isArray(t)) throw new ErreurCommande("invalide", `ajouts.${cle}`, "table attendue");
+    for (const id of Object.keys(t)) {
+      if ((etat[cle] as Record<string, unknown>)[id]) throw new ErreurCommande("precondition", `ajouts.${cle}.${id}`, `identifiant déjà présent : ${id}`);
+      crees.push(id);
+    }
+    fusion[cle] = { ...(etat[cle] as Record<string, unknown>), ...t };
+  }
+  if (crees.length > 20000) throw new ErreurCommande("invalide", "ajouts", "reprise trop volumineuse (20 000 éléments au plus)");
+  // Revalidation complète du modèle obtenu (mêmes validateurs qu'une archive) ; les éléments existants restent inchangés.
+  const v = verifierModele(fusion);
+  if (!v.ok) throw new ErreurCommande("invalide", "ajouts", `reprise refusée : ${v.erreurs.slice(0, 5).join(" ; ")}`);
+  const suivant: ModeleAtelier = { ...etat, site: { ...etat.site, ...site } };
+  for (const cle of TABLES_REPRISE) {
+    const t = ajouts[cle] ?? {};
+    if (!Object.keys(t).length) continue;
+    const valides = v.modele[cle] as Record<string, unknown>;
+    (suivant as unknown as Record<string, Record<string, unknown>>)[cle] = { ...(etat[cle] as Record<string, unknown>), ...Object.fromEntries(Object.keys(t).map((id) => [id, valides[id]])) };
+  }
+  const effets = effetsVides();
+  effets.crees.push(...crees);
+  for (const o of Object.values(ajouts.objets ?? {}) as { niveauId?: string | null }[]) if (o.niveauId && !effets.niveauxTouches.includes(o.niveauId)) effets.niveauxTouches.push(o.niveauId);
+  return { etat: suivant, effets };
+}
 
 export const TYPES_COMMANDES: readonly string[] = Object.keys(REDUCTEURS);
 

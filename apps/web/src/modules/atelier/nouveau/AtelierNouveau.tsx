@@ -5,15 +5,17 @@
  * (R10). Clavier : Échap, Entrée, Suppr, Ctrl/⌘ Z / Maj Z / Y, Ctrl/⌘ K, raccourcis d'outil, saisie de précision.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { CLASSES, ErreurCommande, niveauxOrdonnes, type Commande, type OccurrenceQuelconque } from "@parcours/atelier-model";
-import { useQueryClient } from "@tanstack/react-query";
+import { CLASSES, ErreurCommande, niveauxOrdonnes, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
-import { api } from "../../../lib/api";
+import { api, ApiError } from "../../../lib/api";
 import { useOnline, useReachable } from "../../../components/SyncIndicator";
 import { exporter, type TypeExport } from "./exports";
 import { MenuImport, RapportEchangeDialogue, exporterMaquetteIfc, type RapportAffiche } from "./panneaux/Echanges";
 import { Versions } from "./panneaux/Versions";
 import { Automatisation } from "./panneaux/Automatisation";
+import { Reprise } from "./panneaux/Reprise";
+import { ReferencesExternes } from "./panneaux/ReferencesExternes";
 import { atelierClient } from "../bus/atelier-client";
 import { actionImmediate, lotSuppression, OUTILS_IMMEDIATS } from "./actions";
 import { etatUi, useEtatUi, type NiveauAffichage, type PanneauMobile } from "./etat-ui";
@@ -59,17 +61,25 @@ function champSaisie(t: EventTarget | null): boolean {
   return t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || (t instanceof HTMLElement && t.isContentEditable);
 }
 
-export function AtelierNouveau({ projectId, readOnly, protectedReference = false, code = "", nomProjet = "", harmonie = false }: PropsAtelierNouveau) {
+export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedReference = false, code = "", nomProjet = "", harmonie = false }: PropsAtelierNouveau) {
   const online = useOnline();
   const reachable = useReachable();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
   const copieEnCours = useRef<Promise<void> | null>(null);
-  const client = useMemo(() => atelierClient(projectId, { readOnly }), [projectId, readOnly]);
+  const client = useMemo(() => atelierClient(projectId, { readOnly: readOnlyProjet }), [projectId, readOnlyProjet]);
   const inst = useSyncExternalStore(client.subscribe, client.getSnapshot, client.getSnapshot);
   const ui = useEtatUi();
-  const etat = inst.etat;
+  // Consultation d'un état passé (révision ou version, lot 7 / compléments) : affiché en lecture seule, aucune commande.
+  const [consultation, setConsultation] = useState<{ libelle: string; etat: ModeleAtelier } | null>(null);
+  // Références externes (DA-05-11) : relues quand l'une d'elles change ou que la révision serveur avance.
+  const signatureRefs = Object.values(inst.etat.definitions).filter((d) => d.classe === "reference-externe").map((d) => `${d.id}@${d.version}`).join(",");
+  const referencesExternes = useQuery({ queryKey: ["atelier-references-externes", projectId, signatureRefs, inst.revisionServeur], queryFn: () => api.getAtelierReferencesExternes(projectId), enabled: !!signatureRefs && !inst.horsLigne, retry: false, staleTime: 60_000 });
+  const externes = useMemo(() => (signatureRefs ? referencesExternes.data?.references ?? [] : []).filter((r) => r.representation).map((r) => ({ id: r.id, niveauId: r.params.niveauId, traits: r.representation!.traits })), [referencesExternes.data, signatureRefs]);
+  const niveauxTries = useMemo(() => Object.values(inst.etat.niveaux).sort((a, b) => a.elevation - b.elevation).map((n) => ({ id: n.id, nom: n.nom })), [inst.etat.niveaux]);
+  const readOnly = readOnlyProjet || consultation !== null;
+  const etat = consultation?.etat ?? inst.etat;
   const [erreur, setErreur] = useState<string | null>(null);
   const [mesure, setMesure] = useState<string | null>(null);
   const [rapportEchange, setRapportEchange] = useState<RapportAffiche | null>(null);
@@ -243,11 +253,13 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
       const u = etatUi.get();
       if (mod && e.key.toLowerCase() === "z") {
         e.preventDefault();
+        if (readOnly) return;
         void (e.shiftKey ? client.retablir() : client.annuler());
         return;
       }
       if (mod && e.key.toLowerCase() === "y") {
         e.preventDefault();
+        if (readOnly) return;
         void client.retablir();
         return;
       }
@@ -472,8 +484,14 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
             ◈ Harmonie
           </button>
         )}
-        <span className={`barre-sync${readOnly ? " sync-lecture" : !online || !reachable ? " sync-attente" : lotsEnDifficulte ? " sync-alerte" : enAttente ? " sync-attente" : ""}`} role="status" data-etat={readOnly ? "lecture" : !online ? "hors-ligne" : !reachable ? "injoignable" : lotsEnDifficulte ? "conflit" : enAttente ? "attente" : inst.horsLigne ? "cache" : "enregistre"}>
-          {readOnly
+        {consultation && (
+          <span className="barre-consultation" role="status" data-consultation={consultation.libelle}>
+            Consultation : {consultation.libelle} — lecture seule
+            <button type="button" onClick={() => setConsultation(null)}>Revenir à l'état courant</button>
+          </span>
+        )}
+        <span hidden={!!consultation} className={`barre-sync${readOnly ? " sync-lecture" : !online || !reachable ? " sync-attente" : lotsEnDifficulte ? " sync-alerte" : enAttente ? " sync-attente" : ""}`} role="status" data-etat={readOnly ? "lecture" : !online ? "hors-ligne" : !reachable ? "injoignable" : lotsEnDifficulte ? "conflit" : enAttente ? "attente" : inst.horsLigne ? "cache" : "enregistre"}>
+          {readOnlyProjet
             ? READ_ONLY_MESSAGE
             : !online
               ? `Hors-ligne · ${enAttente} modification(s) enregistrée(s) localement`
@@ -520,7 +538,7 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
             <Vue3D etat={etat} ui={ui} readOnly={readOnly} onCommandes={(c, l) => void executer(c, l, false)} />
           </Suspense>
         ) : (
-          <Plan2D etat={etat} ui={ui} readOnly={readOnly} onResultat={appliquerResultat} onTerminer={finir} onCommandes={(c, l) => void executer(c, l, false)} />
+          <Plan2D etat={etat} ui={ui} readOnly={readOnly} onResultat={appliquerResultat} onTerminer={finir} onCommandes={(c, l) => void executer(c, l, false)} externes={consultation ? [] : externes} />
         )}
         {ui.mode === "2d" && (ui.pointsEnCours.length > 0 || precision) && (
           <form
@@ -552,14 +570,16 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
 
       <aside className="atelier-n-droite" aria-label="Inspecteur et modifications">
         <div className="droite-inspecteur">
-          <Inspecteur etat={etat} ui={ui} readOnly={readOnly} onCommandes={(c, l) => void executer(c, l, false)} />
+          <Inspecteur etat={etat} ui={ui} readOnly={readOnly} projectId={consultation ? undefined : projectId} onCommandes={(c, l) => void executer(c, l, false)} />
         </div>
         <div className="droite-modifications">
-          <Modifications projectId={projectId} instantane={inst} readOnly={readOnly} onDecider={(id, d) => void client.decider(id, d)} onAller={(id) => { etatUi.selectionner([id]); centrerSur(id); }} />
+          <Modifications projectId={projectId} instantane={inst} readOnly={readOnly} onDecider={(id, d) => void client.decider(id, d)} onAller={(id) => { etatUi.selectionner([id]); centrerSur(id); }} onConsulterRevision={(revision) => void api.getAtelierModelARevision(projectId, revision).then((r) => { setConsultation({ libelle: `révision ${revision}`, etat: r.modele }); etatUi.set({ selection: [] }); }).catch((err: unknown) => setErreur(err instanceof ApiError ? (err.serverMessage ?? `Révision ${revision} inaccessible`) : String(err)))} />
         </div>
         <div className="droite-versions">
-          <Versions projectId={projectId} client={client} etat={etat} revision={inst.revisionServeur} selection={ui.selection} niveauId={ui.niveauId} readOnly={readOnly || protectedReference} />
-          <Automatisation projectId={projectId} client={client} etat={etat} revision={inst.revisionServeur} niveauId={ui.niveauId} readOnly={readOnly || protectedReference} />
+          <Versions projectId={projectId} client={client} etat={inst.etat} revision={inst.revisionServeur} selection={ui.selection} niveauId={ui.niveauId} readOnly={readOnlyProjet || protectedReference} consultation={consultation?.libelle ?? null} onConsulter={(libelle, e) => { setConsultation({ libelle, etat: e }); etatUi.set({ selection: [] }); }} />
+          <Reprise projectId={projectId} client={client} readOnly={readOnlyProjet || protectedReference} />
+          <ReferencesExternes projectId={projectId} client={client} niveaux={niveauxTries} niveauId={ui.niveauId} references={signatureRefs ? referencesExternes.data?.references ?? [] : []} readOnly={readOnlyProjet || protectedReference || consultation !== null} />
+          <Automatisation projectId={projectId} client={client} etat={inst.etat} revision={inst.revisionServeur} niveauId={ui.niveauId} readOnly={readOnly || protectedReference} />
         </div>
       </aside>
 

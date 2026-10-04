@@ -26,6 +26,9 @@ export interface PropsVersions {
   selection: string[];
   niveauId: string | null;
   readOnly: boolean;
+  /** Libellé de l'état passé affiché, s'il y en a un. */
+  consultation?: string | null;
+  onConsulter?: (libelle: string, etat: ModeleAtelier) => void;
 }
 
 /** Message lisible d'un refus du serveur (message, détail, conflits). */
@@ -82,7 +85,7 @@ function ResumeDifference({ d, etat, libelle }: { d: DifferenceModeles; etat: Mo
   );
 }
 
-export function Versions({ projectId, client, etat, revision, selection, niveauId, readOnly }: PropsVersions) {
+export function Versions({ projectId, client, etat, revision, selection, niveauId, readOnly, onConsulter }: PropsVersions) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [erreur, setErreur] = useState<string | null>(null);
@@ -170,6 +173,11 @@ export function Versions({ projectId, client, etat, revision, selection, niveauI
               <span className="ver-nom">{v.nom}</span> <span className="nav-detail">r{v.revision} · {date(v.createdAt)}{v.auteur ? ` · ${v.auteur}` : ""}</span>
               <span className="ver-actions">
                 <button type="button" disabled={occupe} onClick={() => void agir(async () => { const c = await api.comparerAtelier(projectId, `v:${v.id}`); setComparaison({ libelle: `« ${v.nom} »`, d: c.difference }); })}>Comparer</button>
+                {onConsulter && (
+                  <button type="button" disabled={occupe} onClick={() => void agir(async () => { const d = await api.getAtelierVersion(projectId, v.id); onConsulter(`version « ${v.nom} » (r${v.revision})`, d.modele); })}>
+                    Consulter
+                  </button>
+                )}
                 {!readOnly && (
                   <button
                     type="button"

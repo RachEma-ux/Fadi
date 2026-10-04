@@ -5,6 +5,8 @@
  * l'outil courant (épaisseur, hauteur…) et informations du niveau.
  */
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../../../../lib/api";
 import { bibliotheques, CLASSES, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
@@ -15,6 +17,8 @@ export interface PropsInspecteur {
   ui: EtatUi;
   readOnly: boolean;
   onCommandes: (commandes: Commande[], label: string) => void;
+  /** Projet (historique d'un objet, DA-21-06) ; absent dans les tests. */
+  projectId?: string;
 }
 
 /** Libellés des paramètres canoniques (ceux qui ne figurent pas ici gardent leur nom technique). */
@@ -63,11 +67,16 @@ const GEOMETRIQUES = new Set(["a", "b", "contour", "trous", "points", "polygones
 
 const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(3).replace(/0+$/, "").replace(".", ","));
 
-export function Inspecteur({ etat, ui, readOnly, onCommandes }: PropsInspecteur) {
+export function Inspecteur({ etat, ui, readOnly, onCommandes, projectId }: PropsInspecteur) {
   const sel = ui.selection.map((id) => etat.objets[id]).filter((o): o is OccurrenceQuelconque => !!o);
   if (sel.length === 0) return <ParametresOutil etat={etat} ui={ui} />;
   if (sel.length > 1) return <SelectionMultiple sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />;
-  return <FicheObjet o={sel[0]!} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />;
+  return (
+    <>
+      <FicheObjet o={sel[0]!} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
+      {projectId && <HistoriqueObjet key={sel[0]!.id} projectId={projectId} objetId={sel[0]!.id} />}
+    </>
+  );
 }
 
 function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconque; etat: ModeleAtelier; readOnly: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
@@ -475,5 +484,31 @@ function ParametresOutil({ etat, ui }: { etat: ModeleAtelier; ui: EtatUi }) {
         </p>
       )}
     </section>
+  );
+}
+
+const ACTIONS: Record<string, string> = { cree: "Créé", modifie: "Modifié", supprime: "Supprimé" };
+
+/** Historique d'un objet (DA-21-06 -d) : ses entrées du journal, dans l'ordre des révisions, chargées à l'ouverture. */
+function HistoriqueObjet({ projectId, objetId }: { projectId: string; objetId: string }) {
+  const [ouvert, setOuvert] = useState(false);
+  const historique = useQuery({ queryKey: ["atelier-historique", projectId, objetId], queryFn: () => api.getAtelierHistoriqueObjet(projectId, objetId), enabled: ouvert, retry: false });
+  return (
+    <details className="inspecteur-historique" onToggle={(e) => setOuvert(e.currentTarget.open)}>
+      <summary>Historique de l'objet</summary>
+      {historique.isLoading && <p role="status">Lecture du journal…</p>}
+      {historique.isError && <p className="ver-erreur">Historique indisponible (hors ligne ?).</p>}
+      {historique.data && (historique.data.entrees.length === 0 ? (
+        <p className="nav-vide">Aucune modification journalisée : objet issu de l'import initial, sans historique antérieur inventé.</p>
+      ) : (
+        <ol>
+          {historique.data.entrees.map((h) => (
+            <li key={h.journalId} data-historique={h.action}>
+              <strong>{ACTIONS[h.action]}</strong> · {h.label} <span className="nav-detail">r{h.revision} · {new Date(h.date).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}{h.auteur ? ` · ${h.auteur}` : ""}{h.successeurs.length ? ` · remplacé par ${h.successeurs.join(", ")}` : ""}</span>
+            </li>
+          ))}
+        </ol>
+      ))}
+    </details>
   );
 }

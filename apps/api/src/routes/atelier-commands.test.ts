@@ -640,3 +640,97 @@ describe("essais de l'Architecture V4 §12 (lot 9)", () => {
     expect(murs).toMatchObject({ produced: { modelRevision: 2 }, freshness: "a-jour" });
   });
 });
+
+describe("compléments : historique d'un objet, réutilisation de modèle", () => {
+  it("historique d'un objet : créé, modifié, supprimé (avec ses successeurs), dans l'ordre, avec l'auteur", async () => {
+    const client = await registerAndLogin("historique@example.com");
+    const pid = await projetVide(client);
+    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("h1", 0, [niveau, mur("m1", 6)]))).status).toBe(200);
+    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("h2", 1, [{ type: "objet.modifier", params: { id: "m1", params: { epaisseur: m(0.3) } } }]))).status).toBe(200);
+    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("h3", 2, [{ type: "mur.scinder", params: { id: "m1", t: 0.5 } }]))).status).toBe(200);
+    const h = (await client.get(`/projects/${pid}/atelier/objets/m1/historique`)).body;
+    expect(h.existe).toBe(false);
+    expect(h.entrees.map((e: { action: string; revision: number }) => [e.action, e.revision])).toEqual([["cree", 1], ["modifie", 2], ["supprime", 3]]);
+    expect(h.entrees[2].successeurs).toHaveLength(2);
+    expect(h.entrees[0].auteur).toBe("historique@example.com");
+    const etranger = await registerAndLogin("historique-etranger@example.com");
+    expect((await etranger.get(`/projects/${pid}/atelier/objets/m1/historique`)).status).toBe(404);
+  });
+
+  it("reprise depuis un autre projet : aperçu sans écriture, exécution en une révision, source modifiée entre-temps → 409, source illisible → 404", async () => {
+    const client = await registerAndLogin("reprise@example.com");
+    const source = (await client.post("/examples/p118-exemple-complet/import")).body.id as string;
+    const cible = await projetVide(client);
+    expect((await client.post(`/projects/${cible}/atelier/commands`).send(enveloppe("c0", 0, [niveau]))).status).toBe(200);
+    const corps = { source: { projectId: source }, options: { familles: ["architecture"], niveaux: ["rdc"] } };
+    const apercu = await client.post(`/projects/${cible}/atelier/reprise/apercu`).send(corps);
+    expect(apercu.status).toBe(200);
+    expect(apercu.body.rapport.niveaux).toEqual([{ source: "RDC", cible: "RDC", action: "apparie" }]);
+    expect(apercu.body.ajouts.objets).toBeGreaterThan(0);
+    expect((await client.get(`/projects/${cible}`)).body.modelRevision).toBe(1);
+    const ok = await client.post(`/projects/${cible}/atelier/reprise`).send({ ...corps, empreinteSource: apercu.body.rapport.source.empreinte, requestId: "rep-1", baseRevision: 1 });
+    expect(ok.status).toBe(200);
+    expect(ok.body.revision).toBe(2);
+    const modele = (await client.get(`/projects/${cible}/atelier/model`)).body.modele;
+    expect(Object.keys(modele.objets).length).toBe(apercu.body.ajouts.objets);
+    expect(Object.values(modele.objets as Record<string, { proprietes: Record<string, { provenance: string }> }>).every((o) => o.proprietes["reprise:origine"]?.provenance === "import")).toBe(true);
+    // Source modifiée entre l'aperçu et la validation.
+    const apercu2 = (await client.post(`/projects/${cible}/atelier/reprise/apercu`).send({ ...corps, options: { familles: ["espaces"], niveaux: ["rdc"] } })).body;
+    const murSource = Object.keys((await client.get(`/projects/${source}/atelier/model`)).body.modele.objets).find((k) => k.includes("rdc-W"))!;
+    expect((await client.post(`/projects/${source}/atelier/commands`).send(enveloppe("s1", 1, [{ type: "objet.modifier", params: { id: murSource, params: { epaisseur: m(0.31) } } }]))).status).toBe(200);
+    expect((await client.post(`/projects/${cible}/atelier/reprise`).send({ source: { projectId: source }, options: { familles: ["espaces"], niveaux: ["rdc"] }, empreinteSource: apercu2.rapport.source.empreinte, requestId: "rep-2", baseRevision: 2 })).status).toBe(409);
+    const etranger = await registerAndLogin("reprise-etranger@example.com");
+    const sienne = await projetVide(etranger);
+    expect((await etranger.post(`/projects/${sienne}/atelier/reprise/apercu`).send(corps)).status).toBe(404);
+  }, 60_000);
+
+  it("références externes : rattacher une publication d'un autre projet, état et traits, publication plus récente, mise à jour, cycles et droits", async () => {
+    const client = await registerAndLogin("refext@example.com");
+    const a = await projetVide(client);
+    const b = await projetVide(client);
+    expect((await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("a0", 0, [niveau]))).status).toBe(200);
+    expect((await client.post(`/projects/${b}/atelier/commands`).send(enveloppe("b0", 0, [niveau, mur("mb", 5)]))).status).toBe(200);
+    const pub1 = (await client.post(`/projects/${b}/atelier/publications`).send({ nom: "B v1" })).body;
+    expect((await client.get(`/projects/${b}/atelier/publications/${pub1.id}`)).body.niveaux).toEqual([{ id: "rdc", nom: "RDC" }]);
+    const rattacher = (id: string, pub: { id: string; revision: number; empreinte: string }, extra: Record<string, unknown> = {}) => ({
+      type: "refexterne.rattacher",
+      params: { id, nom: "Voisin B", projetSourceId: b, publicationId: pub.id, revisionSource: pub.revision, empreinteSource: pub.empreinte, niveauSourceId: "rdc", niveauId: "rdc", position: pt(10, 0), angle: { value: 90, unit: "deg" }, calqueId: null, ...extra },
+    });
+    // Empreinte fausse, niveau source absent, projet lui-même : refusés.
+    expect((await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("r0", 1, [rattacher("ref-b", { ...pub1, empreinte: "x" })]))).status).toBe(409);
+    expect((await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("r0b", 1, [rattacher("ref-b", pub1, { niveauSourceId: "zz" })]))).status).toBe(409);
+    expect((await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("r0c", 1, [rattacher("ref-b", pub1, { projetSourceId: a })]))).body.motif).toBe("reference-circulaire");
+    expect((await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("r1", 1, [rattacher("ref-b", pub1)]))).status).toBe(200);
+    let refs = (await client.get(`/projects/${a}/atelier/references-externes`)).body.references;
+    expect(refs).toHaveLength(1);
+    expect(refs[0].etat).toBe("a-jour");
+    expect(refs[0].representation.traits.length).toBeGreaterThan(0);
+    // Rotation de 90° puis translation (10 ; 0) : le mur de B (x de 0 à 5) devient vertical en x ≈ 10.
+    expect(refs[0].representation.traits.every((t: { a: { x: number } }) => Math.abs(t.a.x - 10) < 0.2)).toBe(true);
+    // Rien n'est copié : le modèle de A n'a aucun objet.
+    expect(Object.keys((await client.get(`/projects/${a}/atelier/model`)).body.modele.objets)).toHaveLength(0);
+    // Nouvelle publication de B → « plus récente », différences consultables avant d'épingler.
+    expect((await client.post(`/projects/${b}/atelier/commands`).send(enveloppe("b1", 1, [mur("mb2", 3)]))).status).toBe(200);
+    const pub2 = (await client.post(`/projects/${b}/atelier/publications`).send({ nom: "B v2" })).body;
+    refs = (await client.get(`/projects/${a}/atelier/references-externes?traits=non`)).body.references;
+    expect(refs[0].etat).toBe("plus-recente");
+    expect(refs[0].representation).toBeNull();
+    const maj = (await client.get(`/projects/${a}/atelier/references-externes/ref-b/mise-a-jour`)).body;
+    expect(maj.differences.ajoutes).toBe(1);
+    expect(maj.representation.change).toBe(true);
+    expect((await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("r2", 2, [rattacher("ref-b", pub2)]))).status).toBe(200);
+    expect((await client.get(`/projects/${a}/atelier/references-externes`)).body.references[0].etat).toBe("a-jour");
+    // Cycle par chaîne : A publie (avec sa référence vers B) ; B ne peut pas référencer cette publication.
+    const pubA = (await client.post(`/projects/${a}/atelier/publications`).send({ nom: "A v1" })).body;
+    const cycle = await client.post(`/projects/${b}/atelier/commands`).send(enveloppe("bc", 2, [{ type: "refexterne.rattacher", params: { nom: "A", projetSourceId: a, publicationId: pubA.id, revisionSource: pubA.revision, empreinteSource: pubA.empreinte, niveauSourceId: "rdc", niveauId: "rdc", position: pt(0, 0), calqueId: null } }]));
+    expect(cycle.status).toBe(409);
+    expect(cycle.body.motif).toBe("reference-circulaire");
+    // Un compte qui ne lit pas B ne peut ni rattacher ni voir la représentation.
+    const etranger = await registerAndLogin("refext-etranger@example.com");
+    const sien = await projetVide(etranger);
+    expect((await etranger.post(`/projects/${sien}/atelier/commands`).send(enveloppe("e0", 0, [niveau, rattacher("x", pub2)]))).status).toBe(404);
+    // Détacher : la référence disparaît, annulable.
+    expect((await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("r3", 3, [{ type: "refexterne.detacher", params: { id: "ref-b" } }]))).status).toBe(200);
+    expect((await client.get(`/projects/${a}/atelier/references-externes`)).body.references).toHaveLength(0);
+  }, 60_000);
+});
