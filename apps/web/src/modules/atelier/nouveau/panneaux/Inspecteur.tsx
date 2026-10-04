@@ -122,6 +122,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         })}
       </dl>
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <OuvertureHote o={o as Occurrence<"porte">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
+      <GroupeSelection sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
@@ -437,6 +438,7 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
       <Contraintes sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <CreerBloc sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <VersNiveau sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
+      <GroupeSelection sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
     </section>
   );
 }
@@ -668,6 +670,55 @@ function VersNiveau({ sel, etat, readOnly, onCommandes }: { sel: OccurrenceQuelc
       <span className="ver-actions">
         <button type="button" disabled={readOnly || !cible} onClick={() => agir("transformer.deplacer")} data-vers-niveau="deplacer">Déplacer</button>
         <button type="button" disabled={readOnly || !cible} onClick={() => agir("transformer.copier")} data-vers-niveau="copier">Copier</button>
+      </span>
+    </details>
+  );
+}
+
+/**
+ * Groupe de la sélection (D-041) : renommer, retirer un membre, ajouter les objets sans groupe au groupe des autres,
+ * sélectionner tout le groupe, dissoudre.
+ */
+function GroupeSelection({ sel, etat, readOnly, onCommandes }: { sel: OccurrenceQuelconque[]; etat: ModeleAtelier; readOnly: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const ids = new Set(sel.map((o) => o.groupeId).filter((x): x is string => !!x));
+  const [nom, setNom] = useState<string | null>(null);
+  if (ids.size !== 1) return null;
+  const gid = [...ids][0]!;
+  const groupe = etat.groupes[gid];
+  if (!groupe) return null;
+  const membres = Object.values(etat.objets).filter((o) => o.groupeId === gid);
+  const sans = sel.filter((o) => !o.groupeId).map((o) => o.id);
+  const retirables = sel.filter((o) => o.groupeId === gid).map((o) => o.id);
+  return (
+    <details className="inspecteur-groupe" data-groupe={gid}>
+      <summary>
+        Groupe « {groupe.nom} » ({membres.length})
+      </summary>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (nom && nom.trim() && nom.trim() !== groupe.nom) onCommandes([{ type: "groupe.modifier", params: { id: gid, nom: nom.trim() } }], `Renommer le groupe « ${groupe.nom} »`);
+          setNom(null);
+        }}
+      >
+        <label htmlFor={`groupe-nom-${gid}`}>Nom</label>
+        <input id={`groupe-nom-${gid}`} value={nom ?? groupe.nom} disabled={readOnly} onChange={(e) => setNom(e.target.value)} onKeyDown={(e) => e.stopPropagation()} maxLength={120} />
+      </form>
+      <span className="ver-actions">
+        <button type="button" onClick={() => etatUi.set({ selection: membres.map((o) => o.id) })}>Sélectionner le groupe</button>
+        {sans.length > 0 && (
+          <button type="button" disabled={readOnly} onClick={() => onCommandes([{ type: "groupe.modifier", params: { id: gid, ajouter: sans } }], `Ajouter ${sans.length} objet(s) au groupe « ${groupe.nom} »`)} data-groupe-action="ajouter">
+            Ajouter au groupe ({sans.length})
+          </button>
+        )}
+        {retirables.length > 0 && retirables.length < membres.length && (
+          <button type="button" disabled={readOnly} onClick={() => onCommandes([{ type: "groupe.modifier", params: { id: gid, retirer: retirables } }], `Retirer ${retirables.length} objet(s) du groupe « ${groupe.nom} »`)} data-groupe-action="retirer">
+            Retirer du groupe ({retirables.length})
+          </button>
+        )}
+        <button type="button" disabled={readOnly} onClick={() => onCommandes([{ type: "groupe.dissoudre", params: { id: gid } }], `Dissoudre le groupe « ${groupe.nom} »`)} data-groupe-action="dissoudre">
+          Dissoudre
+        </button>
       </span>
     </details>
   );

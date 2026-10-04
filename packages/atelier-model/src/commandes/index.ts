@@ -107,6 +107,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "calque.affecter": (etat, p, ctx, c) => reducteursCalque.affecter(etat, p, ctx, c),
   "groupe.creer": (etat, p, ctx, c) => reducteursGroupe.creer(etat, p, ctx, c),
   "groupe.dissoudre": (etat, p) => reducteursGroupe.dissoudre(etat, p),
+  "groupe.modifier": (etat, p) => reducteursGroupe.modifier(etat, p),
   "type.definir": (etat, p, ctx) => reducteursType.definir(etat, p, ctx),
   "type.modifier": (etat, p) => reducteursType.modifier(etat, p),
   "propriete.definir": (etat, p) => definirPropriete(etat, p),

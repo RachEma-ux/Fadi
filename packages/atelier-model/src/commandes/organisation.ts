@@ -153,6 +153,39 @@ export const reducteursGroupe = {
     }
     return { etat: { ...etat, groupes: { ...etat.groupes, [id]: groupe }, objets }, effets };
   },
+  /**
+   * Modifier un groupe (D-041) : renommer, ajouter ou retirer des membres. Un objet déjà membre d'un autre groupe
+   * n'y est pas arraché en silence (refus) ; un groupe vidé est refusé (le dissoudre).
+   */
+  modifier(etat: ModeleAtelier, p: Brut): ResultatCommande {
+    const id = lire.chaine(p, "id");
+    const groupe = etat.groupes[id];
+    if (!groupe) throw new ErreurCommande("precondition", "id", `groupe inconnu : ${id}`);
+    const liste = (cle: string) => (p[cle] === undefined ? [] : Array.isArray(p[cle]) && (p[cle] as unknown[]).every((x) => typeof x === "string") ? (p[cle] as string[]) : (() => { throw new ErreurCommande("invalide", cle, `« ${cle} » : liste d'identifiants`); })());
+    const ajouter = liste("ajouter");
+    const retirer = liste("retirer");
+    const nom = p["nom"] === undefined ? groupe.nom : lire.chaine(p, "nom").trim();
+    if (!nom) throw new ErreurCommande("invalide", "nom", "nom du groupe requis");
+    const objets = { ...etat.objets };
+    const effets = effetsVides();
+    for (const oid of ajouter) {
+      const o = objets[oid];
+      if (!o) throw new ErreurCommande("precondition", "ajouter", `objet inconnu : ${oid}`);
+      if (o.groupeId === id) continue;
+      if (o.groupeId) throw new ErreurCommande("precondition", "ajouter", `${oid} appartient déjà au groupe « ${etat.groupes[o.groupeId]?.nom ?? o.groupeId} » : l'en retirer d'abord`);
+      objets[oid] = { ...o, groupeId: id } as OccurrenceQuelconque;
+      effets.modifies.push(oid);
+    }
+    for (const oid of retirer) {
+      const o = objets[oid];
+      if (!o || o.groupeId !== id) throw new ErreurCommande("precondition", "retirer", `${oid} n'est pas membre du groupe`);
+      objets[oid] = { ...o, groupeId: null } as OccurrenceQuelconque;
+      effets.modifies.push(oid);
+    }
+    if (!Object.values(objets).some((o) => o.groupeId === id)) throw new ErreurCommande("precondition", "retirer", "le groupe serait vide : le dissoudre");
+    if (nom !== groupe.nom) effets.modifies.push(id);
+    return { etat: { ...etat, groupes: { ...etat.groupes, [id]: { ...groupe, nom } }, objets }, effets };
+  },
   dissoudre(etat: ModeleAtelier, p: Brut): ResultatCommande {
     const id = lire.chaine(p, "id");
     if (!etat.groupes[id]) throw new ErreurCommande("precondition", "id", `groupe inconnu : ${id}`);

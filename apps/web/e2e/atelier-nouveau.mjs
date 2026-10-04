@@ -294,7 +294,11 @@ await mesurer("sélection d'un mur au clic → inspecteur affiché", async () =>
   await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);
   // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.
   if (!(await selectionne().then(() => true, () => false))) {
-    await page.waitForTimeout(500);
+    // Le plan peut s'être recadré après le retour de la 3D : la boîte du mur est relue avant le second clic.
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(800);
+    const b2 = (await murPlan.boundingBox()) ?? bMur;
+    Object.assign(bMur, b2);
     await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);
     if (!(await selectionne().then(() => true, () => false))) {
       const sous = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute("class") ?? ""} objet=${e?.closest("[data-objet]")?.getAttribute("data-objet") ?? "-"}`; }, [bMur.x + bMur.width / 2, bMur.y + bMur.height / 2]);

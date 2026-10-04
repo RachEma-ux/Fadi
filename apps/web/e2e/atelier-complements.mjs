@@ -343,6 +343,15 @@ await page.waitForSelector(".plan2d");
   const nouveau = Object.values(apresDup.niveaux).find((n) => n.nom === "Copie e2e");
   const nbCopie = nouveau ? Object.values(apresDup.objets).filter((o) => o.niveauId === nouveau.id).length : -1;
   check("dupliquer un niveau : nouveau niveau avec la copie de tout son contenu, une révision", !!nouveau && nouveau.elevation === 42 && nbCopie === nbSource, `${nbSource} → ${nbCopie}`);
+  // Groupe (D-041) : retirer un membre depuis l'inspecteur.
+  const rg = await lot(pid, `g-${Date.now()}`, (await modele(pid)).revision, [{ type: "groupe.creer", params: { id: "g-croix", nom: "Croix", cibles: ["croix-h", "croix-v"] } }]);
+  await ouvrirPlan();
+  await selectionner("croix-v");
+  await page.locator(".inspecteur-groupe > summary").click();
+  await page.locator('[data-groupe-action="retirer"]').click();
+  await attendreEnregistre().catch(() => {});
+  const mg = (await modele(pid)).modele;
+  check("groupe : un membre retiré depuis l'inspecteur, le groupe garde les autres", rg.status === 200 && mg.objets["croix-v"].groupeId === null && mg.objets["croix-h"].groupeId === "g-croix", `${rg.status} · ${mg.objets["croix-v"].groupeId}`);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
