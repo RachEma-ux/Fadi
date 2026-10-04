@@ -21,7 +21,7 @@ export async function archive(sc) {
   const [archiveDl] = await Promise.all([page.waitForEvent("download"), page.locator('#parcours-project-tools a:has-text("Sauvegarder projet JSON")').click()]);
   const archivePath = await archiveDl.path();
   const archiveJson = JSON.parse(await (await import("node:fs/promises")).readFile(archivePath, "utf8"));
-  check("outils du projet : « Sauvegarder projet JSON » → Parcours_V7_Escalier_B_et_mezzanine.json (21 étapes, modèle natif, cas de programme)", archiveDl.suggestedFilename() === "Parcours_V7_Escalier_B_et_mezzanine.json" && archiveJson.kind === "fadi-project-archive" && archiveJson.steps.length === 21 && !!archiveJson.native && archiveJson.programmeCases.length === 1);
+  check("outils du projet : « Sauvegarder projet JSON » → Parcours_V7_Escalier_B_et_mezzanine.json (version 2 : 21 étapes, modèle typé de l'Atelier, cas de programme)", archiveDl.suggestedFilename() === "Parcours_V7_Escalier_B_et_mezzanine.json" && archiveJson.kind === "fadi-project-archive" && archiveJson.version === 2 && archiveJson.steps.length === 21 && Object.keys(archiveJson.atelier?.modele?.objets ?? {}).length > 0 && archiveJson.native === null && archiveJson.programmeCases.length === 1);
   await page.locator('#parcours-project-tools input[type="file"]').setInputFiles({ name: "Parcours_V7_Escalier_B_et_mezzanine.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(archiveJson)) });
   await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid), { timeout: 20000 });
   await page.waitForSelector(".overview-step");

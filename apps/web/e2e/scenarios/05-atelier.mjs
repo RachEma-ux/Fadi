@@ -171,11 +171,18 @@ export async function acceptationP118(sc) {
     await page.locator('[data-testid="atl-palette-champ"]').fill(libelle);
     await page.keyboard.press("Enter");
   };
-  // Exports du plan du niveau actif (SVG, DXF, PNG) et du métré (CSV) : chacun téléchargé ET enregistré au catalogue.
+  // Exports du plan du niveau actif (SVG, DXF, PNG) et du métré (CSV) : chacun téléchargé ET enregistré au catalogue
+  // (lu sur le serveur : un dessin de plus dans le groupe « dessins »).
+  const dessinsAuCatalogue = async () => (await (await page.request.get(`${BASE}/projects/${atelierPid}/documents`)).json()).documents.filter((d) => d.group === "dessins").length;
   const exportes = [];
   for (const [libelle, ext] of [["Exporter le plan en SVG", "svg"], ["Exporter le plan en DXF", "dxf"], ["Exporter le plan en PNG", "png"], ["Exporter le métré CSV", "csv"]]) {
+    const avant = await dessinsAuCatalogue();
     const [download] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }).catch(() => null), commande(libelle)]);
-    const enregistre = await page.waitForFunction(() => /enregistré au catalogue/.test(document.body.textContent || ""), null, { timeout: 15000 }).then(() => true).catch(() => false);
+    let enregistre = false;
+    for (let i = 0; i < 30 && !enregistre; i++) {
+      enregistre = (await dessinsAuCatalogue()) > avant;
+      if (!enregistre) await page.waitForTimeout(500);
+    }
     exportes.push(`${ext}:${download?.suggestedFilename() ?? "aucun"}:${enregistre ? "catalogue" : "non enregistré"}`);
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);

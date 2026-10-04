@@ -33,9 +33,17 @@ export async function atelierHorsLigne(sc) {
   };
   /** Un mur (raccourci M), deux points exacts dans une zone libre, puis Échap (retour à la sélection). */
   const drawWall = async (y) => {
+    await page.waitForFunction(() => /Sous-sol technique/.test(document.querySelector('[data-testid="atl-niveau-actif"]')?.textContent ?? ""), null, { timeout: 10000 }).catch(() => null);
     await toile.focus();
     await page.keyboard.press("m");
     await page.waitForFunction(() => document.querySelector('[data-testid="atl-puce-outil"]')?.textContent?.includes("Mur"), null, { timeout: 5000 }).catch(() => null);
+    for (const [champ, valeur] of [["epaisseur", "0,2"], ["hauteur", "2,5"]]) {
+      const c = page.locator(`[data-testid="atl-precision-${champ}"]`);
+      if (await c.count()) {
+        await c.fill(valeur);
+        await c.press("Enter");
+      }
+    }
     await poserPoint(60, y);
     await poserPoint(64, y);
     await toile.focus();
