@@ -6,6 +6,7 @@
  */
 import {
   composerFeuille,
+  empreinte,
   csvTableau,
   dxfFeuille,
   dxfVue,
@@ -101,7 +102,7 @@ export function atelierDocumentDescriptors(project: OwnedProject, etat: ModeleAt
     fileName: `${code}_quantites.html`,
     href: `${base}/quantites.html`,
     stepNumber: 10,
-    current: { modelRevision: rev, inputHash: (Object.keys(TABLEAUX) as TypeTableau[]).map((t) => genererTableau(etat, t).empreinte).join("") },
+    current: { modelRevision: rev, inputHash: empreinte((Object.keys(TABLEAUX) as TypeTableau[]).map((t) => genererTableau(etat, t).empreinte).join("")) },
   });
   return out;
 }
