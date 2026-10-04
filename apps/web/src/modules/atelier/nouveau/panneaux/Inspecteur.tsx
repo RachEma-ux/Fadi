@@ -129,6 +129,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       <GroupeSelection sel={[o]} etat={etat} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "zone" && <SyntheseZoneVue o={o as Occurrence<"zone">} etat={etat} />}
+      {o.classe === "esquisse" && !desactive && <ConvertirEsquisse o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "mur" && !desactive && <ScinderEnParts o={o as Occurrence<"mur">} onCommandes={onCommandes} />}
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
@@ -665,6 +666,44 @@ function HistoriqueObjet({ projectId, objetId }: { projectId: string; objetId: s
         </ol>
       ))}
     </details>
+  );
+}
+
+/**
+ * Conversion d'esquisse (D-054) : ligne, polyligne ou polygone → spline (par les sommets, ou ajustée à une tolérance) ;
+ * spline, arc, cercle ou ellipse → polyligne d'un nombre de segments saisi.
+ */
+function ConvertirEsquisse({ o, onCommandes }: { o: Occurrence<"esquisse">; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const forme = o.params.forme;
+  const versSpline = forme === "ligne" || forme === "polyligne" || forme === "polygone";
+  const versPolyligne = forme === "spline" || forme === "arc" || forme === "cercle" || forme === "ellipse";
+  const [valeur, setValeur] = useState(forme === "spline" ? "8" : forme === "arc" ? "16" : "32");
+  const [tolerance, setTolerance] = useState("");
+  if (!versSpline && !versPolyligne) return null;
+  const n = nombreSaisi(valeur);
+  const t = tolerance.trim() ? nombreSaisi(tolerance) : null;
+  return (
+    <form
+      className="inspecteur-convertir"
+      data-convertir-esquisse
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (versSpline) {
+          if (tolerance.trim() && (t === null || !(t >= 0))) return;
+          onCommandes([{ type: "esquisse.convertir", params: { id: o.id, forme: "spline", ...(t !== null ? { tolerance: t } : {}) } }], t !== null ? `Ajuster une spline sur ${o.id} (tolérance ${String(t).replace(".", ",")} m)` : `Convertir ${o.id} en spline`);
+        } else {
+          if (n === null || !Number.isInteger(n) || n < 1) return;
+          onCommandes([{ type: "esquisse.convertir", params: { id: o.id, forme: "polyligne", segments: n } }], `Convertir ${o.id} en polyligne (${n} segments${forme === "spline" ? " par travée" : ""})`);
+        }
+      }}
+    >
+      {versSpline ? (
+        <label>Tolérance d'ajustement (m, vide : tous les sommets)<input inputMode="decimal" value={tolerance} onChange={(e) => setTolerance(e.target.value)} onKeyDown={(e) => e.stopPropagation()} /></label>
+      ) : (
+        <label>Segments{forme === "spline" ? " par travée" : ""}<input inputMode="numeric" value={valeur} onChange={(e) => setValeur(e.target.value)} onKeyDown={(e) => e.stopPropagation()} /></label>
+      )}
+      <button type="submit">{versSpline ? "Convertir en spline" : "Convertir en polyligne"}</button>
+    </form>
   );
 }
 

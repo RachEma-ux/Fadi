@@ -33,6 +33,7 @@ import { controlerContraintes, reducteursContrainte } from "./contrainte.js";
 import { controlerVerrous, verrouillerObjets } from "./verrous.js";
 import { reducteursDocuments } from "./documents.js";
 import { reducteursVues3D } from "./vues3d.js";
+import { convertirEsquisse } from "../esquisse/conversion.js";
 import { joindreMurs, scinderMur } from "./mur.js";
 import { creerOccurrence, modifierOccurrence, supprimerOccurrence } from "./objets.js";
 import { affecterClassification, affecterPhase, definirPropriete, rattacherReference, reducteursCalque, reducteursDefinition, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
@@ -183,6 +184,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   ...Object.fromEntries(FORMES.map((forme) => [`esquisse.${forme}`, ((etat, p, ctx) => creerOccurrence(etat, { ...p, params: { ...((p["params"] as Record<string, unknown> | undefined) ?? p), forme } }, ctx, "esquisse")) as Reducteur])),
   "esquisse.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "esquisse"),
   "esquisse.supprimer": (etat, p, ctx) => supprimerOccurrence(etat, p, ctx, "esquisse"),
+  "esquisse.convertir": (etat, p) => convertirEsquisse(etat, p),
   // Transformations
   "transformer.deplacer": reducteursTransformer.deplacer,
   "transformer.copier": reducteursTransformer.copier,

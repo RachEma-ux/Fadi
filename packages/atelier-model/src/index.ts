@@ -40,4 +40,5 @@ export { raisonVerrou } from "./commandes/verrous.js";
 export * from "./documents/refexterne-rendu.js";
 export * from "./echanges/proprietes-csv.js";
 export * from "./esquisse/trame.js";
+export { ajusterSpline } from "./esquisse/conversion.js";
 export * from "./echanges/bibliotheque.js";

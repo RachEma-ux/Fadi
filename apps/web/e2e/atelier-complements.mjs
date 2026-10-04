@@ -471,6 +471,23 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
   const apres2 = await compter2();
   check("trame d'axes (entraxes saisis) et ellipse tracées", apres2.axes === avant2.axes + 5 && apres2.ellipses === avant2.ellipses + 1, `${JSON.stringify(avant2)} → ${JSON.stringify(apres2)}`);
+  // Conversion d'esquisse (D-054) : l'ellipse devient une polyligne fermée de 24 segments, depuis l'inspecteur.
+  {
+    const ell = Object.values((await modele(pid)).modele.objets).find((x) => x.classe === "esquisse" && x.params.forme === "ellipse");
+    if (ell) {
+      await selectionner(ell.id);
+      await page.locator("[data-convertir-esquisse] input").fill("24");
+      await page.locator('[data-convertir-esquisse] button[type="submit"]').click();
+    }
+    let conv = null;
+    for (let k = 0; k < 40 && ell && !conv; k++) {
+      const x = (await modele(pid)).modele.objets[ell.id];
+      if (x?.params.forme === "polyligne") conv = x;
+      else await page.waitForTimeout(500);
+    }
+    check("esquisse convertie : ellipse → polyligne fermée de 24 segments (inspecteur)", !!conv && conv.params.ferme === true && conv.params.points.length === 24, `${ell?.id} · ${conv?.params.points.length ?? "—"}`);
+    await page.keyboard.press("Escape");
+  }
   // Scinder un mur en parts égales (D-043).
   await selectionner("croix-v");
   await page.locator('[data-scinder="parts"]').fill("4");
