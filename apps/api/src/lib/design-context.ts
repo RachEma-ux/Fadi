@@ -39,6 +39,7 @@ import {
 } from "@parcours/domain-model";
 import { atelierStore, projects } from "../db/schema.js";
 import { HARMONY_ENGINE, PARCOURS_STEPS } from "../data/parcours.js";
+import { revuePerimeeParAtelier } from "./atelier-events.js";
 import { loadNativeDomains } from "./model-context.js";
 import { loadActiveProgrammeCase, programmeStateOf } from "./programme-case.js";
 import { loadProgrammeRepartition } from "../routes/programme.js";
@@ -134,7 +135,10 @@ export async function loadDesignContext(q: Querier, project: ProjectRow, now: st
     engine: HARMONY_ENGINE,
     now,
   };
-  const analysis = designAnalysis(input);
+  const lecture = designAnalysis(input);
+  // Revue archivée périmée par un lot validé du nouvel Atelier (événement `atelier.commande.validee`, L2.3) : l'empreinte
+  // d'entrée ne lit encore que le modèle de l'ancien Atelier jusqu'au lot 4.
+  const analysis = !lecture.stale && revuePerimeeParAtelier(h.designReviewV62) ? { ...lecture, stale: true } : lecture;
   const programmeType = rep.stored ? rep.type : programmeCase?.type;
   const profileLabel = harmonyProfile(HARMONY_ENGINE, h, programmeType ? { type: programmeType } : null, example).label;
   return { input, analysis, audit: designAudit(input, analysis, profileLabel), profileLabel, harmony: h, steps };

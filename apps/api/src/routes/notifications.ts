@@ -7,7 +7,10 @@
  *                               accès reçus à un projet (invitation, rôle),
  *                               commentaires des autres sur vos projets et sur
  *                               ceux qui vous sont partagés, réservations
- *                               d'édition en cours posées par quelqu'un d'autre ;
+ *                               d'édition en cours posées par quelqu'un d'autre,
+ *                               modifications du modèle par d'autres dans le
+ *                               nouvel Atelier (événements traités de la boîte
+ *                               de sortie, une notification par projet) ;
  *                               « non lue » = postérieure à votre dernière
  *                               consultation ;
  *   POST /notifications/seen  → marque tout comme consulté (date conservée par
@@ -17,12 +20,14 @@
  * service externe, absent (voir docs/migration/matrix.md).
  */
 import { Router } from "express";
-import { and, desc, eq, gt, inArray, ne, or } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNotNull, ne, or } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { projectComments, projectMembers, projects, users } from "../db/schema.js";
+import { atelierOutbox, projectComments, projectMembers, projects, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
+import { EVENEMENT_COMMANDE_VALIDEE, regrouperModifications } from "../lib/atelier-events.js";
+import type { Querier } from "../lib/step-rows.js";
 
 export const notificationsRouter = Router();
 notificationsRouter.use(requireAuth);
@@ -30,8 +35,8 @@ notificationsRouter.use(requireAuth);
 export interface NotificationItem {
   id: string;
   at: string;
-  /** `acces` · `commentaire` · `reservation` */
-  kind: "acces" | "commentaire" | "reservation";
+  /** `acces` · `commentaire` · `reservation` · `modele` (lots validés dans le nouvel Atelier, regroupés par projet) */
+  kind: "acces" | "commentaire" | "reservation" | "modele";
   projectId: string;
   projectCode: string;
   projectName: string;
@@ -43,14 +48,14 @@ export interface NotificationItem {
 const WINDOW_DAYS = 30;
 const LIMIT = 40;
 
-export async function notificationsFor(userId: string, email: string): Promise<{ seenAt: string | null; items: NotificationItem[] }> {
-  const [me] = await db.select({ seenAt: users.notificationsSeenAt }).from(users).where(eq(users.id, userId));
+export async function notificationsFor(userId: string, email: string, q: Querier = db): Promise<{ seenAt: string | null; items: NotificationItem[] }> {
+  const [me] = await q.select({ seenAt: users.notificationsSeenAt }).from(users).where(eq(users.id, userId));
   const seenAt = me?.seenAt ?? null;
   const since = new Date(Date.now() - WINDOW_DAYS * 24 * 3600 * 1000);
   const items: NotificationItem[] = [];
 
   // Accès reçus : chaque ligne de membre vous concernant, datée de l'invitation (ou du transfert de propriété qui vous a laissé éditeur).
-  const memberships = await db
+  const memberships = await q
     .select({ project: projects, role: projectMembers.role, invitedBy: projectMembers.invitedBy, createdAt: projectMembers.createdAt })
     .from(projectMembers)
     .innerJoin(projects, eq(projects.id, projectMembers.projectId))
@@ -70,10 +75,10 @@ export async function notificationsFor(userId: string, email: string): Promise<{
   }
 
   // Commentaires des autres sur vos projets et sur ceux qui vous sont partagés, 30 derniers jours.
-  const owned = await db.select({ id: projects.id }).from(projects).where(eq(projects.ownerId, userId));
+  const owned = await q.select({ id: projects.id }).from(projects).where(eq(projects.ownerId, userId));
   const projectIds = [...new Set([...owned.map((p) => p.id), ...memberships.map((m) => m.project.id)])];
   if (projectIds.length) {
-    const comments = await db
+    const comments = await q
       .select({ comment: projectComments, code: projects.code, name: projects.name })
       .from(projectComments)
       .innerJoin(projects, eq(projects.id, projectComments.projectId))
@@ -95,7 +100,7 @@ export async function notificationsFor(userId: string, email: string): Promise<{
       });
     }
     // Réservations d'édition en cours posées par quelqu'un d'autre sur ces projets (visibles tant qu'elles durent).
-    const locked = await db
+    const locked = await q
       .select({ id: projects.id, code: projects.code, name: projects.name, editingLock: projects.editingLock })
       .from(projects)
       .where(or(eq(projects.ownerId, userId), inArray(projects.id, projectIds)));
@@ -113,6 +118,28 @@ export async function notificationsFor(userId: string, email: string): Promise<{
           text: `${lock.email} a réservé l’édition de ${p.code} — ${p.name} jusqu’à ${new Date(lock.expiresAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: process.env["FADI_TZ"] ?? "Europe/Paris" })} : lecture et commentaires seulement d’ici là.`,
           unread: false,
         });
+    }
+    // Modifications du modèle par d'autres (nouvel Atelier) : événements `atelier.commande.validee` traités, 30 derniers
+    // jours, regroupés en une notification par projet (révision la plus haute, auteurs, nombre de lots non consultés).
+    const evenements = await q
+      .select({ projectId: atelierOutbox.projectId, payload: atelierOutbox.payload, createdAt: atelierOutbox.createdAt, code: projects.code, name: projects.name })
+      .from(atelierOutbox)
+      .innerJoin(projects, eq(projects.id, atelierOutbox.projectId))
+      .where(and(inArray(atelierOutbox.projectId, projectIds), eq(atelierOutbox.event, EVENEMENT_COMMANDE_VALIDEE), isNotNull(atelierOutbox.processedAt), gt(atelierOutbox.createdAt, since)))
+      .orderBy(desc(atelierOutbox.createdAt))
+      .limit(500);
+    if (evenements.length) {
+      const ids = [...new Set(evenements.map((e) => e.payload["auteur"]).filter((a): a is string => typeof a === "string"))];
+      const auteurs = ids.length ? await q.select({ id: users.id, email: users.email }).from(users).where(inArray(users.id, ids)) : [];
+      const courriel = new Map(auteurs.map((u) => [u.id, u.email]));
+      const groupes = regrouperModifications(
+        evenements.map((e) => ({ projectId: e.projectId, projectCode: e.code, projectName: e.name, payload: e.payload, at: e.createdAt.toISOString() })),
+        { userId, seenAt: seenAt ? seenAt.toISOString() : null },
+        (a) => (a === null ? "Un import" : (courriel.get(a) ?? a)),
+      );
+      for (const g of groupes) {
+        items.push({ id: g.id, at: g.at, kind: "modele", projectId: g.projectId, projectCode: g.projectCode, projectName: g.projectName, stepNumber: null, text: g.text, unread: false });
+      }
     }
   }
 
