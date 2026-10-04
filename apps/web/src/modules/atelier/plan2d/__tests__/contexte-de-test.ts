@@ -64,6 +64,7 @@ export function banc(etatInitial: EtatModele = etatDeTest(), options: { repli?: 
     },
     niveauActif: () => vue.lire().niveauActifId,
     calqueActif: () => vue.lire().calqueActifId,
+    calquesMasques: () => vue.lire().calquesMasques,
     selection,
     ecriture: { permise: true },
     async valider(label, commandes) {

@@ -314,6 +314,9 @@ export function sessionPoints(ctx: ContexteAtelier, spec: SpecPoints, cleMemoire
             return finir(false);
           }
           return { action: "continuer" };
+        case "saisie-texte":
+        case "choix":
+          return { action: "continuer" };
         case "saisie": {
           if (!Number.isFinite(evt.valeur)) {
             erreurs = [lisible("Saisie", "nombre attendu", "taper une valeur numérique")];

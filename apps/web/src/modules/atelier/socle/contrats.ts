@@ -74,6 +74,8 @@ export interface ContexteAtelier {
   /** Niveau et calque actifs, lus à l'instant de l'appel (ils changent pendant la session : `EtatInterface`). */
   niveauActif(): IdObjet | null;
   calqueActif(): IdObjet | null;
+  /** Calques masqués de la vue courante, lus à l'instant de l'appel (exports, impression : D-038). */
+  calquesMasques(): readonly IdObjet[];
   readonly selection: SelectionAtelier;
   /** Le projet est-il modifiable par ce compte (rôle, réservation, copie protégée de l'exemple) ? Sinon, motif. */
   readonly ecriture: { readonly permise: true } | { readonly permise: false; readonly motif: string };
@@ -135,7 +137,11 @@ export type EvenementPlan =
   | { readonly type: "survol" | "appui" | "glisse" | "relache"; readonly point: PointLocal; readonly accrochage: Accrochage; readonly modificateurs: Modificateurs; readonly objetSousPointeur: IdObjet | null }
   | { readonly type: "touche"; readonly touche: string; readonly modificateurs: Modificateurs }
   /** Saisie de précision pendant le tracé : longueur en m, angle en degrés (sens trigonométrique, 0 = +x). */
-  | { readonly type: "saisie"; readonly champ: "longueur" | "angle" | "x" | "y" | string; readonly valeur: number };
+  | { readonly type: "saisie"; readonly champ: "longueur" | "angle" | "x" | "y" | string; readonly valeur: number }
+  /** Saisie d'un texte (champ de `genre: "texte"`, ex. texte libre) : contenu brut, multiligne permis (D-038). */
+  | { readonly type: "saisie-texte"; readonly champ: string; readonly texte: string }
+  /** Choix dans une liste pendant le geste (champ portant `choix` : type courant, alignement…) (D-038). */
+  | { readonly type: "choix"; readonly champ: string; readonly valeur: string };
 
 // ---------------------------------------------------------------------------------------------------------------
 // Aperçu (dessiné par `plan2d`, jamais écrit dans le modèle)
@@ -159,6 +165,18 @@ export interface ChampSaisie {
   readonly libelle: string;
   readonly unite: "m" | "°" | "";
   readonly valeur: number | null;
+  /**
+   * `"nombre"` par défaut ; `"texte"` : zone de texte multiligne dans la zone de travail, qui envoie un évènement
+   * `saisie-texte` (Entrée valide, Maj+Entrée passe à la ligne) ; la saisie numérique au clavier de la zone de plan
+   * l'ignore (D-038).
+   */
+  readonly genre?: "nombre" | "texte";
+  /**
+   * Liste de choix : l'interface affiche une liste au lieu d'un nombre et envoie l'évènement `choix` ; `valeurChoisie`
+   * est la valeur courante. Ignoré par la saisie numérique au clavier de la zone de plan (D-038).
+   */
+  readonly choix?: readonly { readonly valeur: string; readonly libelle: string }[];
+  readonly valeurChoisie?: string | null;
 }
 
 export interface Apercu {

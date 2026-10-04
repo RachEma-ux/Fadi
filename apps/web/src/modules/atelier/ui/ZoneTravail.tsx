@@ -42,6 +42,52 @@ function ChampPrecision({ champ, pilote, onErreur }: { champ: ChampSaisie; pilot
   );
 }
 
+/** Champ de texte d'un outil (`genre: "texte"`, D-038) : Entrée valide, Maj+Entrée passe à la ligne. */
+function ChampTexte({ champ, pilote }: { champ: ChampSaisie; pilote: PiloteOutils }) {
+  const [texte, setTexte] = useState("");
+  const id = `atl-precision-${champ.champ}`;
+  return (
+    <label htmlFor={id}>
+      {champ.libelle}
+      <textarea
+        id={id}
+        rows={2}
+        autoComplete="off"
+        value={texte}
+        onChange={(e) => setTexte(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if (texte.trim() === "") return;
+            const contenu = texte;
+            setTexte("");
+            void pilote.traiter({ type: "saisie-texte", champ: champ.champ, texte: contenu });
+          }
+        }}
+        data-testid={`atl-precision-${champ.champ}`}
+      />
+    </label>
+  );
+}
+
+/** Liste de choix d'un outil (`ChampSaisie.choix`, D-038) : envoie l'évènement `choix` au changement. */
+function ChampChoix({ champ, pilote }: { champ: ChampSaisie; pilote: PiloteOutils }) {
+  const id = `atl-precision-${champ.champ}`;
+  return (
+    <label htmlFor={id}>
+      {champ.libelle}
+      <select id={id} value={champ.valeurChoisie ?? ""} onChange={(e) => void pilote.traiter({ type: "choix", champ: champ.champ, valeur: e.target.value })} data-testid={`atl-precision-${champ.champ}`}>
+        {champ.valeurChoisie == null && <option value="">—</option>}
+        {(champ.choix ?? []).map((o) => (
+          <option key={o.valeur} value={o.valeur}>
+            {o.libelle}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 export function ZoneTravail({
   pilote,
   vue,
@@ -94,9 +140,15 @@ export function ZoneTravail({
       </div>
       {apercu.champs.length > 0 && (
         <div className="atl-precision" role="group" aria-label="Saisie de précision" data-testid="atl-precision">
-          {apercu.champs.map((c) => (
-            <ChampPrecision key={c.champ} champ={c} pilote={pilote} onErreur={setErreursSaisie} />
-          ))}
+          {apercu.champs.map((c) =>
+            c.choix ? (
+              <ChampChoix key={c.champ} champ={c} pilote={pilote} />
+            ) : c.genre === "texte" ? (
+              <ChampTexte key={c.champ} champ={c} pilote={pilote} />
+            ) : (
+              <ChampPrecision key={c.champ} champ={c} pilote={pilote} onErreur={setErreursSaisie} />
+            ),
+          )}
           <span className="atl-muet atl-petit">Entrée pour appliquer</span>
         </div>
       )}

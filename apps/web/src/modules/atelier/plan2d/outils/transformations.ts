@@ -653,6 +653,9 @@ function sessionPointsDeControle(ctx: ContexteAtelier): SessionOutil {
         case "touche":
           if (evt.touche === "Escape") saisie = null;
           return { action: "continuer" };
+        case "saisie-texte":
+        case "choix":
+          return { action: "continuer" };
         case "saisie":
           return { action: "continuer" };
       }

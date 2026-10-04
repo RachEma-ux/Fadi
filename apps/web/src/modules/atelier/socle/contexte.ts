@@ -69,6 +69,7 @@ export function creerContexte(o: OptionsContexte): ContexteAtelier {
     abonnerEtat: (ecouteur: () => void) => o.bus.on("etat", () => ecouteur()),
     niveauActif: () => o.vue.lire().niveauActifId,
     calqueActif: () => o.vue.lire().calqueActifId,
+    calquesMasques: () => o.vue.lire().calquesMasques,
     selection: o.selection,
     ecriture: o.ecriture,
     async valider(label: string, commandes: readonly Commande[]): Promise<ResultatValidation> {

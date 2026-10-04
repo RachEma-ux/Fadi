@@ -520,7 +520,7 @@ export class ControleurPlan {
   }
 
   private champs(): readonly ChampSaisie[] {
-    return this.o.pilote.apercu().champs;
+    return this.o.pilote.apercu().champs.filter((c) => c.genre !== "texte" && !c.choix);
   }
 
   /**
