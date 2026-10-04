@@ -1,5 +1,5 @@
 {
-  "controles": 372,
+  "controles": 378,
   "parFichier": {
     "00-compte.mjs": 0,
     "01-import-exemple.mjs": 17,
@@ -14,7 +14,7 @@
     "10-accueil-parametres.mjs": 19,
     "11-accessibilite.mjs": 49,
     "12-mesures.mjs": 1,
-    "14-nouvel-atelier.mjs": 45
+    "14-nouvel-atelier.mjs": 51
   },
   "historique": [
     {
@@ -51,6 +51,11 @@
       "date": "2026-10-04",
       "controles": 372,
       "motif": "L3b.3 (#69) : 14-nouvel-atelier.mjs#mesures3d, mesures ⏱ imprimées (ouverture, scène, sélection, déplacement, orbite p95, enregistrement), téléphone tactile (un doigt, pincer, cibles ≥ 44 px), aucune erreur JavaScript (+3)."
+    },
+    {
+      "date": "2026-10-04",
+      "controles": 378,
+      "motif": "L3b.4 (#70) : 14-nouvel-atelier.mjs#vuesTechniques, huit vues de travail non vides (plan, coupes N–S / E–O / quelconque, quatre façades), position de coupe réglable, sélection au clic, accessibilité ordinateur et téléphone, aucune erreur JavaScript (+6)."
     }
   ]
 }
