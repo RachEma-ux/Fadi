@@ -6,9 +6,10 @@
 import type { InstallationModule } from "../socle";
 import { DESSINATEURS_OBJETS } from "./dessinateurs";
 import { outilDeplacerBaie, outilFenetre, outilOuverture, outilPorte } from "./outils/baies";
+import { outilDetecterPieces, outilPiece } from "./outils/pieces";
 import { outilJoindreMurs, outilMur, outilScinderMur } from "./outils/murs";
 
 export const installer: InstallationModule = (r) => {
   for (const d of DESSINATEURS_OBJETS) r.dessinateurs.enregistrer(d);
-  for (const o of [outilMur(), outilPorte(), outilFenetre(), outilOuverture(), outilScinderMur(), outilJoindreMurs(), outilDeplacerBaie()]) r.outils.enregistrer(o);
+  for (const o of [outilMur(), outilPorte(), outilFenetre(), outilOuverture(), outilPiece(), outilScinderMur(), outilJoindreMurs(), outilDeplacerBaie(), outilDetecterPieces()]) r.outils.enregistrer(o);
 };
