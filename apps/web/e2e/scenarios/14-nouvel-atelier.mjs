@@ -677,9 +677,13 @@ export async function mesures3d(sc) {
 
   // Enregistrement : pousser / tirer d'un mur à hauteur donnée, valeur tapée → révision serveur.
   const m0 = await modele();
-  const mur = Object.values(m0.objets).find((o) => o.classe === "mur" && o.params.hauteur && !o.params.niveauHaut);
+  // Le navigateur ne liste que le niveau actif : mur de ce niveau de préférence, sinon on bascule sur le sien.
+  const niveauActif = (await page.locator('[data-testid^="atl-niveau-"][aria-pressed="true"]').first().getAttribute("data-testid"))?.slice("atl-niveau-".length);
+  const poussable = (o) => o.classe === "mur" && o.params.hauteur && !o.params.niveauHaut;
+  const mur = Object.values(m0.objets).find((o) => poussable(o) && o.niveauId === niveauActif) ?? Object.values(m0.objets).find(poussable);
   let enregistrementMs = null;
   if (mur) {
+    if (mur.niveauId !== niveauActif) await page.locator(`[data-testid="atl-niveau-${mur.niveauId}"]`).click();
     await page.locator('[data-testid="atl-nav-filtre"]').fill(mur.id);
     await page.locator(`[data-testid="atl-objet-${mur.id}"]`).click();
     await page.locator('[data-testid="atl-nav-filtre"]').fill("");
