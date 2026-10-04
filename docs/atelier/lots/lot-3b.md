@@ -15,6 +15,6 @@ typecheck d'`apps/web` borné) ; build et e2e dans la CI.
 | --- | --- | --- |
 | L3b.0 | Outil « Supprimer » (touche Suppr), panneau Métré monté, scénario 14 étendu (D-045, D-046) | fusionnée (PR #71) |
 | L3b.1 | Rendu three.js, modes volume / éclaté / coupe, orbite, sélection, manipulateur (DA-02-17), WebGPU en option (D-047) | en revue |
-| L3b.2 | Pousser / tirer (DA-04-07), extrusion d'esquisse (DA-04-01) | à faire |
+| L3b.2 | Pousser / tirer (DA-04-07), extrusion d'esquisse (DA-04-01), aperçu avant validation (D-048) | en revue |
 | L3b.3 | Toucher, cibles, mode immersif, mesures `⏱` | à faire |
 | L3b.4 | Vues techniques de travail en 2D depuis `core-geometry` | à faire |
