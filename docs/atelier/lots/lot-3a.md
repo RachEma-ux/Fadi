@@ -76,10 +76,21 @@ captures à jour.
 
 ## Fiches du lot
 
-<!-- FICHES -->
+48 fiches du périmètre (PR #63) : **6 vérifiées** (DA-01-01, DA-02-16, DA-03-13, DA-07-01, DA-07-02, DA-07-15 :
+geste central exercé par le scénario 14), **40 prototypes** (code et test vitest liés), **2 spécifiées** (DA-02-10
+raccorder, DA-02-11 chanfreiner : aucune commande dans `atelier-commands/1`, D-037). Chaque fiche dit ce qui
+reste (« Reste : … ») ; la part 3D des fiches communes aux lots 3a et 3b est notée « part 3b ». Règle « vérifiée » : D-045.
 
 ## Réserves et reports
 
+- **Aucun outil de suppression** dans le nouvel Atelier : les commandes `*.supprimer` existent dans le modèle, mais
+  aucun outil ne les envoie (Suppr et Retour arrière ne vont qu'à l'outil actif, `plan2d/controleur.ts`). Toutes les
+  sous-exigences « supprimer » des fiches restent ouvertes. Première tâche du lot 3b (L3b.0, D-045).
+- **Panneau « Métré »** (`documents/PanneauMetre.tsx`) écrit et testé mais monté nulle part : seul l'export CSV
+  (`partager.exporter-metre`) est atteignable. Avec L3b.0 (D-045).
+- Raccorder (DA-02-10), chanfreiner (DA-02-11), réseaux rectangulaire et polaire, échelle non uniforme, jonctions
+  en L et en T, types de dalle : pas de commande au contrat figé (D-037, D-038) ; à la réouverture de `atelier-model`.
+- Accrochage (DA-02-15) prouvé par vitest seulement : le scénario 14 pose ses points par saisie de précision.
 - Téléphone 390 px : le dernier onglet du bas (« Affichage ») est rogné au bord droit (capture
   `nouvel-atelier-gestes-mobile.png`) ; le contrôle « sans défilement horizontal » passe. À corriger avec le toucher (L3b.3).
 - Dalle : le type est en lecture seule dans l'inspecteur, faute de commande dans le contrat figé (D-038) ; à ouvrir
