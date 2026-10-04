@@ -55,6 +55,13 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
       case "poteau":
         centres.push({ p: o.params.point, objetId: o.id });
         break;
+      case "garde-corps":
+        if (o.params.points.length >= 2) contour(o.params.points, o.id, o.params.ferme);
+        break;
+      case "objet-importe":
+        // Emprise de la représentation importée : sélection et accrochage sur son contour.
+        if (o.params.empreinte.length >= 2) contour(o.params.empreinte, o.id);
+        break;
       case "cotation":
         segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
         break;

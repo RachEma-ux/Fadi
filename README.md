@@ -67,6 +67,16 @@ End-to-end scenario (Playwright, Chromium), against the built API serving the bu
 ```sh
 WEB_DIST=apps/web/dist node apps/api/dist/server.js &   # DATABASE_URL, WEB_ORIGIN=http://localhost:3001, PORT=3001
 BASE_URL=http://localhost:3001 node apps/web/e2e/parcours-scenario.mjs   # ~330 checks incl. axe-core and the P.118 Atelier acceptance; writes docs/migration/captures/webapp/
+BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-nouveau.mjs     # Atelier (plan, 3D, sync, exports)
+BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-documents.mjs   # derived documents (views, sheets, PDF, schedules)
+BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-echanges.mjs    # IFC 4.3 export / import, DXF import, exchange reports
+```
+
+IFC corpus (lot 6), validated with IfcOpenShell (`pip install ifcopenshell==0.9.0 pytest`), as in CI:
+
+```sh
+npx --workspace=@fadi/api tsx test-corpus/ifc/generer.ts ../../ifc-sortie
+for f in petit p118 p118-reimporte; do python3 apps/api/test-corpus/ifc/valider.py ifc-sortie/$f.ifc ifc-sortie/$f.attendus.json; done
 ```
 
 Permanent hosting (stable URL, persistent PostGIS database, daily backups, verified restore procedure, HTTPS):

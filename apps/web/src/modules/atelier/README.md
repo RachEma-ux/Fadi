@@ -34,6 +34,12 @@ supprimés ; les projets qui n'avaient que lui ont été repris dans le modèle 
   contraintes d'esquisse (ajout, degrés de liberté, suppression). Outils ajoutés : garde-corps, toiture en pente,
   « Placer un bloc » ; les cotes posées sur des objets leur sont rattachées (cotes associatives, « à réparer » si
   l'objet visé est scindé ou supprimé).
+- `nouveau/panneaux/Echanges.tsx` — échanges (lot 6) : « Exporter → Maquette IFC 4.3 » (fichier produit par le
+  serveur, inscrit au catalogue, rapport de fidélité calculé ici sur le même modèle), « Importer → Maquette IFC… »
+  (lue par le serveur avec web-ifc, produits en représentations importées `objet-importe`, R16) et « Importer → Plan
+  DXF (2D)… » (lu ici en commandes : fond de plan `reference-plan` + esquisses et textes groupés, unité et repère
+  explicites). Chaque échange affiche son rapport : lus, écrits ou importés, remarques, pertes. Matrice :
+  `docs/atelier/matrice-echanges.md`.
 - `AtelierHarmonyPage.tsx` — sous-page « Harmonie du bâtiment » de l'étape 10 (V8.4) ; `DesignReview.tsx` — bilan
   Harmonie du bâtiment conçu (flow-v62), calculé côté serveur depuis la projection du modèle typé.
 

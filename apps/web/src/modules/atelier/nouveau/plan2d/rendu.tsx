@@ -58,6 +58,25 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
       const ep = Math.max(2, o.params.epaisseur.value * pr.echelle);
       return <path d={chemin(pr, o.params.points, o.params.ferme)} className={classes("obj-garde-corps", selectionne, survole)} fill="none" stroke={selectionne ? "#b3872f" : "#4f625b"} strokeWidth={ep} strokeDasharray={o.params.remplissage === "barreaudage" ? `${Math.max(1, ep / 2)} ${Math.max(1, ep / 2)}` : undefined} data-objet={o.id} />;
     }
+    case "objet-importe": {
+      // Représentation importée : emprise (enveloppe convexe) en tirets, classe IFC d'origine au survol.
+      if (o.params.empreinte.length < 2) return null;
+      const espace = o.params.ifcClasse.toLowerCase() === "ifcspace";
+      return (
+        <path
+          d={chemin(pr, o.params.empreinte)}
+          className={classes(`obj-objet-importe${espace ? " obj-espace-importe" : ""}`, selectionne, survole)}
+          fill={espace ? "none" : "#96a8b4"}
+          fillOpacity={0.14}
+          stroke={selectionne ? "#b3872f" : espace ? "#8d9ca6" : "#5f717d"}
+          strokeDasharray={espace ? "2 4" : "7 4"}
+          strokeWidth={selectionne ? 2.5 : 1}
+          data-objet={o.id}
+        >
+          <title>{`${o.params.ifcClasse}${o.params.nom ? ` · ${o.params.nom}` : ""} (importé)`}</title>
+        </path>
+      );
+    }
     case "dalle":
     case "zone":
     case "reference-plan": {

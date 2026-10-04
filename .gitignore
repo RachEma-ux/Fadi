@@ -8,3 +8,5 @@ coverage/
 !.env.deploy.example
 *.tsbuildinfo
 .DS_Store
+apps/api/test-corpus/ifc/sortie/
+ifc-sortie/

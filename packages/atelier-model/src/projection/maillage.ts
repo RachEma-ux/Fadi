@@ -36,6 +36,7 @@ export const COULEURS_3D: Record<string, string> = {
   espace: "#cfe0d4",
   "garde-corps": "#6f7f78",
   "bloc-occurrence": "#b8a88a",
+  "objet-importe": "#b9c4cc",
 };
 
 // ---------------------------------------------------------------------------
@@ -513,6 +514,15 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
     case "bloc-occurrence":
       blocMaillage(etat, o, z, t);
       break;
+    case "objet-importe": {
+      // Maillage importé tel quel (repère local, z relatif au niveau).
+      const p = o.params.maillage.positions;
+      const base = t.positions.length / 3;
+      for (let i = 0; i < p.length; i += 3) t.sommet(p[i]!, p[i + 1]!, z + p[i + 2]!);
+      for (const i of o.params.maillage.indices) t.indices.push(base + i);
+      if (o.params.ifcClasse.toLowerCase() === "ifcspace") opacite = 0.2;
+      break;
+    }
     case "solide": {
       const h = o.params.hauteur?.value;
       if (!h) break;

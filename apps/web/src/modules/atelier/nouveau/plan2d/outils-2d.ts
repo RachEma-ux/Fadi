@@ -372,6 +372,9 @@ export function objetsDansCadre(etat: ModeleAtelier, niveauId: string | null, a:
       case "garde-corps":
         pts = o.params.points;
         break;
+      case "objet-importe":
+        pts = o.params.empreinte;
+        break;
       case "espace":
         pts = o.params.polygones.flatMap((pg) => pg.contour);
         break;

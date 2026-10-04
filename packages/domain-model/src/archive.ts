@@ -71,6 +71,28 @@ export interface ArchiveParcelFile {
   revision: number;
 }
 
+/**
+ * Manifeste du paquet natif (lot 6, cahier §5.10) : ce qu'il faut savoir pour relire le paquet sans deviner —
+ * versions des schémas et contrats, unités, repères (avec la conversion explicite cadastral ↔ local), identités et
+ * empreinte du modèle, versions des catalogues de règles. Écrit à chaque sauvegarde ; contrôlé à l'import.
+ */
+export const MANIFESTE_PAQUET_FORMAT = "fadi-paquet-natif";
+export const MANIFESTE_PAQUET_VERSION = 1;
+
+export interface ManifestePaquet {
+  format: typeof MANIFESTE_PAQUET_FORMAT;
+  version: number;
+  schemas: { archive: number; modeleAtelier: number | null; contratCommandes: string; ifc: string };
+  unites: { longueur: "m"; aire: "m2"; volume: "m3"; angle: "deg"; altitudes: string };
+  reperes: {
+    local: string;
+    cadastral: { crs: string; origineLocale: { x: number; y: number }; conversion: string } | null;
+    geographique: string;
+  };
+  identites: { projet: string; revision: number; empreinteModele: string | null; niveaux: number; objets: number; definitions: number; identifiants: string };
+  catalogues: Record<string, string>;
+}
+
 export interface ProjectArchive {
   kind: typeof PROJECT_ARCHIVE_KIND;
   version: typeof PROJECT_ARCHIVE_VERSION;
@@ -104,6 +126,8 @@ export interface ProjectArchive {
   modele: { nativeId: string; etat: Record<string, unknown> } | null;
   /** Modèle du prototype (domaines du moteur V14) à importer à sens unique, venu d'un export du prototype ou d'une archive version 1 ; `null` sinon. */
   natif: { nativeId: string; registry: Record<string, unknown> | null; domains: Record<string, unknown> } | null;
+  /** Manifeste du paquet natif (archives écrites depuis le lot 6) ; `null` pour une archive plus ancienne ou un export du prototype. */
+  manifeste: ManifestePaquet | null;
   stageAttachments: ArchiveAttachment[];
   warnings: string[];
 }
@@ -360,9 +384,26 @@ function fromPrototypeProject(p: unknown, native: unknown, files: unknown, defin
     parcels: [],
     modele: null,
     natif,
+    manifeste: null,
     stageAttachments: attachmentsOf(files, (f) => (validStep(Number(f["stage"]), definitions.length) ? Number(f["stage"]) : null)),
     warnings: [],
   };
+}
+
+/**
+ * Manifeste relu : absent (archive antérieure au lot 6) → `null` ; présent, il doit être reconnu — format, version
+ * relue, contrat de commandes de la même famille — sinon l'archive est refusée plutôt que lue de travers.
+ */
+export function manifesteOf(raw: unknown): ManifestePaquet | null {
+  if (raw === undefined || raw === null) return null;
+  if (!isRecord(raw) || raw["format"] !== MANIFESTE_PAQUET_FORMAT) throw new ArchiveError("Manifeste du paquet natif illisible.");
+  const version = raw["version"];
+  if (!Number.isInteger(version) || (version as number) < 1) throw new ArchiveError("Manifeste du paquet natif : version invalide.");
+  if ((version as number) > MANIFESTE_PAQUET_VERSION) throw new ArchiveError(`Paquet écrit par une version plus récente (manifeste ${String(version)}) : mettre l'application à jour avant de l'importer.`);
+  const schemas = isRecord(raw["schemas"]) ? raw["schemas"] : {};
+  const contrat = str(schemas["contratCommandes"]);
+  if (contrat && !contrat.startsWith("atelier-commands/")) throw new ArchiveError(`Manifeste du paquet natif : contrat de commandes inconnu (${contrat}).`);
+  return raw as unknown as ManifestePaquet;
 }
 
 /** Une archive Fadi relue : structure vérifiée, nom suffixé « · import », étapes bornées aux 21. */
@@ -461,6 +502,7 @@ function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly Par
     parcels,
     modele,
     natif,
+    manifeste: manifesteOf(raw["manifeste"]),
     stageAttachments: attachmentsOf(raw["stageAttachments"], (f) => (validStep(Number(f["stepNumber"]), definitions.length) ? Number(f["stepNumber"]) : null)),
     warnings: Array.isArray(raw["warnings"]) ? raw["warnings"].filter((w): w is string => typeof w === "string") : [],
   };

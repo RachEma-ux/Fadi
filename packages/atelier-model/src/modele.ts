@@ -195,6 +195,21 @@ export interface ParamsGardeCorps {
   nom: string | null;
 }
 
+/**
+ * Représentation importée (lot 6, D-006) : un produit IFC lu par web-ifc, gardé tel quel — classe et GlobalId
+ * d'origine, maillage triangulé (repère local, z relatif au niveau), emprise au sol ; aucun paramètre ni historique
+ * paramétrique inventé.
+ */
+export interface ParamsObjetImporte {
+  ifcClasse: string;
+  globalId: string;
+  nom: string | null;
+  type: string | null;
+  maillage: { positions: number[]; indices: number[] };
+  empreinte: Point2[];
+  source: string | null;
+}
+
 export interface ParamsParClasse {
   mur: ParamsMur;
   porte: ParamsOuverture;
@@ -215,6 +230,7 @@ export interface ParamsParClasse {
   etiquette: ParamsEtiquette;
   "bloc-occurrence": ParamsBlocOccurrence;
   "garde-corps": ParamsGardeCorps;
+  "objet-importe": ParamsObjetImporte;
 }
 
 export interface Occurrence<C extends Classe = Classe> {

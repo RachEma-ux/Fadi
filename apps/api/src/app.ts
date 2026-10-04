@@ -34,9 +34,9 @@ export function createApp() {
   );
 
   // Limite générale de 256 ko ; les lots de commandes de l'Atelier (1 Mo, routes/atelier-commands.ts), les pièces
-  // jointes des étapes, les exports de l'Atelier et l'import d'archive ont leur propre lecture de corps (limite dédiée).
+  // jointes des étapes, les exports de l'Atelier, l'import IFC et l'import d'archive ont leur propre lecture de corps (limite dédiée).
   const jsonBody = express.json({ limit: "256kb" });
-  app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$/.test(req.path) ? next() : jsonBody(req, res, next)));
+  app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$/.test(req.path) ? next() : jsonBody(req, res, next)));
   app.use(attachUser);
 
   // Les routes d'authentification sont la cible privilégiée du

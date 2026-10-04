@@ -80,6 +80,8 @@ export function pointCaracteristique(etat: ModeleAtelier, objetId: string, carac
       return nom === "centre" ? o.params.position : null;
     case "garde-corps":
       return nom === "sommet" && index !== null ? (o.params.points[index] ?? null) : null;
+    case "objet-importe":
+      return nom === "centre" && o.params.empreinte.length ? (() => { const c = centroide(o.params.empreinte); return pt(c.x, c.y); })() : null;
     case "cotation":
     case "texte":
     case "etiquette":

@@ -110,7 +110,9 @@ export interface VueGeneree {
   mesures: { triangles: number; primitives: number };
 }
 
-const PHYSIQUES = new Set<OccurrenceQuelconque["classe"]>(["mur", "porte", "fenetre", "dalle", "toiture", "escalier", "poteau", "solide", "garde-corps", "bloc-occurrence"]);
+const PHYSIQUES = new Set<OccurrenceQuelconque["classe"]>(["mur", "porte", "fenetre", "dalle", "toiture", "escalier", "poteau", "solide", "garde-corps", "bloc-occurrence", "objet-importe"]);
+/** Objet physique d'une vue ; un espace IFC importé n'est pas de la matière (ni coupé, ni occultant). */
+const physique = (o: OccurrenceQuelconque): boolean => PHYSIQUES.has(o.classe) && !(o.classe === "objet-importe" && o.params.ifcClasse.toLowerCase() === "ifcspace");
 const POCHES = new Set<string>(["mur", "poteau", "dalle", "toiture", "escalier"]);
 
 /** L'objet est-il dessiné (calque visible, phase retenue) ? */
@@ -163,7 +165,7 @@ function verserProjection(c: Collecteur, etat: ModeleAtelier, r: ResultatProject
 function maillagesDe(etat: ModeleAtelier, objets: readonly OccurrenceQuelconque[], exclure: ReadonlySet<string> = new Set()): Maillage[] {
   const out: Maillage[] = [];
   for (const o of objets) {
-    if (!PHYSIQUES.has(o.classe) || exclure.has(o.classe)) continue;
+    if (!physique(o) || exclure.has(o.classe)) continue;
     const m = maillageObjet(etat, o);
     if (m && m.indices.length) out.push(m);
   }
@@ -377,7 +379,7 @@ function reperesNiveaux(c: Collecteur, etat: ModeleAtelier, xGauche: number, xDr
 }
 
 function genererCoupeOuFacade(c: Collecteur, etat: ModeleAtelier, v: ParamsVue): void {
-  const objets = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => PHYSIQUES.has(o.classe) && retenu(etat, o, v.phases)).sort((a, b) => (a.id < b.id ? -1 : 1));
+  const objets = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => physique(o) && retenu(etat, o, v.phases)).sort((a, b) => (a.id < b.id ? -1 : 1));
   let camera: Camera;
   let coupe = false;
   if (v.type === "coupe") {
@@ -482,7 +484,7 @@ export function objetsVue(etat: ModeleAtelier, params: ParamsVue): string[] {
     }
     for (const r of Object.values(etat.references)) if (ids.has(r.proprietaireId) && r.objetId) ids.add(r.objetId);
   } else if (params.type === "coupe" || params.type === "facade") {
-    for (const o of tous) if (PHYSIQUES.has(o.classe) && retenu(etat, o, params.phases)) ids.add(o.id);
+    for (const o of tous) if (physique(o) && retenu(etat, o, params.phases)) ids.add(o.id);
   } else {
     const niveaux = niveauxOrdonnes(etat);
     const ref = niveaux.filter((n) => n.elevation >= -1e-9).sort((a, b) => a.elevation - b.elevation)[0] ?? niveaux[0];

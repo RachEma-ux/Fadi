@@ -7,6 +7,7 @@
 import {
   composerFeuille,
   empreinte,
+  exporterIfc,
   csvTableau,
   dxfFeuille,
   dxfVue,
@@ -96,6 +97,16 @@ export function atelierDocumentDescriptors(project: OwnedProject, etat: ModeleAt
     });
   }
   out.push({
+    kind: "atelier-ifc",
+    group: "atelier",
+    label: "Maquette IFC 4.3 (IFC4X3_ADD2) du modèle",
+    fileName: `${code}_revision_${rev}.ifc`,
+    href: `${base}/modele.ifc`,
+    stepNumber: 10,
+    // Le fichier dépend du modèle entier : toute commande avance la révision, qui suffit à le dater (avec l'identité du projet).
+    current: { modelRevision: rev, inputHash: empreinte(`ifc|${project.id}|${project.code}|${project.name}|${rev}`) },
+  });
+  out.push({
     kind: "atelier-quantites",
     group: "atelier",
     label: "Rapport des quantités du modèle (HTML)",
@@ -114,9 +125,16 @@ export interface Rendu {
 
 const TYPES_MIME: Record<FormatDocument, string> = { pdf: "application/pdf", dxf: "application/dxf; charset=utf-8", svg: "image/svg+xml; charset=utf-8" };
 
-/** Rendu d'un document de l'Atelier par son genre (`atelier-vue-<id>-pdf`…), à la révision courante. */
-export function rendreDocumentAtelier(kind: string, project: OwnedProject, etat: ModeleAtelier): Rendu | null {
+/**
+ * Rendu d'un document de l'Atelier par son genre (`atelier-vue-<id>-pdf`…), à la révision courante. `horodatage` :
+ * instant de la révision (en-tête du fichier IFC, pour des octets identiques d'une production à l'autre).
+ */
+export function rendreDocumentAtelier(kind: string, project: OwnedProject, etat: ModeleAtelier, horodatage?: string): Rendu | null {
   const rev = project.modelRevision;
+  if (kind === "atelier-ifc") {
+    const { contenu } = exporterIfc(etat, { projet: { id: project.id, nom: project.name, code: project.code }, revision: rev, horodatage: horodatage ?? new Date(0).toISOString() });
+    return { body: contenu, type: "application/x-step; charset=utf-8" };
+  }
   let m = /^atelier-vue-(.+)-(pdf|dxf|svg)$/.exec(kind);
   if (m) {
     const d = etat.definitions[m[1]!];

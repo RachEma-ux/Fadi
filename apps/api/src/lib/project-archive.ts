@@ -9,6 +9,11 @@ import { randomUUID } from "node:crypto";
 import { asc, eq } from "drizzle-orm";
 import {
   ARCHIVE_ATTACHMENTS_LIMIT,
+  BUSINESS_CHECKS_VERSION,
+  DESIGN_REVIEW_VERSION,
+  DOCUMENTS_VERSION,
+  MANIFESTE_PAQUET_FORMAT,
+  MANIFESTE_PAQUET_VERSION,
   PROJECT_ARCHIVE_KIND,
   PROJECT_ARCHIVE_VERSION,
   archiveStageMapping,
@@ -19,11 +24,12 @@ import {
   type ArchiveAttachment,
   type ArchiveRepartition,
   type HarmonieProposalDecision,
+  type ManifestePaquet,
   type ProgrammeMode,
   type ProjectArchive,
 } from "@parcours/domain-model";
 import { atelierCommands, parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
-import { CONTRAT_COMMANDES, TYPE_RESTAURER, importerModeleNatif, verifierModele, type ModeleAtelier, type RapportImport } from "@parcours/atelier-model";
+import { CONTRAT_COMMANDES, SCHEMA_IFC, TYPE_RESTAURER, empreinteDe, importerModeleNatif, verifierModele, type ModeleAtelier, type RapportImport } from "@parcours/atelier-model";
 import { chargerModele, remplacerModele } from "../lib/atelier-modele.js";
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS } from "../data/parcours.js";
 import { newId } from "./ids.js";
@@ -48,6 +54,33 @@ type ProjectRow = typeof projects.$inferSelect;
 /** Le mode enregistré (« min » / « cible » / « max », ou « cas » quand la répartition vient d'un cas de programme). */
 function repartitionMode(mode: string): ArchiveRepartition["mode"] {
   return mode === "cas" ? "cas" : (PROGRAMME_MODES as readonly string[]).includes(mode) ? (mode as ProgrammeMode) : "cible";
+}
+
+/** Manifeste du paquet natif : versions, unités, repères, identités et empreinte du modèle (lot 6). */
+export function manifestePaquet(project: ProjectRow, etat: ModeleAtelier | null): ManifestePaquet {
+  const parcelle = etat?.site.parcelle ?? null;
+  return {
+    format: MANIFESTE_PAQUET_FORMAT,
+    version: MANIFESTE_PAQUET_VERSION,
+    schemas: { archive: PROJECT_ARCHIVE_VERSION, modeleAtelier: etat ? etat.version : null, contratCommandes: CONTRAT_COMMANDES, ifc: SCHEMA_IFC },
+    unites: { longueur: "m", aire: "m2", volume: "m3", angle: "deg", altitudes: "m, relatives à l'altitude 0 du repère local (aucune altitude absolue)" },
+    reperes: {
+      local: "repère local du projet (x vers l'est du quadrillage, y vers le nord du quadrillage, mètres)",
+      cadastral: parcelle ? { crs: parcelle.crs, origineLocale: { x: parcelle.origineLocale.x, y: parcelle.origineLocale.y }, conversion: "cadastral = local + origineLocale (translation, sans rotation ni échelle)" } : null,
+      geographique: "non utilisé dans le modèle (les fonds de carte restent hors du paquet)",
+    },
+    identites: {
+      projet: project.code,
+      revision: project.modelRevision,
+      // Empreinte du modèle tel qu'il est écrit en JSON (valeurs indéfinies omises), recalculable à la relecture.
+      empreinteModele: etat ? empreinteDe(JSON.parse(JSON.stringify(etat))) : null,
+      niveaux: etat ? Object.keys(etat.niveaux).length : 0,
+      objets: etat ? Object.keys(etat.objets).length : 0,
+      definitions: etat ? Object.keys(etat.definitions).length : 0,
+      identifiants: "identifiants Fadi stables ; GlobalId IFC dérivés de l'identifiant du projet et de l'objet (export), d'origine (objets importés)",
+    },
+    catalogues: { controlesMetier: BUSINESS_CHECKS_VERSION, documents: DOCUMENTS_VERSION, revueConception: DESIGN_REVIEW_VERSION, application: APPLICATION_VERSION, prototypeSource: SOURCE_VERSION },
+  };
 }
 
 /** `backup()` : le projet, ses étapes, son programme, ses parcelles, son modèle typé et ses pièces jointes (20 Mo cumulés) en un seul JSON. */
@@ -99,6 +132,7 @@ export async function exportProjectArchive(q: Querier, project: ProjectRow, now:
     parcels: parcelRows.map((p) => ({ id: p.id, number: p.number, name: p.name, crs: p.crs, parcelNumber: p.parcelNumber, data: p.data, revision: p.revision })),
     modele: charge ? { nativeId: charge.nativeId, etat: charge.etat as unknown as Record<string, unknown> } : null,
     natif: null,
+    manifeste: manifestePaquet(project, (charge?.etat as ModeleAtelier | undefined) ?? null),
     stageAttachments,
     warnings,
   };
@@ -176,6 +210,8 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
   let nativeId = "";
   let rapport: RapportImport | null = null;
   if (archive.modele) {
+    const attendue = archive.manifeste?.identites.empreinteModele;
+    if (attendue && empreinteDe(archive.modele.etat) !== attendue) warnings.push("Le modèle de l'archive ne correspond pas à l'empreinte de son manifeste (fichier modifié hors de Fadi) : il a été revalidé objet par objet avant import.");
     const v = verifierModele(archive.modele.etat);
     if (!v.ok) throw new ArchiveModeleError(v.erreurs);
     modele = v.modele;

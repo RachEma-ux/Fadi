@@ -717,6 +717,16 @@ export const api = {
     }
     return body as DrawingExportRecord;
   },
+  /** Import IFC (lot 6) : le fichier brut est lu par le serveur (web-ifc), les produits deviennent des représentations importées. */
+  importAtelierIfc: async (projectId: string, file: Blob, fileName: string): Promise<{ source: string; revision: number; lots: number; rapport: import("@parcours/atelier-model").RapportEchange }> => {
+    const res = await fetch(`/projects/${projectId}/atelier/import-ifc`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/octet-stream", "X-File-Name": encodeURIComponent(fileName) }, body: file });
+    const body: unknown = await res.json().catch(() => null);
+    if (!res.ok) {
+      const b = body as { erreur?: string; error?: string; message?: string; details?: { message?: string }[] } | null;
+      throw new ApiError(res.status, b?.erreur ?? b?.error ?? `http_${res.status}`, b?.message ?? b?.details?.[0]?.message ?? null, body);
+    }
+    return body as { source: string; revision: number; lots: number; rapport: import("@parcours/atelier-model").RapportEchange };
+  },
   deleteDrawingExport: (projectId: string, exportId: string) => request<void>(`/projects/${projectId}/documents/dessins/${encodeURIComponent(exportId)}`, { method: "DELETE" }),
   stepFileUrl: (projectId: string, stepNumber: number, fileId: string) => `/projects/${projectId}/steps/${stepNumber}/files/${encodeURIComponent(fileId)}`,
   deleteStepFile: (projectId: string, stepNumber: number, fileId: string) => request<void>(`/projects/${projectId}/steps/${stepNumber}/files/${encodeURIComponent(fileId)}`, { method: "DELETE" }),

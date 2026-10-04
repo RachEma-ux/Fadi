@@ -19,6 +19,11 @@ export interface PropsInspecteur {
 
 /** Libellés des paramètres canoniques (ceux qui ne figurent pas ici gardent leur nom technique). */
 const LIBELLES: Record<string, string> = {
+  ifcClasse: "Classe IFC d'origine",
+  globalId: "GlobalId d'origine",
+  source: "Fichier source",
+  maillage: "Maillage",
+  empreinte: "Emprise",
   epaisseur: "Épaisseur",
   hauteur: "Hauteur",
   largeur: "Largeur",
@@ -54,7 +59,7 @@ const LIBELLES: Record<string, string> = {
 };
 
 /** Paramètres géométriques édités au plan, pas dans l'inspecteur (on les résume). */
-const GEOMETRIQUES = new Set(["a", "b", "contour", "trous", "points", "polygones", "point", "centre", "positionTexte"]);
+const GEOMETRIQUES = new Set(["a", "b", "contour", "trous", "points", "polygones", "point", "centre", "positionTexte", "maillage", "empreinte", "ifcClasse", "globalId", "source"]);
 
 const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(3).replace(/0+$/, "").replace(".", ","));
 
@@ -74,13 +79,15 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
   const references = Object.values(etat.references).filter((r) => r.proprietaireId === o.id && r.etat === "a-reparer");
   const modifier = (cle: string, valeur: unknown) => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { [cle]: valeur } } }], `${description.libelle} : ${LIBELLES[cle] ?? cle}`);
   const desactive = readOnly || verrouille;
+  // Représentation importée (R16) : paramètres en lecture seule ; calque, phase et transformations restent possibles.
+  const parametresFiges = desactive || o.classe === "objet-importe";
 
   return (
     <section className="inspecteur" aria-label={`Inspecteur : ${description.libelle}`}>
       <header className="inspecteur-tete">
         <h3>{description.libelle}{typeof params["nom"] === "string" && params["nom"] ? ` — ${params["nom"] as string}` : ""}</h3>
         <p className="inspecteur-meta">
-          <span title="Identifiant stable">{o.id}</span> · IFC <span>{description.ifc}</span>
+          <span title="Identifiant stable">{o.id}</span> · IFC <span>{o.classe === "objet-importe" ? `${o.params.ifcClasse} (importé)` : description.ifc}</span>
           {o.niveauId && etat.niveaux[o.niveauId] ? <> · {etat.niveaux[o.niveauId]!.nom}</> : null}
         </p>
       </header>
@@ -101,7 +108,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         <ChoixPhase sel={[o]} readOnly={desactive} onCommandes={onCommandes} />
         {Object.entries(params).map(([cle, valeur]) => {
           if (GEOMETRIQUES.has(cle)) return <ResumeGeometrie key={cle} cle={cle} valeur={valeur} />;
-          return <Champ key={cle} id={`${o.id}-${cle}`} cle={cle} valeur={valeur} etat={etat} desactive={desactive} onValider={(v) => modifier(cle, v)} />;
+          return <Champ key={cle} id={`${o.id}-${cle}`} cle={cle} valeur={valeur} etat={etat} desactive={parametresFiges} onValider={(v) => modifier(cle, v)} />;
         })}
       </dl>
       {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
@@ -202,7 +209,10 @@ function formatValeur(v: unknown): string {
 
 function ResumeGeometrie({ cle, valeur }: { cle: string; valeur: unknown }) {
   let resume = "";
-  if (Array.isArray(valeur)) resume = `${valeur.length} ${cle === "polygones" ? "polygone(s)" : cle === "trous" ? "trou(s)" : "point(s)"}`;
+  if (cle === "maillage" && valeur && typeof valeur === "object") {
+    const m = valeur as { positions: unknown[]; indices: unknown[] };
+    resume = `${m.indices.length / 3} triangle(s), ${m.positions.length / 3} sommet(s) — représentation importée, non paramétrique`;
+  } else if (Array.isArray(valeur)) resume = `${valeur.length} ${cle === "polygones" ? "polygone(s)" : cle === "trous" ? "trou(s)" : "point(s)"}`;
   else if (valeur && typeof valeur === "object" && "x" in valeur) {
     const p = valeur as { x: number; y: number };
     resume = `x ${fmt(p.x)} · y ${fmt(p.y)} m`;

@@ -39,6 +39,17 @@ jobs:
       - run: npm run db:migrate
       - run: npm test
       - run: npm run build
+      # Corpus IFC (lot 6, D-006 : conformité testée, jamais « certifiée ») : petit modèle comparé à sa référence,
+      # P.118 exporté, puis relu par web-ifc, importé en représentations et réexporté ; chaque fichier validé par
+      # IfcOpenShell (schéma IFC4X3_ADD2, règles EXPRESS, effectifs, géométrie d'un échantillon).
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ifcopenshell==0.9.0 pytest
+      - name: Corpus IFC validé par IfcOpenShell (apps/api/test-corpus/ifc/)
+        run: |
+          npx --workspace=@fadi/api tsx test-corpus/ifc/generer.ts ../../ifc-sortie
+          for f in petit p118 p118-reimporte; do python3 apps/api/test-corpus/ifc/valider.py ifc-sortie/$f.ifc ifc-sortie/$f.attendus.json; done
 
   # Scénario Playwright de bout en bout (apps/web/e2e/parcours-scenario.mjs) :
   # le parcours complet sur P.118 — import, 21 étapes, Atelier, parcelle,
@@ -101,6 +112,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-documents.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des échanges du lot 6 (apps/web/e2e/atelier-echanges.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/atelier-echanges.mjs 2>&1 | tee -a e2e.log
       - name: Sauvegarde puis restauration vérifiées (scripts/verify-restore.sh) sur la base du scénario
         env:
           PGPASSWORD: fadi_ci_password

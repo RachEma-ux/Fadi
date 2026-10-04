@@ -11,6 +11,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../../lib/api";
 import { useOnline, useReachable } from "../../../components/SyncIndicator";
 import { exporter, type TypeExport } from "./exports";
+import { MenuImport, RapportEchangeDialogue, exporterMaquetteIfc, type RapportAffiche } from "./panneaux/Echanges";
 import { atelierClient } from "../bus/atelier-client";
 import { actionImmediate, lotSuppression, OUTILS_IMMEDIATS } from "./actions";
 import { etatUi, useEtatUi, type NiveauAffichage, type PanneauMobile } from "./etat-ui";
@@ -69,6 +70,7 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
   const etat = inst.etat;
   const [erreur, setErreur] = useState<string | null>(null);
   const [mesure, setMesure] = useState<string | null>(null);
+  const [rapportEchange, setRapportEchange] = useState<RapportAffiche | null>(null);
   const [precision, setPrecisionEtat] = useState("");
   // Miroir synchrone de la saisie de précision : les touches arrivent parfois avant que le champ ait le focus.
   const precisionRef = useRef("");
@@ -432,8 +434,37 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
                 {libelle}
               </button>
             ))}
+            <button
+              type="button"
+              data-export="ifc"
+              disabled={readOnly}
+              onClick={(e) => {
+                (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+                etatUi.set({ aide: "Production de la maquette IFC…" });
+                void exporterMaquetteIfc(client, { projectId, code, nomProjet })
+                  .then((r) => {
+                    etatUi.set({ aide: `Maquette IFC produite et inscrite au catalogue des documents : ${r.fichier ?? ""}` });
+                    setRapportEchange(r);
+                  })
+                  .catch((err: unknown) => setErreur(err instanceof Error ? err.message : String(err)));
+              }}
+            >
+              Maquette IFC 4.3 · rapport
+            </button>
           </div>
         </details>
+        <MenuImport
+          client={client}
+          projectId={projectId}
+          etat={etat}
+          niveauId={ui.niveauId}
+          desactive={readOnly || protectedReference}
+          motif={readOnly ? "Lecture seule" : protectedReference ? "Exemple protégé : importez dans une copie de travail" : undefined}
+          onRapport={setRapportEchange}
+          onErreur={setErreur}
+          onAide={(aide) => etatUi.set({ aide })}
+        />
+        {rapportEchange && <RapportEchangeDialogue rapport={rapportEchange} onFermer={() => setRapportEchange(null)} />}
         {harmonie && (
           <button type="button" id="atelier-harmonie-button" className="barre-harmonie" aria-controls="atelier-harmonie-page" aria-expanded="false" onClick={() => window.AtelierHarmonyPage?.open()}>
             ◈ Harmonie

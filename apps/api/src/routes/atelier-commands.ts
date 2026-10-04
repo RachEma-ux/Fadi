@@ -10,12 +10,15 @@
  * - `POST /commands/annuler`, `POST /commands/retablir` : inverse d'une entrée du journal, nouvelle microversion ;
  * - `GET /journal?apres=n` : entrées depuis une révision ; `GET /problemes` : références à réparer, problèmes,
  *   documents périmés, état du bilan ;
+ * - `POST /import-ifc` (lot 6) : fichier IFC brut lu par web-ifc, produits importés en représentations (classe et
+ *   GlobalId d'origine), en lots de 500 commandes dans une seule transaction (tout ou rien) ; réponse : rapport.
  */
-import { Router, json, type Request, type Response } from "express";
+import { Router, json, raw, type Request, type Response } from "express";
 import { and, desc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 import {
   appliquerLot,
+  commandesImportIfc,
   CONTRAT_COMMANDES,
   ErreurCommande,
   referencesAReparer,
@@ -31,7 +34,8 @@ import { loadDesignContext } from "../lib/design-context.js";
 import { documentCatalogue } from "../lib/documents.js";
 import { projectOr404, type AccessibleProject } from "../lib/owned-project.js";
 import { lockProject } from "../lib/step-rows.js";
-import { EchecLot, validerDansTransaction, type ResultatValidation } from "../lib/atelier-validation.js";
+import { EchecLot, appliquerCommandesInternes, validerDansTransaction, type ResultatValidation } from "../lib/atelier-validation.js";
+import { lireIfc } from "../lib/atelier-ifc.js";
 
 export const atelierCommandsRouter = Router({ mergeParams: true });
 atelierCommandsRouter.use(requireAuth);
@@ -195,6 +199,56 @@ atelierCommandsRouter.post("/commands/essai", corps, async (req, res) => {
   } catch (err) {
     if (err instanceof ErreurCommande) {
       erreurCommande(res, err, project.modelRevision);
+      return;
+    }
+    throw err;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Échanges (lot 6)
+// ---------------------------------------------------------------------------
+
+const LIMITE_IFC = 64 * 1024 * 1024;
+const LOTS_IMPORT_MAX = 60;
+
+atelierCommandsRouter.post("/import-ifc", raw({ type: () => true, limit: LIMITE_IFC }), async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const octets = Buffer.isBuffer(req.body) ? (req.body as Buffer) : Buffer.alloc(0);
+  const brut = req.get("X-File-Name") ?? "import.ifc";
+  let source = "import.ifc";
+  try {
+    source = decodeURIComponent(brut).replace(/[\\/\u0000-\u001f]/g, "_").slice(0, 120) || "import.ifc";
+  } catch {
+    source = "import.ifc";
+  }
+  if (!octets.length || !octets.subarray(0, 64).toString("latin1").startsWith("ISO-10303-21")) {
+    invalide(res, "Fichier IFC attendu (STEP ISO-10303-21, texte).", "fichier");
+    return;
+  }
+  let lecture;
+  try {
+    lecture = await lireIfc(new Uint8Array(octets.buffer, octets.byteOffset, octets.byteLength));
+  } catch (err) {
+    invalide(res, `Fichier IFC illisible : ${err instanceof Error ? err.message : String(err)}`, "fichier");
+    return;
+  }
+  try {
+    const sortie = await db.transaction(async (tx) => {
+      await lockProject(tx, project.id);
+      const charge = (await chargerModele(tx, project.id)) ?? (await creerModeleVide(tx, project.id, `fadi-${project.id}`));
+      const { lots, rapport } = commandesImportIfc(charge.etat, lecture, { source });
+      if (lots.length > LOTS_IMPORT_MAX) throw new EchecLot({ status: 413, revision: project.modelRevision, reponse: { erreur: "trop-volumineux", message: `Import trop volumineux (${lots.length} lots de 500 commandes ; ${LOTS_IMPORT_MAX} au plus).` } });
+      let derniere: ResultatValidation | null = null;
+      for (const l of lots) derniere = await appliquerCommandesInternes(tx, project.id, req.user!.id, l.commands, l.label);
+      return { rapport, lots: lots.length, revision: derniere?.revision ?? project.modelRevision };
+    });
+    if (sortie.lots) void traiterEvenements(project.id).catch(() => undefined);
+    res.json({ source, revision: sortie.revision, lots: sortie.lots, rapport: sortie.rapport });
+  } catch (err) {
+    if (err instanceof EchecLot) {
+      res.status(err.resultat.status).json(err.resultat.reponse);
       return;
     }
     throw err;

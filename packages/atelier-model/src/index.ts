@@ -22,3 +22,6 @@ export { dxfVue, dxfFeuille } from "./documents/rendu-dxf.js";
 export { projeterMaillages, contoursUnion, type Camera, type ResultatProjection } from "./documents/visibilite.js";
 export * from "./contraintes.js";
 export { bibliotheques, proprietesEffectives, CLASSES_BLOC, type ParamsDefinitionBloc, type ContenuBloc } from "./commandes/bloc.js";
+export * from "./echanges/ifc.js";
+export * from "./echanges/import-ifc.js";
+export * from "./echanges/import-dxf.js";

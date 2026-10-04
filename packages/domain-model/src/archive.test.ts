@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ArchiveError, archiveFileName, archiveSafeName, cleanArchiveInput, decodeDataUrl, harmonieStateFromPrototype, normalizeImportedProjects } from "./archive";
+import { ArchiveError, archiveFileName, archiveSafeName, cleanArchiveInput, decodeDataUrl, harmonieStateFromPrototype, manifesteOf, normalizeImportedProjects } from "./archive";
 import type { ParcoursStepDefinition } from "./parcours";
 
 function def(number: number): ParcoursStepDefinition {
@@ -178,5 +178,18 @@ describe("archive — export du prototype → archive Fadi", () => {
     expect(decodeDataUrl("data:;base64,QQ==")).toEqual({ type: "application/octet-stream", base64: "QQ==" });
     expect(decodeDataUrl("https://example.org")).toBeNull();
     expect(harmonieStateFromPrototype(2, null)).toEqual({ revision: 0, generatedAt: null, generatedHash: null, proposals: {} });
+  });
+});
+
+describe("manifeste du paquet natif (lot 6)", () => {
+  const manifeste = { format: "fadi-paquet-natif", version: 1, schemas: { archive: 2, modeleAtelier: 1, contratCommandes: "atelier-commands/1", ifc: "IFC4X3_ADD2" } };
+  it("absent : null (archives antérieures) ; reconnu : relu tel quel", () => {
+    expect(manifesteOf(undefined)).toBeNull();
+    expect(manifesteOf(manifeste)).toMatchObject({ format: "fadi-paquet-natif", version: 1 });
+  });
+  it("refuse un manifeste illisible, d'une version future ou d'un contrat de commandes inconnu", () => {
+    expect(() => manifesteOf({ format: "autre" })).toThrow(ArchiveError);
+    expect(() => manifesteOf({ ...manifeste, version: 2 })).toThrow(/plus récente/);
+    expect(() => manifesteOf({ ...manifeste, schemas: { contratCommandes: "autre/1" } })).toThrow(/contrat de commandes inconnu/);
   });
 });

@@ -18,8 +18,8 @@ import { chargerModele } from "../lib/atelier-modele.js";
 import { atelierDocumentDescriptors, rendreDocumentAtelier } from "../lib/atelier-documents.js";
 import { randomUUID } from "node:crypto";
 import { raw, Router, type Request, type Response } from "express";
-import { and, eq } from "drizzle-orm";
-import { drawingExports, projects } from "../db/schema.js";
+import { and, desc, eq } from "drizzle-orm";
+import { atelierCommands, drawingExports, projects } from "../db/schema.js";
 import { lockProject } from "../lib/step-rows.js";
 import { buildingCase, designPlanSvg, programmeCsv, resolvedSpacesCsv, surfacesCsv, type LibrarySpace } from "@parcours/domain-model";
 import { db } from "../db/client.js";
@@ -116,7 +116,9 @@ async function produceAtelier(req: Request, res: Response, kind: string) {
   const now = new Date();
   const charge = await chargerModele(db, project.id);
   const descriptor = atelierDocumentDescriptors(project, charge?.etat ?? null).find((d) => d.kind === kind);
-  const out = descriptor && charge ? rendreDocumentAtelier(kind, project, charge.etat) : null;
+  // Instant de la révision exportée (dernière entrée du journal) : en-tête IFC reproductible.
+  const derniere = kind === "atelier-ifc" ? (await db.select({ createdAt: atelierCommands.createdAt }).from(atelierCommands).where(eq(atelierCommands.projectId, project.id)).orderBy(desc(atelierCommands.resultRevision)).limit(1))[0] : undefined;
+  const out = descriptor && charge ? rendreDocumentAtelier(kind, project, charge.etat, derniere?.createdAt.toISOString().replace(/\.\d{3}Z$/, "")) : null;
   if (!descriptor || !out) {
     res.status(404).json({ error: "not_found", message: "Ce document n'existe pas (ou plus) dans le modèle de l'Atelier." });
     return;
@@ -129,6 +131,10 @@ async function produceAtelier(req: Request, res: Response, kind: string) {
   res.setHeader("X-Input-Hash", descriptor.current.inputHash);
   res.send(out.body);
 }
+
+documentsRouter.get("/atelier/modele.ifc", async (req, res) => {
+  await produceAtelier(req, res, "atelier-ifc");
+});
 
 documentsRouter.get("/atelier/quantites.html", async (req, res) => {
   await produceAtelier(req, res, "atelier-quantites");

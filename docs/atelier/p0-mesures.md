@@ -257,3 +257,17 @@ PostgreSQL local, compte neuf, exemple P.118 importé (1 753 objets). Trois pass
 | Appels de dessin, P.118 complet | < 400 (tampons groupés par niveau et matériau) |
 | Pousser / tirer d'un mur (geste de 10 pas compris) → enregistré | 1,8 – 2,0 s |
 | WebGPU | non mesuré : aucun adaptateur dans ce Chromium |
+
+## Lot 6 — échanges (corpus `apps/api/test-corpus/ifc/`, recette `apps/web/e2e/atelier-echanges.mjs`)
+
+Banc : Node 22 (corpus) ; Chromium headless de Playwright et API construite servant l'application (recette).
+Deux à trois passages ; fourchettes.
+
+| Mesure | Valeur |
+| --- | --- |
+| Export IFC du P.118 en mémoire (`exporterIfc`, 1 753 objets) | 200 – 217 ms ; 3,4 Mo |
+| Lecture du même fichier par web-ifc 0.0.78 (maillages, étages, conversion) | 0,7 s |
+| Lecture + import en représentations + application des 4 lots (Node, sans base) | 1,2 s ; 1 539 représentations |
+| Export IFC depuis l'Atelier (serveur, téléchargement, rapport) | 0,9 – 1,1 s |
+| Import IFC du P.118 depuis l'Atelier (envoi, lecture, 4 lots en transaction, relecture du modèle) | 3,4 – 3,9 s |
+| Validation IfcOpenShell 0.9.0 du P.118 (schéma, règles EXPRESS, échantillon géométrique) | quelques secondes en local ; 0 erreur |

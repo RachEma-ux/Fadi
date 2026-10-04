@@ -72,6 +72,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   ...triplet("solide", "solide", "extruder"),
   ...triplet("reference-plan", "referencePlan"),
   ...triplet("garde-corps", "gardeCorps"),
+  ...triplet("objet-importe", "objetImporte"),
   // Esquisse : une commande par forme + modifier / supprimer
   ...Object.fromEntries(FORMES.map((forme) => [`esquisse.${forme}`, ((etat, p, ctx) => creerOccurrence(etat, { ...p, params: { ...((p["params"] as Record<string, unknown> | undefined) ?? p), forme } }, ctx, "esquisse")) as Reducteur])),
   "esquisse.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "esquisse"),

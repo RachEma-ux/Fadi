@@ -80,6 +80,9 @@ export function modifierOccurrence(etat: ModeleAtelier, p: Brut, ctx: ContexteCo
   const calqueExistant = existant.calqueId ? etat.calques[existant.calqueId] : null;
   if (calqueExistant?.verrouille) throw new ErreurCommande("precondition", "id", `calque verrouillé : ${calqueExistant.nom}`);
   const patch = (p["params"] as Brut | undefined) ?? {};
+  // R16 : une représentation importée n'a pas de paramètres à éditer — elle se transforme (déplacer, tourner, miroir,
+  // échelle, copier) et s'organise (calque, groupe, phase, propriétés), rien de plus.
+  if (existant.classe === "objet-importe" && Object.keys(patch).length) throw new ErreurCommande("precondition", "params", "représentation importée : paramètres non modifiables (seules les transformations et l'organisation s'appliquent)");
   const params = validerParams(etat, existant.classe, { ...(existant.params as unknown as Brut), ...patch });
   const proprietes = p["proprietes"] === undefined ? existant.proprietes : { ...existant.proprietes, ...lireProprietes(p) };
   const suivant = {

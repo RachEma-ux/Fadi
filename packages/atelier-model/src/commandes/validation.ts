@@ -188,6 +188,23 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       nom: lire.chaineOuNull(p, "nom"),
     };
   },
+  "objet-importe"(_etat, p) {
+    const m = p["maillage"] as { positions?: unknown; indices?: unknown } | undefined;
+    const positions = m?.positions;
+    const indices = m?.indices;
+    if (!Array.isArray(positions) || positions.length % 3 !== 0 || positions.length > 1_500_000 || !positions.every((v) => typeof v === "number" && Number.isFinite(v))) throw new ErreurCommande("invalide", "maillage.positions", "maillage : coordonnées x, y, z finies attendues (500 000 sommets au plus)");
+    const n = positions.length / 3;
+    if (!Array.isArray(indices) || indices.length % 3 !== 0 || !indices.every((v) => Number.isInteger(v) && v >= 0 && v < n)) throw new ErreurCommande("invalide", "maillage.indices", "maillage : triangles d'indices entiers valides attendus");
+    return {
+      ifcClasse: lire.chaine(p, "ifcClasse"),
+      globalId: lire.chaine(p, "globalId"),
+      nom: lire.chaineOuNull(p, "nom"),
+      type: lire.chaineOuNull(p, "type"),
+      maillage: { positions: positions as number[], indices: indices as number[] },
+      empreinte: lire.points(p, "empreinte", { optionnel: true }),
+      source: lire.chaineOuNull(p, "source"),
+    };
+  },
   "bloc-occurrence"(_etat, p) {
     return { position: lire.point(p, "position")!, angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" }, echelle: lire.nombre(p, "echelle", { optionnel: true, min: 0 }) ?? 1 };
   },

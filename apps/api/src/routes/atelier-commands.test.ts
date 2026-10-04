@@ -239,6 +239,13 @@ describe("modèle typé de l'exemple P.118 et fraîcheur des documents", () => {
     const pid = imported.body.id as string;
     const archive = JSON.parse((await client.get(`/projects/${pid}/archive`)).text);
     expect(archive.version).toBe(2);
+    // Manifeste du paquet natif (lot 6) : versions, unités, repères, identités, catalogues.
+    expect(archive.manifeste).toMatchObject({ format: "fadi-paquet-natif", version: 1, schemas: { archive: 2, modeleAtelier: 1, contratCommandes: CONTRAT, ifc: "IFC4X3_ADD2" }, unites: { longueur: "m", angle: "deg" }, identites: { revision: 1 } });
+    expect(archive.manifeste.identites.empreinteModele).toMatch(/^[0-9a-f]{16}$/);
+    expect(archive.manifeste.reperes.cadastral.crs).toBe(archive.modele.etat.site.parcelle.crs);
+    const futur = await client.post("/projects/import").set("Content-Type", "application/json").send({ ...archive, manifeste: { ...archive.manifeste, version: 99 } });
+    expect(futur.status).toBe(422);
+    expect(futur.body.message).toMatch(/version plus récente/);
     const retour = await client.post("/projects/import").set("Content-Type", "application/json").send(archive);
     expect(retour.status).toBe(201);
     const copie = retour.body.projects[0].id as string;
@@ -320,4 +327,52 @@ describe("documents dérivés de l'Atelier au catalogue (lot 5)", () => {
     expect((await client.get(`/projects/${pid}/documents/atelier/feuilles/inconnue.pdf`)).status).toBe(404);
     expect((await client.get(`/projects/${pid}/documents/atelier/tableaux/f1.pdf`)).status).toBe(404);
   });
+});
+
+describe("échanges IFC (lot 6)", () => {
+  it("P.118 exporté au catalogue (IFC 4.3, reproductible), réimporté dans un autre projet en représentations, avec rapport ; réimport sans doublon", async () => {
+    const client = await registerAndLogin("ifc@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const pid = imported.body.id as string;
+    const lireTexte = (res: request.Response) => res.text ?? "";
+    const ifc = await client.get(`/projects/${pid}/documents/atelier/modele.ifc`);
+    expect(ifc.status).toBe(200);
+    expect(ifc.headers["content-type"]).toMatch(/application\/x-step/);
+    expect(ifc.headers["content-disposition"]).toMatch(/_revision_1\.ifc/);
+    const texte = lireTexte(ifc);
+    expect(texte).toContain("FILE_SCHEMA(('IFC4X3_ADD2'));");
+    expect(lireTexte(await client.get(`/projects/${pid}/documents/atelier/modele.ifc`))).toBe(texte);
+    const docs = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; freshness: string | null }[];
+    expect(docs.find((d) => d.kind === "atelier-ifc")!.freshness).toBe("a-jour");
+    const source = (await client.get(`/projects/${pid}/atelier/model`)).body.modele;
+    const murs = Object.values(source.objets as Record<string, { classe: string }>).filter((o) => o.classe === "mur").length;
+
+    const cible = await projetVide(client);
+    const refus = await client.post(`/projects/${cible}/atelier/import-ifc`).set("Content-Type", "application/octet-stream").send(Buffer.from("pas un ifc"));
+    expect(refus.status).toBe(400);
+    const r = await client.post(`/projects/${cible}/atelier/import-ifc`).set("Content-Type", "application/octet-stream").set("X-File-Name", encodeURIComponent("P118 révision 1.ifc")).send(Buffer.from(texte));
+    expect(r.status).toBe(200);
+    expect(r.body.source).toBe("P118 révision 1.ifc");
+    expect(r.body.lots).toBeGreaterThan(1);
+    expect(r.body.revision).toBe(r.body.lots);
+    const murIfc = r.body.rapport.classes.find((l: { classe: string }) => l.classe === "IfcWall");
+    expect(murIfc).toMatchObject({ source: murs, cible: murs });
+    expect(r.body.rapport.remarques.some((t: string) => t.includes("pas de parcelle"))).toBe(true);
+    const modele = (await client.get(`/projects/${cible}/atelier/model`)).body.modele;
+    const importes = Object.values(modele.objets as Record<string, { classe: string; params: { globalId: string } }>).filter((o) => o.classe === "objet-importe");
+    expect(importes.length).toBe(r.body.rapport.classes.reduce((n: number, l: { cible: number }) => n + l.cible, 0));
+    expect(Object.keys(modele.niveaux).length).toBe(Object.keys(source.niveaux).length);
+    // Le même fichier une seconde fois : aucun objet en double.
+    const encore = await client.post(`/projects/${cible}/atelier/import-ifc`).set("Content-Type", "application/octet-stream").send(Buffer.from(texte));
+    expect(encore.status).toBe(200);
+    expect((await client.get(`/projects/${cible}/atelier/model`)).body.modele.objets).toEqual(modele.objets);
+    // Droits : un étranger ne voit ni n'importe rien.
+    const etranger = await registerAndLogin("ifc-etranger@example.com");
+    expect((await etranger.post(`/projects/${cible}/atelier/import-ifc`).set("Content-Type", "application/octet-stream").send(Buffer.from(texte))).status).toBe(404);
+    expect((await etranger.get(`/projects/${pid}/documents/atelier/modele.ifc`)).status).toBe(404);
+    // Une commande périme l'export au catalogue.
+    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("apres-ifc", 1, [{ type: "niveau.modifier", params: { id: Object.keys(source.niveaux)[0], nom: "Renommé" } }]))).status).toBe(200);
+    const apres = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; freshness: string | null }[];
+    expect(apres.find((d) => d.kind === "atelier-ifc")!.freshness).toBe("perime");
+  }, 60_000);
 });

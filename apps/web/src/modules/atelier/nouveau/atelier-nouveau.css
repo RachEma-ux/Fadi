@@ -965,10 +965,12 @@
   color: #6b4a12;
 }
 
-.barre-exports {
+.barre-exports,
+.barre-imports {
   position: relative;
 }
-.barre-exports > summary {
+.barre-exports > summary,
+.barre-imports > summary {
   list-style: none;
   min-height: 34px;
   padding: 0.2rem 0.6rem;
@@ -1467,7 +1469,99 @@
   font-weight: 700;
 }
 
-.barre-exports[data-cote="gauche"] .exports-liste {
+.barre-exports[data-cote="gauche"] .exports-liste,
+.barre-imports[data-cote="gauche"] .exports-liste {
   right: auto;
   left: 0;
+}
+
+/* Échanges (lot 6) : import IFC / DXF, rapport de fidélité. */
+.atelier-dialogue {
+  width: min(52rem, calc(100vw - 1.5rem));
+  max-height: 92vh;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--atelier-encre);
+  font-size: 0.92rem;
+}
+.atelier-dialogue::backdrop {
+  background: rgba(16, 47, 40, 0.45);
+}
+.atelier-dialogue h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+.atelier-dialogue label {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.5rem 0;
+}
+.atelier-dialogue fieldset {
+  margin: 0.6rem 0;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+}
+.atelier-dialogue fieldset label {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0.25rem 0;
+}
+.dialogue-note {
+  color: var(--atelier-doux);
+  margin: 0 0 0.6rem;
+}
+.dialogue-erreur {
+  color: #8a2a1b;
+  font-weight: 600;
+}
+.dialogue-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+.dialogue-actions .primaire {
+  background: var(--atelier-encre);
+  border-color: var(--atelier-encre);
+  color: #fff;
+}
+.rapport-table {
+  overflow-x: auto;
+  max-height: 50vh;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+}
+.rapport-table table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+}
+.rapport-table th,
+.rapport-table td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--atelier-ligne);
+  text-align: left;
+  vertical-align: top;
+}
+.rapport-table td:nth-child(2),
+.rapport-table td:nth-child(3) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.rapport-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f4f7f5;
+}
+.rapport-perte th[scope="row"] {
+  color: #7a4a0e;
+}
+.rapport-remarques {
+  margin: 0.7rem 0 0;
+  padding-left: 1.2rem;
+  color: var(--atelier-doux);
 }

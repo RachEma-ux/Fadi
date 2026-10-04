@@ -74,6 +74,16 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
       return { ...o, params: { ...o.params, position: T(o.params.position), angle: { value: o.params.angle.value + rot, unit: "deg" }, echelle: t.type === "echelle" ? o.params.echelle * t.facteur : o.params.echelle } };
     case "garde-corps":
       return { ...o, params: { ...o.params, points: o.params.points.map(T) } };
+    case "objet-importe": {
+      const pos = [...o.params.maillage.positions];
+      for (let i = 0; i < pos.length; i += 3) {
+        const q = T(pt(pos[i]!, pos[i + 1]!));
+        pos[i] = q.x;
+        pos[i + 1] = q.y;
+        if (t.type === "echelle") pos[i + 2] = pos[i + 2]! * t.facteur;
+      }
+      return { ...o, params: { ...o.params, maillage: { ...o.params.maillage, positions: pos }, empreinte: o.params.empreinte.map(T) } };
+    }
   }
 }
 
