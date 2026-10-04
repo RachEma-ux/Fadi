@@ -4,7 +4,8 @@
  * chef de projet, qui étend le contrat (ajout seulement, jamais de retrait) et le consigne en décision.
  *
  * Propriété (matrice du lot 3a) :
- * - `socle/**` (ce fichier, `selection.ts`, `registre.ts`, `contexte.ts`) : chef de projet ;
+ * - `socle/**` (ce fichier, `selection.ts`, `registre.ts`, `dessin.ts`, `interface.ts`, `pilote.ts`, `contexte.ts`) :
+ *   chef de projet ;
  * - `ui/**` : équipier « interface » (L3a.1) — consomme `RegistreOutils`, `SelectionAtelier`, `ContexteAtelier` ;
  * - `plan2d/**` : équipier « 2D » (L3a.2) — produit les `EvenementPlan` (accrochages, saisie de précision),
  *   dessine les `Apercu`, fournit la sélection au clic / lasso / filtre, enregistre ses outils (esquisse,
@@ -65,8 +66,9 @@ export interface ContexteAtelier {
   readonly projetId: string;
   /** État local du bus (optimiste) ; `null` tant que le modèle n'est pas chargé. */
   etat(): EtatModele | null;
-  readonly niveauActifId: IdObjet | null;
-  readonly calqueActifId: IdObjet | null;
+  /** Niveau et calque actifs, lus à l'instant de l'appel (ils changent pendant la session : `EtatInterface`). */
+  niveauActif(): IdObjet | null;
+  calqueActif(): IdObjet | null;
   readonly selection: SelectionAtelier;
   /** Le projet est-il modifiable par ce compte (rôle, réservation, copie protégée de l'exemple) ? Sinon, motif. */
   readonly ecriture: { readonly permise: true } | { readonly permise: false; readonly motif: string };
@@ -77,6 +79,12 @@ export interface ContexteAtelier {
   valider(label: string, commandes: readonly Commande[]): Promise<ResultatValidation>;
   /** Essai à blanc local (même réducteur) : sert au contrôle avant validation, sans rien écrire. */
   essayer(commandes: readonly Commande[]): ResultatValidation;
+  /**
+   * Annuler / rétablir la dernière entrée de l'auteur, **par le serveur** (journal, D-024) : en ligne seulement et
+   * file vide ; sinon refus lisible. Le modèle local est relu ensuite (`BusAtelier.rafraichir`).
+   */
+  annuler(): Promise<ResultatValidation>;
+  retablir(): Promise<ResultatValidation>;
   /** Génère un identifiant d'objet neuf, stable pour la session de l'outil (préfixe par classe, ex. `mur`). */
   nouvelId(prefixe: string): IdObjet;
 }
@@ -250,3 +258,111 @@ export interface DescripteurInspecteur {
   readonly classes: readonly string[];
   champs(objet: ObjetModele, ctx: ContexteAtelier): readonly ChampInspecteur[];
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// État partagé de l'interface (niveau, calque, vue, outil actif, niveau d'affichage, favoris)
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Paramètres d'affichage : jamais dans le modèle du bâtiment (docs/architecture.md). */
+export interface EtatVue {
+  readonly niveauActifId: IdObjet | null;
+  readonly calqueActifId: IdObjet | null;
+  readonly vue: VueTravail;
+  readonly niveauAffichage: NiveauAffichage;
+  /** Identifiant de l'outil actif ; `null` = sélection. */
+  readonly outilActif: string | null;
+  /** Identifiants d'outils épinglés, dans l'ordre. */
+  readonly favoris: readonly string[];
+  /** Calques masqués dans la zone de travail. */
+  readonly calquesMasques: readonly IdObjet[];
+  readonly immersif: boolean;
+}
+
+/** Magasin de l'état de vue (implémentation : `socle/interface.ts`), compatible `useSyncExternalStore`. */
+export interface EtatInterface {
+  lire(): EtatVue;
+  modifier(changement: Partial<EtatVue>): void;
+  abonner(ecouteur: () => void): () => void;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Pilote : session d'outil active (implémentation : `socle/pilote.ts`)
+// ---------------------------------------------------------------------------------------------------------------
+
+/**
+ * Tient la session de l'outil actif, lui transmet les `EvenementPlan` (venus de `plan2d`, ou des champs de saisie
+ * de `ui`), applique sa `ReactionOutil` (validation par le contexte, sélection, fermeture) et publie l'aperçu.
+ * `plan2d` appelle `traiter` et dessine `apercu()` ; `ui` appelle `activer` (palette, barre, raccourci) et affiche
+ * `apercu().consigne`, `apercu().champs` et `derniereErreur()`.
+ */
+export interface PiloteOutils {
+  /** Active un outil (ou la sélection si `null`) ; abandonne la session en cours. Rend le motif si inactivable. */
+  activer(id: string | null): Activation;
+  outilActif(): DefinitionOutil | null;
+  traiter(evenement: EvenementPlan): Promise<void>;
+  /** Aperçu de la session courante ; vide sans session. */
+  apercu(): Apercu;
+  /** Erreurs de la dernière validation refusée (affichées « objet, cause, action ») ; vide si aucune. */
+  derniereErreur(): readonly ErreurLisible[];
+  abandonner(): void;
+  abonner(ecouteur: () => void): () => void;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Dessin des objets du modèle dans le plan (dessinateurs par classe, implémentation : `socle/dessin.ts`)
+// ---------------------------------------------------------------------------------------------------------------
+
+export type StyleDessin = "trait" | "plein" | "hachure" | "fin" | "annotation";
+
+export type FormeDessin =
+  | { readonly forme: "polygone"; readonly points: readonly PointLocal[]; readonly style: StyleDessin }
+  | { readonly forme: "polyligne"; readonly points: readonly PointLocal[]; readonly fermee: boolean; readonly style: StyleDessin }
+  | { readonly forme: "cercle"; readonly centre: PointLocal; readonly rayon: number; readonly style: StyleDessin }
+  | { readonly forme: "arc"; readonly centre: PointLocal; readonly rayon: number; readonly debut: number; readonly fin: number; readonly style: StyleDessin }
+  | { readonly forme: "texte"; readonly position: PointLocal; readonly texte: string; readonly hauteur: number; readonly style: StyleDessin };
+
+/** Représentation 2D d'un objet au niveau actif : ce que `plan2d` dessine, accroche et touche. */
+export interface DessinPlan {
+  readonly objetId: IdObjet;
+  /** Ordre de dessin : fond (dalles, pièces), objet (murs, baies, escalier), annotation (cotes, textes). */
+  readonly couche: "fond" | "objet" | "annotation";
+  readonly formes: readonly FormeDessin[];
+  /** Segments d'accrochage (extrémité, milieu, perpendiculaire, intersection). */
+  readonly segments: readonly { readonly a: PointLocal; readonly b: PointLocal }[];
+  /** Points d'accrochage supplémentaires (centre, point d'insertion). */
+  readonly points: readonly PointLocal[];
+  /** Contour de sélection (clic à l'intérieur ou à moins de la tolérance) ; `null` = segments seulement. */
+  readonly contour: readonly PointLocal[] | null;
+}
+
+/**
+ * Dessinateur d'une ou plusieurs classes : `plan2d` fournit ceux des esquisses et de la référence de plan,
+ * `objets` ceux de l'architecture (murs, baies, dalles, escalier, pièces…), `documents` ceux des cotes et textes.
+ * Une classe sans dessinateur n'est pas dessinée (et `plan2d` le signale en développement).
+ */
+export interface DessinateurPlan {
+  readonly classes: readonly string[];
+  dessiner(objet: ObjetModele, etat: EtatModele): DessinPlan | null;
+}
+
+export interface RegistreDessinateurs {
+  enregistrer(d: DessinateurPlan): void;
+  pour(classe: string): DessinateurPlan | null;
+  /** Dessins des objets d'un niveau (calques masqués exclus), triés par couche. */
+  dessinerNiveau(etat: EtatModele, niveauId: IdObjet, calquesMasques?: readonly IdObjet[]): readonly DessinPlan[];
+}
+
+export interface RegistreInspecteur {
+  enregistrer(d: DescripteurInspecteur): void;
+  pour(classe: string): DescripteurInspecteur | null;
+}
+
+/** Tout ce qu'un module (`plan2d`, `objets`, `documents`) enregistre au démarrage de l'Atelier. */
+export interface Registres {
+  readonly outils: RegistreOutils;
+  readonly dessinateurs: RegistreDessinateurs;
+  readonly inspecteur: RegistreInspecteur;
+}
+
+/** Point d'entrée d'un module : `export const installer: InstallationModule = (r) => { r.outils.enregistrer(…); … }`. */
+export type InstallationModule = (registres: Registres) => void;
