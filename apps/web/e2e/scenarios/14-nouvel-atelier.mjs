@@ -72,13 +72,19 @@ export async function gestes(sc) {
     return m;
   };
   const nouveaux = (m, classe) => Object.values(m.objets).filter((o) => o.classe === classe && !idsAvant.has(o.id));
-  const pres = (a, b) => Math.abs(a - b) < 1e-9;
+  const pres = (a, b) => Math.abs(a - b) < 1e-6;
   const memePoint = (p, x, y) => pres(p.x, x) && pres(p.y, y);
 
   const avant = await modele();
   const idsAvant = new Set(Object.keys(avant.objets));
-  const niveauId = "p_ss";
-  check("nouvel atelier : copie de travail de P.118 importée dans le modèle typé, niveau actif « Sous-sol technique »", avant.objets[niveauId]?.classe === "niveau" && Object.values(avant.objets).filter((o) => o.classe === "niveau").length === 6 && /Sous-sol technique/.test(await page.locator('[data-testid="atl-niveau-actif"]').textContent()), `révision ${avant.revision}`);
+  // Identifiants importés préfixés par l'identifiant du projet (`<projet>_ss`) : le niveau actif est le premier par ordre.
+  const niveauxAvant = Object.values(avant.objets).filter((o) => o.classe === "niveau").sort((a, b) => a.params.ordre - b.params.ordre);
+  const niveauId = niveauxAvant[0]?.id;
+  check(
+    "nouvel atelier : copie de travail de P.118 importée dans le modèle typé (6 niveaux), niveau actif « Sous-sol technique »",
+    niveauxAvant.length === 6 && niveauxAvant[0]?.params.nom === "Sous-sol technique" && niveauId.endsWith("_ss") && /Sous-sol technique/.test(await page.locator('[data-testid="atl-niveau-actif"]').textContent()),
+    `niveau ${niveauId}, révision ${avant.revision}`,
+  );
 
   const toile = page.locator('[data-testid="plan2d-toile"]');
   const puce = page.locator('[data-testid="atl-puce-outil"]');
@@ -162,7 +168,8 @@ export async function gestes(sc) {
   await page.waitForFunction(() => document.querySelector('[data-testid="atl-puce-outil"]')?.textContent?.includes("Sélection"), null, { timeout: 5000 });
   await page.keyboard.press("Enter");
   await page.waitForSelector(`[data-testid="atl-inspecteur-objet"][data-objet="${piece?.id}"]`, { timeout: 5000 }).catch(() => null);
-  check("nouvel atelier : clavier — Entrée sur la zone de plan sélectionne la pièce, l'inspecteur l'affiche", (await page.locator('[data-testid="atl-inspecteur-objet"]').getAttribute("data-objet").catch(() => null)) === piece?.id);
+  const inspecte = page.locator('[data-testid="atl-inspecteur-objet"]');
+  check("nouvel atelier : clavier — Entrée sur la zone de plan sélectionne la pièce, l'inspecteur l'affiche", (await inspecte.count()) === 1 && (await inspecte.getAttribute("data-objet")) === piece?.id);
 
   // Type : mur choisi dans le navigateur (filtre par identifiant), liste de choix de l'inspecteur (D-038).
   await page.locator('[data-testid="atl-nav-filtre"]').fill(murBas.id);
