@@ -236,6 +236,17 @@ export interface RegistreOutils {
 // ---------------------------------------------------------------------------------------------------------------
 
 /**
+ * **Convention de valeur (D-035)** — ce que l'inspecteur passe à `controler(v)` puis `commandes(v)` selon `type` :
+ * - `longueur`, `angle`, `aire`, `nombre` : `number` exprimé dans `unite` (l'interface analyse « 0,25 » et convertit
+ *   explicitement « 25 cm » / « 250 mm » en m ; toute autre unité est refusée par l'interface) ;
+ * - `texte`, `choix` : `string` (la `valeur` de l'option pour `choix`) ; `booleen` : `boolean` ;
+ * - `null` : champ vidé = retirer un paramètre facultatif (D-024) ; le descripteur refuse par `controler` s'il est
+ *   obligatoire.
+ * Affichage de `valeur` : `number`, `Grandeur` `{ value, unit }`, `NonEvaluee` (« non évaluée » + motif), `string`,
+ * `boolean`, `null` / `undefined` (« non renseigné ») ; valeurs exactes, sans arrondi. Aucune commande si la valeur
+ * saisie égale la valeur courante. Enchaînement avant envoi : `controler` → `ctx.essayer(commandes)` →
+ * `ctx.valider(label, commandes)`.
+ *
  * Champ d'inspecteur typé (avec unité). La modification d'un champ produit des commandes (`commandes(valeur)`),
  * jamais une écriture directe. `controler` rend une erreur lisible avant envoi (bornes, unité).
  */
