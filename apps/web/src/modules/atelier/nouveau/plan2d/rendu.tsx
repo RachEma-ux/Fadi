@@ -324,6 +324,12 @@ function Esquisse2D({ o, pr, selectionne, survole }: { o: Occurrence<"esquisse">
       const c = pr.vers(p.centre);
       return <circle cx={c.x} cy={c.y} r={p.rayon.value * pr.echelle} {...commun} />;
     }
+    case "ellipse": {
+      if (!p.centre || !p.rayon || !p.rayonB) return null;
+      const c = pr.vers(p.centre);
+      // Repère SVG : y vers le bas, la rotation change de signe.
+      return <ellipse cx={c.x} cy={c.y} rx={p.rayon.value * pr.echelle} ry={p.rayonB.value * pr.echelle} transform={`rotate(${-(p.rotation?.value ?? 0)} ${c.x} ${c.y})`} {...commun} />;
+    }
     case "arc": {
       if (!p.centre || !p.rayon) return null;
       const pts = pointsArc(p.centre, p.rayon.value, p.angleDebut?.value ?? 0, p.angleFin?.value ?? 360);

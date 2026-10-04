@@ -6,7 +6,7 @@
  *   (R5 : jamais de mélange de repères, la conversion reste explicite) ; un calque DXF par calque du modèle.
  * - CSV des quantités (séparateur « ; », BOM, virgule décimale non utilisée : point, comme les tableaux existants).
  */
-import { pointsArc, pointsSpline, type Vec } from "../geometrie.js";
+import { pointsArc, pointsEllipse, pointsSpline, type Vec } from "../geometrie.js";
 import { type ModeleAtelier, type OccurrenceQuelconque } from "../modele.js";
 import { quantites } from "../quantites.js";
 import { Dxf } from "../documents/rendu-dxf.js";
@@ -85,6 +85,7 @@ function dessiner(d: Dxf, etat: ModeleAtelier, o: OccurrenceQuelconque): void {
     case "esquisse": {
       const p = o.params;
       if (p.forme === "cercle" && p.centre && p.rayon) d.cercle(calque, p.centre, p.rayon.value);
+      else if (p.forme === "ellipse" && p.centre && p.rayon && p.rayonB) d.polyligne(calque, pointsEllipse(p.centre, p.rayon.value, p.rayonB.value, p.rotation?.value ?? 0), true);
       else if (p.forme === "arc" && p.centre && p.rayon) d.polyligne(calque, pointsArc(p.centre, p.rayon.value, p.angleDebut?.value ?? 0, p.angleFin?.value ?? 360), false);
       else if (p.forme === "spline") d.polyligne(calque, pointsSpline(p.points, 8, p.ferme), p.ferme);
       else if (p.forme === "rectangle" && p.points.length === 2) {

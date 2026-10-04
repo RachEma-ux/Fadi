@@ -53,6 +53,21 @@ const selectionner = async (id) => {
   await page.locator(`.nav-objets button[data-objet="${id}"]`).click();
 };
 
+/** Choisit un outil par la palette et attend qu'il soit actif (une seconde tentative au besoin). */
+const choisirOutil = async (requete, libelle) => {
+  for (let essai = 0; essai < 2; essai++) {
+    await page.evaluate(() => document.activeElement?.blur?.());
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("Control+k");
+    await page.locator(".palette-champ").fill(requete);
+    await page.waitForFunction((l) => (document.querySelector(".palette-resultats li")?.textContent ?? "").includes(l), libelle, { timeout: 5000 }).catch(() => {});
+    await page.keyboard.press("Enter");
+    const ok = await page.waitForFunction((l) => (document.querySelector(".atelier-n-outils .outil.est-actif")?.textContent ?? "").includes(l), libelle, { timeout: 5000 }).then(() => true, () => false);
+    if (ok) return true;
+  }
+  return false;
+};
+
 const email = `complements-${Date.now()}@example.com`;
 await page.goto(`${BASE}/inscription`);
 await page.fill('input[name="email"]', email);
@@ -64,8 +79,11 @@ const pid = (await api("post", `/projects/${reference}/copies`, { name: "P.118 �
 const voisin = (await api("post", `/projects/${reference}/copies`, { name: "P.118 · voisin" })).body.id;
 
 // 1. Historique d'un objet.
+// Le mur suivi est pris sur le niveau affiché à l'ouverture (l'ordre des objets du modèle n'est pas garanti).
+await ouvrir(pid);
+const dessinesA = await page.locator(".plan2d .plan-objets [data-objet]").evaluateAll((els) => els.map((e) => e.getAttribute("data-objet")));
 const depart = await modele(pid);
-const murA = Object.values(depart.modele.objets).find((o) => o.classe === "mur");
+const murA = Object.values(depart.modele.objets).find((o) => o.classe === "mur" && dessinesA.includes(o.id)) ?? Object.values(depart.modele.objets).find((o) => o.classe === "mur");
 check("modification d'un mur (épaisseur)", (await lot(pid, `h-${Date.now()}`, depart.revision, [{ type: "objet.modifier", params: { id: murA.id, params: { epaisseur: m(0.37) } } }])).status === 200);
 await ouvrir(pid);
 await selectionner(murA.id);
@@ -359,17 +377,14 @@ await page.waitForSelector(".plan2d");
   const cx = cadre.x + cadre.width * 0.5;
   const cy = cadre.y + cadre.height * 0.5;
   await page.keyboard.press("Escape");
-  await page.keyboard.press("Control+k");
-  await page.locator(".palette-champ").fill("hexagone");
-  await page.keyboard.press("Enter");
+  await choisirOutil("hexagone", "Polygone régulier");
   await page.locator("#outil-cotes").fill("6");
+  await page.evaluate(() => document.activeElement?.blur?.());
   await page.mouse.click(cx, cy);
   await page.mouse.click(cx + 60, cy);
   await attendreEnregistre().catch(() => {});
   await page.keyboard.press("Escape");
-  await page.keyboard.press("Control+k");
-  await page.locator(".palette-champ").fill("circonscrit");
-  await page.keyboard.press("Enter");
+  await choisirOutil("circonscrit", "Cercle par 3 points");
   const outilCercle = (await page.locator(".atelier-n-outils .outil.est-actif").textContent().catch(() => "")) ?? "";
   // Loin de l'hexagone (aucun accrochage sur ses sommets).
   await page.mouse.click(cx - 250, cy + 40);
@@ -379,6 +394,25 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
   const apresFormes = await compterFormes();
   check("polygone régulier (6 côtés renseignés) et cercle par trois points tracés", apresFormes.hex === avantFormes.hex + 1 && apresFormes.cercles === avantFormes.cercles + 1, `${JSON.stringify(avantFormes)} → ${JSON.stringify(apresFormes)} · outil ${outilCercle}`);
+  // Trame d'axes et ellipse (D-046).
+  const compter2 = async () => { const o = Object.values((await modele(pid)).modele.objets); return { axes: o.filter((x) => x.classe === "esquisse" && x.params.forme === "construction").length, ellipses: o.filter((x) => x.classe === "esquisse" && x.params.forme === "ellipse").length }; };
+  const avant2 = await compter2();
+  await choisirOutil("trame", "Trame d'axes");
+  await page.locator('[data-trame="entraxesX"]').fill("2*3");
+  await page.locator('[data-trame="entraxesY"]').fill("4");
+  await page.locator("#outil-depassement").fill("1");
+  await page.evaluate(() => document.activeElement?.blur?.());
+  await page.mouse.click(cx + 200, cy - 150);
+  await attendreEnregistre().catch(() => {});
+  await page.keyboard.press("Escape");
+  await choisirOutil("ovale", "Ellipse");
+  await page.mouse.click(cx - 250, cy - 120);
+  await page.mouse.click(cx - 170, cy - 120);
+  await page.mouse.click(cx - 250, cy - 90);
+  await attendreEnregistre().catch(() => {});
+  await page.keyboard.press("Escape");
+  const apres2 = await compter2();
+  check("trame d'axes (entraxes saisis) et ellipse tracées", apres2.axes === avant2.axes + 5 && apres2.ellipses === avant2.ellipses + 1, `${JSON.stringify(avant2)} → ${JSON.stringify(apres2)}`);
   // Scinder un mur en parts égales (D-043).
   await selectionner("croix-v");
   await page.locator('[data-scinder="parts"]').fill("4");

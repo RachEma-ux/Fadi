@@ -3,7 +3,7 @@
  * orthogonal, grille. Rayon à l'écran (12 px, D-012) converti en mètres par l'échelle de la vue. Les accrochages
  * d'objet priment sur l'orthogonal, qui prime sur la grille. Fonctions pures : testables sans DOM.
  */
-import { intersectionSegments, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { intersectionSegments, pointsEllipse, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { pt } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
@@ -62,6 +62,8 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
       case "esquisse":
         if (o.params.centre) centres.push({ p: o.params.centre, objetId: o.id });
         if (o.params.points.length >= 2) contour(o.params.points, o.id, o.params.ferme);
+        // Ellipse (D-046) : son contour discrétisé sert à la sélection et à l'accrochage.
+        if (o.params.forme === "ellipse" && o.params.centre && o.params.rayon && o.params.rayonB) contour(pointsEllipse(o.params.centre, o.params.rayon.value, o.params.rayonB.value, o.params.rotation?.value ?? 0, 48), o.id);
         break;
       case "poteau":
         centres.push({ p: o.params.point, objetId: o.id });

@@ -392,6 +392,45 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
           compter(e.type, true);
           break;
         }
+        case "ELLIPSE": {
+          // Ellipse (D-046) : centre (10), extrémité du grand axe relative au centre (11), rapport b / a (40),
+          // paramètres de début et de fin (41, 42, radians). Complète et sous une similitude : ellipse ; sinon points.
+          const cx = num(e, 10, 0)!;
+          const cy = num(e, 20, 0)!;
+          const mx = num(e, 11, 0)!;
+          const my = num(e, 21, 0)!;
+          const ratio = num(e, 40, 1)!;
+          const t0 = num(e, 41, 0)!;
+          const t1 = num(e, 42, 2 * Math.PI)!;
+          const a = Math.hypot(mx, my);
+          if (!(a * f > 1e-6) || !(ratio > 0)) {
+            compter("ELLIPSE", false, "ellipses dégénérées ignorées");
+            break;
+          }
+          const complete = Math.abs(t1 - t0 - 2 * Math.PI) < 1e-6 || Math.abs(t1 - t0) < 1e-9;
+          if (complete && sim) {
+            const rot = (Math.atan2(my, mx) * 180) / Math.PI + sim.rotation;
+            const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
+            poser("esquisse.ellipse", { points: [], centre: P(cx, cy), rayon: m(r6(a * f * sim.echelle)), rayonB: m(r6(a * ratio * f * sim.echelle)), rotation: { value: r6(rot), unit: "deg" }, calqueId: calqueDe(e) });
+            compter("ELLIPSE", true);
+            break;
+          }
+          let fin = t1;
+          while (fin <= t0) fin += 2 * Math.PI;
+          const n = Math.max(8, Math.ceil(((fin - t0) * 180) / Math.PI / 5.625));
+          const ux = mx / a;
+          const uy = my / a;
+          const pts: Point2[] = [];
+          for (let k = 0; k <= (complete ? n - 1 : n); k++) {
+            const t = t0 + ((fin - t0) * k) / n;
+            const x = a * Math.cos(t);
+            const y = a * ratio * Math.sin(t);
+            pts.push(P(cx + x * ux - y * uy, cy + x * uy + y * ux));
+          }
+          poser(complete ? "esquisse.polygone" : "esquisse.polyligne", { points: pts, ferme: complete, calqueId: calqueDe(e) });
+          compter("ELLIPSE", true, complete ? "ellipse dans un bloc à échelles inégales ou en miroir : discrétisée en segments" : "arcs d'ellipse discrétisés en segments (≤ 5,6° de paramètre)");
+          break;
+        }
         case "TEXT":
         case "ATTRIB":
         case "MTEXT": {

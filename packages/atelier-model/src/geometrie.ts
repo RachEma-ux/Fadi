@@ -445,3 +445,61 @@ export function cercleTroisPoints(a: Vec, b: Vec, c: Vec): { centre: Point2; ray
   const y = (a2 * (c.x - b.x) + b2 * (a.x - c.x) + c2 * (b.x - a.x)) / d;
   return { centre: pt(x, y), rayon: Math.hypot(a.x - x, a.y - y) };
 }
+
+/** Rectangle par trois points (D-046) : a, b = premier côté ; c donne la largeur (projection perpendiculaire). */
+export function rectangleTroisPoints(a: Vec, b: Vec, c: Vec): Point2[] | null {
+  const ux = b.x - a.x;
+  const uy = b.y - a.y;
+  const l = Math.hypot(ux, uy);
+  if (l < 1e-9) return null;
+  const nx = -uy / l;
+  const ny = ux / l;
+  const h = (c.x - a.x) * nx + (c.y - a.y) * ny;
+  if (Math.abs(h) < 1e-9) return null;
+  const r = (v: number) => Math.round(v * 1e9) / 1e9;
+  return [pt(r(a.x), r(a.y)), pt(r(b.x), r(b.y)), pt(r(b.x + nx * h), r(b.y + ny * h)), pt(r(a.x + nx * h), r(a.y + ny * h))];
+}
+
+/** Lecture d'une liste d'entraxes saisie (« 4,5 ; 5 ; 2*6 » : nombres en m, `n*d` répète d entraxe n fois). */
+export function lireEntraxes(texte: string): number[] {
+  const out: number[] = [];
+  for (const brut of texte.split(/[;\s]+/).filter(Boolean)) {
+    const m = /^(?:(\d+)\*)?(\d+(?:[.,]\d+)?)$/.exec(brut);
+    if (!m) throw new Error(`entraxe illisible : « ${brut} » (nombres en m, « n*d » pour répéter)`);
+    const n = m[1] ? Number(m[1]) : 1;
+    const d = Number(m[2]!.replace(",", "."));
+    if (!(d > 0) || n < 1 || n > 200) throw new Error(`entraxe invalide : « ${brut} »`);
+    for (let k = 0; k < n; k++) out.push(d);
+  }
+  if (out.length > 200) throw new Error("200 entraxes au plus");
+  return out;
+}
+
+/** Points d'une ellipse (D-046) : demi-axes a (grand) et b, grand axe tourné de `rotationDeg`, sens direct. */
+export function pointsEllipse(centre: Vec, a: number, b: number, rotationDeg: number, segments = 64): Point2[] {
+  const r = (rotationDeg * Math.PI) / 180;
+  const c = Math.cos(r);
+  const s = Math.sin(r);
+  const out: Point2[] = [];
+  for (let k = 0; k < segments; k++) {
+    const t = (2 * Math.PI * k) / segments;
+    const x = a * Math.cos(t);
+    const y = b * Math.sin(t);
+    out.push(pt(centre.x + x * c - y * s, centre.y + x * s + y * c));
+  }
+  return out;
+}
+
+/** Ellipse par centre, extrémité d'un axe et point de l'autre demi-axe (distance à l'axe) ; null si dégénérée. */
+export function ellipseTroisPoints(centre: Vec, axe: Vec, p: Vec): { rayon: number; rayonB: number; rotation: number } | null {
+  const ux = axe.x - centre.x;
+  const uy = axe.y - centre.y;
+  const a = Math.hypot(ux, uy);
+  if (a < 1e-9) return null;
+  const b = Math.abs(((p.x - centre.x) * -uy + (p.y - centre.y) * ux) / a);
+  if (b < 1e-9) return null;
+  const rot = (Math.atan2(uy, ux) * 180) / Math.PI;
+  const r = (v: number) => Math.round(v * 1e9) / 1e9;
+  return b > a ? { rayon: r(b), rayonB: r(a), rotation: r(rot + 90) } : { rayon: r(a), rayonB: r(b), rotation: r(rot) };
+}
+

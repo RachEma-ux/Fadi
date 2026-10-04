@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { boucles, caracteristiqueAuPoint, cercleTroisPoints, polygoneRegulier, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { boucles, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -143,6 +143,47 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       const r = distance(pts[0]!, point);
       if (r < 1e-6) return attendre(pts, "Rayon nul.");
       return emettre([{ type: "esquisse.cercle", params: { ...base, centre: pts[0]!, rayon: m(r), points: [] } }], `Cercle r = ${fmt(r)} m`);
+    }
+    case "rectangle-centre": {
+      if (pts.length === 0) return attendre([point], "Cliquez un coin.");
+      const c = pts[0]!;
+      const coin2 = pt(2 * c.x - point.x, 2 * c.y - point.y);
+      if (Math.abs(point.x - c.x) < 1e-6 || Math.abs(point.y - c.y) < 1e-6) return attendre(pts, "Rectangle plat : cliquez un coin hors des axes du centre.");
+      return emettre([{ type: "esquisse.rectangle", params: { ...base, points: [coin2, point] } }], "Rectangle (centre)");
+    }
+    case "rectangle-3-points": {
+      if (pts.length < 2) return attendre([...pts, point], pts.length ? "Cliquez un point qui donne la largeur." : "Cliquez la seconde extrémité du premier côté.");
+      const r = rectangleTroisPoints(pts[0]!, pts[1]!, point);
+      if (!r) return attendre(pts, "Largeur nulle : cliquez hors du premier côté.");
+      return emettre([{ type: "esquisse.polygone", params: { ...base, points: r, ferme: true } }], "Rectangle (3 points)");
+    }
+    case "cercle-2-points": {
+      if (pts.length === 0) return attendre([point], "Cliquez l'autre extrémité du diamètre.");
+      const r = distance(pts[0]!, point) / 2;
+      if (r < 1e-6) return attendre(pts, "Diamètre nul.");
+      return emettre([{ type: "esquisse.cercle", params: { ...base, centre: pt((pts[0]!.x + point.x) / 2, (pts[0]!.y + point.y) / 2), rayon: m(Math.round(r * 1e6) / 1e6), points: [] } }], `Cercle r = ${fmt(r)} m`);
+    }
+    case "ellipse": {
+      if (pts.length < 2) return attendre([...pts, point], pts.length ? "Cliquez un point qui donne l'autre demi-axe." : "Cliquez l'extrémité d'un axe.");
+      const e = ellipseTroisPoints(pts[0]!, pts[1]!, point);
+      if (!e) return attendre(pts, "Ellipse plate : cliquez hors de l'axe.");
+      return emettre([{ type: "esquisse.ellipse", params: { ...base, centre: pts[0]!, rayon: m(e.rayon), rayonB: m(e.rayonB), rotation: { value: e.rotation, unit: "deg" }, points: [] } }], `Ellipse ${fmt(2 * e.rayon)} × ${fmt(2 * e.rayonB)} m`);
+    }
+    case "trame": {
+      // Entraxes et dépassement saisis (D-046) ; rien n'est supposé.
+      let ex: number[];
+      let ey: number[];
+      try {
+        ex = lireEntraxes(String(ui.parametresOutil["entraxesX"] ?? ""));
+        ey = lireEntraxes(String(ui.parametresOutil["entraxesY"] ?? ""));
+      } catch (err) {
+        return attendre([], `Trame : ${err instanceof Error ? err.message : String(err)}.`);
+      }
+      const dep = ui.parametresOutil["depassement"];
+      if (!ex.length && !ey.length) return attendre([], "Renseignez les entraxes en x et/ou en y dans l'inspecteur.");
+      if (typeof dep !== "number" || !(dep >= 0)) return attendre([], "Renseignez le dépassement des axes (m).");
+      const idBase = `trame-${Date.now().toString(36)}`;
+      return emettre(commandesTrame({ niveauId, origine: point, entraxesX: ex, entraxesY: ey, depassement: dep, reperesX: ui.parametresOutil["reperesX"] === "lettres" ? "lettres" : "chiffres", calqueId: (base as { calqueId?: string | null }).calqueId ?? null }, idBase), `Trame ${ex.length + 1} × ${ey.length + 1} axes`, "Trame posée (groupe) : ses axes guident l'accrochage.");
     }
     case "polygone-regulier": {
       // Nombre de côtés : paramètre de l'outil, jamais supposé (D-042).

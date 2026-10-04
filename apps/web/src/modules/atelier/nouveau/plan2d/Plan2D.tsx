@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { cercleTroisPoints, distance, polygoneMur, polygoneRegulier, pt, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { cercleTroisPoints, distance, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -433,6 +433,24 @@ function Apercu({ outil, pts, curseur, ui, pr }: { outil: string; pts: Point2[];
         {cote}
       </>
     );
+  }
+  if (outil === "ellipse") {
+    if (pts.length < 2) return <path d={chemin(pr, [...pts, curseur], false)} className="plan-apercu-trait" />;
+    const e = ellipseTroisPoints(pts[0]!, pts[1]!, curseur);
+    return e ? <path d={chemin(pr, pointsEllipse(pts[0]!, e.rayon, e.rayonB, e.rotation, 48))} className="plan-apercu-trait" /> : null;
+  }
+  if (outil === "rectangle-centre") {
+    const c = pts[0]!;
+    return <path d={chemin(pr, [pt(2 * c.x - curseur.x, 2 * c.y - curseur.y), pt(curseur.x, 2 * c.y - curseur.y), curseur, pt(2 * c.x - curseur.x, curseur.y)])} className="plan-apercu-trait" />;
+  }
+  if (outil === "rectangle-3-points") {
+    if (pts.length < 2) return <path d={chemin(pr, [...pts, curseur], false)} className="plan-apercu-trait" />;
+    const r = rectangleTroisPoints(pts[0]!, pts[1]!, curseur);
+    return r ? <path d={chemin(pr, r)} className="plan-apercu-trait" /> : null;
+  }
+  if (outil === "cercle-2-points") {
+    const c = pr.vers(pt((pts[0]!.x + curseur.x) / 2, (pts[0]!.y + curseur.y) / 2));
+    return <circle cx={c.x} cy={c.y} r={(distance(pts[0]!, curseur) / 2) * pr.echelle} className="plan-apercu-trait" />;
   }
   if (outil === "polygone-regulier") {
     const n = ui.parametresOutil["cotes"];

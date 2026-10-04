@@ -516,6 +516,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   raccorder: [{ cle: "rayon", libelle: "Rayon", unite: "m" }],
   "polygone-regulier": [{ cle: "cotes", libelle: "Nombre de côtés" }],
   prolonger: [{ cle: "longueurProlongement", libelle: "Longueur (sans limite)", unite: "m" }],
+  trame: [{ cle: "depassement", libelle: "Dépassement des axes", unite: "m" }],
   chanfreiner: [{ cle: "distanceChanfrein", libelle: "Distance", unite: "m" }],
 };
 
@@ -557,6 +558,23 @@ function ParametresOutil({ etat, ui }: { etat: ModeleAtelier; ui: EtatUi }) {
             );
           })}
         </dl>
+      )}
+      {ui.outil === "trame" && (
+        <>
+          {(["entraxesX", "entraxesY"] as const).map((cle) => (
+            <div className="champ" key={cle}>
+              <label htmlFor={`outil-${cle}`}>{cle === "entraxesX" ? "Entraxes en x (m)" : "Entraxes en y (m)"}</label>
+              <input id={`outil-${cle}`} value={(ui.parametresOutil[cle] as string | undefined) ?? ""} placeholder="ex. 5,4 ; 2*6" onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, [cle]: e.target.value } }))} onKeyDown={(e) => e.stopPropagation()} data-trame={cle} />
+            </div>
+          ))}
+          <div className="champ">
+            <label htmlFor="outil-reperesX">Repères des axes x</label>
+            <select id="outil-reperesX" value={(ui.parametresOutil["reperesX"] as string | undefined) ?? "chiffres"} onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, reperesX: e.target.value } }))}>
+              <option value="chiffres">1, 2, 3… (axes y : A, B, C…)</option>
+              <option value="lettres">A, B, C… (axes y : 1, 2, 3…)</option>
+            </select>
+          </div>
+        </>
       )}
       {ui.outil === "toiture" && (
         <div className="champ">

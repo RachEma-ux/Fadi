@@ -66,8 +66,32 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
       return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
     case "poteau":
       return { ...o, params: { ...o.params, point: T(o.params.point), angle: { value: o.params.angle.value + rot, unit: "deg" } } };
-    case "esquisse":
-      return { ...o, params: { ...o.params, points: o.params.points.map(T), centre: o.params.centre ? T(o.params.centre) : null, rayon: t.type === "echelle" && o.params.rayon ? { value: o.params.rayon.value * t.facteur, unit: "m" } : o.params.rayon } };
+    case "esquisse": {
+      const q = o.params;
+      // Un rectangle (deux coins, côtés parallèles aux axes) tourné ou symétrisé devient un polygone (D-046).
+      if (q.forme === "rectangle" && q.points.length === 2 && (t.type === "rotation" || t.type === "miroir")) {
+        const [a, b] = q.points as [Point2, Point2];
+        return { ...o, params: { ...q, forme: "polygone", ferme: true, points: [pt(a.x, a.y), pt(b.x, a.y), pt(b.x, b.y), pt(a.x, b.y)].map(T) } };
+      }
+      // Angles des arcs et orientation des ellipses suivent la rotation ou le miroir.
+      const plus = (x: { value: number; unit: "deg" } | null | undefined, d: number) => (x ? { value: Math.round((x.value + d) * 1e9) / 1e9, unit: "deg" as const } : x);
+      let angleDebut = q.angleDebut;
+      let angleFin = q.angleFin;
+      let rotation = q.rotation;
+      if (t.type === "rotation") {
+        angleDebut = plus(angleDebut, rot) ?? null;
+        angleFin = plus(angleFin, rot) ?? null;
+        rotation = plus(rotation, rot);
+      } else if (t.type === "miroir") {
+        const axe = (Math.atan2(t.b.y - t.a.y, t.b.x - t.a.x) * 180) / Math.PI;
+        const refl = (x: { value: number; unit: "deg" } | null | undefined) => (x ? { value: Math.round((2 * axe - x.value) * 1e9) / 1e9, unit: "deg" as const } : x);
+        [angleDebut, angleFin] = [refl(q.angleFin) ?? null, refl(q.angleDebut) ?? null];
+        rotation = refl(rotation);
+      }
+      const k = t.type === "echelle" ? t.facteur : 1;
+      const ech = (x: { value: number; unit: "m" } | null | undefined) => (x && k !== 1 ? { value: x.value * k, unit: "m" as const } : x);
+      return { ...o, params: { ...q, points: q.points.map(T), centre: q.centre ? T(q.centre) : null, rayon: ech(q.rayon) ?? null, angleDebut, angleFin, ...(q.forme === "ellipse" ? { rayonB: ech(q.rayonB) ?? null, rotation: rotation ?? null } : {}) } };
+    }
     case "cotation":
       return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
     case "texte":

@@ -145,24 +145,27 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     };
   },
   esquisse(_etat, p) {
-    const forme = lire.enumeration(p, "forme", ["ligne", "polyligne", "arc", "cercle", "rectangle", "polygone", "spline", "construction", "hachure"] as const);
-    const minPoints: Record<typeof forme, number> = { ligne: 2, polyligne: 2, arc: 0, cercle: 0, rectangle: 2, polygone: 3, spline: 2, construction: 2, hachure: 3 };
+    const forme = lire.enumeration(p, "forme", ["ligne", "polyligne", "arc", "cercle", "rectangle", "polygone", "spline", "construction", "hachure", "ellipse"] as const);
+    const minPoints: Record<typeof forme, number> = { ligne: 2, polyligne: 2, arc: 0, cercle: 0, rectangle: 2, polygone: 3, spline: 2, construction: 2, hachure: 3, ellipse: 0 };
     const points = lire.points(p, "points", { min: minPoints[forme], optionnel: minPoints[forme] === 0 });
     const centre = lire.point(p, "centre", { optionnel: true });
     const rayon = lire.longueur(p, "rayon", { optionnel: true, strict: true });
-    if ((forme === "arc" || forme === "cercle") && (!centre || !rayon)) throw new ErreurCommande("invalide", "centre", `${forme} : centre et rayon requis`);
+    if ((forme === "arc" || forme === "cercle" || forme === "ellipse") && (!centre || !rayon)) throw new ErreurCommande("invalide", "centre", `${forme} : centre et rayon requis`);
+    const rayonB = forme === "ellipse" ? lire.longueur(p, "rayonB", { strict: true }) : null;
+    if (rayonB && rayon && rayonB.value > rayon.value + 1e-12) throw new ErreurCommande("invalide", "rayonB", "ellipse : le demi-petit axe (rayonB) ne dépasse pas le demi-grand axe (rayon)");
     if (forme === "ligne" || forme === "construction") {
       if (distance(points[0]!, points[1]!) <= TOLERANCE_REDUCTEUR) throw new ErreurCommande("invalide", "points", "segment de longueur nulle");
     }
     return {
       forme,
       points,
-      ferme: lire.booleen(p, "ferme", forme === "polygone" || forme === "rectangle" || forme === "hachure" || forme === "cercle"),
+      ferme: lire.booleen(p, "ferme", forme === "polygone" || forme === "rectangle" || forme === "hachure" || forme === "cercle" || forme === "ellipse"),
       centre,
       rayon,
       angleDebut: lire.angle(p, "angleDebut", { optionnel: true }),
       angleFin: lire.angle(p, "angleFin", { optionnel: true }),
       motif: lire.chaineOuNull(p, "motif"),
+      ...(forme === "ellipse" ? { rayonB, rotation: lire.angle(p, "rotation", { optionnel: true }) ?? { value: 0, unit: "deg" } } : {}),
     };
   },
   "reference-plan"(_etat, p) {

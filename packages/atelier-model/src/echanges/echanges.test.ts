@@ -216,6 +216,9 @@ describe("import DXF 2D", () => {
       "0\nDIMENSION\n8\nCotes\n70\n36\n10\n300\n20\n0\n15\n302\n25\n0",
       "0\nDIMENSION\n8\nCotes\n70\n35\n15\n400\n25\n0\n10\n406\n20\n0",
       // Ordonnée en x (bit 64) : origine (500 ; 0), point repéré (503,5 ; 1), rappel jusqu'en (503,5 ; 4) → x = 3,5 m.
+      // Ellipse complète : centre (600 ; 0), grand axe vertical 4 m (demi-axe 2), rapport 0,5 ; arc d'ellipse.
+      "0\nELLIPSE\n8\nMobilier\n10\n600\n20\n0\n11\n0\n21\n2\n40\n0.5\n41\n0\n42\n6.283185307179586",
+      "0\nELLIPSE\n8\nMobilier\n10\n700\n20\n0\n11\n2\n21\n0\n40\n0.5\n41\n0\n42\n1.5707963267948966",
       "0\nDIMENSION\n8\nCotes\n70\n102\n10\n500\n20\n0\n13\n503.5\n23\n1\n14\n503.5\n24\n4",
     ].join("\n");
     const texte = ["0", "SECTION", "2", "HEADER", "9", "$INSUNITS", "70", "6", "0", "ENDSEC", blocs, "0", "SECTION", "2", "ENTITIES", entites, "0", "ENDSEC", "0", "EOF"].join("\n");
@@ -262,6 +265,11 @@ describe("import DXF 2D", () => {
     const dim = r.rapport.entites.find((x) => x.type === "DIMENSION")!;
     expect(dim).toMatchObject({ lues: 8, importees: 7 });
     expect(dim.remarque).toMatch(/angulaires/);
+    const ell = esq.find((o) => o.params.forme === "ellipse")!;
+    expect(ell.params).toMatchObject({ centre: { x: 600, y: 0 }, rayon: { value: 2 }, rayonB: { value: 1 } });
+    expect(ell.params.rotation!.value).toBeCloseTo(90, 6);
+    expect(esq.some((o) => o.params.forme === "polyligne" && o.params.points.some((q) => Math.abs(q.x - 702) < 1e-6))).toBe(true);
+    expect(r.rapport.entites.find((x) => x.type === "ELLIPSE")).toMatchObject({ lues: 2, importees: 2 });
     expect(r.rapport.remarques.some((x) => /4 insertion/.test(x) || /insertion\(s\) de bloc/.test(x))).toBe(true);
   });
 

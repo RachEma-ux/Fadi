@@ -42,7 +42,7 @@ const triplet = (classe: Classe, prefixe: string, creer = "creer"): Record<strin
   [`${prefixe}.supprimer`]: (etat, p, ctx) => supprimerOccurrence(etat, p, ctx, classe),
 });
 
-const FORMES = ["ligne", "polyligne", "arc", "cercle", "rectangle", "polygone", "spline", "construction", "hachure"] as const;
+const FORMES = ["ligne", "polyligne", "arc", "cercle", "rectangle", "polygone", "spline", "construction", "hachure", "ellipse"] as const;
 
 export const REDUCTEURS: Record<string, Reducteur> = {
   // Objets, générique

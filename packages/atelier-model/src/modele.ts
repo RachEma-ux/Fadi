@@ -145,7 +145,7 @@ export interface ParamsSolide extends Contour {
   couleur: string | null;
 }
 
-export type FormeEsquisse = "ligne" | "polyligne" | "arc" | "cercle" | "rectangle" | "polygone" | "spline" | "construction" | "hachure";
+export type FormeEsquisse = "ligne" | "polyligne" | "arc" | "cercle" | "rectangle" | "polygone" | "spline" | "construction" | "hachure" | "ellipse";
 
 export interface ParamsEsquisse {
   forme: FormeEsquisse;
@@ -156,6 +156,9 @@ export interface ParamsEsquisse {
   angleDebut: Angle | null;
   angleFin: Angle | null;
   motif: string | null;
+  /** Ellipse (D-046) : `rayon` = demi-grand axe, `rayonB` = demi-petit axe, `rotation` = angle du grand axe. */
+  rayonB?: Longueur | null;
+  rotation?: Angle | null;
 }
 
 export interface ParamsReferencePlan extends Contour {

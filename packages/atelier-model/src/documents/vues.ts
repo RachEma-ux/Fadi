@@ -8,7 +8,7 @@
  * et même empreinte (reproductibilité). Rien n'est inventé : une hauteur absente ne produit aucun volume, un sens
  * d'ouverture de porte non renseigné est dessiné selon la convention de l'Atelier et signalé ; renseigné, il est suivi (D-037).
  */
-import { aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsSpline, sub, type Vec } from "../geometrie.js";
+import { aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsEllipse, pointsSpline, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
@@ -356,6 +356,7 @@ function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly Occu
         const p = o.params;
         const trait: Trait = p.forme === "construction" ? "cache" : "fin";
         if (p.forme === "cercle" && p.centre && p.rayon) c.cercle(p.centre, p.rayon.value, trait, o.id);
+        else if (p.forme === "ellipse" && p.centre && p.rayon && p.rayonB) c.poly(pointsEllipse(p.centre, p.rayon.value, p.rayonB.value, p.rotation?.value ?? 0), true, trait, null, o.id);
         else if (p.forme === "arc" && p.centre && p.rayon) c.poly(pointsArc(p.centre, p.rayon.value, p.angleDebut?.value ?? 0, p.angleFin?.value ?? 360), false, trait, null, o.id);
         else if (p.forme === "spline") c.poly(pointsSpline(p.points, 8, p.ferme), p.ferme, trait, null, o.id);
         else if (p.forme === "rectangle" && p.points.length === 2) {
