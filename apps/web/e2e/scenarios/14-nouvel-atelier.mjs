@@ -496,16 +496,19 @@ export async function pousserTirer(sc) {
   await page.mouse.move(cx, cy);
   await page.mouse.down();
   for (let i = 1; i <= 8; i++) await page.mouse.move(cx, cy - i * 10);
+  const consignePendant = (await page.locator('[data-testid="atl-consigne"]').textContent()) ?? "";
   await page.mouse.up();
   const apresGlisser = await attendreModele((m) => m.objets[mur.id]?.params.hauteur?.value > h0);
   const h1 = apresGlisser.objets[mur.id]?.params.hauteur?.value;
+  const erreursGeste = (await page.locator('[data-testid="atl-erreurs-geste"], [data-testid="atl-3d-erreurs"]').allTextContents()).join(" / ");
   check(
     "nouvel atelier 3D : pousser / tirer — glisser vers le haut augmente la hauteur du mur, persistée sur le serveur (nouvelle révision)",
     h1 > h0 && apresGlisser.revision > avant.revision,
-    `hauteur ${h0} → ${h1} m, révision ${avant.revision} → ${apresGlisser.revision}`,
+    `hauteur ${h0} → ${h1} m, révision ${avant.revision} → ${apresGlisser.revision} · consigne pendant : ${consignePendant} · erreurs : ${erreursGeste.slice(0, 300)}`,
   );
 
-  await page.locator('[data-testid="atl-outil-modifier.pousser"]').click();
+  // L'outil se ferme après une validation ; s'il est resté actif (refus), un nouveau clic le désactiverait.
+  if (!((await puce.textContent()) ?? "").includes("Pousser")) await page.locator('[data-testid="atl-outil-modifier.pousser"]').click();
   await parametre("hauteur", "3,2");
   const apresSaisie = await attendreModele((m) => m.objets[mur.id]?.params.hauteur?.value === 3.2);
   check("nouvel atelier 3D : pousser / tirer — hauteur tapée 3,20 m persistée exactement", apresSaisie.objets[mur.id]?.params.hauteur?.value === 3.2 && apresSaisie.revision > apresGlisser.revision, `révision ${apresSaisie.revision}`);
