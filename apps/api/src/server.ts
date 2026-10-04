@@ -26,10 +26,14 @@ async function migrateOnStart(): Promise<void> {
 migrateOnStart()
   .then(() => {
     const app = createApp();
-    app.listen(port, () => {
+    const server = app.listen(port, () => {
       // eslint-disable-next-line no-console
       console.log(`Fadi API listening on :${port}${process.env["WEB_DIST"] ? " (sert aussi l'application)" : ""}`);
     });
+    // Connexions persistantes gardées plus longtemps que celles des relais et des clients (60 s) : un client qui
+    // réutilise une connexion au moment où le serveur la ferme recevrait sinon un ECONNRESET.
+    server.keepAliveTimeout = 65_000;
+    server.headersTimeout = 66_000;
   })
   .catch((err: unknown) => {
     // eslint-disable-next-line no-console

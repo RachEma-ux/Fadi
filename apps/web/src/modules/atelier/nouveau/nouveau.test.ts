@@ -215,3 +215,18 @@ describe("palette et projection", () => {
     expect(v.echelle).toBeCloseTo(72);
   });
 });
+
+describe("aide située (UX4, relue au lot 9)", () => {
+  it("chaque outil dit son action en une phrase, donne un exemple court, nomme sa famille et sa fiche", () => {
+    for (const o of OUTILS) {
+      expect(o.aide.trim().length, o.id).toBeGreaterThan(15);
+      expect(o.aide.length, o.id).toBeLessThan(260);
+      expect(o.exemple.trim().length, o.id).toBeGreaterThan(8);
+      expect(o.exemple, o.id).not.toBe(o.aide);
+      expect(o.fiche ?? "", o.id).toMatch(/^(DA-\d\d-\d\d|lot \d.*)?$/);
+    }
+    // Les termes d'autres logiciels mènent aux outils (palette).
+    expect(rechercherOutils("offset")[0]?.id).toBeDefined();
+    expect(rechercherOutils("push")[0]?.id).toBeDefined();
+  });
+});

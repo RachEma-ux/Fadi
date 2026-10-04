@@ -617,3 +617,26 @@ describe("automatisation et assistant (lot 8, T19)", () => {
     expect(h.explication).toMatch(/réserve/);
   }, 60_000);
 });
+
+describe("essais de l'Architecture V4 §12 (lot 9)", () => {
+  it("calcul ancien terminé tardivement : une production de la révision n livrée après n + 1 reste rattachée à n, périmée, sans écraser une production plus récente", async () => {
+    const { recordProducedDocument } = await import("../lib/documents.js");
+    const client = await registerAndLogin("tardif@example.com");
+    const pid = await projetVide(client);
+    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("t1", 0, [niveau, mur("m1")]))).status).toBe(200);
+    const docs1 = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; label: string; fileName: string; stepNumber: number | null; current: { modelRevision: number; inputHash: string }; freshness: string | null; produced: { modelRevision: number } | null }[];
+    const murs1 = docs1.find((d) => d.kind === "atelier-tableau-murs")!;
+    expect(murs1.current.modelRevision).toBe(1);
+    // Le calcul commence à la révision 1 ; pendant ce temps, une commande produit la révision 2.
+    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("t2", 1, [mur("m2", 6)]))).status).toBe(200);
+    // Livraison tardive : la production porte la révision et l'empreinte de son départ.
+    await recordProducedDocument((await import("../db/client.js")).db, pid, { kind: murs1.kind, label: murs1.label, fileName: murs1.fileName, modelRevision: 1, inputHash: murs1.current.inputHash, stepNumber: murs1.stepNumber }, new Date());
+    let murs = ((await client.get(`/projects/${pid}/documents`)).body.documents as typeof docs1).find((d) => d.kind === "atelier-tableau-murs")!;
+    expect(murs).toMatchObject({ produced: { modelRevision: 1 }, freshness: "perime", current: { modelRevision: 2 } });
+    // Production à jour (révision 2), puis une autre livraison tardive de la révision 1 : la plus récente reste.
+    expect((await client.get(`/projects/${pid}/documents/atelier/tableaux/murs.csv`)).status).toBe(200);
+    await recordProducedDocument((await import("../db/client.js")).db, pid, { kind: murs1.kind, label: murs1.label, fileName: murs1.fileName, modelRevision: 1, inputHash: murs1.current.inputHash, stepNumber: murs1.stepNumber }, new Date());
+    murs = ((await client.get(`/projects/${pid}/documents`)).body.documents as typeof docs1).find((d) => d.kind === "atelier-tableau-murs")!;
+    expect(murs).toMatchObject({ produced: { modelRevision: 2 }, freshness: "a-jour" });
+  });
+});

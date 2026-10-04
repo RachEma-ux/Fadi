@@ -231,7 +231,11 @@ export async function documentCatalogue(q: Querier, project: OwnedProject, dctx:
   return [...generated, ...(await drawingExportDescriptors(q, project, dctx))];
 }
 
-/** Enregistre une production : dernière date, révision et empreinte, compteur incrémenté. */
+/**
+ * Enregistre une production : dernière date, révision et empreinte, compteur incrémenté. Une production livrée en
+ * retard (calcul commencé à la révision n, terminé après n + 1) reste rattachée à n : elle ne remplace jamais une
+ * production d'une révision plus récente (essai « calcul ancien terminé tardivement », Architecture V4 §12).
+ */
 export async function recordProducedDocument(
   q: Querier,
   projectId: string,
@@ -244,12 +248,12 @@ export async function recordProducedDocument(
     .onConflictDoUpdate({
       target: [producedDocuments.projectId, producedDocuments.kind],
       set: {
-        label: doc.label,
-        fileName: doc.fileName,
-        modelRevision: doc.modelRevision,
-        inputHash: doc.inputHash,
-        stepNumber: doc.stepNumber,
-        producedAt: now,
+        label: sql`CASE WHEN excluded.model_revision >= ${producedDocuments.modelRevision} THEN excluded.label ELSE ${producedDocuments.label} END`,
+        fileName: sql`CASE WHEN excluded.model_revision >= ${producedDocuments.modelRevision} THEN excluded.file_name ELSE ${producedDocuments.fileName} END`,
+        inputHash: sql`CASE WHEN excluded.model_revision >= ${producedDocuments.modelRevision} THEN excluded.input_hash ELSE ${producedDocuments.inputHash} END`,
+        stepNumber: sql`CASE WHEN excluded.model_revision >= ${producedDocuments.modelRevision} THEN excluded.step_number ELSE ${producedDocuments.stepNumber} END`,
+        producedAt: sql`CASE WHEN excluded.model_revision >= ${producedDocuments.modelRevision} THEN excluded.produced_at ELSE ${producedDocuments.producedAt} END`,
+        modelRevision: sql`GREATEST(excluded.model_revision, ${producedDocuments.modelRevision})`,
         count: sql`${producedDocuments.count} + 1`,
       },
     });

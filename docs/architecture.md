@@ -75,7 +75,7 @@ one-way P.118 importer, the projection to the analysis input used by the other m
 (`projection/maillage.ts`, copied as is by the renderer). The new Atelier UI lives in
 `apps/web/src/modules/atelier/nouveau/` (display state `etat-ui.ts` kept out of the model, SVG plan editor
 `plan2d/`, three.js view `vue3d/` loaded on demand, panels) and talks to the model only through the command bus
-`modules/atelier/bus/atelier-client.ts`; until the switch (lot 4) it opens with `?module=atelier&version=nouveau`.
+`modules/atelier/bus/atelier-client.ts` (since the switch, lot 4, it is the only Atelier).
 A capability sheet
 (`docs/atelier/fiches/DA-XX-YY.md`) is written and in state « spécifiée » before any function of the Atelier
 is coded, and no function is called « disponible » without its linked proof and the owner's acceptance.
@@ -197,6 +197,38 @@ AI assistance may explain an anomaly, propose a variant, or prepare a change —
 goes through the same controlled, reversible commands as a human-initiated one, and stays reversible. No
 AI-initiated write bypasses the command/undo system.
 
+### The rebuilt Atelier after lots 5–8 (DrawAll V4.1)
+
+All of it is pure code in `packages/atelier-model` (no React, no DOM, no three.js), executed identically in the
+browser (preview) and on the server (files, checks), and every write goes through the command service:
+
+- **Derived documents (lot 5)** — views (plan per storey with a cut height, section, elevation with face-level
+  visibility, site plan with the explicit cadastral → local conversion, detail) and sheets are *definitions* of the
+  model; their drawings are derived. Every document carries the revision and the input fingerprint it comes from
+  and is « à jour » / « périmé » in the catalogue (`apps/api/src/lib/atelier-documents.ts`); a late production stays
+  attached to its own revision and never overwrites a newer one. Renderers: SVG, dependency-free vector PDF, DXF R12;
+  schedules as CSV and an HTML quantities report. Bounded sketch constraints (Gauss–Newton, least displacement),
+  blocks and components, simple roofs, guardrails and phases are in the same model.
+- **Exchanges (lot 6)** — IFC 4.3 (`IFC4X3_ADD2`) written directly (`echanges/ifc.ts`) with `IfcMapConversion` from
+  the parcel's CRS, validated in CI by IfcOpenShell on a fixed corpus (`apps/api/test-corpus/ifc/`); IFC import reads
+  with web-ifc on the server and turns each product into an *imported representation* (`objet-importe`: original
+  class and GlobalId, mesh, footprint; never a parametric object); 2D DXF import as a `reference-plan` frame plus
+  sketches; a fidelity report for every exchange; a versioned manifest in the native package (archive v2). Matrix:
+  `docs/atelier/matrice-echanges.md`.
+- **Versions, variants, publication (lot 7)** — a past revision is rebuilt from the journal's exact inverses
+  (`GET …/atelier/model?revision=n`); named versions are immutable snapshots, compared and restored as a new
+  revision; a variant is a forked project linked to its trunk, merged by validated replay of its own journal
+  (conflicts listed, never silently resolved); a publication freezes a version, the rule-catalogue versions and the
+  documents, whose bytes live in content-addressed volumes (SHA-256); fine-grained locks (object or storey, 423);
+  architecture collisions; view comparison between versions. Backup/restore verification covers these tables.
+- **Automation and assistant (lot 8)** — scripts are declarative command templates (typed parameters, bounded
+  loops, a safe arithmetic evaluator; no code is executed) expanded into ordinary commands, so they have exactly the
+  user's rights and refusals; the assistant runs a controlled loop (proposal → dry run → bounded self-correction,
+  at most 3 iterations → preview → explicit approval) and writes nothing before approval. Without a language-model
+  provider (an owner decision), proposals come from Fadi's deterministic rules, including Harmonie's reserves.
+
+Lots, decisions and acceptance records: `docs/atelier/lots/`, `docs/atelier/decisions.md`, `docs/atelier/recette.md`.
+
 ## Delivery lots
 
 | Lot | Deliverable | Validation criterion |
@@ -275,8 +307,8 @@ protected P.118 reference behaves as in the prototype in the Atelier (the first 
 to an automatic working copy through the engine's own `P118Resolved` seam). MapTiler (satellite background,
 altimetry) is called from the browser with the user's key, on request, and simulated in CI. The Playwright
 scenario also runs axe-core on every screen at desktop and phone widths (no critical or serious violation).
-Lot 5 items still open are listed under « Limites restantes » in the matrix (regulatory checks beyond the
-prototype's rules, e-mail notifications, deployment hardening).
+Items still open are listed under « Limites restantes » in the matrix (regulatory checks beyond the
+prototype's rules, e-mail notifications, deployment hardening) and, for the Atelier, in `docs/atelier/recette.md`.
 
 ## Acceptance target: "Parcours App — Pilote P.118"
 

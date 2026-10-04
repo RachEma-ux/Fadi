@@ -253,3 +253,40 @@ describe("lot atomique, inverse et détection de pièces", () => {
     expect(distance(r.etat.site.emprise!.sommets[0]!, r.etat.site.emprise!.sommets[1]!)).toBe(6);
   });
 });
+
+describe("propriétés BIM, classification, groupes (DA-06-07, DA-06-08, DA-03-12, relus au lot 9)", () => {
+  const base = () =>
+    appliquerLot(modeleVide(), { requestId: "pbg", baseRevision: 0, contract: CONTRAT_COMMANDES, label: "t", commands: [
+      { type: "niveau.creer", params: { id: "rdc", nom: "RDC", elevation: 0 } },
+      { type: "mur.tracer", params: { id: "w", niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } },
+      { type: "solide.extruder", params: { id: "s1", niveauId: "rdc", contour: [pt(10, 0), pt(11, 0), pt(11, 1), pt(10, 1)], trous: [], hauteur: m(1), role: "solid" } },
+      { type: "solide.extruder", params: { id: "s2", niveauId: "rdc", contour: [pt(12, 0), pt(13, 0), pt(13, 1), pt(12, 1)], trous: [], hauteur: m(2), role: "solid" } },
+    ] }).etat;
+  const appliquer = (e: ModeleAtelier, commands: Commande[]) => appliquerLot(e, { requestId: "x", baseRevision: 0, contract: CONTRAT_COMMANDES, label: "t", commands });
+
+  it("propriété typée définie (unité, provenance, statut), puis retirée (« non évaluée ») ; l'inverse restitue l'état", () => {
+    const e = base();
+    const r = appliquer(e, [{ type: "propriete.definir", params: { id: "w", nom: "resistanceThermique", valeur: 2.5, unite: "m2.K/W", statut: "a-verifier" } }]);
+    expect(r.etat.objets["w"]!.proprietes["resistanceThermique"]).toEqual({ valeur: 2.5, unite: "m2.K/W", provenance: "saisie", statut: "a-verifier" });
+    expect(appliquer(r.etat, [{ type: "propriete.definir", params: { id: "w", nom: "resistanceThermique" } }]).etat.objets["w"]!.proprietes["resistanceThermique"]).toBeUndefined();
+    expect(appliquer(r.etat, [r.inverse]).etat).toEqual(e);
+    expect(() => appliquer(e, [{ type: "propriete.definir", params: { id: "w", nom: "x", valeur: 1, statut: "certifiee" } }])).toThrow(ErreurCommande);
+  });
+
+  it("classification : code déclaré dans un système, classe IFC tirée de l'ontologie (jamais devinée), retrait", () => {
+    const r = appliquer(base(), [{ type: "classification.affecter", params: { id: "w", systeme: "Uniclass", code: "EF_25_10" } }]).etat;
+    expect(r.objets["w"]!.proprietes["classification:Uniclass"]).toEqual({ valeur: "EF_25_10", provenance: "saisie", statut: "declaree" });
+    expect(r.objets["w"]!.proprietes["classeIfc"]).toEqual({ valeur: "IfcWall", provenance: "regle", statut: "verifiee" });
+    expect(appliquer(r, [{ type: "classification.affecter", params: { id: "w", systeme: "Uniclass", code: null } }]).etat.objets["w"]!.proprietes["classification:Uniclass"]).toBeUndefined();
+  });
+
+  it("multicorps limité : deux solides rassemblés dans un groupe, déplacés ensemble, puis le groupe dissous", () => {
+    const g = appliquer(base(), [{ type: "groupe.creer", params: { id: "g", nom: "Mobilier fixe", cibles: ["s1", "s2"] } }]).etat;
+    expect([g.objets["s1"]!.groupeId, g.objets["s2"]!.groupeId]).toEqual(["g", "g"]);
+    const d = appliquer(g, [{ type: "transformer.deplacer", params: { cibles: ["s1", "s2"], dx: 1, dy: 0 } }]).etat;
+    expect((d.objets["s2"] as Occurrence<"solide">).params.contour[0]!.x).toBe(13);
+    const x = appliquer(d, [{ type: "groupe.dissoudre", params: { id: "g" } }]).etat;
+    expect(x.groupes["g"]).toBeUndefined();
+    expect(x.objets["s1"]!.groupeId).toBeNull();
+  });
+});
