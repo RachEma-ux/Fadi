@@ -155,7 +155,10 @@ export function objetSousPointeur(p: Point2, cache: ReturnType<typeof segmentsDu
     const o = etat.objets[s.objetId];
     // Les murs sont cliquables sur toute leur épaisseur.
     const marge = o?.classe === "mur" ? o.params.epaisseur.value / 2 : 0;
-    const eff = Math.max(0, d - marge);
+    // À égalité, un élément linéaire (mur, ligne…) l'emporte sur le contour d'une surface (pièce, zone, dalle…)
+    // qui le longe : l'ordre des objets du modèle ne décide jamais de la sélection.
+    const surface = !!o && ["piece", "zone", "espace", "dalle", "toiture", "reference-plan"].includes(o.classe);
+    const eff = Math.max(0, d - marge) + (surface ? 1e-4 : 0);
     if (eff <= rayon && (!meilleur || eff < meilleur.distance)) meilleur = { objetId: s.objetId, distance: eff };
   }
   for (const c of cache.centres) {

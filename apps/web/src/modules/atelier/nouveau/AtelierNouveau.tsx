@@ -192,7 +192,8 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
       etatUi.choisirOutil(o.id, o.aide);
       // Pousser / tirer se fait en 3D ; les outils de tracé, en plan.
       if (o.id === "pousser") etatUi.set({ mode: "3d" });
-      else if (o.famille === "creer" || o.famille === "documenter" || o.id === "mesurer") etatUi.set({ mode: "2d" });
+      // Mesurer reste en 3D quand on y est (mesure entre deux points des surfaces, D-048).
+      else if (o.famille === "creer" || o.famille === "documenter" || (o.id === "mesurer" && etatUi.get().mode !== "3d")) etatUi.set({ mode: "2d" });
       if (window.matchMedia?.("(max-width: 760px)").matches) etatUi.set({ panneauMobile: "travail" });
     },
     [disponibilite, etat, executer],

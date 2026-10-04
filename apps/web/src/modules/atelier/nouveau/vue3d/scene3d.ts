@@ -31,6 +31,8 @@ interface Lot {
 }
 
 export interface MesuresRendu {
+  /** Mesure 3D en cours (D-048) : distance entre les deux points relevés, en mètres. */
+  mesure3d?: number | null;
   rendus: number[];
   appels: number;
   triangles: number;
@@ -388,6 +390,31 @@ export class Scene3D {
   }
 
   /** Aperçu d'une modification (pousser / tirer) avant validation. */
+  private mesureGroupe = new THREE.Group();
+  /** Mesure 3D (D-048) : points relevés sur les surfaces, segment et pastilles au-dessus de tout. */
+  majMesure(points: readonly THREE.Vector3[]): void {
+    for (const c of [...this.mesureGroupe.children]) {
+      c.traverse((x) => (x as THREE.Mesh).geometry?.dispose());
+      this.mesureGroupe.remove(c);
+    }
+    if (!this.mesureGroupe.parent) this.scene.add(this.mesureGroupe);
+    const mat = new THREE.MeshBasicMaterial({ color: "#c0392b", depthTest: false });
+    const k = Math.max(0.03, this.echellePoignees() * 0.04);
+    for (const p of points) {
+      const s = new THREE.Mesh(new THREE.SphereGeometry(k, 12, 8), mat);
+      s.position.copy(p);
+      s.renderOrder = 11;
+      this.mesureGroupe.add(s);
+    }
+    if (points.length === 2) {
+      const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints([...points]), new THREE.LineBasicMaterial({ color: "#c0392b", depthTest: false }));
+      ligne.renderOrder = 11;
+      this.mesureGroupe.add(ligne);
+      this.mesures.mesure3d = points[0]!.distanceTo(points[1]!);
+    } else this.mesures.mesure3d = null;
+    this.rendre();
+  }
+
   majApercu(m: Maillage | null): void {
     for (const c of [...this.apercu.children]) {
       (c as THREE.Mesh).geometry.dispose();

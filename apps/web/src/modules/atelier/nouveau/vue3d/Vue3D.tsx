@@ -4,6 +4,7 @@
  * techniques de travail (dessus, coupes N–S et E–O réglables, quatre façades), pousser / tirer avec aperçu
  * (DA-04-07) émis comme une seule commande au relâchement.
  */
+import type { Vector3 } from "three";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { etendueMur, maillageObjet, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
@@ -76,6 +77,14 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
   const options: OptionsScene = useMemo(() => ({ ...reglages, niveauActif: ui.niveauId }), [reglages, ui.niveauId]);
   const setOptions = (patch: Partial<Omit<OptionsScene, "niveauActif">>) => setReglages((r) => ({ ...r, ...patch }));
   const [pousse, setPousse] = useState<{ valeur: number; cle: string } | null>(null);
+  // Mesure 3D (D-048) : outil Mesurer, deux points relevés sur les surfaces visibles.
+  const [mesure, setMesure] = useState<Vector3[]>([]);
+  useEffect(() => {
+    if (ui.outil !== "mesurer" && mesure.length) setMesure([]);
+  }, [ui.outil, mesure.length]);
+  useEffect(() => {
+    if (pret) sceneRef.current?.majMesure(mesure);
+  }, [mesure, pret]);
   const geste = useRef<{ x: number; y: number; bouge: boolean; pousser: null | { o: OccurrenceQuelconque; cle: "hauteur" | "epaisseur"; depart: number; ppm: number; valeur: number }; poignee?: { axe: "x" | "y" | "z"; t0: number; d: number }; rotation?: { a0: number; angle: number; centre: { x: number; y: number } } } | null>(null);
   const [deplace, setDeplace] = useState<{ axe: "x" | "y" | "z" | "r"; d: number } | null>(null);
   const webgpuDisponible = typeof navigator !== "undefined" && "gpu" in navigator;
@@ -275,6 +284,12 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
     if (g.bouge) return;
     const p = relatif(e);
     const hit = s.pointer(p.x, p.y);
+    if (ui.outil === "mesurer") {
+      if (!hit) return void etatUi.set({ aide: "Mesurer en 3D : cliquez un point sur une surface visible." });
+      const point = hit.point.clone();
+      setMesure((m) => (m.length >= 2 ? [point] : [...m, point]));
+      return;
+    }
     if (hit) {
       const o = etat.objets[hit.objetId];
       if (e.shiftKey) etatUi.set((u) => ({ selection: u.selection.includes(hit.objetId) ? u.selection.filter((x) => x !== hit.objetId) : [...u.selection, hit.objetId] }));
@@ -348,7 +363,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
         </label>
       </div>
       <p className="vue3d-etat" aria-live="polite">
-        {erreur ? `Rendu 3D indisponible : ${erreur}` : !pret ? "Préparation de la vue 3D…" : deplace ? (deplace.axe === "r" ? `Rotation : ${fmt(deplace.d)}°` : `Déplacement ${deplace.axe.toUpperCase()} : ${fmt(deplace.d)} m`) : pousse ? `${pousse.cle === "hauteur" ? "Hauteur" : "Épaisseur"} : ${fmt(pousse.valeur)} m` : `${moteur === "webgpu" ? "WebGPU" : "WebGL2"}${webgpu && moteur !== "webgpu" ? " (WebGPU indisponible, repli)" : ""}`}
+        {erreur ? `Rendu 3D indisponible : ${erreur}` : !pret ? "Préparation de la vue 3D…" : deplace ? (deplace.axe === "r" ? `Rotation : ${fmt(deplace.d)}°` : `Déplacement ${deplace.axe.toUpperCase()} : ${fmt(deplace.d)} m`) : pousse ? `${pousse.cle === "hauteur" ? "Hauteur" : "Épaisseur"} : ${fmt(pousse.valeur)} m` : mesure.length === 2 ? `Distance : ${fmt(mesure[0]!.distanceTo(mesure[1]!))} m (Δx ${fmt(mesure[1]!.x - mesure[0]!.x)} · Δy ${fmt(mesure[1]!.y - mesure[0]!.y)} · Δz ${fmt(mesure[1]!.z - mesure[0]!.z)})` : mesure.length === 1 ? "Mesure : cliquez le second point." : `${moteur === "webgpu" ? "WebGPU" : "WebGL2"}${webgpu && moteur !== "webgpu" ? " (WebGPU indisponible, repli)" : ""}`}
       </p>
     </div>
   );

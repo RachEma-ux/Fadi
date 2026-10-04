@@ -16,14 +16,14 @@ import { polygoneMurRaccorde } from "../raccords.js";
 import { battantPorte, symbolePorte } from "../ouvrants.js";
 import { separationsCouches } from "../compositions.js";
 import { extremitesCotation } from "../references.js";
-import type { Longueur, Point2 } from "../unites.js";
+import type { Angle, Longueur, Point2 } from "../unites.js";
 import { ErreurCommande, lire } from "../commandes/base.js";
 import { bornesPrimitives, decouper, type Bornes, type Primitive, type Remplissage, type Trait } from "./dessin.js";
 import { empreinteDe } from "./empreinte.js";
 import { contoursUnion, projeterMaillages, type Camera, type ResultatProjection } from "./visibilite.js";
 
-export type TypeVue = "plan" | "coupe" | "facade" | "masse" | "detail";
-export const TYPES_VUE: readonly TypeVue[] = ["plan", "coupe", "facade", "masse", "detail"];
+export type TypeVue = "plan" | "coupe" | "facade" | "masse" | "detail" | "axonometrie";
+export const TYPES_VUE: readonly TypeVue[] = ["plan", "coupe", "facade", "masse", "detail", "axonometrie"];
 export type Orientation = "nord" | "sud" | "est" | "ouest";
 export const ORIENTATIONS: readonly Orientation[] = ["nord", "sud", "est", "ouest"];
 /** Phases de projet (DA-21 / lot 5) : un objet sans phase est dessiné dans toutes les vues. */
@@ -66,6 +66,12 @@ export interface ParamsVue {
    * de la vue, ordonnée = altitude pour une coupe ou une façade. Absent = aucune.
    */
   annotations?: AnnotationVue[];
+  /**
+   * Axonométrie (D-048) : direction d'où l'on regarde — azimut (degrés, depuis l'axe x local, sens direct) et
+   * inclinaison au-dessus de l'horizontale ; projection parallèle, arêtes cachées au choix.
+   */
+  azimut?: Angle | null;
+  inclinaison?: Angle | null;
 }
 
 export type AnnotationVue =
@@ -138,7 +144,14 @@ export function lireParamsVue(etat: ModeleAtelier, p: Brut): ParamsVue {
     annotations = brutes.map((x, i) => lireAnnotationVue((x ?? {}) as Brut, `annotations[${i}]`));
     if (new Set(annotations.map((x) => x.id)).size !== annotations.length) throw new ErreurCommande("invalide", "annotations", "identifiants d'annotation en double");
   }
-  const base = { type, titre, echelle, niveauId, hauteurCoupe, ligneA, ligneB, profondeur, orientation, cadreMin, cadreMax, lignesCachees, phases };
+  let axo: { azimut: Angle; inclinaison: Angle } | null = null;
+  if (type === "axonometrie") {
+    const azimut = lire.angle(p, "azimut")!;
+    const inclinaison = lire.angle(p, "inclinaison")!;
+    if (!(inclinaison.value > 0 && inclinaison.value < 90)) throw new ErreurCommande("invalide", "inclinaison", "inclinaison : strictement entre 0° et 90°");
+    axo = { azimut, inclinaison };
+  }
+  const base = { type, titre, echelle, niveauId, hauteurCoupe, ligneA, ligneB, profondeur, orientation, cadreMin, cadreMax, lignesCachees, phases, ...(axo ?? {}) };
   // Une vue sans annotation garde exactement la forme d'avant (empreintes inchangées).
   return annotations.length ? { ...base, annotations } : base;
 }
@@ -455,6 +468,14 @@ function genererCoupeOuFacade(c: Collecteur, etat: ModeleAtelier, v: ParamsVue):
     const u = normalise(sub(b, a));
     camera = { origine: [a.x, a.y, 0], regard: [-u.y, u.x, 0], droite: [u.x, u.y, 0], haut: [0, 0, 1] };
     coupe = true;
+  } else if (v.type === "axonometrie") {
+    const az = ((v.azimut?.value ?? 0) * Math.PI) / 180;
+    const inc = ((v.inclinaison?.value ?? 30) * Math.PI) / 180;
+    const regard: [number, number, number] = [-Math.cos(inc) * Math.cos(az), -Math.cos(inc) * Math.sin(az), -Math.sin(inc)];
+    const droite: [number, number, number] = [-Math.sin(az), Math.cos(az), 0];
+    const haut: [number, number, number] = [droite[1] * regard[2] - droite[2] * regard[1], droite[2] * regard[0] - droite[0] * regard[2], droite[0] * regard[1] - droite[1] * regard[0]];
+    camera = { origine: [0, 0, 0], regard, droite, haut };
+    c.avertissements.add("Axonométrie : projection parallèle, sans échelle de mesure dans la profondeur (les longueurs ne se mesurent pas sur le dessin).");
   } else {
     const regard: Record<Orientation, [number, number, number]> = { nord: [0, -1, 0], sud: [0, 1, 0], est: [-1, 0, 0], ouest: [1, 0, 0] };
     const d = regard[v.orientation!];
@@ -466,7 +487,7 @@ function genererCoupeOuFacade(c: Collecteur, etat: ModeleAtelier, v: ParamsVue):
   const r = projeterMaillages(maillages, camera, { coupe, profondeurMax: v.type === "coupe" ? (v.profondeur?.value ?? null) : null, lignesCachees: v.lignesCachees });
   verserProjection(c, etat, r, () => "vue");
   const b = bornesPrimitives(c.primitives);
-  if (b) reperesNiveaux(c, etat, b.min.x, b.max.x);
+  if (b && v.type !== "axonometrie") reperesNiveaux(c, etat, b.min.x, b.max.x);
   const sansVolume = objets.filter((o) => !garde.has(o.id)).length;
   if (sansVolume) c.avertissements.add(`${sansVolume} objet(s) sans volume (hauteur non renseignée, ou bloc dessiné en 2D seulement) : absents de la vue.`);
   c.mesures.triangles += r.triangles;
@@ -552,7 +573,7 @@ export function objetsVue(etat: ModeleAtelier, params: ParamsVue): string[] {
       if (o.classe === "mur" && o.definitionId && etat.definitions[o.definitionId]?.params["couches"]) ids.add(o.definitionId);
     }
     for (const r of Object.values(etat.references)) if (ids.has(r.proprietaireId) && r.objetId) ids.add(r.objetId);
-  } else if (params.type === "coupe" || params.type === "facade") {
+  } else if (params.type === "coupe" || params.type === "facade" || params.type === "axonometrie") {
     for (const o of tous) if (physique(o) && retenu(etat, o, params.phases)) ids.add(o.id);
   } else {
     const niveaux = niveauxOrdonnes(etat);
@@ -615,7 +636,7 @@ export function genererVue(etat: ModeleAtelier, params: ParamsVue, definitionId:
     c.avertissements.add("Niveau de la vue absent du modèle : vue à réparer.");
   } else if (params.type === "plan") genererPlan(c, etat, params, options);
   else if (params.type === "detail") genererDetail(c, etat, params, options);
-  else if (params.type === "coupe" || params.type === "facade") genererCoupeOuFacade(c, etat, params);
+  else if (params.type === "coupe" || params.type === "facade" || params.type === "axonometrie") genererCoupeOuFacade(c, etat, params);
   else genererMasse(c, etat, params);
   for (const an of params.annotations ?? []) {
     if (an.type === "texte") c.texte(an.position, an.texte, 2.5, null, { ancre: "debut" });

@@ -58,7 +58,11 @@ const choisirOutil = async (requete, libelle) => {
   for (let essai = 0; essai < 2; essai++) {
     await page.evaluate(() => document.activeElement?.blur?.());
     await page.keyboard.press("Escape");
-    await page.keyboard.press("Control+k");
+    if (!(await page.locator(".palette-champ").isVisible().catch(() => false))) await page.keyboard.press("Control+k");
+    if (!(await page.locator(".palette-champ").waitFor({ state: "visible", timeout: 3000 }).then(() => true, () => false))) {
+      await page.keyboard.press("Control+k");
+      if (!(await page.locator(".palette-champ").waitFor({ state: "visible", timeout: 3000 }).then(() => true, () => false))) continue;
+    }
     await page.locator(".palette-champ").fill(requete);
     await page.waitForFunction((l) => (document.querySelector(".palette-resultats li")?.textContent ?? "").includes(l), libelle, { timeout: 5000 }).catch(() => {});
     await page.keyboard.press("Enter");
@@ -274,6 +278,23 @@ if (dalle) {
   journalZ = (await api("get", `/projects/${pid}/atelier/journal`)).body.entrees.at(-1)?.label ?? "";
 }
 check("manipulateur 3D : flèche Z pour une dalle (décalage de base modifié, un lot), absente pour un mur", poigneesMur === 3 && elevation !== null && elevation > 0.01 && /Élever .* \(Z, manipulateur 3D\)/.test(journalZ), `${poigneesMur} poignées sur le mur · ${elevation} m · ${journalZ}`);
+// Mesure 3D (D-048) : outil Mesurer, deux points relevés sur des surfaces.
+{
+  const ok = await choisirOutil("mesurer", "Mesurer");
+  const m0 = (await modele(pid)).modele;
+  const autresMurs = Object.values(m0.objets).filter((o) => o.classe === "mur" && o.niveauId === murA.niveauId && o.id !== murA.id).map((o) => o.id);
+  const ecrans = [];
+  for (const id of [murA.id, ...autresMurs]) {
+    const q = await page.evaluate((x) => window.fadiMesures3D?.localiser?.(x) ?? null, id);
+    if (q && cadre3d) ecrans.push(q);
+    if (ecrans.length === 2) break;
+  }
+  for (const q of ecrans) await page.mouse.click(cadre3d.x + q.x, cadre3d.y + q.y);
+  await page.waitForTimeout(300);
+  const d = await page.evaluate(() => window.fadiMesures3D?.mesure3d ?? null);
+  check("mesure 3D entre deux points relevés sur les surfaces", ok && typeof d === "number" && d > 0, `${d} · ${(await page.locator(".vue3d").textContent())?.match(/Distance[^)]*\)/)?.[0] ?? ""}`);
+  await page.keyboard.press("Escape");
+}
 await page.keyboard.press("Escape");
 const chapeaux = {};
 for (const vue of ["Coupe nord–sud", "Plan (dessus)"]) {
@@ -295,6 +316,12 @@ await page.locator('[data-nouvelle="plan"]').click();
 await page.waitForSelector('[data-detail="vue"] .docs-svg svg', { timeout: 60000 });
 await page.waitForFunction(() => /dessinée en trait fin/.test(document.querySelector(".docs-avertissements")?.textContent ?? ""), null, { timeout: 45000 }).catch(() => {});
 check("plan en document : la référence externe est dessinée en trait fin, avec sa révision publiée", /Référence externe « .* » dessinée en trait fin/.test((await page.locator(".docs-avertissements").textContent().catch(() => "")) ?? ""));
+// Axonométrie (D-048) : vue créée et dessinée.
+await page.locator(".docs-nouvelle > summary").click();
+await page.locator('[data-nouvelle="axonometrie"]').click();
+await page.waitForSelector('[data-detail="vue"] .docs-svg svg', { timeout: 60000 }).catch(() => {});
+await page.waitForFunction(() => (document.querySelector('[data-detail="vue"] .docs-svg svg')?.querySelectorAll("line, path, polyline").length ?? 0) > 10, null, { timeout: 60000 }).catch(() => {});
+check("axonométrie : vue créée et dessinée (projection parallèle)", (await page.locator('[data-detail="vue"] .docs-svg svg').locator("line, path, polyline").count()) > 10 && /projection parallèle/.test((await page.locator(".docs-avertissements").textContent().catch(() => "")) ?? ""));
 await page.locator('.barre-mode button:has-text("Plan")').click();
 await page.waitForSelector(".plan2d");
 

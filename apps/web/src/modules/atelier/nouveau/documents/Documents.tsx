@@ -60,7 +60,7 @@ export interface PropsDocuments {
 
 type Choix = { type: "vue" | "feuille"; id: string } | { type: "tableau"; id: TypeTableau } | null;
 
-const LIBELLES_TYPE: Record<TypeVue, string> = { plan: "Plan", coupe: "Coupe", facade: "Façade", masse: "Plan de masse", detail: "Détail" };
+const LIBELLES_TYPE: Record<TypeVue, string> = { plan: "Plan", coupe: "Coupe", facade: "Façade", masse: "Plan de masse", detail: "Détail", axonometrie: "Axonométrie" };
 const ORIENTATION_LIBELLE: Record<Orientation, string> = { nord: "nord", sud: "sud", est: "est", ouest: "ouest" };
 const PHASE_LIBELLE: Record<FiltrePhase, string> = { existant: "Existant", nouveau: "Nouveau", "a-demolir": "À démolir", "sans-phase": "Sans phase" };
 const fmt = (v: number) => (Math.round(v * 100) / 100).toString().replace(".", ",");
@@ -171,6 +171,9 @@ export function Documents({ projectId, code, nomProjet, etat, revision, readOnly
             ? { type, titre: `Façade ${ORIENTATION_LIBELLE[orientation ?? "sud"]}`, echelle: 100, orientation: orientation ?? "sud" }
             : type === "masse"
               ? { type, titre: "Plan de masse", echelle: 500 }
+              : type === "axonometrie"
+                ? // Isométrie vue du sud-ouest : paramètres de dessin affichés et modifiables, pas des données du projet.
+                  { type, titre: "Axonométrie sud-ouest", echelle: 100, azimut: { value: 225, unit: "deg" }, inclinaison: { value: 35.26, unit: "deg" }, lignesCachees: false }
               : { type, titre: `Détail · ${niveau?.nom ?? ""}`, echelle: 20, niveauId: niveau?.id, cadreMin: pt(cx - 2, cy - 2), cadreMax: pt(cx + 2, cy + 2) };
     void executer([{ type: "vue.creer", params: { id, ...params } }], `Nouvelle vue : ${String(params["titre"])}`, { type: "vue", id });
   };
@@ -196,6 +199,7 @@ export function Documents({ projectId, code, nomProjet, etat, revision, readOnly
                   <button key={o} type="button" data-nouvelle={`facade-${o}`} onClick={() => creerVue("facade", o)}>Façade {ORIENTATION_LIBELLE[o]}</button>
                 ))}
                 <button type="button" data-nouvelle="masse" onClick={() => creerVue("masse")}>Plan de masse</button>
+                <button type="button" data-nouvelle="axonometrie" onClick={() => creerVue("axonometrie")}>Axonométrie (isométrie sud-ouest)</button>
                 <button type="button" data-nouvelle="detail" disabled={!niveau} onClick={() => creerVue("detail")}>Détail du niveau actif</button>
               </div>
             </details>
@@ -336,6 +340,8 @@ function VueDetail({ projectId, def, etat, revision, readOnly, catalogue, base, 
     cadreMax: ecrirePoint(p.cadreMax),
     lignesCachees: p.lignesCachees,
     phases: p.phases,
+    azimut: p.azimut ? fmt(p.azimut.value) : "",
+    inclinaison: p.inclinaison ? fmt(p.inclinaison.value) : "",
   }));
   const [local, setLocal] = useState<string | null>(null);
   const appliquer = () => {
@@ -356,6 +362,13 @@ function VueDetail({ projectId, def, etat, revision, readOnly, catalogue, base, 
       params["profondeur"] = pr === null ? null : { value: pr, unit: "m" };
     }
     if (p.type === "facade") params["orientation"] = form.orientation;
+    if (p.type === "axonometrie") {
+      const az = nombre(form.azimut);
+      const inc = nombre(form.inclinaison);
+      if (az === null || inc === null) return setLocal("Axonométrie : azimut et inclinaison en degrés.");
+      params["azimut"] = { value: az, unit: "deg" };
+      params["inclinaison"] = { value: inc, unit: "deg" };
+    }
     if (p.type === "detail") {
       const a = lirePoint(form.cadreMin);
       const b = lirePoint(form.cadreMax);
@@ -431,7 +444,13 @@ function VueDetail({ projectId, def, etat, revision, readOnly, catalogue, base, 
               <label>Cadre, coin haut droit (x ; y)<input value={form.cadreMax} onChange={(e) => setForm({ ...form, cadreMax: e.target.value })} /></label>
             </>
           )}
-          {(p.type === "coupe" || p.type === "facade") && (
+          {p.type === "axonometrie" && (
+            <>
+              <label>Azimut (°, depuis l'axe x, sens direct)<input value={form.azimut} inputMode="decimal" onChange={(e) => setForm({ ...form, azimut: e.target.value })} data-axo="azimut" /></label>
+              <label>Inclinaison (°, au-dessus de l'horizontale)<input value={form.inclinaison} inputMode="decimal" onChange={(e) => setForm({ ...form, inclinaison: e.target.value })} data-axo="inclinaison" /></label>
+            </>
+          )}
+          {(p.type === "coupe" || p.type === "facade" || p.type === "axonometrie") && (
             <label className="docs-case"><input type="checkbox" checked={form.lignesCachees} onChange={(e) => setForm({ ...form, lignesCachees: e.target.checked })} /> Lignes cachées en tirets</label>
           )}
           <fieldset className="docs-phases">

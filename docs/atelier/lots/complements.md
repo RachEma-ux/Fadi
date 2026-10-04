@@ -118,3 +118,4 @@ Organisation : niveaux (gérer, supprimer avec réaffectation), types (supprimer
 Propriétés en tableau (CSV, propriété commune), numérotation des pièces, synthèse de zone, historique CSV (`proprietes-csv.test.ts`, test API, e2e, D-045).
 Esquisse : ellipse, rectangles par centre et par 3 points, cercle par 2 points, trame d'axes ; arcs et rectangles transformés corrigés (`esquisse/*.test.ts`, e2e, D-046).
 Étirer en entraînant les murs joints, portes doubles et coulissantes, répartition d'ouvertures (`architecture-plus.test.ts`, e2e, D-047).
+Vues axonométriques et mesure 3D (`axonometrie.test.ts`, e2e, D-048).
