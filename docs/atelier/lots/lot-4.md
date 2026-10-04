@@ -27,7 +27,9 @@ Ouvrir : n'importe quel projet, `?module=atelier`, ou les étapes 10 et 11 du Pa
 - `⏱` (Chromium headless, cette machine) : ouverture de l'Atelier sur le P.118 typé → plan affiché 0,78 s
   (recette dédiée, premier chargement : 1,5 s) ; rechargement → plan 0,73 s ; annulation d'un mur → enregistrée
   0,53 s ; import de l'exemple → vue d'ensemble 2,5 s ; passage en 3D → première image 2,0 s.
-- Image Docker et CI : vérifiées par le pipeline après envoi (voir ci-dessous).
+- CI (validate, e2e, image) verte sur `a47db68`, après deux corrections découvertes par le pipeline : scripts racine
+  `db:migrate` / `build` / `dev:api` rétablis (une substitution du lot 3 y avait ajouté l'espace de travail web) et
+  fichiers de test de l'API exécutés l'un après l'autre (remise à zéro de la base partagée).
 
 ## Défauts corrigés pendant la bascule
 

@@ -9,59 +9,10 @@
 import { pointsArc, pointsSpline, polygoneMur, type Vec } from "../geometrie.js";
 import { type ModeleAtelier, type OccurrenceQuelconque } from "../modele.js";
 import { quantites } from "../quantites.js";
+import { Dxf } from "../documents/rendu-dxf.js";
 
 const nb = (v: number) => (Math.abs(v) < 1e-12 ? "0" : String(Math.round(v * 1e6) / 1e6));
 const calqueDxf = (nom: string | null | undefined) => (nom ? nom.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9_-]+/g, "_").slice(0, 31) || "0" : "0");
-
-class Dxf {
-  lignes: string[] = [];
-  paire(code: number, valeur: string | number): void {
-    this.lignes.push(String(code), typeof valeur === "number" ? nb(valeur) : valeur);
-  }
-  ligne(calque: string, a: Vec, b: Vec): void {
-    this.paire(0, "LINE");
-    this.paire(8, calque);
-    this.paire(10, a.x);
-    this.paire(20, a.y);
-    this.paire(30, 0);
-    this.paire(11, b.x);
-    this.paire(21, b.y);
-    this.paire(31, 0);
-  }
-  polyligne(calque: string, pts: readonly Vec[], fermee: boolean): void {
-    if (pts.length < 2) return;
-    this.paire(0, "POLYLINE");
-    this.paire(8, calque);
-    this.paire(66, 1);
-    this.paire(70, fermee ? 1 : 0);
-    for (const p of pts) {
-      this.paire(0, "VERTEX");
-      this.paire(8, calque);
-      this.paire(10, p.x);
-      this.paire(20, p.y);
-      this.paire(30, 0);
-    }
-    this.paire(0, "SEQEND");
-    this.paire(8, calque);
-  }
-  cercle(calque: string, c: Vec, r: number): void {
-    this.paire(0, "CIRCLE");
-    this.paire(8, calque);
-    this.paire(10, c.x);
-    this.paire(20, c.y);
-    this.paire(30, 0);
-    this.paire(40, r);
-  }
-  texte(calque: string, p: Vec, hauteur: number, texte: string): void {
-    this.paire(0, "TEXT");
-    this.paire(8, calque);
-    this.paire(10, p.x);
-    this.paire(20, p.y);
-    this.paire(30, 0);
-    this.paire(40, hauteur);
-    this.paire(1, texte.replace(/[\r\n]+/g, " ").slice(0, 250));
-  }
-}
 
 const centre = (pts: readonly Vec[]): Vec => ({ x: pts.reduce((s, p) => s + p.x, 0) / pts.length, y: pts.reduce((s, p) => s + p.y, 0) / pts.length });
 

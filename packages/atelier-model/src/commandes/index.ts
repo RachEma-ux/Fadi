@@ -23,6 +23,7 @@ import {
   type InstantaneDiff,
   type Reducteur,
 } from "./base.js";
+import { reducteursDocuments } from "./documents.js";
 import { joindreMurs, scinderMur } from "./mur.js";
 import { creerOccurrence, modifierOccurrence, supprimerOccurrence } from "./objets.js";
 import { affecterClassification, definirPropriete, rattacherReference, reducteursCalque, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
@@ -104,6 +105,8 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "propriete.definir": (etat, p) => definirPropriete(etat, p),
   "classification.affecter": (etat, p) => affecterClassification(etat, p),
   "reference.reparer": (etat, p) => reparerReference(etat, p),
+  // Documents dérivés (lot 5) : vues et feuilles
+  ...reducteursDocuments,
   // Site
   "site.parcelle.definir": (etat, p) => reducteursSite.parcelle(etat, p),
   "site.emprise.definir": (etat, p) => reducteursSite.emprise(etat, p),
@@ -164,7 +167,7 @@ export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): Resulta
 export function identifiantsCibles(enveloppe: Enveloppe): string[] {
   const ids = new Set<string>();
   for (const c of enveloppe.commands) {
-    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId"]) {
+    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId"]) {
       const v = c.params[k];
       if (typeof v === "string") ids.add(v);
     }

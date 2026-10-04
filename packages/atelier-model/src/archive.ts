@@ -4,6 +4,8 @@
  * unités strictes, repères), les références croisées (niveau, calque, groupe, définition, hôte) sont contrôlées ;
  * la moindre anomalie refuse l'archive en entier avec la liste des erreurs — jamais de correction silencieuse.
  */
+import { lireParamsVue } from "./documents/vues.js";
+import { lireParamsFeuille } from "./documents/feuilles.js";
 import { estClasse } from "./ontologie.js";
 import { ErreurCommande } from "./commandes/base.js";
 import { validerParams } from "./commandes/validation.js";
@@ -49,8 +51,8 @@ export function verifierModele(brut: unknown): ResultatVerification {
   }
   for (const [id, d] of Object.entries(table("definitions")) as [string, Brut][]) {
     const classe = d["classe"];
-    if ((!estClasse(classe) && classe !== "bloc" && classe !== "composant") || typeof d["nom"] !== "string" || !estRecord(d["params"]) || !estNombre(d["version"])) erreurs.push(`definitions.${id} : définition invalide`);
-    else modele.definitions[id] = { id, classe, nom: d["nom"], params: d["params"], version: d["version"] };
+    if ((!estClasse(classe) && !["bloc", "composant", "vue", "feuille"].includes(classe as string)) || typeof d["nom"] !== "string" || !estRecord(d["params"]) || !estNombre(d["version"])) erreurs.push(`definitions.${id} : définition invalide`);
+    else modele.definitions[id] = { id, classe: classe as ModeleAtelier["definitions"][string]["classe"], nom: d["nom"], params: d["params"], version: d["version"] };
   }
   // Les objets sont validés contre le modèle candidat complet (un hôte peut être déclaré après son ouverture).
   const objetsBruts = table("objets");
@@ -122,5 +124,16 @@ export function verifierModele(brut: unknown): ResultatVerification {
     }
   }
   if (estRecord(brut["proprietes"])) modele.proprietes = brut["proprietes"] as ModeleAtelier["proprietes"];
+  // Vues puis feuilles (une feuille place des vues) : paramètres revalidés comme par les commandes.
+  for (const classe of ["vue", "feuille"] as const) {
+    for (const d of Object.values(modele.definitions)) {
+      if (d.classe !== classe) continue;
+      try {
+        d.params = (classe === "vue" ? lireParamsVue(modele, d.params) : lireParamsFeuille(modele, d.params)) as unknown as Record<string, unknown>;
+      } catch (err) {
+        erreurs.push(`definitions.${d.id} : ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+  }
   return erreurs.length ? { ok: false, erreurs } : { ok: true, modele };
 }

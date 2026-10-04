@@ -133,3 +133,50 @@ export function propositionsReparation(etat: ModeleAtelier, ref: Reference, dern
 export function referencesAReparer(etat: ModeleAtelier): Reference[] {
   return Object.values(etat.references).filter((r) => r.etat === "a-reparer");
 }
+
+/**
+ * Caractéristique nommée d'un objet portée exactement par un point (accrochage d'une extrémité de cotation sur
+ * l'extrémité d'un mur, le sommet d'une dalle…) ; `null` si aucune ne coïncide à la tolérance de geste.
+ */
+export function caracteristiqueAuPoint(etat: ModeleAtelier, objetId: string, p: { x: number; y: number }, tol = 0.01): string | null {
+  const o = etat.objets[objetId];
+  if (!o) return null;
+  let meilleure: { c: string; d: number } | null = null;
+  for (const c of caracteristiquesDe(o)) {
+    const q = pointCaracteristique(etat, objetId, c);
+    if (!q) continue;
+    const d = Math.hypot(q.x - p.x, q.y - p.y);
+    if (d <= tol && (!meilleure || d < meilleure.d)) meilleure = { c, d };
+  }
+  return meilleure?.c ?? null;
+}
+
+/** Identifiant de la référence d'une extrémité de cotation (convention : `<cotation>~a`, `<cotation>~b`). */
+export const referenceExtremite = (cotationId: string, extremite: "a" | "b"): string => `${cotationId}~${extremite}`;
+
+/**
+ * Extrémités effectives d'une cotation : une extrémité rattachée suit sa caractéristique (cote associative) ;
+ * libre, elle garde son point ; « à réparer », elle garde son dernier point et le signale.
+ */
+export function extremitesCotation(etat: ModeleAtelier, cotationId: string): { a: Point2; b: Point2; aReparer: boolean; rattachees: number } | null {
+  const o = etat.objets[cotationId];
+  if (!o || o.classe !== "cotation") return null;
+  let a = o.params.a;
+  let b = o.params.b;
+  let aReparer = false;
+  let rattachees = 0;
+  for (const ref of Object.values(etat.references)) {
+    if (ref.proprietaireId !== cotationId) continue;
+    if (ref.etat === "a-reparer") aReparer = true;
+    const p = resoudreReference(etat, ref);
+    if (!p) continue;
+    if (ref.id === referenceExtremite(cotationId, "a")) {
+      a = p;
+      rattachees++;
+    } else if (ref.id === referenceExtremite(cotationId, "b")) {
+      b = p;
+      rattachees++;
+    }
+  }
+  return { a, b, aReparer, rattachees };
+}
