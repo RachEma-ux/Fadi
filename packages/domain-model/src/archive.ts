@@ -5,9 +5,12 @@
  *
  * Le format Fadi (`fadi-project-archive`) réunit tout ce qui appartient au
  * projet : fiche, 21 étapes (réponses, arbitrages Harmonie), répartition
- * programmatique, cas de programme (révisions), fichiers de parcelle, magasin
- * du modèle natif (clés verbatim) et pièces jointes des étapes (base64,
- * 20 Mo cumulés comme le prototype, les autres signalées en réserve).
+ * programmatique, cas de programme (révisions), fichiers de parcelle, modèle
+ * typé de l'Atelier (version 2, état complet) et pièces jointes des étapes
+ * (base64, 20 Mo cumulés comme le prototype, les autres signalées en réserve).
+ * Une archive version 1 (magasin de l'ancien Atelier, clés verbatim) ou un
+ * export du prototype porte un modèle natif (`native`), que l'API importe
+ * dans le modèle typé par l'importeur du lot 1.
  *
  * L'import accepte aussi les exports du logiciel existant — `parcours-v6-
  * project` (V6 / V7 : `workflow` + `native` + `stageAttachments`), une base
@@ -22,7 +25,9 @@ import { EMPTY_PARCOURS_STEP_CONTENT } from "./parcours.js";
 import { PROGRAMME_MODES, type ProgrammeMode } from "./programme.js";
 
 export const PROJECT_ARCHIVE_KIND = "fadi-project-archive";
-export const PROJECT_ARCHIVE_VERSION = 1;
+export const PROJECT_ARCHIVE_VERSION = 2;
+/** Versions relues à l'import : 1 (magasin de l'ancien Atelier) et 2 (modèle typé). */
+export const PROJECT_ARCHIVE_VERSIONS_READ = [1, 2] as const;
 /** Limite du prototype sur les pièces jointes exportées (20 Mo cumulés) et sur le fichier importé (32 Mo). */
 export const ARCHIVE_ATTACHMENTS_LIMIT = 20 * 1024 * 1024;
 export const ARCHIVE_IMPORT_LIMIT = 32 * 1024 * 1024;
@@ -97,10 +102,38 @@ export interface ProjectArchive {
   programmeRepartition: ArchiveRepartition | null;
   programmeCases: ArchiveProgrammeCase[];
   parcels: ArchiveParcelFile[];
-  /** Magasin du moteur de l'Atelier, clés `design.v13.*` telles quelles ; `null` sans modèle. */
-  native: { entries: Record<string, unknown> } | null;
+  /** Modèle typé de l'Atelier (état complet, `@parcours/atelier-model`), opaque ici ; `null` sans modèle. */
+  atelier: { modele: Record<string, unknown> } | null;
+  /** Modèle natif d'une archive version 1 ou d'un export du prototype, à importer dans le modèle typé ; `null` sinon. */
+  native: ArchiveNativeModel | null;
   stageAttachments: ArchiveAttachment[];
   warnings: string[];
+}
+
+/** Jeu de domaines natifs (forme de `p118-native-model.json`) : entrée de l'importeur du lot 1. */
+export interface ArchiveNativeModel {
+  nativeId: string;
+  registry: Record<string, unknown> | null;
+  domains: Record<string, unknown>;
+}
+
+/** Préfixe des clés du magasin de l'ancien Atelier dans une archive version 1 (motif, D-052). */
+const LEGACY_STORE_KEY = /^(design\.v\d+)\.([\w.-]+)$/;
+
+/** Magasin de l'ancien Atelier (archive version 1) → jeu de domaines du projet natif actif ; `null` sans projet actif. */
+export function nativeModelFromLegacyEntries(entries: Record<string, unknown>): ArchiveNativeModel | null {
+  const keys = Object.keys(entries);
+  if (keys.some((k) => !LEGACY_STORE_KEY.test(k))) throw new ArchiveError("Domaine natif invalide.");
+  const prefix = keys.map((k) => LEGACY_STORE_KEY.exec(k)![1]!).find(Boolean);
+  if (!prefix) return null;
+  const active = entries[`${prefix}.activeProject`];
+  if (typeof active !== "string" || !DOMAIN_NAME.test(active)) return null;
+  const registryList = entries[`${prefix}.registry`];
+  const registry = Array.isArray(registryList) ? (registryList.find((r) => isRecord(r) && r["id"] === active) as Record<string, unknown> | undefined) ?? null : null;
+  const domains: Record<string, unknown> = {};
+  const own = `${prefix}.project.${active}.`;
+  for (const k of keys) if (k.startsWith(own)) domains[k.slice(own.length)] = entries[k];
+  return { nativeId: active, registry, domains };
 }
 
 export class ArchiveError extends Error {
@@ -321,15 +354,12 @@ function fromPrototypeProject(p: unknown, native: unknown, files: unknown, defin
     ? [{ revision: Number.isInteger(programmeCase["revision"]) ? (programmeCase["revision"] as number) : 1, caseId: str(programmeCase["caseId"]), scenarioId: str(programmeCase["scenarioId"]), data: programmeCase }]
     : [];
   const site = isRecord(h7["site"]) ? h7["site"] : null;
-  let nativeEntries: Record<string, unknown> | null = null;
+  let nativeModel: ArchiveNativeModel | null = null;
   if (isRecord(native) && isRecord(native["domains"])) {
     const id = str(native["id"]) || "native-import";
     if (!DOMAIN_NAME.test(id)) throw new ArchiveError("Domaine natif invalide.");
-    nativeEntries = { "design.v13.registry": [{ ...(isRecord(native["registry"]) ? native["registry"] : {}), id, name: name }], "design.v13.activeProject": id };
-    for (const [domain, value] of Object.entries(native["domains"])) {
-      if (!DOMAIN_NAME.test(domain)) throw new ArchiveError("Domaine natif invalide.");
-      nativeEntries[`design.v13.project.${id}.${domain}`] = value;
-    }
+    for (const domain of Object.keys(native["domains"])) if (!DOMAIN_NAME.test(domain)) throw new ArchiveError("Domaine natif invalide.");
+    nativeModel = { nativeId: id, registry: { ...(isRecord(native["registry"]) ? native["registry"] : {}), id, name }, domains: { ...native["domains"] } };
   }
   return {
     kind: PROJECT_ARCHIVE_KIND,
@@ -341,7 +371,7 @@ function fromPrototypeProject(p: unknown, native: unknown, files: unknown, defin
     project: {
       code: archiveSafeName(p["name"]).slice(0, 24) || "IMPORT",
       name,
-      modelRevision: nativeEntries ? 1 : 0,
+      modelRevision: nativeModel ? 1 : 0,
       sourceExampleId: null,
       exampleMode: exampleModeOf(data["demoP118V81"]),
       sourceAttachment: null,
@@ -356,7 +386,8 @@ function fromPrototypeProject(p: unknown, native: unknown, files: unknown, defin
     programmeRepartition: repartitionOf(data["programmeRepartition"], componentList),
     programmeCases,
     parcels: [],
-    native: nativeEntries ? { entries: nativeEntries } : null,
+    atelier: null,
+    native: nativeModel,
     stageAttachments: attachmentsOf(files, (f) => (validStep(Number(f["stage"]), definitions.length) ? Number(f["stage"]) : null)),
     warnings: [],
   };
@@ -364,7 +395,7 @@ function fromPrototypeProject(p: unknown, native: unknown, files: unknown, defin
 
 /** Une archive Fadi relue : structure vérifiée, nom suffixé « · import », étapes bornées aux 21. */
 function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly ParcoursStepDefinition[]): ProjectArchive {
-  if (raw["version"] !== PROJECT_ARCHIVE_VERSION) throw new ArchiveError(`Version d'archive non prise en charge : ${String(raw["version"])}.`);
+  if (!(PROJECT_ARCHIVE_VERSIONS_READ as readonly unknown[]).includes(raw["version"])) throw new ArchiveError(`Version d'archive non prise en charge : ${String(raw["version"])}.`);
   const project = raw["project"];
   if (!isRecord(project) || typeof project["name"] !== "string" || !project["name"]) throw new ArchiveError("Structure de projet invalide.");
   const rawSteps = Array.isArray(raw["steps"]) ? raw["steps"].filter(isRecord) : [];
@@ -421,8 +452,15 @@ function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly Par
       },
     };
   });
-  const native = isRecord(raw["native"]) && isRecord(raw["native"]["entries"]) ? { entries: raw["native"]["entries"] as Record<string, unknown> } : null;
-  if (native) for (const key of Object.keys(native.entries)) if (!/^design\.v13\.[\w.-]+$/.test(key)) throw new ArchiveError("Domaine natif invalide.");
+  const atelier = raw["version"] === 2 && isRecord(raw["atelier"]) && isRecord(raw["atelier"]["modele"]) ? { modele: raw["atelier"]["modele"] } : null;
+  let native: ArchiveNativeModel | null = null;
+  if (raw["version"] === 1 && isRecord(raw["native"]) && isRecord(raw["native"]["entries"])) native = nativeModelFromLegacyEntries(raw["native"]["entries"]);
+  else if (!atelier && isRecord(raw["native"]) && isRecord(raw["native"]["domains"])) {
+    const n = raw["native"];
+    const domains = n["domains"] as Record<string, unknown>;
+    if (!DOMAIN_NAME.test(str(n["nativeId"])) || Object.keys(domains).some((d) => !DOMAIN_NAME.test(d))) throw new ArchiveError("Domaine natif invalide.");
+    native = { nativeId: str(n["nativeId"]), registry: isRecord(n["registry"]) ? n["registry"] : null, domains: { ...domains } };
+  }
   const programmeCases = (Array.isArray(raw["programmeCases"]) ? raw["programmeCases"].filter(isRecord) : [])
     .filter((c) => Number.isInteger(c["revision"]) && isRecord(c["data"]))
     .map((c) => ({ revision: c["revision"] as number, caseId: str(c["caseId"]), scenarioId: str(c["scenarioId"]), data: c["data"] as Record<string, unknown> }));
@@ -440,7 +478,7 @@ function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly Par
     project: {
       code: /^[A-Za-z0-9._-]{1,64}$/.test(str(project["code"])) ? (project["code"] as string) : archiveSafeName(project["name"] as string).slice(0, 24) || "IMPORT",
       name: `${project["name"]} · import`,
-      modelRevision: native ? 1 : 0,
+      modelRevision: atelier || native ? 1 : 0,
       sourceExampleId: typeof project["sourceExampleId"] === "string" ? project["sourceExampleId"] : null,
       exampleMode: project["exampleMode"] === "reference" || project["exampleMode"] === "editable" ? project["exampleMode"] : typeof project["sourceExampleId"] === "string" ? "reference" : null,
       sourceAttachment: isRecord(project["sourceAttachment"]) ? project["sourceAttachment"] : null,
@@ -455,6 +493,7 @@ function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly Par
     programmeRepartition: repartitionOf(raw["programmeRepartition"], components),
     programmeCases,
     parcels,
+    atelier,
     native,
     stageAttachments: attachmentsOf(raw["stageAttachments"], (f) => (validStep(Number(f["stepNumber"]), definitions.length) ? Number(f["stepNumber"]) : null)),
     warnings: Array.isArray(raw["warnings"]) ? raw["warnings"].filter((w): w is string => typeof w === "string") : [],

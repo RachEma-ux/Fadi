@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import { asc, eq } from "drizzle-orm";
 import {
   ARCHIVE_ATTACHMENTS_LIMIT,
+  ArchiveError,
   PROJECT_ARCHIVE_KIND,
   PROJECT_ARCHIVE_VERSION,
   archiveStageMapping,
@@ -22,10 +23,12 @@ import {
   type ProgrammeMode,
   type ProjectArchive,
 } from "@parcours/domain-model";
-import { atelierStore, parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
+import type { JeuDonneesP118 } from "@parcours/atelier-model";
+import { parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS } from "../data/parcours.js";
 import { newId } from "./ids.js";
-import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replaceProjection } from "./native-projection.js";
+import { initialiserModeleServeur, modeleArchive } from "./atelier-commands.js";
+import { chargerEtat } from "./atelier-rows.js";
 import { computationFor, loadStepContext, type StepContextProject } from "./step-context.js";
 import { loadStepRows, upsertStep, type Querier, type Tx } from "./step-rows.js";
 import type { SiteContextDeclaration } from "@parcours/domain-model";
@@ -42,13 +45,13 @@ function repartitionMode(mode: string): ArchiveRepartition["mode"] {
   return mode === "cas" ? "cas" : (PROGRAMME_MODES as readonly string[]).includes(mode) ? (mode as ProgrammeMode) : "cible";
 }
 
-/** `backup()` : le projet, ses étapes, son programme, ses parcelles, son modèle natif et ses pièces jointes (20 Mo cumulés) en un seul JSON. */
+/** `backup()` : le projet, ses étapes, son programme, ses parcelles, son modèle typé et ses pièces jointes (20 Mo cumulés) en un seul JSON. */
 export async function exportProjectArchive(q: Querier, project: ProjectRow, now: string): Promise<ProjectArchive> {
   const rows = await loadStepRows(q, project.id);
   const [rep] = await q.select().from(programmeRepartitions).where(eq(programmeRepartitions.projectId, project.id)).limit(1);
   const cases = await q.select().from(programmeCases).where(eq(programmeCases.projectId, project.id)).orderBy(asc(programmeCases.revision));
   const parcelRows = await q.select().from(parcels).where(eq(parcels.projectId, project.id)).orderBy(asc(parcels.number));
-  const store = await q.select().from(atelierStore).where(eq(atelierStore.projectId, project.id));
+  const modele = await chargerEtat(q, project.id);
   const files = await q.select().from(stepFiles).where(eq(stepFiles.projectId, project.id)).orderBy(asc(stepFiles.addedAt));
   const warnings: string[] = [];
   const stageAttachments: ArchiveAttachment[] = [];
@@ -89,7 +92,8 @@ export async function exportProjectArchive(q: Querier, project: ProjectRow, now:
     programmeRepartition: rep ? { type: rep.type, baseArea: rep.baseArea, mode: repartitionMode(rep.mode), custom: { ...rep.custom }, components: [...rep.components] } : null,
     programmeCases: cases.map((c) => ({ revision: c.revision, caseId: c.caseId, scenarioId: c.scenarioId, data: c.data })),
     parcels: parcelRows.map((p) => ({ id: p.id, number: p.number, name: p.name, crs: p.crs, parcelNumber: p.parcelNumber, data: p.data, revision: p.revision })),
-    native: store.length ? { entries: Object.fromEntries(store.map((r) => [r.key, r.value])) } : null,
+    atelier: modele ? { modele: modele as unknown as Record<string, unknown> } : null,
+    native: null,
     stageAttachments,
     warnings,
   };
@@ -135,7 +139,7 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
       ownerId,
       code: archive.project.code,
       name: archive.project.name,
-      modelRevision: archive.native ? Math.max(1, archive.project.modelRevision) : 0,
+      modelRevision: archive.atelier || archive.native ? Math.max(1, archive.project.modelRevision) : 0,
       sourceExampleId: archive.project.sourceExampleId,
       exampleMode: archive.project.exampleMode,
       sourceAttachment: archive.project.sourceAttachment,
@@ -161,19 +165,16 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
   if (archive.parcels.length) {
     await tx.insert(parcels).values(archive.parcels.map((p) => ({ projectId: id, id: p.id, number: p.number, name: p.name, crs: p.crs, parcelNumber: p.parcelNumber, data: p.data, revision: p.revision })));
   }
-  if (archive.native) {
-    const entries = archive.native.entries;
-    await tx.insert(atelierStore).values(Object.entries(entries).map(([key, value]) => ({ projectId: id, key, value, revision: 1 })));
-    const active = entries["design.v13.activeProject"];
-    if (typeof active === "string") {
-      const nativeLevels = entries[`design.v13.project.${active}.levels`];
-      const floorDesign = entries[`design.v13.project.${active}.floorDesign`];
-      if (isNativeLevelArray(nativeLevels) && isNativeFloorDesign(floorDesign)) {
-        await replaceProjection(tx, id, projectNativeModel(id, nativeLevels, floorDesign, project.modelRevision));
-      } else {
-        warnings.push("Modèle natif importé sans niveaux ou plan exploitables : aucune projection dérivée.");
-      }
-    }
+  // Le modèle typé (D-052) : l'état d'une archive version 2 tel quel, ou le modèle natif d'une archive version 1 ou
+  // d'un export du prototype passé par l'importeur du lot 1. Un modèle typé refusé annule tout l'import.
+  if (archive.atelier) {
+    const modele = modeleArchive(archive.atelier.modele);
+    if (typeof modele === "string") throw new ArchiveError(modele);
+    await initialiserModeleServeur(tx, id, { modele });
+  } else if (archive.native) {
+    const natif: JeuDonneesP118 = { registry: archive.native.registry, domains: archive.native.domains };
+    const etat = await initialiserModeleServeur(tx, id, { natif });
+    if (!Object.values(etat.objets).some((o) => o.classe === "niveau")) warnings.push("Modèle natif importé sans niveaux exploitables : modèle typé sans bâtiment.");
   }
   for (const f of archive.stageAttachments) {
     const decoded = decodeDataUrl(f.dataUrl);

@@ -10,7 +10,6 @@
  * approximé.
  */
 import proj4 from "proj4";
-import { eq } from "drizzle-orm";
 import {
   DEFAULT_SITE_OBSERVATIONS,
   siteContext,
@@ -23,7 +22,7 @@ import {
 } from "@parcours/domain-model";
 import { vertexCentroid, type Point2 } from "@parcours/core-geometry";
 import { db } from "../db/client.js";
-import { atelierStore } from "../db/schema.js";
+import { loadNativeDomains } from "./model-context.js";
 import type { NativeParcelDomain } from "./parcel-transmission.js";
 
 export const SITE_CRS_DEFINITIONS: Record<string, string> = {
@@ -45,12 +44,9 @@ export const toWgs84: GeographicConverter = (crs, point) => {
 
 type Querier = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-/** La parcelle du projet natif actif, ou `null` : aucune parcelle n'est inventée. */
+/** La parcelle du modèle typé (projetée dans la forme `nativeParcel`), ou `null` : aucune parcelle n'est inventée. */
 export async function loadSiteParcel(q: Querier, projectId: string): Promise<SiteParcel | null> {
-  const rows = await q.select().from(atelierStore).where(eq(atelierStore.projectId, projectId));
-  const active = rows.find((r) => r.key === "design.v13.activeProject")?.value;
-  if (typeof active !== "string") return null;
-  const np = rows.find((r) => r.key === `design.v13.project.${active}.nativeParcel`)?.value as NativeParcelDomain | undefined;
+  const np = (await loadNativeDomains(q, projectId))?.parcel as NativeParcelDomain | null | undefined;
   if (!np || !Array.isArray(np.vertices)) return null;
   const vertices = np.vertices.filter((v): v is Point2 => Array.isArray(v) && v.length >= 2 && Number.isFinite(v[0]) && Number.isFinite(v[1])).map((v): Point2 => [v[0], v[1]]);
   return {

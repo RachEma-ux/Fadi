@@ -60,7 +60,7 @@ export interface RevisionEvent {
 
 export interface CollaborationView {
   access: { ownerEmail: string; you: string; role: ProjectRole; members: ProjectMember[]; lock: EditingLock | null; sharing: { available: boolean; reason: string } };
-  sync: { modelRevision: number; nativeKeys: number; lastModelWrite: string | null; offline: { available: boolean; reason: string } };
+  sync: { modelRevision: number; modelCommands: number; lastModelWrite: string | null; offline: { available: boolean; reason: string } };
   journal: RevisionEvent[];
   comments: ProjectComment[];
 }

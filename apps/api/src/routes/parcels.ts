@@ -12,7 +12,7 @@
  * et la transmission vers le modèle de l'Atelier (`acceptParcel` du
  * prototype) :
  *
- *   POST   /:id/transmit → { transmission, nativeId }
+ *   POST   /:id/transmit → { transmission } (commandes `site.*` du modèle typé, D-052)
  */
 import { Router } from "express";
 import { and, asc, eq } from "drizzle-orm";
@@ -21,9 +21,13 @@ import { db } from "../db/client.js";
 import { parcels, projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { projectOr404 } from "../lib/owned-project.js";
-import { acceptParcel, hashOf, measure, summarize, type NativeParcelDomain, type ParcelSnapshot, type ParcelTransmission, SUPPORTED_CRS } from "../lib/parcel-transmission.js";
-import { ensureNativeProject, projectKey, readStoreEntry, writeStoreEntry } from "../lib/atelier-store.js";
+import { acceptParcel, commandesTransmission, hashOf, measure, summarize, type NativeParcelDomain, type ParcelSnapshot, type ParcelTransmission, SUPPORTED_CRS } from "../lib/parcel-transmission.js";
+import { apresLotServeur, etatPourServeur, executerLotServeur } from "../lib/atelier-commands.js";
+import { domainsOf } from "../lib/model-context.js";
 import { lockProject } from "../lib/step-rows.js";
+
+/** Classes qui font un « bâtiment déjà dessiné » (murs, pièces, tracés, poteaux, escaliers, dalles, solides du prototype). */
+const CLASSES_BATIMENT = new Set<string>(["mur", "piece", "espace", "zone", "poteau", "escalier", "dalle", "solide"]);
 
 export const parcelsRouter = Router({ mergeParams: true });
 parcelsRouter.use(requireAuth);
@@ -187,6 +191,7 @@ parcelsRouter.post("/:parcelId/transmit", async (req, res) => {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Parcelle invalide." });
     return;
   }
+  let changed = false;
   const outcome = await db.transaction(async (tx) => {
     await lockProject(tx, project.id);
     let snapshot = parsed.data.data as ParcelSnapshot | undefined;
@@ -199,11 +204,13 @@ parcelsRouter.post("/:parcelId/transmit", async (req, res) => {
     if (previous && previous.parcelId === id && previous.signature === hashOf(snapshot) && previous.parcel) {
       return previous;
     }
-    const nativeId = await ensureNativeProject(tx, project);
-    const currentParcel = ((await readStoreEntry(tx, project.id, projectKey(nativeId, "nativeParcel")))?.value as NativeParcelDomain | undefined) ?? null;
-    const footprintRow = (await readStoreEntry(tx, project.id, projectKey(nativeId, "buildingFootprint")))?.value as { vertices?: unknown } | undefined;
-    const floorDesign = (await readStoreEntry(tx, project.id, projectKey(nativeId, "floorDesign")))?.value as { levels?: Record<string, Record<string, unknown[]>> } | undefined;
-    const buildingDrawn = Object.values(floorDesign?.levels ?? {}).some((lvl) => ["walls", "rooms", "paths", "columns", "stairs"].some((k) => Array.isArray(lvl[k]) && lvl[k]!.length > 0));
+    // Le modèle typé (créé s'il n'existe pas encore) : parcelle et emprise actuelles, bâtiment déjà dessiné ou non.
+    const etat = await etatPourServeur(tx, project.id);
+    const domains = domainsOf(etat);
+    const objets = Object.values(etat.objets);
+    const currentParcel = (domains?.parcel as NativeParcelDomain | null | undefined) ?? null;
+    const footprintRow = domains?.footprint as { vertices?: unknown } | null | undefined;
+    const buildingDrawn = objets.some((o) => CLASSES_BATIMENT.has(o.classe));
     const now = new Date().toISOString();
     const result = acceptParcel({
       snapshot,
@@ -212,9 +219,15 @@ parcelsRouter.post("/:parcelId/transmit", async (req, res) => {
       buildingDrawn,
       now,
     });
-    if (result.writes.nativeParcel) await writeStoreEntry(tx, project, projectKey(nativeId, "nativeParcel"), result.writes.nativeParcel);
-    if (result.writes.buildingFootprint) await writeStoreEntry(tx, project, projectKey(nativeId, "buildingFootprint"), result.writes.buildingFootprint);
-    const transmission = { ...result.transmission, nativeId, parcelId: id, parcel: summarize(snapshot) };
+    const site = { parcelleId: objets.find((o) => o.classe === "parcelle")?.id ?? null, empriseId: objets.find((o) => o.classe === "emprise")?.id ?? null };
+    const commandes = commandesTransmission(project.id, site, result.writes);
+    let revision = etat.revision;
+    if (commandes.length > 0) {
+      const lot = await executerLotServeur(tx, project.id, req.user!.id, "Transmission de la parcelle (étape 01)", commandes);
+      revision = lot.reponse.revision;
+      changed ||= lot.change;
+    }
+    const transmission = { ...result.transmission, modelRevision: revision, parcelId: id, parcel: summarize(snapshot) };
     await tx.update(projects).set({ parcelTransmission: transmission, updatedAt: new Date() }).where(eq(projects.id, project.id));
     return transmission;
   });
@@ -222,5 +235,6 @@ parcelsRouter.post("/:parcelId/transmit", async (req, res) => {
     res.status(404).json({ error: "Parcelle introuvable." });
     return;
   }
+  if (changed) apresLotServeur(project.id);
   res.json({ transmission: outcome });
 });

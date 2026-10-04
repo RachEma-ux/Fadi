@@ -17,7 +17,7 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { PARCOURS_STEPS } from "../data/parcours.js";
 import { db } from "../db/client.js";
-import { atelierStore, parcels, producedDocuments, programmeCases, projectComments } from "../db/schema.js";
+import { atelierCommands, parcels, producedDocuments, programmeCases, projectComments } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { activeLock, projectOr404, type OwnedProject } from "../lib/owned-project.js";
@@ -143,12 +143,9 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
       });
   }
 
-  const store = await db.select({ key: atelierStore.key, revision: atelierStore.revision, updatedAt: atelierStore.updatedAt }).from(atelierStore).where(eq(atelierStore.projectId, project.id));
-  for (const r of store) {
-    const domain = r.key.split(".").pop() ?? r.key;
-    if (domain === "ui" || r.key === "design.v13.activeProject" || r.key === "design.v13.registry") continue;
-    events.push({ at: r.updatedAt.toISOString(), kind: "modele", label: `Modèle natif · ${domain}`, detail: `Clé ${r.key} · révision ${r.revision}`, stepNumber: 10, revision: r.revision });
-  }
+  // Le journal des commandes du modèle typé (D-052) : chaque lot validé, annulation, rétablissement ou import.
+  for (const r of await journalModele(project.id))
+    events.push({ at: r.createdAt.toISOString(), kind: "modele", label: `Atelier · ${r.label}`, detail: `${NATURE_JOURNAL[r.nature] ?? r.nature} · révision ${r.resultRevision}`, stepNumber: 10, revision: r.resultRevision });
   const parcelRows = await db.select({ id: parcels.id, name: parcels.name, revision: parcels.revision, updatedAt: parcels.updatedAt }).from(parcels).where(eq(parcels.projectId, project.id));
   for (const p of parcelRows)
     events.push({ at: p.updatedAt.toISOString(), kind: "parcelle", label: `Parcelle · ${p.name}`, detail: `Fichier ${p.id} · révision ${p.revision}`, stepNumber: 1, revision: p.revision });
@@ -209,6 +206,17 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
   return events.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)).slice(0, 300);
 }
 
+const NATURE_JOURNAL: Record<string, string> = { commande: "Commandes", annulation: "Annulation", retablissement: "Rétablissement", import: "Import" };
+
+/** Entrées du journal `atelier_commands` d'un projet, des plus anciennes aux plus récentes. */
+function journalModele(projectId: string) {
+  return db
+    .select({ label: atelierCommands.label, nature: atelierCommands.nature, resultRevision: atelierCommands.resultRevision, createdAt: atelierCommands.createdAt })
+    .from(atelierCommands)
+    .where(eq(atelierCommands.projectId, projectId))
+    .orderBy(asc(atelierCommands.createdAt));
+}
+
 function commentView(c: typeof projectComments.$inferSelect, userId: string) {
   return { id: c.id, stepNumber: c.stepNumber, parentId: c.parentId ?? null, authorEmail: c.authorEmail, body: c.body, createdAt: c.createdAt.toISOString(), mine: c.authorId === userId };
 }
@@ -216,8 +224,8 @@ function commentView(c: typeof projectComments.$inferSelect, userId: string) {
 collaborationRouter.get("/", async (req, res) => {
   const project = await projectOr404(req, res, "read");
   if (!project) return;
-  const store = await db.select({ key: atelierStore.key, revision: atelierStore.revision, updatedAt: atelierStore.updatedAt }).from(atelierStore).where(eq(atelierStore.projectId, project.id));
-  const lastWrite = store.reduce<string | null>((acc, r) => (acc === null || r.updatedAt.toISOString() > acc ? r.updatedAt.toISOString() : acc), null);
+  const journal = await journalModele(project.id);
+  const lastWrite = journal.reduce<string | null>((acc, r) => (acc === null || r.createdAt.toISOString() > acc ? r.createdAt.toISOString() : acc), null);
   const comments = await db.select().from(projectComments).where(eq(projectComments.projectId, project.id)).orderBy(desc(projectComments.createdAt));
   res.json({
     access: {
@@ -237,7 +245,7 @@ collaborationRouter.get("/", async (req, res) => {
     },
     sync: {
       modelRevision: project.modelRevision,
-      nativeKeys: store.length,
+      modelCommands: journal.length,
       lastModelWrite: lastWrite,
       /** File locale de l'Atelier (IndexedDB), file des saisies / arbitrages / commentaires (cache persistant) et cache de lecture : disponibles. */
       offline: {

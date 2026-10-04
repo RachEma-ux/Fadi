@@ -38,6 +38,13 @@ export interface DomainesNatifs {
   readonly omis: readonly { readonly objetId: IdObjet; readonly motif: string }[];
 }
 
+/**
+ * Préfixe des propriétés que la transmission de la parcelle (étape 01) écrit par `propriete.definir` sur la parcelle
+ * et l'emprise : les champs de la forme native sans paramètre canonique (`schema`, `centroid`, `setback`, `validation`…).
+ * Ils priment sur les propriétés `import.*` de l'exemple, que la commande ne peut pas réécrire (R7).
+ */
+export const PREFIXE_PROPRIETE_TRANSMISSION = "transmission.";
+
 const estDict = (v: ValeurJson | undefined): v is { readonly [cle: string]: ValeurJson } => typeof v === "object" && v !== null && !Array.isArray(v);
 
 const pt = (p: PointTague): P2 => (p.frame === "geographic" ? [p.lon, p.lat] : [p.x, p.y]);
@@ -347,7 +354,7 @@ export function projeterDomainesNatifs(modele: EtatModele): DomainesNatifs {
   const parcelle = parcelles[0];
   if (parcelle) {
     const p = parcelle.params;
-    const r = valeursImport(parcelle);
+    const r = { ...valeursImport(parcelle), ...valeursImport(parcelle, PREFIXE_PROPRIETE_TRANSMISSION) };
     const setback = r.setback && typeof r.setback === "object" && !Array.isArray(r.setback) ? (r.setback as Json) : undefined;
     nativeParcel = {
       ...(p.numero !== undefined ? { parcelNumber: p.numero } : {}),
@@ -372,7 +379,7 @@ export function projeterDomainesNatifs(modele: EtatModele): DomainesNatifs {
   if (emprise) {
     const p = emprise.params;
     if (p.sommetsCadastraux) {
-      buildingFootprint = { vertices: p.sommetsCadastraux.map(pt), ...(p.revisionArchitecture !== undefined ? { architectureRevision: p.revisionArchitecture } : {}), ...valeursImport(emprise) };
+      buildingFootprint = { vertices: p.sommetsCadastraux.map(pt), ...(p.revisionArchitecture !== undefined ? { architectureRevision: p.revisionArchitecture } : {}), ...valeursImport(emprise), ...valeursImport(emprise, PREFIXE_PROPRIETE_TRANSMISSION) };
     } else omis.push({ objetId: emprise.id, motif: "emprise sans sommets cadastraux : forme native non produite" });
   }
 

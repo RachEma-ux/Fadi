@@ -78,7 +78,8 @@ export interface ParcelTransmission {
   reason: string;
   at: string;
   signature: string | null;
-  nativeId: string | null;
+  /** Révision du modèle typé après la transmission. */
+  modelRevision?: number;
   parcelId?: string;
   /** La parcelle telle qu'elle a été transmise (mesures dans le plan du CRS). */
   parcel?: ParcelSummary;

@@ -59,7 +59,7 @@ import {
 import { db } from "../db/client.js";
 import type { EditingLock } from "../db/schema.js";
 import { dataFileUrl } from "../runtime-paths.js";
-import { chargerEtat, chargerNiveau, ecrireDiff, ecrireEtat, type Executeur } from "./atelier-rows.js";
+import { chargerEtat, chargerNiveau, ecrireDiff, ecrireEtat, etatVersLignes, lignesVersEtat, type Executeur } from "./atelier-rows.js";
 import { declencherTraitement, ecrireEvenement, EVENEMENT_COMMANDE_VALIDEE } from "./atelier-events.js";
 import { P118_EXAMPLE_ID } from "./design-context.js";
 import { newId } from "./ids.js";
@@ -188,13 +188,25 @@ function donneesP118(): JeuDonneesP118 {
 const json = (v: unknown) => sql`${JSON.stringify(v)}::jsonb`;
 
 /** Crée le modèle typé d'un projet verrouillé qui n'en a pas (voir l'en-tête). */
-async function initialiserModele(ex: Executeur, p: LigneProjet): Promise<EtatModele> {
+async function initialiserModele(ex: Executeur, p: LigneProjet, source?: SourceModele): Promise<EtatModele> {
   const p118 = p.source_example_id === P118_EXAMPLE_ID;
-  const base = p118 ? importerP118(donneesP118(), { projetId: p.id }).modele : etatVide(p.id, VERSION_ONTOLOGIE);
+  const base = source
+    ? "modele" in source
+      ? source.modele
+      : importerP118(source.natif, { projetId: p.id }).modele
+    : p118
+      ? importerP118(donneesP118(), { projetId: p.id }).modele
+      : etatVide(p.id, VERSION_ONTOLOGIE);
   const etat: EtatModele = { ...base, projetId: p.id, revision: p.model_revision, empreinte: calculerEmpreinte(base) };
   await ecrireEtat(ex, etat);
   const journalId = newId("acmd");
-  const label = p118 ? "Import de l'exemple P.118 dans le modèle typé" : "Création du modèle typé (vide)";
+  const label = source
+    ? "modele" in source
+      ? "Import du modèle typé d'une archive"
+      : "Import du modèle natif d'une archive dans le modèle typé"
+    : p118
+      ? "Import de l'exemple P.118 dans le modèle typé"
+      : "Création du modèle typé (vide)";
   const reponse: ReponseCommandes = { revision: etat.revision, empreinte: etat.empreinte, applique: [], effets: effetsReponse(EFFETS_VIDES), journalId };
   await ex.execute(sql`
     INSERT INTO atelier_commands (id, project_id, request_id, contract, nature, label, base_revision, result_revision, commands, inverse, effets, response, base_fingerprint, result_fingerprint, author_id, inverse_of)
@@ -415,6 +427,74 @@ async function refus(ex: Executeur, etat: EtatModele, erreurs: readonly ErreurCo
 // ---------------------------------------------------------------------------
 // Écritures
 // ---------------------------------------------------------------------------
+
+/**
+ * Modèle de départ d'un projet importé d'une archive (D-052) : l'état typé d'une archive version 2 (identifiants
+ * conservés, déjà vérifié par `modeleArchive`), ou le jeu de domaines natifs d'une archive version 1 ou d'un export
+ * du prototype, passé par l'importeur du lot 1.
+ */
+export type SourceModele = { readonly modele: EtatModele } | { readonly natif: JeuDonneesP118 };
+
+/**
+ * Crée le modèle typé d'un projet dans la transaction de l'appelant (import de l'exemple ou d'une archive, D-052) :
+ * la source donnée, sinon P.118 importé pour un projet issu de l'exemple, sinon un modèle vide. Sans effet si le
+ * modèle existe déjà.
+ */
+export async function initialiserModeleServeur(tx: Executeur, projetId: string, source?: SourceModele): Promise<EtatModele> {
+  const p = await verrouillerProjet(tx, projetId);
+  return (await chargerEtat(tx, p.id)) ?? (await initialiserModele(tx, p, source));
+}
+
+/**
+ * L'état typé d'une archive version 2, vérifié avant toute écriture : forme de `EtatModele`, conversion en lignes
+ * sans erreur et empreinte conforme au contenu (un fichier retouché à la main est refusé). Message d'erreur sinon.
+ */
+export function modeleArchive(brut: Record<string, unknown>): EtatModele | string {
+  const m = brut as Partial<EtatModele>;
+  const dict = (x: unknown) => typeof x === "object" && x !== null && !Array.isArray(x);
+  if (!dict(m.objets) || !Array.isArray(m.relations) || !dict(m.catalogue) || !Array.isArray(m.proprietesProjet) || typeof m.empreinte !== "string" || !Number.isInteger(m.versionOntologie)) {
+    return "Modèle typé de l'archive incomplet.";
+  }
+  if (m.versionOntologie !== VERSION_ONTOLOGIE) return `Modèle typé de l'archive : ontologie ${String(m.versionOntologie)} non prise en charge.`;
+  const etat = { ...(m as EtatModele), supprimes: Array.isArray(m.supprimes) ? m.supprimes : [] };
+  try {
+    if (calculerEmpreinte(etat) !== etat.empreinte) return "Modèle typé de l'archive : empreinte non conforme au contenu.";
+    lignesVersEtat(etatVersLignes(etat));
+  } catch (e) {
+    return `Modèle typé de l'archive illisible : ${e instanceof Error ? e.message : String(e)}`;
+  }
+  return etat;
+}
+
+/**
+ * État du modèle typé dans une transaction du serveur (projet verrouillé ici), créé s'il n'existe pas encore :
+ * pour un traitement du serveur qui lit le modèle avant d'émettre ses propres commandes (`executerLotServeur`).
+ */
+export async function etatPourServeur(tx: Executeur, projetId: string): Promise<EtatModele> {
+  return etatSousVerrou(tx, await verrouillerProjet(tx, projetId));
+}
+
+/**
+ * Lot émis par le serveur lui-même (transmission de la parcelle, D-052), dans la transaction de l'appelant : même
+ * moteur, même journal, même événement qu'un `POST /commands`, à la révision courante. L'appelant appelle
+ * `apresLotServeur` une fois sa transaction validée.
+ */
+export async function executerLotServeur(
+  tx: Executeur,
+  projetId: string,
+  auteurId: string,
+  label: string,
+  commandes: readonly Commande[],
+): Promise<{ reponse: ReponseCommandes; change: boolean }> {
+  const avant = await etatPourServeur(tx, projetId);
+  const enveloppe: EnveloppeCommandes = { contract: CONTRAT_COMMANDES, requestId: newId("serveur"), baseRevision: avant.revision, label, commands: commandes };
+  return valider(tx, avant, { nature: "commande", inverseDe: null, auteur: auteurId, enveloppe });
+}
+
+/** Après la validation de la transaction d'un `executerLotServeur` qui a changé le modèle. */
+export function apresLotServeur(projetId: string): void {
+  declencherTraitement(projetId);
+}
 
 /** `POST /commands` */
 export async function executerLot(projetId: string, user: { id: string }, corps: unknown): Promise<ReponseCommandes> {

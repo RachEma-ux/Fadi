@@ -22,6 +22,7 @@
  */
 import { inwardOffset, polygonArea, type Point2 } from "@parcours/core-geometry";
 import { createHash } from "node:crypto";
+import { aire, longueur, pointCadastral, PREFIXE_PROPRIETE_TRANSMISSION, type Commande, type ValeurJson } from "@parcours/atelier-model";
 
 export const SUPPORTED_CRS = new Set(["EPSG:26191", "EPSG:2154"]);
 
@@ -68,7 +69,8 @@ export interface ParcelTransmission {
   reason: string;
   at: string;
   signature: string | null;
-  nativeId: string | null;
+  /** Révision du modèle typé après la transmission (D-052). */
+  modelRevision?: number;
   parcel?: ParcelSummary;
 }
 
@@ -146,7 +148,7 @@ export interface AcceptInput {
 }
 
 export interface AcceptResult {
-  transmission: Omit<ParcelTransmission, "nativeId">;
+  transmission: Omit<ParcelTransmission, "modelRevision">;
   /** Domaines à écrire dans le magasin du projet natif ; vide quand la transmission est refusée. */
   writes: { nativeParcel?: NativeParcelDomain; buildingFootprint?: { vertices: Point2[] } };
 }
@@ -276,4 +278,76 @@ export function parcelSnapshotFromNative(np: NativeParcelDomain, projectName: st
     },
     display: { labels: true, dimensions: true, lambertArea: true, roads: false, roadAxis: true, shapes: true, draggable: false, opacity: 25 },
   };
+}
+
+/**
+ * Unité d'un champ numérique de `nativeParcel` porté en propriété (une grandeur saisie exige son unité) : les aires en
+ * m², le reste (périmètre, longueurs) en m, l'unité déclarée de la parcelle (`units: "m"`).
+ */
+const uniteChamp = (champ: string): "m" | "m²" => (/area/i.test(champ) ? "m²" : "m");
+
+/** Champs de `nativeParcel` portés par les paramètres canoniques de `site.parcelle.definir` (le reste devient propriété). */
+const CHAMPS_CANONIQUES_PARCELLE = new Set(["parcelNumber", "commune", "crs", "vertices", "vertexIds", "area", "officialArea"]);
+
+/** Ce que la transmission lit du modèle typé avant d'émettre ses commandes. */
+export interface SiteDuModele {
+  parcelleId: string | null;
+  empriseId: string | null;
+}
+
+/**
+ * Commandes de la transmission (D-052) : `site.parcelle.definir` (bornes dans le CRS déclaré, aires, recul et son
+ * enveloppe) puis, pour chaque autre champ de la forme native, `propriete.definir` « transmission.<champ> »
+ * (provenance « saisie », statut « déclarée ») ; `site.emprise.definir` quand l'emprise proposée devient celle du
+ * bâtiment. Sommets cadastraux seulement : aucune conversion vers le repère local n'est faite ici.
+ */
+export function commandesTransmission(projectId: string, site: SiteDuModele, writes: AcceptResult["writes"]): Commande[] {
+  const commandes: Commande[] = [];
+  const np = writes.nativeParcel;
+  if (np) {
+    const crs = np.crs;
+    const id = site.parcelleId ?? `${projectId}_parcelle`;
+    const cad = (pts: Point2[]) => pts.map(([x, y]) => pointCadastral(x, y, crs));
+    const envelope = np.setback?.envelope;
+    commandes.push({
+      type: "site.parcelle.definir",
+      cibles: [],
+      params: {
+        id,
+        ...(np.parcelNumber ? { numero: np.parcelNumber } : {}),
+        ...(np.commune ? { commune: np.commune } : {}),
+        crs,
+        sommetsCadastraux: cad(np.vertices),
+        identifiantsSommets: np.vertexIds,
+        aire: aire(np.area),
+        ...(typeof np.officialArea === "number" ? { aireOfficielle: aire(np.officialArea) } : {}),
+        ...(np.setback && Number.isFinite(np.setback.distance) ? { recul: longueur(np.setback.distance) } : {}),
+        ...(Array.isArray(envelope) && envelope.length >= 3 ? { enveloppeRecul: cad(envelope) } : {}),
+      },
+    });
+    for (const [champ, valeur] of Object.entries(np)) {
+      if (CHAMPS_CANONIQUES_PARCELLE.has(champ) || valeur === undefined) continue;
+      commandes.push({
+        type: "propriete.definir",
+        cibles: [id],
+        params: {
+          nom: `${PREFIXE_PROPRIETE_TRANSMISSION}${champ}`,
+          valeur: valeur as ValeurJson,
+          ...(typeof valeur === "number" ? { unite: uniteChamp(champ) } : {}),
+          provenance: "saisie",
+          statut: "declaree",
+          note: "Transmis par l'outil Parcelle (étape 01)",
+        },
+      });
+    }
+  }
+  const fp = writes.buildingFootprint;
+  if (fp && np) {
+    commandes.push({
+      type: "site.emprise.definir",
+      cibles: [],
+      params: { id: site.empriseId ?? `${projectId}_emprise`, sommetsCadastraux: fp.vertices.map(([x, y]) => pointCadastral(x, y, np.crs)) },
+    });
+  }
+  return commandes;
 }

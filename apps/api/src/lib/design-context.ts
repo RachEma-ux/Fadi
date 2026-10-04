@@ -7,7 +7,6 @@
  * de la parcelle, sinon repère saisi), hypothèses de travail (celles de
  * l'exemple pour P.118, sinon celles du dossier).
  */
-import { eq } from "drizzle-orm";
 import type { Point2 } from "@parcours/core-geometry";
 import {
   compassStatus,
@@ -37,7 +36,7 @@ import {
   type HarmonyDossier,
   type ProgrammeCase,
 } from "@parcours/domain-model";
-import { atelierStore, projects } from "../db/schema.js";
+import type { projects } from "../db/schema.js";
 import { HARMONY_ENGINE, PARCOURS_STEPS } from "../data/parcours.js";
 import { revuePerimeeParAtelier } from "./atelier-events.js";
 import { loadNativeDomains } from "./model-context.js";
@@ -74,8 +73,6 @@ export async function loadDesignContext(q: Querier, project: ProjectRow, now: st
   const stepRows = rows ?? (await loadStepRows(q, project.id));
   const steps = await loadStepContext(q, project, stepRows);
   const domains = await loadNativeDomains(q, project.id);
-  const store = await q.select().from(atelierStore).where(eq(atelierStore.projectId, project.id));
-  const solar = domains ? (store.find((r) => r.key === `design.v13.project.${domains.nativeId}.solar`)?.value as Record<string, unknown> | undefined) : undefined;
   const programmeCase = await loadActiveProgrammeCase(q, project.id);
   const rep = await loadProgrammeRepartition(project.id, q);
   const h = harmonyDossier(project.harmony, now);
@@ -93,13 +90,11 @@ export async function loadDesignContext(q: Querier, project: ProjectRow, now: st
   const footprint = point2s((domains?.footprint as { vertices?: unknown } | null)?.vertices);
   const attachment = (project.sourceAttachment ?? {}) as Record<string, unknown>;
   const dossierV62 = (attachment["dossierV62"] ?? null) as { georeference?: DesignGeoreference & { parcelVertices?: Point2[] }; assumptions?: DesignAssumption[] } | null;
-  // `georef(c)` : étude solaire du modèle, sinon géoréférencement de l'exemple quand la parcelle est la sienne, sinon conversion du CRS, sinon repère saisi à l'étape 01.
-  const site = solar?.["site"] as Record<string, unknown> | undefined;
+  // `georef(c)` : géoréférencement de l'exemple quand la parcelle est la sienne, sinon conversion du CRS, sinon repère saisi à l'étape 01
+  // (l'étude solaire de l'ancien Atelier n'existe plus dans le modèle typé, D-052).
   const siteObservations = siteObservationsOf(project);
   let georeference: DesignGeoreference | null = null;
-  if (site && Number.isFinite(Number(site["latitude"])) && Number.isFinite(Number(site["longitude"])) && site["latitude"] !== "" && site["longitude"] !== "") {
-    georeference = { latitude: Number(site["latitude"]), longitude: Number(site["longitude"]), projectNorth: Number(site["north"] ?? site["projectNorth"] ?? site["northAngle"] ?? 0), source: "Référence solaire du projet — statut à vérifier", hypothesis: true };
-  } else if (dossierV62?.georeference && parcel && JSON.stringify(parcel.vertices) === JSON.stringify(dossierV62.georeference.parcelVertices) && parcel.crs === dossierV62.georeference.crs) {
+  if (dossierV62?.georeference && parcel && JSON.stringify(parcel.vertices) === JSON.stringify(dossierV62.georeference.parcelVertices) && parcel.crs === dossierV62.georeference.crs) {
     const { parcelVertices: _ignored, ...g } = dossierV62.georeference;
     georeference = { ...g, hypothesis: true };
   } else if (parcel) {
@@ -118,7 +113,7 @@ export async function loadDesignContext(q: Querier, project: ProjectRow, now: st
     floor: steps.model ? (domains!.floor as DesignReviewInput["floor"]) : { levels: {} },
     parcel,
     footprint,
-    solarSite: site ?? null,
+    solarSite: null,
     programmeCase: programmeCase ? { caseId: programmeCase.caseId, type: programmeCase.type, spaces: programmeCase.spaces, roomLinks: programmeCase.roomLinks ?? {}, hypotheses: programmeCase.hypotheses ?? null, revision: programmeCase.revision } : null,
     repartitionCaseTotals: programmeCase && rep.fromCase ? programmeCaseSums(programmeCase.spaces) : null,
     siteObservations: project.siteObservations,

@@ -10,6 +10,7 @@ import request from "supertest";
 import { createApp } from "./app.js";
 import { pool } from "./db/client.js";
 import { georeferenceFromParcel } from "./lib/site-context.js";
+import { longueur, pointLocal } from "@parcours/atelier-model";
 
 const app = createApp();
 
@@ -40,6 +41,64 @@ async function registerAndLogin(email: string) {
   const res = await client.post("/auth/register").send({ email, password: "correct-horse-battery" });
   expect(res.status).toBe(201);
   return client;
+}
+
+type Agent = ReturnType<typeof agent>;
+interface ObjetVu {
+  id: string;
+  classe: string;
+  niveauId?: string;
+  calqueId?: string;
+  params: Record<string, unknown> & { elevation?: { value: number }; murHoteId?: string; nom?: string; sommetsCadastraux?: { x: number; y: number }[]; identifiantsSommets?: string[] };
+  proprietes?: { nom: string; valeur: unknown }[];
+}
+interface ModeleVu {
+  revision: number;
+  objets: Record<string, ObjetVu>;
+}
+
+/** Le modèle typé de l'Atelier d'un projet (`GET /atelier/model`, D-052). */
+async function modelOf(client: Agent, pid: string): Promise<ModeleVu> {
+  const r = await client.get(`/projects/${pid}/atelier/model`);
+  expect(r.status).toBe(200);
+  return r.body as ModeleVu;
+}
+const objetsDe = (m: ModeleVu, classe: string) => Object.values(m.objets).filter((o) => o.classe === classe);
+
+/** Le journal des commandes du modèle typé (`GET /atelier/journal`). */
+async function journalOf(client: Agent, pid: string): Promise<{ label: string; nature: string }[]> {
+  const r = await client.get(`/projects/${pid}/atelier/journal`);
+  expect(r.status).toBe(200);
+  return r.body.entrees as { label: string; nature: string }[];
+}
+
+let requeteTest = 0;
+/** Un lot de commandes sur le modèle typé à sa révision courante (`POST /atelier/commands`). */
+async function sendCommands(client: Agent, pid: string, commands: unknown[], label = "Essai") {
+  const { revision } = await modelOf(client, pid);
+  return client.post(`/projects/${pid}/atelier/commands`).send({ requestId: `app-test-${++requeteTest}`, baseRevision: revision, contract: "atelier-commands/1", label, commands });
+}
+
+/** Ajoute un mur au premier niveau du modèle (une écriture du modèle : la révision avance d'une unité). */
+async function addWall(client: Agent, pid: string, id = `${pid}_TEST-W-NEW`) {
+  const m = await modelOf(client, pid);
+  let niveau = objetsDe(m, "niveau").find((n) => n.id.endsWith("_rdc")) ?? objetsDe(m, "niveau")[0];
+  let calque = objetsDe(m, "calque")[0];
+  const prep: unknown[] = [];
+  if (!niveau) {
+    prep.push({ type: "niveau.creer", cibles: [], params: { id: `${pid}_rdc`, nom: "Rez", elevation: longueur(0), hauteur: longueur(3), ordre: 0 } });
+    niveau = { id: `${pid}_rdc`, classe: "niveau", params: {} };
+  }
+  if (!calque) {
+    prep.push({ type: "calque.creer", cibles: [], params: { id: `${pid}_C1`, nom: "Murs", couleur: "#336699", visible: true, verrouille: false, ordre: 0 } });
+    calque = { id: `${pid}_C1`, classe: "calque", params: {} };
+  }
+  const r = await sendCommands(client, pid, [
+    ...prep,
+    { type: "mur.tracer", cibles: [], params: { id, niveauId: niveau.id, calqueId: calque.id, a: pointLocal(0, 0), b: pointLocal(4, 0), epaisseur: longueur(0.2), hauteur: longueur(3), alignement: "axe", typeId: "non-type", exterieur: true } },
+  ], "Mur d'essai");
+  expect(r.status).toBe(200);
+  return r.body as { revision: number };
 }
 
 describe("hébergement : l'API sert l'application construite (WEB_DIST)", () => {
@@ -488,30 +547,26 @@ describe("examples", () => {
     expect(imported.status).toBe(201);
     const projectId = imported.body.id as string;
 
-    const levelsRes = await client.get(`/projects/${projectId}/levels`);
-    expect(levelsRes.status).toBe(200);
+    // Le modèle typé de l'Atelier (D-052) : P.118 importé à la création du projet, journalisé « import ».
+    const model = await modelOf(client, projectId);
+    expect(model.revision).toBe(1);
+    expect((await journalOf(client, projectId)).map((e) => [e.nature, e.label])).toEqual([["import", "Import de l'exemple P.118 dans le modèle typé"]]);
     // Les 6 niveaux du modèle natif (sous-sol à R+3), jamais arrondis.
-    expect(levelsRes.body).toHaveLength(6);
-    const mezz = levelsRes.body.find((l: { id: string }) => l.id.endsWith("_mezz"));
-    expect(mezz.elevation).toBeCloseTo(3.2, 10);
-    const ss = levelsRes.body.find((l: { id: string }) => l.id.endsWith("_ss"));
-    expect(ss.elevation).toBeCloseTo(-3.2, 10);
+    const niveaux = objetsDe(model, "niveau");
+    expect(niveaux).toHaveLength(6);
+    const mezz = niveaux.find((l) => l.id.endsWith("_mezz"))!;
+    expect(mezz.params.elevation!.value).toBeCloseTo(3.2, 10);
+    expect(niveaux.find((l) => l.id.endsWith("_ss"))!.params.elevation!.value).toBeCloseTo(-3.2, 10);
 
-    const objectsRes = await client.get(`/projects/${projectId}/levels/${mezz.id}/objects`);
-    expect(objectsRes.status).toBe(200);
     // La mezzanine (cœur de cet exemple) porte bien ses murs, poteaux, portes,
     // fenêtres et escaliers réels — pas un sous-ensemble choisi pour la démo.
-    const kinds = new Set(objectsRes.body.map((o: { kind: string }) => o.kind));
-    for (const expected of ["wall", "column", "door", "window", "stairs", "room"]) {
-      expect(kinds.has(expected)).toBe(true);
-    }
-    // Les portes/fenêtres référencent leur mur hôte via une relation remappée
-    // vers l'id (préfixé projet) réellement inséré, pas l'id natif brut.
-    const door = objectsRes.body.find((o: { kind: string }) => o.kind === "door");
-    expect(door.relations).toEqual([{ kind: "hosted-by", targetId: expect.stringContaining(`${projectId}_`) }]);
-    const hostedWall = objectsRes.body.find((o: { id: string }) => o.id === door.relations[0].targetId);
-    expect(hostedWall).toBeDefined();
-    expect(hostedWall.kind).toBe("wall");
+    const surMezz = Object.values(model.objets).filter((o) => o.niveauId === mezz.id);
+    const classes = new Set(surMezz.map((o) => o.classe));
+    for (const expected of ["mur", "poteau", "porte", "fenetre", "escalier", "piece"]) expect(classes.has(expected)).toBe(true);
+    // Les portes référencent leur mur hôte par l'identifiant (préfixé projet) réellement écrit.
+    const door = surMezz.find((o) => o.classe === "porte")!;
+    expect(door.params.murHoteId).toEqual(expect.stringContaining(`${projectId}_`));
+    expect(model.objets[door.params.murHoteId!]!.classe).toBe("mur");
 
     // Un deuxième import du même exemple ne doit pas entrer en collision
     // d'identifiants avec le premier (ids natifs préfixés par projet).
@@ -521,65 +576,35 @@ describe("examples", () => {
   });
 });
 
-describe("Atelier — magasin du moteur natif", () => {
-  it("serves the imported native model keys with revisions, and keeps the derived projection in step with floorDesign writes", async () => {
+describe("Atelier — modèle typé de l'exemple", () => {
+  it("serves the imported P.118 typed model at revision 1, advances it by one per model write, and keeps it private", async () => {
     const client = await registerAndLogin("atelier@example.com");
     const imported = await client.post("/examples/p118-exemple-complet/import");
     const pid = imported.body.id as string;
 
-    const store = await client.get(`/projects/${pid}/atelier/store`);
-    expect(store.status).toBe(200);
-    expect(store.body.entries["design.v13.activeProject"]).toBe("p118-demo-v819");
-    expect(store.body.entries["design.v13.registry"][0].name).toBe("EXEMPLE COMPLET · P.118 — Escalier B et mezzanine");
-    const fdKey = "design.v13.project.p118-demo-v819.floorDesign";
-    expect(Object.keys(store.body.entries).sort()).toEqual([
-      "design.v13.activeProject",
-      "design.v13.project.p118-demo-v819.buildingFootprint",
-      fdKey,
-      "design.v13.project.p118-demo-v819.levels",
-      "design.v13.project.p118-demo-v819.nativeParcel",
-      "design.v13.project.p118-demo-v819.ui",
-      "design.v13.registry",
-    ]);
-    expect(store.body.revisions[fdKey]).toBe(1);
-    expect(store.body.modelRevision).toBe(1);
+    const model = await modelOf(client, pid);
+    expect(model.revision).toBe(1);
+    const rdc = objetsDe(model, "niveau").find((n) => n.id.endsWith("_rdc"))!;
+    const mursRdc = objetsDe(model, "mur").filter((o) => o.niveauId === rdc.id).length;
+    expect(mursRdc).toBe(39);
+    // La parcelle et l'emprise de l'exemple sont des objets du modèle (site), pas un magasin à part.
+    expect(objetsDe(model, "parcelle")).toHaveLength(1);
+    expect(objetsDe(model, "emprise")).toHaveLength(1);
 
-    // Le modèle natif est verbatim : métadonnées, calques et surfaces de niveau conservés (pas une projection aplatie).
-    const rdc = store.body.entries[fdKey].levels.rdc;
-    expect(rdc.meta.architectureRevision).toBe(3);
-    expect(Object.keys(rdc.layers)).toContain("Escaliers");
-    expect(rdc.areas.gross).toBeCloseTo(673, 0);
+    // Ajouter un mur au RDC : révision du modèle avancée (1 → 2), 39 → 40 murs, projet à la même révision.
+    const saved = await addWall(client, pid);
+    expect(saved.revision).toBe(2);
+    const after = await modelOf(client, pid);
+    expect(objetsDe(after, "mur").filter((o) => o.niveauId === rdc.id)).toHaveLength(40);
+    expect((await client.get(`/projects/${pid}`)).body.modelRevision).toBe(2);
 
-    // Une écriture qui n'annonce pas la révision lue est refusée, avec la valeur courante.
-    const stale = await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: store.body.entries[fdKey], expectedRevision: 0 });
-    expect(stale.status).toBe(409);
-    expect(stale.body.revision).toBe(1);
-    expect(stale.body.value.levels.rdc.walls.length).toBe(39);
-
-    // Ajouter un mur au RDC via le domaine natif : révision du modèle avancée, projection régénérée (39 → 40 murs au RDC).
-    const fd = store.body.entries[fdKey];
-    fd.levels.rdc.walls.push({ id: "TEST-rdc-W-NEW", kind: "wall", a: [0, 0], b: [4, 0], thickness: 0.2, height: 3.2, layer: "Murs", type: "mur" });
-    const saved = await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: fd, expectedRevision: 1 });
-    expect(saved.status).toBe(200);
-    expect(saved.body.revision).toBe(2);
-    expect(saved.body.modelRevision).toBe(2);
-    const levelsRes = await client.get(`/projects/${pid}/levels`);
-    const rdcLevel = levelsRes.body.find((l: { id: string }) => l.id.endsWith("_rdc"));
-    const objects = await client.get(`/projects/${pid}/levels/${rdcLevel.id}/objects`);
-    expect(objects.body.filter((o: { kind: string }) => o.kind === "wall")).toHaveLength(40);
-    expect(objects.body.find((o: { id: string }) => o.id === `${pid}_TEST-rdc-W-NEW`).modelRevision).toBe(2);
-
-    // Une clé hors du magasin de l'Atelier est refusée.
-    const badKey = await client.put(`/projects/${pid}/atelier/store/potentiel-v3`).send({ value: {}, expectedRevision: null });
-    expect(badKey.status).toBe(400);
-
-    // Le magasin d'un projet vierge est vide ; un autre utilisateur n'y accède pas.
+    // Le modèle d'un projet vierge est vide ; un autre utilisateur n'y accède pas.
     const blank = await client.post("/projects").send({ code: "P.906", name: "Vierge" });
-    const blankStore = await client.get(`/projects/${blank.body.id}/atelier/store`);
-    expect(blankStore.body.entries).toEqual({});
+    const vierge = await modelOf(client, blank.body.id as string);
+    expect(objetsDe(vierge, "niveau")).toEqual([]);
+    expect(objetsDe(vierge, "parcelle")).toEqual([]);
     const intruder = await registerAndLogin("atelier-intruder@example.com");
-    expect((await intruder.get(`/projects/${pid}/atelier/store`)).status).toBe(404);
-    expect((await intruder.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: fd, expectedRevision: 2 })).status).toBe(404);
+    expect((await intruder.get(`/projects/${pid}/atelier/model`)).status).toBe(404);
   });
 });
 
@@ -635,7 +660,7 @@ describe("Parcelle — contrat de l'outil et transmission au modèle", () => {
     expect((await intruder.get(base)).status).toBe(404);
   });
 
-  it("transmits a parcel to the native model like acceptParcel: nativeParcel written with setback envelope, then a conflict once a building exists", async () => {
+  it("transmits a parcel to the typed model like acceptParcel: journaled site commands with setback envelope, then a conflict once a building exists", async () => {
     const client = await registerAndLogin("transmit@example.com");
     const project = await client.post("/projects").send({ code: "P.908", name: "Transmission" });
     const pid = project.body.id as string;
@@ -649,34 +674,37 @@ describe("Parcelle — contrat de l'outil et transmission au modèle", () => {
     expect(t1.body.transmission.status).toBe("linked");
     expect(t1.body.transmission.parcel).toMatchObject({ name: "Lot 118", crs: "EPSG:26191", parcelNumber: "118", boundaryCount: 4 });
     expect(t1.body.transmission.parcel.area).toBeCloseTo(1345.5476, 3);
-    const nativeId = t1.body.transmission.nativeId as string;
-    expect(nativeId).toMatch(/^native-fadi-/);
+    // Deux commandes `site.*` journalisées (D-052) : la révision du modèle avance d'une unité.
+    expect(t1.body.transmission.modelRevision).toBe(1);
+    expect((await journalOf(client, pid)).map((e) => e.label)).toContain("Transmission de la parcelle (étape 01)");
     // Même signature → aucune nouvelle écriture (rechargement, clic sans saisie).
     const again = await client.post(`/projects/${pid}/parcels/${id}/transmit`);
     expect(again.body.transmission.at).toBe(t1.body.transmission.at);
 
-    const store = (await client.get(`/projects/${pid}/atelier/store`)).body;
-    expect(store.entries["design.v13.activeProject"]).toBe(nativeId);
-    const np = store.entries[`design.v13.project.${nativeId}.nativeParcel`];
-    expect(np.vertexIds).toEqual(["B.266", "B.267", "B.268", "B.265"]);
-    expect(np.area).toBeCloseTo(1345.5476, 3);
-    expect(np.officialArea).toBe(1346);
-    expect(np.setback.distance).toBe(5);
-    expect(np.setback.envelope).toHaveLength(4);
-    expect(np.setback.area).toBeCloseTo(689.23, 1);
-    expect(np.validation.state).toBe("DECLARED");
-    expect(store.modelRevision).toBeGreaterThanOrEqual(1);
+    const model = await modelOf(client, pid);
+    expect(model.revision).toBe(1);
+    const [parcelle] = objetsDe(model, "parcelle");
+    expect(parcelle!.params.identifiantsSommets).toEqual(["B.266", "B.267", "B.268", "B.265"]);
+    expect((parcelle!.params["aire"] as { value: number }).value).toBeCloseTo(1345.5476, 3);
+    expect((parcelle!.params["aireOfficielle"] as { value: number }).value).toBe(1346);
+    expect((parcelle!.params["recul"] as { value: number }).value).toBe(5);
+    expect(parcelle!.params["enveloppeRecul"]).toHaveLength(4);
+    // Les champs sans paramètre canonique voyagent en propriétés `transmission.*` (grandeurs avec leur unité).
+    const prop = (nom: string) => parcelle!.proprietes!.find((p) => p.nom === `transmission.${nom}`)?.valeur as Record<string, unknown> | undefined;
+    expect(prop("setback")!["area"] as number).toBeCloseTo(689.23, 1);
+    expect(prop("validation")!["state"]).toBe("DECLARED");
+    expect(parcelle!.proprietes!.find((p) => p.nom === "transmission.perimeter")).toMatchObject({ unite: "m" });
 
     // Un bâtiment existe désormais (un mur) : déplacer une borne est un conflit explicite, le modèle n'est pas touché.
-    const fdKey = `design.v13.project.${nativeId}.floorDesign`;
-    await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: { levels: { rdc: { id: "rdc", walls: [{ id: "W1", kind: "wall", a: [0, 0], b: [4, 0], thickness: 0.2 }] } } }, expectedRevision: null });
+    await addWall(client, pid);
     const moved = S01.map((p, i) => (i === 0 ? { ...p, x: p.x + 2 } : p));
     // La capture de l'outil est transmise telle quelle (corps `data`), avant même que l'outil n'ait enregistré son fichier.
     const t2 = await client.post(`/projects/${pid}/parcels/${id}/transmit`).send({ data: { name: "Lot 118", crs: "EPSG:26191", points: moved } });
     expect(t2.body.transmission.status).toBe("conflict");
     expect(t2.body.transmission.reason).toMatch(/un bâtiment est déjà dessiné/);
-    const after = (await client.get(`/projects/${pid}/atelier/store`)).body;
-    expect(after.entries[`design.v13.project.${nativeId}.nativeParcel`].vertices[0][0]).toBeCloseTo(321946.82, 2);
+    const after = await modelOf(client, pid);
+    expect(objetsDe(after, "parcelle")[0]!.params.sommetsCadastraux![0]!.x).toBeCloseTo(321946.82, 2);
+    expect(after.revision).toBe(2); // le mur seulement
     const listed = await client.get(`/projects/${pid}/parcels`);
     expect(listed.body.transmission.status).toBe("conflict");
     expect(listed.body.files[0].revision).toBe(1);
@@ -1077,15 +1105,16 @@ describe("Péremption des propositions (« À réexaminer ») et rapports Harmon
     const step10 = (await client.get(`/projects/${pid}/steps/10`)).body;
     const hall = step10.proposals.find((q: { group: string; title: string }) => q.group === "local" && /R01/.test(q.title));
     await client.post(`/projects/${pid}/steps/10/harmonie/${encodeURIComponent(hall.id)}`).send({ status: "retained" });
-    // Le projet natif actif disparaît du magasin : plus de locaux calculés, le choix est conservé en orphelin.
-    const del = await client.delete(`/projects/${pid}/atelier/store/${encodeURIComponent("design.v13.activeProject")}`);
-    expect(del.status).toBe(204);
+    // Le local R01 du RDC est supprimé du modèle typé : sa proposition disparaît, le choix est conservé en orphelin.
+    const model = await modelOf(client, pid);
+    const rdc = objetsDe(model, "niveau").find((n) => n.id.endsWith("_rdc"))!;
+    const r01 = objetsDe(model, "piece").find((o) => o.niveauId === rdc.id && o.id.endsWith("R01"))!;
+    expect((await sendCommands(client, pid, [{ type: "piece.supprimer", cibles: [r01.id], params: {} }], "Supprimer le hall")).status).toBe(200);
     const without = (await client.get(`/projects/${pid}/steps/10`)).body;
-    expect(without.model).toBeNull();
+    expect(without.model).not.toBeNull();
+    expect(without.proposals.some((q: { id: string; orphaned: boolean }) => q.id !== hall.id && q.orphaned === false)).toBe(true);
     const orphan = without.proposals.find((q: { id: string }) => q.id === hall.id);
     expect(orphan).toMatchObject({ orphaned: true, stale: true, retained: true, group: "local", title: hall.title, ref: hall.ref, roomId: hall.roomId });
-    // Le parti C de l'exemple + les locaux adaptés par l'exemple (dont le hall), tous orphelins sans modèle.
-    expect(without.retainedCount).toBe(1 + step10.proposals.filter((q: { group: string }) => q.group === "local").length);
     expect(without.staleRetainedCount).toBeGreaterThanOrEqual(1);
   });
 
@@ -1138,14 +1167,17 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     expect(exported.headers["content-disposition"]).toBe('attachment; filename="Parcours_V7_Escalier_B_et_mezzanine.json"');
     expect(exported.headers["content-type"]).toMatch(/^application\/json/);
     const archive = JSON.parse(exported.text);
-    expect(archive).toMatchObject({ kind: "fadi-project-archive", version: 1, sourceVersion: "8.19.0", project: { code: "P.118", name: "Escalier B et mezzanine", modelRevision: 1 } });
+    expect(archive).toMatchObject({ kind: "fadi-project-archive", version: 2, sourceVersion: "8.19.0", project: { code: "P.118", name: "Escalier B et mezzanine", modelRevision: 1 } });
     expect(archive.stageMapping).toHaveLength(21);
     expect(archive.steps).toHaveLength(21);
     expect(archive.programmeCases).toHaveLength(1);
     expect(archive.programmeCases[0].data.spaces).toHaveLength(74);
     expect(archive.programmeRepartition.mode).toBe("cas");
     expect(archive.parcels).toHaveLength(1);
-    expect(Object.keys(archive.native.entries)).toContain("design.v13.activeProject");
+    // Version 2 (D-052) : le modèle typé complet, identifiants conservés ; plus de magasin natif.
+    const sourceModel = await modelOf(client, pid);
+    expect(Object.keys(archive.atelier.modele.objets).sort()).toEqual(Object.keys(sourceModel.objets).sort());
+    expect(archive.native).toBeNull();
     // Les pièces : les deux documents de base de l'exemple (étapes 01 / 02, octets conservés) et la pièce ajoutée.
     expect(archive.stageAttachments.map((a: { stepNumber: number; name: string; size: number }) => [a.stepNumber, a.name, a.size])).toEqual([
       [1, "118_officiel.kmz", 881142],
@@ -1178,7 +1210,21 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     const step10 = steps.find((s) => s.number === 10)!;
     expect(step10.model).not.toBeNull();
     expect(step10.proposals.filter((q) => q.id.includes("LOCAL")).length).toBeGreaterThan(10);
-    expect((await client.get(`/projects/${copy.id}/levels`)).body).toHaveLength(6);
+    // Le modèle typé revient tel quel : mêmes objets, mêmes identifiants, même empreinte, journalisé « import ».
+    const copyModel = await modelOf(client, copy.id as string);
+    expect(Object.keys(copyModel.objets).sort()).toEqual(Object.keys(sourceModel.objets).sort());
+    expect((copyModel as unknown as { empreinte: string }).empreinte).toBe((sourceModel as unknown as { empreinte: string }).empreinte);
+    expect(copyModel.revision).toBe(1);
+    expect((await journalOf(client, copy.id as string)).map((e) => e.label)).toEqual(["Import du modèle typé d'une archive"]);
+    // Un modèle typé retouché à la main (empreinte non conforme) est refusé, et rien n'est créé.
+    const count = ((await client.get("/projects")).body as unknown[]).length;
+    const tampered = JSON.parse(exported.text);
+    const someId = Object.keys(tampered.atelier.modele.objets)[0]!;
+    tampered.atelier.modele.objets[someId].note = "retouché";
+    const refused = await client.post("/projects/import").send(tampered);
+    expect(refused.status).toBe(422);
+    expect(refused.body.message).toMatch(/empreinte non conforme/);
+    expect(((await client.get("/projects")).body as unknown[]).length).toBe(count);
     const programme = (await client.get(`/projects/${copy.id}/programme`)).body;
     expect(programme.programmeCase.spaces).toHaveLength(74);
     const files = (await client.get(`/projects/${copy.id}/steps/3/files`)).body as { name: string; size: number; id: string }[];
@@ -1188,7 +1234,7 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     const parcelsRes = (await client.get(`/projects/${copy.id}/parcels`)).body;
     expect(parcelsRes.files).toHaveLength(1);
     expect(parcelsRes.transmission.status).toBe("linked");
-  });
+   }, 30000);
 
   it("« Essayer une autre répartition en copie » : copies the protected P.118 reference into an editable project, reference intact", async () => {
     const client = await registerAndLogin("copie@example.com");
@@ -1206,7 +1252,11 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     const programme = (await client.get(`/projects/${copy.id}/programme`)).body;
     expect(programme.resolvedExample).toBe(false);
     expect(programme.programmeCase).toMatchObject({ caseId: "parcours_lot118", revision: 6, spaceCount: 74 });
-    expect((await client.get(`/projects/${copy.id}/levels`)).body).toHaveLength(6);
+    // La copie reprend le modèle typé courant de la référence (export puis import, D-052).
+    const refModel = await modelOf(client, pid);
+    const copyModel = await modelOf(client, copy.id as string);
+    expect(Object.keys(copyModel.objets).sort()).toEqual(Object.keys(refModel.objets).sort());
+    expect(objetsDe(copyModel, "niveau")).toHaveLength(6);
     const steps = (await client.get(`/projects/${copy.id}/steps`)).body as { status: string; stale: boolean; staleRetainedCount: number }[];
     expect(steps.filter((s) => s.status === "termine")).toHaveLength(21);
     expect(steps.filter((s) => s.stale || s.staleRetainedCount > 0)).toHaveLength(0);
@@ -1224,12 +1274,11 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
 
   it("imports an export of the existing software (parcours-v6-project: workflow + native + stageAttachments) as a new project with its answers, choices, model and attachment", async () => {
     const client = await registerAndLogin("archive-proto@example.com");
-    // Le modèle natif de l'exemple sert de `native` du prototype (registry + domains).
-    const example = await client.post("/examples/p118-exemple-complet/import");
-    const store = (await client.get(`/projects/${example.body.id}/atelier/store`)).body.entries as Record<string, unknown>;
-    const nativeId = store["design.v13.activeProject"] as string;
-    const domains: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(store)) if (k.startsWith(`design.v13.project.${nativeId}.`)) domains[k.slice(`design.v13.project.${nativeId}.`.length)] = v;
+    // Le modèle natif de l'exemple (fichier de données de P.118) sert de `native` du prototype (registry + domains).
+    const { readFileSync } = await import("node:fs");
+    const p118 = JSON.parse(readFileSync(new URL("./data/examples/p118-native-model.json", import.meta.url), "utf8")) as { nativeId: string; domains: Record<string, unknown> };
+    const nativeId = p118.nativeId;
+    const domains = p118.domains;
     const payload = {
       kind: "parcours-v6-project",
       version: 7,
@@ -1271,7 +1320,9 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     expect(steps.find((s) => s.number === 1)!.site!.observations.priority).toBe("service");
     expect(steps.find((s) => s.number === 19)!.content.fields).toEqual({ decision: "GO" });
     expect(steps.find((s) => s.number === 10)!.model).not.toBeNull();
-    expect((await client.get(`/projects/${p.id}/levels`)).body).toHaveLength(6);
+    // Le modèle natif est passé par l'importeur du lot 1 : modèle typé journalisé « import ».
+    expect(objetsDe(await modelOf(client, p.id as string), "niveau")).toHaveLength(6);
+    expect((await journalOf(client, p.id as string)).map((e) => e.label)).toEqual(["Import du modèle natif d'une archive dans le modèle typé"]);
     const files = (await client.get(`/projects/${p.id}/steps/3/files`)).body as { name: string; size: number }[];
     expect(files).toEqual([expect.objectContaining({ name: "note.txt", size: 7 })]);
     // Refus avec les messages du prototype ; aucun projet créé.
@@ -1625,11 +1676,7 @@ describe("Dessins techniques et exports de l'Atelier au catalogue des documents"
     expect(file.headers["content-disposition"]).toContain("Atelier_P.118.dxf");
     expect(file.text ?? file.body.toString()).toBe(dxf);
     // Un mur ajouté au modèle (révision 2) : l'export de la révision 1 est périmé, le fichier reste téléchargeable.
-    const fdKey = "design.v13.project.p118-demo-v819.floorDesign";
-    const store = await client.get(`/projects/${pid}/atelier/store`);
-    const fd = store.body.entries[fdKey];
-    fd.levels.rdc.walls.push({ id: "TEST-rdc-W-EXPORT", kind: "wall", a: [0, 0], b: [4, 0], thickness: 0.2, height: 3.2, layer: "Murs", type: "mur" });
-    expect((await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: fd, expectedRevision: 1 })).status).toBe(200);
+    expect((await addWall(client, pid, `${pid}_TEST-W-EXPORT`)).revision).toBe(2);
     docs = (await client.get(`/projects/${pid}/documents`)).body.documents;
     entry = docs.find((d) => d.kind === `dessin:${id}`)!;
     expect(entry.freshness).toBe("perime");
@@ -1697,13 +1744,7 @@ describe("Documents — catalogue, productions et actualité", () => {
     await client.get(`/projects/${pid}/archive`);
     expect((await docOf("bilan-batiment")).freshness).toBe("a-jour");
     expect((await docOf("archive-projet")).freshness).toBe("a-jour");
-    const store = (await client.get(`/projects/${pid}/atelier/store`)).body;
-    const nativeId = store.entries["design.v13.activeProject"] as string;
-    const fdKey = `design.v13.project.${nativeId}.floorDesign`;
-    const fd = store.entries[fdKey];
-    fd.levels.rdc.walls.push({ id: "DOC-rdc-W-NEW", kind: "wall", a: [0, 0], b: [4, 0], thickness: 0.2, height: 3.2, layer: "Murs", type: "mur" });
-    const put = await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: fd, expectedRevision: (store.revisions as Record<string, number>)[fdKey] });
-    expect(put.status).toBe(200);
+    await addWall(client, pid, `${pid}_DOC-W-NEW`);
     const after = (await client.get(`/projects/${pid}/documents`)).body;
     expect(after.modelRevision).toBe(2);
     expect(after.documents.find((d: { kind: string }) => d.kind === "archive-projet").freshness).toBe("perime");
@@ -1794,7 +1835,7 @@ describe("Collaboration — accès, synchronisation, journal des révisions, com
     const v = (await client.get(`/projects/${pid}/collaboration`)).body;
     expect(v.access).toMatchObject({ ownerEmail: "collab@example.com", you: "collab@example.com", role: "proprietaire", members: [], sharing: { available: true } });
     expect(v.sync).toMatchObject({ modelRevision: 1, offline: { available: true } });
-    expect(v.sync.nativeKeys).toBeGreaterThan(3);
+    expect(v.sync.modelCommands).toBeGreaterThanOrEqual(1); // l'import de P.118 dans le modèle typé
     expect(typeof v.sync.lastModelWrite).toBe("string");
     const kinds = new Set(v.journal.map((e: { kind: string }) => e.kind));
     expect([...kinds]).toEqual(expect.arrayContaining(["projet", "harmonie", "programme", "modele", "parcelle", "document", "revue"]));

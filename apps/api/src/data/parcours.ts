@@ -263,13 +263,11 @@ const programmeCase = readJson<ProgrammeCaseFile>("examples/p118-programme-case.
 const parcel = readJson<ParcelFile>("examples/p118-parcel.json");
 
 // ---------------------------------------------------------------------------
-// Modèle natif de P.118 — les domaines `design.v13` que le moteur de
-// l'Atelier lit et écrit tels quels (extraction verbatim de
-// p118-resolved-template.native). La projection vers les tables
-// `levels` / `architectural_objects` en est dérivée (lib/native-projection.ts).
+// Modèle natif de P.118 — extraction verbatim de p118-resolved-template.native, source de l'importeur du lot 1
+// (`importerP118`) qui l'écrit dans le modèle typé de l'Atelier à l'import de l'exemple (D-052).
 // ---------------------------------------------------------------------------
 
-interface NativeModelFile {
+export interface NativeModelFile {
   sourceVersion: string;
   exampleId: string;
   nativeId: string;
@@ -279,15 +277,9 @@ interface NativeModelFile {
 
 const nativeModel = readJson<NativeModelFile>("examples/p118-native-model.json");
 
-/** Les clés du magasin de l'Atelier à installer pour l'exemple : registre, projet actif, domaines. `null` pour un exemple sans modèle. */
-export function exampleAtelierStore(exampleId: string): { nativeId: string; entries: Record<string, unknown> } | null {
-  if (exampleId !== exempleComplet.id) return null;
-  const entries: Record<string, unknown> = {
-    "design.v13.registry": [nativeModel.registry],
-    "design.v13.activeProject": nativeModel.nativeId,
-  };
-  for (const [domain, value] of Object.entries(nativeModel.domains)) entries[`design.v13.project.${nativeModel.nativeId}.${domain}`] = value;
-  return { nativeId: nativeModel.nativeId, entries };
+/** Le jeu de données natif de l'exemple ; `null` pour un exemple sans modèle. */
+export function exampleNativeModel(exampleId: string): NativeModelFile | null {
+  return exampleId === exempleComplet.id ? nativeModel : null;
 }
 
 /** Le cas de programme (bibliothèque des bâtiments) et les 74 fiches d'espaces de l'exemple complet. */

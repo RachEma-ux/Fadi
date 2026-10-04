@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { atelierStore, parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
+import { parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
 import { hashOf, parcelSnapshotFromNative, summarize, type NativeParcelDomain } from "../lib/parcel-transmission.js";
 import { repartitionFromCase, type ProgrammeCase } from "@parcours/domain-model";
 import { randomUUID } from "node:crypto";
-import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replaceProjection } from "../lib/native-projection.js";
+import { initialiserModeleServeur } from "../lib/atelier-commands.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { stampStepFingerprints } from "../lib/project-archive.js";
@@ -17,8 +17,8 @@ import {
   exampleBaseDocumentContent,
   exampleBaseDocuments,
   exampleBuildingType,
-  exampleAtelierStore,
   exampleHarmonyDossier,
+  exampleNativeModel,
   exampleProgrammeCase,
   exampleRegistryName,
   exampleSiteObservations,
@@ -51,7 +51,7 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
   }
 
   const id = newId("proj");
-  const atelier = exampleAtelierStore(exampleId);
+  const atelier = exampleNativeModel(exampleId);
   const buildingType = exampleBuildingType(exampleId);
 
   const created = await db.transaction(async (tx) => {
@@ -109,20 +109,13 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
     }
 
     if (atelier) {
-      // Le modèle natif de l'exemple, tel quel, dans le magasin du moteur
-      // (registre, projet actif, domaines) — et sa projection dérivée vers
-      // `levels` / `architectural_objects` (identifiants préfixés par projet,
-      // relations remappées : voir lib/native-projection.ts).
-      await tx.insert(atelierStore).values(Object.entries(atelier.entries).map(([key, value]) => ({ projectId: id, key, value, revision: 1 })));
-      const nativeLevels = atelier.entries[`design.v13.project.${atelier.nativeId}.levels`];
-      const floorDesign = atelier.entries[`design.v13.project.${atelier.nativeId}.floorDesign`];
-      if (isNativeLevelArray(nativeLevels) && isNativeFloorDesign(floorDesign)) {
-        await replaceProjection(tx, id, projectNativeModel(id, nativeLevels, floorDesign, 1));
-      }
+      // Le modèle natif de l'exemple importé dans le modèle typé de l'Atelier (`importerP118`, journal « import »),
+      // à la révision du projet (D-052).
+      await initialiserModeleServeur(tx, id);
       // La parcelle de l'exemple ouverte dans l'outil Parcelle (étape 01) :
       // le fichier que `parcelSnapshot()` du prototype dérivait du modèle natif.
-      const np = atelier.entries[`design.v13.project.${atelier.nativeId}.nativeParcel`] as NativeParcelDomain | undefined;
-      const footprint = (atelier.entries[`design.v13.project.${atelier.nativeId}.buildingFootprint`] as { vertices?: [number, number][] } | undefined)?.vertices ?? null;
+      const np = atelier.domains["nativeParcel"] as NativeParcelDomain | undefined;
+      const footprint = (atelier.domains["buildingFootprint"] as { vertices?: [number, number][] } | undefined)?.vertices ?? null;
       if (np) {
         const snapshot = parcelSnapshotFromNative(np, registry.name, { footprint, workingFootprintArea: "673" });
         const parcelId = randomUUID();
@@ -136,7 +129,6 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
               reason: "Parcelle liée au modèle ; bornes / contexte transmis, aucune capacité ni autorisation inventée.",
               at: new Date().toISOString(),
               signature: hashOf(snapshot),
-              nativeId: atelier.nativeId,
               parcelId,
               parcel: summarize(snapshot),
             },
