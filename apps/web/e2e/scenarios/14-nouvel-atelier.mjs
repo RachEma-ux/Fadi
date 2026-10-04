@@ -478,6 +478,8 @@ export async function pousserTirer(sc) {
   await page.locator('[data-testid="atl-vue-3d"]').click();
   await page.waitForSelector('[data-testid="atl-3d-toile"]', { timeout: 30000 });
   await choisirObjet(mur.id);
+  // Les onglets de famille n'existent qu'au niveau d'affichage Complet (le niveau courant dépend des scénarios précédents).
+  await page.locator('[data-testid="atl-affichage-complet"]').click();
   await page.locator('[data-testid="atl-outil-famille-modifier"]').click();
   await page.locator('[data-testid="atl-outil-modifier.pousser"]').click();
   await page.waitForFunction(() => document.querySelector('[data-testid="atl-puce-outil"]')?.textContent?.includes("Pousser"), null, { timeout: 5000 }).catch(() => null);
