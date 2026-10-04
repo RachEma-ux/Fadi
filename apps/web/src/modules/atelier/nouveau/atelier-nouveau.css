@@ -320,17 +320,21 @@
   color: var(--atelier-doux);
   font-size: 0.85em;
 }
-.nav-formulaire {
+.nav-formulaire,
+.nav-formulaire-gerer {
   display: grid;
   gap: 0.4rem;
   margin: 0.4rem 0.7rem;
 }
-.nav-formulaire label {
+.nav-formulaire label,
+.nav-formulaire-gerer label,
+.nav-gerer-niveau > label {
   display: grid;
   gap: 0.15rem;
   font-size: 0.85em;
 }
-.nav-formulaire input {
+.nav-formulaire input,
+.nav-formulaire-gerer input {
   min-height: 32px;
   padding: 0.1rem 0.4rem;
   border: 1px solid var(--atelier-ligne);
@@ -1939,3 +1943,12 @@
 /* Mur hôte et sens d'ouverture (D-037) */
 .inspecteur-ouverture { display: grid; gap: 0.3rem; margin: 0.6rem 0; }
 .inspecteur-ouverture select { max-width: 100%; }
+
+/* Gérer le niveau actif (D-044) */
+.nav-gerer-niveau { margin: 0.3rem 0.7rem; font-size: 0.9em; }
+.nav-gerer-niveau > summary { cursor: pointer; }
+.nav-gerer-niveau > .nav-formulaire-gerer { margin: 0.4rem 0; }
+.inspecteur-gerer-type, .inspecteur-groupe, .inspecteur-vers-niveau { margin: 0.5rem 0; }
+.inspecteur-scinder { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; margin: 0.5rem 0; }
+.inspecteur-scinder input { width: 7rem; }
+

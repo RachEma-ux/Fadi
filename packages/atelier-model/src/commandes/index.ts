@@ -4,8 +4,11 @@
  * est un instantané différentiel (`interne.restaurer`), appliqué par annuler / rétablir comme une nouvelle
  * microversion.
  */
-import type { ModeleAtelier } from "../modele.js";
+import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import type { Classe } from "../ontologie.js";
+import { estOuverture } from "../ontologie.js";
+import { lire } from "./base.js";
+import { validerParams } from "./validation.js";
 import {
   appliquerDifferentiel,
   commandeInverse,
@@ -28,7 +31,7 @@ import { controlerContraintes, reducteursContrainte } from "./contrainte.js";
 import { reducteursDocuments } from "./documents.js";
 import { joindreMurs, scinderMur } from "./mur.js";
 import { creerOccurrence, modifierOccurrence, supprimerOccurrence } from "./objets.js";
-import { affecterClassification, affecterPhase, definirPropriete, rattacherReference, reducteursCalque, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
+import { affecterClassification, affecterPhase, definirPropriete, rattacherReference, reducteursCalque, reducteursDefinition, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
 import { dupliquerNiveau, reducteursTransformer } from "./transformer.js";
 import { verifierModele } from "../archive.js";
 import { reducteursRefExterne } from "./refexterne.js";
@@ -64,6 +67,24 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "ouverture.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "ouverture"),
   "ouverture.deplacer": (etat, p, ctx) => modifierOccurrence(etat, { id: p["id"], params: { position: p["position"] } }, ctx, "ouverture"),
   "ouverture.supprimer": (etat, p, ctx) => supprimerOccurrence(etat, p, ctx, "ouverture"),
+  // Changer de classe sur place (D-044) : porte ↔ fenêtre ↔ baie ; dimensions et position gardées, sens d'ouverture
+  // retiré hors porte ; mêmes contrôles que la pose.
+  "ouverture.changerClasse": (etat, p) => {
+    const id = lire.objet(etat, p, "id");
+    const o = etat.objets[id]!;
+    if (!estOuverture(o.classe)) throw new ErreurCommande("precondition", "id", `${id} n'est pas une ouverture`);
+    const classe = lire.enumeration(p, "classe", ["porte", "fenetre", "ouverture"] as const);
+    if (classe === o.classe) throw new ErreurCommande("invalide", "classe", `${id} est déjà de classe ${classe}`);
+    const calque = o.calqueId ? etat.calques[o.calqueId] : null;
+    if (calque?.verrouille) throw new ErreurCommande("precondition", "id", `calque verrouillé : ${calque.nom}`);
+    const { ouvrant: _o, ...reste } = (o as Occurrence<"porte">).params;
+    void _o;
+    const params = validerParams(etat, classe, reste as unknown as Record<string, unknown>);
+    const effets = effetsVides();
+    effets.modifies.push(id);
+    if (o.niveauId) effets.niveauxTouches.push(o.niveauId);
+    return { etat: { ...etat, objets: { ...etat.objets, [id]: { ...o, classe, params, definitionId: null } as OccurrenceQuelconque } }, effets };
+  },
   // Dalles, toitures, escaliers, pièces, espaces, zones, poteaux, solides
   ...triplet("dalle", "dalle"),
   ...triplet("toiture", "toiture"),
@@ -111,6 +132,8 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "groupe.modifier": (etat, p) => reducteursGroupe.modifier(etat, p),
   "type.definir": (etat, p, ctx) => reducteursType.definir(etat, p, ctx),
   "type.modifier": (etat, p) => reducteursType.modifier(etat, p),
+  "definition.supprimer": (etat, p) => reducteursDefinition.supprimer(etat, p),
+  "definition.substituer": (etat, p) => reducteursDefinition.substituer(etat, p),
   "propriete.definir": (etat, p) => definirPropriete(etat, p),
   "classification.affecter": (etat, p) => affecterClassification(etat, p),
   "reference.reparer": (etat, p) => reparerReference(etat, p),
@@ -221,9 +244,13 @@ export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): Resulta
 export function identifiantsCibles(enveloppe: Enveloppe): string[] {
   const ids = new Set<string>();
   for (const c of enveloppe.commands) {
-    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir"]) {
+    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir", "ancienne", "nouvelle"]) {
       const v = c.params[k];
       if (typeof v === "string") ids.add(v);
+    }
+    for (const k of ["ajouter", "retirer"]) {
+      const v = c.params[k];
+      if (Array.isArray(v)) for (const x of v) if (typeof x === "string") ids.add(x);
     }
     for (const v of c.cibles ?? []) ids.add(v);
     const cibles = c.params["cibles"];

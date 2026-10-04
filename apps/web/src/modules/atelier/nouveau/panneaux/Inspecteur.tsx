@@ -206,8 +206,33 @@ function ChoixType({ o, etat, desactive, onCommandes }: { o: OccurrenceQuelconqu
             +<span className="sr-only">Créer un type à partir de cet objet</span>
           </button>
         )}
+        {o.definitionId && etat.definitions[o.definitionId] && <GererType o={o} etat={etat} types={types} desactive={desactive} onCommandes={onCommandes} />}
       </dd>
     </div>
+  );
+}
+
+/** Type de l'objet : le remplacer partout par un autre, ou le supprimer (objets détachés, paramètres inchangés ; D-044). */
+function GererType({ o, etat, types, desactive, onCommandes }: { o: OccurrenceQuelconque; etat: ModeleAtelier; types: { id: string; nom: string }[]; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const d = etat.definitions[o.definitionId!]!;
+  const n = Object.values(etat.objets).filter((x) => x.definitionId === d.id).length;
+  const autres = types.filter((t) => t.id !== d.id);
+  return (
+    <details className="inspecteur-gerer-type">
+      <summary>Gérer le type « {d.nom} » ({n} objet{n > 1 ? "s" : ""})</summary>
+      {autres.length > 0 && (
+        <label>
+          Remplacer partout par
+          <select value="" disabled={desactive} data-type-action="substituer" onChange={(e) => e.target.value && onCommandes([{ type: "definition.substituer", params: { ancienne: d.id, nouvelle: e.target.value } }], `Remplacer le type « ${d.nom} » partout`)}>
+            <option value="">Choisir…</option>
+            {autres.map((t) => <option key={t.id} value={t.id}>{t.nom}</option>)}
+          </select>
+        </label>
+      )}
+      <button type="button" disabled={desactive} data-type-action="supprimer" onClick={() => onCommandes([{ type: "definition.supprimer", params: { id: d.id, detacher: true } }], `Supprimer le type « ${d.nom} » (${n} objet${n > 1 ? "s" : ""} sans type)`)}>
+        Supprimer le type (objets gardés, sans type)
+      </button>
+    </details>
   );
 }
 
@@ -625,6 +650,12 @@ function OuvertureHote({ o, etat, desactive, onCommandes }: { o: Occurrence<"por
           </option>
         ))}
       </select>
+      <label htmlFor={`classe-${o.id}`}>Nature</label>
+      <select id={`classe-${o.id}`} value={o.classe} disabled={desactive} data-champ="classeOuverture" onChange={(e) => onCommandes([{ type: "ouverture.changerClasse", params: { id: o.id, classe: e.target.value } }], `${libelle} → ${CLASSES[e.target.value as "porte"].libelle}`)}>
+        <option value="porte">{CLASSES.porte.libelle}</option>
+        <option value="fenetre">{CLASSES.fenetre.libelle}</option>
+        <option value="ouverture">{CLASSES.ouverture.libelle}</option>
+      </select>
       {ouvrant !== undefined && (
         <>
           <label htmlFor={`ouvrant-${o.id}`}>Sens d'ouverture</label>
@@ -717,6 +748,16 @@ function GroupeSelection({ sel, etat, readOnly, onCommandes }: { sel: Occurrence
         {retirables.length > 0 && retirables.length < membres.length && (
           <button type="button" disabled={readOnly} onClick={() => onCommandes([{ type: "groupe.modifier", params: { id: gid, retirer: retirables } }], `Retirer ${retirables.length} objet(s) du groupe « ${groupe.nom} »`)} data-groupe-action="retirer">
             Retirer du groupe ({retirables.length})
+          </button>
+        )}
+        {membres.every((x) => x.classe === "esquisse" || x.classe === "texte" || x.classe === "solide") && new Set(membres.map((x) => x.niveauId)).size === 1 && (
+          <button type="button" disabled={readOnly} data-groupe-action="bloc" onClick={() => {
+            // Point de base : coin bas gauche de l'emprise des membres (repère de placement, pas une donnée de projet).
+            const pts = membres.flatMap((x) => { const q = x.params as unknown as Record<string, unknown>; return [...((q["points"] as { x: number; y: number }[] | undefined) ?? []), ...((q["contour"] as { x: number; y: number }[] | undefined) ?? []), ...(q["centre"] ? [q["centre"] as { x: number; y: number }] : []), ...(q["position"] ? [q["position"] as { x: number; y: number }] : [])]; });
+            const base = pts.length ? { x: Math.min(...pts.map((q) => q.x)), y: Math.min(...pts.map((q) => q.y)) } : { x: 0, y: 0 };
+            onCommandes([{ type: "groupe.dissoudre", params: { id: gid } }, { type: "bloc.definir", params: { nom: groupe.nom, cibles: membres.map((x) => x.id), pointDeBase: { ...base, frame: "local", unit: "m" }, remplacer: true } }], `Convertir le groupe « ${groupe.nom} » en bloc`);
+          }}>
+            Convertir en bloc
           </button>
         )}
         <button type="button" disabled={readOnly} onClick={() => onCommandes([{ type: "groupe.dissoudre", params: { id: gid } }], `Dissoudre le groupe « ${groupe.nom} »`)} data-groupe-action="dissoudre">

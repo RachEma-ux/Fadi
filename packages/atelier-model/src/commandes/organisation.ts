@@ -49,9 +49,30 @@ export const reducteursNiveau = {
   supprimer(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande): ResultatCommande {
     const id = lire.chaine(p, "id");
     if (!etat.niveaux[id]) throw new ErreurCommande("precondition", "id", `niveau inconnu : ${id}`);
+    // Réaffectation (D-044) : `reaffecterA` = niveau qui reçoit les objets (ouvertures avec leur mur) avant la
+    // suppression ; un escalier ou un mur dont le niveau haut ne serait plus au-dessus : refus motivé.
+    const reaffecterA = lire.chaineOuNull(p, "reaffecterA");
+    if (reaffecterA !== null) {
+      const cible = etat.niveaux[reaffecterA];
+      if (!cible || reaffecterA === id) throw new ErreurCommande("precondition", "reaffecterA", `niveau de réaffectation inconnu ou identique : ${reaffecterA}`);
+      let objetsR = { ...etat.objets };
+      for (const o of objetsDuNiveau(etat, id)) {
+        if (o.classe === "escalier") throw new ErreurCommande("precondition", "reaffecterA", `${o.id} : un escalier ne change pas de niveau (niveaux de départ et d'arrivée à redéfinir)`);
+        if (o.classe === "mur" && o.params.niveauHautId) {
+          const haut = etat.niveaux[o.params.niveauHautId];
+          if (haut && haut.elevation <= cible.elevation) throw new ErreurCommande("precondition", "reaffecterA", `mur ${o.id} : son niveau haut « ${haut.nom} » ne serait plus au-dessus de « ${cible.nom} »`);
+        }
+        objetsR = { ...objetsR, [o.id]: { ...o, niveauId: reaffecterA } as OccurrenceQuelconque };
+      }
+      const moved = objetsDuNiveau(etat, id).map((o) => o.id);
+      const sansObjets = reducteursNiveau.supprimer({ ...etat, objets: objetsR }, { id }, ctx);
+      sansObjets.effets.modifies.push(...moved);
+      sansObjets.effets.niveauxTouches.push(reaffecterA);
+      return sansObjets;
+    }
     const objets = objetsDuNiveau(etat, id);
     if (objets.length > 0 && !lire.booleen(p, "avecObjets", false)) {
-      throw new ErreurCommande("precondition", "id", `le niveau ${id} contient ${objets.length} objet(s) : indiquer avecObjets = true pour les supprimer avec lui`);
+      throw new ErreurCommande("precondition", "id", `le niveau ${id} contient ${objets.length} objet(s) : indiquer avecObjets = true pour les supprimer avec lui, ou reaffecterA`);
     }
     for (const o of Object.values(etat.objets)) {
       if ((o.classe === "mur" && o.params.niveauHautId === id) || (o.classe === "escalier" && (o.params.niveauArriveeId === id || o.params.niveauDepartId === id) && o.niveauId !== id)) {
@@ -446,3 +467,57 @@ export function affecterPhase(etat: ModeleAtelier, p: Brut, cibles: string[]): R
   });
   return { etat: { ...etat, objets }, effets };
 }
+
+// ---------------------------------------------------------------------------
+// Définitions : suppression, substitution (D-044)
+// ---------------------------------------------------------------------------
+
+const occurrencesDe = (etat: ModeleAtelier, id: string) => Object.values(etat.objets).filter((o) => o.definitionId === id);
+
+export const reducteursDefinition = {
+  /**
+   * Supprimer une définition (type, bloc, composant). Utilisée : refus, sauf pour un type avec `detacher` (les
+   * occurrences deviennent « sans type » — leurs paramètres ne changent pas). Un bloc ou un composant utilisé se
+   * décompose d'abord ; vues, feuilles et références externes ont leurs propres commandes.
+   */
+  supprimer(etat: ModeleAtelier, p: Brut): ResultatCommande {
+    const id = lire.chaine(p, "id");
+    const d = etat.definitions[id];
+    if (!d) throw new ErreurCommande("precondition", "id", `définition inconnue : ${id}`);
+    if (["vue", "feuille", "reference-externe"].includes(d.classe as string)) throw new ErreurCommande("precondition", "id", `${d.nom} : utiliser la commande propre aux ${d.classe === "reference-externe" ? "références externes (refexterne.detacher)" : "vues et feuilles"}`);
+    const occ = occurrencesDe(etat, id);
+    const detacher = lire.booleen(p, "detacher", false);
+    if (occ.length && (d.classe === "bloc" || d.classe === "composant")) throw new ErreurCommande("precondition", "id", `« ${d.nom} » a ${occ.length} occurrence(s) : les décomposer ou les supprimer d'abord`);
+    if (occ.length && !detacher) throw new ErreurCommande("precondition", "id", `le type « ${d.nom} » est utilisé par ${occ.length} objet(s) : indiquer detacher = true (objets sans type) ou substituer un autre type`);
+    const objets = { ...etat.objets };
+    const effets = effetsVides();
+    for (const o of occ) {
+      objets[o.id] = { ...o, definitionId: null } as OccurrenceQuelconque;
+      effets.modifies.push(o.id);
+    }
+    const definitions = { ...etat.definitions };
+    delete definitions[id];
+    effets.supprimes.push(id);
+    return { etat: { ...etat, objets, definitions }, effets };
+  },
+  /** Substituer une définition par une autre de même nature : toutes ses occurrences passent sur la nouvelle. */
+  substituer(etat: ModeleAtelier, p: Brut): ResultatCommande {
+    const ancienne = etat.definitions[lire.chaine(p, "ancienne")];
+    const nouvelle = etat.definitions[lire.chaine(p, "nouvelle")];
+    if (!ancienne || !nouvelle) throw new ErreurCommande("precondition", ancienne ? "nouvelle" : "ancienne", "définition inconnue");
+    if (ancienne.id === nouvelle.id) throw new ErreurCommande("invalide", "nouvelle", "définition identique");
+    const blocs = ["bloc", "composant"];
+    const compatibles = ancienne.classe === nouvelle.classe || (blocs.includes(ancienne.classe as string) && blocs.includes(nouvelle.classe as string));
+    if (!compatibles || ["vue", "feuille", "reference-externe"].includes(ancienne.classe as string)) throw new ErreurCommande("precondition", "nouvelle", `« ${nouvelle.nom} » (${nouvelle.classe}) ne peut pas remplacer « ${ancienne.nom} » (${ancienne.classe})`);
+    const objets = { ...etat.objets };
+    const effets = effetsVides();
+    for (const o of occurrencesDe(etat, ancienne.id)) {
+      objets[o.id] = { ...o, definitionId: nouvelle.id } as OccurrenceQuelconque;
+      effets.modifies.push(o.id);
+      if (o.niveauId && !effets.niveauxTouches.includes(o.niveauId)) effets.niveauxTouches.push(o.niveauId);
+    }
+    if (!effets.modifies.length) throw new ErreurCommande("precondition", "ancienne", `« ${ancienne.nom} » n'a aucune occurrence`);
+    return { etat: { ...etat, objets }, effets };
+  },
+};
+

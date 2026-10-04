@@ -318,8 +318,11 @@ await mesurer("glisser un mur d'un mètre → déplacement enregistré", async (
 const apresDeplacement = await page.locator(".inspecteur .champ-lecture").first().textContent();
 await page.waitForFunction(() => document.querySelector(".mod-journal")?.textContent?.includes("Déplacer"), null, { timeout: 5000 }).catch(() => {});
 check("manipulation directe : le mur glissé a bougé et c'est enregistré", avantDeplacement !== apresDeplacement && (await page.locator(".mod-journal").textContent()).includes("Déplacer"), `${avantDeplacement} → ${apresDeplacement}`);
+// Annulation du déplacement : attendre qu'elle soit enregistrée (révision suivante) avant les exports, sinon un
+// export peut être produit à la révision d'avant l'annulation.
+const revAvantAnnuler = Number(((await page.locator(".barre-sync").textContent()) ?? "").match(/r(\d+)/)?.[1] ?? NaN);
 await page.keyboard.press("Control+z");
-await page.waitForTimeout(800);
+await page.waitForFunction((r) => { const m = (document.querySelector(".barre-sync")?.textContent ?? "").match(/^Enregistré · r(\d+)/); return !!m && Number(m[1]) > r; }, revAvantAnnuler, { timeout: 15000 }).catch(() => page.waitForTimeout(800));
 
 // Exports : DXF, SVG, CSV en plan, PNG en 3D — téléchargés et enregistrés au catalogue des documents (niveau, vue, révision).
 const exportsFaits = [];

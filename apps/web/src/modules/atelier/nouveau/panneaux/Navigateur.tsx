@@ -57,6 +57,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
             </li>
           ))}
         </ul>
+        {!readOnly && ui.niveauId && etat.niveaux[ui.niveauId] && <GererNiveau key={ui.niveauId} etat={etat} niveauId={ui.niveauId} onCommandes={onCommandes} />}
         {!readOnly && !nouveauNiveau && (
           <button type="button" className="nav-ajout" onClick={() => setNouveauNiveau({ nom: `Niveau ${niveaux.length + 1}`, elevation: "", source: "" })}>
             Ajouter un niveau
@@ -168,3 +169,66 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
     </nav>
   );
 }
+
+/**
+ * Niveau actif : renommer, changer l'altitude (niveau.modifier) ; supprimer — vide, avec ses objets, ou en les
+ * réaffectant à un autre niveau (D-044). Aucune valeur supposée : l'altitude est saisie.
+ */
+function GererNiveau({ etat, niveauId, onCommandes }: { etat: ModeleAtelier; niveauId: string; onCommandes: PropsNavigateur["onCommandes"] }) {
+  const n = etat.niveaux[niveauId]!;
+  const [nom, setNom] = useState(n.nom);
+  const [alt, setAlt] = useState(String(n.elevation));
+  const [mode, setMode] = useState("");
+  const nbObjets = Object.values(etat.objets).filter((o) => o.niveauId === niveauId).length;
+  const autres = niveauxOrdonnes(etat).filter((x) => x.id !== niveauId);
+  return (
+    <details className="nav-gerer-niveau">
+      <summary>Gérer « {n.nom} »</summary>
+      <form
+        className="nav-formulaire-gerer"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const elevation = Number(alt.replace(",", "."));
+          if (!nom.trim() || !Number.isFinite(elevation)) return;
+          onCommandes([{ type: "niveau.modifier", params: { id: niveauId, nom: nom.trim(), elevation } }], `Niveau ${nom.trim()}`);
+        }}
+      >
+        <label>
+          Nom
+          <input value={nom} onChange={(e) => setNom(e.target.value)} onKeyDown={(e) => e.stopPropagation()} required />
+        </label>
+        <label>
+          Altitude (m)
+          <input inputMode="decimal" value={alt} onChange={(e) => setAlt(e.target.value)} onKeyDown={(e) => e.stopPropagation()} required />
+        </label>
+        <div className="nav-actions">
+          <button type="submit">Enregistrer</button>
+        </div>
+      </form>
+      <label>
+        Supprimer le niveau
+        <select value={mode} onChange={(e) => setMode(e.target.value)} data-niveau="suppression">
+          <option value="">Choisir…</option>
+          {nbObjets === 0 && <option value="vide">supprimer (niveau vide)</option>}
+          {nbObjets > 0 && <option value="avec">supprimer avec ses {nbObjets} objet(s)</option>}
+          {nbObjets > 0 && autres.map((x) => <option key={x.id} value={`vers:${x.id}`}>réaffecter ses {nbObjets} objet(s) à « {x.nom} »</option>)}
+        </select>
+      </label>
+      <button
+        type="button"
+        className="danger"
+        disabled={!mode}
+        data-niveau="supprimer"
+        onClick={() => {
+          const params = mode === "avec" ? { id: niveauId, avecObjets: true } : mode.startsWith("vers:") ? { id: niveauId, reaffecterA: mode.slice(5) } : { id: niveauId };
+          const autre = autres[0];
+          onCommandes([{ type: "niveau.supprimer", params }], `Supprimer le niveau « ${n.nom} »`);
+          if (autre) etatUi.set({ niveauId: mode.startsWith("vers:") ? mode.slice(5) : autre.id, selection: [], pointsEnCours: [] });
+        }}
+      >
+        Supprimer
+      </button>
+    </details>
+  );
+}
+

@@ -384,6 +384,21 @@ await page.waitForSelector(".plan2d");
   await attendreEnregistre().catch(() => {});
   const morceaux = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "mur" && o.niveauId === nv && Math.abs(o.params.a.x - 302) < 1e-6 && Math.abs(o.params.b.x - 302) < 1e-6);
   check("scinder un mur en 4 parts égales depuis l'inspecteur", morceaux.length === 4 && morceaux.every((o) => Math.abs(Math.abs(o.params.b.y - o.params.a.y) - 1) < 1e-6), `${morceaux.length} morceau(x)`);
+  // Changer la nature d'une ouverture sur place (D-044).
+  if (porte) {
+    await selectionner(porte.id);
+    await page.locator('select[data-champ="classeOuverture"]').selectOption("fenetre");
+    await attendreEnregistre().catch(() => {});
+  }
+  check("ouverture : porte changée en fenêtre sur place", !!porte && (await modele(pid)).modele.objets[porte.id]?.classe === "fenetre");
+  // Supprimer un niveau avec ses objets depuis le navigateur (D-044).
+  await page.locator('.nav-niveaux button:has-text("Copie e2e")').click();
+  await page.locator(".nav-gerer-niveau > summary").click();
+  await page.locator('[data-niveau="suppression"]').selectOption("avec");
+  await page.locator('[data-niveau="supprimer"]').click();
+  await attendreEnregistre().catch(() => {});
+  const mSup = (await modele(pid)).modele;
+  check("niveau supprimé avec ses objets depuis le navigateur", !Object.values(mSup.niveaux).some((n) => n.nom === "Copie e2e"));
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.

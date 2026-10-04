@@ -114,3 +114,4 @@ Dupliquer un niveau avec son contenu (`niveaux-transfert.test.ts`, e2e, D-040).
 Groupes : renommer, ajouter, retirer (`groupes.test.ts`, e2e, D-041).
 Polygone régulier et cercle par trois points (`geometrie-outils.test.ts`, e2e, D-042).
 Transformations complémentaires : copies tournées ou à l'échelle, pas irréguliers, prolonger d'une longueur, raccord de rayon nul, scission multiple, joindre (`transformations-plus.test.ts`, e2e, D-043).
+Organisation : niveaux (gérer, supprimer avec réaffectation), types (supprimer, substituer), nature d'une ouverture, groupe → bloc (`organisation-plus.test.ts`, e2e, D-044).
