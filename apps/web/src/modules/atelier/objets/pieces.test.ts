@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { ObjetPiece } from "@parcours/atelier-model";
+import type { ObjetMur, ObjetPiece } from "@parcours/atelier-model";
 import { appui, banc, cmd, etatDeTest, m, P, saisieTexte, survol, touche } from "./__tests__/banc";
-import { dessinerPiece } from "./dessinateurs";
+import { objetSousPointeur } from "../plan2d/choix";
+import { dessinerMur, dessinerPiece } from "./dessinateurs";
 
 const mur = (id: string, a: [number, number], b: [number, number]) =>
   cmd("mur.tracer", { id, niveauId: "rdc", calqueId: "C1", a: P(...a), b: P(...b), epaisseur: m(0.2), hauteur: m(2.5), alignement: "axe", typeId: "non-type", exterieur: false });
@@ -31,6 +32,19 @@ describe("pièces : proposition puis création", () => {
     await b.jouer(appui(10, 10));
     expect(b.pilote.apercu().erreurs[0]?.cause).toBe("aucune boucle de murs fermée autour du point");
     expect(pieces(b)).toHaveLength(1);
+  });
+
+  it("sélection : un clic sur l'axe d'un mur prend le mur, pas la pièce qu'il borde ; l'intérieur prend la pièce", async () => {
+    const b = banc(etatDeTest(...quatreMurs()));
+    b.pilote.activer("creer.piece");
+    await b.jouer(appui(2, 1.5));
+    const e = b.etat();
+    const murs = Object.values(e.objets).filter((o): o is ObjetMur => o.classe === "mur").map((o) => dessinerMur(o, e));
+    const piece = dessinerPiece(pieces(b)[0] as ObjetPiece, e);
+    const dessins = [piece, ...murs].filter((d) => d !== null);
+    expect(objetSousPointeur(dessins, P(2, 0), 0.1)).toBe("M1");
+    expect(objetSousPointeur(dessins, P(4, 1.5), 0.1)).toBe("M2");
+    expect(objetSousPointeur(dessins, P(2, 1.5), 0.1)).toBe(pieces(b)[0]?.id);
   });
 
   it("nom saisi dans le champ texte (D-038) : la pièce le reçoit", async () => {
