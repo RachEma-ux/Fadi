@@ -174,6 +174,20 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     if (objetId !== null && !etat.objets[objetId]) throw new ErreurCommande("precondition", "objetId", `objet inconnu : ${objetId}`);
     return { position: lire.point(p, "position")!, texte: lire.chaine(p, "texte"), objetId };
   },
+  "garde-corps"(_etat, p) {
+    const points = lire.points(p, "points", { min: 2 });
+    for (let i = 0; i + 1 < points.length; i++) if (distance(points[i]!, points[i + 1]!) <= TOLERANCE_REDUCTEUR) throw new ErreurCommande("invalide", "points", "segment de garde-corps de longueur nulle");
+    return {
+      points,
+      ferme: lire.booleen(p, "ferme", false),
+      // Hauteur saisie, jamais déduite d'une règle (R3) : obligatoire.
+      hauteur: lire.longueur(p, "hauteur", { strict: true })!,
+      epaisseur: lire.longueur(p, "epaisseur", { strict: true })!,
+      remplissage: lire.enumeration(p, "remplissage", ["barreaudage", "plein", "vitre"] as const, "barreaudage"),
+      decalageBase: lire.longueur(p, "decalageBase", { optionnel: true }) ?? { value: 0, unit: "m" },
+      nom: lire.chaineOuNull(p, "nom"),
+    };
+  },
   "bloc-occurrence"(_etat, p) {
     return { position: lire.point(p, "position")!, angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" }, echelle: lire.nombre(p, "echelle", { optionnel: true, min: 0 }) ?? 1 };
   },

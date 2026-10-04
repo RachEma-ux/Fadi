@@ -11,7 +11,7 @@
 import { aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsSpline, polygoneMur, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
-import { maillageObjet, type Maillage } from "../projection/maillage.js";
+import { geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
 import { extremitesCotation } from "../references.js";
 import type { Longueur, Point2 } from "../unites.js";
 import { ErreurCommande, lire } from "../commandes/base.js";
@@ -110,7 +110,7 @@ export interface VueGeneree {
   mesures: { triangles: number; primitives: number };
 }
 
-const PHYSIQUES = new Set<OccurrenceQuelconque["classe"]>(["mur", "porte", "fenetre", "dalle", "toiture", "escalier", "poteau", "solide", "garde-corps" as OccurrenceQuelconque["classe"]]);
+const PHYSIQUES = new Set<OccurrenceQuelconque["classe"]>(["mur", "porte", "fenetre", "dalle", "toiture", "escalier", "poteau", "solide", "garde-corps", "bloc-occurrence"]);
 const POCHES = new Set<string>(["mur", "poteau", "dalle", "toiture", "escalier"]);
 
 /** L'objet est-il dessiné (calque visible, phase retenue) ? */
@@ -399,7 +399,7 @@ function genererCoupeOuFacade(c: Collecteur, etat: ModeleAtelier, v: ParamsVue):
   const b = bornesPrimitives(c.primitives);
   if (b) reperesNiveaux(c, etat, b.min.x, b.max.x);
   const sansVolume = objets.filter((o) => !garde.has(o.id)).length;
-  if (sansVolume) c.avertissements.add(`${sansVolume} objet(s) sans volume (hauteur non renseignée) : absents de la vue.`);
+  if (sansVolume) c.avertissements.add(`${sansVolume} objet(s) sans volume (hauteur non renseignée, ou bloc dessiné en 2D seulement) : absents de la vue.`);
   c.mesures.triangles += r.triangles;
 }
 
@@ -436,6 +436,9 @@ function genererMasse(c: Collecteur, etat: ModeleAtelier, v: ParamsVue): void {
     const toitures = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o): o is Occurrence<"toiture"> => o.classe === "toiture" && retenu(etat, o, v.phases));
     for (const t of toitures) {
       c.poly(t.params.contour, true, "vue", null, t.id);
+      const g = t.params.type !== "plate" && t.params.pente ? geometrieToiture(t.params.contour, t.params.type, t.params.pente.value) : null;
+      if (g?.faitage) c.ligne(g.faitage[0], g.faitage[1], "vue", t.id);
+      if (t.params.type !== "plate" && !t.params.pente) c.avertissements.add(`Toiture ${t.params.nom ?? t.id} : pente non renseignée, dessinée plate.`);
     }
   }
   const b = bornesPrimitives(c.primitives);

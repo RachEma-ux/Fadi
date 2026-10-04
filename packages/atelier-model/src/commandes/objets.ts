@@ -142,7 +142,8 @@ export function supprimerIds(etat: ModeleAtelier, ids: readonly string[], ctx: C
     effets.supprimes.push(id);
     if (o.niveauId) effets.niveauxTouches.push(o.niveauId);
   }
-  const relations = Object.fromEntries(Object.entries(etat.relations).filter(([, r]) => !ids.includes(r.sourceId) && !ids.includes(r.targetId)));
+  // Les contraintes d'esquisse restent et passent « à réparer » (contrôle après commande) ; les autres relations sont retirées.
+  const relations = Object.fromEntries(Object.entries(etat.relations).filter(([, r]) => r.kind === "contrainte" || (!ids.includes(r.sourceId) && !ids.includes(r.targetId))));
   let references = etat.references;
   let problemes = etat.problemes;
   for (const id of ids) {

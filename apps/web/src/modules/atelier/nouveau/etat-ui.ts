@@ -77,7 +77,7 @@ let etat: EtatUi = {
   niveauId: null,
   selection: [],
   outil: "selection",
-  parametresOutil: { epaisseur: 0.2, hauteur: 3, classeOuverture: "porte", largeurOuverture: 0.9, hauteurOuverture: 2.1, allege: 0.9, largeurEscalier: 1.2, taille: 0.3, ...(prefs.parametresOutil ?? {}) },
+  parametresOutil: { epaisseur: 0.2, hauteur: 3, classeOuverture: "porte", largeurOuverture: 0.9, hauteurOuverture: 2.1, allege: 0.9, largeurEscalier: 1.2, taille: 0.3, hauteurGardeCorps: 1, epaisseurGardeCorps: 0.05, penteToiture: 0, ...(prefs.parametresOutil ?? {}) },
   pointsEnCours: [],
   curseur: null,
   mode: "2d",

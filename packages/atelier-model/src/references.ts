@@ -78,6 +78,8 @@ export function pointCaracteristique(etat: ModeleAtelier, objetId: string, carac
     }
     case "bloc-occurrence":
       return nom === "centre" ? o.params.position : null;
+    case "garde-corps":
+      return nom === "sommet" && index !== null ? (o.params.points[index] ?? null) : null;
     case "cotation":
     case "texte":
     case "etiquette":
@@ -106,7 +108,7 @@ export function caracteristiquesDe(o: OccurrenceQuelconque): string[] {
       out.push("contour");
       for (let i = 0; i < n; i++) out.push(`contour[${i}]`);
     } else if (c === "sommet" || c === "segment") {
-      const n = o.classe === "esquisse" ? o.params.points.length : 0;
+      const n = o.classe === "esquisse" || o.classe === "garde-corps" ? o.params.points.length : 0;
       for (let i = 0; i < n; i++) out.push(`${c}[${i}]`);
     } else out.push(c);
   }

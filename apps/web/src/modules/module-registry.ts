@@ -35,7 +35,7 @@ export const MODULES: ModuleDescriptor[] = [
     id: "atelier",
     label: "Atelier architectural",
     implemented: true,
-    status: "L'Atelier reconstruit sur le modèle typé du projet : plan 2D et outils de dessin, vue 3D, niveaux, coupes et façades de travail, inspecteur, annuler / rétablir, exports DXF / SVG / CSV / PNG ; chaque modification est une commande enregistrée avec révision contrôlée, utilisable hors ligne.",
+    status: "L'Atelier reconstruit sur le modèle typé du projet : plan 2D et outils de dessin, vue 3D, niveaux, coupes et façades de travail, inspecteur, annuler / rétablir, exports DXF / SVG / CSV / PNG ; documents dérivés (vues, feuilles, tableaux, PDF au catalogue), toitures en pente, garde-corps, blocs et composants, contraintes d'esquisse, phases ; chaque modification est une commande enregistrée avec révision contrôlée, utilisable hors ligne.",
   },
   {
     id: "analyses",

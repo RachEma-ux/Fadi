@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { centroide, facesMur, pointsArc, pointsSpline, polygoneMur, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { centroide, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMur, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -43,8 +43,22 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
     case "fenetre":
     case "ouverture":
       return <Ouverture2D o={o} etat={etat} pr={pr} selectionne={selectionne} survole={survole} />;
+    case "toiture": {
+      const d = chemin(pr, o.params.contour) + o.params.trous.map((t) => " " + chemin(pr, t)).join("");
+      const g = o.params.type !== "plate" && o.params.pente ? geometrieToiture(o.params.contour, o.params.type, o.params.pente.value) : null;
+      return (
+        <g className={classes("obj-toiture", selectionne, survole)} data-objet={o.id}>
+          <path d={d} fill={COULEURS["toiture"]} fillOpacity={0.25} fillRule="evenodd" stroke={COULEURS["toiture"]} strokeWidth={selectionne ? 2.5 : 1} />
+          {g?.faitage && <path d={chemin(pr, g.faitage, false)} stroke={COULEURS["toiture"]} strokeWidth={1.4} fill="none" />}
+          {g?.type === "monopente" && <path d={chemin(pr, [o.params.contour[0]!, o.params.contour[1]!], false)} stroke={COULEURS["toiture"]} strokeWidth={2.4} fill="none" />}
+        </g>
+      );
+    }
+    case "garde-corps": {
+      const ep = Math.max(2, o.params.epaisseur.value * pr.echelle);
+      return <path d={chemin(pr, o.params.points, o.params.ferme)} className={classes("obj-garde-corps", selectionne, survole)} fill="none" stroke={selectionne ? "#b3872f" : "#4f625b"} strokeWidth={ep} strokeDasharray={o.params.remplissage === "barreaudage" ? `${Math.max(1, ep / 2)} ${Math.max(1, ep / 2)}` : undefined} data-objet={o.id} />;
+    }
     case "dalle":
-    case "toiture":
     case "zone":
     case "reference-plan": {
       const d = chemin(pr, o.params.contour) + o.params.trous.map((t) => " " + chemin(pr, t)).join("");
@@ -112,7 +126,10 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
     case "esquisse":
       return <Esquisse2D o={o} pr={pr} selectionne={selectionne} survole={survole} />;
     case "cotation": {
-      const { a, b, decalage } = o.params;
+      // Cote associative : une extrémité rattachée suit sa caractéristique ; « à réparer » est signalé, jamais masqué.
+      const ext = extremitesCotation(etat, o.id) ?? { a: o.params.a, b: o.params.b, aReparer: false, rattachees: 0 };
+      const { a, b } = ext;
+      const { decalage } = o.params;
       const dx = b.x - a.x;
       const dy = b.y - a.y;
       const l = Math.hypot(dx, dy) || 1;
@@ -126,13 +143,14 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
       const sb2 = pr.vers(b2);
       const mid = { x: (sa2.x + sb2.x) / 2, y: (sa2.y + sb2.y) / 2 };
       const angle = (Math.atan2(sb2.y - sa2.y, sb2.x - sa2.x) * 180) / Math.PI;
-      const texte = `${l.toFixed(2).replace(".", ",")} m`;
+      const texte = `${l.toFixed(2).replace(".", ",")} m${ext.aReparer ? " · à réparer" : ""}`;
+      const couleur = ext.aReparer ? "#b42318" : COULEURS["cotation"];
       return (
-        <g className={classes("obj-cotation", selectionne, survole)} data-objet={o.id} stroke={COULEURS["cotation"]} strokeWidth={selectionne ? 2 : 0.8} fill="none">
+        <g className={classes(`obj-cotation${ext.aReparer ? " cotation-a-reparer" : ""}`, selectionne, survole)} data-objet={o.id} data-rattachees={ext.rattachees} stroke={couleur} strokeWidth={selectionne ? 2 : 0.8} fill="none">
           <line x1={sa.x} y1={sa.y} x2={sa2.x} y2={sa2.y} />
           <line x1={sb.x} y1={sb.y} x2={sb2.x} y2={sb2.y} />
           <line x1={sa2.x} y1={sa2.y} x2={sb2.x} y2={sb2.y} />
-          <text x={mid.x} y={mid.y - 3} fontSize={10} textAnchor="middle" fill={COULEURS["cotation"]} stroke="none" transform={`rotate(${angle > 90 || angle < -90 ? angle + 180 : angle} ${mid.x} ${mid.y})`}>
+          <text x={mid.x} y={mid.y - 3} fontSize={10} textAnchor="middle" fill={couleur} stroke="none" transform={`rotate(${angle > 90 || angle < -90 ? angle + 180 : angle} ${mid.x} ${mid.y})`}>
             {texte}
           </text>
         </g>
@@ -147,12 +165,39 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
         </text>
       );
     }
-    case "bloc-occurrence": {
-      const p = pr.vers(o.params.position);
-      return <circle cx={p.x} cy={p.y} r={4} className={classes("obj-bloc", selectionne, survole)} fill="#fff" stroke="#355e52" data-objet={o.id} />;
-    }
+    case "bloc-occurrence":
+      return <Bloc2D o={o} etat={etat} pr={pr} selectionne={selectionne} survole={survole} />;
   }
 });
+
+/** Occurrence de bloc ou de composant : contenu 2D de sa définition, placé (position, angle, échelle). */
+function Bloc2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"bloc-occurrence">; etat: ModeleAtelier; pr: Projecteur; selectionne: boolean; survole: boolean }) {
+  const def = o.definitionId ? etat.definitions[o.definitionId] : undefined;
+  const contenu = (def?.params["contenu"] as { classe: string; params: Record<string, unknown> }[] | undefined) ?? [];
+  const ang = (o.params.angle.value * Math.PI) / 180;
+  const k = o.params.echelle;
+  const tr = (p: { x: number; y: number }) => ({ x: o.params.position.x + k * (p.x * Math.cos(ang) - p.y * Math.sin(ang)), y: o.params.position.y + k * (p.x * Math.sin(ang) + p.y * Math.cos(ang)) });
+  const couleur = selectionne ? "#b3872f" : def?.classe === "composant" ? "#6b4f2a" : "#355e52";
+  const c = pr.vers(o.params.position);
+  return (
+    <g className={classes(`obj-bloc${def ? "" : " bloc-absent"}`, selectionne, survole)} data-objet={o.id} stroke={couleur} fill="none" strokeWidth={selectionne ? 2 : 1}>
+      {contenu.map((e, i) => {
+        const pts = (Array.isArray(e.params["points"]) ? e.params["points"] : Array.isArray(e.params["contour"]) ? e.params["contour"] : []) as { x: number; y: number }[];
+        if (e.params["forme"] === "cercle" && e.params["centre"] && e.params["rayon"]) {
+          const q = pr.vers(tr(e.params["centre"] as { x: number; y: number }));
+          return <circle key={i} cx={q.x} cy={q.y} r={(e.params["rayon"] as { value: number }).value * k * pr.echelle} />;
+        }
+        if (e.params["forme"] === "rectangle" && pts.length === 2) {
+          const [p1, p2] = [pts[0]!, pts[1]!];
+          return <path key={i} d={chemin(pr, [p1, { x: p2.x, y: p1.y }, p2, { x: p1.x, y: p2.y }].map(tr))} />;
+        }
+        return pts.length >= 2 ? <path key={i} d={chemin(pr, pts.map(tr), e.params["ferme"] === true || "contour" in e.params)} /> : null;
+      })}
+      <circle cx={c.x} cy={c.y} r={3} fill="#fff" />
+      {!def && <text x={c.x + 6} y={c.y} fontSize={10} fill="#b42318" stroke="none">définition absente</text>}
+    </g>
+  );
+}
 
 function Mur2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"mur">; etat: ModeleAtelier; pr: Projecteur; selectionne: boolean; survole: boolean }) {
   const { a, b, epaisseur, alignement } = o.params;

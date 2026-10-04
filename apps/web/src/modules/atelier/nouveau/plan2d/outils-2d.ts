@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { boucles, detecterPieces, distance, projectionSurSegment, pt, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { boucles, caracteristiqueAuPoint, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -46,6 +46,16 @@ function murSous(etat: ModeleAtelier, niveauId: string, p: Point2, rayon: number
 function nomPieceSuivant(etat: ModeleAtelier, niveauId: string): string {
   const n = Object.values(etat.objets).filter((o) => o.classe === "piece" && o.niveauId === niveauId).length + 1;
   return `Pièce ${n}`;
+}
+
+/** Caractéristique d'objet du niveau portée exactement par un point (extrémité de cote accrochée). */
+function rattachementAuPoint(etat: ModeleAtelier, niveauId: string, p: Point2): { objetId: string; caracteristique: string } | null {
+  for (const o of Object.values(etat.objets)) {
+    if (o.niveauId !== niveauId || o.classe === "cotation" || o.classe === "texte" || o.classe === "etiquette" || o.classe === "piece" || o.classe === "espace") continue;
+    const c = caracteristiqueAuPoint(etat, o.id, p, 0.005);
+    if (c && c !== "contour" && c !== "axe") return { objetId: o.id, caracteristique: c };
+  }
+  return null;
 }
 
 export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: EtatUi, options: { rayon: number; alt?: boolean; objetSous: string | null }): ResultatClic {
@@ -110,6 +120,14 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
     case "construction": {
       if (pts.length === 0) return attendre([point], "Cliquez le second point.");
       return emettre([{ type: `esquisse.${outil}`, params: { ...base, points: [pts[0]!, point] } }], outil === "ligne" ? "Ligne" : "Ligne de construction", "", { pointsEnCours: [point] });
+    }
+    case "garde-corps":
+      return attendre([...pts, point], pts.length ? "Point suivant ; Entrée termine le garde-corps." : "Cliquez le point suivant du garde-corps.");
+    case "bloc": {
+      const definitionId = ui.parametresOutil["definitionBloc"] as string | undefined;
+      const def = definitionId ? etat.definitions[definitionId] : undefined;
+      if (!def || (def.classe !== "bloc" && def.classe !== "composant")) return attendre([], "Choisissez d'abord le bloc ou le composant dans l'inspecteur.");
+      return emettre([{ type: "bloc.placer", params: { ...base, definitionId: def.id, position: point, angle: { value: nombre(ui, "angleBloc", 0), unit: "deg" } } }], `${def.classe === "composant" ? "Composant" : "Bloc"} « ${def.nom} »`, "Occurrence placée ; cliquez pour en placer une autre, Échap pour terminer.");
     }
     case "polyligne":
     case "spline": {
@@ -215,8 +233,15 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       const dy = b.y - a.y;
       const l = Math.hypot(dx, dy) || 1;
       const decalage = ((-dy / l) * (point.x - a.x) + (dx / l) * (point.y - a.y));
-      const commandes: Commande[] = [{ type: "cotation.creer", params: { ...base, a, b, decalage: m(decalage) } }];
-      return emettre(commandes, `Cote ${fmt(l)} m`, "Cote posée ; rattachez-la à une arête dans l'inspecteur si besoin.");
+      // Cote associative : chaque extrémité posée exactement sur une caractéristique d'objet (extrémité de mur, sommet…) y est rattachée.
+      const id = `cote-${Math.random().toString(36).slice(2, 10)}`;
+      const commandes: Commande[] = [{ type: "cotation.creer", params: { ...base, id, a, b, decalage: m(decalage) } }];
+      for (const [cle, p] of [["a", a], ["b", b]] as const) {
+        const r = rattachementAuPoint(etat, niveauId, p);
+        if (r) commandes.push({ type: "cotation.rattacher", params: { id, referenceId: referenceExtremite(id, cle), objetId: r.objetId, caracteristique: r.caracteristique } });
+      }
+      const n = commandes.length - 1;
+      return emettre(commandes, `Cote ${fmt(l)} m`, n ? `Cote posée, ${n} extrémité(s) rattachée(s) : elle suivra les objets.` : "Cote posée, libre (aucune extrémité sur un objet).");
     }
     case "texte":
       return emettre([{ type: "texte.creer", params: { ...base, position: point, texte: (ui.parametresOutil["texte"] as string | undefined) || "Texte" } }], "Texte", "Texte posé : modifiez-le dans l'inspecteur.");
@@ -243,8 +268,14 @@ export function fermerContour(outil: string, pts: Point2[], ui: EtatUi, niveauId
   switch (outil) {
     case "dalle":
       return emettre([{ type: "dalle.creer", params: { ...base, contour: pts, trous: [], epaisseur: m(nombre(ui, "epaisseurDalle", 0.25)) } }], "Dalle");
-    case "toiture":
-      return emettre([{ type: "toiture.creer", params: { ...base, contour: pts, trous: [], type: "plate", epaisseur: m(nombre(ui, "epaisseurDalle", 0.3)) } }], "Toiture");
+    case "toiture": {
+      const pente = nombre(ui, "penteToiture", 0);
+      const type = pente > 0 ? ((ui.parametresOutil["typeToiture"] as string | undefined) === "monopente" ? "monopente" : "bipente") : "plate";
+      return emettre([{ type: "toiture.creer", params: { ...base, contour: pts, trous: [], type, pente: pente > 0 ? { value: pente, unit: "deg" } : null, epaisseur: m(nombre(ui, "epaisseurDalle", 0.3)) } }], type === "plate" ? "Toiture" : `Toiture ${type} ${fmt(pente)}°`);
+    }
+    case "garde-corps":
+      if (pts.length < 2) return attendre(pts, "Un garde-corps demande au moins deux points.");
+      return emettre([{ type: "gardeCorps.creer", params: { ...base, points: pts, ferme: false, hauteur: m(nombre(ui, "hauteurGardeCorps", 1)), epaisseur: m(nombre(ui, "epaisseurGardeCorps", 0.05)), remplissage: (ui.parametresOutil["remplissageGardeCorps"] as string | undefined) ?? "barreaudage" } }], "Garde-corps", "Garde-corps posé : hauteur et remplissage dans l'inspecteur.");
     case "zone":
       return emettre([{ type: "zone.creer", params: { ...base, contour: pts, trous: [], nom: (ui.parametresOutil["nom"] as string | undefined) || "Zone" } }], "Zone");
     case "espace":
@@ -267,7 +298,7 @@ export function fermerContour(outil: string, pts: Point2[], ui: EtatUi, niveauId
 /** Entrée sans fermeture : les outils « chaîne » terminent leur tracé (polyligne ouverte, courbe). */
 export function terminer(outil: string, pts: Point2[], ui: EtatUi, niveauId: string | null): ResultatClic {
   if (!niveauId) return attendre([], "");
-  if ((outil === "polyligne" || outil === "spline") && pts.length >= 2) return fermerContour(outil, pts, ui, niveauId);
+  if ((outil === "polyligne" || outil === "spline" || outil === "garde-corps") && pts.length >= 2) return fermerContour(outil, pts, ui, niveauId);
   if (["dalle", "toiture", "zone", "espace", "solide", "polygone", "hachure"].includes(outil)) return fermerContour(outil, pts, ui, niveauId);
   return attendre([], "");
 }
@@ -337,6 +368,9 @@ export function objetsDansCadre(etat: ModeleAtelier, niveauId: string | null, a:
         break;
       case "esquisse":
         pts = o.params.centre ? [o.params.centre] : o.params.points;
+        break;
+      case "garde-corps":
+        pts = o.params.points;
         break;
       case "espace":
         pts = o.params.polygones.flatMap((pg) => pg.contour);

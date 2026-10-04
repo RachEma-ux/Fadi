@@ -6,6 +6,7 @@
  * ne touche pas aux dimensions typées et refuse les escaliers ; un miroir en place d'un mur met « à réparer »
  * les références à ses faces ; étirer conserve la distance des ouvertures à l'extrémité fixe.
  */
+import { decomposerBloc } from "./bloc.js";
 import { add, distance, intersectionSegments, mul, normalise, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
 import type { Contour, ModeleAtelier, Occurrence, OccurrenceQuelconque, Reference } from "../modele.js";
 import { ouverturesDuMur, referencesVers } from "../modele.js";
@@ -71,6 +72,8 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
       return { ...o, params: { ...o.params, position: T(o.params.position) } } as OccurrenceQuelconque;
     case "bloc-occurrence":
       return { ...o, params: { ...o.params, position: T(o.params.position), angle: { value: o.params.angle.value + rot, unit: "deg" }, echelle: t.type === "echelle" ? o.params.echelle * t.facteur : o.params.echelle } };
+    case "garde-corps":
+      return { ...o, params: { ...o.params, points: o.params.points.map(T) } };
   }
 }
 
@@ -272,8 +275,17 @@ export const reducteursTransformer = {
     let courant = etat;
     let effets = effetsVides();
     for (const o of sel) {
+      if (o.classe === "bloc-occurrence") {
+        // Occurrence de bloc ou de composant : copies indépendantes de son contenu, occurrence supprimée.
+        const { objets: copies, crees } = decomposerBloc(courant, o, ctx);
+        const objets = { ...courant.objets, ...copies };
+        delete objets[o.id];
+        courant = { ...courant, objets };
+        effets = fusionnerEffets(effets, { ...effetsVides(), crees, supprimes: [o.id], niveauxTouches: o.niveauId ? [o.niveauId] : [] });
+        continue;
+      }
       if (o.classe !== "esquisse" || !["polyligne", "polygone", "rectangle"].includes(o.params.forme)) {
-        throw new ErreurCommande("precondition", "cibles", `décomposition non prise en charge pour ${o.id} (polylignes, polygones et rectangles d'esquisse seulement)`);
+        throw new ErreurCommande("precondition", "cibles", `décomposition non prise en charge pour ${o.id} (polylignes, polygones et rectangles d'esquisse, occurrences de bloc)`);
       }
       const pts = o.params.forme === "rectangle" && o.params.points.length === 2 ? rectangleEnPoints(o.params.points[0]!, o.params.points[1]!) : o.params.points;
       const segments: [Point2, Point2][] = [];

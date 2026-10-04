@@ -27,7 +27,7 @@ const ORDRE: Record<string, number> = { "reference-plan": 0, zone: 1, espace: 2,
 
 const LIBELLE_ACCROCHE: Record<string, string> = { extremite: "Extrémité", milieu: "Milieu", centre: "Centre", perpendiculaire: "Perpendiculaire", intersection: "Intersection", orthogonal: "Orthogonal", grille: "Grille", libre: "" };
 
-const OUTILS_CONTOUR = new Set(["dalle", "toiture", "zone", "espace", "solide", "polygone", "hachure", "polyligne", "spline"]);
+const OUTILS_CONTOUR = new Set(["dalle", "toiture", "zone", "espace", "solide", "polygone", "hachure", "polyligne", "spline", "garde-corps"]);
 const OUTILS_SEGMENT = new Set(["mur", "escalier", "ligne", "construction", "cotation", "mesurer", "deplacer", "copier", "miroir", "etirer", "rectangle", "cercle", "arc", "tourner", "echelle"]);
 
 export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes }: PropsPlan2D) {
@@ -289,7 +289,13 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       )}
       <g className="plan-objets">
         {objets.map((o) => (
-          <Objet2D key={o.id} o={o} etat={etat} pr={pr} selectionne={selection.has(o.id)} survole={ui.survol === o.id} />
+          o.phase ? (
+            <g key={o.id} data-phase={o.phase}>
+              <Objet2D o={o} etat={etat} pr={pr} selectionne={selection.has(o.id)} survole={ui.survol === o.id} />
+            </g>
+          ) : (
+            <Objet2D key={o.id} o={o} etat={etat} pr={pr} selectionne={selection.has(o.id)} survole={ui.survol === o.id} />
+          )
         ))}
       </g>
       {decalage && (

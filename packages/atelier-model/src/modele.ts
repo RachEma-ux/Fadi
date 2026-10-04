@@ -184,6 +184,17 @@ export interface ParamsBlocOccurrence {
   echelle: number;
 }
 
+/** Garde-corps simple (lot 5) : tracé en plan, hauteur saisie (jamais déduite d'une règle), remplissage. */
+export interface ParamsGardeCorps {
+  points: Point2[];
+  ferme: boolean;
+  hauteur: Longueur;
+  epaisseur: Longueur;
+  remplissage: "barreaudage" | "plein" | "vitre";
+  decalageBase: Longueur;
+  nom: string | null;
+}
+
 export interface ParamsParClasse {
   mur: ParamsMur;
   porte: ParamsOuverture;
@@ -203,6 +214,7 @@ export interface ParamsParClasse {
   texte: ParamsTexte;
   etiquette: ParamsEtiquette;
   "bloc-occurrence": ParamsBlocOccurrence;
+  "garde-corps": ParamsGardeCorps;
 }
 
 export interface Occurrence<C extends Classe = Classe> {
@@ -234,7 +246,7 @@ export interface Definition {
 
 export interface Relation {
   id: string;
-  kind: "heberge-par" | "delimitee-par" | "joint-a" | "relie" | "contient" | "correspond-a" | "programme";
+  kind: "heberge-par" | "delimitee-par" | "joint-a" | "relie" | "contient" | "correspond-a" | "programme" | "contrainte";
   sourceId: string;
   targetId: string;
   params: Record<string, unknown>;

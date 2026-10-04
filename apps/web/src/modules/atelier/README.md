@@ -22,8 +22,18 @@ supprimés ; les projets qui n'avaient que lui ont été repris dans le modèle 
   commandes de l'annexe B), sélection, manipulation directe.
 - `nouveau/vue3d/` — three.js (WebGL2, WebGPU en option), chargé seulement à l'ouverture de la vue 3D ; les maillages
   viennent de `atelier-model/projection/maillage.ts`.
-- `nouveau/exports.ts` — DXF du niveau, SVG du plan, CSV des quantités, modèle JSON, PNG de la vue 3D : téléchargés et
-  enregistrés au catalogue des documents.
+- `nouveau/exports.ts` — exports de travail : DXF du niveau, SVG du plan, CSV des quantités, modèle JSON, PNG de la vue
+  3D, téléchargés et enregistrés au catalogue des documents.
+- `nouveau/documents/` — mode « Documents » (lot 5) : vues (plan par niveau avec hauteur de coupe, coupe, façade avec
+  visibilité par faces, plan de masse, détail), feuilles (formats A0–A4, cartouche, placement automatique) et tableaux
+  (pièces, portes, fenêtres, murs, composants, synthèse). Vues et feuilles sont des définitions du modèle ; l'aperçu
+  est calculé dans le navigateur par `@parcours/atelier-model` (`documents/`), les fichiers PDF / DXF / SVG / CSV sont
+  produits par le serveur à la révision courante (`GET /projects/:id/documents/atelier/…`) et inscrits au catalogue ;
+  fraicheur vue par vue (non produite, à jour, périmée, « dessin inchangé »).
+- `nouveau/panneaux/Complements.tsx` — inspecteur du lot 5 : phase, blocs et composants (créer, propriétés héritées),
+  contraintes d'esquisse (ajout, degrés de liberté, suppression). Outils ajoutés : garde-corps, toiture en pente,
+  « Placer un bloc » ; les cotes posées sur des objets leur sont rattachées (cotes associatives, « à réparer » si
+  l'objet visé est scindé ou supprimé).
 - `AtelierHarmonyPage.tsx` — sous-page « Harmonie du bâtiment » de l'étape 10 (V8.4) ; `DesignReview.tsx` — bilan
   Harmonie du bâtiment conçu (flow-v62), calculé côté serveur depuis la projection du modèle typé.
 

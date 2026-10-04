@@ -380,3 +380,27 @@ function aireContour(poly: readonly Point2[]): number {
   }
   return Math.abs(s / 2);
 }
+
+// ---------------------------------------------------------------------------
+// Phases (lot 5)
+// ---------------------------------------------------------------------------
+
+/** Affecte une phase (existant / nouveau / à démolir) à une sélection, ou la retire (null). */
+export function affecterPhase(etat: ModeleAtelier, p: Brut, cibles: string[]): ResultatCommande {
+  const ids = [...new Set([...(Array.isArray(p["cibles"]) ? (p["cibles"] as unknown[]).filter((x): x is string => typeof x === "string") : []), ...cibles])];
+  if (!ids.length) throw new ErreurCommande("invalide", "cibles", "sélection vide");
+  const phase = p["phase"] === null || p["phase"] === undefined ? null : lire.enumeration(p, "phase", ["existant", "nouveau", "a-demolir"] as const);
+  const objets = { ...etat.objets };
+  const effets = effetsVides();
+  ids.forEach((id, i) => {
+    const o = objets[id];
+    if (!o) throw new ErreurCommande("precondition", `cibles[${i}]`, `objet inconnu : ${id}`);
+    const calque = o.calqueId ? etat.calques[o.calqueId] : null;
+    if (calque?.verrouille) throw new ErreurCommande("precondition", `cibles[${i}]`, `calque verrouillé : ${calque.nom}`);
+    if (o.phase === phase) return;
+    objets[id] = { ...o, phase };
+    effets.modifies.push(id);
+    if (o.niveauId) effets.niveauxTouches.push(o.niveauId);
+  });
+  return { etat: { ...etat, objets }, effets };
+}

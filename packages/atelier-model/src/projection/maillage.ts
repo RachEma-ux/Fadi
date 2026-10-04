@@ -34,6 +34,8 @@ export const COULEURS_3D: Record<string, string> = {
   solide: "#a9b9b0",
   piece: "#e8d9b0",
   espace: "#cfe0d4",
+  "garde-corps": "#6f7f78",
+  "bloc-occurrence": "#b8a88a",
 };
 
 // ---------------------------------------------------------------------------
@@ -341,6 +343,143 @@ function escalierMaillage(etat: ModeleAtelier, e: Occurrence<"escalier">, t: Tam
   for (let k = 0; k < nombre; k++) t.boite(a, u, n, k * giron, (k + 1) * giron, -w, w, z0, z0 + ((k + 1) * H) / nombre);
 }
 
+// ---------------------------------------------------------------------------
+// Toitures en pente, garde-corps, composants (lot 5)
+// ---------------------------------------------------------------------------
+
+/**
+ * Géométrie d'une toiture en pente (convention de l'Atelier, fiche DA-07 / lot 5) : le premier côté du contour est
+ * l'égout ; la pente monte perpendiculairement vers l'intérieur. Bipente : faîtage parallèle à l'égout, à mi-distance
+ * du côté le plus éloigné. Hauteur relative au plan d'égout : `h(p) = tan(pente) × d(p)`.
+ */
+export interface GeometrieToiture {
+  type: "monopente" | "bipente";
+  pans: Vec[][];
+  /** Hauteur au-dessus de l'égout d'un point du contour (m). */
+  hauteur: (p: Vec) => number;
+  /** Faîtage (bipente), extrémités sur le contour. */
+  faitage: [Vec, Vec] | null;
+  /** Contour subdivisé aux points de faîtage (côtés du volume). */
+  contour: Vec[];
+}
+
+function couperDemiPlan(poly: readonly Vec[], d: (p: Vec) => number, c: number, garderInf: boolean): Vec[] {
+  const out: Vec[] = [];
+  const dedans = (p: Vec) => (garderInf ? d(p) <= c + 1e-12 : d(p) >= c - 1e-12);
+  for (let k = 0; k < poly.length; k++) {
+    const cur = poly[k]!;
+    const prec = poly[(k + poly.length - 1) % poly.length]!;
+    const ci = dedans(cur);
+    const pi = dedans(prec);
+    if (ci !== pi) {
+      const t = (c - d(prec)) / (d(cur) - d(prec));
+      out.push({ x: prec.x + (cur.x - prec.x) * t, y: prec.y + (cur.y - prec.y) * t });
+    }
+    if (ci) out.push(cur);
+  }
+  return out;
+}
+
+export function geometrieToiture(contour: readonly Vec[], type: "plate" | "monopente" | "bipente", penteDeg: number): GeometrieToiture | null {
+  if (type === "plate" || contour.length < 3 || !(penteDeg > 0) || penteDeg >= 89) return null;
+  const e0 = contour[0]!;
+  const e1 = contour[1]!;
+  const L = Math.hypot(e1.x - e0.x, e1.y - e0.y);
+  if (L < 1e-9) return null;
+  const u = { x: (e1.x - e0.x) / L, y: (e1.y - e0.y) / L };
+  let n = perp(u);
+  if (aireSignee(contour) < 0) n = { x: -n.x, y: -n.y };
+  const d = (p: Vec) => (p.x - e0.x) * n.x + (p.y - e0.y) * n.y;
+  const dmax = Math.max(...contour.map(d));
+  if (!(dmax > 1e-9)) return null;
+  const tg = Math.tan((penteDeg * Math.PI) / 180);
+  if (type === "monopente") return { type, pans: [[...contour]], hauteur: (p) => tg * Math.max(0, d(p)), faitage: null, contour: [...contour] };
+  const c = dmax / 2;
+  const pans = [couperDemiPlan(contour, d, c, true), couperDemiPlan(contour, d, c, false)].filter((p) => p.length >= 3);
+  // Contour subdivisé aux traversées du faîtage.
+  const sub: Vec[] = [];
+  for (let k = 0; k < contour.length; k++) {
+    const a = contour[k]!;
+    const b = contour[(k + 1) % contour.length]!;
+    sub.push(a);
+    const da = d(a) - c;
+    const db = d(b) - c;
+    if ((da < -1e-12 && db > 1e-12) || (da > 1e-12 && db < -1e-12)) {
+      const t = da / (da - db);
+      sub.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    }
+  }
+  const surFaitage = sub.filter((p) => Math.abs(d(p) - c) < 1e-9);
+  let faitage: [Vec, Vec] | null = null;
+  if (surFaitage.length >= 2) {
+    const s = (p: Vec) => p.x * u.x + p.y * u.y;
+    const tri = [...surFaitage].sort((a, b) => s(a) - s(b));
+    faitage = [tri[0]!, tri[tri.length - 1]!];
+  }
+  return { type, pans, hauteur: (p) => tg * (c - Math.abs(d(p) - c)), faitage, contour: sub };
+}
+
+function toitureEnPente(t: Tampon, g: GeometrieToiture, z0: number, ep: number): void {
+  for (const pan of g.pans) {
+    const tri = trianguler(pan);
+    const haut = pan.map((p) => t.sommet(p.x, p.y, z0 + ep + g.hauteur(p)));
+    const bas = pan.map((p) => t.sommet(p.x, p.y, z0 + g.hauteur(p)));
+    for (let k = 0; k < tri.length; k += 3) {
+      t.indices.push(haut[tri[k]!]!, haut[tri[k + 1]!]!, haut[tri[k + 2]!]!);
+      t.indices.push(bas[tri[k]!]!, bas[tri[k + 2]!]!, bas[tri[k + 1]!]!);
+    }
+  }
+  const c = g.contour;
+  const bas = c.map((p) => t.sommet(p.x, p.y, z0 + g.hauteur(p)));
+  const haut = c.map((p) => t.sommet(p.x, p.y, z0 + ep + g.hauteur(p)));
+  for (let k = 0; k < c.length; k++) t.quad(bas[k]!, bas[(k + 1) % c.length]!, haut[(k + 1) % c.length]!, haut[k]!);
+}
+
+/** Garde-corps : panneau plein ou vitré, ou lisse haute et barreaux (représentation, pas une règle d'écartement). */
+function gardeCorpsMaillage(o: Occurrence<"garde-corps">, z: number, t: Tampon): void {
+  const { points, ferme, hauteur, epaisseur, remplissage, decalageBase } = o.params;
+  const z0 = z + decalageBase.value;
+  const h = hauteur.value;
+  const ep = epaisseur.value;
+  const n = ferme ? points.length : points.length - 1;
+  for (let k = 0; k < n; k++) {
+    const a = points[k]!;
+    const b = points[(k + 1) % points.length]!;
+    const L = Math.hypot(b.x - a.x, b.y - a.y);
+    if (L < 1e-9) continue;
+    const u = normalise(sub(b, a));
+    const nn = perp(u);
+    if (remplissage !== "barreaudage") {
+      t.boite(a, u, nn, 0, L, -ep / 2, ep / 2, z0, z0 + h);
+      continue;
+    }
+    const lisse = Math.min(0.05, h / 4);
+    t.boite(a, u, nn, 0, L, -ep / 2, ep / 2, z0 + h - lisse, z0 + h);
+    const nb = Math.max(1, Math.round(L / 0.12));
+    for (let i = 0; i <= nb; i++) {
+      const s = (L * i) / nb;
+      t.boite(a, u, nn, Math.max(0, s - 0.01), Math.min(L, s + 0.01), -0.01, 0.01, z0, z0 + h - lisse);
+    }
+  }
+}
+
+/** Occurrence de bloc ou de composant : solides fermés de la définition, placés (position, angle, échelle). */
+function blocMaillage(etat: ModeleAtelier, o: Occurrence<"bloc-occurrence">, z: number, t: Tampon): void {
+  const def = o.definitionId ? etat.definitions[o.definitionId] : undefined;
+  const contenu = (def?.params["contenu"] as { classe: string; params: Record<string, unknown> }[] | undefined) ?? [];
+  const ang = (o.params.angle.value * Math.PI) / 180;
+  const k = o.params.echelle;
+  const tr = (p: Vec): Vec => ({ x: o.params.position.x + k * (p.x * Math.cos(ang) - p.y * Math.sin(ang)), y: o.params.position.y + k * (p.x * Math.sin(ang) + p.y * Math.cos(ang)) });
+  for (const e of contenu) {
+    if (e.classe !== "solide") continue;
+    const h = (e.params["hauteur"] as { value: number } | null)?.value;
+    const contour = e.params["contour"] as Vec[] | undefined;
+    if (!h || !contour || contour.length < 3 || e.params["ferme"] === false) continue;
+    const base = ((e.params["decalageBase"] as { value: number } | undefined)?.value ?? 0) * k;
+    t.prisme(contour.map(tr), [], z + base, z + base + h * k);
+  }
+}
+
 /** Maillage d'une occurrence, ou null si elle n'a pas de volume (annotations, hauteur non évaluée…). */
 export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Maillage | null {
   const t = new Tampon();
@@ -358,8 +497,21 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
       if (o.classe === "fenetre") opacite = 0.55;
       break;
     case "dalle":
-    case "toiture":
       t.prisme(o.params.contour, o.params.trous, z + o.params.decalageBase.value, z + o.params.decalageBase.value + o.params.epaisseur.value);
+      break;
+    case "toiture": {
+      const z0 = z + o.params.decalageBase.value;
+      const geo = o.params.type !== "plate" && o.params.pente ? geometrieToiture(o.params.contour, o.params.type, o.params.pente.value) : null;
+      if (!geo) t.prisme(o.params.contour, o.params.trous, z0, z0 + o.params.epaisseur.value);
+      else toitureEnPente(t, geo, z0, o.params.epaisseur.value);
+      break;
+    }
+    case "garde-corps":
+      gardeCorpsMaillage(o, z, t);
+      if (o.params.remplissage === "vitre") opacite = 0.45;
+      break;
+    case "bloc-occurrence":
+      blocMaillage(etat, o, z, t);
       break;
     case "solide": {
       const h = o.params.hauteur?.value;

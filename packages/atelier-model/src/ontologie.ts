@@ -25,7 +25,8 @@ export type Classe =
   | "cotation"
   | "texte"
   | "etiquette"
-  | "bloc-occurrence";
+  | "bloc-occurrence"
+  | "garde-corps";
 
 export type KindRelation =
   | "heberge-par" // ouverture → mur hôte
@@ -35,7 +36,8 @@ export type KindRelation =
   | "contient" // zone → pièce / espace ; groupe → occurrence
   | "correspond-a" // espace déclaré → pièce dessinée (import, code commun)
   | "reference" // annotation → caractéristique d'objet
-  | "programme"; // pièce → espace programmé (liaison Programmation)
+  | "programme" // pièce → espace programmé (liaison Programmation)
+  | "contrainte"; // esquisse → esquisse : contrainte géométrique (lot 5, jeu borné)
 
 export interface DescriptionClasse {
   classe: Classe;
@@ -66,6 +68,7 @@ export const CLASSES: Readonly<Record<Classe, DescriptionClasse>> = {
   cotation: { classe: "cotation", ontologie: "annotation", libelle: "Cotation", ifc: "IfcAnnotation", caracteristiques: [], parNiveau: true },
   texte: { classe: "texte", ontologie: "annotation", libelle: "Texte", ifc: "IfcAnnotation", caracteristiques: [], parNiveau: true },
   etiquette: { classe: "etiquette", ontologie: "annotation", libelle: "Étiquette", ifc: "IfcAnnotation", caracteristiques: [], parNiveau: true },
+  "garde-corps": { classe: "garde-corps", ontologie: "building.architecture", libelle: "Garde-corps", ifc: "IfcRailing", caracteristiques: ["sommet"], parNiveau: true },
   "bloc-occurrence": { classe: "bloc-occurrence", ontologie: "drawing", libelle: "Occurrence de bloc", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre"], parNiveau: true },
 };
 

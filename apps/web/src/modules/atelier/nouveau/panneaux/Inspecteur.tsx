@@ -5,9 +5,10 @@
  * l'outil courant (épaisseur, hauteur…) et informations du niveau.
  */
 import { useEffect, useState } from "react";
-import { CLASSES, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { bibliotheques, CLASSES, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
+import { ChoixPhase, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
 
 export interface PropsInspecteur {
   etat: ModeleAtelier;
@@ -47,6 +48,9 @@ const LIBELLES: Record<string, string> = {
   angle: "Angle",
   couleur: "Couleur",
   referencePlanSeulement: "Référence de plan seulement",
+  remplissage: "Remplissage",
+  decalageBase: "Décalage de base",
+  echelle: "Échelle",
 };
 
 /** Paramètres géométriques édités au plan, pas dans l'inspecteur (on les résume). */
@@ -94,11 +98,15 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
           </dd>
         </div>
         <ChoixType o={o} etat={etat} desactive={desactive} onCommandes={onCommandes} />
+        <ChoixPhase sel={[o]} readOnly={desactive} onCommandes={onCommandes} />
         {Object.entries(params).map(([cle, valeur]) => {
           if (GEOMETRIQUES.has(cle)) return <ResumeGeometrie key={cle} cle={cle} valeur={valeur} />;
           return <Champ key={cle} id={`${o.id}-${cle}`} cle={cle} valeur={valeur} etat={etat} desactive={desactive} onValider={(v) => modifier(cle, v)} />;
         })}
       </dl>
+      {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
+      {o.classe === "esquisse" && <Contraintes sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
+      {(o.classe === "esquisse" || o.classe === "solide" || o.classe === "texte") && <CreerBloc sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {Object.keys(o.proprietes).length > 0 && (
         <details className="inspecteur-proprietes">
           <summary>Propriétés ({Object.keys(o.proprietes).length})</summary>
@@ -210,6 +218,7 @@ function ResumeGeometrie({ cle, valeur }: { cle: string; valeur: unknown }) {
 const ENUMS: Record<string, string[]> = {
   alignement: ["axe", "gauche", "droite"],
   type: ["plate", "monopente", "bipente"],
+  remplissage: ["barreaudage", "plein", "vitre"],
 };
 
 /** Champ éditable selon la forme de la valeur : grandeur {value, unit}, nombre, texte, booléen, niveau, énumération. */
@@ -328,7 +337,37 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
           {Object.values(etat.calques).sort((a, b) => a.ordre - b.ordre).map((c) => <option key={c.id} value={c.id} disabled={c.verrouille}>{c.nom}</option>)}
         </select>
       </div>
+      <dl className="inspecteur-champs">
+        <ChoixPhase sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
+      </dl>
+      <Contraintes sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
+      <CreerBloc sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
     </section>
+  );
+}
+
+/** Bibliothèques : choix du bloc ou du composant à placer (consultation, sans commande). */
+function ChoixBloc({ etat, ui }: { etat: ModeleAtelier; ui: EtatUi }) {
+  const [recherche, setRecherche] = useState("");
+  const groupes = bibliotheques(etat, recherche);
+  const choisi = ui.parametresOutil["definitionBloc"] as string | undefined;
+  return (
+    <div className="choix-bloc">
+      <label htmlFor="recherche-bloc">Rechercher dans les bibliothèques</label>
+      <input id="recherche-bloc" value={recherche} onChange={(e) => setRecherche(e.target.value)} onKeyDown={(e) => e.stopPropagation()} placeholder="nom, bibliothèque, classification" />
+      {groupes.length === 0 && <p className="inspecteur-aide">Aucun bloc : sélectionnez des esquisses ou des solides et « Créer un bloc ou un composant ».</p>}
+      {groupes.map((g) => (
+        <fieldset key={g.nom}>
+          <legend>{g.nom}</legend>
+          {g.definitions.map((d) => (
+            <label key={d.id} className="case">
+              <input type="radio" name="definition-bloc" value={d.id} checked={choisi === d.id} onChange={() => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, definitionBloc: d.id } }))} />
+              {d.nom} <span className="inspecteur-aide">{d.nature} · v{d.version} · {d.occurrences} occurrence(s)</span>
+            </label>
+          ))}
+        </fieldset>
+      ))}
+    </div>
   );
 }
 
@@ -339,12 +378,14 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   fenetre: [{ cle: "largeurOuverture", libelle: "Largeur", unite: "m" }, { cle: "hauteurOuverture", libelle: "Hauteur", unite: "m" }, { cle: "allege", libelle: "Allège", unite: "m" }],
   ouverture: [{ cle: "largeurOuverture", libelle: "Largeur", unite: "m" }, { cle: "hauteurOuverture", libelle: "Hauteur", unite: "m" }],
   dalle: [{ cle: "epaisseurDalle", libelle: "Épaisseur", unite: "m" }],
-  toiture: [{ cle: "epaisseurDalle", libelle: "Épaisseur", unite: "m" }],
+  toiture: [{ cle: "epaisseurDalle", libelle: "Épaisseur", unite: "m" }, { cle: "penteToiture", libelle: "Pente (0 = plate)", unite: "°" }],
+  "garde-corps": [{ cle: "hauteurGardeCorps", libelle: "Hauteur", unite: "m" }, { cle: "epaisseurGardeCorps", libelle: "Épaisseur", unite: "m" }],
   escalier: [{ cle: "largeurEscalier", libelle: "Largeur", unite: "m" }],
   poteau: [{ cle: "taille", libelle: "Section", unite: "m" }, { cle: "hauteur", libelle: "Hauteur", unite: "m" }],
   solide: [{ cle: "hauteurSolide", libelle: "Hauteur d'extrusion", unite: "m" }],
   extruder: [{ cle: "hauteurSolide", libelle: "Hauteur d'extrusion", unite: "m" }],
   decaler: [{ cle: "distanceDecalage", libelle: "Distance", unite: "m" }],
+  bloc: [{ cle: "angleBloc", libelle: "Angle", unite: "°" }],
   repeter: [{ cle: "repetitions", libelle: "Nombre de copies" }, { cle: "pasX", libelle: "Pas en x", unite: "m" }, { cle: "pasY", libelle: "Pas en y", unite: "m" }],
   raccorder: [{ cle: "rayon", libelle: "Rayon", unite: "m" }],
   chanfreiner: [{ cle: "distanceChanfrein", libelle: "Distance", unite: "m" }],
@@ -389,6 +430,26 @@ function ParametresOutil({ etat, ui }: { etat: ModeleAtelier; ui: EtatUi }) {
           })}
         </dl>
       )}
+      {ui.outil === "toiture" && (
+        <div className="champ">
+          <label htmlFor="outil-type-toiture">Type (si pente)</label>
+          <select id="outil-type-toiture" value={(ui.parametresOutil["typeToiture"] as string | undefined) ?? "bipente"} onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, typeToiture: e.target.value } }))}>
+            <option value="bipente">Bipente (faîtage parallèle au premier côté)</option>
+            <option value="monopente">Monopente (égout sur le premier côté)</option>
+          </select>
+        </div>
+      )}
+      {ui.outil === "garde-corps" && (
+        <div className="champ">
+          <label htmlFor="outil-remplissage">Remplissage</label>
+          <select id="outil-remplissage" value={(ui.parametresOutil["remplissageGardeCorps"] as string | undefined) ?? "barreaudage"} onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, remplissageGardeCorps: e.target.value } }))}>
+            <option value="barreaudage">Barreaudage</option>
+            <option value="plein">Plein</option>
+            <option value="vitre">Vitré</option>
+          </select>
+        </div>
+      )}
+      {ui.outil === "bloc" && <ChoixBloc etat={etat} ui={ui} />}
       {ui.outil === "mur" && Object.keys(etat.calques).length > 0 && (
         <div className="champ">
           <label htmlFor="outil-calque">Calque des nouveaux murs</label>

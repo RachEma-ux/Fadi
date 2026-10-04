@@ -61,7 +61,7 @@
   gap: 2px;
 }
 .barre-palette {
-  min-width: 14rem;
+  min-width: 11rem;
   text-align: left;
   color: var(--atelier-doux) !important;
   display: inline-flex;
@@ -80,6 +80,16 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
+}
+/* Le libellé « Affichage » reste lu (aria-label du menu) ; il s'efface sous 1600 px pour garder la barre sur une ligne. */
+@media (max-width: 1600px) {
+  .barre-affichage > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
 }
 .barre-accrochages {
   position: relative;
@@ -973,6 +983,7 @@
   z-index: 20;
   top: calc(100% + 4px);
   right: 0;
+  max-width: calc(100vw - 2rem);
   display: grid;
   gap: 2px;
   min-width: 13rem;
@@ -1069,7 +1080,7 @@
 .docs-item-meta {
   grid-column: 1;
   font-size: 0.78rem;
-  color: var(--atelier-doux);
+  color: #4a6157;
 }
 .docs-fraicheur {
   grid-column: 2;
@@ -1091,7 +1102,7 @@
   color: #8a5a00;
 }
 .fr-non-produit {
-  color: var(--atelier-doux);
+  color: #4a6157;
 }
 .docs-nouvelle > summary,
 .docs-ajout,
@@ -1355,4 +1366,108 @@
   .docs-nouvelle > summary {
     min-height: 44px;
   }
+}
+
+/* Phases (lot 5) : à démolir en tirets et estompé, existant estompé ; la nature reste aussi dans l'inspecteur. */
+.plan2d [data-phase="a-demolir"] * {
+  stroke-dasharray: 5 3;
+  fill-opacity: 0.08;
+}
+.plan2d [data-phase="existant"] {
+  opacity: 0.6;
+}
+
+/* Inspecteur (lot 5) : blocs, contraintes. */
+.inspecteur-bloc,
+.inspecteur-contraintes {
+  margin: 0.5rem 0;
+  border-top: 1px solid var(--atelier-ligne);
+  padding-top: 0.4rem;
+}
+.inspecteur-bloc summary,
+.inspecteur-contraintes summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+.inspecteur-bloc form,
+.ajout-contrainte,
+.choix-bloc {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+.inspecteur-bloc label,
+.ajout-contrainte label,
+.choix-bloc > label {
+  display: grid;
+  gap: 0.1rem;
+  font-size: 0.82rem;
+}
+.inspecteur-bloc .case,
+.ajout-contrainte .case,
+.choix-bloc .case {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.inspecteur-bloc input,
+.inspecteur-bloc select,
+.ajout-contrainte input,
+.ajout-contrainte select,
+.choix-bloc input:not([type="radio"]) {
+  min-height: 30px;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+}
+.inspecteur-bloc button,
+.ajout-contrainte button,
+.liste-contraintes button {
+  min-height: 32px;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+.liste-contraintes {
+  list-style: none;
+  padding: 0;
+  margin: 0.3rem 0;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+}
+.liste-contraintes li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+.liste-contraintes li.a-reparer {
+  color: #b42318;
+  font-weight: 600;
+}
+.liste-contraintes input {
+  width: 5.5rem;
+  min-height: 28px;
+}
+.choix-bloc fieldset {
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+}
+.inspecteur-bloc-info {
+  font-size: 0.85rem;
+  margin: 0.4rem 0;
+}
+.plan2d .cotation-a-reparer text {
+  font-weight: 700;
+}
+
+.barre-exports[data-cote="gauche"] .exports-liste {
+  right: auto;
+  left: 0;
 }

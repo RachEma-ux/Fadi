@@ -213,13 +213,18 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
 
   const validerPrecision = useCallback(() => {
     const u = etatUi.get();
+    // Entrée dans un champ de précision vide : termine le tracé (comme Entrée sur le plan).
+    if (!precisionRef.current.trim()) {
+      finir();
+      return;
+    }
     const r = saisie(u.outil, precisionRef.current, u.pointsEnCours, u.curseur, client.getSnapshot().etat, u, { rayon: 12 / u.vue.echelle, objetSous: null });
     if (!r) {
       etatUi.set({ aide: "Saisie non comprise : une longueur (4,5), un déplacement « dx;dy » (3;-1,2), un facteur ou un angle." });
       return;
     }
     appliquerResultat(r);
-  }, [client, appliquerResultat]);
+  }, [client, appliquerResultat, finir]);
 
   // Clavier global de l'Atelier (hors champs de saisie).
   useEffect(() => {
@@ -255,7 +260,7 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
         if (u.pointsEnCours.length) {
           const r = terminer(u.outil, u.pointsEnCours, u, u.niveauId);
           // Échap termine une chaîne déjà commencée (murs enchaînés) sans créer de contour incomplet.
-          if (["polyligne", "spline"].includes(u.outil) && r.commandes.length) appliquerResultat(r);
+          if (["polyligne", "spline", "garde-corps"].includes(u.outil) && r.commandes.length) appliquerResultat(r);
           else etatUi.set({ pointsEnCours: [], aide: "" });
         } else if (u.outil !== "selection") etatUi.choisirOutil("selection");
         else etatUi.selectionner([]);
@@ -392,7 +397,16 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
           </div>
         </details>
         <button type="button" onClick={cadrer} title="Cadrer le niveau (0)">Cadrer</button>
-        <details className="barre-exports">
+        <details
+          className="barre-exports"
+          onToggle={(e) => {
+            // Menu ouvert vers l'intérieur de l'Atelier, même quand la barre passe sur deux lignes.
+            const d = e.currentTarget;
+            const boite = d.closest(".atelier-n")?.getBoundingClientRect();
+            const r = d.getBoundingClientRect();
+            d.dataset["cote"] = boite && r.left - boite.left < boite.width / 2 ? "gauche" : "droite";
+          }}
+        >
           <summary>Exporter</summary>
           <div className="exports-liste">
             {([

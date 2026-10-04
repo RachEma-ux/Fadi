@@ -23,10 +23,12 @@ import {
   type InstantaneDiff,
   type Reducteur,
 } from "./base.js";
+import { reducteursBloc } from "./bloc.js";
+import { controlerContraintes, reducteursContrainte } from "./contrainte.js";
 import { reducteursDocuments } from "./documents.js";
 import { joindreMurs, scinderMur } from "./mur.js";
 import { creerOccurrence, modifierOccurrence, supprimerOccurrence } from "./objets.js";
-import { affecterClassification, definirPropriete, rattacherReference, reducteursCalque, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
+import { affecterClassification, affecterPhase, definirPropriete, rattacherReference, reducteursCalque, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
 import { reducteursTransformer } from "./transformer.js";
 
 const triplet = (classe: Classe, prefixe: string, creer = "creer"): Record<string, Reducteur> => ({
@@ -69,6 +71,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   ...triplet("poteau", "poteau"),
   ...triplet("solide", "solide", "extruder"),
   ...triplet("reference-plan", "referencePlan"),
+  ...triplet("garde-corps", "gardeCorps"),
   // Esquisse : une commande par forme + modifier / supprimer
   ...Object.fromEntries(FORMES.map((forme) => [`esquisse.${forme}`, ((etat, p, ctx) => creerOccurrence(etat, { ...p, params: { ...((p["params"] as Record<string, unknown> | undefined) ?? p), forme } }, ctx, "esquisse")) as Reducteur])),
   "esquisse.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "esquisse"),
@@ -107,6 +110,13 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "reference.reparer": (etat, p) => reparerReference(etat, p),
   // Documents dérivés (lot 5) : vues et feuilles
   ...reducteursDocuments,
+  // Blocs et composants, contraintes d'esquisse, phases (lot 5)
+  "bloc.definir": (etat, p, ctx) => reducteursBloc.definir(etat, p, ctx),
+  "bloc.placer": (etat, p, ctx) => reducteursBloc.placer(etat, p, ctx),
+  "contrainte.ajouter": (etat, p, ctx) => reducteursContrainte.ajouter(etat, p, ctx),
+  "contrainte.modifier": (etat, p) => reducteursContrainte.modifier(etat, p),
+  "contrainte.supprimer": (etat, p) => reducteursContrainte.supprimer(etat, p),
+  "phase.affecter": (etat, p, _ctx, c) => affecterPhase(etat, p, c),
   // Site
   "site.parcelle.definir": (etat, p) => reducteursSite.parcelle(etat, p),
   "site.emprise.definir": (etat, p) => reducteursSite.emprise(etat, p),
@@ -128,7 +138,8 @@ export function appliquerCommande(etat: ModeleAtelier, commande: Commande, ctx: 
   const reducteur = REDUCTEURS[commande.type];
   if (!reducteur) throw new ErreurCommande("inconnue", "type", `commande inconnue : ${commande.type}`);
   if (typeof commande.params !== "object" || commande.params === null) throw new ErreurCommande("invalide", "params", "paramètres requis");
-  return reducteur(etat, commande.params, ctx, commande.cibles ?? []);
+  const r = reducteur(etat, commande.params, ctx, commande.cibles ?? []);
+  return controlerContraintes(etat, r.etat, commande.type, r.effets, ctx);
 }
 
 export interface ResultatLot {
@@ -167,7 +178,7 @@ export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): Resulta
 export function identifiantsCibles(enveloppe: Enveloppe): string[] {
   const ids = new Set<string>();
   for (const c of enveloppe.commands) {
-    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId"]) {
+    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir"]) {
       const v = c.params[k];
       if (typeof v === "string") ids.add(v);
     }
