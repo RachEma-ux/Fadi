@@ -15,7 +15,7 @@ export interface CurrentUser {
 export interface NotificationItem {
   id: string;
   at: string;
-  kind: "acces" | "commentaire" | "reservation";
+  kind: "acces" | "commentaire" | "reservation" | "modele";
   projectId: string;
   projectCode: string;
   projectName: string;
