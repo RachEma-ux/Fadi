@@ -13,7 +13,9 @@
  * - Autres nœuds de trois murs ou plus (aucune paire alignée, ou plusieurs — croisement de quatre murs) : chaque face
  *   s'arrête sur la face en vis-à-vis du mur voisin de son côté (ordre angulaire autour du nœud), et le contour du mur
  *   passe par le point du nœud, de sorte que les murs couvrent ensemble le cœur du nœud sans vide (D-032).
- * - Murs qui se croisent sans partager d'extrémité, murs alignés : extrémités inchangées (déclaré).
+ * - Murs qui se traversent sans partager d'extrémité : extrémités inchangées ; leur zone commune est donnée par
+ *   `croisementsDuNiveau` (dessin : la zone est peinte d'un seul tenant, sans les traits intérieurs ; D-034).
+ * - Murs alignés : extrémités inchangées.
  * Un raccord qui déplacerait une extrémité de plus de quatre épaisseurs (angle très aigu) n'est pas appliqué.
  *
  * Le résultat est mis en cache par état d'objets (immuable) et par niveau.
@@ -264,3 +266,78 @@ export function polygoneMurRaccorde(etat: ModeleAtelier, mur: Occurrence<"mur">)
   return (aire < 0 ? quad.reverse() : quad).map((p) => pt(p.x, p.y));
 }
 
+/** Intersection d'un polygone par un polygone convexe (Sutherland–Hodgman), sens quelconque. */
+function decouperConvexe(sujet: Vec[], clip: Vec[]): Vec[] {
+  let aire = 0;
+  for (let i = 0; i < clip.length; i++) aire += cross(clip[i]!, clip[(i + 1) % clip.length]!);
+  const signe = aire >= 0 ? 1 : -1;
+  let out = sujet;
+  for (let i = 0; i < clip.length && out.length; i++) {
+    const A = clip[i]!;
+    const B = clip[(i + 1) % clip.length]!;
+    const dedans = (p: Vec) => signe * cross(sub(B, A), sub(p, A)) >= -1e-12;
+    const entree = out;
+    out = [];
+    for (let k = 0; k < entree.length; k++) {
+      const P = entree[k]!;
+      const Q = entree[(k + 1) % entree.length]!;
+      const iP = dedans(P);
+      const iQ = dedans(Q);
+      if (iP) out.push(P);
+      if (iP !== iQ) {
+        const x = intersectionLignes({ p: P, d: sub(Q, P) }, { p: A, d: sub(B, A) });
+        if (x) out.push(x);
+      }
+    }
+  }
+  return out;
+}
+
+const cacheCroisements = new WeakMap<object, Map<string, { murs: [string, string]; polygone: Point2[] }[]>>();
+
+/**
+ * Croisements d'un niveau : paires de murs dont les contours se recouvrent (aire > 1 cm²) sans être raccordés l'un à
+ * l'autre (ni extrémité partagée, ni té) — typiquement deux murs qui se traversent. Géométrie dérivée, pour le dessin.
+ */
+export function croisementsDuNiveau(etat: ModeleAtelier, niveauId: string | null): { murs: [string, string]; polygone: Point2[] }[] {
+  let parNiveau = cacheCroisements.get(etat.objets);
+  if (!parNiveau) {
+    parNiveau = new Map();
+    cacheCroisements.set(etat.objets, parNiveau);
+  }
+  const cle = niveauId ?? "";
+  const deja = parNiveau.get(cle);
+  if (deja) return deja;
+  const murs = Object.values(etat.objets).filter((o): o is Occurrence<"mur"> => o.classe === "mur" && o.niveauId === niveauId);
+  const polys = murs.map((m) => {
+    const pts = polygoneMurRaccorde(etat, m) as Vec[];
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const q of pts) {
+      x0 = Math.min(x0, q.x);
+      y0 = Math.min(y0, q.y);
+      x1 = Math.max(x1, q.x);
+      y1 = Math.max(y1, q.y);
+    }
+    return { m, pts, x0, y0, x1, y1 };
+  });
+  const tol = TOLERANCE_REDUCTEUR * 10;
+  const partagent = (a: Occurrence<"mur">, b: Occurrence<"mur">) => [a.params.a, a.params.b].some((p) => [b.params.a, b.params.b].some((q) => Math.hypot(p.x - q.x, p.y - q.y) <= tol));
+  const out: { murs: [string, string]; polygone: Point2[] }[] = [];
+  for (let i = 0; i < polys.length; i++) {
+    for (let j = i + 1; j < polys.length; j++) {
+      const A = polys[i]!;
+      const B = polys[j]!;
+      if (A.x1 < B.x0 || B.x1 < A.x0 || A.y1 < B.y0 || B.y1 < A.y0) continue;
+      if (partagent(A.m, B.m)) continue;
+      // Le contour d'un mur raccordé reste convexe ; une pointe de nœud peut le rendre concave : on la découpe par l'autre.
+      const inter = decouperConvexe(A.pts, B.pts);
+      if (inter.length < 3) continue;
+      let aire = 0;
+      for (let k = 0; k < inter.length; k++) aire += cross(inter[k]!, inter[(k + 1) % inter.length]!);
+      if (Math.abs(aire) / 2 <= 1e-4) continue;
+      out.push({ murs: [A.m.id, B.m.id], polygone: inter.map((q) => pt(q.x, q.y)) });
+    }
+  }
+  parNiveau.set(cle, out);
+  return out;
+}

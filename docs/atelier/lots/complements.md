@@ -105,3 +105,4 @@ famille « définitions » de la reprise (`reprise.test.ts`, test API, e2e `atel
 référence externe par repointage explicite (`refexterne.test.ts`, test API, bouton « Réparer… »).
 Raccords des nœuds sans paire alignée unique (Y, croisement de quatre murs) : `raccords.test.ts` (D-032).
 Flèche Z du manipulateur 3D pour les objets à décalage de base (e2e `atelier-complements.mjs`, D-033).
+Croisements de murs peints d'un seul tenant dans le plan (`raccords.test.ts`, e2e `atelier-complements.mjs`, D-034).

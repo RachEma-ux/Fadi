@@ -280,6 +280,20 @@ check("plan en document : la référence externe est dessinée en trait fin, ave
 await page.locator('.barre-mode button:has-text("Plan")').click();
 await page.waitForSelector(".plan2d");
 
+// Croisement (D-034) : deux murs qui se traversent ; la zone commune est peinte d'un seul tenant dans le plan.
+{
+  const m0 = await modele(pid);
+  const nv = m0.modele.objets[murA.id].niveauId;
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const r = await lot(pid, `x-${Date.now()}`, m0.revision, [
+    { type: "mur.tracer", params: { id: "croix-h", niveauId: nv, a: P(300, 0), b: P(304, 0), epaisseur: { value: 0.2, unit: "m" }, hauteur: { value: 3, unit: "m" } } },
+    { type: "mur.tracer", params: { id: "croix-v", niveauId: nv, a: P(302, -2), b: P(302, 2), epaisseur: { value: 0.2, unit: "m" }, hauteur: { value: 3, unit: "m" } } },
+  ]);
+  await ouvrir(pid);
+  await page.waitForSelector('[data-croisement="croix-h|croix-v"], [data-croisement="croix-v|croix-h"]', { timeout: 20000 }).catch(() => {});
+  check("croisement de murs : zone commune peinte d'un seul tenant dans le plan", r.status === 200 && (await page.locator('[data-croisement*="croix-h"]').count()) === 1);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

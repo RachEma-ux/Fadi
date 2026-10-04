@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { centroide, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { centroide, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -214,6 +214,25 @@ function Bloc2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"bloc-occ
       })}
       <circle cx={c.x} cy={c.y} r={3} fill="#fff" />
       {!def && <text x={c.x + 6} y={c.y} fontSize={10} fill="#b42318" stroke="none">définition absente</text>}
+    </g>
+  );
+}
+
+/**
+ * Croisements de murs qui se traversent (D-034) : la zone commune est peinte d'un seul tenant par-dessus les deux
+ * murs, ce qui efface les traits intérieurs (comme l'union des contours des documents). Seulement si les deux murs
+ * sont dessinés.
+ */
+export function Croisements2D({ etat, niveauId, visibles, pr }: { etat: ModeleAtelier; niveauId: string | null; visibles: ReadonlySet<string>; pr: Projecteur }) {
+  const c = croisementsDuNiveau(etat, niveauId).filter((x) => visibles.has(x.murs[0]) && visibles.has(x.murs[1]));
+  if (!c.length) return null;
+  return (
+    <g className="plan-croisements" pointerEvents="none" aria-hidden="true">
+      {c.map((x) => {
+        const m = etat.objets[x.murs[0]] as Occurrence<"mur">;
+        const type = m.definitionId === "cloison" ? "cloison" : "mur";
+        return <path key={`${x.murs[0]}|${x.murs[1]}`} data-croisement={`${x.murs[0]}|${x.murs[1]}`} d={chemin(pr, x.polygone)} fill={m.params.hauteur ? COULEURS[type] : "#fff"} fillOpacity={0.94} stroke="none" />;
+      })}
     </g>
   );
 }

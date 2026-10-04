@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { CONTRAT_COMMANDES, appliquerLot, type Commande } from "./commandes/index.js";
 import { importerModeleNatif, type JeuNatif } from "./import/natif.js";
 import { modeleVide, objetsDeClasse, type ModeleAtelier, type Occurrence } from "./modele.js";
-import { facesMurRaccordees, polygoneMurRaccorde, raccordMur, raccordsDuNiveau } from "./raccords.js";
+import { croisementsDuNiveau, facesMurRaccordees, polygoneMurRaccorde, raccordMur, raccordsDuNiveau } from "./raccords.js";
 import { m, pt } from "./unites.js";
 
 const lot = (commands: Commande[]) => ({ requestId: "r", baseRevision: 0, contract: CONTRAT_COMMANDES, label: "r", commands });
@@ -108,5 +108,18 @@ describe("raccords de murs (géométrie dérivée)", () => {
     }
     expect(angles).toBeGreaterThan(0);
     expect(tes + angles).toBeGreaterThan(objetsDeClasse(p118, "mur").length / 4);
+  });
+
+  it("croisement de deux murs qui se traversent : zone commune donnée pour le dessin ; ni té, ni angle, ni nœud (D-034)", () => {
+    const e = modele(mur("h", [0, 0], [4, 0]), mur("v", [2, -2], [2, 2]), mur("t", [0, 3], [0, 0.1]), mur("l", [4, 0], [4, 3]));
+    const c = croisementsDuNiveau(e, "n0");
+    expect(c).toHaveLength(1);
+    expect(c[0]!.murs.sort()).toEqual(["h", "v"]);
+    let aire = 0;
+    const p = c[0]!.polygone;
+    for (let k = 0; k < p.length; k++) aire += p[k]!.x * p[(k + 1) % p.length]!.y - p[(k + 1) % p.length]!.x * p[k]!.y;
+    expect(Math.abs(aire) / 2).toBeCloseTo(0.04, 9);
+    expect(raccordMur(e, M(e, "v"))!.extremites).toEqual(["libre", "libre"]);
+    expect(croisementsDuNiveau(e, "n0")).toBe(c); // cache par état
   });
 });

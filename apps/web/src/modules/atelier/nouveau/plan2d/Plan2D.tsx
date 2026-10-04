@@ -3,13 +3,13 @@
  * (bouton du milieu, Espace + glisser, deux doigts), accrochages visibles, aperçu du tracé en cours, sélection au
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { distance, polygoneMur, pt, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
 import { chemin, projecteur } from "./projecteur";
-import { Definitions2D, Objet2D } from "./rendu";
+import { Croisements2D, Definitions2D, Objet2D } from "./rendu";
 
 export interface PropsPlan2D {
   etat: ModeleAtelier;
@@ -88,6 +88,8 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const externesNiveau = useMemo(() => externes.filter((x) => x.niveauId === ui.niveauId), [externes, ui.niveauId]);
   const cache = useMemo(() => avecExternes(segmentsDuNiveau(etat, ui.niveauId), externesNiveau), [etat, ui.niveauId, externesNiveau]);
   const selection = useMemo(() => new Set(ui.selection), [ui.selection]);
+  const idsVisibles = useMemo(() => new Set(objets.map((o) => o.id)), [objets]);
+  const dernierMur = useMemo(() => objets.map((o) => o.classe).lastIndexOf("mur"), [objets]);
 
   // Cadrage automatique à la première ouverture d'un niveau.
   useEffect(() => {
@@ -340,14 +342,18 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
         </g>
       )}
       <g className="plan-objets">
-        {objets.map((o) => (
-          o.phase ? (
-            <g key={o.id} data-phase={o.phase}>
+        {objets.map((o, i) => (
+          <Fragment key={o.id}>
+            {o.phase ? (
+              <g data-phase={o.phase}>
+                <Objet2D o={o} etat={etat} pr={pr} selectionne={selection.has(o.id)} survole={ui.survol === o.id} />
+              </g>
+            ) : (
               <Objet2D o={o} etat={etat} pr={pr} selectionne={selection.has(o.id)} survole={ui.survol === o.id} />
-            </g>
-          ) : (
-            <Objet2D key={o.id} o={o} etat={etat} pr={pr} selectionne={selection.has(o.id)} survole={ui.survol === o.id} />
-          )
+            )}
+            {/* Croisements de murs (D-034) : peints juste après le dernier mur, sous les poteaux et les ouvertures. */}
+            {i === dernierMur && <Croisements2D etat={etat} niveauId={ui.niveauId} visibles={idsVisibles} pr={pr} />}
+          </Fragment>
         ))}
       </g>
       {decalage && (
