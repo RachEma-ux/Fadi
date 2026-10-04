@@ -1,20 +1,54 @@
 /**
  * Esquisse contrainte bornée (fiches DA-01-07, DA-01-08, DA-06-01 / 02) : contraintes géométriques entre sommets
  * et segments d'esquisses à sommets (lignes, polylignes, polygones) — coïncidence, horizontal, vertical,
- * parallélisme, perpendicularité, distance (cote pilotante ou de contrôle). Solveur de Gauss–Newton au plus petit
- * déplacement (Δ = −Jᵀ(JJᵀ)⁻¹r), diagnostic de rang (degrés de liberté restants, contrainte redondante, conflit).
- * Jeu borné : pas de contrainte d'angle quelconque, de tangence ni d'arc ; 200 variables au plus.
+ * parallélisme, perpendicularité, distance (cote pilotante ou de contrôle) et, depuis D-051, égalité de longueurs,
+ * milieu, point sur ligne, sommet fixe, symétrie par rapport à un axe et angle entre deux segments. Solveur de
+ * Gauss–Newton au plus petit déplacement (Δ = −Jᵀ(JJᵀ)⁻¹r), diagnostic de rang (degrés de liberté restants,
+ * contrainte redondante, conflit). Jeu borné : pas de tangence ni d'arc (les cercles et arcs ne sont pas
+ * contraignables) ; 200 variables au plus.
  *
  * Une contrainte est une relation `contrainte` du modèle : source = esquisse A, cible = esquisse B (ou A),
  * paramètres { type, a, b, valeur, pilotante, etat } où a / b sont des caractéristiques nommées `sommet[i]` ou
  * `segment[i]`. Une contrainte dont un objet a disparu passe « à réparer ».
  */
 import type { ModeleAtelier, Occurrence, Relation } from "./modele.js";
-import type { Longueur } from "./unites.js";
+import type { Angle, Longueur } from "./unites.js";
 
-export type TypeContrainte = "coincidence" | "horizontal" | "vertical" | "parallele" | "perpendiculaire" | "distance";
-export const TYPES_CONTRAINTE: readonly TypeContrainte[] = ["coincidence", "horizontal", "vertical", "parallele", "perpendiculaire", "distance"];
-export const LIBELLES_CONTRAINTE: Record<TypeContrainte, string> = { coincidence: "Coïncidence", horizontal: "Horizontal", vertical: "Vertical", parallele: "Parallèles", perpendiculaire: "Perpendiculaires", distance: "Distance" };
+export type TypeContrainte = "coincidence" | "horizontal" | "vertical" | "parallele" | "perpendiculaire" | "distance" | "egalite" | "milieu" | "sur-ligne" | "fixe" | "symetrie" | "angle";
+export const TYPES_CONTRAINTE: readonly TypeContrainte[] = ["coincidence", "horizontal", "vertical", "parallele", "perpendiculaire", "distance", "egalite", "milieu", "sur-ligne", "fixe", "symetrie", "angle"];
+export const LIBELLES_CONTRAINTE: Record<TypeContrainte, string> = {
+  coincidence: "Coïncidence",
+  horizontal: "Horizontal",
+  vertical: "Vertical",
+  parallele: "Parallèles",
+  perpendiculaire: "Perpendiculaires",
+  distance: "Distance",
+  egalite: "Longueurs égales",
+  milieu: "Au milieu",
+  "sur-ligne": "Sur la ligne",
+  fixe: "Fixe",
+  symetrie: "Symétriques",
+  angle: "Angle",
+};
+
+/**
+ * Éléments portés par chaque type : a (sur l'esquisse A), puis b (sur l'esquisse B ; null : aucun). La symétrie porte
+ * l'axe en a (segment de A) et deux sommets de B en b et c.
+ */
+export const ELEMENTS_CONTRAINTE: Record<TypeContrainte, readonly ["sommet" | "segment", "sommet" | "segment" | null]> = {
+  coincidence: ["sommet", "sommet"],
+  horizontal: ["segment", null],
+  vertical: ["segment", null],
+  parallele: ["segment", "segment"],
+  perpendiculaire: ["segment", "segment"],
+  distance: ["sommet", "sommet"],
+  egalite: ["segment", "segment"],
+  milieu: ["sommet", "segment"],
+  "sur-ligne": ["sommet", "segment"],
+  fixe: ["sommet", null],
+  symetrie: ["segment", "sommet"],
+  angle: ["segment", "segment"],
+};
 
 export interface ParamsContrainte {
   type: TypeContrainte;
@@ -24,10 +58,21 @@ export interface ParamsContrainte {
   /** Cote pilotante (contraint la géométrie) ou de contrôle (mesure seulement). */
   pilotante: boolean;
   etat: "ok" | "a-reparer";
+  /** Angle (contrainte « angle ») : angle orienté de a vers b, en degrés, modulo 180° (droites). */
+  angle?: Angle | null;
+  /** Second sommet de B (contrainte « symetrie », symétrique de b par rapport à l'axe a). */
+  c?: string | null;
+  /** Position tenue (contrainte « fixe »), relevée à l'ajout. */
+  position?: { x: number; y: number } | null;
 }
 
 export const FORMES_CONTRAIGNABLES = ["ligne", "polyligne", "polygone", "construction"] as const;
 export const MAX_VARIABLES = 200;
+/**
+ * Écart au-delà duquel une contrainte est dite non respectée : les coordonnées résolues sont arrondies au
+ * micromètre, ce qui laisse sur une longueur ou un angle un écart résiduel de l'ordre du micromètre.
+ */
+export const TOLERANCE_CONTRAINTE = 5e-6;
 const TOL = 1e-9;
 
 export const contraintesDe = (etat: ModeleAtelier): (Relation & { params: ParamsContrainte })[] =>
@@ -98,6 +143,11 @@ export function systeme(etat: ModeleAtelier, contraintes: (Relation & { params: 
     const vb = sb ? sb.map((i) => variable(B.id, i)) : null;
     const debut = equations.length;
     const d = (x: number[], v: number[]) => [x[v[1]!]! - x[v[0]!]!, x[v[1]! + 1]! - x[v[0]! + 1]!] as const;
+    /** Distance signée du point v à la droite du segment s (normalisée). */
+    const horsLigne = (x: number[], v: number, s: number[]) => {
+      const [sx, sy] = d(x, s);
+      return (sx * (x[v + 1]! - x[s[0]! + 1]!) - sy * (x[v]! - x[s[0]!]!)) / (Math.hypot(sx, sy) || 1);
+    };
     switch (p.type) {
       case "coincidence":
         if (!vb) break;
@@ -123,6 +173,54 @@ export function systeme(etat: ModeleAtelier, contraintes: (Relation & { params: 
         const cible = p.valeur?.value ?? 0;
         if (va.length === 2 && !vb) equations.push((x) => Math.hypot(...d(x, va)) - cible);
         else if (vb) equations.push((x) => Math.hypot(x[vb[0]!]! - x[va[0]!]!, x[vb[0]! + 1]! - x[va[0]! + 1]!) - cible);
+        break;
+      }
+      case "egalite":
+        if (va.length === 2 && vb?.length === 2) equations.push((x) => Math.hypot(...d(x, va)) - Math.hypot(...d(x, vb)));
+        break;
+      case "milieu":
+        if (va.length === 1 && vb?.length === 2)
+          equations.push((x) => x[va[0]!]! - (x[vb[0]!]! + x[vb[1]!]!) / 2, (x) => x[va[0]! + 1]! - (x[vb[0]! + 1]! + x[vb[1]! + 1]!) / 2);
+        break;
+      case "sur-ligne":
+        if (va.length === 1 && vb?.length === 2) equations.push((x) => horsLigne(x, va[0]!, vb));
+        break;
+      case "fixe": {
+        const q = p.position;
+        if (va.length === 1 && q) equations.push((x) => x[va[0]!]! - q.x, (x) => x[va[0]! + 1]! - q.y);
+        break;
+      }
+      case "symetrie": {
+        const sc = p.c ? sommetsDe(B, p.c) : null;
+        if (va.length === 2 && vb?.length === 1 && sc?.length === 1) {
+          const vx = va;
+          const vs = [vb[0]!, variable(B.id, sc[0]!)] as const;
+          // Le milieu des deux sommets est sur l'axe ; leur segment est perpendiculaire à l'axe.
+          equations.push(
+            (x) => {
+              const [ux, uy] = d(x, vx);
+              const mx = (x[vs[0]]! + x[vs[1]]!) / 2 - x[vx[0]!]!;
+              const my = (x[vs[0] + 1]! + x[vs[1] + 1]!) / 2 - x[vx[0]! + 1]!;
+              return (ux * my - uy * mx) / (Math.hypot(ux, uy) || 1);
+            },
+            (x) => {
+              const [ux, uy] = d(x, vx);
+              return (ux * (x[vs[1]]! - x[vs[0]]!) + uy * (x[vs[1] + 1]! - x[vs[0] + 1]!)) / (Math.hypot(ux, uy) || 1);
+            },
+          );
+        }
+        break;
+      }
+      case "angle": {
+        const t = ((p.angle?.value ?? 0) * Math.PI) / 180;
+        if (va.length === 2 && vb?.length === 2)
+          equations.push((x) => {
+            const [ax, ay] = d(x, va);
+            const [bx, by] = d(x, vb);
+            const l = Math.hypot(ax, ay) * Math.hypot(bx, by) || 1;
+            // sin(φ − θ) = 0 avec φ l'angle orienté de a vers b : vrai pour φ = θ (mod 180°).
+            return ((ax * by - ay * bx) * Math.cos(t) - (ax * bx + ay * by) * Math.sin(t)) / l;
+          });
         break;
       }
     }

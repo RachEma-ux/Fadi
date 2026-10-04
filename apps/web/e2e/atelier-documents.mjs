@@ -183,6 +183,15 @@ await page.locator('.ajout-contrainte button:has-text("Ajouter la contrainte")')
 await enregistre();
 const esqApres = (await modele()).objets[esq.id];
 check("contrainte « horizontal » : premier segment rendu horizontal, contrainte listée avec les degrés de liberté", Math.abs(esqApres.params.points[0].y - esqApres.params.points[1].y) < 1e-6 && (await page.locator(".liste-contraintes li").count()) === 1 && /degré\(s\) de liberté/.test(await page.locator(".inspecteur-contraintes > summary").textContent()), JSON.stringify(esqApres.params.points.slice(0, 2).map((p) => [p.x, p.y])));
+// Angle (D-051) : 90° du premier au second segment, saisi dans l'inspecteur.
+await page.locator(".ajout-contrainte select").first().selectOption("angle");
+await page.locator(".ajout-contrainte select").nth(2).selectOption({ label: "2" });
+await page.locator(".ajout-contrainte input").first().fill("90");
+await page.locator('.ajout-contrainte button:has-text("Ajouter la contrainte")').click();
+await enregistre();
+const esqAngle = (await modele()).objets[esq.id].params.points;
+const prodScal = (esqAngle[1].x - esqAngle[0].x) * (esqAngle[2].x - esqAngle[1].x) + (esqAngle[1].y - esqAngle[0].y) * (esqAngle[2].y - esqAngle[1].y);
+check("contrainte « angle » 90° : second segment perpendiculaire au premier, deux contraintes listées", Math.abs(prodScal) < 1e-4 && (await page.locator(".liste-contraintes li").count()) === 2, JSON.stringify(esqAngle.map((p) => [p.x, p.y])));
 
 // Bloc : depuis l'esquisse (remplacée par une occurrence), puis une seconde occurrence placée.
 await page.locator(".inspecteur-bloc > summary").click();

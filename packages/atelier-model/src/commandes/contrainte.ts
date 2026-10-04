@@ -11,23 +11,15 @@ import {
   sommetsDe,
   systeme,
   TYPES_CONTRAINTE,
+  ELEMENTS_CONTRAINTE as ELEMENTS,
   MAX_VARIABLES,
+  TOLERANCE_CONTRAINTE,
   type ParamsContrainte,
-  type TypeContrainte,
 } from "../contraintes.js";
 import type { ModeleAtelier, Occurrence, Relation } from "../modele.js";
 import { effetsVides, ErreurCommande, lire, nouveauProbleme, type ContexteCommande, type Effets, type ResultatCommande } from "./base.js";
 
 type Brut = Record<string, unknown>;
-
-const ELEMENTS: Record<TypeContrainte, ["sommet" | "segment", "sommet" | "segment" | null]> = {
-  coincidence: ["sommet", "sommet"],
-  horizontal: ["segment", null],
-  vertical: ["segment", null],
-  parallele: ["segment", "segment"],
-  perpendiculaire: ["segment", "segment"],
-  distance: ["sommet", "sommet"],
-};
 
 /** Esquisses (et sommets) touchées par un ensemble de contraintes : composante liée à la contrainte ajoutée. */
 function composante(etat: ModeleAtelier, depart: string[]): (Relation & { params: ParamsContrainte })[] {
@@ -98,7 +90,29 @@ function lireContrainte(etat: ModeleAtelier, p: Brut): { sourceId: string; targe
     if (v && typeof v === "object" && (v as { unit?: string }).unit === "deg") throw new ErreurCommande("invalide", "valeur", "unité « ° » refusée pour une distance (mètres attendus)");
     valeur = lire.longueur(p, "valeur", { strict: true });
   }
-  return { sourceId, targetId, params: { type, a, b: segmentSeul ? null : b, valeur, pilotante: lire.booleen(p, "pilotante", true), etat: "ok" } };
+  const params: ParamsContrainte = { type, a, b: segmentSeul ? null : b, valeur, pilotante: lire.booleen(p, "pilotante", true), etat: "ok" };
+  if (type === "angle") {
+    const v = lire.angle(p, "angle");
+    if (!v || !Number.isFinite(v.value)) throw new ErreurCommande("invalide", "angle", "angle en degrés requis");
+    // Droites : l'angle est ramené dans ]−90°, 90°].
+    let t = ((v.value % 180) + 180) % 180;
+    if (t > 90) t -= 180;
+    params.angle = { value: Math.round(t * 1e9) / 1e9, unit: "deg" };
+  }
+  if (type === "symetrie") {
+    const c = lire.chaine(p, "c");
+    if (!c.startsWith("sommet") || !sommetsDe(B, c)) throw new ErreurCommande("precondition", "c", `second sommet de ${targetId} attendu (${c})`);
+    if (c === b) throw new ErreurCommande("invalide", "c", "les deux sommets symétriques doivent être distincts");
+    if (sourceId === targetId && sommetsDe(A, a)!.some((i) => [b, c].includes(`sommet[${i}]`))) throw new ErreurCommande("invalide", "c", "un sommet symétrique ne peut pas appartenir à l'axe");
+    params.c = c;
+  }
+  if (type === "fixe") {
+    const pos = p["position"] as { x?: unknown; y?: unknown } | undefined;
+    const i = sommetsDe(A, a)![0]!;
+    params.position = pos && typeof pos.x === "number" && typeof pos.y === "number" && Number.isFinite(pos.x) && Number.isFinite(pos.y) ? { x: pos.x, y: pos.y } : { x: A.params.points[i]!.x, y: A.params.points[i]!.y };
+  }
+  if (["milieu", "sur-ligne"].includes(type) && sourceId === targetId && sommetsDe(B, b!)!.includes(sommetsDe(A, a)![0]!)) throw new ErreurCommande("invalide", "b", "le sommet est une extrémité de ce segment");
+  return { sourceId, targetId, params };
 }
 
 export const reducteursContrainte = {
@@ -126,7 +140,7 @@ export const reducteursContrainte = {
     const rel = etat.relations[id];
     if (!rel || rel.kind !== "contrainte") throw new ErreurCommande("precondition", "id", `contrainte inconnue : ${id}`);
     const ancien = rel.params as unknown as ParamsContrainte;
-    const c = lireContrainte(etat, { type: ancien.type, objetA: rel.sourceId, objetB: rel.targetId, a: ancien.a, b: ancien.b, valeur: p["valeur"] ?? ancien.valeur, pilotante: p["pilotante"] ?? ancien.pilotante });
+    const c = lireContrainte(etat, { type: ancien.type, objetA: rel.sourceId, objetB: rel.targetId, a: ancien.a, b: ancien.b, valeur: p["valeur"] ?? ancien.valeur, pilotante: p["pilotante"] ?? ancien.pilotante, angle: p["angle"] ?? ancien.angle, c: ancien.c, position: p["position"] ?? ancien.position });
     const avec: ModeleAtelier = { ...etat, relations: { ...etat.relations, [id]: { ...rel, params: c.params as unknown as Brut } } };
     const effets = effetsVides();
     effets.modifies.push(id);
@@ -171,7 +185,7 @@ export function controlerContraintes(avant: ModeleAtelier, apres: ModeleAtelier,
   if (!touchees.size) return { etat, effets: eff };
   const s = systeme(etat, composante(etat, [...touchees]));
   const ecart = Math.max(0, ...s.equations.map((e) => Math.abs(e(s.x))));
-  if (ecart <= 1e-7) return { etat, effets: eff };
+  if (ecart <= TOLERANCE_CONTRAINTE) return { etat, effets: eff };
   if (TRANSFORMATIONS_RIGIDES.test(type)) throw new ErreurCommande("precondition", "cibles", `cette transformation violerait les contraintes de l'esquisse (${[...touchees].join(", ")}) : supprimez ou modifiez d'abord les contraintes`);
   // Geste sur les sommets : les sommets déplacés sont tenus, le reste suit.
   const fixes: { id: string; i: number }[] = [];

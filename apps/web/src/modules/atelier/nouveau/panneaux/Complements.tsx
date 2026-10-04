@@ -9,6 +9,7 @@ import {
   CLASSES_BLOC,
   contraintesDe,
   diagnosticContraintes,
+  ELEMENTS_CONTRAINTE,
   FORMES_CONTRAIGNABLES,
   LIBELLES_CONTRAINTE,
   proprietesEffectives,
@@ -114,14 +115,9 @@ export function FicheOccurrenceBloc({ o, etat }: { o: OccurrenceQuelconque; etat
   );
 }
 
-const ELEMENTS: Record<TypeContrainte, ["sommet" | "segment", "sommet" | "segment" | null]> = {
-  coincidence: ["sommet", "sommet"],
-  horizontal: ["segment", null],
-  vertical: ["segment", null],
-  parallele: ["segment", "segment"],
-  perpendiculaire: ["segment", "segment"],
-  distance: ["segment", null],
-};
+// Dans l'inspecteur, la distance porte sur la longueur d'un segment ; les autres types suivent le modèle (D-051).
+const ELEMENTS: Record<TypeContrainte, readonly ["sommet" | "segment", "sommet" | "segment" | null]> = { ...ELEMENTS_CONTRAINTE, distance: ["segment", null] };
+const nombre = (v: string) => Number(v.trim().replace(",", "."));
 
 /** Contraintes d'une ou deux esquisses sélectionnées : ajout, diagnostic, suppression. */
 export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: OccurrenceQuelconque[]; etat: ModeleAtelier; readOnly: boolean; onCommandes: OnCommandes }) {
@@ -129,7 +125,9 @@ export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: Occurre
   const [type, setType] = useState<TypeContrainte>("horizontal");
   const [a, setA] = useState(0);
   const [b, setB] = useState(0);
+  const [c, setC] = useState(1);
   const [valeur, setValeur] = useState("");
+  const [angle, setAngle] = useState("");
   const [pilotante, setPilotante] = useState(true);
   if (esquisses.length === 0 || esquisses.length > 2 || esquisses.length !== sel.length) return null;
   const A = esquisses[0]!;
@@ -147,10 +145,16 @@ export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: Occurre
       params["b"] = `${kb}[${b}]`;
     }
     if (type === "distance") {
-      const v = Number(valeur.replace(",", "."));
+      const v = nombre(valeur);
       if (!Number.isFinite(v) || v <= 0) return;
       params["valeur"] = { value: v, unit: "m" };
     }
+    if (type === "angle") {
+      const v = nombre(angle);
+      if (!angle.trim() || !Number.isFinite(v)) return;
+      params["angle"] = { value: v, unit: "deg" };
+    }
+    if (type === "symetrie") params["c"] = `sommet[${c}]`;
     onCommandes([{ type: "contrainte.ajouter", params }], `Contrainte : ${LIBELLES_CONTRAINTE[type]}`);
   };
   return (
@@ -166,13 +170,22 @@ export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: Occurre
             const p = r.params as ParamsContrainte;
             return (
               <li key={r.id} className={p.etat === "a-reparer" ? "a-reparer" : undefined}>
-                <span>{LIBELLES_CONTRAINTE[p.type]} · {p.a}{p.b ? ` ↔ ${p.b}` : ""}{p.valeur ? ` = ${p.valeur.value.toString().replace(".", ",")} m` : ""}{!p.pilotante ? " (contrôle)" : ""}{p.etat === "a-reparer" ? " · à réparer" : ""}</span>
+                <span>{LIBELLES_CONTRAINTE[p.type]} · {p.a}{p.b ? ` ↔ ${p.b}` : ""}{p.c ? ` et ${p.c}` : ""}{p.valeur ? ` = ${p.valeur.value.toString().replace(".", ",")} m` : ""}{p.angle ? ` = ${p.angle.value.toString().replace(".", ",")}°` : ""}{p.position ? ` en (${p.position.x.toFixed(3).replace(".", ",")} ; ${p.position.y.toFixed(3).replace(".", ",")})` : ""}{!p.pilotante ? " (contrôle)" : ""}{p.etat === "a-reparer" ? " · à réparer" : ""}</span>
                 {p.type === "distance" && p.etat === "ok" && !readOnly && (
                   <input aria-label="Nouvelle valeur (m)" inputMode="decimal" defaultValue={p.valeur?.value.toString().replace(".", ",")} onKeyDown={(e) => {
                     e.stopPropagation();
                     if (e.key === "Enter") {
                       const v = Number(e.currentTarget.value.replace(",", "."));
                       if (Number.isFinite(v) && v > 0) onCommandes([{ type: "contrainte.modifier", params: { id: r.id, valeur: { value: v, unit: "m" } } }], "Cote modifiée");
+                    }
+                  }} />
+                )}
+                {p.type === "angle" && p.etat === "ok" && !readOnly && (
+                  <input aria-label="Nouvel angle (°)" inputMode="decimal" defaultValue={p.angle?.value.toString().replace(".", ",")} onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === "Enter") {
+                      const v = nombre(e.currentTarget.value);
+                      if (e.currentTarget.value.trim() && Number.isFinite(v)) onCommandes([{ type: "contrainte.modifier", params: { id: r.id, angle: { value: v, unit: "deg" } } }], "Angle modifié");
                     }
                   }} />
                 )}
@@ -185,11 +198,11 @@ export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: Occurre
       {!readOnly && (
         <div className="ajout-contrainte">
           <label>Type
-            <select value={type} onChange={(e) => { setType(e.target.value as TypeContrainte); setA(0); setB(0); }}>
+            <select value={type} onChange={(e) => { setType(e.target.value as TypeContrainte); setA(0); setB(0); setC(1); }}>
               {(Object.keys(ELEMENTS) as TypeContrainte[]).filter((t) => esquisses.length === 2 || ELEMENTS[t][1] !== "sommet" || A.params.points.length > 1).map((t) => <option key={t} value={t}>{LIBELLES_CONTRAINTE[t]}</option>)}
             </select>
           </label>
-          <label>{ka === "sommet" ? "Sommet" : "Segment"} de {A.id}
+          <label>{type === "symetrie" ? "Axe (segment)" : ka === "sommet" ? "Sommet" : "Segment"} de {A.id}
             <select value={a} onChange={(e) => setA(Number(e.target.value))}>{options(A, ka).map((i) => <option key={i} value={i}>{i + 1}</option>)}</select>
           </label>
           {kb && (
@@ -197,6 +210,12 @@ export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: Occurre
               <select value={b} onChange={(e) => setB(Number(e.target.value))}>{options(B, kb).map((i) => <option key={i} value={i}>{i + 1}</option>)}</select>
             </label>
           )}
+          {type === "symetrie" && (
+            <label>Symétrique : sommet de {B.id}
+              <select value={c} onChange={(e) => setC(Number(e.target.value))}>{options(B, "sommet").map((i) => <option key={i} value={i}>{i + 1}</option>)}</select>
+            </label>
+          )}
+          {type === "angle" && <label>Angle de a vers b (°)<input inputMode="decimal" value={angle} onChange={(e) => setAngle(e.target.value)} onKeyDown={(e) => e.stopPropagation()} /></label>}
           {type === "distance" && (
             <>
               <label>Valeur (m)<input inputMode="decimal" value={valeur} onChange={(e) => setValeur(e.target.value)} onKeyDown={(e) => e.stopPropagation()} /></label>
