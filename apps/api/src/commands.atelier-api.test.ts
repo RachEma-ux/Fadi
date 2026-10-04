@@ -1,6 +1,6 @@
 /**
  * Service de commandes du nouvel Atelier (L2.2) — tests d'API L2.5 : T03 (unité refusée), T06 (idempotence),
- * T07 (documents périmés), T08 (conflit entre deux comptes), T10 (droits, réservation), annuler / rétablir,
+ * T07 (événement écrit, puis effets du traitement L2.3 : document et bilan périmés, aperçu, notification), T08 (conflit entre deux comptes), T10 (droits, réservation), annuler / rétablir,
  * journal, problèmes, révisions passées, essai à blanc, initialisation (vide, P.118).
  *
  * Vraie base PostgreSQL/PostGIS (CI : fadi_test), dans un schéma jetable : `DATABASE_URL` reçoit un
@@ -187,7 +187,52 @@ describe.skipIf(!URL_BASE)("service de commandes du nouvel Atelier (§5.4, L2.2 
     expect(docs[0].message).toContain("Bilan du bâtiment");
   });
 
-  it.todo("T07 (L2.3) : le traitement de la boîte de sortie marque vues, bilan Harmonie et aperçu conceptuel périmés");
+  it("T07 (avec L2.3) : après POST /commands, le traitement périme document et bilan Harmonie, invalide l'aperçu, notifie l'autre membre", async () => {
+    const { attendreTraitements } = await import("./lib/atelier-events.js");
+    const { loadDesignContext } = await import("./lib/design-context.js");
+    const { documentCatalogue, documentDescriptors, recordProducedDocument } = await import("./lib/documents.js");
+    const { designReviewSnapshot } = await import("@parcours/domain-model");
+    const { db } = await import("./db/client.js");
+    const proprio = await compte("t07l23-a@atelier.test");
+    const editeur = await compte("t07l23-b@atelier.test");
+    const { id, revision } = await projetPret(proprio);
+    expect((await proprio.post(`/projects/${id}/members`).send({ email: "t07l23-b@atelier.test", role: "editeur" })).status).toBe(201);
+    await attendreTraitements();
+    const charger = async () => {
+      const project = { ...(await db.query.projects.findFirst({ where: (t, { eq }) => eq(t.id, id) }))!, role: "proprietaire" as const };
+      return { project, dctx: await loadDesignContext(db, project, new Date().toISOString()) };
+    };
+
+    // Bilan revu et produit à la révision courante : à jour.
+    let { project, dctx } = await charger();
+    const snap = designReviewSnapshot(dctx.harmony, dctx.analysis, new Date().toISOString(), false);
+    await poolApp.query("UPDATE projects SET harmony = $1 WHERE id = $2", [{ ...dctx.harmony, ...snap }, id]);
+    ({ project, dctx } = await charger());
+    expect(dctx.analysis.stale).toBe(false);
+    const bilan = documentDescriptors(project, dctx).find((d) => d.kind === "bilan-batiment")!;
+    await recordProducedDocument(db, id, { kind: bilan.kind, label: bilan.label, fileName: bilan.fileName, modelRevision: bilan.current.modelRevision, inputHash: bilan.current.inputHash, stepNumber: bilan.stepNumber }, new Date());
+    expect((await documentCatalogue(db, project, dctx)).find((d) => d.kind === "bilan-batiment")!.freshness).toBe("a-jour");
+    const majAvant = project.updatedAt;
+
+    // Lot de l'éditeur par la route ; `declencherTraitement` suit la validation.
+    const r = await editeur.post(`${base(id)}/commands`).send(enveloppe(revision, [mur("M1", 0)], "Mur de l'éditeur"));
+    expect(r.status).toBe(200);
+    await attendreTraitements();
+    const evt = await poolApp.query("SELECT processed_at, attempts, last_error FROM atelier_outbox WHERE command_id = $1", [r.body.journalId]);
+    expect(evt.rows[0]).toMatchObject({ attempts: 1, last_error: null });
+    expect(evt.rows[0].processed_at).not.toBeNull();
+
+    ({ project, dctx } = await charger());
+    expect((await documentCatalogue(db, project, dctx)).find((d) => d.kind === "bilan-batiment")).toMatchObject({ freshness: "perime", current: { modelRevision: revision + 1 } });
+    expect(dctx.analysis.stale).toBe(true);
+    expect((dctx.harmony.designReviewV62 as unknown as Record<string, unknown>)["perimeeParAtelier"]).toMatchObject({ revision: revision + 1, commandeId: r.body.journalId, nature: "commande" });
+    expect(project.updatedAt.getTime()).toBeGreaterThanOrEqual(majAvant.getTime());
+
+    // Notification au propriétaire (pas à l'auteur).
+    const n = (await proprio.get("/notifications")).body.items.filter((i: { kind: string; projectId: string }) => i.kind === "modele" && i.projectId === id);
+    expect(n).toEqual([expect.objectContaining({ text: expect.stringContaining("t07l23-b@atelier.test a modifié le modèle") })]);
+    expect((await editeur.get("/notifications")).body.items.some((i: { kind: string; projectId: string }) => i.kind === "modele" && i.projectId === id)).toBe(false);
+  });
 
   it("T08 : conflit entre deux comptes → 409 détaillé { baseRevision, revisionCourante, conflits: [{ objetId, motif, etatServeur }] }", async () => {
     const proprio = await compte("t08-a@atelier.test");
