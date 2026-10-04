@@ -607,7 +607,9 @@ export async function mesures3d(sc) {
   publier("vue 3D : construction de la scène (prismes, fusion, arêtes)", Number(await attr("scene-ms")));
 
   // Sélection au clic : premier objet trouvé sur une grille de points autour du centre.
+  // page.mouse ne fait pas défiler : le canevas est amené à l'écran avant de lire sa boîte.
   const toile = page.locator('[data-testid="atl-3d-toile"]');
+  await toile.scrollIntoViewIfNeeded();
   const b = await toile.boundingBox();
   let selectionMs = null;
   const pt = { x: 0, y: 0 };
@@ -657,8 +659,10 @@ export async function mesures3d(sc) {
     };
     requestAnimationFrame(boucle);
   });
-  const x0 = b.x + b.width * 0.15;
-  const y0 = b.y + 12;
+  await toile.scrollIntoViewIfNeeded();
+  const bo = await toile.boundingBox();
+  const x0 = bo.x + bo.width * 0.15;
+  const y0 = Math.max(bo.y, 0) + 12;
   await page.mouse.move(x0, y0);
   await page.mouse.down();
   for (let i = 1; i <= 120; i++) await page.mouse.move(x0 + i * 4, y0 + (i % 2));
