@@ -42,3 +42,19 @@ describe("vers un autre niveau (D-039)", () => {
     expect(() => appliquerLot(e, lot([{ type: "transformer.deplacer", params: { dx: 0, dy: 0, niveauCible: "n1" }, cibles: ["wh"] }]))).toThrow(/niveau haut/);
   });
 });
+
+describe("dupliquer un niveau (D-040)", () => {
+  it("nouveau niveau avec la copie de son contenu ; niveau haut → hauteur effective ; inverse exact", () => {
+    const e = base();
+    const r = appliquerLot(e, lot([{ type: "niveau.dupliquer", params: { source: "n0", id: "n3", nom: "Rez bis", elevation: 9 } }], "dup"));
+    expect(r.etat.niveaux["n3"]).toMatchObject({ nom: "Rez bis", elevation: 9, hauteur: 3 });
+    const copies = Object.values(r.etat.objets).filter((o) => o.niveauId === "n3");
+    expect(copies.map((o) => o.classe).sort()).toEqual(["mur", "mur", "porte", "poteau"]);
+    const haut = copies.find((o): o is Occurrence<"mur"> => o.classe === "mur" && o.params.a.y === 5)!;
+    expect(haut.params.niveauHautId).toBeNull();
+    expect(haut.params.hauteur).toEqual({ value: 3, unit: "m" });
+    expect(Object.values(r.etat.objets).filter((o) => o.niveauId === "n0")).toHaveLength(4);
+    expect(appliquerLot(r.etat, lot([r.inverse], "inv")).etat).toEqual(e);
+    expect(() => appliquerLot(e, lot([{ type: "niveau.dupliquer", params: { source: "zz", nom: "X", elevation: 9 } }]))).toThrow(/niveau inconnu/);
+  });
+});

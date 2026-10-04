@@ -329,6 +329,20 @@ await page.waitForSelector(".plan2d");
     copieOk = Object.values(mApres.objets).some((o) => o.classe === "mur" && o.id !== "croix-h" && o.niveauId === autre.id && o.params.a.x === 300 && o.params.a.y === 0) && mApres.objets["croix-h"].niveauId === nv;
   }
   check("vers un autre niveau : un mur copié sur le niveau choisi, l'original reste", copieOk, autre?.nom);
+  // Dupliquer un niveau (D-040) : « Ajouter un niveau » avec « Copier le contenu de ».
+  const avantDup = (await modele(pid)).modele;
+  const nbSource = Object.values(avantDup.objets).filter((o) => o.niveauId === nv).length;
+  await page.locator(".nav-ajout").click();
+  const form = page.locator(".nav-formulaire");
+  await form.locator("input").nth(0).fill("Copie e2e");
+  await form.locator("input").nth(1).fill("42");
+  await form.locator('[data-niveau="source"]').selectOption(nv);
+  await form.locator('button[type="submit"]').click();
+  await attendreEnregistre().catch(() => {});
+  const apresDup = (await modele(pid)).modele;
+  const nouveau = Object.values(apresDup.niveaux).find((n) => n.nom === "Copie e2e");
+  const nbCopie = nouveau ? Object.values(apresDup.objets).filter((o) => o.niveauId === nouveau.id).length : -1;
+  check("dupliquer un niveau : nouveau niveau avec la copie de tout son contenu, une révision", !!nouveau && nouveau.elevation === 42 && nbCopie === nbSource, `${nbSource} → ${nbCopie}`);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.

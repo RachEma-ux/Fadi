@@ -27,7 +27,7 @@ function nomObjet(o: OccurrenceQuelconque): string {
 export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: PropsNavigateur) {
   const niveaux = niveauxOrdonnes(etat);
   const [filtre, setFiltre] = useState("");
-  const [nouveauNiveau, setNouveauNiveau] = useState<{ nom: string; elevation: string } | null>(null);
+  const [nouveauNiveau, setNouveauNiveau] = useState<{ nom: string; elevation: string; source: string } | null>(null);
   const calques = Object.values(etat.calques).sort((a, b) => a.ordre - b.ordre);
   const parClasse = useMemo(() => {
     const m = new Map<Classe, OccurrenceQuelconque[]>();
@@ -58,7 +58,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
           ))}
         </ul>
         {!readOnly && !nouveauNiveau && (
-          <button type="button" className="nav-ajout" onClick={() => setNouveauNiveau({ nom: `Niveau ${niveaux.length + 1}`, elevation: "" })}>
+          <button type="button" className="nav-ajout" onClick={() => setNouveauNiveau({ nom: `Niveau ${niveaux.length + 1}`, elevation: "", source: "" })}>
             Ajouter un niveau
           </button>
         )}
@@ -69,7 +69,9 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
               e.preventDefault();
               const elevation = Number(nouveauNiveau.elevation.replace(",", "."));
               if (!nouveauNiveau.nom.trim() || nouveauNiveau.elevation.trim() === "" || !Number.isFinite(elevation)) return;
-              onCommandes([{ type: "niveau.creer", params: { nom: nouveauNiveau.nom.trim(), elevation, ordre: niveaux.length } }], `Niveau ${nouveauNiveau.nom.trim()}`);
+              // Avec « copier le contenu de » : niveau.dupliquer (D-040), une seule révision.
+              if (nouveauNiveau.source) onCommandes([{ type: "niveau.dupliquer", params: { source: nouveauNiveau.source, nom: nouveauNiveau.nom.trim(), elevation } }], `Niveau ${nouveauNiveau.nom.trim()} (copie de ${etat.niveaux[nouveauNiveau.source]?.nom ?? nouveauNiveau.source})`);
+              else onCommandes([{ type: "niveau.creer", params: { nom: nouveauNiveau.nom.trim(), elevation, ordre: niveaux.length } }], `Niveau ${nouveauNiveau.nom.trim()}`);
               setNouveauNiveau(null);
             }}
           >
@@ -80,6 +82,17 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
             <label>
               Altitude (m)
               <input inputMode="decimal" value={nouveauNiveau.elevation} onChange={(e) => setNouveauNiveau({ ...nouveauNiveau, elevation: e.target.value })} onKeyDown={(e) => e.stopPropagation()} required placeholder="à renseigner" />
+            </label>
+            <label>
+              Copier le contenu de
+              <select value={nouveauNiveau.source} onChange={(e) => setNouveauNiveau({ ...nouveauNiveau, source: e.target.value })} data-niveau="source">
+                <option value="">aucun (niveau vide)</option>
+                {niveaux.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.nom}
+                  </option>
+                ))}
+              </select>
             </label>
             <div className="nav-actions">
               <button type="submit">Créer</button>

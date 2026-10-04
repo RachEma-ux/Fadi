@@ -29,7 +29,7 @@ import { reducteursDocuments } from "./documents.js";
 import { joindreMurs, scinderMur } from "./mur.js";
 import { creerOccurrence, modifierOccurrence, supprimerOccurrence } from "./objets.js";
 import { affecterClassification, affecterPhase, definirPropriete, rattacherReference, reducteursCalque, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
-import { reducteursTransformer } from "./transformer.js";
+import { dupliquerNiveau, reducteursTransformer } from "./transformer.js";
 import { verifierModele } from "../archive.js";
 import { reducteursRefExterne } from "./refexterne.js";
 
@@ -50,6 +50,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "niveau.creer": (etat, p, ctx) => reducteursNiveau.creer(etat, p, ctx),
   "niveau.modifier": (etat, p) => reducteursNiveau.modifier(etat, p),
   "niveau.supprimer": (etat, p, ctx) => reducteursNiveau.supprimer(etat, p, ctx),
+  "niveau.dupliquer": (etat, p, ctx) => dupliquerNiveau(etat, p, ctx, (e, q) => reducteursNiveau.creer(e, q, ctx)),
   // Murs
   ...triplet("mur", "mur", "tracer"),
   "mur.scinder": (etat, p, ctx) => scinderMur(etat, p, ctx),

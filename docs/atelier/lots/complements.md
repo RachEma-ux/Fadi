@@ -110,3 +110,4 @@ DXF : cotes d'ordonnée (D-035) ; XREF résolues par les fichiers joints (D-036)
 Portes : sens d'ouverture et changement d'hôte des ouvertures (`ouvrants.test.ts`, e2e `atelier-complements.mjs`, D-037).
 IFC : connexions des murs `IfcRelConnectsPathElements` (`raccords.test.ts`, corpus régénéré, D-038).
 Déplacer ou copier vers un autre niveau (`niveaux-transfert.test.ts`, e2e `atelier-complements.mjs`, D-039).
+Dupliquer un niveau avec son contenu (`niveaux-transfert.test.ts`, e2e, D-040).

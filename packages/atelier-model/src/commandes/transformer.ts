@@ -508,3 +508,41 @@ function raccordOuChanfrein(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande,
   return { etat: { ...etat, objets }, effets };
 }
 
+/**
+ * Dupliquer un niveau avec son contenu (D-040) : un nouveau niveau (nom, altitude saisis ; hauteur reprise de la
+ * source si elle est renseignée) et une copie de chaque objet du niveau source, au même endroit en plan. Ce qui
+ * dépend des autres niveaux est traité explicitement, jamais deviné :
+ * - un mur à « niveau haut » garde sa hauteur effective, écrite comme hauteur (altitude du niveau haut − altitude
+ *   du niveau source), puisque ce niveau haut n'est plus au-dessus de la copie dans le cas général ;
+ * - un escalier part du nouveau niveau, sans niveau d'arrivée (hauteur à franchir conservée) ;
+ * - les annotations liées gardent leurs références vers les originaux non copiées (copie non associative).
+ */
+export function dupliquerNiveau(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, creerNiveau: (e: ModeleAtelier, q: Brut) => ResultatCommande): ResultatCommande {
+  const sourceId = lire.chaine(p, "source");
+  const source = etat.niveaux[sourceId];
+  if (!source) throw new ErreurCommande("precondition", "source", `niveau inconnu : ${sourceId}`);
+  const r1 = creerNiveau(etat, { id: p["id"], nom: p["nom"], elevation: p["elevation"], hauteur: p["hauteur"] === undefined ? source.hauteur : p["hauteur"] });
+  const nouveau = r1.effets.crees[0]!;
+  const sel = (Object.values(r1.etat.objets) as OccurrenceQuelconque[]).filter((o) => o.niveauId === sourceId && !estOuverture(o.classe)).sort((a, b) => (a.id < b.id ? -1 : 1));
+  if (!sel.length) return r1;
+  const r2 = copier(r1.etat, sel, { type: "translation", dx: 0, dy: 0 }, ctx);
+  const objets = { ...r2.etat.objets };
+  for (const id of r2.effets.crees) {
+    const o = objets[id]!;
+    let copie = { ...o, niveauId: nouveau } as OccurrenceQuelconque;
+    if (copie.classe === "mur") {
+      // Le caractère « extérieur » suit le mur source (même axe, copie sur place).
+      const src = sel.find((x): x is Occurrence<"mur"> => x.classe === "mur" && x.params.a.x === (copie as Occurrence<"mur">).params.a.x && x.params.a.y === (copie as Occurrence<"mur">).params.a.y && x.params.b.x === (copie as Occurrence<"mur">).params.b.x && x.params.b.y === (copie as Occurrence<"mur">).params.b.y);
+      if (src) copie = { ...copie, params: { ...copie.params, exterieur: src.params.exterieur } } as OccurrenceQuelconque;
+    }
+    if (copie.classe === "mur" && copie.params.niveauHautId) {
+      const haut = etat.niveaux[copie.params.niveauHautId];
+      copie = { ...copie, params: { ...copie.params, niveauHautId: null, hauteur: haut && haut.elevation > source.elevation ? { value: Math.round((haut.elevation - source.elevation) * 1e6) / 1e6, unit: "m" } : copie.params.hauteur } };
+    }
+    if (copie.classe === "escalier") copie = { ...copie, params: { ...copie.params, niveauDepartId: nouveau, niveauArriveeId: null } };
+    objets[id] = copie;
+  }
+  const effets = fusionnerEffets(r1.effets, r2.effets);
+  return { etat: { ...r2.etat, objets }, effets: { ...effets, niveauxTouches: [...new Set([...effets.niveauxTouches, nouveau])] } };
+}
+
