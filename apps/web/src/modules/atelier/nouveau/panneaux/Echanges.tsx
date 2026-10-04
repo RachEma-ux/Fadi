@@ -4,7 +4,7 @@
  * commandes d'esquisse), et le rapport de fidélité de chaque échange : conservé, transformé, omis, à réparer.
  */
 import { useEffect, useRef, useState } from "react";
-import { commandesImportDxf, commandesProprietesCsv, exporterIfc, ErreurCommande, type ModeleAtelier, type RapportEchange, type RapportImportDxf, type UniteDxf } from "@parcours/atelier-model";
+import { commandesImportDxf, commandesProprietesCsv, modeleDepuisBibliotheque, planifierReprise, exporterIfc, ErreurCommande, type ModeleAtelier, type RapportEchange, type RapportImportDxf, type UniteDxf } from "@parcours/atelier-model";
 import { api, ApiError } from "../../../../lib/api";
 import type { AtelierClient } from "../../bus/atelier-client";
 
@@ -69,6 +69,21 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
 }) {
   const entreeIfc = useRef<HTMLInputElement | null>(null);
   const entreeCsv = useRef<HTMLInputElement | null>(null);
+  const entreeBib = useRef<HTMLInputElement | null>(null);
+  // Fichier de bibliothèque (D-050) : repris comme une bibliothèque partagée (homonymes réutilisés, provenance fichier).
+  const importerBibliotheque = async (f: File) => {
+    try {
+      const { modele, nom } = modeleDepuisBibliotheque(await f.text());
+      const plan = planifierReprise(modele, client.getSnapshot().etat, { familles: ["definitions"], origine: { projet: "fichier", nom: `${nom} (${f.name})`, revision: 0 }, homonymes: "reutiliser" });
+      if (!plan.commande) return void onAide("Rien à reprendre de ce fichier : toutes ses définitions existent déjà sous le même nom.");
+      await client.executer([plan.commande], `Bibliothèque « ${nom} » importée`);
+      const n = Object.keys((plan.commande.params["ajouts"] as { definitions: Record<string, unknown> }).definitions).length;
+      const reutilises = plan.rapport.homonymes.filter((h) => h.action === "reutilise").length;
+      onAide(`${n} définition(s) ajoutée(s) depuis « ${nom} »${reutilises ? ` ; ${reutilises} homonyme(s) réutilisé(s)` : ""}.`);
+    } catch (err) {
+      onErreur(err instanceof Error ? err.message : String(err));
+    }
+  };
   // Propriétés en tableau (D-045) : une commande propriete.definir par ligne valide, refus nominatifs.
   const importerProprietes = async (f: File) => {
     try {
@@ -120,6 +135,9 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
           <button type="button" data-import="proprietes" disabled={desactive} title={motif ?? "CSV : id ; propriete ; valeur ; unite"} onClick={(e) => { fermerMenu(e); entreeCsv.current?.click(); }}>
             Propriétés (CSV)…
           </button>
+          <button type="button" data-import="bibliotheque" disabled={desactive} title={motif ?? "Fichier .fadi-bibliotheque.json exporté d'un autre projet"} onClick={(e) => { fermerMenu(e); entreeBib.current?.click(); }}>
+            Bibliothèque de définitions…
+          </button>
         </div>
       </details>
       <input
@@ -146,6 +164,19 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
           const f = e.currentTarget.files?.[0];
           e.currentTarget.value = "";
           if (f) void importerProprietes(f);
+        }}
+      />
+      <input
+        ref={entreeBib}
+        type="file"
+        accept=".json,application/json"
+        hidden
+        aria-label="Fichier de bibliothèque à importer"
+        data-entree="bibliotheque"
+        onChange={(e) => {
+          const f = e.currentTarget.files?.[0];
+          e.currentTarget.value = "";
+          if (f) void importerBibliotheque(f);
         }}
       />
       {dxfOuvert && niveauId && (

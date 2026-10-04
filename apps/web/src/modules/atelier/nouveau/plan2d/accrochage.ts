@@ -7,7 +7,7 @@ import { intersectionSegments, pointsEllipse, projectionSurSegment, type ModeleA
 import { pt } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
-export type TypeAccroche = "extremite" | "milieu" | "centre" | "perpendiculaire" | "intersection" | "orthogonal" | "grille" | "libre";
+export type TypeAccroche = "extremite" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "intersection" | "orthogonal" | "grille" | "libre";
 
 export interface Accroche {
   point: Point2;
@@ -29,13 +29,15 @@ export function avecExternes(cache: ReturnType<typeof segmentsDuNiveau>, externe
   if (!externes.length) return cache;
   const segments = [...cache.segments];
   for (const x of externes) for (const t of x.traits.slice(0, 20000)) segments.push({ a: pt(t.a.x, t.a.y), b: pt(t.b.x, t.b.y), objetId: `${PREFIXE_EXTERNE}${x.id}` });
-  return { segments, centres: cache.centres };
+  return { segments, centres: cache.centres, quadrants: cache.quadrants };
 }
 
 /** Segments et points remarquables d'un niveau (axes de murs, contours, esquisses, escaliers). */
-export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): { segments: Segment[]; centres: { p: Point2; objetId: string }[] } {
+export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): { segments: Segment[]; centres: { p: Point2; objetId: string }[]; quadrants: { p: Point2; objetId: string }[] } {
   const segments: Segment[] = [];
   const centres: { p: Point2; objetId: string }[] = [];
+  // Quadrants des cercles et extrémités d'axes des ellipses (D-050).
+  const quadrants: { p: Point2; objetId: string }[] = [];
   const contour = (pts: Point2[], objetId: string, ferme = true) => {
     for (let i = 0; i + 1 < pts.length; i++) segments.push({ a: pts[i]!, b: pts[i + 1]!, objetId });
     if (ferme && pts.length > 2) segments.push({ a: pts[pts.length - 1]!, b: pts[0]!, objetId });
@@ -61,6 +63,12 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
         break;
       case "esquisse":
         if (o.params.centre) centres.push({ p: o.params.centre, objetId: o.id });
+        if (o.params.forme === "cercle" && o.params.centre && o.params.rayon) {
+          const { x, y } = o.params.centre;
+          const r = o.params.rayon.value;
+          for (const q of [pt(x + r, y), pt(x, y + r), pt(x - r, y), pt(x, y - r)]) quadrants.push({ p: q, objetId: o.id });
+        }
+        if (o.params.forme === "ellipse" && o.params.centre && o.params.rayon && o.params.rayonB) for (const q of pointsEllipse(o.params.centre, o.params.rayon.value, o.params.rayonB.value, o.params.rotation?.value ?? 0, 4)) quadrants.push({ p: q, objetId: o.id });
         if (o.params.points.length >= 2) contour(o.params.points, o.id, o.params.ferme);
         // Ellipse (D-046) : son contour discrétisé sert à la sélection et à l'accrochage.
         if (o.params.forme === "ellipse" && o.params.centre && o.params.rayon && o.params.rayonB) contour(pointsEllipse(o.params.centre, o.params.rayon.value, o.params.rayonB.value, o.params.rotation?.value ?? 0, 48), o.id);
@@ -82,7 +90,7 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
         break;
     }
   }
-  return { segments, centres };
+  return { segments, centres, quadrants };
 }
 
 const dist = (a: Point2, b: Point2) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -107,6 +115,7 @@ export function accrocher(p: Point2, cache: ReturnType<typeof segmentsDuNiveau>,
     essayer(s.b, "extremite", s.objetId, 3);
   }
   if (options.centre) for (const c of cache.centres) if (!exclure.includes(c.objetId)) essayer(c.p, "centre", c.objetId, 2);
+  if (options.centre) for (const c of cache.quadrants ?? []) if (!exclure.includes(c.objetId)) essayer(c.p, "quadrant", c.objetId, 2);
   if (options.milieu) for (const s of segs) essayer(pt((s.a.x + s.b.x) / 2, (s.a.y + s.b.y) / 2), "milieu", s.objetId, 2);
   if (options.intersection) {
     const proches = segs.filter((s) => projectionSurSegment(p, s.a, s.b).distance <= rayon * 2);

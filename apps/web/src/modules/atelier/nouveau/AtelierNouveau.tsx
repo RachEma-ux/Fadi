@@ -5,7 +5,7 @@
  * (R10). Clavier : Échap, Entrée, Suppr, Ctrl/⌘ Z / Maj Z / Y, Ctrl/⌘ K, raccourcis d'outil, saisie de précision.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { CLASSES, ErreurCommande, niveauxOrdonnes, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { CLASSES, ErreurCommande, exporterBibliotheque, niveauxOrdonnes, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../../lib/api";
@@ -467,6 +467,26 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
               }}
             >
               Maquette IFC 4.3 · rapport
+            </button>
+            <button
+              type="button"
+              data-export="bibliotheque"
+              onClick={(e) => {
+                // Fichier de bibliothèque (D-050) : types, blocs et composants du projet, calques de leur contenu.
+                (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+                const f = exporterBibliotheque(etat, nomProjet);
+                const url = URL.createObjectURL(new Blob([JSON.stringify(f, null, 2)], { type: "application/json" }));
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `Bibliotheque_${code.replace(/[^A-Za-z0-9._-]+/g, "_")}.fadi-bibliotheque.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 2000);
+                etatUi.set({ aide: `${f.definitions.length} définition(s) exportée(s) en fichier de bibliothèque.` });
+              }}
+            >
+              Bibliothèque de définitions · fichier
             </button>
           </div>
         </details>

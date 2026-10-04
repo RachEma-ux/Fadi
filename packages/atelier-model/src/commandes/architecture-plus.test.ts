@@ -44,7 +44,7 @@ describe("architecture complémentaire (D-047)", () => {
     const r = appliquerLot(e, lot([{ type: "ouverture.repartir", params: { id: "f", nombre: 3, entraxe: m(2.5) } }], "r"));
     const fen = Object.values(r.etat.objets).filter((o): o is Occurrence<"fenetre"> => o.classe === "fenetre").map((o) => o.params.position).sort();
     expect(fen).toEqual([0.1, 0.35, 0.6, 0.85]);
-    expect(r.effets.crees.every((id) => (r.etat.objets[id] as Occurrence<"fenetre">).params.repere === null)).toBe(true);
+    expect(r.effets.crees.map((id) => (r.etat.objets[id] as Occurrence<"fenetre">).params.repere).sort()).toEqual(["F2", "F3", "F4"]);
     expect(() => appliquerLot(e, lot([{ type: "ouverture.repartir", params: { id: "f", nombre: 4, entraxe: m(2.5) } }]))).toThrow(/sortirait/);
     expect(() => appliquerLot(r.etat, lot([{ type: "ouverture.repartir", params: { id: "f", nombre: 1, entraxe: m(2.5) } }]))).toThrow(/chevaucherait/);
   });

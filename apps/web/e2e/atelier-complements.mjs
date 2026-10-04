@@ -481,13 +481,37 @@ await page.waitForSelector(".plan2d");
   (await import("node:fs")).writeFileSync(cheminCsv, "id;propriete;valeur;unite\ncroix-h;Résistance au feu;EI 60;\ncroix-h;Épaisseur relevée;20;\n");
   await page.locator(".barre-imports > summary").click();
   await page.locator('[data-entree="proprietes-csv"]').setInputFiles(cheminCsv);
-  await attendreEnregistre().catch(() => {});
-  await page.waitForTimeout(500);
-  const propsCroix = (await modele(pid)).modele.objets["croix-h"].proprietes;
+  // L'import part en un lot : attendre qu'il soit enregistré sur le serveur (banc de CI chargé).
+  let propsCroix = {};
+  for (let k = 0; k < 40; k++) {
+    propsCroix = (await modele(pid)).modele.objets["croix-h"].proprietes;
+    if (propsCroix["Résistance au feu"]) break;
+    await page.waitForTimeout(500);
+  }
   check("propriétés importées d'un CSV, ligne numérique sans unité refusée", propsCroix["Résistance au feu"]?.valeur === "EI 60" && propsCroix["Résistance au feu"]?.provenance === "import" && !propsCroix["Épaisseur relevée"], JSON.stringify(Object.keys(propsCroix)));
   const histo = await page.request.get(`${BASE}/projects/${pid}/atelier/journal.csv`);
   const histoTexte = await histo.text();
   check("historique exporté en CSV (une ligne par révision)", histo.status() === 200 && /^\uFEFF?revision;date;nature;libelle;auteur/.test(histoTexte) && histoTexte.split("\r\n").length > 5);
+}
+
+// Fichier de bibliothèque (D-050) : exporté de ce projet, importé dans un projet neuf.
+{
+  await page.locator(".barre-exports > summary").click();
+  const [dlBib] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator('[data-export="bibliotheque"]').click()]);
+  const cheminBib = `${OUT}/bibliotheque-e2e.json`;
+  await dlBib.saveAs(cheminBib);
+  const neuf = (await api("post", "/projects", { code: "P.300", name: "Projet bibliothèque" })).body.id;
+  const nv0 = await lot(neuf, `n-${Date.now()}`, 0, [{ type: "niveau.creer", params: { id: "rdc", nom: "RDC", elevation: 0 } }]);
+  await ouvrir(neuf, false);
+  await page.locator(".barre-imports > summary").click();
+  await page.locator('[data-entree="bibliotheque"]').setInputFiles(cheminBib);
+  let defs = 0;
+  for (let k = 0; k < 40 && !defs; k++) {
+    defs = Object.keys((await modele(neuf)).modele.definitions).length;
+    if (!defs) await page.waitForTimeout(500);
+  }
+  check("bibliothèque : fichier exporté puis importé dans un projet neuf (définitions reprises)", nv0.status === 200 && defs > 0, `${defs} définition(s)`);
+  await ouvrir(pid);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.

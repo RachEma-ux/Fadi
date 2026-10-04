@@ -27,7 +27,7 @@ export interface PropsPlan2D {
 /** Ordre de dessin : surfaces d'abord, puis structure, puis annotations. */
 const ORDRE: Record<string, number> = { "reference-plan": 0, zone: 1, espace: 2, dalle: 3, toiture: 3, piece: 4, solide: 5, esquisse: 6, escalier: 7, mur: 8, poteau: 9, porte: 10, fenetre: 10, ouverture: 10, cotation: 11, texte: 12, etiquette: 12, "bloc-occurrence": 13 };
 
-const LIBELLE_ACCROCHE: Record<string, string> = { extremite: "Extrémité", milieu: "Milieu", centre: "Centre", perpendiculaire: "Perpendiculaire", intersection: "Intersection", orthogonal: "Orthogonal", grille: "Grille", libre: "" };
+const LIBELLE_ACCROCHE: Record<string, string> = { extremite: "Extrémité", milieu: "Milieu", centre: "Centre", quadrant: "Quadrant", perpendiculaire: "Perpendiculaire", intersection: "Intersection", orthogonal: "Orthogonal", grille: "Grille", libre: "" };
 
 const OUTILS_CONTOUR = new Set(["dalle", "toiture", "zone", "espace", "solide", "polygone", "hachure", "polyligne", "spline", "garde-corps"]);
 const OUTILS_SEGMENT = new Set(["mur", "escalier", "ligne", "construction", "cotation", "mesurer", "deplacer", "copier", "miroir", "etirer", "rectangle", "cercle", "arc", "tourner", "echelle"]);

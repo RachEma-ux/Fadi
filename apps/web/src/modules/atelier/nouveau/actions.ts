@@ -16,7 +16,7 @@ function nombre(ui: EtatUi, cle: string, defaut: number): number {
 }
 
 /** Outils qui agissent dès qu'on les choisit, sur la sélection courante. */
-export const OUTILS_IMMEDIATS = new Set(["supprimer", "decomposer", "joindre", "grouper", "repeter", "raccorder", "chanfreiner", "extruder"]);
+export const OUTILS_IMMEDIATS = new Set(["supprimer", "decomposer", "joindre", "axes-murs", "grouper", "repeter", "raccorder", "chanfreiner", "extruder"]);
 
 /** Contour fermé d'une esquisse (rectangle, cercle, polygone, polyligne fermée), ou null. */
 export function contourEsquisse(etat: ModeleAtelier, id: string): Point2[] | null {
@@ -71,6 +71,12 @@ export function actionImmediate(outil: string, etat: ModeleAtelier, ui: EtatUi):
       return lotSuppression(etat, sel);
     case "decomposer":
       return { commandes: [{ type: "transformer.decomposer", params: {}, cibles: sel }], label: "Décomposer" };
+    case "axes-murs": {
+      // Axes des murs sélectionnés en lignes de construction (D-050), sur le niveau de chaque mur.
+      const murs = sel.map((id) => etat.objets[id]!).filter((o) => o.classe === "mur");
+      if (!murs.length) return { message: "Axes des murs : sélectionnez des murs." };
+      return { commandes: murs.map((o) => ({ type: "esquisse.construction", params: { niveauId: o.niveauId, points: [(o as { params: { a: unknown } }).params.a, (o as { params: { b: unknown } }).params.b] } })), label: `Axes de ${murs.length} mur${murs.length > 1 ? "s" : ""}` };
+    }
     case "joindre":
       if (sel.length < 2) return { message: "Joindre : sélectionnez au moins deux lignes ou polylignes jointives." };
       return { commandes: [{ type: "transformer.joindre", params: {}, cibles: sel }], label: `Joindre ${sel.length} objets` };

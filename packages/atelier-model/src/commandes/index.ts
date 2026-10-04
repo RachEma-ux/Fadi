@@ -7,6 +7,8 @@
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import type { Classe } from "../ontologie.js";
 import { estOuverture } from "../ontologie.js";
+import { couperContour, unionContoursAdjacents } from "../geometrie.js";
+import { referencesVers } from "../modele.js";
 import { lire } from "./base.js";
 import { validerParams } from "./validation.js";
 import {
@@ -67,6 +69,50 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "ouverture.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "ouverture"),
   "ouverture.deplacer": (etat, p, ctx) => modifierOccurrence(etat, { id: p["id"], params: { position: p["position"] } }, ctx, "ouverture"),
   "ouverture.supprimer": (etat, p, ctx) => supprimerOccurrence(etat, p, ctx, "ouverture"),
+  // Pièces (D-050) : fusionner deux pièces adjacentes d'un même niveau (la première garde son nom, son code et ses
+  // propriétés ; la seconde, sans lien, est supprimée) ; scinder une pièce par une droite (la seconde moitié reçoit
+  // un nouvel identifiant, le même nom et aucun code — à renseigner). Pièce liée (cote, relation, programme) : refus.
+  "piece.fusionner": (etat, p) => {
+    const ids = Array.isArray(p["ids"]) ? (p["ids"] as unknown[]) : [];
+    if (ids.length !== 2 || !ids.every((x) => typeof x === "string")) throw new ErreurCommande("invalide", "ids", "fusion : deux pièces");
+    const [a, b] = (ids as string[]).map((id) => etat.objets[id]) as [OccurrenceQuelconque | undefined, OccurrenceQuelconque | undefined];
+    if (!a || !b || a.classe !== "piece" || b.classe !== "piece") throw new ErreurCommande("precondition", "ids", "fusion : deux pièces existantes");
+    if (a.niveauId !== b.niveauId) throw new ErreurCommande("precondition", "ids", "fusion : pièces d'un même niveau");
+    if (a.params.trous.length || b.params.trous.length) throw new ErreurCommande("precondition", "ids", "fusion : pièces sans trous seulement");
+    if (a.params.aireDeclaree || b.params.aireDeclaree) throw new ErreurCommande("precondition", "ids", "une aire déclarée est renseignée : elle ne vaudrait plus après la fusion — la retirer d'abord");
+    if (referencesVers(etat, b.id).length || Object.values(etat.relations).some((r) => r.sourceId === b.id || r.targetId === b.id)) throw new ErreurCommande("precondition", "ids", `${b.id} est liée (cote, relation ou programme) : la détacher d'abord`);
+    const contour = unionContoursAdjacents(a.params.contour, b.params.contour);
+    if (!contour) throw new ErreurCommande("precondition", "ids", "les deux pièces ne partagent pas de côté (ou leur union aurait un trou)");
+    const objets = { ...etat.objets, [a.id]: { ...a, params: { ...a.params, contour } } as OccurrenceQuelconque };
+    delete objets[b.id];
+    const effets = effetsVides();
+    effets.modifies.push(a.id);
+    effets.supprimes.push(b.id);
+    if (a.niveauId) effets.niveauxTouches.push(a.niveauId);
+    return { etat: { ...etat, objets }, effets };
+  },
+  "piece.scinder": (etat, p, ctx) => {
+    const id = lire.objet(etat, p, "id");
+    const o = etat.objets[id]!;
+    if (o.classe !== "piece") throw new ErreurCommande("precondition", "id", `${id} n'est pas une pièce`);
+    if (o.params.trous.length) throw new ErreurCommande("precondition", "id", "scission : pièce sans trous seulement");
+    if (o.params.aireDeclaree) throw new ErreurCommande("precondition", "id", "une aire déclarée est renseignée : elle ne vaudrait plus après la scission — la retirer d'abord");
+    if (referencesVers(etat, id).length) throw new ErreurCommande("precondition", "id", `${id} est visée par une cote : la détacher d'abord`);
+    const parts = couperContour(o.params.contour, lire.point(p, "a")!, lire.point(p, "b")!);
+    if (!parts) throw new ErreurCommande("precondition", "a", "la droite ne coupe pas la pièce en deux (ou passe par un sommet)");
+    const nouvel = lire.chaineOuNull(p, "nouvelId") ?? ctx.ids.nouveau("piece");
+    if (etat.objets[nouvel]) throw new ErreurCommande("precondition", "nouvelId", `identifiant déjà utilisé : ${nouvel}`);
+    const objets = {
+      ...etat.objets,
+      [id]: { ...o, params: { ...o.params, contour: parts[0], etiquette: null } } as OccurrenceQuelconque,
+      [nouvel]: { ...o, id: nouvel, groupeId: null, proprietes: {}, params: { ...o.params, contour: parts[1], code: null, etiquette: null } } as OccurrenceQuelconque,
+    };
+    const effets = effetsVides();
+    effets.modifies.push(id);
+    effets.crees.push(nouvel);
+    if (o.niveauId) effets.niveauxTouches.push(o.niveauId);
+    return { etat: { ...etat, objets }, effets };
+  },
   // Répartir une ouverture le long de son mur (D-047) : `nombre` copies à `entraxe` (m, signé : vers b si positif) ;
   // une copie qui sortirait du mur ou chevaucherait une autre ouverture : refus du lot entier.
   "ouverture.repartir": (etat, p, ctx) => {
@@ -88,9 +134,13 @@ export const REDUCTEURS: Record<string, Reducteur> = {
       const fin = c + ouv.params.largeur.value / 2;
       if (deb < -1e-9 || fin > L + 1e-9) throw new ErreurCommande("precondition", "nombre", `copie ${k} : l'emprise sortirait du mur ${mur.id}`);
       if (intervalles.some(([a, b]) => deb < b - 1e-9 && fin > a + 1e-9)) throw new ErreurCommande("precondition", "entraxe", `copie ${k} : chevaucherait une ouverture existante`);
-      const { repere: _r, ...params } = ouv.params;
-      void _r;
-      const r = creerOccurrence(courant, { classe: o.classe, calqueId: o.calqueId, definitionId: o.definitionId, params: { ...params, position: Math.round((c / L) * 1e9) / 1e9 } }, ctx, o.classe);
+      // Repère numéroté à la suite (« F1 » → « F2 », « F3 »…) quand il se termine par un nombre libre (D-050) ; sinon
+      // aucun repère (jamais un doublon).
+      const m = ouv.params.repere ? /^(.*?)(\d+)$/.exec(ouv.params.repere) : null;
+      const pris = new Set(Object.values(courant.objets).map((x) => (x.params as { repere?: string | null }).repere).filter(Boolean));
+      const candidat = m ? `${m[1]}${Number(m[2]) + k}` : null;
+      const repere = candidat && !pris.has(candidat) ? candidat : null;
+      const r = creerOccurrence(courant, { classe: o.classe, calqueId: o.calqueId, definitionId: o.definitionId, params: { ...ouv.params, repere, position: Math.round((c / L) * 1e9) / 1e9 } }, ctx, o.classe);
       courant = r.etat;
       effets = fusionnerEffets(effets, r.effets);
     }

@@ -120,3 +120,4 @@ Esquisse : ellipse, rectangles par centre et par 3 points, cercle par 2 points, 
 Étirer en entraînant les murs joints, portes doubles et coulissantes, répartition d'ouvertures (`architecture-plus.test.ts`, e2e, D-047).
 Vues axonométriques et mesure 3D (`axonometrie.test.ts`, e2e, D-048).
 Décalage de contours fermés et en série, chanfrein de sommet, sommets communs, calculs dans les champs (`dessin-plus.test.ts`, e2e, D-049).
+Contour détecté, axes des murs, quadrants, repères numérotés, fusion et scission de pièces, fichier de bibliothèque (`pieces-plus.test.ts`, e2e, D-050).

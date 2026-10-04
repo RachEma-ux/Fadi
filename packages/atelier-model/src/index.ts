@@ -38,3 +38,4 @@ export * from "./commandes/refexterne.js";
 export * from "./documents/refexterne-rendu.js";
 export * from "./echanges/proprietes-csv.js";
 export * from "./esquisse/trame.js";
+export * from "./echanges/bibliotheque.js";

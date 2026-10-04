@@ -270,6 +270,27 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       if (!cible) return attendre([], "Cliquez un point sur l'axe d'un mur.");
       return emettre([{ type: "mur.scinder", params: { id: cible.mur.id, t: cible.t } }], "Scinder le mur", "Mur scindé : les ouvertures ont suivi, les cotes rattachées sont à réparer.");
     }
+    case "scinder-piece": {
+      const id = ui.selection[0];
+      const o = id ? etat.objets[id] : undefined;
+      if (!o || o.classe !== "piece") return attendre([], "Sélectionnez d'abord la pièce à scinder.");
+      if (pts.length === 0) return attendre([point], "Cliquez le second point de la ligne de scission.");
+      return emettre([{ type: "piece.scinder", params: { id: o.id, a: pts[0]!, b: point } }], "Scinder la pièce", "Pièce scindée : la seconde partie porte le même nom, sans code — renommez-la.");
+    }
+    case "contour": {
+      // Contour fermé détecté entre des lignes d'esquisse jointives (D-050) : proposé au clic, jamais imposé.
+      const segs: AxeMur[] = [];
+      for (const o of Object.values(etat.objets)) {
+        if (o.classe !== "esquisse" || o.niveauId !== niveauId) continue;
+        if (o.params.forme === "ligne" || o.params.forme === "construction") segs.push({ id: o.id, a: o.params.points[0]!, b: o.params.points[1]! });
+        else if (o.params.forme === "polyligne") o.params.points.slice(1).forEach((q, k) => segs.push({ id: `${o.id}#${k}`, a: o.params.points[k]!, b: q }));
+      }
+      const faces = boucles(segs).filter((f) => pointDansPolygone(point, f.contour));
+      if (!faces.length) return attendre([], "Aucun contour fermé de lignes d'esquisse autour de ce point.");
+      const face = faces.sort((u, v) => u.aire - v.aire)[0]!;
+      const forme = ui.parametresOutil["formeContour"] === "hachure" ? "hachure" : "polygone";
+      return emettre([{ type: `esquisse.${forme}`, params: { ...base, points: face.contour, ferme: true, ...(forme === "hachure" ? { motif: null } : {}) } }], forme === "hachure" ? "Hachure (contour détecté)" : "Polygone (contour détecté)", `Contour de ${face.contour.length} sommets, ${fmt(face.aire)} m².`);
+    }
     case "sommet":
     case "chanfrein-sommet": {
       // Sommet d'un contour de la sélection (D-049) : le plus proche du clic.

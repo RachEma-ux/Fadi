@@ -547,3 +547,84 @@ export function decalerContour(points: readonly Vec[], d: number): Point2[] | nu
   }
   return out;
 }
+
+const sensDirect = (c: readonly Vec[]): Vec[] => {
+  let a = 0;
+  for (let i = 0; i < c.length; i++) a += cross(c[i]!, c[(i + 1) % c.length]!);
+  return a >= 0 ? [...c] : [...c].reverse();
+};
+
+/**
+ * Union de deux contours adjacents (D-050) : ils partagent au moins un côté entier (mêmes sommets). Les côtés communs
+ * disparaissent ; null si rien n'est partagé ou si l'union n'est pas une seule boucle (contour à trou).
+ */
+export function unionContoursAdjacents(c1: readonly Vec[], c2: readonly Vec[], tol = 1e-6): Point2[] | null {
+  // Les sommets de chaque contour posés sur un côté de l'autre sont d'abord insérés (côtés partiellement communs).
+  const inserer = (c: readonly Vec[], autre: readonly Vec[]) => {
+    const out: Vec[] = [];
+    for (let i = 0; i < c.length; i++) {
+      const a = c[i]!;
+      const b = c[(i + 1) % c.length]!;
+      out.push(a);
+      const ab = sub(b, a);
+      const l2 = dot(ab, ab);
+      const sur = autre.map((q) => ({ q, t: dot(sub(q, a), ab) / l2 })).filter(({ q, t }) => t > 1e-9 && t < 1 - 1e-9 && Math.abs(cross(ab, sub(q, a))) / Math.sqrt(l2) < tol).sort((x, y) => x.t - y.t);
+      for (const { q } of sur) out.push(q);
+    }
+    return out;
+  };
+  const a = sensDirect(inserer(sensDirect(c1), c2));
+  const b = sensDirect(inserer(sensDirect(c2), c1));
+  const meme = (p: Vec, q: Vec) => Math.hypot(p.x - q.x, p.y - q.y) < tol;
+  type Arete = { p: Vec; q: Vec };
+  const aretes = (c: Vec[]): Arete[] => c.map((p, i) => ({ p, q: c[(i + 1) % c.length]! }));
+  const ea = aretes(a);
+  const eb = aretes(b);
+  const commune = (x: Arete, ys: Arete[]) => ys.some((y) => meme(x.p, y.q) && meme(x.q, y.p));
+  const restes = [...ea.filter((x) => !commune(x, eb)), ...eb.filter((x) => !commune(x, ea))];
+  if (restes.length === ea.length + eb.length) return null;
+  const chaine: Vec[] = [restes[0]!.p];
+  let courant = restes[0]!;
+  const utilises = new Set([0]);
+  while (true) {
+    const k = restes.findIndex((x, i) => !utilises.has(i) && meme(x.p, courant.q));
+    if (k < 0) break;
+    utilises.add(k);
+    courant = restes[k]!;
+    chaine.push(courant.p);
+  }
+  if (utilises.size !== restes.length || !meme(courant.q, chaine[0]!)) return null;
+  // Sommets alignés retirés.
+  const out = chaine.filter((p, i) => Math.abs(cross(sub(p, chaine[(i - 1 + chaine.length) % chaine.length]!), sub(chaine[(i + 1) % chaine.length]!, p))) > 1e-12);
+  return out.map((p) => pt(Math.round(p.x * 1e9) / 1e9, Math.round(p.y * 1e9) / 1e9));
+}
+
+/** Coupe d'un contour simple par la droite (a, b) (D-050) : deux contours, ou null si la droite ne le coupe pas en deux. */
+export function couperContour(c: readonly Vec[], a: Vec, b: Vec): [Point2[], Point2[]] | null {
+  const d = sub(b, a);
+  if (Math.hypot(d.x, d.y) < 1e-9) return null;
+  const cote = (p: Vec) => cross(d, sub(p, a));
+  const n = c.length;
+  const coupes: { i: number; p: Vec }[] = [];
+  for (let i = 0; i < n; i++) {
+    const p = c[i]!;
+    const q = c[(i + 1) % n]!;
+    const sp = cote(p);
+    const sq = cote(q);
+    if (Math.abs(sp) < 1e-12) return null; // la droite passe par un sommet : non pris en charge
+    if (sp * sq < 0) {
+      const t = sp / (sp - sq);
+      coupes.push({ i, p: add(p, mul(sub(q, p), t)) });
+    }
+  }
+  if (coupes.length !== 2) return null;
+  const [c1, c2] = coupes as [{ i: number; p: Vec }, { i: number; p: Vec }];
+  const r = (p: Vec) => pt(Math.round(p.x * 1e9) / 1e9, Math.round(p.y * 1e9) / 1e9);
+  const partA: Vec[] = [c1.p];
+  for (let k = c1.i + 1; k <= c2.i; k++) partA.push(c[k]!);
+  partA.push(c2.p);
+  const partB: Vec[] = [c2.p];
+  for (let k = c2.i + 1; k <= c1.i + n; k++) partB.push(c[k % n]!);
+  partB.push(c1.p);
+  return [partA.map(r), partB.map(r)];
+}

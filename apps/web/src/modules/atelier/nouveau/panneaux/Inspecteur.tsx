@@ -469,6 +469,11 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
       <VersNiveau sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <GroupeSelection sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <ProprieteCommune sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
+      {sel.length === 2 && sel.every((o) => o.classe === "piece") && (
+        <button type="button" className="inspecteur-fusion" disabled={readOnly} data-pieces="fusionner" onClick={() => onCommandes([{ type: "piece.fusionner", params: { ids: sel.map((o) => o.id) } }], "Fusionner deux pièces")}>
+          Fusionner les deux pièces (la première garde son nom et son code)
+        </button>
+      )}
       {sel.some((o) => o.classe === "piece") && <NumeroterPieces sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />}
     </section>
   );
@@ -561,6 +566,15 @@ function ParametresOutil({ etat, ui }: { etat: ModeleAtelier; ui: EtatUi }) {
             );
           })}
         </dl>
+      )}
+      {ui.outil === "contour" && (
+        <div className="champ">
+          <label htmlFor="outil-formeContour">Créer</label>
+          <select id="outil-formeContour" value={(ui.parametresOutil["formeContour"] as string | undefined) ?? "polygone"} onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, formeContour: e.target.value } }))}>
+            <option value="polygone">un polygone</option>
+            <option value="hachure">une hachure</option>
+          </select>
+        </div>
       )}
       {ui.outil === "decaler" && (
         <div className="champ">
