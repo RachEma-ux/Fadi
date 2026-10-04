@@ -282,16 +282,20 @@ await page.waitForSelector(".plan2d");
 
 // Croisement (D-034) : deux murs qui se traversent ; la zone commune est peinte d'un seul tenant dans le plan.
 {
+  await ouvrir(pid);
   const m0 = await modele(pid);
-  const nv = m0.modele.objets[murA.id].niveauId;
+  // Niveau affiché : celui d'un objet dessiné dans le plan.
+  const dessines = await page.locator(".plan2d .plan-objets [data-objet]").evaluateAll((els) => els.map((e) => e.getAttribute("data-objet")));
+  const nv = dessines.map((id) => m0.modele.objets[id]?.niveauId).find(Boolean);
   const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
   const r = await lot(pid, `x-${Date.now()}`, m0.revision, [
     { type: "mur.tracer", params: { id: "croix-h", niveauId: nv, a: P(300, 0), b: P(304, 0), epaisseur: { value: 0.2, unit: "m" }, hauteur: { value: 3, unit: "m" } } },
     { type: "mur.tracer", params: { id: "croix-v", niveauId: nv, a: P(302, -2), b: P(302, 2), epaisseur: { value: 0.2, unit: "m" }, hauteur: { value: 3, unit: "m" } } },
   ]);
   await ouvrir(pid);
-  await page.waitForSelector('[data-croisement="croix-h|croix-v"], [data-croisement="croix-v|croix-h"]', { timeout: 20000 }).catch(() => {});
-  check("croisement de murs : zone commune peinte d'un seul tenant dans le plan", r.status === 200 && (await page.locator('[data-croisement*="croix-h"]').count()) === 1);
+  await page.waitForSelector('[data-croisement*="croix-h"]', { state: "attached", timeout: 20000 }).catch(() => {});
+  const n = await page.locator('[data-croisement*="croix-h"]').count();
+  check("croisement de murs : zone commune peinte d'un seul tenant dans le plan", r.status === 200 && n === 1, `lot ${r.status} · niveau ${nv} · ${n} zone(s) · ${await page.locator("[data-croisement]").count()} au total`);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
