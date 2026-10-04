@@ -126,7 +126,6 @@ const altitude = (n: Niveau) => `${n.elevation >= 0 ? "+" : ""}${fmt(n.elevation
 
 class Collecteur {
   primitives: Primitive[] = [];
-  objets = new Set<string>();
   avertissements = new Set<string>();
   mesures = { triangles: 0 };
   ligne(a: Vec, b: Vec, trait: Trait, objetId: string | null): void {
@@ -336,7 +335,6 @@ function dessinerBloc(c: Collecteur, etat: ModeleAtelier, o: Occurrence<"bloc-oc
     c.texte(o.params.position, "définition de bloc absente", 2, o.id, { trait: "a-reparer" });
     return;
   }
-  c.objets.add(def.id);
   const ang = (o.params.angle.value * Math.PI) / 180;
   const k = o.params.echelle;
   const tr = (p: { x: number; y: number }): Vec => ({ x: o.params.position.x + k * (p.x * Math.cos(ang) - p.y * Math.sin(ang)), y: o.params.position.y + k * (p.x * Math.sin(ang) + p.y * Math.cos(ang)) });
@@ -358,7 +356,6 @@ function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue): void {
   const h = (v.hauteurCoupe ?? { value: HAUTEUR_COUPE_DEFAUT }).value;
   const zc = niveau.elevation + h;
   const objets = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => o.niveauId === niveau.id && retenu(etat, o, v.phases)).sort((a, b) => (a.id < b.id ? -1 : 1));
-  objets.forEach((o) => c.objets.add(o.id));
   const camera: Camera = { origine: [0, 0, zc], regard: [0, 0, -1], droite: [1, 0, 0], haut: [0, 1, 0] };
   const r = projeterMaillages(maillagesDe(etat, objets, new Set(["porte", "fenetre"])), camera, { coupe: true, profondeurMax: h + 0.6, lignesCachees: false });
   verserProjection(c, etat, r, (o) => (o && (o.classe === "mur" || o.classe === "poteau" || o.classe === "dalle" || o.classe === "toiture") ? "vue" : "fin"));
@@ -397,7 +394,6 @@ function genererCoupeOuFacade(c: Collecteur, etat: ModeleAtelier, v: ParamsVue):
   }
   const maillages = maillagesDe(etat, objets);
   const garde = new Set(maillages.map((m) => m.objetId));
-  objets.forEach((o) => garde.has(o.id) && c.objets.add(o.id));
   const r = projeterMaillages(maillages, camera, { coupe, profondeurMax: v.type === "coupe" ? (v.profondeur?.value ?? null) : null, lignesCachees: v.lignesCachees });
   verserProjection(c, etat, r, () => "vue");
   const b = bornesPrimitives(c.primitives);
@@ -436,11 +432,9 @@ function genererMasse(c: Collecteur, etat: ModeleAtelier, v: ParamsVue): void {
     const tous = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o): o is Occurrence<"mur"> => o.classe === "mur" && o.niveauId === ref.id && retenu(etat, o, v.phases));
     // Murs extérieurs déclarés s'il y en a (enveloppe du bâtiment), sinon tous les murs du niveau.
     const murs = tous.some((m) => m.params.exterieur) ? tous.filter((m) => m.params.exterieur) : tous;
-    murs.forEach((m) => c.objets.add(m.id));
     for (const s of contoursUnion(murs.map((m) => ({ points: polygoneMur(m.params.a, m.params.b, m.params.epaisseur.value, m.params.alignement), objetId: m.id })))) c.ligne(s.a, s.b, "coupe", s.objetId);
     const toitures = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o): o is Occurrence<"toiture"> => o.classe === "toiture" && retenu(etat, o, v.phases));
     for (const t of toitures) {
-      c.objets.add(t.id);
       c.poly(t.params.contour, true, "vue", null, t.id);
     }
   }
@@ -468,6 +462,45 @@ export function paramsDeDefinition(def: Definition): ParamsVue {
   return def.params as unknown as ParamsVue;
 }
 
+/**
+ * Objets (et définitions) dont dépend une vue, sans la générer : la fraîcheur se calcule pour tout le catalogue
+ * sans projeter un seul maillage, et la génération déclare exactement les mêmes dépendances.
+ */
+export function objetsVue(etat: ModeleAtelier, params: ParamsVue): string[] {
+  const tous = Object.values(etat.objets) as OccurrenceQuelconque[];
+  const ids = new Set<string>();
+  if (params.type === "plan" || params.type === "detail") {
+    for (const o of tous) {
+      if (o.niveauId !== params.niveauId || !retenu(etat, o, params.phases)) continue;
+      ids.add(o.id);
+      if (o.classe === "bloc-occurrence" && o.definitionId) ids.add(o.definitionId);
+      if (o.classe === "etiquette" && o.params.objetId) ids.add(o.params.objetId);
+      if (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") ids.add(o.params.murHoteId);
+    }
+    for (const r of Object.values(etat.references)) if (ids.has(r.proprietaireId) && r.objetId) ids.add(r.objetId);
+  } else if (params.type === "coupe" || params.type === "facade") {
+    for (const o of tous) if (PHYSIQUES.has(o.classe) && retenu(etat, o, params.phases)) ids.add(o.id);
+  } else {
+    const niveaux = niveauxOrdonnes(etat);
+    const ref = niveaux.filter((n) => n.elevation >= -1e-9).sort((a, b) => a.elevation - b.elevation)[0] ?? niveaux[0];
+    for (const o of tous) if (((o.classe === "mur" && o.niveauId === ref?.id) || o.classe === "toiture") && retenu(etat, o, params.phases)) ids.add(o.id);
+  }
+  return [...ids].filter((id) => etat.objets[id] || etat.definitions[id]).sort();
+}
+
+/** Empreinte des entrées d'une vue : paramètres, objets dépendants, références, niveaux, calques, site (masse). */
+export function empreinteVue(etat: ModeleAtelier, params: ParamsVue, objets: readonly string[] = objetsVue(etat, params)): string {
+  const set = new Set(objets);
+  return empreinteDe({
+    params,
+    objets: objets.map((id) => etat.objets[id] ?? etat.definitions[id] ?? null),
+    references: Object.values(etat.references).filter((r) => set.has(r.proprietaireId)).sort((a, b) => (a.id < b.id ? -1 : 1)),
+    niveaux: niveauxOrdonnes(etat).map((n) => [n.id, n.nom, n.elevation, n.hauteur]),
+    calques: Object.values(etat.calques).map((k) => [k.id, k.visible]).sort(),
+    site: params.type === "masse" ? etat.site : null,
+  });
+}
+
 /** Génère une vue à partir de ses paramètres (définition du modèle ou paramètres d'aperçu). */
 export function genererVue(etat: ModeleAtelier, params: ParamsVue, definitionId: string | null = null): VueGeneree {
   const c = new Collecteur();
@@ -485,22 +518,15 @@ export function genererVue(etat: ModeleAtelier, params: ParamsVue, definitionId:
       if (p.type === "poly") return { ...p, remplissage: null, trait: p.trait ? "demoli" : null };
       return p.type === "texte" ? p : { ...p, trait: "demoli" };
     });
-  const objets = [...c.objets].sort();
-  const entrees = {
-    params,
-    objets: objets.map((id) => etat.objets[id] ?? etat.definitions[id] ?? null),
-    references: Object.values(etat.references).filter((r) => c.objets.has(r.proprietaireId)).sort((a, b) => (a.id < b.id ? -1 : 1)),
-    niveaux: niveauxOrdonnes(etat).map((n) => [n.id, n.nom, n.elevation, n.hauteur]),
-    calques: Object.values(etat.calques).map((k) => [k.id, k.visible]).sort(),
-    site: params.type === "masse" ? etat.site : null,
-  };
+  const objets = objetsVue(etat, params);
+  const empreinte = empreinteVue(etat, params, objets);
   return {
     definitionId,
     params,
     primitives: c.primitives,
     bornes: bornesPrimitives(c.primitives, params.echelle),
     objets,
-    empreinte: empreinteDe(entrees),
+    empreinte,
     avertissements: [...c.avertissements],
     mesures: { triangles: c.mesures.triangles, primitives: c.primitives.length },
   };

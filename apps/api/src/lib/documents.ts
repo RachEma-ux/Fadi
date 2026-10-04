@@ -11,13 +11,15 @@ import { desc, eq, sql } from "drizzle-orm";
 import { PARCOURS_STEPS } from "../data/parcours.js";
 import { archiveFileName, documentFreshness, EXAMPLE_REPORT_FILE_NAME, fnv1a, harmonieReportFileName, resolvedSpacesFileName, type DocumentFreshness, type DocumentProduction } from "@parcours/domain-model";
 import { drawingExports, producedDocuments } from "../db/schema.js";
+import { chargerModele } from "./atelier-modele.js";
+import { atelierDocumentDescriptors } from "./atelier-documents.js";
 import type { DesignContext } from "./design-context.js";
 import type { OwnedProject } from "./owned-project.js";
 import { ownsExampleDossier } from "./example-report.js";
 import { contentOf, type StepContext } from "./step-context.js";
 import type { Querier } from "./step-rows.js";
 
-export type DocumentGroup = "harmonie" | "bilan" | "dessins" | "tableaux" | "exemple" | "archive";
+export type DocumentGroup = "harmonie" | "bilan" | "atelier" | "dessins" | "tableaux" | "exemple" | "archive";
 
 export interface DocumentDescriptor {
   kind: string;
@@ -221,7 +223,8 @@ export async function drawingExportDescriptors(q: Querier, project: OwnedProject
 
 export async function documentCatalogue(q: Querier, project: OwnedProject, dctx: DesignContext): Promise<DocumentDescriptor[]> {
   const productions = await loadProductions(q, project.id);
-  const generated = documentDescriptors(project, dctx).map((d) => {
+  const modele = (await chargerModele(q, project.id))?.etat ?? null;
+  const generated = [...documentDescriptors(project, dctx), ...atelierDocumentDescriptors(project, modele)].map((d) => {
     const produced = productions.get(d.kind) ?? null;
     return { ...d, produced, freshness: documentFreshness(d.current, produced) };
   });

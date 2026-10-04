@@ -26,6 +26,8 @@ import "./atelier-nouveau.css";
 
 // three.js n'est chargé qu'à la première ouverture de la vue 3D.
 const Vue3D = lazy(() => import("./vue3d/Vue3D").then((m) => ({ default: m.Vue3D })));
+// Vues, feuilles et tableaux : chargés à la première ouverture du mode Documents.
+const Documents = lazy(() => import("./documents/Documents").then((m) => ({ default: m.Documents })));
 
 export interface PropsAtelierNouveau {
   projectId: string;
@@ -34,6 +36,8 @@ export interface PropsAtelierNouveau {
   protectedReference?: boolean;
   /** Code du projet (noms des fichiers exportés). */
   code?: string;
+  /** Nom du projet (cartouche des feuilles). */
+  nomProjet?: string;
   /** Étape 10 : bouton « Harmonie » (sous-page « Harmonie du bâtiment »). */
   harmonie?: boolean;
 }
@@ -52,7 +56,7 @@ function champSaisie(t: EventTarget | null): boolean {
   return t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || (t instanceof HTMLElement && t.isContentEditable);
 }
 
-export function AtelierNouveau({ projectId, readOnly, protectedReference = false, code = "", harmonie = false }: PropsAtelierNouveau) {
+export function AtelierNouveau({ projectId, readOnly, protectedReference = false, code = "", nomProjet = "", harmonie = false }: PropsAtelierNouveau) {
   const online = useOnline();
   const reachable = useReachable();
   const navigate = useNavigate();
@@ -104,6 +108,7 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
             await c.executer(commandes, label);
             await c.envoyer();
             void queryClient.invalidateQueries({ queryKey: ["projects"] });
+            etatUi.set({ aide: "" });
             navigate(`/projets/${copie.id}${location.search}`, { state: { notice: "Copie de travail créée automatiquement · exemple original conservé." } });
           } catch (err) {
             setErreur(err instanceof ErreurCommande ? `${label} refusé : ${err.message}` : err instanceof Error ? err.message : String(err));
@@ -342,7 +347,7 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
   }
 
   return (
-    <div className={`atelier-n panneau-${ui.panneauMobile}`} data-affichage={ui.affichage}>
+    <div className={`atelier-n panneau-${ui.panneauMobile}${ui.mode === "documents" ? " mode-documents" : ""}`} data-affichage={ui.affichage}>
       <header className="atelier-n-barre" aria-label="Barre de l'Atelier">
         <label className="barre-niveau">
           <span className="sr-only">Niveau actif</span>
@@ -350,9 +355,10 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
             {niveaux.map((n) => <option key={n.id} value={n.id}>{n.nom} ({fmt(n.elevation)} m)</option>)}
           </select>
         </label>
-        <div className="barre-groupe barre-mode" role="group" aria-label="Plan ou 3D">
+        <div className="barre-groupe barre-mode" role="group" aria-label="Plan, 3D ou documents">
           <button type="button" aria-pressed={ui.mode === "2d"} onClick={() => etatUi.set({ mode: "2d" })}>Plan</button>
           <button type="button" aria-pressed={ui.mode === "3d"} onClick={() => etatUi.set({ mode: "3d" })}>3D</button>
+          <button type="button" aria-pressed={ui.mode === "documents"} onClick={() => etatUi.set({ mode: "documents", pointsEnCours: [] })}>Documents</button>
         </div>
         <div className="barre-groupe" role="group" aria-label="Annuler et rétablir">
           <button type="button" onClick={() => void client.annuler()} disabled={readOnly} title="Annuler (Ctrl/⌘ Z)">↶<span className="sr-only">Annuler</span></button>
@@ -458,7 +464,11 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
       </aside>
 
       <main className="atelier-n-travail" ref={zone}>
-        {ui.mode === "3d" ? (
+        {ui.mode === "documents" ? (
+          <Suspense fallback={<p role="status" className="vue3d-etat">Chargement des documents…</p>}>
+            <Documents projectId={projectId} code={code} nomProjet={nomProjet} etat={etat} revision={inst.revisionServeur} readOnly={readOnly} niveauId={ui.niveauId} onCommandes={(c, l) => executer(c, l, false)} />
+          </Suspense>
+        ) : ui.mode === "3d" ? (
           <Suspense fallback={<p role="status" className="vue3d-etat">Chargement de la vue 3D…</p>}>
             <Vue3D etat={etat} ui={ui} readOnly={readOnly} onCommandes={(c, l) => void executer(c, l, false)} />
           </Suspense>

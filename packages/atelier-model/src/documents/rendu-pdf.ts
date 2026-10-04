@@ -140,3 +140,27 @@ export function pdfPage(largeurMm: number, hauteurMm: number, primitives: readon
 export function pdfFeuille(f: FeuilleComposee): Uint8Array {
   return pdfPage(f.largeur, f.hauteur, f.primitives, `${f.params.numero} - ${f.params.titre}`);
 }
+
+/** Une vue seule en PDF, à son échelle (page à la taille du dessin), avec titre, révision et empreinte. */
+export function pdfVue(vue: import("./vues.js").VueGeneree, revision: number): Uint8Array {
+  const MARGE = 10;
+  const k = 1000 / vue.params.echelle;
+  const b = vue.bornes ?? { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } };
+  const largeur = Math.max(120, (b.max.x - b.min.x) * k + 2 * MARGE);
+  const hauteur = (b.max.y - b.min.y) * k + 2 * MARGE + 12;
+  const tr = (p: Vec): Vec => ({ x: MARGE + (p.x - b.min.x) * k, y: 12 + MARGE + (p.y - b.min.y) * k });
+  const prims: Primitive[] = vue.primitives.map((p) => {
+    switch (p.type) {
+      case "ligne":
+        return { ...p, a: tr(p.a), b: tr(p.b) };
+      case "poly":
+        return { ...p, points: p.points.map(tr) };
+      case "cercle":
+        return { ...p, centre: tr(p.centre), rayon: p.rayon * k };
+      case "texte":
+        return { ...p, position: tr(p.position) };
+    }
+  });
+  prims.push({ type: "texte", position: { x: MARGE, y: 8 }, texte: `${vue.params.titre} · 1:${vue.params.echelle} · révision du modèle ${revision} · empreinte ${vue.empreinte}`, hauteurMm: 3, ancre: "debut", angle: 0, trait: "annotation", objetId: null });
+  return pdfPage(largeur, hauteur, prims, vue.params.titre);
+}

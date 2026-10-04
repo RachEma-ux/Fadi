@@ -14,6 +14,8 @@
  * Chaque production est enregistrée avec la révision du modèle et
  * l'empreinte des entrées (`produced_documents`).
  */
+import { chargerModele } from "../lib/atelier-modele.js";
+import { atelierDocumentDescriptors, rendreDocumentAtelier } from "../lib/atelier-documents.js";
 import { randomUUID } from "node:crypto";
 import { raw, Router, type Request, type Response } from "express";
 import { and, eq } from "drizzle-orm";
@@ -104,6 +106,44 @@ documentsRouter.get("/dossier-exemple", async (req, res) => {
     const html = exampleReportFor(project, dctx);
     return html ? { body: html, type: "text/html; charset=utf-8" } : null;
   });
+});
+
+// --- Documents dérivés du modèle typé (lot 5) : vues, feuilles, tableaux, quantités ----------------------------------
+
+async function produceAtelier(req: Request, res: Response, kind: string) {
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  const now = new Date();
+  const charge = await chargerModele(db, project.id);
+  const descriptor = atelierDocumentDescriptors(project, charge?.etat ?? null).find((d) => d.kind === kind);
+  const out = descriptor && charge ? rendreDocumentAtelier(kind, project, charge.etat) : null;
+  if (!descriptor || !out) {
+    res.status(404).json({ error: "not_found", message: "Ce document n'existe pas (ou plus) dans le modèle de l'Atelier." });
+    return;
+  }
+  await recordProducedDocument(db, project.id, { kind, label: descriptor.label, fileName: descriptor.fileName, modelRevision: descriptor.current.modelRevision, inputHash: descriptor.current.inputHash, stepNumber: descriptor.stepNumber }, now);
+  res.setHeader("Content-Type", out.type);
+  res.setHeader("Content-Disposition", `attachment; filename="${descriptor.fileName}"`);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Model-Revision", String(descriptor.current.modelRevision));
+  res.setHeader("X-Input-Hash", descriptor.current.inputHash);
+  res.send(out.body);
+}
+
+documentsRouter.get("/atelier/quantites.html", async (req, res) => {
+  await produceAtelier(req, res, "atelier-quantites");
+});
+
+documentsRouter.get("/atelier/:dossier/:fichier", async (req, res) => {
+  const dossier = req.params["dossier"] as string;
+  const fichier = req.params["fichier"] as string;
+  const m = /^(.+)\.(pdf|dxf|svg|csv)$/.exec(fichier);
+  const kind = !m ? null : dossier === "vues" && m[2] !== "csv" ? `atelier-vue-${m[1]}-${m[2]}` : dossier === "feuilles" && m[2] !== "csv" ? `atelier-feuille-${m[1]}-${m[2]}` : dossier === "tableaux" && m[2] === "csv" ? `atelier-tableau-${m[1]}` : null;
+  if (!kind) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  await produceAtelier(req, res, kind);
 });
 
 // --- Dessins techniques et exports de l'Atelier -------------------------------------------------------------------

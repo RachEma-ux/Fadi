@@ -514,7 +514,7 @@ export interface AnalysesView {
 /** Module Documents : un document productible, sa dernière production et son actualité. */
 export interface DocumentDescriptor {
   kind: string;
-  group: "harmonie" | "bilan" | "dessins" | "tableaux" | "exemple" | "archive";
+  group: "harmonie" | "bilan" | "atelier" | "dessins" | "tableaux" | "exemple" | "archive";
   label: string;
   fileName: string;
   href: string;

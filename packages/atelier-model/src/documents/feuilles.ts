@@ -10,7 +10,7 @@ import type { Definition, ModeleAtelier } from "../modele.js";
 import { ErreurCommande, lire } from "../commandes/base.js";
 import type { Primitive, Trait } from "./dessin.js";
 import { empreinteDe } from "./empreinte.js";
-import { genererVueDefinition, type VueGeneree } from "./vues.js";
+import { empreinteVue, genererVueDefinition, paramsDeDefinition, type VueGeneree } from "./vues.js";
 
 export type FormatFeuille = "A0" | "A1" | "A2" | "A3" | "A4";
 export const FORMATS: Record<FormatFeuille, { largeur: number; hauteur: number }> = {
@@ -182,7 +182,7 @@ export function composerFeuille(etat: ModeleAtelier, params: ParamsFeuille, revi
   }
   if (!params.vues.length) avertissements.push("Feuille sans vue.");
 
-  const empreinte = empreinteDe({ params, vues: vues.map((v) => [v.vueId, v.empreinte]), projet });
+  const empreinte = empreinteFeuille(etat, params, projet);
 
   // Cartouche.
   const cx0 = z.x1 - CARTOUCHE.largeur;
@@ -200,6 +200,15 @@ export function composerFeuille(etat: ModeleAtelier, params: ParamsFeuille, revi
   const echelles = [...new Set(vues.map((v) => v.echelle))].sort((a, b) => a - b);
   texte(cx0 + 123, cy0 + 4, echelles.length ? `Échelle${echelles.length > 1 ? "s" : ""} 1:${echelles.join(" · 1:")}` : "Sans vue", 2.6);
   return { definitionId, params, largeur, hauteur, primitives: out, vues, empreinte, avertissements };
+}
+
+/** Empreinte d'une feuille sans la composer : ses paramètres, l'empreinte de chaque vue placée, le projet. */
+export function empreinteFeuille(etat: ModeleAtelier, params: ParamsFeuille, projet: Projet): string {
+  const vues = params.vues.map((pl) => {
+    const d = etat.definitions[pl.vueId];
+    return [pl.vueId, d && d.classe === ("vue" as Definition["classe"]) ? empreinteVue(etat, paramsDeDefinition(d)) : null];
+  });
+  return empreinteDe({ params, vues, projet });
 }
 
 export function composerFeuilleDefinition(etat: ModeleAtelier, id: string, revision: number, projet: Projet): FeuilleComposee | null {

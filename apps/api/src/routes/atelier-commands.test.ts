@@ -278,3 +278,46 @@ describe("modèle typé de l'exemple P.118 et fraîcheur des documents", () => {
     expect(await basculerAncienMoteur(pool)).toEqual({ convertis: 0, supprimees: false });
   });
 });
+
+describe("documents dérivés de l'Atelier au catalogue (lot 5)", () => {
+  it("vue et feuille produites à la révision courante (PDF, DXF, SVG), à jour puis périmées après une commande ; tableaux identiques d'une génération à l'autre", async () => {
+    const client = await registerAndLogin("docs@example.com");
+    const pid = await projetVide(client);
+    const r = await client.post(`/projects/${pid}/atelier/commands`).send(
+      enveloppe("d1", 0, [
+        niveau,
+        mur("m1", 6),
+        { type: "vue.creer", params: { id: "v1", type: "plan", titre: "Plan du RDC", echelle: 50, niveauId: "rdc" } },
+        { type: "feuille.creer", params: { id: "f1", titre: "Plans", numero: "A-101", format: "A3", orientation: "paysage", vues: [{ vueId: "v1", x: 150, y: 180 }] } },
+      ]),
+    );
+    expect(r.status).toBe(200);
+    const pdf = await client.get(`/projects/${pid}/documents/atelier/feuilles/f1.pdf`).buffer(true).parse((res, cb) => {
+      const parts: Buffer[] = [];
+      res.on("data", (c: Buffer) => parts.push(c));
+      res.on("end", () => cb(null, Buffer.concat(parts)));
+    });
+    expect(pdf.status).toBe(200);
+    expect(pdf.headers["content-type"]).toBe("application/pdf");
+    expect((pdf.body as Buffer).subarray(0, 8).toString("latin1")).toBe("%PDF-1.4");
+    expect(pdf.headers["x-model-revision"]).toBe("1");
+    const dxf = await client.get(`/projects/${pid}/documents/atelier/vues/v1.dxf`);
+    expect(dxf.status).toBe(200);
+    expect(dxf.text).toContain("AC1009");
+    const svg = await client.get(`/projects/${pid}/documents/atelier/vues/v1.svg`);
+    expect(svg.status).toBe(200);
+    const csv1 = await client.get(`/projects/${pid}/documents/atelier/tableaux/murs.csv`);
+    const csv2 = await client.get(`/projects/${pid}/documents/atelier/tableaux/murs.csv`);
+    expect(csv1.status).toBe(200);
+    expect(csv1.text).toBe(csv2.text);
+    let cat = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; group: string; freshness: string | null }[];
+    expect(cat.find((d) => d.kind === "atelier-feuille-f1-pdf")).toMatchObject({ group: "atelier", freshness: "a-jour" });
+    expect(cat.find((d) => d.kind === "atelier-vue-v1-dxf")!.freshness).toBe("a-jour");
+    expect(cat.find((d) => d.kind === "atelier-vue-v1-pdf")!.freshness).toBeNull();
+    await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("d2", 1, [{ type: "objet.modifier", params: { id: "m1", params: { epaisseur: m(0.3) } } }]));
+    cat = (await client.get(`/projects/${pid}/documents`)).body.documents;
+    expect(cat.find((d) => d.kind === "atelier-feuille-f1-pdf")!.freshness).toBe("perime");
+    expect((await client.get(`/projects/${pid}/documents/atelier/feuilles/inconnue.pdf`)).status).toBe(404);
+    expect((await client.get(`/projects/${pid}/documents/atelier/tableaux/f1.pdf`)).status).toBe(404);
+  });
+});

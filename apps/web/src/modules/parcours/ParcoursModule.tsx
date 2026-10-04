@@ -279,7 +279,7 @@ function StepDetail({
 
       {(step.number === 10 || step.number === 11) && (
         <Suspense fallback={<p role="status">Chargement de l’Atelier…</p>}>
-          <AtelierNouveau projectId={projectId} readOnly={!access.canWrite} protectedReference={reference} code={project?.code ?? ""} harmonie={step.number === 10} />
+          <AtelierNouveau projectId={projectId} readOnly={!access.canWrite} protectedReference={reference} code={project?.code ?? ""} nomProjet={project?.name ?? ""} harmonie={step.number === 10} />
         </Suspense>
       )}
       {step.number === 10 && !harmonyPage && (

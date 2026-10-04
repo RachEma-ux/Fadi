@@ -7,7 +7,8 @@ import { useSyncExternalStore } from "react";
 import type { Point2 } from "@parcours/atelier-model";
 
 export type NiveauAffichage = "essentiel" | "contextuel" | "complet";
-export type ModeTravail = "2d" | "3d";
+/** Plan, 3D, ou documents dérivés (vues, feuilles, tableaux — lot 5). */
+export type ModeTravail = "2d" | "3d" | "documents";
 export type PanneauMobile = "travail" | "objets" | "inspecteur" | "problemes";
 
 export interface Accrochages {

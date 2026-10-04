@@ -996,3 +996,363 @@
   color: var(--atelier-doux);
   overflow-wrap: anywhere;
 }
+
+/* Mode Documents (lot 5) : vues, feuilles et tableaux occupent toute la largeur ; outils de dessin et panneaux masqués. */
+.atelier-n.mode-documents {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "barre" "travail" "etat";
+}
+.atelier-n.mode-documents .atelier-n-outils,
+.atelier-n.mode-documents .atelier-n-gauche,
+.atelier-n.mode-documents .atelier-n-droite,
+.atelier-n.mode-documents .atelier-n-onglets {
+  display: none;
+}
+.atelier-n.mode-documents .atelier-n-travail {
+  display: block;
+  grid-area: travail;
+  overflow: hidden;
+}
+.atelier-docs {
+  display: grid;
+  grid-template-columns: minmax(220px, 270px) minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  background: #fff;
+}
+.docs-liste {
+  overflow-y: auto;
+  border-right: 1px solid var(--atelier-ligne);
+  padding: 0.5rem 0.6rem 1rem;
+}
+.docs-liste h3 {
+  margin: 0.8rem 0 0.35rem;
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  color: var(--atelier-doux);
+}
+.docs-liste ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.docs-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 0.4rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  min-height: 40px;
+}
+.docs-item:hover {
+  background: #f3f6f4;
+}
+.docs-item[aria-current="true"] {
+  background: #eaf1ed;
+  border-color: #b9cbc2;
+}
+.docs-item-titre {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.docs-item-meta {
+  grid-column: 1;
+  font-size: 0.78rem;
+  color: var(--atelier-doux);
+}
+.docs-fraicheur {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 0.72rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.fr-a-jour {
+  color: #22663f;
+}
+.fr-perime {
+  color: #a0351f;
+}
+.fr-modele {
+  color: #8a5a00;
+}
+.fr-non-produit {
+  color: var(--atelier-doux);
+}
+.docs-nouvelle > summary,
+.docs-ajout,
+.docs-lien {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0.2rem 0.6rem;
+  margin: 0.2rem 0 0.4rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
+.docs-nouvelle-liste {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 0.4rem;
+}
+.docs-nouvelle-liste button {
+  text-align: left;
+  min-height: 34px;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  background: #fbfcfa;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+}
+.docs-vide,
+.docs-note {
+  color: var(--atelier-doux);
+  font-size: 0.82rem;
+  margin: 0.3rem 0;
+}
+.docs-contenu {
+  overflow-y: auto;
+  min-width: 0;
+  padding: 0.6rem 0.9rem 1.2rem;
+}
+.docs-entete {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+.docs-entete h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.docs-fraicheur-texte {
+  margin: 0.2rem 0 0;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.docs-meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: var(--atelier-doux);
+}
+.doc-telechargements {
+  display: flex;
+  gap: 0.35rem;
+}
+.doc-bouton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0.2rem 0.75rem;
+  border: 1px solid var(--atelier-encre);
+  border-radius: 4px;
+  color: var(--atelier-encre);
+  text-decoration: none;
+  font-weight: 600;
+  background: #fff;
+}
+.doc-bouton:hover {
+  background: var(--atelier-encre);
+  color: #fff;
+}
+.docs-apercu {
+  margin: 0.7rem 0;
+  border: 1px solid var(--atelier-ligne);
+  background: repeating-conic-gradient(#f5f7f6 0% 25%, #fff 0% 50%) 0 0 / 16px 16px;
+  min-height: 240px;
+  overflow: auto;
+  position: relative;
+}
+.docs-svg {
+  display: flex;
+  justify-content: center;
+}
+/* Aperçu ajusté au cadre (rapport largeur / hauteur de la vue ou de la feuille conservé). */
+.docs-svg svg {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 58vh;
+  background: #fff;
+}
+.docs-apercu-feuille .docs-svg {
+  padding: 0.6rem;
+}
+.docs-apercu-feuille .docs-svg svg {
+  box-shadow: 0 1px 4px rgba(24, 61, 50, 0.18);
+}
+.docs-generation {
+  margin: 1rem;
+  color: var(--atelier-doux);
+}
+.docs-avertissements {
+  margin: 0 0 0.6rem;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: #6b4b00;
+}
+.docs-reglages fieldset {
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  padding: 0.5rem 0.7rem 0.7rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.45rem 0.8rem;
+}
+.docs-reglages legend {
+  font-weight: 600;
+  padding: 0 0.3rem;
+}
+.docs-reglages label {
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.82rem;
+}
+.docs-reglages input,
+.docs-reglages select {
+  min-height: 32px;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+}
+.docs-case {
+  display: flex !important;
+  align-items: center;
+  gap: 0.35rem;
+}
+.docs-case input {
+  min-height: 0;
+}
+.docs-phases {
+  grid-column: 1 / -1;
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.9rem !important;
+}
+.docs-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.5rem;
+}
+.docs-actions button,
+.docs-placements button,
+.docs-placer button {
+  min-height: 34px;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+.docs-principal {
+  background: var(--atelier-encre) !important;
+  color: #fff;
+  border-color: var(--atelier-encre) !important;
+}
+.docs-placements {
+  margin: 0.4rem 0 0.8rem;
+}
+.docs-placements h3 {
+  margin: 0 0 0.3rem;
+  font-size: 0.9rem;
+}
+.docs-placements ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.4rem;
+  display: grid;
+  gap: 0.25rem;
+}
+.docs-placements li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+.docs-placer {
+  display: flex;
+  gap: 0.5rem;
+  align-items: end;
+}
+.docs-placer label {
+  display: grid;
+  font-size: 0.82rem;
+}
+.docs-placer select {
+  min-height: 34px;
+}
+.docs-erreur {
+  color: #a0351f;
+  font-weight: 600;
+}
+.docs-tableau {
+  margin-top: 0.6rem;
+  overflow: auto;
+  max-height: 68vh;
+  border: 1px solid var(--atelier-ligne);
+}
+.docs-tableau table {
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  width: 100%;
+}
+.docs-tableau th,
+.docs-tableau td {
+  border-bottom: 1px solid #edf1ef;
+  padding: 0.25rem 0.45rem;
+  text-align: left;
+  white-space: nowrap;
+}
+.docs-tableau thead th {
+  position: sticky;
+  top: 0;
+  background: #f1f5f3;
+}
+.docs-tableau tfoot td {
+  font-weight: 600;
+  background: #f8faf9;
+}
+.docs-tableau td.ne {
+  color: #8a5a00;
+  font-style: italic;
+}
+@media (max-width: 760px) {
+  .atelier-n.mode-documents {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "barre" "travail" "etat";
+  }
+  .atelier-docs {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow-y: auto;
+  }
+  .docs-liste {
+    border-right: 0;
+    border-bottom: 1px solid var(--atelier-ligne);
+    max-height: 38vh;
+  }
+  .docs-item,
+  .doc-bouton,
+  .docs-nouvelle > summary {
+    min-height: 44px;
+  }
+}

@@ -40,7 +40,7 @@ function svgDuPlan(): Blob | null {
   return new Blob([new XMLSerializer().serializeToString(copie)], { type: "image/svg+xml" });
 }
 
-export async function exporter(type: TypeExport, contexte: { projectId: string; code: string; etat: ModeleAtelier; niveauId: string | null; mode: "2d" | "3d" }): Promise<string> {
+export async function exporter(type: TypeExport, contexte: { projectId: string; code: string; etat: ModeleAtelier; niveauId: string | null; mode: "2d" | "3d" | "documents" }): Promise<string> {
   const niveau = contexte.niveauId ? contexte.etat.niveaux[contexte.niveauId] : undefined;
   const base = nomFichier(`Atelier_${contexte.code}${niveau ? `_${niveau.nom}` : ""}`);
   let blob: Blob | null = null;

@@ -135,7 +135,7 @@ export function ProjectShell() {
             {/* Module Atelier : la page de l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; « ← » ramène au parcours. */}
             <StageStrip title="Atelier Architectural" stage={null} subtitle={`${project.code} — ${project.name}`} onBack={() => selectModule("parcours")} onHome={() => navigate("/projets")} />
             <Suspense fallback={<p role="status">Chargement de l’Atelier…</p>}>
-              <AtelierNouveau projectId={projectId} readOnly={!access.canWrite} protectedReference={project.exampleMode === "reference"} code={project.code} />
+              <AtelierNouveau projectId={projectId} readOnly={!access.canWrite} protectedReference={project.exampleMode === "reference"} code={project.code} nomProjet={project.name} />
             </Suspense>
           </>
         )}
