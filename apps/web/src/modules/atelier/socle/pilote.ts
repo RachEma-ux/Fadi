@@ -1,5 +1,8 @@
 /** Pilote de l'outil actif (contrat `PiloteOutils`, figé au lot 3a). */
-import type { Apercu, ContexteAtelier, DefinitionOutil, ErreurLisible, EtatInterface, EvenementPlan, PiloteOutils, RegistreOutils, SessionOutil } from "./contrats";
+import type { Apercu, ContexteAtelier, DefinitionOutil, ErreurLisible, EtatInterface, EvenementPlan, PiloteOutils, RegistreOutils, SessionOutil, VueTravail } from "./contrats";
+
+/** Motif lisible d'un outil inutilisable dans la vue courante (plan 2D ou 3D). */
+export const motifVue = (vue: VueTravail): string => (vue === "3d" ? "outil du plan 2D : revenir à la vue « Plan 2D »" : "outil de la vue 3D : passer en vue « 3D »");
 
 export const APERCU_VIDE: Apercu = { formes: [], champs: [], consigne: "", erreurs: [] };
 
@@ -28,6 +31,8 @@ export function creerPilote(registre: RegistreOutils, ctx: ContexteAtelier, vue:
       const def = registre.trouver(id);
       if (!def) return { ok: false, motif: `outil « ${id} » inconnu` };
       if (def.ecrit && !ctx.ecriture.permise) return { ok: false, motif: ctx.ecriture.motif };
+      const vueCourante = vue.lire().vue;
+      if (!def.vues.includes(vueCourante)) return { ok: false, motif: motifVue(vueCourante) };
       const activation = def.activation(ctx);
       if (!activation.ok) return activation;
       outil = def;

@@ -93,6 +93,7 @@ const PLAN = [
   { fichier: "02-parcours-etapes.mjs", segment: "telephone", lit: ["projectUrl", "exampleUrl"], produit: [] },
   { fichier: "14-nouvel-atelier.mjs", segment: "ouverture", lit: ["exampleUrl"], produit: [] },
   { fichier: "14-nouvel-atelier.mjs", segment: "gestes", lit: ["email", "atelierUrl", "atelierPid"], produit: [] },
+  { fichier: "14-nouvel-atelier.mjs", segment: "vue3d", lit: ["atelierUrl"], produit: [] },
   { fichier: "12-mesures.mjs", segment: "bilan", lit: [], produit: [] },
 ];
 

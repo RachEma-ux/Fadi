@@ -148,7 +148,7 @@ function sessionSupprimer(ctx: ContexteAtelier): SessionOutil {
 }
 
 export function outilSupprimer(): DefinitionOutil {
-  return definir({
+  const def = definir({
     id: "modifier.supprimer",
     libelle: "Supprimer",
     famille: "modifier",
@@ -163,4 +163,6 @@ export function outilSupprimer(): DefinitionOutil {
     activation: activationSelection,
     commencer: sessionSupprimer,
   });
+  // Utilisable aussi dans la vue 3D : la sélection s'y fait au clic, l'accord par Entrée ou un clic.
+  return { ...def, vues: ["plan", "3d"] };
 }

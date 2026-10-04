@@ -40,6 +40,8 @@ export interface ProprietesAtelierInterface {
   readonly client: Pick<ClientAtelierCommandes, "lireJournal" | "lireProblemes">;
   readonly projet: { readonly id: string; readonly code: string; readonly nom: string };
   readonly zoneTravail: ReactNode;
+  /** Vue 3D de la zone de travail (L3b.1) ; absente = bascule 3D désactivée. */
+  readonly zoneTravail3d?: ReactNode;
   /**
    * Panneaux ajoutés sous le navigateur (onglet Projet), rendus à chaque rendu de l'interface pour suivre le niveau
    * actif : le métré du niveau (`documents/PanneauMetre.tsx`, D-045).
@@ -94,7 +96,7 @@ const CIBLES_REPERE: Readonly<Record<Extract<ActionPalette, { type: "repere" }>[
   inspecteur: { onglet: "inspecteur", focus: "atl-inspecteur-titre" },
 };
 
-export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, projet, zoneTravail, panneauxProjet }: ProprietesAtelierInterface) {
+export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, projet, zoneTravail, zoneTravail3d, panneauxProjet }: ProprietesAtelierInterface) {
   const etatVue = useVue(vue);
   const sel = useSelection(ctx.selection);
   usePilote(pilote);
@@ -143,7 +145,7 @@ export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, pro
     if (restants.length !== sel.ids.length) ctx.selection.choisir(restants);
   }, [ctx.selection, etat, sel]);
 
-  const activation = useCallback((o: DefinitionOutil) => activationOutil(o, ctx), [ctx]);
+  const activation = useCallback((o: DefinitionOutil) => activationOutil(o, ctx, etatVue.vue), [ctx, etatVue.vue]);
 
   const activer = useCallback(
     (id: string | null) => {
@@ -390,7 +392,7 @@ export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, pro
         </section>
 
         <section className="atl-zone" aria-label="Zone de travail" data-testid="atl-repere-zone">
-          <ZoneTravail pilote={pilote} vue={vue} vueTravail={etatVue.vue} niveauActif={niveauActif} enfant={zoneTravail} />
+          <ZoneTravail pilote={pilote} vue={vue} vueTravail={etatVue.vue} niveauActif={niveauActif} enfant={zoneTravail} enfant3d={zoneTravail3d} />
         </section>
 
         <section className="atl-inspecteur atl-feuille" aria-label="Inspecteur" hidden={!visible("inspecteur")} data-testid="atl-repere-inspecteur">
@@ -436,7 +438,14 @@ export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, pro
               <h3>Niveau d'affichage</h3>
               {segmentNiveaux}
               <h3>Vue</h3>
-              <p className="atl-muet">Plan 2D. La vue 3D arrive au lot 3b.</p>
+              <span className="atl-segment" role="radiogroup" aria-label="Vue de la zone de travail (téléphone)">
+                <button type="button" role="radio" aria-checked={etatVue.vue === "plan"} onClick={() => vue.modifier({ vue: "plan" })} data-testid="atl-tel-vue-plan">
+                  Plan 2D
+                </button>
+                <button type="button" role="radio" aria-checked={etatVue.vue === "3d"} disabled={!zoneTravail3d} onClick={() => vue.modifier({ vue: "3d" })} data-testid="atl-tel-vue-3d">
+                  3D
+                </button>
+              </span>
               <h3>Niveau actif</h3>
               <p>{niveauActif ? `${niveauActif.nom} · ${niveauActif.detail}` : "Aucun niveau actif"}</p>
             </div>

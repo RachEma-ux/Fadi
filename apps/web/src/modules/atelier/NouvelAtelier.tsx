@@ -15,6 +15,7 @@ import { installer as installerDocuments } from "./documents/installer";
 import { installer as installerObjets } from "./objets/installer";
 import { installer as installerPlan2d } from "./plan2d/installer";
 import { ZonePlan } from "./plan2d/ZonePlan";
+import { Vue3d } from "./vue3d/Vue3d";
 import { creerContexte, creerEtatInterface, creerPilote, creerRegistres, creerSelection, type InstallationModule } from "./socle";
 import { AtelierInterface } from "./ui/AtelierInterface";
 
@@ -92,6 +93,7 @@ export function NouvelAtelier({ projet, readOnly = false }: ProprietesNouvelAtel
         client={atelierCommandesApi}
         projet={projet}
         zoneTravail={<ZonePlan registres={registres} pilote={pilote} ctx={ctx} vue={vue} />}
+        zoneTravail3d={<Vue3d ctx={ctx} vue={vue} pilote={pilote} />}
         panneauxProjet={() => <PanneauMetre ctx={ctx} />}
       />
     </div>
