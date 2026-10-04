@@ -228,6 +228,14 @@ await mesurer("nouvelle façade sud → aperçu (visibilité par faces, modèle 
 await page.locator('[data-detail="vue"] .docs-reglages select').first().selectOption("200");
 await page.locator('[data-detail="vue"] .docs-reglages button[type="submit"]').click();
 await enregistre();
+// Annotation propre à la façade : une cote de hauteur dans le repère du dessin (altitude en ordonnée).
+await page.locator('[data-annoter="type"]').selectOption("cote");
+await page.locator('[data-annoter="a"]').fill("0 ; 0");
+await page.locator('[data-annoter="b"]').fill("0 ; 3");
+await page.locator('[data-annoter="ok"]').click();
+await page.waitForSelector('[data-annotation="cote"]', { timeout: 30000 }).catch(() => {});
+await page.waitForFunction(() => /3,00/.test(document.querySelector('[data-detail="vue"] .docs-svg svg')?.textContent ?? ""), null, { timeout: 60000 }).catch(() => {});
+check("façade : cote propre à la vue ajoutée et dessinée (3,00)", (await page.locator('[data-annotation="cote"]').count()) === 1 && /3,00/.test((await page.locator('[data-detail="vue"] .docs-svg svg').textContent()) ?? ""));
 await page.locator(".docs-contenu").evaluate((e) => e.scrollTo(0, 0));
 await page.screenshot({ path: `${OUT}/5-documents-facade.png` });
 await page.locator('[data-nouvelle="feuille"]').click();
@@ -247,6 +255,34 @@ for (const n of [1, 2]) {
 }
 await page.waitForSelector('[data-detail="feuille"] .docs-svg svg', { timeout: 60000 });
 check("feuille A1 : deux vues placées sans dépassement du cadre", (await page.locator(".docs-placements li").count()) === 2 && !/dépasse le cadre/.test(await page.locator('[data-detail="feuille"]').textContent()));
+// Déplacer une vue sur la feuille à la souris : glisser son cadre, relâcher = un lot « feuille.placer ».
+const champCentre = page.locator("[data-centre-vue]").first();
+const nomVue = await champCentre.getAttribute("data-centre-vue");
+const centreAvant = await champCentre.inputValue();
+const poignee = page.locator(`[data-detail="feuille"] .feuille-poignee[data-poignee-vue="${nomVue}"]`);
+// La composition de la feuille est recalculée après chaque placement : attendre celle qui porte les deux vues.
+await page.waitForFunction(() => document.querySelectorAll('[data-detail="feuille"] .feuille-poignee[data-poignee-vue]').length === 2 && !document.querySelector('[data-detail="feuille"] [aria-busy="true"]'), null, { timeout: 60000 });
+await page.waitForTimeout(300);
+await poignee.waitFor({ timeout: 60000 });
+await poignee.scrollIntoViewIfNeeded();
+const bp = await poignee.boundingBox();
+await page.mouse.move(bp.x + bp.width / 2, bp.y + bp.height / 2);
+const sousPointeur = await page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${e?.getAttribute("class")} ${e?.getAttribute("data-poignee-vue") ?? e?.getAttribute("data-tableau") ?? ""}`; }, [bp.x + bp.width / 2, bp.y + bp.height / 2]);
+await page.mouse.down();
+for (let k = 1; k <= 8; k++) await page.mouse.move(bp.x + bp.width / 2 + k * 5, bp.y + bp.height / 2 + k * 2);
+await page.mouse.up();
+await page.waitForFunction(([nom, avant]) => [...document.querySelectorAll("[data-centre-vue]")].find((e) => e.getAttribute("data-centre-vue") === nom)?.value !== avant, [nomVue, centreAvant], { timeout: 30000 }).catch(() => {});
+const centreApres = await page.locator(`[data-centre-vue="${nomVue}"]`).inputValue();
+const [xa, ya] = centreAvant.split(";").map((t) => Number(t.trim().replace(",", ".")));
+const [xb, yb] = centreApres.split(";").map((t) => Number(t.trim().replace(",", ".")));
+check("vue glissée sur la feuille : centre déplacé vers la droite et vers le bas (environ 40 × 16 px), enregistré", xb > xa && yb < ya && xb - xa < 120 && (xb - xa) / Math.max(1, ya - yb) > 1.5, `${nomVue} : ${centreAvant} → ${centreApres} ; boîte ${JSON.stringify(bp)} ; sous le pointeur ${sousPointeur}`);
+// Nomenclature placée sur la feuille : le tableau des portes, à une place libre, dessiné en grille.
+await page.locator('[data-placer="tableau"]').selectOption("portes");
+await page.locator('[data-placer="tableau-ok"]').click();
+await page.waitForSelector('[data-tableau-place="portes"]', { timeout: 30000 }).catch(() => {});
+await page.waitForFunction(() => /Tableau des portes/.test(document.querySelector('[data-detail="feuille"] .docs-svg svg')?.textContent ?? ""), null, { timeout: 60000 }).catch(() => {});
+check("nomenclature sur la feuille : tableau des portes placé et dessiné, déplaçable", (await page.locator('[data-tableau-place="portes"]').count()) === 1 && /Tableau des portes/.test((await page.locator('[data-detail="feuille"] .docs-svg svg').textContent()) ?? "") && (await page.locator('.feuille-poignee[data-tableau="portes"]').count()) === 1);
+await page.waitForSelector('[data-detail="feuille"] .docs-svg svg', { timeout: 60000 });
 await page.locator(".docs-contenu").evaluate((e) => e.scrollTo(0, 0));
 await page.screenshot({ path: `${OUT}/5-documents-feuille.png` });
 await axe("mode Documents");

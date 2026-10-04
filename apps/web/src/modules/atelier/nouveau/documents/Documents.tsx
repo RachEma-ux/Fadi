@@ -5,10 +5,9 @@
  * produits par le serveur à la révision courante et inscrits au catalogue des documents. Chaque vue affiche sa
  * fraîcheur : non produite, à jour, ou périmée — en distinguant « dessin modifié » de « modèle modifié ailleurs ».
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  composerFeuille,
   csvTableau,
   ECHELLES,
   empreinteFeuille,
@@ -16,6 +15,7 @@ import {
   FORMATS,
   genererTableau,
   genererVue,
+  grilleTableau,
   niveauxOrdonnes,
   ORIENTATIONS,
   paramsDeDefinition,
@@ -39,8 +39,10 @@ import {
   type TypeTableau,
   type TypeVue,
   type VueGeneree,
+  zoneUtile,
 } from "@parcours/atelier-model";
 import { api, type DocumentDescriptor } from "../../../../lib/api";
+import { composerFeuilleHorsFil, genererVueHorsFil } from "./generation-client";
 
 export interface PropsDocuments {
   projectId: string;
@@ -105,21 +107,21 @@ function Telechargements({ href, formats, onProduit }: { href: (f: string) => st
 }
 
 /** Aperçu SVG généré hors du rendu (la façade d'un grand modèle prend une à deux secondes). */
-function useGeneration<T>(cle: string, calcul: () => T): { valeur: T | null; enCours: boolean } {
-  const [etat, setEtat] = useState<{ cle: string; valeur: T } | null>(null);
+function useGeneration<T>(cle: string, calcul: () => Promise<T>): { valeur: T | null; enCours: boolean; erreur: string | null } {
+  const [etat, setEtat] = useState<{ cle: string; valeur: T | null; erreur: string | null } | null>(null);
   useEffect(() => {
     let annule = false;
-    const t = window.setTimeout(() => {
-      const valeur = calcul();
-      if (!annule) setEtat({ cle, valeur });
-    }, 0);
+    calcul().then(
+      (valeur) => !annule && setEtat({ cle, valeur, erreur: null }),
+      (err: unknown) => !annule && setEtat({ cle, valeur: null, erreur: err instanceof Error ? err.message : String(err) }),
+    );
     return () => {
       annule = true;
-      window.clearTimeout(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cle]);
-  return { valeur: etat?.valeur ?? null, enCours: etat?.cle !== cle };
+  // Pendant un nouveau calcul, le résultat précédent reste affiché (marqué « en cours »).
+  return { valeur: etat?.valeur ?? null, enCours: etat?.cle !== cle, erreur: etat?.cle === cle ? etat.erreur : null };
 }
 
 export function Documents({ projectId, code, nomProjet, etat, revision, readOnly, niveauId, onCommandes }: PropsDocuments) {
@@ -315,7 +317,7 @@ function ComparaisonVue({ projectId, p, defId, vue, revision }: { projectId: str
 function VueDetail({ projectId, def, etat, revision, readOnly, catalogue, base, onProduit, onCommandes, feuilles }: { projectId: string; def: Definition; etat: ModeleAtelier; revision: number; readOnly: boolean; catalogue: DocumentDescriptor[] | undefined; base: string; onProduit: () => void; onCommandes: (c: Commande[], label: string, apres?: Choix) => Promise<void>; feuilles: Definition[] }) {
   const p = paramsDeDefinition(def);
   const empreinte = empreinteVue(etat, p);
-  const { valeur: vue, enCours } = useGeneration<VueGeneree>(`${def.id}:${empreinte}`, () => genererVue(etat, p, def.id));
+  const { valeur: vue, enCours } = useGeneration<VueGeneree>(`${def.id}:${empreinte}`, () => genererVueHorsFil(etat, p, def.id));
   const svg = useMemo(() => (vue ? svgVue(vue, revision) : ""), [vue, revision]);
   const f = fraicheur(catalogue, `atelier-vue-${def.id}-`, empreinte, revision);
   const [form, setForm] = useState(() => ({
@@ -385,6 +387,7 @@ function VueDetail({ projectId, def, etat, revision, readOnly, catalogue, base, 
           {vue.avertissements.map((a) => <li key={a}>{a}</li>)}
         </ul>
       )}
+      <AnnotationsVue defId={def.id} p={p} vue={vue} readOnly={readOnly} onCommandes={onCommandes} />
       <form className="docs-reglages" onSubmit={(e) => { e.preventDefault(); appliquer(); }}>
         <fieldset disabled={readOnly}>
           <legend>Réglages de la vue</legend>
@@ -453,24 +456,43 @@ function VueDetail({ projectId, def, etat, revision, readOnly, catalogue, base, 
 function FeuilleDetail({ def, etat, revision, readOnly, projet, catalogue, base, onProduit, onCommandes, vues }: { def: Definition; etat: ModeleAtelier; revision: number; readOnly: boolean; projet: { nom: string; code: string }; catalogue: DocumentDescriptor[] | undefined; base: string; onProduit: () => void; onCommandes: (c: Commande[], label: string, apres?: Choix) => Promise<void>; vues: Definition[] }) {
   const p = def.params as unknown as ParamsFeuille;
   const empreinte = empreinteFeuille(etat, p, projet);
-  const { valeur: feuille, enCours } = useGeneration<FeuilleComposee>(`${def.id}:${empreinte}:${revision}`, () => composerFeuille(etat, p, revision, projet, def.id));
+  const { valeur: feuille, enCours } = useGeneration<FeuilleComposee>(`${def.id}:${empreinte}:${revision}`, () => composerFeuilleHorsFil(etat, p, revision, projet, def.id));
   const svg = useMemo(() => (feuille ? svgFeuille(feuille) : ""), [feuille]);
   const f = fraicheur(catalogue, `atelier-feuille-${def.id}-`, empreinte, revision);
   const [form, setForm] = useState(() => ({ titre: p.titre, numero: p.numero, format: p.format, orientation: p.orientation, jeu: p.jeu ?? "", indice: p.indice ?? "", auteur: p.auteur ?? "", date: p.date ?? "" }));
   const [local, setLocal] = useState<string | null>(null);
+  // Les places libres se calculent sur la composition de la feuille telle qu'elle est enregistrée, jamais sur une composition en retard.
+  const compositionAJour = !enCours && feuille !== null;
   const placees = new Set(p.vues.map((v) => v.vueId));
   const disponibles = vues.filter((v) => !placees.has(v.id));
   const [aPlacer, setAPlacer] = useState("");
-  const placer = () => {
+  const placer = async () => {
     setLocal(null);
     const d = etat.definitions[aPlacer];
     if (!d) return;
-    const taille = tailleDessinMm(genererVue(etat, paramsDeDefinition(d), d.id));
+    const taille = tailleDessinMm(await genererVueHorsFil(etat, paramsDeDefinition(d), d.id));
     const occupees = (feuille?.vues ?? []).map((v) => ({ x0: v.cadre.x0 - 4, y0: v.cadre.y0 - 12, x1: v.cadre.x1 + 4, y1: v.cadre.y1 + 4 }));
     const pos = positionLibre(p, occupees, taille);
     if (!pos) return setLocal(`« ${d.nom} » ne tient pas sur cette feuille à son échelle : changez d'échelle ou de format.`);
     void onCommandes([{ type: "feuille.placer", params: { id: def.id, vueId: d.id, x: pos.x, y: pos.y } }], `Vue placée sur la feuille ${p.numero}`);
     setAPlacer("");
+  };
+  const tableauxDisponibles = (Object.keys(TABLEAUX) as TypeTableau[]).filter((t) => !(p.tableaux ?? []).some((x) => x.type === t));
+  const [tableauAPlacer, setTableauAPlacer] = useState("");
+  const placerTableau = () => {
+    setLocal(null);
+    const type = tableauAPlacer as TypeTableau;
+    if (!type) return;
+    const z = zoneUtile(p);
+    const g = grilleTableau(genererTableau(etat, type), z.y1 - z.y0);
+    const taille = { largeur: g.largeur, hauteur: (g.lignes.length + 1) * g.hauteurLigne + 8 };
+    const occupees = [...(feuille?.vues ?? []).map((v) => ({ x0: v.cadre.x0 - 4, y0: v.cadre.y0 - 12, x1: v.cadre.x1 + 4, y1: v.cadre.y1 + 4 })), ...(feuille?.tableaux ?? []).map((t) => ({ x0: t.cadre.x0 - 4, y0: t.cadre.y0 - 4, x1: t.cadre.x1 + 4, y1: t.cadre.y1 + 4 }))];
+    const pos = positionLibre(p, occupees, taille);
+    // Centre renvoyé par positionLibre → coin haut gauche ; à défaut, en haut à gauche (lignes en trop signalées).
+    const x = pos ? Math.round(pos.x - taille.largeur / 2) : z.x0 + 6;
+    const y = pos ? Math.round(pos.y + taille.hauteur / 2 - 2) : z.y1 - 6;
+    void onCommandes([{ type: "feuille.placerTableau", params: { id: def.id, type, x: Math.max(z.x0, x), y: Math.min(z.y1, y) } }], `${TABLEAUX[type]} placé sur la feuille ${p.numero}`);
+    setTableauAPlacer("");
   };
   return (
     <div className="docs-detail" data-detail="feuille">
@@ -484,7 +506,19 @@ function FeuilleDetail({ def, etat, revision, readOnly, projet, catalogue, base,
       </header>
       <div className="docs-apercu docs-apercu-feuille" aria-busy={enCours} aria-label={`Aperçu de la feuille ${p.numero}`}>
         {enCours && <p role="status" className="docs-generation">Composition de la feuille…</p>}
-        {!enCours && feuille && <div className="docs-svg" dangerouslySetInnerHTML={{ __html: svg }} />}
+        {!enCours && feuille && (
+          <FeuilleInteractive
+            feuille={feuille}
+            svg={svg}
+            readOnly={readOnly}
+            onDeplacer={(c, x, y) =>
+              void onCommandes(
+                "vueId" in c ? [{ type: "feuille.placer", params: { id: def.id, vueId: c.vueId, x, y } }] : [{ type: "feuille.placerTableau", params: { id: def.id, type: c.tableau, x, y } }],
+                "vueId" in c ? `Vue déplacée sur la feuille ${p.numero}` : `Tableau déplacé sur la feuille ${p.numero}`,
+              )
+            }
+          />
+        )}
       </div>
       {feuille && feuille.avertissements.length > 0 && (
         <ul className="docs-avertissements">
@@ -498,7 +532,11 @@ function FeuilleDetail({ def, etat, revision, readOnly, projet, catalogue, base,
           {p.vues.map((v) => (
             <li key={v.vueId}>
               <span>{etat.definitions[v.vueId]?.nom ?? v.vueId}</span>
-              <span className="docs-meta">centre {fmt(v.x)} ; {fmt(v.y)} mm</span>
+              {readOnly ? (
+                <span className="docs-meta">centre {fmt(v.x)} ; {fmt(v.y)} mm</span>
+              ) : (
+                <CentreVue x={v.x} y={v.y} vueId={v.vueId} libelle={etat.definitions[v.vueId]?.nom ?? v.vueId} onValider={(x, y) => void onCommandes([{ type: "feuille.placer", params: { id: def.id, vueId: v.vueId, x, y } }], `Vue déplacée sur la feuille ${p.numero}`)} />
+              )}
               {!readOnly && <button type="button" onClick={() => void onCommandes([{ type: "feuille.retirer", params: { id: def.id, vueId: v.vueId } }], `Vue retirée de la feuille ${p.numero}`)}>Retirer</button>}
             </li>
           ))}
@@ -511,10 +549,34 @@ function FeuilleDetail({ def, etat, revision, readOnly, projet, catalogue, base,
                 {disponibles.map((v) => <option key={v.id} value={v.id}>{v.nom}</option>)}
               </select>
             </label>
-            <button type="button" disabled={!aPlacer} onClick={placer} data-placer="ok">Placer</button>
+            <button type="button" disabled={!aPlacer || !compositionAJour} onClick={() => void placer()} data-placer="ok">Placer</button>
           </div>
         )}
         {local && <p className="docs-erreur" role="alert">{local}</p>}
+      </section>
+      <section className="docs-placements" aria-label="Nomenclatures placées">
+        <h3>Nomenclatures</h3>
+        {!(p.tableaux ?? []).length && <p className="docs-vide">Aucun tableau sur cette feuille.</p>}
+        <ul>
+          {(p.tableaux ?? []).map((t) => (
+            <li key={t.type} data-tableau-place={t.type}>
+              <span>{TABLEAUX[t.type]}</span>
+              <span className="docs-meta">coin haut gauche {fmt(t.x)} ; {fmt(t.y)} mm{feuille?.tableaux.find((x) => x.type === t.type)?.omises ? ` · ${feuille.tableaux.find((x) => x.type === t.type)!.omises} ligne(s) hors feuille` : ""}</span>
+              {!readOnly && <button type="button" onClick={() => void onCommandes([{ type: "feuille.retirerTableau", params: { id: def.id, type: t.type } }], `Tableau retiré de la feuille ${p.numero}`)}>Retirer</button>}
+            </li>
+          ))}
+        </ul>
+        {!readOnly && tableauxDisponibles.length > 0 && (
+          <div className="docs-placer">
+            <label>Placer un tableau
+              <select value={tableauAPlacer} onChange={(e) => setTableauAPlacer(e.target.value)} data-placer="tableau">
+                <option value="">— choisir —</option>
+                {tableauxDisponibles.map((t) => <option key={t} value={t}>{TABLEAUX[t]}</option>)}
+              </select>
+            </label>
+            <button type="button" disabled={!tableauAPlacer || !compositionAJour} onClick={placerTableau} data-placer="tableau-ok">Placer</button>
+          </div>
+        )}
       </section>
       <form className="docs-reglages" onSubmit={(e) => { e.preventDefault(); void onCommandes([{ type: "feuille.modifier", params: { id: def.id, params: { ...form, jeu: form.jeu || null, indice: form.indice || null, auteur: form.auteur || null, date: form.date || null } } }], `Feuille ${form.numero} modifiée`); }}>
         <fieldset disabled={readOnly}>
@@ -543,6 +605,200 @@ function FeuilleDetail({ def, etat, revision, readOnly, projet, catalogue, base,
         </fieldset>
       </form>
     </div>
+  );
+}
+
+/**
+ * Annotations propres à la vue (coupes et façades surtout) : textes et cotes dans le repère du dessin, en mètres
+ * (abscisse le long de la vue, ordonnée = altitude pour une coupe ou une façade). Rien n'est ajouté au modèle 3D.
+ */
+function AnnotationsVue({ defId, p, vue, readOnly, onCommandes }: { defId: string; p: ParamsVue; vue: VueGeneree | null; readOnly: boolean; onCommandes: (c: Commande[], label: string, apres?: Choix) => Promise<void> }) {
+  const [type, setType] = useState<"texte" | "cote">("texte");
+  const [champs, setChamps] = useState({ position: "", texte: "", a: "", b: "", decalage: "0,5" });
+  const [erreur, setErreur] = useState<string | null>(null);
+  const annotations = p.annotations ?? [];
+  const b = vue?.bornes;
+  const ajouter = () => {
+    setErreur(null);
+    let annotation: Record<string, unknown>;
+    if (type === "texte") {
+      const pos = lirePoint(champs.position);
+      if (!pos || !champs.texte.trim()) return setErreur("Texte : saisissez la position « x ; y » (m) et le texte.");
+      annotation = { type, position: { x: pos.x, y: pos.y }, texte: champs.texte.trim() };
+    } else {
+      const a = lirePoint(champs.a);
+      const bb = lirePoint(champs.b);
+      const d = nombre(champs.decalage);
+      if (!a || !bb) return setErreur("Cote : saisissez les deux points « x ; y » (m).");
+      annotation = { type, a: { x: a.x, y: a.y }, b: { x: bb.x, y: bb.y }, decalage: d ?? 0.5 };
+    }
+    void onCommandes([{ type: "vue.annoter", params: { id: defId, annotation } }], type === "texte" ? `Texte ajouté à la vue ${p.titre}` : `Cote ajoutée à la vue ${p.titre}`);
+    setChamps({ ...champs, position: "", texte: "", a: "", b: "" });
+  };
+  return (
+    <section className="docs-placements docs-annotations" aria-label="Annotations de la vue">
+      <h3>Annotations de la vue</h3>
+      <p className="docs-note">
+        Repère du dessin, en mètres{p.type === "coupe" || p.type === "facade" ? " : abscisse le long de la vue, ordonnée = altitude" : " : repère local du projet"}
+        {b ? ` · étendue x ${fmt(b.min.x)} → ${fmt(b.max.x)}, y ${fmt(b.min.y)} → ${fmt(b.max.y)}` : ""}.
+      </p>
+      {annotations.length === 0 && <p className="docs-vide">Aucune annotation propre à cette vue.</p>}
+      <ul>
+        {annotations.map((an) => (
+          <li key={an.id} data-annotation={an.type}>
+            <span>{an.type === "texte" ? `Texte « ${an.texte} »` : `Cote ${fmt(Math.hypot(an.b.x - an.a.x, an.b.y - an.a.y))} m`}</span>
+            <span className="docs-meta">{an.type === "texte" ? `${fmt(an.position.x)} ; ${fmt(an.position.y)}` : `${fmt(an.a.x)} ; ${fmt(an.a.y)} → ${fmt(an.b.x)} ; ${fmt(an.b.y)}`}</span>
+            {!readOnly && <button type="button" onClick={() => void onCommandes([{ type: "vue.retirerAnnotation", params: { id: defId, annotationId: an.id } }], `Annotation retirée de la vue ${p.titre}`)}>Retirer</button>}
+          </li>
+        ))}
+      </ul>
+      {!readOnly && (
+        <form className="docs-annoter" onSubmit={(e) => { e.preventDefault(); ajouter(); }}>
+          <label>Ajouter
+            <select value={type} onChange={(e) => setType(e.target.value as "texte" | "cote")} data-annoter="type">
+              <option value="texte">un texte</option>
+              <option value="cote">une cote</option>
+            </select>
+          </label>
+          {type === "texte" ? (
+            <>
+              <label>Position (x ; y)<input value={champs.position} onChange={(e) => setChamps({ ...champs, position: e.target.value })} data-annoter="position" /></label>
+              <label>Texte<input value={champs.texte} maxLength={200} onChange={(e) => setChamps({ ...champs, texte: e.target.value })} data-annoter="texte" /></label>
+            </>
+          ) : (
+            <>
+              <label>Premier point (x ; y)<input value={champs.a} onChange={(e) => setChamps({ ...champs, a: e.target.value })} data-annoter="a" /></label>
+              <label>Second point (x ; y)<input value={champs.b} onChange={(e) => setChamps({ ...champs, b: e.target.value })} data-annoter="b" /></label>
+              <label>Décalage (m)<input value={champs.decalage} inputMode="decimal" onChange={(e) => setChamps({ ...champs, decalage: e.target.value })} /></label>
+            </>
+          )}
+          <button type="submit" data-annoter="ok">Ajouter</button>
+          {erreur && <p className="docs-erreur" role="alert">{erreur}</p>}
+        </form>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Aperçu de feuille dont les vues se déplacent à la souris ou au doigt (cadre de la vue saisi, relâché = un lot
+ * `feuille.placer`). Les coordonnées viennent de la matrice écran du SVG : 1 unité = 1 mm, y de la feuille vers le haut.
+ */
+type Cible = { vueId: string } | { tableau: TypeTableau };
+
+function FeuilleInteractive({ feuille, svg, readOnly, onDeplacer }: { feuille: FeuilleComposee; svg: string; readOnly: boolean; onDeplacer: (cible: Cible, x: number, y: number) => void }) {
+  const hote = useRef<HTMLDivElement | null>(null);
+  const glisse = useRef<{ cible: Cible; depart: { x: number; y: number }; centre: { x: number; y: number }; el: SVGRectElement; bouge: boolean } | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  // Poignées : un rectangle transparent par vue placée, ajouté au SVG produit (le fichier exporté n'en a pas).
+  const avecPoignees = useMemo(() => {
+    if (readOnly) return svg;
+    const sur = (t: string) => t.replace(/[<>"&]/g, "");
+    const rect = (attrs: string, c: { x0: number; y0: number; x1: number; y1: number }, libelle: string) =>
+      `<rect class="feuille-poignee" ${attrs} x="${c.x0}" y="${feuille.hauteur - c.y1}" width="${c.x1 - c.x0}" height="${c.y1 - c.y0}" tabindex="0" role="button" aria-label="${sur(libelle)}"/>`;
+    const aire = (c: { x0: number; y0: number; x1: number; y1: number }) => (c.x1 - c.x0) * (c.y1 - c.y0);
+    // Les plus petites par-dessus : une vue posée sur une plus grande reste saisissable.
+    const poignees = [
+      ...feuille.vues.map((v, i) => ({ c: v.cadre, html: rect(`data-poignee="v${i}" data-poignee-vue="${sur(v.vueId)}"`, v.cadre, `Déplacer la vue ${v.titre}`) })),
+      ...feuille.tableaux.map((t, i) => ({ c: t.cadre, html: rect(`data-poignee="t${i}" data-tableau="${t.type}"`, t.cadre, `Déplacer le tableau ${t.titre}`) })),
+    ]
+      .sort((a, b) => aire(b.c) - aire(a.c))
+      .map((x) => x.html)
+      .join("");
+    return svg.replace("</svg>", `<g class="feuille-poignees">${poignees}</g></svg>`);
+  }, [svg, feuille, readOnly]);
+  const versFeuille = (e: { clientX: number; clientY: number }) => {
+    const el = hote.current?.querySelector("svg");
+    const m = el?.getScreenCTM();
+    if (!el || !m) return null;
+    const q = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+    return { x: q.x, y: q.y };
+  };
+  const zone = zoneUtile(feuille.params);
+  const borner = (x: number, y: number) => ({ x: Math.round(Math.min(zone.x1, Math.max(zone.x0, x))), y: Math.round(Math.min(zone.y1, Math.max(zone.y0, y))) });
+  /** Cible d'une poignée : une vue (point = centre) ou un tableau (point = coin haut gauche). */
+  const cibleDe = (el: Element | null): { cible: Cible; point: { x: number; y: number } } | null => {
+    const k = el?.getAttribute("data-poignee");
+    if (!k) return null;
+    if (k.startsWith("v")) {
+      const v = feuille.vues[Number(k.slice(1))];
+      const pl = v && feuille.params.vues.find((x) => x.vueId === v.vueId);
+      return v && pl ? { cible: { vueId: v.vueId }, point: { x: pl.x, y: pl.y } } : null;
+    }
+    const t = feuille.tableaux[Number(k.slice(1))];
+    const pl = t && (feuille.params.tableaux ?? []).find((x) => x.type === t.type);
+    return t && pl ? { cible: { tableau: t.type }, point: { x: pl.x, y: pl.y } } : null;
+  };
+  const surAppui = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const el = (e.target as Element).closest?.("[data-poignee]") as SVGRectElement | null;
+    if (!el || readOnly) return;
+    const c = cibleDe(el);
+    const p = versFeuille(e);
+    if (!c || !p) return;
+    e.preventDefault();
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    glisse.current = { cible: c.cible, depart: p, centre: c.point, el, bouge: false };
+  };
+  const surMouvement = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const g = glisse.current;
+    const p = g && versFeuille(e);
+    if (!g || !p) return;
+    const dx = p.x - g.depart.x;
+    const dy = p.y - g.depart.y;
+    g.bouge = g.bouge || Math.hypot(dx, dy) > 1;
+    g.el.setAttribute("transform", `translate(${dx} ${dy})`);
+    const c = borner(g.centre.x + dx, g.centre.y - dy);
+    setInfo(`${"vueId" in g.cible ? "centre" : "coin haut gauche"} ${c.x} ; ${c.y} mm`);
+  };
+  const surRelache = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const g = glisse.current;
+    glisse.current = null;
+    setInfo(null);
+    if (!g) return;
+    g.el.removeAttribute("transform");
+    const p = versFeuille(e);
+    if (!p || !g.bouge) return;
+    const c = borner(g.centre.x + (p.x - g.depart.x), g.centre.y - (p.y - g.depart.y));
+    if (c.x !== Math.round(g.centre.x) || c.y !== Math.round(g.centre.y)) onDeplacer(g.cible, c.x, c.y);
+  };
+  const surTouche = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (readOnly) return;
+    const pas = e.shiftKey ? 1 : 5;
+    const d = { ArrowLeft: [-pas, 0], ArrowRight: [pas, 0], ArrowUp: [0, pas], ArrowDown: [0, -pas] }[e.key];
+    if (!d) return;
+    const c = cibleDe((e.target as Element).closest?.("[data-poignee]") ?? null);
+    if (!c) return;
+    e.preventDefault();
+    const n = borner(c.point.x + d[0]!, c.point.y + d[1]!);
+    onDeplacer(c.cible, n.x, n.y);
+  };
+  return (
+    <>
+      <div ref={hote} className={`docs-svg${readOnly ? "" : " feuille-editable"}`} onPointerDown={surAppui} onPointerMove={surMouvement} onPointerUp={surRelache} onPointerCancel={surRelache} onKeyDown={surTouche} dangerouslySetInnerHTML={{ __html: avecPoignees }} />
+      {!readOnly && <p className="docs-meta feuille-aide" role="status">{info ?? "Glissez une vue pour la déplacer (flèches : 5 mm, Maj + flèches : 1 mm)."}</p>}
+    </>
+  );
+}
+
+/** Centre d'une vue saisi au clavier (mm, depuis le coin bas gauche de la feuille). */
+function CentreVue({ x, y, vueId, libelle, onValider }: { x: number; y: number; vueId: string; libelle: string; onValider: (x: number, y: number) => void }) {
+  const [texte, setTexte] = useState(`${fmt(x)} ; ${fmt(y)}`);
+  useEffect(() => setTexte(`${fmt(x)} ; ${fmt(y)}`), [x, y]);
+  return (
+    <form
+      className="docs-centre"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const [a, b] = texte.split(";").map((t) => Number(t.trim().replace(",", ".")));
+        if (Number.isFinite(a) && Number.isFinite(b)) onValider(a!, b!);
+      }}
+    >
+      <label>
+        <span className="sr-only">Centre de « {libelle} » (x ; y, mm)</span>
+        <input value={texte} onChange={(e) => setTexte(e.target.value)} inputMode="decimal" size={12} data-centre-vue={vueId} />
+      </label>
+      <button type="submit">Placer</button>
+    </form>
   );
 }
 

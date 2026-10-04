@@ -211,3 +211,57 @@ describe("tableaux et quantités", () => {
     expect(html).toContain("Révision du modèle 3");
   });
 });
+
+describe("nomenclatures placées sur feuille", () => {
+  it("tableau des portes du P.118 sur une A1 : grille, en-têtes avec unités, lignes qui ne tiennent pas signalées ; empreinte liée au tableau ; déplacement et retrait", () => {
+    let e = appliquerLot(P118, lot([{ type: "feuille.creer", params: { id: "ft", titre: "Nomenclatures", numero: "A-900", format: "A1", orientation: "paysage" } }])).etat;
+    const sansTableau = composerFeuilleDefinition(e, "ft", 1, { nom: "P", code: "P.118" })!;
+    expect(sansTableau.tableaux).toEqual([]);
+    expect((e.definitions["ft"]!.params as unknown as ParamsFeuille).tableaux).toBeUndefined();
+    e = appliquerLot(e, lot([{ type: "feuille.placerTableau", params: { id: "ft", type: "portes", x: 30, y: 560 } }], "t2")).etat;
+    const f = composerFeuilleDefinition(e, "ft", 2, { nom: "P", code: "P.118" })!;
+    const portes = genererTableau(e, "portes");
+    expect(f.tableaux).toHaveLength(1);
+    expect(f.tableaux[0]).toMatchObject({ type: "portes", empreinte: portes.empreinte, lignes: portes.lignes.length });
+    const textes = f.primitives.filter((p) => p.type === "texte").map((p) => (p as { texte: string }).texte);
+    expect(textes).toContain("Tableau des portes");
+    expect(textes.some((t) => /\(m\)$/.test(t))).toBe(true);
+    expect(f.tableaux[0]!.omises + Math.min(portes.lignes.length + (portes.total ? 1 : 0), 9999)).toBeGreaterThanOrEqual(portes.lignes.length);
+    expect(f.empreinte).not.toBe(sansTableau.empreinte);
+    // Placé trop bas : des lignes omises, avertissement.
+    const bas = appliquerLot(e, lot([{ type: "feuille.placerTableau", params: { id: "ft", type: "portes", x: 30, y: 60 } }], "t3")).etat;
+    const fb = composerFeuilleDefinition(bas, "ft", 3, { nom: "P", code: "P.118" })!;
+    expect(fb.tableaux[0]!.omises).toBeGreaterThan(0);
+    expect(fb.avertissements.some((a) => /ne tiennent pas/.test(a))).toBe(true);
+    expect((bas.definitions["ft"]!.params as unknown as ParamsFeuille).tableaux).toEqual([{ type: "portes", x: 30, y: 60 }]);
+    expect(svgFeuille(fb)).toContain("Tableau des portes");
+    expect(Buffer.from(pdfFeuille(fb)).subarray(0, 8).toString("latin1")).toBe("%PDF-1.4");
+    const retire = appliquerLot(bas, lot([{ type: "feuille.retirerTableau", params: { id: "ft", type: "portes" } }], "t4")).etat;
+    expect((retire.definitions["ft"]!.params as unknown as ParamsFeuille).tableaux).toBeUndefined();
+    expect(() => appliquerLot(retire, lot([{ type: "feuille.retirerTableau", params: { id: "ft", type: "portes" } }], "t5"))).toThrow(/absent/);
+    expect(() => appliquerLot(e, lot([{ type: "feuille.placerTableau", params: { id: "ft", type: "inconnu", x: 30, y: 560 } }], "t6"))).toThrow();
+  });
+});
+
+describe("annotations propres aux coupes et façades", () => {
+  it("texte et cote ajoutés à une façade : dessinés dans la vue, empreinte changée, retrait ; refus des valeurs invalides", () => {
+    let e = appliquerLot(P118, lot([{ type: "vue.creer", params: { id: "fs", type: "facade", titre: "Façade sud", echelle: 200, orientation: "sud" } }])).etat;
+    const avant = genererVueDefinition(e, "fs")!;
+    e = appliquerLot(e, lot([
+      { type: "vue.annoter", params: { id: "fs", annotation: { id: "t1", type: "texte", position: { x: 2, y: 14 }, texte: "Acrotère" } } },
+      { type: "vue.annoter", params: { id: "fs", annotation: { type: "cote", a: { x: 0, y: 0 }, b: { x: 0, y: 13.2 }, decalage: -1 } } },
+    ], "a1")).etat;
+    const apres = genererVueDefinition(e, "fs")!;
+    const textes = apres.primitives.filter((p) => p.type === "texte").map((p) => (p as { texte: string }).texte);
+    expect(textes).toContain("Acrotère");
+    expect(textes.some((t) => /^13,20?$/.test(t))).toBe(true);
+    expect(apres.empreinte).not.toBe(avant.empreinte);
+    const ann = (e.definitions["fs"]!.params as unknown as ParamsVue).annotations!;
+    expect(ann).toHaveLength(2);
+    const sans = appliquerLot(e, lot([{ type: "vue.retirerAnnotation", params: { id: "fs", annotationId: "t1" } }, { type: "vue.retirerAnnotation", params: { id: "fs", annotationId: ann[1]!.id } }], "a2")).etat;
+    expect((sans.definitions["fs"]!.params as unknown as ParamsVue).annotations).toBeUndefined();
+    expect(genererVueDefinition(sans, "fs")!.empreinte).toBe(avant.empreinte);
+    expect(() => appliquerLot(e, lot([{ type: "vue.annoter", params: { id: "fs", annotation: { type: "cote", a: { x: 1, y: 1 }, b: { x: 1, y: 1 } } } }], "a3"))).toThrow(/nulle/);
+    expect(() => appliquerLot(e, lot([{ type: "vue.annoter", params: { id: "fs", annotation: { id: "t1", type: "texte", position: { x: 0, y: 0 }, texte: "x" } } }], "a4"))).toThrow(/déjà/);
+  });
+});

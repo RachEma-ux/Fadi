@@ -175,11 +175,14 @@ await page.locator(`.ver-liste [data-verrou="${murA.id}"] button:has-text("Lever
 await page.waitForFunction((id) => !document.querySelector(`.ver-liste [data-verrou="${id}"]`), murA.id, { timeout: 10000 });
 check("verrou levé : le second compte peut modifier", (await lot(pid, `autre-apres-${Date.now()}`, revV, [{ type: "objet.modifier", params: { id: murA.id, params: { epaisseur: m(0.33) } } }], autre)).status === 200);
 
-// Collision d'architecture : deux fenêtres qui se chevauchent dans un mur.
+// Collision d'architecture : deux fenêtres qui se chevauchent dans un mur (le plus long, pour que les deux tiennent :
+// l'ordre des objets d'une copie ne suit pas celui du fichier).
+const longueur = (o) => Math.hypot(o.params.b.x - o.params.a.x, o.params.b.y - o.params.a.y);
+const murHote = murs.filter((o) => o.id !== murA.id).sort((x, y) => longueur(y) - longueur(x))[0];
 const revC = (await modele(pid)).revision;
 const lc = await lot(pid, `collision-${Date.now()}`, revC, [
-  { type: "ouverture.poser", params: { id: "e2e-f1", classe: "fenetre", murHoteId: murB.id, position: 0.5, largeur: m(0.6), hauteur: m(1), allege: m(1) } },
-  { type: "ouverture.poser", params: { id: "e2e-f2", classe: "fenetre", murHoteId: murB.id, position: 0.52, largeur: m(0.6), hauteur: m(1), allege: m(1) } },
+  { type: "ouverture.poser", params: { id: "e2e-f1", classe: "fenetre", murHoteId: murHote.id, position: 0.5, largeur: m(0.6), hauteur: m(1), allege: m(1) } },
+  { type: "ouverture.poser", params: { id: "e2e-f2", classe: "fenetre", murHoteId: murHote.id, position: 0.5 + 0.2 / longueur(murHote), largeur: m(0.6), hauteur: m(1), allege: m(1) } },
 ]);
 await ouvrir(pid);
 await page.waitForSelector(".mod-collisions li", { timeout: 30000 }).catch(() => {});
@@ -187,7 +190,7 @@ check("collision signalée : ouvertures qui se chevauchent, menant à l'objet", 
 
 // Comparaison d'une vue entre versions (mode Documents).
 const revD = (await modele(pid)).revision;
-const niveauRdc = murB.niveauId;
+const niveauRdc = murHote.niveauId;
 await lot(pid, `vue-${Date.now()}`, revD, [{ type: "vue.creer", params: { id: "e2e-plan", type: "plan", titre: "Plan comparé", echelle: 100, niveauId: niveauRdc } }]);
 await api("post", `/projects/${pid}/atelier/versions`, { nom: "Avant reprise" });
 const revE = (await modele(pid)).revision;

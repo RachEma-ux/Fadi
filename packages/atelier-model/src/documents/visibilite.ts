@@ -303,7 +303,7 @@ function aretesVives(m: Maillage, _cosSeuil: number): Arete[] {
 }
 
 /** Chaîne les segments de coupe en contours (fermés quand les extrémités se rejoignent). */
-function chainer(segments: [Vec, Vec][]): { points: Vec[]; ferme: boolean }[] {
+export function chainer(segments: [Vec, Vec][]): { points: Vec[]; ferme: boolean }[] {
   const cle = (p: Vec) => `${Math.round(p.x * 1e5)},${Math.round(p.y * 1e5)}`;
   const parSommet = new Map<string, number[]>();
   segments.forEach(([a, b], i) => {

@@ -6,10 +6,11 @@
  *   (R5 : jamais de mélange de repères, la conversion reste explicite) ; un calque DXF par calque du modèle.
  * - CSV des quantités (séparateur « ; », BOM, virgule décimale non utilisée : point, comme les tableaux existants).
  */
-import { pointsArc, pointsSpline, polygoneMur, type Vec } from "../geometrie.js";
+import { pointsArc, pointsSpline, type Vec } from "../geometrie.js";
 import { type ModeleAtelier, type OccurrenceQuelconque } from "../modele.js";
 import { quantites } from "../quantites.js";
 import { Dxf } from "../documents/rendu-dxf.js";
+import { polygoneMurRaccorde } from "../raccords.js";
 
 const nb = (v: number) => (Math.abs(v) < 1e-12 ? "0" : String(Math.round(v * 1e6) / 1e6));
 const calqueDxf = (nom: string | null | undefined) => (nom ? nom.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9_-]+/g, "_").slice(0, 31) || "0" : "0");
@@ -20,7 +21,7 @@ function dessiner(d: Dxf, etat: ModeleAtelier, o: OccurrenceQuelconque): void {
   const calque = calqueDxf(o.calqueId ? (etat.calques[o.calqueId]?.nom ?? o.calqueId) : o.classe);
   switch (o.classe) {
     case "mur":
-      d.polyligne(calque, polygoneMur(o.params.a, o.params.b, o.params.epaisseur.value, o.params.alignement), true);
+      d.polyligne(calque, polygoneMurRaccorde(etat, o), true);
       return;
     case "porte":
     case "fenetre":

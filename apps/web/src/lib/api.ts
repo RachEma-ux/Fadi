@@ -969,7 +969,7 @@ export interface AtelierVariantes {
 }
 export interface AtelierFusionEssai {
   variante: { id: string; nom: string; statut: string; forkRevision: number; revision: number };
-  tronc: { id: string; revision: number; lotsDepuisBifurcation: number };
+  tronc: { id: string; revision: number; lotsDepuisBifurcation: number; depuis?: "bifurcation" | "derniere-fusion" }; dejaFusionnes?: number;
   lots: { label: string; revision: number }[];
   affectes: { crees: string[]; modifies: string[]; supprimes: string[] };
   conflits: { objetId: string; tronc: { label: string; revision: number }; variante: { label: string; revision: number } }[];

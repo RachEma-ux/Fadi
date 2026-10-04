@@ -1,0 +1,67 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { CONTRAT_COMMANDES, appliquerLot, type Commande } from "./commandes/index.js";
+import { importerModeleNatif, type JeuNatif } from "./import/natif.js";
+import { modeleVide, objetsDeClasse, type ModeleAtelier, type Occurrence } from "./modele.js";
+import { facesMurRaccordees, polygoneMurRaccorde, raccordMur, raccordsDuNiveau } from "./raccords.js";
+import { m, pt } from "./unites.js";
+
+const lot = (commands: Commande[]) => ({ requestId: "r", baseRevision: 0, contract: CONTRAT_COMMANDES, label: "r", commands });
+const mur = (id: string, a: [number, number], b: [number, number], alignement = "axe") => ({ type: "mur.tracer", params: { id, niveauId: "n0", a: pt(...a), b: pt(...b), epaisseur: m(0.2), hauteur: m(3), alignement } });
+const modele = (...murs: Commande[]): ModeleAtelier => appliquerLot(modeleVide(), lot([{ type: "niveau.creer", params: { id: "n0", nom: "Rez", elevation: 0, hauteur: 3 } }, ...murs])).etat;
+const M = (e: ModeleAtelier, id: string) => e.objets[id] as Occurrence<"mur">;
+const proche = (p: { x: number; y: number }, x: number, y: number) => Math.abs(p.x - x) < 1e-9 && Math.abs(p.y - y) < 1e-9;
+
+describe("raccords de murs (géométrie dérivée)", () => {
+  it("angle : coupe d'onglet, faces extérieures et intérieures se rejoignent ; les paramètres ne changent pas", () => {
+    const e = modele(mur("h", [0, 0], [4, 0]), mur("v", [0, 0], [0, 3]));
+    const h = facesMurRaccordees(e, M(e, "h"));
+    const v = facesMurRaccordees(e, M(e, "v"));
+    // h : face gauche (y = +0,1, intérieure) commence en x = 0,1 ; face droite (y = -0,1, extérieure) en x = -0,1.
+    expect(proche(h.gauche[0], 0.1, 0.1)).toBe(true);
+    expect(proche(h.droite[0], -0.1, -0.1)).toBe(true);
+    // v : les mêmes coins, vus depuis l'autre mur.
+    const coins = [...v.gauche, ...v.droite];
+    expect(coins.some((p) => proche(p, 0.1, 0.1))).toBe(true);
+    expect(coins.some((p) => proche(p, -0.1, -0.1))).toBe(true);
+    expect(raccordMur(e, M(e, "h"))!.extremites).toEqual(["angle", "libre"]);
+    expect(M(e, "h").params.a).toEqual(pt(0, 0));
+  });
+
+  it("té : le mur aboutissant s'arrête sur la face du mur traversant (axe ou face) ; le traversant est inchangé", () => {
+    for (const fin of [0, 0.1]) {
+      const e = modele(mur("t", [0, 0], [6, 0]), mur("a", [3, 4], [3, fin]));
+      const a = facesMurRaccordees(e, M(e, "a"));
+      expect(Math.abs(a.gauche[1].y - 0.1)).toBeLessThan(1e-9);
+      expect(Math.abs(a.droite[1].y - 0.1)).toBeLessThan(1e-9);
+      expect(raccordMur(e, M(e, "t"))!.extremites).toEqual(["libre", "libre"]);
+      expect(raccordMur(e, M(e, "a"))!.extremites[1]).toBe("te");
+    }
+  });
+
+  it("alignés, croisement et nœud de trois murs : extrémités inchangées ou « non traitées »", () => {
+    const e = modele(mur("a", [0, 0], [4, 0]), mur("b", [4, 0], [8, 0]), mur("x1", [10, -2], [10, 2]), mur("x2", [8, 0], [8, 3]), mur("x3", [8, 0], [8, -3]));
+    expect(raccordMur(e, M(e, "a"))!.extremites).toEqual(["libre", "libre"]);
+    expect(raccordMur(e, M(e, "b"))!.extremites[1]).toBe("non-traite");
+    const p = polygoneMurRaccorde(e, M(e, "x1"));
+    expect(p).toHaveLength(4);
+  });
+
+  it("P.118 : chaque mur garde un quadrilatère valide ; des angles et des tés sont raccordés ; cache par état", () => {
+    const p118 = importerModeleNatif(JSON.parse(readFileSync(new URL("../../../apps/api/src/data/examples/p118-native-model.json", import.meta.url), "utf8")) as JeuNatif).modele;
+    let angles = 0;
+    let tes = 0;
+    for (const n of Object.keys(p118.niveaux)) {
+      const r = raccordsDuNiveau(p118, n);
+      expect(raccordsDuNiveau(p118, n)).toBe(r);
+      for (const x of r.values()) {
+        angles += x.extremites.filter((t) => t === "angle").length;
+        tes += x.extremites.filter((t) => t === "te").length;
+        expect(x.gauche[1]).toBeGreaterThan(x.gauche[0]);
+        expect(x.droite[1]).toBeGreaterThan(x.droite[0]);
+      }
+    }
+    expect(angles).toBeGreaterThan(0);
+    expect(tes + angles).toBeGreaterThan(objetsDeClasse(p118, "mur").length / 4);
+  });
+});

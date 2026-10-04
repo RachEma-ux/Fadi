@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointer
 import { distance, polygoneMur, pt, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
-import { clic, objetsDansCadre, type ResultatClic } from "./outils-2d";
+import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
 import { chemin, projecteur } from "./projecteur";
 import { Definitions2D, Objet2D } from "./rendu";
 
@@ -37,7 +37,9 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const [taille, setTaille] = useState({ w: 800, h: 600 });
   const [accroche, setAccroche] = useState<Accroche | null>(null);
   const [cadre, setCadre] = useState<{ a: Point2; b: Point2 } | null>(null);
-  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean } | null>(null);
+  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer" | "lasso"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean } | null>(null);
+  const [lasso, setLasso] = useState<Point2[] | null>(null);
+  const lassoPoints = useRef<Point2[]>([]);
   const [decalage, setDecalage] = useState<{ dx: number; dy: number; accroche: Accroche } | null>(null);
   const pointeurs = useRef(new Map<number, { x: number; y: number }>());
   const pincement = useRef<{ d: number; vue: EtatUi["vue"]; cx: number; cy: number } | null>(null);
@@ -124,6 +126,16 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       if (g.bouge) setCadre({ a: g.depart, b: p });
       return;
     }
+    if (g?.mode === "lasso") {
+      const dernier = lassoPoints.current[lassoPoints.current.length - 1];
+      // Un point tous les 4 px environ : le contour reste léger.
+      if (!dernier || Math.hypot((p.x - dernier.x) * pr.echelle, (p.y - dernier.y) * pr.echelle) > 4) {
+        lassoPoints.current = [...lassoPoints.current, p];
+        g.bouge = g.bouge || lassoPoints.current.length > 2;
+        setLasso(lassoPoints.current);
+      }
+      return;
+    }
     if (g?.mode === "deplacer") {
       g.bouge = g.bouge || Math.hypot(sx - g.x, sy - g.y) > 4;
       if (g.bouge) {
@@ -164,6 +176,11 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       return;
     }
     if (e.button !== 0) return;
+    if (ui.outil === "lasso" || (ui.outil === "selection" && e.altKey)) {
+      lassoPoints.current = [p];
+      glisse.current = { mode: "lasso", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
+      return;
+    }
     if (ui.outil === "selection") {
       const sous = objetSousPointeur(p, cache, etat, ui.niveauId, rayon);
       if (sous && ui.selection.includes(sous.objetId) && !e.shiftKey && !readOnly) {
@@ -202,6 +219,24 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       // Simple clic sur un objet déjà sélectionné : le garder seul.
       const sous = objetSousPointeur(p, cache, etat, ui.niveauId, rayon);
       if (sous) etatUi.selectionner([sous.objetId]);
+      return;
+    }
+    if (g?.mode === "lasso") {
+      const contour = lassoPoints.current;
+      lassoPoints.current = [];
+      setLasso(null);
+      if (g.bouge && contour.length > 2) {
+        const ids = objetsDansLasso(etat, ui.niveauId, contour).filter((id) => {
+          const o = etat.objets[id];
+          return !(o?.calqueId && calquesMasques.has(o.calqueId));
+        });
+        etatUi.selectionner(ids, e.shiftKey);
+        etatUi.set({ aide: ids.length ? `${ids.length} objet(s) sélectionné(s) au lasso.` : "Aucun objet entièrement entouré." });
+        return;
+      }
+      const sous = objetSousPointeur(p, cache, etat, ui.niveauId, rayon);
+      if (sous) etatUi.selectionner([sous.objetId], e.shiftKey);
+      else if (!e.shiftKey) etatUi.selectionner([]);
       return;
     }
     if (g?.mode === "cadre") {
@@ -270,6 +305,8 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
         pincement.current = null;
         glisse.current = null;
         setCadre(null);
+        setLasso(null);
+        lassoPoints.current = [];
       }}
       onPointerLeave={() => {
         setAccroche(null);
@@ -326,6 +363,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
         })}
         {accroche && accroche.type !== "libre" && <MarqueAccroche a={accroche} pr={pr} />}
         {cadre && <CadreSelection a={pr.vers(cadre.a)} b={pr.vers(cadre.b)} />}
+        {lasso && lasso.length > 1 && <path className="plan-lasso" d={chemin(pr, lasso, true)} data-lasso={lasso.length} />}
       </g>
       <EchelleGraphique echelle={ui.vue.echelle} hauteur={taille.h} />
     </svg>

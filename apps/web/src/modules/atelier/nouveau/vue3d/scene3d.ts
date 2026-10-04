@@ -6,7 +6,7 @@
  */
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { englobant, maillageObjet, niveauxOrdonnes, type Maillage, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { chapeauxDeCoupe, englobant, maillageObjet, niveauxOrdonnes, raccordMur, type Maillage, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 
 export type VueTechnique = "perspective" | "dessus" | "coupe-ns" | "coupe-eo" | "facade-sud" | "facade-nord" | "facade-est" | "facade-ouest";
 export type Presentation = "batiment" | "niveau" | "eclate";
@@ -39,6 +39,8 @@ export interface MesuresRendu {
   localiser?: (objetId: string) => { x: number; y: number } | null;
   /** Objet sous un point écran (instrumentation de la recette). */
   sonder?: (x: number, y: number) => string | null;
+  /** Nombre d'objets dont la section est remplie (coupe en 3D) : instrumentation de la recette. */
+  chapeaux?: number;
 }
 
 const ECART_ECLATE = 4;
@@ -83,6 +85,10 @@ export class Scene3D {
   private matApercu = new THREE.MeshStandardMaterial({ color: "#b3521f", transparent: true, opacity: 0.55, side: THREE.DoubleSide, flatShading: true, depthWrite: false });
   private matAretes = new THREE.LineBasicMaterial({ color: "#2d4a40", transparent: true, opacity: 0.35 });
   private plans: THREE.Plane[] = [];
+  /** Maillages du modèle courant (sources des chapeaux de coupe). */
+  private maillagesCourants: Maillage[] = [];
+  private chapeaux: THREE.Mesh[] = [];
+  private cleChapeaux = "";
   private cache = new WeakMap<object, { cle: string; m: Maillage | null }>();
   private etat: ModeleAtelier | null = null;
   private options: OptionsScene | null = null;
@@ -149,6 +155,8 @@ export class Scene3D {
   private maillage(etat: ModeleAtelier, o: OccurrenceQuelconque, cleNiveaux: string): Maillage | null {
     let cle = cleNiveaux;
     if (o.classe === "mur") {
+      const r = raccordMur(etat, o as Occurrence<"mur">);
+      if (r) cle += `|r:${r.gauche.join(",")};${r.droite.join(",")}`;
       for (const x of Object.values(etat.objets)) if ((x.classe === "porte" || x.classe === "fenetre" || x.classe === "ouverture") && x.params.murHoteId === o.id) cle += `|${x.id}:${x.params.position}:${x.params.largeur.value}:${x.params.hauteur.value}:${x.params.allege?.value ?? ""}`;
     } else if (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") {
       const h = etat.objets[o.params.murHoteId];
@@ -239,6 +247,8 @@ export class Scene3D {
       }
       this.lots.push({ maillage: mesh, aretes, debuts, ids });
     }
+    this.maillagesCourants = tous;
+    this.cleChapeaux = "";
     const e = englobant(tous);
     if (e) this.boite.set(new THREE.Vector3(...e.min), new THREE.Vector3(...e.max));
     else this.boite.set(new THREE.Vector3(-10, -10, 0), new THREE.Vector3(10, 10, 3));
@@ -272,6 +282,7 @@ export class Scene3D {
     if (o.vue === "coupe-eo") this.plans.push(new THREE.Plane(new THREE.Vector3(0, 1, 0), -(b.min.y + (b.max.y - b.min.y) * o.positionCoupe)));
     for (const m of this.materiaux.values()) m.needsUpdate = true;
     if (o.vue === "dessus" && actif) for (const [id, g] of this.groupes) g.visible = id === o.niveauActif || (etat.niveaux[id]?.ordre ?? 99) < actif.ordre;
+    this.majChapeaux();
     if (recadrer || !avant || avant.vue !== o.vue || avant.presentation !== o.presentation || (o.presentation === "niveau" && avant.niveauActif !== o.niveauActif)) this.cadrer();
     this.rendre();
   }
@@ -374,6 +385,42 @@ export class Scene3D {
       this.apercu.add(mesh);
     }
     this.rendre();
+  }
+
+  /** Remplit la section là où l'unique plan de coupe traverse la matière (chapeaux purs, `chapeauxDeCoupe`). */
+  private majChapeaux(): void {
+    const plan = this.plans.length === 1 ? this.plans[0]! : null;
+    const visibles = [...this.groupes].filter(([, g]) => g.visible).map(([id]) => id);
+    const cle = plan ? `${plan.normal.toArray().join(",")}|${plan.constant}|${visibles.join(",")}|${this.maillagesCourants.length}` : "";
+    if (cle === this.cleChapeaux) return;
+    this.cleChapeaux = cle;
+    for (const c of this.chapeaux) {
+      c.parent?.remove(c);
+      c.geometry.dispose();
+    }
+    this.chapeaux = [];
+    this.mesures.chapeaux = 0;
+    if (!plan) return;
+    const point = plan.normal.clone().multiplyScalar(-plan.constant);
+    const sources = this.maillagesCourants.filter((m) => visibles.includes(m.niveauId ?? "-"));
+    for (const c of chapeauxDeCoupe(sources, { point: [point.x, point.y, point.z], normale: [plan.normal.x, plan.normal.y, plan.normal.z] })) {
+      const mesh = this.versMesh(c, this.materiauChapeau(c.couleur));
+      mesh.userData["chapeau"] = c.objetId;
+      this.groupes.get(c.niveauId ?? "-")?.add(mesh);
+      this.chapeaux.push(mesh);
+    }
+    this.mesures.chapeaux = this.chapeaux.length;
+  }
+
+  private materiauxChapeau = new Map<string, THREE.MeshBasicMaterial>();
+  private materiauChapeau(couleur: string): THREE.MeshBasicMaterial {
+    let m = this.materiauxChapeau.get(couleur);
+    if (!m) {
+      // Sans plans de coupe (le chapeau est dans le plan) ; aplat, comme un poché.
+      m = new THREE.MeshBasicMaterial({ color: couleur, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+      this.materiauxChapeau.set(couleur, m);
+    }
+    return m;
   }
 
   private versMesh(m: Maillage, mat: THREE.Material): THREE.Mesh {

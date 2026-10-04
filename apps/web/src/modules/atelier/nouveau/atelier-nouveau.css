@@ -399,6 +399,13 @@
   paint-order: stroke;
   font-size: 11px;
 }
+.plan-lasso {
+  fill: rgba(179, 135, 47, 0.08);
+  stroke: #b3872f;
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
 .plan-cadre {
   fill: rgba(179, 135, 47, 0.08);
   stroke: var(--atelier-accent);
@@ -1797,4 +1804,51 @@
 }
 .refext-liste span {
   font-size: 0.85em;
+}
+/* Champs empilés dans les cadres de choix (références externes) : jamais plus larges que le panneau. */
+.reprise-choix label.auto-champ {
+  display: grid;
+}
+.auto-champ select,
+.auto-champ input {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Vues déplaçables sur la feuille (poignées ajoutées à l'aperçu seulement). */
+.feuille-editable .feuille-poignee {
+  fill: rgba(179, 135, 47, 0);
+  stroke: none;
+  cursor: move;
+  touch-action: none;
+}
+.feuille-editable .feuille-poignee:hover,
+.feuille-editable .feuille-poignee:focus-visible,
+.feuille-editable .feuille-poignee[transform] {
+  fill: rgba(179, 135, 47, 0.1);
+  stroke: #b3872f;
+  stroke-width: 0.6;
+  stroke-dasharray: 3 2;
+  outline: none;
+}
+.feuille-editable svg {
+  touch-action: none;
+}
+.feuille-aide {
+  margin: 0.3rem 0.6rem;
+}
+.docs-centre {
+  display: inline-flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+.docs-annoter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  align-items: flex-end;
+}
+.docs-annoter label {
+  display: grid;
+  gap: 0.15rem;
 }

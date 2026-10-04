@@ -210,14 +210,14 @@ export function Versions({ projectId, client, etat, revision, selection, niveauI
           </p>
           <span className="ver-actions">
             <button type="button" disabled={occupe} onClick={() => void agir(async () => { const c = await api.comparerAtelier(projectId, `r:${tronc.baseRevision}`); setComparaison({ libelle: "Point de bifurcation", d: c.difference }); })}>Comparer au tronc</button>
-            {tronc.accessible && tronc.statut !== "fusionnee" && (
-              <button type="button" disabled={occupe} onClick={() => void agir(async () => { await synchroniser(); setFusion(await api.getAtelierFusion(tronc.id, projectId)); })}>Préparer la fusion</button>
+            {tronc.accessible && (
+              <button type="button" disabled={occupe} onClick={() => void agir(async () => { await synchroniser(); setFusion(await api.getAtelierFusion(tronc.id, projectId)); })}>{tronc.statut === "fusionnee" ? "Préparer une nouvelle fusion" : "Préparer la fusion"}</button>
             )}
           </span>
           {fusion && (
             <div className="ver-fusion" data-conflits={fusion.conflits.length}>
               <p>
-                {fusion.lots.length} lot(s) à rejouer sur le tronc (révision {fusion.tronc.revision}, {fusion.tronc.lotsDepuisBifurcation} lot(s) depuis la bifurcation) : {fusion.affectes.crees.length} création(s), {fusion.affectes.modifies.length} modification(s), {fusion.affectes.supprimes.length} suppression(s).
+                {fusion.lots.length} lot(s) à rejouer sur le tronc (révision {fusion.tronc.revision}, {fusion.tronc.lotsDepuisBifurcation} lot(s) du tronc depuis {fusion.tronc.depuis === "derniere-fusion" ? "la dernière fusion" : "la bifurcation"}{fusion.dejaFusionnes ? ` ; ${fusion.dejaFusionnes} lot(s) déjà fusionné(s)` : ""}) : {fusion.affectes.crees.length} création(s), {fusion.affectes.modifies.length} modification(s), {fusion.affectes.supprimes.length} suppression(s).
               </p>
               {!fusion.rejeu.ok && <p className="ver-erreur">Rejeu impossible : « {fusion.rejeu.lot} » — {fusion.rejeu.message}</p>}
               {fusion.conflits.length > 0 && (

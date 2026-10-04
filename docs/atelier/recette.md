@@ -18,9 +18,9 @@ déclaré « disponible » : cet état n'est posé qu'après votre acceptation (
 | 7 | Versions nommées, variantes et fusion par rejeu validé, publications figées, verrous fins, collisions, comparaison de vues | `lots/lot-7.md` |
 | 8 | Scripts versionnés (mêmes commandes, mêmes refus), assistant à boucle contrôlée (règles de Fadi, accord explicite) | `lots/lot-8.md` |
 | 9 | Recette : essai « calcul tardif » ajouté, aide située relue et testée, fiches mises à jour, protocole T17 / T18, documentation | `lots/lot-9.md`, ce dossier, `protocole-mesures.md` |
-| + | Compléments : historique d'un objet, consultation d'un état passé, réutilisation de modèle, références externes | `lots/complements.md` |
+| + | Compléments : historique d'un objet, consultation d'un état passé, réutilisation de modèle, références externes ; raccords de murs, coupes remplies en 3D, lasso, fusions successives, vues et nomenclatures déplaçables sur feuille, annotations des coupes et façades | `lots/complements.md` |
 
-Décisions du chef de projet : D-001 à D-022 (`decisions.md`). Fiches : les 71 à l'état « prototype » (code présent,
+Décisions du chef de projet : D-001 à D-023 (`decisions.md`). Fiches : les 71 à l'état « prototype » (code présent,
 preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leurs écarts déclarés.
 
 ## 2. Contrôles automatiques (état au 4 octobre 2026)
@@ -28,15 +28,15 @@ preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leur
 | Contrôle | Résultat |
 | --- | --- |
 | `npm run typecheck` (dont `scripts/check-module-deps.mjs`, T14) | ✅ |
-| `npm test` | ✅ core-geometry 47 · domain-model 95 · **atelier-model 107** · **API 79** · web 21 |
+| `npm test` | ✅ core-geometry 47 · domain-model 95 · **atelier-model 115** · **API 79** · web 22 |
 | `npm run build` | ✅ |
 | Scénario complet `apps/web/e2e/parcours-scenario.mjs` | ✅ 326 contrôles, « Scénario conforme. » |
 | Recette Atelier `atelier-nouveau.mjs` (lots 3–4) | ✅ 41 contrôles |
-| Recette documents `atelier-documents.mjs` (lot 5) | ✅ 18 contrôles |
+| Recette documents `atelier-documents.mjs` (lot 5, compléments) | ✅ 21 contrôles |
 | Recette échanges `atelier-echanges.mjs` (lot 6) | ✅ 17 contrôles |
 | Recette versions `atelier-versions.mjs` (lot 7) | ✅ 24 contrôles |
 | Recette automatisation `atelier-automatisation.mjs` (lot 8) | ✅ 14 contrôles |
-| Recette compléments `atelier-complements.mjs` | ✅ 21 contrôles (captures `10-reprise.png`, `10-reference-externe.png`) |
+| Recette compléments `atelier-complements.mjs` | ✅ 23 contrôles (captures `10-reprise.png`, `10-reference-externe.png`, `10-coupe-remplie.png`) |
 | Corpus IFC validé par IfcOpenShell 0.9.0 (`apps/api/test-corpus/ifc/`) | ✅ petit modèle (référence octet pour octet), P.118, P.118 réimporté puis réexporté |
 | Sauvegarde puis restauration vérifiées (`scripts/verify-restore.sh`, T11) | ✅ en CI ; en local sur la base de développement (journal, versions, publications, volumes) |
 | axe-core (aucune violation critique ou sérieuse) | ✅ à chaque écran des recettes, ordinateur et téléphone |
@@ -114,13 +114,10 @@ Toutes ces étapes tournent dans `.github/workflows/ci.yml` (jobs `validate`, `e
 
 ## 7. Limites connues (non faites, déclarées)
 
-- Atelier : jonctions de murs et remplissage des coupes en 3D (lot 3b) ; lasso ; manipulateur 3D à poignées ;
-  façade d'un grand modèle calculée dans le fil principal (≈ 1,8 s sur le P.118).
-- Documents : vues déplaçables à la souris sur les feuilles, nomenclatures placées sur feuille, annotations propres
-  aux coupes et façades.
+- Atelier : manipulateur 3D à poignées ; raccords de murs : nœuds de trois murs ou plus et croisements non traités,
+  export IFC en rectangles.
 - Échanges : annotations, matériaux et types IFC à l'import ; `IfcMaterialLayerSet` ; blocs DXF, `XREF`, hachures,
   cotes ; DWG.
-- Versions : seconde fusion d'une même variante.
 - Références externes : accrochage sur la source, représentation dans les documents et la 3D, cache hors ligne
   persistant, réparation d'une référence inaccessible. Réutilisation : sélection spatiale, bibliothèques partagées.
 - Automatisation : génération libre (fournisseur non choisi) ; éditeur guidé de scripts.

@@ -450,7 +450,23 @@ describe("versions, variantes, publications, verrous (lot 7)", () => {
     const variante = (await modele(owner, vid)).modele;
     expect(tronc.objets).toEqual(variante.objets);
     expect((await owner.get(`/projects/${pid}/atelier/variantes`)).body.variantes[0]).toMatchObject({ id: vid, statut: "fusionnee", fusionRevision: 4 });
-    expect((await owner.post(`/projects/${pid}/atelier/variantes/${vid}/fusion`).send({ baseRevision: 4 })).status).toBe(409);
+    const rien = await owner.post(`/projects/${pid}/atelier/variantes/${vid}/fusion`).send({ baseRevision: 4 });
+    expect(rien.status).toBe(409);
+    expect(rien.body.motif).toBe("rien-a-fusionner");
+    // Seconde fusion (D-023) : seuls les lots nouveaux de la variante sont rejoués ; conflits depuis la dernière fusion.
+    expect((await envoyer(owner, vid, "var-3", base + 2, [{ type: "objet.modifier", params: { id: nouveau, params: { hauteur: m(2.6) } } }])).status).toBe(200);
+    expect((await envoyer(owner, pid, "t3", 4, [{ type: "objet.modifier", params: { id: "m1", params: { hauteur: m(3.1) } } }])).status).toBe(200);
+    essai = (await owner.get(`/projects/${pid}/atelier/variantes/${vid}/fusion`)).body;
+    expect(essai).toMatchObject({ dejaFusionnes: 2, lots: [{ label: "var-3" }], conflits: [], rejeu: { ok: true }, tronc: { depuis: "derniere-fusion", lotsDepuisBifurcation: 1 } });
+    expect((await envoyer(owner, pid, "t4", 5, [{ type: "objet.modifier", params: { id: nouveau, params: { hauteur: m(3.3) } } }])).status).toBe(200);
+    essai = (await owner.get(`/projects/${pid}/atelier/variantes/${vid}/fusion`)).body;
+    expect(essai.conflits.map((c: { objetId: string }) => c.objetId)).toEqual([nouveau]);
+    const second = await owner.post(`/projects/${pid}/atelier/variantes/${vid}/fusion`).send({ baseRevision: 6, strategie: "variante-prioritaire" });
+    expect(second.status).toBe(200);
+    expect(second.body).toMatchObject({ revision: 7, lots: 1 });
+    const apres = (await modele(owner, pid)).modele;
+    expect(apres.objets[nouveau].params.hauteur.value).toBe(2.6);
+    expect(apres.objets["m1"].params.hauteur.value).toBe(3.1);
     // Un étranger ne voit pas la variante.
     const etranger = await registerAndLogin("variante-etranger@example.com");
     expect((await etranger.get(`/projects/${pid}/atelier/variantes/${vid}/fusion`)).status).toBe(404);

@@ -32,3 +32,20 @@ de la section 10.1.
 Dans l'Atelier d'une copie de P.118 : sélectionner un mur, ouvrir « Historique de l'objet » ; dans « Complet »,
 « Journal » → « Consulter » ; dans un projet vide avec un niveau, « Reprendre d'un autre projet » → Aperçu →
 Reprendre ; publier un second projet, puis « Références externes » → Rattacher.
+
+## Second ensemble (D-023)
+
+| Sujet | Résultat | Preuve |
+| --- | --- | --- |
+| Raccords de murs (lot 3b) | Onglets aux angles, arrêt sur la face aux tés, en plan, en 3D, dans les vues et le DXF ; P.118 : 330 extrémités en angle, 54 en té, 15 non traitées (nœuds multiples), 41 libres. | `raccords.test.ts` (4), captures du plan |
+| Coupes remplies en 3D (lot 3b) | Section pleine (couleur assombrie) en coupe N–S / E–O, en plan et en coupe horizontale ; rien sans plan de coupe. | `chapeaux.test.ts` (2), e2e `atelier-complements.mjs`, `10-coupe-remplie.png` |
+| Lasso | Outil « Lasso » et Alt + glisser ; objets entièrement entourés ; Maj ajoute. | `nouveau.test.ts`, e2e |
+| Fusions successives | Une variante se fusionne de nouveau : seuls ses lots nouveaux sont rejoués ; conflits depuis la dernière fusion. | test API « variante créée… » (étendu) |
+| Vues déplaçables sur feuille | Glisser le cadre d'une vue (ou d'une nomenclature), flèches au clavier, ou saisie du centre. | e2e `atelier-documents.mjs` |
+| Nomenclatures sur feuille | « Placer un tableau » : tableau du catalogue mis en grille ; lignes hors feuille signalées ; retrait. | `documents.test.ts`, e2e |
+| Annotations propres aux coupes et façades | Textes et cotes dans le repère du dessin ; retrait ; empreinte d'origine retrouvée sans annotation. | `documents.test.ts`, e2e |
+| Génération des documents hors du fil principal | Vues et feuilles calculées dans un worker (même code pur), repli dans le fil principal sans worker ; façade sud du P.118 : 514 ms jusqu'à l'aperçu (1 856 ms avant, interface bloquée). | e2e `atelier-documents.mjs` (mesure) |
+
+Restent non faits : manipulateur 3D à poignées ; import IFC des annotations,
+matériaux et types ; `IfcMaterialLayerSet` ; blocs, `XREF`, hachures et cotes DXF ; DWG ; jonctions de murs à l'export
+IFC (rectangles extrudés) ; nœuds de trois murs ou plus.

@@ -348,7 +348,25 @@ export function objetsDansCadre(etat: ModeleAtelier, niveauId: string | null, a:
   const maxX = Math.max(a.x, b.x);
   const minY = Math.min(a.y, b.y);
   const maxY = Math.max(a.y, b.y);
-  const dedans = (p: { x: number; y: number }) => p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY;
+  return objetsEntierementDans(etat, niveauId, (p) => p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY);
+}
+
+/** Lasso : objets du niveau dont tous les points caractéristiques sont dans le contour tracé à main levée. */
+export function objetsDansLasso(etat: ModeleAtelier, niveauId: string | null, contour: readonly { x: number; y: number }[]): string[] {
+  if (contour.length < 3) return [];
+  const dedans = (q: { x: number; y: number }) => {
+    let r = false;
+    for (let i = 0, j = contour.length - 1; i < contour.length; j = i++) {
+      const a = contour[i]!;
+      const b = contour[j]!;
+      if (a.y > q.y !== b.y > q.y && q.x < ((b.x - a.x) * (q.y - a.y)) / (b.y - a.y) + a.x) r = !r;
+    }
+    return r;
+  };
+  return objetsEntierementDans(etat, niveauId, dedans);
+}
+
+function objetsEntierementDans(etat: ModeleAtelier, niveauId: string | null, dedans: (p: { x: number; y: number }) => boolean): string[] {
   const out: string[] = [];
   for (const o of Object.values(etat.objets) as OccurrenceQuelconque[]) {
     if (o.niveauId !== niveauId) continue;

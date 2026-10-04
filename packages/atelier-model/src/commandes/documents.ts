@@ -4,7 +4,7 @@
  */
 import type { Definition, ModeleAtelier } from "../modele.js";
 import { lireParamsFeuille, type ParamsFeuille } from "../documents/feuilles.js";
-import { lireParamsVue, type ParamsVue } from "../documents/vues.js";
+import { lireAnnotationVue, lireParamsVue, type ParamsVue } from "../documents/vues.js";
 import { effetsVides, ErreurCommande, lire, type ContexteCommande, type Reducteur, type ResultatCommande } from "./base.js";
 
 type Brut = Record<string, unknown>;
@@ -40,6 +40,26 @@ export const reducteursDocuments: Record<string, Reducteur> = {
     const d = definitionDe(etat, id, VUE, "vue");
     const params = lireParamsVue(etat, { ...(d.params as Brut), ...((p["params"] as Brut | undefined) ?? {}) });
     return poser(etat, { ...d, nom: params.titre, params: params as unknown as Brut, version: d.version + 1 }, false);
+  },
+  /** Ajoute une annotation propre à la vue (texte ou cote, repère du dessin en mètres). */
+  "vue.annoter": (etat, p, ctx: ContexteCommande) => {
+    const id = lire.chaine(p, "id");
+    const d = definitionDe(etat, id, VUE, "vue");
+    const actuels = d.params as unknown as ParamsVue;
+    const brute = (p["annotation"] ?? {}) as Brut;
+    const annotation = lireAnnotationVue({ ...brute, id: typeof brute["id"] === "string" ? brute["id"] : ctx.ids.nouveau("annotation") });
+    if ((actuels.annotations ?? []).some((x) => x.id === annotation.id)) throw new ErreurCommande("precondition", "annotation.id", `annotation déjà présente : ${annotation.id}`);
+    const params = lireParamsVue(etat, { ...(actuels as unknown as Brut), annotations: [...(actuels.annotations ?? []), annotation] });
+    return poser(etat, { ...d, params: params as unknown as Brut, version: d.version + 1 }, false);
+  },
+  "vue.retirerAnnotation": (etat, p) => {
+    const id = lire.chaine(p, "id");
+    const d = definitionDe(etat, id, VUE, "vue");
+    const actuels = d.params as unknown as ParamsVue;
+    const annotationId = lire.chaine(p, "annotationId");
+    if (!(actuels.annotations ?? []).some((x) => x.id === annotationId)) throw new ErreurCommande("precondition", "annotationId", `annotation inconnue : ${annotationId}`);
+    const params = lireParamsVue(etat, { ...(actuels as unknown as Brut), annotations: (actuels.annotations ?? []).filter((x) => x.id !== annotationId) });
+    return poser(etat, { ...d, params: params as unknown as Brut, version: d.version + 1 }, false);
   },
   "vue.supprimer": (etat, p) => {
     const id = lire.chaine(p, "id");
@@ -78,8 +98,31 @@ export const reducteursDocuments: Record<string, Reducteur> = {
     const vueId = lire.chaine(p, "vueId");
     const x = lire.nombre(p, "x")!;
     const y = lire.nombre(p, "y")!;
-    const vues = [...actuels.vues.filter((v) => v.vueId !== vueId), { vueId, x, y }];
+    // Une vue déjà placée garde son rang (seul son centre change) ; une nouvelle vue s'ajoute à la fin.
+    const vues = actuels.vues.some((v) => v.vueId === vueId) ? actuels.vues.map((v) => (v.vueId === vueId ? { vueId, x, y } : v)) : [...actuels.vues, { vueId, x, y }];
     const params = lireParamsFeuille(etat, { ...(actuels as unknown as Brut), vues });
+    return poser(etat, { ...d, params: params as unknown as Brut, version: d.version + 1 }, false);
+  },
+  /** Place (ou déplace) une nomenclature sur une feuille : coin haut gauche, en mm. */
+  "feuille.placerTableau": (etat, p) => {
+    const id = lire.chaine(p, "id");
+    const d = definitionDe(etat, id, FEUILLE, "feuille");
+    const actuels = d.params as unknown as ParamsFeuille;
+    const type = lire.chaine(p, "type");
+    const x = lire.nombre(p, "x")!;
+    const y = lire.nombre(p, "y")!;
+    const existants = actuels.tableaux ?? [];
+    const tableaux = existants.some((t) => t.type === type) ? existants.map((t) => (t.type === type ? { type, x, y } : t)) : [...existants, { type, x, y }];
+    const params = lireParamsFeuille(etat, { ...(actuels as unknown as Brut), tableaux });
+    return poser(etat, { ...d, params: params as unknown as Brut, version: d.version + 1 }, false);
+  },
+  "feuille.retirerTableau": (etat, p) => {
+    const id = lire.chaine(p, "id");
+    const d = definitionDe(etat, id, FEUILLE, "feuille");
+    const actuels = d.params as unknown as ParamsFeuille;
+    const type = lire.chaine(p, "type");
+    if (!(actuels.tableaux ?? []).some((t) => t.type === type)) throw new ErreurCommande("precondition", "type", `tableau absent de la feuille : ${type}`);
+    const params = lireParamsFeuille(etat, { ...(actuels as unknown as Brut), tableaux: (actuels.tableaux ?? []).filter((t) => t.type !== type) });
     return poser(etat, { ...d, params: params as unknown as Brut, version: d.version + 1 }, false);
   },
   "feuille.retirer": (etat, p) => {

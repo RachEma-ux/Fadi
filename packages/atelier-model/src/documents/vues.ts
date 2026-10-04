@@ -8,10 +8,11 @@
  * et même empreinte (reproductibilité). Rien n'est inventé : une hauteur absente ne produit aucun volume, un sens
  * d'ouverture de porte non renseigné est dessiné selon la convention de l'Atelier et signalé.
  */
-import { aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsSpline, polygoneMur, sub, type Vec } from "../geometrie.js";
+import { aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsSpline, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
+import { polygoneMurRaccorde } from "../raccords.js";
 import { extremitesCotation } from "../references.js";
 import type { Longueur, Point2 } from "../unites.js";
 import { ErreurCommande, lire } from "../commandes/base.js";
@@ -58,6 +59,40 @@ export interface ParamsVue {
   lignesCachees: boolean;
   /** Phases dessinées ; null = toutes. */
   phases: FiltrePhase[] | null;
+  /**
+   * Annotations propres à la vue (coupes, façades surtout), dans le repère du dessin en mètres : abscisse le long
+   * de la vue, ordonnée = altitude pour une coupe ou une façade. Absent = aucune.
+   */
+  annotations?: AnnotationVue[];
+}
+
+export type AnnotationVue =
+  | { id: string; type: "texte"; position: { x: number; y: number }; texte: string }
+  | { id: string; type: "cote"; a: { x: number; y: number }; b: { x: number; y: number }; decalage: number };
+
+const lirePointDessin = (b: Brut, cle: string, chemin: string): { x: number; y: number } => {
+  const v = b[cle] as Brut | undefined;
+  const x = v && typeof v === "object" ? v["x"] : undefined;
+  const y = v && typeof v === "object" ? v["y"] : undefined;
+  if (typeof x !== "number" || typeof y !== "number" || !Number.isFinite(x) || !Number.isFinite(y) || Math.abs(x) > 1e6 || Math.abs(y) > 1e6) throw new ErreurCommande("invalide", `${chemin}.${cle}`, "point { x, y } du dessin attendu (m)");
+  return { x, y };
+};
+
+/** Lecture validée d'une annotation de vue. */
+export function lireAnnotationVue(b: Brut, chemin = "annotation"): AnnotationVue {
+  const id = lire.chaine(b, "id");
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(id)) throw new ErreurCommande("invalide", `${chemin}.id`, "identifiant d'annotation invalide");
+  const type = lire.enumeration(b, "type", ["texte", "cote"] as const);
+  if (type === "texte") {
+    const texte = lire.chaine(b, "texte").trim();
+    if (!texte || texte.length > 200) throw new ErreurCommande("invalide", `${chemin}.texte`, "texte requis (200 caractères au plus)");
+    return { id, type, position: lirePointDessin(b, "position", chemin), texte };
+  }
+  const a = lirePointDessin(b, "a", chemin);
+  const bb = lirePointDessin(b, "b", chemin);
+  if (Math.hypot(bb.x - a.x, bb.y - a.y) < 0.001) throw new ErreurCommande("invalide", `${chemin}.b`, "cote de longueur nulle");
+  const decalage = typeof b["decalage"] === "number" && Number.isFinite(b["decalage"]) ? (b["decalage"] as number) : 0.5;
+  return { id, type, a, b: bb, decalage };
 }
 
 type Brut = Record<string, unknown>;
@@ -94,7 +129,16 @@ export function lireParamsVue(etat: ModeleAtelier, p: Brut): ParamsVue {
     if (!cadreMin || !cadreMax) throw new ErreurCommande("invalide", "cadreMin", "un détail demande son cadre (cadreMin, cadreMax)");
     if (cadreMax.x - cadreMin.x < 0.05 || cadreMax.y - cadreMin.y < 0.05) throw new ErreurCommande("invalide", "cadreMax", "cadre de détail vide ou inversé");
   }
-  return { type, titre, echelle, niveauId, hauteurCoupe, ligneA, ligneB, profondeur, orientation, cadreMin, cadreMax, lignesCachees, phases };
+  const brutes = p["annotations"];
+  let annotations: AnnotationVue[] = [];
+  if (brutes !== undefined && brutes !== null) {
+    if (!Array.isArray(brutes) || brutes.length > 500) throw new ErreurCommande("invalide", "annotations", "« annotations » : liste (500 au plus)");
+    annotations = brutes.map((x, i) => lireAnnotationVue((x ?? {}) as Brut, `annotations[${i}]`));
+    if (new Set(annotations.map((x) => x.id)).size !== annotations.length) throw new ErreurCommande("invalide", "annotations", "identifiants d'annotation en double");
+  }
+  const base = { type, titre, echelle, niveauId, hauteurCoupe, ligneA, ligneB, profondeur, orientation, cadreMin, cadreMax, lignesCachees, phases };
+  // Une vue sans annotation garde exactement la forme d'avant (empreintes inchangées).
+  return annotations.length ? { ...base, annotations } : base;
 }
 
 export interface VueGeneree {
@@ -266,30 +310,32 @@ function symbolesPlan(c: Collecteur, etat: ModeleAtelier, objets: readonly Occur
 }
 
 /** Annotations, esquisses, références de plan et blocs d'un niveau (communs au plan et au détail). */
+/** Cote : lignes d'attache, ligne de cote décalée, traits obliques, valeur au milieu (même dessin partout). */
+function dessinerCote(c: Collecteur, a: Vec, b: Vec, d: number, objetId: string | null, trait: Trait, suffixe: string): void {
+  const L = Math.hypot(b.x - a.x, b.y - a.y);
+  if (L < 1e-9) return;
+  const u = { x: (b.x - a.x) / L, y: (b.y - a.y) / L };
+  const n = { x: -u.y, y: u.x };
+  const a2 = { x: a.x + n.x * d, y: a.y + n.y * d };
+  const b2 = { x: b.x + n.x * d, y: b.y + n.y * d };
+  c.ligne(a, a2, trait, objetId);
+  c.ligne(b, b2, trait, objetId);
+  c.ligne(a2, b2, trait, objetId);
+  const tick = 0.08;
+  for (const p of [a2, b2]) c.ligne({ x: p.x - (u.x + n.x) * tick, y: p.y - (u.y + n.y) * tick }, { x: p.x + (u.x + n.x) * tick, y: p.y + (u.y + n.y) * tick }, trait, objetId);
+  let angle = (Math.atan2(u.y, u.x) * 180) / Math.PI;
+  if (angle > 90) angle -= 180;
+  if (angle <= -90) angle += 180;
+  c.texte({ x: (a2.x + b2.x) / 2 + n.x * 0.12, y: (a2.y + b2.y) / 2 + n.y * 0.12 }, `${fmt(L)}${suffixe}`, 2.2, objetId, { angle, trait });
+}
+
 function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly OccurrenceQuelconque[]): void {
   for (const o of objets) {
     switch (o.classe) {
       case "cotation": {
         const ext = extremitesCotation(etat, o.id);
         if (!ext) break;
-        const { a, b } = ext;
-        const L = Math.hypot(b.x - a.x, b.y - a.y);
-        if (L < 1e-9) break;
-        const u = { x: (b.x - a.x) / L, y: (b.y - a.y) / L };
-        const n = { x: -u.y, y: u.x };
-        const d = o.params.decalage.value;
-        const a2 = { x: a.x + n.x * d, y: a.y + n.y * d };
-        const b2 = { x: b.x + n.x * d, y: b.y + n.y * d };
-        const trait: Trait = ext.aReparer ? "a-reparer" : "annotation";
-        c.ligne(a, a2, trait, o.id);
-        c.ligne(b, b2, trait, o.id);
-        c.ligne(a2, b2, trait, o.id);
-        const tick = 0.08;
-        for (const p of [a2, b2]) c.ligne({ x: p.x - (u.x + n.x) * tick, y: p.y - (u.y + n.y) * tick }, { x: p.x + (u.x + n.x) * tick, y: p.y + (u.y + n.y) * tick }, trait, o.id);
-        let angle = (Math.atan2(u.y, u.x) * 180) / Math.PI;
-        if (angle > 90) angle -= 180;
-        if (angle <= -90) angle += 180;
-        c.texte({ x: (a2.x + b2.x) / 2 + n.x * 0.12, y: (a2.y + b2.y) / 2 + n.y * 0.12 }, `${fmt(L)}${ext.aReparer ? " · à réparer" : ""}`, 2.2, o.id, { angle, trait });
+        dessinerCote(c, ext.a, ext.b, o.params.decalage.value, o.id, ext.aReparer ? "a-reparer" : "annotation", ext.aReparer ? " · à réparer" : "");
         break;
       }
       case "texte":
@@ -366,7 +412,7 @@ function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue): void {
   if (!v.hauteurCoupe) c.avertissements.add(`Hauteur de coupe : ${fmt(h)} m au-dessus du niveau (convention de dessin par défaut, réglable).`);
   const sansHauteur = objets.filter((o) => o.classe === "mur" && !o.params.hauteur && !o.params.niveauHautId).length;
   if (sansHauteur) c.avertissements.add(`${sansHauteur} mur(s) sans hauteur renseignée : non coupés, dessinés en contour seulement.`);
-  for (const o of objets) if (o.classe === "mur" && !o.params.hauteur && !o.params.niveauHautId) c.poly(polygoneMur(o.params.a, o.params.b, o.params.epaisseur.value, o.params.alignement), true, "cache", null, o.id);
+  for (const o of objets) if (o.classe === "mur" && !o.params.hauteur && !o.params.niveauHautId) c.poly(polygoneMurRaccorde(etat, o), true, "cache", null, o.id);
   c.mesures.triangles += r.triangles;
 }
 
@@ -434,7 +480,7 @@ function genererMasse(c: Collecteur, etat: ModeleAtelier, v: ParamsVue): void {
     const tous = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o): o is Occurrence<"mur"> => o.classe === "mur" && o.niveauId === ref.id && retenu(etat, o, v.phases));
     // Murs extérieurs déclarés s'il y en a (enveloppe du bâtiment), sinon tous les murs du niveau.
     const murs = tous.some((m) => m.params.exterieur) ? tous.filter((m) => m.params.exterieur) : tous;
-    for (const s of contoursUnion(murs.map((m) => ({ points: polygoneMur(m.params.a, m.params.b, m.params.epaisseur.value, m.params.alignement), objetId: m.id })))) c.ligne(s.a, s.b, "coupe", s.objetId);
+    for (const s of contoursUnion(murs.map((m) => ({ points: polygoneMurRaccorde(etat, m), objetId: m.id })))) c.ligne(s.a, s.b, "coupe", s.objetId);
     const toitures = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o): o is Occurrence<"toiture"> => o.classe === "toiture" && retenu(etat, o, v.phases));
     for (const t of toitures) {
       c.poly(t.params.contour, true, "vue", null, t.id);
@@ -515,6 +561,10 @@ export function genererVue(etat: ModeleAtelier, params: ParamsVue, definitionId:
   else if (params.type === "detail") genererDetail(c, etat, params);
   else if (params.type === "coupe" || params.type === "facade") genererCoupeOuFacade(c, etat, params);
   else genererMasse(c, etat, params);
+  for (const an of params.annotations ?? []) {
+    if (an.type === "texte") c.texte(an.position, an.texte, 2.5, null, { ancre: "debut" });
+    else dessinerCote(c, an.a, an.b, an.decalage, null, "annotation", "");
+  }
   // Phase « à démolir » : tirets, sans poché.
   const demolis = new Set((Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => o.phase === "a-demolir").map((o) => o.id));
   if (demolis.size)

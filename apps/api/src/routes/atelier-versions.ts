@@ -258,17 +258,28 @@ async function contexteFusion(req: Request, res: Response, need: "read" | "write
   return { tronc, lien, variante: acces };
 }
 
+/**
+ * Fusions successives (D-023) : un lot de la variante est « déjà fusionné » quand son `requestId` figure au journal
+ * du tronc (le rejeu le conserve) ; seuls les autres sont rejoués. Les conflits se cherchent dans les lots propres au
+ * tronc depuis la dernière fusion (ou la bifurcation), hors lots venus de la variante.
+ */
 async function analyser(troncId: string, troncRevision: number, lien: typeof atelierVariants.$inferSelect, varianteRevision: number) {
-  const entreesTronc = await journalDepuis(db, troncId, lien.forkRevision);
-  const entreesVariante = (await journalDepuis(db, lien.projectId, lien.baseRevision)).filter((e) => e.resultRevision <= varianteRevision);
+  const toutesVariante = (await journalDepuis(db, lien.projectId, lien.baseRevision)).filter((e) => e.resultRevision <= varianteRevision);
+  const ids = toutesVariante.map((e) => e.requestId);
+  const dejaFusionnes = new Set(
+    ids.length ? (await db.select({ r: atelierCommands.requestId }).from(atelierCommands).where(and(eq(atelierCommands.projectId, troncId), inArray(atelierCommands.requestId, ids)))).map((x) => x.r) : [],
+  );
+  const entreesVariante = toutesVariante.filter((e) => !dejaFusionnes.has(e.requestId));
+  const venusDeLaVariante = new Set(ids);
+  const entreesTronc = (await journalDepuis(db, troncId, lien.fusionRevision ?? lien.forkRevision)).filter((e) => !venusDeLaVariante.has(e.requestId));
   const analyse = analyserFusion(entreesTronc.map(effetsJournal), entreesVariante.map(effetsJournal));
-  return { entreesTronc, entreesVariante, analyse, troncRevision };
+  return { entreesTronc, entreesVariante, analyse, troncRevision, dejaFusionnes: dejaFusionnes.size };
 }
 
 atelierVersionsRouter.get("/variantes/:varianteId/fusion", async (req, res) => {
   const ctx = await contexteFusion(req, res, "read");
   if (!ctx) return;
-  const { entreesTronc, entreesVariante, analyse } = await analyser(ctx.tronc.id, ctx.tronc.modelRevision, ctx.lien, ctx.variante.modelRevision);
+  const { entreesTronc, entreesVariante, analyse, dejaFusionnes } = await analyser(ctx.tronc.id, ctx.tronc.modelRevision, ctx.lien, ctx.variante.modelRevision);
   // Rejeu à blanc sur l'état courant du tronc : mêmes réducteurs, mêmes refus.
   const charge = await chargerModele(db, ctx.tronc.id);
   let rejeu: { ok: true } | { ok: false; lot: string; message: string } = { ok: true };
@@ -286,7 +297,8 @@ atelierVersionsRouter.get("/variantes/:varianteId/fusion", async (req, res) => {
   }
   res.json({
     variante: { id: ctx.lien.projectId, nom: ctx.lien.nom, statut: ctx.lien.statut, forkRevision: ctx.lien.forkRevision, revision: ctx.variante.modelRevision },
-    tronc: { id: ctx.tronc.id, revision: ctx.tronc.modelRevision, lotsDepuisBifurcation: entreesTronc.length },
+    tronc: { id: ctx.tronc.id, revision: ctx.tronc.modelRevision, lotsDepuisBifurcation: entreesTronc.length, depuis: ctx.lien.fusionRevision ? "derniere-fusion" : "bifurcation" },
+    dejaFusionnes,
     lots: entreesVariante.map((e) => ({ label: e.label, revision: e.resultRevision })),
     affectes: analyse.affectes,
     conflits: analyse.conflits,
@@ -301,14 +313,13 @@ atelierVersionsRouter.post("/variantes/:varianteId/fusion", async (req, res) => 
   if (!ctx) return;
   const p = fusionSchema.safeParse(req.body ?? {});
   if (!p.success) return void invalide(res, "baseRevision requise ; stratégie : refuser-conflits ou variante-prioritaire");
-  if (ctx.lien.statut === "fusionnee") return void res.status(409).json({ erreur: "conflit", motif: "deja-fusionnee", message: `Variante déjà fusionnée (révision ${ctx.lien.fusionRevision}).` });
   await repondreLot(res, ctx.tronc.id, () =>
     db.transaction(async (tx) => {
       await lockProject(tx, ctx.tronc.id);
       const courant = (await tx.select({ r: projects.modelRevision }).from(projects).where(eq(projects.id, ctx.tronc.id)))[0]!.r;
       if (p.data.baseRevision !== courant) return { status: 409, reponse: { erreur: "conflit", motif: "revision", baseRevision: p.data.baseRevision, revisionCourante: courant, conflits: [] } };
       const { entreesVariante, analyse } = await analyser(ctx.tronc.id, courant, ctx.lien, ctx.variante.modelRevision);
-      if (!entreesVariante.length) return { status: 409, reponse: { erreur: "conflit", motif: "rien-a-fusionner", message: "La variante n'a aucune modification depuis la bifurcation." } };
+      if (!entreesVariante.length) return { status: 409, reponse: { erreur: "conflit", motif: "rien-a-fusionner", message: ctx.lien.fusionRevision ? "La variante n'a aucune modification depuis la dernière fusion." : "La variante n'a aucune modification depuis la bifurcation." } };
       if (analyse.conflits.length && p.data.strategie === "refuser-conflits") return { status: 409, reponse: { erreur: "conflit", motif: "fusion", message: `${analyse.conflits.length} objet(s) modifié(s) dans le tronc et dans la variante depuis la bifurcation.`, conflits: analyse.conflits } };
       let derniere: ResultatValidation | null = null;
       for (const e of entreesVariante) {

@@ -4,7 +4,7 @@ import { actionImmediate, lotSuppression } from "./actions";
 import { etatUi, type EtatUi } from "./etat-ui";
 import { OUTILS, rechercherOutils } from "./outils";
 import { accrocher, objetSousPointeur, segmentsDuNiveau } from "./plan2d/accrochage";
-import { clic, objetsDansCadre, saisie, terminer } from "./plan2d/outils-2d";
+import { clic, objetsDansCadre, objetsDansLasso, saisie, terminer } from "./plan2d/outils-2d";
 import { cadrer, projecteur } from "./plan2d/projecteur";
 
 let n = 0;
@@ -138,6 +138,15 @@ describe("outils de tracé", () => {
     const etat = carre(socle());
     expect(objetsDansCadre(etat, "rdc", pt(-1, -1), pt(5, 1))).toHaveLength(1);
     expect(objetsDansCadre(etat, "rdc", pt(-1, -1), pt(5, 5))).toHaveLength(4);
+  });
+
+  it("sélection au lasso : contour libre, seuls les objets entièrement entourés", () => {
+    const etat = carre(socle());
+    // Un L qui entoure le mur du bas et celui de gauche, pas les deux autres.
+    const l = [pt(-1, -1), pt(5, -1), pt(5, 1), pt(1, 1), pt(1, 5), pt(-1, 5)];
+    expect(objetsDansLasso(etat, "rdc", l)).toHaveLength(2);
+    expect(objetsDansLasso(etat, "rdc", [pt(-1, -1), pt(5, -1), pt(5, 5), pt(-1, 5)])).toHaveLength(4);
+    expect(objetsDansLasso(etat, "rdc", [pt(0, 0), pt(1, 1)])).toEqual([]);
   });
 });
 

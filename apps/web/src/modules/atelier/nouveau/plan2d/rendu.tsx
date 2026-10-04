@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { centroide, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMur, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { centroide, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -220,7 +220,8 @@ function Bloc2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"bloc-occ
 
 function Mur2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"mur">; etat: ModeleAtelier; pr: Projecteur; selectionne: boolean; survole: boolean }) {
   const { a, b, epaisseur, alignement } = o.params;
-  const poly = polygoneMur(a, b, epaisseur.value, alignement);
+  // Contour raccordé aux murs voisins (onglets, tés) : géométrie dérivée, paramètres inchangés.
+  const poly = polygoneMurRaccorde(etat, o);
   const type = o.definitionId === "cloison" ? "cloison" : "mur";
   const fill = o.params.hauteur ? COULEURS[type] : "#fff";
   // Ouvertures : vides dans le mur (rectangle de la largeur, sur toute l'épaisseur).

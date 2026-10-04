@@ -2,7 +2,7 @@
  * Recette des compléments (après le lot 9) dans un vrai navigateur : historique d'un objet (DA-21-06), consultation
  * d'un état passé en lecture seule, réutilisation d'une partie d'un autre modèle avec aperçu (DA-21-09), référence
  * externe à la publication d'un autre projet — superposition grise, publication plus récente signalée, différences,
- * épinglage, refus d'une référence circulaire (DA-05-11) ; axe-core.
+ * épinglage, refus d'une référence circulaire (DA-05-11) ; coupes remplies en 3D ; axe-core.
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-complements.mjs
  */
@@ -89,6 +89,23 @@ check("consultation : l'inspecteur n'offre aucun champ modifiable", (await champ
 await page.locator('.barre-consultation button:has-text("Revenir")').click();
 check("retour à l'état courant", (await page.locator(".barre-consultation").count()) === 0 && (await page.locator(".barre-sync").isVisible()));
 
+// Lasso (Alt + glisser avec l'outil Sélection) : un contour libre autour de tout le plan sélectionne le niveau entier.
+await page.keyboard.press("Escape");
+const zone = await page.locator(".plan2d").boundingBox();
+const cx = zone.x + zone.width / 2;
+const cy = zone.y + zone.height / 2;
+const rx = zone.width / 2 - 8;
+const ry = zone.height / 2 - 8;
+await page.keyboard.down("Alt");
+await page.mouse.move(cx + rx, cy);
+await page.mouse.down();
+for (let k = 1; k <= 36; k++) await page.mouse.move(cx + rx * Math.cos((k * Math.PI) / 18), cy + ry * Math.sin((k * Math.PI) / 18));
+await page.mouse.up();
+await page.keyboard.up("Alt");
+const aideLasso = (await page.locator(".etat-aide").textContent()) ?? "";
+check("lasso : les objets entièrement entourés sont sélectionnés", /objet\(s\) sélectionné\(s\) au lasso/.test(aideLasso) && /objets$/.test((await page.locator(".etat-selection").textContent()) ?? ""), aideLasso);
+await page.keyboard.press("Escape");
+
 // 3. Réutilisation d'une partie d'un autre modèle (dans un projet vide).
 const cible = (await api("post", "/projects", { code: "P.200", name: "Projet repris" })).body.id;
 check("projet cible : un niveau « Rez »", (await lot(cible, `n-${Date.now()}`, 0, [{ type: "niveau.creer", params: { id: "rez", nom: "Rez", elevation: 0, hauteur: 3 } }])).status === 200);
@@ -147,6 +164,23 @@ check("différences avant d'épingler : 1 objet modifié", /1 modifié\(s\)/.tes
 await page.locator("[data-epingler]").click();
 await page.waitForSelector('.refext-liste [data-etat="a-jour"]', { timeout: 20000 }).catch(() => {});
 check("dernière publication épinglée : de nouveau « à jour »", (await page.locator('.refext-liste [data-etat="a-jour"]').count()) === 1);
+
+// Coupes remplies en 3D et murs raccordés (lot 3b, limites levées).
+await page.locator('.barre-mode button:has-text("3D")').click();
+await page.waitForSelector(".vue3d canvas", { timeout: 30000 });
+const chapeaux = {};
+for (const vue of ["Coupe nord–sud", "Plan (dessus)"]) {
+  await page.locator('.vue3d-commandes select[aria-label="Vue"]').selectOption({ label: vue });
+  await page.waitForFunction(() => (window.fadiMesures3D?.chapeaux ?? 0) > 0, null, { timeout: 15000 }).catch(() => {});
+  chapeaux[vue] = await page.evaluate(() => window.fadiMesures3D?.chapeaux ?? 0);
+  if (vue === "Coupe nord–sud") await page.screenshot({ path: `${OUT}/10-coupe-remplie.png` });
+}
+await page.locator('.vue3d-commandes select[aria-label="Vue"]').selectOption({ label: "Perspective" });
+await page.waitForTimeout(300);
+const sansCoupe = await page.evaluate(() => window.fadiMesures3D?.chapeaux ?? 0);
+check("coupe en 3D : la matière coupée est remplie (coupe N–S, plan) ; rien sans plan de coupe", chapeaux["Coupe nord–sud"] > 0 && chapeaux["Plan (dessus)"] > 0 && sansCoupe === 0, JSON.stringify({ ...chapeaux, sansCoupe }));
+await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.waitForSelector(".plan2d");
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;

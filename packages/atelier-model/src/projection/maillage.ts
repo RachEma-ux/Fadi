@@ -9,6 +9,7 @@
  * produit aucun volume : l'objet reste en plan, rien n'est inventé.
  */
 import { aireSignee, facesMur, normalise, perp, pointsArc, sub, type Vec } from "../geometrie.js";
+import { raccordMur } from "../raccords.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 
 export interface Maillage {
@@ -282,13 +283,26 @@ function murMaillage(etat: ModeleAtelier, mur: Occurrence<"mur">, t: Tampon): vo
     vides.push({ s0: Math.max(0, c - o.params.largeur.value / 2), s1: Math.min(L, c + o.params.largeur.value / 2), zb, zt: zb + o.params.hauteur.value });
   }
   const coupures = [...new Set([0, L, ...vides.flatMap((v) => [v.s0, v.s1])])].filter((s) => s >= 0 && s <= L).sort((x, y) => x - y);
+  const r = raccordMur(etat, mur) ?? { gauche: [0, L], droite: [0, L] };
   for (let k = 0; k + 1 < coupures.length; k++) {
     const s0 = coupures[k]!;
     const s1 = coupures[k + 1]!;
     if (s1 - s0 < 1e-6) continue;
     const milieu = (s0 + s1) / 2;
     const ici = vides.filter((v) => v.s0 <= milieu && v.s1 >= milieu).map((v) => [v.zb, v.zt] as [number, number]);
-    for (const [za, zb] of soustraire(z0, z1, ici)) t.boite(a, u, n, s0, s1, o0, o1, za, zb);
+    // Raccords (géométrie dérivée) : aux extrémités, chaque face s'arrête à son abscisse raccordée.
+    const sD0 = k === 0 ? r.droite[0] : s0;
+    const sG0 = k === 0 ? r.gauche[0] : s0;
+    const sD1 = k + 2 === coupures.length ? r.droite[1] : s1;
+    const sG1 = k + 2 === coupures.length ? r.gauche[1] : s1;
+    const biais = sD0 !== s0 || sG0 !== s0 || sD1 !== s1 || sG1 !== s1;
+    for (const [za, zb] of soustraire(z0, z1, ici)) {
+      if (biais && sD1 > sD0 && sG1 > sG0 && o1 > o0 && zb > za) {
+        const p = (s: number, o: number): Vec => ({ x: a.x + u.x * s + n.x * o, y: a.y + u.y * s + n.y * o });
+        // o0 = face droite, o1 = face gauche (décalages croissants selon n).
+        t.prisme([p(sD0, o0), p(sD1, o0), p(sG1, o1), p(sG0, o1)], [], za, zb);
+      } else t.boite(a, u, n, s0, s1, o0, o1, za, zb);
+    }
   }
 }
 
