@@ -27,8 +27,40 @@ L'ancien Atelier (`routes/atelier.ts`, `lib/atelier-store.ts`, `lib/api/atelier.
 | Tâche | Issue | État |
 | --- | --- | --- |
 | L2.1 tables, `VolumeStore`, migration | #36 | fusionnée (PR #44) ; 9 tests PostgreSQL + aller-retour P.118 ; D-030 |
-| L2.2 service de commandes | #37 | en cours (session interrompue le 2026-10-04, travail sauvegardé en e559227 puis repris) |
+| L2.2 service de commandes | #37 | fusionnée (PR #46) ; droits, réservation, conflit détaillé, idempotence à l'octet, journal et inverses, annuler / rétablir, essai, routes §5.4 ; D-031 (session interrompue le 2026-10-04 : travail sauvegardé en e559227 puis repris) |
 | L2.3 événements | #38 | fusionnée (PR #45) ; boîte de sortie idempotente, traitement unique, échecs rejouables ; documents et bilan Harmonie périmés, aperçu invalidé, notification « modèle » regroupée ; tests PostgreSQL |
 | L2.4 client : bus, file Dexie, conflits | #39 | fusionnée (PR #43) ; 17 tests ; détails d'API figés (D-029) |
-| L2.5 tests API, scénario hors ligne | #40 | avec L2.2 |
+| L2.5 tests API, scénario hors ligne | #40 | T03, T06, T07 (de bout en bout avec L2.3), T08, T10, annuler / rétablir, journal, problèmes, révision passée : fusionnés (PR #46) ; scénario coupure et rejeu contre le vrai serveur : en cours (`tache/L2.5-hors-ligne`) |
 | L2.6 décisions, compte rendu, matrice | #41 | en cours ; interface `atelier-events.ts` figée ; `docs/migration/matrix.md` §3 complétée |
+
+## Démonstration en ligne de commande
+
+`node apps/api/scripts/demo-atelier.mjs` contre une API locale (`API_URL`) ; sortie capturée dans la CI (run 37165292170) :
+
+```text
+Modèle initial : révision 0, empreinte sha256-5bbd144c239d…
+Niveau et calque créés : révision 1
+— Idempotence (T06) —
+1er envoi : HTTP 200 révision 2 journal acmd_f0436871-…
+2e envoi  : HTTP 200 révision 2 journal acmd_f0436871-…
+✓ les deux envois sont acceptés (200)
+✓ réponse identique (réponse enregistrée, rien de réappliqué)
+✓ une seule révision (2) et une seule entrée au journal
+— Conflit entre deux comptes (T08) —
+Alice (base 2) : HTTP 200 → révision 3
+Bruno (base 2) : HTTP 409 {"erreur":"conflit","baseRevision":2,"revisionCourante":3,"conflits":[{"objetId":"MA","motif":"créé par « Mur d'Alice » (révision 3)","etatServeur":"mur MA"}]}
+✓ Bruno reçoit 409 « conflit »
+✓ le conflit cite le mur d'Alice tel qu'il est sur le serveur
+Bruno rejoue sur la révision 3 (nouveau requestId) : HTTP 200 → révision 4
+✓ le rejeu sur la révision courante est accepté
+Démonstration conforme.
+```
+
+## Réserves et reports
+
+- T07 côté API vérifie `updatedAt >=` : l'écriture du service suffit à la satisfaire ; la preuve que l'aperçu
+  conceptuel est invalidé par le traitement est dans `db.atelier-events.test.ts` (L2.3).
+- `/problemes` ne produit encore rien pour `conflit` ni `harmonie` (D-031) ; à compléter quand l'Atelier
+  affichera les problèmes (lot 3a ou ultérieur).
+- Défaut corrigé à l'intégration : l'initialisation du modèle écrivait un événement (notification et bilan
+  Harmonie périmé à la simple ouverture) ; supprimé (D-031).
