@@ -72,3 +72,20 @@ describe("manipulateur 3D (DA-02-17) : glisser → transformer.deplacer", () => 
     expect("erreur" in r && r.erreur.cause).toBe("une baie seule se déplace le long de son mur");
   });
 });
+
+describe("mesures de trame (L3b.3)", () => {
+  it("p95 par rang le plus proche, fenêtre glissante, valeurs invalides ignorées", async () => {
+    const { FENETRE_TRAMES, MesuresTrames } = await import("./mesures");
+    const t = new MesuresTrames();
+    expect(t.quantile(0.95)).toBeNull();
+    for (let i = 1; i <= 100; i++) t.ajouter(i);
+    t.ajouter(Number.NaN);
+    t.ajouter(-1);
+    expect(t.nombre).toBe(100);
+    expect(t.quantile(0.95)).toBe(95);
+    expect(t.quantile(0.5)).toBe(50);
+    for (let i = 0; i < FENETRE_TRAMES; i++) t.ajouter(1);
+    expect(t.nombre).toBe(FENETRE_TRAMES);
+    expect(t.quantile(0.95)).toBe(1);
+  });
+});
