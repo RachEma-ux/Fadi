@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { distance, polygoneMur, pt, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { cercleTroisPoints, distance, polygoneMur, polygoneRegulier, pt, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -433,6 +433,18 @@ function Apercu({ outil, pts, curseur, ui, pr }: { outil: string; pts: Point2[];
         {cote}
       </>
     );
+  }
+  if (outil === "polygone-regulier") {
+    const n = ui.parametresOutil["cotes"];
+    if (typeof n === "number" && Number.isInteger(n) && n >= 3 && n <= 64 && distance(pts[0]!, curseur) > 1e-6) return <path d={chemin(pr, polygoneRegulier(pts[0]!, curseur, n))} className="plan-apercu-trait" />;
+    return null;
+  }
+  if (outil === "cercle-3-points") {
+    if (pts.length < 2) return <path d={chemin(pr, [...pts, curseur], false)} className="plan-apercu-trait" />;
+    const c3 = cercleTroisPoints(pts[0]!, pts[1]!, curseur);
+    if (!c3) return null;
+    const c = pr.vers(c3.centre);
+    return <circle cx={c.x} cy={c.y} r={c3.rayon * pr.echelle} className="plan-apercu-trait" />;
   }
   if (OUTILS_CONTOUR.has(outil)) return <path d={chemin(pr, [...pts, curseur], false)} className="plan-apercu-trait" />;
   if (OUTILS_SEGMENT.has(outil)) {

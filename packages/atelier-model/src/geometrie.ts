@@ -418,3 +418,30 @@ export function decalerPolyligne(points: readonly Vec[], d: number): Point2[] {
   out.push(segs[segs.length - 1]!.b);
   return out.map((p) => pt(p.x, p.y));
 }
+
+/** Polygone régulier de `n` côtés (3 à 64), de centre et premier sommet donnés (sens trigonométrique). */
+export function polygoneRegulier(centre: Vec, sommet: Vec, n: number): Point2[] {
+  if (!Number.isInteger(n) || n < 3 || n > 64) throw new Error("nombre de côtés : entier de 3 à 64");
+  const r = Math.hypot(sommet.x - centre.x, sommet.y - centre.y);
+  if (r < 1e-9) throw new Error("rayon nul");
+  const a0 = Math.atan2(sommet.y - centre.y, sommet.x - centre.x);
+  const out: Point2[] = [];
+  for (let k = 0; k < n; k++) {
+    const a = a0 + (2 * Math.PI * k) / n;
+    out.push(pt(Math.round((centre.x + r * Math.cos(a)) * 1e9) / 1e9, Math.round((centre.y + r * Math.sin(a)) * 1e9) / 1e9));
+  }
+  return out;
+}
+
+/** Cercle passant par trois points ; null s'ils sont alignés (ou confondus). */
+export function cercleTroisPoints(a: Vec, b: Vec, c: Vec): { centre: Point2; rayon: number } | null {
+  const d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
+  const echelle = Math.max(Math.hypot(b.x - a.x, b.y - a.y), Math.hypot(c.x - a.x, c.y - a.y), 1e-12);
+  if (Math.abs(d) < 1e-9 * echelle * echelle) return null;
+  const a2 = a.x * a.x + a.y * a.y;
+  const b2 = b.x * b.x + b.y * b.y;
+  const c2 = c.x * c.x + c.y * c.y;
+  const x = (a2 * (b.y - c.y) + b2 * (c.y - a.y) + c2 * (a.y - b.y)) / d;
+  const y = (a2 * (c.x - b.x) + b2 * (a.x - c.x) + c2 * (b.x - a.x)) / d;
+  return { centre: pt(x, y), rayon: Math.hypot(a.x - x, a.y - y) };
+}

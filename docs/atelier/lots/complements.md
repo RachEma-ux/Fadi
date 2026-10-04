@@ -112,3 +112,4 @@ IFC : connexions des murs `IfcRelConnectsPathElements` (`raccords.test.ts`, corp
 Déplacer ou copier vers un autre niveau (`niveaux-transfert.test.ts`, e2e `atelier-complements.mjs`, D-039).
 Dupliquer un niveau avec son contenu (`niveaux-transfert.test.ts`, e2e, D-040).
 Groupes : renommer, ajouter, retirer (`groupes.test.ts`, e2e, D-041).
+Polygone régulier et cercle par trois points (`geometrie-outils.test.ts`, e2e, D-042).

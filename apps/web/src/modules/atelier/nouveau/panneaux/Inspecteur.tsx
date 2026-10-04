@@ -485,6 +485,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   bloc: [{ cle: "angleBloc", libelle: "Angle", unite: "°" }],
   repeter: [{ cle: "repetitions", libelle: "Nombre de copies" }, { cle: "pasX", libelle: "Pas en x", unite: "m" }, { cle: "pasY", libelle: "Pas en y", unite: "m" }],
   raccorder: [{ cle: "rayon", libelle: "Rayon", unite: "m" }],
+  "polygone-regulier": [{ cle: "cotes", libelle: "Nombre de côtés" }],
   chanfreiner: [{ cle: "distanceChanfrein", libelle: "Distance", unite: "m" }],
 };
 

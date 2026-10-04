@@ -352,6 +352,31 @@ await page.waitForSelector(".plan2d");
   await attendreEnregistre().catch(() => {});
   const mg = (await modele(pid)).modele;
   check("groupe : un membre retiré depuis l'inspecteur, le groupe garde les autres", rg.status === 200 && mg.objets["croix-v"].groupeId === null && mg.objets["croix-h"].groupeId === "g-croix", `${rg.status} · ${mg.objets["croix-v"].groupeId}`);
+  // Constructions d'esquisse (D-042) : polygone régulier (côtés renseignés) et cercle par trois points.
+  const compterFormes = async () => { const o = Object.values((await modele(pid)).modele.objets); return { hex: o.filter((x) => x.classe === "esquisse" && x.params.forme === "polygone" && x.params.points.length === 6).length, cercles: o.filter((x) => x.classe === "esquisse" && x.params.forme === "cercle").length }; };
+  const avantFormes = await compterFormes();
+  const cadre = await page.locator(".plan2d").boundingBox();
+  const cx = cadre.x + cadre.width * 0.5;
+  const cy = cadre.y + cadre.height * 0.5;
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Control+k");
+  await page.locator(".palette-champ").fill("hexagone");
+  await page.keyboard.press("Enter");
+  await page.locator("#outil-cotes").fill("6");
+  await page.mouse.click(cx, cy);
+  await page.mouse.click(cx + 60, cy);
+  await attendreEnregistre().catch(() => {});
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Control+k");
+  await page.locator(".palette-champ").fill("circonscrit");
+  await page.keyboard.press("Enter");
+  await page.mouse.click(cx - 50, cy + 40);
+  await page.mouse.click(cx, cy + 90);
+  await page.mouse.click(cx + 50, cy + 40);
+  await attendreEnregistre().catch(() => {});
+  await page.keyboard.press("Escape");
+  const apresFormes = await compterFormes();
+  check("polygone régulier (6 côtés renseignés) et cercle par trois points tracés", apresFormes.hex === avantFormes.hex + 1 && apresFormes.cercles === avantFormes.cercles + 1, `${JSON.stringify(avantFormes)} → ${JSON.stringify(apresFormes)}`);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.

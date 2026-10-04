@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { boucles, caracteristiqueAuPoint, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { boucles, caracteristiqueAuPoint, cercleTroisPoints, polygoneRegulier, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -143,6 +143,20 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       const r = distance(pts[0]!, point);
       if (r < 1e-6) return attendre(pts, "Rayon nul.");
       return emettre([{ type: "esquisse.cercle", params: { ...base, centre: pts[0]!, rayon: m(r), points: [] } }], `Cercle r = ${fmt(r)} m`);
+    }
+    case "polygone-regulier": {
+      // Nombre de côtés : paramètre de l'outil, jamais supposé (D-042).
+      const n = ui.parametresOutil["cotes"];
+      if (typeof n !== "number" || !Number.isInteger(n) || n < 3 || n > 64) return attendre([], "Renseignez le nombre de côtés (entier de 3 à 64) dans l'inspecteur.");
+      if (pts.length === 0) return attendre([point], "Cliquez un sommet du polygone.");
+      if (distance(pts[0]!, point) < 1e-6) return attendre(pts, "Rayon nul.");
+      return emettre([{ type: "esquisse.polygone", params: { ...base, points: polygoneRegulier(pts[0]!, point, n), ferme: true } }], `Polygone régulier (${n} côtés)`);
+    }
+    case "cercle-3-points": {
+      if (pts.length < 2) return attendre([...pts, point], pts.length ? "Cliquez le troisième point." : "Cliquez le deuxième point.");
+      const c = cercleTroisPoints(pts[0]!, pts[1]!, point);
+      if (!c) return attendre(pts, "Points alignés : aucun cercle ne passe par eux.");
+      return emettre([{ type: "esquisse.cercle", params: { ...base, centre: c.centre, rayon: m(Math.round(c.rayon * 1e6) / 1e6), points: [] } }], `Cercle r = ${fmt(c.rayon)} m`);
     }
     case "arc": {
       if (pts.length === 0) return attendre([point], "Cliquez le début de l'arc.");
