@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { CONTRAT_COMMANDES, appliquerLot, type Commande } from "./commandes/index.js";
 import { importerModeleNatif, type JeuNatif } from "./import/natif.js";
 import { modeleVide, objetsDeClasse, type ModeleAtelier, type Occurrence } from "./modele.js";
-import { croisementsDuNiveau, facesMurRaccordees, polygoneMurRaccorde, raccordMur, raccordsDuNiveau } from "./raccords.js";
+import { connexionsDuNiveau, croisementsDuNiveau, facesMurRaccordees, polygoneMurRaccorde, raccordMur, raccordsDuNiveau } from "./raccords.js";
 import { m, pt } from "./unites.js";
 
 const lot = (commands: Commande[]) => ({ requestId: "r", baseRevision: 0, contract: CONTRAT_COMMANDES, label: "r", commands });
@@ -122,4 +122,14 @@ describe("raccords de murs (géométrie dérivée)", () => {
     expect(raccordMur(e, M(e, "v"))!.extremites).toEqual(["libre", "libre"]);
     expect(croisementsDuNiveau(e, "n0")).toBe(c); // cache par état
   });
+
+  it("connexions topologiques (D-038) : angle (fin / début), té (fin / courant), croisement (courant / courant)", () => {
+    const e = modele(mur("a", [0, 0], [4, 0]), mur("b", [4, 0], [4, 3]), mur("t", [2, 3], [2, 0.1]), mur("x1", [10, -2], [10, 2]), mur("x2", [8, 0], [12, 0]));
+    const c = connexionsDuNiveau(e, "n0");
+    expect(c).toContainEqual({ a: "a", b: "b", extremiteA: "fin", extremiteB: "debut" });
+    expect(c).toContainEqual({ a: "a", b: "t", extremiteA: "courant", extremiteB: "fin" });
+    expect(c).toContainEqual({ a: "x1", b: "x2", extremiteA: "courant", extremiteB: "courant" });
+    expect(c).toHaveLength(3);
+  });
 });
+

@@ -341,3 +341,50 @@ export function croisementsDuNiveau(etat: ModeleAtelier, niveauId: string | null
   parNiveau.set(cle, out);
   return out;
 }
+
+export type ExtremiteConnexion = "debut" | "fin" | "courant";
+
+/**
+ * Connexions topologiques entre murs d'un niveau (pour l'IFC, `IfcRelConnectsPathElements`) : extrémités partagées
+ * (début / fin de chaque mur), extrémité dans l'épaisseur d'un autre mur (té : « courant » pour le mur traversant),
+ * murs qui se traversent (« courant » / « courant »). Une connexion par paire de murs et par lieu ; rien de supposé.
+ */
+export function connexionsDuNiveau(etat: ModeleAtelier, niveauId: string | null): { a: string; b: string; extremiteA: ExtremiteConnexion; extremiteB: ExtremiteConnexion }[] {
+  const murs: MurPlan[] = [];
+  for (const o of Object.values(etat.objets)) {
+    if (o.classe !== "mur" || o.niveauId !== niveauId) continue;
+    const m = versPlan(o as Occurrence<"mur">);
+    if (m) murs.push(m);
+  }
+  murs.sort((x, y) => (x.id < y.id ? -1 : 1));
+  const tol = TOLERANCE_REDUCTEUR * 10;
+  const out: { a: string; b: string; extremiteA: ExtremiteConnexion; extremiteB: ExtremiteConnexion }[] = [];
+  const vus = new Set<string>();
+  const ajouter = (a: string, b: string, ea: ExtremiteConnexion, eb: ExtremiteConnexion) => {
+    const [x, y, ex, ey] = a < b ? [a, b, ea, eb] : [b, a, eb, ea];
+    const cle = `${x}|${y}|${ex}|${ey}`;
+    if (vus.has(cle)) return;
+    vus.add(cle);
+    out.push({ a: x, b: y, extremiteA: ex, extremiteB: ey });
+  };
+  for (const w of murs) {
+    for (const fin of [0, 1] as const) {
+      const P = fin === 0 ? w.a : w.b;
+      const ew: ExtremiteConnexion = fin === 0 ? "debut" : "fin";
+      for (const o of murs) {
+        if (o.id === w.id) continue;
+        if (Math.hypot(o.a.x - P.x, o.a.y - P.y) <= tol) ajouter(w.id, o.id, ew, "debut");
+        else if (Math.hypot(o.b.x - P.x, o.b.y - P.y) <= tol) ajouter(w.id, o.id, ew, "fin");
+        else if (dansEpaisseur(P, o, tol) && Math.abs(cross(w.u, o.u)) >= SIN_ALIGNE) ajouter(w.id, o.id, ew, "courant");
+      }
+    }
+  }
+  for (const c of croisementsDuNiveau(etat, niveauId)) {
+    const [a, b] = c.murs;
+    // Un croisement déjà décrit par un té (extrémité dans l'épaisseur) n'est pas répété.
+    if (out.some((x) => (x.a === a && x.b === b) || (x.a === b && x.b === a))) continue;
+    ajouter(a, b, "courant", "courant");
+  }
+  return out;
+}
+

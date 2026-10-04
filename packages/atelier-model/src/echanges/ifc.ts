@@ -21,7 +21,7 @@ import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, maillageObjet } from "../projection/maillage.js";
 import { empreinte } from "../documents/empreinte.js";
 import { compositionMur, lireCouches } from "../compositions.js";
-import { polygoneMurRaccorde, raccordMur } from "../raccords.js";
+import { connexionsDuNiveau, polygoneMurRaccorde, raccordMur, type ExtremiteConnexion } from "../raccords.js";
 
 export const SCHEMA_IFC = "IFC4X3_ADD2";
 
@@ -542,6 +542,20 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   for (const [structure, elements] of contenus) s.ajouter(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid(`rel-contenu|${structure}`)},$,$,$,${liste(elements)},${ref(structure)})`);
   for (const [type, objetsTypes] of typage) s.ajouter(`IFCRELDEFINESBYTYPE(${gid(`rel-type|${type}`)},$,$,$,${liste(objetsTypes)},${ref(type)})`);
   for (const [jeu, objetsMat] of associationsMateriau) s.ajouter(`IFCRELASSOCIATESMATERIAL(${gid(`rel-materiau|${jeu}`)},$,$,$,${liste(objetsMat)},${ref(jeu)})`);
+  // Connexions des murs (D-038) : extrémités partagées, tés, croisements — IfcRelConnectsPathElements.
+  const TYPE_CONNEXION: Record<ExtremiteConnexion, string> = { debut: ".ATSTART.", fin: ".ATEND.", courant: ".ATPATH." };
+  let connexions = 0;
+  for (const niveauId of [...Object.keys(etat.niveaux), null]) {
+    for (const c of connexionsDuNiveau(etat, niveauId)) {
+      const ia = produits.get(c.a);
+      const ib = produits.get(c.b);
+      if (!ia || !ib) continue;
+      // Ordre IFC : RelatingPriorities, RelatedPriorities, RelatedConnectionType, RelatingConnectionType.
+      s.ajouter(`IFCRELCONNECTSPATHELEMENTS(${gid(`rel-connexion|${c.a}|${c.b}|${c.extremiteA}|${c.extremiteB}`)},$,$,$,$,${ref(ia)},${ref(ib)},(),(),${TYPE_CONNEXION[c.extremiteB]},${TYPE_CONNEXION[c.extremiteA]})`);
+      connexions++;
+    }
+  }
+  if (connexions) remarques.add(`${connexions} connexion(s) de murs écrites (IfcRelConnectsPathElements : extrémités, tés, croisements), sans priorités de couches.`);
   // Hypothèses, sources, structure déclarée : propriétés du projet, statut explicite.
   if (etat.site.hypotheses.length) pset(projet, "Fadi_Hypotheses", etat.site.hypotheses.map((h) => `#${prop(h.id, texte(`${h.domaine} — ${h.texte} (statut : ${h.statut})`))}`));
   if (etat.site.sources.length) pset(projet, "Fadi_Sources", etat.site.sources.map((src) => `#${prop(src.id, texte(JSON.stringify(src.champs).slice(0, 2000)))}`));

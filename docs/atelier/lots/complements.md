@@ -108,3 +108,4 @@ Flèche Z du manipulateur 3D pour les objets à décalage de base (e2e `atelier-
 Croisements de murs peints d'un seul tenant dans le plan (`raccords.test.ts`, e2e `atelier-complements.mjs`, D-034).
 DXF : cotes d'ordonnée (D-035) ; XREF résolues par les fichiers joints (D-036) — `echanges.test.ts`.
 Portes : sens d'ouverture et changement d'hôte des ouvertures (`ouvrants.test.ts`, e2e `atelier-complements.mjs`, D-037).
+IFC : connexions des murs `IfcRelConnectsPathElements` (`raccords.test.ts`, corpus régénéré, D-038).
