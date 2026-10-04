@@ -850,6 +850,15 @@ export const api = {
   getAtelierVerrous: (projectId: string) => request<{ verrous: AtelierVerrou[] }>(`/projects/${projectId}/atelier/verrous`),
   postAtelierVerrous: (projectId: string, body: { cles: string[]; motif?: string; minutes?: number }) => request<{ cles: string[]; expiresAt: string }>(`/projects/${projectId}/atelier/verrous`, { method: "POST", body: JSON.stringify(body) }),
   deleteAtelierVerrou: (projectId: string, cle: string) => request<void>(`/projects/${projectId}/atelier/verrous/${encodeURIComponent(cle)}`, { method: "DELETE" }),
+  // --- Lot 8 : scripts et assistant ---
+  getAtelierScripts: (projectId: string) => request<{ integres: AtelierScript[]; projet: (AtelierScript & { versions: number })[] }>(`/projects/${projectId}/atelier/scripts`),
+  postAtelierScript: (projectId: string, script: unknown) => request<AtelierScript>(`/projects/${projectId}/atelier/scripts`, { method: "POST", body: JSON.stringify({ script }) }),
+  essayerAtelierScript: (projectId: string, scriptId: string, body: { parametres: Record<string, unknown>; version?: number }) => request<{ commandes: unknown[]; effets: import("@parcours/atelier-model").Effets; documentsARecalculer: { kind: string; label: string }[]; revision: number }>(`/projects/${projectId}/atelier/scripts/${encodeURIComponent(scriptId)}/essai`, { method: "POST", body: JSON.stringify(body) }),
+  executerAtelierScript: (projectId: string, scriptId: string, body: { parametres: Record<string, unknown>; version?: number; requestId: string; baseRevision: number }) => request<{ revision: number }>(`/projects/${projectId}/atelier/scripts/${encodeURIComponent(scriptId)}/executer`, { method: "POST", body: JSON.stringify(body) }),
+  proposerAtelier: (projectId: string, body: { intention: string; niveauId?: string | null }) => request<AtelierProposition & { documentsARecalculer: { kind: string; label: string }[] }>(`/projects/${projectId}/atelier/assistant/propositions`, { method: "POST", body: JSON.stringify(body) }),
+  getAtelierPropositions: (projectId: string) => request<{ propositions: AtelierProposition[]; fournisseur: string | null; regles: string }>(`/projects/${projectId}/atelier/assistant/propositions`),
+  accepterAtelierProposition: (projectId: string, id: string, body: { requestId: string; baseRevision: number }) => request<{ revision: number }>(`/projects/${projectId}/atelier/assistant/propositions/${encodeURIComponent(id)}/accepter`, { method: "POST", body: JSON.stringify(body) }),
+  refuserAtelierProposition: (projectId: string, id: string) => request<{ statut: string }>(`/projects/${projectId}/atelier/assistant/propositions/${encodeURIComponent(id)}/refuser`, { method: "POST", body: "{}" }),
   getAtelierProblemes: (projectId: string) => request<AtelierProblemesResponse>(`/projects/${projectId}/atelier/problemes`),
   postAtelierCommands: (projectId: string, enveloppe: AtelierEnveloppe) =>
     request<AtelierCommandsResponse>(`/projects/${projectId}/atelier/commands`, { method: "POST", body: JSON.stringify(enveloppe) }),
@@ -908,6 +917,23 @@ export interface AtelierEssaiResponse {
   parCommande: import("@parcours/atelier-model").Effets[];
   problemes: import("@parcours/atelier-model").Probleme[];
   referencesAReparer: string[];
+}
+export type AtelierScript = import("@parcours/atelier-model").ScriptAtelier & { origine: "integre" | "projet" };
+export interface AtelierProposition {
+  id: string;
+  intention: string;
+  generateur: string;
+  regle: string | null;
+  explication: string;
+  commandes: { type: string; params: Record<string, unknown> }[];
+  hypotheses: { texte: string; motif: string }[];
+  iterations: { numero: number; commandes: number; resultat: "valide" | "refuse"; erreur: string | null }[];
+  effets: import("@parcours/atelier-model").Effets | null;
+  statut: "proposee" | "echouee" | "incomprise" | "acceptee" | "refusee";
+  depuisCache: boolean;
+  revisionBase: number;
+  revisionResultat: number | null;
+  createdAt: string;
 }
 export interface AtelierVersion {
   id: string;

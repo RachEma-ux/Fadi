@@ -26,3 +26,5 @@ export * from "./echanges/ifc.js";
 export * from "./echanges/import-ifc.js";
 export * from "./echanges/import-dxf.js";
 export * from "./versions.js";
+export * from "./automatisation/scripts.js";
+export * from "./automatisation/assistant.js";

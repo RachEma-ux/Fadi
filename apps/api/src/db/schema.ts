@@ -505,3 +505,37 @@ export const atelierLocks = pgTable("atelier_locks", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [primaryKey({ columns: [t.projectId, t.cle] })]);
+
+/** Script de la bibliothèque d'un projet (lot 8) : une ligne par version, immuable. */
+export const atelierScripts = pgTable("atelier_scripts", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  scriptId: text("script_id").notNull(),
+  version: integer("version").notNull(),
+  contenu: jsonb("contenu").$type<Record<string, unknown>>().notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [primaryKey({ columns: [t.projectId, t.scriptId, t.version] })]);
+
+export type StatutProposition = "proposee" | "echouee" | "incomprise" | "acceptee" | "refusee";
+
+/** Proposition de l'assistant (lot 8) : séquence inspectable, journal des hypothèses, itérations, décision. */
+export const atelierPropositions = pgTable("atelier_propositions", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  intention: text("intention").notNull(),
+  cle: text("cle").notNull(),
+  generateur: text("generateur").notNull(),
+  regle: text("regle"),
+  explication: text("explication").notNull(),
+  commandes: jsonb("commandes").$type<unknown[]>().notNull(),
+  hypotheses: jsonb("hypotheses").$type<unknown[]>().notNull(),
+  iterations: jsonb("iterations").$type<unknown[]>().notNull(),
+  effets: jsonb("effets").$type<Record<string, unknown> | null>(),
+  statut: text("statut").$type<StatutProposition>().notNull(),
+  depuisCache: boolean("depuis_cache").notNull().default(false),
+  revisionBase: integer("revision_base").notNull(),
+  revisionResultat: integer("revision_resultat"),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+});

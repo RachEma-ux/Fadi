@@ -1653,3 +1653,68 @@
   align-items: center;
   flex-wrap: wrap;
 }
+
+/* Automatisation et assistant (lot 8). */
+.automatisation {
+  margin: 0 0.8rem 1rem;
+  font-size: 0.88rem;
+}
+.automatisation > summary {
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.4rem 0;
+}
+.automatisation h3 {
+  margin: 0.8rem 0 0.3rem;
+  font-size: 0.95rem;
+}
+.automatisation h4 {
+  margin: 0.4rem 0 0.2rem;
+  font-size: 0.88rem;
+}
+.auto-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  font-size: 0.82rem;
+}
+.auto-proposition,
+.auto-apercu {
+  margin: 0.4rem 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  background: #f7faf8;
+}
+.auto-proposition[data-statut="echouee"],
+.auto-proposition[data-statut="incomprise"] {
+  border-color: #d9b4a9;
+}
+.auto-statut {
+  font-weight: 700;
+}
+.auto-iterations,
+.auto-hypotheses ul,
+.auto-sequence ol {
+  margin: 0.2rem 0;
+  padding-left: 1.2rem;
+}
+.auto-sequence li {
+  overflow-wrap: anywhere;
+}
+.auto-champ {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0.3rem 0;
+}
+.auto-script .ver-actions .primaire,
+.auto-proposition .primaire {
+  background: var(--atelier-encre);
+  border-color: var(--atelier-encre);
+  color: #fff;
+}
+.auto-nouveau textarea {
+  width: 100%;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}

@@ -13,6 +13,7 @@ import { useOnline, useReachable } from "../../../components/SyncIndicator";
 import { exporter, type TypeExport } from "./exports";
 import { MenuImport, RapportEchangeDialogue, exporterMaquetteIfc, type RapportAffiche } from "./panneaux/Echanges";
 import { Versions } from "./panneaux/Versions";
+import { Automatisation } from "./panneaux/Automatisation";
 import { atelierClient } from "../bus/atelier-client";
 import { actionImmediate, lotSuppression, OUTILS_IMMEDIATS } from "./actions";
 import { etatUi, useEtatUi, type NiveauAffichage, type PanneauMobile } from "./etat-ui";
@@ -558,6 +559,7 @@ export function AtelierNouveau({ projectId, readOnly, protectedReference = false
         </div>
         <div className="droite-versions">
           <Versions projectId={projectId} client={client} etat={etat} revision={inst.revisionServeur} selection={ui.selection} niveauId={ui.niveauId} readOnly={readOnly || protectedReference} />
+          <Automatisation projectId={projectId} client={client} etat={etat} revision={inst.revisionServeur} niveauId={ui.niveauId} readOnly={readOnly || protectedReference} />
         </div>
       </aside>
 

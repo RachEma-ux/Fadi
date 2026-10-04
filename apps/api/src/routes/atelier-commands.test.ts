@@ -518,3 +518,98 @@ describe("versions, variantes, publications, verrous (lot 7)", () => {
     expect((await owner.get(`/projects/${pid}/atelier/collisions`)).body.collisions).toEqual([]);
   });
 });
+
+describe("automatisation et assistant (lot 8, T19)", () => {
+  const script = (client: ReturnType<typeof request.agent>, pid: string, action: "essai" | "executer", body: Record<string, unknown>) => client.post(`/projects/${pid}/atelier/scripts/trame-poteaux/${action}`).send(body);
+  const trame = { niveauId: "rdc", nx: 3, ny: 2, px: 5, py: 4, hauteur: 3 };
+
+  it("un script de trame de poteaux passe par les mêmes commandes et les mêmes refus qu'un utilisateur", async () => {
+    const owner = await registerAndLogin("script@example.com");
+    const pid = await projetVide(owner);
+    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("s0", 0, [niveau]))).status).toBe(200);
+    // Essai : aperçu, rien d'écrit.
+    const essai = await script(owner, pid, "essai", { parametres: trame });
+    expect(essai.status).toBe(200);
+    expect(essai.body.commandes).toHaveLength(6);
+    expect(essai.body.effets.crees).toHaveLength(6);
+    expect((await owner.get(`/projects/${pid}`)).body.modelRevision).toBe(1);
+    // Exécution : un lot ordinaire, journalisé sous le nom du script.
+    const ex = await script(owner, pid, "executer", { parametres: trame, requestId: "trame-1", baseRevision: 1 });
+    expect(ex.status).toBe(200);
+    expect(ex.body).toMatchObject({ revision: 2, script: { id: "trame-poteaux", version: 1 } });
+    const journal = (await owner.get(`/projects/${pid}/atelier/journal`)).body.entrees;
+    expect(journal.at(-1)).toMatchObject({ label: "Script « Trame de poteaux » v1", resultRevision: 2 });
+    // Les mêmes commandes envoyées à la main (même requestId) donnent exactement les mêmes objets.
+    const autre = await projetVide(owner);
+    expect((await owner.post(`/projects/${autre}/atelier/commands`).send(enveloppe("s0", 0, [niveau]))).status).toBe(200);
+    expect((await owner.post(`/projects/${autre}/atelier/commands`).send(enveloppe("trame-1", 1, essai.body.commandes))).status).toBe(200);
+    const objets = async (p: string) => (await owner.get(`/projects/${p}/atelier/model`)).body.modele.objets;
+    expect(await objets(autre)).toEqual(await objets(pid));
+    // Mêmes refus : révision périmée (409), niveau verrouillé par autrui (423), lecteur (403), paramètre invalide (400).
+    expect((await script(owner, pid, "executer", { parametres: trame, requestId: "trame-2", baseRevision: 1 })).status).toBe(409);
+    const editeur = await registerAndLogin("script-editeur@example.com");
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "script-editeur@example.com", role: "editeur" })).status).toBe(201);
+    expect((await editeur.post(`/projects/${pid}/atelier/verrous`).send({ cles: ["niveau:rdc"] })).status).toBe(201);
+    const verrou = await script(owner, pid, "executer", { parametres: { ...trame, ox: 30 }, requestId: "trame-3", baseRevision: 2 });
+    expect(verrou.status).toBe(423);
+    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("main-3", 2, [{ type: "poteau.creer", params: { niveauId: "rdc", point: pt(40, 0), formeId: "rectangle", largeur: m(0.3), profondeur: m(0.3), hauteur: m(3) } }]))).status).toBe(423);
+    const lecteur = await registerAndLogin("script-lecteur@example.com");
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "script-lecteur@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await script(lecteur, pid, "executer", { parametres: trame, requestId: "trame-4", baseRevision: 2 })).status).toBe(403);
+    const sansHauteur = await script(owner, pid, "essai", { parametres: { niveauId: "rdc" } });
+    expect(sansHauteur.status).toBe(400);
+    expect(sansHauteur.body.details[0].message).toMatch(/Hauteur.*requis/);
+  });
+
+  it("bibliothèque versionnée : un script du projet est enregistré en versions immuables ; les identifiants intégrés sont réservés", async () => {
+    const owner = await registerAndLogin("biblio@example.com");
+    const pid = await projetVide(owner);
+    const s = { id: "reperes", nom: "Repères", parametres: [{ nom: "n", type: "entier", min: 1, max: 5 }], pour: [{ variable: "i", de: 1, a: "n" }], commandes: [{ type: "texte.creer", params: { niveauId: "rdc", position: { x: "=i * 2", y: 0, frame: "local", unit: "m" }, texte: "R{i}" } }] };
+    expect((await owner.post(`/projects/${pid}/atelier/scripts`).send({ script: s })).body.version).toBe(1);
+    expect((await owner.post(`/projects/${pid}/atelier/scripts`).send({ script: { ...s, nom: "Repères numérotés" } })).body.version).toBe(2);
+    expect((await owner.get(`/projects/${pid}/atelier/scripts/reperes/versions`)).body.versions.map((v: { version: number }) => v.version)).toEqual([2, 1]);
+    const liste = (await owner.get(`/projects/${pid}/atelier/scripts`)).body;
+    expect(liste.integres.map((x: { id: string }) => x.id)).toEqual(["trame-poteaux", "enceinte-rectangulaire", "plans-par-niveau"]);
+    expect(liste.projet).toMatchObject([{ id: "reperes", nom: "Repères numérotés", version: 2, versions: 2 }]);
+    expect((await owner.post(`/projects/${pid}/atelier/scripts`).send({ script: { ...s, id: "trame-poteaux" } })).status).toBe(409);
+    expect((await owner.post(`/projects/${pid}/atelier/scripts`).send({ script: { ...s, commandes: [{ type: "interne.restaurer", params: {} }] } })).status).toBe(400);
+    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("b0", 0, [niveau]))).status).toBe(200);
+    const ex = await owner.post(`/projects/${pid}/atelier/scripts/reperes/executer`).send({ parametres: { n: 3 }, version: 1, requestId: "rep-1", baseRevision: 1 });
+    expect(ex.status).toBe(200);
+    expect(Object.values((await owner.get(`/projects/${pid}/atelier/model`)).body.modele.objets as Record<string, { params: { texte: string } }>).map((o) => o.params.texte).sort()).toEqual(["R1", "R2", "R3"]);
+  });
+
+  it("assistant : une proposition n'écrit rien sans accord ; accord → exécution validée ; refus ; cache des séquences validées", async () => {
+    const client = await registerAndLogin("assistant@example.com");
+    const imported = await client.post("/examples/p118-exemple-complet/import");
+    const ref = imported.body.id as string;
+    const pid = (await client.post(`/projects/${ref}/copies`).send({ name: "Assistant" })).body.id as string;
+    const rev0 = (await client.get(`/projects/${pid}`)).body.modelRevision as number;
+    const p = await client.post(`/projects/${pid}/atelier/assistant/propositions`).send({ intention: "Feuilles et quantités" });
+    expect(p.status).toBe(201);
+    expect(p.body).toMatchObject({ statut: "proposee", regle: "feuilles-quantites", generateur: "regles-fadi/1", fournisseur: null, depuisCache: false });
+    expect(p.body.hypotheses.length).toBeGreaterThan(0);
+    expect(p.body.iterations.length).toBeLessThanOrEqual(3);
+    expect((await client.get(`/projects/${pid}`)).body.modelRevision).toBe(rev0);
+    const acc = await client.post(`/projects/${pid}/atelier/assistant/propositions/${p.body.id}/accepter`).send({ requestId: "acc-1", baseRevision: rev0 });
+    expect(acc.status).toBe(200);
+    expect(acc.body.revision).toBe(rev0 + 1);
+    const defs = Object.values((await client.get(`/projects/${pid}/atelier/model`)).body.modele.definitions as Record<string, { classe: string }>);
+    expect(defs.filter((d) => d.classe === "vue")).toHaveLength(6);
+    expect((await client.post(`/projects/${pid}/atelier/assistant/propositions/${p.body.id}/accepter`).send({ requestId: "acc-2", baseRevision: rev0 + 1 })).status).toBe(409);
+    // Même intention : la séquence en cache n'est plus applicable (plans déjà créés) ; les règles ne proposent plus rien.
+    const p2 = (await client.post(`/projects/${pid}/atelier/assistant/propositions`).send({ intention: "feuilles ET quantites" })).body;
+    expect(p2).toMatchObject({ statut: "proposee", depuisCache: false, commandes: [] });
+    // Trame de poteaux : refusée, puis acceptée, puis resservie depuis le cache.
+    const t1 = (await client.post(`/projects/${pid}/atelier/assistant/propositions`).send({ intention: "trame de poteaux 2 x 2 tous les 4 m hauteur 3", niveauId: "rdc" })).body;
+    expect(t1.statut).toBe("proposee");
+    expect((await client.post(`/projects/${pid}/atelier/assistant/propositions/${t1.id}/refuser`)).body.statut).toBe("refusee");
+    expect((await client.post(`/projects/${pid}/atelier/assistant/propositions/${t1.id}/accepter`).send({ requestId: "acc-3", baseRevision: rev0 + 1 })).status).toBe(409);
+    const t2 = (await client.post(`/projects/${pid}/atelier/assistant/propositions`).send({ intention: "trame de poteaux 2 x 2 tous les 4 m hauteur 3", niveauId: "rdc" })).body;
+    expect((await client.post(`/projects/${pid}/atelier/assistant/propositions/${t2.id}/accepter`).send({ requestId: "acc-4", baseRevision: rev0 + 1 })).status).toBe(200);
+    const t3 = (await client.post(`/projects/${pid}/atelier/assistant/propositions`).send({ intention: "Trame de poteaux 2 × 2 tous les 4 m hauteur 3", niveauId: "rdc" })).body;
+    expect(t3).toMatchObject({ statut: "proposee", depuisCache: true });
+    expect(t3.commandes).toEqual(t2.commandes);
+    expect((await client.get(`/projects/${pid}/atelier/assistant/propositions`)).body.propositions.map((x: { statut: string }) => x.statut)).toEqual(["proposee", "acceptee", "refusee", "proposee", "acceptee"]);
+  }, 60_000);
+});

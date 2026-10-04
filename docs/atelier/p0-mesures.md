@@ -280,3 +280,9 @@ Banc : Chromium headless de Playwright, API construite servant l'application, Po
 | --- | --- |
 | Créer une variante du P.118 (copie intégrale reliée au tronc) → Atelier de la variante | 1,2 s |
 | Publier (version figée + 8 documents produits et rangés en volumes, dont la maquette IFC) | 3,1 s |
+
+## Lot 8 — automatisation et assistant (recette `apps/web/e2e/atelier-automatisation.mjs`)
+
+| Mesure | Valeur |
+| --- | --- |
+| Proposition « feuilles et quantités » sur le P.118 (règles, 6 plans générés pour le choix du format, essai à blanc, aperçu, catalogue des documents à recalculer) | 2,9 s |

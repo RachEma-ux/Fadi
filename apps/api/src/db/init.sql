@@ -370,3 +370,37 @@ CREATE TABLE IF NOT EXISTS atelier_locks (
   created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (project_id, cle)
 );
+
+-- Lot 8 : bibliothèque de scripts versionnée (par projet) et propositions de l'assistant (boucle contrôlée).
+CREATE TABLE IF NOT EXISTS atelier_scripts (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  script_id text NOT NULL,
+  version integer NOT NULL,
+  contenu jsonb NOT NULL,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (project_id, script_id, version)
+);
+
+CREATE TABLE IF NOT EXISTS atelier_propositions (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  intention text NOT NULL,
+  cle text NOT NULL,
+  generateur text NOT NULL,
+  regle text,
+  explication text NOT NULL,
+  commandes jsonb NOT NULL,
+  hypotheses jsonb NOT NULL,
+  iterations jsonb NOT NULL,
+  effets jsonb,
+  statut text NOT NULL,
+  depuis_cache boolean NOT NULL DEFAULT false,
+  revision_base integer NOT NULL,
+  revision_resultat integer,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  decided_at timestamptz
+);
+CREATE INDEX IF NOT EXISTS atelier_propositions_project_idx ON atelier_propositions (project_id, created_at);
+CREATE INDEX IF NOT EXISTS atelier_propositions_cle_idx ON atelier_propositions (project_id, cle, statut);

@@ -47,6 +47,11 @@ supprimés ; les projets qui n'avaient que lui ont été repris dans le modèle 
   restaurable), verrous fins de la sélection ou du niveau. Le mode Documents compare une vue à son dessin dans une
   version (traits retirés en rouge, ajoutés en vert) ; le panneau des modifications liste les collisions
   d'architecture.
+- `nouveau/panneaux/Automatisation.tsx` — automatisation et assistant (lot 8) : assistant à boucle contrôlée (intention
+  → proposition des règles de Fadi, sans fournisseur de modèle de langage → séquence inspectable, journal des
+  hypothèses, essais, aperçu des objets affectés et des documents à recalculer → accord explicite) ; scripts de la
+  bibliothèque versionnée (intégrés et du projet) essayés à blanc puis exécutés par les mêmes commandes et les mêmes
+  refus qu'un geste.
 - `AtelierHarmonyPage.tsx` — sous-page « Harmonie du bâtiment » de l'étape 10 (V8.4) ; `DesignReview.tsx` — bilan
   Harmonie du bâtiment conçu (flow-v62), calculé côté serveur depuis la projection du modèle typé.
 
