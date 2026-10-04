@@ -178,9 +178,48 @@ function copier(etat: ModeleAtelier, selection: OccurrenceQuelconque[], t: Trans
   return { etat: { ...etat, objets }, effets };
 }
 
+/**
+ * Vers un autre niveau (D-039, `niveauCible` de `transformer.deplacer` et `transformer.copier`) : les objets visés
+ * (déplacés, ou les copies créées) passent sur le niveau cible, les ouvertures suivent leur mur. Refusé pour un
+ * escalier (niveaux de départ et d'arrivée à redéfinir) et pour un mur dont le niveau haut ne serait plus au-dessus.
+ */
+function versNiveau(r: ResultatCommande, ids: readonly string[], niveauCible: string): ResultatCommande {
+  const etat = r.etat;
+  const cible = etat.niveaux[niveauCible];
+  if (!cible) throw new ErreurCommande("precondition", "niveauCible", `niveau inconnu : ${niveauCible}`);
+  const objets = { ...etat.objets };
+  const touches = new Set<string>();
+  const changer = (id: string) => {
+    const o = objets[id]!;
+    if (o.niveauId === niveauCible) return;
+    if (o.niveauId === null) throw new ErreurCommande("precondition", "cibles", `${id} : objet sans niveau`);
+    if (o.classe === "escalier") throw new ErreurCommande("precondition", "cibles", `${id} : un escalier ne change pas de niveau (niveaux de départ et d'arrivée à redéfinir)`);
+    if (o.classe === "mur" && o.params.niveauHautId) {
+      const haut = etat.niveaux[o.params.niveauHautId];
+      if (haut && haut.elevation <= cible.elevation) throw new ErreurCommande("precondition", "niveauCible", `mur ${id} : son niveau haut « ${haut.nom} » ne serait plus au-dessus du niveau « ${cible.nom} »`);
+    }
+    touches.add(o.niveauId);
+    changes.push(id);
+    objets[id] = { ...o, niveauId: niveauCible } as OccurrenceQuelconque;
+  };
+  const changes: string[] = [];
+  for (const id of ids) {
+    const o = objets[id];
+    if (!o || estOuverture(o.classe)) continue;
+    changer(id);
+    if (o.classe === "mur") for (const ouv of Object.values(objets)) if (estOuverture(ouv.classe) && (ouv as Occurrence<"porte">).params.murHoteId === id) changer(ouv.id);
+  }
+  const effets = { ...r.effets, modifies: [...r.effets.modifies], niveauxTouches: [...new Set([...r.effets.niveauxTouches, ...touches, niveauCible])] };
+  for (const id of changes) if (!effets.crees.includes(id) && !effets.modifies.includes(id)) effets.modifies.push(id);
+  return { ...r, etat: { ...etat, objets }, effets };
+}
+
 export const reducteursTransformer = {
   deplacer(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
-    return appliquerEnPlace(etat, cibles(etat, p, c), lireTransformation(p, "translation"), ctx);
+    const sel = cibles(etat, p, c);
+    const r = appliquerEnPlace(etat, sel, lireTransformation(p, "translation"), ctx);
+    const niveauCible = lire.chaineOuNull(p, "niveauCible");
+    return niveauCible ? versNiveau(r, sel.map((o) => o.id), niveauCible) : r;
   },
   tourner(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
     return appliquerEnPlace(etat, cibles(etat, p, c), lireTransformation(p, "rotation"), ctx);
@@ -194,7 +233,9 @@ export const reducteursTransformer = {
     return appliquerEnPlace(etat, cibles(etat, p, c), lireTransformation(p, "echelle"), ctx);
   },
   copier(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
-    return copier(etat, cibles(etat, p, c), lireTransformation(p, "translation"), ctx);
+    const r = copier(etat, cibles(etat, p, c), lireTransformation(p, "translation"), ctx);
+    const niveauCible = lire.chaineOuNull(p, "niveauCible");
+    return niveauCible ? versNiveau(r, r.effets.crees, niveauCible) : r;
   },
   repeter(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
     const sel = cibles(etat, p, c);

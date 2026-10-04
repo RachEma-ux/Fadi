@@ -315,6 +315,20 @@ await page.waitForSelector(".plan2d");
     dessin = await page.locator(`.plan2d [data-objet="${porte.id}"]`).getAttribute("data-ouvrant").catch(() => null);
   }
   check("porte : sens d'ouverture renseigné dans l'inspecteur, enregistré et dessiné", !!porte && ouvrantLu?.charniere === "fin" && ouvrantLu?.cote === "droite" && dessin === "fin-droite", `${porte?.id} · ${JSON.stringify(ouvrantLu)} · ${dessin}`);
+  // Vers un autre niveau (D-039) : copier un mur sur un autre niveau depuis l'inspecteur.
+  const mAvant = await modele(pid);
+  const autre = Object.values(mAvant.modele.niveaux).find((n) => n.id !== nv);
+  let copieOk = false;
+  if (autre) {
+    await selectionner("croix-h");
+    await page.locator(".inspecteur-vers-niveau > summary").click();
+    await page.locator('[data-vers-niveau="cible"]').selectOption(autre.id);
+    await page.locator('[data-vers-niveau="copier"]').click();
+    await attendreEnregistre().catch(() => {});
+    const mApres = (await modele(pid)).modele;
+    copieOk = Object.values(mApres.objets).some((o) => o.classe === "mur" && o.id !== "croix-h" && o.niveauId === autre.id && o.params.a.x === 300 && o.params.a.y === 0) && mApres.objets["croix-h"].niveauId === nv;
+  }
+  check("vers un autre niveau : un mur copié sur le niveau choisi, l'original reste", copieOk, autre?.nom);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.

@@ -122,6 +122,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         })}
       </dl>
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <OuvertureHote o={o as Occurrence<"porte">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
+      {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
       {o.classe === "esquisse" && <Contraintes sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
@@ -435,6 +436,7 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
       </dl>
       <Contraintes sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <CreerBloc sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
+      <VersNiveau sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
     </section>
   );
 }
@@ -638,6 +640,36 @@ function OuvertureHote({ o, etat, desactive, onCommandes }: { o: Occurrence<"por
         </>
       )}
     </div>
+  );
+}
+
+/** Déplacer ou copier la sélection vers un autre niveau (D-039) : les ouvertures suivent leur mur. */
+function VersNiveau({ sel, etat, readOnly, onCommandes }: { sel: OccurrenceQuelconque[]; etat: ModeleAtelier; readOnly: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const [cible, setCible] = useState("");
+  const ids = sel.filter((o) => !(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture")).map((o) => o.id);
+  const actuels = new Set(sel.map((o) => o.niveauId));
+  const niveaux = Object.values(etat.niveaux).sort((a, b) => a.elevation - b.elevation).filter((n) => !(actuels.size === 1 && actuels.has(n.id)));
+  if (!ids.length || !niveaux.length) return null;
+  const nom = etat.niveaux[cible]?.nom ?? "";
+  const agir = (type: "transformer.deplacer" | "transformer.copier") =>
+    onCommandes([{ type, params: { dx: 0, dy: 0, niveauCible: cible }, cibles: ids }], `${type === "transformer.deplacer" ? "Déplacer" : "Copier"} ${ids.length} objet${ids.length > 1 ? "s" : ""} vers « ${nom} »`);
+  return (
+    <details className="inspecteur-vers-niveau">
+      <summary>Vers un autre niveau</summary>
+      <label htmlFor={`vers-niveau-${ids[0]}`}>Niveau cible</label>
+      <select id={`vers-niveau-${ids[0]}`} value={cible} disabled={readOnly} onChange={(e) => setCible(e.target.value)} data-vers-niveau="cible">
+        <option value="">Choisir…</option>
+        {niveaux.map((n) => (
+          <option key={n.id} value={n.id}>
+            {n.nom} ({n.elevation} m)
+          </option>
+        ))}
+      </select>
+      <span className="ver-actions">
+        <button type="button" disabled={readOnly || !cible} onClick={() => agir("transformer.deplacer")} data-vers-niveau="deplacer">Déplacer</button>
+        <button type="button" disabled={readOnly || !cible} onClick={() => agir("transformer.copier")} data-vers-niveau="copier">Copier</button>
+      </span>
+    </details>
   );
 }
 
