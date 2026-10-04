@@ -4,7 +4,7 @@
  * commandes d'esquisse), et le rapport de fidélité de chaque échange : conservé, transformé, omis, à réparer.
  */
 import { useEffect, useRef, useState } from "react";
-import { commandesImportDxf, exporterIfc, ErreurCommande, type ModeleAtelier, type RapportEchange, type RapportImportDxf, type UniteDxf } from "@parcours/atelier-model";
+import { commandesImportDxf, commandesProprietesCsv, exporterIfc, ErreurCommande, type ModeleAtelier, type RapportEchange, type RapportImportDxf, type UniteDxf } from "@parcours/atelier-model";
 import { api, ApiError } from "../../../../lib/api";
 import type { AtelierClient } from "../../bus/atelier-client";
 
@@ -68,6 +68,18 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
   onAide: (m: string) => void;
 }) {
   const entreeIfc = useRef<HTMLInputElement | null>(null);
+  const entreeCsv = useRef<HTMLInputElement | null>(null);
+  // Propriétés en tableau (D-045) : une commande propriete.definir par ligne valide, refus nominatifs.
+  const importerProprietes = async (f: File) => {
+    try {
+      const { commandes, rapport } = commandesProprietesCsv(client.getSnapshot().etat, await f.text());
+      if (commandes.length) await client.executer(commandes, `Propriétés importées de ${f.name} (${commandes.length})`);
+      onAide(`${rapport.retenues} propriété(s) importée(s) de ${f.name} sur ${rapport.lignes} ligne(s)${rapport.refus.length ? ` ; ${rapport.refus.length} refusée(s)` : ""}.`);
+      if (rapport.refus.length) onErreur(`Lignes refusées : ${rapport.refus.slice(0, 6).map((r) => `ligne ${r.ligne} (${r.motif})`).join(" ; ")}${rapport.refus.length > 6 ? " ; …" : ""}`);
+    } catch (err) {
+      onErreur(err instanceof Error ? err.message : String(err));
+    }
+  };
   const [dxfOuvert, setDxfOuvert] = useState(false);
   const fermerMenu = (e: React.MouseEvent) => (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
 
@@ -105,6 +117,9 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
           <button type="button" data-import="dxf" disabled={desactive || !niveauId} title={motif ?? (!niveauId ? "Créez d'abord un niveau" : undefined)} onClick={(e) => { fermerMenu(e); setDxfOuvert(true); }}>
             Plan DXF (2D)…
           </button>
+          <button type="button" data-import="proprietes" disabled={desactive} title={motif ?? "CSV : id ; propriete ; valeur ; unite"} onClick={(e) => { fermerMenu(e); entreeCsv.current?.click(); }}>
+            Propriétés (CSV)…
+          </button>
         </div>
       </details>
       <input
@@ -118,6 +133,19 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
           const f = e.currentTarget.files?.[0];
           e.currentTarget.value = "";
           if (f) void importerIfc(f);
+        }}
+      />
+      <input
+        ref={entreeCsv}
+        type="file"
+        accept=".csv,text/csv"
+        hidden
+        aria-label="Fichier CSV de propriétés à importer"
+        data-entree="proprietes-csv"
+        onChange={(e) => {
+          const f = e.currentTarget.files?.[0];
+          e.currentTarget.value = "";
+          if (f) void importerProprietes(f);
         }}
       />
       {dxfOuvert && niveauId && (

@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../../lib/api";
-import { bibliotheques, CLASSES, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { bibliotheques, CLASSES, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -124,6 +124,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <OuvertureHote o={o as Occurrence<"porte">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       <GroupeSelection sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
+      {o.classe === "zone" && <SyntheseZoneVue o={o as Occurrence<"zone">} etat={etat} />}
       {o.classe === "mur" && !desactive && <ScinderEnParts o={o as Occurrence<"mur">} onCommandes={onCommandes} />}
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
@@ -465,6 +466,8 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
       <CreerBloc sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <VersNiveau sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <GroupeSelection sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
+      <ProprieteCommune sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
+      {sel.some((o) => o.classe === "piece") && <NumeroterPieces sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />}
     </section>
   );
 }
@@ -781,6 +784,78 @@ function ScinderEnParts({ o, onCommandes }: { o: Occurrence<"mur">; onCommandes:
         Scinder
       </button>
     </div>
+  );
+}
+
+/** Une propriété saisie une fois pour toute la sélection (D-045) : une commande `propriete.definir` par objet. */
+function ProprieteCommune({ sel, readOnly, onCommandes }: { sel: OccurrenceQuelconque[]; readOnly: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const [nom, setNom] = useState("");
+  const [valeur, setValeur] = useState("");
+  const [unite, setUnite] = useState("");
+  const [erreur, setErreur] = useState<string | null>(null);
+  const appliquer = () => {
+    const v = valeur.trim();
+    let val: string | number | boolean = v;
+    if (/^-?\d+(?:[.,]\d+)?$/.test(v)) {
+      if (!unite.trim()) return setErreur("Valeur numérique sans unité : renseignez l'unité (rien n'est supposé).");
+      val = Number(v.replace(",", "."));
+    }
+    setErreur(null);
+    onCommandes(sel.map((o) => ({ type: "propriete.definir", params: { id: o.id, nom: nom.trim(), valeur: val, ...(unite.trim() ? { unite: unite.trim() } : {}) } })), `Propriété « ${nom.trim()} » sur ${sel.length} objets`);
+    setValeur("");
+  };
+  return (
+    <details className="inspecteur-propriete-commune">
+      <summary>Propriété commune</summary>
+      <label>Nom<input value={nom} onChange={(e) => setNom(e.target.value)} onKeyDown={(e) => e.stopPropagation()} maxLength={120} data-propriete="nom" /></label>
+      <label>Valeur<input value={valeur} onChange={(e) => setValeur(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-propriete="valeur" /></label>
+      <label>Unité (si nombre)<input value={unite} onChange={(e) => setUnite(e.target.value)} onKeyDown={(e) => e.stopPropagation()} maxLength={20} /></label>
+      <button type="button" disabled={readOnly || !nom.trim() || !valeur.trim()} onClick={appliquer} data-propriete="appliquer">Appliquer à {sel.length} objets</button>
+      {erreur && <p className="ver-erreur" role="alert">{erreur}</p>}
+    </details>
+  );
+}
+
+/** Numéroter les pièces sélectionnées (préfixe et premier numéro saisis ; ordre de lecture du plan ; D-045). */
+function NumeroterPieces({ sel, etat, readOnly, onCommandes }: { sel: OccurrenceQuelconque[]; etat: ModeleAtelier; readOnly: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const [prefixe, setPrefixe] = useState("");
+  const [debut, setDebut] = useState("");
+  const [chiffres, setChiffres] = useState("");
+  const [erreur, setErreur] = useState<string | null>(null);
+  const ids = sel.filter((o) => o.classe === "piece").map((o) => o.id);
+  const valider = () => {
+    try {
+      const c = commandesNumerotationPieces(etat, ids, prefixe, Number(debut), chiffres ? Number(chiffres) : 0);
+      setErreur(null);
+      onCommandes(c, `Numéroter ${c.length} pièce(s) à partir de ${prefixe}${debut}`);
+    } catch (err) {
+      setErreur(err instanceof Error ? err.message : String(err));
+    }
+  };
+  return (
+    <details className="inspecteur-numeroter">
+      <summary>Numéroter {ids.length} pièce(s)</summary>
+      <label>Préfixe<input value={prefixe} onChange={(e) => setPrefixe(e.target.value)} onKeyDown={(e) => e.stopPropagation()} maxLength={20} data-numeroter="prefixe" /></label>
+      <label>Premier numéro<input type="number" min={0} step={1} value={debut} onChange={(e) => setDebut(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-numeroter="debut" /></label>
+      <label>Chiffres (zéros à gauche, facultatif)<input type="number" min={0} max={6} step={1} value={chiffres} onChange={(e) => setChiffres(e.target.value)} onKeyDown={(e) => e.stopPropagation()} /></label>
+      <p className="inspecteur-aide">Ordre de lecture du plan : de haut en bas, puis de gauche à droite.</p>
+      <button type="button" disabled={readOnly || debut === "" || !Number.isInteger(Number(debut))} onClick={valider} data-numeroter="valider">Numéroter</button>
+      {erreur && <p className="ver-erreur" role="alert">{erreur}</p>}
+    </details>
+  );
+}
+
+/** Synthèse d'une zone : pièces et espaces contenus, aire totale (calculée, non réglementaire ; D-045). */
+function SyntheseZoneVue({ o, etat }: { o: Occurrence<"zone">; etat: ModeleAtelier }) {
+  const s = syntheseZone(etat, o);
+  return (
+    <details className="inspecteur-synthese-zone" open data-synthese-zone={s.pieces.length}>
+      <summary>Contenu de la zone : {s.pieces.length} pièce(s) ou espace(s), {String(s.aireTotale).replace(".", ",")} m²</summary>
+      <ul>
+        {s.pieces.map((p) => <li key={p.id}>{p.nom} — {String(p.aire).replace(".", ",")} m²{p.par === "relation" ? " (lien déclaré)" : ""}</li>)}
+      </ul>
+      <p className="inspecteur-aide">Aires nettes calculées sur les contours (règle de mesure réglementaire non appliquée).</p>
+    </details>
   );
 }
 

@@ -28,7 +28,7 @@ import {
   type Enveloppe,
 } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { atelierCommands, type JournalKind } from "../db/schema.js";
+import { atelierCommands, users, type JournalKind } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { traiterEvenements } from "../lib/atelier-events.js";
 import { chargerModele, creerModeleVide } from "../lib/atelier-modele.js";
@@ -162,6 +162,35 @@ atelierCommandsRouter.get("/journal", async (req, res) => {
     .orderBy(atelierCommands.resultRevision)
     .limit(limite);
   res.json({ revision: project.modelRevision, entrees: rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })) });
+});
+
+/**
+ * Export de l'historique (D-045) : le journal complet en CSV (UTF-8 avec BOM, séparateur « ; ») — révision, date,
+ * nature, libellé, auteur, nombre d'objets créés, modifiés, supprimés. Droit de lecture.
+ */
+atelierCommandsRouter.get("/journal.csv", async (req, res) => {
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  const rows = await db
+    .select({ kind: atelierCommands.kind, label: atelierCommands.label, resultRevision: atelierCommands.resultRevision, effets: atelierCommands.effets, createdAt: atelierCommands.createdAt, email: users.email })
+    .from(atelierCommands)
+    .leftJoin(users, eq(users.id, atelierCommands.authorId))
+    .where(eq(atelierCommands.projectId, project.id))
+    .orderBy(atelierCommands.resultRevision);
+  const cel = (v: string | number) => {
+    const t = String(v);
+    return /[;"\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+  };
+  const NATURE: Record<string, string> = { commande: "modification", annulation: "annulation", retablissement: "rétablissement" };
+  const lignes = [["revision", "date", "nature", "libelle", "auteur", "crees", "modifies", "supprimes"].join(";")];
+  for (const r of rows) {
+    const e = (r.effets ?? {}) as { crees?: string[]; modifies?: string[]; supprimes?: string[] };
+    lignes.push([r.resultRevision, r.createdAt.toISOString(), NATURE[r.kind] ?? r.kind, r.label, r.email ?? "", e.crees?.length ?? 0, e.modifies?.length ?? 0, e.supprimes?.length ?? 0].map(cel).join(";"));
+  }
+  const nom = `Historique_${(project.code ?? "projet").replace(/[^A-Za-z0-9._-]+/g, "_")}_r${project.modelRevision}.csv`;
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${nom}"`);
+  res.send("\uFEFF" + lignes.join("\r\n") + "\r\n");
 });
 
 atelierCommandsRouter.get("/problemes", async (req, res) => {

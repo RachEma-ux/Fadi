@@ -36,3 +36,4 @@ export * from "./automatisation/gabarits.js";
 export * from "./reprise.js";
 export * from "./commandes/refexterne.js";
 export * from "./documents/refexterne-rendu.js";
+export * from "./echanges/proprietes-csv.js";

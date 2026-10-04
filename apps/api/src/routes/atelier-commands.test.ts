@@ -63,6 +63,11 @@ describe("POST /projects/:id/atelier/commands", () => {
     const journal = await client.get(`/projects/${pid}/atelier/journal?apres=0`);
     expect(journal.body.entrees).toHaveLength(1);
     expect(journal.body.entrees[0]).toMatchObject({ kind: "commande", requestId: "r1", baseRevision: 0, resultRevision: 1, label: "Niveau et mur" });
+    // Export de l'historique en CSV (D-045).
+    const csv = await client.get(`/projects/${pid}/atelier/journal.csv`).buffer(true).parse((r, cb) => { let d = ""; r.setEncoding("utf8"); r.on("data", (c: string) => (d += c)); r.on("end", () => cb(null, d)); });
+    expect(csv.status).toBe(200);
+    expect(csv.headers["content-type"]).toMatch(/text\/csv/);
+    expect(String(csv.body)).toMatch(/^\uFEFFrevision;date;nature;libelle;auteur;crees;modifies;supprimes\r\n1;[^;]+;modification;Niveau et mur;[^;]*@[^;]+;2;0;0\r\n$/);
     const outbox = await pool.query("SELECT event_type, processed_at IS NOT NULL AS done FROM atelier_outbox WHERE project_id = $1", [pid]);
     expect(outbox.rows).toEqual([{ event_type: "atelier.commande.validee", done: true }]);
   });

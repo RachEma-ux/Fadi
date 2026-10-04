@@ -370,13 +370,15 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Control+k");
   await page.locator(".palette-champ").fill("circonscrit");
   await page.keyboard.press("Enter");
-  await page.mouse.click(cx - 50, cy + 40);
-  await page.mouse.click(cx, cy + 90);
-  await page.mouse.click(cx + 50, cy + 40);
+  const outilCercle = (await page.locator(".atelier-n-outils .outil.est-actif").textContent().catch(() => "")) ?? "";
+  // Loin de l'hexagone (aucun accrochage sur ses sommets).
+  await page.mouse.click(cx - 250, cy + 40);
+  await page.mouse.click(cx - 200, cy + 90);
+  await page.mouse.click(cx - 150, cy + 40);
   await attendreEnregistre().catch(() => {});
   await page.keyboard.press("Escape");
   const apresFormes = await compterFormes();
-  check("polygone régulier (6 côtés renseignés) et cercle par trois points tracés", apresFormes.hex === avantFormes.hex + 1 && apresFormes.cercles === avantFormes.cercles + 1, `${JSON.stringify(avantFormes)} → ${JSON.stringify(apresFormes)}`);
+  check("polygone régulier (6 côtés renseignés) et cercle par trois points tracés", apresFormes.hex === avantFormes.hex + 1 && apresFormes.cercles === avantFormes.cercles + 1, `${JSON.stringify(avantFormes)} → ${JSON.stringify(apresFormes)} · outil ${outilCercle}`);
   // Scinder un mur en parts égales (D-043).
   await selectionner("croix-v");
   await page.locator('[data-scinder="parts"]').fill("4");
@@ -399,6 +401,18 @@ await page.waitForSelector(".plan2d");
   await attendreEnregistre().catch(() => {});
   const mSup = (await modele(pid)).modele;
   check("niveau supprimé avec ses objets depuis le navigateur", !Object.values(mSup.niveaux).some((n) => n.nom === "Copie e2e"));
+  // Propriétés en tableau (D-045) : import CSV, une ligne refusée nominativement ; historique exporté en CSV.
+  const cheminCsv = `${OUT}/proprietes-e2e.csv`;
+  (await import("node:fs")).writeFileSync(cheminCsv, "id;propriete;valeur;unite\ncroix-h;Résistance au feu;EI 60;\ncroix-h;Épaisseur relevée;20;\n");
+  await page.locator(".barre-imports > summary").click();
+  await page.locator('[data-entree="proprietes-csv"]').setInputFiles(cheminCsv);
+  await attendreEnregistre().catch(() => {});
+  await page.waitForTimeout(500);
+  const propsCroix = (await modele(pid)).modele.objets["croix-h"].proprietes;
+  check("propriétés importées d'un CSV, ligne numérique sans unité refusée", propsCroix["Résistance au feu"]?.valeur === "EI 60" && propsCroix["Résistance au feu"]?.provenance === "import" && !propsCroix["Épaisseur relevée"], JSON.stringify(Object.keys(propsCroix)));
+  const histo = await page.request.get(`${BASE}/projects/${pid}/atelier/journal.csv`);
+  const histoTexte = await histo.text();
+  check("historique exporté en CSV (une ligne par révision)", histo.status() === 200 && /^\uFEFF?revision;date;nature;libelle;auteur/.test(histoTexte) && histoTexte.split("\r\n").length > 5);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.

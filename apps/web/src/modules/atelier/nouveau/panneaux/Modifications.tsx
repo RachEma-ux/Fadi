@@ -69,6 +69,9 @@ export function Modifications({ projectId, instantane, readOnly, onDecider, onAl
       )}
       <details className="mod-journal">
         <summary>Journal ({instantane.journal.length})</summary>
+        <a className="lien journal-export" href={`/projects/${projectId}/atelier/journal.csv`} download data-export-journal>
+          Exporter l'historique (CSV)
+        </a>
         <ol>
           {journal.map((j) => (
             <li key={j.id}>
