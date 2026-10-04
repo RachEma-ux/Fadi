@@ -1242,10 +1242,15 @@ await page.waitForSelector(".offline-banner-inline", { timeout: 15000 });
 await page.waitForFunction(() => /Serveur injoignable/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 15000 });
 check("serveur injoignable (navigateur en ligne) : la saisie est mise en attente (« en attente du serveur (injoignable pour l’instant) »), en-tête « Serveur injoignable · 1 modification(s) en attente, reprise automatique » avec « Réessayer »", /en attente du serveur \(injoignable pour l’instant\)/.test(await page.locator(".offline-banner-inline").textContent()) && /Serveur injoignable · 1 modification\(s\) en attente, reprise automatique/.test(await page.locator(".sync-indicator").textContent()) && (await page.locator('.sync-indicator button:has-text("Réessayer")').count()) === 1);
 await page.unroute(API_PATH);
-// La sonde /health s'espace de 3 s à 30 s (`lib/reachability.ts`) : la reprise peut attendre jusqu'à la sonde suivante.
-await page.waitForFunction(() => !document.querySelector(".offline-banner-inline") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 65000 }).catch(() => {});
+// La sonde /health s'espace de 3 s à 30 s (`lib/reachability.ts`) : la reprise peut attendre jusqu'à la sonde suivante ;
+// sur un banc de CI chargé, deux ou trois sondes peuvent être nécessaires.
+await page.waitForFunction(() => !document.querySelector(".offline-banner-inline") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 95000 }).catch(() => {});
 await page.waitForFunction(async (pid) => (await (await fetch(`/projects/${pid}/steps/3`, { credentials: "include" })).json()).content.fields.f1 === "Demande locale (serveur injoignable)", testPid, { timeout: 15000 }).catch(() => {});
-check("serveur de nouveau joignable : reprise automatique (sonde /health), saisie enregistrée sur le serveur, en-tête synchronisé", (await page.evaluate(async (pid) => (await (await fetch(`/projects/${pid}/steps/3`, { credentials: "include" })).json()).content.fields.f1, testPid)) === "Demande locale (serveur injoignable)" && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()));
+{
+  const f1Serveur = await page.evaluate(async (pid) => (await (await fetch(`/projects/${pid}/steps/3`, { credentials: "include" })).json()).content.fields.f1, testPid);
+  const entete = (await page.locator(".sync-indicator").textContent()) ?? "";
+  check("serveur de nouveau joignable : reprise automatique (sonde /health), saisie enregistrée sur le serveur, en-tête synchronisé", f1Serveur === "Demande locale (serveur injoignable)" && /Synchronisé avec le serveur/.test(entete), `serveur : ${String(f1Serveur).slice(0, 60)} · en-tête : ${entete.slice(0, 120)}`);
+}
 
 // Session au démarrage : un serveur en erreur (503) ou limité n'efface pas l'utilisateur mémorisé — l'écran se relit du cache ;
 // seule une réponse 401 ramène à la connexion.
