@@ -503,3 +503,47 @@ export function ellipseTroisPoints(centre: Vec, axe: Vec, p: Vec): { rayon: numb
   return b > a ? { rayon: r(b), rayonB: r(a), rotation: r(rot + 90) } : { rayon: r(a), rayonB: r(b), rotation: r(rot) };
 }
 
+
+/**
+ * Décalage d'un contour fermé (D-049), joints en onglet : d > 0 vers l'extérieur, d < 0 vers l'intérieur. Null si le
+ * résultat n'est plus un polygone simple de même orientation (contour trop rétréci, ou plusieurs boucles).
+ */
+export function decalerContour(points: readonly Vec[], d: number): Point2[] | null {
+  const n = points.length;
+  if (n < 3) return null;
+  let aire = 0;
+  for (let i = 0; i < n; i++) aire += cross(points[i]!, points[(i + 1) % n]!);
+  if (Math.abs(aire) < 1e-12) return null;
+  const sens = aire > 0 ? 1 : -1; // direct : l'extérieur est à droite des arêtes
+  const lignes = points.map((a, i) => {
+    const b = points[(i + 1) % n]!;
+    const u = normalise(sub(b, a));
+    const nrm = { x: u.y * sens, y: -u.x * sens };
+    return { p: add(a, mul(nrm, d)), d: u };
+  });
+  const out: Point2[] = [];
+  for (let i = 0; i < n; i++) {
+    const l1 = lignes[(i - 1 + n) % n]!;
+    const l2 = lignes[i]!;
+    const den = cross(l1.d, l2.d);
+    let q: Vec;
+    if (Math.abs(den) < 1e-12) q = l2.p;
+    else {
+      const t = cross(sub(l2.p, l1.p), l2.d) / den;
+      q = add(l1.p, mul(l1.d, t));
+    }
+    out.push(pt(Math.round(q.x * 1e9) / 1e9, Math.round(q.y * 1e9) / 1e9));
+  }
+  let aire2 = 0;
+  for (let i = 0; i < n; i++) aire2 += cross(out[i]!, out[(i + 1) % n]!);
+  if (aire2 * aire <= 0) return null;
+  // Chaque côté garde son sens : un côté retourné signale un contour rétréci au-delà de lui-même.
+  for (let i = 0; i < n; i++) if (dot(sub(out[(i + 1) % n]!, out[i]!), sub(points[(i + 1) % n]!, points[i]!)) <= 0) return null;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue;
+      if (intersectionSegments(out[i]!, out[(i + 1) % n]!, out[j]!, out[(j + 1) % n]!, 1e-12)) return null;
+    }
+  }
+  return out;
+}

@@ -270,11 +270,55 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       if (!cible) return attendre([], "Cliquez un point sur l'axe d'un mur.");
       return emettre([{ type: "mur.scinder", params: { id: cible.mur.id, t: cible.t } }], "Scinder le mur", "Mur scindé : les ouvertures ont suivi, les cotes rattachées sont à réparer.");
     }
+    case "sommet":
+    case "chanfrein-sommet": {
+      // Sommet d'un contour de la sélection (D-049) : le plus proche du clic.
+      const id = ui.selection[0];
+      const o = id ? etat.objets[id] : undefined;
+      const sommets = o ? (o.classe === "esquisse" ? o.params.points : "contour" in o.params ? (o.params as { contour: Point2[] }).contour : []) : [];
+      if (!o || !sommets.length) return attendre([], "Sélectionnez d'abord un polygone, une polyligne, une dalle, une zone ou une pièce.");
+      if (outil === "chanfrein-sommet") {
+        const k = sommets.findIndex((q) => distance(q, point) <= options.rayon * 1.5);
+        if (k < 0) return attendre([], "Cliquez près d'un sommet de l'objet sélectionné.");
+        const d = nombre(ui, "distanceChanfrein", 0);
+        if (!(d > 0)) return attendre([], "Renseignez la distance du chanfrein dans l'inspecteur.");
+        return emettre([{ type: "transformer.chanfreinerSommet", params: { id: o.id, index: k, distance: m(d) } }], `Chanfrein de sommet ${fmt(d)} m`);
+      }
+      if (pts.length === 0) {
+        const k = sommets.findIndex((q) => distance(q, point) <= options.rayon * 1.5);
+        if (k < 0) return attendre([], "Cliquez près d'un sommet de l'objet sélectionné.");
+        return { commandes: [], label: "", pointsEnCours: [sommets[k]!], aide: `Sommet ${k + 1} : cliquez sa nouvelle position (Alt : sans entraîner les sommets confondus).` };
+      }
+      const k = sommets.findIndex((q) => distance(q, pts[0]!) < 1e-9);
+      if (k < 0) return attendre([], "Sommet introuvable : recommencez.");
+      return emettre([{ type: "transformer.pointsDeControle", params: { id: o.id, index: k, point, ...(options.alt ? {} : { entrainer: true }) } }], options.alt ? "Déplacer un sommet" : "Déplacer un sommet (sommets confondus entraînés)");
+    }
     case "decaler": {
       if (ui.selection.length === 0) return attendre([], "Sélectionnez des murs ou des lignes, tapez la distance puis Entrée, puis cliquez le côté.");
       const d = nombre(ui, "distanceDecalage", 0);
-      if (!(d > 0)) return attendre([], "Tapez la distance puis Entrée, puis cliquez le côté.");
+      if (!(d > 0) && !String(ui.parametresOutil["distancesDecalage"] ?? "").trim()) return attendre([], "Tapez la distance (ou une série dans l'inspecteur) puis Entrée, puis cliquez le côté.");
       const o = etat.objets[ui.selection[0]!];
+      // Série de distances (D-049) : « 0,5 ; 1 » dans l'inspecteur ; contours fermés : clic dedans = intérieur.
+      let serie: number[] | null = null;
+      const texteSerie = String(ui.parametresOutil["distancesDecalage"] ?? "").trim();
+      if (texteSerie) {
+        try {
+          serie = lireEntraxes(texteSerie);
+        } catch (err) {
+          return attendre([], `Série de distances : ${err instanceof Error ? err.message : String(err)}.`);
+        }
+      }
+      const contourFerme: Point2[] | null = o ? (o.classe === "esquisse" && (o.params.forme === "polygone" || o.params.forme === "hachure") ? o.params.points : o.classe === "esquisse" && o.params.forme === "rectangle" && o.params.points.length === 2 ? [o.params.points[0]!, pt(o.params.points[1]!.x, o.params.points[0]!.y), o.params.points[1]!, pt(o.params.points[0]!.x, o.params.points[1]!.y)] : o.classe === "dalle" || o.classe === "zone" || o.classe === "solide" ? o.params.contour : null) : null;
+      if (contourFerme) {
+        let dedans = false;
+        for (let i = 0, j = contourFerme.length - 1; i < contourFerme.length; j = i++) {
+          const A = contourFerme[i]!;
+          const B = contourFerme[j]!;
+          if (A.y > point.y !== B.y > point.y && point.x < ((B.x - A.x) * (point.y - A.y)) / (B.y - A.y) + A.x) dedans = !dedans;
+        }
+        const coteF = dedans ? "interieur" : "exterieur";
+        return emettre([{ type: "transformer.decaler", params: { ...(serie ? { distances: serie } : { distance: m(d) }), cote: coteF }, cibles: ui.selection }], `Décaler ${serie ? serie.map(fmt).join(" ; ") : fmt(d)} m (${coteF === "interieur" ? "intérieur" : "extérieur"})`);
+      }
       let cote: "gauche" | "droite" = "gauche";
       if (o && (o.classe === "mur" || o.classe === "esquisse")) {
         const a = o.classe === "mur" ? o.params.a : o.params.points[0]!;
@@ -282,7 +326,7 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
         const cross = (b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x);
         cote = cross >= 0 ? "gauche" : "droite";
       }
-      return emettre([{ type: "transformer.decaler", params: { distance: m(d), cote }, cibles: ui.selection }], `Décaler ${fmt(d)} m`);
+      return emettre([{ type: "transformer.decaler", params: { ...(serie ? { distances: serie } : { distance: m(d) }), cote }, cibles: ui.selection }], `Décaler ${serie ? serie.map(fmt).join(" ; ") : fmt(d)} m`);
     }
     case "mesurer": {
       if (pts.length === 0) return attendre([point], "Cliquez le second point.");

@@ -119,3 +119,4 @@ Propriétés en tableau (CSV, propriété commune), numérotation des pièces, s
 Esquisse : ellipse, rectangles par centre et par 3 points, cercle par 2 points, trame d'axes ; arcs et rectangles transformés corrigés (`esquisse/*.test.ts`, e2e, D-046).
 Étirer en entraînant les murs joints, portes doubles et coulissantes, répartition d'ouvertures (`architecture-plus.test.ts`, e2e, D-047).
 Vues axonométriques et mesure 3D (`axonometrie.test.ts`, e2e, D-048).
+Décalage de contours fermés et en série, chanfrein de sommet, sommets communs, calculs dans les champs (`dessin-plus.test.ts`, e2e, D-049).

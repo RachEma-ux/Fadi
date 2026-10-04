@@ -146,6 +146,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "transformer.pointsDeControle": reducteursTransformer.pointsDeControle,
   "transformer.raccorder": reducteursTransformer.raccorder,
   "transformer.chanfreiner": reducteursTransformer.chanfreiner,
+  "transformer.chanfreinerSommet": reducteursTransformer.chanfreinerSommet,
   // Annotations
   ...triplet("cotation", "cotation"),
   "cotation.rattacher": (etat, p, ctx) => rattacherReference(etat, p, ctx),

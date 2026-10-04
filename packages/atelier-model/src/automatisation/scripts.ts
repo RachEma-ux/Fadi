@@ -310,3 +310,20 @@ export const SCRIPTS_INTEGRES: readonly ScriptAtelier[] = [
     commandes: [{ type: "vue.creer", params: { type: "plan", titre: "Plan · {n_nom}", echelle: "=echelle", niveauId: "$n" } }],
   },
 ];
+
+/**
+ * Nombre saisi dans un champ (D-049) : un nombre (virgule ou point décimal) ou un calcul (« 2,5 + 0,3 », « 3 * 0,9 »,
+ * « (4 - 0,2) / 2 ») évalué par le même analyseur sûr que les scripts ; null si la saisie n'est pas lisible.
+ */
+export function nombreSaisi(texte: string): number | null {
+  const t = texte.trim();
+  if (!t) return null;
+  const n = Number(t.replace(",", "."));
+  if (Number.isFinite(n) && /^[-+]?\d*(?:[.,]\d+)?$/.test(t.replace(/\s/g, "")) && /\d/.test(t)) return n;
+  try {
+    const v = evaluer(t.replace(/(\d),(\d)/g, "$1.$2"), {});
+    return Number.isFinite(v) ? Math.round(v * 1e9) / 1e9 : null;
+  } catch {
+    return null;
+  }
+}

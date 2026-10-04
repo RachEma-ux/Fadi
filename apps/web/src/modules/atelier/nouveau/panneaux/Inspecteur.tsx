@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../../lib/api";
-import { bibliotheques, CLASSES, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { bibliotheques, CLASSES, nombreSaisi, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -403,12 +403,14 @@ function Champ({ id, cle, valeur, etat, desactive, onValider }: { id: string; cl
         if (valeur === null || cle === "hauteur") onValider(null);
         return;
       }
-      const n = Number(t.replace(",", "."));
-      if (!Number.isFinite(n)) return;
+      // Un nombre ou un calcul (« 2,5 + 0,3 », D-049), évalué par l'analyseur sûr des scripts.
+      const n = nombreSaisi(t);
+      if (n === null) return;
+      setTexte(String(n).replace(".", ","));
       onValider(estGrandeur || valeur === null ? { value: n, unit: unite ?? "m" } : n);
     } else onValider(t === "" ? null : t);
   };
-  const inchange = numerique ? Number(texte.replace(",", ".")) === brut || (texte === "" && brut === null) : texte === (brut ?? "");
+  const inchange = numerique ? nombreSaisi(texte) === brut || (texte === "" && brut === null) : texte === (brut ?? "");
   return (
     <div className="champ">
       <dt><label htmlFor={id}>{libelle}</label></dt>
@@ -518,6 +520,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   prolonger: [{ cle: "longueurProlongement", libelle: "Longueur (sans limite)", unite: "m" }],
   trame: [{ cle: "depassement", libelle: "Dépassement des axes", unite: "m" }],
   chanfreiner: [{ cle: "distanceChanfrein", libelle: "Distance", unite: "m" }],
+  "chanfrein-sommet": [{ cle: "distanceChanfrein", libelle: "Distance", unite: "m" }],
 };
 
 function ParametresOutil({ etat, ui }: { etat: ModeleAtelier; ui: EtatUi }) {
@@ -558,6 +561,12 @@ function ParametresOutil({ etat, ui }: { etat: ModeleAtelier; ui: EtatUi }) {
             );
           })}
         </dl>
+      )}
+      {ui.outil === "decaler" && (
+        <div className="champ">
+          <label htmlFor="outil-distancesDecalage">Série de distances (m, facultative)</label>
+          <input id="outil-distancesDecalage" value={(ui.parametresOutil["distancesDecalage"] as string | undefined) ?? ""} placeholder="ex. 0,5 ; 1 ; 1,5" onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, distancesDecalage: e.target.value } }))} onKeyDown={(e) => e.stopPropagation()} />
+        </div>
       )}
       {ui.outil === "trame" && (
         <>

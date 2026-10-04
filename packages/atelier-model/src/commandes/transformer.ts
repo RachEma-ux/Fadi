@@ -7,7 +7,7 @@
  * les références à ses faces ; étirer conserve la distance des ouvertures à l'extrémité fixe.
  */
 import { decomposerBloc } from "./bloc.js";
-import { add, distance, intersectionSegments, mul, normalise, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
+import { add, decalerContour, distance, intersectionSegments, mul, normalise, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
 import type { Contour, ModeleAtelier, Occurrence, OccurrenceQuelconque, Reference } from "../modele.js";
 import { ouverturesDuMur, referencesVers } from "../modele.js";
 import { estOuverture } from "../ontologie.js";
@@ -304,27 +304,51 @@ export const reducteursTransformer = {
   },
   decaler(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
     const sel = cibles(etat, p, c);
-    const d = lire.longueur(p, "distance")!.value;
-    const cote = lire.enumeration(p, "cote", ["gauche", "droite"] as const, "gauche");
-    const signe = cote === "gauche" ? 1 : -1;
+    // Série de distances (D-049) : une copie par distance, chacune mesurée depuis l'original.
+    let distances: number[];
+    if (Array.isArray(p["distances"])) {
+      const brut = p["distances"] as unknown[];
+      if (!brut.length || brut.length > 50 || !brut.every((x) => typeof x === "number" && Number.isFinite(x) && x > 0)) throw new ErreurCommande("invalide", "distances", "distances : de 1 à 50 longueurs positives (m)");
+      distances = brut as number[];
+    } else distances = [lire.longueur(p, "distance")!.value];
+    const cote = lire.enumeration(p, "cote", ["gauche", "droite", "exterieur", "interieur"] as const, "gauche");
+    const signe = cote === "gauche" || cote === "exterieur" ? 1 : -1;
     let courant = etat;
     let effets = effetsVides();
-    for (const o of sel) {
-      if (o.classe === "mur" || (o.classe === "esquisse" && (o.params.forme === "ligne" || o.params.forme === "construction"))) {
-        const a: Vec = o.classe === "mur" ? o.params.a : o.params.points[0]!;
-        const b: Vec = o.classe === "mur" ? o.params.b : o.params.points[1]!;
-        const dir = normalise(sub(b, a));
-        const n = { x: -dir.y * d * signe, y: dir.x * d * signe };
-        const r = copier(courant, [o], { type: "translation", dx: n.x, dy: n.y }, ctx);
-        courant = r.etat;
-        effets = fusionnerEffets(effets, r.effets);
-      } else if (o.classe === "esquisse" && o.params.forme === "polyligne") {
-        const dec = decalerPolylignePure(o.params.points, d * signe);
-        const id = ctx.ids.nouveau("esquisse");
-        courant = { ...courant, objets: { ...courant.objets, [id]: { ...o, id, params: { ...o.params, points: dec }, groupeId: null } } };
-        effets = fusionnerEffets(effets, { ...effetsVides(), crees: [id], niveauxTouches: o.niveauId ? [o.niveauId] : [] });
-      } else {
-        throw new ErreurCommande("precondition", "cibles", `décalage non pris en charge pour la classe ${o.classe} (murs, lignes et polylignes seulement)`);
+    const copieAvec = (o: OccurrenceQuelconque, params: Record<string, unknown>) => {
+      const id = ctx.ids.nouveau(o.classe);
+      courant = { ...courant, objets: { ...courant.objets, [id]: { ...o, id, groupeId: null, params: { ...o.params, ...params } } as OccurrenceQuelconque } };
+      effets = fusionnerEffets(effets, { ...effetsVides(), crees: [id], niveauxTouches: o.niveauId ? [o.niveauId] : [] });
+    };
+    for (const d of distances) {
+      for (const o of sel) {
+        if (o.classe === "mur" || (o.classe === "esquisse" && (o.params.forme === "ligne" || o.params.forme === "construction"))) {
+          if (cote === "exterieur" || cote === "interieur") throw new ErreurCommande("invalide", "cote", `${o.id} : côté gauche ou droite pour un mur ou une ligne`);
+          const a: Vec = o.classe === "mur" ? o.params.a : o.params.points[0]!;
+          const b: Vec = o.classe === "mur" ? o.params.b : o.params.points[1]!;
+          const dir = normalise(sub(b, a));
+          const n = { x: -dir.y * d * signe, y: dir.x * d * signe };
+          const r = copier(courant, [o], { type: "translation", dx: n.x, dy: n.y }, ctx);
+          courant = r.etat;
+          effets = fusionnerEffets(effets, r.effets);
+        } else if (o.classe === "esquisse" && o.params.forme === "polyligne") {
+          if (cote === "exterieur" || cote === "interieur") throw new ErreurCommande("invalide", "cote", `${o.id} : côté gauche ou droite pour une polyligne ouverte`);
+          copieAvec(o, { points: decalerPolylignePure(o.params.points, d * signe) });
+        } else {
+          // Contours fermés (D-049) : polygone, rectangle, hachure d'esquisse ; dalle, zone, solide fermé (sans trous).
+          const contour: Point2[] | null =
+            o.classe === "esquisse" && (o.params.forme === "polygone" || o.params.forme === "hachure") ? o.params.points
+            : o.classe === "esquisse" && o.params.forme === "rectangle" && o.params.points.length === 2 ? rectangleEnPoints(o.params.points[0]!, o.params.points[1]!)
+            : (o.classe === "dalle" || o.classe === "zone" || (o.classe === "solide" && o.params.ferme)) ? o.params.contour
+            : null;
+          if (!contour) throw new ErreurCommande("precondition", "cibles", `décalage non pris en charge pour ${o.id} (murs, lignes, polylignes et contours fermés)`);
+          if ((o.classe === "dalle" || o.classe === "zone" || o.classe === "solide") && o.params.trous.length) throw new ErreurCommande("precondition", "cibles", `${o.id} : contour à trous, décalage non pris en charge`);
+          if (cote === "gauche" || cote === "droite") throw new ErreurCommande("invalide", "cote", `${o.id} : côté extérieur ou intérieur pour un contour fermé`);
+          const dec = decalerContour(contour, d * signe);
+          if (!dec) throw new ErreurCommande("precondition", "distances", `${o.id} : décalage de ${d} m impossible (contour trop rétréci ou en plusieurs boucles)`);
+          if (o.classe === "esquisse") copieAvec(o, { forme: o.params.forme === "rectangle" ? "polygone" : o.params.forme, points: dec, ferme: true });
+          else copieAvec(o, { contour: dec });
+        }
       }
     }
     return { etat: courant, effets };
@@ -485,11 +509,40 @@ export const reducteursTransformer = {
   },
   pointsDeControle(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
     void c;
-    void ctx;
     const id = lire.objet(etat, p, "id");
     const o = etat.objets[id]!;
     const index = lire.nombre(p, "index", { entier: true, min: 0 })!;
     const point = lire.point(p, "point")!;
+    // Sommet commun (D-049) : les sommets d'autres objets du niveau confondus avec celui-ci le suivent.
+    if (lire.booleen(p, "entrainer", false)) {
+      const sommets = (x: OccurrenceQuelconque): Point2[] | null => (x.classe === "esquisse" ? x.params.points : "contour" in x.params && Array.isArray((x.params as { contour?: unknown }).contour) ? (x.params as { contour: Point2[] }).contour : null);
+      const propres = sommets(o);
+      const depart = propres?.[index];
+      if (!depart) throw new ErreurCommande("invalide", "index", "sommet inconnu");
+      let r = reducteursTransformer.pointsDeControle(etat, { id, index, point }, ctx, []);
+      const tol = TOLERANCE_REDUCTEUR * 10;
+      for (const x of Object.values(etat.objets)) {
+        if (x.id === id || x.niveauId !== o.niveauId) continue;
+        const cal = x.calqueId ? etat.calques[x.calqueId] : null;
+        if (x.classe === "mur") {
+          const ext: "a" | "b" | null = distance(x.params.a, depart) <= tol ? "a" : distance(x.params.b, depart) <= tol ? "b" : null;
+          if (!ext) continue;
+          if (cal?.verrouille) throw new ErreurCommande("precondition", "entrainer", `${x.id} sur un calque verrouillé : déplacer le sommet seul, ou déverrouiller`);
+          const r2 = reducteursTransformer.etirer(r.etat, { id: x.id, extremite: ext, point }, ctx, []);
+          r = { etat: r2.etat, effets: fusionnerEffets(r.effets, r2.effets) };
+          continue;
+        }
+        const pts = sommets(x);
+        if (!pts) continue;
+        pts.forEach((q, k) => {
+          if (distance(q, depart) > tol) return;
+          if (cal?.verrouille) throw new ErreurCommande("precondition", "entrainer", `${x.id} sur un calque verrouillé : déplacer le sommet seul, ou déverrouiller`);
+          const r2 = reducteursTransformer.pointsDeControle(r.etat, { id: x.id, index: k, point }, ctx, []);
+          r = { etat: r2.etat, effets: fusionnerEffets(r.effets, r2.effets) };
+        });
+      }
+      return r;
+    }
     const effets = effetsVides();
     effets.modifies.push(id);
     if (o.niveauId) effets.niveauxTouches.push(o.niveauId);
@@ -520,6 +573,38 @@ export const reducteursTransformer = {
   },
   raccorder(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
     return raccordOuChanfrein(etat, p, ctx, c, "raccorder");
+  },
+  /**
+   * Chanfrein d'un sommet de contour (D-049) : le sommet est remplacé par deux points à `distance` sur ses deux
+   * côtés ; l'objet garde sa classe. Objet visé par une cote ou une contrainte : refus (indices de sommets décalés).
+   */
+  chanfreinerSommet(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
+    void ctx;
+    void c;
+    const id = lire.objet(etat, p, "id");
+    const o = etat.objets[id]!;
+    const index = lire.nombre(p, "index", { entier: true, min: 0 })!;
+    const d = lire.longueur(p, "distance", { strict: true })!.value;
+    const ferme = o.classe === "esquisse" ? o.params.ferme || o.params.forme === "polygone" || o.params.forme === "hachure" : true;
+    const pts: Point2[] | null = o.classe === "esquisse" && ["polygone", "polyligne", "hachure"].includes(o.params.forme) ? o.params.points : ["dalle", "zone", "solide", "piece", "toiture"].includes(o.classe) ? (o.params as { contour: Point2[] }).contour : null;
+    if (!pts) throw new ErreurCommande("precondition", "id", "chanfrein de sommet : polygones, polylignes et hachures d'esquisse, dalles, zones, pièces, solides, toitures");
+    if (index >= pts.length) throw new ErreurCommande("invalide", "index", `sommet ${index} inconnu (${pts.length} sommets)`);
+    if (!ferme && (index === 0 || index === pts.length - 1)) throw new ErreurCommande("invalide", "index", "extrémité d'une polyligne ouverte : pas de chanfrein");
+    if (referencesVers(etat, id).length || Object.values(etat.relations).some((r) => r.sourceId === id || r.targetId === id)) throw new ErreurCommande("precondition", "id", `${id} est visé par une cote, une contrainte ou une relation : la détacher d'abord`);
+    const n = pts.length;
+    const s0 = pts[index]!;
+    const prec = pts[(index - 1 + n) % n]!;
+    const suiv = pts[(index + 1) % n]!;
+    if (d >= distance(s0, prec) - TOLERANCE_REDUCTEUR || d >= distance(s0, suiv) - TOLERANCE_REDUCTEUR) throw new ErreurCommande("precondition", "distance", "distance plus longue qu'un des côtés du sommet");
+    const q1 = add(s0, mul(normalise(sub(prec, s0)), d));
+    const q2 = add(s0, mul(normalise(sub(suiv, s0)), d));
+    const r6 = (v: number) => Math.round(v * 1e9) / 1e9;
+    const nouveaux = [...pts.slice(0, index), pt(r6(q1.x), r6(q1.y)), pt(r6(q2.x), r6(q2.y)), ...pts.slice(index + 1)];
+    const suivant = o.classe === "esquisse" ? { ...o, params: { ...o.params, points: nouveaux } } : { ...o, params: { ...o.params, contour: nouveaux } };
+    const effets = effetsVides();
+    effets.modifies.push(id);
+    if (o.niveauId) effets.niveauxTouches.push(o.niveauId);
+    return { etat: { ...etat, objets: { ...etat.objets, [id]: suivant as OccurrenceQuelconque } }, effets };
   },
   chanfreiner(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
     return raccordOuChanfrein(etat, p, ctx, c, "chanfreiner");

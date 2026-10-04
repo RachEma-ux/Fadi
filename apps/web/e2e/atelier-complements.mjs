@@ -454,6 +454,12 @@ await page.waitForSelector(".plan2d");
   await page.locator('[data-scinder="valider"]').click();
   await attendreEnregistre().catch(() => {});
   const morceaux = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "mur" && o.niveauId === nv && Math.abs(o.params.a.x - 302) < 1e-6 && Math.abs(o.params.b.x - 302) < 1e-6);
+  // Calcul dans un champ de l'inspecteur (D-049) : « 0,15 + 0,1 » donne 0,25 m.
+  await selectionner("croix-h");
+  await page.locator('input[id="croix-h-epaisseur"]').fill("0,15 + 0,1");
+  await page.locator('input[id="croix-h-epaisseur"]').press("Enter");
+  await attendreEnregistre().catch(() => {});
+  check("champ de l'inspecteur : un calcul est accepté (0,15 + 0,1 → 0,25 m)", Math.abs(((await modele(pid)).modele.objets["croix-h"].params.epaisseur.value) - 0.25) < 1e-9);
   check("scinder un mur en 4 parts égales depuis l'inspecteur", morceaux.length === 4 && morceaux.every((o) => Math.abs(Math.abs(o.params.b.y - o.params.a.y) - 1) < 1e-6), `${morceaux.length} morceau(x)`);
   // Changer la nature d'une ouverture sur place (D-044).
   if (porte) {
