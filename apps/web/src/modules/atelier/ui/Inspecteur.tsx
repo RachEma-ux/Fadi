@@ -43,11 +43,11 @@ function Champ({ champ, objet, ctx, onResultat }: { champ: ChampInspecteur; obje
       </span>
     );
   } else if (champ.type === "booleen") {
-    controle = <input id={id} type="checkbox" checked={champ.valeur === true} disabled={enCours} onChange={(e) => void appliquer({ booleen: e.target.checked })} />;
+    controle = <input id={id} type="checkbox" checked={champ.valeur === true} disabled={enCours} onChange={(e) => void appliquer({ booleen: e.target.checked })} data-testid={id} />;
   } else if (champ.type === "choix") {
     controle = (
       <span className="atl-val">
-        <select id={id} value={typeof champ.valeur === "string" ? champ.valeur : ""} disabled={enCours} onChange={(e) => void appliquer({ texte: e.target.value })} aria-invalid={invalide || undefined}>
+        <select id={id} value={typeof champ.valeur === "string" ? champ.valeur : ""} disabled={enCours} onChange={(e) => void appliquer({ texte: e.target.value })} aria-invalid={invalide || undefined} data-testid={id}>
           {typeof champ.valeur !== "string" && <option value="">{texteValeur(champ.valeur)}</option>}
           {(champ.choix ?? []).map((c) => (
             <option key={c.valeur} value={c.valeur}>

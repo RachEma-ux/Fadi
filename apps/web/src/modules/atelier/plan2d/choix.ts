@@ -10,7 +10,8 @@ import { coinsRectangle, dansRectangle, distanceSegment, pointDansPolygone, rect
 const RANG_COUCHE: Record<DessinPlan["couche"], number> = { annotation: 0, objet: 1, fond: 2 };
 
 /**
- * Objet touché en `p` (m) : distance aux segments ≤ `tolerance`, ou intérieur du contour. Le plus proche
+ * Objet touché en `p` (m) : distance aux segments ≤ `tolerance` (aux traits des formes pour un dessin sans
+ * contour), ou intérieur du contour. Le plus proche
  * l'emporte ; à égalité, la couche du dessus (annotation, objet, fond), puis l'identifiant.
  */
 export function objetSousPointeur(dessins: readonly DessinPlan[], p: Vec, tolerance: number, admis?: (id: IdObjet) => boolean): IdObjet | null {
@@ -20,7 +21,9 @@ export function objetSousPointeur(dessins: readonly DessinPlan[], p: Vec, tolera
     let dist = Infinity;
     for (const s of d.segments) dist = Math.min(dist, distanceSegment(s, p));
     for (const q of d.points) dist = Math.min(dist, Math.hypot(q.x - p.x, q.y - p.y));
-    if (dist > tolerance) dist = Math.min(dist, distanceFormes(d, p));
+    // Un dessin qui déclare un contour se touche par ses segments, ses points et son intérieur : les traits de
+    // ses formes (bord d'une pièce, sur l'axe des murs) ne doivent pas voler le clic à l'objet voisin.
+    if (dist > tolerance && !d.contour) dist = Math.min(dist, distanceFormes(d, p));
     if (dist > tolerance && d.contour && d.contour.length >= 3 && pointDansPolygone(p, d.contour)) dist = tolerance;
     if (dist > tolerance) continue;
     const rang = RANG_COUCHE[d.couche];
