@@ -39,8 +39,8 @@ lot : un manque (commande, calcul géométrique) se signale au chef de projet. L
 | Tâche | Issue | État |
 | --- | --- | --- |
 | Phase 0 — socle et contrats figés | — | sur `lot/3a-atelier` (D-033, D-034) ; 5 tests du socle verts |
-| L3a.1 socle d'interface | #51 | vague A |
-| L3a.2 éditeur de plan 2D | #52 | vague A |
-| L3a.3 objets d'architecture | #53 | vague B |
+| L3a.1 socle d'interface | #51 | fait : PR #56 fusionnée, 19 tests (D-035, D-037) |
+| L3a.2 éditeur de plan 2D | #52 | fait : PR #57 fusionnée, 21 outils, 59 tests (D-036, D-037) ; complément L3a.2b ajuster / prolonger à faire |
+| L3a.3 objets d'architecture | #53 | vague B, en cours |
 | L3a.4 intégration | #54 | chef de projet |
-| L3a.5 continuité des outils (documents simples) | #55 | vague B |
+| L3a.5 continuité des outils (documents simples) | #55 | vague B, en cours |
