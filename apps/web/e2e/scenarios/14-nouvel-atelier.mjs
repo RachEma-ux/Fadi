@@ -4,7 +4,8 @@
  *
  * Gestes d'acceptation du lot 3a (cahier, « Lot 3a », Acceptation) sur la copie de travail de P.118 (modèle typé
  * importé à la première lecture ; la référence protégée n'est pas modifiée) : mur, porte, pièce, type, annuler /
- * rétablir avec révisions persistées, relecture depuis un second navigateur, téléphone 390 px et clavier.
+ * rétablir avec révisions persistées, relecture depuis un second navigateur, téléphone 390 px et clavier ; puis
+ * (lot 3b, L3b.0, D-045) suppression par la touche Suppr annulée et rétablie, panneau Métré monté.
  *
  * Propriétaire : chef de projet (L3a.4, matrice de propriété du lot 3a). L'ordre d'exécution et l'état partagé entre
  * segments sont décrits dans `../run.mjs`.
@@ -277,5 +278,61 @@ export async function gestes(sc) {
   await page.waitForTimeout(400);
   await axeCheck(page, "nouvel atelier après les gestes (ordinateur)");
   await page.screenshot({ path: `${OUT}/nouvel-atelier-gestes-desktop.png` });
+
+  // Suppression (L3b.0, D-045) : mur bas sélectionné, touche Suppr → outil « Supprimer » qui liste la porte hébergée
+  // avant l'accord ; Entrée supprime ; Annuler la rend, Rétablir la refait, révisions persistées.
+  await page.locator('[data-testid="atl-nav-filtre"]').fill(murBas.id);
+  await page.locator(`[data-testid="atl-objet-${murBas.id}"]`).click();
+  await page.waitForSelector(`[data-testid="atl-inspecteur-objet"][data-objet="${murBas.id}"]`, { timeout: 10000 });
+  await page.locator('[data-testid="atl-nav-filtre"]').fill("");
+  await fileVide();
+  await toile.focus();
+  await page.keyboard.press("Delete");
+  await page.waitForFunction(() => document.querySelector('[data-testid="atl-puce-outil"]')?.textContent?.includes("Supprimer"), null, { timeout: 5000 }).catch(() => null);
+  const consigneSuppr = (await page.locator('[data-testid="atl-consigne"]').textContent()) ?? "";
+  check(
+    "nouvel atelier : Suppr sur le mur sélectionné → outil Supprimer, la porte hébergée est listée avant l'accord, rien n'est encore écrit",
+    (await puce.textContent()).includes("Supprimer") && consigneSuppr.includes(murBas.id) && consigneSuppr.includes(porte.id) && (await modele()).revision === apresClavierR.revision,
+    consigneSuppr,
+  );
+  await toile.focus();
+  await page.keyboard.press("Enter");
+  const apresSuppr = await attendreModele((m) => !m.objets[murBas.id]);
+  check(
+    "nouvel atelier : Entrée → mur et porte hébergée supprimés sur le serveur, nouvelle révision",
+    !apresSuppr.objets[murBas.id] && !apresSuppr.objets[porte.id] && apresSuppr.revision > apresClavierR.revision,
+    `révision ${apresClavierR.revision} → ${apresSuppr.revision}`,
+  );
+  await fileVide();
+  await page.locator('[data-testid="atl-annuler"]').click();
+  const revSupprA = await revisionAnnoncee(ANNULEE, apresSuppr.revision);
+  const apresSupprA = await modele();
+  check(
+    "nouvel atelier : Annuler la suppression → mur (type « cloison ») et porte de retour sur le serveur, révision annoncée persistée",
+    apresSupprA.objets[murBas.id]?.params.typeId === "cloison" && apresSupprA.objets[porte.id]?.params.murHoteId === murBas.id && apresSupprA.revision === revSupprA,
+    `révision ${apresSuppr.revision} → ${apresSupprA.revision}`,
+  );
+  await page.locator('[data-testid="atl-retablir"]').click();
+  const revSupprR = await revisionAnnoncee(RETABLIE, revSupprA);
+  const apresSupprR = await modele();
+  check(
+    "nouvel atelier : Rétablir la suppression → mur et porte de nouveau absents, révision annoncée persistée",
+    !apresSupprR.objets[murBas.id] && !apresSupprR.objets[porte.id] && apresSupprR.revision === revSupprR && revSupprR > revSupprA,
+    `révision ${revSupprA} → ${apresSupprR.revision}`,
+  );
+
+  // Panneau « Métré » monté sous le navigateur (D-045) : niveau actif et révision courante.
+  const metre = page.locator('[data-testid="atl-doc-metre"]');
+  await metre.scrollIntoViewIfNeeded().catch(() => null);
+  // Calculé à l'ouverture, il est marqué « À recalculer » après les gestes (R11) ; « Recalculer » le remet à la révision courante.
+  const perime = await metre.getByText("À recalculer").isVisible().catch(() => false);
+  if (perime) await metre.getByRole("button", { name: "Recalculer", exact: true }).click();
+  await page.waitForFunction((rev) => (document.querySelector('[data-testid="atl-doc-metre"]')?.textContent ?? "").includes(`Révision ${rev} `), apresSupprR.revision, { timeout: 5000 }).catch(() => null);
+  const texteMetre = (await metre.textContent().catch(() => "")) ?? "";
+  check(
+    "nouvel atelier : panneau Métré monté (onglet Projet), périmé après les gestes puis recalculé à la révision courante",
+    (await metre.isVisible()) && perime && /Métré · /.test(texteMetre) && texteMetre.includes(`Révision ${apresSupprR.revision} `) && !texteMetre.includes("À recalculer"),
+    texteMetre.slice(0, 160),
+  );
   check("nouvel atelier : aucune erreur JavaScript pendant les gestes (deux navigateurs)", consoleErrors.length === erreursAvant, consoleErrors.slice(erreursAvant).join(" | "));
 }

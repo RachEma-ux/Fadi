@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { atelierCommandesApi } from "../../lib/api/atelier-commandes";
 import { READ_ONLY_HINT } from "../../lib/access";
 import { BusAtelier, joignabiliteNavigateur, stockageNavigateur } from "./bus";
+import { PanneauMetre } from "./documents";
 import { installer as installerDocuments } from "./documents/installer";
 import { installer as installerObjets } from "./objets/installer";
 import { installer as installerPlan2d } from "./plan2d/installer";
@@ -91,6 +92,7 @@ export function NouvelAtelier({ projet, readOnly = false }: ProprietesNouvelAtel
         client={atelierCommandesApi}
         projet={projet}
         zoneTravail={<ZonePlan registres={registres} pilote={pilote} ctx={ctx} vue={vue} />}
+        panneauxProjet={() => <PanneauMetre ctx={ctx} />}
       />
     </div>
   );
