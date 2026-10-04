@@ -679,6 +679,7 @@ export async function mesures3d(sc) {
     await page.locator('[data-testid="atl-nav-filtre"]').fill(mur.id);
     await page.locator(`[data-testid="atl-objet-${mur.id}"]`).click();
     await page.locator('[data-testid="atl-nav-filtre"]').fill("");
+    await page.locator('[data-testid="atl-affichage-complet"]').click();
     await page.locator('[data-testid="atl-outil-famille-modifier"]').click();
     await page.locator('[data-testid="atl-outil-modifier.pousser"]').click();
     const champ = page.locator('[data-testid="atl-precision-hauteur"]');
