@@ -153,6 +153,7 @@ describe.skipIf(!URL_BASE)("service de commandes du nouvel Atelier (§5.4, L2.2 
     const r2 = await a.post(`${base(id)}/commands`).send(env);
     expect(r2.status).toBe(200);
     expect(r2.body).toEqual(r1.body);
+    expect(r2.text).toBe(r1.text);
     expect((await modele(a, id)).revision).toBe(revision + 1);
     const n = await poolApp.query("SELECT count(*)::int AS n FROM atelier_commands WHERE project_id = $1 AND request_id = $2", [id, env.requestId]);
     expect(n.rows[0].n).toBe(1);

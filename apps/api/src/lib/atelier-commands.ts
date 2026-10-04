@@ -378,17 +378,23 @@ async function valider(ex: Executeur, avant: EtatModele, j: Journalisation): Pro
     await ecrireDiff(ex, avant, apres);
     await ex.execute(sql`UPDATE projects SET model_revision = ${apres.revision}, updated_at = now() WHERE id = ${avant.projetId}`);
   }
-  await ex.execute(sql`
+  // La réponse rendue est celle relue du journal (`RETURNING`) : jsonb réordonne les clés, et un renvoi idempotent
+  // doit recevoir exactement les mêmes octets que le premier envoi.
+  const enregistree = await lignes<{ response: ReponseCommandes }>(
+    ex,
+    sql`
     INSERT INTO atelier_commands (id, project_id, request_id, contract, nature, label, base_revision, result_revision, commands, inverse, effets, response, base_fingerprint, result_fingerprint, author_id, inverse_of)
     VALUES (${journalId}, ${avant.projetId}, ${j.enveloppe.requestId}, ${CONTRAT_COMMANDES}, ${j.nature}, ${j.enveloppe.label}, ${avant.revision}, ${apres.revision},
-      ${json(j.enveloppe.commands)}, ${json(r.inverse)}, ${json(r.effets)}, ${json(reponse)}, ${avant.empreinte}, ${apres.empreinte}, ${j.auteur}, ${j.inverseDe})`);
+      ${json(j.enveloppe.commands)}, ${json(r.inverse)}, ${json(r.effets)}, ${json(reponse)}, ${avant.empreinte}, ${apres.empreinte}, ${j.auteur}, ${j.inverseDe})
+    RETURNING response`,
+  );
   if (change) {
     await ecrireEvenement(ex, journalId, {
       event: EVENEMENT_COMMANDE_VALIDEE,
       payload: { projectId: avant.projetId, revision: apres.revision, objetIds: idsTouches(r.effets), types: [...new Set(j.enveloppe.commands.map((c) => c.type))], auteur: j.auteur, nature: j.nature },
     });
   }
-  return { reponse, change };
+  return { reponse: enregistree[0]?.response ?? reponse, change };
 }
 
 /**
