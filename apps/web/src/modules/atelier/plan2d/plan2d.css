@@ -1,0 +1,313 @@
+/* Zone de travail 2D du nouvel Atelier (L3a.2). Palette de la maquette validée (D-022, docs/atelier/maquette/atelier.css). */
+.plan2d {
+  --p2-encre: #183d32;
+  --p2-muet: #4f6a5e;
+  --p2-ligne: #dce5df;
+  --p2-ligne-fort: #b7c9c0;
+  --p2-mur: #315b4b;
+  --p2-apercu: #1d5aa0;
+  --p2-erreur: #a3261b;
+  --p2-selection: #b3872f;
+  --p2-cible: 24px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  color: var(--p2-encre);
+  background: #f4f6f2;
+}
+@media (pointer: coarse) {
+  .plan2d {
+    --p2-cible: 44px;
+  }
+}
+
+.p2-barre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--p2-ligne);
+  background: #fff;
+}
+.p2-groupe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.p2-puce {
+  min-height: var(--p2-cible);
+  min-width: var(--p2-cible);
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--p2-ligne-fort);
+  background: #fff;
+  color: var(--p2-encre);
+  font-size: 13px;
+}
+.p2-puce[aria-pressed="true"] {
+  background: #dfeaf7;
+  border-color: #8db1db;
+  color: #12417a;
+  font-weight: 700;
+}
+.p2-puce:disabled {
+  color: #5b6b63;
+  background: #f0f2f0;
+}
+.p2-puce.p2-maintenant {
+  box-shadow: 0 0 0 2px var(--p2-apercu);
+}
+
+.p2-toile {
+  position: relative;
+  flex: 1;
+  min-height: 240px;
+  overflow: hidden;
+  background: #fbfcfa;
+  touch-action: none;
+  user-select: none;
+  cursor: default;
+}
+.p2-toile:focus-visible {
+  outline: 3px solid #1683df;
+  outline-offset: -3px;
+}
+.p2-toile.p2-avec-outil {
+  cursor: crosshair;
+}
+.p2-toile.p2-mode-pan {
+  cursor: grab;
+}
+.p2-svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.p2-grille line {
+  stroke: #e3e9e4;
+  stroke-width: 1;
+}
+
+/* Objets (géométrie en mètres : traits à épaisseur d'écran constante). */
+.p2-svg polygon,
+.p2-svg polyline,
+.p2-svg circle,
+.p2-svg path,
+.p2-svg line {
+  vector-effect: non-scaling-stroke;
+}
+.p2-trait,
+.p2-plein,
+.p2-hachure,
+.p2-fin,
+.p2-annotation {
+  fill: none;
+  stroke: var(--p2-mur);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+.p2-plein {
+  fill: #e2e8d7;
+  stroke-width: 1;
+}
+.p2-hachure {
+  fill: rgba(49, 91, 75, 0.06);
+  stroke-width: 1;
+}
+.p2-fin {
+  stroke-width: 0.8;
+  stroke-dasharray: 8 3 2 3;
+}
+.p2-annotation {
+  stroke: #6c5a2a;
+  stroke-width: 1;
+}
+.p2-ouvert {
+  fill: none;
+}
+text.p2-trait,
+text.p2-plein,
+text.p2-hachure,
+text.p2-fin,
+text.p2-annotation {
+  fill: var(--p2-encre);
+  stroke: none;
+  font-family: Arial, sans-serif;
+}
+.p2-etat-survole > * {
+  stroke: var(--p2-apercu);
+}
+.p2-etat-selectionne > * {
+  stroke: var(--p2-selection);
+  stroke-width: 2.5;
+}
+
+/* Aperçu : jamais écrit dans le modèle. */
+.p2a-trace {
+  fill: none;
+  stroke: var(--p2-apercu);
+  stroke-width: 2;
+}
+polygon.p2a-trace {
+  fill: rgba(29, 90, 160, 0.06);
+}
+.p2a-fantome,
+.p2a-fantome-groupe > * {
+  fill: none;
+  stroke: var(--p2-apercu);
+  stroke-width: 1.2;
+  stroke-dasharray: 5 4;
+  opacity: 0.85;
+}
+.p2a-erreur {
+  fill: none;
+  stroke: var(--p2-erreur);
+  stroke-width: 2;
+}
+.p2a-cote line,
+line.p2a-cote,
+polygon.p2a-cote {
+  fill: none;
+  stroke: #12417a;
+  stroke-width: 0.8;
+  stroke-dasharray: 3 3;
+}
+.p2a-cote text,
+.p2a-texte {
+  fill: #12417a;
+  stroke: #fbfcfa;
+  stroke-width: 3px;
+  paint-order: stroke;
+  font: 700 12px Arial, sans-serif;
+}
+.p2a-surligner > * {
+  fill: none;
+  stroke-width: 4;
+  opacity: 0.6;
+}
+.p2a-surligner.p2a-trace > * {
+  stroke: var(--p2-apercu);
+}
+.p2a-surligner.p2a-erreur > * {
+  stroke: var(--p2-erreur);
+}
+.p2a-surligner.p2a-cote > * {
+  stroke: #8db1db;
+  stroke-width: 2;
+}
+.p2a-poignee {
+  fill: #fff;
+  stroke: var(--p2-apercu);
+  stroke-width: 2;
+}
+.p2a-poignee.p2a-erreur {
+  fill: var(--p2-erreur);
+}
+
+.p2-lasso {
+  stroke-width: 1;
+}
+.p2-lasso-inclus {
+  fill: rgba(29, 90, 160, 0.08);
+  stroke: var(--p2-apercu);
+}
+.p2-lasso-touches {
+  fill: rgba(47, 122, 82, 0.08);
+  stroke: #2f7a52;
+  stroke-dasharray: 5 3;
+}
+.p2-curseur line {
+  stroke: var(--p2-encre);
+  stroke-width: 1;
+}
+.p2-marque {
+  fill: #fff;
+  stroke: var(--p2-apercu);
+  stroke-width: 2;
+}
+.p2-etiquette {
+  position: absolute;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #12417a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.p2-precision {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.p2-precision label {
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--p2-muet);
+}
+.p2-precision input {
+  width: 96px;
+  min-height: var(--p2-cible);
+  padding: 2px 6px;
+  border: 2px solid var(--p2-apercu);
+  border-radius: 6px;
+  font-weight: 700;
+  color: var(--p2-encre);
+  background: #fff;
+}
+.p2-precision input[readonly] {
+  border-color: var(--p2-ligne-fort);
+}
+.p2-precision input[aria-invalid="true"] {
+  border-color: var(--p2-erreur);
+}
+
+.p2-etat {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 8px;
+  border-top: 1px solid var(--p2-ligne);
+  background: #fff;
+  font-size: 13px;
+}
+.p2-coordonnees {
+  font-variant-numeric: tabular-nums;
+  color: var(--p2-muet);
+}
+.p2-erreurs {
+  margin: 0;
+  padding: 4px 8px 4px 24px;
+  background: #fdeeec;
+  color: var(--p2-erreur);
+  font-size: 13px;
+}
+@media (max-width: 480px) {
+  .p2-precision {
+    left: 8px !important;
+    right: 8px;
+    top: auto !important;
+    bottom: 8px;
+    justify-content: space-between;
+  }
+  .p2-precision label {
+    flex: 1;
+  }
+  .p2-precision input {
+    width: 100%;
+  }
+}

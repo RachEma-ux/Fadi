@@ -78,7 +78,7 @@ export function analyserSaisie(texte: string, unite: "m" | "°" | "", reference:
     return v === null ? erreur("Angle", "nombre attendu", "taper un angle en degrés, ex. 90") : { genre: "valeur", valeur: v };
   }
   if (unite === "m") {
-    if (/[a-zA-Z]/.test(t.replace(/(cm|mm|m)\s*$/, ""))) return erreur("Longueur", `unité inconnue dans « ${t} »`, "utiliser m, cm ou mm");
+    if (/^[-+]?[0-9.,]/.test(t) && /[a-zA-Z]/.test(t.replace(/(cm|mm|m)\s*$/, ""))) return erreur("Longueur", `unité inconnue dans « ${t} »`, "utiliser m, cm ou mm");
     const v = lireLongueur(t);
     return v === null ? erreur("Longueur", "nombre attendu", "taper une longueur, ex. 4,50") : { genre: "valeur", valeur: v };
   }
