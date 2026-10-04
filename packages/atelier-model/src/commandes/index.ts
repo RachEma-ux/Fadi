@@ -30,6 +30,7 @@ import {
 } from "./base.js";
 import { reducteursBloc } from "./bloc.js";
 import { controlerContraintes, reducteursContrainte } from "./contrainte.js";
+import { controlerVerrous, verrouillerObjets } from "./verrous.js";
 import { reducteursDocuments } from "./documents.js";
 import { joindreMurs, scinderMur } from "./mur.js";
 import { creerOccurrence, modifierOccurrence, supprimerOccurrence } from "./objets.js";
@@ -51,6 +52,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "objet.creer": (etat, p, ctx) => creerOccurrence(etat, p, ctx),
   "objet.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx),
   "objet.supprimer": (etat, p, ctx) => supprimerOccurrence(etat, p, ctx),
+  "objet.verrouiller": (etat, p) => verrouillerObjets(etat, p),
   // Niveaux
   "niveau.creer": (etat, p, ctx) => reducteursNiveau.creer(etat, p, ctx),
   "niveau.modifier": (etat, p) => reducteursNiveau.modifier(etat, p),
@@ -285,7 +287,9 @@ export function appliquerCommande(etat: ModeleAtelier, commande: Commande, ctx: 
   if (!reducteur) throw new ErreurCommande("inconnue", "type", `commande inconnue : ${commande.type}`);
   if (typeof commande.params !== "object" || commande.params === null) throw new ErreurCommande("invalide", "params", "paramètres requis");
   const r = reducteur(etat, commande.params, ctx, commande.cibles ?? []);
-  return controlerContraintes(etat, r.etat, commande.type, r.effets, ctx);
+  const c = controlerContraintes(etat, r.etat, commande.type, r.effets, ctx);
+  controlerVerrous(etat, c.etat, commande.type);
+  return c;
 }
 
 export interface ResultatLot {
@@ -328,7 +332,7 @@ export function identifiantsCibles(enveloppe: Enveloppe): string[] {
       const v = c.params[k];
       if (typeof v === "string") ids.add(v);
     }
-    for (const k of ["ajouter", "retirer"]) {
+    for (const k of ["ajouter", "retirer", "ids"]) {
       const v = c.params[k];
       if (Array.isArray(v)) for (const x of v) if (typeof x === "string") ids.add(x);
     }

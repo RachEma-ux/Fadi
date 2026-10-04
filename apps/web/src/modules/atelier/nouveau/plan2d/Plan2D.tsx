@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { cercleTroisPoints, distance, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { cercleTroisPoints, distance, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -189,7 +189,9 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     }
     if (ui.outil === "selection") {
       const sous = objetSousPointeur(p, cache, etat, ui.niveauId, rayon);
-      if (sous && ui.selection.includes(sous.objetId) && !e.shiftKey && !readOnly) {
+      // Une sélection qui contient un objet verrouillé (D-052) ne se saisit pas : le geste devient une sélection au cadre.
+      const tenue = ui.selection.some((id) => { const x = etat.objets[id]; return !!x && !!raisonVerrou(etat, x); });
+      if (sous && ui.selection.includes(sous.objetId) && !e.shiftKey && !readOnly && !tenue) {
         // Saisir la sélection par un point remarquable (extrémité, milieu…) pour la poser avec précision.
         const prise = accrocher(p, cache, ui.accrochages, rayon, null).point;
         glisse.current = { mode: "deplacer", x: sx, y: sy, vue: ui.vue, depart: prise, bouge: false };

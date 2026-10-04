@@ -46,6 +46,26 @@ export function ChoixPhase({ sel, readOnly, onCommandes }: { sel: OccurrenceQuel
   );
 }
 
+/** Verrou des objets sélectionnés (D-052) : un objet verrouillé n'est ni modifié, ni déplacé, ni supprimé. */
+export function ChoixVerrou({ sel, readOnly, onCommandes }: { sel: OccurrenceQuelconque[]; readOnly: boolean; onCommandes: OnCommandes }) {
+  const n = sel.filter((o) => o.verrouille).length;
+  return (
+    <div className="champ">
+      <dt><label htmlFor="verrou-objet">Verrouillé</label></dt>
+      <dd>
+        <input
+          id="verrou-objet"
+          type="checkbox"
+          checked={n === sel.length}
+          ref={(el) => { if (el) el.indeterminate = n > 0 && n < sel.length; }}
+          disabled={readOnly}
+          onChange={(e) => onCommandes([{ type: "objet.verrouiller", params: { ids: sel.map((o) => o.id), verrouille: e.target.checked } }], e.target.checked ? `Verrouiller ${sel.length > 1 ? `${sel.length} objets` : sel[0]!.id}` : `Déverrouiller ${sel.length > 1 ? `${sel.length} objets` : sel[0]!.id}`)}
+        />
+      </dd>
+    </div>
+  );
+}
+
 /** Créer un bloc ou un composant depuis la sélection (point de base : coin bas gauche de la sélection). */
 export function CreerBloc({ sel, etat, readOnly, onCommandes }: { sel: OccurrenceQuelconque[]; etat: ModeleAtelier; readOnly: boolean; onCommandes: OnCommandes }) {
   const [nom, setNom] = useState("");

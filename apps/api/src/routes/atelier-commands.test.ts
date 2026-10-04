@@ -699,6 +699,22 @@ describe("compléments : historique d'un objet, réutilisation de modèle", () =
     expect((await etranger.get(`/projects/${pid}/atelier/objets/m1/historique`)).status).toBe(404);
   });
 
+  it("verrous d'objet et de groupe (D-052) : persistés, relus, et opposés aux lots suivants", async () => {
+    const client = await registerAndLogin("verrous-objets@example.com");
+    const pid = await projetVide(client);
+    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("v1", 0, [niveau, mur("m1", 6), { type: "mur.tracer", params: { id: "m2", niveauId: "rdc", a: pt(0, 5), b: pt(4, 5), epaisseur: m(0.2), hauteur: m(3.2) } }]))).status).toBe(200);
+    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("v2", 1, [{ type: "objet.verrouiller", params: { ids: ["m1"] } }, { type: "groupe.creer", params: { id: "g", nom: "G" }, cibles: ["m2"] }, { type: "groupe.modifier", params: { id: "g", verrouille: true } }]))).status).toBe(200);
+    const modele = (await client.get(`/projects/${pid}/atelier/model`)).body.modele;
+    expect(modele.objets.m1.verrouille).toBe(true);
+    expect("verrouille" in modele.objets.m2).toBe(false);
+    expect(modele.groupes.g).toEqual({ id: "g", nom: "G", verrouille: true });
+    const refus = await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("v3", 2, [{ type: "transformer.deplacer", params: { dx: 1, dy: 0 }, cibles: ["m2"] }]));
+    expect(refus.status).toBe(409);
+    expect(JSON.stringify(refus.body)).toMatch(/groupe verrouillé/);
+    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("v4", 2, [{ type: "objet.verrouiller", params: { ids: ["m1"], verrouille: false } }]))).status).toBe(200);
+    expect("verrouille" in (await client.get(`/projects/${pid}/atelier/model`)).body.modele.objets.m1).toBe(false);
+  });
+
   it("reprise depuis un autre projet : aperçu sans écriture, exécution en une révision, source modifiée entre-temps → 409, source illisible → 404", async () => {
     const client = await registerAndLogin("reprise@example.com");
     const source = (await client.post("/examples/p118-exemple-complet/import")).body.id as string;

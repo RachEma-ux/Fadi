@@ -296,6 +296,7 @@ export const atelierObjets = pgTable(
     params: jsonb("params").$type<Record<string, unknown>>().notNull(),
     proprietes: jsonb("proprietes").$type<Record<string, unknown>>().notNull().default({}),
     modelRevision: integer("model_revision").notNull(),
+    verrouille: boolean("verrouille").notNull().default(false),
   },
   (t) => [primaryKey({ columns: [t.projectId, t.id] }), index("atelier_objets_niveau_idx").on(t.projectId, t.niveauId), index("atelier_objets_classe_idx").on(t.projectId, t.classe)],
 );
@@ -347,6 +348,7 @@ export const atelierGroupes = pgTable(
     projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
     id: text("id").notNull(),
     nom: text("nom").notNull(),
+    verrouille: boolean("verrouille").notNull().default(false),
   },
   (t) => [primaryKey({ columns: [t.projectId, t.id] })],
 );

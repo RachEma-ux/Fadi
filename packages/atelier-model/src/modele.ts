@@ -250,6 +250,8 @@ export interface Occurrence<C extends Classe = Classe> {
   params: ParamsParClasse[C];
   /** Propriétés typées hors paramètres canoniques (BIM, classification, provenance d'import). */
   proprietes: Record<string, Propriete>;
+  /** Objet verrouillé (D-052) : aucune commande ne le modifie ni ne le supprime avant déverrouillage. Absent : libre. */
+  verrouille?: true;
 }
 
 export type OccurrenceQuelconque = { [C in Classe]: Occurrence<C> }[Classe];
@@ -289,6 +291,8 @@ export interface Reference {
 export interface Groupe {
   id: string;
   nom: string;
+  /** Groupe verrouillé (D-052) : ses membres sont tenus comme des objets verrouillés. Absent : libre. */
+  verrouille?: true;
 }
 
 export interface Hypothese {

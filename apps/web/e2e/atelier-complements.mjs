@@ -514,6 +514,32 @@ await page.waitForSelector(".plan2d");
   await ouvrir(pid);
 }
 
+// Verrou d'objet (D-052) : verrouillé depuis l'inspecteur, la suppression au clavier est refusée ; déverrouillé ensuite.
+{
+  const mv = (await modele(pid)).modele;
+  const murV = Object.values(mv.objets).find((o) => o.classe === "mur" && o.niveauId === murA.niveauId && !o.groupeId) ?? Object.values(mv.objets).find((o) => o.classe === "mur" && o.niveauId === murA.niveauId);
+  await page.keyboard.press("Escape");
+  await selectionner(murV.id);
+  await page.locator("#verrou-objet").check();
+  let verrou = false;
+  for (let k = 0; k < 40 && !verrou; k++) {
+    verrou = (await modele(pid)).modele.objets[murV.id]?.verrouille === true;
+    if (!verrou) await page.waitForTimeout(500);
+  }
+  const alerte = await page.locator("[data-verrou-objet]").isVisible();
+  await page.evaluate(() => document.activeElement?.blur?.());
+  await page.keyboard.press("Delete");
+  await page.waitForTimeout(2500);
+  const encore = !!(await modele(pid)).modele.objets[murV.id];
+  await page.locator("#verrou-objet").uncheck();
+  let libre = false;
+  for (let k = 0; k < 40 && !libre; k++) {
+    libre = !("verrouille" in ((await modele(pid)).modele.objets[murV.id] ?? { verrouille: true }));
+    if (!libre) await page.waitForTimeout(500);
+  }
+  check("verrou d'objet : verrouillé depuis l'inspecteur, suppression refusée, puis déverrouillé", verrou && alerte && encore && libre, `verrou ${verrou} · alerte ${alerte} · présent ${encore} · libre ${libre}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

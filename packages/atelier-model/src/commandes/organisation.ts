@@ -176,7 +176,8 @@ export const reducteursGroupe = {
   },
   /**
    * Modifier un groupe (D-041) : renommer, ajouter ou retirer des membres. Un objet déjà membre d'un autre groupe
-   * n'y est pas arraché en silence (refus) ; un groupe vidé est refusé (le dissoudre).
+   * n'y est pas arraché en silence (refus) ; un groupe vidé est refusé (le dissoudre). Verrouiller ou déverrouiller
+   * le groupe (D-052) ; retirer un membre d'un groupe verrouillé est refusé (déverrouiller d'abord).
    */
   modifier(etat: ModeleAtelier, p: Brut): ResultatCommande {
     const id = lire.chaine(p, "id");
@@ -204,8 +205,12 @@ export const reducteursGroupe = {
       effets.modifies.push(oid);
     }
     if (!Object.values(objets).some((o) => o.groupeId === id)) throw new ErreurCommande("precondition", "retirer", "le groupe serait vide : le dissoudre");
-    if (nom !== groupe.nom) effets.modifies.push(id);
-    return { etat: { ...etat, groupes: { ...etat.groupes, [id]: { ...groupe, nom } }, objets }, effets };
+    // Verrou du groupe (D-052) : `verrouille` true / false ; ses membres sont alors tenus (voir controlerVerrous).
+    const verrou = p["verrouille"] === undefined ? groupe.verrouille === true : lire.booleen(p, "verrouille", false);
+    if (nom !== groupe.nom || verrou !== (groupe.verrouille === true)) effets.modifies.push(id);
+    const { verrouille: _v, ...reste } = groupe;
+    void _v;
+    return { etat: { ...etat, groupes: { ...etat.groupes, [id]: { ...reste, nom, ...(verrou ? { verrouille: true as const } : {}) } }, objets }, effets };
   },
   dissoudre(etat: ModeleAtelier, p: Brut): ResultatCommande {
     const id = lire.chaine(p, "id");

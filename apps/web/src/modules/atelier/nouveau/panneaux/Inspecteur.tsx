@@ -7,10 +7,10 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../../lib/api";
-import { bibliotheques, CLASSES, nombreSaisi, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { bibliotheques, CLASSES, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
-import { ChoixPhase, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
+import { ChoixPhase, ChoixVerrou, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
 
 export interface PropsInspecteur {
   etat: ModeleAtelier;
@@ -87,7 +87,9 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
   const problemes = Object.values(etat.problemes).filter((p) => p.objetId === o.id);
   const references = Object.values(etat.references).filter((r) => r.proprietaireId === o.id && r.etat === "a-reparer");
   const modifier = (cle: string, valeur: unknown) => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { [cle]: valeur } } }], `${description.libelle} : ${LIBELLES[cle] ?? cle}`);
-  const desactive = readOnly || verrouille;
+  // Verrou de l'objet ou de son groupe (D-052) : champs figés, le verrou lui-même reste modifiable.
+  const verrouObjet = raisonVerrou(etat, o);
+  const desactive = readOnly || verrouille || !!verrouObjet;
   // Représentation importée (R16) : paramètres en lecture seule ; calque, phase et transformations restent possibles.
   const parametresFiges = desactive || o.classe === "objet-importe";
 
@@ -101,6 +103,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         </p>
       </header>
       {verrouille && <p className="inspecteur-alerte" role="note">Calque « {calque!.nom} » verrouillé : déverrouillez-le dans le navigateur pour modifier cet objet.</p>}
+      {verrouObjet && <p className="inspecteur-alerte" role="note" data-verrou-objet>{verrouObjet === "objet verrouillé" ? "Objet verrouillé" : `Objet ${verrouObjet}`} : déverrouillez-le pour le modifier, le déplacer ou le supprimer.</p>}
       <dl className="inspecteur-champs">
         <div className="champ">
           <dt><label htmlFor={`calque-${o.id}`}>Calque</label></dt>
@@ -115,6 +118,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         </div>
         <ChoixType o={o} etat={etat} desactive={desactive} onCommandes={onCommandes} />
         <ChoixPhase sel={[o]} readOnly={desactive} onCommandes={onCommandes} />
+        <ChoixVerrou sel={[o]} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
         {Object.entries(params).map(([cle, valeur]) => {
           if (cle === "ouvrant" || (cle === "murHoteId" && (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture"))) return null; // contrôles dédiés ci-dessous
           if (GEOMETRIQUES.has(cle)) return <ResumeGeometrie key={cle} cle={cle} valeur={valeur} />;
@@ -122,7 +126,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         })}
       </dl>
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <OuvertureHote o={o as Occurrence<"porte">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
-      <GroupeSelection sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />
+      <GroupeSelection sel={[o]} etat={etat} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "zone" && <SyntheseZoneVue o={o as Occurrence<"zone">} etat={etat} />}
       {o.classe === "mur" && !desactive && <ScinderEnParts o={o as Occurrence<"mur">} onCommandes={onCommandes} />}
@@ -463,6 +467,7 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
       </div>
       <dl className="inspecteur-champs">
         <ChoixPhase sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
+        <ChoixVerrou sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
       </dl>
       <Contraintes sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <CreerBloc sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
@@ -788,11 +793,15 @@ function GroupeSelection({ sel, etat, readOnly, onCommandes }: { sel: Occurrence
   const membres = Object.values(etat.objets).filter((o) => o.groupeId === gid);
   const sans = sel.filter((o) => !o.groupeId).map((o) => o.id);
   const retirables = sel.filter((o) => o.groupeId === gid).map((o) => o.id);
+  const tenu = groupe.verrouille === true;
   return (
-    <details className="inspecteur-groupe" data-groupe={gid}>
+    <details className="inspecteur-groupe" data-groupe={gid} open={tenu || undefined}>
       <summary>
-        Groupe « {groupe.nom} » ({membres.length})
+        Groupe « {groupe.nom} » ({membres.length}){tenu ? " · verrouillé" : ""}
       </summary>
+      <label className="case">
+        <input type="checkbox" checked={tenu} disabled={readOnly} data-groupe-action="verrouiller" onChange={(e) => onCommandes([{ type: "groupe.modifier", params: { id: gid, verrouille: e.target.checked } }], `${e.target.checked ? "Verrouiller" : "Déverrouiller"} le groupe « ${groupe.nom} »`)} /> Groupe verrouillé (membres non modifiables)
+      </label>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -810,12 +819,12 @@ function GroupeSelection({ sel, etat, readOnly, onCommandes }: { sel: Occurrence
             Ajouter au groupe ({sans.length})
           </button>
         )}
-        {retirables.length > 0 && retirables.length < membres.length && (
+        {!tenu && retirables.length > 0 && retirables.length < membres.length && (
           <button type="button" disabled={readOnly} onClick={() => onCommandes([{ type: "groupe.modifier", params: { id: gid, retirer: retirables } }], `Retirer ${retirables.length} objet(s) du groupe « ${groupe.nom} »`)} data-groupe-action="retirer">
             Retirer du groupe ({retirables.length})
           </button>
         )}
-        {membres.every((x) => x.classe === "esquisse" || x.classe === "texte" || x.classe === "solide") && new Set(membres.map((x) => x.niveauId)).size === 1 && (
+        {!tenu && membres.every((x) => x.classe === "esquisse" || x.classe === "texte" || x.classe === "solide") && new Set(membres.map((x) => x.niveauId)).size === 1 && (
           <button type="button" disabled={readOnly} data-groupe-action="bloc" onClick={() => {
             // Point de base : coin bas gauche de l'emprise des membres (repère de placement, pas une donnée de projet).
             const pts = membres.flatMap((x) => { const q = x.params as unknown as Record<string, unknown>; return [...((q["points"] as { x: number; y: number }[] | undefined) ?? []), ...((q["contour"] as { x: number; y: number }[] | undefined) ?? []), ...(q["centre"] ? [q["centre"] as { x: number; y: number }] : []), ...(q["position"] ? [q["position"] as { x: number; y: number }] : [])]; });

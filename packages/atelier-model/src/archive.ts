@@ -47,7 +47,7 @@ export function verifierModele(brut: unknown): ResultatVerification {
   }
   for (const [id, g] of Object.entries(table("groupes")) as [string, Brut][]) {
     if (typeof g["nom"] !== "string") erreurs.push(`groupes.${id} : nom attendu`);
-    else modele.groupes[id] = { id, nom: g["nom"] };
+    else modele.groupes[id] = { id, nom: g["nom"], ...(g["verrouille"] === true ? { verrouille: true as const } : {}) };
   }
   for (const [id, d] of Object.entries(table("definitions")) as [string, Brut][]) {
     const classe = d["classe"];
@@ -82,7 +82,7 @@ export function verifierModele(brut: unknown): ResultatVerification {
     }
     try {
       const params = validerParams(candidat, classe, o["params"]);
-      modele.objets[id] = { id, classe, niveauId, calqueId, groupeId, definitionId, phase: typeof o["phase"] === "string" ? o["phase"] : null, params, proprietes: estRecord(o["proprietes"]) ? (o["proprietes"] as OccurrenceQuelconque["proprietes"]) : {} } as OccurrenceQuelconque;
+      modele.objets[id] = { id, classe, niveauId, calqueId, groupeId, definitionId, phase: typeof o["phase"] === "string" ? o["phase"] : null, params, proprietes: estRecord(o["proprietes"]) ? (o["proprietes"] as OccurrenceQuelconque["proprietes"]) : {}, ...(o["verrouille"] === true ? { verrouille: true as const } : {}) } as OccurrenceQuelconque;
     } catch (err) {
       erreurs.push(`objets.${id} : ${err instanceof ErreurCommande ? `${err.chemin} — ${err.message}` : String(err)}`);
     }

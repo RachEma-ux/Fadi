@@ -203,6 +203,8 @@ CREATE TABLE IF NOT EXISTS atelier_objets (
 );
 CREATE INDEX IF NOT EXISTS atelier_objets_niveau_idx ON atelier_objets (project_id, niveau_id);
 CREATE INDEX IF NOT EXISTS atelier_objets_classe_idx ON atelier_objets (project_id, classe);
+-- Verrou d'objet (D-052).
+ALTER TABLE atelier_objets ADD COLUMN IF NOT EXISTS verrouille boolean NOT NULL DEFAULT false;
 
 CREATE TABLE IF NOT EXISTS atelier_relations (
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
@@ -244,6 +246,8 @@ CREATE TABLE IF NOT EXISTS atelier_groupes (
   nom text NOT NULL,
   PRIMARY KEY (project_id, id)
 );
+-- Verrou de groupe (D-052).
+ALTER TABLE atelier_groupes ADD COLUMN IF NOT EXISTS verrouille boolean NOT NULL DEFAULT false;
 
 CREATE TABLE IF NOT EXISTS atelier_references (
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,

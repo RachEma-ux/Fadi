@@ -187,7 +187,10 @@ function copier(etat: ModeleAtelier, selection: OccurrenceQuelconque[], t: Trans
   for (const o of aCopier) nouveauxIds.set(o.id, ctx.ids.nouveau(o.classe));
   for (const o of aCopier) {
     const id = nouveauxIds.get(o.id)!;
-    let copie = transformerOccurrence({ ...o, id }, t);
+    // Une copie est libre : le verrou (D-052) tient l'original, pas ses copies.
+    const { verrouille: _v, ...libre } = o;
+    void _v;
+    let copie = transformerOccurrence({ ...libre, id } as OccurrenceQuelconque, t);
     if (copie.classe === "mur") copie = { ...copie, params: { ...copie.params, exterieur: false } };
     if (estOuverture(copie.classe)) {
       const c = copie as Occurrence<"porte">;

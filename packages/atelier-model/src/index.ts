@@ -35,6 +35,7 @@ export * from "./automatisation/assistant.js";
 export * from "./automatisation/gabarits.js";
 export * from "./reprise.js";
 export * from "./commandes/refexterne.js";
+export { raisonVerrou } from "./commandes/verrous.js";
 export * from "./documents/refexterne-rendu.js";
 export * from "./echanges/proprietes-csv.js";
 export * from "./esquisse/trame.js";
