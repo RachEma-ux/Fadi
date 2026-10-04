@@ -31,7 +31,7 @@ import {
 } from "@parcours/domain-model";
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, HARMONIE_REPORT_CSS, PARCOURS_STEPS } from "../data/parcours.js";
 import { loadProgrammeRepartition } from "../routes/programme.js";
-import { analyseNativeDomains, loadNativeDomains, type NativeDomains } from "./model-context.js";
+import { analyseModelDomains, loadModelDomains, type ModelDomains } from "./model-context.js";
 import { loadActiveProgrammeCase } from "./programme-case.js";
 import { loadSiteContext } from "./site-context.js";
 import { loadStepRows, type Querier, type StepRows } from "./step-rows.js";
@@ -49,7 +49,7 @@ export interface StepContext {
   rows: StepRows;
   profile: HarmonieProfile;
   site: SiteContext;
-  domains: NativeDomains | null;
+  domains: ModelDomains | null;
   model: ModelAnalysis | null;
   programmeCase: ProgrammeCase | null;
   sources: StepFingerprintSources;
@@ -99,9 +99,9 @@ export async function loadStepContext(q: Querier, project: StepContextProject, r
   const rep = await loadProgrammeRepartition(project.id, q);
   const profile = harmonieProfile(HARMONIE_PROFILES, rep.stored ? rep.type : null, rep.components);
   const site = await loadSiteContext(q, project, profile);
-  const domains = await loadNativeDomains(q, project.id);
+  const domains = await loadModelDomains(q, project.id);
   const programmeCase = await loadActiveProgrammeCase(q, project.id);
-  const model = analyseNativeDomains(domains, programmeCase);
+  const model = analyseModelDomains(domains, programmeCase);
   const base = { project, rows: stepRows, profile, site, domains, model, programmeCase };
   const programmeRepartition = rep.stored ? { type: rep.type, baseArea: rep.baseArea, mode: rep.mode, custom: rep.custom, components: rep.components } : null;
   return { ...base, ...dependenciesOf(base, stepRows, programmeRepartition) };

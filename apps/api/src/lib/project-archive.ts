@@ -22,15 +22,21 @@ import {
   type ProgrammeMode,
   type ProjectArchive,
 } from "@parcours/domain-model";
-import { atelierCommands, atelierStore, parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
-import { CONTRAT_COMMANDES, TYPE_RESTAURER, importerModeleNatif } from "@parcours/atelier-model";
-import { remplacerModele } from "../lib/atelier-modele.js";
+import { atelierCommands, parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
+import { CONTRAT_COMMANDES, TYPE_RESTAURER, importerModeleNatif, verifierModele, type ModeleAtelier, type RapportImport } from "@parcours/atelier-model";
+import { chargerModele, remplacerModele } from "../lib/atelier-modele.js";
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS } from "../data/parcours.js";
 import { newId } from "./ids.js";
-import { isNativeFloorDesign, isNativeLevelArray, projectNativeModel, replaceProjection } from "./native-projection.js";
 import { computationFor, loadStepContext, type StepContextProject } from "./step-context.js";
 import { loadStepRows, upsertStep, type Querier, type Tx } from "./step-rows.js";
 import type { SiteContextDeclaration } from "@parcours/domain-model";
+
+/** Modèle typé d'archive refusé par la revalidation : la transaction est annulée, rien n'est créé. */
+export class ArchiveModeleError extends Error {
+  constructor(public readonly erreurs: string[]) {
+    super(`Modèle de l'Atelier refusé : ${erreurs.slice(0, 3).join(" ; ")}${erreurs.length > 3 ? ` (+ ${erreurs.length - 3})` : ""}`);
+  }
+}
 
 /** Version de l'application écrite dans l'archive (traçabilité, pas une compatibilité). */
 export const APPLICATION_VERSION = "fadi 0.1.0";
@@ -44,13 +50,13 @@ function repartitionMode(mode: string): ArchiveRepartition["mode"] {
   return mode === "cas" ? "cas" : (PROGRAMME_MODES as readonly string[]).includes(mode) ? (mode as ProgrammeMode) : "cible";
 }
 
-/** `backup()` : le projet, ses étapes, son programme, ses parcelles, son modèle natif et ses pièces jointes (20 Mo cumulés) en un seul JSON. */
+/** `backup()` : le projet, ses étapes, son programme, ses parcelles, son modèle typé et ses pièces jointes (20 Mo cumulés) en un seul JSON. */
 export async function exportProjectArchive(q: Querier, project: ProjectRow, now: string): Promise<ProjectArchive> {
   const rows = await loadStepRows(q, project.id);
   const [rep] = await q.select().from(programmeRepartitions).where(eq(programmeRepartitions.projectId, project.id)).limit(1);
   const cases = await q.select().from(programmeCases).where(eq(programmeCases.projectId, project.id)).orderBy(asc(programmeCases.revision));
   const parcelRows = await q.select().from(parcels).where(eq(parcels.projectId, project.id)).orderBy(asc(parcels.number));
-  const store = await q.select().from(atelierStore).where(eq(atelierStore.projectId, project.id));
+  const charge = await chargerModele(q, project.id);
   const files = await q.select().from(stepFiles).where(eq(stepFiles.projectId, project.id)).orderBy(asc(stepFiles.addedAt));
   const warnings: string[] = [];
   const stageAttachments: ArchiveAttachment[] = [];
@@ -91,7 +97,8 @@ export async function exportProjectArchive(q: Querier, project: ProjectRow, now:
     programmeRepartition: rep ? { type: rep.type, baseArea: rep.baseArea, mode: repartitionMode(rep.mode), custom: { ...rep.custom }, components: [...rep.components] } : null,
     programmeCases: cases.map((c) => ({ revision: c.revision, caseId: c.caseId, scenarioId: c.scenarioId, data: c.data })),
     parcels: parcelRows.map((p) => ({ id: p.id, number: p.number, name: p.name, crs: p.crs, parcelNumber: p.parcelNumber, data: p.data, revision: p.revision })),
-    native: store.length ? { entries: Object.fromEntries(store.map((r) => [r.key, r.value])) } : null,
+    modele: charge ? { nativeId: charge.nativeId, etat: charge.etat as unknown as Record<string, unknown> } : null,
+    natif: null,
     stageAttachments,
     warnings,
   };
@@ -137,7 +144,7 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
       ownerId,
       code: archive.project.code,
       name: archive.project.name,
-      modelRevision: archive.native ? Math.max(1, archive.project.modelRevision) : 0,
+      modelRevision: archive.modele || archive.natif ? Math.max(1, archive.project.modelRevision) : 0,
       sourceExampleId: archive.project.sourceExampleId,
       exampleMode: archive.project.exampleMode,
       sourceAttachment: archive.project.sourceAttachment,
@@ -163,26 +170,28 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
   if (archive.parcels.length) {
     await tx.insert(parcels).values(archive.parcels.map((p) => ({ projectId: id, id: p.id, number: p.number, name: p.name, crs: p.crs, parcelNumber: p.parcelNumber, data: p.data, revision: p.revision })));
   }
-  if (archive.native) {
-    const entries = archive.native.entries;
-    await tx.insert(atelierStore).values(Object.entries(entries).map(([key, value]) => ({ projectId: id, key, value, revision: 1 })));
-    const active = entries["design.v13.activeProject"];
-    if (typeof active === "string") {
-      const nativeLevels = entries[`design.v13.project.${active}.levels`];
-      const floorDesign = entries[`design.v13.project.${active}.floorDesign`];
-      if (isNativeLevelArray(nativeLevels) && isNativeFloorDesign(floorDesign)) {
-        await replaceProjection(tx, id, projectNativeModel(id, nativeLevels, floorDesign, project.modelRevision));
-      } else {
-        warnings.push("Modèle natif importé sans niveaux ou plan exploitables : aucune projection dérivée.");
-      }
-      // Modèle typé (chantier DrawAll, D-002) : même import à sens unique que pour l'exemple — copies, archives
-      // et exports du prototype arrivent par ici. Au lot 4, l'archive portera le modèle typé lui-même.
-      const registry = (entries["design.v13.registry"] as { id: string }[] | undefined)?.find((p) => p.id === active);
-      const { modele, rapport } = importerModeleNatif({ nativeId: active, registry: registry as never, domains: { levels: nativeLevels, floorDesign, nativeParcel: entries[`design.v13.project.${active}.nativeParcel`], buildingFootprint: entries[`design.v13.project.${active}.buildingFootprint`], ui: entries[`design.v13.project.${active}.ui`] } });
-      await remplacerModele(tx, id, modele, active, project.modelRevision);
-      const journalId = randomUUID();
-      await tx.insert(atelierCommands).values({ id: journalId, projectId: id, requestId: `import-archive-${journalId}`, kind: "commande", contract: CONTRAT_COMMANDES, label: "Import du modèle (archive)", baseRevision: Math.max(0, project.modelRevision - 1), resultRevision: project.modelRevision, commands: [{ type: "interne.import-natif", params: { nativeId: active } }], inverse: { type: TYPE_RESTAURER, params: { diff: { avant: {}, crees: {} } } }, effets: { crees: Object.keys(modele.objets), modifies: [], supprimes: [], problemes: rapport.problemes, referencesAReparer: [], niveauxTouches: Object.keys(modele.niveaux) }, reponse: { revision: project.modelRevision, journalId, rapport }, inverseOf: null, authorId: ownerId, createdAt: new Date() });
-    }
+  // Modèle de l'Atelier : le modèle typé de l'archive (revalidé en entier, refusé à la moindre anomalie), ou le
+  // modèle du prototype importé à sens unique (exports du prototype, archives version 1).
+  let modele: ModeleAtelier | null = null;
+  let nativeId = "";
+  let rapport: RapportImport | null = null;
+  if (archive.modele) {
+    const v = verifierModele(archive.modele.etat);
+    if (!v.ok) throw new ArchiveModeleError(v.erreurs);
+    modele = v.modele;
+    nativeId = archive.modele.nativeId;
+  } else if (archive.natif) {
+    const d = archive.natif.domains;
+    const r = importerModeleNatif({ nativeId: archive.natif.nativeId, registry: archive.natif.registry as never, domains: { levels: d["levels"], floorDesign: d["floorDesign"], nativeParcel: d["nativeParcel"], buildingFootprint: d["buildingFootprint"], ui: d["ui"] } });
+    modele = r.modele;
+    rapport = r.rapport;
+    nativeId = archive.natif.nativeId;
+    if (!Object.keys(modele.niveaux).length) warnings.push("Modèle du prototype importé sans niveau exploitable.");
+  }
+  if (modele) {
+    await remplacerModele(tx, id, modele, nativeId, project.modelRevision);
+    const journalId = randomUUID();
+    await tx.insert(atelierCommands).values({ id: journalId, projectId: id, requestId: `import-archive-${journalId}`, kind: "commande", contract: CONTRAT_COMMANDES, label: archive.modele ? "Import du modèle (archive)" : "Import du modèle du prototype (archive)", baseRevision: Math.max(0, project.modelRevision - 1), resultRevision: project.modelRevision, commands: [{ type: archive.modele ? "interne.import-archive" : "interne.import-natif", params: { nativeId } }], inverse: { type: TYPE_RESTAURER, params: { diff: { avant: {}, crees: {} } } }, effets: { crees: Object.keys(modele.objets), modifies: [], supprimes: [], problemes: rapport?.problemes ?? [], referencesAReparer: [], niveauxTouches: Object.keys(modele.niveaux) }, reponse: { revision: project.modelRevision, journalId, ...(rapport ? { rapport } : {}) }, inverseOf: null, authorId: ownerId, createdAt: new Date() });
   }
   for (const f of archive.stageAttachments) {
     const decoded = decodeDataUrl(f.dataUrl);

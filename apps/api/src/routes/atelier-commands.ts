@@ -10,34 +10,28 @@
  * - `POST /commands/annuler`, `POST /commands/retablir` : inverse d'une entrée du journal, nouvelle microversion ;
  * - `GET /journal?apres=n` : entrées depuis une révision ; `GET /problemes` : références à réparer, problèmes,
  *   documents périmés, état du bilan ;
- * - `POST /model/importer-natif` : import à sens unique du magasin du moteur extrait (transition, D-002).
  */
 import { Router, json, type Request, type Response } from "express";
 import { and, desc, eq, gt } from "drizzle-orm";
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
   appliquerLot,
   CONTRAT_COMMANDES,
   ErreurCommande,
-  identifiantsCibles,
-  importerModeleNatif,
   referencesAReparer,
-  TYPE_RESTAURER,
   type Commande,
-  type Effets,
   type Enveloppe,
-  type ModeleAtelier,
 } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { atelierCommands, atelierStore, projects, type JournalKind } from "../db/schema.js";
+import { atelierCommands, type JournalKind } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { EVENEMENT_COMMANDE_VALIDEE, enregistrerEvenement, traiterEvenements } from "../lib/atelier-events.js";
-import { chargerModele, creerModeleVide, persisterDifferentiel, remplacerModele } from "../lib/atelier-modele.js";
+import { traiterEvenements } from "../lib/atelier-events.js";
+import { chargerModele, creerModeleVide } from "../lib/atelier-modele.js";
 import { loadDesignContext } from "../lib/design-context.js";
 import { documentCatalogue } from "../lib/documents.js";
 import { projectOr404, type AccessibleProject } from "../lib/owned-project.js";
 import { lockProject } from "../lib/step-rows.js";
+import { EchecLot, validerDansTransaction, type ResultatValidation } from "../lib/atelier-validation.js";
 
 export const atelierCommandsRouter = Router({ mergeParams: true });
 atelierCommandsRouter.use(requireAuth);
@@ -64,8 +58,6 @@ const inverseSchema = z.object({
   journalId: z.string().max(64).optional(),
 });
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
 function invalide(res: Response, details: unknown, chemin = "body"): void {
   res.status(400).json({ erreur: "invalide", details: Array.isArray(details) ? details : [{ chemin, message: typeof details === "string" ? details : JSON.stringify(details) }] });
 }
@@ -76,35 +68,6 @@ function erreurCommande(res: Response, err: ErreurCommande, revisionCourante: nu
     return;
   }
   res.status(400).json({ erreur: "invalide", details: [{ chemin: err.chemin, message: err.message }] });
-}
-
-/** Objets touchés par les entrées du journal postérieures à `baseRevision` qui recoupent les cibles du lot. */
-async function conflitsDepuis(tx: Tx, projectId: string, baseRevision: number, cibles: string[], etat: ModeleAtelier) {
-  const entrees = await tx.select({ effets: atelierCommands.effets, label: atelierCommands.label, resultRevision: atelierCommands.resultRevision, authorId: atelierCommands.authorId }).from(atelierCommands).where(and(eq(atelierCommands.projectId, projectId), gt(atelierCommands.resultRevision, baseRevision)));
-  const conflits: { objetId: string; motif: string; revision: number; etatServeur: unknown }[] = [];
-  for (const e of entrees) {
-    const ef = e.effets as Partial<Effets>;
-    const touches = new Set([...(ef.crees ?? []), ...(ef.modifies ?? []), ...(ef.supprimes ?? [])]);
-    for (const id of cibles) if (touches.has(id)) conflits.push({ objetId: id, motif: `modifié par « ${e.label || "lot"} » (révision ${e.resultRevision})`, revision: e.resultRevision, etatServeur: etat.objets[id] ?? null });
-  }
-  return conflits;
-}
-
-interface ResultatValidation {
-  reponse: Record<string, unknown>;
-  status: number;
-  revision: number;
-  journalId?: string;
-}
-
-/**
- * Cœur transactionnel : rejoue une requête déjà validée (idempotence), vérifie la révision de base, applique
- * les commandes, persiste le différentiel, journalise, enregistre l'événement, avance la révision.
- */
-class EchecLot extends Error {
-  constructor(public readonly resultat: ResultatValidation) {
-    super("lot refusé");
-  }
 }
 
 async function validerLot(project: AccessibleProject, auteurId: string, enveloppe: Enveloppe, kind: JournalKind, inverseOf: string | null, label: string): Promise<ResultatValidation> {
@@ -119,66 +82,7 @@ async function validerLot(project: AccessibleProject, auteurId: string, envelopp
 async function validerLotTx(project: AccessibleProject, auteurId: string, enveloppe: Enveloppe, kind: JournalKind, inverseOf: string | null, label: string): Promise<ResultatValidation> {
   return db.transaction(async (tx) => {
     await lockProject(tx, project.id);
-    const deja = (await tx.select().from(atelierCommands).where(and(eq(atelierCommands.projectId, project.id), eq(atelierCommands.requestId, enveloppe.requestId))).limit(1))[0];
-    if (deja) return { reponse: { ...deja.reponse, rejouee: true }, status: 200, revision: deja.resultRevision, journalId: deja.id };
-    const courant = (await tx.select({ modelRevision: projects.modelRevision }).from(projects).where(eq(projects.id, project.id)).limit(1))[0]!;
-    const charge = (await chargerModele(tx, project.id)) ?? (await creerModeleVide(tx, project.id, `fadi-${project.id}`));
-    if (enveloppe.baseRevision !== courant.modelRevision) {
-      const conflits = await conflitsDepuis(tx, project.id, enveloppe.baseRevision, identifiantsCibles(enveloppe), charge.etat);
-      throw new EchecLot({ reponse: { erreur: "conflit", motif: "revision", baseRevision: enveloppe.baseRevision, revisionCourante: courant.modelRevision, conflits }, status: 409, revision: courant.modelRevision });
-    }
-    let resultat;
-    try {
-      resultat = appliquerLot(charge.etat, enveloppe);
-    } catch (err) {
-      if (err instanceof ErreurCommande) {
-        throw new EchecLot({
-          status: err.code === "precondition" ? 409 : 400,
-          revision: courant.modelRevision,
-          reponse: err.code === "precondition" ? { erreur: "conflit", motif: "precondition", baseRevision: enveloppe.baseRevision, revisionCourante: courant.modelRevision, conflits: [{ chemin: err.chemin, motif: err.message }] } : { erreur: "invalide", details: [{ chemin: err.chemin, message: err.message }] },
-        });
-      }
-      throw err;
-    }
-    const revision = courant.modelRevision + 1;
-    await persisterDifferentiel(tx, project.id, charge.etat, resultat.etat, revision);
-    await tx.update(projects).set({ modelRevision: revision, updatedAt: new Date() }).where(eq(projects.id, project.id));
-    const journalId = randomUUID();
-    const reponse = {
-      revision,
-      journalId,
-      applique: enveloppe.commands.map((c, i) => ({ type: c.type, objetIds: [...(resultat.parCommande[i]?.crees ?? []), ...(resultat.parCommande[i]?.modifies ?? []), ...(resultat.parCommande[i]?.supprimes ?? [])] })),
-      effets: resultat.effets,
-      problemes: resultat.effets.problemes,
-      referencesAReparer: resultat.effets.referencesAReparer,
-    };
-    await tx.insert(atelierCommands).values({
-      id: journalId,
-      projectId: project.id,
-      requestId: enveloppe.requestId,
-      kind,
-      contract: enveloppe.contract,
-      label: label || enveloppe.label,
-      baseRevision: enveloppe.baseRevision,
-      resultRevision: revision,
-      commands: enveloppe.commands,
-      inverse: resultat.inverse as unknown as Record<string, unknown>,
-      effets: resultat.effets as unknown as Record<string, unknown>,
-      reponse,
-      inverseOf,
-      authorId: auteurId,
-      createdAt: new Date(),
-    });
-    await enregistrerEvenement(tx, project.id, EVENEMENT_COMMANDE_VALIDEE, {
-      projectId: project.id,
-      revision,
-      journalId,
-      kind,
-      objetIds: [...resultat.effets.crees, ...resultat.effets.modifies, ...resultat.effets.supprimes],
-      types: enveloppe.commands.map((c) => c.type),
-      auteurId,
-    });
-    return { reponse, status: 200, revision, journalId };
+    return validerDansTransaction(tx, project.id, auteurId, enveloppe, kind, inverseOf, label);
   });
 }
 
@@ -335,35 +239,4 @@ async function inverser(req: Request, res: Response, mode: "annuler" | "retablir
 atelierCommandsRouter.post("/commands/annuler", corps, (req, res) => inverser(req, res, "annuler"));
 atelierCommandsRouter.post("/commands/retablir", corps, (req, res) => inverser(req, res, "retablir"));
 
-// ---------------------------------------------------------------------------
-// Transition : import à sens unique du magasin du moteur extrait (D-002)
-// ---------------------------------------------------------------------------
-
-atelierCommandsRouter.post("/model/importer-natif", corps, async (req, res) => {
-  const project = await projectOr404(req, res, "write");
-  if (!project) return;
-  const remplacer = req.body?.remplacer === true;
-  const r = await db.transaction(async (tx) => {
-    await lockProject(tx, project.id);
-    const existant = await chargerModele(tx, project.id);
-    if (existant && Object.keys(existant.etat.objets).length > 0 && !remplacer) return { status: 409 as const, body: { erreur: "conflit", motif: "modele-existant", message: "Un modèle typé existe déjà : indiquer remplacer = true pour le remplacer par l'import." } };
-    const rows = await tx.select().from(atelierStore).where(eq(atelierStore.projectId, project.id));
-    const active = rows.find((x) => x.key === "design.v13.activeProject")?.value;
-    if (typeof active !== "string") return { status: 404 as const, body: { erreur: "aucun-modele-natif" } };
-    const domaine = (d: string) => rows.find((x) => x.key === `design.v13.project.${active}.${d}`)?.value;
-    const registry = (rows.find((x) => x.key === "design.v13.registry")?.value as { id: string }[] | undefined)?.find((p) => p.id === active);
-    const { modele, rapport } = importerModeleNatif({ nativeId: active, registry: registry as never, domains: { levels: domaine("levels"), floorDesign: domaine("floorDesign"), nativeParcel: domaine("nativeParcel"), buildingFootprint: domaine("buildingFootprint"), ui: domaine("ui") } });
-    const courant = (await tx.select({ modelRevision: projects.modelRevision }).from(projects).where(eq(projects.id, project.id)).limit(1))[0]!;
-    const revision = courant.modelRevision + 1;
-    await remplacerModele(tx, project.id, modele, active, revision);
-    await tx.update(projects).set({ modelRevision: revision, updatedAt: new Date() }).where(eq(projects.id, project.id));
-    const journalId = randomUUID();
-    const reponse = { revision, journalId, rapport };
-    await tx.insert(atelierCommands).values({ id: journalId, projectId: project.id, requestId: `import-natif-${journalId}`, kind: "commande", contract: CONTRAT_COMMANDES, label: "Import du modèle natif", baseRevision: courant.modelRevision, resultRevision: revision, commands: [{ type: "interne.import-natif", params: { nativeId: active } }], inverse: { type: TYPE_RESTAURER, params: { diff: { avant: {}, crees: {} } } }, effets: { crees: Object.keys(modele.objets), modifies: [], supprimes: [], problemes: rapport.problemes, referencesAReparer: [], niveauxTouches: Object.keys(modele.niveaux) }, reponse, inverseOf: null, authorId: req.user!.id, createdAt: new Date() });
-    await enregistrerEvenement(tx, project.id, EVENEMENT_COMMANDE_VALIDEE, { projectId: project.id, revision, journalId, kind: "import", objetIds: [], types: ["interne.import-natif"], auteurId: req.user!.id });
-    return { status: 200 as const, body: reponse };
-  });
-  if (r.status === 200) void traiterEvenements(project.id).catch(() => undefined);
-  res.status(r.status).json(r.body);
-});
 

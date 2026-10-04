@@ -144,6 +144,8 @@ describe("importeur P.118 (section 6, R7 : rien d'omis, aucun arrondi)", () => {
     const projection = projeterPourAnalyse(modele, "p118-demo-v819");
     const type = analyseModel({ nativeId: projection.nativeId, levels: projection.levels, floor: projection.floor, parcel: projection.parcel, footprint: projection.footprint, programme: null });
     expect(type.rooms.map((r) => r.id).sort()).toEqual(natif.rooms.map((r) => r.id).sort());
+    // Même ordre que le jeu natif (rang conservé à l'import) : fiches d'espaces et tableaux listés comme dans l'exemple.
+    expect(type.rooms.map((r) => r.id)).toEqual(natif.rooms.map((r) => r.id));
     for (const r of natif.rooms) {
       const t = type.rooms.find((x) => x.id === r.id)!;
       expect(t.area).toBeCloseTo(r.area, 9);

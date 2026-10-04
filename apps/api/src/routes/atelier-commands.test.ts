@@ -4,9 +4,11 @@
  * import typé de P.118 et persistance par différentiel.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import request from "supertest";
 import { createApp } from "../app.js";
 import { pool } from "../db/client.js";
+import { basculerAncienMoteur } from "../db/bascule.js";
 
 const app = createApp();
 const CONTRAT = "atelier-commands/1";
@@ -15,7 +17,7 @@ const pt = (x: number, y: number) => ({ x, y, frame: "local", unit: "m" });
 
 async function resetDb() {
   await pool.query(
-    "TRUNCATE atelier_outbox, atelier_commands, atelier_site, atelier_problemes, atelier_references, atelier_groupes, atelier_calques, atelier_definitions, atelier_relations, atelier_objets, atelier_niveaux, architectural_objects, atelier_store, levels, parcels, produced_documents, project_comments, project_members, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE",
+    "TRUNCATE atelier_outbox, atelier_commands, atelier_site, atelier_problemes, atelier_references, atelier_groupes, atelier_calques, atelier_definitions, atelier_relations, atelier_objets, atelier_niveaux, parcels, produced_documents, project_comments, project_members, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE",
   );
 }
 beforeAll(resetDb);
@@ -231,16 +233,48 @@ describe("modèle typé de l'exemple P.118 et fraîcheur des documents", () => {
     expect(problemes.documentsPerimes.some((d: { kind: string }) => d.kind === "tableau-surfaces")).toBe(true);
   });
 
-  it("importe le magasin natif à la demande (transition), et refuse d'écraser un modèle existant sans l'option", async () => {
-    const client = await registerAndLogin("natif@example.com");
+  it("archive version 2 : le modèle typé fait l'aller-retour à l'identique ; un modèle altéré est refusé en entier", async () => {
+    const client = await registerAndLogin("archive-type@example.com");
     const imported = await client.post("/examples/p118-exemple-complet/import");
     const pid = imported.body.id as string;
-    const refus = await client.post(`/projects/${pid}/atelier/model/importer-natif`).send({});
-    expect(refus.status).toBe(409);
-    const ok = await client.post(`/projects/${pid}/atelier/model/importer-natif`).send({ remplacer: true });
-    expect(ok.status).toBe(200);
-    expect(ok.body.revision).toBe(2);
-    expect(ok.body.rapport.lignes.find((l: { famille: string }) => l.famille === "walls")).toMatchObject({ source: 220, cible: 220 });
-    expect(Object.keys((await client.get(`/projects/${pid}/atelier/model`)).body.modele.objets)).toHaveLength(1753);
+    const archive = JSON.parse((await client.get(`/projects/${pid}/archive`)).text);
+    expect(archive.version).toBe(2);
+    const retour = await client.post("/projects/import").set("Content-Type", "application/json").send(archive);
+    expect(retour.status).toBe(201);
+    const copie = retour.body.projects[0].id as string;
+    const avant = (await client.get(`/projects/${pid}/atelier/model`)).body.modele;
+    const apres = (await client.get(`/projects/${copie}/atelier/model`)).body.modele;
+    expect(apres).toEqual(avant);
+    // Une grandeur sans unité dans l'archive : refus 422, aucun projet créé.
+    const murId = Object.keys(archive.modele.etat.objets).find((k) => archive.modele.etat.objets[k].classe === "mur")!;
+    archive.modele.etat.objets[murId].params.epaisseur = 0.2;
+    const nb = (await client.get("/projects")).body.length;
+    const refus = await client.post("/projects/import").set("Content-Type", "application/json").send(archive);
+    expect(refus.status).toBe(422);
+    expect(refus.body.error).toBe("archive_model");
+    expect(refus.body.details.some((d: string) => d.includes(murId))).toBe(true);
+    expect((await client.get("/projects")).body.length).toBe(nb);
+  });
+
+  it("bascule : un projet resté sur l'ancien magasin du moteur V14 est repris dans le modèle typé, puis les anciennes tables disparaissent", async () => {
+    const client = await registerAndLogin("bascule@example.com");
+    const pid = (await client.post("/projects").send({ code: "P.OLD", name: "Ancien moteur" })).body.id as string;
+    const jeu = JSON.parse(readFileSync(new URL("../data/examples/p118-native-model.json", import.meta.url), "utf8")) as { nativeId: string; registry: unknown; domains: Record<string, unknown> };
+    // Base telle qu'avant le lot 4 : la table de l'ancien moteur existe et porte le dessin du projet.
+    await pool.query("CREATE TABLE IF NOT EXISTS atelier_store (project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE, key text NOT NULL, value jsonb NOT NULL, revision integer NOT NULL DEFAULT 1, updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY (project_id, key))");
+    const p = "design.v13.";
+    const lignes: [string, unknown][] = [[`${p}activeProject`, jeu.nativeId], [`${p}registry`, [jeu.registry]], ...Object.entries(jeu.domains).map(([d, v]) => [`${p}project.${jeu.nativeId}.${d}`, v] as [string, unknown])];
+    for (const [key, value] of lignes) await pool.query("INSERT INTO atelier_store (project_id, key, value) VALUES ($1, $2, $3)", [pid, key, JSON.stringify(value)]);
+    await pool.query("UPDATE projects SET model_revision = 3 WHERE id = $1", [pid]);
+    const r = await basculerAncienMoteur(pool);
+    expect(r).toEqual({ convertis: 1, supprimees: true });
+    const model = (await client.get(`/projects/${pid}/atelier/model`)).body;
+    expect(Object.keys(model.modele.objets)).toHaveLength(1753);
+    expect(model.revision).toBe(3);
+    const journal = (await client.get(`/projects/${pid}/atelier/journal?apres=0`)).body.entrees;
+    expect(journal[0].label).toBe("Reprise du dessin de l'ancien Atelier (bascule)");
+    expect((await pool.query("SELECT to_regclass('public.atelier_store') AS t")).rows[0].t).toBeNull();
+    // Idempotente : une seconde passe ne fait rien.
+    expect(await basculerAncienMoteur(pool)).toEqual({ convertis: 0, supprimees: false });
   });
 });

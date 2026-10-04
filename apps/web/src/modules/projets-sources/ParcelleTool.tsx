@@ -11,6 +11,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ParcelTransmission } from "../../lib/api";
+import { atelierClientExistant } from "../atelier/bus/atelier-client";
 import { useProjectAccess } from "../../lib/access";
 
 const SLOT_ID = "fadi-harmonie-slot";
@@ -176,8 +177,9 @@ export function ParcelleTool({ projectId, harmonie = null }: { projectId: string
           last = captured.signature;
           await Promise.all([
             queryClient.invalidateQueries({ queryKey: ["parcels", projectId] }),
-            queryClient.invalidateQueries({ queryKey: ["atelier-store", projectId] }),
             queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
+            // La parcelle est entrée dans le modèle typé par une commande du serveur : un Atelier ouvert relit le modèle.
+            atelierClientExistant(projectId)?.relireServeur(),
           ]);
         }
       } catch {

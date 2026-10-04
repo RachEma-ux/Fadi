@@ -47,6 +47,8 @@ export interface InstantaneClient {
   dernierEffets: Effets | null;
   envoiEnCours: boolean;
   readOnly: boolean;
+  /** Ouvert depuis le cache local faute de serveur joignable. */
+  horsLigne: boolean;
 }
 
 type Ecouteur = () => void;
@@ -68,6 +70,8 @@ export class AtelierClient {
   private minuterie: ReturnType<typeof setInterval> | null = null;
   private desabonnerJoignabilite: (() => void) | null = null;
   private envoi: Promise<void> | null = null;
+  /** Chargement initial (modèle + file locale) ; les décisions venues de l'en-tête l'attendent. */
+  demarrage: Promise<void> = Promise.resolve();
   private relancer = false;
   /** Lots retirés de la file par « Annuler » avant d'avoir été envoyés : « Rétablir » les rejoue (pile vidée par toute nouvelle action). */
   private refaireLocal: { commands: Commande[]; label: string }[] = [];
@@ -76,7 +80,7 @@ export class AtelierClient {
     public readonly projectId: string,
     options: { readOnly?: boolean } = {},
   ) {
-    this.instantane = { etat: modeleVide(), revision: 0, revisionServeur: 0, nativeId: "", chargement: "initial", erreur: null, lots: [], journal: [], dernierEffets: null, envoiEnCours: false, readOnly: options.readOnly ?? false };
+    this.instantane = { etat: modeleVide(), revision: 0, revisionServeur: 0, nativeId: "", chargement: "initial", erreur: null, lots: [], journal: [], dernierEffets: null, envoiEnCours: false, readOnly: options.readOnly ?? false, horsLigne: false };
   }
 
   // --- Abonnement (useSyncExternalStore) ---
@@ -98,6 +102,8 @@ export class AtelierClient {
     this.ordre = lotsLocaux.length;
     try {
       const reponse = await api.getAtelierModel(this.projectId);
+      this.etatServeurCache = reponse.modele;
+      void localStore.cacheModel({ projectId: this.projectId, modele: JSON.stringify(reponse.modele), revision: reponse.revision, nativeId: reponse.nativeId, fetchedAt: new Date().toISOString() });
       const rejeu = rejouerLots(reponse.modele, reponse.revision, lotsLocaux);
       this.emettre({ etat: rejeu.etat, revisionServeur: reponse.revision, revision: reponse.revision + rejeu.rejoues.length, nativeId: reponse.nativeId, chargement: "pret", lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
       await this.persisterLots();
@@ -107,13 +113,20 @@ export class AtelierClient {
         const rejeu = rejouerLots(modeleVide(), 0, lotsLocaux);
         this.emettre({ etat: rejeu.etat, revisionServeur: 0, revision: rejeu.rejoues.length, chargement: "aucun-modele", lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
       } else {
-        // Serveur injoignable : on part de la file locale sur le dernier état connu (cache non implémenté : état vide + lots) et on réessaie.
-        const rejeu = rejouerLots(modeleVide(), 0, lotsLocaux);
-        this.emettre({ etat: rejeu.etat, chargement: "erreur", erreur: err instanceof Error ? err.message : String(err), lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
+        // Serveur injoignable : on part du dernier modèle mis en cache sur cet appareil, la file locale rejouée dessus ;
+        // l'envoi reprend au retour du réseau. Sans cache, le modèle reste vide et l'écran le dit.
+        const cache = await localStore.readModelCache(this.projectId);
+        const base = cache ? (JSON.parse(cache.modele) as ModeleAtelier) : modeleVide();
+        const revision = cache?.revision ?? 0;
+        if (cache) this.etatServeurCache = base;
+        const rejeu = rejouerLots(base, revision, lotsLocaux);
+        this.emettre({ etat: rejeu.etat, revisionServeur: revision, revision: revision + rejeu.rejoues.length, nativeId: cache?.nativeId ?? "", chargement: cache ? "pret" : "erreur", horsLigne: true, erreur: err instanceof Error ? err.message : String(err), lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
       }
     }
     this.desabonnerJoignabilite = reachability.subscribe(() => {
-      if (reachability.get()) void this.envoyer();
+      if (reachability.get() !== "reachable") return;
+      // Retour du réseau : la file part, puis un modèle ouvert depuis le cache est relu sur le serveur.
+      void this.envoyer().then(() => (this.instantane.horsLigne ? this.relireServeur() : undefined));
     });
     this.minuterie = setInterval(() => void this.suivreJournal(), 60_000);
     void this.envoyer();
@@ -248,6 +261,7 @@ export class AtelierClient {
     try {
       const r = await api.getAtelierModel(this.projectId);
       this.etatServeurCache = r.modele;
+      void localStore.cacheModel({ projectId: this.projectId, modele: JSON.stringify(r.modele), revision: r.revision, nativeId: r.nativeId, fetchedAt: new Date().toISOString() });
       this.emettre({ revisionServeur: r.revision, nativeId: r.nativeId });
       return r.modele;
     } catch {
@@ -271,7 +285,7 @@ export class AtelierClient {
       do {
         this.relancer = false;
         await this.envoyerSequence();
-      } while (this.relancer && reachability.get());
+      } while (this.relancer && reachability.get() === "reachable");
     })().finally(() => {
       this.envoi = null;
     });
@@ -279,7 +293,7 @@ export class AtelierClient {
   }
 
   private async envoyerSequence(): Promise<void> {
-    if (!reachability.get() || this.instantane.readOnly) return;
+    if (reachability.get() !== "reachable" || this.instantane.readOnly) return;
     this.emettre({ envoiEnCours: true });
     let valides = 0;
     try {
@@ -342,8 +356,9 @@ export class AtelierClient {
     try {
       const r = await api.getAtelierModel(this.projectId);
       this.etatServeurCache = r.modele;
+      void localStore.cacheModel({ projectId: this.projectId, modele: JSON.stringify(r.modele), revision: r.revision, nativeId: r.nativeId, fetchedAt: new Date().toISOString() });
       const rejeu = rejouerLots(r.modele, r.revision, this.instantane.lots);
-      this.emettre({ etat: rejeu.etat, revisionServeur: r.revision, revision: r.revision + rejeu.rejoues.length, nativeId: r.nativeId, chargement: "pret", lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
+      this.emettre({ etat: rejeu.etat, revisionServeur: r.revision, revision: r.revision + rejeu.rejoues.length, nativeId: r.nativeId, chargement: "pret", horsLigne: false, lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
       await this.persisterLots();
       await this.chargerJournal();
       void revisionAttendue;
@@ -363,19 +378,13 @@ export class AtelierClient {
 
   /** Relecture périodique : une entrée d'autrui postérieure à la révision connue déclenche une relecture du modèle. */
   private async suivreJournal(): Promise<void> {
-    if (!reachability.get()) return;
+    if (reachability.get() !== "reachable") return;
     try {
       const j = await api.getAtelierJournal(this.projectId, this.instantane.revisionServeur);
       if (j.entrees.length > 0) await this.relireServeur();
     } catch {
       /* silencieux : la joignabilité est suivie ailleurs */
     }
-  }
-
-  /** Importe le magasin du moteur extrait dans le modèle typé (transition, D-002). */
-  async importerNatif(remplacer = false): Promise<void> {
-    await api.importerModeleNatif(this.projectId, remplacer);
-    await this.relireServeur();
   }
 }
 
@@ -385,13 +394,18 @@ function versJournal(e: AtelierJournalEntry): EntreeJournal {
 
 const clients = new Map<string, AtelierClient>();
 
+/** Le client déjà ouvert pour ce projet, sans en créer (en-tête, bandeau des conflits). */
+export function atelierClientExistant(projectId: string): AtelierClient | null {
+  return clients.get(projectId) ?? null;
+}
+
 /** Un client par projet et par onglet (la file locale est partagée par Dexie). */
 export function atelierClient(projectId: string, options: { readOnly?: boolean } = {}): AtelierClient {
   let c = clients.get(projectId);
   if (!c) {
     c = new AtelierClient(projectId, options);
     clients.set(projectId, c);
-    void c.demarrer();
+    c.demarrage = c.demarrer();
   }
   return c;
 }

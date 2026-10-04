@@ -62,6 +62,8 @@ const longueur = (v: unknown) => {
   const n = nombre(v);
   return n === null ? null : { value: n, unit: "m" as const };
 };
+/** Propriété portant le rang d'un objet dans le jeu natif importé. */
+export const RANG_NATIF = "natif:rang";
 const importee = (valeur: unknown): Propriete => ({ valeur, provenance: "import", statut: "declaree" });
 
 /** Propriétés d'import : tous les champs du natif non consommés par les paramètres canoniques (R7). */
@@ -426,6 +428,10 @@ export function importerModeleNatif(jeu: JeuNatif): { modele: ModeleAtelier; rap
   for (const [k, v] of Object.entries(meta)) if (!["structure", "assumptions", "sources"].includes(k)) modele.proprietes[`natif:meta.${k}`] = importee(v);
   if (jeu.registry) modele.proprietes["natif:registry"] = importee(jeu.registry);
   for (const [k, v] of Object.entries(floor)) if (!["levels", "layers", "meta"].includes(k)) modele.proprietes[`natif:floorDesign.${k}`] = importee(v);
+  // Rang dans le jeu natif (ordre des tableaux du prototype, niveau par niveau) : les lectures qui listent les objets
+  // (fiches d'espaces, analyses) gardent l'ordre de l'exemple ; un objet créé ensuite n'a pas de rang et vient après.
+  let rang = 0;
+  for (const o of Object.values(objets)) o.proprietes[RANG_NATIF] = importee(rang++);
 
   lignes.push(
     { famille: "walls", destination: "mur", source: compteurs.walls, cible: cibles.mur, transformations: ["types cloison / mur / absent → définitions cloison / mur / non-type", "exteriorWallIds → exterieur", "lineRef, color, kind → propriétés natif:*"] },
@@ -449,4 +455,37 @@ export function importerModeleNatif(jeu: JeuNatif): { modele: ModeleAtelier; rap
 
   const resultat: ModeleAtelier = { ...modele, niveaux, objets, relations, definitions, calques, problemes: Object.fromEntries(problemes.map((p) => [p.id, p])) };
   return { modele: resultat, rapport: { nativeId, lignes, problemes, rolesInconnus: [...rolesInconnus], calquesCrees } };
+}
+
+/**
+ * Transmission de la parcelle (étape 01 → modèle, lot 4) : le domaine `nativeParcel` décidé par
+ * `acceptParcel` devient `site.parcelle.definir`, l'emprise déclarée `site.emprise.definir`. Les sommets restent
+ * cadastraux (R5) ; l'origine du repère local d'une parcelle déjà définie est conservée (les objets dessinés ne
+ * bougent pas), sinon elle est posée au centroïde transmis. Les autres champs sont conservés tels quels.
+ */
+export function commandesParcelleNative(parcelle: Record<string, unknown>, emprise: readonly unknown[] | null, etat: ModeleAtelier): { type: string; params: Record<string, unknown> }[] {
+  const crs = chaine(parcelle["crs"]) ?? "inconnu";
+  const vertices = Array.isArray(parcelle["vertices"]) ? (parcelle["vertices"] as unknown[]).filter(estPaire) : [];
+  const ids = Array.isArray(parcelle["vertexIds"]) ? (parcelle["vertexIds"] as unknown[]) : [];
+  const centroid = estPaire(parcelle["centroid"]) ? (parcelle["centroid"] as Paire) : null;
+  const existante = etat.site.parcelle;
+  const origineLocale: CoordonneeCadastrale = existante && existante.origineLocale.crs === crs ? existante.origineLocale : { x: centroid?.[0] ?? 0, y: centroid?.[1] ?? 0, frame: "cadastral", crs, unit: "m" };
+  const sommets = vertices.map((v, i) => ({ id: chaine(ids[i]) ?? `S${i + 1}`, cadastral: { x: v[0], y: v[1], frame: "cadastral", crs, unit: "m" } }));
+  const commandes: { type: string; params: Record<string, unknown> }[] = [
+    {
+      type: "site.parcelle.definir",
+      params: {
+        crs,
+        sourceCrs: chaine(parcelle["sourceCrs"]),
+        origineLocale,
+        sommets,
+        aire: nombre(parcelle["area"]),
+        aireOfficielle: nombre(parcelle["officialArea"]),
+        champs: Object.fromEntries(Object.entries(parcelle).filter(([k]) => !["vertices", "vertexIds", "crs", "sourceCrs", "area", "officialArea", "centroid"].includes(k))),
+      },
+    },
+  ];
+  const sommetsEmprise = (emprise ?? []).filter(estPaire);
+  if (sommetsEmprise.length >= 3) commandes.push({ type: "site.emprise.definir", params: { sommetsCadastraux: sommetsEmprise.map((v) => ({ x: v[0], y: v[1], frame: "cadastral", crs, unit: "m" })), champs: {} } });
+  return commandes;
 }

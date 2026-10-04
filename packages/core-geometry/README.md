@@ -36,19 +36,18 @@ L'extrusion des **poteaux** dépend dans le source de trois fonctions non locali
 
 ## `parcel-geometry.ts` — géométrie de parcelle
 
-Également extrait de `EMB.designer`, utilisé par `window.V14Bridge.inset` et les calculs de centre/emprise de parcelle : `signedArea`, `polygonArea`, `isConvexPolygon`, `intersectLines`, `inwardOffset` (recul de parcelle), `parcelCenter`, `buildingFootprint`, `projectCode`.
+Également extrait de `EMB.designer` (moteur du prototype), utilisé pour les calculs de centre/emprise de parcelle : `signedArea`, `polygonArea`, `isConvexPolygon`, `intersectLines`, `inwardOffset` (recul de parcelle), `parcelCenter`, `buildingFootprint`, `projectCode`.
 
 Portage fidèle de la logique ; signatures modifiées pour recevoir leurs données en paramètre plutôt que de les lire d'un état global caché (c'est précisément ce qui les rend pures et testables). 22 tests dans `src/parcel-geometry.test.ts`, y compris un cas qui **documente** un comportement réel non intuitif plutôt que de le corriger silencieusement : au-delà de la demi-largeur, `inwardOffset` inverse le polygone au lieu de renvoyer `null` — il n'y a pas de garde contre l'auto-intersection dans le code source d'origine.
 
-## `project-repository.ts` — contrat, pas un portage de `V14Bridge`
+## Persistance du modèle
 
-En localisant la définition réelle de `window.V14Bridge` dans le source, il s'avère que ce n'est **pas** un module métier comme `V14Geometry` : c'est une façade fine sur `localStorage` (`domainGet`/`domainSet`, clés `${APP}.project.${id}.${domain}`). Porter ça tel quel en TypeScript aurait simplement recopié la dépendance à `localStorage` que la migration (voir `docs/architecture.md`, jalon 5) a pour but de remplacer.
-
-`project-repository.ts` documente donc le **contrat** fonctionnel que `V14Bridge` remplit aujourd'hui côté client (`interface ProjectRepository`, avec la table de correspondance propriété → implémentation réelle dans le fichier), pour que l'API backend à venir expose une implémentation qui le satisfait, et qu'un adaptateur legacy / HTTP soit interchangeable pendant la transition.
+Le contrat de persistance `project-repository.ts` (façade de l'ancien moteur sur `localStorage`) a été supprimé à la
+bascule de l'Atelier (lot 4) : le modèle du bâtiment est désormais le modèle typé de `packages/atelier-model`, persisté
+par l'API de commandes (`apps/api/src/routes/atelier-commands.ts`, tables `atelier_*`).
 
 ## Ce qui reste à faire pour clore la phase 1
 
-- Implémenter `ProjectRepository` côté backend une fois l'API démarrée (jalon 5 de `docs/architecture.md`).
 - Localiser et porter le catalogue de profils de poteaux (`originalShapeData`, `columnShapeMeta`, `ensureColumnProps`).
 - Cartographier précisément les règles `QA` (280 références dans `esquisser`) avant de les considérer réutilisables en bloc.
 - Dérouler le jalon **P.118** (jalon 7 de `docs/architecture.md`, preuve de fonctionnement bout-en-bout) avant la migration des 21 étapes.

@@ -6,6 +6,11 @@
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { CLASSES, ErreurCommande, niveauxOrdonnes, type Commande, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { useQueryClient } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "react-router-dom";
+import { api } from "../../../lib/api";
+import { useOnline, useReachable } from "../../../components/SyncIndicator";
+import { exporter, type TypeExport } from "./exports";
 import { atelierClient } from "../bus/atelier-client";
 import { actionImmediate, lotSuppression, OUTILS_IMMEDIATS } from "./actions";
 import { etatUi, useEtatUi, type NiveauAffichage, type PanneauMobile } from "./etat-ui";
@@ -25,7 +30,19 @@ const Vue3D = lazy(() => import("./vue3d/Vue3D").then((m) => ({ default: m.Vue3D
 export interface PropsAtelierNouveau {
   projectId: string;
   readOnly: boolean;
+  /** Référence protégée de l'exemple : la première modification validée ouvre une copie de travail et s'y enregistre. */
+  protectedReference?: boolean;
+  /** Code du projet (noms des fichiers exportés). */
+  code?: string;
+  /** Étape 10 : bouton « Harmonie » (sous-page « Harmonie du bâtiment »). */
+  harmonie?: boolean;
 }
+
+export const READ_ONLY_MESSAGE = "Lecture seule : ce projet vous est partagé en lecture ; vous pouvez explorer le modèle, mais vos modifications dans l’Atelier ne sont pas enregistrées.";
+
+/** Nom de la copie créée automatiquement (prototype : `copy('P.118 — copie de travail · Atelier', …)` ; Fadi affiche « code — nom »). */
+export const DRAWING_COPY_NAME = "copie de travail · Atelier";
+export const PROTECTED_REFERENCE_MESSAGE = "Exemple protégé : première modification dans une copie automatique.";
 
 const fmt = (v: number) => v.toFixed(2).replace(".", ",");
 const ETIQUETTES_MOBILE: Record<PanneauMobile, string> = { travail: "Plan", objets: "Projet", inspecteur: "Inspecteur", problemes: "Modifications" };
@@ -35,7 +52,13 @@ function champSaisie(t: EventTarget | null): boolean {
   return t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || (t instanceof HTMLElement && t.isContentEditable);
 }
 
-export function AtelierNouveau({ projectId, readOnly }: PropsAtelierNouveau) {
+export function AtelierNouveau({ projectId, readOnly, protectedReference = false, code = "", harmonie = false }: PropsAtelierNouveau) {
+  const online = useOnline();
+  const reachable = useReachable();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const copieEnCours = useRef<Promise<void> | null>(null);
   const client = useMemo(() => atelierClient(projectId, { readOnly }), [projectId, readOnly]);
   const inst = useSyncExternalStore(client.subscribe, client.getSnapshot, client.getSnapshot);
   const ui = useEtatUi();
@@ -68,6 +91,28 @@ export function AtelierNouveau({ projectId, readOnly }: PropsAtelierNouveau) {
     async (commandes: Commande[], label: string, selectionnerCrees = true) => {
       if (commandes.length === 0) return;
       setErreur(null);
+      if (protectedReference) {
+        // Exemple protégé (prototype `copy(…, { stayInAtelier: true, automatic: true })`) : la copie de travail est créée à la
+        // première modification, le lot y est appliqué, puis l'écran bascule sur elle (même module, même étape) ; la référence reste intacte.
+        if (copieEnCours.current) return;
+        etatUi.set({ aide: "Exemple protégé : création de la copie de travail…" });
+        copieEnCours.current = (async () => {
+          try {
+            const copie = await api.copyProject(projectId, DRAWING_COPY_NAME);
+            const c = atelierClient(copie.id);
+            await c.demarrage;
+            await c.executer(commandes, label);
+            await c.envoyer();
+            void queryClient.invalidateQueries({ queryKey: ["projects"] });
+            navigate(`/projets/${copie.id}${location.search}`, { state: { notice: "Copie de travail créée automatiquement · exemple original conservé." } });
+          } catch (err) {
+            setErreur(err instanceof ErreurCommande ? `${label} refusé : ${err.message}` : err instanceof Error ? err.message : String(err));
+          } finally {
+            copieEnCours.current = null;
+          }
+        })();
+        return;
+      }
       try {
         const { effets } = await client.executer(commandes, label);
         const crees = effets.crees.filter((id) => client.getSnapshot().etat.objets[id]);
@@ -78,7 +123,7 @@ export function AtelierNouveau({ projectId, readOnly }: PropsAtelierNouveau) {
         setErreur(message);
       }
     },
-    [client],
+    [client, protectedReference, projectId, navigate, location.search, queryClient],
   );
 
   const appliquerResultat = useCallback(
@@ -243,7 +288,7 @@ export function AtelierNouveau({ projectId, readOnly }: PropsAtelierNouveau) {
         }
       }
       // Saisie de précision : un chiffre pendant un tracé ouvre le champ de longueur.
-      if (/^[0-9.,-]$/.test(e.key) && (u.pointsEnCours.length > 0 || u.outil === "echelle" || u.outil === "tourner")) {
+      if (/^[0-9.,;-]$/.test(e.key) && (u.pointsEnCours.length > 0 || u.outil === "echelle" || u.outil === "tourner")) {
         e.preventDefault();
         setPrecision((p) => p + e.key);
         requestAnimationFrame(() => champPrecision.current?.focus());
@@ -283,14 +328,11 @@ export function AtelierNouveau({ projectId, readOnly }: PropsAtelierNouveau) {
           <h2 id="accueil-titre">Ce projet n'a pas encore de modèle dessiné</h2>
           {inst.chargement === "erreur" && <p role="alert">Serveur injoignable : {inst.erreur}. Les modifications seront envoyées au retour de la connexion.</p>}
           {readOnly ? (
-            <p>Projet en lecture seule : rien à afficher.</p>
+            <p className="atelier-n-lecture-vide" role="note">Lecture seule : ce projet vous est partagé en lecture et n’a pas encore de modèle dessiné ; rien ne peut être créé ici.</p>
           ) : (
             <>
-              <p>Créez un premier niveau pour commencer à dessiner, ou reprenez le dessin déjà saisi dans l'Atelier du prototype.</p>
+              <p>Créez un premier niveau pour commencer à dessiner. Un dessin du prototype s'importe avec son archive (page Projets, « Importer projet JSON »).</p>
               <PremierNiveau onCreer={(nom, elevation) => void executer([{ type: "niveau.creer", params: { nom, elevation, ordre: 0 } }], `Niveau ${nom}`, false)} />
-              <button type="button" className="bouton-secondaire" onClick={() => void client.importerNatif().catch((err: unknown) => setErreur(err instanceof Error ? err.message : String(err)))}>
-                Reprendre le dessin du prototype
-              </button>
             </>
           )}
           {erreur && <p role="alert" className="atelier-n-erreur">{erreur}</p>}
@@ -344,8 +386,53 @@ export function AtelierNouveau({ projectId, readOnly }: PropsAtelierNouveau) {
           </div>
         </details>
         <button type="button" onClick={cadrer} title="Cadrer le niveau (0)">Cadrer</button>
-        <span className={`barre-sync${lotsEnDifficulte ? " sync-alerte" : enAttente ? " sync-attente" : ""}`} role="status">
-          {lotsEnDifficulte ? `${lotsEnDifficulte} lot(s) à traiter` : enAttente ? `${enAttente} modification(s) en attente` : `Enregistré · r${inst.revisionServeur}`}
+        <details className="barre-exports">
+          <summary>Exporter</summary>
+          <div className="exports-liste">
+            {([
+              ["dxf", "Plan du niveau · DXF"],
+              ["svg", "Plan affiché · SVG"],
+              ["csv", "Quantités · CSV"],
+              ["json", "Modèle · JSON"],
+              ["png", "Vue 3D · PNG"],
+            ] as [TypeExport, string][]).map(([t, libelle]) => (
+              <button
+                key={t}
+                type="button"
+                data-export={t}
+                disabled={readOnly || (t === "png" && ui.mode !== "3d") || (t === "svg" && ui.mode !== "2d")}
+                title={t === "png" && ui.mode !== "3d" ? "Passez en 3D pour exporter l'image de la vue" : t === "svg" && ui.mode !== "2d" ? "Passez en Plan pour exporter le dessin" : undefined}
+                onClick={(e) => {
+                  (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+                  void exporter(t, { projectId, code, etat, niveauId: ui.niveauId, mode: ui.mode })
+                    .then((nom) => etatUi.set({ aide: `Exporté et enregistré au catalogue des documents : ${nom}` }))
+                    .catch((err: unknown) => setErreur(err instanceof Error ? err.message : String(err)));
+                }}
+              >
+                {libelle}
+              </button>
+            ))}
+          </div>
+        </details>
+        {harmonie && (
+          <button type="button" id="atelier-harmonie-button" className="barre-harmonie" aria-controls="atelier-harmonie-page" aria-expanded="false" onClick={() => window.AtelierHarmonyPage?.open()}>
+            ◈ Harmonie
+          </button>
+        )}
+        <span className={`barre-sync${readOnly ? " sync-lecture" : !online || !reachable ? " sync-attente" : lotsEnDifficulte ? " sync-alerte" : enAttente ? " sync-attente" : ""}`} role="status" data-etat={readOnly ? "lecture" : !online ? "hors-ligne" : !reachable ? "injoignable" : lotsEnDifficulte ? "conflit" : enAttente ? "attente" : inst.horsLigne ? "cache" : "enregistre"}>
+          {readOnly
+            ? READ_ONLY_MESSAGE
+            : !online
+              ? `Hors-ligne · ${enAttente} modification(s) enregistrée(s) localement`
+              : !reachable
+                ? `Serveur injoignable : les modifications sont enregistrées localement (${enAttente})`
+                : lotsEnDifficulte
+                  ? `${lotsEnDifficulte} lot(s) à traiter`
+                  : enAttente
+                    ? `${enAttente} modification(s) en attente`
+                    : inst.horsLigne
+                      ? "Modèle ouvert depuis le cache local de cet appareil"
+                      : `Enregistré · r${inst.revisionServeur}`}
         </span>
       </header>
 
@@ -416,6 +503,11 @@ export function AtelierNouveau({ projectId, readOnly }: PropsAtelierNouveau) {
       </aside>
 
       <footer className="atelier-n-etat" aria-live="polite">
+        {protectedReference && !readOnly && (
+          <span className="atelier-n-reference" role="note" title={`La référence reste intacte : votre première modification validée ouvre une copie de travail (« ${DRAWING_COPY_NAME} ») et s’y enregistre.`}>
+            {PROTECTED_REFERENCE_MESSAGE}
+          </span>
+        )}
         {erreur ? <span className="etat-erreur" role="alert">{erreur}</span> : <span className="etat-aide">{mesure ?? ui.aide}</span>}
         <span className="etat-selection">{selection.length === 1 ? `${CLASSES[selection[0]!.classe].libelle} ${selection[0]!.id}` : selection.length > 1 ? `${selection.length} objets` : ""}</span>
         {ui.curseur && ui.outil !== "selection" && <span className="etat-curseur">x {fmt(ui.curseur.x)} · y {fmt(ui.curseur.y)} m</span>}

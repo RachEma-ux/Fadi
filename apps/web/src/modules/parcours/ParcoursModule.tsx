@@ -28,7 +28,7 @@ import { StepForm } from "./StepForm";
 import { useReachable } from "../../components/SyncIndicator";
 
 // Le moteur de l'Atelier (scripts, markup, feuille de style) n'est chargé qu'à la première ouverture des étapes 10 / 11 ou de l'Atelier.
-const NativeAtelier = lazy(() => import("../atelier/NativeAtelier").then((m) => ({ default: m.NativeAtelier })));
+const AtelierNouveau = lazy(() => import("../atelier/nouveau/AtelierNouveau").then((m) => ({ default: m.AtelierNouveau })));
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
@@ -279,7 +279,7 @@ function StepDetail({
 
       {(step.number === 10 || step.number === 11) && (
         <Suspense fallback={<p role="status">Chargement de l’Atelier…</p>}>
-          <NativeAtelier projectId={projectId} stage={step.number} readOnly={!access.canWrite} />
+          <AtelierNouveau projectId={projectId} readOnly={!access.canWrite} protectedReference={reference} code={project?.code ?? ""} harmonie={step.number === 10} />
         </Suspense>
       )}
       {step.number === 10 && !harmonyPage && (

@@ -1,6 +1,6 @@
 /**
  * Recette du nouvel Atelier (lots 3a–3b), indépendante du grand scénario : inscription, import de l'exemple P.118,
- * ouverture de `?module=atelier&version=nouveau`, tracé au clavier et à la souris, inspecteur, palette, annuler /
+ * ouverture de `?module=atelier` (référence protégée → copie de travail à la première modification), tracé au clavier et à la souris, inspecteur, palette, annuler /
  * rétablir, suppression, panneau mobile à 390 px, axe-core (aucune violation critique ou sérieuse).
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-nouveau.mjs
@@ -55,10 +55,11 @@ await page.waitForURL(/\/(projets|accueil)/);
 await page.goto(`${BASE}/projets`);
 await page.locator('.example-card button:has-text("Importer")').first().click();
 await page.waitForURL(/\/projets\/proj_/, { timeout: 60000 });
-const url = page.url().split("?")[0];
+const urlReference = page.url().split("?")[0];
+let url = urlReference;
 
 await mesurer("ouverture du nouvel Atelier P.118 → plan affiché", async () => {
-  await page.goto(`${url}?module=atelier&version=nouveau`);
+  await page.goto(`${url}?module=atelier`);
   await page.waitForSelector(".plan2d .plan-objets [data-objet]", { timeout: 30000 });
 });
 const nbObjets = await page.locator(".plan2d [data-objet]").count();
@@ -78,8 +79,16 @@ check("changer de niveau redessine le plan", (await page.locator(".nav-niveaux b
 await page.locator(".nav-ajout").click();
 await page.locator(".navigateur .nav-formulaire input").first().fill("Essai lot 3a");
 await page.locator(".navigateur .nav-formulaire input").nth(1).fill("20");
+check("référence protégée : la barre d'état l'annonce", /Exemple protégé : première modification dans une copie automatique\./.test(await page.locator(".atelier-n-reference").textContent()));
 await page.locator('.navigateur .nav-formulaire button[type="submit"]').click();
-await page.waitForFunction(() => [...document.querySelectorAll(".nav-niveaux li")].some((e) => e.textContent.includes("Essai lot 3a")));
+// Première modification sur la référence : copie de travail créée, la modification y est appliquée, l'écran bascule dessus.
+await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().startsWith(urlReference), { timeout: 30000 });
+url = page.url().split("?")[0];
+await page.waitForFunction(() => [...document.querySelectorAll(".nav-niveaux li")].some((e) => e.textContent.includes("Essai lot 3a")), null, { timeout: 30000 });
+const copieInfo = await (await page.request.get(`${BASE}/projects/${url.split("/").pop()}`)).json();
+const referenceModele = await (await page.request.get(`${BASE}/projects/${urlReference.split("/").pop()}/atelier/model`)).json();
+check("copie de travail créée automatiquement (« copie de travail · Atelier », modifiable), la référence reste à la révision 1 sans le niveau", copieInfo.name === "copie de travail · Atelier" && copieInfo.exampleMode === "editable" && referenceModele.revision === 1 && !Object.values(referenceModele.modele.niveaux).some((n) => n.nom === "Essai lot 3a") && (await page.locator(".atelier-n-reference").count()) === 0, JSON.stringify({ nom: copieInfo.name, mode: copieInfo.exampleMode, rev: referenceModele.revision }));
+check("site : CRS, aire de la parcelle et origine du repère local affichés", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator("#atelier-site-info").textContent()));
 await page.locator('.nav-niveaux button:has-text("Essai lot 3a")').click();
 await page.waitForTimeout(200);
 
@@ -94,8 +103,8 @@ check("raccourci M → outil Mur", (await page.locator('.atelier-n-outils .outil
 await mesurer("tracer un mur (clic + saisie 4 + Entrée) → mur affiché", async () => {
   await page.mouse.move(cx - 100, cy);
   await page.mouse.click(cx - 100, cy);
-  await page.mouse.move(cx + 50, cy + 2);
-  await page.keyboard.type("4");
+  await page.mouse.move(cx + 50, cy);
+  await page.keyboard.type("4;0");
   await page.keyboard.press("Enter");
   await page.waitForSelector(".plan2d .obj-mur, .plan2d [data-objet^='mur-']", { timeout: 5000 }).catch(async (err) => {
     await page.screenshot({ path: `${OUT}/echec-mur.png` });
@@ -103,23 +112,30 @@ await mesurer("tracer un mur (clic + saisie 4 + Entrée) → mur affiché", asyn
     throw err;
   });
 });
-// Trois murs de plus à la souris pour fermer un carré.
+// Trois murs de plus en saisie de précision « dx;dy » pour fermer le carré.
 const echelle = await page.evaluate(() => Number(document.querySelector(".etat-echelle").textContent.replace(/[^0-9]/g, "")));
 const pas = 4 * echelle;
-await page.mouse.click(cx - 100 + pas, cy - pas);
-await page.mouse.click(cx - 100, cy - pas);
-await page.mouse.click(cx - 100, cy);
+for (const saisie of ["0;4", "-4;0", "0;-4"]) {
+  await page.keyboard.type(saisie);
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(100);
+}
+// Les gestes suivants se placent sur le carré tel qu'il est affiché (boîte des quatre murs, épaisseur comprise).
+const B = await page.evaluate(() => { const bs = [...document.querySelectorAll(".plan2d [data-objet^='mur-']")].map((e) => e.getBoundingClientRect()); return { left: Math.min(...bs.map((b) => b.left)), right: Math.max(...bs.map((b) => b.right)), top: Math.min(...bs.map((b) => b.top)), bottom: Math.max(...bs.map((b) => b.bottom)) }; });
+const sx = (t) => B.left + t * (B.right - B.left);
+const sy = (t) => B.bottom - t * (B.bottom - B.top);
 await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 const murs = await page.locator(".plan2d [data-objet^='mur-']").count();
 check("quatre murs tracés (saisie de précision + accrochage aux extrémités)", murs === 4, String(murs));
+if (process.env.DIAG) console.log("diagnostic murs", JSON.stringify(await page.evaluate(async (pid) => { const m = await (await fetch(`/projects/${pid}/atelier/model`, { credentials: "include" })).json(); return Object.values(m.modele.objets).filter((o) => o.classe === "mur" && m.modele.niveaux[o.niveauId]?.nom === "Essai lot 3a").map((o) => [o.params.a.x, o.params.a.y, o.params.b.x, o.params.b.y]); }, url.split("/").pop())));
 // Pièce par clic dans la boucle.
 await page.keyboard.press("Escape");
 await page.keyboard.press("r");
-await page.mouse.click(cx - 100 + pas / 2, cy - pas / 2);
+await page.mouse.click(sx(0.5), sy(0.5));
 await page.waitForTimeout(300);
 const pieces = await page.locator(".plan2d [data-objet^='piece-']").count();
-check("outil Pièce : clic dans la boucle → pièce de 16 m² créée et sélectionnée", pieces === 1 && (await page.locator(".inspecteur h3").textContent()).includes("Pièce"));
+check("outil Pièce : clic dans la boucle → pièce de 16 m² créée et sélectionnée", pieces === 1 && (await page.locator(".inspecteur h3").textContent()).includes("Pièce"), `${pieces} pièce(s) · inspecteur « ${await page.locator(".inspecteur h3").textContent()} » · aide « ${await page.locator(".atelier-n-etat").textContent()} »`);
 // Inspecteur : renommer la pièce.
 await page.locator('.inspecteur input[id$="-nom"]').fill("Bureau");
 await page.keyboard.press("Enter");
@@ -145,19 +161,19 @@ await page.locator(".palette-champ").fill("door");
 await page.keyboard.press("Enter");
 check("palette : Entrée choisit l'outil (Porte)", (await page.locator('.atelier-n-outils .outil.est-actif').textContent()).includes("Porte"));
 // Porte sur le premier mur (milieu).
-await page.mouse.click(cx - 100 + pas / 2, cy);
+await page.mouse.click(sx(0.5), sy(0.01));
 await page.waitForTimeout(300);
 check("porte posée sur le mur cliqué", (await page.locator(".plan2d [data-objet^='porte-']").count()) === 1);
 
 // Type : créer un type depuis un mur, puis l'affecter à un autre.
 await page.keyboard.press("Escape");
 await page.keyboard.press("Escape");
-await page.mouse.click(cx - 100 + pas, cy - pas / 2);
+await page.mouse.click(sx(0.99), sy(0.5));
 await page.waitForTimeout(150);
 await page.locator('.inspecteur button[title="Créer un type à partir de cet objet"]').click();
 await page.waitForTimeout(300);
 const typeCree = await page.locator('.inspecteur select[id^="type-"] option:checked').textContent();
-await page.mouse.click(cx - 100, cy - pas / 2);
+await page.mouse.click(sx(0.01), sy(0.5));
 await page.waitForTimeout(150);
 await page.locator('.inspecteur select[id^="type-"]').selectOption({ label: typeCree });
 await page.waitForTimeout(200);
@@ -166,9 +182,9 @@ check("type : créé depuis un mur puis affecté à un autre mur", typeCree.star
 // Sélection par cadre et suppression.
 await page.keyboard.press("Escape");
 await page.keyboard.press("Escape");
-await page.mouse.move(cx - 100 - 30, cy + 30);
+await page.mouse.move(sx(0) - 30, sy(0) + 30);
 await page.mouse.down();
-await page.mouse.move(cx - 100 + pas + 30, cy - 10, { steps: 5 });
+await page.mouse.move(sx(1) + 30, sy(0.1), { steps: 5 });
 await page.mouse.up();
 await page.waitForTimeout(200);
 check("cadre : le mur du bas sélectionné", (await page.locator(".etat-selection").textContent()).length > 0);
@@ -290,10 +306,28 @@ check("manipulation directe : le mur glissé a bougé et c'est enregistré", ava
 await page.keyboard.press("Control+z");
 await page.waitForTimeout(800);
 
+// Exports : DXF, SVG, CSV en plan, PNG en 3D — téléchargés et enregistrés au catalogue des documents (niveau, vue, révision).
+const exportsFaits = [];
+for (const kind of ["dxf", "svg", "csv"]) {
+  await page.locator(".barre-exports > summary").click();
+  const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator(`[data-export="${kind}"]`).click()]);
+  const enregistre = await page.waitForFunction((k) => window.__fadiExports?.some((e) => e.kind === k), kind, { timeout: 15000 }).then(() => true).catch(() => false);
+  exportsFaits.push(`${kind}:${dl.suggestedFilename()}:${enregistre ? "catalogue" : "non"}`);
+}
+await page.locator('.barre-mode button:has-text("3D")').click();
+await page.waitForFunction(() => (window.fadiMesures3D?.triangles ?? 0) > 0, null, { timeout: 30000 });
+await page.locator(".barre-exports > summary").click();
+const [dlPng] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator('[data-export="png"]').click()]);
+const pngOk = await page.waitForFunction(() => window.__fadiExports?.some((e) => e.kind === "png"), null, { timeout: 15000 }).then(() => true).catch(() => false);
+exportsFaits.push(`png:${dlPng.suggestedFilename()}:${pngOk ? "catalogue" : "non"}`);
+await page.locator('.barre-mode button:has-text("Plan")').click();
+const docsCatalogue = (await (await page.request.get(`${BASE}/projects/${url.split("/").pop()}/documents`)).json()).documents.filter((d) => d.group === "dessins");
+check("exports DXF, SVG, CSV et PNG : téléchargés et enregistrés au catalogue, « à jour » à la révision courante", exportsFaits.every((e) => /:catalogue$/.test(e)) && docsCatalogue.length === 4 && docsCatalogue.every((d) => d.freshness === "a-jour") && docsCatalogue.some((d) => /Dessin technique DXF · Essai lot 3a · dessin plan/.test(d.label)), `${exportsFaits.join(" ")} | ${docsCatalogue.map((d) => d.label).join(" ; ")}`);
+
 // Second navigateur (même compte) : il lit les mêmes révisions.
 const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 }, storageState: await ctx.storageState() });
 const page2 = await ctx2.newPage();
-await page2.goto(`${url}?module=atelier&version=nouveau`);
+await page2.goto(`${url}?module=atelier`);
 await page2.waitForSelector(".plan2d");
 await page2.locator('.nav-niveaux button:has-text("Essai lot 3a")').click();
 await page2.waitForTimeout(300);
@@ -317,7 +351,7 @@ await axe("téléphone");
 const tel = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2, storageState: await ctx.storageState() });
 const pt3 = await tel.newPage();
 pt3.on("pageerror", (e) => erreursPage.push(`téléphone : ${e.message}`));
-await pt3.goto(`${url}?module=atelier&version=nouveau`);
+await pt3.goto(`${url}?module=atelier`);
 await pt3.waitForSelector(".plan2d");
 await pt3.locator('.barre-mode button:has-text("3D")').tap();
 await pt3.waitForFunction(() => (window.fadiMesures3D?.triangles ?? 0) > 0, null, { timeout: 30000 });

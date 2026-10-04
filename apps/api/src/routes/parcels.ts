@@ -22,7 +22,9 @@ import { parcels, projects } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { projectOr404 } from "../lib/owned-project.js";
 import { acceptParcel, hashOf, measure, summarize, type NativeParcelDomain, type ParcelSnapshot, type ParcelTransmission, SUPPORTED_CRS } from "../lib/parcel-transmission.js";
-import { ensureNativeProject, projectKey, readStoreEntry, writeStoreEntry } from "../lib/atelier-store.js";
+import { commandesParcelleNative, projeterPourAnalyse } from "@parcours/atelier-model";
+import { chargerModele, creerModeleVide } from "../lib/atelier-modele.js";
+import { appliquerCommandesInternes } from "../lib/atelier-validation.js";
 import { lockProject } from "../lib/step-rows.js";
 
 export const parcelsRouter = Router({ mergeParams: true });
@@ -199,21 +201,24 @@ parcelsRouter.post("/:parcelId/transmit", async (req, res) => {
     if (previous && previous.parcelId === id && previous.signature === hashOf(snapshot) && previous.parcel) {
       return previous;
     }
-    const nativeId = await ensureNativeProject(tx, project);
-    const currentParcel = ((await readStoreEntry(tx, project.id, projectKey(nativeId, "nativeParcel")))?.value as NativeParcelDomain | undefined) ?? null;
-    const footprintRow = (await readStoreEntry(tx, project.id, projectKey(nativeId, "buildingFootprint")))?.value as { vertices?: unknown } | undefined;
-    const floorDesign = (await readStoreEntry(tx, project.id, projectKey(nativeId, "floorDesign")))?.value as { levels?: Record<string, Record<string, unknown[]>> } | undefined;
-    const buildingDrawn = Object.values(floorDesign?.levels ?? {}).some((lvl) => ["walls", "rooms", "paths", "columns", "stairs"].some((k) => Array.isArray(lvl[k]) && lvl[k]!.length > 0));
+    // Modèle typé : la parcelle et l'emprise transmises deviennent deux commandes (cahier §5.6), dans cette transaction.
+    const charge = (await chargerModele(tx, project.id)) ?? (await creerModeleVide(tx, project.id, `fadi-${project.id}`));
+    const nativeId = charge.nativeId;
+    const domaines = projeterPourAnalyse(charge.etat, nativeId);
+    const currentParcel = (domaines.parcel as NativeParcelDomain | null) ?? null;
+    const buildingDrawn = Object.values(charge.etat.objets).some((o) => ["mur", "piece", "espace", "solide", "poteau", "escalier", "dalle"].includes(o.classe));
     const now = new Date().toISOString();
     const result = acceptParcel({
       snapshot,
       currentParcel,
-      currentFootprint: Array.isArray(footprintRow?.vertices) ? (footprintRow!.vertices as [number, number][]) : null,
+      currentFootprint: domaines.footprint.length ? domaines.footprint : null,
       buildingDrawn,
       now,
     });
-    if (result.writes.nativeParcel) await writeStoreEntry(tx, project, projectKey(nativeId, "nativeParcel"), result.writes.nativeParcel);
-    if (result.writes.buildingFootprint) await writeStoreEntry(tx, project, projectKey(nativeId, "buildingFootprint"), result.writes.buildingFootprint);
+    if (result.writes.nativeParcel) {
+      const commandes = commandesParcelleNative(result.writes.nativeParcel as unknown as Record<string, unknown>, result.writes.buildingFootprint?.vertices ?? null, charge.etat);
+      await appliquerCommandesInternes(tx, project.id, req.user!.id, commandes, "Parcelle transmise depuis l'étape 01");
+    }
     const transmission = { ...result.transmission, nativeId, parcelId: id, parcel: summarize(snapshot) };
     await tx.update(projects).set({ parcelTransmission: transmission, updatedAt: new Date() }).where(eq(projects.id, project.id));
     return transmission;

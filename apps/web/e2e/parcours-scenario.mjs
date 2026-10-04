@@ -468,64 +468,86 @@ await page.goto(`${variantUrl}?module=parcours&etape=2`);
 await page.waitForSelector("#biz-f1");
 check("variante : « Terminée ✓ » actif (copie modifiable), formulaire et panneau Harmonie générés — pas de récit (présentation du prototype pour une copie) ; l'original reste la référence", (await page.locator(".step-detail-nav .step-done").textContent()) === "Terminée ✓" && !(await page.locator(".step-detail-nav .step-done").isDisabled()) && (await page.locator(".ex81-story").count()) === 0 && (await page.locator(".h7-panel:not(.h7-panel-reference)").count()) === 1 && (await page.evaluate(async (pid) => (await (await fetch(`/projects/${pid}`, { credentials: "include" })).json()).exampleMode, exampleUrl.split("/").pop())) === "reference");
 
-// 6b. Atelier natif sur l'exemple : moteur, niveaux, dessin d'un mur persisté (projection + révision), annulation persistée
-await measure("ouverture de l'Atelier (moteur, modèle P.118, géométrie affichée)", async () => {
-  await page.goto(`${exampleUrl}?module=atelier`);
-  await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
-});
-await page.waitForTimeout(600);
+// 6b. Atelier (modèle typé) sur l'exemple : niveaux, référence protégée → copie de travail automatique, dessin d'un mur
+// persisté (révision), annuler / rétablir persistés, second appareil à la même révision, rechargement.
 const examplePid = exampleUrl.split("/").pop();
-const rdcWallsOf = async (pid) =>
-  page.evaluate(async (pid) => {
-    const levels = await (await fetch(`/projects/${pid}/levels`, { credentials: "include" })).json();
-    const rdc = levels.find((l) => l.id.endsWith("_rdc"));
-    const objs = await (await fetch(`/projects/${pid}/levels/${rdc.id}/objects`, { credentials: "include" })).json();
-    const project = await (await fetch(`/projects/${pid}`, { credentials: "include" })).json();
-    return { walls: objs.filter((o) => o.kind === "wall").length, revision: project.modelRevision };
-  }, pid);
+/** Le modèle typé tel que le serveur le sert. */
+const modelOf = async (pid) => (await page.request.get(`${BASE}/projects/${pid}/atelier/model`)).json();
+const wallsOn = async (pid, niveauId) => {
+  const r = await modelOf(pid);
+  const murs = Object.values(r.modele.objets).filter((o) => o.classe === "mur" && o.niveauId === niveauId);
+  return { walls: murs.length, revision: r.revision, heights: murs.map((w) => w.params.hauteur?.value ?? null) };
+};
+const rdcWallsOf = (pid) => wallsOn(pid, "rdc");
 const rdcWalls = () => rdcWallsOf(examplePid);
-check("atelier : géométrie P.118 chargée (EPSG:26191 · 1345.55 m²)", (await page.locator("#viewer-info").textContent()).includes("1345.55"));
-check("atelier : 6 niveaux", (await page.locator("#model-floors button").count()) === 6);
-check("atelier : barre d'outils V8 prête", (await page.locator("#atelier-toolbar").getAttribute("data-ready")) === "1");
+const atelierPret = (p = page) => p.waitForSelector(".atelier-n .plan2d [data-objet]", { timeout: 30000 });
+const choisirNiveau = async (nom, p = page) => {
+  await p.locator(".nav-niveaux button", { hasText: nom }).first().click();
+  await p.waitForTimeout(250);
+};
+const atelierEnregistre = (p = page, timeout = 20000) => p.waitForFunction(() => document.querySelector(".barre-sync")?.dataset.etat === "enregistre", null, { timeout }).catch(() => {});
+/** Attente côté Node (révision du serveur) — sans relecture en boucle depuis l'onglet. */
+const waitRevisionAbove = async (pid, n, timeoutMs = 20000) => {
+  const until = Date.now() + timeoutMs;
+  while (Date.now() < until) {
+    if ((await (await page.request.get(`${BASE}/projects/${pid}`)).json()).modelRevision > n) return true;
+    await page.waitForTimeout(300);
+  }
+  return false;
+};
+/** Un mur tracé en saisie de précision depuis un point de la zone de travail (fractions de sa largeur / hauteur). */
+const tracerMur = async (fx, fy = 0.5, saisie = "3;0") => {
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("m");
+  const b = await page.locator(".plan2d").boundingBox();
+  await page.mouse.move(b.x + b.width * fx, b.y + b.height * fy);
+  await page.mouse.click(b.x + b.width * fx, b.y + b.height * fy);
+  await page.keyboard.type(saisie);
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Escape");
+};
+const raccourci = async (touches) => {
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press(touches);
+};
+await measure("ouverture de l'Atelier (modèle P.118 typé, plan affiché)", async () => {
+  await page.goto(`${exampleUrl}?module=atelier`);
+  await atelierPret();
+});
+check("atelier : site P.118 rattaché au cadastre (EPSG:26191 · parcelle 1345,55 m² · origine du repère local)", /EPSG:26191 · parcelle 1345,55 m² · origine locale/.test(await page.locator("#atelier-site-info").textContent()));
+check("atelier : 6 niveaux", (await page.locator(".nav-niveaux li").count()) === 6);
+check("atelier : cinq repères (barre, outils, navigateur, zone de travail, inspecteur et modifications)", (await page.locator(".atelier-n-barre, .atelier-n-outils, .atelier-n-gauche, .atelier-n-travail, .atelier-n-droite").count()) === 5);
 const before = await rdcWalls();
 check("atelier : 39 murs au RDC avant dessin, révision 1", before.walls === 39 && before.revision === 1, JSON.stringify(before));
-// Référence protégée de l'exemple (`demoP118V81.mode = "reference"`) : la note l'annonce, l'aide de l'outil aussi, et la première
-// modification validée crée la copie de travail automatiquement (`ensureDrawingCopy` → `copy('P.118 — copie de travail · Atelier')`).
-check("atelier de la référence : note « Exemple protégé : première modification dans une copie automatique. »", /Exemple protégé : première modification dans une copie automatique\./.test(await page.locator(".native-atelier-reference").textContent()));
-await page.locator("#model-floors button", { hasText: "RDC" }).first().click();
-await page.locator('#atelier-toolbar [data-atab="design"]').click();
-await page.waitForTimeout(600);
-await page.locator('button:has-text("Mur")').first().click();
-check("atelier de la référence : l'aide de l'outil ajoute « Exemple protégé : première modification dans une copie automatique »", /Exemple protégé : première modification dans une copie automatique/.test(await page.evaluate(() => document.querySelector("#nativeDesignerRoot")?.textContent || "")));
-const box = await page.locator("#viewer-surface").boundingBox();
-await page.mouse.click(box.x + box.width * 0.45, box.y + box.height * 0.5);
-await page.waitForTimeout(200);
-await page.mouse.click(box.x + box.width * 0.55, box.y + box.height * 0.5);
-await page.keyboard.press("Enter");
+// Référence protégée de l'exemple (`demoP118V81.mode = "reference"`) : la barre l'annonce, et la première modification validée crée la
+// copie de travail automatiquement (prototype : `copy('P.118 — copie de travail · Atelier', { stayInAtelier: true, automatic: true })`).
+check("atelier de la référence : « Exemple protégé : première modification dans une copie automatique. »", /Exemple protégé : première modification dans une copie automatique\./.test(await page.locator(".atelier-n-reference").textContent()));
+await choisirNiveau("RDC");
+await tracerMur(0.45);
 await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid) && /module=atelier/.test(u.toString()), { timeout: 30000 });
 const atelierUrl = page.url().split("?")[0];
 const atelierPid = atelierUrl.split("/").pop();
 const copyToastSeen = await page.waitForFunction(() => /Copie de travail créée automatiquement · exemple original conservé\./.test(document.querySelector(".h7-toast")?.textContent || ""), null, { timeout: 6000 }).then(() => true).catch(() => false); // s'efface de lui-même après 3,6 s
-await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
-await page.waitForFunction(() => /Enregistré sur le serveur|Modèle chargé depuis le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
-await page.waitForTimeout(400);
+await atelierPret();
+await waitRevisionAbove(atelierPid, 1);
+await atelierEnregistre();
 const copyProject = await (await page.request.get(`${BASE}/projects/${atelierPid}`)).json();
 const afterDraw = await rdcWallsOf(atelierPid);
 const referenceAfter = await rdcWalls();
 check("atelier de la référence : un mur dessiné → copie de travail créée automatiquement (« P.118 — copie de travail · Atelier », mode modifiable), écran basculé sur la copie, même module", copyProject.code === "P.118" && copyProject.name === "copie de travail · Atelier" && copyProject.exampleMode === "editable" && copyProject.sourceExampleId === "p118-exemple-complet" && page.url().includes("module=atelier") && (await page.locator(".project-header h1").textContent()) === "P.118 — copie de travail · Atelier", JSON.stringify({ name: copyProject.name, mode: copyProject.exampleMode, title: await page.locator(".project-header h1").textContent() }));
-check("copie de travail : le mur dessiné y est enregistré → 40 murs, révision 2 (projection régénérée) ; la référence reste à 39 murs, révision 1", afterDraw.walls === 40 && afterDraw.revision === 2 && referenceAfter.walls === 39 && referenceAfter.revision === 1, JSON.stringify({ afterDraw, referenceAfter }));
-check("copie de travail : plus de note « Exemple protégé », aide du moteur « Copie de travail active · modification enregistrée ; exemple original conservé. » (toast de navigation « Copie de travail créée automatiquement… »)", (await page.locator(".native-atelier-reference").count()) === 0 && /Copie de travail active · modification enregistrée ; exemple original conservé\./.test(await page.evaluate(() => document.querySelector("#nativeDesignerRoot")?.textContent || "")), copyToastSeen ? "toast vu" : "toast non observé (effacé avant la lecture)");
+check("copie de travail : le mur dessiné y est enregistré → 40 murs, révision 2 ; la référence reste à 39 murs, révision 1", afterDraw.walls === 40 && afterDraw.revision === 2 && referenceAfter.walls === 39 && referenceAfter.revision === 1, JSON.stringify({ afterDraw, referenceAfter }));
+check("copie de travail : plus de note « Exemple protégé » (toast de navigation « Copie de travail créée automatiquement… »)", (await page.locator(".atelier-n-reference").count()) === 0, copyToastSeen ? "toast vu" : "toast non observé (effacé avant la lecture)");
 await page.screenshot({ path: `${OUT}/atelier-concevoir-wall-desktop.png`, fullPage: true });
 await measure("annulation d'un mur → enregistrée sur le serveur (révision avancée)", async () => {
-  await page.locator('#atelier-toolbar [data-quick="undo"]').click();
-  await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+  await raccourci("Control+z");
+  await waitRevisionAbove(atelierPid, 2);
 });
-await page.waitForTimeout(400);
 const afterUndo = await rdcWallsOf(atelierPid);
 check("copie de travail : annuler → 39 murs, révision 3 (l'annulation modifie l'état persistant)", afterUndo.walls === 39 && afterUndo.revision === 3, JSON.stringify(afterUndo));
-await page.locator('#atelier-toolbar [data-quick="redo"]').click();
-await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
-await page.waitForFunction(async (pid) => (await (await fetch(`/projects/${pid}`, { credentials: "include" })).json()).modelRevision === 4, atelierPid, { timeout: 10000 }).catch(() => {});
+await raccourci("Control+Shift+z");
+await waitRevisionAbove(atelierPid, 3);
 const afterRedo = await rdcWallsOf(atelierPid);
 check("copie de travail : rétablir → 40 murs, révision 4 (le rétablissement est persisté lui aussi)", afterRedo.walls === 40 && afterRedo.revision === 4, JSON.stringify(afterRedo));
 // Second appareil (même compte, autre navigateur) : le modèle enregistré est relu à la même révision, avec le mur rétabli.
@@ -537,132 +559,91 @@ await device2.fill('input[name="password"]', "scenario-pass-123");
 await device2.click('button[type="submit"]');
 await device2.waitForURL(/\/(projets|accueil)/);
 await device2.goto(`${atelierUrl}?module=atelier`);
-await device2.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
-const device2Store = await (await device2.request.get(`${BASE}/projects/${atelierPid}/atelier/store`)).json();
-const device1Store = await (await page.request.get(`${BASE}/projects/${atelierPid}/atelier/store`)).json();
-const floorDesignKey = Object.keys(device2Store.entries).find((k) => k.endsWith(".floorDesign"));
-check("second appareil : le modèle est relu à la même révision (floorDesign identique, même révision de clé), 6 niveaux affichés", device2Store.modelRevision >= 4 && JSON.stringify(device2Store.entries[floorDesignKey]) === JSON.stringify(device1Store.entries[floorDesignKey]) && device2Store.revisions[floorDesignKey] === device1Store.revisions[floorDesignKey] && (await device2.locator("#model-floors button").count()) === 6, JSON.stringify({ rev: device2Store.modelRevision, key: floorDesignKey, keyRev: device2Store.revisions[floorDesignKey] }));
+await atelierPret(device2);
+const device2Model = await (await device2.request.get(`${BASE}/projects/${atelierPid}/atelier/model`)).json();
+const device1Model = await modelOf(atelierPid);
+check("second appareil : le modèle est relu à la même révision (objets identiques), 6 niveaux affichés", device2Model.revision === 4 && JSON.stringify(device2Model.modele.objets) === JSON.stringify(device1Model.modele.objets) && (await device2.locator(".nav-niveaux li").count()) === 6 && /Enregistré · r4/.test(await device2.locator(".barre-sync").textContent()), JSON.stringify({ rev: device2Model.revision, barre: await device2.locator(".barre-sync").textContent() }));
 await ctxDevice2.close();
-await measure("rechargement de la page de l'Atelier → géométrie affichée", async () => {
+await measure("rechargement de la page de l'Atelier → plan affiché", async () => {
   await page.reload();
-  await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+  await atelierPret();
 });
-check("copie de travail : rechargement → modèle toujours là", (await page.locator("#model-floors button").count()) === 6);
+check("copie de travail : rechargement → modèle toujours là", (await page.locator(".nav-niveaux li").count()) === 6);
 
-// 5b. Acceptation P.118 dans l'Atelier (copie de travail) : chaque niveau × chaque mode de vue (volume, éclatée, plan = D2, coupe) et
-// chaque dessin technique rendus sans erreur ni vue vide ; la mezzanine modifiée en D2 (plan) puis relue en D3 (volume) et en vue
-// éclatée ; hauteur du mur modifiée (propriétés) ; Pousser/Tirer activable ; annuler / rétablir persistés ; réouverture sur un autre
+// 6b'. Acceptation P.118 dans l'Atelier (copie de travail) : chaque niveau × chaque présentation 3D (bâtiment, niveau actif, éclaté)
+// et chaque vue technique (plan, coupes N–S / E–O, quatre façades) rendus sans vue vide ni erreur ; la mezzanine modifiée en plan puis
+// relue en 3D ; hauteur du mur modifiée (inspecteur) ; Pousser / tirer activable ; annuler / rétablir persistés ; réouverture sur un autre
 // appareil à la même révision ; exports DXF / SVG / CSV / PNG enregistrés au catalogue ; tableau des surfaces de la même révision.
-const wallsOf = async (pid, suffix) =>
-  page.evaluate(
-    async ([pid, suffix]) => {
-      const levels = await (await fetch(`/projects/${pid}/levels`, { credentials: "include" })).json();
-      const level = levels.find((l) => l.id.endsWith(suffix));
-      const objs = await (await fetch(`/projects/${pid}/levels/${level.id}/objects`, { credentials: "include" })).json();
-      const project = await (await fetch(`/projects/${pid}`, { credentials: "include" })).json();
-      const walls = objs.filter((o) => o.kind === "wall");
-      return { walls: walls.length, revision: project.modelRevision, heights: walls.map((w) => w.height ?? w.properties?.height ?? null) };
-    },
-    [pid, suffix],
-  );
-const canvasInk = () =>
-  page.evaluate(() => {
-    const c = document.getElementById("building-canvas");
-    if (!c || c.hidden || !c.width) return 0;
-    const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
-    const bg = [d[0], d[1], d[2]];
-    let ink = 0;
-    for (let i = 0; i < d.length; i += 4 * 101) if (Math.abs(d[i] - bg[0]) + Math.abs(d[i + 1] - bg[1]) + Math.abs(d[i + 2] - bg[2]) > 40) ink++;
-    return ink;
-  });
-const techContent = () => page.evaluate(() => { const svg = document.querySelector("#technical-stage svg"); return svg ? svg.querySelectorAll("path, line, polygon, polyline, rect").length : 0; });
-/** Les commandes natives du viewer (modes, niveaux, dessins techniques, export de vue) sont pilotées par la barre V8 et peuvent être masquées : clic par script, comme la barre le fait (`click(item.target)`). */
-const nativeClick = (selector) => page.locator(selector).first().evaluate((el) => el.click());
 const errorsBeforeAcceptance = consoleErrors.length;
-/** Attente côté Node (pas de relecture en boucle dans la page : des `fetch` répétés depuis l'onglet retardent l'envoi du modèle). */
-const waitRevisionAbove = async (pid, n, timeoutMs = 20000) => {
-  const until = Date.now() + timeoutMs;
-  while (Date.now() < until) {
-    if ((await (await page.request.get(`${BASE}/projects/${pid}`)).json()).modelRevision > n) return true;
-    await page.waitForTimeout(400);
-  }
-  return false;
-};
-const levelIds = await page.$$eval("#model-floors button", (bs) => bs.map((b) => b.dataset.level));
+const rendus3D = () => page.evaluate(() => window.fadiMesures3D?.rendus?.length ?? 0);
+const apresRendu = async (n0) => page.waitForFunction((n) => (window.fadiMesures3D?.rendus?.length ?? 0) > n, n0, { timeout: 10000 }).catch(() => {});
+await page.locator('.barre-mode button:has-text("3D")').click();
+await page.waitForFunction(() => (window.fadiMesures3D?.triangles ?? 0) > 0, null, { timeout: 30000 });
+const niveauxNoms = await page.locator(".nav-niveaux button span:first-child").allTextContents();
 const combos = [];
-for (const levelId of levelIds) {
-  await nativeClick(`#model-floors button[data-level="${levelId}"]`);
-  await page.waitForTimeout(150);
-  for (const mode of ["volume", "explode", "plan", "section"]) {
-    const button = page.locator(`#mode-${mode}`);
-    if (await button.isDisabled()) { combos.push(`${levelId}/${mode}:désactivé`); continue; }
-    await nativeClick(`#mode-${mode}`);
-    await page.waitForTimeout(250);
-    const ok = (await page.locator(`#mode-${mode}`).getAttribute("aria-pressed")) === "true" && (mode === "plan" || mode === "section" ? (await techContent()) > 10 : (await canvasInk()) > 30);
-    if (!ok) combos.push(`${levelId}/${mode}:vide`);
+for (const presentation of ["Bâtiment", "Niveau actif", "Éclaté"]) {
+  for (const nom of niveauxNoms) {
+    const n0 = await rendus3D();
+    await choisirNiveau(nom);
+    await page.locator('.vue3d-commandes select[aria-label="Présentation"]').selectOption({ label: presentation });
+    await apresRendu(n0);
+    if (!((await page.evaluate(() => window.fadiMesures3D.triangles)) > 0)) combos.push(`${nom}/${presentation}:vide`);
   }
 }
-check("acceptation · 6 niveaux × 4 modes (volume, éclatée, plan D2, coupe) : chaque combinaison rendue (dessin non vide), aucune erreur JavaScript", levelIds.length === 6 && combos.length === 0 && consoleErrors.length === errorsBeforeAcceptance, combos.join(" ") || `${levelIds.length} niveaux`);
+check("acceptation · 6 niveaux × 3 présentations 3D (bâtiment, niveau actif, éclaté) : chaque combinaison rendue (image non vide), aucune erreur JavaScript", niveauxNoms.length === 6 && combos.length === 0 && consoleErrors.length === errorsBeforeAcceptance, combos.join(" ") || `${niveauxNoms.length} niveaux`);
+await page.locator('.vue3d-commandes select[aria-label="Présentation"]').selectOption({ label: "Bâtiment" });
 const techViews = [];
-for (const view of ["plan", "siteplan", "section", "section-ew", "elevation-north", "elevation-south", "elevation-east", "elevation-west"]) {
-  const b = page.locator(`[data-tech-view="${view}"]`).first();
-  if ((await b.count()) === 0 || (await b.isDisabled())) { techViews.push(`${view}:absent`); continue; }
-  await nativeClick(`[data-tech-view="${view}"]`);
-  await page.waitForTimeout(250);
-  if ((await techContent()) < 5) techViews.push(`${view}:vide`);
+for (const vue of ["Plan (dessus)", "Coupe nord–sud", "Coupe est–ouest", "Façade nord", "Façade sud", "Façade est", "Façade ouest"]) {
+  const n0 = await rendus3D();
+  await page.locator('.vue3d-commandes select[aria-label="Vue"]').selectOption({ label: vue });
+  await apresRendu(n0);
+  if (!((await page.evaluate(() => window.fadiMesures3D.triangles)) > 0)) techViews.push(`${vue}:vide`);
 }
-check("acceptation · dessins techniques (plan, plan de situation, coupes N-S / E-O, 4 élévations) : chacun rendu en SVG, aucune erreur JavaScript", techViews.length === 0 && consoleErrors.length === errorsBeforeAcceptance, techViews.join(" "));
-// Mezzanine modifiée en D2 (plan) : un mur dessiné, enregistré sur le serveur, relu en D3 (volume) et en vue éclatée.
-await nativeClick('#model-floors button[data-level="mezz"]');
-await nativeClick("#mode-plan");
-await page.waitForTimeout(300);
-const mezzBefore = await wallsOf(atelierPid, "_mezz");
-await page.locator('#atelier-toolbar [data-atab="design"]').click();
-await page.waitForTimeout(400);
-await page.locator('[data-atelier-tool="wall"]').first().click();
-const surface = await page.locator("#viewer-surface").boundingBox();
-await page.mouse.click(surface.x + surface.width * 0.42, surface.y + surface.height * 0.46);
-await page.waitForTimeout(150);
-await page.mouse.click(surface.x + surface.width * 0.52, surface.y + surface.height * 0.46);
-await page.keyboard.press("Enter");
+check("acceptation · vues techniques (plan, coupes N–S / E–O, 4 façades) : chacune rendue, aucune erreur JavaScript", techViews.length === 0 && consoleErrors.length === errorsBeforeAcceptance, techViews.join(" "));
+await page.locator('.vue3d-commandes select[aria-label="Vue"]').selectOption({ label: "Perspective" });
+// Mezzanine modifiée en plan : un mur dessiné, enregistré sur le serveur, relu en 3D (niveau actif) et en vue éclatée.
+await page.locator('.barre-mode button:has-text("Plan")').click();
+await choisirNiveau("Mezzanine");
+const mezzBefore = await wallsOn(atelierPid, "mezz");
+await tracerMur(0.4, 0.45, "2,5;0");
 await waitRevisionAbove(atelierPid, mezzBefore.revision);
-const mezzAfter = await wallsOf(atelierPid, "_mezz");
-check("acceptation · mezzanine (D2, plan) : un mur dessiné → enregistré sur le serveur (murs +1, révision avancée)", mezzAfter.walls === mezzBefore.walls + 1 && mezzAfter.revision > mezzBefore.revision, `${mezzBefore.walls} → ${mezzAfter.walls}, révision ${mezzBefore.revision} → ${mezzAfter.revision} · outil mur ${await page.locator('[data-atelier-tool="wall"]').first().getAttribute("aria-pressed")} · aide « ${await page.locator("#atelier-tool-status").textContent().catch(() => "-")} » · ${await page.locator(".native-atelier-status").textContent().catch(() => "-")}`);
-await nativeClick("#mode-volume");
-await page.waitForTimeout(300);
-const d3Ink = await canvasInk();
-await nativeClick("#mode-explode");
-await page.waitForTimeout(300);
-const explodeInk = await canvasInk();
-check("acceptation · mezzanine relue en D3 (volume) puis en vue éclatée : dessins non vides, aucune erreur JavaScript", d3Ink > 30 && explodeInk > 30 && consoleErrors.length === errorsBeforeAcceptance, `volume ${d3Ink} · éclatée ${explodeInk}`);
-// Propriétés du mur dessiné : le mur venant d'être tracé est la sélection courante ; « Propriétés » (⚙) ouvre son panneau — hauteur 2,40 m appliquée, persistée.
-await nativeClick("#mode-plan");
-await page.waitForTimeout(250);
-await page.locator('#atelier-toolbar [data-quick="props"]').click();
-await page.waitForSelector('#atelier-properties input[name="height"]', { timeout: 10000 }).catch(() => {});
-const heightField = page.locator('#atelier-properties input[name="height"]');
+const mezzAfter = await wallsOn(atelierPid, "mezz");
+check("acceptation · mezzanine (plan) : un mur dessiné → enregistré sur le serveur (murs +1, révision avancée)", mezzAfter.walls === mezzBefore.walls + 1 && mezzAfter.revision > mezzBefore.revision, `${mezzBefore.walls} → ${mezzAfter.walls}, révision ${mezzBefore.revision} → ${mezzAfter.revision} · ${await page.locator(".atelier-n-etat").textContent()}`);
+await page.locator('.barre-mode button:has-text("3D")').click();
+for (const presentation of ["Niveau actif", "Éclaté"]) {
+  const n0 = await rendus3D();
+  await page.locator('.vue3d-commandes select[aria-label="Présentation"]').selectOption({ label: presentation });
+  await apresRendu(n0);
+}
+check("acceptation · mezzanine relue en 3D (niveau actif) puis en vue éclatée : images non vides, aucune erreur JavaScript", (await page.evaluate(() => window.fadiMesures3D.triangles)) > 0 && consoleErrors.length === errorsBeforeAcceptance);
+await page.locator('.vue3d-commandes select[aria-label="Présentation"]').selectOption({ label: "Bâtiment" });
+await page.locator('.barre-mode button:has-text("Plan")').click();
+// Hauteur du mur dessiné (encore sélectionné) : 2,40 m dans l'inspecteur, persistée.
+const heightField = page.locator('.inspecteur input[id$="-hauteur"]');
 let heightChanged = false;
 if (await heightField.count()) {
-  await heightField.fill("2.4");
-  await page.locator('#atelier-properties button[type="submit"]:has-text("Appliquer")').click();
+  await heightField.fill("2,4");
+  await heightField.press("Enter");
   await waitRevisionAbove(atelierPid, mezzAfter.revision);
-  const afterHeight = await wallsOf(atelierPid, "_mezz");
+  const afterHeight = await wallsOn(atelierPid, "mezz");
   heightChanged = afterHeight.heights.some((h) => Math.abs(Number(h) - 2.4) < 1e-6) && afterHeight.revision > mezzAfter.revision;
 }
-check("acceptation · propriétés du mur (hauteur 2,40 m) : appliquées et persistées (révision avancée)", heightChanged, `panneau ${await page.locator("#atelier-properties").evaluate((p) => (p.hidden ? "masqué" : "ouvert · " + [...p.querySelectorAll("input")].map((i) => i.name).join(","))).catch(() => "absent")}`);
-await page.locator('[data-atelier-tool="pushpull"]').first().click();
-await page.waitForTimeout(200);
-check("acceptation · Pousser/Tirer : outil activé sur la sélection (poignées L / l / H), aide affichée", (await page.locator('[data-atelier-tool="pushpull"]').first().getAttribute("aria-pressed")) === "true" && /Glissez une flèche/.test(await page.locator("#atelier-tool-status").textContent().catch(() => "")));
-await page.locator('[data-atelier-tool="select"]').first().click();
-// Annuler / rétablir persistés sur la mezzanine, puis relecture sur un autre appareil à la même révision.
-const beforeUndoMezz = await wallsOf(atelierPid, "_mezz");
-await page.locator('#atelier-toolbar [data-quick="undo"]').click();
+check("acceptation · hauteur du mur (2,40 m, inspecteur) : appliquée et persistée (révision avancée)", heightChanged, `inspecteur « ${await page.locator(".inspecteur h3").first().textContent().catch(() => "-")} »`);
+await page.keyboard.press("Escape");
+await page.keyboard.press("u");
+await page.waitForTimeout(300);
+check("acceptation · Pousser / tirer : outil activé en vue 3D, aide affichée", (await page.locator('.barre-mode button[aria-pressed="true"]').textContent()) === "3D" && /cliquez un mur, un poteau, un solide, une dalle ou une toiture et glissez/.test(await page.locator(".atelier-n-etat").textContent()));
+await page.locator('.barre-mode button:has-text("Plan")').click();
+// Annuler / rétablir persistés sur la mezzanine (la hauteur), puis relecture sur un autre appareil à la même révision.
+const beforeUndoMezz = await wallsOn(atelierPid, "mezz");
+await raccourci("Control+z");
 await waitRevisionAbove(atelierPid, beforeUndoMezz.revision);
-const afterUndoMezz = await wallsOf(atelierPid, "_mezz");
-await page.locator('#atelier-toolbar [data-quick="redo"]').click();
+const afterUndoMezz = await wallsOn(atelierPid, "mezz");
+await raccourci("Control+Shift+z");
 await waitRevisionAbove(atelierPid, afterUndoMezz.revision);
-const afterRedoMezz = await wallsOf(atelierPid, "_mezz");
-check("acceptation · annuler (hauteur) puis rétablir : chaque pas persisté (révisions successives), état final = hauteur 2,40 m", afterUndoMezz.revision > beforeUndoMezz.revision && afterRedoMezz.revision > afterUndoMezz.revision && afterRedoMezz.heights.some((h) => Math.abs(Number(h) - 2.4) < 1e-6), `${beforeUndoMezz.revision} → ${afterUndoMezz.revision} → ${afterRedoMezz.revision}`);
+const afterRedoMezz = await wallsOn(atelierPid, "mezz");
+check("acceptation · annuler (hauteur) puis rétablir : chaque pas persisté (révisions successives), état final = hauteur 2,40 m", afterUndoMezz.revision > beforeUndoMezz.revision && !afterUndoMezz.heights.some((h) => Math.abs(Number(h) - 2.4) < 1e-6) && afterRedoMezz.revision > afterUndoMezz.revision && afterRedoMezz.heights.some((h) => Math.abs(Number(h) - 2.4) < 1e-6), `${beforeUndoMezz.revision} → ${afterUndoMezz.revision} → ${afterRedoMezz.revision}`);
+await atelierEnregistre();
 const ctxDevice3 = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 const device3 = await ctxDevice3.newPage();
 await device3.goto(`${BASE}/connexion`);
@@ -671,45 +652,49 @@ await device3.fill('input[name="password"]', "scenario-pass-123");
 await device3.click('button[type="submit"]');
 await device3.waitForURL(/\/(projets|accueil)/);
 await device3.goto(`${atelierUrl}?module=atelier`);
-await device3.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
-await device3.locator('#model-floors button[data-level="mezz"]').first().evaluate((el) => el.click());
-await device3.locator("#mode-plan").first().evaluate((el) => el.click());
-await device3.waitForTimeout(300);
-const device3Project = await (await device3.request.get(`${BASE}/projects/${atelierPid}`)).json();
-const device3Tech = await device3.evaluate(() => document.querySelectorAll("#technical-stage svg path, #technical-stage svg line, #technical-stage svg polygon").length);
-check("acceptation · autre appareil : la copie se rouvre à la même révision, mezzanine en plan avec son mur (dessin non vide)", device3Project.modelRevision === afterRedoMezz.revision && device3Tech > 10, `révision ${device3Project.modelRevision} vs ${afterRedoMezz.revision}`);
+await atelierPret(device3);
+await choisirNiveau("Mezzanine", device3);
+const device3Model = await (await device3.request.get(`${BASE}/projects/${atelierPid}/atelier/model`)).json();
+const device3Murs = await device3.locator(".plan2d [data-objet]").count();
+check("acceptation · autre appareil : la copie se rouvre à la même révision, mezzanine en plan avec son mur (dessin non vide)", device3Model.revision === afterRedoMezz.revision && device3Murs > 10, `révision ${device3Model.revision} vs ${afterRedoMezz.revision} · ${device3Murs} objets`);
 await ctxDevice3.close();
-// Exports de la même révision : DXF, SVG, CSV (panneau Exporter du moteur) et PNG (vue), chacun téléchargé ET enregistré au catalogue avec niveau, vue et révision.
-await page.locator('[data-atelier-tool="exports"]').first().click();
-await page.waitForSelector('[data-export="dxf"]', { timeout: 10000 });
+// Exports de la même révision : DXF, SVG, CSV (plan) et PNG (vue 3D), chacun téléchargé ET enregistré au catalogue avec niveau, vue et révision.
 const exported = [];
 for (const kind of ["dxf", "svg", "csv"]) {
+  await page.locator(".barre-exports > summary").click();
   const [download] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator(`[data-export="${kind}"]`).click()]);
   const registered = await page.waitForFunction((k) => window.__fadiExports?.some((e) => e.kind === k), kind, { timeout: 15000 }).then(() => true).catch(() => false);
   exported.push(`${kind}:${download.suggestedFilename()}:${registered ? "catalogue" : "non enregistré"}`);
 }
-check("acceptation · exports DXF, SVG et CSV du moteur : téléchargés et enregistrés au catalogue (niveau mezzanine, vue plan, révision courante)", exported.length === 3 && exported.every((e) => /:catalogue$/.test(e)), exported.join(" "));
-const [pngDownload] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), nativeClick("#mode-volume").then(() => page.waitForTimeout(300)).then(() => nativeClick("#export-view"))]);
+check("acceptation · exports DXF, SVG et CSV : téléchargés et enregistrés au catalogue (niveau mezzanine, dessin plan, révision courante)", exported.length === 3 && exported.every((e) => /:catalogue$/.test(e)), exported.join(" "));
+await page.locator('.barre-mode button:has-text("3D")').click();
+await page.waitForFunction(() => (window.fadiMesures3D?.triangles ?? 0) > 0, null, { timeout: 30000 });
+await page.locator(".barre-exports > summary").click();
+const [pngDownload] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator('[data-export="png"]').click()]);
 const pngRegistered = await page.waitForFunction(() => window.__fadiExports?.some((e) => e.kind === "png"), null, { timeout: 15000 }).then(() => true).catch(() => false);
-check("acceptation · export PNG de la vue : téléchargé et enregistré au catalogue", /\.png$/.test(pngDownload.suggestedFilename()) && pngRegistered, pngDownload.suggestedFilename());
+check("acceptation · export PNG de la vue 3D : téléchargé et enregistré au catalogue", /\.png$/.test(pngDownload.suggestedFilename()) && pngRegistered, pngDownload.suggestedFilename());
+await page.locator('.barre-mode button:has-text("Plan")').click();
 const catalogueDocs = (await (await page.request.get(`${BASE}/projects/${atelierPid}/documents`)).json()).documents;
 const drawingDocs = catalogueDocs.filter((d) => d.group === "dessins");
 const surfacesDoc = catalogueDocs.find((d) => d.kind === "tableau-surfaces");
-check("acceptation · catalogue : 4 dessins / exports « à jour » à la révision courante (DXF · mezzanine · dessin plan…), tableau des surfaces productible à la même révision", drawingDocs.length === 4 && drawingDocs.every((d) => d.freshness === "a-jour" && d.produced.modelRevision === afterRedoMezz.revision) && drawingDocs.some((d) => /Dessin technique DXF · Mezzanine · dessin plan/.test(d.label)) && surfacesDoc.current.modelRevision === afterRedoMezz.revision, drawingDocs.map((d) => d.label).join(" | "));
+check("acceptation · catalogue : 4 dessins / exports « à jour » à la révision courante (DXF · Mezzanine · dessin plan…), tableau des surfaces productible à la même révision", drawingDocs.length === 4 && drawingDocs.every((d) => d.freshness === "a-jour" && d.produced.modelRevision === afterRedoMezz.revision) && drawingDocs.some((d) => /Dessin technique DXF · Mezzanine · dessin plan/.test(d.label)) && surfacesDoc.current.modelRevision === afterRedoMezz.revision, drawingDocs.map((d) => d.label).join(" | "));
 const acceptanceSurfaces = await page.request.get(`${BASE}/projects/${atelierPid}/documents/surfaces`);
 check("acceptation · tableau des surfaces (CSV) produit depuis cette révision, mezzanine incluse", acceptanceSurfaces.status() === 200 && /Mezzanine/.test(await acceptanceSurfaces.text()) && ((await (await page.request.get(`${BASE}/projects/${atelierPid}/documents`)).json()).documents.find((d) => d.kind === "tableau-surfaces").freshness === "a-jour"));
 check("acceptation · aucune erreur JavaScript pendant l'acceptation", consoleErrors.length === errorsBeforeAcceptance, consoleErrors.slice(errorsBeforeAcceptance).join(" | "));
-// Référence, étape 10 : la page est l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; « Analyser → Harmonie » ouvre la sous-page avec le panneau de l'exemple
+// Référence, étape 10 : la page est l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; « Harmonie » ouvre la sous-page avec le panneau de l'exemple
 // (récit, « Lire le bilan du bâtiment conçu » / « Voir les capacités et ambiances » / « Exporter le bilan »).
 await page.goto(`${exampleUrl}?module=parcours&etape=10`);
-await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+await atelierPret();
 check("étape 10 (référence) : page « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », enveloppe de Fadi effacée, titre de l'étape replié sous le dessin", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && !(await page.locator(".app-sidebar").isVisible()) && (await page.locator(".stage10-fold > summary").textContent()) === "Étude de capacité architecturale");
-await page.locator('#atelier-toolbar [data-atab="analyse"]').click();
 await page.locator("#atelier-harmonie-button").click();
 await page.waitForFunction(() => !document.getElementById("atelier-harmonie-page")?.hidden);
 await page.evaluate(() => { document.querySelector(".h7-panel-reference").open = true; });
 await page.locator('.h7-panel-reference button:has-text("Lire le bilan du bâtiment conçu")').click();
-await page.waitForSelector(".design-review-fold[open] .v62-tabs, .v62-tabs", { timeout: 15000 });
+await page.waitForSelector(".design-review-fold[open] .v62-tabs, .v62-tabs", { timeout: 15000 }).catch(async (err) => {
+  await page.screenshot({ path: `${OUT}/echec-bilan-etape10.png`, fullPage: true }).catch(() => {});
+  console.log(await page.evaluate(() => [...document.querySelectorAll(".v62-tabs")].map((t) => { const l = []; for (let e = t; e; e = e.parentElement) l.push(`${e.tagName}.${e.className}#${e.id} d=${getComputedStyle(e).display} h=${Math.round(e.getBoundingClientRect().height)}${e.hidden ? " hidden" : ""}`); return l.join(" < "); }).join("\n")));
+  throw err;
+});
 check("étape 10 (référence) : panneau de l'exemple dans la sous-page, « Lire le bilan du bâtiment conçu » ouvre le bilan en ligne ; « Voir les capacités et ambiances des N zones », « Exporter le bilan »", (await page.locator(".h7-panel-reference .ex81-story").count()) === 1 && (await page.locator(".v62-tabs").count()) >= 1 && /Voir les capacités et ambiances des \d+ zones/.test(await page.locator(".h7-panel-reference .ex81-actions").last().textContent()) && (await page.locator('.h7-panel-reference a:has-text("Exporter le bilan")').getAttribute("href")) === `/projects/${examplePid}/design-review/rapport`);
 await page.keyboard.press("Escape");
 await page.locator(".workflow-back").click();
@@ -717,13 +702,12 @@ await page.waitForSelector(".overview-step");
 check("étape 10 : « ← » du bandeau → vue d'ensemble, enveloppe de Fadi de retour", !(await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && (await page.locator(".module-nav").isVisible()));
 // Variante (copie modifiable), étape 10 : propositions localisées sur les locaux du modèle (flow-v62 / h7-app), panneau Harmonie généré.
 await page.goto(`${variantUrl}?module=parcours&etape=10`);
-await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
-check("étape 10 : l'Atelier est monté dans l'étape (même moteur)", (await page.locator(".native-atelier #viewer-info").count()) === 1);
-// Sous-page « Harmonie du bâtiment » (V8.4) : depuis le bouton « Harmonie » du groupe Analyser de la barre d'outils native
-await page.locator('#atelier-toolbar [data-atab="analyse"]').click();
+await atelierPret();
+check("étape 10 : l'Atelier est monté dans l'étape (même Atelier que le module)", (await page.locator(".atelier-n .plan2d").count()) === 1);
+// Sous-page « Harmonie du bâtiment » (V8.4) : depuis le bouton « Harmonie » de la barre de l'Atelier
 await page.locator("#atelier-harmonie-button").click();
 await page.waitForFunction(() => !document.getElementById("atelier-harmonie-page")?.hidden);
-check("étape 10 : « Analyser → Harmonie » ouvre la sous-page « Harmonie du bâtiment » (en-tête, 3 rubriques, Atelier masqué)", (await page.locator("#ah84-title").textContent()) === "Harmonie du bâtiment" && (await page.locator(".ah84-links button").count()) === 3 && !(await page.locator(".native-atelier").isVisible()));
+check("étape 10 : « Harmonie » (barre de l'Atelier) ouvre la sous-page « Harmonie du bâtiment » (en-tête, 3 rubriques, Atelier masqué)", (await page.locator("#ah84-title").textContent()) === "Harmonie du bâtiment" && (await page.locator(".ah84-links button").count()) === 3 && !(await page.locator(".atelier-n").isVisible()));
 // Propositions localisées sur les locaux du modèle (flow-v62 / h7-app)
 await page.evaluate(() => { document.querySelector(".h7-panel").open = true; });
 await page.waitForSelector(".h7-locals");
@@ -826,7 +810,7 @@ await page.waitForFunction(() => /à réexaminer/.test(document.querySelector(".
 check("références directionnelles : l'empreinte de l'étape 10 change → « … · à réexaminer »", /à réexaminer/.test(await page.locator(".h7-panel > summary").textContent()));
 await page.keyboard.press("Escape");
 await page.waitForFunction(() => document.getElementById("atelier-harmonie-page")?.hidden === true);
-check("sous-page : Échap → « Retour à l’Atelier », le dessin réapparaît", await page.locator(".native-atelier").isVisible());
+check("sous-page : Échap → « Retour à l’Atelier », le dessin réapparaît", await page.locator(".atelier-n").isVisible());
 
 // 6c. Étape 01 de l'exemple : outil Parcelle (fichier P.118 servi par Fadi), panneau de l'exemple dans sa colonne gauche (lecture) ;
 //     puis, sur la variante (copie modifiable), transmission au modèle et propositions de site modifiables.
@@ -858,8 +842,9 @@ await page.waitForFunction(() => /Conflit avec le bâtiment dessiné/.test(docum
 check("variante étape 01 : borne déplacée → « Conflit avec le bâtiment dessiné » (motif du prototype)", (await page.locator(".v62-alert").textContent().catch(() => "")).includes("Les bornes diffèrent et un bâtiment est déjà dessiné"));
 const npAfterConflict = await page.evaluate(async (pid) => {
   const parcels = await (await fetch(`/projects/${pid}/parcels`, { credentials: "include" })).json();
-  const store = await (await fetch(`/projects/${pid}/atelier/store`, { credentials: "include" })).json();
-  return store.entries[`design.v13.project.${parcels.transmission.nativeId}.nativeParcel`]?.vertices?.[0]?.[0];
+  const m = await (await fetch(`/projects/${pid}/atelier/model`, { credentials: "include" })).json();
+  void parcels;
+  return m.modele.site.parcelle?.sommets?.[0]?.cadastral?.x;
 }, variantPid);
 check("variante étape 01 : le modèle n'est pas déplacé par le conflit (B.266 inchangée)", Math.abs(npAfterConflict - 321946.82) < 1e-6, String(npAfterConflict));
 await borneX.fill(borneBefore);
@@ -939,7 +924,7 @@ check("outils du projet : « Exporter la synthèse des choix Harmonie » → Har
 const [archiveDl] = await Promise.all([page.waitForEvent("download"), page.locator('#parcours-project-tools a:has-text("Sauvegarder projet JSON")').click()]);
 const archivePath = await archiveDl.path();
 const archiveJson = JSON.parse(await (await import("node:fs/promises")).readFile(archivePath, "utf8"));
-check("outils du projet : « Sauvegarder projet JSON » → Parcours_V7_Escalier_B_et_mezzanine.json (21 étapes, modèle natif, cas de programme)", archiveDl.suggestedFilename() === "Parcours_V7_Escalier_B_et_mezzanine.json" && archiveJson.kind === "fadi-project-archive" && archiveJson.steps.length === 21 && !!archiveJson.native && archiveJson.programmeCases.length === 1);
+check("outils du projet : « Sauvegarder projet JSON » → Parcours_V7_Escalier_B_et_mezzanine.json (archive v2 : 21 étapes, modèle typé de l'Atelier, cas de programme)", archiveDl.suggestedFilename() === "Parcours_V7_Escalier_B_et_mezzanine.json" && archiveJson.kind === "fadi-project-archive" && archiveJson.version === 2 && archiveJson.steps.length === 21 && Object.keys(archiveJson.modele?.etat?.objets ?? {}).length > 1000 && archiveJson.programmeCases.length === 1, `version ${archiveJson.version} · ${Object.keys(archiveJson.modele?.etat?.objets ?? {}).length} objets`);
 await page.locator('#parcours-project-tools input[type="file"]').setInputFiles({ name: "Parcours_V7_Escalier_B_et_mezzanine.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(archiveJson)) });
 await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid), { timeout: 20000 });
 await page.waitForSelector(".overview-step");
@@ -1103,64 +1088,58 @@ await page.locator(".comment-delete").first().click();
 await page.waitForFunction(() => document.querySelectorAll(".comment").length === 0, null, { timeout: 10000 });
 check("collaboration : « Supprimer » (auteur) le commentaire d'origine → sa réponse part avec lui, plus de commentaire", (await page.locator(".comment").count()) === 0);
 
-// 6k. Hors-ligne (sur la copie de travail) : file locale (IndexedDB) de l'Atelier, quatre états visibles, rejeu au retour du réseau et après rechargement, ouverture depuis le cache local
+// 6k. Hors-ligne (sur la copie de travail) : file locale des lots de commandes (IndexedDB), états visibles, rejeu au retour du réseau et après
+// rechargement, conflit explicite (jamais de fusion), ouverture depuis le cache local du modèle.
 await page.goto(`${atelierUrl}?module=atelier`);
-await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
+await atelierPret();
 await page.waitForFunction(() => /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
-const drawWall = async (fx) => {
-  await page.locator("#model-floors button", { hasText: "RDC" }).first().click();
-  await page.locator('#atelier-toolbar [data-atab="design"]').click();
-  await page.waitForTimeout(500);
-  await page.locator('button:has-text("Mur")').first().click();
-  const b = await page.locator("#viewer-surface").boundingBox();
-  await page.mouse.click(b.x + b.width * fx, b.y + b.height * 0.5);
-  await page.waitForTimeout(200);
-  await page.mouse.click(b.x + b.width * (fx + 0.08), b.y + b.height * 0.5);
-  await page.keyboard.press("Enter");
-};
+await choisirNiveau("RDC");
+await page.locator('.barre-mode button:has-text("Plan")').click();
+const drawWall = (fx) => tracerMur(fx, 0.62, "2;0");
+const lotsLocaux = () => page.evaluate(() => new Promise((resolve) => { const req = indexedDB.open("fadi-local"); req.onsuccess = () => { const tx = req.result.transaction("lots"); const all = tx.objectStore("lots").getAll(); all.onsuccess = () => resolve(all.result.map((e) => `${e.label} · ${e.etat}`)); }; }));
 const wallsBeforeOffline = await rdcWallsOf(atelierPid);
 await ctx.setOffline(true);
 await page.waitForFunction(() => /Hors-ligne/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 5000 }).catch(() => {});
 check("hors-ligne : l'en-tête du projet passe « Hors-ligne »", /^Hors-ligne/.test(await page.locator(".sync-indicator").textContent()));
 await drawWall(0.45);
-await page.waitForFunction(() => /Hors-ligne · enregistré localement/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 10000 });
-const outbox = await page.evaluate(() => new Promise((resolve) => { const req = indexedDB.open("fadi-local"); req.onsuccess = () => { const tx = req.result.transaction("outbox"); const all = tx.objectStore("outbox").getAll(); all.onsuccess = () => resolve(all.result.map((e) => e.key.split(".").pop())); }; }));
-check("hors-ligne : un mur dessiné → « Hors-ligne · enregistré localement », écriture conservée dans la file IndexedDB (floorDesign)", /enregistré localement \(\d+\)/.test(await page.locator(".native-atelier-status").textContent()) && outbox.includes("floorDesign") && /modification\(s\) enregistrée\(s\) localement/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify(outbox));
+await page.waitForFunction(() => document.querySelector(".barre-sync")?.dataset.etat === "hors-ligne" && /1 modification\(s\) enregistrée\(s\) localement/.test(document.querySelector(".barre-sync").textContent), null, { timeout: 10000 }).catch(() => {});
+const fileHorsLigne = await lotsLocaux();
+check("hors-ligne : un mur dessiné → « Hors-ligne · 1 modification(s) enregistrée(s) localement », lot conservé dans la file IndexedDB", /Hors-ligne · 1 modification\(s\) enregistrée\(s\) localement/.test(await page.locator(".barre-sync").textContent()) && fileHorsLigne.some((l) => /^Mur 2,00 m · local$/.test(l)) && /modification\(s\) enregistrée\(s\) localement/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify(fileHorsLigne));
 await ctx.setOffline(false);
-await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
+await page.waitForFunction(() => document.querySelector(".barre-sync")?.dataset.etat === "enregistre", null, { timeout: 20000 }).catch(() => {});
+await waitRevisionAbove(atelierPid, wallsBeforeOffline.revision);
 const wallsAfterOnline = await rdcWallsOf(atelierPid);
-check("retour du réseau : synchronisation automatique → « Enregistré sur le serveur », +1 mur et +1 révision sur le serveur, file vide", wallsAfterOnline.walls === wallsBeforeOffline.walls + 1 && wallsAfterOnline.revision === wallsBeforeOffline.revision + 1 && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify({ wallsBeforeOffline, wallsAfterOnline }));
-// Conflit du modèle : un autre appareil écrit la même clé pendant la coupure ; au retour, le rejeu est refusé (409), la version du
-// serveur reprend la clé, la vôtre est conservée en copie de secours, et le bandeau propose de la reprendre ou de garder le serveur.
-const storeBefore = await (await page.request.get(`${BASE}/projects/${atelierPid}/atelier/store`)).json();
-const floorKey = Object.keys(storeBefore.entries).find((k) => k.endsWith(".floorDesign"));
+await page.waitForFunction(() => /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+check("retour du réseau : synchronisation automatique → « Enregistré », +1 mur et +1 révision sur le serveur, file vide", wallsAfterOnline.walls === wallsBeforeOffline.walls + 1 && wallsAfterOnline.revision === wallsBeforeOffline.revision + 1 && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()) && (await lotsLocaux()).length === 0, JSON.stringify({ wallsBeforeOffline, wallsAfterOnline }));
+// Conflit du modèle : hors ligne, la hauteur d'un mur est modifiée ; pendant la coupure, un autre appareil supprime ce mur. Au retour, le
+// lot ne s'applique plus sur la version du serveur : il reste « conflit » sur l'appareil, listé dans le bandeau, jamais fusionné.
+const modeleAvantConflit = await modelOf(atelierPid);
+const murConflit = Object.values(modeleAvantConflit.modele.objets).filter((o) => o.classe === "mur" && o.niveauId === "rdc" && o.id.startsWith("mur-")).map((o) => o.id).sort().pop();
+await page.locator(`.nav-objets button[data-objet="${murConflit}"]`).click();
 await ctx.setOffline(true);
-await drawWall(0.52);
-await page.waitForFunction(() => /Hors-ligne · enregistré localement/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 10000 });
-const otherModel = await page.request.put(`${BASE}/projects/${atelierPid}/atelier/store/${encodeURIComponent(floorKey)}`, { data: { value: storeBefore.entries[floorKey], expectedRevision: storeBefore.revisions[floorKey] } });
-check("autre appareil : écriture du même floorDesign pendant la coupure (200)", otherModel.status() === 200, String(otherModel.status()));
+await page.locator('.inspecteur input[id$="-hauteur"]').fill("2,7");
+await page.locator('.inspecteur input[id$="-hauteur"]').press("Enter");
+await page.waitForTimeout(400);
+const autreAppareil = await page.request.post(`${BASE}/projects/${atelierPid}/atelier/commands`, { data: { requestId: `autre-appareil-${Date.now()}`, baseRevision: modeleAvantConflit.revision, contract: "atelier-commands/1", label: "Suppression par un autre appareil", commands: [{ type: "objet.supprimer", params: { id: murConflit, avecHeberges: true } }] } });
+check("autre appareil : suppression du même mur pendant la coupure (200)", autreAppareil.status() === 200, String(autreAppareil.status()));
 await ctx.setOffline(false);
 await page.waitForSelector('.conflict-banner li[data-kind="modele"]', { timeout: 20000 });
 const modelConflictText = (await page.locator('.conflict-banner li[data-kind="modele"]').textContent()).replace(/\s+/g, " ");
-check("retour du réseau : rejeu refusé (409) → « Conflit détecté », conflit du modèle listé (« Atelier · floorDesign », copie de secours), compté dans l'en-tête", /Atelier · floorDesign/.test(modelConflictText) && /conservée sous « .*backup\.conflit-/.test(modelConflictText) && /Conflit détecté/.test(await page.locator(".native-atelier-status").textContent()) && /1 conflit\(s\) à examiner/.test(await page.locator(".sync-indicator").textContent()), modelConflictText.slice(0, 160));
-const wallsDuringConflict = await rdcWallsOf(atelierPid);
-await page.locator('.conflict-banner li[data-kind="modele"] button:has-text("Reprendre ma version")').click();
-await page.waitForFunction(() => !document.querySelector(".conflict-banner") && /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || "") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 20000 });
-// La copie de secours est retirée du serveur par une seconde écriture (regroupée) : on attend qu'elle ait disparu.
-await page.waitForFunction(async (pid) => !Object.keys((await (await fetch(`/projects/${pid}/atelier/store`, { credentials: "include" })).json()).entries).some((k) => k.includes(".backup.conflit-")), atelierPid, { timeout: 15000 }).catch(() => {});
+check("retour du réseau : le lot ne s'applique plus → conflit du modèle listé (« Atelier · Mur : Hauteur … ne s’applique plus »), compté dans l'en-tête et dans l'Atelier", /Atelier · Mur : Hauteur/.test(modelConflictText) && /ne s’applique plus sur la version du serveur/.test(modelConflictText) && /1 conflit\(s\) à examiner/.test(await page.locator(".sync-indicator").textContent()) && /1 lot\(s\) à traiter/.test(await page.locator(".barre-sync").textContent()), modelConflictText.slice(0, 200));
+await page.locator('.conflict-banner li[data-kind="modele"] button:has-text("Garder le serveur")').click();
+await page.waitForFunction(() => !document.querySelector(".conflict-banner") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 20000 }).catch(() => {});
+const apresConflit = await modelOf(atelierPid);
+check("« Garder le serveur » : le lot est abandonné, le mur supprimé par l'autre appareil reste supprimé, en-tête synchronisé, file vide", !apresConflit.modele.objets[murConflit] && !(await page.locator(".conflict-banner").count()) && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()) && (await lotsLocaux()).length === 0, await page.locator(".sync-indicator").textContent());
 const wallsResolved = await rdcWallsOf(atelierPid);
-const storeResolved = await (await page.request.get(`${BASE}/projects/${atelierPid}/atelier/store`)).json();
-const backupsLeft = Object.keys(storeResolved.entries).filter((k) => k.includes(".backup.conflit-"));
-check("« Reprendre ma version » : le dessin local est réécrit sur la clé à partir de la révision du serveur (+1 mur), la copie de secours est retirée, en-tête synchronisé", wallsDuringConflict.walls === wallsAfterOnline.walls && wallsResolved.walls === wallsAfterOnline.walls + 1 && backupsLeft.length === 0 && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify({ wallsAfterOnline, wallsDuringConflict, wallsResolved, backupsLeft, indicator: await page.locator(".sync-indicator").textContent() }));
 // Serveur injoignable (route bloquée) puis rechargement de la page : la file locale est rejouée à l'ouverture.
-await page.route(/\/atelier\/store\//, (route) => route.abort());
+await page.route(/\/atelier\/commands/, (route) => route.abort());
 await drawWall(0.6);
-await page.waitForFunction(() => /Serveur injoignable/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 });
-check("serveur injoignable : « Serveur injoignable : les modifications sont enregistrées localement… »", true);
-await page.unroute(/\/atelier\/store\//);
+await page.waitForFunction(() => ["injoignable", "attente"].includes(document.querySelector(".barre-sync")?.dataset.etat || ""), null, { timeout: 15000 }).catch(() => {});
+check("serveur injoignable : le lot reste sur l'appareil (« … enregistrées localement » ou « en attente »)", /enregistrées localement|en attente/.test(await page.locator(".barre-sync").textContent()) && (await lotsLocaux()).length === 1, await page.locator(".barre-sync").textContent());
+await page.unroute(/\/atelier\/commands/);
 await page.reload();
-await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
-await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
+await atelierPret();
+await waitRevisionAbove(atelierPid, wallsResolved.revision);
 const wallsAfterReload = await rdcWallsOf(atelierPid);
 check("rechargement : la file locale est rejouée à l'ouverture → +1 mur et +1 révision sur le serveur", wallsAfterReload.walls === wallsResolved.walls + 1 && wallsAfterReload.revision === wallsResolved.revision + 1, JSON.stringify({ wallsResolved, wallsAfterReload }));
 // Rechargement complet hors-ligne : l'enveloppe (service worker) sert l'application, le cache persistant (IndexedDB) relit
@@ -1174,9 +1153,8 @@ await page.reload();
 await page.waitForSelector(".reference-answers", { timeout: 20000 });
 check("rechargement hors-ligne : l'étape 02 se relit depuis le cache persistant, bandeau « Lecture hors-ligne : données lues le … »", (await page.locator(".step-detail-title").textContent()) === "Réglementation & constructibilité" && /^Lecture hors-ligne : données lues le/.test(await page.locator(".offline-banner").textContent()) && /^Hors-ligne/.test(await page.locator(".sync-indicator").textContent()));
 await page.locator('.module-nav button:has-text("Atelier architectural")').click();
-await page.waitForFunction(() => /cache local|enregistré localement/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
-await page.waitForFunction(() => document.querySelectorAll("#model-floors button").length === 6, null, { timeout: 20000 }).catch(() => {});
-check("rechargement hors-ligne : l'Atelier s'ouvre depuis le cache local du modèle, 6 niveaux", (await page.locator("#model-floors button").count()) === 6, await page.locator(".native-atelier-status").textContent());
+await page.waitForSelector(".atelier-n .plan2d [data-objet]", { timeout: 30000 }).catch(() => {});
+check("rechargement hors-ligne : l'Atelier s'ouvre depuis le cache local du modèle, 6 niveaux, plan dessiné", (await page.locator(".nav-niveaux li").count()) === 6 && (await page.locator(".atelier-n .plan2d [data-objet]").count()) > 10 && /^Hors-ligne/.test(await page.locator(".barre-sync").textContent()), await page.locator(".barre-sync").textContent().catch(() => "absent"));
 await ctx.setOffline(false);
 await page.goto(`${exampleUrl}?module=parcours`);
 await page.waitForSelector(".overview-step");
@@ -1372,8 +1350,10 @@ const readerPatch = await page2.request.patch(`${BASE}/projects/${testPid}/steps
 check("lecteur : une écriture forcée est refusée par le serveur (403 avec motif)", readerPatch.status() === 403 && /partagé en lecture/.test(((await readerPatch.json()).message) || ""));
 await page2.screenshot({ path: `${OUT}/partage-lecteur-02-desktop.png`, fullPage: true });
 await page2.goto(`${projectUrl}?module=atelier`);
-await page2.waitForSelector(".native-atelier-status-readonly", { timeout: 30000 });
-check("lecteur : Atelier en lecture seule (rien n'est enregistré)", /^Lecture seule/.test(await page2.locator(".native-atelier-status").textContent()));
+// P.TEST n'a pas de modèle dessiné : le lecteur voit l'accueil vide de l'Atelier, en lecture seule, sans « Créer le niveau ».
+await page2.waitForSelector('.barre-sync[data-etat="lecture"], .atelier-n-lecture-vide', { timeout: 30000 });
+const readerAtelierEmpty = (await page2.locator(".atelier-n-lecture-vide").count()) === 1;
+check("lecteur : Atelier en lecture seule (rien n'est enregistré, outils de tracé indisponibles)", readerAtelierEmpty ? /Lecture seule/.test(await page2.locator(".atelier-n-lecture-vide").textContent()) && (await page2.locator(".atelier-n form, .atelier-n-accueil button").count()) === 0 : /^Lecture seule/.test(await page2.locator(".barre-sync").textContent()) && (await page2.locator('.atelier-n-outils .outil[aria-disabled="true"]').count()) > 0, readerAtelierEmpty ? "projet sans modèle : accueil en lecture seule" : "modèle affiché en lecture seule");
 // Le propriétaire passe le lecteur éditeur : la saisie devient possible et visible par le propriétaire.
 await page.selectOption(`.members-table tr[data-member="${readerEmail}"] select`, "editeur");
 await page.waitForFunction((e) => /est maintenant éditeur/.test(document.querySelector(".members-notice")?.textContent || ""), null, { timeout: 10000 });
@@ -1494,12 +1474,13 @@ const localCounts = () =>
         const req = indexedDB.open("fadi-local");
         req.onsuccess = () => {
           const db = req.result;
-          const tx = db.transaction(["outbox", "modelCache", "keyValue"], "readonly");
+          // File des lots de commandes de l'Atelier (Dexie v4 : `lots`) ; un lot synchronisé en est retiré.
+          const tx = db.transaction(["lots", "modelCache", "keyValue"], "readonly");
           const out = { outbox: 0, modelCache: 0, queries: 0, paused: 0, outboxKeys: [], outboxProjects: 0 };
-          const o = tx.objectStore("outbox").getAll();
+          const o = tx.objectStore("lots").getAll();
           o.onsuccess = () => {
             out.outbox = o.result.length;
-            out.outboxKeys = o.result.map((e) => `${e.key} (${e.attempts} essai(s)${e.lastError ? ` · ${e.lastError}` : ""})`);
+            out.outboxKeys = o.result.map((e) => `${e.label} (${e.etat}${e.detail ? ` · ${e.detail}` : ""})`);
             out.outboxProjects = new Set(o.result.map((e) => e.projectId)).size;
           };
           const m = tx.objectStore("modelCache").count();
@@ -1549,8 +1530,8 @@ await page.goto(`${BASE}/bibliotheque/batiments/parcours_lot118`);
 await page.waitForSelector('.bl-hero button:has-text("Ouvrir le modèle P.118")', { timeout: 30000 });
 await page.locator('.bl-hero button:has-text("Ouvrir le modèle P.118")').click();
 await page.waitForURL((u) => u.toString().startsWith(`${exampleUrl}?module=parcours&etape=10`), { timeout: 20000 });
-await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
-check("bibliothèque · cas P.118 : « Ouvrir le modèle P.118 » → référence de l'exemple du compte, étape 10, Atelier monté", page.url().startsWith(`${exampleUrl}?module=parcours&etape=10`) && (await page.locator(".native-atelier #viewer-info").count()) === 1);
+await atelierPret();
+check("bibliothèque · cas P.118 : « Ouvrir le modèle P.118 » → référence de l'exemple du compte, étape 10, Atelier monté", page.url().startsWith(`${exampleUrl}?module=parcours&etape=10`) && (await page.locator(".atelier-n .plan2d").count()) === 1);
 await page.goto(`${BASE}/bibliotheque/batiments/parcours_lot118?rubrique=technique`);
 await page.waitForSelector('section[role=tabpanel] button:has-text("Ouvrir le modèle P.118")', { timeout: 30000 });
 check("bibliothèque · cas P.118, rubrique Technique : « P.118 conserve ses polygones réels » et « Ouvrir le modèle P.118 » à la place du gabarit", /P\.118 conserve ses polygones réels/.test(await page.locator("section[role=tabpanel]").textContent()) && (await page.locator("section[role=tabpanel] svg").count()) === 0);
@@ -1572,8 +1553,8 @@ await pageFresh.locator('.bl-hero button:has-text("Ouvrir le modèle P.118")').c
 await pageFresh.waitForURL(/\/projets\/proj_[^?]+\?module=parcours&etape=10/, { timeout: 60000 });
 const freshToast = await pageFresh.waitForFunction(() => /Exemple P\.118 importé/.test(document.querySelector(".h7-toast")?.textContent || ""), null, { timeout: 8000 }).then(() => true).catch(() => false); // s'efface de lui-même après 3,6 s
 await pageFresh.waitForSelector(".project-header h1", { timeout: 30000, state: "attached" }); // étape 10 : page de l'Atelier, en-tête de Fadi effacé
-await pageFresh.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
-check("bibliothèque · cas P.118 sans l'exemple dans le compte : l'exemple est importé puis ouvert à l'étape 10, Atelier monté (toast « Exemple P.118 importé »)", (await pageFresh.locator(".project-header h1").textContent()) === "P.118 — Escalier B et mezzanine" && (await pageFresh.locator(".native-atelier #viewer-info").count()) === 1, freshToast ? "toast vu" : "toast non observé (effacé avant la lecture)");
+await atelierPret(pageFresh);
+check("bibliothèque · cas P.118 sans l'exemple dans le compte : l'exemple est importé puis ouvert à l'étape 10, Atelier monté (toast « Exemple P.118 importé »)", (await pageFresh.locator(".project-header h1").textContent()) === "P.118 — Escalier B et mezzanine" && (await pageFresh.locator(".atelier-n .plan2d").count()) === 1, freshToast ? "toast vu" : "toast non observé (effacé avant la lecture)");
 await ctxFresh.close();
 
 // 6n. Accessibilité : chaque écran de l'application, ordinateur puis téléphone (axe-core, WCAG 2.2 AA).
@@ -1587,14 +1568,14 @@ const a11yScreens = [
   ["étape 02", `${exampleUrl}?module=parcours&etape=2`, ".reference-answers"],
   ["étape 02 (variante, formulaire)", `${variantUrl}?module=parcours&etape=2`, "#biz-f1"],
   ["étape 06", `${exampleUrl}?module=parcours&etape=6`, ".programme-case"],
-  ["étape 10", `${exampleUrl}?module=parcours&etape=10`, '#atelier-toolbar[data-ready="1"]'],
+  ["étape 10", `${exampleUrl}?module=parcours&etape=10`, ".atelier-n .plan2d [data-objet]"],
   ["étape 14", `${exampleUrl}?module=parcours&etape=14`, ".reference-answers .ex81-budget"],
   ["étape 14 (variante, formulaire)", `${variantUrl}?module=parcours&etape=14`, ".biz-kpis"],
   ["étape 17 (variante)", `${variantUrl}?module=parcours&etape=17`, ".biz-kpi"],
   ["étape 19", `${exampleUrl}?module=parcours&etape=19`, ".reference-answers"],
   ["étape 19 (variante, décision)", `${variantUrl}?module=parcours&etape=19`, ".decision-grid"],
   ["programmation", `${exampleUrl}?module=programmation`, ".programme-case"],
-  ["atelier", `${exampleUrl}?module=atelier`, '#atelier-toolbar[data-ready="1"]'],
+  ["atelier", `${exampleUrl}?module=atelier`, ".atelier-n .plan2d [data-objet]"],
   ["analyses", `${exampleUrl}?module=analyses`, ".analyses-checks"],
   ["documents", `${exampleUrl}?module=documents`, ".documents-table"],
   ["collaboration", `${exampleUrl}?module=collaboration`, ".members-panel"],
@@ -1629,18 +1610,22 @@ for (const [width, height, device] of viewports) {
   }
 }
 await ctxAnon.close();
-// Au-delà des règles automatisables : clavier sur la barre d'outils de l'Atelier (motif ARIA « tabs », flèches), et audit axe du
-// document de l'outil Parcelle (prototype conservé tel quel) — à titre de rapport, non bloquant : ses écarts sont ceux du
+// Au-delà des règles automatisables : clavier dans l'Atelier (palette Ctrl/⌘ K parcourue aux flèches, raccourci d'outil, Échap), et audit
+// axe du document de l'outil Parcelle (prototype conservé tel quel) — à titre de rapport, non bloquant : ses écarts sont ceux du
 // prototype, listés ici pour la revue manuelle (clavier, toucher, zoom) que l'automatisation ne remplace pas.
 await page.setViewportSize({ width: 1280, height: 900 });
 await page.goto(`${atelierUrl}?module=atelier`);
-await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
-await page.locator('#atelier-toolbar [role="tab"][aria-selected="true"]').first().focus();
-const tabBefore = await page.evaluate(() => document.activeElement?.textContent?.trim());
-await page.keyboard.press("ArrowRight");
-await page.waitForTimeout(200);
-const tabAfter = await page.evaluate(() => ({ text: document.activeElement?.textContent?.trim(), selected: document.activeElement?.getAttribute("aria-selected"), role: document.activeElement?.getAttribute("role") }));
-check("clavier · barre d'outils de l'Atelier : flèche droite → onglet suivant focalisé et sélectionné (rôle tab)", tabAfter.role === "tab" && tabAfter.selected === "true" && tabAfter.text !== tabBefore, `${tabBefore} → ${tabAfter.text}`);
+await atelierPret();
+await page.keyboard.press("Control+k");
+await page.waitForSelector(".palette-champ");
+const optionAvant = await page.locator('.palette-resultats [aria-selected="true"]').textContent();
+await page.keyboard.press("ArrowDown");
+const optionApres = await page.locator('.palette-resultats [aria-selected="true"]').textContent();
+await page.keyboard.press("Escape");
+await page.keyboard.press("m");
+const outilClavier = await page.locator(".atelier-n-outils .outil.est-actif").first().textContent();
+await page.keyboard.press("Escape");
+check("clavier · Atelier : Ctrl K ouvre la palette, flèche bas → option suivante sélectionnée, Échap la ferme ; « M » choisit l'outil Mur, Échap revient à la sélection", optionAvant !== optionApres && (await page.locator(".palette").count()) === 0 && /Mur/.test(outilClavier) && /Sélection/.test(await page.locator(".atelier-n-outils .outil.est-actif").first().textContent()), `${optionAvant?.slice(0, 20)} → ${optionApres?.slice(0, 20)} · ${outilClavier}`);
 await page.goto(`${exampleUrl}?module=parcours&etape=1`);
 await page.waitForFunction(() => document.querySelector(".parcelle-tool iframe")?.contentWindow?.ParcoursParcel?.ready, null, { timeout: 30000 });
 const parcelleFrame = page.frames().find((f) => /\/parcelle\//.test(f.url()));
@@ -1699,11 +1684,11 @@ const noHorizontalScroll = await page.evaluate(() => document.documentElement.sc
 check("téléphone : pas de défilement horizontal", noHorizontalScroll);
 // Étape 10 sur téléphone : la page est l'Atelier Architectural (bandeau, barre d'outils, dessin), enveloppe effacée.
 await page.goto(`${exampleUrl}?module=parcours&etape=10`);
-await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+await atelierPret();
 await page.waitForTimeout(600);
 await page.screenshot({ path: `${OUT}/10-mobile.png`, fullPage: false });
-check("téléphone étape 10 : indicateur permanent de l'outil / onglet actif dans la barre d'outils, rangées défilantes signalées", /^(Outil|Onglet) : /.test((await page.locator("#fadi-active-tool").textContent().catch(() => "")) || "") && (await page.locator(".atelier-toolbar-main.is-scrollable").count()) === 1, await page.locator("#fadi-active-tool").textContent().catch(() => "absent"));
-check("téléphone étape 10 : bandeau « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », enveloppe effacée, dessin sur toute la largeur", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && !(await page.locator(".module-nav").isVisible()) && (await page.locator("#nativeDesignerRoot").evaluate((e) => Math.round(e.getBoundingClientRect().width))) >= 380);
+check("téléphone étape 10 : outil actif signalé dans la barre d'outils (rangée défilante), onglets des panneaux en bas", /Sélection/.test((await page.locator(".atelier-n-outils .outil.est-actif").first().textContent().catch(() => "")) || "") && (await page.locator(".atelier-n-outils").evaluate((e) => e.scrollWidth > e.clientWidth && getComputedStyle(e).overflowX === "auto")) && (await page.locator(".atelier-n-onglets").isVisible()));
+check("téléphone étape 10 : bandeau « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », enveloppe effacée, dessin sur toute la largeur", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && !(await page.locator(".module-nav").isVisible()) && (await page.locator(".atelier-n").evaluate((e) => Math.round(e.getBoundingClientRect().width))) >= 380);
 
 check("aucune erreur JavaScript", consoleErrors.length === 0, consoleErrors.join(" | "));
 console.log(`⏱ mesures indicatives (Chromium headless, cette machine) : ${measures.map((m) => `${m.label} = ${m.ms} ms`).join(" ; ")}`);

@@ -2,6 +2,7 @@ import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
+import { basculerAncienMoteur } from "./bascule.js";
 
 const connectionString = process.env["DATABASE_URL"];
 if (!connectionString) {
@@ -16,6 +17,9 @@ async function main() {
     await pool.query(sql);
     // eslint-disable-next-line no-console
     console.log("Schema applied (init.sql).");
+    const b = await basculerAncienMoteur(pool);
+    // eslint-disable-next-line no-console
+    if (b.supprimees) console.log(`Bascule de l'Atelier : ${b.convertis} projet(s) repris dans le modèle typé, tables de l'ancien moteur supprimées.`);
   } finally {
     await pool.end();
   }

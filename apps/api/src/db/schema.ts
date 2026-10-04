@@ -117,28 +117,6 @@ export const programmeRepartitions = pgTable("programme_repartitions", {
 });
 
 /**
- * Magasin du moteur de l'Atelier natif (module Atelier, propriétaire du
- * modèle du bâtiment) : les clés `design.v13.*` que le moteur lit et écrit
- * telles quelles (registre, projet actif, domaines `levels`, `floorDesign`,
- * `nativeParcel`, `buildingFootprint`, `ui`, `views`, `sources`…), une ligne
- * par clé et par projet. `revision` est la révision contrôlée de la clé :
- * une écriture doit annoncer la révision qu'elle a lue (détection de
- * conflit). La projection vers `levels` / `architectural_objects` est
- * dérivée de ce magasin (lib/native-projection.ts), jamais l'inverse.
- */
-export const atelierStore = pgTable(
-  "atelier_store",
-  {
-    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-    key: text("key").notNull(),
-    value: jsonb("value").notNull().$type<unknown>(),
-    revision: integer("revision").notNull().default(1),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [primaryKey({ columns: [t.projectId, t.key] })],
-);
-
-/**
  * Fichiers de parcelle de l'outil Parcelle (étape 01), un par ligne : le
  * contrat `/api/parcels` de l'outil (`project-files.js`), scopé par projet.
  * `data` est le fichier tel que l'outil le capture (`ParcelFileData.clean`),
@@ -159,36 +137,6 @@ export const parcels = pgTable(
   },
   (t) => [primaryKey({ columns: [t.projectId, t.id] })],
 );
-
-export const levels = pgTable("levels", {
-  id: text("id").primaryKey(),
-  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-  label: text("label").notNull(),
-  /**
-   * Élévation du niveau, mètres, repère local du bâtiment. `double
-   * precision`, pas un entier : le modèle natif P.118 porte des altitudes
-   * décimales (ex. -3,2 m) et les arrondir perdrait de la donnée — interdit
-   * par AGENTS.md.
-   */
-  elevation: doublePrecision("elevation").notNull().default(0),
-  position: integer("position").notNull().default(0),
-}, (t) => [index("levels_project_id_idx").on(t.projectId)]);
-
-/**
- * Un objet architectural au sens de @parcours/domain-model
- * (`ArchitecturalObject`) : mur, porte, fenêtre, colonne, escalier…
- * `properties` et `relations` sont stockés tels quels (JSON), le serveur ne
- * connaît pas le détail de chaque `kind` — ce n'est pas son rôle.
- */
-export const architecturalObjects = pgTable("architectural_objects", {
-  id: text("id").primaryKey(),
-  levelId: text("level_id").notNull().references(() => levels.id, { onDelete: "cascade" }),
-  kind: text("kind").notNull(),
-  properties: jsonb("properties").notNull().$type<Record<string, unknown>>(),
-  relations: jsonb("relations").notNull().$type<{ kind: string; targetId: string }[]>(),
-  modelRevision: integer("model_revision").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-}, (t) => [index("architectural_objects_level_id_idx").on(t.levelId)]);
 
 /** Contenu binaire tel quel (bytea) : pièces jointes des étapes. */
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({

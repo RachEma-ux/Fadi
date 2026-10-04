@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createApp } from "./app.js";
 import { pool } from "./db/client.js";
+import { basculerAncienMoteur } from "./db/bascule.js";
 
 const port = Number(process.env["PORT"] ?? 3001);
 
@@ -17,6 +18,9 @@ async function migrateOnStart(): Promise<void> {
   await pool.query(sql);
   // eslint-disable-next-line no-console
   console.log("Schema applied (init.sql).");
+  const b = await basculerAncienMoteur(pool);
+  // eslint-disable-next-line no-console
+  if (b.supprimees) console.log(`Bascule de l'Atelier : ${b.convertis} projet(s) repris dans le modèle typé.`);
 }
 
 migrateOnStart()

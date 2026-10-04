@@ -109,9 +109,10 @@ describe("archive — export du prototype → archive Fadi", () => {
     demo.workflow.data["demoP118V81"] = { mode: "editable", copiedAt: "2026-09-30" };
     expect(normalizeImportedProjects(demo, DEFS, OPTIONS)[0]!.archive.project.exampleMode).toBe("editable");
     expect(a.programmeCases).toEqual([{ revision: 2, caseId: "hotel", scenarioId: "B", data: expect.objectContaining({ caseId: "hotel" }) }]);
-    expect(a.native!.entries["design.v13.activeProject"]).toBe("native-1");
-    expect(a.native!.entries["design.v13.project.native-1.levels"]).toEqual([{ id: "rdc" }]);
-    expect(a.native!.entries["design.v13.registry"]).toEqual([{ id: "native-1", name: "Étude Bellevue · import" }]);
+    expect(a.natif!.nativeId).toBe("native-1");
+    expect(a.natif!.domains["levels"]).toEqual([{ id: "rdc" }]);
+    expect(a.natif!.registry).toEqual({ id: "native-1", name: "Étude Bellevue · import" });
+    expect(a.modele).toBeNull();
     expect(a.project.modelRevision).toBe(1);
     // Seules les pièces d'une étape valide avec données base64 sont reprises.
     expect(a.stageAttachments).toEqual([{ stepNumber: 3, name: "règlement.pdf", type: "application/pdf", size: 4, addedAt: "2026-09-28T00:00:00.000Z", dataUrl: "data:application/pdf;base64,JVBERg==" }]);
@@ -126,8 +127,8 @@ describe("archive — export du prototype → archive Fadi", () => {
       ["parcours-v5", "A · import"],
       ["parcours-v5", "B · import"],
     ]);
-    expect(list[0]!.archive.native!.entries["design.v13.activeProject"]).toBe("n-a");
-    expect(list[1]!.archive.native).toBeNull();
+    expect(list[0]!.archive.natif!.nativeId).toBe("n-a");
+    expect(list[1]!.archive.natif).toBeNull();
     expect(list[1]!.archive.project.modelRevision).toBe(0);
     const single = normalizeImportedProjects({ id: "c", name: "C", data: { done: {} } }, DEFS, OPTIONS);
     expect(single[0]!.archive.project.name).toBe("C · import");
@@ -159,7 +160,14 @@ describe("archive — export du prototype → archive Fadi", () => {
     expect(a.steps[1]!.content.harmonie.generatedHash).toBeNull();
     expect(a.steps[1]!.content.harmonie.proposals["H01-B"]).toMatchObject({ status: "adapted", acceptedHash: null, snapshot: { ref: "H02-B" } });
     expect(a.stageAttachments).toHaveLength(1);
-    expect(() => normalizeImportedProjects({ ...exported, native: { entries: { "design.v13.project.x.levels": [], "pwned": 1 } } }, DEFS, OPTIONS)).toThrow("Domaine natif invalide.");
+    // Archive version 1 (avant la bascule) : le magasin du moteur V14 est ramené au jeu natif ; une clé étrangère est refusée.
+    const v1 = { ...exported, version: 1, natif: undefined, modele: undefined, native: { entries: { "design.v13.activeProject": "n1", "design.v13.registry": [{ id: "n1", name: "M" }], "design.v13.project.n1.levels": [{ id: "rdc" }] } } };
+    expect(normalizeImportedProjects(v1, DEFS, OPTIONS)[0]!.archive.natif).toEqual({ nativeId: "n1", registry: { id: "n1", name: "M" }, domains: { levels: [{ id: "rdc" }] } });
+    expect(() => normalizeImportedProjects({ ...v1, native: { entries: { "design.v13.project.x.levels": [], "pwned": 1 } } }, DEFS, OPTIONS)).toThrow("Domaine natif invalide.");
+    // Version 2 : le modèle typé est transmis tel quel (le serveur le revalide).
+    const v2 = normalizeImportedProjects({ ...exported, natif: null, modele: { nativeId: "m", etat: { version: 1, niveaux: {} } } }, DEFS, OPTIONS)[0]!.archive;
+    expect(v2.modele).toEqual({ nativeId: "m", etat: { version: 1, niveaux: {} } });
+    expect(v2.project.modelRevision).toBe(1);
     expect(() => normalizeImportedProjects({ ...exported, version: 99 }, DEFS, OPTIONS)).toThrow("Version d'archive non prise en charge : 99.");
   });
 

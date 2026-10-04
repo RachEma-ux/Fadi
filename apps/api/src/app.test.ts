@@ -6,6 +6,7 @@
  * le schéma déjà appliqué (`npm run db:migrate`).
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import request from "supertest";
 import { createApp } from "./app.js";
 import { pool } from "./db/client.js";
@@ -13,10 +14,19 @@ import { georeferenceFromParcel } from "./lib/site-context.js";
 
 const app = createApp();
 
+/** Enveloppe d'un lot de commandes de l'Atelier (contrat atelier-commands/1). */
+let lotN = 0;
+function lot(baseRevision: number, commands: unknown[], label = "test") {
+  lotN += 1;
+  return { requestId: `test-${Date.now()}-${lotN}`, baseRevision, contract: "atelier-commands/1", label, commands };
+}
+const m = (value: number) => ({ value, unit: "m" });
+const pt = (x: number, y: number) => ({ x, y, frame: "local", unit: "m" });
+
 async function resetDb() {
   // L'ordre respecte les clés étrangères (CASCADE serait aussi suffisant,
   // mais l'ordre explicite documente les dépendances).
-  await pool.query("TRUNCATE architectural_objects, atelier_store, levels, parcels, produced_documents, project_comments, project_members, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE");
+  await pool.query("TRUNCATE parcels, produced_documents, project_comments, project_members, programme_cases, programme_repartitions, project_steps, step_files, projects, sessions, users CASCADE");
 }
 
 beforeAll(async () => {
@@ -77,7 +87,7 @@ describe("hébergement : l'API sert l'application construite (WEB_DIST)", () => 
       const missing = await request(served).get("/missing.png").set("Accept", "image/png");
       expect(missing.status).toBe(404);
       // Un fichier manquant demandé avec Accept */* (balise script) reste un 404, jamais index.html.
-      expect((await request(served).get("/atelier-native/absent.js").set("Accept", "*/*")).status).toBe(404);
+      expect((await request(served).get("/parcelle/absent.js").set("Accept", "*/*")).status).toBe(404);
     } finally {
       if (previous === undefined) delete process.env["WEB_DIST"];
       else process.env["WEB_DIST"] = previous;
@@ -184,57 +194,46 @@ describe("projects", () => {
   });
 });
 
-describe("levels and architectural objects", () => {
+describe("modèle typé de l'Atelier (commandes)", () => {
   async function setupProjectWithLevel(email: string) {
     const client = await registerAndLogin(email);
     const project = await client.post("/projects").send({ code: "P.118", name: "Pilote" });
-    const level = await client.post(`/projects/${project.body.id}/levels`).send({ label: "RDC", elevation: 0, position: 0 });
-    return { client, projectId: project.body.id as string, levelId: level.body.id as string };
+    const projectId = project.body.id as string;
+    const r = await client.post(`/projects/${projectId}/atelier/commands`).send(lot(0, [{ type: "niveau.creer", params: { id: "rdc", nom: "RDC", elevation: 0, hauteur: 3 } }]));
+    expect(r.status).toBe(200);
+    return { client, projectId };
   }
 
-  it("creates an architectural object and advances the project's modelRevision atomically", async () => {
-    const { client, projectId, levelId } = await setupProjectWithLevel("modeler@example.com");
-
-    const before = await client.get(`/projects/${projectId}`);
-    expect(before.body.modelRevision).toBe(0);
-
-    const wall = await client
-      .post(`/projects/${projectId}/levels/${levelId}/objects`)
-      .send({ kind: "wall", properties: { a: [0, 0], b: [4, 0], thickness: 0.2 }, relations: [] });
-    expect(wall.status).toBe(201);
-    expect(wall.body.modelRevision).toBe(1);
-
-    const after = await client.get(`/projects/${projectId}`);
-    expect(after.body.modelRevision).toBe(1);
-
-    const listed = await client.get(`/projects/${projectId}/levels/${levelId}/objects`);
-    expect(listed.body).toHaveLength(1);
+  it("crée un mur et avance la révision du projet d'une unité, atomiquement", async () => {
+    const { client, projectId } = await setupProjectWithLevel("modeler@example.com");
+    expect((await client.get(`/projects/${projectId}`)).body.modelRevision).toBe(1);
+    const wall = await client.post(`/projects/${projectId}/atelier/commands`).send(lot(1, [{ type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } }]));
+    expect(wall.status).toBe(200);
+    expect(wall.body.revision).toBe(2);
+    expect((await client.get(`/projects/${projectId}`)).body.modelRevision).toBe(2);
+    const model = await client.get(`/projects/${projectId}/atelier/model`);
+    expect(Object.values(model.body.modele.objets).filter((o) => (o as { classe: string }).classe === "mur")).toHaveLength(1);
   });
 
-  it("advances modelRevision again on delete, and only while something was actually deleted", async () => {
-    const { client, projectId, levelId } = await setupProjectWithLevel("deleter@example.com");
-    const wall = await client
-      .post(`/projects/${projectId}/levels/${levelId}/objects`)
-      .send({ kind: "wall", properties: {}, relations: [] });
-
-    const del = await client.delete(`/projects/${projectId}/levels/${levelId}/objects/${wall.body.id}`);
-    expect(del.status).toBe(204);
-    const afterDelete = await client.get(`/projects/${projectId}`);
-    expect(afterDelete.body.modelRevision).toBe(2);
-
-    // Deleting an object that no longer exists must not bump the revision again.
-    const delAgain = await client.delete(`/projects/${projectId}/levels/${levelId}/objects/${wall.body.id}`);
-    expect(delAgain.status).toBe(204);
-    const stillTwo = await client.get(`/projects/${projectId}`);
-    expect(stillTwo.body.modelRevision).toBe(2);
+  it("une suppression avance la révision ; supprimer un objet disparu est refusé sans rien écrire", async () => {
+    const { client, projectId } = await setupProjectWithLevel("deleter@example.com");
+    const wall = await client.post(`/projects/${projectId}/atelier/commands`).send(lot(1, [{ type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } }]));
+    const id = wall.body.effets.crees[0] as string;
+    const del = await client.post(`/projects/${projectId}/atelier/commands`).send(lot(2, [{ type: "objet.supprimer", params: { id } }]));
+    expect(del.status).toBe(200);
+    expect((await client.get(`/projects/${projectId}`)).body.modelRevision).toBe(3);
+    const again = await client.post(`/projects/${projectId}/atelier/commands`).send(lot(3, [{ type: "objet.supprimer", params: { id } }]));
+    expect(again.status).toBe(409);
+    expect((await client.get(`/projects/${projectId}`)).body.modelRevision).toBe(3);
   });
 
-  it("404s on a level or object that belongs to someone else's project", async () => {
+  it("404 sur le modèle d'un projet d'autrui ; les anciennes routes /levels n'existent plus", async () => {
     const mine = await setupProjectWithLevel("victim@example.com");
     const attacker = await registerAndLogin("attacker@example.com");
-
-    const res = await attacker.get(`/projects/${mine.projectId}/levels/${mine.levelId}/objects`);
-    expect(res.status).toBe(404);
+    expect((await attacker.get(`/projects/${mine.projectId}/atelier/model`)).status).toBe(404);
+    expect((await attacker.post(`/projects/${mine.projectId}/atelier/commands`).send(lot(1, [{ type: "niveau.creer", params: { nom: "X", elevation: 0 } }]))).status).toBe(404);
+    expect((await mine.client.get(`/projects/${mine.projectId}/levels`)).status).toBe(404);
+    expect((await mine.client.get(`/projects/${mine.projectId}/atelier/store`)).status).toBe(404);
   });
 });
 
@@ -488,30 +487,21 @@ describe("examples", () => {
     expect(imported.status).toBe(201);
     const projectId = imported.body.id as string;
 
-    const levelsRes = await client.get(`/projects/${projectId}/levels`);
-    expect(levelsRes.status).toBe(200);
+    const model = await client.get(`/projects/${projectId}/atelier/model`);
+    expect(model.status).toBe(200);
+    const modele = model.body.modele as { niveaux: Record<string, { elevation: number }>; objets: Record<string, { classe: string; niveauId: string; params: Record<string, unknown> }> };
     // Les 6 niveaux du modèle natif (sous-sol à R+3), jamais arrondis.
-    expect(levelsRes.body).toHaveLength(6);
-    const mezz = levelsRes.body.find((l: { id: string }) => l.id.endsWith("_mezz"));
-    expect(mezz.elevation).toBeCloseTo(3.2, 10);
-    const ss = levelsRes.body.find((l: { id: string }) => l.id.endsWith("_ss"));
-    expect(ss.elevation).toBeCloseTo(-3.2, 10);
-
-    const objectsRes = await client.get(`/projects/${projectId}/levels/${mezz.id}/objects`);
-    expect(objectsRes.status).toBe(200);
-    // La mezzanine (cœur de cet exemple) porte bien ses murs, poteaux, portes,
-    // fenêtres et escaliers réels — pas un sous-ensemble choisi pour la démo.
-    const kinds = new Set(objectsRes.body.map((o: { kind: string }) => o.kind));
-    for (const expected of ["wall", "column", "door", "window", "stairs", "room"]) {
-      expect(kinds.has(expected)).toBe(true);
-    }
-    // Les portes/fenêtres référencent leur mur hôte via une relation remappée
-    // vers l'id (préfixé projet) réellement inséré, pas l'id natif brut.
-    const door = objectsRes.body.find((o: { kind: string }) => o.kind === "door");
-    expect(door.relations).toEqual([{ kind: "hosted-by", targetId: expect.stringContaining(`${projectId}_`) }]);
-    const hostedWall = objectsRes.body.find((o: { id: string }) => o.id === door.relations[0].targetId);
-    expect(hostedWall).toBeDefined();
-    expect(hostedWall.kind).toBe("wall");
+    expect(Object.keys(modele.niveaux)).toHaveLength(6);
+    expect(modele.niveaux["mezz"]!.elevation).toBeCloseTo(3.2, 10);
+    expect(modele.niveaux["ss"]!.elevation).toBeCloseTo(-3.2, 10);
+    // La mezzanine (cœur de cet exemple) porte bien ses murs, poteaux, portes, fenêtres, escaliers et pièces réels.
+    const mezz = Object.values(modele.objets).filter((o) => o.niveauId === "mezz");
+    const classes = new Set(mezz.map((o) => o.classe));
+    for (const attendue of ["mur", "poteau", "porte", "fenetre", "escalier", "piece"]) expect(classes.has(attendue)).toBe(true);
+    // Une porte référence son mur hôte, qui existe et est un mur.
+    const porte = mezz.find((o) => o.classe === "porte")!;
+    expect(modele.objets[porte.params["murHoteId"] as string]?.classe).toBe("mur");
+    expect(Object.keys(modele.objets)).toHaveLength(1753);
 
     // Un deuxième import du même exemple ne doit pas entrer en collision
     // d'identifiants avec le premier (ids natifs préfixés par projet).
@@ -521,65 +511,36 @@ describe("examples", () => {
   });
 });
 
-describe("Atelier — magasin du moteur natif", () => {
-  it("serves the imported native model keys with revisions, and keeps the derived projection in step with floorDesign writes", async () => {
+describe("Atelier — modèle typé de l'exemple", () => {
+  it("sert le modèle importé à sa révision ; une commande sur une révision périmée est refusée ; un mur ajouté au RDC est persisté", async () => {
     const client = await registerAndLogin("atelier@example.com");
     const imported = await client.post("/examples/p118-exemple-complet/import");
     const pid = imported.body.id as string;
 
-    const store = await client.get(`/projects/${pid}/atelier/store`);
-    expect(store.status).toBe(200);
-    expect(store.body.entries["design.v13.activeProject"]).toBe("p118-demo-v819");
-    expect(store.body.entries["design.v13.registry"][0].name).toBe("EXEMPLE COMPLET · P.118 — Escalier B et mezzanine");
-    const fdKey = "design.v13.project.p118-demo-v819.floorDesign";
-    expect(Object.keys(store.body.entries).sort()).toEqual([
-      "design.v13.activeProject",
-      "design.v13.project.p118-demo-v819.buildingFootprint",
-      fdKey,
-      "design.v13.project.p118-demo-v819.levels",
-      "design.v13.project.p118-demo-v819.nativeParcel",
-      "design.v13.project.p118-demo-v819.ui",
-      "design.v13.registry",
-    ]);
-    expect(store.body.revisions[fdKey]).toBe(1);
-    expect(store.body.modelRevision).toBe(1);
+    const model = await client.get(`/projects/${pid}/atelier/model`);
+    expect(model.status).toBe(200);
+    expect(model.body.revision).toBe(1);
+    expect(model.body.nativeId).toBe("p118-demo-v819");
+    const murs = (etat: { objets: Record<string, { classe: string; niveauId: string }> }) => Object.values(etat.objets).filter((o) => o.classe === "mur" && o.niveauId === "rdc").length;
+    expect(murs(model.body.modele)).toBe(39);
+    // Les calques et la parcelle cadastrale sont conservés (pas une projection aplatie).
+    expect(Object.keys(model.body.modele.calques)).toContain("Escaliers");
+    expect(model.body.modele.site.parcelle.origineLocale.frame).toBe("cadastral");
 
-    // Le modèle natif est verbatim : métadonnées, calques et surfaces de niveau conservés (pas une projection aplatie).
-    const rdc = store.body.entries[fdKey].levels.rdc;
-    expect(rdc.meta.architectureRevision).toBe(3);
-    expect(Object.keys(rdc.layers)).toContain("Escaliers");
-    expect(rdc.areas.gross).toBeCloseTo(673, 0);
-
-    // Une écriture qui n'annonce pas la révision lue est refusée, avec la valeur courante.
-    const stale = await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: store.body.entries[fdKey], expectedRevision: 0 });
+    const stale = await client.post(`/projects/${pid}/atelier/commands`).send(lot(0, [{ type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3.2) } }]));
     expect(stale.status).toBe(409);
-    expect(stale.body.revision).toBe(1);
-    expect(stale.body.value.levels.rdc.walls.length).toBe(39);
+    expect(stale.body.motif).toBe("revision");
 
-    // Ajouter un mur au RDC via le domaine natif : révision du modèle avancée, projection régénérée (39 → 40 murs au RDC).
-    const fd = store.body.entries[fdKey];
-    fd.levels.rdc.walls.push({ id: "TEST-rdc-W-NEW", kind: "wall", a: [0, 0], b: [4, 0], thickness: 0.2, height: 3.2, layer: "Murs", type: "mur" });
-    const saved = await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: fd, expectedRevision: 1 });
+    const saved = await client.post(`/projects/${pid}/atelier/commands`).send(lot(1, [{ type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3.2), calqueId: "Murs" } }]));
     expect(saved.status).toBe(200);
     expect(saved.body.revision).toBe(2);
-    expect(saved.body.modelRevision).toBe(2);
-    const levelsRes = await client.get(`/projects/${pid}/levels`);
-    const rdcLevel = levelsRes.body.find((l: { id: string }) => l.id.endsWith("_rdc"));
-    const objects = await client.get(`/projects/${pid}/levels/${rdcLevel.id}/objects`);
-    expect(objects.body.filter((o: { kind: string }) => o.kind === "wall")).toHaveLength(40);
-    expect(objects.body.find((o: { id: string }) => o.id === `${pid}_TEST-rdc-W-NEW`).modelRevision).toBe(2);
+    expect(murs((await client.get(`/projects/${pid}/atelier/model`)).body.modele)).toBe(40);
 
-    // Une clé hors du magasin de l'Atelier est refusée.
-    const badKey = await client.put(`/projects/${pid}/atelier/store/potentiel-v3`).send({ value: {}, expectedRevision: null });
-    expect(badKey.status).toBe(400);
-
-    // Le magasin d'un projet vierge est vide ; un autre utilisateur n'y accède pas.
+    // Un projet vierge n'a pas de modèle ; un autre utilisateur n'accède pas à celui-ci.
     const blank = await client.post("/projects").send({ code: "P.906", name: "Vierge" });
-    const blankStore = await client.get(`/projects/${blank.body.id}/atelier/store`);
-    expect(blankStore.body.entries).toEqual({});
+    expect((await client.get(`/projects/${blank.body.id}/atelier/model`)).status).toBe(404);
     const intruder = await registerAndLogin("atelier-intruder@example.com");
-    expect((await intruder.get(`/projects/${pid}/atelier/store`)).status).toBe(404);
-    expect((await intruder.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: fd, expectedRevision: 2 })).status).toBe(404);
+    expect((await intruder.get(`/projects/${pid}/atelier/model`)).status).toBe(404);
   });
 });
 
@@ -635,7 +596,7 @@ describe("Parcelle — contrat de l'outil et transmission au modèle", () => {
     expect((await intruder.get(base)).status).toBe(404);
   });
 
-  it("transmits a parcel to the native model like acceptParcel: nativeParcel written with setback envelope, then a conflict once a building exists", async () => {
+  it("transmits a parcel to the typed model like acceptParcel: parcel and setback envelope written by commands, then a conflict once a building exists", async () => {
     const client = await registerAndLogin("transmit@example.com");
     const project = await client.post("/projects").send({ code: "P.908", name: "Transmission" });
     const pid = project.body.id as string;
@@ -650,33 +611,36 @@ describe("Parcelle — contrat de l'outil et transmission au modèle", () => {
     expect(t1.body.transmission.parcel).toMatchObject({ name: "Lot 118", crs: "EPSG:26191", parcelNumber: "118", boundaryCount: 4 });
     expect(t1.body.transmission.parcel.area).toBeCloseTo(1345.5476, 3);
     const nativeId = t1.body.transmission.nativeId as string;
-    expect(nativeId).toMatch(/^native-fadi-/);
+    expect(nativeId).toMatch(/^fadi-/);
     // Même signature → aucune nouvelle écriture (rechargement, clic sans saisie).
     const again = await client.post(`/projects/${pid}/parcels/${id}/transmit`);
     expect(again.body.transmission.at).toBe(t1.body.transmission.at);
 
-    const store = (await client.get(`/projects/${pid}/atelier/store`)).body;
-    expect(store.entries["design.v13.activeProject"]).toBe(nativeId);
-    const np = store.entries[`design.v13.project.${nativeId}.nativeParcel`];
-    expect(np.vertexIds).toEqual(["B.266", "B.267", "B.268", "B.265"]);
-    expect(np.area).toBeCloseTo(1345.5476, 3);
-    expect(np.officialArea).toBe(1346);
-    expect(np.setback.distance).toBe(5);
-    expect(np.setback.envelope).toHaveLength(4);
-    expect(np.setback.area).toBeCloseTo(689.23, 1);
-    expect(np.validation.state).toBe("DECLARED");
-    expect(store.modelRevision).toBeGreaterThanOrEqual(1);
+    const model = (await client.get(`/projects/${pid}/atelier/model`)).body;
+    expect(model.nativeId).toBe(nativeId);
+    const parcelle = model.modele.site.parcelle;
+    expect(parcelle.sommets.map((x: { id: string }) => x.id)).toEqual(["B.266", "B.267", "B.268", "B.265"]);
+    expect(parcelle.sommets[0].cadastral).toMatchObject({ x: 321946.82, y: 347183.88, frame: "cadastral", crs: "EPSG:26191" });
+    expect(parcelle.aire.value).toBeCloseTo(1345.5476, 3);
+    expect(parcelle.aireOfficielle).toEqual({ value: 1346, unit: "m2" });
+    expect(parcelle.champs.setback.distance).toBe(5);
+    expect(parcelle.champs.setback.envelope).toHaveLength(4);
+    expect(parcelle.champs.setback.area).toBeCloseTo(689.23, 1);
+    expect(parcelle.champs.validation.state).toBe("DECLARED");
+    expect(model.revision).toBeGreaterThanOrEqual(1);
+    const journal = (await client.get(`/projects/${pid}/atelier/journal?apres=0`)).body;
+    expect(journal.entrees.map((e: { label: string }) => e.label)).toContain("Parcelle transmise depuis l'étape 01");
 
     // Un bâtiment existe désormais (un mur) : déplacer une borne est un conflit explicite, le modèle n'est pas touché.
-    const fdKey = `design.v13.project.${nativeId}.floorDesign`;
-    await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: { levels: { rdc: { id: "rdc", walls: [{ id: "W1", kind: "wall", a: [0, 0], b: [4, 0], thickness: 0.2 }] } } }, expectedRevision: null });
+    const rev = model.revision as number;
+    expect((await client.post(`/projects/${pid}/atelier/commands`).send(lot(rev, [{ type: "niveau.creer", params: { id: "rdc", nom: "RDC", elevation: 0 } }, { type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } }]))).status).toBe(200);
     const moved = S01.map((p, i) => (i === 0 ? { ...p, x: p.x + 2 } : p));
     // La capture de l'outil est transmise telle quelle (corps `data`), avant même que l'outil n'ait enregistré son fichier.
     const t2 = await client.post(`/projects/${pid}/parcels/${id}/transmit`).send({ data: { name: "Lot 118", crs: "EPSG:26191", points: moved } });
     expect(t2.body.transmission.status).toBe("conflict");
     expect(t2.body.transmission.reason).toMatch(/un bâtiment est déjà dessiné/);
-    const after = (await client.get(`/projects/${pid}/atelier/store`)).body;
-    expect(after.entries[`design.v13.project.${nativeId}.nativeParcel`].vertices[0][0]).toBeCloseTo(321946.82, 2);
+    const after = (await client.get(`/projects/${pid}/atelier/model`)).body;
+    expect(after.modele.site.parcelle.sommets[0].cadastral.x).toBeCloseTo(321946.82, 2);
     const listed = await client.get(`/projects/${pid}/parcels`);
     expect(listed.body.transmission.status).toBe("conflict");
     expect(listed.body.files[0].revision).toBe(1);
@@ -1077,9 +1041,8 @@ describe("Péremption des propositions (« À réexaminer ») et rapports Harmon
     const step10 = (await client.get(`/projects/${pid}/steps/10`)).body;
     const hall = step10.proposals.find((q: { group: string; title: string }) => q.group === "local" && /R01/.test(q.title));
     await client.post(`/projects/${pid}/steps/10/harmonie/${encodeURIComponent(hall.id)}`).send({ status: "retained" });
-    // Le projet natif actif disparaît du magasin : plus de locaux calculés, le choix est conservé en orphelin.
-    const del = await client.delete(`/projects/${pid}/atelier/store/${encodeURIComponent("design.v13.activeProject")}`);
-    expect(del.status).toBe(204);
+    // Le modèle typé disparaît (aucune route ne le permet : simulé en base) : plus de locaux calculés, le choix est conservé en orphelin.
+    await pool.query("DELETE FROM atelier_site WHERE project_id = $1", [pid]);
     const without = (await client.get(`/projects/${pid}/steps/10`)).body;
     expect(without.model).toBeNull();
     const orphan = without.proposals.find((q: { id: string }) => q.id === hall.id);
@@ -1138,14 +1101,16 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     expect(exported.headers["content-disposition"]).toBe('attachment; filename="Parcours_V7_Escalier_B_et_mezzanine.json"');
     expect(exported.headers["content-type"]).toMatch(/^application\/json/);
     const archive = JSON.parse(exported.text);
-    expect(archive).toMatchObject({ kind: "fadi-project-archive", version: 1, sourceVersion: "8.19.0", project: { code: "P.118", name: "Escalier B et mezzanine", modelRevision: 1 } });
+    expect(archive).toMatchObject({ kind: "fadi-project-archive", version: 2, sourceVersion: "8.19.0", project: { code: "P.118", name: "Escalier B et mezzanine", modelRevision: 1 } });
     expect(archive.stageMapping).toHaveLength(21);
     expect(archive.steps).toHaveLength(21);
     expect(archive.programmeCases).toHaveLength(1);
     expect(archive.programmeCases[0].data.spaces).toHaveLength(74);
     expect(archive.programmeRepartition.mode).toBe("cas");
     expect(archive.parcels).toHaveLength(1);
-    expect(Object.keys(archive.native.entries)).toContain("design.v13.activeProject");
+    expect(archive.modele.nativeId).toBe("p118-demo-v819");
+    expect(Object.keys(archive.modele.etat.objets)).toHaveLength(1753);
+    expect(archive.natif).toBeNull();
     // Les pièces : les deux documents de base de l'exemple (étapes 01 / 02, octets conservés) et la pièce ajoutée.
     expect(archive.stageAttachments.map((a: { stepNumber: number; name: string; size: number }) => [a.stepNumber, a.name, a.size])).toEqual([
       [1, "118_officiel.kmz", 881142],
@@ -1178,7 +1143,7 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     const step10 = steps.find((s) => s.number === 10)!;
     expect(step10.model).not.toBeNull();
     expect(step10.proposals.filter((q) => q.id.includes("LOCAL")).length).toBeGreaterThan(10);
-    expect((await client.get(`/projects/${copy.id}/levels`)).body).toHaveLength(6);
+    expect(Object.keys((await client.get(`/projects/${copy.id}/atelier/model`)).body.modele.niveaux)).toHaveLength(6);
     const programme = (await client.get(`/projects/${copy.id}/programme`)).body;
     expect(programme.programmeCase.spaces).toHaveLength(74);
     const files = (await client.get(`/projects/${copy.id}/steps/3/files`)).body as { name: string; size: number; id: string }[];
@@ -1206,7 +1171,7 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     const programme = (await client.get(`/projects/${copy.id}/programme`)).body;
     expect(programme.resolvedExample).toBe(false);
     expect(programme.programmeCase).toMatchObject({ caseId: "parcours_lot118", revision: 6, spaceCount: 74 });
-    expect((await client.get(`/projects/${copy.id}/levels`)).body).toHaveLength(6);
+    expect(Object.keys((await client.get(`/projects/${copy.id}/atelier/model`)).body.modele.niveaux)).toHaveLength(6);
     const steps = (await client.get(`/projects/${copy.id}/steps`)).body as { status: string; stale: boolean; staleRetainedCount: number }[];
     expect(steps.filter((s) => s.status === "termine")).toHaveLength(21);
     expect(steps.filter((s) => s.stale || s.staleRetainedCount > 0)).toHaveLength(0);
@@ -1225,11 +1190,11 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
   it("imports an export of the existing software (parcours-v6-project: workflow + native + stageAttachments) as a new project with its answers, choices, model and attachment", async () => {
     const client = await registerAndLogin("archive-proto@example.com");
     // Le modèle natif de l'exemple sert de `native` du prototype (registry + domains).
-    const example = await client.post("/examples/p118-exemple-complet/import");
-    const store = (await client.get(`/projects/${example.body.id}/atelier/store`)).body.entries as Record<string, unknown>;
-    const nativeId = store["design.v13.activeProject"] as string;
+    await client.post("/examples/p118-exemple-complet/import");
+    const jeu = JSON.parse(readFileSync(new URL("./data/examples/p118-native-model.json", import.meta.url), "utf8")) as { nativeId: string; domains: Record<string, unknown> };
+    const nativeId = jeu.nativeId;
     const domains: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(store)) if (k.startsWith(`design.v13.project.${nativeId}.`)) domains[k.slice(`design.v13.project.${nativeId}.`.length)] = v;
+    for (const [k, v] of Object.entries(jeu.domains)) domains[k] = v;
     const payload = {
       kind: "parcours-v6-project",
       version: 7,
@@ -1271,7 +1236,7 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     expect(steps.find((s) => s.number === 1)!.site!.observations.priority).toBe("service");
     expect(steps.find((s) => s.number === 19)!.content.fields).toEqual({ decision: "GO" });
     expect(steps.find((s) => s.number === 10)!.model).not.toBeNull();
-    expect((await client.get(`/projects/${p.id}/levels`)).body).toHaveLength(6);
+    expect(Object.keys((await client.get(`/projects/${p.id}/atelier/model`)).body.modele.niveaux)).toHaveLength(6);
     const files = (await client.get(`/projects/${p.id}/steps/3/files`)).body as { name: string; size: number }[];
     expect(files).toEqual([expect.objectContaining({ name: "note.txt", size: 7 })]);
     // Refus avec les messages du prototype ; aucun projet créé.
@@ -1625,11 +1590,7 @@ describe("Dessins techniques et exports de l'Atelier au catalogue des documents"
     expect(file.headers["content-disposition"]).toContain("Atelier_P.118.dxf");
     expect(file.text ?? file.body.toString()).toBe(dxf);
     // Un mur ajouté au modèle (révision 2) : l'export de la révision 1 est périmé, le fichier reste téléchargeable.
-    const fdKey = "design.v13.project.p118-demo-v819.floorDesign";
-    const store = await client.get(`/projects/${pid}/atelier/store`);
-    const fd = store.body.entries[fdKey];
-    fd.levels.rdc.walls.push({ id: "TEST-rdc-W-EXPORT", kind: "wall", a: [0, 0], b: [4, 0], thickness: 0.2, height: 3.2, layer: "Murs", type: "mur" });
-    expect((await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: fd, expectedRevision: 1 })).status).toBe(200);
+    expect((await client.post(`/projects/${pid}/atelier/commands`).send(lot(1, [{ type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3.2), calqueId: "Murs" } }]))).status).toBe(200);
     docs = (await client.get(`/projects/${pid}/documents`)).body.documents;
     entry = docs.find((d) => d.kind === `dessin:${id}`)!;
     expect(entry.freshness).toBe("perime");
@@ -1697,12 +1658,8 @@ describe("Documents — catalogue, productions et actualité", () => {
     await client.get(`/projects/${pid}/archive`);
     expect((await docOf("bilan-batiment")).freshness).toBe("a-jour");
     expect((await docOf("archive-projet")).freshness).toBe("a-jour");
-    const store = (await client.get(`/projects/${pid}/atelier/store`)).body;
-    const nativeId = store.entries["design.v13.activeProject"] as string;
-    const fdKey = `design.v13.project.${nativeId}.floorDesign`;
-    const fd = store.entries[fdKey];
-    fd.levels.rdc.walls.push({ id: "DOC-rdc-W-NEW", kind: "wall", a: [0, 0], b: [4, 0], thickness: 0.2, height: 3.2, layer: "Murs", type: "mur" });
-    const put = await client.put(`/projects/${pid}/atelier/store/${fdKey}`).send({ value: fd, expectedRevision: (store.revisions as Record<string, number>)[fdKey] });
+    const revisionAvant = (await client.get(`/projects/${pid}/atelier/model`)).body.revision as number;
+    const put = await client.post(`/projects/${pid}/atelier/commands`).send(lot(revisionAvant, [{ type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3.2), calqueId: "Murs" } }]));
     expect(put.status).toBe(200);
     const after = (await client.get(`/projects/${pid}/documents`)).body;
     expect(after.modelRevision).toBe(2);
@@ -1794,7 +1751,7 @@ describe("Collaboration — accès, synchronisation, journal des révisions, com
     const v = (await client.get(`/projects/${pid}/collaboration`)).body;
     expect(v.access).toMatchObject({ ownerEmail: "collab@example.com", you: "collab@example.com", role: "proprietaire", members: [], sharing: { available: true } });
     expect(v.sync).toMatchObject({ modelRevision: 1, offline: { available: true } });
-    expect(v.sync.nativeKeys).toBeGreaterThan(3);
+    expect(v.sync.journalEntries).toBeGreaterThanOrEqual(1);
     expect(typeof v.sync.lastModelWrite).toBe("string");
     const kinds = new Set(v.journal.map((e: { kind: string }) => e.kind));
     expect([...kinds]).toEqual(expect.arrayContaining(["projet", "harmonie", "programme", "modele", "parcelle", "document", "revue"]));
@@ -1938,7 +1895,7 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     // Lecteur : lit tout (étapes, programme, Atelier, analyses, documents, pièces), commente, mais ne modifie rien — 403 avec le motif, jamais 404.
     expect((await reader.get(`/projects/${pid}/steps/7`)).status).toBe(200);
     expect((await reader.get(`/projects/${pid}/programme`)).status).toBe(200);
-    expect((await reader.get(`/projects/${pid}/atelier/store`)).status).toBe(200);
+    expect((await reader.get(`/projects/${pid}/atelier/model`)).status).toBe(200);
     expect((await reader.get(`/projects/${pid}/analyses`)).status).toBe(200);
     expect((await reader.get(`/projects/${pid}/documents`)).status).toBe(200);
     expect((await reader.get(`/projects/${pid}/steps/2/files`)).status).toBe(200);
@@ -1946,7 +1903,7 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     expect(refused.status).toBe(403);
     expect(refused.body).toMatchObject({ error: "forbidden", role: "lecteur", message: "Ce projet vous est partagé en lecture : les modifications sont réservées à son propriétaire et à ses éditeurs." });
     expect((await reader.post(`/projects/${pid}/steps/2/harmonie/H01-B`).send({ status: "retained" })).status).toBe(403);
-    expect((await reader.put(`/projects/${pid}/atelier/store/design.v13.test`).send({ value: "x" })).status).toBe(403);
+    expect((await reader.post(`/projects/${pid}/atelier/commands`).send(lot(1, [{ type: "niveau.creer", params: { nom: "X", elevation: 0 } }]))).status).toBe(403);
     expect((await reader.post(`/projects/${pid}/steps/2/files`).set("X-File-Name", "note.txt").set("Content-Type", "text/plain").send("abc")).status).toBe(403);
     expect((await reader.delete(`/projects/${pid}`)).status).toBe(403);
     // Copier = exporter puis importer : un lecteur obtient sa propre copie modifiable, l'original reste intact.
@@ -2057,7 +2014,7 @@ describe("Verrou d'édition optionnel — un seul éditeur actif", () => {
     expect((await owner.get("/notifications")).body.items[0].text).toMatch(/^lock-editor@example\.com a réservé l’édition de P\.LOCK — Verrou jusqu’à \d{2}:\d{2} : lecture et commentaires seulement d’ici là\.$/);
     expect((await editor.get("/notifications")).body.items.some((n: { kind: string }) => n.kind === "reservation")).toBe(false);
     expect((await owner.post(`/projects/${pid}/steps/2/harmonie/H01-A`).send({ status: "retained" })).status).toBe(423);
-    expect((await owner.put(`/projects/${pid}/atelier/store/design.v13.registry`).send({ value: [], expectedRevision: null })).status).toBe(423);
+    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(lot(0, [{ type: "niveau.creer", params: { nom: "X", elevation: 0 } }]))).status).toBe(423);
     expect((await owner.put(`/projects/${pid}/lock`)).status).toBe(423);
     expect((await owner.get(`/projects/${pid}/steps/2`)).body.content.fields.f1).toBe("Éditeur, sans verrou");
     expect((await owner.post(`/projects/${pid}/collaboration/comments`).send({ body: "Je relis pendant que tu édites." })).status).toBe(201);

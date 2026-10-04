@@ -7,6 +7,13 @@
 import type { ModeleAtelier, OccurrenceQuelconque, Propriete } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import type { Point2 } from "../unites.js";
+import { RANG_NATIF } from "../import/natif.js";
+
+/** Ordre de lecture : rang natif d'abord (ordre de l'exemple importé), puis les objets créés ensuite, par identifiant. */
+const rangDe = (o: { proprietes: Record<string, Propriete> }) => {
+  const v = o.proprietes[RANG_NATIF]?.valeur;
+  return typeof v === "number" ? v : Number.POSITIVE_INFINITY;
+};
 
 type Paire = [number, number];
 const paire = (p: Point2): Paire => [p.x, p.y];
@@ -14,7 +21,7 @@ const trous = (t: Point2[][]) => t.map((h) => ({ kind: "poly", poly: h.map(paire
 
 function natif(o: { proprietes: Record<string, Propriete> }): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(o.proprietes)) if (k.startsWith("natif:") && !k.includes(".")) out[k.slice(6)] = v.valeur;
+  for (const [k, v] of Object.entries(o.proprietes)) if (k.startsWith("natif:") && !k.includes(".") && k !== RANG_NATIF) out[k.slice(6)] = v.valeur;
   return out;
 }
 
@@ -43,7 +50,7 @@ export function projeterPourAnalyse(etat: ModeleAtelier, nativeId = "modele-type
     if (!niveauId || !floorLevels[niveauId]) return;
     (floorLevels[niveauId]![famille] as unknown[]).push(valeur);
   };
-  const objets = Object.values(etat.objets).sort((a, b) => (a.id < b.id ? -1 : 1));
+  const objets = Object.values(etat.objets).sort((a, b) => rangDe(a) - rangDe(b) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   for (const o of objets) projeterObjet(o, push, floorLevels);
   const meta: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(etat.proprietes)) if (k.startsWith("natif:meta.")) meta[k.slice("natif:meta.".length)] = v.valeur;

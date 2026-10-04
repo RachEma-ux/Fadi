@@ -35,7 +35,7 @@ export const MODULES: ModuleDescriptor[] = [
     id: "atelier",
     label: "Atelier architectural",
     implemented: true,
-    status: "Le moteur de l'Atelier du prototype (3D, plan, coupes, façades, niveaux, outils de dessin, exports) sur le modèle du projet, persisté avec révision contrôlée.",
+    status: "L'Atelier reconstruit sur le modèle typé du projet : plan 2D et outils de dessin, vue 3D, niveaux, coupes et façades de travail, inspecteur, annuler / rétablir, exports DXF / SVG / CSV / PNG ; chaque modification est une commande enregistrée avec révision contrôlée, utilisable hors ligne.",
   },
   {
     id: "analyses",
@@ -53,6 +53,6 @@ export const MODULES: ModuleDescriptor[] = [
     id: "collaboration",
     label: "Collaboration",
     implemented: true,
-    status: "Commentaires par projet et par étape, journal des révisions, synchronisation hors-ligne de l'Atelier (file locale rejouée) et lecture hors-ligne ; partage multi-utilisateur et droits non disponibles (Lot 4), annoncés tels quels.",
+    status: "Commentaires par projet et par étape, journal des révisions, synchronisation hors-ligne de l'Atelier (file locale des modifications, envoyée dans l'ordre) et lecture hors-ligne ; partage multi-utilisateur et droits non disponibles (Lot 4), annoncés tels quels.",
   },
 ];

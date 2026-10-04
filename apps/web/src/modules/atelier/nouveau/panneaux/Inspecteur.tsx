@@ -296,6 +296,11 @@ function Champ({ id, cle, valeur, etat, desactive, onValider }: { id: string; cl
               e.preventDefault();
               if (!inchange) valider();
             }
+            if (e.key === "Escape") {
+              // Échap : on rend la main au dessin (saisie validée si elle a changé, au blur) — les raccourcis reprennent.
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
             e.stopPropagation();
           }}
         />

@@ -394,7 +394,7 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
             <span>Modèle</span>
             <b>Révision {v.sync.modelRevision}</b>
             <small>
-              {v.sync.lastModelWrite ? `dernière écriture ${new Date(v.sync.lastModelWrite).toLocaleString("fr-FR")}` : "aucune écriture"} · {v.sync.nativeKeys} clé(s)
+              {v.sync.lastModelWrite ? `dernière écriture ${new Date(v.sync.lastModelWrite).toLocaleString("fr-FR")}` : "aucune écriture"} · {v.sync.journalEntries} modification(s) au journal
             </small>
           </div>
           <div className="biz-kpi">

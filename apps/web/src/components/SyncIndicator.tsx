@@ -1,17 +1,15 @@
 /**
  * État de synchronisation du projet, visible en permanence dans l'en-tête :
- * réseau (en ligne / hors-ligne), écritures du modèle en attente dans la
- * file locale, dernier état de l'Atelier (enregistré localement,
- * synchronisation, enregistré sur le serveur, conflit). Les formulaires et
+ * réseau (en ligne / hors-ligne), lots de commandes de l'Atelier en attente
+ * dans la file locale, lots en conflit ou refusés à trancher. Les formulaires et
  * arbitrages, eux, exigent le réseau : leurs envois restent en pause pendant
  * une coupure (TanStack Query) et le disent dans leur écran.
  */
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useMutationState } from "@tanstack/react-query";
-import { localStore } from "../lib/local-store";
 import { conflictsStore, type SyncConflict } from "../lib/mutations";
 import { reachability } from "../lib/reachability";
-import { atelierStorage, type SyncState } from "../modules/atelier/native/storage";
+import { synchroniserAtelier, useFileAtelier } from "../modules/atelier/bus/etat-projet";
 
 /** Les refus 409 conservés pour l'écran (`recordConflict`, magasin synchrone) ; jamais relus du serveur. */
 export function useSyncConflicts(projectId: string): SyncConflict[] {
@@ -42,27 +40,14 @@ export function useReachable(): boolean {
 export function SyncIndicator({ projectId }: { projectId: string }) {
   const online = useOnline();
   const reachable = useReachable();
-  const [sync, setSync] = useState<SyncState>({ status: "idle", pending: 0, message: null });
-  const [queued, setQueued] = useState(0);
+  // Lots de commandes de l'Atelier en attente (file locale) et lots en conflit ou refusés, à trancher.
+  const file = useFileAtelier(projectId);
   // Saisies, arbitrages et commentaires en pause (hors-ligne), persistés avec le cache.
   const pausedMutations = useMutationState({ filters: { status: "pending", predicate: (m) => m.state.isPaused }, select: (m) => m.mutationId });
   const conflicts = useSyncConflicts(projectId);
-  const [modelConflicts, setModelConflicts] = useState(0);
-  useEffect(() => atelierStorage.subscribe(setSync), []);
-  useEffect(() => atelierStorage.subscribeConflicts((c) => setModelConflicts(c.length)), []);
-  useEffect(() => {
-    let alive = true;
-    const read = () => void localStore.pendingCount(projectId).then((n) => alive && setQueued(n));
-    read();
-    const t = setInterval(read, 5000);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
-  }, [projectId, sync]);
 
-  const pending = Math.max(sync.pending, queued) + pausedMutations.length;
-  const conflictCount = conflicts.length + modelConflicts;
+  const pending = file.enAttente + pausedMutations.length;
+  const conflictCount = conflicts.length + file.aTraiter.length;
   const state = !online ? "offline" : !reachable ? "unreachable" : conflictCount > 0 ? "conflict" : pending > 0 ? "pending" : "synced";
   const label = !online
     ? `Hors-ligne · ${pending} modification(s) enregistrée(s) localement`
@@ -78,12 +63,12 @@ export function SyncIndicator({ projectId }: { projectId: string }) {
       <i aria-hidden="true" />
       {label}
       {online && !reachable && (
-        <button type="button" className="sync-indicator-retry" onClick={() => void reachability.probeNow().then((ok) => { if (ok) void atelierStorage.retryPending(); })}>
+        <button type="button" className="sync-indicator-retry" onClick={() => void reachability.probeNow().then((ok) => { if (ok) synchroniserAtelier(projectId); })}>
           Réessayer
         </button>
       )}
       {online && reachable && pending > 0 && (
-        <button type="button" className="sync-indicator-retry" onClick={() => void atelierStorage.retryPending()}>
+        <button type="button" className="sync-indicator-retry" onClick={() => synchroniserAtelier(projectId)}>
           Synchroniser maintenant
         </button>
       )}

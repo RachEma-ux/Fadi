@@ -162,24 +162,6 @@ export interface MembersView {
   members: ProjectMember[];
 }
 
-export interface Level {
-  id: string;
-  projectId: string;
-  label: string;
-  elevation: number;
-  position: number;
-}
-
-export interface ArchitecturalObjectDto {
-  id: string;
-  levelId: string;
-  kind: string;
-  properties: Record<string, unknown>;
-  relations: { kind: string; targetId: string }[];
-  modelRevision: number;
-  createdAt: string;
-}
-
 /** Une proposition Harmonie pour une étape — jamais présentée comme acquise. */
 export interface HarmonieOption {
   title: string;
@@ -584,7 +566,7 @@ export interface RevisionEvent {
 
 export interface CollaborationView {
   access: { ownerEmail: string; you: string; role: ProjectRole; members: ProjectMember[]; lock: EditingLock | null; sharing: { available: boolean; reason: string } };
-  sync: { modelRevision: number; nativeKeys: number; lastModelWrite: string | null; offline: { available: boolean; reason: string } };
+  sync: { modelRevision: number; journalEntries: number; lastModelWrite: string | null; offline: { available: boolean; reason: string } };
   journal: RevisionEvent[];
   comments: ProjectComment[];
 }
@@ -638,12 +620,6 @@ export interface ParcoursExample {
   documentedDecisions: number;
 }
 
-/** Le magasin du moteur de l'Atelier natif : clés `design.v13.*` et leur révision par clé. */
-export interface AtelierStore {
-  entries: Record<string, unknown>;
-  revisions: Record<string, number>;
-  modelRevision: number;
-}
 
 export interface ParcelFileMeta {
   id: string;
@@ -696,13 +672,6 @@ export const api = {
     request<Project>("/projects", { method: "POST", body: JSON.stringify({ code, name }) }),
   getProject: (id: string) => request<Project>(`/projects/${id}`),
   deleteProject: (id: string) => request<void>(`/projects/${id}`, { method: "DELETE" }),
-
-  listLevels: (projectId: string) => request<Level[]>(`/projects/${projectId}/levels`),
-  createLevel: (projectId: string, label: string, elevation: number, position: number) =>
-    request<Level>(`/projects/${projectId}/levels`, {
-      method: "POST",
-      body: JSON.stringify({ label, elevation, position }),
-    }),
 
   listSteps: (projectId: string) => request<ParcoursStep[]>(`/projects/${projectId}/steps`),
   patchStep: (projectId: string, stepNumber: number, patch: { status?: ParcoursStepStatus; fields?: Record<string, ParcoursFieldValue>; baseline?: Record<string, ParcoursFieldValue> }) =>
@@ -836,14 +805,6 @@ export const api = {
   putSiteObservation: (projectId: string, note: string) => request<DesignReviewView>(`/projects/${projectId}/design-review/observation`, { method: "PUT", body: JSON.stringify({ note }) }),
   /** « Rapport de cette étape » (`Harmonie_Etape_NN_V7.html`) ou, sans étape, la synthèse des choix du projet (`Harmonie_Choix_Parcours_V7.html`). */
   harmonieReportUrl: (projectId: string, stepNumber: number | null) => (stepNumber === null ? `/projects/${projectId}/steps/harmonie/rapport` : `/projects/${projectId}/steps/${stepNumber}/harmonie/rapport`),
-  getAtelierStore: (projectId: string) => request<AtelierStore>(`/projects/${projectId}/atelier/store`),
-  putAtelierStoreEntry: (projectId: string, key: string, value: unknown, expectedRevision: number | null) =>
-    request<{ key: string; revision: number; modelRevision: number }>(`/projects/${projectId}/atelier/store/${encodeURIComponent(key)}`, {
-      method: "PUT",
-      body: JSON.stringify({ value, expectedRevision }),
-    }),
-  deleteAtelierStoreEntry: (projectId: string, key: string) =>
-    request<void>(`/projects/${projectId}/atelier/store/${encodeURIComponent(key)}`, { method: "DELETE" }),
   listParcels: (projectId: string) => request<{ files: ParcelFileMeta[]; initialized: boolean; transmission: ParcelTransmission | null }>(`/projects/${projectId}/parcels`),
   /** Transmet la parcelle capturée dans l'outil (ou, sans `data`, le fichier enregistré) au modèle ; `keepalive` pour la transmission avant de quitter l'étape. */
   transmitParcel: (projectId: string, parcelId: string, data?: unknown) => {
@@ -859,20 +820,6 @@ export const api = {
   importExample: (exampleId: string) =>
     request<Project>(`/examples/${exampleId}/import`, { method: "POST" }),
 
-  listObjects: (projectId: string, levelId: string) =>
-    request<ArchitecturalObjectDto[]>(`/projects/${projectId}/levels/${levelId}/objects`),
-  createObject: (
-    projectId: string,
-    levelId: string,
-    kind: string,
-    properties: Record<string, unknown>,
-  ) =>
-    request<ArchitecturalObjectDto>(`/projects/${projectId}/levels/${levelId}/objects`, {
-      method: "POST",
-      body: JSON.stringify({ kind, properties, relations: [] }),
-    }),
-  deleteObject: (projectId: string, levelId: string, objectId: string) =>
-    request<void>(`/projects/${projectId}/levels/${levelId}/objects/${objectId}`, { method: "DELETE" }),
   // --- Atelier typé (chantier DrawAll, cahier des charges §5.4) ---
   getAtelierModel: (projectId: string) => request<AtelierModelResponse>(`/projects/${projectId}/atelier/model`),
   getAtelierJournal: (projectId: string, apres: number) => request<AtelierJournalResponse>(`/projects/${projectId}/atelier/journal?apres=${apres}`),
@@ -885,8 +832,6 @@ export const api = {
     request<AtelierCommandsResponse>(`/projects/${projectId}/atelier/commands/annuler`, { method: "POST", body: JSON.stringify(body) }),
   postAtelierRetablir: (projectId: string, body: { requestId: string; baseRevision: number; journalId?: string }) =>
     request<AtelierCommandsResponse>(`/projects/${projectId}/atelier/commands/retablir`, { method: "POST", body: JSON.stringify(body) }),
-  importerModeleNatif: (projectId: string, remplacer = false) =>
-    request<{ revision: number; journalId: string; rapport: unknown }>(`/projects/${projectId}/atelier/model/importer-natif`, { method: "POST", body: JSON.stringify({ remplacer }) }),
 };
 
 // Types du service de commandes (le modèle lui-même est typé par @parcours/atelier-model).

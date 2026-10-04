@@ -9,3 +9,5 @@ export * from "./import/natif.js";
 export * from "./projection/analyse.js";
 export * from "./sync.js";
 export * from "./projection/maillage.js";
+export * from "./archive.js";
+export * from "./echanges/plan.js";

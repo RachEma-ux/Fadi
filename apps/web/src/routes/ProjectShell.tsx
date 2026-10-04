@@ -20,8 +20,7 @@ import { ParcelleTool } from "../modules/projets-sources/ParcelleTool";
 import { ProjectSources } from "../modules/projets-sources/StepSources";
 
 // Le moteur de l'Atelier (scripts, markup, feuille de style) n'est chargé qu'à la première ouverture de l'Atelier.
-const NativeAtelier = lazy(() => import("../modules/atelier/NativeAtelier").then((m) => ({ default: m.NativeAtelier })));
-// Nouvel Atelier typé (lots 3a–3b) : ouvert par `?module=atelier&version=nouveau` jusqu'à la bascule (lot 4).
+// L'Atelier architectural (modèle typé, lots 3a–4) : three.js n'est chargé qu'à l'ouverture de la vue 3D.
 const AtelierNouveau = lazy(() => import("../modules/atelier/nouveau/AtelierNouveau").then((m) => ({ default: m.AtelierNouveau })));
 
 export function ProjectShell() {
@@ -136,7 +135,7 @@ export function ProjectShell() {
             {/* Module Atelier : la page de l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; « ← » ramène au parcours. */}
             <StageStrip title="Atelier Architectural" stage={null} subtitle={`${project.code} — ${project.name}`} onBack={() => selectModule("parcours")} onHome={() => navigate("/projets")} />
             <Suspense fallback={<p role="status">Chargement de l’Atelier…</p>}>
-              {searchParams.get("version") === "nouveau" ? <AtelierNouveau projectId={projectId} readOnly={!access.canWrite} /> : <NativeAtelier projectId={projectId} readOnly={!access.canWrite} />}
+              <AtelierNouveau projectId={projectId} readOnly={!access.canWrite} protectedReference={project.exampleMode === "reference"} code={project.code} />
             </Suspense>
           </>
         )}

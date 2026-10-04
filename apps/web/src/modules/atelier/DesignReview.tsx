@@ -509,8 +509,12 @@ export function DesignReviewFold({ projectId, roomsAction = false, request = nul
   const [report, setReport] = useState(false);
   const [reportTab, setReportTab] = useState<Tab>("synthesis");
   const foldRef = useRef<HTMLDetailsElement>(null);
+  // La demande peut arriver avant le bilan (requête encore en cours, pli pas encore monté) : elle est traitée une fois, dès que le pli existe.
+  const handledNonce = useRef<number | null>(null);
+  const ready = Boolean(query.data);
   useEffect(() => {
-    if (!request) return;
+    if (!request || !ready || handledNonce.current === request.nonce) return;
+    handledNonce.current = request.nonce;
     setOpen(true);
     setReportTab(request.action === "rooms" ? "rooms" : "synthesis");
     setReport(true);
@@ -519,7 +523,7 @@ export function DesignReviewFold({ projectId, roomsAction = false, request = nul
     if (enclosing && !enclosing.open) enclosing.open = true;
     const id = window.setTimeout(() => foldRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 50);
     return () => window.clearTimeout(id);
-  }, [request]);
+  }, [request, ready]);
   const [compass, setCompass] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const refresh = useMutation({

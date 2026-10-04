@@ -1,0 +1,126 @@
+/**
+ * Relecture d'un modèle typé venu de l'extérieur (archive de projet, cahier §5.6) : rien n'entre dans la base
+ * sans passer par les mêmes validateurs que les commandes. Chaque occurrence est revalidée (`validerParams`,
+ * unités strictes, repères), les références croisées (niveau, calque, groupe, définition, hôte) sont contrôlées ;
+ * la moindre anomalie refuse l'archive en entier avec la liste des erreurs — jamais de correction silencieuse.
+ */
+import { estClasse } from "./ontologie.js";
+import { ErreurCommande } from "./commandes/base.js";
+import { validerParams } from "./commandes/validation.js";
+import { modeleVide, type ModeleAtelier, type OccurrenceQuelconque } from "./modele.js";
+
+type Brut = Record<string, unknown>;
+const estRecord = (v: unknown): v is Brut => typeof v === "object" && v !== null && !Array.isArray(v);
+const estNombre = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+// Identifiants : texte libre (les calques du prototype portent leur nom), sans caractère de contrôle.
+const ID = /^[^\u0000-\u001f]{1,200}$/u;
+
+export type ResultatVerification = { ok: true; modele: ModeleAtelier } | { ok: false; erreurs: string[] };
+
+export function verifierModele(brut: unknown): ResultatVerification {
+  const erreurs: string[] = [];
+  if (!estRecord(brut) || brut["version"] !== 1) return { ok: false, erreurs: ["modèle : version 1 attendue"] };
+  const table = (cle: string): Brut => {
+    const t = brut[cle];
+    if (t === undefined) return {};
+    if (!estRecord(t)) {
+      erreurs.push(`${cle} : objet attendu`);
+      return {};
+    }
+    for (const [id, v] of Object.entries(t)) {
+      if (!ID.test(id)) erreurs.push(`${cle}.${id} : identifiant invalide`);
+      if (!estRecord(v) || v["id"] !== id) erreurs.push(`${cle}.${id} : entrée invalide (id différent de la clé)`);
+    }
+    return t;
+  };
+  const modele = modeleVide();
+  const niveaux = table("niveaux");
+  for (const [id, n] of Object.entries(niveaux) as [string, Brut][]) {
+    if (typeof n["nom"] !== "string" || !estNombre(n["elevation"]) || !estNombre(n["ordre"]) || !(n["hauteur"] === null || estNombre(n["hauteur"]))) erreurs.push(`niveaux.${id} : nom, altitude, hauteur ou ordre invalide`);
+    else modele.niveaux[id] = { id, nom: n["nom"], elevation: n["elevation"], hauteur: (n["hauteur"] as number | null) ?? null, ordre: n["ordre"] };
+  }
+  for (const [id, c] of Object.entries(table("calques")) as [string, Brut][]) {
+    if (typeof c["nom"] !== "string" || typeof c["visible"] !== "boolean" || typeof c["verrouille"] !== "boolean" || !estNombre(c["ordre"])) erreurs.push(`calques.${id} : calque invalide`);
+    else modele.calques[id] = { id, nom: c["nom"], couleur: typeof c["couleur"] === "string" ? c["couleur"] : null, remplissage: typeof c["remplissage"] === "string" ? c["remplissage"] : null, visible: c["visible"], verrouille: c["verrouille"], ordre: c["ordre"] };
+  }
+  for (const [id, g] of Object.entries(table("groupes")) as [string, Brut][]) {
+    if (typeof g["nom"] !== "string") erreurs.push(`groupes.${id} : nom attendu`);
+    else modele.groupes[id] = { id, nom: g["nom"] };
+  }
+  for (const [id, d] of Object.entries(table("definitions")) as [string, Brut][]) {
+    const classe = d["classe"];
+    if ((!estClasse(classe) && classe !== "bloc" && classe !== "composant") || typeof d["nom"] !== "string" || !estRecord(d["params"]) || !estNombre(d["version"])) erreurs.push(`definitions.${id} : définition invalide`);
+    else modele.definitions[id] = { id, classe, nom: d["nom"], params: d["params"], version: d["version"] };
+  }
+  // Les objets sont validés contre le modèle candidat complet (un hôte peut être déclaré après son ouverture).
+  const objetsBruts = table("objets");
+  const candidat = { ...modele, objets: objetsBruts as unknown as ModeleAtelier["objets"] } as ModeleAtelier;
+  for (const [id, o] of Object.entries(objetsBruts) as [string, Brut][]) {
+    const classe = o["classe"];
+    if (!estClasse(classe)) {
+      erreurs.push(`objets.${id} : classe inconnue ${String(classe)}`);
+      continue;
+    }
+    const ref = (cle: string, dans: Brut) => {
+      const v = o[cle];
+      if (v === null || v === undefined) return null;
+      if (typeof v !== "string" || !dans[v]) {
+        erreurs.push(`objets.${id} : ${cle} inconnu (${String(v)})`);
+        return null;
+      }
+      return v;
+    };
+    const niveauId = ref("niveauId", modele.niveaux as unknown as Brut);
+    const calqueId = ref("calqueId", modele.calques as unknown as Brut);
+    const groupeId = ref("groupeId", modele.groupes as unknown as Brut);
+    const definitionId = o["definitionId"] === "non-type" ? "non-type" : ref("definitionId", modele.definitions as unknown as Brut);
+    if (!estRecord(o["params"])) {
+      erreurs.push(`objets.${id} : paramètres absents`);
+      continue;
+    }
+    try {
+      const params = validerParams(candidat, classe, o["params"]);
+      modele.objets[id] = { id, classe, niveauId, calqueId, groupeId, definitionId, phase: typeof o["phase"] === "string" ? o["phase"] : null, params, proprietes: estRecord(o["proprietes"]) ? (o["proprietes"] as OccurrenceQuelconque["proprietes"]) : {} } as OccurrenceQuelconque;
+    } catch (err) {
+      erreurs.push(`objets.${id} : ${err instanceof ErreurCommande ? `${err.chemin} — ${err.message}` : String(err)}`);
+    }
+  }
+  for (const [id, r] of Object.entries(table("relations")) as [string, Brut][]) {
+    if (typeof r["kind"] !== "string" || typeof r["sourceId"] !== "string" || typeof r["targetId"] !== "string") erreurs.push(`relations.${id} : relation invalide`);
+    else modele.relations[id] = { id, kind: r["kind"] as ModeleAtelier["relations"][string]["kind"], sourceId: r["sourceId"], targetId: r["targetId"], params: estRecord(r["params"]) ? r["params"] : {} };
+  }
+  for (const [id, r] of Object.entries(table("references")) as [string, Brut][]) {
+    if (typeof r["proprietaireId"] !== "string" || !["ok", "a-reparer", "libre"].includes(String(r["etat"]))) erreurs.push(`references.${id} : référence invalide`);
+    else modele.references[id] = { id, proprietaireId: r["proprietaireId"], objetId: typeof r["objetId"] === "string" ? r["objetId"] : null, caracteristique: typeof r["caracteristique"] === "string" ? r["caracteristique"] : null, etat: r["etat"] as "ok", propositions: Array.isArray(r["propositions"]) ? (r["propositions"] as ModeleAtelier["references"][string]["propositions"]) : [] };
+  }
+  for (const [id, p] of Object.entries(table("problemes")) as [string, Brut][]) {
+    if (typeof p["type"] !== "string" || typeof p["message"] !== "string") erreurs.push(`problemes.${id} : problème invalide`);
+    else modele.problemes[id] = { id, type: p["type"] as ModeleAtelier["problemes"][string]["type"], objetId: typeof p["objetId"] === "string" ? p["objetId"] : null, message: p["message"] };
+  }
+  const site = brut["site"];
+  if (site !== undefined) {
+    if (!estRecord(site)) erreurs.push("site : objet attendu");
+    else {
+      const parcelle = site["parcelle"];
+      if (parcelle !== null && parcelle !== undefined) {
+        const o = estRecord(parcelle) ? parcelle["origineLocale"] : null;
+        const sommets = estRecord(parcelle) ? parcelle["sommets"] : null;
+        const cadastralOk = (c: unknown) => estRecord(c) && c["frame"] === "cadastral" && estNombre(c["x"]) && estNombre(c["y"]) && typeof c["crs"] === "string";
+        if (!estRecord(parcelle) || !cadastralOk(o) || !Array.isArray(sommets) || !sommets.every((s) => estRecord(s) && cadastralOk(s["cadastral"]))) erreurs.push("site.parcelle : sommets et origine du repère local en coordonnées cadastrales attendus");
+      }
+      const emprise = site["emprise"];
+      if (emprise !== null && emprise !== undefined && (!estRecord(emprise) || !Array.isArray(emprise["sommets"]) || !Array.isArray(emprise["sommetsCadastraux"]))) erreurs.push("site.emprise : sommets locaux et cadastraux attendus");
+      if (!erreurs.some((e) => e.startsWith("site"))) {
+        modele.site = {
+          parcelle: (site["parcelle"] as ModeleAtelier["site"]["parcelle"]) ?? null,
+          emprise: (site["emprise"] as ModeleAtelier["site"]["emprise"]) ?? null,
+          hypotheses: Array.isArray(site["hypotheses"]) ? (site["hypotheses"] as ModeleAtelier["site"]["hypotheses"]) : [],
+          sources: Array.isArray(site["sources"]) ? (site["sources"] as ModeleAtelier["site"]["sources"]) : [],
+          structure: estRecord(site["structure"]) ? site["structure"] : null,
+        };
+      }
+    }
+  }
+  if (estRecord(brut["proprietes"])) modele.proprietes = brut["proprietes"] as ModeleAtelier["proprietes"];
+  return erreurs.length ? { ok: false, erreurs } : { ok: true, modele };
+}

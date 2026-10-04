@@ -7,12 +7,12 @@ import { defineConfig, type Plugin } from "vite";
  * Service worker (`public/sw.js`) complété au build :
  * - `__FADI_BUILD__` : identifiant du build — chaque build ouvre son propre
  *   cache (`fadi-shell-<build>`) et, à l'activation, supprime ceux des
- *   builds précédents ; le moteur de l'Atelier et l'outil Parcelle
- *   (fichiers non empreints) ne restent donc jamais périmés ;
+ *   builds précédents ; l'outil Parcelle (fichiers non empreints) ne
+ *   reste donc jamais périmé ;
  * - `__FADI_ASSETS__` : la liste des fichiers à mettre en cache dès
  *   l'installation — morceaux de l'application (y compris ceux chargés
- *   paresseusement : projet, Atelier, bibliothèque), moteur de l'Atelier,
- *   outil Parcelle — pour qu'un projet déjà ouvert s'ouvre entièrement sans
+ *   paresseusement : projet, Atelier et sa vue 3D, bibliothèque), outil
+ *   Parcelle — pour qu'un projet déjà ouvert s'ouvre entièrement sans
  *   réseau, même dans un écran jamais visité en ligne.
  * L'identifiant est le commit courant, sinon l'instant du build.
  */
@@ -45,7 +45,8 @@ function serviceWorkerBuildId(): Plugin {
     },
     writeBundle(_options, bundle) {
       const file = join(outDir, "sw.js");
-      const assets = [...new Set(["/index.html", ...Object.keys(bundle).map((name) => `/${name}`), ...publicFiles("atelier-native"), ...publicFiles("parcelle")])].filter((p) => /\.(js|css|html|svg|woff2?|png|json)$/.test(p));
+      const assets = [...new Set(["/index.html", ...Object.keys(bundle).map((name) => `/${name}`), ...publicFiles("parcelle")])].filter((p) => /\.(js|css|html|svg|woff2?|png|json)$/.test(p) && !p.includes("three.webgpu"));
+      // Le moteur WebGPU (option de la vue 3D, ~0,7 Mo) n'est pas préchargé : il ne sert que si l'option est cochée en ligne.
       try {
         writeFileSync(file, readFileSync(file, "utf8").replaceAll("__FADI_BUILD__", buildId()).replace('"__FADI_ASSETS__"', JSON.stringify(assets)));
       } catch (err) {

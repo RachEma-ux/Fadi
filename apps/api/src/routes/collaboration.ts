@@ -13,11 +13,11 @@
  * membre peut commenter, un lecteur ne peut rien modifier d'autre.
  */
 import { Router } from "express";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { PARCOURS_STEPS } from "../data/parcours.js";
 import { db } from "../db/client.js";
-import { atelierStore, parcels, producedDocuments, programmeCases, projectComments } from "../db/schema.js";
+import { atelierCommands, parcels, producedDocuments, programmeCases, projectComments } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { activeLock, projectOr404, type OwnedProject } from "../lib/owned-project.js";
@@ -143,11 +143,11 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
       });
   }
 
-  const store = await db.select({ key: atelierStore.key, revision: atelierStore.revision, updatedAt: atelierStore.updatedAt }).from(atelierStore).where(eq(atelierStore.projectId, project.id));
-  for (const r of store) {
-    const domain = r.key.split(".").pop() ?? r.key;
-    if (domain === "ui" || r.key === "design.v13.activeProject" || r.key === "design.v13.registry") continue;
-    events.push({ at: r.updatedAt.toISOString(), kind: "modele", label: `Modèle natif · ${domain}`, detail: `Clé ${r.key} · révision ${r.revision}`, stepNumber: 10, revision: r.revision });
+  // Journal des commandes de l'Atelier : chaque lot validé est une entrée de l'historique (50 dernières).
+  const journal = await db.select({ label: atelierCommands.label, kind: atelierCommands.kind, resultRevision: atelierCommands.resultRevision, createdAt: atelierCommands.createdAt }).from(atelierCommands).where(eq(atelierCommands.projectId, project.id)).orderBy(desc(atelierCommands.resultRevision)).limit(50);
+  for (const r of journal) {
+    const verbe = r.kind === "annulation" ? "Annulé" : r.kind === "retablissement" ? "Rétabli" : "Modèle";
+    events.push({ at: r.createdAt.toISOString(), kind: "modele", label: `${verbe} · ${r.label || "lot de commandes"}`, detail: `Atelier · révision ${r.resultRevision}`, stepNumber: 10, revision: r.resultRevision });
   }
   const parcelRows = await db.select({ id: parcels.id, name: parcels.name, revision: parcels.revision, updatedAt: parcels.updatedAt }).from(parcels).where(eq(parcels.projectId, project.id));
   for (const p of parcelRows)
@@ -216,8 +216,9 @@ function commentView(c: typeof projectComments.$inferSelect, userId: string) {
 collaborationRouter.get("/", async (req, res) => {
   const project = await projectOr404(req, res, "read");
   if (!project) return;
-  const store = await db.select({ key: atelierStore.key, revision: atelierStore.revision, updatedAt: atelierStore.updatedAt }).from(atelierStore).where(eq(atelierStore.projectId, project.id));
-  const lastWrite = store.reduce<string | null>((acc, r) => (acc === null || r.updatedAt.toISOString() > acc ? r.updatedAt.toISOString() : acc), null);
+  const [dernier] = await db.select({ createdAt: atelierCommands.createdAt }).from(atelierCommands).where(eq(atelierCommands.projectId, project.id)).orderBy(desc(atelierCommands.resultRevision)).limit(1);
+  const [{ n: entreesJournal } = { n: 0 }] = await db.select({ n: count() }).from(atelierCommands).where(eq(atelierCommands.projectId, project.id));
+  const lastWrite = dernier ? dernier.createdAt.toISOString() : null;
   const comments = await db.select().from(projectComments).where(eq(projectComments.projectId, project.id)).orderBy(desc(projectComments.createdAt));
   res.json({
     access: {
@@ -237,13 +238,13 @@ collaborationRouter.get("/", async (req, res) => {
     },
     sync: {
       modelRevision: project.modelRevision,
-      nativeKeys: store.length,
+      journalEntries: entreesJournal,
       lastModelWrite: lastWrite,
       /** File locale de l'Atelier (IndexedDB), file des saisies / arbitrages / commentaires (cache persistant) et cache de lecture : disponibles. */
       offline: {
         available: true,
         reason:
-          "Les écritures de l'Atelier sont enregistrées localement (IndexedDB) avec leur révision, puis synchronisées au retour du réseau (409 en cas de conflit, copie de secours conservée) ; les saisies, arbitrages et commentaires faits sans réseau attendent sur l'appareil, même après rechargement, et sont rejoués avec la valeur ou la version lue (refus 409 si le serveur a avancé, jamais écrasé) ; les pages déjà lues se relisent sans réseau. Les autres actions (programme, liaisons, sources…) exigent le réseau.",
+          "Les modifications de l'Atelier sont enregistrées localement (IndexedDB) par lot de commandes avec la révision lue, puis envoyées dans l'ordre au retour du réseau (409 : rejeu sur la version serveur, ou brouillon « conflit » à trancher, jamais fusionné) ; les saisies, arbitrages et commentaires faits sans réseau attendent sur l'appareil, même après rechargement, et sont rejoués avec la valeur ou la version lue (refus 409 si le serveur a avancé, jamais écrasé) ; les pages déjà lues se relisent sans réseau. Les autres actions (programme, liaisons, sources…) exigent le réseau.",
       },
     },
     journal: await revisionJournal(project),

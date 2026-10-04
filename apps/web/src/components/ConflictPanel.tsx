@@ -8,20 +8,19 @@
  * - arbitrage : votre arbitrage (statut, motif, responsable) face à la
  *   version courante ; « Réappliquer sur la version courante » le renvoie
  *   avec cette version ;
- * - modèle (Atelier) : la version du serveur a repris la clé, la vôtre est
- *   conservée en copie de secours ; « Garder le serveur » retire la copie,
- *   « Reprendre ma version » la réécrit sur la clé à partir de la révision
- *   courante.
+ * - modèle (Atelier) : un lot de commandes en conflit ou refusé reste dans
+ *   la file locale ; « Garder le serveur » l'abandonne, « Réappliquer sur la
+ *   version courante » le rejoue sur l'état du serveur (lot en conflit).
  *
  * Rien n'est écrasé sans décision explicite ; une reprise refusée à nouveau
  * revient ici avec l'état relu.
  */
-import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api, type HarmonieProposalStatus, type ParcoursFieldValue } from "../lib/api";
 import { adoptStep, clearConflict, MUTATION_KEYS, recordConflict, type DecideVars, type StepPatchVars, type SyncConflict } from "../lib/mutations";
-import { atelierStorage, type ModelConflict } from "../modules/atelier/native/storage";
+import type { LotEnAttente } from "@parcours/atelier-model";
+import { deciderLot, useFileAtelier } from "../modules/atelier/bus/etat-projet";
 import { useSyncConflicts } from "./SyncIndicator";
 
 const STATUS_LABEL: Record<HarmonieProposalStatus, string> = {
@@ -35,13 +34,6 @@ const STATUS_LABEL: Record<HarmonieProposalStatus, string> = {
 };
 
 const show = (v: ParcoursFieldValue | undefined) => (v === null || v === undefined || v === "" ? "vide" : String(v));
-
-/** Les conflits du modèle en attente dans le moteur de l'Atelier. */
-export function useModelConflicts(): ModelConflict[] {
-  const [conflicts, setConflicts] = useState<ModelConflict[]>([]);
-  useEffect(() => atelierStorage.subscribeConflicts(setConflicts), []);
-  return conflicts;
-}
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
@@ -154,18 +146,21 @@ function DecisionConflict({ projectId, c }: { projectId: string; c: SyncConflict
   );
 }
 
-function ModelConflictItem({ projectId, c }: { projectId: string; c: ModelConflict }) {
+function ModelConflictItem({ projectId, c }: { projectId: string; c: LotEnAttente }) {
+  const motif = c.detail && typeof c.detail["message"] === "string" ? (c.detail["message"] as string) : c.detail && Array.isArray(c.detail["conflits"]) ? ((c.detail["conflits"] as { motif?: string }[])[0]?.motif ?? "") : "";
   return (
-    <li data-conflict={c.backupKey} data-kind="modele">
-      <b>Atelier · {c.key.split(".").pop()}</b> · {new Date(c.at).toLocaleString("fr-FR")} — la version du serveur (révision {c.serverRevision}) a repris cette clé ; votre version est conservée sous «{" "}
-      {c.backupKey} ».
+    <li data-conflict={c.enveloppe.requestId} data-kind="modele">
+      <b>Atelier · {c.enveloppe.label || "lot de commandes"}</b> · {new Date(c.creeA).toLocaleString("fr-FR")} — {c.etat === "conflit" ? "ne s’applique plus sur la version du serveur" : "refusé par le serveur"}
+      {motif ? ` (${motif})` : ""}. Le lot est conservé sur cet appareil.
       <span className="conflict-actions">
-        <button type="button" className="button-secondary" onClick={() => atelierStorage.resolveConflict(c.backupKey, "serveur")}>
+        <button type="button" className="button-secondary" onClick={() => deciderLot(projectId, c.enveloppe.requestId, "abandonner")}>
           Garder le serveur
         </button>
-        <button type="button" className="button-primary" onClick={() => atelierStorage.resolveConflict(c.backupKey, "mienne")}>
-          Reprendre ma version
-        </button>
+        {c.etat === "conflit" && (
+          <button type="button" className="button-primary" onClick={() => deciderLot(projectId, c.enveloppe.requestId, "rejouer")}>
+            Réappliquer sur la version courante
+          </button>
+        )}
         <Link to={`/projets/${projectId}?module=atelier`}>ouvrir l’Atelier</Link>
       </span>
     </li>
@@ -174,7 +169,7 @@ function ModelConflictItem({ projectId, c }: { projectId: string; c: ModelConfli
 
 export function ConflictPanel({ projectId }: { projectId: string }) {
   const conflicts = useSyncConflicts(projectId);
-  const model = useModelConflicts();
+  const model = useFileAtelier(projectId).aTraiter;
   const steps = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
   const labelOf = (stepNumber: number | null, key: string) => steps.data?.find((s) => s.number === stepNumber)?.form?.fields.find((f) => f.key === key)?.label ?? key;
   const total = conflicts.length + model.length;
@@ -190,7 +185,7 @@ export function ConflictPanel({ projectId }: { projectId: string }) {
           c.kind === "arbitrage" && c.decision ? <DecisionConflict key={c.id} projectId={projectId} c={c} /> : <FieldConflict key={c.id} projectId={projectId} c={c} labelOf={labelOf} />,
         )}
         {model.map((c) => (
-          <ModelConflictItem key={c.backupKey} projectId={projectId} c={c} />
+          <ModelConflictItem key={c.enveloppe.requestId} projectId={projectId} c={c} />
         ))}
       </ul>
     </section>

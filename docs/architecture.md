@@ -139,8 +139,8 @@ Reuse is not estimated in advance; it is established by inventory, one function 
 
 - `geometry.ts` — `V14Geometry`, ported faithfully and tested (**keep**, behind a stable interface).
 - `parcel-geometry.ts` — the genuinely pure parcel functions found alongside `V14Bridge` (**keep**).
-- `project-repository.ts` — `V14Bridge` audited and found to be a `localStorage` facade, not business logic
-  (**replace**, by a real backend implementing the documented `ProjectRepository` contract).
+- `V14Bridge` — audited and found to be a `localStorage` facade, not business logic (**replaced**: the API and
+  the typed Atelier model; its facade `project-repository.ts` was removed at the Atelier switch-over, lot 4).
 - Column profile catalogue (`originalShapeData`, `columnShapeMeta`, `ensureColumnProps`) — not yet located in
   this pass (**pending inventory**).
 
@@ -227,24 +227,27 @@ blocks and formats (verified by execution, captures in `docs/migration/captures/
 (SHA-256 checked). `packages/core-geometry` keeps the rendering engine's pure geometry, with reproducible tests.
 
 Lot 2 is in place: `apps/api` (Express + PostgreSQL/PostGIS) owns projects, the 21 steps and their Harmonie
-decisions, programme cases (revisioned), parcels, the Atelier's native store (revision per key, 409 on a stale
-write, derived `levels` / `architectural_objects` projection, `projects.model_revision` advancing with each
-write), step files, produced documents and comments. Project import covers the P.118 example and the
-prototype's own exports (archive module); undo/redo runs inside the native Atelier engine and is persisted.
+decisions, programme cases (revisioned), parcels, the Atelier's typed model (`packages/atelier-model`:
+typed, idempotent commands journalled per project in `atelier_commands`, revision per project, detailed 409 on
+a stale lot, server-side undo / redo through the journal's inverses, `projects.model_revision` advancing with
+each lot), step files, produced documents and comments. Project import covers the P.118 example and the
+prototype's own exports (archive module, read in v1 and v2). The prototype's Atelier engine, first
+encapsulated unchanged, was replaced by the rebuilt Atelier at the DrawAll V4.1 switch-over (Atelier lot 4,
+`docs/atelier/lots/lot-4.md`); its key/value store was migrated into the typed model and dropped.
 `packages/domain-model` carries the entity types, the frames, and the business logic as pure functions
 (Harmonie rules and staleness, site zoning, programme library, model analysis, design review, Harmony engine
 tables, business checks, documents) — the API executes them server-side, the client only renders.
 
 Lot 3 is the pilot as it stands: the seven modules have real screens (Projets et sources, Parcours with the 21
-real steps and tools, Programmation, Atelier — the prototype's engine, encapsulated unchanged —, Analyses
+real steps and tools, Programmation, Atelier — rebuilt on the typed model since the DrawAll V4.1 switch-over —, Analyses
 métier, Documents, Collaboration). The conformity matrix (`docs/migration/matrix.md`) is the authoritative
 record of what is ported, with what decision, which proof (domain / API tests, the Playwright scenario,
 captures) and which limits remain. The e2e scenario runs the full workflow on P.118 (import, steps, Atelier
 drawing with undo, parcel tool, Harmonie arbitrations and staleness, library and programme, links to the drawn
 model, transfers, reports, archive, copy, analyses, documents, comments).
 
-Lot 4 has its first slices: the Atelier's writes go through a local IndexedDB queue (Dexie) replayed on
-reconnection and on the next opening, with the four visible states and a conflict backup; form answers,
+Lot 4 has its first slices: the Atelier's command lots go through a local IndexedDB queue (Dexie), sent in order and rebased on
+reconnection and at the next opening, with the four visible states and lots in conflict kept until decided; form answers,
 Harmonie decisions and comments are keyed mutations paused offline, persisted, restored after a reload and
 replayed with the value or version they were based on (the server refuses a replay that would overwrite a
 newer write — 409 shown, never silent); the query cache is persisted (offline reading of what was already
@@ -257,7 +260,7 @@ be refused (read-only forms, Atelier in read-only mode, "Projets partagés avec 
 project: every read-modify-write transaction first locks the project row (`FOR UPDATE`), so simultaneous
 writes are serialised instead of overwriting each other, then the per-field / per-version checks (409) apply.
 Conflicts are resolved explicitly: every 409 keeps what was attempted next to the server's state (field values,
-decision and version, model backup key) and offers to keep the server's version or to re-apply one's own on the
+decision and version, the Atelier lot refused) and offers to keep the server's version or to re-apply one's own on the
 current state — never an automatic merge. The service-worker cache is versioned per build and purged on
 activation, and the Playwright scenario runs in CI. The "single active editor" rule is an optional, expiring
 reservation (30 min, renewed while the holder keeps the project open, releasable by the owner): other accounts

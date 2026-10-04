@@ -263,10 +263,9 @@ const programmeCase = readJson<ProgrammeCaseFile>("examples/p118-programme-case.
 const parcel = readJson<ParcelFile>("examples/p118-parcel.json");
 
 // ---------------------------------------------------------------------------
-// Modèle natif de P.118 — les domaines `design.v13` que le moteur de
-// l'Atelier lit et écrit tels quels (extraction verbatim de
-// p118-resolved-template.native). La projection vers les tables
-// `levels` / `architectural_objects` en est dérivée (lib/native-projection.ts).
+// Modèle natif de P.118 — extraction verbatim de p118-resolved-template.native (domaines du moteur V14 du
+// prototype). Depuis la bascule (lot 4), c'est seulement la source de l'importeur à sens unique vers le modèle
+// typé (`importerModeleNatif`) : rien n'est plus stocké sous cette forme.
 // ---------------------------------------------------------------------------
 
 interface NativeModelFile {
@@ -279,15 +278,10 @@ interface NativeModelFile {
 
 const nativeModel = readJson<NativeModelFile>("examples/p118-native-model.json");
 
-/** Les clés du magasin de l'Atelier à installer pour l'exemple : registre, projet actif, domaines. `null` pour un exemple sans modèle. */
-export function exampleAtelierStore(exampleId: string): { nativeId: string; entries: Record<string, unknown> } | null {
+/** Le jeu natif de l'exemple (source de l'importeur), ou `null` pour un exemple sans modèle. */
+export function exampleNativeModel(exampleId: string): { nativeId: string; registry: NativeModelFile["registry"]; domains: Record<string, unknown> } | null {
   if (exampleId !== exempleComplet.id) return null;
-  const entries: Record<string, unknown> = {
-    "design.v13.registry": [nativeModel.registry],
-    "design.v13.activeProject": nativeModel.nativeId,
-  };
-  for (const [domain, value] of Object.entries(nativeModel.domains)) entries[`design.v13.project.${nativeModel.nativeId}.${domain}`] = value;
-  return { nativeId: nativeModel.nativeId, entries };
+  return { nativeId: nativeModel.nativeId, registry: nativeModel.registry, domains: nativeModel.domains };
 }
 
 /** Le cas de programme (bibliothèque des bâtiments) et les 74 fiches d'espaces de l'exemple complet. */

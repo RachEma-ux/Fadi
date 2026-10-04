@@ -76,15 +76,7 @@ CREATE TABLE IF NOT EXISTS programme_repartitions (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Magasin du moteur de l'Atelier natif (clés design.v13.*), voir schema.ts.
-CREATE TABLE IF NOT EXISTS atelier_store (
-  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
-  key text NOT NULL,
-  value jsonb NOT NULL,
-  revision integer NOT NULL DEFAULT 1,
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (project_id, key)
-);
+-- (Lot 4) L'ancien magasin du moteur V14 `atelier_store` est converti puis supprimé par db/bascule.ts.
 
 -- Fichiers de l'outil Parcelle (étape 01), contrat /api/parcels scopé par projet.
 CREATE TABLE IF NOT EXISTS parcels (
@@ -124,31 +116,7 @@ CREATE TABLE IF NOT EXISTS step_files (
 );
 CREATE INDEX IF NOT EXISTS step_files_project_step_idx ON step_files (project_id, step_number);
 
-CREATE TABLE IF NOT EXISTS levels (
-  id text PRIMARY KEY,
-  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
-  label text NOT NULL,
-  -- double precision, pas integer : le modèle natif P.118 porte des altitudes
-  -- décimales (ex. -3.2 m, 3.2 m) — les arrondir à l'entier serait une perte
-  -- de donnée interdite par AGENTS.md (« N'arrondis pas les mètres en
-  -- nombres entiers »). Migration en place pour une base déjà créée avec
-  -- l'ancien type integer.
-  elevation double precision NOT NULL DEFAULT 0,
-  "position" integer NOT NULL DEFAULT 0
-);
-ALTER TABLE levels ALTER COLUMN elevation TYPE double precision;
-CREATE INDEX IF NOT EXISTS levels_project_id_idx ON levels (project_id);
-
-CREATE TABLE IF NOT EXISTS architectural_objects (
-  id text PRIMARY KEY,
-  level_id text NOT NULL REFERENCES levels (id) ON DELETE CASCADE,
-  kind text NOT NULL,
-  properties jsonb NOT NULL,
-  relations jsonb NOT NULL,
-  model_revision integer NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS architectural_objects_level_id_idx ON architectural_objects (level_id);
+-- (Lot 4) `levels` et `architectural_objects` (projection de l'ancien moteur) sont supprimées par db/bascule.ts.
 
 CREATE TABLE IF NOT EXISTS drawing_exports (
   id text PRIMARY KEY,

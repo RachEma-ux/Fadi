@@ -89,6 +89,15 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
         )}
       </section>
 
+      <section aria-labelledby="nav-site">
+        <h3 id="nav-site">Site</h3>
+        <p className="nav-site" id="atelier-site-info">
+          {etat.site.parcelle
+            ? `${etat.site.parcelle.crs}${etat.site.parcelle.aire ? ` · parcelle ${etat.site.parcelle.aire.value.toFixed(2).replace(".", ",")} m²` : ""} · origine locale ${etat.site.parcelle.origineLocale.x.toFixed(2).replace(".", ",")} ; ${etat.site.parcelle.origineLocale.y.toFixed(2).replace(".", ",")}`
+            : "Aucune parcelle transmise : repère local libre (étape 01 pour la rattacher au cadastre)."}
+        </p>
+      </section>
+
       <section aria-labelledby="nav-calques">
         <h3 id="nav-calques">Calques</h3>
         {calques.length === 0 ? (

@@ -99,8 +99,9 @@ regenerates every extracted dataset from it.
 - `apps/web` — React 19, Vite, React Router, TanStack Query (persisted), Dexie (IndexedDB queues), a service
   worker. `src/modules/<module>/` holds one folder per module with a `README.md` stating its responsibility and
   current status; `src/lib/` the API client, access rules, mutations and offline plumbing; `e2e/` the
-  Playwright scenario; `public/atelier-native/` and `public/parcelle/` the prototype's engine and tool,
-  extracted by script (SHA-256 checked).
+  Playwright scenarios (`parcours-scenario.mjs`, `atelier-nouveau.mjs`); `public/parcelle/` the prototype's
+  parcel tool, extracted by script (SHA-256 checked). The Atelier (`src/modules/atelier/nouveau/`) is the
+  rebuilt one (typed model, command bus, SVG plan, three.js view loaded on demand).
 - `apps/api` — Express 5 + TypeScript strict, PostgreSQL / PostGIS via Drizzle, bundled by esbuild. Routes per
   module, server-side authorization on every request (roles, reservation), transactions serialised per project,
   documents generated on demand. `src/data/` holds the datasets extracted from the prototype (steps, forms,

@@ -60,6 +60,13 @@ interface Moteur {
   info: { render: { calls: number; triangles: number } };
 }
 
+let sceneActive: Scene3D | null = null;
+
+/** Image PNG de la vue 3D affichée (export « vue »), ou null sans vue 3D ouverte. */
+export function captureVue3D(): Promise<Blob | null> {
+  return sceneActive ? sceneActive.capturer() : Promise.resolve(null);
+}
+
 export class Scene3D {
   private moteur!: Moteur;
   readonly scene = new THREE.Scene();
@@ -121,6 +128,7 @@ export class Scene3D {
     this.controles = new OrbitControls(this.perspective, this.canvas);
     this.controles.enableDamping = false;
     this.controles.addEventListener("change", () => this.rendre());
+    sceneActive = this;
     this.mesures.localiser = (id) => this.ecranDe(id);
     this.mesures.sonder = (x, y) => this.pointer(x, y)?.objetId ?? null;
     window.fadiMesures3D = this.mesures;
@@ -439,7 +447,15 @@ export class Scene3D {
     });
   }
 
+  /** Rendu immédiat puis lecture du canevas dans la même tâche (le tampon WebGL n'est pas conservé au-delà). */
+  capturer(): Promise<Blob | null> {
+    if (!this.moteur) return Promise.resolve(null);
+    this.moteur.render(this.scene, this.camera);
+    return new Promise((resolve) => this.canvas.toBlob((b) => resolve(b), "image/png"));
+  }
+
   liberer(): void {
+    if (sceneActive === this) sceneActive = null;
     if (this.demande) cancelAnimationFrame(this.demande);
     this.controles?.dispose();
     for (const l of this.lots) {

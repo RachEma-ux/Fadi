@@ -39,6 +39,6 @@ export const persistOptions: Omit<PersistQueryClientOptions, "queryClient"> = {
   buster: `${QUERY_CACHE_VERSION}:${lastUserId()}`,
   dehydrateOptions: {
     // Le modèle natif (plusieurs Mo) a son cache dédié ; les sessions et la liste des exemples se relisent.
-    shouldDehydrateQuery: (query) => query.state.status === "success" && !["atelier-store", "auth"].includes(String(query.queryKey[0])),
+    shouldDehydrateQuery: (query) => query.state.status === "success" && !["auth"].includes(String(query.queryKey[0])),
   },
 };
