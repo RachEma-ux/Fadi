@@ -67,6 +67,8 @@ export interface Rendu3d {
   panoramique(dxPx: number, dyPx: number): void;
   zoomer(facteur: number): void;
   lireOrbite(): Orbite;
+  /** Mètres par pixel à la distance de la cible (glisser vertical de pousser / tirer). */
+  metresParPixel(): number;
   /** Objet sous le pixel (coordonnées dans le canevas), ou `null`. */
   viser(x: number, y: number): IdObjet | null;
   /** Point du plan horizontal d'altitude `z` sous le pixel, ou `null` (rayon parallèle). */
@@ -312,6 +314,7 @@ function construire(T: Trois, renderer: THREE.WebGLRenderer, moteur: Moteur, rep
     zoomer(facteur) {
       orbite.distance = Math.min(5000, Math.max(0.5, orbite.distance / facteur));
     },
+    metresParPixel: () => (2 * orbite.distance * Math.tan((camera.fov * Math.PI) / 360)) / hauteurPx,
     lireOrbite: () => ({ ...orbite, cible: [...orbite.cible] as [number, number, number] }),
     viser(x, y) {
       placerCamera();

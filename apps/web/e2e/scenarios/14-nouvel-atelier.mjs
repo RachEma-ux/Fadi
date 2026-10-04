@@ -431,3 +431,139 @@ export async function vue3d(sc) {
   await page.locator('[data-testid="atl-vue-plan"]').click();
   check("nouvel atelier 3D : aucune erreur JavaScript pendant la vue 3D, retour au plan 2D", consoleErrors.length === erreursAvant && (await page.locator('[data-testid="plan2d-zone"]').isVisible()), consoleErrors.slice(erreursAvant).join(" | "));
 }
+
+/**
+ * Pousser / tirer et extrusion (lot 3b, L3b.2) sur la copie de travail de P.118 : en 3D, la hauteur d'un mur du
+ * niveau actif est modifiée par un glisser vertical puis par une valeur tapée, et persistée (lue sur le serveur) ;
+ * dans le plan, un rectangle tracé au clavier est extrudé à 0,90 m en solide, visible en 3D.
+ */
+export async function pousserTirer(sc) {
+  const { BASE, page, consoleErrors, check } = sc;
+  const { atelierUrl, atelierPid } = sc;
+  const erreursAvant = consoleErrors.length;
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${atelierUrl}?module=atelier&version=nouveau`);
+  await page.waitForSelector('[data-testid="atelier-interface"]', { timeout: 30000 });
+  const modele = async () => (await page.request.get(`${BASE}/projects/${atelierPid}/atelier/model`)).json();
+  const attendreModele = async (predicat, delaiMs = 20000) => {
+    const fin = Date.now() + delaiMs;
+    let m = await modele();
+    while (!predicat(m) && Date.now() < fin) {
+      await page.waitForTimeout(400);
+      m = await modele();
+    }
+    return m;
+  };
+  const puce = page.locator('[data-testid="atl-puce-outil"]');
+  const parametre = async (champ, valeur) => {
+    const c = page.locator(`[data-testid="atl-precision-${champ}"]`);
+    await c.fill(valeur);
+    await c.press("Enter");
+  };
+  const choisirObjet = async (id) => {
+    await page.locator('[data-testid="atl-nav-filtre"]').fill(id);
+    await page.locator(`[data-testid="atl-objet-${id}"]`).click();
+    await page.waitForSelector(`[data-testid="atl-inspecteur-objet"][data-objet="${id}"]`, { timeout: 10000 });
+    await page.locator('[data-testid="atl-nav-filtre"]').fill("");
+  };
+
+  // Mur du niveau actif dont la hauteur est donnée (pas liée à un niveau haut).
+  const niveauActif = (await page.locator('[data-testid^="atl-niveau-"][aria-pressed="true"]').first().getAttribute("data-testid"))?.slice("atl-niveau-".length);
+  const avant = await modele();
+  const poussable = (o) => o.classe === "mur" && o.params.hauteur && !o.params.niveauHaut;
+  const mur = Object.values(avant.objets).find((o) => poussable(o) && o.niveauId === niveauActif) ?? Object.values(avant.objets).find(poussable);
+  const h0 = mur?.params.hauteur.value;
+  if (mur && mur.niveauId !== niveauActif) await page.locator(`[data-testid="atl-niveau-${mur.niveauId}"]`).click();
+
+  await page.locator('[data-testid="atl-vue-3d"]').click();
+  await page.waitForSelector('[data-testid="atl-3d-toile"]', { timeout: 30000 });
+  await choisirObjet(mur.id);
+  // Les onglets de famille n'existent qu'au niveau d'affichage Complet (le niveau courant dépend des scénarios précédents).
+  await page.locator('[data-testid="atl-affichage-complet"]').click();
+  await page.locator('[data-testid="atl-outil-famille-modifier"]').click();
+  await page.locator('[data-testid="atl-outil-modifier.pousser"]').click();
+  await page.waitForFunction(() => document.querySelector('[data-testid="atl-puce-outil"]')?.textContent?.includes("Pousser"), null, { timeout: 5000 }).catch(() => null);
+  check(
+    "nouvel atelier 3D : outil Pousser / tirer actif sur le mur sélectionné (hauteur courante proposée)",
+    (await puce.textContent()).includes("Pousser") && ((await page.locator('[data-testid="atl-consigne"]').textContent()) ?? "").includes(mur.id),
+    `${mur?.id} h=${h0}`,
+  );
+
+  // Glisser vertical vers le haut au centre de la vue : aperçu puis validation au relâcher.
+  // page.mouse ne fait pas défiler : le canevas est amené à l'écran et le geste vise le centre de sa partie visible.
+  const toile3d = page.locator('[data-testid="atl-3d-toile"]');
+  await toile3d.scrollIntoViewIfNeeded();
+  const boite = await toile3d.boundingBox();
+  const vp = page.viewportSize();
+  const haut = Math.max(boite.y, 0);
+  const bas = Math.min(boite.y + boite.height, vp.height);
+  const cx = boite.x + boite.width / 2;
+  const cy = Math.max(haut + 90, (haut + bas) / 2);
+  const sousPointeur = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.getAttribute("data-testid") ?? document.elementFromPoint(x, y)?.tagName ?? "rien", [cx, cy]);
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i++) await page.mouse.move(cx, cy - i * 10);
+  const consignePendant = (await page.locator('[data-testid="atl-consigne"]').textContent()) ?? "";
+  await page.mouse.up();
+  const apresGlisser = await attendreModele((m) => m.objets[mur.id]?.params.hauteur?.value > h0);
+  const h1 = apresGlisser.objets[mur.id]?.params.hauteur?.value;
+  const erreursGeste = (await page.locator('[data-testid="atl-erreurs-geste"], [data-testid="atl-3d-erreurs"]').allTextContents()).join(" / ");
+  check(
+    "nouvel atelier 3D : pousser / tirer — glisser vers le haut augmente la hauteur du mur, persistée sur le serveur (nouvelle révision)",
+    h1 > h0 && apresGlisser.revision > avant.revision,
+    `hauteur ${h0} → ${h1} m, révision ${avant.revision} → ${apresGlisser.revision} · sous le pointeur : ${sousPointeur} · consigne pendant : ${consignePendant} · erreurs : ${erreursGeste.slice(0, 300)}`,
+  );
+
+  // L'outil se ferme après une validation ; s'il est resté actif (refus), un nouveau clic le désactiverait.
+  if (!((await puce.textContent()) ?? "").includes("Pousser")) await page.locator('[data-testid="atl-outil-modifier.pousser"]').click();
+  await parametre("hauteur", "3,2");
+  const apresSaisie = await attendreModele((m) => m.objets[mur.id]?.params.hauteur?.value === 3.2);
+  check("nouvel atelier 3D : pousser / tirer — hauteur tapée 3,20 m persistée exactement", apresSaisie.objets[mur.id]?.params.hauteur?.value === 3.2 && apresSaisie.revision > apresGlisser.revision, `révision ${apresSaisie.revision}`);
+
+  // Extrusion : rectangle 2 × 1 m tracé au clavier (R, deux points) dans un endroit libre, puis Extruder à 0,90 m.
+  await page.locator('[data-testid="atl-vue-plan"]').click();
+  const toile = page.locator('[data-testid="plan2d-toile"]');
+  const saisie = page.locator('[data-testid="plan2d-precision"] input:not([readonly])');
+  const poserPoint = async (x, y) => {
+    await toile.focus();
+    await page.keyboard.press(String(x)[0]);
+    await saisie.waitFor({ state: "visible", timeout: 5000 });
+    await saisie.fill(`${x};${y}`);
+    await saisie.press("Enter");
+    await saisie.waitFor({ state: "detached", timeout: 5000 });
+  };
+  const idsAvant = new Set(Object.keys(apresSaisie.objets));
+  await toile.focus();
+  await page.keyboard.press("r");
+  await poserPoint(50, 50);
+  await poserPoint(52, 51);
+  const apresRect = await attendreModele((m) => Object.values(m.objets).some((o) => o.classe === "esquisse.rectangle" && !idsAvant.has(o.id)));
+  const rect = Object.values(apresRect.objets).find((o) => o.classe === "esquisse.rectangle" && !idsAvant.has(o.id));
+  await toile.focus();
+  await page.keyboard.press("Escape");
+  await choisirObjet(rect.id);
+  await page.locator('[data-testid="atl-affichage-complet"]').click();
+  await page.locator('[data-testid="atl-outil-famille-creer"]').click();
+  await page.locator('[data-testid="atl-outil-creer.extruder"]').click();
+  await parametre("hauteur", "0,9");
+  const apresExtr = await attendreModele((m) => Object.values(m.objets).some((o) => o.classe === "solide" && !idsAvant.has(o.id)));
+  const solide = Object.values(apresExtr.objets).find((o) => o.classe === "solide" && !idsAvant.has(o.id));
+  check(
+    "nouvel atelier : Extruder — rectangle 2,00 × 1,00 m extrudé à 0,90 m en solide (contour à 4 sommets, esquisse conservée), persisté",
+    !!solide && solide.params.hauteur.value === 0.9 && solide.params.contour.length === 4 && solide.niveauId === rect.niveauId && !!apresExtr.objets[rect.id],
+    solide ? `${solide.id}, révision ${apresExtr.revision}` : "aucun solide",
+  );
+
+  await page.locator('[data-testid="atl-affichage-essentiel"]').click();
+  await page.locator('[data-testid="atl-vue-3d"]').click();
+  await page.locator('[data-testid="atl-3d-niveaux-actif"]').click();
+  const visible = await page
+    .waitForFunction((rev) => {
+      const el = document.querySelector('[data-testid="atl-3d-etat"]');
+      return !!el && el.getAttribute("data-revision") === String(rev) && Number(el.getAttribute("data-triangles")) > 0;
+    }, apresExtr.revision, { timeout: 20000 })
+    .then(() => true)
+    .catch(() => false);
+  await page.locator('[data-testid="atl-vue-plan"]').click();
+  check("nouvel atelier 3D : solide et mur modifié rendus en 3D à la révision courante, aucune erreur JavaScript", visible && consoleErrors.length === erreursAvant, consoleErrors.slice(erreursAvant).join(" | "));
+}

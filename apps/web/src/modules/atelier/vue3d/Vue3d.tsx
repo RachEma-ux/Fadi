@@ -3,17 +3,20 @@
  * tous les niveaux ou le niveau actif, orbite (glisser), panoramique (clic droit, Maj+glisser ou deux doigts),
  * zoom (molette, pincer), sélection au clic (Maj : basculer), manipulateur (glisser un objet sélectionné →
  * `transformer.deplacer`, DA-02-17), clavier (flèches : orbite, Maj+flèches : panoramique, + / − : zoom,
- * Échap : vider la sélection). Moteur WebGL2 ; WebGPU sur réglage, avec repli (D-004).
+ * Échap : vider la sélection). Moteur WebGL2 ; WebGPU sur réglage, avec repli (D-004). Outils Pousser / tirer et
+ * Extruder (L3b.2) : glisser verticalement propose la valeur, le volume est montré par essai à blanc avant validation.
  *
  * N'écrit le modèle que par `ctx.valider` (R-commandes). L'état du rendu (triangles, objets, moteur, mode) est
  * exposé en attributs `data-*` de `atl-3d-etat` pour le scénario de bout en bout.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { pointLocal, type IdObjet } from "@parcours/atelier-model";
+import { pointLocal, type EtatModele, type IdObjet } from "@parcours/atelier-model";
 import type { ContexteAtelier, ErreurLisible, EtatInterface, PiloteOutils } from "../socle";
 import { Erreurs } from "../ui/Erreurs";
 import { libelleClasse } from "../ui/navigateur";
 import { commandesDeplacement3d, contraindre } from "./manipulateur";
+import { CHAMP_GLISSER, ID_EXTRUDER, ID_POUSSER } from "./outils";
+import { arrondirGlisser, ciblePoussee, commandesExtrusion, commandesPoussee, contourExtrudable, etatApercu, PAS_GLISSER } from "./pousser";
 import { creerRendu, type InfoRendu, type Moteur, type Rendu3d } from "./rendu";
 import { hauteurCoupeParDefaut, LIBELLES_MODE, MODES_3D, niveauxDuModele, sceneDuModele, type Mode3d } from "./scene";
 import "./vue3d.css";
@@ -34,14 +37,20 @@ interface Geste {
   x: number;
   y: number;
   bouge: boolean;
-  readonly type: "orbite" | "pan" | "deplacer";
+  readonly type: "orbite" | "pan" | "deplacer" | "pousser";
+  /** Valeur de départ de la grandeur poussée (pousser / tirer, extruder). */
+  readonly base?: number;
   /** Point de départ du manipulateur sur le plan horizontal. */
   readonly sol?: [number, number];
   readonly zSol: number;
 }
 
 export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInterface; pilote: PiloteOutils }) {
-  const etat = useSyncExternalStore(ctx.abonnerEtat, ctx.etat, ctx.etat);
+  const etatServeur = useSyncExternalStore(ctx.abonnerEtat, ctx.etat, ctx.etat);
+  const outilId = useSyncExternalStore(pilote.abonner, () => pilote.outilActif()?.id ?? null, () => null);
+  const [apercuEtat, setApercuEtat] = useState<EtatModele | null>(null);
+  // Aperçu (essai à blanc) pendant un glisser de pousser / tirer ou d'extrusion ; jamais écrit.
+  const etat = apercuEtat ?? etatServeur;
   const sel = useSyncExternalStore(ctx.selection.abonner, ctx.selection.lire, ctx.selection.lire);
   const etatVue = useSyncExternalStore(vue.abonner, vue.lire, vue.lire);
   const canevas = useRef<HTMLCanvasElement>(null);
@@ -144,6 +153,29 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hCoupe]);
 
+  // L'aperçu disparaît quand l'outil se ferme (validation, Échap, changement d'outil).
+  useEffect(() => {
+    if (outilId !== ID_POUSSER && outilId !== ID_EXTRUDER) setApercuEtat(null);
+  }, [outilId]);
+
+  /** Valeur proposée par le glisser → saisie de l'outil, et état d'aperçu par les mêmes commandes. */
+  const proposer = (v: number) => {
+    void pilote.traiter({ type: "saisie", champ: CHAMP_GLISSER, valeur: v });
+    const courant = ctx.etat();
+    const o = courant?.objets[sel.principal ?? ""];
+    let cmds: ReturnType<typeof commandesPoussee> | ReturnType<typeof commandesExtrusion> = { motif: "" };
+    if (outilId === ID_POUSSER) {
+      const c = ciblePoussee(o);
+      if (!("motif" in c)) cmds = commandesPoussee(c, v);
+    } else {
+      const s = contourExtrudable(o);
+      const decalage = Number(pilote.apercu().champs.find((c) => c.champ === "decalageBase")?.valeur ?? 0);
+      const conserver = pilote.apercu().champs.find((c) => c.champ === "conserver")?.valeurChoisie !== "non";
+      if (!("motif" in s)) cmds = commandesExtrusion(s, { id: "solide-apercu", hauteur: v, decalageBase: decalage, conserverSource: conserver });
+    }
+    setApercuEtat(etatApercu(ctx.essayer, cmds as never));
+  };
+
   const recentrer = () => {
     rendu.current?.cadrer(scene?.bornes ?? null);
     redessiner();
@@ -169,6 +201,11 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
       // Deuxième doigt : le geste devient pincer + panoramique.
       const [autre] = [...gestes.current.values()];
       if (autre) pincer.current = Math.hypot(autre.x - x, autre.y - y);
+    }
+    if (e.button === 0 && !e.shiftKey && (outilId === ID_POUSSER || outilId === ID_EXTRUDER)) {
+      const champ = pilote.apercu().champs.find((c) => c.champ === "hauteur" || c.champ === "epaisseur");
+      gestes.current.set(e.pointerId, { id: e.pointerId, x0: x, y0: y, x, y, bouge: false, type: "pousser", base: typeof champ?.valeur === "number" ? champ.valeur : 0, zSol });
+      return;
     }
     const sousPointeur = e.button === 0 && !e.shiftKey && !pilote.outilActif() ? r.viser(x, y) : null;
     const deplacer = sousPointeur !== null && selection.has(sousPointeur) && ctx.ecriture.permise;
@@ -199,6 +236,10 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
       }
     } else if (g.type === "orbite") r.orbiter(dx, dy);
     else if (g.type === "pan") r.panoramique(dx, dy);
+    else if (g.type === "pousser") {
+      // Vers le haut = plus haut ; un pixel vaut la taille d'un pixel à la distance de la cible.
+      proposer(Math.max(PAS_GLISSER, arrondirGlisser((g.base ?? 0) - (y - g.y0) * r.metresParPixel())));
+    }
     else if (g.sol) {
       const p = r.pointPlan(x, y, g.zSol);
       if (p) {
@@ -231,6 +272,11 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
         ctx.selection.vider();
         setAnnonce("Sélection vide.");
       }
+      return;
+    }
+    if (g.type === "pousser") {
+      setApercuEtat(null);
+      await pilote.traiter({ type: "touche", touche: "Enter", modificateurs: { maj: e.shiftKey, ctrl: e.ctrlKey || e.metaKey, alt: e.altKey } });
       return;
     }
     if (g.type === "deplacer" && g.sol && etat) {
