@@ -23,7 +23,7 @@ export interface PropsAutomatisation {
   readOnly: boolean;
 }
 
-const SUGGESTIONS = ["Feuilles et quantités", "Détecter les pièces du niveau actif", "Trame de poteaux 4 x 3 tous les 6 m", "Corriger les ouvertures hors mur"];
+const SUGGESTIONS = ["Feuilles et quantités", "Annoter les réserves Harmonie", "Détecter les pièces du niveau actif", "Trame de poteaux 4 x 3 tous les 6 m", "Corriger les ouvertures hors mur"];
 const STATUTS: Record<AtelierProposition["statut"], string> = { proposee: "Proposée — en attente de votre accord", echouee: "Échec après les essais", incomprise: "Intention non reconnue", acceptee: "Acceptée et exécutée", refusee: "Refusée" };
 const requestId = () => `ui-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 

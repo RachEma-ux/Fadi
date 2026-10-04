@@ -86,6 +86,21 @@ describe("assistant à boucle contrôlée (D4)", () => {
     expect(boucleControlee(e, "fais un café", generateurRegles, { niveauId: null }).statut).toBe("incomprise");
   });
 
+  it("depuis Harmonie, sans fournisseur : une étiquette par réserve rattachée à un objet ; les autres restent au bilan (hypothèse)", () => {
+    const piece = Object.values(P118.objets).find((o) => o.classe === "piece")!;
+    const reserves = [
+      { id: "r1", priority: "prioritaire", title: "Capacité à vérifier", refs: [`${piece.niveauId}|${piece.id}`], step: 10 },
+      { id: "r2", priority: "à vérifier", title: "Contexte non déclaré", refs: [], step: 1 },
+    ];
+    const p = boucleControlee(P118, "Annoter les réserves Harmonie", generateurRegles, { niveauId: null, reserves });
+    expect(p).toMatchObject({ statut: "proposee", regle: "reserves-harmonie" });
+    const etiquettes = p.commandes.filter((c) => c.type === "etiquette.creer");
+    expect(etiquettes).toHaveLength(1);
+    expect(etiquettes[0]!.params).toMatchObject({ objetId: piece.id, niveauId: piece.niveauId, texte: "Réserve Harmonie (prioritaire) · Capacité à vérifier" });
+    expect(p.hypotheses[0]!.texte).toMatch(/1 réserve\(s\) sans objet/);
+    expect(boucleControlee(P118, "réserves harmonie", generateurRegles, { niveauId: null }).explication).toMatch(/indisponible/);
+  });
+
   it("auto-correction bornée à trois itérations ; la correction est écrite au journal des hypothèses", () => {
     const e = base();
     let appels = 0;

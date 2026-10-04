@@ -203,7 +203,9 @@ atelierAutomatisationRouter.post("/assistant/propositions", async (req, res) => 
   const p = propositionSchema.safeParse(req.body ?? {});
   if (!p.success) return void invalide(res, "intention", "intention de 2 à 300 caractères");
   const charge = (await chargerModele(db, project.id)) ?? (await db.transaction((tx) => creerModeleVide(tx, project.id, `fadi-${project.id}`)));
-  const contexte = { niveauId: p.data.niveauId ?? null };
+  // Réserves du bilan Harmonie du bâtiment conçu (calculées ici, à la révision courante) : données de la règle « réserves ».
+  const dctx = await loadDesignContext(db, project, new Date().toISOString());
+  const contexte = { niveauId: p.data.niveauId ?? null, reserves: dctx.analysis.issues.map((i) => ({ id: i.id, priority: i.priority, title: i.title, refs: i.refs, step: i.step })) };
   const cle = cleCache(p.data.intention, contexte);
   // Cache : dernière séquence acceptée pour la même clé (intention normalisée + version des règles), réessayée telle quelle.
   const enCache = (await db.select().from(atelierPropositions).where(and(eq(atelierPropositions.projectId, project.id), eq(atelierPropositions.cle, cle), eq(atelierPropositions.statut, "acceptee"))).orderBy(desc(atelierPropositions.createdAt)).limit(1))[0];

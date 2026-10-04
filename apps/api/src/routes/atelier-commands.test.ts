@@ -611,5 +611,9 @@ describe("automatisation et assistant (lot 8, T19)", () => {
     expect(t3).toMatchObject({ statut: "proposee", depuisCache: true });
     expect(t3.commandes).toEqual(t2.commandes);
     expect((await client.get(`/projects/${pid}/atelier/assistant/propositions`)).body.propositions.map((x: { statut: string }) => x.statut)).toEqual(["proposee", "acceptee", "refusee", "proposee", "acceptee"]);
+    // Depuis Harmonie, sans fournisseur : les réserves du bilan annotées sur les objets concernés.
+    const h = (await client.post(`/projects/${pid}/atelier/assistant/propositions`).send({ intention: "Annoter les réserves Harmonie" })).body;
+    expect(h).toMatchObject({ statut: "proposee", regle: "reserves-harmonie" });
+    expect(h.explication).toMatch(/réserve/);
   }, 60_000);
 });

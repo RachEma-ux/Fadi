@@ -8,7 +8,8 @@
  *
  * Générateur par défaut : **règles déterministes de Fadi** (aucun fournisseur de modèle de langage n'est configuré,
  * décision §10.1 du maître d'ouvrage) — intentions reconnues : feuilles et quantités (un plan et une feuille par
- * niveau), pièces détectées depuis les murs fermés, trame de poteaux, collisions d'ouvertures (recentrage dans le mur).
+ * niveau), pièces détectées depuis les murs fermés, trame de poteaux, collisions d'ouvertures (recentrage dans le mur),
+ * réserves du bilan Harmonie annotées sur les objets concernés.
  * Toute valeur choisie par une règle (échelle, format, nom provisoire) est une **hypothèse** écrite au journal,
  * jamais une exigence.
  */
@@ -19,6 +20,7 @@ import { positionLibre, tailleDessinMm, type FormatFeuille } from "../documents/
 import { genererVue, lireParamsVue } from "../documents/vues.js";
 import type { ModeleAtelier } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
+import { centroide } from "../geometrie.js";
 import { collisions } from "../versions.js";
 import { developperScript, SCRIPTS_INTEGRES } from "./scripts.js";
 
@@ -46,8 +48,18 @@ export interface Generateur {
   corriger(precedente: Generation, erreur: ErreurCommande, etat: ModeleAtelier): Generation | null;
 }
 
+export interface ReserveHarmonie {
+  id: string;
+  priority: string;
+  title: string;
+  refs: string[];
+  step: number;
+}
+
 export interface ContexteAssistant {
   niveauId: string | null;
+  /** Réserves du bilan Harmonie du bâtiment conçu (calculées par le serveur), quand elles sont disponibles. */
+  reserves?: readonly ReserveHarmonie[];
 }
 
 export interface Iteration {
@@ -107,7 +119,7 @@ export function boucleControlee(etat: ModeleAtelier, intention: string, generate
     if (r.ok) return { ...base, regle: cache.regle, explication: cache.explication, commandes: cache.commandes, hypotheses: cache.hypotheses, iterations: [{ numero: 1, commandes: cache.commandes.length, resultat: "valide", erreur: null }], statut: "proposee", effets: r.effets, depuisCache: true };
   }
   const premiere = generateur.proposer(intention, etat, contexte);
-  if (!premiere) return { ...base, regle: null, explication: "Intention non reconnue par les règles de Fadi. Exemples : « feuilles et quantités », « détecter les pièces », « trame de poteaux 4 x 3 tous les 6 m », « corriger les ouvertures ».", commandes: [], hypotheses: [], iterations: [], statut: "incomprise", effets: null, depuisCache: false };
+  if (!premiere) return { ...base, regle: null, explication: "Intention non reconnue par les règles de Fadi. Exemples : « feuilles et quantités », « détecter les pièces », « trame de poteaux 4 x 3 tous les 6 m », « corriger les ouvertures », « annoter les réserves Harmonie ».", commandes: [], hypotheses: [], iterations: [], statut: "incomprise", effets: null, depuisCache: false };
   let g: Generation = premiere;
   const iterations: Iteration[] = [];
   for (let n = 1; n <= ITERATIONS_MAX; n++) {
@@ -216,6 +228,41 @@ function tramePoteaux(etat: ModeleAtelier, intention: string, niveauId: string |
   return { regle: "trame-poteaux", explication: `Trame de ${nx} × ${ny} poteaux au pas de ${px} m sur « ${niv.nom} » (script « Trame de poteaux » v${script.version}).`, commandes, hypotheses };
 }
 
+/** Réserves Harmonie : une étiquette par réserve rattachée à un objet du modèle, sur un calque dédié. */
+function annoterReserves(etat: ModeleAtelier, reserves: readonly ReserveHarmonie[] | undefined): Generation {
+  if (!reserves) return { regle: "reserves-harmonie", explication: "Bilan Harmonie indisponible pour ce projet : rien à annoter.", commandes: [], hypotheses: [] };
+  const commandes: Commande[] = [];
+  const hypotheses: HypotheseProposition[] = [];
+  const calqueId = "assistant-reserves-harmonie";
+  if (!etat.calques[calqueId]) commandes.push({ type: "calque.creer", params: { id: calqueId, nom: "Réserves Harmonie" } });
+  const dejaAnnotees = new Set((Object.values(etat.objets) as { classe: string; params: { texte?: string } }[]).filter((o) => o.classe === "etiquette" && o.params.texte?.startsWith("Réserve Harmonie")).map((o) => o.params.texte));
+  let placees = 0;
+  const nonPlacees: string[] = [];
+  for (const r of reserves) {
+    const texte = `Réserve Harmonie (${r.priority}) · ${r.title}`.slice(0, 300);
+    if (dejaAnnotees.has(texte)) continue;
+    // Références du bilan : « niveau|objet » (analyse du modèle) ou identifiant d'objet seul.
+    const o = r.refs.map((ref) => etat.objets[ref.includes("|") ? ref.slice(ref.lastIndexOf("|") + 1) : ref]).find((x) => !!x && !!x.niveauId);
+    let position: { x: number; y: number } | null = null;
+    if (o && "contour" in o.params && Array.isArray(o.params.contour) && o.params.contour.length >= 3) position = centroide(o.params.contour as { x: number; y: number }[]);
+    else if (o && o.classe === "mur") position = { x: (o.params.a.x + o.params.b.x) / 2, y: (o.params.a.y + o.params.b.y) / 2 };
+    if (!o || !position) {
+      nonPlacees.push(r.title);
+      continue;
+    }
+    placees++;
+    commandes.push({ type: "etiquette.creer", params: { niveauId: o.niveauId, calqueId, objetId: o.id, position: { x: Math.round(position.x * 1000) / 1000, y: Math.round(position.y * 1000) / 1000, frame: "local", unit: "m" }, texte } });
+  }
+  if (nonPlacees.length) hypotheses.push({ texte: `${nonPlacees.length} réserve(s) sans objet du modèle à annoter : ${nonPlacees.slice(0, 5).join(" ; ")}`, motif: "réserve portant sur le projet ou sur un élément absent du modèle : elle reste dans le bilan Harmonie" });
+  if (placees) hypotheses.push({ texte: "Étiquettes au centre de l'objet concerné, calque « Réserves Harmonie »", motif: "position de lecture ; les réserves restent celles du bilan, rien n'est corrigé" });
+  return {
+    regle: "reserves-harmonie",
+    explication: placees ? `${placees} réserve(s) du bilan Harmonie annotée(s) sur les objets concernés (étiquettes reliées).` : "Aucune réserve Harmonie à annoter sur le modèle.",
+    commandes: placees ? commandes : [],
+    hypotheses,
+  };
+}
+
 function corrigerOuvertures(etat: ModeleAtelier): Generation {
   const commandes: Commande[] = [];
   const hypotheses: HypotheseProposition[] = [];
@@ -243,6 +290,7 @@ export const generateurRegles: Generateur = {
     if (/piece|local|locaux/.test(t) && /detect|ferm|cre|propos/.test(t)) return piecesDetectees(etat, /niveau actif|ce niveau/.test(t) ? contexte.niveauId : null);
     if (/poteau|trame/.test(t)) return tramePoteaux(etat, intention, contexte.niveauId);
     if (/ouverture|porte|fenetre/.test(t) && /corrig|repar|hors|depass/.test(t)) return corrigerOuvertures(etat);
+    if (/harmonie|reserve/.test(t)) return annoterReserves(etat, contexte.reserves);
     return null;
   },
   corriger(precedente, erreur) {
