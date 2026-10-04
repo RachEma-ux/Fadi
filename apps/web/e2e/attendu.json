@@ -1,5 +1,5 @@
 {
-  "controles": 352,
+  "controles": 378,
   "parFichier": {
     "00-compte.mjs": 0,
     "01-import-exemple.mjs": 17,
@@ -14,7 +14,7 @@
     "10-accueil-parametres.mjs": 19,
     "11-accessibilite.mjs": 49,
     "12-mesures.mjs": 1,
-    "14-nouvel-atelier.mjs": 25
+    "14-nouvel-atelier.mjs": 51
   },
   "historique": [
     {
@@ -31,6 +31,31 @@
       "date": "2026-10-04",
       "controles": 352,
       "motif": "L3a.4 : 14-nouvel-atelier.mjs#gestes, gestes d'acceptation du lot 3a sur la copie de travail de P.118 — mur (M), porte (P), pièce, sélection au clavier, type, annuler / rétablir avec révisions persistées, second navigateur, téléphone 390 px et clavier (Ctrl+Z, Ctrl+Maj+Z), aucune erreur JavaScript (17 appels à check) et axe-core téléphone + ordinateur après les gestes (+19)."
+    },
+    {
+      "date": "2026-10-04",
+      "controles": 357,
+      "motif": "L3b.0 (D-045) : 14-nouvel-atelier.mjs#gestes, suppression du mur bas par la touche Suppr (porte hébergée listée avant l'accord), Entrée, annuler puis rétablir avec révisions persistées, panneau Métré monté, périmé puis recalculé (+5)."
+    },
+    {
+      "date": "2026-10-04",
+      "controles": 364,
+      "motif": "L3b.1 (#67) : 14-nouvel-atelier.mjs#vue3d, vue 3D WebGL2 de P.118 — ouverture, 6 niveaux × 3 modes sans vue vide, plan de coupe réglable, clavier, aucune erreur JavaScript (5 appels à check) et axe-core ordinateur + téléphone (+7)."
+    },
+    {
+      "date": "2026-10-04",
+      "controles": 369,
+      "motif": "L3b.2 (#68) : 14-nouvel-atelier.mjs#pousserTirer, hauteur d'un mur par glisser vertical en 3D puis valeur tapée (persistées), rectangle extrudé à 0,90 m en solide, rendu 3D à la révision courante (+5)."
+    },
+    {
+      "date": "2026-10-04",
+      "controles": 372,
+      "motif": "L3b.3 (#69) : 14-nouvel-atelier.mjs#mesures3d, mesures ⏱ imprimées (ouverture, scène, sélection, déplacement, orbite p95, enregistrement), téléphone tactile (un doigt, pincer, cibles ≥ 44 px), aucune erreur JavaScript (+3)."
+    },
+    {
+      "date": "2026-10-04",
+      "controles": 378,
+      "motif": "L3b.4 (#70) : 14-nouvel-atelier.mjs#vuesTechniques, huit vues de travail non vides (plan, coupes N–S / E–O / quelconque, quatre façades), position de coupe réglable, sélection au clic, accessibilité ordinateur et téléphone, aucune erreur JavaScript (+6)."
     }
   ]
 }

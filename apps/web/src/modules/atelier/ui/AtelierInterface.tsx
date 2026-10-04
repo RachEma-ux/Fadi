@@ -40,7 +40,17 @@ export interface ProprietesAtelierInterface {
   readonly client: Pick<ClientAtelierCommandes, "lireJournal" | "lireProblemes">;
   readonly projet: { readonly id: string; readonly code: string; readonly nom: string };
   readonly zoneTravail: ReactNode;
+  /** Vue 3D de la zone de travail (L3b.1) ; absente = bascule 3D désactivée. */
+  readonly zoneTravail3d?: ReactNode;
+  /**
+   * Panneaux ajoutés sous le navigateur (onglet Projet), rendus à chaque rendu de l'interface pour suivre le niveau
+   * actif : le métré du niveau (`documents/PanneauMetre.tsx`, D-045).
+   */
+  readonly panneauxProjet?: () => ReactNode;
 }
+
+/** Outil ouvert par la touche Suppr hors outil actif, sélection non vide (D-045). */
+export const OUTIL_SUPPRIMER = "modifier.supprimer";
 
 const REQUETE_TELEPHONE = "(max-width: 760px)";
 
@@ -86,7 +96,7 @@ const CIBLES_REPERE: Readonly<Record<Extract<ActionPalette, { type: "repere" }>[
   inspecteur: { onglet: "inspecteur", focus: "atl-inspecteur-titre" },
 };
 
-export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, projet, zoneTravail }: ProprietesAtelierInterface) {
+export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, projet, zoneTravail, zoneTravail3d, panneauxProjet }: ProprietesAtelierInterface) {
   const etatVue = useVue(vue);
   const sel = useSelection(ctx.selection);
   usePilote(pilote);
@@ -128,7 +138,14 @@ export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, pro
     if (Object.keys(changement).length > 0) vue.modifier(changement);
   }, [etat, vue, etatVue.niveauActifId, etatVue.calqueActifId]);
 
-  const activation = useCallback((o: DefinitionOutil) => activationOutil(o, ctx), [ctx]);
+  // Objets disparus (suppression, annulation d'une création, révision distante) retirés de la sélection.
+  useEffect(() => {
+    if (!etat) return;
+    const restants = sel.ids.filter((id) => etat.objets[id] !== undefined);
+    if (restants.length !== sel.ids.length) ctx.selection.choisir(restants);
+  }, [ctx.selection, etat, sel]);
+
+  const activation = useCallback((o: DefinitionOutil) => activationOutil(o, ctx, etatVue.vue), [ctx, etatVue.vue]);
 
   const activer = useCallback(
     (id: string | null) => {
@@ -225,6 +242,12 @@ export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, pro
   useEffect(() => {
     const surTouche = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.isComposing) return;
+      // Suppr hors outil actif et hors champ, sélection non vide : outil « Supprimer » (accord avant écriture).
+      if (e.key === "Delete" && !e.ctrlKey && !e.metaKey && !e.altKey && !paletteOuverte && !estChamp(e.target) && !pilote.outilActif() && ctx.selection.lire().ids.length > 0 && registres.outils.trouver(OUTIL_SUPPRIMER)) {
+        e.preventDefault();
+        activer(OUTIL_SUPPRIMER);
+        return;
+      }
       const action = resoudreTouche({ key: e.key, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey, shiftKey: e.shiftKey, dansChamp: estChamp(e.target) }, table);
       if (!action) return;
       if (paletteOuverte && action.type !== "palette") return;
@@ -257,7 +280,7 @@ export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, pro
     };
     document.addEventListener("keydown", surTouche);
     return () => document.removeEventListener("keydown", surTouche);
-  }, [activer, historique, onglet, paletteOuverte, pilote, table, telephone]);
+  }, [activer, ctx.selection, historique, onglet, paletteOuverte, pilote, registres.outils, table, telephone]);
 
   // Une feuille ouverte au téléphone reçoit le focus (son titre).
   useEffect(() => {
@@ -364,11 +387,12 @@ export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, pro
           {teteFeuille("projet", "Projet") ?? <h2>Projet</h2>}
           <div className="atl-feuille-corps">
             <Navigateur etat={etat} vue={vue} etatVue={etatVue} selection={ctx.selection} sel={sel} projetId={projet.id} />
+            {panneauxProjet?.()}
           </div>
         </section>
 
         <section className="atl-zone" aria-label="Zone de travail" data-testid="atl-repere-zone">
-          <ZoneTravail pilote={pilote} vue={vue} vueTravail={etatVue.vue} niveauActif={niveauActif} enfant={zoneTravail} />
+          <ZoneTravail pilote={pilote} vue={vue} vueTravail={etatVue.vue} niveauActif={niveauActif} enfant={zoneTravail} enfant3d={zoneTravail3d} />
         </section>
 
         <section className="atl-inspecteur atl-feuille" aria-label="Inspecteur" hidden={!visible("inspecteur")} data-testid="atl-repere-inspecteur">
@@ -414,7 +438,14 @@ export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, pro
               <h3>Niveau d'affichage</h3>
               {segmentNiveaux}
               <h3>Vue</h3>
-              <p className="atl-muet">Plan 2D. La vue 3D arrive au lot 3b.</p>
+              <span className="atl-segment" role="radiogroup" aria-label="Vue de la zone de travail (téléphone)">
+                <button type="button" role="radio" aria-checked={etatVue.vue === "plan"} onClick={() => vue.modifier({ vue: "plan" })} data-testid="atl-tel-vue-plan">
+                  Plan 2D
+                </button>
+                <button type="button" role="radio" aria-checked={etatVue.vue === "3d"} disabled={!zoneTravail3d} onClick={() => vue.modifier({ vue: "3d" })} data-testid="atl-tel-vue-3d">
+                  3D
+                </button>
+              </span>
               <h3>Niveau actif</h3>
               <p>{niveauActif ? `${niveauActif.nom} · ${niveauActif.detail}` : "Aucun niveau actif"}</p>
             </div>

@@ -32,7 +32,7 @@ export type FamilleOutil = (typeof FAMILLES_OUTIL)[number];
 export const NIVEAUX_AFFICHAGE = ["essentiel", "contextuel", "complet"] as const;
 export type NiveauAffichage = (typeof NIVEAUX_AFFICHAGE)[number];
 
-/** Vue de la zone de travail. `3d` arrive au lot 3b : au lot 3a, seul `plan` est rendu. */
+/** Vue de la zone de travail : `plan` (plan 2D) ou `3d` (vue 3D, lot 3b, `vue3d/`). */
 export type VueTravail = "plan" | "3d";
 
 // ---------------------------------------------------------------------------------------------------------------

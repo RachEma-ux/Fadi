@@ -12,7 +12,7 @@
  *   « niveau CAO » —, documents, problèmes, annuler, rétablir) et niveaux d'affichage.
  */
 import type { EtatModele, IdObjet } from "@parcours/atelier-model";
-import { normaliser, type Activation, type AideOutil, type ContexteAtelier, type DefinitionOutil, type FamilleOutil, type NiveauAffichage, type RegistreOutils } from "../socle";
+import { motifVue, normaliser, type Activation, type AideOutil, type ContexteAtelier, type DefinitionOutil, type FamilleOutil, type NiveauAffichage, type RegistreOutils, type VueTravail } from "../socle";
 import { libelleClasse, libelleObjet } from "./navigateur";
 
 export const LIBELLES_FAMILLE: Readonly<Record<FamilleOutil, string>> = {
@@ -172,8 +172,9 @@ export function trouvePar(outil: DefinitionOutil, texte: string): string {
 }
 
 /** Activation telle que le pilote la contrôlera (écriture permise, puis `activation`). */
-export function activationOutil(outil: DefinitionOutil, ctx: ContexteAtelier): Activation {
+export function activationOutil(outil: DefinitionOutil, ctx: ContexteAtelier, vueTravail?: VueTravail): Activation {
   if (outil.ecrit && !ctx.ecriture.permise) return { ok: false, motif: ctx.ecriture.motif };
+  if (vueTravail && !outil.vues.includes(vueTravail)) return { ok: false, motif: motifVue(vueTravail) };
   try {
     return outil.activation(ctx);
   } catch (e) {

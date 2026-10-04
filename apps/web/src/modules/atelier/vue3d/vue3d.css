@@ -1,0 +1,106 @@
+/* Vue 3D du nouvel Atelier (L3b.1). Couleurs et rayons repris des jetons de l'interface (atelier-interface.css). */
+.atl-3d {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  min-height: 0;
+}
+.atl-3d-barre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.atl-3d-coupe,
+.atl-3d-moteur {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+.atl-3d-coupe input[type="range"] {
+  width: 160px;
+  min-height: 24px;
+}
+.atl-3d-moteur select {
+  min-height: 32px;
+}
+.atl-3d-cadre {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 320px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.atl-3d-toile {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+}
+.atl-3d-toile:focus-visible {
+  outline: 3px solid #1f6feb;
+  outline-offset: -3px;
+}
+/* Texte d'état sur le fond de la zone (#eef2ec) : encre pleine, le gris « muet » n'y atteint pas 4,5:1 (axe-core). */
+.atl-3d-etat,
+.atl-3d-repli {
+  margin: 0;
+  color: var(--atl-encre, #183d32);
+}
+.atl-3d-diagnostics ul {
+  max-height: 10rem;
+  overflow: auto;
+  margin: 4px 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+}
+@media (max-width: 760px) {
+  .atl-3d-cadre {
+    min-height: 260px;
+  }
+  .atl-3d-coupe input[type="range"] {
+    width: 120px;
+  }
+}
+/* Cibles tactiles (L3b.3) : 44 px au téléphone et sur écran tactile (jeton --atl-cible). */
+.atl.atl-tel .atl-3d-barre button,
+.atl.atl-tel .atl-3d-barre select,
+.atl.atl-tel .atl-3d-barre input[type="range"] {
+  min-height: var(--atl-cible, 44px);
+}
+@media (pointer: coarse) {
+  .atl .atl-3d .atl-3d-barre button,
+  .atl .atl-3d .atl-3d-barre select,
+  .atl .atl-3d .atl-3d-barre input[type="range"] {
+    min-height: var(--atl-cible, 44px);
+  }
+}
+.atl-immersif-3d .atl-3d-cadre,
+.atl[data-immersif="true"] .atl-3d-cadre {
+  min-height: 70vh;
+}
+/* Vues techniques (L3b.4). */
+.atl-3d-vues {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid #c9d3cd;
+  padding-top: 6px;
+}
+.atl-3d-svg {
+  width: 100%;
+  height: 360px;
+  background: #ffffff;
+  border-radius: 8px;
+}
+.atl-3d-svg path {
+  cursor: pointer;
+}
+@media (max-width: 760px) {
+  .atl-3d-svg {
+    height: 260px;
+  }
+}

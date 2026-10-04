@@ -10,18 +10,22 @@ import { useEffect, useMemo, useState } from "react";
 import { atelierCommandesApi } from "../../lib/api/atelier-commandes";
 import { READ_ONLY_HINT } from "../../lib/access";
 import { BusAtelier, joignabiliteNavigateur, stockageNavigateur } from "./bus";
+import { PanneauMetre } from "./documents";
 import { installer as installerDocuments } from "./documents/installer";
 import { installer as installerObjets } from "./objets/installer";
 import { installer as installerPlan2d } from "./plan2d/installer";
 import { ZonePlan } from "./plan2d/ZonePlan";
+import { installer as installerVue3d } from "./vue3d/installer";
+import { Vue3d } from "./vue3d/Vue3d";
 import { creerContexte, creerEtatInterface, creerPilote, creerRegistres, creerSelection, type InstallationModule } from "./socle";
 import { AtelierInterface } from "./ui/AtelierInterface";
 
 /**
  * Modules qui enregistrent leurs outils, dessinateurs et descripteurs (une classe n'est prise qu'une fois, un
- * raccourci aussi, D-037) : plan 2D (L A C R), architecture (M P F O S E), documents simples (K T U).
+ * raccourci aussi, D-037) : plan 2D (L A C R), architecture (M P F O S E), documents simples (K T U), vue 3D
+ * (pousser / tirer, extruder ; sans raccourci).
  */
-export const MODULES_ATELIER: readonly InstallationModule[] = [installerPlan2d, installerObjets, installerDocuments];
+export const MODULES_ATELIER: readonly InstallationModule[] = [installerPlan2d, installerObjets, installerDocuments, installerVue3d];
 
 /** Relecture des révisions distantes (second navigateur, autre membre) : au retour sur l'onglet et périodiquement. */
 const RELECTURE_MS = 30_000;
@@ -91,6 +95,8 @@ export function NouvelAtelier({ projet, readOnly = false }: ProprietesNouvelAtel
         client={atelierCommandesApi}
         projet={projet}
         zoneTravail={<ZonePlan registres={registres} pilote={pilote} ctx={ctx} vue={vue} />}
+        zoneTravail3d={<Vue3d ctx={ctx} vue={vue} pilote={pilote} />}
+        panneauxProjet={() => <PanneauMetre ctx={ctx} />}
       />
     </div>
   );
