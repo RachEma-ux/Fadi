@@ -290,8 +290,14 @@ const murPlan = page.locator(`.plan2d [data-objet="${murId}"]`);
 const bMur = await murPlan.boundingBox();
 const ech2 = await page.evaluate(() => Number(document.querySelector(".etat-echelle").textContent.replace(/[^0-9]/g, "")));
 await mesurer("sélection d'un mur au clic → inspecteur affiché", async () => {
+  const selectionne = () => page.waitForFunction((id) => document.querySelector(".inspecteur-meta")?.textContent?.includes(id), murId, { timeout: 5000 });
   await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);
-  await page.waitForFunction((id) => document.querySelector(".inspecteur-meta")?.textContent?.includes(id), murId, { timeout: 5000 });
+  // Un rendu du plan peut être en cours au moment du clic (retour de la 3D) : un second clic, une seule fois.
+  if (!(await selectionne().then(() => true, () => false))) {
+    await page.waitForTimeout(500);
+    await page.mouse.click(bMur.x + bMur.width / 2, bMur.y + bMur.height / 2);
+    await selectionne();
+  }
 });
 const avantDeplacement = await page.locator(".inspecteur .champ-lecture").first().textContent();
 await mesurer("glisser un mur d'un mètre → déplacement enregistré", async () => {
