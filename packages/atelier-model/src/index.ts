@@ -3,6 +3,7 @@ export * from "./ontologie.js";
 export * from "./modele.js";
 export * from "./geometrie.js";
 export * from "./raccords.js";
+export * from "./ouvrants.js";
 export * from "./compositions.js";
 export * from "./references.js";
 export * from "./quantites.js";

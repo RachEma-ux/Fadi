@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { centroide, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { battantPorte, centroide, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -300,17 +300,14 @@ function Ouverture2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"por
     );
   }
   if (o.classe === "porte") {
-    // Battant ouvert à 90° côté gauche du mur, avec son arc de débattement.
-    const charniere = dec(p1, 1);
-    const bout = { x: charniere.x + (f.gauche[0].x - f.droite[0].x) * 0 + (-uy) * w * 1, y: charniere.y + ux * w * 1 };
-    const sc = pr.vers(charniere);
-    const sb = pr.vers(bout);
-    const sp2 = pr.vers(dec(p2, 1));
-    const r = w * pr.echelle;
+    // Battant ouvert à 90° avec son arc de débattement : sens renseigné (D-037), sinon convention de l'Atelier.
+    const bt = battantPorte(etat, o as Occurrence<"porte">);
+    if (!bt) return null;
+    const bout = { x: bt.charniere.x + bt.ouvert.x * bt.largeur, y: bt.charniere.y + bt.ouvert.y * bt.largeur };
     return (
-      <g className={classes("obj-porte", selectionne, survole)} data-objet={o.id} stroke={couleur} strokeWidth={selectionne ? 2 : 1} fill="none">
-        <line x1={sc.x} y1={sc.y} x2={sb.x} y2={sb.y} />
-        <path d={`M${sb.x.toFixed(1)} ${sb.y.toFixed(1)} A${r.toFixed(1)} ${r.toFixed(1)} 0 0 1 ${sp2.x.toFixed(1)} ${sp2.y.toFixed(1)}`} strokeDasharray="2 2" />
+      <g className={classes("obj-porte", selectionne, survole)} data-objet={o.id} data-ouvrant={bt.explicite ? `${bt.ouvrant.charniere}-${bt.ouvrant.cote}` : "non-renseigne"} stroke={couleur} strokeWidth={selectionne ? 2 : 1} fill="none">
+        <path d={chemin(pr, [bt.charniere, bout], false)} />
+        <path d={chemin(pr, pointsArc(bt.charniere, bt.largeur, bt.arc[0], bt.arc[1], 16), false)} strokeDasharray={bt.explicite ? undefined : "2 2"} />
       </g>
     );
   }

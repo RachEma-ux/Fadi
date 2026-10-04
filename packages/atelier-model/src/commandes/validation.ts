@@ -3,6 +3,7 @@
  * objets référencés. Retourne des paramètres typés ou lève `ErreurCommande` (400 côté API) — jamais de valeur
  * par défaut inventée pour une grandeur physique (R3) : une hauteur absente reste `null`.
  */
+import { lireOuvrant } from "../ouvrants.js";
 import { distance } from "../geometrie.js";
 import type { ModeleAtelier, ParamsParClasse } from "../modele.js";
 import type { Classe } from "../ontologie.js";
@@ -43,7 +44,11 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       nom: lire.chaineOuNull(p, "nom"),
     };
   },
-  porte: (etat, p) => ouverture(etat, p),
+  porte: (etat, p) => {
+    const o = ouverture(etat, p);
+    const ouvrant = lireOuvrant(p["ouvrant"]);
+    return ouvrant ? { ...o, ouvrant } : o;
+  },
   fenetre: (etat, p) => ouverture(etat, p),
   ouverture: (etat, p) => ouverture(etat, p),
   dalle(_etat, p) {

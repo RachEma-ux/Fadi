@@ -116,10 +116,12 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         <ChoixType o={o} etat={etat} desactive={desactive} onCommandes={onCommandes} />
         <ChoixPhase sel={[o]} readOnly={desactive} onCommandes={onCommandes} />
         {Object.entries(params).map(([cle, valeur]) => {
+          if (cle === "ouvrant" || (cle === "murHoteId" && (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture"))) return null; // contrôles dédiés ci-dessous
           if (GEOMETRIQUES.has(cle)) return <ResumeGeometrie key={cle} cle={cle} valeur={valeur} />;
           return <Champ key={cle} id={`${o.id}-${cle}`} cle={cle} valeur={valeur} etat={etat} desactive={parametresFiges} onValider={(v) => modifier(cle, v)} />;
         })}
       </dl>
+      {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <OuvertureHote o={o as Occurrence<"porte">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
       {o.classe === "esquisse" && <Contraintes sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
@@ -584,3 +586,58 @@ function HistoriqueObjet({ projectId, objetId }: { projectId: string; objetId: s
     </details>
   );
 }
+
+const OUVRANTS: [string, string][] = [
+  ["debut-gauche", "charnière au début · ouvre côté gauche"],
+  ["debut-droite", "charnière au début · ouvre côté droit"],
+  ["fin-gauche", "charnière à la fin · ouvre côté gauche"],
+  ["fin-droite", "charnière à la fin · ouvre côté droit"],
+];
+
+/**
+ * Mur hôte et sens d'ouverture (D-037) : changer d'hôte parmi les murs du projet (la position est gardée, l'emprise
+ * contrôlée) ; pour une porte, sens d'ouverture renseigné ou non (« début », « gauche » : sens de tracé du mur hôte).
+ */
+function OuvertureHote({ o, etat, desactive, onCommandes }: { o: Occurrence<"porte">; etat: ModeleAtelier; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const libelle = CLASSES[o.classe].libelle;
+  const murs = Object.values(etat.objets).filter((x): x is Occurrence<"mur"> => x.classe === "mur").sort((a, b) => (a.niveauId === o.niveauId ? 0 : 1) - (b.niveauId === o.niveauId ? 0 : 1) || a.id.localeCompare(b.id));
+  const nomMur = (m: Occurrence<"mur">) => `${m.id}${m.niveauId && m.niveauId !== o.niveauId ? ` (${etat.niveaux[m.niveauId]?.nom ?? m.niveauId})` : ""}`;
+  const ouvrant = o.classe === "porte" ? (o.params.ouvrant ?? null) : undefined;
+  const valeur = ouvrant ? `${ouvrant.charniere}-${ouvrant.cote}` : "";
+  const fixer = (v: string) => {
+    const [charniere, cote] = v ? v.split("-") : [];
+    onCommandes([{ type: "ouverture.modifier", params: { id: o.id, params: { ouvrant: v ? { charniere, cote } : null } } }], v ? `Sens d'ouverture : ${OUVRANTS.find(([k]) => k === v)?.[1]}` : "Sens d'ouverture non renseigné");
+  };
+  return (
+    <div className="inspecteur-ouverture">
+      <label htmlFor={`hote-${o.id}`}>Mur hôte</label>
+      <select id={`hote-${o.id}`} value={o.params.murHoteId} disabled={desactive} data-champ="murHoteId" onChange={(e) => onCommandes([{ type: "ouverture.modifier", params: { id: o.id, params: { murHoteId: e.target.value } } }], `${libelle} : changer de mur hôte`)}>
+        {murs.map((m) => (
+          <option key={m.id} value={m.id}>
+            {nomMur(m)}
+          </option>
+        ))}
+      </select>
+      {ouvrant !== undefined && (
+        <>
+          <label htmlFor={`ouvrant-${o.id}`}>Sens d'ouverture</label>
+          <select id={`ouvrant-${o.id}`} value={valeur} disabled={desactive} data-champ="ouvrant" onChange={(e) => fixer(e.target.value)}>
+            <option value="">non renseigné (dessin selon la convention, signalé)</option>
+            {OUVRANTS.map(([k, l]) => (
+              <option key={k} value={k}>
+                {l}
+              </option>
+            ))}
+          </select>
+          {ouvrant && (
+            <span className="ver-actions">
+              <button type="button" disabled={desactive} onClick={() => fixer(`${ouvrant.charniere === "debut" ? "fin" : "debut"}-${ouvrant.cote}`)}>Inverser la charnière</button>
+              <button type="button" disabled={desactive} onClick={() => fixer(`${ouvrant.charniere}-${ouvrant.cote === "gauche" ? "droite" : "gauche"}`)} data-inverser="cote">Inverser le côté</button>
+            </span>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+

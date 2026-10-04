@@ -303,6 +303,18 @@ await page.waitForSelector(".plan2d");
   await page.waitForSelector('[data-croisement*="croix-h"]', { state: "attached", timeout: 20000 }).catch(() => {});
   const n = await page.locator('[data-croisement*="croix-h"]').count();
   check("croisement de murs : zone commune peinte d'un seul tenant dans le plan", r.status === 200 && n === 1, `lot ${r.status} · niveau ${nv} · ${n} zone(s) · ${await page.locator("[data-croisement]").count()} au total · ${(await page.locator(".barre-sync").textContent().catch(() => ""))?.slice(0, 60)}`);
+  // Sens d'ouverture d'une porte (D-037) : choisi dans l'inspecteur, suivi par le plan.
+  const porte = Object.values((await modele(pid)).modele.objets).find((o) => o.classe === "porte" && o.niveauId === nv);
+  let ouvrantLu = null;
+  let dessin = null;
+  if (porte) {
+    await selectionner(porte.id);
+    await page.locator('select[data-champ="ouvrant"]').selectOption("fin-droite");
+    await attendreEnregistre().catch(() => {});
+    ouvrantLu = (await modele(pid)).modele.objets[porte.id].params.ouvrant ?? null;
+    dessin = await page.locator(`.plan2d [data-objet="${porte.id}"]`).getAttribute("data-ouvrant").catch(() => null);
+  }
+  check("porte : sens d'ouverture renseigné dans l'inspecteur, enregistré et dessiné", !!porte && ouvrantLu?.charniere === "fin" && ouvrantLu?.cote === "droite" && dessin === "fin-droite", `${porte?.id} · ${JSON.stringify(ouvrantLu)} · ${dessin}`);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.

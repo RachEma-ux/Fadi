@@ -3,6 +3,7 @@
  * avec provenance et statut, relations porteuses de sens, références topologiques, site (parcelle, emprise,
  * hypothèses, sources, structure déclarée). Objet immuable : les réducteurs retournent un nouvel état.
  */
+import type { OuvrantPorte } from "./ouvrants.js";
 import type { Classe } from "./ontologie.js";
 import type { Angle, Longueur, Point2, SommetParcelle, Surface } from "./unites.js";
 
@@ -57,6 +58,8 @@ export interface ParamsOuverture {
   hauteur: Longueur;
   allege: Longueur | null;
   repere: string | null;
+  /** Porte seulement : sens d'ouverture (D-037) ; absent ou null : non renseigné. */
+  ouvrant?: OuvrantPorte | null;
 }
 
 export interface Contour {

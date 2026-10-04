@@ -96,7 +96,7 @@ describe("vues du P.118", () => {
     expect(poches.length).toBeGreaterThan(30);
     const portes = objetsDeClasse(P118, "porte", "rdc");
     expect(new Set(v1.primitives.filter((p) => p.objetId && portes.some((d) => d.id === p.objetId)).map((p) => p.objetId)).size).toBe(portes.length);
-    expect(v1.avertissements.some((a) => /Sens d'ouverture des portes non renseigné/.test(a))).toBe(true);
+    expect(v1.avertissements.some((a) => /Sens d'ouverture non renseigné/.test(a))).toBe(true);
     expect(v1.avertissements.some((a) => a.includes(`${HAUTEUR_COUPE_DEFAUT.toFixed(2).replace(".", ",")} m`))).toBe(true);
     expect(v1.objets).toContain(portes[0]!.id);
   });

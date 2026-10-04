@@ -349,14 +349,37 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
           }
           const ep = ouv.classe === "porte" ? 0.04 : 0.03;
           const centre = (oG + oD) / 2;
-          const panneau = boite(a, u, c - w / 2, c + w / 2, centre - ep / 2, centre + ep / 2, zb, zb + ouv.params.hauteur.value);
           const classeIfc = ouv.classe === "porte" ? "IFCDOOR" : "IFCWINDOW";
-          const remplissage = s.ajouter(`${classeIfc}(${gid(ouv.id)},$,${opt(ouv.params.repere ?? ouv.id)},$,$,${ref(placementDe(o.niveauId))},${ref(forme([corpsSolide([panneau])]))},${opt(ouv.params.repere)},${reelStep(ouv.params.hauteur.value)},${reelStep(w)},${ouv.classe === "porte" ? ".DOOR." : ".WINDOW."},$,$)`);
+          let placementRemplissage: number;
+          let panneau: number;
+          let operation = "$";
+          const ouvrant = ouv.classe === "porte" ? ouv.params.ouvrant : null;
+          if (ouvrant) {
+            // Sens renseigné (D-037) : repère propre à la porte, Y dans le sens d'ouverture, X le long de la baie ;
+            // gauche / droite « vu dans le sens +Y » (IfcDoorTypeOperationEnum) : charnière du côté de X minimal → LEFT.
+            const y = ouvrant.cote === "gauche" ? n : { x: -n.x, y: -n.y };
+            const x = { x: y.y, y: -y.x };
+            const sCharniere = ouvrant.charniere === "debut" ? c - w / 2 : c + w / 2;
+            const sAutre = ouvrant.charniere === "debut" ? c + w / 2 : c - w / 2;
+            const surAxe = (sv: number) => ({ x: a.x + u.x * sv + n.x * centre, y: a.y + u.y * sv + n.y * centre });
+            const pc = surAxe(sCharniere);
+            const pa = surAxe(sAutre);
+            const gaucheVu = (pa.x - pc.x) * x.x + (pa.y - pc.y) * x.y > 0; // l'autre tableau du côté +X : charnière à gauche
+            const origine = gaucheVu ? pc : pa;
+            operation = gaucheVu ? ".SINGLE_SWING_LEFT." : ".SINGLE_SWING_RIGHT.";
+            const etage = o.niveauId ? etages.get(o.niveauId) : undefined;
+            placementRemplissage = s.ajouter(`IFCLOCALPLACEMENT(${ref(etage ? etage.placement : placementBat)},${ref(s.ajouter(`IFCAXIS2PLACEMENT3D(${ref(pt3(origine.x, origine.y, 0))},${ref(axeZ)},${ref(dir3(x.x, x.y, 0))})`))})`);
+            panneau = boite({ x: 0, y: 0 }, { x: 1, y: 0 }, 0, w, -ep / 2, ep / 2, zb, zb + ouv.params.hauteur.value);
+          } else {
+            panneau = boite(a, u, c - w / 2, c + w / 2, centre - ep / 2, centre + ep / 2, zb, zb + ouv.params.hauteur.value);
+            placementRemplissage = placementDe(o.niveauId);
+          }
+          const remplissage = s.ajouter(`${classeIfc}(${gid(ouv.id)},$,${opt(ouv.params.repere ?? ouv.id)},$,$,${ref(placementRemplissage)},${ref(forme([corpsSolide([panneau])]))},${opt(ouv.params.repere)},${reelStep(ouv.params.hauteur.value)},${reelStep(w)},${ouv.classe === "porte" ? ".DOOR." : ".WINDOW."},${operation},$)`);
           s.ajouter(`IFCRELFILLSELEMENT(${gid(`rel-remplit|${ouv.id}`)},$,$,$,${ref(ouverture)},${ref(remplissage)})`);
           produits.set(ouv.id, remplissage);
           contenir(o.niveauId, remplissage);
           identite(remplissage, ouv);
-          compter(ouv.classe, ouv.classe === "porte" ? "IfcDoor" : "IfcWindow", "SweptSolid (panneau) + IfcOpeningElement", true, ouv.classe === "porte" ? "sens d'ouverture non renseigné : OperationType non écrit" : undefined);
+          compter(ouv.classe, ouv.classe === "porte" ? "IfcDoor" : "IfcWindow", "SweptSolid (panneau) + IfcOpeningElement", true, ouv.classe === "porte" && !ouvrant ? "sens d'ouverture non renseigné : OperationType non écrit" : undefined);
         }
         break;
       }

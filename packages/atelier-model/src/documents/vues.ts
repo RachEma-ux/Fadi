@@ -6,13 +6,14 @@
  * Une vue est une définition du modèle (`vue.creer`) : ses paramètres sont canoniques, le dessin est dérivé. Chaque
  * génération rend ses objets référencés et une empreinte de ses entrées : même modèle, même vue, mêmes primitives
  * et même empreinte (reproductibilité). Rien n'est inventé : une hauteur absente ne produit aucun volume, un sens
- * d'ouverture de porte non renseigné est dessiné selon la convention de l'Atelier et signalé.
+ * d'ouverture de porte non renseigné est dessiné selon la convention de l'Atelier et signalé ; renseigné, il est suivi (D-037).
  */
 import { aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsSpline, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
 import { polygoneMurRaccorde } from "../raccords.js";
+import { battantPorte } from "../ouvrants.js";
 import { separationsCouches } from "../compositions.js";
 import { extremitesCotation } from "../references.js";
 import type { Longueur, Point2 } from "../unites.js";
@@ -241,15 +242,15 @@ function symbolesPlan(c: Collecteur, etat: ModeleAtelier, objets: readonly Occur
     switch (o.classe) {
       case "porte": {
         const k = cadreOuverture(etat, o);
-        if (!k) break;
-        portes++;
-        // Battant ouvert à 90° côté gauche du mur (convention de l'Atelier : le sens d'ouverture n'est pas renseigné).
-        const charniere = k.dec(k.p1, 1);
-        const bout = { x: charniere.x - k.u.y * k.w, y: charniere.y + k.u.x * k.w };
-        c.ligne(charniere, bout, "vue", o.id);
-        const debut = (Math.atan2(k.u.y, k.u.x) * 180) / Math.PI;
-        c.poly(pointsArc(charniere, k.w, debut, debut + 90, 16), false, "fin", null, o.id);
-        c.ligne(k.dec(k.p1, 0), k.dec(k.p2, 0), "fin", o.id);
+        const bt = battantPorte(etat, o);
+        if (!k || !bt) break;
+        // Battant ouvert à 90° selon le sens renseigné (D-037), sinon selon la convention de l'Atelier (dit).
+        if (!bt.explicite) portes++;
+        c.ligne(bt.charniere, { x: bt.charniere.x + bt.ouvert.x * bt.largeur, y: bt.charniere.y + bt.ouvert.y * bt.largeur }, "vue", o.id);
+        c.poly(pointsArc(bt.charniere, bt.largeur, bt.arc[0], bt.arc[1], 16), false, "fin", null, o.id);
+        // Seuil : sur la face opposée au battant.
+        const fs = bt.ouvrant.cote === "gauche" ? 0 : 1;
+        c.ligne(k.dec(k.p1, fs), k.dec(k.p2, fs), "fin", o.id);
         break;
       }
       case "fenetre": {
@@ -307,7 +308,7 @@ function symbolesPlan(c: Collecteur, etat: ModeleAtelier, objets: readonly Occur
         break;
     }
   }
-  if (portes) c.avertissements.add("Sens d'ouverture des portes non renseigné dans le modèle : battants dessinés selon la convention de l'Atelier (côté gauche du mur hôte).");
+  if (portes) c.avertissements.add(`Sens d'ouverture non renseigné pour ${portes} porte${portes > 1 ? "s" : ""} : battant${portes > 1 ? "s" : ""} dessiné${portes > 1 ? "s" : ""} selon la convention de l'Atelier (charnière au début, côté gauche du mur hôte).`);
 }
 
 /** Annotations, esquisses, références de plan et blocs d'un niveau (communs au plan et au détail). */

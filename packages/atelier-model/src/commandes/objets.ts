@@ -84,6 +84,7 @@ export function modifierOccurrence(etat: ModeleAtelier, p: Brut, ctx: ContexteCo
   // échelle, copier) et s'organise (calque, groupe, phase, propriétés), rien de plus.
   if (existant.classe === "objet-importe" && Object.keys(patch).length) throw new ErreurCommande("precondition", "params", "représentation importée : paramètres non modifiables (seules les transformations et l'organisation s'appliquent)");
   const params = validerParams(etat, existant.classe, { ...(existant.params as unknown as Brut), ...patch });
+  const effets0: string[] = [];
   const proprietes = p["proprietes"] === undefined ? existant.proprietes : { ...existant.proprietes, ...lireProprietes(p) };
   const suivant = {
     ...existant,
@@ -93,11 +94,19 @@ export function modifierOccurrence(etat: ModeleAtelier, p: Brut, ctx: ContexteCo
     definitionId: p["definitionId"] === undefined ? existant.definitionId : lire.chaineOuNull(p, "definitionId"),
   } as OccurrenceQuelconque;
   if (suivant.definitionId !== null && !etat.definitions[suivant.definitionId]) throw new ErreurCommande("precondition", "definitionId", `définition inconnue : ${suivant.definitionId}`);
+  // Changer d'hôte (D-037) : une ouverture suit le niveau de son nouveau mur ; position et largeur sont contrôlées
+  // sur ce mur par la validation (l'emprise ne sort jamais du mur hôte).
+  if (estOuverture(existant.classe)) {
+    const hote = etat.objets[(suivant as Occurrence<"porte">).params.murHoteId]!;
+    if (hote.niveauId !== existant.niveauId) (suivant as { niveauId: string | null }).niveauId = hote.niveauId;
+    if (hote.niveauId) effets0.push(hote.niveauId);
+  }
   const objets = { ...etat.objets, [id]: suivant };
   let problemes = etat.problemes;
   const effets = effetsVides();
   effets.modifies.push(id);
   if (existant.niveauId) effets.niveauxTouches.push(existant.niveauId);
+  for (const n of effets0) if (!effets.niveauxTouches.includes(n)) effets.niveauxTouches.push(n);
   // Un mur modifié : les ouvertures dont l'emprise sort du nouvel axe passent « à réparer » (R12), jamais supprimées.
   if (existant.classe === "mur") {
     const m = suivant as Occurrence<"mur">;

@@ -46,6 +46,9 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
     case "mur":
       return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
     case "porte":
+      // Le miroir change le côté d'ouverture d'une porte dont le sens est renseigné (D-037).
+      if (t.type === "miroir" && o.params.ouvrant) return { ...o, params: { ...o.params, ouvrant: { ...o.params.ouvrant, cote: o.params.ouvrant.cote === "gauche" ? "droite" : "gauche" } } };
+      return o;
     case "fenetre":
     case "ouverture":
       return o;
@@ -117,10 +120,16 @@ function appliquerEnPlace(etat: ModeleAtelier, selection: OccurrenceQuelconque[]
   const effets: Effets = effetsVides();
   for (const o of selection) {
     if (estOuverture(o.classe)) continue;
-    objets[o.id] = transformerOccurrence(o, t);
+    objets[o.id] = transformerOccurrence(objets[o.id] ?? o, t);
     effets.modifies.push(o.id);
     if (o.niveauId) effets.niveauxTouches.push(o.niveauId);
     if (t.type === "miroir" && o.classe === "mur") {
+      // Sens d'ouverture des portes hébergées (D-037) : le miroir change le côté d'ouverture.
+      for (const x of Object.values(objets)) {
+        if (x.classe !== "porte" || x.params.murHoteId !== o.id || !x.params.ouvrant) continue;
+        objets[x.id] = { ...x, params: { ...x.params, ouvrant: { ...x.params.ouvrant, cote: x.params.ouvrant.cote === "gauche" ? "droite" : "gauche" } } };
+        if (!effets.modifies.includes(x.id)) effets.modifies.push(x.id);
+      }
       for (const ref of referencesVers(etat, o.id)) {
         if (ref.caracteristique === "face-gauche" || ref.caracteristique === "face-droite") {
           const inverse = ref.caracteristique === "face-gauche" ? "face-droite" : "face-gauche";

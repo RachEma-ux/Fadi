@@ -1935,3 +1935,7 @@
 .refext-liste li[data-etat="non-lisible"] {
   border-left-color: #6b46c1;
 }
+
+/* Mur hôte et sens d'ouverture (D-037) */
+.inspecteur-ouverture { display: grid; gap: 0.3rem; margin: 0.6rem 0; }
+.inspecteur-ouverture select { max-width: 100%; }
