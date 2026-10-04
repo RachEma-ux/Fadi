@@ -11,9 +11,10 @@ import { outilDetecterPieces, outilPiece } from "./outils/pieces";
 import { outilJoindreMurs, outilMur, outilScinderMur } from "./outils/murs";
 import { outilDalle } from "./outils/dalles";
 import { outilEscalier } from "./outils/escalier";
+import { outilEspace, outilNiveau, outilZone } from "./outils/espaces";
 
 export const installer: InstallationModule = (r) => {
   for (const d of DESSINATEURS_OBJETS) r.dessinateurs.enregistrer(d);
   r.inspecteur.enregistrer(DESCRIPTEUR_ARCHITECTURE);
-  for (const o of [outilMur(), outilPorte(), outilFenetre(), outilOuverture(), outilPiece(), outilScinderMur(), outilJoindreMurs(), outilDeplacerBaie(), outilDetecterPieces(), outilDalle(), outilEscalier()]) r.outils.enregistrer(o);
+  for (const o of [outilMur(), outilPorte(), outilFenetre(), outilOuverture(), outilPiece(), outilScinderMur(), outilJoindreMurs(), outilDeplacerBaie(), outilDetecterPieces(), outilDalle(), outilEscalier(), outilEspace(), outilZone(), outilNiveau()]) r.outils.enregistrer(o);
 };

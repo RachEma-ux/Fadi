@@ -25,6 +25,8 @@ import {
   type EtatModele,
   type ObjetModele,
   type ObjetNiveau,
+  type PointLocal,
+  type PolygoneAvecTrous,
   type Unite,
 } from "@parcours/atelier-model";
 import type { ChampInspecteur, ContexteAtelier, DescripteurInspecteur, ErreurLisible } from "../socle";
@@ -254,6 +256,8 @@ function champClassification(o: ObjetModele): Champ {
 
 // --- Champs propres aux classes -------------------------------------------------------------------------------
 
+const aireNette = (polys: readonly PolygoneAvecTrous<PointLocal>[]): number => polys.reduce((s, p) => s + aireContour(p.contour) - p.trous.reduce((t, h) => t + aireContour(h.polygone), 0), 0);
+
 function champsPropres(o: ObjetModele, ctx: ContexteAtelier): Champ[] {
   const etat = ctx.etat();
   switch (o.classe) {
@@ -284,9 +288,19 @@ function champsPropres(o: ObjetModele, ctx: ContexteAtelier): Champ[] {
     case "dalle":
       // Types de dalle absents du contrat (`type.definir` limité à mur, porte, fenêtre, ouverture : D-038).
       return [champLecture("typeId", "Type", o.params.typeId ?? null, { provenance: "types de dalle non disponibles au contrat atelier-commands/1 (D-038)" })];
-    case "piece": {
-      const aire = o.params.polygones.reduce((s, p) => s + aireContour(p.contour) - p.trous.reduce((t, h) => t + aireContour(h.polygone), 0), 0);
-      return [champLecture("aire", "Surface (contour courant)", { value: aire, unit: "m²" })];
+    case "piece":
+    case "espace":
+      return [champLecture("aire", "Surface (contour courant)", { value: aireNette(o.params.polygones), unit: "m²" })];
+    case "zone": {
+      const ids = (etat?.relations ?? []).filter((r) => r.type === "contient" && r.sourceId === o.id).map((r) => r.cibleId);
+      const membres = ids.flatMap((id) => {
+        const x = etat?.objets[id];
+        return x?.classe === "piece" || x?.classe === "espace" ? [x] : [];
+      });
+      return [
+        champLecture("contenu", "Contenu", membres.length > 0 ? membres.map((x) => x.params.nom).join(", ") : null, { provenance: "relations « contient » ; modifier le contenu avec l'outil Zone" }),
+        champLecture("aire", "Surface (somme du contenu)", { value: aireNette([...o.params.polygones, ...membres.flatMap((x) => x.params.polygones)]), unit: "m²" }),
+      ];
     }
     case "escalier": {
       const i = indicesEscalier(o, etat);

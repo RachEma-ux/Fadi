@@ -7,12 +7,12 @@
  * Épaisseur et décalage de la sous-face : dernières valeurs saisies, jamais de valeur par défaut (R3). La dalle reste
  * sans type : les types de dalle ne sont pas au contrat `atelier-commands/1` (D-038).
  */
-import { TOLERANCES, type EtatModele, type IdObjet, type ObjetPiece } from "@parcours/atelier-model";
+import type { EtatModele, IdObjet, ObjetPiece } from "@parcours/atelier-model";
 import type { Apercu, ChampSaisie, ContexteAtelier, DefinitionOutil, ErreurLisible, EvenementPlan, FormeApercu, ReactionOutil, SessionOutil } from "../../socle";
-import { activationCreation, champsSegment, commande, contraindrePolaire, controler, coteSegment, definir, enTete, lisible, longueur, P, type Verrous } from "../../plan2d/outils/commun";
-import { formaterValeur } from "../../plan2d/saisie";
-import { distance, pointDansPolygone, versPoint, type Vec } from "../../plan2d/geometrie";
+import { activationCreation, commande, controler, definir, enTete, lisible, longueur, P } from "../../plan2d/outils/commun";
+import { pointDansPolygone, type Vec } from "../../plan2d/geometrie";
 import { aireContour } from "../geometrie";
+import { traceContour } from "./contour";
 import { controlerChoix, controlerSaisie, ecrireMemoire, lireMemoire, type Valeurs } from "./parametres";
 
 const CLE = "creer.dalle";
@@ -20,8 +20,6 @@ const MODES = [
   { valeur: "contour", libelle: "Par contour" },
   { valeur: "piece", libelle: "Depuis une pièce" },
 ] as const;
-
-const confondus = (a: Vec, b: Vec) => distance(a, b) <= TOLERANCES.tolCoincidence;
 
 /** Pièce du niveau dont un polygone contient le point (l'objet sous le pointeur est préféré). */
 export function pieceSousPoint(etat: EtatModele, niveauId: IdObjet, p: Vec, dessous: IdObjet | null): ObjetPiece | null {
@@ -40,10 +38,7 @@ export function pieceSousPoint(etat: EtatModele, niveauId: IdObjet, p: Vec, dess
 
 export function sessionDalle(ctx: ContexteAtelier): SessionOutil {
   let valeurs: Valeurs = lireMemoire(CLE);
-  let points: Vec[] = [];
-  let curseur: Vec | null = null;
-  let brut: Vec | null = null;
-  let verrous: Verrous = {};
+  const trace = traceContour("Dalle");
   let piece: ObjetPiece | null = null;
   let erreurs: readonly ErreurLisible[] = [];
   const mode = () => (valeurs.choix.mode === "piece" ? "piece" : "contour");
@@ -68,13 +63,12 @@ export function sessionDalle(ctx: ContexteAtelier): SessionOutil {
       return { action: "continuer" };
     }
     erreurs = [];
-    points = [];
-    verrous = {};
+    trace.vider();
     ecrireMemoire(CLE, valeurs);
     return { action: "valider", label, commandes: c, terminer: false };
   };
 
-  const fermer = (): ReactionOutil => (points.length >= 3 ? creer(points, [], "Créer une dalle") : refus(lisible("Dalle", "moins de trois sommets", "poser au moins trois points")));
+  const fermer = (): ReactionOutil => (trace.points().length >= 3 ? creer(trace.points(), [], "Créer une dalle") : refus(lisible("Dalle", "moins de trois sommets", "poser au moins trois points")));
 
   const viser = (p: Vec, dessous: IdObjet | null) => {
     const etat = ctx.etat();
@@ -88,8 +82,7 @@ export function sessionDalle(ctx: ContexteAtelier): SessionOutil {
         case "survol":
         case "glisse":
         case "relache":
-          brut = evt.point;
-          curseur = contraindrePolaire(points.at(-1) ?? null, evt.point, verrous);
+          trace.survoler(evt.point);
           viser(evt.point, evt.objetSousPointeur);
           return { action: "continuer" };
         case "appui": {
@@ -99,23 +92,15 @@ export function sessionDalle(ctx: ContexteAtelier): SessionOutil {
             const q = piece.params.polygones.reduce((m, x) => (aireContour(x.contour) > aireContour(m.contour) ? x : m));
             return creer(q.contour, q.trous, `Créer une dalle depuis la pièce ${piece.params.nom}`);
           }
-          const p = contraindrePolaire(points.at(-1) ?? null, evt.point, verrous);
-          const premier = points[0];
-          const dernier = points.at(-1);
-          if (premier && points.length >= 3 && confondus(p, premier)) return fermer();
-          if (dernier && confondus(p, dernier)) return points.length >= 3 ? fermer() : refus(lisible("Dalle", "point confondu avec le précédent", "poser un point distinct"));
-          points = [...points, p];
-          verrous = {};
-          curseur = p;
+          const r = trace.poser(evt.point);
+          if (r === "ferme") return fermer();
+          if (r !== "pose") return refus(r);
           erreurs = [];
           return { action: "continuer" };
         }
         case "touche":
-          if (evt.touche === "Enter" && points.length >= 3) return fermer();
-          if (evt.touche === "Backspace") {
-            points = points.slice(0, -1);
-            verrous = {};
-          }
+          if (evt.touche === "Enter" && trace.points().length >= 3) return fermer();
+          if (evt.touche === "Backspace") trace.retirerDernier();
           return { action: "continuer" };
         case "saisie-texte":
           return { action: "continuer" };
@@ -124,8 +109,7 @@ export function sessionDalle(ctx: ContexteAtelier): SessionOutil {
           if (ko) return refus(ko);
           valeurs = { ...valeurs, choix: { ...valeurs.choix, mode: evt.valeur } };
           ecrireMemoire(CLE, valeurs);
-          points = [];
-          verrous = {};
+          trace.vider();
           erreurs = [];
           return { action: "continuer" };
         }
@@ -137,9 +121,8 @@ export function sessionDalle(ctx: ContexteAtelier): SessionOutil {
             valeurs = { ...valeurs, nombres: { ...valeurs.nombres, [evt.champ]: evt.valeur } };
             ecrireMemoire(CLE, valeurs);
           } else {
-            if (evt.champ === "longueur" && !(evt.valeur > 0)) return refus(lisible("Longueur", "valeur nulle ou négative", "taper une longueur positive (l'angle donne le sens)"));
-            verrous = { ...verrous, [evt.champ]: evt.valeur };
-            if (brut) curseur = contraindrePolaire(points.at(-1) ?? null, brut, verrous);
+            const ko = trace.verrouiller(evt.champ, evt.valeur);
+            if (ko) return refus(ko);
           }
           erreurs = [];
           return { action: "continuer" };
@@ -151,15 +134,12 @@ export function sessionDalle(ctx: ContexteAtelier): SessionOutil {
       const formes: FormeApercu[] = [];
       if (mode() === "piece" && piece) {
         for (const q of piece.params.polygones) formes.push({ forme: "polygone", points: q.contour, style }, ...q.trous.map((h): FormeApercu => ({ forme: "polygone", points: h.polygone, style: "fantome" })));
-      } else if (points.length > 0) {
-        const tous = curseur && !confondus(curseur, points.at(-1) as Vec) ? [...points, curseur] : points;
-        formes.push({ forme: tous.length >= 3 ? "polygone" : "polyligne", points: tous.map(versPoint), style } as FormeApercu);
-        if (curseur) formes.push(coteSegment(points.at(-1) as Vec, curseur));
-        if (tous.length >= 3) formes.push({ forme: "texte", position: versPoint(tous[0] as Vec), texte: `${formaterValeur(aireContour(tous), "")} m²`, style: "cote" });
+      } else if (mode() === "contour") {
+        formes.push(...trace.formes(style));
       }
       const champs: ChampSaisie[] = [
         champMode(),
-        ...(mode() === "contour" && points.length > 0 ? champsSegment(points.at(-1) as Vec, curseur, verrous) : []),
+        ...(mode() === "contour" ? trace.champs() : []),
         { champ: "epaisseur", libelle: "Épaisseur", unite: "m", valeur: valeurs.nombres.epaisseur ?? null },
         { champ: "decalageBase", libelle: "Décalage de la sous-face", unite: "m", valeur: valeurs.nombres.decalageBase ?? null },
       ];
@@ -168,14 +148,13 @@ export function sessionDalle(ctx: ContexteAtelier): SessionOutil {
           ? piece
             ? `Cliquez pour créer la dalle de la pièce ${piece.params.nom}.`
             : "Survolez une pièce du niveau actif."
-          : points.length === 0
+          : trace.points().length === 0
             ? "Cliquez le premier sommet du contour de la dalle."
             : "Sommet suivant ; premier point ou Entrée pour fermer le contour.";
       return { formes, champs, consigne, erreurs };
     },
     abandonner() {
-      points = [];
-      verrous = {};
+      trace.vider();
       piece = null;
       erreurs = [];
     },
