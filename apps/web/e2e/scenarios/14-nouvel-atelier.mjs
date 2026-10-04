@@ -567,3 +567,180 @@ export async function pousserTirer(sc) {
   await page.locator('[data-testid="atl-vue-plan"]').click();
   check("nouvel atelier 3D : solide et mur modifié rendus en 3D à la révision courante, aucune erreur JavaScript", visible && consoleErrors.length === erreursAvant, consoleErrors.slice(erreursAvant).join(" | "));
 }
+
+/**
+ * Mesures et toucher de la vue 3D (lot 3b, L3b.3) sur P.118. Mesures `⏱` imprimées (jamais annoncées avant, R14) :
+ * ouverture de la vue 3D, construction de la scène, sélection au clic, déplacement par le manipulateur (jusqu'à la
+ * révision serveur), orbite (p95 de l'intervalle entre images pendant un glisser continu, et p95 du temps de rendu
+ * côté processeur), enregistrement (pousser / tirer jusqu'à la révision serveur). Puis téléphone tactile (contexte
+ * `hasTouch`) : un doigt fait tourner la vue, deux doigts qui s'écartent rapprochent la caméra, un toucher
+ * sélectionne ; cibles d'au moins 44 px dans la barre de la vue 3D.
+ */
+export async function mesures3d(sc) {
+  const { BASE, browser, page, consoleErrors, check, measure, measures } = sc;
+  const { email, atelierUrl, atelierPid } = sc;
+  const erreursAvant = consoleErrors.length;
+  const url = `${atelierUrl}?module=atelier&version=nouveau`;
+  const modele = async (p = page) => (await p.request.get(`${BASE}/projects/${atelierPid}/atelier/model`)).json();
+  const attendreModele = async (predicat, p = page, delaiMs = 20000) => {
+    const fin = Date.now() + delaiMs;
+    let m = await modele(p);
+    while (!predicat(m) && Date.now() < fin) {
+      await p.waitForTimeout(200);
+      m = await modele(p);
+    }
+    return m;
+  };
+  const attr = async (nom, p = page) => p.locator('[data-testid="atl-3d-etat"]').getAttribute(`data-${nom}`);
+  const publier = (label, ms) => {
+    measures.push({ label, ms });
+    console.log(`⏱ ${label} : ${ms} ms`);
+  };
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(url);
+  await page.waitForSelector('[data-testid="atelier-interface"]', { timeout: 30000 });
+  await measure("vue 3D : bascule et première image (tous les niveaux de P.118)", async () => {
+    await page.locator('[data-testid="atl-vue-3d"]').click();
+    await page.waitForFunction(() => Number(document.querySelector('[data-testid="atl-3d-etat"]')?.getAttribute("data-triangles")) > 0, null, { timeout: 30000 });
+  });
+  publier("vue 3D : construction de la scène (prismes, fusion, arêtes)", Number(await attr("scene-ms")));
+
+  // Sélection au clic : premier objet trouvé sur une grille de points autour du centre.
+  // page.mouse ne fait pas défiler : le canevas est amené à l'écran avant de lire sa boîte.
+  const toile = page.locator('[data-testid="atl-3d-toile"]');
+  await toile.scrollIntoViewIfNeeded();
+  const b = await toile.boundingBox();
+  let selectionMs = null;
+  const pt = { x: 0, y: 0 };
+  for (const [fx, fy] of [[0.5, 0.5], [0.45, 0.55], [0.55, 0.45], [0.4, 0.5], [0.6, 0.5], [0.5, 0.6], [0.5, 0.4]]) {
+    pt.x = b.x + b.width * fx;
+    pt.y = b.y + b.height * fy;
+    const t0 = Date.now();
+    await page.mouse.click(pt.x, pt.y);
+    const ok = await page.waitForFunction(() => Number(document.querySelector('[data-testid="atl-3d-etat"]')?.getAttribute("data-selection")) > 0, null, { timeout: 3000 }).then(() => true).catch(() => false);
+    if (ok) {
+      selectionMs = Date.now() - t0;
+      break;
+    }
+  }
+  if (selectionMs !== null) publier("vue 3D : sélection au clic (jusqu'à la surbrillance)", selectionMs);
+  const choisi = await page.locator('[data-testid="atl-inspecteur-objet"]').getAttribute("data-objet").catch(() => null);
+
+  // Déplacement par le manipulateur (objet sélectionné, glisser de 40 px), jusqu'à la révision serveur ; annulé ensuite.
+  let deplacementMs = null;
+  const avant = await modele();
+  // Le glisser part du point qui a sélectionné l'objet (il est donc sous le pointeur et sélectionné).
+  if (selectionMs !== null && choisi && !["porte", "fenetre", "ouverture"].includes(avant.objets[choisi]?.classe)) {
+    const t0 = Date.now();
+    await page.mouse.move(pt.x, pt.y);
+    await page.mouse.down();
+    for (let i = 1; i <= 4; i++) await page.mouse.move(pt.x + i * 10, pt.y);
+    await page.mouse.up();
+    const apres = await attendreModele((m) => m.revision > avant.revision, page, 10000);
+    if (apres.revision > avant.revision) {
+      deplacementMs = Date.now() - t0;
+      publier("vue 3D : déplacement par le manipulateur (jusqu'à la révision serveur)", deplacementMs);
+      await page.waitForFunction(() => /^\s*0 lot\(s\) en attente d'envoi/.test(document.querySelector('[data-testid="atl-compte-attente"]')?.textContent ?? ""), null, { timeout: 20000 }).catch(() => null);
+      await page.locator('[data-testid="atl-annuler"]').click();
+      await attendreModele((m) => m.revision > apres.revision, page, 10000);
+    }
+  }
+
+  // Orbite : glisser continu de 120 pas sur une zone vide (bord haut de la vue), intervalles entre images mesurés dans la page.
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => {
+    window.__intervalles = [];
+    let precedent = performance.now();
+    const boucle = (t) => {
+      window.__intervalles.push(t - precedent);
+      precedent = t;
+      if (window.__intervalles.length < 400) requestAnimationFrame(boucle);
+    };
+    requestAnimationFrame(boucle);
+  });
+  await toile.scrollIntoViewIfNeeded();
+  const bo = await toile.boundingBox();
+  const x0 = bo.x + bo.width * 0.15;
+  const y0 = Math.max(bo.y, 0) + 12;
+  await page.mouse.move(x0, y0);
+  await page.mouse.down();
+  for (let i = 1; i <= 120; i++) await page.mouse.move(x0 + i * 4, y0 + (i % 2));
+  await page.mouse.up();
+  const intervalles = await page.evaluate(() => window.__intervalles.slice(1));
+  const tri = [...intervalles].sort((a, c) => a - c);
+  const p95Images = tri.length ? Math.round(tri[Math.min(tri.length - 1, Math.ceil(0.95 * tri.length) - 1)]) : null;
+  const p95Rendu = Number(await attr("trame-p95"));
+  const nTrames = Number(await attr("trames"));
+  if (p95Images !== null) publier(`vue 3D : orbite, p95 de l'intervalle entre images (${tri.length} images)`, p95Images);
+  publier(`vue 3D : orbite, p95 du temps de rendu processeur (${nTrames} trames)`, Math.round(p95Rendu * 100) / 100);
+
+  // Enregistrement : pousser / tirer d'un mur à hauteur donnée, valeur tapée → révision serveur.
+  const m0 = await modele();
+  // Le navigateur ne liste que le niveau actif : mur de ce niveau de préférence, sinon on bascule sur le sien.
+  const niveauActif = (await page.locator('[data-testid^="atl-niveau-"][aria-pressed="true"]').first().getAttribute("data-testid"))?.slice("atl-niveau-".length);
+  const poussable = (o) => o.classe === "mur" && o.params.hauteur && !o.params.niveauHaut;
+  const mur = Object.values(m0.objets).find((o) => poussable(o) && o.niveauId === niveauActif) ?? Object.values(m0.objets).find(poussable);
+  let enregistrementMs = null;
+  if (mur) {
+    if (mur.niveauId !== niveauActif) await page.locator(`[data-testid="atl-niveau-${mur.niveauId}"]`).click();
+    await page.locator('[data-testid="atl-nav-filtre"]').fill(mur.id);
+    await page.locator(`[data-testid="atl-objet-${mur.id}"]`).click();
+    await page.locator('[data-testid="atl-nav-filtre"]').fill("");
+    await page.locator('[data-testid="atl-affichage-complet"]').click();
+    await page.locator('[data-testid="atl-outil-famille-modifier"]').click();
+    await page.locator('[data-testid="atl-outil-modifier.pousser"]').click();
+    const champ = page.locator('[data-testid="atl-precision-hauteur"]');
+    await champ.fill(String(mur.params.hauteur.value + 0.1).replace(".", ","));
+    const t0 = Date.now();
+    await champ.press("Enter");
+    const apres = await attendreModele((m) => m.revision > m0.revision);
+    if (apres.revision > m0.revision) enregistrementMs = Date.now() - t0;
+    if (enregistrementMs !== null) publier("vue 3D : enregistrement d'un pousser / tirer (jusqu'à la révision serveur)", enregistrementMs);
+  }
+  check(
+    "nouvel atelier 3D : mesures imprimées — ouverture, scène, sélection, déplacement, orbite p95 (images et rendu), enregistrement",
+    p95Images !== null && tri.length >= 60 && nTrames >= 60 && Number.isFinite(p95Rendu) && selectionMs !== null && enregistrementMs !== null,
+    `sélection ${selectionMs} ms, déplacement ${deplacementMs ?? "non mesuré"} ms, orbite p95 ${p95Images} ms / rendu ${p95Rendu} ms (${nTrames} trames), enregistrement ${enregistrementMs} ms`,
+  );
+  await page.locator('[data-testid="atl-vue-plan"]').click();
+
+  // Téléphone tactile : un doigt (orbite), deux doigts (pincer), toucher (sélection), cibles ≥ 44 px.
+  const ctxTel = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
+  const tel = await ctxTel.newPage();
+  tel.on("pageerror", (e) => consoleErrors.push(e.message));
+  await tel.goto(`${BASE}/connexion`);
+  await tel.fill('input[name="email"]', email);
+  await tel.fill('input[name="password"]', "scenario-pass-123");
+  await tel.click('button[type="submit"]');
+  await tel.waitForURL(/\/(projets|accueil)/);
+  await tel.goto(url);
+  await tel.waitForSelector('[data-testid="atelier-interface"]', { timeout: 30000 });
+  await tel.locator('[data-testid="atl-vue-3d"]').tap();
+  await tel.waitForFunction(() => Number(document.querySelector('[data-testid="atl-3d-etat"]')?.getAttribute("data-triangles")) > 0, null, { timeout: 30000 });
+  const cdp = await ctxTel.newCDPSession(tel);
+  const bt = await tel.locator('[data-testid="atl-3d-toile"]').boundingBox();
+  const cx = bt.x + bt.width / 2;
+  const cy = bt.y + bt.height / 2;
+  const toucher = (type, points) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: points.map(([x, y], id) => ({ x, y, id, radiusX: 4, radiusY: 4, force: 1 })) });
+  const az0 = Number(await attr("azimut", tel));
+  await toucher("touchStart", [[cx - 60, cy]]);
+  for (let i = 1; i <= 10; i++) await toucher("touchMove", [[cx - 60 + i * 12, cy]]);
+  await toucher("touchEnd", []);
+  await tel.waitForTimeout(200);
+  const az1 = Number(await attr("azimut", tel));
+  const d0 = Number(await attr("distance", tel));
+  await toucher("touchStart", [[cx - 30, cy], [cx + 30, cy]]);
+  for (let i = 1; i <= 10; i++) await toucher("touchMove", [[cx - 30 - i * 8, cy], [cx + 30 + i * 8, cy]]);
+  await toucher("touchEnd", []);
+  await tel.waitForTimeout(200);
+  const d1 = Number(await attr("distance", tel));
+  const cibles = await tel.locator('[data-testid="atl-3d"] .atl-3d-barre button, [data-testid="atl-3d"] .atl-3d-barre select').evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height < 44).map((e) => e.textContent?.trim() || e.getAttribute("data-testid")));
+  check(
+    "nouvel atelier 3D : téléphone tactile — un doigt fait tourner la vue, deux doigts écartés rapprochent la caméra, cibles de la barre ≥ 44 px",
+    az1 !== az0 && d1 < d0 && cibles.length === 0,
+    `azimut ${az0}° → ${az1}°, distance ${d0} → ${d1} m, cibles < 44 px : ${cibles.join(", ") || "aucune"}`,
+  );
+  await ctxTel.close();
+  check("nouvel atelier 3D : aucune erreur JavaScript pendant les mesures et le toucher", consoleErrors.length === erreursAvant, consoleErrors.slice(erreursAvant).join(" | "));
+}

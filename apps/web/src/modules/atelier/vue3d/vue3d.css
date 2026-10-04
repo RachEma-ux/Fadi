@@ -65,3 +65,20 @@
     width: 120px;
   }
 }
+/* Cibles tactiles (L3b.3) : 44 px au téléphone et sur écran tactile (jeton --atl-cible). */
+.atl.atl-tel .atl-3d-barre button,
+.atl.atl-tel .atl-3d-barre select,
+.atl.atl-tel .atl-3d-barre input[type="range"] {
+  min-height: var(--atl-cible, 44px);
+}
+@media (pointer: coarse) {
+  .atl .atl-3d .atl-3d-barre button,
+  .atl .atl-3d .atl-3d-barre select,
+  .atl .atl-3d .atl-3d-barre input[type="range"] {
+    min-height: var(--atl-cible, 44px);
+  }
+}
+.atl-immersif-3d .atl-3d-cadre,
+.atl[data-immersif="true"] .atl-3d-cadre {
+  min-height: 70vh;
+}

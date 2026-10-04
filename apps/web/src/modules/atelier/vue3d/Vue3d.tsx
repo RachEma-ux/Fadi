@@ -17,6 +17,7 @@ import { libelleClasse } from "../ui/navigateur";
 import { commandesDeplacement3d, contraindre } from "./manipulateur";
 import { CHAMP_GLISSER, ID_EXTRUDER, ID_POUSSER } from "./outils";
 import { arrondirGlisser, ciblePoussee, commandesExtrusion, commandesPoussee, contourExtrudable, etatApercu, PAS_GLISSER } from "./pousser";
+import { MesuresTrames } from "./mesures";
 import { creerRendu, type InfoRendu, type Moteur, type Rendu3d } from "./rendu";
 import { hauteurCoupeParDefaut, LIBELLES_MODE, MODES_3D, niveauxDuModele, sceneDuModele, type Mode3d } from "./scene";
 import "./vue3d.css";
@@ -68,6 +69,10 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
   const gestes = useRef(new Map<number, Geste>());
   const pincer = useRef<number | null>(null);
   const cadree = useRef(false);
+  // Mesures (L3b.3) : durée de chaque trame rendue, durée de construction de la scène, ouverture.
+  const trames = useRef(new MesuresTrames());
+  const debut = useRef(performance.now());
+  const [mesures, setMesures] = useState<{ p95: number | null; n: number; sceneMs: number | null; ouvertureMs: number | null }>({ p95: null, n: 0, sceneMs: null, ouvertureMs: null });
 
   const niveauActif = etatVue.niveauActifId;
   const niveaux = useMemo(() => (etat ? niveauxDuModele(etat) : []), [etat]);
@@ -86,7 +91,13 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
     if (demande.current !== null) return;
     demande.current = requestAnimationFrame(() => {
       demande.current = null;
-      if (rendu.current) setInfo(rendu.current.rendre());
+      const r = rendu.current;
+      if (!r) return;
+      const t0 = performance.now();
+      const i = r.rendre();
+      trames.current.ajouter(performance.now() - t0);
+      setInfo(i);
+      setMesures((m) => ({ ...m, p95: trames.current.quantile(0.95), n: trames.current.nombre, ouvertureMs: m.ouvertureMs ?? (i.triangles > 0 ? Math.round(performance.now() - debut.current) : null) }));
     });
   }, []);
 
@@ -132,7 +143,10 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
   useEffect(() => {
     const r = rendu.current;
     if (!r || !scene) return;
+    const t0 = performance.now();
     r.afficher(scene, { selection, coupe: hCoupe });
+    const sceneMs = performance.now() - t0;
+    setMesures((m) => ({ ...m, sceneMs: Math.round(sceneMs) }));
     if (!cadree.current) {
       r.cadrer(scene.bornes);
       cadree.current = true;
@@ -424,6 +438,13 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
         data-objets={info?.objets ?? 0}
         data-niveaux={ids.join(",")}
         data-revision={etat?.revision ?? ""}
+        data-selection={sel.ids.length}
+        data-azimut={rendu.current ? Math.round((rendu.current.lireOrbite().azimut * 180) / Math.PI) : ""}
+        data-distance={rendu.current ? rendu.current.lireOrbite().distance.toFixed(2) : ""}
+        data-trame-p95={mesures.p95 === null ? "" : mesures.p95.toFixed(2)}
+        data-trames={mesures.n}
+        data-scene-ms={mesures.sceneMs ?? ""}
+        data-ouverture-ms={mesures.ouvertureMs ?? ""}
       >
         {info ? `${info.moteur === "webgpu" ? "WebGPU" : "WebGL2"} · ${info.objets} objet(s) · ${info.triangles} triangle(s)` : "Préparation de la vue 3D…"}
         {scene && scene.diagnostics.length > 0 ? ` · ${scene.diagnostics.length} élément(s) signalé(s)` : ""}

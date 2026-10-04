@@ -1,5 +1,5 @@
 {
-  "controles": 369,
+  "controles": 372,
   "parFichier": {
     "00-compte.mjs": 0,
     "01-import-exemple.mjs": 17,
@@ -14,7 +14,7 @@
     "10-accueil-parametres.mjs": 19,
     "11-accessibilite.mjs": 49,
     "12-mesures.mjs": 1,
-    "14-nouvel-atelier.mjs": 42
+    "14-nouvel-atelier.mjs": 45
   },
   "historique": [
     {
@@ -46,6 +46,11 @@
       "date": "2026-10-04",
       "controles": 369,
       "motif": "L3b.2 (#68) : 14-nouvel-atelier.mjs#pousserTirer, hauteur d'un mur par glisser vertical en 3D puis valeur tapée (persistées), rectangle extrudé à 0,90 m en solide, rendu 3D à la révision courante (+5)."
+    },
+    {
+      "date": "2026-10-04",
+      "controles": 372,
+      "motif": "L3b.3 (#69) : 14-nouvel-atelier.mjs#mesures3d, mesures ⏱ imprimées (ouverture, scène, sélection, déplacement, orbite p95, enregistrement), téléphone tactile (un doigt, pincer, cibles ≥ 44 px), aucune erreur JavaScript (+3)."
     }
   ]
 }
