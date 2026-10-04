@@ -24,11 +24,11 @@ sur `lot/3b-3d` après la fusion précédente.
 ## Acceptation (cahier §7, lot 3b)
 
 Preuve : scénario `apps/web/e2e/scenarios/14-nouvel-atelier.mjs`, segments `vue3d`, `pousserTirer`, `mesures3d`
-et `vuesTechniques` (CI de la PR #75, RUN_L3B4) ; total e2e 378 contrôles, conforme à `e2e/attendu.json`.
+et `vuesTechniques` (CI de la PR #75, [run 37206826263](https://github.com/RachEma-ux/Fadi/actions/runs/37206826263), jobs validate, e2e, image verts) ; total e2e 378 contrôles, conforme à `e2e/attendu.json`.
 
 | Critère | Preuve (libellé du contrôle) |
 | --- | --- |
-| Chaque niveau × chaque mode rendu sans vue vide ni erreur JavaScript | « nouvel atelier 3D : 6 niveaux × 3 modes (volume, éclaté, coupe) rendus sans vue vide » ; « aucune erreur JavaScript pendant la vue 3D, retour au plan 2D » |
+| Chaque niveau × chaque mode rendu sans vue vide ni erreur JavaScript | « nouvel atelier 3D : 6 niveaux × 3 modes (volume, éclaté, coupe) rendus sans vue vide » (18 rendus) ; « aucune erreur JavaScript pendant la vue 3D, retour au plan 2D » |
 | Hauteur d'un mur modifiée par pousser / tirer et persistée | « pousser / tirer — glisser vers le haut augmente la hauteur du mur, persistée sur le serveur (nouvelle révision) » ; « hauteur tapée 3,20 m persistée exactement » |
 | Budget de trame mesuré et publié | « mesures imprimées — ouverture, scène, sélection, déplacement, orbite p95 (images et rendu), enregistrement » ; valeurs ci-dessous |
 | 3D utilisable au toucher | « téléphone tactile — un doigt fait tourner la vue, deux doigts écartés rapprochent la caméra, cibles de la barre ≥ 44 px » (azimut −45° → −128°, distance 143,55 → 39,15 m, aucune cible < 44 px) |
