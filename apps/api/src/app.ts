@@ -11,6 +11,7 @@ import { projectsRouter } from "./routes/projects.js";
 import { examplesRouter } from "./routes/examples.js";
 import { libraryRouter } from "./routes/library.js";
 import { notificationsRouter } from "./routes/notifications.js";
+import { atelierCommandsRouter } from "./routes/atelier-commands.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
 const API_PREFIX = /^\/(auth|projects|examples|library|notifications|health)(\/|$)/;
@@ -55,6 +56,8 @@ export function createApp() {
   const apiLimit = Number(process.env["API_RATE_LIMIT"] ?? 300);
   const apiLimiter = rateLimit({ windowMs: 60 * 1000, limit: apiLimit, standardHeaders: true, legacyHeaders: false });
   app.use("/projects", apiLimiter, projectsRouter);
+  // Nouvel Atelier (§5.4) : après projectsRouter, dont la limite couvre déjà `/projects` ; l'ancien `/atelier/store` y reste servi.
+  app.use("/projects/:projectId/atelier", atelierCommandsRouter);
   app.use("/examples", apiLimiter, examplesRouter);
   app.use("/library", apiLimiter, libraryRouter);
   app.use("/notifications", apiLimiter, notificationsRouter);
