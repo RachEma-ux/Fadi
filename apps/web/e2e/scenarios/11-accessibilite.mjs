@@ -22,14 +22,14 @@ export async function ecrans(sc) {
     ["étape 02", `${exampleUrl}?module=parcours&etape=2`, ".reference-answers"],
     ["étape 02 (variante, formulaire)", `${variantUrl}?module=parcours&etape=2`, "#biz-f1"],
     ["étape 06", `${exampleUrl}?module=parcours&etape=6`, ".programme-case"],
-    ["étape 10", `${exampleUrl}?module=parcours&etape=10`, '#atelier-toolbar[data-ready="1"]'],
+    ["étape 10", `${exampleUrl}?module=parcours&etape=10`, '.nouvel-atelier [data-testid="plan2d-toile"]'],
     ["étape 14", `${exampleUrl}?module=parcours&etape=14`, ".reference-answers .ex81-budget"],
     ["étape 14 (variante, formulaire)", `${variantUrl}?module=parcours&etape=14`, ".biz-kpis"],
     ["étape 17 (variante)", `${variantUrl}?module=parcours&etape=17`, ".biz-kpi"],
     ["étape 19", `${exampleUrl}?module=parcours&etape=19`, ".reference-answers"],
     ["étape 19 (variante, décision)", `${variantUrl}?module=parcours&etape=19`, ".decision-grid"],
     ["programmation", `${exampleUrl}?module=programmation`, ".programme-case"],
-    ["atelier", `${exampleUrl}?module=atelier`, '#atelier-toolbar[data-ready="1"]'],
+    ["atelier", `${exampleUrl}?module=atelier`, '.nouvel-atelier [data-testid="plan2d-toile"]'],
     ["analyses", `${exampleUrl}?module=analyses`, ".analyses-checks"],
     ["documents", `${exampleUrl}?module=documents`, ".documents-table"],
     ["collaboration", `${exampleUrl}?module=collaboration`, ".members-panel"],
@@ -64,18 +64,21 @@ export async function ecrans(sc) {
     }
   }
   await ctxAnon.close();
-  // Au-delà des règles automatisables : clavier sur la barre d'outils de l'Atelier (motif ARIA « tabs », flèches), et audit axe du
-  // document de l'outil Parcelle (prototype conservé tel quel) — à titre de rapport, non bloquant : ses écarts sont ceux du
-  // prototype, listés ici pour la revue manuelle (clavier, toucher, zoom) que l'automatisation ne remplace pas.
+  // Au-delà des règles automatisables : clavier dans l'Atelier (raccourci d'outil depuis la zone de plan, Échap rend la
+  // sélection), et audit axe du document de l'outil Parcelle (prototype conservé tel quel) — à titre de rapport, non
+  // bloquant : ses écarts sont ceux du prototype, listés ici pour la revue manuelle (clavier, toucher, zoom) que
+  // l'automatisation ne remplace pas.
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(`${atelierUrl}?module=atelier`);
-  await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
-  await page.locator('#atelier-toolbar [role="tab"][aria-selected="true"]').first().focus();
-  const tabBefore = await page.evaluate(() => document.activeElement?.textContent?.trim());
-  await page.keyboard.press("ArrowRight");
-  await page.waitForTimeout(200);
-  const tabAfter = await page.evaluate(() => ({ text: document.activeElement?.textContent?.trim(), selected: document.activeElement?.getAttribute("aria-selected"), role: document.activeElement?.getAttribute("role") }));
-  check("clavier · barre d'outils de l'Atelier : flèche droite → onglet suivant focalisé et sélectionné (rôle tab)", tabAfter.role === "tab" && tabAfter.selected === "true" && tabAfter.text !== tabBefore, `${tabBefore} → ${tabAfter.text}`);
+  await page.waitForSelector('[data-testid="plan2d-toile"]', { timeout: 30000 });
+  await page.locator('[data-testid="plan2d-toile"]').focus();
+  await page.keyboard.press("m");
+  await page.waitForFunction(() => document.querySelector('[data-testid="atl-puce-outil"]')?.textContent?.includes("Mur"), null, { timeout: 5000 }).catch(() => null);
+  const outilClavier = await page.locator('[data-testid="atl-puce-outil"]').textContent();
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(() => document.querySelector('[data-testid="atl-puce-outil"]')?.textContent?.includes("Sélection"), null, { timeout: 5000 }).catch(() => null);
+  const outilApres = await page.locator('[data-testid="atl-puce-outil"]').textContent();
+  check("clavier · Atelier : M depuis la zone de plan → outil Mur actif, Échap → retour à la sélection (focus conservé dans la zone)", /Mur/.test(outilClavier ?? "") && /Sélection/.test(outilApres ?? "") && (await page.evaluate(() => !!document.activeElement?.closest('[data-testid="plan2d-zone"]'))), `${outilClavier} → ${outilApres}`);
   await page.goto(`${exampleUrl}?module=parcours&etape=1`);
   await page.waitForFunction(() => document.querySelector(".parcelle-tool iframe")?.contentWindow?.ParcoursParcel?.ready, null, { timeout: 30000 });
   const parcelleFrame = page.frames().find((f) => /\/parcelle\//.test(f.url()));

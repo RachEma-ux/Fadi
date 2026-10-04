@@ -40,10 +40,10 @@ export async function etape01Exemple(sc) {
   await borneX.dispatchEvent("change");
   await page.waitForFunction(() => /Conflit avec le bâtiment dessiné/.test(document.querySelector(".parcelle-status")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
   check("variante étape 01 : borne déplacée → « Conflit avec le bâtiment dessiné » (motif du prototype)", (await page.locator(".v62-alert").textContent().catch(() => "")).includes("Les bornes diffèrent et un bâtiment est déjà dessiné"));
+  // La parcelle du modèle typé (objet `parcelle`, sommets cadastraux) : lue sur le serveur.
   const npAfterConflict = await page.evaluate(async (pid) => {
-    const parcels = await (await fetch(`/projects/${pid}/parcels`, { credentials: "include" })).json();
-    const store = await (await fetch(`/projects/${pid}/atelier/store`, { credentials: "include" })).json();
-    return store.entries[`design.v13.project.${parcels.transmission.nativeId}.nativeParcel`]?.vertices?.[0]?.[0];
+    const m = await (await fetch(`/projects/${pid}/atelier/model`, { credentials: "include" })).json();
+    return Object.values(m.objets).find((o) => o.classe === "parcelle")?.params?.sommetsCadastraux?.[0]?.x;
   }, variantPid);
   check("variante étape 01 : le modèle n'est pas déplacé par le conflit (B.266 inchangée)", Math.abs(npAfterConflict - 321946.82) < 1e-6, String(npAfterConflict));
   await borneX.fill(borneBefore);

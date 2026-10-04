@@ -144,11 +144,11 @@ export async function telephone(sc) {
   await page.screenshot({ path: `${OUT}/01-mobile.png`, fullPage: true });
   const noHorizontalScroll = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
   check("téléphone : pas de défilement horizontal", noHorizontalScroll);
-  // Étape 10 sur téléphone : la page est l'Atelier Architectural (bandeau, barre d'outils, dessin), enveloppe effacée.
+  // Étape 10 sur téléphone : la page est l'Atelier Architectural (bandeau, outils, zone de plan), enveloppe effacée.
   await page.goto(`${exampleUrl}?module=parcours&etape=10`);
-  await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+  await page.waitForSelector('.nouvel-atelier [data-testid="plan2d-toile"]', { timeout: 30000 });
   await page.waitForTimeout(600);
   await page.screenshot({ path: `${OUT}/10-mobile.png`, fullPage: false });
-  check("téléphone étape 10 : indicateur permanent de l'outil / onglet actif dans la barre d'outils, rangées défilantes signalées", /^(Outil|Onglet) : /.test((await page.locator("#fadi-active-tool").textContent().catch(() => "")) || "") && (await page.locator(".atelier-toolbar-main.is-scrollable").count()) === 1, await page.locator("#fadi-active-tool").textContent().catch(() => "absent"));
-  check("téléphone étape 10 : bandeau « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », enveloppe effacée, dessin sur toute la largeur", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && !(await page.locator(".module-nav").isVisible()) && (await page.locator("#nativeDesignerRoot").evaluate((e) => Math.round(e.getBoundingClientRect().width))) >= 380);
+  check("téléphone étape 10 : disposition téléphone de l'Atelier, indicateur permanent de l'outil actif (« Sélection ») et onglets des repères", (await page.locator(".nouvel-atelier .atl.atl-tel").count()) === 1 && /Sélection/.test((await page.locator('[data-testid="atl-puce-outil"]').textContent().catch(() => "")) || "") && (await page.locator(".atl-tel-outils").count()) === 1, await page.locator('[data-testid="atl-puce-outil"]').textContent().catch(() => "absent"));
+  check("téléphone étape 10 : bandeau « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », enveloppe effacée, dessin sur toute la largeur", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && !(await page.locator(".module-nav").isVisible()) && (await page.locator(".nouvel-atelier").evaluate((e) => Math.round(e.getBoundingClientRect().width))) >= 380);
 }

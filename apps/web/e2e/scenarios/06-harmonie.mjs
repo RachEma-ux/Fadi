@@ -66,12 +66,11 @@ export async function etape02(sc) {
 export async function etape10Harmonie(sc) {
   const { OUT, page, check } = sc;
   const { exampleUrl, variantUrl, examplePid } = sc;
-  // Référence, étape 10 : la page est l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; « Analyser → Harmonie » ouvre la sous-page avec le panneau de l'exemple
+  // Référence, étape 10 : la page est l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; le bouton « Harmonie » du bandeau de l'Atelier ouvre la sous-page avec le panneau de l'exemple
   // (récit, « Lire le bilan du bâtiment conçu » / « Voir les capacités et ambiances » / « Exporter le bilan »).
   await page.goto(`${exampleUrl}?module=parcours&etape=10`);
-  await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
+  await page.waitForSelector('.nouvel-atelier [data-testid="plan2d-toile"]', { timeout: 30000 });
   check("étape 10 (référence) : page « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », enveloppe de Fadi effacée, titre de l'étape replié sous le dessin", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && !(await page.locator(".app-sidebar").isVisible()) && (await page.locator(".stage10-fold > summary").textContent()) === "Étude de capacité architecturale");
-  await page.locator('#atelier-toolbar [data-atab="analyse"]').click();
   await page.locator("#atelier-harmonie-button").click();
   await page.waitForFunction(() => !document.getElementById("atelier-harmonie-page")?.hidden);
   await page.evaluate(() => { document.querySelector(".h7-panel-reference").open = true; });
@@ -84,13 +83,12 @@ export async function etape10Harmonie(sc) {
   check("étape 10 : « ← » du bandeau → vue d'ensemble, enveloppe de Fadi de retour", !(await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && (await page.locator(".module-nav").isVisible()));
   // Variante (copie modifiable), étape 10 : propositions localisées sur les locaux du modèle (flow-v62 / h7-app), panneau Harmonie généré.
   await page.goto(`${variantUrl}?module=parcours&etape=10`);
-  await page.waitForFunction(() => document.getElementById("viewer-info")?.textContent?.includes("EPSG"), null, { timeout: 30000 });
-  check("étape 10 : l'Atelier est monté dans l'étape (même moteur)", (await page.locator(".native-atelier #viewer-info").count()) === 1);
-  // Sous-page « Harmonie du bâtiment » (V8.4) : depuis le bouton « Harmonie » du groupe Analyser de la barre d'outils native
-  await page.locator('#atelier-toolbar [data-atab="analyse"]').click();
+  await page.waitForSelector('.nouvel-atelier [data-testid="plan2d-toile"]', { timeout: 30000 });
+  check("étape 10 : l'Atelier est monté dans l'étape, bandeau « Atelier Architectural · ÉTAPE 10 / 21 »", (await page.locator('.nouvel-atelier [data-testid="atl-bandeau"]').textContent()) === "Atelier Architectural · ÉTAPE 10 / 21");
+  // Sous-page « Harmonie du bâtiment » (V8.4) : depuis le bouton « Harmonie » du bandeau de l'Atelier
   await page.locator("#atelier-harmonie-button").click();
   await page.waitForFunction(() => !document.getElementById("atelier-harmonie-page")?.hidden);
-  check("étape 10 : « Analyser → Harmonie » ouvre la sous-page « Harmonie du bâtiment » (en-tête, 3 rubriques, Atelier masqué)", (await page.locator("#ah84-title").textContent()) === "Harmonie du bâtiment" && (await page.locator(".ah84-links button").count()) === 3 && !(await page.locator(".native-atelier").isVisible()));
+  check("étape 10 : « Harmonie » ouvre la sous-page « Harmonie du bâtiment » (en-tête, 3 rubriques, Atelier masqué)", (await page.locator("#ah84-title").textContent()) === "Harmonie du bâtiment" && (await page.locator(".ah84-links button").count()) === 3 && !(await page.locator(".nouvel-atelier").isVisible()));
   // Propositions localisées sur les locaux du modèle (flow-v62 / h7-app)
   await page.evaluate(() => { document.querySelector(".h7-panel").open = true; });
   await page.waitForSelector(".h7-locals");
@@ -197,7 +195,7 @@ export async function bilanBatiment(sc) {
   check("références directionnelles : l'empreinte de l'étape 10 change → « … · à réexaminer »", /à réexaminer/.test(await page.locator(".h7-panel > summary").textContent()));
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.getElementById("atelier-harmonie-page")?.hidden === true);
-  check("sous-page : Échap → « Retour à l’Atelier », le dessin réapparaît", await page.locator(".native-atelier").isVisible());
+  check("sous-page : Échap → « Retour à l’Atelier », le dessin réapparaît", await page.locator(".nouvel-atelier").isVisible());
   Object.assign(sc, { maptilerLog });
 }
 

@@ -1717,11 +1717,11 @@ body.atelier-immersive .step-detail {
 body.atelier-immersive .step-detail-atelier .work {
   padding: 0 0 24px;
 }
-body.atelier-immersive .step-detail-atelier .work > :not(.native-atelier):not(.ah84-entry):not(#atelier-harmonie-page) {
+body.atelier-immersive .step-detail-atelier .work > :not(.nouvel-atelier):not(.ah84-entry):not(#atelier-harmonie-page) {
   margin-left: 24px;
   margin-right: 24px;
 }
-body.atelier-immersive .native-atelier {
+body.atelier-immersive .nouvel-atelier {
   margin: 0 0 18px;
 }
 /* `stage10-fold` : titre et intro de l'étape, repliés sous le dessin (prototype). */
@@ -2851,55 +2851,6 @@ button.h7-chip.h7-goto:hover {
 }
 
 /* ---------------------------------------------------------------------- */
-/* Atelier natif (moteur du prototype, scopé #nativeDesignerRoot)         */
-/* ---------------------------------------------------------------------- */
-.native-atelier {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 12px 0 24px;
-}
-.native-atelier-status {
-  margin: 0;
-  font-size: 12.5px;
-  color: var(--muted);
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: var(--cream);
-  border: 1px solid var(--line);
-}
-.native-atelier-status-saved {
-  color: var(--done);
-}
-.native-atelier-status-conflict,
-.native-atelier-status-error {
-  color: #a0351f;
-  background: #fbeeea;
-  border-color: #ecc9c0;
-}
-.native-atelier-reference {
-  margin: 0;
-  font-size: 12.5px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: #fff7e6;
-  border: 1px solid #ecd9b0;
-}
-#nativeDesignerMount {
-  width: 100%;
-  min-width: 0;
-}
-#nativeDesignerParking.native-mounted {
-  display: block;
-  width: 100%;
-  min-width: 0;
-}
-/* Accessibilité : la ligne d'information du viewer (« EPSG… · surface ») du moteur extrait est à 4,48:1 sur son fond ; Fadi la surcharge d'un ton (5,7:1) sans toucher au fichier extrait. */
-#nativeDesignerRoot .v7-info-line > p {
-  color: #56634d;
-}
-
-/* ---------------------------------------------------------------------- */
 /* Sources de l'étape (fold-card, sources-card : valeurs du prototype)      */
 /* ---------------------------------------------------------------------- */
 .fold-card {
@@ -3708,11 +3659,6 @@ button.h7-chip.h7-goto:hover {
   font-size: 12px;
   cursor: pointer;
   color: var(--ink);
-}
-.native-atelier-status-offline {
-  color: #a0351f;
-  background: #fbeeea;
-  border-color: #ecc9c0;
 }
 .offline-banner {
   margin: 0;

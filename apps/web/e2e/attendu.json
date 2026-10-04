@@ -1,12 +1,12 @@
 {
-  "controles": 378,
+  "controles": 368,
   "parFichier": {
     "00-compte.mjs": 0,
     "01-import-exemple.mjs": 17,
     "02-parcours-etapes.mjs": 16,
     "03-parcelle.mjs": 14,
     "04-programmation.mjs": 47,
-    "05-atelier.mjs": 26,
+    "05-atelier.mjs": 16,
     "06-harmonie.mjs": 55,
     "07-documents.mjs": 19,
     "08-collaboration.mjs": 38,
@@ -56,6 +56,11 @@
       "date": "2026-10-04",
       "controles": 378,
       "motif": "L3b.4 (#70) : 14-nouvel-atelier.mjs#vuesTechniques, huit vues de travail non vides (plan, coupes N–S / E–O / quelconque, quatre façades), position de coupe réglable, sélection au clic, accessibilité ordinateur et téléphone, aucune erreur JavaScript (+6)."
+    },
+    {
+      "date": "2026-10-04",
+      "controles": 368,
+      "motif": "L4.3 (#80) : bascule (D-052), 05-atelier.mjs réécrit pour l'Atelier DrawAll — référence protégée et copie de travail automatique, annuler / rétablir persistés, second navigateur, rechargement (11 contrôles) ; acceptation P.118 : exports SVG / DXF / PNG / métré au catalogue, surfaces et plan de lecture à la révision courante (5). Les niveaux × modes, la vue 3D, pousser / tirer et les vues techniques de l'ancien moteur (−10) sont couverts sur la même copie par 14-nouvel-atelier.mjs (vue3d, pousserTirer, vuesTechniques). Autres fichiers : contrôles réécrits un pour un (02, 03, 04, 06, 08, 09, 11)."
     }
   ]
 }

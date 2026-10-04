@@ -13,7 +13,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import { atelierCommandesApi } from "../../lib/api/atelier-commandes";
 import { READ_ONLY_HINT } from "../../lib/access";
-import { BusAtelier, joignabiliteNavigateur, stockageNavigateur, type TransportAtelier } from "./bus";
+import { BusAtelier, joignabiliteNavigateur, stockageNavigateur, type StockageFile, type TransportAtelier } from "./bus";
 import { PanneauMetre } from "./documents";
 import { installer as installerDocuments } from "./documents/installer";
 import { installer as installerObjets } from "./objets/installer";
@@ -56,9 +56,14 @@ interface CopieTravail {
  * les écritures vont à la copie. La copie reprend le modèle typé courant (mêmes identifiants, même révision, même
  * empreinte), donc le lot s'y applique à l'identique.
  */
-export function transportReference(base: TransportAtelier, creerCopie: () => Promise<CopieTravail>, surCopie: (copie: CopieTravail) => void): TransportAtelier {
+export function transportReference(
+  base: TransportAtelier,
+  creerCopie: () => Promise<CopieTravail>,
+  surCopie: (copie: CopieTravail) => void,
+): TransportAtelier & { readonly copieDemandee: () => boolean } {
   let copie: Promise<CopieTravail> | null = null;
   return {
+    copieDemandee: () => copie !== null,
     lireModele: (projectId) => base.lireModele(projectId),
     lireJournal: (projectId, apres) => base.lireJournal(projectId, apres),
     async envoyerCommandes(_projectId, enveloppe) {
@@ -71,8 +76,23 @@ export function transportReference(base: TransportAtelier, creerCopie: () => Pro
   };
 }
 
-function monter(projetId: string, readOnly: boolean, transport: TransportAtelier) {
-  const { stockage } = stockageNavigateur();
+/**
+ * Stockage de la référence protégée : une fois la copie demandée, les états reçus sont ceux de la copie ; ils ne
+ * remplacent pas le modèle de la référence en cache local (ouverture hors-ligne de la référence).
+ */
+export function stockageReference(base: StockageFile, copieDemandee: () => boolean): StockageFile {
+  return {
+    lister: (projectId) => base.lister(projectId),
+    ecrire: (entree) => base.ecrire(entree),
+    supprimer: (requestId) => base.supprimer(requestId),
+    lireModele: (projectId) => base.lireModele(projectId),
+    ecrireModele: (modele) => (copieDemandee() ? Promise.resolve() : base.ecrireModele(modele)),
+  };
+}
+
+function monter(projetId: string, readOnly: boolean, transport: TransportAtelier, protegerCache: (() => boolean) | null) {
+  const { stockage: navigateur } = stockageNavigateur();
+  const stockage = protegerCache ? stockageReference(navigateur, protegerCache) : navigateur;
   const bus = new BusAtelier({ projectId: projetId, transport, stockage, joignabilite: joignabiliteNavigateur() });
   const registres = creerRegistres();
   for (const installer of MODULES_ATELIER) installer(registres);
@@ -92,19 +112,29 @@ export function NouvelAtelier({ projet, readOnly = false, etape = null, actionsE
   const adresse = useRef(location.search);
   adresse.current = location.search;
   const reference = !readOnly && projet.exampleMode === "reference";
+  // Copie de travail créée par la première commande : l'écran bascule une fois la file du bus vide (le lot est alors
+  // retiré de la file locale de la référence, qui ne le rejouera jamais).
+  const [copie, setCopie] = useState<CopieTravail | null>(null);
   const montage = useMemo(() => {
-    const transport = reference
-      ? transportReference(
-          atelierCommandesApi,
-          () => api.copyProject(projet.id, NOM_COPIE_TRAVAIL),
-          (copie) => {
-            void queryClient.invalidateQueries({ queryKey: ["projects"] });
-            navigate(`/projets/${copie.id}?${new URLSearchParams(adresse.current).toString()}`, { state: { notice: "Copie de travail créée automatiquement · exemple original conservé." } });
-          },
-        )
-      : atelierCommandesApi;
-    return monter(projet.id, readOnly, transport);
-  }, [projet.id, readOnly, reference, navigate, queryClient]);
+    if (!reference) return monter(projet.id, readOnly, atelierCommandesApi, null);
+    const transport = transportReference(atelierCommandesApi, () => api.copyProject(projet.id, NOM_COPIE_TRAVAIL), setCopie);
+    return monter(projet.id, readOnly, transport, transport.copieDemandee);
+  }, [projet.id, readOnly, reference]);
+
+  useEffect(() => {
+    if (!copie) return;
+    const { bus } = montage;
+    let parti = false;
+    const basculer = () => {
+      if (parti || bus.resume().enAttente > 0) return;
+      parti = true;
+      void queryClient.invalidateQueries({ queryKey: ["projects"] });
+      navigate(`/projets/${copie.id}?${new URLSearchParams(adresse.current).toString()}`, { state: { notice: "Copie de travail créée automatiquement · exemple original conservé." } });
+    };
+    const desabonner = bus.on("etat", basculer);
+    basculer();
+    return desabonner;
+  }, [copie, montage, navigate, queryClient]);
   const [ouvert, setOuvert] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
 

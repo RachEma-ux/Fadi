@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MODULES_ATELIER, transportReference } from "./NouvelAtelier";
-import type { TransportAtelier } from "./bus";
+import { MODULES_ATELIER, stockageReference, transportReference } from "./NouvelAtelier";
+import { stockageMemoire, type TransportAtelier } from "./bus";
 import { creerRegistres } from "./socle";
 import { tableRaccourcis } from "./ui/raccourcis";
 
@@ -37,5 +37,18 @@ describe("référence protégée de l'exemple (D-052 §7)", () => {
     expect(envois).toEqual(["copie-1", "copie-1"]);
     expect(bascules).toEqual(["copie-1", "copie-1"]);
     expect(lectures).toEqual(["ref"]);
+  });
+});
+
+describe("cache local de la référence protégée", () => {
+  it("n'enregistre plus le modèle reçu une fois la copie demandée (c'est celui de la copie)", async () => {
+    const base = stockageMemoire();
+    let demandee = false;
+    const s = stockageReference(base, () => demandee);
+    const modele = (revision: number) => ({ projectId: "ref", modele: { revision } as never, lecture: "t" });
+    await s.ecrireModele(modele(1));
+    demandee = true;
+    await s.ecrireModele(modele(2));
+    expect((await s.lireModele("ref"))?.modele).toMatchObject({ revision: 1 });
   });
 });

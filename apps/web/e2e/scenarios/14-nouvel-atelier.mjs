@@ -11,11 +11,11 @@
  * segments sont décrits dans `../run.mjs`.
  */
 
-/** Ouverture du nouvel Atelier par `?module=atelier&version=nouveau` sur l'exemple P.118. */
+/** Ouverture de l'Atelier par `?module=atelier` sur l'exemple P.118. */
 export async function ouverture(sc) {
   const { OUT, page, check, measure, axeCheck } = sc;
   const { exampleUrl } = sc;
-  const url = `${exampleUrl}?module=atelier&version=nouveau`;
+  const url = `${exampleUrl}?module=atelier`;
   await page.setViewportSize({ width: 1280, height: 900 });
   await measure("ouverture du nouvel Atelier (modèle typé P.118, interface, zone de plan)", async () => {
     await page.goto(url);
@@ -49,7 +49,7 @@ export async function ouverture(sc) {
 export async function gestes(sc) {
   const { BASE, OUT, browser, page, consoleErrors, check, measure, axeCheck } = sc;
   const { email, atelierUrl, atelierPid } = sc;
-  const url = `${atelierUrl}?module=atelier&version=nouveau`;
+  const url = `${atelierUrl}?module=atelier`;
   const erreursAvant = consoleErrors.length;
   await page.setViewportSize({ width: 1280, height: 900 });
   await measure("ouverture du nouvel Atelier sur la copie de travail de P.118", async () => {
@@ -347,7 +347,7 @@ export async function vue3d(sc) {
   const { atelierUrl } = sc;
   const erreursAvant = consoleErrors.length;
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto(`${atelierUrl}?module=atelier&version=nouveau`);
+  await page.goto(`${atelierUrl}?module=atelier`);
   await page.waitForSelector('[data-testid="atelier-interface"]', { timeout: 30000 });
   const etat = page.locator('[data-testid="atl-3d-etat"]');
   const lire = async () => ({
@@ -442,7 +442,7 @@ export async function pousserTirer(sc) {
   const { atelierUrl, atelierPid } = sc;
   const erreursAvant = consoleErrors.length;
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto(`${atelierUrl}?module=atelier&version=nouveau`);
+  await page.goto(`${atelierUrl}?module=atelier`);
   await page.waitForSelector('[data-testid="atelier-interface"]', { timeout: 30000 });
   const modele = async () => (await page.request.get(`${BASE}/projects/${atelierPid}/atelier/model`)).json();
   const attendreModele = async (predicat, delaiMs = 20000) => {
@@ -580,7 +580,7 @@ export async function mesures3d(sc) {
   const { BASE, browser, page, consoleErrors, check, measure, measures } = sc;
   const { email, atelierUrl, atelierPid } = sc;
   const erreursAvant = consoleErrors.length;
-  const url = `${atelierUrl}?module=atelier&version=nouveau`;
+  const url = `${atelierUrl}?module=atelier`;
   const modele = async (p = page) => (await p.request.get(`${BASE}/projects/${atelierPid}/atelier/model`)).json();
   const attendreModele = async (predicat, p = page, delaiMs = 20000) => {
     const fin = Date.now() + delaiMs;
@@ -756,7 +756,7 @@ export async function vuesTechniques(sc) {
   const { atelierUrl } = sc;
   const erreursAvant = consoleErrors.length;
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto(`${atelierUrl}?module=atelier&version=nouveau`);
+  await page.goto(`${atelierUrl}?module=atelier`);
   await page.waitForSelector('[data-testid="atelier-interface"]', { timeout: 30000 });
   await page.locator('[data-testid="atl-vue-3d"]').click();
   await page.waitForFunction(() => Number(document.querySelector('[data-testid="atl-3d-etat"]')?.getAttribute("data-triangles")) > 0, null, { timeout: 30000 });

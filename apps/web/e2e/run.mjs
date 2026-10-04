@@ -4,8 +4,8 @@
  *
  * Le parcours de caractérisation (celui rejoué sur le prototype, docs/migration/reference.md) est le même
  * qu'avant le découpage : nouveau projet et 21 étapes, arbitrages Harmonie, programmation et bibliothèque,
- * chiffrage, exemple P.118 importé (référence protégée, variante en copie), Atelier natif et acceptation
- * P.118, bilan du bâtiment conçu, outil Parcelle et MapTiler simulé, péremption, archive, analyses,
+ * chiffrage, exemple P.118 importé (référence protégée, variante en copie), Atelier (copie de travail
+ * automatique, annuler / rétablir, second navigateur) et acceptation P.118, bilan du bâtiment conçu, outil Parcelle et MapTiler simulé, péremption, archive, analyses,
  * documents, collaboration et partage, hors-ligne (Atelier et saisies), sources, Harmonie transversale,
  * Paramètres, accessibilité (axe-core, WCAG 2.2 AA), présentation téléphone, captures ordinateur (1280) et
  * téléphone (390) dans docs/migration/captures/webapp/.

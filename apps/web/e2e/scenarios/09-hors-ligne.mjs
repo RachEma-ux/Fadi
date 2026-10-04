@@ -7,70 +7,94 @@
  * segments suivants relisent. Un fichier = un propriétaire (cahier des charges, §9).
  */
 
-/** 6k. Hors-ligne de l'Atelier (file IndexedDB, conflit du modèle, rejeu, cache local). */
+/** 6k. Hors-ligne de l'Atelier (file de commandes IndexedDB, conflit de révision, rejeu, cache local). */
 export async function atelierHorsLigne(sc) {
   const { BASE, ctx, page, check } = sc;
   const { exampleUrl, rdcWallsOf, atelierUrl, atelierPid } = sc;
-  // 6k. Hors-ligne (sur la copie de travail) : file locale (IndexedDB) de l'Atelier, quatre états visibles, rejeu au retour du réseau et après rechargement, ouverture depuis le cache local
+  // 6k. Hors-ligne (sur la copie de travail) : file locale (IndexedDB) des lots de commandes du bus de l'Atelier, rejeu au
+  // retour du réseau et après rechargement, conflit de révision (409) résolu par « Rejouer mes commandes », ouverture
+  // depuis le cache local du modèle. La persistance est lue sur le serveur.
+  const entete = page.locator(".project-header .sync-indicator");
+  const attente = page.locator('[data-testid="atl-compte-attente"]');
   await page.goto(`${atelierUrl}?module=atelier`);
-  await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
-  await page.waitForFunction(() => /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
-  const drawWall = async (fx) => {
-    await page.locator("#model-floors button", { hasText: "RDC" }).first().click();
-    await page.locator('#atelier-toolbar [data-atab="design"]').click();
-    await page.waitForTimeout(500);
-    await page.locator('button:has-text("Mur")').first().click();
-    const b = await page.locator("#viewer-surface").boundingBox();
-    await page.mouse.click(b.x + b.width * fx, b.y + b.height * 0.5);
-    await page.waitForTimeout(200);
-    await page.mouse.click(b.x + b.width * (fx + 0.08), b.y + b.height * 0.5);
-    await page.keyboard.press("Enter");
+  await page.waitForSelector('[data-testid="plan2d-toile"]', { timeout: 30000 });
+  await page.mouse.move(2, 2);
+  const lots = (n) => page.waitForFunction((n) => new RegExp(`^\\s*${n} lot\\(s\\) en attente d'envoi`).test(document.querySelector('[data-testid="atl-compte-attente"]')?.textContent ?? ""), n, { timeout: 20000 });
+  await lots(0).catch(() => {});
+  const toile = page.locator('[data-testid="plan2d-toile"]');
+  const saisie = page.locator('[data-testid="plan2d-precision"] input:not([readonly])');
+  const poserPoint = async (x, y) => {
+    await toile.focus();
+    await page.keyboard.press(String(x)[0]);
+    await saisie.waitFor({ state: "visible", timeout: 5000 });
+    await saisie.fill(`${x};${y}`);
+    await saisie.press("Enter");
+    await saisie.waitFor({ state: "detached", timeout: 5000 });
+  };
+  /** Un mur (raccourci M), deux points exacts dans une zone libre, puis Échap (retour à la sélection). */
+  const drawWall = async (y) => {
+    await toile.focus();
+    await page.keyboard.press("m");
+    await page.waitForFunction(() => document.querySelector('[data-testid="atl-puce-outil"]')?.textContent?.includes("Mur"), null, { timeout: 5000 }).catch(() => null);
+    await poserPoint(60, y);
+    await poserPoint(64, y);
+    await toile.focus();
+    await page.keyboard.press("Escape");
+  };
+  const attendre = async (predicat, delaiMs = 20000) => {
+    const fin = Date.now() + delaiMs;
+    let v = await rdcWallsOf(atelierPid);
+    while (!predicat(v) && Date.now() < fin) {
+      await page.waitForTimeout(400);
+      v = await rdcWallsOf(atelierPid);
+    }
+    return v;
   };
   const wallsBeforeOffline = await rdcWallsOf(atelierPid);
   await ctx.setOffline(true);
-  await page.waitForFunction(() => /Hors-ligne/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 5000 }).catch(() => {});
-  check("hors-ligne : l'en-tête du projet passe « Hors-ligne »", /^Hors-ligne/.test(await page.locator(".sync-indicator").textContent()));
-  await drawWall(0.45);
-  await page.waitForFunction(() => /Hors-ligne · enregistré localement/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 10000 });
-  const outbox = await page.evaluate(() => new Promise((resolve) => { const req = indexedDB.open("fadi-local"); req.onsuccess = () => { const tx = req.result.transaction("outbox"); const all = tx.objectStore("outbox").getAll(); all.onsuccess = () => resolve(all.result.map((e) => e.key.split(".").pop())); }; }));
-  check("hors-ligne : un mur dessiné → « Hors-ligne · enregistré localement », écriture conservée dans la file IndexedDB (floorDesign)", /enregistré localement \(\d+\)/.test(await page.locator(".native-atelier-status").textContent()) && outbox.includes("floorDesign") && /modification\(s\) enregistrée\(s\) localement/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify(outbox));
+  await page.waitForFunction(() => /Hors-ligne/.test(document.querySelector(".project-header .sync-indicator")?.textContent || ""), null, { timeout: 5000 }).catch(() => {});
+  check("hors-ligne : l'en-tête du projet passe « Hors-ligne »", /^Hors-ligne/.test(await entete.textContent()));
+  await drawWall(60);
+  await lots(1).catch(() => {});
+  const fileLocale = await page.evaluate(() => new Promise((resolve) => { const req = indexedDB.open("fadi-atelier"); req.onsuccess = () => { try { const db = req.result; const nom = [...db.objectStoreNames].find((n) => /file|lots|entrees/i.test(n)) ?? db.objectStoreNames[0]; const all = db.transaction(nom).objectStore(nom).getAll(); all.onsuccess = () => resolve(all.result.length); all.onerror = () => resolve(-1); } catch { resolve(-1); } }; req.onerror = () => resolve(-1); }));
+  check("hors-ligne : un mur dessiné → « 1 lot(s) en attente d'envoi », rien sur le serveur", /^\s*1 lot\(s\) en attente d'envoi/.test(await attente.textContent()) && (await rdcWallsOf(atelierPid)).revision === wallsBeforeOffline.revision, `file IndexedDB : ${fileLocale}`);
   await ctx.setOffline(false);
-  await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
-  const wallsAfterOnline = await rdcWallsOf(atelierPid);
-  check("retour du réseau : synchronisation automatique → « Enregistré sur le serveur », +1 mur et +1 révision sur le serveur, file vide", wallsAfterOnline.walls === wallsBeforeOffline.walls + 1 && wallsAfterOnline.revision === wallsBeforeOffline.revision + 1 && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify({ wallsBeforeOffline, wallsAfterOnline }));
-  // Conflit du modèle : un autre appareil écrit la même clé pendant la coupure ; au retour, le rejeu est refusé (409), la version du
-  // serveur reprend la clé, la vôtre est conservée en copie de secours, et le bandeau propose de la reprendre ou de garder le serveur.
-  const storeBefore = await (await page.request.get(`${BASE}/projects/${atelierPid}/atelier/store`)).json();
-  const floorKey = Object.keys(storeBefore.entries).find((k) => k.endsWith(".floorDesign"));
+  await lots(0).catch(() => {});
+  const wallsAfterOnline = await attendre((v) => v.murs === wallsBeforeOffline.murs + 1);
+  check("retour du réseau : synchronisation automatique → file vide, +1 mur et +1 révision sur le serveur, en-tête synchronisé", wallsAfterOnline.murs === wallsBeforeOffline.murs + 1 && wallsAfterOnline.revision === wallsBeforeOffline.revision + 1 && /^\s*0 lot\(s\)/.test(await attente.textContent()), JSON.stringify({ avant: [wallsBeforeOffline.murs, wallsBeforeOffline.revision], apres: [wallsAfterOnline.murs, wallsAfterOnline.revision] }));
+  // Conflit de révision : un autre appareil valide un lot pendant la coupure ; au retour, le rejeu est refusé (409), le lot
+  // reste en conflit (rien n'est écrasé) et le panneau propose de le rejouer sur l'état courant ou de garder le serveur.
   await ctx.setOffline(true);
-  await drawWall(0.52);
-  await page.waitForFunction(() => /Hors-ligne · enregistré localement/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 10000 });
-  const otherModel = await page.request.put(`${BASE}/projects/${atelierPid}/atelier/store/${encodeURIComponent(floorKey)}`, { data: { value: storeBefore.entries[floorKey], expectedRevision: storeBefore.revisions[floorKey] } });
-  check("autre appareil : écriture du même floorDesign pendant la coupure (200)", otherModel.status() === 200, String(otherModel.status()));
+  await drawWall(62);
+  await lots(1).catch(() => {});
+  const m = await (await page.request.get(`${BASE}/projects/${atelierPid}/atelier/model`)).json();
+  const niveau = Object.values(m.objets).filter((o) => o.classe === "niveau").sort((x, y) => x.params.ordre - y.params.ordre)[0];
+  const calque = Object.values(m.objets).find((o) => o.classe === "calque");
+  const pt = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const lg = (v) => ({ value: v, unit: "m" });
+  const autre = await page.request.post(`${BASE}/projects/${atelierPid}/atelier/commands`, {
+    data: { requestId: `e2e-autre-${Date.now()}`, baseRevision: m.revision, contract: "atelier-commands/1", label: "Autre appareil", commands: [{ type: "mur.tracer", cibles: [], params: { id: `${atelierPid}_E2E-AUTRE`, niveauId: niveau.id, calqueId: calque.id, a: pt(70, 70), b: pt(74, 70), epaisseur: lg(0.2), hauteur: lg(3), alignement: "axe", typeId: "non-type", exterieur: true } }] },
+  });
+  check("autre appareil : un lot validé pendant la coupure (200, révision avancée)", autre.status() === 200, String(autre.status()));
   await ctx.setOffline(false);
-  await page.waitForSelector('.conflict-banner li[data-kind="modele"]', { timeout: 20000 });
-  const modelConflictText = (await page.locator('.conflict-banner li[data-kind="modele"]').textContent()).replace(/\s+/g, " ");
-  check("retour du réseau : rejeu refusé (409) → « Conflit détecté », conflit du modèle listé (« Atelier · floorDesign », copie de secours), compté dans l'en-tête", /Atelier · floorDesign/.test(modelConflictText) && /conservée sous « .*backup\.conflit-/.test(modelConflictText) && /Conflit détecté/.test(await page.locator(".native-atelier-status").textContent()) && /1 conflit\(s\) à examiner/.test(await page.locator(".sync-indicator").textContent()), modelConflictText.slice(0, 160));
+  await page.waitForSelector('.conflict-banner li[data-kind="commandes"]', { timeout: 20000 });
+  const conflitTexte = (await page.locator('.conflict-banner li[data-kind="commandes"]').first().textContent()).replace(/\s+/g, " ");
   const wallsDuringConflict = await rdcWallsOf(atelierPid);
-  await page.locator('.conflict-banner li[data-kind="modele"] button:has-text("Reprendre ma version")').click();
-  await page.waitForFunction(() => !document.querySelector(".conflict-banner") && /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || "") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 20000 });
-  // La copie de secours est retirée du serveur par une seconde écriture (regroupée) : on attend qu'elle ait disparu.
-  await page.waitForFunction(async (pid) => !Object.keys((await (await fetch(`/projects/${pid}/atelier/store`, { credentials: "include" })).json()).entries).some((k) => k.includes(".backup.conflit-")), atelierPid, { timeout: 15000 }).catch(() => {});
-  const wallsResolved = await rdcWallsOf(atelierPid);
-  const storeResolved = await (await page.request.get(`${BASE}/projects/${atelierPid}/atelier/store`)).json();
-  const backupsLeft = Object.keys(storeResolved.entries).filter((k) => k.includes(".backup.conflit-"));
-  check("« Reprendre ma version » : le dessin local est réécrit sur la clé à partir de la révision du serveur (+1 mur), la copie de secours est retirée, en-tête synchronisé", wallsDuringConflict.walls === wallsAfterOnline.walls && wallsResolved.walls === wallsAfterOnline.walls + 1 && backupsLeft.length === 0 && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify({ wallsAfterOnline, wallsDuringConflict, wallsResolved, backupsLeft, indicator: await page.locator(".sync-indicator").textContent() }));
-  // Serveur injoignable (route bloquée) puis rechargement de la page : la file locale est rejouée à l'ouverture.
-  await page.route(/\/atelier\/store\//, (route) => route.abort());
-  await drawWall(0.6);
-  await page.waitForFunction(() => /Serveur injoignable/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 15000 });
-  check("serveur injoignable : « Serveur injoignable : les modifications sont enregistrées localement… »", true);
-  await page.unroute(/\/atelier\/store\//);
+  check("retour du réseau : rejeu refusé (409) → lot en conflit listé dans le panneau, rien n'est écrasé (seul le mur de l'autre appareil est sur le serveur)", wallsDuringConflict.murs === wallsAfterOnline.murs + 1 && /Rejouer mes commandes/.test(conflitTexte), conflitTexte.slice(0, 160));
+  await page.locator('.conflict-banner li[data-kind="commandes"] button:has-text("Rejouer mes commandes")').first().click();
+  const wallsResolved = await attendre((v) => v.murs === wallsAfterOnline.murs + 2);
+  await lots(0).catch(() => {});
+  check("« Rejouer mes commandes » : le lot est revalidé sur l'état courant et accepté (+1 mur sur celui de l'autre appareil), plus de conflit", wallsResolved.murs === wallsAfterOnline.murs + 2 && (await page.locator('.conflict-banner li[data-kind="commandes"]').count()) === 0, JSON.stringify({ apres: wallsAfterOnline.murs, conflit: wallsDuringConflict.murs, resolu: wallsResolved.murs }));
+  // Serveur injoignable (route des commandes bloquée) puis rechargement de la page : la file locale est rejouée à l'ouverture.
+  await page.route(/\/atelier\/commands(\?|$)/, (route) => route.abort());
+  await drawWall(64);
+  await page.waitForTimeout(1500);
+  check("serveur injoignable : le lot reste dans la file locale (« 1 lot(s) en attente d'envoi »), rien n'est perdu", /^\s*1 lot\(s\) en attente d'envoi/.test(await attente.textContent()), await attente.textContent());
+  await page.unroute(/\/atelier\/commands(\?|$)/);
   await page.reload();
-  await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
-  await page.waitForFunction(() => /Enregistré sur le serveur/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
-  const wallsAfterReload = await rdcWallsOf(atelierPid);
-  check("rechargement : la file locale est rejouée à l'ouverture → +1 mur et +1 révision sur le serveur", wallsAfterReload.walls === wallsResolved.walls + 1 && wallsAfterReload.revision === wallsResolved.revision + 1, JSON.stringify({ wallsResolved, wallsAfterReload }));
+  await page.waitForSelector('[data-testid="plan2d-toile"]', { timeout: 30000 });
+  const wallsAfterReload = await attendre((v) => v.murs === wallsResolved.murs + 1);
+  check("rechargement : la file locale est rejouée à l'ouverture → +1 mur et +1 révision sur le serveur", wallsAfterReload.murs === wallsResolved.murs + 1 && wallsAfterReload.revision === wallsResolved.revision + 1, JSON.stringify({ resolu: [wallsResolved.murs, wallsResolved.revision], recharge: [wallsAfterReload.murs, wallsAfterReload.revision] }));
   // Rechargement complet hors-ligne : l'enveloppe (service worker) sert l'application, le cache persistant (IndexedDB) relit
   // les étapes déjà lues, l'Atelier s'ouvre depuis le cache local du modèle.
   await page.goto(`${exampleUrl}?module=parcours&etape=2`);
@@ -80,11 +104,11 @@ export async function atelierHorsLigne(sc) {
   await ctx.setOffline(true);
   await page.reload();
   await page.waitForSelector(".reference-answers", { timeout: 20000 });
-  check("rechargement hors-ligne : l'étape 02 se relit depuis le cache persistant, bandeau « Lecture hors-ligne : données lues le … »", (await page.locator(".step-detail-title").textContent()) === "Réglementation & constructibilité" && /^Lecture hors-ligne : données lues le/.test(await page.locator(".offline-banner").textContent()) && /^Hors-ligne/.test(await page.locator(".sync-indicator").textContent()));
+  check("rechargement hors-ligne : l'étape 02 se relit depuis le cache persistant, bandeau « Lecture hors-ligne : données lues le … »", (await page.locator(".step-detail-title").textContent()) === "Réglementation & constructibilité" && /^Lecture hors-ligne : données lues le/.test(await page.locator(".offline-banner").textContent()) && /^Hors-ligne/.test(await entete.textContent()));
   await page.locator('.module-nav button:has-text("Atelier architectural")').click();
-  await page.waitForFunction(() => /cache local|enregistré localement/.test(document.querySelector(".native-atelier-status")?.textContent || ""), null, { timeout: 20000 });
-  await page.waitForFunction(() => document.querySelectorAll("#model-floors button").length === 6, null, { timeout: 20000 }).catch(() => {});
-  check("rechargement hors-ligne : l'Atelier s'ouvre depuis le cache local du modèle, 6 niveaux", (await page.locator("#model-floors button").count()) === 6, await page.locator(".native-atelier-status").textContent());
+  await page.waitForSelector('[data-testid="plan2d-toile"]', { timeout: 20000 }).catch(() => {});
+  const niveauxHorsLigne = await page.locator('[data-testid^="atl-niveau-"]:not([data-testid="atl-niveau-actif"])').count();
+  check("rechargement hors-ligne : l'Atelier s'ouvre depuis le cache local du modèle, 6 niveaux", niveauxHorsLigne === 6, `${niveauxHorsLigne} niveaux`);
   await ctx.setOffline(false);
   await page.goto(`${exampleUrl}?module=parcours`);
   await page.waitForSelector(".overview-step");

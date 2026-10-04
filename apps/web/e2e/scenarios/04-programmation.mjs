@@ -221,8 +221,8 @@ export async function bibliothequeP118(sc) {
   await page.waitForSelector('.bl-hero button:has-text("Ouvrir le modèle P.118")', { timeout: 30000 });
   await page.locator('.bl-hero button:has-text("Ouvrir le modèle P.118")').click();
   await page.waitForURL((u) => u.toString().startsWith(`${exampleUrl}?module=parcours&etape=10`), { timeout: 20000 });
-  await page.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
-  check("bibliothèque · cas P.118 : « Ouvrir le modèle P.118 » → référence de l'exemple du compte, étape 10, Atelier monté", page.url().startsWith(`${exampleUrl}?module=parcours&etape=10`) && (await page.locator(".native-atelier #viewer-info").count()) === 1);
+  await page.waitForFunction(() => !!document.querySelector('.nouvel-atelier [data-testid="plan2d-toile"]'), null, { timeout: 30000 });
+  check("bibliothèque · cas P.118 : « Ouvrir le modèle P.118 » → référence de l'exemple du compte, étape 10, Atelier monté", page.url().startsWith(`${exampleUrl}?module=parcours&etape=10`) && (await page.locator('.nouvel-atelier [data-testid="atl-bandeau"]').textContent()) === "Atelier Architectural · ÉTAPE 10 / 21");
   await page.goto(`${BASE}/bibliotheque/batiments/parcours_lot118?rubrique=technique`);
   await page.waitForSelector('section[role=tabpanel] button:has-text("Ouvrir le modèle P.118")', { timeout: 30000 });
   check("bibliothèque · cas P.118, rubrique Technique : « P.118 conserve ses polygones réels » et « Ouvrir le modèle P.118 » à la place du gabarit", /P\.118 conserve ses polygones réels/.test(await page.locator("section[role=tabpanel]").textContent()) && (await page.locator("section[role=tabpanel] svg").count()) === 0);
@@ -244,7 +244,7 @@ export async function bibliothequeP118(sc) {
   await pageFresh.waitForURL(/\/projets\/proj_[^?]+\?module=parcours&etape=10/, { timeout: 60000 });
   const freshToast = await pageFresh.waitForFunction(() => /Exemple P\.118 importé/.test(document.querySelector(".h7-toast")?.textContent || ""), null, { timeout: 8000 }).then(() => true).catch(() => false); // s'efface de lui-même après 3,6 s
   await pageFresh.waitForSelector(".project-header h1", { timeout: 30000, state: "attached" }); // étape 10 : page de l'Atelier, en-tête de Fadi effacé
-  await pageFresh.waitForFunction(() => document.querySelector("#atelier-toolbar")?.getAttribute("data-ready") === "1", null, { timeout: 30000 });
-  check("bibliothèque · cas P.118 sans l'exemple dans le compte : l'exemple est importé puis ouvert à l'étape 10, Atelier monté (toast « Exemple P.118 importé »)", (await pageFresh.locator(".project-header h1").textContent()) === "P.118 — Escalier B et mezzanine" && (await pageFresh.locator(".native-atelier #viewer-info").count()) === 1, freshToast ? "toast vu" : "toast non observé (effacé avant la lecture)");
+  await pageFresh.waitForFunction(() => !!document.querySelector('.nouvel-atelier [data-testid="plan2d-toile"]'), null, { timeout: 30000 });
+  check("bibliothèque · cas P.118 sans l'exemple dans le compte : l'exemple est importé puis ouvert à l'étape 10, Atelier monté (toast « Exemple P.118 importé »)", (await pageFresh.locator(".project-header h1").textContent()) === "P.118 — Escalier B et mezzanine" && (await pageFresh.locator('.nouvel-atelier [data-testid="atl-bandeau"]').textContent()) === "Atelier Architectural · ÉTAPE 10 / 21", freshToast ? "toast vu" : "toast non observé (effacé avant la lecture)");
   await ctxFresh.close();
 }

@@ -113,8 +113,12 @@ export async function partage(sc) {
   check("lecteur : une écriture forcée est refusée par le serveur (403 avec motif)", readerPatch.status() === 403 && /partagé en lecture/.test(((await readerPatch.json()).message) || ""));
   await page2.screenshot({ path: `${OUT}/partage-lecteur-02-desktop.png`, fullPage: true });
   await page2.goto(`${projectUrl}?module=atelier`);
-  await page2.waitForSelector(".native-atelier-status-readonly", { timeout: 30000 });
-  check("lecteur : Atelier en lecture seule (rien n'est enregistré)", /^Lecture seule/.test(await page2.locator(".native-atelier-status").textContent()));
+  await page2.waitForSelector('[data-testid="plan2d-toile"]', { timeout: 30000 });
+  // Lecture seule : un outil qui écrit (Mur, raccourci M) est refusé avec le motif du partage ; rien n'est envoyé.
+  await page2.locator('[data-testid="plan2d-toile"]').focus();
+  await page2.keyboard.press("m");
+  await page2.waitForSelector('[data-testid="atl-refus-outil"]', { timeout: 10000 }).catch(() => null);
+  check("lecteur : Atelier en lecture seule (outil d'écriture refusé avec le motif, rien n'est enregistré)", /partagé en lecture/.test((await page2.locator('[data-testid="atl-refus-outil"]').textContent().catch(() => "")) || ""));
   // Le propriétaire passe le lecteur éditeur : la saisie devient possible et visible par le propriétaire.
   await page.selectOption(`.members-table tr[data-member="${readerEmail}"] select`, "editeur");
   await page.waitForFunction((e) => /est maintenant éditeur/.test(document.querySelector(".members-notice")?.textContent || ""), null, { timeout: 10000 });
