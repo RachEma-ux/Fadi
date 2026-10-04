@@ -109,6 +109,7 @@ export function contexteDemo(options: { ecriture?: ContexteAtelier["ecriture"]; 
       entrees: () => [],
       joignabilite: () => "en-ligne",
       rafraichir: async () => true,
+      on: () => () => {},
       executer: async (label: string) => {
         appels.push(label);
         return etat ? { ok: true as const, requestId: "r", etat } : { ok: false as const, erreurs: [] };

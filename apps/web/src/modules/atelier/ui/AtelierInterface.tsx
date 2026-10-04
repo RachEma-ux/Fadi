@@ -18,7 +18,7 @@ import "./atelier-interface.css";
 import { BarreCommandes } from "./BarreCommandes";
 import { Erreurs } from "./Erreurs";
 import { lisible } from "./format";
-import { useBus, usePilote, useSelection, useVue } from "./hooks";
+import { useNotifications, usePilote, useSelection, useVue } from "./hooks";
 import { Inspecteur } from "./Inspecteur";
 import { Navigateur } from "./Navigateur";
 import { niveaux, vueValide } from "./navigateur";
@@ -90,7 +90,8 @@ export function AtelierInterface({ registres, pilote, ctx, vue, bus, client, pro
   const etatVue = useVue(vue);
   const sel = useSelection(ctx.selection);
   usePilote(pilote);
-  useBus(bus);
+  // Révisions distantes, annulations et conflits résolus (D-036).
+  useNotifications(ctx.abonnerEtat);
   const etat = ctx.etat();
   const telephone = useTelephone();
 
