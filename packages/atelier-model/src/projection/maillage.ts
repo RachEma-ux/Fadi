@@ -283,7 +283,7 @@ function murMaillage(etat: ModeleAtelier, mur: Occurrence<"mur">, t: Tampon): vo
     vides.push({ s0: Math.max(0, c - o.params.largeur.value / 2), s1: Math.min(L, c + o.params.largeur.value / 2), zb, zt: zb + o.params.hauteur.value });
   }
   const coupures = [...new Set([0, L, ...vides.flatMap((v) => [v.s0, v.s1])])].filter((s) => s >= 0 && s <= L).sort((x, y) => x - y);
-  const r = raccordMur(etat, mur) ?? { gauche: [0, L], droite: [0, L] };
+  const r: { gauche: [number, number]; droite: [number, number]; pointes?: [Vec | null, Vec | null] } = raccordMur(etat, mur) ?? { gauche: [0, L], droite: [0, L] };
   for (let k = 0; k + 1 < coupures.length; k++) {
     const s0 = coupures[k]!;
     const s1 = coupures[k + 1]!;
@@ -295,12 +295,15 @@ function murMaillage(etat: ModeleAtelier, mur: Occurrence<"mur">, t: Tampon): vo
     const sG0 = k === 0 ? r.gauche[0] : s0;
     const sD1 = k + 2 === coupures.length ? r.droite[1] : s1;
     const sG1 = k + 2 === coupures.length ? r.gauche[1] : s1;
-    const biais = sD0 !== s0 || sG0 !== s0 || sD1 !== s1 || sG1 !== s1;
+    const biais = sD0 !== s0 || sG0 !== s0 || sD1 !== s1 || sG1 !== s1 || (k === 0 && !!r.pointes?.[0]) || (k + 2 === coupures.length && !!r.pointes?.[1]);
     for (const [za, zb] of soustraire(z0, z1, ici)) {
       if (biais && sD1 > sD0 && sG1 > sG0 && o1 > o0 && zb > za) {
         const p = (s: number, o: number): Vec => ({ x: a.x + u.x * s + n.x * o, y: a.y + u.y * s + n.y * o });
         // o0 = face droite, o1 = face gauche (décalages croissants selon n).
-        t.prisme([p(sD0, o0), p(sD1, o0), p(sG1, o1), p(sG0, o1)], [], za, zb);
+        // Nœud sans paire (D-032) : le contour passe par le point du nœud.
+        const pA = k === 0 ? r.pointes?.[0] : undefined;
+        const pB = k + 2 === coupures.length ? r.pointes?.[1] : undefined;
+        t.prisme([p(sD0, o0), p(sD1, o0), ...(pB ? [pB] : []), p(sG1, o1), p(sG0, o1), ...(pA ? [pA] : [])], [], za, zb);
       } else t.boite(a, u, n, s0, s1, o0, o1, za, zb);
     }
   }

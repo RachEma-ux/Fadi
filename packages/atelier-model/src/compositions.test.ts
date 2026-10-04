@@ -60,8 +60,11 @@ describe("composition des parois (D-026)", () => {
     expect(contenu).toMatch(/IFCMATERIAL\('B\\X2\\00E9\\X0\\ton',\$,\$\)/);
     expect((contenu.match(/IFCMATERIALLAYER\(/g) ?? []).length).toBe(3);
     expect(contenu).toMatch(/IFCMATERIALLAYERSET\(\(#\d+,#\d+,#\d+\),'Mur ext\\X2\\00E9\\X0\\rieur isol\\X2\\00E9\\X0\\',\$\)/);
-    const assoc = /IFCRELASSOCIATESMATERIAL\([^;]*,\((#\d+(?:,#\d+)*)\),#\d+\);/.exec(contenu)!;
-    expect(assoc[1]!.split(",")).toHaveLength(2); // le type et le mur cohérent
+    // Le jeu de couches est associé au type ; le mur cohérent reçoit son usage (repère propre du mur : de la face
+    // gauche, décalage 0,18, vers la face droite).
+    expect((contenu.match(/IFCRELASSOCIATESMATERIAL\(/g) ?? []).length).toBe(2);
+    expect(contenu).toMatch(/IFCMATERIALLAYERSETUSAGE\(#\d+,\.AXIS2\.,\.NEGATIVE\.,0\.18,\$\)/);
+    expect((contenu.match(/IFCMATERIALLAYERSETUSAGE\(/g) ?? []).length).toBe(1);
     expect(rapport.remarques.some((r) => /w2 : épaisseur différente/.test(r))).toBe(true);
   });
 });

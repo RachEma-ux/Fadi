@@ -66,4 +66,49 @@ describe("réutilisation de modèle (DA-21-09)", () => {
     const une = appliquerLot(vide, lot([plan.commande!], "x")).etat;
     expect(() => appliquerLot(une, lot([plan.commande!], "y"))).toThrow(/déjà présent/);
   });
+
+  it("sélection spatiale : seuls les objets entièrement dans le rectangle ; les ouvertures suivent leur mur ; dit au rapport", () => {
+    const c = cible();
+    const tous = planifierReprise(P118, c, { familles: ["architecture"], niveaux: ["rdc"], origine });
+    const murs = objetsDeClasse(P118, "mur", "rdc") as Occurrence<"mur">[];
+    const xs = murs.flatMap((m2) => [m2.params.a.x, m2.params.b.x]).sort((a, b) => a - b);
+    const xMedian = xs[Math.floor(xs.length / 2)]!;
+    const zone = { min: { x: -1000, y: -1000 }, max: { x: xMedian, y: 1000 } };
+    const partiel = planifierReprise(P118, c, { familles: ["architecture"], niveaux: ["rdc"], origine, zone });
+    const ajoutes = Object.values((partiel.commande!.params["ajouts"] as { objets: Record<string, Occurrence<"mur">> }).objets);
+    const mursRepris = ajoutes.filter((o) => o.classe === "mur");
+    expect(mursRepris.length).toBeGreaterThan(0);
+    expect(mursRepris.length).toBeLessThan(murs.length);
+    expect(mursRepris.every((o) => o.params.a.x <= xMedian && o.params.b.x <= xMedian)).toBe(true);
+    expect(Object.keys((tous.commande!.params["ajouts"] as { objets: Record<string, unknown> }).objets).length).toBeGreaterThan(ajoutes.length);
+    expect(partiel.rapport.remarques.some((r) => /Sélection spatiale/.test(r))).toBe(true);
+    const r = appliquerLot(c, lot([partiel.commande!], "z"));
+    expect(objetsDeClasse(r.etat, "mur").length).toBe(mursRepris.length + 1);
+  });
+
+  it("bibliothèque partagée : définitions reprises sans occurrence (types, blocs), filtre par bibliothèque, calques du contenu remappés", () => {
+    const biblio = appliquerLot(modeleVide(), lot([
+      { type: "niveau.creer", params: { id: "n", nom: "N", elevation: 0 } },
+      { type: "calque.creer", params: { id: "c-mob", nom: "Mobilier" } },
+      { type: "type.definir", params: { id: "ext", classe: "mur", nom: "Mur extérieur", params: { couches: [{ materiau: "Béton", epaisseur: m(0.2) }] } } },
+      { type: "esquisse.ligne", params: { id: "e1", niveauId: "n", points: [pt(0, 0), pt(1, 0)], calqueId: "c-mob" } },
+      { type: "bloc.definir", params: { id: "table", nom: "Table", cibles: ["e1"], pointDeBase: pt(0, 0), bibliotheque: "Mobilier" } },
+      { type: "bloc.definir", params: { id: "wc", nom: "WC", cibles: ["e1"], pointDeBase: pt(0, 0), bibliotheque: "Sanitaires" } },
+    ])).etat;
+    const c = cible();
+    const tout = planifierReprise(biblio, c, { familles: ["definitions"], origine });
+    const r = appliquerLot(c, lot([tout.commande!], "b")).etat;
+    expect(Object.values(r.definitions).map((d) => d.nom).sort()).toEqual(["Mur extérieur", "Table", "WC"]);
+    expect(objetsDeClasse(r, "esquisse")).toHaveLength(0); // aucune occurrence n'est reprise
+    const table = Object.values(r.definitions).find((d) => d.nom === "Table")!;
+    const calque = (table.params as { contenu: { calqueId: string | null }[] }).contenu[0]!.calqueId!;
+    expect(r.calques[calque]!.nom).toBe("Mobilier");
+    expect(tout.rapport.remarques.some((x) => /3 définition/.test(x))).toBe(true);
+    const seule = planifierReprise(biblio, c, { familles: ["definitions"], bibliotheque: "Sanitaires", origine });
+    const r2 = appliquerLot(c, lot([seule.commande!], "s")).etat;
+    expect(Object.values(r2.definitions).map((d) => d.nom)).toEqual(["WC"]);
+    // Homonyme réutilisé : la définition existante de la cible est gardée, rien n'est dupliqué.
+    const encore = planifierReprise(biblio, r, { familles: ["definitions"], origine });
+    expect(encore.rapport.homonymes.filter((h) => h.action === "reutilise")).toHaveLength(3);
+  });
 });

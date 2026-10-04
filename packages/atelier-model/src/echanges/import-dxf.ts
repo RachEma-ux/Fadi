@@ -6,9 +6,10 @@
  *
  * Entités lues : LINE, LWPOLYLINE (arrondis « bulge » discrétisés), POLYLINE / VERTEX / SEQEND (2D), CIRCLE, ARC, TEXT,
  * MTEXT (texte brut), ATTRIB ; INSERT (blocs décomposés : point de base, échelles, rotation, réseaux ; blocs imbriqués
- * jusqu'à 8 niveaux) ; HATCH (contours extérieurs en hachures, motif nommé) ; DIMENSION linéaires et alignées (cotes).
- * Les autres entités (XREF — fichier externe non fourni —, cotes angulaires ou radiales, splines, 3D…) sont comptées
- * et signalées, jamais devinées.
+ * jusqu'à 8 niveaux) ; HATCH (contours extérieurs en hachures, motif nommé) ; DIMENSION linéaires et alignées (cotes),
+ * radiales et diamétrales (cotes linéaires dont la valeur est le rayon ou le diamètre), angulaires (arc et texte de
+ * l'angle mesuré, D-031). Les autres entités (XREF — fichier externe non fourni —, cotes d'ordonnée, splines, 3D…)
+ * sont comptées et signalées, jamais devinées.
  *
  * Unités : `$INSUNITS` de l'en-tête ; quand il est absent ou « sans unité », l'unité est celle que l'utilisateur
  * choisit (`uniteSiAbsente`) et le rapport l'écrit comme une hypothèse. Repère (R5) : `local` (les coordonnées sont
@@ -224,7 +225,9 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
     const c = comptes.get(type) ?? { lues: 0, importees: 0, remarque };
     c.lues++;
     if (ok) c.importees++;
+    // Remarques distinctes cumulées (trois au plus) : un type d'entité peut être repris de plusieurs façons.
     if (remarque && !c.remarque) c.remarque = remarque;
+    else if (remarque && c.remarque && !c.remarque.includes(remarque) && c.remarque.split(" | ").length < 3) c.remarque = `${c.remarque} | ${remarque}`;
     comptes.set(type, c);
   };
   const calques = new Map<string, string>();
@@ -511,8 +514,90 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
         }
         case "DIMENSION": {
           const type = (num(e, 70, 0) ?? 0) & 7;
+          const texteImpose = (txt(e, 1) ?? "").trim();
+          if (type === 6) {
+            compter("DIMENSION", false, "cotes d'ordonnée non importées (pas d'objet équivalent dans l'Atelier)");
+            break;
+          }
+          if (type === 3 || type === 4) {
+            // Radiale (10 = centre, 15 = point de la courbe) ou diamétrale (15 et 10 = points opposés) : reprise comme
+            // cote linéaire entre ces deux points, dont la valeur recalculée est le rayon ou le diamètre.
+            const A = type === 4 ? P(num(e, 10, 0)!, num(e, 20, 0)!) : P(num(e, 15, 0)!, num(e, 25, 0)!);
+            const B = type === 4 ? P(num(e, 15, 0)!, num(e, 25, 0)!) : P(num(e, 10, 0)!, num(e, 20, 0)!);
+            if (Math.hypot(B.x - A.x, B.y - A.y) <= 1e-6) {
+              compter("DIMENSION", false, "cotes de longueur nulle ignorées");
+              break;
+            }
+            const id = nouvelId();
+            commandes.push({ type: "cotation.creer", params: { id, niveauId: options.niveauId, a: A, b: B, decalage: m(0), calqueId: calqueDe(e) } });
+            crees.push(id);
+            etendre(A);
+            etendre(B);
+            const r = "cotes radiales et diamétrales reprises en cotes linéaires (centre → courbe, ou d'un point à l'opposé : la valeur est le rayon ou le diamètre ; préfixe R / ⌀ non porté, non associatives)";
+            compter("DIMENSION", true, texteImpose && texteImpose !== "<>" ? `${r} ; texte imposé « ${texteImpose.slice(0, 40)} » non repris` : r);
+            break;
+          }
+          if (type === 2 || type === 5) {
+            // Angulaire : deux droites (13-14 et 15-10, type 2) ou trois points (sommet 15, côtés 13 et 14, type 5) ; l'arc
+            // de cote passe par 16. Reprise en arc d'esquisse et texte de la valeur mesurée sur la géométrie du fichier.
+            const p = (cx: number, cy: number) => ({ x: num(e, cx, 0)!, y: num(e, cy, 0)! });
+            const arcPt = p(16, 26);
+            let sommet: { x: number; y: number } | null;
+            let d1: { x: number; y: number };
+            let d2: { x: number; y: number };
+            if (type === 5) {
+              sommet = p(15, 25);
+              const q1 = p(13, 23);
+              const q2 = p(14, 24);
+              d1 = { x: q1.x - sommet.x, y: q1.y - sommet.y };
+              d2 = { x: q2.x - sommet.x, y: q2.y - sommet.y };
+            } else {
+              const a1 = p(13, 23);
+              const b1 = p(14, 24);
+              const a2 = p(15, 25);
+              const b2 = p(10, 20);
+              d1 = { x: b1.x - a1.x, y: b1.y - a1.y };
+              d2 = { x: b2.x - a2.x, y: b2.y - a2.y };
+              const det = d1.x * d2.y - d1.y * d2.x;
+              if (Math.abs(det) < 1e-12) sommet = null;
+              else {
+                const t = ((a2.x - a1.x) * d2.y - (a2.y - a1.y) * d2.x) / det;
+                sommet = { x: a1.x + d1.x * t, y: a1.y + d1.y * t };
+                // Côtés : les demi-droites dont le secteur contient le point de l'arc.
+                const w = { x: arcPt.x - sommet.x, y: arcPt.y - sommet.y };
+                const al = (w.x * d2.y - w.y * d2.x) / det;
+                const be = (d1.x * w.y - d1.y * w.x) / det;
+                if (al < 0) d1 = { x: -d1.x, y: -d1.y };
+                if (be < 0) d2 = { x: -d2.x, y: -d2.y };
+              }
+            }
+            const rayon = sommet ? Math.hypot(arcPt.x - sommet.x, arcPt.y - sommet.y) : 0;
+            if (!sommet || Math.hypot(d1.x, d1.y) < 1e-9 || Math.hypot(d2.x, d2.y) < 1e-9 || !(rayon * f > 1e-6)) {
+              compter("DIMENSION", false, "cotes angulaires sans géométrie lisible (côtés parallèles ou nuls) ignorées");
+              break;
+            }
+            const deg = (v: { x: number; y: number }) => ((Math.atan2(v.y, v.x) * 180) / Math.PI + 360) % 360;
+            let a0 = deg(d1);
+            let ouverture = (deg(d2) - a0 + 360) % 360;
+            const aP = (deg({ x: arcPt.x - sommet.x, y: arcPt.y - sommet.y }) - a0 + 360) % 360;
+            if (aP > ouverture + 1e-9) {
+              // Le point de l'arc est dans l'autre secteur : l'arc va de d2 à d1.
+              a0 = deg(d2);
+              ouverture = 360 - ouverture;
+            }
+            const valeur = Math.round(ouverture * 10) / 10;
+            if (sim) {
+              poser("esquisse.arc", { points: [], centre: P(sommet.x, sommet.y), rayon: m(Math.round(rayon * f * sim.echelle * 1e6) / 1e6), angleDebut: { value: Math.round((a0 + sim.rotation) * 1e6) / 1e6, unit: "deg" }, angleFin: { value: Math.round((a0 + ouverture + sim.rotation) * 1e6) / 1e6, unit: "deg" }, calqueId: calqueDe(e) });
+            } else poser("esquisse.polyligne", { points: arcEnPoints(sommet.x, sommet.y, rayon, a0, a0 + ouverture), ferme: false, calqueId: calqueDe(e) });
+            const mi = ((a0 + ouverture / 2) * Math.PI) / 180;
+            const posTexte = e.champs.some((c) => c.code === 11) ? p(11, 21) : { x: sommet.x + rayon * Math.cos(mi), y: sommet.y + rayon * Math.sin(mi) };
+            poser("texte.creer", { position: P(posTexte.x, posTexte.y), texte: `${valeur.toFixed(1).replace(".", ",")}°`, calqueId: calqueDe(e) });
+            const r = "cotes angulaires reprises en arc d'esquisse et texte de l'angle mesuré sur la géométrie du fichier (non associatives)";
+            compter("DIMENSION", true, texteImpose && texteImpose !== "<>" ? `${r} ; texte imposé « ${texteImpose.slice(0, 40)} » non repris` : r);
+            break;
+          }
           if (type !== 0 && type !== 1) {
-            compter("DIMENSION", false, "cotes angulaires, radiales, diamétrales ou d'ordonnée non importées");
+            compter("DIMENSION", false, "type de cote inconnu, non importé");
             break;
           }
           const a = { x: num(e, 13, 0)!, y: num(e, 23, 0)! };

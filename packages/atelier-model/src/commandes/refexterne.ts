@@ -5,6 +5,9 @@
  * explicite du repère local de la source vers le repère local du projet (position, angle ; R5).
  *
  * Commandes : `refexterne.rattacher` (créer, ou épingler une publication plus récente) et `refexterne.detacher`.
+ * Réparation (D-031) : `refexterne.rattacher` avec `reparer: true` repointe une référence existante vers une autre
+ * source (autre projet, autre publication, éventuellement plus ancienne) en gardant son nom, son niveau, son calage et
+ * son calque — un choix explicite de l'utilisateur, journalisé et annulable, jamais un remplacement silencieux.
  * Les droits sur la source, l'existence de la publication et l'absence de référence circulaire sont contrôlés par
  * le serveur avant l'application (le modèle ne connaît pas les autres projets).
  */
@@ -59,8 +62,12 @@ export const reducteursRefExterne: Record<string, Reducteur> = {
     if (existante && existante.classe !== REFERENCE_EXTERNE) throw new ErreurCommande("precondition", "id", `définition d'une autre nature : ${id}`);
     const avant = existante ? (existante.params as unknown as ParamsReferenceExterne) : null;
     const params = lireParamsReferenceExterne(etat, { ...(avant as unknown as Brut | null ?? {}), ...p });
-    if (avant && avant.projetSourceId !== params.projetSourceId) throw new ErreurCommande("precondition", "projetSourceId", "une référence garde sa source : détachez-la pour en rattacher une autre");
-    if (avant && params.revisionSource < avant.revisionSource) throw new ErreurCommande("precondition", "revisionSource", "une mise à jour n'épingle jamais une révision plus ancienne");
+    // Calque verrouillé (le sien ou celui demandé) : ni rattachement ni mise à jour.
+    for (const c of [avant?.calqueId, params.calqueId]) if (c && etat.calques[c]?.verrouille) throw new ErreurCommande("precondition", "calqueId", `calque verrouillé : ${etat.calques[c]!.nom}`);
+    const reparer = lire.booleen(p, "reparer", false);
+    if (reparer && !avant) throw new ErreurCommande("precondition", "id", `réparer : référence externe inconnue : ${id}`);
+    if (!reparer && avant && avant.projetSourceId !== params.projetSourceId) throw new ErreurCommande("precondition", "projetSourceId", "une référence garde sa source : détachez-la pour en rattacher une autre");
+    if (!reparer && avant && avant.projetSourceId === params.projetSourceId && params.revisionSource < avant.revisionSource) throw new ErreurCommande("precondition", "revisionSource", "une mise à jour n'épingle jamais une révision plus ancienne");
     const definition: Definition = { id, classe: REFERENCE_EXTERNE, nom: params.nom, params: params as unknown as Brut, version: (existante?.version ?? 0) + 1 };
     const effets = effetsVides();
     (existante ? effets.modifies : effets.crees).push(id);
@@ -70,6 +77,8 @@ export const reducteursRefExterne: Record<string, Reducteur> = {
   "refexterne.detacher": (etat, p) => {
     const id = lire.chaine(p, "id");
     if (etat.definitions[id]?.classe !== REFERENCE_EXTERNE) throw new ErreurCommande("precondition", "id", `référence externe inconnue : ${id}`);
+    const calque = (etat.definitions[id]!.params as unknown as ParamsReferenceExterne).calqueId;
+    if (calque && etat.calques[calque]?.verrouille) throw new ErreurCommande("precondition", "calqueId", `calque verrouillé : ${etat.calques[calque]!.nom}`);
     const definitions = { ...etat.definitions };
     delete definitions[id];
     const effets = effetsVides();

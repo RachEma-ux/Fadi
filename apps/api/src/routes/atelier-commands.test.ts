@@ -716,6 +716,12 @@ describe("compléments : historique d'un objet, réutilisation de modèle", () =
     const murSource = Object.keys((await client.get(`/projects/${source}/atelier/model`)).body.modele.objets).find((k) => k.includes("rdc-W"))!;
     expect((await client.post(`/projects/${source}/atelier/commands`).send(enveloppe("s1", 1, [{ type: "objet.modifier", params: { id: murSource, params: { epaisseur: m(0.31) } } }]))).status).toBe(200);
     expect((await client.post(`/projects/${cible}/atelier/reprise`).send({ source: { projectId: source }, options: { familles: ["espaces"], niveaux: ["rdc"] }, empreinteSource: apercu2.rapport.source.empreinte, requestId: "rep-2", baseRevision: 2 })).status).toBe(409);
+    // Projet bibliothèque (définitions seules, aucun objet) : repris comme bibliothèque partagée.
+    const biblio = await projetVide(client);
+    expect((await client.post(`/projects/${biblio}/atelier/commands`).send(enveloppe("bib0", 0, [{ type: "type.definir", params: { id: "ext", classe: "mur", nom: "Mur extérieur bibliothèque" } }]))).status).toBe(200);
+    const apercuBib = await client.post(`/projects/${cible}/atelier/reprise/apercu`).send({ source: { projectId: biblio }, options: { familles: ["definitions"] } });
+    expect(apercuBib.status).toBe(200);
+    expect(apercuBib.body.ajouts.definitions).toBe(1);
     const etranger = await registerAndLogin("reprise-etranger@example.com");
     const sienne = await projetVide(etranger);
     expect((await etranger.post(`/projects/${sienne}/atelier/reprise/apercu`).send(corps)).status).toBe(404);
@@ -778,8 +784,21 @@ describe("compléments : historique d'un objet, réutilisation de modèle", () =
     const svgMembre = await brut(etrangerB.get(`/projects/${a}/documents/atelier/vues/va.svg`));
     expect(svgMembre.status).toBe(200);
     expect((String(svgMembre.body).match(/<line/g) ?? []).length).toBeLessThan((String(svg.body).match(/<line/g) ?? []).length);
+    // Publication écrite sous un autre contrat : « non lisible », conservée, jamais redessinée ; rattachement refusé.
+    await pool.query("UPDATE atelier_publications SET catalogues = catalogues || '{\"contratCommandes\":\"atelier-commands/9\"}'::jsonb WHERE id = $1", [pub2.id]);
+    const nl = (await client.get(`/projects/${a}/atelier/references-externes`)).body.references[0];
+    expect(nl).toMatchObject({ etat: "non-lisible", representation: null });
+    const refusNl = await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("r-nl", 4, [rattacher("ref-nl", pub2)]));
+    expect(refusNl.status).toBe(409);
+    expect(refusNl.body.motif).toBe("non-lisible");
+    // Réparer (D-031) : repointer explicitement la référence non lisible vers une publication lisible ; calage gardé.
+    const repare = await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("r-rep", 4, [{ type: "refexterne.rattacher", params: { id: "ref-b", reparer: true, projetSourceId: b, publicationId: pub1.id, revisionSource: pub1.revision, empreinteSource: pub1.empreinte, niveauSourceId: "rdc" } }]));
+    expect(repare.status).toBe(200);
+    const reparee = (await client.get(`/projects/${a}/atelier/references-externes`)).body.references[0];
+    expect(reparee.params).toMatchObject({ publicationId: pub1.id, position: { x: 10, y: 0 } });
+    expect(reparee.representation).not.toBeNull();
     // Détacher : la référence disparaît, annulable.
-    expect((await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("r3", 4, [{ type: "refexterne.detacher", params: { id: "ref-b" } }]))).status).toBe(200);
+    expect((await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("r3", 5, [{ type: "refexterne.detacher", params: { id: "ref-b" } }]))).status).toBe(200);
     expect((await client.get(`/projects/${a}/atelier/references-externes`)).body.references).toHaveLength(0);
   }, 60_000);
 });

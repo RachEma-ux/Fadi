@@ -530,13 +530,15 @@ atelierVersionsRouter.get("/objets/:objetId/historique", async (req, res) => {
 const repriseSchema = z.object({
   source: z.object({ projectId: z.string().min(1).max(64), versionId: z.string().max(64).optional() }),
   options: z.object({
-    familles: z.array(z.enum(["architecture", "espaces", "dessin", "documents"])).max(4),
+    familles: z.array(z.enum(["architecture", "espaces", "dessin", "documents", "definitions"])).max(5),
     niveaux: z.array(z.string().max(200)).max(200).optional(),
     site: z.boolean().optional(),
     hypotheses: z.boolean().optional(),
     sources: z.boolean().optional(),
     structure: z.boolean().optional(),
     homonymes: z.enum(["reutiliser", "renommer"]).optional(),
+    zone: z.object({ min: z.object({ x: z.number().finite(), y: z.number().finite() }), max: z.object({ x: z.number().finite(), y: z.number().finite() }) }).optional(),
+    bibliotheque: z.string().trim().min(1).max(120).optional(),
   }),
   empreinteSource: z.string().max(64).optional(),
   requestId: z.string().min(1).max(64).optional(),
@@ -559,7 +561,7 @@ async function planDeReprise(req: Request, cible: AccessibleProject, corps: z.in
     revision = v.revision;
     nom = `${source.name} · version « ${v.nom} »`;
   } else etat = (await chargerModele(db, source.id))?.etat ?? null;
-  if (!etat || (!Object.keys(etat.objets).length && !etat.site.parcelle)) return { status: 409, reponse: { erreur: "conflit", motif: "source-vide", message: "Le modèle source est vide." } };
+  if (!etat || (!Object.keys(etat.objets).length && !Object.keys(etat.definitions).length && !etat.site.parcelle)) return { status: 409, reponse: { erreur: "conflit", motif: "source-vide", message: "Le modèle source est vide." } };
   return planifierReprise(etat, etatCible, { ...corps.options, origine: { projet: source.id, nom, revision } });
 }
 

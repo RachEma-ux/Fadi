@@ -2,7 +2,8 @@
  * Références externes (DA-05-11) : superposer en lecture seule, sur un niveau de ce projet, le plan d'un niveau
  * d'une **publication** d'un autre projet lisible. Rien n'est copié : la référence épingle la publication (révision,
  * empreinte) et la conversion explicite du repère de la source vers celui du projet (position, angle). Une
- * publication plus récente est signalée ; ses différences se consultent avant d'épingler.
+ * publication plus récente est signalée ; ses différences se consultent avant d'épingler. Une référence inaccessible
+ * ou non lisible se répare en la repointant vers une autre publication (calage, niveau et nom gardés ; D-031).
  */
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -36,7 +37,7 @@ async function executerEtValider(client: AtelierClient, commandes: Commande[], l
   throw new Error(d.message ?? d.conflits?.[0]?.motif ?? "Référence refusée par le serveur.");
 }
 
-const ETAT: Record<ReferenceExterneEtat["etat"], string> = { "a-jour": "à jour", "plus-recente": "publication plus récente disponible", inaccessible: "source inaccessible" };
+const ETAT: Record<ReferenceExterneEtat["etat"], string> = { "a-jour": "à jour", "plus-recente": "publication plus récente disponible", inaccessible: "source inaccessible", "non-lisible": "non lisible (contrat ou modèle plus récent)" };
 
 export function ReferencesExternes({ projectId, niveaux, niveauId, references, readOnly, client, horsLigne = false }: Props) {
   const [ouvert, setOuvert] = useState(false);
@@ -51,6 +52,7 @@ export function ReferencesExternes({ projectId, niveaux, niveauId, references, r
   const [angle, setAngle] = useState("0");
   const [message, setMessage] = useState<{ texte: string; erreur: boolean } | null>(null);
   const [miseAJour, setMiseAJour] = useState<{ id: string; texte: string } | null>(null);
+  const [aReparer, setAReparer] = useState<ReferenceExterneEtat | null>(null);
 
   const agir = async (f: () => Promise<string | void>) => {
     setMessage(null);
@@ -78,6 +80,16 @@ export function ReferencesExternes({ projectId, niveaux, niveauId, references, r
         `Référence externe « ${pub.nom} »`,
       );
       return "Référence rattachée (lecture seule, rien n'est copié).";
+    });
+
+  const repointer = (r: ReferenceExterneEtat) =>
+    agir(async () => {
+      const pub = publication.data;
+      if (!pub) throw new Error("Choisissez une publication.");
+      if (!niveauSourceId) throw new Error("Choisissez le niveau source.");
+      await executerEtValider(client, [{ type: "refexterne.rattacher", params: { id: r.id, reparer: true, projetSourceId: sourceId, publicationId: pub.id, revisionSource: pub.revision, empreinteSource: pub.empreinte, niveauSourceId } }], `Réparer la référence « ${r.nom} »`);
+      setAReparer(null);
+      return `Référence « ${r.nom} » repointée sur « ${pub.nom} » (révision ${pub.revision}) ; calage et niveau conservés.`;
     });
 
   const epinglerDerniere = (r: ReferenceExterneEtat) =>
@@ -124,6 +136,11 @@ export function ReferencesExternes({ projectId, niveaux, niveauId, references, r
                     </button>
                   </>
                 )}
+                {(r.etat === "inaccessible" || r.etat === "non-lisible") && (
+                  <button type="button" onClick={() => { setAReparer(r); setOuvert(true); }} data-reparer={r.id}>
+                    Réparer…
+                  </button>
+                )}
                 <button type="button" onClick={() => void agir(async () => { await executerEtValider(client, [{ type: "refexterne.detacher", params: { id: r.id } }], `Détacher la référence « ${r.nom} »`); return "Référence détachée."; })}>
                   Détacher
                 </button>
@@ -135,7 +152,8 @@ export function ReferencesExternes({ projectId, niveaux, niveauId, references, r
       </ul>
       {!readOnly && (
         <fieldset className="reprise-choix">
-          <legend>Rattacher une publication</legend>
+          <legend>{aReparer ? `Repointer « ${aReparer.nom} » vers une autre publication` : "Rattacher une publication"}</legend>
+          {aReparer && <p className="ver-info">Le calage (origine, rotation), le niveau du projet et le nom de la référence sont conservés ; seule la source change. <button type="button" onClick={() => setAReparer(null)}>Annuler</button></p>}
           <label className="auto-champ">
             Projet source
             <select value={sourceId} onChange={(e) => { setSourceId(e.target.value); setPublicationId(""); setNiveauSourceId(""); }} data-refext="source">
@@ -174,6 +192,7 @@ export function ReferencesExternes({ projectId, niveaux, niveauId, references, r
               </select>
             </label>
           )}
+          {!aReparer && (<>
           <label className="auto-champ">
             Niveau du projet
             <select value={cible || niveauId || ""} onChange={(e) => setCible(e.target.value)} data-refext="niveau">
@@ -192,9 +211,16 @@ export function ReferencesExternes({ projectId, niveaux, niveauId, references, r
             Rotation (degrés, sens trigonométrique)
             <input value={angle} onChange={(e) => setAngle(e.target.value)} inputMode="decimal" data-refext="angle" />
           </label>
-          <button type="button" className="primaire" disabled={!publication.data || !niveauSourceId || !niveaux.length} onClick={() => void rattacher()} data-refext="rattacher">
-            Rattacher
-          </button>
+          </>)}
+          {aReparer ? (
+            <button type="button" className="primaire" disabled={!publication.data || !niveauSourceId} onClick={() => void repointer(aReparer)} data-refext="repointer">
+              Repointer
+            </button>
+          ) : (
+            <button type="button" className="primaire" disabled={!publication.data || !niveauSourceId || !niveaux.length} onClick={() => void rattacher()} data-refext="rattacher">
+              Rattacher
+            </button>
+          )}
         </fieldset>
       )}
       {message && <p className={message.erreur ? "ver-erreur" : "ver-info"} role={message.erreur ? "alert" : "status"}>{message.texte}</p>}

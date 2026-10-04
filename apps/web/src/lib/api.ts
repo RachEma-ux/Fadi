@@ -951,7 +951,7 @@ export interface AtelierProposition {
 }
 export interface RepriseDemande {
   source: { projectId: string; versionId?: string };
-  options: { familles: ("architecture" | "espaces" | "dessin" | "documents")[]; niveaux?: string[]; site?: boolean; hypotheses?: boolean; sources?: boolean; structure?: boolean; homonymes?: "reutiliser" | "renommer" };
+  options: { familles: ("architecture" | "espaces" | "dessin" | "documents" | "definitions")[]; bibliotheque?: string; niveaux?: string[]; site?: boolean; hypotheses?: boolean; sources?: boolean; structure?: boolean; homonymes?: "reutiliser" | "renommer"; zone?: { min: { x: number; y: number }; max: { x: number; y: number } } };
 }
 export interface AtelierVersion {
   id: string;
@@ -1016,7 +1016,7 @@ export interface ReferenceExterneEtat {
   id: string;
   nom: string;
   params: { nom: string; projetSourceId: string; publicationId: string; revisionSource: number; empreinteSource: string; niveauSourceId: string; niveauId: string; position: { x: number; y: number }; angle: { value: number; unit: string }; calqueId: string | null };
-  etat: "a-jour" | "plus-recente" | "inaccessible";
+  etat: "a-jour" | "plus-recente" | "inaccessible" | "non-lisible";
   source: { nom: string } | null;
   derniere: { id: string; nom: string; revision: number; empreinte: string; createdAt: string } | null;
   representation: { traits: { a: { x: number; y: number }; b: { x: number; y: number }; coupe: boolean }[]; empreinte: string; niveauSourceNom: string | null } | null;

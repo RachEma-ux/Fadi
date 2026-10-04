@@ -24,6 +24,11 @@ describe("références externes (DA-05-11)", () => {
     expect(() => appliquerLot(maj.etat, lot([{ type: "refexterne.rattacher", params: { id: "voisin", publicationId: "pub-1", revisionSource: 3, empreinteSource: "abc" } }]))).toThrow(/plus ancienne/);
     expect(() => appliquerLot(maj.etat, lot([{ type: "refexterne.rattacher", params: { id: "voisin", projetSourceId: "autre" } }]))).toThrow(/garde sa source/);
     expect(() => appliquerLot(e, lot([{ ...rattacher, params: { ...rattacher.params, niveauId: "inconnu" } }]))).toThrow(/niveau inconnu/);
+    // Réparation explicite : autre source (et révision plus ancienne) acceptée, calage et nom gardés ; inverse exact.
+    const rep = appliquerLot(maj.etat, lot([{ type: "refexterne.rattacher", params: { id: "voisin", reparer: true, projetSourceId: "copie", publicationId: "pub-c", revisionSource: 1, empreinteSource: "ccc" } }], "rep"));
+    expect(rep.etat.definitions["voisin"]).toMatchObject({ nom: "Bâtiment voisin", params: { projetSourceId: "copie", revisionSource: 1, position: { x: 50, y: 0 }, angle: { value: 90 } } });
+    expect(appliquerLot(rep.etat, lot([rep.inverse], "inv-rep")).etat).toEqual(maj.etat);
+    expect(() => appliquerLot(e, lot([{ ...rattacher, params: { ...rattacher.params, reparer: true } }]))).toThrow(/réparer/);
     const d = appliquerLot(maj.etat, lot([{ type: "refexterne.detacher", params: { id: "voisin" } }], "d"));
     expect(referencesExternes(d.etat)).toHaveLength(0);
     expect(appliquerLot(d.etat, lot([d.inverse], "inv")).etat).toEqual(maj.etat);
@@ -57,5 +62,13 @@ describe("références externes (DA-05-11)", () => {
     expect(dessine.empreinte).toBe(apercu.empreinte);
     const inaccessible = genererVue(r, vue, null, { externes: [{ id: "voisin", traits: null }] });
     expect(inaccessible.avertissements.some((a) => /source inaccessible/.test(a))).toBe(true);
+  });
+
+  it("calque verrouillé : ni rattachement, ni mise à jour, ni détachement", () => {
+    const e = appliquerLot(base(), lot([{ type: "calque.creer", params: { id: "k", nom: "Voisins" } }, { ...rattacher, params: { ...rattacher.params, calqueId: "k" } }])).etat;
+    const v = appliquerLot(e, lot([{ type: "calque.modifier", params: { id: "k", verrouille: true } }], "v")).etat;
+    expect(() => appliquerLot(v, lot([{ type: "refexterne.rattacher", params: { id: "voisin", publicationId: "pub-2", revisionSource: 5, empreinteSource: "x" } }], "m"))).toThrow(/verrouillé/);
+    expect(() => appliquerLot(v, lot([{ type: "refexterne.detacher", params: { id: "voisin" } }], "d"))).toThrow(/verrouillé/);
+    expect(() => appliquerLot(v, lot([{ ...rattacher, params: { ...rattacher.params, id: "autre", calqueId: "k" } }], "n"))).toThrow(/verrouillé/);
   });
 });

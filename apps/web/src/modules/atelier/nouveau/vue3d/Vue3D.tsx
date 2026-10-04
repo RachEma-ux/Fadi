@@ -76,8 +76,8 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
   const options: OptionsScene = useMemo(() => ({ ...reglages, niveauActif: ui.niveauId }), [reglages, ui.niveauId]);
   const setOptions = (patch: Partial<Omit<OptionsScene, "niveauActif">>) => setReglages((r) => ({ ...r, ...patch }));
   const [pousse, setPousse] = useState<{ valeur: number; cle: string } | null>(null);
-  const geste = useRef<{ x: number; y: number; bouge: boolean; pousser: null | { o: OccurrenceQuelconque; cle: "hauteur" | "epaisseur"; depart: number; ppm: number; valeur: number }; poignee?: { axe: "x" | "y"; t0: number; d: number } } | null>(null);
-  const [deplace, setDeplace] = useState<{ axe: "x" | "y"; d: number } | null>(null);
+  const geste = useRef<{ x: number; y: number; bouge: boolean; pousser: null | { o: OccurrenceQuelconque; cle: "hauteur" | "epaisseur"; depart: number; ppm: number; valeur: number }; poignee?: { axe: "x" | "y"; t0: number; d: number }; rotation?: { a0: number; angle: number; centre: { x: number; y: number } } } | null>(null);
+  const [deplace, setDeplace] = useState<{ axe: "x" | "y" | "r"; d: number } | null>(null);
   const webgpuDisponible = typeof navigator !== "undefined" && "gpu" in navigator;
 
   // Création / recréation du moteur.
@@ -149,8 +149,18 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
     geste.current = { x: p.x, y: p.y, bouge: false, pousser: null };
     if (poigneesActives && !pousserActif) {
       const axe = s.poigneeSous(p.x, p.y);
-      const t0 = axe ? s.abscisseSurAxe(axe, p.x, p.y) : null;
-      if (axe && t0 !== null) {
+      if (axe === "r") {
+        const a0 = s.angleAutourDuCentre(p.x, p.y);
+        const centre = s.centreEnPlan();
+        if (a0 !== null && centre) {
+          s.activerControles(false);
+          canvasRef.current?.setPointerCapture(e.pointerId);
+          geste.current.rotation = { a0, angle: 0, centre };
+          return;
+        }
+      }
+      const t0 = axe && axe !== "r" ? s.abscisseSurAxe(axe, p.x, p.y) : null;
+      if (axe && axe !== "r" && t0 !== null) {
         s.activerControles(false);
         canvasRef.current?.setPointerCapture(e.pointerId);
         geste.current.poignee = { axe, t0, d: 0 };
@@ -182,6 +192,19 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
     if (!g) return;
     const p = relatif(e);
     if (Math.hypot(p.x - g.x, p.y - g.y) > 4) g.bouge = true;
+    if (g.rotation) {
+      const a = sceneRef.current?.angleAutourDuCentre(p.x, p.y);
+      if (a === null || a === undefined) return;
+      let d = a - g.rotation.a0;
+      while (d > 180) d -= 360;
+      while (d < -180) d += 360;
+      // Pas d'un degré ; Maj : pas de 15°.
+      const pas = e.shiftKey ? 15 : 1;
+      g.rotation.angle = Math.round(d / pas) * pas;
+      setDeplace({ axe: "r", d: g.rotation.angle });
+      sceneRef.current?.apercuRotation(g.rotation.angle);
+      return;
+    }
     if (g.poignee) {
       const t = sceneRef.current?.abscisseSurAxe(g.poignee.axe, p.x, p.y);
       if (t === null || t === undefined) return;
@@ -206,6 +229,17 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
     const g = geste.current;
     geste.current = null;
     if (!s || !g) return;
+    if (g.rotation) {
+      s.activerControles(true);
+      s.apercuDeplacement(0, 0);
+      setDeplace(null);
+      const { angle, centre } = g.rotation;
+      if (Math.abs(angle) >= 0.5) {
+        const n = ui.selection.length;
+        onCommandes([{ type: "transformer.tourner", params: { centre: { x: Math.round(centre.x * 1e6) / 1e6, y: Math.round(centre.y * 1e6) / 1e6, frame: "local", unit: "m" }, angle: { value: angle, unit: "deg" } }, cibles: ui.selection }], `Tourner ${n} objet${n > 1 ? "s" : ""} de ${fmt(angle)}° (manipulateur 3D)`);
+      }
+      return;
+    }
     if (g.poignee) {
       s.activerControles(true);
       s.apercuDeplacement(0, 0);
@@ -305,7 +339,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
         </label>
       </div>
       <p className="vue3d-etat" aria-live="polite">
-        {erreur ? `Rendu 3D indisponible : ${erreur}` : !pret ? "Préparation de la vue 3D…" : deplace ? `Déplacement ${deplace.axe.toUpperCase()} : ${fmt(deplace.d)} m` : pousse ? `${pousse.cle === "hauteur" ? "Hauteur" : "Épaisseur"} : ${fmt(pousse.valeur)} m` : `${moteur === "webgpu" ? "WebGPU" : "WebGL2"}${webgpu && moteur !== "webgpu" ? " (WebGPU indisponible, repli)" : ""}`}
+        {erreur ? `Rendu 3D indisponible : ${erreur}` : !pret ? "Préparation de la vue 3D…" : deplace ? (deplace.axe === "r" ? `Rotation : ${fmt(deplace.d)}°` : `Déplacement ${deplace.axe.toUpperCase()} : ${fmt(deplace.d)} m`) : pousse ? `${pousse.cle === "hauteur" ? "Hauteur" : "Épaisseur"} : ${fmt(pousse.valeur)} m` : `${moteur === "webgpu" ? "WebGPU" : "WebGL2"}${webgpu && moteur !== "webgpu" ? " (WebGPU indisponible, repli)" : ""}`}
       </p>
     </div>
   );

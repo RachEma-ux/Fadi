@@ -11,6 +11,8 @@
  */
 import { and, desc, eq } from "drizzle-orm";
 import {
+  CONTRAT_COMMANDES,
+  modeleVide,
   REFERENCE_EXTERNE,
   representationReferenceExterne,
   type Commande,
@@ -36,6 +38,13 @@ async function publicationAvecModele(lecteur: Lecteur, projetId: string, publica
   if (!pub) return null;
   const v = (await lecteur.select({ modele: atelierVersions.modele }).from(atelierVersions).where(eq(atelierVersions.id, pub.versionId)).limit(1))[0];
   return v ? { pub, modele: v.modele as unknown as ModeleAtelier } : null;
+}
+
+/** Une publication écrite sous un autre contrat de commandes ou une version plus récente du modèle n'est pas lue (D-029). */
+export function lisible(pub: { catalogues: Record<string, string> }): boolean {
+  const contrat = pub.catalogues["contratCommandes"];
+  const version = Number(pub.catalogues["modeleAtelier"] ?? "1");
+  return (contrat === undefined || contrat === CONTRAT_COMMANDES) && !(version > modeleVide().version);
 }
 
 const refsDe = (etat: ModeleAtelier) =>
@@ -74,6 +83,7 @@ export async function controlerRattachements(lecteur: Lecteur, projetId: string,
     const s = await publicationAvecModele(lecteur, source.id, p.publicationId);
     if (!s) return { status: 404, reponse: { erreur: "publication-inconnue", message: "Publication source inconnue." } };
     if (p.revisionSource !== s.pub.revision || p.empreinteSource !== s.pub.empreinte) return conflit("publication-differente", "La révision ou l'empreinte annoncées ne correspondent pas à la publication.", "empreinteSource");
+    if (!lisible(s.pub)) return conflit("non-lisible", "Cette publication a été écrite sous un contrat ou une version du modèle plus récents : elle n'est pas lisible ici.", "publicationId");
     if (typeof p.niveauSourceId !== "string" || !s.modele.niveaux[p.niveauSourceId]) return conflit("niveau-source-inconnu", "Ce niveau n'existe pas dans la publication source.", "niveauSourceId");
     if (await chaineRevientA(lecteur, projetId, s.modele)) return conflit("reference-circulaire", "Cette publication référence déjà ce projet (directement ou par une chaîne) : référence circulaire refusée.", "projetSourceId");
   }
@@ -84,7 +94,7 @@ export interface EtatReference {
   id: string;
   nom: string;
   params: ParamsReferenceExterne;
-  etat: "a-jour" | "plus-recente" | "inaccessible";
+  etat: "a-jour" | "plus-recente" | "inaccessible" | "non-lisible";
   source: { nom: string } | null;
   derniere: { id: string; nom: string; revision: number; empreinte: string; createdAt: string } | null;
   representation: ReturnType<typeof representationReferenceExterne> | null;
@@ -101,6 +111,11 @@ export async function etatReferences(auteurId: string, etat: ModeleAtelier, avec
       continue;
     }
     const derniere = (await db.select().from(atelierPublications).where(eq(atelierPublications.projectId, source.id)).orderBy(desc(atelierPublications.revision), desc(atelierPublications.createdAt)).limit(1))[0]!;
+    if (!lisible(epinglee.pub)) {
+      // Conservée telle quelle, jamais redessinée ni rattachée ailleurs en silence (R12).
+      sortie.push({ id: r.id, nom: r.nom, params: r.params, etat: "non-lisible", source: { nom: source.name }, derniere: { id: derniere.id, nom: derniere.nom, revision: derniere.revision, empreinte: derniere.empreinte, createdAt: derniere.createdAt.toISOString() }, representation: null });
+      continue;
+    }
     sortie.push({
       id: r.id,
       nom: r.nom,

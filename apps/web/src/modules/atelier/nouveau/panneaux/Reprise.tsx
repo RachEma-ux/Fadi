@@ -15,6 +15,7 @@ const FAMILLES: [RepriseDemande["options"]["familles"][number], string][] = [
   ["espaces", "Pièces, espaces, zones"],
   ["dessin", "Dessin et annotations (esquisses, cotes, textes, solides, blocs, objets importés)"],
   ["documents", "Vues et feuilles"],
+  ["definitions", "Bibliothèque de définitions (types, blocs, composants, même sans occurrence)"],
 ];
 
 export function Reprise({ projectId, client, readOnly }: { projectId: string; client: AtelierClient; readOnly: boolean }) {
@@ -29,7 +30,14 @@ export function Reprise({ projectId, client, readOnly }: { projectId: string; cl
   const [apercu, setApercu] = useState<{ rapport: RapportReprise; vide: boolean; ajouts: Record<string, number>; cle: string } | null>(null);
   const [message, setMessage] = useState<{ texte: string; erreur: boolean } | null>(null);
   const [occupe, setOccupe] = useState(false);
-  const demande = (): RepriseDemande => ({ source: { projectId: sourceId, ...(versionId ? { versionId } : {}) }, options: { familles: [...familles] as RepriseDemande["options"]["familles"], ...donnees, homonymes } });
+  const [zone, setZone] = useState({ active: false, min: "", max: "" });
+  const [bibliotheque, setBibliotheque] = useState("");
+  const lireXY = (t: string) => {
+    const [x, y] = t.split(";").map((v) => Number(v.trim().replace(",", ".")));
+    return Number.isFinite(x) && Number.isFinite(y) && t.includes(";") ? { x: x!, y: y! } : null;
+  };
+  const zoneLue = zone.active ? (() => { const a = lireXY(zone.min); const b = lireXY(zone.max); return a && b ? { min: { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y) }, max: { x: Math.max(a.x, b.x), y: Math.max(a.y, b.y) } } : null; })() : null;
+  const demande = (): RepriseDemande => ({ source: { projectId: sourceId, ...(versionId ? { versionId } : {}) }, options: { familles: [...familles] as RepriseDemande["options"]["familles"], ...donnees, homonymes, ...(zoneLue ? { zone: zoneLue } : {}), ...(familles.has("definitions") && bibliotheque.trim() ? { bibliotheque: bibliotheque.trim() } : {}) } });
   const cle = JSON.stringify(demande());
   const agir = async (f: () => Promise<string | void>) => {
     setMessage(null);
@@ -78,6 +86,12 @@ export function Reprise({ projectId, client, readOnly }: { projectId: string; cl
             <input type="checkbox" checked={familles.has(f)} onChange={(e) => { const s = new Set(familles); if (e.target.checked) s.add(f); else s.delete(f); setFamilles(s); setApercu(null); }} data-famille={f} /> {libelle}
           </label>
         ))}
+        {familles.has("definitions") && (
+          <label className="auto-champ">
+            Bibliothèque de blocs et composants (vide : toutes)
+            <input value={bibliotheque} onChange={(e) => { setBibliotheque(e.target.value); setApercu(null); }} placeholder="Mobilier" maxLength={120} data-reprise="bibliotheque" />
+          </label>
+        )}
       </fieldset>
       <fieldset className="reprise-choix">
         <legend>Données de projet (jamais reprises par défaut)</legend>
@@ -87,6 +101,19 @@ export function Reprise({ projectId, client, readOnly }: { projectId: string; cl
           </label>
         ))}
       </fieldset>
+      <fieldset className="reprise-choix">
+        <legend>Sélection spatiale</legend>
+        <label>
+          <input type="checkbox" checked={zone.active} onChange={(e) => { setZone({ ...zone, active: e.target.checked }); setApercu(null); }} data-reprise="zone" /> Seulement les objets entièrement dans un rectangle (repère local de la source)
+        </label>
+        {zone.active && (
+          <>
+            <label className="auto-champ">Coin (x ; y, m)<input value={zone.min} onChange={(e) => { setZone({ ...zone, min: e.target.value }); setApercu(null); }} placeholder="0 ; 0" data-reprise="zone-min" /></label>
+            <label className="auto-champ">Coin opposé (x ; y, m)<input value={zone.max} onChange={(e) => { setZone({ ...zone, max: e.target.value }); setApercu(null); }} placeholder="12 ; 8" data-reprise="zone-max" /></label>
+            {!zoneLue && <p className="ver-erreur">Saisissez deux coins « x ; y ».</p>}
+          </>
+        )}
+      </fieldset>
       <label className="auto-champ">
         Calques et définitions de même nom
         <select value={homonymes} onChange={(e) => { setHomonymes(e.target.value as "reutiliser" | "renommer"); setApercu(null); }}>
@@ -95,7 +122,7 @@ export function Reprise({ projectId, client, readOnly }: { projectId: string; cl
         </select>
       </label>
       <span className="ver-actions">
-        <button type="button" disabled={occupe || !sourceId} onClick={() => void agir(async () => { const a = await api.apercuRepriseAtelier(projectId, demande()); setApercu({ ...a, cle }); })}>
+        <button type="button" disabled={occupe || !sourceId || (zone.active && !zoneLue)} onClick={() => void agir(async () => { const a = await api.apercuRepriseAtelier(projectId, demande()); setApercu({ ...a, cle }); })}>
           Aperçu
         </button>
         <button

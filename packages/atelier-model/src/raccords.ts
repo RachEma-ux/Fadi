@@ -10,7 +10,10 @@
  *   s'arrête sur la face du mur traversant qui lui fait face (ni recouvrement, ni vide).
  * - Nœud de trois murs ou plus avec une seule paire alignée : la paire se prolonge, les autres murs s'arrêtent sur
  *   sa face (comme un té).
- * - Croisements, autres nœuds, murs alignés : extrémités inchangées (déclaré).
+ * - Autres nœuds de trois murs ou plus (aucune paire alignée, ou plusieurs — croisement de quatre murs) : chaque face
+ *   s'arrête sur la face en vis-à-vis du mur voisin de son côté (ordre angulaire autour du nœud), et le contour du mur
+ *   passe par le point du nœud, de sorte que les murs couvrent ensemble le cœur du nœud sans vide (D-032).
+ * - Murs qui se croisent sans partager d'extrémité, murs alignés : extrémités inchangées (déclaré).
  * Un raccord qui déplacerait une extrémité de plus de quatre épaisseurs (angle très aigu) n'est pas appliqué.
  *
  * Le résultat est mis en cache par état d'objets (immuable) et par niveau.
@@ -25,9 +28,11 @@ export interface RaccordMur {
   droite: [number, number];
   /** Nature du raccord à chaque extrémité (a, b). */
   extremites: [TypeRaccord, TypeRaccord];
+  /** Nœud sans paire (D-032) : point du nœud par lequel passe le contour, à chaque extrémité. */
+  pointes?: [Vec | null, Vec | null];
 }
 
-export type TypeRaccord = "libre" | "angle" | "te" | "non-traite";
+export type TypeRaccord = "libre" | "angle" | "te" | "noeud" | "non-traite";
 
 interface MurPlan {
   id: string;
@@ -123,7 +128,55 @@ function calculer(murs: MurPlan[], tol: number): Map<string, RaccordMur> {
         const paires: [number, number][] = [];
         for (let u = 0; u < tous.length; u++) for (let v = u + 1; v < tous.length; v++) if (dot(sens[u]!, sens[v]!) < -Math.cos((1 * Math.PI) / 180)) paires.push([u, v]);
         if (paires.length !== 1) {
-          r.extremites[fin] = "non-traite";
+          // Nœud sans paire unique : chaque face s'arrête sur la face en vis-à-vis du voisin de son côté.
+          const ang = (v: Vec) => Math.atan2(v.y, v.x);
+          const deux = 2 * Math.PI;
+          const a0 = ang(sens[0]!);
+          let ccw = -1;
+          let cw = -1;
+          let dccw = Infinity;
+          let dcw = Infinity;
+          for (let k = 1; k < tous.length; k++) {
+            const d = (((ang(sens[k]!) - a0) % deux) + deux) % deux;
+            if (d > 1e-9 && d < dccw) {
+              dccw = d;
+              ccw = k;
+            }
+            const d2 = (deux - d) % deux;
+            if (d2 > 1e-9 && d2 < dcw) {
+              dcw = d2;
+              cw = k;
+            }
+          }
+          if (ccw < 0 || cw < 0) {
+            r.extremites[fin] = "non-traite";
+            continue;
+          }
+          const cote = (m: MurPlan, s: Vec, signe: 1 | -1): "gauche" | "droite" => (cross(s, sensFace(m, "gauche")) * signe > 0 ? "gauche" : "droite");
+          const nouvelles: Partial<Record<"gauche" | "droite", number>> = {};
+          let valide = true;
+          for (const [voisin, signe] of [[ccw, 1], [cw, -1]] as const) {
+            const fW = cote(w, sens[0]!, signe);
+            const o = tous[voisin]!.m;
+            const fO = cote(o, sens[voisin]!, signe === 1 ? -1 : 1);
+            const x = intersectionLignes(ligneFace(w, fW), ligneFace(o, fO));
+            // Faces parallèles (voisin à 180°) : la face reste au nœud.
+            const sx = x ? dot(sub(x, w.a), w.u) : fin === 0 ? 0 : w.L;
+            if (Math.abs(sx - (fin === 0 ? 0 : w.L)) > 4 * Math.max(w.e, o.e) + tol) {
+              valide = false;
+              break;
+            }
+            nouvelles[fW] = sx;
+          }
+          if (!valide || nouvelles.gauche === undefined || nouvelles.droite === undefined) {
+            r.extremites[fin] = "non-traite";
+            continue;
+          }
+          r.gauche[fin] = nouvelles.gauche;
+          r.droite[fin] = nouvelles.droite;
+          r.extremites[fin] = "noeud";
+          r.pointes ??= [null, null];
+          r.pointes[fin] = P;
           continue;
         }
         const [pu, pv] = paires[0]!;
@@ -203,7 +256,9 @@ export function facesMurRaccordees(etat: ModeleAtelier, mur: Occurrence<"mur">):
 /** Polygone du mur après raccord, sens direct (remplace `polygoneMur` pour le dessin). */
 export function polygoneMurRaccorde(etat: ModeleAtelier, mur: Occurrence<"mur">): Point2[] {
   const f = facesMurRaccordees(etat, mur);
-  const quad = [f.droite[0], f.droite[1], f.gauche[1], f.gauche[0]];
+  const r = raccordMur(etat, mur);
+  // Contour : droite a → b, (pointe du nœud en b), gauche b → a, (pointe du nœud en a).
+  const quad = [f.droite[0], f.droite[1], ...(r?.pointes?.[1] ? [r.pointes[1]] : []), f.gauche[1], f.gauche[0], ...(r?.pointes?.[0] ? [r.pointes[0]] : [])];
   let aire = 0;
   for (let i = 0; i < quad.length; i++) aire += cross(quad[i]!, quad[(i + 1) % quad.length]!);
   return (aire < 0 ? quad.reverse() : quad).map((p) => pt(p.x, p.y));

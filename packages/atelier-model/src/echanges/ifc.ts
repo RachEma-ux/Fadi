@@ -310,12 +310,17 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         const reps: number[] = [];
         const etendue = etendueMur(etat, o);
         // Corps d'abord (représentation lue par défaut par la plupart des visualiseurs), axe ensuite.
+        // Repère propre au mur (D-030) : origine en a, X le long de l'axe, Y vers la face gauche — l'axe, le corps et
+        // l'usage des couches (`IfcMaterialLayerSetUsage`, AXIS2) s'y écrivent.
+        const versLocal = (q: Vec): Vec => ({ x: (q.x - a.x) * u.x + (q.y - a.y) * u.y, y: (q.x - a.x) * n.x + (q.y - a.y) * n.y });
+        const etage = o.niveauId ? etages.get(o.niveauId) : undefined;
+        const placementMur = s.ajouter(`IFCLOCALPLACEMENT(${ref(etage ? etage.placement : placementBat)},${ref(s.ajouter(`IFCAXIS2PLACEMENT3D(${ref(pt3(a.x, a.y, 0))},${ref(axeZ)},${ref(dir3(u.x, u.y, 0))})`))})`);
         // Raccords (D-023) : un mur dont une extrémité est raccordée est extrudé depuis son contour raccordé.
         const raccord = raccordMur(etat, o);
-        const raccorde = !!raccord && (Math.abs(raccord.gauche[0]) > 1e-9 || Math.abs(raccord.droite[0]) > 1e-9 || Math.abs(raccord.gauche[1] - L) > 1e-9 || Math.abs(raccord.droite[1] - L) > 1e-9);
-        if (etendue) reps.push(corpsSolide([raccorde ? extrusionContour(polygoneMurRaccorde(etat, o), [], etendue[0] - z0(o.niveauId), etendue[1] - etendue[0]) : boite(a, u, 0, L, Math.min(oG, oD), Math.max(oG, oD), etendue[0] - z0(o.niveauId), etendue[1] - z0(o.niveauId))]));
-        reps.push(s.ajouter(`IFCSHAPEREPRESENTATION(${ref(axe)},'Axis','Curve2D',${liste([polyligne2([a, b], false)])})`));
-        const id = s.ajouter(`IFCWALL(${gid(o.id)},$,${opt(nom ?? o.id)},$,$,${ref(placementDe(o.niveauId))},${ref(forme(reps))},$,${o.definitionId === "cloison" ? ".PARTITIONING." : ".STANDARD."})`);
+        const raccorde = !!raccord && (Math.abs(raccord.gauche[0]) > 1e-9 || Math.abs(raccord.droite[0]) > 1e-9 || Math.abs(raccord.gauche[1] - L) > 1e-9 || Math.abs(raccord.droite[1] - L) > 1e-9 || !!raccord.pointes?.some((x) => x));
+        if (etendue) reps.push(corpsSolide([raccorde ? extrusionContour(polygoneMurRaccorde(etat, o).map(versLocal), [], etendue[0] - z0(o.niveauId), etendue[1] - etendue[0]) : boite({ x: 0, y: 0 }, { x: 1, y: 0 }, 0, L, Math.min(oG, oD), Math.max(oG, oD), etendue[0] - z0(o.niveauId), etendue[1] - z0(o.niveauId))]));
+        reps.push(s.ajouter(`IFCSHAPEREPRESENTATION(${ref(axe)},'Axis','Curve2D',${liste([polyligne2([{ x: 0, y: 0 }, { x: L, y: 0 }], false)])})`));
+        const id = s.ajouter(`IFCWALL(${gid(o.id)},$,${opt(nom ?? o.id)},$,$,${ref(placementMur)},${ref(forme(reps))},$,${o.definitionId === "cloison" ? ".PARTITIONING." : ".STANDARD."})`);
         produits.set(o.id, id);
         contenir(o.niveauId, id);
         identite(id, o);
@@ -323,8 +328,9 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         if (o.definitionId && typesMur.has(o.definitionId)) typage.set(typesMur.get(o.definitionId)!, [...(typage.get(typesMur.get(o.definitionId)!) ?? []), id]);
         const composition = compositionMur(etat, o);
         if (composition && composition.coherente && jeuxCouches.has(composition.typeId)) {
-          const jeu = jeuxCouches.get(composition.typeId)!;
-          associationsMateriau.set(jeu, [...(associationsMateriau.get(jeu) ?? []), id]);
+          // Usage des couches : de la face gauche (décalage oG sur Y local) vers la face droite (sens négatif de Y).
+          const usage = s.ajouter(`IFCMATERIALLAYERSETUSAGE(${ref(jeuxCouches.get(composition.typeId)!)},.AXIS2.,.NEGATIVE.,${reelStep(oG)},$)`);
+          associationsMateriau.set(usage, [id]);
         } else if (composition && !composition.coherente) remarques.add(`Mur ${o.id} : épaisseur différente de la composition du type « ${composition.typeNom} » (écart ${Math.round(composition.ecart * 1000)} mm) : couches non écrites.`);
         compter("mur", "IfcWall", etendue ? "Axis + SweptSolid (corps plein vidé par les ouvertures)" : "Axis", true, etendue ? undefined : "mur sans hauteur : axe seul, sans volume (hauteur non évaluée)");
         // Ouvertures hébergées : vide + élément de remplissage.

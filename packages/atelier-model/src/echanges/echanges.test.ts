@@ -208,6 +208,14 @@ describe("import DXF 2D", () => {
       "0\nDIMENSION\n8\nCotes\n70\n33\n10\n0\n20\n-6\n13\n0\n23\n-5\n14\n4\n24\n-5",
       "0\nDIMENSION\n8\nCotes\n70\n32\n50\n0\n10\n0\n20\n-14\n13\n0\n23\n-8\n14\n3\n24\n-12\n1\n3 m",
       "0\nDIMENSION\n8\nCotes\n70\n34\n10\n0\n20\n0",
+      // Angulaire trois points : sommet (100 ; 0), côtés vers (110 ; 0) et (100 ; 10), arc par (103 ; 3) → 90°.
+      "0\nDIMENSION\n8\nCotes\n70\n37\n15\n100\n25\n0\n13\n110\n23\n0\n14\n100\n24\n10\n16\n103\n26\n3",
+      // Angulaire deux droites (y = 0 et y = x), arc par (-3 ; 1) : secteur entre (1 ; 1) et −x, 135°.
+      "0\nDIMENSION\n8\nCotes\n70\n34\n13\n200\n23\n0\n14\n210\n24\n0\n15\n200\n25\n0\n10\n201\n20\n1\n16\n197\n26\n1",
+      // Radiale : centre (300 ; 0), point (302 ; 0) ; diamétrale de (400 ; 0) à (406 ; 0) ; ordonnée ignorée.
+      "0\nDIMENSION\n8\nCotes\n70\n36\n10\n300\n20\n0\n15\n302\n25\n0",
+      "0\nDIMENSION\n8\nCotes\n70\n35\n15\n400\n25\n0\n10\n406\n20\n0",
+      "0\nDIMENSION\n8\nCotes\n70\n38\n10\n0\n20\n0",
     ].join("\n");
     const texte = ["0", "SECTION", "2", "HEADER", "9", "$INSUNITS", "70", "6", "0", "ENDSEC", blocs, "0", "SECTION", "2", "ENTITIES", entites, "0", "ENDSEC", "0", "EOF"].join("\n");
     const r = commandesImportDxf(base(), texte, { source: "blocs.dxf", niveauId: "rdc", repere: "local", uniteSiAbsente: "m" });
@@ -233,13 +241,26 @@ describe("import DXF 2D", () => {
     expect(hachures.map((h) => h.params.motif).sort()).toEqual(["ANSI31", "plein"]);
     expect(r.rapport.entites.find((x) => x.type === "HATCH")?.remarque).toMatch(/1 îlot/);
     const cotes = objetsDeClasse(e, "cotation");
-    expect(cotes).toHaveLength(2);
+    expect(cotes).toHaveLength(4);
     const alignee = cotes.find((c) => c.params.a.y === -5)!;
     expect(alignee.params.b).toMatchObject({ x: 4, y: -5 });
     expect(Math.abs(alignee.params.decalage.value)).toBeCloseTo(1, 6);
     const orientee = cotes.find((c) => c.params.a.y === -8)!;
     expect(orientee.params.b).toMatchObject({ x: 3, y: -8 });
-    expect(r.rapport.entites.find((x) => x.type === "DIMENSION")).toMatchObject({ lues: 3, importees: 2 });
+    expect(cotes.find((c) => c.params.a.x === 300)!.params.b).toMatchObject({ x: 302, y: 0 });
+    expect(cotes.find((c) => c.params.a.x === 400)!.params.b).toMatchObject({ x: 406, y: 0 });
+    const arcs = esq.filter((o) => o.params.forme === "arc");
+    const droit = arcs.find((a) => a.params.centre!.x === 100)!;
+    expect(droit.params.angleDebut!.value).toBeCloseTo(0, 6);
+    expect(droit.params.angleFin!.value).toBeCloseTo(90, 6);
+    expect(droit.params.rayon!.value).toBeCloseTo(Math.hypot(3, 3), 6);
+    const obtus = arcs.find((a) => Math.abs(a.params.centre!.x - 200) < 1e-6)!;
+    expect(obtus.params.angleFin!.value - obtus.params.angleDebut!.value).toBeCloseTo(135, 6);
+    expect(obtus.params.angleDebut!.value).toBeCloseTo(45, 6);
+    expect(objetsDeClasse(e, "texte").map((t) => t.params.texte)).toEqual(expect.arrayContaining(["90,0°", "135,0°"]));
+    const dim = r.rapport.entites.find((x) => x.type === "DIMENSION")!;
+    expect(dim).toMatchObject({ lues: 8, importees: 6 });
+    expect(dim.remarque).toMatch(/angulaires/);
     expect(r.rapport.remarques.some((x) => /4 insertion/.test(x) || /insertion\(s\) de bloc/.test(x))).toBe(true);
   });
 

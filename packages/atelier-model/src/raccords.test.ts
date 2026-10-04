@@ -39,7 +39,7 @@ describe("raccords de murs (géométrie dérivée)", () => {
     }
   });
 
-  it("nœud de trois murs (une paire alignée) : la paire se prolonge, le troisième s'arrête sur sa face ; croisement de quatre : non traité", () => {
+  it("nœud de trois murs (une paire alignée) : la paire se prolonge, le troisième s'arrête sur sa face ; croisement de quatre : nœud (D-032)", () => {
     const n3 = modele(mur("g", [0, 0], [4, 0]), mur("d", [4, 0], [8, 0]), mur("t", [4, 0], [4, 3]));
     expect(raccordMur(n3, M(n3, "g"))!.extremites).toEqual(["libre", "libre"]);
     expect(raccordMur(n3, M(n3, "d"))!.extremites).toEqual(["libre", "libre"]);
@@ -48,7 +48,39 @@ describe("raccords de murs (géométrie dérivée)", () => {
     expect(Math.abs(t.gauche[0].y - 0.1)).toBeLessThan(1e-9);
     expect(Math.abs(t.droite[0].y - 0.1)).toBeLessThan(1e-9);
     const n4 = modele(mur("a1", [0, 0], [4, 0]), mur("a2", [4, 0], [8, 0]), mur("b1", [4, 0], [4, 3]), mur("b2", [4, 0], [4, -3]));
-    expect(raccordMur(n4, M(n4, "b1"))!.extremites[0]).toBe("non-traite");
+    // Deux paires alignées : chaque face s'arrête sur la face voisine, le contour passe par le nœud.
+    const r4 = raccordMur(n4, M(n4, "b1"))!;
+    expect(r4.extremites[0]).toBe("noeud");
+    expect(r4.gauche[0]).toBeCloseTo(0.1, 9);
+    expect(r4.droite[0]).toBeCloseTo(0.1, 9);
+    const p4 = polygoneMurRaccorde(n4, M(n4, "b1"));
+    expect(p4).toHaveLength(5);
+    expect(p4.some((q) => proche(q, 4, 0))).toBe(true);
+  });
+
+  it("nœud de trois murs sans paire alignée (Y) : faces arrêtées sur les voisines, cœur du nœud couvert sans vide (D-032)", () => {
+    const c = (deg: number): [number, number] => [Math.round(3 * Math.cos((deg * Math.PI) / 180) * 1e9) / 1e9, Math.round(3 * Math.sin((deg * Math.PI) / 180) * 1e9) / 1e9];
+    const y = modele(mur("y0", [0, 0], c(0)), mur("y1", [0, 0], c(120)), mur("y2", c(240), [0, 0]));
+    for (const id of ["y0", "y1", "y2"]) {
+      const r = raccordMur(y, M(y, id))!;
+      const fin = id === "y2" ? 1 : 0;
+      expect(r.extremites[fin]).toBe("noeud");
+      const L = 3;
+      const attendu = 0.1 / Math.tan(Math.PI / 3);
+      expect(Math.abs(r.gauche[fin] - (fin ? L - attendu : attendu))).toBeLessThan(1e-6);
+      expect(Math.abs(r.droite[fin] - (fin ? L - attendu : attendu))).toBeLessThan(1e-6);
+    }
+    // Le cœur (centre du triangle entre les faces) est dans au moins un contour.
+    const dedans = (poly: { x: number; y: number }[], q: { x: number; y: number }) => {
+      let d = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const A = poly[i]!;
+        const B = poly[j]!;
+        if (A.y > q.y !== B.y > q.y && q.x < ((B.x - A.x) * (q.y - A.y)) / (B.y - A.y) + A.x) d = !d;
+      }
+      return d;
+    };
+    for (const q of [{ x: 0.01, y: 0.005 }, { x: -0.02, y: 0.01 }, { x: 0.005, y: -0.03 }]) expect(["y0", "y1", "y2"].some((id) => dedans(polygoneMurRaccorde(y, M(y, id)), q))).toBe(true);
   });
 
   it("alignés, croisement et nœud de trois murs : extrémités inchangées ou « non traitées »", () => {

@@ -23,7 +23,7 @@ Légende : **C** conservé · **T** transformé (dit au rapport) · **O** omis (
 | Classe | IFC export | IFC import | DXF export (vues) | DXF import | Paquet natif |
 | --- | --- | --- | --- | --- | --- |
 | niveau | C `IfcBuildingStorey` (`Elevation`, placement) | C : même altitude ± 5 mm = niveau existant, sinon niveau « IFC · nom » créé | T : une vue par niveau | — (niveau d'accueil choisi) | C |
-| mur | C `IfcWall` + `IfcWallType` ; corps `SweptSolid` vidé par les ouvertures ; axe `Axis` ; `Pset_WallCommon` | T : représentation importée (maillage, vides déjà soustraits) | T : poché, contour de l'union | — | C |
+| mur | C `IfcWall` + `IfcWallType`, repère propre au mur ; corps `SweptSolid` (contour raccordé aux angles et tés) vidé par les ouvertures ; axe `Axis` ; `Pset_WallCommon` ; composition : `IfcMaterialLayerSet` (type) et `IfcMaterialLayerSetUsage` (mur cohérent) | T : représentation importée (maillage, vides déjà soustraits) | T : poché, contour de l'union | — | C |
 | porte, fenêtre, ouverture | C `IfcDoor` / `IfcWindow` + `IfcOpeningElement`, `IfcRelVoidsElement`, `IfcRelFillsElement` | T : représentation importée ; `IfcOpeningElement` O (vide déjà dans l'hôte) | T : symbole conventionnel | — | C |
 | dalle | C `IfcSlab` `FLOOR`, profil à trous | T : représentation importée | T | — | C |
 | toiture | C `IfcRoof` agrégeant `IfcSlab` `ROOF` (plate : extrusion ; en pente : `Tessellation`) | T : le pan importé ; `IfcRoof` sans corps O | T : contour, faîtage | — | C |
@@ -35,7 +35,7 @@ Légende : **C** conservé · **T** transformé (dit au rapport) · **O** omis (
 | garde-corps | C `IfcRailing` `GUARDRAIL`, `Fadi_GardeCorps` | T : représentation importée | T | — | C |
 | bloc (occurrence) | composant : C `IfcBuildingElementProxy` + `Fadi_Composant` ; bloc 2D : O | — | T : contenu dessiné à chaque occurrence | T : `INSERT` décomposé en esquisses et textes (point de base, échelles, rotation, réseau, blocs imbriqués ; le bloc n'est pas recréé) ; `XREF` : O (fichier non fourni) | C |
 | objet importé | T `IfcBuildingElementProxy`, GlobalId d'origine, classe d'origine en `ObjectType` et `Fadi_Import` | C : maillage, classe, GlobalId ; type, matériaux et propriétés simples en propriétés importées ; O si GlobalId déjà présent (pas de doublon) | T : coupé et vu comme toute matière | — | C |
-| cotation | T `IfcAnnotation` `DIMENSION` (export seulement ; valeur et rattachements non portés) | T : `IfcAnnotation` → traits (esquisses) et textes, non associatifs | C | T : `DIMENSION` linéaires et alignées → cotes non associatives (texte imposé non repris) ; angulaires, radiales, d'ordonnée : O | C |
+| cotation | T `IfcAnnotation` `DIMENSION` (export seulement ; valeur et rattachements non portés) | T : `IfcAnnotation` → traits (esquisses) et textes, non associatifs | C | T : `DIMENSION` linéaires et alignées → cotes non associatives (texte imposé non repris) ; radiales et diamétrales → cotes linéaires (rayon, diamètre) ; angulaires → arc et texte de l'angle (D-031) ; d'ordonnée : O | C |
 | texte, étiquette | T `IfcAnnotation` `TEXT` | T `IfcTextLiteral` → `texte` (position, contenu) | C | C `TEXT`, `MTEXT`, `ATTRIB` → `texte` (position, contenu ; hauteur, rotation, style non portés) | C |
 | esquisse | T `IfcAnnotation` (polylignes ; arcs et cercles omis) | O | C | C `LINE`, `LWPOLYLINE` (arrondis discrétisés), `POLYLINE` 2D, `CIRCLE`, `ARC` ; `HATCH` → hachure (contour extérieur, motif nommé ; îlots, arêtes elliptiques ou splines : O) ; `SPLINE`, 3D : O comptés | C |
 | référence de plan | O (fond de dessin) | — | T | C : cadre du dessin (`reference-plan`, calque « Référence DXF »), contenu groupé | C |
@@ -65,7 +65,7 @@ Légende : **C** conservé · **T** transformé (dit au rapport) · **O** omis (
 
 ## Hors périmètre (déclaré)
 
-`IfcMaterialLayerSetUsage` (les couches d'un type composé sont exportées en `IfcMaterialLayerSet`, D-026), `IfcStairFlight`, bibliothèques
+`IfcStairFlight`, bibliothèques
 (`IfcProjectLibrary`), calques IFC (`IfcPresentationLayerWithStyle`), `XREF` DXF (le fichier référencé n'est pas fourni :
 signalé au rapport), DWG. À l'import IFC, le type, les matériaux (couches et épaisseurs) et les propriétés simples sont
 repris en propriétés importées « déclarées » des représentations, jamais réinterprétés.

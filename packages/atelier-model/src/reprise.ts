@@ -22,7 +22,11 @@ export const FAMILLES_REPRISE = {
   espaces: ["piece", "espace", "zone"],
   dessin: ["esquisse", "cotation", "texte", "etiquette", "reference-plan", "solide", "bloc-occurrence", "objet-importe"],
 } as const;
-export type FamilleReprise = keyof typeof FAMILLES_REPRISE | "documents";
+/**
+ * `documents` : vues et feuilles ; `definitions` : la bibliothèque de définitions de la source (types, blocs,
+ * composants), même sans occurrence — un projet sert ainsi de bibliothèque partagée entre projets.
+ */
+export type FamilleReprise = keyof typeof FAMILLES_REPRISE | "documents" | "definitions";
 
 export interface OptionsReprise {
   familles: FamilleReprise[];
@@ -36,6 +40,21 @@ export interface OptionsReprise {
   homonymes?: "reutiliser" | "renommer" | undefined;
   origine: { projet: string; nom: string; revision: number };
   prefixe?: string | undefined;
+  /** Sélection spatiale (repère local de la source) : seuls les objets entièrement dans ce rectangle sont repris. */
+  zone?: { min: { x: number; y: number }; max: { x: number; y: number } } | undefined;
+  /** Famille `definitions` : seuls les blocs et composants de cette bibliothèque (nom exact) ; toutes si absent. */
+  bibliotheque?: string | undefined;
+}
+
+/** Points caractéristiques d'un objet en plan (pour la sélection spatiale) ; une ouverture suit son mur. */
+function pointsEnPlan(o: OccurrenceQuelconque): { x: number; y: number }[] {
+  const p = o.params as unknown as Record<string, unknown>;
+  const out: { x: number; y: number }[] = [];
+  const estPoint = (v: unknown): v is { x: number; y: number } => !!v && typeof v === "object" && typeof (v as { x?: unknown }).x === "number" && typeof (v as { y?: unknown }).y === "number";
+  for (const cle of ["a", "b", "point", "position", "centre"]) if (estPoint(p[cle])) out.push(p[cle]);
+  for (const cle of ["contour", "points", "empreinte"]) if (Array.isArray(p[cle])) for (const q of p[cle] as unknown[]) if (estPoint(q)) out.push(q);
+  if (Array.isArray(p["polygones"])) for (const pg of p["polygones"] as { contour?: unknown[] }[]) for (const q of pg.contour ?? []) if (estPoint(q)) out.push(q);
+  return out;
 }
 
 export interface RapportReprise {
@@ -72,7 +91,7 @@ export function planifierReprise(source: ModeleAtelier, cible: ModeleAtelier, op
   const prefixe = options.prefixe ?? "reprise";
   const empreinte = empreinteDe(source);
   const rapport: RapportReprise = { source: { ...options.origine, empreinte }, parClasse: [], niveaux: [], homonymes: [], aReparer: [], nonRepris: [], remarques: [] };
-  const classes = new Set<string>(options.familles.flatMap((f) => (f === "documents" ? [] : [...FAMILLES_REPRISE[f]])));
+  const classes = new Set<string>(options.familles.flatMap((f) => (f === "documents" || f === "definitions" ? [] : [...FAMILLES_REPRISE[f]])));
   const avecDocuments = options.familles.includes("documents");
   const niveauxSource = Object.values(source.niveaux).filter((n) => !options.niveaux || options.niveaux.includes(n.id));
   const nid = (id: string) => {
@@ -101,7 +120,14 @@ export function planifierReprise(source: ModeleAtelier, cible: ModeleAtelier, op
   const niveauxRepris = new Set(niveauxSource.map((n) => n.id));
 
   // Objets retenus : familles cochées, sur les niveaux retenus ; une ouverture suit son mur.
-  const retenus = (Object.values(source.objets) as OccurrenceQuelconque[]).filter((o) => classes.has(o.classe) && (!o.niveauId || niveauxRepris.has(o.niveauId)));
+  const z = options.zone;
+  const dansZone = (o: OccurrenceQuelconque) => {
+    if (!z || o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") return true;
+    const pts = pointsEnPlan(o);
+    return pts.length > 0 && pts.every((q) => q.x >= z.min.x - 1e-9 && q.x <= z.max.x + 1e-9 && q.y >= z.min.y - 1e-9 && q.y <= z.max.y + 1e-9);
+  };
+  const retenus = (Object.values(source.objets) as OccurrenceQuelconque[]).filter((o) => classes.has(o.classe) && (!o.niveauId || niveauxRepris.has(o.niveauId)) && dansZone(o));
+  if (z) rapport.remarques.push(`Sélection spatiale : objets entièrement dans le rectangle (${z.min.x} ; ${z.min.y}) – (${z.max.x} ; ${z.max.y}) du repère local de la source.`);
   const idsRetenus = new Set(retenus.map((o) => o.id));
   const objets: OccurrenceQuelconque[] = [];
   for (const o of retenus) {
@@ -129,7 +155,27 @@ export function planifierReprise(source: ModeleAtelier, cible: ModeleAtelier, op
       nouveau();
     }
   };
+  const definitionsUtilisees = new Set(objets.map((o) => o.definitionId).filter((x): x is string => !!x && x !== "non-type"));
+  if (avecDocuments) for (const d of Object.values(source.definitions)) if ((d.classe as string) === "vue" || (d.classe as string) === "feuille") definitionsUtilisees.add(d.id);
+  if (options.familles.includes("definitions")) {
+    const avant = definitionsUtilisees.size;
+    for (const d of Object.values(source.definitions)) {
+      if (["vue", "feuille", "reference-externe"].includes(d.classe as string)) continue;
+      const bib = (d.params as { bibliotheque?: string | null }).bibliotheque ?? null;
+      if (options.bibliotheque && bib !== options.bibliotheque) continue;
+      definitionsUtilisees.add(d.id);
+    }
+    rapport.remarques.push(options.bibliotheque ? `Bibliothèque « ${options.bibliotheque} » : ${definitionsUtilisees.size - avant} définition(s) de blocs et composants retenue(s) en plus des définitions utilisées.` : `Bibliothèque de définitions : ${definitionsUtilisees.size - avant} définition(s) retenue(s) en plus des définitions utilisées (types, blocs, composants).`);
+  }
+  const homonymeDefinition = (d: Definition) => Object.values(cible.definitions).find((x) => x.classe === d.classe && memeNom(x.nom, d.nom));
   const calquesUtilises = new Set(objets.map((o) => o.calqueId).filter((x): x is string => !!x));
+  // Calques du contenu des blocs et composants copiés (pas de ceux qui seront remplacés par un homonyme réutilisé).
+  for (const id of definitionsUtilisees) {
+    const d = source.definitions[id];
+    if (!d || (d.classe !== "bloc" && d.classe !== "composant")) continue;
+    if (homonymeDefinition(d) && (options.homonymes ?? "reutiliser") === "reutiliser") continue;
+    for (const e of ((d.params as { contenu?: { calqueId?: string | null }[] }).contenu ?? [])) if (e.calqueId) calquesUtilises.add(e.calqueId);
+  }
   for (const id of calquesUtilises) {
     const c = source.calques[id];
     if (!c) continue;
@@ -147,8 +193,6 @@ export function planifierReprise(source: ModeleAtelier, cible: ModeleAtelier, op
     table.set(id, n);
     ajouts.groupes[n] = { ...g, id: n };
   }
-  const definitionsUtilisees = new Set(objets.map((o) => o.definitionId).filter((x): x is string => !!x && x !== "non-type"));
-  if (avecDocuments) for (const d of Object.values(source.definitions)) if ((d.classe as string) === "vue" || (d.classe as string) === "feuille") definitionsUtilisees.add(d.id);
   for (const id of definitionsUtilisees) {
     const d = source.definitions[id];
     if (!d) continue;
@@ -159,12 +203,18 @@ export function planifierReprise(source: ModeleAtelier, cible: ModeleAtelier, op
         continue;
       }
     }
-    const existant = Object.values(cible.definitions).find((x) => x.classe === d.classe && memeNom(x.nom, d.nom));
+    const existant = homonymeDefinition(d);
     homonyme("definition", d.nom, existant?.id, id, () => {
       const n = nid(id);
       table.set(id, n);
       ajouts.definitions[n] = { ...d, id: n, nom: existant ? `${d.nom} (reprise)` : d.nom };
     });
+  }
+  // Contenu des blocs et composants copiés : calques remappés (un calque non repris est retiré).
+  for (const d of Object.values(ajouts.definitions)) {
+    if (d.classe !== "bloc" && d.classe !== "composant") continue;
+    const contenu = ((d.params as { contenu?: { calqueId?: string | null }[] }).contenu ?? []).map((e) => ({ ...e, calqueId: e.calqueId && table.has(e.calqueId) ? table.get(e.calqueId)! : null }));
+    d.params = { ...d.params, contenu };
   }
   // Une feuille ne garde que les vues reprises.
   for (const d of Object.values(ajouts.definitions)) {

@@ -1932,3 +1932,6 @@
   overflow: auto;
   font-size: 0.75em;
 }
+.refext-liste li[data-etat="non-lisible"] {
+  border-left-color: #6b46c1;
+}

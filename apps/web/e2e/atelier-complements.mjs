@@ -140,6 +140,13 @@ check("reprise : une révision, objets nouveaux avec leur provenance, aucune don
 await page.waitForSelector(".plan2d .plan-objets [data-objet]", { timeout: 15000 }).catch(() => {});
 check("reprise : les objets repris sont dessinés", (await page.locator(".plan2d .plan-objets [data-objet]").count()) > 0);
 await page.screenshot({ path: `${OUT}/10-reprise.png` });
+// Bibliothèque partagée (D-031) : la famille « définitions » propose le filtre par bibliothèque, l'aperçu compte les définitions.
+await page.locator('[data-famille="architecture"]').uncheck().catch(() => {});
+await page.locator('[data-famille="definitions"]').check();
+const champBib = await page.locator('[data-reprise="bibliotheque"]').isVisible().catch(() => false);
+await page.locator('details.reprise button:has-text("Aperçu")').click();
+await page.waitForFunction(() => /définition\(s\)/.test(document.querySelector("[data-reprise-apercu]")?.textContent ?? ""), null, { timeout: 30000 }).catch(() => {});
+check("bibliothèque de définitions : filtre proposé, aperçu sans écriture", champBib && /définition\(s\)/.test((await page.locator("[data-reprise-apercu]").textContent().catch(() => "")) ?? "") && (await modele(cible)).revision === 2);
 
 // 4. Référence externe : la publication du voisin, superposée en gris sur le RDC du projet.
 const pub1 = await api("post", `/projects/${voisin}/atelier/publications`, { nom: "Voisin v1" });
@@ -185,7 +192,7 @@ await selectionner(murA.id);
 const avantGlisse = (await modele(pid)).modele.objets[murA.id].params.a;
 await page.locator('.barre-mode button:has-text("3D")').click();
 await page.waitForSelector(".vue3d canvas", { timeout: 30000 });
-await page.waitForFunction(() => (window.fadiMesures3D?.poignees ?? 0) === 2, null, { timeout: 20000 }).catch(() => {});
+await page.waitForFunction(() => (window.fadiMesures3D?.poignees ?? 0) === 3, null, { timeout: 20000 }).catch(() => {});
 await page.waitForTimeout(500);
 const fleche = await page.evaluate(() => window.fadiMesures3D?.localiserPoignee?.("x") ?? null);
 const cadre3d = await page.locator(".vue3d-canevas").boundingBox();
@@ -198,6 +205,31 @@ if (fleche && cadre3d) {
 await attendreEnregistre().catch(() => {});
 const apresGlisse = (await modele(pid)).modele.objets[murA.id].params.a;
 check("manipulateur 3D : la flèche X glissée déplace la sélection en X seulement, un lot enregistré", !!fleche && Math.abs(apresGlisse.x - avantGlisse.x) > 0.01 && Math.abs(apresGlisse.y - avantGlisse.y) < 1e-9, `${JSON.stringify(fleche)} · ${avantGlisse.x} → ${apresGlisse.x}`);
+// Anneau : rotation autour de la verticale du centre de la sélection (un lot « transformer.tourner »).
+await page.waitForFunction(() => (window.fadiMesures3D?.poignees ?? 0) === 3, null, { timeout: 20000 }).catch(() => {});
+await page.waitForTimeout(400);
+const anneau = await page.evaluate(() => window.fadiMesures3D?.localiserPoignee?.("r") ?? null);
+const centreG = await page.evaluate(() => window.fadiMesures3D?.localiserPoignee?.("c") ?? null);
+const avantRot = (await modele(pid)).modele.objets[murA.id].params;
+if (anneau && centreG && cadre3d) {
+  // Glisser le long de l'anneau d'environ un quart de tour.
+  const r0 = Math.hypot(anneau.x - centreG.x, anneau.y - centreG.y);
+  const a0 = Math.atan2(anneau.y - centreG.y, anneau.x - centreG.x);
+  await page.mouse.move(cadre3d.x + anneau.x, cadre3d.y + anneau.y);
+  await page.mouse.down();
+  for (let k = 1; k <= 12; k++) {
+    const a = a0 + (k / 12) * (Math.PI / 2);
+    await page.mouse.move(cadre3d.x + centreG.x + r0 * Math.cos(a), cadre3d.y + centreG.y + r0 * Math.sin(a));
+  }
+  await page.mouse.up();
+}
+await attendreEnregistre().catch(() => {});
+const apresRot = (await modele(pid)).modele.objets[murA.id].params;
+const dirAvant = Math.atan2(avantRot.b.y - avantRot.a.y, avantRot.b.x - avantRot.a.x);
+const dirApres = Math.atan2(apresRot.b.y - apresRot.a.y, apresRot.b.x - apresRot.a.x);
+const tour = Math.abs((((dirApres - dirAvant) * 180) / Math.PI + 540) % 360 - 180);
+const journalRot = (await api("get", `/projects/${pid}/atelier/journal`)).body.entrees.at(-1)?.label ?? "";
+check("manipulateur 3D : l'anneau tourne la sélection autour de son centre, un lot enregistré", !!anneau && tour > 20 && /Tourner .* \(manipulateur 3D\)/.test(journalRot), `${tour.toFixed(1)}° · ${journalRot}`);
 await page.keyboard.press("Escape");
 const chapeaux = {};
 for (const vue of ["Coupe nord–sud", "Plan (dessus)"]) {

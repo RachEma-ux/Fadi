@@ -90,3 +90,17 @@ leur contour raccordé (référence du corpus mise à jour, validée par IfcOpen
 Formulaire de script (paramètres, boucles, commandes du catalogue guidé ou libres), validé à mesure, enregistré en
 version du projet ; les scripts intégrés se rouvrent à l'identique. Preuves : `gabarits.test.ts` (3), e2e
 `atelier-automatisation.mjs` (« éditeur guidé »).
+
+## Suites (D-029)
+
+Références externes : calque verrouillé et publication « non lisible » (test API, `refexterne.test.ts`) ;
+réutilisation par sélection spatiale (`reprise.test.ts`, panneau « Reprendre ») ; anneau de rotation du manipulateur
+3D (e2e `atelier-complements.mjs`).
+
+## Suites (D-030, D-031)
+
+IFC : placement propre de chaque mur et `IfcMaterialLayerSetUsage` (`compositions.test.ts`, corpus régénéré et validé
+par IfcOpenShell). DXF : cotes radiales, diamétrales et angulaires (`echanges.test.ts`). Bibliothèques partagées :
+famille « définitions » de la reprise (`reprise.test.ts`, test API, e2e `atelier-complements.mjs`). Réparation d'une
+référence externe par repointage explicite (`refexterne.test.ts`, test API, bouton « Réparer… »).
+Raccords des nœuds sans paire alignée unique (Y, croisement de quatre murs) : `raccords.test.ts` (D-032).

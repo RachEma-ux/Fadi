@@ -45,7 +45,7 @@ export interface MesuresRendu {
   externes?: number;
   /** Poignées du manipulateur affichées (0 ou 2) et position écran d'une flèche (instrumentation de la recette). */
   poignees?: number;
-  localiserPoignee?: (axe: "x" | "y") => { x: number; y: number } | null;
+  localiserPoignee?: (axe: "x" | "y" | "r" | "c") => { x: number; y: number } | null;
 }
 
 const ECART_ECLATE = 4;
@@ -364,6 +364,7 @@ export class Scene3D {
   /** Mise en évidence de la sélection (maillages superposés). */
   majSelection(ids: readonly string[]): void {
     this.selection.position.set(0, 0, 0);
+    this.selection.rotation.z = 0;
     for (const c of [...this.selection.children]) {
       (c as THREE.Mesh).geometry.dispose();
       this.selection.remove(c);
@@ -520,7 +521,7 @@ export class Scene3D {
   // ---------------------------------------------------------------------------------------------------------------
   private poignees = new THREE.Group();
   private centrePoignees: THREE.Vector3 | null = null;
-  private matPoignee = { x: new THREE.MeshBasicMaterial({ color: "#c0392b", depthTest: false }), y: new THREE.MeshBasicMaterial({ color: "#2e8b57", depthTest: false }) };
+  private matPoignee = { x: new THREE.MeshBasicMaterial({ color: "#c0392b", depthTest: false }), y: new THREE.MeshBasicMaterial({ color: "#2e8b57", depthTest: false }), r: new THREE.MeshBasicMaterial({ color: "#2f6fb3", depthTest: false }) };
 
   /** Place les poignées au-dessus du centre de la sélection (null : les retirer). */
   majPoignees(actif: boolean): void {
@@ -561,11 +562,20 @@ export class Scene3D {
       }
       this.poignees.add(fleche);
     }
-    this.mesures.poignees = 2;
+    // Anneau de rotation (autour de la verticale passant par le centre), bleu.
+    const anneau = new THREE.Group();
+    const tore = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.025, 8, 48), this.matPoignee.r);
+    tore.userData["axe"] = "r";
+    tore.renderOrder = 10;
+    anneau.add(tore);
+    anneau.position.copy(c);
+    anneau.userData["axe"] = "r";
+    this.poignees.add(anneau);
+    this.mesures.poignees = 3;
     this.mesures.localiserPoignee = (axe) => {
       if (!this.centrePoignees) return null;
       const k = this.echellePoignees();
-      const d = axe === "x" ? new THREE.Vector3(k * 0.8, 0, 0) : new THREE.Vector3(0, k * 0.8, 0);
+      const d = axe === "x" ? new THREE.Vector3(k * 0.8, 0, 0) : axe === "y" ? new THREE.Vector3(0, k * 0.8, 0) : axe === "r" ? new THREE.Vector3(-k * 0.55 * Math.SQRT1_2, -k * 0.55 * Math.SQRT1_2, 0) : new THREE.Vector3(0, 0, 0);
       const p = this.centrePoignees.clone().add(this.poignees.position).add(d).project(this.camera);
       return { x: ((p.x + 1) / 2) * this.largeur, y: ((1 - p.y) / 2) * this.hauteur };
     };
@@ -591,12 +601,12 @@ export class Scene3D {
   }
 
   /** Poignée sous le pointeur (coordonnées relatives au canevas). */
-  poigneeSous(x: number, y: number): "x" | "y" | null {
+  poigneeSous(x: number, y: number): "x" | "y" | "r" | null {
     if (!this.poignees.children.length) return null;
     const rc = new THREE.Raycaster();
     rc.setFromCamera(new THREE.Vector2((x / this.largeur) * 2 - 1, -(y / this.hauteur) * 2 + 1), this.camera);
     const h = rc.intersectObjects(this.poignees.children, true)[0];
-    return (h?.object.userData["axe"] as "x" | "y" | undefined) ?? null;
+    return (h?.object.userData["axe"] as "x" | "y" | "r" | undefined) ?? null;
   }
 
   /** Abscisse, le long de l'axe passant par le centre des poignées, du point de l'axe le plus proche du rayon du pointeur. */
@@ -614,8 +624,37 @@ export class Scene3D {
     return (b * w.dot(d2) - w.dot(d1)) / den;
   }
 
+  /** Angle (degrés) du pointeur autour du centre des poignées, dans le plan horizontal qui les porte. */
+  angleAutourDuCentre(x: number, y: number): number | null {
+    const c = this.centrePoignees;
+    if (!c) return null;
+    const rc = new THREE.Raycaster();
+    rc.setFromCamera(new THREE.Vector2((x / this.largeur) * 2 - 1, -(y / this.hauteur) * 2 + 1), this.camera);
+    const plan = new THREE.Plane(new THREE.Vector3(0, 0, 1), -c.z);
+    const p = rc.ray.intersectPlane(plan, new THREE.Vector3());
+    if (!p) return null;
+    return (Math.atan2(p.y - c.y, p.x - c.x) * 180) / Math.PI;
+  }
+
+  /** Centre des poignées en plan (centre de rotation proposé). */
+  centreEnPlan(): { x: number; y: number } | null {
+    return this.centrePoignees ? { x: this.centrePoignees.x, y: this.centrePoignees.y } : null;
+  }
+
+  /** Aperçu de la rotation : la sélection tourne autour de la verticale du centre. */
+  apercuRotation(angleDeg: number): void {
+    const c = this.centrePoignees;
+    if (!c) return;
+    const a = (angleDeg * Math.PI) / 180;
+    this.selection.rotation.z = a;
+    // Rotation autour de (cx, cy) : position = c − R·c.
+    this.selection.position.set(c.x - (Math.cos(a) * c.x - Math.sin(a) * c.y), c.y - (Math.sin(a) * c.x + Math.cos(a) * c.y), 0);
+    this.rendre();
+  }
+
   /** Aperçu du déplacement : la sélection et les poignées suivent le décalage. */
   apercuDeplacement(dx: number, dy: number): void {
+    this.selection.rotation.z = 0;
     this.selection.position.set(dx, dy, 0);
     this.poignees.position.set(dx, dy, 0);
     this.rendre();
