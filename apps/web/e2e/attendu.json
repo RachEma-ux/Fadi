@@ -1,5 +1,5 @@
 {
-  "controles": 352,
+  "controles": 357,
   "parFichier": {
     "00-compte.mjs": 0,
     "01-import-exemple.mjs": 17,
@@ -14,7 +14,7 @@
     "10-accueil-parametres.mjs": 19,
     "11-accessibilite.mjs": 49,
     "12-mesures.mjs": 1,
-    "14-nouvel-atelier.mjs": 25
+    "14-nouvel-atelier.mjs": 30
   },
   "historique": [
     {
@@ -31,6 +31,11 @@
       "date": "2026-10-04",
       "controles": 352,
       "motif": "L3a.4 : 14-nouvel-atelier.mjs#gestes, gestes d'acceptation du lot 3a sur la copie de travail de P.118 — mur (M), porte (P), pièce, sélection au clavier, type, annuler / rétablir avec révisions persistées, second navigateur, téléphone 390 px et clavier (Ctrl+Z, Ctrl+Maj+Z), aucune erreur JavaScript (17 appels à check) et axe-core téléphone + ordinateur après les gestes (+19)."
+    },
+    {
+      "date": "2026-10-04",
+      "controles": 357,
+      "motif": "L3b.0 (D-045) : 14-nouvel-atelier.mjs#gestes, suppression du mur bas par la touche Suppr (porte hébergée listée avant l'accord), Entrée, annuler puis rétablir avec révisions persistées, panneau Métré monté, périmé puis recalculé (+5)."
     }
   ]
 }

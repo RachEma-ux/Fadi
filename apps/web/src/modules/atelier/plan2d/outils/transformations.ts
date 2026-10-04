@@ -31,6 +31,7 @@ import {
   type DependancesOutils,
   type EtatPoints,
 } from "./commun";
+import { outilSupprimer } from "./supprimer";
 
 /** Nombre maximal d'objets dessinés en fantôme (au-delà : contour d'emprise seulement). */
 export const FANTOMES_MAX = 400;
@@ -718,5 +719,6 @@ export function outilsTransformation(deps: DependancesOutils): DefinitionOutil[]
     outilRepeter(deps),
     outilDecomposer(deps),
     outilPointsDeControle(),
+    outilSupprimer(),
   ];
 }

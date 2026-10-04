@@ -14,7 +14,7 @@ describe("installation : outils et dessinateurs enregistrés", () => {
     const b = banc();
     const outils = b.registres.outils.lister();
     expect(outils.filter((o) => o.famille === "creer").map((o) => o.id)).toEqual(["creer.ligne", "creer.polyligne", "creer.arc", "creer.cercle", "creer.rectangle", "creer.polygone", "creer.spline", "creer.main-levee", "creer.axe", "creer.construction", "creer.hachure"]);
-    expect(outils.filter((o) => o.famille === "modifier")).toHaveLength(12);
+    expect(outils.filter((o) => o.famille === "modifier")).toHaveLength(13);
     expect(outils.filter((o) => o.raccourci).map((o) => o.raccourci)).toEqual(["L", "A", "C", "R"]);
     expect(outils.every((o) => o.fiches.length > 0 && o.vues.includes("plan") && o.aide.exemple !== "")).toBe(true);
     expect(b.registres.outils.rechercher("offset", "complet").map((o) => o.id)).toEqual(["modifier.decaler"]);
