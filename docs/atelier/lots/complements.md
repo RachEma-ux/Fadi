@@ -49,3 +49,44 @@ Reprendre ; publier un second projet, puis « Références externes » → Ratta
 Restent non faits : manipulateur 3D à poignées ; import IFC des annotations,
 matériaux et types ; `IfcMaterialLayerSet` ; blocs, `XREF`, hachures et cotes DXF ; DWG ; jonctions de murs à l'export
 IFC (rectangles extrudés) ; nœuds de trois murs ou plus.
+
+## Références externes, suite (D-024)
+
+Accrochage sur la source ; dessin dans les plans et détails des documents (téléchargements et publications, avec
+les droits du demandeur) et en 3D ; mention « hors ligne » sur la dernière représentation lue. Preuves :
+`refexterne.test.ts` (3), test API « références externes » (vue SVG avec et sans droit sur la source), e2e
+`atelier-complements.mjs` (3D et document).
+
+## Échanges complétés (D-025)
+
+| Sujet | Résultat | Preuve |
+| --- | --- | --- |
+| Blocs DXF | `INSERT` décomposés (base, échelles, rotation, réseau, imbrication, calque 0) ; `XREF` signalées. | `echanges.test.ts` « blocs (INSERT)… » |
+| Hachures et cotes DXF | `HATCH` → hachure du contour extérieur (motif nommé) ; `DIMENSION` linéaires et alignées → cotes. | idem |
+| IFC : type, matériaux, propriétés | Propriétés `ifc:type`, `ifc:materiaux` (couches et épaisseurs), `ifc:epaisseurCouches`, `ifc:<Pset>.<nom>` (avec la mesure IFC). | test API « P.118 exporté… » (fichier `test-corpus/ifc/materiaux-mm.ifc`, en millimètres) |
+| IFC : annotations | Textes et traits du niveau ; les textes du P.118 exporté reviennent à l'identique. | idem |
+
+## Composition des parois (D-026)
+
+Couches du type de mur (matériau, épaisseur, fonction) éditées dans l'inspecteur ; cohérence avec l'épaisseur du mur
+(collision sinon, correction proposée, jamais faite en silence) ; séparations dessinées en plan et dans les documents ;
+`IfcMaterialLayerSet` à l'export. Preuves : `compositions.test.ts` (3), e2e `atelier-complements.mjs`.
+
+## Manipulateur 3D à poignées
+
+Avec l'outil Sélection, deux flèches (X rouge, Y verte) au-dessus de la sélection, de taille constante à l'écran ;
+glisser une flèche déplace la sélection le long de l'axe (pas de 1 cm, 10 cm avec Maj ; valeur affichée), le
+relâcher produit un lot `transformer.deplacer` ; calque verrouillé : pas de poignées. Preuve : e2e
+`atelier-complements.mjs` (« manipulateur 3D »).
+
+## Raccords, suite (D-027)
+
+Nœuds de trois murs avec une paire alignée raccordés comme des tés ; à l'export IFC, murs raccordés extrudés depuis
+leur contour raccordé (référence du corpus mise à jour, validée par IfcOpenShell 0.9.0). Preuves : `raccords.test.ts`
+(5), `test-corpus/ifc/petit.attendu.ifc`.
+
+## Éditeur guidé de scripts (D-028)
+
+Formulaire de script (paramètres, boucles, commandes du catalogue guidé ou libres), validé à mesure, enregistré en
+version du projet ; les scripts intégrés se rouvrent à l'identique. Preuves : `gabarits.test.ts` (3), e2e
+`atelier-automatisation.mjs` (« éditeur guidé »).

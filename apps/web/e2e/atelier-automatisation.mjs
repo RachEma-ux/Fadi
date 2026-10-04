@@ -123,6 +123,28 @@ await page.locator('.auto-script button:has-text("Exécuter")').click();
 const refus = await message();
 check("le script est refusé comme un geste : « Verrouillé par … » (423), rien d'écrit", /Verrouillé par/.test(refus) && Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "poteau" && o.params.point.x >= 260).length === 0, refus);
 
+// Éditeur guidé : un script de deux murs parallèles, validé à mesure, enregistré en version du projet.
+await page.locator(".auto-editeur > summary").click();
+await page.locator('[data-editeur="id"]').fill("deux-murs");
+await page.locator('[data-editeur="nom"]').fill("Deux murs parallèles");
+await page.locator('[data-editeur="ajouter-boucle"]').click();
+const champ = (k) => page.locator(`[data-editeur-commande="0"] [data-editeur-champ="${k}"]`);
+await champ("niveauId").fill("rdc");
+await champ("ax").fill("300");
+await champ("ay").fill("i * 3");
+await champ("bx").fill("305");
+await champ("by").fill("i * 3");
+await champ("epaisseur").fill("0,2");
+await champ("hauteur").fill("2,8");
+await page.waitForSelector('[data-editeur-verdict="valide"]', { timeout: 10000 }).catch(() => {});
+const verdict = (await page.locator("[data-editeur-verdict]").textContent()) ?? "";
+check("éditeur guidé : script valide à mesure, 2 commandes développées", /Script valide : 2 commande\(s\)/.test(verdict), verdict);
+await axe("éditeur guidé de scripts", ".auto-editeur");
+await page.locator('[data-editeur="enregistrer"]').click();
+await page.waitForFunction(() => /Script « Deux murs parallèles » enregistré \(version 1\)/.test(document.querySelector(".auto-editeur")?.textContent ?? ""), null, { timeout: 15000 }).catch(() => {});
+const scripts = (await api("get", `/projects/${pid}/atelier/scripts`)).body;
+check("éditeur guidé : version 1 enregistrée dans la bibliothèque du projet, choisie pour l'essai", (scripts.projet ?? []).some((x) => x.id === "deux-murs" && x.version === 1) && (await page.locator('[data-script="choix"]').inputValue()) === "deux-murs");
+
 // Téléphone.
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(300);

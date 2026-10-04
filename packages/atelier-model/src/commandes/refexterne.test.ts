@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { importerModeleNatif, type JeuNatif } from "../import/natif.js";
 import { modeleVide } from "../modele.js";
 import { representationReferenceExterne } from "../documents/refexterne-rendu.js";
+import { empreinteVue, genererVue, type ParamsVue } from "../documents/vues.js";
 import { pt } from "../unites.js";
 import { CONTRAT_COMMANDES, appliquerLot, type Commande } from "./index.js";
 import { referencesExternes, versRepereProjet, type ParamsReferenceExterne } from "./refexterne.js";
@@ -38,5 +39,23 @@ describe("références externes (DA-05-11)", () => {
     const sans = representationReferenceExterne(P118, { ...params, position: pt(0, 0), angle: { value: 0, unit: "deg" } });
     expect(rep.traits[0]!.a).toEqual(versRepereProjet(sans.traits[0]!.a, params));
     expect(representationReferenceExterne(P118, { ...params, niveauSourceId: "absent" }).traits).toEqual([]);
+  });
+
+  it("documents : le plan du niveau dessine les traits fournis par l'appelant, sinon le dit ; l'empreinte suit l'épinglage", () => {
+    const e = base();
+    const vue: ParamsVue = { type: "plan", titre: "Rez", echelle: 100, niveauId: "n0", hauteurCoupe: null, ligneA: null, ligneB: null, profondeur: null, orientation: null, cadreMin: null, cadreMax: null, lignesCachees: false, phases: null };
+    const sans = empreinteVue(e, vue);
+    const r = appliquerLot(e, lot([rattacher])).etat;
+    expect(empreinteVue(r, vue)).not.toBe(sans);
+    const apercu = genererVue(r, vue);
+    expect(apercu.avertissements.some((a) => /aperçu sans accès/.test(a))).toBe(true);
+    const traits = representationReferenceExterne(P118, r.definitions["voisin"]!.params as unknown as ParamsReferenceExterne).traits;
+    const dessine = genererVue(r, vue, null, { externes: [{ id: "voisin", traits }] });
+    const fins = (v: typeof apercu) => v.primitives.filter((p) => p.type === "ligne" && p.trait === "fin").length;
+    // Les traits de longueur nulle sont écartés par le collecteur, comme pour tout dessin.
+    expect(fins(dessine) - fins(apercu)).toBe(traits.filter((t) => Math.hypot(t.b.x - t.a.x, t.b.y - t.a.y) > 1e-9).length);
+    expect(dessine.empreinte).toBe(apercu.empreinte);
+    const inaccessible = genererVue(r, vue, null, { externes: [{ id: "voisin", traits: null }] });
+    expect(inaccessible.avertissements.some((a) => /source inaccessible/.test(a))).toBe(true);
   });
 });

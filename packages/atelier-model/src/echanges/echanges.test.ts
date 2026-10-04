@@ -174,6 +174,75 @@ describe("import DXF 2D", () => {
   ].join("\n");
   const base = (): ModeleAtelier => ({ ...appliquerLot(modeleVide(), { requestId: "n", baseRevision: 0, contract: CONTRAT_COMMANDES, label: "n", commands: [{ type: "niveau.creer", params: { id: "rdc", nom: "RDC", elevation: 0 } }] }).etat, site: { ...P118.site } });
 
+  it("blocs (INSERT) décomposés : point de base, rotation, échelle, réseau, imbrication, calque 0 ; XREF signalé ; hachures et cotes", () => {
+    const blocs = [
+      "0\nSECTION\n2\nBLOCKS",
+      // Bloc « TABLE » : base (1 ; 1), un carré 2 × 2 sur le calque 0 et un cercle de rayon 0,5.
+      "0\nBLOCK\n8\n0\n2\nTABLE\n70\n0\n10\n1\n20\n1",
+      "0\nLWPOLYLINE\n8\n0\n90\n4\n70\n1\n10\n1\n20\n1\n10\n3\n20\n1\n10\n3\n20\n3\n10\n1\n20\n3",
+      "0\nCIRCLE\n8\nMobilier\n10\n2\n20\n2\n40\n0.5",
+      "0\nENDBLK\n8\n0",
+      // Bloc « SALLE » : deux TABLE, la seconde décalée de 5.
+      "0\nBLOCK\n8\n0\n2\nSALLE\n70\n0\n10\n0\n20\n0",
+      "0\nINSERT\n8\n0\n2\nTABLE\n10\n0\n20\n0",
+      "0\nINSERT\n8\n0\n2\nTABLE\n10\n5\n20\n0",
+      "0\nENDBLK\n8\n0",
+      "0\nBLOCK\n8\n0\n2\nVOISIN\n70\n4\n1\nvoisin.dwg\n10\n0\n20\n0",
+      "0\nENDBLK\n8\n0",
+      "0\nENDSEC",
+    ].join("\n");
+    const entites = [
+      // TABLE en (10 ; 10), tournée de 90°, échelle 2 : le carré 4 × 4 de (6 ; 10) à (10 ; 14).
+      "0\nINSERT\n8\nMobilier\n2\nTABLE\n10\n10\n20\n10\n41\n2\n42\n2\n50\n90",
+      // Réseau 3 colonnes au pas 4 de TABLE, en (0 ; 20).
+      "0\nINSERT\n8\nMobilier\n2\nTABLE\n10\n0\n20\n20\n70\n3\n44\n4",
+      // SALLE (imbriquée) en miroir (échelle x −1) : les cercles deviennent des polygones.
+      "0\nINSERT\n8\nSalle\n2\nSALLE\n10\n0\n20\n40\n41\n-1",
+      "0\nINSERT\n8\n0\n2\nVOISIN\n10\n0\n20\n0",
+      "0\nATTRIB\n8\nTextes\n10\n10\n20\n9\n1\nT-01",
+      // Hachure : contour polyligne 10 × 10 avec un îlot 2 × 2.
+      "0\nHATCH\n8\nSols\n2\nANSI31\n70\n0\n91\n2\n92\n2\n72\n0\n73\n1\n93\n4\n10\n50\n20\n0\n10\n60\n20\n0\n10\n60\n20\n10\n10\n50\n20\n10\n92\n2\n72\n0\n73\n1\n93\n4\n10\n54\n20\n4\n10\n56\n20\n4\n10\n56\n20\n6\n10\n54\n20\n6",
+      // Hachure pleine par arêtes (segments).
+      "0\nHATCH\n8\nSols\n2\nSOLID\n70\n1\n91\n1\n92\n1\n93\n3\n72\n1\n10\n70\n20\n0\n11\n74\n21\n0\n72\n1\n10\n74\n20\n0\n11\n74\n21\n3\n72\n1\n10\n74\n20\n3\n11\n70\n21\n0",
+      // Cote alignée de (0 ; -5) à (4 ; -5), ligne de cote en y = -6 ; cote orientée horizontale de (0 ; -8) à (3 ; -12).
+      "0\nDIMENSION\n8\nCotes\n70\n33\n10\n0\n20\n-6\n13\n0\n23\n-5\n14\n4\n24\n-5",
+      "0\nDIMENSION\n8\nCotes\n70\n32\n50\n0\n10\n0\n20\n-14\n13\n0\n23\n-8\n14\n3\n24\n-12\n1\n3 m",
+      "0\nDIMENSION\n8\nCotes\n70\n34\n10\n0\n20\n0",
+    ].join("\n");
+    const texte = ["0", "SECTION", "2", "HEADER", "9", "$INSUNITS", "70", "6", "0", "ENDSEC", blocs, "0", "SECTION", "2", "ENTITIES", entites, "0", "ENDSEC", "0", "EOF"].join("\n");
+    const r = commandesImportDxf(base(), texte, { source: "blocs.dxf", niveauId: "rdc", repere: "local", uniteSiAbsente: "m" });
+    const e = appliquer(base(), r.lots);
+    const esq = objetsDeClasse(e, "esquisse");
+    // Carré tourné et agrandi : sommets (10 ; 10), (10 ; 14), (6 ; 14), (6 ; 10) au calque de l'insertion.
+    const carre = esq.find((o) => o.params.forme === "polygone" && o.params.points.some((p) => Math.abs(p.x - 6) < 1e-6 && Math.abs(p.y - 14) < 1e-6))!;
+    expect(carre).toBeTruthy();
+    expect(e.calques[carre.calqueId!]!.nom).toBe("DXF · Mobilier");
+    const cercles = esq.filter((o) => o.params.forme === "cercle");
+    expect(cercles.some((c) => Math.abs(c.params.centre!.x - 8) < 1e-6 && Math.abs(c.params.centre!.y - 12) < 1e-6 && c.params.rayon!.value === 1)).toBe(true);
+    // Réseau : trois carrés en y = 20, aux x 0, 4, 8.
+    expect(esq.filter((o) => o.params.forme === "polygone" && o.params.points.some((p) => Math.abs(p.y - 20) < 1e-6) && o.params.points.length === 4)).toHaveLength(3);
+    // Miroir imbriqué : deux tables, cercles discrétisés, carrés en x négatifs.
+    expect(esq.filter((o) => o.params.points.some((p) => p.y > 39 && p.x < -4.9)).length).toBeGreaterThan(0);
+    expect(r.rapport.entites.find((x) => x.type === "CIRCLE")?.remarque).toMatch(/miroir/);
+    expect(r.rapport.entites.find((x) => x.type === "INSERT")).toMatchObject({ lues: 6, importees: 5 }); // dont les deux tables imbriquées dans SALLE
+    expect(r.rapport.entites.find((x) => x.type === "INSERT")?.remarque).toMatch(/décomposé/);
+    expect(r.rapport.remarques.some((x) => /XREF « voisin\.dwg »/.test(x))).toBe(true);
+    expect(objetsDeClasse(e, "texte").map((t) => t.params.texte)).toContain("T-01");
+    const hachures = esq.filter((o) => o.params.forme === "hachure");
+    expect(hachures).toHaveLength(2);
+    expect(hachures.map((h) => h.params.motif).sort()).toEqual(["ANSI31", "plein"]);
+    expect(r.rapport.entites.find((x) => x.type === "HATCH")?.remarque).toMatch(/1 îlot/);
+    const cotes = objetsDeClasse(e, "cotation");
+    expect(cotes).toHaveLength(2);
+    const alignee = cotes.find((c) => c.params.a.y === -5)!;
+    expect(alignee.params.b).toMatchObject({ x: 4, y: -5 });
+    expect(Math.abs(alignee.params.decalage.value)).toBeCloseTo(1, 6);
+    const orientee = cotes.find((c) => c.params.a.y === -8)!;
+    expect(orientee.params.b).toMatchObject({ x: 3, y: -8 });
+    expect(r.rapport.entites.find((x) => x.type === "DIMENSION")).toMatchObject({ lues: 3, importees: 2 });
+    expect(r.rapport.remarques.some((x) => /4 insertion/.test(x) || /insertion\(s\) de bloc/.test(x))).toBe(true);
+  });
+
   it("unités du fichier ($INSUNITS 4 = mm), un calque par calque DXF, groupe ; INSERT signalé, jamais deviné", () => {
     const r = commandesImportDxf(base(), dxf(4, ENTITES), { source: "plan.dxf", niveauId: "rdc", repere: "local", uniteSiAbsente: "m" });
     const e = appliquer(base(), r.lots);

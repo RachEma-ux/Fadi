@@ -24,6 +24,7 @@ import {
   TABLEAUX,
   type Definition,
   type ModeleAtelier,
+  type OptionsGeneration,
   type ParamsFeuille,
   type TypeTableau,
 } from "@parcours/atelier-model";
@@ -129,7 +130,7 @@ const TYPES_MIME: Record<FormatDocument, string> = { pdf: "application/pdf", dxf
  * Rendu d'un document de l'Atelier par son genre (`atelier-vue-<id>-pdf`…), à la révision courante. `horodatage` :
  * instant de la révision (en-tête du fichier IFC, pour des octets identiques d'une production à l'autre).
  */
-export function rendreDocumentAtelier(kind: string, project: OwnedProject, etat: ModeleAtelier, horodatage?: string): Rendu | null {
+export function rendreDocumentAtelier(kind: string, project: OwnedProject, etat: ModeleAtelier, horodatage?: string, options: OptionsGeneration = {}): Rendu | null {
   const rev = project.modelRevision;
   if (kind === "atelier-ifc") {
     const { contenu } = exporterIfc(etat, { projet: { id: project.id, nom: project.name, code: project.code }, revision: rev, horodatage: horodatage ?? new Date(0).toISOString() });
@@ -139,7 +140,7 @@ export function rendreDocumentAtelier(kind: string, project: OwnedProject, etat:
   if (m) {
     const d = etat.definitions[m[1]!];
     if (!d || d.classe !== ("vue" as Definition["classe"])) return null;
-    const vue = genererVue(etat, paramsDeDefinition(d), d.id);
+    const vue = genererVue(etat, paramsDeDefinition(d), d.id, options);
     const f = m[2] as FormatDocument;
     const body = f === "pdf" ? Buffer.from(pdfVue(vue, rev)) : f === "dxf" ? dxfVue(vue, rev, etat.site.parcelle?.origineLocale ?? null) : svgVue(vue, rev);
     return { body, type: TYPES_MIME[f] };
@@ -148,7 +149,7 @@ export function rendreDocumentAtelier(kind: string, project: OwnedProject, etat:
   if (m) {
     const d = etat.definitions[m[1]!];
     if (!d || d.classe !== ("feuille" as Definition["classe"])) return null;
-    const feuille = composerFeuille(etat, d.params as unknown as ParamsFeuille, rev, projetDe(project), d.id);
+    const feuille = composerFeuille(etat, d.params as unknown as ParamsFeuille, rev, projetDe(project), d.id, options);
     const f = m[2] as FormatDocument;
     const body = f === "pdf" ? Buffer.from(pdfFeuille(feuille)) : f === "dxf" ? dxfFeuille(feuille, rev) : svgFeuille(feuille);
     return { body, type: TYPES_MIME[f] };

@@ -51,7 +51,7 @@ supprimés ; les projets qui n'avaient que lui ont été repris dans le modèle 
   → proposition des règles de Fadi, sans fournisseur de modèle de langage → séquence inspectable, journal des
   hypothèses, essais, aperçu des objets affectés et des documents à recalculer → accord explicite) ; scripts de la
   bibliothèque versionnée (intégrés et du projet) essayés à blanc puis exécutés par les mêmes commandes et les mêmes
-  refus qu'un geste.
+  refus qu'un geste ; `panneaux/EditeurScript.tsx` : éditeur guidé de scripts (D-028).
 - `nouveau/panneaux/Reprise.tsx` — réutilisation d'une partie d'un autre modèle (familles, niveaux, données de projet
   cochées, homonymes) : aperçu sans écriture, puis reprise en une révision (compléments, D-022).
 - `nouveau/panneaux/ReferencesExternes.tsx` — références externes : publication d'un autre projet superposée en gris

@@ -16,6 +16,7 @@ import {
   type Commande,
   type ModeleAtelier,
   type ParamsReferenceExterne,
+  type TraitsExternes,
 } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { atelierPublications, atelierVersions } from "../db/schema.js";
@@ -120,4 +121,10 @@ export async function modelesPourMiseAJour(auteurId: string, p: ParamsReferenceE
   const derniere = (await db.select({ id: atelierPublications.id }).from(atelierPublications).where(eq(atelierPublications.projectId, source.id)).orderBy(desc(atelierPublications.revision), desc(atelierPublications.createdAt)).limit(1))[0];
   const neuve = derniere ? await publicationAvecModele(db, source.id, derniere.id) : null;
   return epinglee && neuve ? { epinglee, neuve } : null;
+}
+
+/** Traits de chaque référence externe du modèle, lus avec les droits de `auteurId` (null = inaccessible), pour les documents. */
+export async function traitsExternesPour(auteurId: string, etat: ModeleAtelier): Promise<TraitsExternes[]> {
+  if (!refsDe(etat).length) return [];
+  return (await etatReferences(auteurId, etat, true)).map((r) => ({ id: r.id, traits: r.representation?.traits ?? null }));
 }

@@ -10,7 +10,7 @@ import type { Definition, ModeleAtelier } from "../modele.js";
 import { ErreurCommande, lire } from "../commandes/base.js";
 import type { Primitive, Trait } from "./dessin.js";
 import { empreinteDe } from "./empreinte.js";
-import { empreinteVue, genererVueDefinition, paramsDeDefinition, type VueGeneree } from "./vues.js";
+import { empreinteVue, genererVueDefinition, paramsDeDefinition, type OptionsGeneration, type VueGeneree } from "./vues.js";
 import { genererTableau, TABLEAUX, type Tableau, type TypeTableau } from "./tableaux.js";
 
 export type FormatFeuille = "A0" | "A1" | "A2" | "A3" | "A4";
@@ -168,7 +168,7 @@ export interface Projet {
 }
 
 /** Compose une feuille : cadre, vues à leur échelle avec leur titre, cartouche. */
-export function composerFeuille(etat: ModeleAtelier, params: ParamsFeuille, revision: number, projet: Projet, definitionId: string | null = null): FeuilleComposee {
+export function composerFeuille(etat: ModeleAtelier, params: ParamsFeuille, revision: number, projet: Projet, definitionId: string | null = null, options: OptionsGeneration = {}): FeuilleComposee {
   const { largeur, hauteur } = dimensions(params.format, params.orientation);
   const z = zoneUtile(params);
   const out: Primitive[] = [];
@@ -183,7 +183,7 @@ export function composerFeuille(etat: ModeleAtelier, params: ParamsFeuille, revi
   // Vues.
   const vues: FeuilleComposee["vues"] = [];
   for (const pl of params.vues) {
-    const vue = genererVueDefinition(etat, pl.vueId);
+    const vue = genererVueDefinition(etat, pl.vueId, options);
     if (!vue) {
       avertissements.push(`Vue ${pl.vueId} absente du modèle : placement à retirer.`);
       continue;
@@ -284,8 +284,8 @@ export function empreinteFeuille(etat: ModeleAtelier, params: ParamsFeuille, pro
   return empreinteDe(tableaux.length ? { params, vues, projet, tableaux } : { params, vues, projet });
 }
 
-export function composerFeuilleDefinition(etat: ModeleAtelier, id: string, revision: number, projet: Projet): FeuilleComposee | null {
+export function composerFeuilleDefinition(etat: ModeleAtelier, id: string, revision: number, projet: Projet, options: OptionsGeneration = {}): FeuilleComposee | null {
   const def = etat.definitions[id];
   if (!def || def.classe !== ("feuille" as Definition["classe"])) return null;
-  return composerFeuille(etat, def.params as unknown as ParamsFeuille, revision, projet, id);
+  return composerFeuille(etat, def.params as unknown as ParamsFeuille, revision, projet, id, options);
 }

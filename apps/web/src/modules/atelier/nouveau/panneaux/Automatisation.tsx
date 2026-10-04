@@ -9,9 +9,10 @@
  */
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ModeleAtelier, ParametreScript } from "@parcours/atelier-model";
+import type { ModeleAtelier, ParametreScript, ScriptAtelier } from "@parcours/atelier-model";
 import { api, type AtelierProposition, type AtelierScript } from "../../../../lib/api";
 import type { AtelierClient } from "../../bus/atelier-client";
+import { EditeurScript } from "./EditeurScript";
 import { messageErreur } from "./Versions";
 
 export interface PropsAutomatisation {
@@ -256,9 +257,10 @@ export function Automatisation({ projectId, client, etat, revision, niveauId, re
             </form>
           )}
           {essai && essai.cle === cleEssai && <Apercu effets={essai.effets} documents={essai.documents} commandes={essai.commandes} />}
+          {!readOnly && <EditeurScript projectId={projectId} etat={etat} scripts={tous as unknown as ScriptAtelier[]} onEnregistre={(id) => { setScriptId(id); setEssai(null); }} />}
           {!readOnly && (
             <details className="auto-nouveau">
-              <summary>Ajouter un script au projet (JSON)</summary>
+              <summary>Ajouter un script au projet (JSON, avancé)</summary>
               <textarea aria-label="Script (JSON)" rows={6} value={nouveauScript} onChange={(e) => setNouveauScript(e.target.value)} placeholder='{ "id": "mon-script", "nom": "…", "parametres": [], "pour": [], "commandes": [] }' />
               <button
                 type="button"

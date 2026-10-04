@@ -77,6 +77,8 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   const signatureRefs = Object.values(inst.etat.definitions).filter((d) => d.classe === "reference-externe").map((d) => `${d.id}@${d.version}`).join(",");
   const referencesExternes = useQuery({ queryKey: ["atelier-references-externes", projectId, signatureRefs, inst.revisionServeur], queryFn: () => api.getAtelierReferencesExternes(projectId), enabled: !!signatureRefs && !inst.horsLigne, retry: false, staleTime: 60_000 });
   const externes = useMemo(() => (signatureRefs ? referencesExternes.data?.references ?? [] : []).filter((r) => r.representation).map((r) => ({ id: r.id, niveauId: r.params.niveauId, traits: r.representation!.traits })), [referencesExternes.data, signatureRefs]);
+  // Documents : traits des références (null = inaccessible) ; absent tant qu'ils ne sont pas lus.
+  const documentsExternes = useMemo(() => (!signatureRefs ? [] : referencesExternes.data ? referencesExternes.data.references.map((r) => ({ id: r.id, traits: r.representation?.traits ?? null })) : undefined), [signatureRefs, referencesExternes.data]);
   const niveauxTries = useMemo(() => Object.values(inst.etat.niveaux).sort((a, b) => a.elevation - b.elevation).map((n) => ({ id: n.id, nom: n.nom })), [inst.etat.niveaux]);
   const readOnly = readOnlyProjet || consultation !== null;
   const etat = consultation?.etat ?? inst.etat;
@@ -531,11 +533,11 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
       <main className="atelier-n-travail" ref={zone}>
         {ui.mode === "documents" ? (
           <Suspense fallback={<p role="status" className="vue3d-etat">Chargement des documents…</p>}>
-            <Documents projectId={projectId} code={code} nomProjet={nomProjet} etat={etat} revision={inst.revisionServeur} readOnly={readOnly} niveauId={ui.niveauId} onCommandes={(c, l) => executer(c, l, false)} />
+            <Documents projectId={projectId} code={code} nomProjet={nomProjet} etat={etat} revision={inst.revisionServeur} readOnly={readOnly} niveauId={ui.niveauId} onCommandes={(c, l) => executer(c, l, false)} externes={documentsExternes} />
           </Suspense>
         ) : ui.mode === "3d" ? (
           <Suspense fallback={<p role="status" className="vue3d-etat">Chargement de la vue 3D…</p>}>
-            <Vue3D etat={etat} ui={ui} readOnly={readOnly} onCommandes={(c, l) => void executer(c, l, false)} />
+            <Vue3D etat={etat} ui={ui} readOnly={readOnly} onCommandes={(c, l) => void executer(c, l, false)} externes={consultation ? undefined : externes} />
           </Suspense>
         ) : (
           <Plan2D etat={etat} ui={ui} readOnly={readOnly} onResultat={appliquerResultat} onTerminer={finir} onCommandes={(c, l) => void executer(c, l, false)} externes={consultation ? [] : externes} />
@@ -578,7 +580,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         <div className="droite-versions">
           <Versions projectId={projectId} client={client} etat={inst.etat} revision={inst.revisionServeur} selection={ui.selection} niveauId={ui.niveauId} readOnly={readOnlyProjet || protectedReference} consultation={consultation?.libelle ?? null} onConsulter={(libelle, e) => { setConsultation({ libelle, etat: e }); etatUi.set({ selection: [] }); }} />
           <Reprise projectId={projectId} client={client} readOnly={readOnlyProjet || protectedReference} />
-          <ReferencesExternes projectId={projectId} client={client} niveaux={niveauxTries} niveauId={ui.niveauId} references={signatureRefs ? referencesExternes.data?.references ?? [] : []} readOnly={readOnlyProjet || protectedReference || consultation !== null} />
+          <ReferencesExternes projectId={projectId} client={client} niveaux={niveauxTries} niveauId={ui.niveauId} references={signatureRefs ? referencesExternes.data?.references ?? [] : []} readOnly={readOnlyProjet || protectedReference || consultation !== null || inst.horsLigne} horsLigne={inst.horsLigne} />
           <Automatisation projectId={projectId} client={client} etat={inst.etat} revision={inst.revisionServeur} niveauId={ui.niveauId} readOnly={readOnly || protectedReference} />
         </div>
       </aside>

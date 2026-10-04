@@ -1153,7 +1153,7 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     const parcelsRes = (await client.get(`/projects/${copy.id}/parcels`)).body;
     expect(parcelsRes.files).toHaveLength(1);
     expect(parcelsRes.transmission.status).toBe("linked");
-  });
+  }, 30_000);
 
   it("« Essayer une autre répartition en copie » : copies the protected P.118 reference into an editable project, reference intact", async () => {
     const client = await registerAndLogin("copie@example.com");

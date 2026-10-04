@@ -41,6 +41,11 @@ export interface MesuresRendu {
   sonder?: (x: number, y: number) => string | null;
   /** Nombre d'objets dont la section est remplie (coupe en 3D) : instrumentation de la recette. */
   chapeaux?: number;
+  /** Nombre de références externes dessinées en 3D. */
+  externes?: number;
+  /** Poignées du manipulateur affichées (0 ou 2) et position écran d'une flèche (instrumentation de la recette). */
+  poignees?: number;
+  localiserPoignee?: (axe: "x" | "y") => { x: number; y: number } | null;
 }
 
 const ECART_ECLATE = 4;
@@ -88,6 +93,10 @@ export class Scene3D {
   /** Maillages du modèle courant (sources des chapeaux de coupe). */
   private maillagesCourants: Maillage[] = [];
   private chapeaux: THREE.Mesh[] = [];
+  /** Références externes (DA-05-11) : traits gris au niveau de rattachement, ni sélectionnables ni accrochables en 3D. */
+  private externes: readonly { niveauId: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number } }[] }[] = [];
+  private lignesExternes: THREE.LineSegments[] = [];
+  private matExternes = new THREE.LineBasicMaterial({ color: "#8a8f98", transparent: true, opacity: 0.9 });
   private cleChapeaux = "";
   private cache = new WeakMap<object, { cle: string; m: Maillage | null }>();
   private etat: ModeleAtelier | null = null;
@@ -133,7 +142,10 @@ export class Scene3D {
     this.moteur.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.controles = new OrbitControls(this.perspective, this.canvas);
     this.controles.enableDamping = false;
-    this.controles.addEventListener("change", () => this.rendre());
+    this.controles.addEventListener("change", () => {
+      this.ajusterPoignees();
+      this.rendre();
+    });
     sceneActive = this;
     this.mesures.localiser = (id) => this.ecranDe(id);
     this.mesures.sonder = (x, y) => this.pointer(x, y)?.objetId ?? null;
@@ -249,6 +261,7 @@ export class Scene3D {
     }
     this.maillagesCourants = tous;
     this.cleChapeaux = "";
+    this.poserExternes();
     const e = englobant(tous);
     if (e) this.boite.set(new THREE.Vector3(...e.min), new THREE.Vector3(...e.max));
     else this.boite.set(new THREE.Vector3(-10, -10, 0), new THREE.Vector3(10, 10, 3));
@@ -350,6 +363,7 @@ export class Scene3D {
 
   /** Mise en évidence de la sélection (maillages superposés). */
   majSelection(ids: readonly string[]): void {
+    this.selection.position.set(0, 0, 0);
     for (const c of [...this.selection.children]) {
       (c as THREE.Mesh).geometry.dispose();
       this.selection.remove(c);
@@ -385,6 +399,39 @@ export class Scene3D {
       this.apercu.add(mesh);
     }
     this.rendre();
+  }
+
+  /** Traits des références externes, posés dans le groupe de leur niveau (éclaté et masquage suivent). */
+  majExternes(liste: readonly { niveauId: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number } }[] }[]): void {
+    this.externes = liste;
+    this.poserExternes();
+    this.rendre();
+  }
+
+  private poserExternes(): void {
+    for (const l of this.lignesExternes) {
+      l.parent?.remove(l);
+      l.geometry.dispose();
+    }
+    this.lignesExternes = [];
+    const etat = this.etat;
+    if (!etat) return;
+    this.matExternes.clippingPlanes = this.plans;
+    for (const x of this.externes) {
+      const n = etat.niveaux[x.niveauId];
+      const g = this.groupes.get(x.niveauId);
+      if (!n || !g || !x.traits.length) continue;
+      const z = n.elevation + 0.02;
+      const pos = new Float32Array(Math.min(x.traits.length, 20000) * 6);
+      x.traits.slice(0, 20000).forEach((t, i) => pos.set([t.a.x, t.a.y, z, t.b.x, t.b.y, z], i * 6));
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      const lignes = new THREE.LineSegments(geo, this.matExternes);
+      lignes.userData["referenceExterne"] = true;
+      g.add(lignes);
+      this.lignesExternes.push(lignes);
+    }
+    this.mesures.externes = this.lignesExternes.length;
   }
 
   /** Remplit la section là où l'unique plan de coupe traverse la matière (chapeaux purs, `chapeauxDeCoupe`). */
@@ -465,6 +512,113 @@ export class Scene3D {
     const dz = m.niveauId ? (this.groupes.get(m.niveauId)?.position.z ?? 0) : 0;
     const p = new THREE.Vector3((e.min[0] + e.max[0]) / 2, (e.min[1] + e.max[1]) / 2, e.max[2] - 0.05 + dz).project(this.camera);
     return { x: ((p.x + 1) / 2) * this.largeur, y: ((1 - p.y) / 2) * this.hauteur };
+  }
+
+  // ---------------------------------------------------------------------------------------------------------------
+  // Manipulateur à poignées : deux flèches (X rouge, Y verte) au-dessus de la sélection ; glisser une flèche déplace
+  // la sélection le long de cet axe (aperçu), le relâcher produit un lot `transformer.deplacer`.
+  // ---------------------------------------------------------------------------------------------------------------
+  private poignees = new THREE.Group();
+  private centrePoignees: THREE.Vector3 | null = null;
+  private matPoignee = { x: new THREE.MeshBasicMaterial({ color: "#c0392b", depthTest: false }), y: new THREE.MeshBasicMaterial({ color: "#2e8b57", depthTest: false }) };
+
+  /** Place les poignées au-dessus du centre de la sélection (null : les retirer). */
+  majPoignees(actif: boolean): void {
+    for (const c of [...this.poignees.children]) {
+      c.traverse((x) => (x as THREE.Mesh).geometry?.dispose());
+      this.poignees.remove(c);
+    }
+    if (!this.poignees.parent) this.scene.add(this.poignees);
+    this.centrePoignees = null;
+    this.poignees.position.set(0, 0, 0);
+    if (!actif || !this.selection.children.length) {
+      this.mesures.poignees = 0;
+      this.rendre();
+      return;
+    }
+    const b = new THREE.Box3().setFromObject(this.selection);
+    if (b.isEmpty()) return;
+    const c = b.getCenter(new THREE.Vector3());
+    c.z = b.max.z + 0.1;
+    this.centrePoignees = c;
+    // Flèches de longueur unité, mises à l'échelle de l'écran (taille constante quel que soit le zoom).
+    const longueur = 1;
+    for (const axe of ["x", "y"] as const) {
+      const fleche = new THREE.Group();
+      const tige = new THREE.Mesh(new THREE.CylinderGeometry(longueur * 0.025, longueur * 0.025, longueur, 10), this.matPoignee[axe]);
+      tige.position.y = longueur / 2;
+      const pointe = new THREE.Mesh(new THREE.ConeGeometry(longueur * 0.08, longueur * 0.22, 14), this.matPoignee[axe]);
+      pointe.position.y = longueur + longueur * 0.11;
+      fleche.add(tige, pointe);
+      // Le cylindre de three.js suit Y : la flèche X est tournée de −90° autour de Z.
+      if (axe === "x") fleche.rotation.z = -Math.PI / 2;
+      fleche.position.copy(c);
+      fleche.userData["axe"] = axe;
+      fleche.renderOrder = 10;
+      for (const m of [tige, pointe]) {
+        m.userData["axe"] = axe;
+        m.renderOrder = 10;
+      }
+      this.poignees.add(fleche);
+    }
+    this.mesures.poignees = 2;
+    this.mesures.localiserPoignee = (axe) => {
+      if (!this.centrePoignees) return null;
+      const k = this.echellePoignees();
+      const d = axe === "x" ? new THREE.Vector3(k * 0.8, 0, 0) : new THREE.Vector3(0, k * 0.8, 0);
+      const p = this.centrePoignees.clone().add(this.poignees.position).add(d).project(this.camera);
+      return { x: ((p.x + 1) / 2) * this.largeur, y: ((1 - p.y) / 2) * this.hauteur };
+    };
+    this.ajusterPoignees();
+    this.rendre();
+  }
+
+  /** Longueur (m) qui donne aux flèches environ un huitième de la hauteur de la vue. */
+  private echellePoignees(): number {
+    const c = this.centrePoignees;
+    if (!c) return 1;
+    if (this.camera === this.perspective) {
+      const d = this.perspective.position.distanceTo(c);
+      return Math.max(0.05, 2 * d * Math.tan((this.perspective.fov * Math.PI) / 360) * 0.12);
+    }
+    return Math.max(0.05, ((this.ortho.top - this.ortho.bottom) / this.ortho.zoom) * 0.12);
+  }
+
+  private ajusterPoignees(): void {
+    if (!this.centrePoignees) return;
+    const k = this.echellePoignees();
+    for (const f of this.poignees.children) f.scale.setScalar(k);
+  }
+
+  /** Poignée sous le pointeur (coordonnées relatives au canevas). */
+  poigneeSous(x: number, y: number): "x" | "y" | null {
+    if (!this.poignees.children.length) return null;
+    const rc = new THREE.Raycaster();
+    rc.setFromCamera(new THREE.Vector2((x / this.largeur) * 2 - 1, -(y / this.hauteur) * 2 + 1), this.camera);
+    const h = rc.intersectObjects(this.poignees.children, true)[0];
+    return (h?.object.userData["axe"] as "x" | "y" | undefined) ?? null;
+  }
+
+  /** Abscisse, le long de l'axe passant par le centre des poignées, du point de l'axe le plus proche du rayon du pointeur. */
+  abscisseSurAxe(axe: "x" | "y", x: number, y: number): number | null {
+    const c = this.centrePoignees;
+    if (!c) return null;
+    const rc = new THREE.Raycaster();
+    rc.setFromCamera(new THREE.Vector2((x / this.largeur) * 2 - 1, -(y / this.hauteur) * 2 + 1), this.camera);
+    const d1 = axe === "x" ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+    const d2 = rc.ray.direction;
+    const w = c.clone().sub(rc.ray.origin);
+    const b = d1.dot(d2);
+    const den = 1 - b * b;
+    if (den < 1e-6) return null; // rayon parallèle à l'axe
+    return (b * w.dot(d2) - w.dot(d1)) / den;
+  }
+
+  /** Aperçu du déplacement : la sélection et les poignées suivent le décalage. */
+  apercuDeplacement(dx: number, dy: number): void {
+    this.selection.position.set(dx, dy, 0);
+    this.poignees.position.set(dx, dy, 0);
+    this.rendre();
   }
 
   /** Pixels écran par mètre vertical au point donné (pousser / tirer). */

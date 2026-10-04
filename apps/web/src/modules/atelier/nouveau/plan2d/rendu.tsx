@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { centroide, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { centroide, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -245,6 +245,9 @@ function Mur2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"mur">; et
         const quad = [{ x: p1.x + (f.droite[0].x - a.x), y: p1.y + (f.droite[0].y - a.y) }, { x: p2.x + (f.droite[0].x - a.x), y: p2.y + (f.droite[0].y - a.y) }, { x: p2.x + (f.droite[0].x - a.x) + nx, y: p2.y + (f.droite[0].y - a.y) + ny }, { x: p1.x + (f.droite[0].x - a.x) + nx, y: p1.y + (f.droite[0].y - a.y) + ny }];
         return <path key={ouv.id} d={chemin(pr, quad)} fill="#fff" stroke="none" />;
       })}
+      {separationsCouches(etat, o, ouvertures.map((ouv) => { const c = ouv.params.position * Math.hypot(dx, dy); return [c - ouv.params.largeur.value / 2, c + ouv.params.largeur.value / 2] as [number, number]; })).map((sep, i) => (
+        <path key={`couche-${i}`} className="mur-couche" d={chemin(pr, [sep.a, sep.b], false)} fill="none" stroke="#11302a" strokeWidth={0.6} strokeOpacity={0.55} />
+      ))}
     </g>
   );
 }

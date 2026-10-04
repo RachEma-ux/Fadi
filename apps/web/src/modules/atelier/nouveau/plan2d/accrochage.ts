@@ -21,6 +21,17 @@ interface Segment {
   objetId: string;
 }
 
+/** Identifiant porté par les segments d'une référence externe (DA-05-11) dans le cache d'accrochage. */
+export const PREFIXE_EXTERNE = "externe:";
+
+/** Ajoute au cache les traits d'une référence externe (déjà convertis dans le repère du projet). */
+export function avecExternes(cache: ReturnType<typeof segmentsDuNiveau>, externes: readonly { id: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number } }[] }[]): ReturnType<typeof segmentsDuNiveau> {
+  if (!externes.length) return cache;
+  const segments = [...cache.segments];
+  for (const x of externes) for (const t of x.traits.slice(0, 20000)) segments.push({ a: pt(t.a.x, t.a.y), b: pt(t.b.x, t.b.y), objetId: `${PREFIXE_EXTERNE}${x.id}` });
+  return { segments, centres: cache.centres };
+}
+
 /** Segments et points remarquables d'un niveau (axes de murs, contours, esquisses, escaliers). */
 export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): { segments: Segment[]; centres: { p: Point2; objetId: string }[] } {
   const segments: Segment[] = [];
@@ -136,6 +147,8 @@ export function surGrille(p: Point2, pas: number): Point2 {
 export function objetSousPointeur(p: Point2, cache: ReturnType<typeof segmentsDuNiveau>, etat: ModeleAtelier, niveauId: string | null, rayon: number): { objetId: string; distance: number } | null {
   let meilleur: { objetId: string; distance: number } | null = null;
   for (const s of cache.segments) {
+    // Traits d'une référence externe : accrochables, jamais sélectionnables (lecture seule).
+    if (s.objetId.startsWith(PREFIXE_EXTERNE)) continue;
     const d = projectionSurSegment(p, s.a, s.b).distance;
     const o = etat.objets[s.objetId];
     // Les murs sont cliquables sur toute leur épaisseur.

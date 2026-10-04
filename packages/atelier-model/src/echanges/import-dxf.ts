@@ -5,8 +5,10 @@
  * objet (déplacer, tourner, échelle) ; décision D-019.
  *
  * Entités lues : LINE, LWPOLYLINE (arrondis « bulge » discrétisés), POLYLINE / VERTEX / SEQEND (2D), CIRCLE, ARC, TEXT,
- * MTEXT (texte brut). Les autres entités (blocs INSERT, hachures, cotes, splines, 3D…) sont comptées et signalées,
- * jamais devinées.
+ * MTEXT (texte brut), ATTRIB ; INSERT (blocs décomposés : point de base, échelles, rotation, réseaux ; blocs imbriqués
+ * jusqu'à 8 niveaux) ; HATCH (contours extérieurs en hachures, motif nommé) ; DIMENSION linéaires et alignées (cotes).
+ * Les autres entités (XREF — fichier externe non fourni —, cotes angulaires ou radiales, splines, 3D…) sont comptées
+ * et signalées, jamais devinées.
  *
  * Unités : `$INSUNITS` de l'en-tête ; quand il est absent ou « sans unité », l'unité est celle que l'utilisateur
  * choisit (`uniteSiAbsente`) et le rapport l'écrit comme une hypothèse. Repère (R5) : `local` (les coordonnées sont
@@ -60,13 +62,29 @@ interface Entite {
   champs: Paire[];
 }
 
-/** Sections HEADER et ENTITIES, entités découpées sur le code 0. */
-function lire(texte: string): { insunits: number | null; entites: Entite[] } {
+interface Bloc {
+  nom: string;
+  base: { x: number; y: number };
+  /** Bloc de référence externe (XREF) : son contenu est dans un autre fichier. */
+  externe: boolean;
+  chemin: string | null;
+  entites: Entite[];
+}
+
+/** Sections HEADER, BLOCKS et ENTITIES, entités découpées sur le code 0. */
+function lire(texte: string): { insunits: number | null; entites: Entite[]; blocs: Map<string, Bloc> } {
   const ps = paires(texte);
   let insunits: number | null = null;
   const entites: Entite[] = [];
+  const blocs = new Map<string, Bloc>();
   let section: string | null = null;
   let courante: Entite | null = null;
+  let entete: Entite | null = null;
+  let bloc: Bloc | null = null;
+  const fermer = () => {
+    if (courante) (bloc ? bloc.entites : entites).push(courante);
+    courante = null;
+  };
   for (let i = 0; i < ps.length; i++) {
     const p = ps[i]!;
     if (p.code === 0 && p.valeur === "SECTION") {
@@ -75,9 +93,9 @@ function lire(texte: string): { insunits: number | null; entites: Entite[] } {
       continue;
     }
     if (p.code === 0 && p.valeur === "ENDSEC") {
-      if (courante) entites.push(courante);
-      courante = null;
+      fermer();
       section = null;
+      bloc = null;
       continue;
     }
     if (section === "HEADER" && p.code === 9 && p.valeur === "$INSUNITS") {
@@ -85,15 +103,68 @@ function lire(texte: string): { insunits: number | null; entites: Entite[] } {
       if (v && v.code === 70) insunits = Number.parseInt(v.valeur, 10);
       continue;
     }
-    if (section === "ENTITIES" || section === "BLOCKS") {
-      if (section === "BLOCKS") continue; // le contenu des blocs n'est pas lu (INSERT signalés)
+    if (section === "BLOCKS") {
+      if (p.code === 0 && p.valeur === "BLOCK") {
+        fermer();
+        entete = { type: "BLOCK", champs: [] };
+        continue;
+      }
+      if (entete && p.code !== 0) {
+        entete.champs.push(p);
+        continue;
+      }
+      if (entete && p.code === 0) {
+        // Fin de l'en-tête du bloc : il est créé, ses entités suivent (un bloc peut être vide, XREF par exemple).
+        const e: Entite = entete;
+        const nom = e.champs.find((c) => c.code === 2)?.valeur ?? "";
+        const f = (code: number) => Number.parseFloat(e.champs.find((c) => c.code === code)?.valeur ?? "0") || 0;
+        const drapeaux = Number.parseInt(e.champs.find((c) => c.code === 70)?.valeur ?? "0", 10) || 0;
+        bloc = { nom, base: { x: f(10), y: f(20) }, externe: (drapeaux & 4) !== 0, chemin: e.champs.find((c) => c.code === 1)?.valeur ?? null, entites: [] };
+        if (nom) blocs.set(nom, bloc);
+        entete = null;
+      }
+      if (p.code === 0 && p.valeur === "ENDBLK") {
+        fermer();
+        bloc = null;
+        continue;
+      }
+      if (!bloc) continue;
       if (p.code === 0) {
-        if (courante) entites.push(courante);
+        fermer();
+        courante = { type: p.valeur, champs: [] };
+      } else courante?.champs.push(p);
+      continue;
+    }
+    if (section === "ENTITIES") {
+      if (p.code === 0) {
+        fermer();
         courante = { type: p.valeur, champs: [] };
       } else courante?.champs.push(p);
     }
   }
-  return { insunits, entites };
+  fermer();
+  return { insunits, entites, blocs };
+}
+
+/** Transformation affine 2D (unités du fichier) : x' = a x + c y + e ; y' = b x + d y + f. */
+interface Affine {
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+  e: number;
+  f: number;
+}
+const IDENTITE: Affine = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+const appliquerAffine = (m: Affine, x: number, y: number) => ({ x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f });
+const composer = (m: Affine, n: Affine): Affine => ({ a: m.a * n.a + m.c * n.b, b: m.b * n.a + m.d * n.b, c: m.a * n.c + m.c * n.d, d: m.b * n.c + m.d * n.d, e: m.a * n.e + m.c * n.f + m.e, f: m.b * n.e + m.d * n.f + m.f });
+/** Échelle uniforme et sens conservé (similitude directe) : les cercles et arcs restent des cercles et arcs. */
+function similitude(m: Affine): { echelle: number; rotation: number } | null {
+  const sx = Math.hypot(m.a, m.b);
+  const sy = Math.hypot(m.c, m.d);
+  const det = m.a * m.d - m.b * m.c;
+  if (det <= 0 || Math.abs(sx - sy) > 1e-9 * Math.max(1, sx) || Math.abs(m.a * m.c + m.b * m.d) > 1e-9 * Math.max(1, sx * sy)) return null;
+  return { echelle: sx, rotation: (Math.atan2(m.b, m.a) * 180) / Math.PI };
 }
 
 const num = (e: Entite, code: number, defaut: number | null = null): number | null => {
@@ -134,7 +205,7 @@ const idSur = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(
 
 export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: OptionsImportDxf): { lots: { label: string; commands: Commande[] }[]; rapport: RapportImportDxf } {
   if (!etat.niveaux[options.niveauId]) throw new Error(`Niveau inconnu : ${options.niveauId}`);
-  const { insunits, entites } = lire(texte);
+  const { insunits, entites, blocs } = lire(texte);
   const prefixe = options.prefixe ?? "dxf";
   const remarques: string[] = [];
   const uniteFichier = insunits !== null ? INSUNITS[insunits] : undefined;
@@ -146,7 +217,7 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
   const ox = options.repere === "cadastral" ? parcelle!.origineLocale.x : 0;
   const oy = options.repere === "cadastral" ? parcelle!.origineLocale.y : 0;
   remarques.push(options.repere === "cadastral" ? `Repère : coordonnées lues dans ${parcelle!.crs}, converties explicitement en repère local (− ${ox} ; − ${oy}).` : "Repère : coordonnées lues comme celles du repère local du projet.");
-  const P = (x: number, y: number): Point2 => pt(Math.round((x * f - ox) * 1e6) / 1e6, Math.round((y * f - oy) * 1e6) / 1e6);
+  const P0 = (x: number, y: number): Point2 => pt(Math.round((x * f - ox) * 1e6) / 1e6, Math.round((y * f - oy) * 1e6) / 1e6);
 
   const comptes = new Map<string, { lues: number; importees: number; remarque: string | null }>();
   const compter = (type: string, ok: boolean, remarque: string | null = null) => {
@@ -158,8 +229,7 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
   };
   const calques = new Map<string, string>();
   const commandes: Commande[] = [];
-  const calqueDe = (e: Entite) => {
-    const nom = nomCalque(txt(e, 8));
+  const calqueNomme = (nom: string) => {
     let id = calques.get(nom);
     if (!id) {
       id = `${prefixe}-calque-${idSur(nom)}`;
@@ -191,101 +261,304 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
   };
   const distincts = (pts: Point2[]) => pts.filter((p, i) => i === 0 || Math.hypot(p.x - pts[i - 1]!.x, p.y - pts[i - 1]!.y) > 1e-6);
 
-  for (let i = 0; i < entites.length; i++) {
-    const e = entites[i]!;
-    switch (e.type) {
-      case "LINE": {
-        const a = P(num(e, 10, 0)!, num(e, 20, 0)!);
-        const b = P(num(e, 11, 0)!, num(e, 21, 0)!);
-        if (Math.hypot(b.x - a.x, b.y - a.y) <= 1e-6) {
-          compter("LINE", false, "segments de longueur nulle ignorés");
-          break;
-        }
-        poser("esquisse.ligne", { points: [a, b], calqueId: calqueDe(e) });
-        compter("LINE", true);
-        break;
+  let decomposes = 0;
+  /** Une liste d'entités (le dessin, ou le contenu d'un bloc) sous une transformation (blocs insérés). */
+  const importer = (liste: Entite[], M: Affine, chemin: string[], calqueParent: string | null): void => {
+    const P = (x: number, y: number): Point2 => {
+      const q = appliquerAffine(M, x, y);
+      return P0(q.x, q.y);
+    };
+    const sim = similitude(M);
+    // Une entité de bloc sur le calque « 0 » prend le calque de l'insertion (convention DXF).
+    const nomDe = (x: Entite) => {
+      const nom = nomCalque(txt(x, 8));
+      return nom === "0" && calqueParent ? calqueParent : nom;
+    };
+    const calqueDe = (x: Entite) => calqueNomme(nomDe(x));
+    /** Cercle ou arc sous une transformation quelconque : polyligne (≤ 11,25° par segment). */
+    const arcEnPoints = (cx: number, cy: number, r: number, a0: number, a1: number) => {
+      let fin = a1;
+      while (fin <= a0) fin += 360;
+      const n = Math.max(4, Math.ceil((fin - a0) / 11.25));
+      const pts: Point2[] = [];
+      for (let k = 0; k <= n; k++) {
+        const t = ((a0 + ((fin - a0) * k) / n) * Math.PI) / 180;
+        pts.push(P(cx + r * Math.cos(t), cy + r * Math.sin(t)));
       }
-      case "LWPOLYLINE": {
-        const ferme = ((num(e, 70, 0) ?? 0) & 1) === 1;
-        const sommets: { x: number; y: number; bulge: number }[] = [];
-        for (const c of e.champs) {
-          if (c.code === 10) sommets.push({ x: Number.parseFloat(c.valeur), y: 0, bulge: 0 });
-          else if (c.code === 20 && sommets.length) sommets[sommets.length - 1]!.y = Number.parseFloat(c.valeur);
-          else if (c.code === 42 && sommets.length) sommets[sommets.length - 1]!.bulge = Number.parseFloat(c.valeur);
-        }
-        const brut: { x: number; y: number }[] = sommets.length ? [sommets[0]!] : [];
-        let arrondis = false;
-        for (let k = 0; k + 1 < sommets.length + (ferme ? 1 : 0); k++) {
-          const a = sommets[k]!;
-          const b = sommets[(k + 1) % sommets.length]!;
-          if (Math.abs(a.bulge) > 1e-9) arrondis = true;
-          brut.push(...arrondi(a, b, a.bulge));
-        }
-        if (ferme && brut.length > 1) brut.pop();
-        const pts = distincts(brut.map((p) => P(p.x, p.y)));
-        if (pts.length < 2) {
-          compter("LWPOLYLINE", false, "polylignes de moins de deux sommets ignorées");
+      return pts;
+    };
+    for (let i = 0; i < liste.length; i++) {
+      const e = liste[i]!;
+      switch (e.type) {
+        case "LINE": {
+          const a = P(num(e, 10, 0)!, num(e, 20, 0)!);
+          const b = P(num(e, 11, 0)!, num(e, 21, 0)!);
+          if (Math.hypot(b.x - a.x, b.y - a.y) <= 1e-6) {
+            compter("LINE", false, "segments de longueur nulle ignorés");
+            break;
+          }
+          poser("esquisse.ligne", { points: [a, b], calqueId: calqueDe(e) });
+          compter("LINE", true);
           break;
         }
-        poser(ferme && pts.length >= 3 ? "esquisse.polygone" : "esquisse.polyligne", { points: pts, ferme: ferme && pts.length >= 3, calqueId: calqueDe(e) });
-        compter("LWPOLYLINE", true, arrondis ? "arrondis (bulge) discrétisés en segments (≤ 11,25° par segment)" : null);
-        break;
+        case "LWPOLYLINE": {
+          const ferme = ((num(e, 70, 0) ?? 0) & 1) === 1;
+          const sommets: { x: number; y: number; bulge: number }[] = [];
+          for (const c of e.champs) {
+            if (c.code === 10) sommets.push({ x: Number.parseFloat(c.valeur), y: 0, bulge: 0 });
+            else if (c.code === 20 && sommets.length) sommets[sommets.length - 1]!.y = Number.parseFloat(c.valeur);
+            else if (c.code === 42 && sommets.length) sommets[sommets.length - 1]!.bulge = Number.parseFloat(c.valeur);
+          }
+          const brut: { x: number; y: number }[] = sommets.length ? [sommets[0]!] : [];
+          let arrondis = false;
+          for (let k = 0; k + 1 < sommets.length + (ferme ? 1 : 0); k++) {
+            const a = sommets[k]!;
+            const b = sommets[(k + 1) % sommets.length]!;
+            if (Math.abs(a.bulge) > 1e-9) arrondis = true;
+            brut.push(...arrondi(a, b, a.bulge));
+          }
+          if (ferme && brut.length > 1) brut.pop();
+          const pts = distincts(brut.map((p) => P(p.x, p.y)));
+          if (pts.length < 2) {
+            compter("LWPOLYLINE", false, "polylignes de moins de deux sommets ignorées");
+            break;
+          }
+          poser(ferme && pts.length >= 3 ? "esquisse.polygone" : "esquisse.polyligne", { points: pts, ferme: ferme && pts.length >= 3, calqueId: calqueDe(e) });
+          compter("LWPOLYLINE", true, arrondis ? "arrondis (bulge) discrétisés en segments (≤ 11,25° par segment)" : null);
+          break;
+        }
+        case "POLYLINE": {
+          const ferme = ((num(e, 70, 0) ?? 0) & 1) === 1;
+          const sommets: { x: number; y: number; bulge: number }[] = [];
+          let j = i + 1;
+          for (; j < liste.length && liste[j]!.type === "VERTEX"; j++) sommets.push({ x: num(liste[j]!, 10, 0)!, y: num(liste[j]!, 20, 0)!, bulge: num(liste[j]!, 42, 0)! });
+          if (liste[j]?.type === "SEQEND") j++;
+          i = j - 1;
+          if ((num(e, 70, 0)! & (8 | 16 | 64)) !== 0) {
+            compter("POLYLINE", false, "polylignes 3D et maillages ignorés (import 2D)");
+            break;
+          }
+          const brut: { x: number; y: number }[] = sommets.length ? [sommets[0]!] : [];
+          for (let k = 0; k + 1 < sommets.length + (ferme ? 1 : 0); k++) brut.push(...arrondi(sommets[k]!, sommets[(k + 1) % sommets.length]!, sommets[k]!.bulge));
+          if (ferme && brut.length > 1) brut.pop();
+          const pts = distincts(brut.map((p) => P(p.x, p.y)));
+          if (pts.length < 2) {
+            compter("POLYLINE", false, "polylignes de moins de deux sommets ignorées");
+            break;
+          }
+          poser(ferme && pts.length >= 3 ? "esquisse.polygone" : "esquisse.polyligne", { points: pts, ferme: ferme && pts.length >= 3, calqueId: calqueDe(e) });
+          compter("POLYLINE", true);
+          break;
+        }
+        case "CIRCLE":
+        case "ARC": {
+          const rf = num(e, 40, 0) ?? 0;
+          if (!(rf * f > 1e-6)) {
+            compter(e.type, false, "rayon nul ignoré");
+            break;
+          }
+          const cx = num(e, 10, 0)!;
+          const cy = num(e, 20, 0)!;
+          if (!sim) {
+            // Bloc inséré avec des échelles inégales ou en miroir : la courbe est reprise point par point.
+            const pts = e.type === "CIRCLE" ? arcEnPoints(cx, cy, rf, 0, 360).slice(0, -1) : arcEnPoints(cx, cy, rf, num(e, 50, 0)!, num(e, 51, 360)!);
+            poser(e.type === "CIRCLE" ? "esquisse.polygone" : "esquisse.polyligne", { points: pts, ferme: e.type === "CIRCLE", calqueId: calqueDe(e) });
+            compter(e.type, true, "dans un bloc à échelles inégales ou en miroir : discrétisé en segments");
+            break;
+          }
+          const r = rf * f * sim.echelle;
+          const centre = P(cx, cy);
+          if (e.type === "CIRCLE") poser("esquisse.cercle", { points: [], centre, rayon: m(Math.round(r * 1e6) / 1e6), calqueId: calqueDe(e) });
+          else poser("esquisse.arc", { points: [], centre, rayon: m(Math.round(r * 1e6) / 1e6), angleDebut: { value: Math.round((num(e, 50, 0)! + sim.rotation) * 1e6) / 1e6, unit: "deg" }, angleFin: { value: Math.round((num(e, 51, 360)! + sim.rotation) * 1e6) / 1e6, unit: "deg" }, calqueId: calqueDe(e) });
+          compter(e.type, true);
+          break;
+        }
+        case "TEXT":
+        case "ATTRIB":
+        case "MTEXT": {
+          const brut = e.type === "MTEXT" ? e.champs.filter((c) => c.code === 3 || c.code === 1).map((c) => c.valeur).join("") : (txt(e, 1) ?? "");
+          const t = brut.replace(/\\P/g, " ").replace(/\\[A-Za-z][^;]*;/g, "").replace(/[{}]/g, "").replace(/%%[cC]/g, "⌀").replace(/%%[dD]/g, "°").replace(/%%[pP]/g, "±").trim();
+          if (!t) {
+            compter(e.type, false, "textes vides ignorés");
+            break;
+          }
+          poser("texte.creer", { position: P(num(e, 10, 0)!, num(e, 20, 0)!), texte: t.slice(0, 500), calqueId: calqueDe(e) });
+          compter(e.type, true, "position et contenu repris ; hauteur, rotation et style non portés");
+          break;
+        }
+        case "INSERT": {
+          const nom = txt(e, 2) ?? "";
+          const b = blocs.get(nom);
+          if (!b) {
+            const message = `Bloc « ${nom} » inséré mais absent de la section BLOCKS : non décomposé.`;
+            if (!remarques.includes(message)) remarques.push(message);
+            compter("INSERT", false, "blocs absents du fichier : voir les remarques");
+            break;
+          }
+          if (b.externe) {
+            const message = `Référence externe XREF « ${b.chemin ?? nom} » : fichier non fourni avec le dessin, non résolue (à importer séparément).`;
+            if (!remarques.includes(message)) remarques.push(message);
+            compter("INSERT", false, "références externes (XREF) non résolues : voir les remarques");
+            break;
+          }
+          if (chemin.includes(nom) || chemin.length >= 8) {
+            compter("INSERT", false, "blocs imbriqués au-delà de 8 niveaux, ou récursifs : non décomposés");
+            break;
+          }
+          const sx = num(e, 41, 1)!;
+          const sy = num(e, 42, 1)!;
+          const rot = ((num(e, 50, 0) ?? 0) * Math.PI) / 180;
+          const colonnes = Math.max(1, Math.min(100, num(e, 70, 1)!));
+          const rangees = Math.max(1, Math.min(100, num(e, 71, 1)!));
+          const dc = num(e, 44, 0)!;
+          const dr = num(e, 45, 0)!;
+          const cos = Math.cos(rot);
+          const sin = Math.sin(rot);
+          for (let r = 0; r < rangees; r++) {
+            for (let c = 0; c < colonnes; c++) {
+              // Repère du bloc → repère d'insertion : retrait du point de base, échelles, rotation, translation (+ pas du réseau, dans le repère tourné).
+              const ix = num(e, 10, 0)! + cos * c * dc - sin * r * dr;
+              const iy = num(e, 20, 0)! + sin * c * dc + cos * r * dr;
+              const local: Affine = { a: cos * sx, b: sin * sx, c: -sin * sy, d: cos * sy, e: ix - (cos * sx * b.base.x - sin * sy * b.base.y), f: iy - (sin * sx * b.base.x + cos * sy * b.base.y) };
+              importer(b.entites, composer(M, local), [...chemin, nom], nomDe(e));
+            }
+          }
+          decomposes += colonnes * rangees;
+          compter("INSERT", true, "bloc décomposé en esquisses et textes (point de base, échelles, rotation, réseau)");
+          break;
+        }
+        case "HATCH": {
+          // Contours : chemins polylignes (sommets, arrondis) ou arêtes (segments, arcs) ; le motif est porté par son nom.
+          const champs = e.champs;
+          const motif = (txt(e, 2) ?? "").trim() || null;
+          const plein = (num(e, 70, 0) ?? 0) === 1;
+          const boucles: { x: number; y: number }[][] = [];
+          let k = champs.findIndex((c) => c.code === 91);
+          const nb = k >= 0 ? Number.parseInt(champs[k]!.valeur, 10) : 0;
+          let nonLus = 0;
+          k++;
+          for (let b = 0; b < nb && k < champs.length; b++) {
+            while (k < champs.length && champs[k]!.code !== 92) k++;
+            if (k >= champs.length) break;
+            const type = Number.parseInt(champs[k]!.valeur, 10);
+            k++;
+            const pts: { x: number; y: number }[] = [];
+            const val = (code: number) => {
+              while (k < champs.length && champs[k]!.code !== code) k++;
+              return k < champs.length ? Number.parseFloat(champs[k++]!.valeur) : 0;
+            };
+            if (type & 2) {
+              const avecArrondis = val(72) === 1;
+              val(73);
+              const n = val(93);
+              const sommets: { x: number; y: number; bulge: number }[] = [];
+              for (let v = 0; v < n; v++) sommets.push({ x: val(10), y: val(20), bulge: avecArrondis ? val(42) : 0 });
+              if (sommets.length) pts.push(sommets[0]!);
+              for (let v = 0; v < sommets.length; v++) pts.push(...arrondi(sommets[v]!, sommets[(v + 1) % sommets.length]!, sommets[v]!.bulge));
+              pts.pop();
+            } else {
+              const n = val(93);
+              for (let a = 0; a < n; a++) {
+                const t = val(72);
+                if (t === 1) {
+                  const p0 = { x: val(10), y: val(20) };
+                  const p1 = { x: val(11), y: val(21) };
+                  if (!pts.length) pts.push(p0);
+                  pts.push(p1);
+                } else if (t === 2) {
+                  const cx = val(10);
+                  const cy = val(20);
+                  const r = val(40);
+                  let a0 = val(50);
+                  let a1 = val(51);
+                  const direct = val(73) === 1;
+                  if (!direct) [a0, a1] = [360 - a0, 360 - a1];
+                  let fin = a1;
+                  while (fin <= a0) fin += 360;
+                  const nseg = Math.max(2, Math.ceil((fin - a0) / 11.25));
+                  for (let q = 0; q <= nseg; q++) {
+                    const ang = ((a0 + ((fin - a0) * q) / nseg) * Math.PI) / 180;
+                    const pnt = { x: cx + r * Math.cos(ang), y: cy + r * (direct ? 1 : -1) * Math.sin(ang) };
+                    if (q > 0 || !pts.length) pts.push(pnt);
+                  }
+                } else nonLus++;
+              }
+            }
+            if (pts.length >= 3) boucles.push(pts);
+          }
+          if (!boucles.length) {
+            compter("HATCH", false, "hachures sans contour lisible ignorées");
+            break;
+          }
+          // Contours extérieurs seulement : un contour contenu dans un autre est un îlot (non porté par la hachure).
+          const contient = (poly: { x: number; y: number }[], q: { x: number; y: number }) => {
+            let dedans = false;
+            for (let u = 0, v = poly.length - 1; u < poly.length; v = u++) {
+              const A = poly[u]!;
+              const B = poly[v]!;
+              if (A.y > q.y !== B.y > q.y && q.x < ((B.x - A.x) * (q.y - A.y)) / (B.y - A.y) + A.x) dedans = !dedans;
+            }
+            return dedans;
+          };
+          const exterieurs = boucles.filter((bq, u) => !boucles.some((o, v) => v !== u && contient(o, bq[0]!)));
+          for (const bq of exterieurs) {
+            const pts = distincts(bq.map((q) => P(q.x, q.y)));
+            if (pts.length >= 3) poser("esquisse.hachure", { points: pts, ferme: true, motif: plein ? "plein" : motif, calqueId: calqueDe(e) });
+          }
+          const ilots = boucles.length - exterieurs.length;
+          compter("HATCH", true, `contour extérieur en hachure, motif nommé${ilots ? ` ; ${ilots} îlot(s) non porté(s)` : ""}${nonLus ? ` ; ${nonLus} arête(s) elliptique(s) ou spline ignorée(s)` : ""}`);
+          break;
+        }
+        case "DIMENSION": {
+          const type = (num(e, 70, 0) ?? 0) & 7;
+          if (type !== 0 && type !== 1) {
+            compter("DIMENSION", false, "cotes angulaires, radiales, diamétrales ou d'ordonnée non importées");
+            break;
+          }
+          const a = { x: num(e, 13, 0)!, y: num(e, 23, 0)! };
+          let b = { x: num(e, 14, 0)!, y: num(e, 24, 0)! };
+          const ligne = { x: num(e, 10, 0)!, y: num(e, 20, 0)! };
+          let remarque = "cotes linéaires et alignées reprises (valeur recalculée par l'Atelier, non associatives)";
+          if (type === 0) {
+            // Cote orientée : la mesure est la projection sur sa direction ; la cote est posée sur cette direction.
+            const ang = ((num(e, 50, 0) ?? 0) * Math.PI) / 180;
+            const u = { x: Math.cos(ang), y: Math.sin(ang) };
+            const l = (b.x - a.x) * u.x + (b.y - a.y) * u.y;
+            b = { x: a.x + u.x * l, y: a.y + u.y * l };
+            remarque = "cotes orientées reprises sur leur direction (valeur conservée), linéaires et alignées ; non associatives";
+          }
+          const A = P(a.x, a.y);
+          const B = P(b.x, b.y);
+          const L = Math.hypot(B.x - A.x, B.y - A.y);
+          if (L <= 1e-6) {
+            compter("DIMENSION", false, "cotes de longueur nulle ignorées");
+            break;
+          }
+          const Lg = P(ligne.x, ligne.y);
+          const decalage = ((-(B.y - A.y) / L) * (Lg.x - A.x) + ((B.x - A.x) / L) * (Lg.y - A.y));
+          const id = nouvelId();
+          commandes.push({ type: "cotation.creer", params: { id, niveauId: options.niveauId, a: A, b: B, decalage: m(Math.round(decalage * 1e6) / 1e6), calqueId: calqueDe(e) } });
+          crees.push(id);
+          etendre(A);
+          etendre(B);
+          const texte = (txt(e, 1) ?? "").trim();
+          compter("DIMENSION", true, texte && texte !== "<>" ? `${remarque} ; texte imposé « ${texte.slice(0, 40)} » non repris` : remarque);
+          break;
+        }
+        case "ATTDEF":
+          compter("ATTDEF", false, "définitions d'attributs de bloc : seules les valeurs (ATTRIB) sont reprises");
+          break;
+        case "VERTEX":
+        case "SEQEND":
+          break;
+        default:
+          compter(e.type, false, "entité hors du sous-ensemble 2D lu");
       }
-      case "POLYLINE": {
-        const ferme = ((num(e, 70, 0) ?? 0) & 1) === 1;
-        const sommets: { x: number; y: number; bulge: number }[] = [];
-        let j = i + 1;
-        for (; j < entites.length && entites[j]!.type === "VERTEX"; j++) sommets.push({ x: num(entites[j]!, 10, 0)!, y: num(entites[j]!, 20, 0)!, bulge: num(entites[j]!, 42, 0)! });
-        if (entites[j]?.type === "SEQEND") j++;
-        i = j - 1;
-        if ((num(e, 70, 0)! & (8 | 16 | 64)) !== 0) {
-          compter("POLYLINE", false, "polylignes 3D et maillages ignorés (import 2D)");
-          break;
-        }
-        const brut: { x: number; y: number }[] = sommets.length ? [sommets[0]!] : [];
-        for (let k = 0; k + 1 < sommets.length + (ferme ? 1 : 0); k++) brut.push(...arrondi(sommets[k]!, sommets[(k + 1) % sommets.length]!, sommets[k]!.bulge));
-        if (ferme && brut.length > 1) brut.pop();
-        const pts = distincts(brut.map((p) => P(p.x, p.y)));
-        if (pts.length < 2) {
-          compter("POLYLINE", false, "polylignes de moins de deux sommets ignorées");
-          break;
-        }
-        poser(ferme && pts.length >= 3 ? "esquisse.polygone" : "esquisse.polyligne", { points: pts, ferme: ferme && pts.length >= 3, calqueId: calqueDe(e) });
-        compter("POLYLINE", true);
-        break;
-      }
-      case "CIRCLE":
-      case "ARC": {
-        const r = (num(e, 40, 0) ?? 0) * f;
-        if (!(r > 1e-6)) {
-          compter(e.type, false, "rayon nul ignoré");
-          break;
-        }
-        const centre = P(num(e, 10, 0)!, num(e, 20, 0)!);
-        if (e.type === "CIRCLE") poser("esquisse.cercle", { points: [], centre, rayon: m(Math.round(r * 1e6) / 1e6), calqueId: calqueDe(e) });
-        else poser("esquisse.arc", { points: [], centre, rayon: m(Math.round(r * 1e6) / 1e6), angleDebut: { value: num(e, 50, 0)!, unit: "deg" }, angleFin: { value: num(e, 51, 360)!, unit: "deg" }, calqueId: calqueDe(e) });
-        compter(e.type, true);
-        break;
-      }
-      case "TEXT":
-      case "MTEXT": {
-        const brut = e.type === "MTEXT" ? e.champs.filter((c) => c.code === 3 || c.code === 1).map((c) => c.valeur).join("") : (txt(e, 1) ?? "");
-        const t = brut.replace(/\\P/g, " ").replace(/\\[A-Za-z][^;]*;/g, "").replace(/[{}]/g, "").replace(/%%[cC]/g, "⌀").replace(/%%[dD]/g, "°").replace(/%%[pP]/g, "±").trim();
-        if (!t) {
-          compter(e.type, false, "textes vides ignorés");
-          break;
-        }
-        poser("texte.creer", { position: P(num(e, 10, 0)!, num(e, 20, 0)!), texte: t.slice(0, 500), calqueId: calqueDe(e) });
-        compter(e.type, true, "position et contenu repris ; hauteur, rotation et style non portés");
-        break;
-      }
-      case "VERTEX":
-      case "SEQEND":
-        break;
-      default:
-        compter(e.type, false, e.type === "INSERT" ? "blocs insérés non décomposés (à exploser dans l'outil d'origine)" : e.type === "HATCH" ? "hachures non importées" : e.type === "DIMENSION" ? "cotes non importées (à recréer, associatives)" : "entité hors du sous-ensemble 2D lu");
     }
-  }
+  };
+  importer(entites, IDENTITE, [], null);
+  if (decomposes) remarques.push(`${decomposes} insertion(s) de bloc décomposée(s) en esquisses et textes (le bloc lui-même n'est pas recréé).`);
+
   // Fond de plan : cadre englobant du dessin (jamais agrandi ni deviné ; un dessin sans surface n'a pas de cadre).
   if (crees.length && cadre.x1 - cadre.x0 > 1e-6 && cadre.y1 - cadre.y0 > 1e-6) {
     const idCadre = `${prefixe}-${idSur(options.source)}-cadre`;

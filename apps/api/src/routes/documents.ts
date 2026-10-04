@@ -16,6 +16,7 @@
  */
 import { chargerModele } from "../lib/atelier-modele.js";
 import { atelierDocumentDescriptors, rendreDocumentAtelier } from "../lib/atelier-documents.js";
+import { traitsExternesPour } from "../lib/atelier-refexterne.js";
 import { randomUUID } from "node:crypto";
 import { raw, Router, type Request, type Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
@@ -118,7 +119,9 @@ async function produceAtelier(req: Request, res: Response, kind: string) {
   const descriptor = atelierDocumentDescriptors(project, charge?.etat ?? null).find((d) => d.kind === kind);
   // Instant de la révision exportée (dernière entrée du journal) : en-tête IFC reproductible.
   const derniere = kind === "atelier-ifc" ? (await db.select({ createdAt: atelierCommands.createdAt }).from(atelierCommands).where(eq(atelierCommands.projectId, project.id)).orderBy(desc(atelierCommands.resultRevision)).limit(1))[0] : undefined;
-  const out = descriptor && charge ? rendreDocumentAtelier(kind, project, charge.etat, derniere?.createdAt.toISOString().replace(/\.\d{3}Z$/, "")) : null;
+  // Références externes : traits des publications sources, lus avec les droits du demandeur (R13).
+  const externes = charge && /^atelier-(vue|feuille)-/.test(kind) ? await traitsExternesPour(req.user!.id, charge.etat) : [];
+  const out = descriptor && charge ? rendreDocumentAtelier(kind, project, charge.etat, derniere?.createdAt.toISOString().replace(/\.\d{3}Z$/, ""), { externes }) : null;
   if (!descriptor || !out) {
     res.status(404).json({ error: "not_found", message: "Ce document n'existe pas (ou plus) dans le modèle de l'Atelier." });
     return;

@@ -20,6 +20,8 @@ import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconqu
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, maillageObjet } from "../projection/maillage.js";
 import { empreinte } from "../documents/empreinte.js";
+import { compositionMur, lireCouches } from "../compositions.js";
+import { polygoneMurRaccorde, raccordMur } from "../raccords.js";
 
 export const SCHEMA_IFC = "IFC4X3_ADD2";
 
@@ -257,9 +259,33 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   // Types de murs.
   const typesMur = new Map<string, number>();
   const definitionsMur = Object.values(etat.definitions).filter((d: Definition) => d.classe === "mur").sort((a, b) => (a.id < b.id ? -1 : 1));
+  // Compositions (D-026) : un IfcMaterialLayerSet par type de mur composé, associé au type et aux murs cohérents.
+  const materiauxIfc = new Map<string, number>();
+  const materiauIfc = (nom: string) => {
+    let id = materiauxIfc.get(nom);
+    if (id === undefined) {
+      id = s.ajouter(`IFCMATERIAL(${chaineStep(nom)},$,$)`);
+      materiauxIfc.set(nom, id);
+    }
+    return id;
+  };
+  const jeuxCouches = new Map<string, number>();
+  const associationsMateriau = new Map<number, number[]>();
   for (const d of definitionsMur) {
     const t = s.ajouter(`IFCWALLTYPE(${gid(`type|${d.id}`)},$,${chaineStep(d.nom)},$,$,$,$,$,$,${d.id === "cloison" ? ".PARTITIONING." : ".STANDARD."})`);
     typesMur.set(d.id, t);
+    let couches: ReturnType<typeof lireCouches> = null;
+    try {
+      couches = lireCouches(d.params["couches"]);
+    } catch {
+      couches = null;
+    }
+    if (couches) {
+      const ids = couches.map((c) => s.ajouter(`IFCMATERIALLAYER(${ref(materiauIfc(c.materiau))},${reelStep(c.epaisseur.value)},${c.fonction === "lame-air" ? ".T." : "$"},${chaineStep(c.materiau)},$,${c.fonction ? chaineStep(c.fonction) : "$"},$)`));
+      const jeu = s.ajouter(`IFCMATERIALLAYERSET(${liste(ids)},${chaineStep(d.nom)},$)`);
+      jeuxCouches.set(d.id, jeu);
+      associationsMateriau.set(jeu, [t]);
+    }
   }
   const typage = new Map<number, number[]>();
 
@@ -284,7 +310,10 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         const reps: number[] = [];
         const etendue = etendueMur(etat, o);
         // Corps d'abord (représentation lue par défaut par la plupart des visualiseurs), axe ensuite.
-        if (etendue) reps.push(corpsSolide([boite(a, u, 0, L, Math.min(oG, oD), Math.max(oG, oD), etendue[0] - z0(o.niveauId), etendue[1] - z0(o.niveauId))]));
+        // Raccords (D-023) : un mur dont une extrémité est raccordée est extrudé depuis son contour raccordé.
+        const raccord = raccordMur(etat, o);
+        const raccorde = !!raccord && (Math.abs(raccord.gauche[0]) > 1e-9 || Math.abs(raccord.droite[0]) > 1e-9 || Math.abs(raccord.gauche[1] - L) > 1e-9 || Math.abs(raccord.droite[1] - L) > 1e-9);
+        if (etendue) reps.push(corpsSolide([raccorde ? extrusionContour(polygoneMurRaccorde(etat, o), [], etendue[0] - z0(o.niveauId), etendue[1] - etendue[0]) : boite(a, u, 0, L, Math.min(oG, oD), Math.max(oG, oD), etendue[0] - z0(o.niveauId), etendue[1] - z0(o.niveauId))]));
         reps.push(s.ajouter(`IFCSHAPEREPRESENTATION(${ref(axe)},'Axis','Curve2D',${liste([polyligne2([a, b], false)])})`));
         const id = s.ajouter(`IFCWALL(${gid(o.id)},$,${opt(nom ?? o.id)},$,$,${ref(placementDe(o.niveauId))},${ref(forme(reps))},$,${o.definitionId === "cloison" ? ".PARTITIONING." : ".STANDARD."})`);
         produits.set(o.id, id);
@@ -292,6 +321,11 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         identite(id, o);
         pset(id, "Pset_WallCommon", [`#${prop("IsExternal", `IFCBOOLEAN(${o.params.exterieur ? ".T." : ".F."})`)}`]);
         if (o.definitionId && typesMur.has(o.definitionId)) typage.set(typesMur.get(o.definitionId)!, [...(typage.get(typesMur.get(o.definitionId)!) ?? []), id]);
+        const composition = compositionMur(etat, o);
+        if (composition && composition.coherente && jeuxCouches.has(composition.typeId)) {
+          const jeu = jeuxCouches.get(composition.typeId)!;
+          associationsMateriau.set(jeu, [...(associationsMateriau.get(jeu) ?? []), id]);
+        } else if (composition && !composition.coherente) remarques.add(`Mur ${o.id} : épaisseur différente de la composition du type « ${composition.typeNom} » (écart ${Math.round(composition.ecart * 1000)} mm) : couches non écrites.`);
         compter("mur", "IfcWall", etendue ? "Axis + SweptSolid (corps plein vidé par les ouvertures)" : "Axis", true, etendue ? undefined : "mur sans hauteur : axe seul, sans volume (hauteur non évaluée)");
         // Ouvertures hébergées : vide + élément de remplissage.
         for (const ouv of ouvertesTriees(ouverturesParMur.get(o.id) ?? [])) {
@@ -478,6 +512,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   // Contenance spatiale, typage, propriétés.
   for (const [structure, elements] of contenus) s.ajouter(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid(`rel-contenu|${structure}`)},$,$,$,${liste(elements)},${ref(structure)})`);
   for (const [type, objetsTypes] of typage) s.ajouter(`IFCRELDEFINESBYTYPE(${gid(`rel-type|${type}`)},$,$,$,${liste(objetsTypes)},${ref(type)})`);
+  for (const [jeu, objetsMat] of associationsMateriau) s.ajouter(`IFCRELASSOCIATESMATERIAL(${gid(`rel-materiau|${jeu}`)},$,$,$,${liste(objetsMat)},${ref(jeu)})`);
   // Hypothèses, sources, structure déclarée : propriétés du projet, statut explicite.
   if (etat.site.hypotheses.length) pset(projet, "Fadi_Hypotheses", etat.site.hypotheses.map((h) => `#${prop(h.id, texte(`${h.domaine} — ${h.texte} (statut : ${h.statut})`))}`));
   if (etat.site.sources.length) pset(projet, "Fadi_Sources", etat.site.sources.map((src) => `#${prop(src.id, texte(JSON.stringify(src.champs).slice(0, 2000)))}`));

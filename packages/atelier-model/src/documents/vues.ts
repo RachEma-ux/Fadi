@@ -11,8 +11,9 @@
 import { aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsSpline, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
-import { geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
+import { etendueMur, geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
 import { polygoneMurRaccorde } from "../raccords.js";
+import { separationsCouches } from "../compositions.js";
 import { extremitesCotation } from "../references.js";
 import type { Longueur, Point2 } from "../unites.js";
 import { ErreurCommande, lire } from "../commandes/base.js";
@@ -399,14 +400,31 @@ function dessinerBloc(c: Collecteur, etat: ModeleAtelier, o: Occurrence<"bloc-oc
 
 // --- Générateurs ------------------------------------------------------------------------------------------------
 
-function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue): void {
+function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue, options: OptionsGeneration = {}): void {
   const niveau = etat.niveaux[v.niveauId!]!;
+  dessinerExternes(c, etat, niveau.id, options);
   const h = (v.hauteurCoupe ?? { value: HAUTEUR_COUPE_DEFAUT }).value;
   const zc = niveau.elevation + h;
   const objets = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => o.niveauId === niveau.id && retenu(etat, o, v.phases)).sort((a, b) => (a.id < b.id ? -1 : 1));
   const camera: Camera = { origine: [0, 0, zc], regard: [0, 0, -1], droite: [1, 0, 0], haut: [0, 1, 0] };
   const r = projeterMaillages(maillagesDe(etat, objets, new Set(["porte", "fenetre"])), camera, { coupe: true, profondeurMax: h + 0.6, lignesCachees: false });
   verserProjection(c, etat, r, (o) => (o && (o.classe === "mur" || o.classe === "poteau" || o.classe === "dalle" || o.classe === "toiture") ? "vue" : "fin"));
+  // Couches des parois coupées (composition cohérente du type, D-026) : séparations en trait fin, hors des baies coupées.
+  for (const o of objets) {
+    if (o.classe !== "mur") continue;
+    const ext = etendueMur(etat, o);
+    if (!ext || zc < ext[0] || zc > ext[1]) continue;
+    const L = Math.hypot(o.params.b.x - o.params.a.x, o.params.b.y - o.params.a.y);
+    const vides: [number, number][] = [];
+    for (const x of objets) {
+      if ((x.classe !== "porte" && x.classe !== "fenetre" && x.classe !== "ouverture") || x.params.murHoteId !== o.id) continue;
+      const zb = ext[0] + (x.params.allege?.value ?? 0);
+      if (zc < zb || zc > zb + x.params.hauteur.value) continue;
+      const cc = x.params.position * L;
+      vides.push([cc - x.params.largeur.value / 2, cc + x.params.largeur.value / 2]);
+    }
+    for (const sep of separationsCouches(etat, o, vides)) c.ligne(sep.a, sep.b, "fin", o.id);
+  }
   symbolesPlan(c, etat, objets);
   annotations2D(c, etat, objets);
   if (!v.hauteurCoupe) c.avertissements.add(`Hauteur de coupe : ${fmt(h)} m au-dessus du niveau (convention de dessin par défaut, réglable).`);
@@ -501,8 +519,8 @@ function genererMasse(c: Collecteur, etat: ModeleAtelier, v: ParamsVue): void {
   c.avertissements.add("Nord : nord du quadrillage du repère cadastral, pas le nord géographique (non renseigné).");
 }
 
-function genererDetail(c: Collecteur, etat: ModeleAtelier, v: ParamsVue): void {
-  genererPlan(c, etat, v);
+function genererDetail(c: Collecteur, etat: ModeleAtelier, v: ParamsVue, options: OptionsGeneration = {}): void {
+  genererPlan(c, etat, v, options);
   const cadre = { min: { x: v.cadreMin!.x, y: v.cadreMin!.y }, max: { x: v.cadreMax!.x, y: v.cadreMax!.y } };
   c.primitives = decouper(c.primitives, cadre);
   c.poly([cadre.min, { x: cadre.max.x, y: cadre.min.y }, cadre.max, { x: cadre.min.x, y: cadre.max.y }], true, "fin", null, null);
@@ -527,6 +545,8 @@ export function objetsVue(etat: ModeleAtelier, params: ParamsVue): string[] {
       if (o.classe === "bloc-occurrence" && o.definitionId) ids.add(o.definitionId);
       if (o.classe === "etiquette" && o.params.objetId) ids.add(o.params.objetId);
       if (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") ids.add(o.params.murHoteId);
+      // Type de mur composé : ses couches sont dessinées (D-026) ; un type sans couches ne change rien au dessin.
+      if (o.classe === "mur" && o.definitionId && etat.definitions[o.definitionId]?.params["couches"]) ids.add(o.definitionId);
     }
     for (const r of Object.values(etat.references)) if (ids.has(r.proprietaireId) && r.objetId) ids.add(r.objetId);
   } else if (params.type === "coupe" || params.type === "facade") {
@@ -549,16 +569,49 @@ export function empreinteVue(etat: ModeleAtelier, params: ParamsVue, objets: rea
     niveaux: niveauxOrdonnes(etat).map((n) => [n.id, n.nom, n.elevation, n.hauteur]),
     calques: Object.values(etat.calques).map((k) => [k.id, k.visible]).sort(),
     site: params.type === "masse" ? etat.site : null,
+    // Références externes du niveau dessiné (épinglage et conversion) ; absent quand il n'y en a pas.
+    ...((params.type === "plan" || params.type === "detail") && params.niveauId && refsDuNiveau(etat, params.niveauId).length ? { externes: refsDuNiveau(etat, params.niveauId).map((d) => [d.id, d.params]) } : {}),
   });
 }
 
 /** Génère une vue à partir de ses paramètres (définition du modèle ou paramètres d'aperçu). */
-export function genererVue(etat: ModeleAtelier, params: ParamsVue, definitionId: string | null = null): VueGeneree {
+/**
+ * Références externes (DA-05-11) : le modèle ne connaît pas les autres projets ; l'appelant (serveur, navigateur)
+ * fournit les traits déjà convertis dans le repère du projet, lus avec les droits de l'utilisateur (null = source
+ * inaccessible). Sans ces traits, la vue le dit au lieu de dessiner.
+ */
+export interface TraitsExternes {
+  id: string;
+  traits: readonly { a: Vec; b: Vec }[] | null;
+}
+
+export interface OptionsGeneration {
+  externes?: readonly TraitsExternes[];
+}
+
+const refsDuNiveau = (etat: ModeleAtelier, niveauId: string) =>
+  Object.values(etat.definitions)
+    .filter((d) => d.classe === ("reference-externe" as Definition["classe"]) && (d.params as Record<string, unknown>)["niveauId"] === niveauId)
+    .sort((a, b) => (a.id < b.id ? -1 : 1));
+
+function dessinerExternes(c: Collecteur, etat: ModeleAtelier, niveauId: string, options: OptionsGeneration): void {
+  for (const d of refsDuNiveau(etat, niveauId)) {
+    const x = options.externes?.find((e) => e.id === d.id);
+    if (!options.externes) c.avertissements.add(`Référence externe « ${d.nom} » non dessinée : aperçu sans accès aux sources.`);
+    else if (!x || !x.traits) c.avertissements.add(`Référence externe « ${d.nom} » non dessinée : source inaccessible.`);
+    else {
+      for (const t of x.traits.slice(0, 20000)) c.ligne(t.a, t.b, "fin", null);
+      c.avertissements.add(`Référence externe « ${d.nom} » dessinée en trait fin (révision publiée ${(d.params as Record<string, unknown>)["revisionSource"]}, lecture seule).`);
+    }
+  }
+}
+
+export function genererVue(etat: ModeleAtelier, params: ParamsVue, definitionId: string | null = null, options: OptionsGeneration = {}): VueGeneree {
   const c = new Collecteur();
   if ((params.type === "plan" || params.type === "detail") && !(params.niveauId && etat.niveaux[params.niveauId])) {
     c.avertissements.add("Niveau de la vue absent du modèle : vue à réparer.");
-  } else if (params.type === "plan") genererPlan(c, etat, params);
-  else if (params.type === "detail") genererDetail(c, etat, params);
+  } else if (params.type === "plan") genererPlan(c, etat, params, options);
+  else if (params.type === "detail") genererDetail(c, etat, params, options);
   else if (params.type === "coupe" || params.type === "facade") genererCoupeOuFacade(c, etat, params);
   else genererMasse(c, etat, params);
   for (const an of params.annotations ?? []) {
@@ -588,8 +641,8 @@ export function genererVue(etat: ModeleAtelier, params: ParamsVue, definitionId:
 }
 
 /** Vue d'une définition « vue » du modèle, par identifiant. */
-export function genererVueDefinition(etat: ModeleAtelier, id: string): VueGeneree | null {
+export function genererVueDefinition(etat: ModeleAtelier, id: string, options: OptionsGeneration = {}): VueGeneree | null {
   const def = etat.definitions[id];
   if (!def || def.classe !== ("vue" as Definition["classe"])) return null;
-  return genererVue(etat, paramsDeDefinition(def), id);
+  return genererVue(etat, paramsDeDefinition(def), id, options);
 }

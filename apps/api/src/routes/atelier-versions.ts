@@ -369,7 +369,7 @@ atelierVersionsRouter.post("/publications", async (req, res) => {
         version = await creerVersion(tx, project.id, req.user!.id, nomVersion, `Version figée par la publication « ${p.data.nom} »`, courant, etat);
       }
       const etat = version.modele as unknown as ModeleAtelier;
-      const documents = await produireDocumentsPublies(tx, project, etat, version.revision, version.createdAt.toISOString().replace(/\.\d{3}Z$/, ""));
+      const documents = await produireDocumentsPublies(tx, project, etat, version.revision, version.createdAt.toISOString().replace(/\.\d{3}Z$/, ""), req.user!.id);
       const row = { id: randomUUID(), projectId: project.id, versionId: version.id, nom: p.data.nom, revision: version.revision, empreinte: version.empreinte, catalogues: cataloguesActuels(etat), documents, authorId: req.user!.id, createdAt: new Date() };
       await tx.insert(atelierPublications).values(row);
       return row;

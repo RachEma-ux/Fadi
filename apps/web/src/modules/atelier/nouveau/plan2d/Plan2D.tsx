@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { distance, polygoneMur, pt, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
-import { accrocher, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
+import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
 import { chemin, projecteur } from "./projecteur";
 import { Definitions2D, Objet2D } from "./rendu";
@@ -32,7 +32,9 @@ const LIBELLE_ACCROCHE: Record<string, string> = { extremite: "Extrémité", mil
 const OUTILS_CONTOUR = new Set(["dalle", "toiture", "zone", "espace", "solide", "polygone", "hachure", "polyligne", "spline", "garde-corps"]);
 const OUTILS_SEGMENT = new Set(["mur", "escalier", "ligne", "construction", "cotation", "mesurer", "deplacer", "copier", "miroir", "etirer", "rectangle", "cercle", "arc", "tourner", "echelle"]);
 
-export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes, externes = [] }: PropsPlan2D) {
+const AUCUNE: NonNullable<PropsPlan2D["externes"]> = [];
+
+export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes, externes = AUCUNE }: PropsPlan2D) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [taille, setTaille] = useState({ w: 800, h: 600 });
   const [accroche, setAccroche] = useState<Accroche | null>(null);
@@ -82,7 +84,9 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
         .sort((a, b) => (ORDRE[a.classe] ?? 20) - (ORDRE[b.classe] ?? 20)),
     [etat.objets, ui.niveauId, calquesMasques],
   );
-  const cache = useMemo(() => segmentsDuNiveau(etat, ui.niveauId), [etat, ui.niveauId]);
+  // Accrochage aussi sur les traits des références externes du niveau (DA-05-11), qui restent non sélectionnables.
+  const externesNiveau = useMemo(() => externes.filter((x) => x.niveauId === ui.niveauId), [externes, ui.niveauId]);
+  const cache = useMemo(() => avecExternes(segmentsDuNiveau(etat, ui.niveauId), externesNiveau), [etat, ui.niveauId, externesNiveau]);
   const selection = useMemo(() => new Set(ui.selection), [ui.selection]);
 
   // Cadrage automatique à la première ouverture d'un niveau.

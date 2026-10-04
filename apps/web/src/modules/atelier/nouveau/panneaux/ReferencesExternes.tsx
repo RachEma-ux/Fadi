@@ -18,6 +18,8 @@ interface Props {
   references: ReferenceExterneEtat[];
   readOnly: boolean;
   client: AtelierClient;
+  /** Hors ligne : la représentation affichée est la dernière lue (cache persistant), la mise à jour attend le réseau. */
+  horsLigne?: boolean;
 }
 
 /** Exécute, envoie, et lève l'explication du serveur si le lot est refusé (droits, publication, cycle). */
@@ -36,7 +38,7 @@ async function executerEtValider(client: AtelierClient, commandes: Commande[], l
 
 const ETAT: Record<ReferenceExterneEtat["etat"], string> = { "a-jour": "à jour", "plus-recente": "publication plus récente disponible", inaccessible: "source inaccessible" };
 
-export function ReferencesExternes({ projectId, niveaux, niveauId, references, readOnly, client }: Props) {
+export function ReferencesExternes({ projectId, niveaux, niveauId, references, readOnly, client, horsLigne = false }: Props) {
   const [ouvert, setOuvert] = useState(false);
   const projets = useQuery({ queryKey: ["projects"], queryFn: () => api.listProjects(), enabled: ouvert && !readOnly, retry: false });
   const [sourceId, setSourceId] = useState("");
@@ -101,6 +103,7 @@ export function ReferencesExternes({ projectId, niveaux, niveauId, references, r
   return (
     <details className="refext" onToggle={(e) => setOuvert(e.currentTarget.open)} data-references-externes={references.length}>
       <summary>Références externes{references.length ? ` (${references.length})` : ""}</summary>
+      {horsLigne && references.length > 0 && <p className="ver-info" data-refext-hors-ligne>Hors ligne : dernière représentation lue, mise à jour à la reconnexion.</p>}
       {references.length === 0 && <p className="ver-info">Aucune référence. Une référence superpose en gris, sans rien copier, le plan publié d'un autre projet.</p>}
       <ul className="refext-liste">
         {references.map((r) => (

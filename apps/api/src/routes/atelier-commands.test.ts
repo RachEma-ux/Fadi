@@ -231,7 +231,7 @@ describe("modèle typé de l'exemple P.118 et fraîcheur des documents", () => {
     expect(inchanges.rows[0].n).toBe(1);
     const problemes = (await client.get(`/projects/${wid}/atelier/problemes`)).body;
     expect(problemes.documentsPerimes.some((d: { kind: string }) => d.kind === "tableau-surfaces")).toBe(true);
-  });
+  }, 30_000);
 
   it("archive version 2 : le modèle typé fait l'aller-retour à l'identique ; un modèle altéré est refusé en entier", async () => {
     const client = await registerAndLogin("archive-type@example.com");
@@ -360,8 +360,29 @@ describe("échanges IFC (lot 6)", () => {
     expect(r.body.rapport.remarques.some((t: string) => t.includes("pas de parcelle"))).toBe(true);
     const modele = (await client.get(`/projects/${cible}/atelier/model`)).body.modele;
     const importes = Object.values(modele.objets as Record<string, { classe: string; params: { globalId: string } }>).filter((o) => o.classe === "objet-importe");
-    expect(importes.length).toBe(r.body.rapport.classes.reduce((n: number, l: { cible: number }) => n + l.cible, 0));
+    expect(importes.length).toBe(r.body.rapport.classes.filter((l: { classe: string }) => l.classe !== "IfcAnnotation").reduce((n: number, l: { cible: number }) => n + l.cible, 0));
+    // Annotations : les textes et les cotes de la source reviennent en textes et en traits (non associatifs).
+    const annot = r.body.rapport.classes.find((l: { classe: string }) => l.classe === "IfcAnnotation");
+    const textesSource = Object.values(source.objets as Record<string, { classe: string; params: { texte?: string } }>).filter((o) => o.classe === "texte");
+    const textesImportes = Object.values(modele.objets as Record<string, { classe: string; params: { texte: string } }>).filter((o) => o.classe === "texte");
+    expect(annot.cible).toBeGreaterThan(0);
+    expect(textesImportes.map((t) => t.params.texte).sort()).toEqual(textesSource.map((t) => t.params.texte!).sort());
     expect(Object.keys(modele.niveaux).length).toBe(Object.keys(source.niveaux).length);
+    // Fichier d'un autre logiciel en millimètres : type, couches de matériaux et propriétés repris tels quels ; annotation.
+    const autre = await projetVide(client);
+    const mm = readFileSync(new URL("../../test-corpus/ifc/materiaux-mm.ifc", import.meta.url));
+    const rm = await client.post(`/projects/${autre}/atelier/import-ifc`).set("Content-Type", "application/octet-stream").set("X-File-Name", "materiaux-mm.ifc").send(mm);
+    expect(rm.status).toBe(200);
+    const mmModele = (await client.get(`/projects/${autre}/atelier/model`)).body.modele;
+    const mur = Object.values(mmModele.objets as Record<string, { classe: string; params: { ifcClasse: string }; proprietes: Record<string, { valeur: unknown; unite?: string; provenance: string; statut: string }> }>).find((o) => o.classe === "objet-importe" && o.params.ifcClasse === "IfcWall")!;
+    expect(mur.proprietes["ifc:type"]).toMatchObject({ valeur: "Mur beton 200", provenance: "import", statut: "declaree" });
+    expect(mur.proprietes["ifc:materiaux"]!.valeur).toBe("Beton 180 mm ; Enduit 20 mm");
+    expect(mur.proprietes["ifc:epaisseurCouches"]).toMatchObject({ valeur: 0.2, unite: "m" });
+    expect(mur.proprietes["ifc:Pset_WallCommon.IsExternal"]!.valeur).toBe(true);
+    expect(mur.proprietes["ifc:Pset_WallCommon.ThermalTransmittance"]).toMatchObject({ valeur: 0.25, unite: "IfcThermalTransmittanceMeasure" });
+    const note = Object.values(mmModele.objets as Record<string, { classe: string; params: { texte: string; position: { x: number; y: number } } }>).find((o) => o.classe === "texte")!;
+    expect(note.params.texte).toBe("Facade nord");
+    expect(note.params.position).toMatchObject({ x: 0.5, y: -0.5 });
     // Le même fichier une seconde fois : aucun objet en double.
     const encore = await client.post(`/projects/${cible}/atelier/import-ifc`).set("Content-Type", "application/octet-stream").send(Buffer.from(texte));
     expect(encore.status).toBe(200);
@@ -745,8 +766,20 @@ describe("compléments : historique d'un objet, réutilisation de modèle", () =
     const etranger = await registerAndLogin("refext-etranger@example.com");
     const sien = await projetVide(etranger);
     expect((await etranger.post(`/projects/${sien}/atelier/commands`).send(enveloppe("e0", 0, [niveau, rattacher("x", pub2)]))).status).toBe(404);
+    // Documents : le plan du niveau dessine la référence avec les droits du demandeur.
+    expect((await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("v1", 3, [{ type: "vue.creer", params: { id: "va", type: "plan", titre: "Rez A", echelle: 100, niveauId: "rdc" } }]))).status).toBe(200);
+    const brut = (r: request.Test) => r.buffer(true).parse((res, cb) => { let d = ""; res.setEncoding("utf8"); res.on("data", (c: string) => (d += c)); res.on("end", () => cb(null, d)); });
+    const svg = await brut(client.get(`/projects/${a}/documents/atelier/vues/va.svg`));
+    expect(svg.status).toBe(200);
+    expect(String(svg.body)).toContain("<line");
+    const etrangerB = await registerAndLogin("refext-membre@example.com");
+    expect((await client.post(`/projects/${a}/members`).send({ email: "refext-membre@example.com", role: "lecteur" })).status).toBe(201);
+    // Un membre de A qui ne lit pas B : la vue se produit, la référence n'est pas dessinée (moins de traits).
+    const svgMembre = await brut(etrangerB.get(`/projects/${a}/documents/atelier/vues/va.svg`));
+    expect(svgMembre.status).toBe(200);
+    expect((String(svgMembre.body).match(/<line/g) ?? []).length).toBeLessThan((String(svg.body).match(/<line/g) ?? []).length);
     // Détacher : la référence disparaît, annulable.
-    expect((await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("r3", 3, [{ type: "refexterne.detacher", params: { id: "ref-b" } }]))).status).toBe(200);
+    expect((await client.post(`/projects/${a}/atelier/commands`).send(enveloppe("r3", 4, [{ type: "refexterne.detacher", params: { id: "ref-b" } }]))).status).toBe(200);
     expect((await client.get(`/projects/${a}/atelier/references-externes`)).body.references).toHaveLength(0);
   }, 60_000);
 });

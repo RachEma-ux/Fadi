@@ -14,6 +14,8 @@ export interface PropsVue3D {
   ui: EtatUi;
   readOnly: boolean;
   onCommandes: (commandes: Commande[], label: string) => void;
+  /** Références externes : traits dans le repère du projet, par niveau (DA-05-11). */
+  externes?: readonly { niveauId: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number } }[] }[];
 }
 
 const VUES: { id: VueTechnique; libelle: string }[] = [
@@ -59,7 +61,9 @@ function avecValeur(o: OccurrenceQuelconque, cle: "hauteur" | "epaisseur", v: nu
   return { ...o, params } as unknown as OccurrenceQuelconque;
 }
 
-export function Vue3D({ etat, ui, readOnly, onCommandes }: PropsVue3D) {
+const SANS_EXTERNES: NonNullable<PropsVue3D["externes"]> = [];
+
+export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNES }: PropsVue3D) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const conteneur = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<Scene3D | null>(null);
@@ -72,7 +76,8 @@ export function Vue3D({ etat, ui, readOnly, onCommandes }: PropsVue3D) {
   const options: OptionsScene = useMemo(() => ({ ...reglages, niveauActif: ui.niveauId }), [reglages, ui.niveauId]);
   const setOptions = (patch: Partial<Omit<OptionsScene, "niveauActif">>) => setReglages((r) => ({ ...r, ...patch }));
   const [pousse, setPousse] = useState<{ valeur: number; cle: string } | null>(null);
-  const geste = useRef<{ x: number; y: number; bouge: boolean; pousser: null | { o: OccurrenceQuelconque; cle: "hauteur" | "epaisseur"; depart: number; ppm: number; valeur: number } } | null>(null);
+  const geste = useRef<{ x: number; y: number; bouge: boolean; pousser: null | { o: OccurrenceQuelconque; cle: "hauteur" | "epaisseur"; depart: number; ppm: number; valeur: number }; poignee?: { axe: "x" | "y"; t0: number; d: number } } | null>(null);
+  const [deplace, setDeplace] = useState<{ axe: "x" | "y"; d: number } | null>(null);
   const webgpuDisponible = typeof navigator !== "undefined" && "gpu" in navigator;
 
   // Création / recréation du moteur.
@@ -114,6 +119,10 @@ export function Vue3D({ etat, ui, readOnly, onCommandes }: PropsVue3D) {
   }, [etat, pret]);
 
   useEffect(() => {
+    if (pret) sceneRef.current?.majExternes(externes);
+  }, [externes, pret]);
+
+  useEffect(() => {
     if (pret) sceneRef.current?.appliquerOptions(options, false);
   }, [options, pret, etat]);
 
@@ -122,6 +131,11 @@ export function Vue3D({ etat, ui, readOnly, onCommandes }: PropsVue3D) {
   }, [ui.selection, pret, etat, options]);
 
   const pousserActif = ui.outil === "pousser";
+  // Manipulateur à poignées : outil Sélection, sélection modifiable (calques non verrouillés).
+  const poigneesActives = pret && ui.outil === "selection" && !readOnly && ui.selection.length > 0 && ui.selection.every((id) => { const o = etat.objets[id]; return o && !(o.calqueId && etat.calques[o.calqueId]?.verrouille); });
+  useEffect(() => {
+    if (pret) sceneRef.current?.majPoignees(poigneesActives);
+  }, [poigneesActives, ui.selection, pret, etat, options]);
 
   function relatif(e: React.PointerEvent): { x: number; y: number } {
     const r = canvasRef.current!.getBoundingClientRect();
@@ -133,6 +147,16 @@ export function Vue3D({ etat, ui, readOnly, onCommandes }: PropsVue3D) {
     if (!s || e.button !== 0) return;
     const p = relatif(e);
     geste.current = { x: p.x, y: p.y, bouge: false, pousser: null };
+    if (poigneesActives && !pousserActif) {
+      const axe = s.poigneeSous(p.x, p.y);
+      const t0 = axe ? s.abscisseSurAxe(axe, p.x, p.y) : null;
+      if (axe && t0 !== null) {
+        s.activerControles(false);
+        canvasRef.current?.setPointerCapture(e.pointerId);
+        geste.current.poignee = { axe, t0, d: 0 };
+        return;
+      }
+    }
     if (!pousserActif || readOnly) return;
     const hit = s.pointer(p.x, p.y);
     const o = hit ? etat.objets[hit.objetId] : undefined;
@@ -158,6 +182,17 @@ export function Vue3D({ etat, ui, readOnly, onCommandes }: PropsVue3D) {
     if (!g) return;
     const p = relatif(e);
     if (Math.hypot(p.x - g.x, p.y - g.y) > 4) g.bouge = true;
+    if (g.poignee) {
+      const t = sceneRef.current?.abscisseSurAxe(g.poignee.axe, p.x, p.y);
+      if (t === null || t === undefined) return;
+      // Pas d'un centimètre ; Maj : pas de 10 cm.
+      const pas = e.shiftKey ? 0.1 : 0.01;
+      const d = Math.round((t - g.poignee.t0) / pas) * pas;
+      g.poignee.d = Math.round(d * 1000) / 1000;
+      setDeplace({ axe: g.poignee.axe, d: g.poignee.d });
+      sceneRef.current?.apercuDeplacement(g.poignee.axe === "x" ? g.poignee.d : 0, g.poignee.axe === "y" ? g.poignee.d : 0);
+      return;
+    }
     if (!g.pousser) return;
     const delta = -(p.y - g.y) / g.pousser.ppm;
     const valeur = Math.max(0.01, Math.round((g.pousser.depart + delta) * 100) / 100);
@@ -171,6 +206,17 @@ export function Vue3D({ etat, ui, readOnly, onCommandes }: PropsVue3D) {
     const g = geste.current;
     geste.current = null;
     if (!s || !g) return;
+    if (g.poignee) {
+      s.activerControles(true);
+      s.apercuDeplacement(0, 0);
+      setDeplace(null);
+      const { axe, d } = g.poignee;
+      if (Math.abs(d) >= 0.005) {
+        const n = ui.selection.length;
+        onCommandes([{ type: "transformer.deplacer", params: { dx: axe === "x" ? d : 0, dy: axe === "y" ? d : 0 }, cibles: ui.selection }], `Déplacer ${n} objet${n > 1 ? "s" : ""} de ${fmt(d)} m (${axe.toUpperCase()}, manipulateur 3D)`);
+      }
+      return;
+    }
     if (g.pousser) {
       s.activerControles(true);
       s.majApercu(null);
@@ -210,7 +256,9 @@ export function Vue3D({ etat, ui, readOnly, onCommandes }: PropsVue3D) {
           geste.current = null;
           sceneRef.current?.activerControles(true);
           sceneRef.current?.majApercu(null);
+          sceneRef.current?.apercuDeplacement(0, 0);
           setPousse(null);
+          setDeplace(null);
         }}
       />
       <div className="vue3d-commandes" role="group" aria-label="Réglages de la vue 3D">
@@ -257,7 +305,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes }: PropsVue3D) {
         </label>
       </div>
       <p className="vue3d-etat" aria-live="polite">
-        {erreur ? `Rendu 3D indisponible : ${erreur}` : !pret ? "Préparation de la vue 3D…" : pousse ? `${pousse.cle === "hauteur" ? "Hauteur" : "Épaisseur"} : ${fmt(pousse.valeur)} m` : `${moteur === "webgpu" ? "WebGPU" : "WebGL2"}${webgpu && moteur !== "webgpu" ? " (WebGPU indisponible, repli)" : ""}`}
+        {erreur ? `Rendu 3D indisponible : ${erreur}` : !pret ? "Préparation de la vue 3D…" : deplace ? `Déplacement ${deplace.axe.toUpperCase()} : ${fmt(deplace.d)} m` : pousse ? `${pousse.cle === "hauteur" ? "Hauteur" : "Épaisseur"} : ${fmt(pousse.valeur)} m` : `${moteur === "webgpu" ? "WebGPU" : "WebGL2"}${webgpu && moteur !== "webgpu" ? " (WebGPU indisponible, repli)" : ""}`}
       </p>
     </div>
   );

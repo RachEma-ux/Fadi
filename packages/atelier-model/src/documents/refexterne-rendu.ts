@@ -35,5 +35,7 @@ export function representationReferenceExterne(source: ModeleAtelier, ref: Param
     }
     if (traits.length > 20000) break;
   }
-  return { traits, empreinte: empreinteDe(traits), niveauSourceNom: niveau.nom };
+  // Les traits de longueur nulle (sommets répétés) n'apportent rien au dessin.
+  const utiles = traits.filter((t) => Math.hypot(t.b.x - t.a.x, t.b.y - t.a.y) >= 1e-6);
+  return { traits: utiles, empreinte: empreinteDe(utiles), niveauSourceNom: niveau.nom };
 }

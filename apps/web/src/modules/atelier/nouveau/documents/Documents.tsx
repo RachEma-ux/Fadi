@@ -38,6 +38,7 @@ import {
   type ParamsVue,
   type TypeTableau,
   type TypeVue,
+  type TraitsExternes,
   type VueGeneree,
   zoneUtile,
 } from "@parcours/atelier-model";
@@ -53,6 +54,8 @@ export interface PropsDocuments {
   readOnly: boolean;
   niveauId: string | null;
   onCommandes: (commandes: Commande[], label: string) => Promise<void> | void;
+  /** Traits des références externes (lus avec les droits de l'utilisateur) ; absent : pas encore lus. */
+  externes?: readonly TraitsExternes[];
 }
 
 type Choix = { type: "vue" | "feuille"; id: string } | { type: "tableau"; id: TypeTableau } | null;
@@ -124,7 +127,7 @@ function useGeneration<T>(cle: string, calcul: () => Promise<T>): { valeur: T | 
   return { valeur: etat?.valeur ?? null, enCours: etat?.cle !== cle, erreur: etat?.cle === cle ? etat.erreur : null };
 }
 
-export function Documents({ projectId, code, nomProjet, etat, revision, readOnly, niveauId, onCommandes }: PropsDocuments) {
+export function Documents({ projectId, code, nomProjet, etat, revision, readOnly, niveauId, onCommandes, externes }: PropsDocuments) {
   const queryClient = useQueryClient();
   const catalogue = useQuery({ queryKey: ["documents", projectId], queryFn: () => api.getDocuments(projectId), staleTime: 5000 });
   const [choix, setChoix] = useState<Choix>(null);
@@ -252,10 +255,10 @@ export function Documents({ projectId, code, nomProjet, etat, revision, readOnly
       <div className="docs-contenu">
         {erreur && <p className="docs-erreur" role="alert">{erreur}</p>}
         {choix?.type === "vue" && etat.definitions[choix.id] && (
-          <VueDetail key={choix.id} projectId={projectId} def={etat.definitions[choix.id]!} etat={etat} revision={revision} readOnly={readOnly} catalogue={catalogue.data?.documents} base={base} onProduit={produit} onCommandes={executer} feuilles={feuilles} />
+          <VueDetail key={choix.id} projectId={projectId} def={etat.definitions[choix.id]!} etat={etat} revision={revision} readOnly={readOnly} catalogue={catalogue.data?.documents} base={base} onProduit={produit} onCommandes={executer} feuilles={feuilles} externes={externes} />
         )}
         {choix?.type === "feuille" && etat.definitions[choix.id] && (
-          <FeuilleDetail key={choix.id} def={etat.definitions[choix.id]!} etat={etat} revision={revision} readOnly={readOnly} projet={projet} catalogue={catalogue.data?.documents} base={base} onProduit={produit} onCommandes={executer} vues={vues} />
+          <FeuilleDetail key={choix.id} def={etat.definitions[choix.id]!} etat={etat} revision={revision} readOnly={readOnly} projet={projet} catalogue={catalogue.data?.documents} base={base} onProduit={produit} onCommandes={executer} vues={vues} externes={externes} />
         )}
         {choix?.type === "tableau" && <TableauDetail type={choix.id} etat={etat} base={base} onProduit={produit} />}
       </div>
@@ -314,10 +317,10 @@ function ComparaisonVue({ projectId, p, defId, vue, revision }: { projectId: str
   );
 }
 
-function VueDetail({ projectId, def, etat, revision, readOnly, catalogue, base, onProduit, onCommandes, feuilles }: { projectId: string; def: Definition; etat: ModeleAtelier; revision: number; readOnly: boolean; catalogue: DocumentDescriptor[] | undefined; base: string; onProduit: () => void; onCommandes: (c: Commande[], label: string, apres?: Choix) => Promise<void>; feuilles: Definition[] }) {
+function VueDetail({ projectId, def, etat, revision, readOnly, catalogue, base, onProduit, onCommandes, feuilles, externes }: { projectId: string; def: Definition; etat: ModeleAtelier; revision: number; readOnly: boolean; catalogue: DocumentDescriptor[] | undefined; base: string; onProduit: () => void; onCommandes: (c: Commande[], label: string, apres?: Choix) => Promise<void>; feuilles: Definition[]; externes?: readonly TraitsExternes[] }) {
   const p = paramsDeDefinition(def);
   const empreinte = empreinteVue(etat, p);
-  const { valeur: vue, enCours } = useGeneration<VueGeneree>(`${def.id}:${empreinte}`, () => genererVueHorsFil(etat, p, def.id));
+  const { valeur: vue, enCours } = useGeneration<VueGeneree>(`${def.id}:${empreinte}:${externes ? "x" : "-"}`, () => genererVueHorsFil(etat, p, def.id, externes ? { externes } : {}));
   const svg = useMemo(() => (vue ? svgVue(vue, revision) : ""), [vue, revision]);
   const f = fraicheur(catalogue, `atelier-vue-${def.id}-`, empreinte, revision);
   const [form, setForm] = useState(() => ({
@@ -453,10 +456,10 @@ function VueDetail({ projectId, def, etat, revision, readOnly, catalogue, base, 
 
 // --- Feuille -------------------------------------------------------------------------------------------------------
 
-function FeuilleDetail({ def, etat, revision, readOnly, projet, catalogue, base, onProduit, onCommandes, vues }: { def: Definition; etat: ModeleAtelier; revision: number; readOnly: boolean; projet: { nom: string; code: string }; catalogue: DocumentDescriptor[] | undefined; base: string; onProduit: () => void; onCommandes: (c: Commande[], label: string, apres?: Choix) => Promise<void>; vues: Definition[] }) {
+function FeuilleDetail({ def, etat, revision, readOnly, projet, catalogue, base, onProduit, onCommandes, vues, externes }: { def: Definition; etat: ModeleAtelier; revision: number; readOnly: boolean; projet: { nom: string; code: string }; catalogue: DocumentDescriptor[] | undefined; base: string; onProduit: () => void; onCommandes: (c: Commande[], label: string, apres?: Choix) => Promise<void>; vues: Definition[]; externes?: readonly TraitsExternes[] }) {
   const p = def.params as unknown as ParamsFeuille;
   const empreinte = empreinteFeuille(etat, p, projet);
-  const { valeur: feuille, enCours } = useGeneration<FeuilleComposee>(`${def.id}:${empreinte}:${revision}`, () => composerFeuilleHorsFil(etat, p, revision, projet, def.id));
+  const { valeur: feuille, enCours } = useGeneration<FeuilleComposee>(`${def.id}:${empreinte}:${revision}:${externes ? "x" : "-"}`, () => composerFeuilleHorsFil(etat, p, revision, projet, def.id, externes ? { externes } : {}));
   const svg = useMemo(() => (feuille ? svgFeuille(feuille) : ""), [feuille]);
   const f = fraicheur(catalogue, `atelier-feuille-${def.id}-`, empreinte, revision);
   const [form, setForm] = useState(() => ({ titre: p.titre, numero: p.numero, format: p.format, orientation: p.orientation, jeu: p.jeu ?? "", indice: p.indice ?? "", auteur: p.auteur ?? "", date: p.date ?? "" }));

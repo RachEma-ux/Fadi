@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../../lib/api";
-import { bibliotheques, CLASSES, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { bibliotheques, CLASSES, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -120,6 +120,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
           return <Champ key={cle} id={`${o.id}-${cle}`} cle={cle} valeur={valeur} etat={etat} desactive={parametresFiges} onValider={(v) => modifier(cle, v)} />;
         })}
       </dl>
+      {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
       {o.classe === "esquisse" && <Contraintes sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || o.classe === "solide" || o.classe === "texte") && <CreerBloc sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
@@ -202,6 +203,77 @@ function ChoixType({ o, etat, desactive, onCommandes }: { o: OccurrenceQuelconqu
         )}
       </dd>
     </div>
+  );
+}
+
+const FONCTION_LIBELLE: Record<FonctionCouche, string> = { porteur: "porteur", isolant: "isolant", etancheite: "étanchéité", parement: "parement", "lame-air": "lame d'air", autre: "autre" };
+
+/**
+ * Composition de la paroi (D-026) : les couches du type du mur, de la face gauche à la face droite ; modifier les
+ * couches modifie le type (tous ses murs). Rien n'est supposé : sans couches, la composition est « non renseignée ».
+ */
+function CompositionParoi({ o, etat, desactive, onCommandes }: { o: Occurrence<"mur">; etat: ModeleAtelier; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const type = o.definitionId ? etat.definitions[o.definitionId] : undefined;
+  const actuelles = (type?.params["couches"] as CoucheParoi[] | undefined) ?? [];
+  const [lignes, setLignes] = useState(() => actuelles.map((c) => ({ materiau: c.materiau, epaisseur: fmt(c.epaisseur.value * 1000), fonction: c.fonction ?? "" })));
+  const [erreur, setErreur] = useState<string | null>(null);
+  const cle = JSON.stringify(actuelles);
+  useEffect(() => setLignes(actuelles.map((c) => ({ materiau: c.materiau, epaisseur: fmt(c.epaisseur.value * 1000), fonction: c.fonction ?? "" }))), [cle]); // eslint-disable-line react-hooks/exhaustive-deps
+  const composition = compositionMur(etat, o);
+  const nbMurs = type ? Object.values(etat.objets).filter((x) => x.definitionId === type.id).length : 0;
+  if (!type) return <p className="inspecteur-note">Composition : donnez un type à ce mur pour décrire ses couches.</p>;
+  const enregistrer = () => {
+    setErreur(null);
+    const couches = lignes.filter((l) => l.materiau.trim() || l.epaisseur.trim()).map((l) => ({ materiau: l.materiau.trim(), epaisseur: { value: Number(l.epaisseur.replace(",", ".")) / 1000, unit: "m" }, fonction: l.fonction || null }));
+    if (couches.some((c) => !c.materiau || !(c.epaisseur.value > 0))) return setErreur("Chaque couche demande un matériau et une épaisseur en millimètres.");
+    onCommandes([{ type: "type.modifier", params: { id: type.id, params: { couches: couches.length ? couches : null } } }], `Composition du type « ${type.nom} »`);
+  };
+  return (
+    <details className="inspecteur-composition" open={actuelles.length > 0} data-composition={composition ? (composition.coherente ? "coherente" : "incoherente") : "absente"}>
+      <summary>Composition du type « {type.nom} »{actuelles.length ? ` · ${actuelles.length} couche(s)` : " · non renseignée"}</summary>
+      <p className="inspecteur-note">De la face gauche à la face droite (sens du tracé). {nbMurs > 1 ? `Modifier les couches modifie les ${nbMurs} murs de ce type.` : ""}</p>
+      <table className="composition-couches">
+        <thead>
+          <tr><th scope="col">Matériau</th><th scope="col">mm</th><th scope="col">Fonction</th><th scope="col"><span className="sr-only">Retirer</span></th></tr>
+        </thead>
+        <tbody>
+          {lignes.map((l, i) => (
+            <tr key={i}>
+              <td><input aria-label={`Matériau de la couche ${i + 1}`} value={l.materiau} disabled={desactive} maxLength={80} onChange={(e) => setLignes(lignes.map((x, j) => (j === i ? { ...x, materiau: e.target.value } : x)))} data-couche-materiau={i} /></td>
+              <td><input aria-label={`Épaisseur de la couche ${i + 1} (mm)`} inputMode="decimal" value={l.epaisseur} disabled={desactive} size={5} onChange={(e) => setLignes(lignes.map((x, j) => (j === i ? { ...x, epaisseur: e.target.value } : x)))} data-couche-epaisseur={i} /></td>
+              <td>
+                <select aria-label={`Fonction de la couche ${i + 1}`} value={l.fonction} disabled={desactive} onChange={(e) => setLignes(lignes.map((x, j) => (j === i ? { ...x, fonction: e.target.value } : x)))}>
+                  <option value="">—</option>
+                  {FONCTIONS_COUCHE.map((f) => <option key={f} value={f}>{FONCTION_LIBELLE[f]}</option>)}
+                </select>
+              </td>
+              <td><button type="button" className="bouton-mini" disabled={desactive} onClick={() => setLignes(lignes.filter((_, j) => j !== i))}>×<span className="sr-only">Retirer la couche {i + 1}</span></button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {!desactive && (
+        <span className="ver-actions">
+          <button type="button" onClick={() => setLignes([...lignes, { materiau: "", epaisseur: "", fonction: "" }])} data-couche-ajouter>Ajouter une couche</button>
+          <button type="button" className="primaire" onClick={enregistrer} data-couche-enregistrer>Enregistrer la composition</button>
+        </span>
+      )}
+      {erreur && <p className="inspecteur-alerte" role="alert">{erreur}</p>}
+      {composition && (
+        composition.coherente ? (
+          <p className="inspecteur-note">Somme des couches {fmt(composition.total * 1000)} mm = épaisseur du mur.</p>
+        ) : (
+          <p className="inspecteur-alerte" role="note">
+            Somme des couches {fmt(composition.total * 1000)} mm ≠ épaisseur du mur {fmt(o.params.epaisseur.value * 1000)} mm : couches non dessinées ni exportées.
+            {!desactive && (
+              <button type="button" className="bouton-mini" onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { epaisseur: { value: composition.total, unit: "m" } } } }], "Épaisseur du mur = composition")} data-couche-appliquer>
+                Donner au mur l'épaisseur de la composition
+              </button>
+            )}
+          </p>
+        )
+      )}
+    </details>
   );
 }
 

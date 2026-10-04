@@ -25,6 +25,7 @@ import { BUSINESS_CHECKS_VERSION, DESIGN_REVIEW_VERSION, DOCUMENTS_VERSION } fro
 import { atelierCommands, atelierVersions, volumes, type DocumentPublie } from "../db/schema.js";
 import { chargerModele } from "./atelier-modele.js";
 import { atelierDocumentDescriptors, rendreDocumentAtelier } from "./atelier-documents.js";
+import { traitsExternesPour } from "./atelier-refexterne.js";
 import type { OwnedProject } from "./owned-project.js";
 import { APPLICATION_VERSION } from "./project-archive.js";
 import type { Querier } from "./step-rows.js";
@@ -93,12 +94,14 @@ export async function rangerVolume(q: Querier, contenu: Buffer, mime: string): P
  * Documents d'une publication : tous les documents de l'Atelier productibles à la révision de la version (vues et
  * feuilles en PDF, tableaux CSV, quantités, maquette IFC), produits depuis l'instantané de la version.
  */
-export async function produireDocumentsPublies(q: Querier, project: OwnedProject, etat: ModeleAtelier, revision: number, horodatage: string): Promise<DocumentPublie[]> {
+export async function produireDocumentsPublies(q: Querier, project: OwnedProject, etat: ModeleAtelier, revision: number, horodatage: string, auteurId: string | null = null): Promise<DocumentPublie[]> {
   const fige = { ...project, modelRevision: revision };
+  // Références externes dessinées avec les droits de l'auteur de la publication.
+  const externes = auteurId ? await traitsExternesPour(auteurId, etat) : [];
   const out: DocumentPublie[] = [];
   for (const d of atelierDocumentDescriptors(fige, etat)) {
     if (/-(dxf|svg)$/.test(d.kind)) continue; // les PDF suffisent à la publication des vues et des feuilles
-    const rendu = rendreDocumentAtelier(d.kind, fige, etat, horodatage);
+    const rendu = rendreDocumentAtelier(d.kind, fige, etat, horodatage, { externes });
     if (!rendu) continue;
     const contenu = Buffer.isBuffer(rendu.body) ? rendu.body : Buffer.from(rendu.body, "utf8");
     const volumeId = await rangerVolume(q, contenu, rendu.type);

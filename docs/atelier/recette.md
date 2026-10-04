@@ -20,7 +20,7 @@ déclaré « disponible » : cet état n'est posé qu'après votre acceptation (
 | 9 | Recette : essai « calcul tardif » ajouté, aide située relue et testée, fiches mises à jour, protocole T17 / T18, documentation | `lots/lot-9.md`, ce dossier, `protocole-mesures.md` |
 | + | Compléments : historique d'un objet, consultation d'un état passé, réutilisation de modèle, références externes ; raccords de murs, coupes remplies en 3D, lasso, fusions successives, vues et nomenclatures déplaçables sur feuille, annotations des coupes et façades | `lots/complements.md` |
 
-Décisions du chef de projet : D-001 à D-023 (`decisions.md`). Fiches : les 71 à l'état « prototype » (code présent,
+Décisions du chef de projet : D-001 à D-028 (`decisions.md`). Fiches : les 71 à l'état « prototype » (code présent,
 preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leurs écarts déclarés.
 
 ## 2. Contrôles automatiques (état au 4 octobre 2026)
@@ -28,15 +28,15 @@ preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leur
 | Contrôle | Résultat |
 | --- | --- |
 | `npm run typecheck` (dont `scripts/check-module-deps.mjs`, T14) | ✅ |
-| `npm test` | ✅ core-geometry 47 · domain-model 95 · **atelier-model 115** · **API 79** · web 22 |
+| `npm test` | ✅ core-geometry 47 · domain-model 95 · **atelier-model 124** · **API 79** · web 22 |
 | `npm run build` | ✅ |
 | Scénario complet `apps/web/e2e/parcours-scenario.mjs` | ✅ 326 contrôles, « Scénario conforme. » |
 | Recette Atelier `atelier-nouveau.mjs` (lots 3–4) | ✅ 41 contrôles |
 | Recette documents `atelier-documents.mjs` (lot 5, compléments) | ✅ 21 contrôles |
 | Recette échanges `atelier-echanges.mjs` (lot 6) | ✅ 17 contrôles |
 | Recette versions `atelier-versions.mjs` (lot 7) | ✅ 24 contrôles |
-| Recette automatisation `atelier-automatisation.mjs` (lot 8) | ✅ 14 contrôles |
-| Recette compléments `atelier-complements.mjs` | ✅ 23 contrôles (captures `10-reprise.png`, `10-reference-externe.png`, `10-coupe-remplie.png`) |
+| Recette automatisation `atelier-automatisation.mjs` (lot 8, éditeur guidé) | ✅ 17 contrôles |
+| Recette compléments `atelier-complements.mjs` | ✅ 27 contrôles (captures `10-reprise.png`, `10-reference-externe.png`, `10-coupe-remplie.png`) |
 | Corpus IFC validé par IfcOpenShell 0.9.0 (`apps/api/test-corpus/ifc/`) | ✅ petit modèle (référence octet pour octet), P.118, P.118 réimporté puis réexporté |
 | Sauvegarde puis restauration vérifiées (`scripts/verify-restore.sh`, T11) | ✅ en CI ; en local sur la base de développement (journal, versions, publications, volumes) |
 | axe-core (aucune violation critique ou sérieuse) | ✅ à chaque écran des recettes, ordinateur et téléphone |
@@ -114,11 +114,11 @@ Toutes ces étapes tournent dans `.github/workflows/ci.yml` (jobs `validate`, `e
 
 ## 7. Limites connues (non faites, déclarées)
 
-- Atelier : manipulateur 3D à poignées ; raccords de murs : nœuds de trois murs ou plus et croisements non traités,
-  export IFC en rectangles.
-- Échanges : annotations, matériaux et types IFC à l'import ; `IfcMaterialLayerSet` ; blocs DXF, `XREF`, hachures,
-  cotes ; DWG.
-- Références externes : accrochage sur la source, représentation dans les documents et la 3D, cache hors ligne
-  persistant, réparation d'une référence inaccessible. Réutilisation : sélection spatiale, bibliothèques partagées.
-- Automatisation : génération libre (fournisseur non choisi) ; éditeur guidé de scripts.
+- Atelier : manipulateur 3D en rotation et en hauteur (translation X / Y faite ; outils Tourner et Pousser / tirer) ;
+  raccords de murs : croisements et nœuds sans paire alignée unique non traités.
+- Échanges : `IfcMaterialLayerSetUsage` (sens et décalage des couches dans un repère propre au mur) ; `XREF` DXF
+  (fichier non fourni, signalé) ; cotes DXF angulaires et radiales ; DWG.
+- Références externes : réparation d'une référence inaccessible autre que le détachement ; calque verrouillé ;
+  contrat source plus récent. Réutilisation : sélection spatiale, bibliothèques partagées.
+- Automatisation : génération libre (fournisseur de modèle de langage non choisi, §10.1).
 - Mesures T17 / T18 sur utilisateurs et appareils réels : protocole fourni, mesure à faire.

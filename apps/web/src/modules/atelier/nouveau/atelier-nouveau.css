@@ -1852,3 +1852,83 @@
   display: grid;
   gap: 0.15rem;
 }
+
+/* Composition de la paroi (D-026). */
+.inspecteur-composition {
+  margin: 0.4rem 0.7rem;
+}
+.inspecteur-composition > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.composition-couches {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85em;
+  margin: 0.3rem 0;
+}
+.composition-couches th {
+  text-align: left;
+  font-weight: 600;
+}
+.composition-couches input,
+.composition-couches select {
+  width: 100%;
+  min-width: 0;
+}
+.composition-couches td:nth-child(2) {
+  width: 4.5rem;
+}
+.inspecteur-note {
+  margin: 0.3rem 0.7rem;
+  font-size: 0.85em;
+  color: var(--atelier-doux);
+}
+.inspecteur-composition .inspecteur-note,
+.inspecteur-composition .inspecteur-alerte {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Éditeur guidé de scripts (D-028). */
+.auto-editeur {
+  margin: 0.5rem 0;
+}
+.auto-editeur > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.editeur-identite {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+.editeur-ligne {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+  margin: 0.2rem 0;
+}
+.editeur-ligne input,
+.editeur-ligne select {
+  min-width: 0;
+  flex: 1 1 4.5rem;
+}
+.editeur-commande {
+  border-top: 1px solid var(--atelier-ligne);
+  padding: 0.3rem 0;
+}
+.editeur-champs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 0.4rem;
+}
+.editeur-champs input {
+  min-width: 0;
+}
+.editeur-json pre {
+  max-height: 14rem;
+  overflow: auto;
+  font-size: 0.75em;
+}

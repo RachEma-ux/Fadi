@@ -39,10 +39,23 @@ describe("raccords de murs (géométrie dérivée)", () => {
     }
   });
 
+  it("nœud de trois murs (une paire alignée) : la paire se prolonge, le troisième s'arrête sur sa face ; croisement de quatre : non traité", () => {
+    const n3 = modele(mur("g", [0, 0], [4, 0]), mur("d", [4, 0], [8, 0]), mur("t", [4, 0], [4, 3]));
+    expect(raccordMur(n3, M(n3, "g"))!.extremites).toEqual(["libre", "libre"]);
+    expect(raccordMur(n3, M(n3, "d"))!.extremites).toEqual(["libre", "libre"]);
+    expect(raccordMur(n3, M(n3, "t"))!.extremites[0]).toBe("te");
+    const t = facesMurRaccordees(n3, M(n3, "t"));
+    expect(Math.abs(t.gauche[0].y - 0.1)).toBeLessThan(1e-9);
+    expect(Math.abs(t.droite[0].y - 0.1)).toBeLessThan(1e-9);
+    const n4 = modele(mur("a1", [0, 0], [4, 0]), mur("a2", [4, 0], [8, 0]), mur("b1", [4, 0], [4, 3]), mur("b2", [4, 0], [4, -3]));
+    expect(raccordMur(n4, M(n4, "b1"))!.extremites[0]).toBe("non-traite");
+  });
+
   it("alignés, croisement et nœud de trois murs : extrémités inchangées ou « non traitées »", () => {
     const e = modele(mur("a", [0, 0], [4, 0]), mur("b", [4, 0], [8, 0]), mur("x1", [10, -2], [10, 2]), mur("x2", [8, 0], [8, 3]), mur("x3", [8, 0], [8, -3]));
     expect(raccordMur(e, M(e, "a"))!.extremites).toEqual(["libre", "libre"]);
-    expect(raccordMur(e, M(e, "b"))!.extremites[1]).toBe("non-traite");
+    // b, x2 et x3 se rejoignent en (8 ; 0) : x2 et x3 forment la paire alignée, b s'arrête sur leur face.
+    expect(raccordMur(e, M(e, "b"))!.extremites[1]).toBe("te");
     const p = polygoneMurRaccorde(e, M(e, "x1"));
     expect(p).toHaveLength(4);
   });

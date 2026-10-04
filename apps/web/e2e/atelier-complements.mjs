@@ -75,6 +75,21 @@ const histo = (await page.locator(".inspecteur-historique").textContent()) ?? ""
 check("historique de l'objet : la modification est listée avec son auteur et sa révision", (await page.locator('.inspecteur-historique [data-historique="modifie"]').count()) >= 1 && histo.includes(email), histo.slice(0, 200));
 await axe("historique d'un objet", ".inspecteur-historique");
 
+// Composition de la paroi (D-026) : deux couches sur le type du mur, somme = épaisseur (370 mm) → couches dessinées.
+await page.locator(".inspecteur-composition > summary").click();
+await page.locator("[data-couche-ajouter]").click();
+await page.locator("[data-couche-ajouter]").click();
+await page.locator('[data-couche-materiau="0"]').fill("Béton");
+await page.locator('[data-couche-epaisseur="0"]').fill("200");
+await page.locator('[data-couche-materiau="1"]').fill("Isolant");
+await page.locator('[data-couche-epaisseur="1"]').fill("170");
+await page.locator("[data-couche-enregistrer]").click();
+await page.waitForSelector('.inspecteur-composition[data-composition="coherente"]', { timeout: 15000 }).catch(() => {});
+await attendreEnregistre();
+await page.waitForSelector(`.plan2d [data-objet="${murA.id}"] .mur-couche`, { timeout: 15000 }).catch(() => {});
+const typeMur = (await modele(pid)).modele.definitions[murA.definitionId];
+check("composition du type : couches enregistrées, cohérentes avec l'épaisseur, dessinées dans le mur", typeMur?.params?.couches?.length === 2 && (await page.locator('.inspecteur-composition[data-composition="coherente"]').count()) === 1 && (await page.locator(`.plan2d [data-objet="${murA.id}"] .mur-couche`).count()) >= 1, `${JSON.stringify(typeMur?.params?.couches ?? null).slice(0, 160)} · ${murA.definitionId} · ${await page.locator(".inspecteur-composition").getAttribute("data-composition").catch(() => "?")} · ${((await page.locator(".inspecteur-composition").textContent().catch(() => "")) ?? "").slice(0, 200)} · ${((await page.locator(".etat-aide, .etat-erreur").first().textContent().catch(() => "")) ?? "").slice(0, 150)}`);
+
 // 2. Consulter un état passé (lecture seule), puis revenir.
 await page.locator('select[aria-label="Niveau d\'affichage des outils"]').selectOption("complet");
 await page.locator(".mod-journal summary").click();
@@ -165,9 +180,25 @@ await page.locator("[data-epingler]").click();
 await page.waitForSelector('.refext-liste [data-etat="a-jour"]', { timeout: 20000 }).catch(() => {});
 check("dernière publication épinglée : de nouveau « à jour »", (await page.locator('.refext-liste [data-etat="a-jour"]').count()) === 1);
 
-// Coupes remplies en 3D et murs raccordés (lot 3b, limites levées).
+// Coupes remplies en 3D et murs raccordés (lot 3b, limites levées) ; manipulateur à poignées.
+await selectionner(murA.id);
+const avantGlisse = (await modele(pid)).modele.objets[murA.id].params.a;
 await page.locator('.barre-mode button:has-text("3D")').click();
 await page.waitForSelector(".vue3d canvas", { timeout: 30000 });
+await page.waitForFunction(() => (window.fadiMesures3D?.poignees ?? 0) === 2, null, { timeout: 20000 }).catch(() => {});
+await page.waitForTimeout(500);
+const fleche = await page.evaluate(() => window.fadiMesures3D?.localiserPoignee?.("x") ?? null);
+const cadre3d = await page.locator(".vue3d-canevas").boundingBox();
+if (fleche && cadre3d) {
+  await page.mouse.move(cadre3d.x + fleche.x, cadre3d.y + fleche.y);
+  await page.mouse.down();
+  for (let k = 1; k <= 10; k++) await page.mouse.move(cadre3d.x + fleche.x + k * 6, cadre3d.y + fleche.y);
+  await page.mouse.up();
+}
+await attendreEnregistre().catch(() => {});
+const apresGlisse = (await modele(pid)).modele.objets[murA.id].params.a;
+check("manipulateur 3D : la flèche X glissée déplace la sélection en X seulement, un lot enregistré", !!fleche && Math.abs(apresGlisse.x - avantGlisse.x) > 0.01 && Math.abs(apresGlisse.y - avantGlisse.y) < 1e-9, `${JSON.stringify(fleche)} · ${avantGlisse.x} → ${apresGlisse.x}`);
+await page.keyboard.press("Escape");
 const chapeaux = {};
 for (const vue of ["Coupe nord–sud", "Plan (dessus)"]) {
   await page.locator('.vue3d-commandes select[aria-label="Vue"]').selectOption({ label: vue });
@@ -178,7 +209,16 @@ for (const vue of ["Coupe nord–sud", "Plan (dessus)"]) {
 await page.locator('.vue3d-commandes select[aria-label="Vue"]').selectOption({ label: "Perspective" });
 await page.waitForTimeout(300);
 const sansCoupe = await page.evaluate(() => window.fadiMesures3D?.chapeaux ?? 0);
+check("référence externe dessinée aussi en 3D (traits gris au niveau de rattachement)", (await page.evaluate(() => window.fadiMesures3D?.externes ?? 0)) === 1);
 check("coupe en 3D : la matière coupée est remplie (coupe N–S, plan) ; rien sans plan de coupe", chapeaux["Coupe nord–sud"] > 0 && chapeaux["Plan (dessus)"] > 0 && sansCoupe === 0, JSON.stringify({ ...chapeaux, sansCoupe }));
+// Documents : le plan du niveau dessine la référence (traits lus avec les droits de l'utilisateur) et le dit.
+await page.locator('.barre-mode button:has-text("Documents")').click();
+await page.waitForSelector(".atelier-docs");
+await page.locator(".docs-nouvelle > summary").click();
+await page.locator('[data-nouvelle="plan"]').click();
+await page.waitForSelector('[data-detail="vue"] .docs-svg svg', { timeout: 60000 });
+await page.waitForFunction(() => /dessinée en trait fin/.test(document.querySelector(".docs-avertissements")?.textContent ?? ""), null, { timeout: 45000 }).catch(() => {});
+check("plan en document : la référence externe est dessinée en trait fin, avec sa révision publiée", /Référence externe « .* » dessinée en trait fin/.test((await page.locator(".docs-avertissements").textContent().catch(() => "")) ?? ""));
 await page.locator('.barre-mode button:has-text("Plan")').click();
 await page.waitForSelector(".plan2d");
 

@@ -2,6 +2,7 @@
  * Commandes d'organisation et de site : niveaux, calques, groupes, définitions (types), propriétés typées,
  * classification, références (rattacher / réparer), parcelle et emprise.
  */
+import { lireCouches } from "../compositions.js";
 import { boucles, type AxeMur } from "../geometrie.js";
 import type { Calque, CoordonneeCadastrale, Definition, Groupe, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque, Propriete, Reference } from "../modele.js";
 import { objetsDeClasse, objetsDuNiveau } from "../modele.js";
@@ -179,6 +180,8 @@ export const reducteursType = {
     const classe = lire.chaine(p, "classe");
     if (!estClasse(classe) && classe !== "bloc" && classe !== "composant") throw new ErreurCommande("invalide", "classe", `classe inconnue : ${classe}`);
     const params = (p["params"] as Brut | undefined) ?? {};
+    // Composition d'un type de mur : couches validées (matériau nommé, épaisseur), jamais supposées (D-026).
+    if (classe === "mur" && params["couches"] !== undefined) params["couches"] = lireCouches(params["couches"]);
     const definition: Definition = { id, classe: classe as Definition["classe"], nom: lire.chaine(p, "nom"), params, version: 1 };
     const effets = effetsVides();
     effets.crees.push(id);
@@ -194,6 +197,12 @@ export const reducteursType = {
       params: p["params"] === undefined ? existant.params : { ...existant.params, ...(p["params"] as Brut) },
       version: existant.version + 1,
     };
+    if (existant.classe === "mur" && definition.params["couches"] !== undefined) {
+      const couches = lireCouches(definition.params["couches"]);
+      definition.params = { ...definition.params };
+      if (couches) definition.params["couches"] = couches;
+      else delete definition.params["couches"];
+    }
     const effets = effetsVides();
     effets.modifies.push(id);
     // Propagation explicite, jamais silencieuse : les occurrences qui utilisent la définition sont signalées modifiées.

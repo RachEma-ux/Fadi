@@ -12,6 +12,7 @@
  * - `collisions` : contrôles d'architecture (ouverture hors mur, ouvertures qui se chevauchent, escalier traversé
  *   par la dalle du niveau d'arrivée).
  */
+import { compositionMur } from "./compositions.js";
 import type { Commande, InstantaneDiff } from "./commandes/index.js";
 import { appliquerDifferentiel, ErreurCommande, TYPE_RESTAURER } from "./commandes/index.js";
 import type { Primitive } from "./documents/dessin.js";
@@ -222,7 +223,7 @@ export function analyserFusion(tronc: readonly EffetsJournal[], variante: readon
 
 // --- Collisions d'architecture -----------------------------------------------------------------------------------
 
-export type TypeCollision = "ouverture-hors-mur" | "ouverture-trop-haute" | "ouvertures-chevauchantes" | "escalier-contre-dalle";
+export type TypeCollision = "ouverture-hors-mur" | "ouverture-trop-haute" | "ouvertures-chevauchantes" | "escalier-contre-dalle" | "composition-incoherente";
 
 export interface Collision {
   type: TypeCollision;
@@ -259,6 +260,12 @@ export function collisions(etat: ModeleAtelier): Collision[] {
         out.push({ type: "ouvertures-chevauchantes", objets: [tri[i]!.id, tri[j]!.id, murId], niveauId: etat.objets[murId]?.niveauId ?? null, message: `${tri[i]!.id} et ${tri[j]!.id} se chevauchent dans le mur ${murId} (${Math.round((tri[i]!.s1 - tri[j]!.s0) * 1000) / 1000} m)` });
       }
     }
+  }
+  // Parois : l'épaisseur d'un mur dont le type porte une composition doit égaler la somme des couches (D-026).
+  for (const o of objets) {
+    if (o.classe !== "mur") continue;
+    const c = compositionMur(etat, o);
+    if (c && !c.coherente) out.push({ type: "composition-incoherente", objets: [o.id], niveauId: o.niveauId, message: `${o.id} : épaisseur ${Math.round(o.params.epaisseur.value * 1000)} mm, composition du type « ${c.typeNom} » ${Math.round(c.total * 1000)} mm (écart ${Math.round(c.ecart * 1000)} mm)` });
   }
   // Escaliers : la dalle du niveau d'arrivée ne doit pas traverser la volée (trémie absente).
   for (const o of objets) {

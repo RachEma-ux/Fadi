@@ -8,7 +8,9 @@
  *   intérieure avec intérieure).
  * - Té (T) : l'extrémité d'un mur tombe dans l'épaisseur d'un autre, loin de ses extrémités → le mur aboutissant
  *   s'arrête sur la face du mur traversant qui lui fait face (ni recouvrement, ni vide).
- * - Croisements, nœuds de trois murs ou plus, murs alignés : extrémités inchangées (déclaré).
+ * - Nœud de trois murs ou plus avec une seule paire alignée : la paire se prolonge, les autres murs s'arrêtent sur
+ *   sa face (comme un té).
+ * - Croisements, autres nœuds, murs alignés : extrémités inchangées (déclaré).
  * Un raccord qui déplacerait une extrémité de plus de quatre épaisseurs (angle très aigu) n'est pas appliqué.
  *
  * Le résultat est mis en cache par état d'objets (immuable) et par niveau.
@@ -113,8 +115,23 @@ function calculer(murs: MurPlan[], tol: number): Map<string, RaccordMur> {
           continue;
         }
       } else {
-        r.extremites[fin] = "non-traite";
-        continue;
+        // Nœud de trois murs ou plus : une seule paire alignée (un mur qui continue) et les autres qui y aboutissent.
+        // Les murs de la paire se prolongent l'un l'autre (rien à faire) ; un mur qui aboutit s'arrête sur leur face.
+        const tous = [{ m: w, d: dW }, ...partages.map((x) => ({ m: x.m, d: x.dO }))];
+        // Sens « vers l'intérieur du mur » depuis le nœud : opposé de dW pour w, dO pour les autres.
+        const sens = tous.map((x, k) => (k === 0 ? mul(x.d, -1) : x.d));
+        const paires: [number, number][] = [];
+        for (let u = 0; u < tous.length; u++) for (let v = u + 1; v < tous.length; v++) if (dot(sens[u]!, sens[v]!) < -Math.cos((1 * Math.PI) / 180)) paires.push([u, v]);
+        if (paires.length !== 1) {
+          r.extremites[fin] = "non-traite";
+          continue;
+        }
+        const [pu, pv] = paires[0]!;
+        if (pu === 0 || pv === 0) continue; // w est dans la paire alignée : il se prolonge dans l'autre mur
+        const o = tous[pu]!.m;
+        const proche: "gauche" | "droite" = dot(sensFace(o, "gauche"), mul(dW, -1)) > 0 ? "gauche" : "droite";
+        cible = { o, faces: { gauche: proche, droite: proche } };
+        type = "te";
       }
       if (!cible) continue;
       const nouvelles: Partial<Record<"gauche" | "droite", number>> = {};

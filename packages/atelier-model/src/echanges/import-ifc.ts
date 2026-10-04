@@ -32,6 +32,21 @@ export interface ProduitIfcLu {
   etageGlobalId: string | null;
   /** Triangles dans le repère du fichier, en mètres, Z vers le haut. */
   maillage: { positions: number[]; indices: number[] };
+  /** Nom du type IFC associé (`IfcRelDefinesByType`), s'il y en a un. */
+  typeNom?: string | null;
+  /** Matériaux associés (`IfcRelAssociatesMaterial`), couches avec leur épaisseur en mètres quand elle est donnée. */
+  materiaux?: { nom: string; epaisseur: number | null }[];
+  /** Propriétés simples des jeux de propriétés (`IfcPropertySingleValue`), telles quelles. */
+  proprietes?: { ensemble: string; nom: string; valeur: string | number | boolean; mesure: string | null }[];
+}
+
+/** Annotation 2D lue (textes et traits), dans le repère du fichier, en mètres, Z vers le haut. */
+export interface AnnotationIfcLue {
+  globalId: string;
+  nom: string | null;
+  etageGlobalId: string | null;
+  textes: { texte: string; x: number; y: number; z: number }[];
+  polylignes: { x: number; y: number; z: number }[][];
 }
 
 export interface LectureIfc {
@@ -43,6 +58,8 @@ export interface LectureIfc {
   conversion: { crs: string | null; est: number; nord: number; hauteur: number; axeX: [number, number]; echelle: number } | null;
   /** Produits lus mais sans géométrie exploitable, ou classes hors du sous-ensemble (nombre par classe). */
   ignores: { classe: string; nombre: number; raison: string }[];
+  /** Annotations 2D (`IfcAnnotation`) : textes et polylignes. */
+  annotations?: AnnotationIfcLue[];
 }
 
 export interface OptionsImportIfc {
@@ -242,6 +259,17 @@ export function commandesImportIfc(etat: ModeleAtelier, lecture: LectureIfc, opt
       empreinte: enveloppeConvexe(plan).map((q) => pt(q.x, q.y)),
       source: options.source,
     };
+    // Type, matériaux et propriétés : repris tels quels, en propriétés importées déclarées (rien n'est réinterprété).
+    const props: Record<string, { valeur: unknown; unite?: string; provenance: "import"; statut: "declaree" }> = {};
+    if (p.typeNom) props["ifc:type"] = { valeur: p.typeNom, provenance: "import", statut: "declaree" };
+    if (p.materiaux?.length) {
+      props["ifc:materiaux"] = { valeur: p.materiaux.map((x) => (x.epaisseur !== null ? `${x.nom} ${Math.round(x.epaisseur * 1000)} mm` : x.nom)).join(" ; ").slice(0, 500), provenance: "import", statut: "declaree" };
+      const total = p.materiaux.every((x) => x.epaisseur !== null) ? p.materiaux.reduce((s2, x) => s2 + x.epaisseur!, 0) : null;
+      if (total !== null && p.materiaux.length > 1) props["ifc:epaisseurCouches"] = { valeur: r5(total), unite: "m", provenance: "import", statut: "declaree" };
+    }
+    for (const q of (p.proprietes ?? []).slice(0, 100)) props[`ifc:${q.ensemble}.${q.nom}`.slice(0, 120)] = q.mesure ? { valeur: q.valeur, unite: q.mesure, provenance: "import", statut: "declaree" } : { valeur: q.valeur, provenance: "import", statut: "declaree" };
+    if (Object.keys(props).length) params["proprietes"] = props;
+    if ((p.proprietes?.length ?? 0) > 100) remarques.push(`${p.globalId} : ${p.proprietes!.length} propriétés, les 100 premières reprises.`);
     if (groupeLibre && groupeCree) params["groupeId"] = groupeId;
     commandes.push({ cmd: { type: "objetImporte.creer", params }, label: "objets" });
     if (groupeLibre && !groupeCree) {
@@ -250,6 +278,29 @@ export function commandesImportIfc(etat: ModeleAtelier, lecture: LectureIfc, opt
     }
     compter(p.classe, true);
   }
+  // Annotations 2D : textes et traits sur le niveau de leur étage, calque « annotations » ; comptées par classe.
+  const annotations = lecture.annotations ?? [];
+  if (annotations.length) {
+    const calqueAnn = `${prefixe}-calque-annotations`;
+    if (!etat.calques[calqueAnn]) commandes.push({ cmd: { type: "calque.creer", params: { id: calqueAnn, nom: `Import IFC · annotations · ${options.source}`.slice(0, 120) } }, label: "annotations" });
+    for (const a of [...annotations].sort((x, y) => (x.globalId < y.globalId ? -1 : 1))) {
+      const base = idImporte(`${prefixe}-ann`, a.globalId);
+      if (dejaImportes.has(a.globalId) || etat.objets[`${base}-0`]) {
+        compter("IfcAnnotation", false, "déjà importée (même GlobalId) : non réimportée");
+        continue;
+      }
+      const zmin = Math.min(...a.textes.map((t) => t.z), ...a.polylignes.flat().map((q) => q.z), Infinity);
+      const niveau = (a.etageGlobalId ? niveauDeEtage.get(a.etageGlobalId) : undefined) ?? accueilSansEtage(Number.isFinite(zmin) ? zmin : 0);
+      const P = (q: { x: number; y: number }) => pt(r5(q.x + dx), r5(q.y + dy));
+      let k = 0;
+      for (const t of a.textes) if (t.texte.trim()) commandes.push({ cmd: { type: "texte.creer", params: { id: `${base}-${k++}`, niveauId: niveau.id, calqueId: calqueAnn, position: P(t), texte: t.texte.trim().slice(0, 500) } }, label: "annotations" });
+      for (const l of a.polylignes) {
+        const pts = l.map(P).filter((q, i, arr) => i === 0 || Math.hypot(q.x - arr[i - 1]!.x, q.y - arr[i - 1]!.y) > 1e-6);
+        if (pts.length >= 2) commandes.push({ cmd: { type: pts.length === 2 ? "esquisse.ligne" : "esquisse.polyligne", params: { id: `${base}-${k++}`, niveauId: niveau.id, calqueId: calqueAnn, points: pts, ferme: false } }, label: "annotations" });
+      }
+      compter("IfcAnnotation", k > 0, k > 0 ? "textes et traits repris en textes et esquisses (cotes non associatives)" : "annotation sans texte ni trait lisible");
+    }
+  }
   if (sansEtage) remarques.push(`${sansEtage} produit(s) sans étage dans le fichier : rattaché(s) au niveau dont l'altitude est immédiatement sous leur point le plus bas.`);
   for (const i of lecture.ignores) {
     const l = lignes.get(i.classe) ?? { classe: i.classe, source: 0, cible: 0, ifc: i.classe, representation: "—", remarques: [] };
@@ -257,7 +308,7 @@ export function commandesImportIfc(etat: ModeleAtelier, lecture: LectureIfc, opt
     if (!l.remarques.includes(i.raison)) l.remarques.push(i.raison);
     lignes.set(i.classe, l);
   }
-  remarques.push("Chaque produit est importé en représentation (maillage, classe et GlobalId d'origine) : ni paramètres, ni ouvertures hébergées, ni propriétés réinterprétées.");
+  remarques.push("Chaque produit est importé en représentation (maillage, classe et GlobalId d'origine) ; son type, ses matériaux et ses propriétés simples sont repris tels quels en propriétés importées « déclarées » : ni paramètres, ni ouvertures hébergées, rien de réinterprété.");
 
   const lots: { label: string; commands: Commande[] }[] = [];
   for (let k = 0; k < commandes.length; k += tailleLot) {

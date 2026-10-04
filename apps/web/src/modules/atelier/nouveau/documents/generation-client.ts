@@ -2,7 +2,7 @@
  * Client du fil de génération des documents : une seule instance, demandes numérotées ; repli dans le fil
  * principal si les workers ne sont pas disponibles (tests, navigateur ancien).
  */
-import { composerFeuille, genererVue, type FeuilleComposee, type ModeleAtelier, type ParamsFeuille, type ParamsVue, type Projet, type VueGeneree } from "@parcours/atelier-model";
+import { composerFeuille, genererVue, type FeuilleComposee, type ModeleAtelier, type OptionsGeneration, type ParamsFeuille, type ParamsVue, type Projet, type VueGeneree } from "@parcours/atelier-model";
 import type { DemandeGeneration } from "./generation.worker";
 
 type SansId<T> = T extends unknown ? Omit<T, "id"> : never;
@@ -48,8 +48,8 @@ function demander<T>(d: SansId<DemandeGeneration>, local: () => T): Promise<T> {
   });
 }
 
-export const genererVueHorsFil = (etat: ModeleAtelier, params: ParamsVue, definitionId: string): Promise<VueGeneree> =>
-  demander({ nature: "vue", etat, params, definitionId }, () => genererVue(etat, params, definitionId));
+export const genererVueHorsFil = (etat: ModeleAtelier, params: ParamsVue, definitionId: string, options: OptionsGeneration = {}): Promise<VueGeneree> =>
+  demander({ nature: "vue", etat, params, definitionId, options }, () => genererVue(etat, params, definitionId, options));
 
-export const composerFeuilleHorsFil = (etat: ModeleAtelier, params: ParamsFeuille, revision: number, projet: Projet, definitionId: string): Promise<FeuilleComposee> =>
-  demander({ nature: "feuille", etat, params, revision, projet, definitionId }, () => composerFeuille(etat, params, revision, projet, definitionId));
+export const composerFeuilleHorsFil = (etat: ModeleAtelier, params: ParamsFeuille, revision: number, projet: Projet, definitionId: string, options: OptionsGeneration = {}): Promise<FeuilleComposee> =>
+  demander({ nature: "feuille", etat, params, revision, projet, definitionId, options }, () => composerFeuille(etat, params, revision, projet, definitionId, options));

@@ -109,7 +109,7 @@ await mesurer("import IFC du P.118 (lecture web-ifc, 4 lots, relecture du modèl
   await page.locator(".echanges-rapport").waitFor({ timeout: 120000 });
 });
 const lignes = await page.locator(".echanges-rapport tbody tr").evaluateAll((trs) => Object.fromEntries(trs.map((tr) => [tr.querySelector("th").textContent, [...tr.querySelectorAll("td")].map((t) => t.textContent)])));
-check("rapport d'import : IfcWall lus = importés = murs du P.118 ; ouvertures et annotations déclarées non importées", lignes["IfcWall"]?.[0] === String(murs) && lignes["IfcWall"]?.[1] === String(murs) && lignes["IfcOpeningElement"]?.[1] === "0" && !!lignes["IfcAnnotation"], JSON.stringify(lignes).slice(0, 300));
+check("rapport d'import : IfcWall lus = importés = murs du P.118 ; ouvertures déclarées non importées, annotations reprises en textes et traits", lignes["IfcWall"]?.[0] === String(murs) && lignes["IfcWall"]?.[1] === String(murs) && lignes["IfcOpeningElement"]?.[1] === "0" && !!lignes["IfcAnnotation"], JSON.stringify(lignes).slice(0, 300));
 check("rapport d'import : repère déclaré (projet sans parcelle : coordonnées gardées)", (await page.locator(".echanges-rapport .rapport-remarques").textContent()).includes("pas de parcelle"));
 await page.screenshot({ path: `${OUT}/6-import-ifc-rapport.png` });
 await fermerRapport();
@@ -162,9 +162,10 @@ await page.screenshot({ path: `${OUT}/6-import-dxf-rapport.png` });
 await fermerRapport();
 await enregistre();
 const avecDxf = await modele(cible);
-const esquisses = Object.values(avecDxf.objets).filter((o) => o.classe === "esquisse");
+// Esquisses venues du DXF (le projet porte aussi les traits des annotations IFC importées plus haut).
+const esquisses = Object.values(avecDxf.objets).filter((o) => o.classe === "esquisse" && o.id.startsWith("dxf-"));
 const ligne = esquisses.find((o) => o.params.forme === "ligne");
-check("modèle : esquisses en mètres (8 m), calques « DXF · … », un groupe", ligne && Math.abs(ligne.params.points[1].x - 8) < 1e-9 && Object.values(avecDxf.calques).some((c) => c.nom === "DXF · Murs") && Object.values(avecDxf.groupes).some((g) => g.nom.includes("terrasse.dxf")));
+check("modèle : esquisses en mètres (8 m), calques « DXF · … », un groupe", ligne && Math.abs(ligne.params.points[1].x - 8) < 1e-9 && Object.values(avecDxf.calques).some((c) => c.nom === "DXF · Murs") && Object.values(avecDxf.groupes).some((g) => g.nom.includes("terrasse.dxf")), `${esquisses.length} esquisse(s) · ${JSON.stringify(ligne?.params.points ?? null)} · calques ${Object.values(avecDxf.calques).map((c) => c.nom).join(", ")} · groupes ${Object.values(avecDxf.groupes).map((g) => g.nom).join(", ")} · r${avecDxf.revision ?? "?"}`);
 
 // Téléphone.
 await page.setViewportSize({ width: 390, height: 844 });

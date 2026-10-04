@@ -1,6 +1,6 @@
 # Matrice d'échanges de l'Atelier
 
-État au lot 6 (4 octobre 2026). Une ligne par classe du modèle typé, une colonne par format. Chaque échange produit
+État au lot 6, complété (4 octobre 2026, D-025). Une ligne par classe du modèle typé, une colonne par format. Chaque échange produit
 un rapport (par classe : effectifs source / cible, représentation, remarques ; pertes et références à réparer) :
 rien n'est omis en silence. Code : `packages/atelier-model/src/echanges/`, `documents/`, `apps/api/src/lib/atelier-ifc.ts`.
 
@@ -33,11 +33,11 @@ Légende : **C** conservé · **T** transformé (dit au rapport) · **O** omis (
 | zone | T `IfcZone` sans géométrie, membres par `IfcRelAssignsToGroup` | O (pas de géométrie) | T : contour | — | C |
 | solide | C `IfcBuildingElementProxy`, rôle en `ObjectType` et `Fadi_Solide.Role` (jamais reclassé) | T : représentation importée | T | — | C |
 | garde-corps | C `IfcRailing` `GUARDRAIL`, `Fadi_GardeCorps` | T : représentation importée | T | — | C |
-| bloc (occurrence) | composant : C `IfcBuildingElementProxy` + `Fadi_Composant` ; bloc 2D : O | — | T : contenu dessiné à chaque occurrence | O : `INSERT` compté, non décomposé | C |
-| objet importé | T `IfcBuildingElementProxy`, GlobalId d'origine, classe d'origine en `ObjectType` et `Fadi_Import` | O si GlobalId déjà présent (pas de doublon) | T : coupé et vu comme toute matière | — | C |
-| cotation | T `IfcAnnotation` `DIMENSION` (export seulement ; valeur et rattachements non portés) | O : `IfcAnnotation` comptée | C | O : `DIMENSION` comptée | C |
-| texte, étiquette | T `IfcAnnotation` `TEXT` (export seulement) | O | C | C `TEXT`, `MTEXT` → `texte` (position, contenu ; hauteur, rotation, style non portés) | C |
-| esquisse | T `IfcAnnotation` (polylignes ; arcs et cercles omis) | O | C | C `LINE`, `LWPOLYLINE` (arrondis discrétisés), `POLYLINE` 2D, `CIRCLE`, `ARC` ; `HATCH`, `SPLINE`, 3D : O comptés | C |
+| bloc (occurrence) | composant : C `IfcBuildingElementProxy` + `Fadi_Composant` ; bloc 2D : O | — | T : contenu dessiné à chaque occurrence | T : `INSERT` décomposé en esquisses et textes (point de base, échelles, rotation, réseau, blocs imbriqués ; le bloc n'est pas recréé) ; `XREF` : O (fichier non fourni) | C |
+| objet importé | T `IfcBuildingElementProxy`, GlobalId d'origine, classe d'origine en `ObjectType` et `Fadi_Import` | C : maillage, classe, GlobalId ; type, matériaux et propriétés simples en propriétés importées ; O si GlobalId déjà présent (pas de doublon) | T : coupé et vu comme toute matière | — | C |
+| cotation | T `IfcAnnotation` `DIMENSION` (export seulement ; valeur et rattachements non portés) | T : `IfcAnnotation` → traits (esquisses) et textes, non associatifs | C | T : `DIMENSION` linéaires et alignées → cotes non associatives (texte imposé non repris) ; angulaires, radiales, d'ordonnée : O | C |
+| texte, étiquette | T `IfcAnnotation` `TEXT` | T `IfcTextLiteral` → `texte` (position, contenu) | C | C `TEXT`, `MTEXT`, `ATTRIB` → `texte` (position, contenu ; hauteur, rotation, style non portés) | C |
+| esquisse | T `IfcAnnotation` (polylignes ; arcs et cercles omis) | O | C | C `LINE`, `LWPOLYLINE` (arrondis discrétisés), `POLYLINE` 2D, `CIRCLE`, `ARC` ; `HATCH` → hachure (contour extérieur, motif nommé ; îlots, arêtes elliptiques ou splines : O) ; `SPLINE`, 3D : O comptés | C |
 | référence de plan | O (fond de dessin) | — | T | C : cadre du dessin (`reference-plan`, calque « Référence DXF »), contenu groupé | C |
 | contrainte, référence | O (comptées « à réparer » au rapport s'il y en a) | — | — | — | C |
 | hypothèses, sources, structure déclarée | C `Fadi_Hypotheses`, `Fadi_Sources`, `Fadi_StructureDeclaree` (statut explicite, « à confirmer ») | — | — | — | C |
@@ -65,7 +65,9 @@ Légende : **C** conservé · **T** transformé (dit au rapport) · **O** omis (
 
 ## Hors périmètre (déclaré)
 
-`IfcMaterialLayerSet` (aucune composition de paroi n'est connue), `IfcStairFlight`, bibliothèques (`IfcProjectLibrary`),
-calques IFC (`IfcPresentationLayerWithStyle`), annotations IFC à l'import, blocs DXF (`INSERT`) et `XREF`, DWG.
+`IfcMaterialLayerSetUsage` (les couches d'un type composé sont exportées en `IfcMaterialLayerSet`, D-026), `IfcStairFlight`, bibliothèques
+(`IfcProjectLibrary`), calques IFC (`IfcPresentationLayerWithStyle`), `XREF` DXF (le fichier référencé n'est pas fourni :
+signalé au rapport), DWG. À l'import IFC, le type, les matériaux (couches et épaisseurs) et les propriétés simples sont
+repris en propriétés importées « déclarées » des représentations, jamais réinterprétés.
 Conformité IFC **testée**, jamais « certifiée » (D-006) ; l'ouverture dans un visualiseur tiers est un constat du
 maître d'ouvrage (acceptation du lot 6).
