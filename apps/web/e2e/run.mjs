@@ -92,6 +92,7 @@ const PLAN = [
   { fichier: "11-accessibilite.mjs", segment: "ecrans", lit: ["exampleUrl", "variantUrl", "atelierUrl"], produit: [] },
   { fichier: "02-parcours-etapes.mjs", segment: "telephone", lit: ["projectUrl", "exampleUrl"], produit: [] },
   { fichier: "14-nouvel-atelier.mjs", segment: "ouverture", lit: ["exampleUrl"], produit: [] },
+  { fichier: "14-nouvel-atelier.mjs", segment: "gestes", lit: ["email", "atelierUrl", "atelierPid"], produit: [] },
   { fichier: "12-mesures.mjs", segment: "bilan", lit: [], produit: [] },
 ];
 

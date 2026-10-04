@@ -88,7 +88,9 @@ export function PanneauProblemes({
         <span className={`atl-compte ${resume.conflits ? "atl-r" : "atl-i"}`} data-testid="atl-compte-conflits">
           Conflits : {resume.conflits || "aucun"}
         </span>
-        <span className={`atl-compte ${resume.enAttente ? "atl-a" : "atl-i"}`}>{resume.enAttente} lot(s) en attente d'envoi</span>
+        <span className={`atl-compte ${resume.enAttente ? "atl-a" : "atl-i"}`} data-testid="atl-compte-attente">
+          {resume.enAttente} lot(s) en attente d'envoi
+        </span>
         <button type="button" className="atl-bascule" aria-expanded={ouvert} aria-controls="atl-panneau-corps" onClick={onBasculer} data-testid="atl-panneau-detail">
           {ouvert ? "Replier" : "Détail"}
         </button>
