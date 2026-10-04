@@ -744,3 +744,65 @@ export async function mesures3d(sc) {
   await ctxTel.close();
   check("nouvel atelier 3D : aucune erreur JavaScript pendant les mesures et le toucher", consoleErrors.length === erreursAvant, consoleErrors.slice(erreursAvant).join(" | "));
 }
+
+/**
+ * Vues techniques de travail (lot 3b, L3b.4) sur la copie de travail de P.118 : depuis la vue 3D, plan (coupe
+ * horizontale), coupes nord–sud, est–ouest et selon un plan quelconque, quatre façades, calculés depuis
+ * `core-geometry` ; aucune vue vide, position réglable, sélection d'un objet au clic, accessibilité ordinateur et
+ * téléphone. Vues de travail sans export (documents : lot 5).
+ */
+export async function vuesTechniques(sc) {
+  const { OUT, page, consoleErrors, check, axeCheck } = sc;
+  const { atelierUrl } = sc;
+  const erreursAvant = consoleErrors.length;
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${atelierUrl}?module=atelier&version=nouveau`);
+  await page.waitForSelector('[data-testid="atelier-interface"]', { timeout: 30000 });
+  await page.locator('[data-testid="atl-vue-3d"]').click();
+  await page.waitForFunction(() => Number(document.querySelector('[data-testid="atl-3d-etat"]')?.getAttribute("data-triangles")) > 0, null, { timeout: 30000 });
+  await page.locator('[data-testid="atl-3d-niveaux-tous"]').click();
+  await page.locator('[data-testid="atl-3d-vues"]').click();
+  const panneau = page.locator('[data-testid="atl-vue-technique"]');
+  await panneau.waitFor({ timeout: 10000 });
+  const choix = page.locator('[data-testid="atl-vue-technique-type"]');
+  const types = await choix.locator("option").evaluateAll((els) => els.map((e) => e.value));
+  const vides = [];
+  const comptes = [];
+  for (const t of types) {
+    await choix.selectOption(t);
+    await page.waitForFunction((t) => document.querySelector('[data-testid="atl-vue-technique"]')?.getAttribute("data-type") === t, t);
+    const n = Number(await panneau.getAttribute("data-formes"));
+    comptes.push(`${t} ${n}`);
+    if (!(n > 0)) vides.push(t);
+  }
+  check(`nouvel atelier vues techniques : ${types.length} vues (plan, 3 coupes, 4 façades) calculées sur P.118, aucune vide`, types.length === 8 && vides.length === 0, comptes.join(" · "));
+
+  // Coupe est–ouest : la position suit le curseur et la vue est recalculée.
+  await choix.selectOption("coupe-eo");
+  const curseur = page.locator('[data-testid="atl-vue-technique-position"]');
+  const titreAvant = (await panneau.locator(".atl-3d-etat").textContent()) ?? "";
+  await curseur.evaluate((el) => {
+    const v = String(Number(el.min) + (Number(el.max) - Number(el.min)) / 4);
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(el, v);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  const titreApres = (await panneau.locator(".atl-3d-etat").textContent()) ?? "";
+  check("nouvel atelier vues techniques : position de coupe réglable, titre et vue recalculés", titreApres !== titreAvant && Number(await panneau.getAttribute("data-formes")) > 0, `${titreAvant} → ${titreApres}`);
+
+  // Sélection au clic sur une forme coupée de la façade sud.
+  await choix.selectOption("facade-sud");
+  const forme = panneau.locator("svg path[data-objet]").last();
+  const id = await forme.getAttribute("data-objet");
+  await forme.click({ force: true });
+  const surligne = await panneau.locator(`svg path[data-objet="${id}"]`).first().getAttribute("stroke");
+  check("nouvel atelier vues techniques : un clic sur une forme sélectionne l'objet (surbrillance)", surligne === "#e8833a", `${id} : ${surligne}`);
+
+  await axeCheck(page, "nouvel atelier, vues techniques (ordinateur)");
+  await page.screenshot({ path: `${OUT}/nouvel-atelier-vues-techniques-desktop.png` });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(400);
+  await axeCheck(page, "nouvel atelier, vues techniques (téléphone)");
+  await page.screenshot({ path: `${OUT}/nouvel-atelier-vues-techniques-mobile.png` });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  check("nouvel atelier vues techniques : aucune erreur JavaScript", consoleErrors.length === erreursAvant, consoleErrors.slice(erreursAvant).join(" | "));
+}

@@ -82,3 +82,25 @@
 .atl[data-immersif="true"] .atl-3d-cadre {
   min-height: 70vh;
 }
+/* Vues techniques (L3b.4). */
+.atl-3d-vues {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid #c9d3cd;
+  padding-top: 6px;
+}
+.atl-3d-svg {
+  width: 100%;
+  height: 360px;
+  background: #ffffff;
+  border-radius: 8px;
+}
+.atl-3d-svg path {
+  cursor: pointer;
+}
+@media (max-width: 760px) {
+  .atl-3d-svg {
+    height: 260px;
+  }
+}

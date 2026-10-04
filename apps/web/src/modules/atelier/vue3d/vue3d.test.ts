@@ -89,3 +89,44 @@ describe("mesures de trame (L3b.3)", () => {
     expect(t.quantile(0.95)).toBe(1);
   });
 });
+
+describe("vues techniques (L3b.4) : plan, coupes, façades depuis core-geometry", () => {
+  const etat = () => etatDeTest(mur("M1", [0, 0], [6, 0]), porte, mur("M2", [6, 0], [6, 4]), dalle);
+  const niveaux = [{ id: "rdc", nom: "Rez", elevation: 0 }];
+  it("coupe nord–sud à x = 3 : linteau de M1 coupé, partie ouest de M1 vue au-delà, M2 (côté spectateur) absent ; lignes de niveau", async () => {
+    const { vueTechnique } = await import("./vues");
+    const s = sceneDuModele(etat(), { niveaux: ["rdc"], mode: "volume" });
+    const v = vueTechnique(s, niveaux, { type: "coupe-ns", position: 3 });
+    const coupes = v.formes.filter((f) => f.style === "coupe");
+    // À x = 3 (milieu de la porte de 1 m) : seul le linteau de M1 (2 → 2,5 m) et la dalle sont coupés.
+    expect(coupes.filter((f) => f.objetId === "M1").map((f) => [f.points[0]?.[1], f.points[2]?.[1]])).toEqual([[2, 2.5]]);
+    expect(coupes.some((f) => f.objetId === "D1")).toBe(true);
+    // Regard vers l'ouest : la partie de M1 à l'ouest de la porte (x 0 → 2,5) est vue ; M2 (x = 6) est entre le spectateur et le plan.
+    expect(v.formes.find((f) => f.objetId === "M1" && f.style === "vue" && f.points[0]?.[1] === 0)).toBeDefined();
+    expect(v.formes.some((f) => f.objetId === "M2")).toBe(false);
+    expect(v.niveaux).toEqual([{ v: 0, nom: "Rez" }]);
+    expect(v.titre).toBe("Coupe nord–sud à x = 3,00 m, vue depuis l'est");
+  });
+  it("coupe est–ouest, coupe quelconque à 0° identique à l'est–ouest au centre ; plan à 1 m : murs coupés, dalle vue", async () => {
+    const { vueTechnique } = await import("./vues");
+    const s = sceneDuModele(etat(), { niveaux: ["rdc"], mode: "volume" });
+    const eo = vueTechnique(s, niveaux, { type: "coupe-eo", position: 2 });
+    const q = vueTechnique(s, niveaux, { type: "coupe-quelconque", position: 0, angle: 0 });
+    const cle = (v: typeof eo) => v.formes.filter((f) => f.style === "coupe").map((f) => f.objetId).sort();
+    expect(cle(eo)).toEqual(["D1", "M2"]);
+    expect(cle(q)).toEqual(cle(vueTechnique(s, niveaux, { type: "coupe-eo", position: 1.95 })));
+    const plan = vueTechnique(s, niveaux, { type: "plan", position: 1 });
+    expect(plan.formes.filter((f) => f.style === "coupe").map((f) => f.objetId).sort()).toEqual(["M1", "M1", "M2"]);
+    expect(plan.formes.find((f) => f.objetId === "D1")?.style).toBe("vue");
+  });
+  it("façade sud : murs projetés, porte dessinée devant son mur ; façade est : M2 devant M1", async () => {
+    const { vueTechnique } = await import("./vues");
+    const s = sceneDuModele(etat(), { niveaux: ["rdc"], mode: "volume" });
+    const sud = vueTechnique(s, niveaux, { type: "facade-sud", position: 0 });
+    const ordre = sud.formes.map((f) => f.objetId);
+    expect(ordre.lastIndexOf("P1")).toBeGreaterThan(ordre.lastIndexOf("M1"));
+    const est = vueTechnique(s, niveaux, { type: "facade-est", position: 0 });
+    const o2 = est.formes.map((f) => f.objetId);
+    expect(o2.lastIndexOf("M2")).toBeGreaterThan(o2.lastIndexOf("M1"));
+  });
+});

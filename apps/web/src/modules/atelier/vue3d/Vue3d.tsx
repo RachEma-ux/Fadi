@@ -20,6 +20,7 @@ import { arrondirGlisser, ciblePoussee, commandesExtrusion, commandesPoussee, co
 import { MesuresTrames } from "./mesures";
 import { creerRendu, type InfoRendu, type Moteur, type Rendu3d } from "./rendu";
 import { hauteurCoupeParDefaut, LIBELLES_MODE, MODES_3D, niveauxDuModele, sceneDuModele, type Mode3d } from "./scene";
+import { VuesTechniques } from "./VuesTechniques";
 import "./vue3d.css";
 
 const CLE_MOTEUR = "fadi.atelier.3d.moteur";
@@ -62,6 +63,7 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
   const [echec, setEchec] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode3d>("volume");
   const [portee, setPortee] = useState<"tous" | "actif">("tous");
+  const [vuesOuvertes, setVuesOuvertes] = useState(false);
   const [coupe, setCoupe] = useState<number | null>(null);
   const [info, setInfo] = useState<InfoRendu | null>(null);
   const [erreurs, setErreurs] = useState<readonly ErreurLisible[]>([]);
@@ -80,6 +82,9 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
   const scene = useMemo(() => (etat ? sceneDuModele(etat, { niveaux: ids, mode }) : null), [etat, ids, mode]);
   const hCoupe = mode === "coupe" ? (coupe ?? (etat ? hauteurCoupeParDefaut(etat, niveauActif, scene?.decalages) : 1.2)) : null;
   const selection = useMemo(() => new Set(sel.ids), [sel]);
+  // Vues techniques (L3b.4) : niveaux à leur altitude (mode volume), quel que soit le mode 3D.
+  const sceneVues = useMemo(() => (vuesOuvertes && etat ? (mode === "volume" ? scene : sceneDuModele(etat, { niveaux: ids, mode: "volume" })) : null), [vuesOuvertes, etat, ids, mode, scene]);
+  const niveauxVues = useMemo(() => niveaux.filter((n) => ids.includes(n.id)).map((n) => ({ id: n.id, nom: n.params.nom, elevation: n.params.elevation.value })), [niveaux, ids]);
   const zSol = useMemo(() => {
     const n = niveaux.find((x) => x.id === niveauActif);
     return (n?.params.elevation.value ?? 0) + (scene?.decalages[niveauActif ?? ""] ?? 0);
@@ -392,6 +397,9 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
             <input type="range" min={Math.floor(zMin)} max={Math.ceil(zMax)} step={0.1} value={hCoupe} onChange={(e) => setCoupe(Number(e.target.value))} data-testid="atl-3d-coupe" />
           </label>
         )}
+        <button type="button" className="atl-petit-bouton" aria-pressed={vuesOuvertes} onClick={() => setVuesOuvertes((v) => !v)} data-testid="atl-3d-vues">
+          Vue technique
+        </button>
         <button type="button" className="atl-petit-bouton" onClick={recentrer} data-testid="atl-3d-recentrer">
           Recentrer
         </button>
@@ -449,6 +457,18 @@ export function Vue3d({ ctx, vue, pilote }: { ctx: ContexteAtelier; vue: EtatInt
         {info ? `${info.moteur === "webgpu" ? "WebGPU" : "WebGL2"} · ${info.objets} objet(s) · ${info.triangles} triangle(s)` : "Préparation de la vue 3D…"}
         {scene && scene.diagnostics.length > 0 ? ` · ${scene.diagnostics.length} élément(s) signalé(s)` : ""}
       </p>
+      {sceneVues && etat && (
+        <VuesTechniques
+          scene={sceneVues}
+          niveaux={niveauxVues}
+          hauteurPlan={hauteurCoupeParDefaut(etat, niveauActif)}
+          selection={selection}
+          onChoisir={(id, basculer) => {
+            ctx.selection.choisir([id], basculer ? "basculer" : "remplacer");
+            setAnnonce(`Sélection : ${nomObjet(id)}.`);
+          }}
+        />
+      )}
       {scene && scene.diagnostics.length > 0 && (
         <details className="atl-3d-diagnostics">
           <summary>Éléments signalés par la géométrie ({scene.diagnostics.length})</summary>
