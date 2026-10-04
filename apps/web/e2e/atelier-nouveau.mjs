@@ -273,7 +273,8 @@ await mesurer("pousser / tirer un mur → hauteur enregistrée", async () => {
   await page.mouse.down();
   for (let k = 1; k <= 10; k++) await page.mouse.move(c3.x + pos.x, c3.y + pos.y - k * 6);
   await page.mouse.up();
-  await page.waitForFunction(() => document.querySelector(".barre-sync")?.textContent?.startsWith("Enregistré"), null, { timeout: 10000 });
+  // Le geste part en un lot ; sur une machine de CI chargée, l'enregistrement peut dépasser quelques secondes.
+  await page.waitForFunction(() => document.querySelector(".barre-sync")?.textContent?.startsWith("Enregistré"), null, { timeout: 30000 });
 });
 const hauteurApres = await page.locator('.inspecteur input[id$="-hauteur"]').inputValue().catch(() => "");
 check("pousser / tirer : la hauteur du mur a augmenté (> 3 m) et est enregistrée", Number(hauteurApres.replace(",", ".")) > 3, `${hauteurApres} ; ${murId} à ${JSON.stringify(pos)} ; sonde ${await page.evaluate((p) => window.fadiMesures3D.sonder(p.x, p.y), pos)}`);

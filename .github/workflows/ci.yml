@@ -132,7 +132,8 @@ jobs:
         if: failure()
         run: |
           grep -n "^✗" e2e.log | head -n 8 | while IFS= read -r l; do echo "::error title=e2e::${l:0:900}"; done
-          echo "::error title=e2e-fin::$(tail -n 30 e2e.log | tr '\n' '|' | cut -c1-900)"
+          echo "::error title=e2e-fin::$(tail -n 12 e2e.log | tr '\n' '|' | cut -c1-900)"
+          grep -n -E "Error|Timeout|exceeded" e2e.log | tail -n 4 | while IFS= read -r l; do echo "::error title=e2e-erreur::${l:0:900}"; done
           echo "::error title=api-log::$(tail -n 15 api.log | tr '\n' '|' | cut -c1-900)"
       - name: Journaux des serveurs
         if: failure()
