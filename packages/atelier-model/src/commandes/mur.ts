@@ -16,7 +16,52 @@ function murDe(etat: ModeleAtelier, id: string): Occurrence<"mur"> {
   return o;
 }
 
+/**
+ * Scission en plusieurs points (D-043) : `positions` (liste de t, 0 < t < 1, sur le mur d'origine) — scissions
+ * successives sur le dernier morceau ; les références « à réparer » proposent tous les morceaux.
+ */
+function scinderMurPlusieurs(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande): ResultatCommande {
+  const id = lire.chaine(p, "id");
+  murDe(etat, id);
+  const brut = p["positions"] as unknown[];
+  if (!brut.length || brut.length > 100 || !brut.every((t) => typeof t === "number" && t > 0 && t < 1)) throw new ErreurCommande("invalide", "positions", "positions : de 1 à 100 nombres t, 0 < t < 1");
+  const ts = [...new Set(brut as number[])].sort((x, y) => x - y);
+  let courant = etat;
+  let reste = id;
+  let precedent = 0;
+  const morceaux: string[] = [];
+  let effets = effetsVides();
+  for (const t of ts) {
+    const tLocal = (t - precedent) / (1 - precedent);
+    const r = scinderMur(courant, { id: reste, t: tLocal }, ctx);
+    courant = r.etat;
+    const [g, d] = r.effets.crees as [string, string];
+    morceaux.push(g);
+    reste = d;
+    precedent = t;
+    effets = {
+      ...effets,
+      crees: [...effets.crees.filter((x) => !r.effets.supprimes.includes(x)), ...r.effets.crees],
+      supprimes: [...effets.supprimes, ...r.effets.supprimes.filter((x) => !effets.crees.includes(x))],
+      modifies: [...new Set([...effets.modifies, ...r.effets.modifies])],
+      niveauxTouches: [...new Set([...effets.niveauxTouches, ...r.effets.niveauxTouches])],
+      problemes: [...effets.problemes, ...r.effets.problemes],
+      referencesAReparer: [...new Set([...effets.referencesAReparer, ...r.effets.referencesAReparer])],
+    };
+  }
+  morceaux.push(reste);
+  // Les références qui visaient le mur d'origine proposent chacun des morceaux.
+  let references = courant.references;
+  for (const ref of Object.values(courant.references)) {
+    if (ref.etat !== "a-reparer" || !ref.propositions.some((x) => morceaux.includes(x.objetId) || x.objetId === id)) continue;
+    const caracteristique = ref.propositions[0]?.caracteristique ?? "axe";
+    references = { ...references, [ref.id]: { ...ref, propositions: morceaux.map((m) => ({ objetId: m, caracteristique })) } };
+  }
+  return { etat: { ...courant, references }, effets };
+}
+
 export function scinderMur(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande): ResultatCommande {
+  if (Array.isArray(p["positions"])) return scinderMurPlusieurs(etat, p, ctx);
   const id = lire.chaine(p, "id");
   const mur = murDe(etat, id);
   const calque = mur.calqueId ? etat.calques[mur.calqueId] : null;

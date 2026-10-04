@@ -377,6 +377,13 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
   const apresFormes = await compterFormes();
   check("polygone régulier (6 côtés renseignés) et cercle par trois points tracés", apresFormes.hex === avantFormes.hex + 1 && apresFormes.cercles === avantFormes.cercles + 1, `${JSON.stringify(avantFormes)} → ${JSON.stringify(apresFormes)}`);
+  // Scinder un mur en parts égales (D-043).
+  await selectionner("croix-v");
+  await page.locator('[data-scinder="parts"]').fill("4");
+  await page.locator('[data-scinder="valider"]').click();
+  await attendreEnregistre().catch(() => {});
+  const morceaux = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "mur" && o.niveauId === nv && Math.abs(o.params.a.x - 302) < 1e-6 && Math.abs(o.params.b.x - 302) < 1e-6);
+  check("scinder un mur en 4 parts égales depuis l'inspecteur", morceaux.length === 4 && morceaux.every((o) => Math.abs(Math.abs(o.params.b.y - o.params.a.y) - 1) < 1e-6), `${morceaux.length} morceau(x)`);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.

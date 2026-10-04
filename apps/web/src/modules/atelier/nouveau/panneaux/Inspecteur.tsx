@@ -124,6 +124,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <OuvertureHote o={o as Occurrence<"porte">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       <GroupeSelection sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
+      {o.classe === "mur" && !desactive && <ScinderEnParts o={o as Occurrence<"mur">} onCommandes={onCommandes} />}
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
       {o.classe === "esquisse" && <Contraintes sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
@@ -486,6 +487,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   repeter: [{ cle: "repetitions", libelle: "Nombre de copies" }, { cle: "pasX", libelle: "Pas en x", unite: "m" }, { cle: "pasY", libelle: "Pas en y", unite: "m" }],
   raccorder: [{ cle: "rayon", libelle: "Rayon", unite: "m" }],
   "polygone-regulier": [{ cle: "cotes", libelle: "Nombre de côtés" }],
+  prolonger: [{ cle: "longueurProlongement", libelle: "Longueur (sans limite)", unite: "m" }],
   chanfreiner: [{ cle: "distanceChanfrein", libelle: "Distance", unite: "m" }],
 };
 
@@ -722,6 +724,22 @@ function GroupeSelection({ sel, etat, readOnly, onCommandes }: { sel: Occurrence
         </button>
       </span>
     </details>
+  );
+}
+
+/** Scinder un mur en N parts égales (D-043, `mur.scinder` à plusieurs positions). */
+function ScinderEnParts({ o, onCommandes }: { o: Occurrence<"mur">; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const [n, setN] = useState("");
+  const parts = Number(n);
+  const valide = Number.isInteger(parts) && parts >= 2 && parts <= 100;
+  return (
+    <div className="inspecteur-scinder">
+      <label htmlFor={`scinder-${o.id}`}>Scinder en parts égales</label>
+      <input id={`scinder-${o.id}`} type="number" min={2} max={100} step={1} value={n} placeholder="nombre de parts" onChange={(e) => setN(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-scinder="parts" />
+      <button type="button" disabled={!valide} onClick={() => { onCommandes([{ type: "mur.scinder", params: { id: o.id, positions: Array.from({ length: parts - 1 }, (_, k) => (k + 1) / parts) } }], `Scinder le mur en ${parts} parts`); setN(""); }} data-scinder="valider">
+        Scinder
+      </button>
+    </div>
   );
 }
 

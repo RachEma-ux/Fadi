@@ -177,12 +177,12 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
     case "tourner": {
       if (ui.selection.length === 0) return attendre([], "Sélectionnez d'abord des objets.");
       if (pts.length === 0) return attendre([point], "Cliquez un point de référence, ou tapez l'angle puis Entrée.");
-      if (pts.length === 1) return attendre([...pts, point], "Cliquez la nouvelle direction.");
+      if (pts.length === 1) return attendre([...pts, point], "Cliquez la nouvelle direction (Alt : garder l'original).");
       const c = pts[0]!;
       const a0 = Math.atan2(pts[1]!.y - c.y, pts[1]!.x - c.x);
       const a1 = Math.atan2(point.y - c.y, point.x - c.x);
       const angle = ((a1 - a0) * 180) / Math.PI;
-      return emettre([{ type: "transformer.tourner", params: { centre: c, angle: { value: angle, unit: "deg" } }, cibles: ui.selection }], `Tourner ${fmt(angle)}°`);
+      return emettre([{ type: "transformer.tourner", params: { centre: c, angle: { value: angle, unit: "deg" }, copie: options.alt === true }, cibles: ui.selection }], `Tourner ${fmt(angle)}°${options.alt ? " (copie)" : ""}`);
     }
     case "miroir": {
       if (ui.selection.length === 0) return attendre([], "Sélectionnez d'abord des objets.");
@@ -210,7 +210,17 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
     case "prolonger": {
       const id = ui.selection[0];
       if (!id) return attendre([], "Sélectionnez d'abord l'objet à ajuster ou prolonger.");
-      if (!options.objetSous || options.objetSous === id) return attendre([], "Cliquez l'objet limite.");
+      // Prolonger d'une longueur donnée (D-043) : longueur renseignée et clic près de l'extrémité à prolonger.
+      const longueur = nombre(ui, "longueurProlongement", 0);
+      const o = etat.objets[id];
+      if (outil === "prolonger" && longueur > 0 && o && (!options.objetSous || options.objetSous === id)) {
+        const ext = o.classe === "esquisse" ? [o.params.points[0], o.params.points[o.params.points.length - 1]] : o.classe === "mur" || o.classe === "escalier" ? [o.params.a, o.params.b] : null;
+        if (ext && ext[0] && ext[1]) {
+          const extremite = distance(point, ext[0]) <= distance(point, ext[1]) ? "a" : "b";
+          return emettre([{ type: "transformer.prolonger", params: { id, extremite, longueur: m(longueur) } }], `Prolonger de ${fmt(longueur)} m`);
+        }
+      }
+      if (!options.objetSous || options.objetSous === id) return attendre([], outil === "prolonger" ? "Cliquez l'objet limite, ou renseignez une longueur et cliquez l'extrémité à prolonger." : "Cliquez l'objet limite.");
       return emettre([{ type: `transformer.${outil}`, params: { id, limiteId: options.objetSous } }], outil === "ajuster" ? "Ajuster" : "Prolonger");
     }
     case "scinder": {

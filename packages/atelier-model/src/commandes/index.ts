@@ -92,6 +92,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "transformer.decaler": reducteursTransformer.decaler,
   "transformer.repeter": reducteursTransformer.repeter,
   "transformer.decomposer": reducteursTransformer.decomposer,
+  "transformer.joindre": reducteursTransformer.joindre,
   "transformer.pointsDeControle": reducteursTransformer.pointsDeControle,
   "transformer.raccorder": reducteursTransformer.raccorder,
   "transformer.chanfreiner": reducteursTransformer.chanfreiner,

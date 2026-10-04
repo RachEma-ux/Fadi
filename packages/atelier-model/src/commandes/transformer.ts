@@ -222,7 +222,10 @@ export const reducteursTransformer = {
     return niveauCible ? versNiveau(r, sel.map((o) => o.id), niveauCible) : r;
   },
   tourner(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
-    return appliquerEnPlace(etat, cibles(etat, p, c), lireTransformation(p, "rotation"), ctx);
+    // « copie » : garder l'original et tourner une copie (D-043).
+    const sel = cibles(etat, p, c);
+    const t = lireTransformation(p, "rotation");
+    return lire.booleen(p, "copie", false) ? copier(etat, sel, t, ctx) : appliquerEnPlace(etat, sel, t, ctx);
   },
   miroir(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
     const sel = cibles(etat, p, c);
@@ -230,9 +233,33 @@ export const reducteursTransformer = {
     return lire.booleen(p, "copie", false) ? copier(etat, sel, t, ctx) : appliquerEnPlace(etat, sel, t, ctx);
   },
   echelle(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
-    return appliquerEnPlace(etat, cibles(etat, p, c), lireTransformation(p, "echelle"), ctx);
+    const sel = cibles(etat, p, c);
+    const t = lireTransformation(p, "echelle");
+    if (lire.booleen(p, "copie", false)) {
+      if (sel.some((o) => o.classe === "escalier")) throw new ErreurCommande("precondition", "cibles", "échelle refusée sur un escalier (dimensions typées)");
+      return copier(etat, sel, t, ctx);
+    }
+    return appliquerEnPlace(etat, sel, t, ctx);
   },
   copier(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
+    // Copies multiples à pas irréguliers (D-043) : `vecteurs` = liste de décalages, une copie par décalage, un seul lot.
+    if (Array.isArray(p["vecteurs"])) {
+      const sel = cibles(etat, p, c);
+      const vecteurs = p["vecteurs"] as unknown[];
+      if (vecteurs.length < 1 || vecteurs.length > 200) throw new ErreurCommande("invalide", "vecteurs", "de 1 à 200 décalages { dx, dy }");
+      let courant = etat;
+      let effets = effetsVides();
+      vecteurs.forEach((v, i) => {
+        const b = (v ?? {}) as Brut;
+        if (typeof b["dx"] !== "number" || typeof b["dy"] !== "number" || !Number.isFinite(b["dx"]) || !Number.isFinite(b["dy"])) throw new ErreurCommande("invalide", `vecteurs[${i}]`, "décalage { dx, dy } en mètres attendu");
+        const r = copier(courant, sel, { type: "translation", dx: b["dx"], dy: b["dy"] }, ctx);
+        courant = r.etat;
+        effets = fusionnerEffets(effets, r.effets);
+      });
+      const niveauCible = lire.chaineOuNull(p, "niveauCible");
+      const r = { etat: courant, effets };
+      return niveauCible ? versNiveau(r, r.effets.crees, niveauCible) : r;
+    }
     const r = copier(etat, cibles(etat, p, c), lireTransformation(p, "translation"), ctx);
     const niveauCible = lire.chaineOuNull(p, "niveauCible");
     return niveauCible ? versNiveau(r, r.effets.crees, niveauCible) : r;
@@ -328,6 +355,19 @@ export const reducteursTransformer = {
     return ajusterOuProlonger(etat, p, ctx, c, "ajuster");
   },
   prolonger(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
+    // Prolongement d'une longueur donnée, sans frontière (D-043) : `longueur` et `extremite` au lieu de `limiteId`.
+    if (p["longueur"] !== undefined) {
+      const id = lire.objet(etat, p, "id");
+      const o = etat.objets[id]!;
+      const axe = axeDe(o);
+      if (!axe) throw new ErreurCommande("precondition", "id", "prolonger : murs, escaliers et lignes seulement");
+      const l = lire.longueur(p, "longueur")!.value;
+      const extremite = lire.enumeration(p, "extremite", ["a", "b"] as const);
+      const dir = normalise(extremite === "a" ? sub(axe[0], axe[1]) : sub(axe[1], axe[0]));
+      const depart = extremite === "a" ? axe[0] : axe[1];
+      const point = add(depart, mul(dir, l));
+      return reducteursTransformer.etirer(etat, { id, extremite, point: pt(Math.round(point.x * 1e9) / 1e9, Math.round(point.y * 1e9) / 1e9) }, ctx, []);
+    }
     return ajusterOuProlonger(etat, p, ctx, c, "prolonger");
   },
   decomposer(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
@@ -363,6 +403,45 @@ export const reducteursTransformer = {
       effets = fusionnerEffets(effets, { ...effetsVides(), crees, supprimes: [o.id], niveauxTouches: o.niveauId ? [o.niveauId] : [] });
     }
     return { etat: courant, effets };
+  },
+  /**
+   * Joindre (D-043, inverse de décomposer) : des lignes et polylignes d'esquisse jointives bout à bout (tolérance du
+   * réducteur) deviennent une polyligne — un polygone si la chaîne se referme. Un même niveau ; sinon refus.
+   */
+  joindre(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
+    void ctx;
+    const sel = cibles(etat, p, c);
+    if (sel.length < 2) throw new ErreurCommande("invalide", "cibles", "joindre : au moins deux lignes ou polylignes");
+    for (const o of sel) if (o.classe !== "esquisse" || !["ligne", "polyligne"].includes(o.params.forme) || o.params.ferme) throw new ErreurCommande("precondition", "cibles", `${o.id} : seules les lignes et polylignes ouvertes se joignent`);
+    if (new Set(sel.map((o) => o.niveauId)).size !== 1) throw new ErreurCommande("precondition", "cibles", "joindre : objets d'un même niveau");
+    for (const o of sel) {
+      if (referencesVers(etat, o.id).length || Object.values(etat.relations).some((r) => r.sourceId === o.id || r.targetId === o.id)) throw new ErreurCommande("precondition", "cibles", `${o.id} est visé par une cote, une contrainte ou une relation : la détacher d'abord (rien n'est réparé en silence)`);
+    }
+    const tol = TOLERANCE_REDUCTEUR * 10;
+    const meme = (u: Point2, v: Point2) => distance(u, v) <= tol;
+    const restes = sel.slice(1).map((o) => [...(o as Occurrence<"esquisse">).params.points]);
+    let chaine = [...(sel[0] as Occurrence<"esquisse">).params.points];
+    while (restes.length) {
+      const i = restes.findIndex((r) => meme(r[0]!, chaine[chaine.length - 1]!) || meme(r[r.length - 1]!, chaine[chaine.length - 1]!) || meme(r[0]!, chaine[0]!) || meme(r[r.length - 1]!, chaine[0]!));
+      if (i < 0) throw new ErreurCommande("precondition", "cibles", "joindre : les objets ne sont pas jointifs bout à bout");
+      const r = restes.splice(i, 1)[0]!;
+      const fin = chaine[chaine.length - 1]!;
+      if (meme(r[0]!, fin)) chaine = [...chaine, ...r.slice(1)];
+      else if (meme(r[r.length - 1]!, fin)) chaine = [...chaine, ...r.slice(0, -1).reverse()];
+      else if (meme(r[r.length - 1]!, chaine[0]!)) chaine = [...r.slice(0, -1), ...chaine];
+      else chaine = [...[...r].reverse().slice(0, -1), ...chaine];
+    }
+    const ferme = chaine.length > 3 && meme(chaine[0]!, chaine[chaine.length - 1]!);
+    if (ferme) chaine = chaine.slice(0, -1);
+    const premier = sel[0] as Occurrence<"esquisse">;
+    const objets = { ...etat.objets };
+    for (const o of sel.slice(1)) delete objets[o.id];
+    objets[premier.id] = { ...premier, params: { ...premier.params, forme: ferme ? "polygone" : "polyligne", points: chaine, ferme } };
+    const effets = effetsVides();
+    effets.modifies.push(premier.id);
+    effets.supprimes.push(...sel.slice(1).map((o) => o.id));
+    if (premier.niveauId) effets.niveauxTouches.push(premier.niveauId);
+    return { etat: { ...etat, objets }, effets };
   },
   pointsDeControle(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
     void c;
@@ -458,7 +537,9 @@ function raccordOuChanfrein(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande,
   if (o1.classe !== "esquisse" || o2.classe !== "esquisse" || o1.params.forme !== "ligne" || o2.params.forme !== "ligne") {
     throw new ErreurCommande("precondition", "id1", `${mode} : deux lignes d'esquisse seulement`);
   }
-  const taille = lire.longueur(p, mode === "raccorder" ? "rayon" : "distance", { strict: true })!.value;
+  // Rayon nul (D-043) : jonction d'angle — les deux lignes sont ajustées ou prolongées jusqu'à leur intersection.
+  const taille = lire.longueur(p, mode === "raccorder" ? "rayon" : "distance", { strict: mode === "chanfreiner" })!.value;
+  if (taille < 0) throw new ErreurCommande("invalide", "rayon", "rayon positif ou nul");
   const [a1, b1] = [o1.params.points[0]!, o1.params.points[1]!];
   const [a2, b2] = [o2.params.points[0]!, o2.params.points[1]!];
   const far = 1e6;
@@ -481,6 +562,12 @@ function raccordOuChanfrein(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande,
   const [n2a, n2b, p2] = raccourcir(a2, b2);
   if (distance(n1a, n1b) <= TOLERANCE_REDUCTEUR || distance(n2a, n2b) <= TOLERANCE_REDUCTEUR) throw new ErreurCommande("precondition", "rayon", "taille trop grande pour ces lignes");
   const objets: Record<string, OccurrenceQuelconque> = { ...etat.objets, [id1]: { ...o1, params: { ...o1.params, points: [n1a, n1b] } }, [id2]: { ...o2, params: { ...o2.params, points: [n2a, n2b] } } };
+  if (mode === "raccorder" && taille === 0) {
+    const e0 = effetsVides();
+    e0.modifies.push(id1, id2);
+    if (o1.niveauId) e0.niveauxTouches.push(o1.niveauId);
+    return { etat: { ...etat, objets }, effets: e0 };
+  }
   const id = ctx.ids.nouveau("esquisse");
   if (mode === "chanfreiner") {
     objets[id] = { ...o1, id, groupeId: null, params: { ...o1.params, forme: "ligne", points: [p1, p2] } };

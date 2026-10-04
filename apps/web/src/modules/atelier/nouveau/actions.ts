@@ -16,7 +16,7 @@ function nombre(ui: EtatUi, cle: string, defaut: number): number {
 }
 
 /** Outils qui agissent dès qu'on les choisit, sur la sélection courante. */
-export const OUTILS_IMMEDIATS = new Set(["supprimer", "decomposer", "grouper", "repeter", "raccorder", "chanfreiner", "extruder"]);
+export const OUTILS_IMMEDIATS = new Set(["supprimer", "decomposer", "joindre", "grouper", "repeter", "raccorder", "chanfreiner", "extruder"]);
 
 /** Contour fermé d'une esquisse (rectangle, cercle, polygone, polyligne fermée), ou null. */
 export function contourEsquisse(etat: ModeleAtelier, id: string): Point2[] | null {
@@ -71,6 +71,9 @@ export function actionImmediate(outil: string, etat: ModeleAtelier, ui: EtatUi):
       return lotSuppression(etat, sel);
     case "decomposer":
       return { commandes: [{ type: "transformer.decomposer", params: {}, cibles: sel }], label: "Décomposer" };
+    case "joindre":
+      if (sel.length < 2) return { message: "Joindre : sélectionnez au moins deux lignes ou polylignes jointives." };
+      return { commandes: [{ type: "transformer.joindre", params: {}, cibles: sel }], label: `Joindre ${sel.length} objets` };
     case "grouper":
       return { commandes: [{ type: "groupe.creer", params: { nom: `Groupe ${Object.keys(etat.groupes).length + 1}` }, cibles: sel }], label: "Grouper" };
     case "repeter": {
