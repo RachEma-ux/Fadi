@@ -20,7 +20,7 @@ déclaré « disponible » : cet état n'est posé qu'après votre acceptation (
 | 9 | Recette : essai « calcul tardif » ajouté, aide située relue et testée, fiches mises à jour, protocole T17 / T18, documentation | `lots/lot-9.md`, ce dossier, `protocole-mesures.md` |
 | + | Compléments : historique d'un objet, consultation d'un état passé, réutilisation de modèle, références externes ; raccords de murs, coupes remplies en 3D, lasso, fusions successives, vues et nomenclatures déplaçables sur feuille, annotations des coupes et façades | `lots/complements.md` |
 
-Décisions du chef de projet : D-001 à D-046 (`decisions.md`). Fiches : les 71 à l'état « prototype » (code présent,
+Décisions du chef de projet : D-001 à D-047 (`decisions.md`). Fiches : les 71 à l'état « prototype » (code présent,
 preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leurs écarts déclarés.
 
 ## 2. Contrôles automatiques (état au 4 octobre 2026)
@@ -28,7 +28,7 @@ preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leur
 | Contrôle | Résultat |
 | --- | --- |
 | `npm run typecheck` (dont `scripts/check-module-deps.mjs`, T14) | ✅ |
-| `npm test` | ✅ core-geometry 47 · domain-model 95 · **atelier-model 162** · **API 79** · web 22 |
+| `npm test` | ✅ core-geometry 47 · domain-model 95 · **atelier-model 165** · **API 79** · web 22 |
 | `npm run build` | ✅ |
 | Scénario complet `apps/web/e2e/parcours-scenario.mjs` | ✅ 326 contrôles, « Scénario conforme. » |
 | Recette Atelier `atelier-nouveau.mjs` (lots 3–4) | ✅ 41 contrôles |
@@ -36,7 +36,7 @@ preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leur
 | Recette échanges `atelier-echanges.mjs` (lot 6) | ✅ 17 contrôles |
 | Recette versions `atelier-versions.mjs` (lot 7) | ✅ 24 contrôles |
 | Recette automatisation `atelier-automatisation.mjs` (lot 8, éditeur guidé) | ✅ 17 contrôles |
-| Recette compléments `atelier-complements.mjs` | ✅ 42 contrôles (captures `10-reprise.png`, `10-reference-externe.png`, `10-coupe-remplie.png`) |
+| Recette compléments `atelier-complements.mjs` | ✅ 43 contrôles (captures `10-reprise.png`, `10-reference-externe.png`, `10-coupe-remplie.png`) |
 | Corpus IFC validé par IfcOpenShell 0.9.0 (`apps/api/test-corpus/ifc/`) | ✅ petit modèle (référence octet pour octet), P.118, P.118 réimporté puis réexporté |
 | Sauvegarde puis restauration vérifiées (`scripts/verify-restore.sh`, T11) | ✅ en CI ; en local sur la base de développement (journal, versions, publications, volumes) |
 | axe-core (aucune violation critique ou sérieuse) | ✅ à chaque écran des recettes, ordinateur et téléphone |

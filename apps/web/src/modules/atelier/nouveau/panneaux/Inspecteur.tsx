@@ -657,10 +657,11 @@ function OuvertureHote({ o, etat, desactive, onCommandes }: { o: Occurrence<"por
   const nomMur = (m: Occurrence<"mur">) => `${m.id}${m.niveauId && m.niveauId !== o.niveauId ? ` (${etat.niveaux[m.niveauId]?.nom ?? m.niveauId})` : ""}`;
   const ouvrant = o.classe === "porte" ? (o.params.ouvrant ?? null) : undefined;
   const valeur = ouvrant ? `${ouvrant.charniere}-${ouvrant.cote}` : "";
-  const fixer = (v: string) => {
+  const fixer = (v: string, type = ouvrant?.type) => {
     const [charniere, cote] = v ? v.split("-") : [];
-    onCommandes([{ type: "ouverture.modifier", params: { id: o.id, params: { ouvrant: v ? { charniere, cote } : null } } }], v ? `Sens d'ouverture : ${OUVRANTS.find(([k]) => k === v)?.[1]}` : "Sens d'ouverture non renseigné");
+    onCommandes([{ type: "ouverture.modifier", params: { id: o.id, params: { ouvrant: v ? { charniere, cote, ...(type && type !== "battante" ? { type } : {}) } : null } } }], v ? `Sens d'ouverture : ${OUVRANTS.find(([k]) => k === v)?.[1]}${type && type !== "battante" ? ` (${type})` : ""}` : "Sens d'ouverture non renseigné");
   };
+  const [rep, setRep] = useState({ nombre: "", entraxe: "" });
   return (
     <div className="inspecteur-ouverture">
       <label htmlFor={`hote-${o.id}`}>Mur hôte</label>
@@ -689,12 +690,32 @@ function OuvertureHote({ o, etat, desactive, onCommandes }: { o: Occurrence<"por
             ))}
           </select>
           {ouvrant && (
+            <>
+              <label htmlFor={`vantail-${o.id}`}>Vantail</label>
+              <select id={`vantail-${o.id}`} value={ouvrant.type ?? "battante"} disabled={desactive} data-champ="vantail" onChange={(e) => fixer(valeur, e.target.value as "battante")}>
+                <option value="battante">battant (un vantail)</option>
+                <option value="double">double (deux vantaux battants)</option>
+                <option value="coulissante">coulissant (glisse vers la charnière)</option>
+              </select>
+            </>
+          )}
+          {ouvrant && (
             <span className="ver-actions">
               <button type="button" disabled={desactive} onClick={() => fixer(`${ouvrant.charniere === "debut" ? "fin" : "debut"}-${ouvrant.cote}`)}>Inverser la charnière</button>
               <button type="button" disabled={desactive} onClick={() => fixer(`${ouvrant.charniere}-${ouvrant.cote === "gauche" ? "droite" : "gauche"}`)} data-inverser="cote">Inverser le côté</button>
             </span>
           )}
         </>
+      )}
+      {!desactive && (
+        <details className="inspecteur-repartir">
+          <summary>Répartir le long du mur</summary>
+          <label>Nombre de copies<input type="number" min={1} max={100} step={1} value={rep.nombre} onChange={(e) => setRep({ ...rep, nombre: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-repartir="nombre" /></label>
+          <label>Entraxe (m, négatif : vers le début du mur)<input inputMode="decimal" value={rep.entraxe} onChange={(e) => setRep({ ...rep, entraxe: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-repartir="entraxe" /></label>
+          <button type="button" disabled={!Number.isInteger(Number(rep.nombre)) || Number(rep.nombre) < 1 || !Number.isFinite(Number(rep.entraxe.replace(",", "."))) || rep.entraxe.trim() === ""} onClick={() => onCommandes([{ type: "ouverture.repartir", params: { id: o.id, nombre: Number(rep.nombre), entraxe: { value: Number(rep.entraxe.replace(",", ".")), unit: "m" } } }], `Répartir ${libelle.toLowerCase()} × ${rep.nombre}`)} data-repartir="valider">
+            Répartir
+          </button>
+        </details>
       )}
     </div>
   );

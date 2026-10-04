@@ -245,7 +245,8 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
         return { commandes: [], label: "", pointsEnCours: [ext === "a" ? extremites[0]! : extremites[1]!], aide: `Extrémité ${ext} : cliquez sa nouvelle position.` };
       }
       const extremite = o.classe === "esquisse" ? (distance(pts[0]!, o.params.points[0]!) < 1e-9 ? "a" : "b") : distance(pts[0]!, o.params.a) < 1e-9 ? "a" : "b";
-      return emettre([{ type: "transformer.etirer", params: { id: o.id, extremite, point } }], "Étirer");
+      // Les murs joints suivent (D-047) ; Alt : étirer le mur seul.
+      return emettre([{ type: "transformer.etirer", params: { id: o.id, extremite, point, ...(o.classe === "mur" && !options.alt ? { entrainer: true } : {}) } }], o.classe === "mur" && !options.alt ? "Étirer (murs joints entraînés)" : "Étirer");
     }
     case "ajuster":
     case "prolonger": {

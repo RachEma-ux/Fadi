@@ -67,6 +67,35 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "ouverture.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "ouverture"),
   "ouverture.deplacer": (etat, p, ctx) => modifierOccurrence(etat, { id: p["id"], params: { position: p["position"] } }, ctx, "ouverture"),
   "ouverture.supprimer": (etat, p, ctx) => supprimerOccurrence(etat, p, ctx, "ouverture"),
+  // Répartir une ouverture le long de son mur (D-047) : `nombre` copies à `entraxe` (m, signé : vers b si positif) ;
+  // une copie qui sortirait du mur ou chevaucherait une autre ouverture : refus du lot entier.
+  "ouverture.repartir": (etat, p, ctx) => {
+    const id = lire.objet(etat, p, "id");
+    const o = etat.objets[id]!;
+    if (!estOuverture(o.classe)) throw new ErreurCommande("precondition", "id", `${id} n'est pas une ouverture`);
+    const ouv = o as Occurrence<"porte">;
+    const mur = etat.objets[ouv.params.murHoteId] as Occurrence<"mur">;
+    const L = Math.hypot(mur.params.b.x - mur.params.a.x, mur.params.b.y - mur.params.a.y);
+    const nombre = lire.nombre(p, "nombre", { entier: true, min: 1, max: 100 })!;
+    const entraxe = lire.longueur(p, "entraxe")!.value;
+    if (Math.abs(entraxe) < ouv.params.largeur.value) throw new ErreurCommande("invalide", "entraxe", "entraxe plus petit que la largeur : les ouvertures se chevaucheraient");
+    const intervalles = Object.values(etat.objets).filter((x) => estOuverture(x.classe) && (x as Occurrence<"porte">).params.murHoteId === mur.id).map((x) => { const q = (x as Occurrence<"porte">).params; return [q.position * L - q.largeur.value / 2, q.position * L + q.largeur.value / 2] as const; });
+    let courant = etat;
+    let effets = effetsVides();
+    for (let k = 1; k <= nombre; k++) {
+      const c = ouv.params.position * L + k * entraxe;
+      const deb = c - ouv.params.largeur.value / 2;
+      const fin = c + ouv.params.largeur.value / 2;
+      if (deb < -1e-9 || fin > L + 1e-9) throw new ErreurCommande("precondition", "nombre", `copie ${k} : l'emprise sortirait du mur ${mur.id}`);
+      if (intervalles.some(([a, b]) => deb < b - 1e-9 && fin > a + 1e-9)) throw new ErreurCommande("precondition", "entraxe", `copie ${k} : chevaucherait une ouverture existante`);
+      const { repere: _r, ...params } = ouv.params;
+      void _r;
+      const r = creerOccurrence(courant, { classe: o.classe, calqueId: o.calqueId, definitionId: o.definitionId, params: { ...params, position: Math.round((c / L) * 1e9) / 1e9 } }, ctx, o.classe);
+      courant = r.etat;
+      effets = fusionnerEffets(effets, r.effets);
+    }
+    return { etat: courant, effets };
+  },
   // Changer de classe sur place (D-044) : porte ↔ fenêtre ↔ baie ; dimensions et position gardées, sens d'ouverture
   // retiré hors porte ; mêmes contrôles que la pose.
   "ouverture.changerClasse": (etat, p) => {

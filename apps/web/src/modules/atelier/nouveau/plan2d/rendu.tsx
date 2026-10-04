@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { battantPorte, centroide, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -302,12 +302,12 @@ function Ouverture2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"por
   if (o.classe === "porte") {
     // Battant ouvert à 90° avec son arc de débattement : sens renseigné (D-037), sinon convention de l'Atelier.
     const bt = battantPorte(etat, o as Occurrence<"porte">);
-    if (!bt) return null;
-    const bout = { x: bt.charniere.x + bt.ouvert.x * bt.largeur, y: bt.charniere.y + bt.ouvert.y * bt.largeur };
+    const sym = symbolePorte(etat, o as Occurrence<"porte">);
+    if (!bt || !sym) return null;
     return (
-      <g className={classes("obj-porte", selectionne, survole)} data-objet={o.id} data-ouvrant={bt.explicite ? `${bt.ouvrant.charniere}-${bt.ouvrant.cote}` : "non-renseigne"} stroke={couleur} strokeWidth={selectionne ? 2 : 1} fill="none">
-        <path d={chemin(pr, [bt.charniere, bout], false)} />
-        <path d={chemin(pr, pointsArc(bt.charniere, bt.largeur, bt.arc[0], bt.arc[1], 16), false)} strokeDasharray={bt.explicite ? undefined : "2 2"} />
+      <g className={classes("obj-porte", selectionne, survole)} data-objet={o.id} data-ouvrant={bt.explicite ? `${bt.ouvrant.charniere}-${bt.ouvrant.cote}${bt.ouvrant.type && bt.ouvrant.type !== "battante" ? `-${bt.ouvrant.type}` : ""}` : "non-renseigne"} stroke={couleur} strokeWidth={selectionne ? 2 : 1} fill="none">
+        {sym.vantaux.map((v, i) => <path key={`v${i}`} d={chemin(pr, v, false)} />)}
+        {sym.arcs.map((a, i) => <path key={`a${i}`} d={chemin(pr, a, false)} strokeDasharray={bt.explicite ? undefined : "2 2"} strokeWidth={0.8} />)}
       </g>
     );
   }

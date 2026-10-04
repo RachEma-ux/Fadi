@@ -340,6 +340,22 @@ export const reducteursTransformer = {
     if (o.niveauId) effets.niveauxTouches.push(o.niveauId);
     if (o.classe === "mur") {
       const fixe = extremite === "a" ? o.params.b : o.params.a;
+      // Entraîner les murs joints (D-047) : les murs du niveau dont une extrémité coïncide avec celle déplacée la
+      // suivent (même commande, même révision) ; leurs ouvertures gardent leur distance à l'extrémité fixe.
+      if (lire.booleen(p, "entrainer", false)) {
+        const depart = extremite === "a" ? o.params.a : o.params.b;
+        let r = reducteursTransformer.etirer(etat, { id, extremite, point }, ctx, []);
+        for (const w of Object.values(etat.objets)) {
+          if (w.classe !== "mur" || w.id === id || w.niveauId !== o.niveauId) continue;
+          const ext: "a" | "b" | null = distance(w.params.a, depart) <= TOLERANCE_REDUCTEUR * 10 ? "a" : distance(w.params.b, depart) <= TOLERANCE_REDUCTEUR * 10 ? "b" : null;
+          if (!ext) continue;
+          const calqueW = w.calqueId ? etat.calques[w.calqueId] : null;
+          if (calqueW?.verrouille) throw new ErreurCommande("precondition", "entrainer", `mur joint ${w.id} sur un calque verrouillé : étirer seul, ou déverrouiller`);
+          const r2 = reducteursTransformer.etirer(r.etat, { id: w.id, extremite: ext, point }, ctx, []);
+          r = { etat: r2.etat, effets: fusionnerEffets(r.effets, r2.effets) };
+        }
+        return r;
+      }
       const params = extremite === "a" ? { ...o.params, a: point } : { ...o.params, b: point };
       const nouvelleLongueur = distance(params.a, params.b);
       if (nouvelleLongueur <= TOLERANCE_REDUCTEUR) throw new ErreurCommande("precondition", "point", "mur de longueur nulle");

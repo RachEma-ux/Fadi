@@ -366,7 +366,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
             const pa = surAxe(sAutre);
             const gaucheVu = (pa.x - pc.x) * x.x + (pa.y - pc.y) * x.y > 0; // l'autre tableau du côté +X : charnière à gauche
             const origine = gaucheVu ? pc : pa;
-            operation = gaucheVu ? ".SINGLE_SWING_LEFT." : ".SINGLE_SWING_RIGHT.";
+            operation = ouvrant.type === "double" ? ".DOUBLE_DOOR_SINGLE_SWING." : ouvrant.type === "coulissante" ? (gaucheVu ? ".SLIDING_TO_LEFT." : ".SLIDING_TO_RIGHT.") : gaucheVu ? ".SINGLE_SWING_LEFT." : ".SINGLE_SWING_RIGHT.";
             const etage = o.niveauId ? etages.get(o.niveauId) : undefined;
             placementRemplissage = s.ajouter(`IFCLOCALPLACEMENT(${ref(etage ? etage.placement : placementBat)},${ref(s.ajouter(`IFCAXIS2PLACEMENT3D(${ref(pt3(origine.x, origine.y, 0))},${ref(axeZ)},${ref(dir3(x.x, x.y, 0))})`))})`);
             panneau = boite({ x: 0, y: 0 }, { x: 1, y: 0 }, 0, w, -ep / 2, ep / 2, zb, zb + ouv.params.hauteur.value);

@@ -333,6 +333,14 @@ await page.waitForSelector(".plan2d");
     dessin = await page.locator(`.plan2d [data-objet="${porte.id}"]`).getAttribute("data-ouvrant").catch(() => null);
   }
   check("porte : sens d'ouverture renseigné dans l'inspecteur, enregistré et dessiné", !!porte && ouvrantLu?.charniere === "fin" && ouvrantLu?.cote === "droite" && dessin === "fin-droite", `${porte?.id} · ${JSON.stringify(ouvrantLu)} · ${dessin}`);
+  // Porte double (D-047) : nature du vantail choisie dans l'inspecteur, dessinée avec deux vantaux.
+  let dessinDouble = null;
+  if (porte) {
+    await page.locator('select[data-champ="vantail"]').selectOption("double");
+    await attendreEnregistre().catch(() => {});
+    dessinDouble = await page.locator(`.plan2d [data-objet="${porte.id}"]`).getAttribute("data-ouvrant").catch(() => null);
+  }
+  check("porte double : nature du vantail enregistrée et dessinée", dessinDouble === "fin-droite-double" && (await modele(pid)).modele.objets[porte?.id]?.params.ouvrant?.type === "double", String(dessinDouble));
   // Vers un autre niveau (D-039) : copier un mur sur un autre niveau depuis l'inspecteur.
   const mAvant = await modele(pid);
   const autre = Object.values(mAvant.modele.niveaux).find((n) => n.id !== nv);

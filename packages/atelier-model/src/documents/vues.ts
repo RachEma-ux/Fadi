@@ -13,7 +13,7 @@ import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconqu
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
 import { polygoneMurRaccorde } from "../raccords.js";
-import { battantPorte } from "../ouvrants.js";
+import { battantPorte, symbolePorte } from "../ouvrants.js";
 import { separationsCouches } from "../compositions.js";
 import { extremitesCotation } from "../references.js";
 import type { Longueur, Point2 } from "../unites.js";
@@ -243,11 +243,12 @@ function symbolesPlan(c: Collecteur, etat: ModeleAtelier, objets: readonly Occur
       case "porte": {
         const k = cadreOuverture(etat, o);
         const bt = battantPorte(etat, o);
-        if (!k || !bt) break;
-        // Battant ouvert à 90° selon le sens renseigné (D-037), sinon selon la convention de l'Atelier (dit).
+        const sym = symbolePorte(etat, o);
+        if (!k || !bt || !sym) break;
+        // Vantaux selon le sens et la nature renseignés (D-037, D-047), sinon selon la convention de l'Atelier (dit).
         if (!bt.explicite) portes++;
-        c.ligne(bt.charniere, { x: bt.charniere.x + bt.ouvert.x * bt.largeur, y: bt.charniere.y + bt.ouvert.y * bt.largeur }, "vue", o.id);
-        c.poly(pointsArc(bt.charniere, bt.largeur, bt.arc[0], bt.arc[1], 16), false, "fin", null, o.id);
+        for (const v of sym.vantaux) c.poly(v, false, "vue", null, o.id);
+        for (const a of sym.arcs) c.poly(a, false, "fin", null, o.id);
         // Seuil : sur la face opposée au battant.
         const fs = bt.ouvrant.cote === "gauche" ? 0 : 1;
         c.ligne(k.dec(k.p1, fs), k.dec(k.p2, fs), "fin", o.id);
