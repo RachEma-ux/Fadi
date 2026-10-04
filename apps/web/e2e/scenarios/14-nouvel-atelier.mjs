@@ -12,7 +12,7 @@
 
 /** Ouverture du nouvel Atelier par `?module=atelier&version=nouveau` sur l'exemple P.118. */
 export async function ouverture(sc) {
-  const { page, check, measure, axeCheck } = sc;
+  const { OUT, page, check, measure, axeCheck } = sc;
   const { exampleUrl } = sc;
   const url = `${exampleUrl}?module=atelier&version=nouveau`;
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -27,13 +27,14 @@ export async function ouverture(sc) {
   check("nouvel atelier : les 6 niveaux de P.118 dans le navigateur", niveaux === 6, `${niveaux} niveaux`);
   check("nouvel atelier : zone de plan affichée", await page.locator('[data-testid="plan2d-zone"]').isVisible());
   check("nouvel atelier : l'ancien Atelier n'est pas monté", (await page.locator("#atelier-toolbar").count()) === 0);
-  for (const [width, height, device] of [
-    [1280, 900, "ordinateur"],
-    [390, 844, "téléphone"],
+  for (const [width, height, device, capture] of [
+    [1280, 900, "ordinateur", "desktop"],
+    [390, 844, "téléphone", "mobile"],
   ]) {
     await page.setViewportSize({ width, height });
     await page.waitForTimeout(400);
     await axeCheck(page, `nouvel atelier (${device})`);
+    await page.screenshot({ path: `${OUT}/nouvel-atelier-ouverture-${capture}.png` });
   }
   await page.setViewportSize({ width: 1280, height: 900 });
 }
@@ -45,7 +46,7 @@ export async function ouverture(sc) {
  * (`GET /projects/:id/atelier/model`), jamais déduite de l'écran.
  */
 export async function gestes(sc) {
-  const { BASE, browser, page, consoleErrors, check, measure, axeCheck } = sc;
+  const { BASE, OUT, browser, page, consoleErrors, check, measure, axeCheck } = sc;
   const { email, atelierUrl, atelierPid } = sc;
   const url = `${atelierUrl}?module=atelier&version=nouveau`;
   const erreursAvant = consoleErrors.length;
@@ -270,9 +271,11 @@ export async function gestes(sc) {
   await page.waitForSelector('[data-testid="atl-champ-typeId"]', { state: "visible", timeout: 5000 });
   check("nouvel atelier : téléphone — la feuille Inspecteur montre le mur sélectionné, type « cloison »", (await page.locator('[data-testid="atl-inspecteur-objet"]').getAttribute("data-objet")) === murBas.id && (await page.locator('[data-testid="atl-champ-typeId"]').inputValue()) === "cloison");
   await axeCheck(page, "nouvel atelier après les gestes (téléphone, feuille Inspecteur)");
+  await page.screenshot({ path: `${OUT}/nouvel-atelier-gestes-mobile.png` });
   await page.keyboard.press("Escape");
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.waitForTimeout(400);
   await axeCheck(page, "nouvel atelier après les gestes (ordinateur)");
+  await page.screenshot({ path: `${OUT}/nouvel-atelier-gestes-desktop.png` });
   check("nouvel atelier : aucune erreur JavaScript pendant les gestes (deux navigateurs)", consoleErrors.length === erreursAvant, consoleErrors.slice(erreursAvant).join(" | "));
 }
