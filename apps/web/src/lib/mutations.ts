@@ -155,9 +155,11 @@ export function adoptStep(queryClient: QueryClient, projectId: string, updated: 
 /**
  * Un échec sans réponse du serveur n'est pas un refus : la mutation réessaie, et comme le client HTTP vient de
  * déclarer le serveur injoignable (`reachability`), TanStack la met en pause au lieu de l'abandonner — elle
- * repart dès que la sonde `/health` répond. Un refus applicatif (4xx, 409) n'est jamais réessayé.
+ * repart dès que la sonde `/health` répond. Un refus applicatif (4xx, 409) n'est jamais réessayé. Le plafond est
+ * large (20) : une liaison qui bascule plusieurs fois entre joignable et injoignable consomme des essais, et une
+ * saisie ne doit pas être abandonnée pour autant.
  */
-const RETRY_NETWORK = { retry: (count: number, err: unknown) => isNetworkError(err) && count < 5, retryDelay: (count: number) => Math.min(8000, 1000 * 2 ** count) };
+const RETRY_NETWORK = { retry: (count: number, err: unknown) => isNetworkError(err) && count < 20, retryDelay: (count: number) => Math.min(8000, 1000 * 2 ** count) };
 
 export function registerMutationDefaults(queryClient: QueryClient) {
   queryClient.setMutationDefaults(MUTATION_KEYS.stepPatch, {

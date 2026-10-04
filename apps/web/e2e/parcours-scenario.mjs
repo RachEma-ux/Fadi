@@ -1235,6 +1235,13 @@ check("retour du réseau sans concurrence : la saisie en attente est enregistré
 // attend au lieu d'échouer — « Serveur injoignable » dans l'en-tête, « en attente du serveur » sous l'étape —, puis repart
 // d'elle-même dès que la sonde /health répond (`lib/reachability.ts`).
 const API_PATH = /\/(projects|auth|health|examples|library|notifications)(\/|\?|$)/;
+// Journal de cette phase (diagnostic) : écritures et sondes, avec leur issue.
+const journalInjoignable = [];
+const noterRequete = (issue) => (r) => { const q = issue === "ok" ? r.request() : r; if (q.method() === "PATCH" || /\/health/.test(q.url())) journalInjoignable.push(`${issue === "ok" ? r.status() : "échec"} ${q.method()} ${new URL(q.url()).pathname} ${q.postData()?.slice(0, 60) ?? ""}`); };
+const surReponse = noterRequete("ok");
+const surEchec = noterRequete("echec");
+page.on("response", surReponse);
+page.on("requestfailed", surEchec);
 await page.route(API_PATH, (route) => route.abort("connectionrefused"));
 await page.locator("#biz-f1").fill("Demande locale (serveur injoignable)");
 await page.locator("#biz-f1").blur();
@@ -1245,11 +1252,16 @@ await page.unroute(API_PATH);
 // La sonde /health s'espace de 3 s à 30 s (`lib/reachability.ts`) : la reprise peut attendre jusqu'à la sonde suivante ;
 // sur un banc de CI chargé, deux ou trois sondes peuvent être nécessaires.
 await page.waitForFunction(() => !document.querySelector(".offline-banner-inline") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 95000 }).catch(() => {});
-await page.waitForFunction(async (pid) => (await (await fetch(`/projects/${pid}/steps/3`, { credentials: "include" })).json()).content.fields.f1 === "Demande locale (serveur injoignable)", testPid, { timeout: 15000 }).catch(() => {});
+// Lecture côté serveur par le contexte de requêtes de Playwright (jamais par la page : un service worker pourrait
+// répondre depuis son cache).
+const f1DuServeur = async () => (await (await page.request.get(`${BASE}/projects/${testPid}/steps/3`)).json()).content.fields.f1;
+for (let k = 0; k < 30 && (await f1DuServeur()) !== "Demande locale (serveur injoignable)"; k++) await page.waitForTimeout(500);
 {
-  const f1Serveur = await page.evaluate(async (pid) => (await (await fetch(`/projects/${pid}/steps/3`, { credentials: "include" })).json()).content.fields.f1, testPid);
+  const f1Serveur = await f1DuServeur();
   const entete = (await page.locator(".sync-indicator").textContent()) ?? "";
-  check("serveur de nouveau joignable : reprise automatique (sonde /health), saisie enregistrée sur le serveur, en-tête synchronisé", f1Serveur === "Demande locale (serveur injoignable)" && /Synchronisé avec le serveur/.test(entete), `serveur : ${String(f1Serveur).slice(0, 60)} · en-tête : ${entete.slice(0, 120)}`);
+  page.off("response", surReponse);
+  page.off("requestfailed", surEchec);
+  check("serveur de nouveau joignable : reprise automatique (sonde /health), saisie enregistrée sur le serveur, en-tête synchronisé", f1Serveur === "Demande locale (serveur injoignable)" && /Synchronisé avec le serveur/.test(entete), `serveur : ${String(f1Serveur).slice(0, 60)} · en-tête : ${entete.slice(0, 120)} · requêtes : ${journalInjoignable.slice(-12).join(" ; ")}`);
 }
 
 // Session au démarrage : un serveur en erreur (503) ou limité n'efface pas l'utilisateur mémorisé — l'écran se relit du cache ;
