@@ -66,6 +66,11 @@ export interface ContexteAtelier {
   readonly projetId: string;
   /** État local du bus (optimiste) ; `null` tant que le modèle n'est pas chargé. */
   etat(): EtatModele | null;
+  /**
+   * Abonnement aux changements de l'état local (validation, révision distante, annulation, conflit résolu) ;
+   * rend la fonction de désabonnement ; compatible `useSyncExternalStore` avec `etat` (D-036).
+   */
+  abonnerEtat(ecouteur: () => void): () => void;
   /** Niveau et calque actifs, lus à l'instant de l'appel (ils changent pendant la session : `EtatInterface`). */
   niveauActif(): IdObjet | null;
   calqueActif(): IdObjet | null;

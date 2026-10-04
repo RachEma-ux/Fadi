@@ -15,7 +15,7 @@ const MODELE_ABSENT = lisible("Modèle", "non chargé", "ouvrir le projet en lig
 export interface OptionsContexte {
   readonly projetId: string;
   /** Sous-ensemble du bus utilisé (injectable en test). */
-  readonly bus: Pick<BusAtelier, "etatLocal" | "etatConfirme" | "executer" | "entrees" | "joignabilite" | "rafraichir">;
+  readonly bus: Pick<BusAtelier, "etatLocal" | "etatConfirme" | "executer" | "entrees" | "joignabilite" | "rafraichir" | "on">;
   /** Routes annuler / rétablir (`creerClientAtelierCommandes()`). */
   readonly client: Pick<ClientAtelierCommandes, "annuler" | "retablir">;
   readonly selection: SelectionAtelier;
@@ -65,6 +65,8 @@ export function creerContexte(o: OptionsContexte): ContexteAtelier {
   return {
     projetId: o.projetId,
     etat: () => o.bus.etatLocal(),
+    /** L'évènement `etat` du bus couvre toute évolution de l'état local ou confirmé (bus/types.ts). */
+    abonnerEtat: (ecouteur: () => void) => o.bus.on("etat", () => ecouteur()),
     niveauActif: () => o.vue.lire().niveauActifId,
     calqueActif: () => o.vue.lire().calqueActifId,
     selection: o.selection,

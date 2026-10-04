@@ -60,14 +60,20 @@ describe("pilote, état de vue, dessinateurs, contexte", () => {
 
   const fauxBus = (joignabilite: "en-ligne" | "hors-ligne" = "en-ligne", file: number = 0) => {
     const appels: string[] = [];
+    const ecouteursEtat = new Set<(v: never) => void>();
     return {
       appels,
+      emettreEtat: () => ecouteursEtat.forEach((f) => f(undefined as never)),
       bus: {
         etatLocal: () => etatVide,
         etatConfirme: () => etatVide,
         entrees: () => Array.from({ length: file }) as never[],
         joignabilite: () => joignabilite,
         rafraichir: async () => (appels.push("rafraichir"), true),
+        on: (_nom: unknown, fn: (v: never) => void) => {
+          ecouteursEtat.add(fn);
+          return () => void ecouteursEtat.delete(fn);
+        },
         executer: async (label: string) => (appels.push(`executer:${label}`), { ok: true as const, requestId: "r", etat: etatVide }),
       },
       client: {
@@ -113,14 +119,21 @@ describe("pilote, état de vue, dessinateurs, contexte", () => {
     expect(creerPilote(r, lecture, vue).activer("selection.clic")).toEqual({ ok: true });
   });
 
-  it("contexte : niveau actif lu à l'appel ; annuler par le serveur puis relecture ; refus hors ligne, file non vide, serveur injoignable", async () => {
-    const { bus, client, appels } = fauxBus();
+  it("contexte : niveau actif lu à l'appel ; abonnement à l'état ; annuler par le serveur puis relecture ; refus hors ligne, file non vide, serveur injoignable", async () => {
+    const faux = fauxBus();
+    const { bus, client, appels } = faux;
     const vue = creerEtatInterface();
     const ctx = creerContexte({ projetId: "p", bus, client, selection: creerSelection(), vue, ecriture: { permise: true }, genererId: () => "id" });
     expect(ctx.niveauActif()).toBeNull();
     vue.modifier({ niveauActifId: "n1" });
     expect(ctx.niveauActif()).toBe("n1");
     expect(ctx.nouvelId("mur")).toBe("mur-id");
+    let vu = 0;
+    const fin = ctx.abonnerEtat(() => vu++);
+    faux.emettreEtat();
+    fin();
+    faux.emettreEtat();
+    expect(vu).toBe(1);
     expect((await ctx.annuler()).ok).toBe(true);
     expect(appels).toEqual(["annuler@3", "rafraichir"]);
     const r = await ctx.retablir();
