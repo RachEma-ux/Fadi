@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ObjetPiece } from "@parcours/atelier-model";
-import { appui, banc, cmd, etatDeTest, m, P, survol, touche } from "./__tests__/banc";
+import { appui, banc, cmd, etatDeTest, m, P, saisieTexte, survol, touche } from "./__tests__/banc";
 import { dessinerPiece } from "./dessinateurs";
 
 const mur = (id: string, a: [number, number], b: [number, number]) =>
@@ -31,6 +31,16 @@ describe("pièces : proposition puis création", () => {
     await b.jouer(appui(10, 10));
     expect(b.pilote.apercu().erreurs[0]?.cause).toBe("aucune boucle de murs fermée autour du point");
     expect(pieces(b)).toHaveLength(1);
+  });
+
+  it("nom saisi dans le champ texte (D-038) : la pièce le reçoit", async () => {
+    const b = banc(etatDeTest(...quatreMurs()));
+    b.pilote.activer("creer.piece");
+    expect(b.pilote.apercu().champs[0]).toMatchObject({ champ: "nom", genre: "texte" });
+    await b.jouer(saisieTexte("nom", "  Séjour "), survol(2, 1.5));
+    expect(b.pilote.apercu().formes.some((f) => f.forme === "texte" && f.texte === "Séjour — 12,00 m²")).toBe(true);
+    await b.jouer(appui(2, 1.5));
+    expect(pieces(b)[0]?.params.nom).toBe("Séjour");
   });
 
   it("détection du niveau : deux contours, seule la nouvelle pièce est créée à la validation", async () => {

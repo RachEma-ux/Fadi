@@ -7,7 +7,7 @@
  * contours suivent les **axes** des murs, pas leurs faces intérieures (limite déclarée du réducteur).
  *
  * - `creer.piece` (famille Créer, maquette « Pièce ») : survol = contour proposé sous le pointeur et sa surface ;
- *   appui = `piece.creer` ;
+ *   appui = `piece.creer` ; nom saisi dans le champ texte « Nom » (D-038), sinon « Pièce n » libre du niveau ;
  * - `analyser.pieces` (famille Analyser, maquette « Détecter les pièces ») : toutes les boucles fermées du niveau
  *   actif, marquées « nouvelle » ou « correspond à » une pièce existante ; Entrée (ou appui) crée les nouvelles.
  */
@@ -35,11 +35,11 @@ function nomsLibres(etat: EtatModele, niveauId: IdObjet, n: number): string[] {
   return r;
 }
 
-function creations(ctx: ContexteAtelier, propositions: readonly PieceProposee[]) {
+function creations(ctx: ContexteAtelier, propositions: readonly PieceProposee[], nom: string | null = null) {
   const t = enTete(ctx);
   const etat = ctx.etat();
   if (!t || !etat) return null;
-  const noms = nomsLibres(etat, t.niveauId, propositions.length);
+  const noms = nom !== null && propositions.length === 1 ? [nom] : nomsLibres(etat, t.niveauId, propositions.length);
   return propositions.map((p, i) => commande("piece.creer", { id: ctx.nouvelId("piece"), ...t, polygones: [{ contour: p.contour, trous: [] }], nom: noms[i] }));
 }
 
@@ -65,6 +65,7 @@ export function outilPiece(): DefinitionOutil {
     commencer: (ctx) => {
       let proposition: PieceProposee | null = null;
       let existante: ObjetPiece | null = null;
+      let nom: string | null = null;
       let erreurs: readonly ErreurLisible[] = [];
       const viser = (p: Vec) => {
         const etat = ctx.etat();
@@ -74,6 +75,10 @@ export function outilPiece(): DefinitionOutil {
       };
       return {
         traiter(evt): ReactionOutil {
+          if (evt.type === "saisie-texte" && evt.champ === "nom") {
+            nom = evt.texte.trim() || null;
+            erreurs = [];
+          }
           if (evt.type === "survol" || evt.type === "glisse") viser(evt.point);
           if (evt.type !== "appui") return { action: "continuer" };
           viser(evt.point);
@@ -85,26 +90,29 @@ export function outilPiece(): DefinitionOutil {
             erreurs = [{ ...lisible("Pièce", `correspond déjà à la pièce ${existante.params.nom} (${existante.id})`, "la modifier dans l'inspecteur"), objetIds: [existante.id] }];
             return { action: "continuer" };
           }
-          const c = creations(ctx, [proposition]);
+          const c = creations(ctx, [proposition], nom);
           if (!c) {
             erreurs = [lisible("Pièce", "niveau ou calque actif absent", "choisir un niveau et un calque")];
             return { action: "continuer" };
           }
           erreurs = controler(ctx, c);
-          return erreurs.length > 0 ? { action: "continuer" } : { action: "valider", label: "Créer une pièce", commandes: c, terminer: false };
+          if (erreurs.length > 0) return { action: "continuer" };
+          nom = null;
+          return { action: "valider", label: "Créer une pièce", commandes: c, terminer: false };
         },
         apercu() {
           const p = proposition;
-          const formes = p ? formeProposition(p, existante ? "fantome" : "trace", existante ? `${existante.params.nom} (existante)` : `Proposition — ${texteAire(p.aire)}`) : [];
+          const formes = p ? formeProposition(p, existante ? "fantome" : "trace", existante ? `${existante.params.nom} (existante)` : `${nom ?? "Proposition"} — ${texteAire(p.aire)}`) : [];
           return {
             formes,
-            champs: [],
+            champs: [{ champ: "nom", libelle: nom ? `Nom (${nom})` : "Nom (sinon « Pièce n »)", unite: "", valeur: null, genre: "texte" }],
             consigne: p ? "Cliquez pour créer la pièce proposée (contour sur les axes des murs)." : "Survolez l'intérieur d'une pièce fermée par des murs.",
             erreurs,
           };
         },
         abandonner() {
           proposition = null;
+          nom = null;
           erreurs = [];
         },
       };

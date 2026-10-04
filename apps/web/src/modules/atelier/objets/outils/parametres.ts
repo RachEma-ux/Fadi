@@ -3,20 +3,27 @@
  * jamais une valeur inventée ni tirée de P.118 (R3, DA-07-01). Un paramètre absent bloque le geste avec une
  * erreur lisible qui dit quel champ saisir. Préférence d'interface, jamais dans le modèle (R10).
  *
- * Les champs de saisie du contrat ne portent que des nombres (`ChampSaisie`) : les choix (type, alignement) sont
- * codés en rangs numériques en attendant un champ « choix » au socle (demande au chef de projet).
+ * Deux genres de valeurs : les nombres (`saisie`) et les choix dans une liste (`choix`, D-038 : type courant,
+ * alignement), mémorisés séparément.
  */
 import { cleDefinition, ID_NON_TYPE, type AlignementMur, type ClasseTypee, type EtatModele, type Longueur } from "@parcours/atelier-model";
 import type { ChampSaisie, ErreurLisible } from "../../socle";
 import { lisible } from "../../plan2d/outils/commun";
 
-const memoire = new Map<string, Readonly<Record<string, number>>>();
-
-export function lireMemoire(cle: string): Readonly<Record<string, number>> {
-  return memoire.get(cle) ?? {};
+export interface Valeurs {
+  readonly nombres: Readonly<Record<string, number>>;
+  readonly choix: Readonly<Record<string, string>>;
 }
 
-export function ecrireMemoire(cle: string, valeurs: Readonly<Record<string, number>>): void {
+export const VIDES: Valeurs = { nombres: {}, choix: {} };
+
+const memoire = new Map<string, Valeurs>();
+
+export function lireMemoire(cle: string): Valeurs {
+  return memoire.get(cle) ?? VIDES;
+}
+
+export function ecrireMemoire(cle: string, valeurs: Valeurs): void {
   memoire.set(cle, valeurs);
 }
 
@@ -25,23 +32,38 @@ export function oublierParametresObjets(): void {
   memoire.clear();
 }
 
-/** Alignement codé : −1 gauche, 0 axe, 1 droite. */
-export const ALIGNEMENTS: readonly AlignementMur[] = ["gauche", "axe", "droite"];
-export const alignementDe = (code: number | undefined): AlignementMur => ALIGNEMENTS[(code ?? 0) + 1] ?? "axe";
-export const codeAlignement = (a: unknown): number => (a === "gauche" ? -1 : a === "droite" ? 1 : 0);
+export const ALIGNEMENTS: readonly { readonly valeur: AlignementMur; readonly libelle: string }[] = [
+  { valeur: "axe", libelle: "Axe (faces à ± e/2)" },
+  { valeur: "gauche", libelle: "Face gauche sur le tracé" },
+  { valeur: "droite", libelle: "Face droite sur le tracé" },
+];
 
-/** Types du catalogue pour une classe, rang 0 = « sans type » puis par identifiant. */
-export function typesDe(etat: EtatModele | null, classe: ClasseTypee): { id: string; nom: string }[] {
-  const r = [{ id: ID_NON_TYPE, nom: "Sans type" }];
+/** Alignement choisi ; « axe » tant qu'aucun choix n'est fait (convention de tracé DA-02-07). */
+export const alignementDe = (v: Valeurs): AlignementMur => (ALIGNEMENTS.find((a) => a.valeur === v.choix.alignement)?.valeur ?? "axe");
+
+export function champAlignement(v: Valeurs): ChampSaisie {
+  return { champ: "alignement", libelle: "Alignement", unite: "", valeur: null, choix: ALIGNEMENTS, valeurChoisie: alignementDe(v) };
+}
+
+/** Types du catalogue pour une classe : « sans type » puis par identifiant. */
+export function typesDe(etat: EtatModele | null, classe: ClasseTypee): { valeur: string; libelle: string }[] {
+  const r = [{ valeur: ID_NON_TYPE, libelle: "Sans type" }];
   if (!etat) return r;
   const defs = Object.values(etat.catalogue.definitions)
     .filter((d) => d.classe === classe && d.id !== ID_NON_TYPE)
     .sort((a, b) => a.id.localeCompare(b.id));
-  return [...r, ...defs.map((d) => ({ id: d.id, nom: d.nom }))];
+  return [...r, ...defs.map((d) => ({ valeur: d.id, libelle: d.nom }))];
 }
 
-export const typeDeRang = (etat: EtatModele | null, classe: ClasseTypee, rang: number | undefined): string => typesDe(etat, classe)[rang ?? 0]?.id ?? ID_NON_TYPE;
-export const rangDeType = (etat: EtatModele | null, classe: ClasseTypee, id: string): number => Math.max(0, typesDe(etat, classe).findIndex((t) => t.id === id));
+/** Type choisi s'il existe encore au catalogue, sinon « sans type ». */
+export const typeDe = (etat: EtatModele | null, classe: ClasseTypee, v: Valeurs): string => {
+  const id = v.choix.type;
+  return id !== undefined && typesDe(etat, classe).some((t) => t.valeur === id) ? id : ID_NON_TYPE;
+};
+
+export function champType(etat: EtatModele | null, classe: ClasseTypee, v: Valeurs): ChampSaisie {
+  return { champ: "type", libelle: "Type", unite: "", valeur: null, choix: typesDe(etat, classe), valeurChoisie: typeDe(etat, classe, v) };
+}
 
 /** Dimension proposée par le type (DA-05-14 : valeur proposée à la création, jamais imposée). */
 export function dimensionProposee(etat: EtatModele | null, classe: ClasseTypee, typeId: string, cle: "epaisseur" | "hauteur" | "largeur" | "allege"): number | undefined {
@@ -49,27 +71,24 @@ export function dimensionProposee(etat: EtatModele | null, classe: ClasseTypee, 
   return d?.value;
 }
 
-export function champType(etat: EtatModele | null, classe: ClasseTypee, rang: number | undefined): ChampSaisie {
-  const types = typesDe(etat, classe);
-  return { champ: "type", libelle: `Type (${types.map((t, i) => `${i} ${t.nom}`).join(", ")})`, unite: "", valeur: rang ?? 0 };
+/** Contrôle d'un choix reçu (`choix`) : la valeur doit être l'une des options du champ. */
+export function controlerChoix(objet: string, champ: ChampSaisie | undefined, valeur: string): ErreurLisible | null {
+  if (!champ?.choix) return lisible(objet, `« ${valeur} » : aucun choix attendu ici`, "utiliser les champs proposés par l'outil");
+  return champ.choix.some((c) => c.valeur === valeur) ? null : lisible(objet, `${champ.libelle.toLowerCase()} « ${valeur} » inconnu`, "choisir une valeur de la liste");
 }
 
 /** Contrôle d'un paramètre numérique saisi. */
-export function controlerSaisie(objet: string, champ: string, valeur: number, etat: EtatModele | null, classe?: ClasseTypee): ErreurLisible | null {
+export function controlerSaisie(objet: string, champ: string, valeur: number): ErreurLisible | null {
   switch (champ) {
     case "epaisseur":
     case "hauteur":
     case "largeur":
     case "giron":
+    case "emmarchement":
+    case "hauteurAFranchir":
       return valeur > 0 ? null : lisible(objet, `${champ} ${valeur} m : doit être strictement positive`, "taper une valeur supérieure à 0");
     case "allege":
       return valeur >= 0 ? null : lisible(objet, `allège ${valeur} m négative`, "taper une allège positive ou nulle");
-    case "alignement":
-      return [-1, 0, 1].includes(valeur) ? null : lisible(objet, `alignement ${valeur} inconnu`, "taper −1 (gauche), 0 (axe) ou 1 (droite)");
-    case "type": {
-      const n = classe ? typesDe(etat, classe).length : 1;
-      return Number.isInteger(valeur) && valeur >= 0 && valeur < n ? null : lisible(objet, `type n° ${valeur} inconnu`, `taper un numéro de 0 à ${n - 1}`);
-    }
     case "contremarches":
     case "marches":
       return Number.isInteger(valeur) && valeur >= (champ === "marches" ? 0 : 1) ? null : lisible(objet, `${champ} ${valeur} : entier attendu`, champ === "marches" ? "taper un entier positif ou nul" : "taper un entier supérieur ou égal à 1");

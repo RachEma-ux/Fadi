@@ -15,7 +15,7 @@ import { formaterValeur } from "../../plan2d/saisie";
 import { versPoint, type Vec } from "../../plan2d/geometrie";
 import { controlerEmpriseBaie, estBaie, faces, murSousPoint, repereAxe, surMur } from "../geometrie";
 import { MARGE_MUR } from "./murs";
-import { champType, controlerSaisie, dimensionProposee, ecrireMemoire, lireMemoire, typeDeRang } from "./parametres";
+import { champType, controlerChoix, controlerSaisie, dimensionProposee, ecrireMemoire, lireMemoire, typeDe, type Valeurs } from "./parametres";
 
 export const LIBELLES_BAIE: Readonly<Record<ClasseBaie, string>> = { porte: "Porte", fenetre: "Fenêtre", ouverture: "Ouverture" };
 
@@ -26,9 +26,9 @@ interface Cible {
 }
 
 /** Valeurs effectives (saisies, sinon proposées par le type ; allège 0 pour porte et ouverture). */
-export function valeursBaie(etat: EtatModele | null, classe: ClasseBaie, v: Readonly<Record<string, number>>): { largeur?: number; hauteur?: number; allege?: number; typeId: string } {
-  const typeId = typeDeRang(etat, classe, v.type);
-  const p = (k: "largeur" | "hauteur" | "allege") => v[k] ?? dimensionProposee(etat, classe, typeId, k);
+export function valeursBaie(etat: EtatModele | null, classe: ClasseBaie, v: Valeurs): { largeur?: number; hauteur?: number; allege?: number; typeId: string } {
+  const typeId = typeDe(etat, classe, v);
+  const p = (k: "largeur" | "hauteur" | "allege") => v.nombres[k] ?? dimensionProposee(etat, classe, typeId, k);
   const allege = p("allege") ?? (classe === "fenetre" ? undefined : 0);
   return { largeur: p("largeur"), hauteur: p("hauteur"), ...(allege !== undefined ? { allege } : {}), typeId };
 }
@@ -64,12 +64,12 @@ function emprise(etat: EtatModele, nom: string, c: Cible, largeur: number, ignor
   return e ? { ...lisible(nom, e.cause, e.action), objetIds: e.ids } : null;
 }
 
-const PARAMETRES = ["largeur", "hauteur", "allege", "type"];
+const PARAMETRES = ["largeur", "hauteur", "allege"];
 
 export function sessionPoserBaie(ctx: ContexteAtelier, classe: ClasseBaie): SessionOutil {
   const cle = `creer.${classe}`;
   const nom = LIBELLES_BAIE[classe];
-  let valeurs: Record<string, number> = { ...lireMemoire(cle) };
+  let valeurs: Valeurs = lireMemoire(cle);
   let distance: number | undefined;
   let cible: Cible | null = null;
   let erreurs: readonly ErreurLisible[] = [];
@@ -134,7 +134,18 @@ export function sessionPoserBaie(ctx: ContexteAtelier, classe: ClasseBaie): Sess
           cible = viser(ctx, evt.point, evt.objetSousPointeur, distance);
           return poser();
         case "touche":
+        case "saisie-texte":
           return { action: "continuer" };
+        case "choix": {
+          const champ = champType(ctx.etat(), classe, valeurs);
+          const ko = controlerChoix(nom, champ.champ === evt.champ ? champ : undefined, evt.valeur);
+          if (ko) return refus(ko);
+          valeurs = { ...valeurs, choix: { ...valeurs.choix, [evt.champ]: evt.valeur } };
+          ecrireMemoire(cle, valeurs);
+          erreurs = [];
+          evaluer();
+          return { action: "continuer" };
+        }
         case "saisie": {
           if (!Number.isFinite(evt.valeur)) return refus(lisible("Saisie", "nombre attendu", "taper une valeur numérique"));
           if (evt.champ === "distance") {
@@ -142,9 +153,9 @@ export function sessionPoserBaie(ctx: ContexteAtelier, classe: ClasseBaie): Sess
             distance = evt.valeur;
             if (cible) cible = { ...cible, s: distance };
           } else if (PARAMETRES.includes(evt.champ)) {
-            const ko = controlerSaisie(nom, evt.champ, evt.valeur, ctx.etat(), classe);
+            const ko = controlerSaisie(nom, evt.champ, evt.valeur);
             if (ko) return refus(ko);
-            valeurs = { ...valeurs, [evt.champ]: evt.valeur };
+            valeurs = { ...valeurs, nombres: { ...valeurs.nombres, [evt.champ]: evt.valeur } };
             ecrireMemoire(cle, valeurs);
           }
           erreurs = [];
@@ -161,7 +172,7 @@ export function sessionPoserBaie(ctx: ContexteAtelier, classe: ClasseBaie): Sess
         { champ: "largeur", libelle: "Largeur", unite: "m", valeur: v.largeur ?? null },
         { champ: "hauteur", libelle: "Hauteur", unite: "m", valeur: v.hauteur ?? null },
         { champ: "allege", libelle: "Allège", unite: "m", valeur: v.allege ?? null },
-        champType(etat, classe, valeurs.type),
+        champType(etat, classe, valeurs),
       ];
       const tous = erreurs.length > 0 ? erreurs : erreurSurvol ? [erreurSurvol] : [];
       return {

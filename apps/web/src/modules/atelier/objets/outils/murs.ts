@@ -9,24 +9,24 @@
  * colinéaire, de même sens et de mêmes paramètres (seul cas que `mur.joindre` admet), le lot contient aussi
  * `mur.joindre`. Les jonctions en L et en T n'ont pas de commande dans `atelier-commands/1` : non inventées.
  */
-import { jsonCanonique, TOLERANCES, type Commande, type EtatModele, type IdObjet, type ObjetMur } from "@parcours/atelier-model";
+import { estNonEvaluee, jsonCanonique, TOLERANCES, type Commande, type EtatModele, type IdObjet, type ObjetMur } from "@parcours/atelier-model";
 import type { Apercu, ChampSaisie, ContexteAtelier, DefinitionOutil, ErreurLisible, EvenementPlan, FormeApercu, ReactionOutil, SessionOutil } from "../../socle";
 import { activationCreation, champsSegment, commande, contraindrePolaire, controler, coteSegment, definir, enTete, lisible, longueur, P, type Verrous } from "../../plan2d/outils/commun";
 import { distance, scalaire, sous, versPoint, vectoriel, type Vec } from "../../plan2d/geometrie";
 import { contourMur, estMur, murSousPoint, repereAxe } from "../geometrie";
-import { alignementDe, champType, codeAlignement, controlerSaisie, dimensionProposee, ecrireMemoire, lireMemoire, rangDeType, typeDeRang } from "./parametres";
+import { alignementDe, champAlignement, champType, controlerChoix, controlerSaisie, dimensionProposee, ecrireMemoire, lireMemoire, typeDe, type Valeurs } from "./parametres";
 
 const CLE = "creer.mur";
 const confondus = (a: Vec, b: Vec) => distance(a, b) <= TOLERANCES.tolCoincidence;
 
 /** Paramètres canoniques d'un nouveau mur (sans axe), ou l'erreur du champ manquant. */
-export function parametresMur(etat: EtatModele | null, v: Readonly<Record<string, number>>): Record<string, unknown> | { erreur: ErreurLisible } {
-  const typeId = typeDeRang(etat, "mur", v.type);
-  const e = v.epaisseur ?? dimensionProposee(etat, "mur", typeId, "epaisseur");
-  const h = v.hauteur ?? dimensionProposee(etat, "mur", typeId, "hauteur");
+export function parametresMur(etat: EtatModele | null, v: Valeurs): Record<string, unknown> | { erreur: ErreurLisible } {
+  const typeId = typeDe(etat, "mur", v);
+  const e = v.nombres.epaisseur ?? dimensionProposee(etat, "mur", typeId, "epaisseur");
+  const h = v.nombres.hauteur ?? dimensionProposee(etat, "mur", typeId, "hauteur");
   if (e === undefined) return { erreur: lisible("Mur", "épaisseur non renseignée", "taper l'épaisseur dans le champ « Épaisseur » (ex. 0,2)") };
   if (h === undefined) return { erreur: lisible("Mur", "hauteur non renseignée", "taper la hauteur dans le champ « Hauteur » (ex. 2,5)") };
-  return { epaisseur: longueur(e), hauteur: longueur(h), alignement: alignementDe(v.alignement), typeId, exterieur: false };
+  return { epaisseur: longueur(e), hauteur: longueur(h), alignement: alignementDe(v), typeId, exterieur: false };
 }
 
 /** Mur existant que le nouveau mur prolonge exactement (colinéaire, même sens, contigu, mêmes paramètres). */
@@ -48,7 +48,7 @@ function prolonge(etat: EtatModele, niveauId: IdObjet, calqueId: IdObjet, params
 }
 
 /** Lot d'un segment de mur : `mur.tracer`, puis `mur.joindre` avec les murs qu'il prolonge exactement. */
-export function lotMur(ctx: ContexteAtelier, a: Vec, b: Vec, valeurs: Readonly<Record<string, number>>): { commandes: Commande[]; id: IdObjet } | { erreur: ErreurLisible } {
+export function lotMur(ctx: ContexteAtelier, a: Vec, b: Vec, valeurs: Valeurs): { commandes: Commande[]; id: IdObjet } | { erreur: ErreurLisible } {
   const t = enTete(ctx);
   if (!t) return { erreur: lisible("Mur", "niveau ou calque actif absent", "choisir un niveau et un calque") };
   const etat = ctx.etat();
@@ -70,12 +70,12 @@ export function lotMur(ctx: ContexteAtelier, a: Vec, b: Vec, valeurs: Readonly<R
 }
 
 /** Formes d'aperçu d'un segment de mur : contour d'épaisseur, axe et cote. */
-export function formesMur(a: Vec, b: Vec, valeurs: Readonly<Record<string, number>>, epaisseur: number | undefined, style: "trace" | "erreur"): FormeApercu[] {
+export function formesMur(a: Vec, b: Vec, valeurs: Valeurs, epaisseur: number | undefined, style: "trace" | "erreur"): FormeApercu[] {
   const r = repereAxe(a, b);
   if (!r) return [];
   const f: FormeApercu[] = [{ forme: "segment", a: versPoint(a), b: versPoint(b), style: "fantome" }];
   if (epaisseur !== undefined && epaisseur > 0) {
-    const al = alignementDe(valeurs.alignement);
+    const al = alignementDe(valeurs);
     const faces = al === "axe" ? { gauche: epaisseur / 2, droite: -epaisseur / 2 } : al === "gauche" ? { gauche: 0, droite: -epaisseur } : { gauche: epaisseur, droite: 0 };
     f.push({ forme: "polygone", points: contourMur(r, faces).map(versPoint), style });
   }
@@ -84,25 +84,24 @@ export function formesMur(a: Vec, b: Vec, valeurs: Readonly<Record<string, numbe
 }
 
 /** Valeurs initiales : mémoire de session, ou paramètres d'un mur sélectionné (pipette). */
-function valeursInitiales(ctx: ContexteAtelier): Record<string, number> {
+function valeursInitiales(ctx: ContexteAtelier): Valeurs {
   const etat = ctx.etat();
   const sel = ctx.selection.lire().principal;
   const m = sel && etat ? etat.objets[sel] : undefined;
   if (estMur(m)) {
+    const al = m.params.alignement;
     return {
-      epaisseur: m.params.epaisseur.value,
-      ...(m.params.hauteur ? { hauteur: m.params.hauteur.value } : {}),
-      alignement: codeAlignement(m.params.alignement),
-      type: rangDeType(etat, "mur", m.params.typeId),
+      nombres: { epaisseur: m.params.epaisseur.value, ...(m.params.hauteur ? { hauteur: m.params.hauteur.value } : {}) },
+      choix: { ...(estNonEvaluee(al) ? {} : { alignement: al }), type: m.params.typeId },
     };
   }
-  return { ...lireMemoire(CLE) };
+  return lireMemoire(CLE);
 }
 
-const PARAMETRES = ["epaisseur", "hauteur", "alignement", "type"];
+const PARAMETRES = ["epaisseur", "hauteur"];
 
 export function sessionMur(ctx: ContexteAtelier): SessionOutil {
-  let valeurs: Record<string, number> = valeursInitiales(ctx);
+  let valeurs: Valeurs = valeursInitiales(ctx);
   let premier: Vec | null = null;
   let depart: Vec | null = null;
   let segments = 0;
@@ -118,6 +117,18 @@ export function sessionMur(ctx: ContexteAtelier): SessionOutil {
     verrous = {};
   };
   const contraindre = (p: Vec) => contraindrePolaire(depart, p, verrous);
+  const champsParametres = (): ChampSaisie[] => {
+    const etat = ctx.etat();
+    const typeId = typeDe(etat, "mur", valeurs);
+    const e = valeurs.nombres.epaisseur ?? dimensionProposee(etat, "mur", typeId, "epaisseur");
+    const h = valeurs.nombres.hauteur ?? dimensionProposee(etat, "mur", typeId, "hauteur");
+    return [
+      { champ: "epaisseur", libelle: "Épaisseur", unite: "m", valeur: e ?? null },
+      { champ: "hauteur", libelle: "Hauteur", unite: "m", valeur: h ?? null },
+      champAlignement(valeurs),
+      champType(etat, "mur", valeurs),
+    ];
+  };
 
   const poser = (p: Vec): ReactionOutil => {
     if (!depart) {
@@ -168,18 +179,29 @@ export function sessionMur(ctx: ContexteAtelier): SessionOutil {
         case "touche":
           if (evt.touche === "Enter" || evt.touche === "Backspace") finChaine();
           return { action: "continuer" };
+        case "saisie-texte":
+          return { action: "continuer" };
+        case "choix": {
+          const refus = controlerChoix("Mur", champsParametres().find((c) => c.champ === evt.champ), evt.valeur);
+          erreurs = refus ? [refus] : [];
+          if (!refus) {
+            valeurs = { ...valeurs, choix: { ...valeurs.choix, [evt.champ]: evt.valeur } };
+            ecrireMemoire(CLE, valeurs);
+          }
+          return { action: "continuer" };
+        }
         case "saisie": {
           if (!Number.isFinite(evt.valeur)) {
             erreurs = [lisible("Saisie", "nombre attendu", "taper une valeur numérique")];
             return { action: "continuer" };
           }
           if (PARAMETRES.includes(evt.champ)) {
-            const refus = controlerSaisie("Mur", evt.champ, evt.valeur, ctx.etat(), "mur");
+            const refus = controlerSaisie("Mur", evt.champ, evt.valeur);
             if (refus) {
               erreurs = [refus];
               return { action: "continuer" };
             }
-            valeurs = { ...valeurs, [evt.champ]: evt.valeur };
+            valeurs = { ...valeurs, nombres: { ...valeurs.nombres, [evt.champ]: evt.valeur } };
             ecrireMemoire(CLE, valeurs);
           } else {
             if (evt.champ === "longueur" && !(evt.valeur > 0)) {
@@ -195,17 +217,9 @@ export function sessionMur(ctx: ContexteAtelier): SessionOutil {
       }
     },
     apercu(): Apercu {
-      const etat = ctx.etat();
-      const typeId = typeDeRang(etat, "mur", valeurs.type);
-      const e = valeurs.epaisseur ?? dimensionProposee(etat, "mur", typeId, "epaisseur");
-      const h = valeurs.hauteur ?? dimensionProposee(etat, "mur", typeId, "hauteur");
-      const champs: ChampSaisie[] = [
-        ...(depart ? champsSegment(depart, curseur, verrous) : []),
-        { champ: "epaisseur", libelle: "Épaisseur", unite: "m", valeur: e ?? null },
-        { champ: "hauteur", libelle: "Hauteur", unite: "m", valeur: h ?? null },
-        { champ: "alignement", libelle: "Alignement (−1 gauche, 0 axe, 1 droite)", unite: "", valeur: valeurs.alignement ?? 0 },
-        champType(etat, "mur", valeurs.type),
-      ];
+      const parametres = champsParametres();
+      const e = parametres[0]?.valeur ?? undefined;
+      const champs: ChampSaisie[] = [...(depart ? champsSegment(depart, curseur, verrous) : []), ...parametres];
       const formes = depart && curseur && distance(depart, curseur) > 0 ? formesMur(depart, curseur, valeurs, e, erreurs.length > 0 ? "erreur" : "trace") : [];
       const consigne = !depart
         ? "Cliquez le point de départ du mur (tapez d'abord épaisseur et hauteur si elles sont vides)."

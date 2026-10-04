@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { ObjetMur } from "@parcours/atelier-model";
 import { oublierParametres } from "../plan2d/outils/commun";
-import { appui, banc, cmd, etatDeTest, m, P, saisie, survol, touche } from "./__tests__/banc";
+import { appui, banc, choix, cmd, etatDeTest, m, P, saisie, survol, touche } from "./__tests__/banc";
 import { dessinerMur } from "./dessinateurs";
 import { oublierParametresObjets } from "./outils/parametres";
 
@@ -72,6 +72,22 @@ describe("creer.mur : tracé chaîné", () => {
     await b.jouer(touche("Enter"), saisie("epaisseur", 0.3), appui(5, 0), appui(7, 0));
     expect(b.valides[1]?.commandes.map((c) => c.type)).toEqual(["mur.tracer"]);
     expect(murs(b)).toHaveLength(2);
+  });
+
+  it("alignement et type choisis dans une liste (D-038) ; choix inconnu refusé", async () => {
+    const b = banc(etatDeTest(cmd("type.definir", { definition: { id: "beton-20", classe: "mur", nom: "Béton 20", dimensionsProposees: { epaisseur: m(0.2), hauteur: m(2.6) }, proprietes: [], provenance: "saisie", statut: "declaree" } })));
+    b.pilote.activer("creer.mur");
+    const champ = (c: string) => b.pilote.apercu().champs.find((x) => x.champ === c);
+    expect(champ("type")?.choix?.map((c) => c.valeur)).toEqual(["non-type", "beton-20"]);
+    expect(champ("alignement")?.valeurChoisie).toBe("axe");
+    await b.jouer(choix("alignement", "oblique"));
+    expect(b.pilote.apercu().erreurs[0]?.cause).toMatch(/alignement « oblique » inconnu/);
+    await b.jouer(choix("alignement", "droite"), choix("type", "beton-20"));
+    expect(champ("type")?.valeurChoisie).toBe("beton-20");
+    // Épaisseur et hauteur proposées par le type (DA-05-14).
+    expect(champ("epaisseur")?.valeur).toBe(0.2);
+    await b.jouer(appui(0, 0), appui(3, 0));
+    expect(b.valides[0]?.commandes[0]).toMatchObject({ params: { epaisseur: m(0.2), hauteur: m(2.6), alignement: "droite", typeId: "beton-20" } });
   });
 
   it("pipette : un mur sélectionné donne épaisseur, hauteur, alignement et type courants", async () => {

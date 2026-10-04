@@ -65,6 +65,7 @@ export function banc(etatInitial: EtatModele = etatDeTest(), options: { calque?:
     },
     niveauActif: () => vue.lire().niveauActifId,
     calqueActif: () => vue.lire().calqueActifId,
+    calquesMasques: () => vue.lire().calquesMasques,
     selection,
     ecriture: { permise: true },
     async valider(label, commandes) {
@@ -105,6 +106,8 @@ export const survol = (x: number, y: number, mods: Partial<Modificateurs> = {}, 
 export const glisse = (x: number, y: number): EvenementPlan => ({ type: "glisse", point: P(x, y), accrochage: AUCUN, modificateurs: SANS, objetSousPointeur: null });
 export const relache = (x: number, y: number, mods: Partial<Modificateurs> = {}): EvenementPlan => ({ type: "relache", point: P(x, y), accrochage: AUCUN, modificateurs: { ...SANS, ...mods }, objetSousPointeur: null });
 export const saisie = (champ: string, valeur: number): EvenementPlan => ({ type: "saisie", champ, valeur });
+export const choix = (champ: string, valeur: string): EvenementPlan => ({ type: "choix", champ, valeur });
+export const saisieTexte = (champ: string, texte: string): EvenementPlan => ({ type: "saisie-texte", champ, texte });
 export const touche = (t: string): EvenementPlan => ({ type: "touche", touche: t, modificateurs: SANS });
 
 /** Dernier objet créé d'une classe. */
