@@ -85,6 +85,9 @@ export async function atelierHorsLigne(sc) {
   });
   check("autre appareil : un lot validé pendant la coupure (200, révision avancée)", autre.status() === 200, String(autre.status()));
   await ctx.setOffline(false);
+  // Le compteur « Conflits : 1 » reste visible panneau replié ; le détail s'ouvre par « Détail » (panneau des modifications).
+  await page.waitForFunction(() => /Conflits : 1/.test(document.querySelector('[data-testid="atl-compte-conflits"]')?.textContent ?? ""), null, { timeout: 30000 });
+  if ((await page.locator('[data-testid="atl-panneau-detail"]').getAttribute("aria-expanded")) !== "true") await page.locator('[data-testid="atl-panneau-detail"]').click();
   await page.waitForSelector('.conflict-banner li[data-kind="commandes"]', { timeout: 20000 });
   const conflitTexte = (await page.locator('.conflict-banner li[data-kind="commandes"]').first().textContent()).replace(/\s+/g, " ");
   const wallsDuringConflict = await rdcWallsOf(atelierPid);
