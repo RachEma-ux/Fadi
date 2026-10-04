@@ -88,7 +88,7 @@ function Champ({ champ, objet, ctx, onResultat }: { champ: ChampInspecteur; obje
   }
   return (
     <div className={`atl-prop${invalide ? " atl-invalide" : ""}`}>
-      <label htmlFor={id}>{champ.libelle}</label>
+      {champ.lectureSeule ? <span className="atl-cle">{champ.libelle}</span> : <label htmlFor={id}>{champ.libelle}</label>}
       {controle}
       {champ.provenance && <span className="atl-provenance">{champ.provenance}</span>}
     </div>
