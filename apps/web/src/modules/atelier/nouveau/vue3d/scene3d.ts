@@ -9,7 +9,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { chapeauxDeCoupe, englobant, maillageObjet, niveauxOrdonnes, raccordMur, type Maillage, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 
 export type VueTechnique = "perspective" | "dessus" | "coupe-ns" | "coupe-eo" | "facade-sud" | "facade-nord" | "facade-est" | "facade-ouest";
-export type Presentation = "batiment" | "niveau" | "eclate";
+export type Presentation = "batiment" | "niveau" | "eclate" | "eclate-horizontal";
+const estEclate = (p: Presentation | undefined) => p === "eclate" || p === "eclate-horizontal";
 
 export interface OptionsScene {
   vue: VueTechnique;
@@ -283,15 +284,18 @@ export class Scene3D {
       const n = etat.niveaux[id];
       const rang = n ? ordonnes.findIndex((x) => x.id === id) : 0;
       g.visible = o.presentation !== "niveau" || id === o.niveauActif || id === "-";
-      g.position.z = o.presentation === "eclate" ? rang * ECART_ECLATE : 0;
+      // Éclaté horizontal (D-053) : les niveaux posés côte à côte au même sol (altitude ramenée à 0), de gauche à
+      // droite dans l'ordre des niveaux, séparés d'un écart fixe.
+      g.position.z = o.presentation === "eclate" ? rang * ECART_ECLATE : o.presentation === "eclate-horizontal" && n ? -n.elevation : 0;
+      g.position.x = o.presentation === "eclate-horizontal" ? rang * (this.boite.isEmpty() ? 0 : this.boite.max.x - this.boite.min.x + ECART_ECLATE) : 0;
       // Coupe horizontale en perspective : les niveaux au-dessus du niveau actif sont masqués.
-      if (o.vue === "perspective" && o.coupeHorizontale !== null && actif && n && n.ordre > actif.ordre && o.presentation !== "eclate") g.visible = false;
+      if (o.vue === "perspective" && o.coupeHorizontale !== null && actif && n && n.ordre > actif.ordre && !estEclate(o.presentation)) g.visible = false;
     }
     for (const l of this.lots) if (l.aretes) l.aretes.visible = o.aretes || o.vue !== "perspective";
     // Plans de coupe (partagés par tous les matériaux).
     this.plans.length = 0;
     const b = this.boite;
-    if (o.vue === "perspective" && o.coupeHorizontale !== null && actif && o.presentation !== "eclate") this.plans.push(new THREE.Plane(new THREE.Vector3(0, 0, -1), actif.elevation + o.coupeHorizontale));
+    if (o.vue === "perspective" && o.coupeHorizontale !== null && actif && !estEclate(o.presentation)) this.plans.push(new THREE.Plane(new THREE.Vector3(0, 0, -1), actif.elevation + o.coupeHorizontale));
     if (o.vue === "dessus" && actif) this.plans.push(new THREE.Plane(new THREE.Vector3(0, 0, -1), actif.elevation + (o.coupeHorizontale ?? 1.2)));
     if (o.vue === "coupe-ns") this.plans.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), -(b.min.x + (b.max.x - b.min.x) * o.positionCoupe)));
     if (o.vue === "coupe-eo") this.plans.push(new THREE.Plane(new THREE.Vector3(0, 1, 0), -(b.min.y + (b.max.y - b.min.y) * o.positionCoupe)));
@@ -307,6 +311,12 @@ export class Scene3D {
     const o = this.options;
     const b = this.boite.clone();
     if (o?.presentation === "eclate" && this.etat) b.max.z += niveauxOrdonnes(this.etat).length * ECART_ECLATE;
+    if (o?.presentation === "eclate-horizontal") {
+      // Emprise réelle des niveaux déplacés.
+      const u = new THREE.Box3();
+      for (const g of this.groupes.values()) if (g.visible) u.union(new THREE.Box3().setFromObject(g));
+      if (!u.isEmpty()) b.copy(u);
+    }
     if (o?.presentation === "niveau" && o.niveauActif && this.etat) {
       const g = this.groupes.get(o.niveauActif);
       if (g) {
@@ -322,7 +332,9 @@ export class Scene3D {
       this.camera = this.perspective;
       this.controles.object = this.perspective;
       this.controles.enableRotate = true;
-      this.perspective.position.set(c.x - r * 0.9, c.y - r * 1.3, c.z + r * 0.9);
+      // Éclaté horizontal : la rangée de niveaux vue de face (depuis le sud, en plongée).
+      if (o?.presentation === "eclate-horizontal") this.perspective.position.set(c.x, c.y - r * 1.15, c.z + r * 0.65);
+      else this.perspective.position.set(c.x - r * 0.9, c.y - r * 1.3, c.z + r * 0.9);
       this.controles.target.copy(c);
     } else {
       this.camera = this.ortho;
@@ -353,6 +365,23 @@ export class Scene3D {
 
   private echelleOrtho = 20;
 
+  /** Caméra courante (vue enregistrée, D-053) : position et point visé, repère local en mètres. */
+  pointDeVue(): { position: { x: number; y: number; z: number }; cible: { x: number; y: number; z: number } } {
+    const r = (v: number) => Math.round(v * 1000) / 1000;
+    const p = this.camera.position;
+    const c = this.controles.target;
+    return { position: { x: r(p.x), y: r(p.y), z: r(p.z) }, cible: { x: r(c.x), y: r(c.y), z: r(c.z) } };
+  }
+
+  /** Replace la caméra perspective sur un point de vue enregistré (après `appliquerOptions`). */
+  placerPointDeVue(v: { position: { x: number; y: number; z: number }; cible: { x: number; y: number; z: number } }): void {
+    if (this.camera !== this.perspective) return;
+    this.perspective.position.set(v.position.x, v.position.y, v.position.z);
+    this.controles.target.set(v.cible.x, v.cible.y, v.cible.z);
+    this.controles.update();
+    this.rendre();
+  }
+
   private ajusterOrtho(): void {
     const a = this.largeur / this.hauteur;
     const e = this.echelleOrtho;
@@ -381,7 +410,7 @@ export class Scene3D {
       const mesh = this.versMesh(m, this.matSelection);
       const g = m.niveauId ? this.groupes.get(m.niveauId) : null;
       if (g) {
-        mesh.position.z = g.position.z;
+        mesh.position.copy(g.position);
         mesh.visible = g.visible;
       }
       this.selection.add(mesh);
@@ -423,7 +452,7 @@ export class Scene3D {
     if (m) {
       const mesh = this.versMesh(m, this.matApercu);
       const g = m.niveauId ? this.groupes.get(m.niveauId) : null;
-      if (g) mesh.position.z = g.position.z;
+      if (g) mesh.position.copy(g.position);
       this.apercu.add(mesh);
     }
     this.rendre();
@@ -523,7 +552,7 @@ export class Scene3D {
         else hi = mid - 1;
       }
       const point = h.point.clone();
-      point.z -= (h.object.parent?.position.z ?? 0);
+      if (h.object.parent) point.sub(h.object.parent.position);
       return { objetId: lot.ids[lo]!, point };
     }
     return null;
@@ -537,8 +566,8 @@ export class Scene3D {
     const m = this.maillage(etat, o, JSON.stringify(etat.niveaux));
     const e = m ? englobant([m]) : null;
     if (!e || !m) return null;
-    const dz = m.niveauId ? (this.groupes.get(m.niveauId)?.position.z ?? 0) : 0;
-    const p = new THREE.Vector3((e.min[0] + e.max[0]) / 2, (e.min[1] + e.max[1]) / 2, e.max[2] - 0.05 + dz).project(this.camera);
+    const d = m.niveauId ? this.groupes.get(m.niveauId)?.position : undefined;
+    const p = new THREE.Vector3((e.min[0] + e.max[0]) / 2 + (d?.x ?? 0), (e.min[1] + e.max[1]) / 2 + (d?.y ?? 0), e.max[2] - 0.05 + (d?.z ?? 0)).project(this.camera);
     return { x: ((p.x + 1) / 2) * this.largeur, y: ((1 - p.y) / 2) * this.hauteur };
   }
 

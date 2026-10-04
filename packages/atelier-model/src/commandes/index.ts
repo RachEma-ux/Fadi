@@ -32,6 +32,7 @@ import { reducteursBloc } from "./bloc.js";
 import { controlerContraintes, reducteursContrainte } from "./contrainte.js";
 import { controlerVerrous, verrouillerObjets } from "./verrous.js";
 import { reducteursDocuments } from "./documents.js";
+import { reducteursVues3D } from "./vues3d.js";
 import { joindreMurs, scinderMur } from "./mur.js";
 import { creerOccurrence, modifierOccurrence, supprimerOccurrence } from "./objets.js";
 import { affecterClassification, affecterPhase, definirPropriete, rattacherReference, reducteursCalque, reducteursDefinition, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
@@ -221,6 +222,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "reference.reparer": (etat, p) => reparerReference(etat, p),
   // Documents dérivés (lot 5) : vues et feuilles
   ...reducteursDocuments,
+  ...reducteursVues3D,
   // Blocs et composants, contraintes d'esquisse, phases (lot 5)
   "bloc.definir": (etat, p, ctx) => reducteursBloc.definir(etat, p, ctx),
   "bloc.placer": (etat, p, ctx) => reducteursBloc.placer(etat, p, ctx),

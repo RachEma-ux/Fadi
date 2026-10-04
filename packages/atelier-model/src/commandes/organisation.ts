@@ -84,7 +84,14 @@ export const reducteursNiveau = {
     delete niveaux[id];
     r.effets.supprimes.push(id);
     r.effets.niveauxTouches.push(id);
-    return { etat: { ...r.etat, niveaux }, effets: r.effets };
+    // Vues 3D enregistrées (D-053) qui retenaient ce niveau comme niveau actif : elles n'en retiennent plus aucun.
+    let definitions = r.etat.definitions;
+    for (const d of Object.values(definitions)) {
+      if ((d.classe as string) !== "vue-3d" || (d.params as { niveauId?: string | null }).niveauId !== id) continue;
+      definitions = { ...definitions, [d.id]: { ...d, params: { ...d.params, niveauId: null }, version: d.version + 1 } };
+      r.effets.modifies.push(d.id);
+    }
+    return { etat: { ...r.etat, niveaux, definitions }, effets: r.effets };
   },
 };
 
@@ -489,7 +496,7 @@ export const reducteursDefinition = {
     const id = lire.chaine(p, "id");
     const d = etat.definitions[id];
     if (!d) throw new ErreurCommande("precondition", "id", `définition inconnue : ${id}`);
-    if (["vue", "feuille", "reference-externe"].includes(d.classe as string)) throw new ErreurCommande("precondition", "id", `${d.nom} : utiliser la commande propre aux ${d.classe === "reference-externe" ? "références externes (refexterne.detacher)" : "vues et feuilles"}`);
+    if (["vue", "feuille", "reference-externe", "vue-3d"].includes(d.classe as string)) throw new ErreurCommande("precondition", "id", `${d.nom} : utiliser la commande propre aux ${d.classe === "reference-externe" ? "références externes (refexterne.detacher)" : d.classe === "vue-3d" ? "vues 3D (vue3d.supprimer)" : "vues et feuilles"}`);
     const occ = occurrencesDe(etat, id);
     const detacher = lire.booleen(p, "detacher", false);
     if (occ.length && (d.classe === "bloc" || d.classe === "composant")) throw new ErreurCommande("precondition", "id", `« ${d.nom} » a ${occ.length} occurrence(s) : les décomposer ou les supprimer d'abord`);
@@ -513,7 +520,7 @@ export const reducteursDefinition = {
     if (ancienne.id === nouvelle.id) throw new ErreurCommande("invalide", "nouvelle", "définition identique");
     const blocs = ["bloc", "composant"];
     const compatibles = ancienne.classe === nouvelle.classe || (blocs.includes(ancienne.classe as string) && blocs.includes(nouvelle.classe as string));
-    if (!compatibles || ["vue", "feuille", "reference-externe"].includes(ancienne.classe as string)) throw new ErreurCommande("precondition", "nouvelle", `« ${nouvelle.nom} » (${nouvelle.classe}) ne peut pas remplacer « ${ancienne.nom} » (${ancienne.classe})`);
+    if (!compatibles || ["vue", "feuille", "reference-externe", "vue-3d"].includes(ancienne.classe as string)) throw new ErreurCommande("precondition", "nouvelle", `« ${nouvelle.nom} » (${nouvelle.classe}) ne peut pas remplacer « ${ancienne.nom} » (${ancienne.classe})`);
     const objets = { ...etat.objets };
     const effets = effetsVides();
     for (const o of occurrencesDe(etat, ancienne.id)) {

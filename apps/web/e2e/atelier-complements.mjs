@@ -308,6 +308,29 @@ await page.waitForTimeout(300);
 const sansCoupe = await page.evaluate(() => window.fadiMesures3D?.chapeaux ?? 0);
 check("référence externe dessinée aussi en 3D (traits gris au niveau de rattachement)", (await page.evaluate(() => window.fadiMesures3D?.externes ?? 0)) === 1);
 check("coupe en 3D : la matière coupée est remplie (coupe N–S, plan) ; rien sans plan de coupe", chapeaux["Coupe nord–sud"] > 0 && chapeaux["Plan (dessus)"] > 0 && sansCoupe === 0, JSON.stringify({ ...chapeaux, sansCoupe }));
+// Vues 3D enregistrées et éclaté horizontal (D-053) : la vue est enregistrée dans le modèle, puis rejouée.
+{
+  const pres = page.locator('.vue3d-commandes select[aria-label="Présentation"]');
+  await pres.selectOption("eclate-horizontal");
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${OUT}/10b-eclate-horizontal.png` });
+  await page.locator("[data-vues-3d] > summary").click();
+  await page.locator('[data-vues-3d] input[aria-label="Nom de la vue 3D"]').fill("Éclaté e2e");
+  await page.locator('[data-vues-3d] button:has-text("Enregistrer la vue")').click();
+  let v3 = null;
+  for (let k = 0; k < 40 && !v3; k++) {
+    v3 = Object.values((await modele(pid)).modele.definitions).find((d) => d.classe === "vue-3d" && d.nom === "Éclaté e2e") ?? null;
+    if (!v3) await page.waitForTimeout(500);
+  }
+  await pres.selectOption("batiment");
+  await page.waitForTimeout(200);
+  await page.locator('[data-vues-3d] select[aria-label="Vue enregistrée"]').selectOption({ label: "Éclaté e2e" });
+  await page.waitForTimeout(300);
+  const rejouee = await pres.inputValue();
+  check("vue 3D enregistrée (caméra, présentation éclatée horizontale) puis rejouée", !!v3 && v3.params.presentation === "eclate-horizontal" && typeof v3.params.camera?.position?.x === "number" && rejouee === "eclate-horizontal", `${JSON.stringify(v3?.params ?? null).slice(0, 160)} · rejouée ${rejouee}`);
+  await pres.selectOption("batiment");
+  await page.locator("[data-vues-3d] > summary").click();
+}
 // Documents : le plan du niveau dessine la référence (traits lus avec les droits de l'utilisateur) et le dit.
 await page.locator('.barre-mode button:has-text("Documents")').click();
 await page.waitForSelector(".atelier-docs");

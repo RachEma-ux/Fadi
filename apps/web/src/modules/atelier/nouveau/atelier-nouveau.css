@@ -940,6 +940,43 @@
 .vue3d-curseur input {
   width: 8rem;
 }
+/* Vues 3D enregistrées (D-053) : panneau déroulant posé dans la barre. */
+.vue3d-enregistrees {
+  position: relative;
+}
+.vue3d-enregistrees > summary {
+  min-height: 32px;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.94);
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85em;
+  cursor: pointer;
+}
+.vue3d-enregistrees[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.97);
+}
+.vue3d-ligne {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+.vue3d-ligne input {
+  min-height: 32px;
+  min-width: 0;
+  width: 11rem;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+}
 .vue3d-etat {
   position: absolute;
   left: 10px;

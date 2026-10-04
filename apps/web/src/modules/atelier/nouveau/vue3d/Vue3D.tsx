@@ -6,7 +6,7 @@
  */
 import type { Vector3 } from "three";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { etendueMur, maillageObjet, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { etendueMur, maillageObjet, vues3D, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { Scene3D, type OptionsScene, type Presentation, type VueTechnique } from "./scene3d";
 
@@ -34,6 +34,7 @@ const PRESENTATIONS: { id: Presentation; libelle: string }[] = [
   { id: "batiment", libelle: "Bâtiment" },
   { id: "niveau", libelle: "Niveau actif" },
   { id: "eclate", libelle: "Éclaté" },
+  { id: "eclate-horizontal", libelle: "Éclaté horizontal" },
 ];
 
 const fmt = (v: number) => v.toFixed(2).replace(".", ",");
@@ -131,9 +132,36 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
     if (pret) sceneRef.current?.majExternes(externes);
   }, [externes, pret]);
 
+  // Vue 3D enregistrée à rejouer (D-053) : son point de vue est posé après l'application de ses réglages.
+  const [rejeu, setRejeu] = useState(0);
+  const pointDeVueEnAttente = useRef<{ position: { x: number; y: number; z: number }; cible: { x: number; y: number; z: number } } | null>(null);
   useEffect(() => {
-    if (pret) sceneRef.current?.appliquerOptions(options, false);
-  }, [options, pret, etat]);
+    if (!pret) return;
+    sceneRef.current?.appliquerOptions(options, false);
+    if (pointDeVueEnAttente.current) {
+      sceneRef.current?.placerPointDeVue(pointDeVueEnAttente.current);
+      pointDeVueEnAttente.current = null;
+    }
+  }, [options, pret, etat, rejeu]);
+  const enregistrees = useMemo(() => vues3D(etat), [etat]);
+  const [vueChoisie, setVueChoisie] = useState("");
+  const [nomVue, setNomVue] = useState("");
+  const rejouer = (id: string) => {
+    const v = enregistrees.find((x) => x.id === id);
+    if (!v) return;
+    pointDeVueEnAttente.current = v.params.camera;
+    if (v.params.niveauId && etat.niveaux[v.params.niveauId] && v.params.niveauId !== ui.niveauId) etatUi.set({ niveauId: v.params.niveauId });
+    setRejeu((n) => n + 1);
+    setReglages({ vue: v.params.vue, presentation: v.params.presentation, coupeHorizontale: v.params.coupeHorizontale, positionCoupe: v.params.positionCoupe, aretes: v.params.aretes });
+  };
+  const enregistrer = () => {
+    const s = sceneRef.current;
+    const nom = nomVue.trim();
+    if (!s || !nom) return;
+    const existante = enregistrees.find((x) => x.nom === nom);
+    onCommandes([{ type: "vue3d.enregistrer", params: { ...(existante ? { id: existante.id } : {}), nom, camera: s.pointDeVue(), vue: options.vue, presentation: options.presentation, coupeHorizontale: options.coupeHorizontale, positionCoupe: options.positionCoupe, aretes: options.aretes, niveauId: ui.niveauId } }], `${existante ? "Mettre à jour" : "Enregistrer"} la vue 3D « ${nom} »`);
+    setNomVue("");
+  };
 
   useEffect(() => {
     if (pret) sceneRef.current?.majSelection(ui.selection);
@@ -334,7 +362,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
             </select>
           </label>
         )}
-        {options.vue === "perspective" && options.presentation !== "eclate" && (
+        {options.vue === "perspective" && options.presentation !== "eclate" && options.presentation !== "eclate-horizontal" && (
           <label className="vue3d-case">
             <input type="checkbox" checked={options.coupeHorizontale !== null} onChange={(e) => setOptions({ coupeHorizontale: e.target.checked ? 1.2 : null })} />
             Coupe horizontale
@@ -357,6 +385,28 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
           Arêtes
         </label>
         <button type="button" onClick={() => sceneRef.current?.cadrer()}>Cadrer</button>
+        <details className="vue3d-enregistrees" data-vues-3d>
+          <summary>Vues enregistrées ({enregistrees.length})</summary>
+          {enregistrees.length > 0 && (
+            <span className="vue3d-ligne">
+              <select aria-label="Vue enregistrée" value={vueChoisie} onChange={(e) => { setVueChoisie(e.target.value); rejouer(e.target.value); }}>
+                <option value="">Choisir une vue…</option>
+                {enregistrees.map((v) => <option key={v.id} value={v.id}>{v.nom}</option>)}
+              </select>
+              {vueChoisie && !readOnly && (
+                <button type="button" onClick={() => { const v = enregistrees.find((x) => x.id === vueChoisie); if (v) onCommandes([{ type: "vue3d.supprimer", params: { id: v.id } }], `Supprimer la vue 3D « ${v.nom} »`); setVueChoisie(""); }}>
+                  Supprimer
+                </button>
+              )}
+            </span>
+          )}
+          {!readOnly && (
+            <form className="vue3d-ligne" onSubmit={(e) => { e.preventDefault(); enregistrer(); }}>
+              <input aria-label="Nom de la vue 3D" placeholder="Nom de la vue" value={nomVue} maxLength={120} onChange={(e) => setNomVue(e.target.value)} onKeyDown={(e) => e.stopPropagation()} />
+              <button type="submit" disabled={!nomVue.trim()}>Enregistrer la vue</button>
+            </form>
+          )}
+        </details>
         <label className="vue3d-case" title={webgpuDisponible ? "Moteur WebGPU (essai), repli WebGL2 en cas d'échec" : "WebGPU indisponible dans ce navigateur : WebGL2"}>
           <input type="checkbox" checked={webgpu} disabled={!webgpuDisponible} onChange={(e) => setWebgpu(e.target.checked)} />
           WebGPU

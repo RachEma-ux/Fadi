@@ -123,3 +123,4 @@ Décalage de contours fermés et en série, chanfrein de sommet, sommets communs
 Contour détecté, axes des murs, quadrants, repères numérotés, fusion et scission de pièces, fichier de bibliothèque (`pieces-plus.test.ts`, e2e, D-050).
 Contraintes : longueurs égales, milieu, sur la ligne, fixe, symétrie, angle ; tolérance de respect au micromètre (`contrainte-plus.test.ts`, e2e, D-051).
 Verrous d'objet et de groupe (`verrous.test.ts`, API, e2e, D-052).
+Vues 3D enregistrées et éclaté horizontal (`vues3d.test.ts`, e2e, D-053).
