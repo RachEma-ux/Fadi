@@ -253,11 +253,16 @@ await page.locator('[data-detail="feuille"] .docs-reglages select').first().sele
 await page.locator('[data-detail="feuille"] .docs-reglages button[type="submit"]').click();
 await page.waitForFunction(() => /A1 paysage/.test(document.querySelector("[data-feuille]")?.textContent || ""), null, { timeout: 30000 });
 for (const n of [1, 2]) {
-  await page.locator('[data-placer="vue"]').selectOption({ index: 1 });
-  // « Placer » attend la composition à jour de la feuille ; sur un banc chargé, elle peut prendre du temps.
-  await page.waitForFunction(() => { const b = document.querySelector('[data-placer="ok"]'); return !!b && !b.disabled; }, null, { timeout: 60000 }).catch(() => {});
-  await page.locator('[data-placer="ok"]').click();
-  await page.waitForFunction((k) => document.querySelectorAll(".docs-placements li").length === k, n, { timeout: 60000 }).catch(async (err) => {
+  // « Placer » attend la composition à jour de la feuille ; sur un banc chargé, elle peut prendre du temps. Trois
+  // tentatives au plus : un clic arrivé pendant un recalcul (bouton redevenu inactif) est refait.
+  for (let essai = 0; essai < 3; essai++) {
+    await page.locator('[data-placer="vue"]').selectOption({ index: 1 });
+    await page.waitForFunction(() => { const b = document.querySelector('[data-placer="ok"]'); return !!b && !b.disabled; }, null, { timeout: 60000 }).catch(() => {});
+    await page.locator('[data-placer="ok"]').click().catch(() => {});
+    const place = await page.waitForFunction((k) => document.querySelectorAll(".docs-placements li").length >= k, n, { timeout: 25000 }).then(() => true).catch(() => false);
+    if (place) break;
+  }
+  await page.waitForFunction((k) => document.querySelectorAll(".docs-placements li").length === k, n, { timeout: 30000 }).catch(async (err) => {
     console.log("diagnostic placement :", await page.locator(".docs-contenu").textContent());
     await page.screenshot({ path: `${OUT}/echec-placement.png` });
     (await import("node:fs")).writeFileSync(`${OUT}/modele-echec.json`, JSON.stringify(await modele()));
