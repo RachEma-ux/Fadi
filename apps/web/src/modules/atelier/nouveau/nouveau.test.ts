@@ -112,6 +112,24 @@ describe("gomme : effacement partiel (D-100)", () => {
   });
 });
 
+describe("cote rattachée à un bloc (D-102)", () => {
+  it("accrochage sur les traits du bloc ; cote posée sur deux sommets : deux rattachements « sommet[i] »", () => {
+    const etat = appliquer(socle(), [
+      { type: "esquisse.rectangle", params: { id: "e1", niveauId: "rdc", points: [pt(10, 10), pt(11.2, 10.8)] } },
+      { type: "bloc.definir", params: { id: "b", nom: "Table", cibles: ["e1"], pointDeBase: pt(10, 10) } },
+      { type: "bloc.placer", params: { id: "o1", definitionId: "b", niveauId: "rdc", position: pt(0, 5) } },
+    ]);
+    const cache = segmentsDuNiveau(etat, "rdc");
+    expect(cache.segments.filter((s) => s.objetId === "o1")).toHaveLength(4);
+    expect(accrocher(pt(1.19, 5.01), cache, etatUi.get().accrochages, 0.1, null).point).toMatchObject({ x: 1.2, y: 5 });
+    const u = ui({ outil: "cotation" });
+    const r = clic("cotation", pt(0.6, 4.5), etat, { ...u, pointsEnCours: [pt(0, 5), pt(1.2, 5)] }, opts);
+    const ratt = r.commandes.filter((c) => c.type === "cotation.rattacher").map((c) => (c.params as { caracteristique: string }).caracteristique);
+    // Le premier sommet est aussi le point d'insertion : la caractéristique « centre » (même point, même suivi) est retenue.
+    expect(ratt).toEqual(["centre", "sommet[1]"]);
+  });
+});
+
 let n = 0;
 function appliquer(etat: ModeleAtelier, commandes: Commande[]): ModeleAtelier {
   n += 1;

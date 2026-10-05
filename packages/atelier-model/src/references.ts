@@ -6,6 +6,7 @@
 import { add, centroide, distance, facesMur, mul, sub } from "./geometrie.js";
 import type { ModeleAtelier, OccurrenceQuelconque, Reference } from "./modele.js";
 import { CLASSES } from "./ontologie.js";
+import { sommetsBloc } from "./blocs-places.js";
 import { pt, type Point2 } from "./unites.js";
 
 const milieu = (a: Point2, b: Point2): Point2 => pt((a.x + b.x) / 2, (a.y + b.y) / 2);
@@ -77,6 +78,8 @@ export function pointCaracteristique(etat: ModeleAtelier, objetId: string, carac
       return null;
     }
     case "bloc-occurrence":
+      // Sommets du contenu placé (D-102) : une cote rattachée suit l'occurrence déplacée, tournée ou mise à l'échelle.
+      if (nom === "sommet" && index !== null) return sommetsBloc(etat, o)[index] ?? null;
       return nom === "centre" ? o.params.position : null;
     case "garde-corps":
       return nom === "sommet" && index !== null ? (o.params.points[index] ?? null) : null;
@@ -101,7 +104,7 @@ export interface PropositionReference {
 }
 
 /** Caractéristiques énumérables d'un objet (sans les index au-delà de ses sommets). */
-export function caracteristiquesDe(o: OccurrenceQuelconque): string[] {
+export function caracteristiquesDe(o: OccurrenceQuelconque, etat?: ModeleAtelier): string[] {
   const base = CLASSES[o.classe].caracteristiques;
   const out: string[] = [];
   for (const c of base) {
@@ -110,7 +113,7 @@ export function caracteristiquesDe(o: OccurrenceQuelconque): string[] {
       out.push("contour");
       for (let i = 0; i < n; i++) out.push(`contour[${i}]`);
     } else if (c === "sommet" || c === "segment") {
-      const n = o.classe === "esquisse" || o.classe === "garde-corps" ? o.params.points.length : 0;
+      const n = o.classe === "esquisse" || o.classe === "garde-corps" ? o.params.points.length : o.classe === "bloc-occurrence" && etat ? sommetsBloc(etat, o).length : 0;
       for (let i = 0; i < n; i++) out.push(`${c}[${i}]`);
     } else out.push(c);
   }
@@ -123,7 +126,7 @@ export function propositionsReparation(etat: ModeleAtelier, ref: Reference, dern
   for (const o of Object.values(etat.objets)) {
     if (o.id === ref.proprietaireId) continue;
     if (niveauId !== null && o.niveauId !== niveauId) continue;
-    for (const c of caracteristiquesDe(o)) {
+    for (const c of caracteristiquesDe(o, etat)) {
       const p = pointCaracteristique(etat, o.id, c);
       if (!p) continue;
       const d = dernierPoint ? distance(dernierPoint, p) : Infinity;
@@ -146,7 +149,7 @@ export function caracteristiqueAuPoint(etat: ModeleAtelier, objetId: string, p: 
   const o = etat.objets[objetId];
   if (!o) return null;
   let meilleure: { c: string; d: number } | null = null;
-  for (const c of caracteristiquesDe(o)) {
+  for (const c of caracteristiquesDe(o, etat)) {
     const q = pointCaracteristique(etat, objetId, c);
     if (!q) continue;
     const d = Math.hypot(q.x - p.x, q.y - p.y);

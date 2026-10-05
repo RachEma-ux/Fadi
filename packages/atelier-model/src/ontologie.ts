@@ -71,7 +71,7 @@ export const CLASSES: Readonly<Record<Classe, DescriptionClasse>> = {
   etiquette: { classe: "etiquette", ontologie: "annotation", libelle: "Étiquette", ifc: "IfcAnnotation", caracteristiques: [], parNiveau: true },
   "garde-corps": { classe: "garde-corps", ontologie: "building.architecture", libelle: "Garde-corps", ifc: "IfcRailing", caracteristiques: ["sommet"], parNiveau: true },
   "objet-importe": { classe: "objet-importe", ontologie: "building.architecture", libelle: "Objet importé (IFC)", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre"], parNiveau: true },
-  "bloc-occurrence": { classe: "bloc-occurrence", ontologie: "drawing", libelle: "Occurrence de bloc", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre"], parNiveau: true },
+  "bloc-occurrence": { classe: "bloc-occurrence", ontologie: "drawing", libelle: "Occurrence de bloc", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre", "sommet"], parNiveau: true },
 };
 
 export const CLASSES_OUVERTURE: readonly Classe[] = ["porte", "fenetre", "ouverture"];

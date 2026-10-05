@@ -172,3 +172,4 @@ Plancher : trémies choisies une à une, aperçu chiffré au survol (`nouveau.te
 Décalage des courbes et ellipses (`chanfrein-arc.test.ts`, `nouveau.test.ts`, D-099).
 Effacement partiel à la gomme (`esquisse/effacer.test.ts`, `nouveau.test.ts`, D-100).
 Menuiserie paramétrée des fenêtres (`menuiserie.test.ts`, e2e, D-101).
+Cotes rattachées à une occurrence de bloc (`bloc.test.ts`, `nouveau.test.ts`, D-102).

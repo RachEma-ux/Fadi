@@ -183,3 +183,32 @@ describe("blocs imbriqués (D-078)", () => {
     expect(prims.length).toBeGreaterThan(0);
   });
 });
+
+describe("cotes rattachées à une occurrence de bloc (D-102, DA-05-06)", () => {
+  it("sommets du contenu placé ; cote rattachée à deux sommets, qui suit l'occurrence déplacée et tournée", async () => {
+    const { sommetsBloc, traitsBloc } = await import("../blocs-places.js");
+    const { caracteristiqueAuPoint, extremitesCotation, referenceExtremite } = await import("../references.js");
+    const e = appliquerLot(socle(), lot([
+      { type: "bloc.definir", params: { id: "b", nom: "Table", cibles: ["e1", "e2"], pointDeBase: pt(10, 10) } },
+      { type: "bloc.placer", params: { id: "o1", definitionId: "b", niveauId: "rdc", position: pt(0, 5) } },
+    ], "b")).etat;
+    const o = e.objets["o1"]!;
+    const s = sommetsBloc(e, o);
+    expect(s.slice(0, 4)).toEqual([pt(0, 5), pt(1.2, 5), pt(1.2, 5.8), pt(0, 5.8)]);
+    expect(s[4]).toEqual(pt(0.6, 5.4)); // centre du cercle
+    expect(traitsBloc(e, o).map((t) => [t.ferme, !!t.courbe])).toEqual([[true, false], [false, true]]);
+    expect(caracteristiqueAuPoint(e, "o1", pt(1.2, 5.8))).toBe("sommet[2]");
+    const c = appliquerLot(e, lot([
+      { type: "cotation.creer", params: { id: "k", niveauId: "rdc", a: pt(0, 5), b: pt(1.2, 5), decalage: m(0.5) } },
+      { type: "cotation.rattacher", params: { id: "k", referenceId: referenceExtremite("k", "a"), objetId: "o1", caracteristique: "sommet[0]" } },
+      { type: "cotation.rattacher", params: { id: "k", referenceId: referenceExtremite("k", "b"), objetId: "o1", caracteristique: "sommet[1]" } },
+    ], "c")).etat;
+    const d = appliquerLot(c, lot([{ type: "transformer.tourner", params: { centre: pt(0, 5), angle: { value: 90, unit: "deg" } }, cibles: ["o1"] }, { type: "transformer.deplacer", params: { dx: 2, dy: 0 }, cibles: ["o1"] }], "d")).etat;
+    const x = extremitesCotation(d, "k")!;
+    expect(x.rattachees).toBe(2);
+    expect(x.a.x).toBeCloseTo(2, 9);
+    expect(x.a.y).toBeCloseTo(5, 9);
+    expect(x.b.x).toBeCloseTo(2, 9);
+    expect(x.b.y).toBeCloseTo(6.2, 9);
+  });
+});

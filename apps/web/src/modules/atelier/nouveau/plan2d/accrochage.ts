@@ -4,7 +4,7 @@
  * d'objet priment sur l'orthogonal, qui prime sur la grille. Fonctions pures : testables sans DOM.
  */
 import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
-import { pt } from "@parcours/atelier-model";
+import { pt, traitsBloc } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
 export type TypeAccroche = "extremite" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "intersection" | "proche" | "orthogonal" | "grille" | "libre";
@@ -118,6 +118,14 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
         break;
       case "cotation":
         segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
+        break;
+      case "bloc-occurrence":
+        // Contenu placé (D-102) : accrochage et sélection sur les traits du bloc ; les cotes s'y rattachent.
+        for (const t of traitsBloc(etat, o)) {
+          const pts = t.points;
+          for (let i = 0; i + 1 < pts.length; i++) segments.push({ a: pts[i]!, b: pts[i + 1]!, objetId: o.id, ...(t.courbe ? { courbe: true } : {}) });
+          if (t.ferme && pts.length > 2) segments.push({ a: pts[pts.length - 1]!, b: pts[0]!, objetId: o.id });
+        }
         break;
       default:
         break;
