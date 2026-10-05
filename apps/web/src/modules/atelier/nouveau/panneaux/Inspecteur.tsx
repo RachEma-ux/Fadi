@@ -1006,6 +1006,7 @@ function GroupeSelection({ sel, etat, readOnly, onCommandes }: { sel: Occurrence
         <label htmlFor={`groupe-nom-${gid}`}>Nom</label>
         <input id={`groupe-nom-${gid}`} value={nom ?? groupe.nom} disabled={readOnly} onChange={(e) => setNom(e.target.value)} onKeyDown={(e) => e.stopPropagation()} maxLength={120} />
       </form>
+      <ProprietesCible cible={{ groupeId: gid }} proprietes={groupe.proprietes} readOnly={readOnly} onCommandes={onCommandes} libelle={`groupe « ${groupe.nom} »`} />
       <span className="ver-actions">
         <button type="button" onClick={() => etatUi.set({ selection: membres.map((o) => o.id) })}>Sélectionner le groupe</button>
         {sans.length > 0 && (
@@ -1502,5 +1503,54 @@ function OuvertureAngle({ murs, onCommandes }: { murs: Occurrence<"mur">[]; onCo
         <button type="button" disabled={!ok} onClick={() => onCommandes([{ type: "ouverture.angle", params: { murA: murs[0]!.id, murB: murs[1]!.id, classe, largeurA: { value: lu.largeurA!, unit: "m" }, largeurB: { value: lu.largeurB!, unit: "m" }, hauteur: { value: lu.hauteur!, unit: "m" }, ...(classe === "fenetre" ? { allege: { value: lu.allege!, unit: "m" } } : {}) } }], `Ouverture d'angle sur ${murs[0]!.id} et ${murs[1]!.id}`)} data-angle-poser>Poser</button>
       </div>
     </details>
+  );
+}
+
+/**
+ * Propriétés d'un groupe ou d'un calque (D-088) : liste, ajout (nom, valeur, unité si nombre), retrait ; mêmes règles
+ * que pour les objets (nombre sans unité refusé, rien n'est supposé).
+ */
+export function ProprietesCible({ cible, proprietes, readOnly, onCommandes, libelle }: { cible: { groupeId: string } | { calqueCible: string }; proprietes: Record<string, { valeur: unknown; unite?: string | null }> | undefined; readOnly: boolean; onCommandes: PropsInspecteur["onCommandes"]; libelle: string }) {
+  const [nom, setNom] = useState("");
+  const [valeur, setValeur] = useState("");
+  const [unite, setUnite] = useState("");
+  const [erreur, setErreur] = useState<string | null>(null);
+  const entrees = Object.entries(proprietes ?? {}).sort(([a], [b]) => a.localeCompare(b, "fr"));
+  const ajouter = () => {
+    const v = valeur.trim();
+    let val: string | number = v;
+    if (/^-?\d+(?:[.,]\d+)?$/.test(v)) {
+      if (!unite.trim()) return setErreur("Valeur numérique sans unité : renseignez l'unité (rien n'est supposé).");
+      val = Number(v.replace(",", "."));
+    }
+    setErreur(null);
+    onCommandes([{ type: "propriete.definir", params: { ...cible, nom: nom.trim(), valeur: val, ...(unite.trim() ? { unite: unite.trim() } : {}) } }], `Propriété « ${nom.trim()} » du ${libelle}`);
+    setNom("");
+    setValeur("");
+    setUnite("");
+  };
+  return (
+    <div className="proprietes-cible" data-proprietes-cible>
+      <p className="inspecteur-aide">Propriétés du {libelle} : {entrees.length ? "" : "aucune."}</p>
+      {entrees.length > 0 && (
+        <ul className="inspecteur-liste">
+          {entrees.map(([k, p]) => (
+            <li key={k}>
+              {k} : {String(p.valeur)}{p.unite ? ` ${p.unite}` : ""}
+              {!readOnly && <button type="button" className="lien" onClick={() => onCommandes([{ type: "propriete.definir", params: { ...cible, nom: k } }], `Retirer la propriété « ${k} » du ${libelle}`)}>Retirer</button>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {!readOnly && (
+        <div className="nav-formulaire-altimetrie">
+          <input aria-label="Nom de la propriété" placeholder="Nom" value={nom} maxLength={120} onChange={(e) => setNom(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-prop-cible="nom" />
+          <input aria-label="Valeur" placeholder="Valeur" value={valeur} onChange={(e) => setValeur(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-prop-cible="valeur" />
+          <input aria-label="Unité (si nombre)" placeholder="Unité" value={unite} maxLength={20} onChange={(e) => setUnite(e.target.value)} onKeyDown={(e) => e.stopPropagation()} />
+          <button type="button" disabled={!nom.trim() || !valeur.trim()} onClick={ajouter} data-prop-cible="ajouter">Ajouter</button>
+        </div>
+      )}
+      {erreur && <p className="ver-erreur" role="alert">{erreur}</p>}
+    </div>
   );
 }

@@ -158,3 +158,4 @@ Escaliers à volées et paliers (`escaliers.test.ts`, e2e, D-084).
 Loupe de précision au doigt (e2e, D-085).
 Murs courbes (`murs-courbes.test.ts`, e2e, D-086).
 Éclaté par groupe (e2e, D-087).
+Échelle d'un escalier, étirer arcs et cercles, propriétés des groupes et calques (tests, e2e, D-088).

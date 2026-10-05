@@ -3,6 +3,7 @@
  * verrouillage = commandes `calque.modifier`, car ils sont dans le modèle), objets du niveau regroupés par classe
  * (clic = sélection, la vue se recentre).
  */
+import { ProprietesCible } from "./Inspecteur";
 import { useMemo, useState } from "react";
 import { altimetrieDu, descendantsCalque, CLASSES, ensemblesPartages, niveauxOrdonnes, type Classe, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi, type FiltresAffichage } from "../etat-ui";
@@ -403,6 +404,7 @@ function GererCalques({ etat, onCommandes }: { etat: ModeleAtelier; onCommandes:
               <input type="color" aria-label={`Couleur de ${c.nom}`} value={/^#[0-9a-f]{6}$/i.test(c.couleur ?? "") ? c.couleur! : "#355e52"} onChange={(e) => onCommandes([{ type: "calque.modifier", params: { id: c.id, couleur: e.target.value } }], `Couleur du calque ${c.nom}`)} />
               <button type="button" title="Monter" onClick={() => echanger(-1)} disabled={calques[0]?.id === c.id}>↑<span className="sr-only">Monter {c.nom}</span></button>
               <button type="button" title="Descendre" onClick={() => echanger(1)} disabled={calques[calques.length - 1]?.id === c.id}>↓<span className="sr-only">Descendre {c.nom}</span></button>
+              <ProprietesCible cible={{ calqueCible: c.id }} proprietes={c.proprietes} readOnly={false} onCommandes={onCommandes} libelle={`calque « ${c.nom} »`} />
               <button type="button" data-calque-supprimer disabled={objets > 0} title={objets ? `${objets} objet(s) sur ce calque : les réaffecter d'abord` : "Supprimer le calque"} onClick={() => onCommandes([{ type: "calque.supprimer", params: { id: c.id } }], `Supprimer le calque ${c.nom}`)}>
                 Supprimer{objets ? ` (${objets} objet(s))` : ""}
               </button>

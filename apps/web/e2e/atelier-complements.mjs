@@ -889,6 +889,16 @@ await page.waitForSelector(".plan2d");
     }
     check("calques imbriqués : rangé sous un parent, masquer le parent masque le sous-calque", range && enfantMasque, `${range} · ${enfantMasque}`);
     await page.locator("[data-calque-choix]").selectOption(cal.id);
+    // Propriété d'un calque (D-088).
+    await page.locator('.nav-gerer-calques [data-prop-cible="nom"]').fill("Lot e2e");
+    await page.locator('.nav-gerer-calques [data-prop-cible="valeur"]').fill("Gros œuvre");
+    await page.locator('.nav-gerer-calques [data-prop-cible="ajouter"]').click();
+    let propCalque = null;
+    for (let k = 0; k < 30 && !propCalque; k++) {
+      propCalque = (await modele(pid)).modele.calques[cal.id]?.proprietes?.["Lot e2e"]?.valeur ?? null;
+      if (!propCalque) await page.waitForTimeout(500);
+    }
+    check("propriété d'un calque : saisie dans « Gérer les calques », enregistrée", propCalque === "Gros œuvre", String(propCalque));
     await page.locator("[data-calque-supprimer]").click();
     for (let k = 0; k < 30 && !supprime; k++) {
       supprime = !(await modele(pid)).modele.calques[cal.id];

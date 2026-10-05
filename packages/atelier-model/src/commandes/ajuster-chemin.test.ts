@@ -99,3 +99,18 @@ describe("décaler cercles, arcs et polylignes à arcs (D-076)", () => {
     expect(() => appliquerLot(e, lot([{ type: "transformer.decaler", params: { distance: m(1.5), cote: "gauche" }, cibles: ["p"] }], "p2"))).toThrow(/rayon/);
   });
 });
+
+describe("étirer un arc ou un cercle (D-088)", () => {
+  it("arc : angle de l'extrémité suivie, centre gardé ; cercle : rayon jusqu'au point", () => {
+    const e = appliquerLot(modeleVide(), lot([
+      { type: "niveau.creer", params: { id: "n", nom: "R", elevation: 0 } },
+      { type: "esquisse.arc", params: { id: "a", niveauId: "n", centre: pt(0, 0), rayon: m(2), angleDebut: { value: 0, unit: "deg" }, angleFin: { value: 90, unit: "deg" } } },
+      { type: "esquisse.cercle", params: { id: "c", niveauId: "n", centre: pt(10, 0), rayon: m(1) } },
+    ], "b")).etat;
+    const r = appliquerLot(e, lot([{ type: "transformer.etirer", params: { id: "a", extremite: "b", point: pt(-5, 5) } }], "e")).etat;
+    expect((r.objets["a"] as Occurrence<"esquisse">).params.angleFin!.value).toBe(135);
+    expect((r.objets["a"] as Occurrence<"esquisse">).params.rayon!.value).toBe(2);
+    const c = appliquerLot(e, lot([{ type: "transformer.etirer", params: { id: "c", extremite: "a", point: pt(13, 0) } }], "c")).etat;
+    expect((c.objets["c"] as Occurrence<"esquisse">).params.rayon!.value).toBe(3);
+  });
+});

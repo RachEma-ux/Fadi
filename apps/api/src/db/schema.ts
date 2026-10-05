@@ -341,6 +341,7 @@ export const atelierCalques = pgTable(
     verrouille: boolean("verrouille").notNull().default(false),
     ordre: integer("ordre").notNull().default(0),
     parentId: text("parent_id"),
+    proprietes: jsonb("proprietes").$type<Record<string, unknown> | null>(),
   },
   (t) => [primaryKey({ columns: [t.projectId, t.id] })],
 );
@@ -352,6 +353,7 @@ export const atelierGroupes = pgTable(
     id: text("id").notNull(),
     nom: text("nom").notNull(),
     verrouille: boolean("verrouille").notNull().default(false),
+    proprietes: jsonb("proprietes").$type<Record<string, unknown> | null>(),
   },
   (t) => [primaryKey({ columns: [t.projectId, t.id] })],
 );

@@ -36,6 +36,8 @@ export interface Calque {
   ordre: number;
   /** Calque parent (D-080, calques imbriqués) ; absent : à la racine. */
   parentId?: string;
+  /** Propriétés du calque (D-088), mêmes règles que celles des objets ; absent : aucune. */
+  proprietes?: Record<string, Propriete>;
 }
 
 export type AlignementMur = "gauche" | "axe" | "droite";
@@ -318,6 +320,8 @@ export interface Groupe {
   nom: string;
   /** Groupe verrouillé (D-052) : ses membres sont tenus comme des objets verrouillés. Absent : libre. */
   verrouille?: true;
+  /** Propriétés du groupe (D-088), mêmes règles que celles des objets ; absent : aucune. */
+  proprietes?: Record<string, Propriete>;
 }
 
 export interface Hypothese {

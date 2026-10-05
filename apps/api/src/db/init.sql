@@ -252,6 +252,9 @@ CREATE TABLE IF NOT EXISTS atelier_groupes (
 );
 -- Verrou de groupe (D-052).
 ALTER TABLE atelier_groupes ADD COLUMN IF NOT EXISTS verrouille boolean NOT NULL DEFAULT false;
+-- Propriétés des groupes et des calques (D-088).
+ALTER TABLE atelier_groupes ADD COLUMN IF NOT EXISTS proprietes jsonb;
+ALTER TABLE atelier_calques ADD COLUMN IF NOT EXISTS proprietes jsonb;
 
 CREATE TABLE IF NOT EXISTS atelier_references (
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,

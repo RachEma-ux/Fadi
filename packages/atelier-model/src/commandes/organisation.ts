@@ -341,6 +341,36 @@ export const reducteursType = {
 };
 
 export function definirPropriete(etat: ModeleAtelier, p: Brut): ResultatCommande {
+  // Propriété d'un groupe ou d'un calque (D-088) : même forme, cible nommée par groupeId ou calqueId.
+  const groupeId = lire.chaineOuNull(p, "groupeId");
+  const calqueCible = lire.chaineOuNull(p, "calqueCible");
+  if (groupeId !== null || calqueCible !== null) {
+    const nomP = lire.chaine(p, "nom");
+    const provenanceP = lire.enumeration(p, "provenance", ["saisie", "import", "calcul", "regle"] as const, "saisie");
+    const statutP = lire.enumeration(p, "statut", ["declaree", "verifiee", "a-verifier"] as const, "declaree");
+    const uniteP = lire.chaineOuNull(p, "unite");
+    if (typeof p["valeur"] === "number" && !uniteP) throw new ErreurCommande("invalide", "unite", `propriété numérique « ${nomP} » sans unité : refusée`);
+    const prop: Propriete = uniteP === null ? { valeur: p["valeur"], provenance: provenanceP, statut: statutP } : { valeur: p["valeur"], unite: uniteP, provenance: provenanceP, statut: statutP };
+    const maj = <T extends { proprietes?: Record<string, Propriete> }>(x: T): T => {
+      const proprietes = { ...(x.proprietes ?? {}) };
+      if (p["valeur"] === undefined) delete proprietes[nomP];
+      else proprietes[nomP] = prop;
+      const { proprietes: _p, ...reste } = x;
+      void _p;
+      return (Object.keys(proprietes).length ? { ...reste, proprietes } : reste) as T;
+    };
+    const effetsG = effetsVides();
+    if (groupeId !== null) {
+      const g = etat.groupes[groupeId];
+      if (!g) throw new ErreurCommande("precondition", "groupeId", `groupe inconnu : ${groupeId}`);
+      effetsG.modifies.push(groupeId);
+      return { etat: { ...etat, groupes: { ...etat.groupes, [groupeId]: maj(g) } }, effets: effetsG };
+    }
+    const c = etat.calques[calqueCible!];
+    if (!c) throw new ErreurCommande("precondition", "calqueCible", `calque inconnu : ${calqueCible}`);
+    effetsG.modifies.push(calqueCible!);
+    return { etat: { ...etat, calques: { ...etat.calques, [calqueCible!]: maj(c) } }, effets: effetsG };
+  }
   const id = lire.objet(etat, p, "id");
   const nom = lire.chaine(p, "nom");
   const o = etat.objets[id]!;

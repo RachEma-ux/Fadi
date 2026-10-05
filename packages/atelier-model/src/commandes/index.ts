@@ -353,7 +353,7 @@ export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): Resulta
 export function identifiantsCibles(enveloppe: Enveloppe): string[] {
   const ids = new Set<string>();
   for (const c of enveloppe.commands) {
-    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir", "ancienne", "nouvelle", "zoneId", "dalleId", "murA", "murB"]) {
+    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir", "ancienne", "nouvelle", "zoneId", "dalleId", "murA", "murB", "groupeId", "calqueCible"]) {
       const v = c.params[k];
       if (typeof v === "string") ids.add(v);
     }

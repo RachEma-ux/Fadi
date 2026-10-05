@@ -32,3 +32,24 @@ describe("calques imbriqués (D-080)", () => {
     expect("parentId" in racine.calques["murs"]!).toBe(false);
   });
 });
+
+describe("propriétés des groupes et des calques (D-088)", () => {
+  it("définir, remplacer, retirer ; nombre sans unité refusé ; cible inconnue refusée ; inverse exact", () => {
+    const e = appliquerLot(base(), lot([
+      { type: "niveau.creer", params: { id: "n", nom: "R", elevation: 0 } },
+      { type: "esquisse.ligne", params: { id: "l", niveauId: "n", points: [{ x: 0, y: 0, frame: "local", unit: "m" }, { x: 1, y: 0, frame: "local", unit: "m" }] } },
+      { type: "groupe.creer", params: { id: "g", nom: "Lot A" }, cibles: ["l"] },
+    ], "g")).etat;
+    const r = appliquerLot(e, lot([
+      { type: "propriete.definir", params: { groupeId: "g", nom: "Lot", valeur: "A" } },
+      { type: "propriete.definir", params: { calqueCible: "murs", nom: "Coût", valeur: 120, unite: "€/m" } },
+    ], "p"));
+    expect(r.etat.groupes["g"]!.proprietes!["Lot"]!.valeur).toBe("A");
+    expect(r.etat.calques["murs"]!.proprietes!["Coût"]).toMatchObject({ valeur: 120, unite: "€/m" });
+    expect(appliquerLot(r.etat, lot([r.inverse], "i")).etat).toEqual(e);
+    const sans = appliquerLot(r.etat, lot([{ type: "propriete.definir", params: { groupeId: "g", nom: "Lot" } }], "s")).etat;
+    expect("proprietes" in sans.groupes["g"]!).toBe(false);
+    expect(() => appliquerLot(e, lot([{ type: "propriete.definir", params: { calqueCible: "murs", nom: "x", valeur: 3 } }]))).toThrow(/sans unité/);
+    expect(() => appliquerLot(e, lot([{ type: "propriete.definir", params: { groupeId: "zz", nom: "x", valeur: "a" } }]))).toThrow(/inconnu/);
+  });
+});

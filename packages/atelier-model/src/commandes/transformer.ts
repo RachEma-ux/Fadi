@@ -67,6 +67,8 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
     case "espace":
       return { ...o, params: { ...o.params, polygones: o.params.polygones.map((c) => contourT(c, t)), etiquette: o.params.etiquette ? T(o.params.etiquette) : null } };
     case "escalier":
+      // Échelle (D-088) : l'axe est mis à l'échelle, les dimensions typées (largeur, hauteur à franchir, contremarches)
+      // sont gardées comme pour les murs ; le giron suit la longueur ; aucune règle de confort appliquée.
       return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
     case "poteau":
       return { ...o, params: { ...o.params, point: T(o.params.point), angle: { value: t.type === "miroir" ? Math.round((2 * axeMiroir(t) - o.params.angle.value) * 1e9) / 1e9 : o.params.angle.value + rot, unit: "deg" } } };
@@ -151,7 +153,6 @@ function lireTransformation(p: Brut, type: "translation" | "rotation" | "miroir"
 }
 
 function appliquerEnPlace(etat: ModeleAtelier, selection: OccurrenceQuelconque[], t: Transformation, ctx: ContexteCommande): ResultatCommande {
-  if (t.type === "echelle" && selection.some((o) => o.classe === "escalier")) throw new ErreurCommande("precondition", "cibles", "échelle refusée sur un escalier (dimensions typées)");
   const objets = { ...etat.objets };
   let references = etat.references;
   let problemes = etat.problemes;
@@ -186,7 +187,6 @@ function appliquerEnPlace(etat: ModeleAtelier, selection: OccurrenceQuelconque[]
 
 /** Copie d'une sélection (nouveaux identifiants, ouvertures des murs copiées avec hôte remappé). */
 function copier(etat: ModeleAtelier, selection: OccurrenceQuelconque[], t: Transformation, ctx: ContexteCommande): ResultatCommande {
-  if (t.type === "echelle" && selection.some((o) => o.classe === "escalier")) throw new ErreurCommande("precondition", "cibles", "échelle refusée sur un escalier");
   const objets = { ...etat.objets };
   const effets = effetsVides();
   const nouveauxIds = new Map<string, string>();
@@ -277,7 +277,6 @@ export const reducteursTransformer = {
     const sel = cibles(etat, p, c);
     const t = lireTransformation(p, "echelle");
     if (lire.booleen(p, "copie", false)) {
-      if (sel.some((o) => o.classe === "escalier")) throw new ErreurCommande("precondition", "cibles", "échelle refusée sur un escalier (dimensions typées)");
       return copier(etat, sel, t, ctx);
     }
     return appliquerEnPlace(etat, sel, t, ctx);
@@ -467,6 +466,16 @@ export const reducteursTransformer = {
     if (o.classe === "escalier") {
       const params = extremite === "a" ? { ...o.params, a: point } : { ...o.params, b: point };
       if (distance(params.a, params.b) <= TOLERANCE_REDUCTEUR) throw new ErreurCommande("precondition", "point", "escalier de longueur nulle");
+      return { etat: { ...etat, objets: { ...etat.objets, [id]: { ...o, params } } }, effets };
+    }
+    // Arc, cercle (D-088) : le centre reste ; l'extrémité étirée suit le point (angle de début ou de fin) ; un cercle
+    // prend le rayon jusqu'au point.
+    if (o.classe === "esquisse" && (o.params.forme === "arc" || o.params.forme === "cercle") && o.params.centre && o.params.rayon) {
+      const c = o.params.centre;
+      const r = distance(c, point);
+      if (r <= TOLERANCE_REDUCTEUR) throw new ErreurCommande("precondition", "point", "point au centre : étirement indéfini");
+      const angle = Math.round(((Math.atan2(point.y - c.y, point.x - c.x) * 180) / Math.PI) * 1e9) / 1e9;
+      const params = o.params.forme === "cercle" ? { ...o.params, rayon: { value: Math.round(r * 1e9) / 1e9, unit: "m" as const } } : extremite === "a" ? { ...o.params, angleDebut: { value: angle, unit: "deg" as const } } : { ...o.params, angleFin: { value: angle, unit: "deg" as const } };
       return { etat: { ...etat, objets: { ...etat.objets, [id]: { ...o, params } } }, effets };
     }
     if (o.classe === "esquisse" && o.params.points.length >= 2) {

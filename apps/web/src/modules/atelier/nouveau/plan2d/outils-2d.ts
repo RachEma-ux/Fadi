@@ -318,12 +318,16 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       const id = ui.selection[0];
       const o = id ? etat.objets[id] : undefined;
       if (!o || (o.classe !== "mur" && o.classe !== "escalier" && o.classe !== "esquisse")) return attendre([], "Sélectionnez un mur, un escalier ou une ligne.");
+      // Arc et cercle (D-088) : extrémités aux angles de début et de fin ; un cercle s'étire par son rayon.
+      const rond = o.classe === "esquisse" && (o.params.forme === "arc" || o.params.forme === "cercle") && o.params.centre && o.params.rayon ? o.params : null;
+      const surCercle = (deg: number) => pt(rond!.centre!.x + rond!.rayon!.value * Math.cos((deg * Math.PI) / 180), rond!.centre!.y + rond!.rayon!.value * Math.sin((deg * Math.PI) / 180));
+      const extremites = rond ? (rond.forme === "cercle" ? [point, point] : [surCercle(rond.angleDebut?.value ?? 0), surCercle(rond.angleFin?.value ?? 360)]) : o.classe === "esquisse" ? [o.params.points[0]!, o.params.points[o.params.points.length - 1]!] : [o.params.a, o.params.b];
+      if (o.classe === "esquisse" && !rond && o.params.points.length < 2) return attendre([], "Cet objet n'a pas d'extrémités à étirer.");
       if (pts.length === 0) {
-        const extremites = o.classe === "esquisse" ? [o.params.points[0]!, o.params.points[o.params.points.length - 1]!] : [o.params.a, o.params.b];
         const ext = distance(point, extremites[0]!) <= distance(point, extremites[1]!) ? "a" : "b";
-        return { commandes: [], label: "", pointsEnCours: [ext === "a" ? extremites[0]! : extremites[1]!], aide: `Extrémité ${ext} : cliquez sa nouvelle position.` };
+        return { commandes: [], label: "", pointsEnCours: [ext === "a" ? extremites[0]! : extremites[1]!], aide: rond?.forme === "cercle" ? "Cliquez le nouveau rayon (point du cercle)." : `Extrémité ${ext} : cliquez sa nouvelle position.` };
       }
-      const extremite = o.classe === "esquisse" ? (distance(pts[0]!, o.params.points[0]!) < 1e-9 ? "a" : "b") : distance(pts[0]!, o.params.a) < 1e-9 ? "a" : "b";
+      const extremite = distance(pts[0]!, extremites[0]!) < 1e-9 ? "a" : "b";
       // Les murs joints suivent (D-047) ; Alt : étirer le mur seul.
       return emettre([{ type: "transformer.etirer", params: { id: o.id, extremite, point, ...(o.classe === "mur" && !options.alt ? { entrainer: true } : {}) } }], o.classe === "mur" && !options.alt ? "Étirer (murs joints entraînés)" : "Étirer");
     }

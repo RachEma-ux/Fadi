@@ -135,12 +135,14 @@ describe("commandes : transformations (D-012)", () => {
     expect(r.etat.references["ref-o-3"]!.propositions[0]).toEqual({ objetId: "mur-w-1", caracteristique: "face-droite" });
   });
 
-  it("refuse l'échelle sur un escalier et garde les dimensions typées des murs", () => {
+  it("échelle : axe d'un escalier mis à l'échelle (D-088), dimensions typées des murs et des escaliers gardées", () => {
     let etat = appliquerLot(socle(), lot([
       { type: "mur.tracer", params: murParams(0, 0, 4, 0) },
       { type: "escalier.creer", params: { niveauId: "rdc", a: pt(0, 1), b: pt(3, 1), largeur: m(1.2), hauteurAFranchir: m(3.2), niveauDepartId: "rdc", niveauArriveeId: "r1" } },
     ], "e")).etat;
-    expect(() => appliquerLot(etat, lot([{ type: "transformer.echelle", params: { centre: pt(0, 0), facteur: 2 }, cibles: ["escalier-e-2"] }]))).toThrow(/escalier/);
+    const esc = appliquerLot(etat, lot([{ type: "transformer.echelle", params: { centre: pt(0, 0), facteur: 2 }, cibles: ["escalier-e-2"] }], "se")).etat.objets["escalier-e-2"] as Occurrence<"escalier">;
+    expect(esc.params.b).toEqual(pt(6, 2));
+    expect(esc.params.largeur.value).toBe(1.2);
     etat = appliquerLot(etat, lot([{ type: "transformer.echelle", params: { centre: pt(0, 0), facteur: 2 }, cibles: ["mur-e-1"] }], "sc")).etat;
     const mur = etat.objets["mur-e-1"] as Occurrence<"mur">;
     expect(mur.params.b).toEqual(pt(8, 0));
