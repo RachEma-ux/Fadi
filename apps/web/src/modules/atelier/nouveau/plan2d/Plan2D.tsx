@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { aireNette, centroide, cleTremie, pointDansPolygone, tremiesRetenues, cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pointsSpline, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { abscissesIntersections, effacerPortion, aireNette, centroide, cleTremie, pointDansPolygone, tremiesRetenues, cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pointsSpline, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -392,7 +392,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       const brut = lassoPoints.current;
       lassoPoints.current = [];
       setLasso(null);
-      const r = ui.outil === "gomme" ? gommer(brut, etat, cache) : traceMainLevee(brut, ui, e.altKey);
+      const r = ui.outil === "gomme" ? gommer(brut, etat, cache, e.altKey) : traceMainLevee(brut, ui, e.altKey);
       if ("message" in r) etatUi.set({ aide: r.message });
       else onCommandes(r.commandes, r.label);
       return;
@@ -748,8 +748,9 @@ export function traceMainLevee(brut: readonly Point2[], ui: EtatUi, courbe: bool
  * Gomme (D-079, DA-01-06) : les esquisses que le tracé traverse sont supprimées, en un seul lot ; les esquisses
  * verrouillées restent et sont dites. Les autres classes (murs, pièces…) ne sont jamais gommées.
  */
-export function gommer(trace: readonly Point2[], etat: ModeleAtelier, cache: { segments: readonly { a: Point2; b: Point2; objetId: string }[] }): { commandes: Commande[]; label: string } | { message: string } {
+export function gommer(trace: readonly Point2[], etat: ModeleAtelier, cache: { segments: readonly { a: Point2; b: Point2; objetId: string }[] }, partiel = false): { commandes: Commande[]; label: string } | { message: string } {
   if (trace.length < 2) return { message: "Glissez la gomme à travers les traits à effacer." };
+  if (partiel) return gommerPartiel(trace, etat, cache);
   const touches = new Set<string>();
   for (const s of cache.segments) {
     if (touches.has(s.objetId) || etat.objets[s.objetId]?.classe !== "esquisse") continue;
@@ -764,6 +765,43 @@ export function gommer(trace: readonly Point2[], etat: ModeleAtelier, cache: { s
   const ids = [...touches].filter((id) => !verrouilles.includes(id)).sort();
   if (!ids.length) return { message: verrouilles.length ? `Esquisses verrouillées, non gommées : ${verrouilles.join(", ")}.` : "Aucun trait d'esquisse traversé." };
   return { commandes: ids.map((id) => ({ type: "objet.supprimer", params: { id } })), label: `Gommer ${ids.length} esquisse(s)${verrouilles.length ? ` (${verrouilles.length} verrouillée(s) gardée(s))` : ""}` };
+}
+
+/**
+ * Effacement partiel (D-100, Alt avec la gomme) : sur les lignes et polylignes traversées, seule la portion entre les
+ * deux intersections voisines avec les autres traits disparaît (morceau restant : même objet ; second morceau : nouvel
+ * objet sur le même niveau et calque). Sans intersection de part et d'autre : le trait entier est retiré.
+ */
+function gommerPartiel(trace: readonly Point2[], etat: ModeleAtelier, cache: { segments: readonly { a: Point2; b: Point2; objetId: string }[] }): { commandes: Commande[]; label: string } | { message: string } {
+  const traceSegs = trace.slice(1).map((b, i) => ({ a: trace[i]!, b }));
+  const commandes: Commande[] = [];
+  const verrouilles: string[] = [];
+  let n = 0;
+  for (const o of Object.values(etat.objets)) {
+    if (o.classe !== "esquisse") continue;
+    const q = o.params;
+    if (q.forme !== "ligne" && q.forme !== "polyligne" && q.forme !== "construction") continue;
+    if (q.renflements?.some((b) => b !== 0)) continue;
+    const ferme = q.forme === "polyligne" && q.ferme;
+    const croisements = abscissesIntersections(q.points, ferme, traceSegs);
+    if (!croisements.length) continue;
+    if (raisonVerrou(etat, o)) {
+      verrouilles.push(o.id);
+      continue;
+    }
+    const coupures = abscissesIntersections(q.points, ferme, cache.segments.filter((s) => s.objetId !== o.id));
+    const morceaux = effacerPortion(q.points, ferme, croisements[0]!, coupures);
+    n++;
+    if (!morceaux.length) {
+      commandes.push({ type: "objet.supprimer", params: { id: o.id } });
+      continue;
+    }
+    const forme = (m: Point2[]) => (q.forme === "polyligne" || m.length > 2 ? "polyligne" : q.forme);
+    commandes.push({ type: "objet.modifier", params: { id: o.id, params: { forme: forme(morceaux[0]!), points: morceaux[0]!, ferme: false } } });
+    for (const m of morceaux.slice(1)) commandes.push({ type: `esquisse.${forme(m)}`, params: { niveauId: o.niveauId, points: m, ferme: false, calqueId: o.calqueId } });
+  }
+  if (!n) return { message: verrouilles.length ? `Esquisses verrouillées, non gommées : ${verrouilles.join(", ")}.` : "Aucune ligne ni polyligne traversée (effacement partiel : lignes et polylignes)." };
+  return { commandes, label: `Effacement partiel de ${n} trait(s)${verrouilles.length ? ` (${verrouilles.length} verrouillé(s) gardé(s))` : ""}` };
 }
 
 // ---------------------------------------------------------------------------

@@ -169,3 +169,5 @@ Ouvertures sur un mur courbe (`murs-courbes.test.ts`, e2e, D-095).
 Pièces et planchers délimités par un arc (`murs-courbes.test.ts`, `nouveau.test.ts`, D-096).
 Échange BCF 2.1 des vues 3D (`echanges/bcf.test.ts`, e2e, D-097).
 Plancher : trémies choisies une à une, aperçu chiffré au survol (`nouveau.test.ts`, e2e, D-098).
+Décalage des courbes et ellipses (`chanfrein-arc.test.ts`, `nouveau.test.ts`, D-099).
+Effacement partiel à la gomme (`esquisse/effacer.test.ts`, `nouveau.test.ts`, D-100).

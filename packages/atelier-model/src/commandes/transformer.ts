@@ -361,6 +361,31 @@ export const reducteursTransformer = {
           const r = o.params.rayon.value + plus * d;
           if (!(r > 1e-9)) throw new ErreurCommande("precondition", "distances", `${o.id} : décalage de ${d} m impossible (rayon annulé)`);
           copieAvec(o, { rayon: { value: Math.round(r * 1e9) / 1e9, unit: "m" } });
+        } else if (o.classe === "esquisse" && (o.params.forme === "spline" || o.params.forme === "ellipse")) {
+          // Courbe, ellipse (D-099) : la décalée n'est ni une spline ni une ellipse ; elle est produite en polyligne
+          // approchée (courbe : 16 points par segment ; ellipse : 96 points), ouverte ou fermée comme l'original.
+          const q = o.params;
+          const ferme = q.forme === "ellipse" || q.ferme;
+          let pts: Point2[];
+          if (q.forme === "ellipse") {
+            if (!q.centre || !q.rayon || !q.rayonB) throw new ErreurCommande("precondition", "cibles", `${o.id} : ellipse incomplète`);
+            pts = pointsEllipse(q.centre, q.rayon.value, q.rayonB.value, q.rotation?.value ?? 0, 96);
+          } else {
+            pts = pointsSpline(q.points, 16, q.ferme, q.tangentes);
+            if (q.ferme && pts.length > 1 && distance(pts[0]!, pts[pts.length - 1]!) < 1e-9) pts = pts.slice(0, -1);
+          }
+          const nets = pts.filter((x, i) => i === 0 || distance(x, pts[i - 1]!) > 1e-9);
+          let res: Point2[] | null;
+          if (ferme) {
+            if (cote === "gauche" || cote === "droite") throw new ErreurCommande("invalide", "cote", `${o.id} : côté extérieur ou intérieur pour une courbe fermée`);
+            res = decalerContour(nets, d * signe);
+            if (!res) throw new ErreurCommande("precondition", "distances", `${o.id} : décalage de ${d} m impossible (courbe trop rétrécie)`);
+          } else {
+            if (cote === "exterieur" || cote === "interieur") throw new ErreurCommande("invalide", "cote", `${o.id} : côté gauche ou droite pour une courbe ouverte`);
+            res = decalerPolylignePure(nets, d * signe);
+          }
+          const arr = res.map((x) => pt(Math.round(x.x * 1e9) / 1e9, Math.round(x.y * 1e9) / 1e9));
+          copieAvec(o, { forme: ferme ? "polygone" : "polyligne", points: arr, ferme, centre: null, rayon: null, rayonB: null, rotation: null, angleDebut: null, angleFin: null, tangentes: undefined });
         } else if (o.classe === "esquisse" && o.params.forme === "polyligne" && o.params.renflements && !arrondis) {
           // Polyligne à segments en arc (D-076) : segments droits glissés, arcs concentriques, jonctions tangentes.
           let delta = d * signe;

@@ -46,6 +46,7 @@ export { contourFerme, CLASSES_A_CONTOUR } from "./commandes/changer-classe.js";
 export * from "./documents/refexterne-rendu.js";
 export * from "./echanges/proprietes-csv.js";
 export * from "./esquisse/trame.js";
+export * from "./esquisse/effacer.js";
 export { ajusterSpline } from "./esquisse/conversion.js";
 export * from "./echanges/bibliotheque.js";
 export * from "./plancher.js";

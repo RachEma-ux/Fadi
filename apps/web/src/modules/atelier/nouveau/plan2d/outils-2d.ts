@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { axesDesMurs, tremiesRetenues, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { axesDesMurs, pointsEllipse, tremiesRetenues, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -446,7 +446,16 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
           return attendre([], `Série de distances : ${err instanceof Error ? err.message : String(err)}.`);
         }
       }
-      const contourFerme: Point2[] | null = o ? (o.classe === "esquisse" && (o.params.forme === "polygone" || o.params.forme === "hachure" || (o.params.forme === "polyligne" && o.params.ferme && (options.alt === true || !!o.params.renflements))) ? o.params.points : o.classe === "esquisse" && o.params.forme === "rectangle" && o.params.points.length === 2 ? [o.params.points[0]!, pt(o.params.points[1]!.x, o.params.points[0]!.y), o.params.points[1]!, pt(o.params.points[0]!.x, o.params.points[1]!.y)] : o.classe === "dalle" || o.classe === "zone" || o.classe === "solide" ? o.params.contour : null) : null;
+      // Courbe, ellipse (D-099) : côté lu sur la courbe échantillonnée (fermée : dedans / dehors ; ouverte : segment le plus proche).
+      const courbe: Point2[] | null = o?.classe === "esquisse" && o.params.forme === "ellipse" && o.params.centre && o.params.rayon && o.params.rayonB ? pointsEllipse(o.params.centre, o.params.rayon.value, o.params.rayonB.value, o.params.rotation?.value ?? 0, 96) : o?.classe === "esquisse" && o.params.forme === "spline" ? pointsSpline(o.params.points, 16, o.params.ferme, o.params.tangentes) : null;
+      if (courbe && o?.classe === "esquisse" && o.params.forme === "spline" && !o.params.ferme && courbe.length >= 2) {
+        let k = 0;
+        for (let i = 0; i + 1 < courbe.length; i++) if (projectionSurSegment(point, courbe[i]!, courbe[i + 1]!).distance < projectionSurSegment(point, courbe[k]!, courbe[k + 1]!).distance) k = i;
+        const [a, b] = [courbe[k]!, courbe[k + 1]!];
+        const coteS = (b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x) >= 0 ? "gauche" : "droite";
+        return emettre([{ type: "transformer.decaler", params: { ...(serie ? { distances: serie } : { distance: m(d) }), cote: coteS }, cibles: ui.selection }], `Décaler ${serie ? serie.map(fmt).join(" ; ") : fmt(d)} m (courbe, polyligne approchée)`);
+      }
+      const contourFerme: Point2[] | null = courbe ? courbe : o ? (o.classe === "esquisse" && (o.params.forme === "polygone" || o.params.forme === "hachure" || (o.params.forme === "polyligne" && o.params.ferme && (options.alt === true || !!o.params.renflements))) ? o.params.points : o.classe === "esquisse" && o.params.forme === "rectangle" && o.params.points.length === 2 ? [o.params.points[0]!, pt(o.params.points[1]!.x, o.params.points[0]!.y), o.params.points[1]!, pt(o.params.points[0]!.x, o.params.points[1]!.y)] : o.classe === "dalle" || o.classe === "zone" || o.classe === "solide" ? o.params.contour : null) : null;
       // Cercle (D-076) : clic dedans = intérieur, dehors = extérieur ; décalage concentrique.
       if (o?.classe === "esquisse" && (o.params.forme === "cercle" || o.params.forme === "arc") && o.params.centre && o.params.rayon) {
         const coteC = distance(point, o.params.centre) < o.params.rayon.value ? "interieur" : "exterieur";

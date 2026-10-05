@@ -69,3 +69,34 @@ describe("raccord et chanfrein multiples (D-094, DA-02-10)", () => {
     expect(Object.keys(c.etat.objets)).toHaveLength(Object.keys(rect.objets).length + 4);
   });
 });
+
+describe("décalage des courbes et ellipses (D-099, DA-02-09)", () => {
+  const e = appliquerLot(modeleVide(), lot([
+    { type: "niveau.creer", params: { id: "n", nom: "Rez", elevation: 0 } },
+    { type: "esquisse.ellipse", params: { id: "el", niveauId: "n", centre: pt(0, 0), rayon: m(4), rayonB: m(2), rotation: { value: 0, unit: "deg" } } },
+    { type: "esquisse.spline", params: { id: "sp", niveauId: "n", points: [pt(0, 0), pt(5, 3), pt(10, 0)] } },
+  ], "b")).etat;
+
+  it("ellipse décalée vers l'extérieur : polygone approché à la distance voulue ; inverse exact", () => {
+    const r = appliquerLot(e, lot([{ type: "transformer.decaler", params: { distance: m(0.5), cote: "exterieur" }, cibles: ["el"] }], "d"));
+    const c = E(r.etat, r.effets.crees[0]!);
+    expect(c.params.forme).toBe("polygone");
+    expect(c.params.points.length).toBe(96);
+    // Sommets sur les grands et petits axes : 4,5 et 2,5 du centre.
+    expect(Math.max(...c.params.points.map((q) => q.x))).toBeCloseTo(4.5, 2);
+    expect(Math.max(...c.params.points.map((q) => q.y))).toBeCloseTo(2.5, 2);
+    expect(appliquerLot(r.etat, lot([r.inverse], "inv")).etat).toEqual(e);
+    expect(() => appliquerLot(e, lot([{ type: "transformer.decaler", params: { distance: m(0.5), cote: "gauche" }, cibles: ["el"] }], "x"))).toThrow(/extérieur ou intérieur/);
+  });
+
+  it("courbe ouverte décalée à gauche : polyligne approchée, extrémités décalées perpendiculairement", () => {
+    const r = appliquerLot(e, lot([{ type: "transformer.decaler", params: { distance: m(1), cote: "gauche" }, cibles: ["sp"] }], "d"));
+    const c = E(r.etat, r.effets.crees[0]!);
+    expect(c.params.forme).toBe("polyligne");
+    expect(c.params.ferme).toBe(false);
+    expect(c.params.tangentes).toBeUndefined();
+    const p0 = c.params.points[0]!;
+    expect(Math.hypot(p0.x, p0.y)).toBeCloseTo(1, 6);
+    expect(() => appliquerLot(e, lot([{ type: "transformer.decaler", params: { distance: m(1), cote: "exterieur" }, cibles: ["sp"] }], "x"))).toThrow(/gauche ou droite/);
+  });
+});

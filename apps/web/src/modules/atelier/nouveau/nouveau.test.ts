@@ -78,6 +78,40 @@ describe("plancher : trémies choisies une à une (D-098)", () => {
   });
 });
 
+describe("décaler une ellipse ou une courbe (D-099)", () => {
+  it("clic hors de l'ellipse : extérieur ; près d'une courbe ouverte : côté du segment le plus proche", () => {
+    const etat = appliquer(socle(), [
+      { type: "esquisse.ellipse", params: { id: "el", niveauId: "rdc", centre: pt(0, 0), rayon: m(4), rayonB: m(2), rotation: { value: 0, unit: "deg" } } },
+      { type: "esquisse.spline", params: { id: "sp", niveauId: "rdc", points: [pt(10, 0), pt(15, 3), pt(20, 0)] } },
+    ]);
+    const u = (sel: string[]) => ui({ outil: "decaler", selection: sel, parametresOutil: { distanceDecalage: 0.5 } });
+    expect(clic("decaler", pt(6, 0), etat, u(["el"]), opts).commandes[0]!.params).toMatchObject({ cote: "exterieur" });
+    expect(clic("decaler", pt(0, 0), etat, u(["el"]), opts).commandes[0]!.params).toMatchObject({ cote: "interieur" });
+    const r = clic("decaler", pt(15, 5), etat, u(["sp"]), opts);
+    expect(r.commandes[0]!.params).toMatchObject({ cote: "gauche" });
+    expect(Object.values(appliquer(etat, r.commandes).objets).some((o) => o.classe === "esquisse" && (o.params as { forme: string }).forme === "polyligne")).toBe(true);
+  });
+});
+
+describe("gomme : effacement partiel (D-100)", () => {
+  it("Alt : la ligne perd la portion entre deux traits voisins (deux morceaux), une ligne libre disparaît", async () => {
+    const { gommer } = await import("./plan2d/Plan2D");
+    const etat = appliquer(socle(), [
+      { type: "esquisse.ligne", params: { id: "l", niveauId: "rdc", points: [pt(0, 0), pt(10, 0)] } },
+      { type: "esquisse.ligne", params: { id: "c1", niveauId: "rdc", points: [pt(3, -2), pt(3, 2)] } },
+      { type: "esquisse.ligne", params: { id: "c2", niveauId: "rdc", points: [pt(6, -2), pt(6, 2)] } },
+      { type: "esquisse.ligne", params: { id: "libre", niveauId: "rdc", points: [pt(0, 5), pt(10, 5)] } },
+    ]);
+    const r = gommer([pt(4.5, -1), pt(4.5, 6)], etat, segmentsDuNiveau(etat, "rdc"), true) as { commandes: Commande[]; label: string };
+    expect(r.label).toMatch(/Effacement partiel de 2/);
+    const apres = appliquer(etat, r.commandes);
+    expect((apres.objets["l"] as Occurrence<"esquisse">).params.points).toEqual([pt(0, 0), pt(3, 0)]);
+    expect(apres.objets["libre"]).toBeUndefined();
+    const morceau = Object.values(apres.objets).find((o) => o.classe === "esquisse" && !["l", "c1", "c2"].includes(o.id)) as Occurrence<"esquisse">;
+    expect(morceau.params.points).toEqual([pt(6, 0), pt(10, 0)]);
+  });
+});
+
 let n = 0;
 function appliquer(etat: ModeleAtelier, commandes: Commande[]): ModeleAtelier {
   n += 1;
