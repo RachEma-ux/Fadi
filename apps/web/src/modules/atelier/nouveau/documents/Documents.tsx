@@ -340,13 +340,14 @@ function VueDetail({ projectId, def, etat, revision, readOnly, catalogue, base, 
     cadreMax: ecrirePoint(p.cadreMax),
     lignesCachees: p.lignesCachees,
     phases: p.phases,
+    calquesMasques: p.calquesMasques ?? [],
     azimut: p.azimut ? fmt(p.azimut.value) : "",
     inclinaison: p.inclinaison ? fmt(p.inclinaison.value) : "",
   }));
   const [local, setLocal] = useState<string | null>(null);
   const appliquer = () => {
     setLocal(null);
-    const params: Record<string, unknown> = { titre: form.titre, echelle: nombre(form.echelle) ?? p.echelle, lignesCachees: form.lignesCachees, phases: form.phases };
+    const params: Record<string, unknown> = { titre: form.titre, echelle: nombre(form.echelle) ?? p.echelle, lignesCachees: form.lignesCachees, phases: form.phases, calquesMasques: form.calquesMasques };
     if (p.type === "plan" || p.type === "detail") {
       params["niveauId"] = form.niveauId;
       const h = nombre(form.hauteurCoupe);
@@ -462,6 +463,16 @@ function VueDetail({ projectId, def, etat, revision, readOnly, catalogue, base, 
               </label>
             ))}
           </fieldset>
+          {Object.keys(etat.calques).length > 0 && (
+            <fieldset className="docs-phases" data-calques-vue>
+              <legend>Calques masqués dans cette vue</legend>
+              {Object.values(etat.calques).sort((a, b) => a.ordre - b.ordre).map((c) => (
+                <label key={c.id} className="docs-case">
+                  <input type="checkbox" data-calque-vue={c.id} checked={form.calquesMasques.includes(c.id)} disabled={!c.visible} onChange={(e) => setForm({ ...form, calquesMasques: e.target.checked ? [...form.calquesMasques, c.id] : form.calquesMasques.filter((x) => x !== c.id) })} /> {c.nom}{!c.visible ? " (masqué dans le projet)" : ""}
+                </label>
+              ))}
+            </fieldset>
+          )}
           {local && <p className="docs-erreur" role="alert">{local}</p>}
           <div className="docs-actions">
             <button type="submit" className="docs-principal">Appliquer</button>

@@ -355,6 +355,23 @@ await page.locator('[data-nouvelle="plan"]').click();
 await page.waitForSelector('[data-detail="vue"] .docs-svg svg', { timeout: 60000 });
 await page.waitForFunction(() => /dessinée en trait fin/.test(document.querySelector(".docs-avertissements")?.textContent ?? ""), null, { timeout: 45000 }).catch(() => {});
 check("plan en document : la référence externe est dessinée en trait fin, avec sa révision publiée", /Référence externe « .* » dessinée en trait fin/.test((await page.locator(".docs-avertissements").textContent().catch(() => "")) ?? ""));
+// Calques masqués dans cette vue seulement (D-057).
+{
+  const caseCalque = page.locator('[data-detail="vue"] [data-calque-vue]:enabled').first();
+  const calqueId = await caseCalque.getAttribute("data-calque-vue").catch(() => null);
+  if (calqueId) {
+    await caseCalque.check();
+    await page.locator('[data-detail="vue"] button.docs-principal:has-text("Appliquer")').click();
+  }
+  let vueMasquee = null;
+  for (let k = 0; k < 40 && calqueId && !vueMasquee; k++) {
+    const mv = (await modele(pid)).modele;
+    vueMasquee = Object.values(mv.definitions).find((d) => d.classe === "vue" && d.params.calquesMasques?.includes(calqueId)) ?? null;
+    if (!vueMasquee) await page.waitForTimeout(500);
+  }
+  const calqueProjet = calqueId ? (await modele(pid)).modele.calques[calqueId] : null;
+  check("vue : un calque masqué dans cette vue seulement (le calque reste visible dans le projet)", !!vueMasquee && calqueProjet?.visible === true, `${calqueId} · ${vueMasquee?.id ?? "—"}`);
+}
 // Axonométrie (D-048) : vue créée et dessinée.
 await page.locator(".docs-nouvelle > summary").click();
 await page.locator('[data-nouvelle="axonometrie"]').click();

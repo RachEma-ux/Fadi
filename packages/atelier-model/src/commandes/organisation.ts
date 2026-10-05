@@ -142,7 +142,18 @@ export const reducteursCalque = {
     delete calques[id];
     const effets = effetsVides();
     effets.supprimes.push(id);
-    return { etat: { ...etat, calques }, effets };
+    // Vues qui masquaient ce calque (D-057) : il sort de leur liste.
+    let definitions = etat.definitions;
+    for (const d of Object.values(definitions)) {
+      const masques = (d.params as { calquesMasques?: string[] }).calquesMasques;
+      if (d.classe !== "vue" || !masques?.includes(id)) continue;
+      const reste = masques.filter((c) => c !== id);
+      const { calquesMasques: _m, ...params } = d.params as { calquesMasques?: string[] } & Record<string, unknown>;
+      void _m;
+      definitions = { ...definitions, [d.id]: { ...d, params: reste.length ? { ...params, calquesMasques: reste } : params, version: d.version + 1 } };
+      effets.modifies.push(d.id);
+    }
+    return { etat: { ...etat, calques, definitions }, effets };
   },
   affecter(etat: ModeleAtelier, p: Brut, _ctx: ContexteCommande, c: string[]): ResultatCommande {
     const calqueId = lire.calque(etat, p);

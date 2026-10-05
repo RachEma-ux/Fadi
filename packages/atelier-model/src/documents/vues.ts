@@ -72,6 +72,8 @@ export interface ParamsVue {
    */
   azimut?: Angle | null;
   inclinaison?: Angle | null;
+  /** Calques masqués dans cette vue seulement (D-057), en plus des calques masqués du projet. Absent = aucun. */
+  calquesMasques?: string[];
 }
 
 export type AnnotationVue =
@@ -151,7 +153,14 @@ export function lireParamsVue(etat: ModeleAtelier, p: Brut): ParamsVue {
     if (!(inclinaison.value > 0 && inclinaison.value < 90)) throw new ErreurCommande("invalide", "inclinaison", "inclinaison : strictement entre 0° et 90°");
     axo = { azimut, inclinaison };
   }
-  const base = { type, titre, echelle, niveauId, hauteurCoupe, ligneA, ligneB, profondeur, orientation, cadreMin, cadreMax, lignesCachees, phases, ...(axo ?? {}) };
+  let calquesMasques: string[] = [];
+  if (p["calquesMasques"] !== undefined && p["calquesMasques"] !== null) {
+    const v = p["calquesMasques"];
+    if (!Array.isArray(v) || !v.every((x) => typeof x === "string")) throw new ErreurCommande("invalide", "calquesMasques", "« calquesMasques » : liste d'identifiants de calques");
+    for (const c of v as string[]) if (!etat.calques[c]) throw new ErreurCommande("precondition", "calquesMasques", `calque inconnu : ${c}`);
+    calquesMasques = [...new Set(v as string[])].sort();
+  }
+  const base = { type, titre, echelle, niveauId, hauteurCoupe, ligneA, ligneB, profondeur, orientation, cadreMin, cadreMax, lignesCachees, phases, ...(axo ?? {}), ...(calquesMasques.length ? { calquesMasques } : {}) };
   // Une vue sans annotation garde exactement la forme d'avant (empreintes inchangées).
   return annotations.length ? { ...base, annotations } : base;
 }
@@ -175,8 +184,11 @@ const physique = (o: OccurrenceQuelconque): boolean => PHYSIQUES.has(o.classe) &
 const POCHES = new Set<string>(["mur", "poteau", "dalle", "toiture", "escalier"]);
 
 /** L'objet est-il dessiné (calque visible, phase retenue) ? */
-function retenu(etat: ModeleAtelier, o: OccurrenceQuelconque, phases: FiltrePhase[] | null): boolean {
+function retenu(etat: ModeleAtelier, o: OccurrenceQuelconque, v: Pick<ParamsVue, "phases" | "calquesMasques">): boolean {
   if (o.calqueId && etat.calques[o.calqueId]?.visible === false) return false;
+  // Calques masqués dans cette vue seulement (D-057).
+  if (o.calqueId && v.calquesMasques?.includes(o.calqueId)) return false;
+  const phases = v.phases;
   if (!phases) return true;
   const ph = (o.phase as FiltrePhase | null) ?? "sans-phase";
   return phases.includes(ph);
@@ -421,7 +433,7 @@ function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue, options: 
   dessinerExternes(c, etat, niveau.id, options);
   const h = (v.hauteurCoupe ?? { value: HAUTEUR_COUPE_DEFAUT }).value;
   const zc = niveau.elevation + h;
-  const objets = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => o.niveauId === niveau.id && retenu(etat, o, v.phases)).sort((a, b) => (a.id < b.id ? -1 : 1));
+  const objets = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => o.niveauId === niveau.id && retenu(etat, o, v)).sort((a, b) => (a.id < b.id ? -1 : 1));
   const camera: Camera = { origine: [0, 0, zc], regard: [0, 0, -1], droite: [1, 0, 0], haut: [0, 1, 0] };
   const r = projeterMaillages(maillagesDe(etat, objets, new Set(["porte", "fenetre"])), camera, { coupe: true, profondeurMax: h + 0.6, lignesCachees: false });
   verserProjection(c, etat, r, (o) => (o && (o.classe === "mur" || o.classe === "poteau" || o.classe === "dalle" || o.classe === "toiture") ? "vue" : "fin"));
@@ -459,7 +471,7 @@ function reperesNiveaux(c: Collecteur, etat: ModeleAtelier, xGauche: number, xDr
 }
 
 function genererCoupeOuFacade(c: Collecteur, etat: ModeleAtelier, v: ParamsVue): void {
-  const objets = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => physique(o) && retenu(etat, o, v.phases)).sort((a, b) => (a.id < b.id ? -1 : 1));
+  const objets = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => physique(o) && retenu(etat, o, v)).sort((a, b) => (a.id < b.id ? -1 : 1));
   let camera: Camera;
   let coupe = false;
   if (v.type === "coupe") {
@@ -519,11 +531,11 @@ function genererMasse(c: Collecteur, etat: ModeleAtelier, v: ParamsVue): void {
   const niveaux = niveauxOrdonnes(etat);
   const ref = niveaux.filter((n) => n.elevation >= -1e-9).sort((a, b) => a.elevation - b.elevation)[0] ?? niveaux[0];
   if (ref) {
-    const tous = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o): o is Occurrence<"mur"> => o.classe === "mur" && o.niveauId === ref.id && retenu(etat, o, v.phases));
+    const tous = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o): o is Occurrence<"mur"> => o.classe === "mur" && o.niveauId === ref.id && retenu(etat, o, v));
     // Murs extérieurs déclarés s'il y en a (enveloppe du bâtiment), sinon tous les murs du niveau.
     const murs = tous.some((m) => m.params.exterieur) ? tous.filter((m) => m.params.exterieur) : tous;
     for (const s of contoursUnion(murs.map((m) => ({ points: polygoneMurRaccorde(etat, m), objetId: m.id })))) c.ligne(s.a, s.b, "coupe", s.objetId);
-    const toitures = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o): o is Occurrence<"toiture"> => o.classe === "toiture" && retenu(etat, o, v.phases));
+    const toitures = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o): o is Occurrence<"toiture"> => o.classe === "toiture" && retenu(etat, o, v));
     for (const t of toitures) {
       c.poly(t.params.contour, true, "vue", null, t.id);
       const g = t.params.type !== "plate" && t.params.pente ? geometrieToiture(t.params.contour, t.params.type, t.params.pente.value) : null;
@@ -564,7 +576,7 @@ export function objetsVue(etat: ModeleAtelier, params: ParamsVue): string[] {
   const ids = new Set<string>();
   if (params.type === "plan" || params.type === "detail") {
     for (const o of tous) {
-      if (o.niveauId !== params.niveauId || !retenu(etat, o, params.phases)) continue;
+      if (o.niveauId !== params.niveauId || !retenu(etat, o, params)) continue;
       ids.add(o.id);
       if (o.classe === "bloc-occurrence" && o.definitionId) ids.add(o.definitionId);
       if (o.classe === "etiquette" && o.params.objetId) ids.add(o.params.objetId);
@@ -574,11 +586,11 @@ export function objetsVue(etat: ModeleAtelier, params: ParamsVue): string[] {
     }
     for (const r of Object.values(etat.references)) if (ids.has(r.proprietaireId) && r.objetId) ids.add(r.objetId);
   } else if (params.type === "coupe" || params.type === "facade" || params.type === "axonometrie") {
-    for (const o of tous) if (physique(o) && retenu(etat, o, params.phases)) ids.add(o.id);
+    for (const o of tous) if (physique(o) && retenu(etat, o, params)) ids.add(o.id);
   } else {
     const niveaux = niveauxOrdonnes(etat);
     const ref = niveaux.filter((n) => n.elevation >= -1e-9).sort((a, b) => a.elevation - b.elevation)[0] ?? niveaux[0];
-    for (const o of tous) if (((o.classe === "mur" && o.niveauId === ref?.id) || o.classe === "toiture") && retenu(etat, o, params.phases)) ids.add(o.id);
+    for (const o of tous) if (((o.classe === "mur" && o.niveauId === ref?.id) || o.classe === "toiture") && retenu(etat, o, params)) ids.add(o.id);
   }
   return [...ids].filter((id) => etat.objets[id] || etat.definitions[id]).sort();
 }
