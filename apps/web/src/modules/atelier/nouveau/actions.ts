@@ -80,7 +80,10 @@ export function actionImmediate(outil: string, etat: ModeleAtelier, ui: EtatUi):
       return { commandes: murs.map((o) => ({ type: "esquisse.construction", params: { niveauId: o.niveauId, points: [(o as { params: { a: unknown } }).params.a, (o as { params: { b: unknown } }).params.b] } })), label: `Axes de ${murs.length} mur${murs.length > 1 ? "s" : ""}` };
     }
     case "joindre":
-      if (sel.length < 2) return { message: "Joindre : sélectionnez au moins deux lignes ou polylignes jointives." };
+      if (sel.length < 2) return { message: "Joindre : sélectionnez au moins deux lignes ou polylignes jointives, ou deux murs." };
+      // Deux murs (D-068, DA-07-01) : chacun est porté sur l'axe prolongé de l'autre — jonction d'angle.
+      if (sel.length === 2 && sel.every((id) => etat.objets[id]?.classe === "mur"))
+        return { commandes: [{ type: "mur.joindre", params: { id: sel[0], autreId: sel[1] } }, { type: "mur.joindre", params: { id: sel[1], autreId: sel[0] } }], label: "Joindre deux murs (angle)" };
       return { commandes: [{ type: "transformer.joindre", params: {}, cibles: sel }], label: `Joindre ${sel.length} objets` };
     case "grouper":
       return { commandes: [{ type: "groupe.creer", params: { nom: `Groupe ${Object.keys(etat.groupes).length + 1}` }, cibles: sel }], label: "Grouper" };

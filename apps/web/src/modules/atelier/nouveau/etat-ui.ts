@@ -57,6 +57,8 @@ export interface EtatUi {
    * seulement ; ils réduisent l'affichage et la sélection, jamais le modèle.
    */
   filtres: FiltresAffichage;
+  /** Isolement (DA-18-04) : seuls ces objets sont affichés, pour cet utilisateur et cette session ; null = inactif. */
+  isolement: string[] | null;
   /** Ensembles d'affichage locaux (préréglages nommés), conservés sur cet appareil. */
   ensembles: EnsembleLocal[];
 }
@@ -110,6 +112,7 @@ let etat: EtatUi = {
   aide: "",
   filtres: { classesMasquees: prefs.filtres?.classesMasquees ?? [], calquesMasques: prefs.filtres?.calquesMasques ?? [] },
   ensembles: Array.isArray(prefs.ensembles) ? prefs.ensembles : [],
+  isolement: null,
 };
 
 const ecouteurs = new Set<() => void>();

@@ -830,6 +830,79 @@ await page.waitForSelector(".plan2d");
   check("main levée : un tracé glissé devient une polyligne simplifiée ; repère altimétrique déclaré, altitudes absolues des niveaux affichées", ok && apres === avant + 1 && /NGF-IGN69/.test(niveauTxt), `outil ${ok} · ${avant} → ${apres} · ${niveauTxt.slice(0, 80)}`);
 }
 
+// Gestion des calques, jonction de deux murs, isolement (D-068).
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const P = (x, y) => ({ x: ax + x, y: ay + y, frame: "local", unit: "m" });
+  let rj = { status: 0 };
+  for (let k = 0; k < 5 && rj.status !== 200; k++) rj = await lot(pid, `j-${Date.now()}-${k}`, (await modele(pid)).revision, [
+    { type: "mur.tracer", params: { id: "jonc-a", niveauId: murA.niveauId, a: P(50, 50), b: P(53, 50), epaisseur: m(0.2), hauteur: m(3) } },
+    { type: "mur.tracer", params: { id: "jonc-b", niveauId: murA.niveauId, a: P(54, 51), b: P(54, 55), epaisseur: m(0.2), hauteur: m(3) } },
+  ]);
+  if (rj.status !== 200) console.log("lot jonction", rj.status, JSON.stringify(rj.body).slice(0, 300));
+  await ouvrir(pid);
+  // Calques : créer, renommer, supprimer depuis le navigateur.
+  await page.locator(".nav-gerer-calques > summary").click();
+  await page.locator("[data-calque-nouveau]").fill("Calque e2e");
+  await page.locator('.nav-gerer-calques form button[type="submit"]').click();
+  let cal = null;
+  for (let k = 0; k < 30 && !cal; k++) {
+    cal = Object.values((await modele(pid)).modele.calques).find((c) => c.nom === "Calque e2e") ?? null;
+    if (!cal) await page.waitForTimeout(500);
+  }
+  let renomme = null;
+  let supprime = false;
+  if (cal) {
+    await page.locator("[data-calque-choix]").selectOption(cal.id);
+    await page.locator("[data-calque-nom]").fill("Calque e2e renommé");
+    await page.locator('.nav-gerer-calques button:has-text("Renommer")').click();
+    for (let k = 0; k < 30 && renomme !== "Calque e2e renommé"; k++) {
+      renomme = (await modele(pid)).modele.calques[cal.id]?.nom ?? null;
+      if (renomme !== "Calque e2e renommé") await page.waitForTimeout(500);
+    }
+    await page.locator("[data-calque-supprimer]").click();
+    for (let k = 0; k < 30 && !supprime; k++) {
+      supprime = !(await modele(pid)).modele.calques[cal.id];
+      if (!supprime) await page.waitForTimeout(500);
+    }
+  }
+  check("calques : créé, renommé puis supprimé depuis le navigateur", !!cal && renomme === "Calque e2e renommé" && supprime, `${cal?.id} · ${renomme} · ${supprime}`);
+  // Joindre deux murs : sélection des deux, palette « Joindre ».
+  await selectionner("jonc-a");
+  await page.locator(".nav-filtre").fill("jonc-b");
+  await page.locator('.nav-objets button[data-objet="jonc-b"]').click({ modifiers: ["Shift"] });
+  await page.evaluate(() => document.activeElement?.blur?.());
+  await page.keyboard.press("Control+k");
+  await page.locator(".palette-champ").waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+  await page.locator(".palette-champ").fill("joindre");
+  await page.waitForFunction(() => (document.querySelector(".palette-resultats li")?.textContent ?? "").includes("Joindre"), null, { timeout: 5000 }).catch(() => {});
+  await page.keyboard.press("Enter");
+  let joints = null;
+  for (let k = 0; k < 30 && !joints; k++) {
+    const o = (await modele(pid)).modele.objets;
+    const A = o["jonc-a"]?.params.b;
+    const B = o["jonc-b"]?.params.a;
+    if (A && B && Math.hypot(A.x - (ax + 54), A.y - (ay + 50)) < 1e-6 && Math.hypot(B.x - (ax + 54), B.y - (ay + 50)) < 1e-6) joints = { A, B };
+    else await page.waitForTimeout(500);
+  }
+  check("joindre deux murs : chacun prolongé jusqu'à l'axe de l'autre (angle)", rj.status === 200 && !!joints, `${rj.status} · ${JSON.stringify(joints)}`);
+  // Isolement en 3D : seuls les deux murs restent, puis on quitte.
+  await selectionner("jonc-a");
+  await page.locator(".nav-filtre").fill("jonc-b");
+  await page.locator('.nav-objets button[data-objet="jonc-b"]').click({ modifiers: ["Shift"] });
+  await page.locator('.barre-mode button:has-text("3D")').click();
+  await page.locator('[data-isolement="isoler"]').click();
+  await page.locator(".nav-filtre").fill("");
+  const isole = await page.locator("[data-isolement-actif]").getAttribute("data-isolement-actif").catch(() => null);
+  await page.locator('[data-isolement="quitter"]').click();
+  const quitte = (await page.locator("[data-isolement-actif]").count()) === 0;
+  await page.locator('.barre-mode button:has-text("Plan")').click();
+  check("isolement : la sélection isolée pour soi en 3D, puis l'affichage complet revient", isole === "2" && quitte, `${isole} · ${quitte}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

@@ -362,6 +362,23 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
             </select>
           </label>
         )}
+        {options.vue === "perspective" && (options.presentation === "eclate" || options.presentation === "eclate-horizontal") && (
+          <label className="vue3d-curseur">
+            Écart {fmt(options.ecartEclate ?? 4)} m
+            <input type="range" data-ecart-eclate min={0} max={20} step={0.5} value={options.ecartEclate ?? 4} onChange={(e) => setOptions({ ecartEclate: e.target.valueAsNumber })} />
+          </label>
+        )}
+        {ui.isolement ? (
+          <button type="button" data-isolement="quitter" onClick={() => etatUi.set({ isolement: null, aide: "Isolement quitté : tout l'affichage revient." })}>
+            Quitter l'isolement ({ui.isolement.length})
+          </button>
+        ) : (
+          ui.selection.length > 0 && (
+            <button type="button" data-isolement="isoler" title="N'afficher que la sélection (pour vous seulement ; le modèle n'est pas modifié)" onClick={() => etatUi.set({ isolement: [...ui.selection], aide: "Sélection isolée : seuls ces objets sont affichés, pour vous seulement." })}>
+              Isoler la sélection
+            </button>
+          )
+        )}
         {options.vue === "perspective" && options.presentation !== "eclate" && options.presentation !== "eclate-horizontal" && (
           <label className="vue3d-case">
             <input type="checkbox" checked={options.coupeHorizontale !== null} onChange={(e) => setOptions({ coupeHorizontale: e.target.checked ? 1.2 : null })} />

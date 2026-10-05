@@ -138,3 +138,4 @@ Décalage à angles arrondis, chanfrein multiple, hachure décomposée (`esquiss
 Référentiels de classification, classification dans l'inspecteur, export IFC des classifications (`referentiels.test.ts`, e2e, D-065).
 Filtres d'affichage par classe et ensembles d'affichage locaux ou partagés (`ensembles.test.ts`, e2e, D-066).
 Repère altimétrique du site, extrusion d'un profil ouvert, main levée (`altimetrie.test.ts`, `nouveau.test.ts`, e2e, D-067).
+Gestion des calques, jonction de deux murs, isolement de la sélection, écart de l'éclaté (`nouveau.test.ts`, e2e, D-068).

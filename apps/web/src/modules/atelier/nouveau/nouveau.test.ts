@@ -354,3 +354,17 @@ describe("main levée (D-067)", () => {
     expect("message" in traceMainLevee([pt(0, 0)], u, false)).toBe(true);
   });
 });
+
+describe("joindre deux murs (D-068)", () => {
+  it("deux murs perpendiculaires non jointifs : chacun prolongé jusqu'à l'axe de l'autre", () => {
+    const etat = murs(socle(), [[0, 0, 3, 0], [4, 1, 4, 5]]);
+    const [a, b] = Object.keys(etat.objets);
+    const r = actionImmediate("joindre", etat, ui({ selection: [a!, b!] })) as { commandes: Commande[]; label: string };
+    expect(r.label).toMatch(/murs/);
+    const e = appliquer(etat, r.commandes);
+    const A = e.objets[a!] as Occurrence<"mur">;
+    const B = e.objets[b!] as Occurrence<"mur">;
+    expect(distance(A.params.b, pt(4, 0))).toBeLessThan(1e-6);
+    expect(distance(B.params.a, pt(4, 0))).toBeLessThan(1e-6);
+  });
+});

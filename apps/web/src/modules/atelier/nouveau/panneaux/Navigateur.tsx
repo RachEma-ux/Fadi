@@ -138,6 +138,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
             ))}
           </ul>
         )}
+        {!readOnly && <GererCalques etat={etat} onCommandes={onCommandes} />}
       </section>
 
       <section aria-labelledby="nav-objets" className="nav-objets">
@@ -274,6 +275,12 @@ function EnsemblesAffichage({ etat, ui, readOnly, onCommandes }: { etat: ModeleA
   return (
     <section aria-labelledby="nav-ensembles" className="nav-ensembles" data-ensembles>
       <h3 id="nav-ensembles">Ensembles d'affichage</h3>
+      {ui.isolement && (
+        <p className="nav-detail" data-isolement-actif={ui.isolement.length}>
+          Isolement actif : {ui.isolement.length} objet(s) seulement.{" "}
+          <button type="button" className="lien" data-isolement-quitter onClick={() => etatUi.set({ isolement: null })}>Quitter l'isolement</button>
+        </p>
+      )}
       <p className="nav-detail" data-filtres-actifs={actifs}>
         {actifs ? `Filtres pour vous : ${f.classesMasquees.length} classe(s), ${f.calquesMasques.length} calque(s) masqués.` : "Tout est affiché (filtres locaux vides)."}
         {actifs > 0 && <button type="button" className="lien" data-ensemble-tout onClick={() => etatUi.set({ filtres: { classesMasquees: [], calquesMasques: [] } })}>Tout afficher</button>}
@@ -349,6 +356,55 @@ function RepereAltimetrique({ etat, readOnly, onCommandes }: { etat: ModeleAteli
           <button type="submit" disabled={!pret}>Déclarer</button>
           {a && <button type="button" className="lien" onClick={() => onCommandes([{ type: "site.altimetrie.definir", params: { altitude: null } }], "Retirer le repère altimétrique")}>Retirer</button>}
         </form>
+      )}
+    </details>
+  );
+}
+
+/**
+ * Gestion des calques (D-068, DA-05-01 -a, -b, -f) : créer, renommer, changer la couleur, monter ou descendre,
+ * supprimer (un calque qui porte des objets est refusé par la commande : les réaffecter d'abord).
+ */
+function GererCalques({ etat, onCommandes }: { etat: ModeleAtelier; onCommandes: (commandes: Commande[], label: string) => void }) {
+  const calques = Object.values(etat.calques).sort((a, b) => a.ordre - b.ordre);
+  const [choixBrut, setChoix] = useState(calques[0]?.id ?? "");
+  const [nom, setNom] = useState("");
+  const [nouveau, setNouveau] = useState("");
+  const choix = etat.calques[choixBrut] ? choixBrut : (calques[0]?.id ?? "");
+  const c = etat.calques[choix] ?? null;
+  const objets = c ? Object.values(etat.objets).filter((o) => o.calqueId === c.id).length : 0;
+  const echanger = (d: -1 | 1) => {
+    if (!c) return;
+    const i = calques.findIndex((x) => x.id === c.id);
+    const autre = calques[i + d];
+    if (!autre) return;
+    onCommandes([{ type: "calque.modifier", params: { id: c.id, ordre: autre.ordre } }, { type: "calque.modifier", params: { id: autre.id, ordre: c.ordre } }], `Calque ${c.nom} ${d < 0 ? "monté" : "descendu"}`);
+  };
+  return (
+    <details className="nav-gerer-calques" data-gerer-calques>
+      <summary>Gérer les calques</summary>
+      <form className="nav-formulaire-altimetrie nav-formulaire-calques" onSubmit={(e) => { e.preventDefault(); const n = nouveau.trim(); if (n) { onCommandes([{ type: "calque.creer", params: { nom: n, ordre: calques.reduce((mx, x) => Math.max(mx, x.ordre + 1), 0) } }], `Créer le calque ${n}`); setNouveau(""); } }}>
+        <input aria-label="Nom du nouveau calque" placeholder="Nouveau calque" value={nouveau} maxLength={80} onChange={(e) => setNouveau(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-calque-nouveau />
+        <button type="submit" disabled={!nouveau.trim()}>Créer</button>
+      </form>
+      {calques.length > 0 && (
+        <div className="nav-formulaire-altimetrie nav-formulaire-calques">
+          <select aria-label="Calque à modifier" value={choix} onChange={(e) => { setChoix(e.target.value); setNom(""); }} data-calque-choix>
+            {calques.map((x) => <option key={x.id} value={x.id}>{x.nom}</option>)}
+          </select>
+          {c && (
+            <>
+              <input aria-label="Nouveau nom" placeholder={c.nom} value={nom} maxLength={80} onChange={(e) => setNom(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-calque-nom />
+              <button type="button" disabled={!nom.trim() || nom.trim() === c.nom} onClick={() => { onCommandes([{ type: "calque.modifier", params: { id: c.id, nom: nom.trim() } }], `Renommer le calque ${c.nom}`); setNom(""); }}>Renommer</button>
+              <input type="color" aria-label={`Couleur de ${c.nom}`} value={/^#[0-9a-f]{6}$/i.test(c.couleur ?? "") ? c.couleur! : "#355e52"} onChange={(e) => onCommandes([{ type: "calque.modifier", params: { id: c.id, couleur: e.target.value } }], `Couleur du calque ${c.nom}`)} />
+              <button type="button" title="Monter" onClick={() => echanger(-1)} disabled={calques[0]?.id === c.id}>↑<span className="sr-only">Monter {c.nom}</span></button>
+              <button type="button" title="Descendre" onClick={() => echanger(1)} disabled={calques[calques.length - 1]?.id === c.id}>↓<span className="sr-only">Descendre {c.nom}</span></button>
+              <button type="button" data-calque-supprimer disabled={objets > 0} title={objets ? `${objets} objet(s) sur ce calque : les réaffecter d'abord` : "Supprimer le calque"} onClick={() => onCommandes([{ type: "calque.supprimer", params: { id: c.id } }], `Supprimer le calque ${c.nom}`)}>
+                Supprimer{objets ? ` (${objets} objet(s))` : ""}
+              </button>
+            </>
+          )}
+        </div>
       )}
     </details>
   );

@@ -21,6 +21,8 @@ export interface OptionsScene {
   /** Position de la coupe verticale, 0–1 sur l'étendue du bâtiment. */
   positionCoupe: number;
   aretes: boolean;
+  /** Écart entre niveaux en présentation éclatée, en mètres (DA-18-03) ; 4 m par défaut. */
+  ecartEclate?: number;
 }
 
 interface Lot {
@@ -286,8 +288,9 @@ export class Scene3D {
       g.visible = o.presentation !== "niveau" || id === o.niveauActif || id === "-";
       // Éclaté horizontal (D-053) : les niveaux posés côte à côte au même sol (altitude ramenée à 0), de gauche à
       // droite dans l'ordre des niveaux, séparés d'un écart fixe.
-      g.position.z = o.presentation === "eclate" ? rang * ECART_ECLATE : o.presentation === "eclate-horizontal" && n ? -n.elevation : 0;
-      g.position.x = o.presentation === "eclate-horizontal" ? rang * (this.boite.isEmpty() ? 0 : this.boite.max.x - this.boite.min.x + ECART_ECLATE) : 0;
+      const ecart = o.ecartEclate ?? ECART_ECLATE;
+      g.position.z = o.presentation === "eclate" ? rang * ecart : o.presentation === "eclate-horizontal" && n ? -n.elevation : 0;
+      g.position.x = o.presentation === "eclate-horizontal" ? rang * (this.boite.isEmpty() ? 0 : this.boite.max.x - this.boite.min.x + ecart) : 0;
       // Coupe horizontale en perspective : les niveaux au-dessus du niveau actif sont masqués.
       if (o.vue === "perspective" && o.coupeHorizontale !== null && actif && n && n.ordre > actif.ordre && !estEclate(o.presentation)) g.visible = false;
     }
@@ -310,7 +313,7 @@ export class Scene3D {
   cadrer(): void {
     const o = this.options;
     const b = this.boite.clone();
-    if (o?.presentation === "eclate" && this.etat) b.max.z += niveauxOrdonnes(this.etat).length * ECART_ECLATE;
+    if (o?.presentation === "eclate" && this.etat) b.max.z += niveauxOrdonnes(this.etat).length * (o.ecartEclate ?? ECART_ECLATE);
     if (o?.presentation === "eclate-horizontal") {
       // Emprise réelle des niveaux déplacés.
       const u = new THREE.Box3();

@@ -85,9 +85,10 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   // Filtres d'affichage locaux (D-066) : le plan et la vue 3D ne voient que les objets affichés ; le modèle est intact.
   const etatAffiche = useMemo((): ModeleAtelier => {
     const f = ui.filtres;
-    if (!f.classesMasquees.length && !f.calquesMasques.length) return etat;
-    return { ...etat, objets: Object.fromEntries(Object.entries(etat.objets).filter(([, o]) => visibleSelonFiltres(o, f))) };
-  }, [etat, ui.filtres]);
+    const iso = ui.isolement ? new Set(ui.isolement) : null;
+    if (!f.classesMasquees.length && !f.calquesMasques.length && !iso) return etat;
+    return { ...etat, objets: Object.fromEntries(Object.entries(etat.objets).filter(([id, o]) => visibleSelonFiltres(o, f) && (!iso || iso.has(id)))) };
+  }, [etat, ui.filtres, ui.isolement]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [mesure, setMesure] = useState<string | null>(null);
   const [rapportEchange, setRapportEchange] = useState<RapportAffiche | null>(null);
