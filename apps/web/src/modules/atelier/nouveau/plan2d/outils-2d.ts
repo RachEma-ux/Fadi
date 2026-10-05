@@ -213,7 +213,9 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       if (pts.length === 0) return attendre([point], "Cliquez le point d'arrivée (ou tapez dx,dy puis Entrée).");
       const dx = point.x - pts[0]!.x;
       const dy = point.y - pts[0]!.y;
-      return emettre([{ type: outil === "deplacer" ? "transformer.deplacer" : "transformer.copier", params: { dx, dy }, cibles: ui.selection }], `${outil === "deplacer" ? "Déplacer" : "Copier"} ${ui.selection.length} objet(s)`);
+      // Copier avec Alt (D-060) : les pièces copiées prennent le code suivant libre (B07 → B08).
+      const suivant = outil === "copier" && options.alt === true;
+      return emettre([{ type: outil === "deplacer" ? "transformer.deplacer" : "transformer.copier", params: { dx, dy, ...(suivant ? { codes: "suivant" } : {}) }, cibles: ui.selection }], `${outil === "deplacer" ? "Déplacer" : "Copier"} ${ui.selection.length} objet(s)${suivant ? " (codes suivants)" : ""}`);
     }
     case "tourner": {
       if (ui.selection.length === 0) return attendre([], "Sélectionnez d'abord des objets.");

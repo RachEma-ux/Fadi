@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../../lib/api";
-import { bibliotheques, CLASSES, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { bibliotheques, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -146,6 +146,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       <GroupeSelection sel={[o]} etat={etat} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "zone" && <SyntheseZoneVue o={o as Occurrence<"zone">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
+      {(o.classe === "esquisse" || o.classe === "dalle" || o.classe === "piece" || o.classe === "zone") && !desactive && contourFerme(o) && <ChangerClasseContour key={o.id} o={o} onCommandes={onCommandes} />}
       {o.classe === "escalier" && !desactive && <TremieEscalier o={o as Occurrence<"escalier">} etat={etat} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && <ConvertirEsquisse o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "mur" && !desactive && <ScinderEnParts o={o as Occurrence<"mur">} onCommandes={onCommandes} />}
@@ -707,6 +708,34 @@ function HistoriqueObjet({ projectId, objetId }: { projectId: string; objetId: s
         </ol>
       ))}
     </details>
+  );
+}
+
+/** Changer de classe sur place (D-060) : le contour est gardé, les paramètres propres à la classe d'arrivée sont saisis. */
+function ChangerClasseContour({ o, onCommandes }: { o: OccurrenceQuelconque; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const choix = (["piece", "zone", "dalle", "esquisse"] as const).filter((c) => c !== o.classe);
+  const [classe, setClasse] = useState<(typeof choix)[number]>(choix[0]!);
+  const [nom, setNom] = useState("");
+  const [epaisseur, setEpaisseur] = useState("");
+  const LIB: Record<string, string> = { piece: "Pièce", zone: "Zone", dalle: "Dalle", esquisse: "Esquisse (polygone)" };
+  const e = nombreSaisi(epaisseur);
+  const pret = classe === "dalle" ? e !== null && e > 0 : classe === "esquisse" ? true : nom.trim().length > 0;
+  return (
+    <form className="inspecteur-classe" data-changer-classe onSubmit={(ev) => {
+      ev.preventDefault();
+      if (!pret) return;
+      const params = classe === "dalle" ? { epaisseur: { value: e, unit: "m" } } : classe === "esquisse" ? {} : { nom: nom.trim() };
+      onCommandes([{ type: "objet.changerClasse", params: { id: o.id, classe, params } }], `${o.id} → ${LIB[classe]}`);
+    }}>
+      <label>Changer en
+        <select value={classe} onChange={(ev) => setClasse(ev.target.value as typeof classe)} data-classe-cible>
+          {choix.map((c) => <option key={c} value={c}>{LIB[c]}</option>)}
+        </select>
+      </label>
+      {(classe === "piece" || classe === "zone") && <label>Nom<input value={nom} maxLength={120} onChange={(ev) => setNom(ev.target.value)} onKeyDown={(ev) => ev.stopPropagation()} data-classe-nom /></label>}
+      {classe === "dalle" && <label>Épaisseur (m)<input inputMode="decimal" value={epaisseur} onChange={(ev) => setEpaisseur(ev.target.value)} onKeyDown={(ev) => ev.stopPropagation()} data-classe-epaisseur /></label>}
+      <button type="submit" disabled={!pret}>Changer de classe</button>
+    </form>
   );
 }
 

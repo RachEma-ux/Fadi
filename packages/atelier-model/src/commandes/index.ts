@@ -37,6 +37,7 @@ import { convertirEsquisse } from "../esquisse/conversion.js";
 import { affecterZone } from "./zones.js";
 import { alignerSelection } from "./transformer.js";
 import { tremieEscalier } from "./tremie.js";
+import { changerClasse } from "./changer-classe.js";
 import { joindreMurs, scinderMur } from "./mur.js";
 import { creerOccurrence, modifierOccurrence, supprimerOccurrence } from "./objets.js";
 import { affecterClassification, affecterPhase, definirPropriete, rattacherReference, reducteursCalque, reducteursDefinition, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
@@ -190,6 +191,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "esquisse.convertir": (etat, p) => convertirEsquisse(etat, p),
   "zone.affecter": (etat, p, ctx) => affecterZone(etat, p, ctx),
   "escalier.tremie": (etat, p) => tremieEscalier(etat, p),
+  "objet.changerClasse": (etat, p) => changerClasse(etat, p),
   // Transformations
   "transformer.deplacer": reducteursTransformer.deplacer,
   "transformer.copier": reducteursTransformer.copier,

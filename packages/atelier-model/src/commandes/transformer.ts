@@ -284,10 +284,10 @@ export const reducteursTransformer = {
         effets = fusionnerEffets(effets, r.effets);
       });
       const niveauCible = lire.chaineOuNull(p, "niveauCible");
-      const r = { etat: courant, effets };
+      const r = codesDesCopies({ etat: courant, effets }, p);
       return niveauCible ? versNiveau(r, r.effets.crees, niveauCible) : r;
     }
-    const r = copier(etat, cibles(etat, p, c), lireTransformation(p, "translation"), ctx);
+    const r = codesDesCopies(copier(etat, cibles(etat, p, c), lireTransformation(p, "translation"), ctx), p);
     const niveauCible = lire.chaineOuNull(p, "niveauCible");
     return niveauCible ? versNiveau(r, r.effets.crees, niveauCible) : r;
   },
@@ -850,4 +850,28 @@ export function alignerSelection(etat: ModeleAtelier, p: Brut, ctx: ContexteComm
   theta = Math.atan2(Math.sin(theta), Math.cos(theta));
   const t = translationPuisRotation(d1.x - s1.x, d1.y - s1.y, d1, theta);
   return lire.booleen(p, "copie", false) ? copier(etat, sel, t, ctx) : appliquerEnPlace(etat, sel, t, ctx);
+}
+
+/**
+ * Codes des pièces copiées (D-060, DA-02-02) : `codes` = « garder » (par défaut, comme avant), « vider » (code à
+ * renseigner) ou « suivant » — le numéro final du code est porté au premier numéro libre du projet, zéros de tête
+ * gardés (B07 → B08) ; un code sans numéro reçoit « -2 », « -3 »… Aucun autre paramètre de la pièce ne change.
+ */
+function codesDesCopies(r: ResultatCommande, p: Brut): ResultatCommande {
+  const mode = lire.enumeration(p, "codes", ["garder", "vider", "suivant"] as const, "garder");
+  if (mode === "garder") return r;
+  let objets = r.etat.objets;
+  const pris = new Set(Object.values(objets).filter((o): o is Occurrence<"piece"> => o.classe === "piece" && !r.effets.crees.includes(o.id)).map((o) => o.params.code).filter((x): x is string => !!x));
+  for (const id of r.effets.crees) {
+    const o = objets[id];
+    if (o?.classe !== "piece" || !o.params.code) continue;
+    let code: string | null = null;
+    if (mode === "suivant") {
+      const m = /^(.*?)(\d+)$/.exec(o.params.code);
+      for (let k = m ? Number(m[2]) + 1 : 2; !code || pris.has(code); k++) code = m ? `${m[1]}${String(k).padStart(m[2]!.length, "0")}` : `${o.params.code}-${k}`;
+      pris.add(code);
+    }
+    objets = { ...objets, [id]: { ...o, params: { ...o.params, code } } };
+  }
+  return { etat: { ...r.etat, objets }, effets: r.effets };
 }

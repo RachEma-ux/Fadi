@@ -267,3 +267,12 @@ describe("réseau sur trajectoire et aligner (D-058)", () => {
     expect(q[1]!.y).toBeCloseTo(6);
   });
 });
+
+describe("copier avec codes suivants (D-060)", () => {
+  it("Alt au second clic : codes « suivant »", () => {
+    const etat = socle();
+    const u = ui({ selection: ["x"], pointsEnCours: [pt(0, 0)] });
+    expect(clic("copier", pt(1, 0), etat, u, { ...opts, alt: true }).commandes[0]).toMatchObject({ type: "transformer.copier", params: { dx: 1, dy: 0, codes: "suivant" } });
+    expect(clic("copier", pt(1, 0), etat, u, opts).commandes[0]!.params).not.toHaveProperty("codes");
+  });
+});

@@ -712,6 +712,27 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
 }
 
+// Changer de classe sur place (D-060) : une esquisse fermée devient une pièce nommée.
+{
+  const e0 = await modele(pid);
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const P = (x, y) => ({ x: ax + x, y: ay + y, frame: "local", unit: "m" });
+  const r0 = await lot(pid, `cc-${Date.now()}`, e0.revision, [{ type: "esquisse.polygone", params: { id: "contour-e2e", niveauId: murA.niveauId, points: [P(-40, -40), P(-36, -40), P(-36, -37), P(-40, -37)] } }]);
+  await ouvrir(pid);
+  await selectionner("contour-e2e");
+  await page.locator("[data-classe-cible]").selectOption("piece");
+  await page.locator("[data-classe-nom]").fill("Réserve e2e");
+  await page.locator('[data-changer-classe] button[type="submit"]').click();
+  let o = null;
+  for (let k = 0; k < 30 && o?.classe !== "piece"; k++) {
+    o = (await modele(pid)).modele.objets["contour-e2e"];
+    if (o?.classe !== "piece") await page.waitForTimeout(500);
+  }
+  check("changer de classe : l'esquisse fermée devient une pièce nommée, même identifiant", r0.status === 200 && o?.classe === "piece" && o?.params.nom === "Réserve e2e", `${r0.status} · ${o?.classe}`);
+  await page.keyboard.press("Escape");
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];
