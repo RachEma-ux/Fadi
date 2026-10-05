@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { cercleTroisPoints, distance, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { cercleTroisPoints, distance, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -39,7 +39,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const [taille, setTaille] = useState({ w: 800, h: 600 });
   const [accroche, setAccroche] = useState<Accroche | null>(null);
   const [cadre, setCadre] = useState<{ a: Point2; b: Point2 } | null>(null);
-  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer" | "lasso"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean } | null>(null);
+  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer" | "lasso" | "trace"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean } | null>(null);
   const [lasso, setLasso] = useState<Point2[] | null>(null);
   const lassoPoints = useRef<Point2[]>([]);
   const [decalage, setDecalage] = useState<{ dx: number; dy: number; accroche: Accroche } | null>(null);
@@ -132,7 +132,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       if (g.bouge) setCadre({ a: g.depart, b: p });
       return;
     }
-    if (g?.mode === "lasso") {
+    if (g?.mode === "lasso" || g?.mode === "trace") {
       const dernier = lassoPoints.current[lassoPoints.current.length - 1];
       // Un point tous les 4 px environ : le contour reste léger.
       if (!dernier || Math.hypot((p.x - dernier.x) * pr.echelle, (p.y - dernier.y) * pr.echelle) > 4) {
@@ -182,6 +182,12 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       return;
     }
     if (e.button !== 0) return;
+    // Main levée (D-067, DA-01-06) : le tracé suit le pointeur (souris, stylet ou doigt) jusqu'au relâchement.
+    if (ui.outil === "main-levee" && !readOnly) {
+      lassoPoints.current = [p];
+      glisse.current = { mode: "trace", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
+      return;
+    }
     if (ui.outil === "lasso" || (ui.outil === "selection" && e.altKey)) {
       lassoPoints.current = [p];
       glisse.current = { mode: "lasso", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
@@ -227,6 +233,15 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       // Simple clic sur un objet déjà sélectionné : le garder seul.
       const sous = objetSousPointeur(p, cache, etat, ui.niveauId, rayon);
       if (sous) etatUi.selectionner([sous.objetId]);
+      return;
+    }
+    if (g?.mode === "trace") {
+      const brut = lassoPoints.current;
+      lassoPoints.current = [];
+      setLasso(null);
+      const r = traceMainLevee(brut, ui, e.altKey);
+      if ("message" in r) etatUi.set({ aide: r.message });
+      else onCommandes(r.commandes, r.label);
       return;
     }
     if (g?.mode === "lasso") {
@@ -375,7 +390,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
         })}
         {accroche && accroche.type !== "libre" && <MarqueAccroche a={accroche} pr={pr} />}
         {cadre && <CadreSelection a={pr.vers(cadre.a)} b={pr.vers(cadre.b)} />}
-        {lasso && lasso.length > 1 && <path className="plan-lasso" d={chemin(pr, lasso, true)} data-lasso={lasso.length} />}
+        {lasso && lasso.length > 1 && (ui.outil === "main-levee" ? <path className="plan-trace" d={chemin(pr, lasso, false)} data-trace={lasso.length} /> : <path className="plan-lasso" d={chemin(pr, lasso, true)} data-lasso={lasso.length} />)}
       </g>
       <EchelleGraphique echelle={ui.vue.echelle} hauteur={taille.h} />
     </svg>
@@ -514,4 +529,21 @@ function EchelleGraphique({ echelle, hauteur }: { echelle: number; hauteur: numb
       <text x={px + 6} y={2}>{String(l).replace(".", ",")} m</text>
     </g>
   );
+}
+
+/**
+ * Tracé à main levée (D-067, DA-01-06) : simplifié à la tolérance de l'outil (Douglas–Peucker), fermé quand il revient
+ * à son départ (moins de trois fois la tolérance), polyligne — ou spline avec Alt au relâchement. Pur.
+ */
+export function traceMainLevee(brut: readonly Point2[], ui: EtatUi, courbe: boolean): { commandes: Commande[]; label: string } | { message: string } {
+  if (!ui.niveauId) return { message: "Choisissez d'abord un niveau." };
+  const t = Number(ui.parametresOutil["toleranceMainLevee"]);
+  const tolerance = Number.isFinite(t) && t > 0 ? t : 0.05;
+  let points = simplifierTrace(brut, tolerance);
+  if (points.length < 2) return { message: "Tracé trop court : glissez pour dessiner." };
+  const ferme = points.length >= 4 && distance(points[0]!, points[points.length - 1]!) <= tolerance * 3;
+  if (ferme) points = points.slice(0, -1);
+  if (ferme && points.length < 3) return { message: "Tracé fermé trop petit." };
+  const forme = courbe ? "spline" : "polyligne";
+  return { commandes: [{ type: `esquisse.${forme}`, params: { niveauId: ui.niveauId, points, ferme } }], label: `Main levée : ${forme === "spline" ? "courbe" : "polyligne"} de ${points.length} points${ferme ? " (fermée)" : ""}` };
 }

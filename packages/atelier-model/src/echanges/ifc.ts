@@ -16,6 +16,7 @@
  * - reproductibilité : l'horodatage du fichier est fourni par l'appelant (instant de la révision exportée).
  */
 import { referentielDu } from "../commandes/referentiels.js";
+import { altimetrieDu } from "../commandes/altimetrie.js";
 import { aireNette, facesMur, normalise, perp, pointsPolyligne, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
@@ -172,7 +173,10 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
     const r = s.ajouter(`IFCSHAPEREPRESENTATION(${ref(emprise)},'FootPrint','Curve2D',${liste([poly])})`);
     repSite = ref(s.ajouter(`IFCPRODUCTDEFINITIONSHAPE($,$,${liste([r])})`));
   }
-  const site = s.ajouter(`IFCSITE(${gid("site")},$,${chaineStep(parcelle ? `Parcelle (${parcelle.crs})` : "Site")},$,$,${ref(placementSite)},${repSite},$,.ELEMENT.,$,$,$,$,$)`);
+  // RefElevation (D-067) : altitude absolue de la cote locale 0, seulement si elle est déclarée.
+  const altimetrie = altimetrieDu(etat);
+  const site = s.ajouter(`IFCSITE(${gid("site")},$,${chaineStep(parcelle ? `Parcelle (${parcelle.crs})` : "Site")},$,$,${ref(placementSite)},${repSite},$,.ELEMENT.,$,$,${altimetrie ? reelStep(altimetrie.altitude) : "$"},$,$)`);
+  if (altimetrie) remarques.add(`Altitude de référence du site : ${altimetrie.altitude} m (${altimetrie.systeme}, déclarée ; source : ${altimetrie.source}).`);
   const placementBat = s.ajouter(`IFCLOCALPLACEMENT(${ref(placementSite)},${ref(sco)})`);
   const batiment = s.ajouter(`IFCBUILDING(${gid("batiment")},$,${chaineStep(options.projet.nom || "Bâtiment")},$,$,${ref(placementBat)},$,$,.ELEMENT.,$,$,$)`);
   s.ajouter(`IFCRELAGGREGATES(${gid("rel-projet-site")},$,$,$,${ref(projet)},${liste([site])})`);

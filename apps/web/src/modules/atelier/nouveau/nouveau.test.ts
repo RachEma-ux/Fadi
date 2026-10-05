@@ -326,3 +326,31 @@ describe("filtres d'affichage locaux (D-066)", () => {
     expect(visibleSelonFiltres({ classe: "esquisse", calqueId: "mob" }, f)).toBe(false);
   });
 });
+
+describe("extrusion d'un profil ouvert (D-067)", () => {
+  it("ligne ouverte + épaisseur : solide de contour décalé de part et d'autre ; sans épaisseur : message", () => {
+    const etat = appliquer(socle(), [{ type: "esquisse.polyligne", params: { id: "p", niveauId: "rdc", points: [pt(0, 0), pt(4, 0), pt(4, 3)] } }]);
+    expect((actionImmediate("extruder", etat, ui({ selection: ["p"], parametresOutil: { hauteurSolide: 1 } })) as { message: string }).message).toMatch(/épaisseur/);
+    const r = actionImmediate("extruder", etat, ui({ selection: ["p"], parametresOutil: { hauteurSolide: 1, epaisseurProfil: 0.2 } })) as { commandes: Commande[] };
+    const contour = (r.commandes[0]!.params as { contour: { x: number; y: number }[] }).contour;
+    expect(contour).toHaveLength(6);
+    expect(contour[0]).toMatchObject({ x: 0, y: 0.1 });
+    expect(contour[1]!.x).toBeCloseTo(3.9, 9);
+    expect(appliquer(etat, r.commandes).objets).toBeDefined();
+  });
+});
+
+describe("main levée (D-067)", () => {
+  it("tracé simplifié à la tolérance, fermé s'il revient au départ ; Alt : courbe ; trop court : message", async () => {
+    const { traceMainLevee } = await import("./plan2d/Plan2D");
+    const u = ui({ parametresOutil: { ...etatUi.get().parametresOutil, toleranceMainLevee: 0.05 } });
+    const droite = Array.from({ length: 50 }, (_, i) => pt(i * 0.1, Math.sin(i) * 0.01));
+    const r = traceMainLevee(droite, u, false) as { commandes: Commande[] };
+    expect(r.commandes[0]).toMatchObject({ type: "esquisse.polyligne", params: { ferme: false } });
+    expect((r.commandes[0]!.params as { points: unknown[] }).points).toHaveLength(2);
+    const boucle = Array.from({ length: 41 }, (_, i) => pt(Math.cos((i / 40) * 2 * Math.PI) * 2, Math.sin((i / 40) * 2 * Math.PI) * 2));
+    const c = traceMainLevee(boucle, u, true) as { commandes: Commande[] };
+    expect(c.commandes[0]).toMatchObject({ type: "esquisse.spline", params: { ferme: true } });
+    expect("message" in traceMainLevee([pt(0, 0)], u, false)).toBe(true);
+  });
+});

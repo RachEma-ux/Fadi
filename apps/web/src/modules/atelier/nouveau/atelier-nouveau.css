@@ -2028,7 +2028,8 @@
   display: flex;
   gap: 0.2rem;
 }
-.nav-formulaire-ensemble {
+.nav-formulaire-ensemble,
+.nav-formulaire-altimetrie {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
@@ -2037,7 +2038,16 @@
 }
 .nav-formulaire-ensemble input[type="text"],
 .nav-formulaire-ensemble input:not([type]),
-.nav-formulaire-ensemble select {
+.nav-formulaire-ensemble select,
+.nav-formulaire-altimetrie input {
   min-width: 0;
   flex: 1 1 9rem;
+}
+
+/* Tracé à main levée en cours (D-067). */
+.plan-trace {
+  fill: none;
+  stroke: #355e52;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
 }

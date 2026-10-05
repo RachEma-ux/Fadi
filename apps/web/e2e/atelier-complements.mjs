@@ -802,6 +802,34 @@ await page.waitForSelector(".plan2d");
   check("filtre d'affichage local : les murs masqués pour soi disparaissent du plan, ensemble partagé enregistré, « Tout afficher » les rend", avantMurs > 0 && masques === 0 && remis === avantMurs && ens?.params.classesMasquees.includes("mur") === true, `${avantMurs} → ${masques} → ${remis} · ${JSON.stringify(ens?.params ?? null)}`);
 }
 
+// Main levée et repère altimétrique (D-067).
+{
+  await page.keyboard.press("Escape");
+  const avant = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "esquisse" && o.params.forme === "polyligne").length;
+  const ok = await choisirOutil("main levée", "Main levée");
+  const z = await page.locator(".plan2d").boundingBox();
+  const x0 = z.x + z.width * 0.3;
+  const y0 = z.y + z.height * 0.3;
+  await page.mouse.move(x0, y0);
+  await page.mouse.down();
+  for (let k = 1; k <= 30; k++) await page.mouse.move(x0 + k * 6, y0 + Math.sin(k / 4) * 20);
+  await page.mouse.up();
+  let apres = avant;
+  for (let k = 0; k < 30 && apres === avant; k++) {
+    apres = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "esquisse" && o.params.forme === "polyligne").length;
+    if (apres === avant) await page.waitForTimeout(500);
+  }
+  await page.keyboard.press("Escape");
+  await page.locator(".nav-altimetrie > summary").click();
+  await page.locator('[data-altimetrie-champ="altitude"]').fill("432,15");
+  await page.locator('[data-altimetrie-champ="systeme"]').fill("NGF-IGN69");
+  await page.locator('[data-altimetrie-champ="source"]').fill("plan du géomètre (e2e)");
+  await page.locator('.nav-altimetrie button[type="submit"]').click();
+  await page.waitForSelector('.nav-altimetrie[data-altimetrie="declaree"]', { timeout: 30000 }).catch(() => {});
+  const niveauTxt = (await page.locator(".nav-niveaux").textContent()) ?? "";
+  check("main levée : un tracé glissé devient une polyligne simplifiée ; repère altimétrique déclaré, altitudes absolues des niveaux affichées", ok && apres === avant + 1 && /NGF-IGN69/.test(niveauTxt), `outil ${ok} · ${avant} → ${apres} · ${niveauTxt.slice(0, 80)}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

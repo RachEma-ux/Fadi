@@ -4,7 +4,7 @@
  * (clic = sélection, la vue se recentre).
  */
 import { useMemo, useState } from "react";
-import { CLASSES, ensemblesPartages, niveauxOrdonnes, type Classe, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { altimetrieDu, CLASSES, ensemblesPartages, niveauxOrdonnes, type Classe, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi, type FiltresAffichage } from "../etat-ui";
 import { normaliser } from "../outils";
 
@@ -26,6 +26,7 @@ function nomObjet(o: OccurrenceQuelconque): string {
 
 export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: PropsNavigateur) {
   const niveaux = niveauxOrdonnes(etat);
+  const altimetrie = altimetrieDu(etat);
   const [filtre, setFiltre] = useState("");
   const [nouveauNiveau, setNouveauNiveau] = useState<{ nom: string; elevation: string; source: string } | null>(null);
   const calques = Object.values(etat.calques).sort((a, b) => a.ordre - b.ordre);
@@ -54,7 +55,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
             <li key={n.id}>
               <button type="button" aria-pressed={n.id === ui.niveauId} className={n.id === ui.niveauId ? "est-actif" : ""} onClick={() => etatUi.set({ niveauId: n.id, selection: [], pointsEnCours: [] })}>
                 <span>{n.nom}</span>
-                <span className="nav-detail">{fmt(n.elevation)} m</span>
+                <span className="nav-detail">{fmt(n.elevation)} m{altimetrie ? ` · ${fmt(Math.round((altimetrie.altitude + n.elevation) * 1000) / 1000)} m ${altimetrie.systeme}` : ""}</span>
               </button>
             </li>
           ))}
@@ -112,6 +113,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
             ? `${etat.site.parcelle.crs}${etat.site.parcelle.aire ? ` · parcelle ${etat.site.parcelle.aire.value.toFixed(2).replace(".", ",")} m²` : ""} · origine locale ${etat.site.parcelle.origineLocale.x.toFixed(2).replace(".", ",")} ; ${etat.site.parcelle.origineLocale.y.toFixed(2).replace(".", ",")}`
             : "Aucune parcelle transmise : repère local libre (étape 01 pour la rattacher au cadastre)."}
         </p>
+        <RepereAltimetrique etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       </section>
 
       <section aria-labelledby="nav-calques">
@@ -326,5 +328,28 @@ function EnsemblesAffichage({ etat, ui, readOnly, onCommandes }: { etat: ModeleA
         <button type="submit" disabled={!nom.trim()}>Enregistrer l'affichage actuel</button>
       </form>
     </section>
+  );
+}
+
+/** Repère altimétrique (D-067, R5) : altitude absolue de la cote locale 0, déclarée avec son système et sa source. */
+function RepereAltimetrique({ etat, readOnly, onCommandes }: { etat: ModeleAtelier; readOnly: boolean; onCommandes: (commandes: Commande[], label: string) => void }) {
+  const a = altimetrieDu(etat);
+  const [form, setForm] = useState({ altitude: a ? String(a.altitude).replace(".", ",") : "", systeme: a?.systeme ?? "", source: a?.source ?? "" });
+  const v = Number(form.altitude.trim().replace(",", "."));
+  const pret = form.altitude.trim() !== "" && Number.isFinite(v) && form.systeme.trim() && form.source.trim();
+  return (
+    <details className="nav-altimetrie" data-altimetrie={a ? "declaree" : "non-declaree"}>
+      <summary>{a ? `Cote 0 = ${String(a.altitude).replace(".", ",")} m ${a.systeme}` : "Altitude de référence non déclarée"}</summary>
+      {a && <p className="nav-detail">Source : {a.source} (déclarée, non vérifiée par Fadi).</p>}
+      {!readOnly && (
+        <form className="nav-formulaire-altimetrie" onSubmit={(e) => { e.preventDefault(); if (pret) onCommandes([{ type: "site.altimetrie.definir", params: { altitude: { value: v, unit: "m" }, systeme: form.systeme.trim(), source: form.source.trim() } }], `Repère altimétrique : cote 0 = ${form.altitude} m ${form.systeme.trim()}`); }}>
+          <input aria-label="Altitude de la cote 0 (m)" placeholder="Altitude de la cote 0 (m)" inputMode="decimal" value={form.altitude} onChange={(e) => setForm({ ...form, altitude: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-altimetrie-champ="altitude" />
+          <input aria-label="Système altimétrique" placeholder="Système (ex. NGF-IGN69)" value={form.systeme} maxLength={60} onChange={(e) => setForm({ ...form, systeme: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-altimetrie-champ="systeme" />
+          <input aria-label="Source" placeholder="Source (relevé, plan…)" value={form.source} maxLength={200} onChange={(e) => setForm({ ...form, source: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-altimetrie-champ="source" />
+          <button type="submit" disabled={!pret}>Déclarer</button>
+          {a && <button type="button" className="lien" onClick={() => onCommandes([{ type: "site.altimetrie.definir", params: { altitude: null } }], "Retirer le repère altimétrique")}>Retirer</button>}
+        </form>
+      )}
+    </details>
   );
 }

@@ -35,6 +35,7 @@ import { reducteursDocuments } from "./documents.js";
 import { reducteursVues3D } from "./vues3d.js";
 import { reducteursReferentiel } from "./referentiels.js";
 import { reducteursEnsemble } from "./ensembles.js";
+import { definirAltimetrie } from "./altimetrie.js";
 import { convertirEsquisse } from "../esquisse/conversion.js";
 import { arrondirSommets } from "../esquisse/arrondir.js";
 import { affecterZone } from "./zones.js";
@@ -249,6 +250,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   // Site
   "site.parcelle.definir": (etat, p) => reducteursSite.parcelle(etat, p),
   "site.emprise.definir": (etat, p) => reducteursSite.emprise(etat, p),
+  "site.altimetrie.definir": (etat, p) => definirAltimetrie(etat, p),
   // Références externes (DA-05-11)
   ...reducteursRefExterne,
   // Réutilisation de modèle (DA-21-09) : ajouts préparés par `planifierReprise`, revalidés comme une archive.

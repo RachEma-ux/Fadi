@@ -137,3 +137,4 @@ Segments en arc dans les polylignes, arrondi des sommets, DXF exact (`esquisse/a
 Décalage à angles arrondis, chanfrein multiple, hachure décomposée (`esquisse/decalage-arrondi.test.ts`, D-064).
 Référentiels de classification, classification dans l'inspecteur, export IFC des classifications (`referentiels.test.ts`, e2e, D-065).
 Filtres d'affichage par classe et ensembles d'affichage locaux ou partagés (`ensembles.test.ts`, e2e, D-066).
+Repère altimétrique du site, extrusion d'un profil ouvert, main levée (`altimetrie.test.ts`, `nouveau.test.ts`, e2e, D-067).

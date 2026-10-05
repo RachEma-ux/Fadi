@@ -767,3 +767,34 @@ export function decalerArrondi(points: readonly Vec[], ferme: boolean, d: number
   if (!ferme) renf.splice(out.length - 1);
   return { points: out, renflements: renf };
 }
+
+/**
+ * Simplification d'un tracé à main levée (D-067, DA-01-06) : Douglas–Peucker à la tolérance donnée (m) — chaque
+ * point d'origine reste à moins de la tolérance du tracé simplifié ; extrémités gardées ; points arrondis au µm.
+ */
+export function simplifierTrace(points: readonly Vec[], tolerance: number): Point2[] {
+  const p = points.filter((q, i) => i === 0 || Math.hypot(q.x - points[i - 1]!.x, q.y - points[i - 1]!.y) > 1e-9);
+  if (p.length <= 2) return p.map((q) => pt(q.x, q.y));
+  const garder = new Array<boolean>(p.length).fill(false);
+  garder[0] = true;
+  garder[p.length - 1] = true;
+  const pile: [number, number][] = [[0, p.length - 1]];
+  while (pile.length) {
+    const [i, j] = pile.pop()!;
+    let k = -1;
+    let dMax = 0;
+    for (let m = i + 1; m < j; m++) {
+      const d = projectionSurSegment(p[m]!, p[i]!, p[j]!).distance;
+      if (d > dMax) {
+        dMax = d;
+        k = m;
+      }
+    }
+    if (k >= 0 && dMax > tolerance) {
+      garder[k] = true;
+      pile.push([i, k], [k, j]);
+    }
+  }
+  const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
+  return p.filter((_, i) => garder[i]).map((q) => pt(r6(q.x), r6(q.y)));
+}
