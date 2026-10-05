@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../../../lib/api";
-import { bibliotheques, proposerPlancher, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { bibliotheques, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -139,6 +139,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         <ChoixVerrou sel={[o]} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
         {Object.entries(avecFacultatifs(o.classe, params)).map(([cle, valeur]) => {
           if (cle === "ouvrant" || (cle === "murHoteId" && (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture"))) return null; // contrôles dédiés ci-dessous
+          if (cle === "motif" && !(o.classe === "esquisse" && o.params.forme === "hachure")) return null; // motif : hachures seulement (D-072)
           if (GEOMETRIQUES.has(cle)) return <ResumeGeometrie key={cle} cle={cle} valeur={valeur} />;
           return <Champ key={cle} id={`${o.id}-${cle}`} cle={cle} valeur={valeur} etat={etat} desactive={parametresFiges} onValider={(v) => modifier(cle, v)} />;
         })}
@@ -404,6 +405,20 @@ function Champ({ id, cle, valeur, etat, desactive, onValider }: { id: string; cl
           <select id={id} value={(valeur as string | null) ?? ""} disabled={desactive} onChange={(e) => onValider(e.target.value || null)}>
             <option value="">non renseigné</option>
             {Object.values(etat.niveaux).sort((a, b) => a.ordre - b.ordre).map((n) => <option key={n.id} value={n.id}>{n.nom}</option>)}
+          </select>
+        </dd>
+      </div>
+    );
+  }
+  if (cle === "motif") {
+    return (
+      <div className="champ">
+        <dt><label htmlFor={id}>Motif de hachure</label></dt>
+        <dd>
+          <select id={id} value={(valeur as string | null) ?? ""} disabled={desactive} data-champ="motif" onChange={(e) => onValider(e.target.value || null)}>
+            <option value="">par défaut ({MOTIFS_HACHURE[MOTIF_HACHURE_DEFAUT]!.libelle})</option>
+            {Object.entries(MOTIFS_HACHURE).map(([v, m]) => <option key={v} value={v}>{m.libelle}</option>)}
+            {typeof valeur === "string" && valeur && !MOTIFS_HACHURE[valeur] && <option value={valeur}>{valeur} (inconnu)</option>}
           </select>
         </dd>
       </div>

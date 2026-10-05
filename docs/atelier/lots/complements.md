@@ -142,3 +142,4 @@ Gestion des calques, jonction de deux murs, isolement de la sélection, écart d
 Outil Plancher : contour et trémies proposés depuis les murs et les escaliers, interstices, reprise (`plancher.test.ts`, `nouveau.test.ts`, e2e, D-069).
 Manipulateur du plan 2D : déplacer selon un axe, tourner, échelle uniforme (`nouveau.test.ts`, e2e, D-070).
 Miroir des occurrences de bloc, pas polaire réglable, liaison pièce ↔ espace programmé (`bloc.test.ts`, `nouveau.test.ts`, e2e, D-071).
+Motifs de hachure dans les vues et au plan (`hachures.test.ts`, e2e, D-072).

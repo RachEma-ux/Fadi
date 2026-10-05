@@ -11,6 +11,7 @@
 import { pointsPolyligne, placementOccurrence, aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsEllipse, pointsSpline, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
+import { lignesHachure, motifHachure } from "../hachures.js";
 import { etendueMur, geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
 import { polygoneMurRaccorde } from "../raccords.js";
 import { battantPorte, symbolePorte } from "../ouvrants.js";
@@ -373,7 +374,7 @@ function marquesDeCentre(c: Collecteur, objets: readonly OccurrenceQuelconque[],
   }
 }
 
-function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly OccurrenceQuelconque[]): void {
+function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly OccurrenceQuelconque[], echelle: number | null = null): void {
   for (const o of objets) {
     switch (o.classe) {
       case "cotation": {
@@ -406,6 +407,12 @@ function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly Occu
           c.poly([q1, { x: q2.x, y: q1.y }, q2, { x: q1.x, y: q2.y }], true, trait, null, o.id);
         } else if (p.renflements) c.poly(pointsPolyligne(p.points, p.ferme, p.renflements), p.ferme, trait, null, o.id);
         else c.poly(p.points, p.ferme || p.forme === "polygone" || p.forme === "hachure", trait, null, o.id);
+        // Motif de hachure (D-072) : pas papier converti à l'échelle de la vue ; sans échelle, contour seul.
+        if (p.forme === "hachure" && echelle) {
+          const m = motifHachure(p.motif);
+          if (!m.connu) c.avertissements.add(`Motif de hachure inconnu « ${p.motif} » : dessiné avec le motif « ${m.motif.libelle} ».`);
+          for (const f of m.motif.familles) for (const [a, b] of lignesHachure([p.points], f.angle, (f.pasMm * echelle) / 1000)) c.ligne(a, b, "fin", o.id);
+        }
         break;
       }
       case "reference-plan":
@@ -470,7 +477,7 @@ function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue, options: 
     for (const sep of separationsCouches(etat, o, vides)) c.ligne(sep.a, sep.b, "fin", o.id);
   }
   symbolesPlan(c, etat, objets);
-  annotations2D(c, etat, objets);
+  annotations2D(c, etat, objets, v.echelle);
   marquesDeCentre(c, objets, v.echelle);
   if (!v.hauteurCoupe) c.avertissements.add(`Hauteur de coupe : ${fmt(h)} m au-dessus du niveau (convention de dessin par défaut, réglable).`);
   const sansHauteur = objets.filter((o) => o.classe === "mur" && !o.params.hauteur && !o.params.niveauHautId).length;

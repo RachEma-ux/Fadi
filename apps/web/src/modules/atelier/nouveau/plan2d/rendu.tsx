@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { pointsPolyligne, placementOccurrence, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { pointsPolyligne, placementOccurrence, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -339,7 +339,7 @@ function Esquisse2D({ o, pr, selectionne, survole }: { o: Occurrence<"esquisse">
     case "construction":
       return <path d={chemin(pr, p.points, false)} {...commun} strokeDasharray="8 4 2 4" strokeWidth={0.8} />;
     case "hachure": {
-      return <path d={chemin(pr, p.points)} {...commun} fill="url(#hachure-motif)" />;
+      return <path d={chemin(pr, p.points)} {...commun} fill={`url(#hachure-${motifHachure(p.motif).id})`} data-motif={motifHachure(p.motif).id} />;
     }
     case "rectangle": {
       const pts = p.points.length === 2 ? [p.points[0]!, { x: p.points[1]!.x, y: p.points[0]!.y }, p.points[1]!, { x: p.points[0]!.x, y: p.points[1]!.y }] : p.points;
@@ -358,9 +358,13 @@ export function Definitions2D() {
       <marker id="fleche-escalier" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
         <path d="M0 0 L8 4 L0 8 Z" fill="#6b8f7f" />
       </marker>
-      <pattern id="hachure-motif" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-        <line x1="0" y1="0" x2="0" y2="6" stroke="#355e52" strokeWidth="1" />
-      </pattern>
+      {/* Motifs de hachure (D-072) : un motif SVG par famille ; à l'écran, 1 mm papier ≈ 3 px. */}
+      {Object.entries(MOTIFS_HACHURE).map(([id, m]) => (
+        <pattern key={id} id={`hachure-${id}`} width={m.familles[0]!.pasMm * 3} height={m.familles[0]!.pasMm * 3} patternUnits="userSpaceOnUse" patternTransform={`rotate(${-m.familles[0]!.angle + 90})`}>
+          <line x1="0" y1="0" x2="0" y2={m.familles[0]!.pasMm * 3} stroke="#355e52" strokeWidth="1" />
+          {m.familles[1] && <line x1="0" y1="0" x2={m.familles[0]!.pasMm * 3} y2="0" stroke="#355e52" strokeWidth="1" />}
+        </pattern>
+      ))}
     </defs>
   );
 }

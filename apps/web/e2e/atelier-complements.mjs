@@ -999,6 +999,27 @@ await page.waitForSelector(".plan2d");
   check("espace programmé : la pièce liée depuis son inspecteur à un espace du programme appliqué", /Aucun programme appliqué/.test(txt) || lie === "lié", `${lie} · ${txt.slice(0, 100)}`);
 }
 
+// Motif de hachure (D-072) : choisi dans l'inspecteur, dessiné au plan.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const P = (x, y) => ({ x: ax + x, y: ay + y, frame: "local", unit: "m" });
+  let rh = { status: 0 };
+  for (let k = 0; k < 5 && rh.status !== 200; k++) rh = await lot(pid, `h-${Date.now()}-${k}`, (await modele(pid)).revision, [{ type: "esquisse.hachure", params: { id: "hach-e2e", niveauId: murA.niveauId, points: [P(100, 100), P(103, 100), P(103, 102), P(100, 102)] } }]);
+  await ouvrir(pid);
+  await selectionner("hach-e2e");
+  await page.locator('select[data-champ="motif"]').selectOption("croisee");
+  await page.waitForSelector('.plan2d [data-motif="croisee"]', { state: "attached", timeout: 15000 }).catch(() => {});
+  let motif = null;
+  for (let k = 0; k < 30 && motif !== "croisee"; k++) {
+    motif = (await modele(pid)).modele.objets["hach-e2e"]?.params.motif ?? null;
+    if (motif !== "croisee") await page.waitForTimeout(500);
+  }
+  check("hachure : motif « croisée » choisi dans l'inspecteur, enregistré et dessiné", rh.status === 200 && motif === "croisee" && (await page.locator('.plan2d [data-motif="croisee"]').count()) > 0, `${rh.status} · ${motif}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];
