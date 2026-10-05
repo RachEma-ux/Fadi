@@ -20,7 +20,7 @@
  *
  * Le résultat est mis en cache par état d'objets (immuable) et par niveau.
  */
-import { add, cross, dot, facesMur, longueurAxeMur, mul, normalise, perp, pointAxeMur, sub, type Vec } from "./geometrie.js";
+import { add, cross, dot, facesMur, longueurAxeMur, mul, normalise, perp, pointAxeMur, projectionSurAxeMur, sub, type Vec } from "./geometrie.js";
 import type { ModeleAtelier, Occurrence } from "./modele.js";
 import { pt, TOLERANCE_REDUCTEUR, type Point2 } from "./unites.js";
 
@@ -54,6 +54,8 @@ interface MurPlan {
   seul?: 0 | 1;
   /** Mur réel (identifiant sans le suffixe d'extrémité). */
   base?: string;
+  /** Hôte virtuel (D-105) : tangente d'un mur courbe au pied d'une extrémité qui y aboutit ; jamais raccordé lui-même. */
+  hote?: true;
 }
 
 const SIN_ALIGNE = Math.sin((1 * Math.PI) / 180);
@@ -112,6 +114,7 @@ function calculer(murs: MurPlan[], tol: number): Map<string, RaccordMur> {
   const out = new Map<string, RaccordMur>();
   for (const w of murs) out.set(w.id, { gauche: [0, w.L], droite: [0, w.L], extremites: ["libre", "libre"] });
   for (const w of murs) {
+    if (w.hote) continue;
     const r = out.get(w.id)!;
     for (const fin of [0, 1] as const) {
       if (w.seul !== undefined && fin !== w.seul) continue;
@@ -119,7 +122,7 @@ function calculer(murs: MurPlan[], tol: number): Map<string, RaccordMur> {
       const dW = fin === 0 ? mul(w.u, -1) : w.u; // vers l'extérieur du mur, à cette extrémité
       const partages: { m: MurPlan; dO: Vec }[] = [];
       for (const o of murs) {
-        if (o.id === w.id || (o.base !== undefined && o.base === w.base)) continue;
+        if (o.id === w.id || o.hote || (o.base !== undefined && o.base === w.base)) continue;
         if (o.seul !== 1 && Math.hypot(o.a.x - P.x, o.a.y - P.y) <= tol) partages.push({ m: o, dO: o.u });
         else if (o.seul !== 0 && Math.hypot(o.b.x - P.x, o.b.y - P.y) <= tol) partages.push({ m: o, dO: mul(o.u, -1) });
       }
@@ -262,7 +265,35 @@ export function raccordsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
       if (m) murs.push(m);
       else murs.push(...versPlanCourbe(o as Occurrence<"mur">));
     }
+    // Té sur un mur courbe (D-105) : une extrémité de mur droit dans l'épaisseur d'un mur courbe, loin de ses
+    // extrémités, s'arrête sur la face de l'arc approchée par sa tangente au pied de l'extrémité.
+    const courbes = Object.values(etat.objets).filter((o): o is Occurrence<"mur"> => o.classe === "mur" && o.niveauId === niveauId && !!o.params.renflement);
+    if (courbes.length) {
+      const tol = TOLERANCE_REDUCTEUR * 10;
+      const droits = murs.filter((m) => m.seul === undefined);
+      let k = 0;
+      for (const w of droits) {
+        for (const P of [w.a, w.b]) {
+          for (const c of courbes) {
+            const L = longueurAxeMur(c.params);
+            const pr = projectionSurAxeMur(P, c.params);
+            const s = pr.t * L;
+            if (s <= tol || s >= L - tol) continue;
+            const q = pointAxeMur(c.params, s);
+            const n = perp(q.u);
+            const e = c.params.epaisseur.value;
+            const oG = c.params.alignement === "axe" ? e / 2 : c.params.alignement === "gauche" ? 0 : e;
+            const oD = c.params.alignement === "axe" ? -e / 2 : c.params.alignement === "gauche" ? -e : 0;
+            const o = dot(sub(P, q.p), n);
+            if (o < oD - tol || o > oG + tol) continue;
+            const demi = Math.max(1, 2 * e);
+            murs.push({ id: `${c.id}#t${k++}`, base: c.id, hote: true, a: sub(q.p, mul(q.u, demi)), b: add(q.p, mul(q.u, demi)), L: 2 * demi, u: q.u, n, e, oG, oD });
+          }
+        }
+      }
+    }
     r = calculer(murs, TOLERANCE_REDUCTEUR * 10);
+    for (const m of murs) if (m.hote) r.delete(m.id);
     // Mur courbe (D-104) : raccord recomposé de ses deux extrémités virtuelles ; abscisses le long des tangentes
     // d'extrémité, exprimées depuis a (début) et depuis a + longueur d'arc (fin).
     for (const o of Object.values(etat.objets)) {

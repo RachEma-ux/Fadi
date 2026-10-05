@@ -175,3 +175,4 @@ Menuiserie paramétrée des fenêtres (`menuiserie.test.ts`, e2e, D-101).
 Cotes rattachées à une occurrence de bloc (`bloc.test.ts`, `nouveau.test.ts`, D-102).
 Calques gelés (`calques-imbriques.test.ts`, e2e, D-103).
 Raccords avec un mur courbe (`murs-courbes.test.ts`, D-104).
+Té et jonction avec un mur courbe (`murs-courbes.test.ts`, D-105).

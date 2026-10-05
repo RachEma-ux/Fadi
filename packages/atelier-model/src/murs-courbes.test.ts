@@ -36,7 +36,8 @@ describe("murs courbes (D-086)", () => {
   it("scission et jonction refusées ; miroir inverse l'arc ; IFC et vue produits", () => {
     const e = base();
     expect(() => appliquerLot(e, lot([{ type: "mur.scinder", params: { id: "c", t: 0.5 } }]))).toThrow(/courbe/);
-    expect(() => appliquerLot(e, lot([{ type: "mur.joindre", params: { id: "d", autreId: "c" } }]))).toThrow(/courbe/);
+    // Jonction avec un mur courbe (D-105) : le mur droit est porté sur le cercle de l'arc.
+    expect((appliquerLot(e, lot([{ type: "mur.joindre", params: { id: "d", autreId: "c" } }])).etat.objets["d"] as Occurrence<"mur">).params.a).toEqual(pt(4, 0));
     const r = appliquerLot(e, lot([{ type: "transformer.miroir", params: { a: pt(0, 0), b: pt(1, 0) }, cibles: ["c"] }], "m")).etat;
     expect((r.objets["c"] as Occurrence<"mur">).params.renflement).toBeCloseTo(-b90, 12);
     expect(exporterIfc(e, { projet: { id: "p", nom: "t", code: "T" }, revision: 1, horodatage: "2026-10-05T00:00:00" }).contenu).toMatch(/IFCWALL/);
@@ -154,5 +155,42 @@ describe("raccords avec un mur courbe (D-104)", () => {
       { type: "mur.tracer", params: { id: "droit", niveauId: "n", a: pt(4, -3), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } },
     ])).etat;
     expect(raccordMur(al, al.objets["arc"] as Occurrence<"mur">)!.extremites).toEqual(["libre", "libre"]);
+  });
+});
+
+describe("té sur un mur courbe (D-105)", () => {
+  it("mur droit radial aboutissant au milieu de l'arc : arrêté sur la face extérieure de l'arc", async () => {
+    const { raccordMur } = await import("./raccords.js");
+    const P = 4 * Math.SQRT1_2;
+    const e = appliquerLot(modeleVide(), lot([
+      { type: "niveau.creer", params: { id: "n", nom: "R", elevation: 0, hauteur: 3 } },
+      { type: "mur.tracer", params: { id: "arc", niveauId: "n", a: pt(4, 0), b: pt(0, 4), renflement: b90, epaisseur: m(0.2), hauteur: m(3) } },
+      { type: "mur.tracer", params: { id: "radial", niveauId: "n", a: pt(6, 6), b: pt(P, P), epaisseur: m(0.2), hauteur: m(3) } },
+    ])).etat;
+    const r = raccordMur(e, e.objets["radial"] as Occurrence<"mur">)!;
+    expect(r.extremites[1]).toBe("te");
+    const attendu = Math.hypot(6, 6) - 4.1;
+    expect(r.gauche[1]).toBeCloseTo(attendu, 6);
+    expect(r.droite[1]).toBeCloseTo(attendu, 6);
+    // Le mur courbe lui-même n'est pas modifié par le té.
+    expect(raccordMur(e, e.objets["arc"] as Occurrence<"mur">)!.extremites).toEqual(["libre", "libre"]);
+  });
+});
+
+describe("jonction d'un mur courbe (D-105)", () => {
+  it("le mur courbe glisse sur son cercle jusqu'à l'axe d'un mur droit (renflement recalculé) ; trop loin : refus", () => {
+    const e = appliquerLot(modeleVide(), lot([
+      { type: "niveau.creer", params: { id: "n", nom: "R", elevation: 0, hauteur: 3 } },
+      { type: "mur.tracer", params: { id: "c", niveauId: "n", a: pt(4, 0), b: pt(0, 4), renflement: b90, epaisseur: m(0.2), hauteur: m(3) } },
+      { type: "mur.tracer", params: { id: "h", niveauId: "n", a: pt(-6, 2), b: pt(-5, 2), epaisseur: m(0.2), hauteur: m(3) } },
+      { type: "mur.tracer", params: { id: "loin", niveauId: "n", a: pt(9, -9), b: pt(9, -8), epaisseur: m(0.2), hauteur: m(3) } },
+    ])).etat;
+    const c = appliquerLot(e, lot([{ type: "mur.joindre", params: { id: "c", autreId: "h" } }], "j")).etat.objets["c"] as Occurrence<"mur">;
+    expect(c.params.a.x).toBeCloseTo(Math.sqrt(12), 9);
+    expect(c.params.a.y).toBeCloseTo(2, 9);
+    expect(c.params.b).toEqual(pt(0, 4));
+    expect(c.params.renflement).toBeCloseTo(Math.tan(Math.PI / 12), 9);
+    expect(longueurAxeMur(c.params)).toBeCloseTo((4 * Math.PI) / 3, 9);
+    expect(() => appliquerLot(e, lot([{ type: "mur.joindre", params: { id: "c", autreId: "loin" } }], "x"))).toThrow(/ne se rencontrent pas/);
   });
 });
