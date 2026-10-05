@@ -5,6 +5,7 @@
  * microversion.
  */
 import { jumelerOuverture, ouvertureAngle } from "./fenetres.js";
+import { creerEscalierVolees } from "./escaliers.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import type { Classe } from "../ontologie.js";
 import { estOuverture } from "../ontologie.js";
@@ -128,6 +129,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   },
   // Répartir une ouverture le long de son mur (D-047) : `nombre` copies à `entraxe` (m, signé : vers b si positif) ;
   // une copie qui sortirait du mur ou chevaucherait une autre ouverture : refus du lot entier.
+  "escalier.volees": (etat, p, ctx) => creerEscalierVolees(etat, p, ctx),
   "ouverture.jumeler": (etat, p, ctx) => jumelerOuverture(etat, p, ctx),
   "ouverture.angle": (etat, p, ctx) => ouvertureAngle(etat, p, ctx),
   "ouverture.repartir": (etat, p, ctx) => {

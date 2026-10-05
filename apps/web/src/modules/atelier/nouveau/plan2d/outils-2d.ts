@@ -134,6 +134,8 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
     }
     case "garde-corps":
       return attendre([...pts, point], pts.length ? "Point suivant ; Entrée termine le garde-corps." : "Cliquez le point suivant du garde-corps.");
+    case "escalier-volees":
+      return attendre([...pts, point], pts.length >= 2 ? "Angle suivant, ou Entrée pour terminer l'escalier (dernier point = arrivée)." : "Cliquez l'angle suivant de l'axe de l'escalier.");
     case "bloc": {
       const definitionId = ui.parametresOutil["definitionBloc"] as string | undefined;
       const def = definitionId ? etat.definitions[definitionId] : undefined;
@@ -508,8 +510,23 @@ export function fermerContour(outil: string, pts: Point2[], ui: EtatUi, niveauId
 export function terminer(outil: string, pts: Point2[], ui: EtatUi, niveauId: string | null): ResultatClic {
   if (!niveauId) return attendre([], "");
   if ((outil === "polyligne" || outil === "spline" || outil === "garde-corps") && pts.length >= 2) return fermerContour(outil, pts, ui, niveauId);
+  if (outil === "escalier-volees") return escalierVolees(pts, ui, niveauId);
   if (["dalle", "toiture", "zone", "espace", "solide", "polygone", "hachure"].includes(outil)) return fermerContour(outil, pts, ui, niveauId);
   return attendre([], "");
+}
+
+/**
+ * Escalier à volées (D-084) : axe saisi point par point (au moins un angle) ; largeur, hauteur à franchir,
+ * contremarches et épaisseur des paliers lues dans l'inspecteur, jamais supposées.
+ */
+export function escalierVolees(pts: Point2[], ui: EtatUi, niveauId: string): ResultatClic {
+  if (pts.length < 3) return attendre(pts, "Un escalier à volées demande au moins un angle (trois points).");
+  const largeur = Number(ui.parametresOutil["largeurVolees"]);
+  const hauteur = Number(ui.parametresOutil["hauteurVolees"]);
+  const contremarches = Number(ui.parametresOutil["contremarchesVolees"]);
+  const palier = Number(ui.parametresOutil["epaisseurPalier"]);
+  if (![largeur, hauteur, palier].every((x) => Number.isFinite(x) && x > 0) || !Number.isInteger(contremarches) || contremarches < 2) return attendre(pts, "Renseignez dans l'inspecteur la largeur, la hauteur à franchir, le nombre de contremarches et l'épaisseur des paliers.");
+  return { commandes: [{ type: "escalier.volees", params: { niveauId, points: pts, largeur: m(largeur), hauteurAFranchir: m(hauteur), contremarches, epaisseurPalier: m(palier), ...(ui.parametresOutil["niveauArriveeVolees"] ? { niveauArriveeId: ui.parametresOutil["niveauArriveeVolees"] } : {}) } }], label: `Escalier à ${pts.length - 1} volées`, pointsEnCours: [], aide: `Escalier à ${pts.length - 1} volées et ${pts.length - 2} palier(s) posé.` };
 }
 
 /** Saisie de précision (DA-02-16) : longueur, « dx,dy » ou facteur, appliquée au point suivant du tracé. */

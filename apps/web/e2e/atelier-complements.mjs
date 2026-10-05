@@ -1259,6 +1259,29 @@ await page.waitForSelector(".plan2d");
   check("fenêtres jumelées : la fenêtre partagée en deux, meneau de 0,10 m", jumelles === 2, String(jumelles));
 }
 
+// Escalier à volées et palier tracé au plan (D-084).
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const avant = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "escalier").length;
+  const ok = await choisirOutil("escalier à volées", "Escalier à volées");
+  for (const [k, v] of [["largeurVolees", "1"], ["hauteurVolees", "3"], ["contremarchesVolees", "18"], ["epaisseurPalier", "0.2"]]) await page.locator(`#outil-${k}`).fill(v);
+  const z = await page.locator(".plan2d").boundingBox();
+  for (const [fx, fy] of [[0.55, 0.7], [0.8, 0.7], [0.8, 0.45]]) {
+    await page.mouse.click(z.x + z.width * fx, z.y + z.height * fy);
+    await page.waitForTimeout(150);
+  }
+  await page.evaluate(() => document.activeElement?.blur?.());
+  await page.keyboard.press("Enter");
+  let apres = avant;
+  for (let k = 0; k < 30 && apres < avant + 2; k++) {
+    apres = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "escalier").length;
+    if (apres < avant + 2) await page.waitForTimeout(500);
+  }
+  await page.keyboard.press("Escape");
+  check("escalier à volées : deux volées et un palier posés au plan (trois points, Entrée)", ok && apres === avant + 2, `outil ${ok} · ${avant} → ${apres}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

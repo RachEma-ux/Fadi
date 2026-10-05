@@ -585,6 +585,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   toiture: [{ cle: "epaisseurDalle", libelle: "Épaisseur", unite: "m" }, { cle: "penteToiture", libelle: "Pente (0 = plate)", unite: "°" }],
   "garde-corps": [{ cle: "hauteurGardeCorps", libelle: "Hauteur", unite: "m" }, { cle: "epaisseurGardeCorps", libelle: "Épaisseur", unite: "m" }],
   escalier: [{ cle: "largeurEscalier", libelle: "Largeur", unite: "m" }],
+  "escalier-volees": [{ cle: "largeurVolees", libelle: "Largeur", unite: "m" }, { cle: "hauteurVolees", libelle: "Hauteur à franchir", unite: "m" }, { cle: "contremarchesVolees", libelle: "Contremarches (total)" }, { cle: "epaisseurPalier", libelle: "Épaisseur des paliers", unite: "m" }],
   poteau: [{ cle: "taille", libelle: "Section", unite: "m" }, { cle: "hauteur", libelle: "Hauteur", unite: "m" }],
   solide: [{ cle: "hauteurSolide", libelle: "Hauteur d'extrusion", unite: "m" }],
   extruder: [{ cle: "hauteurSolide", libelle: "Hauteur d'extrusion", unite: "m" }, { cle: "epaisseurProfil", libelle: "Épaisseur d'un profil ouvert", unite: "m" }],
@@ -673,6 +674,15 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: Mo
             </select>
           </div>
         </>
+      )}
+      {ui.outil === "escalier-volees" && (
+        <div className="champ">
+          <label htmlFor="outil-niveauArriveeVolees">Niveau d'arrivée</label>
+          <select id="outil-niveauArriveeVolees" value={(ui.parametresOutil["niveauArriveeVolees"] as string | undefined) ?? ""} onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, niveauArriveeVolees: e.target.value || undefined } }))}>
+            <option value="">non renseigné</option>
+            {Object.values(etat.niveaux).sort((a, b) => a.elevation - b.elevation).filter((x) => x.id !== ui.niveauId).map((x) => <option key={x.id} value={x.id}>{x.nom}</option>)}
+          </select>
+        </div>
       )}
       {ui.outil === "toiture" && (
         <div className="champ">

@@ -456,3 +456,13 @@ describe("gomme (D-079)", () => {
     expect(r.label).toMatch(/verrouillée/);
   });
 });
+
+describe("escalier à volées au plan (D-084)", () => {
+  it("valeurs exigées ; trois points + Entrée : une commande escalier.volees", () => {
+    const pts = [pt(0, 0), pt(4, 0), pt(4, 3)];
+    expect(terminer("escalier-volees", pts, ui({ outil: "escalier-volees" }), "rdc").aide).toMatch(/Renseignez/);
+    const r = terminer("escalier-volees", pts, ui({ outil: "escalier-volees", parametresOutil: { largeurVolees: 1, hauteurVolees: 3, contremarchesVolees: 18, epaisseurPalier: 0.2 } }), "rdc");
+    expect(r.commandes[0]!.type).toBe("escalier.volees");
+    expect(appliquer(socle(), r.commandes).objets).toBeDefined();
+  });
+});
