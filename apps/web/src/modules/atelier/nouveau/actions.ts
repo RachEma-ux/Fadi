@@ -93,7 +93,7 @@ export function actionImmediate(outil: string, etat: ModeleAtelier, ui: EtatUi):
     }
     case "raccorder":
     case "chanfreiner": {
-      if (sel.length !== 2) return { message: `${outil === "raccorder" ? "Raccorder" : "Chanfreiner"} : sélectionnez exactement deux lignes d'esquisse.` };
+      if (sel.length !== 2) return { message: `${outil === "raccorder" ? "Raccorder" : "Chanfreiner"} : sélectionnez exactement deux lignes d'esquisse${outil === "raccorder" ? " (ou une ligne et un arc, ou deux arcs)" : ""}.` };
       const taille = nombre(ui, outil === "raccorder" ? "rayon" : "distanceChanfrein", 0.5);
       return { commandes: [{ type: `transformer.${outil}`, params: { id1: sel[0], id2: sel[1], [outil === "raccorder" ? "rayon" : "distance"]: m(taille) } }], label: outil === "raccorder" ? "Raccorder" : "Chanfreiner" };
     }

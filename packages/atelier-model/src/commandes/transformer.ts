@@ -8,7 +8,7 @@
  */
 import { decomposerBloc } from "./bloc.js";
 import { validerParams } from "./validation.js";
-import { add, centreRenflement, decalerArrondi, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
+import { add, dot, pointsArc, pointsEllipse, pointsPolyligne, centreRenflement, decalerArrondi, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
 import type { Contour, ModeleAtelier, Occurrence, OccurrenceQuelconque, Reference } from "../modele.js";
 import { ouverturesDuMur, referencesVers } from "../modele.js";
 import { estOuverture } from "../ontologie.js";
@@ -700,7 +700,8 @@ function ajusterOuProlonger(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande,
   const limite = etat.objets[limiteId]!;
   const axe = axeDe(o);
   const axeLimite = axeDe(limite);
-  if (!axe || !axeLimite) throw new ErreurCommande("precondition", "id", `${mode} : murs, escaliers et lignes seulement`);
+  // Polylignes ouvertes et limites courbes ou polygonales (D-073) : chemin général.
+  if (!axe || !axeLimite) return ajusterOuProlongerChemin(etat, ctx, id, limiteId, mode);
   const far = 1e6;
   const dA = sub(axe[1], axe[0]);
   const dB = sub(axeLimite[1], axeLimite[0]);
@@ -713,14 +714,249 @@ function ajusterOuProlonger(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande,
   return reducteursTransformer.etirer(etat, { id, extremite, point: pt(Math.round(x.point.x * 1e9) / 1e9, Math.round(x.point.y * 1e9) / 1e9) }, ctx, []);
 }
 
+type LimiteCoupe = { type: "droite"; a: Vec; b: Vec } | { type: "segments"; segs: [Vec, Vec][] } | { type: "cercle"; c: Vec; r: number };
+
+/** Limite d'ajustement ou de prolongement (D-073) : droite (axes), tracé discrétisé (courbes, contours), cercle exact. */
+function limiteDe(o: OccurrenceQuelconque): LimiteCoupe | null {
+  const axe = axeDe(o);
+  if (axe) return { type: "droite", a: axe[0], b: axe[1] };
+  const segs = (pts: readonly Vec[], ferme: boolean): [Vec, Vec][] => {
+    const out: [Vec, Vec][] = [];
+    for (let i = 0; i + 1 < pts.length; i++) out.push([pts[i]!, pts[i + 1]!]);
+    if (ferme && pts.length > 2) out.push([pts[pts.length - 1]!, pts[0]!]);
+    return out;
+  };
+  if (o.classe === "esquisse") {
+    const q = o.params;
+    if (q.forme === "cercle" && q.centre && q.rayon) return { type: "cercle", c: q.centre, r: q.rayon.value };
+    if (q.forme === "arc" && q.centre && q.rayon) return { type: "segments", segs: segs(pointsArc(q.centre, q.rayon.value, q.angleDebut?.value ?? 0, q.angleFin?.value ?? 360, 128), false) };
+    if (q.forme === "ellipse" && q.centre && q.rayon && q.rayonB) return { type: "segments", segs: segs(pointsEllipse(q.centre, q.rayon.value, q.rayonB.value, q.rotation?.value ?? 0, 128), true) };
+    if (q.forme === "spline") return { type: "segments", segs: segs(pointsSpline(q.points, 16, q.ferme), q.ferme) };
+    if (q.forme === "rectangle" && q.points.length === 2) {
+      const [a, b] = [q.points[0]!, q.points[1]!];
+      return { type: "segments", segs: segs([a, pt(b.x, a.y), b, pt(a.x, b.y)], true) };
+    }
+    return { type: "segments", segs: segs(pointsPolyligne(q.points, q.ferme, q.renflements), q.ferme || q.forme === "polygone" || q.forme === "hachure") };
+  }
+  if (o.classe === "dalle" || o.classe === "toiture" || o.classe === "zone" || o.classe === "piece" || o.classe === "reference-plan") return { type: "segments", segs: segs(o.params.contour, true) };
+  if (o.classe === "solide") return { type: "segments", segs: segs(o.params.contour, o.params.ferme) };
+  return null;
+}
+
+/** Chemin droit de l'objet à couper ou prolonger : axe (mur, escalier, ligne) ou polyligne ouverte sans arc. */
+function cheminDe(o: OccurrenceQuelconque): Vec[] | null {
+  const axe = axeDe(o);
+  if (axe) return [axe[0], axe[1]];
+  if (o.classe === "esquisse" && o.params.forme === "polyligne" && !o.params.ferme && o.params.points.length >= 2) {
+    if (o.params.renflements?.some((b) => b !== 0)) throw new ErreurCommande("precondition", "id", "polyligne à segments en arc : décomposer d'abord");
+    return [...o.params.points];
+  }
+  return null;
+}
+
+/** Paramètres t > 0 (en m le long de `dir` unitaire) où la demi-droite depuis `o` rencontre la limite. */
+function rencontres(o: Vec, dir: Vec, l: LimiteCoupe): number[] {
+  const out: number[] = [];
+  if (l.type === "droite") {
+    const d = sub(l.b, l.a);
+    const den = dir.x * d.y - dir.y * d.x;
+    if (Math.abs(den) > 1e-12) {
+      const w = sub(l.a, o);
+      const t = (w.x * d.y - w.y * d.x) / den;
+      if (t > 1e-9) out.push(t);
+    }
+  } else if (l.type === "segments") {
+    for (const [a, b] of l.segs) {
+      const d = sub(b, a);
+      const den = dir.x * d.y - dir.y * d.x;
+      if (Math.abs(den) < 1e-12) continue;
+      const w = sub(a, o);
+      const t = (w.x * d.y - w.y * d.x) / den;
+      const u = (w.x * dir.y - w.y * dir.x) / den;
+      if (t > 1e-9 && u >= -1e-12 && u <= 1 + 1e-12) out.push(t);
+    }
+  } else {
+    const w = sub(o, l.c);
+    const B = dot(w, dir);
+    const C = dot(w, w) - l.r * l.r;
+    const D = B * B - C;
+    if (D >= 0) for (const t of [-B - Math.sqrt(D), -B + Math.sqrt(D)]) if (t > 1e-9) out.push(t);
+  }
+  return out.sort((x, y) => x - y);
+}
+
+const arrondiNm = (q: Vec) => pt(Math.round(q.x * 1e9) / 1e9, Math.round(q.y * 1e9) / 1e9);
+
+function ajusterOuProlongerChemin(etat: ModeleAtelier, ctx: ContexteCommande, id: string, limiteId: string, mode: "ajuster" | "prolonger"): ResultatCommande {
+  const o = etat.objets[id]!;
+  const chemin = cheminDe(o);
+  if (!chemin) throw new ErreurCommande("precondition", "id", `${mode} : murs, escaliers, lignes et polylignes ouvertes seulement`);
+  const limite = limiteDe(etat.objets[limiteId]!);
+  if (!limite) throw new ErreurCommande("precondition", "limiteId", `${mode} : la limite doit être un axe, un tracé, un cercle ou un contour`);
+  const n = chemin.length;
+  if (mode === "prolonger") {
+    const bouts = [
+      { extremite: "a" as const, o: chemin[0]!, dir: normalise(sub(chemin[0]!, chemin[1]!)) },
+      { extremite: "b" as const, o: chemin[n - 1]!, dir: normalise(sub(chemin[n - 1]!, chemin[n - 2]!)) },
+    ].map((b) => ({ ...b, t: rencontres(b.o, b.dir, limite)[0] ?? Infinity }));
+    const choix = bouts[0]!.t <= bouts[1]!.t ? bouts[0]! : bouts[1]!;
+    if (!Number.isFinite(choix.t)) throw new ErreurCommande("precondition", "limiteId", "la limite n'est pas atteinte en prolongeant l'une ou l'autre extrémité");
+    return reducteursTransformer.etirer(etat, { id, extremite: choix.extremite, point: arrondiNm(add(choix.o, mul(choix.dir, choix.t))) }, ctx, []);
+  }
+  // Ajuster : coupure à la rencontre la plus proche d'une extrémité, du côté de cette extrémité.
+  const longueurs = [0];
+  for (let i = 0; i + 1 < n; i++) longueurs.push(longueurs[i]! + distance(chemin[i]!, chemin[i + 1]!));
+  const L = longueurs[n - 1]!;
+  let meilleur: { s: number; i: number; point: Vec } | null = null;
+  for (let i = 0; i + 1 < n; i++) {
+    const l = distance(chemin[i]!, chemin[i + 1]!);
+    if (l < 1e-12) continue;
+    const dir = normalise(sub(chemin[i + 1]!, chemin[i]!));
+    for (const t of rencontres(chemin[i]!, dir, limite)) {
+      if (t >= l - 1e-9) continue;
+      const s = longueurs[i]! + t;
+      if (s <= 1e-9 || s >= L - 1e-9) continue;
+      if (!meilleur || Math.min(s, L - s) < Math.min(meilleur.s, L - meilleur.s)) meilleur = { s, i, point: add(chemin[i]!, mul(dir, t)) };
+    }
+  }
+  if (!meilleur) throw new ErreurCommande("precondition", "limiteId", "la limite ne coupe pas l'objet : rien à ajuster");
+  const X = arrondiNm(meilleur.point);
+  const debut = meilleur.s < L - meilleur.s;
+  if (n === 2) return reducteursTransformer.etirer(etat, { id, extremite: debut ? "a" : "b", point: X }, ctx, []);
+  const points = (debut ? [X, ...chemin.slice(meilleur.i + 1)] : [...chemin.slice(0, meilleur.i + 1), X]).map((q) => pt(q.x, q.y));
+  const effets = effetsVides();
+  effets.modifies.push(id);
+  if (o.niveauId) effets.niveauxTouches.push(o.niveauId);
+  const params = validerParams(etat, "esquisse", { ...(o.params as unknown as Brut), points, renflements: undefined });
+  return { etat: { ...etat, objets: { ...etat.objets, [id]: { ...o, params } as OccurrenceQuelconque } }, effets };
+}
+
+type ElementRaccord = { type: "ligne"; a: Vec; b: Vec } | { type: "arc"; c: Vec; r: number; debut: number; fin: number };
+
+const radians = (d: number) => (d * Math.PI) / 180;
+const pointArc = (e: { c: Vec; r: number }, deg: number): Vec => ({ x: e.c.x + e.r * Math.cos(radians(deg)), y: e.c.y + e.r * Math.sin(radians(deg)) });
+
+/** Courbes décalées d'un élément (à distance r) : deux droites ou un/deux cercles. */
+function decalees(e: ElementRaccord, r: number): ({ type: "droite"; p: Vec; u: Vec } | { type: "cercle"; c: Vec; r: number })[] {
+  if (e.type === "ligne") {
+    const u = normalise(sub(e.b, e.a));
+    const n = { x: -u.y, y: u.x };
+    return [{ type: "droite", p: add(e.a, mul(n, r)), u }, { type: "droite", p: add(e.a, mul(n, -r)), u }];
+  }
+  return [{ type: "cercle", c: e.c, r: e.r + r }, ...(e.r > r + 1e-9 ? [{ type: "cercle" as const, c: e.c, r: e.r - r }] : [])];
+}
+
+function intersectionsCourbes(k1: ReturnType<typeof decalees>[number], k2: ReturnType<typeof decalees>[number]): Vec[] {
+  if (k1.type === "droite" && k2.type === "droite") {
+    const den = k1.u.x * k2.u.y - k1.u.y * k2.u.x;
+    if (Math.abs(den) < 1e-12) return [];
+    const w = sub(k2.p, k1.p);
+    const t = (w.x * k2.u.y - w.y * k2.u.x) / den;
+    return [add(k1.p, mul(k1.u, t))];
+  }
+  if (k1.type === "cercle" && k2.type === "droite") return intersectionsCourbes(k2, k1);
+  if (k1.type === "droite" && k2.type === "cercle") {
+    const w = sub(k1.p, k2.c);
+    const B = dot(w, k1.u);
+    const D = B * B - (dot(w, w) - k2.r * k2.r);
+    if (D < 0) return [];
+    return [-B - Math.sqrt(D), -B + Math.sqrt(D)].map((t) => add(k1.p, mul(k1.u, t)));
+  }
+  const c1 = k1 as { c: Vec; r: number };
+  const c2 = k2 as { c: Vec; r: number };
+  const d = distance(c1.c, c2.c);
+  if (d < 1e-12 || d > c1.r + c2.r || d < Math.abs(c1.r - c2.r)) return [];
+  const a = (c1.r * c1.r - c2.r * c2.r + d * d) / (2 * d);
+  const h = Math.sqrt(Math.max(0, c1.r * c1.r - a * a));
+  const u = normalise(sub(c2.c, c1.c));
+  const m = add(c1.c, mul(u, a));
+  return [add(m, mul({ x: -u.y, y: u.x }, h)), add(m, mul({ x: u.y, y: -u.x }, h))];
+}
+
+/** Point de tangence : le point de l'élément (droite ou cercle porteur) le plus proche du centre du raccord. */
+function tangence(e: ElementRaccord, f: Vec): Vec {
+  if (e.type === "ligne") {
+    const u = normalise(sub(e.b, e.a));
+    return add(e.a, mul(u, dot(sub(f, e.a), u)));
+  }
+  return add(e.c, mul(normalise(sub(f, e.c)), e.r));
+}
+
+const extremites = (e: ElementRaccord): [Vec, Vec] => (e.type === "ligne" ? [e.a, e.b] : [pointArc(e, e.debut), pointArc(e, e.fin)]);
+
+/**
+ * Raccord tangent entre une ligne et un arc, ou deux arcs (D-073, DA-02-10) : centres candidats à l'intersection
+ * des courbes décalées du rayon ; retenu celui dont les points de tangence sont les plus proches du coin (les deux
+ * extrémités les plus proches l'une de l'autre). Chaque élément est ajusté ou prolongé jusqu'à son point de
+ * tangence ; l'arc de raccord est créé. Rayon nul refusé (pas de coin vif défini avec un arc).
+ */
+function raccordCourbe(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, o1: Occurrence<"esquisse">, o2: Occurrence<"esquisse">): ResultatCommande {
+  const r = lire.longueur(p, "rayon")!.value;
+  if (!(r > 0)) throw new ErreurCommande("invalide", "rayon", "rayon strictement positif pour un raccord avec un arc");
+  const element = (o: Occurrence<"esquisse">): ElementRaccord => {
+    const q = o.params;
+    if (q.forme === "ligne") return { type: "ligne", a: q.points[0]!, b: q.points[1]! };
+    if (!q.centre || !q.rayon) throw new ErreurCommande("precondition", "id1", `arc ${o.id} sans centre ni rayon`);
+    return { type: "arc", c: q.centre, r: q.rayon.value, debut: q.angleDebut?.value ?? 0, fin: q.angleFin?.value ?? 360 };
+  };
+  const e1 = element(o1);
+  const e2 = element(o2);
+  const [x1, x2] = [extremites(e1), extremites(e2)];
+  let coin: { i: number; j: number; d: number } = { i: 0, j: 0, d: Infinity };
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { const d = distance(x1[i]!, x2[j]!); if (d < coin.d) coin = { i, j, d }; }
+  const E1 = x1[coin.i]!;
+  const E2 = x2[coin.j]!;
+  let meilleur: { f: Vec; t1: Vec; t2: Vec; score: number } | null = null;
+  for (const k1 of decalees(e1, r)) for (const k2 of decalees(e2, r)) for (const f of intersectionsCourbes(k1, k2)) {
+    const t1 = tangence(e1, f);
+    const t2 = tangence(e2, f);
+    if (Math.abs(distance(f, t1) - r) > 1e-6 || Math.abs(distance(f, t2) - r) > 1e-6) continue;
+    const score = distance(t1, E1) + distance(t2, E2);
+    if (!meilleur || score < meilleur.score) meilleur = { f, t1, t2, score };
+  }
+  if (!meilleur) throw new ErreurCommande("precondition", "rayon", "aucun raccord de ce rayon entre ces deux éléments");
+  const arr = (v: Vec) => pt(Math.round(v.x * 1e9) / 1e9, Math.round(v.y * 1e9) / 1e9);
+  const angleDe = (c: Vec, q: Vec) => Math.round(((Math.atan2(q.y - c.y, q.x - c.x) * 180) / Math.PI) * 1e9) / 1e9;
+  const ajuste = (o: Occurrence<"esquisse">, e: ElementRaccord, bout: number, t: Vec): OccurrenceQuelconque => {
+    if (e.type === "ligne") {
+      const points = [...o.params.points];
+      points[bout] = arr(t);
+      if (distance(points[0]!, points[1]!) <= TOLERANCE_REDUCTEUR) throw new ErreurCommande("precondition", "rayon", "rayon trop grand pour ces éléments");
+      return { ...o, params: { ...o.params, points } };
+    }
+    const a = angleDe(e.c, t);
+    const q = o.params;
+    return { ...o, params: { ...q, ...(bout === 0 ? { angleDebut: { value: a, unit: "deg" as const } } : { angleFin: { value: a, unit: "deg" as const } }) } };
+  };
+  const n1 = ajuste(o1, e1, coin.i, meilleur.t1);
+  const n2 = ajuste(o2, e2, coin.j, meilleur.t2);
+  const f = meilleur.f;
+  let a0 = angleDe(f, meilleur.t1);
+  let a1 = angleDe(f, meilleur.t2);
+  let delta = a1 - a0;
+  while (delta <= -180) delta += 360;
+  while (delta > 180) delta -= 360;
+  if (delta < 0) [a0, a1] = [a1, a0];
+  const id = ctx.ids.nouveau("esquisse");
+  const arc = { ...o1, id, groupeId: null, params: { ...o1.params, forme: "arc" as const, points: [], ferme: false, centre: arr(f), rayon: { value: r, unit: "m" as const }, angleDebut: { value: a0, unit: "deg" as const }, angleFin: { value: a1, unit: "deg" as const }, motif: null } };
+  const effets = effetsVides();
+  effets.modifies.push(o1.id, o2.id);
+  effets.crees.push(id);
+  if (o1.niveauId) effets.niveauxTouches.push(o1.niveauId);
+  return { etat: { ...etat, objets: { ...etat.objets, [o1.id]: n1, [o2.id]: n2, [id]: arc as OccurrenceQuelconque } }, effets };
+}
+
 function raccordOuChanfrein(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[], mode: "raccorder" | "chanfreiner"): ResultatCommande {
   void c;
   const id1 = lire.objet(etat, p, "id1");
   const id2 = lire.objet(etat, p, "id2");
   const o1 = etat.objets[id1]!;
   const o2 = etat.objets[id2]!;
+  if (mode === "raccorder" && o1.classe === "esquisse" && o2.classe === "esquisse" && (o1.params.forme === "arc" || o2.params.forme === "arc") && (o1.params.forme === "ligne" || o1.params.forme === "arc") && (o2.params.forme === "ligne" || o2.params.forme === "arc")) {
+    return raccordCourbe(etat, p, ctx, o1 as Occurrence<"esquisse">, o2 as Occurrence<"esquisse">);
+  }
   if (o1.classe !== "esquisse" || o2.classe !== "esquisse" || o1.params.forme !== "ligne" || o2.params.forme !== "ligne") {
-    throw new ErreurCommande("precondition", "id1", `${mode} : deux lignes d'esquisse seulement`);
+    throw new ErreurCommande("precondition", "id1", `${mode} : deux lignes d'esquisse (raccord : ligne ou arc)`);
   }
   // Rayon nul (D-043) : jonction d'angle — les deux lignes sont ajustées ou prolongées jusqu'à leur intersection.
   const taille = lire.longueur(p, mode === "raccorder" ? "rayon" : "distance", { strict: mode === "chanfreiner" })!.value;
