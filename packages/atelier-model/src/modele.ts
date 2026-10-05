@@ -4,6 +4,7 @@
  * hypothèses, sources, structure déclarée). Objet immuable : les réducteurs retournent un nouvel état.
  */
 import type { OuvrantPorte } from "./ouvrants.js";
+import type { Menuiserie } from "./menuiserie.js";
 import type { Classe } from "./ontologie.js";
 import type { Angle, Longueur, Point2, SommetParcelle, Surface } from "./unites.js";
 
@@ -69,6 +70,8 @@ export interface ParamsOuverture {
   repere: string | null;
   /** Porte seulement : sens d'ouverture (D-037) ; absent ou null : non renseigné. */
   ouvrant?: OuvrantPorte | null;
+  /** Fenêtre seulement : menuiserie paramétrée (D-101) ; absente : panneau simple, menuiserie non évaluée. */
+  menuiserie?: Menuiserie | null;
 }
 
 export interface Contour {

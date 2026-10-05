@@ -5,6 +5,7 @@
  */
 import { contourFerme } from "./changer-classe.js";
 import { lireOuvrant } from "../ouvrants.js";
+import { lireMenuiserie } from "../menuiserie.js";
 import { distance, longueurAxeMur } from "../geometrie.js";
 import { USAGES_DALLE, type ModeleAtelier, type ParamsParClasse } from "../modele.js";
 import type { Classe } from "../ontologie.js";
@@ -68,7 +69,13 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     const ouvrant = lireOuvrant(p["ouvrant"]);
     return ouvrant ? { ...o, ouvrant } : o;
   },
-  fenetre: (etat, p) => ouverture(etat, p),
+  fenetre: (etat, p) => {
+    const o = ouverture(etat, p);
+    // Menuiserie paramétrée (D-101) : dormant, vitrage, vantaux ; absente : panneau simple.
+    const hote = etat.objets[o.murHoteId] as { params: { epaisseur: { value: number } } };
+    const menuiserie = lireMenuiserie(p["menuiserie"], { largeur: o.largeur.value, hauteur: o.hauteur.value, epaisseurMur: hote.params.epaisseur.value });
+    return menuiserie ? { ...o, menuiserie } : o;
+  },
   ouverture: (etat, p) => ouverture(etat, p),
   dalle(_etat, p) {
     const usage = p["usage"] === undefined || p["usage"] === null ? null : lire.enumeration(p, "usage", USAGES_DALLE);

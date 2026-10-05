@@ -24,6 +24,7 @@ import { etendueMur, maillageObjet } from "../projection/maillage.js";
 import { empreinte } from "../documents/empreinte.js";
 import { compositionMur, lireCouches } from "../compositions.js";
 import { connexionsDuNiveau, polygoneMurRaccorde, raccordMur, type ExtremiteConnexion } from "../raccords.js";
+import { corpsMenuiserie } from "../menuiserie.js";
 
 export const SCHEMA_IFC = "IFC4X3_ADD2";
 
@@ -386,11 +387,25 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
             panneau = boite(va, vu, c - w / 2, c + w / 2, centre - ep / 2, centre + ep / 2, zb, zb + ouv.params.hauteur.value);
             placementRemplissage = placementDe(o.niveauId);
           }
-          const remplissage = s.ajouter(`${classeIfc}(${gid(ouv.id)},$,${opt(ouv.params.repere ?? ouv.id)},$,$,${ref(placementRemplissage)},${ref(forme([corpsSolide([panneau])]))},${opt(ouv.params.repere)},${reelStep(ouv.params.hauteur.value)},${reelStep(w)},${ouv.classe === "porte" ? ".DOOR." : ".WINDOW."},${operation},$)`);
+          // Menuiserie paramétrée (D-101) : corps en dormant, montants et vitrages au lieu du panneau simple.
+          const menuiserie = ouv.classe === "fenetre" ? ouv.params.menuiserie : null;
+          const corps = menuiserie ? corpsMenuiserie(w, ouv.params.hauteur.value, menuiserie, ep).map((k) => boite(va, vu, c - w / 2 + k.s0, c - w / 2 + k.s1, centre - k.e / 2, centre + k.e / 2, zb + k.z0, zb + k.z1)) : [panneau];
+          const remplissage = s.ajouter(`${classeIfc}(${gid(ouv.id)},$,${opt(ouv.params.repere ?? ouv.id)},$,$,${ref(placementRemplissage)},${ref(forme([corpsSolide(corps)]))},${opt(ouv.params.repere)},${reelStep(ouv.params.hauteur.value)},${reelStep(w)},${ouv.classe === "porte" ? ".DOOR." : ".WINDOW."},${operation},$)`);
           s.ajouter(`IFCRELFILLSELEMENT(${gid(`rel-remplit|${ouv.id}`)},$,$,$,${ref(ouverture)},${ref(remplissage)})`);
           produits.set(ouv.id, remplissage);
           contenir(o.niveauId, remplissage);
           identite(remplissage, ouv);
+          if (menuiserie) {
+            // Valeurs saisies seulement (D-101) : rien n'est écrit pour ce qui n'est pas renseigné.
+            const lg = (v: number) => `IFCPOSITIVELENGTHMEASURE(${reelStep(v)})`;
+            pset(remplissage, "Fadi_Menuiserie", [
+              menuiserie.dormant ? `#${prop("DormantLargeurProfil", lg(menuiserie.dormant.largeur.value))}` : null,
+              menuiserie.dormant ? `#${prop("DormantProfondeur", lg(menuiserie.dormant.epaisseur.value))}` : null,
+              menuiserie.vitrage ? `#${prop("VitrageEpaisseur", lg(menuiserie.vitrage.epaisseur.value))}` : null,
+              menuiserie.vitrage?.composition ? `#${prop("VitrageComposition", label(menuiserie.vitrage.composition))}` : null,
+              menuiserie.vantaux ? `#${prop("Vantaux", `IFCCOUNTMEASURE(${menuiserie.vantaux})`)}` : null,
+            ]);
+          }
           compter(ouv.classe, ouv.classe === "porte" ? "IfcDoor" : "IfcWindow", "SweptSolid (panneau) + IfcOpeningElement", true, ouv.classe === "porte" && !ouvrant ? "sens d'ouverture non renseigné : OperationType non écrit" : undefined);
         }
         break;

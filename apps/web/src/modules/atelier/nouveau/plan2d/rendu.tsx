@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -304,6 +304,13 @@ function Ouverture2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"por
         <path d={chemin(pr, l2, false)} />
         <path d={chemin(pr, [dec(p1, 0), dec(p1, 1)], false)} />
         <path d={chemin(pr, [dec(p2, 0), dec(p2, 1)], false)} />
+        {/* Menuiserie paramétrée (D-101) : montants du dormant et entre vantaux, dans la profondeur du dormant. */}
+        {o.params.menuiserie && (() => {
+          const q0 = dec(p1, 0);
+          const q1 = dec(p1, 1);
+          const ln = Math.hypot(q1.x - q0.x, q1.y - q0.y) || 1;
+          return traitsMenuiseriePlan(dec(p1, 0.5), { x: ux, y: uy }, { x: (q1.x - q0.x) / ln, y: (q1.y - q0.y) / ln }, w, o.params.menuiserie).map((r, i) => <path key={`m${i}`} d={chemin(pr, r)} fill="currentColor" fillOpacity={0.25} data-menuiserie />);
+        })()}
       </g>
     );
   }

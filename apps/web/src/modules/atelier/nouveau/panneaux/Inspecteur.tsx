@@ -138,13 +138,14 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         <ChoixPhase sel={[o]} readOnly={desactive} onCommandes={onCommandes} />
         <ChoixVerrou sel={[o]} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
         {Object.entries(avecFacultatifs(o.classe, params)).map(([cle, valeur]) => {
-          if (cle === "ouvrant" || (cle === "murHoteId" && (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture"))) return null; // contrôles dédiés ci-dessous
+          if (cle === "ouvrant" || cle === "menuiserie" || (cle === "murHoteId" && (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture"))) return null; // contrôles dédiés ci-dessous
           if (cle === "motif" && !(o.classe === "esquisse" && o.params.forme === "hachure")) return null; // motif : hachures seulement (D-072)
           if (GEOMETRIQUES.has(cle)) return <ResumeGeometrie key={cle} cle={cle} valeur={valeur} />;
           return <Champ key={cle} id={`${o.id}-${cle}`} cle={cle} valeur={valeur} etat={etat} desactive={parametresFiges} onValider={(v) => modifier(cle, v)} />;
         })}
       </dl>
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <OuvertureHote o={o as Occurrence<"porte">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
+      {o.classe === "fenetre" && <MenuiserieFenetre key={`men-${o.id}`} o={o as Occurrence<"fenetre">} desactive={desactive} onCommandes={onCommandes} />}
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && !desactive && <JumelerOuverture key={`jum-${o.id}`} o={o as Occurrence<"porte">} onCommandes={onCommandes} />}
       <GroupeSelection sel={[o]} etat={etat} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
       <Classification key={`classif-${o.id}`} sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />
@@ -1487,6 +1488,40 @@ function TangentesCourbe({ o, onCommandes }: { o: Occurrence<"esquisse">; onComm
         <label>Intensité (m)<input inputMode="decimal" value={longueur} onChange={(e) => setLongueur(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-tangente-longueur /></label>
         <button type="button" disabled={a === null || l === null || !(l > 0)} onClick={() => ecrire({ x: Math.round(l! * Math.cos((a! * Math.PI) / 180) * 1e9) / 1e9, y: Math.round(l! * Math.sin((a! * Math.PI) / 180) * 1e9) / 1e9 }, `Tangente imposée au point ${i + 1} de ${o.id}`)} data-tangente-imposer>Imposer</button>
         <button type="button" disabled={!t} onClick={() => ecrire(null, `Tangente libérée au point ${i + 1} de ${o.id}`)}>Libérer</button>
+      </div>
+    </details>
+  );
+}
+
+/** Menuiserie paramétrée d'une fenêtre (D-101) : valeurs saisies, aucune par défaut ; vide = non évaluée. */
+function MenuiserieFenetre({ o, desactive, onCommandes }: { o: Occurrence<"fenetre">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const m = o.params.menuiserie ?? null;
+  const cm = (v: number | undefined) => (v === undefined ? "" : String(Math.round(v * 1000) / 1000).replace(".", ","));
+  const [v, setV] = useState({ profil: cm(m?.dormant?.largeur.value), profondeur: cm(m?.dormant?.epaisseur.value), vitrage: cm(m?.vitrage?.epaisseur.value), composition: m?.vitrage?.composition ?? "", vantaux: m?.vantaux ? String(m.vantaux) : "" });
+  const lu = { profil: nombreSaisi(v.profil), profondeur: nombreSaisi(v.profondeur), vitrage: nombreSaisi(v.vitrage) };
+  const dormantPartiel = (lu.profil === null) !== (lu.profondeur === null);
+  const menuiserie = {
+    ...(lu.profil !== null && lu.profondeur !== null ? { dormant: { largeur: { value: lu.profil, unit: "m" }, epaisseur: { value: lu.profondeur, unit: "m" } } } : {}),
+    ...(lu.vitrage !== null ? { vitrage: { epaisseur: { value: lu.vitrage, unit: "m" }, composition: v.composition.trim() || null } } : {}),
+    ...(v.vantaux ? { vantaux: Number(v.vantaux) } : {}),
+  };
+  const vide = Object.keys(menuiserie).length === 0;
+  const champ = (k: "profil" | "profondeur" | "vitrage", libelle: string) => <label key={k}>{libelle}<input inputMode="decimal" value={v[k]} disabled={desactive} onChange={(e) => setV({ ...v, [k]: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-menuiserie-champ={k} /></label>;
+  return (
+    <details className="inspecteur-historique" data-menuiserie>
+      <summary>Menuiserie {m ? "(renseignée)" : "(non évaluée)"}</summary>
+      <div className="nav-formulaire-altimetrie">
+        {champ("profil", "Dormant : profil (m)")}
+        {champ("profondeur", "Dormant : profondeur (m)")}
+        {champ("vitrage", "Vitrage : épaisseur (m)")}
+        <label>Composition<input value={v.composition} maxLength={40} placeholder="ex. 4/16/4" disabled={desactive} onChange={(e) => setV({ ...v, composition: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-menuiserie-champ="composition" /></label>
+        <label>Vantaux<select value={v.vantaux} disabled={desactive} onChange={(e) => setV({ ...v, vantaux: e.target.value })} data-menuiserie-champ="vantaux"><option value="">—</option>{[1, 2, 3, 4, 5, 6].map((k) => <option key={k} value={k}>{k}</option>)}</select></label>
+        {dormantPartiel && <p className="inspecteur-aide">Dormant : profil et profondeur ensemble.</p>}
+        {!desactive && (
+          <button type="button" disabled={dormantPartiel} data-menuiserie-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { menuiserie: vide ? null : menuiserie } } }], vide ? `Menuiserie retirée de ${o.id}` : `Menuiserie de ${o.id}`)}>
+            {vide ? "Retirer la menuiserie" : "Appliquer"}
+          </button>
+        )}
       </div>
     </details>
   );

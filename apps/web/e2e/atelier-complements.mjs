@@ -54,6 +54,29 @@ const selectionner = async (id) => {
   await page.locator(`.nav-objets button[data-objet="${id}"]`).click();
 };
 
+/** Boîte d'un élément du plan une fois la vue stable (la sélection recentre la vue). */
+const boiteStable = async (selecteur) => {
+  let b = null;
+  for (let k = 0; k < 25; k++) {
+    const n = await page.locator(selecteur).boundingBox().catch(() => null);
+    if (n && b && Math.abs(n.x - b.x) < 0.5 && Math.abs(n.y - b.y) < 0.5 && Math.abs(n.width - b.width) < 0.5) return n;
+    b = n;
+    await page.waitForTimeout(150);
+  }
+  return b;
+};
+
+/** Zoom à la molette sur un élément du plan jusqu'à une largeur affichée minimale (px). */
+const zoomerSur = async (selecteur, largeurMin) => {
+  for (let k = 0; k < 15; k++) {
+    const b = await boiteStable(selecteur);
+    if (!b || Math.max(b.width, b.height) >= largeurMin) return b;
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.wheel(0, -500);
+  }
+  return boiteStable(selecteur);
+};
+
 /** Choisit un outil par la palette et attend qu'il soit actif (une seconde tentative au besoin). */
 const choisirOutil = async (requete, libelle, id = null) => {
   for (let essai = 0; essai < 2; essai++) {
@@ -667,7 +690,7 @@ await page.waitForSelector(".plan2d");
   if (!ok) await page.keyboard.press("Escape");
   await page.locator("#outil-copiesTrajet").fill("3");
   await page.evaluate(() => document.activeElement?.blur?.());
-  const boiteAllee = await page.locator('.plan2d [data-objet="allee-e2e"]').boundingBox().catch(() => null);
+  const boiteAllee = await zoomerSur('.plan2d [data-objet="allee-e2e"]', 120);
   const boiteBanc = await page.locator('.plan2d [data-objet="banc-e2e"]').boundingBox().catch(() => null);
   if (boiteAllee && boiteBanc) {
     await page.mouse.click(boiteAllee.x + boiteAllee.width / 2, boiteAllee.y + boiteAllee.height / 2);
@@ -1351,6 +1374,22 @@ await page.waitForSelector(".plan2d");
     }
   }
   check("fenêtres jumelées : la fenêtre partagée en deux, meneau de 0,10 m", jumelles === 2, String(jumelles));
+  // Menuiserie paramétrée (D-101) : dormant, vitrage et deux vantaux saisis dans l'inspecteur de la fenêtre B.
+  let men = null;
+  if (surB) {
+    await page.keyboard.press("Escape");
+    await attendreEnregistre().catch(() => {});
+    await selectionner(surB.id);
+    await page.locator("[data-menuiserie] > summary").click();
+    for (const [k, v] of [["profil", "0,06"], ["profondeur", "0,07"], ["vitrage", "0,024"], ["composition", "4/16/4"]]) await page.locator(`[data-menuiserie-champ="${k}"]`).fill(v);
+    await page.locator('[data-menuiserie-champ="vantaux"]').selectOption("2");
+    await page.locator("[data-menuiserie-appliquer]").click();
+    for (let k = 0; k < 30 && !men; k++) {
+      men = (await modele(pid)).modele.objets[surB.id]?.params.menuiserie ?? null;
+      if (!men) await page.waitForTimeout(500);
+    }
+  }
+  check("menuiserie de fenêtre : dormant, vitrage 4/16/4 et deux vantaux enregistrés", men?.dormant?.largeur.value === 0.06 && men?.vitrage?.composition === "4/16/4" && men?.vantaux === 2, JSON.stringify(men));
 }
 
 // Escalier à volées et palier tracé au plan (D-084).
