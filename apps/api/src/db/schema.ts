@@ -511,6 +511,7 @@ export const atelierLocks = pgTable("atelier_locks", {
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  transmisPar: text("transmis_par"),
 }, (t) => [primaryKey({ columns: [t.projectId, t.cle] })]);
 
 /** Script de la bibliothèque d'un projet (lot 8) : une ligne par version, immuable. */

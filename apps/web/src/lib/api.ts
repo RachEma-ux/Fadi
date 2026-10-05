@@ -115,7 +115,7 @@ export interface Project {
 export interface NotificationItem {
   id: string;
   at: string;
-  kind: "acces" | "commentaire" | "reservation" | "modification";
+  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou";
   projectId: string;
   projectCode: string;
   projectName: string;
@@ -865,6 +865,7 @@ export const api = {
   restaurerAtelierPublication: (projectId: string, publicationId: string, body: { requestId: string; baseRevision: number }) => request<{ revision: number; inchange?: boolean; ecartsCatalogues?: { catalogue: string }[] }>(`/projects/${projectId}/atelier/publications/${encodeURIComponent(publicationId)}/restaurer`, { method: "POST", body: JSON.stringify(body) }),
   getAtelierVerrous: (projectId: string) => request<{ verrous: AtelierVerrou[] }>(`/projects/${projectId}/atelier/verrous`),
   postAtelierVerrous: (projectId: string, body: { cles: string[]; motif?: string; minutes?: number }) => request<{ cles: string[]; expiresAt: string }>(`/projects/${projectId}/atelier/verrous`, { method: "POST", body: JSON.stringify(body) }),
+  transfererAtelierVerrou: (projectId: string, cle: string, email: string) => request<{ cle: string; auteur: string; expiresAt: string }>(`/projects/${projectId}/atelier/verrous/${encodeURIComponent(cle)}/transferer`, { method: "POST", body: JSON.stringify({ email }) }),
   deleteAtelierVerrou: (projectId: string, cle: string) => request<void>(`/projects/${projectId}/atelier/verrous/${encodeURIComponent(cle)}`, { method: "DELETE" }),
   // --- Lot 8 : scripts et assistant ---
   getAtelierScripts: (projectId: string) => request<{ integres: AtelierScript[]; projet: (AtelierScript & { versions: number })[] }>(`/projects/${projectId}/atelier/scripts`),

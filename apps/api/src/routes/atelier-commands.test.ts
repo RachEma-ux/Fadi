@@ -854,3 +854,25 @@ describe("notifications ciblées (D-081)", () => {
     expect((await editor.get("/notifications")).body.items.filter((x: { kind: string }) => x.kind === "modification")).toHaveLength(0);
   });
 });
+
+describe("verrou transmis (D-089)", () => {
+  it("l'auteur transmet son verrou à un éditeur, qui en est notifié ; un lecteur est refusé", async () => {
+    const owner = await registerAndLogin("owner-verrou@example.com");
+    const editor = await registerAndLogin("editor-verrou@example.com");
+    await registerAndLogin("lecteur-verrou@example.com");
+    const pid = await projetVide(owner);
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "editor-verrou@example.com", role: "editeur" })).status).toBe(201);
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "lecteur-verrou@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("v1", 0, [niveau, mur("m1")]))).status).toBe(200);
+    expect((await owner.post(`/projects/${pid}/atelier/verrous`).send({ cles: ["m1"], motif: "reprise" })).status).toBe(201);
+    expect((await owner.post(`/projects/${pid}/atelier/verrous/m1/transferer`).send({ email: "lecteur-verrou@example.com" })).status).toBe(422);
+    const t = await owner.post(`/projects/${pid}/atelier/verrous/m1/transferer`).send({ email: "editor-verrou@example.com" });
+    expect(t.status).toBe(200);
+    expect(t.body.auteur).toBe("editor-verrou@example.com");
+    const v = (await editor.get(`/projects/${pid}/atelier/verrous`)).body.verrous;
+    expect(v[0]).toMatchObject({ cle: "m1", moi: true });
+    const n = (await editor.get("/notifications")).body.items.filter((x: { kind: string }) => x.kind === "verrou");
+    expect(n[0].text).toMatch(/owner-verrou@example\.com vous a transmis le verrou de m1/);
+    expect((await owner.post(`/projects/${pid}/atelier/verrous/m1/transferer`).send({ email: "owner-verrou@example.com" })).status).toBe(200); // le propriétaire peut le reprendre
+  });
+});

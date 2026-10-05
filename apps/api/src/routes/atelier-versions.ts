@@ -11,6 +11,7 @@
  * - `GET /publications`, `POST /publications`, `GET /publications/:id`, `GET /publications/:id/fichiers/:volume`,
  *   `POST /publications/:id/restaurer` : publications figées (version, catalogues, documents en volumes) ;
  * - `GET /verrous`, `POST /verrous`, `DELETE /verrous/:cle` : verrous logiques fins (objet ou `niveau:<id>`) ;
+ * - `POST /verrous/:cle/transferer` { email } : verrou transmis à un éditeur du projet (D-089), notifié ;
  * - `GET /collisions` : contrôles d'architecture du modèle courant ;
  * - `GET /objets/:id/historique` : historique d'un objet (journal) ;
  * - `POST /reprise/apercu`, `POST /reprise` : réutilisation d'une partie d'un autre modèle (DA-21-09) ;
@@ -467,7 +468,7 @@ atelierVersionsRouter.post("/verrous", async (req, res) => {
       await tx
         .insert(atelierLocks)
         .values({ projectId: project.id, cle, motif: p.data.motif, authorId: req.user!.id, expiresAt, createdAt: maintenant })
-        .onConflictDoUpdate({ target: [atelierLocks.projectId, atelierLocks.cle], set: { motif: p.data.motif, authorId: req.user!.id, expiresAt, createdAt: maintenant } });
+        .onConflictDoUpdate({ target: [atelierLocks.projectId, atelierLocks.cle], set: { motif: p.data.motif, authorId: req.user!.id, expiresAt, createdAt: maintenant, transmisPar: null } });
     }
     return { status: 201, corps: { cles: p.data.cles, expiresAt: expiresAt.toISOString() } };
   });
@@ -484,6 +485,28 @@ atelierVersionsRouter.delete("/verrous/:cle", async (req, res) => {
   if (row.authorId !== req.user!.id && project.role !== "proprietaire" && !expire) return void res.status(403).json({ erreur: "interdit", message: "Seul l'auteur du verrou ou le propriétaire du projet peut le lever." });
   await db.delete(atelierLocks).where(and(eq(atelierLocks.projectId, project.id), eq(atelierLocks.cle, cle)));
   res.status(204).end();
+});
+
+/**
+ * Transmettre un verrou (D-089) : l'auteur du verrou (ou le propriétaire du projet) le transmet à un membre qui peut
+ * écrire ; l'échéance est gardée ; le destinataire en est notifié. Verrou expiré, destinataire inconnu ou en
+ * lecture seule : refus motivé.
+ */
+atelierVersionsRouter.post("/verrous/:cle/transferer", async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const p = z.object({ email: z.string().email().max(320) }).safeParse(req.body ?? {});
+  if (!p.success) return void invalide(res, "email du destinataire");
+  const cle = req.params["cle"] as string;
+  const row = (await db.select().from(atelierLocks).where(and(eq(atelierLocks.projectId, project.id), eq(atelierLocks.cle, cle))).limit(1))[0];
+  if (!row || row.expiresAt.getTime() <= Date.now()) return void res.status(404).json({ erreur: "verrou-inconnu", message: "Aucun verrou en cours sur cette clé." });
+  if (row.authorId !== req.user!.id && project.role !== "proprietaire") return void res.status(403).json({ erreur: "interdit", message: "Seul l'auteur du verrou ou le propriétaire du projet peut le transmettre." });
+  const dest = (await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.email, p.data.email.toLowerCase())).limit(1))[0];
+  const acces = dest ? await loadProjectAccess(project.id, dest.id) : null;
+  if (!dest || !acces || !roleAllows(acces.role, "write")) return void res.status(422).json({ erreur: "destinataire", message: "Le destinataire doit être un membre du projet qui peut modifier (éditeur ou propriétaire)." });
+  if (dest.id === row.authorId) return void res.status(422).json({ erreur: "destinataire", message: "Ce verrou lui appartient déjà." });
+  await db.update(atelierLocks).set({ authorId: dest.id, transmisPar: req.user!.email, createdAt: new Date() }).where(and(eq(atelierLocks.projectId, project.id), eq(atelierLocks.cle, cle)));
+  res.json({ cle, auteur: dest.email, expiresAt: row.expiresAt.toISOString() });
 });
 
 // ---------------------------------------------------------------------------

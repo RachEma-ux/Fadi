@@ -381,6 +381,12 @@ export function Versions({ projectId, client, etat, revision, selection, niveauI
               <li key={v.cle} data-verrou={v.cle}>
                 {niveau ? `Niveau ${niveau.nom}` : v.cle} <span className="nav-detail">{v.moi ? "vous" : v.auteur} · jusqu'à {date(v.expiresAt)}{v.motif ? ` · ${v.motif}` : ""}</span>
                 {!readOnly && v.moi && <button type="button" onClick={() => void agir(async () => { await api.deleteAtelierVerrou(projectId, v.cle); return "Verrou levé."; })}>Lever</button>}
+                {!readOnly && v.moi && (
+                  <form className="ver-transmettre" onSubmit={(e) => { e.preventDefault(); const champ = e.currentTarget.elements.namedItem("email") as HTMLInputElement; const email = champ.value.trim(); if (email) void agir(async () => { const r = await api.transfererAtelierVerrou(projectId, v.cle, email); champ.value = ""; return `Verrou transmis à ${r.auteur}.`; }); }}>
+                    <input name="email" type="email" aria-label={`Transmettre le verrou ${v.cle} à (courriel)`} placeholder="Transmettre à…" onKeyDown={(e) => e.stopPropagation()} data-verrou-transmettre={v.cle} />
+                    <button type="submit">Transmettre</button>
+                  </form>
+                )}
               </li>
             );
           })}

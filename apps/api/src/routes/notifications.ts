@@ -21,7 +21,7 @@
 import { Router } from "express";
 import { and, desc, eq, gt, inArray, ne, or } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { atelierCommands, projectComments, projectMembers, projects, users } from "../db/schema.js";
+import { atelierCommands, atelierLocks, projectComments, projectMembers, projects, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
@@ -33,7 +33,7 @@ export interface NotificationItem {
   id: string;
   at: string;
   /** `acces` · `commentaire` · `reservation` · `modification` (objets de l'Atelier, D-081) */
-  kind: "acces" | "commentaire" | "reservation" | "modification";
+  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou";
   projectId: string;
   projectCode: string;
   projectName: string;
@@ -157,6 +157,27 @@ export async function notificationsFor(userId: string, email: string): Promise<{
         });
       }
     }
+  }
+
+  // Verrous qui vous ont été transmis (D-089), tant qu'ils courent.
+  const transmis = await db
+    .select({ cle: atelierLocks.cle, par: atelierLocks.transmisPar, at: atelierLocks.createdAt, expiresAt: atelierLocks.expiresAt, projectId: projects.id, code: projects.code, name: projects.name })
+    .from(atelierLocks)
+    .innerJoin(projects, eq(projects.id, atelierLocks.projectId))
+    .where(and(eq(atelierLocks.authorId, userId), gt(atelierLocks.expiresAt, new Date())));
+  for (const v of transmis) {
+    if (!v.par) continue;
+    items.push({
+      id: `verrou:${v.projectId}:${v.cle}:${v.at.toISOString()}`,
+      at: v.at.toISOString(),
+      kind: "verrou",
+      projectId: v.projectId,
+      projectCode: v.code,
+      projectName: v.name,
+      stepNumber: null,
+      text: `${v.par} vous a transmis le verrou de ${v.cle.startsWith("niveau:") ? `l'étage ${v.cle.slice(7)}` : v.cle} dans ${v.code} (jusqu'à ${v.expiresAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: process.env["FADI_TZ"] ?? "Europe/Paris" })}).`,
+      unread: false,
+    });
   }
 
   const sorted = items.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)).slice(0, LIMIT);

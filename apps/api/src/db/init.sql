@@ -381,6 +381,8 @@ CREATE TABLE IF NOT EXISTS atelier_locks (
   created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (project_id, cle)
 );
+-- Verrou transmis (D-089) : courriel de qui l'a transmis, pour la notification du destinataire.
+ALTER TABLE atelier_locks ADD COLUMN IF NOT EXISTS transmis_par text;
 
 -- Lot 8 : bibliothèque de scripts versionnée (par projet) et propositions de l'assistant (boucle contrôlée).
 CREATE TABLE IF NOT EXISTS atelier_scripts (
