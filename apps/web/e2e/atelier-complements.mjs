@@ -754,6 +754,32 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
 }
 
+// Classification avec référentiel chargé (D-065) : CSV lu dans l'inspecteur, code vérifié sur un mur.
+{
+  await page.keyboard.press("Escape");
+  await selectionner(murA.id);
+  await page.locator("[data-classification] > summary").click();
+  await page.locator(".classif-referentiels > summary").click();
+  await page.locator('[data-referentiel="systeme"]').fill("CFC-e2e");
+  await page.locator('[data-referentiel="edition"]').fill("2017");
+  await page.locator('[data-referentiel="fichier"]').setInputFiles({ name: "cfc-e2e.csv", mimeType: "text/csv", buffer: Buffer.from("Code;Libellé\n211;Maçonnerie\n214;Charpente\n") });
+  let ref = null;
+  for (let k = 0; k < 30 && !ref; k++) {
+    ref = Object.values((await modele(pid)).modele.definitions).find((d) => d.classe === "referentiel-classification" && d.params.systeme === "CFC-e2e") ?? null;
+    if (!ref) await page.waitForTimeout(500);
+  }
+  await page.locator('[data-classif="systeme"]').fill("CFC-e2e");
+  await page.locator('[data-classif="code"]').fill("211");
+  await page.locator('[data-classification] button:has-text("Classer")').click();
+  let prop = null;
+  for (let k = 0; k < 30 && !prop; k++) {
+    prop = (await modele(pid)).modele.objets[murA.id]?.proprietes["classification:CFC-e2e"] ?? null;
+    if (!prop) await page.waitForTimeout(500);
+  }
+  check("classification : référentiel chargé depuis un CSV, code vérifié et libellé noté sur le mur", !!ref && Object.keys(ref.params.codes).length === 2 && prop?.statut === "verifiee" && (await modele(pid)).modele.objets[murA.id]?.proprietes["classification:CFC-e2e:libelle"]?.valeur === "Maçonnerie", `${JSON.stringify(ref?.params?.codes ?? null)} · ${JSON.stringify(prop)}`);
+  await page.keyboard.press("Escape");
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

@@ -8,6 +8,8 @@ import {
   bibliotheques,
   CLASSES_BLOC,
   contraintesDe,
+  CLASSE_REFERENTIEL,
+  lireReferentielCsv,
   diagnosticContraintes,
   ELEMENTS_CONTRAINTE,
   FORMES_CONTRAIGNABLES,
@@ -19,6 +21,7 @@ import {
   type ModeleAtelier,
   type OccurrenceQuelconque,
   type ParamsContrainte,
+  type ParamsReferentiel,
   type TypeContrainte,
 } from "@parcours/atelier-model";
 
@@ -43,6 +46,77 @@ export function ChoixPhase({ sel, readOnly, onCommandes }: { sel: OccurrenceQuel
         </select>
       </dd>
     </div>
+  );
+}
+
+/**
+ * Classification (D-065, DA-06-08) : système et code déclarés par l'utilisateur ; quand un référentiel du système
+ * est chargé, le code est vérifié (liste proposée) et son libellé noté. Référentiels chargés depuis un CSV.
+ */
+export function Classification({ sel, etat, readOnly, onCommandes }: { sel: OccurrenceQuelconque[]; etat: ModeleAtelier; readOnly: boolean; onCommandes: OnCommandes }) {
+  const referentiels = Object.values(etat.definitions).filter((d) => d.classe === CLASSE_REFERENTIEL).map((d) => ({ id: d.id, nom: d.nom, p: d.params as unknown as ParamsReferentiel }));
+  const [systeme, setSysteme] = useState(referentiels[0]?.p.systeme ?? "");
+  const [code, setCode] = useState("");
+  const [charge, setCharge] = useState({ systeme: "", edition: "" });
+  const [message, setMessage] = useState<string | null>(null);
+  const ref = referentiels.find((r) => r.p.systeme === systeme.trim()) ?? null;
+  const actuels = sel.length === 1 ? Object.entries(sel[0]!.proprietes).filter(([k]) => k.startsWith("classification:") && !k.endsWith(":libelle")).map(([k, v]) => ({ systeme: k.slice("classification:".length), code: String(v.valeur), statut: v.statut, libelle: sel[0]!.proprietes[`${k}:libelle`]?.valeur as string | undefined })) : [];
+  const codes = ref ? Object.keys(ref.p.codes).filter((c) => !code || c.startsWith(code)).slice(0, 200) : [];
+  return (
+    <details className="inspecteur-classification" data-classification>
+      <summary>Classification{actuels.length ? ` (${actuels.length})` : ""}</summary>
+      {actuels.length > 0 && (
+        <ul>
+          {actuels.map((a) => (
+            <li key={a.systeme}>
+              {a.systeme} : <strong>{a.code}</strong>{a.libelle ? ` — ${a.libelle}` : ""} <span className="nav-detail">{a.statut === "verifiee" ? "vérifié au référentiel" : "déclaré"}</span>
+              {!readOnly && <button type="button" className="lien" onClick={() => onCommandes([{ type: "classification.affecter", params: { id: sel[0]!.id, systeme: a.systeme, code: null } }], `Retirer la classification ${a.systeme}`)}>Retirer</button>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {!readOnly && (
+        <form className="ajout-contrainte" onSubmit={(e) => { e.preventDefault(); if (systeme.trim() && code.trim()) onCommandes(sel.map((o) => ({ type: "classification.affecter", params: { id: o.id, systeme: systeme.trim(), code: code.trim() } })), `Classer ${sel.length > 1 ? `${sel.length} objets` : sel[0]!.id} : ${systeme.trim()} ${code.trim()}`); }}>
+          <label>Système<input list="classif-systemes" value={systeme} maxLength={80} onChange={(e) => setSysteme(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-classif="systeme" /></label>
+          <datalist id="classif-systemes">{referentiels.map((r) => <option key={r.id} value={r.p.systeme} />)}</datalist>
+          <label>Code<input list="classif-codes" value={code} maxLength={60} onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-classif="code" /></label>
+          <datalist id="classif-codes">{codes.map((c) => <option key={c} value={c}>{ref!.p.codes[c]}</option>)}</datalist>
+          <p className="inspecteur-aide">{ref ? `Référentiel ${ref.nom} chargé (${Object.keys(ref.p.codes).length} codes, source : ${ref.p.source}) : le code est vérifié.` : "Aucun référentiel chargé pour ce système : le code est enregistré tel quel (« déclaré »)."}</p>
+          <button type="submit" disabled={!systeme.trim() || !code.trim()}>Classer</button>
+        </form>
+      )}
+      <details className="classif-referentiels">
+        <summary>Référentiels chargés ({referentiels.length})</summary>
+        <ul>
+          {referentiels.map((r) => (
+            <li key={r.id}>
+              {r.nom} · {Object.keys(r.p.codes).length} codes · {r.p.source}
+              {!readOnly && <button type="button" className="lien" onClick={() => onCommandes([{ type: "referentiel.retirer", params: { id: r.id } }], `Retirer le référentiel ${r.nom}`)}>Retirer</button>}
+            </li>
+          ))}
+        </ul>
+        {!readOnly && (
+          <div className="ajout-contrainte">
+            <label>Système<input value={charge.systeme} maxLength={80} onChange={(e) => setCharge({ ...charge, systeme: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-referentiel="systeme" /></label>
+            <label>Édition<input value={charge.edition} maxLength={40} onChange={(e) => setCharge({ ...charge, edition: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-referentiel="edition" /></label>
+            <label>Fichier CSV (code ; libellé)
+              <input type="file" accept=".csv,.txt,text/csv" disabled={!charge.systeme.trim()} data-referentiel="fichier" onChange={(e) => {
+                const f = e.currentTarget.files?.[0];
+                e.currentTarget.value = "";
+                if (!f) return;
+                void f.text().then((t) => {
+                  const r = lireReferentielCsv(t);
+                  if (!r.codes.length) return setMessage(`${f.name} : aucun code lu.`);
+                  onCommandes([{ type: "referentiel.charger", params: { systeme: charge.systeme.trim(), edition: charge.edition.trim() || null, source: f.name, codes: r.codes } }], `Référentiel ${charge.systeme.trim()} chargé (${r.codes.length} codes)`);
+                  setMessage(`${r.codes.length} code(s) lu(s) dans ${f.name}${r.refus.length ? ` ; ${r.refus.length} ligne(s) refusée(s) (code vide)` : ""}.`);
+                });
+              }} />
+            </label>
+            {message && <p className="inspecteur-aide" role="status">{message}</p>}
+          </div>
+        )}
+      </details>
+    </details>
   );
 }
 

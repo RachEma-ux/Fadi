@@ -135,3 +135,4 @@ Frontière apparente vérifiée, accrochage « Proche », historique des indices
 Arc tangent, marques de centre (`geometrie-outils.test.ts`, `calques-vue.test.ts`, `nouveau.test.ts`, D-062).
 Segments en arc dans les polylignes, arrondi des sommets, DXF exact (`esquisse/arcs-polyligne.test.ts`, e2e, D-063).
 Décalage à angles arrondis, chanfrein multiple, hachure décomposée (`esquisse/decalage-arrondi.test.ts`, D-064).
+Référentiels de classification, classification dans l'inspecteur, export IFC des classifications (`referentiels.test.ts`, e2e, D-065).

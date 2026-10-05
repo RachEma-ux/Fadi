@@ -33,6 +33,7 @@ import { controlerContraintes, reducteursContrainte } from "./contrainte.js";
 import { controlerVerrous, verrouillerObjets } from "./verrous.js";
 import { reducteursDocuments } from "./documents.js";
 import { reducteursVues3D } from "./vues3d.js";
+import { reducteursReferentiel } from "./referentiels.js";
 import { convertirEsquisse } from "../esquisse/conversion.js";
 import { arrondirSommets } from "../esquisse/arrondir.js";
 import { affecterZone } from "./zones.js";
@@ -235,6 +236,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   // Documents dérivés (lot 5) : vues et feuilles
   ...reducteursDocuments,
   ...reducteursVues3D,
+  ...reducteursReferentiel,
   // Blocs et composants, contraintes d'esquisse, phases (lot 5)
   "bloc.definir": (etat, p, ctx) => reducteursBloc.definir(etat, p, ctx),
   "bloc.placer": (etat, p, ctx) => reducteursBloc.placer(etat, p, ctx),

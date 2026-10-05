@@ -10,7 +10,7 @@ import { api } from "../../../../lib/api";
 import { bibliotheques, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
-import { ChoixPhase, ChoixVerrou, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
+import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
 
 export interface PropsInspecteur {
   etat: ModeleAtelier;
@@ -144,6 +144,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       </dl>
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <OuvertureHote o={o as Occurrence<"porte">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       <GroupeSelection sel={[o]} etat={etat} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
+      <Classification key={`classif-${o.id}`} sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "zone" && <SyntheseZoneVue o={o as Occurrence<"zone">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || o.classe === "dalle" || o.classe === "piece" || o.classe === "zone") && !desactive && contourFerme(o) && <ChangerClasseContour key={o.id} o={o} onCommandes={onCommandes} />}
@@ -516,6 +517,7 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
       <CreerBloc sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <VersNiveau sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <GroupeSelection sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
+      <Classification sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <ProprieteCommune sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
       {sel.length === 2 && sel.every((o) => o.classe === "piece") && (
         <button type="button" className="inspecteur-fusion" disabled={readOnly} data-pieces="fusionner" onClick={() => onCommandes([{ type: "piece.fusionner", params: { ids: sel.map((o) => o.id) } }], "Fusionner deux pièces")}>

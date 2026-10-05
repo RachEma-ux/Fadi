@@ -2,6 +2,7 @@
  * Commandes d'organisation et de site : niveaux, calques, groupes, définitions (types), propriétés typées,
  * classification, références (rattacher / réparer), parcelle et emprise.
  */
+import { codesProches, referentielDu } from "./referentiels.js";
 import { lireCouches } from "../compositions.js";
 import { boucles, type AxeMur } from "../geometrie.js";
 import type { Calque, CoordonneeCadastrale, Definition, Groupe, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque, Propriete, Reference } from "../modele.js";
@@ -312,8 +313,21 @@ export function affecterClassification(etat: ModeleAtelier, p: Brut): ResultatCo
   const code = lire.chaineOuNull(p, "code");
   const o = etat.objets[id]!;
   const proprietes = { ...o.proprietes };
-  if (code === null) delete proprietes[`classification:${systeme}`];
-  else proprietes[`classification:${systeme}`] = { valeur: code, provenance: "saisie", statut: "declaree" };
+  // Référentiel chargé pour ce système (D-065) : le code doit y figurer ; il est alors « vérifié » et son libellé noté.
+  const ref = code === null ? null : referentielDu(etat, systeme);
+  if (ref && !(code! in ref.params.codes)) {
+    const proches = codesProches(ref.params, code!);
+    throw new ErreurCommande("precondition", "code", `code « ${code} » absent du référentiel ${ref.nom} (source : ${ref.params.source})${proches.length ? ` ; codes proches : ${proches.join(", ")}` : ""}`);
+  }
+  if (code === null) {
+    delete proprietes[`classification:${systeme}`];
+    delete proprietes[`classification:${systeme}:libelle`];
+  } else {
+    proprietes[`classification:${systeme}`] = { valeur: code, provenance: "saisie", statut: ref ? "verifiee" : "declaree" };
+    const libelle = ref?.params.codes[code];
+    if (libelle) proprietes[`classification:${systeme}:libelle`] = { valeur: libelle, provenance: "import", statut: "verifiee" };
+    else delete proprietes[`classification:${systeme}:libelle`];
+  }
   proprietes["classeIfc"] = { valeur: CLASSES[o.classe].ifc, provenance: "regle", statut: "verifiee" };
   const effets = effetsVides();
   effets.modifies.push(id);
@@ -507,7 +521,7 @@ export const reducteursDefinition = {
     const id = lire.chaine(p, "id");
     const d = etat.definitions[id];
     if (!d) throw new ErreurCommande("precondition", "id", `définition inconnue : ${id}`);
-    if (["vue", "feuille", "reference-externe", "vue-3d"].includes(d.classe as string)) throw new ErreurCommande("precondition", "id", `${d.nom} : utiliser la commande propre aux ${d.classe === "reference-externe" ? "références externes (refexterne.detacher)" : d.classe === "vue-3d" ? "vues 3D (vue3d.supprimer)" : "vues et feuilles"}`);
+    if (["vue", "feuille", "reference-externe", "vue-3d", "referentiel-classification"].includes(d.classe as string)) throw new ErreurCommande("precondition", "id", `${d.nom} : utiliser la commande propre aux ${d.classe === "reference-externe" ? "références externes (refexterne.detacher)" : d.classe === "vue-3d" ? "vues 3D (vue3d.supprimer)" : d.classe === "referentiel-classification" ? "référentiels (referentiel.retirer)" : "vues et feuilles"}`);
     const occ = occurrencesDe(etat, id);
     const detacher = lire.booleen(p, "detacher", false);
     if (occ.length && (d.classe === "bloc" || d.classe === "composant")) throw new ErreurCommande("precondition", "id", `« ${d.nom} » a ${occ.length} occurrence(s) : les décomposer ou les supprimer d'abord`);
@@ -531,7 +545,7 @@ export const reducteursDefinition = {
     if (ancienne.id === nouvelle.id) throw new ErreurCommande("invalide", "nouvelle", "définition identique");
     const blocs = ["bloc", "composant"];
     const compatibles = ancienne.classe === nouvelle.classe || (blocs.includes(ancienne.classe as string) && blocs.includes(nouvelle.classe as string));
-    if (!compatibles || ["vue", "feuille", "reference-externe", "vue-3d"].includes(ancienne.classe as string)) throw new ErreurCommande("precondition", "nouvelle", `« ${nouvelle.nom} » (${nouvelle.classe}) ne peut pas remplacer « ${ancienne.nom} » (${ancienne.classe})`);
+    if (!compatibles || ["vue", "feuille", "reference-externe", "vue-3d", "referentiel-classification"].includes(ancienne.classe as string)) throw new ErreurCommande("precondition", "nouvelle", `« ${nouvelle.nom} » (${nouvelle.classe}) ne peut pas remplacer « ${ancienne.nom} » (${ancienne.classe})`);
     const objets = { ...etat.objets };
     const effets = effetsVides();
     for (const o of occurrencesDe(etat, ancienne.id)) {

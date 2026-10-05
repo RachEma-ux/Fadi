@@ -15,6 +15,7 @@
  *   GlobalId d'un export à l'autre ; l'identifiant Fadi est aussi écrit en propriété (`Fadi_Identite`) ;
  * - reproductibilité : l'horodatage du fichier est fourni par l'appelant (instant de la révision exportée).
  */
+import { referentielDu } from "../commandes/referentiels.js";
 import { aireNette, facesMur, normalise, perp, pointsPolyligne, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
@@ -543,6 +544,37 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   for (const [structure, elements] of contenus) s.ajouter(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid(`rel-contenu|${structure}`)},$,$,$,${liste(elements)},${ref(structure)})`);
   for (const [type, objetsTypes] of typage) s.ajouter(`IFCRELDEFINESBYTYPE(${gid(`rel-type|${type}`)},$,$,$,${liste(objetsTypes)},${ref(type)})`);
   for (const [jeu, objetsMat] of associationsMateriau) s.ajouter(`IFCRELASSOCIATESMATERIAL(${gid(`rel-materiau|${jeu}`)},$,$,$,${liste(objetsMat)},${ref(jeu)})`);
+  // Classification (D-065) : IfcClassification par système (source et édition du référentiel chargé, sinon non
+  // renseignées), IfcClassificationReference par code (libellé du référentiel), une association par code.
+  const parCode = new Map<string, { systeme: string; code: string; libelle: string | null; objets: number[] }>();
+  // Ordre déterministe (l'ordre de lecture des objets en base varie) : objets par identifiant, propriétés par nom.
+  for (const o of (Object.values(etat.objets) as OccurrenceQuelconque[]).sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))) {
+    const idProduit = produits.get(o.id);
+    if (!idProduit) continue;
+    for (const [k, v] of Object.entries(o.proprietes).sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0))) {
+      if (!k.startsWith("classification:") || k.endsWith(":libelle")) continue;
+      const systeme = k.slice("classification:".length);
+      const code = String(v.valeur);
+      const cle = `${systeme}\u0000${code}`;
+      const e = parCode.get(cle) ?? { systeme, code, libelle: (o.proprietes[`${k}:libelle`]?.valeur as string | undefined) ?? null, objets: [] };
+      e.objets.push(idProduit);
+      parCode.set(cle, e);
+    }
+  }
+  if (parCode.size) {
+    const systemes = new Map<string, number>();
+    for (const e of [...parCode.values()].sort((x, y) => (x.systeme < y.systeme ? -1 : x.systeme > y.systeme ? 1 : x.code < y.code ? -1 : x.code > y.code ? 1 : 0))) {
+      let idSys = systemes.get(e.systeme);
+      if (idSys === undefined) {
+        const r = referentielDu(etat, e.systeme);
+        idSys = s.ajouter(`IFCCLASSIFICATION(${r ? chaineStep(r.params.source) : "$"},${r?.params.edition ? chaineStep(r.params.edition) : "$"},$,${chaineStep(e.systeme)},$,$,$)`);
+        systemes.set(e.systeme, idSys);
+      }
+      const idRef = s.ajouter(`IFCCLASSIFICATIONREFERENCE($,${chaineStep(e.code)},${e.libelle ? chaineStep(e.libelle) : "$"},${ref(idSys)},$,$)`);
+      s.ajouter(`IFCRELASSOCIATESCLASSIFICATION(${gid(`rel-classification|${e.systeme}|${e.code}`)},$,$,$,${liste([...e.objets].sort((x, y) => x - y))},${ref(idRef)})`);
+    }
+    remarques.add(`${parCode.size} code(s) de classification écrit(s) (IfcClassificationReference) dans ${systemes.size} système(s) ; codes vérifiés seulement si un référentiel était chargé.`);
+  }
   // Connexions des murs (D-038) : extrémités partagées, tés, croisements — IfcRelConnectsPathElements.
   const TYPE_CONNEXION: Record<ExtremiteConnexion, string> = { debut: ".ATSTART.", fin: ".ATEND.", courant: ".ATPATH." };
   let connexions = 0;
