@@ -4,8 +4,9 @@
  * parallélisme, perpendicularité, distance (cote pilotante ou de contrôle) et, depuis D-051, égalité de longueurs,
  * milieu, point sur ligne, sommet fixe, symétrie par rapport à un axe et angle entre deux segments. Solveur de
  * Gauss–Newton au plus petit déplacement (Δ = −Jᵀ(JJᵀ)⁻¹r), diagnostic de rang (degrés de liberté restants,
- * contrainte redondante, conflit). Jeu borné : pas de tangence ni d'arc (les cercles et arcs ne sont pas
- * contraignables) ; 200 variables au plus.
+ * contrainte redondante, conflit). Depuis D-074 : cercles et arcs contraignables par leur centre (« centre », traité
+ * comme un sommet) et leur rayon (« cercle ») — rayon, diamètre, tangence ligne–cercle et cercle–cercle ; les angles
+ * d'un arc ne sont pas des variables. 200 variables au plus.
  *
  * Une contrainte est une relation `contrainte` du modèle : source = esquisse A, cible = esquisse B (ou A),
  * paramètres { type, a, b, valeur, pilotante, etat } où a / b sont des caractéristiques nommées `sommet[i]` ou
@@ -14,8 +15,8 @@
 import type { ModeleAtelier, Occurrence, Relation } from "./modele.js";
 import type { Angle, Longueur } from "./unites.js";
 
-export type TypeContrainte = "coincidence" | "horizontal" | "vertical" | "parallele" | "perpendiculaire" | "distance" | "egalite" | "milieu" | "sur-ligne" | "fixe" | "symetrie" | "angle";
-export const TYPES_CONTRAINTE: readonly TypeContrainte[] = ["coincidence", "horizontal", "vertical", "parallele", "perpendiculaire", "distance", "egalite", "milieu", "sur-ligne", "fixe", "symetrie", "angle"];
+export type TypeContrainte = "coincidence" | "horizontal" | "vertical" | "parallele" | "perpendiculaire" | "distance" | "egalite" | "milieu" | "sur-ligne" | "fixe" | "symetrie" | "angle" | "rayon" | "diametre" | "tangence";
+export const TYPES_CONTRAINTE: readonly TypeContrainte[] = ["coincidence", "horizontal", "vertical", "parallele", "perpendiculaire", "distance", "egalite", "milieu", "sur-ligne", "fixe", "symetrie", "angle", "rayon", "diametre", "tangence"];
 export const LIBELLES_CONTRAINTE: Record<TypeContrainte, string> = {
   coincidence: "Coïncidence",
   horizontal: "Horizontal",
@@ -29,13 +30,20 @@ export const LIBELLES_CONTRAINTE: Record<TypeContrainte, string> = {
   fixe: "Fixe",
   symetrie: "Symétriques",
   angle: "Angle",
+  rayon: "Rayon",
+  diametre: "Diamètre",
+  tangence: "Tangence",
 };
 
 /**
  * Éléments portés par chaque type : a (sur l'esquisse A), puis b (sur l'esquisse B ; null : aucun). La symétrie porte
  * l'axe en a (segment de A) et deux sommets de B en b et c.
  */
-export const ELEMENTS_CONTRAINTE: Record<TypeContrainte, readonly ["sommet" | "segment", "sommet" | "segment" | null]> = {
+export type GenreElement = "sommet" | "segment" | "cercle";
+/** Caractéristique du bon genre ? « centre » (cercle, arc) vaut un sommet ; « cercle » porte centre et rayon. */
+export const estDuGenre = (carac: string, genre: GenreElement) => (genre === "sommet" ? carac.startsWith("sommet") || carac === "centre" : genre === "segment" ? carac.startsWith("segment") : carac === "cercle");
+
+export const ELEMENTS_CONTRAINTE: Record<TypeContrainte, readonly [GenreElement, GenreElement | null]> = {
   coincidence: ["sommet", "sommet"],
   horizontal: ["segment", null],
   vertical: ["segment", null],
@@ -48,6 +56,10 @@ export const ELEMENTS_CONTRAINTE: Record<TypeContrainte, readonly ["sommet" | "s
   fixe: ["sommet", null],
   symetrie: ["segment", "sommet"],
   angle: ["segment", "segment"],
+  rayon: ["cercle", null],
+  diametre: ["cercle", null],
+  /** Tangence : a = segment d'une ligne ou cercle ; b = cercle. */
+  tangence: ["segment", "cercle"],
 };
 
 export interface ParamsContrainte {
@@ -64,9 +76,11 @@ export interface ParamsContrainte {
   c?: string | null;
   /** Position tenue (contrainte « fixe »), relevée à l'ajout. */
   position?: { x: number; y: number } | null;
+  /** Tangence de deux cercles (D-074) : intérieure (un cercle dans l'autre) ou extérieure, relevée à l'ajout. */
+  interne?: boolean;
 }
 
-export const FORMES_CONTRAIGNABLES = ["ligne", "polyligne", "polygone", "construction"] as const;
+export const FORMES_CONTRAIGNABLES = ["ligne", "polyligne", "polygone", "construction", "cercle", "arc"] as const;
 export const MAX_VARIABLES = 200;
 /**
  * Écart au-delà duquel une contrainte est dite non respectée : les coordonnées résolues sont arrondies au
@@ -87,11 +101,16 @@ export function raisonNonContraignable(etat: ModeleAtelier, id: string): string 
   if (o.classe !== "esquisse") return `${id} n'est pas une esquisse`;
   if (!(FORMES_CONTRAIGNABLES as readonly string[]).includes(o.params.forme)) return `esquisse « ${o.params.forme} » : contraintes réservées aux lignes, polylignes et polygones`;
   if (o.params.renflements) return `${id} : polyligne à segments en arc, contraintes non prises en charge`;
+  if ((o.params.forme === "cercle" || o.params.forme === "arc") && (!o.params.centre || !o.params.rayon)) return `${id} : cercle sans centre ni rayon`;
   return null;
 }
 
 /** Indices des sommets d'une caractéristique `sommet[i]` (1 sommet) ou `segment[i]` (2 sommets). */
 export function sommetsDe(o: Occurrence<"esquisse">, carac: string): number[] | null {
+  // Cercles et arcs (D-074) : −1 = centre, −2 = rayon.
+  const rond = (o.params.forme === "cercle" || o.params.forme === "arc") && !!o.params.centre && !!o.params.rayon;
+  if (carac === "centre") return rond ? [-1] : null;
+  if (carac === "cercle") return rond ? [-1, -2] : null;
   const m = /^(sommet|segment)\[(\d+)\]$/.exec(carac);
   if (!m) return null;
   const i = Number(m[2]);
@@ -110,6 +129,8 @@ interface Systeme {
   equations: ((x: number[]) => number)[];
   /** Équation(s) de chaque contrainte (pour le diagnostic). */
   parContrainte: Map<string, number[]>;
+  /** Cases fictives (seconde case d'un rayon), hors degrés de liberté. */
+  fictives: number;
 }
 
 const cle = (id: string, i: number) => `${id}#${i}`;
@@ -125,7 +146,9 @@ export function systeme(etat: ModeleAtelier, contraintes: (Relation & { params: 
       const o = etat.objets[id] as Occurrence<"esquisse">;
       v = x.length;
       index.set(k, v);
-      x.push(o.params.points[i]!.x, o.params.points[i]!.y);
+      if (i === -1) x.push(o.params.centre!.x, o.params.centre!.y);
+      else if (i === -2) x.push(o.params.rayon!.value, 0); // rayon (la seconde case n'est pas une variable utile)
+      else x.push(o.params.points[i]!.x, o.params.points[i]!.y);
     }
     return v;
   };
@@ -212,6 +235,23 @@ export function systeme(etat: ModeleAtelier, contraintes: (Relation & { params: 
         }
         break;
       }
+      case "rayon":
+      case "diametre": {
+        const cible = p.valeur?.value ?? 0;
+        const k = p.type === "diametre" ? 2 : 1;
+        if (va.length === 2) equations.push((x) => k * x[va[1]!]! - cible);
+        break;
+      }
+      case "tangence": {
+        if (!vb || vb.length !== 2) break;
+        const [c, rr] = [vb[0]!, vb[1]!];
+        if (p.a.startsWith("segment") && va.length === 2) equations.push((x) => Math.abs(horsLigne(x, c, va)) - x[rr]!);
+        else if (p.a === "cercle" && va.length === 2) {
+          const [c1, r1] = [va[0]!, va[1]!];
+          equations.push((x) => Math.hypot(x[c]! - x[c1]!, x[c + 1]! - x[c1 + 1]!) - (p.interne ? Math.abs(x[r1]! - x[rr]!) : x[r1]! + x[rr]!));
+        }
+        break;
+      }
       case "angle": {
         const t = ((p.angle?.value ?? 0) * Math.PI) / 180;
         if (va.length === 2 && vb?.length === 2)
@@ -234,7 +274,7 @@ export function systeme(etat: ModeleAtelier, contraintes: (Relation & { params: 
     const y0 = x[v + 1]!;
     equations.push((x) => x[v]! - x0, (x) => x[v + 1]! - y0);
   }
-  return { index, x, equations, parContrainte };
+  return { index, x, equations, parContrainte, fictives: [...index.keys()].filter((k) => k.endsWith("#-2")).length };
 }
 
 /** Jacobien par différences centrées (pas de 1 µm) : précis à 1e-12 près sur ces équations régulières. */
@@ -329,7 +369,7 @@ export function resoudreSysteme(s: Systeme): ResultatResolution {
   const rg = J.length ? rang(J) : 0;
   // Coordonnées arrondies au micromètre : deux résolutions identiques donnent les mêmes octets.
   x = x.map((v) => Math.round(v * 1e6) / 1e6);
-  return { converge: r <= 1e-7, x, residu: r, degresDeLiberte: x.length - rg, rang: rg };
+  return { converge: r <= 1e-7, x, residu: r, degresDeLiberte: x.length - rg - s.fictives, rang: rg };
 }
 
 /** Écrit les positions résolues dans les esquisses (nouvel état, immuable). */
@@ -349,8 +389,13 @@ export function appliquerSolution(etat: ModeleAtelier, s: Systeme, x: number[]):
       const n = m.get(i);
       return n ? { ...p, x: n[0], y: n[1] } : p;
     });
-    if (points.some((p, i) => p.x !== o.params.points[i]!.x || p.y !== o.params.points[i]!.y)) {
-      objets[id] = { ...o, params: { ...o.params, points } };
+    const c = m.get(-1);
+    const r = m.get(-2);
+    const centre = c && o.params.centre ? { ...o.params.centre, x: c[0], y: c[1] } : o.params.centre;
+    const rayon = r && o.params.rayon ? { ...o.params.rayon, value: r[0] } : o.params.rayon;
+    const change = points.some((p, i) => p.x !== o.params.points[i]!.x || p.y !== o.params.points[i]!.y) || centre?.x !== o.params.centre?.x || centre?.y !== o.params.centre?.y || rayon?.value !== o.params.rayon?.value;
+    if (change) {
+      objets[id] = { ...o, params: { ...o.params, points, centre, rayon } };
       modifies.push(id);
     }
   }
@@ -372,7 +417,7 @@ export function diagnosticContraintes(etat: ModeleAtelier, ids: string[]): { con
   let variables = 0;
   for (const id of ids) {
     const o = etat.objets[id];
-    if (o?.classe === "esquisse") variables += 2 * o.params.points.length;
+    if (o?.classe === "esquisse") variables += 2 * o.params.points.length + ((o.params.forme === "cercle" || o.params.forme === "arc") && o.params.centre && o.params.rayon ? 3 : 0);
   }
   const J = s.equations.length ? jacobien(s, s.x) : [];
   return { contraintes: liees.filter((r) => r.params.etat === "ok").length, degresDeLiberte: variables - (J.length ? rang(J) : 0), ecart: Math.max(0, ...s.equations.map((e) => Math.abs(e(s.x)))), aReparer: liees.filter((r) => r.params.etat === "a-reparer").length };

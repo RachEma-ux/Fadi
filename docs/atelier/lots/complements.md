@@ -144,3 +144,4 @@ Manipulateur du plan 2D : déplacer selon un axe, tourner, échelle uniforme (`n
 Miroir des occurrences de bloc, pas polaire réglable, liaison pièce ↔ espace programmé (`bloc.test.ts`, `nouveau.test.ts`, e2e, D-071).
 Motifs de hachure dans les vues et au plan (`hachures.test.ts`, e2e, D-072).
 Ajuster et prolonger des polylignes jusqu'à des courbes et des contours, raccord ligne–arc et arc–arc (`ajuster-chemin.test.ts`, D-073).
+Cercles et arcs contraignables : rayon, diamètre, tangences (`contraintes-cercles.test.ts`, e2e, D-074).

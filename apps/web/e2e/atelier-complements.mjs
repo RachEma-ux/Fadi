@@ -1020,6 +1020,28 @@ await page.waitForSelector(".plan2d");
   check("hachure : motif « croisée » choisi dans l'inspecteur, enregistré et dessiné", rh.status === 200 && motif === "croisee" && (await page.locator('.plan2d [data-motif="croisee"]').count()) > 0, `${rh.status} · ${motif}`);
 }
 
+// Contrainte de rayon sur un cercle (D-074) : depuis l'inspecteur, rayon piloté.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  let rc = { status: 0 };
+  for (let k = 0; k < 5 && rc.status !== 200; k++) rc = await lot(pid, `cc-${Date.now()}-${k}`, (await modele(pid)).revision, [{ type: "esquisse.cercle", params: { id: "cercle-e2e", niveauId: murA.niveauId, centre: { x: ax + 110, y: ay + 100, frame: "local", unit: "m" }, rayon: m(1) } }]);
+  await ouvrir(pid);
+  await selectionner("cercle-e2e");
+  await page.locator(".inspecteur-contraintes > summary").click();
+  await page.locator("[data-contrainte-type]").selectOption("rayon");
+  await page.locator("[data-contrainte-valeur]").fill("1,75");
+  await page.locator('.ajout-contrainte button:has-text("Ajouter la contrainte")').click();
+  let rayon = null;
+  for (let k = 0; k < 30 && rayon !== 1.75; k++) {
+    rayon = (await modele(pid)).modele.objets["cercle-e2e"]?.params.rayon?.value ?? null;
+    if (rayon !== 1.75) await page.waitForTimeout(500);
+  }
+  check("contrainte de rayon : ajoutée depuis l'inspecteur du cercle, rayon piloté à 1,75 m", rc.status === 200 && rayon === 1.75, `${rc.status} · ${rayon}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

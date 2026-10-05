@@ -12,6 +12,7 @@ import {
   systeme,
   TYPES_CONTRAINTE,
   ELEMENTS_CONTRAINTE as ELEMENTS,
+  estDuGenre,
   MAX_VARIABLES,
   TOLERANCE_CONTRAINTE,
   type ParamsContrainte,
@@ -45,6 +46,7 @@ function degeneres(etat: ModeleAtelier, ids: Iterable<string>): string | null {
     if (o?.classe !== "esquisse") continue;
     const pts = o.params.points;
     for (let i = 0; i + 1 < pts.length; i++) if (Math.hypot(pts[i + 1]!.x - pts[i]!.x, pts[i + 1]!.y - pts[i]!.y) < 1e-6) return id;
+    if (o.params.rayon && !(o.params.rayon.value > 1e-6)) return id;
   }
   return null;
 }
@@ -77,15 +79,16 @@ function lireContrainte(etat: ModeleAtelier, p: Brut): { sourceId: string; targe
   const B = etat.objets[targetId] as Occurrence<"esquisse">;
   // Distance : deux sommets, ou un segment seul (longueur).
   const segmentSeul = type === "distance" && a.startsWith("segment") && b === null;
-  if (!segmentSeul && !a.startsWith(ka)) throw new ErreurCommande("invalide", "a", `« ${type} » porte sur ${ka === "sommet" ? "un sommet" : "un segment"} : ${a}`);
+  const genreA = type === "tangence" && a === "cercle" ? "cercle" : ka;
+  if (!segmentSeul && !estDuGenre(a, genreA)) throw new ErreurCommande("invalide", "a", `« ${type} » porte sur ${ka === "sommet" ? "un sommet (ou le centre d'un cercle)" : ka === "segment" ? (type === "tangence" ? "un segment ou un cercle" : "un segment") : "un cercle ou un arc"} : ${a}`);
   if (!sommetsDe(A, a)) throw new ErreurCommande("precondition", "a", `${a} n'existe pas sur ${sourceId}`);
   if (kb && !segmentSeul) {
-    if (!b || !b.startsWith(kb)) throw new ErreurCommande("invalide", "b", `« ${type} » demande un second ${kb}`);
+    if (!b || !estDuGenre(b, kb)) throw new ErreurCommande("invalide", "b", `« ${type} » demande ${kb === "cercle" ? "un cercle ou un arc" : `un second ${kb}`}`);
     if (!sommetsDe(B, b)) throw new ErreurCommande("precondition", "b", `${b} n'existe pas sur ${targetId}`);
     if (sourceId === targetId && a === b) throw new ErreurCommande("invalide", "b", "contrainte d'un élément avec lui-même");
   }
   let valeur = null;
-  if (type === "distance") {
+  if (type === "distance" || type === "rayon" || type === "diametre") {
     const v = p["valeur"];
     if (v && typeof v === "object" && (v as { unit?: string }).unit === "deg") throw new ErreurCommande("invalide", "valeur", "unité « ° » refusée pour une distance (mètres attendus)");
     valeur = lire.longueur(p, "valeur", { strict: true });
@@ -109,7 +112,15 @@ function lireContrainte(etat: ModeleAtelier, p: Brut): { sourceId: string; targe
   if (type === "fixe") {
     const pos = p["position"] as { x?: unknown; y?: unknown } | undefined;
     const i = sommetsDe(A, a)![0]!;
-    params.position = pos && typeof pos.x === "number" && typeof pos.y === "number" && Number.isFinite(pos.x) && Number.isFinite(pos.y) ? { x: pos.x, y: pos.y } : { x: A.params.points[i]!.x, y: A.params.points[i]!.y };
+    const q = i === -1 ? A.params.centre! : A.params.points[i]!;
+    params.position = pos && typeof pos.x === "number" && typeof pos.y === "number" && Number.isFinite(pos.x) && Number.isFinite(pos.y) ? { x: pos.x, y: pos.y } : { x: q.x, y: q.y };
+  }
+  if ((type === "rayon" || type === "diametre") && !(valeur!.value > 0)) throw new ErreurCommande("invalide", "valeur", `${type} strictement positif`);
+  if (type === "tangence" && a === "cercle") {
+    if (sourceId === targetId) throw new ErreurCommande("invalide", "b", "tangence d'un cercle avec lui-même");
+    // Intérieure si l'un des cercles contient le centre de l'autre (relevé à l'ajout, conservé ensuite).
+    const d = Math.hypot(A.params.centre!.x - B.params.centre!.x, A.params.centre!.y - B.params.centre!.y);
+    params.interne = typeof p["interne"] === "boolean" ? (p["interne"] as boolean) : d < Math.max(A.params.rayon!.value, B.params.rayon!.value);
   }
   if (["milieu", "sur-ligne"].includes(type) && sourceId === targetId && sommetsDe(B, b!)!.includes(sommetsDe(A, a)![0]!)) throw new ErreurCommande("invalide", "b", "le sommet est une extrémité de ce segment");
   return { sourceId, targetId, params };
@@ -140,7 +151,7 @@ export const reducteursContrainte = {
     const rel = etat.relations[id];
     if (!rel || rel.kind !== "contrainte") throw new ErreurCommande("precondition", "id", `contrainte inconnue : ${id}`);
     const ancien = rel.params as unknown as ParamsContrainte;
-    const c = lireContrainte(etat, { type: ancien.type, objetA: rel.sourceId, objetB: rel.targetId, a: ancien.a, b: ancien.b, valeur: p["valeur"] ?? ancien.valeur, pilotante: p["pilotante"] ?? ancien.pilotante, angle: p["angle"] ?? ancien.angle, c: ancien.c, position: p["position"] ?? ancien.position });
+    const c = lireContrainte(etat, { type: ancien.type, objetA: rel.sourceId, objetB: rel.targetId, a: ancien.a, b: ancien.b, valeur: p["valeur"] ?? ancien.valeur, pilotante: p["pilotante"] ?? ancien.pilotante, angle: p["angle"] ?? ancien.angle, c: ancien.c, position: p["position"] ?? ancien.position, interne: ancien.interne });
     const avec: ModeleAtelier = { ...etat, relations: { ...etat.relations, [id]: { ...rel, params: c.params as unknown as Brut } } };
     const effets = effetsVides();
     effets.modifies.push(id);
@@ -197,6 +208,8 @@ export function controlerContraintes(avant: ModeleAtelier, apres: ModeleAtelier,
       const q = a.params.points[i];
       if (!q || q.x !== p.x || q.y !== p.y) fixes.push({ id, i });
     });
+    if (b.params.centre && (a.params.centre?.x !== b.params.centre.x || a.params.centre?.y !== b.params.centre.y)) fixes.push({ id, i: -1 });
+    if (b.params.rayon && a.params.rayon?.value !== b.params.rayon.value) fixes.push({ id, i: -2 });
   }
   const r = resoudre(etat, [...touchees], fixes);
   return { etat: r.etat, effets: { ...eff, modifies: [...new Set([...eff.modifies, ...r.modifies])] } };

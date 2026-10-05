@@ -12,6 +12,7 @@ import {
   lireReferentielCsv,
   diagnosticContraintes,
   ELEMENTS_CONTRAINTE,
+  type GenreElement,
   FORMES_CONTRAIGNABLES,
   LIBELLES_CONTRAINTE,
   proprietesEffectives,
@@ -210,16 +211,26 @@ export function FicheOccurrenceBloc({ o, etat }: { o: OccurrenceQuelconque; etat
 }
 
 // Dans l'inspecteur, la distance porte sur la longueur d'un segment ; les autres types suivent le modèle (D-051).
-const ELEMENTS: Record<TypeContrainte, readonly ["sommet" | "segment", "sommet" | "segment" | null]> = { ...ELEMENTS_CONTRAINTE, distance: ["segment", null] };
+const ELEMENTS: Record<TypeContrainte, readonly [GenreElement, GenreElement | null]> = { ...ELEMENTS_CONTRAINTE, distance: ["segment", null] };
+
+/** Caractéristiques d'une esquisse d'un genre donné (D-074 : centre et cercle des cercles et arcs), avec libellés. */
+function caracteristiques(o: OccurrenceQuelconque & { classe: "esquisse" }, genre: GenreElement, tangence = false): { cle: string; libelle: string }[] {
+  const rond = (o.params.forme === "cercle" || o.params.forme === "arc") && !!o.params.centre && !!o.params.rayon;
+  const n = o.params.points.length;
+  const nbSeg = n - (o.params.ferme || o.params.forme === "polygone" ? 0 : 1);
+  if (genre === "sommet") return [...Array.from({ length: n }, (_, i) => ({ cle: `sommet[${i}]`, libelle: `${i + 1}` })), ...(rond ? [{ cle: "centre", libelle: "centre" }] : [])];
+  if (genre === "segment") return [...Array.from({ length: Math.max(0, nbSeg) }, (_, i) => ({ cle: `segment[${i}]`, libelle: `${i + 1}` })), ...(tangence && rond ? [{ cle: "cercle", libelle: "cercle" }] : [])];
+  return rond ? [{ cle: "cercle", libelle: o.params.forme === "arc" ? "arc" : "cercle" }] : [];
+}
 const nombre = (v: string) => Number(v.trim().replace(",", "."));
 
 /** Contraintes d'une ou deux esquisses sélectionnées : ajout, diagnostic, suppression. */
 export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: OccurrenceQuelconque[]; etat: ModeleAtelier; readOnly: boolean; onCommandes: OnCommandes }) {
   const esquisses = sel.filter((o) => o.classe === "esquisse" && (FORMES_CONTRAIGNABLES as readonly string[]).includes(o.params.forme)) as (OccurrenceQuelconque & { classe: "esquisse" })[];
   const [type, setType] = useState<TypeContrainte>("horizontal");
-  const [a, setA] = useState(0);
-  const [b, setB] = useState(0);
-  const [c, setC] = useState(1);
+  const [aChoisi, setA] = useState("");
+  const [bChoisi, setB] = useState("");
+  const [cChoisi, setC] = useState("");
   const [valeur, setValeur] = useState("");
   const [angle, setAngle] = useState("");
   const [pilotante, setPilotante] = useState(true);
@@ -230,13 +241,29 @@ export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: Occurre
   const liste = contraintesDe(etat).filter((r) => ids.includes(r.sourceId) || ids.includes(r.targetId));
   const diag = diagnosticContraintes(etat, ids);
   const [ka, kb] = ELEMENTS[type];
-  const nbSeg = (o: typeof A) => o.params.points.length - (o.params.ferme || o.params.forme === "polygone" ? 0 : 1);
-  const options = (o: typeof A, k: "sommet" | "segment") => Array.from({ length: k === "sommet" ? o.params.points.length : nbSeg(o) }, (_, i) => i);
+  const optA = caracteristiques(A, ka, type === "tangence");
+  const optB = kb ? caracteristiques(B, kb) : [];
+  const optC = caracteristiques(B, "sommet").filter((x) => x.cle !== "centre");
+  const a = optA.some((x) => x.cle === aChoisi) ? aChoisi : (optA[0]?.cle ?? "");
+  const b = optB.some((x) => x.cle === bChoisi) ? bChoisi : (optB[0]?.cle ?? "");
+  const c = optC.some((x) => x.cle === cChoisi) ? cChoisi : (optC[1]?.cle ?? optC[0]?.cle ?? "");
+  const possible = (t: TypeContrainte) => {
+    const [ga, gb] = ELEMENTS[t];
+    if (!caracteristiques(A, ga, t === "tangence").length) return false;
+    if (gb && !caracteristiques(B, gb).length) return false;
+    return esquisses.length === 2 || gb !== "sommet" || caracteristiques(A, "sommet").length > 1;
+  };
   const ajouter = () => {
-    const params: Record<string, unknown> = { type, objetA: A.id, a: `${ka}[${a}]`, pilotante };
+    if (!a || (kb && !b)) return;
+    const params: Record<string, unknown> = { type, objetA: A.id, a, pilotante };
     if (kb) {
       params["objetB"] = B.id;
-      params["b"] = `${kb}[${b}]`;
+      params["b"] = b;
+    }
+    if (type === "rayon" || type === "diametre") {
+      const v = nombre(valeur);
+      if (!Number.isFinite(v) || v <= 0) return;
+      params["valeur"] = { value: v, unit: "m" };
     }
     if (type === "distance") {
       const v = nombre(valeur);
@@ -248,7 +275,7 @@ export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: Occurre
       if (!angle.trim() || !Number.isFinite(v)) return;
       params["angle"] = { value: v, unit: "deg" };
     }
-    if (type === "symetrie") params["c"] = `sommet[${c}]`;
+    if (type === "symetrie") params["c"] = c;
     onCommandes([{ type: "contrainte.ajouter", params }], `Contrainte : ${LIBELLES_CONTRAINTE[type]}`);
   };
   return (
@@ -265,7 +292,7 @@ export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: Occurre
             return (
               <li key={r.id} className={p.etat === "a-reparer" ? "a-reparer" : undefined}>
                 <span>{LIBELLES_CONTRAINTE[p.type]} · {p.a}{p.b ? ` ↔ ${p.b}` : ""}{p.c ? ` et ${p.c}` : ""}{p.valeur ? ` = ${p.valeur.value.toString().replace(".", ",")} m` : ""}{p.angle ? ` = ${p.angle.value.toString().replace(".", ",")}°` : ""}{p.position ? ` en (${p.position.x.toFixed(3).replace(".", ",")} ; ${p.position.y.toFixed(3).replace(".", ",")})` : ""}{!p.pilotante ? " (contrôle)" : ""}{p.etat === "a-reparer" ? " · à réparer" : ""}</span>
-                {p.type === "distance" && p.etat === "ok" && !readOnly && (
+                {(p.type === "distance" || p.type === "rayon" || p.type === "diametre") && p.etat === "ok" && !readOnly && (
                   <input aria-label="Nouvelle valeur (m)" inputMode="decimal" defaultValue={p.valeur?.value.toString().replace(".", ",")} onKeyDown={(e) => {
                     e.stopPropagation();
                     if (e.key === "Enter") {
@@ -292,23 +319,24 @@ export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: Occurre
       {!readOnly && (
         <div className="ajout-contrainte">
           <label>Type
-            <select value={type} onChange={(e) => { setType(e.target.value as TypeContrainte); setA(0); setB(0); setC(1); }}>
-              {(Object.keys(ELEMENTS) as TypeContrainte[]).filter((t) => esquisses.length === 2 || ELEMENTS[t][1] !== "sommet" || A.params.points.length > 1).map((t) => <option key={t} value={t}>{LIBELLES_CONTRAINTE[t]}</option>)}
+            <select value={type} data-contrainte-type onChange={(e) => { setType(e.target.value as TypeContrainte); setA(""); setB(""); setC(""); }}>
+              {(Object.keys(ELEMENTS) as TypeContrainte[]).filter(possible).map((t) => <option key={t} value={t}>{LIBELLES_CONTRAINTE[t]}</option>)}
             </select>
           </label>
-          <label>{type === "symetrie" ? "Axe (segment)" : ka === "sommet" ? "Sommet" : "Segment"} de {A.id}
-            <select value={a} onChange={(e) => setA(Number(e.target.value))}>{options(A, ka).map((i) => <option key={i} value={i}>{i + 1}</option>)}</select>
+          <label>{type === "symetrie" ? "Axe (segment)" : ka === "sommet" ? "Sommet" : ka === "cercle" ? "Cercle" : type === "tangence" ? "Segment ou cercle" : "Segment"} de {A.id}
+            <select value={a} onChange={(e) => setA(e.target.value)}>{optA.map((x) => <option key={x.cle} value={x.cle}>{x.libelle}</option>)}</select>
           </label>
           {kb && (
-            <label>{kb === "sommet" ? "Sommet" : "Segment"} de {B.id}
-              <select value={b} onChange={(e) => setB(Number(e.target.value))}>{options(B, kb).map((i) => <option key={i} value={i}>{i + 1}</option>)}</select>
+            <label>{kb === "sommet" ? "Sommet" : kb === "cercle" ? "Cercle" : "Segment"} de {B.id}
+              <select value={b} onChange={(e) => setB(e.target.value)}>{optB.map((x) => <option key={x.cle} value={x.cle}>{x.libelle}</option>)}</select>
             </label>
           )}
           {type === "symetrie" && (
             <label>Symétrique : sommet de {B.id}
-              <select value={c} onChange={(e) => setC(Number(e.target.value))}>{options(B, "sommet").map((i) => <option key={i} value={i}>{i + 1}</option>)}</select>
+              <select value={c} onChange={(e) => setC(e.target.value)}>{optC.map((x) => <option key={x.cle} value={x.cle}>{x.libelle}</option>)}</select>
             </label>
           )}
+          {(type === "rayon" || type === "diametre") && <label>{type === "rayon" ? "Rayon" : "Diamètre"} (m)<input inputMode="decimal" data-contrainte-valeur value={valeur} onChange={(e) => setValeur(e.target.value)} onKeyDown={(e) => e.stopPropagation()} /></label>}
           {type === "angle" && <label>Angle de a vers b (°)<input inputMode="decimal" value={angle} onChange={(e) => setAngle(e.target.value)} onKeyDown={(e) => e.stopPropagation()} /></label>}
           {type === "distance" && (
             <>
