@@ -863,6 +863,29 @@ await page.waitForSelector(".plan2d");
       renomme = (await modele(pid)).modele.calques[cal.id]?.nom ?? null;
       if (renomme !== "Calque e2e renommé") await page.waitForTimeout(500);
     }
+    // Calques imbriqués (D-080) : un parent créé, le calque rangé dessous, masquer le parent masque l'enfant.
+    await page.locator("[data-calque-nouveau]").fill("Parent e2e");
+    await page.locator('.nav-gerer-calques form button[type="submit"]').click();
+    let parent = null;
+    for (let k = 0; k < 30 && !parent; k++) {
+      parent = Object.values((await modele(pid)).modele.calques).find((c) => c.nom === "Parent e2e") ?? null;
+      if (!parent) await page.waitForTimeout(500);
+    }
+    await page.locator("[data-calque-choix]").selectOption(cal.id);
+    await page.locator("[data-calque-parent]").selectOption(parent.id);
+    let range = false;
+    for (let k = 0; k < 30 && !range; k++) {
+      range = (await modele(pid)).modele.calques[cal.id]?.parentId === parent.id;
+      if (!range) await page.waitForTimeout(500);
+    }
+    await page.locator(`.nav-calques li:has-text("Parent e2e") button[title="Masquer"]`).click();
+    let enfantMasque = false;
+    for (let k = 0; k < 30 && !enfantMasque; k++) {
+      enfantMasque = (await modele(pid)).modele.calques[cal.id]?.visible === false;
+      if (!enfantMasque) await page.waitForTimeout(500);
+    }
+    check("calques imbriqués : rangé sous un parent, masquer le parent masque le sous-calque", range && enfantMasque, `${range} · ${enfantMasque}`);
+    await page.locator("[data-calque-choix]").selectOption(cal.id);
     await page.locator("[data-calque-supprimer]").click();
     for (let k = 0; k < 30 && !supprime; k++) {
       supprime = !(await modele(pid)).modele.calques[cal.id];

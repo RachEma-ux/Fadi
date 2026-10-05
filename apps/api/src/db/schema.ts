@@ -340,6 +340,7 @@ export const atelierCalques = pgTable(
     visible: boolean("visible").notNull().default(true),
     verrouille: boolean("verrouille").notNull().default(false),
     ordre: integer("ordre").notNull().default(0),
+    parentId: text("parent_id"),
   },
   (t) => [primaryKey({ columns: [t.projectId, t.id] })],
 );

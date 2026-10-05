@@ -365,6 +365,6 @@ export function identifiantsCibles(enveloppe: Enveloppe): string[] {
 
 export { CONTRAT_COMMANDES, ErreurCommande, TYPE_RESTAURER, generateurIds, differentiel, appliquerDifferentiel, commandeInverse };
 export type { Commande, Enveloppe, Effets, ContexteCommande, InstantaneDiff, Reducteur };
-export { detecterPieces, type PropositionPiece } from "./organisation.js";
+export { detecterPieces, descendantsCalque, type PropositionPiece } from "./organisation.js";
 export { transformerOccurrence } from "./transformer.js";
 export { validerParams } from "./validation.js";

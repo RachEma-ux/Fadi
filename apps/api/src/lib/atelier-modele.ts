@@ -51,7 +51,7 @@ export async function chargerModele(q: Querier, projectId: string): Promise<Mode
     ),
     relations: Object.fromEntries(relations.map((r): [string, Relation] => [r.id, { id: r.id, kind: r.kind as Relation["kind"], sourceId: r.sourceId, targetId: r.targetId, params: r.params }])),
     definitions: Object.fromEntries(definitions.map((d): [string, Definition] => [d.id, { id: d.id, classe: d.classe as Definition["classe"], nom: d.nom, params: d.params, version: d.version }])),
-    calques: Object.fromEntries(calques.map((c): [string, Calque] => [c.id, { id: c.id, nom: c.nom, couleur: c.couleur, remplissage: c.remplissage, visible: c.visible, verrouille: c.verrouille, ordre: c.ordre }])),
+    calques: Object.fromEntries(calques.map((c): [string, Calque] => [c.id, { id: c.id, nom: c.nom, couleur: c.couleur, remplissage: c.remplissage, visible: c.visible, verrouille: c.verrouille, ordre: c.ordre, ...(c.parentId ? { parentId: c.parentId } : {}) }])),
     groupes: Object.fromEntries(groupes.map((g): [string, Groupe] => [g.id, { id: g.id, nom: g.nom, ...(g.verrouille ? { verrouille: true as const } : {}) }])),
     references: Object.fromEntries(references.map((r): [string, Reference] => [r.id, { id: r.id, proprietaireId: r.proprietaireId, objetId: r.objetId, caracteristique: r.caracteristique, etat: r.etat as Reference["etat"], propositions: r.propositions as Reference["propositions"] }])),
     problemes: Object.fromEntries(problemes.map((p): [string, Probleme] => [p.id, { id: p.id, type: p.type as Probleme["type"], objetId: p.objetId, message: p.message }])),
@@ -105,7 +105,7 @@ export async function remplacerModele(tx: Tx, projectId: string, etat: ModeleAte
   for (const lot of lots(Object.values(etat.objets).map((o) => ligneObjet(projectId, o, modelRevision)))) await tx.insert(atelierObjets).values(lot);
   for (const lot of lots(Object.values(etat.relations).map((r) => ({ projectId, id: r.id, kind: r.kind, sourceId: r.sourceId, targetId: r.targetId, params: r.params })))) await tx.insert(atelierRelations).values(lot);
   for (const lot of lots(Object.values(etat.definitions).map((d) => ({ projectId, id: d.id, classe: d.classe, nom: d.nom, params: d.params, version: d.version })))) await tx.insert(atelierDefinitions).values(lot);
-  for (const lot of lots(Object.values(etat.calques).map((c) => ({ projectId, id: c.id, nom: c.nom, couleur: c.couleur, remplissage: c.remplissage, visible: c.visible, verrouille: c.verrouille, ordre: c.ordre })))) await tx.insert(atelierCalques).values(lot);
+  for (const lot of lots(Object.values(etat.calques).map((c) => ({ projectId, id: c.id, nom: c.nom, couleur: c.couleur, remplissage: c.remplissage, visible: c.visible, verrouille: c.verrouille, ordre: c.ordre, parentId: c.parentId ?? null })))) await tx.insert(atelierCalques).values(lot);
   for (const lot of lots(Object.values(etat.groupes).map((g) => ({ projectId, id: g.id, nom: g.nom, verrouille: g.verrouille === true })))) await tx.insert(atelierGroupes).values(lot);
   for (const lot of lots(Object.values(etat.references).map((r) => ({ projectId, id: r.id, proprietaireId: r.proprietaireId, objetId: r.objetId, caracteristique: r.caracteristique, etat: r.etat, propositions: r.propositions })))) await tx.insert(atelierReferences).values(lot);
   for (const lot of lots(Object.values(etat.problemes).map((p) => ({ projectId, id: p.id, type: p.type, objetId: p.objetId, message: p.message })))) await tx.insert(atelierProblemes).values(lot);
@@ -135,7 +135,7 @@ export async function persisterDifferentiel(tx: Tx, projectId: string, avant: Mo
   await sync("objets", atelierObjets, apres.objets, (o) => ligneObjet(projectId, o, modelRevision));
   await sync("relations", atelierRelations, apres.relations, (r) => ({ projectId, id: r.id, kind: r.kind, sourceId: r.sourceId, targetId: r.targetId, params: r.params }));
   await sync("definitions", atelierDefinitions, apres.definitions, (d) => ({ projectId, id: d.id, classe: d.classe, nom: d.nom, params: d.params, version: d.version }));
-  await sync("calques", atelierCalques, apres.calques, (c) => ({ projectId, id: c.id, nom: c.nom, couleur: c.couleur, remplissage: c.remplissage, visible: c.visible, verrouille: c.verrouille, ordre: c.ordre }));
+  await sync("calques", atelierCalques, apres.calques, (c) => ({ projectId, id: c.id, nom: c.nom, couleur: c.couleur, remplissage: c.remplissage, visible: c.visible, verrouille: c.verrouille, ordre: c.ordre, parentId: c.parentId ?? null }));
   await sync("groupes", atelierGroupes, apres.groupes, (g) => ({ projectId, id: g.id, nom: g.nom, verrouille: g.verrouille === true }));
   await sync("references", atelierReferences, apres.references, (r) => ({ projectId, id: r.id, proprietaireId: r.proprietaireId, objetId: r.objetId, caracteristique: r.caracteristique, etat: r.etat, propositions: r.propositions }));
   await sync("problemes", atelierProblemes, apres.problemes, (p) => ({ projectId, id: p.id, type: p.type, objetId: p.objetId, message: p.message }));

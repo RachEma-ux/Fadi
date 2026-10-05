@@ -241,6 +241,8 @@ CREATE TABLE IF NOT EXISTS atelier_calques (
   ordre integer NOT NULL DEFAULT 0,
   PRIMARY KEY (project_id, id)
 );
+-- Calques imbriqués (D-080) : calque parent (null : à la racine).
+ALTER TABLE atelier_calques ADD COLUMN IF NOT EXISTS parent_id text;
 
 CREATE TABLE IF NOT EXISTS atelier_groupes (
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,

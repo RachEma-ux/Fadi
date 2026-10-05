@@ -4,7 +4,7 @@
  * (clic = sélection, la vue se recentre).
  */
 import { useMemo, useState } from "react";
-import { altimetrieDu, CLASSES, ensemblesPartages, niveauxOrdonnes, type Classe, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { altimetrieDu, descendantsCalque, CLASSES, ensemblesPartages, niveauxOrdonnes, type Classe, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi, type FiltresAffichage } from "../etat-ui";
 import { normaliser } from "../outils";
 
@@ -29,7 +29,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
   const altimetrie = altimetrieDu(etat);
   const [filtre, setFiltre] = useState("");
   const [nouveauNiveau, setNouveauNiveau] = useState<{ nom: string; elevation: string; source: string } | null>(null);
-  const calques = Object.values(etat.calques).sort((a, b) => a.ordre - b.ordre);
+  const calques = arbreCalques(etat);
   const parClasse = useMemo(() => {
     const m = new Map<Classe, OccurrenceQuelconque[]>();
     const f = normaliser(filtre);
@@ -123,7 +123,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
         ) : (
           <ul className="nav-liste nav-calques">
             {calques.map((c) => (
-              <li key={c.id}>
+              <li key={c.id} style={c.profondeur ? { paddingLeft: `${c.profondeur * 0.9}rem` } : undefined} data-calque-profondeur={c.profondeur}>
                 <span className="nav-pastille" style={{ background: c.couleur ?? "transparent" }} aria-hidden="true" />
                 <span className="nav-nom">{c.nom}</span>
                 <button type="button" className="nav-bascule" aria-pressed={c.visible} title={c.visible ? "Masquer" : "Afficher"} disabled={readOnly} onClick={() => onCommandes([{ type: "calque.modifier", params: { id: c.id, visible: !c.visible } }], `${c.visible ? "Masquer" : "Afficher"} ${c.nom}`)}>
@@ -396,6 +396,10 @@ function GererCalques({ etat, onCommandes }: { etat: ModeleAtelier; onCommandes:
             <>
               <input aria-label="Nouveau nom" placeholder={c.nom} value={nom} maxLength={80} onChange={(e) => setNom(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-calque-nom />
               <button type="button" disabled={!nom.trim() || nom.trim() === c.nom} onClick={() => { onCommandes([{ type: "calque.modifier", params: { id: c.id, nom: nom.trim() } }], `Renommer le calque ${c.nom}`); setNom(""); }}>Renommer</button>
+              <select aria-label={`Ranger ${c.nom} sous`} value={c.parentId ?? ""} data-calque-parent onChange={(e) => onCommandes([{ type: "calque.modifier", params: { id: c.id, parentId: e.target.value || null } }], e.target.value ? `Ranger le calque ${c.nom} sous ${etat.calques[e.target.value]?.nom ?? e.target.value}` : `Calque ${c.nom} à la racine`)}>
+                <option value="">à la racine</option>
+                {calques.filter((x) => x.id !== c.id && !descendantsCalque(etat, c.id).includes(x.id)).map((x) => <option key={x.id} value={x.id}>sous {x.nom}</option>)}
+              </select>
               <input type="color" aria-label={`Couleur de ${c.nom}`} value={/^#[0-9a-f]{6}$/i.test(c.couleur ?? "") ? c.couleur! : "#355e52"} onChange={(e) => onCommandes([{ type: "calque.modifier", params: { id: c.id, couleur: e.target.value } }], `Couleur du calque ${c.nom}`)} />
               <button type="button" title="Monter" onClick={() => echanger(-1)} disabled={calques[0]?.id === c.id}>↑<span className="sr-only">Monter {c.nom}</span></button>
               <button type="button" title="Descendre" onClick={() => echanger(1)} disabled={calques[calques.length - 1]?.id === c.id}>↓<span className="sr-only">Descendre {c.nom}</span></button>
@@ -408,4 +412,22 @@ function GererCalques({ etat, onCommandes }: { etat: ModeleAtelier; onCommandes:
       )}
     </details>
   );
+}
+
+/** Calques en arbre (D-080) : chaque parent suivi de ses sous-calques, dans l'ordre ; profondeur pour l'indentation. */
+function arbreCalques(etat: ModeleAtelier): (ModeleAtelier["calques"][string] & { profondeur: number })[] {
+  const tous = Object.values(etat.calques).sort((a, b) => a.ordre - b.ordre || (a.id < b.id ? -1 : 1));
+  const out: (ModeleAtelier["calques"][string] & { profondeur: number })[] = [];
+  const vus = new Set<string>();
+  const poser = (parent: string | undefined, profondeur: number) => {
+    for (const c of tous) {
+      if ((c.parentId && etat.calques[c.parentId] ? c.parentId : undefined) !== parent || vus.has(c.id)) continue;
+      vus.add(c.id);
+      out.push({ ...c, profondeur });
+      poser(c.id, profondeur + 1);
+    }
+  };
+  poser(undefined, 0);
+  for (const c of tous) if (!vus.has(c.id)) out.push({ ...c, profondeur: 0 });
+  return out;
 }

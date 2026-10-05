@@ -150,3 +150,4 @@ Propriétés en tableau, décalage des cercles, arcs et polylignes à arcs (`aju
 Manipulateur 2D : pivot déplaçable, valeur tapée pendant le glissement (`nouveau.test.ts`, e2e, D-077).
 Blocs imbriqués (`bloc.test.ts`, D-078).
 Reconnaissance de formes proposée, gomme (`reconnaissance.test.ts`, e2e, D-079).
+Calques imbriqués (`calques-imbriques.test.ts`, e2e, D-080).

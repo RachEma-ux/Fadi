@@ -34,6 +34,8 @@ export interface Calque {
   visible: boolean;
   verrouille: boolean;
   ordre: number;
+  /** Calque parent (D-080, calques imbriqués) ; absent : à la racine. */
+  parentId?: string;
 }
 
 export type AlignementMur = "gauche" | "axe" | "droite";

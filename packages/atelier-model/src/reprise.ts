@@ -189,6 +189,14 @@ export function planifierReprise(source: ModeleAtelier, cible: ModeleAtelier, op
       ajouts.calques[n] = { ...c, id: n, nom: existant ? `${c.nom} (reprise)` : c.nom, ordre: Object.keys(cible.calques).length + Object.keys(ajouts.calques).length };
     });
   }
+  // Calques imbriqués (D-080) : parent remappé s'il est repris, sinon le calque passe à la racine.
+  for (const c of Object.values(ajouts.calques)) {
+    if (!c.parentId) continue;
+    const parent = table.get(c.parentId);
+    const { parentId: _p, ...reste } = c;
+    void _p;
+    ajouts.calques[c.id] = parent ? { ...reste, parentId: parent } : reste;
+  }
   for (const id of new Set(objets.map((o) => o.groupeId).filter((x): x is string => !!x))) {
     const g = source.groupes[id];
     if (!g) continue;

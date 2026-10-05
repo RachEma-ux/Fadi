@@ -100,6 +100,25 @@ export const reducteursNiveau = {
 // Calques et groupes
 // ---------------------------------------------------------------------------
 
+/** Sous-calques d'un calque, transitivement (D-080). */
+export function descendantsCalque(etat: ModeleAtelier, id: string): string[] {
+  const out: string[] = [];
+  const pile = [id];
+  while (pile.length) {
+    const p = pile.pop()!;
+    for (const c of Object.values(etat.calques)) if (c.parentId === p && !out.includes(c.id) && c.id !== id) { out.push(c.id); pile.push(c.id); }
+  }
+  return out.sort();
+}
+
+function lireParent(etat: ModeleAtelier, p: Brut, id: string): string | null {
+  const parent = lire.chaineOuNull(p, "parentId");
+  if (!parent) return null;
+  if (!etat.calques[parent]) throw new ErreurCommande("precondition", "parentId", `calque parent inconnu : ${parent}`);
+  if (parent === id || descendantsCalque(etat, id).includes(parent)) throw new ErreurCommande("precondition", "parentId", "cycle : un calque ne peut pas être rangé sous lui-même ou sous un de ses sous-calques");
+  return parent;
+}
+
 export const reducteursCalque = {
   creer(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande): ResultatCommande {
     const id = lire.chaineOuNull(p, "id") ?? ctx.ids.nouveau("calque");
@@ -113,6 +132,8 @@ export const reducteursCalque = {
       verrouille: lire.booleen(p, "verrouille", false),
       ordre: lire.nombre(p, "ordre", { optionnel: true, entier: true }) ?? Object.keys(etat.calques).length,
     };
+    const parent = lireParent(etat, p, id);
+    if (parent) calque.parentId = parent;
     const effets = effetsVides();
     effets.crees.push(id);
     return { etat: { ...etat, calques: { ...etat.calques, [id]: calque } }, effets };
@@ -130,9 +151,25 @@ export const reducteursCalque = {
       verrouille: lire.booleen(p, "verrouille", existant.verrouille),
       ordre: p["ordre"] === undefined ? existant.ordre : lire.nombre(p, "ordre", { entier: true })!,
     };
+    if (p["parentId"] !== undefined) {
+      const parent = lireParent(etat, p, id);
+      delete calque.parentId;
+      if (parent) calque.parentId = parent;
+    }
     const effets = effetsVides();
     effets.modifies.push(id);
-    return { etat: { ...etat, calques: { ...etat.calques, [id]: calque } }, effets };
+    let calques = { ...etat.calques, [id]: calque };
+    // Calques imbriqués (D-080) : masquer, afficher, verrouiller ou libérer un calque l'applique à ses descendants
+    // (même commande, même révision) ; un sous-calque reste ensuite réglable seul.
+    for (const cle of ["visible", "verrouille"] as const) {
+      if (p[cle] === undefined || calque[cle] === existant[cle]) continue;
+      for (const d of descendantsCalque(etat, id)) {
+        if (calques[d]![cle] === calque[cle]) continue;
+        calques = { ...calques, [d]: { ...calques[d]!, [cle]: calque[cle] } };
+        effets.modifies.push(d);
+      }
+    }
+    return { etat: { ...etat, calques }, effets };
   },
   supprimer(etat: ModeleAtelier, p: Brut): ResultatCommande {
     const id = lire.chaine(p, "id");
@@ -140,9 +177,18 @@ export const reducteursCalque = {
     const utilise = Object.values(etat.objets).filter((o) => o.calqueId === id);
     if (utilise.length > 0) throw new ErreurCommande("precondition", "id", `le calque ${id} porte ${utilise.length} objet(s) : les réaffecter d'abord (calque.affecter)`);
     const calques = { ...etat.calques };
+    const parentSupprime = calques[id]!.parentId;
     delete calques[id];
     const effets = effetsVides();
     effets.supprimes.push(id);
+    // Sous-calques (D-080) : rattachés au parent du calque supprimé.
+    for (const c of Object.values(calques)) {
+      if (c.parentId !== id) continue;
+      const { parentId: _p, ...reste } = c;
+      void _p;
+      calques[c.id] = parentSupprime ? { ...reste, parentId: parentSupprime } : reste;
+      effets.modifies.push(c.id);
+    }
     // Vues (D-057) et ensembles d'affichage partagés (D-066) qui masquaient ce calque : il sort de leur liste.
     let definitions = etat.definitions;
     for (const d of Object.values(definitions)) {
