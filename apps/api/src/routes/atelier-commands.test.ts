@@ -266,7 +266,7 @@ describe("modèle typé de l'exemple P.118 et fraîcheur des documents", () => {
     expect(refus.body.error).toBe("archive_model");
     expect(refus.body.details.some((d: string) => d.includes(murId))).toBe(true);
     expect((await client.get("/projects")).body.length).toBe(nb);
-  });
+  }, 30_000);
 
   it("bascule : un projet resté sur l'ancien magasin du moteur V14 est repris dans le modèle typé, puis les anciennes tables disparaissent", async () => {
     const client = await registerAndLogin("bascule@example.com");

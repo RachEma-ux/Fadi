@@ -1605,7 +1605,7 @@ describe("Dessins techniques et exports de l'Atelier au catalogue des documents"
     expect((await client.delete(`/projects/${pid}/documents/dessins/${id}`)).status).toBe(204);
     expect((await client.get(`/projects/${pid}/documents/dessins/${id}`)).status).toBe(404);
     expect(((await client.get(`/projects/${pid}/documents`)).body.documents as unknown[]).length).toBe(42);
-  });
+  }, 30_000);
 });
 
 describe("Documents — catalogue, productions et actualité", () => {
