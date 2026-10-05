@@ -1282,6 +1282,35 @@ await page.waitForSelector(".plan2d");
   check("escalier à volées : deux volées et un palier posés au plan (trois points, Entrée)", ok && apres === avant + 2, `outil ${ok} · ${avant} → ${apres}`);
 }
 
+// Loupe de précision au doigt (D-085) : appui tenu en traçant une ligne, la loupe paraît ; relâcher pose le point.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const ok = await choisirOutil("ligne", "Ligne");
+  const z = await page.locator(".plan2d").boundingBox();
+  const toucher = async (type, x, y) => page.evaluate(([t, cx, cy]) => {
+    const el = document.querySelector(".plan2d");
+    el.dispatchEvent(new PointerEvent(t, { pointerType: "touch", pointerId: 77, isPrimary: true, clientX: cx, clientY: cy, button: 0, buttons: t === "pointerup" ? 0 : 1, bubbles: true }));
+  }, [type, x, y]);
+  const avant = Object.keys((await modele(pid)).modele.objets).length;
+  const x0 = z.x + z.width * 0.35;
+  const y0 = z.y + z.height * 0.8;
+  await toucher("pointerdown", x0, y0);
+  await page.waitForTimeout(500);
+  const loupe = (await page.locator("[data-loupe]").count()) === 1;
+  await toucher("pointermove", x0 + 3, y0 + 2);
+  await toucher("pointerup", x0 + 3, y0 + 2);
+  const sansLoupe = (await page.locator("[data-loupe]").count()) === 0;
+  await page.mouse.click(x0 + 120, y0);
+  let apres = avant;
+  for (let k = 0; k < 30 && apres === avant; k++) {
+    apres = Object.keys((await modele(pid)).modele.objets).length;
+    if (apres === avant) await page.waitForTimeout(500);
+  }
+  await page.keyboard.press("Escape");
+  check("loupe au doigt : appui tenu → loupe ; relâcher pose le premier point de la ligne", ok && loupe && sansLoupe && apres === avant + 1, `outil ${ok} · loupe ${loupe} · ${sansLoupe} · ${avant} → ${apres}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

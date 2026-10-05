@@ -2153,3 +2153,17 @@
 .manip-pivot-deplace {
   fill: #6b4f2a;
 }
+
+/* Loupe de précision au doigt (D-085) */
+.plan-loupe-fond {
+  fill: var(--plan-fond);
+}
+.plan-loupe-bord {
+  fill: none;
+  stroke: var(--atelier-accent);
+  stroke-width: 2;
+}
+.plan-loupe-reticule {
+  stroke: #b3261e;
+  stroke-width: 1.5;
+}

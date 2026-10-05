@@ -3,7 +3,7 @@
  * (bouton du milieu, Espace + glisser, deux doigts), accrochages visibles, aperçu du tracé en cours, sélection au
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
-import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { cercleTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
@@ -39,9 +39,13 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const [taille, setTaille] = useState({ w: 800, h: 600 });
   const [accroche, setAccroche] = useState<Accroche | null>(null);
   const [cadre, setCadre] = useState<{ a: Point2; b: Point2 } | null>(null);
-  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer" | "lasso" | "trace" | "manip" | "fini"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean; poignee?: Poignee } | null>(null);
+  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer" | "lasso" | "trace" | "manip" | "fini" | "visee"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean; poignee?: Poignee } | null>(null);
   // Manipulateur 2D (D-070, DA-02-17) : aperçu du glissement d'une poignée ; une seule commande au relâchement.
   const [manip, setManip] = useState<ApercuManip | null>(null);
+  // Loupe de précision au doigt (D-085) : un appui tenu sans bouger passe en visée ; la loupe montre le point accroché.
+  const [loupe, setLoupe] = useState<{ sx: number; sy: number; point: Point2 } | null>(null);
+  const minuterieVisee = useRef<number | null>(null);
+  const idObjets = `plan-objets-${useId().replace(/:/g, "")}`;
   const [lasso, setLasso] = useState<Point2[] | null>(null);
   const lassoPoints = useRef<Point2[]>([]);
   const [decalage, setDecalage] = useState<{ dx: number; dy: number; accroche: Accroche } | null>(null);
@@ -164,6 +168,12 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       return;
     }
     const g = glisse.current;
+    if (g?.mode === "visee") {
+      const a = accrocher(pr.depuis(sx, sy), cache, ui.accrochages, rayon * 2, ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null);
+      setLoupe({ sx, sy, point: a.point });
+      setAccroche(a);
+      return;
+    }
     if (g?.mode === "pan") {
       const dx = (sx - g.x) / g.vue.echelle;
       const dy = (sy - g.y) / g.vue.echelle;
@@ -221,7 +231,11 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   function surAppui(e: ReactPointerEvent<SVGSVGElement>) {
     const el = svgRef.current;
     if (!el) return;
-    el.setPointerCapture(e.pointerId);
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // Pointeur déjà relâché ou inconnu du navigateur : le geste continue sans capture.
+    }
     const { sx, sy } = pointEcran(e);
     pointeurs.current.set(e.pointerId, { x: sx, y: sy });
     if (pointeurs.current.size === 2) {
@@ -268,8 +282,21 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       glisse.current = { mode: "cadre", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
       return;
     }
-    // Au doigt, un glisser sur le fond déplace la vue ; le tracé se fait par touchers successifs.
-    if (e.pointerType === "touch") glisse.current = { mode: "pan", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
+    // Au doigt, un glisser sur le fond déplace la vue ; le tracé se fait par touchers successifs. Un appui tenu
+    // (0,35 s) sans bouger passe en visée avec la loupe : le doigt ajuste le point, le relâcher le pose.
+    if (e.pointerType === "touch") {
+      glisse.current = { mode: "pan", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
+      if (minuterieVisee.current) window.clearTimeout(minuterieVisee.current);
+      minuterieVisee.current = window.setTimeout(() => {
+        const g = glisse.current;
+        if (!g || g.mode !== "pan" || g.bouge || pointeurs.current.size !== 1) return;
+        glisse.current = { ...g, mode: "visee" };
+        etatUi.set({ vue: g.vue });
+        const a = accrocher(g.depart, cache, ui.accrochages, rayon * 2, ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null);
+        setLoupe({ sx: g.x, sy: g.y, point: a.point });
+        setAccroche(a);
+      }, 350);
+    }
   }
 
   function surRelache(e: ReactPointerEvent<SVGSVGElement>) {
@@ -282,6 +309,9 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     }
     const g = glisse.current;
     glisse.current = null;
+    if (minuterieVisee.current) window.clearTimeout(minuterieVisee.current);
+    minuterieVisee.current = null;
+    if (loupe) setLoupe(null);
     if (g?.mode === "fini") return;
     const p = pr.depuis(sx, sy);
     if (g?.mode === "pan" && (g.bouge || e.pointerType !== "touch")) return;
@@ -440,7 +470,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
             ))}
         </g>
       )}
-      <g className="plan-objets">
+      <g className="plan-objets" id={idObjets}>
         {objets.map((o, i) => (
           <Fragment key={o.id}>
             {o.phase ? (
@@ -496,6 +526,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
         {cadre && <CadreSelection a={pr.vers(cadre.a)} b={pr.vers(cadre.b)} />}
         {lasso && lasso.length > 1 && (ui.outil === "main-levee" || ui.outil === "gomme" ? <path className="plan-trace" d={chemin(pr, lasso, false)} data-trace={lasso.length} /> : <path className="plan-lasso" d={chemin(pr, lasso, true)} data-lasso={lasso.length} />)}
       </g>
+      {loupe && <Loupe loupe={loupe} pr={pr} idObjets={idObjets} largeur={taille.w} />}
       <EchelleGraphique echelle={ui.vue.echelle} hauteur={taille.h} />
     </svg>
   );
@@ -795,6 +826,32 @@ function Manipulateur2D({ boite, pr, manip, saisie }: { boite: { min: Point2; ma
       <circle cx={c.x - 30} cy={c.y + 30} r={6} className={boite.pivotDeplace ? "manip-pivot manip-pivot-deplace" : "manip-pivot"} pointerEvents="none" />
       {cible(c.x - 30, c.y + 30, "p", "Déplacer le pivot (glisser, accroché) ; clic : retour au centre")}
       <text x={c.x + 12} y={c.y + 22} className="plan-cote-apercu" role="status" aria-live="polite" data-manip-valeur>{valeur}</text>
+    </g>
+  );
+}
+
+/** Loupe de précision (D-085) : vue agrandie (× 3) autour du point visé, posée au-dessus du doigt, réticule au point accroché. */
+function Loupe({ loupe, pr, idObjets, largeur }: { loupe: { sx: number; sy: number; point: Point2 }; pr: ReturnType<typeof projecteur>; idObjets: string; largeur: number }) {
+  const R = 56;
+  const k = 3;
+  const cx = Math.min(Math.max(loupe.sx, R + 4), largeur - R - 4);
+  const cy = loupe.sy - R - 48 < R + 4 ? loupe.sy + R + 48 : loupe.sy - R - 48;
+  const q = pr.vers(loupe.point);
+  const idClip = `${idObjets}-loupe`;
+  return (
+    <g className="plan-loupe" pointerEvents="none" data-loupe>
+      <defs>
+        <clipPath id={idClip}>
+          <circle cx={cx} cy={cy} r={R} />
+        </clipPath>
+      </defs>
+      <circle cx={cx} cy={cy} r={R} className="plan-loupe-fond" />
+      <g clipPath={`url(#${idClip})`}>
+        <use href={`#${idObjets}`} transform={`translate(${cx} ${cy}) scale(${k}) translate(${-q.x} ${-q.y})`} />
+      </g>
+      <line x1={cx - 10} y1={cy} x2={cx + 10} y2={cy} className="plan-loupe-reticule" />
+      <line x1={cx} y1={cy - 10} x2={cx} y2={cy + 10} className="plan-loupe-reticule" />
+      <circle cx={cx} cy={cy} r={R} className="plan-loupe-bord" />
     </g>
   );
 }
