@@ -440,3 +440,19 @@ describe("manipulateur 2D : valeur saisie (D-077)", () => {
     expect(valeurSaisie({ ...base, poignee: "s" }, 0)).toBeNull();
   });
 });
+
+describe("gomme (D-079)", () => {
+  it("les esquisses traversées sont supprimées en un lot ; les murs jamais ; verrouillée gardée", async () => {
+    const { gommer } = await import("./plan2d/Plan2D");
+    let etat = carre(socle());
+    etat = appliquer(etat, [
+      { type: "esquisse.ligne", params: { id: "t1", niveauId: "rdc", points: [pt(1, 1), pt(3, 1)] } },
+      { type: "esquisse.ligne", params: { id: "t2", niveauId: "rdc", points: [pt(1, 2), pt(3, 2)] } },
+      { type: "esquisse.ligne", params: { id: "t3", niveauId: "rdc", points: [pt(1, 3), pt(3, 3)] } },
+      { type: "objet.verrouiller", params: { ids: ["t3"], verrouille: true } },
+    ]);
+    const r = gommer([pt(2, -1), pt(2, 5)], etat, segmentsDuNiveau(etat, "rdc")) as { commandes: Commande[]; label: string };
+    expect(r.commandes.map((c) => (c.params as { id: string }).id)).toEqual(["t1", "t2"]);
+    expect(r.label).toMatch(/verrouillée/);
+  });
+});

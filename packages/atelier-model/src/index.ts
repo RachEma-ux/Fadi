@@ -50,3 +50,4 @@ export * from "./echanges/bibliotheque.js";
 export * from "./plancher.js";
 export * from "./hachures.js";
 export * from "./blocs-places.js";
+export * from "./reconnaissance.js";

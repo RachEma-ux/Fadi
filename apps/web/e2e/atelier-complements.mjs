@@ -1136,6 +1136,48 @@ await page.waitForSelector(".plan2d");
   check("manipulateur 2D : pivot déplacé, rotation de 90° tapée autour de lui (le milieu du mur bouge, la longueur reste)", deplace && Math.hypot(mil(w1).x - mil(w0).x, mil(w1).y - mil(w0).y) > 0.01 && Math.abs(longueur(w1) - longueur(w0)) < 1e-6 && Math.abs((w1.b.x - w1.a.x) * (w0.b.x - w0.a.x) + (w1.b.y - w1.a.y) * (w0.b.y - w0.a.y)) < 1e-6, `pivot ${deplace} · ${JSON.stringify(mil(w0))} → ${JSON.stringify(mil(w1))}`);
 }
 
+// Forme reconnue proposée puis acceptée, gomme (D-079).
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const P = (x, y) => ({ x: ax + x, y: ay + y, frame: "local", unit: "m" });
+  const rond = Array.from({ length: 16 }, (_, i) => P(120 + 1.5 * Math.cos((i * Math.PI) / 8), 100 + 1.5 * Math.sin((i * Math.PI) / 8)));
+  let rr = { status: 0 };
+  for (let k = 0; k < 5 && rr.status !== 200; k++) rr = await lot(pid, `rf-${Date.now()}-${k}`, (await modele(pid)).revision, [
+    { type: "esquisse.polyligne", params: { id: "croquis-e2e", niveauId: murA.niveauId, points: rond, ferme: true } },
+    { type: "esquisse.ligne", params: { id: "gomme-e2e", niveauId: murA.niveauId, points: [P(130, 100), P(132, 100)] } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("croquis-e2e");
+  await page.locator("[data-reconnaissance] > summary").click();
+  await page.locator('[data-forme-reconnue="cercle"] button').click();
+  let forme = null;
+  for (let k = 0; k < 30 && forme !== "cercle"; k++) {
+    forme = (await modele(pid)).modele.objets["croquis-e2e"]?.params.forme ?? null;
+    if (forme !== "cercle") await page.waitForTimeout(500);
+  }
+  check("forme reconnue : le croquis presque circulaire proposé en cercle, remplacé sur clic (même identifiant)", rr.status === 200 && forme === "cercle", `${rr.status} · ${forme}`);
+  await selectionner("gomme-e2e");
+  const b = await page.locator('.plan2d [data-objet="gomme-e2e"]').boundingBox();
+  const ok = await choisirOutil("gomme", "Gomme");
+  if (b) {
+    const x = b.x + b.width / 2;
+    await page.mouse.move(x, b.y - 30);
+    await page.mouse.down();
+    for (let k = 1; k <= 12; k++) await page.mouse.move(x, b.y - 30 + k * 6);
+    await page.mouse.up();
+  }
+  let gommee = false;
+  for (let k = 0; k < 30 && !gommee; k++) {
+    gommee = !(await modele(pid)).modele.objets["gomme-e2e"];
+    if (!gommee) await page.waitForTimeout(500);
+  }
+  await page.keyboard.press("Escape");
+  check("gomme : le trait traversé est supprimé", ok && gommee, `outil ${ok} · ${JSON.stringify(b)}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

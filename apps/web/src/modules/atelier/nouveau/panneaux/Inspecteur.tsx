@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../../../lib/api";
-import { bibliotheques, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -153,6 +153,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {o.classe === "escalier" && !desactive && <TremieEscalier o={o as Occurrence<"escalier">} etat={etat} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && ["polyligne", "polygone", "rectangle"].includes((o as Occurrence<"esquisse">).params.forme) && <ArrondirSommets key={`arr-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && <ConvertirEsquisse o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
+      {o.classe === "esquisse" && !desactive && ["polyligne", "spline"].includes((o as Occurrence<"esquisse">).params.forme) && <ReconnaitreForme key={`rec-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "mur" && !desactive && <ScinderEnParts o={o as Occurrence<"mur">} onCommandes={onCommandes} />}
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
@@ -1379,6 +1380,37 @@ function TableauProprietes({ sel, readOnly, onCommandes }: { sel: OccurrenceQuel
       )}
       {!readOnly && <button type="button" disabled={!modifiees.length} onClick={enregistrer} data-tableau-enregistrer>Enregistrer {modifiees.length} modification(s)</button>}
       {erreur && <p className="ver-erreur" role="alert">{erreur}</p>}
+    </details>
+  );
+}
+
+/**
+ * Reconnaissance de formes proposée (D-079, DA-01-06) : droite, cercle ou rectangle approchant le tracé, avec l'écart
+ * maximal ; remplacer seulement sur clic (même identifiant, même calque), jamais seul (R3).
+ */
+function ReconnaitreForme({ o, onCommandes }: { o: Occurrence<"esquisse">; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const [ouvert, setOuvert] = useState(false);
+  const q = o.params;
+  const pts = q.forme === "spline" ? pointsSpline(q.points, 8, q.ferme) : q.points;
+  const propositions = ouvert ? reconnaitreForme(pts, q.ferme) : [];
+  const base = { id: o.id, niveauId: o.niveauId, calqueId: o.calqueId };
+  const remplacer = (f: (typeof propositions)[number]) => {
+    const creer: Commande = f.forme === "ligne" ? { type: "esquisse.ligne", params: { ...base, points: f.points } } : f.forme === "cercle" ? { type: "esquisse.cercle", params: { ...base, centre: f.centre, rayon: { value: f.rayon, unit: "m" } } } : { type: "esquisse.polygone", params: { ...base, points: f.points } };
+    onCommandes([{ type: "objet.supprimer", params: { id: o.id } }, creer], `Remplacer ${o.id} par ${f.forme === "polygone" ? "un rectangle" : f.forme === "cercle" ? "un cercle" : "une ligne"} (forme reconnue)`);
+  };
+  return (
+    <details className="inspecteur-historique" data-reconnaissance onToggle={(e) => setOuvert(e.currentTarget.open)}>
+      <summary>Reconnaître une forme</summary>
+      {ouvert && (propositions.length === 0 ? <p className="nav-vide">Aucune forme simple ne s'approche de ce tracé (écart au-delà de 5 % de sa taille).</p> : (
+        <ul className="inspecteur-liste">
+          {propositions.map((f, i) => (
+            <li key={i} data-forme-reconnue={f.forme}>
+              {f.forme === "ligne" ? "Ligne" : f.forme === "cercle" ? `Cercle de rayon ${fmt(f.rayon)} m` : "Rectangle"} · écart maximal {fmt(f.ecart)} m
+              <button type="button" className="lien" onClick={() => remplacer(f)}>Remplacer</button>
+            </li>
+          ))}
+        </ul>
+      ))}
     </details>
   );
 }

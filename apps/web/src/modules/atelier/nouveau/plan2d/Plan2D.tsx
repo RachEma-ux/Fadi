@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { cercleTroisPoints, distance, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { cercleTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -238,7 +238,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     }
     if (e.button !== 0) return;
     // Main levée (D-067, DA-01-06) : le tracé suit le pointeur (souris, stylet ou doigt) jusqu'au relâchement.
-    if (ui.outil === "main-levee" && !readOnly) {
+    if ((ui.outil === "main-levee" || ui.outil === "gomme") && !readOnly) {
       lassoPoints.current = [p];
       glisse.current = { mode: "trace", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
       return;
@@ -321,7 +321,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       const brut = lassoPoints.current;
       lassoPoints.current = [];
       setLasso(null);
-      const r = traceMainLevee(brut, ui, e.altKey);
+      const r = ui.outil === "gomme" ? gommer(brut, etat, cache) : traceMainLevee(brut, ui, e.altKey);
       if ("message" in r) etatUi.set({ aide: r.message });
       else onCommandes(r.commandes, r.label);
       return;
@@ -494,7 +494,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
         })}
         {accroche && accroche.type !== "libre" && <MarqueAccroche a={accroche} pr={pr} />}
         {cadre && <CadreSelection a={pr.vers(cadre.a)} b={pr.vers(cadre.b)} />}
-        {lasso && lasso.length > 1 && (ui.outil === "main-levee" ? <path className="plan-trace" d={chemin(pr, lasso, false)} data-trace={lasso.length} /> : <path className="plan-lasso" d={chemin(pr, lasso, true)} data-lasso={lasso.length} />)}
+        {lasso && lasso.length > 1 && (ui.outil === "main-levee" || ui.outil === "gomme" ? <path className="plan-trace" d={chemin(pr, lasso, false)} data-trace={lasso.length} /> : <path className="plan-lasso" d={chemin(pr, lasso, true)} data-lasso={lasso.length} />)}
       </g>
       <EchelleGraphique echelle={ui.vue.echelle} hauteur={taille.h} />
     </svg>
@@ -650,6 +650,28 @@ export function traceMainLevee(brut: readonly Point2[], ui: EtatUi, courbe: bool
   if (ferme && points.length < 3) return { message: "Tracé fermé trop petit." };
   const forme = courbe ? "spline" : "polyligne";
   return { commandes: [{ type: `esquisse.${forme}`, params: { niveauId: ui.niveauId, points, ferme } }], label: `Main levée : ${forme === "spline" ? "courbe" : "polyligne"} de ${points.length} points${ferme ? " (fermée)" : ""}` };
+}
+
+/**
+ * Gomme (D-079, DA-01-06) : les esquisses que le tracé traverse sont supprimées, en un seul lot ; les esquisses
+ * verrouillées restent et sont dites. Les autres classes (murs, pièces…) ne sont jamais gommées.
+ */
+export function gommer(trace: readonly Point2[], etat: ModeleAtelier, cache: { segments: readonly { a: Point2; b: Point2; objetId: string }[] }): { commandes: Commande[]; label: string } | { message: string } {
+  if (trace.length < 2) return { message: "Glissez la gomme à travers les traits à effacer." };
+  const touches = new Set<string>();
+  for (const s of cache.segments) {
+    if (touches.has(s.objetId) || etat.objets[s.objetId]?.classe !== "esquisse") continue;
+    for (let i = 0; i + 1 < trace.length; i++) {
+      if (intersectionSegments(s.a, s.b, trace[i]!, trace[i + 1]!)) {
+        touches.add(s.objetId);
+        break;
+      }
+    }
+  }
+  const verrouilles = [...touches].filter((id) => raisonVerrou(etat, etat.objets[id]!));
+  const ids = [...touches].filter((id) => !verrouilles.includes(id)).sort();
+  if (!ids.length) return { message: verrouilles.length ? `Esquisses verrouillées, non gommées : ${verrouilles.join(", ")}.` : "Aucun trait d'esquisse traversé." };
+  return { commandes: ids.map((id) => ({ type: "objet.supprimer", params: { id } })), label: `Gommer ${ids.length} esquisse(s)${verrouilles.length ? ` (${verrouilles.length} verrouillée(s) gardée(s))` : ""}` };
 }
 
 // ---------------------------------------------------------------------------
