@@ -175,6 +175,8 @@ export interface ParamsEsquisse {
    * un par segment (fermeture comprise) ; absent = tous droits.
    */
   renflements?: number[];
+  /** Courbe (D-082) : tangente imposée à chaque point (vecteur en m), null = libre ; absent = toutes libres. */
+  tangentes?: ({ x: number; y: number } | null)[];
 }
 
 export interface ParamsReferencePlan extends Contour {

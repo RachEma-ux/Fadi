@@ -1201,6 +1201,29 @@ await page.waitForSelector(".plan2d");
   check("gomme : le trait traversé est supprimé", ok && gommee, `outil ${ok} · ${JSON.stringify(b)}`);
 }
 
+// Tangente imposée à une courbe (D-082).
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const P = (x, y) => ({ x: ax + x, y: ay + y, frame: "local", unit: "m" });
+  let rs = { status: 0 };
+  for (let k = 0; k < 5 && rs.status !== 200; k++) rs = await lot(pid, `sp-${Date.now()}-${k}`, (await modele(pid)).revision, [{ type: "esquisse.spline", params: { id: "courbe-e2e", niveauId: murA.niveauId, points: [P(140, 100), P(144, 100), P(148, 100)] } }]);
+  await ouvrir(pid);
+  await selectionner("courbe-e2e");
+  await page.locator("[data-tangentes] > summary").click();
+  await page.locator("[data-tangente-angle]").fill("90");
+  await page.locator("[data-tangente-longueur]").fill("2");
+  await page.locator("[data-tangente-imposer]").click();
+  let t = null;
+  for (let k = 0; k < 30 && !t; k++) {
+    t = (await modele(pid)).modele.objets["courbe-e2e"]?.params.tangentes?.[0] ?? null;
+    if (!t) await page.waitForTimeout(500);
+  }
+  check("courbe : tangente imposée au premier point depuis l'inspecteur (90°, 2 m)", rs.status === 200 && !!t && Math.abs(t.x) < 1e-9 && Math.abs(t.y - 2) < 1e-9, `${rs.status} · ${JSON.stringify(t)}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

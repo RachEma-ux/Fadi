@@ -335,7 +335,7 @@ function Esquisse2D({ o, pr, selectionne, survole }: { o: Occurrence<"esquisse">
       return <path d={chemin(pr, pts, false)} {...commun} />;
     }
     case "spline":
-      return <path d={chemin(pr, pointsSpline(p.points, 8, p.ferme), p.ferme)} {...commun} />;
+      return <path d={chemin(pr, pointsSpline(p.points, 8, p.ferme, p.tangentes), p.ferme)} {...commun} />;
     case "construction":
       return <path d={chemin(pr, p.points, false)} {...commun} strokeDasharray="8 4 2 4" strokeWidth={0.8} />;
     case "hachure": {

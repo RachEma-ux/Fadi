@@ -87,7 +87,7 @@ function dessiner(d: Dxf, etat: ModeleAtelier, o: OccurrenceQuelconque): void {
       if (p.forme === "cercle" && p.centre && p.rayon) d.cercle(calque, p.centre, p.rayon.value);
       else if (p.forme === "ellipse" && p.centre && p.rayon && p.rayonB) d.polyligne(calque, pointsEllipse(p.centre, p.rayon.value, p.rayonB.value, p.rotation?.value ?? 0), true);
       else if (p.forme === "arc" && p.centre && p.rayon) d.polyligne(calque, pointsArc(p.centre, p.rayon.value, p.angleDebut?.value ?? 0, p.angleFin?.value ?? 360), false);
-      else if (p.forme === "spline") d.polyligne(calque, pointsSpline(p.points, 8, p.ferme), p.ferme);
+      else if (p.forme === "spline") d.polyligne(calque, pointsSpline(p.points, 8, p.ferme, p.tangentes), p.ferme);
       else if (p.forme === "rectangle" && p.points.length === 2) {
         const [a, b] = [p.points[0]!, p.points[1]!];
         d.polyligne(calque, [a, { x: b.x, y: a.y }, b, { x: a.x, y: b.y }], true);

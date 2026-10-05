@@ -95,7 +95,9 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
       const ech = (x: { value: number; unit: "m" } | null | undefined) => (x && k !== 1 ? { value: x.value * k, unit: "m" as const } : x);
       // Segments en arc (D-063) : le miroir inverse le sens de chaque arc ; les autres transformations le gardent.
       const renflements = q.renflements && t.type === "miroir" ? q.renflements.map((x) => (x === 0 ? 0 : -x)) : q.renflements;
-      return { ...o, params: { ...q, points: q.points.map(T), centre: q.centre ? T(q.centre) : null, rayon: ech(q.rayon) ?? null, angleDebut, angleFin, ...(q.forme === "ellipse" ? { rayonB: ech(q.rayonB) ?? null, rotation: rotation ?? null } : {}), ...(renflements ? { renflements } : {}) } };
+      // Tangentes de courbe (D-082) : partie linéaire de la transformation (vecteurs).
+      const tangentes = q.tangentes ? q.tangentes.map((v) => (v ? (() => { const a = T(pt(0, 0)); const b = T(pt(v.x, v.y)); return { x: Math.round((b.x - a.x) * 1e9) / 1e9, y: Math.round((b.y - a.y) * 1e9) / 1e9 }; })() : null)) : undefined;
+      return { ...o, params: { ...q, ...(tangentes ? { tangentes } : {}), points: q.points.map(T), centre: q.centre ? T(q.centre) : null, rayon: ech(q.rayon) ?? null, angleDebut, angleFin, ...(q.forme === "ellipse" ? { rayonB: ech(q.rayonB) ?? null, rotation: rotation ?? null } : {}), ...(renflements ? { renflements } : {}) } };
     }
     case "cotation":
       return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
@@ -751,7 +753,7 @@ function limiteDe(o: OccurrenceQuelconque): LimiteCoupe | null {
     if (q.forme === "cercle" && q.centre && q.rayon) return { type: "cercle", c: q.centre, r: q.rayon.value };
     if (q.forme === "arc" && q.centre && q.rayon) return { type: "segments", segs: segs(pointsArc(q.centre, q.rayon.value, q.angleDebut?.value ?? 0, q.angleFin?.value ?? 360, 128), false) };
     if (q.forme === "ellipse" && q.centre && q.rayon && q.rayonB) return { type: "segments", segs: segs(pointsEllipse(q.centre, q.rayon.value, q.rayonB.value, q.rotation?.value ?? 0, 128), true) };
-    if (q.forme === "spline") return { type: "segments", segs: segs(pointsSpline(q.points, 16, q.ferme), q.ferme) };
+    if (q.forme === "spline") return { type: "segments", segs: segs(pointsSpline(q.points, 16, q.ferme, q.tangentes), q.ferme) };
     if (q.forme === "rectangle" && q.points.length === 2) {
       const [a, b] = [q.points[0]!, q.points[1]!];
       return { type: "segments", segs: segs([a, pt(b.x, a.y), b, pt(a.x, b.y)], true) };
@@ -1088,7 +1090,7 @@ function repeterSurTrajet(etat: ModeleAtelier, sel: OccurrenceQuelconque[], p: B
   if (!tr || tr.classe !== "esquisse" || !["ligne", "polyligne", "polygone", "spline", "construction"].includes(tr.params.forme)) throw new ErreurCommande("precondition", "trajetId", `trajectoire : ligne, polyligne, polygone ou spline attendue (${trajetId})`);
   if (sel.some((o) => o.id === trajetId)) throw new ErreurCommande("precondition", "cibles", "la trajectoire ne fait pas partie de la sélection répétée");
   const ferme = tr.params.ferme || tr.params.forme === "polygone";
-  const brut = tr.params.forme === "spline" ? pointsSpline(tr.params.points, 16, ferme) : tr.params.points;
+  const brut = tr.params.forme === "spline" ? pointsSpline(tr.params.points, 16, ferme, tr.params.tangentes) : tr.params.points;
   const pts: Vec[] = ferme ? [...brut, brut[0]!] : [...brut];
   const cumul = [0];
   for (let i = 1; i < pts.length; i++) cumul.push(cumul[i - 1]! + distance(pts[i - 1]!, pts[i]!));

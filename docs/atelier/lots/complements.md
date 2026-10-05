@@ -152,3 +152,4 @@ Blocs imbriqués (`bloc.test.ts`, D-078).
 Reconnaissance de formes proposée, gomme (`reconnaissance.test.ts`, e2e, D-079).
 Calques imbriqués (`calques-imbriques.test.ts`, e2e, D-080).
 Notifications ciblées des auteurs d'objets modifiés (`atelier-commands.test.ts`, D-081).
+Tangentes imposées des courbes (`tangentes.test.ts`, e2e, D-082).

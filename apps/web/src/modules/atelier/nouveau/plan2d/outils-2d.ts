@@ -271,7 +271,7 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       for (const o of Object.values(etat.objets) as OccurrenceQuelconque[]) {
         if (!estTrajet(o)) continue;
         const ferme = o.params.ferme || o.params.forme === "polygone";
-        const q = o.params.forme === "spline" ? pointsSpline(o.params.points, 16, ferme) : o.params.points;
+        const q = o.params.forme === "spline" ? pointsSpline(o.params.points, 16, ferme, o.params.tangentes) : o.params.points;
         const n = q.length;
         for (let i = 0; i + (ferme ? 0 : 1) < n; i++) {
           const d = projectionSurSegment(pts[0]!, q[i]!, q[(i + 1) % n]!).distance;

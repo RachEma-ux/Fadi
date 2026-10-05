@@ -426,16 +426,33 @@ export function pointsArc(centre: Vec, rayon: number, angleDebutDeg: number, ang
 }
 
 /** Spline de Catmull-Rom centripète par les points de contrôle (D-012), `n` échantillons par segment. */
-export function pointsSpline(controle: readonly Vec[], n = 8, ferme = false): Point2[] {
+export function pointsSpline(controle: readonly Vec[], n = 8, ferme = false, tangentes?: readonly (Vec | null)[] | null): Point2[] {
   if (controle.length < 2) return controle.map((p) => pt(p.x, p.y));
   const pts = ferme ? [controle[controle.length - 1]!, ...controle, controle[0]!, controle[1]!] : [controle[0]!, ...controle, controle[controle.length - 1]!];
   const out: Point2[] = [];
   const tj = (ti: number, pi: Vec, pj: Vec): number => ti + Math.sqrt(distance(pi, pj));
+  const N = controle.length;
   for (let i = 0; i + 3 < pts.length; i++) {
     const p0 = pts[i]!;
     const p1 = pts[i + 1]!;
     const p2 = pts[i + 2]!;
     const p3 = pts[i + 3]!;
+    // Tangentes imposées (D-082) : segment en Hermite cubique, tangente libre = (suivant − précédent) / 2.
+    const ta = tangentes?.[i % N] ?? null;
+    const tb = tangentes?.[(i + 1) % N] ?? null;
+    if (ta || tb) {
+      const m1 = ta ?? mul(sub(p2, p0), 0.5);
+      const m2 = tb ?? mul(sub(p3, p1), 0.5);
+      for (let k = 0; k < n; k++) {
+        const s = k / n;
+        const h00 = 2 * s ** 3 - 3 * s ** 2 + 1;
+        const h10 = s ** 3 - 2 * s ** 2 + s;
+        const h01 = -2 * s ** 3 + 3 * s ** 2;
+        const h11 = s ** 3 - s ** 2;
+        out.push(pt(h00 * p1.x + h10 * m1.x + h01 * p2.x + h11 * m2.x, h00 * p1.y + h10 * m1.y + h01 * p2.y + h11 * m2.y));
+      }
+      continue;
+    }
     const t0 = 0;
     const t1 = tj(t0, p0, p1) || 1e-6;
     const t2 = tj(t1, p1, p2) || t1 + 1e-6;

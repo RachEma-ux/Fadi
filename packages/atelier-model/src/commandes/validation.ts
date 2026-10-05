@@ -187,6 +187,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       motif: lire.chaineOuNull(p, "motif"),
       ...(forme === "ellipse" ? { rayonB, rotation: lire.angle(p, "rotation", { optionnel: true }) ?? { value: 0, unit: "deg" } } : {}),
       ...renflementsDe(p, forme, points.length, lire.booleen(p, "ferme", false)),
+      ...tangentesDe(p, forme, points.length),
     };
   },
   "reference-plan"(_etat, p) {
@@ -256,6 +257,25 @@ function ouverture(etat: ModeleAtelier, p: Brut): ParamsParClasse["porte"] {
     allege: lire.longueur(p, "allege", { optionnel: true }),
     repere: lire.chaineOuNull(p, "repere"),
   };
+}
+
+/**
+ * Tangentes imposées d'une courbe (D-082) : une entrée par point, `null` = tangente libre (courbe passant par les
+ * points) ; vecteur en mètres (direction et intensité). Absent, ou toutes libres : clé omise.
+ */
+function tangentesDe(p: Brut, forme: string, n: number): { tangentes?: ({ x: number; y: number } | null)[] } {
+  const brut = p["tangentes"];
+  if (brut === undefined || brut === null) return {};
+  if (forme !== "spline") throw new ErreurCommande("invalide", "tangentes", "tangentes réservées aux courbes (spline)");
+  if (!Array.isArray(brut) || brut.length !== n) throw new ErreurCommande("invalide", "tangentes", `une tangente (ou null) par point : ${n} attendue(s)`);
+  const t = brut.map((v, i) => {
+    if (v === null) return null;
+    const q = v as { x?: unknown; y?: unknown };
+    if (typeof q.x !== "number" || typeof q.y !== "number" || !Number.isFinite(q.x) || !Number.isFinite(q.y)) throw new ErreurCommande("invalide", `tangentes[${i}]`, "vecteur { x, y } en mètres, ou null");
+    if (Math.hypot(q.x, q.y) < 1e-9) throw new ErreurCommande("invalide", `tangentes[${i}]`, "tangente nulle : utiliser null (libre)");
+    return { x: q.x, y: q.y };
+  });
+  return t.some((x) => x !== null) ? { tangentes: t } : {};
 }
 
 export function validerParams<C extends Classe>(etat: ModeleAtelier, classe: C, params: Brut): ParamsParClasse[C] {

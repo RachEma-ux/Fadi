@@ -402,7 +402,7 @@ function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly Occu
         if (p.forme === "cercle" && p.centre && p.rayon) c.cercle(p.centre, p.rayon.value, trait, o.id);
         else if (p.forme === "ellipse" && p.centre && p.rayon && p.rayonB) c.poly(pointsEllipse(p.centre, p.rayon.value, p.rayonB.value, p.rotation?.value ?? 0), true, trait, null, o.id);
         else if (p.forme === "arc" && p.centre && p.rayon) c.poly(pointsArc(p.centre, p.rayon.value, p.angleDebut?.value ?? 0, p.angleFin?.value ?? 360), false, trait, null, o.id);
-        else if (p.forme === "spline") c.poly(pointsSpline(p.points, 8, p.ferme), p.ferme, trait, null, o.id);
+        else if (p.forme === "spline") c.poly(pointsSpline(p.points, 8, p.ferme, p.tangentes), p.ferme, trait, null, o.id);
         else if (p.forme === "rectangle" && p.points.length === 2) {
           const [q1, q2] = [p.points[0]!, p.points[1]!];
           c.poly([q1, { x: q2.x, y: q1.y }, q2, { x: q1.x, y: q2.y }], true, trait, null, o.id);

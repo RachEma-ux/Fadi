@@ -119,7 +119,7 @@ export function convertirEsquisse(etat: ModeleAtelier, p: Brut): ResultatCommand
       if (ferme && points.length > 1) points.pop();
     } else if (source === "spline") {
       ferme = q.ferme;
-      points = pointsSpline(q.points, segments, q.ferme);
+      points = pointsSpline(q.points, segments, q.ferme, q.tangentes);
     } else if (source === "arc") {
       if (!q.centre || !q.rayon) throw new ErreurCommande("precondition", "id", "arc sans centre ni rayon");
       points = pointsArc(q.centre, q.rayon.value, q.angleDebut?.value ?? 0, q.angleFin?.value ?? 360, segments);

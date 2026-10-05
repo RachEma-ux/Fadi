@@ -153,6 +153,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {o.classe === "escalier" && !desactive && <TremieEscalier o={o as Occurrence<"escalier">} etat={etat} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && ["polyligne", "polygone", "rectangle"].includes((o as Occurrence<"esquisse">).params.forme) && <ArrondirSommets key={`arr-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && <ConvertirEsquisse o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
+      {o.classe === "esquisse" && !desactive && (o as Occurrence<"esquisse">).params.forme === "spline" && <TangentesCourbe key={`tan-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && ["polyligne", "spline"].includes((o as Occurrence<"esquisse">).params.forme) && <ReconnaitreForme key={`rec-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "mur" && !desactive && <ScinderEnParts o={o as Occurrence<"mur">} onCommandes={onCommandes} />}
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
@@ -1391,7 +1392,7 @@ function TableauProprietes({ sel, readOnly, onCommandes }: { sel: OccurrenceQuel
 function ReconnaitreForme({ o, onCommandes }: { o: Occurrence<"esquisse">; onCommandes: PropsInspecteur["onCommandes"] }) {
   const [ouvert, setOuvert] = useState(false);
   const q = o.params;
-  const pts = q.forme === "spline" ? pointsSpline(q.points, 8, q.ferme) : q.points;
+  const pts = q.forme === "spline" ? pointsSpline(q.points, 8, q.ferme, q.tangentes) : q.points;
   const propositions = ouvert ? reconnaitreForme(pts, q.ferme) : [];
   const base = { id: o.id, niveauId: o.niveauId, calqueId: o.calqueId };
   const remplacer = (f: (typeof propositions)[number]) => {
@@ -1411,6 +1412,42 @@ function ReconnaitreForme({ o, onCommandes }: { o: Occurrence<"esquisse">; onCom
           ))}
         </ul>
       ))}
+    </details>
+  );
+}
+
+/**
+ * Tangentes d'une courbe (D-082, DA-01-05) : imposer en un point la direction (angle) et l'intensité (m) de la
+ * tangente, ou la libérer ; la courbe passe toujours par ses points.
+ */
+function TangentesCourbe({ o, onCommandes }: { o: Occurrence<"esquisse">; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const n = o.params.points.length;
+  const [i, setI] = useState(0);
+  const [angle, setAngle] = useState("");
+  const [longueur, setLongueur] = useState("");
+  const actuelles = o.params.tangentes ?? Array.from({ length: n }, () => null);
+  const t = actuelles[i] ?? null;
+  const ecrire = (v: { x: number; y: number } | null, label: string) => {
+    const tangentes = Array.from({ length: n }, (_, k) => (k === i ? v : (actuelles[k] ?? null)));
+    onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { tangentes: tangentes.some((x) => x) ? tangentes : null } } }], label);
+  };
+  const a = nombreSaisi(angle);
+  const l = nombreSaisi(longueur);
+  return (
+    <details className="inspecteur-historique" data-tangentes>
+      <summary>Tangentes ({actuelles.filter(Boolean).length} imposée(s))</summary>
+      <div className="nav-formulaire-altimetrie">
+        <label>Point
+          <select value={i} onChange={(e) => setI(Number(e.target.value))} data-tangente-point>
+            {Array.from({ length: n }, (_, k) => <option key={k} value={k}>{k + 1}{actuelles[k] ? " (imposée)" : ""}</option>)}
+          </select>
+        </label>
+        <p className="inspecteur-aide">{t ? `Tangente imposée : ${fmt(Math.round(((Math.atan2(t.y, t.x) * 180) / Math.PI) * 100) / 100)}°, ${fmt(Math.round(Math.hypot(t.x, t.y) * 1000) / 1000)} m.` : "Tangente libre (la courbe suit ses voisins)."}</p>
+        <label>Angle (°)<input inputMode="decimal" value={angle} onChange={(e) => setAngle(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-tangente-angle /></label>
+        <label>Intensité (m)<input inputMode="decimal" value={longueur} onChange={(e) => setLongueur(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-tangente-longueur /></label>
+        <button type="button" disabled={a === null || l === null || !(l > 0)} onClick={() => ecrire({ x: Math.round(l! * Math.cos((a! * Math.PI) / 180) * 1e9) / 1e9, y: Math.round(l! * Math.sin((a! * Math.PI) / 180) * 1e9) / 1e9 }, `Tangente imposée au point ${i + 1} de ${o.id}`)} data-tangente-imposer>Imposer</button>
+        <button type="button" disabled={!t} onClick={() => ecrire(null, `Tangente libérée au point ${i + 1} de ${o.id}`)}>Libérer</button>
+      </div>
     </details>
   );
 }
