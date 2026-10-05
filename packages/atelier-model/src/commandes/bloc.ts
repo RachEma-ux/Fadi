@@ -10,16 +10,33 @@ import { pt, type Point2 } from "../unites.js";
 import { effetsVides, ErreurCommande, lire, type ContexteCommande, type ResultatCommande } from "./base.js";
 import { creerOccurrence } from "./objets.js";
 import { transformerOccurrence } from "./transformer.js";
+import { definitionsImbriquees } from "../blocs-places.js";
+export { definitionsImbriquees };
 
 type Brut = Record<string, unknown>;
 
-/** Classes admises dans un bloc ou un composant : du dessin et des solides, jamais un élément hébergeant (mur…). */
-export const CLASSES_BLOC = ["esquisse", "texte", "solide"] as const;
+/**
+ * Classes admises dans un bloc ou un composant : du dessin, des solides et (D-078) des occurrences d'autres blocs
+ * (blocs imbriqués, sans cycle) ; jamais un élément hébergeant (mur…).
+ */
+export const CLASSES_BLOC = ["esquisse", "texte", "solide", "bloc-occurrence"] as const;
+/** Profondeur d'imbrication au plus (au-delà : refus à la définition, rien dessiné au-delà). */
+export const PROFONDEUR_BLOCS = 8;
 
 export interface ContenuBloc {
   classe: (typeof CLASSES_BLOC)[number];
   params: Record<string, unknown>;
   calqueId: string | null;
+  /** Occurrence imbriquée : définition placée (D-078). */
+  definitionId?: string | null;
+}
+
+/** Profondeur d'imbrication d'une définition (1 : aucun bloc imbriqué). */
+function profondeur(etat: ModeleAtelier, defId: string, garde = 0): number {
+  if (garde > PROFONDEUR_BLOCS + 1) return garde;
+  const d = etat.definitions[defId];
+  const enfants = ((d?.params as unknown as ParamsDefinitionBloc | undefined)?.contenu ?? []).filter((e) => e.classe === "bloc-occurrence" && e.definitionId).map((e) => e.definitionId!);
+  return 1 + Math.max(0, ...enfants.map((x) => profondeur(etat, x, garde + 1)));
 }
 
 export interface ParamsDefinitionBloc {
@@ -65,9 +82,9 @@ function contenuDepuis(etat: ModeleAtelier, cibles: string[], base: Point2): Con
   return cibles.map((id, i) => {
     const o = etat.objets[id];
     if (!o) throw new ErreurCommande("precondition", `cibles[${i}]`, `objet inconnu : ${id}`);
-    if (!(CLASSES_BLOC as readonly string[]).includes(o.classe)) throw new ErreurCommande("precondition", `cibles[${i}]`, `classe « ${o.classe} » refusée dans un bloc (esquisses, textes et solides seulement)`);
+    if (!(CLASSES_BLOC as readonly string[]).includes(o.classe)) throw new ErreurCommande("precondition", `cibles[${i}]`, `classe « ${o.classe} » refusée dans un bloc (esquisses, textes, solides et occurrences de blocs seulement)`);
     const relatif = transformerOccurrence(o, { type: "translation", dx: -base.x, dy: -base.y });
-    return { classe: o.classe as ContenuBloc["classe"], params: relatif.params as unknown as Record<string, unknown>, calqueId: o.calqueId };
+    return { classe: o.classe as ContenuBloc["classe"], params: relatif.params as unknown as Record<string, unknown>, calqueId: o.calqueId, ...(o.classe === "bloc-occurrence" ? { definitionId: o.definitionId } : {}) };
   });
 }
 
@@ -84,6 +101,13 @@ export const reducteursBloc = {
     const pointDeBase = lire.point(p, "pointDeBase")!;
     const cibles = Array.isArray(p["cibles"]) ? (p["cibles"] as unknown[]).filter((x): x is string => typeof x === "string") : [];
     const contenu = contenuDepuis(etat, cibles, pointDeBase);
+    // Blocs imbriqués (D-078) : ni cycle (la définition dans elle-même, directement ou non), ni profondeur excessive.
+    for (const e of contenu) {
+      if (e.classe !== "bloc-occurrence") continue;
+      if (!e.definitionId || !estBloc(etat.definitions[e.definitionId])) throw new ErreurCommande("precondition", "cibles", "occurrence imbriquée sans définition de bloc");
+      if (e.definitionId === id || definitionsImbriquees(etat, e.definitionId).has(id)) throw new ErreurCommande("precondition", "cibles", `cycle : le bloc « ${etat.definitions[e.definitionId]!.nom} » contient déjà ce bloc`);
+      if (profondeur(etat, e.definitionId) >= PROFONDEUR_BLOCS) throw new ErreurCommande("precondition", "cibles", `imbrication de plus de ${PROFONDEUR_BLOCS} niveaux refusée`);
+    }
     const anciens = existante ? (existante.params as unknown as ParamsDefinitionBloc) : null;
     const params: ParamsDefinitionBloc = {
       pointDeBase,
@@ -130,7 +154,7 @@ export function decomposerBloc(etat: ModeleAtelier, o: Occurrence<"bloc-occurren
   const crees: string[] = [];
   for (const e of params.contenu) {
     const id = ctx.ids.nouveau(e.classe);
-    let copie = { id, classe: e.classe, niveauId: o.niveauId, definitionId: null, calqueId: e.calqueId ?? o.calqueId, groupeId: null, phase: o.phase, params: e.params, proprietes: {} } as unknown as OccurrenceQuelconque;
+    let copie = { id, classe: e.classe, niveauId: o.niveauId, definitionId: e.classe === "bloc-occurrence" ? (e.definitionId ?? null) : null, calqueId: e.calqueId ?? o.calqueId, groupeId: null, phase: o.phase, params: e.params, proprietes: {} } as unknown as OccurrenceQuelconque;
     if (o.params.miroir) copie = transformerOccurrence(copie, { type: "miroir", a: pt(0, 0), b: pt(1, 0) });
     if (o.params.echelle !== 1) copie = transformerOccurrence(copie, { type: "echelle", centre: pt(0, 0), facteur: o.params.echelle });
     if (o.params.angle.value) copie = transformerOccurrence(copie, { type: "rotation", centre: pt(0, 0), angleDeg: o.params.angle.value });

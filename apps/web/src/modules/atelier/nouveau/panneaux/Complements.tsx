@@ -159,7 +159,7 @@ export function CreerBloc({ sel, etat, readOnly, onCommandes }: { sel: Occurrenc
     <details className="inspecteur-bloc">
       <summary>Créer un bloc ou un composant</summary>
       {refusees.length > 0 ? (
-        <p className="inspecteur-alerte" role="note">Un bloc ne contient que des esquisses, textes et solides : retirez {refusees.map((o) => o.id).slice(0, 3).join(", ")}{refusees.length > 3 ? "…" : ""} de la sélection.</p>
+        <p className="inspecteur-alerte" role="note">Un bloc ne contient que des esquisses, textes, solides et occurrences de blocs : retirez {refusees.map((o) => o.id).slice(0, 3).join(", ")}{refusees.length > 3 ? "…" : ""} de la sélection.</p>
       ) : (
         <form
           onSubmit={(e) => {

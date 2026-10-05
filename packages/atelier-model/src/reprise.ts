@@ -15,6 +15,7 @@
  */
 import type { Commande } from "./commandes/index.js";
 import { empreinteDe } from "./documents/empreinte.js";
+import { definitionsImbriquees } from "./blocs-places.js";
 import type { Calque, Definition, Groupe, ModeleAtelier, Niveau, OccurrenceQuelconque, Reference, Relation } from "./modele.js";
 
 export const FAMILLES_REPRISE = {
@@ -167,6 +168,8 @@ export function planifierReprise(source: ModeleAtelier, cible: ModeleAtelier, op
     }
     rapport.remarques.push(options.bibliotheque ? `Bibliothèque « ${options.bibliotheque} » : ${definitionsUtilisees.size - avant} définition(s) de blocs et composants retenue(s) en plus des définitions utilisées.` : `Bibliothèque de définitions : ${definitionsUtilisees.size - avant} définition(s) retenue(s) en plus des définitions utilisées (types, blocs, composants).`);
   }
+  // Blocs imbriqués (D-078) : les définitions placées dans les blocs repris suivent.
+  for (const id of [...definitionsUtilisees]) for (const x of definitionsImbriquees(source, id)) definitionsUtilisees.add(x);
   const homonymeDefinition = (d: Definition) => Object.values(cible.definitions).find((x) => x.classe === d.classe && memeNom(x.nom, d.nom));
   const calquesUtilises = new Set(objets.map((o) => o.calqueId).filter((x): x is string => !!x));
   // Calques du contenu des blocs et composants copiés (pas de ceux qui seront remplacés par un homonyme réutilisé).
@@ -213,7 +216,7 @@ export function planifierReprise(source: ModeleAtelier, cible: ModeleAtelier, op
   // Contenu des blocs et composants copiés : calques remappés (un calque non repris est retiré).
   for (const d of Object.values(ajouts.definitions)) {
     if (d.classe !== "bloc" && d.classe !== "composant") continue;
-    const contenu = ((d.params as { contenu?: { calqueId?: string | null }[] }).contenu ?? []).map((e) => ({ ...e, calqueId: e.calqueId && table.has(e.calqueId) ? table.get(e.calqueId)! : null }));
+    const contenu = ((d.params as { contenu?: { calqueId?: string | null; definitionId?: string | null }[] }).contenu ?? []).map((e) => ({ ...e, calqueId: e.calqueId && table.has(e.calqueId) ? table.get(e.calqueId)! : null, ...(e.definitionId ? { definitionId: table.get(e.definitionId) ?? e.definitionId } : {}) }));
     d.params = { ...d.params, contenu };
   }
   // Une feuille ne garde que les vues reprises.

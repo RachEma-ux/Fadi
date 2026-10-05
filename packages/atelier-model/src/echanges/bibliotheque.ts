@@ -6,6 +6,7 @@
  */
 import { estClasse } from "../ontologie.js";
 import { modeleVide, type Calque, type Definition, type ModeleAtelier } from "../modele.js";
+import { definitionsImbriquees } from "../blocs-places.js";
 
 export const FORMAT_BIBLIOTHEQUE = "fadi-bibliotheque/1";
 
@@ -19,10 +20,13 @@ export interface FichierBibliotheque {
 const EXCLUES = ["vue", "feuille", "reference-externe", "vue-3d", "referentiel-classification", "ensemble-affichage"];
 
 export function exporterBibliotheque(etat: ModeleAtelier, nom: string, bibliotheque?: string): FichierBibliotheque {
-  const definitions = Object.values(etat.definitions)
+  const retenues = Object.values(etat.definitions)
     .filter((d) => !EXCLUES.includes(d.classe as string))
-    .filter((d) => !bibliotheque || (d.params as { bibliotheque?: string | null }).bibliotheque === bibliotheque)
-    .sort((a, b) => (a.id < b.id ? -1 : 1));
+    .filter((d) => !bibliotheque || (d.params as { bibliotheque?: string | null }).bibliotheque === bibliotheque);
+  // Blocs imbriqués (D-078) : leurs définitions suivent, même d'une autre bibliothèque.
+  const ids0 = new Set(retenues.map((d) => d.id));
+  for (const d of retenues) for (const x of definitionsImbriquees(etat, d.id)) ids0.add(x);
+  const definitions = [...ids0].map((id) => etat.definitions[id]).filter((d): d is Definition => !!d).sort((a, b) => (a.id < b.id ? -1 : 1));
   const ids = new Set<string>();
   for (const d of definitions) for (const e of ((d.params as { contenu?: { calqueId?: string | null }[] }).contenu ?? [])) if (e.calqueId) ids.add(e.calqueId);
   const calques = [...ids].map((id) => etat.calques[id]).filter((c): c is Calque => !!c);

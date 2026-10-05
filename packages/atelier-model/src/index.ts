@@ -49,3 +49,4 @@ export { ajusterSpline } from "./esquisse/conversion.js";
 export * from "./echanges/bibliotheque.js";
 export * from "./plancher.js";
 export * from "./hachures.js";
+export * from "./blocs-places.js";

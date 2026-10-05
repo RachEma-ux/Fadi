@@ -529,6 +529,9 @@ export const reducteursDefinition = {
     if (["vue", "feuille", "reference-externe", "vue-3d", "referentiel-classification", "ensemble-affichage"].includes(d.classe as string)) throw new ErreurCommande("precondition", "id", `${d.nom} : utiliser la commande propre aux ${d.classe === "reference-externe" ? "références externes (refexterne.detacher)" : d.classe === "vue-3d" ? "vues 3D (vue3d.supprimer)" : d.classe === "referentiel-classification" ? "référentiels (referentiel.retirer)" : d.classe === "ensemble-affichage" ? "ensembles d'affichage (ensemble.supprimer)" : "vues et feuilles"}`);
     const occ = occurrencesDe(etat, id);
     const detacher = lire.booleen(p, "detacher", false);
+    // Bloc placé dans un autre bloc (D-078) : la définition qui l'imbrique est nommée.
+    const parent = (d.classe === "bloc" || d.classe === "composant") ? Object.values(etat.definitions).find((x) => x.id !== id && ((x.params["contenu"] as { definitionId?: string | null }[] | undefined) ?? []).some((e) => e.definitionId === id)) : undefined;
+    if (parent) throw new ErreurCommande("precondition", "id", `« ${d.nom} » est imbriqué dans le bloc « ${parent.nom} » : redéfinir ce bloc d'abord`);
     if (occ.length && (d.classe === "bloc" || d.classe === "composant")) throw new ErreurCommande("precondition", "id", `« ${d.nom} » a ${occ.length} occurrence(s) : les décomposer ou les supprimer d'abord`);
     if (occ.length && !detacher) throw new ErreurCommande("precondition", "id", `le type « ${d.nom} » est utilisé par ${occ.length} objet(s) : indiquer detacher = true (objets sans type) ou substituer un autre type`);
     const objets = { ...etat.objets };

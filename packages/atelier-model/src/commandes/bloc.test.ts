@@ -152,3 +152,34 @@ describe("miroir d'une occurrence de bloc (D-071)", () => {
     expect(appliquerLot(r.etat, lot([r.inverse], "inv")).etat).toEqual(e);
   });
 });
+
+describe("blocs imbriqués (D-078)", () => {
+  it("un bloc contient une occurrence d'un autre : dessin et décomposition composés ; cycle refusé ; export de bibliothèque complet", async () => {
+    const { genererVue } = await import("../documents/vues.js");
+    const { exporterBibliotheque } = await import("../echanges/bibliotheque.js");
+    const { contenuPlace } = await import("../blocs-places.js");
+    let e = appliquerLot(modeleVide(), lot([
+      { type: "niveau.creer", params: { id: "rdc", nom: "RDC", elevation: 0, hauteur: 3 } },
+      { type: "esquisse.ligne", params: { id: "seg", niveauId: "rdc", points: [pt(0, 0), pt(1, 0)] } },
+      { type: "bloc.definir", params: { id: "petit", nom: "Trait", cibles: ["seg"], pointDeBase: pt(0, 0), bibliotheque: "A" } },
+      { type: "bloc.placer", params: { id: "o1", definitionId: "petit", niveauId: "rdc", position: pt(10, 0), angle: { value: 90, unit: "deg" } } },
+      { type: "bloc.definir", params: { id: "grand", nom: "Paire", cibles: ["o1"], pointDeBase: pt(10, 0), bibliotheque: "B" } },
+      { type: "bloc.placer", params: { id: "o2", definitionId: "grand", niveauId: "rdc", position: pt(100, 100), echelle: 2 } },
+    ], "n")).etat;
+    const places = contenuPlace(e, "grand", (e.objets["o2"] as Occurrence<"bloc-occurrence">).params);
+    expect(places).toHaveLength(1);
+    const fin = places[0]!.tr(pt(1, 0));
+    expect(fin.x).toBeCloseTo(100, 9);
+    expect(fin.y).toBeCloseTo(102, 9); // tourné de 90° puis échelle 2
+    expect(places[0]!.k).toBe(2);
+    expect(() => appliquerLot(e, lot([{ type: "bloc.definir", params: { redefinir: "petit", cibles: ["o2"], pointDeBase: pt(0, 0) } }], "c"))).toThrow(/cycle/);
+    const d = appliquerLot(e, lot([{ type: "transformer.decomposer", params: { cibles: ["o2"] } }], "d")).etat;
+    const inner = Object.values(d.objets).find((o) => o.classe === "bloc-occurrence" && o.id !== "o1") as Occurrence<"bloc-occurrence">;
+    expect(inner.definitionId).toBe("petit");
+    expect(inner.params.echelle).toBe(2);
+    expect(exporterBibliotheque(e, "x", "B").definitions.map((x) => x.id)).toEqual(["grand", "petit"]);
+    e = appliquerLot(e, lot([{ type: "vue.creer", params: { id: "v", type: "plan", titre: "R", echelle: 50, niveauId: "rdc" } }], "v")).etat;
+    const prims = genererVue(e, e.definitions["v"]!.params as never, "v").primitives.filter((p) => (p as { objetId?: string }).objetId === "o2");
+    expect(prims.length).toBeGreaterThan(0);
+  });
+});

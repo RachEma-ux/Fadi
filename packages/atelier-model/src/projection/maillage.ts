@@ -8,7 +8,8 @@
  * solide montent de `decalageBase` sur leur épaisseur / hauteur. Une hauteur absente (« non évaluée ») ne
  * produit aucun volume : l'objet reste en plan, rien n'est inventé.
  */
-import { aireSignee, placementOccurrence, facesMur, normalise, perp, pointsArc, sub, type Vec } from "../geometrie.js";
+import { contenuPlace } from "../blocs-places.js";
+import { aireSignee, facesMur, normalise, perp, pointsArc, sub, type Vec } from "../geometrie.js";
 import { raccordMur } from "../raccords.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 
@@ -483,11 +484,8 @@ function gardeCorpsMaillage(o: Occurrence<"garde-corps">, z: number, t: Tampon):
 
 /** Occurrence de bloc ou de composant : solides fermés de la définition, placés (position, angle, échelle). */
 function blocMaillage(etat: ModeleAtelier, o: Occurrence<"bloc-occurrence">, z: number, t: Tampon): void {
-  const def = o.definitionId ? etat.definitions[o.definitionId] : undefined;
-  const contenu = (def?.params["contenu"] as { classe: string; params: Record<string, unknown> }[] | undefined) ?? [];
-  const k = o.params.echelle;
-  const tr = placementOccurrence(o.params);
-  for (const e of contenu) {
+  for (const { classe, params, tr, k } of contenuPlace(etat, o.definitionId, o.params)) {
+    const e = { classe, params };
     if (e.classe !== "solide") continue;
     const h = (e.params["hauteur"] as { value: number } | null)?.value;
     const contour = e.params["contour"] as Vec[] | undefined;

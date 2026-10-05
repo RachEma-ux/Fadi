@@ -148,3 +148,4 @@ Cercles et arcs contraignables : rayon, diamètre, tangences (`contraintes-cercl
 Éclaté par classe, visite à hauteur d'œil (e2e, D-075).
 Propriétés en tableau, décalage des cercles, arcs et polylignes à arcs (`ajuster-chemin.test.ts`, e2e, D-076).
 Manipulateur 2D : pivot déplaçable, valeur tapée pendant le glissement (`nouveau.test.ts`, e2e, D-077).
+Blocs imbriqués (`bloc.test.ts`, D-078).
