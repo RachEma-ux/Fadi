@@ -39,7 +39,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const [taille, setTaille] = useState({ w: 800, h: 600 });
   const [accroche, setAccroche] = useState<Accroche | null>(null);
   const [cadre, setCadre] = useState<{ a: Point2; b: Point2 } | null>(null);
-  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer" | "lasso" | "trace" | "manip"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean; poignee?: Poignee } | null>(null);
+  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer" | "lasso" | "trace" | "manip" | "fini"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean; poignee?: Poignee } | null>(null);
   // Manipulateur 2D (D-070, DA-02-17) : aperçu du glissement d'une poignée ; une seule commande au relâchement.
   const [manip, setManip] = useState<ApercuManip | null>(null);
   const [lasso, setLasso] = useState<Point2[] | null>(null);
@@ -92,18 +92,46 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   // Accrochage aussi sur les traits des références externes du niveau (DA-05-11), qui restent non sélectionnables.
   const externesNiveau = useMemo(() => externes.filter((x) => x.niveauId === ui.niveauId), [externes, ui.niveauId]);
   const cache = useMemo(() => avecExternes(segmentsDuNiveau(etat, ui.niveauId), externesNiveau), [etat, ui.niveauId, externesNiveau]);
-  const boiteManip = useMemo(() => (ui.outil === "selection" && !readOnly ? boiteManipulateur(etat, ui.selection, ui.niveauId, cache) : null), [ui.outil, readOnly, etat, ui.selection, ui.niveauId, cache]);
+  // Pivot déplaçable (D-077) : propre à la sélection courante, affichage seul (R10).
+  const [pivotPerso, setPivotPerso] = useState<{ cle: string; p: Point2 } | null>(null);
+  const cleSelection = ui.selection.join("|");
+  const boiteManip = useMemo(() => {
+    const b = ui.outil === "selection" && !readOnly ? boiteManipulateur(etat, ui.selection, ui.niveauId, cache) : null;
+    return b && pivotPerso?.cle === cleSelection ? { ...b, pivot: pivotPerso.p, pivotDeplace: true } : b ? { ...b, pivotDeplace: false } : null;
+  }, [ui.outil, readOnly, etat, ui.selection, ui.niveauId, cache, pivotPerso, cleSelection]);
+  // Saisie de la valeur au clavier pendant le glissement (D-077) : chiffres, virgule, signe ; Entrée applique.
+  const [saisie, setSaisie] = useState("");
   useEffect(() => {
-    if (!manip) return;
-    const echap = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      glisse.current = null;
-      setManip(null);
-      etatUi.set({ aide: "Manipulation annulée : aucune commande." });
+    if (!manip) {
+      setSaisie("");
+      return;
+    }
+    const touche = (e: KeyboardEvent) => {
+      // Geste terminé au clavier : le relâchement du pointeur ne fera plus rien.
+      const finir = () => {
+        if (glisse.current) glisse.current = { ...glisse.current, mode: "fini" };
+      };
+      if (e.key === "Escape") {
+        finir();
+        setManip(null);
+        etatUi.set({ aide: "Manipulation annulée : aucune commande." });
+      } else if (/^[0-9.,-]$/.test(e.key)) setSaisie((v) => v + e.key);
+      else if (e.key === "Backspace") setSaisie((v) => v.slice(0, -1));
+      else if (e.key === "Enter" && saisie && boiteManip) {
+        const v = Number(saisie.replace(",", "."));
+        const m = Number.isFinite(v) ? valeurSaisie(manip, v) : null;
+        finir();
+        setManip(null);
+        const c = m ? commandeManip(m, boiteManip.pivot, ui.selection) : null;
+        if (c) onCommandes([c.commande], c.label);
+        else etatUi.set({ aide: "Valeur saisie invalide ou nulle : aucune commande." });
+      } else return;
+      e.preventDefault();
+      e.stopPropagation();
     };
-    window.addEventListener("keydown", echap, true);
-    return () => window.removeEventListener("keydown", echap, true);
-  }, [manip]);
+    window.addEventListener("keydown", touche, true);
+    return () => window.removeEventListener("keydown", touche, true);
+  }, [manip, saisie, boiteManip, ui.selection, onCommandes]);
   const selection = useMemo(() => new Set(ui.selection), [ui.selection]);
   const idsVisibles = useMemo(() => new Set(objets.map((o) => o.id)), [objets]);
   const dernierMur = useMemo(() => objets.map((o) => o.classe).lastIndexOf("mur"), [objets]);
@@ -157,6 +185,11 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
         g.bouge = g.bouge || lassoPoints.current.length > 2;
         setLasso(lassoPoints.current);
       }
+      return;
+    }
+    if (g?.mode === "manip" && g.poignee === "p") {
+      g.bouge = g.bouge || Math.hypot(sx - g.x, sy - g.y) > 4;
+      if (g.bouge) setPivotPerso({ cle: cleSelection, p: accrocher(p, cache, ui.accrochages, rayon, null, ui.selection).point });
       return;
     }
     if (g?.mode === "manip" && g.poignee && boiteManip) {
@@ -249,8 +282,14 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     }
     const g = glisse.current;
     glisse.current = null;
+    if (g?.mode === "fini") return;
     const p = pr.depuis(sx, sy);
     if (g?.mode === "pan" && (g.bouge || e.pointerType !== "touch")) return;
+    if (g?.mode === "manip" && g.poignee === "p") {
+      // Clic sans glisser sur le pivot : retour au centre de la sélection.
+      if (!g.bouge) setPivotPerso(null);
+      return;
+    }
     if (g?.mode === "manip") {
       const m = manip;
       setManip(null);
@@ -423,7 +462,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
           ))}
         </g>
       )}
-      {boiteManip && !decalage && <Manipulateur2D boite={boiteManip} pr={pr} manip={manip} />}
+      {boiteManip && !decalage && <Manipulateur2D boite={boiteManip} pr={pr} manip={manip} saisie={saisie} />}
       {decalage && (
         <g className="plan-deplacement" transform={`translate(${decalage.dx * pr.echelle} ${-decalage.dy * pr.echelle})`} pointerEvents="none">
           {objets.filter((o) => selection.has(o.id)).map((o) => (
@@ -618,7 +657,7 @@ export function traceMainLevee(brut: readonly Point2[], ui: EtatUi, courbe: bool
 // Affichage seul (R10) ; chaque glissement émet une seule commande transformer.*, mêmes contrôles que par menu.
 // ---------------------------------------------------------------------------
 
-export type Poignee = "x" | "y" | "c" | "r" | "s";
+export type Poignee = "x" | "y" | "c" | "r" | "s" | "p";
 
 export interface ApercuManip {
   poignee: Poignee;
@@ -666,6 +705,17 @@ export function apercuManip(poignee: Poignee, depart: Point2, courant: Point2, p
   return { ...base, facteur: d0 < 1e-9 ? 1 : Math.max(0.01, Math.round((d1 / d0) * 100) / 100) };
 }
 
+/** Valeur tapée pendant le glissement (D-077) : longueur le long de l'axe ou du geste, angle, facteur. */
+export function valeurSaisie(m: ApercuManip, v: number): ApercuManip | null {
+  if (m.poignee === "r") return { ...m, angle: v };
+  if (m.poignee === "s") return v > 0 ? { ...m, facteur: v } : null;
+  if (m.poignee === "x") return { ...m, dx: v * (m.dx < 0 ? -1 : 1), dy: 0 };
+  if (m.poignee === "y") return { ...m, dx: 0, dy: v * (m.dy < 0 ? -1 : 1) };
+  const l = Math.hypot(m.dx, m.dy);
+  if (l < 1e-12) return null;
+  return { ...m, dx: arrondiMm((m.dx / l) * v), dy: arrondiMm((m.dy / l) * v) };
+}
+
 /** Commande émise au relâchement (null : rien à faire — vecteur, angle nuls ou facteur 1, comme par menu). */
 export function commandeManip(m: ApercuManip, pivot: Point2, cibles: readonly string[]): { commande: Commande; label: string } | null {
   const n = cibles.length;
@@ -683,7 +733,7 @@ function transformEcran(m: ApercuManip, c: { x: number; y: number }, echelle: nu
 
 const CIBLE = 44; // px : cible tactile minimale (cahier §8)
 
-function Manipulateur2D({ boite, pr, manip }: { boite: { min: Point2; max: Point2; pivot: Point2 }; pr: ReturnType<typeof projecteur>; manip: ApercuManip | null }) {
+function Manipulateur2D({ boite, pr, manip, saisie }: { boite: { min: Point2; max: Point2; pivot: Point2; pivotDeplace?: boolean }; pr: ReturnType<typeof projecteur>; manip: ApercuManip | null; saisie: string }) {
   const c = pr.vers(boite.pivot);
   const a = pr.vers(boite.min);
   const b = pr.vers(boite.max);
@@ -698,7 +748,7 @@ function Manipulateur2D({ boite, pr, manip }: { boite: { min: Point2; max: Point
       <title>{titre}</title>
     </rect>
   );
-  const valeur = !manip ? "" : manip.poignee === "r" ? `${String(manip.angle).replace(".", ",")}°` : manip.poignee === "s" ? `× ${String(manip.facteur).replace(".", ",")}` : `dx ${fmt(manip.dx)} m · dy ${fmt(manip.dy)} m`;
+  const valeur = saisie ? `${saisie.replace(".", ",")} ⏎` : !manip ? "" : manip.poignee === "r" ? `${String(manip.angle).replace(".", ",")}°` : manip.poignee === "s" ? `× ${String(manip.facteur).replace(".", ",")}` : `dx ${fmt(manip.dx)} m · dy ${fmt(manip.dy)} m`;
   return (
     <g className="manipulateur-2d" data-manipulateur>
       <rect x={gauche} y={haut} width={droite - gauche} height={bas - haut} className="manip-boite" pointerEvents="none" />
@@ -719,6 +769,9 @@ function Manipulateur2D({ boite, pr, manip }: { boite: { min: Point2; max: Point
       {cible(c.x, c.y - L, "y", "Déplacer le long de y (glisser)")}
       <rect x={c.x - 7} y={c.y - 7} width={14} height={14} className="manip-centre" pointerEvents="none" />
       {cible(c.x, c.y, "c", "Déplacer librement (glisser)")}
+      <line x1={c.x} y1={c.y} x2={c.x - 30} y2={c.y + 30} className="manip-tige" pointerEvents="none" />
+      <circle cx={c.x - 30} cy={c.y + 30} r={6} className={boite.pivotDeplace ? "manip-pivot manip-pivot-deplace" : "manip-pivot"} pointerEvents="none" />
+      {cible(c.x - 30, c.y + 30, "p", "Déplacer le pivot (glisser, accroché) ; clic : retour au centre")}
       <text x={c.x + 12} y={c.y + 22} className="plan-cote-apercu" role="status" aria-live="polite" data-manip-valeur>{valeur}</text>
     </g>
   );

@@ -429,3 +429,14 @@ describe("décaler un cercle au plan (D-076)", () => {
     expect((clic("decaler", pt(3, 0), etat, u, opts).commandes[0]!.params as { cote: string }).cote).toBe("exterieur");
   });
 });
+
+describe("manipulateur 2D : valeur saisie (D-077)", () => {
+  it("axe : longueur signée selon le geste ; libre : le long du geste ; angle, facteur", async () => {
+    const { valeurSaisie } = await import("./plan2d/Plan2D");
+    const base = { dx: 0, dy: 0, angle: 0, facteur: 1 };
+    expect(valeurSaisie({ ...base, poignee: "x", dx: -0.3 }, 2)).toMatchObject({ dx: -2, dy: 0 });
+    expect(valeurSaisie({ ...base, poignee: "c", dx: 3, dy: 4 }, 10)).toMatchObject({ dx: 6, dy: 8 });
+    expect(valeurSaisie({ ...base, poignee: "r" }, 45)).toMatchObject({ angle: 45 });
+    expect(valeurSaisie({ ...base, poignee: "s" }, 0)).toBeNull();
+  });
+});

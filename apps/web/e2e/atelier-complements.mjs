@@ -1084,6 +1084,58 @@ await page.waitForSelector(".plan2d");
   check("propriétés en tableau : deux cellules saisies, enregistrées en un seul lot", vals.join() === "M-A,M-B" && rev === rev0 + 1, `${vals.join()} · r${rev0} → r${rev}`);
 }
 
+// Manipulateur 2D : valeur tapée pendant le glissement, pivot déplacé (D-077).
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  await selectionner("pl-w3");
+  await page.waitForSelector("[data-manipulateur]", { timeout: 10000 }).catch(() => {});
+  const a0 = (await modele(pid)).modele.objets["pl-w3"].params.a;
+  const fx = await page.locator('[data-poignee="x"]').boundingBox();
+  if (fx) {
+    await page.mouse.move(fx.x + fx.width / 2, fx.y + fx.height / 2);
+    await page.mouse.down();
+    for (let k = 1; k <= 4; k++) await page.mouse.move(fx.x + fx.width / 2 + k * 5, fx.y + fx.height / 2);
+    await page.keyboard.type("2");
+    await page.keyboard.press("Enter");
+    await page.mouse.up();
+  }
+  let a1 = a0;
+  for (let k = 0; k < 30 && a1.x === a0.x; k++) {
+    a1 = (await modele(pid)).modele.objets["pl-w3"].params.a;
+    if (a1.x === a0.x) await page.waitForTimeout(500);
+  }
+  check("manipulateur 2D : « 2 » tapé pendant le glissement de la flèche X = déplacement de 2 m exactement", Math.abs(a1.x - a0.x - 2) < 1e-9 && a1.y === a0.y, `${a0.x} → ${a1.x}`);
+  await attendreEnregistre().catch(() => {});
+  await selectionner("pl-w3");
+  const fp = await page.locator('[data-poignee="p"]').boundingBox();
+  if (fp) {
+    await page.mouse.move(fp.x + fp.width / 2, fp.y + fp.height / 2);
+    await page.mouse.down();
+    for (let k = 1; k <= 6; k++) await page.mouse.move(fp.x + fp.width / 2 - k * 10, fp.y + fp.height / 2 + k * 6);
+    await page.mouse.up();
+  }
+  const deplace = (await page.locator(".manip-pivot-deplace").count()) === 1;
+  const w0 = (await modele(pid)).modele.objets["pl-w3"].params;
+  const fr = await page.locator('[data-poignee="r"]').boundingBox();
+  if (fr) {
+    await page.mouse.move(fr.x + fr.width / 2, fr.y + fr.height / 2);
+    await page.mouse.down();
+    for (let k = 1; k <= 4; k++) await page.mouse.move(fr.x + fr.width / 2 - k * 6, fr.y + fr.height / 2 - k * 4);
+    await page.keyboard.type("90");
+    await page.keyboard.press("Enter");
+    await page.mouse.up();
+  }
+  let w1 = w0;
+  for (let k = 0; k < 30 && w1.a.x === w0.a.x && w1.a.y === w0.a.y; k++) {
+    w1 = (await modele(pid)).modele.objets["pl-w3"].params;
+    if (w1.a.x === w0.a.x && w1.a.y === w0.a.y) await page.waitForTimeout(500);
+  }
+  const mil = (w) => ({ x: (w.a.x + w.b.x) / 2, y: (w.a.y + w.b.y) / 2 });
+  const longueur = (w) => Math.hypot(w.b.x - w.a.x, w.b.y - w.a.y);
+  check("manipulateur 2D : pivot déplacé, rotation de 90° tapée autour de lui (le milieu du mur bouge, la longueur reste)", deplace && Math.hypot(mil(w1).x - mil(w0).x, mil(w1).y - mil(w0).y) > 0.01 && Math.abs(longueur(w1) - longueur(w0)) < 1e-6 && Math.abs((w1.b.x - w1.a.x) * (w0.b.x - w0.a.x) + (w1.b.y - w1.a.y) * (w0.b.y - w0.a.y)) < 1e-6, `pivot ${deplace} · ${JSON.stringify(mil(w0))} → ${JSON.stringify(mil(w1))}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

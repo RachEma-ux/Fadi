@@ -147,3 +147,4 @@ Ajuster et prolonger des polylignes jusqu'à des courbes et des contours, raccor
 Cercles et arcs contraignables : rayon, diamètre, tangences (`contraintes-cercles.test.ts`, e2e, D-074).
 Éclaté par classe, visite à hauteur d'œil (e2e, D-075).
 Propriétés en tableau, décalage des cercles, arcs et polylignes à arcs (`ajuster-chemin.test.ts`, e2e, D-076).
+Manipulateur 2D : pivot déplaçable, valeur tapée pendant le glissement (`nouveau.test.ts`, e2e, D-077).
