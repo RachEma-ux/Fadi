@@ -838,3 +838,19 @@ describe("compléments : historique d'un objet, réutilisation de modèle", () =
     expect((await client.get(`/projects/${a}/atelier/references-externes`)).body.references).toHaveLength(0);
   }, 60_000);
 });
+
+describe("notifications ciblées (D-081)", () => {
+  it("l'auteur d'un objet est notifié quand un autre compte le modifie ; pas pour ses propres modifications", async () => {
+    const owner = await registerAndLogin("owner-notif@example.com");
+    const editor = await registerAndLogin("editor-notif@example.com");
+    const pid = await projetVide(owner);
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "editor-notif@example.com", role: "editeur" })).status).toBe(201);
+    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("n1", 0, [niveau, mur("m1"), mur("m2", 6)]))).status).toBe(200);
+    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("n2", 1, [{ type: "mur.modifier", params: { id: "m2", params: { hauteur: m(3) } } }], "Moi"))).status).toBe(200);
+    expect((await editor.post(`/projects/${pid}/atelier/commands`).send(enveloppe("n3", 2, [{ type: "mur.modifier", params: { id: "m1", params: { epaisseur: m(0.3) } } }], "Épaisseur de m1"))).status).toBe(200);
+    const n = (await owner.get("/notifications")).body.items.filter((x: { kind: string }) => x.kind === "modification");
+    expect(n).toHaveLength(1);
+    expect(n[0].text).toMatch(/editor-notif@example\.com a modifié 1 de vos objets .*Épaisseur de m1.*m1/);
+    expect((await editor.get("/notifications")).body.items.filter((x: { kind: string }) => x.kind === "modification")).toHaveLength(0);
+  });
+});

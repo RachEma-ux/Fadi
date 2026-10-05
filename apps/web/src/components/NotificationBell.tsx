@@ -11,11 +11,12 @@ import { Link } from "react-router-dom";
 import { api, type NotificationItem } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 
-const KIND_LABEL: Record<NotificationItem["kind"], string> = { acces: "Accès", commentaire: "Commentaire", reservation: "Réservation" };
+const KIND_LABEL: Record<NotificationItem["kind"], string> = { acces: "Accès", commentaire: "Commentaire", reservation: "Réservation", modification: "Modification" };
 
 function targetOf(n: NotificationItem): string {
   if (n.kind === "commentaire") return n.stepNumber ? `/projets/${n.projectId}?module=parcours&etape=${n.stepNumber}` : `/projets/${n.projectId}?module=collaboration`;
   if (n.kind === "reservation") return `/projets/${n.projectId}?module=collaboration`;
+  if (n.kind === "modification") return `/projets/${n.projectId}?module=atelier`;
   return `/projets/${n.projectId}`;
 }
 

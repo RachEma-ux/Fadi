@@ -8,6 +8,8 @@
  *                               commentaires des autres sur vos projets et sur
  *                               ceux qui vous sont partagés, réservations
  *                               d'édition en cours posées par quelqu'un d'autre ;
+ *                               modifications de l'Atelier par d'autres sur des
+ *                               objets que vous avez créés ou modifiés (D-081) ;
  *                               « non lue » = postérieure à votre dernière
  *                               consultation ;
  *   POST /notifications/seen  → marque tout comme consulté (date conservée par
@@ -19,7 +21,7 @@
 import { Router } from "express";
 import { and, desc, eq, gt, inArray, ne, or } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { projectComments, projectMembers, projects, users } from "../db/schema.js";
+import { atelierCommands, projectComments, projectMembers, projects, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
@@ -30,8 +32,8 @@ notificationsRouter.use(requireAuth);
 export interface NotificationItem {
   id: string;
   at: string;
-  /** `acces` · `commentaire` · `reservation` */
-  kind: "acces" | "commentaire" | "reservation";
+  /** `acces` · `commentaire` · `reservation` · `modification` (objets de l'Atelier, D-081) */
+  kind: "acces" | "commentaire" | "reservation" | "modification";
   projectId: string;
   projectCode: string;
   projectName: string;
@@ -113,6 +115,47 @@ export async function notificationsFor(userId: string, email: string): Promise<{
           text: `${lock.email} a réservé l’édition de ${p.code} — ${p.name} jusqu’à ${new Date(lock.expiresAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: process.env["FADI_TZ"] ?? "Europe/Paris" })} : lecture et commentaires seulement d’ici là.`,
           unread: false,
         });
+    }
+  }
+
+  // Modifications de l'Atelier par d'autres sur vos objets (D-081) : objets que vous avez créés ou modifiés, touchés
+  // depuis par un autre compte (30 derniers jours) ; une notification par lot, sans rien inventer.
+  if (projectIds.length) {
+    const ids = (e: unknown, cles: string[]) => cles.flatMap((k) => (Array.isArray((e as Record<string, unknown>)?.[k]) ? ((e as Record<string, unknown>)[k] as unknown[]).filter((x): x is string => typeof x === "string") : []));
+    const miens = await db.select({ projectId: atelierCommands.projectId, effets: atelierCommands.effets, rev: atelierCommands.resultRevision }).from(atelierCommands).where(and(inArray(atelierCommands.projectId, projectIds), eq(atelierCommands.authorId, userId)));
+    const mesObjets = new Map<string, Map<string, number>>();
+    for (const m of miens) {
+      const parProjet = mesObjets.get(m.projectId) ?? new Map<string, number>();
+      for (const id of ids(m.effets, ["crees", "modifies"])) parProjet.set(id, Math.max(parProjet.get(id) ?? 0, m.rev));
+      mesObjets.set(m.projectId, parProjet);
+    }
+    if (mesObjets.size) {
+      const autres = await db
+        .select({ id: atelierCommands.id, projectId: atelierCommands.projectId, label: atelierCommands.label, effets: atelierCommands.effets, rev: atelierCommands.resultRevision, createdAt: atelierCommands.createdAt, email: users.email, code: projects.code, name: projects.name })
+        .from(atelierCommands)
+        .innerJoin(users, eq(users.id, atelierCommands.authorId))
+        .innerJoin(projects, eq(projects.id, atelierCommands.projectId))
+        .where(and(inArray(atelierCommands.projectId, [...mesObjets.keys()]), ne(atelierCommands.authorId, userId), gt(atelierCommands.createdAt, since)))
+        .orderBy(desc(atelierCommands.createdAt))
+        .limit(200);
+      let n = 0;
+      for (const a of autres) {
+        const miensP = mesObjets.get(a.projectId)!;
+        const touches = ids(a.effets, ["modifies", "supprimes"]).filter((id) => (miensP.get(id) ?? Infinity) < a.rev);
+        if (!touches.length || n >= LIMIT) continue;
+        n++;
+        items.push({
+          id: `modification:${a.id}`,
+          at: a.createdAt.toISOString(),
+          kind: "modification",
+          projectId: a.projectId,
+          projectCode: a.code,
+          projectName: a.name,
+          stepNumber: null,
+          text: `${a.email} a modifié ${touches.length} de vos objets dans l'Atelier de ${a.code} (« ${a.label} », révision ${a.rev}) : ${touches.slice(0, 3).join(", ")}${touches.length > 3 ? "…" : ""}.`,
+          unread: false,
+        });
+      }
     }
   }
 
