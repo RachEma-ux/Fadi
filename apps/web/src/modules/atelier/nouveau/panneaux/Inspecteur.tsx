@@ -72,9 +72,9 @@ export function Inspecteur(props: PropsInspecteur) {
   const { etat, ui } = props;
   const sel = ui.selection.map((id) => etat.objets[id]).filter((o): o is OccurrenceQuelconque => !!o);
   if (sel.length === 0) return <ParametresOutil etat={etat} ui={ui} />;
-  // Outil de transformation actif avec des paramètres (répéter, décaler, réseau sur trajectoire…) : ses champs
-  // restent accessibles au-dessus de la sélection (D-058).
-  if (ui.outil !== "selection" && (PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0) {
+  // Outil qui agit sur la sélection (répéter, décaler, réseau sur trajectoire…) avec des paramètres : ses champs
+  // restent accessibles au-dessus de la sélection (D-058). Les outils de dessin gardent l'inspecteur de la sélection.
+  if (ui.outil !== "selection" && (OUTILS_PAR_ID[ui.outil]?.condition ?? "").startsWith("selection") && (PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0) {
     return (
       <>
         <ParametresOutil etat={etat} ui={ui} />
