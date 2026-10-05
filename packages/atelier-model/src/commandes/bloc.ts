@@ -6,8 +6,10 @@
  * définitions (paramètre `bibliotheque`), sans commande propre.
  */
 import type { Definition, ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
+import { referencesVers } from "../modele.js";
+import { pointCaracteristique } from "../references.js";
 import { pt, type Point2 } from "../unites.js";
-import { effetsVides, ErreurCommande, lire, type ContexteCommande, type ResultatCommande } from "./base.js";
+import { effetsVides, ErreurCommande, lire, nouveauProbleme, type ContexteCommande, type ResultatCommande } from "./base.js";
 import { creerOccurrence } from "./objets.js";
 import { transformerOccurrence } from "./transformer.js";
 import { definitionsImbriquees } from "../blocs-places.js";
@@ -122,6 +124,19 @@ export const reducteursBloc = {
     (existante ? effets.modifies : effets.crees).push(id);
     // Les occurrences suivent la nouvelle version : signalées modifiées (vues et quantités à recalculer).
     if (existante) for (const o of Object.values(etat.objets)) if (o.classe === "bloc-occurrence" && o.definitionId === id) effets.modifies.push(o.id);
+    // Cotes rattachées aux sommets d'une occurrence (D-102) : un sommet disparu rend la référence « à réparer ».
+    if (existante) {
+      for (const o of Object.values(suivant.objets)) {
+        if (o.classe !== "bloc-occurrence" || o.definitionId !== id) continue;
+        for (const ref of referencesVers(suivant, o.id)) {
+          if (ref.etat !== "ok" || !ref.caracteristique || pointCaracteristique(suivant, o.id, ref.caracteristique)) continue;
+          const pb = nouveauProbleme(ctx.ids, "reference-a-reparer", ref.proprietaireId, `référence de ${ref.proprietaireId} vers ${o.id} (${ref.caracteristique}) : sommet absent du bloc redéfini — à réparer`);
+          suivant = { ...suivant, references: { ...suivant.references, [ref.id]: { ...ref, etat: "a-reparer", propositions: [] } }, problemes: { ...suivant.problemes, [pb.id]: pb } };
+          effets.problemes.push(pb);
+          effets.referencesAReparer.push(ref.id);
+        }
+      }
+    }
     // Remplacer la sélection par une occurrence posée au point de base (même niveau, calque du premier objet).
     if (lire.booleen(p, "remplacer", false)) {
       const sources = cibles.map((c) => etat.objets[c]!);

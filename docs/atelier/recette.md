@@ -28,7 +28,7 @@ preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leur
 | Contrôle | Résultat |
 | --- | --- |
 | `npm run typecheck` (dont `scripts/check-module-deps.mjs`, T14) | ✅ |
-| `npm test` | ✅ core-geometry 47 · domain-model 95 · **atelier-model 278** · **API 83** · web 50 |
+| `npm test` | ✅ core-geometry 47 · domain-model 95 · **atelier-model 279** · **API 83** · web 50 |
 | `npm run build` | ✅ |
 | Scénario complet `apps/web/e2e/parcours-scenario.mjs` | ✅ 326 contrôles, « Scénario conforme. » |
 | Recette Atelier `atelier-nouveau.mjs` (lots 3–4) | ✅ 41 contrôles |

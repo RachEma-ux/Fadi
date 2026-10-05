@@ -212,3 +212,18 @@ describe("cotes rattachées à une occurrence de bloc (D-102, DA-05-06)", () => 
     expect(x.b.y).toBeCloseTo(6.2, 9);
   });
 });
+
+describe("bloc redéfini et cotes rattachées (D-102)", () => {
+  it("sommet disparu à la redéfinition : référence « à réparer » avec un problème, jamais déplacée en silence", async () => {
+    const { referenceExtremite } = await import("../references.js");
+    const e = appliquerLot(socle(), lot([
+      { type: "bloc.definir", params: { id: "b", nom: "Table", cibles: ["e1", "e2"], pointDeBase: pt(10, 10) } },
+      { type: "bloc.placer", params: { id: "o1", definitionId: "b", niveauId: "rdc", position: pt(0, 5) } },
+      { type: "cotation.creer", params: { id: "k", niveauId: "rdc", a: pt(0, 5), b: pt(0.6, 5.4), decalage: m(0.5) } },
+      { type: "cotation.rattacher", params: { id: "k", referenceId: referenceExtremite("k", "b"), objetId: "o1", caracteristique: "sommet[4]" } },
+    ], "b")).etat;
+    const r = appliquerLot(e, lot([{ type: "bloc.definir", params: { redefinir: "b", cibles: ["e1"], pointDeBase: pt(10, 10) } }], "re"));
+    expect(r.etat.references[referenceExtremite("k", "b")]!.etat).toBe("a-reparer");
+    expect(r.effets.referencesAReparer).toEqual([referenceExtremite("k", "b")]);
+  });
+});
