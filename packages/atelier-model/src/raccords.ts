@@ -20,7 +20,7 @@
  *
  * Le résultat est mis en cache par état d'objets (immuable) et par niveau.
  */
-import { add, cross, dot, facesMur, mul, normalise, perp, polygoneMurCourbe, sub, type Vec } from "./geometrie.js";
+import { add, cross, dot, facesMur, longueurAxeMur, mul, normalise, perp, pointAxeMur, sub, type Vec } from "./geometrie.js";
 import type { ModeleAtelier, Occurrence } from "./modele.js";
 import { pt, TOLERANCE_REDUCTEUR, type Point2 } from "./unites.js";
 
@@ -47,12 +47,35 @@ interface MurPlan {
   /** Décalage signé (selon n) de la face gauche et de la face droite par rapport à l'axe. */
   oG: number;
   oD: number;
+  /**
+   * Extrémité d'un mur courbe (D-104) : mur droit virtuel tangent à l'arc à cette extrémité (0 = a, 1 = b) ; seule
+   * cette extrémité est réelle (l'autre n'est ni raccordée ni partagée) ; jamais hôte d'un té.
+   */
+  seul?: 0 | 1;
+  /** Mur réel (identifiant sans le suffixe d'extrémité). */
+  base?: string;
 }
 
 const SIN_ALIGNE = Math.sin((1 * Math.PI) / 180);
 
+/** Extrémités d'un mur courbe en murs droits virtuels tangents (D-104). */
+function versPlanCourbe(m: Occurrence<"mur">): MurPlan[] {
+  const p = m.params;
+  const L = longueurAxeMur(p);
+  if (!p.renflement || L < 1e-9) return [];
+  const e = p.epaisseur.value;
+  const oG = p.alignement === "axe" ? e / 2 : p.alignement === "gauche" ? 0 : e;
+  const oD = p.alignement === "axe" ? -e / 2 : p.alignement === "gauche" ? -e : 0;
+  const A = pointAxeMur(p, 0);
+  const B = pointAxeMur(p, L);
+  return [
+    { id: `${m.id}#a`, base: m.id, seul: 0, a: A.p, b: add(A.p, mul(A.u, L)), L, u: A.u, n: perp(A.u), e, oG, oD },
+    { id: `${m.id}#b`, base: m.id, seul: 1, a: sub(B.p, mul(B.u, L)), b: B.p, L, u: B.u, n: perp(B.u), e, oG, oD },
+  ];
+}
+
 function versPlan(m: Occurrence<"mur">): MurPlan | null {
-  if (m.params.renflement) return null; // mur courbe (D-086) : pas de raccord calculé, contour propre
+  if (m.params.renflement) return null; // mur courbe (D-086) : extrémités traitées par versPlanCourbe (D-104)
   const { a, b, epaisseur, alignement } = m.params;
   const L = Math.hypot(b.x - a.x, b.y - a.y);
   if (L < 1e-9) return null;
@@ -91,13 +114,14 @@ function calculer(murs: MurPlan[], tol: number): Map<string, RaccordMur> {
   for (const w of murs) {
     const r = out.get(w.id)!;
     for (const fin of [0, 1] as const) {
+      if (w.seul !== undefined && fin !== w.seul) continue;
       const P = fin === 0 ? w.a : w.b;
       const dW = fin === 0 ? mul(w.u, -1) : w.u; // vers l'extérieur du mur, à cette extrémité
       const partages: { m: MurPlan; dO: Vec }[] = [];
       for (const o of murs) {
-        if (o.id === w.id) continue;
-        if (Math.hypot(o.a.x - P.x, o.a.y - P.y) <= tol) partages.push({ m: o, dO: o.u });
-        else if (Math.hypot(o.b.x - P.x, o.b.y - P.y) <= tol) partages.push({ m: o, dO: mul(o.u, -1) });
+        if (o.id === w.id || (o.base !== undefined && o.base === w.base)) continue;
+        if (o.seul !== 1 && Math.hypot(o.a.x - P.x, o.a.y - P.y) <= tol) partages.push({ m: o, dO: o.u });
+        else if (o.seul !== 0 && Math.hypot(o.b.x - P.x, o.b.y - P.y) <= tol) partages.push({ m: o, dO: mul(o.u, -1) });
       }
       let cible: { o: MurPlan; faces: Record<"gauche" | "droite", "gauche" | "droite"> } | null = null;
       let type: TypeRaccord = "libre";
@@ -111,7 +135,7 @@ function calculer(murs: MurPlan[], tol: number): Map<string, RaccordMur> {
         cible = { o, faces: { [exterieurW]: exterieurO, [autre(exterieurW)]: autre(exterieurO) } as Record<"gauche" | "droite", "gauche" | "droite"> };
         type = "angle";
       } else if (partages.length === 0) {
-        const hotes = murs.filter((o) => o.id !== w.id && dansEpaisseur(P, o, tol) && Math.abs(cross(w.u, o.u)) >= SIN_ALIGNE);
+        const hotes = murs.filter((o) => o.id !== w.id && o.seul === undefined && dansEpaisseur(P, o, tol) && Math.abs(cross(w.u, o.u)) >= SIN_ALIGNE);
         if (hotes.length === 1) {
           const o = hotes[0]!;
           // Face du mur traversant tournée vers le corps du mur aboutissant (direction -dW).
@@ -236,8 +260,22 @@ export function raccordsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
       if (o.classe !== "mur" || o.niveauId !== niveauId) continue;
       const m = versPlan(o as Occurrence<"mur">);
       if (m) murs.push(m);
+      else murs.push(...versPlanCourbe(o as Occurrence<"mur">));
     }
     r = calculer(murs, TOLERANCE_REDUCTEUR * 10);
+    // Mur courbe (D-104) : raccord recomposé de ses deux extrémités virtuelles ; abscisses le long des tangentes
+    // d'extrémité, exprimées depuis a (début) et depuis a + longueur d'arc (fin).
+    for (const o of Object.values(etat.objets)) {
+      if (o.classe !== "mur" || o.niveauId !== niveauId || !o.params.renflement) continue;
+      const ra = r.get(`${o.id}#a`);
+      const rb = r.get(`${o.id}#b`);
+      if (!ra || !rb) continue;
+      r.delete(`${o.id}#a`);
+      r.delete(`${o.id}#b`);
+      const pa = ra.pointes?.[0] ?? null;
+      const pb = rb.pointes?.[1] ?? null;
+      r.set(o.id, { gauche: [ra.gauche[0], rb.gauche[1]], droite: [ra.droite[0], rb.droite[1]], extremites: [ra.extremites[0], rb.extremites[1]], ...(pa || pb ? { pointes: [pa, pb] as [Vec | null, Vec | null] } : {}) });
+    }
     parNiveau.set(cle, r);
   }
   return r;
@@ -256,9 +294,55 @@ export function facesMurRaccordees(etat: ModeleAtelier, mur: Occurrence<"mur">):
   return { gauche: [pnt(r.gauche[0], m.oG), pnt(r.gauche[1], m.oG)], droite: [pnt(r.droite[0], m.oD), pnt(r.droite[1], m.oD)] };
 }
 
+/**
+ * Contour d'un mur courbe raccordé (D-104), sur la portion [s0, s1] de son axe (abscisse curviligne) : faces
+ * concentriques échantillonnées (5°) ; aux extrémités réelles, chaque face s'arrête à l'abscisse raccordée le long de
+ * la tangente d'extrémité (onglet, té, nœud), comme un mur droit. Sens direct.
+ */
+export function contourMurCourbeRaccorde(etat: ModeleAtelier, mur: Occurrence<"mur">, s0?: number, s1?: number): Point2[] {
+  const p = mur.params;
+  const L = longueurAxeMur(p);
+  const d0 = s0 ?? 0;
+  const d1 = s1 ?? L;
+  if (!p.renflement) return [];
+  const e = p.epaisseur.value;
+  const oG = p.alignement === "axe" ? e / 2 : p.alignement === "gauche" ? 0 : e;
+  const oD = p.alignement === "axe" ? -e / 2 : p.alignement === "gauche" ? -e : 0;
+  const n = Math.max(2, Math.ceil((Math.abs(4 * Math.atan(p.renflement)) * (180 / Math.PI) * ((d1 - d0) / L)) / 5));
+  const G: Vec[] = [];
+  const D: Vec[] = [];
+  for (let k = 0; k <= n; k++) {
+    const q = pointAxeMur(p, d0 + ((d1 - d0) * k) / n);
+    const nn = perp(q.u);
+    G.push(add(q.p, mul(nn, oG)));
+    D.push(add(q.p, mul(nn, oD)));
+  }
+  const r = raccordMur(etat, mur);
+  let pa: Vec | null = null;
+  let pb: Vec | null = null;
+  if (r && d0 <= 1e-12) {
+    const q = pointAxeMur(p, 0);
+    const nn = perp(q.u);
+    G[0] = add(add(q.p, mul(q.u, r.gauche[0])), mul(nn, oG));
+    D[0] = add(add(q.p, mul(q.u, r.droite[0])), mul(nn, oD));
+    pa = r.pointes?.[0] ?? null;
+  }
+  if (r && d1 >= L - 1e-12) {
+    const q = pointAxeMur(p, L);
+    const nn = perp(q.u);
+    G[n] = add(add(q.p, mul(q.u, r.gauche[1] - L)), mul(nn, oG));
+    D[n] = add(add(q.p, mul(q.u, r.droite[1] - L)), mul(nn, oD));
+    pb = r.pointes?.[1] ?? null;
+  }
+  const poly = [...D, ...(pb ? [pb] : []), ...G.reverse(), ...(pa ? [pa] : [])];
+  let aire = 0;
+  for (let i = 0; i < poly.length; i++) aire += cross(poly[i]!, poly[(i + 1) % poly.length]!);
+  return (aire < 0 ? poly.reverse() : poly).map((x) => pt(x.x, x.y));
+}
+
 /** Polygone du mur après raccord, sens direct (remplace `polygoneMur` pour le dessin). */
 export function polygoneMurRaccorde(etat: ModeleAtelier, mur: Occurrence<"mur">): Point2[] {
-  if (mur.params.renflement) return polygoneMurCourbe(mur.params.a, mur.params.b, mur.params.epaisseur.value, mur.params.alignement, mur.params.renflement);
+  if (mur.params.renflement) return contourMurCourbeRaccorde(etat, mur);
   const f = facesMurRaccordees(etat, mur);
   const r = raccordMur(etat, mur);
   // Contour : droite a → b, (pointe du nœud en b), gauche b → a, (pointe du nœud en a).

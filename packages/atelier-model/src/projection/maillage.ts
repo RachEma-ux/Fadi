@@ -9,8 +9,8 @@
  * produit aucun volume : l'objet reste en plan, rien n'est inventé.
  */
 import { contenuPlace } from "../blocs-places.js";
-import { aireSignee, facesMur, hoteOuverture, longueurAxeMur, normalise, perp, pointsArc, polygoneMurCourbe, portionAxeMur, sub, type Vec } from "../geometrie.js";
-import { raccordMur } from "../raccords.js";
+import { aireSignee, facesMur, hoteOuverture, longueurAxeMur, normalise, perp, pointsArc, sub, type Vec } from "../geometrie.js";
+import { contourMurCourbeRaccorde, raccordMur } from "../raccords.js";
 import { corpsMenuiserie } from "../menuiserie.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 
@@ -279,8 +279,8 @@ function murMaillage(etat: ModeleAtelier, mur: Occurrence<"mur">, t: Tampon): vo
       if (s1 - s0 < 1e-6) continue;
       const milieu = (s0 + s1) / 2;
       const ici = vides.filter((v) => v.s0 <= milieu && v.s1 >= milieu).map((v) => [v.zb, v.zt] as [number, number]);
-      const portion = portionAxeMur(mur.params, s0, s1);
-      const contour = polygoneMurCourbe(portion.a, portion.b, mur.params.epaisseur.value, mur.params.alignement, portion.renflement!);
+      // Raccords aux extrémités réelles (D-104) : onglets et tés avec les murs voisins.
+      const contour = contourMurCourbeRaccorde(etat, mur, s0, s1);
       for (const [za, zb] of soustraire(z0, z1, ici)) if (zb > za) t.prisme(contour, [], za, zb);
     }
     return;

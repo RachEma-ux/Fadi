@@ -121,3 +121,38 @@ describe("pièces et planchers délimités par un arc (D-096)", () => {
     expect(proposerPlancher(e, "n", "axe").interstices).toEqual([]);
   });
 });
+
+describe("raccords avec un mur courbe (D-104)", () => {
+  it("angle entre un mur droit et l'extrémité d'un mur courbe : onglet sur la tangente ; 3D et vues suivent", async () => {
+    const { raccordMur } = await import("./raccords.js");
+    const e = appliquerLot(modeleVide(), lot([
+      { type: "niveau.creer", params: { id: "n", nom: "R", elevation: 0, hauteur: 3 } },
+      { type: "mur.tracer", params: { id: "arc", niveauId: "n", a: pt(4, 0), b: pt(0, 4), renflement: b90, epaisseur: m(0.2), hauteur: m(3) } },
+      { type: "mur.tracer", params: { id: "droit", niveauId: "n", a: pt(8, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } },
+    ])).etat;
+    const arc = e.objets["arc"] as Occurrence<"mur">;
+    const r = raccordMur(e, arc)!;
+    expect(r.extremites).toEqual(["angle", "libre"]);
+    expect(r.gauche[0]).toBeCloseTo(-0.1, 9);
+    expect(r.droite[0]).toBeCloseTo(0.1, 9);
+    const rd = raccordMur(e, e.objets["droit"] as Occurrence<"mur">)!;
+    expect(rd.extremites[1]).toBe("angle");
+    const poly = polygoneMurRaccorde(e, arc);
+    const a = (x: number, y: number) => poly.some((q) => Math.abs(q.x - x) < 1e-9 && Math.abs(q.y - y) < 1e-9);
+    expect(a(3.9, -0.1)).toBe(true);
+    expect(a(4.1, 0.1)).toBe(true);
+    expect(polygoneMurRaccorde(e, e.objets["droit"] as Occurrence<"mur">).some((q) => Math.abs(q.x - 3.9) < 1e-9 && Math.abs(q.y + 0.1) < 1e-9)).toBe(true);
+    // 3D : le prisme du mur courbe part du point d'onglet.
+    const mai = maillageObjet(e, arc)!;
+    let trouve = false;
+    for (let i = 0; i < mai.positions.length; i += 3) if (Math.abs(mai.positions[i]! - 3.9) < 1e-9 && Math.abs(mai.positions[i + 1]! + 0.1) < 1e-9) trouve = true;
+    expect(trouve).toBe(true);
+    // Mur droit aligné sur la tangente : prolongement, aucun raccord.
+    const al = appliquerLot(modeleVide(), lot([
+      { type: "niveau.creer", params: { id: "n", nom: "R", elevation: 0, hauteur: 3 } },
+      { type: "mur.tracer", params: { id: "arc", niveauId: "n", a: pt(4, 0), b: pt(0, 4), renflement: b90, epaisseur: m(0.2), hauteur: m(3) } },
+      { type: "mur.tracer", params: { id: "droit", niveauId: "n", a: pt(4, -3), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } },
+    ])).etat;
+    expect(raccordMur(al, al.objets["arc"] as Occurrence<"mur">)!.extremites).toEqual(["libre", "libre"]);
+  });
+});
