@@ -145,3 +145,4 @@ Miroir des occurrences de bloc, pas polaire réglable, liaison pièce ↔ espace
 Motifs de hachure dans les vues et au plan (`hachures.test.ts`, e2e, D-072).
 Ajuster et prolonger des polylignes jusqu'à des courbes et des contours, raccord ligne–arc et arc–arc (`ajuster-chemin.test.ts`, D-073).
 Cercles et arcs contraignables : rayon, diamètre, tangences (`contraintes-cercles.test.ts`, e2e, D-074).
+Éclaté par classe, visite à hauteur d'œil (e2e, D-075).

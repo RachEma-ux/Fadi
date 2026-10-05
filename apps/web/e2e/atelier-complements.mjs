@@ -899,6 +899,23 @@ await page.waitForSelector(".plan2d");
   const isole = await page.locator("[data-isolement-actif]").getAttribute("data-isolement-actif").catch(() => null);
   await page.locator('[data-isolement="quitter"]').click();
   const quitte = (await page.locator("[data-isolement-actif]").count()) === 0;
+  // Éclaté par classe (D-075) : présentation choisie, écart réglable.
+  await page.locator('select[aria-label="Présentation"]').selectOption("eclate-classes");
+  await page.locator("[data-ecart-eclate]").fill("6");
+  await page.waitForTimeout(300);
+  check("éclaté par classe : présentation choisie, écart réglé", (await page.locator('select[aria-label="Présentation"]').inputValue()) === "eclate-classes" && (await page.locator("[data-ecart-eclate]").inputValue()) === "6");
+  await page.locator('select[aria-label="Présentation"]').selectOption("batiment");
+  // Visite à hauteur d'œil (D-075) : œil à niveau + 1,60 m, avancer au clavier à hauteur constante.
+  await page.locator("[data-visite-oeil]").fill("1,6");
+  await page.locator('[data-visite="commencer"]').click();
+  const v0 = await page.evaluate(() => window.fadiMesures3D?.pointDeVue?.() ?? null);
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("ArrowUp");
+  const v1 = await page.evaluate(() => window.fadiMesures3D?.pointDeVue?.() ?? null);
+  const alt = Number(await page.locator("[data-visite-active]").getAttribute("data-visite-active").catch(() => "NaN"));
+  await page.locator('[data-visite="quitter"]').click();
+  const avance = v0 && v1 ? Math.hypot(v1.position.x - v0.position.x, v1.position.y - v0.position.y) : 0;
+  check("visite à hauteur d'œil : caméra à niveau + 1,60 m, avance de 1 m au clavier sans changer de hauteur", !!v0 && Math.abs(v0.position.z - alt) < 1e-3 && Math.abs(avance - 1) < 0.01 && Math.abs(v1.position.z - v0.position.z) < 1e-6, `${JSON.stringify(v0?.position)} → ${JSON.stringify(v1?.position)} · œil ${alt}`);
   await page.locator('.barre-mode button:has-text("Plan")').click();
   check("isolement : la sélection isolée pour soi en 3D, puis l'affichage complet revient", isole === "2" && quitte, `${isole} · ${quitte}`);
 }

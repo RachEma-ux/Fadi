@@ -35,6 +35,7 @@ const PRESENTATIONS: { id: Presentation; libelle: string }[] = [
   { id: "niveau", libelle: "Niveau actif" },
   { id: "eclate", libelle: "Éclaté" },
   { id: "eclate-horizontal", libelle: "Éclaté horizontal" },
+  { id: "eclate-classes", libelle: "Éclaté par classe" },
 ];
 
 const fmt = (v: number) => v.toFixed(2).replace(".", ",");
@@ -74,6 +75,43 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
   const [webgpu, setWebgpu] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   // Le niveau actif vient toujours de l'état d'affichage partagé (jamais d'une copie locale qui pourrait retarder).
+  // Visite à hauteur d'œil (D-075) : hauteur saisie au-dessus du niveau actif (1,60 m proposé, convention de vue).
+  const [hauteurOeil, setHauteurOeil] = useState("1,60");
+  const [visite, setVisite] = useState<number | null>(null);
+  const commencerVisite = () => {
+    const h = Number(hauteurOeil.replace(",", "."));
+    const n = ui.niveauId ? etat.niveaux[ui.niveauId] : null;
+    if (!n || !(h > 0)) return;
+    sceneRef.current?.commencerVisite(n.elevation + h);
+    setVisite(n.elevation + h);
+    etatUi.set({ aide: "Visite : glissez pour regarder autour ; ↑ ↓ (ou Z S) pour avancer, ← → (ou Q D) pour tourner ; Maj : pas plus grands." });
+  };
+  const bouger = (avance: number, tour: number) => {
+    if (avance) sceneRef.current?.avancerVisite(avance);
+    if (tour) sceneRef.current?.tournerVisite(tour);
+  };
+  useEffect(() => {
+    if (visite === null) return;
+    const touche = (e: KeyboardEvent) => {
+      const cible = e.target as HTMLElement | null;
+      if (cible && (cible.tagName === "INPUT" || cible.tagName === "TEXTAREA" || cible.tagName === "SELECT" || cible.isContentEditable)) return;
+      const k = e.key.toLowerCase();
+      const pas = e.shiftKey ? 2 : 0.5;
+      const angle = e.shiftKey ? 45 : 15;
+      if (k === "arrowup" || k === "z" || k === "w") bouger(pas, 0);
+      else if (k === "arrowdown" || k === "s") bouger(-pas, 0);
+      else if (k === "arrowleft" || k === "q" || k === "a") bouger(0, angle);
+      else if (k === "arrowright" || k === "d") bouger(0, -angle);
+      else if (k === "escape") {
+        sceneRef.current?.quitterVisite();
+        setVisite(null);
+      } else return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    window.addEventListener("keydown", touche, true);
+    return () => window.removeEventListener("keydown", touche, true);
+  }, [visite]);
   const [reglages, setReglages] = useState<Omit<OptionsScene, "niveauActif">>({ vue: "perspective", presentation: "batiment", coupeHorizontale: null, positionCoupe: 0.5, aretes: true });
   const options: OptionsScene = useMemo(() => ({ ...reglages, niveauActif: ui.niveauId }), [reglages, ui.niveauId]);
   const setOptions = (patch: Partial<Omit<OptionsScene, "niveauActif">>) => setReglages((r) => ({ ...r, ...patch }));
@@ -362,7 +400,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
             </select>
           </label>
         )}
-        {options.vue === "perspective" && (options.presentation === "eclate" || options.presentation === "eclate-horizontal") && (
+        {options.vue === "perspective" && (options.presentation === "eclate" || options.presentation === "eclate-horizontal" || options.presentation === "eclate-classes") && (
           <label className="vue3d-curseur">
             Écart {fmt(options.ecartEclate ?? 4)} m
             <input type="range" data-ecart-eclate min={0} max={20} step={0.5} value={options.ecartEclate ?? 4} onChange={(e) => setOptions({ ecartEclate: e.target.valueAsNumber })} />
@@ -379,7 +417,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
             </button>
           )
         )}
-        {options.vue === "perspective" && options.presentation !== "eclate" && options.presentation !== "eclate-horizontal" && (
+        {options.vue === "perspective" && options.presentation !== "eclate" && options.presentation !== "eclate-horizontal" && options.presentation !== "eclate-classes" && (
           <label className="vue3d-case">
             <input type="checkbox" checked={options.coupeHorizontale !== null} onChange={(e) => setOptions({ coupeHorizontale: e.target.checked ? 1.2 : null })} />
             Coupe horizontale
@@ -401,7 +439,24 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
           <input type="checkbox" checked={options.aretes} onChange={(e) => setOptions({ aretes: e.target.checked })} />
           Arêtes
         </label>
-        <button type="button" onClick={() => sceneRef.current?.cadrer()}>Cadrer</button>
+        <button type="button" onClick={() => sceneRef.current?.cadrer()} disabled={visite !== null}>Cadrer</button>
+        {options.vue === "perspective" && (visite === null ? (
+          <span className="vue3d-ligne">
+            <label className="vue3d-curseur">
+              Œil à (m)
+              <input inputMode="decimal" size={4} aria-label="Hauteur de l'œil au-dessus du niveau (m)" value={hauteurOeil} onChange={(e) => setHauteurOeil(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-visite-oeil />
+            </label>
+            <button type="button" data-visite="commencer" disabled={!ui.niveauId || !(Number(hauteurOeil.replace(",", ".")) > 0)} onClick={commencerVisite}>Visite à hauteur d'œil</button>
+          </span>
+        ) : (
+          <span className="vue3d-ligne" data-visite-active={visite.toFixed(2)}>
+            <button type="button" title="Avancer (↑ ou Z)" onClick={() => bouger(0.5, 0)}>↑<span className="sr-only">Avancer</span></button>
+            <button type="button" title="Reculer (↓ ou S)" onClick={() => bouger(-0.5, 0)}>↓<span className="sr-only">Reculer</span></button>
+            <button type="button" title="Tourner à gauche (← ou Q)" onClick={() => bouger(0, 15)}>↺<span className="sr-only">Tourner à gauche</span></button>
+            <button type="button" title="Tourner à droite (→ ou D)" onClick={() => bouger(0, -15)}>↻<span className="sr-only">Tourner à droite</span></button>
+            <button type="button" data-visite="quitter" onClick={() => { sceneRef.current?.quitterVisite(); setVisite(null); }}>Quitter la visite</button>
+          </span>
+        ))}
         <details className="vue3d-enregistrees" data-vues-3d>
           <summary>Vues enregistrées ({enregistrees.length})</summary>
           {enregistrees.length > 0 && (

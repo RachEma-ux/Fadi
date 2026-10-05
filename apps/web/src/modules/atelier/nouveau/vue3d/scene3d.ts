@@ -9,8 +9,15 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { chapeauxDeCoupe, englobant, maillageObjet, niveauxOrdonnes, raccordMur, type Maillage, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 
 export type VueTechnique = "perspective" | "dessus" | "coupe-ns" | "coupe-eo" | "facade-sud" | "facade-nord" | "facade-est" | "facade-ouest";
-export type Presentation = "batiment" | "niveau" | "eclate" | "eclate-horizontal";
-const estEclate = (p: Presentation | undefined) => p === "eclate" || p === "eclate-horizontal";
+export type Presentation = "batiment" | "niveau" | "eclate" | "eclate-horizontal" | "eclate-classes";
+const estEclate = (p: Presentation | undefined) => p === "eclate" || p === "eclate-horizontal" || p === "eclate-classes";
+
+/**
+ * Éclaté par classe (D-075, DA-18-03) : chaque classe soulevée d'un écart, dans cet ordre (les ouvertures restent
+ * avec leurs murs) ; les classes absentes ne laissent pas de vide.
+ */
+const ORDRE_ECLATE_CLASSES = ["dalle", "mur", "poteau", "escalier", "garde-corps", "piece", "espace", "zone", "solide", "bloc-occurrence", "objet-importe", "toiture"];
+const classeEclate = (c: string) => (c === "porte" || c === "fenetre" || c === "ouverture" ? "mur" : c);
 
 export interface OptionsScene {
   vue: VueTechnique;
@@ -31,6 +38,8 @@ interface Lot {
   /** Premier triangle de chaque objet (croissant) et son identifiant. */
   debuts: number[];
   ids: string[];
+  /** Classe des objets du lot (éclaté par classe). */
+  classe: string;
 }
 
 export interface MesuresRendu {
@@ -51,6 +60,8 @@ export interface MesuresRendu {
   /** Poignées du manipulateur affichées (0 ou 2) et position écran d'une flèche (instrumentation de la recette). */
   poignees?: number;
   localiserPoignee?: (axe: "x" | "y" | "z" | "r" | "c") => { x: number; y: number } | null;
+  /** Point de vue courant (recette : visite à hauteur d'œil). */
+  pointDeVue?: () => { position: { x: number; y: number; z: number }; cible: { x: number; y: number; z: number } };
 }
 
 const ECART_ECLATE = 4;
@@ -154,6 +165,7 @@ export class Scene3D {
     sceneActive = this;
     this.mesures.localiser = (id) => this.ecranDe(id);
     this.mesures.sonder = (x, y) => this.pointer(x, y)?.objetId ?? null;
+    this.mesures.pointDeVue = () => this.pointDeVue();
     window.fadiMesures3D = this.mesures;
     return this.mesures.moteur;
   }
@@ -214,7 +226,7 @@ export class Scene3D {
       const m = this.maillage(etat, o, cleNiveaux);
       if (!m) continue;
       tous.push(m);
-      const cle = `${m.niveauId ?? "-"}|${m.couleur}|${m.opacite}`;
+      const cle = `${m.niveauId ?? "-"}|${m.couleur}|${m.opacite}|${classeEclate(o.classe)}`;
       const l = parLot.get(cle) ?? [];
       l.push(m);
       parLot.set(cle, l);
@@ -262,7 +274,7 @@ export class Scene3D {
         aretes = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), this.matAretes);
         groupe.add(aretes);
       }
-      this.lots.push({ maillage: mesh, aretes, debuts, ids });
+      this.lots.push({ maillage: mesh, aretes, debuts, ids, classe: cle.split("|")[3]! });
     }
     this.maillagesCourants = tous;
     this.cleChapeaux = "";
@@ -295,6 +307,12 @@ export class Scene3D {
       if (o.vue === "perspective" && o.coupeHorizontale !== null && actif && n && n.ordre > actif.ordre && !estEclate(o.presentation)) g.visible = false;
     }
     for (const l of this.lots) if (l.aretes) l.aretes.visible = o.aretes || o.vue !== "perspective";
+    // Éclaté par classe : chaque lot soulevé selon le rang de sa classe ; sinon, à sa place.
+    for (const l of this.lots) {
+      const z = o.presentation === "eclate-classes" ? this.decalageClasse(l.classe, o) : 0;
+      l.maillage.position.z = z;
+      if (l.aretes) l.aretes.position.z = z;
+    }
     // Plans de coupe (partagés par tous les matériaux).
     this.plans.length = 0;
     const b = this.boite;
@@ -309,11 +327,32 @@ export class Scene3D {
     this.rendre();
   }
 
+  private classesPresentes(): string[] {
+    const presentes = new Set(this.lots.map((l) => l.classe));
+    return [...ORDRE_ECLATE_CLASSES.filter((c) => presentes.has(c)), ...[...presentes].filter((c) => !ORDRE_ECLATE_CLASSES.includes(c)).sort()];
+  }
+
+  private decalageClasse(classe: string, o: OptionsScene | null = this.options): number {
+    if (o?.presentation !== "eclate-classes") return 0;
+    return Math.max(0, this.classesPresentes().indexOf(classeEclate(classe))) * (o.ecartEclate ?? ECART_ECLATE);
+  }
+
+  /** Décalage d'affichage d'un objet : celui de son niveau (éclaté par niveau) et de sa classe (éclaté par classe). */
+  private decalageObjet(niveauId: string | null, classe: string | undefined): THREE.Vector3 {
+    const v = new THREE.Vector3();
+    const g = niveauId ? this.groupes.get(niveauId) : null;
+    if (g) v.copy(g.position);
+    if (classe) v.z += this.decalageClasse(classe);
+    return v;
+  }
+
   /** Place la caméra pour la vue courante. */
   cadrer(): void {
+    if (this.visite) return; // en visite, la caméra reste à hauteur d'œil
     const o = this.options;
     const b = this.boite.clone();
     if (o?.presentation === "eclate" && this.etat) b.max.z += niveauxOrdonnes(this.etat).length * (o.ecartEclate ?? ECART_ECLATE);
+    if (o?.presentation === "eclate-classes") b.max.z += this.classesPresentes().length * (o.ecartEclate ?? ECART_ECLATE);
     if (o?.presentation === "eclate-horizontal") {
       // Emprise réelle des niveaux déplacés.
       const u = new THREE.Box3();
@@ -376,6 +415,68 @@ export class Scene3D {
     return { position: { x: r(p.x), y: r(p.y), z: r(p.z) }, cible: { x: r(c.x), y: r(c.y), z: r(c.z) } };
   }
 
+  // ---------------------------------------------------------------------------------------------------------------
+  // Visite à hauteur d'œil (D-075, DA-17-16) : l'œil posé à l'altitude du niveau + hauteur saisie, au centre de la
+  // vue courante, regard horizontal ; on regarde autour en glissant, on avance et on tourne au clavier ou aux boutons.
+  // ---------------------------------------------------------------------------------------------------------------
+
+  private visite: { z: number } | null = null;
+
+  get enVisite(): boolean {
+    return this.visite !== null;
+  }
+
+  commencerVisite(altitudeOeil: number): void {
+    if (this.camera !== this.perspective) return;
+    const cible = this.controles.target.clone();
+    const dir = new THREE.Vector3().subVectors(cible, this.perspective.position);
+    dir.z = 0;
+    if (dir.lengthSq() < 1e-9) dir.set(0, 1, 0);
+    dir.normalize();
+    this.visite = { z: altitudeOeil };
+    this.perspective.position.set(cible.x, cible.y, altitudeOeil);
+    this.controles.enableZoom = false;
+    this.controles.enablePan = false;
+    this.controles.target.set(cible.x + dir.x * 0.01, cible.y + dir.y * 0.01, altitudeOeil);
+    this.controles.update();
+    this.rendre();
+  }
+
+  /** Avance (m, négatif : recule) dans la direction du regard, à hauteur constante. */
+  avancerVisite(d: number): void {
+    if (!this.visite) return;
+    const dir = new THREE.Vector3().subVectors(this.controles.target, this.perspective.position);
+    dir.z = 0;
+    if (dir.lengthSq() < 1e-12) return;
+    dir.normalize().multiplyScalar(d);
+    this.perspective.position.add(dir);
+    this.controles.target.add(dir);
+    this.perspective.position.z = this.visite.z;
+    this.controles.update();
+    this.rendre();
+  }
+
+  /** Tourne le regard (degrés, positif : vers la gauche). */
+  tournerVisite(deg: number): void {
+    if (!this.visite) return;
+    const p = this.perspective.position;
+    const t = this.controles.target;
+    const a = (deg * Math.PI) / 180;
+    const dx = t.x - p.x;
+    const dy = t.y - p.y;
+    t.set(p.x + dx * Math.cos(a) - dy * Math.sin(a), p.y + dx * Math.sin(a) + dy * Math.cos(a), t.z);
+    this.controles.update();
+    this.rendre();
+  }
+
+  quitterVisite(): void {
+    if (!this.visite) return;
+    this.visite = null;
+    this.controles.enableZoom = true;
+    this.controles.enablePan = true;
+    this.cadrer();
+  }
+
   /** Replace la caméra perspective sur un point de vue enregistré (après `appliquerOptions`). */
   placerPointDeVue(v: { position: { x: number; y: number; z: number }; cible: { x: number; y: number; z: number } }): void {
     if (this.camera !== this.perspective) return;
@@ -412,10 +513,8 @@ export class Scene3D {
       if (!m) continue;
       const mesh = this.versMesh(m, this.matSelection);
       const g = m.niveauId ? this.groupes.get(m.niveauId) : null;
-      if (g) {
-        mesh.position.copy(g.position);
-        mesh.visible = g.visible;
-      }
+      mesh.position.copy(this.decalageObjet(m.niveauId, o.classe));
+      if (g) mesh.visible = g.visible;
       this.selection.add(mesh);
     }
     this.rendre();
@@ -454,8 +553,7 @@ export class Scene3D {
     }
     if (m) {
       const mesh = this.versMesh(m, this.matApercu);
-      const g = m.niveauId ? this.groupes.get(m.niveauId) : null;
-      if (g) mesh.position.copy(g.position);
+      mesh.position.copy(this.decalageObjet(m.niveauId, m.classe));
       this.apercu.add(mesh);
     }
     this.rendre();
@@ -569,7 +667,7 @@ export class Scene3D {
     const m = this.maillage(etat, o, JSON.stringify(etat.niveaux));
     const e = m ? englobant([m]) : null;
     if (!e || !m) return null;
-    const d = m.niveauId ? this.groupes.get(m.niveauId)?.position : undefined;
+    const d = this.decalageObjet(m.niveauId, o.classe);
     const p = new THREE.Vector3((e.min[0] + e.max[0]) / 2 + (d?.x ?? 0), (e.min[1] + e.max[1]) / 2 + (d?.y ?? 0), e.max[2] - 0.05 + (d?.z ?? 0)).project(this.camera);
     return { x: ((p.x + 1) / 2) * this.largeur, y: ((1 - p.y) / 2) * this.hauteur };
   }
