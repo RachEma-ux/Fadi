@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { axesDesMurs, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -144,7 +144,7 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       return emettre([{ type: "dalle.creer", params: { ...base, contour: choix.contour, trous: choix.trous.map((t) => t.contour), epaisseur: m(ep), usage: "plancher" } }], `Plancher ${fmt(choix.aire)} m²`, `Plancher créé (${fmt(choix.aire)} m², ${choix.trous.length} trémie(s)).${deja}`);
     }
     case "piece": {
-      const axes: AxeMur[] = Object.values(etat.objets).filter((o): o is Occurrence<"mur"> => o.classe === "mur" && o.niveauId === niveauId).map((w) => ({ id: w.id, a: w.params.a, b: w.params.b }));
+      const axes: AxeMur[] = axesDesMurs(Object.values(etat.objets).filter((o): o is Occurrence<"mur"> => o.classe === "mur" && o.niveauId === niveauId));
       const faces = boucles(axes).filter((f) => pointDansPolygone(point, f.contour));
       if (faces.length === 0) return attendre([], "Aucune boucle fermée de murs ici : fermez le contour ou utilisez l'outil Espace.");
       const face = faces.sort((u, v) => u.aire - v.aire)[0]!;

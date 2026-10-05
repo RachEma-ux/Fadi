@@ -4,7 +4,7 @@
  */
 import { codesProches, referentielDu } from "./referentiels.js";
 import { lireCouches } from "../compositions.js";
-import { boucles, type AxeMur } from "../geometrie.js";
+import { axesDesMurs, boucles, type AxeMur } from "../geometrie.js";
 import type { Calque, CoordonneeCadastrale, Definition, Groupe, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque, Propriete, Reference } from "../modele.js";
 import { objetsDeClasse, objetsDuNiveau } from "../modele.js";
 import { CLASSES, estClasse } from "../ontologie.js";
@@ -531,7 +531,7 @@ export interface PropositionPiece {
 /** Boucles fermées des axes de murs d'un niveau ; les boucles déjà représentées par une pièce sont marquées. */
 export function detecterPieces(etat: ModeleAtelier, niveauId: string): PropositionPiece[] {
   const murs = objetsDeClasse(etat, "mur", niveauId);
-  const axes: AxeMur[] = murs.map((m) => ({ id: m.id, a: m.params.a, b: m.params.b }));
+  const axes: AxeMur[] = axesDesMurs(murs as Occurrence<"mur">[]);
   const pieces = objetsDeClasse(etat, "piece", niveauId) as Occurrence<"piece">[];
   return boucles(axes).map((b) => {
     const c = b.contour;

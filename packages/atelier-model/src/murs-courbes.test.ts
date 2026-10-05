@@ -4,6 +4,8 @@ import { genererVue, type ParamsVue } from "./documents/vues.js";
 import { exporterIfc } from "./echanges/ifc.js";
 import { aireSignee, flecheCorde, hoteOuverture, longueurAxeMur, pointAxeMur, portionAxeMur, projectionSurAxeMur, renflementTroisPoints } from "./geometrie.js";
 import { modeleVide, type Occurrence } from "./modele.js";
+import { detecterPieces } from "./commandes/organisation.js";
+import { proposerPlancher } from "./plancher.js";
 import { maillageObjet } from "./projection/maillage.js";
 import { quantites } from "./quantites.js";
 import { polygoneMurRaccorde } from "./raccords.js";
@@ -88,5 +90,34 @@ describe("ouvertures sur un mur courbe (D-095)", () => {
     const prims = genererVue(v, v.definitions["v"]!.params as unknown as ParamsVue, "v").primitives;
     expect(prims.some((p) => (p as { objetId?: string }).objetId === "f")).toBe(true);
     expect(prims.some((p) => (p as { objetId?: string }).objetId === "p")).toBe(true);
+  });
+});
+
+describe("pièces et planchers délimités par un arc (D-096)", () => {
+  const demiDisque = () =>
+    appliquerLot(modeleVide(), lot([
+      { type: "niveau.creer", params: { id: "n", nom: "R", elevation: 0, hauteur: 3 } },
+      { type: "mur.tracer", params: { id: "droit", niveauId: "n", a: pt(-4, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } },
+      { type: "mur.tracer", params: { id: "arc", niveauId: "n", a: pt(4, 0), b: pt(-4, 0), renflement: 1, epaisseur: m(0.2), hauteur: m(3) } },
+    ])).etat;
+  const aireCordes = (r: number) => 0.5 * r * r * 36 * Math.sin((5 * Math.PI) / 180);
+
+  it("boucle fermée par un mur droit et un mur en demi-cercle : pièce proposée, contour qui suit l'arc", () => {
+    const p = detecterPieces(demiDisque(), "n");
+    expect(p).toHaveLength(1);
+    expect(p[0]!.murs.sort()).toEqual(["arc", "droit"]);
+    expect(p[0]!.aire).toBeCloseTo(aireCordes(4), 6);
+    expect(p[0]!.contour.some((q) => Math.abs(q.x) < 1e-9 && Math.abs(q.y - 4) < 1e-9)).toBe(true);
+  });
+
+  it("plancher : sur l'axe, et sur la face extérieure (arc élargi d'une demi-épaisseur)", () => {
+    const e = demiDisque();
+    const axe = proposerPlancher(e, "n", "axe");
+    expect(axe.contours).toHaveLength(1);
+    expect(axe.contours[0]!.aire).toBeCloseTo(aireCordes(4), 5);
+    const ext = proposerPlancher(e, "n", "exterieur").contours[0]!;
+    expect(Math.max(...ext.contour.map((q) => q.y))).toBeGreaterThan(4.09);
+    expect(Math.min(...ext.contour.map((q) => q.y))).toBeCloseTo(-0.1, 9);
+    expect(proposerPlancher(e, "n", "axe").interstices).toEqual([]);
   });
 });

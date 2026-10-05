@@ -46,6 +46,20 @@ describe("raccord et chanfrein multiples (D-094)", () => {
   });
 });
 
+describe("pièce délimitée par un arc (D-096)", () => {
+  it("clic dans un demi-disque fermé par un mur courbe : pièce au contour qui suit l'arc", () => {
+    const etat = appliquer(socle(), [
+      { type: "mur.tracer", params: { id: "d", niveauId: "rdc", a: pt(-4, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3) } },
+      { type: "mur.tracer", params: { id: "c", niveauId: "rdc", a: pt(4, 0), b: pt(-4, 0), renflement: 1, epaisseur: m(0.2), hauteur: m(3) } },
+    ]);
+    const r = clic("piece", pt(0, 2), etat, ui({ outil: "piece" }), opts);
+    expect(r.commandes).toHaveLength(1);
+    const contour = (r.commandes[0]!.params as { contour: { x: number; y: number }[] }).contour;
+    expect(contour.length).toBe(37);
+    expect(contour.some((q) => Math.abs(q.y - 4) < 1e-9)).toBe(true);
+  });
+});
+
 let n = 0;
 function appliquer(etat: ModeleAtelier, commandes: Commande[]): ModeleAtelier {
   n += 1;

@@ -7,7 +7,7 @@
  * pour la boucle ouverte, interstices listés avec la jonction proposée. Les planchers existants qui s'écartent de
  * la proposition sont signalés, jamais corrigés seuls (R12).
  */
-import { aireSignee, contoursExterieurs, cross, decalerContourCotes, dot, facesMur, memePoint, perp, normalise, pointDansPolygone, projectionSurSegment, sub, type AxeMur, type Vec } from "./geometrie.js";
+import { aireSignee, axesDesMurs, contoursExterieurs, longueurAxeMur, pointAxeMur, projectionSurAxeMur, cross, decalerContourCotes, dot, facesMur, memePoint, perp, normalise, pointDansPolygone, sub, type AxeMur, type Vec } from "./geometrie.js";
 import type { ModeleAtelier, Occurrence } from "./modele.js";
 import { empriseEscalier } from "./commandes/tremie.js";
 import { pt, type Point2 } from "./unites.js";
@@ -102,7 +102,7 @@ export function intersticesMurs(etat: ModeleAtelier, niveauId: string, tol = 1e-
   const libres: { murId: string; point: Point2 }[] = [];
   for (const w of ms) {
     for (const p of [w.params.a, w.params.b]) {
-      const lie = ms.some((v) => v.id !== w.id && (memePoint(p, v.params.a, tol) || memePoint(p, v.params.b, tol) || projectionSurSegment(p, v.params.a, v.params.b).distance <= tol));
+      const lie = ms.some((v) => v.id !== w.id && (memePoint(p, v.params.a, tol) || memePoint(p, v.params.b, tol) || projectionSurAxeMur(p, v.params).distance <= tol));
       if (!lie) libres.push({ murId: w.id, point: pt(p.x, p.y) });
     }
   }
@@ -125,6 +125,15 @@ function decalagesFaceExterieure(contour: readonly Vec[], cotes: readonly string
     const b = contour[(i + 1) % contour.length]!;
     const u = normalise(sub(b, a));
     const exterieur = { x: u.y, y: -u.x };
+    if (w.params.renflement) {
+      // Mur courbe (D-096) : côté de la face d'après la tangente locale, décalage selon l'alignement.
+      const e = w.params.epaisseur.value;
+      const m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      const t = pointAxeMur(w.params, projectionSurAxeMur(m, w.params).t * longueurAxeMur(w.params)).u;
+      const gauche = dot(perp(t), exterieur) > 0;
+      const al = w.params.alignement;
+      return gauche ? (al === "axe" ? e / 2 : al === "gauche" ? 0 : e) : al === "axe" ? e / 2 : al === "gauche" ? e : 0;
+    }
     const f = facesMur(w.params.a, w.params.b, w.params.epaisseur.value, w.params.alignement);
     const nGauche = perp(normalise(sub(w.params.b, w.params.a)));
     const face = dot(nGauche, exterieur) > 0 ? f.gauche : f.droite;
@@ -137,7 +146,7 @@ const memeContour = (c1: readonly Vec[], c2: readonly Vec[], tol = 1e-6) => c1.l
 /** Propositions de plancher du niveau, sur la ligne de rive choisie. Le modèle n'est pas modifié. */
 export function proposerPlancher(etat: ModeleAtelier, niveauId: string, rive: RivePlancher): PropositionsPlancher {
   const ms = murs(etat, niveauId);
-  const axes: AxeMur[] = ms.map((w) => ({ id: w.id, a: w.params.a, b: w.params.b }));
+  const axes: AxeMur[] = axesDesMurs(ms);
   const tremies = tremiesProposees(etat, niveauId);
   const placees = new Set<PropositionTremie>();
   const contours: PropositionContourPlancher[] = [];

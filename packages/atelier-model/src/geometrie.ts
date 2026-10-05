@@ -258,6 +258,26 @@ export interface AxeMur {
   b: Vec;
 }
 
+/**
+ * Axes de murs pour le graphe des boucles (D-096) : un segment par mur droit ; un mur courbe donne la suite de cordes
+ * de son arc (pas de 5°), toutes portant son identifiant — pièces, planchers et boucles délimités par un arc.
+ */
+export function axesDesMurs(murs: readonly { id: string; params: { a: Vec; b: Vec; renflement?: number } }[]): AxeMur[] {
+  const out: AxeMur[] = [];
+  for (const w of murs) {
+    if (!w.params.renflement) {
+      out.push({ id: w.id, a: w.params.a, b: w.params.b });
+      continue;
+    }
+    let prec: Vec = w.params.a;
+    for (const q of pointsRenflement(w.params.a, w.params.b, w.params.renflement, 5)) {
+      out.push({ id: w.id, a: prec, b: q });
+      prec = q;
+    }
+  }
+  return out;
+}
+
 export type TypeJonction = "L" | "T" | "X";
 
 export interface Jonction {
@@ -395,7 +415,10 @@ interface FaceGraphe {
   aireSignee: number;
 }
 
-function facesGraphe(axes: readonly AxeMur[], tol: number): FaceGraphe[] {
+function facesGraphe(axesMurs: readonly AxeMur[], tol: number): FaceGraphe[] {
+  // Clés internes par segment : un mur courbe donne plusieurs segments du même identifiant (D-096).
+  const axes = axesMurs.map((x, i) => ({ id: String(i), a: x.a, b: x.b }));
+  const murDe = (cle: string): string => axesMurs[Number(cle)]!.id;
   const noeuds: Noeud[] = [];
   const idNoeud = (p: Vec): number => {
     const existant = noeuds.find((n) => memePoint(n.p, p, Math.max(tol, 1e-6)));
@@ -424,8 +447,8 @@ function facesGraphe(axes: readonly AxeMur[], tol: number): FaceGraphe[] {
       const u = idNoeud(pts[i]!.p);
       const v = idNoeud(pts[i + 1]!.p);
       if (u === v) continue;
-      aretes.push({ id: aretes.length, de: u, vers: v, mur: axe.id });
-      aretes.push({ id: aretes.length, de: v, vers: u, mur: axe.id });
+      aretes.push({ id: aretes.length, de: u, vers: v, mur: murDe(axe.id) });
+      aretes.push({ id: aretes.length, de: v, vers: u, mur: murDe(axe.id) });
     }
   }
   // 3. Pour chaque nœud, les arêtes sortantes triées par angle.
