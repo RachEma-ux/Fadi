@@ -1380,6 +1380,20 @@ await page.waitForSelector(".plan2d");
   check("mur courbe : tracé en trois clics (début, fin, point de l'arc)", ok && apres === avant + 1, `outil ${ok} · ${avant} → ${apres} · ${aideMur}`);
 }
 
+// Repère de saisie (D-091) : posé en deux clics, affiché, retiré par « Repère global ».
+{
+  await page.keyboard.press("Escape");
+  const ok = await choisirOutil("repère de saisie", "Repère de saisie", "repere-saisie");
+  const z = await page.locator(".plan2d").boundingBox();
+  await page.mouse.click(z.x + z.width * 0.5, z.y + z.height * 0.9);
+  await page.mouse.click(z.x + z.width * 0.6, z.y + z.height * 0.8);
+  const pose = (await page.locator("[data-repere-saisie]").count()) === 1;
+  await page.locator("[data-repere-global]").click();
+  const retire = (await page.locator("[data-repere-saisie]").count()) === 0;
+  await page.keyboard.press("Escape");
+  check("repère de saisie : posé en deux clics, affiché au plan, retiré par « Repère global »", ok && pose && retire, `${ok} · ${pose} · ${retire}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

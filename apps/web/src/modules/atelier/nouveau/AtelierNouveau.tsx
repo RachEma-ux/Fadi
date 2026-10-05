@@ -167,7 +167,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
 
   const appliquerResultat = useCallback(
     (r: ResultatClic) => {
-      etatUi.set({ pointsEnCours: r.pointsEnCours, aide: r.aide });
+      etatUi.set({ pointsEnCours: r.pointsEnCours, aide: r.aide, ...(r.repere !== undefined ? { repere: r.repere } : {}) });
       setMesure(r.mesure ?? null);
       setPrecision("");
       if (r.selectionner) etatUi.selectionner(r.selectionner);
@@ -637,6 +637,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           </span>
         )}
         {erreur ? <span className="etat-erreur" role="alert">{erreur}</span> : <span className="etat-aide">{mesure ?? ui.aide}</span>}
+        {ui.repere && <button type="button" className="lien" data-repere-global onClick={() => etatUi.set({ repere: null, aide: "Repère global rétabli." })}>Repère global (x′ à {String(Math.round(ui.repere.angle * 100) / 100).replace(".", ",")}°)</button>}
         <span className="etat-selection">{selection.length === 1 ? `${CLASSES[selection[0]!.classe].libelle} ${selection[0]!.id}` : selection.length > 1 ? `${selection.length} objets` : ""}</span>
         {ui.curseur && ui.outil !== "selection" && <span className="etat-curseur">x {fmt(ui.curseur.x)} · y {fmt(ui.curseur.y)} m</span>}
         <span className="etat-echelle">{Math.round(ui.vue.echelle)} px/m</span>

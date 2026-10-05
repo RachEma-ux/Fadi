@@ -18,6 +18,8 @@ export interface ResultatClic {
   selectionner?: string[];
   /** Mesure affichée (outil Mesurer). */
   mesure?: string;
+  /** Repère de saisie à poser (D-091) ; null : retour au repère global. */
+  repere?: { origine: Point2; angle: number } | null;
 }
 
 const m = (value: number) => ({ value, unit: "m" as const });
@@ -71,6 +73,14 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       if (distance(a, point) < 1e-6) return attendre(pts, "Point identique au précédent.");
       const commandes: Commande[] = [{ type: "mur.tracer", params: { ...base, a, b: point, epaisseur: m(nombre(ui, "epaisseur", 0.2)), hauteur: m(nombre(ui, "hauteur", niveau?.hauteur ?? 3)), alignement: (ui.parametresOutil["alignement"] as string | undefined) ?? "axe", calqueId: (ui.parametresOutil["calqueId"] as string | null | undefined) ?? null, definitionId: (ui.parametresOutil["typeMur"] as string | null | undefined) ?? null } }];
       return { commandes, label: `Mur ${fmt(distance(a, point))} m`, pointsEnCours: [point], aide: "Mur tracé. Cliquez le point suivant pour enchaîner, Échap pour terminer." };
+    }
+    case "repere-saisie": {
+      // Repère de saisie (D-091) : origine, puis un point de l'axe x′ ; affichage seul.
+      if (pts.length === 0) return attendre([point], "Cliquez un point de l'axe x′ du repère (direction).");
+      const o = pts[0]!;
+      if (distance(o, point) < 1e-6) return attendre(pts, "Point confondu avec l'origine.");
+      const angle = Math.round(((Math.atan2(point.y - o.y, point.x - o.x) * 180) / Math.PI) * 1e6) / 1e6;
+      return { commandes: [], label: "", pointsEnCours: [], aide: `Repère de saisie posé (x′ à ${fmt(angle)}°) : saisies « dx;dy », repérage polaire et flèches du manipulateur s'y rapportent.`, repere: { origine: o, angle } };
     }
     case "mur-courbe": {
       // Mur courbe (D-086) : début, fin, puis un point de l'arc.
@@ -563,7 +573,13 @@ export function saisie(outil: string, texte: string, pts: Point2[], curseur: Poi
   if (outil === "decaler") return null; // la distance est lue depuis les paramètres de l'outil
   if (!dernier) return null;
   let cible: Point2;
-  if (paire) cible = pt(dernier.x + Number(paire[1]), dernier.y + Number(paire[2]));
+  if (paire) {
+    // Repère de saisie (D-091) : « dx;dy » exprimés dans ses axes.
+    const a = ((ui.repere?.angle ?? 0) * Math.PI) / 180;
+    const dx = Number(paire[1]);
+    const dy = Number(paire[2]);
+    cible = pt(Math.round((dernier.x + dx * Math.cos(a) - dy * Math.sin(a)) * 1e9) / 1e9, Math.round((dernier.y + dx * Math.sin(a) + dy * Math.cos(a)) * 1e9) / 1e9);
+  }
   else {
     const l = Number(t);
     if (!(l > 0)) return null;

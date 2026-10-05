@@ -478,3 +478,22 @@ describe("mur courbe au plan (D-086)", () => {
     expect(appliquer(etat, r.commandes).objets).toBeDefined();
   });
 });
+
+describe("repère de saisie (D-091)", () => {
+  it("posé en deux clics ; « dx;dy » dans ses axes ; polaire depuis son axe ; manipulateur selon x′", async () => {
+    const etat = socle();
+    const r = clic("repere-saisie", pt(1, 1), etat, ui({ outil: "repere-saisie", pointsEnCours: [pt(0, 0)] }), opts);
+    expect(r.repere?.angle).toBeCloseTo(45, 6);
+    const s = saisie("ligne", "2;0", [pt(0, 0)], null, etat, ui({ outil: "ligne", pointsEnCours: [pt(0, 0)], repere: { origine: pt(0, 0), angle: 90 } }), opts)!;
+    const p = (s.commandes[0]?.params as { points?: { x: number; y: number }[] } | undefined)?.points?.[1] ?? s.pointsEnCours[s.pointsEnCours.length - 1]!;
+    expect(p.x).toBeCloseTo(0, 9);
+    expect(p.y).toBeCloseTo(2, 9);
+    const vide = segmentsDuNiveau(etat, "rdc");
+    const acc = { extremite: false, milieu: false, centre: false, perpendiculaire: false, intersection: false, orthogonal: true, grille: false, pasGrille: 0.5, pasPolaire: 90, angleRepere: 30 };
+    const a = accrocher(pt(10 * Math.cos(0.5), 10 * Math.sin(0.5)), vide, acc, 0.5, pt(0, 0));
+    expect(Math.atan2(a.point.y, a.point.x)).toBeCloseTo(Math.PI / 6, 9);
+    const { apercuManip } = await import("./plan2d/Plan2D");
+    const m = apercuManip("x", pt(0, 0), pt(3, 3), pt(0, 0), false, 90);
+    expect([m.dx, m.dy]).toEqual([0, 3]);
+  });
+});

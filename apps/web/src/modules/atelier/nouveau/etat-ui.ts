@@ -24,6 +24,8 @@ export interface Accrochages {
   proche?: boolean;
   /** Pas du repérage polaire, en degrés (D-071) ; absent des préférences anciennes : 45°. */
   pasPolaire?: number;
+  /** Orientation du repère de saisie (D-091), en degrés, posée par l'état d'interface ; absente : repère global. */
+  angleRepere?: number;
 }
 
 export interface Vue2D {
@@ -61,6 +63,11 @@ export interface EtatUi {
   filtres: FiltresAffichage;
   /** Isolement (DA-18-04) : seuls ces objets sont affichés, pour cet utilisateur et cette session ; null = inactif. */
   isolement: string[] | null;
+  /**
+   * Repère de saisie (D-091, DA-02-16) : origine et orientation (degrés) d'un repère temporaire — saisies « dx;dy »,
+   * repérage polaire et flèches du manipulateur s'y rapportent. Affichage seul, jamais dans le modèle (R10).
+   */
+  repere: { origine: Point2; angle: number } | null;
   /** Ensembles d'affichage locaux (préréglages nommés), conservés sur cet appareil. */
   ensembles: EnsembleLocal[];
 }
@@ -115,6 +122,7 @@ let etat: EtatUi = {
   filtres: { classesMasquees: prefs.filtres?.classesMasquees ?? [], calquesMasques: prefs.filtres?.calquesMasques ?? [] },
   ensembles: Array.isArray(prefs.ensembles) ? prefs.ensembles : [],
   isolement: null,
+  repere: null,
 };
 
 const ecouteurs = new Set<() => void>();

@@ -161,3 +161,4 @@ Murs courbes (`murs-courbes.test.ts`, e2e, D-086).
 Échelle d'un escalier, étirer arcs et cercles, propriétés des groupes et calques (tests, e2e, D-088).
 Verrou transmis et notifié (`atelier-commands.test.ts`, D-089).
 Boîte de coupe et annotations 3D (`vues3d.test.ts`, e2e, D-090).
+Repère de saisie (`nouveau.test.ts`, e2e, D-091).

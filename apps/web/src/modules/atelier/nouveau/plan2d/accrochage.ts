@@ -180,7 +180,9 @@ export function accrocher(p: Point2, cache: ReturnType<typeof segmentsDuNiveau>,
       const angle = Math.atan2(dy, dx);
       const pasDeg = options.pasPolaire && options.pasPolaire > 0 && options.pasPolaire <= 90 ? options.pasPolaire : 45;
       const pas = (pasDeg * Math.PI) / 180;
-      const arrondi = Math.round(angle / pas) * pas;
+      // Repère de saisie (D-091) : les directions polaires partent de son axe x.
+      const base = ((options.angleRepere ?? 0) * Math.PI) / 180;
+      const arrondi = base + Math.round((angle - base) / pas) * pas;
       if (Math.abs(angle - arrondi) < (rayon / Math.max(l, 1e-9)) * 2) {
         const q = pt(depuis.x + l * Math.cos(arrondi), depuis.y + l * Math.sin(arrondi));
         return { point: options.grille ? surGrille(q, options.pasGrille) : q, type: "orthogonal", objetId: null };

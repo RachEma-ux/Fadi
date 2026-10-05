@@ -96,6 +96,8 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   // Accrochage aussi sur les traits des références externes du niveau (DA-05-11), qui restent non sélectionnables.
   const externesNiveau = useMemo(() => externes.filter((x) => x.niveauId === ui.niveauId), [externes, ui.niveauId]);
   const cache = useMemo(() => avecExternes(segmentsDuNiveau(etat, ui.niveauId), externesNiveau), [etat, ui.niveauId, externesNiveau]);
+  // Repère de saisie (D-091) : les accrochages polaires suivent son orientation.
+  const accs = useMemo(() => (ui.repere ? { ...ui.accrochages, angleRepere: ui.repere.angle } : ui.accrochages), [ui.accrochages, ui.repere]);
   // Pivot déplaçable (D-077) : propre à la sélection courante, affichage seul (R10).
   const [pivotPerso, setPivotPerso] = useState<{ cle: string; p: Point2 } | null>(null);
   const cleSelection = ui.selection.join("|");
@@ -123,7 +125,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       else if (e.key === "Backspace") setSaisie((v) => v.slice(0, -1));
       else if (e.key === "Enter" && saisie && boiteManip) {
         const v = Number(saisie.replace(",", "."));
-        const m = Number.isFinite(v) ? valeurSaisie(manip, v) : null;
+        const m = Number.isFinite(v) ? valeurSaisie(manip, v, ui.repere?.angle ?? 0) : null;
         finir();
         setManip(null);
         const c = m ? commandeManip(m, boiteManip.pivot, ui.selection) : null;
@@ -169,7 +171,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     }
     const g = glisse.current;
     if (g?.mode === "visee") {
-      const a = accrocher(pr.depuis(sx, sy), cache, ui.accrochages, rayon * 2, ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null);
+      const a = accrocher(pr.depuis(sx, sy), cache, accs, rayon * 2, ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null);
       setLoupe({ sx, sy, point: a.point });
       setAccroche(a);
       return;
@@ -199,19 +201,19 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     }
     if (g?.mode === "manip" && g.poignee === "p") {
       g.bouge = g.bouge || Math.hypot(sx - g.x, sy - g.y) > 4;
-      if (g.bouge) setPivotPerso({ cle: cleSelection, p: accrocher(p, cache, ui.accrochages, rayon, null, ui.selection).point });
+      if (g.bouge) setPivotPerso({ cle: cleSelection, p: accrocher(p, cache, accs, rayon, null, ui.selection).point });
       return;
     }
     if (g?.mode === "manip" && g.poignee && boiteManip) {
       g.bouge = g.bouge || Math.hypot(sx - g.x, sy - g.y) > 4;
-      if (g.bouge) setManip(apercuManip(g.poignee, g.depart, g.poignee === "x" || g.poignee === "y" || g.poignee === "c" ? accrocher(p, cache, ui.accrochages, rayon, g.depart, ui.selection).point : p, boiteManip.pivot, e.shiftKey));
+      if (g.bouge) setManip(apercuManip(g.poignee, g.depart, g.poignee === "x" || g.poignee === "y" || g.poignee === "c" ? accrocher(p, cache, accs, rayon, g.depart, ui.selection).point : p, boiteManip.pivot, e.shiftKey, ui.repere?.angle ?? 0));
       return;
     }
     if (g?.mode === "deplacer") {
       g.bouge = g.bouge || Math.hypot(sx - g.x, sy - g.y) > 4;
       if (g.bouge) {
         // La destination s'accroche aux autres objets (jamais à ceux qu'on déplace).
-        const a = accrocher(p, cache, ui.accrochages, rayon, g.depart, ui.selection);
+        const a = accrocher(p, cache, accs, rayon, g.depart, ui.selection);
         setDecalage({ dx: a.point.x - g.depart.x, dy: a.point.y - g.depart.y, accroche: a });
       }
       return;
@@ -223,7 +225,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       return;
     }
     const depuis = ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null;
-    const a = accrocher(p, cache, ui.accrochages, rayon, depuis);
+    const a = accrocher(p, cache, accs, rayon, depuis);
     setAccroche(a);
     etatUi.set({ curseur: a.point });
   }
@@ -266,7 +268,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     if (poignee && boiteManip && ui.outil === "selection") {
       // Déplacements : saisis par le point remarquable le plus proche, comme le glisser de la sélection ; rotation et
       // échelle : le point pressé, autour du pivot.
-      glisse.current = { mode: "manip", x: sx, y: sy, vue: ui.vue, depart: poignee === "x" || poignee === "y" || poignee === "c" ? accrocher(p, cache, ui.accrochages, rayon, null).point : p, bouge: false, poignee };
+      glisse.current = { mode: "manip", x: sx, y: sy, vue: ui.vue, depart: poignee === "x" || poignee === "y" || poignee === "c" ? accrocher(p, cache, accs, rayon, null).point : p, bouge: false, poignee };
       return;
     }
     if (ui.outil === "selection") {
@@ -275,7 +277,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       const tenue = ui.selection.some((id) => { const x = etat.objets[id]; return !!x && !!raisonVerrou(etat, x); });
       if (sous && ui.selection.includes(sous.objetId) && !e.shiftKey && !readOnly && !tenue) {
         // Saisir la sélection par un point remarquable (extrémité, milieu…) pour la poser avec précision.
-        const prise = accrocher(p, cache, ui.accrochages, rayon, null).point;
+        const prise = accrocher(p, cache, accs, rayon, null).point;
         glisse.current = { mode: "deplacer", x: sx, y: sy, vue: ui.vue, depart: prise, bouge: false };
         return;
       }
@@ -292,7 +294,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
         if (!g || g.mode !== "pan" || g.bouge || pointeurs.current.size !== 1) return;
         glisse.current = { ...g, mode: "visee" };
         etatUi.set({ vue: g.vue });
-        const a = accrocher(g.depart, cache, ui.accrochages, rayon * 2, ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null);
+        const a = accrocher(g.depart, cache, accs, rayon * 2, ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null);
         setLoupe({ sx: g.x, sy: g.y, point: a.point });
         setAccroche(a);
       }, 350);
@@ -399,7 +401,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     }
     // Clic d'outil : point accroché (au doigt, l'accroche est recalculée au point touché).
     const depuis = ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null;
-    const a = e.pointerType === "touch" || !accroche ? accrocher(p, cache, ui.accrochages, rayon * (e.pointerType === "touch" ? 2 : 1), depuis) : accroche;
+    const a = e.pointerType === "touch" || !accroche ? accrocher(p, cache, accs, rayon * (e.pointerType === "touch" ? 2 : 1), depuis) : accroche;
     const sous = objetSousPointeur(p, cache, etat, ui.niveauId, rayon)?.objetId ?? null;
     onResultat(clic(ui.outil, a.point, etat, ui, { rayon, alt: e.altKey, objetSous: sous }));
   }
@@ -421,7 +423,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     return () => el.removeEventListener("wheel", bloquer);
   }, []);
 
-  const pasGrille = ui.accrochages.pasGrille * ui.vue.echelle;
+  const pasGrille = accs.pasGrille * ui.vue.echelle;
   const origine = pr.vers({ x: 0, y: 0 });
   const curseur = accroche?.point ?? null;
   const pts = ui.pointsEnCours;
@@ -451,7 +453,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       onDoubleClick={onTerminer}
     >
       <Definitions2D />
-      {ui.accrochages.grille && pasGrille >= 8 && (
+      {accs.grille && pasGrille >= 8 && (
         <>
           <defs>
             <pattern id="grille-plan" width={pasGrille} height={pasGrille} patternUnits="userSpaceOnUse" x={origine.x} y={origine.y}>
@@ -492,7 +494,8 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
           ))}
         </g>
       )}
-      {boiteManip && !decalage && <Manipulateur2D boite={boiteManip} pr={pr} manip={manip} saisie={saisie} />}
+      {boiteManip && !decalage && <Manipulateur2D boite={boiteManip} pr={pr} manip={manip} saisie={saisie} angle={ui.repere?.angle ?? 0} />}
+      {ui.repere && <RepereSaisie repere={ui.repere} pr={pr} />}
       {decalage && (
         <g className="plan-deplacement" transform={`translate(${decalage.dx * pr.echelle} ${-decalage.dy * pr.echelle})`} pointerEvents="none">
           {objets.filter((o) => selection.has(o.id)).map((o) => (
@@ -745,13 +748,21 @@ export function boiteManipulateur(etat: ModeleAtelier, selection: readonly strin
   return { min: pt(r.min.x, r.min.y), max: pt(r.max.x, r.max.y), pivot: pt((r.min.x + r.max.x) / 2, (r.min.y + r.max.y) / 2) };
 }
 
-const arrondiMm = (v: number) => Math.round(v * 1000) / 1000;
+const arrondiMm = (v: number) => Math.round(v * 1000) / 1000 || 0;
 
 /** Valeurs de l'aperçu : déplacement (contraint à l'axe pour x, y), angle (pas de 1°, 15° avec Maj), facteur (0,01). */
-export function apercuManip(poignee: Poignee, depart: Point2, courant: Point2, pivot: Point2, maj: boolean): ApercuManip {
+export function apercuManip(poignee: Poignee, depart: Point2, courant: Point2, pivot: Point2, maj: boolean, angleRepere = 0): ApercuManip {
   const base: ApercuManip = { poignee, dx: 0, dy: 0, angle: 0, facteur: 1 };
-  if (poignee === "x") return { ...base, dx: arrondiMm(courant.x - depart.x) };
-  if (poignee === "y") return { ...base, dy: arrondiMm(courant.y - depart.y) };
+  // Repère de saisie (D-091) : les flèches suivent ses axes.
+  const ar = (angleRepere * Math.PI) / 180;
+  const u = { x: Math.cos(ar), y: Math.sin(ar) };
+  const v = { x: -u.y, y: u.x };
+  const surAxe = (ax: { x: number; y: number }) => {
+    const d = (courant.x - depart.x) * ax.x + (courant.y - depart.y) * ax.y;
+    return { dx: arrondiMm(d * ax.x), dy: arrondiMm(d * ax.y) };
+  };
+  if (poignee === "x") return { ...base, ...surAxe(u) };
+  if (poignee === "y") return { ...base, ...surAxe(v) };
   if (poignee === "c") return { ...base, dx: arrondiMm(courant.x - depart.x), dy: arrondiMm(courant.y - depart.y) };
   if (poignee === "r") {
     let a = ((Math.atan2(courant.y - pivot.y, courant.x - pivot.x) - Math.atan2(depart.y - pivot.y, depart.x - pivot.x)) * 180) / Math.PI;
@@ -766,11 +777,15 @@ export function apercuManip(poignee: Poignee, depart: Point2, courant: Point2, p
 }
 
 /** Valeur tapée pendant le glissement (D-077) : longueur le long de l'axe ou du geste, angle, facteur. */
-export function valeurSaisie(m: ApercuManip, v: number): ApercuManip | null {
+export function valeurSaisie(m: ApercuManip, v: number, angleRepere = 0): ApercuManip | null {
   if (m.poignee === "r") return { ...m, angle: v };
   if (m.poignee === "s") return v > 0 ? { ...m, facteur: v } : null;
-  if (m.poignee === "x") return { ...m, dx: v * (m.dx < 0 ? -1 : 1), dy: 0 };
-  if (m.poignee === "y") return { ...m, dx: 0, dy: v * (m.dy < 0 ? -1 : 1) };
+  if (m.poignee === "x" || m.poignee === "y") {
+    const ar = (angleRepere * Math.PI) / 180;
+    const ax = m.poignee === "x" ? { x: Math.cos(ar), y: Math.sin(ar) } : { x: -Math.sin(ar), y: Math.cos(ar) };
+    const signe = m.dx * ax.x + m.dy * ax.y < 0 ? -1 : 1;
+    return { ...m, dx: arrondiMm(signe * v * ax.x), dy: arrondiMm(signe * v * ax.y) };
+  }
   const l = Math.hypot(m.dx, m.dy);
   if (l < 1e-12) return null;
   return { ...m, dx: arrondiMm((m.dx / l) * v), dy: arrondiMm((m.dy / l) * v) };
@@ -793,7 +808,7 @@ function transformEcran(m: ApercuManip, c: { x: number; y: number }, echelle: nu
 
 const CIBLE = 44; // px : cible tactile minimale (cahier §8)
 
-function Manipulateur2D({ boite, pr, manip, saisie }: { boite: { min: Point2; max: Point2; pivot: Point2; pivotDeplace?: boolean }; pr: ReturnType<typeof projecteur>; manip: ApercuManip | null; saisie: string }) {
+function Manipulateur2D({ boite, pr, manip, saisie, angle = 0 }: { boite: { min: Point2; max: Point2; pivot: Point2; pivotDeplace?: boolean }; pr: ReturnType<typeof projecteur>; manip: ApercuManip | null; saisie: string; angle?: number }) {
   const c = pr.vers(boite.pivot);
   const a = pr.vers(boite.min);
   const b = pr.vers(boite.max);
@@ -821,12 +836,14 @@ function Manipulateur2D({ boite, pr, manip, saisie }: { boite: { min: Point2; ma
       <line x1={c.x} y1={c.y} x2={rot.x} y2={rot.y} className="manip-tige" pointerEvents="none" />
       <circle cx={rot.x} cy={rot.y} r={8} className="manip-rotation" pointerEvents="none" />
       {cible(rot.x, rot.y, "r", "Tourner autour du centre (glisser ; Maj : pas de 15°)")}
+      <g transform={angle ? `rotate(${-angle} ${c.x} ${c.y})` : undefined}>
       <line x1={c.x} y1={c.y} x2={c.x + L} y2={c.y} className="manip-axe manip-axe-x" pointerEvents="none" />
       <path d={`M ${c.x + L + 12} ${c.y} L ${c.x + L} ${c.y - 6} L ${c.x + L} ${c.y + 6} Z`} className="manip-fleche manip-axe-x" pointerEvents="none" />
       {cible(c.x + L, c.y, "x", "Déplacer le long de x (glisser)")}
       <line x1={c.x} y1={c.y} x2={c.x} y2={c.y - L} className="manip-axe manip-axe-y" pointerEvents="none" />
       <path d={`M ${c.x} ${c.y - L - 12} L ${c.x - 6} ${c.y - L} L ${c.x + 6} ${c.y - L} Z`} className="manip-fleche manip-axe-y" pointerEvents="none" />
       {cible(c.x, c.y - L, "y", "Déplacer le long de y (glisser)")}
+      </g>
       <rect x={c.x - 7} y={c.y - 7} width={14} height={14} className="manip-centre" pointerEvents="none" />
       {cible(c.x, c.y, "c", "Déplacer librement (glisser)")}
       <line x1={c.x} y1={c.y} x2={c.x - 30} y2={c.y + 30} className="manip-tige" pointerEvents="none" />
@@ -859,6 +876,20 @@ function Loupe({ loupe, pr, idObjets, largeur }: { loupe: { sx: number; sy: numb
       <line x1={cx - 10} y1={cy} x2={cx + 10} y2={cy} className="plan-loupe-reticule" />
       <line x1={cx} y1={cy - 10} x2={cx} y2={cy + 10} className="plan-loupe-reticule" />
       <circle cx={cx} cy={cy} r={R} className="plan-loupe-bord" />
+    </g>
+  );
+}
+
+/** Repère de saisie (D-091) : origine et axes x (rouge) et y (vert), dessinés au plan. */
+function RepereSaisie({ repere, pr }: { repere: { origine: Point2; angle: number }; pr: ReturnType<typeof projecteur> }) {
+  const o = pr.vers(repere.origine);
+  return (
+    <g className="plan-repere-saisie" transform={`rotate(${-repere.angle} ${o.x} ${o.y})`} pointerEvents="none" data-repere-saisie={repere.angle}>
+      <line x1={o.x} y1={o.y} x2={o.x + 48} y2={o.y} className="manip-axe manip-axe-x" />
+      <line x1={o.x} y1={o.y} x2={o.x} y2={o.y - 48} className="manip-axe manip-axe-y" />
+      <circle cx={o.x} cy={o.y} r={4} className="manip-centre" />
+      <text x={o.x + 52} y={o.y + 4} className="plan-cote-apercu">x′</text>
+      <text x={o.x + 4} y={o.y - 52} className="plan-cote-apercu">y′</text>
     </g>
   );
 }
