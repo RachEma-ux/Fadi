@@ -145,6 +145,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         })}
       </dl>
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <OuvertureHote o={o as Occurrence<"porte">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
+      {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && !desactive && <JumelerOuverture key={`jum-${o.id}`} o={o as Occurrence<"porte">} onCommandes={onCommandes} />}
       <GroupeSelection sel={[o]} etat={etat} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
       <Classification key={`classif-${o.id}`} sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
@@ -531,6 +532,7 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
         <ChoixPhase sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
         <ChoixVerrou sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
       </dl>
+      {sel.length === 2 && sel.every((o) => o.classe === "mur") && !readOnly && <OuvertureAngle key={sel.map((o) => o.id).join("|")} murs={sel as Occurrence<"mur">[]} onCommandes={onCommandes} />}
       <TableauProprietes key={sel.map((o) => o.id).join("|")} sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
       <Contraintes sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <CreerBloc sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
@@ -1447,6 +1449,46 @@ function TangentesCourbe({ o, onCommandes }: { o: Occurrence<"esquisse">; onComm
         <label>Intensité (m)<input inputMode="decimal" value={longueur} onChange={(e) => setLongueur(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-tangente-longueur /></label>
         <button type="button" disabled={a === null || l === null || !(l > 0)} onClick={() => ecrire({ x: Math.round(l! * Math.cos((a! * Math.PI) / 180) * 1e9) / 1e9, y: Math.round(l! * Math.sin((a! * Math.PI) / 180) * 1e9) / 1e9 }, `Tangente imposée au point ${i + 1} de ${o.id}`)} data-tangente-imposer>Imposer</button>
         <button type="button" disabled={!t} onClick={() => ecrire(null, `Tangente libérée au point ${i + 1} de ${o.id}`)}>Libérer</button>
+      </div>
+    </details>
+  );
+}
+
+/** Jumeler une ouverture (D-083) : n ouvertures égales et leurs meneaux dans la même emprise. */
+function JumelerOuverture({ o, onCommandes }: { o: Occurrence<"porte">; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const [nombre, setNombre] = useState("2");
+  const [meneau, setMeneau] = useState("");
+  const n = Number(nombre);
+  const mn = nombreSaisi(meneau);
+  return (
+    <details className="inspecteur-historique" data-jumeler>
+      <summary>Jumeler</summary>
+      <div className="nav-formulaire-altimetrie">
+        <label>Nombre<select value={nombre} onChange={(e) => setNombre(e.target.value)} data-jumeler-nombre>{[2, 3, 4, 5, 6].map((k) => <option key={k} value={k}>{k}</option>)}</select></label>
+        <label>Meneau (m)<input inputMode="decimal" value={meneau} onChange={(e) => setMeneau(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-jumeler-meneau /></label>
+        <button type="button" disabled={mn === null || !(mn > 0)} onClick={() => onCommandes([{ type: "ouverture.jumeler", params: { id: o.id, nombre: n, meneau: { value: mn!, unit: "m" } } }], `Jumeler ${o.id} en ${n}`)}>Jumeler</button>
+      </div>
+    </details>
+  );
+}
+
+/** Ouverture d'angle sur deux murs joints (D-083) : dimensions saisies, aucune par défaut. */
+function OuvertureAngle({ murs, onCommandes }: { murs: Occurrence<"mur">[]; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const [classe, setClasse] = useState("fenetre");
+  const [v, setV] = useState({ largeurA: "", largeurB: "", hauteur: "", allege: "" });
+  const lu = Object.fromEntries(Object.entries(v).map(([k, x]) => [k, nombreSaisi(x)])) as Record<keyof typeof v, number | null>;
+  const ok = [lu.largeurA, lu.largeurB, lu.hauteur].every((x) => x !== null && x > 0) && (classe !== "fenetre" || (lu.allege !== null && lu.allege >= 0));
+  const champ = (k: keyof typeof v, libelle: string) => <label key={k}>{libelle}<input inputMode="decimal" value={v[k]} onChange={(e) => setV({ ...v, [k]: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-angle-champ={k} /></label>;
+  return (
+    <details className="inspecteur-historique" data-ouverture-angle>
+      <summary>Ouverture d'angle</summary>
+      <div className="nav-formulaire-altimetrie">
+        <label>Classe<select value={classe} onChange={(e) => setClasse(e.target.value)}><option value="fenetre">fenêtre</option><option value="ouverture">baie</option><option value="porte">porte</option></select></label>
+        {champ("largeurA", `Largeur sur ${murs[0]!.id} (m)`)}
+        {champ("largeurB", `Largeur sur ${murs[1]!.id} (m)`)}
+        {champ("hauteur", "Hauteur (m)")}
+        {classe === "fenetre" && champ("allege", "Allège (m)")}
+        <button type="button" disabled={!ok} onClick={() => onCommandes([{ type: "ouverture.angle", params: { murA: murs[0]!.id, murB: murs[1]!.id, classe, largeurA: { value: lu.largeurA!, unit: "m" }, largeurB: { value: lu.largeurB!, unit: "m" }, hauteur: { value: lu.hauteur!, unit: "m" }, ...(classe === "fenetre" ? { allege: { value: lu.allege!, unit: "m" } } : {}) } }], `Ouverture d'angle sur ${murs[0]!.id} et ${murs[1]!.id}`)} data-angle-poser>Poser</button>
       </div>
     </details>
   );

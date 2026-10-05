@@ -4,6 +4,7 @@
  * est un instantané différentiel (`interne.restaurer`), appliqué par annuler / rétablir comme une nouvelle
  * microversion.
  */
+import { jumelerOuverture, ouvertureAngle } from "./fenetres.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import type { Classe } from "../ontologie.js";
 import { estOuverture } from "../ontologie.js";
@@ -127,6 +128,8 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   },
   // Répartir une ouverture le long de son mur (D-047) : `nombre` copies à `entraxe` (m, signé : vers b si positif) ;
   // une copie qui sortirait du mur ou chevaucherait une autre ouverture : refus du lot entier.
+  "ouverture.jumeler": (etat, p, ctx) => jumelerOuverture(etat, p, ctx),
+  "ouverture.angle": (etat, p, ctx) => ouvertureAngle(etat, p, ctx),
   "ouverture.repartir": (etat, p, ctx) => {
     const id = lire.objet(etat, p, "id");
     const o = etat.objets[id]!;
@@ -348,7 +351,7 @@ export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): Resulta
 export function identifiantsCibles(enveloppe: Enveloppe): string[] {
   const ids = new Set<string>();
   for (const c of enveloppe.commands) {
-    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir", "ancienne", "nouvelle", "zoneId", "dalleId"]) {
+    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir", "ancienne", "nouvelle", "zoneId", "dalleId", "murA", "murB"]) {
       const v = c.params[k];
       if (typeof v === "string") ids.add(v);
     }

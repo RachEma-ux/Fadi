@@ -1224,6 +1224,41 @@ await page.waitForSelector(".plan2d");
   check("courbe : tangente imposée au premier point depuis l'inspecteur (90°, 2 m)", rs.status === 200 && !!t && Math.abs(t.x) < 1e-9 && Math.abs(t.y - 2) < 1e-9, `${rs.status} · ${JSON.stringify(t)}`);
 }
 
+// Fenêtre d'angle et fenêtres jumelées (D-083).
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  await selectionner("jonc-a");
+  await page.locator(".nav-filtre").fill("jonc-b");
+  await page.locator('.nav-objets button[data-objet="jonc-b"]').click({ modifiers: ["Shift"] });
+  await page.locator("[data-ouverture-angle] > summary").click();
+  for (const [k, v] of [["largeurA", "1,2"], ["largeurB", "1,2"], ["hauteur", "1,4"], ["allege", "0,9"]]) await page.locator(`[data-angle-champ="${k}"]`).fill(v);
+  await page.locator("[data-angle-poser]").click();
+  let surA = null;
+  let surB = null;
+  for (let k = 0; k < 30 && !(surA && surB); k++) {
+    const os = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "fenetre");
+    surA = os.find((o) => o.params.murHoteId === "jonc-a") ?? null;
+    surB = os.find((o) => o.params.murHoteId === "jonc-b") ?? null;
+    if (!(surA && surB)) await page.waitForTimeout(500);
+  }
+  check("fenêtre d'angle : deux fenêtres groupées sur les deux murs joints", !!surA && !!surB && surA.groupeId === surB.groupeId && !!surA.groupeId, `${surA?.id} · ${surB?.id}`);
+  let jumelles = 0;
+  if (surA) {
+    await page.keyboard.press("Escape");
+    await attendreEnregistre().catch(() => {});
+    await selectionner(surA.id);
+    await page.locator("[data-jumeler] > summary").click();
+    await page.locator("[data-jumeler-meneau]").fill("0,1");
+    await page.locator('[data-jumeler] button:has-text("Jumeler")').click();
+    for (let k = 0; k < 30 && jumelles < 2; k++) {
+      jumelles = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "fenetre" && o.params.murHoteId === "jonc-a").length;
+      if (jumelles < 2) await page.waitForTimeout(500);
+    }
+  }
+  check("fenêtres jumelées : la fenêtre partagée en deux, meneau de 0,10 m", jumelles === 2, String(jumelles));
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];
