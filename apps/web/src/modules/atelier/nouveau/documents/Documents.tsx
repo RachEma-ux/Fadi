@@ -631,6 +631,7 @@ function FeuilleDetail({ def, etat, revision, readOnly, projet, catalogue, base,
           <label>Indice<input value={form.indice} onChange={(e) => setForm({ ...form, indice: e.target.value })} /></label>
           <label>Auteur<input value={form.auteur} onChange={(e) => setForm({ ...form, auteur: e.target.value })} /></label>
           <label>Date (saisie)<input value={form.date} placeholder="non renseignée" onChange={(e) => setForm({ ...form, date: e.target.value })} /></label>
+          <HistoriqueIndices historique={p.historique ?? []} readOnly={readOnly} onChanger={(historique) => void onCommandes([{ type: "feuille.modifier", params: { id: def.id, params: { historique } } }], `Feuille ${p.numero} : historique des indices`)} />
           <div className="docs-actions">
             <button type="submit" className="docs-principal">Appliquer</button>
             <button type="button" onClick={() => window.confirm(`Supprimer la feuille ${p.numero} ? Les vues restent dans le modèle.`) && void onCommandes([{ type: "feuille.supprimer", params: { id: def.id } }], `Feuille ${p.numero} supprimée`, null)}>Supprimer la feuille</button>
@@ -638,6 +639,36 @@ function FeuilleDetail({ def, etat, revision, readOnly, projet, catalogue, base,
         </fieldset>
       </form>
     </div>
+  );
+}
+
+/** Historique des indices de la feuille (D-061) : lignes saisies, dessinées au-dessus du cartouche. */
+function HistoriqueIndices({ historique, readOnly, onChanger }: { historique: NonNullable<ParamsFeuille["historique"]>; readOnly: boolean; onChanger: (h: NonNullable<ParamsFeuille["historique"]>) => void }) {
+  const [ligne, setLigne] = useState({ indice: "", date: "", objet: "" });
+  return (
+    <fieldset className="docs-historique" data-historique-indices={historique.length}>
+      <legend>Historique des indices</legend>
+      {historique.length > 0 && (
+        <ol>
+          {historique.map((h, i) => (
+            <li key={`${h.indice}-${i}`}>
+              <strong>{h.indice}</strong> · {h.date ?? "date non renseignée"} · {h.objet}
+              {!readOnly && <button type="button" className="lien" onClick={() => onChanger(historique.filter((_, k) => k !== i))}>Retirer</button>}
+            </li>
+          ))}
+        </ol>
+      )}
+      {!readOnly && historique.length < 10 && (
+        <span className="docs-ligne">
+          <input aria-label="Indice" placeholder="Indice" value={ligne.indice} maxLength={10} onChange={(e) => setLigne({ ...ligne, indice: e.target.value })} data-histo="indice" />
+          <input aria-label="Date" placeholder="Date" value={ligne.date} maxLength={30} onChange={(e) => setLigne({ ...ligne, date: e.target.value })} data-histo="date" />
+          <input aria-label="Objet de la modification" placeholder="Objet de la modification" value={ligne.objet} maxLength={80} onChange={(e) => setLigne({ ...ligne, objet: e.target.value })} data-histo="objet" />
+          <button type="button" disabled={!ligne.indice.trim() || !ligne.objet.trim()} data-histo="ajouter" onClick={() => { onChanger([...historique, { indice: ligne.indice.trim(), date: ligne.date.trim() || null, objet: ligne.objet.trim() }]); setLigne({ indice: "", date: "", objet: "" }); }}>
+            Ajouter l'indice
+          </button>
+        </span>
+      )}
+    </fieldset>
   );
 }
 

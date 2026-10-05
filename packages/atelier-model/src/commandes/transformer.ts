@@ -654,7 +654,8 @@ function ajusterOuProlonger(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande,
   const pr = projectionSurSegment(x.point, axe[0], axe[1]);
   const extremite: "a" | "b" = mode === "prolonger" ? (distance(axe[0], x.point) <= distance(axe[1], x.point) ? "a" : "b") : pr.t < 0.5 ? "a" : "b";
   if (mode === "ajuster" && (pr.t <= 0 || pr.t >= 1)) throw new ErreurCommande("precondition", "limiteId", "la limite ne coupe pas l'objet : rien à ajuster");
-  return reducteursTransformer.etirer(etat, { id, extremite, point: pt(x.point.x, x.point.y) }, ctx, []);
+  // Intersection de droites prolongées (1e6 m) : arrondie au nanomètre, comme le prolongement d'une longueur donnée.
+  return reducteursTransformer.etirer(etat, { id, extremite, point: pt(Math.round(x.point.x * 1e9) / 1e9, Math.round(x.point.y * 1e9) / 1e9) }, ctx, []);
 }
 
 function raccordOuChanfrein(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[], mode: "raccorder" | "chanfreiner"): ResultatCommande {

@@ -403,10 +403,10 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         <details className="barre-accrochages">
           <summary>Accrochages</summary>
           <div className="accrochages-liste">
-            {(["extremite", "milieu", "centre", "perpendiculaire", "intersection", "orthogonal", "grille"] as const).map((k) => (
+            {(["extremite", "milieu", "centre", "perpendiculaire", "intersection", "proche", "orthogonal", "grille"] as const).map((k) => (
               <label key={k}>
-                <input type="checkbox" checked={ui.accrochages[k]} onChange={(e) => etatUi.set((u) => ({ accrochages: { ...u.accrochages, [k]: e.target.checked } }))} />
-                {{ extremite: "Extrémité", milieu: "Milieu", centre: "Centre", perpendiculaire: "Perpendiculaire", intersection: "Intersection", orthogonal: "Orthogonal (45°)", grille: "Grille" }[k]}
+                <input type="checkbox" checked={ui.accrochages[k] === true} data-accrochage={k} onChange={(e) => etatUi.set((u) => ({ accrochages: { ...u.accrochages, [k]: e.target.checked } }))} />
+                {{ extremite: "Extrémité", milieu: "Milieu", centre: "Centre", perpendiculaire: "Perpendiculaire", intersection: "Intersection", proche: "Proche (tracés et faces de murs)", orthogonal: "Orthogonal (45°)", grille: "Grille" }[k]}
               </label>
             ))}
             <label>

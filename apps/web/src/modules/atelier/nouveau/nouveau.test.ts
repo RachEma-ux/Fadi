@@ -276,3 +276,21 @@ describe("copier avec codes suivants (D-060)", () => {
     expect(clic("copier", pt(1, 0), etat, u, opts).commandes[0]!.params).not.toHaveProperty("codes");
   });
 });
+
+describe("accrochage « proche » (D-061)", () => {
+  const etat = carre(socle());
+  const cache = segmentsDuNiveau(etat, "rdc");
+  const acc = { ...etatUi.get().accrochages, grille: false, orthogonal: false };
+
+  it("désactivé par défaut ; activé : point le plus proche sur la face d'un mur (épaisseur 0,20 m)", () => {
+    expect(accrocher(pt(1.7, 0.13), cache, acc, 0.05, null).type).toBe("libre");
+    const a = accrocher(pt(1.7, 0.13), cache, { ...acc, proche: true }, 0.05, null);
+    expect(a.type).toBe("proche");
+    expect(a.point.x).toBeCloseTo(1.7);
+    expect(a.point.y).toBeCloseTo(0.1);
+  });
+
+  it("une extrémité proche reste prioritaire", () => {
+    expect(accrocher(pt(4.02, 0.02), cache, { ...acc, proche: true }, 0.2, null).type).toBe("extremite");
+  });
+});

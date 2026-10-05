@@ -20,6 +20,8 @@ export interface Accrochages {
   orthogonal: boolean;
   grille: boolean;
   pasGrille: number;
+  /** Point le plus proche sur un tracé ou une face de mur (D-061) ; absent des préférences anciennes : désactivé. */
+  proche?: boolean;
 }
 
 export interface Vue2D {

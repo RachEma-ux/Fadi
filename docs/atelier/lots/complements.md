@@ -131,3 +131,4 @@ Calques masqués par vue (`documents/calques-vue.test.ts`, e2e, D-057).
 Réseau sur trajectoire, aligner ; paramètres d'outil visibles avec une sélection (`reseau-trajet.test.ts`, e2e, D-058).
 Usage des dalles, hauteur propre des pièces et espaces, trémie d'escalier (`dalles-pieces.test.ts`, e2e, D-059).
 Changer de classe sur place, copie de pièces avec code suivant (`changer-classe.test.ts`, e2e, D-060).
+Frontière apparente vérifiée, accrochage « Proche », historique des indices des feuilles (`frontiere-apparente.test.ts`, `historique-feuille.test.ts`, e2e, D-061).

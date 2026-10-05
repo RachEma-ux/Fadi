@@ -271,6 +271,14 @@ for (const n of [1, 2]) {
 }
 await page.waitForSelector('[data-detail="feuille"] .docs-svg svg', { timeout: 60000 });
 check("feuille A1 : deux vues placées sans dépassement du cadre", (await page.locator(".docs-placements li").count()) === 2 && !/dépasse le cadre/.test(await page.locator('[data-detail="feuille"]').textContent()));
+// Historique des indices (D-061) : une ligne ajoutée, dessinée au-dessus du cartouche.
+await page.locator('[data-histo="indice"]').fill("A");
+await page.locator('[data-histo="date"]').fill("2026-10-05");
+await page.locator('[data-histo="objet"]').fill("Première diffusion");
+await page.locator('[data-histo="ajouter"]').click();
+await page.waitForFunction(() => document.querySelector("[data-historique-indices]")?.getAttribute("data-historique-indices") === "1", null, { timeout: 30000 }).catch(() => {});
+await page.waitForFunction(() => /Première diffusion/.test(document.querySelector('[data-detail="feuille"] svg')?.textContent ?? ""), null, { timeout: 60000 }).catch(() => {});
+check("feuille : historique des indices saisi et dessiné au-dessus du cartouche", (await page.locator("[data-historique-indices]").getAttribute("data-historique-indices")) === "1" && /Première diffusion/.test((await page.locator('[data-detail="feuille"] svg').first().textContent()) ?? ""), `${await page.locator("[data-historique-indices]").getAttribute("data-historique-indices")}`);
 // Déplacer une vue sur la feuille à la souris : glisser son cadre, relâcher = un lot « feuille.placer ».
 const champCentre = page.locator("[data-centre-vue]").first();
 const nomVue = await champCentre.getAttribute("data-centre-vue");

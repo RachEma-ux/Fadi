@@ -27,7 +27,7 @@ export interface PropsPlan2D {
 /** Ordre de dessin : surfaces d'abord, puis structure, puis annotations. */
 const ORDRE: Record<string, number> = { "reference-plan": 0, zone: 1, espace: 2, dalle: 3, toiture: 3, piece: 4, solide: 5, esquisse: 6, escalier: 7, mur: 8, poteau: 9, porte: 10, fenetre: 10, ouverture: 10, cotation: 11, texte: 12, etiquette: 12, "bloc-occurrence": 13 };
 
-const LIBELLE_ACCROCHE: Record<string, string> = { extremite: "Extrémité", milieu: "Milieu", centre: "Centre", quadrant: "Quadrant", perpendiculaire: "Perpendiculaire", intersection: "Intersection", orthogonal: "Orthogonal", grille: "Grille", libre: "" };
+const LIBELLE_ACCROCHE: Record<string, string> = { extremite: "Extrémité", milieu: "Milieu", centre: "Centre", quadrant: "Quadrant", perpendiculaire: "Perpendiculaire", intersection: "Intersection", proche: "Proche", orthogonal: "Orthogonal", grille: "Grille", libre: "" };
 
 const OUTILS_CONTOUR = new Set(["dalle", "toiture", "zone", "espace", "solide", "polygone", "hachure", "polyligne", "spline", "garde-corps"]);
 const OUTILS_SEGMENT = new Set(["mur", "escalier", "ligne", "construction", "cotation", "mesurer", "deplacer", "copier", "miroir", "etirer", "rectangle", "cercle", "arc", "tourner", "echelle"]);
@@ -488,6 +488,7 @@ function MarqueAccroche({ a, pr }: { a: Accroche; pr: ReturnType<typeof projecte
     a.type === "centre" ? <circle cx={s.x} cy={s.y} r={r} /> :
     a.type === "intersection" ? <path d={`M${s.x - r} ${s.y - r} L${s.x + r} ${s.y + r} M${s.x + r} ${s.y - r} L${s.x - r} ${s.y + r}`} /> :
     a.type === "perpendiculaire" ? <path d={`M${s.x - r} ${s.y + r} L${s.x + r} ${s.y + r} M${s.x} ${s.y + r} L${s.x} ${s.y - r}`} /> :
+    a.type === "proche" ? <path d={`M${s.x - r} ${s.y - r} L${s.x + r} ${s.y - r} L${s.x - r} ${s.y + r} L${s.x + r} ${s.y + r} Z`} /> :
     <circle cx={s.x} cy={s.y} r={3} />;
   return (
     <g className={`plan-accroche accroche-${a.type}`}>

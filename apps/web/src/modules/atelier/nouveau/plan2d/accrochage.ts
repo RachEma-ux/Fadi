@@ -3,11 +3,11 @@
  * orthogonal, grille. Rayon à l'écran (12 px, D-012) converti en mètres par l'échelle de la vue. Les accrochages
  * d'objet priment sur l'orthogonal, qui prime sur la grille. Fonctions pures : testables sans DOM.
  */
-import { intersectionSegments, pointsEllipse, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { facesMur, intersectionSegments, pointsEllipse, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { pt } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
-export type TypeAccroche = "extremite" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "intersection" | "orthogonal" | "grille" | "libre";
+export type TypeAccroche = "extremite" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "intersection" | "proche" | "orthogonal" | "grille" | "libre";
 
 export interface Accroche {
   point: Point2;
@@ -29,12 +29,14 @@ export function avecExternes(cache: ReturnType<typeof segmentsDuNiveau>, externe
   if (!externes.length) return cache;
   const segments = [...cache.segments];
   for (const x of externes) for (const t of x.traits.slice(0, 20000)) segments.push({ a: pt(t.a.x, t.a.y), b: pt(t.b.x, t.b.y), objetId: `${PREFIXE_EXTERNE}${x.id}` });
-  return { segments, centres: cache.centres, quadrants: cache.quadrants };
+  return { segments, centres: cache.centres, quadrants: cache.quadrants, faces: cache.faces };
 }
 
 /** Segments et points remarquables d'un niveau (axes de murs, contours, esquisses, escaliers). */
-export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): { segments: Segment[]; centres: { p: Point2; objetId: string }[]; quadrants: { p: Point2; objetId: string }[] } {
+export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): { segments: Segment[]; centres: { p: Point2; objetId: string }[]; quadrants: { p: Point2; objetId: string }[]; faces?: Segment[] } {
   const segments: Segment[] = [];
+  // Faces des murs (D-061) : servent seulement à l'accrochage « proche » (pas d'extrémités ni de milieux en plus).
+  const faces: Segment[] = [];
   const centres: { p: Point2; objetId: string }[] = [];
   // Quadrants des cercles et extrémités d'axes des ellipses (D-050).
   const quadrants: { p: Point2; objetId: string }[] = [];
@@ -45,7 +47,12 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
   for (const o of Object.values(etat.objets) as OccurrenceQuelconque[]) {
     if (o.niveauId !== niveauId) continue;
     switch (o.classe) {
-      case "mur":
+      case "mur": {
+        segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
+        const f = facesMur(o.params.a, o.params.b, o.params.epaisseur.value, o.params.alignement);
+        faces.push({ a: pt(f.gauche[0].x, f.gauche[0].y), b: pt(f.gauche[1].x, f.gauche[1].y), objetId: o.id }, { a: pt(f.droite[0].x, f.droite[0].y), b: pt(f.droite[1].x, f.droite[1].y), objetId: o.id });
+        break;
+      }
       case "escalier":
         segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
         break;
@@ -90,7 +97,7 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
         break;
     }
   }
-  return { segments, centres, quadrants };
+  return { segments, centres, quadrants, faces };
 }
 
 const dist = (a: Point2, b: Point2) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -128,6 +135,13 @@ export function accrocher(p: Point2, cache: ReturnType<typeof segmentsDuNiveau>,
     for (const s of segs) {
       const pr = projectionSurSegment(depuis, s.a, s.b);
       if (pr.t > 0 && pr.t < 1) essayer(pt(pr.point.x, pr.point.y), "perpendiculaire", s.objetId, 0);
+    }
+  }
+  // Point le plus proche (D-061) : sur un tracé ou une face de mur, au-dessous des accroches remarquables.
+  if (!meilleur && options.proche) {
+    for (const s of [...segs, ...(cache.faces ?? []).filter((f) => !exclure.includes(f.objetId))]) {
+      const pr = projectionSurSegment(p, s.a, s.b);
+      essayer(pt(pr.point.x, pr.point.y), "proche", s.objetId, -1);
     }
   }
   if (meilleur) return meilleur;

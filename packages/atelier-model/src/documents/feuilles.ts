@@ -51,6 +51,11 @@ export interface ParamsFeuille {
   vues: PlacementVue[];
   /** Nomenclatures placées (absent des feuilles antérieures : aucune). */
   tableaux?: PlacementTableau[];
+  /**
+   * Historique des indices (D-061) : lignes saisies (indice, date, objet de la modification), de la plus ancienne à la
+   * plus récente, dessinées au-dessus du cartouche ; absent = aucune ligne. Jamais rempli automatiquement.
+   */
+  historique?: { indice: string; date: string | null; objet: string }[];
 }
 
 type Brut = Record<string, unknown>;
@@ -91,8 +96,20 @@ export function lireParamsFeuille(etat: ModeleAtelier, p: Brut): ParamsFeuille {
   });
   if (new Set(tableaux.map((t) => t.type)).size !== tableaux.length) throw new ErreurCommande("invalide", "tableaux", "un tableau ne figure qu'une fois sur une feuille");
   const base = { titre, numero, format, orientation, jeu: texte("jeu", 60), indice: texte("indice", 10), auteur: texte("auteur", 80), date: texte("date", 30), vues };
-  // Une feuille sans tableau garde exactement la forme d'avant (empreintes inchangées).
-  return tableaux.length ? { ...base, tableaux } : base;
+  const brutsH = p["historique"] ?? [];
+  if (!Array.isArray(brutsH) || brutsH.length > 10) throw new ErreurCommande("invalide", "historique", "« historique » : liste de 10 lignes au plus { indice, date, objet }");
+  const historique = brutsH.map((v, i) => {
+    const b = (v ?? {}) as Brut;
+    const champ = (cle: string, max: number, requis: boolean) => {
+      const t = typeof b[cle] === "string" ? (b[cle] as string).trim() : "";
+      if (requis && !t) throw new ErreurCommande("invalide", `historique[${i}].${cle}`, `« ${cle} » requis`);
+      if (t.length > max) throw new ErreurCommande("invalide", `historique[${i}].${cle}`, `« ${cle} » : ${max} caractères au plus`);
+      return t || null;
+    };
+    return { indice: champ("indice", 10, true)!, date: champ("date", 30, false), objet: champ("objet", 80, true)! };
+  });
+  // Une feuille sans tableau ni historique garde exactement la forme d'avant (empreintes inchangées).
+  return { ...base, ...(tableaux.length ? { tableaux } : {}), ...(historique.length ? { historique } : {}) };
 }
 
 export function dimensions(format: FormatFeuille, orientation: OrientationFeuille): { largeur: number; hauteur: number } {
@@ -249,6 +266,22 @@ export function composerFeuille(etat: ModeleAtelier, params: ParamsFeuille, revi
   texte(cx0 + 3, lignes[0]! + 4, `Jeu : ${params.jeu ?? "—"} · Indice : ${params.indice ?? "—"} · Auteur : ${params.auteur ?? "non renseigné"}`.slice(0, 80), 2.6);
   texte(cx0 + 123, lignes[0]! + 4, `Feuille ${params.numero}`, 4);
   texte(cx0 + 3, cy0 + 4, `Révision du modèle ${revision} · empreinte ${empreinte} · date : ${params.date ?? "non renseignée"} · ${params.format} ${params.orientation}`.slice(0, 95), 2.2);
+  // Historique des indices (D-061) : une ligne de 5 mm par indice au-dessus du cartouche, la plus récente en haut.
+  const histo = params.historique ?? [];
+  if (histo.length) {
+    const h = 5;
+    let yb = cy1;
+    for (const [k, l] of [...histo, { indice: "Indice", date: "Date", objet: "Objet de la modification" }].entries()) {
+      const yh = yb + h;
+      rect(cx0, yb, z.x1, yh, k === histo.length ? "coupe" : "fin");
+      ligne({ x: cx0 + 18, y: yb }, { x: cx0 + 18, y: yh });
+      ligne({ x: cx0 + 48, y: yb }, { x: cx0 + 48, y: yh });
+      texte(cx0 + 2, yb + 1.6, l.indice, 2.2);
+      texte(cx0 + 20, yb + 1.6, l.date ?? "—", 2.2);
+      texte(cx0 + 50, yb + 1.6, l.objet.slice(0, 60), 2.2);
+      yb = yh;
+    }
+  }
   const echelles = [...new Set(vues.map((v) => v.echelle))].sort((a, b) => a - b);
   texte(cx0 + 123, cy0 + 4, echelles.length ? `Échelle${echelles.length > 1 ? "s" : ""} 1:${echelles.join(" · 1:")}` : "Sans vue", 2.6);
   return { definitionId, params, largeur, hauteur, primitives: out, vues, tableaux, empreinte, avertissements };
