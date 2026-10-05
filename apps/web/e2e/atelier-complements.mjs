@@ -1030,8 +1030,28 @@ await page.waitForSelector(".plan2d");
   await page.locator("[data-plancher-rive]").selectOption("exterieur");
   await page.locator("#outil-epaisseurPlancher").fill("0.25");
   await page.waitForSelector("[data-propositions-plancher]", { state: "attached", timeout: 10000 }).catch(() => {});
-  const b1 = await page.locator('.plan2d [data-objet="pl-w1"]').boundingBox();
-  const b3 = await page.locator('.plan2d [data-objet="pl-w3"]').boundingBox();
+  // La vue se recentre sur la sélection : attendre qu'elle soit stable avant de viser.
+  let b1 = null;
+  let b3 = null;
+  for (let k = 0; k < 20; k++) {
+    const n1 = await page.locator('.plan2d [data-objet="pl-w1"]').boundingBox();
+    const n3 = await page.locator('.plan2d [data-objet="pl-w3"]').boundingBox();
+    const stable = !!n1 && !!b1 && Math.abs(n1.x - b1.x) < 0.5 && Math.abs(n1.y - b1.y) < 0.5;
+    b1 = n1;
+    b3 = n3;
+    if (stable) break;
+    await page.waitForTimeout(200);
+  }
+  // Aperçu chiffré au survol (D-098) : aire de la proposition, trémies retenues, aire nette.
+  let survol = "";
+  if (b1 && b3) {
+    for (let k = 0; k < 4 && !survol; k++) {
+      // Au milieu exact (la proposition peut ne faire que quelques pixels à l'échelle du niveau) : un léger aller-retour.
+      await page.mouse.move((b1.x + b1.width / 2 + b3.x + b3.width / 2) / 2 + (k % 2 ? 0.5 : 0), (b1.y + b1.height / 2 + b3.y + b3.height / 2) / 2);
+      survol = (await page.locator("[data-plancher-survol]").textContent({ timeout: 2000 }).catch(() => "")) ?? "";
+    }
+  }
+  check("outil Plancher : aperçu chiffré au survol d'une proposition", /m² · 0\/0 trémie\(s\) · net .* m²/.test(survol), survol);
   if (b1 && b3) await page.mouse.click((b1.x + b1.width / 2 + b3.x + b3.width / 2) / 2, (b1.y + b1.height / 2 + b3.y + b3.height / 2) / 2);
   let cree = null;
   for (let k = 0; k < 30 && !cree; k++) {

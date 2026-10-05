@@ -168,3 +168,4 @@ Chanfrein avec un arc, raccord et chanfrein multiples (`chanfrein-arc.test.ts`, 
 Ouvertures sur un mur courbe (`murs-courbes.test.ts`, e2e, D-095).
 Pièces et planchers délimités par un arc (`murs-courbes.test.ts`, `nouveau.test.ts`, D-096).
 Échange BCF 2.1 des vues 3D (`echanges/bcf.test.ts`, e2e, D-097).
+Plancher : trémies choisies une à une, aperçu chiffré au survol (`nouveau.test.ts`, e2e, D-098).

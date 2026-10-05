@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pointsSpline, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { aireNette, centroide, cleTremie, pointDansPolygone, tremiesRetenues, cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pointsSpline, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -33,6 +33,7 @@ const OUTILS_CONTOUR = new Set(["dalle", "toiture", "zone", "espace", "solide", 
 const OUTILS_SEGMENT = new Set(["mur", "escalier", "ligne", "construction", "cotation", "mesurer", "deplacer", "copier", "miroir", "etirer", "rectangle", "cercle", "arc", "tourner", "echelle"]);
 
 const AUCUNE: NonNullable<PropsPlan2D["externes"]> = [];
+const AUCUNE_CLE: string[] = [];
 
 export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes, externes = AUCUNE }: PropsPlan2D) {
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -86,6 +87,9 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   // Outil Plancher (D-069) : propositions en surimpression, jamais écrites.
   const rivePlancher = ui.parametresOutil["rivePlancher"];
   const plancher = useMemo(() => (ui.outil === "plancher" && ui.niveauId && (rivePlancher === "axe" || rivePlancher === "exterieur") ? proposerPlancher(etat, ui.niveauId, rivePlancher) : null), [ui.outil, ui.niveauId, rivePlancher, etat]);
+  // Aperçu chiffré au survol d'une proposition (D-098) et trémies écartées dans l'inspecteur.
+  const [survolPlancher, setSurvolPlancher] = useState<number | null>(null);
+  const tremiesExclues = Array.isArray(ui.parametresOutil["tremiesExclues"]) ? (ui.parametresOutil["tremiesExclues"] as string[]) : AUCUNE_CLE;
   const objets = useMemo(
     () =>
       (Object.values(etat.objets) as OccurrenceQuelconque[])
@@ -237,6 +241,10 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       if ((sous?.objetId ?? null) !== ui.survol) etatUi.set({ survol: sous?.objetId ?? null });
       setAccroche(null);
       return;
+    }
+    if (plancher) {
+      const i = plancher.contours.map((c, k) => ({ k, c })).filter(({ c }) => pointDansPolygone(p, c.contour)).sort((u, v) => u.c.aire - v.c.aire)[0]?.k ?? null;
+      if (i !== survolPlancher) setSurvolPlancher(i);
     }
     const depuis = ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null;
     const a = accrocher(p, cache, accs, rayon, depuis);
@@ -544,9 +552,19 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
             {plancher.contours.map((c, i) => (
               <g key={i}>
                 <path d={chemin(pr, c.contour)} className="plan-apercu-trait plan-proposition" />
-                {c.trous.map((t, k) => <path key={k} d={chemin(pr, t.contour)} className="plan-apercu-trait plan-proposition-trou" />)}
+                {c.trous.map((t, k) => { const exclue = tremiesExclues.includes(cleTremie(t)); return <path key={k} d={chemin(pr, t.contour)} className={`plan-apercu-trait plan-proposition-trou${exclue ? " plan-proposition-trou-exclue" : ""}`} data-tremie-exclue={exclue ? "oui" : "non"} />; })}
               </g>
             ))}
+            {survolPlancher !== null && plancher.contours[survolPlancher] && (() => {
+              const c = plancher.contours[survolPlancher]!;
+              const retenues = tremiesRetenues(c, tremiesExclues);
+              const q = pr.vers(centroide(c.contour));
+              return (
+                <text x={q.x} y={q.y} className="plan-cote-apercu plan-plancher-survol" textAnchor="middle" data-plancher-survol={survolPlancher}>
+                  {`${fmt(c.aire)} m² · ${retenues.length}/${c.trous.length} trémie(s) · net ${fmt(aireNette(c.contour, retenues.map((t) => t.contour)))} m²`}
+                </text>
+              );
+            })()}
             {plancher.interstices.map((x, i) => {
               const q = pr.vers(x.point);
               return <circle key={`i${i}`} cx={q.x} cy={q.y} r={6} className="plan-interstice" />;

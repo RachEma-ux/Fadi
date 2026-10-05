@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../../../lib/api";
-import { bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { aire, cleTremie, bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -1174,6 +1174,7 @@ function SyntheseZoneVue({ o, etat, desactive, onCommandes }: { o: Occurrence<"z
  */
 function PropositionsPlancherVue({ etat, ui, readOnly, onCommandes }: { etat: ModeleAtelier; ui: EtatUi; readOnly: boolean; onCommandes?: (commandes: Commande[], label: string) => void }) {
   const rive = ui.parametresOutil["rivePlancher"];
+  const exclues = Array.isArray(ui.parametresOutil["tremiesExclues"]) ? (ui.parametresOutil["tremiesExclues"] as string[]) : [];
   const props = ui.niveauId && (rive === "axe" || rive === "exterieur") ? proposerPlancher(etat, ui.niveauId, rive) : null;
   const vus = new Set<string>();
   const interstices = (props?.interstices ?? []).filter((x) => {
@@ -1200,6 +1201,25 @@ function PropositionsPlancherVue({ etat, ui, readOnly, onCommandes }: { etat: Mo
               ? `${props.contours.length} contour(s) proposé(s) : ${props.contours.map((c) => `${fmt(c.aire)} m² (${c.trous.length} trémie(s))`).join(" ; ")}. Aire géométrique, pas une surface réglementaire.`
               : "Aucun contour fermé de murs sur ce niveau."}
           </p>
+          {props.contours.some((c) => c.trous.length > 0) && (
+            // Choix trou par trou (D-098) : décocher écarte la trémie du plancher créé au clic ; rien n'est écrit ici.
+            <ul className="inspecteur-liste" data-plancher-tremies>
+              {props.contours.flatMap((c, i) =>
+                c.trous.map((t) => {
+                  const cle = cleTremie(t);
+                  const retenue = !exclues.includes(cle);
+                  return (
+                    <li key={`${i}|${cle}`}>
+                      <label>
+                        <input type="checkbox" checked={retenue} data-tremie={cle} onChange={(e) => etatUi.set((u) => { const avant = Array.isArray(u.parametresOutil["tremiesExclues"]) ? (u.parametresOutil["tremiesExclues"] as string[]) : []; return { parametresOutil: { ...u.parametresOutil, tremiesExclues: e.target.checked ? avant.filter((x) => x !== cle) : [...avant, cle] } }; })} />
+                        Trémie {t.escaliers.join(", ")} — {fmt(Math.round(aire(t.contour) * 100) / 100)} m²{props.contours.length > 1 ? ` (contour ${i + 1})` : ""}
+                      </label>
+                    </li>
+                  );
+                }),
+              )}
+            </ul>
+          )}
           {props.tremiesIsolees.length > 0 && <p className="inspecteur-aide">{props.tremiesIsolees.length} trémie(s) d'escalier hors de tout contour proposé.</p>}
           {interstices.length > 0 && (
             <ul className="inspecteur-liste" data-plancher-interstices={interstices.length}>

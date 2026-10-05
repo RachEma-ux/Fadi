@@ -60,6 +60,24 @@ describe("pièce délimitée par un arc (D-096)", () => {
   });
 });
 
+describe("plancher : trémies choisies une à une (D-098)", () => {
+  it("trémie proposée retenue par défaut ; écartée dans les paramètres de l'outil : dalle sans ce trou", async () => {
+    const { cleTremie, proposerPlancher } = await import("@parcours/atelier-model");
+    const etat = appliquer(socle(), [
+      ...[[0, 0, 10, 0], [10, 0, 10, 6], [10, 6, 0, 6], [0, 6, 0, 0]].map(([ax, ay, bx, by]) => ({ type: "mur.tracer", params: { niveauId: "r1", a: pt(ax!, ay!), b: pt(bx!, by!), epaisseur: m(0.2), hauteur: m(3) } })),
+      { type: "escalier.creer", params: { id: "s1", niveauId: "rdc", a: pt(1, 1), b: pt(4, 1), largeur: m(1), hauteurAFranchir: m(3), niveauDepartId: "rdc", niveauArriveeId: "r1", contremarches: 18, referencePlanSeulement: false } },
+    ]);
+    const t = proposerPlancher(etat, "r1", "axe").contours[0]!.trous[0]!;
+    expect(cleTremie(t)).toBe("s1");
+    const u = (exclues: string[]) => ui({ niveauId: "r1", outil: "plancher", parametresOutil: { rivePlancher: "axe", epaisseurPlancher: 0.25, tremiesExclues: exclues } });
+    const avec = clic("plancher", pt(8, 4), etat, u([]), opts);
+    expect((avec.commandes[0]!.params as { trous: unknown[] }).trous).toHaveLength(1);
+    const sans = clic("plancher", pt(8, 4), etat, u(["s1"]), opts);
+    expect((sans.commandes[0]!.params as { trous: unknown[] }).trous).toHaveLength(0);
+    expect(sans.aide).toMatch(/1 écartée/);
+  });
+});
+
 let n = 0;
 function appliquer(etat: ModeleAtelier, commandes: Commande[]): ModeleAtelier {
   n += 1;

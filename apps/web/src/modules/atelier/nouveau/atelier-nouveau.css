@@ -387,6 +387,10 @@
 .plan-proposition-trou {
   stroke-dasharray: 2 3;
 }
+/* Trémie écartée avant validation (D-098) : trait estompé. */
+.plan-proposition-trou-exclue {
+  opacity: 0.35;
+}
 .plan-interstice {
   fill: none;
   stroke: #b3261e;

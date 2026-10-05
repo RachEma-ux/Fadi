@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { axesDesMurs, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { axesDesMurs, tremiesRetenues, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -140,8 +140,11 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       const props = proposerPlancher(etat, niveauId, rive);
       const choix = props.contours.filter((c) => pointDansPolygone(point, c.contour)).sort((u, v) => u.aire - v.aire)[0];
       if (!choix) return attendre([], props.contours.length ? "Cliquez à l'intérieur d'un contour proposé (pointillés)." : "Aucun contour fermé de murs sur ce niveau : joignez les murs (interstices listés dans l'inspecteur) ou dessinez une dalle.");
+      // Trémies écartées une à une dans l'inspecteur (D-098), avant validation.
+      const exclues = Array.isArray(ui.parametresOutil["tremiesExclues"]) ? (ui.parametresOutil["tremiesExclues"] as string[]) : [];
+      const retenues = tremiesRetenues(choix, exclues);
       const deja = props.planchers.length ? ` Ce niveau a déjà ${props.planchers.length} plancher(s) : signalé, rien n'est fusionné.` : "";
-      return emettre([{ type: "dalle.creer", params: { ...base, contour: choix.contour, trous: choix.trous.map((t) => t.contour), epaisseur: m(ep), usage: "plancher" } }], `Plancher ${fmt(choix.aire)} m²`, `Plancher créé (${fmt(choix.aire)} m², ${choix.trous.length} trémie(s)).${deja}`);
+      return emettre([{ type: "dalle.creer", params: { ...base, contour: choix.contour, trous: retenues.map((t) => t.contour), epaisseur: m(ep), usage: "plancher" } }], `Plancher ${fmt(choix.aire)} m²`, `Plancher créé (${fmt(choix.aire)} m², ${retenues.length} trémie(s)${retenues.length < choix.trous.length ? `, ${choix.trous.length - retenues.length} écartée(s)` : ""}).${deja}`);
     }
     case "piece": {
       const axes: AxeMur[] = axesDesMurs(Object.values(etat.objets).filter((o): o is Occurrence<"mur"> => o.classe === "mur" && o.niveauId === niveauId));

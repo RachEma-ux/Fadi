@@ -21,6 +21,12 @@ export interface PropositionTremie {
   contour: Point2[];
 }
 
+/** Clé stable d'une trémie proposée (D-098) : ses escaliers ; sert au choix trou par trou avant validation. */
+export const cleTremie = (t: PropositionTremie): string => [...t.escaliers].sort().join("+");
+
+/** Trémies retenues d'une proposition : toutes, sauf celles écartées (clés `cleTremie`). */
+export const tremiesRetenues = (c: { trous: readonly PropositionTremie[] }, exclues: readonly string[] = []): PropositionTremie[] => c.trous.filter((t) => !exclues.includes(cleTremie(t)));
+
 export interface PropositionContourPlancher {
   contour: Point2[];
   murs: string[];
