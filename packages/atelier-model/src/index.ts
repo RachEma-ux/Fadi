@@ -48,6 +48,7 @@ export * from "./esquisse/trame.js";
 export { ajusterSpline } from "./esquisse/conversion.js";
 export * from "./echanges/bibliotheque.js";
 export * from "./plancher.js";
+export * from "./coins-jointifs.js";
 export * from "./hachures.js";
 export * from "./blocs-places.js";
 export * from "./reconnaissance.js";

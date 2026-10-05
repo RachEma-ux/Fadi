@@ -3,7 +3,7 @@
  * chanfreiner. Fonctions pures : elles rendent le lot de commandes à exécuter, ou un message expliquant la
  * condition d'activation manquante (UX4 : un outil indisponible dit pourquoi).
  */
-import { decalerPolyligne, pointsPolyligne, pointsArc, pt, type Commande, type ModeleAtelier, type Point2 } from "@parcours/atelier-model";
+import { coinsJointifs, decalerPolyligne, pointsPolyligne, pointsArc, pt, type Commande, type ModeleAtelier, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "./etat-ui";
 
 export type ResultatAction = { commandes: Commande[]; label: string } | { message: string };
@@ -93,8 +93,15 @@ export function actionImmediate(outil: string, etat: ModeleAtelier, ui: EtatUi):
     }
     case "raccorder":
     case "chanfreiner": {
-      if (sel.length !== 2) return { message: `${outil === "raccorder" ? "Raccorder" : "Chanfreiner"} : sélectionnez exactement deux lignes d'esquisse${outil === "raccorder" ? " (ou une ligne et un arc, ou deux arcs)" : ""}.` };
       const taille = nombre(ui, outil === "raccorder" ? "rayon" : "distanceChanfrein", 0.5);
+      const nomOutil = outil === "raccorder" ? "Raccorder" : "Chanfreiner";
+      // Plus de deux éléments (D-094) : un raccord (ou chanfrein) par coin jointif, tous dans un seul lot.
+      if (sel.length > 2) {
+        const coins = coinsJointifs(etat, sel);
+        if (!coins.length) return { message: `${nomOutil} : aucun coin jointif entre les lignes et arcs sélectionnés (extrémités confondues).` };
+        return { commandes: coins.map(([id1, id2]) => ({ type: `transformer.${outil}`, params: { id1, id2, [outil === "raccorder" ? "rayon" : "distance"]: m(taille) } })), label: `${nomOutil} ${coins.length} coins` };
+      }
+      if (sel.length !== 2) return { message: `${nomOutil} : sélectionnez deux lignes d'esquisse, une ligne et un arc, deux arcs, ou plusieurs éléments jointifs.` };
       return { commandes: [{ type: `transformer.${outil}`, params: { id1: sel[0], id2: sel[1], [outil === "raccorder" ? "rayon" : "distance"]: m(taille) } }], label: outil === "raccorder" ? "Raccorder" : "Chanfreiner" };
     }
     case "extruder": {

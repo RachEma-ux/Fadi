@@ -1150,7 +1150,11 @@ await page.waitForSelector(".plan2d");
     rev = md.revision;
     if (vals.join() !== "M-A,M-B") await page.waitForTimeout(500);
   }
-  check("propriétés en tableau : deux cellules saisies, enregistrées en un seul lot", vals.join() === "M-A,M-B" && rev === rev0 + 1, `${vals.join()} · r${rev0} → r${rev}`);
+  // Un seul lot : la dernière entrée de l'historique des deux objets est la même révision (indépendant d'une révision
+  // de départ lue trop tôt).
+  const derniere = async (id) => { const h = (await api("get", `/projects/${pid}/atelier/objets/${id}/historique`)).body?.entrees ?? []; return h[h.length - 1]?.revision ?? null; };
+  const [ra, rb] = [await derniere("jonc-a"), await derniere("jonc-b")];
+  check("propriétés en tableau : deux cellules saisies, enregistrées en un seul lot", vals.join() === "M-A,M-B" && ra !== null && ra === rb && rev >= ra && ra > rev0 - 1, `${vals.join()} · r${rev0} → r${rev} · historique ${ra}/${rb}`);
 }
 
 // Manipulateur 2D : valeur tapée pendant le glissement, pivot déplacé (D-077).
@@ -1491,6 +1495,40 @@ await page.waitForSelector(".plan2d");
     }
   }
   check("poignées de tangente : une par point ; glisser impose la tangente (un lot), Alt + clic la libère", r0.status === 200 && nb === 3 && imposee && rev === avant.revision + 1 && liberee, `${r0.status} · ${nb} · ${JSON.stringify(t)} · r${avant.revision} → r${rev} · ${liberee}`);
+}
+
+// Raccord multiple (D-094) : quatre lignes jointives sélectionnées, palette « Raccorder » : quatre arcs en un lot.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const cotes = [[-70, -70, -66, -70], [-66, -70, -66, -67], [-66, -67, -70, -67], [-70, -67, -70, -70]];
+  const r0 = await lot(pid, `rm-${Date.now()}`, (await modele(pid)).revision, cotes.map(([ax2, ay2, bx, by], i) => ({ type: "esquisse.ligne", params: { id: `rac-${i + 1}`, niveauId: murA.niveauId, points: [P(ax2, ay2), P(bx, by)] } })));
+  await page.reload();
+  await page.waitForSelector(".plan2d .plan-objets [data-objet]", { timeout: 30000 });
+  await attendreEnregistre().catch(() => {});
+  const avant = await modele(pid);
+  const arcsAvant = Object.values(avant.modele.objets).filter((o) => o.classe === "esquisse" && o.params.forme === "arc").length;
+  await selectionner("rac-1");
+  for (const id of ["rac-2", "rac-3", "rac-4"]) {
+    await page.locator(".nav-filtre").fill(id);
+    await page.locator(`.nav-objets button[data-objet="${id}"]`).click({ modifiers: ["Shift"] });
+  }
+  await page.evaluate(() => document.activeElement?.blur?.());
+  await page.keyboard.press("Control+k");
+  await page.locator(".palette-champ").waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+  await page.locator(".palette-champ").fill("raccorder");
+  await page.waitForFunction(() => (document.querySelector(".palette-resultats li")?.textContent ?? "").includes("Raccorder"), null, { timeout: 5000 }).catch(() => {});
+  await page.keyboard.press("Enter");
+  let arcs = arcsAvant;
+  let rev = avant.revision;
+  for (let k = 0; k < 30 && arcs === arcsAvant; k++) {
+    const md = await modele(pid);
+    arcs = Object.values(md.modele.objets).filter((o) => o.classe === "esquisse" && o.params.forme === "arc").length;
+    rev = md.revision;
+    if (arcs === arcsAvant) await page.waitForTimeout(500);
+  }
+  check("raccord multiple : quatre lignes jointives, quatre arcs créés en un seul lot", r0.status === 200 && arcs === arcsAvant + 4 && rev === avant.revision + 1, `${r0.status} · arcs ${arcsAvant} → ${arcs} · r${avant.revision} → r${rev}`);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.

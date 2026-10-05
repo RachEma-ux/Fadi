@@ -34,6 +34,18 @@ describe("poignées de tangente au plan (D-093)", () => {
   });
 });
 
+describe("raccord et chanfrein multiples (D-094)", () => {
+  it("quatre lignes jointives sélectionnées : quatre commandes dans un lot ; aucune jointure : message", () => {
+    const etat = appliquer(socle(), [[0, 0, 4, 0], [4, 0, 4, 3], [4, 3, 0, 3], [0, 3, 0, 0], [9, 9, 10, 9]].map(([ax, ay, bx, by], i) => ({ type: "esquisse.ligne", params: { id: `l${i}`, niveauId: "rdc", points: [pt(ax!, ay!), pt(bx!, by!)] } })));
+    const r = actionImmediate("raccorder", etat, ui({ selection: ["l0", "l1", "l2", "l3"], parametresOutil: { rayon: 0.5 } }));
+    expect("commandes" in r && r.commandes.length).toBe(4);
+    if ("commandes" in r) expect(Object.values(appliquer(etat, r.commandes).objets).filter((o) => o.classe === "esquisse" && (o.params as { forme: string }).forme === "arc")).toHaveLength(4);
+    const c = actionImmediate("chanfreiner", etat, ui({ selection: ["l0", "l1", "l2"], parametresOutil: { distanceChanfrein: 0.2 } }));
+    expect("commandes" in c && c.commandes.length).toBe(2);
+    expect("message" in actionImmediate("raccorder", etat, ui({ selection: ["l0", "l2", "l4"] }))).toBe(true);
+  });
+});
+
 let n = 0;
 function appliquer(etat: ModeleAtelier, commandes: Commande[]): ModeleAtelier {
   n += 1;

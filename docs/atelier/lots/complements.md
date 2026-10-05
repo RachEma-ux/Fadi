@@ -164,3 +164,4 @@ Boîte de coupe et annotations 3D (`vues3d.test.ts`, e2e, D-090).
 Repère de saisie (`nouveau.test.ts`, e2e, D-091).
 Escalier hélicoïdal, hachures associatives, motif de points (tests, e2e, D-092).
 Poignées de tangente au plan (`nouveau.test.ts`, e2e, D-093).
+Chanfrein avec un arc, raccord et chanfrein multiples (`chanfrein-arc.test.ts`, e2e, D-094).

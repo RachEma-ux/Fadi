@@ -980,6 +980,62 @@ function raccordCourbe(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, o1: 
   return { etat: { ...etat, objets: { ...etat.objets, [o1.id]: n1, [o2.id]: n2, [id]: arc as OccurrenceQuelconque } }, effets };
 }
 
+/**
+ * Chanfrein avec un arc (D-094, DA-02-11) : le coin est l'intersection des deux éléments (prolongés : droite
+ * entière, cercle entier) la plus proche des deux extrémités voisines ; chaque élément est ramené à `distance` du coin,
+ * mesurée le long de l'élément (longueur d'arc sur un arc), vers son autre extrémité ; un segment relie les deux points.
+ */
+function chanfreinCourbe(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, o1: Occurrence<"esquisse">, o2: Occurrence<"esquisse">): ResultatCommande {
+  const d = lire.longueur(p, "distance", { strict: true })!.value;
+  if (!(d > 0)) throw new ErreurCommande("invalide", "distance", "distance strictement positive");
+  const element = (o: Occurrence<"esquisse">): ElementRaccord => {
+    const q = o.params;
+    if (q.forme === "ligne") return { type: "ligne", a: q.points[0]!, b: q.points[1]! };
+    if (!q.centre || !q.rayon) throw new ErreurCommande("precondition", "id1", `arc ${o.id} sans centre ni rayon`);
+    return { type: "arc", c: q.centre, r: q.rayon.value, debut: q.angleDebut?.value ?? 0, fin: q.angleFin?.value ?? 360 };
+  };
+  const e1 = element(o1);
+  const e2 = element(o2);
+  const [x1, x2] = [extremites(e1), extremites(e2)];
+  let proche: { i: number; j: number; d: number } = { i: 0, j: 0, d: Infinity };
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { const dd = distance(x1[i]!, x2[j]!); if (dd < proche.d) proche = { i, j, d: dd }; }
+  const E1 = x1[proche.i]!;
+  const E2 = x2[proche.j]!;
+  let coin: Vec | null = null;
+  for (const x of intersectionsCourbes(decalees(e1, 0)[0]!, decalees(e2, 0)[0]!)) if (!coin || distance(x, E1) + distance(x, E2) < distance(coin, E1) + distance(coin, E2)) coin = x;
+  if (!coin) throw new ErreurCommande("precondition", "id2", "les deux éléments ne se rencontrent pas, même prolongés");
+  const X = coin;
+  const arr = (v: Vec) => pt(Math.round(v.x * 1e9) / 1e9 || 0, Math.round(v.y * 1e9) / 1e9 || 0);
+  const mod360 = (a: number) => ((a % 360) + 360) % 360;
+  const ramener = (o: Occurrence<"esquisse">, e: ElementRaccord, bout: number): { objet: OccurrenceQuelconque; point: Vec } => {
+    if (e.type === "ligne") {
+      const loin = bout === 0 ? e.b : e.a;
+      if (d >= distance(X, loin) - TOLERANCE_REDUCTEUR) throw new ErreurCommande("precondition", "distance", `distance trop grande pour ${o.id}`);
+      const q = arr(add(X, mul(normalise(sub(loin, X)), d)));
+      const points = [...o.params.points];
+      points[bout] = q;
+      return { objet: { ...o, params: { ...o.params, points } }, point: q };
+    }
+    const ax = (Math.atan2(X.y - e.c.y, X.x - e.c.x) * 180) / Math.PI;
+    const pas = (d / e.r) * (180 / Math.PI);
+    // Début ramené vers la fin (sens trigonométrique), ou fin ramenée vers le début (sens horaire).
+    const portee = bout === 0 ? mod360(e.fin - ax) : mod360(ax - e.debut);
+    if (pas >= portee - 1e-9) throw new ErreurCommande("precondition", "distance", `distance trop grande pour l'arc ${o.id}`);
+    const a = Math.round((bout === 0 ? ax + pas : ax - pas) * 1e9) / 1e9;
+    const q = o.params;
+    return { objet: { ...o, params: { ...q, ...(bout === 0 ? { angleDebut: { value: a, unit: "deg" as const } } : { angleFin: { value: a, unit: "deg" as const } }) } }, point: arr(pointArc(e, a)) };
+  };
+  const r1 = ramener(o1, e1, proche.i);
+  const r2 = ramener(o2, e2, proche.j);
+  const id = ctx.ids.nouveau("esquisse");
+  const segment = { ...o1, id, groupeId: null, params: { ...o1.params, forme: "ligne" as const, points: [r1.point, r2.point], ferme: false, centre: null, rayon: null, angleDebut: null, angleFin: null, motif: null } };
+  const effets = effetsVides();
+  effets.modifies.push(o1.id, o2.id);
+  effets.crees.push(id);
+  if (o1.niveauId) effets.niveauxTouches.push(o1.niveauId);
+  return { etat: { ...etat, objets: { ...etat.objets, [o1.id]: r1.objet, [o2.id]: r2.objet, [id]: segment as OccurrenceQuelconque } }, effets };
+}
+
 function raccordOuChanfrein(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[], mode: "raccorder" | "chanfreiner"): ResultatCommande {
   void c;
   const id1 = lire.objet(etat, p, "id1");
@@ -989,8 +1045,11 @@ function raccordOuChanfrein(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande,
   if (mode === "raccorder" && o1.classe === "esquisse" && o2.classe === "esquisse" && (o1.params.forme === "arc" || o2.params.forme === "arc") && (o1.params.forme === "ligne" || o1.params.forme === "arc") && (o2.params.forme === "ligne" || o2.params.forme === "arc")) {
     return raccordCourbe(etat, p, ctx, o1 as Occurrence<"esquisse">, o2 as Occurrence<"esquisse">);
   }
+  if (mode === "chanfreiner" && o1.classe === "esquisse" && o2.classe === "esquisse" && (o1.params.forme === "arc" || o2.params.forme === "arc") && (o1.params.forme === "ligne" || o1.params.forme === "arc") && (o2.params.forme === "ligne" || o2.params.forme === "arc")) {
+    return chanfreinCourbe(etat, p, ctx, o1 as Occurrence<"esquisse">, o2 as Occurrence<"esquisse">);
+  }
   if (o1.classe !== "esquisse" || o2.classe !== "esquisse" || o1.params.forme !== "ligne" || o2.params.forme !== "ligne") {
-    throw new ErreurCommande("precondition", "id1", `${mode} : deux lignes d'esquisse (raccord : ligne ou arc)`);
+    throw new ErreurCommande("precondition", "id1", `${mode} : deux lignes d'esquisse, ou une ligne et un arc, ou deux arcs`);
   }
   // Rayon nul (D-043) : jonction d'angle — les deux lignes sont ajustées ou prolongées jusqu'à leur intersection.
   const taille = lire.longueur(p, mode === "raccorder" ? "rayon" : "distance", { strict: mode === "chanfreiner" })!.value;
