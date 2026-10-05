@@ -239,3 +239,31 @@ describe("aide située (UX4, relue au lot 9)", () => {
     expect(rechercherOutils("push")[0]?.id).toBeDefined();
   });
 });
+
+describe("réseau sur trajectoire et aligner (D-058)", () => {
+  const etat = appliquer(socle(), [
+    { type: "esquisse.polyligne", params: { id: "allee", niveauId: "rdc", points: [pt(0, 0), pt(10, 0), pt(10, 10)] } },
+    { type: "esquisse.ligne", params: { id: "banc", niveauId: "rdc", points: [pt(0, -1), pt(1, -1)] } },
+  ]);
+
+  it("réseau : nombre exigé, trajectoire cliquée puis point de base ; la trajectoire est retrouvée au premier point", () => {
+    expect(clic("reseau-trajet", pt(5, 0), etat, ui({ selection: ["banc"] }), { ...opts, objetSous: "allee" }).commandes).toHaveLength(0);
+    const u = ui({ selection: ["banc"], parametresOutil: { ...etatUi.get().parametresOutil, copiesTrajet: 4 } });
+    const r1 = clic("reseau-trajet", pt(5, 0.05), etat, u, { ...opts, objetSous: "allee" });
+    expect(r1.pointsEnCours).toHaveLength(1);
+    const r2 = clic("reseau-trajet", pt(0.5, -1), etat, { ...u, pointsEnCours: r1.pointsEnCours }, { ...opts, alt: true });
+    expect(r2.commandes[0]).toMatchObject({ type: "transformer.repeter", params: { trajetId: "allee", nombre: 4, orienter: true }, cibles: ["banc"] });
+    expect(clic("reseau-trajet", pt(5, 0), etat, u, { ...opts, objetSous: "banc" }).aide).toMatch(/trajectoire/);
+  });
+
+  it("aligner : quatre clics, une commande", () => {
+    let u = ui({ selection: ["banc"] });
+    for (const p of [pt(0, -1), pt(5, 5), pt(1, -1)]) u = { ...u, pointsEnCours: clic("aligner", p, etat, u, opts).pointsEnCours };
+    const r = clic("aligner", pt(5, 9), etat, u, opts);
+    expect(r.commandes[0]).toMatchObject({ type: "transformer.aligner", params: { source1: pt(0, -1), dest1: pt(5, 5), source2: pt(1, -1), dest2: pt(5, 9), copie: false } });
+    const apres = appliquer(etat, r.commandes);
+    const q = (apres.objets["banc"] as Occurrence<"esquisse">).params.points;
+    expect(q[0]!.x).toBeCloseTo(5);
+    expect(q[1]!.y).toBeCloseTo(6);
+  });
+});

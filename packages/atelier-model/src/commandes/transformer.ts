@@ -7,7 +7,7 @@
  * les références à ses faces ; étirer conserve la distance des ouvertures à l'extrémité fixe.
  */
 import { decomposerBloc } from "./bloc.js";
-import { add, decalerContour, distance, intersectionSegments, mul, normalise, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
+import { add, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
 import type { Contour, ModeleAtelier, Occurrence, OccurrenceQuelconque, Reference } from "../modele.js";
 import { ouverturesDuMur, referencesVers } from "../modele.js";
 import { estOuverture } from "../ontologie.js";
@@ -293,6 +293,7 @@ export const reducteursTransformer = {
   },
   repeter(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
     const sel = cibles(etat, p, c);
+    if (p["trajetId"] !== undefined && p["trajetId"] !== null) return repeterSurTrajet(etat, sel, p, ctx);
     const nombre = lire.nombre(p, "nombre", { entier: true, min: 1, max: 500 })!;
     const centre = lire.point(p, "centre", { optionnel: true });
     let courant = etat;
@@ -761,3 +762,92 @@ export function dupliquerNiveau(etat: ModeleAtelier, p: Brut, ctx: ContexteComma
   return { etat: { ...r2.etat, objets }, effets: { ...effets, niveauxTouches: [...new Set([...effets.niveauxTouches, nouveau])] } };
 }
 
+
+/**
+ * Réseau suivant une trajectoire (D-058, DA-02-12) : copies de la sélection le long d'une esquisse (ligne,
+ * polyligne, polygone, spline, construction), à intervalles égaux en longueur — `nombre` copies (dernière au bout
+ * d'un trajet ouvert ; réparties sur le tour d'un trajet fermé) ou un `pas` (m). Le point de `base` de la sélection
+ * est posé sur le trajet à chaque intervalle ; avec `orienter`, chaque copie tourne autour de ce point de l'écart
+ * entre la tangente du trajet et la tangente au départ. L'original reste en place.
+ */
+function repeterSurTrajet(etat: ModeleAtelier, sel: OccurrenceQuelconque[], p: Brut, ctx: ContexteCommande): ResultatCommande {
+  const trajetId = lire.chaine(p, "trajetId");
+  const tr = etat.objets[trajetId];
+  if (!tr || tr.classe !== "esquisse" || !["ligne", "polyligne", "polygone", "spline", "construction"].includes(tr.params.forme)) throw new ErreurCommande("precondition", "trajetId", `trajectoire : ligne, polyligne, polygone ou spline attendue (${trajetId})`);
+  if (sel.some((o) => o.id === trajetId)) throw new ErreurCommande("precondition", "cibles", "la trajectoire ne fait pas partie de la sélection répétée");
+  const ferme = tr.params.ferme || tr.params.forme === "polygone";
+  const brut = tr.params.forme === "spline" ? pointsSpline(tr.params.points, 16, ferme) : tr.params.points;
+  const pts: Vec[] = ferme ? [...brut, brut[0]!] : [...brut];
+  const cumul = [0];
+  for (let i = 1; i < pts.length; i++) cumul.push(cumul[i - 1]! + distance(pts[i - 1]!, pts[i]!));
+  const L = cumul[cumul.length - 1]!;
+  if (!(L > TOLERANCE_REDUCTEUR)) throw new ErreurCommande("precondition", "trajetId", "trajectoire de longueur nulle");
+  const base = lire.point(p, "base")!;
+  const orienter = lire.booleen(p, "orienter", false);
+  const pas = lire.nombre(p, "pas", { optionnel: true, min: 0.001 });
+  const nombre = pas === null ? lire.nombre(p, "nombre", { entier: true, min: 1, max: 500 })! : null;
+  const abscisses: number[] = [];
+  if (pas !== null) for (let s = pas; s <= L + 1e-9 && abscisses.length < 500; s += pas) abscisses.push(Math.min(s, L));
+  else for (let k = 1; k <= nombre!; k++) abscisses.push(ferme ? (L * k) / (nombre! + 1) : (L * k) / nombre!);
+  if (!abscisses.length) throw new ErreurCommande("precondition", "pas", `pas plus long que la trajectoire (${L.toFixed(3)} m)`);
+  const en = (s: number): { point: Vec; angle: number } => {
+    let i = 1;
+    while (i < cumul.length - 1 && cumul[i]! < s) i++;
+    const a = pts[i - 1]!;
+    const b = pts[i]!;
+    const l = cumul[i]! - cumul[i - 1]!;
+    const t = l > 0 ? (s - cumul[i - 1]!) / l : 0;
+    return { point: { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }, angle: Math.atan2(b.y - a.y, b.x - a.x) };
+  };
+  const depart = en(0);
+  let courant = etat;
+  let effets = effetsVides();
+  for (const s of abscisses) {
+    const { point, angle } = en(s);
+    // Le point de base de la sélection est posé sur le trajet, en P(s).
+    const dx = point.x - base.x;
+    const dy = point.y - base.y;
+    const t = translationPuisRotation(dx, dy, point, orienter ? angle - depart.angle : 0);
+    const r = copier(courant, sel, t, ctx);
+    courant = r.etat;
+    effets = fusionnerEffets(effets, r.effets);
+  }
+  return { etat: courant, effets };
+}
+
+/** Translation (dx, dy) suivie d'une rotation d'angle θ (radians) autour de P : une seule transformation rigide. */
+function translationPuisRotation(dx: number, dy: number, P: Vec, theta: number): Transformation {
+  if (Math.abs(theta) < 1e-12) return { type: "translation", dx, dy };
+  // x ↦ R(x + d − P) + P = R·x + τ, avec τ = R(d − P) + P ; centre fixe Q = (I − R)⁻¹ τ.
+  const c = Math.cos(theta);
+  const sn = Math.sin(theta);
+  const ux = dx - P.x;
+  const uy = dy - P.y;
+  const tx = c * ux - sn * uy + P.x;
+  const ty = sn * ux + c * uy + P.y;
+  const a11 = 1 - c;
+  const a12 = sn;
+  const a21 = -sn;
+  const a22 = 1 - c;
+  const det = a11 * a22 - a12 * a21;
+  return { type: "rotation", centre: { x: (a22 * tx - a12 * ty) / det, y: (-a21 * tx + a11 * ty) / det }, angleDeg: (theta * 180) / Math.PI };
+}
+
+/**
+ * Aligner (D-058, DA-02-03) : la sélection est déplacée pour que `source1` vienne sur `dest1`, puis tournée autour
+ * de `dest1` pour que la direction source1 → source2 prenne celle de dest1 → dest2 (sans mise à l'échelle). Avec
+ * `copie`, l'original reste.
+ */
+export function alignerSelection(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
+  const sel = cibles(etat, p, c);
+  const s1 = lire.point(p, "source1")!;
+  const s2 = lire.point(p, "source2")!;
+  const d1 = lire.point(p, "dest1")!;
+  const d2 = lire.point(p, "dest2")!;
+  if (distance(s1, s2) < TOLERANCE_REDUCTEUR) throw new ErreurCommande("invalide", "source2", "les deux points source sont confondus");
+  if (distance(d1, d2) < TOLERANCE_REDUCTEUR) throw new ErreurCommande("invalide", "dest2", "les deux points de destination sont confondus");
+  let theta = Math.atan2(d2.y - d1.y, d2.x - d1.x) - Math.atan2(s2.y - s1.y, s2.x - s1.x);
+  theta = Math.atan2(Math.sin(theta), Math.cos(theta));
+  const t = translationPuisRotation(d1.x - s1.x, d1.y - s1.y, d1, theta);
+  return lire.booleen(p, "copie", false) ? copier(etat, sel, t, ctx) : appliquerEnPlace(etat, sel, t, ctx);
+}

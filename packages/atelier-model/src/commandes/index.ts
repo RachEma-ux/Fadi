@@ -35,6 +35,7 @@ import { reducteursDocuments } from "./documents.js";
 import { reducteursVues3D } from "./vues3d.js";
 import { convertirEsquisse } from "../esquisse/conversion.js";
 import { affecterZone } from "./zones.js";
+import { alignerSelection } from "./transformer.js";
 import { joindreMurs, scinderMur } from "./mur.js";
 import { creerOccurrence, modifierOccurrence, supprimerOccurrence } from "./objets.js";
 import { affecterClassification, affecterPhase, definirPropriete, rattacherReference, reducteursCalque, reducteursDefinition, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
@@ -198,6 +199,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "transformer.prolonger": reducteursTransformer.prolonger,
   "transformer.decaler": reducteursTransformer.decaler,
   "transformer.repeter": reducteursTransformer.repeter,
+  "transformer.aligner": alignerSelection,
   "transformer.decomposer": reducteursTransformer.decomposer,
   "transformer.joindre": reducteursTransformer.joindre,
   "transformer.pointsDeControle": reducteursTransformer.pointsDeControle,

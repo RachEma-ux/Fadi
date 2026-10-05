@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { boucles, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { boucles, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -224,6 +224,45 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       const a1 = Math.atan2(point.y - c.y, point.x - c.x);
       const angle = ((a1 - a0) * 180) / Math.PI;
       return emettre([{ type: "transformer.tourner", params: { centre: c, angle: { value: angle, unit: "deg" }, copie: options.alt === true }, cibles: ui.selection }], `Tourner ${fmt(angle)}°${options.alt ? " (copie)" : ""}`);
+    }
+    case "reseau-trajet": {
+      // Nombre de copies ou pas : paramètres de l'outil, jamais supposés (D-058).
+      if (ui.selection.length === 0) return attendre([], "Sélectionnez d'abord des objets.");
+      const nb = ui.parametresOutil["copiesTrajet"];
+      const pas = ui.parametresOutil["pasTrajet"];
+      const avecPas = typeof pas === "number" && pas > 0;
+      if (!avecPas && !(typeof nb === "number" && Number.isInteger(nb) && nb >= 1)) return attendre([], "Renseignez le nombre de copies (ou un pas) dans l'inspecteur.");
+      const estTrajet = (o: OccurrenceQuelconque | undefined): o is Occurrence<"esquisse"> => !!o && o.classe === "esquisse" && o.niveauId === niveauId && ["ligne", "polyligne", "polygone", "spline", "construction"].includes(o.params.forme) && !ui.selection.includes(o.id);
+      if (pts.length === 0) {
+        const o = options.objetSous ? etat.objets[options.objetSous] : undefined;
+        if (!estTrajet(o)) return attendre([], "Cliquez la trajectoire : une ligne, une polyligne, un polygone ou une courbe hors de la sélection.");
+        return attendre([point], `Trajectoire ${o.id} : cliquez le point de base de la sélection (Alt : copies orientées).`);
+      }
+      // La trajectoire est celle qui passe au premier clic (fonction pure : rien n'est retenu hors des points).
+      let trajet: string | null = null;
+      let meilleure = options.rayon * 1.5;
+      for (const o of Object.values(etat.objets) as OccurrenceQuelconque[]) {
+        if (!estTrajet(o)) continue;
+        const ferme = o.params.ferme || o.params.forme === "polygone";
+        const q = o.params.forme === "spline" ? pointsSpline(o.params.points, 16, ferme) : o.params.points;
+        const n = q.length;
+        for (let i = 0; i + (ferme ? 0 : 1) < n; i++) {
+          const d = projectionSurSegment(pts[0]!, q[i]!, q[(i + 1) % n]!).distance;
+          if (d <= meilleure) {
+            meilleure = d;
+            trajet = o.id;
+          }
+        }
+      }
+      if (!trajet) return attendre([], "Trajectoire introuvable : cliquez-la de nouveau.");
+      return emettre([{ type: "transformer.repeter", params: { trajetId: trajet, base: point, ...(avecPas ? { pas } : { nombre: nb }), orienter: options.alt === true }, cibles: ui.selection }], `Réseau sur trajectoire (${avecPas ? `pas ${fmt(pas as number)} m` : `${nb} copies`}${options.alt ? ", orientées" : ""})`);
+    }
+    case "aligner": {
+      if (ui.selection.length === 0) return attendre([], "Sélectionnez d'abord des objets.");
+      if (pts.length === 0) return attendre([point], "Cliquez la destination de ce premier point.");
+      if (pts.length === 1) return attendre([...pts, point], "Cliquez un second point source.");
+      if (pts.length === 2) return attendre([...pts, point], "Cliquez la direction de destination de ce second point (Alt : garder l'original).");
+      return emettre([{ type: "transformer.aligner", params: { source1: pts[0]!, dest1: pts[1]!, source2: pts[2]!, dest2: point, copie: options.alt === true }, cibles: ui.selection }], `Aligner${options.alt ? " (copie)" : ""}`);
     }
     case "miroir": {
       if (ui.selection.length === 0) return attendre([], "Sélectionnez d'abord des objets.");

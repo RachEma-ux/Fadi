@@ -67,9 +67,25 @@ const GEOMETRIQUES = new Set(["a", "b", "contour", "trous", "points", "polygones
 
 const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(3).replace(/0+$/, "").replace(".", ","));
 
-export function Inspecteur({ etat, ui, readOnly, onCommandes, projectId }: PropsInspecteur) {
+export function Inspecteur(props: PropsInspecteur) {
+  const { etat, ui } = props;
   const sel = ui.selection.map((id) => etat.objets[id]).filter((o): o is OccurrenceQuelconque => !!o);
   if (sel.length === 0) return <ParametresOutil etat={etat} ui={ui} />;
+  // Outil de transformation actif avec des paramètres (répéter, décaler, réseau sur trajectoire…) : ses champs
+  // restent accessibles au-dessus de la sélection (D-058).
+  if (ui.outil !== "selection" && (PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0) {
+    return (
+      <>
+        <ParametresOutil etat={etat} ui={ui} />
+        <InspecteurSelection {...props} />
+      </>
+    );
+  }
+  return <InspecteurSelection {...props} />;
+}
+
+function InspecteurSelection({ etat, ui, readOnly, onCommandes, projectId }: PropsInspecteur) {
+  const sel = ui.selection.map((id) => etat.objets[id]).filter((o): o is OccurrenceQuelconque => !!o);
   if (sel.length > 1) return <SelectionMultiple sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />;
   return (
     <>
@@ -528,6 +544,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   repeter: [{ cle: "repetitions", libelle: "Nombre de copies" }, { cle: "pasX", libelle: "Pas en x", unite: "m" }, { cle: "pasY", libelle: "Pas en y", unite: "m" }],
   raccorder: [{ cle: "rayon", libelle: "Rayon", unite: "m" }],
   "polygone-regulier": [{ cle: "cotes", libelle: "Nombre de côtés" }],
+  "reseau-trajet": [{ cle: "copiesTrajet", libelle: "Nombre de copies" }, { cle: "pasTrajet", libelle: "ou pas (prioritaire)", unite: "m" }],
   prolonger: [{ cle: "longueurProlongement", libelle: "Longueur (sans limite)", unite: "m" }],
   trame: [{ cle: "depassement", libelle: "Dépassement des axes", unite: "m" }],
   chanfreiner: [{ cle: "distanceChanfrein", libelle: "Distance", unite: "m" }],

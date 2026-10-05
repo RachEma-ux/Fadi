@@ -162,7 +162,7 @@ export const reducteursContrainte = {
   },
 };
 
-const TRANSFORMATIONS_RIGIDES = /^transformer\.(deplacer|tourner|miroir|echelle|etirer|ajuster|prolonger|decaler|raccorder|chanfreiner)$/;
+const TRANSFORMATIONS_RIGIDES = /^transformer\.(deplacer|tourner|miroir|echelle|etirer|ajuster|prolonger|decaler|raccorder|chanfreiner|aligner)$/;
 
 /**
  * Après une commande (hors contraintes) : contraintes « à réparer » si un objet a disparu ; esquisse modifiée

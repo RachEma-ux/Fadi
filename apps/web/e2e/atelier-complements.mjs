@@ -639,6 +639,45 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
 }
 
+// Réseau sur trajectoire (D-058) : trois copies d'une ligne le long d'une allée, outil de la palette.
+{
+  const eR = await modele(pid);
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const P = (x, y) => ({ x: ax + x, y: ay + y, frame: "local", unit: "m" });
+  const r0 = await lot(pid, `rt-${Date.now()}`, eR.revision, [
+    { type: "esquisse.polyligne", params: { id: "allee-e2e", niveauId: murA.niveauId, points: [P(0.7, 1.3), P(3.7, 1.3)] } },
+    { type: "esquisse.ligne", params: { id: "banc-e2e", niveauId: murA.niveauId, points: [P(0.7, 0.9), P(1.1, 0.9)] } },
+  ]);
+  await ouvrir(pid);
+  const avant = Object.keys((await modele(pid)).modele.objets).length;
+  // Sélection d'abord (l'outil n'est proposé qu'avec une sélection), puis la palette sans Échap (qui la viderait).
+  await selectionner("banc-e2e");
+  await page.evaluate(() => document.activeElement?.blur?.());
+  await page.keyboard.press("Control+k");
+  await page.locator(".palette-champ").waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+  await page.locator(".palette-champ").fill("trajectoire");
+  await page.waitForFunction(() => (document.querySelector(".palette-resultats li")?.textContent ?? "").includes("Réseau sur trajectoire"), null, { timeout: 5000 }).catch(() => {});
+  await page.keyboard.press("Enter");
+  const ok = await page.waitForFunction(() => (document.querySelector(".atelier-n-outils .outil.est-actif")?.textContent ?? "").includes("Réseau sur trajectoire"), null, { timeout: 5000 }).then(() => true, () => false);
+  if (!ok) await page.keyboard.press("Escape");
+  await page.locator("#outil-copiesTrajet").fill("3");
+  await page.evaluate(() => document.activeElement?.blur?.());
+  const boiteAllee = await page.locator('.plan2d [data-objet="allee-e2e"]').boundingBox().catch(() => null);
+  const boiteBanc = await page.locator('.plan2d [data-objet="banc-e2e"]').boundingBox().catch(() => null);
+  if (boiteAllee && boiteBanc) {
+    await page.mouse.click(boiteAllee.x + boiteAllee.width / 2, boiteAllee.y + boiteAllee.height / 2);
+    await page.mouse.click(boiteBanc.x + boiteBanc.width / 2, boiteBanc.y + boiteBanc.height / 2);
+  }
+  let apres = avant;
+  for (let k = 0; k < 30 && apres === avant; k++) {
+    apres = Object.keys((await modele(pid)).modele.objets).length;
+    if (apres === avant) await page.waitForTimeout(500);
+  }
+  check("réseau sur trajectoire : trois copies posées le long de l'allée (outil de la palette)", r0.status === 200 && ok && apres === avant + 3, `${r0.status} · outil ${ok} · ${avant} → ${apres} · allée ${JSON.stringify(boiteAllee)}`);
+  await page.keyboard.press("Escape");
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];
