@@ -359,7 +359,11 @@ export function Definitions2D() {
         <path d="M0 0 L8 4 L0 8 Z" fill="#6b8f7f" />
       </marker>
       {/* Motifs de hachure (D-072) : un motif SVG par famille ; à l'écran, 1 mm papier ≈ 3 px. */}
-      {Object.entries(MOTIFS_HACHURE).map(([id, m]) => (
+      {Object.entries(MOTIFS_HACHURE).map(([id, m]) => m.points ? (
+        <pattern key={id} id={`hachure-${id}`} width={m.points.pasMm * 3} height={m.points.pasMm * 3} patternUnits="userSpaceOnUse">
+          <circle cx={m.points.pasMm * 1.5} cy={m.points.pasMm * 1.5} r={Math.max(0.8, m.points.rayonMm * 3)} fill="#355e52" />
+        </pattern>
+      ) : (
         <pattern key={id} id={`hachure-${id}`} width={m.familles[0]!.pasMm * 3} height={m.familles[0]!.pasMm * 3} patternUnits="userSpaceOnUse" patternTransform={`rotate(${-m.familles[0]!.angle + 90})`}>
           <line x1="0" y1="0" x2="0" y2={m.familles[0]!.pasMm * 3} stroke="#355e52" strokeWidth="1" />
           {m.familles[1] && <line x1="0" y1="0" x2={m.familles[0]!.pasMm * 3} y2="0" stroke="#355e52" strokeWidth="1" />}

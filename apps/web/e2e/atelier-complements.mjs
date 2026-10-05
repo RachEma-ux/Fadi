@@ -1394,6 +1394,48 @@ await page.waitForSelector(".plan2d");
   check("repère de saisie : posé en deux clics, affiché au plan, retiré par « Repère global »", ok && pose && retire, `${ok} · ${pose} · ${retire}`);
 }
 
+// Escalier hélicoïdal au plan (D-092).
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const avant = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "solide" && o.params.role === "marche-helicoidale").length;
+  const ok = await choisirOutil("escalier hélicoïdal", "Escalier hélicoïdal", "escalier-helicoidal");
+  for (const [k, v] of [["rayonInterieurHelice", "0.1"], ["balayageHelice", "270"], ["hauteurHelice", "3"], ["contremarchesHelice", "15"], ["epaisseurMarche", "0.05"]]) await page.locator(`#outil-${k}`).fill(v);
+  const z = await page.locator(".plan2d").boundingBox();
+  await page.mouse.click(z.x + z.width * 0.7, z.y + z.height * 0.85);
+  await page.mouse.click(z.x + z.width * 0.75, z.y + z.height * 0.85);
+  let apres = avant;
+  for (let k = 0; k < 30 && apres === avant; k++) {
+    apres = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "solide" && o.params.role === "marche-helicoidale").length;
+    if (apres === avant) await page.waitForTimeout(500);
+  }
+  await page.keyboard.press("Escape");
+  check("escalier hélicoïdal : quinze marches posées (centre, bord extérieur)", ok && apres === avant + 15, `outil ${ok} · ${avant} → ${apres}`);
+}
+
+// Hachure associée à une pièce (D-092) : suit le contour quand la pièce bouge.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  await selectionner("piece-e2e");
+  const avant = Object.values((await modele(pid)).modele.objets).filter((o) => o.params?.sourceId === "piece-e2e").length;
+  await page.locator('[data-hachurer="piece-e2e"]').click();
+  let h = null;
+  for (let k = 0; k < 30 && !h; k++) {
+    h = Object.values((await modele(pid)).modele.objets).find((o) => o.params?.sourceId === "piece-e2e") ?? null;
+    if (!h) await page.waitForTimeout(500);
+  }
+  let suivie = false;
+  if (h) {
+    await attendreEnregistre().catch(() => {});
+    const x0 = h.params.points[0].x;
+    const r = await lot(pid, `hm-${Date.now()}`, (await modele(pid)).revision, [{ type: "transformer.deplacer", params: { dx: 1, dy: 0 }, cibles: ["piece-e2e"] }]);
+    const apres = (await modele(pid)).modele.objets[h.id];
+    suivie = r.status === 200 && Math.abs(apres.params.points[0].x - x0 - 1) < 1e-9;
+  }
+  check("hachure associée : créée depuis l'inspecteur de la pièce, elle suit la pièce déplacée", avant === 0 && !!h && suivie, `${h?.id} · ${suivie}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

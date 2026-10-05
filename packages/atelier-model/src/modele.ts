@@ -182,6 +182,8 @@ export interface ParamsEsquisse {
    * un par segment (fermeture comprise) ; absent = tous droits.
    */
   renflements?: number[];
+  /** Hachure associative (D-092) : objet dont la hachure suit le contour fermé ; absent : hachure libre. */
+  sourceId?: string;
   /** Courbe (D-082) : tangente imposée à chaque point (vecteur en m), null = libre ; absent = toutes libres. */
   tangentes?: ({ x: number; y: number } | null)[];
 }

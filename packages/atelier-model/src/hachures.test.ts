@@ -34,3 +34,23 @@ describe("motifs de hachure (D-072, DA-01-11)", () => {
     expect(g.avertissements.some((a) => /ANSI31/.test(a))).toBe(true);
   });
 });
+
+describe("hachures associatives et motif de points (D-092)", () => {
+  it("la hachure liée suit le contour de sa dalle ; source supprimée : lien perdu ; points dans une vue", () => {
+    const lot = (commands: unknown[], id: string) => ({ requestId: id, baseRevision: 0, contract: CONTRAT_COMMANDES, label: id, commands: commands as never });
+    const e = appliquerLot(modeleVide(), lot([
+      { type: "niveau.creer", params: { id: "n0", nom: "Rez", elevation: 0, hauteur: 3 } },
+      { type: "dalle.creer", params: { id: "d", niveauId: "n0", contour: [pt(0, 0), pt(4, 0), pt(4, 3), pt(0, 3)], trous: [], epaisseur: { value: 0.2, unit: "m" } } },
+      { type: "esquisse.hachure", params: { id: "h", niveauId: "n0", points: [pt(0, 0), pt(4, 0), pt(4, 3), pt(0, 3)], sourceId: "d", motif: "points" } },
+      { type: "vue.creer", params: { id: "v", type: "plan", titre: "Rez", echelle: 50, niveauId: "n0" } },
+    ], "a")).etat;
+    const r = appliquerLot(e, lot([{ type: "transformer.deplacer", params: { dx: 10, dy: 0 }, cibles: ["d"] }], "m"));
+    expect((r.etat.objets["h"]!.params as { points: { x: number }[] }).points[0]!.x).toBe(10);
+    expect(appliquerLot(r.etat, lot([r.inverse], "i")).etat).toEqual(e);
+    const s = appliquerLot(e, lot([{ type: "objet.supprimer", params: { id: "d" } }], "s")).etat;
+    expect("sourceId" in s.objets["h"]!.params).toBe(false);
+    const g = genererVue(e, e.definitions["v"]!.params as unknown as ParamsVue, "v");
+    expect(g.primitives.filter((p) => p.type === "cercle" && (p as { objetId?: string }).objetId === "h").length).toBeGreaterThan(100);
+    expect(() => appliquerLot(e, lot([{ type: "esquisse.hachure", params: { niveauId: "n0", points: [pt(0, 0), pt(1, 0), pt(1, 1)], sourceId: "zz" } }], "x"))).toThrow(/inconnu/);
+  });
+});

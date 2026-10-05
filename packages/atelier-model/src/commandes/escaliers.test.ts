@@ -38,3 +38,17 @@ describe("escalier à volées et paliers (D-084)", () => {
     expect(() => appliquerLot(e, lot([{ type: "escalier.volees", params: { niveauId: "n0", points: [pt(0, 0), pt(0.52, 0), pt(0.52, 3)], largeur: m(1), hauteurAFranchir: m(3), contremarches: 18, epaisseurPalier: m(0.2) } }]))).toThrow(/trop courte/);
   });
 });
+
+describe("escalier hélicoïdal (D-092)", () => {
+  it("une marche par contremarche, en secteur d'anneau, hauteurs enchaînées, groupe ; inverse exact ; rayons incohérents refusés", () => {
+    const e = appliquerLot(modeleVide(), lot([{ type: "niveau.creer", params: { id: "n0", nom: "Rez", elevation: 0, hauteur: 3 } }], "b")).etat;
+    const r = appliquerLot(e, lot([{ type: "escalier.helicoidal", params: { niveauId: "n0", centre: pt(0, 0), rayonInterieur: m(0.1), rayonExterieur: m(1), angleDepart: 0, balayage: 360, hauteurAFranchir: m(2.88), contremarches: 16, epaisseurMarche: m(0.05) } }], "h"));
+    const marches = Object.values(r.etat.objets).filter((o) => o.classe === "solide") as Occurrence<"solide">[];
+    expect(marches).toHaveLength(16);
+    const derniere = marches.reduce((a, b) => (a.params.decalageBase.value > b.params.decalageBase.value ? a : b));
+    expect(derniere.params.decalageBase.value + derniere.params.hauteur!.value).toBeCloseTo(2.88, 6);
+    expect(new Set(marches.map((x) => x.groupeId)).size).toBe(1);
+    expect(appliquerLot(r.etat, lot([r.inverse], "i")).etat).toEqual(e);
+    expect(() => appliquerLot(e, lot([{ type: "escalier.helicoidal", params: { niveauId: "n0", centre: pt(0, 0), rayonInterieur: m(1), rayonExterieur: m(0.5), angleDepart: 0, balayage: 360, hauteurAFranchir: m(3), contremarches: 16, epaisseurMarche: m(0.05) } }]))).toThrow(/rayon/);
+  });
+});

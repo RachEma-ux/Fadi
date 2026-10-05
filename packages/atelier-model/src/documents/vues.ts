@@ -11,7 +11,7 @@
 import { pointsPolyligne, aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsEllipse, pointsSpline, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
-import { lignesHachure, motifHachure } from "../hachures.js";
+import { lignesHachure, motifHachure, pointsHachure } from "../hachures.js";
 import { contenuPlace } from "../blocs-places.js";
 import { etendueMur, geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
 import { polygoneMurRaccorde } from "../raccords.js";
@@ -413,6 +413,7 @@ function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly Occu
           const m = motifHachure(p.motif);
           if (!m.connu) c.avertissements.add(`Motif de hachure inconnu « ${p.motif} » : dessiné avec le motif « ${m.motif.libelle} ».`);
           for (const f of m.motif.familles) for (const [a, b] of lignesHachure([p.points], f.angle, (f.pasMm * echelle) / 1000)) c.ligne(a, b, "fin", o.id);
+          if (m.motif.points) for (const q of pointsHachure([p.points], (m.motif.points.pasMm * echelle) / 1000)) c.cercle(q, (m.motif.points.rayonMm * echelle) / 1000, "fin", o.id);
         }
         break;
       }

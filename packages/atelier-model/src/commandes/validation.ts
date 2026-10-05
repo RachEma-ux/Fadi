@@ -3,6 +3,7 @@
  * objets référencés. Retourne des paramètres typés ou lève `ErreurCommande` (400 côté API) — jamais de valeur
  * par défaut inventée pour une grandeur physique (R3) : une hauteur absente reste `null`.
  */
+import { contourFerme } from "./changer-classe.js";
 import { lireOuvrant } from "../ouvrants.js";
 import { distance } from "../geometrie.js";
 import { USAGES_DALLE, type ModeleAtelier, type ParamsParClasse } from "../modele.js";
@@ -189,6 +190,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       ...(forme === "ellipse" ? { rayonB, rotation: lire.angle(p, "rotation", { optionnel: true }) ?? { value: 0, unit: "deg" } } : {}),
       ...renflementsDe(p, forme, points.length, lire.booleen(p, "ferme", false)),
       ...tangentesDe(p, forme, points.length),
+      ...sourceHachure(_etat, p, forme),
     };
   },
   "reference-plan"(_etat, p) {
@@ -275,6 +277,16 @@ function ouverture(etat: ModeleAtelier, p: Brut): ParamsParClasse["porte"] {
  * Tangentes imposées d'une courbe (D-082) : une entrée par point, `null` = tangente libre (courbe passant par les
  * points) ; vecteur en mètres (direction et intensité). Absent, ou toutes libres : clé omise.
  */
+/** Hachure associative (D-092) : objet source à contour fermé dont la hachure suit le contour ; absente : libre. */
+function sourceHachure(etat: ModeleAtelier, p: Brut, forme: string): { sourceId?: string } {
+  const id = p["sourceId"];
+  if (id === undefined || id === null) return {};
+  if (forme !== "hachure") throw new ErreurCommande("invalide", "sourceId", "objet source réservé aux hachures");
+  if (typeof id !== "string" || !etat.objets[id]) throw new ErreurCommande("precondition", "sourceId", `objet source inconnu : ${String(id)}`);
+  if (!contourFerme(etat.objets[id]!)) throw new ErreurCommande("precondition", "sourceId", `${id} n'a pas de contour fermé (dalle, pièce, zone, polygone ou rectangle)`);
+  return { sourceId: id };
+}
+
 function tangentesDe(p: Brut, forme: string, n: number): { tangentes?: ({ x: number; y: number } | null)[] } {
   const brut = p["tangentes"];
   if (brut === undefined || brut === null) return {};

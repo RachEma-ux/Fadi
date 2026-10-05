@@ -5,7 +5,7 @@
  * microversion.
  */
 import { jumelerOuverture, ouvertureAngle } from "./fenetres.js";
-import { creerEscalierVolees } from "./escaliers.js";
+import { creerEscalierHelicoidal, creerEscalierVolees } from "./escaliers.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import type { Classe } from "../ontologie.js";
 import { estOuverture } from "../ontologie.js";
@@ -33,6 +33,7 @@ import {
 import { reducteursBloc } from "./bloc.js";
 import { controlerContraintes, reducteursContrainte } from "./contrainte.js";
 import { controlerVerrous, verrouillerObjets } from "./verrous.js";
+import { suivreHachures } from "./hachures-associees.js";
 import { reducteursDocuments } from "./documents.js";
 import { reducteursVues3D } from "./vues3d.js";
 import { reducteursReferentiel } from "./referentiels.js";
@@ -130,6 +131,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   // Répartir une ouverture le long de son mur (D-047) : `nombre` copies à `entraxe` (m, signé : vers b si positif) ;
   // une copie qui sortirait du mur ou chevaucherait une autre ouverture : refus du lot entier.
   "escalier.volees": (etat, p, ctx) => creerEscalierVolees(etat, p, ctx),
+  "escalier.helicoidal": (etat, p, ctx) => creerEscalierHelicoidal(etat, p, ctx),
   "ouverture.jumeler": (etat, p, ctx) => jumelerOuverture(etat, p, ctx),
   "ouverture.angle": (etat, p, ctx) => ouvertureAngle(etat, p, ctx),
   "ouverture.repartir": (etat, p, ctx) => {
@@ -312,9 +314,9 @@ export function appliquerCommande(etat: ModeleAtelier, commande: Commande, ctx: 
   if (!reducteur) throw new ErreurCommande("inconnue", "type", `commande inconnue : ${commande.type}`);
   if (typeof commande.params !== "object" || commande.params === null) throw new ErreurCommande("invalide", "params", "paramètres requis");
   const r = reducteur(etat, commande.params, ctx, commande.cibles ?? []);
-  const c = controlerContraintes(etat, r.etat, commande.type, r.effets, ctx);
-  controlerVerrous(etat, c.etat, commande.type);
-  return c;
+  const c0 = controlerContraintes(etat, r.etat, commande.type, r.effets, ctx);
+  controlerVerrous(etat, c0.etat, commande.type);
+  return commande.type === "interne.restaurer" ? c0 : suivreHachures(c0.etat, c0.effets);
 }
 
 export interface ResultatLot {

@@ -497,3 +497,13 @@ describe("repère de saisie (D-091)", () => {
     expect([m.dx, m.dy]).toEqual([0, 3]);
   });
 });
+
+describe("escalier hélicoïdal au plan (D-092)", () => {
+  it("valeurs exigées ; centre puis bord extérieur : une commande escalier.helicoidal", () => {
+    const etat = socle();
+    expect(clic("escalier-helicoidal", pt(1, 0), etat, ui({ outil: "escalier-helicoidal", pointsEnCours: [pt(0, 0)] }), opts).aide).toMatch(/Renseignez/);
+    const r = clic("escalier-helicoidal", pt(0, 1), etat, ui({ outil: "escalier-helicoidal", pointsEnCours: [pt(0, 0)], parametresOutil: { rayonInterieurHelice: 0.1, balayageHelice: 360, hauteurHelice: 3, contremarchesHelice: 17, epaisseurMarche: 0.05 } }), opts);
+    expect((r.commandes[0]!.params as { angleDepart: number }).angleDepart).toBe(90);
+    expect(Object.values(appliquer(etat, r.commandes).objets).filter((o) => o.classe === "solide")).toHaveLength(17);
+  });
+});

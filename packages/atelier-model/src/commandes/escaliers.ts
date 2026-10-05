@@ -85,3 +85,46 @@ export function creerEscalierVolees(etat: ModeleAtelier, p: Brut, ctx: ContexteC
   }
   return { etat: courant, effets };
 }
+
+/**
+ * Escalier hélicoïdal (D-092, DA-07-10) : `escalier.helicoidal` { niveauId, centre, rayonInterieur, rayonExterieur,
+ * angleDepart (°), balayage (° signé : > 0 sens direct), hauteurAFranchir, contremarches, epaisseurMarche, nom? } crée une marche par contremarche — un solide en secteur d'anneau, de l'épaisseur saisie,
+ * dessus à la hauteur atteinte — réunies dans un groupe nommé (rôle « marche-helicoidale »). Toutes les valeurs sont
+ * saisies ; aucune règle (giron, échappée) n'est appliquée. Les marches ne sont pas des objets « escalier » : ni
+ * trémie proposée, ni décompte dans les escaliers (déclaré).
+ */
+export function creerEscalierHelicoidal(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande): ResultatCommande {
+  const niveauId = lire.chaine(p, "niveauId");
+  if (!etat.niveaux[niveauId]) throw new ErreurCommande("precondition", "niveauId", `niveau inconnu : ${niveauId}`);
+  const centre = lire.point(p, "centre")!;
+  const ri = lire.longueur(p, "rayonInterieur")!.value;
+  const re = lire.longueur(p, "rayonExterieur", { strict: true })!.value;
+  if (!(ri >= 0 && re > ri)) throw new ErreurCommande("invalide", "rayonExterieur", "rayon extérieur plus grand que le rayon intérieur (≥ 0)");
+  const depart = lire.nombre(p, "angleDepart")!;
+  const balayage = lire.nombre(p, "balayage")!;
+  if (!(Math.abs(balayage) > 0 && Math.abs(balayage) <= 1080)) throw new ErreurCommande("invalide", "balayage", "balayage non nul, trois tours au plus");
+  const H = lire.longueur(p, "hauteurAFranchir", { strict: true })!.value;
+  const n = lire.nombre(p, "contremarches", { entier: true, min: 2, max: 200 })!;
+  const ep = lire.longueur(p, "epaisseurMarche", { strict: true })!.value;
+  if (!(H > 0) || !(ep > 0)) throw new ErreurCommande("invalide", "hauteurAFranchir", "hauteur à franchir et épaisseur de marche strictement positives");
+  const nom = lire.chaineOuNull(p, "nom")?.trim() || `Escalier hélicoïdal ${Object.keys(etat.groupes).length + 1}`;
+  const gid = ctx.ids.nouveau("groupe");
+  let courant: ModeleAtelier = { ...etat, groupes: { ...etat.groupes, [gid]: { id: gid, nom } } };
+  let effets = effetsVides();
+  effets.crees.push(gid);
+  const h = H / n;
+  const pasAngle = balayage / n;
+  const sur = (r: number, deg: number) => pt(r6(centre.x + r * Math.cos((deg * Math.PI) / 180)), r6(centre.y + r * Math.sin((deg * Math.PI) / 180)));
+  const subdiv = Math.max(1, Math.ceil(Math.abs(pasAngle) / 10));
+  for (let i = 0; i < n; i++) {
+    const a0 = depart + i * pasAngle;
+    const ext = Array.from({ length: subdiv + 1 }, (_, k) => sur(re, a0 + (pasAngle * k) / subdiv));
+    const int = ri > 0 ? Array.from({ length: subdiv + 1 }, (_, k) => sur(ri, a0 + (pasAngle * (subdiv - k)) / subdiv)) : [pt(centre.x, centre.y)];
+    const contour = pasAngle > 0 ? [...ext, ...int] : [...ext, ...int].reverse();
+    const dessus = (i + 1) * h;
+    const r = creerOccurrence(courant, { niveauId, groupeId: gid, params: { contour, trous: [], ferme: true, hauteur: { value: r6(ep), unit: "m" }, decalageBase: { value: r6(dessus - ep), unit: "m" }, role: "marche-helicoidale", nom: `${nom} · marche ${i + 1}` } }, ctx, "solide");
+    courant = r.etat;
+    effets = fusionnerEffets(effets, r.effets);
+  }
+  return { etat: courant, effets };
+}

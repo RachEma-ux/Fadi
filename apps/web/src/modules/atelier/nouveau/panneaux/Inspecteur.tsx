@@ -151,6 +151,11 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "zone" && <SyntheseZoneVue o={o as Occurrence<"zone">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || o.classe === "dalle" || o.classe === "piece" || o.classe === "zone") && !desactive && contourFerme(o) && <ChangerClasseContour key={o.id} o={o} onCommandes={onCommandes} />}
+      {(o.classe === "dalle" || o.classe === "piece" || o.classe === "zone" || (o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.forme !== "hachure")) && !desactive && contourFerme(o) && (
+        <button type="button" className="lien" data-hachurer={o.id} onClick={() => onCommandes([{ type: "esquisse.hachure", params: { niveauId: o.niveauId, calqueId: o.calqueId, points: contourFerme(o)!.contour, sourceId: o.id } }], `Hachure associée à ${o.id}`)}>
+          Hachurer (associé au contour)
+        </button>
+      )}
       {o.classe === "escalier" && !desactive && <TremieEscalier o={o as Occurrence<"escalier">} etat={etat} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && ["polyligne", "polygone", "rectangle"].includes((o as Occurrence<"esquisse">).params.forme) && <ArrondirSommets key={`arr-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && <ConvertirEsquisse o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
@@ -586,6 +591,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   toiture: [{ cle: "epaisseurDalle", libelle: "Épaisseur", unite: "m" }, { cle: "penteToiture", libelle: "Pente (0 = plate)", unite: "°" }],
   "garde-corps": [{ cle: "hauteurGardeCorps", libelle: "Hauteur", unite: "m" }, { cle: "epaisseurGardeCorps", libelle: "Épaisseur", unite: "m" }],
   escalier: [{ cle: "largeurEscalier", libelle: "Largeur", unite: "m" }],
+  "escalier-helicoidal": [{ cle: "rayonInterieurHelice", libelle: "Rayon intérieur", unite: "m" }, { cle: "balayageHelice", libelle: "Balayage (− : horaire)", unite: "°" }, { cle: "hauteurHelice", libelle: "Hauteur à franchir", unite: "m" }, { cle: "contremarchesHelice", libelle: "Contremarches" }, { cle: "epaisseurMarche", libelle: "Épaisseur des marches", unite: "m" }],
   "escalier-volees": [{ cle: "largeurVolees", libelle: "Largeur", unite: "m" }, { cle: "hauteurVolees", libelle: "Hauteur à franchir", unite: "m" }, { cle: "contremarchesVolees", libelle: "Contremarches (total)" }, { cle: "epaisseurPalier", libelle: "Épaisseur des paliers", unite: "m" }],
   poteau: [{ cle: "taille", libelle: "Section", unite: "m" }, { cle: "hauteur", libelle: "Hauteur", unite: "m" }],
   solide: [{ cle: "hauteurSolide", libelle: "Hauteur d'extrusion", unite: "m" }],

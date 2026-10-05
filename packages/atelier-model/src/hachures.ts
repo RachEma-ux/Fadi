@@ -15,6 +15,8 @@ export interface FamilleHachure {
 export interface MotifHachure {
   libelle: string;
   familles: FamilleHachure[];
+  /** Motif de points (D-092) : pas de la grille et rayon des points, en mm papier. */
+  points?: { pasMm: number; rayonMm: number };
 }
 
 export const MOTIF_HACHURE_DEFAUT = "diagonale";
@@ -27,7 +29,37 @@ export const MOTIFS_HACHURE: Record<string, MotifHachure> = {
   horizontale: { libelle: "Horizontale", familles: [{ angle: 0, pasMm: 2 }] },
   verticale: { libelle: "Verticale", familles: [{ angle: 90, pasMm: 2 }] },
   quadrillage: { libelle: "Quadrillage", familles: [{ angle: 0, pasMm: 3 }, { angle: 90, pasMm: 3 }] },
+  points: { libelle: "Points", familles: [], points: { pasMm: 2, rayonMm: 0.2 } },
 };
+
+/** Points d'un motif de points dans un contour (D-092) : grille ancrée sur l'origine, au plus `max` points. */
+export function pointsHachure(contours: readonly (readonly Vec[])[], pas: number, max = 4000): Point2[] {
+  if (!(pas > 0) || !contours.length || contours[0]!.length < 3) return [];
+  const tous = contours.flat();
+  const xs = tous.map((q) => q.x);
+  const ys = tous.map((q) => q.y);
+  const out: Point2[] = [];
+  const dedans = (q: Vec) => {
+    let n = 0;
+    for (const c of contours) {
+      let d = false;
+      for (let i = 0, j = c.length - 1; i < c.length; j = i++) {
+        const a = c[i]!;
+        const b = c[j]!;
+        if (a.y > q.y !== b.y > q.y && q.x < ((b.x - a.x) * (q.y - a.y)) / (b.y - a.y) + a.x) d = !d;
+      }
+      if (d) n++;
+    }
+    return n % 2 === 1;
+  };
+  for (let x = Math.ceil(Math.min(...xs) / pas) * pas; x <= Math.max(...xs) && out.length < max; x += pas) {
+    for (let y = Math.ceil(Math.min(...ys) / pas) * pas; y <= Math.max(...ys) && out.length < max; y += pas) {
+      const q = pt(Math.round(x * 1e9) / 1e9, Math.round(y * 1e9) / 1e9);
+      if (dedans(q)) out.push(q);
+    }
+  }
+  return out;
+}
 
 /** Motif retenu pour un nom (null ou inconnu : le motif par défaut, `connu` à faux pour un nom inconnu). */
 export function motifHachure(nom: string | null | undefined): { id: string; motif: MotifHachure; connu: boolean } {

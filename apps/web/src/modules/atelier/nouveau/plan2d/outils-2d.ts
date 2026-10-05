@@ -74,6 +74,21 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       const commandes: Commande[] = [{ type: "mur.tracer", params: { ...base, a, b: point, epaisseur: m(nombre(ui, "epaisseur", 0.2)), hauteur: m(nombre(ui, "hauteur", niveau?.hauteur ?? 3)), alignement: (ui.parametresOutil["alignement"] as string | undefined) ?? "axe", calqueId: (ui.parametresOutil["calqueId"] as string | null | undefined) ?? null, definitionId: (ui.parametresOutil["typeMur"] as string | null | undefined) ?? null } }];
       return { commandes, label: `Mur ${fmt(distance(a, point))} m`, pointsEnCours: [point], aide: "Mur tracé. Cliquez le point suivant pour enchaîner, Échap pour terminer." };
     }
+    case "escalier-helicoidal": {
+      // Escalier hélicoïdal (D-092) : centre, puis le bord extérieur de la première marche (rayon et angle de départ).
+      if (pts.length === 0) return attendre([point], "Cliquez le bord extérieur de la première marche (rayon et départ).");
+      const c = pts[0]!;
+      const re = distance(c, point);
+      const ri = Number(ui.parametresOutil["rayonInterieurHelice"]);
+      const balayage = Number(ui.parametresOutil["balayageHelice"]);
+      const hauteur = Number(ui.parametresOutil["hauteurHelice"]);
+      const n = Number(ui.parametresOutil["contremarchesHelice"]);
+      const ep = Number(ui.parametresOutil["epaisseurMarche"]);
+      if (![balayage, hauteur, ep].every((x) => Number.isFinite(x) && x !== 0) || !Number.isFinite(ri) || ri < 0 || !Number.isInteger(n) || n < 2) return attendre(pts, "Renseignez dans l'inspecteur le rayon intérieur, le balayage (°), la hauteur, les contremarches et l'épaisseur des marches.");
+      if (!(re > ri)) return attendre(pts, "Le rayon extérieur doit dépasser le rayon intérieur.");
+      const angleDepart = Math.round(((Math.atan2(point.y - c.y, point.x - c.x) * 180) / Math.PI) * 1e6) / 1e6;
+      return emettre([{ type: "escalier.helicoidal", params: { niveauId, centre: c, rayonInterieur: m(ri), rayonExterieur: m(Math.round(re * 1e6) / 1e6), angleDepart, balayage, hauteurAFranchir: m(hauteur), contremarches: n, epaisseurMarche: m(ep) } }], `Escalier hélicoïdal (${n} marches)`, `Escalier hélicoïdal posé : ${n} marches sur ${fmt(Math.abs(balayage))}°.`);
+    }
     case "repere-saisie": {
       // Repère de saisie (D-091) : origine, puis un point de l'axe x′ ; affichage seul.
       if (pts.length === 0) return attendre([point], "Cliquez un point de l'axe x′ du repère (direction).");
