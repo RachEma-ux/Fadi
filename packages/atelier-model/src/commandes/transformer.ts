@@ -8,7 +8,7 @@
  */
 import { decomposerBloc } from "./bloc.js";
 import { validerParams } from "./validation.js";
-import { add, dot, pointsArc, pointsEllipse, pointsPolyligne, centreRenflement, decalerArrondi, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
+import { add, decalerPolyligneArcs, dot, pointsArc, pointsEllipse, pointsPolyligne, centreRenflement, decalerArrondi, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
 import type { Contour, ModeleAtelier, Occurrence, OccurrenceQuelconque, Reference } from "../modele.js";
 import { ouverturesDuMur, referencesVers } from "../modele.js";
 import { estOuverture } from "../ontologie.js";
@@ -351,8 +351,28 @@ export const reducteursTransformer = {
           const r = copier(courant, [o], { type: "translation", dx: n.x, dy: n.y }, ctx);
           courant = r.etat;
           effets = fusionnerEffets(effets, r.effets);
+        } else if (o.classe === "esquisse" && (o.params.forme === "cercle" || o.params.forme === "arc") && o.params.centre && o.params.rayon) {
+          // Cercle, arc (D-076) : décalage concentrique ; extérieur = loin du centre. Arc : gauche = vers le centre (sens direct).
+          const plus = cote === "exterieur" || (o.params.forme === "arc" && cote === "droite") ? 1 : cote === "interieur" || (o.params.forme === "arc" && cote === "gauche") ? -1 : null;
+          if (plus === null) throw new ErreurCommande("invalide", "cote", `${o.id} : côté extérieur ou intérieur pour un cercle`);
+          const r = o.params.rayon.value + plus * d;
+          if (!(r > 1e-9)) throw new ErreurCommande("precondition", "distances", `${o.id} : décalage de ${d} m impossible (rayon annulé)`);
+          copieAvec(o, { rayon: { value: Math.round(r * 1e9) / 1e9, unit: "m" } });
+        } else if (o.classe === "esquisse" && o.params.forme === "polyligne" && o.params.renflements && !arrondis) {
+          // Polyligne à segments en arc (D-076) : segments droits glissés, arcs concentriques, jonctions tangentes.
+          let delta = d * signe;
+          if (o.params.ferme) {
+            if (cote === "gauche" || cote === "droite") throw new ErreurCommande("invalide", "cote", `${o.id} : côté extérieur ou intérieur pour un contour fermé`);
+            let aire = 0;
+            const q = o.params.points;
+            for (let i = 0; i < q.length; i++) aire += q[i]!.x * q[(i + 1) % q.length]!.y - q[(i + 1) % q.length]!.x * q[i]!.y;
+            delta = -(aire > 0 ? 1 : -1) * d * signe;
+          } else if (cote === "exterieur" || cote === "interieur") throw new ErreurCommande("invalide", "cote", `${o.id} : côté gauche ou droite pour une polyligne ouverte`);
+          const r = decalerPolyligneArcs(o.params.points, o.params.renflements, o.params.ferme, delta);
+          if (typeof r === "string") throw new ErreurCommande("precondition", "cibles", `${o.id} : décalage impossible — ${r}`);
+          copieAvec(o, { points: r.points, renflements: r.renflements });
         } else if (o.classe === "esquisse" && o.params.forme === "polyligne" && !(arrondis && o.params.ferme)) {
-          if (o.params.renflements) throw new ErreurCommande("precondition", "cibles", `${o.id} : polyligne à segments en arc, décalage non pris en charge`);
+          if (o.params.renflements) throw new ErreurCommande("precondition", "cibles", `${o.id} : polyligne à segments en arc, décalage en angles arrondis non pris en charge (angles vifs)`);
           if (cote === "exterieur" || cote === "interieur") throw new ErreurCommande("invalide", "cote", `${o.id} : côté gauche ou droite pour une polyligne ouverte`);
           if (arrondis) {
             const r = decalerArrondi(o.params.points, false, d * signe);

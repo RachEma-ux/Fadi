@@ -2125,3 +2125,23 @@
   stroke: var(--atelier-accent);
   stroke-width: 2;
 }
+
+/* Propriétés en tableau (D-076) */
+.inspecteur-tableau-proprietes .tableau-defilant {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.tableau-proprietes {
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.tableau-proprietes th,
+.tableau-proprietes td {
+  border: 1px solid var(--atelier-ligne);
+  padding: 2px 4px;
+  text-align: left;
+  white-space: nowrap;
+}
+.tableau-proprietes input {
+  width: 7rem;
+}

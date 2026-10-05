@@ -529,6 +529,7 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
         <ChoixPhase sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
         <ChoixVerrou sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
       </dl>
+      <TableauProprietes key={sel.map((o) => o.id).join("|")} sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
       <Contraintes sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <CreerBloc sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <VersNiveau sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
@@ -1286,6 +1287,98 @@ function EspaceProgramme({ projectId, pieceId, readOnly }: { projectId: string; 
           {erreur && <p className="ver-erreur" role="alert">{erreur}</p>}
         </>
       )}
+    </details>
+  );
+}
+
+/**
+ * Propriétés en tableau (D-076, DA-05-12) : une ligne par objet sélectionné, une colonne par propriété présente
+ * (classification exclue : elle a sa section) ; les cellules modifiées sont enregistrées en un seul lot de
+ * `propriete.definir`. Une valeur numérique garde l'unité de la propriété ; sans unité connue, elle est refusée
+ * (rien n'est supposé) ; une cellule vidée retire la propriété de l'objet.
+ */
+function TableauProprietes({ sel, readOnly, onCommandes }: { sel: OccurrenceQuelconque[]; readOnly: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const lignes = sel.slice(0, 200);
+  const [colonnesAjoutees, setColonnesAjoutees] = useState<string[]>([]);
+  const [nouvelle, setNouvelle] = useState("");
+  const [brouillon, setBrouillon] = useState<Record<string, string>>({});
+  const [erreur, setErreur] = useState<string | null>(null);
+  const colonnes = [...new Set([...lignes.flatMap((o) => Object.keys(o.proprietes).filter((k) => !k.startsWith("classification:"))), ...colonnesAjoutees])].sort((a, b) => a.localeCompare(b, "fr"));
+  const texte = (o: OccurrenceQuelconque, k: string) => {
+    const v = o.proprietes[k]?.valeur;
+    return v === undefined || v === null ? "" : typeof v === "number" ? String(v).replace(".", ",") : String(v);
+  };
+  const unite = (k: string) => lignes.map((o) => o.proprietes[k]?.unite).find((u) => !!u) ?? null;
+  const cle = (id: string, k: string) => `${id}\u0000${k}`;
+  const modifiees = Object.entries(brouillon).filter(([c, v]) => {
+    const [id, k] = c.split("\u0000") as [string, string];
+    const o = lignes.find((x) => x.id === id);
+    return o && v !== texte(o, k);
+  });
+  const enregistrer = () => {
+    const commandes: Commande[] = [];
+    for (const [c, v] of modifiees) {
+      const [id, k] = c.split("\u0000") as [string, string];
+      const t = v.trim();
+      if (!t) {
+        commandes.push({ type: "propriete.definir", params: { id, nom: k } });
+        continue;
+      }
+      const o = lignes.find((x) => x.id === id)!;
+      const u = o.proprietes[k]?.unite ?? unite(k);
+      if (/^-?\d+(?:[.,]\d+)?$/.test(t)) {
+        if (!u) return setErreur(`« ${k} » de ${id} : valeur numérique sans unité connue — saisissez-la par « Propriété commune » avec son unité.`);
+        commandes.push({ type: "propriete.definir", params: { id, nom: k, valeur: Number(t.replace(",", ".")), unite: u } });
+      } else commandes.push({ type: "propriete.definir", params: { id, nom: k, valeur: t } });
+    }
+    if (!commandes.length) return;
+    setErreur(null);
+    onCommandes(commandes, `Propriétés en tableau (${commandes.length} cellule(s))`);
+    setBrouillon({});
+  };
+  return (
+    <details className="inspecteur-tableau-proprietes" data-tableau-proprietes>
+      <summary>Propriétés en tableau</summary>
+      {sel.length > lignes.length && <p className="inspecteur-aide">Les 200 premiers objets seulement.</p>}
+      {colonnes.length === 0 ? <p className="nav-vide">Aucune propriété sur ces objets : ajoutez une colonne.</p> : (
+        <div className="tableau-defilant">
+          <table className="tableau-proprietes">
+            <thead>
+              <tr>
+                <th scope="col">Objet</th>
+                {colonnes.map((k) => <th key={k} scope="col">{k}{unite(k) ? ` (${unite(k)})` : ""}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {lignes.map((o) => (
+                <tr key={o.id}>
+                  <th scope="row">{o.id}</th>
+                  {colonnes.map((k) => (
+                    <td key={k}>
+                      <input
+                        aria-label={`${k} de ${o.id}`}
+                        value={brouillon[cle(o.id, k)] ?? texte(o, k)}
+                        disabled={readOnly}
+                        data-cellule={`${o.id}|${k}`}
+                        onChange={(e) => setBrouillon((b) => ({ ...b, [cle(o.id, k)]: e.target.value }))}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {!readOnly && (
+        <form className="nav-formulaire-altimetrie" onSubmit={(e) => { e.preventDefault(); const n = nouvelle.trim(); if (n && !colonnes.includes(n)) setColonnesAjoutees((c) => [...c, n]); setNouvelle(""); }}>
+          <input aria-label="Nouvelle colonne (nom de propriété)" placeholder="Nouvelle colonne" value={nouvelle} maxLength={120} onChange={(e) => setNouvelle(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-tableau-colonne />
+          <button type="submit" disabled={!nouvelle.trim()}>Ajouter la colonne</button>
+        </form>
+      )}
+      {!readOnly && <button type="button" disabled={!modifiees.length} onClick={enregistrer} data-tableau-enregistrer>Enregistrer {modifiees.length} modification(s)</button>}
+      {erreur && <p className="ver-erreur" role="alert">{erreur}</p>}
     </details>
   );
 }

@@ -78,3 +78,24 @@ describe("raccord ligne–arc et arc–arc (D-073)", () => {
     for (const q of [fin1, debut2]) expect(extr.some((x2) => Math.hypot(x2[0]! - q[0]!, x2[1]! - q[1]!) < 1e-6)).toBe(true);
   });
 });
+
+describe("décaler cercles, arcs et polylignes à arcs (D-076)", () => {
+  it("cercle concentrique ; polyligne arrondie : arc concentrique, jonctions tangentes ; angle vif avec un arc refusé", () => {
+    const e = appliquerLot(modeleVide(), lot([
+      { type: "niveau.creer", params: { id: "n", nom: "Rez", elevation: 0 } },
+      { type: "esquisse.cercle", params: { id: "c", niveauId: "n", centre: pt(0, 0), rayon: m(2) } },
+      // L à coin arrondi : (0,0) → (4,0) → arc de 90° (rayon 1, sens direct) → (5,1) → (5,4)
+      { type: "esquisse.polyligne", params: { id: "p", niveauId: "n", points: [pt(0, 0), pt(4, 0), pt(5, 1), pt(5, 4)], renflements: [0, Math.tan(Math.PI / 8), 0] } },
+      { type: "esquisse.polyligne", params: { id: "v", niveauId: "n", points: [pt(0, 10), pt(4, 10), pt(4, 14)], renflements: [0.4, 0] } },
+    ], "b")).etat;
+    const avant = new Set(Object.keys(e.objets));
+    const nouveau = (x: ModeleAtelier) => Object.values(x.objets).find((o) => !avant.has(o.id)) as Occurrence<"esquisse">;
+    const c = nouveau(appliquerLot(e, lot([{ type: "transformer.decaler", params: { distance: m(0.5), cote: "exterieur" }, cibles: ["c"] }], "c")).etat);
+    expect(c.params.rayon!.value).toBe(2.5);
+    const q = nouveau(appliquerLot(e, lot([{ type: "transformer.decaler", params: { distance: m(0.5), cote: "gauche" }, cibles: ["p"] }], "p")).etat);
+    expect(q.params.points.map((x) => [x.x, x.y])).toEqual([[0, 0.5], [4, 0.5], [4.5, 1], [4.5, 4]]);
+    expect(q.params.renflements![1]).toBeCloseTo(Math.tan(Math.PI / 8), 12);
+    expect(() => appliquerLot(e, lot([{ type: "transformer.decaler", params: { distance: m(0.5), cote: "gauche" }, cibles: ["v"] }], "v"))).toThrow(/angle vif/);
+    expect(() => appliquerLot(e, lot([{ type: "transformer.decaler", params: { distance: m(1.5), cote: "gauche" }, cibles: ["p"] }], "p2"))).toThrow(/rayon/);
+  });
+});

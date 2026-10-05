@@ -401,7 +401,12 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
           return attendre([], `Série de distances : ${err instanceof Error ? err.message : String(err)}.`);
         }
       }
-      const contourFerme: Point2[] | null = o ? (o.classe === "esquisse" && (o.params.forme === "polygone" || o.params.forme === "hachure" || (o.params.forme === "polyligne" && o.params.ferme && options.alt === true)) ? o.params.points : o.classe === "esquisse" && o.params.forme === "rectangle" && o.params.points.length === 2 ? [o.params.points[0]!, pt(o.params.points[1]!.x, o.params.points[0]!.y), o.params.points[1]!, pt(o.params.points[0]!.x, o.params.points[1]!.y)] : o.classe === "dalle" || o.classe === "zone" || o.classe === "solide" ? o.params.contour : null) : null;
+      const contourFerme: Point2[] | null = o ? (o.classe === "esquisse" && (o.params.forme === "polygone" || o.params.forme === "hachure" || (o.params.forme === "polyligne" && o.params.ferme && (options.alt === true || !!o.params.renflements))) ? o.params.points : o.classe === "esquisse" && o.params.forme === "rectangle" && o.params.points.length === 2 ? [o.params.points[0]!, pt(o.params.points[1]!.x, o.params.points[0]!.y), o.params.points[1]!, pt(o.params.points[0]!.x, o.params.points[1]!.y)] : o.classe === "dalle" || o.classe === "zone" || o.classe === "solide" ? o.params.contour : null) : null;
+      // Cercle (D-076) : clic dedans = intérieur, dehors = extérieur ; décalage concentrique.
+      if (o?.classe === "esquisse" && (o.params.forme === "cercle" || o.params.forme === "arc") && o.params.centre && o.params.rayon) {
+        const coteC = distance(point, o.params.centre) < o.params.rayon.value ? "interieur" : "exterieur";
+        return emettre([{ type: "transformer.decaler", params: { ...(serie ? { distances: serie } : { distance: m(d) }), cote: coteC }, cibles: ui.selection }], `Décaler ${serie ? serie.map(fmt).join(" ; ") : fmt(d)} m (${coteC === "interieur" ? "intérieur" : "extérieur"})`);
+      }
       if (contourFerme) {
         let dedans = false;
         for (let i = 0, j = contourFerme.length - 1; i < contourFerme.length; j = i++) {

@@ -1059,6 +1059,31 @@ await page.waitForSelector(".plan2d");
   check("contrainte de rayon : ajoutée depuis l'inspecteur du cercle, rayon piloté à 1,75 m", rc.status === 200 && rayon === 1.75, `${rc.status} · ${rayon}`);
 }
 
+// Propriétés en tableau (D-076) : une colonne ajoutée, deux cellules saisies, un seul lot.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const rev0 = (await modele(pid)).revision;
+  await selectionner("jonc-a");
+  await page.locator(".nav-filtre").fill("jonc-b");
+  await page.locator('.nav-objets button[data-objet="jonc-b"]').click({ modifiers: ["Shift"] });
+  await page.locator("[data-tableau-proprietes] > summary").click();
+  await page.locator("[data-tableau-colonne]").fill("Repère e2e");
+  await page.locator('[data-tableau-proprietes] button:has-text("Ajouter la colonne")').click();
+  await page.locator('[data-cellule="jonc-a|Repère e2e"]').fill("M-A");
+  await page.locator('[data-cellule="jonc-b|Repère e2e"]').fill("M-B");
+  await page.locator("[data-tableau-enregistrer]").click();
+  let vals = [];
+  let rev = rev0;
+  for (let k = 0; k < 30 && vals.join() !== "M-A,M-B"; k++) {
+    const md = await modele(pid);
+    vals = ["jonc-a", "jonc-b"].map((id) => md.modele.objets[id]?.proprietes["Repère e2e"]?.valeur);
+    rev = md.revision;
+    if (vals.join() !== "M-A,M-B") await page.waitForTimeout(500);
+  }
+  check("propriétés en tableau : deux cellules saisies, enregistrées en un seul lot", vals.join() === "M-A,M-B" && rev === rev0 + 1, `${vals.join()} · r${rev0} → r${rev}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

@@ -796,6 +796,56 @@ export function centreRenflement(a: Vec, b: Vec, renflement: number): Vec {
   return { x: (a.x + b.x) / 2 - uy * h, y: (a.y + b.y) / 2 + ux * h };
 }
 
+/**
+ * Décalage d'une polyligne à segments en arc (D-076) : chaque segment droit glisse de `d` vers sa gauche, chaque
+ * arc devient concentrique (rayon diminué de `d` s'il tourne à gauche, augmenté sinon ; même renflement). Jonctions :
+ * continues si les deux bouts décalés coïncident (raccords tangents), en onglet entre deux segments droits ; sinon,
+ * refus motivé (texte). Rayon annulé : refus.
+ */
+export function decalerPolyligneArcs(points: readonly Vec[], renflements: readonly number[], ferme: boolean, d: number): { points: Point2[]; renflements: number[] } | string {
+  const n = points.length;
+  const nbSeg = ferme ? n : n - 1;
+  const segs: { a: Vec; b: Vec; bulge: number; droit: boolean }[] = [];
+  for (let i = 0; i < nbSeg; i++) {
+    const a = points[i]!;
+    const b = points[(i + 1) % n]!;
+    const bulge = renflements[i] ?? 0;
+    if (Math.abs(bulge) < 1e-12) {
+      const u = normalise(sub(b, a));
+      const g = { x: -u.y * d, y: u.x * d };
+      segs.push({ a: add(a, g), b: add(b, g), bulge: 0, droit: true });
+    } else {
+      const c = centreRenflement(a, b, bulge);
+      const r = distance(a, c);
+      const r2 = bulge > 0 ? r - d : r + d;
+      if (!(r2 > 1e-9)) return `segment ${i + 1} : le rayon de l'arc s'annulerait`;
+      const k = r2 / r;
+      segs.push({ a: add(c, mul(sub(a, c), k)), b: add(c, mul(sub(b, c), k)), bulge, droit: false });
+    }
+  }
+  const sommets: Vec[] = [];
+  const joint = (s1: (typeof segs)[number], s2: (typeof segs)[number], j: number): Vec | string => {
+    if (distance(s1.b, s2.a) < 1e-9) return s2.a;
+    if (s1.droit && s2.droit) {
+      const d1 = sub(s1.b, s1.a);
+      const d2 = sub(s2.b, s2.a);
+      const den = cross(d1, d2);
+      if (Math.abs(den) < 1e-12) return s2.a;
+      const t = cross(sub(s2.a, s1.a), d2) / den;
+      return add(s1.a, mul(d1, t));
+    }
+    return `sommet ${j + 1} : angle vif entre un arc et un autre segment (arrondir ce sommet d'abord)`;
+  };
+  for (let i = 0; i < n; i++) {
+    if (!ferme && i === 0) { sommets.push(segs[0]!.a); continue; }
+    if (!ferme && i === n - 1) { sommets.push(segs[nbSeg - 1]!.b); continue; }
+    const j = joint(segs[(i - 1 + nbSeg) % nbSeg]!, segs[i % nbSeg]!, i);
+    if (typeof j === "string") return j;
+    sommets.push(j);
+  }
+  return { points: sommets.map((q) => pt(Math.round(q.x * 1e9) / 1e9, Math.round(q.y * 1e9) / 1e9)), renflements: segs.map((x) => x.bulge) };
+}
+
 /** Points d'une polyligne dont certains segments sont en arc (renflements par segment ; absent : tous droits). */
 export function pointsPolyligne(points: readonly Vec[], ferme: boolean, renflements?: readonly number[] | null, pasDeg = 11.25): Point2[] {
   if (!points.length) return [];

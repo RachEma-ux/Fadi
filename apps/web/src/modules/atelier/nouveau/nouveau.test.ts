@@ -420,3 +420,12 @@ describe("repérage polaire réglable (D-071)", () => {
     expect(accrocher(p, vide, acc, 0.2, pt(0, 0)).type).toBe("libre");
   });
 });
+
+describe("décaler un cercle au plan (D-076)", () => {
+  it("clic dedans : intérieur ; dehors : extérieur", () => {
+    const etat = appliquer(socle(), [{ type: "esquisse.cercle", params: { id: "c", niveauId: "rdc", centre: pt(0, 0), rayon: m(2) } }]);
+    const u = ui({ outil: "decaler", selection: ["c"], parametresOutil: { distanceDecalage: 0.5 } });
+    expect((clic("decaler", pt(0.5, 0), etat, u, opts).commandes[0]!.params as { cote: string }).cote).toBe("interieur");
+    expect((clic("decaler", pt(3, 0), etat, u, opts).commandes[0]!.params as { cote: string }).cote).toBe("exterieur");
+  });
+});
