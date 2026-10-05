@@ -138,6 +138,46 @@ export function facesMur(a: Vec, b: Vec, epaisseur: number, alignement: Aligneme
   return { gauche: [add(a, g), add(b, g)], droite: [add(a, r), add(b, r)] };
 }
 
+/**
+ * Renflement de l'arc qui va de a à b en passant par m (D-086) : b = tan(θ/4), θ balayage signé (> 0 : sens direct) ;
+ * null si les trois points sont alignés ou confondus.
+ */
+export function renflementTroisPoints(a: Vec, b: Vec, m: Vec): number | null {
+  const c = cross(sub(b, a), sub(m, a));
+  if (Math.abs(c) < 1e-12 || distance(a, b) < 1e-12) return null;
+  const u = sub(a, m);
+  const v = sub(b, m);
+  const angleM = Math.acos(Math.max(-1, Math.min(1, dot(u, v) / (Math.hypot(u.x, u.y) * Math.hypot(v.x, v.y)))));
+  const theta = 2 * Math.PI - 2 * angleM;
+  return (c < 0 ? 1 : -1) * Math.tan(theta / 4);
+}
+
+/** Longueur d'axe d'un mur (D-086) : corde, ou arc pour un mur courbe. */
+export function longueurAxeMur(p: { a: Vec; b: Vec; renflement?: number }): number {
+  const c = Math.hypot(p.b.x - p.a.x, p.b.y - p.a.y);
+  if (!p.renflement) return c;
+  const theta = 4 * Math.atan(Math.abs(p.renflement));
+  return (theta * c) / (2 * Math.sin(theta / 2));
+}
+
+/**
+ * Contour d'un mur courbe (D-086), sens direct : faces concentriques à l'axe en arc, décalées selon l'alignement
+ * (face gauche du sens a → b : vers le centre pour un arc en sens direct), arcs discrétisés au pas donné.
+ */
+export function polygoneMurCourbe(a: Vec, b: Vec, epaisseur: number, alignement: Alignement, renflement: number, pasDeg = 5): Point2[] {
+  const c = centreRenflement(a, b, renflement);
+  const r = distance(a, c);
+  const offG = alignement === "axe" ? epaisseur / 2 : alignement === "gauche" ? 0 : epaisseur;
+  const offD = alignement === "axe" ? epaisseur / 2 : alignement === "gauche" ? epaisseur : 0;
+  const sensDirect = renflement > 0;
+  const rG = sensDirect ? r - offG : r + offG;
+  const rD = sensDirect ? r + offD : r - offD;
+  const axe = [pt(a.x, a.y), ...pointsRenflement(a, b, renflement, pasDeg)];
+  const face = (rr: number) => axe.map((q) => ({ x: c.x + ((q.x - c.x) * rr) / r, y: c.y + ((q.y - c.y) * rr) / r }));
+  const poly = [...face(Math.max(rD, 0)), ...face(Math.max(rG, 0)).reverse()];
+  return (aireSignee(poly) < 0 ? poly.reverse() : poly).map((q) => pt(q.x, q.y));
+}
+
 /** Polygone (quadrilatère) d'un mur, sens direct. */
 export function polygoneMur(a: Vec, b: Vec, epaisseur: number, alignement: Alignement): Point2[] {
   const f = facesMur(a, b, epaisseur, alignement);

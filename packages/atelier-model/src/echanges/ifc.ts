@@ -17,7 +17,7 @@
  */
 import { referentielDu } from "../commandes/referentiels.js";
 import { altimetrieDu } from "../commandes/altimetrie.js";
-import { aireNette, facesMur, normalise, perp, pointsPolyligne, sub, type Vec } from "../geometrie.js";
+import { aireNette, facesMur, normalise, perp, pointsPolyligne, pointsRenflement, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, maillageObjet } from "../projection/maillage.js";
@@ -322,9 +322,10 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         const placementMur = s.ajouter(`IFCLOCALPLACEMENT(${ref(etage ? etage.placement : placementBat)},${ref(s.ajouter(`IFCAXIS2PLACEMENT3D(${ref(pt3(a.x, a.y, 0))},${ref(axeZ)},${ref(dir3(u.x, u.y, 0))})`))})`);
         // Raccords (D-023) : un mur dont une extrémité est raccordée est extrudé depuis son contour raccordé.
         const raccord = raccordMur(etat, o);
-        const raccorde = !!raccord && (Math.abs(raccord.gauche[0]) > 1e-9 || Math.abs(raccord.droite[0]) > 1e-9 || Math.abs(raccord.gauche[1] - L) > 1e-9 || Math.abs(raccord.droite[1] - L) > 1e-9 || !!raccord.pointes?.some((x) => x));
+        const raccorde = !!o.params.renflement || (!!raccord && (Math.abs(raccord.gauche[0]) > 1e-9 || Math.abs(raccord.droite[0]) > 1e-9 || Math.abs(raccord.gauche[1] - L) > 1e-9 || Math.abs(raccord.droite[1] - L) > 1e-9 || !!raccord.pointes?.some((x) => x)));
         if (etendue) reps.push(corpsSolide([raccorde ? extrusionContour(polygoneMurRaccorde(etat, o).map(versLocal), [], etendue[0] - z0(o.niveauId), etendue[1] - etendue[0]) : boite({ x: 0, y: 0 }, { x: 1, y: 0 }, 0, L, Math.min(oG, oD), Math.max(oG, oD), etendue[0] - z0(o.niveauId), etendue[1] - z0(o.niveauId))]));
-        reps.push(s.ajouter(`IFCSHAPEREPRESENTATION(${ref(axe)},'Axis','Curve2D',${liste([polyligne2([{ x: 0, y: 0 }, { x: L, y: 0 }], false)])})`));
+        // Axe : segment, ou arc discrétisé pour un mur courbe (D-086).
+        reps.push(s.ajouter(`IFCSHAPEREPRESENTATION(${ref(axe)},'Axis','Curve2D',${liste([polyligne2(o.params.renflement ? [a, ...pointsRenflement(a, b, o.params.renflement, 5)].map(versLocal) : [{ x: 0, y: 0 }, { x: L, y: 0 }], false)])})`));
         const id = s.ajouter(`IFCWALL(${gid(o.id)},$,${opt(nom ?? o.id)},$,$,${ref(placementMur)},${ref(forme(reps))},$,${o.definitionId === "cloison" ? ".PARTITIONING." : ".STANDARD."})`);
         produits.set(o.id, id);
         contenir(o.niveauId, id);

@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { cercleTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -562,6 +562,13 @@ function Apercu({ outil, pts, curseur, ui, pr }: { outil: string; pts: Point2[];
   const s = pr.vers(curseur);
   const longueur = distance(dernier, curseur);
   const cote = <text x={s.x + 10} y={s.y - 10} className="plan-cote-apercu">{fmt(longueur)} m</text>;
+  if (outil === "mur-courbe") {
+    if (pts.length < 2) return longueur < 1e-6 ? null : <path d={chemin(pr, [dernier, curseur], false)} className="plan-apercu-trait" />;
+    const r = renflementTroisPoints(pts[0]!, pts[1]!, curseur);
+    if (r === null || Math.abs(r) > 1) return <path d={chemin(pr, [pts[0]!, pts[1]!], false)} className="plan-apercu-trait" />;
+    const ep = typeof ui.parametresOutil["epaisseur"] === "number" ? (ui.parametresOutil["epaisseur"] as number) : 0.2;
+    return <path d={chemin(pr, polygoneMurCourbe(pts[0]!, pts[1]!, ep, ((ui.parametresOutil["alignement"] as string | undefined) ?? "axe") as "axe", r))} className="plan-apercu-mur" />;
+  }
   if (outil === "mur") {
     const ep = typeof ui.parametresOutil["epaisseur"] === "number" ? (ui.parametresOutil["epaisseur"] as number) : 0.2;
     if (longueur < 1e-6) return null;

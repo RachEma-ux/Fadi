@@ -466,3 +466,15 @@ describe("escalier à volées au plan (D-084)", () => {
     expect(appliquer(socle(), r.commandes).objets).toBeDefined();
   });
 });
+
+describe("mur courbe au plan (D-086)", () => {
+  it("trois clics : début, fin, point de l'arc → mur.tracer avec renflement ; point aligné refusé", () => {
+    const etat = socle();
+    const u = (pts: ReturnType<typeof pt>[]) => ui({ outil: "mur-courbe", pointsEnCours: pts, parametresOutil: { epaisseur: 0.2, hauteur: 3 } });
+    expect(clic("mur-courbe", pt(2, 0), etat, u([pt(0, 0), pt(4, 0)]), opts).aide).toMatch(/aligné/);
+    const r = clic("mur-courbe", pt(2, -2), etat, u([pt(0, 0), pt(4, 0)]), opts);
+    const p = r.commandes[0]!.params as { renflement: number };
+    expect(p.renflement).toBeCloseTo(1, 9); // demi-cercle
+    expect(appliquer(etat, r.commandes).objets).toBeDefined();
+  });
+});

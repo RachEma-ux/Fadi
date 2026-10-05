@@ -59,6 +59,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       alignement: lire.enumeration(p, "alignement", ["gauche", "axe", "droite"] as const, "axe"),
       exterieur: lire.booleen(p, "exterieur", false),
       nom: lire.chaineOuNull(p, "nom"),
+      ...renflementMur(etat, p),
     };
   },
   porte: (etat, p) => {
@@ -240,12 +241,23 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
   },
 };
 
+/** Renflement d'un mur courbe (D-086) : |b| ≤ 1 ; nul ou absent : mur droit (clé omise). */
+function renflementMur(etat: ModeleAtelier, p: Brut): { renflement?: number } {
+  const b = p["renflement"];
+  if (b === undefined || b === null || b === 0) return {};
+  if (typeof b !== "number" || !Number.isFinite(b) || Math.abs(b) > 1) throw new ErreurCommande("invalide", "renflement", "renflement de mur : nombre entre −1 et 1 (demi-cercle au plus)");
+  const id = typeof p["id"] === "string" ? p["id"] : null;
+  if (id && Object.values(etat.objets).some((o) => (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.params.murHoteId === id)) throw new ErreurCommande("precondition", "renflement", `${id} porte des ouvertures : un mur courbe n'en accepte pas`);
+  return { renflement: b };
+}
+
 function ouverture(etat: ModeleAtelier, p: Brut): ParamsParClasse["porte"] {
   const murHoteId = lire.chaine(p, "murHoteId");
   const hote = etat.objets[murHoteId];
   if (!hote || hote.classe !== "mur") throw new ErreurCommande("precondition", "murHoteId", `mur hôte introuvable : ${murHoteId}`);
   const position = lire.nombre(p, "position", { min: 0, max: 1 })!;
   const largeur = lire.longueur(p, "largeur", { strict: true })!;
+  if (hote.params.renflement) throw new ErreurCommande("precondition", "murHoteId", `${murHoteId} est un mur courbe : ouvertures non prises en charge (mur droit attendu)`);
   const longueurMur = distance(hote.params.a, hote.params.b);
   const demi = largeur.value / 2 / longueurMur;
   if (position - demi < -1e-9 || position + demi > 1 + 1e-9) throw new ErreurCommande("precondition", "position", "l'emprise de l'ouverture sort du mur hôte");

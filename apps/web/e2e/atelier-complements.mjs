@@ -54,8 +54,10 @@ const selectionner = async (id) => {
 };
 
 /** Choisit un outil par la palette et attend qu'il soit actif (une seconde tentative au besoin). */
-const choisirOutil = async (requete, libelle) => {
+const choisirOutil = async (requete, libelle, id = null) => {
   for (let essai = 0; essai < 2; essai++) {
+    // Pointeur hors de la palette : un survol choisirait l'élément sous la souris au lieu du premier résultat.
+    await page.mouse.move(2, 2);
     await page.evaluate(() => document.activeElement?.blur?.());
     await page.keyboard.press("Escape");
     if (!(await page.locator(".palette-champ").isVisible().catch(() => false))) await page.keyboard.press("Control+k");
@@ -66,7 +68,8 @@ const choisirOutil = async (requete, libelle) => {
     await page.locator(".palette-champ").fill(requete);
     await page.waitForFunction((l) => (document.querySelector(".palette-resultats li")?.textContent ?? "").includes(l), libelle, { timeout: 5000 }).catch(() => {});
     await page.keyboard.press("Enter");
-    const ok = await page.waitForFunction((l) => (document.querySelector(".atelier-n-outils .outil.est-actif")?.textContent ?? "").includes(l), libelle, { timeout: 5000 }).then(() => true, () => false);
+    // Outil actif : bouton de la barre, ou (outil rangé dans un menu) le plan qui annonce l'outil courant.
+    const ok = await page.waitForFunction(([l, i]) => (document.querySelector(".atelier-n-outils .outil.est-actif")?.textContent ?? "").includes(l) || (!!i && (document.querySelector(".plan2d")?.getAttribute("aria-label") ?? "").endsWith(`outil ${i}`)), [libelle, id], { timeout: 5000 }).then(() => true, () => false);
     if (ok) return true;
   }
   return false;
@@ -1286,7 +1289,7 @@ await page.waitForSelector(".plan2d");
 {
   await page.keyboard.press("Escape");
   await attendreEnregistre().catch(() => {});
-  const ok = await choisirOutil("ligne", "Ligne");
+  const ok = await choisirOutil("ligne", "Ligne", "ligne");
   const z = await page.locator(".plan2d").boundingBox();
   const toucher = async (type, x, y) => page.evaluate(([t, cx, cy]) => {
     const el = document.querySelector(".plan2d");
@@ -1309,6 +1312,29 @@ await page.waitForSelector(".plan2d");
   }
   await page.keyboard.press("Escape");
   check("loupe au doigt : appui tenu → loupe ; relâcher pose le premier point de la ligne", ok && loupe && sansLoupe && apres === avant + 1, `outil ${ok} · loupe ${loupe} · ${sansLoupe} · ${avant} → ${apres}`);
+}
+
+// Mur courbe tracé au plan (D-086).
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const avant = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "mur" && o.params.renflement).length;
+  const ok = await choisirOutil("mur courbe", "Mur courbe");
+  await page.locator("#outil-epaisseur").fill("0.2");
+  await page.locator("#outil-hauteur").fill("3");
+  const z = await page.locator(".plan2d").boundingBox();
+  for (const [fx, fy] of [[0.2, 0.85], [0.4, 0.85], [0.3, 0.8]]) {
+    await page.mouse.click(z.x + z.width * fx, z.y + z.height * fy);
+    await page.waitForTimeout(150);
+  }
+  const aideMur = (await page.locator(".etat-aide, .etat-erreur").first().textContent().catch(() => "")) ?? "";
+  let apres = avant;
+  for (let k = 0; k < 30 && apres === avant; k++) {
+    apres = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "mur" && o.params.renflement).length;
+    if (apres === avant) await page.waitForTimeout(500);
+  }
+  await page.keyboard.press("Escape");
+  check("mur courbe : tracé en trois clics (début, fin, point de l'arc)", ok && apres === avant + 1, `outil ${ok} · ${avant} → ${apres} · ${aideMur}`);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.

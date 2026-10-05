@@ -578,6 +578,7 @@ function ChoixBloc({ etat, ui }: { etat: ModeleAtelier; ui: EtatUi }) {
 /** Paramètres de l'outil courant (persistés dans les préférences d'affichage, jamais dans le modèle). */
 const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: string }[]> = {
   mur: [{ cle: "epaisseur", libelle: "Épaisseur", unite: "m" }, { cle: "hauteur", libelle: "Hauteur", unite: "m" }],
+  "mur-courbe": [{ cle: "epaisseur", libelle: "Épaisseur", unite: "m" }, { cle: "hauteur", libelle: "Hauteur", unite: "m" }],
   porte: [{ cle: "largeurOuverture", libelle: "Largeur", unite: "m" }, { cle: "hauteurOuverture", libelle: "Hauteur", unite: "m" }],
   fenetre: [{ cle: "largeurOuverture", libelle: "Largeur", unite: "m" }, { cle: "hauteurOuverture", libelle: "Hauteur", unite: "m" }, { cle: "allege", libelle: "Allège", unite: "m" }],
   ouverture: [{ cle: "largeurOuverture", libelle: "Largeur", unite: "m" }, { cle: "hauteurOuverture", libelle: "Hauteur", unite: "m" }],

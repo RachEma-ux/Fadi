@@ -9,7 +9,7 @@
  * produit aucun volume : l'objet reste en plan, rien n'est inventé.
  */
 import { contenuPlace } from "../blocs-places.js";
-import { aireSignee, facesMur, normalise, perp, pointsArc, sub, type Vec } from "../geometrie.js";
+import { aireSignee, facesMur, normalise, perp, pointsArc, polygoneMurCourbe, sub, type Vec } from "../geometrie.js";
 import { raccordMur } from "../raccords.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 
@@ -266,6 +266,11 @@ function murMaillage(etat: ModeleAtelier, mur: Occurrence<"mur">, t: Tampon): vo
   const etendue = etendueMur(etat, mur);
   if (!etendue) return;
   const [z0, z1] = etendue;
+  // Mur courbe (D-086) : prisme de son contour (sans ouverture, refusées sur un mur courbe).
+  if (mur.params.renflement) {
+    t.prisme(polygoneMurCourbe(mur.params.a, mur.params.b, mur.params.epaisseur.value, mur.params.alignement, mur.params.renflement), [], z0, z1);
+    return;
+  }
   const { a, b } = mur.params;
   const L = Math.hypot(b.x - a.x, b.y - a.y);
   if (L < 1e-9) return;

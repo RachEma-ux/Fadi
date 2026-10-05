@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -71,6 +71,17 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       if (distance(a, point) < 1e-6) return attendre(pts, "Point identique au précédent.");
       const commandes: Commande[] = [{ type: "mur.tracer", params: { ...base, a, b: point, epaisseur: m(nombre(ui, "epaisseur", 0.2)), hauteur: m(nombre(ui, "hauteur", niveau?.hauteur ?? 3)), alignement: (ui.parametresOutil["alignement"] as string | undefined) ?? "axe", calqueId: (ui.parametresOutil["calqueId"] as string | null | undefined) ?? null, definitionId: (ui.parametresOutil["typeMur"] as string | null | undefined) ?? null } }];
       return { commandes, label: `Mur ${fmt(distance(a, point))} m`, pointsEnCours: [point], aide: "Mur tracé. Cliquez le point suivant pour enchaîner, Échap pour terminer." };
+    }
+    case "mur-courbe": {
+      // Mur courbe (D-086) : début, fin, puis un point de l'arc.
+      if (pts.length === 0) return attendre([point], "Cliquez la fin du mur courbe.");
+      if (pts.length === 1) return distance(pts[0]!, point) < 1e-6 ? attendre(pts, "Point identique au précédent.") : attendre([pts[0]!, point], "Cliquez un point de l'arc (il fixe la courbure).");
+      const [a, b] = [pts[0]!, pts[1]!];
+      const r = renflementTroisPoints(a, b, point);
+      if (r === null) return attendre(pts, "Point aligné avec les extrémités : choisissez un point de l'arc, hors de la corde.");
+      if (Math.abs(r) > 1 + 1e-9) return attendre(pts, "Arc de plus d'un demi-cercle : refusé (demi-cercle au plus).");
+      const renflement = Math.round(Math.max(-1, Math.min(1, r)) * 1e9) / 1e9;
+      return emettre([{ type: "mur.tracer", params: { ...base, a, b, renflement, epaisseur: m(nombre(ui, "epaisseur", 0.2)), hauteur: m(nombre(ui, "hauteur", niveau?.hauteur ?? 3)), alignement: (ui.parametresOutil["alignement"] as string | undefined) ?? "axe", calqueId: (ui.parametresOutil["calqueId"] as string | null | undefined) ?? null, definitionId: (ui.parametresOutil["typeMur"] as string | null | undefined) ?? null } }], "Mur courbe", "Mur courbe tracé (ouvertures non prises en charge sur un mur courbe).");
     }
     case "porte":
     case "fenetre":

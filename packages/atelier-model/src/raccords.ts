@@ -20,7 +20,7 @@
  *
  * Le résultat est mis en cache par état d'objets (immuable) et par niveau.
  */
-import { add, cross, dot, facesMur, mul, normalise, perp, sub, type Vec } from "./geometrie.js";
+import { add, cross, dot, facesMur, mul, normalise, perp, polygoneMurCourbe, sub, type Vec } from "./geometrie.js";
 import type { ModeleAtelier, Occurrence } from "./modele.js";
 import { pt, TOLERANCE_REDUCTEUR, type Point2 } from "./unites.js";
 
@@ -52,6 +52,7 @@ interface MurPlan {
 const SIN_ALIGNE = Math.sin((1 * Math.PI) / 180);
 
 function versPlan(m: Occurrence<"mur">): MurPlan | null {
+  if (m.params.renflement) return null; // mur courbe (D-086) : pas de raccord calculé, contour propre
   const { a, b, epaisseur, alignement } = m.params;
   const L = Math.hypot(b.x - a.x, b.y - a.y);
   if (L < 1e-9) return null;
@@ -257,6 +258,7 @@ export function facesMurRaccordees(etat: ModeleAtelier, mur: Occurrence<"mur">):
 
 /** Polygone du mur après raccord, sens direct (remplace `polygoneMur` pour le dessin). */
 export function polygoneMurRaccorde(etat: ModeleAtelier, mur: Occurrence<"mur">): Point2[] {
+  if (mur.params.renflement) return polygoneMurCourbe(mur.params.a, mur.params.b, mur.params.epaisseur.value, mur.params.alignement, mur.params.renflement);
   const f = facesMurRaccordees(etat, mur);
   const r = raccordMur(etat, mur);
   // Contour : droite a → b, (pointe du nœud en b), gauche b → a, (pointe du nœud en a).
@@ -308,7 +310,7 @@ export function croisementsDuNiveau(etat: ModeleAtelier, niveauId: string | null
   const cle = niveauId ?? "";
   const deja = parNiveau.get(cle);
   if (deja) return deja;
-  const murs = Object.values(etat.objets).filter((o): o is Occurrence<"mur"> => o.classe === "mur" && o.niveauId === niveauId);
+  const murs = Object.values(etat.objets).filter((o): o is Occurrence<"mur"> => o.classe === "mur" && o.niveauId === niveauId && !o.params.renflement);
   const polys = murs.map((m) => {
     const pts = polygoneMurRaccorde(etat, m) as Vec[];
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;

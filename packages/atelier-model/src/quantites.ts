@@ -4,7 +4,7 @@
  * ouvertures par classe, dalles (aire brute et nette), poteaux, escaliers, solides. Ordre déterministe par
  * identifiant : deux appels sur le même état donnent la même sortie.
  */
-import { aire, aireNette, distance } from "./geometrie.js";
+import { aire, aireNette, longueurAxeMur } from "./geometrie.js";
 import type { ModeleAtelier } from "./modele.js";
 import { niveauxOrdonnes, objetsDeClasse } from "./modele.js";
 import { TOLERANCE_AIRE_ABS, TOLERANCE_AIRE_REL } from "./unites.js";
@@ -70,7 +70,7 @@ export function quantites(etat: ModeleAtelier): Quantites {
     let surfaceAxeHauteur = 0;
     let sansHauteur = 0;
     for (const m of murs) {
-      const l = distance(m.params.a, m.params.b);
+      const l = longueurAxeMur(m.params); // mur courbe : longueur de l'arc (D-086)
       longueurAxe += l;
       if (m.params.hauteur) surfaceAxeHauteur += l * m.params.hauteur.value;
       else sansHauteur++;

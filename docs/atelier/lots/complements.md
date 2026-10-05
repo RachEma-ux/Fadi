@@ -156,3 +156,4 @@ Tangentes imposées des courbes (`tangentes.test.ts`, e2e, D-082).
 Fenêtres jumelées et d'angle (`fenetres.test.ts`, e2e, D-083).
 Escaliers à volées et paliers (`escaliers.test.ts`, e2e, D-084).
 Loupe de précision au doigt (e2e, D-085).
+Murs courbes (`murs-courbes.test.ts`, e2e, D-086).

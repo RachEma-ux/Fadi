@@ -50,6 +50,11 @@ export interface ParamsMur {
   alignement: AlignementMur;
   exterieur: boolean;
   nom: string | null;
+  /**
+   * Mur courbe (D-086) : renflement de l'axe a → b (b = tan(θ/4), convention DXF ; > 0 : sens direct), |b| ≤ 1
+   * (demi-cercle au plus) ; absent = mur droit.
+   */
+  renflement?: number;
 }
 
 export interface ParamsOuverture {

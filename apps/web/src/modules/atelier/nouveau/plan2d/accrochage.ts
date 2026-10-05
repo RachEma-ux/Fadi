@@ -50,6 +50,14 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
     if (o.niveauId !== niveauId) continue;
     switch (o.classe) {
       case "mur": {
+        if (o.params.renflement) {
+          // Mur courbe (D-086) : axe en arc discrétisé (extrémités accrochables, sans milieux de morceaux).
+          const arc = [o.params.a, ...pointsRenflement(o.params.a, o.params.b, o.params.renflement, 5)];
+          for (let i = 0; i + 1 < arc.length; i++) segments.push({ a: arc[i]!, b: arc[i + 1]!, objetId: o.id, courbe: true });
+          segments.push({ a: o.params.a, b: o.params.a, objetId: o.id });
+          segments.push({ a: o.params.b, b: o.params.b, objetId: o.id });
+          break;
+        }
         segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
         const f = facesMur(o.params.a, o.params.b, o.params.epaisseur.value, o.params.alignement);
         faces.push({ a: pt(f.gauche[0].x, f.gauche[0].y), b: pt(f.gauche[1].x, f.gauche[1].y), objetId: o.id }, { a: pt(f.droite[0].x, f.droite[0].y), b: pt(f.droite[1].x, f.droite[1].y), objetId: o.id });

@@ -47,7 +47,8 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
   const rot = t.type === "rotation" ? t.angleDeg : 0;
   switch (o.classe) {
     case "mur":
-      return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
+      // Mur courbe (D-086) : le miroir inverse le sens de l'arc.
+      return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b), ...(o.params.renflement && t.type === "miroir" ? { renflement: -o.params.renflement } : {}) } };
     case "porte":
       // Le miroir change le côté d'ouverture d'une porte dont le sens est renseigné (D-037).
       if (t.type === "miroir" && o.params.ouvrant) return { ...o, params: { ...o.params, ouvrant: { ...o.params.ouvrant, cote: o.params.ouvrant.cote === "gauche" ? "droite" : "gauche" } } };
@@ -344,6 +345,7 @@ export const reducteursTransformer = {
     };
     for (const d of distances) {
       for (const o of sel) {
+        if (o.classe === "mur" && o.params.renflement) throw new ErreurCommande("precondition", "cibles", `${o.id} : mur courbe, décalage non pris en charge`);
         if (o.classe === "mur" || (o.classe === "esquisse" && (o.params.forme === "ligne" || o.params.forme === "construction"))) {
           if (cote === "exterieur" || cote === "interieur") throw new ErreurCommande("invalide", "cote", `${o.id} : côté gauche ou droite pour un mur ou une ligne`);
           const a: Vec = o.classe === "mur" ? o.params.a : o.params.points[0]!;
@@ -708,6 +710,7 @@ function decalerPolylignePure(points: readonly Point2[], d: number): Point2[] {
 }
 
 function axeDe(o: OccurrenceQuelconque): [Vec, Vec] | null {
+  if (o.classe === "mur" && o.params.renflement) return null; // mur courbe (D-086)
   if (o.classe === "mur" || o.classe === "escalier") return [o.params.a, o.params.b];
   if (o.classe === "esquisse" && (o.params.forme === "ligne" || o.params.forme === "construction") && o.params.points.length >= 2) return [o.params.points[0]!, o.params.points[1]!];
   return null;

@@ -72,7 +72,7 @@ export function compositionMur(etat: ModeleAtelier, mur: Occurrence<"mur">): Com
  */
 export function separationsCouches(etat: ModeleAtelier, mur: Occurrence<"mur">, vides: readonly [number, number][] = []): { a: Vec; b: Vec }[] {
   const c = compositionMur(etat, mur);
-  if (!c || !c.coherente || c.couches.length < 2) return [];
+  if (!c || !c.coherente || c.couches.length < 2 || mur.params.renflement) return [];
   const { a, b, epaisseur, alignement } = mur.params;
   const L = Math.hypot(b.x - a.x, b.y - a.y);
   if (L < 1e-9) return [];

@@ -22,7 +22,7 @@ function murDe(etat: ModeleAtelier, id: string): Occurrence<"mur"> {
  */
 function scinderMurPlusieurs(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande): ResultatCommande {
   const id = lire.chaine(p, "id");
-  murDe(etat, id);
+  if (murDe(etat, id).params.renflement) throw new ErreurCommande("precondition", "id", `${id} : mur courbe, scission non prise en charge`);
   const brut = p["positions"] as unknown[];
   if (!brut.length || brut.length > 100 || !brut.every((t) => typeof t === "number" && t > 0 && t < 1)) throw new ErreurCommande("invalide", "positions", "positions : de 1 à 100 nombres t, 0 < t < 1");
   const ts = [...new Set(brut as number[])].sort((x, y) => x - y);
@@ -64,6 +64,7 @@ export function scinderMur(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande):
   if (Array.isArray(p["positions"])) return scinderMurPlusieurs(etat, p, ctx);
   const id = lire.chaine(p, "id");
   const mur = murDe(etat, id);
+  if (mur.params.renflement) throw new ErreurCommande("precondition", "id", `${id} : mur courbe, scission non prise en charge`);
   const calque = mur.calqueId ? etat.calques[mur.calqueId] : null;
   if (calque?.verrouille) throw new ErreurCommande("precondition", "id", `calque verrouillé : ${calque.nom}`);
   const { a, b } = mur.params;
@@ -129,6 +130,7 @@ export function joindreMurs(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande)
   const autreId = lire.chaine(p, "autreId");
   const mur = murDe(etat, id);
   const autre = murDe(etat, autreId);
+  if (mur.params.renflement || autre.params.renflement) throw new ErreurCommande("precondition", "id", "jonction avec un mur courbe non prise en charge");
   const calque = mur.calqueId ? etat.calques[mur.calqueId] : null;
   if (calque?.verrouille) throw new ErreurCommande("precondition", "id", `calque verrouillé : ${calque.nom}`);
   // Intersection des droites porteuses (segments prolongés).
