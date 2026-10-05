@@ -18,7 +18,7 @@ import { appliquerDifferentiel, ErreurCommande, TYPE_RESTAURER } from "./command
 import type { Primitive } from "./documents/dessin.js";
 
 import { serialisationStable } from "./documents/empreinte.js";
-import { pointDansPolygone } from "./geometrie.js";
+import { longueurAxeMur, pointDansPolygone } from "./geometrie.js";
 import type { ModeleAtelier, OccurrenceQuelconque } from "./modele.js";
 
 /** Un dessin quelconque (vue générée, feuille composée) : ses primitives. */
@@ -243,7 +243,7 @@ export function collisions(etat: ModeleAtelier): Collision[] {
     if (o.classe !== "porte" && o.classe !== "fenetre" && o.classe !== "ouverture") continue;
     const mur = etat.objets[o.params.murHoteId];
     if (!mur || mur.classe !== "mur") continue;
-    const L = Math.hypot(mur.params.b.x - mur.params.a.x, mur.params.b.y - mur.params.a.y);
+    const L = longueurAxeMur(mur.params);
     const c = o.params.position * L;
     const w = o.params.largeur.value;
     const s0 = c - w / 2;

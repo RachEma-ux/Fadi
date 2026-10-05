@@ -9,7 +9,7 @@
  * produit aucun volume : l'objet reste en plan, rien n'est inventé.
  */
 import { contenuPlace } from "../blocs-places.js";
-import { aireSignee, facesMur, normalise, perp, pointsArc, polygoneMurCourbe, sub, type Vec } from "../geometrie.js";
+import { aireSignee, facesMur, hoteOuverture, longueurAxeMur, normalise, perp, pointsArc, polygoneMurCourbe, portionAxeMur, sub, type Vec } from "../geometrie.js";
 import { raccordMur } from "../raccords.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 
@@ -266,9 +266,22 @@ function murMaillage(etat: ModeleAtelier, mur: Occurrence<"mur">, t: Tampon): vo
   const etendue = etendueMur(etat, mur);
   if (!etendue) return;
   const [z0, z1] = etendue;
-  // Mur courbe (D-086) : prisme de son contour (sans ouverture, refusées sur un mur courbe).
+  // Mur courbe (D-086) : prismes des portions d'arc entre les vides des ouvertures (D-095), chaque portion coupée en
+  // hauteur sous et au-dessus des ouvertures qu'elle porte.
   if (mur.params.renflement) {
-    t.prisme(polygoneMurCourbe(mur.params.a, mur.params.b, mur.params.epaisseur.value, mur.params.alignement, mur.params.renflement), [], z0, z1);
+    const L = longueurAxeMur(mur.params);
+    const vides = videsOuvertures(etat, mur, L, z0);
+    const coupures = [...new Set([0, L, ...vides.flatMap((v) => [v.s0, v.s1])])].filter((s) => s >= 0 && s <= L).sort((x, y) => x - y);
+    for (let k = 0; k + 1 < coupures.length; k++) {
+      const s0 = coupures[k]!;
+      const s1 = coupures[k + 1]!;
+      if (s1 - s0 < 1e-6) continue;
+      const milieu = (s0 + s1) / 2;
+      const ici = vides.filter((v) => v.s0 <= milieu && v.s1 >= milieu).map((v) => [v.zb, v.zt] as [number, number]);
+      const portion = portionAxeMur(mur.params, s0, s1);
+      const contour = polygoneMurCourbe(portion.a, portion.b, mur.params.epaisseur.value, mur.params.alignement, portion.renflement!);
+      for (const [za, zb] of soustraire(z0, z1, ici)) if (zb > za) t.prisme(contour, [], za, zb);
+    }
     return;
   }
   const { a, b } = mur.params;
@@ -281,13 +294,7 @@ function murMaillage(etat: ModeleAtelier, mur: Occurrence<"mur">, t: Tampon): vo
   const oD = (f.droite[0].x - a.x) * n.x + (f.droite[0].y - a.y) * n.y;
   const [o0, o1] = [Math.min(oG, oD), Math.max(oG, oD)];
   // Vides des ouvertures hébergées, en abscisse le long de l'axe.
-  const vides: { s0: number; s1: number; zb: number; zt: number }[] = [];
-  for (const o of Object.values(etat.objets)) {
-    if ((o.classe !== "porte" && o.classe !== "fenetre" && o.classe !== "ouverture") || o.params.murHoteId !== mur.id) continue;
-    const c = o.params.position * L;
-    const zb = z0 + (o.params.allege?.value ?? 0);
-    vides.push({ s0: Math.max(0, c - o.params.largeur.value / 2), s1: Math.min(L, c + o.params.largeur.value / 2), zb, zt: zb + o.params.hauteur.value });
-  }
+  const vides = videsOuvertures(etat, mur, L, z0);
   const coupures = [...new Set([0, L, ...vides.flatMap((v) => [v.s0, v.s1])])].filter((s) => s >= 0 && s <= L).sort((x, y) => x - y);
   const r: { gauche: [number, number]; droite: [number, number]; pointes?: [Vec | null, Vec | null] } = raccordMur(etat, mur) ?? { gauche: [0, L], droite: [0, L] };
   for (let k = 0; k + 1 < coupures.length; k++) {
@@ -315,13 +322,26 @@ function murMaillage(etat: ModeleAtelier, mur: Occurrence<"mur">, t: Tampon): vo
   }
 }
 
+/** Vides des ouvertures d'un mur, en abscisse le long de l'axe (corde ou arc) et en altitude. */
+function videsOuvertures(etat: ModeleAtelier, mur: Occurrence<"mur">, L: number, z0: number): { s0: number; s1: number; zb: number; zt: number }[] {
+  const vides: { s0: number; s1: number; zb: number; zt: number }[] = [];
+  for (const o of Object.values(etat.objets)) {
+    if ((o.classe !== "porte" && o.classe !== "fenetre" && o.classe !== "ouverture") || o.params.murHoteId !== mur.id) continue;
+    const c = o.params.position * L;
+    const zb = z0 + (o.params.allege?.value ?? 0);
+    vides.push({ s0: Math.max(0, c - o.params.largeur.value / 2), s1: Math.min(L, c + o.params.largeur.value / 2), zb, zt: zb + o.params.hauteur.value });
+  }
+  return vides;
+}
+
 function ouvertureMaillage(etat: ModeleAtelier, o: Occurrence<"porte" | "fenetre" | "ouverture">, t: Tampon): void {
   if (o.classe === "ouverture") return; // baie libre : le vide suffit
   const mur = etat.objets[o.params.murHoteId];
   if (!mur || mur.classe !== "mur") return;
   const etendue = etendueMur(etat, mur);
   if (!etendue) return;
-  const { a, b } = mur.params;
+  // Mur courbe (D-095) : le corps se pose sur la tangente à l'axe au centre de l'ouverture.
+  const { a, b, position } = hoteOuverture(mur.params, o.params.position, o.params.largeur.value);
   const L = Math.hypot(b.x - a.x, b.y - a.y);
   if (L < 1e-9) return;
   const u = normalise(sub(b, a));
@@ -331,7 +351,7 @@ function ouvertureMaillage(etat: ModeleAtelier, o: Occurrence<"porte" | "fenetre
   const oD = (f.droite[0].x - a.x) * n.x + (f.droite[0].y - a.y) * n.y;
   const centre = (oG + oD) / 2;
   const e = o.classe === "porte" ? 0.04 : 0.03;
-  const c = o.params.position * L;
+  const c = position * L;
   const zb = etendue[0] + (o.params.allege?.value ?? 0);
   t.boite(a, u, n, c - o.params.largeur.value / 2, c + o.params.largeur.value / 2, centre - e / 2, centre + e / 2, zb, zb + o.params.hauteur.value);
 }

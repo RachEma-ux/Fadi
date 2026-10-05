@@ -8,7 +8,7 @@
  * et même empreinte (reproductibilité). Rien n'est inventé : une hauteur absente ne produit aucun volume, un sens
  * d'ouverture de porte non renseigné est dessiné selon la convention de l'Atelier et signalé ; renseigné, il est suivi (D-037).
  */
-import { pointsPolyligne, aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsEllipse, pointsSpline, sub, type Vec } from "../geometrie.js";
+import { pointsPolyligne, aireNette, centroide, facesMur, hoteOuverture, longueurAxeMur, normalise, perp, pointsArc, pointsEllipse, pointsSpline, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { lignesHachure, motifHachure, pointsHachure } from "../hachures.js";
@@ -250,12 +250,14 @@ function maillagesDe(etat: ModeleAtelier, objets: readonly OccurrenceQuelconque[
 function cadreOuverture(etat: ModeleAtelier, o: Occurrence<"porte" | "fenetre" | "ouverture">) {
   const hote = etat.objets[o.params.murHoteId];
   if (!hote || hote.classe !== "mur") return null;
-  const { a, b, epaisseur, alignement } = hote.params;
+  const { epaisseur, alignement } = hote.params;
+  // Mur courbe (D-095) : symbole posé sur la tangente à l'axe au centre de l'ouverture.
+  const { a, b, position } = hoteOuverture(hote.params, o.params.position, o.params.largeur.value);
   const L = Math.hypot(b.x - a.x, b.y - a.y);
   if (L < 1e-9) return null;
   const u = normalise(sub(b, a));
   const f = facesMur(a, b, epaisseur.value, alignement);
-  const c = { x: a.x + (b.x - a.x) * o.params.position, y: a.y + (b.y - a.y) * o.params.position };
+  const c = { x: a.x + (b.x - a.x) * position, y: a.y + (b.y - a.y) * position };
   const w = o.params.largeur.value;
   const p1 = { x: c.x - (u.x * w) / 2, y: c.y - (u.y * w) / 2 };
   const p2 = { x: c.x + (u.x * w) / 2, y: c.y + (u.y * w) / 2 };
@@ -467,7 +469,7 @@ function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue, options: 
     if (o.classe !== "mur") continue;
     const ext = etendueMur(etat, o);
     if (!ext || zc < ext[0] || zc > ext[1]) continue;
-    const L = Math.hypot(o.params.b.x - o.params.a.x, o.params.b.y - o.params.a.y);
+    const L = longueurAxeMur(o.params);
     const vides: [number, number][] = [];
     for (const x of objets) {
       if ((x.classe !== "porte" && x.classe !== "fenetre" && x.classe !== "ouverture") || x.params.murHoteId !== o.id) continue;

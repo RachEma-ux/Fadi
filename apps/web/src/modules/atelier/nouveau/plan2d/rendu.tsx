@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -256,6 +256,13 @@ function Mur2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"mur">; et
     <g className={classes(`obj-mur obj-mur-${type}`, selectionne, survole)} data-objet={o.id}>
       <path d={chemin(pr, poly)} fill={fill} fillOpacity={selectionne ? 0.85 : 0.75} stroke={selectionne ? "#b3872f" : o.params.exterieur ? "#11302a" : COULEURS[type]} strokeWidth={selectionne ? 2.5 : o.params.exterieur ? 1.4 : 0.9} />
       {ouvertures.map((ouv) => {
+        // Mur courbe (D-095) : vide le long de l'arc, entre les deux faces.
+        if (o.params.renflement) {
+          const Lc = longueurAxeMur(o.params);
+          const cc = ouv.params.position * Lc;
+          const portion = portionAxeMur(o.params, Math.max(0, cc - ouv.params.largeur.value / 2), Math.min(Lc, cc + ouv.params.largeur.value / 2));
+          return <path key={ouv.id} d={chemin(pr, polygoneMurCourbe(portion.a, portion.b, epaisseur.value, alignement, portion.renflement!))} fill="#fff" stroke="none" />;
+        }
         const c = { x: a.x + dx * ouv.params.position, y: a.y + dy * ouv.params.position };
         const w = ouv.params.largeur.value / 2;
         const p1 = { x: c.x - ux * w, y: c.y - uy * w };
@@ -273,14 +280,16 @@ function Mur2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"mur">; et
 function Ouverture2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"porte" | "fenetre" | "ouverture">; etat: ModeleAtelier; pr: Projecteur; selectionne: boolean; survole: boolean }) {
   const hote = etat.objets[o.params.murHoteId];
   if (!hote || hote.classe !== "mur") return null;
-  const { a, b, epaisseur, alignement } = hote.params;
+  const { epaisseur, alignement } = hote.params;
+  // Mur courbe (D-095) : symbole posé sur la tangente à l'axe au centre de l'ouverture.
+  const { a, b, position } = hoteOuverture(hote.params, o.params.position, o.params.largeur.value);
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const l = Math.hypot(dx, dy) || 1;
   const ux = dx / l;
   const uy = dy / l;
   const f = facesMur(a, b, epaisseur.value, alignement);
-  const c = { x: a.x + dx * o.params.position, y: a.y + dy * o.params.position };
+  const c = { x: a.x + dx * position, y: a.y + dy * position };
   const w = o.params.largeur.value;
   const p1 = { x: c.x - ux * (w / 2), y: c.y - uy * (w / 2) };
   const p2 = { x: c.x + ux * (w / 2), y: c.y + uy * (w / 2) };

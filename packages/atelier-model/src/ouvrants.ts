@@ -7,7 +7,7 @@
  * Géométrie pure, en repère local du projet ; rien ne dépend de React ni du DOM.
  */
 import { ErreurCommande } from "./commandes/base.js";
-import { add, cross, facesMur, mul, normalise, perp, sub, type Vec } from "./geometrie.js";
+import { add, cross, facesMur, hoteOuverture, mul, normalise, perp, sub, type Vec } from "./geometrie.js";
 import type { ModeleAtelier, Occurrence } from "./modele.js";
 
 export interface OuvrantPorte {
@@ -51,14 +51,16 @@ export interface BattantPorte {
 export function battantPorte(etat: ModeleAtelier, porte: Occurrence<"porte">): BattantPorte | null {
   const hote = etat.objets[porte.params.murHoteId];
   if (!hote || hote.classe !== "mur") return null;
-  const { a, b, epaisseur, alignement } = hote.params;
+  const { epaisseur, alignement } = hote.params;
+  // Mur courbe (D-095) : battant posé sur la tangente à l'axe au centre de la porte.
+  const { a, b, position } = hoteOuverture(hote.params, porte.params.position, porte.params.largeur.value);
   if (Math.hypot(b.x - a.x, b.y - a.y) < 1e-9) return null;
   const u = normalise(sub(b, a));
   const n = perp(u);
   const f = facesMur(a, b, epaisseur.value, alignement);
   const ouvrant = porte.params.ouvrant ?? OUVRANT_CONVENTION;
   const w = porte.params.largeur.value;
-  const c = add(a, mul(sub(b, a), porte.params.position));
+  const c = add(a, mul(sub(b, a), position));
   const jambage = add(c, mul(u, ouvrant.charniere === "debut" ? -w / 2 : w / 2));
   // Décalage de la face du côté de l'ouverture, depuis l'axe du mur (selon n).
   const face = ouvrant.cote === "gauche" ? f.gauche[0] : f.droite[0];

@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -37,7 +37,7 @@ function murSous(etat: ModeleAtelier, niveauId: string, p: Point2, rayon: number
   let meilleur: { mur: Occurrence<"mur">; t: number; d: number } | null = null;
   for (const o of Object.values(etat.objets)) {
     if (o.classe !== "mur" || o.niveauId !== niveauId) continue;
-    const pr = projectionSurSegment(p, o.params.a, o.params.b);
+    const pr = projectionSurAxeMur(p, o.params); // mur courbe : sur l'arc (D-095)
     const d = Math.max(0, pr.distance - o.params.epaisseur.value / 2);
     if (d <= rayon && (!meilleur || d < meilleur.d)) meilleur = { mur: o, t: pr.t, d };
   }
@@ -106,7 +106,7 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       if (r === null) return attendre(pts, "Point aligné avec les extrémités : choisissez un point de l'arc, hors de la corde.");
       if (Math.abs(r) > 1 + 1e-9) return attendre(pts, "Arc de plus d'un demi-cercle : refusé (demi-cercle au plus).");
       const renflement = Math.round(Math.max(-1, Math.min(1, r)) * 1e9) / 1e9;
-      return emettre([{ type: "mur.tracer", params: { ...base, a, b, renflement, epaisseur: m(nombre(ui, "epaisseur", 0.2)), hauteur: m(nombre(ui, "hauteur", niveau?.hauteur ?? 3)), alignement: (ui.parametresOutil["alignement"] as string | undefined) ?? "axe", calqueId: (ui.parametresOutil["calqueId"] as string | null | undefined) ?? null, definitionId: (ui.parametresOutil["typeMur"] as string | null | undefined) ?? null } }], "Mur courbe", "Mur courbe tracé (ouvertures non prises en charge sur un mur courbe).");
+      return emettre([{ type: "mur.tracer", params: { ...base, a, b, renflement, epaisseur: m(nombre(ui, "epaisseur", 0.2)), hauteur: m(nombre(ui, "hauteur", niveau?.hauteur ?? 3)), alignement: (ui.parametresOutil["alignement"] as string | undefined) ?? "axe", calqueId: (ui.parametresOutil["calqueId"] as string | null | undefined) ?? null, definitionId: (ui.parametresOutil["typeMur"] as string | null | undefined) ?? null } }], "Mur courbe", "Mur courbe tracé ; portes et fenêtres se posent le long de l'arc.");
     }
     case "porte":
     case "fenetre":
@@ -115,7 +115,7 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       if (!cible) return attendre([], "Cliquez sur un mur pour y poser l'ouverture.");
       const largeur = nombre(ui, "largeurOuverture", 0.9);
       const hauteur = nombre(ui, "hauteurOuverture", 2.1);
-      const longueur = distance(cible.mur.params.a, cible.mur.params.b);
+      const longueur = longueurAxeMur(cible.mur.params);
       const demi = largeur / 2 / longueur;
       const position = Math.min(1 - demi, Math.max(demi, cible.t));
       const params: Record<string, unknown> = { classe: outil, murHoteId: cible.mur.id, position, largeur: m(largeur), hauteur: m(hauteur) };

@@ -9,7 +9,7 @@ import { creerEscalierHelicoidal, creerEscalierVolees } from "./escaliers.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import type { Classe } from "../ontologie.js";
 import { estOuverture } from "../ontologie.js";
-import { couperContour, unionContoursAdjacents } from "../geometrie.js";
+import { couperContour, longueurAxeMur, unionContoursAdjacents } from "../geometrie.js";
 import { referencesVers } from "../modele.js";
 import { lire } from "./base.js";
 import { validerParams } from "./validation.js";
@@ -140,7 +140,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
     if (!estOuverture(o.classe)) throw new ErreurCommande("precondition", "id", `${id} n'est pas une ouverture`);
     const ouv = o as Occurrence<"porte">;
     const mur = etat.objets[ouv.params.murHoteId] as Occurrence<"mur">;
-    const L = Math.hypot(mur.params.b.x - mur.params.a.x, mur.params.b.y - mur.params.a.y);
+    const L = longueurAxeMur(mur.params); // mur courbe : le long de l'arc (D-095)
     const nombre = lire.nombre(p, "nombre", { entier: true, min: 1, max: 100 })!;
     const entraxe = lire.longueur(p, "entraxe")!.value;
     if (Math.abs(entraxe) < ouv.params.largeur.value) throw new ErreurCommande("invalide", "entraxe", "entraxe plus petit que la largeur : les ouvertures se chevaucheraient");

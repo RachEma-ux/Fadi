@@ -3,7 +3,7 @@
  * orthogonal, grille. Rayon à l'écran (12 px, D-012) converti en mètres par l'échelle de la vue. Les accrochages
  * d'objet priment sur l'orthogonal, qui prime sur la grille. Fonctions pures : testables sans DOM.
  */
-import { facesMur, intersectionSegments, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { pt } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
@@ -226,7 +226,7 @@ export function objetSousPointeur(p: Point2, cache: ReturnType<typeof segmentsDu
     if (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") {
       const hote = etat.objets[o.params.murHoteId];
       if (!hote || hote.classe !== "mur") continue;
-      const c = pt(hote.params.a.x + (hote.params.b.x - hote.params.a.x) * o.params.position, hote.params.a.y + (hote.params.b.y - hote.params.a.y) * o.params.position);
+      const c = pointAxeMur(hote.params, o.params.position * longueurAxeMur(hote.params)).p; // mur courbe : sur l'arc (D-095)
       const d = Math.max(0, dist(p, c) - o.params.largeur.value / 2);
       if (d <= rayon && (!meilleur || d < meilleur.distance + 1e-9)) meilleur = { objetId: o.id, distance: Math.max(0, d - 1e-6) };
     } else if (o.classe === "texte" || o.classe === "etiquette") {

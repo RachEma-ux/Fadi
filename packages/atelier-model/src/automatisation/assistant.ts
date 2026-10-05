@@ -20,7 +20,7 @@ import { positionLibre, tailleDessinMm, type FormatFeuille } from "../documents/
 import { genererVue, lireParamsVue } from "../documents/vues.js";
 import type { ModeleAtelier } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
-import { centroide } from "../geometrie.js";
+import { centroide, longueurAxeMur } from "../geometrie.js";
 import { collisions } from "../versions.js";
 import { developperScript, SCRIPTS_INTEGRES } from "./scripts.js";
 
@@ -271,7 +271,7 @@ function corrigerOuvertures(etat: ModeleAtelier): Generation {
     const o = etat.objets[c.objets[0]!];
     const mur = etat.objets[c.objets[1]!];
     if (!o || !mur || mur.classe !== "mur" || (o.classe !== "porte" && o.classe !== "fenetre" && o.classe !== "ouverture")) continue;
-    const L = Math.hypot(mur.params.b.x - mur.params.a.x, mur.params.b.y - mur.params.a.y);
+    const L = longueurAxeMur(mur.params);
     const w = o.params.largeur.value;
     if (w >= L) continue;
     const position = Math.min(Math.max(o.params.position, w / 2 / L), 1 - w / 2 / L);

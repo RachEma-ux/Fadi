@@ -8,7 +8,7 @@
  */
 import { decomposerBloc } from "./bloc.js";
 import { validerParams } from "./validation.js";
-import { add, decalerPolyligneArcs, dot, pointsArc, pointsEllipse, pointsPolyligne, centreRenflement, decalerArrondi, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
+import { add, decalerPolyligneArcs, dot, pointsArc, pointsEllipse, pointsPolyligne, centreRenflement, longueurAxeMur, decalerArrondi, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
 import type { Contour, ModeleAtelier, Occurrence, OccurrenceQuelconque, Reference } from "../modele.js";
 import { ouverturesDuMur, referencesVers } from "../modele.js";
 import { estOuverture } from "../ontologie.js";
@@ -441,9 +441,9 @@ export const reducteursTransformer = {
         return r;
       }
       const params = extremite === "a" ? { ...o.params, a: point } : { ...o.params, b: point };
-      const nouvelleLongueur = distance(params.a, params.b);
+      const nouvelleLongueur = longueurAxeMur(params);
       if (nouvelleLongueur <= TOLERANCE_REDUCTEUR) throw new ErreurCommande("precondition", "point", "mur de longueur nulle");
-      const ancienneLongueur = distance(o.params.a, o.params.b);
+      const ancienneLongueur = longueurAxeMur(o.params);
       const objets = { ...etat.objets, [id]: { ...o, params } as OccurrenceQuelconque };
       let problemes = etat.problemes;
       for (const ouv of ouverturesDuMur(etat, id)) {

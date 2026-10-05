@@ -1382,6 +1382,18 @@ await page.waitForSelector(".plan2d");
   }
   await page.keyboard.press("Escape");
   check("mur courbe : tracé en trois clics (début, fin, point de l'arc)", ok && apres === avant + 1, `outil ${ok} · ${avant} → ${apres} · ${aideMur}`);
+  // Fenêtre posée sur l'arc (D-095) : clic sur le point de passage de l'arc.
+  const courbes = new Set(Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "mur" && o.params.renflement).map((o) => o.id));
+  const okF = await choisirOutil("fenêtre", "Fenêtre", "fenetre");
+  await page.mouse.click(z.x + z.width * 0.3, z.y + z.height * 0.8);
+  let fen = null;
+  for (let k = 0; k < 30 && !fen; k++) {
+    fen = Object.values((await modele(pid)).modele.objets).find((o) => o.classe === "fenetre" && courbes.has(o.params.murHoteId)) ?? null;
+    if (!fen) await page.waitForTimeout(500);
+  }
+  await page.keyboard.press("Escape");
+  const vide = fen ? await page.locator(`.plan2d [data-objet="${fen.id}"]`).count() : 0;
+  check("fenêtre posée sur un mur courbe, dessinée au plan", okF && !!fen && Math.abs(fen.params.position - 0.5) < 0.1 && vide === 1, `outil ${okF} · ${fen?.id} · ${fen?.params.position} · ${vide}`);
 }
 
 // Repère de saisie (D-091) : posé en deux clics, affiché, retiré par « Repère global ».

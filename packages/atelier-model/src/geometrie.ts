@@ -160,6 +160,72 @@ export function longueurAxeMur(p: { a: Vec; b: Vec; renflement?: number }): numb
   return (theta * c) / (2 * Math.sin(theta / 2));
 }
 
+/** Point et direction unitaire (sens a → b) de l'axe d'un mur à l'abscisse curviligne `s` (D-095 ; droit ou courbe). */
+export function pointAxeMur(p: { a: Vec; b: Vec; renflement?: number }, s: number): { p: Point2; u: Vec } {
+  const c = Math.hypot(p.b.x - p.a.x, p.b.y - p.a.y) || 1;
+  if (!p.renflement) {
+    const u = { x: (p.b.x - p.a.x) / c, y: (p.b.y - p.a.y) / c };
+    return { p: pt(p.a.x + u.x * s, p.a.y + u.y * s), u };
+  }
+  const L = longueurAxeMur(p);
+  const ctr = centreRenflement(p.a, p.b, p.renflement);
+  const r = Math.hypot(p.a.x - ctr.x, p.a.y - ctr.y);
+  const theta = 4 * Math.atan(p.renflement);
+  const t = Math.atan2(p.a.y - ctr.y, p.a.x - ctr.x) + theta * (s / L);
+  const sens = theta > 0 ? 1 : -1;
+  return { p: pt(ctr.x + r * Math.cos(t), ctr.y + r * Math.sin(t)), u: { x: -Math.sin(t) * sens, y: Math.cos(t) * sens } };
+}
+
+/** Flèche, sur l'axe d'un mur courbe, d'une corde de longueur `w` (0 pour un mur droit). */
+export function flecheCorde(p: { a: Vec; b: Vec; renflement?: number }, w: number): number {
+  if (!p.renflement) return 0;
+  const c = Math.hypot(p.b.x - p.a.x, p.b.y - p.a.y);
+  const r = c / (2 * Math.sin(2 * Math.atan(Math.abs(p.renflement))));
+  return r - Math.sqrt(Math.max(0, r * r - (w / 2) ** 2));
+}
+
+/** Projection d'un point sur l'axe d'un mur (D-095) : fraction `t` de la longueur d'axe (bornée à [0, 1]) et distance. */
+export function projectionSurAxeMur(q: Vec, p: { a: Vec; b: Vec; renflement?: number }): { t: number; distance: number } {
+  if (!p.renflement) {
+    const r = projectionSurSegment(q, p.a, p.b);
+    return { t: r.t, distance: r.distance };
+  }
+  const c = centreRenflement(p.a, p.b, p.renflement);
+  const r = Math.hypot(p.a.x - c.x, p.a.y - c.y);
+  const theta = 4 * Math.atan(p.renflement);
+  const a0 = Math.atan2(p.a.y - c.y, p.a.x - c.x);
+  // Écart angulaire depuis a, dans le sens de l'arc, ramené à [0, 2π[.
+  let d = (Math.atan2(q.y - c.y, q.x - c.x) - a0) * Math.sign(theta);
+  d = ((d % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const balayage = Math.abs(theta);
+  if (d <= balayage) return { t: d / balayage, distance: Math.abs(Math.hypot(q.x - c.x, q.y - c.y) - r) };
+  const da = Math.hypot(q.x - p.a.x, q.y - p.a.y);
+  const db = Math.hypot(q.x - p.b.x, q.y - p.b.y);
+  return da <= db ? { t: 0, distance: da } : { t: 1, distance: db };
+}
+
+/** Portion [s0, s1] de l'axe d'un mur (D-095) : extrémités et renflement du sous-arc (même centre, même sens). */
+export function portionAxeMur(p: { a: Vec; b: Vec; renflement?: number }, s0: number, s1: number): { a: Point2; b: Point2; renflement?: number } {
+  const a = pointAxeMur(p, s0).p;
+  const b = pointAxeMur(p, s1).p;
+  if (!p.renflement) return { a, b };
+  const L = longueurAxeMur(p);
+  const theta = 4 * Math.atan(p.renflement) * ((s1 - s0) / L);
+  return { a, b, renflement: Math.tan(theta / 4) };
+}
+
+/**
+ * Hôte droit équivalent d'une ouverture (D-095) : sur un mur droit, le mur lui-même ; sur un mur courbe, le segment
+ * tangent à l'axe au centre de l'ouverture, de la largeur de l'ouverture (position 0,5). Le corps de l'ouverture
+ * (cadre, vantail, vitrage) se dessine sur ce segment ; le vide dans le mur suit l'arc (`portionAxeMur`).
+ */
+export function hoteOuverture(mur: { a: Vec; b: Vec; renflement?: number }, position: number, largeur: number): { a: Point2; b: Point2; position: number } {
+  if (!mur.renflement) return { a: pt(mur.a.x, mur.a.y), b: pt(mur.b.x, mur.b.y), position };
+  const { p, u } = pointAxeMur(mur, position * longueurAxeMur(mur));
+  const w = largeur / 2;
+  return { a: pt(p.x - u.x * w, p.y - u.y * w), b: pt(p.x + u.x * w, p.y + u.y * w), position: 0.5 };
+}
+
 /**
  * Contour d'un mur courbe (D-086), sens direct : faces concentriques à l'axe en arc, décalées selon l'alignement
  * (face gauche du sens a → b : vers le centre pour un arc en sens direct), arcs discrétisés au pas donné.

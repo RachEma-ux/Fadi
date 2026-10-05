@@ -6,7 +6,7 @@
  *   (R5 : jamais de mélange de repères, la conversion reste explicite) ; un calque DXF par calque du modèle.
  * - CSV des quantités (séparateur « ; », BOM, virgule décimale non utilisée : point, comme les tableaux existants).
  */
-import { pointsArc, pointsEllipse, pointsSpline, type Vec } from "../geometrie.js";
+import { hoteOuverture, pointsArc, pointsEllipse, pointsSpline, type Vec } from "../geometrie.js";
 import { type ModeleAtelier, type OccurrenceQuelconque } from "../modele.js";
 import { quantites } from "../quantites.js";
 import { Dxf } from "../documents/rendu-dxf.js";
@@ -28,10 +28,12 @@ function dessiner(d: Dxf, etat: ModeleAtelier, o: OccurrenceQuelconque): void {
     case "ouverture": {
       const h = etat.objets[o.params.murHoteId];
       if (!h || h.classe !== "mur") return;
-      const L = Math.hypot(h.params.b.x - h.params.a.x, h.params.b.y - h.params.a.y);
+      // Mur courbe (D-095) : trait sur la tangente à l'axe au centre de l'ouverture.
+      const v = hoteOuverture(h.params, o.params.position, o.params.largeur.value);
+      const L = Math.hypot(v.b.x - v.a.x, v.b.y - v.a.y);
       if (L < 1e-9) return;
-      const u = { x: (h.params.b.x - h.params.a.x) / L, y: (h.params.b.y - h.params.a.y) / L };
-      const c = { x: h.params.a.x + u.x * o.params.position * L, y: h.params.a.y + u.y * o.params.position * L };
+      const u = { x: (v.b.x - v.a.x) / L, y: (v.b.y - v.a.y) / L };
+      const c = { x: v.a.x + u.x * v.position * L, y: v.a.y + u.y * v.position * L };
       const w = o.params.largeur.value / 2;
       d.ligne(calque, { x: c.x - u.x * w, y: c.y - u.y * w }, { x: c.x + u.x * w, y: c.y + u.y * w });
       return;

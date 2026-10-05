@@ -7,7 +7,7 @@
  *   le poteau d'angle — croisement des deux murs — est conservé).
  * Aucune dimension par défaut (R3) ; mêmes contrôles d'emprise que la pose ; un groupe nommé réunit les pièces.
  */
-import { distance, memePoint } from "../geometrie.js";
+import { distance, longueurAxeMur, memePoint } from "../geometrie.js";
 import type { ModeleAtelier, Occurrence } from "../modele.js";
 import { estOuverture } from "../ontologie.js";
 import { effetsVides, ErreurCommande, fusionnerEffets, lire, type ContexteCommande, type ResultatCommande } from "./base.js";
@@ -33,7 +33,7 @@ export function jumelerOuverture(etat: ModeleAtelier, p: Brut, ctx: ContexteComm
   const meneau = lire.longueur(p, "meneau", { strict: true })!.value;
   if (!(meneau > 0)) throw new ErreurCommande("invalide", "meneau", "largeur du meneau strictement positive");
   const mur = etat.objets[ouv.params.murHoteId] as Occurrence<"mur">;
-  const L = distance(mur.params.a, mur.params.b);
+  const L = longueurAxeMur(mur.params);
   const W = ouv.params.largeur.value;
   const w = (W - (nombre - 1) * meneau) / nombre;
   if (!(w > 0.01)) throw new ErreurCommande("precondition", "meneau", `meneaux trop larges : chaque ouverture ferait ${r9(w)} m`);
@@ -60,6 +60,7 @@ export function ouvertureAngle(etat: ModeleAtelier, p: Brut, ctx: ContexteComman
   const A = etat.objets[idA]!;
   const B = etat.objets[idB]!;
   if (A.classe !== "mur" || B.classe !== "mur") throw new ErreurCommande("precondition", "murA", "deux murs attendus");
+  if (A.params.renflement || B.params.renflement) throw new ErreurCommande("precondition", "murA", "ouverture d'angle : murs droits seulement");
   if (A.params.alignement !== "axe" || B.params.alignement !== "axe") throw new ErreurCommande("precondition", "murA", "ouverture d'angle : murs alignés sur l'axe seulement");
   const classe = lire.enumeration(p, "classe", ["fenetre", "ouverture", "porte"] as const, "fenetre");
   const largeurA = lire.longueur(p, "largeurA", { strict: true })!.value;

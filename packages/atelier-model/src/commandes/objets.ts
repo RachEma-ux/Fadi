@@ -5,7 +5,7 @@
  * références vers un objet supprimé passent « à réparer » (R12). Les alias `mur.tracer`, `ouverture.poser`,
  * `dalle.creer`, `esquisse.ligne`… sont enregistrés dans `index.ts`.
  */
-import { distance } from "../geometrie.js";
+import { longueurAxeMur } from "../geometrie.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque, Propriete, Reference } from "../modele.js";
 import { ouverturesDuMur, referencesVers } from "../modele.js";
 import { CLASSES, estClasse, estOuverture, type Classe } from "../ontologie.js";
@@ -110,7 +110,7 @@ export function modifierOccurrence(etat: ModeleAtelier, p: Brut, ctx: ContexteCo
   // Un mur modifié : les ouvertures dont l'emprise sort du nouvel axe passent « à réparer » (R12), jamais supprimées.
   if (existant.classe === "mur") {
     const m = suivant as Occurrence<"mur">;
-    const longueur = distance(m.params.a, m.params.b);
+    const longueur = longueurAxeMur(m.params); // mur courbe : longueur d'arc (D-095)
     for (const o of ouverturesDuMur(etat, id)) {
       const demi = o.params.largeur.value / 2 / longueur;
       if (o.params.position - demi < -1e-9 || o.params.position + demi > 1 + 1e-9) {

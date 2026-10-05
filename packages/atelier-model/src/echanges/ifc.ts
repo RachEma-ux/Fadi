@@ -17,7 +17,7 @@
  */
 import { referentielDu } from "../commandes/referentiels.js";
 import { altimetrieDu } from "../commandes/altimetrie.js";
-import { aireNette, facesMur, normalise, perp, pointsPolyligne, pointsRenflement, sub, type Vec } from "../geometrie.js";
+import { aireNette, facesMur, flecheCorde, hoteOuverture, normalise, perp, pointsPolyligne, pointsRenflement, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, maillageObjet } from "../projection/maillage.js";
@@ -341,11 +341,17 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         compter("mur", "IfcWall", etendue ? "Axis + SweptSolid (corps plein vidé par les ouvertures)" : "Axis", true, etendue ? undefined : "mur sans hauteur : axe seul, sans volume (hauteur non évaluée)");
         // Ouvertures hébergées : vide + élément de remplissage.
         for (const ouv of ouvertesTriees(ouverturesParMur.get(o.id) ?? [])) {
-          const c = ouv.params.position * L;
+          // Mur courbe (D-095) : vide et remplissage dans le repère tangent à l'axe au centre de l'ouverture ; le vide
+          // déborde de la flèche de la corde pour traverser tout le mur.
+          const v = hoteOuverture(o.params, ouv.params.position, ouv.params.largeur.value);
+          const va = v.a;
+          const vu = normalise(sub(v.b, v.a));
+          const vn = perp(vu);
+          const c = v.position * Math.hypot(v.b.x - v.a.x, v.b.y - v.a.y);
           const w = ouv.params.largeur.value;
           const zb = (etendue?.[0] ?? z0(o.niveauId)) - z0(o.niveauId) + (ouv.params.allege?.value ?? 0);
-          const marge = 0.01;
-          const vide = boite(a, u, c - w / 2, c + w / 2, Math.min(oG, oD) - marge, Math.max(oG, oD) + marge, zb, zb + ouv.params.hauteur.value);
+          const marge = 0.01 + (o.params.renflement ? flecheCorde(o.params, ouv.params.largeur.value) : 0);
+          const vide = boite(va, vu, c - w / 2, c + w / 2, Math.min(oG, oD) - marge, Math.max(oG, oD) + marge, zb, zb + ouv.params.hauteur.value);
           const ouverture = s.ajouter(`IFCOPENINGELEMENT(${gid(`vide|${ouv.id}`)},$,${chaineStep(`Vide ${ouv.params.repere ?? ouv.id}`)},$,$,${ref(placementDe(o.niveauId))},${ref(forme([corpsSolide([vide])]))},$,.OPENING.)`);
           s.ajouter(`IFCRELVOIDSELEMENT(${gid(`rel-vide|${ouv.id}`)},$,$,$,${ref(id)},${ref(ouverture)})`);
           if (ouv.classe === "ouverture") {
@@ -363,11 +369,11 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
           if (ouvrant) {
             // Sens renseigné (D-037) : repère propre à la porte, Y dans le sens d'ouverture, X le long de la baie ;
             // gauche / droite « vu dans le sens +Y » (IfcDoorTypeOperationEnum) : charnière du côté de X minimal → LEFT.
-            const y = ouvrant.cote === "gauche" ? n : { x: -n.x, y: -n.y };
+            const y = ouvrant.cote === "gauche" ? vn : { x: -vn.x, y: -vn.y };
             const x = { x: y.y, y: -y.x };
             const sCharniere = ouvrant.charniere === "debut" ? c - w / 2 : c + w / 2;
             const sAutre = ouvrant.charniere === "debut" ? c + w / 2 : c - w / 2;
-            const surAxe = (sv: number) => ({ x: a.x + u.x * sv + n.x * centre, y: a.y + u.y * sv + n.y * centre });
+            const surAxe = (sv: number) => ({ x: va.x + vu.x * sv + vn.x * centre, y: va.y + vu.y * sv + vn.y * centre });
             const pc = surAxe(sCharniere);
             const pa = surAxe(sAutre);
             const gaucheVu = (pa.x - pc.x) * x.x + (pa.y - pc.y) * x.y > 0; // l'autre tableau du côté +X : charnière à gauche
@@ -377,7 +383,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
             placementRemplissage = s.ajouter(`IFCLOCALPLACEMENT(${ref(etage ? etage.placement : placementBat)},${ref(s.ajouter(`IFCAXIS2PLACEMENT3D(${ref(pt3(origine.x, origine.y, 0))},${ref(axeZ)},${ref(dir3(x.x, x.y, 0))})`))})`);
             panneau = boite({ x: 0, y: 0 }, { x: 1, y: 0 }, 0, w, -ep / 2, ep / 2, zb, zb + ouv.params.hauteur.value);
           } else {
-            panneau = boite(a, u, c - w / 2, c + w / 2, centre - ep / 2, centre + ep / 2, zb, zb + ouv.params.hauteur.value);
+            panneau = boite(va, vu, c - w / 2, c + w / 2, centre - ep / 2, centre + ep / 2, zb, zb + ouv.params.hauteur.value);
             placementRemplissage = placementDe(o.niveauId);
           }
           const remplissage = s.ajouter(`${classeIfc}(${gid(ouv.id)},$,${opt(ouv.params.repere ?? ouv.id)},$,$,${ref(placementRemplissage)},${ref(forme([corpsSolide([panneau])]))},${opt(ouv.params.repere)},${reelStep(ouv.params.hauteur.value)},${reelStep(w)},${ouv.classe === "porte" ? ".DOOR." : ".WINDOW."},${operation},$)`);
