@@ -145,19 +145,23 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
         {parClasse.map(([classe, liste]) => {
           const masquee = ui.filtres.classesMasquees.includes(classe);
           return (
-          <details key={classe} open={liste.length <= 12 || liste.some((o) => selection.has(o.id))} className={masquee ? "classe-masquee" : undefined}>
+          <div key={classe} className="nav-classe">
+          {/* Filtre d'affichage local par classe (DA-05-02, D-066) et sélection de toute la classe sur le niveau ; hors du
+              résumé (un bouton dans un résumé est un contrôle imbriqué). */}
+          <span className="nav-classe-actions">
+            <button type="button" className="nav-bascule" aria-pressed={!masquee} data-classe-bascule={classe} title={masquee ? "Afficher cette classe (pour vous)" : "Masquer cette classe (pour vous)"} onClick={() => basculerClasse(classe)}>
+              {masquee ? "○" : "◉"}
+              <span className="sr-only">{masquee ? `Afficher ${CLASSES[classe].libelle}` : `Masquer ${CLASSES[classe].libelle}`}</span>
+            </button>
+            {!masquee && (
+              <button type="button" className="nav-bascule" data-classe-selection={classe} title="Sélectionner toute la classe sur ce niveau" onClick={() => etatUi.selectionner(liste.filter((o) => !(o.calqueId && ui.filtres.calquesMasques.includes(o.calqueId))).map((o) => o.id))}>
+                ⊞<span className="sr-only">Sélectionner toute la classe {CLASSES[classe].libelle}</span>
+              </button>
+            )}
+          </span>
+          <details open={liste.length <= 12 || liste.some((o) => selection.has(o.id))} className={masquee ? "classe-masquee" : undefined}>
             <summary>
               {CLASSES[classe].libelle} <span className="nav-detail">{liste.length}{masquee ? " · masquée pour vous" : ""}</span>
-              {/* Filtre d'affichage local par classe (DA-05-02, D-066) et sélection de toute la classe sur le niveau. */}
-              <button type="button" className="nav-bascule" aria-pressed={!masquee} data-classe-bascule={classe} title={masquee ? "Afficher cette classe (pour vous)" : "Masquer cette classe (pour vous)"} onClick={(e) => { e.preventDefault(); e.stopPropagation(); basculerClasse(classe); }}>
-                {masquee ? "○" : "◉"}
-                <span className="sr-only">{masquee ? `Afficher ${CLASSES[classe].libelle}` : `Masquer ${CLASSES[classe].libelle}`}</span>
-              </button>
-              {!masquee && (
-                <button type="button" className="nav-bascule" data-classe-selection={classe} title="Sélectionner toute la classe sur ce niveau" onClick={(e) => { e.preventDefault(); e.stopPropagation(); etatUi.selectionner(liste.filter((o) => !(o.calqueId && ui.filtres.calquesMasques.includes(o.calqueId))).map((o) => o.id)); }}>
-                  ⊞<span className="sr-only">Sélectionner toute la classe {CLASSES[classe].libelle}</span>
-                </button>
-              )}
             </summary>
             <ul className="nav-liste">
               {liste.slice(0, 300).map((o) => (
@@ -178,6 +182,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
               {liste.length > 300 && <li className="nav-vide">… {liste.length - 300} de plus : filtrez pour les trouver.</li>}
             </ul>
           </details>
+          </div>
           );
         })}
       </section>

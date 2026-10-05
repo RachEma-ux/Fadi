@@ -76,7 +76,7 @@ export function Classification({ sel, etat, readOnly, onCommandes }: { sel: Occu
         </ul>
       )}
       {!readOnly && (
-        <form className="ajout-contrainte" onSubmit={(e) => { e.preventDefault(); if (systeme.trim() && code.trim()) onCommandes(sel.map((o) => ({ type: "classification.affecter", params: { id: o.id, systeme: systeme.trim(), code: code.trim() } })), `Classer ${sel.length > 1 ? `${sel.length} objets` : sel[0]!.id} : ${systeme.trim()} ${code.trim()}`); }}>
+        <form className="classif-formulaire" onSubmit={(e) => { e.preventDefault(); if (systeme.trim() && code.trim()) onCommandes(sel.map((o) => ({ type: "classification.affecter", params: { id: o.id, systeme: systeme.trim(), code: code.trim() } })), `Classer ${sel.length > 1 ? `${sel.length} objets` : sel[0]!.id} : ${systeme.trim()} ${code.trim()}`); }}>
           <label>Système<input list="classif-systemes" value={systeme} maxLength={80} onChange={(e) => setSysteme(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-classif="systeme" /></label>
           <datalist id="classif-systemes">{referentiels.map((r) => <option key={r.id} value={r.p.systeme} />)}</datalist>
           <label>Code<input list="classif-codes" value={code} maxLength={60} onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-classif="code" /></label>
@@ -96,7 +96,7 @@ export function Classification({ sel, etat, readOnly, onCommandes }: { sel: Occu
           ))}
         </ul>
         {!readOnly && (
-          <div className="ajout-contrainte">
+          <div className="classif-formulaire">
             <label>Système<input value={charge.systeme} maxLength={80} onChange={(e) => setCharge({ ...charge, systeme: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-referentiel="systeme" /></label>
             <label>Édition<input value={charge.edition} maxLength={40} onChange={(e) => setCharge({ ...charge, edition: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-referentiel="edition" /></label>
             <label>Fichier CSV (code ; libellé)

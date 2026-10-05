@@ -2018,8 +2018,15 @@
 .navigateur details.classe-masquee > summary {
   opacity: 0.6;
 }
-.navigateur summary .nav-bascule {
-  margin-left: 0.3rem;
+.nav-classe {
+  position: relative;
+}
+.nav-classe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: 0.2rem;
 }
 .nav-formulaire-ensemble {
   display: flex;
