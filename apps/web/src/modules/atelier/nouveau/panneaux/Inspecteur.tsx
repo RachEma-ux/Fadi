@@ -148,6 +148,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {o.classe === "zone" && <SyntheseZoneVue o={o as Occurrence<"zone">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || o.classe === "dalle" || o.classe === "piece" || o.classe === "zone") && !desactive && contourFerme(o) && <ChangerClasseContour key={o.id} o={o} onCommandes={onCommandes} />}
       {o.classe === "escalier" && !desactive && <TremieEscalier o={o as Occurrence<"escalier">} etat={etat} onCommandes={onCommandes} />}
+      {o.classe === "esquisse" && !desactive && ["polyligne", "polygone", "rectangle"].includes((o as Occurrence<"esquisse">).params.forme) && <ArrondirSommets key={`arr-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && <ConvertirEsquisse o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "mur" && !desactive && <ScinderEnParts o={o as Occurrence<"mur">} onCommandes={onCommandes} />}
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
@@ -708,6 +709,30 @@ function HistoriqueObjet({ projectId, objetId }: { projectId: string; objetId: s
         </ol>
       ))}
     </details>
+  );
+}
+
+/** Arrondir les sommets (D-063) : chaque sommet devient un segment en arc tangent à ses deux côtés. */
+function ArrondirSommets({ o, onCommandes }: { o: Occurrence<"esquisse">; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const [rayon, setRayon] = useState("");
+  const [sommet, setSommet] = useState("");
+  const r = nombreSaisi(rayon);
+  const n = o.params.forme === "rectangle" && o.params.points.length === 2 ? 4 : o.params.points.length;
+  return (
+    <form className="inspecteur-arrondir" data-arrondir onSubmit={(e) => {
+      e.preventDefault();
+      if (r === null || !(r > 0)) return;
+      onCommandes([{ type: "esquisse.arrondirSommets", params: { id: o.id, rayon: { value: r, unit: "m" }, ...(sommet ? { sommets: [Number(sommet)] } : {}) } }], `Arrondir ${sommet ? `le sommet ${Number(sommet) + 1}` : "les sommets"} de ${o.id} (rayon ${String(r).replace(".", ",")} m)`);
+    }}>
+      <label>Rayon d'arrondi (m)<input inputMode="decimal" value={rayon} onChange={(e) => setRayon(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-arrondir-rayon /></label>
+      <label>Sommet
+        <select value={sommet} onChange={(e) => setSommet(e.target.value)}>
+          <option value="">Tous</option>
+          {Array.from({ length: n }, (_, i) => <option key={i} value={i}>{i + 1}</option>)}
+        </select>
+      </label>
+      <button type="submit" disabled={r === null || !(r > 0)}>Arrondir</button>
+    </form>
   );
 }
 

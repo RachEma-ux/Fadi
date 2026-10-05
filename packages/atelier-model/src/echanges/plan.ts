@@ -91,7 +91,7 @@ function dessiner(d: Dxf, etat: ModeleAtelier, o: OccurrenceQuelconque): void {
       else if (p.forme === "rectangle" && p.points.length === 2) {
         const [a, b] = [p.points[0]!, p.points[1]!];
         d.polyligne(calque, [a, { x: b.x, y: a.y }, b, { x: a.x, y: b.y }], true);
-      } else d.polyligne(calque, p.points, p.ferme || p.forme === "polygone" || p.forme === "hachure");
+      } else d.polyligne(calque, p.points, p.ferme || p.forme === "polygone" || p.forme === "hachure", p.renflements);
       return;
     }
     case "cotation":

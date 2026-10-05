@@ -20,6 +20,7 @@
 import type { Commande } from "../commandes/index.js";
 import type { ModeleAtelier } from "../modele.js";
 import { m, pt, type Point2 } from "../unites.js";
+import { pointsPolyligne } from "../geometrie.js";
 
 export type UniteDxf = "mm" | "cm" | "m" | "in" | "ft";
 const FACTEURS: Record<UniteDxf, number> = { mm: 0.001, cm: 0.01, m: 1, in: 0.0254, ft: 0.3048 };
@@ -267,7 +268,8 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
     const id = nouvelId();
     commandes.push({ type, params: { id, niveauId: options.niveauId, ...params } });
     crees.push(id);
-    for (const q of (params["points"] as Point2[] | undefined) ?? []) etendre(q);
+    const renflements = params["renflements"] as number[] | undefined;
+    for (const q of renflements ? pointsPolyligne(params["points"] as Point2[], params["ferme"] === true, renflements) : ((params["points"] as Point2[] | undefined) ?? [])) etendre(q);
     if (params["centre"]) etendre(params["centre"] as Point2, (params["rayon"] as { value: number }).value);
     if (params["position"]) etendre(params["position"] as Point2);
   };
@@ -294,6 +296,20 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
       return nom === "0" && calqueParent ? calqueParent : `${prefixeCalque}${nom}`;
     };
     const calqueDe = (x: Entite) => calqueNomme(nomDe(x));
+    /**
+     * Polyligne à arrondis (D-063) : gardée avec ses segments en arc (renflements) quand la transformation est une
+     * similitude directe et que chaque arrondi fait au plus un demi-cercle ; sinon discrétisée (comportement antérieur).
+     */
+    const poserAvecArcs = (sommets: { x: number; y: number; bulge: number }[], ferme: boolean, e: Entite, type: string): boolean => {
+      if (!sim || !sommets.some((q) => Math.abs(q.bulge) > 1e-9) || !sommets.every((q) => Math.abs(q.bulge) <= 1)) return false;
+      const pts = sommets.map((q) => P(q.x, q.y));
+      const f = ferme && pts.length >= 3;
+      const n = pts.length - 1 + (f ? 1 : 0);
+      for (let k = 0; k < n; k++) if (Math.hypot(pts[(k + 1) % pts.length]!.x - pts[k]!.x, pts[(k + 1) % pts.length]!.y - pts[k]!.y) <= 1e-6) return false;
+      poser("esquisse.polyligne", { points: pts, ferme: f, renflements: sommets.slice(0, n).map((q) => (Math.abs(q.bulge) <= 1e-9 ? 0 : q.bulge)), calqueId: calqueDe(e) });
+      compter(type, true, "arrondis (bulge) gardés en segments en arc");
+      return true;
+    };
     /** Cercle ou arc sous une transformation quelconque : polyligne (≤ 11,25° par segment). */
     const arcEnPoints = (cx: number, cy: number, r: number, a0: number, a1: number) => {
       let fin = a1;
@@ -328,6 +344,7 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
             else if (c.code === 20 && sommets.length) sommets[sommets.length - 1]!.y = Number.parseFloat(c.valeur);
             else if (c.code === 42 && sommets.length) sommets[sommets.length - 1]!.bulge = Number.parseFloat(c.valeur);
           }
+          if (poserAvecArcs(sommets, ferme, e, "LWPOLYLINE")) break;
           const brut: { x: number; y: number }[] = sommets.length ? [sommets[0]!] : [];
           let arrondis = false;
           for (let k = 0; k + 1 < sommets.length + (ferme ? 1 : 0); k++) {
@@ -357,6 +374,7 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
             compter("POLYLINE", false, "polylignes 3D et maillages ignorés (import 2D)");
             break;
           }
+          if (poserAvecArcs(sommets, ferme, e, "POLYLINE")) break;
           const brut: { x: number; y: number }[] = sommets.length ? [sommets[0]!] : [];
           for (let k = 0; k + 1 < sommets.length + (ferme ? 1 : 0); k++) brut.push(...arrondi(sommets[k]!, sommets[(k + 1) % sommets.length]!, sommets[k]!.bulge));
           if (ferme && brut.length > 1) brut.pop();

@@ -8,7 +8,7 @@
  * et même empreinte (reproductibilité). Rien n'est inventé : une hauteur absente ne produit aucun volume, un sens
  * d'ouverture de porte non renseigné est dessiné selon la convention de l'Atelier et signalé ; renseigné, il est suivi (D-037).
  */
-import { aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsEllipse, pointsSpline, sub, type Vec } from "../geometrie.js";
+import { pointsPolyligne, aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsEllipse, pointsSpline, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
@@ -404,7 +404,8 @@ function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly Occu
         else if (p.forme === "rectangle" && p.points.length === 2) {
           const [q1, q2] = [p.points[0]!, p.points[1]!];
           c.poly([q1, { x: q2.x, y: q1.y }, q2, { x: q1.x, y: q2.y }], true, trait, null, o.id);
-        } else c.poly(p.points, p.ferme || p.forme === "polygone" || p.forme === "hachure", trait, null, o.id);
+        } else if (p.renflements) c.poly(pointsPolyligne(p.points, p.ferme, p.renflements), p.ferme, trait, null, o.id);
+        else c.poly(p.points, p.ferme || p.forme === "polygone" || p.forme === "hachure", trait, null, o.id);
         break;
       }
       case "reference-plan":

@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { pointsPolyligne } from "../geometrie.js";
 import { describe, expect, it } from "vitest";
 import { CONTRAT_COMMANDES, appliquerLot, type Commande } from "../commandes/index.js";
 import { importerModeleNatif, type JeuNatif } from "../import/natif.js";
@@ -300,12 +301,14 @@ describe("import DXF 2D", () => {
     const r = commandesImportDxf(base(), dxf(4, ENTITES), { source: "plan.dxf", niveauId: "rdc", repere: "local", uniteSiAbsente: "m" });
     const e = appliquer(base(), r.lots);
     const esq = objetsDeClasse(e, "esquisse");
-    expect(esq.map((o) => o.params.forme).sort()).toEqual(["arc", "cercle", "ligne", "polygone"]);
+    expect(esq.map((o) => o.params.forme).sort()).toEqual(["arc", "cercle", "ligne", "polyligne"]);
     const ligne = esq.find((o) => o.params.forme === "ligne")!;
     expect(ligne.params.points[1]).toMatchObject({ x: 4, y: 0 });
-    const poly = esq.find((o) => o.params.forme === "polygone")!;
-    expect(poly.params.points.length).toBeGreaterThan(4); // arrondi discrétisé
-    expect(Math.max(...poly.params.points.map((p) => p.x))).toBeCloseTo(1.5, 6); // demi-cercle de rayon 0,5 m
+    // Arrondi gardé en segment en arc (D-063) : quatre sommets, renflement 1 (demi-cercle) sur le deuxième côté.
+    const poly = esq.find((o) => o.params.forme === "polyligne")!;
+    expect(poly.params).toMatchObject({ ferme: true, renflements: [0, 1, 0, 0] });
+    expect(poly.params.points).toHaveLength(4);
+    expect(Math.max(...pointsPolyligne(poly.params.points, true, poly.params.renflements).map((p) => p.x))).toBeCloseTo(1.5, 6); // demi-cercle de rayon 0,5 m
     expect(esq.find((o) => o.params.forme === "cercle")!.params.rayon).toEqual({ value: 0.25, unit: "m" });
     expect(objetsDeClasse(e, "texte")[0]!.params.texte).toBe("Séjour ⌀ 30");
     expect(Object.values(e.calques).map((c) => c.nom).sort()).toEqual(["DXF · Mobilier", "DXF · Murs", "DXF · Textes", "Référence DXF"]);

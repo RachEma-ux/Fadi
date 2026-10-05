@@ -26,19 +26,21 @@ export class Dxf {
     this.paire(21, b.y);
     this.paire(31, 0);
   }
-  polyligne(calque: string, pts: readonly Vec[], fermee: boolean): void {
+  polyligne(calque: string, pts: readonly Vec[], fermee: boolean, renflements?: readonly number[]): void {
     if (pts.length < 2) return;
     this.paire(0, "POLYLINE");
     this.paire(8, calque);
     this.paire(66, 1);
     this.paire(70, fermee ? 1 : 0);
-    for (const p of pts) {
+    pts.forEach((p, i) => {
       this.paire(0, "VERTEX");
       this.paire(8, calque);
       this.paire(10, p.x);
       this.paire(20, p.y);
       this.paire(30, 0);
-    }
+      // Segment en arc (D-063) : renflement porté par le sommet de départ du segment (code 42).
+      if (renflements?.[i]) this.paire(42, renflements[i]!);
+    });
     this.paire(0, "SEQEND");
     this.paire(8, calque);
   }

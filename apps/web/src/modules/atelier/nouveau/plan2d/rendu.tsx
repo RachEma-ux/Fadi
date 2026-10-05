@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { pointsPolyligne, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -347,7 +347,8 @@ function Esquisse2D({ o, pr, selectionne, survole }: { o: Occurrence<"esquisse">
       return <path d={chemin(pr, pts)} {...commun} />;
     }
     default:
-      return <path d={chemin(pr, p.points, p.ferme)} {...commun} />;
+      // Segments en arc (D-063) : dessinés par leurs points discrétisés.
+      return <path d={chemin(pr, p.renflements ? pointsPolyligne(p.points, p.ferme, p.renflements) : p.points, p.ferme)} {...commun} />;
   }
 }
 

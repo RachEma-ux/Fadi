@@ -13,7 +13,7 @@
  */
 import { ErreurCommande, effetsVides, lire, type ResultatCommande } from "../commandes/base.js";
 import { validerParams } from "../commandes/validation.js";
-import { distance, pointsArc, pointsEllipse, pointsSpline, projectionSurSegment, type Vec } from "../geometrie.js";
+import { distance, pointsArc, pointsEllipse, pointsRenflement, pointsSpline, projectionSurSegment, type Vec } from "../geometrie.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque, ParamsEsquisse } from "../modele.js";
 import { pt, type Point2 } from "../unites.js";
 
@@ -86,6 +86,7 @@ export function convertirEsquisse(etat: ModeleAtelier, p: Brut): ResultatCommand
   const vierge = { centre: null, rayon: null, angleDebut: null, angleFin: null, motif: null, rayonB: null, rotation: null };
   if (forme === "spline") {
     if (!(VERS_SPLINE as readonly string[]).includes(source)) throw new ErreurCommande("precondition", "forme", `une esquisse « ${source} » ne devient pas une spline (lignes, polylignes et polygones seulement)`);
+    if (e.params.renflements) throw new ErreurCommande("precondition", "forme", "polyligne à segments en arc : la convertir d'abord en polyligne droite");
     const ferme = e.params.ferme || source === "polygone";
     const tolerance = lire.nombre(p, "tolerance", { optionnel: true, min: 0, max: 100 });
     let points = e.params.points.map((q) => pt(q.x, q.y));
@@ -96,13 +97,27 @@ export function convertirEsquisse(etat: ModeleAtelier, p: Brut): ResultatCommand
     }
     params = { ...e.params, ...vierge, forme: "spline", points, ferme };
   } else {
-    if (!(VERS_POLYLIGNE as readonly string[]).includes(source)) throw new ErreurCommande("precondition", "forme", `une esquisse « ${source} » est déjà faite de segments`);
+    const arcs = source === "polyligne" && !!e.params.renflements;
+    if (!(VERS_POLYLIGNE as readonly string[]).includes(source) && !arcs) throw new ErreurCommande("precondition", "forme", `une esquisse « ${source} » est déjà faite de segments`);
     const segments = lire.nombre(p, "segments", { entier: true, min: 1, max: 2000 });
     if (segments === null) throw new ErreurCommande("invalide", "segments", "nombre de segments requis");
     const q = e.params;
     let points: Point2[];
     let ferme = false;
-    if (source === "spline") {
+    if (arcs) {
+      // Polyligne à segments en arc (D-063) : chaque arc remplacé par `segments` segments droits.
+      ferme = q.ferme;
+      points = [];
+      const n = q.points.length - 1 + (q.ferme && q.points.length > 2 ? 1 : 0);
+      points.push(pt(q.points[0]!.x, q.points[0]!.y));
+      for (let i = 0; i < n; i++) {
+        const a = q.points[i]!;
+        const b = q.points[(i + 1) % q.points.length]!;
+        const r = q.renflements![i] ?? 0;
+        points.push(...(r === 0 ? [pt(b.x, b.y)] : pointsRenflement(a, b, r, (4 * Math.abs(Math.atan(r)) * 180) / Math.PI / segments + 1e-9)));
+      }
+      if (ferme && points.length > 1) points.pop();
+    } else if (source === "spline") {
       ferme = q.ferme;
       points = pointsSpline(q.points, segments, q.ferme);
     } else if (source === "arc") {
@@ -125,6 +140,7 @@ export function convertirEsquisse(etat: ModeleAtelier, p: Brut): ResultatCommand
   const brut = { ...params } as unknown as Brut;
   delete brut["rayonB"];
   delete brut["rotation"];
+  delete brut["renflements"];
   const valides = validerParams(etat, "esquisse", brut);
   const effets = effetsVides();
   effets.modifies.push(id);

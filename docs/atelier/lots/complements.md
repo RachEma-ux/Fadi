@@ -133,3 +133,4 @@ Usage des dalles, hauteur propre des pièces et espaces, trémie d'escalier (`da
 Changer de classe sur place, copie de pièces avec code suivant (`changer-classe.test.ts`, e2e, D-060).
 Frontière apparente vérifiée, accrochage « Proche », historique des indices des feuilles (`frontiere-apparente.test.ts`, `historique-feuille.test.ts`, e2e, D-061).
 Arc tangent, marques de centre (`geometrie-outils.test.ts`, `calques-vue.test.ts`, `nouveau.test.ts`, D-062).
+Segments en arc dans les polylignes, arrondi des sommets, DXF exact (`esquisse/arcs-polyligne.test.ts`, e2e, D-063).

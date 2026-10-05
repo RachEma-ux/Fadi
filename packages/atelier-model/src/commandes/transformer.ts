@@ -7,7 +7,7 @@
  * les références à ses faces ; étirer conserve la distance des ouvertures à l'extrémité fixe.
  */
 import { decomposerBloc } from "./bloc.js";
-import { add, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
+import { add, centreRenflement, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
 import type { Contour, ModeleAtelier, Occurrence, OccurrenceQuelconque, Reference } from "../modele.js";
 import { ouverturesDuMur, referencesVers } from "../modele.js";
 import { estOuverture } from "../ontologie.js";
@@ -90,7 +90,9 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
       }
       const k = t.type === "echelle" ? t.facteur : 1;
       const ech = (x: { value: number; unit: "m" } | null | undefined) => (x && k !== 1 ? { value: x.value * k, unit: "m" as const } : x);
-      return { ...o, params: { ...q, points: q.points.map(T), centre: q.centre ? T(q.centre) : null, rayon: ech(q.rayon) ?? null, angleDebut, angleFin, ...(q.forme === "ellipse" ? { rayonB: ech(q.rayonB) ?? null, rotation: rotation ?? null } : {}) } };
+      // Segments en arc (D-063) : le miroir inverse le sens de chaque arc ; les autres transformations le gardent.
+      const renflements = q.renflements && t.type === "miroir" ? q.renflements.map((x) => (x === 0 ? 0 : -x)) : q.renflements;
+      return { ...o, params: { ...q, points: q.points.map(T), centre: q.centre ? T(q.centre) : null, rayon: ech(q.rayon) ?? null, angleDebut, angleFin, ...(q.forme === "ellipse" ? { rayonB: ech(q.rayonB) ?? null, rotation: rotation ?? null } : {}), ...(renflements ? { renflements } : {}) } };
     }
     case "cotation":
       return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
@@ -336,6 +338,7 @@ export const reducteursTransformer = {
           courant = r.etat;
           effets = fusionnerEffets(effets, r.effets);
         } else if (o.classe === "esquisse" && o.params.forme === "polyligne") {
+          if (o.params.renflements) throw new ErreurCommande("precondition", "cibles", `${o.id} : polyligne à segments en arc, décalage non pris en charge`);
           if (cote === "exterieur" || cote === "interieur") throw new ErreurCommande("invalide", "cote", `${o.id} : côté gauche ou droite pour une polyligne ouverte`);
           copieAvec(o, { points: decalerPolylignePure(o.params.points, d * signe) });
         } else {
@@ -462,11 +465,20 @@ export const reducteursTransformer = {
       const objets = { ...courant.objets };
       delete objets[o.id];
       const crees: string[] = [];
-      for (const [a, b] of segments) {
+      const { renflements: _r, ...sansRenflements } = o.params;
+      void _r;
+      segments.forEach(([a, b], i) => {
         const id = ctx.ids.nouveau("esquisse");
-        objets[id] = { ...o, id, groupeId: null, params: { ...o.params, forme: "ligne", points: [a, b], ferme: false, centre: null, rayon: null, angleDebut: null, angleFin: null, motif: null } };
+        const bulge = o.params.renflements?.[i] ?? 0;
+        if (bulge !== 0) {
+          // Segment en arc (D-063) : il devient un arc, parcouru en sens direct.
+          const c = centreRenflement(a, b, bulge);
+          const ang = (q: Vec) => ({ value: Math.round(((Math.atan2(q.y - c.y, q.x - c.x) * 180) / Math.PI) * 1e9) / 1e9 || 0, unit: "deg" as const });
+          const [d0, d1] = bulge > 0 ? [ang(a), ang(b)] : [ang(b), ang(a)];
+          objets[id] = { ...o, id, groupeId: null, params: { ...sansRenflements, forme: "arc", points: [], ferme: false, centre: pt(Math.round(c.x * 1e9) / 1e9, Math.round(c.y * 1e9) / 1e9), rayon: { value: Math.round(distance(a, c) * 1e9) / 1e9, unit: "m" }, angleDebut: d0, angleFin: d1, motif: null } };
+        } else objets[id] = { ...o, id, groupeId: null, params: { ...sansRenflements, forme: "ligne", points: [a, b], ferme: false, centre: null, rayon: null, angleDebut: null, angleFin: null, motif: null } };
         crees.push(id);
-      }
+      });
       courant = { ...courant, objets };
       effets = fusionnerEffets(effets, { ...effetsVides(), crees, supprimes: [o.id], niveauxTouches: o.niveauId ? [o.niveauId] : [] });
     }
@@ -481,6 +493,7 @@ export const reducteursTransformer = {
     const sel = cibles(etat, p, c);
     if (sel.length < 2) throw new ErreurCommande("invalide", "cibles", "joindre : au moins deux lignes ou polylignes");
     for (const o of sel) if (o.classe !== "esquisse" || !["ligne", "polyligne"].includes(o.params.forme) || o.params.ferme) throw new ErreurCommande("precondition", "cibles", `${o.id} : seules les lignes et polylignes ouvertes se joignent`);
+    for (const o of sel) if ((o as Occurrence<"esquisse">).params.renflements) throw new ErreurCommande("precondition", "cibles", `${o.id} : polyligne à segments en arc, la décomposer d'abord pour la joindre`);
     if (new Set(sel.map((o) => o.niveauId)).size !== 1) throw new ErreurCommande("precondition", "cibles", "joindre : objets d'un même niveau");
     for (const o of sel) {
       if (referencesVers(etat, o.id).length || Object.values(etat.relations).some((r) => r.sourceId === o.id || r.targetId === o.id)) throw new ErreurCommande("precondition", "cibles", `${o.id} est visé par une cote, une contrainte ou une relation : la détacher d'abord (rien n'est réparé en silence)`);
@@ -592,6 +605,7 @@ export const reducteursTransformer = {
     const ferme = o.classe === "esquisse" ? o.params.ferme || o.params.forme === "polygone" || o.params.forme === "hachure" : true;
     const pts: Point2[] | null = o.classe === "esquisse" && ["polygone", "polyligne", "hachure"].includes(o.params.forme) ? o.params.points : ["dalle", "zone", "solide", "piece", "toiture"].includes(o.classe) ? (o.params as { contour: Point2[] }).contour : null;
     if (!pts) throw new ErreurCommande("precondition", "id", "chanfrein de sommet : polygones, polylignes et hachures d'esquisse, dalles, zones, pièces, solides, toitures");
+    if (o.classe === "esquisse" && o.params.renflements) throw new ErreurCommande("precondition", "id", "polyligne à segments en arc : chanfrein de sommet non pris en charge");
     if (index >= pts.length) throw new ErreurCommande("invalide", "index", `sommet ${index} inconnu (${pts.length} sommets)`);
     if (!ferme && (index === 0 || index === pts.length - 1)) throw new ErreurCommande("invalide", "index", "extrémité d'une polyligne ouverte : pas de chanfrein");
     if (referencesVers(etat, id).length || Object.values(etat.relations).some((r) => r.sourceId === id || r.targetId === id)) throw new ErreurCommande("precondition", "id", `${id} est visé par une cote, une contrainte ou une relation : la détacher d'abord`);

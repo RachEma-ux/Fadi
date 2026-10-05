@@ -34,6 +34,7 @@ import { controlerVerrous, verrouillerObjets } from "./verrous.js";
 import { reducteursDocuments } from "./documents.js";
 import { reducteursVues3D } from "./vues3d.js";
 import { convertirEsquisse } from "../esquisse/conversion.js";
+import { arrondirSommets } from "../esquisse/arrondir.js";
 import { affecterZone } from "./zones.js";
 import { alignerSelection } from "./transformer.js";
 import { tremieEscalier } from "./tremie.js";
@@ -189,6 +190,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "esquisse.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "esquisse"),
   "esquisse.supprimer": (etat, p, ctx) => supprimerOccurrence(etat, p, ctx, "esquisse"),
   "esquisse.convertir": (etat, p) => convertirEsquisse(etat, p),
+  "esquisse.arrondirSommets": (etat, p) => arrondirSommets(etat, p),
   "zone.affecter": (etat, p, ctx) => affecterZone(etat, p, ctx),
   "escalier.tremie": (etat, p) => tremieEscalier(etat, p),
   "objet.changerClasse": (etat, p) => changerClasse(etat, p),

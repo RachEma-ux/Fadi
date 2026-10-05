@@ -3,7 +3,7 @@
  * chanfreiner. Fonctions pures : elles rendent le lot de commandes à exécuter, ou un message expliquant la
  * condition d'activation manquante (UX4 : un outil indisponible dit pourquoi).
  */
-import { pointsArc, pt, type Commande, type ModeleAtelier, type Point2 } from "@parcours/atelier-model";
+import { pointsPolyligne, pointsArc, pt, type Commande, type ModeleAtelier, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "./etat-ui";
 
 export type ResultatAction = { commandes: Commande[]; label: string } | { message: string };
@@ -36,6 +36,8 @@ export function contourEsquisse(etat: ModeleAtelier, id: string): Point2[] | nul
     case "hachure":
       return p.points.length >= 3 ? p.points : null;
     case "polyligne":
+      // Segments en arc (D-063) : contour discrétisé (11,25° par segment au plus).
+      return p.ferme && p.points.length >= 3 ? (p.renflements ? pointsPolyligne(p.points, true, p.renflements) : p.points) : null;
     case "spline":
       return p.ferme && p.points.length >= 3 ? p.points : null;
     default:

@@ -12,6 +12,17 @@ import { ErreurCommande, lire } from "./base.js";
 
 type Brut = Record<string, unknown>;
 
+/** Renflements d'une polyligne (D-063) : un par segment, |b| ≤ 1 (demi-cercle au plus) ; tous nuls : clé absente. */
+function renflementsDe(p: Brut, forme: string, n: number, ferme: boolean): { renflements?: number[] } {
+  const v = p["renflements"];
+  if (v === undefined || v === null) return {};
+  if (forme !== "polyligne") throw new ErreurCommande("invalide", "renflements", "segments en arc : polylignes seulement");
+  const attendu = n - 1 + (ferme && n > 2 ? 1 : 0);
+  if (!Array.isArray(v) || v.length !== attendu || !v.every((x) => typeof x === "number" && Number.isFinite(x) && Math.abs(x) <= 1 + 1e-12)) throw new ErreurCommande("invalide", "renflements", `renflements : ${attendu} nombre(s) entre −1 et 1 (un par segment)`);
+  const r = (v as number[]).map((x) => (Math.abs(x) < 1e-12 ? 0 : Math.round(x * 1e12) / 1e12));
+  return r.some((x) => x !== 0) ? { renflements: r } : {};
+}
+
 /** Hauteur propre d'une pièce ou d'un espace (D-059) : clé présente seulement si déclarée. */
 const hauteurPropre = (p: Brut): { hauteur?: Longueur } => {
   const h = lire.longueur(p, "hauteur", { optionnel: true, strict: true });
@@ -175,6 +186,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       angleFin: lire.angle(p, "angleFin", { optionnel: true }),
       motif: lire.chaineOuNull(p, "motif"),
       ...(forme === "ellipse" ? { rayonB, rotation: lire.angle(p, "rotation", { optionnel: true }) ?? { value: 0, unit: "deg" } } : {}),
+      ...renflementsDe(p, forme, points.length, lire.booleen(p, "ferme", false)),
     };
   },
   "reference-plan"(_etat, p) {

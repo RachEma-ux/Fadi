@@ -3,7 +3,7 @@
  * orthogonal, grille. Rayon à l'écran (12 px, D-012) converti en mètres par l'échelle de la vue. Les accrochages
  * d'objet priment sur l'orthogonal, qui prime sur la grille. Fonctions pures : testables sans DOM.
  */
-import { facesMur, intersectionSegments, pointsEllipse, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { facesMur, intersectionSegments, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { pt } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
@@ -19,6 +19,8 @@ interface Segment {
   a: Point2;
   b: Point2;
   objetId: string;
+  /** Morceau d'un segment en arc (D-063) : sélection, intersections et « proche », sans extrémité ni milieu. */
+  courbe?: true;
 }
 
 /** Identifiant porté par les segments d'une référence externe (DA-05-11) dans le cache d'accrochage. */
@@ -76,7 +78,23 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
           for (const q of [pt(x + r, y), pt(x, y + r), pt(x - r, y), pt(x, y - r)]) quadrants.push({ p: q, objetId: o.id });
         }
         if (o.params.forme === "ellipse" && o.params.centre && o.params.rayon && o.params.rayonB) for (const q of pointsEllipse(o.params.centre, o.params.rayon.value, o.params.rayonB.value, o.params.rotation?.value ?? 0, 4)) quadrants.push({ p: q, objetId: o.id });
-        if (o.params.points.length >= 2) contour(o.params.points, o.id, o.params.ferme);
+        if (o.params.renflements) {
+          // Polyligne à segments en arc (D-063) : sommets et côtés droits accrochables ; arcs en morceaux « courbes ».
+          const q = o.params.points;
+          const n = q.length - 1 + (o.params.ferme && q.length > 2 ? 1 : 0);
+          for (let i = 0; i < n; i++) {
+            const a = q[i]!;
+            const b = q[(i + 1) % q.length]!;
+            const r = o.params.renflements[i] ?? 0;
+            if (r === 0) segments.push({ a, b, objetId: o.id });
+            else {
+              const arc = [a, ...pointsRenflement(a, b, r)];
+              for (let k = 0; k + 1 < arc.length; k++) segments.push({ a: arc[k]!, b: arc[k + 1]!, objetId: o.id, courbe: true });
+              // Les deux extrémités de l'arc restent des sommets.
+              segments.push({ a, b: a, objetId: o.id }, { a: b, b, objetId: o.id });
+            }
+          }
+        } else if (o.params.points.length >= 2) contour(o.params.points, o.id, o.params.ferme);
         // Ellipse (D-046) : son contour discrétisé sert à la sélection et à l'accrochage.
         if (o.params.forme === "ellipse" && o.params.centre && o.params.rayon && o.params.rayonB) contour(pointsEllipse(o.params.centre, o.params.rayon.value, o.params.rayonB.value, o.params.rotation?.value ?? 0, 48), o.id);
         break;
@@ -117,13 +135,14 @@ export function accrocher(p: Point2, cache: ReturnType<typeof segmentsDuNiveau>,
     }
   };
   const segs = cache.segments.filter((s) => !exclure.includes(s.objetId));
-  if (options.extremite) for (const s of segs) {
+  const droits = segs.filter((s) => !s.courbe);
+  if (options.extremite) for (const s of droits) {
     essayer(s.a, "extremite", s.objetId, 3);
     essayer(s.b, "extremite", s.objetId, 3);
   }
   if (options.centre) for (const c of cache.centres) if (!exclure.includes(c.objetId)) essayer(c.p, "centre", c.objetId, 2);
   if (options.centre) for (const c of cache.quadrants ?? []) if (!exclure.includes(c.objetId)) essayer(c.p, "quadrant", c.objetId, 2);
-  if (options.milieu) for (const s of segs) essayer(pt((s.a.x + s.b.x) / 2, (s.a.y + s.b.y) / 2), "milieu", s.objetId, 2);
+  if (options.milieu) for (const s of droits) if (s.a.x !== s.b.x || s.a.y !== s.b.y) essayer(pt((s.a.x + s.b.x) / 2, (s.a.y + s.b.y) / 2), "milieu", s.objetId, 2);
   if (options.intersection) {
     const proches = segs.filter((s) => projectionSurSegment(p, s.a, s.b).distance <= rayon * 2);
     for (let i = 0; i < proches.length; i++) for (let j = i + 1; j < proches.length; j++) {

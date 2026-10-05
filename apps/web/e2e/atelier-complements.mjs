@@ -733,6 +733,27 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
 }
 
+// Rectangle à coins arrondis (D-063) : sommets arrondis depuis l'inspecteur, segments en arc dessinés.
+{
+  const e0 = await modele(pid);
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const P = (x, y) => ({ x: ax + x, y: ay + y, frame: "local", unit: "m" });
+  const r0 = await lot(pid, `ar-${Date.now()}`, e0.revision, [{ type: "esquisse.rectangle", params: { id: "rect-e2e", niveauId: murA.niveauId, points: [P(-50, -50), P(-46, -47)] } }]);
+  await ouvrir(pid);
+  await selectionner("rect-e2e");
+  await page.locator("[data-arrondir-rayon]").fill("0,5");
+  await page.locator('[data-arrondir] button[type="submit"]').click();
+  let q = null;
+  for (let k = 0; k < 30 && !q?.renflements; k++) {
+    q = (await modele(pid)).modele.objets["rect-e2e"]?.params;
+    if (!q?.renflements) await page.waitForTimeout(500);
+  }
+  const d = (await page.locator('.plan2d [data-objet="rect-e2e"]').getAttribute("d").catch(() => "")) ?? "";
+  check("rectangle à coins arrondis : quatre segments en arc, dessinés en plan", r0.status === 200 && q?.forme === "polyligne" && q?.points.length === 8 && q?.renflements.filter((b) => b !== 0).length === 4 && (d.match(/L/g) ?? []).length > 8, `${r0.status} · ${q?.forme} · ${q?.points?.length} · tracé ${(d.match(/L/g) ?? []).length}`);
+  await page.keyboard.press("Escape");
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

@@ -15,7 +15,7 @@
  *   GlobalId d'un export à l'autre ; l'identifiant Fadi est aussi écrit en propriété (`Fadi_Identite`) ;
  * - reproductibilité : l'horodatage du fichier est fourni par l'appelant (instant de la révision exportée).
  */
-import { aireNette, facesMur, normalise, perp, sub, type Vec } from "../geometrie.js";
+import { aireNette, facesMur, normalise, perp, pointsPolyligne, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, maillageObjet } from "../projection/maillage.js";
@@ -508,7 +508,8 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
           item = s.ajouter(`IFCTEXTLITERAL(${chaineStep(o.params.texte)},${ref(p)},.LEFT.)`);
         } else if (o.classe === "cotation") item = polyligne2([o.params.a, o.params.b], false);
         else {
-          const pts = o.params.points.length >= 2 ? o.params.points : o.params.centre ? [o.params.centre, o.params.centre] : [];
+          // Segments en arc (D-063) : discrétisés pour l'annotation (polyligne IFC).
+          const pts = o.params.renflements ? pointsPolyligne(o.params.points, o.params.ferme, o.params.renflements) : o.params.points.length >= 2 ? o.params.points : o.params.centre ? [o.params.centre, o.params.centre] : [];
           if (pts.length < 2) {
             compter(o.classe, "IfcAnnotation", "—", false, "esquisse sans sommet (cercle, arc) : omise");
             break;

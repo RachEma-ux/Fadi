@@ -649,3 +649,50 @@ export function arcTangent(p0: Vec, tangente: Vec, p1: Vec): { centre: Point2; r
   const r = (v: number) => Math.round(v * 1e9) / 1e9;
   return s > 0 ? { centre: pt(r(c.x), r(c.y)), rayon: r(Math.abs(s)), angleDebut: r(ang(p0)), angleFin: r(ang(p1)) } : { centre: pt(r(c.x), r(c.y)), rayon: r(Math.abs(s)), angleDebut: r(ang(p1)), angleFin: r(ang(p0)) };
 }
+
+/**
+ * Segment en arc (D-063) : renflement DXF b = tan(θ/4), θ angle au centre signé (b > 0 : arc parcouru en sens
+ * direct de a à b, il bombe à droite de a → b). Points de l'arc de a (exclu) à b (inclus), un point tous les `pasDeg` degrés au plus.
+ */
+export function pointsRenflement(a: Vec, b: Vec, renflement: number, pasDeg = 11.25): Point2[] {
+  if (Math.abs(renflement) < 1e-12) return [pt(b.x, b.y)];
+  const d = Math.hypot(b.x - a.x, b.y - a.y);
+  if (d < 1e-12) return [pt(b.x, b.y)];
+  const c = centreRenflement(a, b, renflement);
+  const theta = 4 * Math.atan(renflement);
+  const a0 = Math.atan2(a.y - c.y, a.x - c.x);
+  const r = Math.hypot(a.x - c.x, a.y - c.y);
+  const n = Math.max(2, Math.ceil(Math.abs((theta * 180) / Math.PI) / pasDeg));
+  const out: Point2[] = [];
+  for (let k = 1; k < n; k++) {
+    const t = a0 + (theta * k) / n;
+    out.push(pt(c.x + r * Math.cos(t), c.y + r * Math.sin(t)));
+  }
+  out.push(pt(b.x, b.y));
+  return out;
+}
+
+/** Centre de l'arc d'un segment a → b de renflement b (≠ 0). */
+export function centreRenflement(a: Vec, b: Vec, renflement: number): Vec {
+  const theta = 4 * Math.atan(renflement);
+  const d = Math.hypot(b.x - a.x, b.y - a.y);
+  const ux = (b.x - a.x) / d;
+  const uy = (b.y - a.y) / d;
+  // Distance signée du milieu de la corde au centre, vers la gauche de a → b.
+  const h = d / (2 * Math.tan(theta / 2));
+  return { x: (a.x + b.x) / 2 - uy * h, y: (a.y + b.y) / 2 + ux * h };
+}
+
+/** Points d'une polyligne dont certains segments sont en arc (renflements par segment ; absent : tous droits). */
+export function pointsPolyligne(points: readonly Vec[], ferme: boolean, renflements?: readonly number[] | null, pasDeg = 11.25): Point2[] {
+  if (!points.length) return [];
+  const out: Point2[] = [pt(points[0]!.x, points[0]!.y)];
+  const n = points.length - 1 + (ferme && points.length > 2 ? 1 : 0);
+  for (let i = 0; i < n; i++) {
+    const a = points[i]!;
+    const b = points[(i + 1) % points.length]!;
+    out.push(...pointsRenflement(a, b, renflements?.[i] ?? 0, pasDeg));
+  }
+  if (ferme && points.length > 2) out.pop();
+  return out;
+}

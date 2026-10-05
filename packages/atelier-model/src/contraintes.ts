@@ -86,6 +86,7 @@ export function raisonNonContraignable(etat: ModeleAtelier, id: string): string 
   if (!o) return `objet inconnu : ${id}`;
   if (o.classe !== "esquisse") return `${id} n'est pas une esquisse`;
   if (!(FORMES_CONTRAIGNABLES as readonly string[]).includes(o.params.forme)) return `esquisse « ${o.params.forme} » : contraintes réservées aux lignes, polylignes et polygones`;
+  if (o.params.renflements) return `${id} : polyligne à segments en arc, contraintes non prises en charge`;
   return null;
 }
 

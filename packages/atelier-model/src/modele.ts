@@ -168,6 +168,11 @@ export interface ParamsEsquisse {
   /** Ellipse (D-046) : `rayon` = demi-grand axe, `rayonB` = demi-petit axe, `rotation` = angle du grand axe. */
   rayonB?: Longueur | null;
   rotation?: Angle | null;
+  /**
+   * Polyligne à segments en arc (D-063) : renflement de chaque segment (b = tan(θ/4), convention DXF ; 0 = droit),
+   * un par segment (fermeture comprise) ; absent = tous droits.
+   */
+  renflements?: number[];
 }
 
 export interface ParamsReferencePlan extends Contour {
