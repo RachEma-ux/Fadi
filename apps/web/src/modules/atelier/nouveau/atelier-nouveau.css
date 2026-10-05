@@ -2167,3 +2167,37 @@
   stroke: #b3261e;
   stroke-width: 1.5;
 }
+
+/* Annotations 3D (D-090) */
+.vue3d-annotation {
+  position: absolute;
+  transform: translate(-50%, -120%);
+  background: var(--plan-fond);
+  border: 1px solid var(--atelier-accent);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.8rem;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.vue3d-annotation::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 1px;
+  height: 6px;
+  background: var(--atelier-accent);
+}
+.vue3d-annotation-saisie {
+  position: absolute;
+  left: 50%;
+  bottom: 3rem;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.4rem;
+  background: var(--plan-fond);
+  padding: 0.4rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 6px;
+}

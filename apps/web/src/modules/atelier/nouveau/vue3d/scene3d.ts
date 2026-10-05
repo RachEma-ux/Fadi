@@ -30,6 +30,8 @@ export interface OptionsScene {
   aretes: boolean;
   /** Écart entre niveaux en présentation éclatée, en mètres (DA-18-03) ; 4 m par défaut. */
   ecartEclate?: number;
+  /** Boîte de coupe (D-090) : bornes en fraction de l'étendue du bâtiment (x0 < x1, y0 < y1), ou absente. */
+  boiteCoupe?: { x0: number; x1: number; y0: number; y1: number } | null;
 }
 
 interface Lot {
@@ -320,6 +322,13 @@ export class Scene3D {
     const b = this.boite;
     if (o.vue === "perspective" && o.coupeHorizontale !== null && actif && !estEclate(o.presentation)) this.plans.push(new THREE.Plane(new THREE.Vector3(0, 0, -1), actif.elevation + o.coupeHorizontale));
     if (o.vue === "dessus" && actif) this.plans.push(new THREE.Plane(new THREE.Vector3(0, 0, -1), actif.elevation + (o.coupeHorizontale ?? 1.2)));
+    if (o.vue === "perspective" && o.boiteCoupe && !estEclate(o.presentation)) {
+      const bc = o.boiteCoupe;
+      const X = (f: number) => b.min.x + (b.max.x - b.min.x) * f;
+      const Y = (f: number) => b.min.y + (b.max.y - b.min.y) * f;
+      // Plans dont le demi-espace gardé est l'intérieur de la boîte (normale · p + constante ≥ 0).
+      this.plans.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), -X(bc.x0)), new THREE.Plane(new THREE.Vector3(-1, 0, 0), X(bc.x1)), new THREE.Plane(new THREE.Vector3(0, 1, 0), -Y(bc.y0)), new THREE.Plane(new THREE.Vector3(0, -1, 0), Y(bc.y1)));
+    }
     if (o.vue === "coupe-ns") this.plans.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), -(b.min.x + (b.max.x - b.min.x) * o.positionCoupe)));
     if (o.vue === "coupe-eo") this.plans.push(new THREE.Plane(new THREE.Vector3(0, 1, 0), -(b.min.y + (b.max.y - b.min.y) * o.positionCoupe)));
     for (const m of this.materiaux.values()) m.needsUpdate = true;
@@ -489,6 +498,13 @@ export class Scene3D {
     this.controles.enableZoom = true;
     this.controles.enablePan = true;
     this.cadrer();
+  }
+
+  /** Position à l'écran (px) d'un point du modèle, ou null s'il est derrière la caméra (annotations 3D, D-090). */
+  versEcran(p: { x: number; y: number; z: number }): { x: number; y: number } | null {
+    const v = new THREE.Vector3(p.x, p.y, p.z).project(this.camera);
+    if (v.z > 1 || v.z < -1) return null;
+    return { x: ((v.x + 1) / 2) * this.largeur, y: ((1 - v.y) / 2) * this.hauteur };
   }
 
   /** Replace la caméra perspective sur un point de vue enregistré (après `appliquerOptions`). */
@@ -668,6 +684,7 @@ export class Scene3D {
       }
       const point = h.point.clone();
       if (h.object.parent) point.sub(h.object.parent.position);
+      point.sub(h.object.position); // éclaté par classe ou par groupe : décalage propre au lot
       return { objetId: lot.ids[lo]!, point };
     }
     return null;

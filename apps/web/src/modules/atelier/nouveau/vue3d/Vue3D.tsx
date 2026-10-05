@@ -119,6 +119,20 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
   const [pousse, setPousse] = useState<{ valeur: number; cle: string } | null>(null);
   // Mesure 3D (D-048) : outil Mesurer, deux points relevés sur les surfaces visibles.
   const [mesure, setMesure] = useState<Vector3[]>([]);
+  // Annotations 3D (D-090) : points annotés, enregistrés avec la vue ; mode « Annoter » ; positions à l'écran.
+  const [annotations, setAnnotations] = useState<{ position: { x: number; y: number; z: number }; texte: string }[]>([]);
+  const [annoter, setAnnoter] = useState(false);
+  const [pointAnnote, setPointAnnote] = useState<{ x: number; y: number; z: number } | null>(null);
+  const [texteAnnote, setTexteAnnote] = useState("");
+  const [, setTic] = useState(0);
+  useEffect(() => {
+    const sc = sceneRef.current;
+    if (!sc || !pret) return;
+    sc.onRendu = annotations.length ? () => setTic((n) => (n + 1) % 1e6) : null;
+    return () => {
+      sc.onRendu = null;
+    };
+  }, [annotations.length, pret]);
   useEffect(() => {
     if (ui.outil !== "mesurer" && mesure.length) setMesure([]);
   }, [ui.outil, mesure.length]);
@@ -191,14 +205,15 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
     pointDeVueEnAttente.current = v.params.camera;
     if (v.params.niveauId && etat.niveaux[v.params.niveauId] && v.params.niveauId !== ui.niveauId) etatUi.set({ niveauId: v.params.niveauId });
     setRejeu((n) => n + 1);
-    setReglages({ vue: v.params.vue, presentation: v.params.presentation, coupeHorizontale: v.params.coupeHorizontale, positionCoupe: v.params.positionCoupe, aretes: v.params.aretes });
+    setReglages({ vue: v.params.vue, presentation: v.params.presentation, coupeHorizontale: v.params.coupeHorizontale, positionCoupe: v.params.positionCoupe, aretes: v.params.aretes, boiteCoupe: v.params.boiteCoupe ?? null });
+    setAnnotations(v.params.annotations ?? []);
   };
   const enregistrer = () => {
     const s = sceneRef.current;
     const nom = nomVue.trim();
     if (!s || !nom) return;
     const existante = enregistrees.find((x) => x.nom === nom);
-    onCommandes([{ type: "vue3d.enregistrer", params: { ...(existante ? { id: existante.id } : {}), nom, camera: s.pointDeVue(), vue: options.vue, presentation: options.presentation, coupeHorizontale: options.coupeHorizontale, positionCoupe: options.positionCoupe, aretes: options.aretes, niveauId: ui.niveauId } }], `${existante ? "Mettre à jour" : "Enregistrer"} la vue 3D « ${nom} »`);
+    onCommandes([{ type: "vue3d.enregistrer", params: { ...(existante ? { id: existante.id } : {}), nom, camera: s.pointDeVue(), vue: options.vue, presentation: options.presentation, coupeHorizontale: options.coupeHorizontale, positionCoupe: options.positionCoupe, aretes: options.aretes, niveauId: ui.niveauId, ...(options.boiteCoupe ? { boiteCoupe: options.boiteCoupe } : {}), ...(annotations.length ? { annotations } : {}) } }], `${existante ? "Mettre à jour" : "Enregistrer"} la vue 3D « ${nom} »`);
     setNomVue("");
   };
 
@@ -351,6 +366,11 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
     if (g.bouge) return;
     const p = relatif(e);
     const hit = s.pointer(p.x, p.y);
+    if (annoter) {
+      if (!hit) return void etatUi.set({ aide: "Annoter : cliquez un point sur une surface visible." });
+      setPointAnnote({ x: Math.round(hit.point.x * 1000) / 1000, y: Math.round(hit.point.y * 1000) / 1000, z: Math.round(hit.point.z * 1000) / 1000 });
+      return;
+    }
     if (ui.outil === "mesurer") {
       if (!hit) return void etatUi.set({ aide: "Mesurer en 3D : cliquez un point sur une surface visible." });
       const point = hit.point.clone();
@@ -436,11 +456,29 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
             <input type="range" min={0.02} max={0.98} step={0.01} value={options.positionCoupe} onChange={(e) => setOptions({ positionCoupe: e.target.valueAsNumber })} />
           </label>
         )}
+        {options.vue === "perspective" && !(options.presentation ?? "").startsWith("eclate") && (
+          <label className="vue3d-case">
+            <input type="checkbox" checked={!!options.boiteCoupe} data-boite-coupe onChange={(e) => setOptions({ boiteCoupe: e.target.checked ? { x0: 0.1, x1: 0.9, y0: 0.1, y1: 0.9 } : null })} />
+            Boîte de coupe
+          </label>
+        )}
+        {options.vue === "perspective" && options.boiteCoupe && !(options.presentation ?? "").startsWith("eclate") && (
+          <span className="vue3d-ligne" data-boite-coupe-reglages>
+            {(["x0", "x1", "y0", "y1"] as const).map((k) => (
+              <label key={k} className="vue3d-curseur">
+                {k === "x0" ? "Ouest" : k === "x1" ? "Est" : k === "y0" ? "Sud" : "Nord"}
+                <input type="range" min={0} max={1} step={0.01} value={options.boiteCoupe![k]} data-boite={k} onChange={(e) => { const v = e.target.valueAsNumber; const b = { ...options.boiteCoupe!, [k]: v }; if (b.x0 < b.x1 - 0.01 && b.y0 < b.y1 - 0.01) setOptions({ boiteCoupe: b }); }} />
+              </label>
+            ))}
+          </span>
+        )}
         <label className="vue3d-case">
           <input type="checkbox" checked={options.aretes} onChange={(e) => setOptions({ aretes: e.target.checked })} />
           Arêtes
         </label>
         <button type="button" onClick={() => sceneRef.current?.cadrer()} disabled={visite !== null}>Cadrer</button>
+        <button type="button" aria-pressed={annoter} data-annoter onClick={() => { setAnnoter(!annoter); setPointAnnote(null); }}>{annoter ? "Fin des annotations" : "Annoter"}</button>
+        {annotations.length > 0 && <button type="button" onClick={() => setAnnotations([])}>Effacer les annotations ({annotations.length})</button>}
         {options.vue === "perspective" && (visite === null ? (
           <span className="vue3d-ligne">
             <label className="vue3d-curseur">
@@ -485,6 +523,17 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
           WebGPU
         </label>
       </div>
+      {annotations.map((a, i) => {
+        const q = pret ? sceneRef.current?.versEcran(a.position) : null;
+        return q ? <span key={i} className="vue3d-annotation" style={{ left: q.x, top: q.y }} data-annotation={i}>{a.texte}</span> : null;
+      })}
+      {pointAnnote && (
+        <form className="vue3d-annotation-saisie" onSubmit={(e) => { e.preventDefault(); const t = texteAnnote.trim(); if (t) { setAnnotations((l) => [...l, { position: pointAnnote, texte: t }]); setPointAnnote(null); setTexteAnnote(""); } }}>
+          <input autoFocus aria-label="Texte de l'annotation" value={texteAnnote} maxLength={500} onChange={(e) => setTexteAnnote(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-annotation-texte />
+          <button type="submit" disabled={!texteAnnote.trim()}>Ajouter</button>
+          <button type="button" onClick={() => setPointAnnote(null)}>Annuler</button>
+        </form>
+      )}
       <p className="vue3d-etat" aria-live="polite">
         {erreur ? `Rendu 3D indisponible : ${erreur}` : !pret ? "Préparation de la vue 3D…" : deplace ? (deplace.axe === "r" ? `Rotation : ${fmt(deplace.d)}°` : `Déplacement ${deplace.axe.toUpperCase()} : ${fmt(deplace.d)} m`) : pousse ? `${pousse.cle === "hauteur" ? "Hauteur" : "Épaisseur"} : ${fmt(pousse.valeur)} m` : mesure.length === 2 ? `Distance : ${fmt(mesure[0]!.distanceTo(mesure[1]!))} m (Δx ${fmt(mesure[1]!.x - mesure[0]!.x)} · Δy ${fmt(mesure[1]!.y - mesure[0]!.y)} · Δz ${fmt(mesure[1]!.z - mesure[0]!.z)})` : mesure.length === 1 ? "Mesure : cliquez le second point." : `${moteur === "webgpu" ? "WebGPU" : "WebGL2"}${webgpu && moteur !== "webgpu" ? " (WebGPU indisponible, repli)" : ""}`}
       </p>

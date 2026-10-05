@@ -44,3 +44,14 @@ describe("vues 3D enregistrées (D-053)", () => {
     expect(() => appliquerLot(avec, lot([{ type: "definition.supprimer", params: { id: "v" } }]))).toThrow(/vue3d.supprimer/);
   });
 });
+
+describe("vue 3D : boîte de coupe et annotations (D-090)", () => {
+  it("enregistrées avec la vue ; boîte vide ou annotation sans texte refusées", () => {
+    const e = appliquerLot(modeleVide(), lot([{ type: "niveau.creer", params: { id: "n0", nom: "Rez", elevation: 0 } }], "n")).etat;
+    const camera = { position: { x: 0, y: -10, z: 5 }, cible: { x: 0, y: 0, z: 0 } };
+    const r = appliquerLot(e, lot([{ type: "vue3d.enregistrer", params: { id: "v", nom: "Coupe", camera, boiteCoupe: { x0: 0.2, x1: 0.8, y0: 0, y1: 0.5 }, annotations: [{ position: { x: 1, y: 2, z: 3 }, texte: "Reprise d'appui" }] } }], "v")).etat;
+    expect(r.definitions["v"]!.params).toMatchObject({ boiteCoupe: { x0: 0.2, x1: 0.8, y0: 0, y1: 0.5 }, annotations: [{ texte: "Reprise d'appui" }] });
+    expect(() => appliquerLot(e, lot([{ type: "vue3d.enregistrer", params: { nom: "x", camera, boiteCoupe: { x0: 0.5, x1: 0.5, y0: 0, y1: 1 } } }]))).toThrow(/vide/);
+    expect(() => appliquerLot(e, lot([{ type: "vue3d.enregistrer", params: { nom: "x", camera, annotations: [{ position: { x: 0, y: 0, z: 0 }, texte: " " }] } }]))).toThrow(/texte/);
+  });
+});

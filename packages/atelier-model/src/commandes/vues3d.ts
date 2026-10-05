@@ -31,6 +31,10 @@ export interface ParamsVue3D {
   positionCoupe: number;
   aretes: boolean;
   niveauId: string | null;
+  /** Boîte de coupe (D-090), bornes en fraction de l'étendue du bâtiment ; absente : aucune. */
+  boiteCoupe?: { x0: number; x1: number; y0: number; y1: number };
+  /** Annotations 3D (D-090) : un point du modèle (repère local, m) et un texte. */
+  annotations?: { position: Point3; texte: string }[];
 }
 
 const BORNE = 1e6;
@@ -55,7 +59,30 @@ export function lireParamsVue3D(etat: ModeleAtelier, p: Brut): ParamsVue3D {
   const positionCoupe = lire.nombre(p, "positionCoupe", { optionnel: true, min: 0, max: 1 }) ?? 0.5;
   const niveauId = lire.chaineOuNull(p, "niveauId");
   if (niveauId && !etat.niveaux[niveauId]) throw new ErreurCommande("precondition", "niveauId", `niveau inconnu : ${niveauId}`);
-  return { nom, camera: { position, cible }, vue, presentation, coupeHorizontale, positionCoupe, aretes: lire.booleen(p, "aretes", true), niveauId };
+  const sortie: ParamsVue3D = { nom, camera: { position, cible }, vue, presentation, coupeHorizontale, positionCoupe, aretes: lire.booleen(p, "aretes", true), niveauId };
+  const bc = p["boiteCoupe"] as Brut | null | undefined;
+  if (bc !== undefined && bc !== null) {
+    const f = (k: string) => {
+      const v = bc[k];
+      if (typeof v !== "number" || !(v >= 0 && v <= 1)) throw new ErreurCommande("invalide", `boiteCoupe.${k}`, "borne de la boîte de coupe entre 0 et 1");
+      return v;
+    };
+    const b = { x0: f("x0"), x1: f("x1"), y0: f("y0"), y1: f("y1") };
+    if (!(b.x0 < b.x1 && b.y0 < b.y1)) throw new ErreurCommande("invalide", "boiteCoupe", "boîte de coupe vide (x0 < x1 et y0 < y1 attendus)");
+    sortie.boiteCoupe = b;
+  }
+  const an = p["annotations"];
+  if (an !== undefined && an !== null) {
+    if (!Array.isArray(an) || an.length > 100) throw new ErreurCommande("invalide", "annotations", "annotations : liste de 100 éléments au plus");
+    const liste = an.map((x, i) => {
+      const q = (x ?? {}) as Brut;
+      const texte = typeof q["texte"] === "string" ? q["texte"].trim() : "";
+      if (!texte || texte.length > 500) throw new ErreurCommande("invalide", `annotations[${i}].texte`, "texte d'annotation requis (500 caractères au plus)");
+      return { position: point3(q["position"], `annotations[${i}].position`), texte };
+    });
+    if (liste.length) sortie.annotations = liste;
+  }
+  return sortie;
 }
 
 export const reducteursVues3D: Record<string, Reducteur> = {

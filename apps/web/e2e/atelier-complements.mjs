@@ -944,6 +944,36 @@ await page.waitForSelector(".plan2d");
   await page.waitForTimeout(300);
   check("éclaté par groupe : présentation choisie", (await page.locator('select[aria-label="Présentation"]').inputValue()) === "eclate-groupes");
   await page.locator('select[aria-label="Présentation"]').selectOption("batiment");
+  // Boîte de coupe et annotation 3D enregistrées avec une vue (D-090).
+  await page.locator("[data-boite-coupe]").check();
+  await page.locator('[data-boite="x1"]').fill("0.6");
+  await page.locator("[data-annoter]").click();
+  const can = await page.locator(".vue3d canvas").first().boundingBox();
+  let annotee = false;
+  // Un point du canevas qui touche une surface (sonde de la scène), puis le clic d'annotation.
+  const cible = await page.evaluate(([w, h]) => {
+    for (let i = 1; i < 12; i++) for (let j = 1; j < 12; j++) { const x = (w * i) / 12; const y = (h * j) / 12; if (window.fadiMesures3D?.sonder?.(x, y)) return { x, y }; }
+    return null;
+  }, [can.width, can.height]);
+  if (cible) {
+    await page.mouse.click(can.x + cible.x, can.y + cible.y);
+    annotee = await page.locator("[data-annotation-texte]").isVisible().catch(() => false);
+  }
+  if (annotee) {
+    await page.locator("[data-annotation-texte]").fill("Point e2e");
+    await page.locator('.vue3d-annotation-saisie button[type="submit"]').click();
+  }
+  await page.locator("[data-annoter]").click();
+  await page.locator("[data-vues-3d] > summary").click().catch(() => {});
+  await page.locator('input[aria-label="Nom de la vue 3D"]').fill("Coupe annotée e2e");
+  await page.locator('[data-vues-3d] button:has-text("Enregistrer la vue")').click();
+  let vueAnn = null;
+  for (let k = 0; k < 30 && !vueAnn; k++) {
+    vueAnn = Object.values((await modele(pid)).modele.definitions).find((d) => d.classe === "vue-3d" && d.nom === "Coupe annotée e2e") ?? null;
+    if (!vueAnn) await page.waitForTimeout(500);
+  }
+  check("vue 3D : boîte de coupe et annotation enregistrées avec la vue", annotee && vueAnn?.params.boiteCoupe?.x1 === 0.6 && vueAnn?.params.annotations?.[0]?.texte === "Point e2e" && (await page.locator("[data-annotation]").count()) === 1, `${annotee} · ${JSON.stringify(vueAnn?.params?.boiteCoupe ?? null)} · ${JSON.stringify(vueAnn?.params?.annotations ?? null)}`);
+  await page.locator("[data-boite-coupe]").uncheck();
   // Visite à hauteur d'œil (D-075) : œil à niveau + 1,60 m, avancer au clavier à hauteur constante.
   await page.locator("[data-visite-oeil]").fill("1,6");
   await page.locator('[data-visite="commencer"]').click();
