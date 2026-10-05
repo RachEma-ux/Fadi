@@ -8,11 +8,13 @@
  * - Numérotation des pièces : codes `préfixe + numéro` dans l'ordre de lecture du plan (de haut en bas, puis de
  *   gauche à droite, par centre de gravité) ; un code déjà porté par une autre pièce du projet est refusé.
  * - Synthèse d'une zone : pièces et espaces dont le contour est entièrement dans la zone (même niveau), ou liés à la
- *   zone par une relation « contient » ; nombre et somme des aires nettes (calculées, non réglementaires).
+ *   zone par une relation « contient » (de tout niveau), y compris ceux de ses sous-zones (zones imbriquées, D-056) ;
+ *   nombre et somme des aires nettes (calculées, non réglementaires), chaque pièce comptée une fois.
  */
 import type { Commande } from "../commandes/index.js";
 import { aireNette, centroide, pointDansPolygone, projectionSurSegment, type Vec } from "../geometrie.js";
 import type { ModeleAtelier, Occurrence } from "../modele.js";
+import { sousZones } from "../commandes/zones.js";
 
 export interface RapportProprietesCsv {
   lignes: number;
@@ -93,12 +95,15 @@ export function commandesNumerotationPieces(etat: ModeleAtelier, ids: readonly s
 }
 
 export interface SyntheseZone {
-  pieces: { id: string; nom: string; aire: number; par: "contour" | "relation" }[];
+  pieces: { id: string; nom: string; aire: number; par: "contour" | "relation" | "sous-zone"; niveauId: string | null }[];
   aireTotale: number;
+  /** Zones contenues, directement ou non (D-056). */
+  sousZones: { id: string; nom: string }[];
 }
 
 export function syntheseZone(etat: ModeleAtelier, zone: Occurrence<"zone">): SyntheseZone {
   const lies = new Set(Object.values(etat.relations).filter((r) => r.kind === "contient" && r.sourceId === zone.id).map((r) => r.targetId));
+  const sous = sousZones(etat, zone.id).map((id) => etat.objets[id] as Occurrence<"zone">);
   const pieces: SyntheseZone["pieces"] = [];
   for (const o of Object.values(etat.objets)) {
     if (o.classe !== "piece" && o.classe !== "espace") continue;
@@ -109,7 +114,13 @@ export function syntheseZone(etat: ModeleAtelier, zone: Occurrence<"zone">): Syn
     if (!dedans && !lies.has(o.id)) continue;
     const aire = contours.reduce((s, c) => s + aireNette(c.contour, c.trous), 0);
     const nom = [o.classe === "piece" ? o.params.code : null, o.params.nom].filter(Boolean).join(" · ") || o.id;
-    pieces.push({ id: o.id, nom, aire: Math.round(aire * 100) / 100, par: lies.has(o.id) ? "relation" : "contour" });
+    pieces.push({ id: o.id, nom, aire: Math.round(aire * 100) / 100, par: lies.has(o.id) ? "relation" : "contour", niveauId: o.niveauId });
   }
-  return { pieces, aireTotale: Math.round(pieces.reduce((s, p) => s + p.aire, 0) * 100) / 100 };
+  // Pièces des sous-zones, chacune une fois.
+  for (const z of sous) {
+    for (const q of syntheseZone({ ...etat, relations: Object.fromEntries(Object.entries(etat.relations).filter(([, r]) => !(r.kind === "contient" && etat.objets[r.targetId]?.classe === "zone"))) }, z).pieces) {
+      if (!pieces.some((x) => x.id === q.id)) pieces.push({ ...q, par: "sous-zone" });
+    }
+  }
+  return { pieces, aireTotale: Math.round(pieces.reduce((s, p) => s + p.aire, 0) * 100) / 100, sousZones: sous.map((z) => ({ id: z.id, nom: z.params.nom ?? z.id })) };
 }

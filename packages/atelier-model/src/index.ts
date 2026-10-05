@@ -37,6 +37,7 @@ export * from "./reprise.js";
 export * from "./commandes/refexterne.js";
 export * from "./commandes/vues3d.js";
 export { raisonVerrou } from "./commandes/verrous.js";
+export { sousZones } from "./commandes/zones.js";
 export * from "./documents/refexterne-rendu.js";
 export * from "./echanges/proprietes-csv.js";
 export * from "./esquisse/trame.js";

@@ -596,6 +596,32 @@ await page.waitForSelector(".plan2d");
   check("verrou d'objet : verrouillé depuis l'inspecteur, suppression refusée, puis déverrouillé", verrou && alerte && encore && libre, `verrou ${verrou} · alerte ${alerte} · présent ${encore} · libre ${libre}`);
 }
 
+// Appartenance aux zones (D-056) : une pièce ou une zone d'un autre niveau rattachée depuis l'inspecteur de la zone.
+{
+  const etatZ = await modele(pid);
+  const pts = [[0, 0], [3, 0], [3, 3], [0, 3]].map(([x, y]) => ({ x: x + 500, y: y + 500, frame: "local", unit: "m" }));
+  const cree = await lot(pid, `z-${Date.now()}`, etatZ.revision, [{ type: "zone.creer", params: { id: "zone-e2e", niveauId: murA.niveauId, nom: "Zone e2e", contour: pts } }]);
+  if (cree.status === 200) await ouvrir(pid);
+  const mz = (await modele(pid)).modele;
+  const zone = mz.objets["zone-e2e"];
+  const avant = Object.values(mz.relations).filter((r) => r.kind === "contient" && r.sourceId === zone?.id).length;
+  let apres = avant;
+  if (zone) {
+    await page.keyboard.press("Escape");
+    await selectionner(zone.id);
+    const choix = page.locator("[data-zone-candidat] option").nth(1);
+    const valeur = await choix.getAttribute("value");
+    await page.locator("[data-zone-candidat]").selectOption(valeur);
+    await page.locator("[data-zone-rattacher]").click();
+    for (let k = 0; k < 40 && apres === avant; k++) {
+      apres = Object.values((await modele(pid)).modele.relations).filter((r) => r.kind === "contient" && r.sourceId === zone.id).length;
+      if (apres === avant) await page.waitForTimeout(500);
+    }
+  }
+  check("zone : un membre (pièce, espace ou zone, tout niveau) rattaché depuis l'inspecteur de la zone", !!zone && apres === avant + 1, `${zone?.id} · ${avant} → ${apres}`);
+  await page.keyboard.press("Escape");
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

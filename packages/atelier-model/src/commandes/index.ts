@@ -34,6 +34,7 @@ import { controlerVerrous, verrouillerObjets } from "./verrous.js";
 import { reducteursDocuments } from "./documents.js";
 import { reducteursVues3D } from "./vues3d.js";
 import { convertirEsquisse } from "../esquisse/conversion.js";
+import { affecterZone } from "./zones.js";
 import { joindreMurs, scinderMur } from "./mur.js";
 import { creerOccurrence, modifierOccurrence, supprimerOccurrence } from "./objets.js";
 import { affecterClassification, affecterPhase, definirPropriete, rattacherReference, reducteursCalque, reducteursDefinition, reducteursGroupe, reducteursNiveau, reducteursSite, reducteursType, reparerReference } from "./organisation.js";
@@ -185,6 +186,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "esquisse.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "esquisse"),
   "esquisse.supprimer": (etat, p, ctx) => supprimerOccurrence(etat, p, ctx, "esquisse"),
   "esquisse.convertir": (etat, p) => convertirEsquisse(etat, p),
+  "zone.affecter": (etat, p, ctx) => affecterZone(etat, p, ctx),
   // Transformations
   "transformer.deplacer": reducteursTransformer.deplacer,
   "transformer.copier": reducteursTransformer.copier,
@@ -332,7 +334,7 @@ export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): Resulta
 export function identifiantsCibles(enveloppe: Enveloppe): string[] {
   const ids = new Set<string>();
   for (const c of enveloppe.commands) {
-    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir", "ancienne", "nouvelle"]) {
+    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir", "ancienne", "nouvelle", "zoneId"]) {
       const v = c.params[k];
       if (typeof v === "string") ids.add(v);
     }

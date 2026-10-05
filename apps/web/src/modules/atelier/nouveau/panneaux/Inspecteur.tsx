@@ -128,7 +128,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <OuvertureHote o={o as Occurrence<"porte">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       <GroupeSelection sel={[o]} etat={etat} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
-      {o.classe === "zone" && <SyntheseZoneVue o={o as Occurrence<"zone">} etat={etat} />}
+      {o.classe === "zone" && <SyntheseZoneVue o={o as Occurrence<"zone">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && <ConvertirEsquisse o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "mur" && !desactive && <ScinderEnParts o={o as Occurrence<"mur">} onCommandes={onCommandes} />}
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
@@ -956,15 +956,50 @@ function NumeroterPieces({ sel, etat, readOnly, onCommandes }: { sel: Occurrence
 }
 
 /** Synthèse d'une zone : pièces et espaces contenus, aire totale (calculée, non réglementaire ; D-045). */
-function SyntheseZoneVue({ o, etat }: { o: Occurrence<"zone">; etat: ModeleAtelier }) {
+function SyntheseZoneVue({ o, etat, desactive, onCommandes }: { o: Occurrence<"zone">; etat: ModeleAtelier; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
   const s = syntheseZone(etat, o);
+  const [candidat, setCandidat] = useState("");
+  const niveau = (id: string | null) => (id && etat.niveaux[id] ? etat.niveaux[id]!.nom : "sans niveau");
+  // Membres déclarés (relations « contient ») : pièces, espaces et sous-zones, de tout niveau (D-056).
+  const declares = new Set(Object.values(etat.relations).filter((r) => r.kind === "contient" && r.sourceId === o.id).map((r) => r.targetId));
+  const candidats = Object.values(etat.objets)
+    .filter((x) => (x.classe === "piece" || x.classe === "espace" || x.classe === "zone") && x.id !== o.id && !declares.has(x.id))
+    .map((x) => ({ id: x.id, libelle: `${x.classe === "zone" ? "Zone" : x.classe === "espace" ? "Espace" : "Pièce"} ${[x.classe === "piece" ? x.params.code : null, (x.params as { nom?: string | null }).nom].filter(Boolean).join(" · ") || x.id} (${niveau(x.niveauId)})` }))
+    .sort((a, b) => a.libelle.localeCompare(b.libelle, "fr"));
+  const NATURE: Record<string, string> = { relation: " (lien déclaré)", "sous-zone": " (par une sous-zone)", contour: "" };
   return (
     <details className="inspecteur-synthese-zone" open data-synthese-zone={s.pieces.length}>
       <summary>Contenu de la zone : {s.pieces.length} pièce(s) ou espace(s), {String(s.aireTotale).replace(".", ",")} m²</summary>
       <ul>
-        {s.pieces.map((p) => <li key={p.id}>{p.nom} — {String(p.aire).replace(".", ",")} m²{p.par === "relation" ? " (lien déclaré)" : ""}</li>)}
+        {s.pieces.map((p) => (
+          <li key={p.id}>
+            {p.nom} — {String(p.aire).replace(".", ",")} m²{p.niveauId !== o.niveauId ? ` · ${niveau(p.niveauId)}` : ""}{NATURE[p.par]}
+            {p.par === "relation" && !desactive && <button type="button" className="lien" data-zone-retirer={p.id} onClick={() => onCommandes([{ type: "zone.affecter", params: { zoneId: o.id, retirer: [p.id] } }], `Retirer ${p.nom} de la zone`)}>Retirer</button>}
+          </li>
+        ))}
       </ul>
-      <p className="inspecteur-aide">Aires nettes calculées sur les contours (règle de mesure réglementaire non appliquée).</p>
+      {s.sousZones.length > 0 && (
+        <p>
+          Sous-zones : {s.sousZones.map((z, i) => (
+            <span key={z.id}>
+              {i ? ", " : ""}{z.nom}
+              {declares.has(z.id) && !desactive && <button type="button" className="lien" onClick={() => onCommandes([{ type: "zone.affecter", params: { zoneId: o.id, retirer: [z.id] } }], `Retirer la sous-zone ${z.nom}`)}>retirer</button>}
+            </span>
+          ))}
+        </p>
+      )}
+      {!desactive && candidats.length > 0 && (
+        <span className="ver-actions">
+          <select aria-label="Pièce, espace ou zone à rattacher" value={candidat} onChange={(e) => setCandidat(e.target.value)} data-zone-candidat>
+            <option value="">Rattacher…</option>
+            {candidats.map((c) => <option key={c.id} value={c.id}>{c.libelle}</option>)}
+          </select>
+          <button type="button" disabled={!candidat} data-zone-rattacher onClick={() => { onCommandes([{ type: "zone.affecter", params: { zoneId: o.id, ajouter: [candidat] } }], `Rattacher ${candidats.find((c) => c.id === candidat)?.libelle ?? candidat} à la zone`); setCandidat(""); }}>
+            Rattacher
+          </button>
+        </span>
+      )}
+      <p className="inspecteur-aide">Aires nettes calculées sur les contours (règle de mesure réglementaire non appliquée). Appartenance par contour (même niveau) ou déclarée (tout niveau, sous-zones comprises).</p>
     </details>
   );
 }

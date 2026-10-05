@@ -126,3 +126,4 @@ Verrous d'objet et de groupe (`verrous.test.ts`, API, e2e, D-052).
 Vues 3D enregistrées et éclaté horizontal (`vues3d.test.ts`, e2e, D-053).
 Conversion d'esquisses : spline ajustée, courbes en polylignes (`esquisse/conversion.test.ts`, e2e, D-054).
 Commentaires attachés aux entrées du journal (API, e2e, D-055).
+Zones : appartenance déclarée, imbriquées, sur plusieurs niveaux (`zones.test.ts`, e2e, D-056).
