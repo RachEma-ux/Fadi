@@ -30,6 +30,7 @@ const LIBELLES: Record<string, string> = {
   empreinte: "Emprise",
   epaisseur: "Épaisseur",
   hauteur: "Hauteur",
+  usage: "Usage",
   largeur: "Largeur",
   profondeur: "Profondeur",
   allege: "Allège",
@@ -135,7 +136,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         <ChoixType o={o} etat={etat} desactive={desactive} onCommandes={onCommandes} />
         <ChoixPhase sel={[o]} readOnly={desactive} onCommandes={onCommandes} />
         <ChoixVerrou sel={[o]} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
-        {Object.entries(params).map(([cle, valeur]) => {
+        {Object.entries(avecFacultatifs(o.classe, params)).map(([cle, valeur]) => {
           if (cle === "ouvrant" || (cle === "murHoteId" && (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture"))) return null; // contrôles dédiés ci-dessous
           if (GEOMETRIQUES.has(cle)) return <ResumeGeometrie key={cle} cle={cle} valeur={valeur} />;
           return <Champ key={cle} id={`${o.id}-${cle}`} cle={cle} valeur={valeur} etat={etat} desactive={parametresFiges} onValider={(v) => modifier(cle, v)} />;
@@ -145,6 +146,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       <GroupeSelection sel={[o]} etat={etat} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "zone" && <SyntheseZoneVue o={o as Occurrence<"zone">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
+      {o.classe === "escalier" && !desactive && <TremieEscalier o={o as Occurrence<"escalier">} etat={etat} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && <ConvertirEsquisse o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "mur" && !desactive && <ScinderEnParts o={o as Occurrence<"mur">} onCommandes={onCommandes} />}
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
@@ -358,6 +360,15 @@ function ResumeGeometrie({ cle, valeur }: { cle: string; valeur: unknown }) {
   );
 }
 
+/** Paramètres facultatifs absents du modèle mais proposés à la saisie (D-059) : « non renseigné » tant que vides. */
+function avecFacultatifs(classe: string, params: Record<string, unknown>): Record<string, unknown> {
+  if ((classe === "piece" || classe === "espace") && !("hauteur" in params)) return { ...params, hauteur: null };
+  if (classe === "dalle" && !("usage" in params)) return { ...params, usage: null };
+  return params;
+}
+
+const USAGES_DALLE_LIBELLES: [string, string][] = [["plancher", "Plancher"], ["dalle-isolee", "Dalle isolée"]];
+
 const ENUMS: Record<string, string[]> = {
   alignement: ["axe", "gauche", "droite"],
   type: ["plate", "monopente", "bipente"],
@@ -389,6 +400,19 @@ function Champ({ id, cle, valeur, etat, desactive, onValider }: { id: string; cl
           <select id={id} value={(valeur as string | null) ?? ""} disabled={desactive} onChange={(e) => onValider(e.target.value || null)}>
             <option value="">non renseigné</option>
             {Object.values(etat.niveaux).sort((a, b) => a.ordre - b.ordre).map((n) => <option key={n.id} value={n.id}>{n.nom}</option>)}
+          </select>
+        </dd>
+      </div>
+    );
+  }
+  if (cle === "usage") {
+    return (
+      <div className="champ">
+        <dt><label htmlFor={id}>{libelle}</label></dt>
+        <dd>
+          <select id={id} value={(valeur as string | null) ?? ""} disabled={desactive} data-champ="usage" onChange={(e) => onValider(e.target.value || null)}>
+            <option value="">non renseigné</option>
+            {USAGES_DALLE_LIBELLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </dd>
       </div>
@@ -683,6 +707,29 @@ function HistoriqueObjet({ projectId, objetId }: { projectId: string; objetId: s
         </ol>
       ))}
     </details>
+  );
+}
+
+/** Trémie (D-059) : percer une dalle de l'emprise de l'escalier, agrandie d'une marge déclarée. */
+function TremieEscalier({ o, etat, onCommandes }: { o: Occurrence<"escalier">; etat: ModeleAtelier; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const dalles = Object.values(etat.objets).filter((x): x is Occurrence<"dalle"> => x.classe === "dalle");
+  // Dalles du niveau d'arrivée d'abord (la trémie s'y perce le plus souvent).
+  const tri = [...dalles].sort((a, b) => (a.niveauId === o.params.niveauArriveeId ? 0 : 1) - (b.niveauId === o.params.niveauArriveeId ? 0 : 1) || a.id.localeCompare(b.id));
+  const [dalle, setDalle] = useState("");
+  const [marge, setMarge] = useState("0");
+  if (!tri.length) return null;
+  const m = nombreSaisi(marge);
+  return (
+    <form className="inspecteur-tremie" data-tremie onSubmit={(e) => { e.preventDefault(); if (dalle && m !== null && m >= 0) onCommandes([{ type: "escalier.tremie", params: { id: o.id, dalleId: dalle, marge: m } }], `Trémie de ${o.id} dans ${dalle}`); }}>
+      <label>Trémie dans la dalle
+        <select value={dalle} onChange={(e) => setDalle(e.target.value)} data-tremie-dalle>
+          <option value="">Choisir…</option>
+          {tri.map((d) => <option key={d.id} value={d.id}>{d.params.nom ?? d.id}{d.niveauId && etat.niveaux[d.niveauId] ? ` (${etat.niveaux[d.niveauId]!.nom})` : ""}</option>)}
+        </select>
+      </label>
+      <label>Marge (m)<input inputMode="decimal" value={marge} onChange={(e) => setMarge(e.target.value)} onKeyDown={(e) => e.stopPropagation()} /></label>
+      <button type="submit" disabled={!dalle}>Percer la trémie</button>
+    </form>
   );
 }
 

@@ -18,6 +18,9 @@ export interface QuantitePiece {
   aireDeclaree: number | null;
   /** Écart au-delà de la tolérance (D-012) : à signaler, jamais corrigé en silence. */
   ecartSignale: boolean;
+  /** Hauteur propre déclarée et volume (aire calculée × hauteur), D-059 ; absents si la hauteur ne l'est pas. */
+  hauteur?: number;
+  volume?: number;
 }
 
 export interface QuantitesNiveau {
@@ -28,7 +31,7 @@ export interface QuantitesNiveau {
   airePieces: number;
   murs: { nombre: number; longueurAxe: number; surfaceAxeHauteur: number; sansHauteur: number };
   ouvertures: { portes: number; fenetres: number; ouvertures: number };
-  dalles: { nombre: number; aireBrute: number; aireNette: number };
+  dalles: { nombre: number; aireBrute: number; aireNette: number; parUsage?: Record<string, { nombre: number; aireNette: number }> };
   toitures: { nombre: number; aire: number };
   poteaux: number;
   escaliers: number;
@@ -59,6 +62,7 @@ export function quantites(etat: ModeleAtelier): Quantites {
           aireCalculee,
           aireDeclaree,
           ecartSignale: aireDeclaree !== null && ecart > Math.max(TOLERANCE_AIRE_ABS, TOLERANCE_AIRE_REL * Math.max(aireDeclaree, aireCalculee)),
+          ...(p.params.hauteur ? { hauteur: p.params.hauteur.value, volume: arrondi(aireCalculee * p.params.hauteur.value) } : {}),
         };
       });
     const murs = objetsDeClasse(etat, "mur", n.id).sort(parId);
@@ -85,7 +89,26 @@ export function quantites(etat: ModeleAtelier): Quantites {
         fenetres: objetsDeClasse(etat, "fenetre", n.id).length,
         ouvertures: objetsDeClasse(etat, "ouverture", n.id).length,
       },
-      dalles: { nombre: dalles.length, aireBrute: arrondi(dalles.reduce((s, d) => s + aire(d.params.contour), 0)), aireNette: arrondi(dalles.reduce((s, d) => s + aireNette(d.params.contour, d.params.trous), 0)) },
+      dalles: {
+        nombre: dalles.length,
+        aireBrute: arrondi(dalles.reduce((s, d) => s + aire(d.params.contour), 0)),
+        aireNette: arrondi(dalles.reduce((s, d) => s + aireNette(d.params.contour, d.params.trous), 0)),
+        // Par usage déclaré (D-059), seulement si au moins une dalle en porte un ; « non-renseigne » pour les autres.
+        ...(dalles.some((d) => d.params.usage)
+          ? {
+              parUsage: Object.fromEntries(
+                Object.entries(
+                  [...dalles].sort(parId).reduce<Record<string, { nombre: number; aireNette: number }>>((acc, d) => {
+                    const k = d.params.usage ?? "non-renseigne";
+                    const q = acc[k] ?? { nombre: 0, aireNette: 0 };
+                    acc[k] = { nombre: q.nombre + 1, aireNette: arrondi(q.aireNette + aireNette(d.params.contour, d.params.trous)) };
+                    return acc;
+                  }, {}),
+                ).sort(([a], [b]) => (a < b ? -1 : 1)),
+              ),
+            }
+          : {}),
+      },
       toitures: { nombre: toitures.length, aire: arrondi(toitures.reduce((s, t) => s + aireNette(t.params.contour, t.params.trous), 0)) },
       poteaux: objetsDeClasse(etat, "poteau", n.id).length,
       escaliers: objetsDeClasse(etat, "escalier", n.id).length,

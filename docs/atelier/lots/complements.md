@@ -129,3 +129,4 @@ Commentaires attachés aux entrées du journal (API, e2e, D-055).
 Zones : appartenance déclarée, imbriquées, sur plusieurs niveaux (`zones.test.ts`, e2e, D-056).
 Calques masqués par vue (`documents/calques-vue.test.ts`, e2e, D-057).
 Réseau sur trajectoire, aligner ; paramètres d'outil visibles avec une sélection (`reseau-trajet.test.ts`, e2e, D-058).
+Usage des dalles, hauteur propre des pièces et espaces, trémie d'escalier (`dalles-pieces.test.ts`, e2e, D-059).

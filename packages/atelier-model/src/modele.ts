@@ -71,7 +71,12 @@ export interface ParamsDalle extends Contour {
   epaisseur: Longueur;
   decalageBase: Longueur;
   nom: string | null;
+  /** Usage déclaré (D-059) : plancher ou dalle isolée, pour filtrer et quantifier ; absent = non renseigné. */
+  usage?: UsageDalle;
 }
+
+export const USAGES_DALLE = ["plancher", "dalle-isolee"] as const;
+export type UsageDalle = (typeof USAGES_DALLE)[number];
 
 export type TypeToiture = "plate" | "monopente" | "bipente";
 
@@ -106,6 +111,8 @@ export interface ParamsPiece extends Contour {
   aireDeclaree: Surface | null;
   notes: string | null;
   etiquette: Point2 | null;
+  /** Hauteur propre déclarée (D-059) : volume = aire nette × hauteur ; absente = volume non évalué. */
+  hauteur?: Longueur;
 }
 
 export interface ParamsEspace {
@@ -116,6 +123,8 @@ export interface ParamsEspace {
   aireDeclaree: Surface | null;
   notes: string | null;
   etiquette: Point2 | null;
+  /** Hauteur propre déclarée (D-059). */
+  hauteur?: Longueur;
 }
 
 export interface ParamsZone extends Contour {

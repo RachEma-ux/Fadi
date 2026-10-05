@@ -5,12 +5,18 @@
  */
 import { lireOuvrant } from "../ouvrants.js";
 import { distance } from "../geometrie.js";
-import type { ModeleAtelier, ParamsParClasse } from "../modele.js";
+import { USAGES_DALLE, type ModeleAtelier, type ParamsParClasse } from "../modele.js";
 import type { Classe } from "../ontologie.js";
-import { TOLERANCE_REDUCTEUR } from "../unites.js";
+import { TOLERANCE_REDUCTEUR, type Longueur } from "../unites.js";
 import { ErreurCommande, lire } from "./base.js";
 
 type Brut = Record<string, unknown>;
+
+/** Hauteur propre d'une pièce ou d'un espace (D-059) : clé présente seulement si déclarée. */
+const hauteurPropre = (p: Brut): { hauteur?: Longueur } => {
+  const h = lire.longueur(p, "hauteur", { optionnel: true, strict: true });
+  return h ? { hauteur: h } : {};
+};
 
 function surfaceOuNull(params: Brut, cle: string) {
   const v = params[cle];
@@ -52,7 +58,8 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
   fenetre: (etat, p) => ouverture(etat, p),
   ouverture: (etat, p) => ouverture(etat, p),
   dalle(_etat, p) {
-    return { ...contour(p), epaisseur: lire.longueur(p, "epaisseur", { strict: true })!, decalageBase: lire.longueur(p, "decalageBase", { optionnel: true }) ?? { value: 0, unit: "m" }, nom: lire.chaineOuNull(p, "nom") };
+    const usage = p["usage"] === undefined || p["usage"] === null ? null : lire.enumeration(p, "usage", USAGES_DALLE);
+    return { ...contour(p), epaisseur: lire.longueur(p, "epaisseur", { strict: true })!, decalageBase: lire.longueur(p, "decalageBase", { optionnel: true }) ?? { value: 0, unit: "m" }, nom: lire.chaineOuNull(p, "nom"), ...(usage ? { usage } : {}) };
   },
   toiture(_etat, p) {
     return {
@@ -97,6 +104,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       aireDeclaree: surfaceOuNull(p, "aireDeclaree"),
       notes: lire.chaineOuNull(p, "notes"),
       etiquette: lire.point(p, "etiquette", { optionnel: true }),
+      ...hauteurPropre(p),
     };
   },
   espace(_etat, p) {
@@ -114,6 +122,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       aireDeclaree: surfaceOuNull(p, "aireDeclaree"),
       notes: lire.chaineOuNull(p, "notes"),
       etiquette: lire.point(p, "etiquette", { optionnel: true }),
+      ...hauteurPropre(p),
     };
   },
   zone(_etat, p) {

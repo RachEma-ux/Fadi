@@ -678,6 +678,40 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
 }
 
+// Trémie d'escalier et hauteur propre d'une pièce (D-059), depuis l'inspecteur.
+{
+  const e0 = await modele(pid);
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const P = (x, y) => ({ x: ax + x, y: ay + y, frame: "local", unit: "m" });
+  const M = (v) => ({ value: v, unit: "m" });
+  const r0 = await lot(pid, `tr-${Date.now()}`, e0.revision, [
+    { type: "dalle.creer", params: { id: "dalle-e2e", niveauId: murA.niveauId, contour: [P(-20, -20), P(-10, -20), P(-10, -10), P(-20, -10)], epaisseur: M(0.2) } },
+    { type: "escalier.creer", params: { id: "esc-e2e", niveauId: murA.niveauId, a: P(-18, -15), b: P(-13, -15), largeur: M(1.2), hauteurAFranchir: M(3), niveauDepartId: murA.niveauId } },
+    { type: "piece.creer", params: { id: "piece-e2e", niveauId: murA.niveauId, nom: "Local e2e", contour: [P(-30, -30), P(-26, -30), P(-26, -27), P(-30, -27)] } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("esc-e2e");
+  await page.locator("[data-tremie-dalle]").selectOption("dalle-e2e");
+  await page.locator('[data-tremie] button[type="submit"]').click();
+  let trous = 0;
+  for (let k = 0; k < 30 && !trous; k++) {
+    trous = (await modele(pid)).modele.objets["dalle-e2e"]?.params.trous.length ?? 0;
+    if (!trous) await page.waitForTimeout(500);
+  }
+  await page.keyboard.press("Escape");
+  await selectionner("piece-e2e");
+  await page.locator('input[id="piece-e2e-hauteur"]').fill("2,5");
+  await page.locator('input[id="piece-e2e-hauteur"]').press("Enter");
+  let h = null;
+  for (let k = 0; k < 30 && !h; k++) {
+    h = (await modele(pid)).modele.objets["piece-e2e"]?.params.hauteur ?? null;
+    if (!h) await page.waitForTimeout(500);
+  }
+  check("trémie percée dans la dalle depuis l'escalier, hauteur propre d'une pièce saisie (D-059)", r0.status === 200 && trous === 1 && h?.value === 2.5, `${r0.status} · trous ${trous} · hauteur ${JSON.stringify(h)}`);
+  await page.keyboard.press("Escape");
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

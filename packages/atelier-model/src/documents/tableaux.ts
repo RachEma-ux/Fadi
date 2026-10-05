@@ -72,11 +72,12 @@ export function genererTableau(etat: ModeleAtelier, type: TypeTableau): Tableau 
   let total: Cellule[] | null = null;
   switch (type) {
     case "pieces": {
-      colonnes = ["Niveau", "Code", "Nom", "Catégorie", "Aire calculée", "Aire déclarée", "Écart signalé", "Identifiant"];
-      unites = [null, null, null, null, "m²", "m²", null, null];
+      // Hauteur propre et volume (D-059) : « non évaluée » tant que la hauteur n'est pas déclarée.
+      colonnes = ["Niveau", "Code", "Nom", "Catégorie", "Aire calculée", "Aire déclarée", "Écart signalé", "Hauteur", "Volume", "Identifiant"];
+      unites = [null, null, null, null, "m²", "m²", null, "m", "m³", null];
       const q = quantites(etat);
-      for (const n of q.niveaux) for (const p of n.pieces) lignes.push([n.nom, p.code, p.nom, p.categorie, r2(p.aireCalculee), p.aireDeclaree === null ? null : r2(p.aireDeclaree), p.ecartSignale ? "oui" : "non", p.id]);
-      total = ["Total", null, `${lignes.length} pièce(s)`, null, r2(q.totaux.airePieces), null, null, null];
+      for (const n of q.niveaux) for (const p of n.pieces) lignes.push([n.nom, p.code, p.nom, p.categorie, r2(p.aireCalculee), p.aireDeclaree === null ? null : r2(p.aireDeclaree), p.ecartSignale ? "oui" : "non", p.hauteur === undefined ? null : r3(p.hauteur), p.volume === undefined ? null : r2(p.volume), p.id]);
+      total = ["Total", null, `${lignes.length} pièce(s)`, null, r2(q.totaux.airePieces), null, null, null, null, null];
       break;
     }
     case "portes":
