@@ -159,7 +159,7 @@ documentsRouter.get("/atelier/:dossier/:fichier", async (req, res) => {
 
 /** 25 Mo : un PNG 2000 × 1360 ou un DXF du modèle complet tiennent largement. */
 const DRAWING_LIMIT = 25 * 1024 * 1024;
-const DRAWING_KINDS = new Set(["dxf", "svg", "png", "csv", "json"]);
+const DRAWING_KINDS = new Set(["dxf", "svg", "png", "csv", "json", "bcf"]);
 const EXPORT_ID = /^[0-9a-f-]{36}$/;
 
 function headerText(req: Request, name: string, max: number): string | null {
@@ -175,7 +175,7 @@ documentsRouter.post("/dessins", raw({ type: () => true, limit: DRAWING_LIMIT })
   const fileName = headerText(req, "x-file-name", 255);
   const kind = (headerText(req, "x-export-kind", 10) ?? fileName?.split(".").pop() ?? "").toLowerCase();
   if (!fileName || !DRAWING_KINDS.has(kind)) {
-    res.status(400).json({ error: "invalid_input", details: { kind: "Export attendu : dxf, svg, png, csv ou json (en-têtes X-File-Name / X-Export-Kind)" } });
+    res.status(400).json({ error: "invalid_input", details: { kind: "Export attendu : dxf, svg, png, csv, json ou bcf (en-têtes X-File-Name / X-Export-Kind)" } });
     return;
   }
   const content = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);

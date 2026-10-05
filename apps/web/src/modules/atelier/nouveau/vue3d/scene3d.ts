@@ -7,6 +7,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { chapeauxDeCoupe, englobant, maillageObjet, niveauxOrdonnes, raccordMur, type Maillage, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { CHAMP_DE_VISION_DEG } from "./camera";
 
 export type VueTechnique = "perspective" | "dessus" | "coupe-ns" | "coupe-eo" | "facade-sud" | "facade-nord" | "facade-est" | "facade-ouest";
 export type Presentation = "batiment" | "niveau" | "eclate" | "eclate-horizontal" | "eclate-classes" | "eclate-groupes";
@@ -97,7 +98,7 @@ export function captureVue3D(): Promise<Blob | null> {
 export class Scene3D {
   private moteur!: Moteur;
   readonly scene = new THREE.Scene();
-  private perspective = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
+  private perspective = new THREE.PerspectiveCamera(CHAMP_DE_VISION_DEG, 1, 0.1, 5000);
   private ortho = new THREE.OrthographicCamera(-10, 10, 10, -10, -5000, 5000);
   private camera: THREE.Camera = this.perspective;
   private controles!: OrbitControls;

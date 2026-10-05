@@ -181,7 +181,7 @@ export async function loadProductions(q: Querier, projectId: string): Promise<Ma
   return new Map(rows.map((r) => [r.kind, { producedAt: r.producedAt.toISOString(), modelRevision: r.modelRevision, inputHash: r.inputHash, count: r.count }]));
 }
 
-const DRAWING_KIND_LABEL: Record<string, string> = { dxf: "Dessin technique DXF", svg: "Plan SVG", png: "Image PNG", csv: "Métrés CSV", json: "Modèle JSON" };
+const DRAWING_KIND_LABEL: Record<string, string> = { dxf: "Dessin technique DXF", svg: "Plan SVG", png: "Image PNG", csv: "Métrés CSV", json: "Modèle JSON", bcf: "Revue BCF (vues 3D)" };
 
 /** Libellé de la vue du moteur au moment de l'export (`captureView` : `tech` = plan / coupe / façade…, `mode` = volume / filaire…). */
 function drawingViewLabel(view: Record<string, unknown>): string {

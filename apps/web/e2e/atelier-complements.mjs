@@ -6,6 +6,7 @@
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-complements.mjs
  */
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
 
@@ -973,6 +974,29 @@ await page.waitForSelector(".plan2d");
     if (!vueAnn) await page.waitForTimeout(500);
   }
   check("vue 3D : boîte de coupe et annotation enregistrées avec la vue", annotee && vueAnn?.params.boiteCoupe?.x1 === 0.6 && vueAnn?.params.annotations?.[0]?.texte === "Point e2e" && (await page.locator("[data-annotation]").count()) === 1, `${annotee} · ${JSON.stringify(vueAnn?.params?.boiteCoupe ?? null)} · ${JSON.stringify(vueAnn?.params?.annotations ?? null)}`);
+  // Échange BCF (D-097) : export des vues 3D (.bcfzip, catalogue), réimport : une vue de plus, annotation et point repris.
+  {
+    await page.locator(".barre-exports > summary").click();
+    const [dlBcf] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator('[data-export="bcf"]').click()]);
+    const bcfCatalogue = await page.waitForFunction(() => window.__fadiExports?.some((e) => e.kind === "bcf"), null, { timeout: 15000 }).then(() => true).catch(() => false);
+    const chemin = await dlBcf.path();
+    const octets = chemin ? readFileSync(chemin) : Buffer.alloc(0);
+    const nAvant = Object.values((await modele(pid)).modele.definitions).filter((d) => d.classe === "vue-3d").length;
+    await page.locator("[data-vues-3d] > summary").click().catch(() => {});
+    if (!(await page.locator("[data-import-bcf]").isVisible().catch(() => false))) await page.locator("[data-vues-3d] > summary").click().catch(() => {});
+    await page.locator("[data-import-bcf]").setInputFiles({ name: dlBcf.suggestedFilename(), mimeType: "application/octet-stream", buffer: octets });
+    let reprise = null;
+    let nApres = nAvant;
+    for (let k = 0; k < 30 && !reprise; k++) {
+      const defs = Object.values((await modele(pid)).modele.definitions).filter((d) => d.classe === "vue-3d");
+      nApres = defs.length;
+      reprise = defs.find((d) => d.nom === "Coupe annotée e2e (2)") ?? null;
+      if (!reprise) await page.waitForTimeout(500);
+    }
+    const a0 = vueAnn?.params.annotations?.[0];
+    const a1 = reprise?.params.annotations?.[0];
+    check("BCF : vues 3D exportées (.bcfzip, catalogue) puis réimportées — annotation et point repris", dlBcf.suggestedFilename().endsWith(".bcfzip") && octets.subarray(0, 2).toString() === "PK" && bcfCatalogue && nApres === 2 * nAvant && a1?.texte === "Point e2e" && !!a0 && Math.abs(a1.position.x - a0.position.x) < 1e-5 && Math.abs(a1.position.z - a0.position.z) < 1e-5, `${dlBcf.suggestedFilename()} · ${bcfCatalogue} · ${nAvant} → ${nApres} · ${JSON.stringify(a1 ?? null)}`);
+  }
   await page.locator("[data-boite-coupe]").uncheck();
   // Visite à hauteur d'œil (D-075) : œil à niveau + 1,60 m, avancer au clavier à hauteur constante.
   await page.locator("[data-visite-oeil]").fill("1,6");

@@ -29,6 +29,7 @@ export { bibliotheques, proprietesEffectives, CLASSES_BLOC, type ParamsDefinitio
 export * from "./echanges/ifc.js";
 export * from "./echanges/import-ifc.js";
 export * from "./echanges/import-dxf.js";
+export * from "./echanges/bcf.js";
 export * from "./versions.js";
 export * from "./automatisation/scripts.js";
 export * from "./automatisation/assistant.js";

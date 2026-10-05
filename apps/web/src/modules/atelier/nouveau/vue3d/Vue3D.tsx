@@ -6,7 +6,7 @@
  */
 import type { Vector3 } from "three";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { etendueMur, maillageObjet, vues3D, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { etendueMur, importerBcf, lireZip, maillageObjet, vues3D, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { Scene3D, type OptionsScene, type Presentation, type VueTechnique } from "./scene3d";
 
@@ -215,6 +215,30 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
     const existante = enregistrees.find((x) => x.nom === nom);
     onCommandes([{ type: "vue3d.enregistrer", params: { ...(existante ? { id: existante.id } : {}), nom, camera: s.pointDeVue(), vue: options.vue, presentation: options.presentation, coupeHorizontale: options.coupeHorizontale, positionCoupe: options.positionCoupe, aretes: options.aretes, niveauId: ui.niveauId, ...(options.boiteCoupe ? { boiteCoupe: options.boiteCoupe } : {}), ...(annotations.length ? { annotations } : {}) } }], `${existante ? "Mettre à jour" : "Enregistrer"} la vue 3D « ${nom} »`);
     setNomVue("");
+  };
+
+  // Import BCF (D-097) : chaque sujet devient une vue 3D enregistrée (un lot) ; les avertissements sont affichés.
+  const importerFichierBcf = async (f: File) => {
+    try {
+      const octets = new Uint8Array(await f.arrayBuffer());
+      const inflate = async (brut: Uint8Array) => new Uint8Array(await new Response(new Blob([brut as BlobPart]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer());
+      const { vues, avertissements } = importerBcf(await lireZip(octets, inflate));
+      if (!vues.length) {
+        etatUi.set({ aide: `BCF : aucun sujet repris.${avertissements.length ? ` ${avertissements.join(" ")}` : ""}` });
+        return;
+      }
+      const pris = new Set(enregistrees.map((v) => v.nom));
+      const commandes: Commande[] = vues.map((v) => {
+        let nom = v.nom;
+        for (let k = 2; pris.has(nom); k++) nom = `${v.nom.slice(0, 110)} (${k})`;
+        pris.add(nom);
+        return { type: "vue3d.enregistrer", params: { nom, camera: v.camera, niveauId: null, ...(v.annotations.length ? { annotations: v.annotations } : {}) } };
+      });
+      onCommandes(commandes, `Importer ${vues.length} vue(s) 3D depuis ${f.name}`);
+      etatUi.set({ aide: `BCF : ${vues.length} vue(s) 3D importée(s) (repère local du projet).${avertissements.length ? ` ${avertissements.join(" ")}` : ""}` });
+    } catch (err) {
+      etatUi.set({ aide: `BCF illisible : ${err instanceof Error ? err.message : String(err)}` });
+    }
   };
 
   useEffect(() => {
@@ -516,6 +540,12 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
               <input aria-label="Nom de la vue 3D" placeholder="Nom de la vue" value={nomVue} maxLength={120} onChange={(e) => setNomVue(e.target.value)} onKeyDown={(e) => e.stopPropagation()} />
               <button type="submit" disabled={!nomVue.trim()}>Enregistrer la vue</button>
             </form>
+          )}
+          {!readOnly && (
+            <label className="vue3d-ligne" title="Fichier .bcfzip (BCF 2.1) : un sujet par vue, coordonnées dans le repère local du projet">
+              Importer un BCF
+              <input type="file" accept=".bcfzip,.bcf,.zip" data-import-bcf onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void importerFichierBcf(f); }} />
+            </label>
           )}
         </details>
         <label className="vue3d-case" title={webgpuDisponible ? "Moteur WebGPU (essai), repli WebGL2 en cas d'échec" : "WebGPU indisponible dans ce navigateur : WebGL2"}>

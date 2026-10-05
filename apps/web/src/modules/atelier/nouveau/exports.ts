@@ -3,10 +3,11 @@
  * commentaire), SVG du plan affiché, CSV des quantités, modèle JSON, PNG de la vue 3D. Chaque export est téléchargé
  * ET enregistré au catalogue des documents (niveau, vue et révision stampés par le serveur).
  */
-import { csvQuantites, dxfNiveau, type ModeleAtelier } from "@parcours/atelier-model";
+import { csvQuantites, dxfNiveau, exporterBcf, zipStocke, type ModeleAtelier } from "@parcours/atelier-model";
+import { CHAMP_DE_VISION_DEG } from "./vue3d/camera";
 import { api } from "../../../lib/api";
 
-export type TypeExport = "dxf" | "svg" | "csv" | "json" | "png";
+export type TypeExport = "dxf" | "svg" | "csv" | "json" | "png" | "bcf";
 
 declare global {
   interface Window {
@@ -68,6 +69,16 @@ export async function exporter(type: TypeExport, contexte: { projectId: string; 
       blob = new Blob([JSON.stringify({ contrat: "modele-atelier/1", modele: contexte.etat }, null, 1)], { type: "application/json" });
       nom = `${nomFichier(`Atelier_${contexte.code}`)}_modele.json`;
       break;
+    case "bcf": {
+      // Revue BCF 2.1 (D-097) : un sujet par vue 3D enregistrée ; auteur = la personne connectée (son propre fichier).
+      const moi = await api.me().catch(() => null);
+      const r = exporterBcf(contexte.etat, { projet: { id: contexte.projectId, nom: contexte.code }, horodatage: new Date().toISOString(), auteur: moi?.email ?? "Fadi", champDeVision: CHAMP_DE_VISION_DEG });
+      if (!r.sujets) throw new Error("Aucune vue 3D enregistrée : enregistrez une vue (3D → Vues enregistrées) pour l'exporter en BCF.");
+      blob = new Blob([zipStocke(r.fichiers) as BlobPart], { type: "application/octet-stream" });
+      nom = `${nomFichier(`Atelier_${contexte.code}`)}_revue.bcfzip`;
+      vue = { mode: "3D" };
+      break;
+    }
     case "png": {
       const { captureVue3D } = await import("./vue3d/scene3d");
       blob = await captureVue3D();

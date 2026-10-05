@@ -458,6 +458,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
               ["csv", "Quantités · CSV"],
               ["json", "Modèle · JSON"],
               ["png", "Vue 3D · PNG"],
+              ["bcf", "Vues 3D · BCF"],
             ] as [TypeExport, string][]).map(([t, libelle]) => (
               <button
                 key={t}

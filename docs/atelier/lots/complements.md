@@ -167,3 +167,4 @@ Poignées de tangente au plan (`nouveau.test.ts`, e2e, D-093).
 Chanfrein avec un arc, raccord et chanfrein multiples (`chanfrein-arc.test.ts`, e2e, D-094).
 Ouvertures sur un mur courbe (`murs-courbes.test.ts`, e2e, D-095).
 Pièces et planchers délimités par un arc (`murs-courbes.test.ts`, `nouveau.test.ts`, D-096).
+Échange BCF 2.1 des vues 3D (`echanges/bcf.test.ts`, e2e, D-097).
