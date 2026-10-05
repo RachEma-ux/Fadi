@@ -305,3 +305,14 @@ describe("outil arc tangent (D-062)", () => {
     expect(clic("arc-tangent", pt(9, 0), etat, ui({ pointsEnCours: r1.pointsEnCours }), opts).commandes).toHaveLength(0);
   });
 });
+
+describe("décaler avec angles arrondis (D-064)", () => {
+  it("Alt au clic du côté : angles « arrondis » transmis", () => {
+    const etat = appliquer(socle(), [{ type: "esquisse.polygone", params: { id: "pg", niveauId: "rdc", points: [pt(0, 0), pt(4, 0), pt(4, 3), pt(0, 3)] } }]);
+    const u = ui({ selection: ["pg"], parametresOutil: { ...etatUi.get().parametresOutil, distanceDecalage: 0.5, distancesDecalage: "" } });
+    const r = clic("decaler", pt(8, 8), etat, u, { ...opts, alt: true });
+    expect(r.commandes[0]).toMatchObject({ type: "transformer.decaler", params: { cote: "exterieur", angles: "arrondis" } });
+    const apres = appliquer(etat, r.commandes);
+    expect(Object.values(apres.objets).some((o) => o.classe === "esquisse" && o.params.forme === "polyligne" && !!o.params.renflements)).toBe(true);
+  });
+});

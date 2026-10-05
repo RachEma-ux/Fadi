@@ -7,7 +7,8 @@
  * les références à ses faces ; étirer conserve la distance des ouvertures à l'extrémité fixe.
  */
 import { decomposerBloc } from "./bloc.js";
-import { add, centreRenflement, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
+import { validerParams } from "./validation.js";
+import { add, centreRenflement, decalerArrondi, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
 import type { Contour, ModeleAtelier, Occurrence, OccurrenceQuelconque, Reference } from "../modele.js";
 import { ouverturesDuMur, referencesVers } from "../modele.js";
 import { estOuverture } from "../ontologie.js";
@@ -319,11 +320,16 @@ export const reducteursTransformer = {
     } else distances = [lire.longueur(p, "distance")!.value];
     const cote = lire.enumeration(p, "cote", ["gauche", "droite", "exterieur", "interieur"] as const, "gauche");
     const signe = cote === "gauche" || cote === "exterieur" ? 1 : -1;
+    // Angles arrondis (D-064) : esquisses seulement (segments en arc de polyligne, D-063).
+    const arrondis = lire.enumeration(p, "angles", ["vifs", "arrondis"] as const, "vifs") === "arrondis";
     let courant = etat;
     let effets = effetsVides();
     const copieAvec = (o: OccurrenceQuelconque, params: Record<string, unknown>) => {
       const id = ctx.ids.nouveau(o.classe);
-      courant = { ...courant, objets: { ...courant.objets, [id]: { ...o, id, groupeId: null, params: { ...o.params, ...params } } as OccurrenceQuelconque } };
+      // Esquisse : paramètres revalidés (renflements tous nuls retirés, D-064).
+      const fusion = { ...o.params, ...params } as Record<string, unknown>;
+      const valides = o.classe === "esquisse" ? validerParams(courant, "esquisse", fusion) : fusion;
+      courant = { ...courant, objets: { ...courant.objets, [id]: { ...o, id, groupeId: null, params: valides } as OccurrenceQuelconque } };
       effets = fusionnerEffets(effets, { ...effetsVides(), crees: [id], niveauxTouches: o.niveauId ? [o.niveauId] : [] });
     };
     for (const d of distances) {
@@ -337,10 +343,26 @@ export const reducteursTransformer = {
           const r = copier(courant, [o], { type: "translation", dx: n.x, dy: n.y }, ctx);
           courant = r.etat;
           effets = fusionnerEffets(effets, r.effets);
-        } else if (o.classe === "esquisse" && o.params.forme === "polyligne") {
+        } else if (o.classe === "esquisse" && o.params.forme === "polyligne" && !(arrondis && o.params.ferme)) {
           if (o.params.renflements) throw new ErreurCommande("precondition", "cibles", `${o.id} : polyligne à segments en arc, décalage non pris en charge`);
           if (cote === "exterieur" || cote === "interieur") throw new ErreurCommande("invalide", "cote", `${o.id} : côté gauche ou droite pour une polyligne ouverte`);
-          copieAvec(o, { points: decalerPolylignePure(o.params.points, d * signe) });
+          if (arrondis) {
+            const r = decalerArrondi(o.params.points, false, d * signe);
+            if (!r) throw new ErreurCommande("precondition", "distances", `${o.id} : décalage arrondi de ${d} m impossible (un côté s'inverserait)`);
+            copieAvec(o, { points: r.points, renflements: r.renflements });
+          } else copieAvec(o, { points: decalerPolylignePure(o.params.points, d * signe) });
+        } else if (arrondis) {
+          // Contour fermé d'esquisse, angles arrondis vers l'extérieur (ou vifs vers l'intérieur) : polyligne fermée.
+          if (o.classe !== "esquisse" || !["polygone", "rectangle", "polyligne"].includes(o.params.forme)) throw new ErreurCommande("precondition", "angles", `${o.id} : angles arrondis pour les polygones, rectangles et polylignes d'esquisse seulement`);
+          if (o.params.renflements) throw new ErreurCommande("precondition", "cibles", `${o.id} : polyligne à segments en arc, décalage non pris en charge`);
+          if (cote === "gauche" || cote === "droite") throw new ErreurCommande("invalide", "cote", `${o.id} : côté extérieur ou intérieur pour un contour fermé`);
+          const contour = o.params.forme === "rectangle" && o.params.points.length === 2 ? rectangleEnPoints(o.params.points[0]!, o.params.points[1]!) : o.params.points;
+          let aire = 0;
+          for (let i = 0; i < contour.length; i++) aire += contour[i]!.x * contour[(i + 1) % contour.length]!.y - contour[(i + 1) % contour.length]!.x * contour[i]!.y;
+          // Contour direct : l'extérieur est à droite des côtés (décalage « à gauche » négatif).
+          const r = decalerArrondi(contour, true, -(aire > 0 ? 1 : -1) * d * signe);
+          if (!r) throw new ErreurCommande("precondition", "distances", `${o.id} : décalage arrondi de ${d} m impossible (contour trop rétréci)`);
+          copieAvec(o, { forme: "polyligne", points: r.points, ferme: true, renflements: r.renflements });
         } else {
           // Contours fermés (D-049) : polygone, rectangle, hachure d'esquisse ; dalle, zone, solide fermé (sans trous).
           const contour: Point2[] | null =
@@ -455,8 +477,8 @@ export const reducteursTransformer = {
         effets = fusionnerEffets(effets, { ...effetsVides(), crees, supprimes: [o.id], niveauxTouches: o.niveauId ? [o.niveauId] : [] });
         continue;
       }
-      if (o.classe !== "esquisse" || !["polyligne", "polygone", "rectangle"].includes(o.params.forme)) {
-        throw new ErreurCommande("precondition", "cibles", `décomposition non prise en charge pour ${o.id} (polylignes, polygones et rectangles d'esquisse, occurrences de bloc)`);
+      if (o.classe !== "esquisse" || !["polyligne", "polygone", "rectangle", "hachure"].includes(o.params.forme)) {
+        throw new ErreurCommande("precondition", "cibles", `décomposition non prise en charge pour ${o.id} (polylignes, polygones, rectangles et hachures d'esquisse, occurrences de bloc)`);
       }
       const pts = o.params.forme === "rectangle" && o.params.points.length === 2 ? rectangleEnPoints(o.params.points[0]!, o.params.points[1]!) : o.params.points;
       const segments: [Point2, Point2][] = [];
@@ -596,8 +618,19 @@ export const reducteursTransformer = {
    * côtés ; l'objet garde sa classe. Objet visé par une cote ou une contrainte : refus (indices de sommets décalés).
    */
   chanfreinerSommet(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
-    void ctx;
     void c;
+    // Chanfrein multiple (D-064) : `sommets` (indices du contour d'origine), traités du dernier au premier pour que
+    // les indices restent valables ; chaque côté porte alors les reculs de ses deux extrémités.
+    if (p["sommets"] !== undefined) {
+      const v = p["sommets"];
+      if (!Array.isArray(v) || !v.length || !v.every((x) => Number.isInteger(x) && x >= 0)) throw new ErreurCommande("invalide", "sommets", "sommets : liste d'indices");
+      let r: ResultatCommande = { etat, effets: effetsVides() };
+      for (const index of [...new Set(v as number[])].sort((a, b) => b - a)) {
+        const r2 = reducteursTransformer.chanfreinerSommet(r.etat, { id: p["id"], distance: p["distance"], index }, ctx, []);
+        r = { etat: r2.etat, effets: fusionnerEffets(r.effets, r2.effets) };
+      }
+      return r;
+    }
     const id = lire.objet(etat, p, "id");
     const o = etat.objets[id]!;
     const index = lire.nombre(p, "index", { entier: true, min: 0 })!;

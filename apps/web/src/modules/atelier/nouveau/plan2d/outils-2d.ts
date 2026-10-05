@@ -358,6 +358,12 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
         if (k < 0) return attendre([], "Cliquez près d'un sommet de l'objet sélectionné.");
         const d = nombre(ui, "distanceChanfrein", 0);
         if (!(d > 0)) return attendre([], "Renseignez la distance du chanfrein dans l'inspecteur.");
+        // Alt (D-064) : chanfrein de tous les sommets (extrémités d'une polyligne ouverte exclues).
+        if (options.alt) {
+          const ouvert = o.classe === "esquisse" && o.params.forme === "polyligne" && !o.params.ferme;
+          const tous = sommets.map((_, i) => i).filter((i) => !ouvert || (i > 0 && i < sommets.length - 1));
+          return emettre([{ type: "transformer.chanfreinerSommet", params: { id: o.id, sommets: tous, distance: m(d) } }], `Chanfrein de ${tous.length} sommets ${fmt(d)} m`);
+        }
         return emettre([{ type: "transformer.chanfreinerSommet", params: { id: o.id, index: k, distance: m(d) } }], `Chanfrein de sommet ${fmt(d)} m`);
       }
       if (pts.length === 0) {
@@ -384,7 +390,7 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
           return attendre([], `Série de distances : ${err instanceof Error ? err.message : String(err)}.`);
         }
       }
-      const contourFerme: Point2[] | null = o ? (o.classe === "esquisse" && (o.params.forme === "polygone" || o.params.forme === "hachure") ? o.params.points : o.classe === "esquisse" && o.params.forme === "rectangle" && o.params.points.length === 2 ? [o.params.points[0]!, pt(o.params.points[1]!.x, o.params.points[0]!.y), o.params.points[1]!, pt(o.params.points[0]!.x, o.params.points[1]!.y)] : o.classe === "dalle" || o.classe === "zone" || o.classe === "solide" ? o.params.contour : null) : null;
+      const contourFerme: Point2[] | null = o ? (o.classe === "esquisse" && (o.params.forme === "polygone" || o.params.forme === "hachure" || (o.params.forme === "polyligne" && o.params.ferme && options.alt === true)) ? o.params.points : o.classe === "esquisse" && o.params.forme === "rectangle" && o.params.points.length === 2 ? [o.params.points[0]!, pt(o.params.points[1]!.x, o.params.points[0]!.y), o.params.points[1]!, pt(o.params.points[0]!.x, o.params.points[1]!.y)] : o.classe === "dalle" || o.classe === "zone" || o.classe === "solide" ? o.params.contour : null) : null;
       if (contourFerme) {
         let dedans = false;
         for (let i = 0, j = contourFerme.length - 1; i < contourFerme.length; j = i++) {
@@ -393,7 +399,8 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
           if (A.y > point.y !== B.y > point.y && point.x < ((B.x - A.x) * (point.y - A.y)) / (B.y - A.y) + A.x) dedans = !dedans;
         }
         const coteF = dedans ? "interieur" : "exterieur";
-        return emettre([{ type: "transformer.decaler", params: { ...(serie ? { distances: serie } : { distance: m(d) }), cote: coteF }, cibles: ui.selection }], `Décaler ${serie ? serie.map(fmt).join(" ; ") : fmt(d)} m (${coteF === "interieur" ? "intérieur" : "extérieur"})`);
+        // Alt (D-064) : angles arrondis (esquisses).
+        return emettre([{ type: "transformer.decaler", params: { ...(serie ? { distances: serie } : { distance: m(d) }), cote: coteF, ...(options.alt ? { angles: "arrondis" } : {}) }, cibles: ui.selection }], `Décaler ${serie ? serie.map(fmt).join(" ; ") : fmt(d)} m (${coteF === "interieur" ? "intérieur" : "extérieur"}${options.alt ? ", angles arrondis" : ""})`);
       }
       let cote: "gauche" | "droite" = "gauche";
       if (o && (o.classe === "mur" || o.classe === "esquisse")) {
@@ -402,7 +409,7 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
         const cross = (b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x);
         cote = cross >= 0 ? "gauche" : "droite";
       }
-      return emettre([{ type: "transformer.decaler", params: { ...(serie ? { distances: serie } : { distance: m(d) }), cote }, cibles: ui.selection }], `Décaler ${serie ? serie.map(fmt).join(" ; ") : fmt(d)} m`);
+      return emettre([{ type: "transformer.decaler", params: { ...(serie ? { distances: serie } : { distance: m(d) }), cote, ...(options.alt ? { angles: "arrondis" } : {}) }, cibles: ui.selection }], `Décaler ${serie ? serie.map(fmt).join(" ; ") : fmt(d)} m${options.alt ? " (angles arrondis)" : ""}`);
     }
     case "mesurer": {
       if (pts.length === 0) return attendre([point], "Cliquez le second point.");

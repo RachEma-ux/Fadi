@@ -696,3 +696,74 @@ export function pointsPolyligne(points: readonly Vec[], ferme: boolean, renfleme
   if (ferme && points.length > 2) out.pop();
   return out;
 }
+
+/**
+ * Décalage à angles arrondis (D-064, DA-02-09) : chaque côté décalé de `d` (gauche si d > 0) ; aux sommets où le
+ * décalage s'ouvre (côté extérieur du virage), un arc de rayon |d| centré sur le sommet relie les deux côtés
+ * (renflement tan(déviation/4)) ; côté intérieur, les côtés se coupent (angle vif). Renvoie null si un côté décalé
+ * s'inverse (rayon trop grand pour la figure).
+ */
+export function decalerArrondi(points: readonly Vec[], ferme: boolean, d: number): { points: Point2[]; renflements: number[] } | null {
+  const n = points.length;
+  if (n < 2 || (ferme && n < 3)) return null;
+  const nSeg = ferme ? n : n - 1;
+  const u: Vec[] = [];
+  for (let i = 0; i < nSeg; i++) {
+    const a = points[i]!;
+    const b = points[(i + 1) % n]!;
+    const l = Math.hypot(b.x - a.x, b.y - a.y);
+    if (l < 1e-12) return null;
+    u.push({ x: (b.x - a.x) / l, y: (b.y - a.y) / l });
+  }
+  const off = (p: Vec, v: Vec): Vec => ({ x: p.x - v.y * d, y: p.y + v.x * d });
+  // Pour chaque côté : son début et sa fin décalés, ajustés aux sommets intérieurs (intersection des droites).
+  const debut: Vec[] = u.map((v, i) => off(points[i]!, v));
+  const fin: Vec[] = u.map((v, i) => off(points[(i + 1) % n]!, v));
+  const arcs = new Map<number, number>(); // sommet → renflement de l'arc (côté extérieur)
+  const sommets = ferme ? Array.from({ length: n }, (_, i) => i) : Array.from({ length: n - 2 }, (_, i) => i + 1);
+  for (const i of sommets) {
+    const s1 = (i - 1 + nSeg) % nSeg; // côté entrant
+    const s2 = i % nSeg; // côté sortant
+    const v1 = u[s1]!;
+    const v2 = u[s2]!;
+    const dev = Math.atan2(v1.x * v2.y - v1.y * v2.x, v1.x * v2.x + v1.y * v2.y);
+    if (Math.abs(dev) < 1e-9) continue;
+    if (dev * d < 0) arcs.set(i, Math.tan(dev / 4));
+    else {
+      // Intersection des deux côtés décalés.
+      const p1 = debut[s1]!;
+      const p2 = debut[s2]!;
+      const den = v1.x * v2.y - v1.y * v2.x;
+      const t = ((p2.x - p1.x) * v2.y - (p2.y - p1.y) * v2.x) / den;
+      const x = { x: p1.x + v1.x * t, y: p1.y + v1.y * t };
+      fin[s1] = x;
+      debut[s2] = x;
+    }
+  }
+  // Un côté décalé ne doit pas changer de sens.
+  for (let i = 0; i < nSeg; i++) {
+    const a = debut[i]!;
+    const b = fin[i]!;
+    if ((b.x - a.x) * u[i]!.x + (b.y - a.y) * u[i]!.y <= 1e-9) return null;
+  }
+  const r9 = (v: number) => Math.round(v * 1e9) / 1e9;
+  const P = (v: Vec) => pt(r9(v.x), r9(v.y));
+  const out: Point2[] = [];
+  const renf: number[] = [];
+  for (let i = 0; i < nSeg; i++) {
+    // Sommet de départ du côté i : précédé d'un arc s'il y en a un au sommet i.
+    const arc = arcs.get(i);
+    if (arc !== undefined) {
+      out.push(P(fin[(i - 1 + nSeg) % nSeg]!));
+      renf.push(Math.round(arc * 1e12) / 1e12);
+    }
+    out.push(P(debut[i]!));
+    renf.push(0);
+  }
+  if (!ferme) out.push(P(fin[nSeg - 1]!));
+  else {
+    // Fermé : l'éventuel arc du sommet 0 a été placé en tête ; la boucle se referme sur le premier point.
+  }
+  if (!ferme) renf.splice(out.length - 1);
+  return { points: out, renflements: renf };
+}
