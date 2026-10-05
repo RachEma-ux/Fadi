@@ -140,3 +140,4 @@ Filtres d'affichage par classe et ensembles d'affichage locaux ou partagés (`en
 Repère altimétrique du site, extrusion d'un profil ouvert, main levée (`altimetrie.test.ts`, `nouveau.test.ts`, e2e, D-067).
 Gestion des calques, jonction de deux murs, isolement de la sélection, écart de l'éclaté (`nouveau.test.ts`, e2e, D-068).
 Outil Plancher : contour et trémies proposés depuis les murs et les escaliers, interstices, reprise (`plancher.test.ts`, `nouveau.test.ts`, e2e, D-069).
+Manipulateur du plan 2D : déplacer selon un axe, tourner, échelle uniforme (`nouveau.test.ts`, e2e, D-070).

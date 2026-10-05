@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { cercleTroisPoints, distance, proposerPlancher, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { cercleTroisPoints, distance, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -39,7 +39,9 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const [taille, setTaille] = useState({ w: 800, h: 600 });
   const [accroche, setAccroche] = useState<Accroche | null>(null);
   const [cadre, setCadre] = useState<{ a: Point2; b: Point2 } | null>(null);
-  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer" | "lasso" | "trace"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean } | null>(null);
+  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer" | "lasso" | "trace" | "manip"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean; poignee?: Poignee } | null>(null);
+  // Manipulateur 2D (D-070, DA-02-17) : aperçu du glissement d'une poignée ; une seule commande au relâchement.
+  const [manip, setManip] = useState<ApercuManip | null>(null);
   const [lasso, setLasso] = useState<Point2[] | null>(null);
   const lassoPoints = useRef<Point2[]>([]);
   const [decalage, setDecalage] = useState<{ dx: number; dy: number; accroche: Accroche } | null>(null);
@@ -90,6 +92,18 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   // Accrochage aussi sur les traits des références externes du niveau (DA-05-11), qui restent non sélectionnables.
   const externesNiveau = useMemo(() => externes.filter((x) => x.niveauId === ui.niveauId), [externes, ui.niveauId]);
   const cache = useMemo(() => avecExternes(segmentsDuNiveau(etat, ui.niveauId), externesNiveau), [etat, ui.niveauId, externesNiveau]);
+  const boiteManip = useMemo(() => (ui.outil === "selection" && !readOnly ? boiteManipulateur(etat, ui.selection, ui.niveauId, cache) : null), [ui.outil, readOnly, etat, ui.selection, ui.niveauId, cache]);
+  useEffect(() => {
+    if (!manip) return;
+    const echap = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      glisse.current = null;
+      setManip(null);
+      etatUi.set({ aide: "Manipulation annulée : aucune commande." });
+    };
+    window.addEventListener("keydown", echap, true);
+    return () => window.removeEventListener("keydown", echap, true);
+  }, [manip]);
   const selection = useMemo(() => new Set(ui.selection), [ui.selection]);
   const idsVisibles = useMemo(() => new Set(objets.map((o) => o.id)), [objets]);
   const dernierMur = useMemo(() => objets.map((o) => o.classe).lastIndexOf("mur"), [objets]);
@@ -145,6 +159,11 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       }
       return;
     }
+    if (g?.mode === "manip" && g.poignee && boiteManip) {
+      g.bouge = g.bouge || Math.hypot(sx - g.x, sy - g.y) > 4;
+      if (g.bouge) setManip(apercuManip(g.poignee, g.depart, g.poignee === "x" || g.poignee === "y" || g.poignee === "c" ? accrocher(p, cache, ui.accrochages, rayon, g.depart, ui.selection).point : p, boiteManip.pivot, e.shiftKey));
+      return;
+    }
     if (g?.mode === "deplacer") {
       g.bouge = g.bouge || Math.hypot(sx - g.x, sy - g.y) > 4;
       if (g.bouge) {
@@ -196,6 +215,13 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       glisse.current = { mode: "lasso", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
       return;
     }
+    const poignee = (e.target as Element | null)?.closest?.("[data-poignee]")?.getAttribute("data-poignee") as Poignee | null | undefined;
+    if (poignee && boiteManip && ui.outil === "selection") {
+      // Déplacements : saisis par le point remarquable le plus proche, comme le glisser de la sélection ; rotation et
+      // échelle : le point pressé, autour du pivot.
+      glisse.current = { mode: "manip", x: sx, y: sy, vue: ui.vue, depart: poignee === "x" || poignee === "y" || poignee === "c" ? accrocher(p, cache, ui.accrochages, rayon, null).point : p, bouge: false, poignee };
+      return;
+    }
     if (ui.outil === "selection") {
       const sous = objetSousPointeur(p, cache, etat, ui.niveauId, rayon);
       // Une sélection qui contient un objet verrouillé (D-052) ne se saisit pas : le geste devient une sélection au cadre.
@@ -225,6 +251,20 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     glisse.current = null;
     const p = pr.depuis(sx, sy);
     if (g?.mode === "pan" && (g.bouge || e.pointerType !== "touch")) return;
+    if (g?.mode === "manip") {
+      const m = manip;
+      setManip(null);
+      if (!g.bouge || !m || !boiteManip) {
+        // Simple clic sur une poignée : sélection comme un clic ordinaire (rien n'est transformé).
+        const sous = objetSousPointeur(p, cache, etat, ui.niveauId, rayon);
+        if (sous) etatUi.selectionner([sous.objetId], e.shiftKey);
+        else if (!e.shiftKey) etatUi.selectionner([]);
+        return;
+      }
+      const c = commandeManip(m, boiteManip.pivot, ui.selection);
+      if (c) onCommandes([c.commande], c.label);
+      return;
+    }
     if (g?.mode === "deplacer") {
       const d = decalage;
       setDecalage(null);
@@ -376,6 +416,14 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
           </Fragment>
         ))}
       </g>
+      {manip && boiteManip && (
+        <g className="plan-deplacement" transform={transformEcran(manip, pr.vers(boiteManip.pivot), pr.echelle)} pointerEvents="none" data-manip-apercu={manip.poignee}>
+          {objets.filter((o) => selection.has(o.id)).map((o) => (
+            <Objet2D key={o.id} o={o} etat={etat} pr={pr} selectionne survole={false} />
+          ))}
+        </g>
+      )}
+      {boiteManip && !decalage && <Manipulateur2D boite={boiteManip} pr={pr} manip={manip} />}
       {decalage && (
         <g className="plan-deplacement" transform={`translate(${decalage.dx * pr.echelle} ${-decalage.dy * pr.echelle})`} pointerEvents="none">
           {objets.filter((o) => selection.has(o.id)).map((o) => (
@@ -563,4 +611,115 @@ export function traceMainLevee(brut: readonly Point2[], ui: EtatUi, courbe: bool
   if (ferme && points.length < 3) return { message: "Tracé fermé trop petit." };
   const forme = courbe ? "spline" : "polyligne";
   return { commandes: [{ type: `esquisse.${forme}`, params: { niveauId: ui.niveauId, points, ferme } }], label: `Main levée : ${forme === "spline" ? "courbe" : "polyligne"} de ${points.length} points${ferme ? " (fermée)" : ""}` };
+}
+
+// ---------------------------------------------------------------------------
+// Manipulateur 2D (D-070, DA-02-17) : flèches X et Y, carré central, anneau de rotation, coins d'échelle uniforme.
+// Affichage seul (R10) ; chaque glissement émet une seule commande transformer.*, mêmes contrôles que par menu.
+// ---------------------------------------------------------------------------
+
+export type Poignee = "x" | "y" | "c" | "r" | "s";
+
+export interface ApercuManip {
+  poignee: Poignee;
+  dx: number;
+  dy: number;
+  angle: number;
+  facteur: number;
+}
+
+const CLASSES_NON_MANIPULABLES = new Set(["porte", "fenetre", "ouverture"]);
+
+/** Boîte englobante et pivot (centre) d'une sélection manipulable, ou null (sélection vide, verrouillée, autre niveau, ouverture). */
+export function boiteManipulateur(etat: ModeleAtelier, selection: readonly string[], niveauId: string | null, cache: { segments: readonly { a: Point2; b: Point2; objetId: string }[]; quadrants: readonly { p: Point2; objetId: string }[] }): { min: Point2; max: Point2; pivot: Point2 } | null {
+  if (!selection.length) return null;
+  for (const id of selection) {
+    const o = etat.objets[id];
+    if (!o || o.niveauId !== niveauId || raisonVerrou(etat, o) || CLASSES_NON_MANIPULABLES.has(o.classe)) return null;
+  }
+  const ids = new Set(selection);
+  const points: Point2[] = [];
+  for (const s of cache.segments) if (ids.has(s.objetId)) points.push(s.a, s.b);
+  for (const q of cache.quadrants) if (ids.has(q.objetId)) points.push(q.p);
+  if (!points.length) return null;
+  const r = rectangleEnglobant(points);
+  return { min: pt(r.min.x, r.min.y), max: pt(r.max.x, r.max.y), pivot: pt((r.min.x + r.max.x) / 2, (r.min.y + r.max.y) / 2) };
+}
+
+const arrondiMm = (v: number) => Math.round(v * 1000) / 1000;
+
+/** Valeurs de l'aperçu : déplacement (contraint à l'axe pour x, y), angle (pas de 1°, 15° avec Maj), facteur (0,01). */
+export function apercuManip(poignee: Poignee, depart: Point2, courant: Point2, pivot: Point2, maj: boolean): ApercuManip {
+  const base: ApercuManip = { poignee, dx: 0, dy: 0, angle: 0, facteur: 1 };
+  if (poignee === "x") return { ...base, dx: arrondiMm(courant.x - depart.x) };
+  if (poignee === "y") return { ...base, dy: arrondiMm(courant.y - depart.y) };
+  if (poignee === "c") return { ...base, dx: arrondiMm(courant.x - depart.x), dy: arrondiMm(courant.y - depart.y) };
+  if (poignee === "r") {
+    let a = ((Math.atan2(courant.y - pivot.y, courant.x - pivot.x) - Math.atan2(depart.y - pivot.y, depart.x - pivot.x)) * 180) / Math.PI;
+    while (a > 180) a -= 360;
+    while (a <= -180) a += 360;
+    const pas = maj ? 15 : 1;
+    return { ...base, angle: (Math.round(a / pas) * pas) || 0 };
+  }
+  const d0 = Math.hypot(depart.x - pivot.x, depart.y - pivot.y);
+  const d1 = Math.hypot(courant.x - pivot.x, courant.y - pivot.y);
+  return { ...base, facteur: d0 < 1e-9 ? 1 : Math.max(0.01, Math.round((d1 / d0) * 100) / 100) };
+}
+
+/** Commande émise au relâchement (null : rien à faire — vecteur, angle nuls ou facteur 1, comme par menu). */
+export function commandeManip(m: ApercuManip, pivot: Point2, cibles: readonly string[]): { commande: Commande; label: string } | null {
+  const n = cibles.length;
+  const objets = `${n} objet${n > 1 ? "s" : ""}`;
+  if (m.poignee === "r") return m.angle ? { commande: { type: "transformer.tourner", params: { centre: pivot, angle: { value: m.angle, unit: "deg" } }, cibles: [...cibles] }, label: `Tourner ${objets} de ${String(m.angle).replace(".", ",")}° (manipulateur)` } : null;
+  if (m.poignee === "s") return Math.abs(m.facteur - 1) > 1e-9 ? { commande: { type: "transformer.echelle", params: { centre: pivot, facteur: m.facteur }, cibles: [...cibles] }, label: `Échelle × ${String(m.facteur).replace(".", ",")} (manipulateur)` } : null;
+  return Math.hypot(m.dx, m.dy) > 1e-9 ? { commande: { type: "transformer.deplacer", params: { dx: m.dx, dy: m.dy }, cibles: [...cibles] }, label: `Déplacer ${objets} (${fmt(Math.hypot(m.dx, m.dy))} m, manipulateur)` } : null;
+}
+
+function transformEcran(m: ApercuManip, c: { x: number; y: number }, echelle: number): string {
+  if (m.poignee === "r") return `rotate(${-m.angle} ${c.x} ${c.y})`;
+  if (m.poignee === "s") return `translate(${c.x} ${c.y}) scale(${m.facteur}) translate(${-c.x} ${-c.y})`;
+  return `translate(${m.dx * echelle} ${-m.dy * echelle})`;
+}
+
+const CIBLE = 44; // px : cible tactile minimale (cahier §8)
+
+function Manipulateur2D({ boite, pr, manip }: { boite: { min: Point2; max: Point2; pivot: Point2 }; pr: ReturnType<typeof projecteur>; manip: ApercuManip | null }) {
+  const c = pr.vers(boite.pivot);
+  const a = pr.vers(boite.min);
+  const b = pr.vers(boite.max);
+  const gauche = Math.min(a.x, b.x);
+  const droite = Math.max(a.x, b.x);
+  const haut = Math.min(a.y, b.y);
+  const bas = Math.max(a.y, b.y);
+  const L = 64;
+  const rot = { x: droite + 28, y: haut - 28 };
+  const cible = (x: number, y: number, p: Poignee, titre: string, cle?: string) => (
+    <rect key={cle ?? p} x={x - CIBLE / 2} y={y - CIBLE / 2} width={CIBLE} height={CIBLE} className="manip-cible" data-poignee={p} pointerEvents="all">
+      <title>{titre}</title>
+    </rect>
+  );
+  const valeur = !manip ? "" : manip.poignee === "r" ? `${String(manip.angle).replace(".", ",")}°` : manip.poignee === "s" ? `× ${String(manip.facteur).replace(".", ",")}` : `dx ${fmt(manip.dx)} m · dy ${fmt(manip.dy)} m`;
+  return (
+    <g className="manipulateur-2d" data-manipulateur>
+      <rect x={gauche} y={haut} width={droite - gauche} height={bas - haut} className="manip-boite" pointerEvents="none" />
+      {[[gauche, haut], [droite, haut], [droite, bas], [gauche, bas]].map(([x, y], i) => (
+        <g key={`s${i}`}>
+          <rect x={x! - 5} y={y! - 5} width={10} height={10} className="manip-coin" pointerEvents="none" />
+          {cible(x!, y!, "s", "Échelle uniforme autour du centre (glisser)", `s${i}`)}
+        </g>
+      ))}
+      <line x1={c.x} y1={c.y} x2={rot.x} y2={rot.y} className="manip-tige" pointerEvents="none" />
+      <circle cx={rot.x} cy={rot.y} r={8} className="manip-rotation" pointerEvents="none" />
+      {cible(rot.x, rot.y, "r", "Tourner autour du centre (glisser ; Maj : pas de 15°)")}
+      <line x1={c.x} y1={c.y} x2={c.x + L} y2={c.y} className="manip-axe manip-axe-x" pointerEvents="none" />
+      <path d={`M ${c.x + L + 12} ${c.y} L ${c.x + L} ${c.y - 6} L ${c.x + L} ${c.y + 6} Z`} className="manip-fleche manip-axe-x" pointerEvents="none" />
+      {cible(c.x + L, c.y, "x", "Déplacer le long de x (glisser)")}
+      <line x1={c.x} y1={c.y} x2={c.x} y2={c.y - L} className="manip-axe manip-axe-y" pointerEvents="none" />
+      <path d={`M ${c.x} ${c.y - L - 12} L ${c.x - 6} ${c.y - L} L ${c.x + 6} ${c.y - L} Z`} className="manip-fleche manip-axe-y" pointerEvents="none" />
+      {cible(c.x, c.y - L, "y", "Déplacer le long de y (glisser)")}
+      <rect x={c.x - 7} y={c.y - 7} width={14} height={14} className="manip-centre" pointerEvents="none" />
+      {cible(c.x, c.y, "c", "Déplacer librement (glisser)")}
+      <text x={c.x + 12} y={c.y + 22} className="plan-cote-apercu" role="status" aria-live="polite" data-manip-valeur>{valeur}</text>
+    </g>
+  );
 }

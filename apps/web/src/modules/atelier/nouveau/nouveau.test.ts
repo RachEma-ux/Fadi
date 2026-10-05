@@ -383,3 +383,28 @@ describe("outil Plancher (D-069)", () => {
     expect(clic("plancher", pt(9, 9), etat, ui({ outil: "plancher", parametresOutil: { rivePlancher: "axe", epaisseurPlancher: 0.25 } }), opts).commandes).toHaveLength(0);
   });
 });
+
+describe("manipulateur 2D (D-070)", () => {
+  it("boîte et pivot ; valeurs (axe, angle au pas, facteur) ; une commande, rien pour une valeur nulle ; ouverture seule : aucun manipulateur", async () => {
+    const { boiteManipulateur, apercuManip, commandeManip } = await import("./plan2d/Plan2D");
+    const etat = carre(socle());
+    const ids = Object.keys(etat.objets);
+    const b = boiteManipulateur(etat, ids, "rdc", segmentsDuNiveau(etat, "rdc"))!;
+    expect(b.pivot).toMatchObject({ x: 2, y: 2 });
+    expect(boiteManipulateur(etat, ids, "r1", segmentsDuNiveau(etat, "rdc"))).toBeNull();
+    const x = apercuManip("x", pt(2, 2), pt(3.5, 7), b.pivot, false);
+    expect([x.dx, x.dy]).toEqual([1.5, 0]);
+    const r = apercuManip("r", pt(4, 2), pt(2, 4.02), b.pivot, false);
+    expect(r.angle).toBe(90);
+    expect(apercuManip("r", pt(4, 2), pt(3.2, 3.3), b.pivot, true).angle).toBe(45);
+    const s = apercuManip("s", pt(4, 4), pt(6, 6), b.pivot, false);
+    expect(s.facteur).toBe(2);
+    const c = commandeManip(r, b.pivot, ids)!;
+    expect(c.commande.type).toBe("transformer.tourner");
+    expect(appliquer(etat, [c.commande]).objets).toBeDefined();
+    expect(commandeManip(apercuManip("x", pt(0, 0), pt(0, 0), b.pivot, false), b.pivot, ids)).toBeNull();
+    const avecPorte = appliquer(etat, [{ type: "ouverture.poser", params: { classe: "porte", murHoteId: ids[0], position: 0.5, largeur: m(0.9), hauteur: m(2.1) } }]);
+    const porte = Object.keys(avecPorte.objets).find((id) => avecPorte.objets[id]!.classe === "porte")!;
+    expect(boiteManipulateur(avecPorte, [porte], "rdc", segmentsDuNiveau(avecPorte, "rdc"))).toBeNull();
+  });
+});

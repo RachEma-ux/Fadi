@@ -933,6 +933,55 @@ await page.waitForSelector(".plan2d");
   check("outil Plancher : contour proposé depuis quatre murs, rive sur la face extérieure, plancher créé au clic", rp.status === 200 && ok && !!cree && cree.params.epaisseur.value === 0.25, `${rp.status} · outil ${ok} · ${JSON.stringify(cree?.params.contour ?? null).slice(0, 160)}`);
 }
 
+// Manipulateur 2D (D-070) : flèche X glissée = un seul lot, déplacement en x seulement ; anneau = rotation.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  await selectionner("pl-w2");
+  await page.waitForSelector("[data-manipulateur]", { timeout: 10000 }).catch(() => {});
+  const fx = await page.locator('[data-poignee="x"]').boundingBox();
+  const avant = await modele(pid);
+  const a0 = avant.modele.objets["pl-w2"].params.a;
+  if (fx) {
+    await page.mouse.move(fx.x + fx.width / 2, fx.y + fx.height / 2);
+    await page.mouse.down();
+    for (let k = 1; k <= 10; k++) await page.mouse.move(fx.x + fx.width / 2 + k * 8, fx.y + fx.height / 2 + k * 3);
+    await page.mouse.up();
+  }
+  let a1 = a0;
+  let rev = avant.revision;
+  for (let k = 0; k < 30 && a1.x === a0.x; k++) {
+    const m1 = await modele(pid);
+    a1 = m1.modele.objets["pl-w2"].params.a;
+    rev = m1.revision;
+    if (a1.x === a0.x) await page.waitForTimeout(500);
+  }
+  check("manipulateur 2D : poignées d'au moins 44 px ; flèche X glissée = un lot, déplacement en x seulement", !!fx && fx.width >= 44 && fx.height >= 44 && a1.x > a0.x && Math.abs(a1.y - a0.y) < 1e-9 && rev === avant.revision + 1, `${JSON.stringify(fx)} · ${a0.x} → ${a1.x} · y ${a0.y} → ${a1.y} · r${avant.revision} → r${rev}`);
+  await attendreEnregistre().catch(() => {});
+  await selectionner("pl-w2"); // recentre la vue sur le mur déplacé
+  await page.waitForTimeout(300);
+  const fr = await page.locator('[data-poignee="r"]').boundingBox();
+  const fc = await page.locator('[data-poignee="c"]').boundingBox();
+  if (fr && fc) {
+    const cx = fc.x + fc.width / 2;
+    const cy = fc.y + fc.height / 2;
+    const rx = fr.x + fr.width / 2;
+    const ry = fr.y + fr.height / 2;
+    const r = Math.hypot(rx - cx, ry - cy);
+    const t0 = Math.atan2(ry - cy, rx - cx);
+    await page.mouse.move(rx, ry);
+    await page.mouse.down();
+    for (let k = 1; k <= 12; k++) { const t = t0 - (k / 12) * (Math.PI / 2); await page.mouse.move(cx + r * Math.cos(t), cy + r * Math.sin(t)); }
+    await page.mouse.up();
+  }
+  let journal = "";
+  for (let k = 0; k < 30 && !/Tourner/.test(journal); k++) {
+    journal = (await api("get", `/projects/${pid}/atelier/journal`)).body?.entrees?.at(-1)?.label ?? "";
+    if (!/Tourner/.test(journal)) await page.waitForTimeout(500);
+  }
+  check("manipulateur 2D : l'anneau tourne la sélection (90°) en un lot", /Tourner 1 objet de 90° \(manipulateur\)/.test(journal), journal);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];
