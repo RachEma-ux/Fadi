@@ -2013,3 +2013,24 @@
   box-sizing: border-box;
   font: inherit;
 }
+
+/* Filtres d'affichage locaux et ensembles d'affichage (D-066). */
+.navigateur details.classe-masquee > summary {
+  opacity: 0.6;
+}
+.navigateur summary .nav-bascule {
+  margin-left: 0.3rem;
+}
+.nav-formulaire-ensemble {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin-top: 0.4rem;
+}
+.nav-formulaire-ensemble input[type="text"],
+.nav-formulaire-ensemble input:not([type]),
+.nav-formulaire-ensemble select {
+  min-width: 0;
+  flex: 1 1 9rem;
+}

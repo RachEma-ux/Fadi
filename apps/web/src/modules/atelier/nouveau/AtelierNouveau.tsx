@@ -5,7 +5,7 @@
  * (R10). Clavier : Échap, Entrée, Suppr, Ctrl/⌘ Z / Maj Z / Y, Ctrl/⌘ K, raccourcis d'outil, saisie de précision.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { CLASSES, ErreurCommande, exporterBibliotheque, niveauxOrdonnes, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { CLASSES, ensemblesPartages, ErreurCommande, exporterBibliotheque, niveauxOrdonnes, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../../lib/api";
@@ -18,7 +18,7 @@ import { Reprise } from "./panneaux/Reprise";
 import { ReferencesExternes } from "./panneaux/ReferencesExternes";
 import { atelierClient } from "../bus/atelier-client";
 import { actionImmediate, lotSuppression, OUTILS_IMMEDIATS } from "./actions";
-import { etatUi, useEtatUi, type NiveauAffichage, type PanneauMobile } from "./etat-ui";
+import { etatUi, useEtatUi, visibleSelonFiltres, type NiveauAffichage, type PanneauMobile } from "./etat-ui";
 import { FAMILLES, OUTILS, OUTILS_PAR_ID, outilsVisibles, type Famille, type Outil } from "./outils";
 import { Inspecteur } from "./panneaux/Inspecteur";
 import { Modifications } from "./panneaux/Modifications";
@@ -82,6 +82,12 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   const niveauxTries = useMemo(() => Object.values(inst.etat.niveaux).sort((a, b) => a.elevation - b.elevation).map((n) => ({ id: n.id, nom: n.nom })), [inst.etat.niveaux]);
   const readOnly = readOnlyProjet || consultation !== null;
   const etat = consultation?.etat ?? inst.etat;
+  // Filtres d'affichage locaux (D-066) : le plan et la vue 3D ne voient que les objets affichés ; le modèle est intact.
+  const etatAffiche = useMemo((): ModeleAtelier => {
+    const f = ui.filtres;
+    if (!f.classesMasquees.length && !f.calquesMasques.length) return etat;
+    return { ...etat, objets: Object.fromEntries(Object.entries(etat.objets).filter(([, o]) => visibleSelonFiltres(o, f))) };
+  }, [etat, ui.filtres]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [mesure, setMesure] = useState<string | null>(null);
   const [rapportEchange, setRapportEchange] = useState<RapportAffiche | null>(null);
@@ -100,6 +106,17 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   useEffect(() => {
     if (niveaux.length && (!ui.niveauId || !etat.niveaux[ui.niveauId])) etatUi.set({ niveauId: niveaux[0]!.id });
   }, [niveaux, ui.niveauId, etat.niveaux]);
+
+  // Ensemble d'affichage associé à l'étage (D-066) : appliqué quand on passe sur cet étage (partagé d'abord).
+  const niveauPrecedent = useRef<string | null>(null);
+  useEffect(() => {
+    if (!ui.niveauId || niveauPrecedent.current === ui.niveauId) return;
+    niveauPrecedent.current = ui.niveauId;
+    const partage = ensemblesPartages(etat).find((e) => e.params.niveauId === ui.niveauId);
+    const local = ui.ensembles.find((e) => e.niveauId === ui.niveauId);
+    const choisi = partage ? { classesMasquees: partage.params.classesMasquees, calquesMasques: partage.params.calquesMasques } : local ? { classesMasquees: local.classesMasquees, calquesMasques: local.calquesMasques } : null;
+    if (choisi) etatUi.set({ filtres: choisi, aide: `Ensemble d'affichage « ${partage?.params.nom ?? local!.nom} » appliqué (associé à cet étage).` });
+  }, [ui.niveauId, etat, ui.ensembles]);
 
   // La sélection ne garde que les objets encore présents.
   useEffect(() => {
@@ -558,10 +575,10 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           </Suspense>
         ) : ui.mode === "3d" ? (
           <Suspense fallback={<p role="status" className="vue3d-etat">Chargement de la vue 3D…</p>}>
-            <Vue3D etat={etat} ui={ui} readOnly={readOnly} onCommandes={(c, l) => void executer(c, l, false)} externes={consultation ? undefined : externes} />
+            <Vue3D etat={etatAffiche} ui={ui} readOnly={readOnly} onCommandes={(c, l) => void executer(c, l, false)} externes={consultation ? undefined : externes} />
           </Suspense>
         ) : (
-          <Plan2D etat={etat} ui={ui} readOnly={readOnly} onResultat={appliquerResultat} onTerminer={finir} onCommandes={(c, l) => void executer(c, l, false)} externes={consultation ? [] : externes} />
+          <Plan2D etat={etatAffiche} ui={ui} readOnly={readOnly} onResultat={appliquerResultat} onTerminer={finir} onCommandes={(c, l) => void executer(c, l, false)} externes={consultation ? [] : externes} />
         )}
         {ui.mode === "2d" && (ui.pointsEnCours.length > 0 || precision) && (
           <form

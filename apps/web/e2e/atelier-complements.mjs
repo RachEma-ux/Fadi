@@ -780,6 +780,28 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
 }
 
+// Filtres d'affichage et ensembles (D-066) : une classe masquée pour soi disparaît du plan ; un ensemble partagé.
+{
+  await page.keyboard.press("Escape");
+  const classe = "mur";
+  const avantMurs = await page.locator(".plan2d .obj-mur").count();
+  await page.locator(`[data-classe-bascule="${classe}"]`).first().click();
+  await page.waitForTimeout(400);
+  const masques = await page.locator(".plan2d .obj-mur").count();
+  await page.locator("[data-ensemble-nom]").fill("Sans murs e2e");
+  await page.locator("[data-ensemble-partager]").check();
+  await page.locator('.nav-formulaire-ensemble button[type="submit"]').click();
+  let ens = null;
+  for (let k = 0; k < 30 && !ens; k++) {
+    ens = Object.values((await modele(pid)).modele.definitions).find((d) => d.classe === "ensemble-affichage" && d.nom === "Sans murs e2e") ?? null;
+    if (!ens) await page.waitForTimeout(500);
+  }
+  await page.locator("[data-ensemble-tout]").click();
+  await page.waitForTimeout(400);
+  const remis = await page.locator(".plan2d .obj-mur").count();
+  check("filtre d'affichage local : les murs masqués pour soi disparaissent du plan, ensemble partagé enregistré, « Tout afficher » les rend", avantMurs > 0 && masques === 0 && remis === avantMurs && ens?.params.classesMasquees.includes("mur") === true, `${avantMurs} → ${masques} → ${remis} · ${JSON.stringify(ens?.params ?? null)}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

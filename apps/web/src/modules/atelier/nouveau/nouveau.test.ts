@@ -316,3 +316,13 @@ describe("décaler avec angles arrondis (D-064)", () => {
     expect(Object.values(apres.objets).some((o) => o.classe === "esquisse" && o.params.forme === "polyligne" && !!o.params.renflements)).toBe(true);
   });
 });
+
+describe("filtres d'affichage locaux (D-066)", () => {
+  it("classe ou calque masqués localement : objet non affiché", async () => {
+    const { visibleSelonFiltres } = await import("./etat-ui");
+    const f = { classesMasquees: ["cotation"], calquesMasques: ["mob"] };
+    expect(visibleSelonFiltres({ classe: "mur", calqueId: null }, f)).toBe(true);
+    expect(visibleSelonFiltres({ classe: "cotation", calqueId: null }, f)).toBe(false);
+    expect(visibleSelonFiltres({ classe: "esquisse", calqueId: "mob" }, f)).toBe(false);
+  });
+});

@@ -4,8 +4,8 @@
  * (clic = sélection, la vue se recentre).
  */
 import { useMemo, useState } from "react";
-import { CLASSES, niveauxOrdonnes, type Classe, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
-import { etatUi, type EtatUi } from "../etat-ui";
+import { CLASSES, ensemblesPartages, niveauxOrdonnes, type Classe, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { etatUi, type EtatUi, type FiltresAffichage } from "../etat-ui";
 import { normaliser } from "../outils";
 
 export interface PropsNavigateur {
@@ -42,6 +42,8 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
     return [...m].sort((a, b) => CLASSES[a[0]].libelle.localeCompare(CLASSES[b[0]].libelle, "fr"));
   }, [etat.objets, ui.niveauId, filtre]);
   const selection = new Set(ui.selection);
+  const basculerClasse = (classe: string) =>
+    etatUi.set((u) => ({ filtres: { ...u.filtres, classesMasquees: u.filtres.classesMasquees.includes(classe) ? u.filtres.classesMasquees.filter((c) => c !== classe) : [...u.filtres.classesMasquees, classe] }, selection: u.selection.filter((id) => etat.objets[id]?.classe !== classe) }));
 
   return (
     <nav className="navigateur" aria-label="Navigateur du projet">
@@ -140,10 +142,22 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
         <h3 id="nav-objets">Objets du niveau</h3>
         <input type="search" className="nav-filtre" placeholder="Filtrer (nom, classe, identifiant)" aria-label="Filtrer les objets" value={filtre} onChange={(e) => setFiltre(e.target.value)} onKeyDown={(e) => e.stopPropagation()} />
         {parClasse.length === 0 && <p className="nav-vide">{filtre ? "Aucun objet ne correspond." : "Aucun objet sur ce niveau : choisissez un outil de création."}</p>}
-        {parClasse.map(([classe, liste]) => (
-          <details key={classe} open={liste.length <= 12 || liste.some((o) => selection.has(o.id))}>
+        {parClasse.map(([classe, liste]) => {
+          const masquee = ui.filtres.classesMasquees.includes(classe);
+          return (
+          <details key={classe} open={liste.length <= 12 || liste.some((o) => selection.has(o.id))} className={masquee ? "classe-masquee" : undefined}>
             <summary>
-              {CLASSES[classe].libelle} <span className="nav-detail">{liste.length}</span>
+              {CLASSES[classe].libelle} <span className="nav-detail">{liste.length}{masquee ? " · masquée pour vous" : ""}</span>
+              {/* Filtre d'affichage local par classe (DA-05-02, D-066) et sélection de toute la classe sur le niveau. */}
+              <button type="button" className="nav-bascule" aria-pressed={!masquee} data-classe-bascule={classe} title={masquee ? "Afficher cette classe (pour vous)" : "Masquer cette classe (pour vous)"} onClick={(e) => { e.preventDefault(); e.stopPropagation(); basculerClasse(classe); }}>
+                {masquee ? "○" : "◉"}
+                <span className="sr-only">{masquee ? `Afficher ${CLASSES[classe].libelle}` : `Masquer ${CLASSES[classe].libelle}`}</span>
+              </button>
+              {!masquee && (
+                <button type="button" className="nav-bascule" data-classe-selection={classe} title="Sélectionner toute la classe sur ce niveau" onClick={(e) => { e.preventDefault(); e.stopPropagation(); etatUi.selectionner(liste.filter((o) => !(o.calqueId && ui.filtres.calquesMasques.includes(o.calqueId))).map((o) => o.id)); }}>
+                  ⊞<span className="sr-only">Sélectionner toute la classe {CLASSES[classe].libelle}</span>
+                </button>
+              )}
             </summary>
             <ul className="nav-liste">
               {liste.slice(0, 300).map((o) => (
@@ -164,8 +178,10 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
               {liste.length > 300 && <li className="nav-vide">… {liste.length - 300} de plus : filtrez pour les trouver.</li>}
             </ul>
           </details>
-        ))}
+          );
+        })}
       </section>
+      <EnsemblesAffichage etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />
     </nav>
   );
 }
@@ -232,3 +248,78 @@ function GererNiveau({ etat, niveauId, onCommandes }: { etat: ModeleAtelier; niv
   );
 }
 
+
+/**
+ * Ensembles d'affichage (DA-05-03, D-066) : filtres locaux de classes et de calques, enregistrés sur cet appareil ou
+ * partagés avec l'équipe (`ensemble.enregistrer`), associés au choix à un étage. Ils ne révèlent jamais un calque
+ * masqué dans le modèle et ne changent rien au projet.
+ */
+function EnsemblesAffichage({ etat, ui, readOnly, onCommandes }: { etat: ModeleAtelier; ui: EtatUi; readOnly: boolean; onCommandes: (commandes: Commande[], label: string) => void }) {
+  const [nom, setNom] = useState("");
+  const [niveauId, setNiveauId] = useState("");
+  const [partager, setPartager] = useState(false);
+  const f = ui.filtres;
+  const actifs = f.classesMasquees.length + f.calquesMasques.length;
+  const partages = ensemblesPartages(etat);
+  const appliquer = (x: FiltresAffichage, libelle: string) => etatUi.set({ filtres: { classesMasquees: [...x.classesMasquees], calquesMasques: [...x.calquesMasques] }, selection: [], aide: `Ensemble d'affichage « ${libelle} » appliqué.` });
+  const calques = Object.values(etat.calques).sort((a, b) => a.ordre - b.ordre);
+  const niveaux = niveauxOrdonnes(etat);
+  return (
+    <section aria-labelledby="nav-ensembles" className="nav-ensembles" data-ensembles>
+      <h3 id="nav-ensembles">Ensembles d'affichage</h3>
+      <p className="nav-detail" data-filtres-actifs={actifs}>
+        {actifs ? `Filtres pour vous : ${f.classesMasquees.length} classe(s), ${f.calquesMasques.length} calque(s) masqués.` : "Tout est affiché (filtres locaux vides)."}
+        {actifs > 0 && <button type="button" className="lien" data-ensemble-tout onClick={() => etatUi.set({ filtres: { classesMasquees: [], calquesMasques: [] } })}>Tout afficher</button>}
+      </p>
+      {calques.length > 0 && (
+        <details>
+          <summary>Calques masqués pour vous</summary>
+          <ul className="nav-liste">
+            {calques.map((c) => (
+              <li key={c.id}>
+                <label className="case">
+                  <input type="checkbox" data-calque-local={c.id} checked={f.calquesMasques.includes(c.id)} onChange={(e) => etatUi.set((u) => ({ filtres: { ...u.filtres, calquesMasques: e.target.checked ? [...u.filtres.calquesMasques, c.id] : u.filtres.calquesMasques.filter((x) => x !== c.id) } }))} />
+                  {c.nom}{!c.visible ? " (masqué dans le projet)" : ""}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+      {(ui.ensembles.length > 0 || partages.length > 0) && (
+        <ul className="nav-liste">
+          {partages.map((e) => (
+            <li key={e.id} data-ensemble-partage={e.id}>
+              <button type="button" onClick={() => appliquer(e.params, e.nom)}>{e.nom}</button>
+              <span className="nav-detail">partagé{e.params.niveauId && etat.niveaux[e.params.niveauId] ? ` · ${etat.niveaux[e.params.niveauId]!.nom}` : ""}</span>
+              {!readOnly && <button type="button" className="lien" onClick={() => onCommandes([{ type: "ensemble.supprimer", params: { id: e.id } }], `Supprimer l'ensemble « ${e.nom} »`)}>Supprimer</button>}
+            </li>
+          ))}
+          {ui.ensembles.map((e, i) => (
+            <li key={`${e.nom}-${i}`} data-ensemble-local={e.nom}>
+              <button type="button" onClick={() => appliquer(e, e.nom)}>{e.nom}</button>
+              <span className="nav-detail">sur cet appareil{e.niveauId && etat.niveaux[e.niveauId] ? ` · ${etat.niveaux[e.niveauId]!.nom}` : ""}</span>
+              <button type="button" className="lien" onClick={() => etatUi.set((u) => ({ ensembles: u.ensembles.filter((_, k) => k !== i) }))}>Supprimer</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form className="nav-formulaire-ensemble" onSubmit={(e) => {
+        e.preventDefault();
+        const n = nom.trim();
+        if (!n) return;
+        if (partager) onCommandes([{ type: "ensemble.enregistrer", params: { nom: n, classesMasquees: f.classesMasquees, calquesMasques: f.calquesMasques.filter((c) => etat.calques[c]), niveauId: niveauId || null } }], `Partager l'ensemble d'affichage « ${n} »`);
+        else etatUi.set((u) => ({ ensembles: [...u.ensembles.filter((x) => x.nom !== n), { nom: n, classesMasquees: [...f.classesMasquees], calquesMasques: [...f.calquesMasques], niveauId: niveauId || null }] }));
+        setNom("");
+      }}>
+        <input value={nom} maxLength={80} placeholder="Nom de l'ensemble" aria-label="Nom de l'ensemble d'affichage" onChange={(e) => setNom(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-ensemble-nom />
+        <select value={niveauId} aria-label="Étage associé" onChange={(e) => setNiveauId(e.target.value)}>
+          <option value="">Aucun étage associé</option>
+          {niveaux.map((n) => <option key={n.id} value={n.id}>{n.nom}</option>)}
+        </select>
+        <label className="case"><input type="checkbox" checked={partager} disabled={readOnly} onChange={(e) => setPartager(e.target.checked)} data-ensemble-partager /> Partager avec l'équipe</label>
+        <button type="submit" disabled={!nom.trim()}>Enregistrer l'affichage actuel</button>
+      </form>
+    </section>
+  );
+}

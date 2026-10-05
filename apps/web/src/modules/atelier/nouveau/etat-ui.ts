@@ -52,11 +52,28 @@ export interface EtatUi {
   /** Objet survolé (mise en évidence) */
   survol: string | null;
   aide: string;
+  /**
+   * Filtres d'affichage locaux (DA-05-02, DA-05-03, D-066) : classes et calques masqués pour cet utilisateur
+   * seulement ; ils réduisent l'affichage et la sélection, jamais le modèle.
+   */
+  filtres: FiltresAffichage;
+  /** Ensembles d'affichage locaux (préréglages nommés), conservés sur cet appareil. */
+  ensembles: EnsembleLocal[];
+}
+
+export interface FiltresAffichage {
+  classesMasquees: string[];
+  calquesMasques: string[];
+}
+
+export interface EnsembleLocal extends FiltresAffichage {
+  nom: string;
+  niveauId: string | null;
 }
 
 const CLE_PREFS = "fadi.atelier.prefs";
 
-function lirePrefs(): Partial<Pick<EtatUi, "affichage" | "accrochages" | "favoris" | "parametresOutil">> {
+function lirePrefs(): Partial<Pick<EtatUi, "affichage" | "accrochages" | "favoris" | "parametresOutil" | "filtres" | "ensembles">> {
   try {
     const raw = typeof localStorage !== "undefined" ? localStorage.getItem(CLE_PREFS) : null;
     return raw ? (JSON.parse(raw) as Partial<EtatUi>) : {};
@@ -67,7 +84,7 @@ function lirePrefs(): Partial<Pick<EtatUi, "affichage" | "accrochages" | "favori
 
 function ecrirePrefs(e: EtatUi): void {
   try {
-    localStorage?.setItem(CLE_PREFS, JSON.stringify({ affichage: e.affichage, accrochages: e.accrochages, favoris: e.favoris, parametresOutil: e.parametresOutil }));
+    localStorage?.setItem(CLE_PREFS, JSON.stringify({ affichage: e.affichage, accrochages: e.accrochages, favoris: e.favoris, parametresOutil: e.parametresOutil, filtres: e.filtres, ensembles: e.ensembles }));
   } catch {
     /* stockage indisponible : préférences non conservées */
   }
@@ -91,6 +108,8 @@ let etat: EtatUi = {
   favoris: prefs.favoris ?? ["mur", "porte", "fenetre", "dalle", "escalier", "piece"],
   survol: null,
   aide: "",
+  filtres: { classesMasquees: prefs.filtres?.classesMasquees ?? [], calquesMasques: prefs.filtres?.calquesMasques ?? [] },
+  ensembles: Array.isArray(prefs.ensembles) ? prefs.ensembles : [],
 };
 
 const ecouteurs = new Set<() => void>();
@@ -100,7 +119,7 @@ export const etatUi = {
   set(patch: Partial<EtatUi> | ((e: EtatUi) => Partial<EtatUi>)): void {
     const p = typeof patch === "function" ? patch(etat) : patch;
     etat = { ...etat, ...p };
-    if ("affichage" in p || "accrochages" in p || "favoris" in p || "parametresOutil" in p) ecrirePrefs(etat);
+    if ("affichage" in p || "accrochages" in p || "favoris" in p || "parametresOutil" in p || "filtres" in p || "ensembles" in p) ecrirePrefs(etat);
     for (const fn of ecouteurs) fn();
   },
   subscribe(fn: () => void): () => void {
@@ -121,4 +140,9 @@ export const etatUi = {
 
 export function useEtatUi(): EtatUi {
   return useSyncExternalStore(etatUi.subscribe, etatUi.get, etatUi.get);
+}
+
+/** Objet affiché selon les filtres locaux (D-066) : ni sa classe ni son calque ne sont masqués localement. */
+export function visibleSelonFiltres(o: { classe: string; calqueId: string | null }, f: FiltresAffichage): boolean {
+  return !f.classesMasquees.includes(o.classe) && !(o.calqueId && f.calquesMasques.includes(o.calqueId));
 }
