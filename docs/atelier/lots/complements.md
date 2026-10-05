@@ -132,3 +132,4 @@ Réseau sur trajectoire, aligner ; paramètres d'outil visibles avec une sélect
 Usage des dalles, hauteur propre des pièces et espaces, trémie d'escalier (`dalles-pieces.test.ts`, e2e, D-059).
 Changer de classe sur place, copie de pièces avec code suivant (`changer-classe.test.ts`, e2e, D-060).
 Frontière apparente vérifiée, accrochage « Proche », historique des indices des feuilles (`frontiere-apparente.test.ts`, `historique-feuille.test.ts`, e2e, D-061).
+Arc tangent, marques de centre (`geometrie-outils.test.ts`, `calques-vue.test.ts`, `nouveau.test.ts`, D-062).

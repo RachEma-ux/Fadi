@@ -38,3 +38,17 @@ describe("calques masqués dans une vue (D-057)", () => {
     expect(s.definitions["v"]!.version).toBe(e.definitions["v"]!.version + 1);
   });
 });
+
+describe("marques de centre (D-062)", () => {
+  it("croix de 3 mm papier au centre d'un cercle (1:50 → 0,15 m), bornée au rayon pour un petit cercle", () => {
+    const e = appliquerLot(base(), lot([
+      { type: "esquisse.cercle", params: { id: "c", niveauId: "n0", centre: pt(10, 10), rayon: m(1) } },
+      { type: "esquisse.cercle", params: { id: "petit", niveauId: "n0", centre: pt(20, 10), rayon: m(0.1) } },
+    ], "c")).etat;
+    const prims = genererVue(e, e.definitions["v"]!.params as unknown as ParamsVue, "v").primitives;
+    const croix = (id: string) => prims.filter((p) => p.type === "ligne" && (p as { objetId?: string }).objetId === id) as { a: { x: number; y: number }; b: { x: number; y: number } }[];
+    expect(croix("c")).toHaveLength(2);
+    expect(croix("c")[0]!.b.x - croix("c")[0]!.a.x).toBeCloseTo(0.15, 9);
+    expect(croix("petit")[0]!.b.x - croix("petit")[0]!.a.x).toBeCloseTo(0.1, 9);
+  });
+});

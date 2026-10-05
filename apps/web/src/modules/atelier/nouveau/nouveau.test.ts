@@ -294,3 +294,14 @@ describe("accrochage « proche » (D-061)", () => {
     expect(accrocher(pt(4.02, 0.02), cache, { ...acc, proche: true }, 0.2, null).type).toBe("extremite");
   });
 });
+
+describe("outil arc tangent (D-062)", () => {
+  it("extrémité de ligne cliquée puis fin : arc tangent émis", () => {
+    const etat = appliquer(socle(), [{ type: "esquisse.ligne", params: { id: "l", niveauId: "rdc", points: [pt(0, 0), pt(4, 0)] } }]);
+    const r1 = clic("arc-tangent", pt(4.05, 0.02), etat, ui(), { ...opts, objetSous: "l" });
+    expect(r1.pointsEnCours).toEqual([pt(4, 0)]);
+    const r2 = clic("arc-tangent", pt(6, 2), etat, ui({ pointsEnCours: r1.pointsEnCours }), opts);
+    expect(r2.commandes[0]).toMatchObject({ type: "esquisse.arc", params: { centre: { x: 4, y: 2 }, rayon: { value: 2 } } });
+    expect(clic("arc-tangent", pt(9, 0), etat, ui({ pointsEnCours: r1.pointsEnCours }), opts).commandes).toHaveLength(0);
+  });
+});

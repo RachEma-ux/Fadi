@@ -19,3 +19,20 @@ describe("constructions d'esquisse (D-042)", () => {
     expect(cercleTroisPoints(pt(0, 0), pt(1, 1), pt(2, 2))).toBeNull();
   });
 });
+
+describe("arc tangent (D-062)", () => {
+  it("part tangent à la direction donnée, passe par le point final ; sens direct ou indirect", async () => {
+    const { arcTangent, pointsArc } = await import("./geometrie.js");
+    const a = arcTangent({ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 2 })!;
+    expect(a.centre).toMatchObject({ x: 0, y: 2 });
+    expect(a.rayon).toBe(2);
+    expect([a.angleDebut, a.angleFin]).toEqual([-90, 0]);
+    const b = arcTangent({ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: -2 })!;
+    expect(b.centre).toMatchObject({ x: 0, y: -2 });
+    // Parcours direct de (2, −2) à (0, 0) : l'arc commence au point final.
+    const q = pointsArc(b.centre, b.rayon, b.angleDebut, b.angleFin, 8);
+    expect(q[0]!.x).toBeCloseTo(2, 9);
+    expect(q[8]!.y).toBeCloseTo(0, 9);
+    expect(arcTangent({ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 5, y: 0 })).toBeNull();
+  });
+});

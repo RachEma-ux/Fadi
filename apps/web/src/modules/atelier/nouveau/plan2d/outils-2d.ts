@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { boucles, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { arcTangent, boucles, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -206,6 +206,20 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       const r = distance(c, pts[1]!);
       const ang = (q: Point2) => (Math.atan2(q.y - c.y, q.x - c.x) * 180) / Math.PI;
       return emettre([{ type: "esquisse.arc", params: { ...base, centre: c, rayon: m(r), angleDebut: { value: ang(pts[1]!), unit: "deg" }, angleFin: { value: ang(point), unit: "deg" }, points: [] } }], "Arc");
+    }
+    case "arc-tangent": {
+      // Arc tangent (D-062) : il prolonge une ligne, une polyligne ouverte ou un arc depuis son extrémité.
+      if (pts.length === 0) {
+        const candidats = extremitesTangentes(etat, niveauId).filter((x) => !options.objetSous || x.objetId === options.objetSous);
+        const proche = candidats.map((x) => ({ x, d: distance(x.point, point) })).sort((a, b) => a.d - b.d)[0];
+        if (!proche || proche.d > options.rayon * 3) return attendre([], "Cliquez près de l'extrémité d'une ligne, d'une polyligne ouverte ou d'un arc.");
+        return attendre([proche.x.point], "Cliquez la fin de l'arc tangent.");
+      }
+      const depart = extremitesTangentes(etat, niveauId).find((x) => distance(x.point, pts[0]!) < 1e-9);
+      if (!depart) return attendre([], "Extrémité introuvable : recommencez.");
+      const a = arcTangent(depart.point, depart.tangente, point);
+      if (!a) return attendre(pts, "Point sur la tangente : aucun arc ; cliquez hors de la droite.");
+      return emettre([{ type: "esquisse.arc", params: { ...base, centre: a.centre, rayon: m(a.rayon), angleDebut: { value: a.angleDebut, unit: "deg" }, angleFin: { value: a.angleFin, unit: "deg" }, points: [] } }], `Arc tangent (rayon ${fmt(a.rayon)} m)`);
     }
     case "deplacer":
     case "copier": {
@@ -577,6 +591,28 @@ function objetsEntierementDans(etat: ModeleAtelier, niveauId: string | null, ded
         pts = o.params.contour;
     }
     if (pts.length && pts.every(dedans)) out.push(o.id);
+  }
+  return out;
+}
+
+/** Extrémités libres des lignes, polylignes ouvertes et arcs d'un niveau, avec la direction qui les prolonge (D-062). */
+export function extremitesTangentes(etat: ModeleAtelier, niveauId: string | null): { point: Point2; tangente: Point2; objetId: string }[] {
+  const out: { point: Point2; tangente: Point2; objetId: string }[] = [];
+  for (const o of Object.values(etat.objets) as OccurrenceQuelconque[]) {
+    if (o.classe !== "esquisse" || o.niveauId !== niveauId) continue;
+    const q = o.params;
+    if ((q.forme === "ligne" || q.forme === "polyligne" || q.forme === "construction") && !q.ferme && q.points.length >= 2) {
+      const [a, b] = [q.points[0]!, q.points[1]!];
+      const [y, z] = [q.points[q.points.length - 2]!, q.points[q.points.length - 1]!];
+      out.push({ point: a, tangente: pt(a.x - b.x, a.y - b.y), objetId: o.id }, { point: z, tangente: pt(z.x - y.x, z.y - y.y), objetId: o.id });
+    } else if (q.forme === "arc" && q.centre && q.rayon) {
+      const d = ((q.angleDebut?.value ?? 0) * Math.PI) / 180;
+      const f = ((q.angleFin?.value ?? 360) * Math.PI) / 180;
+      const r = q.rayon.value;
+      const c = q.centre;
+      // Parcours direct de début à fin : à la fin, la tangente directe ; au début, l'opposée.
+      out.push({ point: pt(c.x + r * Math.cos(d), c.y + r * Math.sin(d)), tangente: pt(Math.sin(d), -Math.cos(d)), objetId: o.id }, { point: pt(c.x + r * Math.cos(f), c.y + r * Math.sin(f)), tangente: pt(-Math.sin(f), Math.cos(f)), objetId: o.id });
+    }
   }
   return out;
 }

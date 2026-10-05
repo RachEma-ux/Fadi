@@ -357,6 +357,22 @@ function dessinerCote(c: Collecteur, a: Vec, b: Vec, d: number, objetId: string 
   c.texte({ x: (a2.x + b2.x) / 2 + n.x * 0.12, y: (a2.y + b2.y) / 2 + n.y * 0.12 }, `${fmt(L)}${suffixe}`, 2.2, objetId, { angle, trait });
 }
 
+/**
+ * Marques de centre (D-062, DA-01-10) : une croix en trait fin au centre des cercles, arcs et ellipses d'esquisse
+ * (hors lignes de construction), de 3 mm sur le papier quelle que soit l'échelle, bornée au rayon.
+ */
+function marquesDeCentre(c: Collecteur, objets: readonly OccurrenceQuelconque[], echelle: number): void {
+  for (const o of objets) {
+    if (o.classe !== "esquisse") continue;
+    const p = o.params;
+    if (!(p.forme === "cercle" || p.forme === "arc" || p.forme === "ellipse") || !p.centre || !p.rayon) continue;
+    const h = Math.min((0.003 * echelle) / 2, p.rayon.value * 0.5);
+    const { x, y } = p.centre;
+    c.ligne({ x: x - h, y }, { x: x + h, y }, "fin", o.id);
+    c.ligne({ x, y: y - h }, { x, y: y + h }, "fin", o.id);
+  }
+}
+
 function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly OccurrenceQuelconque[]): void {
   for (const o of objets) {
     switch (o.classe) {
@@ -455,6 +471,7 @@ function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue, options: 
   }
   symbolesPlan(c, etat, objets);
   annotations2D(c, etat, objets);
+  marquesDeCentre(c, objets, v.echelle);
   if (!v.hauteurCoupe) c.avertissements.add(`Hauteur de coupe : ${fmt(h)} m au-dessus du niveau (convention de dessin par défaut, réglable).`);
   const sansHauteur = objets.filter((o) => o.classe === "mur" && !o.params.hauteur && !o.params.niveauHautId).length;
   if (sansHauteur) c.avertissements.add(`${sansHauteur} mur(s) sans hauteur renseignée : non coupés, dessinés en contour seulement.`);

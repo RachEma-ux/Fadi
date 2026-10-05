@@ -628,3 +628,24 @@ export function couperContour(c: readonly Vec[], a: Vec, b: Vec): [Point2[], Poi
   partB.push(c1.p);
   return [partA.map(r), partB.map(r)];
 }
+
+/**
+ * Arc tangent (D-062, DA-01-03) : arc qui part de `p0` dans la direction `tangente` et finit en `p1`. Centre sur la
+ * normale en p0 : c = p0 + s·n avec s = |p1 − p0|² / (2 (p1 − p0)·n) ; sens direct si le centre est à gauche. Renvoie
+ * angles en degrés pour un parcours direct de `angleDebut` à `angleFin` (convention de `pointsArc`), ou null si p1
+ * est sur la tangente (aucun arc).
+ */
+export function arcTangent(p0: Vec, tangente: Vec, p1: Vec): { centre: Point2; rayon: number; angleDebut: number; angleFin: number } | null {
+  const l = Math.hypot(tangente.x, tangente.y);
+  if (l < 1e-12) return null;
+  const t = { x: tangente.x / l, y: tangente.y / l };
+  const n = { x: -t.y, y: t.x };
+  const d = { x: p1.x - p0.x, y: p1.y - p0.y };
+  const dn = d.x * n.x + d.y * n.y;
+  if (Math.abs(dn) < 1e-9 * Math.max(1, Math.hypot(d.x, d.y))) return null;
+  const s = (d.x * d.x + d.y * d.y) / (2 * dn);
+  const c = { x: p0.x + n.x * s, y: p0.y + n.y * s };
+  const ang = (q: Vec) => (Math.atan2(q.y - c.y, q.x - c.x) * 180) / Math.PI;
+  const r = (v: number) => Math.round(v * 1e9) / 1e9;
+  return s > 0 ? { centre: pt(r(c.x), r(c.y)), rayon: r(Math.abs(s)), angleDebut: r(ang(p0)), angleFin: r(ang(p1)) } : { centre: pt(r(c.x), r(c.y)), rayon: r(Math.abs(s)), angleDebut: r(ang(p1)), angleFin: r(ang(p0)) };
+}
