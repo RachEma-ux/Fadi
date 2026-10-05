@@ -1548,6 +1548,7 @@ function JumelerOuverture({ o, onCommandes }: { o: Occurrence<"porte">; onComman
 /** Ouverture d'angle sur deux murs joints (D-083) : dimensions saisies, aucune par défaut. */
 function OuvertureAngle({ murs, onCommandes }: { murs: Occurrence<"mur">[]; onCommandes: PropsInspecteur["onCommandes"] }) {
   const [classe, setClasse] = useState("fenetre");
+  const [sansPoteau, setSansPoteau] = useState(false);
   const [v, setV] = useState({ largeurA: "", largeurB: "", hauteur: "", allege: "" });
   const lu = Object.fromEntries(Object.entries(v).map(([k, x]) => [k, nombreSaisi(x)])) as Record<keyof typeof v, number | null>;
   const ok = [lu.largeurA, lu.largeurB, lu.hauteur].every((x) => x !== null && x > 0) && (classe !== "fenetre" || (lu.allege !== null && lu.allege >= 0));
@@ -1561,7 +1562,8 @@ function OuvertureAngle({ murs, onCommandes }: { murs: Occurrence<"mur">[]; onCo
         {champ("largeurB", `Largeur sur ${murs[1]!.id} (m)`)}
         {champ("hauteur", "Hauteur (m)")}
         {classe === "fenetre" && champ("allege", "Allège (m)")}
-        <button type="button" disabled={!ok} onClick={() => onCommandes([{ type: "ouverture.angle", params: { murA: murs[0]!.id, murB: murs[1]!.id, classe, largeurA: { value: lu.largeurA!, unit: "m" }, largeurB: { value: lu.largeurB!, unit: "m" }, hauteur: { value: lu.hauteur!, unit: "m" }, ...(classe === "fenetre" ? { allege: { value: lu.allege!, unit: "m" } } : {}) } }], `Ouverture d'angle sur ${murs[0]!.id} et ${murs[1]!.id}`)} data-angle-poser>Poser</button>
+        <label><input type="checkbox" checked={sansPoteau} onChange={(e) => setSansPoteau(e.target.checked)} data-angle-sans-poteau /> Sans poteau (vitrage bord à bord)</label>
+        <button type="button" disabled={!ok} onClick={() => onCommandes([{ type: "ouverture.angle", params: { murA: murs[0]!.id, murB: murs[1]!.id, classe, ...(sansPoteau ? { sansPoteau: true } : {}), largeurA: { value: lu.largeurA!, unit: "m" }, largeurB: { value: lu.largeurB!, unit: "m" }, hauteur: { value: lu.hauteur!, unit: "m" }, ...(classe === "fenetre" ? { allege: { value: lu.allege!, unit: "m" } } : {}) } }], `Ouverture d'angle sur ${murs[0]!.id} et ${murs[1]!.id}`)} data-angle-poser>Poser</button>
       </div>
     </details>
   );

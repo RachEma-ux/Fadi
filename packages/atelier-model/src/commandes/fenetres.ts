@@ -70,12 +70,15 @@ export function ouvertureAngle(etat: ModeleAtelier, p: Brut, ctx: ContexteComman
   let coin: { ta: 0 | 1; tb: 0 | 1 } | null = null;
   for (const ta of [0, 1] as const) for (const tb of [0, 1] as const) if (memePoint(ta ? A.params.b : A.params.a, tb ? B.params.b : B.params.a, 1e-6)) coin = { ta, tb };
   if (!coin) throw new ErreurCommande("precondition", "murB", "les deux murs n'ont pas d'extrémité commune (joindre-les d'abord)");
+  // Sans poteau (D-106) : chaque baie va jusqu'au point d'angle des axes ; les vides se rejoignent dans l'onglet du
+  // raccord (vitrage bord à bord) ; sinon un poteau d'une demi-épaisseur de l'autre mur reste à l'angle.
+  const sansPoteau = lire.booleen(p, "sansPoteau", false);
   const place = (m: Occurrence<"mur">, t: 0 | 1, largeur: number, epAutre: number) => {
     const L = distance(m.params.a, m.params.b);
-    const d = epAutre / 2 + largeur / 2;
+    const d = (sansPoteau ? 0 : epAutre / 2) + largeur / 2;
     return r9((t ? L - d : d) / L);
   };
-  const g = nouveauGroupe(etat, ctx, classe === "fenetre" ? "Fenêtre d'angle" : classe === "porte" ? "Porte d'angle" : "Baie d'angle");
+  const g = nouveauGroupe(etat, ctx, `${classe === "fenetre" ? "Fenêtre d'angle" : classe === "porte" ? "Porte d'angle" : "Baie d'angle"}${sansPoteau ? " sans poteau" : ""}`);
   let courant = g.etat;
   let effets = effetsVides();
   for (const [m, t, largeur, epAutre] of [[A, coin.ta, largeurA, B.params.epaisseur.value], [B, coin.tb, largeurB, A.params.epaisseur.value]] as const) {

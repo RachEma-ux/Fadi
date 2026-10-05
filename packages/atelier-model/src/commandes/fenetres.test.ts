@@ -40,3 +40,25 @@ describe("fenêtres jumelées et d'angle (D-083)", () => {
     expect(() => appliquerLot(e, lot([{ type: "ouverture.angle", params: { murA: "a", murB: "a", largeurA: m(1), largeurB: m(1), hauteur: m(1) } }]))).toThrow();
   });
 });
+
+describe("angle sans poteau (D-106)", () => {
+  it("les deux fenêtres vont jusqu'au point d'angle ; le mur s'ouvre jusqu'à l'onglet dans la hauteur des fenêtres", async () => {
+    const { maillageObjet } = await import("../projection/maillage.js");
+    const zCoin = (etat: ReturnType<typeof base>) => {
+      const mai = maillageObjet(etat, etat.objets["a"]!)!;
+      const zs = new Set<number>();
+      for (let i = 0; i < mai.positions.length; i += 3) if (Math.abs(mai.positions[i]! - 10.2) < 1e-6 && Math.abs(mai.positions[i + 1]! + 0.1) < 1e-6) zs.add(Math.round(mai.positions[i + 2]! * 1000) / 1000);
+      return [...zs].sort((u, v) => u - v);
+    };
+    const e = base();
+    const avec = appliquerLot(e, lot([{ type: "ouverture.angle", params: { murA: "a", murB: "b", largeurA: m(2), largeurB: m(1.5), hauteur: m(1.4), allege: m(0.9) } }], "a")).etat;
+    const sans = appliquerLot(e, lot([{ type: "ouverture.angle", params: { murA: "a", murB: "b", largeurA: m(2), largeurB: m(1.5), hauteur: m(1.4), allege: m(0.9), sansPoteau: true } }], "s")).etat;
+    const ns = Object.values(sans.objets).filter((o) => o.classe === "fenetre" && o.id !== "f") as Occurrence<"fenetre">[];
+    expect(ns.find((x) => x.params.murHoteId === "a")!.params.position * 10 + 1).toBeCloseTo(10, 9);
+    expect(ns.find((x) => x.params.murHoteId === "b")!.params.position * 8 - 0.75).toBeCloseTo(0, 9);
+    expect(sans.groupes[ns[0]!.groupeId!]!.nom).toMatch(/sans poteau/);
+    // Avec poteau : le poteau d'angle (triangle de l'onglet) monte sur toute la hauteur.
+    expect(zCoin(avec)).toEqual([0, 3]);
+    expect(zCoin(sans)).toEqual([0, 0.9, 2.3, 3]);
+  });
+});

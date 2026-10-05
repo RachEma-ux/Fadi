@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -268,6 +268,20 @@ function Mur2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"mur">; et
         const p1 = { x: c.x - ux * w, y: c.y - uy * w };
         const p2 = { x: c.x + ux * w, y: c.y + uy * w };
         const quad = [{ x: p1.x + (f.droite[0].x - a.x), y: p1.y + (f.droite[0].y - a.y) }, { x: p2.x + (f.droite[0].x - a.x), y: p2.y + (f.droite[0].y - a.y) }, { x: p2.x + (f.droite[0].x - a.x) + nx, y: p2.y + (f.droite[0].y - a.y) + ny }, { x: p1.x + (f.droite[0].x - a.x) + nx, y: p1.y + (f.droite[0].y - a.y) + ny }];
+        // Baie jusqu'à l'extrémité du mur (angle sans poteau, D-106) : le vide prend l'onglet du raccord.
+        const debutAuBout = ouv.params.position * l - w <= 1e-6;
+        const finAuBout = ouv.params.position * l + w >= l - 1e-6;
+        if (debutAuBout || finAuBout) {
+          const fr = facesMurRaccordees(etat, o);
+          if (debutAuBout) {
+            quad[0] = fr.droite[0];
+            quad[3] = fr.gauche[0];
+          }
+          if (finAuBout) {
+            quad[1] = fr.droite[1];
+            quad[2] = fr.gauche[1];
+          }
+        }
         return <path key={ouv.id} d={chemin(pr, quad)} fill="#fff" stroke="none" />;
       })}
       {separationsCouches(etat, o, ouvertures.map((ouv) => { const c = ouv.params.position * Math.hypot(dx, dy); return [c - ouv.params.largeur.value / 2, c + ouv.params.largeur.value / 2] as [number, number]; })).map((sep, i) => (

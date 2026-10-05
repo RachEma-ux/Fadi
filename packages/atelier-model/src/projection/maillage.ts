@@ -311,13 +311,15 @@ function murMaillage(etat: ModeleAtelier, mur: Occurrence<"mur">, t: Tampon): vo
     const sG1 = k + 2 === coupures.length ? r.gauche[1] : s1;
     const biais = sD0 !== s0 || sG0 !== s0 || sD1 !== s1 || sG1 !== s1 || (k === 0 && !!r.pointes?.[0]) || (k + 2 === coupures.length && !!r.pointes?.[1]);
     for (const [za, zb] of soustraire(z0, z1, ici)) {
-      if (biais && sD1 > sD0 && sG1 > sG0 && o1 > o0 && zb > za) {
+      // Une face peut s'annuler (poteau d'angle en triangle, D-106) : le prisme garde l'autre face et l'onglet.
+      if (biais && sD1 >= sD0 - 1e-9 && sG1 >= sG0 - 1e-9 && (sD1 - sD0 > 1e-9 || sG1 - sG0 > 1e-9) && o1 > o0 && zb > za) {
         const p = (s: number, o: number): Vec => ({ x: a.x + u.x * s + n.x * o, y: a.y + u.y * s + n.y * o });
         // o0 = face droite, o1 = face gauche (décalages croissants selon n).
         // Nœud sans paire (D-032) : le contour passe par le point du nœud.
         const pA = k === 0 ? r.pointes?.[0] : undefined;
         const pB = k + 2 === coupures.length ? r.pointes?.[1] : undefined;
-        t.prisme([p(sD0, o0), p(sD1, o0), ...(pB ? [pB] : []), p(sG1, o1), p(sG0, o1), ...(pA ? [pA] : [])], [], za, zb);
+        const contour = [p(sD0, o0), p(sD1, o0), ...(pB ? [pB] : []), p(sG1, o1), p(sG0, o1), ...(pA ? [pA] : [])].filter((q, i, l) => Math.hypot(q.x - l[(i + l.length - 1) % l.length]!.x, q.y - l[(i + l.length - 1) % l.length]!.y) > 1e-9);
+        t.prisme(contour, [], za, zb);
       } else t.boite(a, u, n, s0, s1, o0, o1, za, zb);
     }
   }
