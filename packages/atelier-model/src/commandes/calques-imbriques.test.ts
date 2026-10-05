@@ -53,3 +53,32 @@ describe("propriétés des groupes et des calques (D-088)", () => {
     expect(() => appliquerLot(e, lot([{ type: "propriete.definir", params: { groupeId: "zz", nom: "x", valeur: "a" } }]))).toThrow(/inconnu/);
   });
 });
+
+describe("calques gelés (D-103, DA-05-01)", () => {
+  it("geler un parent gèle ses descendants ; objets figés (modification refusée) ; hors des vues ; inverse exact", async () => {
+    const { pt } = await import("../unites.js");
+    const { genererVue } = await import("../documents/vues.js");
+    const e = appliquerLot(base(), lot([
+      { type: "niveau.creer", params: { id: "n", nom: "R", elevation: 0, hauteur: 3 } },
+      { type: "esquisse.ligne", params: { id: "l", niveauId: "n", points: [pt(0, 0), pt(2, 0)], calqueId: "cloisons" } },
+      { type: "esquisse.ligne", params: { id: "l2", niveauId: "n", points: [pt(0, 1), pt(2, 1)], calqueId: "mob" } },
+    ], "o")).etat;
+    const r = appliquerLot(e, lot([{ type: "calque.modifier", params: { id: "archi", gele: true } }], "g"));
+    expect(["archi", "murs", "cloisons", "mob"].map((id) => !!r.etat.calques[id]!.gele)).toEqual([true, true, true, false]);
+    expect(appliquerLot(r.etat, lot([r.inverse], "i")).etat).toEqual(e);
+    expect(() => appliquerLot(r.etat, lot([{ type: "transformer.deplacer", params: { dx: 1, dy: 0 }, cibles: ["l"] }], "x"))).toThrow(/calque gelé.*dégeler le calque/);
+    const vue = { type: "plan" as const, titre: "P", echelle: 50, niveauId: "n", hauteurCoupe: null, ligneA: null, ligneB: null, profondeur: null, orientation: null, cadreMin: null, cadreMax: null, lignesCachees: false, phases: null };
+    const ids = (etat: typeof e) => new Set(genererVue(etat, vue).primitives.map((p) => (p as { objetId?: string }).objetId));
+    expect(ids(e).has("l")).toBe(true);
+    expect(ids(r.etat).has("l")).toBe(false);
+    expect(ids(r.etat).has("l2")).toBe(true);
+    const d = appliquerLot(r.etat, lot([{ type: "calque.modifier", params: { id: "cloisons", gele: false } }], "d")).etat;
+    expect(d.calques["cloisons"]!.gele).toBeUndefined();
+    expect(d.calques["murs"]!.gele).toBe(true);
+    const { verifierModele } = await import("../archive.js");
+    const relu = verifierModele(JSON.parse(JSON.stringify(r.etat)));
+    if (!relu.ok) throw new Error(relu.erreurs.join(" ; "));
+    expect(relu.modele.calques["murs"]!.gele).toBe(true);
+    expect(relu.modele.calques["mob"]!.gele).toBeUndefined();
+  });
+});

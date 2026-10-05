@@ -37,6 +37,11 @@ export interface Calque {
   ordre: number;
   /** Calque parent (D-080, calques imbriqués) ; absent : à la racine. */
   parentId?: string;
+  /**
+   * Calque gelé (D-103) : ses objets sortent de tout l'affichage (plan, 3D, accrochage, sélection), des vues et des
+   * exports, et ne se modifient plus ; absent : non gelé. Le masquage (`visible`) ne vaut que pour le plan et les vues.
+   */
+  gele?: boolean;
   /** Propriétés du calque (D-088), mêmes règles que celles des objets ; absent : aucune. */
   proprietes?: Record<string, Propriete>;
 }

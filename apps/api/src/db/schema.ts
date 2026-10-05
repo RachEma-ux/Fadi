@@ -341,6 +341,8 @@ export const atelierCalques = pgTable(
     verrouille: boolean("verrouille").notNull().default(false),
     ordre: integer("ordre").notNull().default(0),
     parentId: text("parent_id"),
+    /** Calque gelé (D-103). */
+    gele: boolean("gele").notNull().default(false),
     proprietes: jsonb("proprietes").$type<Record<string, unknown> | null>(),
   },
   (t) => [primaryKey({ columns: [t.projectId, t.id] })],

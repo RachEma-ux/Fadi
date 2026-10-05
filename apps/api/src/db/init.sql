@@ -243,6 +243,8 @@ CREATE TABLE IF NOT EXISTS atelier_calques (
 );
 -- Calques imbriqués (D-080) : calque parent (null : à la racine).
 ALTER TABLE atelier_calques ADD COLUMN IF NOT EXISTS parent_id text;
+-- Calques gelés (D-103) : hors de tout affichage, des vues et des exports ; objets non modifiables.
+ALTER TABLE atelier_calques ADD COLUMN IF NOT EXISTS gele boolean NOT NULL DEFAULT false;
 
 CREATE TABLE IF NOT EXISTS atelier_groupes (
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,

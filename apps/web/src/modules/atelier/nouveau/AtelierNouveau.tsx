@@ -86,8 +86,10 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   const etatAffiche = useMemo((): ModeleAtelier => {
     const f = ui.filtres;
     const iso = ui.isolement ? new Set(ui.isolement) : null;
-    if (!f.classesMasquees.length && !f.calquesMasques.length && !iso) return etat;
-    return { ...etat, objets: Object.fromEntries(Object.entries(etat.objets).filter(([id, o]) => visibleSelonFiltres(o, f) && (!iso || iso.has(id)))) };
+    // Calques gelés (D-103) : leurs objets sortent du plan, de la 3D, de l'accrochage et de la sélection.
+    const geles = new Set(Object.values(etat.calques).filter((c) => c.gele).map((c) => c.id));
+    if (!f.classesMasquees.length && !f.calquesMasques.length && !iso && !geles.size) return etat;
+    return { ...etat, objets: Object.fromEntries(Object.entries(etat.objets).filter(([id, o]) => visibleSelonFiltres(o, f) && (!iso || iso.has(id)) && !(o.calqueId && geles.has(o.calqueId)))) };
   }, [etat, ui.filtres, ui.isolement]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [mesure, setMesure] = useState<string | null>(null);

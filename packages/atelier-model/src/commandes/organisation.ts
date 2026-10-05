@@ -134,6 +134,7 @@ export const reducteursCalque = {
     };
     const parent = lireParent(etat, p, id);
     if (parent) calque.parentId = parent;
+    if (lire.booleen(p, "gele", false)) calque.gele = true;
     const effets = effetsVides();
     effets.crees.push(id);
     return { etat: { ...etat, calques: { ...etat.calques, [id]: calque } }, effets };
@@ -156,6 +157,11 @@ export const reducteursCalque = {
       delete calque.parentId;
       if (parent) calque.parentId = parent;
     }
+    // Gel (D-103) : clé absente quand le calque n'est pas gelé.
+    if (p["gele"] !== undefined) {
+      delete calque.gele;
+      if (lire.booleen(p, "gele", false)) calque.gele = true;
+    }
     const effets = effetsVides();
     effets.modifies.push(id);
     let calques = { ...etat.calques, [id]: calque };
@@ -166,6 +172,15 @@ export const reducteursCalque = {
       for (const d of descendantsCalque(etat, id)) {
         if (calques[d]![cle] === calque[cle]) continue;
         calques = { ...calques, [d]: { ...calques[d]!, [cle]: calque[cle] } };
+        effets.modifies.push(d);
+      }
+    }
+    if (p["gele"] !== undefined && !!calque.gele !== !!existant.gele) {
+      for (const d of descendantsCalque(etat, id)) {
+        if (!!calques[d]!.gele === !!calque.gele) continue;
+        const { gele: _g, ...reste } = calques[d]!;
+        void _g;
+        calques = { ...calques, [d]: calque.gele ? { ...reste, gele: true } : reste };
         effets.modifies.push(d);
       }
     }

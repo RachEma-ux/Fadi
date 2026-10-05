@@ -135,6 +135,11 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
                   {c.verrouille ? "🔒" : "🔓"}
                   <span className="sr-only">{c.verrouille ? `Déverrouiller ${c.nom}` : `Verrouiller ${c.nom}`}</span>
                 </button>
+                {/* Gel (D-103) : hors de tout l'affichage (plan, 3D, accrochage), des vues et des exports ; objets figés. */}
+                <button type="button" className="nav-bascule" aria-pressed={!!c.gele} data-calque-geler={c.id} title={c.gele ? "Dégeler" : "Geler (masqué partout, objets figés)"} disabled={readOnly} onClick={() => onCommandes([{ type: "calque.modifier", params: { id: c.id, gele: !c.gele } }], `${c.gele ? "Dégeler" : "Geler"} ${c.nom}`)}>
+                  {c.gele ? "❄" : "∗"}
+                  <span className="sr-only">{c.gele ? `Dégeler ${c.nom}` : `Geler ${c.nom}`}</span>
+                </button>
               </li>
             ))}
           </ul>

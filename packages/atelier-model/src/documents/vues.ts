@@ -188,7 +188,7 @@ const POCHES = new Set<string>(["mur", "poteau", "dalle", "toiture", "escalier"]
 
 /** L'objet est-il dessiné (calque visible, phase retenue) ? */
 function retenu(etat: ModeleAtelier, o: OccurrenceQuelconque, v: Pick<ParamsVue, "phases" | "calquesMasques">): boolean {
-  if (o.calqueId && etat.calques[o.calqueId]?.visible === false) return false;
+  if (o.calqueId && (etat.calques[o.calqueId]?.visible === false || etat.calques[o.calqueId]?.gele)) return false;
   // Calques masqués dans cette vue seulement (D-057).
   if (o.calqueId && v.calquesMasques?.includes(o.calqueId)) return false;
   const phases = v.phases;
@@ -639,7 +639,7 @@ export function empreinteVue(etat: ModeleAtelier, params: ParamsVue, objets: rea
     objets: objets.map((id) => etat.objets[id] ?? etat.definitions[id] ?? null),
     references: Object.values(etat.references).filter((r) => set.has(r.proprietaireId)).sort((a, b) => (a.id < b.id ? -1 : 1)),
     niveaux: niveauxOrdonnes(etat).map((n) => [n.id, n.nom, n.elevation, n.hauteur]),
-    calques: Object.values(etat.calques).map((k) => [k.id, k.visible]).sort(),
+    calques: Object.values(etat.calques).map((k) => (k.gele ? [k.id, k.visible, "gele"] : [k.id, k.visible])).sort(),
     site: params.type === "masse" ? etat.site : null,
     // Références externes du niveau dessiné (épinglage et conversion) ; absent quand il n'y en a pas.
     ...((params.type === "plan" || params.type === "detail") && params.niveauId && refsDuNiveau(etat, params.niveauId).length ? { externes: refsDuNiveau(etat, params.niveauId).map((d) => [d.id, d.params]) } : {}),

@@ -34,7 +34,10 @@ export function verrouillerObjets(etat: ModeleAtelier, p: Brut): ResultatCommand
 export function raisonVerrou(etat: ModeleAtelier, o: OccurrenceQuelconque): string | null {
   if (o.verrouille) return "objet verrouillé";
   const g = o.groupeId ? etat.groupes[o.groupeId] : null;
-  return g?.verrouille ? `membre du groupe verrouillé « ${g.nom} »` : null;
+  if (g?.verrouille) return `membre du groupe verrouillé « ${g.nom} »`;
+  // Calque gelé (D-103) : ses objets ne se modifient plus tant qu'il n'est pas dégelé.
+  const c = o.calqueId ? etat.calques[o.calqueId] : null;
+  return c?.gele ? `sur le calque gelé « ${c.nom} »` : null;
 }
 
 const egaux = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b);
@@ -43,11 +46,12 @@ export function controlerVerrous(avant: ModeleAtelier, apres: ModeleAtelier, typ
   if (type === "objet.verrouiller" || type.startsWith("interne.")) return;
   if (avant.objets === apres.objets) return;
   const groupesVerrouilles = Object.values(avant.groupes).some((g) => g.verrouille);
+  const calquesGeles = Object.values(avant.calques).some((c) => c.gele);
   for (const o of Object.values(avant.objets)) {
-    if (!o.verrouille && !(groupesVerrouilles && o.groupeId && avant.groupes[o.groupeId]?.verrouille)) continue;
+    if (!o.verrouille && !(groupesVerrouilles && o.groupeId && avant.groupes[o.groupeId]?.verrouille) && !(calquesGeles && o.calqueId && avant.calques[o.calqueId]?.gele)) continue;
     const n = apres.objets[o.id];
     if (n === o || (n && egaux(n, o))) continue;
     const raison = raisonVerrou(avant, o)!;
-    throw new ErreurCommande("precondition", "id", `${o.id} : ${raison} — ${n ? "modification" : "suppression"} refusée, le déverrouiller d'abord`);
+    throw new ErreurCommande("precondition", "id", `${o.id} : ${raison} — ${n ? "modification" : "suppression"} refusée, ${avant.calques[o.calqueId ?? ""]?.gele && !o.verrouille ? "dégeler le calque" : "le déverrouiller"} d'abord`);
   }
 }

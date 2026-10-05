@@ -173,3 +173,4 @@ Décalage des courbes et ellipses (`chanfrein-arc.test.ts`, `nouveau.test.ts`, D
 Effacement partiel à la gomme (`esquisse/effacer.test.ts`, `nouveau.test.ts`, D-100).
 Menuiserie paramétrée des fenêtres (`menuiserie.test.ts`, e2e, D-101).
 Cotes rattachées à une occurrence de bloc (`bloc.test.ts`, `nouveau.test.ts`, D-102).
+Calques gelés (`calques-imbriques.test.ts`, e2e, D-103).

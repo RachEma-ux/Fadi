@@ -46,7 +46,7 @@ export function verifierModele(brut: unknown): ResultatVerification {
   }
   for (const [id, c] of Object.entries(table("calques")) as [string, Brut][]) {
     if (typeof c["nom"] !== "string" || typeof c["visible"] !== "boolean" || typeof c["verrouille"] !== "boolean" || !estNombre(c["ordre"])) erreurs.push(`calques.${id} : calque invalide`);
-    else modele.calques[id] = { id, nom: c["nom"], couleur: typeof c["couleur"] === "string" ? c["couleur"] : null, remplissage: typeof c["remplissage"] === "string" ? c["remplissage"] : null, visible: c["visible"], verrouille: c["verrouille"], ordre: c["ordre"], ...(typeof c["parentId"] === "string" && c["parentId"] ? { parentId: c["parentId"] } : {}), ...(estRecord(c["proprietes"]) && Object.keys(c["proprietes"]).length ? { proprietes: c["proprietes"] as never } : {}) };
+    else modele.calques[id] = { id, nom: c["nom"], couleur: typeof c["couleur"] === "string" ? c["couleur"] : null, remplissage: typeof c["remplissage"] === "string" ? c["remplissage"] : null, visible: c["visible"], verrouille: c["verrouille"], ordre: c["ordre"], ...(typeof c["parentId"] === "string" && c["parentId"] ? { parentId: c["parentId"] } : {}), ...(c["gele"] === true ? { gele: true } : {}), ...(estRecord(c["proprietes"]) && Object.keys(c["proprietes"]).length ? { proprietes: c["proprietes"] as never } : {}) };
   }
   for (const c of Object.values(modele.calques)) if (c.parentId && !modele.calques[c.parentId]) erreurs.push(`calques.${c.id} : calque parent inconnu (${c.parentId})`);
   for (const [id, g] of Object.entries(table("groupes")) as [string, Brut][]) {

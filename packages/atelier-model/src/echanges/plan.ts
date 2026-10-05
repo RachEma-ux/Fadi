@@ -113,7 +113,7 @@ function dessiner(d: Dxf, etat: ModeleAtelier, o: OccurrenceQuelconque): void {
 /** Plan d'un niveau en DXF R12 (repère local, mètres). */
 export function dxfNiveau(etat: ModeleAtelier, niveauId: string): string {
   const niveau = etat.niveaux[niveauId];
-  const objets = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => o.niveauId === niveauId && !(o.calqueId && etat.calques[o.calqueId]?.visible === false)).sort((a, b) => (a.id < b.id ? -1 : 1));
+  const objets = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => o.niveauId === niveauId && !(o.calqueId && (etat.calques[o.calqueId]?.visible === false || etat.calques[o.calqueId]?.gele))).sort((a, b) => (a.id < b.id ? -1 : 1));
   const d = new Dxf();
   const origine = etat.site.parcelle?.origineLocale;
   d.paire(999, `Fadi · Atelier · niveau ${niveau?.nom ?? niveauId} (altitude ${nb(niveau?.elevation ?? 0)} m) · repère local du projet, mètres`);

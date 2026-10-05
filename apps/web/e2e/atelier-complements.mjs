@@ -673,8 +673,9 @@ await page.waitForSelector(".plan2d");
   const ay = murA.params.a.y;
   const P = (x, y) => ({ x: ax + x, y: ay + y, frame: "local", unit: "m" });
   const r0 = await lot(pid, `rt-${Date.now()}`, eR.revision, [
-    { type: "esquisse.polyligne", params: { id: "allee-e2e", niveauId: murA.niveauId, points: [P(0.7, 1.3), P(3.7, 1.3)] } },
-    { type: "esquisse.ligne", params: { id: "banc-e2e", niveauId: murA.niveauId, points: [P(0.7, 0.9), P(1.1, 0.9)] } },
+    // Loin de toute autre géométrie : le premier clic doit tomber sur l'allée seule.
+    { type: "esquisse.polyligne", params: { id: "allee-e2e", niveauId: murA.niveauId, points: [P(-89.3, -88.7), P(-86.3, -88.7)] } },
+    { type: "esquisse.ligne", params: { id: "banc-e2e", niveauId: murA.niveauId, points: [P(-89.3, -89.1), P(-88.9, -89.1)] } },
   ]);
   await ouvrir(pid);
   const avant = Object.keys((await modele(pid)).modele.objets).length;
@@ -1624,6 +1625,34 @@ await page.waitForSelector(".plan2d");
     if (arcs === arcsAvant) await page.waitForTimeout(500);
   }
   check("raccord multiple : quatre lignes jointives, quatre arcs créés en un seul lot", r0.status === 200 && arcs === arcsAvant + 4 && rev === avant.revision + 1, `${r0.status} · arcs ${arcsAvant} → ${arcs} · r${avant.revision} → r${rev}`);
+}
+
+// Calque gelé (D-103) : geler depuis le navigateur retire ses objets du plan ; dégeler les rend.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const rg = await lot(pid, `gel-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "calque.creer", params: { id: "gel-e2e", nom: "Gel e2e" } },
+    { type: "esquisse.ligne", params: { id: "trait-gel", niveauId: murA.niveauId, points: [P(ax - 95, ay - 95), P(ax - 92, ay - 95)], calqueId: "gel-e2e" } },
+  ]);
+  await ouvrir(pid);
+  const avant = await page.locator('.plan2d [data-objet="trait-gel"]').count();
+  await page.locator('[data-calque-geler="gel-e2e"]').click();
+  let gele = false;
+  for (let k = 0; k < 30 && !gele; k++) {
+    gele = (await modele(pid)).modele.calques["gel-e2e"]?.gele === true;
+    if (!gele) await page.waitForTimeout(500);
+  }
+  await page.waitForFunction(() => !document.querySelector('.plan2d [data-objet="trait-gel"]'), null, { timeout: 5000 }).catch(() => {});
+  const pendant = await page.locator('.plan2d [data-objet="trait-gel"]').count();
+  await attendreEnregistre().catch(() => {});
+  await page.locator('[data-calque-geler="gel-e2e"]').click();
+  await page.waitForSelector('.plan2d [data-objet="trait-gel"]', { state: "attached", timeout: 10000 }).catch(() => {});
+  const apres = await page.locator('.plan2d [data-objet="trait-gel"]').count();
+  check("calque gelé : ses objets quittent le plan, dégelé ils reviennent", rg.status === 200 && avant === 1 && gele && pendant === 0 && apres === 1, `${rg.status} · ${avant} → ${pendant} → ${apres} · ${gele}`);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
