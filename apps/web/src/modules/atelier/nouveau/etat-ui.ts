@@ -22,6 +22,8 @@ export interface Accrochages {
   pasGrille: number;
   /** Point le plus proche sur un tracé ou une face de mur (D-061) ; absent des préférences anciennes : désactivé. */
   proche?: boolean;
+  /** Pas du repérage polaire, en degrés (D-071) ; absent des préférences anciennes : 45°. */
+  pasPolaire?: number;
 }
 
 export interface Vue2D {

@@ -5,8 +5,8 @@
  * l'outil courant (épaisseur, hauteur…) et informations du niveau.
  */
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../../../../lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, ApiError } from "../../../../lib/api";
 import { bibliotheques, proposerPlancher, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
@@ -91,6 +91,7 @@ function InspecteurSelection({ etat, ui, readOnly, onCommandes, projectId }: Pro
   return (
     <>
       <FicheObjet o={sel[0]!} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
+      {projectId && sel[0]!.classe === "piece" && <EspaceProgramme key={`prog-${sel[0]!.id}`} projectId={projectId} pieceId={`${sel[0]!.niveauId}|${sel[0]!.id}`} readOnly={readOnly} />}
       {projectId && <HistoriqueObjet key={sel[0]!.id} projectId={projectId} objetId={sel[0]!.id} />}
     </>
   );
@@ -1216,4 +1217,60 @@ function dansContour(p: { x: number; y: number }, poly: readonly { x: number; y:
     if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) dedans = !dedans;
   }
   return dedans;
+}
+
+/**
+ * Liaison de la pièce à un espace programmé (D-071, DA-07-15) : la liaison appartient au cas de programme appliqué
+ * (module Programmation, mêmes routes et mêmes contrôles que « Programme ↔ modèle dessiné ») ; la pièce doit être
+ * enregistrée sur le serveur. Sans programme appliqué : dit, rien n'est proposé.
+ */
+function EspaceProgramme({ projectId, pieceId, readOnly }: { projectId: string; /** Identifiant de zone de l'analyse : « niveau|pièce ». */ pieceId: string; readOnly: boolean }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [choix, setChoix] = useState("");
+  const [erreur, setErreur] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const liens = useQuery({ queryKey: ["programme-links", projectId], queryFn: () => api.getProgrammeModelLinks(projectId), enabled: ouvert, retry: false });
+  const lier = useMutation({
+    mutationFn: async ({ spaceId, retirer }: { spaceId: string; retirer: boolean }) => (retirer ? api.unlinkProgrammeRoom(projectId, spaceId, pieceId) : api.linkProgrammeRoom(projectId, spaceId, pieceId)),
+    onSuccess: () => {
+      setErreur(null);
+      setChoix("");
+      for (const k of ["programme-links", "programme", "steps", "design-review"]) void qc.invalidateQueries({ queryKey: [k, projectId] });
+    },
+    onError: (e) => setErreur(e instanceof ApiError && e.serverMessage ? e.serverMessage : "Liaison refusée."),
+  });
+  const v = liens.data;
+  const lies = v?.rows.filter((r) => r.linked.some((x) => x.id === pieceId) || r.missing.includes(pieceId)) ?? [];
+  return (
+    <details className="inspecteur-historique" data-espace-programme onToggle={(e) => setOuvert(e.currentTarget.open)}>
+      <summary>Espace programmé</summary>
+      {liens.isLoading && <p role="status">Lecture du programme…</p>}
+      {liens.isError && <p className="ver-erreur">Programme indisponible (hors ligne ?).</p>}
+      {v && !v.applied && <p className="nav-vide">Aucun programme appliqué à ce projet : rien à lier (Programmation, étape 07).</p>}
+      {v?.applied && (
+        <>
+          {lies.length === 0 ? <p className="nav-vide">Pièce liée à aucun espace programmé.</p> : (
+            <ul className="inspecteur-liste">
+              {lies.map((r) => (
+                <li key={r.space.id} data-espace-lie={r.space.id}>
+                  {r.space.name} (cible {String(r.space.target).replace(".", ",")} m²{r.drawnArea !== null ? `, dessiné ${String(r.drawnArea).replace(".", ",")} m²` : ""})
+                  {!readOnly && <button type="button" className="lien" disabled={lier.isPending} onClick={() => lier.mutate({ spaceId: r.space.id, retirer: true })}>Délier</button>}
+                </li>
+              ))}
+            </ul>
+          )}
+          {!readOnly && (
+            <form className="nav-formulaire-altimetrie" onSubmit={(e) => { e.preventDefault(); if (choix) lier.mutate({ spaceId: choix, retirer: false }); }}>
+              <select aria-label="Espace programmé à lier" value={choix} onChange={(e) => setChoix(e.target.value)} data-espace-choix>
+                <option value="">— espace —</option>
+                {v.rows.filter((r) => !lies.includes(r)).map((r, i) => <option key={`${r.space.id}-${i}`} value={r.space.id}>{r.space.name}</option>)}
+              </select>
+              <button type="submit" disabled={!choix || lier.isPending}>Lier</button>
+            </form>
+          )}
+          {erreur && <p className="ver-erreur" role="alert">{erreur}</p>}
+        </>
+      )}
+    </details>
+  );
 }

@@ -125,3 +125,30 @@ describe("toitures simples, garde-corps, phases (lot 5)", () => {
     expect(appliquerLot(ph, lot([{ type: "phase.affecter", params: { cibles: ["g"], phase: null } }], "ph2")).etat.objets["g"]!.phase).toBeNull();
   });
 });
+
+describe("miroir d'une occurrence de bloc (D-071)", () => {
+  it("le contenu est retourné : décomposer l'occurrence symétrisée = symétriser le contenu décomposé ; deux miroirs : identité ; inverse exact", () => {
+    const e = appliquerLot(modeleVide(), lot([
+      { type: "niveau.creer", params: { id: "rdc", nom: "RDC", elevation: 0, hauteur: 3 } },
+      { type: "esquisse.polyligne", params: { id: "L", niveauId: "rdc", points: [pt(0, 0), pt(2, 0), pt(2, 1)] } },
+      { type: "bloc.definir", params: { id: "b", nom: "Équerre", cibles: ["L"], pointDeBase: pt(0, 0) } },
+      { type: "bloc.placer", params: { id: "o", definitionId: "b", niveauId: "rdc", position: pt(5, 5), angle: { value: 30, unit: "deg" } } },
+    ], "b")).etat;
+    const axe = { a: pt(0, -3), b: pt(4, 5) };
+    const r = appliquerLot(e, lot([{ type: "transformer.miroir", params: axe, cibles: ["o"] }], "m"));
+    expect((r.etat.objets["o"] as Occurrence<"bloc-occurrence">).params.miroir).toBe(true);
+    const points = (et: ModeleAtelier) => {
+      const d = appliquerLot(et, lot([{ type: "transformer.decomposer", params: { cibles: ["o"] } }], "d")).etat;
+      return (Object.values(d.objets).find((o) => o.classe === "esquisse" && o.id !== "L") as Occurrence<"esquisse">).params.points.map((q) => [Math.round(q.x * 1e6) / 1e6, Math.round(q.y * 1e6) / 1e6]);
+    };
+    const decomposeAvant = appliquerLot(e, lot([{ type: "transformer.decomposer", params: { cibles: ["o"] } }], "d0")).etat;
+    const idCopie = Object.keys(decomposeAvant.objets).find((id) => id !== "L" && decomposeAvant.objets[id]!.classe === "esquisse")!;
+    const symetrise = appliquerLot(decomposeAvant, lot([{ type: "transformer.miroir", params: axe, cibles: [idCopie] }], "m2")).etat;
+    const attendu = (symetrise.objets[idCopie] as Occurrence<"esquisse">).params.points.map((q) => [Math.round(q.x * 1e6) / 1e6, Math.round(q.y * 1e6) / 1e6]);
+    expect(points(r.etat)).toEqual(attendu);
+    const deux = appliquerLot(r.etat, lot([{ type: "transformer.miroir", params: axe, cibles: ["o"] }], "m3")).etat;
+    expect("miroir" in (deux.objets["o"] as Occurrence<"bloc-occurrence">).params).toBe(false);
+    expect(points(deux)).toEqual(points(e));
+    expect(appliquerLot(r.etat, lot([r.inverse], "inv")).etat).toEqual(e);
+  });
+});

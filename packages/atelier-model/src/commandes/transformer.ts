@@ -39,6 +39,8 @@ function cibles(etat: ModeleAtelier, p: Brut, cibl: string[]): OccurrenceQuelcon
 
 const contourT = (c: Contour, t: Transformation): Contour => ({ contour: c.contour.map((q) => transformerPoint2(q, t)), trous: c.trous.map((h) => h.map((q) => transformerPoint2(q, t))) });
 
+const axeMiroir = (t: { a: { x: number; y: number }; b: { x: number; y: number } }) => (Math.atan2(t.b.y - t.a.y, t.b.x - t.a.x) * 180) / Math.PI;
+
 /** Applique une transformation géométrique aux paramètres d'une occurrence (sans toucher aux dimensions typées). */
 export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation): OccurrenceQuelconque {
   const T = (q: Point2) => transformerPoint2(q, t);
@@ -66,7 +68,7 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
     case "escalier":
       return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
     case "poteau":
-      return { ...o, params: { ...o.params, point: T(o.params.point), angle: { value: o.params.angle.value + rot, unit: "deg" } } };
+      return { ...o, params: { ...o.params, point: T(o.params.point), angle: { value: t.type === "miroir" ? Math.round((2 * axeMiroir(t) - o.params.angle.value) * 1e9) / 1e9 : o.params.angle.value + rot, unit: "deg" } } };
     case "esquisse": {
       const q = o.params;
       // Un rectangle (deux coins, côtés parallèles aux axes) tourné ou symétrisé devient un polygone (D-046).
@@ -100,8 +102,14 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
     case "texte":
     case "etiquette":
       return { ...o, params: { ...o.params, position: T(o.params.position) } } as OccurrenceQuelconque;
-    case "bloc-occurrence":
+    case "bloc-occurrence": {
+      // Miroir (D-071) : symétrie d'axe φ ∘ rotation θ ∘ retournement m = rotation (2φ − θ) ∘ retournement (1 − m).
+      if (t.type === "miroir") {
+        const { miroir: _m, ...reste } = o.params;
+        return { ...o, params: { ...reste, position: T(o.params.position), angle: { value: Math.round((2 * axeMiroir(t) - o.params.angle.value) * 1e9) / 1e9, unit: "deg" }, ...(o.params.miroir ? {} : { miroir: true as const }) } };
+      }
       return { ...o, params: { ...o.params, position: T(o.params.position), angle: { value: o.params.angle.value + rot, unit: "deg" }, echelle: t.type === "echelle" ? o.params.echelle * t.facteur : o.params.echelle } };
+    }
     case "garde-corps":
       return { ...o, params: { ...o.params, points: o.params.points.map(T) } };
     case "objet-importe": {

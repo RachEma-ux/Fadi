@@ -141,3 +141,4 @@ Repère altimétrique du site, extrusion d'un profil ouvert, main levée (`altim
 Gestion des calques, jonction de deux murs, isolement de la sélection, écart de l'éclaté (`nouveau.test.ts`, e2e, D-068).
 Outil Plancher : contour et trémies proposés depuis les murs et les escaliers, interstices, reprise (`plancher.test.ts`, `nouveau.test.ts`, e2e, D-069).
 Manipulateur du plan 2D : déplacer selon un axe, tourner, échelle uniforme (`nouveau.test.ts`, e2e, D-070).
+Miroir des occurrences de bloc, pas polaire réglable, liaison pièce ↔ espace programmé (`bloc.test.ts`, `nouveau.test.ts`, e2e, D-071).

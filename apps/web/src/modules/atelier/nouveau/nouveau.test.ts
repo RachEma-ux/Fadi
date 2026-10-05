@@ -408,3 +408,15 @@ describe("manipulateur 2D (D-070)", () => {
     expect(boiteManipulateur(avecPorte, [porte], "rdc", segmentsDuNiveau(avecPorte, "rdc"))).toBeNull();
   });
 });
+
+describe("repérage polaire réglable (D-071)", () => {
+  it("pas de 30° : un point proche de 30° est ramené sur la direction ; 45° par défaut", () => {
+    const vide = segmentsDuNiveau(socle(), "rdc");
+    const acc = { extremite: false, milieu: false, centre: false, perpendiculaire: false, intersection: false, orthogonal: true, grille: false, pasGrille: 0.5 };
+    const p = pt(10 * Math.cos(0.53), 10 * Math.sin(0.53));
+    const a = accrocher(p, vide, { ...acc, pasPolaire: 30 }, 0.2, pt(0, 0));
+    expect(a.type).toBe("orthogonal");
+    expect(Math.atan2(a.point.y, a.point.x)).toBeCloseTo(Math.PI / 6, 9);
+    expect(accrocher(p, vide, acc, 0.2, pt(0, 0)).type).toBe("libre");
+  });
+});

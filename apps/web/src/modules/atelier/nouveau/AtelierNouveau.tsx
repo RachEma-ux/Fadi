@@ -424,9 +424,15 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
             {(["extremite", "milieu", "centre", "perpendiculaire", "intersection", "proche", "orthogonal", "grille"] as const).map((k) => (
               <label key={k}>
                 <input type="checkbox" checked={ui.accrochages[k] === true} data-accrochage={k} onChange={(e) => etatUi.set((u) => ({ accrochages: { ...u.accrochages, [k]: e.target.checked } }))} />
-                {{ extremite: "Extrémité", milieu: "Milieu", centre: "Centre", perpendiculaire: "Perpendiculaire", intersection: "Intersection", proche: "Proche (tracés et faces de murs)", orthogonal: "Orthogonal (45°)", grille: "Grille" }[k]}
+                {{ extremite: "Extrémité", milieu: "Milieu", centre: "Centre", perpendiculaire: "Perpendiculaire", intersection: "Intersection", proche: "Proche (tracés et faces de murs)", orthogonal: `Polaire (${ui.accrochages.pasPolaire ?? 45}°)`, grille: "Grille" }[k]}
               </label>
             ))}
+            <label>
+              Pas polaire
+              <select value={String(ui.accrochages.pasPolaire ?? 45)} data-pas-polaire onChange={(e) => etatUi.set((u) => ({ accrochages: { ...u.accrochages, pasPolaire: Number(e.target.value) } }))}>
+                {[5, 10, 15, 22.5, 30, 45, 90].map((v) => <option key={v} value={String(v)}>{String(v).replace(".", ",")}°</option>)}
+              </select>
+            </label>
             <label>
               Pas de grille (m)
               <input type="number" min={0.01} step="any" value={ui.accrochages.pasGrille} onChange={(e) => Number.isFinite(e.target.valueAsNumber) && e.target.valueAsNumber > 0 && etatUi.set((u) => ({ accrochages: { ...u.accrochages, pasGrille: e.target.valueAsNumber } }))} />

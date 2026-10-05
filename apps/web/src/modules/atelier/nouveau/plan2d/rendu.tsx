@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { pointsPolyligne, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { pointsPolyligne, placementOccurrence, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -193,9 +193,8 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
 function Bloc2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"bloc-occurrence">; etat: ModeleAtelier; pr: Projecteur; selectionne: boolean; survole: boolean }) {
   const def = o.definitionId ? etat.definitions[o.definitionId] : undefined;
   const contenu = (def?.params["contenu"] as { classe: string; params: Record<string, unknown> }[] | undefined) ?? [];
-  const ang = (o.params.angle.value * Math.PI) / 180;
   const k = o.params.echelle;
-  const tr = (p: { x: number; y: number }) => ({ x: o.params.position.x + k * (p.x * Math.cos(ang) - p.y * Math.sin(ang)), y: o.params.position.y + k * (p.x * Math.sin(ang) + p.y * Math.cos(ang)) });
+  const tr = placementOccurrence(o.params);
   const couleur = selectionne ? "#b3872f" : def?.classe === "composant" ? "#6b4f2a" : "#355e52";
   const c = pr.vers(o.params.position);
   return (

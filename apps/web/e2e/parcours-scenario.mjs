@@ -477,7 +477,15 @@ check("variante : « Terminée ✓ » actif (copie modifiable), formulaire et pa
 // persisté (révision), annuler / rétablir persistés, second appareil à la même révision, rechargement.
 const examplePid = exampleUrl.split("/").pop();
 /** Le modèle typé tel que le serveur le sert. */
-const modelOf = async (pid) => (await page.request.get(`${BASE}/projects/${pid}/atelier/model`)).json();
+const modelOf = async (pid) => {
+  // Une connexion réutilisée peut être coupée (ECONNRESET) : une seconde tentative, jamais plus.
+  try {
+    return await (await page.request.get(`${BASE}/projects/${pid}/atelier/model`)).json();
+  } catch {
+    await page.waitForTimeout(300);
+    return (await page.request.get(`${BASE}/projects/${pid}/atelier/model`)).json();
+  }
+};
 const wallsOn = async (pid, niveauId) => {
   const r = await modelOf(pid);
   const murs = Object.values(r.modele.objets).filter((o) => o.classe === "mur" && o.niveauId === niveauId);

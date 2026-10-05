@@ -8,7 +8,7 @@
  * et même empreinte (reproductibilité). Rien n'est inventé : une hauteur absente ne produit aucun volume, un sens
  * d'ouverture de porte non renseigné est dessiné selon la convention de l'Atelier et signalé ; renseigné, il est suivi (D-037).
  */
-import { pointsPolyligne, aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsEllipse, pointsSpline, sub, type Vec } from "../geometrie.js";
+import { pointsPolyligne, placementOccurrence, aireNette, centroide, facesMur, normalise, perp, pointsArc, pointsEllipse, pointsSpline, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
@@ -429,9 +429,8 @@ function dessinerBloc(c: Collecteur, etat: ModeleAtelier, o: Occurrence<"bloc-oc
     c.texte(o.params.position, "définition de bloc absente", 2, o.id, { trait: "a-reparer" });
     return;
   }
-  const ang = (o.params.angle.value * Math.PI) / 180;
   const k = o.params.echelle;
-  const tr = (p: { x: number; y: number }): Vec => ({ x: o.params.position.x + k * (p.x * Math.cos(ang) - p.y * Math.sin(ang)), y: o.params.position.y + k * (p.x * Math.sin(ang) + p.y * Math.cos(ang)) });
+  const tr = placementOccurrence(o.params);
   for (const e of contenu) {
     const pts = Array.isArray(e.params["points"]) ? (e.params["points"] as Vec[]) : Array.isArray(e.params["contour"]) ? (e.params["contour"] as Vec[]) : [];
     if (e.classe === "esquisse" && e.params["forme"] === "cercle" && e.params["centre"] && e.params["rayon"]) c.cercle(tr(e.params["centre"] as Vec), (e.params["rayon"] as Longueur).value * k, "fin", o.id);

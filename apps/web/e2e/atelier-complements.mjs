@@ -982,6 +982,23 @@ await page.waitForSelector(".plan2d");
   check("manipulateur 2D : l'anneau tourne la sélection (90°) en un lot", /Tourner 1 objet de 90° \(manipulateur\)/.test(journal), journal);
 }
 
+// Espace programmé depuis l'inspecteur d'une pièce (D-071) : lecture du cas de programme, état dit sans invention.
+{
+  await page.keyboard.press("Escape");
+  await selectionner("piece-e2e");
+  await page.locator("[data-espace-programme] > summary").click();
+  await page.waitForFunction(() => /programme appliqué|Pièce liée|liée à/.test(document.querySelector("[data-espace-programme]")?.textContent ?? ""), null, { timeout: 15000 }).catch(() => {});
+  const txt = (await page.locator("[data-espace-programme]").textContent()) ?? "";
+  let lie = "sans programme";
+  if ((await page.locator("[data-espace-choix] option").count()) > 1) {
+    const valeur = await page.locator("[data-espace-choix] option").nth(1).getAttribute("value");
+    await page.locator("[data-espace-choix]").selectOption(valeur);
+    await page.locator('[data-espace-programme] button[type="submit"]').click();
+    lie = await page.waitForSelector(`[data-espace-lie="${valeur}"]`, { timeout: 15000 }).then(() => "lié", () => "non lié");
+  }
+  check("espace programmé : la pièce liée depuis son inspecteur à un espace du programme appliqué", /Aucun programme appliqué/.test(txt) || lie === "lié", `${lie} · ${txt.slice(0, 100)}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

@@ -117,7 +117,7 @@ export const reducteursBloc = {
   placer(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande): ResultatCommande {
     const definitionId = lire.chaine(p, "definitionId");
     if (!estBloc(etat.definitions[definitionId])) throw new ErreurCommande("precondition", "definitionId", `bloc ou composant inconnu : ${definitionId}`);
-    return creerOccurrence(etat, { id: p["id"], niveauId: p["niveauId"], calqueId: p["calqueId"], definitionId, phase: p["phase"], proprietes: p["proprietes"], params: { position: p["position"], angle: p["angle"] ?? { value: 0, unit: "deg" }, echelle: p["echelle"] ?? 1 } }, ctx, "bloc-occurrence");
+    return creerOccurrence(etat, { id: p["id"], niveauId: p["niveauId"], calqueId: p["calqueId"], definitionId, phase: p["phase"], proprietes: p["proprietes"], params: { position: p["position"], angle: p["angle"] ?? { value: 0, unit: "deg" }, echelle: p["echelle"] ?? 1, ...(p["miroir"] === true ? { miroir: true } : {}) } }, ctx, "bloc-occurrence");
   },
 };
 
@@ -131,6 +131,7 @@ export function decomposerBloc(etat: ModeleAtelier, o: Occurrence<"bloc-occurren
   for (const e of params.contenu) {
     const id = ctx.ids.nouveau(e.classe);
     let copie = { id, classe: e.classe, niveauId: o.niveauId, definitionId: null, calqueId: e.calqueId ?? o.calqueId, groupeId: null, phase: o.phase, params: e.params, proprietes: {} } as unknown as OccurrenceQuelconque;
+    if (o.params.miroir) copie = transformerOccurrence(copie, { type: "miroir", a: pt(0, 0), b: pt(1, 0) });
     if (o.params.echelle !== 1) copie = transformerOccurrence(copie, { type: "echelle", centre: pt(0, 0), facteur: o.params.echelle });
     if (o.params.angle.value) copie = transformerOccurrence(copie, { type: "rotation", centre: pt(0, 0), angleDeg: o.params.angle.value });
     copie = transformerOccurrence(copie, { type: "translation", dx: o.params.position.x, dy: o.params.position.y });

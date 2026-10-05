@@ -202,6 +202,8 @@ export interface ParamsBlocOccurrence {
   position: Point2;
   angle: Angle;
   echelle: number;
+  /** Occurrence symétrisée (D-071) : contenu retourné autour de l'axe x local avant rotation ; absent = non. */
+  miroir?: true;
 }
 
 /** Garde-corps simple (lot 5) : tracé en plan, hauteur saisie (jamais déduite d'une règle), remplissage. */

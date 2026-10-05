@@ -97,6 +97,16 @@ export function intersectionSegments(a: Vec, b: Vec, c: Vec, d: Vec, tol = TOLER
   return { point: add(a, mul(r, t)), t: Math.max(0, Math.min(1, t)), u: Math.max(0, Math.min(1, u)) };
 }
 
+/** Placement d'un point du contenu d'une occurrence de bloc (D-071) : retournement éventuel, échelle, rotation, position. */
+export function placementOccurrence(p: { position: Vec; angle: { value: number }; echelle: number; miroir?: boolean }): (q: Vec) => Vec {
+  const ang = (p.angle.value * Math.PI) / 180;
+  const c = Math.cos(ang);
+  const s = Math.sin(ang);
+  const k = p.echelle;
+  const m = p.miroir ? -1 : 1;
+  return (q) => ({ x: p.position.x + k * (q.x * c - m * q.y * s), y: p.position.y + k * (q.x * s + m * q.y * c) });
+}
+
 export function rectangleEnglobant(points: readonly Vec[]): { min: Vec; max: Vec } {
   let minX = Infinity;
   let minY = Infinity;
