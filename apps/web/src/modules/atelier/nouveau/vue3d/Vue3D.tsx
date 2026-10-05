@@ -36,6 +36,7 @@ const PRESENTATIONS: { id: Presentation; libelle: string }[] = [
   { id: "eclate", libelle: "Éclaté" },
   { id: "eclate-horizontal", libelle: "Éclaté horizontal" },
   { id: "eclate-classes", libelle: "Éclaté par classe" },
+  { id: "eclate-groupes", libelle: "Éclaté par groupe" },
 ];
 
 const fmt = (v: number) => v.toFixed(2).replace(".", ",");
@@ -400,7 +401,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
             </select>
           </label>
         )}
-        {options.vue === "perspective" && (options.presentation === "eclate" || options.presentation === "eclate-horizontal" || options.presentation === "eclate-classes") && (
+        {options.vue === "perspective" && (options.presentation === "eclate" || options.presentation === "eclate-horizontal" || options.presentation === "eclate-classes" || options.presentation === "eclate-groupes") && (
           <label className="vue3d-curseur">
             Écart {fmt(options.ecartEclate ?? 4)} m
             <input type="range" data-ecart-eclate min={0} max={20} step={0.5} value={options.ecartEclate ?? 4} onChange={(e) => setOptions({ ecartEclate: e.target.valueAsNumber })} />
@@ -417,7 +418,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
             </button>
           )
         )}
-        {options.vue === "perspective" && options.presentation !== "eclate" && options.presentation !== "eclate-horizontal" && options.presentation !== "eclate-classes" && (
+        {options.vue === "perspective" && options.presentation !== "eclate" && options.presentation !== "eclate-horizontal" && options.presentation !== "eclate-classes" && options.presentation !== "eclate-groupes" && (
           <label className="vue3d-case">
             <input type="checkbox" checked={options.coupeHorizontale !== null} onChange={(e) => setOptions({ coupeHorizontale: e.target.checked ? 1.2 : null })} />
             Coupe horizontale

@@ -930,6 +930,9 @@ await page.waitForSelector(".plan2d");
   await page.locator("[data-ecart-eclate]").fill("6");
   await page.waitForTimeout(300);
   check("éclaté par classe : présentation choisie, écart réglé", (await page.locator('select[aria-label="Présentation"]').inputValue()) === "eclate-classes" && (await page.locator("[data-ecart-eclate]").inputValue()) === "6");
+  await page.locator('select[aria-label="Présentation"]').selectOption("eclate-groupes");
+  await page.waitForTimeout(300);
+  check("éclaté par groupe : présentation choisie", (await page.locator('select[aria-label="Présentation"]').inputValue()) === "eclate-groupes");
   await page.locator('select[aria-label="Présentation"]').selectOption("batiment");
   // Visite à hauteur d'œil (D-075) : œil à niveau + 1,60 m, avancer au clavier à hauteur constante.
   await page.locator("[data-visite-oeil]").fill("1,6");

@@ -12,7 +12,7 @@ type Brut = Record<string, unknown>;
 
 export const CLASSE_VUE_3D = "vue-3d" as Definition["classe"];
 export const VUES_TECHNIQUES_3D = ["perspective", "dessus", "coupe-ns", "coupe-eo", "facade-sud", "facade-nord", "facade-est", "facade-ouest"] as const;
-export const PRESENTATIONS_3D = ["batiment", "niveau", "eclate", "eclate-horizontal", "eclate-classes"] as const;
+export const PRESENTATIONS_3D = ["batiment", "niveau", "eclate", "eclate-horizontal", "eclate-classes", "eclate-groupes"] as const;
 
 export interface Point3 {
   x: number;

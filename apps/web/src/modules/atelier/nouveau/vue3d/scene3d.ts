@@ -9,8 +9,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { chapeauxDeCoupe, englobant, maillageObjet, niveauxOrdonnes, raccordMur, type Maillage, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 
 export type VueTechnique = "perspective" | "dessus" | "coupe-ns" | "coupe-eo" | "facade-sud" | "facade-nord" | "facade-est" | "facade-ouest";
-export type Presentation = "batiment" | "niveau" | "eclate" | "eclate-horizontal" | "eclate-classes";
-const estEclate = (p: Presentation | undefined) => p === "eclate" || p === "eclate-horizontal" || p === "eclate-classes";
+export type Presentation = "batiment" | "niveau" | "eclate" | "eclate-horizontal" | "eclate-classes" | "eclate-groupes";
+const estEclate = (p: Presentation | undefined) => p === "eclate" || p === "eclate-horizontal" || p === "eclate-classes" || p === "eclate-groupes";
 
 /**
  * Éclaté par classe (D-075, DA-18-03) : chaque classe soulevée d'un écart, dans cet ordre (les ouvertures restent
@@ -40,6 +40,8 @@ interface Lot {
   ids: string[];
   /** Classe des objets du lot (éclaté par classe). */
   classe: string;
+  /** Groupe des objets du lot (éclaté par groupe, D-087) ; vide : sans groupe. */
+  groupe: string;
 }
 
 export interface MesuresRendu {
@@ -226,7 +228,7 @@ export class Scene3D {
       const m = this.maillage(etat, o, cleNiveaux);
       if (!m) continue;
       tous.push(m);
-      const cle = `${m.niveauId ?? "-"}|${m.couleur}|${m.opacite}|${classeEclate(o.classe)}`;
+      const cle = `${m.niveauId ?? "-"}|${m.couleur}|${m.opacite}|${classeEclate(o.classe)}|${o.groupeId ?? ""}`;
       const l = parLot.get(cle) ?? [];
       l.push(m);
       parLot.set(cle, l);
@@ -274,7 +276,7 @@ export class Scene3D {
         aretes = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), this.matAretes);
         groupe.add(aretes);
       }
-      this.lots.push({ maillage: mesh, aretes, debuts, ids, classe: cle.split("|")[3]! });
+      this.lots.push({ maillage: mesh, aretes, debuts, ids, classe: cle.split("|")[3]!, groupe: cle.split("|")[4] ?? "" });
     }
     this.maillagesCourants = tous;
     this.cleChapeaux = "";
@@ -309,7 +311,7 @@ export class Scene3D {
     for (const l of this.lots) if (l.aretes) l.aretes.visible = o.aretes || o.vue !== "perspective";
     // Éclaté par classe : chaque lot soulevé selon le rang de sa classe ; sinon, à sa place.
     for (const l of this.lots) {
-      const z = o.presentation === "eclate-classes" ? this.decalageClasse(l.classe, o) : 0;
+      const z = o.presentation === "eclate-classes" ? this.decalageClasse(l.classe, o) : o.presentation === "eclate-groupes" ? this.decalageGroupe(l.groupe, o) : 0;
       l.maillage.position.z = z;
       if (l.aretes) l.aretes.position.z = z;
     }
@@ -332,17 +334,28 @@ export class Scene3D {
     return [...ORDRE_ECLATE_CLASSES.filter((c) => presentes.has(c)), ...[...presentes].filter((c) => !ORDRE_ECLATE_CLASSES.includes(c)).sort()];
   }
 
+  /** Éclaté par groupe (D-087) : chaque groupe soulevé d'un écart (ordre des identifiants) ; sans groupe : en place. */
+  private groupesPresents(): string[] {
+    return [...new Set(this.lots.map((l) => l.groupe).filter(Boolean))].sort();
+  }
+
+  private decalageGroupe(groupe: string, o: OptionsScene | null = this.options): number {
+    if (o?.presentation !== "eclate-groupes" || !groupe) return 0;
+    return (this.groupesPresents().indexOf(groupe) + 1) * (o.ecartEclate ?? ECART_ECLATE);
+  }
+
   private decalageClasse(classe: string, o: OptionsScene | null = this.options): number {
     if (o?.presentation !== "eclate-classes") return 0;
     return Math.max(0, this.classesPresentes().indexOf(classeEclate(classe))) * (o.ecartEclate ?? ECART_ECLATE);
   }
 
   /** Décalage d'affichage d'un objet : celui de son niveau (éclaté par niveau) et de sa classe (éclaté par classe). */
-  private decalageObjet(niveauId: string | null, classe: string | undefined): THREE.Vector3 {
+  private decalageObjet(niveauId: string | null, classe: string | undefined, groupe?: string | null): THREE.Vector3 {
     const v = new THREE.Vector3();
     const g = niveauId ? this.groupes.get(niveauId) : null;
     if (g) v.copy(g.position);
     if (classe) v.z += this.decalageClasse(classe);
+    if (groupe) v.z += this.decalageGroupe(groupe);
     return v;
   }
 
@@ -353,6 +366,7 @@ export class Scene3D {
     const b = this.boite.clone();
     if (o?.presentation === "eclate" && this.etat) b.max.z += niveauxOrdonnes(this.etat).length * (o.ecartEclate ?? ECART_ECLATE);
     if (o?.presentation === "eclate-classes") b.max.z += this.classesPresentes().length * (o.ecartEclate ?? ECART_ECLATE);
+    if (o?.presentation === "eclate-groupes") b.max.z += this.groupesPresents().length * (o.ecartEclate ?? ECART_ECLATE);
     if (o?.presentation === "eclate-horizontal") {
       // Emprise réelle des niveaux déplacés.
       const u = new THREE.Box3();
@@ -513,7 +527,7 @@ export class Scene3D {
       if (!m) continue;
       const mesh = this.versMesh(m, this.matSelection);
       const g = m.niveauId ? this.groupes.get(m.niveauId) : null;
-      mesh.position.copy(this.decalageObjet(m.niveauId, o.classe));
+      mesh.position.copy(this.decalageObjet(m.niveauId, o.classe, o.groupeId));
       if (g) mesh.visible = g.visible;
       this.selection.add(mesh);
     }
@@ -667,7 +681,7 @@ export class Scene3D {
     const m = this.maillage(etat, o, JSON.stringify(etat.niveaux));
     const e = m ? englobant([m]) : null;
     if (!e || !m) return null;
-    const d = this.decalageObjet(m.niveauId, o.classe);
+    const d = this.decalageObjet(m.niveauId, o.classe, o.groupeId);
     const p = new THREE.Vector3((e.min[0] + e.max[0]) / 2 + (d?.x ?? 0), (e.min[1] + e.max[1]) / 2 + (d?.y ?? 0), e.max[2] - 0.05 + (d?.z ?? 0)).project(this.camera);
     return { x: ((p.x + 1) / 2) * this.largeur, y: ((1 - p.y) / 2) * this.hauteur };
   }
