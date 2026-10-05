@@ -1436,6 +1436,63 @@ await page.waitForSelector(".plan2d");
   check("hachure associée : créée depuis l'inspecteur de la pièce, elle suit la pièce déplacée", avant === 0 && !!h && suivie, `${h?.id} · ${suivie}`);
 }
 
+// Poignées de tangente au plan (D-093) : glisser la poignée d'un point impose sa tangente (un lot) ; Alt + clic la libère.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const r0 = await lot(pid, `sp-${Date.now()}`, (await modele(pid)).revision, [{ type: "esquisse.spline", params: { id: "sp-e2e", niveauId: murA.niveauId, points: [P(-50, -50), P(-47, -47), P(-44, -50)], ferme: false } }]);
+  await page.reload();
+  await page.waitForSelector(".plan2d .plan-objets [data-objet]", { timeout: 30000 });
+  await attendreEnregistre().catch(() => {});
+  await selectionner("sp-e2e");
+  await page.waitForSelector('[data-tangente-poignee="1"]', { timeout: 10000 }).catch(() => {});
+  const nb = await page.locator("[data-tangente-poignee]").count();
+  // Zoom à la molette sur la courbe jusqu'à ce que les poignées soient bien séparées.
+  for (let k = 0; k < 12; k++) {
+    const a = await page.locator('[data-tangente-poignee="1"]').boundingBox();
+    const b = await page.locator('[data-tangente-poignee="2"]').boundingBox();
+    if (!a || !b || Math.hypot(a.x - b.x, a.y - b.y) > 80) break;
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+    await page.mouse.wheel(0, -400);
+    await page.waitForTimeout(100);
+  }
+  const h = await page.locator('[data-tangente-poignee="1"]').boundingBox();
+  const avant = await modele(pid);
+  let t = null;
+  let rev = avant.revision;
+  if (h) {
+    const x = h.x + h.width / 2;
+    const y = h.y + h.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    for (let k = 1; k <= 8; k++) await page.mouse.move(x + k * 4, y - k * 6);
+    await page.mouse.up();
+    for (let k = 0; k < 30 && !t; k++) {
+      const m1 = await modele(pid);
+      t = m1.modele.objets["sp-e2e"].params.tangentes ?? null;
+      rev = m1.revision;
+      if (!t) await page.waitForTimeout(500);
+    }
+  }
+  const imposee = !!t && t[0] === null && t[2] === null && !!t[1] && t[1].y > 0;
+  let liberee = false;
+  if (imposee) {
+    await attendreEnregistre().catch(() => {});
+    const h2 = await page.locator('[data-tangente-poignee="1"]').boundingBox();
+    if (h2) {
+      await page.keyboard.down("Alt");
+      await page.mouse.click(h2.x + h2.width / 2, h2.y + h2.height / 2);
+      await page.keyboard.up("Alt");
+      for (let k = 0; k < 30 && !liberee; k++) {
+        liberee = !(await modele(pid)).modele.objets["sp-e2e"].params.tangentes;
+        if (!liberee) await page.waitForTimeout(500);
+      }
+    }
+  }
+  check("poignées de tangente : une par point ; glisser impose la tangente (un lot), Alt + clic la libère", r0.status === 200 && nb === 3 && imposee && rev === avant.revision + 1 && liberee, `${r0.status} · ${nb} · ${JSON.stringify(t)} · r${avant.revision} → r${rev} · ${liberee}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

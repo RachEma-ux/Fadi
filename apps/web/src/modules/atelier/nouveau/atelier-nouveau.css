@@ -2201,3 +2201,27 @@
   border: 1px solid var(--atelier-ligne);
   border-radius: 6px;
 }
+
+/* Poignées de tangente des courbes (D-093) */
+.plan-tangentes line {
+  stroke: var(--atelier-accent);
+  stroke-width: 1;
+}
+.plan-tangentes circle {
+  fill: var(--atelier-accent);
+  stroke: #fff;
+  stroke-width: 1;
+  cursor: grab;
+}
+.plan-tangentes .tangente-libre line {
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
+}
+.plan-tangentes circle.tangente-cible {
+  fill: transparent;
+  stroke: none;
+}
+.plan-tangentes .tangente-libre circle:not(.tangente-cible) {
+  fill: #fff;
+  stroke: var(--atelier-accent);
+}

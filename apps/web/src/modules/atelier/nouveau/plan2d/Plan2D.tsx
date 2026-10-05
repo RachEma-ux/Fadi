@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pointsSpline, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -39,7 +39,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const [taille, setTaille] = useState({ w: 800, h: 600 });
   const [accroche, setAccroche] = useState<Accroche | null>(null);
   const [cadre, setCadre] = useState<{ a: Point2; b: Point2 } | null>(null);
-  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer" | "lasso" | "trace" | "manip" | "fini" | "visee"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean; poignee?: Poignee } | null>(null);
+  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer" | "lasso" | "trace" | "manip" | "fini" | "visee" | "tangente"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean; poignee?: Poignee; tangente?: number } | null>(null);
   // Manipulateur 2D (D-070, DA-02-17) : aperçu du glissement d'une poignée ; une seule commande au relâchement.
   const [manip, setManip] = useState<ApercuManip | null>(null);
   // Loupe de précision au doigt (D-085) : un appui tenu sans bouger passe en visée ; la loupe montre le point accroché.
@@ -105,6 +105,9 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     const b = ui.outil === "selection" && !readOnly ? boiteManipulateur(etat, ui.selection, ui.niveauId, cache) : null;
     return b && pivotPerso?.cle === cleSelection ? { ...b, pivot: pivotPerso.p, pivotDeplace: true } : b ? { ...b, pivotDeplace: false } : null;
   }, [ui.outil, readOnly, etat, ui.selection, ui.niveauId, cache, pivotPerso, cleSelection]);
+  // Poignées de tangente (D-093, DA-01-05) : une courbe seule sélectionnée ; aperçu du glissement, une commande au relâchement.
+  const courbeTangentes = useMemo(() => (ui.outil === "selection" && !readOnly ? splineEditable(etat, ui.selection, ui.niveauId) : null), [ui.outil, readOnly, etat, ui.selection, ui.niveauId]);
+  const [tangenteApercu, setTangenteApercu] = useState<{ i: number; v: Point2 } | null>(null);
   // Saisie de la valeur au clavier pendant le glissement (D-077) : chiffres, virgule, signe ; Entrée applique.
   const [saisie, setSaisie] = useState("");
   useEffect(() => {
@@ -199,6 +202,17 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       }
       return;
     }
+    if (g?.mode === "tangente" && g.tangente !== undefined && courbeTangentes) {
+      g.bouge = g.bouge || Math.hypot(sx - g.x, sy - g.y) > 4;
+      const base = courbeTangentes.points[g.tangente];
+      if (g.bouge && base) {
+        // La poignée suit le pointeur, accrochée ; Maj : direction par pas de 15°.
+        const q = accrocher(p, cache, accs, rayon, base, ui.selection).point;
+        const v = tangenteDepuisPoignee(base, q, e.shiftKey);
+        setTangenteApercu(v ? { i: g.tangente, v } : null);
+      }
+      return;
+    }
     if (g?.mode === "manip" && g.poignee === "p") {
       g.bouge = g.bouge || Math.hypot(sx - g.x, sy - g.y) > 4;
       if (g.bouge) setPivotPerso({ cle: cleSelection, p: accrocher(p, cache, accs, rayon, null, ui.selection).point });
@@ -259,6 +273,12 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       glisse.current = { mode: "trace", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
       return;
     }
+    // Poignée de tangente (D-093) avant le lasso : Alt + clic sur une poignée libère la tangente.
+    const tangente = (e.target as Element | null)?.closest?.("[data-tangente-poignee]")?.getAttribute("data-tangente-poignee");
+    if (tangente != null && courbeTangentes && ui.outil === "selection") {
+      glisse.current = { mode: "tangente", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false, tangente: Number(tangente) };
+      return;
+    }
     if (ui.outil === "lasso" || (ui.outil === "selection" && e.altKey)) {
       lassoPoints.current = [p];
       glisse.current = { mode: "lasso", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
@@ -317,6 +337,17 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     if (g?.mode === "fini") return;
     const p = pr.depuis(sx, sy);
     if (g?.mode === "pan" && (g.bouge || e.pointerType !== "touch")) return;
+    if (g?.mode === "tangente" && g.tangente !== undefined && courbeTangentes) {
+      const ap = tangenteApercu;
+      setTangenteApercu(null);
+      // Glisser : tangente imposée ; Alt + clic : tangente libérée ; simple clic : rien.
+      const v = g.bouge ? (ap && ap.i === g.tangente ? ap.v : null) : e.altKey ? null : undefined;
+      if (v === undefined || (!g.bouge && !courbeTangentes.imposees[g.tangente])) return;
+      if (g.bouge && !v) return;
+      const c = commandeTangente(courbeTangentes, g.tangente, v);
+      onCommandes([c.commande], c.label);
+      return;
+    }
     if (g?.mode === "manip" && g.poignee === "p") {
       // Clic sans glisser sur le pivot : retour au centre de la sélection.
       if (!g.bouge) setPivotPerso(null);
@@ -443,6 +474,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
         glisse.current = null;
         setCadre(null);
         setLasso(null);
+        setTangenteApercu(null);
         lassoPoints.current = [];
       }}
       onPointerLeave={() => {
@@ -495,6 +527,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
         </g>
       )}
       {boiteManip && !decalage && <Manipulateur2D boite={boiteManip} pr={pr} manip={manip} saisie={saisie} angle={ui.repere?.angle ?? 0} />}
+      {courbeTangentes && !decalage && !manip && <PoigneesTangente courbe={courbeTangentes} apercu={tangenteApercu} pr={pr} />}
       {ui.repere && <RepereSaisie repere={ui.repere} pr={pr} />}
       {decalage && (
         <g className="plan-deplacement" transform={`translate(${decalage.dx * pr.echelle} ${-decalage.dy * pr.echelle})`} pointerEvents="none">
@@ -890,6 +923,90 @@ function RepereSaisie({ repere, pr }: { repere: { origine: Point2; angle: number
       <circle cx={o.x} cy={o.y} r={4} className="manip-centre" />
       <text x={o.x + 52} y={o.y + 4} className="plan-cote-apercu">x′</text>
       <text x={o.x + 4} y={o.y - 52} className="plan-cote-apercu">y′</text>
+    </g>
+  );
+}
+
+/** Courbe (spline) seule sélectionnée, modifiable (non verrouillée), avec ses tangentes effectives (D-093). */
+export interface CourbeTangentes {
+  id: string;
+  points: Point2[];
+  ferme: boolean;
+  /** Tangente imposée par point, ou null (libre). */
+  imposees: (Point2 | null)[];
+  /** Tangente effective par point : imposée, ou celle que la courbe suit d'elle-même ((suivant − précédent) / 2). */
+  effectives: Point2[];
+}
+
+export function splineEditable(etat: ModeleAtelier, selection: readonly string[], niveauId: string | null): CourbeTangentes | null {
+  if (selection.length !== 1) return null;
+  const o = etat.objets[selection[0]!];
+  if (!o || o.classe !== "esquisse" || o.niveauId !== niveauId || raisonVerrou(etat, o)) return null;
+  const q = o.params as { forme: string; points: Point2[]; ferme?: boolean; tangentes?: (Point2 | null)[] };
+  if (q.forme !== "spline" || q.points.length < 2) return null;
+  const n = q.points.length;
+  const ferme = !!q.ferme;
+  const imposees = Array.from({ length: n }, (_, i) => (q.tangentes?.[i] ? pt(q.tangentes[i]!.x, q.tangentes[i]!.y) : null));
+  const effectives = q.points.map((_, i) => {
+    const t = imposees[i];
+    if (t) return t;
+    // Même convention que pointsSpline : extrémités d'une courbe ouverte doublées.
+    const prec = ferme ? q.points[(i - 1 + n) % n]! : q.points[Math.max(0, i - 1)]!;
+    const suiv = ferme ? q.points[(i + 1) % n]! : q.points[Math.min(n - 1, i + 1)]!;
+    return pt((suiv.x - prec.x) / 2 || 0, (suiv.y - prec.y) / 2 || 0);
+  });
+  return { id: o.id, points: q.points.map((p) => pt(p.x, p.y)), ferme, imposees, effectives };
+}
+
+/** Poignée au tiers de la tangente (convention de Bézier : t = 3 · (poignée − point)). */
+export function positionPoignee(p: Point2, t: Point2): Point2 {
+  return pt(p.x + t.x / 3, p.y + t.y / 3);
+}
+
+/** Tangente tirée de la position de la poignée ; Maj : angle arrondi à 15°. Nulle (poignée sur le point) : null. */
+export function tangenteDepuisPoignee(p: Point2, q: Point2, maj = false): Point2 | null {
+  let x = 3 * (q.x - p.x);
+  let y = 3 * (q.y - p.y);
+  const l = Math.hypot(x, y);
+  if (l < 1e-6) return null;
+  if (maj) {
+    const a = (Math.round(Math.atan2(y, x) / (Math.PI / 12)) * Math.PI) / 12;
+    x = l * Math.cos(a);
+    y = l * Math.sin(a);
+  }
+  const r = (v: number) => Math.round(v * 1e9) / 1e9 || 0;
+  return pt(r(x), r(y));
+}
+
+export function commandeTangente(c: CourbeTangentes, i: number, v: Point2 | null): { commande: Commande; label: string } {
+  const tangentes = c.imposees.map((t, k) => (k === i ? v : t));
+  return {
+    commande: { type: "objet.modifier", params: { id: c.id, params: { tangentes: tangentes.some((x) => x) ? tangentes : null } } },
+    label: v ? `Tangente imposée au point ${i + 1} de ${c.id} (poignée)` : `Tangente libérée au point ${i + 1} de ${c.id}`,
+  };
+}
+
+function PoigneesTangente({ courbe, apercu, pr }: { courbe: CourbeTangentes; apercu: { i: number; v: Point2 } | null; pr: ReturnType<typeof projecteur> }) {
+  const tangentes = apercu ? courbe.imposees.map((t, k) => (k === apercu.i ? apercu.v : t)) : null;
+  return (
+    <g className="plan-tangentes" data-tangentes-courbe={courbe.id}>
+      {tangentes && <path d={chemin(pr, pointsSpline(courbe.points, 16, courbe.ferme, tangentes), courbe.ferme)} className="plan-apercu-trait" pointerEvents="none" data-tangente-apercu={apercu!.i} />}
+      {courbe.points.map((p, i) => {
+        const t = apercu?.i === i ? apercu.v : courbe.effectives[i]!;
+        const a = pr.vers(p);
+        const b = pr.vers(positionPoignee(p, t));
+        const imposee = apercu?.i === i || !!courbe.imposees[i];
+        return (
+          <g key={i} className={imposee ? "tangente-imposee" : "tangente-libre"}>
+            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} pointerEvents="none" />
+            <circle cx={b.x} cy={b.y} r={5} pointerEvents="none" />
+            {/* Cible de saisie plus large que la marque (doigt, stylet). */}
+            <circle cx={b.x} cy={b.y} r={14} className="tangente-cible" data-tangente-poignee={i} data-imposee={imposee ? "oui" : "non"} pointerEvents="all">
+              <title>{`Tangente au point ${i + 1} : glisser pour l'imposer (Maj : pas de 15°)${courbe.imposees[i] ? " ; Alt + clic : la libérer" : ""}`}</title>
+            </circle>
+          </g>
+        );
+      })}
     </g>
   );
 }

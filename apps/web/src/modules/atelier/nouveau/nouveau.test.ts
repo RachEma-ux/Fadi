@@ -7,6 +7,33 @@ import { accrocher, objetSousPointeur, segmentsDuNiveau } from "./plan2d/accroch
 import { clic, objetsDansCadre, objetsDansLasso, saisie, terminer } from "./plan2d/outils-2d";
 import { cadrer, projecteur } from "./plan2d/projecteur";
 
+describe("poignées de tangente au plan (D-093)", () => {
+  it("tangentes effectives, poignée au tiers, Maj au pas de 15°, commande objet.modifier ; libérer la dernière remet null", async () => {
+    const { splineEditable, positionPoignee, tangenteDepuisPoignee, commandeTangente } = await import("./plan2d/Plan2D");
+    const etat = appliquer(socle(), [{ type: "esquisse.spline", params: { id: "sp", niveauId: "rdc", points: [pt(0, 0), pt(2, 2), pt(4, 0)], ferme: false } }]);
+    expect(splineEditable(etat, ["sp"], "r1")).toBeNull();
+    expect(splineEditable(etat, [], "rdc")).toBeNull();
+    const c = splineEditable(etat, ["sp"], "rdc")!;
+    expect(c.imposees).toEqual([null, null, null]);
+    expect(c.effectives).toEqual([pt(1, 1), pt(2, 0), pt(1, -1)]);
+    expect(positionPoignee(pt(2, 2), pt(3, 0))).toEqual(pt(3, 2));
+    expect(tangenteDepuisPoignee(pt(2, 2), pt(3, 2))).toEqual(pt(3, 0));
+    expect(tangenteDepuisPoignee(pt(2, 2), pt(2, 2))).toBeNull();
+    const maj = tangenteDepuisPoignee(pt(0, 0), pt(1, 0.1), true)!;
+    expect(maj.y).toBe(0);
+    const k = commandeTangente(c, 1, pt(3, 0));
+    const e2 = appliquer(etat, [k.commande]);
+    const c2 = splineEditable(e2, ["sp"], "rdc")!;
+    expect(c2.imposees).toEqual([null, pt(3, 0), null]);
+    expect(c2.effectives[1]).toEqual(pt(3, 0));
+    const lib = commandeTangente(c2, 1, null);
+    expect((lib.commande.params as { params: { tangentes: unknown } }).params.tangentes).toBeNull();
+    expect((appliquer(e2, [lib.commande]).objets["sp"]!.params as { tangentes?: unknown }).tangentes).toBeUndefined();
+    const ligne = appliquer(socle(), [{ type: "esquisse.polyligne", params: { id: "pl", niveauId: "rdc", points: [pt(0, 0), pt(1, 1)], ferme: false } }]);
+    expect(splineEditable(ligne, ["pl"], "rdc")).toBeNull();
+  });
+});
+
 let n = 0;
 function appliquer(etat: ModeleAtelier, commandes: Commande[]): ModeleAtelier {
   n += 1;
