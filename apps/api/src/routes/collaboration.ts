@@ -210,7 +210,7 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
 }
 
 function commentView(c: typeof projectComments.$inferSelect, userId: string) {
-  return { id: c.id, stepNumber: c.stepNumber, parentId: c.parentId ?? null, authorEmail: c.authorEmail, body: c.body, createdAt: c.createdAt.toISOString(), mine: c.authorId === userId };
+  return { id: c.id, stepNumber: c.stepNumber, parentId: c.parentId ?? null, atelierRevision: c.atelierRevision ?? null, authorEmail: c.authorEmail, body: c.body, createdAt: c.createdAt.toISOString(), mine: c.authorId === userId };
 }
 
 collaborationRouter.get("/", async (req, res) => {
@@ -256,7 +256,14 @@ collaborationRouter.get("/comments", async (req, res) => {
   const project = await projectOr404(req, res, "read");
   if (!project) return;
   const step = typeof req.query["step"] === "string" ? Number(req.query["step"]) : null;
-  const where = step !== null && Number.isInteger(step) ? and(eq(projectComments.projectId, project.id), eq(projectComments.stepNumber, step)) : eq(projectComments.projectId, project.id);
+  // Fil d'une entrée du journal de l'Atelier (D-055) : `?revision=` (révision résultante de l'entrée).
+  const revision = typeof req.query["revision"] === "string" ? Number(req.query["revision"]) : null;
+  const where =
+    revision !== null && Number.isInteger(revision)
+      ? and(eq(projectComments.projectId, project.id), eq(projectComments.atelierRevision, revision))
+      : step !== null && Number.isInteger(step)
+        ? and(eq(projectComments.projectId, project.id), eq(projectComments.stepNumber, step))
+        : eq(projectComments.projectId, project.id);
   const rows = await db.select().from(projectComments).where(where).orderBy(asc(projectComments.createdAt));
   res.json(rows.map((c) => commentView(c, req.user!.id)));
 });
@@ -266,6 +273,8 @@ const commentSchema = z.object({
   stepNumber: z.number().int().min(1).max(21).nullable().optional(),
   /** Réponse en fil : le commentaire auquel on répond (même projet) ; l'étape de la réponse est celle du commentaire parent. */
   parentId: z.string().min(1).max(64).nullable().optional(),
+  /** Entrée du journal de l'Atelier commentée (D-055) : sa révision résultante ; elle doit exister. */
+  atelierRevision: z.number().int().min(1).nullable().optional(),
 });
 
 collaborationRouter.post("/comments", async (req, res) => {
@@ -277,10 +286,19 @@ collaborationRouter.post("/comments", async (req, res) => {
     return;
   }
   let stepNumber = parsed.data.stepNumber ?? null;
+  let atelierRevision = parsed.data.atelierRevision ?? null;
+  if (atelierRevision !== null) {
+    const [entree] = await db.select({ id: atelierCommands.id }).from(atelierCommands).where(and(eq(atelierCommands.projectId, project.id), eq(atelierCommands.resultRevision, atelierRevision))).limit(1);
+    if (!entree) {
+      res.status(404).json({ error: "not_found", message: `Aucune entrée du journal de l'Atelier à la révision ${atelierRevision}.` });
+      return;
+    }
+    stepNumber = null;
+  }
   let parentId: string | null = null;
   if (parsed.data.parentId) {
     const [parent] = await db
-      .select({ id: projectComments.id, stepNumber: projectComments.stepNumber, parentId: projectComments.parentId })
+      .select({ id: projectComments.id, stepNumber: projectComments.stepNumber, parentId: projectComments.parentId, atelierRevision: projectComments.atelierRevision })
       .from(projectComments)
       .where(and(eq(projectComments.projectId, project.id), eq(projectComments.id, parsed.data.parentId)))
       .limit(1);
@@ -291,10 +309,11 @@ collaborationRouter.post("/comments", async (req, res) => {
     // Un seul niveau de fil (comme un fil de discussion lisible) : répondre à une réponse rattache au commentaire d'origine.
     parentId = parent.parentId ?? parent.id;
     stepNumber = parent.stepNumber;
+    atelierRevision = parent.atelierRevision ?? null;
   }
   const [created] = await db
     .insert(projectComments)
-    .values({ id: newId("com"), projectId: project.id, stepNumber, parentId, authorId: req.user!.id, authorEmail: req.user!.email, body: parsed.data.body })
+    .values({ id: newId("com"), projectId: project.id, stepNumber, parentId, atelierRevision, authorId: req.user!.id, authorEmail: req.user!.email, body: parsed.data.body })
     .returning();
   res.status(201).json(commentView(created!, req.user!.id));
 });

@@ -4,9 +4,10 @@
  * réparer, ouvertures sans hôte, écarts d'import), et le bilan du serveur (réserves Harmonie, revue périmée,
  * documents à régénérer). Les problèmes ne sont jamais corrigés en silence : chaque ligne mène à l'objet.
  */
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ModeleAtelier, TypeProbleme } from "@parcours/atelier-model";
-import { api } from "../../../../lib/api";
+import { api, type ProjectComment } from "../../../../lib/api";
 import type { InstantaneClient } from "../../bus/atelier-client";
 
 export interface PropsModifications {
@@ -39,6 +40,11 @@ export function Modifications({ projectId, instantane, readOnly, onDecider, onAl
   const parType = new Map<string, typeof problemes>();
   for (const p of problemes) parType.set(p.type, [...(parType.get(p.type) ?? []), p]);
   const journal = [...instantane.journal].reverse().slice(0, 30);
+  // Commentaires attachés aux entrées du journal (D-055) : lus à l'ouverture du journal.
+  const [journalOuvert, setJournalOuvert] = useState(false);
+  const commentaires = useQuery({ queryKey: ["comments", projectId, "atelier"], queryFn: () => api.listComments(projectId, null), enabled: journalOuvert, retry: false });
+  const parRevision = new Map<number, ProjectComment[]>();
+  for (const c of commentaires.data ?? []) if (c.atelierRevision != null) parRevision.set(c.atelierRevision, [...(parRevision.get(c.atelierRevision) ?? []), c]);
 
   return (
     <section className="modifications" aria-label="Modifications et problèmes">
@@ -67,7 +73,7 @@ export function Modifications({ projectId, instantane, readOnly, onDecider, onAl
           ))}
         </ul>
       )}
-      <details className="mod-journal">
+      <details className="mod-journal" onToggle={(e) => setJournalOuvert(e.currentTarget.open)}>
         <summary>Journal ({instantane.journal.length})</summary>
         <a className="lien journal-export" href={`/projects/${projectId}/atelier/journal.csv`} download data-export-journal>
           Exporter l'historique (CSV)
@@ -81,6 +87,7 @@ export function Modifications({ projectId, instantane, readOnly, onDecider, onAl
                   Consulter
                 </button>
               )}
+              <FilEntree projectId={projectId} revision={j.resultRevision} commentaires={parRevision.get(j.resultRevision) ?? []} />
             </li>
           ))}
         </ol>
@@ -135,5 +142,55 @@ export function Modifications({ projectId, instantane, readOnly, onDecider, onAl
         </div>
       )}
     </section>
+  );
+}
+
+/** Fil de commentaires d'une entrée du journal (D-055) : lecture pour tous, écriture pour qui peut commenter. */
+function FilEntree({ projectId, revision, commentaires }: { projectId: string; revision: number; commentaires: ProjectComment[] }) {
+  const queryClient = useQueryClient();
+  const [ouvert, setOuvert] = useState(false);
+  const [texte, setTexte] = useState("");
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [envoi, setEnvoi] = useState(false);
+  const envoyer = async () => {
+    const corps = texte.trim();
+    if (!corps) return;
+    setEnvoi(true);
+    setErreur(null);
+    try {
+      await api.addComment(projectId, corps, null, null, revision);
+      setTexte("");
+      await queryClient.invalidateQueries({ queryKey: ["comments", projectId] });
+    } catch (err) {
+      setErreur(err instanceof Error ? err.message : "Commentaire non enregistré.");
+    } finally {
+      setEnvoi(false);
+    }
+  };
+  return (
+    <>
+      <button type="button" className="lien journal-commenter" data-commenter-revision={revision} aria-expanded={ouvert} onClick={() => setOuvert(!ouvert)}>
+        {commentaires.length ? `Commentaires (${commentaires.length})` : "Commenter"}
+      </button>
+      {ouvert && (
+        <div className="journal-fil" data-fil-revision={revision}>
+          {commentaires.length > 0 && (
+            <ul>
+              {commentaires.map((c) => (
+                <li key={c.id}>
+                  <span className="nav-detail">{c.authorEmail} · {new Date(c.createdAt).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}</span> {c.body}
+                </li>
+              ))}
+            </ul>
+          )}
+          <form onSubmit={(e) => { e.preventDefault(); void envoyer(); }}>
+            <label className="sr-only" htmlFor={`fil-${revision}`}>Commentaire sur la révision {revision}</label>
+            <textarea id={`fil-${revision}`} rows={2} maxLength={4000} value={texte} onChange={(e) => setTexte(e.target.value)} onKeyDown={(e) => e.stopPropagation()} placeholder={`Commentaire sur la révision ${revision}`} />
+            <button type="submit" disabled={envoi || !texte.trim()}>Publier</button>
+            {erreur && <p className="ver-erreur" role="alert">{erreur}</p>}
+          </form>
+        </div>
+      )}
+    </>
   );
 }

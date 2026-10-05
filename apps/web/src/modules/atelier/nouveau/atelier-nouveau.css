@@ -1989,3 +1989,27 @@
 .inspecteur-scinder { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; margin: 0.5rem 0; }
 .inspecteur-scinder input { width: 7rem; }
 
+
+/* Commentaires d'une entrée du journal (D-055). */
+.journal-commenter {
+  margin-left: 0.4rem;
+  font-size: 0.85em;
+}
+.journal-fil {
+  margin: 0.3rem 0 0.5rem 0.8rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--atelier-ligne);
+}
+.journal-fil ul {
+  list-style: none;
+  margin: 0 0 0.3rem;
+  padding: 0;
+}
+.journal-fil li {
+  margin-bottom: 0.25rem;
+}
+.journal-fil textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+}

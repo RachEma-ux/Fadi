@@ -67,6 +67,12 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
           <Link to={`/projets/${projectId}?module=parcours&etape=${c.stepNumber}`}>étape {pad2(c.stepNumber)}</Link>
         </>
       )}
+      {c.atelierRevision != null && !c.parentId && (
+        <>
+          {" · "}
+          <Link to={`/projets/${projectId}?module=atelier`}>Atelier, révision {c.atelierRevision}</Link>
+        </>
+      )}
       {c.mine && (
         <button type="button" className="comment-delete" disabled={remove.isPending} onClick={() => remove.mutate(c.id)}>
           Supprimer

@@ -241,6 +241,8 @@ export const projectComments = pgTable("project_comments", {
   body: text("body").notNull(),
   /** Réponse en fil : identifiant du commentaire auquel elle répond (même projet), null au premier niveau. */
   parentId: text("parent_id"),
+  /** Entrée du journal de l'Atelier commentée (D-055) : sa révision résultante, null sinon. */
+  atelierRevision: integer("atelier_revision"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("project_comments_project_idx").on(t.projectId, t.createdAt)]);
 

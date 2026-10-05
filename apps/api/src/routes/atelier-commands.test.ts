@@ -715,6 +715,21 @@ describe("compléments : historique d'un objet, réutilisation de modèle", () =
     expect("verrouille" in (await client.get(`/projects/${pid}/atelier/model`)).body.modele.objets.m1).toBe(false);
   });
 
+  it("commentaires attachés à une entrée du journal (D-055) : fil par révision, réponses rattachées, révision inconnue refusée", async () => {
+    const client = await registerAndLogin("journal-commentaires@example.com");
+    const pid = await projetVide(client);
+    expect((await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("jc1", 0, [niveau, mur("m1", 6)]))).status).toBe(200);
+    const c1 = await client.post(`/projects/${pid}/collaboration/comments`).send({ body: "Mur à vérifier avec le BET", atelierRevision: 1 });
+    expect(c1.status).toBe(201);
+    expect(c1.body).toMatchObject({ atelierRevision: 1, stepNumber: null, parentId: null });
+    const r1 = await client.post(`/projects/${pid}/collaboration/comments`).send({ body: "Vu", parentId: c1.body.id });
+    expect(r1.body).toMatchObject({ atelierRevision: 1, parentId: c1.body.id });
+    expect((await client.post(`/projects/${pid}/collaboration/comments`).send({ body: "Hors fil", stepNumber: 3 })).status).toBe(201);
+    const fil = (await client.get(`/projects/${pid}/collaboration/comments?revision=1`)).body;
+    expect(fil.map((c: { body: string }) => c.body)).toEqual(["Mur à vérifier avec le BET", "Vu"]);
+    expect((await client.post(`/projects/${pid}/collaboration/comments`).send({ body: "?", atelierRevision: 99 })).status).toBe(404);
+  });
+
   it("reprise depuis un autre projet : aperçu sans écriture, exécution en une révision, source modifiée entre-temps → 409, source illisible → 404", async () => {
     const client = await registerAndLogin("reprise@example.com");
     const source = (await client.post("/examples/p118-exemple-complet/import")).body.id as string;

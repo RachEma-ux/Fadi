@@ -125,6 +125,22 @@ const champEpaisseur = page.locator(".inspecteur input:enabled");
 check("consultation : l'inspecteur n'offre aucun champ modifiable", (await champEpaisseur.count()) === 0);
 await page.locator('.barre-consultation button:has-text("Revenir")').click();
 check("retour à l'état courant", (await page.locator(".barre-consultation").count()) === 0 && (await page.locator(".barre-sync").isVisible()));
+// Commentaire attaché à une entrée du journal (D-055) : publié depuis le panneau, relu par révision.
+{
+  if ((await page.locator(".mod-journal").getAttribute("open")) === null) await page.locator(".mod-journal summary").click();
+  const btn = page.locator("[data-commenter-revision]").first();
+  const rev = Number(await btn.getAttribute("data-commenter-revision"));
+  await btn.click();
+  await page.locator(`[data-fil-revision="${rev}"] textarea`).fill("À vérifier avec le BET");
+  await page.locator(`[data-fil-revision="${rev}"] button[type="submit"]`).click();
+  let fil = [];
+  for (let k = 0; k < 30 && !fil.length; k++) {
+    fil = (await api("get", `/projects/${pid}/collaboration/comments?revision=${rev}`)).body ?? [];
+    if (!fil.length) await page.waitForTimeout(500);
+  }
+  await page.waitForSelector(`[data-fil-revision="${rev}"] li`, { timeout: 10000 }).catch(() => {});
+  check("commentaire attaché à une entrée du journal, relu par révision et affiché dans son fil", fil.length === 1 && fil[0].atelierRevision === rev && (await page.locator(`[data-fil-revision="${rev}"] li`).count()) === 1, `r${rev} · ${JSON.stringify(fil).slice(0, 120)}`);
+}
 
 // Lasso (Alt + glisser avec l'outil Sélection) : un contour libre autour de tout le plan sélectionne le niveau entier.
 await page.keyboard.press("Escape");
