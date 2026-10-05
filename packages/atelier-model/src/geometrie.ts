@@ -1078,11 +1078,35 @@ export function decalerArrondi(points: readonly Vec[], ferme: boolean, d: number
 }
 
 /**
+ * Lissage adaptatif d'un tracé à main levée (D-107, DA-01-06) : tolérance de simplification propre à chaque point,
+ * proportionnelle à la vitesse locale du geste rapportée à sa vitesse médiane (bornée de 0,5 à 3 fois la tolérance) —
+ * un geste rapide est davantage lissé, un passage lent et appliqué garde ses détails. Instants en millisecondes.
+ */
+export function tolerancesAdaptatives(points: readonly Vec[], instants: readonly number[], tolerance: number): number[] {
+  const n = points.length;
+  if (n !== instants.length || n < 3) return points.map(() => tolerance);
+  const v = points.map((_, i) => {
+    const a = Math.max(0, i - 1);
+    const b = Math.min(n - 1, i + 1);
+    const dt = instants[b]! - instants[a]!;
+    return dt > 0 ? distance(points[a]!, points[b]!) / dt : NaN;
+  });
+  const valides = v.filter((x) => Number.isFinite(x) && x > 0).sort((x, y) => x - y);
+  if (!valides.length) return points.map(() => tolerance);
+  const med = valides[Math.floor(valides.length / 2)]!;
+  return v.map((x) => tolerance * (Number.isFinite(x) && x > 0 ? Math.min(3, Math.max(0.5, x / med)) : 1));
+}
+
+/**
  * Simplification d'un tracé à main levée (D-067, DA-01-06) : Douglas–Peucker à la tolérance donnée (m) — chaque
  * point d'origine reste à moins de la tolérance du tracé simplifié ; extrémités gardées ; points arrondis au µm.
  */
-export function simplifierTrace(points: readonly Vec[], tolerance: number): Point2[] {
-  const p = points.filter((q, i) => i === 0 || Math.hypot(q.x - points[i - 1]!.x, q.y - points[i - 1]!.y) > 1e-9);
+export function simplifierTrace(points: readonly Vec[], tolerance: number | readonly number[]): Point2[] {
+  const gardes = points.map((q, i) => i === 0 || Math.hypot(q.x - points[i - 1]!.x, q.y - points[i - 1]!.y) > 1e-9);
+  const p = points.filter((_, i) => gardes[i]);
+  // Tolérance par point (lissage adaptatif, D-107) : le point qui la dépasse le plus (écart rapporté à sa propre
+  // tolérance) est gardé ; à tolérance unique, c'est le Douglas–Peucker habituel.
+  const tol = typeof tolerance === "number" ? p.map(() => tolerance) : tolerance.filter((_, i) => gardes[i]);
   if (p.length <= 2) return p.map((q) => pt(q.x, q.y));
   const garder = new Array<boolean>(p.length).fill(false);
   garder[0] = true;
@@ -1091,15 +1115,15 @@ export function simplifierTrace(points: readonly Vec[], tolerance: number): Poin
   while (pile.length) {
     const [i, j] = pile.pop()!;
     let k = -1;
-    let dMax = 0;
+    let rMax = 0;
     for (let m = i + 1; m < j; m++) {
-      const d = projectionSurSegment(p[m]!, p[i]!, p[j]!).distance;
-      if (d > dMax) {
-        dMax = d;
+      const r = projectionSurSegment(p[m]!, p[i]!, p[j]!).distance / Math.max(1e-12, tol[m] ?? 0);
+      if (r > rMax) {
+        rMax = r;
         k = m;
       }
     }
-    if (k >= 0 && dMax > tolerance) {
+    if (k >= 0 && rMax > 1) {
       garder[k] = true;
       pile.push([i, k], [k, j]);
     }

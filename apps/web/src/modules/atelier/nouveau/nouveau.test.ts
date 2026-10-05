@@ -130,6 +130,19 @@ describe("cote rattachée à un bloc (D-102)", () => {
   });
 });
 
+describe("main levée : lissage adaptatif (D-107)", () => {
+  it("case cochée et instants fournis : un geste rapide est davantage lissé ; sans la case, tolérance unique", async () => {
+    const { traceMainLevee } = await import("./plan2d/Plan2D");
+    const points = Array.from({ length: 41 }, (_, i) => pt(i * 0.1, i % 2 ? 0.03 : 0));
+    const instants = points.map((_, i) => (i <= 20 ? i * 40 : 800 + (i - 20) * 10));
+    const nb = (adaptatif: boolean) => {
+      const r = traceMainLevee(points, ui({ parametresOutil: { toleranceMainLevee: 0.02, ...(adaptatif ? { lissageAdaptatif: true } : {}) } }), false, instants) as { commandes: Commande[] };
+      return (r.commandes[0]!.params as { points: unknown[] }).points.length;
+    };
+    expect(nb(true)).toBeLessThan(nb(false));
+  });
+});
+
 let n = 0;
 function appliquer(etat: ModeleAtelier, commandes: Commande[]): ModeleAtelier {
   n += 1;

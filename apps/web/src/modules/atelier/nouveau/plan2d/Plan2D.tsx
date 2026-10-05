@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { abscissesIntersections, effacerPortion, aireNette, centroide, cleTremie, pointDansPolygone, tremiesRetenues, cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pointsSpline, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { tolerancesAdaptatives, abscissesIntersections, effacerPortion, aireNette, centroide, cleTremie, pointDansPolygone, tremiesRetenues, cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pointsSpline, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -49,6 +49,8 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const idObjets = `plan-objets-${useId().replace(/:/g, "")}`;
   const [lasso, setLasso] = useState<Point2[] | null>(null);
   const lassoPoints = useRef<Point2[]>([]);
+  // Instants des points du tracé (ms) : lissage adaptatif de la main levée (D-107).
+  const lassoInstants = useRef<number[]>([]);
   const [decalage, setDecalage] = useState<{ dx: number; dy: number; accroche: Accroche } | null>(null);
   const pointeurs = useRef(new Map<number, { x: number; y: number }>());
   const pincement = useRef<{ d: number; vue: EtatUi["vue"]; cx: number; cy: number } | null>(null);
@@ -201,6 +203,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       // Un point tous les 4 px environ : le contour reste léger.
       if (!dernier || Math.hypot((p.x - dernier.x) * pr.echelle, (p.y - dernier.y) * pr.echelle) > 4) {
         lassoPoints.current = [...lassoPoints.current, p];
+        lassoInstants.current = [...lassoInstants.current, e.timeStamp];
         g.bouge = g.bouge || lassoPoints.current.length > 2;
         setLasso(lassoPoints.current);
       }
@@ -278,6 +281,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     // Main levée (D-067, DA-01-06) : le tracé suit le pointeur (souris, stylet ou doigt) jusqu'au relâchement.
     if ((ui.outil === "main-levee" || ui.outil === "gomme") && !readOnly) {
       lassoPoints.current = [p];
+      lassoInstants.current = [e.timeStamp];
       glisse.current = { mode: "trace", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
       return;
     }
@@ -392,7 +396,9 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       const brut = lassoPoints.current;
       lassoPoints.current = [];
       setLasso(null);
-      const r = ui.outil === "gomme" ? gommer(brut, etat, cache, e.altKey) : traceMainLevee(brut, ui, e.altKey);
+      const instants = lassoInstants.current;
+      lassoInstants.current = [];
+      const r = ui.outil === "gomme" ? gommer(brut, etat, cache, e.altKey) : traceMainLevee(brut, ui, e.altKey, instants);
       if ("message" in r) etatUi.set({ aide: r.message });
       else onCommandes(r.commandes, r.label);
       return;
@@ -731,11 +737,13 @@ function EchelleGraphique({ echelle, hauteur }: { echelle: number; hauteur: numb
  * Tracé à main levée (D-067, DA-01-06) : simplifié à la tolérance de l'outil (Douglas–Peucker), fermé quand il revient
  * à son départ (moins de trois fois la tolérance), polyligne — ou spline avec Alt au relâchement. Pur.
  */
-export function traceMainLevee(brut: readonly Point2[], ui: EtatUi, courbe: boolean): { commandes: Commande[]; label: string } | { message: string } {
+export function traceMainLevee(brut: readonly Point2[], ui: EtatUi, courbe: boolean, instants?: readonly number[]): { commandes: Commande[]; label: string } | { message: string } {
   if (!ui.niveauId) return { message: "Choisissez d'abord un niveau." };
   const t = Number(ui.parametresOutil["toleranceMainLevee"]);
   const tolerance = Number.isFinite(t) && t > 0 ? t : 0.05;
-  let points = simplifierTrace(brut, tolerance);
+  // Lissage adaptatif (D-107, case de l'outil) : la tolérance suit la vitesse du geste.
+  const adaptatif = ui.parametresOutil["lissageAdaptatif"] === true && !!instants && instants.length === brut.length;
+  let points = simplifierTrace(brut, adaptatif ? tolerancesAdaptatives(brut, instants!, tolerance) : tolerance);
   if (points.length < 2) return { message: "Tracé trop court : glissez pour dessiner." };
   const ferme = points.length >= 4 && distance(points[0]!, points[points.length - 1]!) <= tolerance * 3;
   if (ferme) points = points.slice(0, -1);

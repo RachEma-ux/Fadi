@@ -650,6 +650,12 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: Mo
           })}
         </dl>
       )}
+      {ui.outil === "main-levee" && (
+        <label className="case" title="Un geste rapide est davantage lissé, un passage lent garde ses détails (0,5 à 3 fois la tolérance)">
+          <input type="checkbox" checked={ui.parametresOutil["lissageAdaptatif"] === true} data-lissage-adaptatif onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, lissageAdaptatif: e.target.checked } }))} />
+          Lissage adaptatif (selon la vitesse du geste)
+        </label>
+      )}
       {ui.outil === "plancher" && <PropositionsPlancherVue etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "contour" && (
         <div className="champ">
