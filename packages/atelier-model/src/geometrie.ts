@@ -214,6 +214,72 @@ interface Arete {
  * (aire signée négative dans le parcours) est exclue. Jamais imposé : le résultat est une proposition.
  */
 export function boucles(axes: readonly AxeMur[], tol = TOLERANCE_REDUCTEUR): BoucleFermee[] {
+  return facesGraphe(axes, tol)
+    .filter((f) => f.aireSignee > tol * tol)
+    .map((f) => ({ contour: f.contour.map((p) => pt(p.x, p.y)), murs: [...new Set(f.aretes)], aire: f.aireSignee }));
+}
+
+/** Contour extérieur d'un ensemble connexe de murs (D-069) : sens direct, mur porteur de chaque côté (côté i : sommet i → i+1). */
+export interface ContourExterieur {
+  contour: Point2[];
+  cotes: string[];
+  murs: string[];
+  aire: number;
+}
+
+/**
+ * Contours extérieurs du graphe des axes de murs (D-069, plancher DA-07-05) : la face extérieure de chaque
+ * composante connexe qui enferme au moins une boucle, débarrassée des murs en impasse (allers-retours). Une
+ * proposition, jamais une écriture.
+ */
+export function contoursExterieurs(axes: readonly AxeMur[], tol = TOLERANCE_REDUCTEUR): ContourExterieur[] {
+  const out: ContourExterieur[] = [];
+  for (const f of facesGraphe(axes, tol)) {
+    if (f.aireSignee >= -tol * tol) continue;
+    // Sens direct : contour inversé ; le côté j du contour inversé est le côté (n − 2 − j) du parcours.
+    let pts: Vec[] = [...f.contour].reverse();
+    const n0 = pts.length;
+    let cotes: string[] = pts.map((_, j) => f.aretes[(n0 - 2 - j + 2 * n0) % n0]!);
+    // Impasses : … P, Q, P … → P (deux côtés retirés), répété jusqu'à stabilité.
+    for (let change = true; change && pts.length >= 3; ) {
+      change = false;
+      for (let i = 0; i < pts.length; i++) {
+        const n = pts.length;
+        const avant = pts[(i - 1 + n) % n]!;
+        const apres = pts[(i + 1) % n]!;
+        if (memePoint(avant, apres, Math.max(tol, 1e-6))) {
+          const iApres = (i + 1) % n;
+          const garder = (k: number) => k !== i && k !== iApres;
+          const cotesNouveaux: string[] = [];
+          const ptsNouveaux: Vec[] = [];
+          for (let k = 0; k < n; k++) if (garder(k)) {
+            ptsNouveaux.push(pts[k]!);
+            // côté sortant de P (= avant) : celui qui sortait de Q (après l'aller-retour)
+            cotesNouveaux.push(k === (i - 1 + n) % n ? cotes[iApres]! : cotes[k]!);
+          }
+          pts = ptsNouveaux;
+          cotes = cotesNouveaux;
+          change = true;
+          break;
+        }
+      }
+    }
+    if (pts.length < 3) continue;
+    const a = aireSignee(pts);
+    if (a <= tol * tol) continue;
+    out.push({ contour: pts.map((p) => pt(p.x, p.y)), cotes, murs: [...new Set(cotes)], aire: a });
+  }
+  return out;
+}
+
+interface FaceGraphe {
+  contour: Vec[];
+  /** Mur de chaque côté du parcours (côté i : sommet i → i+1). */
+  aretes: string[];
+  aireSignee: number;
+}
+
+function facesGraphe(axes: readonly AxeMur[], tol: number): FaceGraphe[] {
   const noeuds: Noeud[] = [];
   const idNoeud = (p: Vec): number => {
     const existant = noeuds.find((n) => memePoint(n.p, p, Math.max(tol, 1e-6)));
@@ -262,7 +328,7 @@ export function boucles(axes: readonly AxeMur[], tol = TOLERANCE_REDUCTEUR): Bou
   // 4. Parcours des faces : depuis une arête, à chaque nœud prendre l'arête suivante dans l'ordre horaire
   //    après l'arête inverse (règle « tourner à gauche »).
   const visitee = new Set<number>();
-  const faces: BoucleFermee[] = [];
+  const faces: FaceGraphe[] = [];
   for (const depart of aretes) {
     if (visitee.has(depart.id)) continue;
     const chemin: Arete[] = [];
@@ -293,10 +359,7 @@ export function boucles(axes: readonly AxeMur[], tol = TOLERANCE_REDUCTEUR): Bou
     }
     if (chemin.length < 3 || courante.id !== depart.id) continue;
     const contour = chemin.map((a) => noeuds[a.de]!.p);
-    const s = aireSignee(contour);
-    if (s <= tol * tol) continue; // face extérieure (négative) ou dégénérée
-    const murs = [...new Set(chemin.map((a) => a.mur))];
-    faces.push({ contour: contour.map((p) => pt(p.x, p.y)), murs, aire: s });
+    faces.push({ contour, aretes: chemin.map((a) => a.mur), aireSignee: aireSignee(contour) });
   }
   return faces;
 }
@@ -546,6 +609,46 @@ export function decalerContour(points: readonly Vec[], d: number): Point2[] | nu
     }
   }
   return out;
+}
+
+/**
+ * Décalage d'un contour fermé de sens direct, côté par côté (D-069) : le côté i (sommet i → i+1) est porté vers
+ * l'extérieur de ds[i] (m, ≥ 0 ou < 0). Deux côtés alignés de décalages différents : un ressaut de deux sommets.
+ * Null si le résultat se recoupe ou change de sens.
+ */
+export function decalerContourCotes(points: readonly Vec[], ds: readonly number[]): Point2[] | null {
+  const n = points.length;
+  if (n < 3 || ds.length !== n || aireSignee(points) <= 1e-12) return null;
+  const lignes = points.map((a, i) => {
+    const u = normalise(sub(points[(i + 1) % n]!, a));
+    return { p: add(a, mul({ x: u.y, y: -u.x }, ds[i]!)), d: u };
+  });
+  const out: Vec[] = [];
+  for (let i = 0; i < n; i++) {
+    const l1 = lignes[(i - 1 + n) % n]!;
+    const l2 = lignes[i]!;
+    const den = cross(l1.d, l2.d);
+    if (Math.abs(den) < 1e-12) {
+      // Alignés : même décalage, le sommet glisse sur la ligne ; sinon un ressaut perpendiculaire.
+      const q1 = add(points[i]!, mul({ x: l1.d.y, y: -l1.d.x }, ds[(i - 1 + n) % n]!));
+      const q2 = add(points[i]!, mul({ x: l2.d.y, y: -l2.d.x }, ds[i]!));
+      if (memePoint(q1, q2, 1e-9)) out.push(q2);
+      else out.push(q1, q2);
+    } else {
+      const t = cross(sub(l2.p, l1.p), l2.d) / den;
+      out.push(add(l1.p, mul(l1.d, t)));
+    }
+  }
+  const res = out.map((q) => pt(Math.round(q.x * 1e9) / 1e9, Math.round(q.y * 1e9) / 1e9));
+  const m = res.length;
+  if (aireSignee(res) <= 1e-12) return null;
+  for (let i = 0; i < m; i++) {
+    for (let j = i + 2; j < m; j++) {
+      if (i === 0 && j === m - 1) continue;
+      if (intersectionSegments(res[i]!, res[(i + 1) % m]!, res[j]!, res[(j + 1) % m]!, 1e-12)) return null;
+    }
+  }
+  return res;
 }
 
 const sensDirect = (c: readonly Vec[]): Vec[] => {

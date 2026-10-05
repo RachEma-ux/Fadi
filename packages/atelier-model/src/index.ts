@@ -47,3 +47,4 @@ export * from "./echanges/proprietes-csv.js";
 export * from "./esquisse/trame.js";
 export { ajusterSpline } from "./esquisse/conversion.js";
 export * from "./echanges/bibliotheque.js";
+export * from "./plancher.js";

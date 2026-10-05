@@ -368,3 +368,18 @@ describe("joindre deux murs (D-068)", () => {
     expect(distance(B.params.a, pt(4, 0))).toBeLessThan(1e-6);
   });
 });
+
+describe("outil Plancher (D-069)", () => {
+  it("rive et épaisseur exigées ; clic dans le contour proposé : dalle d'usage plancher sur la face extérieure", () => {
+    const etat = carre(socle());
+    const ici = pt(2, 2);
+    expect(clic("plancher", ici, etat, ui({ outil: "plancher" }), opts).aide).toMatch(/ligne de rive/);
+    expect(clic("plancher", ici, etat, ui({ outil: "plancher", parametresOutil: { rivePlancher: "exterieur" } }), opts).aide).toMatch(/épaisseur/);
+    const r = clic("plancher", ici, etat, ui({ outil: "plancher", parametresOutil: { rivePlancher: "exterieur", epaisseurPlancher: 0.25 } }), opts);
+    expect(r.commandes).toHaveLength(1);
+    const p = r.commandes[0]!.params as { contour: { x: number; y: number }[]; usage: string };
+    expect(p.usage).toBe("plancher");
+    expect(Math.min(...p.contour.map((q) => q.x))).toBeCloseTo(-0.1, 9);
+    expect(clic("plancher", pt(9, 9), etat, ui({ outil: "plancher", parametresOutil: { rivePlancher: "axe", epaisseurPlancher: 0.25 } }), opts).commandes).toHaveLength(0);
+  });
+});

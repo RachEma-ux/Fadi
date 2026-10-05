@@ -903,6 +903,36 @@ await page.waitForSelector(".plan2d");
   check("isolement : la sélection isolée pour soi en 3D, puis l'affichage complet revient", isole === "2" && quitte, `${isole} · ${quitte}`);
 }
 
+// Outil Plancher (D-069) : contour proposé depuis les murs fermés, rive choisie, clic dans la proposition.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const P = (x, y) => ({ x: ax + x, y: ay + y, frame: "local", unit: "m" });
+  const W = (id, a, b) => ({ type: "mur.tracer", params: { id, niveauId: murA.niveauId, a, b, epaisseur: m(0.2), hauteur: m(3) } });
+  let rp = { status: 0 };
+  for (let k = 0; k < 5 && rp.status !== 200; k++) rp = await lot(pid, `pl-${Date.now()}-${k}`, (await modele(pid)).revision, [W("pl-w1", P(80, 80), P(86, 80)), W("pl-w2", P(86, 80), P(86, 84)), W("pl-w3", P(86, 84), P(80, 84)), W("pl-w4", P(80, 84), P(80, 80))]);
+  await ouvrir(pid);
+  await selectionner("pl-w1");
+  const avant = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "dalle" && o.params.usage === "plancher").length;
+  const ok = await choisirOutil("plancher", "Plancher");
+  await page.locator("[data-plancher-rive]").selectOption("exterieur");
+  await page.locator("#outil-epaisseurPlancher").fill("0.25");
+  await page.waitForSelector("[data-propositions-plancher]", { state: "attached", timeout: 10000 }).catch(() => {});
+  const b1 = await page.locator('.plan2d [data-objet="pl-w1"]').boundingBox();
+  const b3 = await page.locator('.plan2d [data-objet="pl-w3"]').boundingBox();
+  if (b1 && b3) await page.mouse.click((b1.x + b1.width / 2 + b3.x + b3.width / 2) / 2, (b1.y + b1.height / 2 + b3.y + b3.height / 2) / 2);
+  let cree = null;
+  for (let k = 0; k < 30 && !cree; k++) {
+    const ds = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "dalle" && o.params.usage === "plancher");
+    cree = ds.length > avant ? ds.find((d) => d.params.contour.some((q) => Math.abs(q.x - (ax + 79.9)) < 1e-6)) ?? null : null;
+    if (!cree) await page.waitForTimeout(500);
+  }
+  await page.keyboard.press("Escape");
+  check("outil Plancher : contour proposé depuis quatre murs, rive sur la face extérieure, plancher créé au clic", rp.status === 200 && ok && !!cree && cree.params.epaisseur.value === 0.25, `${rp.status} · outil ${ok} · ${JSON.stringify(cree?.params.contour ?? null).slice(0, 160)}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

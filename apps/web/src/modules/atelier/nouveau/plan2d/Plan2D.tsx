@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { cercleTroisPoints, distance, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { cercleTroisPoints, distance, proposerPlancher, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -77,6 +77,9 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const rayon = 12 / ui.vue.echelle;
 
   const calquesMasques = useMemo(() => new Set(Object.values(etat.calques).filter((c) => !c.visible).map((c) => c.id)), [etat.calques]);
+  // Outil Plancher (D-069) : propositions en surimpression, jamais écrites.
+  const rivePlancher = ui.parametresOutil["rivePlancher"];
+  const plancher = useMemo(() => (ui.outil === "plancher" && ui.niveauId && (rivePlancher === "axe" || rivePlancher === "exterieur") ? proposerPlancher(etat, ui.niveauId, rivePlancher) : null), [ui.outil, ui.niveauId, rivePlancher, etat]);
   const objets = useMemo(
     () =>
       (Object.values(etat.objets) as OccurrenceQuelconque[])
@@ -383,6 +386,20 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       {decalage && decalage.accroche.type !== "libre" && <MarqueAccroche a={decalage.accroche} pr={pr} />}
       {decalage && <text x={pr.vers(decalage.accroche.point).x + 10} y={pr.vers(decalage.accroche.point).y - 10} className="plan-cote-apercu">{fmt(Math.hypot(decalage.dx, decalage.dy))} m</text>}
       <g className="plan-apercu" pointerEvents="none">
+        {plancher && (
+          <g className="plan-propositions-plancher" data-propositions-plancher={plancher.contours.length}>
+            {plancher.contours.map((c, i) => (
+              <g key={i}>
+                <path d={chemin(pr, c.contour)} className="plan-apercu-trait plan-proposition" />
+                {c.trous.map((t, k) => <path key={k} d={chemin(pr, t.contour)} className="plan-apercu-trait plan-proposition-trou" />)}
+              </g>
+            ))}
+            {plancher.interstices.map((x, i) => {
+              const q = pr.vers(x.point);
+              return <circle key={`i${i}`} cx={q.x} cy={q.y} r={6} className="plan-interstice" />;
+            })}
+          </g>
+        )}
         {pts.length > 0 && curseur && <Apercu outil={ui.outil} pts={pts} curseur={curseur} ui={ui} pr={pr} />}
         {pts.map((p, i) => {
           const s = pr.vers(p);

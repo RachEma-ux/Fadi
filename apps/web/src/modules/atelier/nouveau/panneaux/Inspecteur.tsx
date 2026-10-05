@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../../lib/api";
-import { bibliotheques, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { bibliotheques, proposerPlancher, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -71,13 +71,13 @@ const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(3).repla
 export function Inspecteur(props: PropsInspecteur) {
   const { etat, ui } = props;
   const sel = ui.selection.map((id) => etat.objets[id]).filter((o): o is OccurrenceQuelconque => !!o);
-  if (sel.length === 0) return <ParametresOutil etat={etat} ui={ui} />;
+  if (sel.length === 0) return <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} />;
   // Outil qui agit sur la sélection (répéter, décaler, réseau sur trajectoire…) avec des paramètres : ses champs
   // restent accessibles au-dessus de la sélection (D-058). Les outils de dessin gardent l'inspecteur de la sélection.
   if (ui.outil !== "selection" && (OUTILS_PAR_ID[ui.outil]?.condition ?? "").startsWith("selection") && (PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0) {
     return (
       <>
-        <ParametresOutil etat={etat} ui={ui} />
+        <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} />
         <InspecteurSelection {...props} />
       </>
     );
@@ -573,6 +573,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   raccorder: [{ cle: "rayon", libelle: "Rayon", unite: "m" }],
   "polygone-regulier": [{ cle: "cotes", libelle: "Nombre de côtés" }],
   "main-levee": [{ cle: "toleranceMainLevee", libelle: "Tolérance de simplification", unite: "m" }],
+  plancher: [{ cle: "epaisseurPlancher", libelle: "Épaisseur", unite: "m" }],
   "reseau-trajet": [{ cle: "copiesTrajet", libelle: "Nombre de copies" }, { cle: "pasTrajet", libelle: "ou pas (prioritaire)", unite: "m" }],
   prolonger: [{ cle: "longueurProlongement", libelle: "Longueur (sans limite)", unite: "m" }],
   trame: [{ cle: "depassement", libelle: "Dépassement des axes", unite: "m" }],
@@ -580,7 +581,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   "chanfrein-sommet": [{ cle: "distanceChanfrein", libelle: "Distance", unite: "m" }],
 };
 
-function ParametresOutil({ etat, ui }: { etat: ModeleAtelier; ui: EtatUi }) {
+function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: ModeleAtelier; ui: EtatUi; readOnly?: boolean; onCommandes?: (commandes: Commande[], label: string) => void }) {
   const outil = OUTILS_PAR_ID[ui.outil];
   const champs = PARAMS_OUTIL[ui.outil] ?? [];
   const niveau = ui.niveauId ? etat.niveaux[ui.niveauId] : null;
@@ -619,6 +620,7 @@ function ParametresOutil({ etat, ui }: { etat: ModeleAtelier; ui: EtatUi }) {
           })}
         </dl>
       )}
+      {ui.outil === "plancher" && <PropositionsPlancherVue etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "contour" && (
         <div className="champ">
           <label htmlFor="outil-formeContour">Créer</label>
@@ -1125,3 +1127,93 @@ function SyntheseZoneVue({ o, etat, desactive, onCommandes }: { o: Occurrence<"z
   );
 }
 
+
+/**
+ * Outil Plancher (D-069, DA-07-05) : ligne de rive choisie explicitement, propositions listées (aire, trémies),
+ * interstices des murs avec la jonction proposée, planchers existants et leurs écarts avec « Reprendre ». Rien n'est
+ * écrit sans un clic.
+ */
+function PropositionsPlancherVue({ etat, ui, readOnly, onCommandes }: { etat: ModeleAtelier; ui: EtatUi; readOnly: boolean; onCommandes?: (commandes: Commande[], label: string) => void }) {
+  const rive = ui.parametresOutil["rivePlancher"];
+  const props = ui.niveauId && (rive === "axe" || rive === "exterieur") ? proposerPlancher(etat, ui.niveauId, rive) : null;
+  const vus = new Set<string>();
+  const interstices = (props?.interstices ?? []).filter((x) => {
+    if (!x.voisinId) return true;
+    const cle = [x.murId, x.voisinId].sort().join("|");
+    if (vus.has(cle)) return false;
+    vus.add(cle);
+    return true;
+  });
+  return (
+    <div className="inspecteur-plancher" data-plancher-outil>
+      <div className="champ">
+        <label htmlFor="outil-rivePlancher">Ligne de rive</label>
+        <select id="outil-rivePlancher" data-plancher-rive value={rive === "axe" || rive === "exterieur" ? rive : ""} onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, rivePlancher: e.target.value || undefined } }))}>
+          <option value="">— à choisir —</option>
+          <option value="axe">Axe (ligne de référence) des murs</option>
+          <option value="exterieur">Face extérieure des murs</option>
+        </select>
+      </div>
+      {props && (
+        <>
+          <p className="inspecteur-aide" data-plancher-propositions={props.contours.length}>
+            {props.contours.length
+              ? `${props.contours.length} contour(s) proposé(s) : ${props.contours.map((c) => `${fmt(c.aire)} m² (${c.trous.length} trémie(s))`).join(" ; ")}. Aire géométrique, pas une surface réglementaire.`
+              : "Aucun contour fermé de murs sur ce niveau."}
+          </p>
+          {props.tremiesIsolees.length > 0 && <p className="inspecteur-aide">{props.tremiesIsolees.length} trémie(s) d'escalier hors de tout contour proposé.</p>}
+          {interstices.length > 0 && (
+            <ul className="inspecteur-liste" data-plancher-interstices={interstices.length}>
+              {interstices.map((x, i) => (
+                <li key={i}>
+                  Interstice : extrémité libre de {x.murId}
+                  {x.voisinId && x.distance !== null ? ` (à ${fmt(x.distance)} m de ${x.voisinId})` : ""}
+                  {x.voisinId && !readOnly && onCommandes && (
+                    <button type="button" className="lien" data-plancher-joindre={x.murId} onClick={() => onCommandes([{ type: "mur.joindre", params: { id: x.murId, autreId: x.voisinId } }, { type: "mur.joindre", params: { id: x.voisinId, autreId: x.murId } }], `Joindre ${x.murId} et ${x.voisinId}`)}>
+                      Joindre
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {props.planchers.length > 0 && (
+            <ul className="inspecteur-liste" data-plancher-existants={props.planchers.length}>
+              {props.plusieurs && <li>Plusieurs planchers sur ce niveau : signalé, rien n'est fusionné.</li>}
+              {props.planchers.map((p) => {
+                const prop = p.proposition !== null ? props.contours[p.proposition] : null;
+                const d = etat.objets[p.dalleId];
+                const ecart = p.contourDifferent || p.tremiesAbsentes.length > 0;
+                return (
+                  <li key={p.dalleId} data-plancher-ecart={ecart ? "oui" : "non"}>
+                    {p.dalleId} : {prop === null ? "hors des contours proposés" : !ecart ? "conforme à la proposition" : [p.contourDifferent ? "contour différent de l'emprise actuelle des murs" : null, p.tremiesAbsentes.length ? `${p.tremiesAbsentes.length} trémie(s) absente(s)` : null].filter(Boolean).join(" ; ")}
+                    {ecart && prop && d?.classe === "dalle" && !readOnly && onCommandes && (
+                      <button
+                        type="button"
+                        className="lien"
+                        data-plancher-reprendre={p.dalleId}
+                        onClick={() => onCommandes([{ type: "objet.modifier", params: { id: p.dalleId, params: { ...(p.contourDifferent ? { contour: prop.contour } : {}), trous: [...(p.contourDifferent ? d.params.trous.filter((h) => h.every((q) => prop.contour.length > 0 && dansContour(q, prop.contour))) : d.params.trous), ...p.tremiesAbsentes.map((t) => t.contour)] } } }], `Reprendre le plancher ${p.dalleId}`)}
+                      >
+                        Reprendre
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function dansContour(p: { x: number; y: number }, poly: readonly { x: number; y: number }[]): boolean {
+  let dedans = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i]!;
+    const b = poly[j]!;
+    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) dedans = !dedans;
+  }
+  return dedans;
+}

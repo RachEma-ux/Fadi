@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { arcTangent, boucles, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -95,6 +95,17 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
     case "hachure": {
       if (pts.length >= 3 && distance(point, pts[0]!) <= options.rayon) return fermerContour(outil, pts, ui, niveauId);
       return attendre([...pts, point], pts.length >= 2 ? "Cliquez le premier point ou Entrée pour fermer le contour." : "Cliquez les sommets suivants.");
+    }
+    case "plancher": {
+      const rive = ui.parametresOutil["rivePlancher"];
+      const ep = ui.parametresOutil["epaisseurPlancher"];
+      if (rive !== "axe" && rive !== "exterieur") return attendre([], "Choisissez d'abord la ligne de rive dans l'inspecteur (axe des murs ou face extérieure).");
+      if (typeof ep !== "number" || !(ep > 0)) return attendre([], "Saisissez d'abord l'épaisseur du plancher dans l'inspecteur.");
+      const props = proposerPlancher(etat, niveauId, rive);
+      const choix = props.contours.filter((c) => pointDansPolygone(point, c.contour)).sort((u, v) => u.aire - v.aire)[0];
+      if (!choix) return attendre([], props.contours.length ? "Cliquez à l'intérieur d'un contour proposé (pointillés)." : "Aucun contour fermé de murs sur ce niveau : joignez les murs (interstices listés dans l'inspecteur) ou dessinez une dalle.");
+      const deja = props.planchers.length ? ` Ce niveau a déjà ${props.planchers.length} plancher(s) : signalé, rien n'est fusionné.` : "";
+      return emettre([{ type: "dalle.creer", params: { ...base, contour: choix.contour, trous: choix.trous.map((t) => t.contour), epaisseur: m(ep), usage: "plancher" } }], `Plancher ${fmt(choix.aire)} m²`, `Plancher créé (${fmt(choix.aire)} m², ${choix.trous.length} trémie(s)).${deja}`);
     }
     case "piece": {
       const axes: AxeMur[] = Object.values(etat.objets).filter((o): o is Occurrence<"mur"> => o.classe === "mur" && o.niveauId === niveauId).map((w) => ({ id: w.id, a: w.params.a, b: w.params.b }));
