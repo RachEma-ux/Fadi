@@ -471,7 +471,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
             {(["extremite", "milieu", "centre", "perpendiculaire", "intersection", "proche", "orthogonal", "grille"] as const).map((k) => (
               <label key={k}>
                 <input type="checkbox" checked={ui.accrochages[k] === true} data-accrochage={k} onChange={(e) => etatUi.set((u) => ({ accrochages: { ...u.accrochages, [k]: e.target.checked } }))} />
-                {{ extremite: "Extrémité", milieu: "Milieu", centre: "Centre", perpendiculaire: "Perpendiculaire", intersection: "Intersection", proche: "Proche (tracés et faces de murs)", orthogonal: `Polaire (${ui.accrochages.pasPolaire ?? 45}°)`, grille: "Grille" }[k]}
+                {{ extremite: "Extrémité", milieu: "Milieu", centre: "Centre", perpendiculaire: "Perpendiculaire et tangente", intersection: "Intersection", proche: "Proche (tracés et faces de murs)", orthogonal: `Polaire (${ui.accrochages.pasPolaire ?? 45}°)`, grille: "Grille" }[k]}
               </label>
             ))}
             <label>

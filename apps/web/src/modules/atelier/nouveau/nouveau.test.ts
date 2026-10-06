@@ -3,7 +3,7 @@ import { CONTRAT_COMMANDES, appliquerLot, distance, m, modeleVide, pt, type Comm
 import { actionImmediate, lotSuppression } from "./actions";
 import { etatUi, type EtatUi } from "./etat-ui";
 import { OUTILS, rechercherOutils } from "./outils";
-import { accrocher, objetSousPointeur, segmentsDuNiveau } from "./plan2d/accrochage";
+import { accrocher, objetSousPointeur, pointsTangence, segmentsDuNiveau } from "./plan2d/accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, saisie, terminer } from "./plan2d/outils-2d";
 import { cadrer, projecteur } from "./plan2d/projecteur";
 
@@ -198,6 +198,16 @@ describe("accrochages du plan 2D", () => {
     expect(a.type).toBe("extremite");
     expect(a.point.x).toBeCloseTo(4);
     expect(a.point.y).toBeCloseTo(0);
+  });
+
+  it("tangente (D-151) : depuis le point précédent, point de contact sur un cercle ; arc : seulement dans ses angles", () => {
+    expect(pointsTangence(pt(0, 0), { x: 2, y: 0 }, 1).map((q) => [Math.round(q.x * 1e6) / 1e6, Math.round(q.y * 1e6) / 1e6])).toEqual([[1.5, -0.866025], [1.5, 0.866025]]);
+    expect(pointsTangence(pt(0, 0), { x: 2, y: 0 }, 1, 90, 180)).toHaveLength(1);
+    expect(pointsTangence(pt(2, 0.2), { x: 2, y: 0 }, 1)).toEqual([]);
+    const e = appliquer(socle(), [{ type: "esquisse.cercle", params: { id: "k", niveauId: "rdc", points: [], centre: pt(20, 0), rayon: { value: 1, unit: "m" } } }]);
+    const a = accrocher(pt(19.52, 0.85), segmentsDuNiveau(e, "rdc"), { ...acc, perpendiculaire: true, grille: false }, 0.2, pt(18, 0));
+    expect(a.type).toBe("tangente");
+    expect(Math.hypot(a.point.x - 20, a.point.y)).toBeCloseTo(1, 9);
   });
 
   it("trouve le milieu d'un mur, puis la grille loin des objets", () => {

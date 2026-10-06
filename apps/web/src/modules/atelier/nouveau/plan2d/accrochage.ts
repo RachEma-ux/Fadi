@@ -7,7 +7,7 @@ import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointsElli
 import { contoursArchitecture, pt, traitsBloc } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
-export type TypeAccroche = "extremite" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "intersection" | "proche" | "orthogonal" | "grille" | "libre";
+export type TypeAccroche = "extremite" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "tangente" | "intersection" | "proche" | "orthogonal" | "grille" | "libre";
 
 export interface Accroche {
   point: Point2;
@@ -35,7 +35,9 @@ export function avecExternes(cache: ReturnType<typeof segmentsDuNiveau>, externe
 }
 
 /** Segments et points remarquables d'un niveau (axes de murs, contours, esquisses, escaliers). */
-export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): { segments: Segment[]; centres: { p: Point2; objetId: string }[]; quadrants: { p: Point2; objetId: string }[]; faces?: Segment[] } {
+export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): { segments: Segment[]; centres: { p: Point2; objetId: string }[]; quadrants: { p: Point2; objetId: string }[]; faces?: Segment[]; cercles?: { c: Point2; r: number; debut: number; fin: number; objetId: string }[] } {
+  // Cercles et arcs (D-151) : points de tangence depuis le point précédent du tracé.
+  const cercles: { c: Point2; r: number; debut: number; fin: number; objetId: string }[] = [];
   const segments: Segment[] = [];
   // Faces des murs (D-061) : servent seulement à l'accrochage « proche » (pas d'extrémités ni de milieux en plus).
   const faces: Segment[] = [];
@@ -80,6 +82,7 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
         break;
       case "esquisse":
         if (o.params.centre) centres.push({ p: o.params.centre, objetId: o.id });
+        if ((o.params.forme === "cercle" || o.params.forme === "arc") && o.params.centre && o.params.rayon) cercles.push({ c: o.params.centre, r: o.params.rayon.value, debut: o.params.forme === "arc" ? (o.params.angleDebut?.value ?? 0) : 0, fin: o.params.forme === "arc" ? (o.params.angleFin?.value ?? 360) : 360, objetId: o.id });
         if (o.params.forme === "cercle" && o.params.centre && o.params.rayon) {
           const { x, y } = o.params.centre;
           const r = o.params.rayon.value;
@@ -135,7 +138,24 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
         break;
     }
   }
-  return { segments, centres, quadrants, faces };
+  return { segments, centres, quadrants, faces, cercles };
+}
+
+/**
+ * Points de tangence (D-151) depuis `depuis` vers un cercle de centre c et de rayon r : aucun si le point est dans
+ * le cercle ; sur un arc, seulement ceux compris entre ses angles de début et de fin (sens direct).
+ */
+export function pointsTangence(depuis: Point2, c: { x: number; y: number }, r: number, debut = 0, fin = 360): Point2[] {
+  const d = Math.hypot(depuis.x - c.x, depuis.y - c.y);
+  if (!(d > r + 1e-9)) return [];
+  const base = Math.atan2(depuis.y - c.y, depuis.x - c.x);
+  const t = Math.acos(r / d);
+  const dansArc = (a: number) => {
+    if (fin - debut >= 360 - 1e-9) return true;
+    const norm = (x: number) => ((x % 360) + 360) % 360;
+    return norm((a * 180) / Math.PI - debut) <= norm(fin - debut) + 1e-9;
+  };
+  return [base + t, base - t].filter(dansArc).map((a) => pt(Math.round((c.x + r * Math.cos(a)) * 1e9) / 1e9, Math.round((c.y + r * Math.sin(a)) * 1e9) / 1e9));
 }
 
 const dist = (a: Point2, b: Point2) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -170,6 +190,8 @@ export function accrocher(p: Point2, cache: ReturnType<typeof segmentsDuNiveau>,
       if (x) essayer(pt(x.point.x, x.point.y), "intersection", proches[i]!.objetId, 1);
     }
   }
+  // Tangente (D-151) : avec l'accrochage perpendiculaire, depuis le point précédent vers un cercle ou un arc.
+  if (options.perpendiculaire && depuis) for (const k of cache.cercles ?? []) if (!exclure.includes(k.objetId)) for (const q of pointsTangence(depuis, k.c, k.r, k.debut, k.fin)) essayer(q, "tangente", k.objetId, 1);
   if (options.perpendiculaire && depuis) {
     for (const s of segs) {
       const pr = projectionSurSegment(depuis, s.a, s.b);
