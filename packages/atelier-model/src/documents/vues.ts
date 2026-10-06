@@ -11,7 +11,7 @@
 import { pointsPolyligne, aireNette, centroide, facesMur, hoteOuverture, longueurAxeMur, normalise, perp, pointsArc, pointsEllipse, pointsSpline, sub, type Vec } from "../geometrie.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
-import { lignesHachure, motifHachure, pointsHachure } from "../hachures.js";
+import { bandesDegrade, lignesHachure, motifHachure, pointsHachure } from "../hachures.js";
 import { contenuPlace, contoursArchitecture } from "../blocs-places.js";
 import { etendueMur, geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
 import { traitsMenuiseriePlan } from "../menuiserie.js";
@@ -208,9 +208,9 @@ class Collecteur {
     if (Math.hypot(b.x - a.x, b.y - a.y) < 1e-6) return;
     this.primitives.push({ type: "ligne", a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y }, trait, objetId });
   }
-  poly(points: readonly Vec[], ferme: boolean, trait: Trait | null, remplissage: Remplissage, objetId: string | null): void {
+  poly(points: readonly Vec[], ferme: boolean, trait: Trait | null, remplissage: Remplissage, objetId: string | null, gris?: number): void {
     if (points.length < 2) return;
-    this.primitives.push({ type: "poly", points: points.map((p) => ({ x: p.x, y: p.y })), ferme, trait, remplissage, objetId });
+    this.primitives.push({ type: "poly", points: points.map((p) => ({ x: p.x, y: p.y })), ferme, trait, remplissage, objetId, ...(gris === undefined ? {} : { gris }) });
   }
   texte(position: Vec, texte: string, hauteurMm: number, objetId: string | null, options: { ancre?: "debut" | "milieu" | "fin"; angle?: number; trait?: Trait } = {}): void {
     if (!texte.trim()) return;
@@ -426,7 +426,9 @@ function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly Occu
         } else if (p.renflements) c.poly(pointsPolyligne(p.points, p.ferme, p.renflements), p.ferme, trait, null, o.id);
         else c.poly(p.points, p.ferme || p.forme === "polygone" || p.forme === "hachure", trait, null, o.id);
         // Motif de hachure (D-072) : pas papier converti à l'échelle de la vue ; sans échelle, contour seul.
-        if (p.forme === "hachure" && echelle) {
+        // Dégradé (D-120) : bandes de gris, à toute échelle ; il remplace le motif.
+        if (p.forme === "hachure" && p.degrade) for (const b of bandesDegrade(p.points, p.degrade)) c.poly(b.points, true, null, "degrade", o.id, b.gris);
+        else if (p.forme === "hachure" && echelle) {
           const m = motifHachure(p.motif);
           if (!m.connu) c.avertissements.add(`Motif de hachure inconnu « ${p.motif} » : dessiné avec le motif « ${m.motif.libelle} ».`);
           for (const f of m.motif.familles) for (const [a, b] of lignesHachure([p.points], f.angle, (f.pasMm * echelle) / 1000)) c.ligne(a, b, "fin", o.id);

@@ -3,7 +3,7 @@
  * Pur et reproductible : mêmes primitives, mêmes octets (coordonnées arrondies au centième de millimètre).
  */
 import type { Vec } from "../geometrie.js";
-import { EPAISSEUR_MM, GRIS_REMPLISSAGE, GRIS_TRAIT, ROUGE_A_REPARER, TIRETS_MM, type Primitive, type Trait } from "./dessin.js";
+import { EPAISSEUR_MM, grisRemplissage, GRIS_TRAIT, ROUGE_A_REPARER, TIRETS_MM, type Primitive, type Trait } from "./dessin.js";
 import type { VueGeneree } from "./vues.js";
 import { comparerDessins } from "../versions.js";
 
@@ -52,7 +52,7 @@ export function elementsSvg(primitives: readonly Primitive[], vers: VersFeuille)
         break;
       }
       case "poly": {
-        if (p.remplissage) remplis.push(`<path d="${chemin(p.points, true)}" fill="${gris(GRIS_REMPLISSAGE[p.remplissage])}" stroke="none"${obj(p.objetId)}/>`);
+        if (p.remplissage) remplis.push(`<path d="${chemin(p.points, true)}" fill="${gris(grisRemplissage(p))}" stroke="none"${obj(p.objetId)}/>`);
         if (p.trait) ajouter(p.trait, `<path d="${chemin(p.points, p.ferme)}"${obj(p.objetId)}/>`);
         break;
       }

@@ -102,7 +102,9 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
       const renflements = q.renflements && t.type === "miroir" ? q.renflements.map((x) => (x === 0 ? 0 : -x)) : q.renflements;
       // Tangentes de courbe (D-082) : partie linéaire de la transformation (vecteurs).
       const tangentes = q.tangentes ? q.tangentes.map((v) => (v ? (() => { const a = T(pt(0, 0)); const b = T(pt(v.x, v.y)); return { x: Math.round((b.x - a.x) * 1e9) / 1e9, y: Math.round((b.y - a.y) * 1e9) / 1e9 }; })() : null)) : undefined;
-      return { ...o, params: { ...q, ...(tangentes ? { tangentes } : {}), points: q.points.map(T), centre: q.centre ? T(q.centre) : null, rayon: ech(q.rayon) ?? null, angleDebut, angleFin, ...(q.forme === "ellipse" ? { rayonB: ech(q.rayonB) ?? null, rotation: rotation ?? null } : {}), ...(renflements ? { renflements } : {}) } };
+      // Dégradé (D-120) : sa direction suit la rotation ou le miroir.
+      const degrade = q.degrade ? { ...q.degrade, angle: t.type === "rotation" ? plus(q.degrade.angle, rot)! : t.type === "miroir" ? { value: Math.round((2 * axeMiroir(t) - q.degrade.angle.value) * 1e9) / 1e9, unit: "deg" as const } : q.degrade.angle } : undefined;
+      return { ...o, params: { ...q, ...(tangentes ? { tangentes } : {}), ...(degrade ? { degrade } : {}), points: q.points.map(T), centre: q.centre ? T(q.centre) : null, rayon: ech(q.rayon) ?? null, angleDebut, angleFin, ...(q.forme === "ellipse" ? { rayonB: ech(q.rayonB) ?? null, rotation: rotation ?? null } : {}), ...(renflements ? { renflements } : {}) } };
     }
     case "cotation":
       return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };

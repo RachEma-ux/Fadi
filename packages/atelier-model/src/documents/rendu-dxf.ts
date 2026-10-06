@@ -5,7 +5,7 @@
  */
 import type { Vec } from "../geometrie.js";
 import { trianguler } from "../projection/maillage.js";
-import type { Primitive, Trait } from "./dessin.js";
+import { grisRemplissage, type Primitive, type Trait } from "./dessin.js";
 import type { FeuilleComposee } from "./feuilles.js";
 import type { VueGeneree } from "./vues.js";
 
@@ -75,6 +75,10 @@ const CALQUES: Record<Trait, { nom: string; couleur: number; type: string }> = {
   "a-reparer": { nom: "A_REPARER", couleur: 1, type: "CONTINUOUS" },
 };
 
+/** Gris AutoCAD (ACI 250 à 255) le plus proche d'un gris 0 (noir) à 1 (blanc). */
+const GRIS_ACI: [number, number][] = [[250, 0.2], [251, 0.31], [252, 0.51], [253, 0.71], [254, 0.86], [255, 1]];
+export const couleurGris = (g: number): number => GRIS_ACI.reduce((m, c) => (Math.abs(c[1] - g) < Math.abs(m[1] - g) ? c : m))[0];
+
 function entete(d: Dxf, commentaires: string[], unites: 4 | 6): void {
   for (const c of commentaires) d.paire(999, c.replace(/[\r\n]+/g, " "));
   d.paire(0, "SECTION");
@@ -122,12 +126,14 @@ function entites(d: Dxf, primitives: readonly Primitive[], hauteurTexte: (mm: nu
   d.paire(0, "SECTION");
   d.paire(2, "ENTITIES");
   for (const p of primitives) {
-    if (p.type === "poly" && p.remplissage === "poche" && p.points.length >= 3) {
+    if (p.type === "poly" && (p.remplissage === "poche" || p.remplissage === "degrade") && p.points.length >= 3) {
       const tri = trianguler(p.points);
       for (let k = 0; k < tri.length; k += 3) {
         const [a, b, c] = [p.points[tri[k]!]!, p.points[tri[k + 1]!]!, p.points[tri[k + 2]!]!];
         d.paire(0, "SOLID");
-        d.paire(8, CALQUES.coupe.nom);
+        d.paire(8, p.remplissage === "degrade" ? CALQUES.fin.nom : CALQUES.coupe.nom);
+        // Bande de dégradé (D-120) : gris de la palette AutoCAD (250 à 255) le plus proche.
+        if (p.remplissage === "degrade") d.paire(62, couleurGris(grisRemplissage(p)));
         const sommets: Vec[] = [a, b, c, c];
         sommets.forEach((q, i) => {
           d.paire(10 + i, q.x);

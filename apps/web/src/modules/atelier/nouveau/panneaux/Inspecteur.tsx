@@ -140,11 +140,13 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         {Object.entries(avecFacultatifs(o.classe, params)).map(([cle, valeur]) => {
           if (cle === "ouvrant" || cle === "menuiserie" || (cle === "murHoteId" && (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture"))) return null; // contrôles dédiés ci-dessous
           if (cle === "motif" && !(o.classe === "esquisse" && o.params.forme === "hachure")) return null; // motif : hachures seulement (D-072)
+          if (cle === "degrade") return null; // dégradé : contrôle dédié ci-dessous (D-120)
           if (GEOMETRIQUES.has(cle)) return <ResumeGeometrie key={cle} cle={cle} valeur={valeur} />;
           return <Champ key={cle} id={`${o.id}-${cle}`} cle={cle} valeur={valeur} etat={etat} desactive={parametresFiges} onValider={(v) => modifier(cle, v)} />;
         })}
       </dl>
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <OuvertureHote o={o as Occurrence<"porte">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
+      {o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.forme === "hachure" && <DegradeHachure key={`deg-${o.id}`} o={o as Occurrence<"esquisse">} desactive={desactive} onCommandes={onCommandes} />}
       {(o.classe === "fenetre" || o.classe === "porte") && <MenuiserieFenetre key={`men-${o.id}`} o={o as Occurrence<"fenetre">} desactive={desactive} onCommandes={onCommandes} />}
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && !desactive && <JumelerOuverture key={`jum-${o.id}`} o={o as Occurrence<"porte">} onCommandes={onCommandes} />}
       <GroupeSelection sel={[o]} etat={etat} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
@@ -1537,6 +1539,38 @@ function TangentesCourbe({ o, onCommandes }: { o: Occurrence<"esquisse">; onComm
 }
 
 /** Menuiserie paramétrée d'une fenêtre (D-101) : valeurs saisies, aucune par défaut ; vide = non évaluée. */
+/** Dégradé d'une hachure (D-120) : deux gris (0 % noir … 100 % blanc) et une direction ; il remplace le motif. */
+function DegradeHachure({ o, desactive, onCommandes }: { o: Occurrence<"esquisse">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const d = o.params.degrade ?? null;
+  const pc = (x: number) => String(Math.round(x * 100));
+  const [v, setV] = useState({ de: d ? pc(d.de) : "20", a: d ? pc(d.a) : "100", angle: d ? String(d.angle.value).replace(".", ",") : "0" });
+  const de = nombreSaisi(v.de);
+  const a = nombreSaisi(v.a);
+  const angle = nombreSaisi(v.angle);
+  const valide = de !== null && a !== null && angle !== null && de >= 0 && de <= 100 && a >= 0 && a <= 100;
+  return (
+    <details className="inspecteur-historique" data-degrade-hachure>
+      <summary>Dégradé {d ? `(${pc(d.de)} % → ${pc(d.a)} %)` : "(aucun : motif de traits)"}</summary>
+      <div className="nav-formulaire-altimetrie">
+        <label>Gris de départ (% de blanc)<input inputMode="decimal" value={v.de} disabled={desactive} onChange={(e) => setV({ ...v, de: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-degrade-champ="de" /></label>
+        <label>Gris d'arrivée (% de blanc)<input inputMode="decimal" value={v.a} disabled={desactive} onChange={(e) => setV({ ...v, a: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-degrade-champ="a" /></label>
+        <label>Direction (°)<input inputMode="decimal" value={v.angle} disabled={desactive} onChange={(e) => setV({ ...v, angle: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-degrade-champ="angle" /></label>
+        {!valide && <p className="inspecteur-aide">Gris entre 0 et 100 %, direction en degrés.</p>}
+        {!desactive && (
+          <button type="button" disabled={!valide} data-degrade-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { degrade: { de: de! / 100, a: a! / 100, angle: { value: angle!, unit: "deg" } } } } }], `Dégradé de ${o.id}`)}>
+            Appliquer le dégradé
+          </button>
+        )}
+        {!desactive && d && (
+          <button type="button" className="lien" data-degrade-retirer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { degrade: null } } }], `Dégradé retiré de ${o.id}`)}>
+            Retirer (revenir au motif)
+          </button>
+        )}
+      </div>
+    </details>
+  );
+}
+
 function MenuiserieFenetre({ o, desactive, onCommandes }: { o: Occurrence<"fenetre">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
   const m = o.params.menuiserie ?? null;
   const cm = (v: number | undefined) => (v === undefined ? "" : String(Math.round(v * 1000) / 1000).replace(".", ","));

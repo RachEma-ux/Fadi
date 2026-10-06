@@ -3,7 +3,7 @@
  * dépendance) : mêmes primitives que le SVG, mêmes octets d'une génération à l'autre (pas de date de création).
  */
 import type { Vec } from "../geometrie.js";
-import { EPAISSEUR_MM, GRIS_REMPLISSAGE, GRIS_TRAIT, TIRETS_MM, type Primitive, type Trait } from "./dessin.js";
+import { EPAISSEUR_MM, grisRemplissage, GRIS_TRAIT, TIRETS_MM, type Primitive, type Trait } from "./dessin.js";
 import type { FeuilleComposee } from "./feuilles.js";
 
 const PT = 72 / 25.4;
@@ -77,7 +77,7 @@ function cerclePdf(c: Vec, r: number): string {
 function contenu(primitives: readonly Primitive[]): string {
   const l: string[] = ["1 J 1 j"];
   // Remplissages d'abord, puis traits, puis textes (même ordre que le SVG).
-  for (const p of primitives) if (p.type === "poly" && p.remplissage) l.push(`${n(GRIS_REMPLISSAGE[p.remplissage])} g ${cheminPdf(p.points, true)} f`);
+  for (const p of primitives) if (p.type === "poly" && p.remplissage) l.push(`${n(grisRemplissage(p))} g ${cheminPdf(p.points, true)} f`);
   let courant: Trait | null = null;
   const regler = (t: Trait) => {
     if (t !== courant) {

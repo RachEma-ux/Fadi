@@ -1873,6 +1873,32 @@ await page.waitForSelector(".plan2d");
   check("états de calques : instantané enregistré, calque gelé puis état restauré", !!def && restaure && /Restaurer l'état de calques/.test(journal), `${def?.id} · ${cid} · ${restaure} · ${journal}`);
 }
 
+// Dégradé de hachure (D-120) : saisi dans l'inspecteur, dessiné en dégradé dans le plan.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const r0 = await lot(pid, `deg-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "esquisse.hachure", params: { id: "hach-deg", niveauId: murA.niveauId, points: [P(ax - 220, ay - 220), P(ax - 216, ay - 220), P(ax - 216, ay - 218), P(ax - 220, ay - 218)] } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("hach-deg");
+  await page.locator("[data-degrade-hachure] > summary").click();
+  await page.locator('[data-degrade-champ="de"]').fill("10");
+  await page.locator('[data-degrade-champ="a"]').fill("90");
+  await page.locator('[data-degrade-champ="angle"]').fill("45");
+  await page.locator("[data-degrade-appliquer]").click();
+  let d = null;
+  for (let k = 0; k < 30 && !d; k++) {
+    d = (await modele(pid)).modele.objets["hach-deg"]?.params.degrade ?? null;
+    if (!d) await page.waitForTimeout(500);
+  }
+  const dessine = await page.waitForSelector('.plan2d [data-objet="hach-deg"][data-degrade]', { state: "attached", timeout: 10000 }).then(() => true, () => false);
+  check("dégradé de hachure : saisi dans l'inspecteur, enregistré, dessiné dans le plan", r0.status === 200 && d?.de === 0.1 && d?.a === 0.9 && d?.angle?.value === 45 && dessine, `${r0.status} · ${JSON.stringify(d)} · ${dessine}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

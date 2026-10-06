@@ -196,6 +196,17 @@ export interface ParamsEsquisse {
   sourceId?: string;
   /** Courbe (D-082) : tangente imposée à chaque point (vecteur en m), null = libre ; absent = toutes libres. */
   tangentes?: ({ x: number; y: number } | null)[];
+  /**
+   * Dégradé d'une hachure (D-120) : remplissage du gris `de` au gris `a` (0 = noir, 1 = blanc) selon la direction
+   * `angle` ; il remplace le motif. Convention graphique, jamais une donnée de projet. Absent : motif de traits.
+   */
+  degrade?: DegradeHachure;
+}
+
+export interface DegradeHachure {
+  de: number;
+  a: number;
+  angle: Angle;
 }
 
 export interface ParamsReferencePlan extends Contour {

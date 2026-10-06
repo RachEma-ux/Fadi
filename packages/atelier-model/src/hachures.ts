@@ -112,3 +112,46 @@ export function lignesHachure(contours: readonly (readonly Vec[])[], angleDeg: n
   }
   return out;
 }
+
+/** Découpe d'un polygone par le demi-plan f(q) ≥ 0 (f affine), Sutherland–Hodgman. */
+function couperDemiPlan(poly: readonly Vec[], f: (q: Vec) => number): Vec[] {
+  const out: Vec[] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i]!;
+    const q = poly[(i + 1) % poly.length]!;
+    const fp = f(p);
+    const fq = f(q);
+    if (fp >= 0) out.push(p);
+    if ((fp >= 0) !== (fq >= 0)) {
+      const t = fp / (fp - fq);
+      out.push({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t });
+    }
+  }
+  return out;
+}
+
+/**
+ * Dégradé d'une hachure dans les vues (D-120) : `n` bandes perpendiculaires à la direction du dégradé, chacune
+ * remplie du gris interpolé en son milieu (0 = noir, 1 = blanc) — rendu identique en SVG, PDF et DXF.
+ */
+export function bandesDegrade(contour: readonly Vec[], degrade: { de: number; a: number; angle: { value: number } }, n = 16): { points: Point2[]; gris: number }[] {
+  if (contour.length < 3) return [];
+  const r = (degrade.angle.value * Math.PI) / 180;
+  const u = { x: Math.cos(r), y: Math.sin(r) };
+  const s = (q: Vec) => q.x * u.x + q.y * u.y;
+  const valeurs = contour.map(s);
+  const s0 = Math.min(...valeurs);
+  const s1 = Math.max(...valeurs);
+  if (s1 - s0 < 1e-12) return [];
+  const w = (s1 - s0) / n;
+  const out: { points: Point2[]; gris: number }[] = [];
+  for (let k = 0; k < n; k++) {
+    const bas = s0 + k * w;
+    const haut = k === n - 1 ? s1 : bas + w;
+    const bande = couperDemiPlan(couperDemiPlan(contour, (q) => s(q) - bas), (q) => haut - s(q));
+    if (bande.length < 3 || Math.abs(aireSignee(bande)) < 1e-12) continue;
+    const gris = Math.round((degrade.de + ((degrade.a - degrade.de) * (k + 0.5)) / n) * 1000) / 1000;
+    out.push({ points: bande.map((q) => pt(Math.round(q.x * 1e9) / 1e9, Math.round(q.y * 1e9) / 1e9)), gris });
+  }
+  return out;
+}

@@ -203,6 +203,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       ...renflementsDe(p, forme, points.length, lire.booleen(p, "ferme", false)),
       ...tangentesDe(p, forme, points.length),
       ...sourceHachure(_etat, p, forme),
+      ...degradeDe(p, forme),
     };
   },
   "reference-plan"(_etat, p) {
@@ -304,6 +305,19 @@ function sourceHachure(etat: ModeleAtelier, p: Brut, forme: string): { sourceId?
   if (typeof id !== "string" || !etat.objets[id]) throw new ErreurCommande("precondition", "sourceId", `objet source inconnu : ${String(id)}`);
   if (!contourFerme(etat.objets[id]!)) throw new ErreurCommande("precondition", "sourceId", `${id} n'a pas de contour fermé (dalle, pièce, zone, polygone ou rectangle)`);
   return { sourceId: id };
+}
+
+/** Dégradé (D-120) : hachures seulement ; deux gris entre 0 (noir) et 1 (blanc) et un angle ; null le retire. */
+function degradeDe(p: Brut, forme: string): { degrade?: { de: number; a: number; angle: { value: number; unit: "deg" } } } {
+  const brut = p["degrade"];
+  if (brut === undefined || brut === null) return {};
+  if (forme !== "hachure") throw new ErreurCommande("invalide", "degrade", "dégradé réservé aux hachures");
+  if (typeof brut !== "object" || Array.isArray(brut)) throw new ErreurCommande("invalide", "degrade", "dégradé : { de, a, angle }");
+  const q = brut as Brut;
+  const de = lire.nombre(q, "de", { min: 0, max: 1 })!;
+  const a = lire.nombre(q, "a", { min: 0, max: 1 })!;
+  const angle = lire.angle(q, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" as const };
+  return { degrade: { de, a, angle: { value: angle.value, unit: "deg" } } };
 }
 
 function tangentesDe(p: Brut, forme: string, n: number): { tangentes?: ({ x: number; y: number } | null)[] } {

@@ -379,6 +379,29 @@ function Esquisse2D({ o, pr, selectionne, survole }: { o: Occurrence<"esquisse">
     case "construction":
       return <path d={chemin(pr, p.points, false)} {...commun} strokeDasharray="8 4 2 4" strokeWidth={0.8} />;
     case "hachure": {
+      // Dégradé (D-120) : gris `de` → `a` le long de la direction du dégradé (bornes du contour sur cette direction).
+      if (p.degrade && p.points.length >= 3) {
+        const r = (p.degrade.angle.value * Math.PI) / 180;
+        const u = { x: Math.cos(r), y: Math.sin(r) };
+        const s = p.points.map((q) => q.x * u.x + q.y * u.y);
+        const c = p.points[0]!;
+        const sc = c.x * u.x + c.y * u.y;
+        const A = pr.vers({ x: c.x + u.x * (Math.min(...s) - sc), y: c.y + u.y * (Math.min(...s) - sc) });
+        const B = pr.vers({ x: c.x + u.x * (Math.max(...s) - sc), y: c.y + u.y * (Math.max(...s) - sc) });
+        const gris = (g: number) => `rgb(${Math.round(g * 255)},${Math.round(g * 255)},${Math.round(g * 255)})`;
+        const id = `degrade-${o.id.replace(/[^\w-]/g, "_")}`;
+        return (
+          <g>
+            <defs>
+              <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={A.x} y1={A.y} x2={B.x} y2={B.y}>
+                <stop offset="0" stopColor={gris(p.degrade.de)} />
+                <stop offset="1" stopColor={gris(p.degrade.a)} />
+              </linearGradient>
+            </defs>
+            <path d={chemin(pr, p.points)} {...commun} fill={`url(#${id})`} data-degrade={`${p.degrade.de}-${p.degrade.a}`} />
+          </g>
+        );
+      }
       return <path d={chemin(pr, p.points)} {...commun} fill={`url(#hachure-${motifHachure(p.motif).id})`} data-motif={motifHachure(p.motif).id} />;
     }
     case "rectangle": {

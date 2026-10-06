@@ -24,7 +24,8 @@ export type Trait =
   /** Référence à réparer : dessinée et signalée, jamais masquée. */
   | "a-reparer";
 
-export type Remplissage = "poche" | "vitrage" | "piece" | "blanc" | null;
+/** Remplissage d'un polygone ; « degrade » : bande d'un dégradé de hachure (D-120), gris porté par la primitive. */
+export type Remplissage = "poche" | "vitrage" | "piece" | "blanc" | "degrade" | null;
 
 export interface PrimitiveLigne {
   type: "ligne";
@@ -41,6 +42,8 @@ export interface PrimitivePoly {
   trait: Trait | null;
   remplissage: Remplissage;
   objetId: string | null;
+  /** Gris propre (0 = noir, 1 = blanc) d'une bande de dégradé (D-120) ; absent : gris du remplissage. */
+  gris?: number;
 }
 
 export interface PrimitiveTexte {
@@ -80,7 +83,10 @@ export const TIRETS_MM: Record<Trait, number[]> = { coupe: [], vue: [], fin: [],
 export const GRIS_TRAIT: Record<Trait, number> = { coupe: 0, vue: 0.1, fin: 0.35, cache: 0.45, annotation: 0.1, site: 0.2, demoli: 0.3, "a-reparer": 0 };
 /** Couleur d'écran / SVG du trait « à réparer » (doublée d'un libellé, jamais seule). */
 export const ROUGE_A_REPARER = "#b42318";
-export const GRIS_REMPLISSAGE: Record<Exclude<Remplissage, null>, number> = { poche: 0.25, vitrage: 0.88, piece: 0.96, blanc: 1 };
+export const GRIS_REMPLISSAGE: Record<Exclude<Remplissage, null>, number> = { poche: 0.25, vitrage: 0.88, piece: 0.96, blanc: 1, degrade: 0.5 };
+
+/** Gris d'un polygone rempli : le sien (bande de dégradé) ou celui de son remplissage. */
+export const grisRemplissage = (p: { remplissage: Remplissage; gris?: number }): number => p.gris ?? (p.remplissage ? GRIS_REMPLISSAGE[p.remplissage] : 1);
 
 /**
  * Boîte englobante du dessin. Avec l'échelle (1:N), l'encombrement approché des textes est compté (largeur moyenne

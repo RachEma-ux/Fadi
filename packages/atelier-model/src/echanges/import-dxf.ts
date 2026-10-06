@@ -536,6 +536,10 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
           const champs = e.champs;
           const motif = (txt(e, 2) ?? "").trim() || null;
           const plein = (num(e, 70, 0) ?? 0) === 1;
+          // Dégradé (D-120) : drapeau 450, angle 460 (radians), couleurs vraies 421 ramenées à leur gris (luminance) ;
+          // sans deux couleurs lisibles, la hachure reste pleine (rien d'inventé).
+          const couleurs = (num(e, 450, 0) ?? 0) === 1 ? champsDegrade(e.champs) : [];
+          const degrade = couleurs.length >= 2 ? { de: couleurs[0]!, a: couleurs[1]!, angle: { value: Math.round((((num(e, 460, 0) ?? 0) * 180) / Math.PI) * 1e6) / 1e6, unit: "deg" } } : null;
           const boucles: { x: number; y: number }[][] = [];
           let k = champs.findIndex((c) => c.code === 91);
           const nb = k >= 0 ? Number.parseInt(champs[k]!.valeur, 10) : 0;
@@ -607,10 +611,10 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
           const exterieurs = boucles.filter((bq, u) => !boucles.some((o, v) => v !== u && contient(o, bq[0]!)));
           for (const bq of exterieurs) {
             const pts = distincts(bq.map((q) => P(q.x, q.y)));
-            if (pts.length >= 3) poser("esquisse.hachure", { points: pts, ferme: true, motif: plein ? "plein" : motif, calqueId: calqueDe(e) });
+            if (pts.length >= 3) poser("esquisse.hachure", { points: pts, ferme: true, motif: plein ? "plein" : motif, calqueId: calqueDe(e), ...(degrade ? { degrade } : {}) });
           }
           const ilots = boucles.length - exterieurs.length;
-          compter("HATCH", true, `contour extérieur en hachure, motif nommé${ilots ? ` ; ${ilots} îlot(s) non porté(s)` : ""}${nonLus ? ` ; ${nonLus} arête(s) elliptique(s) ou spline ignorée(s)` : ""}`);
+          compter("HATCH", true, `contour extérieur en hachure, ${degrade ? "dégradé" : "motif nommé"}${ilots ? ` ; ${ilots} îlot(s) non porté(s)` : ""}${nonLus ? ` ; ${nonLus} arête(s) elliptique(s) ou spline ignorée(s)` : ""}`);
           break;
         }
         case "DIMENSION": {
@@ -788,4 +792,21 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
       remarques,
     },
   };
+}
+
+/** Gris (0 = noir, 1 = blanc) des couleurs vraies (code 421) d'un dégradé de HATCH, dans l'ordre. */
+function champsDegrade(champs: readonly { code: number; valeur: string }[]): number[] {
+  const debut = champs.findIndex((c) => c.code === 450);
+  return champs
+    .slice(debut)
+    .filter((c) => c.code === 421)
+    .map((c) => {
+      const v = Number.parseInt(c.valeur, 10);
+      if (!Number.isFinite(v)) return Number.NaN;
+      const r = (v >> 16) & 255;
+      const g = (v >> 8) & 255;
+      const b = v & 255;
+      return Math.round(((0.299 * r + 0.587 * g + 0.114 * b) / 255) * 1000) / 1000;
+    })
+    .filter((x) => Number.isFinite(x));
 }
