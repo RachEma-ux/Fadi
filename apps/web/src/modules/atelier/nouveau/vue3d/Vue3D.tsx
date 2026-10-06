@@ -590,6 +590,10 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
           <input type="checkbox" checked={options.aretes} onChange={(e) => setOptions({ aretes: e.target.checked })} />
           Arêtes
         </label>
+        <label className="vue3d-case" title="Arêtes vues en trait plein, arêtes cachées en tirets, faces non dessinées">
+          <input type="checkbox" checked={!!options.filaire} data-filaire onChange={(e) => setOptions({ filaire: e.target.checked })} />
+          Filaire
+        </label>
         <button type="button" onClick={() => sceneRef.current?.cadrer()} disabled={visite !== null}>Cadrer</button>
         <button type="button" aria-pressed={annoter} data-annoter onClick={() => { setAnnoter(!annoter); setPointAnnote(null); }}>{annoter ? "Fin des annotations" : "Annoter"}</button>
         {annotations.length > 0 && <button type="button" onClick={() => setAnnotations([])}>Effacer les annotations ({annotations.length})</button>}

@@ -205,3 +205,4 @@ Contraintes avec des murs (`contrainte-murs.test.ts`, e2e, D-129).
 Longueurs saisies avec leur unité (`longueur-saisie.test.ts`, e2e, D-130).
 Aimantation d'un sommet avec contrainte (`nouveau.test.ts`, D-131).
 Axes associés au centre d'un cercle (`axes-associes.test.ts`, e2e, D-132).
+Mode filaire de la vue 3D (e2e, D-133).

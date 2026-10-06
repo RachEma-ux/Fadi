@@ -33,11 +33,16 @@ export interface OptionsScene {
   ecartEclate?: number;
   /** Boîte de coupe (D-090) : bornes en fraction de l'étendue du bâtiment (x0 < x1, y0 < y1), ou absente. */
   boiteCoupe?: { x0: number; x1: number; y0: number; y1: number } | null;
+  /** Mode filaire (D-133, DA-01-12) : arêtes vues en trait plein, arêtes cachées en tirets, faces non dessinées. */
+  filaire?: boolean;
 }
 
 interface Lot {
   maillage: THREE.Mesh;
   aretes: THREE.LineSegments | null;
+  /** Arêtes cachées (mode filaire) : mêmes arêtes, dessinées en tirets derrière les faces. */
+  cachees: THREE.LineSegments | null;
+  materiauFaces: THREE.Material;
   /** Premier triangle de chaque objet (croissant) et son identifiant. */
   debuts: number[];
   ids: string[];
@@ -67,6 +72,8 @@ export interface MesuresRendu {
   localiserPoignee?: (axe: "x" | "y" | "z" | "r" | "c") => { x: number; y: number } | null;
   /** Point de vue courant (recette : visite à hauteur d'œil). */
   pointDeVue?: () => { position: { x: number; y: number; z: number }; cible: { x: number; y: number; z: number } };
+  /** Mode filaire actif (recette, D-133). */
+  filaire?: boolean;
   /** Position écran d'un point du modèle (recette : face latérale poussée, D-125). */
   versEcran?: (p: { x: number; y: number; z: number }) => { x: number; y: number } | null;
 }
@@ -112,6 +119,10 @@ export class Scene3D {
   private matSelection = new THREE.MeshStandardMaterial({ color: "#b3872f", emissive: "#5a3f0c", polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, side: THREE.DoubleSide, flatShading: true });
   private matApercu = new THREE.MeshStandardMaterial({ color: "#b3521f", transparent: true, opacity: 0.55, side: THREE.DoubleSide, flatShading: true, depthWrite: false });
   private matAretes = new THREE.LineBasicMaterial({ color: "#2d4a40", transparent: true, opacity: 0.35 });
+  // Mode filaire (D-133) : faces écrites dans la profondeur seulement ; arêtes vues pleines, cachées en tirets.
+  private matProfondeur = new THREE.MeshBasicMaterial({ colorWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  private matAretesVues = new THREE.LineBasicMaterial({ color: "#1f3a32" });
+  private matAretesCachees = new THREE.LineDashedMaterial({ color: "#5d7a70", dashSize: 0.15, gapSize: 0.1, depthFunc: THREE.GreaterDepth, depthWrite: false, transparent: true, opacity: 0.45 });
   private plans: THREE.Plane[] = [];
   /** Maillages du modèle courant (sources des chapeaux de coupe). */
   private maillagesCourants: Maillage[] = [];
@@ -223,6 +234,7 @@ export class Scene3D {
     for (const l of this.lots) {
       l.maillage.geometry.dispose();
       l.aretes?.geometry.dispose();
+      l.cachees?.geometry.dispose();
     }
     for (const g of this.groupes.values()) this.scene.remove(g);
     this.groupes.clear();
@@ -278,11 +290,18 @@ export class Scene3D {
       if (premier.opacite < 1) mesh.renderOrder = 2;
       groupe.add(mesh);
       let aretes: THREE.LineSegments | null = null;
+      let cachees: THREE.LineSegments | null = null;
       if (premier.opacite >= 0.5) {
-        aretes = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), this.matAretes);
+        const geoAretes = new THREE.EdgesGeometry(geo, 25);
+        aretes = new THREE.LineSegments(geoAretes, this.matAretes);
         groupe.add(aretes);
+        cachees = new THREE.LineSegments(geoAretes.clone(), this.matAretesCachees);
+        cachees.computeLineDistances();
+        cachees.visible = false;
+        cachees.renderOrder = 3;
+        groupe.add(cachees);
       }
-      this.lots.push({ maillage: mesh, aretes, debuts, ids, classe: cle.split("|")[3]!, groupe: cle.split("|")[4] ?? "" });
+      this.lots.push({ maillage: mesh, aretes, cachees, materiauFaces: mesh.material as THREE.Material, debuts, ids, classe: cle.split("|")[3]!, groupe: cle.split("|")[4] ?? "" });
     }
     this.maillagesCourants = tous;
     this.cleChapeaux = "";
@@ -314,12 +333,20 @@ export class Scene3D {
       // Coupe horizontale en perspective : les niveaux au-dessus du niveau actif sont masqués.
       if (o.vue === "perspective" && o.coupeHorizontale !== null && actif && n && n.ordre > actif.ordre && !estEclate(o.presentation)) g.visible = false;
     }
-    for (const l of this.lots) if (l.aretes) l.aretes.visible = o.aretes || o.vue !== "perspective";
+    for (const l of this.lots) if (l.aretes) l.aretes.visible = o.aretes || o.vue !== "perspective" || !!o.filaire;
+    // Mode filaire (D-133) : faces en profondeur seule (elles cachent sans se dessiner), arêtes vues et cachées.
+    for (const l of this.lots) {
+      l.maillage.material = o.filaire ? this.matProfondeur : l.materiauFaces;
+      if (l.aretes) l.aretes.material = o.filaire ? this.matAretesVues : this.matAretes;
+      if (l.cachees) l.cachees.visible = !!o.filaire;
+    }
+    this.mesures.filaire = !!o.filaire;
     // Éclaté par classe : chaque lot soulevé selon le rang de sa classe ; sinon, à sa place.
     for (const l of this.lots) {
       const z = o.presentation === "eclate-classes" ? this.decalageClasse(l.classe, o) : o.presentation === "eclate-groupes" ? this.decalageGroupe(l.groupe, o) : 0;
       l.maillage.position.z = z;
       if (l.aretes) l.aretes.position.z = z;
+      if (l.cachees) l.cachees.position.z = z;
     }
     // Plans de coupe (partagés par tous les matériaux).
     this.plans.length = 0;
@@ -335,6 +362,10 @@ export class Scene3D {
     }
     if (o.vue === "coupe-ns") this.plans.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), -(b.min.x + (b.max.x - b.min.x) * o.positionCoupe)));
     if (o.vue === "coupe-eo") this.plans.push(new THREE.Plane(new THREE.Vector3(0, 1, 0), -(b.min.y + (b.max.y - b.min.y) * o.positionCoupe)));
+    for (const m of [this.matProfondeur, this.matAretesVues, this.matAretesCachees]) {
+      m.clippingPlanes = this.plans;
+      m.needsUpdate = true;
+    }
     for (const m of this.materiaux.values()) m.needsUpdate = true;
     if (o.vue === "dessus" && actif) for (const [id, g] of this.groupes) g.visible = id === o.niveauActif || (etat.niveaux[id]?.ordre ?? 99) < actif.ordre;
     this.majChapeaux();
@@ -936,8 +967,12 @@ export class Scene3D {
     for (const l of this.lots) {
       l.maillage.geometry.dispose();
       l.aretes?.geometry.dispose();
+      l.cachees?.geometry.dispose();
     }
     for (const m of this.materiaux.values()) m.dispose();
+    this.matProfondeur.dispose();
+    this.matAretesVues.dispose();
+    this.matAretesCachees.dispose();
     this.matSelection.dispose();
     this.matApercu.dispose();
     this.matAretes.dispose();

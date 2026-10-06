@@ -2148,6 +2148,20 @@ await page.waitForSelector(".plan2d");
   check("axes associés : deux axes créés au centre du cercle, ils suivent le cercle déplacé", r0.status === 200 && r1.status === 200 && axes.length === 2 && ok, `${r0.status} · ${r1.status} · ${axes.length} · ${ok}`);
 }
 
+// Mode filaire de la vue 3D (D-133) : arêtes cachées en tirets, faces non dessinées.
+{
+  await page.keyboard.press("Escape");
+  await page.locator('.barre-mode button:has-text("3D")').click();
+  await page.waitForFunction(() => !!window.fadiMesures3D?.versEcran, null, { timeout: 30000 }).catch(() => {});
+  await page.locator("[data-filaire]").check();
+  const actif = await page.waitForFunction(() => window.fadiMesures3D?.filaire === true, null, { timeout: 5000 }).then(() => true, () => false);
+  await page.screenshot({ path: `${OUT}/3d-filaire.png` });
+  await page.locator("[data-filaire]").uncheck();
+  const retire = await page.waitForFunction(() => window.fadiMesures3D?.filaire === false, null, { timeout: 5000 }).then(() => true, () => false);
+  await page.locator('.barre-mode button:has-text("Plan")').click().catch(() => {});
+  check("vue 3D filaire : activée puis retirée (arêtes cachées en tirets)", actif && retire, `${actif} · ${retire}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];
