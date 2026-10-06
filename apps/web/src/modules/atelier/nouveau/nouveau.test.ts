@@ -899,3 +899,20 @@ describe("panneaux Affichage, Info modèle, Matériaux, Arborescence (D-159)", (
     expect(arbre[0]!.enfants.map((n) => [n.genre, n.libelle, n.enfants.length])).toEqual([["groupe", "Groupe Façade", 2], ["classe", "Mur (3)", 3]]);
   });
 });
+
+describe("menu principal : enregistrement et partage (D-160)", () => {
+  it("message d'enregistrement et partage seulement quand tout est enregistré", async () => {
+    const { messageEnregistrement, partagePossible } = await import("./fichier");
+    const base = { enAttente: 0, aTraiter: 0, enLigne: true, joignable: true, lecture: false, revision: 7 };
+    expect(messageEnregistrement(base)).toEqual({ enregistre: true, message: "Tout est enregistré (révision r7)." });
+    expect(partagePossible(base).possible).toBe(true);
+    expect(messageEnregistrement({ ...base, enAttente: 2 }).enregistre).toBe(false);
+    expect(messageEnregistrement({ ...base, enAttente: 2, enLigne: false }).message).toMatch(/^Hors-ligne : 2 modification/);
+    expect(messageEnregistrement({ ...base, enAttente: 1, joignable: false }).message).toMatch(/^Serveur injoignable/);
+    expect(messageEnregistrement({ ...base, aTraiter: 1, enAttente: 3 }).message).toMatch(/^1 lot\(s\) à traiter/);
+    const p = partagePossible({ ...base, enAttente: 1, enLigne: false });
+    expect(p.possible).toBe(false);
+    expect(p.motif).toMatch(/^Partage différé : hors-ligne/);
+    expect(partagePossible({ ...base, lecture: true, enAttente: 5 }).possible).toBe(true);
+  });
+});

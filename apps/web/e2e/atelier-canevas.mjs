@@ -3,7 +3,7 @@
  * desktop et en émulation mobile : canevas plein écran, barre d'outils flottante, outils étendus, panneaux flottants
  * exclusifs sans redimensionner le dessin, Instructeur, champ Mesures, Échap vers l'outil précédent ; réglages de
  * navigation (D-157) ; outils de vue, rapporteur et raccourcis (D-158) ;
- * panneaux Affichage, Info modèle, Matériaux, arborescence et ombres (D-159) ; axe-core.
+ * panneaux Affichage, Info modèle, Matériaux, arborescence et ombres (D-159) ; menu principal (D-160) ; axe-core.
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-canevas.mjs
  */
@@ -318,6 +318,48 @@ check("mobile : cibles des outils et des panneaux d'au moins 44 px", petites ===
 await tel.screenshot({ path: `${OUT}/canevas-mobile.png` });
 await axe("disposition Canevas (mobile)", tel);
 await mobile.close();
+
+// 7. Menu principal (D-160) : enregistrer maintenant, Ctrl + S, exporter, importer, imprimer, partager.
+const aideBas = () => page.locator(".atelier-n-etat").textContent();
+const menu = async (entree) => { await page.locator("[data-menu-principal] > summary").click(); await page.locator(`[data-menu="${entree}"]`).click(); };
+await menu("enregistrer");
+await page.waitForFunction(() => /Tout est enregistré \(révision r\d+\)/.test(document.querySelector(".atelier-n-etat")?.textContent ?? ""), null, { timeout: 15000 }).catch(() => {});
+check("Enregistrer maintenant : « Tout est enregistré (révision rN) »", /Tout est enregistré \(révision r\d+\)/.test((await aideBas()) ?? ""));
+await page.evaluate(() => { const e = document.querySelector(".atelier-n-etat"); if (e) e.setAttribute("data-avant", "1"); });
+await page.locator(".plan2d").click({ position: { x: 5, y: 5 } }).catch(() => {});
+await page.keyboard.press("Escape");
+await page.keyboard.press("Control+s");
+await page.waitForTimeout(400);
+check("Ctrl + S : enregistrer maintenant (sans la boîte d'enregistrement du navigateur)", /Tout est enregistré/.test((await aideBas()) ?? ""));
+await menu("exporter");
+check("Exporter… ouvre le menu des exports", await page.locator(".barre-exports[open]").count() === 1);
+await page.keyboard.press("Escape");
+await page.evaluate(() => document.querySelector(".barre-exports")?.removeAttribute("open"));
+await menu("importer");
+check("Importer… ouvre le menu des imports", await page.locator(".barre-imports[open]").count() === 1);
+await page.evaluate(() => document.querySelector(".barre-imports")?.removeAttribute("open"));
+await menu("imprimer");
+check("Imprimer : bascule vers les documents (feuilles en PDF)", (await page.locator('.barre-mode button:has-text("Documents")').getAttribute("aria-pressed")) === "true");
+await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.waitForSelector(".plan2d .plan-objets [data-objet]");
+// Hors-ligne : une modification reste sur l'appareil, le partage est différé et le dit.
+await ctx.setOffline(true);
+await page.waitForFunction(() => document.querySelector(".barre-sync")?.getAttribute("data-etat") === "hors-ligne", null, { timeout: 15000 }).catch(() => {});
+await page.locator('.atelier-n-outils .outil:has-text("Mur")').first().click();
+const cp = await centre();
+await page.mouse.click(cp.x - 200, cp.y + 150);
+await page.mouse.click(cp.x - 100, cp.y + 150);
+await page.keyboard.press("Escape");
+await page.keyboard.press("Escape");
+await menu("partager");
+await page.waitForTimeout(400);
+check("Partager hors-ligne : différé, avec le motif", /Partage différé : hors-ligne/.test((await aideBas()) ?? "") && page.url().includes("module=atelier"), (await aideBas()) ?? "");
+await ctx.setOffline(false);
+await page.waitForFunction(() => /^Enregistré · r\d+/.test(document.querySelector(".barre-sync")?.textContent ?? ""), null, { timeout: 30000 }).catch(() => {});
+await menu("partager");
+await page.waitForURL(/module=collaboration/, { timeout: 15000 }).catch(() => {});
+check("Partager une fois tout enregistré : ouvre le partage du projet", page.url().includes("module=collaboration"), page.url());
+await ouvrir(pid);
 
 // Retour à la disposition classique (préférence locale).
 await page.locator("[data-disposition-canevas]").click();

@@ -2649,3 +2649,33 @@
     right: calc(var(--colonne-l) + 1rem);
   }
 }
+
+/* Menu principal (D-160). */
+.barre-menu {
+  position: relative;
+}
+.barre-menu > summary {
+  list-style: none;
+  min-height: 34px;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+.barre-menu .menu-principal-liste {
+  right: auto;
+  left: 0;
+  min-width: 16rem;
+}
+.menu-principal-liste button {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.25rem;
+}
+.menu-principal-liste kbd {
+  font-size: 0.8em;
+  opacity: 0.75;
+}

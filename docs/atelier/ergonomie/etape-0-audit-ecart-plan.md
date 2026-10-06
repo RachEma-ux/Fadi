@@ -91,7 +91,7 @@ Chaque tranche est additive, livrée seule, avec ses tests, et vérifie que les 
    raccourcis configurables (infobulles, palette).
 4. **D-159 — Panneaux** (livrée) : Instructeur (opération en étapes, astuces), Affichage (masquer la sélection, réafficher
    tout / le dernier), Info modèle, Matériaux (lecture), Ombres (option d'affichage 3D), arbre de l'Outliner.
-5. **D-160 — Fichiers** : menu principal (enregistrer maintenant, exporter, importer, imprimer, partager après
+5. **D-160 — Fichiers** (livrée) : menu principal (enregistrer maintenant, exporter, importer, imprimer, partager après
    enregistrement confirmé).
 6. **D-161 — Qualité** : recette Playwright Canevas desktop + émulation mobile, axe-core, cibles ≥ 44 px, catalogue
    de messages français.

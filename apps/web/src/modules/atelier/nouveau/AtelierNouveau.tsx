@@ -30,6 +30,8 @@ import { saisie, terminer, type ResultatClic } from "./plan2d/outils-2d";
 import { CadrePanneau, ColonnePanneaux, Instructeur } from "./panneaux/Canevas";
 import { ChoixPeripherique, ReglagesNavigationPanneau } from "./panneaux/Navigation";
 import { RaccourcisPanneau } from "./panneaux/Raccourcis";
+import { MenuPrincipal } from "./panneaux/MenuPrincipal";
+import { messageEnregistrement, partagePossible, type EtatEnregistrement } from "./fichier";
 import { AffichagePanneau, InfoModelePanneau, MateriauxPanneau } from "./panneaux/Affichage";
 import { libelleTouche, outilDeTouche, raccourciDe } from "./raccourcis";
 import { cadrerNiveau, Plan2D } from "./plan2d/Plan2D";
@@ -298,6 +300,8 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
     appliquerResultat(r);
   }, [client, appliquerResultat, finir]);
 
+  // Ctrl + S (D-160) : « Enregistrer maintenant », défini plus bas ; lu au moment de la touche.
+  const enregistrerRef = useRef<(() => void) | null>(null);
   // Clavier global de l'Atelier (hors champs de saisie).
   useEffect(() => {
     const surTouche = (e: KeyboardEvent) => {
@@ -305,6 +309,11 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
       if (mod && e.key.toLowerCase() === "k") {
         e.preventDefault();
         etatUi.set((u) => ({ paletteOuverte: !u.paletteOuverte }));
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        enregistrerRef.current?.();
         return;
       }
       if (champSaisie(e.target) || etatUi.get().paletteOuverte) return;
@@ -439,6 +448,37 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
 
   const lotsEnDifficulte = inst.lots.filter((l) => l.etat === "conflit" || l.etat === "refuse").length;
   const enAttente = inst.lots.filter((l) => l.etat === "local" || l.etat === "synchronisation").length;
+  // Menu principal (D-160) : enregistrer maintenant, puis partager seulement quand tout est enregistré.
+  const etatEnregistrement = useCallback((): EtatEnregistrement => {
+    const snap = client.getSnapshot();
+    return {
+      enAttente: snap.lots.filter((l) => l.etat === "local" || l.etat === "synchronisation").length,
+      aTraiter: snap.lots.filter((l) => l.etat === "conflit" || l.etat === "refuse").length,
+      enLigne: navigator.onLine !== false,
+      joignable: reachable,
+      lecture: readOnly,
+      revision: snap.revisionServeur,
+    };
+  }, [client, reachable, readOnly]);
+  const enregistrerMaintenant = useCallback(async (): Promise<boolean> => {
+    if (!readOnly) await client.envoyer();
+    const m = messageEnregistrement(etatEnregistrement());
+    etatUi.set({ aide: m.message });
+    return m.enregistre;
+  }, [client, readOnly, etatEnregistrement]);
+  useEffect(() => {
+    enregistrerRef.current = () => void enregistrerMaintenant();
+  }, [enregistrerMaintenant]);
+  const partager = useCallback(async () => {
+    if (!readOnly) await client.envoyer();
+    const p = partagePossible(etatEnregistrement());
+    if (!p.possible) {
+      etatUi.set({ aide: p.motif });
+      return;
+    }
+    navigate(`/projets/${projectId}?module=collaboration`);
+  }, [client, readOnly, etatEnregistrement, navigate, projectId]);
+
   const selection = ui.selection.map((id) => etat.objets[id]).filter((o): o is OccurrenceQuelconque => !!o);
 
   if (inst.chargement === "initial" || inst.chargement === "chargement") {
@@ -468,6 +508,13 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   return (
     <div className={`atelier-n panneau-${ui.panneauMobile}${ui.mode === "documents" ? " mode-documents" : ""} disposition-${ui.disposition}${ui.outilsReplies ? " outils-replies" : ""}`} data-affichage={ui.affichage} data-outil-actif={ui.outil} data-panneau={ui.disposition === "canevas" ? (ui.panneauFlottant ?? "") : undefined}>
       <header className="atelier-n-barre" aria-label="Barre de l'Atelier">
+        <MenuPrincipal
+          lecture={readOnly}
+          onEnregistrer={() => void enregistrerMaintenant()}
+          onPartager={() => void partager()}
+          onDocuments={() => etatUi.set({ mode: "documents", pointsEnCours: [], aide: "Imprimer : choisissez une feuille ou une vue, puis téléchargez-la en PDF." })}
+          onProjets={() => navigate("/projets")}
+        />
         <label className="barre-niveau">
           <span className="sr-only">Niveau actif</span>
           <select value={ui.niveauId ?? ""} onChange={(e) => etatUi.set({ niveauId: e.target.value, selection: [], pointsEnCours: [] })}>
