@@ -2326,6 +2326,28 @@ await page.waitForSelector(".plan2d");
   globalThis.collerAilleurs = { x0 };
 }
 
+// Lot validé par le serveur mais réponse perdue (page fermée, réseau coupé) : à la réouverture, il est retiré de la
+// file au lieu d'être rejoué (son rejeu sur un modèle qui le contient déjà passerait pour un conflit).
+{
+  await attendreEnregistre().catch(() => {});
+  await page.route("**/atelier/commands", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await route.fetch().catch(() => {}); // le serveur valide…
+    await route.abort("connectionreset"); // …mais la réponse n'arrive jamais
+  });
+  await page.evaluate(() => document.activeElement?.blur?.());
+  await page.keyboard.press("Control+v");
+  let cree = null;
+  for (let k = 0; k < 30 && !cree; k++) {
+    cree = (await modele(pid)).modele.objets["pp-e2e-c2"] ?? null;
+    if (!cree) await page.waitForTimeout(500);
+  }
+  await page.unroute("**/atelier/commands");
+  const reouvert = await ouvrir(pid).then(() => true, () => false);
+  const barre = await page.locator(".barre-sync").textContent().catch(() => "");
+  check("lot validé dont la réponse s'est perdue : retiré de la file à la réouverture, aucun conflit", !!cree && reouvert && /^Enregistré · r\d+/.test(barre), `${!!cree} · ${barre}`);
+}
+
 // Orientation d'un texte (D-146) : saisie dans l'inspecteur, texte tourné au plan.
 {
   await page.keyboard.press("Escape");

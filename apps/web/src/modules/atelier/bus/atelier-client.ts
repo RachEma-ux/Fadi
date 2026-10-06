@@ -104,7 +104,7 @@ export class AtelierClient {
       const reponse = await api.getAtelierModel(this.projectId);
       this.etatServeurCache = reponse.modele;
       void localStore.cacheModel({ projectId: this.projectId, modele: JSON.stringify(reponse.modele), revision: reponse.revision, nativeId: reponse.nativeId, fetchedAt: new Date().toISOString() });
-      const rejeu = rejouerLots(reponse.modele, reponse.revision, lotsLocaux);
+      const rejeu = rejouerLots(reponse.modele, reponse.revision, await this.sansDejaValides(lotsLocaux));
       this.emettre({ etat: rejeu.etat, revisionServeur: reponse.revision, revision: reponse.revision + rejeu.rejoues.length, nativeId: reponse.nativeId, chargement: "pret", lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
       await this.persisterLots();
       await this.chargerJournal();
@@ -359,13 +359,32 @@ export class AtelierClient {
       const r = await api.getAtelierModel(this.projectId);
       this.etatServeurCache = r.modele;
       void localStore.cacheModel({ projectId: this.projectId, modele: JSON.stringify(r.modele), revision: r.revision, nativeId: r.nativeId, fetchedAt: new Date().toISOString() });
-      const rejeu = rejouerLots(r.modele, r.revision, this.instantane.lots);
+      const rejeu = rejouerLots(r.modele, r.revision, await this.sansDejaValides(this.instantane.lots));
       this.emettre({ etat: rejeu.etat, revisionServeur: r.revision, revision: r.revision + rejeu.rejoues.length, nativeId: r.nativeId, chargement: "pret", horsLigne: false, lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
       await this.persisterLots();
       await this.chargerJournal();
       void revisionAttendue;
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) this.emettre({ chargement: "aucun-modele" });
+    }
+  }
+
+  /**
+   * Lots de la file déjà validés par le serveur (D-147) : page fermée ou réseau coupé entre la validation et le retrait
+   * de la file. Leur `requestId` figure au journal ; ils sont retirés au lieu d'être rejoués sur un modèle qui les
+   * contient déjà (le rejeu échouerait et les ferait passer pour des conflits).
+   */
+  private async sansDejaValides(lots: LotEnAttente[]): Promise<LotEnAttente[]> {
+    if (!lots.length) return lots;
+    try {
+      const plusAncien = Math.min(...lots.map((l) => l.enveloppe.baseRevision));
+      const j = await api.getAtelierJournal(this.projectId, Math.max(0, plusAncien - 50));
+      const valides = new Set(j.entrees.map((e) => e.requestId));
+      const restants = lots.filter((l) => !valides.has(l.enveloppe.requestId));
+      for (const l of lots) if (valides.has(l.enveloppe.requestId)) await localStore.removeLot(this.projectId, l.enveloppe.requestId);
+      return restants;
+    } catch {
+      return lots; // journal illisible : rejeu ordinaire
     }
   }
 
