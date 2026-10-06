@@ -187,3 +187,4 @@ Porte-fenêtre et menuiserie de porte (`menuiserie.test.ts`, D-113).
 Solide associé à son esquisse (`solides-associes.test.ts`, `nouveau.test.ts`, D-114).
 Réseau associatif (`reseau-associatif.test.ts`, e2e, D-115).
 Étirer par fenêtre polygonale (`etirer-fenetre.test.ts`, e2e, D-116).
+Ajuster des formes fermées et des splines, extrémité imposée (`ajuster-forme.test.ts`, e2e, D-117).

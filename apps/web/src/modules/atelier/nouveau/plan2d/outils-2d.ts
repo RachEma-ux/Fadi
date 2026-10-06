@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { axesDesMurs, pointsEllipse, tremiesRetenues, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { estFormeFermee, axesDesMurs, pointsEllipse, tremiesRetenues, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -42,6 +42,26 @@ function murSous(etat: ModeleAtelier, niveauId: string, p: Point2, rayon: number
     if (d <= rayon && (!meilleur || d < meilleur.d)) meilleur = { mur: o, t: pr.t, d };
   }
   return meilleur ? { mur: meilleur.mur, t: meilleur.t } : null;
+}
+
+/** Limite droite (axe de mur droit, d'escalier, ligne d'esquisse) la plus proche d'un point (D-117). */
+function limiteDroiteSous(etat: ModeleAtelier, niveauId: string, p: Point2, rayon: number, sauf: string): string | null {
+  let meilleur: { id: string; d: number } | null = null;
+  for (const o of Object.values(etat.objets)) {
+    if (o.niveauId !== niveauId || o.id === sauf) continue;
+    const axe = o.classe === "mur" && !o.params.renflement ? [o.params.a, o.params.b] : o.classe === "escalier" ? [o.params.a, o.params.b] : o.classe === "esquisse" && (o.params.forme === "ligne" || o.params.forme === "construction") && o.params.points.length >= 2 ? [o.params.points[0]!, o.params.points[1]!] : null;
+    if (!axe) continue;
+    const d = Math.max(0, projectionSurSegment(p, axe[0]!, axe[1]!).distance - (o.classe === "mur" ? o.params.epaisseur.value / 2 : 0));
+    if (d <= rayon && (!meilleur || d < meilleur.d)) meilleur = { id: o.id, d };
+  }
+  return meilleur?.id ?? null;
+}
+
+/** Extrémités d'un objet ajustable ou prolongeable (a, b), ou null. */
+function extremitesDe(o: OccurrenceQuelconque): [Point2, Point2] | null {
+  if (o.classe === "mur" || o.classe === "escalier") return [o.params.a, o.params.b];
+  if (o.classe === "esquisse" && !o.params.ferme && o.params.points.length >= 2) return [o.params.points[0]!, o.params.points[o.params.points.length - 1]!];
+  return null;
 }
 
 /** Nom de pièce suivant (« Pièce 3 ») — jamais une catégorie ou une surface inventée. */
@@ -382,8 +402,22 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
           return emettre([{ type: "transformer.prolonger", params: { id, extremite, longueur: m(longueur) } }], `Prolonger de ${fmt(longueur)} m`);
         }
       }
+      // Forme fermée (D-117) : limite droite, puis le côté à garder.
+      if (outil === "ajuster" && o && estFormeFermee(o)) {
+        if (pts.length === 0) {
+          if (!options.objetSous || options.objetSous === id) return attendre([], "Cliquez la limite droite (axe de mur, ligne), puis le côté à garder.");
+          return attendre([point], "Cliquez le côté de la forme à garder.");
+        }
+        const limiteId = limiteDroiteSous(etat, niveauId, pts[0]!, options.rayon * 2, id);
+        if (!limiteId) return attendre([], "Limite droite introuvable au premier clic : recommencez sur un axe de mur ou une ligne.");
+        return emettre([{ type: "transformer.ajuster", params: { id, limiteId, cote: point } }], "Ajuster la forme");
+      }
+      // Extrémité désignée (D-117) : un clic sur l'objet lui-même retient l'extrémité la plus proche.
+      if (options.objetSous === id && o && extremitesDe(o)) return attendre([point], `Extrémité retenue : cliquez l'objet limite (l'extrémité ${outil === "ajuster" ? "coupée" : "prolongée"} sera celle-ci).`);
       if (!options.objetSous || options.objetSous === id) return attendre([], outil === "prolonger" ? "Cliquez l'objet limite, ou renseignez une longueur et cliquez l'extrémité à prolonger." : "Cliquez l'objet limite.");
-      return emettre([{ type: `transformer.${outil}`, params: { id, limiteId: options.objetSous } }], outil === "ajuster" ? "Ajuster" : "Prolonger");
+      const ext = o ? extremitesDe(o) : null;
+      const extremite = pts.length && ext ? (distance(pts[0]!, ext[0]) <= distance(pts[0]!, ext[1]) ? "a" : "b") : null;
+      return emettre([{ type: `transformer.${outil}`, params: { id, limiteId: options.objetSous, ...(extremite ? { extremite } : {}) } }], `${outil === "ajuster" ? "Ajuster" : "Prolonger"}${extremite ? ` (extrémité ${extremite})` : ""}`);
     }
     case "scinder": {
       const cible = murSous(etat, niveauId, point, options.rayon * 2);

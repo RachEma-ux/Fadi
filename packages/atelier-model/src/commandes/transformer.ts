@@ -8,6 +8,7 @@
  */
 import { genererReseau, grouperReseau, lireParametresReseau, nomReseau } from "./reseau-associatif.js";
 import { decomposerBloc } from "./bloc.js";
+import { ajusterForme, estFormeFermee } from "./ajuster-forme.js";
 import { validerParams } from "./validation.js";
 import { add, decalerPolyligneArcs, dot, pointsArc, pointsEllipse, pointsPolyligne, centreRenflement, longueurAxeMur, decalerArrondi, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
 import type { Contour, ModeleAtelier, Occurrence, OccurrenceQuelconque, Reference } from "../modele.js";
@@ -768,15 +769,22 @@ function ajusterOuProlonger(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande,
   const limite = etat.objets[limiteId]!;
   const axe = axeDe(o);
   const axeLimite = axeDe(limite);
-  // Polylignes ouvertes et limites courbes ou polygonales (D-073) : chemin général.
-  if (!axe || !axeLimite) return ajusterOuProlongerChemin(etat, ctx, id, limiteId, mode);
+  // Forme fermée (D-117) : coupée par la droite porteuse d'une limite droite, côté `cote` gardé.
+  if (mode === "ajuster" && estFormeFermee(o)) {
+    if (!axeLimite) throw new ErreurCommande("precondition", "limiteId", "forme fermée : la limite doit être droite (axe de mur, ligne, escalier)");
+    return ajusterForme(etat, p, o, { a: axeLimite[0], b: axeLimite[1] });
+  }
+  // Extrémité imposée (D-117) : celle qui bouge, au lieu de la plus proche.
+  const force = p["extremite"] === undefined ? null : lire.enumeration(p, "extremite", ["a", "b"] as const);
+  // Polylignes ouvertes, splines et limites courbes ou polygonales (D-073, D-117) : chemin général.
+  if (!axe || !axeLimite) return ajusterOuProlongerChemin(etat, ctx, id, limiteId, mode, force);
   const far = 1e6;
   const dA = sub(axe[1], axe[0]);
   const dB = sub(axeLimite[1], axeLimite[0]);
   const x = intersectionSegments(add(axe[0], mul(dA, -far)), add(axe[1], mul(dA, far)), add(axeLimite[0], mul(dB, -far)), add(axeLimite[1], mul(dB, far)), 1e-6);
   if (!x) throw new ErreurCommande("precondition", "limiteId", "objets parallèles : aucune intersection");
   const pr = projectionSurSegment(x.point, axe[0], axe[1]);
-  const extremite: "a" | "b" = mode === "prolonger" ? (distance(axe[0], x.point) <= distance(axe[1], x.point) ? "a" : "b") : pr.t < 0.5 ? "a" : "b";
+  const extremite: "a" | "b" = force ?? (mode === "prolonger" ? (distance(axe[0], x.point) <= distance(axe[1], x.point) ? "a" : "b") : pr.t < 0.5 ? "a" : "b");
   if (mode === "ajuster" && (pr.t <= 0 || pr.t >= 1)) throw new ErreurCommande("precondition", "limiteId", "la limite ne coupe pas l'objet : rien à ajuster");
   // Intersection de droites prolongées (1e6 m) : arrondie au nanomètre, comme le prolongement d'une longueur donnée.
   return reducteursTransformer.etirer(etat, { id, extremite, point: pt(Math.round(x.point.x * 1e9) / 1e9, Math.round(x.point.y * 1e9) / 1e9) }, ctx, []);
@@ -811,10 +819,15 @@ function limiteDe(o: OccurrenceQuelconque): LimiteCoupe | null {
   return null;
 }
 
-/** Chemin droit de l'objet à couper ou prolonger : axe (mur, escalier, ligne) ou polyligne ouverte sans arc. */
+/** Points d'échantillonnage par segment de spline pour ajuster ou prolonger (D-117). */
+const PAS_SPLINE = 16;
+
+/** Chemin de l'objet à couper ou prolonger : axe (mur, escalier, ligne), polyligne ouverte sans arc, spline ouverte
+ * (tracé échantillonné : PAS_SPLINE points par segment, le k-ième point de passage à l'indice k × PAS_SPLINE). */
 function cheminDe(o: OccurrenceQuelconque): Vec[] | null {
   const axe = axeDe(o);
   if (axe) return [axe[0], axe[1]];
+  if (o.classe === "esquisse" && o.params.forme === "spline" && !o.params.ferme && o.params.points.length >= 2) return pointsSpline(o.params.points, PAS_SPLINE, false, o.params.tangentes);
   if (o.classe === "esquisse" && o.params.forme === "polyligne" && !o.params.ferme && o.params.points.length >= 2) {
     if (o.params.renflements?.some((b) => b !== 0)) throw new ErreurCommande("precondition", "id", "polyligne à segments en arc : décomposer d'abord");
     return [...o.params.points];
@@ -855,10 +868,11 @@ function rencontres(o: Vec, dir: Vec, l: LimiteCoupe): number[] {
 
 const arrondiNm = (q: Vec) => pt(Math.round(q.x * 1e9) / 1e9, Math.round(q.y * 1e9) / 1e9);
 
-function ajusterOuProlongerChemin(etat: ModeleAtelier, ctx: ContexteCommande, id: string, limiteId: string, mode: "ajuster" | "prolonger"): ResultatCommande {
+function ajusterOuProlongerChemin(etat: ModeleAtelier, ctx: ContexteCommande, id: string, limiteId: string, mode: "ajuster" | "prolonger", force: "a" | "b" | null = null): ResultatCommande {
   const o = etat.objets[id]!;
   const chemin = cheminDe(o);
-  if (!chemin) throw new ErreurCommande("precondition", "id", `${mode} : murs, escaliers, lignes et polylignes ouvertes seulement`);
+  if (!chemin) throw new ErreurCommande("precondition", "id", `${mode} : murs, escaliers, lignes, polylignes et splines ouvertes, formes fermées (ajuster) seulement`);
+  const spline = o.classe === "esquisse" && o.params.forme === "spline" ? o.params : null;
   const limite = limiteDe(etat.objets[limiteId]!);
   if (!limite) throw new ErreurCommande("precondition", "limiteId", `${mode} : la limite doit être un axe, un tracé, un cercle ou un contour`);
   const n = chemin.length;
@@ -867,9 +881,18 @@ function ajusterOuProlongerChemin(etat: ModeleAtelier, ctx: ContexteCommande, id
       { extremite: "a" as const, o: chemin[0]!, dir: normalise(sub(chemin[0]!, chemin[1]!)) },
       { extremite: "b" as const, o: chemin[n - 1]!, dir: normalise(sub(chemin[n - 1]!, chemin[n - 2]!)) },
     ].map((b) => ({ ...b, t: rencontres(b.o, b.dir, limite)[0] ?? Infinity }));
-    const choix = bouts[0]!.t <= bouts[1]!.t ? bouts[0]! : bouts[1]!;
-    if (!Number.isFinite(choix.t)) throw new ErreurCommande("precondition", "limiteId", "la limite n'est pas atteinte en prolongeant l'une ou l'autre extrémité");
-    return reducteursTransformer.etirer(etat, { id, extremite: choix.extremite, point: arrondiNm(add(choix.o, mul(choix.dir, choix.t))) }, ctx, []);
+    const choix = force ? bouts[force === "a" ? 0 : 1]! : bouts[0]!.t <= bouts[1]!.t ? bouts[0]! : bouts[1]!;
+    if (!Number.isFinite(choix.t)) throw new ErreurCommande("precondition", "limiteId", force ? `la limite n'est pas atteinte en prolongeant l'extrémité ${force}` : "la limite n'est pas atteinte en prolongeant l'une ou l'autre extrémité");
+    const X = arrondiNm(add(choix.o, mul(choix.dir, choix.t)));
+    if (spline) {
+      // Spline (D-117) : un point de passage ajouté dans la direction de la tangente d'extrémité ; la courbe garde ses
+      // points de passage et sa tangente imposée éventuelle (libre au nouveau point).
+      const debut = choix.extremite === "a";
+      const points = debut ? [X, ...spline.points] : [...spline.points, X];
+      const tangentes = spline.tangentes ? (debut ? [null, ...spline.tangentes] : [...spline.tangentes, null]) : undefined;
+      return remplacerEsquisse(etat, o, { points, ...(tangentes ? { tangentes } : {}) });
+    }
+    return reducteursTransformer.etirer(etat, { id, extremite: choix.extremite, point: X }, ctx, []);
   }
   // Ajuster : coupure à la rencontre la plus proche d'une extrémité, du côté de cette extrémité.
   const longueurs = [0];
@@ -880,16 +903,42 @@ function ajusterOuProlongerChemin(etat: ModeleAtelier, ctx: ContexteCommande, id
     const l = distance(chemin[i]!, chemin[i + 1]!);
     if (l < 1e-12) continue;
     const dir = normalise(sub(chemin[i + 1]!, chemin[i]!));
-    for (const t of rencontres(chemin[i]!, dir, limite)) {
-      if (t >= l - 1e-9) continue;
+    // Origine reculée d'un dixième de micron : une rencontre exactement au sommet de départ est comptée (D-117).
+    for (const t0 of rencontres(add(chemin[i]!, mul(dir, -1e-7)), dir, limite)) {
+      const t = Math.max(0, t0 - 1e-7);
+      if (t0 - 1e-7 < -1e-9 || t >= l - 1e-9) continue;
       const s = longueurs[i]! + t;
       if (s <= 1e-9 || s >= L - 1e-9) continue;
-      if (!meilleur || Math.min(s, L - s) < Math.min(meilleur.s, L - meilleur.s)) meilleur = { s, i, point: add(chemin[i]!, mul(dir, t)) };
+      // Extrémité imposée : la coupe la plus proche de cette extrémité.
+      const cle = (x: number) => (force === "a" ? x : force === "b" ? L - x : Math.min(x, L - x));
+      if (!meilleur || cle(s) < cle(meilleur.s)) meilleur = { s, i, point: add(chemin[i]!, mul(dir, t)) };
     }
   }
   if (!meilleur) throw new ErreurCommande("precondition", "limiteId", "la limite ne coupe pas l'objet : rien à ajuster");
   const X = arrondiNm(meilleur.point);
-  const debut = meilleur.s < L - meilleur.s;
+  const debut = force ? force === "a" : meilleur.s < L - meilleur.s;
+  if (spline) {
+    // Spline (D-117) : points de passage du côté gardé, plus le point de coupe (tangente libre au point de coupe).
+    const N = spline.points.length;
+    const k = Math.min(Math.floor(meilleur.i / PAS_SPLINE), N - 2);
+    const proche = (q: Vec) => distance(q, X) <= 1e-9;
+    const tg = spline.tangentes;
+    let points: Point2[];
+    let tangentes: (Vec | null)[] | undefined;
+    if (debut) {
+      const reste = spline.points.slice(k + 1);
+      const tr = tg?.slice(k + 1);
+      points = proche(reste[0]!) ? reste : [X, ...reste];
+      tangentes = tr ? (proche(reste[0]!) ? tr : [null, ...tr]) : undefined;
+    } else {
+      const reste = spline.points.slice(0, k + 1);
+      const tr = tg?.slice(0, k + 1);
+      points = proche(reste[reste.length - 1]!) ? reste : [...reste, X];
+      tangentes = tr ? (proche(reste[reste.length - 1]!) ? tr : [...tr, null]) : undefined;
+    }
+    if (points.length < 2) throw new ErreurCommande("precondition", "limiteId", "il ne resterait qu'un point de la courbe");
+    return remplacerEsquisse(etat, o, { points, tangentes: tangentes?.some((v) => v) ? tangentes : undefined });
+  }
   if (n === 2) return reducteursTransformer.etirer(etat, { id, extremite: debut ? "a" : "b", point: X }, ctx, []);
   const points = (debut ? [X, ...chemin.slice(meilleur.i + 1)] : [...chemin.slice(0, meilleur.i + 1), X]).map((q) => pt(q.x, q.y));
   const effets = effetsVides();
@@ -897,6 +946,15 @@ function ajusterOuProlongerChemin(etat: ModeleAtelier, ctx: ContexteCommande, id
   if (o.niveauId) effets.niveauxTouches.push(o.niveauId);
   const params = validerParams(etat, "esquisse", { ...(o.params as unknown as Brut), points, renflements: undefined });
   return { etat: { ...etat, objets: { ...etat.objets, [id]: { ...o, params } as OccurrenceQuelconque } }, effets };
+}
+
+/** Remplace des paramètres d'esquisse, revalidés (D-117). */
+function remplacerEsquisse(etat: ModeleAtelier, o: OccurrenceQuelconque, patch: Brut): ResultatCommande {
+  const params = validerParams(etat, "esquisse", { ...(o.params as unknown as Brut), ...patch });
+  const effets = effetsVides();
+  effets.modifies.push(o.id);
+  if (o.niveauId) effets.niveauxTouches.push(o.niveauId);
+  return { etat: { ...etat, objets: { ...etat.objets, [o.id]: { ...o, params } as OccurrenceQuelconque } }, effets };
 }
 
 type ElementRaccord = { type: "ligne"; a: Vec; b: Vec } | { type: "arc"; c: Vec; r: number; debut: number; fin: number };

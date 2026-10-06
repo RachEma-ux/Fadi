@@ -394,3 +394,4 @@ export type { Commande, Enveloppe, Effets, ContexteCommande, InstantaneDiff, Red
 export { detecterPieces, descendantsCalque, type PropositionPiece } from "./organisation.js";
 export { transformerOccurrence } from "./transformer.js";
 export { validerParams } from "./validation.js";
+export { estFormeFermee } from "./ajuster-forme.js";

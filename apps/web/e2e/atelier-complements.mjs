@@ -1774,6 +1774,44 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
 }
 
+// Ajuster une forme fermée (D-117) : dalle coupée par une ligne, côté gardé désigné au clic.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const r0 = await lot(pid, `ajf-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "objet.creer", params: { id: "dalle-aj", classe: "dalle", niveauId: murA.niveauId, params: { contour: [P(ax - 200, ay - 200), P(ax - 196, ay - 200), P(ax - 196, ay - 197), P(ax - 200, ay - 197)], trous: [], epaisseur: m(0.2) } } },
+    { type: "objet.creer", params: { id: "ligne-aj", classe: "esquisse", niveauId: murA.niveauId, params: { forme: "ligne", points: [P(ax - 198, ay - 202), P(ax - 198, ay - 195)], ferme: false } } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("dalle-aj");
+  const b = await zoomerSur('.plan2d [data-objet="dalle-aj"]', 250);
+  // Palette ouverte sans Échap : la sélection (la dalle) est gardée.
+  await page.mouse.move(2, 2);
+  await page.evaluate(() => document.activeElement?.blur?.());
+  await page.keyboard.press("Control+k");
+  await page.locator(".palette-champ").fill("ajuster");
+  await page.waitForFunction(() => (document.querySelector(".palette-resultats li")?.textContent ?? "").includes("Ajuster"), null, { timeout: 5000 }).catch(() => {});
+  await page.keyboard.press("Enter");
+  const outilOk = await page.waitForFunction(() => (document.querySelector(".plan2d")?.getAttribute("aria-label") ?? "").endsWith("outil ajuster"), null, { timeout: 5000 }).then(() => true, () => false);
+  let contour = null;
+  if (b && outilOk) {
+    await page.mouse.click(b.x + b.width / 2, b.y - b.height / 3);
+    await page.waitForFunction(() => /côté de la forme/.test(document.querySelector(".etat-aide")?.textContent ?? ""), null, { timeout: 5000 }).catch(() => {});
+    await page.mouse.click(b.x + b.width * 0.8, b.y + b.height / 2);
+    for (let k = 0; k < 30 && !contour; k++) {
+      const c = (await modele(pid)).modele.objets["dalle-aj"]?.params.contour;
+      if (c && Math.min(...c.map((q) => q.x)) > ax - 199) contour = c;
+      else await page.waitForTimeout(500);
+    }
+  }
+  const xs = (contour ?? []).map((q) => Math.round((q.x - ax) * 1e6) / 1e6);
+  check("ajuster une dalle : coupée par la ligne, côté désigné gardé", r0.status === 200 && Math.min(...xs) === -198 && Math.max(...xs) === -196, `${r0.status} · ${JSON.stringify(xs)} · ${await page.locator(".etat-aide").textContent()}`);
+  await page.keyboard.press("Escape");
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];
