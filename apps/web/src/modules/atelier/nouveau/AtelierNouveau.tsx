@@ -30,6 +30,7 @@ import { saisie, terminer, type ResultatClic } from "./plan2d/outils-2d";
 import { CadrePanneau, ColonnePanneaux, Instructeur } from "./panneaux/Canevas";
 import { ChoixPeripherique, ReglagesNavigationPanneau } from "./panneaux/Navigation";
 import { RaccourcisPanneau } from "./panneaux/Raccourcis";
+import { AffichagePanneau, InfoModelePanneau, MateriauxPanneau } from "./panneaux/Affichage";
 import { libelleTouche, outilDeTouche, raccourciDe } from "./raccourcis";
 import { cadrerNiveau, Plan2D } from "./plan2d/Plan2D";
 import "./atelier-nouveau.css";
@@ -95,9 +96,11 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
     const iso = ui.isolement ? new Set(ui.isolement) : null;
     // Calques gelés (D-103) : leurs objets sortent du plan, de la 3D, de l'accrochage et de la sélection.
     const geles = new Set(Object.values(etat.calques).filter((c) => c.gele).map((c) => c.id));
-    if (!f.classesMasquees.length && !f.calquesMasques.length && !iso && !geles.size) return etat;
-    return { ...etat, objets: Object.fromEntries(Object.entries(etat.objets).filter(([id, o]) => visibleSelonFiltres(o, f) && (!iso || iso.has(id)) && !(o.calqueId && geles.has(o.calqueId)))) };
-  }, [etat, ui.filtres, ui.isolement]);
+    // Objets masqués pour soi (D-159) : hors du plan et de la 3D, comme l'isolement.
+    const masques = ui.masques.length ? new Set(ui.masques) : null;
+    if (!f.classesMasquees.length && !f.calquesMasques.length && !iso && !geles.size && !masques) return etat;
+    return { ...etat, objets: Object.fromEntries(Object.entries(etat.objets).filter(([id, o]) => visibleSelonFiltres(o, f) && (!iso || iso.has(id)) && !masques?.has(id) && !(o.calqueId && geles.has(o.calqueId)))) };
+  }, [etat, ui.filtres, ui.isolement, ui.masques]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [mesure, setMesure] = useState<string | null>(null);
   const [rapportEchange, setRapportEchange] = useState<RapportAffiche | null>(null);
@@ -753,6 +756,21 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           {ui.panneauFlottant === "raccourcis" && (
             <CadrePanneau id="raccourcis" titre="Raccourcis">
               <RaccourcisPanneau ui={ui} />
+            </CadrePanneau>
+          )}
+          {ui.panneauFlottant === "affichage" && (
+            <CadrePanneau id="affichage" titre="Affichage">
+              <AffichagePanneau ui={ui} etat={etat} />
+            </CadrePanneau>
+          )}
+          {ui.panneauFlottant === "materiaux" && (
+            <CadrePanneau id="materiaux" titre="Matériaux">
+              <MateriauxPanneau etat={etat} />
+            </CadrePanneau>
+          )}
+          {ui.panneauFlottant === "modele" && (
+            <CadrePanneau id="modele" titre="Info modèle">
+              <InfoModelePanneau etat={etat} revision={consultation ? null : inst.revisionServeur} />
             </CadrePanneau>
           )}
         </>

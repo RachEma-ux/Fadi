@@ -16,6 +16,9 @@ export const PANNEAUX_CANEVAS: { id: PanneauFlottant; libelle: string; picto: st
   { id: "outliner", libelle: "Navigateur", picto: "☰" },
   { id: "modifications", libelle: "Modifications", picto: "⚑" },
   { id: "versions", libelle: "Versions", picto: "⧉" },
+  { id: "affichage", libelle: "Affichage", picto: "◐" },
+  { id: "materiaux", libelle: "Matériaux", picto: "▤" },
+  { id: "modele", libelle: "Info modèle", picto: "ℹ" },
   { id: "navigation", libelle: "Navigation", picto: "✥" },
   { id: "raccourcis", libelle: "Raccourcis", picto: "⌨" },
 ];

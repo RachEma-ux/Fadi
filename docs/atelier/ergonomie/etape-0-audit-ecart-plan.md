@@ -89,7 +89,7 @@ Chaque tranche est additive, livrée seule, avec ses tests, et vérifie que les 
    Maj = panoramique ; tactile deux doigts orbite ou panoramique.
 3. **D-158 — Outils de vue et saisie** (livrée) : outils Panoramique et Zoom, zoom étendu, rapporteur, accrochage parallèle,
    raccourcis configurables (infobulles, palette).
-4. **D-159 — Panneaux** : Instructeur (opération en étapes, astuces), Affichage (masquer la sélection, réafficher
+4. **D-159 — Panneaux** (livrée) : Instructeur (opération en étapes, astuces), Affichage (masquer la sélection, réafficher
    tout / le dernier), Info modèle, Matériaux (lecture), Ombres (option d'affichage 3D), arbre de l'Outliner.
 5. **D-160 — Fichiers** : menu principal (enregistrer maintenant, exporter, importer, imprimer, partager après
    enregistrement confirmé).

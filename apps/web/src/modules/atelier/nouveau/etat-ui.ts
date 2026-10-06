@@ -96,7 +96,7 @@ export interface EtatUi {
 /** Disposition de l'Atelier (D-156) : grille à cinq repères (défaut) ou canevas plein écran à panneaux flottants. */
 export type Disposition = "classique" | "canevas";
 /** Panneaux flottants exclusifs de la disposition Canevas (D-156). */
-export type PanneauFlottant = "instructeur" | "entite" | "outliner" | "modifications" | "versions" | "affichage" | "navigation" | "raccourcis" | "modele";
+export type PanneauFlottant = "instructeur" | "entite" | "outliner" | "modifications" | "versions" | "affichage" | "navigation" | "raccourcis" | "modele" | "materiaux";
 
 /** Réglages de navigation (D-157), propres à l'appareil. */
 export interface ReglagesNavigation {

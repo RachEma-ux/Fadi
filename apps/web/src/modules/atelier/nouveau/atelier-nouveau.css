@@ -2589,3 +2589,63 @@
   text-align: center;
   text-transform: none;
 }
+
+/* Affichage, Info modèle, Matériaux, Arborescence (D-159). */
+.canevas-colonne {
+  overflow-y: auto;
+  max-height: 100%;
+}
+.affichage-actions {
+  flex-wrap: wrap;
+  margin: 0.4rem 0;
+}
+.affichage-ombres {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+}
+.info-modele-liste {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.6rem;
+  margin: 0 0 0.6rem;
+}
+.info-modele-liste dt {
+  font-weight: 600;
+}
+.info-modele-liste dd {
+  margin: 0;
+}
+.info-modele-classes,
+.materiaux-liste {
+  margin: 0.2rem 0 0.6rem;
+  padding-left: 1.1rem;
+}
+.arbre-racine,
+.arbre-racine ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 0.9rem;
+}
+.arbre-racine {
+  padding-left: 0.2rem;
+}
+.arbre-objet.est-choisi {
+  font-weight: 600;
+}
+.arbre-tout {
+  font-size: 0.85em;
+}
+
+/* Canevas : les réglages de la vue 3D se placent entre la barre d'outils flottante et la colonne de panneaux. */
+.atelier-n.disposition-canevas .vue3d-commandes {
+  left: 9rem;
+  right: 7rem;
+}
+@media (max-width: 760px) {
+  .atelier-n.disposition-canevas .vue3d-commandes {
+    left: 4.5rem;
+    right: calc(var(--colonne-l) + 1rem);
+  }
+}

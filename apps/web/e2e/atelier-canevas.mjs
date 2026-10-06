@@ -2,7 +2,8 @@
  * Recette de la disposition « Canevas » (D-156 et suivantes ; ergonomie de référence SketchUp pour le Web) sur
  * desktop et en émulation mobile : canevas plein écran, barre d'outils flottante, outils étendus, panneaux flottants
  * exclusifs sans redimensionner le dessin, Instructeur, champ Mesures, Échap vers l'outil précédent ; réglages de
- * navigation (D-157) ; outils de vue, rapporteur et raccourcis (D-158) ; axe-core.
+ * navigation (D-157) ; outils de vue, rapporteur et raccourcis (D-158) ;
+ * panneaux Affichage, Info modèle, Matériaux, arborescence et ombres (D-159) ; axe-core.
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-canevas.mjs
  */
@@ -254,6 +255,52 @@ check("Panoramique : glisser déplace la vue sans zoomer", Math.abs(d1.x - d0.x 
 check("infobulle d'outil : raccourci affiché (Mur, M)", ((await page.locator('.atelier-n-outils .outil:has-text("Mur")').first().getAttribute("title")) ?? "").startsWith("Mur (M)"));
 await page.keyboard.press("Escape");
 await page.evaluate(() => { const p = JSON.parse(localStorage.getItem("fadi.atelier.prefs") ?? "{}"); return p.raccourcis; }).then((r) => check("raccourcis enregistrés sur l'appareil", r?.rapporteur === "j", JSON.stringify(r)));
+
+// 5 quater. Panneaux Affichage, Info modèle, Matériaux, Arborescence, Ombres (D-159).
+await page.locator('[data-panneau-icone="outliner"]').click();
+await page.locator("[data-arborescence] > summary").click();
+const objetsModele = (await modele(pid)).modele.objets;
+const idArbre = (await page.locator(".plan2d .plan-objets [data-objet]").evaluateAll((els) => els.map((e) => e.getAttribute("data-objet")))).find((id) => objetsModele[id] && !objetsModele[id].groupeId && objetsModele[id].classe === "mur");
+const oArbre = objetsModele[idArbre];
+const noeud = page.locator(`[data-arbre-noeud="n:${oArbre.niveauId}"]`);
+if (!(await noeud.evaluate((e) => e.parentElement.open))) await noeud.click();
+await page.locator(`[data-arbre-noeud="n:${oArbre.niveauId}/c:${oArbre.classe}"]`).click();
+const premierArbre = page.locator(`[data-arbre-objet="${idArbre}"]`);
+await premierArbre.click();
+check("Arborescence : clic = sélection de l'objet", (await premierArbre.getAttribute("aria-pressed")) === "true");
+await page.locator('[data-panneau-icone="affichage"]').click();
+const surPlan = () => page.locator(`.plan2d [data-objet="${idArbre}"]`).count();
+const avantMasque = await surPlan();
+await page.locator("[data-masquer-selection]").click();
+check("Masquer la sélection : l'objet sort du plan (pour soi)", avantMasque > 0 && (await surPlan()) === 0, `${avantMasque} → ${await surPlan()}`);
+check("masquage local : le modèle n'est pas modifié", !!(await modele(pid)).modele.objets[idArbre]);
+await page.locator("[data-reafficher-dernier]").click();
+check("Réafficher le dernier : l'objet revient", (await surPlan()) === avantMasque);
+await page.locator('[data-panneau-icone="outliner"]').click();
+await page.locator(`[data-arbre-objet="${idArbre}"]`).click();
+await page.locator('[data-panneau-icone="affichage"]').click();
+await page.locator("[data-masquer-selection]").click();
+await page.locator("[data-reafficher-tout]").click();
+check("Réafficher tout", (await surPlan()) === avantMasque && (await page.locator("[data-masques]").getAttribute("data-masques")) === "0");
+await page.locator('[data-panneau-icone="modele"]').click();
+const nbObjets = Object.keys((await modele(pid)).modele.objets).length;
+check("Info modèle : nombre d'objets du modèle", ((await page.locator("[data-info-objets]").textContent()) ?? "").replace(/\s/g, "") === String(nbObjets), `${await page.locator("[data-info-objets]").textContent()} / ${nbObjets}`);
+check("Info modèle : niveaux listés", (await page.locator("[data-info-niveaux] tbody tr").count()) === Object.keys((await modele(pid)).modele.niveaux).length);
+await page.locator('[data-panneau-icone="materiaux"]').click();
+check("Matériaux : panneau en lecture (compositions ou « non renseigné »)", await page.locator("[data-materiaux]").isVisible() && (await page.locator("[data-murs-sans-composition]").count()) === 1);
+await page.screenshot({ path: `${OUT}/canevas-materiaux.png` });
+await page.locator('[data-panneau-icone="affichage"]').click();
+await page.locator("[data-ombres]").check();
+await page.locator('.barre-mode button:has-text("3D")').click();
+await page.waitForFunction(() => window.fadiMesures3D?.ombres?.actives === true, null, { timeout: 20000 }).catch(() => {});
+const ombres = await page.evaluate(() => window.fadiMesures3D?.ombres ?? null);
+check("Ombres en 3D : activées, portées par la maquette", ombres?.actives === true && ombres.portees > 0, JSON.stringify(ombres));
+await page.screenshot({ path: `${OUT}/canevas-ombres.png` });
+await page.locator("[data-ombres]").uncheck();
+await page.waitForFunction(() => window.fadiMesures3D?.ombres?.actives === false, null, { timeout: 10000 }).catch(() => {});
+check("Ombres désactivées", (await page.evaluate(() => window.fadiMesures3D?.ombres?.actives)) === false);
+await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.waitForSelector(".plan2d .plan-objets [data-objet]");
 await axe("disposition Canevas (desktop)");
 
 // 6. Mobile (390 × 844, tactile) : panneau en surcouche, barre d'outils toujours accessible.

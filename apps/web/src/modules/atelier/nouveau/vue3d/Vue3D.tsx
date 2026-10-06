@@ -250,6 +250,10 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
   }, [ui.navigation, pret]);
 
   useEffect(() => {
+    if (pret) sceneRef.current?.majOmbres(ui.ombres);
+  }, [ui.ombres, pret]);
+
+  useEffect(() => {
     if (pret) sceneRef.current?.majExternes(externes);
   }, [externes, pret]);
 

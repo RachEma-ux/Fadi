@@ -5,6 +5,7 @@
  */
 import { ProprietesCible } from "./Inspecteur";
 import { ClasserParRegle, EtatsCalques } from "./Complements";
+import { Arborescence } from "./Affichage";
 import { useMemo, useState } from "react";
 import { altimetrieDu, descendantsCalque, CLASSES, ensemblesPartages, niveauxOrdonnes, type Classe, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi, type FiltresAffichage } from "../etat-ui";
@@ -198,6 +199,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
           );
         })}
       </section>
+      <Arborescence etat={etat} ui={ui} />
       <EnsemblesAffichage etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />
     </nav>
   );

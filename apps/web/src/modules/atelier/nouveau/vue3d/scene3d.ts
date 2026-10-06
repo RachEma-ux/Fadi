@@ -65,6 +65,8 @@ export interface MesuresRendu {
   localiser?: (objetId: string) => { x: number; y: number } | null;
   /** Objet sous un point écran (instrumentation de la recette). */
   sonder?: (x: number, y: number) => string | null;
+  /** Ombres d'affichage actives et ombres portées effectivement calculées (instrumentation, D-159). */
+  ombres?: { actives: boolean; portees: number };
   /** Nombre d'objets dont la section est remplie (coupe en 3D) : instrumentation de la recette. */
   chapeaux?: number;
   /** Nombre de références externes dessinées en 3D. */
@@ -99,6 +101,7 @@ interface Moteur {
   localClippingEnabled: boolean;
   setClearColor(c: THREE.ColorRepresentation, a?: number): void;
   info: { render: { calls: number; triangles: number } };
+  shadowMap?: { enabled: boolean };
 }
 
 let sceneActive: Scene3D | null = null;
@@ -151,12 +154,19 @@ export class Scene3D {
   readonly mesures: MesuresRendu = { rendus: [], appels: 0, triangles: 0, moteur: "webgl2" };
   onRendu: (() => void) | null = null;
 
+  /** Lumière d'affichage (direction fixe : ce n'est pas une étude d'ensoleillement). */
+  private readonly soleil = new THREE.DirectionalLight("#ffffff", 1.4);
+  /** Sol qui ne montre que les ombres portées (D-159). */
+  private readonly sol = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShadowMaterial({ opacity: 0.22 }));
+  private ombres = false;
+
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.scene.background = new THREE.Color("#eef2ee");
     this.scene.add(new THREE.HemisphereLight("#ffffff", "#b9c2bb", 1.6));
-    const soleil = new THREE.DirectionalLight("#ffffff", 1.4);
-    soleil.position.set(-40, -60, 90);
-    this.scene.add(soleil);
+    this.soleil.position.set(-40, -60, 90);
+    this.scene.add(this.soleil, this.soleil.target, this.sol);
+    this.sol.visible = false;
+    this.sol.receiveShadow = true;
     this.scene.add(this.selection, this.apercu);
     this.perspective.up.set(0, 0, 1);
     this.ortho.up.set(0, 0, 1);
@@ -338,7 +348,61 @@ export class Scene3D {
     if (e) this.boite.set(new THREE.Vector3(...e.min), new THREE.Vector3(...e.max));
     else this.boite.set(new THREE.Vector3(-10, -10, 0), new THREE.Vector3(10, 10, 3));
     if (this.options) this.appliquerOptions(this.options, false);
+    this.poserOmbres();
     this.rendre();
+  }
+
+  /**
+   * Ombres d'affichage (D-159) : option locale, jamais une donnée du projet ; la lumière garde une direction fixe
+   * (aucune orientation, date ni heure n'est supposée : ce n'est pas une étude d'ensoleillement).
+   */
+  majOmbres(actives: boolean): void {
+    if (this.ombres === actives) return;
+    this.ombres = actives;
+    if (this.moteur?.shadowMap) this.moteur.shadowMap.enabled = actives;
+    for (const m of this.materiaux.values()) m.needsUpdate = true;
+    this.poserOmbres();
+    this.rendre();
+  }
+
+  get ombresActives(): boolean {
+    return this.ombres;
+  }
+
+  private poserOmbres(): void {
+    const actives = this.ombres && !!this.moteur?.shadowMap;
+    this.mesures.ombres = { actives, portees: actives ? this.lots.length : 0 };
+    this.soleil.castShadow = actives;
+    this.sol.visible = actives;
+    for (const l of this.lots) {
+      l.maillage.castShadow = actives;
+      l.maillage.receiveShadow = actives;
+    }
+    if (!actives) {
+      // Lumière d'affichage par défaut.
+      this.soleil.position.set(-40, -60, 90);
+      this.soleil.target.position.set(0, 0, 0);
+      return;
+    }
+    const b = this.boite;
+    const c = b.getCenter(new THREE.Vector3());
+    const t = b.getSize(new THREE.Vector3());
+    const r = Math.max(t.x, t.y, t.z, 4);
+    this.soleil.target.position.copy(c);
+    // Lumière rasante de côté (droite, devant) : les ombres portées restent visibles depuis le point de vue initial.
+    this.soleil.position.set(c.x + r * 1.1, c.y - r * 0.7, c.z + r * 1.2);
+    const cam = this.soleil.shadow.camera;
+    cam.left = -r * 2.5;
+    cam.right = r * 2.5;
+    cam.top = r * 2.5;
+    cam.bottom = -r * 2.5;
+    cam.near = 0.1;
+    cam.far = r * 8;
+    cam.updateProjectionMatrix();
+    this.soleil.shadow.mapSize.set(2048, 2048);
+    this.soleil.shadow.bias = -0.0005;
+    this.sol.position.set(c.x, c.y, b.min.z - 0.01);
+    this.sol.scale.set(r * 6, r * 6, 1);
   }
 
   /** Niveaux visibles, éclaté, coupes et caméra. `recadrer` replace la caméra (changement de vue). */

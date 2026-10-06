@@ -860,3 +860,42 @@ describe("outils de vue et de saisie (D-158)", () => {
     expect(libelleTouche(null)).toBeNull();
   });
 });
+
+describe("panneaux Affichage, Info modèle, Matériaux, Arborescence (D-159)", () => {
+  it("masquer / réafficher le dernier / tout : pile des masquages, sans doublon", async () => {
+    const { masquer, reafficherDernier, reafficherTout } = await import("./panneaux-modele");
+    const m1 = masquer({ masques: [], pileMasques: [] }, ["a", "b", "a"])!;
+    expect(m1).toEqual({ masques: ["a", "b"], pileMasques: [["a", "b"]] });
+    expect(masquer(m1, ["a"])).toBeNull();
+    const m2 = masquer(m1, ["b", "c"])!;
+    expect(m2).toEqual({ masques: ["a", "b", "c"], pileMasques: [["a", "b"], ["c"]] });
+    const r = reafficherDernier(m2)!;
+    expect(r.masques).toEqual(["a", "b"]);
+    expect(r.reaffiches).toEqual(["c"]);
+    expect(reafficherDernier({ masques: [], pileMasques: [] })).toBeNull();
+    expect(reafficherTout()).toEqual({ masques: [], pileMasques: [] });
+  });
+
+  it("info modèle : niveaux, classes, site non renseigné ; matériaux des compositions ; arborescence groupes et blocs", async () => {
+    const { arborescence, infoModele, materiauxEnUsage } = await import("./panneaux-modele");
+    let etat = carre(socle());
+    const i = infoModele(etat);
+    expect(i.objets).toBe(4);
+    expect(i.niveaux.map((n) => [n.nom, n.objets])).toEqual([["RDC", 4], ["R+1", 0]]);
+    expect(i.parClasse[0]).toMatchObject({ classe: "mur", nombre: 4 });
+    expect(i.site).toEqual({ parcelle: false, emprise: false, hypotheses: 0, sources: 0 });
+    expect(materiauxEnUsage(etat)).toEqual({ materiaux: [], mursSansComposition: 4 });
+    const murs = Object.keys(etat.objets);
+    etat = appliquer(etat, [
+      { type: "type.definir", params: { id: "t-mur", classe: "mur", nom: "Béton 20", params: { couches: [{ materiau: "Béton armé", epaisseur: m(0.18), fonction: "porteur" }, { materiau: "Enduit", epaisseur: m(0.02), fonction: "parement" }] } } },
+      { type: "mur.tracer", params: { id: "wt", niveauId: "rdc", a: pt(0, 6), b: pt(4, 6), epaisseur: m(0.2), hauteur: m(3), definitionId: "t-mur" } },
+      { type: "groupe.creer", params: { nom: "Façade" }, cibles: [murs[1]!, murs[2]!] },
+    ]);
+    const mat = materiauxEnUsage(etat);
+    expect(mat.materiaux.map((x) => [x.materiau, x.fonctions, x.types, x.murs])).toEqual([["Béton armé", ["porteur"], ["Béton 20"], ["wt"]], ["Enduit", ["parement"], ["Béton 20"], ["wt"]]]);
+    expect(mat.mursSansComposition).toBe(4);
+    const arbre = arborescence(etat);
+    expect(arbre.map((n) => n.libelle)).toEqual(["RDC", "R+1"]);
+    expect(arbre[0]!.enfants.map((n) => [n.genre, n.libelle, n.enfants.length])).toEqual([["groupe", "Groupe Façade", 2], ["classe", "Mur (3)", 3]]);
+  });
+});
