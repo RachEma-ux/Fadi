@@ -87,6 +87,7 @@ export function faceLaterale(etat: ModeleAtelier, o: OccurrenceQuelconque, p: { 
   let z0 = 0;
   let z1 = 0;
   if (o.classe === "dalle") {
+    if (o.params.pente) return null; // dalle inclinée (D-140) : faces latérales non verticales
     contour = o.params.contour;
     z0 = z + o.params.decalageBase.value;
     z1 = z0 + o.params.epaisseur.value;

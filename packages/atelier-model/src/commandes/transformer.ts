@@ -58,7 +58,12 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
     case "fenetre":
     case "ouverture":
       return o;
-    case "dalle":
+    case "dalle": {
+      // Dalle inclinée (D-140) : la direction de montée suit la rotation ou le miroir.
+      const pe = o.params.pente;
+      const pente = pe ? { ...pe, direction: { value: t.type === "rotation" ? Math.round((pe.direction.value + rot) * 1e9) / 1e9 : t.type === "miroir" ? Math.round((2 * axeMiroir(t) - pe.direction.value) * 1e9) / 1e9 : pe.direction.value, unit: "deg" as const } } : undefined;
+      return { ...o, params: { ...o.params, ...contourT(o.params, t), ...(pente ? { pente } : {}) } };
+    }
     case "toiture":
     case "zone":
     case "solide":

@@ -72,6 +72,7 @@ export function corpsDe(etat: ModeleAtelier, o: OccurrenceQuelconque): Corps[] {
       return [c(poly, [], e[0], e[1])];
     }
     case "dalle": {
+      if (o.params.pente) return []; // dalle inclinée (D-140) : prisme non vertical, non évaluée ici
       const z0 = z + o.params.decalageBase.value;
       return [c(o.params.contour, o.params.trous, z0, z0 + o.params.epaisseur.value)];
     }

@@ -2227,6 +2227,30 @@ await page.waitForSelector(".plan2d");
   check("section de poteau : profilé I (parois 0,02 m) enregistré et dessiné au plan", r0.status === 200 && sec?.epaisseurProfil?.value === 0.02 && dessine, `${r0.status} · ${JSON.stringify(sec?.epaisseurProfil)} · ${dessine}`);
 }
 
+// Dalle inclinée (D-140) : pente saisie dans l'inspecteur, enregistrée avec sa direction.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const x0 = murA.params.a.x - 310;
+  const y0 = murA.params.a.y - 310;
+  const r0 = await lot(pid, `rampe-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "dalle.creer", params: { id: "rampe-e2e", niveauId: murA.niveauId, contour: [P(x0, y0), P(x0 + 6, y0), P(x0 + 6, y0 + 3), P(x0, y0 + 3)], trous: [], epaisseur: m(0.2) } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("rampe-e2e");
+  await page.locator("[data-pente-dalle] > summary").click();
+  await page.locator('[data-pente-champ="angle"]').fill("5");
+  await page.locator('[data-pente-champ="direction"]').fill("90");
+  await page.locator("[data-pente-appliquer]").click();
+  let pente = null;
+  for (let k = 0; k < 30 && !pente; k++) {
+    pente = (await modele(pid)).modele.objets["rampe-e2e"]?.params.pente ?? null;
+    if (!pente) await page.waitForTimeout(500);
+  }
+  check("dalle inclinée : pente de 5° vers 90° enregistrée", r0.status === 200 && pente?.angle?.value === 5 && pente?.direction?.value === 90, `${r0.status} · ${JSON.stringify(pente)}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

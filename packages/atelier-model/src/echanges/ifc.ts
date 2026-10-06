@@ -421,12 +421,13 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         if (!etat.objets[o.params.murHoteId]) compter(o.classe, o.classe === "porte" ? "IfcDoor" : o.classe === "fenetre" ? "IfcWindow" : "IfcOpeningElement", "—", false, "mur hôte introuvable : omise");
         break; // écrites avec leur mur hôte
       case "dalle": {
-        const solide = extrusionContour(o.params.contour, o.params.trous, o.params.decalageBase.value, o.params.epaisseur.value);
-        const id = s.ajouter(`IFCSLAB(${gid(o.id)},$,${opt(nom ?? o.id)},$,$,${ref(placementDe(o.niveauId))},${ref(forme([corpsSolide([solide])]))},$,.FLOOR.)`);
+        // Dalle inclinée (D-140) : maillage (tessellation) ; sinon extrusion du contour.
+        const rep = o.params.pente ? corpsMaille(o) : corpsSolide([extrusionContour(o.params.contour, o.params.trous, o.params.decalageBase.value, o.params.epaisseur.value)]);
+        const id = s.ajouter(`IFCSLAB(${gid(o.id)},$,${opt(nom ?? o.id)},$,$,${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.FLOOR.)`);
         produits.set(o.id, id);
         contenir(o.niveauId, id);
         identite(id, o);
-        compter("dalle", "IfcSlab (FLOOR)", "SweptSolid", true);
+        compter("dalle", "IfcSlab (FLOOR)", o.params.pente ? "Tessellation" : "SweptSolid", true);
         break;
       }
       case "toiture": {

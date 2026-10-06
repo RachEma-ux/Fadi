@@ -90,6 +90,16 @@ export interface ParamsDalle extends Contour {
   nom: string | null;
   /** Usage déclaré (D-059) : plancher ou dalle isolée, pour filtrer et quantifier ; absent = non renseigné. */
   usage?: UsageDalle;
+  /**
+   * Dalle inclinée (D-140) : pente (degrés, 0 à 60) et direction de montée (degrés, 0 = +x) ; le dessous part de la
+   * hauteur de base au point le plus bas et monte selon la pente ; l'épaisseur reste mesurée à la verticale.
+   */
+  pente?: PenteDalle;
+}
+
+export interface PenteDalle {
+  angle: Angle;
+  direction: Angle;
 }
 
 export const USAGES_DALLE = ["plancher", "dalle-isolee"] as const;

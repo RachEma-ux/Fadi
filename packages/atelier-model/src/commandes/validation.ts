@@ -83,7 +83,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
   ouverture: (etat, p) => ouverture(etat, p),
   dalle(_etat, p) {
     const usage = p["usage"] === undefined || p["usage"] === null ? null : lire.enumeration(p, "usage", USAGES_DALLE);
-    return { ...contour(p), epaisseur: lire.longueur(p, "epaisseur", { strict: true })!, decalageBase: lire.longueur(p, "decalageBase", { optionnel: true }) ?? { value: 0, unit: "m" }, nom: lire.chaineOuNull(p, "nom"), ...(usage ? { usage } : {}) };
+    return { ...contour(p), epaisseur: lire.longueur(p, "epaisseur", { strict: true })!, decalageBase: lire.longueur(p, "decalageBase", { optionnel: true }) ?? { value: 0, unit: "m" }, nom: lire.chaineOuNull(p, "nom"), ...(usage ? { usage } : {}), ...penteDalle(p) };
   },
   toiture(_etat, p) {
     return {
@@ -359,6 +359,18 @@ function degradeDe(p: Brut, forme: string): { degrade?: { de: number; a: number;
   const a = lire.nombre(q, "a", { min: 0, max: 1 })!;
   const angle = lire.angle(q, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" as const };
   return { degrade: { de, a, angle: { value: angle.value, unit: "deg" } } };
+}
+
+/** Pente d'une dalle (D-140) : angle de 0 (exclu) à 60°, direction de montée ; null la retire. */
+function penteDalle(p: Brut): { pente?: { angle: { value: number; unit: "deg" }; direction: { value: number; unit: "deg" } } } {
+  const brut = p["pente"];
+  if (brut === undefined || brut === null) return {};
+  if (typeof brut !== "object" || Array.isArray(brut)) throw new ErreurCommande("invalide", "pente", "pente : { angle, direction }");
+  const q = brut as Brut;
+  const angle = lire.angle(q, "angle")!;
+  if (!(angle.value > 0 && angle.value <= 60)) throw new ErreurCommande("invalide", "pente.angle", "pente entre 0 (exclu) et 60°");
+  const direction = lire.angle(q, "direction", { optionnel: true }) ?? { value: 0, unit: "deg" as const };
+  return { pente: { angle: { value: angle.value, unit: "deg" }, direction: { value: direction.value, unit: "deg" } } };
 }
 
 /** Formes de section des poteaux qui demandent une épaisseur de paroi (D-139). */

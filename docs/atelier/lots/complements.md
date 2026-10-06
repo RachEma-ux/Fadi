@@ -212,3 +212,4 @@ Mise à jour d'une variante depuis son tronc (`atelier-commands.test.ts`, e2e `a
 Décalage d'altitude des références externes (`refexterne.test.ts`, e2e, D-137).
 Calage cadastral des références externes (`refexterne.test.ts`, e2e, D-138).
 Formes de section des poteaux (`sections-poteaux.test.ts`, e2e, D-139).
+Dalles inclinées (`dalles-inclinees.test.ts`, e2e, D-140).

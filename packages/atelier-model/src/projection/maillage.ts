@@ -191,13 +191,14 @@ class Tampon {
     this.indices.push(a, b, c, a, c, d);
   }
   /** Prisme droit d'un contour (avec trous) entre z0 et z1. */
-  prisme(contour: readonly Vec[], trous: readonly (readonly Vec[])[], z0: number, z1: number): void {
+  prisme(contour: readonly Vec[], trous: readonly (readonly Vec[])[], z0: number, z1: number, dz?: (p: Vec) => number): void {
     if (contour.length < 3 || !(z1 > z0)) return;
     const anneaux = [contour, ...trous];
     const tri = trianguler(contour, trous);
     const plats = anneaux.flat();
-    const bas = plats.map((p) => this.sommet(p.x, p.y, z0));
-    const haut = plats.map((p) => this.sommet(p.x, p.y, z1));
+    // Prisme incliné (D-140) : dessous et dessus relevés de dz(p), épaisseur verticale inchangée.
+    const bas = plats.map((p) => this.sommet(p.x, p.y, z0 + (dz ? dz(p) : 0)));
+    const haut = plats.map((p) => this.sommet(p.x, p.y, z1 + (dz ? dz(p) : 0)));
     for (let k = 0; k < tri.length; k += 3) {
       this.indices.push(haut[tri[k]!]!, haut[tri[k + 1]!]!, haut[tri[k + 2]!]!);
       this.indices.push(bas[tri[k]!]!, bas[tri[k + 2]!]!, bas[tri[k + 1]!]!);
@@ -561,7 +562,7 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
       if (o.classe === "fenetre") opacite = 0.55;
       break;
     case "dalle":
-      t.prisme(o.params.contour, o.params.trous, z + o.params.decalageBase.value, z + o.params.decalageBase.value + o.params.epaisseur.value);
+      t.prisme(o.params.contour, o.params.trous, z + o.params.decalageBase.value, z + o.params.decalageBase.value + o.params.epaisseur.value, o.params.pente ? releveDalle(o.params.contour, o.params.pente) : undefined);
       break;
     case "toiture": {
       const z0 = z + o.params.decalageBase.value;
@@ -697,4 +698,13 @@ export function couper(m: Maillage, plan: PlanCoupe): number[] {
     if (pts.length >= 2) out.push(...pts[0]!, ...pts[1]!);
   }
   return out;
+}
+
+/** Relevé d'une dalle inclinée (D-140) : montée depuis le point le plus bas du contour, selon la direction et la pente. */
+export function releveDalle(contour: readonly Vec[], pente: { angle: { value: number }; direction: { value: number } }): (p: Vec) => number {
+  const d = (pente.direction.value * Math.PI) / 180;
+  const u = { x: Math.cos(d), y: Math.sin(d) };
+  const s0 = Math.min(...contour.map((q) => q.x * u.x + q.y * u.y));
+  const k = Math.tan((pente.angle.value * Math.PI) / 180);
+  return (p) => Math.round((p.x * u.x + p.y * u.y - s0) * k * 1e9) / 1e9;
 }

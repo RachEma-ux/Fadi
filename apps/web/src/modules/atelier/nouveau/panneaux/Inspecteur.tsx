@@ -142,6 +142,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
           if (cle === "motif" && !(o.classe === "esquisse" && o.params.forme === "hachure")) return null; // motif : hachures seulement (D-072)
           if (cle === "degrade" || cle === "motifLignes") return null; // dégradé (D-120), lignes de motif importé (D-121)
           if (o.classe === "poteau" && (cle === "formeId" || cle === "epaisseurProfil")) return null; // section : contrôle dédié (D-139)
+          if (o.classe === "dalle" && cle === "pente") return null; // pente : contrôle dédié (D-140)
           if (cle === "axeDe") {
             const ax = valeur as { sourceId: string; angle: number } | null;
             return ax ? (
@@ -185,13 +186,14 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       <Classification key={`classif-${o.id}`} sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "zone" && <SyntheseZoneVue o={o as Occurrence<"zone">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
-      {(o.classe === "esquisse" || o.classe === "dalle" || o.classe === "piece" || o.classe === "zone") && !desactive && contourFerme(o) && <ChangerClasseContour key={o.id} o={o} onCommandes={onCommandes} />}
+      {(o.classe === "esquisse" || o.classe === "dalle" || o.classe === "piece" || o.classe === "zone") && !desactive && contourFerme(o) && <ChangerClasseContour key={`cc-${o.id}`} o={o} onCommandes={onCommandes} />}
       {(o.classe === "dalle" || o.classe === "piece" || o.classe === "zone" || (o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.forme !== "hachure")) && !desactive && contourFerme(o) && (
         <button type="button" className="lien" data-hachurer={o.id} onClick={() => onCommandes([{ type: "esquisse.hachure", params: { niveauId: o.niveauId, calqueId: o.calqueId, points: contourFerme(o)!.contour, sourceId: o.id } }], `Hachure associée à ${o.id}`)}>
           Hachurer (associé au contour)
         </button>
       )}
       {o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.centre && (o as Occurrence<"esquisse">).params.rayon && !desactive && <AxesCentre key={`axes-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
+      {o.classe === "dalle" && <PenteDalle key={`pente-${o.id}`} o={o as Occurrence<"dalle">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "poteau" && <SectionPoteau key={`sec-${o.id}`} o={o as Occurrence<"poteau">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "escalier" && !desactive && <TremieEscalier o={o as Occurrence<"escalier">} etat={etat} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && ["polyligne", "polygone", "rectangle"].includes((o as Occurrence<"esquisse">).params.forme) && <ArrondirSommets key={`arr-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
@@ -585,8 +587,8 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
           {" "}(un polygone, à extruder ou hachurer).
         </p>
       )}
-      {sel.length === 2 && sel.every((o) => o.classe === "mur") && !readOnly && <OuvertureAngle key={sel.map((o) => o.id).join("|")} murs={sel as Occurrence<"mur">[]} onCommandes={onCommandes} />}
-      <TableauProprietes key={sel.map((o) => o.id).join("|")} sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
+      {sel.length === 2 && sel.every((o) => o.classe === "mur") && !readOnly && <OuvertureAngle key={`angle|${sel.map((o) => o.id).join("|")}`} murs={sel as Occurrence<"mur">[]} onCommandes={onCommandes} />}
+      <TableauProprietes key={`props|${sel.map((o) => o.id).join("|")}`} sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
       <Contraintes sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <CreerBloc sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <VersNiveau sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
@@ -1591,6 +1593,31 @@ function TangentesCourbe({ o, onCommandes }: { o: Occurrence<"esquisse">; onComm
 }
 
 /** Menuiserie paramétrée d'une fenêtre (D-101) : valeurs saisies, aucune par défaut ; vide = non évaluée. */
+/** Pente d'une dalle (D-140) : angle (0 à 60°) et direction de montée (0° = +x) ; l'épaisseur reste verticale. */
+function PenteDalle({ o, desactive, onCommandes }: { o: Occurrence<"dalle">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const p = o.params.pente ?? null;
+  const [v, setV] = useState({ angle: p ? String(p.angle.value).replace(".", ",") : "", direction: p ? String(p.direction.value).replace(".", ",") : "0" });
+  const angle = nombreSaisi(v.angle);
+  const direction = nombreSaisi(v.direction);
+  const valide = angle !== null && angle > 0 && angle <= 60 && direction !== null;
+  return (
+    <details className="inspecteur-historique" data-pente-dalle>
+      <summary>Pente {p ? `(${String(p.angle.value).replace(".", ",")}° vers ${String(p.direction.value).replace(".", ",")}°)` : "(dalle horizontale)"}</summary>
+      <div className="nav-formulaire-altimetrie">
+        <label>Pente (°)<input inputMode="decimal" value={v.angle} disabled={desactive} onChange={(e) => setV({ ...v, angle: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-pente-champ="angle" /></label>
+        <label>Direction de montée (°)<input inputMode="decimal" value={v.direction} disabled={desactive} onChange={(e) => setV({ ...v, direction: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-pente-champ="direction" /></label>
+        {!valide && v.angle !== "" && <p className="inspecteur-aide">Pente entre 0 (exclu) et 60°, direction en degrés.</p>}
+        {!desactive && (
+          <button type="button" disabled={!valide} data-pente-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { pente: { angle: { value: angle, unit: "deg" }, direction: { value: direction, unit: "deg" } } } } }], `Pente de ${o.id}`)}>
+            Appliquer la pente
+          </button>
+        )}
+        {!desactive && p && <button type="button" className="lien" onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { pente: null } } }], `Pente retirée de ${o.id}`)}>Rendre horizontale</button>}
+      </div>
+    </details>
+  );
+}
+
 /** Section d'un poteau (D-139) : rectangle, cercle (diamètre = largeur), profilés I, T, L, U avec l'épaisseur des parois saisie. */
 function SectionPoteau({ o, desactive, onCommandes }: { o: Occurrence<"poteau">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
   const connue = ["rectangle", "cercle", "I", "T", "L", "U"].includes(o.params.formeId) ? o.params.formeId : "rectangle";
