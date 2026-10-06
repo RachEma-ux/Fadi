@@ -59,3 +59,4 @@ export * from "./coins-jointifs.js";
 export * from "./hachures.js";
 export * from "./blocs-places.js";
 export * from "./reconnaissance.js";
+export { aireCommune, corpsDe, interferences, type Corps, type Interference } from "./interferences.js";

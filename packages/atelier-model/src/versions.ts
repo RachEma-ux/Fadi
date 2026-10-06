@@ -10,7 +10,7 @@
  * - `comparerDessins` : primitives retirées / ajoutées entre deux dessins d'une même vue ;
  * - `analyserFusion` : objets affectés par une variante et conflits avec le tronc (objet touché des deux côtés) ;
  * - `collisions` : contrôles d'architecture (ouverture hors mur, ouvertures qui se chevauchent, escalier traversé
- *   par la dalle du niveau d'arrivée).
+ *   par la dalle du niveau d'arrivée). Le contrôle d'interférence des corps (D-124) est à la demande : `interferences`.
  */
 import { compositionMur } from "./compositions.js";
 import type { Commande, InstantaneDiff } from "./commandes/index.js";

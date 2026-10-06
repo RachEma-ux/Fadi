@@ -6,7 +6,7 @@
  */
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ModeleAtelier, TypeProbleme } from "@parcours/atelier-model";
+import { interferences, type Interference, type ModeleAtelier, type TypeProbleme } from "@parcours/atelier-model";
 import { api, type ProjectComment } from "../../../../lib/api";
 import type { InstantaneClient } from "../../bus/atelier-client";
 
@@ -130,6 +130,7 @@ export function Modifications({ projectId, instantane, readOnly, onDecider, onAl
           </ul>
         </details>
       )}
+      <ControleInterferences etat={etat} onAller={onAller} />
       {bilan.data?.classesIfc && bilan.data.classesIfc.length > 0 && (
         <details className="mod-problemes" open data-classes-ifc={bilan.data.classesIfc.length}>
           <summary>
@@ -204,5 +205,40 @@ function FilEntree({ projectId, revision, commentaires }: { projectId: string; r
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * Contrôle d'interférence à la demande (D-124, DA-03-12) : corps (solides, poteaux, murs, dalles) qui occupent un
+ * même volume — un solide contre tout corps, deux poteaux. Le résultat vaut pour l'état contrôlé ; rien n'est corrigé.
+ */
+function ControleInterferences({ etat, onAller }: { etat: ModeleAtelier; onAller: (objetId: string) => void }) {
+  const [resultat, setResultat] = useState<Interference[] | null>(null);
+  const fmt = (v: number) => String(Math.round(v * 1000) / 1000).replace(".", ",");
+  return (
+    <details className="mod-problemes" data-interferences>
+      <summary>
+        Interférences entre corps {resultat && <span className="nav-detail">{resultat.length}</span>}
+      </summary>
+      <button type="button" className="lien" data-interferences-controler onClick={() => setResultat(interferences(etat))}>
+        {resultat ? "Contrôler à nouveau" : "Contrôler les interférences"}
+      </button>
+      {resultat && resultat.length === 0 && <p className="nav-detail" data-interferences-aucune>Aucun volume commun entre corps contrôlés.</p>}
+      {resultat && resultat.length > 0 && (
+        <ul>
+          {resultat.slice(0, 300).map((i) => (
+            <li key={i.objets.join("|")} data-interference={i.objets.join("|")}>
+              {i.objets.map((id, k) => (
+                <span key={id}>
+                  {k > 0 && " et "}
+                  {etat.objets[id] ? <button type="button" className="lien" onClick={() => onAller(id)}>{id}</button> : id}
+                </span>
+              ))}
+              {` : ${fmt(i.volume)} m³ en commun`}
+            </li>
+          ))}
+        </ul>
+      )}
+    </details>
   );
 }

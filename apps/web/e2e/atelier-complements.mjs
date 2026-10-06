@@ -1948,6 +1948,25 @@ await page.waitForSelector(".plan2d");
   check("motif DXF importé : dessiné par ses lignes, signalé dans l'inspecteur, retour au catalogue", r0.status === 200 && plan && /ANSI31/.test(libelle) && retour, `${r0.status} · ${plan} · ${libelle} · ${retour}`);
 }
 
+// Contrôle d'interférence à la demande (D-124) : un solide et un poteau qui se recouvrent sont listés.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const r0 = await lot(pid, `inter-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "objet.creer", params: { id: "inter-sol", classe: "solide", niveauId: murA.niveauId, params: { contour: [P(ax - 240, ay - 240), P(ax - 238, ay - 240), P(ax - 238, ay - 238), P(ax - 240, ay - 238)], trous: [], ferme: true, hauteur: m(1) } } },
+    { type: "poteau.creer", params: { id: "inter-pot", niveauId: murA.niveauId, point: P(ax - 238, ay - 239), formeId: "rectangle", largeur: m(0.4), profondeur: m(0.4), hauteur: m(3) } },
+  ]);
+  await ouvrir(pid);
+  await page.locator("[data-interferences] > summary").click();
+  await page.locator("[data-interferences-controler]").click();
+  const vu = await page.waitForSelector('[data-interference="inter-pot|inter-sol"]', { state: "attached", timeout: 10000 }).then(() => true, () => false);
+  const texte = vu ? (await page.locator('[data-interference="inter-pot|inter-sol"]').textContent()) ?? "" : "";
+  check("interférences : solide et poteau qui se recouvrent listés avec leur volume commun", r0.status === 200 && vu && /0,08 m³/.test(texte), `${r0.status} · ${vu} · ${texte}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];
