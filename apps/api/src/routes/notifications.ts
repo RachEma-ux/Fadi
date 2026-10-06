@@ -10,6 +10,8 @@
  *                               d'édition en cours posées par quelqu'un d'autre ;
  *                               modifications de l'Atelier par d'autres sur des
  *                               objets que vous avez créés ou modifiés (D-081) ;
+ *                               exports de dessin que vous avez produits, périmés
+ *                               depuis par une modification d'un autre (D-110) ;
  *                               « non lue » = postérieure à votre dernière
  *                               consultation ;
  *   POST /notifications/seen  → marque tout comme consulté (date conservée par
@@ -21,7 +23,7 @@
 import { Router } from "express";
 import { and, desc, eq, gt, inArray, ne, or } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { atelierCommands, atelierLocks, projectComments, projectMembers, projects, users } from "../db/schema.js";
+import { atelierCommands, atelierLocks, drawingExports, projectComments, projectMembers, projects, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
@@ -32,8 +34,8 @@ notificationsRouter.use(requireAuth);
 export interface NotificationItem {
   id: string;
   at: string;
-  /** `acces` · `commentaire` · `reservation` · `modification` (objets de l'Atelier, D-081) */
-  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou";
+  /** `acces` · `commentaire` · `reservation` · `modification` (objets de l'Atelier, D-081) · `verrou` · `peremption` (D-110) */
+  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou" | "peremption";
   projectId: string;
   projectCode: string;
   projectName: string;
@@ -156,6 +158,40 @@ export async function notificationsFor(userId: string, email: string): Promise<{
           unread: false,
         });
       }
+    }
+  }
+
+  // Péremption de vos exports de dessin (D-110) : un export que vous avez produit, dont le modèle a depuis été modifié
+  // par un autre compte ; une notification par fichier (le plus récent de ce nom), datée de la première modification.
+  if (projectIds.length) {
+    const exports = await db
+      .select({ id: drawingExports.id, projectId: drawingExports.projectId, fileName: drawingExports.fileName, rev: drawingExports.modelRevision, createdAt: drawingExports.createdAt, code: projects.code, name: projects.name })
+      .from(drawingExports)
+      .innerJoin(projects, eq(projects.id, drawingExports.projectId))
+      .where(and(inArray(drawingExports.projectId, projectIds), eq(drawingExports.createdBy, userId), gt(drawingExports.createdAt, since)))
+      .orderBy(desc(drawingExports.createdAt));
+    const derniers = new Map<string, (typeof exports)[number]>();
+    for (const x of exports) if (!derniers.has(`${x.projectId}|${x.fileName}`)) derniers.set(`${x.projectId}|${x.fileName}`, x);
+    for (const x of [...derniers.values()].slice(0, LIMIT)) {
+      const [premiere] = await db
+        .select({ rev: atelierCommands.resultRevision, label: atelierCommands.label, createdAt: atelierCommands.createdAt, email: users.email })
+        .from(atelierCommands)
+        .innerJoin(users, eq(users.id, atelierCommands.authorId))
+        .where(and(eq(atelierCommands.projectId, x.projectId), ne(atelierCommands.authorId, userId), gt(atelierCommands.resultRevision, x.rev), gt(atelierCommands.createdAt, x.createdAt)))
+        .orderBy(atelierCommands.resultRevision)
+        .limit(1);
+      if (!premiere) continue;
+      items.push({
+        id: `peremption:${x.id}`,
+        at: premiere.createdAt.toISOString(),
+        kind: "peremption",
+        projectId: x.projectId,
+        projectCode: x.code,
+        projectName: x.name,
+        stepNumber: 10,
+        text: `Votre export « ${x.fileName} » (révision ${x.rev}) est périmé : ${premiere.email} a modifié le modèle de ${x.code} (révision ${premiere.rev}, « ${premiere.label} »).`,
+        unread: false,
+      });
     }
   }
 

@@ -876,3 +876,21 @@ describe("verrou transmis (D-089)", () => {
     expect((await owner.post(`/projects/${pid}/atelier/verrous/m1/transferer`).send({ email: "owner-verrou@example.com" })).status).toBe(200); // le propriétaire peut le reprendre
   });
 });
+
+describe("péremption d'un export (D-110)", () => {
+  it("l'auteur d'un export est notifié quand un autre compte modifie ensuite le modèle ; pas pour ses propres changements", async () => {
+    const owner = await registerAndLogin("owner-perime@example.com");
+    const editor = await registerAndLogin("editor-perime@example.com");
+    const pid = await projetVide(owner);
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "editor-perime@example.com", role: "editeur" })).status).toBe(201);
+    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("p1", 0, [niveau, mur("m1")]))).status).toBe(200);
+    const ex = await owner.post(`/projects/${pid}/documents/dessins`).set("Content-Type", "application/octet-stream").set("X-File-Name", "quantites.csv").set("X-Export-Kind", "csv").send(Buffer.from("a;b\n"));
+    expect(ex.status).toBe(201);
+    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("p2", 1, [{ type: "mur.modifier", params: { id: "m1", params: { hauteur: m(3) } } }], "Moi"))).status).toBe(200);
+    expect((await owner.get("/notifications")).body.items.filter((x: { kind: string }) => x.kind === "peremption")).toHaveLength(0);
+    expect((await editor.post(`/projects/${pid}/atelier/commands`).send(enveloppe("p3", 2, [{ type: "mur.modifier", params: { id: "m1", params: { epaisseur: m(0.3) } } }], "Épaisseur"))).status).toBe(200);
+    const n = (await owner.get("/notifications")).body.items.filter((x: { kind: string }) => x.kind === "peremption");
+    expect(n).toHaveLength(1);
+    expect(n[0].text).toMatch(/« quantites\.csv » \(révision 1\) est périmé : editor-perime@example\.com a modifié le modèle .*révision 3.*Épaisseur/);
+  });
+});

@@ -115,7 +115,7 @@ export interface Project {
 export interface NotificationItem {
   id: string;
   at: string;
-  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou";
+  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou" | "peremption";
   projectId: string;
   projectCode: string;
   projectName: string;
