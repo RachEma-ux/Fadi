@@ -1349,8 +1349,8 @@ await page.waitForSelector(".plan2d");
   await selectionner("jonc-a");
   await page.locator(".nav-filtre").fill("jonc-b");
   await page.locator('.nav-objets button[data-objet="jonc-b"]').click({ modifiers: ["Shift"] });
-  // Panneau pris une seule fois : pendant un nouveau rendu de l'inspecteur, deux exemplaires peuvent coexister un instant.
-  const angle = page.locator("[data-ouverture-angle]").last();
+  // Panneau visible seulement : l'inspecteur peut exister en deux exemplaires (l'un masqué selon la mise en page).
+  const angle = page.locator("[data-ouverture-angle]:visible").first();
   await angle.locator("> summary").click();
   for (const [k, v] of [["largeurA", "1,2"], ["largeurB", "1,2"], ["hauteur", "1,4"], ["allege", "0,9"]]) await angle.locator(`[data-angle-champ="${k}"]`).fill(v);
   await angle.locator("[data-angle-poser]").click();
