@@ -1349,9 +1349,11 @@ await page.waitForSelector(".plan2d");
   await selectionner("jonc-a");
   await page.locator(".nav-filtre").fill("jonc-b");
   await page.locator('.nav-objets button[data-objet="jonc-b"]').click({ modifiers: ["Shift"] });
-  await page.locator("[data-ouverture-angle] > summary").click();
-  for (const [k, v] of [["largeurA", "1,2"], ["largeurB", "1,2"], ["hauteur", "1,4"], ["allege", "0,9"]]) await page.locator(`[data-angle-champ="${k}"]`).fill(v);
-  await page.locator("[data-angle-poser]").click();
+  // Panneau pris une seule fois : pendant un nouveau rendu de l'inspecteur, deux exemplaires peuvent coexister un instant.
+  const angle = page.locator("[data-ouverture-angle]").last();
+  await angle.locator("> summary").click();
+  for (const [k, v] of [["largeurA", "1,2"], ["largeurB", "1,2"], ["hauteur", "1,4"], ["allege", "0,9"]]) await angle.locator(`[data-angle-champ="${k}"]`).fill(v);
+  await angle.locator("[data-angle-poser]").click();
   let surA = null;
   let surB = null;
   for (let k = 0; k < 30 && !(surA && surB); k++) {
