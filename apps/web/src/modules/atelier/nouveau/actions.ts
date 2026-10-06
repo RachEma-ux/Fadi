@@ -3,7 +3,7 @@
  * chanfreiner. Fonctions pures : elles rendent le lot de commandes à exécuter, ou un message expliquant la
  * condition d'activation manquante (UX4 : un outil indisponible dit pourquoi).
  */
-import { coinsJointifs, profilFerme, decalerPolyligne, pointsPolyligne, pointsArc, pt, type Commande, type ModeleAtelier, type Point2 } from "@parcours/atelier-model";
+import { chaineFermee, coinsJointifs, profilFerme, decalerPolyligne, pointsPolyligne, pointsArc, pt, type Commande, type ModeleAtelier, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "./etat-ui";
 
 export type ResultatAction = { commandes: Commande[]; label: string } | { message: string };
@@ -124,6 +124,7 @@ export function actionImmediate(outil: string, etat: ModeleAtelier, ui: EtatUi):
         const associe = ui.parametresOutil["solideAssocie"] === true && !!profilFerme(o);
         if (contour) commandes.push({ type: "solide.extruder", params: { niveauId: o.niveauId, contour, trous: [], ferme: true, hauteur: m(hauteur), role: "solid", ...(associe ? { sourceId: id } : {}) } });
       }
+      if (commandes.length === 0 && chaineFermee(etat, sel)) return { message: `Extruder : ces ${sel.length} traits forment un contour fermé — « Joindre en profil » (inspecteur) puis Extruder.` };
       if (commandes.length === 0) return { message: "Extruder : sélectionnez une esquisse fermée (rectangle, cercle, polygone), ou une ligne ouverte avec une épaisseur de profil." };
       return { commandes, label: `Extruder ${commandes.length} esquisse${commandes.length > 1 ? "s" : ""} (${String(hauteur).replace(".", ",")} m)` };
     }

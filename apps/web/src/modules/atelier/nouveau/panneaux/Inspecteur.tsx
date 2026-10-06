@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../../../lib/api";
-import { aire, cleTremie, bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { aire, chaineFermee, cleTremie, bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -552,6 +552,14 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
         <ChoixPhase sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
         <ChoixVerrou sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
       </dl>
+      {/* Chaîne jointive fermée (D-126) : profil proposé, jamais imposé. */}
+      {!readOnly && chaineFermee(etat, sel.map((o) => o.id)) && (
+        <p className="inspecteur-aide" data-profil-propose={sel.length}>
+          Ces {sel.length} traits forment un contour fermé.{" "}
+          <button type="button" className="lien" data-joindre-profil onClick={() => onCommandes([{ type: "transformer.joindre", params: {}, cibles: sel.map((o) => o.id) }], `Joindre ${sel.length} traits en profil`)}>Joindre en profil</button>
+          {" "}(un polygone, à extruder ou hachurer).
+        </p>
+      )}
       {sel.length === 2 && sel.every((o) => o.classe === "mur") && !readOnly && <OuvertureAngle key={sel.map((o) => o.id).join("|")} murs={sel as Occurrence<"mur">[]} onCommandes={onCommandes} />}
       <TableauProprietes key={sel.map((o) => o.id).join("|")} sel={sel} readOnly={readOnly} onCommandes={onCommandes} />
       <Contraintes sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />

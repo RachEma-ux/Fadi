@@ -61,3 +61,4 @@ export * from "./blocs-places.js";
 export * from "./reconnaissance.js";
 export { aireCommune, corpsDe, interferences, type Corps, type Interference } from "./interferences.js";
 export { areteLaPlusProche, normaleExterieure, pousserArete } from "./pousser-face.js";
+export { chaineFermee } from "./esquisse/chaines.js";

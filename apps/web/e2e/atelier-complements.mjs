@@ -2017,6 +2017,29 @@ await page.waitForSelector(".plan2d");
   check("pousser / tirer une face latérale : poteau élargi d'un côté en 3D", r0.status === 200 && !!fait && /Face de pot-face/.test(journal), `${r0.status} · ${JSON.stringify(cible)} · ${JSON.stringify(fait && { l: fait.largeur, p: fait.profondeur, pt: fait.point })} · ${journal}`);
 }
 
+// Chaîne jointive fermée proposée comme profil (D-126) : quatre lignes sélectionnées, « Joindre en profil ».
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const x0 = murA.params.a.x - 260;
+  const y0 = murA.params.a.y - 260;
+  const L = (id, a, b) => ({ type: "objet.creer", params: { id, classe: "esquisse", niveauId: murA.niveauId, params: { forme: "ligne", points: [P(x0 + a[0], y0 + a[1]), P(x0 + b[0], y0 + b[1])], ferme: false } } });
+  const r0 = await lot(pid, `chaine-${Date.now()}`, (await modele(pid)).revision, [L("prof-a", [0, 0], [3, 0]), L("prof-b", [3, 0], [3, 2]), L("prof-c", [0, 2], [3, 2]), L("prof-d", [0, 2], [0, 0])]);
+  await ouvrir(pid);
+  await page.locator(".nav-filtre").fill("prof-");
+  for (const [k, id] of ["prof-a", "prof-b", "prof-c", "prof-d"].entries()) await page.locator(`.nav-objets button[data-objet="${id}"]`).click({ modifiers: k ? ["Shift"] : [] });
+  const propose = await page.waitForSelector('[data-profil-propose="4"]', { timeout: 10000 }).then(() => true, () => false);
+  if (propose) await page.locator("[data-joindre-profil]").click();
+  let profil = null;
+  for (let k = 0; k < 30 && propose && !profil; k++) {
+    const o = (await modele(pid)).modele.objets["prof-a"];
+    if (o?.params.forme === "polygone") profil = o.params;
+    else await page.waitForTimeout(500);
+  }
+  check("chaîne jointive fermée : profil proposé, joint en polygone sur demande", r0.status === 200 && propose && profil?.points?.length === 4, `${r0.status} · ${propose} · ${JSON.stringify(profil?.forme)}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];
