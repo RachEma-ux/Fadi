@@ -111,6 +111,11 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
       return <path d={d} className={classes("obj-solide", selectionne, survole)} fill={o.params.ferme ? (o.params.couleur ?? COULEURS["solide"]) : "none"} fillOpacity={0.35} fillRule="evenodd" stroke={o.params.couleur ?? COULEURS["solide"]} strokeWidth={selectionne ? 2 : 0.8} data-objet={o.id} />;
     }
     case "poteau": {
+      // Section non rectangulaire (D-139) : contour de la section (cercle, profilés I, T, L, U).
+      if (o.params.formeId === "cercle" || o.params.formeId === "rond" || o.params.epaisseurProfil) {
+        const sec = contoursArchitecture("poteau", o.params as unknown as Record<string, unknown>);
+        if (sec) return <path d={chemin(pr, sec.contour)} className={classes("obj-poteau", selectionne, survole)} fill={COULEURS["poteau"]} stroke={selectionne ? "#b3872f" : COULEURS["poteau"]} strokeWidth={selectionne ? 2.5 : 1} data-objet={o.id} data-section={o.params.formeId} />;
+      }
       const c = pr.vers(o.params.point);
       const w = o.params.largeur.value * pr.echelle;
       const h = o.params.profondeur.value * pr.echelle;

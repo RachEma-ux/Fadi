@@ -2204,6 +2204,29 @@ await page.waitForSelector(".plan2d");
   check("styles par classe en 3D : couleur des murs appliquée puis rétablie", applique && retabli, `${applique} · ${retabli}`);
 }
 
+// Section d'un poteau (D-139) : profilé I choisi dans l'inspecteur, dessiné au plan par son contour.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const r0 = await lot(pid, `sec-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "poteau.creer", params: { id: "pot-sec", niveauId: murA.niveauId, point: P(murA.params.a.x - 300, murA.params.a.y - 300), formeId: "rectangle", largeur: m(0.2), profondeur: m(0.3), hauteur: m(3) } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("pot-sec");
+  await page.locator("[data-section-forme]").selectOption("I");
+  await page.locator("[data-section-epaisseur]").fill("0,02");
+  await page.locator("[data-section-appliquer]").click();
+  let sec = null;
+  for (let k = 0; k < 30 && !sec; k++) {
+    const o = (await modele(pid)).modele.objets["pot-sec"];
+    if (o?.params.formeId === "I") sec = o.params;
+    else await page.waitForTimeout(500);
+  }
+  const dessine = await page.waitForSelector('.plan2d [data-objet="pot-sec"][data-section="I"]', { state: "attached", timeout: 10000 }).then(() => true, () => false);
+  check("section de poteau : profilé I (parois 0,02 m) enregistré et dessiné au plan", r0.status === 200 && sec?.epaisseurProfil?.value === 0.02 && dessine, `${r0.status} · ${JSON.stringify(sec?.epaisseurProfil)} · ${dessine}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

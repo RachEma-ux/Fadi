@@ -11,6 +11,7 @@
 import { aireSignee, cross, normalise, perp, polygoneMur, polygoneMurCourbe, sub, type Vec } from "./geometrie.js";
 import type { ModeleAtelier, OccurrenceQuelconque } from "./modele.js";
 import { etendueMur, trianguler } from "./projection/maillage.js";
+import { contoursArchitecture } from "./blocs-places.js";
 
 export interface Corps {
   objetId: string;
@@ -60,14 +61,9 @@ export function corpsDe(etat: ModeleAtelier, o: OccurrenceQuelconque): Corps[] {
     case "poteau": {
       const h = o.params.hauteur?.value;
       if (!h) return [];
-      const ang = (o.params.angle.value * Math.PI) / 180;
-      const u = { x: Math.cos(ang), y: Math.sin(ang) };
-      const n = perp(u);
-      const lx = o.params.largeur.value / 2;
-      const ly = o.params.profondeur.value / 2;
-      const p = o.params.point;
-      const q = (s: number, t: number) => ({ x: p.x + u.x * s + n.x * t, y: p.y + u.y * s + n.y * t });
-      return [c([q(-lx, -ly), q(lx, -ly), q(lx, ly), q(-lx, ly)], [], z, z + h)];
+      // Section selon la forme (D-139).
+      const s = contoursArchitecture("poteau", o.params as unknown as Record<string, unknown>);
+      return s ? [c(s.contour, [], z, z + h)] : [];
     }
     case "mur": {
       const e = etendueMur(etat, o);

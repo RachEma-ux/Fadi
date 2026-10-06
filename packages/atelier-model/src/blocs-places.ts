@@ -67,15 +67,13 @@ export function definitionsImbriquees(etat: ModeleAtelier, defId: string): Set<s
  */
 export function contoursArchitecture(classe: string, params: Record<string, unknown>): { contour: Vec[]; trous: Vec[][] } | null {
   if (classe === "poteau") {
-    const q = params as { point?: Vec; largeur?: { value: number }; profondeur?: { value: number }; angle?: { value: number } };
+    const q = params as { point?: Vec; largeur?: { value: number }; profondeur?: { value: number }; angle?: { value: number }; formeId?: string; epaisseurProfil?: { value: number } };
     if (!q.point || !q.largeur || !q.profondeur) return null;
     const a = ((q.angle?.value ?? 0) * Math.PI) / 180;
     const u = { x: Math.cos(a), y: Math.sin(a) };
     const n = { x: -u.y, y: u.x };
-    const lx = q.largeur.value / 2;
-    const ly = q.profondeur.value / 2;
     const c = (s: number, o: number): Vec => ({ x: q.point!.x + u.x * s + n.x * o, y: q.point!.y + u.y * s + n.y * o });
-    return { contour: [c(-lx, -ly), c(lx, -ly), c(lx, ly), c(-lx, ly)], trous: [] };
+    return { contour: sectionPoteau(q.formeId ?? "rectangle", q.largeur.value, q.profondeur.value, q.epaisseurProfil?.value ?? null).map(([s, o]) => c(s, o)), trous: [] };
   }
   if (classe === "dalle") {
     const q = params as { contour?: Vec[]; trous?: Vec[][] };
@@ -132,4 +130,22 @@ export function sommetsBloc(etat: ModeleAtelier, o: { params: object; definition
     } else if (q.point) ajouter(e.tr(q.point));
   }
   return out;
+}
+
+/**
+ * Section d'un poteau dans son repère propre (D-139), centrée sur la boîte largeur × profondeur, sens direct : rectangle,
+ * cercle (diamètre = largeur, 32 côtés), profilés I, T, L, U d'épaisseur de paroi t (sans épaisseur : rectangle).
+ */
+export function sectionPoteau(forme: string, l: number, p: number, t: number | null): [number, number][] {
+  const x = l / 2;
+  const y = p / 2;
+  if (forme === "cercle" || forme === "rond") return Array.from({ length: 32 }, (_, k) => [x * Math.cos((2 * Math.PI * k) / 32), x * Math.sin((2 * Math.PI * k) / 32)] as [number, number]);
+  if (t && t > 0) {
+    const h = t / 2;
+    if (forme === "I") return [[-x, -y], [x, -y], [x, -y + t], [h, -y + t], [h, y - t], [x, y - t], [x, y], [-x, y], [-x, y - t], [-h, y - t], [-h, -y + t], [-x, -y + t]];
+    if (forme === "T") return [[-h, -y], [h, -y], [h, y - t], [x, y - t], [x, y], [-x, y], [-x, y - t], [-h, y - t]];
+    if (forme === "L") return [[-x, -y], [x, -y], [x, -y + t], [-x + t, -y + t], [-x + t, y], [-x, y]];
+    if (forme === "U") return [[-x, -y], [x, -y], [x, y], [x - t, y], [x - t, -y + t], [-x + t, -y + t], [-x + t, y], [-x, y]];
+  }
+  return [[-x, -y], [x, -y], [x, y], [-x, y]];
 }

@@ -151,7 +151,13 @@ export interface ParamsZone extends Contour {
 
 export interface ParamsPoteau {
   point: Point2;
+  /**
+   * Forme de la section (D-139) : rectangle (par défaut, dont « basic-square » importé), « cercle » (diamètre =
+   * largeur), profilés « I », « T », « L », « U » (largeur × profondeur, parois d'épaisseur `epaisseurProfil`).
+   */
   formeId: string;
+  /** Épaisseur des parois d'un profilé I, T, L ou U (saisie, jamais supposée) ; absente pour les autres formes. */
+  epaisseurProfil?: Longueur;
   largeur: Longueur;
   profondeur: Longueur;
   hauteur: Longueur | null;

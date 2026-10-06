@@ -69,6 +69,8 @@ export function faceLaterale(etat: ModeleAtelier, o: OccurrenceQuelconque, p: { 
   const z = o.niveauId ? (etat.niveaux[o.niveauId]?.elevation ?? 0) : 0;
   const entre = (z0: number, z1: number) => p.z > z0 + 0.005 && p.z < z1 - 0.005;
   if (o.classe === "poteau") {
+    // Faces latérales poussées : section rectangulaire seulement (D-139).
+    if (o.params.formeId === "cercle" || o.params.formeId === "rond" || o.params.epaisseurProfil) return null;
     const h = o.params.hauteur?.value;
     if (!h || !entre(z, z + h)) return null;
     const ang = (o.params.angle.value * Math.PI) / 180;

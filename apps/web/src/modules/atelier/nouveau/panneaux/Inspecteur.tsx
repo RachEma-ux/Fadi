@@ -141,6 +141,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
           if (cle === "ouvrant" || cle === "menuiserie" || (cle === "murHoteId" && (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture"))) return null; // contrôles dédiés ci-dessous
           if (cle === "motif" && !(o.classe === "esquisse" && o.params.forme === "hachure")) return null; // motif : hachures seulement (D-072)
           if (cle === "degrade" || cle === "motifLignes") return null; // dégradé (D-120), lignes de motif importé (D-121)
+          if (o.classe === "poteau" && (cle === "formeId" || cle === "epaisseurProfil")) return null; // section : contrôle dédié (D-139)
           if (cle === "axeDe") {
             const ax = valeur as { sourceId: string; angle: number } | null;
             return ax ? (
@@ -191,6 +192,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         </button>
       )}
       {o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.centre && (o as Occurrence<"esquisse">).params.rayon && !desactive && <AxesCentre key={`axes-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
+      {o.classe === "poteau" && <SectionPoteau key={`sec-${o.id}`} o={o as Occurrence<"poteau">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "escalier" && !desactive && <TremieEscalier o={o as Occurrence<"escalier">} etat={etat} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && ["polyligne", "polygone", "rectangle"].includes((o as Occurrence<"esquisse">).params.forme) && <ArrondirSommets key={`arr-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && <ConvertirEsquisse o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
@@ -1589,6 +1591,36 @@ function TangentesCourbe({ o, onCommandes }: { o: Occurrence<"esquisse">; onComm
 }
 
 /** Menuiserie paramétrée d'une fenêtre (D-101) : valeurs saisies, aucune par défaut ; vide = non évaluée. */
+/** Section d'un poteau (D-139) : rectangle, cercle (diamètre = largeur), profilés I, T, L, U avec l'épaisseur des parois saisie. */
+function SectionPoteau({ o, desactive, onCommandes }: { o: Occurrence<"poteau">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const connue = ["rectangle", "cercle", "I", "T", "L", "U"].includes(o.params.formeId) ? o.params.formeId : "rectangle";
+  const [forme, setForme] = useState(o.params.formeId === "rond" ? "cercle" : connue);
+  const [ep, setEp] = useState(o.params.epaisseurProfil ? String(o.params.epaisseurProfil.value).replace(".", ",") : "");
+  const profile = ["I", "T", "L", "U"].includes(forme);
+  const e = profile ? longueurSaisie(ep) : null;
+  const valide = !profile || (e !== null && e > 0);
+  return (
+    <div className="nav-formulaire-altimetrie" data-section-poteau>
+      <label>Section
+        <select value={forme} disabled={desactive} onChange={(ev) => setForme(ev.target.value)} data-section-forme>
+          <option value="rectangle">Rectangulaire{o.params.formeId !== "rectangle" && !["cercle", "rond", "I", "T", "L", "U"].includes(o.params.formeId) ? ` (« ${o.params.formeId} »)` : ""}</option>
+          <option value="cercle">Circulaire (diamètre = largeur)</option>
+          <option value="I">Profilé I (H)</option>
+          <option value="T">Profilé T</option>
+          <option value="L">Cornière L</option>
+          <option value="U">Profilé U</option>
+        </select>
+      </label>
+      {profile && <label>Épaisseur des parois (m)<input inputMode="decimal" value={ep} disabled={desactive} onChange={(ev) => setEp(ev.target.value)} onKeyDown={(ev) => ev.stopPropagation()} data-section-epaisseur /></label>}
+      {!desactive && (
+        <button type="button" disabled={!valide} data-section-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { formeId: forme === "rectangle" && !["cercle", "rond", "I", "T", "L", "U"].includes(o.params.formeId) ? o.params.formeId : forme, epaisseurProfil: profile ? { value: e, unit: "m" } : null } } }], `Section de ${o.id}`)}>
+          Appliquer la section
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** Axes associés au centre d'un cercle, d'un arc ou d'une ellipse (D-132) : deux lignes de construction qui suivent. */
 function AxesCentre({ o, onCommandes }: { o: Occurrence<"esquisse">; onCommandes: PropsInspecteur["onCommandes"] }) {
   const [debord, setDebord] = useState("0,2");

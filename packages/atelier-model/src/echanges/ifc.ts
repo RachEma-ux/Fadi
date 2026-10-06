@@ -25,6 +25,7 @@ import { empreinte } from "../documents/empreinte.js";
 import { compositionMur, lireCouches } from "../compositions.js";
 import { connexionsDuNiveau, polygoneMurRaccorde, raccordMur, type ExtremiteConnexion } from "../raccords.js";
 import { corpsMenuiserie } from "../menuiserie.js";
+import { contoursArchitecture } from "../blocs-places.js";
 import { controleClassesIfc } from "../annexe-c.js";
 
 export const SCHEMA_IFC = "IFC4X3_ADD2";
@@ -496,7 +497,9 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         const u = { x: Math.cos(ang), y: Math.sin(ang) };
         const lx = o.params.largeur.value / 2;
         const ly = o.params.profondeur.value / 2;
-        const rep = h ? forme([corpsSolide([boite(o.params.point, u, -lx, lx, -ly, ly, 0, h)])]) : null;
+        // Section non rectangulaire (D-139) : extrusion du contour de la section (cercle, profilés I, T, L, U).
+        const section = o.params.formeId === "cercle" || o.params.formeId === "rond" || o.params.epaisseurProfil ? contoursArchitecture("poteau", o.params as unknown as Record<string, unknown>) : null;
+        const rep = h ? forme([corpsSolide([section ? extrusionContour(section.contour, [], 0, h) : boite(o.params.point, u, -lx, lx, -ly, ly, 0, h)])]) : null;
         const id = s.ajouter(`IFCCOLUMN(${gid(o.id)},$,${opt(nom ?? o.id)},$,$,${ref(placementDe(o.niveauId))},${rep ? ref(rep) : "$"},$,.COLUMN.)`);
         produits.set(o.id, id);
         contenir(o.niveauId, id);

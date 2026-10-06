@@ -11,6 +11,7 @@ import { type ModeleAtelier, type OccurrenceQuelconque } from "../modele.js";
 import { quantites } from "../quantites.js";
 import { Dxf } from "../documents/rendu-dxf.js";
 import { polygoneMurRaccorde } from "../raccords.js";
+import { contoursArchitecture } from "../blocs-places.js";
 
 const nb = (v: number) => (Math.abs(v) < 1e-12 ? "0" : String(Math.round(v * 1e6) / 1e6));
 const calqueDxf = (nom: string | null | undefined) => (nom ? nom.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9_-]+/g, "_").slice(0, 31) || "0" : "0");
@@ -70,6 +71,12 @@ function dessiner(d: Dxf, etat: ModeleAtelier, o: OccurrenceQuelconque): void {
       return;
     }
     case "poteau": {
+      // Section selon la forme (D-139) : contour polygonal.
+      const sec = contoursArchitecture("poteau", o.params as unknown as Record<string, unknown>);
+      if (sec && (o.params.formeId === "cercle" || o.params.formeId === "rond" || o.params.epaisseurProfil)) {
+        d.polyligne(calque, sec.contour, true);
+        return;
+      }
       const ang = (o.params.angle.value * Math.PI) / 180;
       const u = { x: Math.cos(ang), y: Math.sin(ang) };
       const n = { x: -u.y, y: u.x };

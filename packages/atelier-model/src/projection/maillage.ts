@@ -610,11 +610,9 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
     case "poteau": {
       const h = o.params.hauteur?.value;
       if (!h) break;
-      const ang = (o.params.angle.value * Math.PI) / 180;
-      const u = { x: Math.cos(ang), y: Math.sin(ang) };
-      const lx = o.params.largeur.value / 2;
-      const ly = o.params.profondeur.value / 2;
-      t.boite(o.params.point, u, perp(u), -lx, lx, -ly, ly, z, z + h);
+      // Section selon la forme (D-139) : rectangle, cercle, profilés I, T, L, U.
+      const c = contoursArchitecture("poteau", o.params as unknown as Record<string, unknown>);
+      if (c) t.prisme(c.contour, [], z, z + h);
       break;
     }
     case "escalier":

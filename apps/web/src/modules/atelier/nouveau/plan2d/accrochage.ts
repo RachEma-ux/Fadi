@@ -4,7 +4,7 @@
  * d'objet priment sur l'orthogonal, qui prime sur la grille. Fonctions pures : testables sans DOM.
  */
 import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
-import { pt, traitsBloc } from "@parcours/atelier-model";
+import { contoursArchitecture, pt, traitsBloc } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
 export type TypeAccroche = "extremite" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "intersection" | "proche" | "orthogonal" | "grille" | "libre";
@@ -106,9 +106,13 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
         // Ellipse (D-046) : son contour discrétisé sert à la sélection et à l'accrochage.
         if (o.params.forme === "ellipse" && o.params.centre && o.params.rayon && o.params.rayonB) contour(pointsEllipse(o.params.centre, o.params.rayon.value, o.params.rayonB.value, o.params.rotation?.value ?? 0, 48), o.id);
         break;
-      case "poteau":
+      case "poteau": {
         centres.push({ p: o.params.point, objetId: o.id });
+        // Contour de la section (D-139) : sommets et arêtes accrochables.
+        const sec = contoursArchitecture("poteau", o.params as unknown as Record<string, unknown>);
+        if (sec) contour(sec.contour.map((q) => pt(q.x, q.y)), o.id, true);
         break;
+      }
       case "garde-corps":
         if (o.params.points.length >= 2) contour(o.params.points, o.id, o.params.ferme);
         break;

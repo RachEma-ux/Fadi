@@ -153,11 +153,20 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     return { ...contour(p), nom: lire.chaine(p, "nom"), categorie: lire.chaineOuNull(p, "categorie") };
   },
   poteau(_etat, p) {
+    const formeId = lire.chaine(p, "formeId");
+    const largeur = lire.longueur(p, "largeur", { strict: true })!;
+    const profondeur = lire.longueur(p, "profondeur", { strict: true })!;
+    // Profilés (D-139) : épaisseur des parois saisie, inférieure à la moitié de la plus petite dimension.
+    const profile = PROFILES_POTEAU.includes(formeId);
+    const ep = profile ? lire.longueur(p, "epaisseurProfil", { strict: true }) : null;
+    if (!profile && p["epaisseurProfil"] !== undefined && p["epaisseurProfil"] !== null) throw new ErreurCommande("invalide", "epaisseurProfil", "épaisseur de paroi réservée aux profilés I, T, L, U");
+    if (ep && ep.value >= Math.min(largeur.value, profondeur.value) / 2) throw new ErreurCommande("invalide", "epaisseurProfil", "épaisseur de paroi inférieure à la moitié de la largeur et de la profondeur");
     return {
       point: lire.point(p, "point")!,
-      formeId: lire.chaine(p, "formeId"),
-      largeur: lire.longueur(p, "largeur", { strict: true })!,
-      profondeur: lire.longueur(p, "profondeur", { strict: true })!,
+      formeId,
+      ...(ep ? { epaisseurProfil: ep } : {}),
+      largeur,
+      profondeur,
       hauteur: lire.longueur(p, "hauteur", { optionnel: true, strict: true }),
       angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" },
       nom: lire.chaineOuNull(p, "nom"),
@@ -351,6 +360,9 @@ function degradeDe(p: Brut, forme: string): { degrade?: { de: number; a: number;
   const angle = lire.angle(q, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" as const };
   return { degrade: { de, a, angle: { value: angle.value, unit: "deg" } } };
 }
+
+/** Formes de section des poteaux qui demandent une épaisseur de paroi (D-139). */
+export const PROFILES_POTEAU = ["I", "T", "L", "U"];
 
 function tangentesDe(p: Brut, forme: string, n: number): { tangentes?: ({ x: number; y: number } | null)[] } {
   const brut = p["tangentes"];
