@@ -420,7 +420,7 @@ await page.locator('[data-nouvelle="axonometrie"]').click();
 await page.waitForSelector('[data-detail="vue"] .docs-svg svg', { timeout: 60000 }).catch(() => {});
 await page.waitForFunction(() => (document.querySelector('[data-detail="vue"] .docs-svg svg')?.querySelectorAll("line, path, polyline").length ?? 0) > 10, null, { timeout: 60000 }).catch(() => {});
 check("axonométrie : vue créée et dessinée (projection parallèle)", (await page.locator('[data-detail="vue"] .docs-svg svg').locator("line, path, polyline").count()) > 10 && /projection parallèle/.test((await page.locator(".docs-avertissements").textContent().catch(() => "")) ?? ""));
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 await page.waitForSelector(".plan2d");
 
 // Croisement (D-034) : deux murs qui se traversent ; la zone commune est peinte d'un seul tenant dans le plan.
@@ -1048,7 +1048,7 @@ await page.waitForSelector(".plan2d");
   await page.locator('[data-visite="quitter"]').click();
   const avance = v0 && v1 ? Math.hypot(v1.position.x - v0.position.x, v1.position.y - v0.position.y) : 0;
   check("visite à hauteur d'œil : caméra à niveau + 1,60 m, avance de 1 m au clavier sans changer de hauteur", !!v0 && Math.abs(v0.position.z - alt) < 1e-3 && Math.abs(avance - 1) < 0.01 && Math.abs(v1.position.z - v0.position.z) < 1e-6, `${JSON.stringify(v0?.position)} → ${JSON.stringify(v1?.position)} · œil ${alt}`);
-  await page.locator('.barre-mode button:has-text("Plan")').click();
+  await page.locator('.barre-mode button:text-is("Plan")').click();
   check("isolement : la sélection isolée pour soi en 3D, puis l'affichage complet revient", isole === "2" && quitte, `${isole} · ${quitte}`);
 }
 
@@ -2030,7 +2030,7 @@ await page.waitForSelector(".plan2d");
   }
   const journal = (await api("get", `/projects/${pid}/atelier/journal`)).body.entrees.at(-1)?.label ?? "";
   await page.locator("[data-isolement-quitter]").click().catch(() => {});
-  await page.locator('.barre-mode button:has-text("Plan")').click().catch(() => {});
+  await page.locator('.barre-mode button:text-is("Plan")').click().catch(() => {});
   check("pousser / tirer une face latérale : poteau élargi d'un côté en 3D", r0.status === 200 && !!fait && /Face de pot-face/.test(journal), `${r0.status} · ${JSON.stringify(cible)} · ${JSON.stringify(fait && { l: fait.largeur, p: fait.profondeur, pt: fait.point })} · ${journal}`);
 }
 
@@ -2066,7 +2066,7 @@ await page.waitForSelector(".plan2d");
   }
   const d = await page.evaluate(() => window.fadiMesures3D?.mesure3d ?? null);
   await page.locator("[data-isolement-quitter]").click().catch(() => {});
-  await page.locator('.barre-mode button:has-text("Plan")').click().catch(() => {});
+  await page.locator('.barre-mode button:text-is("Plan")').click().catch(() => {});
   check("accrochage 3D : coins du poteau accrochés, diagonale exacte (√2 m)", r0.status === 200 && ok && typeof d === "number" && Math.abs(d - Math.SQRT2) < 1e-6, `${r0.status} · ${ok} · ${d} · ${JSON.stringify(coins)}`);
 }
 
@@ -2173,7 +2173,7 @@ await page.waitForSelector(".plan2d");
   await page.screenshot({ path: `${OUT}/3d-filaire.png` });
   await page.locator("[data-filaire]").uncheck();
   const retire = await page.waitForFunction(() => window.fadiMesures3D?.filaire === false, null, { timeout: 5000 }).then(() => true, () => false);
-  await page.locator('.barre-mode button:has-text("Plan")').click().catch(() => {});
+  await page.locator('.barre-mode button:text-is("Plan")').click().catch(() => {});
   check("vue 3D filaire : activée puis retirée (arêtes cachées en tirets)", actif && retire, `${actif} · ${retire}`);
 }
 
@@ -2200,7 +2200,7 @@ await page.waitForSelector(".plan2d");
   await page.screenshot({ path: `${OUT}/3d-styles.png` });
   await page.locator('[data-styles-classes] li:has([data-style-couleur="mur"]) button.lien').click();
   const retabli = await page.waitForFunction(() => window.fadiMesures3D?.styles === 0, null, { timeout: 5000 }).then(() => true, () => false);
-  await page.locator('.barre-mode button:has-text("Plan")').click().catch(() => {});
+  await page.locator('.barre-mode button:text-is("Plan")').click().catch(() => {});
   check("styles par classe en 3D : couleur des murs appliquée puis rétablie", applique && retabli, `${applique} · ${retabli}`);
 }
 

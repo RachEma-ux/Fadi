@@ -8,8 +8,8 @@ import type { Point2 } from "@parcours/atelier-model";
 import { lireReglagesNavigation } from "./navigation";
 
 export type NiveauAffichage = "essentiel" | "contextuel" | "complet";
-/** Plan, 3D, ou documents dérivés (vues, feuilles, tableaux — lot 5). */
-export type ModeTravail = "2d" | "3d" | "documents";
+/** Plan, 3D, documents dérivés (vues, feuilles, tableaux — lot 5), ou Planche (géométrie libre, cahier-planche MO-1). */
+export type ModeTravail = "2d" | "3d" | "documents" | "planche";
 export type PanneauMobile = "travail" | "objets" | "inspecteur" | "problemes";
 
 export interface Accrochages {

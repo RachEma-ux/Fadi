@@ -182,7 +182,7 @@ await page.keyboard.up("Shift");
 const v3 = await vue();
 check("3D souris : Maj + molette maintenue = panoramique", ecart(v1.cible, v3.cible) > 0.05);
 await page.screenshot({ path: `${OUT}/canevas-navigation.png` });
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 await page.waitForSelector(".plan2d .plan-objets [data-objet]");
 
 // 5 ter. Outils de vue et de saisie (D-158) : raccourcis configurables, Rapporteur, Zoom, Zoom étendu, Panoramique.
@@ -299,7 +299,7 @@ await page.screenshot({ path: `${OUT}/canevas-ombres.png` });
 await page.locator("[data-ombres]").uncheck();
 await page.waitForFunction(() => window.fadiMesures3D?.ombres?.actives === false, null, { timeout: 10000 }).catch(() => {});
 check("Ombres désactivées", (await page.evaluate(() => window.fadiMesures3D?.ombres?.actives)) === false);
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 await page.waitForSelector(".plan2d .plan-objets [data-objet]");
 // Clavier (D-161) : Entrée sur une icône ouvre son panneau et y place le focus ; Échap le ferme et rend le focus.
 await page.locator('[data-panneau-icone="navigation"]').focus();
@@ -357,7 +357,7 @@ check("Importer… ouvre le menu des imports", await page.locator(".barre-import
 await page.evaluate(() => document.querySelector(".barre-imports")?.removeAttribute("open"));
 await menu("imprimer");
 check("Imprimer : bascule vers les documents (feuilles en PDF)", (await page.locator('.barre-mode button:has-text("Documents")').getAttribute("aria-pressed")) === "true");
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 await page.waitForSelector(".plan2d .plan-objets [data-objet]");
 // Hors-ligne : une modification reste sur l'appareil, le partage est différé et le dit.
 await ctx.setOffline(true);
@@ -385,7 +385,7 @@ check("Scènes : vue 3D ouverte sur les vues enregistrées", (await page.locator
 await page.locator('[data-acces-3d="styles"]').click();
 await page.waitForSelector("[data-styles-classes][open]", { timeout: 15000 }).catch(() => {});
 check("Styles : réglage des styles par classe déplié", (await page.locator("[data-styles-classes][open]").count()) === 1);
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 await page.waitForSelector(".plan2d .plan-objets [data-objet]");
 
 // Retour à la disposition classique (préférence locale).

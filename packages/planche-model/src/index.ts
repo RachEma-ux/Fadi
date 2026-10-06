@@ -4,3 +4,4 @@ export * from "./geometrie-libre";
 export * from "./inference";
 export * from "./saisie-vcb";
 export * from "./catalogue-outils";
+export * from "./outils/index";

@@ -1929,3 +1929,217 @@ export function rendreUnique(m: Modele, occurrence: Id): Resultat {
   const modele = t.fermer();
   return { modele, rapport: differences(m, modele) };
 }
+
+// --- Lot 2 : formes ---
+
+/** Données portées par une courbe d'arc (centre, rayon, normale du plan de l'arc). */
+export interface InfosArc {
+  readonly centre: Vec3;
+  readonly rayon: number;
+  readonly normale: Vec3;
+}
+
+/**
+ * Arc ouvert (outils Arc, Arc 2 points, Arc 3 points) : polyligne `points[0] → … → points[n]` enregistrée
+ * comme UNE courbe de genre « arc » (la gomme l'efface d'un coup). L'arc ne crée pas de face par lui-même ;
+ * s'il ferme une boucle coplanaire avec la géométrie existante, la face automatique est créée (§5.4).
+ */
+export function ajouterArc(m: Modele, points: readonly Vec3[], infos: InfosArc, o: OptionsContexte = {}): Resultat {
+  if (points.length < 2) throw new RangeError("Un arc demande au moins deux points.");
+  if (points.length - 1 > 999) {
+    throw new RangeError("Curve segments must be in the range from 3 to 999 (segments de courbe : de 3 à 999)");
+  }
+  const courbe = { cle: "k", genre: "arc", centre: infos.centre, rayon: infos.rayon, normale: normalize(infos.normale) } as const;
+  return operer(m, o.dans, (t, c) => {
+    const segs: SegmentSource[] = [];
+    for (let i = 0; i + 1 < points.length; i++) segs.push({ a: points[i] as Vec3, b: points[i + 1] as Vec3, courbe });
+    insererGeometrie(t, c, segs, [], true);
+  });
+}
+
+/**
+ * Secteur (outil Secteur / Pie) : arc `points` (une courbe « arc ») fermé par deux rayons (arêtes simples)
+ * vers `centre` ; la boucle est coplanaire, la face est créée automatiquement.
+ */
+export function ajouterSecteur(
+  m: Modele,
+  centre: Vec3,
+  points: readonly Vec3[],
+  infos: InfosArc,
+  o: OptionsContexte = {},
+): Resultat {
+  if (points.length < 2) throw new RangeError("Un secteur demande au moins deux points d'arc.");
+  if (points.length - 1 > 999) {
+    throw new RangeError("Curve segments must be in the range from 3 to 999 (segments de courbe : de 3 à 999)");
+  }
+  const courbe = { cle: "k", genre: "arc", centre: infos.centre, rayon: infos.rayon, normale: normalize(infos.normale) } as const;
+  return operer(m, o.dans, (t, c) => {
+    const segs: SegmentSource[] = [{ a: centre, b: points[0] as Vec3 }];
+    for (let i = 0; i + 1 < points.length; i++) segs.push({ a: points[i] as Vec3, b: points[i + 1] as Vec3, courbe });
+    segs.push({ a: points[points.length - 1] as Vec3, b: centre });
+    insererGeometrie(t, c, segs, [], true);
+  });
+}
+
+// --- Lot 2 : trace ---
+// Primitives ajoutées pour les outils Sélection, Lasso, Gomme, Ligne et Main levée (src/outils/).
+
+/** Arêtes d'une courbe entière si l'arête en fait partie, sinon l'arête seule (I8). */
+function etendreAuxCourbes(c: Ctx, ids: readonly Id[]): Id[] {
+  const r = new Set<Id>();
+  for (const id of ids) {
+    const a = c.aretes.get(id);
+    if (!a) continue;
+    const k = a.courbe ? c.courbes.get(a.courbe) : undefined;
+    for (const x of k ? k.aretes : [id]) r.add(x);
+  }
+  return [...r];
+}
+
+/** Arêtes de la courbe de l'arête (courbe entière), ou l'arête seule ; lecture seule. */
+export function aretesDeLaCourbe(m: Modele, arete: Id, o: OptionsContexte = {}): Id[] {
+  const c = contexte(m, o.dans);
+  const a = c.aretes[arete];
+  if (!a) return [];
+  const k = a.courbe ? c.courbes[a.courbe] : undefined;
+  return k ? [...k.aretes] : [arete];
+}
+
+/** Gomme glissée : efface plusieurs arêtes (et leurs courbes entières) en UNE opération. */
+export function effacerAretes(m: Modele, aretes: readonly Id[], o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (t, c) => {
+    effacerAretesInterne(t, c, etendreAuxCourbes(c, aretes));
+  });
+}
+
+/**
+ * Effacer (touche Suppr de la Sélection) : faces seules supprimées (leurs arêtes restent), arêtes effacées avec
+ * leurs courbes et leurs faces dépendantes, occurrences retirées. Ids inconnus ignorés.
+ */
+export function effacerEntites(m: Modele, ids: readonly Id[], o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (t, c) => {
+    for (const id of ids) {
+      c.faces.delete(id);
+      c.occurrences.delete(id);
+    }
+    effacerAretesInterne(t, c, etendreAuxCourbes(c, ids.filter((id) => c.aretes.has(id))));
+  });
+}
+
+export interface AttributsVisibilite {
+  readonly masquee?: boolean;
+  readonly adoucie?: boolean;
+}
+
+/** Gomme Maj / Ctrl / Alt : masque, adoucit ou rétablit des arêtes (attribut absent = inchangé). */
+export function modifierAretes(m: Modele, aretes: readonly Id[], attributs: AttributsVisibilite, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of aretes) {
+      const a = c.aretes.get(id);
+      if (!a) continue;
+      const { masquee, adoucie, ...reste } = a;
+      const mq = attributs.masquee ?? masquee ?? false;
+      const ad = attributs.adoucie ?? adoucie ?? false;
+      c.aretes.set(id, { ...reste, ...(mq ? { masquee: true } : {}), ...(ad ? { adoucie: true } : {}) });
+    }
+  });
+}
+
+/**
+ * Main levée : polyligne ouverte enregistrée comme UNE courbe (genre « arc » faute de genre dédié ; centre = premier
+ * point, rayon 0). Pas de face automatique, sauf si `fermee` (boucle plane, doc [S12]).
+ */
+export function ajouterCourbeLibre(m: Modele, points: readonly Vec3[], o: OptionsContexte & { readonly fermee?: boolean } = {}): Resultat {
+  const p0 = points[0];
+  if (!p0 || points.length < 2) throw new RangeError("Courbe à main levée : au moins deux points.");
+  const n = len(newell(points)) > EPS ? normalize(newell(points)) : AXE_Z;
+  const courbe = { cle: "k", genre: "arc" as const, centre: p0, rayon: 0, normale: n };
+  const segs: SegmentSource[] = [];
+  for (let i = 0; i + 1 < points.length; i++) {
+    const a = points[i] as Vec3;
+    const b = points[i + 1] as Vec3;
+    if (dist(a, b) > TOL) segs.push({ a, b, courbe });
+  }
+  return operer(m, o.dans, (t, c) => {
+    insererGeometrie(t, c, segs, [], o.fermee === true);
+  });
+}
+
+/** Arêtes bordant une face (boucle extérieure et trous). */
+export function aretesDeFace(m: Modele, face: Id, o: OptionsContexte = {}): Id[] {
+  const c = versCtx(contexte(m, o.dans));
+  const f = c.faces.get(face);
+  if (!f) return [];
+  const r: Id[] = [];
+  for (const b of [f.exterieur, ...f.trous]) {
+    for (let i = 0; i < b.length; i++) {
+      const a = areteEntre(c, b[i] as Id, b[(i + 1) % b.length] as Id);
+      if (a && !r.includes(a.id)) r.push(a.id);
+    }
+  }
+  return r;
+}
+
+/** Faces qui partagent une arête. */
+export function facesDeLArete(m: Modele, arete: Id, o: OptionsContexte = {}): Id[] {
+  const c = versCtx(contexte(m, o.dans));
+  const a = c.aretes.get(arete);
+  return a ? facesDeArete(c, a).map((f) => f.id) : [];
+}
+
+/** Tout le connecté (triple-clic) : arêtes et faces reliées par des sommets à l'arête ou à la face donnée. */
+export function entitesConnectees(m: Modele, id: Id, o: OptionsContexte = {}): Id[] {
+  const c = versCtx(contexte(m, o.dans));
+  const depart: Id[] = [];
+  const f0 = c.faces.get(id);
+  const a0 = c.aretes.get(id);
+  if (f0) depart.push(...f0.exterieur, ...f0.trous.flat());
+  else if (a0) depart.push(a0.a, a0.b);
+  else return [];
+  const vus = new Set<Id>(depart);
+  const pile = [...depart];
+  const aretes = new Set<Id>();
+  while (pile.length) {
+    const s = pile.pop() as Id;
+    for (const a of aretesDuSommet(c, s)) {
+      aretes.add(a.id);
+      for (const x of [a.a, a.b]) if (!vus.has(x)) (vus.add(x), pile.push(x));
+    }
+  }
+  const faces = [...c.faces.values()].filter((f) => [f.exterieur, ...f.trous].some((b) => b.some((s) => vus.has(s)))).map((f) => f.id);
+  return [...faces, ...aretes];
+}
+
+/** Matrice monde d'une occurrence (transformations composées depuis la racine) ; null si introuvable. */
+export function matriceMonde(m: Modele, occurrence: Id): Matrice4 | null {
+  const chercher = (c: Contexte, M: Matrice4, prof: number): Matrice4 | null => {
+    if (prof > 32) return null;
+    for (const occ of Object.values(c.occurrences)) {
+      const M2 = composer(M, occ.transformation);
+      if (occ.id === occurrence) return M2;
+      const d = m.definitions[occ.definition];
+      const r = d ? chercher(d.contenu, M2, prof + 1) : null;
+      if (r) return r;
+    }
+    return null;
+  };
+  return chercher(m.racine, IDENTITE, 0);
+}
+
+/** Inverse d'une transformation affine (null si singulière). */
+export function inverserMatrice(M: Matrice4): Matrice4 | null {
+  const g = (i: number): number => M[i] ?? 0;
+  const [a, b, c, d, e, f, h, i, j] = [g(0), g(1), g(2), g(4), g(5), g(6), g(8), g(9), g(10)];
+  const det = a * (e * j - f * i) - b * (d * j - f * h) + c * (d * i - e * h);
+  if (Math.abs(det) < EPS) return null;
+  const r = [
+    (e * j - f * i) / det, (c * i - b * j) / det, (b * f - c * e) / det,
+    (f * h - d * j) / det, (a * j - c * h) / det, (c * d - a * f) / det,
+    (d * i - e * h) / det, (b * h - a * i) / det, (a * e - b * d) / det,
+  ] as const;
+  const t = v3(g(3), g(7), g(11));
+  const tx = -(r[0] * t.x + r[1] * t.y + r[2] * t.z);
+  const ty = -(r[3] * t.x + r[4] * t.y + r[5] * t.z);
+  const tz = -(r[6] * t.x + r[7] * t.y + r[8] * t.z);
+  return [r[0], r[1], r[2], tx, r[3], r[4], r[5], ty, r[6], r[7], r[8], tz, 0, 0, 0, 1];
+}

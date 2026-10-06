@@ -280,7 +280,7 @@ const hauteurApres = await page.locator('.inspecteur input[id$="-hauteur"]').inp
 check("pousser / tirer : la hauteur du mur a augmenté (> 3 m) et est enregistrée", Number(hauteurApres.replace(",", ".")) > 3, `${hauteurApres} ; ${murId} à ${JSON.stringify(pos)} ; sonde ${await page.evaluate((p) => window.fadiMesures3D.sonder(p.x, p.y), pos)}`);
 await page.screenshot({ path: `${OUT}/3b-pousser.png` });
 await page.keyboard.press("Escape");
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 await page.waitForSelector(".plan2d");
 await page.waitForTimeout(200);
 
@@ -338,7 +338,7 @@ await page.locator(".barre-exports > summary").click();
 const [dlPng] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator('[data-export="png"]').click()]);
 const pngOk = await page.waitForFunction(() => window.__fadiExports?.some((e) => e.kind === "png"), null, { timeout: 15000 }).then(() => true).catch(() => false);
 exportsFaits.push(`png:${dlPng.suggestedFilename()}:${pngOk ? "catalogue" : "non"}`);
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 const docsCatalogue = (await (await page.request.get(`${BASE}/projects/${url.split("/").pop()}/documents`)).json()).documents.filter((d) => d.group === "dessins");
 check("exports DXF, SVG, CSV et PNG : téléchargés et enregistrés au catalogue, « à jour » à la révision courante", exportsFaits.every((e) => /:catalogue$/.test(e)) && docsCatalogue.length === 4 && docsCatalogue.every((d) => d.freshness === "a-jour") && docsCatalogue.some((d) => /Dessin technique DXF · Essai lot 3a · dessin plan/.test(d.label)), `${exportsFaits.join(" ")} | ${docsCatalogue.map((d) => d.label).join(" ; ")}`);
 

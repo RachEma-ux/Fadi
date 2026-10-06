@@ -20,7 +20,7 @@ d'inventé, commandes inversibles, repères explicites).
 | Chemin | Rôle |
 | --- | --- |
 | `cahier-planche.md` | Cahier des charges : décisions, compatibilité avec les règles Fadi, anatomie de l'écran, spécification outil par outil, conventions, panneaux, menus, plan par lots, lacunes du relevé, décisions ouvertes. |
-| `fiches/PL-NN-MM.md` | Fiches de capacité (gabarit `docs/atelier/fiches/_gabarit.md`). Lot 1 : PL-01-01 géométrie libre, PL-01-02 champ Mesures, PL-01-03 inférences, PL-01-04 catalogue des outils. |
+| `fiches/PL-NN-MM.md` | Fiches de capacité (gabarit `docs/atelier/fiches/_gabarit.md`). Lot 1 : PL-01-01 géométrie libre, PL-01-02 champ Mesures, PL-01-03 inférences, PL-01-04 catalogue des outils. Lot 2 : PL-02-01 sélection et lasso, PL-02-02 gomme, PL-02-03 ligne et main levée, PL-02-04 rectangles, PL-02-05 cercle et polygone, PL-02-06 arcs et secteur, PL-02-07 interface du mode Planche. |
 | `lots/lot-N.md` | Comptes rendus de lot (numérotation propre à la Planche). |
 | `reference/` | Relevés en direct de SketchUp pour le Web (06/10/2026) et référence documentaire sourcée — **source de comportement, non modifiée** ; un nouveau relevé s'ajoute en nouveau fichier. |
 
@@ -32,8 +32,8 @@ en direct).
 
 | Lot | Contenu | État |
 | --- | --- | --- |
-| 1 | Noyau pur `packages/planche-model` : géométrie libre, champ Mesures, inférences, catalogue des outils (sans interface) | Spécifié ; fiches PL-01-01 à PL-01-04 « spécifiée » ; compte rendu prévisionnel `lots/lot-1.md` |
-| 2 | Rendu three.js, outils de dessin et champ Mesures dans le mode Planche | À spécifier |
+| 1 | Noyau pur `packages/planche-model` : géométrie libre, champ Mesures, inférences, catalogue des outils (sans interface) | Codé et commité (D-164, 177 tests) ; fiches PL-01-01 à PL-01-04 encore « spécifiée » ; compte rendu `lots/lot-1.md` encore prévisionnel ; acceptation non consignée |
+| 2 | Rendu three.js, outils de dessin et champ Mesures dans le mode Planche | Codé, non commité ; fiches PL-02-01 à PL-02-07 « prototype » ; compte rendu `lots/lot-2.md` ; recette `apps/web/e2e/planche.mjs` inscrite en CI, pas encore exécutée ; acceptation demandée après CI verte (écarts à trancher : P-5, CA-MLV-2, rectangle tourné, P-7, panneaux) |
 | 3 | Outils de modification | À spécifier |
 | 4 | Mesure, annotation, caméra | À spécifier |
 | 5 | Groupes, composants, matériaux, balises, panneaux | À spécifier |
