@@ -4,28 +4,29 @@
  * présents en permanence : la colonne d'icônes de droite ouvre chacun dans un panneau flottant exclusif (un seul à
  * la fois). Rien n'est dupliqué : navigateur, inspecteur, modifications et versions sont les panneaux existants.
  */
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { etatUi, type EtatUi, type PanneauFlottant } from "../etat-ui";
 import { OUTILS_PAR_ID, type Outil } from "../outils";
 import { libelleTouche, raccourciDe } from "../raccourcis";
+import { t } from "../messages";
 
 /** Panneaux proposés dans la colonne, dans l'ordre (étiquette, pictogramme, raccourci d'accessibilité). */
 export const PANNEAUX_CANEVAS: { id: PanneauFlottant; libelle: string; picto: string }[] = [
-  { id: "instructeur", libelle: "Instructeur", picto: "?" },
-  { id: "entite", libelle: "Info entité", picto: "ⓘ" },
-  { id: "outliner", libelle: "Navigateur", picto: "☰" },
-  { id: "modifications", libelle: "Modifications", picto: "⚑" },
-  { id: "versions", libelle: "Versions", picto: "⧉" },
-  { id: "affichage", libelle: "Affichage", picto: "◐" },
-  { id: "materiaux", libelle: "Matériaux", picto: "▤" },
-  { id: "modele", libelle: "Info modèle", picto: "ℹ" },
-  { id: "navigation", libelle: "Navigation", picto: "✥" },
-  { id: "raccourcis", libelle: "Raccourcis", picto: "⌨" },
+  { id: "instructeur", libelle: t("panneau.instructeur"), picto: "?" },
+  { id: "entite", libelle: t("panneau.entite"), picto: "ⓘ" },
+  { id: "outliner", libelle: t("panneau.outliner"), picto: "☰" },
+  { id: "modifications", libelle: t("panneau.modifications"), picto: "⚑" },
+  { id: "versions", libelle: t("panneau.versions"), picto: "⧉" },
+  { id: "affichage", libelle: t("panneau.affichage"), picto: "◐" },
+  { id: "materiaux", libelle: t("panneau.materiaux"), picto: "▤" },
+  { id: "modele", libelle: t("panneau.modele"), picto: "ℹ" },
+  { id: "navigation", libelle: t("panneau.navigation"), picto: "✥" },
+  { id: "raccourcis", libelle: t("panneau.raccourcis"), picto: "⌨" },
 ];
 
 export function ColonnePanneaux({ ui, alertes, panneaux = PANNEAUX_CANEVAS }: { ui: EtatUi; alertes: number; panneaux?: { id: PanneauFlottant; libelle: string; picto: string }[] }) {
   return (
-    <nav className="canevas-colonne" aria-label="Panneaux" data-canevas-colonne>
+    <nav className="canevas-colonne" aria-label={t("canevas.panneaux")} data-canevas-colonne>
       {panneaux.map((p) => (
         <button key={p.id} type="button" className="canevas-icone" aria-pressed={ui.panneauFlottant === p.id} data-panneau-icone={p.id} onClick={() => etatUi.basculerPanneau(p.id)} title={p.libelle}>
           <span aria-hidden="true" className="canevas-picto">{p.picto}</span>
@@ -37,16 +38,38 @@ export function ColonnePanneaux({ ui, alertes, panneaux = PANNEAUX_CANEVAS }: { 
   );
 }
 
-/** Cadre d'un panneau flottant (titre, contenu défilant, poignée de repli). */
+/** Cadre d'un panneau flottant (titre, contenu défilant, poignée de repli). À l'ouverture, le focus va au panneau ;
+ * Échap ou × le ferment et rendent le focus à son icône (clavier, D-161). */
 export function CadrePanneau({ id, titre, children }: { id: PanneauFlottant; titre: string; children: ReactNode }) {
+  const ref = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    ref.current?.focus({ preventScroll: true });
+  }, []);
+  const fermer = () => {
+    etatUi.set({ panneauFlottant: null });
+    requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-panneau-icone="${id}"]`)?.focus());
+  };
   return (
-    <section className="canevas-panneau" id={`canevas-panneau-${id}`} aria-label={titre} data-panneau-flottant={id}>
+    <section
+      ref={ref}
+      tabIndex={-1}
+      className="canevas-panneau"
+      id={`canevas-panneau-${id}`}
+      aria-label={titre}
+      data-panneau-flottant={id}
+      onKeyDown={(e) => {
+        if (e.key !== "Escape") return;
+        e.preventDefault();
+        e.stopPropagation();
+        fermer();
+      }}
+    >
       <header className="canevas-panneau-tete">
         <h3>{titre}</h3>
-        <button type="button" className="canevas-fermer" onClick={() => etatUi.set({ panneauFlottant: null })} aria-label={`Fermer le panneau ${titre}`}>×</button>
+        <button type="button" className="canevas-fermer" onClick={fermer} aria-label={t("panneau.fermer", { titre })}>×</button>
       </header>
       <div className="canevas-panneau-corps">{children}</div>
-      <button type="button" className="canevas-poignee" onClick={() => etatUi.set({ panneauFlottant: null })} aria-label={`Replier le panneau ${titre}`} />
+      <button type="button" className="canevas-poignee" onClick={fermer} aria-label={t("panneau.replier", { titre })} />
     </section>
   );
 }

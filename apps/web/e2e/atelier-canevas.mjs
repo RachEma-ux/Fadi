@@ -301,6 +301,15 @@ await page.waitForFunction(() => window.fadiMesures3D?.ombres?.actives === false
 check("Ombres désactivées", (await page.evaluate(() => window.fadiMesures3D?.ombres?.actives)) === false);
 await page.locator('.barre-mode button:has-text("Plan")').click();
 await page.waitForSelector(".plan2d .plan-objets [data-objet]");
+// Clavier (D-161) : Entrée sur une icône ouvre son panneau et y place le focus ; Échap le ferme et rend le focus.
+await page.locator('[data-panneau-icone="navigation"]').focus();
+await page.keyboard.press("Enter");
+await page.waitForSelector('[data-panneau-flottant="navigation"]');
+check("clavier : le focus entre dans le panneau ouvert", await page.evaluate(() => !!document.activeElement?.closest('[data-panneau-flottant="navigation"]')));
+await page.keyboard.press("Escape");
+check("clavier : Échap ferme le panneau et rend le focus à son icône", (await page.locator('[data-panneau-flottant="navigation"]').count()) === 0 && (await page.evaluate(() => document.activeElement?.getAttribute("data-panneau-icone"))) === "navigation");
+const horsVue = await page.locator(".canevas-colonne .canevas-icone").evaluateAll((els) => els.filter((e) => { const r = e.getBoundingClientRect(); return r.bottom > window.innerHeight || r.top < 0; }).length);
+check("colonne de panneaux : toutes les icônes visibles (desktop)", horsVue === 0, `${horsVue} hors de la vue`);
 await axe("disposition Canevas (desktop)");
 
 // 6. Mobile (390 × 844, tactile) : panneau en surcouche, barre d'outils toujours accessible.
@@ -313,6 +322,14 @@ await tel.locator('[data-panneau-icone="outliner"]').tap();
 const panneauTel = await boite(".atelier-n-gauche", tel);
 const outilsTel = await boite(".atelier-n-outils", tel);
 check("mobile : le panneau ouvert laisse la barre d'outils accessible", panneauTel.x >= outilsTel.x + outilsTel.width - 1, `panneau x ${Math.round(panneauTel.x)} · outils ${Math.round(outilsTel.x + outilsTel.width)}`);
+await tel.locator('[data-panneau-icone="raccourcis"]').scrollIntoViewIfNeeded();
+await tel.locator('[data-panneau-icone="raccourcis"]').tap();
+check("mobile : dernière icône atteignable, panneau Raccourcis ouvert", await tel.locator('[data-panneau-flottant="raccourcis"]').isVisible());
+const panneauR = await boite('[data-panneau-flottant="raccourcis"]', tel);
+check("mobile : le panneau tient dans l'écran", panneauR.x >= 0 && panneauR.x + panneauR.width <= 390 + 1, JSON.stringify(panneauR));
+const petitesPanneau = await tel.locator('[data-panneau-flottant="raccourcis"] button:visible, [data-panneau-flottant="raccourcis"] input:visible').evaluateAll((els) => els.filter((e) => { const r = e.getBoundingClientRect(); return r.height < 24; }).length);
+check("mobile : commandes du panneau d'au moins 24 px (WCAG 2.2, 2.5.8)", petitesPanneau === 0, `${petitesPanneau} trop petite(s)`);
+await tel.locator('[data-panneau-icone="outliner"]').tap();
 const petites = await tel.locator(".atelier-n-outils .outil:visible, .canevas-colonne .canevas-icone").evaluateAll((els) => els.filter((e) => { const r = e.getBoundingClientRect(); return r.width < 44 || r.height < 44; }).length);
 check("mobile : cibles des outils et des panneaux d'au moins 44 px", petites === 0, `${petites} trop petite(s)`);
 await tel.screenshot({ path: `${OUT}/canevas-mobile.png` });

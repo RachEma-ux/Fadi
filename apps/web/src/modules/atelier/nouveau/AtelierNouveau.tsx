@@ -31,6 +31,7 @@ import { CadrePanneau, ColonnePanneaux, Instructeur } from "./panneaux/Canevas";
 import { ChoixPeripherique, ReglagesNavigationPanneau } from "./panneaux/Navigation";
 import { RaccourcisPanneau } from "./panneaux/Raccourcis";
 import { MenuPrincipal } from "./panneaux/MenuPrincipal";
+import { LANGUE_INTERFACE, NOM_LANGUE, t as msg } from "./messages";
 import { messageEnregistrement, partagePossible, type EtatEnregistrement } from "./fichier";
 import { AffichagePanneau, InfoModelePanneau, MateriauxPanneau } from "./panneaux/Affichage";
 import { libelleTouche, outilDeTouche, raccourciDe } from "./raccourcis";
@@ -389,6 +390,9 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         else etatUi.selectionner([]);
         return;
       }
+      // Entrée sur un bouton, un lien ou un résumé (clavier, D-161) hors tracé en cours : l'élément garde son action ;
+      // pendant un tracé, Entrée le termine comme avant.
+      if (e.key === "Enter" && e.target instanceof Element && e.target.closest("button, a[href], summary") && !precisionRef.current && etatUi.get().pointsEnCours.length === 0) return;
       if (e.key === "Enter") {
         e.preventDefault();
         if (precisionRef.current) validerPrecision();
@@ -825,8 +829,8 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
       <footer className="atelier-n-etat" aria-live="polite">
         {ui.disposition === "canevas" && (
           <span className="canevas-bas">
-            <button type="button" className="lien" data-aide-instructeur onClick={() => etatUi.basculerPanneau("instructeur")} title="Aide de l'outil actif">?</button>
-            <span className="canevas-langue" title="L'interface de Fadi est en français.">Français</span>
+            <button type="button" className="lien" data-aide-instructeur onClick={() => etatUi.basculerPanneau("instructeur")} title={msg("bas.aide")} aria-label={msg("bas.aide")}>?</button>
+            <span className="canevas-langue" title={msg("bas.langue")} lang={LANGUE_INTERFACE}>{NOM_LANGUE[LANGUE_INTERFACE]}</span>
             <ChoixPeripherique ui={ui} />
           </span>
         )}

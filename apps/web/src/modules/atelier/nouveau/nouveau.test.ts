@@ -916,3 +916,17 @@ describe("menu principal : enregistrement et partage (D-160)", () => {
     expect(partagePossible({ ...base, lecture: true, enAttente: 5 }).possible).toBe(true);
   });
 });
+
+describe("catalogue de messages de l'ergonomie (D-161)", () => {
+  it("français seul livré ; chaque clé a un texte ; paramètres remplacés ; panneaux du Canevas tirés du catalogue", async () => {
+    const { CATALOGUE, LANGUE_INTERFACE, t } = await import("./messages");
+    const { PANNEAUX_CANEVAS } = await import("./panneaux/Canevas");
+    expect(Object.keys(CATALOGUE)).toEqual(["fr"]);
+    expect(LANGUE_INTERFACE).toBe("fr");
+    for (const [cle, texte] of Object.entries(CATALOGUE.fr)) expect(texte.trim(), cle).not.toBe("");
+    expect(t("panneau.fermer", { titre: "Navigation" })).toBe("Fermer le panneau Navigation");
+    expect(t("panneau.fermer")).toBe("Fermer le panneau {titre}");
+    expect(PANNEAUX_CANEVAS.map((p) => p.libelle)).toEqual(PANNEAUX_CANEVAS.map((p) => t(`panneau.${p.id}` as Parameters<typeof t>[0])));
+    expect(new Set(PANNEAUX_CANEVAS.map((p) => p.id)).size).toBe(PANNEAUX_CANEVAS.length);
+  });
+});

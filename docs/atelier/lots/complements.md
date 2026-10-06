@@ -233,3 +233,4 @@ Navigation configurable — tranche 2 (`navigation.test.ts`, `atelier-canevas.mj
 Outils de vue, rapporteur, parallèle, raccourcis configurables — tranche 3 (`nouveau.test.ts`, `atelier-canevas.mjs`, D-158).
 Panneaux Affichage, Info modèle, Matériaux, arborescence, ombres — tranche 4 (`nouveau.test.ts`, `atelier-canevas.mjs`, D-159).
 Menu principal, enregistrer maintenant, partage après enregistrement — tranche 5 (`nouveau.test.ts`, `atelier-canevas.mjs`, D-160).
+Qualité de l'ergonomie : messages, clavier, cibles, recette mobile — tranche 6 (`nouveau.test.ts`, `atelier-canevas.mjs`, D-161) ; compte rendu `ergonomie/compte-rendu.md`.

@@ -93,9 +93,11 @@ Chaque tranche est additive, livrée seule, avec ses tests, et vérifie que les 
    tout / le dernier), Info modèle, Matériaux (lecture), Ombres (option d'affichage 3D), arbre de l'Outliner.
 5. **D-160 — Fichiers** (livrée) : menu principal (enregistrer maintenant, exporter, importer, imprimer, partager après
    enregistrement confirmé).
-6. **D-161 — Qualité** : recette Playwright Canevas desktop + émulation mobile, axe-core, cibles ≥ 44 px, catalogue
+6. **D-161 — Qualité** (livrée) : recette Playwright Canevas desktop + émulation mobile, axe-core, cibles ≥ 44 px, catalogue
    de messages français.
 
 **Métriques de succès** : en Canevas, sur desktop et mobile, ouvrir le plan, choisir un outil, tracer avec saisie
 numérique, naviguer, ouvrir un panneau sans perdre le dessin, enregistrer — recette verte ; recettes existantes
 vertes ; aucune violation axe critique ou sérieuse.
+
+Toutes les tranches sont livrées : voir `compte-rendu.md` (preuves, métriques, écarts déclarés).

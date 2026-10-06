@@ -1,0 +1,41 @@
+# Ergonomie « SketchUp pour le Web » — compte rendu des tranches D-156 à D-161
+
+Source : `cahier-sketchup-web.md` ; audit, écart et plan : `etape-0-audit-ecart-plan.md`. Toutes les tranches sont
+additives : la disposition classique à cinq repères reste celle par défaut, les recettes existantes passent toujours,
+aucune règle d'`AGENTS.md` ni du cahier des charges de l'Atelier n'est modifiée.
+
+## Ce qui est livré
+
+| Tranche | Décision | Contenu | Preuves |
+|---|---|---|---|
+| 1 | D-156 | Disposition Canevas : dessin plein écran, barre d'outils flottante repliable, grille d'outils étendus, colonne d'icônes et panneaux flottants exclusifs, Instructeur, champ Mesures toujours visible, Échap → outil précédent, mobile en surcouche | `atelier-canevas.mjs` |
+| 2 | D-157 | Navigation configurable : souris / trackpad, deux doigts, inversions, sensibilités, « Réinitialiser tout » ; 3D : molette maintenue = orbite, Maj = panoramique ; trackpad 2D et 3D | `navigation.test.ts`, `atelier-canevas.mjs` |
+| 3 | D-158 | Outils Panoramique, Zoom, Zoom étendu ; Rapporteur ; accrochage Parallèle ; raccourcis configurables (infobulles, palette, Instructeur) | `nouveau.test.ts`, `atelier-canevas.mjs` |
+| 4 | D-159 | Panneaux Affichage (masquer / réafficher, isolement, ombres d'affichage en 3D), Info modèle, Matériaux (lecture), arborescence dans le navigateur | `nouveau.test.ts`, `atelier-canevas.mjs` |
+| 5 | D-160 | Menu principal : enregistrer maintenant (Ctrl + S), exporter, importer, imprimer (feuilles en PDF), partager après enregistrement confirmé, ouvrir un autre projet | `nouveau.test.ts`, `atelier-canevas.mjs` (dont hors-ligne) |
+| 6 | D-161 | Qualité : catalogue de messages (français), focus des panneaux au clavier (ouverture, Échap, retour à l'icône), Entrée active le bouton focalisé hors tracé, cibles de 24 px au moins dans les panneaux et 44 px pour les outils et icônes au téléphone, recette desktop + mobile, axe-core | `nouveau.test.ts`, `atelier-canevas.mjs` |
+
+## Métriques de succès (étape 0)
+
+En disposition Canevas, sur desktop (1440 × 900) et téléphone émulé (390 × 844, tactile) : ouvrir le plan, choisir
+un outil, tracer avec une valeur saisie (mur de 5,00 m exact), naviguer (molette, trackpad, 3D), ouvrir un panneau sans
+redimensionner le dessin, enregistrer (Ctrl + S et menu) — recette `atelier-canevas.mjs` verte ; recettes existantes
+vertes (`parcours-scenario`, `atelier-nouveau`, `atelier-documents`, `atelier-echanges`, `atelier-versions`,
+`atelier-automatisation`, `atelier-complements`) ; aucune violation axe-core critique ou sérieuse (desktop et mobile).
+
+Performance : le moteur 3D reste chargé à la demande (morceau `scene3d` séparé) ; le zoom étendu en 3D l'importe
+dynamiquement. Les mesures indicatives du scénario de bout en bout (ouverture de l'Atelier, rechargement) restent
+publiées par `parcours-scenario.mjs`.
+
+## Écarts déclarés (décisions du maître d'ouvrage ou données à spécifier)
+
+- **Interface anglaise** : non livrée — `AGENTS.md` impose une application en français. Le catalogue `messages.ts`
+  regroupe les libellés de la couche d'ergonomie ; ouvrir une autre langue est une décision à prendre.
+- **Matériaux peints sur une face** (pot de peinture, création de matériaux) : non livrés — ce serait une nouvelle
+  donnée du modèle typé à spécifier ; le panneau Matériaux lit les compositions de murs (D-026).
+- **Ombres** : option d'affichage (lumière de direction fixe), **pas** une étude d'ensoleillement : orientation, date
+  et heure non évaluées (aucune donnée géographique supposée).
+- **Retourner / coque extérieure / suis-moi complet** : opérations de solides qui dépendent du noyau OCCT, dont la
+  licence relève de la section 10.1 du cahier des charges (décision ouverte).
+- **Accrochage Parallèle** désactivé par défaut (comme Proche) pour ne pas changer les tracés existants ; il s'active
+  dans le menu Accrochages.
