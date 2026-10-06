@@ -34,3 +34,10 @@ export function affecterTouche(perso: Record<string, string>, outilId: string, t
   if (t !== (defaut ?? "")) suivant[outilId] = t;
   return suivant;
 }
+
+/** Libellé lisible d'une touche (lettre en capitale, « Suppr » pour Delete). */
+export function libelleTouche(t: string | null): string | null {
+  if (!t) return null;
+  if (t.toLowerCase() === "delete") return "Suppr";
+  return t.length === 1 ? t.toUpperCase() : t;
+}

@@ -29,7 +29,8 @@ import { segmentsDuNiveau } from "./plan2d/accrochage";
 import { saisie, terminer, type ResultatClic } from "./plan2d/outils-2d";
 import { CadrePanneau, ColonnePanneaux, Instructeur } from "./panneaux/Canevas";
 import { ChoixPeripherique, ReglagesNavigationPanneau } from "./panneaux/Navigation";
-import { outilDeTouche } from "./raccourcis";
+import { RaccourcisPanneau } from "./panneaux/Raccourcis";
+import { libelleTouche, outilDeTouche, raccourciDe } from "./raccourcis";
 import { cadrerNiveau, Plan2D } from "./plan2d/Plan2D";
 import "./atelier-nouveau.css";
 
@@ -213,6 +214,11 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
     [readOnly, ui.niveauId, ui.selection, etat.objets],
   );
 
+  const cadrer = useCallback(() => {
+    const r = zone.current?.getBoundingClientRect();
+    etatUi.set({ vue: cadrerNiveau(etat, ui.niveauId, r?.width ?? 800, r?.height ?? 600) });
+  }, [etat, ui.niveauId]);
+
   const choisir = useCallback(
     (o: Outil) => {
       const raison = disponibilite(o);
@@ -229,6 +235,13 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         else void executer(r.commandes, r.label, o.id !== "supprimer");
         return;
       }
+      if (o.id === "zoom-etendu") {
+        // Zoom étendu (D-158) : tout le niveau dans la vue (en 3D, le cadrage de la scène).
+        etatUi.set({ paletteOuverte: false });
+        if (etatUi.get().mode === "3d") void import("./vue3d/scene3d").then((m) => m.cadrerVue3D());
+        else cadrer();
+        return;
+      }
       if (o.id === "calques") {
         etatUi.set({ paletteOuverte: false, panneauMobile: "objets" });
         return;
@@ -237,10 +250,10 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
       // Pousser / tirer se fait en 3D ; les outils de tracé, en plan.
       if (o.id === "pousser") etatUi.set({ mode: "3d" });
       // Mesurer reste en 3D quand on y est (mesure entre deux points des surfaces, D-048).
-      else if (o.famille === "creer" || o.famille === "documenter" || (o.id === "mesurer" && etatUi.get().mode !== "3d")) etatUi.set({ mode: "2d" });
+      else if (o.famille === "creer" || o.famille === "documenter" || o.id === "rapporteur" || o.id === "naviguer" || o.id === "zoom" || (o.id === "mesurer" && etatUi.get().mode !== "3d")) etatUi.set({ mode: "2d" });
       if (window.matchMedia?.("(max-width: 760px)").matches) etatUi.set({ panneauMobile: "travail" });
     },
-    [disponibilite, etat, executer],
+    [disponibilite, etat, executer, cadrer],
   );
 
   const centrerSur = useCallback(
@@ -260,11 +273,6 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
     },
     [etat, ui.niveauId, ui.vue],
   );
-
-  const cadrer = useCallback(() => {
-    const r = zone.current?.getBoundingClientRect();
-    etatUi.set({ vue: cadrerNiveau(etat, ui.niveauId, r?.width ?? 800, r?.height ?? 600) });
-  }, [etat, ui.niveauId]);
 
   const finir = useCallback(() => {
     const u = etatUi.get();
@@ -455,7 +463,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   }
 
   return (
-    <div className={`atelier-n panneau-${ui.panneauMobile}${ui.mode === "documents" ? " mode-documents" : ""} disposition-${ui.disposition}${ui.outilsReplies ? " outils-replies" : ""}`} data-affichage={ui.affichage} data-panneau={ui.disposition === "canevas" ? (ui.panneauFlottant ?? "") : undefined}>
+    <div className={`atelier-n panneau-${ui.panneauMobile}${ui.mode === "documents" ? " mode-documents" : ""} disposition-${ui.disposition}${ui.outilsReplies ? " outils-replies" : ""}`} data-affichage={ui.affichage} data-outil-actif={ui.outil} data-panneau={ui.disposition === "canevas" ? (ui.panneauFlottant ?? "") : undefined}>
       <header className="atelier-n-barre" aria-label="Barre de l'Atelier">
         <label className="barre-niveau">
           <span className="sr-only">Niveau actif</span>
@@ -487,10 +495,10 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         <details className="barre-accrochages">
           <summary>Accrochages</summary>
           <div className="accrochages-liste">
-            {(["extremite", "milieu", "centre", "perpendiculaire", "intersection", "proche", "orthogonal", "grille"] as const).map((k) => (
+            {(["extremite", "milieu", "centre", "perpendiculaire", "intersection", "proche", "parallele", "orthogonal", "grille"] as const).map((k) => (
               <label key={k}>
                 <input type="checkbox" checked={ui.accrochages[k] === true} data-accrochage={k} onChange={(e) => etatUi.set((u) => ({ accrochages: { ...u.accrochages, [k]: e.target.checked } }))} />
-                {{ extremite: "Extrémité", milieu: "Milieu", centre: "Centre", perpendiculaire: "Perpendiculaire et tangente", intersection: "Intersection", proche: "Proche (tracés et faces de murs)", orthogonal: `Polaire (${ui.accrochages.pasPolaire ?? 45}°)`, grille: "Grille" }[k]}
+                {{ extremite: "Extrémité", milieu: "Milieu", centre: "Centre", perpendiculaire: "Perpendiculaire et tangente", intersection: "Intersection", proche: "Proche (tracés et faces de murs)", parallele: "Parallèle (arête survolée)", orthogonal: `Polaire (${ui.accrochages.pasPolaire ?? 45}°)`, grille: "Grille" }[k]}
               </label>
             ))}
             <label>
@@ -640,14 +648,14 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           <span aria-hidden="true">↖</span> <span className="outil-libelle">Sélection</span>
         </button>
         {outilsBarre.favoris.filter((o) => o.id !== "selection").map((o) => (
-          <BoutonOutil key={o.id} o={o} actif={ui.outil === o.id} raison={disponibilite(o)} onChoisir={choisir} />
+          <BoutonOutil key={o.id} o={o} touche={libelleTouche(raccourciDe(o, ui.raccourcis))} actif={ui.outil === o.id} raison={disponibilite(o)} onChoisir={choisir} />
         ))}
         {ui.disposition !== "canevas" &&
           outilsBarre.parFamille.map(([f, liste]) => (
             <details key={f} className="outils-famille">
               <summary>{FAMILLES[f]}</summary>
               <div className="outils-famille-liste">
-                {liste.map((o) => <BoutonOutil key={o.id} o={o} actif={ui.outil === o.id} raison={disponibilite(o)} onChoisir={choisir} />)}
+                {liste.map((o) => <BoutonOutil key={o.id} o={o} touche={libelleTouche(raccourciDe(o, ui.raccourcis))} actif={ui.outil === o.id} raison={disponibilite(o)} onChoisir={choisir} />)}
               </div>
             </details>
           ))}
@@ -663,7 +671,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
             <section key={f} aria-label={FAMILLES[f]}>
               <h4>{FAMILLES[f]}</h4>
               <div className="canevas-grille">
-                {liste.map((o) => <BoutonOutil key={o.id} o={o} actif={ui.outil === o.id} raison={disponibilite(o)} onChoisir={(x) => { setEtendus(false); choisir(x); }} />)}
+                {liste.map((o) => <BoutonOutil key={o.id} o={o} touche={libelleTouche(raccourciDe(o, ui.raccourcis))} actif={ui.outil === o.id} raison={disponibilite(o)} onChoisir={(x) => { setEtendus(false); choisir(x); }} />)}
               </div>
             </section>
           ))}
@@ -742,6 +750,11 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
               <ReglagesNavigationPanneau ui={ui} />
             </CadrePanneau>
           )}
+          {ui.panneauFlottant === "raccourcis" && (
+            <CadrePanneau id="raccourcis" titre="Raccourcis">
+              <RaccourcisPanneau ui={ui} />
+            </CadrePanneau>
+          )}
         </>
       )}
       <footer className="atelier-n-etat" aria-live="polite">
@@ -778,14 +791,15 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   );
 }
 
-function BoutonOutil({ o, actif, raison, onChoisir }: { o: Outil; actif: boolean; raison: string | null; onChoisir: (o: Outil) => void }) {
+function BoutonOutil({ o, touche, actif, raison, onChoisir }: { o: Outil; touche: string | null; actif: boolean; raison: string | null; onChoisir: (o: Outil) => void }) {
   return (
     <button
       type="button"
       className={`outil${actif ? " est-actif" : ""}${raison ? " est-indisponible" : ""}`}
       aria-pressed={actif}
       aria-disabled={!!raison}
-      title={`${o.libelle}${o.raccourci ? ` (${o.raccourci.length === 1 ? o.raccourci.toUpperCase() : o.raccourci})` : ""} — ${raison ?? o.aide}`}
+      title={`${o.libelle}${touche ? ` (${touche})` : ""} — ${raison ?? o.aide}`}
+      data-raccourci={touche ?? undefined}
       onClick={() => onChoisir(o)}
     >
       <span aria-hidden="true">{o.picto}</span> <span className="outil-libelle">{o.libelle}</span>

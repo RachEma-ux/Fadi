@@ -548,6 +548,15 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       const angle = (Math.atan2(point.y - a.y, point.x - a.x) * 180) / Math.PI;
       return { commandes: [], label: "", pointsEnCours: [], aide: `Distance ${fmt(d)} m · dx ${fmt(point.x - a.x)} · dy ${fmt(point.y - a.y)} · ${fmt(angle)}°`, mesure: `${fmt(d)} m` };
     }
+    case "rapporteur": {
+      // Rapporteur (D-158) : sommet, référence, second côté ; angle en sens direct depuis la référence.
+      if (pts.length === 0) return attendre([point], "Cliquez un point du premier côté (référence).");
+      if (pts.length === 1) {
+        if (distance(pts[0]!, point) < 1e-9) return attendre(pts, "Le premier côté doit partir du sommet : cliquez un autre point.");
+        return attendre([...pts, point], "Cliquez le second côté, ou tapez l'angle (degrés) puis Entrée.");
+      }
+      return rapporteur(pts[0]!, pts[1]!, point, base.niveauId, options.alt === true);
+    }
     case "cotation": {
       if (pts.length === 0) return attendre([point], "Cliquez le second point de la cote.");
       if (pts.length === 1) return attendre([...pts, point], "Cliquez la position de la ligne de cote.");
@@ -628,6 +637,26 @@ export function fermerContour(outil: string, pts: Point2[], ui: EtatUi, niveauId
 }
 
 /** Entrée sans fermeture : les outils « chaîne » terminent leur tracé (polyligne ouverte, courbe). */
+/** Angle en degrés (sens direct, de −180 à 180) du côté `sommet → b` mesuré depuis `sommet → reference`. */
+export function angleRapporteur(sommet: Point2, reference: Point2, b: Point2): number {
+  const a1 = Math.atan2(reference.y - sommet.y, reference.x - sommet.x);
+  const a2 = Math.atan2(b.y - sommet.y, b.x - sommet.x);
+  let d = ((a2 - a1) * 180) / Math.PI;
+  while (d > 180) d -= 360;
+  while (d <= -180) d += 360;
+  return Math.round(d * 1e6) / 1e6;
+}
+
+function rapporteur(sommet: Point2, reference: Point2, b: Point2, niveauId: string | null, seulementMesurer: boolean): ResultatClic {
+  const angle = angleRapporteur(sommet, reference, b);
+  const texte = `Angle ${fmt(angle)}° (${fmt(Math.abs(angle))}° ${angle >= 0 ? "dans le sens direct" : "dans le sens horaire"} depuis la référence)`;
+  if (seulementMesurer || !niveauId || distance(sommet, b) < 1e-9) return { commandes: [], label: "", pointsEnCours: [], aide: texte, mesure: `${fmt(angle)}°` };
+  const l = Math.max(distance(sommet, b), distance(sommet, reference));
+  const u = { x: (b.x - sommet.x) / distance(sommet, b), y: (b.y - sommet.y) / distance(sommet, b) };
+  const fin = pt(Math.round((sommet.x + u.x * l) * 1e9) / 1e9, Math.round((sommet.y + u.y * l) * 1e9) / 1e9);
+  return { commandes: [{ type: "esquisse.construction", params: { niveauId, points: [sommet, fin] } }], label: `Ligne de construction à ${fmt(angle)}°`, pointsEnCours: [], aide: `${texte} ; ligne de construction posée.`, mesure: `${fmt(angle)}°` };
+}
+
 export function terminer(outil: string, pts: Point2[], ui: EtatUi, niveauId: string | null): ResultatClic {
   if (!niveauId) return attendre([], "");
   if ((outil === "polyligne" || outil === "spline" || outil === "garde-corps") && pts.length >= 2) return fermerContour(outil, pts, ui, niveauId);
@@ -687,6 +716,14 @@ export function saisie(outil: string, texte: string, pts: Point2[], curseur: Poi
     const angle = Number(t);
     if (!Number.isFinite(angle)) return null;
     return emettre([{ type: "transformer.tourner", params: { centre: dernier, angle: { value: angle, unit: "deg" } }, cibles: ui.selection }], `Tourner ${angle}°`);
+  }
+  if (outil === "rapporteur" && pts.length === 2) {
+    const angle = Number(t);
+    if (!Number.isFinite(angle)) return null;
+    const [s0, r0] = [pts[0]!, pts[1]!];
+    const a = Math.atan2(r0.y - s0.y, r0.x - s0.x) + (angle * Math.PI) / 180;
+    const l = distance(s0, r0);
+    return rapporteur(s0, r0, pt(Math.round((s0.x + l * Math.cos(a)) * 1e9) / 1e9, Math.round((s0.y + l * Math.sin(a)) * 1e9) / 1e9), ui.niveauId, false);
   }
   if (outil === "decaler") return null; // la distance est lue depuis les paramètres de l'outil
   if (!dernier) return null;

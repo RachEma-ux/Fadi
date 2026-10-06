@@ -2569,3 +2569,23 @@
 .canevas-peripherique select {
   min-height: 2rem;
 }
+
+/* Raccourcis configurables (D-158). */
+.raccourcis-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.4rem 0;
+}
+.raccourcis-table th,
+.raccourcis-table td {
+  text-align: left;
+  font-weight: normal;
+  padding: 0.15rem 0.25rem;
+  border-bottom: 1px solid var(--bordure, #e2e2e2);
+}
+.raccourcis-table .raccourci-touche {
+  width: 4.5rem;
+  min-height: 2rem;
+  text-align: center;
+  text-transform: none;
+}

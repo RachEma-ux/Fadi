@@ -25,6 +25,10 @@ export interface Accrochages {
   proche?: boolean;
   /** Pas du repérage polaire, en degrés (D-071) ; absent des préférences anciennes : 45°. */
   pasPolaire?: number;
+  /** Parallèle (D-158) : pendant un tracé, la direction parallèle à la dernière arête survolée ; absent : désactivé. */
+  parallele?: boolean;
+  /** Arête de référence du parallèle (posée par le plan, jamais enregistrée). */
+  referenceParallele?: { a: Point2; b: Point2; objetId: string } | null;
   /** Orientation du repère de saisie (D-091), en degrés, posée par l'état d'interface ; absente : repère global. */
   angleRepere?: number;
 }

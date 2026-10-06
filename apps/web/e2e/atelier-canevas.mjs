@@ -2,7 +2,7 @@
  * Recette de la disposition « Canevas » (D-156 et suivantes ; ergonomie de référence SketchUp pour le Web) sur
  * desktop et en émulation mobile : canevas plein écran, barre d'outils flottante, outils étendus, panneaux flottants
  * exclusifs sans redimensionner le dessin, Instructeur, champ Mesures, Échap vers l'outil précédent ; réglages de
- * navigation (D-157) ; axe-core.
+ * navigation (D-157) ; outils de vue, rapporteur et raccourcis (D-158) ; axe-core.
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-canevas.mjs
  */
@@ -183,6 +183,77 @@ check("3D souris : Maj + molette maintenue = panoramique", ecart(v1.cible, v3.ci
 await page.screenshot({ path: `${OUT}/canevas-navigation.png` });
 await page.locator('.barre-mode button:has-text("Plan")').click();
 await page.waitForSelector(".plan2d .plan-objets [data-objet]");
+
+// 5 ter. Outils de vue et de saisie (D-158) : raccourcis configurables, Rapporteur, Zoom, Zoom étendu, Panoramique.
+await page.locator('[data-panneau-icone="raccourcis"]').click();
+await page.locator("[data-raccourcis-filtre]").fill("rapp");
+await page.locator('[data-raccourci-outil="rapporteur"]').press("j");
+check("raccourci J affecté au Rapporteur", (await page.locator('[data-raccourci-outil="rapporteur"]').inputValue()) === "J");
+await page.locator("[data-raccourcis-filtre]").fill("");
+await page.locator('[data-raccourci-outil="mesurer"]').press("j");
+check("touche déjà prise : retirée de l'autre outil et dit à l'écran", ((await page.locator("[data-raccourcis-message]").textContent()) ?? "").includes("retirée de Rapporteur") && (await page.locator('[data-raccourci-outil="rapporteur"]').inputValue()) === "");
+await page.locator('[data-raccourci-outil="mesurer"]').press("Backspace");
+await page.locator('[data-raccourci-outil="rapporteur"]').press("j");
+await page.locator('[data-raccourci-outil="mesurer"]').press("1");
+check("touche réservée refusée avec son motif", ((await page.locator("[data-raccourcis-message]").textContent()) ?? "").startsWith("Touche refusée"));
+await page.locator('[data-panneau-icone="raccourcis"]').click();
+await page.mouse.click(c2.x, c2.y - 200);
+await page.keyboard.press("Escape");
+await page.keyboard.press("j");
+const outilActif = () => page.locator(".atelier-n").getAttribute("data-outil-actif");
+check("la touche personnalisée choisit l'outil (Rapporteur)", (await outilActif()) === "rapporteur");
+const constructions = async () => Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "esquisse" && o.params.forme === "construction").length;
+const avantConstr = await constructions();
+await page.mouse.click(c2.x - 150, c2.y + 120);
+await page.mouse.click(c2.x - 50, c2.y + 120);
+await page.mouse.move(c2.x - 100, c2.y + 60);
+await page.keyboard.type("30");
+await page.keyboard.press("Enter");
+let apresConstr = avantConstr;
+for (let k = 0; k < 20 && apresConstr === avantConstr; k++) {
+  apresConstr = await constructions();
+  if (apresConstr === avantConstr) await page.waitForTimeout(500);
+}
+const etatBas = (await page.locator(".atelier-n-etat").textContent()) ?? "";
+// La référence suit les accrochages (pas forcément horizontale) : l'angle affiché est celui saisi, la ligne est posée.
+check("Rapporteur : angle saisi (30°) → angle affiché et ligne de construction posée", apresConstr === avantConstr + 1 && etatBas.includes("30,00°"), `${avantConstr} → ${apresConstr}`);
+await page.keyboard.press("Escape");
+const ouvrirPalette = async (mot) => { await page.keyboard.press("Control+k"); await page.keyboard.type(mot); await page.keyboard.press("Enter"); };
+await ouvrirPalette("loupe");
+check("outil Zoom choisi depuis la palette", (await outilActif()) === "zoom");
+let d0 = await dessin();
+await page.mouse.click(c2.x, c2.y);
+let d1 = await dessin();
+check("Zoom : clic = rapprocher × 2", Math.abs(d1.width / d0.width - 2) < 0.1, (d1.width / d0.width).toFixed(3));
+await page.keyboard.down("Shift");
+await page.mouse.click(c2.x, c2.y);
+await page.keyboard.up("Shift");
+d1 = await dessin();
+check("Zoom : Maj + clic = éloigner", Math.abs(d1.width / d0.width - 1) < 0.05, (d1.width / d0.width).toFixed(3));
+await page.mouse.move(c2.x - 60, c2.y - 40);
+await page.mouse.down();
+await page.mouse.move(c2.x, c2.y, { steps: 4 });
+await page.mouse.move(c2.x + 60, c2.y + 40, { steps: 4 });
+await page.mouse.up();
+d1 = await dessin();
+check("Zoom : glisser un cadre = zoom sur le cadre", d1.width / d0.width > 3, (d1.width / d0.width).toFixed(2));
+await ouvrirPalette("zoom extents");
+await page.waitForTimeout(150);
+d1 = await dessin();
+const zoneTravail = await boite(".plan2d");
+check("Zoom étendu : tout le niveau tient dans la vue", d1.width <= zoneTravail.width + 1 && d1.height <= zoneTravail.height + 1 && d1.width > zoneTravail.width * 0.3, `${Math.round(d1.width)}×${Math.round(d1.height)}`);
+await page.keyboard.press("h");
+check("Panoramique : touche H", (await outilActif()) === "naviguer");
+d0 = await dessin();
+await page.mouse.move(c2.x, c2.y);
+await page.mouse.down();
+await page.mouse.move(c2.x + 80, c2.y + 30, { steps: 5 });
+await page.mouse.up();
+d1 = await dessin();
+check("Panoramique : glisser déplace la vue sans zoomer", Math.abs(d1.x - d0.x - 80) < 2 && Math.abs(d1.y - d0.y - 30) < 2 && Math.abs(d1.width - d0.width) < 1);
+check("infobulle d'outil : raccourci affiché (Mur, M)", ((await page.locator('.atelier-n-outils .outil:has-text("Mur")').first().getAttribute("title")) ?? "").startsWith("Mur (M)"));
+await page.keyboard.press("Escape");
+await page.evaluate(() => { const p = JSON.parse(localStorage.getItem("fadi.atelier.prefs") ?? "{}"); return p.raccourcis; }).then((r) => check("raccourcis enregistrés sur l'appareil", r?.rapporteur === "j", JSON.stringify(r)));
 await axe("disposition Canevas (desktop)");
 
 // 6. Mobile (390 × 844, tactile) : panneau en surcouche, barre d'outils toujours accessible.

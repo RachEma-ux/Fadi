@@ -103,6 +103,11 @@ interface Moteur {
 
 let sceneActive: Scene3D | null = null;
 
+/** Cadre la scène 3D affichée (zoom étendu, D-158). */
+export function cadrerVue3D(): void {
+  sceneActive?.cadrer();
+}
+
 /** Image PNG de la vue 3D affichée (export « vue »), ou null sans vue 3D ouverte. */
 export function captureVue3D(): Promise<Blob | null> {
   return sceneActive ? sceneActive.capturer() : Promise.resolve(null);

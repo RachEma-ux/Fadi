@@ -87,7 +87,7 @@ Chaque tranche est additive, livrée seule, avec ses tests, et vérifie que les 
 2. **D-157 — Navigation** (livrée) : réglages (périphérique souris / trackpad, geste deux doigts, inversions, sensibilités,
    Réinitialiser) ; trackpad 2D (deux doigts = panoramique, pincement = zoom) ; 3D : molette maintenue = orbite,
    Maj = panoramique ; tactile deux doigts orbite ou panoramique.
-3. **D-158 — Outils de vue et saisie** : outils Panoramique et Zoom, zoom étendu, rapporteur, accrochage parallèle,
+3. **D-158 — Outils de vue et saisie** (livrée) : outils Panoramique et Zoom, zoom étendu, rapporteur, accrochage parallèle,
    raccourcis configurables (infobulles, palette).
 4. **D-159 — Panneaux** : Instructeur (opération en étapes, astuces), Affichage (masquer la sélection, réafficher
    tout / le dernier), Info modèle, Matériaux (lecture), Ombres (option d'affichage 3D), arbre de l'Outliner.

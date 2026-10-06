@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { FAMILLES, rechercherOutils, type Outil } from "../outils";
+import { libelleTouche, raccourciDe } from "../raccourcis";
 
 export interface PropsPalette {
   ui: EtatUi;
@@ -71,7 +72,7 @@ export function Palette({ ui, disponibilite, onChoisir }: PropsPalette) {
                   <strong>{o.libelle}</strong> <span className="palette-famille">{FAMILLES[o.famille]}</span>
                   <span className="palette-aide">{raison ?? o.aide}</span>
                 </span>
-                {o.raccourci && <kbd>{o.raccourci.length === 1 ? o.raccourci.toUpperCase() : o.raccourci}</kbd>}
+                {libelleTouche(raccourciDe(o, ui.raccourcis)) && <kbd>{libelleTouche(raccourciDe(o, ui.raccourcis))}</kbd>}
                 <button
                   type="button"
                   className="palette-favori"

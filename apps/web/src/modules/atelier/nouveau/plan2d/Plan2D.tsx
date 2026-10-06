@@ -7,9 +7,9 @@ import { facteurPan, interpreterMolette } from "../navigation";
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { espacesTraversant, tolerancesAdaptatives, abscissesIntersections, effacerPortion, aireNette, centroide, cleTremie, pointDansPolygone, tremiesRetenues, cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pointsSpline, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
-import { accrocher, avecExternes, objetSousPointeur, PREFIXE_EXTERNE, segmentsDuNiveau, type Accroche } from "./accrochage";
+import { accrocher, areteSurvolee, avecExternes, objetSousPointeur, PREFIXE_EXTERNE, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
-import { chemin, projecteur } from "./projecteur";
+import { cadrer as cadrerVue, chemin, projecteur } from "./projecteur";
 import { Croisements2D, Definitions2D, Objet2D } from "./rendu";
 
 export interface PropsPlan2D {
@@ -28,7 +28,7 @@ export interface PropsPlan2D {
 /** Ordre de dessin : surfaces d'abord, puis structure, puis annotations. */
 const ORDRE: Record<string, number> = { "reference-plan": 0, zone: 1, espace: 2, dalle: 3, toiture: 3, piece: 4, solide: 5, esquisse: 6, escalier: 7, mur: 8, poteau: 9, porte: 10, fenetre: 10, ouverture: 10, cotation: 11, texte: 12, etiquette: 12, "bloc-occurrence": 13 };
 
-const LIBELLE_ACCROCHE: Record<string, string> = { extremite: "Extrémité", milieu: "Milieu", centre: "Centre", quadrant: "Quadrant", perpendiculaire: "Perpendiculaire", tangente: "Tangente", intersection: "Intersection", proche: "Proche", orthogonal: "Orthogonal", grille: "Grille", libre: "" };
+const LIBELLE_ACCROCHE: Record<string, string> = { extremite: "Extrémité", milieu: "Milieu", centre: "Centre", quadrant: "Quadrant", perpendiculaire: "Perpendiculaire", tangente: "Tangente", intersection: "Intersection", proche: "Proche", parallele: "Parallèle", orthogonal: "Orthogonal", grille: "Grille", libre: "" };
 
 const OUTILS_CONTOUR = new Set(["dalle", "toiture", "zone", "espace", "solide", "polygone", "hachure", "polyligne", "spline", "garde-corps", "escalier-volees", "escalier-balance"]);
 const OUTILS_SEGMENT = new Set(["mur", "escalier", "ligne", "construction", "cotation", "mesurer", "deplacer", "copier", "miroir", "etirer", "rectangle", "cercle", "arc", "tourner", "echelle"]);
@@ -41,7 +41,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const [taille, setTaille] = useState({ w: 800, h: 600 });
   const [accroche, setAccroche] = useState<Accroche | null>(null);
   const [cadre, setCadre] = useState<{ a: Point2; b: Point2 } | null>(null);
-  const glisse = useRef<{ mode: "pan" | "cadre" | "deplacer" | "lasso" | "trace" | "manip" | "fini" | "visee" | "tangente"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean; poignee?: Poignee; tangente?: number } | null>(null);
+  const glisse = useRef<{ mode: "pan" | "zoom" | "cadre" | "deplacer" | "lasso" | "trace" | "manip" | "fini" | "visee" | "tangente"; x: number; y: number; vue: EtatUi["vue"]; depart: Point2; bouge: boolean; poignee?: Poignee; tangente?: number } | null>(null);
   // Manipulateur 2D (D-070, DA-02-17) : aperçu du glissement d'une poignée ; une seule commande au relâchement.
   const [manip, setManip] = useState<ApercuManip | null>(null);
   // Loupe de précision au doigt (D-085) : un appui tenu sans bouger passe en visée ; la loupe montre le point accroché.
@@ -74,6 +74,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const lassoInstants = useRef<number[]>([]);
   const [decalage, setDecalage] = useState<{ dx: number; dy: number; accroche: Accroche } | null>(null);
   const pointeurs = useRef(new Map<number, { x: number; y: number }>());
+  const refParallele = useRef<{ a: Point2; b: Point2; objetId: string } | null>(null);
   const pincement = useRef<{ d: number; vue: EtatUi["vue"]; cx: number; cy: number } | null>(null);
   const espace = useRef(false);
   const cadreInitial = useRef<string | null>(null);
@@ -218,7 +219,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       return;
     }
     const p = pr.depuis(sx, sy);
-    if (g?.mode === "cadre") {
+    if (g?.mode === "cadre" || g?.mode === "zoom") {
       g.bouge = g.bouge || Math.hypot(sx - g.x, sy - g.y) > 4;
       if (g.bouge) setCadre({ a: g.depart, b: p });
       return;
@@ -275,7 +276,13 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       if (i !== survolPlancher) setSurvolPlancher(i);
     }
     const depuis = ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null;
-    const a = accrocher(p, cache, accs, rayon, depuis);
+    // Parallèle (D-158) : l'arête survolée pendant le tracé devient la référence.
+    if (!depuis || !accs.parallele) refParallele.current = null;
+    else {
+      const ar = areteSurvolee(p, cache, rayon);
+      if (ar) refParallele.current = ar;
+    }
+    const a = accrocher(p, cache, refParallele.current ? { ...accs, referenceParallele: refParallele.current } : accs, rayon, depuis);
     setAccroche(a);
     etatUi.set({ curseur: a.point });
   }
@@ -308,6 +315,11 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       return;
     }
     if (e.button !== 0) return;
+    // Outil Zoom (D-158) : clic = rapprocher, Maj / Alt + clic = éloigner, glisser = zoom sur le cadre.
+    if (ui.outil === "zoom") {
+      glisse.current = { mode: "zoom", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
+      return;
+    }
     // Main levée (D-067, DA-01-06) : le tracé suit le pointeur (souris, stylet ou doigt) jusqu'au relâchement.
     if ((ui.outil === "main-levee" || ui.outil === "gomme") && !readOnly) {
       lassoPoints.current = [p];
@@ -460,6 +472,17 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       else if (!e.shiftKey) etatUi.selectionner([]);
       return;
     }
+    if (g?.mode === "zoom") {
+      setCadre(null);
+      if (g.bouge && Math.abs(sx - g.x) > 4 && Math.abs(sy - g.y) > 4) {
+        const v = cadrerVue([g.depart, p], taille.w, taille.h, 8);
+        etatUi.set({ vue: { ...v, echelle: clampEchelle(v.echelle) } });
+      } else if (!g.bouge) {
+        const echelle = clampEchelle(ui.vue.echelle * (e.shiftKey || e.altKey ? 0.5 : 2));
+        etatUi.set({ vue: { echelle, cx: p.x - (sx - taille.w / 2) / echelle, cy: p.y + (sy - taille.h / 2) / echelle } });
+      }
+      return;
+    }
     if (g?.mode === "cadre") {
       setCadre(null);
       if (g.bouge) {
@@ -485,7 +508,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     }
     // Clic d'outil : point accroché (au doigt, l'accroche est recalculée au point touché).
     const depuis = ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null;
-    const a = e.pointerType === "touch" || !accroche ? accrocher(p, cache, accs, rayon * (e.pointerType === "touch" ? 2 : 1), depuis) : accroche;
+    const a = e.pointerType === "touch" || !accroche ? accrocher(p, cache, refParallele.current && depuis ? { ...accs, referenceParallele: refParallele.current } : accs, rayon * (e.pointerType === "touch" ? 2 : 1), depuis) : accroche;
     const sous = objetSousPointeur(p, cache, etat, ui.niveauId, rayon)?.objetId ?? null;
     // Points accrochés aux traits d'une référence externe (D-153) : la cote posée dessus suit la référence.
     if (a.objetId?.startsWith(PREFIXE_EXTERNE)) pointsExternes.current.set(`${a.point.x};${a.point.y}`, a.objetId.slice(PREFIXE_EXTERNE.length));
@@ -776,6 +799,7 @@ function MarqueAccroche({ a, pr }: { a: Accroche; pr: ReturnType<typeof projecte
     a.type === "intersection" ? <path d={`M${s.x - r} ${s.y - r} L${s.x + r} ${s.y + r} M${s.x + r} ${s.y - r} L${s.x - r} ${s.y + r}`} /> :
     a.type === "perpendiculaire" ? <path d={`M${s.x - r} ${s.y + r} L${s.x + r} ${s.y + r} M${s.x} ${s.y + r} L${s.x} ${s.y - r}`} /> :
     a.type === "tangente" ? <g><circle cx={s.x} cy={s.y + r / 2} r={r / 2} /><path d={`M${s.x - r} ${s.y} L${s.x + r} ${s.y}`} /></g> :
+    a.type === "parallele" ? <path d={`M${s.x - r} ${s.y + r / 2} L${s.x + r / 2} ${s.y - r} M${s.x - r / 2} ${s.y + r} L${s.x + r} ${s.y - r / 2}`} /> :
     a.type === "proche" ? <path d={`M${s.x - r} ${s.y - r} L${s.x + r} ${s.y - r} L${s.x - r} ${s.y + r} L${s.x + r} ${s.y + r} Z`} /> :
     <circle cx={s.x} cy={s.y} r={3} />;
   return (

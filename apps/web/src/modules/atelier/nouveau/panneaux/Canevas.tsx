@@ -7,7 +7,7 @@
 import type { ReactNode } from "react";
 import { etatUi, type EtatUi, type PanneauFlottant } from "../etat-ui";
 import { OUTILS_PAR_ID, type Outil } from "../outils";
-import { raccourciDe } from "../raccourcis";
+import { libelleTouche, raccourciDe } from "../raccourcis";
 
 /** Panneaux proposés dans la colonne, dans l'ordre (étiquette, pictogramme, raccourci d'accessibilité). */
 export const PANNEAUX_CANEVAS: { id: PanneauFlottant; libelle: string; picto: string }[] = [
@@ -17,6 +17,7 @@ export const PANNEAUX_CANEVAS: { id: PanneauFlottant; libelle: string; picto: st
   { id: "modifications", libelle: "Modifications", picto: "⚑" },
   { id: "versions", libelle: "Versions", picto: "⧉" },
   { id: "navigation", libelle: "Navigation", picto: "✥" },
+  { id: "raccourcis", libelle: "Raccourcis", picto: "⌨" },
 ];
 
 export function ColonnePanneaux({ ui, alertes, panneaux = PANNEAUX_CANEVAS }: { ui: EtatUi; alertes: number; panneaux?: { id: PanneauFlottant; libelle: string; picto: string }[] }) {
@@ -60,7 +61,7 @@ export function etapesOutil(o: Outil): string[] {
 export function Instructeur({ ui }: { ui: EtatUi }) {
   const o = OUTILS_PAR_ID[ui.outil];
   if (!o) return <p className="inspecteur-aide">Aucun outil actif.</p>;
-  const touche = raccourciDe(o, ui.raccourcis);
+  const touche = libelleTouche(raccourciDe(o, ui.raccourcis));
   return (
     <div className="instructeur" data-instructeur={o.id}>
       <p className="instructeur-outil">
@@ -71,7 +72,7 @@ export function Instructeur({ ui }: { ui: EtatUi }) {
       <h4>Astuces</h4>
       <ul>
         <li>Exemple : {o.exemple}</li>
-        {touche && <li>Raccourci : <kbd>{touche.toUpperCase()}</kbd></li>}
+        {touche && <li>Raccourci : <kbd>{touche}</kbd></li>}
         <li>Valeur exacte : tapez-la pendant le tracé dans le champ Mesures (longueur, « dx;dy », facteur ou angle), puis Entrée.</li>
         <li>Échap : annule le tracé en cours, puis revient à l'outil précédent.</li>
         {o.condition && <li>Disponible {o.condition === "niveau" ? "quand un niveau est actif" : o.condition === "selection" ? "avec une sélection" : o.condition === "selection-mur" ? "avec un mur sélectionné" : "avec une ligne sélectionnée"}.</li>}

@@ -230,3 +230,4 @@ Profils verticaux extrudés (`profils-verticaux.test.ts`, e2e, D-154).
 Contraintes verticales (`poses.test.ts`, e2e, D-155).
 Disposition Canevas — ergonomie SketchUp Web, tranche 1 (`atelier-canevas.mjs`, D-156).
 Navigation configurable — tranche 2 (`navigation.test.ts`, `atelier-canevas.mjs`, D-157).
+Outils de vue, rapporteur, parallèle, raccourcis configurables — tranche 3 (`nouveau.test.ts`, `atelier-canevas.mjs`, D-158).

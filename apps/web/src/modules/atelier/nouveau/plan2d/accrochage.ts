@@ -7,7 +7,7 @@ import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointsElli
 import { contoursArchitecture, pt, traitsBloc } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
-export type TypeAccroche = "extremite" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "tangente" | "intersection" | "proche" | "orthogonal" | "grille" | "libre";
+export type TypeAccroche = "extremite" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "tangente" | "intersection" | "proche" | "parallele" | "orthogonal" | "grille" | "libre";
 
 export interface Accroche {
   point: Point2;
@@ -206,6 +206,12 @@ export function accrocher(p: Point2, cache: ReturnType<typeof segmentsDuNiveau>,
     }
   }
   if (meilleur) return meilleur;
+  // Parallèle (D-158) : direction de l'arête de référence (survolée pendant le tracé), à moins d'un rayon de la droite.
+  const ref = options.parallele && depuis ? options.referenceParallele : null;
+  if (ref) {
+    const q = surParallele(p, depuis!, ref.a, ref.b, rayon);
+    if (q) return { point: q, type: "parallele", objetId: ref.objetId };
+  }
   if (options.orthogonal && depuis) {
     const dx = p.x - depuis.x;
     const dy = p.y - depuis.y;
@@ -225,6 +231,34 @@ export function accrocher(p: Point2, cache: ReturnType<typeof segmentsDuNiveau>,
   }
   if (options.grille) return { point: surGrille(p, options.pasGrille), type: "grille", objetId: null };
   return { point: p, type: "libre", objetId: null };
+}
+
+/** Projection de `p` sur la droite issue de `depuis` parallèle à [a, b], si `p` en est à moins de `rayon` (et assez loin de `depuis`). */
+export function surParallele(p: Point2, depuis: Point2, a: Point2, b: Point2, rayon: number): Point2 | null {
+  const l = Math.hypot(b.x - a.x, b.y - a.y);
+  if (l < 1e-9) return null;
+  const u = { x: (b.x - a.x) / l, y: (b.y - a.y) / l };
+  const v = { x: p.x - depuis.x, y: p.y - depuis.y };
+  const t = v.x * u.x + v.y * u.y;
+  const ecart = Math.abs(v.x * u.y - v.y * u.x);
+  if (ecart > rayon || Math.abs(t) < rayon * 2) return null;
+  return pt(Math.round((depuis.x + u.x * t) * 1e9) / 1e9, Math.round((depuis.y + u.y * t) * 1e9) / 1e9);
+}
+
+/** Arête droite la plus proche du pointeur (à moins de `rayon`), candidate pour la référence du parallèle. */
+export function areteSurvolee(p: Point2, cache: ReturnType<typeof segmentsDuNiveau>, rayon: number, exclure: readonly string[] = []): { a: Point2; b: Point2; objetId: string } | null {
+  let meilleur: { a: Point2; b: Point2; objetId: string } | null = null;
+  let dMin = rayon;
+  for (const s of cache.segments) {
+    if (s.courbe || exclure.includes(s.objetId)) continue;
+    if (Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y) < 1e-9) continue;
+    const d = projectionSurSegment(p, s.a, s.b).distance;
+    if (d <= dMin) {
+      dMin = d;
+      meilleur = { a: s.a, b: s.b, objetId: s.objetId };
+    }
+  }
+  return meilleur;
 }
 
 export function surGrille(p: Point2, pas: number): Point2 {

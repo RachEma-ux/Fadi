@@ -806,3 +806,57 @@ describe("aimantation d'un sommet avec contrainte (D-131)", () => {
     expect(sans.commandes).toHaveLength(1);
   });
 });
+
+describe("outils de vue et de saisie (D-158)", () => {
+  it("rapporteur : sommet, référence, second côté → angle signé et ligne de construction ; Alt mesure seulement ; angle saisi", async () => {
+    const { angleRapporteur } = await import("./plan2d/outils-2d");
+    const etat = socle();
+    const u = ui({ outil: "rapporteur" });
+    const r1 = clic("rapporteur", pt(0, 0), etat, u, opts);
+    expect(r1.pointsEnCours).toEqual([pt(0, 0)]);
+    expect(clic("rapporteur", pt(0, 0), etat, ui({ outil: "rapporteur", pointsEnCours: [pt(0, 0)] }), opts).pointsEnCours).toEqual([pt(0, 0)]);
+    const u2 = ui({ outil: "rapporteur", pointsEnCours: [pt(0, 0), pt(4, 0)] });
+    const r3 = clic("rapporteur", pt(1, 1), etat, u2, opts);
+    expect(r3.mesure).toBe("45,00°");
+    expect(r3.commandes).toHaveLength(1);
+    expect(r3.commandes[0]!.type).toBe("esquisse.construction");
+    const fin = (r3.commandes[0]!.params as { points: { x: number; y: number }[] }).points[1]!;
+    expect(fin.x).toBeCloseTo(4 / Math.SQRT2);
+    expect(fin.y).toBeCloseTo(4 / Math.SQRT2);
+    expect(clic("rapporteur", pt(1, 1), etat, u2, { ...opts, alt: true }).commandes).toHaveLength(0);
+    expect(angleRapporteur(pt(0, 0), pt(1, 0), pt(0, -1))).toBe(-90);
+    expect(angleRapporteur(pt(0, 0), pt(-1, 0.001), pt(-1, -0.001))).toBeCloseTo(0.1146, 3);
+    const s = saisie("rapporteur", "30", [pt(0, 0), pt(2, 0)], null, etat, u2, opts)!;
+    expect(s.mesure).toBe("30,00°");
+    const q = (s.commandes[0]!.params as { points: { x: number; y: number }[] }).points[1]!;
+    expect(q.x).toBeCloseTo(Math.sqrt(3));
+    expect(q.y).toBeCloseTo(1);
+  });
+
+  it("accrochage parallèle : direction de l'arête survolée, seulement à moins d'un rayon de la droite", async () => {
+    const { areteSurvolee, surParallele } = await import("./plan2d/accrochage");
+    const etat = murs(socle(), [[0, 0, 4, 2]]);
+    const cache = segmentsDuNiveau(etat, "rdc");
+    const ref = areteSurvolee(pt(2, 1.05), cache, 0.2);
+    expect(ref?.objetId).toBeTruthy();
+    expect(areteSurvolee(pt(2, 3), cache, 0.2)).toBeNull();
+    expect(surParallele(pt(10.05, 6), pt(6, 4), pt(0, 0), pt(4, 2), 0.2)).toEqual(pt(10.04, 6.02));
+    expect(surParallele(pt(10, 7), pt(6, 4), pt(0, 0), pt(4, 2), 0.2)).toBeNull();
+    const acc = { ...etatUi.get().accrochages, extremite: false, milieu: false, centre: false, perpendiculaire: false, intersection: false, orthogonal: false, grille: false };
+    const a = accrocher(pt(10.05, 6), cache, { ...acc, parallele: true, referenceParallele: ref }, 0.2, pt(6, 4));
+    expect(a.type).toBe("parallele");
+    expect(accrocher(pt(10.05, 6), cache, { ...acc, parallele: false, referenceParallele: ref }, 0.2, pt(6, 4)).type).toBe("libre");
+  });
+
+  it("outils Panoramique, Zoom, Zoom étendu, Rapporteur trouvables ; raccourcis personnalisés affichés", async () => {
+    const { libelleTouche, raccourciDe, affecterTouche } = await import("./raccourcis");
+    for (const [mot, id] of [["pan", "naviguer"], ["zoom extents", "zoom-etendu"], ["loupe", "zoom"], ["protractor", "rapporteur"]] as const) expect(rechercherOutils(mot)[0]?.id).toBe(id);
+    const mur = OUTILS.find((o) => o.id === "mur")!;
+    const perso = affecterTouche({}, "rapporteur", "m");
+    expect("motif" in perso).toBe(false);
+    expect(raccourciDe(mur, perso as Record<string, string>)).toBeNull();
+    expect(libelleTouche(raccourciDe(OUTILS.find((o) => o.id === "rapporteur")!, perso as Record<string, string>))).toBe("M");
+    expect(libelleTouche("Delete")).toBe("Suppr");
+    expect(libelleTouche(null)).toBeNull();
+  });
+});
