@@ -206,6 +206,12 @@ export interface ParamsEsquisse {
    * modèle — le motif suit le dessin, pas la feuille) ; absent : motif du catalogue désigné par `motif`.
    */
   motifLignes?: { angle: number; pas: number }[];
+  /**
+   * Axe associé (D-132) : ligne de construction passant par le centre d'un cercle, d'un arc ou d'une ellipse
+   * (`sourceId`), dans la direction `angle` (degrés, relative à l'orientation d'une ellipse), dépassant le contour de
+   * `debord` mètres ; elle suit sa source. Source supprimée : l'axe garde sa place et perd le lien.
+   */
+  axeDe?: { sourceId: string; angle: number; debord: number };
 }
 
 export interface DegradeHachure {

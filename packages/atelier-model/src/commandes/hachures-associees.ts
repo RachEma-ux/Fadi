@@ -5,7 +5,9 @@
  */
 import { pointsArc, pointsEllipse, pointsPolyligne, pointsSpline } from "../geometrie.js";
 import type { Contour, ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
-import type { Effets } from "./base.js";
+import { pt, type Point2 } from "../unites.js";
+import { effetsVides, ErreurCommande, fusionnerEffets, lire, type ContexteCommande, type Effets, type ResultatCommande } from "./base.js";
+import { creerOccurrence } from "./objets.js";
 import { contourFerme } from "./changer-classe.js";
 
 /**
@@ -67,6 +69,59 @@ export function suivreHachures(etat: ModeleAtelier, effets: Effets): { etat: Mod
     objets = { ...objets, [s.id]: { ...s, params: { ...s.params, contour: c.contour.map((q) => ({ ...q })), trous: c.trous.map((t) => t.map((q) => ({ ...q }))) } } };
     modifies.push(s.id);
   }
+  // Axes associés (D-132) : la ligne passe par le centre de sa source, dans sa direction, débord compris.
+  for (const o of Object.values(etat.objets)) {
+    if (o.classe !== "esquisse" || !o.params.axeDe || o.verrouille) continue;
+    const a = o as Occurrence<"esquisse">;
+    const source = etat.objets[a.params.axeDe!.sourceId];
+    const pts = source ? pointsAxeAssocie(source, a.params.axeDe!) : null;
+    if (!pts) {
+      const { axeDe: _x, ...reste } = a.params;
+      void _x;
+      objets = { ...objets, [a.id]: { ...a, params: reste } };
+      modifies.push(a.id);
+      continue;
+    }
+    if (pts.every((q, i) => q.x === a.params.points[i]?.x && q.y === a.params.points[i]?.y) && a.params.points.length === 2) continue;
+    objets = { ...objets, [a.id]: { ...a, params: { ...a.params, points: pts } } };
+    modifies.push(a.id);
+  }
   if (!modifies.length) return { etat, effets };
   return { etat: { ...etat, objets }, effets: { ...effets, modifies: [...new Set([...effets.modifies, ...modifies])] } };
+}
+
+/** Extrémités d'un axe associé (D-132) : centre ± (demi-étendue du contour dans la direction + débord). */
+export function pointsAxeAssocie(source: OccurrenceQuelconque, axe: { angle: number; debord: number }): Point2[] | null {
+  if (source.classe !== "esquisse" || !source.params.centre || !source.params.rayon) return null;
+  const q = source.params;
+  const rot = q.forme === "ellipse" ? (q.rotation?.value ?? 0) : 0;
+  const t = ((axe.angle + rot) * Math.PI) / 180;
+  const u = { x: Math.cos(t), y: Math.sin(t) };
+  // Demi-étendue : rayon ; ellipse : rayon dans la direction de l'axe (relative à son grand axe).
+  let r = q.rayon!.value;
+  if (q.forme === "ellipse" && q.rayonB) {
+    const a = (axe.angle * Math.PI) / 180;
+    r = 1 / Math.sqrt((Math.cos(a) / q.rayon!.value) ** 2 + (Math.sin(a) / q.rayonB.value) ** 2);
+  }
+  const L = r + axe.debord;
+  const c = q.centre!;
+  const r9 = (v: number) => Math.round(v * 1e9) / 1e9;
+  return [pt(r9(c.x - u.x * L), r9(c.y - u.y * L)), pt(r9(c.x + u.x * L), r9(c.y + u.y * L))];
+}
+
+/** `esquisse.axesCentre` (D-132) : deux axes associés (0° et 90°) au centre d'un cercle, d'un arc ou d'une ellipse. */
+export function creerAxesCentre(etat: ModeleAtelier, p: Record<string, unknown>, ctx: ContexteCommande): ResultatCommande {
+  const id = lire.objet(etat, p, "id");
+  const s = etat.objets[id]!;
+  const debord = lire.nombre(p, "debord", { min: 0, max: 100 })!;
+  if (s.classe !== "esquisse" || !s.params.centre || !s.params.rayon) throw new ErreurCommande("precondition", "id", `${id} : cercle, arc ou ellipse attendu`);
+  let courant = etat;
+  let effets = effetsVides();
+  for (const angle of [0, 90]) {
+    const pts = pointsAxeAssocie(s, { angle, debord })!;
+    const r = creerOccurrence(courant, { niveauId: s.niveauId, calqueId: s.calqueId, params: { forme: "construction", points: pts, ferme: false, axeDe: { sourceId: id, angle, debord } } }, ctx, "esquisse");
+    courant = r.etat;
+    effets = fusionnerEffets(effets, r.effets);
+  }
+  return { etat: courant, effets };
 }

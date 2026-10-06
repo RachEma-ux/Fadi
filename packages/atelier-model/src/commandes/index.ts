@@ -4,6 +4,7 @@
  * est un instantané différentiel (`interne.restaurer`), appliqué par annuler / rétablir comme une nouvelle
  * microversion.
  */
+import { creerAxesCentre } from "./hachures-associees.js";
 import { creerEscalierBalance } from "./escalier-balance.js";
 import { dissocierReseau, modifierReseau } from "./reseau-associatif.js";
 import { copier } from "./transformer.js";
@@ -138,6 +139,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "escalier.volees": (etat, p, ctx) => creerEscalierVolees(etat, p, ctx),
   "escalier.helicoidal": (etat, p, ctx) => creerEscalierHelicoidal(etat, p, ctx),
   "escalier.balance": (etat, p, ctx) => creerEscalierBalance(etat, p, ctx),
+  "esquisse.axesCentre": (etat, p, ctx) => creerAxesCentre(etat, p, ctx),
   "ouverture.jumeler": (etat, p, ctx) => jumelerOuverture(etat, p, ctx),
   "ouverture.angle": (etat, p, ctx) => ouvertureAngle(etat, p, ctx),
   "ouverture.repartir": (etat, p, ctx) => {

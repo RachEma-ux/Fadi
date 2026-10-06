@@ -205,6 +205,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       ...sourceHachure(_etat, p, forme),
       ...degradeDe(p, forme),
       ...motifLignesDe(p, forme),
+      ...axeDeDe(_etat, p, forme),
     };
   },
   "reference-plan"(_etat, p) {
@@ -306,6 +307,20 @@ function sourceHachure(etat: ModeleAtelier, p: Brut, forme: string): { sourceId?
   if (typeof id !== "string" || !etat.objets[id]) throw new ErreurCommande("precondition", "sourceId", `objet source inconnu : ${String(id)}`);
   if (!contourFerme(etat.objets[id]!)) throw new ErreurCommande("precondition", "sourceId", `${id} n'a pas de contour fermé (dalle, pièce, zone, polygone ou rectangle)`);
   return { sourceId: id };
+}
+
+/** Axe associé au centre d'un cercle, d'un arc ou d'une ellipse (D-132) : lignes de construction seulement. */
+function axeDeDe(etat: ModeleAtelier, p: Brut, forme: string): { axeDe?: { sourceId: string; angle: number; debord: number } } {
+  const brut = p["axeDe"];
+  if (brut === undefined || brut === null) return {};
+  if (forme !== "construction") throw new ErreurCommande("invalide", "axeDe", "axe associé réservé aux lignes de construction");
+  const q = brut as Brut;
+  const sourceId = lire.chaine(q, "sourceId");
+  const s = etat.objets[sourceId];
+  if (!s || s.classe !== "esquisse" || !s.params.centre || !s.params.rayon) throw new ErreurCommande("precondition", "axeDe", `${sourceId} : cercle, arc ou ellipse attendu`);
+  const angle = q["angle"];
+  if (typeof angle !== "number" || !Number.isFinite(angle)) throw new ErreurCommande("invalide", "axeDe.angle", "angle en degrés");
+  return { axeDe: { sourceId, angle, debord: lire.nombre(q, "debord", { min: 0, max: 100 })! } };
 }
 
 /** Lignes d'un motif importé (D-121) : hachures seulement, une à huit familles (angle, pas en m) ; null les retire. */

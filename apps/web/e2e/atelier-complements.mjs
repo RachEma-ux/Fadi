@@ -2125,6 +2125,29 @@ await page.waitForSelector(".plan2d");
   check("longueur saisie en millimètres : convertie explicitement en mètres (0,25 m)", ep === 0.25 && affiche === "0,25", `${ep} · ${affiche}`);
 }
 
+// Axes associés au centre d'un cercle (D-132) : créés depuis l'inspecteur, ils suivent le cercle déplacé.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const cx = murA.params.a.x - 290;
+  const cy = murA.params.a.y - 290;
+  const r0 = await lot(pid, `axc-${Date.now()}`, (await modele(pid)).revision, [{ type: "esquisse.cercle", params: { id: "cercle-axes", niveauId: murA.niveauId, centre: P(cx, cy), rayon: m(1) } }]);
+  await ouvrir(pid);
+  await selectionner("cercle-axes");
+  await page.locator("[data-axes-creer]").click();
+  let axes = [];
+  for (let k = 0; k < 30 && axes.length < 2; k++) {
+    axes = Object.values((await modele(pid)).modele.objets).filter((o) => o.params.axeDe?.sourceId === "cercle-axes");
+    if (axes.length < 2) await page.waitForTimeout(500);
+  }
+  const md = await modele(pid);
+  const r1 = await lot(pid, `axd-${Date.now()}`, md.revision, [{ type: "transformer.deplacer", params: { dx: 1, dy: 0 }, cibles: ["cercle-axes"] }]);
+  const suivis = Object.values((await modele(pid)).modele.objets).filter((o) => o.params.axeDe?.sourceId === "cercle-axes");
+  const ok = suivis.length === 2 && suivis.every((o) => Math.abs((o.params.points[0].x + o.params.points[1].x) / 2 - (cx + 1)) < 1e-6);
+  check("axes associés : deux axes créés au centre du cercle, ils suivent le cercle déplacé", r0.status === 200 && r1.status === 200 && axes.length === 2 && ok, `${r0.status} · ${r1.status} · ${axes.length} · ${ok}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

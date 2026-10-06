@@ -141,6 +141,18 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
           if (cle === "ouvrant" || cle === "menuiserie" || (cle === "murHoteId" && (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture"))) return null; // contrôles dédiés ci-dessous
           if (cle === "motif" && !(o.classe === "esquisse" && o.params.forme === "hachure")) return null; // motif : hachures seulement (D-072)
           if (cle === "degrade" || cle === "motifLignes") return null; // dégradé (D-120), lignes de motif importé (D-121)
+          if (cle === "axeDe") {
+            const ax = valeur as { sourceId: string; angle: number } | null;
+            return ax ? (
+              <div className="champ" key={cle} data-axe-associe={ax.sourceId}>
+                <dt>Axe associé</dt>
+                <dd>
+                  centre de {ax.sourceId} ({String(ax.angle).replace(".", ",")}°){" "}
+                  {!desactive && <button type="button" className="lien" onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { axeDe: null } } }], `Axe ${o.id} détaché`)}>Détacher</button>}
+                </dd>
+              </div>
+            ) : null;
+          }
           if (cle === "motif" && o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.motifLignes) {
             const n = (o as Occurrence<"esquisse">).params.motifLignes!.length;
             return (
@@ -171,6 +183,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
           Hachurer (associé au contour)
         </button>
       )}
+      {o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.centre && (o as Occurrence<"esquisse">).params.rayon && !desactive && <AxesCentre key={`axes-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "escalier" && !desactive && <TremieEscalier o={o as Occurrence<"escalier">} etat={etat} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && ["polyligne", "polygone", "rectangle"].includes((o as Occurrence<"esquisse">).params.forme) && <ArrondirSommets key={`arr-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {o.classe === "esquisse" && !desactive && <ConvertirEsquisse o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
@@ -1568,6 +1581,20 @@ function TangentesCourbe({ o, onCommandes }: { o: Occurrence<"esquisse">; onComm
 }
 
 /** Menuiserie paramétrée d'une fenêtre (D-101) : valeurs saisies, aucune par défaut ; vide = non évaluée. */
+/** Axes associés au centre d'un cercle, d'un arc ou d'une ellipse (D-132) : deux lignes de construction qui suivent. */
+function AxesCentre({ o, onCommandes }: { o: Occurrence<"esquisse">; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const [debord, setDebord] = useState("0,2");
+  const d = longueurSaisie(debord);
+  return (
+    <div className="nav-formulaire-altimetrie" data-axes-centre>
+      <label>Débord des axes (m)<input inputMode="decimal" value={debord} onChange={(e) => setDebord(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-axes-debord /></label>
+      <button type="button" className="lien" disabled={d === null || d < 0} data-axes-creer onClick={() => onCommandes([{ type: "esquisse.axesCentre", params: { id: o.id, debord: d } }], `Axes associés au centre de ${o.id}`)}>
+        Axes associés (suivent le centre)
+      </button>
+    </div>
+  );
+}
+
 /** Dégradé d'une hachure (D-120) : deux gris (0 % noir … 100 % blanc) et une direction ; il remplace le motif. */
 function DegradeHachure({ o, desactive, onCommandes }: { o: Occurrence<"esquisse">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
   const d = o.params.degrade ?? null;
