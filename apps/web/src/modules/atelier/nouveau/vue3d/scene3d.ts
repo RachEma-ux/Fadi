@@ -689,9 +689,46 @@ export class Scene3D {
       const point = h.point.clone();
       if (h.object.parent) point.sub(h.object.parent.position);
       point.sub(h.object.position); // éclaté par classe ou par groupe : décalage propre au lot
+      this.dernierToucher = { h, monde: h.point.clone() };
       return { objetId: lot.ids[lo]!, point };
     }
+    this.dernierToucher = null;
     return null;
+  }
+
+  private dernierToucher: { h: THREE.Intersection; monde: THREE.Vector3 } | null = null;
+
+  /**
+   * Accrochage 3D (D-127, DA-04-07) : le point visé est porté sur un sommet du triangle touché, ou sur le milieu d'une
+   * de ses arêtes, s'il en est à moins de `rayonPx` pixels à l'écran ; sinon le point de la surface.
+   */
+  pointAccroche(x: number, y: number, rayonPx = 12): { objetId: string; point: THREE.Vector3; type: "sommet" | "milieu" | "surface" } | null {
+    const hit = this.pointer(x, y);
+    const t = this.dernierToucher;
+    if (!hit || !t || !t.h.face) return hit ? { ...hit, type: "surface" } : null;
+    const geo = (t.h.object as THREE.Mesh).geometry as THREE.BufferGeometry;
+    const pos = geo.getAttribute("position");
+    const sommet = (i: number) => new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)).applyMatrix4(t.h.object.matrixWorld);
+    const [a, b, c] = [sommet(t.h.face.a), sommet(t.h.face.b), sommet(t.h.face.c)];
+    const candidats: { p: THREE.Vector3; type: "sommet" | "milieu" }[] = [
+      { p: a, type: "sommet" },
+      { p: b, type: "sommet" },
+      { p: c, type: "sommet" },
+      { p: a.clone().add(b).multiplyScalar(0.5), type: "milieu" },
+      { p: b.clone().add(c).multiplyScalar(0.5), type: "milieu" },
+      { p: c.clone().add(a).multiplyScalar(0.5), type: "milieu" },
+    ];
+    let meilleur: { p: THREE.Vector3; type: "sommet" | "milieu"; d: number } | null = null;
+    for (const k of candidats) {
+      const e = k.p.clone().project(this.camera);
+      const d = Math.hypot(((e.x + 1) / 2) * this.largeur - x, ((1 - e.y) / 2) * this.hauteur - y);
+      if (d <= rayonPx && (!meilleur || d < meilleur.d || (d === meilleur.d && k.type === "sommet"))) meilleur = { ...k, d };
+    }
+    if (!meilleur) return { ...hit, type: "surface" };
+    const point = meilleur.p.clone();
+    if (t.h.object.parent) point.sub(t.h.object.parent.position);
+    point.sub(t.h.object.position);
+    return { objetId: hit.objetId, point, type: meilleur.type };
   }
 
   /** Point écran du milieu de la face supérieure d'un objet visible. */

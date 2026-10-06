@@ -2017,6 +2017,42 @@ await page.waitForSelector(".plan2d");
   check("pousser / tirer une face latérale : poteau élargi d'un côté en 3D", r0.status === 200 && !!fait && /Face de pot-face/.test(journal), `${r0.status} · ${JSON.stringify(cible)} · ${JSON.stringify(fait && { l: fait.largeur, p: fait.profondeur, pt: fait.point })} · ${journal}`);
 }
 
+// Accrochage 3D (D-127) : mesure entre deux coins opposés du dessus d'un poteau 1 × 1, cliqués à quelques pixels.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const cx = murA.params.a.x - 270;
+  const cy = murA.params.a.y - 270;
+  const r0 = await lot(pid, `acc3d-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "poteau.creer", params: { id: "pot-mes", niveauId: murA.niveauId, point: P(cx, cy), formeId: "rectangle", largeur: m(1), profondeur: m(1), hauteur: m(3) } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("pot-mes");
+  await page.locator('.barre-mode button:has-text("3D")').click();
+  await page.waitForFunction(() => !!window.fadiMesures3D?.versEcran, null, { timeout: 30000 }).catch(() => {});
+  await page.locator('[data-isolement="isoler"]').click();
+  await page.waitForTimeout(500);
+  await page.locator('button:has-text("Cadrer")').last().click();
+  await page.waitForTimeout(500);
+  const ok = await choisirOutil("mesurer", "Mesurer");
+  const z = ((await modele(pid)).modele.niveaux[murA.niveauId]?.elevation ?? 0) + 3;
+  const coins = await page.evaluate(([cx, cy, z]) => {
+    const v = window.fadiMesures3D.versEcran;
+    const c = v({ x: cx, y: cy, z });
+    return [v({ x: cx - 0.5, y: cy - 0.5, z }), v({ x: cx + 0.5, y: cy + 0.5, z })].map((q) => (q && c ? { x: q.x + Math.sign(c.x - q.x) * 4, y: q.y + Math.sign(c.y - q.y) * 4 } : null));
+  }, [cx, cy, z]);
+  const c3 = await page.locator(".vue3d-canevas").boundingBox();
+  for (const q of coins) if (q && c3) {
+    await page.mouse.click(c3.x + q.x, c3.y + q.y);
+    await page.waitForTimeout(300);
+  }
+  const d = await page.evaluate(() => window.fadiMesures3D?.mesure3d ?? null);
+  await page.locator("[data-isolement-quitter]").click().catch(() => {});
+  await page.locator('.barre-mode button:has-text("Plan")').click().catch(() => {});
+  check("accrochage 3D : coins du poteau accrochés, diagonale exacte (√2 m)", r0.status === 200 && ok && typeof d === "number" && Math.abs(d - Math.SQRT2) < 1e-6, `${r0.status} · ${ok} · ${d} · ${JSON.stringify(coins)}`);
+}
+
 // Chaîne jointive fermée proposée comme profil (D-126) : quatre lignes sélectionnées, « Joindre en profil ».
 {
   await page.keyboard.press("Escape");

@@ -483,9 +483,12 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
       return;
     }
     if (ui.outil === "mesurer") {
-      if (!hit) return void etatUi.set({ aide: "Mesurer en 3D : cliquez un point sur une surface visible." });
-      const point = hit.point.clone();
+      // Accrochage 3D (D-127) : sommet ou milieu d'arête le plus proche du pointeur ; Alt : point de la surface.
+      const a = e.altKey ? (hit ? { ...hit, type: "surface" as const } : null) : s.pointAccroche(p.x, p.y);
+      if (!a) return void etatUi.set({ aide: "Mesurer en 3D : cliquez un point sur une surface visible." });
+      const point = a.point.clone();
       setMesure((m) => (m.length >= 2 ? [point] : [...m, point]));
+      etatUi.set({ aide: a.type === "sommet" ? "Point accroché à un sommet (Alt : point de la surface)." : a.type === "milieu" ? "Point accroché au milieu d'une arête (Alt : point de la surface)." : "Point pris sur la surface." });
       return;
     }
     if (hit) {

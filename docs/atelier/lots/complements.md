@@ -199,3 +199,4 @@ Contrôle d'interférence (`interferences.test.ts`, e2e, D-124).
 ## Suivi
 Pousser / tirer des faces latérales (`pousser-face.test.ts`, `nouveau.test.ts`, e2e, D-125).
 Chaînes jointives proposées comme profils (`esquisse/chaines.test.ts`, e2e, D-126).
+Accrochage 3D de la mesure (e2e, D-127).
