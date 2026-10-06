@@ -215,3 +215,4 @@ Formes de section des poteaux (`sections-poteaux.test.ts`, e2e, D-139).
 Dalles inclinées (`dalles-inclinees.test.ts`, e2e, D-140).
 Baies cintrées (`baies-cintrees.test.ts`, e2e, D-141).
 Espaces sur plusieurs niveaux (`espaces-volume.test.ts`, e2e, D-142).
+Réservation par zone, notifications de verrous (`reservations.test.ts`, API, e2e versions, D-143).

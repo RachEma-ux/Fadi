@@ -6,7 +6,7 @@
  */
 import { and, eq, gt, inArray, ne } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
-import { appliquerLot, CONTRAT_COMMANDES, ErreurCommande, identifiantsCibles, type Commande, type Effets, type Enveloppe, type ModeleAtelier } from "@parcours/atelier-model";
+import { appliquerLot, clesReservation, CONTRAT_COMMANDES, ErreurCommande, identifiantsCibles, type Commande, type Effets, type Enveloppe, type ModeleAtelier } from "@parcours/atelier-model";
 import type { db } from "../db/client.js";
 import { atelierCommands, atelierLocks, projects, users, type JournalKind } from "../db/schema.js";
 import { EVENEMENT_COMMANDE_VALIDEE, enregistrerEvenement } from "./atelier-events.js";
@@ -75,8 +75,8 @@ export async function validerDansTransaction(tx: Tx, projectId: string, auteurId
   // Verrous logiques fins (lot 7) : un objet ou un niveau réservé par un autre compte refuse le lot entier (423).
   const touches = [...resultat.effets.crees, ...resultat.effets.modifies, ...resultat.effets.supprimes];
   if (touches.length) {
-    const cles = new Set(touches);
-    for (const id of touches) for (const n of [charge.etat.objets[id]?.niveauId, resultat.etat.objets[id]?.niveauId]) if (n) cles.add(`niveau:${n}`);
+    // Objet, niveau et zones qui le contiennent, avant et après (D-143).
+    const cles = new Set(clesReservation(charge.etat, resultat.etat, touches));
     const tenus = await tx
       .select({ cle: atelierLocks.cle, motif: atelierLocks.motif, expiresAt: atelierLocks.expiresAt, authorId: atelierLocks.authorId, email: users.email })
       .from(atelierLocks)

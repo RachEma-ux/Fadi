@@ -513,7 +513,7 @@ export const atelierPublications = pgTable("atelier_publications", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-/** Verrou logique fin (lot 7) : objet (`<id>`) ou niveau (`niveau:<id>`) réservé par un compte jusqu'à une échéance. */
+/** Verrou logique fin (lot 7) : objet (`<id>`), niveau (`niveau:<id>`) ou zone (`zone:<id>`, D-143) réservé par un compte jusqu'à une échéance. */
 export const atelierLocks = pgTable("atelier_locks", {
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   cle: text("cle").notNull(),
@@ -523,6 +523,18 @@ export const atelierLocks = pgTable("atelier_locks", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   transmisPar: text("transmis_par"),
 }, (t) => [primaryKey({ columns: [t.projectId, t.cle] })]);
+
+/** Prise ou libération d'un verrou fin (D-143), pour les notifications des autres membres ; libellé figé. */
+export const atelierLockEvents = pgTable("atelier_lock_events", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  cle: text("cle").notNull(),
+  libelle: text("libelle").notNull(),
+  kind: text("kind").$type<"prise" | "liberation">().notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+});
 
 /** Script de la bibliothèque d'un projet (lot 8) : une ligne par version, immuable. */
 export const atelierScripts = pgTable("atelier_scripts", {

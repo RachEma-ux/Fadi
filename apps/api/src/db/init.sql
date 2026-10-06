@@ -390,6 +390,18 @@ CREATE TABLE IF NOT EXISTS atelier_locks (
 );
 -- Verrou transmis (D-089) : courriel de qui l'a transmis, pour la notification du destinataire.
 ALTER TABLE atelier_locks ADD COLUMN IF NOT EXISTS transmis_par text;
+-- Prises et libérations de verrous (D-143) : notifiées aux autres membres du projet ; libellé figé à l'écriture.
+CREATE TABLE IF NOT EXISTS atelier_lock_events (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  cle text NOT NULL,
+  libelle text NOT NULL,
+  kind text NOT NULL,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  expires_at timestamptz,
+  at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS atelier_lock_events_project_idx ON atelier_lock_events (project_id, at);
 
 -- Lot 8 : bibliothèque de scripts versionnée (par projet) et propositions de l'assistant (boucle contrôlée).
 CREATE TABLE IF NOT EXISTS atelier_scripts (

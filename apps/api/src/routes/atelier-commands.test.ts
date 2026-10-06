@@ -900,6 +900,33 @@ describe("verrou transmis (D-089)", () => {
   });
 });
 
+describe("réservation par zone et notifications de prise et de libération (D-143)", () => {
+  it("une zone réservée refuse les lots d'autrui qui touchent un objet dedans ; prise et libération notifiées aux autres", async () => {
+    const owner = await registerAndLogin("owner-zone@example.com");
+    const editor = await registerAndLogin("editor-zone@example.com");
+    const pid = await projetVide(owner);
+    expect((await owner.post(`/projects/${pid}/members`).send({ email: "editor-zone@example.com", role: "editeur" })).status).toBe(201);
+    const zone = { type: "objet.creer", params: { id: "z1", classe: "zone", niveauId: "rdc", params: { contour: [pt(-1, -1), pt(5, -1), pt(5, 1), pt(-1, 1)], trous: [], nom: "Aile nord" } } };
+    const loin = { type: "mur.tracer", params: { id: "m2", niveauId: "rdc", a: pt(0, 10), b: pt(4, 10), epaisseur: m(0.2), hauteur: m(3.2) } };
+    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("z0", 0, [niveau, mur("m1"), loin, zone]))).status).toBe(200);
+    expect((await owner.post(`/projects/${pid}/atelier/verrous`).send({ cles: ["zone:m1"] })).status).toBe(404); // m1 n'est pas une zone
+    expect((await owner.post(`/projects/${pid}/atelier/verrous`).send({ cles: ["zone:z1"], motif: "Façade" })).status).toBe(201);
+    const refus = await editor.post(`/projects/${pid}/atelier/commands`).send(enveloppe("z1", 1, [{ type: "mur.modifier", params: { id: "m1", params: { hauteur: m(3) } } }]));
+    expect(refus.status).toBe(423);
+    expect(refus.body.verrous[0]).toMatchObject({ cle: "zone:z1", auteur: "owner-zone@example.com" });
+    // Entrer dans la zone est aussi refusé ; un mur hors de la zone reste modifiable.
+    expect((await editor.post(`/projects/${pid}/atelier/commands`).send(enveloppe("z2", 1, [{ type: "transformer.deplacer", params: { dx: 0, dy: -10 }, cibles: ["m2"] }]))).status).toBe(423);
+    expect((await editor.post(`/projects/${pid}/atelier/commands`).send(enveloppe("z3", 1, [{ type: "mur.modifier", params: { id: "m2", params: { hauteur: m(3) } } }]))).status).toBe(200);
+    let n = (await editor.get("/notifications")).body.items.filter((x: { kind: string }) => x.kind === "verrou");
+    expect(n[0].text).toMatch(/owner-zone@example\.com a réservé la zone Aile nord dans .* jusqu'à/);
+    expect((await owner.delete(`/projects/${pid}/atelier/verrous/zone:z1`)).status).toBe(204);
+    n = (await editor.get("/notifications")).body.items.filter((x: { kind: string }) => x.kind === "verrou");
+    expect(n[0].text).toMatch(/owner-zone@example\.com a libéré la zone Aile nord/);
+    expect((await owner.get("/notifications")).body.items.filter((x: { kind: string }) => x.kind === "verrou")).toHaveLength(0); // pas ses propres verrous
+    expect((await editor.post(`/projects/${pid}/atelier/commands`).send(enveloppe("z4", 2, [{ type: "mur.modifier", params: { id: "m1", params: { hauteur: m(3) } } }]))).status).toBe(200);
+  });
+});
+
 describe("péremption d'un export (D-110)", () => {
   it("l'auteur d'un export est notifié quand un autre compte modifie ensuite le modèle ; pas pour ses propres changements", async () => {
     const owner = await registerAndLogin("owner-perime@example.com");

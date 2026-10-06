@@ -28,7 +28,9 @@ import {
   ErreurCommande,
   analyserFusion,
   appliquerLot,
+  cleReservationConnue,
   collisions,
+  libelleCleReservation,
   commandeRestaurerVers,
   comparerModeles,
   empreinteDe,
@@ -41,7 +43,7 @@ import {
   type ModeleAtelier,
 } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { atelierCommands, atelierLocks, atelierPublications, atelierVariants, atelierVersions, projects, users, volumes } from "../db/schema.js";
+import { atelierCommands, atelierLockEvents, atelierLocks, atelierPublications, atelierVariants, atelierVersions, projects, users, volumes } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { traiterEvenements } from "../lib/atelier-events.js";
 import { chargerModele, creerModeleVide } from "../lib/atelier-modele.js";
@@ -531,8 +533,8 @@ atelierVersionsRouter.post("/verrous", async (req, res) => {
   const p = verrouSchema.safeParse(req.body ?? {});
   if (!p.success) return void invalide(res, "cles (1 à 200), motif, minutes (1 à 480)");
   const charge = await chargerModele(db, project.id);
-  const inconnues = p.data.cles.filter((c) => (c.startsWith("niveau:") ? !charge?.etat.niveaux[c.slice(7)] : !charge?.etat.objets[c]));
-  if (inconnues.length) return void res.status(404).json({ erreur: "inconnu", message: `Objet ou niveau inconnu : ${inconnues.slice(0, 5).join(", ")}` });
+  const inconnues = p.data.cles.filter((c) => !charge || !cleReservationConnue(charge.etat, c));
+  if (inconnues.length) return void res.status(404).json({ erreur: "inconnu", message: `Objet, niveau ou zone inconnu : ${inconnues.slice(0, 5).join(", ")}` });
   const resultat = await db.transaction(async (tx) => {
     await lockProject(tx, project.id);
     const maintenant = new Date();
@@ -549,6 +551,8 @@ atelierVersionsRouter.post("/verrous", async (req, res) => {
         .insert(atelierLocks)
         .values({ projectId: project.id, cle, motif: p.data.motif, authorId: req.user!.id, expiresAt, createdAt: maintenant })
         .onConflictDoUpdate({ target: [atelierLocks.projectId, atelierLocks.cle], set: { motif: p.data.motif, authorId: req.user!.id, expiresAt, createdAt: maintenant, transmisPar: null } });
+      // Prise notifiée aux autres membres (D-143) ; un renouvellement par le même compte ne l'est pas deux fois.
+      if (!tenus.some((t) => t.cle === cle && t.authorId === req.user!.id)) await tx.insert(atelierLockEvents).values({ id: randomUUID(), projectId: project.id, cle, libelle: libelleCleReservation(charge?.etat ?? null, cle), kind: "prise", authorId: req.user!.id, expiresAt, at: maintenant });
     }
     return { status: 201, corps: { cles: p.data.cles, expiresAt: expiresAt.toISOString() } };
   });
@@ -564,6 +568,11 @@ atelierVersionsRouter.delete("/verrous/:cle", async (req, res) => {
   const expire = row.expiresAt.getTime() <= Date.now();
   if (row.authorId !== req.user!.id && project.role !== "proprietaire" && !expire) return void res.status(403).json({ erreur: "interdit", message: "Seul l'auteur du verrou ou le propriétaire du projet peut le lever." });
   await db.delete(atelierLocks).where(and(eq(atelierLocks.projectId, project.id), eq(atelierLocks.cle, cle)));
+  // Libération notifiée aux autres membres (D-143), sauf pour un verrou déjà échu.
+  if (!expire) {
+    const charge = await chargerModele(db, project.id);
+    await db.insert(atelierLockEvents).values({ id: randomUUID(), projectId: project.id, cle, libelle: libelleCleReservation(charge?.etat ?? null, cle), kind: "liberation", authorId: req.user!.id, expiresAt: null, at: new Date() });
+  }
   res.status(204).end();
 });
 

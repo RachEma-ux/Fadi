@@ -12,6 +12,8 @@
  *                               objets que vous avez créés ou modifiés (D-081) ;
  *                               exports de dessin que vous avez produits, périmés
  *                               depuis par une modification d'un autre (D-110) ;
+ *                               verrous fins (étage, zone, objet) pris ou
+ *                               libérés par un autre membre (D-143) ;
  *                               « non lue » = postérieure à votre dernière
  *                               consultation ;
  *   POST /notifications/seen  → marque tout comme consulté (date conservée par
@@ -23,7 +25,7 @@
 import { Router } from "express";
 import { and, desc, eq, gt, inArray, ne, or } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { atelierCommands, atelierLocks, drawingExports, projectComments, projectMembers, projects, users } from "../db/schema.js";
+import { atelierCommands, atelierLockEvents, atelierLocks, drawingExports, projectComments, projectMembers, projects, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
@@ -214,6 +216,32 @@ export async function notificationsFor(userId: string, email: string): Promise<{
       text: `${v.par} vous a transmis le verrou de ${v.cle.startsWith("niveau:") ? `l'étage ${v.cle.slice(7)}` : v.cle} dans ${v.code} (jusqu'à ${v.expiresAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: process.env["FADI_TZ"] ?? "Europe/Paris" })}).`,
       unread: false,
     });
+  }
+
+  // Prises et libérations de verrous fins par d'autres (D-143) : étage, zone ou objet réservé puis libéré.
+  if (projectIds.length) {
+    const evts = await db
+      .select({ e: atelierLockEvents, email: users.email, code: projects.code, name: projects.name })
+      .from(atelierLockEvents)
+      .innerJoin(users, eq(users.id, atelierLockEvents.authorId))
+      .innerJoin(projects, eq(projects.id, atelierLockEvents.projectId))
+      .where(and(inArray(atelierLockEvents.projectId, projectIds), ne(atelierLockEvents.authorId, userId), gt(atelierLockEvents.at, since)))
+      .orderBy(desc(atelierLockEvents.at))
+      .limit(LIMIT);
+    const heure = (d: Date) => d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: process.env["FADI_TZ"] ?? "Europe/Paris" });
+    for (const { e, email: auteur, code, name } of evts) {
+      items.push({
+        id: `verrou-${e.kind}:${e.id}`,
+        at: e.at.toISOString(),
+        kind: "verrou",
+        projectId: e.projectId,
+        projectCode: code,
+        projectName: name,
+        stepNumber: null,
+        text: e.kind === "prise" ? `${auteur} a réservé ${e.libelle} dans ${code}${e.expiresAt ? ` jusqu'à ${heure(e.expiresAt)}` : ""}.` : `${auteur} a libéré ${e.libelle} dans ${code}.`,
+        unread: false,
+      });
+    }
   }
 
   const sorted = items.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)).slice(0, LIMIT);

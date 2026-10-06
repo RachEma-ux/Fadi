@@ -189,6 +189,28 @@ await page.locator(`.ver-liste [data-verrou="${murA.id}"] button:has-text("Lever
 await page.waitForFunction((id) => !document.querySelector(`.ver-liste [data-verrou="${id}"]`), murA.id, { timeout: 10000 });
 check("verrou levé : le second compte peut modifier", (await lot(pid, `autre-apres-${Date.now()}`, revV, [{ type: "objet.modifier", params: { id: murA.id, params: { epaisseur: m(0.33) } } }], autre)).status === 200);
 
+// Réservation par zone (D-143) : une zone autour du mur A, réservée depuis le panneau ; le second compte est refusé.
+{
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const { a, b } = murA.params;
+  const [x0, x1, y0, y1] = [Math.min(a.x, b.x) - 0.5, Math.max(a.x, b.x) + 0.5, Math.min(a.y, b.y) - 0.5, Math.max(a.y, b.y) + 0.5];
+  const rz = await lot(pid, `zone-e2e-${Date.now()}`, (await modele(pid)).revision, [{ type: "objet.creer", params: { id: "zone-e2e", classe: "zone", niveauId: murA.niveauId, params: { contour: [P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1)], trous: [], nom: "Zone e2e" } } }]);
+  await ouvrir(pid);
+  await page.locator(`.nav-niveaux button:has-text("${depart.modele.niveaux[murA.niveauId].nom}")`).first().click();
+  await page.waitForSelector(`.nav-objets button[data-objet="zone-e2e"]`, { state: "attached", timeout: 15000 });
+  await page.evaluate(() => document.querySelector(`.nav-objets button[data-objet="zone-e2e"]`)?.click());
+  await page.waitForFunction(() => (document.querySelector(".etat-selection")?.textContent ?? "").includes("zone-e2e"), null, { timeout: 10000 });
+  await page.locator("[data-verrouiller-zone]").click();
+  await page.waitForSelector('.ver-liste [data-verrou="zone:zone-e2e"]', { timeout: 10000 });
+  const refusZ = await lot(pid, `autre-zone-${Date.now()}`, (await modele(pid)).revision, [{ type: "objet.modifier", params: { id: murA.id, params: { epaisseur: m(0.34) } } }], autre);
+  const libelle = await page.locator('.ver-liste [data-verrou="zone:zone-e2e"]').textContent();
+  check("zone réservée : un objet dedans est refusé au second compte (423, clé de zone)", rz.status === 200 && refusZ.status === 423 && refusZ.body.verrous?.[0]?.cle === "zone:zone-e2e" && libelle.includes("Zone e2e"), `${rz.status} · ${refusZ.status} · ${libelle}`);
+  await page.locator('.ver-liste [data-verrou="zone:zone-e2e"] button:has-text("Lever")').click();
+  await page.waitForFunction(() => !document.querySelector('.ver-liste [data-verrou="zone:zone-e2e"]'), null, { timeout: 10000 });
+  const notes = (await (await autre.get(`${BASE}/notifications`)).json()).items.filter((x) => x.kind === "verrou").map((x) => x.text);
+  check("prise et libération de la zone notifiées au second compte", notes.some((t) => /a réservé la zone Zone e2e/.test(t)) && notes.some((t) => /a libéré la zone Zone e2e/.test(t)), notes.slice(0, 2).join(" | "));
+}
+
 // Collision d'architecture : deux fenêtres qui se chevauchent dans un mur (le plus long, pour que les deux tiennent :
 // l'ordre des objets d'une copie ne suit pas celui du fichier).
 const longueur = (o) => Math.hypot(o.params.b.x - o.params.a.x, o.params.b.y - o.params.a.y);

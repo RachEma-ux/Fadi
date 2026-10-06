@@ -14,6 +14,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import type { DifferenceModeles, ModeleAtelier } from "@parcours/atelier-model";
+import { libelleCleReservation } from "@parcours/atelier-model";
 import { api, ApiError, type AtelierFusionEssai, type AtelierMiseAJourEssai } from "../../../../lib/api";
 import type { AtelierClient } from "../../bus/atelier-client";
 import { etatUi } from "../etat-ui";
@@ -86,6 +87,7 @@ function ResumeDifference({ d, etat, libelle }: { d: DifferenceModeles; etat: Mo
 }
 
 export function Versions({ projectId, client, etat, revision, selection, niveauId, readOnly, onConsulter }: PropsVersions) {
+  const zonesSelection = selection.filter((id) => etat.objets[id]?.classe === "zone");
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [erreur, setErreur] = useState<string | null>(null);
@@ -411,6 +413,10 @@ export function Versions({ projectId, client, etat, revision, selection, niveauI
           <button type="button" disabled={occupe || !niveauId} onClick={() => void agir(async () => { const r = await api.postAtelierVerrous(projectId, { cles: [`niveau:${niveauId}`], minutes: 30 }); return `Niveau verrouillé jusqu'à ${date(r.expiresAt)}.`; })}>
             Verrouiller le niveau
           </button>
+          {/* Réservation par zone (D-143) : tout objet dont un point est dans la zone sélectionnée. */}
+          <button type="button" disabled={occupe || !zonesSelection.length} data-verrouiller-zone onClick={() => void agir(async () => { const r = await api.postAtelierVerrous(projectId, { cles: zonesSelection.map((z) => `zone:${z}`), minutes: 30 }); return `${r.cles.length} zone(s) réservée(s) jusqu'à ${date(r.expiresAt)} : les objets qui y ont un point sont protégés.`; })}>
+            Réserver la zone sélectionnée
+          </button>
         </span>
       )}
       {!verrous.data?.verrous.length ? (
@@ -418,10 +424,9 @@ export function Versions({ projectId, client, etat, revision, selection, niveauI
       ) : (
         <ul className="ver-liste" aria-label="Verrous en cours">
           {verrous.data.verrous.map((v) => {
-            const niveau = v.cle.startsWith("niveau:") ? etat.niveaux[v.cle.slice(7)] : undefined;
             return (
               <li key={v.cle} data-verrou={v.cle}>
-                {niveau ? `Niveau ${niveau.nom}` : v.cle} <span className="nav-detail">{v.moi ? "vous" : v.auteur} · jusqu'à {date(v.expiresAt)}{v.motif ? ` · ${v.motif}` : ""}</span>
+                {libelleCleReservation(etat, v.cle).replace(/^l'(étage|objet) /, (_, x: string) => (x === "étage" ? "Niveau " : "")).replace(/^la zone (.*)$/, "Zone « $1 »")} <span className="nav-detail">{v.moi ? "vous" : v.auteur} · jusqu'à {date(v.expiresAt)}{v.motif ? ` · ${v.motif}` : ""}</span>
                 {!readOnly && v.moi && <button type="button" onClick={() => void agir(async () => { await api.deleteAtelierVerrou(projectId, v.cle); return "Verrou levé."; })}>Lever</button>}
                 {!readOnly && v.moi && (
                   <form className="ver-transmettre" onSubmit={(e) => { e.preventDefault(); const champ = e.currentTarget.elements.namedItem("email") as HTMLInputElement; const email = champ.value.trim(); if (email) void agir(async () => { const r = await api.transfererAtelierVerrou(projectId, v.cle, email); champ.value = ""; return `Verrou transmis à ${r.auteur}.`; }); }}>
