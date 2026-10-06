@@ -154,6 +154,21 @@ describe("rejet de la paume (D-109)", () => {
   });
 });
 
+describe("extruder un solide associé (D-114)", () => {
+  it("case cochée : le solide porte la source et suit l'esquisse ; décochée : solide libre", () => {
+    const etat = appliquer(socle(), [{ type: "esquisse.rectangle", params: { id: "r", niveauId: "rdc", points: [pt(0, 0), pt(2, 1)] } }]);
+    const avec = actionImmediate("extruder", etat, ui({ selection: ["r"], parametresOutil: { hauteurSolide: 1, solideAssocie: true } }));
+    const sans = actionImmediate("extruder", etat, ui({ selection: ["r"], parametresOutil: { hauteurSolide: 1 } }));
+    expect("commandes" in avec && (avec.commandes[0]!.params as { sourceId?: string }).sourceId).toBe("r");
+    expect("commandes" in sans && (sans.commandes[0]!.params as { sourceId?: string }).sourceId).toBeUndefined();
+    if ("commandes" in avec) {
+      const e2 = appliquer(appliquer(etat, avec.commandes), [{ type: "transformer.deplacer", params: { dx: 1, dy: 0 }, cibles: ["r"] }]);
+      const s = Object.values(e2.objets).find((o) => o.classe === "solide") as Occurrence<"solide">;
+      expect(Math.min(...s.params.contour.map((q) => q.x))).toBe(1);
+    }
+  });
+});
+
 let n = 0;
 function appliquer(etat: ModeleAtelier, commandes: Commande[]): ModeleAtelier {
   n += 1;

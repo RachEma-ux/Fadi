@@ -169,6 +169,8 @@ export interface ParamsSolide extends Contour {
   role: string;
   nom: string | null;
   couleur: string | null;
+  /** Solide associé (D-114) : esquisse fermée dont il suit le profil ; absent : solide libre. */
+  sourceId?: string;
 }
 
 export type FormeEsquisse = "ligne" | "polyligne" | "arc" | "cercle" | "rectangle" | "polygone" | "spline" | "construction" | "hachure" | "ellipse";

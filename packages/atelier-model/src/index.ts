@@ -7,6 +7,7 @@ export * from "./ouvrants.js";
 export * from "./menuiserie.js";
 export * from "./annexe-c.js";
 export * from "./classification-regle.js";
+export { profilFerme } from "./commandes/hachures-associees.js";
 export * from "./compositions.js";
 export * from "./references.js";
 export * from "./quantites.js";

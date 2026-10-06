@@ -1141,6 +1141,8 @@ const modelConflictText = (await page.locator('.conflict-banner li[data-kind="mo
 check("retour du réseau : le lot ne s'applique plus → conflit du modèle listé (« Atelier · Mur : Hauteur … ne s’applique plus »), compté dans l'en-tête et dans l'Atelier", /Atelier · Mur : Hauteur/.test(modelConflictText) && /ne s’applique plus sur la version du serveur/.test(modelConflictText) && /1 conflit\(s\) à examiner/.test(await page.locator(".sync-indicator").textContent()) && /1 lot\(s\) à traiter/.test(await page.locator(".barre-sync").textContent()), modelConflictText.slice(0, 200));
 await page.locator('.conflict-banner li[data-kind="modele"] button:has-text("Garder le serveur")').click();
 await page.waitForFunction(() => !document.querySelector(".conflict-banner") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 20000 }).catch(() => {});
+// La file IndexedDB se vide de façon asynchrone après l'abandon du lot : attendre qu'elle le soit.
+for (let k = 0; k < 40 && (await lotsLocaux()).length; k++) await page.waitForTimeout(250);
 const apresConflit = await modelOf(atelierPid);
 check("« Garder le serveur » : le lot est abandonné, le mur supprimé par l'autre appareil reste supprimé, en-tête synchronisé, file vide", !apresConflit.modele.objets[murConflit] && !(await page.locator(".conflict-banner").count()) && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()) && (await lotsLocaux()).length === 0, await page.locator(".sync-indicator").textContent());
 const wallsResolved = await rdcWallsOf(atelierPid);
@@ -1148,6 +1150,7 @@ const wallsResolved = await rdcWallsOf(atelierPid);
 await page.route(/\/atelier\/commands/, (route) => route.abort());
 await drawWall(0.6);
 await page.waitForFunction(() => ["injoignable", "attente"].includes(document.querySelector(".barre-sync")?.dataset.etat || ""), null, { timeout: 15000 }).catch(() => {});
+for (let k = 0; k < 40 && (await lotsLocaux()).length !== 1; k++) await page.waitForTimeout(250);
 check("serveur injoignable : le lot reste sur l'appareil (« … enregistrées localement » ou « en attente »)", /enregistrées localement|en attente/.test(await page.locator(".barre-sync").textContent()) && (await lotsLocaux()).length === 1, await page.locator(".barre-sync").textContent());
 await page.unroute(/\/atelier\/commands/);
 await page.reload();

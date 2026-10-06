@@ -184,3 +184,4 @@ Notifications de péremption des exports (`atelier-commands.test.ts`, D-110).
 Contrôle croisé classe Fadi / classe IFC (`annexe-c.test.ts`, D-111).
 Classification en lot par règle (`annexe-c.test.ts`, e2e, D-112).
 Porte-fenêtre et menuiserie de porte (`menuiserie.test.ts`, D-113).
+Solide associé à son esquisse (`solides-associes.test.ts`, `nouveau.test.ts`, D-114).

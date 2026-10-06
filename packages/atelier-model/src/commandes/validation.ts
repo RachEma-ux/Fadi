@@ -4,6 +4,7 @@
  * par défaut inventée pour une grandeur physique (R3) : une hauteur absente reste `null`.
  */
 import { contourFerme } from "./changer-classe.js";
+import { profilFerme } from "./hachures-associees.js";
 import { lireOuvrant } from "../ouvrants.js";
 import { lireMenuiserie } from "../menuiserie.js";
 import { distance, longueurAxeMur } from "../geometrie.js";
@@ -174,6 +175,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       role: lire.chaine(p, "role", { optionnel: true }) || "solid",
       nom: lire.chaineOuNull(p, "nom"),
       couleur: lire.chaineOuNull(p, "couleur"),
+      ...sourceSolide(_etat, p),
     };
   },
   esquisse(_etat, p) {
@@ -285,6 +287,15 @@ function ouverture(etat: ModeleAtelier, p: Brut): ParamsParClasse["porte"] {
  * Tangentes imposées d'une courbe (D-082) : une entrée par point, `null` = tangente libre (courbe passant par les
  * points) ; vecteur en mètres (direction et intensité). Absent, ou toutes libres : clé omise.
  */
+/** Solide associé (D-114) : esquisse source au profil fermé ; absente : solide libre. */
+function sourceSolide(etat: ModeleAtelier, p: Brut): { sourceId?: string } {
+  const id = p["sourceId"];
+  if (id === undefined || id === null) return {};
+  if (typeof id !== "string" || !etat.objets[id]) throw new ErreurCommande("precondition", "sourceId", `esquisse source inconnue : ${String(id)}`);
+  if (!profilFerme(etat.objets[id]!)) throw new ErreurCommande("precondition", "sourceId", `${id} n'a pas de profil fermé (esquisse fermée, cercle, ellipse, courbe fermée)`);
+  return { sourceId: id };
+}
+
 /** Hachure associative (D-092) : objet source à contour fermé dont la hachure suit le contour ; absente : libre. */
 function sourceHachure(etat: ModeleAtelier, p: Brut, forme: string): { sourceId?: string } {
   const id = p["sourceId"];
