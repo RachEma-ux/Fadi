@@ -13,7 +13,7 @@
  */
 import type { Definition, ModeleAtelier } from "../modele.js";
 import type { Point2 } from "../unites.js";
-import type { Angle } from "../unites.js";
+import type { Angle, Longueur } from "../unites.js";
 import { effetsVides, ErreurCommande, lire, type ContexteCommande, type Reducteur } from "./base.js";
 
 export const REFERENCE_EXTERNE = "reference-externe" as Definition["classe"];
@@ -29,6 +29,8 @@ export interface ParamsReferenceExterne {
   position: Point2;
   angle: Angle;
   calqueId: string | null;
+  /** Décalage d'altitude (D-137) : la source est posée à l'altitude du niveau du projet plus ce décalage (m, signé). */
+  decalageAltitude?: Longueur;
 }
 
 type Brut = Record<string, unknown>;
@@ -50,6 +52,10 @@ export function lireParamsReferenceExterne(etat: ModeleAtelier, p: Brut): Params
     position: lire.point(p, "position")!,
     angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" },
     calqueId,
+    ...(() => {
+      const d = lire.longueur(p, "decalageAltitude", { optionnel: true });
+      return d && d.value !== 0 ? { decalageAltitude: d } : {};
+    })(),
   };
 }
 

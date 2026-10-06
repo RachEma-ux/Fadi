@@ -72,3 +72,15 @@ describe("références externes (DA-05-11)", () => {
     expect(() => appliquerLot(v, lot([{ ...rattacher, params: { ...rattacher.params, id: "autre", calqueId: "k" } }], "n"))).toThrow(/verrouillé/);
   });
 });
+
+describe("décalage d'altitude d'une référence externe (D-137, DA-05-11)", () => {
+  it("posé à la demande, gardé par une mise à jour, retiré par null ou 0", () => {
+    const r = appliquerLot(base(), lot([{ ...rattacher, params: { ...rattacher.params, decalageAltitude: { value: -3.2, unit: "m" } } }])).etat;
+    expect((r.definitions["voisin"]!.params as unknown as ParamsReferenceExterne).decalageAltitude).toEqual({ value: -3.2, unit: "m" });
+    const maj = appliquerLot(r, lot([{ type: "refexterne.rattacher", params: { id: "voisin", publicationId: "pub-2", revisionSource: 5, empreinteSource: "def" } }], "maj")).etat;
+    expect((maj.definitions["voisin"]!.params as unknown as ParamsReferenceExterne).decalageAltitude?.value).toBe(-3.2);
+    const zero = appliquerLot(maj, lot([{ type: "refexterne.rattacher", params: { id: "voisin", decalageAltitude: { value: 0, unit: "m" } } }], "z")).etat;
+    expect((zero.definitions["voisin"]!.params as unknown as ParamsReferenceExterne).decalageAltitude).toBeUndefined();
+    expect(() => appliquerLot(r, lot([{ type: "refexterne.rattacher", params: { id: "voisin", decalageAltitude: 3 } }], "x"))).toThrow(/longueur en mètres/);
+  });
+});

@@ -49,6 +49,7 @@ export function ReferencesExternes({ projectId, niveaux, niveauId, references, r
   const [niveauSourceId, setNiveauSourceId] = useState("");
   const [cible, setCible] = useState("");
   const [position, setPosition] = useState("0;0");
+  const [altitudes, setAltitudes] = useState<Record<string, string>>({});
   const [angle, setAngle] = useState("0");
   const [message, setMessage] = useState<{ texte: string; erreur: boolean } | null>(null);
   const [miseAJour, setMiseAJour] = useState<{ id: string; texte: string } | null>(null);
@@ -147,6 +148,29 @@ export function ReferencesExternes({ projectId, niveaux, niveauId, references, r
               </span>
             )}
             {miseAJour?.id === r.id && <p className="ver-info">{miseAJour.texte}</p>}
+            {/* Décalage d'altitude (D-137) : la source posée plus haut ou plus bas que le niveau du projet (3D). */}
+            {!readOnly && r.etat !== "inaccessible" && (
+              <span className="ver-actions" data-refext-altitude={r.id}>
+                <label>
+                  Décalage d'altitude (m)
+                  <input inputMode="decimal" value={altitudes[r.id] ?? String((r.params as { decalageAltitude?: { value: number } }).decalageAltitude?.value ?? 0).replace(".", ",")} onChange={(e) => setAltitudes({ ...altitudes, [r.id]: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-refext-decalage={r.id} />
+                </label>
+                <button
+                  type="button"
+                  data-refext-decalage-appliquer={r.id}
+                  onClick={() =>
+                    void agir(async () => {
+                      const v = Number((altitudes[r.id] ?? "0").replace(",", "."));
+                      if (!Number.isFinite(v)) throw new Error("Décalage d'altitude en mètres attendu.");
+                      await executerEtValider(client, [{ type: "refexterne.rattacher", params: { ...r.params, id: r.id, position: pt(r.params.position.x, r.params.position.y), decalageAltitude: { value: v, unit: "m" } } }], `Décalage d'altitude de « ${r.nom} »`);
+                      return `Référence posée à ${String(v).replace(".", ",")} m du niveau.`;
+                    })
+                  }
+                >
+                  Appliquer
+                </button>
+              </span>
+            )}
           </li>
         ))}
       </ul>

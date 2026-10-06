@@ -130,7 +130,7 @@ export class Scene3D {
   private maillagesCourants: Maillage[] = [];
   private chapeaux: THREE.Mesh[] = [];
   /** Références externes (DA-05-11) : traits gris au niveau de rattachement, ni sélectionnables ni accrochables en 3D. */
-  private externes: readonly { niveauId: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number } }[] }[] = [];
+  private externes: readonly { niveauId: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number } }[]; decalage?: number }[] = [];
   private lignesExternes: THREE.LineSegments[] = [];
   private matExternes = new THREE.LineBasicMaterial({ color: "#8a8f98", transparent: true, opacity: 0.9 });
   private cleChapeaux = "";
@@ -642,7 +642,7 @@ export class Scene3D {
   }
 
   /** Traits des références externes, posés dans le groupe de leur niveau (éclaté et masquage suivent). */
-  majExternes(liste: readonly { niveauId: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number } }[] }[]): void {
+  majExternes(liste: readonly { niveauId: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number } }[]; decalage?: number }[]): void {
     this.externes = liste;
     this.poserExternes();
     this.rendre();
@@ -661,7 +661,8 @@ export class Scene3D {
       const n = etat.niveaux[x.niveauId];
       const g = this.groupes.get(x.niveauId);
       if (!n || !g || !x.traits.length) continue;
-      const z = n.elevation + 0.02;
+      // Décalage d'altitude de la référence (D-137) : posée au-dessus ou au-dessous du niveau du projet.
+      const z = n.elevation + (x.decalage ?? 0) + 0.02;
       const pos = new Float32Array(Math.min(x.traits.length, 20000) * 6);
       x.traits.slice(0, 20000).forEach((t, i) => pos.set([t.a.x, t.a.y, z, t.b.x, t.b.y, z], i * 6));
       const geo = new THREE.BufferGeometry();

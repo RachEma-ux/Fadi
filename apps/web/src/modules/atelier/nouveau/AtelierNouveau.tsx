@@ -77,7 +77,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   // Références externes (DA-05-11) : relues quand l'une d'elles change ou que la révision serveur avance.
   const signatureRefs = Object.values(inst.etat.definitions).filter((d) => d.classe === "reference-externe").map((d) => `${d.id}@${d.version}`).join(",");
   const referencesExternes = useQuery({ queryKey: ["atelier-references-externes", projectId, signatureRefs, inst.revisionServeur], queryFn: () => api.getAtelierReferencesExternes(projectId), enabled: !!signatureRefs && !inst.horsLigne, retry: false, staleTime: 60_000 });
-  const externes = useMemo(() => (signatureRefs ? referencesExternes.data?.references ?? [] : []).filter((r) => r.representation).map((r) => ({ id: r.id, niveauId: r.params.niveauId, traits: r.representation!.traits })), [referencesExternes.data, signatureRefs]);
+  const externes = useMemo(() => (signatureRefs ? referencesExternes.data?.references ?? [] : []).filter((r) => r.representation).map((r) => ({ id: r.id, niveauId: r.params.niveauId, traits: r.representation!.traits, decalage: (r.params as { decalageAltitude?: { value: number } }).decalageAltitude?.value ?? 0 })), [referencesExternes.data, signatureRefs]);
   // Documents : traits des références (null = inaccessible) ; absent tant qu'ils ne sont pas lus.
   const documentsExternes = useMemo(() => (!signatureRefs ? [] : referencesExternes.data ? referencesExternes.data.references.map((r) => ({ id: r.id, traits: r.representation?.traits ?? null })) : undefined), [signatureRefs, referencesExternes.data]);
   const niveauxTries = useMemo(() => Object.values(inst.etat.niveaux).sort((a, b) => a.elevation - b.elevation).map((n) => ({ id: n.id, nom: n.nom })), [inst.etat.niveaux]);

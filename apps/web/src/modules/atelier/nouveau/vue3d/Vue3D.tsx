@@ -16,7 +16,7 @@ export interface PropsVue3D {
   readOnly: boolean;
   onCommandes: (commandes: Commande[], label: string) => void;
   /** Références externes : traits dans le repère du projet, par niveau (DA-05-11). */
-  externes?: readonly { niveauId: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number } }[] }[];
+  externes?: readonly { niveauId: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number } }[]; decalage?: number }[];
 }
 
 const VUES: { id: VueTechnique; libelle: string }[] = [

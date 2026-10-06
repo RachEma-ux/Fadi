@@ -236,6 +236,18 @@ check(
 );
 check("référence : état « à jour »", (await page.locator('.refext-liste [data-etat="a-jour"]').count()) === 1);
 await page.screenshot({ path: `${OUT}/10-reference-externe.png` });
+// Décalage d'altitude de la référence (D-137) : saisi dans le panneau, enregistré dans sa définition.
+{
+  const refId = Object.values(apresRef.modele.definitions).find((d) => d.classe === "reference-externe")?.id;
+  await page.locator(`[data-refext-decalage="${refId}"]`).fill("-1,5");
+  await page.locator(`[data-refext-decalage-appliquer="${refId}"]`).click();
+  let dec = null;
+  for (let k = 0; k < 30 && dec === null; k++) {
+    dec = (await modele(pid)).modele.definitions[refId]?.params.decalageAltitude?.value ?? null;
+    if (dec === null) await page.waitForTimeout(500);
+  }
+  check("référence externe : décalage d'altitude enregistré (−1,5 m)", dec === -1.5, String(dec));
+}
 
 // Le voisin publie une nouvelle révision : signalée, différences consultables, épinglage.
 const v = await modele(voisin);
