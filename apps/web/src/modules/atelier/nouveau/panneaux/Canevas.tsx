@@ -24,6 +24,28 @@ export const PANNEAUX_CANEVAS: { id: PanneauFlottant; libelle: string; picto: st
   { id: "raccourcis", libelle: t("panneau.raccourcis"), picto: "⌨" },
 ];
 
+/** Accès de la colonne vers les réglages de la vue 3D (scènes = vues 3D enregistrées D-053, styles par classe D-135). */
+export const ACCES_3D: { id: string; libelle: string; aide: string; picto: string; selecteur: string }[] = [
+  { id: "scenes", libelle: t("panneau.scenes"), aide: t("panneau.scenes.aide"), picto: "▣", selecteur: "[data-vues-3d]" },
+  { id: "styles", libelle: t("panneau.styles"), aide: t("panneau.styles.aide"), picto: "✎", selecteur: "[data-styles-classes]" },
+];
+
+/** Passe en 3D puis déplie le réglage demandé (la vue 3D se charge à la demande : on l'attend jusqu'à 5 s). */
+export function ouvrirDans3D(selecteur: string): void {
+  etatUi.set({ mode: "3d", panneauFlottant: null });
+  const debut = performance.now();
+  const essayer = () => {
+    const d = document.querySelector<HTMLDetailsElement>(selecteur);
+    if (d) {
+      d.open = true;
+      d.querySelector<HTMLElement>("summary")?.focus();
+      return;
+    }
+    if (performance.now() - debut < 5000) window.setTimeout(essayer, 100);
+  };
+  essayer();
+}
+
 export function ColonnePanneaux({ ui, alertes, panneaux = PANNEAUX_CANEVAS }: { ui: EtatUi; alertes: number; panneaux?: { id: PanneauFlottant; libelle: string; picto: string }[] }) {
   return (
     <nav className="canevas-colonne" aria-label={t("canevas.panneaux")} data-canevas-colonne>
@@ -32,6 +54,12 @@ export function ColonnePanneaux({ ui, alertes, panneaux = PANNEAUX_CANEVAS }: { 
           <span aria-hidden="true" className="canevas-picto">{p.picto}</span>
           <span className="canevas-etiquette">{p.libelle}</span>
           {p.id === "modifications" && alertes > 0 && <span className="pastille">{alertes}</span>}
+        </button>
+      ))}
+      {ACCES_3D.map((a) => (
+        <button key={a.id} type="button" className="canevas-icone" data-acces-3d={a.id} onClick={() => ouvrirDans3D(a.selecteur)} title={a.aide}>
+          <span aria-hidden="true" className="canevas-picto">{a.picto}</span>
+          <span className="canevas-etiquette">{a.libelle}</span>
         </button>
       ))}
     </nav>

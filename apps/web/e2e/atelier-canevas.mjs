@@ -378,6 +378,16 @@ await page.waitForURL(/module=collaboration/, { timeout: 15000 }).catch(() => {}
 check("Partager une fois tout enregistré : ouvre le partage du projet", page.url().includes("module=collaboration"), page.url());
 await ouvrir(pid);
 
+// 8. Scènes et Styles depuis la colonne : la vue 3D s'ouvre sur le réglage demandé.
+await page.locator('[data-acces-3d="scenes"]').click();
+await page.waitForSelector("[data-vues-3d][open]", { timeout: 15000 }).catch(() => {});
+check("Scènes : vue 3D ouverte sur les vues enregistrées", (await page.locator("[data-vues-3d][open]").count()) === 1);
+await page.locator('[data-acces-3d="styles"]').click();
+await page.waitForSelector("[data-styles-classes][open]", { timeout: 15000 }).catch(() => {});
+check("Styles : réglage des styles par classe déplié", (await page.locator("[data-styles-classes][open]").count()) === 1);
+await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.waitForSelector(".plan2d .plan-objets [data-objet]");
+
 // Retour à la disposition classique (préférence locale).
 await page.locator("[data-disposition-canevas]").click();
 check("retour à la disposition classique", await page.locator(".atelier-n.disposition-classique").count() === 1);

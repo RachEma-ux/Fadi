@@ -14,6 +14,7 @@ aucune règle d'`AGENTS.md` ni du cahier des charges de l'Atelier n'est modifié
 | 4 | D-159 | Panneaux Affichage (masquer / réafficher, isolement, ombres d'affichage en 3D), Info modèle, Matériaux (lecture), arborescence dans le navigateur | `nouveau.test.ts`, `atelier-canevas.mjs` |
 | 5 | D-160 | Menu principal : enregistrer maintenant (Ctrl + S), exporter, importer, imprimer (feuilles en PDF), partager après enregistrement confirmé, ouvrir un autre projet | `nouveau.test.ts`, `atelier-canevas.mjs` (dont hors-ligne) |
 | 6 | D-161 | Qualité : catalogue de messages (français), focus des panneaux au clavier (ouverture, Échap, retour à l'icône), Entrée active le bouton focalisé hors tracé, cibles de 24 px au moins dans les panneaux et 44 px pour les outils et icônes au téléphone, recette desktop + mobile, axe-core | `nouveau.test.ts`, `atelier-canevas.mjs` |
+| — | D-162 | Scènes (vues 3D enregistrées) et Styles par classe accessibles depuis la colonne ; indicateur « Synchronisé » affiché seulement quand toutes les écritures sont acceptées | `atelier-canevas.mjs`, `parcours-scenario.mjs` |
 
 ## Métriques de succès (étape 0)
 

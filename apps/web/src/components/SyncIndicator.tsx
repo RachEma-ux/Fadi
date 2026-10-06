@@ -7,13 +7,19 @@
  */
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useMutationState } from "@tanstack/react-query";
-import { conflictsStore, type SyncConflict } from "../lib/mutations";
+import { conflictsStore, MUTATION_KEYS, type SyncConflict } from "../lib/mutations";
 import { reachability } from "../lib/reachability";
 import { synchroniserAtelier, useFileAtelier } from "../modules/atelier/bus/etat-projet";
 
 /** Les refus 409 conservés pour l'écran (`recordConflict`, magasin synchrone) ; jamais relus du serveur. */
 export function useSyncConflicts(projectId: string): SyncConflict[] {
   return useSyncExternalStore(conflictsStore.subscribe, () => conflictsStore.get(projectId));
+}
+
+const CLES_REJOUABLES = new Set<string>(Object.values(MUTATION_KEYS).map((k) => k[0]));
+/** Écriture rejouable (saisie d'étape, arbitrage, commentaire) d'après la clé de sa mutation. */
+function ecritureRejouable(cle: readonly unknown[] | undefined): boolean {
+  return !!cle && CLES_REJOUABLES.has(cle[0] as string);
 }
 
 /** L'état réseau du navigateur, suivi par les événements `online` / `offline`. */
@@ -42,8 +48,10 @@ export function SyncIndicator({ projectId }: { projectId: string }) {
   const reachable = useReachable();
   // Lots de commandes de l'Atelier en attente (file locale) et lots en conflit ou refusés, à trancher.
   const file = useFileAtelier(projectId);
-  // Saisies, arbitrages et commentaires en pause (hors-ligne), persistés avec le cache.
-  const pausedMutations = useMutationState({ filters: { status: "pending", predicate: (m) => m.state.isPaused }, select: (m) => m.mutationId });
+  // Saisies, arbitrages et commentaires pas encore acceptés par le serveur : en pause (hors-ligne, persistés avec le
+  // cache), en cours d'envoi ou en attente d'un nouvel essai après un échec réseau. « Synchronisé » n'est dit que
+  // lorsqu'il n'en reste aucune.
+  const pausedMutations = useMutationState({ filters: { status: "pending", predicate: (m) => m.state.isPaused || ecritureRejouable(m.options.mutationKey) }, select: (m) => m.mutationId });
   const conflicts = useSyncConflicts(projectId);
 
   const pending = file.enAttente + pausedMutations.length;
