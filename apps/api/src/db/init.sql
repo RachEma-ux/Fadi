@@ -257,6 +257,8 @@ ALTER TABLE atelier_groupes ADD COLUMN IF NOT EXISTS verrouille boolean NOT NULL
 -- Propriétés des groupes et des calques (D-088).
 ALTER TABLE atelier_groupes ADD COLUMN IF NOT EXISTS proprietes jsonb;
 ALTER TABLE atelier_calques ADD COLUMN IF NOT EXISTS proprietes jsonb;
+-- Réseaux associatifs (D-115) : paramètres et copies d'un groupe-réseau.
+ALTER TABLE atelier_groupes ADD COLUMN IF NOT EXISTS reseau jsonb;
 
 CREATE TABLE IF NOT EXISTS atelier_references (
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,

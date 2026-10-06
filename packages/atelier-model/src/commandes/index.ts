@@ -4,6 +4,8 @@
  * est un instantané différentiel (`interne.restaurer`), appliqué par annuler / rétablir comme une nouvelle
  * microversion.
  */
+import { dissocierReseau, modifierReseau } from "./reseau-associatif.js";
+import { copier } from "./transformer.js";
 import { jumelerOuverture, ouvertureAngle } from "./fenetres.js";
 import { creerEscalierHelicoidal, creerEscalierVolees } from "./escaliers.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
@@ -233,6 +235,8 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "calque.supprimer": (etat, p) => reducteursCalque.supprimer(etat, p),
   "calque.affecter": (etat, p, ctx, c) => reducteursCalque.affecter(etat, p, ctx, c),
   "groupe.creer": (etat, p, ctx, c) => reducteursGroupe.creer(etat, p, ctx, c),
+  "reseau.modifier": (etat, p, ctx) => modifierReseau(etat, p, ctx, copier),
+  "reseau.dissocier": (etat, p) => dissocierReseau(etat, p),
   "groupe.dissoudre": (etat, p) => reducteursGroupe.dissoudre(etat, p),
   "groupe.modifier": (etat, p) => reducteursGroupe.modifier(etat, p),
   "type.definir": (etat, p, ctx) => reducteursType.definir(etat, p, ctx),

@@ -89,7 +89,9 @@ export function actionImmediate(outil: string, etat: ModeleAtelier, ui: EtatUi):
       return { commandes: [{ type: "groupe.creer", params: { nom: `Groupe ${Object.keys(etat.groupes).length + 1}` }, cibles: sel }], label: "Grouper" };
     case "repeter": {
       const n = Math.round(nombre(ui, "repetitions", 3));
-      return { commandes: [{ type: "transformer.repeter", params: { nombre: n, dx: nombre(ui, "pasX", 1), dy: nombre(ui, "pasY", 0) }, cibles: sel }], label: `Répéter × ${n}` };
+      // Réseau associatif (D-115, case de l'outil) : paramètres gardés dans le groupe des copies.
+      const associatif = ui.parametresOutil["reseauAssocie"] === true;
+      return { commandes: [{ type: "transformer.repeter", params: { nombre: n, dx: nombre(ui, "pasX", 1), dy: nombre(ui, "pasY", 0), ...(associatif ? { associatif: true } : {}) }, cibles: sel }], label: `Répéter × ${n}${associatif ? " (réseau associatif)" : ""}` };
     }
     case "raccorder":
     case "chanfreiner": {

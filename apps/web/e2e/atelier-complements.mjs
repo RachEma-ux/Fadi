@@ -1707,6 +1707,36 @@ await page.waitForSelector(".plan2d");
   check("classer par règle : murs du niveau actif proposés puis classés en un seul lot", n > 0 && classes === n && rev === avant.revision + 1, `${n} · ${classes} · r${avant.revision} → r${rev}`);
 }
 
+// Réseau associatif (D-115) : créé par un lot, recalculé depuis l'inspecteur d'une copie (nombre, pas).
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const r0 = await lot(pid, `res-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "poteau.creer", params: { id: "pot-res", niveauId: murA.niveauId, point: P(ax - 99, ay - 99), formeId: "rectangle", largeur: m(0.3), profondeur: m(0.3), hauteur: m(3) } },
+    { type: "transformer.repeter", params: { nombre: 3, dx: 2, dy: 0, associatif: true }, cibles: ["pot-res"] },
+  ]);
+  await ouvrir(pid);
+  const g = Object.values((await modele(pid)).modele.groupes).find((x) => x.reseau?.sources?.includes("pot-res"));
+  let apres = null;
+  if (g) {
+    await selectionner(g.reseau.copies[0]);
+    await page.locator(`[data-groupe="${g.id}"] > summary`).click().catch(() => {});
+    await page.locator('[data-reseau-champ="nombre"]').fill("2");
+    await page.locator('[data-reseau-champ="dx"]').fill("3");
+    await page.locator("[data-reseau-recalculer]").click();
+    for (let k = 0; k < 30 && !apres; k++) {
+      const gr = (await modele(pid)).modele.groupes[g.id];
+      if (gr?.reseau?.nombre === 2) apres = gr;
+      else await page.waitForTimeout(500);
+    }
+  }
+  const xs = apres ? apres.reseau.copies.length : 0;
+  check("réseau associatif : recalculé depuis l'inspecteur (2 copies au pas de 3 m)", r0.status === 200 && !!g && apres?.reseau?.dx === 3 && xs === 2, `${r0.status} · ${g?.id} · ${JSON.stringify(apres?.reseau ?? null).slice(0, 160)}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

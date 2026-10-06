@@ -6,6 +6,7 @@
  * ne touche pas aux dimensions typées et refuse les escaliers ; un miroir en place d'un mur met « à réparer »
  * les références à ses faces ; étirer conserve la distance des ouvertures à l'extrémité fixe.
  */
+import { genererReseau, grouperReseau, lireParametresReseau, nomReseau } from "./reseau-associatif.js";
 import { decomposerBloc } from "./bloc.js";
 import { validerParams } from "./validation.js";
 import { add, decalerPolyligneArcs, dot, pointsArc, pointsEllipse, pointsPolyligne, centreRenflement, longueurAxeMur, decalerArrondi, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
@@ -186,7 +187,7 @@ function appliquerEnPlace(etat: ModeleAtelier, selection: OccurrenceQuelconque[]
 }
 
 /** Copie d'une sélection (nouveaux identifiants, ouvertures des murs copiées avec hôte remappé). */
-function copier(etat: ModeleAtelier, selection: OccurrenceQuelconque[], t: Transformation, ctx: ContexteCommande): ResultatCommande {
+export function copier(etat: ModeleAtelier, selection: OccurrenceQuelconque[], t: Transformation, ctx: ContexteCommande): ResultatCommande {
   const objets = { ...etat.objets };
   const effets = effetsVides();
   const nouveauxIds = new Map<string, string>();
@@ -307,6 +308,14 @@ export const reducteursTransformer = {
   repeter(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande, c: string[]): ResultatCommande {
     const sel = cibles(etat, p, c);
     if (p["trajetId"] !== undefined && p["trajetId"] !== null) return repeterSurTrajet(etat, sel, p, ctx);
+    // Réseau associatif (D-115) : paramètres gardés dans un groupe qui réunit les copies.
+    if (lire.booleen(p, "associatif", false)) {
+      const params = lireParametresReseau(p, sel.map((o) => o.id));
+      const gen = genererReseau(etat, params, ctx, copier);
+      const gid = ctx.ids.nouveau("groupe");
+      const etatG = grouperReseau(gen.etat, { id: gid, nom: nomReseau(params), reseau: { ...params, copies: gen.copies } }, gen.copies);
+      return { etat: etatG, effets: { ...gen.effets, crees: [...gen.effets.crees, gid] } };
+    }
     const nombre = lire.nombre(p, "nombre", { entier: true, min: 1, max: 500 })!;
     const centre = lire.point(p, "centre", { optionnel: true });
     let courant = etat;

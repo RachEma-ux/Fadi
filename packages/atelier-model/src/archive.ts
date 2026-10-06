@@ -22,6 +22,13 @@ const ID = /^[^\u0000-\u001f]{1,200}$/u;
 
 export type ResultatVerification = { ok: true; modele: ModeleAtelier } | { ok: false; erreurs: string[] };
 
+/** Paramètres de réseau associatif (D-115) bien formés ; sinon le groupe est relu sans eux. */
+function reseauValide(r: unknown): boolean {
+  if (!estRecord(r)) return false;
+  const liste = (v: unknown) => Array.isArray(v) && v.every((x) => typeof x === "string");
+  return liste(r["sources"]) && liste(r["copies"]) && Number.isInteger(r["nombre"]) && (typeof r["dx"] === "number" || typeof r["angle"] === "number");
+}
+
 export function verifierModele(brut: unknown): ResultatVerification {
   const erreurs: string[] = [];
   if (!estRecord(brut) || brut["version"] !== 1) return { ok: false, erreurs: ["modèle : version 1 attendue"] };
@@ -51,7 +58,7 @@ export function verifierModele(brut: unknown): ResultatVerification {
   for (const c of Object.values(modele.calques)) if (c.parentId && !modele.calques[c.parentId]) erreurs.push(`calques.${c.id} : calque parent inconnu (${c.parentId})`);
   for (const [id, g] of Object.entries(table("groupes")) as [string, Brut][]) {
     if (typeof g["nom"] !== "string") erreurs.push(`groupes.${id} : nom attendu`);
-    else modele.groupes[id] = { id, nom: g["nom"], ...(g["verrouille"] === true ? { verrouille: true as const } : {}), ...(estRecord(g["proprietes"]) && Object.keys(g["proprietes"]).length ? { proprietes: g["proprietes"] as never } : {}) };
+    else modele.groupes[id] = { id, nom: g["nom"], ...(g["verrouille"] === true ? { verrouille: true as const } : {}), ...(estRecord(g["proprietes"]) && Object.keys(g["proprietes"]).length ? { proprietes: g["proprietes"] as never } : {}), ...(reseauValide(g["reseau"]) ? { reseau: g["reseau"] as never } : {}) };
   }
   for (const [id, d] of Object.entries(table("definitions")) as [string, Brut][]) {
     const classe = d["classe"];

@@ -202,7 +202,10 @@ export function planifierReprise(source: ModeleAtelier, cible: ModeleAtelier, op
     if (!g) continue;
     const n = nid(id);
     table.set(id, n);
-    ajouts.groupes[n] = { ...g, id: n };
+    // Réseau associatif (D-115) : ses sources et copies ne sont pas reprises comme telles — le groupe repris est ordinaire.
+    const { reseau: _r, ...gSans } = g;
+    void _r;
+    ajouts.groupes[n] = { ...gSans, id: n };
   }
   for (const id of definitionsUtilisees) {
     const d = source.definitions[id];

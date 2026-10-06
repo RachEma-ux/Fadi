@@ -650,6 +650,12 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: Mo
           })}
         </dl>
       )}
+      {ui.outil === "repeter" && (
+        <label className="case" title="Les paramètres sont gardés : modifier le pas ou le nombre recalcule les copies">
+          <input type="checkbox" checked={ui.parametresOutil["reseauAssocie"] === true} data-reseau-associe onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, reseauAssocie: e.target.checked } }))} />
+          Réseau associatif
+        </label>
+      )}
       {ui.outil === "extruder" && (
         <label className="case" title="Le solide suit le profil de l'esquisse fermée quand elle change ; supprimée ou ouverte, il garde son dernier contour">
           <input type="checkbox" checked={ui.parametresOutil["solideAssocie"] === true} data-solide-associe onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, solideAssocie: e.target.checked } }))} />
@@ -992,6 +998,30 @@ function VersNiveau({ sel, etat, readOnly, onCommandes }: { sel: OccurrenceQuelc
   );
 }
 
+/** Réseau associatif (D-115) : nombre et pas (ou angle) modifiables, recalcul des copies en un lot ; dissocier. */
+function ReseauAssocie({ gid, reseau, readOnly, onCommandes }: { gid: string; reseau: NonNullable<ModeleAtelier["groupes"][string]["reseau"]>; readOnly: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const cm = (v: number | undefined) => (v === undefined ? "" : String(v).replace(".", ","));
+  const [v, setV] = useState({ nombre: String(reseau.nombre), dx: cm(reseau.dx), dy: cm(reseau.dy), angle: cm(reseau.angle) });
+  const polaire = !!reseau.centre;
+  const n = Number(v.nombre);
+  const lu = { dx: nombreSaisi(v.dx), dy: nombreSaisi(v.dy), angle: nombreSaisi(v.angle) };
+  const ok = Number.isInteger(n) && n >= 1 && n <= 500 && (polaire ? lu.angle !== null : lu.dx !== null && lu.dy !== null);
+  const champ = (k: keyof typeof v, libelle: string) => <label key={k}>{libelle}<input inputMode="decimal" value={v[k]} disabled={readOnly} onChange={(e) => setV({ ...v, [k]: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-reseau-champ={k} /></label>;
+  return (
+    <div className="nav-formulaire-altimetrie" data-reseau={gid}>
+      <p className="inspecteur-aide">Réseau associatif : {reseau.copies.length} copie(s) de {reseau.sources.join(", ")}.</p>
+      {champ("nombre", "Copies")}
+      {polaire ? champ("angle", "Angle (°)") : [champ("dx", "Pas en x (m)"), champ("dy", "Pas en y (m)")]}
+      {!readOnly && (
+        <>
+          <button type="button" disabled={!ok} data-reseau-recalculer onClick={() => onCommandes([{ type: "reseau.modifier", params: { groupeId: gid, nombre: n, ...(polaire ? { angle: { value: lu.angle!, unit: "deg" } } : { dx: lu.dx!, dy: lu.dy! }) } }], `Recalculer le réseau (${n} copies)`)}>Recalculer</button>
+          <button type="button" className="lien" onClick={() => onCommandes([{ type: "reseau.dissocier", params: { groupeId: gid } }], "Dissocier le réseau")}>Dissocier</button>
+        </>
+      )}
+    </div>
+  );
+}
+
 /**
  * Groupe de la sélection (D-041) : renommer, retirer un membre, ajouter les objets sans groupe au groupe des autres,
  * sélectionner tout le groupe, dissoudre.
@@ -1012,6 +1042,7 @@ function GroupeSelection({ sel, etat, readOnly, onCommandes }: { sel: Occurrence
       <summary>
         Groupe « {groupe.nom} » ({membres.length}){tenu ? " · verrouillé" : ""}
       </summary>
+      {groupe.reseau && <ReseauAssocie gid={gid} reseau={groupe.reseau} readOnly={readOnly || tenu} onCommandes={onCommandes} />}
       <label className="case">
         <input type="checkbox" checked={tenu} disabled={readOnly} data-groupe-action="verrouiller" onChange={(e) => onCommandes([{ type: "groupe.modifier", params: { id: gid, verrouille: e.target.checked } }], `${e.target.checked ? "Verrouiller" : "Déverrouiller"} le groupe « ${groupe.nom} »`)} /> Groupe verrouillé (membres non modifiables)
       </label>

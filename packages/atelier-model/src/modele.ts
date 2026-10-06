@@ -334,6 +334,18 @@ export interface Groupe {
   verrouille?: true;
   /** Propriétés du groupe (D-088), mêmes règles que celles des objets ; absent : aucune. */
   proprietes?: Record<string, Propriete>;
+  /** Réseau associatif (D-115) : paramètres et copies (membres du groupe) ; absent : groupe ordinaire. */
+  reseau?: ParametresReseau & { copies: string[] };
+}
+
+/** Paramètres d'un réseau associatif (D-115) : rectangulaire (pas dx, dy en m) ou polaire (centre, angle en °). */
+export interface ParametresReseau {
+  sources: string[];
+  nombre: number;
+  dx?: number;
+  dy?: number;
+  centre?: Point2 | null;
+  angle?: number;
 }
 
 export interface Hypothese {

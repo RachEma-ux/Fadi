@@ -356,6 +356,8 @@ export const atelierGroupes = pgTable(
     nom: text("nom").notNull(),
     verrouille: boolean("verrouille").notNull().default(false),
     proprietes: jsonb("proprietes").$type<Record<string, unknown> | null>(),
+    /** Réseau associatif (D-115) : paramètres et copies ; null : groupe ordinaire. */
+    reseau: jsonb("reseau").$type<Record<string, unknown> | null>(),
   },
   (t) => [primaryKey({ columns: [t.projectId, t.id] })],
 );
