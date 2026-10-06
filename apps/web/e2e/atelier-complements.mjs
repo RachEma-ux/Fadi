@@ -2322,20 +2322,8 @@ await page.waitForSelector(".plan2d");
     if (!copie) await page.waitForTimeout(500);
   }
   const ici = r0.status === 200 && !!copie && Math.abs(copie.params.points[0].x - (x0 + 1)) < 1e-9 && Math.abs(copie.params.points[0].y - (y0 - 1)) < 1e-9;
-  await ouvrir(voisin);
-  await page.evaluate(() => document.activeElement?.blur?.());
-  await page.keyboard.press("Control+v");
-  let ailleurs = null;
-  for (let k = 0; k < 30 && !ailleurs; k++) {
-    ailleurs = (await modele(voisin)).modele.objets["pp-e2e"] ?? null;
-    if (!ailleurs) await page.waitForTimeout(500);
-  }
-  check("presse-papiers : collé ici décalé de 1 m, puis dans un autre projet aux mêmes coordonnées", ici && !!ailleurs && Math.abs(ailleurs.params.points[0].x - x0) < 1e-9, `${r0.status} · ici ${ici} · voisin ${JSON.stringify(ailleurs?.params.points?.[0] ?? null)}`);
-  await attendreEnregistre().catch(() => {});
-  await ouvrir(pid).catch(async () => {
-    console.log(`(retour au projet : ${await page.locator(".barre-sync").textContent().catch(() => "?")} — rechargement)`);
-    await ouvrir(pid);
-  });
+  check("presse-papiers : collé dans le même projet, décalé de 1 m", ici, `${r0.status} · ${JSON.stringify(copie?.params.points?.[0] ?? null)}`);
+  globalThis.collerAilleurs = { x0 };
 }
 
 // Orientation d'un texte (D-146) : saisie dans l'inspecteur, texte tourné au plan.
@@ -2458,6 +2446,20 @@ await page.waitForSelector(".plan2d");
   await page.waitForTimeout(500);
   const annonce = await page.locator("[data-espace-traverses]").textContent().catch(() => "");
   check("espace sur plusieurs niveaux : niveau haut enregistré, niveau intermédiaire traversé", r0.status === 200 && haut === au[1].id && annonce.includes(au[0].nom), `${r0.status} · ${haut} · ${annonce}`);
+}
+
+// Presse-papiers, suite (D-147) : le même contenu collé dans le projet voisin (en dernier : la page reste sur le voisin).
+{
+  await ouvrir(voisin);
+  await page.evaluate(() => document.activeElement?.blur?.());
+  await page.keyboard.press("Control+v");
+  let ailleurs = null;
+  for (let k = 0; k < 30 && !ailleurs; k++) {
+    ailleurs = (await modele(voisin)).modele.objets["pp-e2e"] ?? null;
+    if (!ailleurs) await page.waitForTimeout(500);
+  }
+  check("presse-papiers : collé dans un autre projet aux mêmes coordonnées", !!ailleurs && Math.abs(ailleurs.params.points[0].x - globalThis.collerAilleurs.x0) < 1e-9, JSON.stringify(ailleurs?.params.points?.[0] ?? null));
+  await attendreEnregistre().catch(() => {});
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.

@@ -36,7 +36,7 @@ preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leur
 | Recette échanges `atelier-echanges.mjs` (lot 6) | ✅ 17 contrôles |
 | Recette versions `atelier-versions.mjs` (lot 7) | ✅ 24 contrôles |
 | Recette automatisation `atelier-automatisation.mjs` (lot 8, éditeur guidé) | ✅ 17 contrôles |
-| Recette compléments `atelier-complements.mjs` | ✅ 127 contrôles (captures `10-reprise.png`, `10-reference-externe.png`, `10-coupe-remplie.png`) |
+| Recette compléments `atelier-complements.mjs` | ✅ 128 contrôles (captures `10-reprise.png`, `10-reference-externe.png`, `10-coupe-remplie.png`) |
 | Corpus IFC validé par IfcOpenShell 0.9.0 (`apps/api/test-corpus/ifc/`) | ✅ petit modèle (référence octet pour octet), P.118, P.118 réimporté puis réexporté |
 | Sauvegarde puis restauration vérifiées (`scripts/verify-restore.sh`, T11) | ✅ en CI ; en local sur la base de développement (journal, versions, publications, volumes) |
 | axe-core (aucune violation critique ou sérieuse) | ✅ à chaque écran des recettes, ordinateur et téléphone |
