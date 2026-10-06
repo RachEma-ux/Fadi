@@ -1416,6 +1416,31 @@ await page.waitForSelector(".plan2d");
   check("escalier à volées : deux volées et un palier posés au plan (trois points, Entrée)", ok && apres === avant + 2, `outil ${ok} · ${avant} → ${apres}`);
 }
 
+// Escalier balancé tracé au plan (D-123) : trois points, Entrée ; une marche balancée par contremarche.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const compter = async () => Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "solide" && o.params.role === "marche-balancee").length;
+  const avant = await compter();
+  const ok = await choisirOutil("marches balancées", "Escalier balancé", "escalier-balance");
+  for (const [k, v] of [["largeurVolees", "1"], ["hauteurVolees", "2.8"], ["contremarchesVolees", "14"], ["epaisseurMarche", "0.05"], ["ligneFoulee", "0.5"], ["marchesBalancees", "4"]]) await page.locator(`#outil-${k}`).fill(v);
+  const z = await page.locator(".plan2d").boundingBox();
+  for (const [fx, fy] of [[0.3, 0.75], [0.6, 0.75], [0.6, 0.35]]) {
+    await page.mouse.click(z.x + z.width * fx, z.y + z.height * fy);
+    await page.waitForTimeout(150);
+  }
+  await page.evaluate(() => document.activeElement?.blur?.());
+  await page.keyboard.press("Enter");
+  let apres = avant;
+  for (let k = 0; k < 30 && apres < avant + 14; k++) {
+    apres = await compter();
+    if (apres < avant + 14) await page.waitForTimeout(500);
+  }
+  const aide = (await page.locator(".etat-aide").textContent()) ?? "";
+  await page.keyboard.press("Escape");
+  check("escalier balancé : quatorze marches posées au plan (trois points, Entrée)", ok && apres === avant + 14, `outil ${ok} · ${avant} → ${apres} · ${aide}`);
+}
+
 // Loupe de précision au doigt (D-085) : appui tenu en traçant une ligne, la loupe paraît ; relâcher pose le point.
 {
   await page.keyboard.press("Escape");

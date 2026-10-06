@@ -29,7 +29,7 @@ const ORDRE: Record<string, number> = { "reference-plan": 0, zone: 1, espace: 2,
 
 const LIBELLE_ACCROCHE: Record<string, string> = { extremite: "Extrémité", milieu: "Milieu", centre: "Centre", quadrant: "Quadrant", perpendiculaire: "Perpendiculaire", intersection: "Intersection", proche: "Proche", orthogonal: "Orthogonal", grille: "Grille", libre: "" };
 
-const OUTILS_CONTOUR = new Set(["dalle", "toiture", "zone", "espace", "solide", "polygone", "hachure", "polyligne", "spline", "garde-corps", "escalier-volees"]);
+const OUTILS_CONTOUR = new Set(["dalle", "toiture", "zone", "espace", "solide", "polygone", "hachure", "polyligne", "spline", "garde-corps", "escalier-volees", "escalier-balance"]);
 const OUTILS_SEGMENT = new Set(["mur", "escalier", "ligne", "construction", "cotation", "mesurer", "deplacer", "copier", "miroir", "etirer", "rectangle", "cercle", "arc", "tourner", "echelle"]);
 
 const AUCUNE: NonNullable<PropsPlan2D["externes"]> = [];

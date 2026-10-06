@@ -194,6 +194,7 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
     case "garde-corps":
       return attendre([...pts, point], pts.length ? "Point suivant ; Entrée termine le garde-corps." : "Cliquez le point suivant du garde-corps.");
     case "escalier-volees":
+    case "escalier-balance":
       return attendre([...pts, point], pts.length >= 2 ? "Angle suivant, ou Entrée pour terminer l'escalier (dernier point = arrivée)." : "Cliquez l'angle suivant de l'axe de l'escalier.");
     case "bloc": {
       const definitionId = ui.parametresOutil["definitionBloc"] as string | undefined;
@@ -606,6 +607,7 @@ export function terminer(outil: string, pts: Point2[], ui: EtatUi, niveauId: str
   if (!niveauId) return attendre([], "");
   if ((outil === "polyligne" || outil === "spline" || outil === "garde-corps") && pts.length >= 2) return fermerContour(outil, pts, ui, niveauId);
   if (outil === "escalier-volees") return escalierVolees(pts, ui, niveauId);
+  if (outil === "escalier-balance") return escalierBalance(pts, ui, niveauId);
   if (["dalle", "toiture", "zone", "espace", "solide", "polygone", "hachure"].includes(outil)) return fermerContour(outil, pts, ui, niveauId);
   return attendre([], "");
 }
@@ -622,6 +624,20 @@ export function escalierVolees(pts: Point2[], ui: EtatUi, niveauId: string): Res
   const palier = Number(ui.parametresOutil["epaisseurPalier"]);
   if (![largeur, hauteur, palier].every((x) => Number.isFinite(x) && x > 0) || !Number.isInteger(contremarches) || contremarches < 2) return attendre(pts, "Renseignez dans l'inspecteur la largeur, la hauteur à franchir, le nombre de contremarches et l'épaisseur des paliers.");
   return { commandes: [{ type: "escalier.volees", params: { niveauId, points: pts, largeur: m(largeur), hauteurAFranchir: m(hauteur), contremarches, epaisseurPalier: m(palier), ...(ui.parametresOutil["niveauArriveeVolees"] ? { niveauArriveeId: ui.parametresOutil["niveauArriveeVolees"] } : {}) } }], label: `Escalier à ${pts.length - 1} volées`, pointsEnCours: [], aide: `Escalier à ${pts.length - 1} volées et ${pts.length - 2} palier(s) posé.` };
+}
+
+/** Escalier balancé (D-123) : axe cliqué (départ, angles, arrivée), toutes les dimensions saisies dans l'inspecteur. */
+export function escalierBalance(pts: Point2[], ui: EtatUi, niveauId: string): ResultatClic {
+  if (pts.length < 3) return attendre(pts, "Un escalier balancé demande au moins un angle (trois points).");
+  const v = (cle: string) => Number(ui.parametresOutil[cle]);
+  const largeur = v("largeurVolees");
+  const hauteur = v("hauteurVolees");
+  const contremarches = v("contremarchesVolees");
+  const ep = v("epaisseurMarche");
+  const foulee = v("ligneFoulee");
+  const balancees = v("marchesBalancees");
+  if (![largeur, hauteur, ep, foulee].every((x) => Number.isFinite(x) && x > 0) || !Number.isInteger(contremarches) || contremarches < 2 || !Number.isInteger(balancees) || balancees < 2) return attendre(pts, "Renseignez dans l'inspecteur la largeur, la hauteur à franchir, les contremarches, l'épaisseur des marches, la ligne de foulée et le nombre de marches balancées.");
+  return { commandes: [{ type: "escalier.balance", params: { niveauId, points: pts, largeur: m(largeur), hauteurAFranchir: m(hauteur), contremarches, epaisseurMarche: m(ep), ligneFoulee: m(foulee), marchesBalancees: balancees } }], label: `Escalier balancé (${contremarches} marches)`, pointsEnCours: [], aide: `Escalier balancé posé : ${contremarches} marches, ${balancees} balancées par tournant.` };
 }
 
 /** Saisie de précision (DA-02-16) : longueur, « dx,dy » ou facteur, appliquée au point suivant du tracé. */

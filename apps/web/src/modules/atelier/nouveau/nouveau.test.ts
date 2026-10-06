@@ -733,3 +733,13 @@ describe("répéter sur les niveaux (D-122)", () => {
     expect((a.commandes[0]!.params as Record<string, unknown>)["etages"]).toBeUndefined();
   });
 });
+
+describe("outil Escalier balancé (D-123)", () => {
+  it("Entrée après trois points : lot escalier.balance avec les dimensions saisies, sinon demande de saisie", () => {
+    const pts = [pt(0, 0), pt(3, 0), pt(3, 3)];
+    const u = (po: Record<string, unknown>): EtatUi => ({ ...etatUi.get(), outil: "escalier-balance", niveauId: "rdc", parametresOutil: { ...po } });
+    expect(terminer("escalier-balance", pts, u({}), "rdc").aide).toMatch(/Renseignez/);
+    const r = terminer("escalier-balance", pts, u({ largeurVolees: 1, hauteurVolees: 2.8, contremarchesVolees: 14, epaisseurMarche: 0.05, ligneFoulee: 0.5, marchesBalancees: 4 }), "rdc");
+    expect(r.commandes[0]).toMatchObject({ type: "escalier.balance", params: { contremarches: 14, marchesBalancees: 4 } });
+  });
+});

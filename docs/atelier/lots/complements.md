@@ -193,3 +193,4 @@ Ensembles personnels synchronisés entre appareils (`app.test.ts`, `nouveau.test
 Dégradés de hachure (`degrade.test.ts`, e2e, D-120).
 Motifs DXF nommés importés (`motifs-importes.test.ts`, e2e, D-121).
 Réseau 3D sur les niveaux (`reseau-3d.test.ts`, `nouveau.test.ts`, D-122).
+Escalier balancé (`escalier-balance.test.ts`, `nouveau.test.ts`, e2e, D-123).
