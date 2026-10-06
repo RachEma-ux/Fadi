@@ -713,3 +713,23 @@ describe("outils Étirer par fenêtre et Ajuster une forme fermée (D-116, D-117
     expect((apres.objets["d"] as Occurrence<"dalle">).params.contour).toEqual([pt(0, 0), pt(3, 0), pt(3, 4), pt(0, 4)]);
   });
 });
+
+describe("répéter sur les niveaux (D-122)", () => {
+  it("le paramètre « Étages au-dessus » ajoute etages au lot ; ignoré en réseau associatif", () => {
+    const etat = appliquerLot(modeleVide(), { requestId: "r", baseRevision: 0, contract: CONTRAT_COMMANDES, label: "r", commands: [
+      { type: "niveau.creer", params: { id: "n0", nom: "Rez", elevation: 0, hauteur: 3 } },
+      { type: "niveau.creer", params: { id: "n1", nom: "R+1", elevation: 3, hauteur: 3 } },
+      { type: "poteau.creer", params: { id: "p", niveauId: "n0", point: pt(0, 0), formeId: "rectangle", largeur: m(0.3), profondeur: m(0.3), hauteur: m(3) } },
+    ] }).etat;
+    const ui = (po: Record<string, unknown>): EtatUi => ({ ...etatUi.get(), niveauId: "n0", selection: ["p"], parametresOutil: { ...etatUi.get().parametresOutil, repetitions: 2, pasX: 1, pasY: 0, ...po } });
+    const r = actionImmediate("repeter", etat, ui({ etagesReseau: 1 }));
+    if ("message" in r) throw new Error(r.message);
+    expect(r.commandes[0]).toMatchObject({ type: "transformer.repeter", params: { nombre: 2, etages: 1 } });
+    expect(r.label).toMatch(/sur 2 niveaux/);
+    const apres = appliquerLot(etat, { requestId: "a", baseRevision: 1, contract: CONTRAT_COMMANDES, label: "a", commands: r.commandes }).etat;
+    expect(Object.values(apres.objets).filter((o) => o.niveauId === "n1")).toHaveLength(3);
+    const a = actionImmediate("repeter", etat, ui({ etagesReseau: 1, reseauAssocie: true }));
+    if ("message" in a) throw new Error(a.message);
+    expect((a.commandes[0]!.params as Record<string, unknown>)["etages"]).toBeUndefined();
+  });
+});

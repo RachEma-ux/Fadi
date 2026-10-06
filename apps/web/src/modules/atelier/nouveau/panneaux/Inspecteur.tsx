@@ -613,7 +613,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   extruder: [{ cle: "hauteurSolide", libelle: "Hauteur d'extrusion", unite: "m" }, { cle: "epaisseurProfil", libelle: "Épaisseur d'un profil ouvert", unite: "m" }],
   decaler: [{ cle: "distanceDecalage", libelle: "Distance", unite: "m" }],
   bloc: [{ cle: "angleBloc", libelle: "Angle", unite: "°" }],
-  repeter: [{ cle: "repetitions", libelle: "Nombre de copies" }, { cle: "pasX", libelle: "Pas en x", unite: "m" }, { cle: "pasY", libelle: "Pas en y", unite: "m" }],
+  repeter: [{ cle: "repetitions", libelle: "Nombre de copies" }, { cle: "pasX", libelle: "Pas en x", unite: "m" }, { cle: "pasY", libelle: "Pas en y", unite: "m" }, { cle: "etagesReseau", libelle: "Étages au-dessus (réseau 3D)" }],
   raccorder: [{ cle: "rayon", libelle: "Rayon", unite: "m" }],
   "polygone-regulier": [{ cle: "cotes", libelle: "Nombre de côtés" }],
   "main-levee": [{ cle: "toleranceMainLevee", libelle: "Tolérance de simplification", unite: "m" }],

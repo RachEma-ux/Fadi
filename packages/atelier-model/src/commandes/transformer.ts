@@ -12,7 +12,7 @@ import { ajusterForme, estFormeFermee } from "./ajuster-forme.js";
 import { validerParams } from "./validation.js";
 import { add, decalerPolyligneArcs, dot, pointsArc, pointsEllipse, pointsPolyligne, centreRenflement, longueurAxeMur, decalerArrondi, decalerContour, distance, intersectionSegments, mul, normalise, pointsSpline, projectionSurSegment, sub, transformerPoint2, type Transformation, type Vec } from "../geometrie.js";
 import type { Contour, ModeleAtelier, Occurrence, OccurrenceQuelconque, Reference } from "../modele.js";
-import { ouverturesDuMur, referencesVers } from "../modele.js";
+import { niveauxOrdonnes, ouverturesDuMur, referencesVers } from "../modele.js";
 import { estOuverture } from "../ontologie.js";
 import { pt, TOLERANCE_REDUCTEUR, type Point2 } from "../unites.js";
 import { ErreurCommande, effetsVides, fusionnerEffets, lire, nouveauProbleme, type ContexteCommande, type Effets, type ResultatCommande } from "./base.js";
@@ -226,6 +226,34 @@ export function copier(etat: ModeleAtelier, selection: OccurrenceQuelconque[], t
 }
 
 /**
+ * Réseau 3D (D-122) : les copies créées montent de `k` niveaux (ordre des élévations) ; le niveau haut d'un mur monte
+ * d'autant. Un niveau manquant n'est jamais inventé : refus motivé (créer les niveaux d'abord) ; un escalier, refusé.
+ */
+function etagerCopies(r: ResultatCommande, k: number): ResultatCommande {
+  const etat = r.etat;
+  const ordre = niveauxOrdonnes(etat).map((n) => n.id);
+  const monte = (id: string | null, quoi: string): string => {
+    const i = id ? ordre.indexOf(id) : -1;
+    if (i < 0) throw new ErreurCommande("precondition", "etages", `${quoi} : objet sans niveau`);
+    const cible = ordre[i + k];
+    if (!cible) throw new ErreurCommande("precondition", "etages", `${quoi} : il manque ${i + k - ordre.length + 1} niveau(x) au-dessus de « ${etat.niveaux[id!]!.nom} » — créer les niveaux d'abord`);
+    return cible;
+  };
+  const objets = { ...etat.objets };
+  const touches = new Set<string>();
+  for (const id of r.effets.crees) {
+    const o = objets[id];
+    if (!o) continue;
+    if (o.classe === "escalier") throw new ErreurCommande("precondition", "etages", `${id} : un escalier ne se répète pas d'un niveau à l'autre (niveaux de départ et d'arrivée à redéfinir)`);
+    const niveauId = monte(o.niveauId, id);
+    touches.add(niveauId);
+    if (o.classe === "mur" && o.params.niveauHautId) objets[id] = { ...o, niveauId, params: { ...o.params, niveauHautId: monte(o.params.niveauHautId, `${id} (niveau haut)`) } };
+    else objets[id] = { ...o, niveauId } as OccurrenceQuelconque;
+  }
+  return { etat: { ...etat, objets }, effets: { ...r.effets, niveauxTouches: [...new Set([...r.effets.niveauxTouches, ...touches])] } };
+}
+
+/**
  * Vers un autre niveau (D-039, `niveauCible` de `transformer.deplacer` et `transformer.copier`) : les objets visés
  * (déplacés, ou les copies créées) passent sur le niveau cible, les ouvertures suivent leur mur. Refusé pour un
  * escalier (niveaux de départ et d'arrivée à redéfinir) et pour un mur dont le niveau haut ne serait plus au-dessus.
@@ -315,13 +343,16 @@ export const reducteursTransformer = {
     if (p["trajetId"] !== undefined && p["trajetId"] !== null) return repeterSurTrajet(etat, sel, p, ctx);
     // Réseau associatif (D-115) : paramètres gardés dans un groupe qui réunit les copies.
     if (lire.booleen(p, "associatif", false)) {
+      if (p["etages"] !== undefined && p["etages"] !== null) throw new ErreurCommande("invalide", "etages", "réseau associatif : dans le plan seulement (réseau sur les niveaux : non associatif)");
       const params = lireParametresReseau(p, sel.map((o) => o.id));
       const gen = genererReseau(etat, params, ctx, copier);
       const gid = ctx.ids.nouveau("groupe");
       const etatG = grouperReseau(gen.etat, { id: gid, nom: nomReseau(params), reseau: { ...params, copies: gen.copies } }, gen.copies);
       return { etat: etatG, effets: { ...gen.effets, crees: [...gen.effets.crees, gid] } };
     }
-    const nombre = lire.nombre(p, "nombre", { entier: true, min: 1, max: 500 })!;
+    // Réseau 3D (D-122) : `etages` = nombre de niveaux au-dessus qui reçoivent chacun une copie de l'ensemble.
+    const etages = p["etages"] === undefined || p["etages"] === null ? 0 : lire.nombre(p, "etages", { entier: true, min: 1, max: 50 })!;
+    const nombre = lire.nombre(p, "nombre", { entier: true, min: etages ? 0 : 1, max: 500 })!;
     const centre = lire.point(p, "centre", { optionnel: true });
     let courant = etat;
     let effets = effetsVides();
@@ -330,6 +361,15 @@ export const reducteursTransformer = {
       const r = copier(courant, sel, t, ctx);
       courant = r.etat;
       effets = fusionnerEffets(effets, r.effets);
+    }
+    if (etages) {
+      const plan = [...sel, ...effets.crees.map((id) => courant.objets[id]!).filter((o) => !estOuverture(o.classe))];
+      for (let k = 1; k <= etages; k++) {
+        const r = copier(courant, plan, { type: "translation", dx: 0, dy: 0 }, ctx);
+        const e = etagerCopies(r, k);
+        courant = e.etat;
+        effets = fusionnerEffets(effets, e.effets);
+      }
     }
     return { etat: courant, effets };
   },

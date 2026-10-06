@@ -91,7 +91,9 @@ export function actionImmediate(outil: string, etat: ModeleAtelier, ui: EtatUi):
       const n = Math.round(nombre(ui, "repetitions", 3));
       // Réseau associatif (D-115, case de l'outil) : paramètres gardés dans le groupe des copies.
       const associatif = ui.parametresOutil["reseauAssocie"] === true;
-      return { commandes: [{ type: "transformer.repeter", params: { nombre: n, dx: nombre(ui, "pasX", 1), dy: nombre(ui, "pasY", 0), ...(associatif ? { associatif: true } : {}) }, cibles: sel }], label: `Répéter × ${n}${associatif ? " (réseau associatif)" : ""}` };
+      // Réseau 3D (D-122) : copies de l'ensemble sur les niveaux au-dessus (non associatif).
+      const etages = associatif ? 0 : Math.max(0, Math.round(nombre(ui, "etagesReseau", 0)));
+      return { commandes: [{ type: "transformer.repeter", params: { nombre: n, dx: nombre(ui, "pasX", 1), dy: nombre(ui, "pasY", 0), ...(associatif ? { associatif: true } : {}), ...(etages ? { etages } : {}) }, cibles: sel }], label: `Répéter × ${n}${associatif ? " (réseau associatif)" : ""}${etages ? ` sur ${etages + 1} niveaux` : ""}` };
     }
     case "raccorder":
     case "chanfreiner": {
