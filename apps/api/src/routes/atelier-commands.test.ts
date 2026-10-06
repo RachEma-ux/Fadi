@@ -894,3 +894,14 @@ describe("péremption d'un export (D-110)", () => {
     expect(n[0].text).toMatch(/« quantites\.csv » \(révision 1\) est périmé : editor-perime@example\.com a modifié le modèle .*révision 3.*Épaisseur/);
   });
 });
+
+describe("problèmes : classes IFC à vérifier (D-111)", () => {
+  it("une classe IFC déclarée hors de l'annexe C est listée dans les problèmes", async () => {
+    const owner = await registerAndLogin("owner-annexec@example.com");
+    const pid = await projetVide(owner);
+    expect((await owner.post(`/projects/${pid}/atelier/commands`).send(enveloppe("c1", 0, [niveau, mur("m1"), { type: "propriete.definir", params: { id: "m1", nom: "classeIfc", valeur: "IfcDoor" } }]))).status).toBe(200);
+    const p = (await owner.get(`/projects/${pid}/atelier/problemes`)).body;
+    expect(p.classesIfc).toHaveLength(1);
+    expect(p.classesIfc[0]).toMatchObject({ objetId: "m1", declaree: "IfcDoor", attendues: ["IfcWall"] });
+  });
+});

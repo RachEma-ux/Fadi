@@ -1011,6 +1011,8 @@ export interface AtelierProblemesResponse {
   references: import("@parcours/atelier-model").Reference[];
   problemes: import("@parcours/atelier-model").Probleme[];
   documentsPerimes: { kind: string; label: string }[];
+  /** Contrôle croisé classe Fadi / classe IFC (D-111). */
+  classesIfc?: import("@parcours/atelier-model").IncoherenceClasseIfc[];
   bilan: { reviewStale: boolean; reserves: number; reservesPrioritaires: number; ecartsAudit: number };
 }
 

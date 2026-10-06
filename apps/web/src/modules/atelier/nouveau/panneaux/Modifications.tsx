@@ -130,6 +130,18 @@ export function Modifications({ projectId, instantane, readOnly, onDecider, onAl
           </ul>
         </details>
       )}
+      {bilan.data?.classesIfc && bilan.data.classesIfc.length > 0 && (
+        <details className="mod-problemes" open data-classes-ifc={bilan.data.classesIfc.length}>
+          <summary>
+            Classes IFC à vérifier (annexe C) <span className="nav-detail">{bilan.data.classesIfc.length}</span>
+          </summary>
+          <ul>
+            {bilan.data.classesIfc.slice(0, 100).map((c) => (
+              <li key={c.objetId}>{etat.objets[c.objetId] ? <button type="button" className="lien" onClick={() => onAller(c.objetId)}>{c.message}</button> : c.message}</li>
+            ))}
+          </ul>
+        </details>
+      )}
       {bilan.data && (
         <div className="mod-bilan">
           <h4>Revue et documents</h4>

@@ -5,6 +5,7 @@ export * from "./geometrie.js";
 export * from "./raccords.js";
 export * from "./ouvrants.js";
 export * from "./menuiserie.js";
+export * from "./annexe-c.js";
 export * from "./compositions.js";
 export * from "./references.js";
 export * from "./quantites.js";

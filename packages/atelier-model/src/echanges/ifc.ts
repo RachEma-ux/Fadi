@@ -25,6 +25,7 @@ import { empreinte } from "../documents/empreinte.js";
 import { compositionMur, lireCouches } from "../compositions.js";
 import { connexionsDuNiveau, polygoneMurRaccorde, raccordMur, type ExtremiteConnexion } from "../raccords.js";
 import { corpsMenuiserie } from "../menuiserie.js";
+import { controleClassesIfc } from "../annexe-c.js";
 
 export const SCHEMA_IFC = "IFC4X3_ADD2";
 
@@ -639,6 +640,8 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
     "DATA;",
   ];
   const contenu = [...entete, ...s.lignes, "ENDSEC;", "END-ISO-10303-21;", ""].join("\n");
+  // Contrôle croisé annexe C (D-111) : une classe IFC déclarée différente de l'annexe C est nommée, jamais suivie.
+  for (const x of controleClassesIfc(etat)) remarques.add(`${x.message}.`);
   const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
   return {
     contenu,

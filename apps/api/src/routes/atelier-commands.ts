@@ -26,6 +26,7 @@ import {
   referencesAReparer,
   type Commande,
   type Enveloppe,
+  controleClassesIfc,
 } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { atelierCommands, users, type JournalKind } from "../db/schema.js";
@@ -205,6 +206,8 @@ atelierCommandsRouter.get("/problemes", async (req, res) => {
     references: charge ? referencesAReparer(charge.etat) : [],
     problemes: charge ? Object.values(charge.etat.problemes) : [],
     collisions: charge ? collisions(charge.etat) : [],
+    // Contrôle croisé classe Fadi / classe IFC (D-111, annexe C) : signalé, jamais corrigé.
+    classesIfc: charge ? controleClassesIfc(charge.etat) : [],
     documentsPerimes: documents,
     bilan: {
       reviewStale: dctx.harmony.designReviewV62 ? dctx.analysis.stale : false,
