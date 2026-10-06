@@ -818,7 +818,7 @@ await page.waitForSelector(".plan2d");
   const masques = await page.locator(".plan2d .obj-mur").count();
   await page.locator("[data-ensemble-nom]").fill("Sans murs e2e");
   await page.locator("[data-ensemble-partager]").check();
-  await page.locator('.nav-formulaire-ensemble button[type="submit"]').click();
+  await page.locator('[data-ensembles] .nav-formulaire-ensemble button[type="submit"]').click();
   let ens = null;
   for (let k = 0; k < 30 && !ens; k++) {
     ens = Object.values((await modele(pid)).modele.definitions).find((d) => d.classe === "ensemble-affichage" && d.nom === "Sans murs e2e") ?? null;
@@ -1817,7 +1817,7 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
   await page.locator("[data-ensemble-nom]").fill("Perso e2e");
   await page.locator("[data-ensemble-partager]").uncheck().catch(() => {});
-  await page.locator('.nav-formulaire-ensemble button[type="submit"]').click();
+  await page.locator('[data-ensembles] .nav-formulaire-ensemble button[type="submit"]').click();
   let serveur = null;
   for (let k = 0; k < 30 && !serveur; k++) {
     const r = await api("get", "/preferences/atelier-ensembles");
@@ -1842,6 +1842,35 @@ await page.waitForSelector(".plan2d");
   }
   await ctx2.close();
   check("ensembles personnels : enregistrés sur un appareil, retrouvés et supprimés sur un autre du même compte", !!serveur?.version && vu && retire, `${JSON.stringify(serveur).slice(0, 120)} · ${vu} · ${retire}`);
+}
+
+// États de calques (D-119) : instantané enregistré dans le modèle, calque gelé ensuite, état restauré depuis le navigateur.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  await page.locator("[data-etats-calques] > summary").click();
+  await page.locator("[data-etat-calques-nom]").fill("Départ e2e");
+  await page.locator("[data-etats-calques] form button[type=submit]").click();
+  let def = null;
+  for (let k = 0; k < 30 && !def; k++) {
+    def = Object.values((await modele(pid)).modele.definitions).find((d) => d.classe === "etat-calques" && d.nom === "Départ e2e") ?? null;
+    if (!def) await page.waitForTimeout(500);
+  }
+  const cid = def ? Object.keys(def.params.calques)[0] : null;
+  if (cid) {
+    await attendreEnregistre().catch(() => {});
+    await page.locator(`[data-calque-geler="${cid}"]`).click();
+    for (let k = 0; k < 30 && !(await modele(pid)).modele.calques[cid]?.gele; k++) await page.waitForTimeout(500);
+    await attendreEnregistre().catch(() => {});
+    await page.locator(`[data-etat-calques-restaurer="${def.id}"]`).click();
+  }
+  let restaure = false;
+  for (let k = 0; k < 30 && cid && !restaure; k++) {
+    restaure = (await modele(pid)).modele.calques[cid]?.gele !== true;
+    if (!restaure) await page.waitForTimeout(500);
+  }
+  const journal = (await api("get", `/projects/${pid}/atelier/journal`)).body.entrees.at(-1)?.label ?? "";
+  check("états de calques : instantané enregistré, calque gelé puis état restauré", !!def && restaure && /Restaurer l'état de calques/.test(journal), `${def?.id} · ${cid} · ${restaure} · ${journal}`);
 }
 
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.

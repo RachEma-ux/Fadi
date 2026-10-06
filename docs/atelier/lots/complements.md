@@ -189,3 +189,4 @@ Réseau associatif (`reseau-associatif.test.ts`, e2e, D-115).
 Étirer par fenêtre polygonale (`etirer-fenetre.test.ts`, e2e, D-116).
 Ajuster des formes fermées et des splines, extrémité imposée (`ajuster-forme.test.ts`, e2e, D-117).
 Ensembles personnels synchronisés entre appareils (`app.test.ts`, `nouveau.test.ts`, e2e, D-118).
+États de calques versionnés (`etats-calques.test.ts`, e2e, D-119).

@@ -5,6 +5,7 @@
  */
 import { useState } from "react";
 import {
+  etatsCalques,
   bibliotheques,
   CLASSES,
   CLASSES_BLOC,
@@ -389,6 +390,46 @@ export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: Occurre
           <button type="button" onClick={ajouter}>Ajouter la contrainte</button>
         </div>
       )}
+    </details>
+  );
+}
+
+/**
+ * États de calques (D-119, DA-05-03) : instantanés nommés de la visibilité, du verrouillage et du gel des calques,
+ * enregistrés dans le modèle (versionnés avec lui) ; « Restaurer » remet les calques dans l'état enregistré.
+ */
+export function EtatsCalques({ etat, onCommandes }: { etat: ModeleAtelier; onCommandes: OnCommandes }) {
+  const [nom, setNom] = useState("");
+  const liste = etatsCalques(etat);
+  if (Object.keys(etat.calques).length === 0) return null;
+  return (
+    <details data-etats-calques>
+      <summary>États de calques</summary>
+      {liste.length > 0 && (
+        <ul className="nav-liste">
+          {liste.map((d) => (
+            <li key={d.id} data-etat-calques={d.id}>
+              <button type="button" data-etat-calques-restaurer={d.id} onClick={() => onCommandes([{ type: "etatCalques.restaurer", params: { id: d.id } }], `Restaurer l'état de calques « ${d.nom} »`)}>{d.nom}</button>
+              <span className="nav-detail">version {d.version} · {Object.keys(d.params.calques).length} calque(s)</span>
+              <button type="button" className="lien" data-etat-calques-maj={d.id} onClick={() => onCommandes([{ type: "etatCalques.enregistrer", params: { id: d.id } }], `Mettre à jour l'état de calques « ${d.nom} »`)}>Mettre à jour</button>
+              <button type="button" className="lien" onClick={() => onCommandes([{ type: "etatCalques.supprimer", params: { id: d.id } }], `Supprimer l'état de calques « ${d.nom} »`)}>Supprimer</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form
+        className="nav-formulaire-ensemble nav-formulaire-etat-calques"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const n = nom.trim();
+          if (!n) return;
+          onCommandes([{ type: "etatCalques.enregistrer", params: { nom: n } }], `Enregistrer l'état de calques « ${n} »`);
+          setNom("");
+        }}
+      >
+        <input value={nom} maxLength={80} placeholder="Nom de l'état" aria-label="Nom de l'état de calques" onChange={(e) => setNom(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-etat-calques-nom />
+        <button type="submit" disabled={!nom.trim()}>Enregistrer l'état actuel</button>
+      </form>
     </details>
   );
 }

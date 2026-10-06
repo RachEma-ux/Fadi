@@ -17,7 +17,7 @@ export interface FichierBibliotheque {
   calques: Calque[];
 }
 
-const EXCLUES = ["vue", "feuille", "reference-externe", "vue-3d", "referentiel-classification", "ensemble-affichage"];
+const EXCLUES = ["vue", "feuille", "reference-externe", "vue-3d", "referentiel-classification", "ensemble-affichage", "etat-calques"];
 
 export function exporterBibliotheque(etat: ModeleAtelier, nom: string, bibliotheque?: string): FichierBibliotheque {
   const retenues = Object.values(etat.definitions)

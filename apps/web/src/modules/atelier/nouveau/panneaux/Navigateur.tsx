@@ -4,7 +4,7 @@
  * (clic = sélection, la vue se recentre).
  */
 import { ProprietesCible } from "./Inspecteur";
-import { ClasserParRegle } from "./Complements";
+import { ClasserParRegle, EtatsCalques } from "./Complements";
 import { useMemo, useState } from "react";
 import { altimetrieDu, descendantsCalque, CLASSES, ensemblesPartages, niveauxOrdonnes, type Classe, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi, type FiltresAffichage } from "../etat-ui";
@@ -146,6 +146,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
           </ul>
         )}
         {!readOnly && <GererCalques etat={etat} onCommandes={onCommandes} />}
+        {!readOnly && <EtatsCalques etat={etat} onCommandes={onCommandes} />}
         {!readOnly && <ClasserParRegle etat={etat} niveauId={ui.niveauId} onCommandes={onCommandes} />}
       </section>
 

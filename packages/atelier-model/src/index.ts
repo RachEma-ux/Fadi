@@ -43,6 +43,7 @@ export * from "./commandes/refexterne.js";
 export * from "./commandes/vues3d.js";
 export * from "./commandes/referentiels.js";
 export * from "./commandes/ensembles.js";
+export * from "./commandes/etats-calques.js";
 export * from "./commandes/altimetrie.js";
 export { raisonVerrou } from "./commandes/verrous.js";
 export { sousZones } from "./commandes/zones.js";
