@@ -4,6 +4,7 @@
  * hypothèses, sources, structure déclarée). Objet immuable : les réducteurs retournent un nouvel état.
  */
 import type { Cintre } from "./cintres.js";
+import type { ProfilVertical } from "./profils-verticaux.js";
 import type { OuvrantPorte } from "./ouvrants.js";
 import type { Menuiserie } from "./menuiserie.js";
 import type { Classe } from "./ontologie.js";
@@ -202,6 +203,11 @@ export interface ParamsSolide extends Contour {
   depouille?: Angle;
   /** Extrusion oblique (D-148) : axe penché de `angle` (degrés) vers `direction` (degrés, 0 = +x) ; absente = verticale. */
   inclinaison?: { angle: Angle; direction: Angle };
+  /**
+   * Profil vertical extrudé horizontalement (D-154) : emprise (contour), hauteur et base en sont dérivées ; le
+   * volume est celui du profil, pas le prisme de l'emprise.
+   */
+  profilVertical?: ProfilVertical;
 }
 
 export type FormeEsquisse = "ligne" | "polyligne" | "arc" | "cercle" | "rectangle" | "polygone" | "spline" | "construction" | "hachure" | "ellipse";

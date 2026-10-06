@@ -3,6 +3,7 @@
  * objets référencés. Retourne des paramètres typés ou lève `ErreurCommande` (400 côté API) — jamais de valeur
  * par défaut inventée pour une grandeur physique (R3) : une hauteur absente reste `null`.
  */
+import { derivesProfil, lireProfilVertical, type ProfilVertical } from "../profils-verticaux.js";
 import { REFERENCE_EXTERNE, versRepereProjet, type ParamsReferenceExterne } from "./refexterne.js";
 import { contourFerme } from "./changer-classe.js";
 import { profilFerme } from "./hachures-associees.js";
@@ -188,9 +189,20 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       ...(p["miroir"] === true && formeId === "L" && ep ? { miroir: true as const } : {}),
     };
   },
-  solide(_etat, p) {
+  solide(_etat, p0) {
+    // Profil vertical (D-154) : emprise, hauteur et base dérivées du profil ; incompatible avec dépouille,
+    // inclinaison et esquisse source.
+    let p = p0;
+    let pv: ProfilVertical | null = null;
+    if (p0["profilVertical"] !== undefined && p0["profilVertical"] !== null) {
+      pv = lireProfilVertical(p0["profilVertical"]);
+      for (const k of ["depouille", "inclinaison", "sourceId"]) if (p0[k] !== undefined && p0[k] !== null) throw new ErreurCommande("invalide", k, "profil vertical : ni dépouille, ni inclinaison, ni esquisse source");
+      const d = derivesProfil(pv);
+      p = { ...p0, contour: d.contour, trous: [], ferme: true, hauteur: { value: Math.round((d.zMax - d.zMin) * 1e9) / 1e9, unit: "m" }, decalageBase: { value: d.zMin, unit: "m" } };
+    }
     const ferme = lire.booleen(p, "ferme", true);
     return {
+      ...(pv ? { profilVertical: pv } : {}),
       ...contour(p, ferme ? 3 : 2),
       ferme,
       hauteur: lire.longueur(p, "hauteur", { optionnel: true }),

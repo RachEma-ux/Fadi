@@ -2276,6 +2276,31 @@ await page.waitForSelector(".plan2d");
   check("baie cintrée : arc surbaissé de flèche 0,25 m enregistré", r0.status === 200 && cintre?.type === "surbaisse" && Math.abs((cintre?.fleche?.value ?? 0) - 0.25) < 1e-9, `${r0.status} · ${JSON.stringify(cintre)}`);
 }
 
+// Profil vertical sur la face d'un mur, extrudé horizontalement (D-154).
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const x0 = murA.params.a.x - 510;
+  const y0 = murA.params.a.y - 510;
+  const r0 = await lot(pid, `pv-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "mur.tracer", params: { id: "mur-pv-e2e", niveauId: murA.niveauId, a: P(x0, y0), b: P(x0 + 6, y0), epaisseur: m(0.2), hauteur: m(3) } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("mur-pv-e2e");
+  await page.locator("[data-profil-vertical] > summary").click();
+  await page.locator("[data-profil-plan]").selectOption("1");
+  await page.locator("[data-profil-points]").fill("0 ; 3\n6 ; 3\n3 ; 5");
+  await page.locator("[data-profil-profondeur]").fill("20 cm");
+  await page.locator("[data-profil-appliquer]").click();
+  let s = null;
+  for (let k = 0; k < 30 && !s; k++) {
+    s = Object.values((await modele(pid)).modele.objets).find((o) => o.classe === "solide" && o.params.profilVertical && Math.abs(o.params.profilVertical.a.y - (y0 - 0.1)) < 1e-6) ?? null;
+    if (!s) await page.waitForTimeout(500);
+  }
+  check("profil vertical : pignon sur la face droite du mur, extrudé de 0,20 m", r0.status === 200 && !!s && s.params.profilVertical.cote === "droite" && s.params.hauteur?.value === 2 && s.params.decalageBase?.value === 3, `${r0.status} · ${JSON.stringify(s?.params.profilVertical ?? null).slice(0, 160)}`);
+}
+
 // Porte pivotante (D-152) : vantail choisi dans l'inspecteur, distance du pivot saisie avant l'envoi.
 {
   await page.keyboard.press("Escape");

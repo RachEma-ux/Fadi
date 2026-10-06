@@ -6,6 +6,7 @@
  * ne touche pas aux dimensions typées et refuse les escaliers ; un miroir en place d'un mur met « à réparer »
  * les références à ses faces ; étirer conserve la distance des ouvertures à l'extrémité fixe.
  */
+import { derivesProfil } from "../profils-verticaux.js";
 import { genererReseau, grouperReseau, lireParametresReseau, nomReseau } from "./reseau-associatif.js";
 import { decomposerBloc } from "./bloc.js";
 import { ajusterForme, estFormeFermee } from "./ajuster-forme.js";
@@ -67,6 +68,13 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
       return { ...o, params: { ...o.params, ...contourT(o.params, t), ...(pente ? { pente } : {}) } };
     }
     case "solide": {
+      // Profil vertical (D-154) : la ligne du plan suit la transformation, le profil et la profondeur sont gardés ; au
+      // miroir, le côté d'extrusion s'inverse ; l'emprise est recalculée.
+      if (o.params.profilVertical) {
+        const pv = o.params.profilVertical;
+        const suivant = { ...pv, a: T(pv.a), b: T(pv.b), ...(t.type === "miroir" ? { cote: pv.cote === "gauche" ? ("droite" as const) : ("gauche" as const) } : {}) };
+        return { ...o, params: { ...o.params, profilVertical: suivant, contour: derivesProfil(suivant).contour, trous: [] } };
+      }
       // Extrusion oblique (D-148) : la direction de l'inclinaison suit la rotation ou le miroir.
       const inc = o.params.inclinaison;
       const inclinaison = inc ? { ...inc, direction: { value: t.type === "rotation" ? Math.round((inc.direction.value + rot) * 1e9) / 1e9 : t.type === "miroir" ? Math.round((2 * axeMiroir(t) - inc.direction.value) * 1e9) / 1e9 : inc.direction.value, unit: "deg" as const } } : undefined;
@@ -226,6 +234,7 @@ function echelleNonUniforme(o: OccurrenceQuelconque, t: Transformation & { type:
       return { ...o, params: { ...o.params, ...contourT(o.params, t), ...(pente ? { pente } : {}) } };
     }
     case "solide": {
+      if (o.params.profilVertical) throw refus("profil vertical (son plan ne resterait pas vertical)");
       // Dépouille et inclinaison (D-148) : angles gardés, direction d'inclinaison transformée.
       const inc = o.params.inclinaison;
       const s = affine(o, T, fx, fy) as Occurrence<"solide">;

@@ -12,6 +12,7 @@ import { architectureBloc, contenuPlace, contoursArchitecture } from "../blocs-p
 import { etendueEspace } from "../espaces-volume.js";
 import { anneauRetombee, etendueDalle } from "../dalles.js";
 import { faceHauteSolide, formeLibre } from "../solides-forme.js";
+import { reperesProfil } from "../profils-verticaux.js";
 import { arcCintre, flecheCintre, profilBaie } from "../cintres.js";
 import { aireSignee, facesMur, hoteOuverture, longueurAxeMur, normalise, perp, pointsArc, sub, type Vec } from "../geometrie.js";
 import { contourMurCourbeRaccorde, raccordMur } from "../raccords.js";
@@ -688,7 +689,12 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
       const h = o.params.hauteur?.value;
       if (!h) break;
       const z0 = z + o.params.decalageBase.value;
-      if (o.params.ferme && formeLibre(o.params)) {
+      if (o.params.profilVertical) {
+        // Profil vertical extrudé horizontalement (D-154) : le profil, épaissi de la profondeur du côté choisi.
+        const pv = o.params.profilVertical;
+        const { u, n, o0, o1 } = reperesProfil(pv);
+        t.profilEpais(pv.a, u, n, pv.profil.map((q) => ({ s: q.s, z: z + q.z })), o0, o1);
+      } else if (o.params.ferme && formeLibre(o.params)) {
         // Dépouille ou extrusion oblique (D-148) : volume réglé entre la face basse et la face haute.
         const fh = faceHauteSolide(o.params);
         if (fh) t.loft(o.params.contour, o.params.trous, fh.contour, fh.trous, z0, z0 + h);
