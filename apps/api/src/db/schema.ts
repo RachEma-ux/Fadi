@@ -474,6 +474,8 @@ export const atelierVariants = pgTable("atelier_variants", {
   statut: text("statut").$type<"ouverte" | "fusionnee">().notNull().default("ouverte"),
   fusionRevision: integer("fusion_revision"),
   fusionAt: timestamp("fusion_at", { withTimezone: true }),
+  /** Dernière mise à jour de la variante depuis le tronc (D-136) : révision du tronc rejouée jusque-là. */
+  syncRevision: integer("sync_revision"),
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

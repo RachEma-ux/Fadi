@@ -14,7 +14,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import type { DifferenceModeles, ModeleAtelier } from "@parcours/atelier-model";
-import { api, ApiError, type AtelierFusionEssai } from "../../../../lib/api";
+import { api, ApiError, type AtelierFusionEssai, type AtelierMiseAJourEssai } from "../../../../lib/api";
 import type { AtelierClient } from "../../bus/atelier-client";
 import { etatUi } from "../etat-ui";
 
@@ -95,6 +95,7 @@ export function Versions({ projectId, client, etat, revision, selection, niveauI
   const [nomPublication, setNomPublication] = useState("");
   const [comparaison, setComparaison] = useState<{ libelle: string; d: DifferenceModeles } | null>(null);
   const [fusion, setFusion] = useState<AtelierFusionEssai | null>(null);
+  const [miseAJour, setMiseAJour] = useState<AtelierMiseAJourEssai | null>(null);
   const [publicationOuverte, setPublicationOuverte] = useState<string | null>(null);
   const [occupe, setOccupe] = useState(false);
 
@@ -213,7 +214,48 @@ export function Versions({ projectId, client, etat, revision, selection, niveauI
             {tronc.accessible && (
               <button type="button" disabled={occupe} onClick={() => void agir(async () => { await synchroniser(); setFusion(await api.getAtelierFusion(tronc.id, projectId)); })}>{tronc.statut === "fusionnee" ? "Préparer une nouvelle fusion" : "Préparer la fusion"}</button>
             )}
+            {tronc.accessible && !readOnly && (
+              <button type="button" disabled={occupe} data-preparer-mise-a-jour onClick={() => void agir(async () => { await synchroniser(); setMiseAJour(await api.getAtelierMiseAJour(tronc.id, projectId)); })}>Mettre à jour depuis le tronc</button>
+            )}
           </span>
+          {miseAJour && (
+            <div className="ver-fusion" data-mise-a-jour={miseAJour.lots.length} data-conflits={miseAJour.conflits.length}>
+              <p>
+                {miseAJour.lots.length} lot(s) du tronc à reprendre (révision {miseAJour.tronc.revision}, depuis {miseAJour.tronc.depuis === "derniere-mise-a-jour" ? "la dernière mise à jour" : "la bifurcation"}) : {miseAJour.affectes.crees.length} création(s), {miseAJour.affectes.modifies.length} modification(s), {miseAJour.affectes.supprimes.length} suppression(s) ; {miseAJour.variante.lotsPropres} lot(s) propres à la variante.
+              </p>
+              {!miseAJour.rejeu.ok && <p className="ver-erreur">Rejeu impossible : « {miseAJour.rejeu.lot} » — {miseAJour.rejeu.message}</p>}
+              {miseAJour.conflits.length > 0 && (
+                <>
+                  <p className="ver-erreur">{miseAJour.conflits.length} conflit(s) : objet modifié dans la variante et dans le tronc.</p>
+                  <ul className="ver-conflits">
+                    {miseAJour.conflits.map((c) => (
+                      <li key={c.objetId}>{c.objetId}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {miseAJour.rejeu.ok && miseAJour.lots.length > 0 && (
+                <button
+                  type="button"
+                  className="primaire"
+                  disabled={occupe}
+                  data-appliquer-mise-a-jour
+                  onClick={() => {
+                    if (miseAJour.conflits.length && !window.confirm(`${miseAJour.conflits.length} conflit(s) : la version du tronc sera rejouée sur ces objets. Continuer ?`)) return;
+                    void agir(async () => {
+                      const r = await api.postAtelierMiseAJour(tronc.id, projectId, { baseRevision: miseAJour.variante.revision, strategie: miseAJour.conflits.length ? "tronc-prioritaire" : "refuser-conflits" });
+                      setMiseAJour(null);
+                      await client.relireServeur();
+                      return `Variante mise à jour depuis le tronc (${r.lots} lot(s), révision ${r.revision}).`;
+                    });
+                  }}
+                >
+                  {miseAJour.conflits.length ? "Reprendre (le tronc prévaut)" : "Reprendre les lots du tronc"}
+                </button>
+              )}
+              {miseAJour.lots.length === 0 && <p className="nav-detail">Rien à reprendre : la variante est à jour.</p>}
+            </div>
+          )}
           {fusion && (
             <div className="ver-fusion" data-conflits={fusion.conflits.length}>
               <p>

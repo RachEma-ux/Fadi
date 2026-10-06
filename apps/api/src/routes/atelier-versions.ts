@@ -7,7 +7,9 @@
  * - `GET /comparer?de=&a=` : différences entre deux états (`courante`, `r:<révision>`, `v:<version>`) ;
  * - `GET /variantes`, `POST /variantes` (bifurcation : copie intégrale reliée au tronc), `GET /variantes/:id/fusion`
  *   (essai : objets affectés, conflits, rejeu à blanc), `POST /variantes/:id/fusion` (rejeu validé, lot par lot,
- *   dans une transaction, conflits refusés sauf stratégie « variante prioritaire ») ;
+ *   dans une transaction, conflits refusés sauf stratégie « variante prioritaire ») ; `GET` / `POST
+ *   /variantes/:id/mise-a-jour` (D-136) : la variante reprend les lots du tronc postérieurs à la bifurcation (ou à sa
+ *   dernière mise à jour), rejoués et validés dans la variante, conflits refusés sauf « tronc prioritaire » ;
  * - `GET /publications`, `POST /publications`, `GET /publications/:id`, `GET /publications/:id/fichiers/:volume`,
  *   `POST /publications/:id/restaurer` : publications figées (version, catalogues, documents en volumes) ;
  * - `GET /verrous`, `POST /verrous`, `DELETE /verrous/:cle` : verrous logiques fins (objet ou `niveau:<id>`) ;
@@ -219,7 +221,7 @@ atelierVersionsRouter.get("/variantes", async (req, res) => {
   const tronc = parent ? await loadProjectAccess(parent.parentId, req.user!.id) : null;
   res.json({
     revision: project.modelRevision,
-    tronc: parent ? { id: parent.parentId, name: tronc?.name ?? null, accessible: !!tronc, nom: parent.nom, forkRevision: parent.forkRevision, baseRevision: parent.baseRevision, statut: parent.statut, fusionRevision: parent.fusionRevision } : null,
+    tronc: parent ? { id: parent.parentId, name: tronc?.name ?? null, accessible: !!tronc, nom: parent.nom, forkRevision: parent.forkRevision, baseRevision: parent.baseRevision, statut: parent.statut, fusionRevision: parent.fusionRevision, syncRevision: parent.syncRevision ?? null } : null,
     variantes: lisibles,
   });
 });
@@ -305,6 +307,81 @@ atelierVersionsRouter.get("/variantes/:varianteId/fusion", async (req, res) => {
     conflits: analyse.conflits,
     rejeu,
   });
+});
+
+/**
+ * Mise à jour d'une variante depuis son tronc (D-136, DA-21-09) : lots du tronc postérieurs à la bifurcation (ou à la
+ * dernière mise à jour), hors ceux venus de la variante et ceux déjà repris ; conflits = objets touchés aussi par les
+ * lots propres à la variante. Rejoués avec leur `requestId` : une fusion ultérieure les reconnaît comme déjà présents.
+ */
+async function analyserMiseAJour(troncId: string, troncRevision: number, lien: typeof atelierVariants.$inferSelect, varianteRevision: number) {
+  const journalVariante = (await journalDepuis(db, lien.projectId, lien.baseRevision)).filter((e) => e.resultRevision <= varianteRevision);
+  const idsVariante = new Set(journalVariante.map((e) => e.requestId));
+  const aRejouer = (await journalDepuis(db, troncId, lien.syncRevision ?? lien.forkRevision)).filter((e) => e.resultRevision <= troncRevision && !idsVariante.has(e.requestId));
+  const ids = journalVariante.map((e) => e.requestId);
+  const dansLeTronc = new Set(ids.length ? (await db.select({ r: atelierCommands.requestId }).from(atelierCommands).where(and(eq(atelierCommands.projectId, troncId), inArray(atelierCommands.requestId, ids)))).map((x) => x.r) : []);
+  const propres = journalVariante.filter((e) => !dansLeTronc.has(e.requestId));
+  const analyse = analyserFusion(propres.map(effetsJournal), aRejouer.map(effetsJournal));
+  return { aRejouer, propres, analyse };
+}
+
+atelierVersionsRouter.get("/variantes/:varianteId/mise-a-jour", async (req, res) => {
+  const ctx = await contexteFusion(req, res, "read");
+  if (!ctx) return;
+  const { aRejouer, propres, analyse } = await analyserMiseAJour(ctx.tronc.id, ctx.tronc.modelRevision, ctx.lien, ctx.variante.modelRevision);
+  const charge = await chargerModele(db, ctx.lien.projectId);
+  let rejeu: { ok: true } | { ok: false; lot: string; message: string } = { ok: true };
+  if (charge) {
+    let etat = charge.etat;
+    for (const e of aRejouer) {
+      try {
+        etat = appliquerLot(etat, { requestId: e.requestId, baseRevision: 0, contract: CONTRAT_COMMANDES, label: e.label, commands: e.commands }).etat;
+      } catch (err) {
+        if (!(err instanceof ErreurCommande)) throw err;
+        rejeu = { ok: false, lot: e.label, message: err.message };
+        break;
+      }
+    }
+  }
+  res.json({
+    variante: { id: ctx.lien.projectId, nom: ctx.lien.nom, revision: ctx.variante.modelRevision, lotsPropres: propres.length },
+    tronc: { id: ctx.tronc.id, revision: ctx.tronc.modelRevision, depuis: ctx.lien.syncRevision ? "derniere-mise-a-jour" : "bifurcation" },
+    lots: aRejouer.map((e) => ({ label: e.label, revision: e.resultRevision })),
+    affectes: analyse.affectes,
+    conflits: analyse.conflits,
+    rejeu,
+  });
+});
+
+const miseAJourSchema = z.object({ baseRevision: z.number().int().min(0), strategie: z.enum(["refuser-conflits", "tronc-prioritaire"]).default("refuser-conflits") });
+
+atelierVersionsRouter.post("/variantes/:varianteId/mise-a-jour", async (req, res) => {
+  const ctx = await contexteFusion(req, res, "read");
+  if (!ctx) return;
+  if (!roleAllows(ctx.variante.role, "write")) return void res.status(403).json({ erreur: "interdit", message: "Écriture sur la variante requise." });
+  const p = miseAJourSchema.safeParse(req.body ?? {});
+  if (!p.success) return void invalide(res, "baseRevision (révision de la variante) requise ; stratégie : refuser-conflits ou tronc-prioritaire");
+  const varianteId = ctx.lien.projectId;
+  await repondreLot(res, varianteId, () =>
+    db.transaction(async (tx) => {
+      await lockProject(tx, varianteId);
+      const courant = (await tx.select({ r: projects.modelRevision }).from(projects).where(eq(projects.id, varianteId)))[0]!.r;
+      if (p.data.baseRevision !== courant) return { status: 409, reponse: { erreur: "conflit", motif: "revision", baseRevision: p.data.baseRevision, revisionCourante: courant, conflits: [] } };
+      const troncRevision = (await tx.select({ r: projects.modelRevision }).from(projects).where(eq(projects.id, ctx.tronc.id)))[0]!.r;
+      const { aRejouer, analyse } = await analyserMiseAJour(ctx.tronc.id, troncRevision, ctx.lien, courant);
+      if (!aRejouer.length) return { status: 409, reponse: { erreur: "conflit", motif: "rien-a-reprendre", message: "Le tronc n'a aucune modification à reprendre." } };
+      if (analyse.conflits.length && p.data.strategie === "refuser-conflits") return { status: 409, reponse: { erreur: "conflit", motif: "mise-a-jour", message: `${analyse.conflits.length} objet(s) modifié(s) dans la variante et dans le tronc.`, conflits: analyse.conflits } };
+      let derniere: ResultatValidation | null = null;
+      for (const e of aRejouer) {
+        const base = (await tx.select({ r: projects.modelRevision }).from(projects).where(eq(projects.id, varianteId)))[0]!.r;
+        const label = `Mise à jour depuis le tronc : ${e.label}`.slice(0, 200);
+        derniere = await validerDansTransaction(tx, varianteId, req.user!.id, { requestId: e.requestId, baseRevision: base, contract: CONTRAT_COMMANDES, label, commands: e.commands }, "commande", null, label);
+        if (derniere.status !== 200) throw new EchecLot(derniere);
+      }
+      await tx.update(atelierVariants).set({ syncRevision: troncRevision }).where(eq(atelierVariants.projectId, varianteId));
+      return { status: 200, reponse: { revision: derniere!.revision, lots: aRejouer.length, affectes: analyse.affectes, conflits: analyse.conflits, strategie: p.data.strategie, troncRevision } };
+    }),
+  );
 });
 
 const fusionSchema = z.object({ baseRevision: z.number().int().min(0), strategie: z.enum(["refuser-conflits", "variante-prioritaire"]).default("refuser-conflits") });

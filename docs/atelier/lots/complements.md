@@ -208,3 +208,4 @@ Axes associés au centre d'un cercle (`axes-associes.test.ts`, e2e, D-132).
 Mode filaire de la vue 3D (e2e, D-133).
 Sélection des semblables et multi-niveaux (`selection-semblables.test.ts`, e2e, D-134).
 Styles graphiques par classe en 3D (e2e, D-135).
+Mise à jour d'une variante depuis son tronc (`atelier-commands.test.ts`, e2e `atelier-versions.mjs`, D-136).

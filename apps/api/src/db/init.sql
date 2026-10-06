@@ -355,6 +355,7 @@ CREATE TABLE IF NOT EXISTS atelier_variants (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS atelier_variants_parent_idx ON atelier_variants (parent_id);
+ALTER TABLE atelier_variants ADD COLUMN IF NOT EXISTS sync_revision integer;
 
 CREATE TABLE IF NOT EXISTS volumes (
   id text PRIMARY KEY,

@@ -493,6 +493,29 @@ describe("versions, variantes, publications, verrous (lot 7)", () => {
     const apres = (await modele(owner, pid)).modele;
     expect(apres.objets[nouveau].params.hauteur.value).toBe(2.6);
     expect(apres.objets["m1"].params.hauteur.value).toBe(3.1);
+    // Mise à jour de la variante depuis le tronc (D-136) : seuls les lots du tronc absents de la variante (t2, t3, t4
+    // n'y sont pas ; var-1..3 y sont nés) sont repris ; une fusion suivante les sait déjà présents.
+    // Lot propre à la variante (pas encore fusionné) sur m1, que le tronc a aussi modifié (t3) : conflit.
+    expect((await envoyer(owner, vid, "var-4", (await modele(owner, vid)).revision, [{ type: "objet.modifier", params: { id: "m1", params: { epaisseur: m(0.22) } } }])).status).toBe(200);
+    const vRev = (await modele(owner, vid)).revision as number;
+    let maj = (await owner.get(`/projects/${pid}/atelier/variantes/${vid}/mise-a-jour`)).body;
+    expect(maj.lots.map((l: { label: string }) => l.label)).toEqual(["t2", "t3", "t4"]);
+    expect(maj.rejeu).toEqual({ ok: true });
+    expect(maj.variante.lotsPropres).toBe(1);
+    expect(maj.conflits.map((c: { objetId: string }) => c.objetId)).toEqual(["m1"]);
+    expect((await owner.post(`/projects/${pid}/atelier/variantes/${vid}/mise-a-jour`).send({ baseRevision: vRev })).status).toBe(409);
+    const prise = await owner.post(`/projects/${pid}/atelier/variantes/${vid}/mise-a-jour`).send({ baseRevision: vRev, strategie: "tronc-prioritaire" });
+    expect(prise.status).toBe(200);
+    expect(prise.body).toMatchObject({ lots: 3, revision: vRev + 3 });
+    const vApres = (await modele(owner, vid)).modele;
+    expect(vApres.objets["m1"].params.hauteur.value).toBe(3.1);
+    expect((await owner.get(`/projects/${vid}/atelier/variantes`)).body.tronc.syncRevision).toBe(7);
+    maj = (await owner.get(`/projects/${pid}/atelier/variantes/${vid}/mise-a-jour`)).body;
+    expect(maj.lots).toEqual([]);
+    expect((await owner.post(`/projects/${pid}/atelier/variantes/${vid}/mise-a-jour`).send({ baseRevision: vRev + 3 })).body.motif).toBe("rien-a-reprendre");
+    // La fusion suivante ne rejoue pas les lots repris du tronc : seulement var-4.
+    expect((await owner.get(`/projects/${pid}/atelier/variantes/${vid}/fusion`)).body.lots.map((l: { label: string }) => l.label)).toEqual(["var-4"]);
+    expect(vApres.objets["m1"].params.epaisseur.value).toBe(0.22);
     // Un étranger ne voit pas la variante.
     const etranger = await registerAndLogin("variante-etranger@example.com");
     expect((await etranger.get(`/projects/${pid}/atelier/variantes/${vid}/fusion`)).status).toBe(404);

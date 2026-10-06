@@ -869,6 +869,9 @@ export const api = {
   postAtelierVariante: (projectId: string, nom: string) => request<{ id: string; name: string; nom: string; forkRevision: number }>(`/projects/${projectId}/atelier/variantes`, { method: "POST", body: JSON.stringify({ nom }) }),
   getAtelierFusion: (troncId: string, varianteId: string) => request<AtelierFusionEssai>(`/projects/${troncId}/atelier/variantes/${encodeURIComponent(varianteId)}/fusion`),
   postAtelierFusion: (troncId: string, varianteId: string, body: { baseRevision: number; strategie: "refuser-conflits" | "variante-prioritaire" }) => request<{ revision: number; lots: number }>(`/projects/${troncId}/atelier/variantes/${encodeURIComponent(varianteId)}/fusion`, { method: "POST", body: JSON.stringify(body) }),
+  /** Mise à jour d'une variante depuis son tronc (D-136) : essai, puis rejeu validé dans la variante. */
+  getAtelierMiseAJour: (troncId: string, varianteId: string) => request<AtelierMiseAJourEssai>(`/projects/${troncId}/atelier/variantes/${encodeURIComponent(varianteId)}/mise-a-jour`),
+  postAtelierMiseAJour: (troncId: string, varianteId: string, body: { baseRevision: number; strategie: "refuser-conflits" | "tronc-prioritaire" }) => request<{ revision: number; lots: number }>(`/projects/${troncId}/atelier/variantes/${encodeURIComponent(varianteId)}/mise-a-jour`, { method: "POST", body: JSON.stringify(body) }),
   getAtelierPublications: (projectId: string) => request<{ publications: AtelierPublicationResume[] }>(`/projects/${projectId}/atelier/publications`),
   postAtelierPublication: (projectId: string, body: { nom: string; versionId?: string }) => request<AtelierPublication>(`/projects/${projectId}/atelier/publications`, { method: "POST", body: JSON.stringify(body) }),
   getAtelierPublication: (projectId: string, publicationId: string) => request<AtelierPublication & { base: string; ecarts: { catalogue: string; publie: string; actuel: string }[]; version: { nom: string; revision: number; empreinte: string }; niveaux?: { id: string; nom: string }[] }>(`/projects/${projectId}/atelier/publications/${encodeURIComponent(publicationId)}`),
@@ -977,8 +980,17 @@ export interface AtelierVersion {
 }
 export interface AtelierVariantes {
   revision: number;
-  tronc: { id: string; name: string | null; accessible: boolean; nom: string; forkRevision: number; baseRevision: number; statut: string; fusionRevision: number | null } | null;
+  tronc: { id: string; name: string | null; accessible: boolean; nom: string; forkRevision: number; baseRevision: number; statut: string; fusionRevision: number | null; syncRevision?: number | null } | null;
   variantes: { id: string; name: string; nom: string; forkRevision: number; baseRevision: number; statut: string; fusionRevision: number | null; revision: number; modifications: number; createdAt: string }[];
+}
+/** Essai de mise à jour d'une variante depuis son tronc (D-136). */
+export interface AtelierMiseAJourEssai {
+  variante: { id: string; nom: string; revision: number; lotsPropres: number };
+  tronc: { id: string; revision: number; depuis: "bifurcation" | "derniere-mise-a-jour" };
+  lots: { label: string; revision: number }[];
+  affectes: { crees: string[]; modifies: string[]; supprimes: string[] };
+  conflits: { objetId: string; tronc: { label: string; revision: number }; variante: { label: string; revision: number } }[];
+  rejeu: { ok: true } | { ok: false; lot: string; message: string };
 }
 export interface AtelierFusionEssai {
   variante: { id: string; nom: string; statut: string; forkRevision: number; revision: number };

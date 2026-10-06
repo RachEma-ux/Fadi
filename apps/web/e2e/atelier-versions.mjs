@@ -136,6 +136,20 @@ check("fusion « la variante prévaut » confirmée : rejouée dans le tronc", /
 const troncApres = (await modele(pid)).modele;
 check("tronc : les deux murs ont les valeurs de la variante ; statut « fusionnée »", troncApres.objets[murA.id].params.hauteur.value === 2.9 && troncApres.objets[murB.id].params.epaisseur.value === 0.3 && (await api("get", `/projects/${pid}/atelier/variantes`)).body.variantes[0].statut === "fusionnee");
 
+// Mise à jour de la variante depuis le tronc (D-136) : les lots du tronc absents de la variante y sont rejoués.
+{
+  const revT = (await modele(pid)).revision;
+  check("le tronc avance après la fusion (mur A)", (await lot(pid, `tronc-maj-${Date.now()}`, revT, [{ type: "objet.modifier", params: { id: murA.id, params: { epaisseur: m(0.27) } } }], autre)).status === 200);
+  await ouvrir(vid);
+  await page.locator("[data-preparer-mise-a-jour]").click();
+  await page.waitForSelector("[data-mise-a-jour]", { timeout: 30000 });
+  const n = Number(await page.locator("[data-mise-a-jour]").getAttribute("data-mise-a-jour"));
+  await page.locator("[data-appliquer-mise-a-jour]").click();
+  const texte = await info();
+  const variante = (await modele(vid)).modele;
+  check("variante mise à jour depuis le tronc : lots repris, valeurs du tronc dans la variante", n === 2 && /Variante mise à jour depuis le tronc \(2 lot\(s\)/.test(texte) && variante.objets[murA.id].params.epaisseur.value === 0.27 && variante.objets[murB.id].params.hauteur.value === 3.4, `${n} · ${texte}`);
+}
+
 // Publication.
 await ouvrir(pid);
 await page.locator("#pub-nom").fill("Dossier PC");

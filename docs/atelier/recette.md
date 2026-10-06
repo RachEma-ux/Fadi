@@ -20,7 +20,7 @@ déclaré « disponible » : cet état n'est posé qu'après votre acceptation (
 | 9 | Recette : essai « calcul tardif » ajouté, aide située relue et testée, fiches mises à jour, protocole T17 / T18, documentation | `lots/lot-9.md`, ce dossier, `protocole-mesures.md` |
 | + | Compléments : historique d'un objet, consultation d'un état passé, réutilisation de modèle, références externes ; raccords de murs, coupes remplies en 3D, lasso, fusions successives, vues et nomenclatures déplaçables sur feuille, annotations des coupes et façades | `lots/complements.md` |
 
-Décisions du chef de projet : D-001 à D-135 (`decisions.md`). Fiches : les 71 à l'état « prototype » (code présent,
+Décisions du chef de projet : D-001 à D-136 (`decisions.md`). Fiches : les 71 à l'état « prototype » (code présent,
 preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leurs écarts déclarés.
 
 ## 2. Contrôles automatiques (état au 4 octobre 2026)
