@@ -1967,6 +1967,56 @@ await page.waitForSelector(".plan2d");
   check("interférences : solide et poteau qui se recouvrent listés avec leur volume commun", r0.status === 200 && vu && /0,08 m³/.test(texte), `${r0.status} · ${vu} · ${texte}`);
 }
 
+// Pousser / tirer une face latérale en 3D (D-125) : face d'un poteau tournée vers la caméra, tirée de quelques dizaines de cm.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const cx = murA.params.a.x - 250;
+  const cy = murA.params.a.y - 250;
+  const r0 = await lot(pid, `face-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "poteau.creer", params: { id: "pot-face", niveauId: murA.niveauId, point: P(cx, cy), formeId: "rectangle", largeur: m(1), profondeur: m(1), hauteur: m(3) } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("pot-face");
+  await page.locator('.barre-mode button:has-text("3D")').click();
+  await page.waitForFunction(() => !!window.fadiMesures3D?.versEcran, null, { timeout: 30000 }).catch(() => {});
+  await page.locator('[data-isolement="isoler"]').click();
+  await page.waitForTimeout(500);
+  await page.locator('.vue3d-commandes button:has-text("Cadrer"), button:has-text("Cadrer")').last().click();
+  await page.waitForTimeout(500);
+  await page.keyboard.press("u");
+  const z0 = (await modele(pid)).modele.niveaux[murA.niveauId]?.elevation ?? 0;
+  const cible = await page.evaluate(([cx, cy, z]) => {
+    const m3 = window.fadiMesures3D;
+    const cam = m3.pointDeVue().position;
+    const faces = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([nx, ny]) => ({ nx, ny, c: { x: cx + nx * 0.5, y: cy + ny * 0.5, z: z + 1.5 } }));
+    const f = faces.sort((a, b) => ((cam.x - b.c.x) * b.nx + (cam.y - b.c.y) * b.ny) - ((cam.x - a.c.x) * a.nx + (cam.y - a.c.y) * a.ny))[0];
+    const a = m3.versEcran(f.c);
+    const b = m3.versEcran({ x: f.c.x + f.nx, y: f.c.y + f.ny, z: f.c.z });
+    return a && b ? { a, b } : null;
+  }, [cx, cy, z0]);
+  const c3 = await page.locator(".vue3d-canevas").boundingBox();
+  let fait = null;
+  if (cible && c3) {
+    const ux = cible.b.x - cible.a.x;
+    const uy = cible.b.y - cible.a.y;
+    await page.mouse.move(c3.x + cible.a.x, c3.y + cible.a.y);
+    await page.mouse.down();
+    for (let k = 1; k <= 10; k++) await page.mouse.move(c3.x + cible.a.x + (ux * 0.5 * k) / 10, c3.y + cible.a.y + (uy * 0.5 * k) / 10);
+    await page.mouse.up();
+    for (let k = 0; k < 30 && !fait; k++) {
+      const o = (await modele(pid)).modele.objets["pot-face"];
+      if (o && (o.params.largeur.value !== 1 || o.params.profondeur.value !== 1)) fait = o.params;
+      else await page.waitForTimeout(500);
+    }
+  }
+  const journal = (await api("get", `/projects/${pid}/atelier/journal`)).body.entrees.at(-1)?.label ?? "";
+  await page.locator("[data-isolement-quitter]").click().catch(() => {});
+  await page.locator('.barre-mode button:has-text("Plan")').click().catch(() => {});
+  check("pousser / tirer une face latérale : poteau élargi d'un côté en 3D", r0.status === 200 && !!fait && /Face de pot-face/.test(journal), `${r0.status} · ${JSON.stringify(cible)} · ${JSON.stringify(fait && { l: fait.largeur, p: fait.profondeur, pt: fait.point })} · ${journal}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

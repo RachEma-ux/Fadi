@@ -6,7 +6,7 @@
  */
 import type { Vector3 } from "three";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { etendueMur, importerBcf, lireZip, maillageObjet, vues3D, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { areteLaPlusProche, etendueMur, importerBcf, lireZip, maillageObjet, normaleExterieure, pousserArete, vues3D, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { Scene3D, type OptionsScene, type Presentation, type VueTechnique } from "./scene3d";
 
@@ -57,6 +57,63 @@ function grandeurPoussee(etat: ModeleAtelier, o: OccurrenceQuelconque): { cle: "
     default:
       return null;
   }
+}
+
+/**
+ * Face latérale poussée (D-125, DA-04-07) : arête d'un contour (dalle, solide fermé, toiture plate) ou face d'un poteau
+ * (largeur ou profondeur, la face opposée reste en place) — selon le point visé, entre le dessous et le dessus.
+ */
+export type FaceLaterale = { o: OccurrenceQuelconque; type: "arete"; i: number; normale: { x: number; y: number } } | { o: OccurrenceQuelconque; type: "poteau"; cle: "largeur" | "profondeur"; signe: 1 | -1; normale: { x: number; y: number } };
+
+export function faceLaterale(etat: ModeleAtelier, o: OccurrenceQuelconque, p: { x: number; y: number; z: number }): FaceLaterale | null {
+  const z = o.niveauId ? (etat.niveaux[o.niveauId]?.elevation ?? 0) : 0;
+  const entre = (z0: number, z1: number) => p.z > z0 + 0.005 && p.z < z1 - 0.005;
+  if (o.classe === "poteau") {
+    const h = o.params.hauteur?.value;
+    if (!h || !entre(z, z + h)) return null;
+    const ang = (o.params.angle.value * Math.PI) / 180;
+    const u = { x: Math.cos(ang), y: Math.sin(ang) };
+    const v = { x: -u.y, y: u.x };
+    const s = (p.x - o.params.point.x) * u.x + (p.y - o.params.point.y) * u.y;
+    const t = (p.x - o.params.point.x) * v.x + (p.y - o.params.point.y) * v.y;
+    const lx = o.params.largeur.value / 2;
+    const ly = o.params.profondeur.value / 2;
+    if (Math.abs(s) / lx >= Math.abs(t) / ly) return { o, type: "poteau", cle: "largeur", signe: s >= 0 ? 1 : -1, normale: s >= 0 ? u : { x: -u.x, y: -u.y } };
+    return { o, type: "poteau", cle: "profondeur", signe: t >= 0 ? 1 : -1, normale: t >= 0 ? v : { x: -v.x, y: -v.y } };
+  }
+  let contour: { x: number; y: number }[] | null = null;
+  let z0 = 0;
+  let z1 = 0;
+  if (o.classe === "dalle") {
+    contour = o.params.contour;
+    z0 = z + o.params.decalageBase.value;
+    z1 = z0 + o.params.epaisseur.value;
+  } else if (o.classe === "toiture" && o.params.type === "plate") {
+    contour = o.params.contour;
+    z0 = z + o.params.decalageBase.value;
+    z1 = z0 + o.params.epaisseur.value;
+  } else if (o.classe === "solide" && o.params.ferme && o.params.hauteur && !o.params.sourceId) {
+    contour = o.params.contour;
+    z0 = z + o.params.decalageBase.value;
+    z1 = z0 + o.params.hauteur.value;
+  }
+  if (!contour || !entre(z0, z1)) return null;
+  const i = areteLaPlusProche(contour, p);
+  return { o, type: "arete", i, normale: normaleExterieure(contour, i) };
+}
+
+/** Paramètres modifiés par une face latérale poussée de d mètres (null : refusé). */
+export function paramsFacePoussee(f: FaceLaterale, d: number): Record<string, unknown> | null {
+  if (f.type === "arete") {
+    const contour = pousserArete((f.o.params as unknown as { contour: { x: number; y: number }[] }).contour, f.i, d);
+    return contour ? { contour } : null;
+  }
+  const o = f.o as Extract<OccurrenceQuelconque, { classe: "poteau" }>;
+  const actuel = o.params[f.cle].value;
+  const valeur = Math.round((actuel + d) * 1000) / 1000;
+  if (!(valeur >= 0.01)) return null;
+  const point = { ...o.params.point, x: Math.round((o.params.point.x + (f.normale.x * d) / 2) * 1e6) / 1e6, y: Math.round((o.params.point.y + (f.normale.y * d) / 2) * 1e6) / 1e6 };
+  return { [f.cle]: { value: valeur, unit: "m" }, point };
 }
 
 function avecValeur(o: OccurrenceQuelconque, cle: "hauteur" | "epaisseur", v: number): OccurrenceQuelconque {
@@ -139,7 +196,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
   useEffect(() => {
     if (pret) sceneRef.current?.majMesure(mesure);
   }, [mesure, pret]);
-  const geste = useRef<{ x: number; y: number; bouge: boolean; pousser: null | { o: OccurrenceQuelconque; cle: "hauteur" | "epaisseur"; depart: number; ppm: number; valeur: number }; poignee?: { axe: "x" | "y" | "z"; t0: number; d: number }; rotation?: { a0: number; angle: number; centre: { x: number; y: number } } } | null>(null);
+  const geste = useRef<{ x: number; y: number; bouge: boolean; pousser: null | { o: OccurrenceQuelconque; cle: "hauteur" | "epaisseur"; depart: number; ppm: number; valeur: number }; lateral?: { face: FaceLaterale; ecran: { x: number; y: number }; d: number; params: Record<string, unknown> | null }; poignee?: { axe: "x" | "y" | "z"; t0: number; d: number }; rotation?: { a0: number; angle: number; centre: { x: number; y: number } } } | null>(null);
   const [deplace, setDeplace] = useState<{ axe: "x" | "y" | "z" | "r"; d: number } | null>(null);
   const webgpuDisponible = typeof navigator !== "undefined" && "gpu" in navigator;
 
@@ -300,6 +357,17 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
     s.activerControles(false);
     canvasRef.current?.setPointerCapture(e.pointerId);
     const surface = hit.point.clone();
+    // Face latérale (D-125) : glisser dans le sens de la normale de la face (vecteur d'un mètre projeté à l'écran).
+    const face = faceLaterale(etat, o, surface);
+    if (face) {
+      const a = s.versEcran(surface);
+      const b = s.versEcran({ x: surface.x + face.normale.x, y: surface.y + face.normale.y, z: surface.z });
+      if (a && b && Math.hypot(b.x - a.x, b.y - a.y) > 2) {
+        geste.current.lateral = { face, ecran: { x: b.x - a.x, y: b.y - a.y }, d: 0, params: null };
+        etatUi.selectionner([o.id]);
+        return;
+      }
+    }
     geste.current.pousser = { o, cle: g.cle, depart: g.depart, ppm: s.pixelsParMetreVertical(surface), valeur: g.depart };
     etatUi.selectionner([o.id]);
   }
@@ -331,6 +399,16 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
       g.poignee.d = Math.round(d * 1000) / 1000;
       setDeplace({ axe: g.poignee.axe, d: g.poignee.d });
       sceneRef.current?.apercuDeplacement(g.poignee.axe === "x" ? g.poignee.d : 0, g.poignee.axe === "y" ? g.poignee.d : 0, g.poignee.axe === "z" ? g.poignee.d : 0);
+      return;
+    }
+    if (g.lateral) {
+      const e2 = g.lateral.ecran.x ** 2 + g.lateral.ecran.y ** 2;
+      const d = Math.round((((p.x - g.x) * g.lateral.ecran.x + (p.y - g.y) * g.lateral.ecran.y) / e2) * 100) / 100;
+      g.lateral.d = d;
+      g.lateral.params = d === 0 ? null : paramsFacePoussee(g.lateral.face, d);
+      setPousse({ valeur: d, cle: g.lateral.params ? "face" : "face-refusee" });
+      const o = g.lateral.face.o;
+      sceneRef.current?.majApercu(g.lateral.params ? maillageObjet(etat, { ...o, params: { ...(o.params as unknown as Record<string, unknown>), ...g.lateral.params } } as unknown as OccurrenceQuelconque) : null);
       return;
     }
     if (!g.pousser) return;
@@ -373,6 +451,15 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
           onCommandes(commandes, `Élever ${n} objet${n > 1 ? "s" : ""} de ${fmt(d)} m (Z, manipulateur 3D)`);
         } else onCommandes([{ type: "transformer.deplacer", params: { dx: axe === "x" ? d : 0, dy: axe === "y" ? d : 0 }, cibles: ui.selection }], `Déplacer ${n} objet${n > 1 ? "s" : ""} de ${fmt(d)} m (${axe.toUpperCase()}, manipulateur 3D)`);
       }
+      return;
+    }
+    if (g.lateral) {
+      s.activerControles(true);
+      s.majApercu(null);
+      setPousse(null);
+      const { face, d, params } = g.lateral;
+      if (params && Math.abs(d) >= 0.01) onCommandes([{ type: "objet.modifier", params: { id: face.o.id, params } }], `Face de ${face.o.id} ${d > 0 ? "tirée" : "poussée"} de ${fmt(Math.abs(d))} m (pousser / tirer)`);
+      else if (Math.abs(d) >= 0.01) etatUi.set({ aide: "Pousser / tirer : la forme se croiserait ou s'annulerait — rien n'est modifié." });
       return;
     }
     if (g.pousser) {
@@ -565,7 +652,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
         </form>
       )}
       <p className="vue3d-etat" aria-live="polite">
-        {erreur ? `Rendu 3D indisponible : ${erreur}` : !pret ? "Préparation de la vue 3D…" : deplace ? (deplace.axe === "r" ? `Rotation : ${fmt(deplace.d)}°` : `Déplacement ${deplace.axe.toUpperCase()} : ${fmt(deplace.d)} m`) : pousse ? `${pousse.cle === "hauteur" ? "Hauteur" : "Épaisseur"} : ${fmt(pousse.valeur)} m` : mesure.length === 2 ? `Distance : ${fmt(mesure[0]!.distanceTo(mesure[1]!))} m (Δx ${fmt(mesure[1]!.x - mesure[0]!.x)} · Δy ${fmt(mesure[1]!.y - mesure[0]!.y)} · Δz ${fmt(mesure[1]!.z - mesure[0]!.z)})` : mesure.length === 1 ? "Mesure : cliquez le second point." : `${moteur === "webgpu" ? "WebGPU" : "WebGL2"}${webgpu && moteur !== "webgpu" ? " (WebGPU indisponible, repli)" : ""}`}
+        {erreur ? `Rendu 3D indisponible : ${erreur}` : !pret ? "Préparation de la vue 3D…" : deplace ? (deplace.axe === "r" ? `Rotation : ${fmt(deplace.d)}°` : `Déplacement ${deplace.axe.toUpperCase()} : ${fmt(deplace.d)} m`) : pousse ? (pousse.cle === "face" || pousse.cle === "face-refusee" ? `Face : ${pousse.valeur > 0 ? "+" : ""}${fmt(pousse.valeur)} m${pousse.cle === "face-refusee" ? " (refusé : forme croisée)" : ""}` : `${pousse.cle === "hauteur" ? "Hauteur" : "Épaisseur"} : ${fmt(pousse.valeur)} m`) : mesure.length === 2 ? `Distance : ${fmt(mesure[0]!.distanceTo(mesure[1]!))} m (Δx ${fmt(mesure[1]!.x - mesure[0]!.x)} · Δy ${fmt(mesure[1]!.y - mesure[0]!.y)} · Δz ${fmt(mesure[1]!.z - mesure[0]!.z)})` : mesure.length === 1 ? "Mesure : cliquez le second point." : `${moteur === "webgpu" ? "WebGPU" : "WebGL2"}${webgpu && moteur !== "webgpu" ? " (WebGPU indisponible, repli)" : ""}`}
       </p>
     </div>
   );

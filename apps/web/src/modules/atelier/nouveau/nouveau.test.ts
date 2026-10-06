@@ -743,3 +743,26 @@ describe("outil Escalier balancé (D-123)", () => {
     expect(r.commandes[0]).toMatchObject({ type: "escalier.balance", params: { contremarches: 14, marchesBalancees: 4 } });
   });
 });
+
+describe("pousser / tirer une face latérale en 3D (D-125)", () => {
+  it("dalle : arête visée entre dessous et dessus, contour poussé ; poteau : face opposée fixe", async () => {
+    const { faceLaterale, paramsFacePoussee } = await import("./vue3d/Vue3D");
+    const etat = appliquerLot(modeleVide(), { requestId: "r", baseRevision: 0, contract: CONTRAT_COMMANDES, label: "r", commands: [
+      { type: "niveau.creer", params: { id: "n", nom: "R", elevation: 0, hauteur: 3 } },
+      { type: "objet.creer", params: { id: "d", classe: "dalle", niveauId: "n", params: { contour: [pt(0, 0), pt(4, 0), pt(4, 3), pt(0, 3)], trous: [], epaisseur: m(0.2) } } },
+      { type: "poteau.creer", params: { id: "p", niveauId: "n", point: pt(10, 0), formeId: "rectangle", largeur: m(0.4), profondeur: m(0.2), hauteur: m(3) } },
+    ] }).etat;
+    const dalle = etat.objets["d"]!;
+    expect(faceLaterale(etat, dalle, { x: 2, y: 1.5, z: 0.2 })).toBeNull(); // dessus : pousser vertical
+    const f = faceLaterale(etat, dalle, { x: 4, y: 1, z: 0.1 })!;
+    expect(f).toMatchObject({ type: "arete", i: 1 });
+    expect(paramsFacePoussee(f, 0.5)).toEqual({ contour: [pt(0, 0), pt(4.5, 0), pt(4.5, 3), pt(0, 3)] });
+    const g = faceLaterale(etat, etat.objets["p"]!, { x: 10.2, y: 0.02, z: 1 })!;
+    expect(g).toMatchObject({ type: "poteau", cle: "largeur", signe: 1 });
+    const q = paramsFacePoussee(g, 0.2)!;
+    expect(q["largeur"]).toEqual({ value: 0.6, unit: "m" });
+    expect((q["point"] as { x: number }).x).toBeCloseTo(10.1, 9); // face gauche (x = 9,8) inchangée
+    const apres = appliquerLot(etat, { requestId: "a", baseRevision: 1, contract: CONTRAT_COMMANDES, label: "a", commands: [{ type: "objet.modifier", params: { id: "p", params: q } }, { type: "objet.modifier", params: { id: "d", params: paramsFacePoussee(f, 0.5)! } }] }).etat;
+    expect((apres.objets["p"] as Occurrence<"poteau">).params.largeur.value).toBe(0.6);
+  });
+});

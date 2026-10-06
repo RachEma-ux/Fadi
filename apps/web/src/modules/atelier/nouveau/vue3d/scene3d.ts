@@ -67,6 +67,8 @@ export interface MesuresRendu {
   localiserPoignee?: (axe: "x" | "y" | "z" | "r" | "c") => { x: number; y: number } | null;
   /** Point de vue courant (recette : visite à hauteur d'œil). */
   pointDeVue?: () => { position: { x: number; y: number; z: number }; cible: { x: number; y: number; z: number } };
+  /** Position écran d'un point du modèle (recette : face latérale poussée, D-125). */
+  versEcran?: (p: { x: number; y: number; z: number }) => { x: number; y: number } | null;
 }
 
 const ECART_ECLATE = 4;
@@ -171,6 +173,7 @@ export class Scene3D {
     this.mesures.localiser = (id) => this.ecranDe(id);
     this.mesures.sonder = (x, y) => this.pointer(x, y)?.objetId ?? null;
     this.mesures.pointDeVue = () => this.pointDeVue();
+    this.mesures.versEcran = (p) => this.versEcran(p);
     window.fadiMesures3D = this.mesures;
     return this.mesures.moteur;
   }
