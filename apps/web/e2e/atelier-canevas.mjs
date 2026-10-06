@@ -1,7 +1,8 @@
 /**
  * Recette de la disposition « Canevas » (D-156 et suivantes ; ergonomie de référence SketchUp pour le Web) sur
  * desktop et en émulation mobile : canevas plein écran, barre d'outils flottante, outils étendus, panneaux flottants
- * exclusifs sans redimensionner le dessin, Instructeur, champ Mesures, Échap vers l'outil précédent ; axe-core.
+ * exclusifs sans redimensionner le dessin, Instructeur, champ Mesures, Échap vers l'outil précédent ; réglages de
+ * navigation (D-157) ; axe-core.
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-canevas.mjs
  */
@@ -115,6 +116,73 @@ await page.locator("[data-replier-outils]").click();
 const repliee = await boite(".atelier-n-outils");
 check("barre d'outils repliée : seuls le bouton de repli et l'outil actif restent", repliee.height < outils.height / 2, `${Math.round(outils.height)} → ${Math.round(repliee.height)}`);
 await page.locator("[data-replier-outils]").click();
+
+// 5 bis. Navigation configurable (D-157) : sensibilité, inversion, trackpad, 3D (molette maintenue = orbite).
+await page.keyboard.press("Escape");
+await page.locator('[data-panneau-icone="navigation"]').click();
+check("panneau Navigation ouvert", await page.locator("[data-nav-reglages]").isVisible());
+const centre = async () => { const b = await boite(".plan2d"); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
+const dessin = () => boite(".plan2d .plan-objets");
+const c2 = await centre();
+await page.mouse.move(c2.x, c2.y);
+const molette = async (dx, dy) => { await page.mouse.move(c2.x, c2.y); const a = await dessin(); await page.mouse.wheel(dx, dy); await page.waitForTimeout(150); const b = await dessin(); return { a, b, k: b.width / a.width }; };
+const z1 = await molette(0, -100);
+await molette(0, 100);
+await page.locator('[data-nav-sensibilite="sensibiliteZoom"]').fill("1");
+const z2 = await molette(0, -100);
+await molette(0, 200);
+check("sensibilité du zoom ×2 : le zoom double en logarithme", Math.abs(Math.log(z2.k) / Math.log(z1.k) - 2) < 0.15, `${z1.k.toFixed(3)} → ${z2.k.toFixed(3)}`);
+await page.locator('[data-nav-inverser="zoom"]').check();
+const z3 = await molette(0, -100);
+check("zoom inversé : la molette vers le haut éloigne", z3.k < 1 && z1.k > 1, z3.k.toFixed(3));
+await page.locator("[data-nav-reinitialiser]").click();
+check("Réinitialiser tout : réglages par défaut", !(await page.locator('[data-nav-inverser="zoom"]').isChecked()) && (await page.locator('[data-nav-sensibilite="sensibiliteZoom"]').inputValue()) === "0");
+await page.locator("[data-nav-peripherique-rapide]").selectOption("trackpad");
+check("barre inférieure : périphérique Trackpad repris dans le panneau", await page.locator('[data-nav-peripherique="trackpad"]').isChecked());
+const p1 = await molette(30, 40);
+check("trackpad : deux doigts = panoramique (pas de zoom)", Math.abs(p1.k - 1) < 0.01 && Math.abs(p1.b.x - p1.a.x + 30) < 2 && Math.abs(p1.b.y - p1.a.y + 40) < 2, `dx ${Math.round(p1.b.x - p1.a.x)} dy ${Math.round(p1.b.y - p1.a.y)}`);
+await page.keyboard.down("Control");
+const p2 = await molette(0, -20);
+await page.keyboard.up("Control");
+check("trackpad : pincement (Ctrl + molette) = zoom", p2.k > 1.05, p2.k.toFixed(3));
+const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem("fadi.atelier.prefs") ?? "{}").navigation ?? null);
+check("réglages de navigation enregistrés sur l'appareil", prefs?.peripherique === "trackpad");
+await page.locator('.barre-mode button:has-text("3D")').click();
+await page.waitForSelector(".vue3d canvas", { timeout: 30000 });
+await page.waitForFunction(() => !!window.fadiMesures3D?.pointDeVue, null, { timeout: 20000 });
+await page.waitForTimeout(500);
+const c3 = await boite(".vue3d-canevas");
+await page.mouse.move(c3.x + c3.width / 2, c3.y + c3.height / 2);
+const vue = () => page.evaluate(() => window.fadiMesures3D.pointDeVue());
+const ecart = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+let v0 = await vue();
+await page.mouse.wheel(60, 0);
+await page.waitForTimeout(150);
+let v1 = await vue();
+check("3D trackpad : deux doigts = orbite (la cible reste, la caméra tourne)", ecart(v0.cible, v1.cible) < 1e-3 && ecart(v0.position, v1.position) > 0.1);
+await page.keyboard.down("Shift");
+await page.mouse.wheel(60, 0);
+await page.keyboard.up("Shift");
+await page.waitForTimeout(150);
+const v2 = await vue();
+check("3D trackpad : Maj + deux doigts = panoramique (la cible se déplace)", ecart(v1.cible, v2.cible) > 0.05);
+await page.locator("[data-nav-peripherique-rapide]").selectOption("souris");
+v0 = await vue();
+await page.mouse.down({ button: "middle" });
+for (let k = 1; k <= 8; k++) await page.mouse.move(c3.x + c3.width / 2 + k * 10, c3.y + c3.height / 2);
+await page.mouse.up({ button: "middle" });
+v1 = await vue();
+check("3D souris : molette maintenue = orbite", ecart(v0.cible, v1.cible) < 1e-3 && ecart(v0.position, v1.position) > 0.1);
+await page.keyboard.down("Shift");
+await page.mouse.down({ button: "middle" });
+for (let k = 1; k <= 8; k++) await page.mouse.move(c3.x + c3.width / 2 + 80 - k * 10, c3.y + c3.height / 2 + k * 5);
+await page.mouse.up({ button: "middle" });
+await page.keyboard.up("Shift");
+const v3 = await vue();
+check("3D souris : Maj + molette maintenue = panoramique", ecart(v1.cible, v3.cible) > 0.05);
+await page.screenshot({ path: `${OUT}/canevas-navigation.png` });
+await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.waitForSelector(".plan2d .plan-objets [data-objet]");
 await axe("disposition Canevas (desktop)");
 
 // 6. Mobile (390 × 844, tactile) : panneau en surcouche, barre d'outils toujours accessible.

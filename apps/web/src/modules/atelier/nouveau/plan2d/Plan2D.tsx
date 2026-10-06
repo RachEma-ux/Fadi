@@ -3,6 +3,7 @@
  * (bouton du milieu, Espace + glisser, deux doigts), accrochages visibles, aperçu du tracé en cours, sélection au
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
+import { facteurPan, interpreterMolette } from "../navigation";
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { espacesTraversant, tolerancesAdaptatives, abscissesIntersections, effacerPortion, aireNette, centroide, cleTremie, pointDansPolygone, tremiesRetenues, cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pointsSpline, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
@@ -209,8 +210,9 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       return;
     }
     if (g?.mode === "pan") {
-      const dx = (sx - g.x) / g.vue.echelle;
-      const dy = (sy - g.y) / g.vue.echelle;
+      const k = facteurPan(ui.navigation);
+      const dx = ((sx - g.x) * k) / g.vue.echelle;
+      const dy = ((sy - g.y) * k) / g.vue.echelle;
       g.bouge = g.bouge || Math.hypot(sx - g.x, sy - g.y) > 3;
       etatUi.set({ vue: { ...g.vue, cx: g.vue.cx - dx, cy: g.vue.cy + dy } });
       return;
@@ -496,9 +498,15 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
 
   function surMolette(e: React.WheelEvent<SVGSVGElement>) {
     const { sx, sy } = pointEcran(e);
+    // D-157 : réglages de navigation (souris : molette = zoom, Maj = panoramique ; trackpad : deux doigts = panoramique,
+    // pincement = zoom ; inversions et sensibilités).
+    const geste = interpreterMolette(e, ui.navigation);
+    if (geste.type !== "zoom") {
+      etatUi.set({ vue: { ...ui.vue, cx: ui.vue.cx - geste.dx / ui.vue.echelle, cy: ui.vue.cy + geste.dy / ui.vue.echelle } });
+      return;
+    }
     const ancre = pr.depuis(sx, sy);
-    const facteur = Math.exp(-e.deltaY * 0.0015);
-    const echelle = clampEchelle(ui.vue.echelle * facteur);
+    const echelle = clampEchelle(ui.vue.echelle * geste.facteur);
     etatUi.set({ vue: { echelle, cx: ancre.x - (sx - taille.w / 2) / echelle, cy: ancre.y + (sy - taille.h / 2) / echelle } });
   }
 

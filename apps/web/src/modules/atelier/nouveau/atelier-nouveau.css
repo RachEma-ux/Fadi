@@ -2542,3 +2542,30 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* Réglages de navigation (D-157). */
+.nav-reglages fieldset {
+  border: 1px solid var(--bordure, #ccc);
+  border-radius: 6px;
+  margin: 0 0 0.6rem;
+  padding: 0.4rem 0.6rem;
+  display: grid;
+  gap: 0.25rem;
+}
+.nav-reglages label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+}
+.nav-reglages .nav-sensibilite {
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+.nav-reglages .nav-sensibilite input {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+.canevas-peripherique select {
+  min-height: 2rem;
+}

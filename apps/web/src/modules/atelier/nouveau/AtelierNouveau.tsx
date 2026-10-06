@@ -28,6 +28,7 @@ import { Palette } from "./panneaux/Palette";
 import { segmentsDuNiveau } from "./plan2d/accrochage";
 import { saisie, terminer, type ResultatClic } from "./plan2d/outils-2d";
 import { CadrePanneau, ColonnePanneaux, Instructeur } from "./panneaux/Canevas";
+import { ChoixPeripherique, ReglagesNavigationPanneau } from "./panneaux/Navigation";
 import { outilDeTouche } from "./raccourcis";
 import { cadrerNiveau, Plan2D } from "./plan2d/Plan2D";
 import "./atelier-nouveau.css";
@@ -736,6 +737,11 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
               <Instructeur ui={ui} />
             </CadrePanneau>
           )}
+          {ui.panneauFlottant === "navigation" && (
+            <CadrePanneau id="navigation" titre="Navigation">
+              <ReglagesNavigationPanneau ui={ui} />
+            </CadrePanneau>
+          )}
         </>
       )}
       <footer className="atelier-n-etat" aria-live="polite">
@@ -743,6 +749,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           <span className="canevas-bas">
             <button type="button" className="lien" data-aide-instructeur onClick={() => etatUi.basculerPanneau("instructeur")} title="Aide de l'outil actif">?</button>
             <span className="canevas-langue" title="L'interface de Fadi est en français.">Français</span>
+            <ChoixPeripherique ui={ui} />
           </span>
         )}
         {protectedReference && !readOnly && (

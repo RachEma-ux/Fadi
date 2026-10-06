@@ -8,6 +8,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { chapeauxDeCoupe, englobant, maillageObjet, niveauxOrdonnes, raccordMur, type Maillage, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { CHAMP_DE_VISION_DEG } from "./camera";
+import type { ReglagesNavigation } from "../etat-ui";
+import { interpreterMolette, reglagesOrbite } from "../navigation";
 
 export type VueTechnique = "perspective" | "dessus" | "coupe-ns" | "coupe-eo" | "facade-sud" | "facade-nord" | "facade-est" | "facade-ouest";
 export type Presentation = "batiment" | "niveau" | "eclate" | "eclate-horizontal" | "eclate-classes" | "eclate-groupes";
@@ -182,6 +184,10 @@ export class Scene3D {
       this.ajusterPoignees();
       this.rendre();
     });
+    // D-157 : trackpad (deux doigts = orbite, Maj = panoramique) intercepté avant OrbitControls ; le pincement
+    // (molette + Ctrl) reste le zoom d'OrbitControls.
+    this.canvas.addEventListener("wheel", this.surMoletteTrackpad, { capture: true, passive: false });
+    this.majNavigation(this.navigation);
     sceneActive = this;
     this.mesures.localiser = (id) => this.ecranDe(id);
     this.mesures.sonder = (x, y) => this.pointer(x, y)?.objetId ?? null;
@@ -951,6 +957,71 @@ export class Scene3D {
     return Math.abs(((b.y - a.y) * this.hauteur) / 2) || 1;
   }
 
+  // ---------------------------------------------------------------------------------------------------------------
+  // Navigation configurable (D-157) : bouton du milieu = orbite (Maj = panoramique), sensibilités et inversions,
+  // geste à deux doigts, trackpad.
+  // ---------------------------------------------------------------------------------------------------------------
+
+  private navigation: ReglagesNavigation | null = null;
+
+  majNavigation(r: ReglagesNavigation | null): void {
+    this.navigation = r;
+    if (!r || !this.controles) return;
+    const o = reglagesOrbite(r);
+    this.controles.zoomSpeed = o.vitesseZoom;
+    this.controles.panSpeed = o.vitessePan;
+    this.controles.rotateSpeed = o.vitesseOrbite;
+    this.controles.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN };
+    this.controles.touches = { ONE: THREE.TOUCH.ROTATE, TWO: o.deuxDoigts === "orbite" ? THREE.TOUCH.DOLLY_ROTATE : THREE.TOUCH.DOLLY_PAN };
+  }
+
+  private surMoletteTrackpad = (e: WheelEvent): void => {
+    const r = this.navigation;
+    if (!r || r.peripherique !== "trackpad" || e.ctrlKey || e.metaKey || !this.controles.enabled) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const g = interpreterMolette(e, r, true);
+    if (g.type === "orbite" && this.controles.enableRotate) this.orbiter(g.dx, g.dy);
+    else if (g.type !== "zoom") this.panoramique(g.type === "orbite" ? -g.dx : g.dx, g.type === "orbite" ? -g.dy : g.dy);
+  };
+
+  /** Orbite autour du point visé (axe vertical Z), en pixels d'écran. */
+  orbiter(dxPx: number, dyPx: number): void {
+    const t = this.controles.target;
+    const off = new THREE.Vector3().subVectors(this.camera.position, t);
+    const len = off.length();
+    if (len < 1e-9) return;
+    const theta = Math.atan2(off.y, off.x) - (2 * Math.PI * dxPx) / this.hauteur;
+    const phi = Math.min(Math.PI - 0.01, Math.max(0.01, Math.acos(Math.max(-1, Math.min(1, off.z / len))) - (2 * Math.PI * dyPx) / this.hauteur));
+    this.camera.position.set(t.x + len * Math.sin(phi) * Math.cos(theta), t.y + len * Math.sin(phi) * Math.sin(theta), t.z + len * Math.cos(phi));
+    if (this.visite) this.camera.position.z = this.visite.z;
+    this.controles.update();
+    this.ajusterPoignees();
+    this.rendre();
+  }
+
+  /** Panoramique (pixels d'écran ; positif = le dessin suit le geste vers la droite et le bas). */
+  panoramique(dxPx: number, dyPx: number): void {
+    if (!this.controles.enablePan) return;
+    const cam = this.camera;
+    let parPixel: number;
+    if (cam === this.perspective) {
+      const d = cam.position.distanceTo(this.controles.target);
+      parPixel = (2 * d * Math.tan((this.perspective.fov * Math.PI) / 360)) / this.hauteur;
+    } else {
+      parPixel = (this.ortho.right - this.ortho.left) / this.ortho.zoom / this.largeur;
+    }
+    cam.updateMatrixWorld();
+    const droite = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0);
+    const haut = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1);
+    const v = droite.multiplyScalar(-dxPx * parPixel).add(haut.multiplyScalar(dyPx * parPixel));
+    cam.position.add(v);
+    this.controles.target.add(v);
+    this.controles.update();
+    this.ajusterPoignees();
+    this.rendre();
+  }
+
   activerControles(actif: boolean): void {
     this.controles.enabled = actif;
   }
@@ -981,6 +1052,7 @@ export class Scene3D {
   liberer(): void {
     if (sceneActive === this) sceneActive = null;
     if (this.demande) cancelAnimationFrame(this.demande);
+    this.canvas.removeEventListener("wheel", this.surMoletteTrackpad, { capture: true });
     this.controles?.dispose();
     for (const l of this.lots) {
       l.maillage.geometry.dispose();

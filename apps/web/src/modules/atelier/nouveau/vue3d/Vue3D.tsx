@@ -219,6 +219,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
         setMoteur(m);
         const r = conteneur.current?.getBoundingClientRect();
         s.redimensionner(r?.width ?? 800, r?.height ?? 600);
+        s.majNavigation(etatUi.get().navigation);
         setPret(true);
       })
       .catch((err: unknown) => setErreur(err instanceof Error ? err.message : String(err)));
@@ -243,6 +244,10 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
     if (pret) sceneRef.current?.majModele(etat);
     if (pret) sceneRef.current?.majStyles(ui.stylesClasses);
   }, [etat, pret, ui.stylesClasses]);
+
+  useEffect(() => {
+    if (pret) sceneRef.current?.majNavigation(ui.navigation);
+  }, [ui.navigation, pret]);
 
   useEffect(() => {
     if (pret) sceneRef.current?.majExternes(externes);

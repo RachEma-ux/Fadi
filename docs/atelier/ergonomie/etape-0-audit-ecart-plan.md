@@ -80,11 +80,11 @@ n'est pas modifié.
 
 Chaque tranche est additive, livrée seule, avec ses tests, et vérifie que les recettes existantes passent toujours.
 
-1. **D-156 — Disposition Canevas** : bascule de disposition (préférence locale) ; barre d'outils flottante repliable
+1. **D-156 — Disposition Canevas** (livrée) : bascule de disposition (préférence locale) ; barre d'outils flottante repliable
    avec outil actif ; grille d'outils étendus ; colonne d'icônes à droite et panneaux flottants exclusifs (Outliner =
    navigateur, Info entité = inspecteur, Modifications, Versions, Instructeur, Affichage, Navigation, Raccourcis) ;
    barre inférieure (aide, langue, périphérique, champ Mesures toujours visible) ; mobile : panneaux en surcouche.
-2. **D-157 — Navigation** : réglages (périphérique souris / trackpad, geste deux doigts, inversions, sensibilités,
+2. **D-157 — Navigation** (livrée) : réglages (périphérique souris / trackpad, geste deux doigts, inversions, sensibilités,
    Réinitialiser) ; trackpad 2D (deux doigts = panoramique, pincement = zoom) ; 3D : molette maintenue = orbite,
    Maj = panoramique ; tactile deux doigts orbite ou panoramique.
 3. **D-158 — Outils de vue et saisie** : outils Panoramique et Zoom, zoom étendu, rapporteur, accrochage parallèle,

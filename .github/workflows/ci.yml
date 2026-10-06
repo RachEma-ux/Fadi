@@ -128,6 +128,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-complements.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la disposition Canevas — ergonomie SketchUp Web (apps/web/e2e/atelier-canevas.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/atelier-canevas.mjs 2>&1 | tee -a e2e.log
       - name: Sauvegarde puis restauration vérifiées (scripts/verify-restore.sh) sur la base du scénario
         env:
           PGPASSWORD: fadi_ci_password

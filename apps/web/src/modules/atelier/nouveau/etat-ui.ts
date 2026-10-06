@@ -5,6 +5,7 @@
  */
 import { useSyncExternalStore } from "react";
 import type { Point2 } from "@parcours/atelier-model";
+import { lireReglagesNavigation } from "./navigation";
 
 export type NiveauAffichage = "essentiel" | "contextuel" | "complet";
 /** Plan, 3D, ou documents dérivés (vues, feuilles, tableaux — lot 5). */
@@ -107,7 +108,7 @@ export interface ReglagesNavigation {
   sensibiliteOrbite: number;
 }
 
-export const NAVIGATION_DEFAUT: ReglagesNavigation = { peripherique: "souris", deuxDoigts: "orbite", inverserZoom: false, inverserPan: false, inverserOrbite: false, sensibiliteZoom: 1, sensibilitePan: 1, sensibiliteOrbite: 1 };
+export const NAVIGATION_DEFAUT: ReglagesNavigation = { peripherique: "souris", deuxDoigts: "pan", inverserZoom: false, inverserPan: false, inverserOrbite: false, sensibiliteZoom: 1, sensibilitePan: 1, sensibiliteOrbite: 1 };
 
 export interface FiltresAffichage {
   classesMasquees: string[];
@@ -167,7 +168,7 @@ let etat: EtatUi = {
   panneauFlottant: null,
   outilsReplies: prefs.outilsReplies === true,
   outilPrecedent: "selection",
-  navigation: { ...NAVIGATION_DEFAUT, ...(prefs.navigation && typeof prefs.navigation === "object" ? prefs.navigation : {}) },
+  navigation: lireReglagesNavigation(prefs.navigation, NAVIGATION_DEFAUT),
   raccourcis: prefs.raccourcis && typeof prefs.raccourcis === "object" ? prefs.raccourcis : {},
   masques: [],
   pileMasques: [],
