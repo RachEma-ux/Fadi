@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { anneauRetombee, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { anneauRetombee, architectureBloc, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -212,6 +212,7 @@ function Bloc2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"bloc-occ
   const def = o.definitionId ? etat.definitions[o.definitionId] : undefined;
   // Contenu placé, blocs imbriqués compris (D-078).
   const contenu = contenuPlace(etat, o.definitionId, o.params);
+  const arch = architectureBloc(etat, o);
   const couleur = selectionne ? "#b3872f" : def?.classe === "composant" ? "#6b4f2a" : "#355e52";
   const c = pr.vers(o.params.position);
   return (
@@ -232,6 +233,12 @@ function Bloc2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"bloc-occ
         }
         return pts.length >= 2 ? <path key={i} d={chemin(pr, pts.map(tr), e.params["ferme"] === true || "contour" in e.params)} /> : null;
       })}
+      {/* Murs et ouvertures du bloc (D-150) : dessinés comme des murs, dans leur modèle virtuel (non sélectionnables à part). */}
+      {arch.objets.length > 0 && (
+        <g pointerEvents="none" data-bloc-architecture>
+          {arch.objets.map((x) => <Objet2D key={x.id} o={x} etat={arch.modele} pr={pr} selectionne={false} survole={false} />)}
+        </g>
+      )}
       <circle cx={c.x} cy={c.y} r={3} fill="#fff" />
       {!def && <text x={c.x + 6} y={c.y} fontSize={10} fill="#b42318" stroke="none">définition absente</text>}
     </g>

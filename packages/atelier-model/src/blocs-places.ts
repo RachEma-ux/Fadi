@@ -4,7 +4,7 @@
  * définition absente ou une profondeur excessive arrête la descente (rien n'est inventé).
  */
 import { placementOccurrence, pointsArc, type Vec } from "./geometrie.js";
-import type { ModeleAtelier } from "./modele.js";
+import type { ModeleAtelier, OccurrenceQuelconque } from "./modele.js";
 import { pt, type Point2 } from "./unites.js";
 
 export interface ElementPlace {
@@ -16,6 +16,9 @@ export interface ElementPlace {
   k: number;
   /** Chemin d'imbrication (identifiants de définitions). */
   chemin: string[];
+  /** Clé locale d'un mur (D-150) et numéro de l'instance de définition qui le porte (blocs imbriqués répétés). */
+  cle?: string;
+  instance: number;
 }
 
 interface Placement {
@@ -27,22 +30,67 @@ interface Placement {
 
 export function contenuPlace(etat: ModeleAtelier, definitionId: string | null, placement: Placement, profondeurMax = 8): ElementPlace[] {
   const out: ElementPlace[] = [];
+  let instances = 0;
   const descendre = (defId: string | null, tr: (q: Vec) => Vec, k: number, chemin: string[]) => {
     if (!defId || chemin.length >= profondeurMax || chemin.includes(defId)) return;
     const def = etat.definitions[defId];
-    const contenu = (def?.params["contenu"] as { classe: string; params: Record<string, unknown>; definitionId?: string | null }[] | undefined) ?? [];
+    const contenu = (def?.params["contenu"] as { classe: string; params: Record<string, unknown>; definitionId?: string | null; cle?: string }[] | undefined) ?? [];
+    const instance = instances++;
     for (const e of contenu) {
       if (e.classe === "bloc-occurrence") {
         const p = e.params as unknown as Placement;
         const local = placementOccurrence(p);
         descendre(e.definitionId ?? null, (q) => tr(local(q)), k * (p.echelle ?? 1), [...chemin, defId]);
-      } else out.push({ classe: e.classe, params: e.params, tr, k, chemin: [...chemin, defId] });
+      } else out.push({ classe: e.classe, params: e.params, tr, k, chemin: [...chemin, defId], instance, ...(e.cle ? { cle: e.cle } : {}) });
     }
   };
   descendre(definitionId, placementOccurrence(placement), placement.echelle, []);
   return out;
 }
 
+
+/**
+ * Murs et ouvertures d'une occurrence de bloc (D-150), placés dans le modèle : axes transformés par le placement
+ * (position, rotation, échelle, miroir, blocs imbriqués), dimensions typées gardées (épaisseur, hauteur, baies)
+ * comme à la décomposition ; au miroir, le côté d'un mur aligné sur une face et le côté d'ouverture d'une porte
+ * s'inversent. Rendus dans un modèle virtuel limité à ces objets, sur le niveau de l'occurrence : les murs du bloc
+ * se raccordent entre eux, jamais aux murs du modèle (déclaré).
+ */
+export function architectureBloc(etat: ModeleAtelier, o: { id: string; niveauId: string | null; calqueId: string | null; params: object; definitionId: string | null }): { modele: ModeleAtelier; objets: OccurrenceQuelconque[] } {
+  const objets: OccurrenceQuelconque[] = [];
+  const murs = new Map<string, string>();
+  for (const e of contenuPlace(etat, o.definitionId, o.params as unknown as Placement)) {
+    if (e.classe !== "mur" && e.classe !== "porte" && e.classe !== "fenetre" && e.classe !== "ouverture") continue;
+    const o0 = e.tr({ x: 0, y: 0 });
+    const ux = e.tr({ x: 1, y: 0 });
+    const uy = e.tr({ x: 0, y: 1 });
+    const miroir = (ux.x - o0.x) * (uy.y - o0.y) - (ux.y - o0.y) * (uy.x - o0.x) < 0;
+    const P = (v: Vec) => { const q = e.tr(v); return pt(Math.round(q.x * 1e9) / 1e9, Math.round(q.y * 1e9) / 1e9); };
+    const p = { ...e.params } as Record<string, unknown>;
+    let id: string;
+    if (e.classe === "mur") {
+      id = `${o.id}:${e.instance}:${e.cle ?? objets.length}`;
+      if (e.cle) murs.set(`${e.instance}|${e.cle}`, id);
+      p["a"] = P(p["a"] as Vec);
+      p["b"] = P(p["b"] as Vec);
+      p["niveauHautId"] = null;
+      if (miroir) {
+        if (typeof p["renflement"] === "number") p["renflement"] = -(p["renflement"] as number);
+        if (p["alignement"] === "gauche" || p["alignement"] === "droite") p["alignement"] = p["alignement"] === "gauche" ? "droite" : "gauche";
+      }
+    } else {
+      const hote = murs.get(`${e.instance}|${String(p["murHoteId"])}`);
+      if (!hote) continue; // hôte absent du contenu : rien d'inventé
+      id = `${o.id}:${e.instance}:${objets.length}`;
+      p["murHoteId"] = hote;
+      const ouvrant = p["ouvrant"] as { cote?: string } | null | undefined;
+      if (miroir && ouvrant?.cote) p["ouvrant"] = { ...ouvrant, cote: ouvrant.cote === "gauche" ? "droite" : "gauche" };
+    }
+    objets.push({ id, classe: e.classe, niveauId: o.niveauId, definitionId: null, calqueId: o.calqueId, groupeId: null, phase: null, params: p, proprietes: {} } as unknown as OccurrenceQuelconque);
+  }
+  const modele: ModeleAtelier = { ...etat, objets: Object.fromEntries(objets.map((x) => [x.id, x])) };
+  return { modele, objets };
+}
 
 /** Définitions imbriquées dans une définition de bloc, transitivement (elle-même exclue sauf cycle). */
 export function definitionsImbriquees(etat: ModeleAtelier, defId: string): Set<string> {

@@ -21,9 +21,9 @@ function socle(): ModeleAtelier {
 }
 
 describe("blocs et composants (DA-05-06, DA-05-07, DA-05-09)", () => {
-  it("définit un bloc depuis 3 objets, refuse un mur, place deux occurrences distinctes de la même définition", () => {
-    const e = socle();
-    expect(() => appliquerLot(e, lot([{ type: "bloc.definir", params: { id: "b", nom: "Table", cibles: ["e1", "w"], pointDeBase: pt(10, 10) } }]))).toThrow(/classe « mur » refusée/);
+  it("définit un bloc depuis 3 objets, refuse une cote, place deux occurrences distinctes de la même définition", () => {
+    const e = appliquerLot(socle(), lot([{ type: "cotation.creer", params: { id: "k0", niveauId: "rdc", a: pt(0, 0), b: pt(1, 0) } }], "k0")).etat;
+    expect(() => appliquerLot(e, lot([{ type: "bloc.definir", params: { id: "b", nom: "Table", cibles: ["e1", "k0"], pointDeBase: pt(10, 10) } }]))).toThrow(/classe « cotation » refusée/);
     const r = appliquerLot(e, lot([
       { type: "bloc.definir", params: { id: "b", nom: "Table", cibles: ["e1", "e2", "t1"], pointDeBase: pt(10, 10), bibliotheque: "Mobilier" } },
       { type: "bloc.placer", params: { id: "o1", definitionId: "b", niveauId: "rdc", position: pt(0, 5) } },
@@ -235,7 +235,6 @@ describe("poteaux et dalles dans un bloc (D-108, DA-05-06)", () => {
       { type: "poteau.creer", params: { id: "p", niveauId: "rdc", point: pt(10, 10), formeId: "rectangle", largeur: m(0.2), profondeur: m(0.2), hauteur: m(3) } },
       { type: "dalle.creer", params: { id: "d", niveauId: "rdc", contour: [pt(10, 10), pt(12, 10), pt(12, 11), pt(10, 11)], trous: [], epaisseur: m(0.2) } },
     ], "o")).etat;
-    expect(() => appliquerLot(e, lot([{ type: "bloc.definir", params: { id: "x", nom: "X", cibles: ["w"], pointDeBase: pt(10, 10) } }]))).toThrow(/poteaux, dalles/);
     const r = appliquerLot(e, lot([
       { type: "bloc.definir", params: { id: "b", nom: "Kiosque", cibles: ["p", "d"], pointDeBase: pt(10, 10) } },
       { type: "bloc.placer", params: { id: "o1", definitionId: "b", niveauId: "rdc", position: pt(0, 0), angle: { value: 90, unit: "deg" }, echelle: 2 } },

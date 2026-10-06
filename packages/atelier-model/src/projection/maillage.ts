@@ -8,7 +8,7 @@
  * solide montent de `decalageBase` sur leur épaisseur / hauteur. Une hauteur absente (« non évaluée ») ne
  * produit aucun volume : l'objet reste en plan, rien n'est inventé.
  */
-import { contenuPlace, contoursArchitecture } from "../blocs-places.js";
+import { architectureBloc, contenuPlace, contoursArchitecture } from "../blocs-places.js";
 import { etendueEspace } from "../espaces-volume.js";
 import { anneauRetombee, etendueDalle } from "../dalles.js";
 import { faceHauteSolide, formeLibre } from "../solides-forme.js";
@@ -624,6 +624,15 @@ function blocMaillage(etat: ModeleAtelier, o: Occurrence<"bloc-occurrence">, z: 
     if (!h || !contour || contour.length < 3 || e.params["ferme"] === false) continue;
     const base = ((e.params["decalageBase"] as { value: number } | undefined)?.value ?? 0) * k;
     t.prisme(contour.map(tr), [], z + base, z + base + h * k);
+  }
+  // Murs et ouvertures du bloc (D-150) : maillés dans leur modèle virtuel (raccords entre eux, vides des baies).
+  const arch = architectureBloc(etat, o);
+  for (const x of arch.objets) {
+    const m = maillageObjet(arch.modele, x);
+    if (!m) continue;
+    const decal = t.positions.length / 3;
+    for (let i = 0; i < m.positions.length; i++) t.positions.push(m.positions[i]!);
+    for (let i = 0; i < m.indices.length; i++) t.indices.push(decal + m.indices[i]!);
   }
 }
 

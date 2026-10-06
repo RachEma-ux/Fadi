@@ -6,7 +6,7 @@
  * définitions (paramètre `bibliotheque`), sans commande propre.
  */
 import type { Definition, ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
-import { referencesVers } from "../modele.js";
+import { ouverturesDuMur, referencesVers } from "../modele.js";
 import { pointCaracteristique } from "../references.js";
 import { pt, type Point2 } from "../unites.js";
 import { effetsVides, ErreurCommande, lire, nouveauProbleme, type ContexteCommande, type ResultatCommande } from "./base.js";
@@ -21,9 +21,9 @@ type Brut = Record<string, unknown>;
  * Classes admises dans un bloc ou un composant : du dessin, des solides et (D-078) des occurrences d'autres blocs
  * (blocs imbriqués, sans cycle) ; jamais un élément hébergeant (mur…).
  */
-// Poteaux et dalles (D-108) : objets d'architecture admis dans un bloc (volume, plan, décomposition) ; les murs et
-// ouvertures, liés entre eux (raccords, hôtes), restent refusés.
-export const CLASSES_BLOC = ["esquisse", "texte", "solide", "bloc-occurrence", "poteau", "dalle"] as const;
+// Poteaux et dalles (D-108) : objets d'architecture admis dans un bloc (volume, plan, décomposition). Murs et
+// ouvertures (D-150) : admis ensemble — une ouverture vient avec son mur hôte, les murs du bloc se raccordent entre eux.
+export const CLASSES_BLOC = ["esquisse", "texte", "solide", "bloc-occurrence", "poteau", "dalle", "mur", "porte", "fenetre", "ouverture"] as const;
 /** Profondeur d'imbrication au plus (au-delà : refus à la définition, rien dessiné au-delà). */
 export const PROFONDEUR_BLOCS = 8;
 
@@ -33,6 +33,8 @@ export interface ContenuBloc {
   calqueId: string | null;
   /** Occurrence imbriquée : définition placée (D-078). */
   definitionId?: string | null;
+  /** Clé locale (D-150) : identifiant d'origine d'un mur, auquel ses ouvertures se rattachent (`murHoteId`). */
+  cle?: string;
 }
 
 /** Profondeur d'imbrication d'une définition (1 : aucun bloc imbriqué). */
@@ -81,14 +83,33 @@ function lireBibliotheque(etat: ModeleAtelier, p: Brut, idCourant: string | null
 }
 
 /** Contenu d'une sélection, ramené au point de base (coordonnées relatives). */
-function contenuDepuis(etat: ModeleAtelier, cibles: string[], base: Point2): ContenuBloc[] {
-  if (!cibles.length) throw new ErreurCommande("invalide", "cibles", "sélection vide");
-  return cibles.map((id, i) => {
+/** Ouvertures des murs visés (D-150) : elles suivent leur mur dans le bloc. */
+export function avecOuvertures(etat: ModeleAtelier, cibles: string[]): string[] {
+  const out = [...cibles];
+  for (const id of cibles) if (etat.objets[id]?.classe === "mur") for (const ouv of ouverturesDuMur(etat, id)) if (!out.includes(ouv.id)) out.push(ouv.id);
+  return out;
+}
+
+function contenuDepuis(etat: ModeleAtelier, cibles0: string[], base: Point2): ContenuBloc[] {
+  if (!cibles0.length) throw new ErreurCommande("invalide", "cibles", "sélection vide");
+  const cibles = avecOuvertures(etat, cibles0);
+  // Murs d'abord : leurs ouvertures s'y rattachent par la clé locale.
+  const ordre = (id: string) => (etat.objets[id]?.classe === "mur" ? 0 : 1);
+  return [...cibles].sort((a, b) => ordre(a) - ordre(b)).map((id) => {
+    const i = cibles0.indexOf(id);
     const o = etat.objets[id];
     if (!o) throw new ErreurCommande("precondition", `cibles[${i}]`, `objet inconnu : ${id}`);
-    if (!(CLASSES_BLOC as readonly string[]).includes(o.classe)) throw new ErreurCommande("precondition", `cibles[${i}]`, `classe « ${o.classe} » refusée dans un bloc (esquisses, textes, solides, poteaux, dalles et occurrences de blocs seulement)`);
-    const relatif = transformerOccurrence(o, { type: "translation", dx: -base.x, dy: -base.y });
-    return { classe: o.classe as ContenuBloc["classe"], params: relatif.params as unknown as Record<string, unknown>, calqueId: o.calqueId, ...(o.classe === "bloc-occurrence" ? { definitionId: o.definitionId } : {}) };
+    if (!(CLASSES_BLOC as readonly string[]).includes(o.classe)) throw new ErreurCommande("precondition", `cibles[${i}]`, `classe « ${o.classe} » refusée dans un bloc (esquisses, textes, solides, poteaux, dalles, murs avec leurs ouvertures et occurrences de blocs seulement)`);
+    if ((o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && !cibles.includes(o.params.murHoteId)) throw new ErreurCommande("precondition", `cibles[${i}]`, `${o.id} : une ouverture entre dans un bloc avec son mur ${o.params.murHoteId}`);
+    let relatif = transformerOccurrence(o, { type: "translation", dx: -base.x, dy: -base.y });
+    if (relatif.classe === "mur" && relatif.params.niveauHautId) {
+      // Un bloc n'est lié à aucun niveau : le niveau haut devient la hauteur effective (non évaluée si incohérent).
+      const bas = o.niveauId ? etat.niveaux[o.niveauId] : undefined;
+      const haut = etat.niveaux[relatif.params.niveauHautId];
+      const h = bas && haut && haut.elevation > bas.elevation ? { value: Math.round((haut.elevation - bas.elevation) * 1e9) / 1e9, unit: "m" as const } : null;
+      relatif = { ...relatif, params: { ...relatif.params, niveauHautId: null, hauteur: h } };
+    }
+    return { classe: o.classe as ContenuBloc["classe"], params: relatif.params as unknown as Record<string, unknown>, calqueId: o.calqueId, ...(o.classe === "bloc-occurrence" ? { definitionId: o.definitionId } : {}), ...(o.classe === "mur" ? { cle: o.id } : {}) };
   });
 }
 
@@ -145,8 +166,9 @@ export const reducteursBloc = {
       const niveaux = new Set(sources.map((o) => o.niveauId));
       if (niveaux.size !== 1) throw new ErreurCommande("precondition", "cibles", "remplacer la sélection demande des objets d'un même niveau");
       const objets = { ...suivant.objets };
-      for (const c of cibles) delete objets[c];
-      effets.supprimes.push(...cibles);
+      const retires = avecOuvertures(etat, cibles);
+      for (const c of retires) delete objets[c];
+      effets.supprimes.push(...retires);
       suivant = { ...suivant, objets };
       const r = creerOccurrence(suivant, { niveauId: sources[0]!.niveauId, calqueId: sources[0]!.calqueId, definitionId: id, params: { position: pointDeBase, angle: { value: 0, unit: "deg" }, echelle: 1 } }, ctx, "bloc-occurrence");
       suivant = r.etat;
@@ -169,9 +191,13 @@ export function decomposerBloc(etat: ModeleAtelier, o: Occurrence<"bloc-occurren
   const params = def.params as unknown as ParamsDefinitionBloc;
   const objets: Record<string, OccurrenceQuelconque> = {};
   const crees: string[] = [];
+  const murs = new Map<string, string>(); // clé locale → identifiant du mur décomposé (D-150)
   for (const e of params.contenu) {
     const id = ctx.ids.nouveau(e.classe);
-    let copie = { id, classe: e.classe, niveauId: o.niveauId, definitionId: e.classe === "bloc-occurrence" ? (e.definitionId ?? null) : null, calqueId: e.calqueId ?? o.calqueId, groupeId: null, phase: o.phase, params: e.params, proprietes: {} } as unknown as OccurrenceQuelconque;
+    if (e.classe === "mur" && e.cle) murs.set(e.cle, id);
+    const estOuv = e.classe === "porte" || e.classe === "fenetre" || e.classe === "ouverture";
+    const p0 = estOuv ? { ...e.params, murHoteId: murs.get(String(e.params["murHoteId"])) ?? e.params["murHoteId"] } : e.params;
+    let copie = { id, classe: e.classe, niveauId: o.niveauId, definitionId: e.classe === "bloc-occurrence" ? (e.definitionId ?? null) : null, calqueId: e.calqueId ?? o.calqueId, groupeId: null, phase: o.phase, params: p0, proprietes: {} } as unknown as OccurrenceQuelconque;
     if (o.params.miroir) copie = transformerOccurrence(copie, { type: "miroir", a: pt(0, 0), b: pt(1, 0) });
     if (o.params.echelle !== 1) copie = transformerOccurrence(copie, { type: "echelle", centre: pt(0, 0), facteur: o.params.echelle });
     if (o.params.angle.value) copie = transformerOccurrence(copie, { type: "rotation", centre: pt(0, 0), angleDeg: o.params.angle.value });

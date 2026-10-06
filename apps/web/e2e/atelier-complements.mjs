@@ -2276,6 +2276,25 @@ await page.waitForSelector(".plan2d");
   check("baie cintrée : arc surbaissé de flèche 0,25 m enregistré", r0.status === 200 && cintre?.type === "surbaisse" && Math.abs((cintre?.fleche?.value ?? 0) - 0.25) < 1e-9, `${r0.status} · ${JSON.stringify(cintre)}`);
 }
 
+// Murs et ouvertures dans un bloc (D-150) : un mur et sa porte deviennent un bloc ; l'occurrence les dessine au plan.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const x0 = murA.params.a.x - 470;
+  const y0 = murA.params.a.y - 470;
+  const r0 = await lot(pid, `blocmur-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "mur.tracer", params: { id: "mur-bloc-e2e", niveauId: murA.niveauId, a: P(x0, y0), b: P(x0 + 4, y0), epaisseur: m(0.2), hauteur: m(2.5) } },
+    { type: "ouverture.poser", params: { id: "porte-bloc-e2e", classe: "porte", murHoteId: "mur-bloc-e2e", position: 0.5, largeur: m(0.9), hauteur: m(2.1) } },
+    { type: "bloc.definir", params: { id: "bloc-mur-e2e", nom: "Cloison avec porte e2e", cibles: ["mur-bloc-e2e"], pointDeBase: P(x0, y0), remplacer: true } },
+  ]);
+  const occ = Object.values((await modele(pid)).modele.objets).find((o) => o.classe === "bloc-occurrence" && o.definitionId === "bloc-mur-e2e");
+  await ouvrir(pid);
+  if (occ) await selectionner(occ.id);
+  const dessine = await page.waitForSelector(`.plan2d [data-objet="${occ?.id}"] [data-bloc-architecture] path`, { state: "attached", timeout: 10000 }).then(() => true, () => false);
+  check("bloc d'un mur et de sa porte : occurrence posée, mur dessiné au plan", r0.status === 200 && !!occ && dessine, `${r0.status} · ${occ?.id} · ${dessine}`);
+}
+
 // Extrusion avec dépouille et oblique (D-148) : saisie dans l'inspecteur d'un solide.
 {
   await page.keyboard.press("Escape");

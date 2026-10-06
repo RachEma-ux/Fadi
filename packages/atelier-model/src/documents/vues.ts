@@ -12,7 +12,7 @@ import { pointsPolyligne, aireNette, centroide, facesMur, hoteOuverture, longueu
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { bandesDegrade, lignesHachure, motifHachure, pointsHachure } from "../hachures.js";
-import { contenuPlace, contoursArchitecture } from "../blocs-places.js";
+import { architectureBloc, contenuPlace, contoursArchitecture } from "../blocs-places.js";
 import { etendueMur, geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
 import { traitsMenuiseriePlan } from "../menuiserie.js";
 import { polygoneMurRaccorde } from "../raccords.js";
@@ -477,6 +477,13 @@ function dessinerBloc(c: Collecteur, etat: ModeleAtelier, o: Occurrence<"bloc-oc
       c.poly([q1, { x: q2.x, y: q1.y }, q2, { x: q1.x, y: q2.y }].map(tr), true, "fin", null, o.id);
     } else if (pts.length >= 2) c.poly(pts.map(tr), e.params["ferme"] === true || "contour" in e.params, "fin", null, o.id);
     else if (e.classe === "texte" && e.params["position"]) c.texte(tr(e.params["position"] as Vec), String(e.params["texte"] ?? ""), 2, o.id);
+  }
+  // Murs et ouvertures du bloc (D-150) : leur coupe vient du maillage ; ici les symboles des portes et fenêtres, et le
+  // contour des murs sans hauteur (non coupés).
+  const arch = architectureBloc(etat, o);
+  if (arch.objets.length) {
+    symbolesPlan(c, arch.modele, arch.objets);
+    for (const x of arch.objets) if (x.classe === "mur" && !x.params.hauteur) c.poly(polygoneMurRaccorde(arch.modele, x), true, "cache", null, o.id);
   }
 }
 

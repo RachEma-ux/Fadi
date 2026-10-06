@@ -50,8 +50,9 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
   const rot = t.type === "rotation" ? t.angleDeg : 0;
   switch (o.classe) {
     case "mur":
-      // Mur courbe (D-086) : le miroir inverse le sens de l'arc.
-      return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b), ...(o.params.renflement && t.type === "miroir" ? { renflement: -o.params.renflement } : {}) } };
+      // Mur courbe (D-086) : le miroir inverse le sens de l'arc. Mur aligné sur une face (D-150) : le miroir change le
+      // côté de l'épaisseur (gauche ↔ droite), sinon le corps passerait de l'autre côté de l'axe.
+      return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b), ...(o.params.renflement && t.type === "miroir" ? { renflement: -o.params.renflement } : {}), ...(t.type === "miroir" && o.params.alignement !== "axe" ? { alignement: o.params.alignement === "gauche" ? ("droite" as const) : ("gauche" as const) } : {}) } };
     case "porte":
       // Le miroir change le côté d'ouverture d'une porte dont le sens est renseigné (D-037).
       if (t.type === "miroir" && o.params.ouvrant) return { ...o, params: { ...o.params, ouvrant: { ...o.params.ouvrant, cote: o.params.ouvrant.cote === "gauche" ? "droite" : "gauche" } } };

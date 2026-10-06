@@ -222,3 +222,4 @@ Symétrie des profilés et orientation des textes (`symetrie-textes-poteaux.test
 Presse-papiers entre projets (`presse-papiers.test.ts`, e2e, D-147).
 Dépouille et extrusion oblique (`solides-forme.test.ts`, e2e, D-148).
 File locale : lots déjà validés retirés à la réouverture (e2e, D-149).
+Murs et ouvertures dans un bloc (`blocs-murs.test.ts`, e2e, D-150).
