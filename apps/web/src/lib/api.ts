@@ -657,6 +657,12 @@ export interface ParcelTransmission {
   parcel?: ParcelSummary;
 }
 
+/** Ensembles d'affichage personnels (classes et calques masqués pour soi, étage associé) et version serveur. */
+export interface EnsemblesPersonnels {
+  ensembles: { nom: string; niveauId: string | null; classesMasquees: string[]; calquesMasques: string[] }[];
+  version: string | null;
+}
+
 export const api = {
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -670,6 +676,10 @@ export const api = {
   /** Notifications dans l'application (accès reçus, commentaires des autres, réservations d'édition), relues des données datées. */
   listNotifications: () => request<NotificationsView>("/notifications"),
   markNotificationsSeen: () => request<{ seenAt: string }>("/notifications/seen", { method: "POST" }),
+  /** Ensembles d'affichage personnels de l'Atelier, synchronisés entre les appareils du compte (D-118). */
+  lireEnsemblesPersonnels: () => request<EnsemblesPersonnels>("/preferences/atelier-ensembles"),
+  enregistrerEnsemblesPersonnels: (ensembles: EnsemblesPersonnels["ensembles"], base: string | null) =>
+    request<EnsemblesPersonnels>("/preferences/atelier-ensembles", { method: "PUT", body: JSON.stringify({ ensembles, base }) }),
   createProject: (code: string, name: string) =>
     request<Project>("/projects", { method: "POST", body: JSON.stringify({ code, name }) }),
   getProject: (id: string) => request<Project>(`/projects/${id}`),

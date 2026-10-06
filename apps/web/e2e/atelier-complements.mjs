@@ -1812,6 +1812,38 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
 }
 
+// Ensembles personnels synchronisés entre deux appareils du même compte (D-118).
+{
+  await page.keyboard.press("Escape");
+  await page.locator("[data-ensemble-nom]").fill("Perso e2e");
+  await page.locator("[data-ensemble-partager]").uncheck().catch(() => {});
+  await page.locator('.nav-formulaire-ensemble button[type="submit"]').click();
+  let serveur = null;
+  for (let k = 0; k < 30 && !serveur; k++) {
+    const r = await api("get", "/preferences/atelier-ensembles");
+    if (r.body?.ensembles?.some((e) => e.nom === "Perso e2e")) serveur = r.body;
+    else await page.waitForTimeout(500);
+  }
+  const ctx2 = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page2 = await ctx2.newPage();
+  await page2.goto(`${BASE}/connexion`);
+  await page2.fill('input[name="email"]', email);
+  await page2.fill('input[name="password"]', "complements-pass-123");
+  await page2.click('button[type="submit"]');
+  await page2.waitForURL(/\/(projets|accueil)/);
+  await page2.goto(`${BASE}/projets/${pid}?module=atelier`);
+  const vu = await page2.waitForSelector('[data-ensemble-local="Perso e2e"]', { state: "attached", timeout: 20000 }).then(() => true, () => false);
+  // Supprimé sur le second appareil : le serveur ne l'a plus.
+  if (vu) await page2.locator('[data-ensemble-local="Perso e2e"] button.lien').click();
+  let retire = false;
+  for (let k = 0; k < 30 && vu && !retire; k++) {
+    retire = !(await api("get", "/preferences/atelier-ensembles")).body?.ensembles?.some((e) => e.nom === "Perso e2e");
+    if (!retire) await page.waitForTimeout(500);
+  }
+  await ctx2.close();
+  check("ensembles personnels : enregistrés sur un appareil, retrouvés et supprimés sur un autre du même compte", !!serveur?.version && vu && retire, `${JSON.stringify(serveur).slice(0, 120)} · ${vu} · ${retire}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

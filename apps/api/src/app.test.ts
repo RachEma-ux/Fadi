@@ -2044,3 +2044,29 @@ describe("Verrou d'édition optionnel — un seul éditeur actif", () => {
     expect((await owner.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Libre à nouveau" } })).status).toBe(200);
   });
 });
+
+describe("ensembles d'affichage personnels synchronisés entre appareils (D-118, DA-05-03)", () => {
+  it("deux appareils du même compte : version comparée, conflit 409 avec la version du serveur, rien partagé avec un autre compte", async () => {
+    const a = await registerAndLogin("ensembles-sync@example.com");
+    const b = agent();
+    expect((await b.post("/auth/login").send({ email: "ensembles-sync@example.com", password: "correct-horse-battery" })).status).toBe(200);
+    const vide = (await a.get("/preferences/atelier-ensembles")).body;
+    expect(vide).toEqual({ ensembles: [], version: null });
+    const ens = { nom: "Structure", niveauId: "n1", classesMasquees: ["mobilier"], calquesMasques: [] };
+    const r1 = await a.put("/preferences/atelier-ensembles").send({ ensembles: [ens], base: null });
+    expect(r1.status).toBe(200);
+    expect((await b.get("/preferences/atelier-ensembles")).body).toEqual({ ensembles: [ens], version: r1.body.version });
+    // L'appareil B écrit sur une base périmée : 409 avec l'état du serveur.
+    const r2 = await b.put("/preferences/atelier-ensembles").send({ ensembles: [], base: null });
+    expect(r2.status).toBe(409);
+    expect(r2.body).toMatchObject({ error: "version_perimee", ensembles: [ens], version: r1.body.version });
+    const r3 = await b.put("/preferences/atelier-ensembles").send({ ensembles: [ens, { ...ens, nom: "Réseaux" }], base: r1.body.version });
+    expect(r3.status).toBe(200);
+    expect(r3.body.version > r1.body.version).toBe(true);
+    expect((await a.put("/preferences/atelier-ensembles").send({ ensembles: [ens, ens], base: r3.body.version })).status).toBe(400);
+    expect((await a.put("/preferences/atelier-ensembles").send({ ensembles: [{ nom: "" }], base: null })).status).toBe(400);
+    const autre = await registerAndLogin("ensembles-autre@example.com");
+    expect((await autre.get("/preferences/atelier-ensembles")).body.ensembles).toEqual([]);
+    expect((await agent().get("/preferences/atelier-ensembles")).status).toBe(401);
+  });
+});

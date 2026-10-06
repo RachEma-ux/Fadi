@@ -23,6 +23,7 @@ import { FAMILLES, OUTILS, OUTILS_PAR_ID, outilsVisibles, type Famille, type Out
 import { Inspecteur } from "./panneaux/Inspecteur";
 import { Modifications } from "./panneaux/Modifications";
 import { Navigateur } from "./panneaux/Navigateur";
+import { brancherSyncEnsembles } from "./sync-ensembles";
 import { Palette } from "./panneaux/Palette";
 import { segmentsDuNiveau } from "./plan2d/accrochage";
 import { saisie, terminer, type ResultatClic } from "./plan2d/outils-2d";
@@ -109,6 +110,9 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   useEffect(() => {
     if (niveaux.length && (!ui.niveauId || !etat.niveaux[ui.niveauId])) etatUi.set({ niveauId: niveaux[0]!.id });
   }, [niveaux, ui.niveauId, etat.niveaux]);
+
+  // Ensembles personnels synchronisés entre les appareils du compte (D-118).
+  useEffect(() => brancherSyncEnsembles(), []);
 
   // Ensemble d'affichage associé à l'étage (D-066) : appliqué quand on passe sur cet étage (partagé d'abord).
   const niveauPrecedent = useRef<string | null>(null);

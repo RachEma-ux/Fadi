@@ -266,7 +266,8 @@ function GererNiveau({ etat, niveauId, onCommandes }: { etat: ModeleAtelier; niv
 
 
 /**
- * Ensembles d'affichage (DA-05-03, D-066) : filtres locaux de classes et de calques, enregistrés sur cet appareil ou
+ * Ensembles d'affichage (DA-05-03, D-066) : filtres locaux de classes et de calques, personnels (synchronisés entre
+ * vos appareils, D-118) ou
  * partagés avec l'équipe (`ensemble.enregistrer`), associés au choix à un étage. Ils ne révèlent jamais un calque
  * masqué dans le modèle et ne changent rien au projet.
  */
@@ -320,7 +321,7 @@ function EnsemblesAffichage({ etat, ui, readOnly, onCommandes }: { etat: ModeleA
           {ui.ensembles.map((e, i) => (
             <li key={`${e.nom}-${i}`} data-ensemble-local={e.nom}>
               <button type="button" onClick={() => appliquer(e, e.nom)}>{e.nom}</button>
-              <span className="nav-detail">sur cet appareil{e.niveauId && etat.niveaux[e.niveauId] ? ` · ${etat.niveaux[e.niveauId]!.nom}` : ""}</span>
+              <span className="nav-detail" title="Personnel : suit votre compte sur vos autres appareils">pour vous{e.niveauId && etat.niveaux[e.niveauId] ? ` · ${etat.niveaux[e.niveauId]!.nom}` : ""}</span>
               <button type="button" className="lien" onClick={() => etatUi.set((u) => ({ ensembles: u.ensembles.filter((_, k) => k !== i) }))}>Supprimer</button>
             </li>
           ))}

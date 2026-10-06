@@ -68,7 +68,7 @@ export interface EtatUi {
    * repérage polaire et flèches du manipulateur s'y rapportent. Affichage seul, jamais dans le modèle (R10).
    */
   repere: { origine: Point2; angle: number } | null;
-  /** Ensembles d'affichage locaux (préréglages nommés), conservés sur cet appareil. */
+  /** Ensembles d'affichage personnels (préréglages nommés), conservés sur l'appareil et synchronisés avec le compte (D-118). */
   ensembles: EnsembleLocal[];
 }
 

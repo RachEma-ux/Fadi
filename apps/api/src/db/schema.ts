@@ -29,6 +29,10 @@ export const users = pgTable("users", {
   notificationsSeenAt: timestamp("notifications_seen_at", { withTimezone: true }),
   /** Nom affiché (accueil « Bonjour … », initiales de l'avatar) ; facultatif, saisi dans Paramètres — jamais déduit d'ailleurs que de la saisie. */
   displayName: text("display_name"),
+  /** Ensembles d'affichage personnels de l'Atelier, synchronisés entre les appareils du compte (D-118) ; null tant que rien n'est enregistré. */
+  atelierEnsembles: jsonb("atelier_ensembles"),
+  /** Date serveur du dernier enregistrement de ces ensembles (version comparée par les appareils). */
+  atelierEnsemblesAt: timestamp("atelier_ensembles_at", { withTimezone: true }),
 }, (t) => [uniqueIndex("users_email_unique").on(t.email)]);
 
 export const sessions = pgTable("sessions", {

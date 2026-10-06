@@ -669,3 +669,47 @@ describe("escalier hélicoïdal au plan (D-092)", () => {
     expect(Object.values(appliquer(etat, r.commandes).objets).filter((o) => o.classe === "solide")).toHaveLength(17);
   });
 });
+
+describe("ensembles personnels synchronisés (D-118) : fusion à trois voies par nom", () => {
+  it("ajouts et modifications locaux gardés, suppression locale appliquée si le serveur n'a pas changé l'ensemble", async () => {
+    const { fusionnerEnsembles } = await import("./sync-ensembles");
+    const e = (nom: string, c: string[] = []) => ({ nom, niveauId: null, classesMasquees: c, calquesMasques: [] });
+    const base = [e("A"), e("B"), e("C")];
+    const serveur = [e("A", ["mur"]), e("B"), e("C", ["dalle"]), e("D")]; // autre appareil : A et C modifiés, D ajouté
+    const local = [e("A"), e("E")]; // ici : B et C supprimés, E ajouté
+    const f = fusionnerEnsembles(serveur, local, base);
+    // B supprimé ici et inchangé ailleurs : retiré ; C supprimé ici mais modifié ailleurs : gardé (version du serveur).
+    expect(f.map((x) => x.nom).sort()).toEqual(["A", "C", "D", "E"]);
+    expect(f.find((x) => x.nom === "A")!.classesMasquees).toEqual(["mur"]);
+    expect(f.find((x) => x.nom === "C")!.classesMasquees).toEqual(["dalle"]);
+    const g = fusionnerEnsembles(serveur, [e("A", ["porte"]), e("B"), e("C")], base);
+    expect(g.find((x) => x.nom === "A")!.classesMasquees).toEqual(["porte"]); // modification locale l'emporte
+  });
+});
+
+describe("outils Étirer par fenêtre et Ajuster une forme fermée (D-116, D-117)", () => {
+  const ui = (patch: Partial<EtatUi>): EtatUi => ({ ...etatUi.get(), niveauId: "n", pointsEnCours: [], selection: [], ...patch });
+  const etat0 = appliquerLot(modeleVide(), { requestId: "r", baseRevision: 0, contract: CONTRAT_COMMANDES, label: "r", commands: [
+    { type: "niveau.creer", params: { id: "n", nom: "R", elevation: 0, hauteur: 3 } },
+    { type: "objet.creer", params: { id: "lim", classe: "esquisse", niveauId: "n", params: { forme: "ligne", points: [pt(3, -10), pt(3, 10)], ferme: false } } },
+    { type: "objet.creer", params: { id: "d", classe: "dalle", niveauId: "n", params: { contour: [pt(0, 0), pt(6, 0), pt(6, 4), pt(0, 4)], trous: [], epaisseur: m(0.2) } } },
+  ] }).etat;
+  it("étirer par fenêtre : sans fenêtre, demande le lasso ; base puis destination émettent un lot", () => {
+    expect(clic("etirer-fenetre", pt(1, 1), etat0, ui({}), { rayon: 0.1, objetSous: null }).aide).toMatch(/entourer/);
+    const fenetre = [pt(5, -1), pt(7, -1), pt(7, 5), pt(5, 5)];
+    const r1 = clic("etirer-fenetre", pt(6, 0), etat0, ui({}), { rayon: 0.1, objetSous: null, fenetre });
+    expect(r1.pointsEnCours).toEqual([pt(6, 0)]);
+    const r2 = clic("etirer-fenetre", pt(7, 0), etat0, ui({ pointsEnCours: r1.pointsEnCours }), { rayon: 0.1, objetSous: null, fenetre });
+    expect(r2.commandes[0]).toMatchObject({ type: "transformer.etirerFenetre", params: { niveauId: "n", dx: 1, dy: 0 } });
+    const apres = appliquerLot(etat0, { requestId: "e", baseRevision: 1, contract: CONTRAT_COMMANDES, label: "e", commands: r2.commandes }).etat;
+    expect((apres.objets["d"] as Occurrence<"dalle">).params.contour[1]).toEqual(pt(7, 0));
+  });
+  it("ajuster une dalle : clic sur la limite, puis le côté à garder", () => {
+    const r1 = clic("ajuster", pt(3, 6), etat0, ui({ selection: ["d"] }), { rayon: 0.1, objetSous: "lim" });
+    expect(r1.aide).toMatch(/côté/);
+    const r2 = clic("ajuster", pt(1, 2), etat0, ui({ selection: ["d"], pointsEnCours: r1.pointsEnCours }), { rayon: 0.1, objetSous: "d" });
+    expect(r2.commandes[0]).toMatchObject({ type: "transformer.ajuster", params: { id: "d", limiteId: "lim" } });
+    const apres = appliquerLot(etat0, { requestId: "a", baseRevision: 1, contract: CONTRAT_COMMANDES, label: "a", commands: r2.commandes }).etat;
+    expect((apres.objets["d"] as Occurrence<"dalle">).params.contour).toEqual([pt(0, 0), pt(3, 0), pt(3, 4), pt(0, 4)]);
+  });
+});
