@@ -84,3 +84,56 @@ export function rejouerLots(etatServeur: ModeleAtelier, revisionServeur: number,
   }
   return { etat: courant, rejoues, incompatibles };
 }
+
+/** Un champ modifié par un lot en conflit (D-128) : valeur voulue ici, valeur actuelle du serveur. */
+export interface ChampEnConflit {
+  /** Clé stable « index de commande:champ ». */
+  cle: string;
+  objetId: string;
+  champ: string;
+  mien: unknown;
+  serveur: unknown;
+  objetPresent: boolean;
+  /** Le champ seul s'applique-t-il sur l'état actuel ? (essai sur l'état serveur, rien n'est écrit) */
+  applicable: boolean;
+}
+
+/**
+ * Aide à la résolution champ par champ (D-128, DA-21-02) : pour un lot en conflit fait de modifications d'objets
+ * (`objet.modifier`), chaque champ voulu face à la valeur actuelle du serveur, et s'il s'applique encore seul. Null
+ * si le lot contient d'autres commandes (la décision reste « rejouer » ou « abandonner »).
+ */
+export function champsEnConflit(etatServeur: ModeleAtelier, enveloppe: Enveloppe): ChampEnConflit[] | null {
+  if (!enveloppe.commands.length || enveloppe.commands.some((c) => c.type !== "objet.modifier")) return null;
+  const out: ChampEnConflit[] = [];
+  enveloppe.commands.forEach((c, i) => {
+    const p = c.params as { id?: unknown; params?: Record<string, unknown> };
+    if (typeof p.id !== "string" || !p.params || typeof p.params !== "object") return;
+    const o = etatServeur.objets[p.id];
+    for (const [champ, mien] of Object.entries(p.params)) {
+      let applicable = false;
+      if (o) {
+        try {
+          appliquerLot(etatServeur, { ...enveloppe, requestId: `${enveloppe.requestId}-essai`, commands: [{ type: "objet.modifier", params: { id: p.id, params: { [champ]: mien } } }] });
+          applicable = true;
+        } catch {
+          applicable = false;
+        }
+      }
+      out.push({ cle: `${i}:${champ}`, objetId: p.id, champ, mien, serveur: o ? (o.params as unknown as Record<string, unknown>)[champ] : undefined, objetPresent: !!o, applicable });
+    }
+  });
+  return out;
+}
+
+/** Commandes qui reprennent les seuls champs choisis d'un lot en conflit (D-128), une par objet. */
+export function reprendreChamps(enveloppe: Enveloppe, choisis: ReadonlySet<string>): Commande[] {
+  const out: Commande[] = [];
+  enveloppe.commands.forEach((c, i) => {
+    if (c.type !== "objet.modifier") return;
+    const p = c.params as { id: string; params: Record<string, unknown> };
+    const params = Object.fromEntries(Object.entries(p.params).filter(([k]) => choisis.has(`${i}:${k}`)));
+    if (Object.keys(params).length) out.push({ type: "objet.modifier", params: { id: p.id, params } });
+  });
+  return out;
+}

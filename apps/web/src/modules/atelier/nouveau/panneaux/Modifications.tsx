@@ -6,7 +6,7 @@
  */
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { interferences, type Interference, type ModeleAtelier, type TypeProbleme } from "@parcours/atelier-model";
+import { champsEnConflit, interferences, reprendreChamps, type Commande, type Enveloppe, type Interference, type ModeleAtelier, type TypeProbleme } from "@parcours/atelier-model";
 import { api, type ProjectComment } from "../../../../lib/api";
 import type { InstantaneClient } from "../../bus/atelier-client";
 
@@ -18,6 +18,8 @@ export interface PropsModifications {
   onAller: (objetId: string) => void;
   /** Ouvre l'état du modèle à une révision passée, en lecture seule. */
   onConsulterRevision?: (revision: number) => void;
+  /** Reprise champ par champ d'un lot en conflit (D-128) : le lot est abandonné, les champs choisis repartent. */
+  onReprendre?: (requestId: string, commandes: Commande[], label: string) => void;
 }
 
 const ETATS_LOT: Record<string, string> = { local: "En attente d'envoi", synchronisation: "Envoi…", synchronise: "Enregistré", conflit: "Conflit", refuse: "Refusé" };
@@ -32,7 +34,7 @@ const TYPES: Record<TypeProbleme, string> = {
   import: "Import",
 };
 
-export function Modifications({ projectId, instantane, readOnly, onDecider, onAller, onConsulterRevision }: PropsModifications) {
+export function Modifications({ projectId, instantane, readOnly, onDecider, onAller, onConsulterRevision, onReprendre }: PropsModifications) {
   const etat: ModeleAtelier = instantane.etat;
   const bilan = useQuery({ queryKey: ["atelier-problemes", projectId, instantane.revisionServeur], queryFn: () => api.getAtelierProblemes(projectId), retry: false, enabled: instantane.chargement === "pret" });
   const lots = [...instantane.lots].reverse();
@@ -67,6 +69,7 @@ export function Modifications({ projectId, instantane, readOnly, onDecider, onAl
                     {l.etat === "conflit" && <button type="button" disabled={readOnly} onClick={() => onDecider(l.enveloppe.requestId, "rejouer")}>Rejouer sur la version actuelle</button>}
                     <button type="button" disabled={readOnly} onClick={() => onDecider(l.enveloppe.requestId, "abandonner")}>Abandonner</button>
                   </span>
+                  {l.etat === "conflit" && onReprendre && !readOnly && <ResolutionChamps etat={etat} enveloppe={l.enveloppe} onReprendre={onReprendre} />}
                 </>
               )}
             </li>
@@ -239,6 +242,49 @@ function ControleInterferences({ etat, onAller }: { etat: ModeleAtelier; onAller
           ))}
         </ul>
       )}
+    </details>
+  );
+}
+
+const valeurLisible = (v: unknown): string => {
+  if (v === undefined) return "—";
+  if (v === null) return "non renseigné";
+  if (typeof v === "object" && v && "value" in v) {
+    const q = v as { value: number; unit?: string };
+    return `${String(q.value).replace(".", ",")}${q.unit ? ` ${q.unit}` : ""}`;
+  }
+  const t = typeof v === "string" ? v : JSON.stringify(v);
+  return t.length > 40 ? `${t.slice(0, 40)}…` : t;
+};
+
+/**
+ * Aide à la résolution champ par champ (D-128, DA-21-02) : pour un lot de modifications d'objets en conflit, chaque
+ * champ voulu face à la valeur actuelle ; les champs qui s'appliquent encore sont cochés ; « Reprendre » abandonne le
+ * lot et envoie les seuls champs cochés. Rien n'est fusionné sans ce choix.
+ */
+function ResolutionChamps({ etat, enveloppe, onReprendre }: { etat: ModeleAtelier; enveloppe: Enveloppe; onReprendre: NonNullable<PropsModifications["onReprendre"]> }) {
+  const champs = champsEnConflit(etat, enveloppe);
+  const [choisis, setChoisis] = useState<Set<string> | null>(null);
+  if (!champs?.length) return null;
+  const actifs = choisis ?? new Set(champs.filter((c) => c.applicable).map((c) => c.cle));
+  const commandes = reprendreChamps(enveloppe, actifs);
+  return (
+    <details className="lot-champs" data-resolution-champs={champs.length}>
+      <summary>Résoudre champ par champ</summary>
+      <ul>
+        {champs.map((c) => (
+          <li key={c.cle} data-champ-conflit={c.cle}>
+            <label className="case">
+              <input type="checkbox" disabled={!c.objetPresent} checked={actifs.has(c.cle)} onChange={(e) => { const n = new Set(actifs); if (e.target.checked) n.add(c.cle); else n.delete(c.cle); setChoisis(n); }} />
+              {c.objetId} · {c.champ} : le mien {valeurLisible(c.mien)}, actuel {c.objetPresent ? valeurLisible(c.serveur) : "objet supprimé"}
+              {!c.applicable && c.objetPresent && <span className="nav-detail"> — ne s'applique plus</span>}
+            </label>
+          </li>
+        ))}
+      </ul>
+      <button type="button" disabled={!commandes.length} data-reprendre-champs onClick={() => onReprendre(enveloppe.requestId, commandes, `${enveloppe.label} (champs repris)`)}>
+        Reprendre les champs cochés
+      </button>
     </details>
   );
 }
