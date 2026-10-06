@@ -8,11 +8,15 @@
  * comme un sommet) et leur rayon (« cercle ») — rayon, diamètre, tangence ligne–cercle et cercle–cercle ; les angles
  * d'un arc ne sont pas des variables. 200 variables au plus.
  *
+ * Objets d'architecture (D-129) : un mur droit est contraignable comme une ligne — sommets `sommet[0]` (a) et
+ * `sommet[1]` (b), segment `segment[0]` (son axe) ; la résolution déplace ses extrémités (ouvertures à position
+ * relative conservée, raccords recalculés). Mur courbe : non contraignable.
+ *
  * Une contrainte est une relation `contrainte` du modèle : source = esquisse A, cible = esquisse B (ou A),
  * paramètres { type, a, b, valeur, pilotante, etat } où a / b sont des caractéristiques nommées `sommet[i]` ou
  * `segment[i]`. Une contrainte dont un objet a disparu passe « à réparer ».
  */
-import type { ModeleAtelier, Occurrence, Relation } from "./modele.js";
+import type { ModeleAtelier, Occurrence, OccurrenceQuelconque, Relation } from "./modele.js";
 import type { Angle, Longueur } from "./unites.js";
 
 export type TypeContrainte = "coincidence" | "horizontal" | "vertical" | "parallele" | "perpendiculaire" | "distance" | "egalite" | "milieu" | "sur-ligne" | "fixe" | "symetrie" | "angle" | "rayon" | "diametre" | "tangence";
@@ -94,11 +98,24 @@ export const contraintesDe = (etat: ModeleAtelier): (Relation & { params: Params
 
 export const contraintesDeLObjet = (etat: ModeleAtelier, id: string) => contraintesDe(etat).filter((r) => r.sourceId === id || r.targetId === id);
 
-/** Esquisse contraignable ? (sinon, la raison) */
+/**
+ * Vue « esquisse » d'un objet contraignable (D-129) : l'esquisse elle-même, ou un mur droit vu comme une ligne de
+ * son axe (a, b) ; null sinon.
+ */
+export function commeEsquisse(o: OccurrenceQuelconque | undefined): Occurrence<"esquisse"> | null {
+  if (!o) return null;
+  if (o.classe === "esquisse") return o;
+  if (o.classe === "mur" && !o.params.renflement) return { ...o, classe: "esquisse", params: { forme: "ligne", points: [o.params.a, o.params.b], ferme: false, centre: null, rayon: null, angleDebut: null, angleFin: null, motif: null } } as unknown as Occurrence<"esquisse">;
+  return null;
+}
+
+/** Esquisse (ou mur droit, D-129) contraignable ? (sinon, la raison) */
 export function raisonNonContraignable(etat: ModeleAtelier, id: string): string | null {
-  const o = etat.objets[id];
-  if (!o) return `objet inconnu : ${id}`;
-  if (o.classe !== "esquisse") return `${id} n'est pas une esquisse`;
+  const brut = etat.objets[id];
+  if (!brut) return `objet inconnu : ${id}`;
+  if (brut.classe === "mur" && brut.params.renflement) return `${id} : mur courbe, contraintes non prises en charge`;
+  const o = commeEsquisse(brut);
+  if (!o) return `${id} n'est ni une esquisse ni un mur droit`;
   if (!(FORMES_CONTRAIGNABLES as readonly string[]).includes(o.params.forme)) return `esquisse « ${o.params.forme} » : contraintes réservées aux lignes, polylignes et polygones`;
   if (o.params.renflements) return `${id} : polyligne à segments en arc, contraintes non prises en charge`;
   if ((o.params.forme === "cercle" || o.params.forme === "arc") && (!o.params.centre || !o.params.rayon)) return `${id} : cercle sans centre ni rayon`;
@@ -143,7 +160,7 @@ export function systeme(etat: ModeleAtelier, contraintes: (Relation & { params: 
     const k = cle(id, i);
     let v = index.get(k);
     if (v === undefined) {
-      const o = etat.objets[id] as Occurrence<"esquisse">;
+      const o = commeEsquisse(etat.objets[id])!;
       v = x.length;
       index.set(k, v);
       if (i === -1) x.push(o.params.centre!.x, o.params.centre!.y);
@@ -157,8 +174,8 @@ export function systeme(etat: ModeleAtelier, contraintes: (Relation & { params: 
   for (const r of contraintes) {
     const p = r.params;
     if (p.etat !== "ok" || !p.pilotante) continue;
-    const A = etat.objets[r.sourceId] as Occurrence<"esquisse"> | undefined;
-    const B = etat.objets[r.targetId] as Occurrence<"esquisse"> | undefined;
+    const A = commeEsquisse(etat.objets[r.sourceId]);
+    const B = commeEsquisse(etat.objets[r.targetId]);
     if (!A || !B) continue;
     const sa = sommetsDe(A, p.a);
     const sb = p.b ? sommetsDe(B, p.b) : null;
@@ -384,7 +401,20 @@ export function appliquerSolution(etat: ModeleAtelier, s: Systeme, x: number[]):
   const objets = { ...etat.objets };
   const modifies: string[] = [];
   for (const [id, m] of parObjet) {
-    const o = objets[id] as Occurrence<"esquisse">;
+    const brut = objets[id]!;
+    // Mur droit (D-129) : extrémités a et b.
+    if (brut.classe === "mur") {
+      const na = m.get(0);
+      const nb = m.get(1);
+      const a = na ? { ...brut.params.a, x: na[0], y: na[1] } : brut.params.a;
+      const b = nb ? { ...brut.params.b, x: nb[0], y: nb[1] } : brut.params.b;
+      if (a.x !== brut.params.a.x || a.y !== brut.params.a.y || b.x !== brut.params.b.x || b.y !== brut.params.b.y) {
+        objets[id] = { ...brut, params: { ...brut.params, a, b } };
+        modifies.push(id);
+      }
+      continue;
+    }
+    const o = brut as Occurrence<"esquisse">;
     const points = o.params.points.map((p, i) => {
       const n = m.get(i);
       return n ? { ...p, x: n[0], y: n[1] } : p;
@@ -417,6 +447,7 @@ export function diagnosticContraintes(etat: ModeleAtelier, ids: string[]): { con
   let variables = 0;
   for (const id of ids) {
     const o = etat.objets[id];
+    if (o?.classe === "mur" && !o.params.renflement) variables += 4;
     if (o?.classe === "esquisse") variables += 2 * o.params.points.length + ((o.params.forme === "cercle" || o.params.forme === "arc") && o.params.centre && o.params.rayon ? 3 : 0);
   }
   const J = s.equations.length ? jacobien(s, s.x) : [];

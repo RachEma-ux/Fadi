@@ -5,6 +5,7 @@
  */
 import { useState } from "react";
 import {
+  commeEsquisse,
   etatsCalques,
   bibliotheques,
   CLASSES,
@@ -269,7 +270,8 @@ const nombre = (v: string) => Number(v.trim().replace(",", "."));
 
 /** Contraintes d'une ou deux esquisses sélectionnées : ajout, diagnostic, suppression. */
 export function Contraintes({ sel, etat, readOnly, onCommandes }: { sel: OccurrenceQuelconque[]; etat: ModeleAtelier; readOnly: boolean; onCommandes: OnCommandes }) {
-  const esquisses = sel.filter((o) => o.classe === "esquisse" && (FORMES_CONTRAIGNABLES as readonly string[]).includes(o.params.forme)) as (OccurrenceQuelconque & { classe: "esquisse" })[];
+  // Murs droits (D-129) : contraignables comme une ligne de leur axe.
+  const esquisses = sel.map((o) => commeEsquisse(o)).filter((o): o is NonNullable<typeof o> => !!o && (FORMES_CONTRAIGNABLES as readonly string[]).includes(o.params.forme)) as (OccurrenceQuelconque & { classe: "esquisse" })[];
   const [type, setType] = useState<TypeContrainte>("horizontal");
   const [aChoisi, setA] = useState("");
   const [bChoisi, setB] = useState("");

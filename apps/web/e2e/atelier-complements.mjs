@@ -2076,6 +2076,36 @@ await page.waitForSelector(".plan2d");
   check("chaîne jointive fermée : profil proposé, joint en polygone sur demande", r0.status === 200 && propose && profil?.points?.length === 4, `${r0.status} · ${propose} · ${JSON.stringify(profil?.forme)}`);
 }
 
+// Contrainte entre deux murs (D-129) : perpendicularité ajoutée depuis l'inspecteur d'une sélection de deux murs.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const x0 = murA.params.a.x - 280;
+  const y0 = murA.params.a.y - 280;
+  const r0 = await lot(pid, `cmur-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "mur.tracer", params: { id: "cmur-1", niveauId: murA.niveauId, a: P(x0, y0), b: P(x0 + 5, y0), epaisseur: m(0.2), hauteur: m(3) } },
+    { type: "mur.tracer", params: { id: "cmur-2", niveauId: murA.niveauId, a: P(x0 + 7, y0 + 1), b: P(x0 + 8, y0 + 4), epaisseur: m(0.2), hauteur: m(3) } },
+  ]);
+  await ouvrir(pid);
+  await page.locator(".nav-filtre").fill("cmur-");
+  await page.locator('.nav-objets button[data-objet="cmur-1"]').click();
+  await page.locator('.nav-objets button[data-objet="cmur-2"]').click({ modifiers: ["Shift"] });
+  await page.locator(".inspecteur-contraintes > summary").click();
+  await page.locator("[data-contrainte-type]").selectOption("perpendiculaire");
+  await page.locator('.ajout-contrainte button:has-text("Ajouter la contrainte")').click();
+  let pv = null;
+  for (let k = 0; k < 30 && pv === null; k++) {
+    const o = (await modele(pid)).modele.objets;
+    const a = o["cmur-1"]?.params;
+    const b = o["cmur-2"]?.params;
+    const ps = a && b ? (a.b.x - a.a.x) * (b.b.x - b.a.x) + (a.b.y - a.a.y) * (b.b.y - b.a.y) : null;
+    if (ps !== null && Math.abs(ps) < 1e-4) pv = ps;
+    else await page.waitForTimeout(500);
+  }
+  check("contrainte entre murs : perpendicularité ajoutée depuis l'inspecteur, murs résolus", r0.status === 200 && pv !== null, `${r0.status} · ${pv}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

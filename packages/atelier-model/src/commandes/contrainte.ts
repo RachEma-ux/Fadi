@@ -5,6 +5,7 @@
  */
 import {
   appliquerSolution,
+  commeEsquisse,
   contraintesDe,
   raisonNonContraignable,
   resoudreSysteme,
@@ -17,7 +18,7 @@ import {
   TOLERANCE_CONTRAINTE,
   type ParamsContrainte,
 } from "../contraintes.js";
-import type { ModeleAtelier, Occurrence, Relation } from "../modele.js";
+import type { ModeleAtelier, Relation } from "../modele.js";
 import { effetsVides, ErreurCommande, lire, nouveauProbleme, type ContexteCommande, type Effets, type ResultatCommande } from "./base.js";
 
 type Brut = Record<string, unknown>;
@@ -42,8 +43,8 @@ function composante(etat: ModeleAtelier, depart: string[]): (Relation & { params
 
 function degeneres(etat: ModeleAtelier, ids: Iterable<string>): string | null {
   for (const id of ids) {
-    const o = etat.objets[id];
-    if (o?.classe !== "esquisse") continue;
+    const o = commeEsquisse(etat.objets[id]);
+    if (!o) continue;
     const pts = o.params.points;
     for (let i = 0; i + 1 < pts.length; i++) if (Math.hypot(pts[i + 1]!.x - pts[i]!.x, pts[i + 1]!.y - pts[i]!.y) < 1e-6) return id;
     if (o.params.rayon && !(o.params.rayon.value > 1e-6)) return id;
@@ -75,8 +76,8 @@ function lireContrainte(etat: ModeleAtelier, p: Brut): { sourceId: string; targe
   const a = lire.chaine(p, "a");
   const b = lire.chaineOuNull(p, "b");
   const [ka, kb] = ELEMENTS[type];
-  const A = etat.objets[sourceId] as Occurrence<"esquisse">;
-  const B = etat.objets[targetId] as Occurrence<"esquisse">;
+  const A = commeEsquisse(etat.objets[sourceId])!;
+  const B = commeEsquisse(etat.objets[targetId])!;
   // Distance : deux sommets, ou un segment seul (longueur).
   const segmentSeul = type === "distance" && a.startsWith("segment") && b === null;
   const genreA = type === "tangence" && a === "cercle" ? "cercle" : ka;
@@ -192,7 +193,7 @@ export function controlerContraintes(avant: ModeleAtelier, apres: ModeleAtelier,
     etat = { ...etat, relations: { ...etat.relations, [r.id]: { ...r, params: { ...r.params, etat: "a-reparer" } as unknown as Brut } }, problemes: { ...etat.problemes, [pb.id]: pb } };
     eff = { ...eff, modifies: [...eff.modifies, r.id], problemes: [...eff.problemes, pb], referencesAReparer: [...eff.referencesAReparer, r.id] };
   }
-  const touchees = new Set(eff.modifies.filter((id) => etat.objets[id]?.classe === "esquisse" && toutes.some((r) => r.params.etat === "ok" && (r.sourceId === id || r.targetId === id))));
+  const touchees = new Set(eff.modifies.filter((id) => !!commeEsquisse(etat.objets[id]) && toutes.some((r) => r.params.etat === "ok" && (r.sourceId === id || r.targetId === id))));
   if (!touchees.size) return { etat, effets: eff };
   const s = systeme(etat, composante(etat, [...touchees]));
   const ecart = Math.max(0, ...s.equations.map((e) => Math.abs(e(s.x))));
@@ -201,9 +202,9 @@ export function controlerContraintes(avant: ModeleAtelier, apres: ModeleAtelier,
   // Geste sur les sommets : les sommets déplacés sont tenus, le reste suit.
   const fixes: { id: string; i: number }[] = [];
   for (const id of touchees) {
-    const a = avant.objets[id];
-    const b = etat.objets[id];
-    if (a?.classe !== "esquisse" || b?.classe !== "esquisse") continue;
+    const a = commeEsquisse(avant.objets[id]);
+    const b = commeEsquisse(etat.objets[id]);
+    if (!a || !b) continue;
     b.params.points.forEach((p, i) => {
       const q = a.params.points[i];
       if (!q || q.x !== p.x || q.y !== p.y) fixes.push({ id, i });
