@@ -375,7 +375,7 @@ export interface Definition {
 
 export interface Relation {
   id: string;
-  kind: "heberge-par" | "delimitee-par" | "joint-a" | "relie" | "contient" | "correspond-a" | "programme" | "contrainte";
+  kind: "heberge-par" | "delimitee-par" | "joint-a" | "relie" | "contient" | "correspond-a" | "programme" | "contrainte" | "pose";
   sourceId: string;
   targetId: string;
   params: Record<string, unknown>;

@@ -48,6 +48,7 @@ export * from "./automatisation/gabarits.js";
 export * from "./reprise.js";
 export * from "./commandes/refexterne.js";
 export * from "./commandes/vues3d.js";
+export { etendueVerticale, posesDe, GENRES_POSE, type GenrePose } from "./commandes/poses.js";
 export * from "./commandes/referentiels.js";
 export * from "./commandes/ensembles.js";
 export * from "./commandes/etats-calques.js";

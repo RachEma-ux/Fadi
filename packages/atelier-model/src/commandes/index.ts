@@ -38,6 +38,7 @@ import { reducteursBloc } from "./bloc.js";
 import { controlerContraintes, reducteursContrainte } from "./contrainte.js";
 import { controlerVerrous, verrouillerObjets } from "./verrous.js";
 import { suivreHachures } from "./hachures-associees.js";
+import { reducteursPose, suivrePoses } from "./poses.js";
 import { reducteursDocuments } from "./documents.js";
 import { reducteursVues3D } from "./vues3d.js";
 import { reducteursReferentiel } from "./referentiels.js";
@@ -276,6 +277,8 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "bloc.definir": (etat, p, ctx) => reducteursBloc.definir(etat, p, ctx),
   "bloc.placer": (etat, p, ctx) => reducteursBloc.placer(etat, p, ctx),
   "contrainte.ajouter": (etat, p, ctx) => reducteursContrainte.ajouter(etat, p, ctx),
+  "pose.ajouter": (etat, p, ctx) => reducteursPose.ajouter(etat, p, ctx),
+  "pose.supprimer": (etat, p) => reducteursPose.supprimer(etat, p),
   "contrainte.modifier": (etat, p) => reducteursContrainte.modifier(etat, p),
   "contrainte.supprimer": (etat, p) => reducteursContrainte.supprimer(etat, p),
   "phase.affecter": (etat, p, _ctx, c) => affecterPhase(etat, p, c),
@@ -339,7 +342,9 @@ export function appliquerCommande(etat: ModeleAtelier, commande: Commande, ctx: 
   if (!reducteur) throw new ErreurCommande("inconnue", "type", `commande inconnue : ${commande.type}`);
   if (typeof commande.params !== "object" || commande.params === null) throw new ErreurCommande("invalide", "params", "paramètres requis");
   const r = reducteur(etat, commande.params, ctx, commande.cibles ?? []);
-  const c0 = controlerContraintes(etat, r.etat, commande.type, r.effets, ctx);
+  const c00 = controlerContraintes(etat, r.etat, commande.type, r.effets, ctx);
+  // Contraintes verticales (D-155) : avant le contrôle des verrous, pour qu'un porté verrouillé refuse le lot.
+  const c0 = commande.type === "interne.restaurer" ? c00 : suivrePoses(c00.etat, c00.effets);
   controlerVerrous(etat, c0.etat, commande.type);
   return commande.type === "interne.restaurer" ? c0 : suivreHachures(c0.etat, c0.effets);
 }

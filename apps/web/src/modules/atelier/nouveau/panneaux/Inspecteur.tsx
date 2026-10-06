@@ -10,6 +10,7 @@ import { api, ApiError } from "../../../../lib/api";
 import { aire, chaineFermee, etendueEspace, niveauxTraverses, niveauxOrdonnes, cleTremie, bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, longueurSaisie, nombreSaisi, objetsSemblables, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type OuvrantPorte, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { EditeurProfilVertical } from "./ProfilVertical";
+import { ContrainteVerticale, PosesObjet } from "./Poses";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
 
@@ -198,6 +199,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {o.classe === "espace" && <EspaceNiveaux key={`espn-${o.id}`} o={o as Occurrence<"espace">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {(o.classe === "mur" || o.classe === "esquisse" || (o.classe === "solide" && !!(o as Occurrence<"solide">).params.profilVertical)) && <EditeurProfilVertical key={`pv-${o.id}`} etat={etat} o={o} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "solide" && (o as Occurrence<"solide">).params.ferme && !(o as Occurrence<"solide">).params.profilVertical && <FormeSolide key={`forme-${o.id}`} o={o as Occurrence<"solide">} desactive={desactive} onCommandes={onCommandes} />}
+      <PosesObjet o={o} etat={etat} readOnly={desactive} onCommandes={onCommandes} />
       {o.classe === "texte" && <OrientationTexte key={`orient-${o.id}`} o={o as Occurrence<"texte">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "dalle" && <SensRetombeeDalle key={`retombee-${o.id}`} o={o as Occurrence<"dalle">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "dalle" && <PenteDalle key={`pente-${o.id}`} o={o as Occurrence<"dalle">} desactive={desactive} onCommandes={onCommandes} />}
@@ -575,6 +577,7 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
       <ul className="inspecteur-compte">
         {[...parClasse].map(([c, n]) => <li key={c}>{CLASSES[c as keyof typeof CLASSES]?.libelle ?? c} : {n}</li>)}
       </ul>
+      <ContrainteVerticale key={`pose|${sel.map((o) => o.id).join("|")}`} sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       <div className="champ">
         <label htmlFor="calque-multiple">Affecter au calque</label>
         <select id="calque-multiple" value="" disabled={readOnly} onChange={(e) => e.target.value && onCommandes([{ type: "calque.affecter", params: { calqueId: e.target.value }, cibles: sel.map((o) => o.id) }], `Changer de calque (${sel.length})`)}>

@@ -38,7 +38,8 @@ export type KindRelation =
   | "correspond-a" // espace déclaré → pièce dessinée (import, code commun)
   | "reference" // annotation → caractéristique d'objet
   | "programme" // pièce → espace programmé (liaison Programmation)
-  | "contrainte"; // esquisse → esquisse : contrainte géométrique (lot 5, jeu borné)
+  | "contrainte" // esquisse → esquisse : contrainte géométrique (lot 5, jeu borné)
+  | "pose"; // objet porté → porteur : contrainte verticale (D-155)
 
 export interface DescriptionClasse {
   classe: Classe;

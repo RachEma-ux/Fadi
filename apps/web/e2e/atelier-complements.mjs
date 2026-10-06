@@ -2276,6 +2276,32 @@ await page.waitForSelector(".plan2d");
   check("baie cintrée : arc surbaissé de flèche 0,25 m enregistré", r0.status === 200 && cintre?.type === "surbaisse" && Math.abs((cintre?.fleche?.value ?? 0) - 0.25) < 1e-9, `${r0.status} · ${JSON.stringify(cintre)}`);
 }
 
+// Contrainte verticale (D-155) : une dalle posée sur un poteau, depuis la sélection de deux objets.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const x0 = murA.params.a.x - 530;
+  const y0 = murA.params.a.y - 530;
+  const r0 = await lot(pid, `pose-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "poteau.creer", params: { id: "poteau-pose-e2e", niveauId: murA.niveauId, point: P(x0 + 1, y0 + 1), formeId: "rectangle", largeur: m(0.3), profondeur: m(0.3), hauteur: m(2.7) } },
+    { type: "dalle.creer", params: { id: "dalle-pose-e2e", niveauId: murA.niveauId, contour: [P(x0, y0), P(x0 + 3, y0), P(x0 + 3, y0 + 3), P(x0, y0 + 3)], trous: [], epaisseur: m(0.2) } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("dalle-pose-e2e");
+  await page.locator(".nav-filtre").fill("poteau-pose-e2e");
+  await page.locator('.nav-objets button[data-objet="poteau-pose-e2e"]').click({ modifiers: ["Shift"] });
+  const panneau = page.locator("[data-contrainte-verticale]:visible").first();
+  await panneau.locator("> summary").click();
+  await panneau.locator("[data-pose-appliquer]").click();
+  let base = null;
+  for (let k = 0; k < 30 && base !== 2.7; k++) {
+    base = (await modele(pid)).modele.objets["dalle-pose-e2e"]?.params.decalageBase?.value ?? null;
+    if (base !== 2.7) await page.waitForTimeout(500);
+  }
+  check("contrainte verticale : la dalle posée sur le poteau monte à 2,70 m", r0.status === 200 && base === 2.7, `${r0.status} · ${base}`);
+}
+
 // Profil vertical sur la face d'un mur, extrudé horizontalement (D-154).
 {
   await page.keyboard.press("Escape");
