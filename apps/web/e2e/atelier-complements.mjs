@@ -1737,6 +1737,43 @@ await page.waitForSelector(".plan2d");
   check("réseau associatif : recalculé depuis l'inspecteur (2 copies au pas de 3 m)", r0.status === 200 && !!g && apres?.reseau?.dx === 3 && xs === 2, `${r0.status} · ${g?.id} · ${JSON.stringify(apres?.reseau ?? null).slice(0, 160)}`);
 }
 
+// Étirer par fenêtre polygonale (D-116) : lasso autour d'une extrémité, base puis destination ; l'autre reste.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const r0 = await lot(pid, `fen-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "objet.creer", params: { id: "ligne-fen", classe: "esquisse", niveauId: murA.niveauId, params: { forme: "ligne", points: [P(ax - 140, ay + 140), P(ax - 136, ay + 140)], ferme: false } } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("ligne-fen");
+  const b = await zoomerSur('.plan2d [data-objet="ligne-fen"]', 300);
+  let fini = null;
+  if (b && (await choisirOutil("fenêtre polygonale", "Étirer par fenêtre", "etirer-fenetre"))) {
+    const xr = b.x + b.width;
+    const yc = b.y + b.height / 2;
+    await page.mouse.move(xr - 20, yc - 20);
+    await page.mouse.down();
+    for (const [x, y] of [[xr + 25, yc - 25], [xr + 20, yc + 20], [xr - 25, yc + 25], [xr - 20, yc - 20]]) await page.mouse.move(x, y, { steps: 6 });
+    await page.mouse.up();
+    const fenetre = await page.locator("[data-fenetre-etirer]").count();
+    await page.mouse.click(xr, yc);
+    await page.waitForFunction(() => /destination/.test(document.querySelector(".etat-aide")?.textContent ?? ""), null, { timeout: 5000 }).catch(() => {});
+    await page.mouse.click(xr, yc - 80);
+    for (let k = 0; k < 30 && !fini; k++) {
+      const o = (await modele(pid)).modele.objets["ligne-fen"];
+      if (o && o.params.points[1].y > ay + 140 + 0.1) fini = { o, fenetre };
+      else await page.waitForTimeout(500);
+    }
+  }
+  const pts = fini?.o.params.points ?? [];
+  const journal = (await api("get", `/projects/${pid}/atelier/journal`)).body.entrees.at(-1)?.label ?? "";
+  check("étirer par fenêtre : lasso libre, extrémité entourée étirée, l'autre fixe", r0.status === 200 && fini?.fenetre === 1 && Math.abs(pts[0].x - (ax - 140)) < 1e-6 && Math.abs(pts[0].y - (ay + 140)) < 1e-6 && pts[1].y > ay + 140 && /fenêtre/.test(journal), `${r0.status} · ${JSON.stringify(pts)} · ${journal}`);
+  await page.keyboard.press("Escape");
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

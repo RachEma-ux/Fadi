@@ -49,6 +49,22 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const idObjets = `plan-objets-${useId().replace(/:/g, "")}`;
   const [lasso, setLasso] = useState<Point2[] | null>(null);
   const lassoPoints = useRef<Point2[]>([]);
+  // Étirer par fenêtre (D-116) : fenêtre polygonale tracée au lasso, puis point de base et destination.
+  const [fenetreEtirer, setFenetreEtirer] = useState<Point2[] | null>(null);
+  useEffect(() => {
+    setFenetreEtirer(null);
+  }, [ui.outil, ui.niveauId]);
+  useEffect(() => {
+    if (!fenetreEtirer) return;
+    const touche = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setFenetreEtirer(null);
+        etatUi.set({ pointsEnCours: [], aide: "Fenêtre d'étirement abandonnée." });
+      }
+    };
+    window.addEventListener("keydown", touche);
+    return () => window.removeEventListener("keydown", touche);
+  }, [fenetreEtirer]);
   // Rejet de la paume (D-109) : pendant qu'un stylet touche l'écran, et une seconde après, les contacts du doigt
   // (paume posée) sont ignorés ; leurs identifiants sont retenus pour ignorer aussi leurs mouvements.
   const stylet = useRef<{ actif: boolean; dernier: number }>({ actif: false, dernier: -Infinity });
@@ -301,7 +317,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       glisse.current = { mode: "tangente", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false, tangente: Number(tangente) };
       return;
     }
-    if (ui.outil === "lasso" || (ui.outil === "selection" && e.altKey)) {
+    if (ui.outil === "lasso" || (ui.outil === "selection" && e.altKey) || (ui.outil === "etirer-fenetre" && !fenetreEtirer && !readOnly)) {
       lassoPoints.current = [p];
       glisse.current = { mode: "lasso", x: sx, y: sy, vue: ui.vue, depart: p, bouge: false };
       return;
@@ -419,6 +435,13 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       const contour = lassoPoints.current;
       lassoPoints.current = [];
       setLasso(null);
+      if (ui.outil === "etirer-fenetre") {
+        if (g.bouge && contour.length > 2) {
+          setFenetreEtirer(contour);
+          etatUi.set({ pointsEnCours: [], aide: "Cliquez le point de base du déplacement (Échap : abandonner)." });
+        } else etatUi.set({ aide: "Glissez pour entourer les sommets à étirer." });
+        return;
+      }
       if (g.bouge && contour.length > 2) {
         const ids = objetsDansLasso(etat, ui.niveauId, contour).filter((id) => {
           const o = etat.objets[id];
@@ -460,7 +483,9 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     const depuis = ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null;
     const a = e.pointerType === "touch" || !accroche ? accrocher(p, cache, accs, rayon * (e.pointerType === "touch" ? 2 : 1), depuis) : accroche;
     const sous = objetSousPointeur(p, cache, etat, ui.niveauId, rayon)?.objetId ?? null;
-    onResultat(clic(ui.outil, a.point, etat, ui, { rayon, alt: e.altKey, objetSous: sous }));
+    const r = clic(ui.outil, a.point, etat, ui, { rayon, alt: e.altKey, objetSous: sous, ...(fenetreEtirer ? { fenetre: fenetreEtirer } : {}) });
+    if (ui.outil === "etirer-fenetre" && r.commandes.length) setFenetreEtirer(null);
+    onResultat(r);
   }
 
   function surMolette(e: React.WheelEvent<SVGSVGElement>) {
@@ -597,6 +622,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
           return <circle key={i} cx={s.x} cy={s.y} r={3} className="plan-point" />;
         })}
         {accroche && accroche.type !== "libre" && <MarqueAccroche a={accroche} pr={pr} />}
+        {fenetreEtirer && <path className="plan-lasso plan-fenetre-etirer" d={chemin(pr, fenetreEtirer, true)} data-fenetre-etirer={fenetreEtirer.length} />}
         {cadre && <CadreSelection a={pr.vers(cadre.a)} b={pr.vers(cadre.b)} />}
         {lasso && lasso.length > 1 && (ui.outil === "main-levee" || ui.outil === "gomme" ? <path className="plan-trace" d={chemin(pr, lasso, false)} data-trace={lasso.length} /> : <path className="plan-lasso" d={chemin(pr, lasso, true)} data-lasso={lasso.length} />)}
       </g>

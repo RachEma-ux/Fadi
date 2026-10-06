@@ -60,7 +60,7 @@ function rattachementAuPoint(etat: ModeleAtelier, niveauId: string, p: Point2): 
   return null;
 }
 
-export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: EtatUi, options: { rayon: number; alt?: boolean; objetSous: string | null }): ResultatClic {
+export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: EtatUi, options: { rayon: number; alt?: boolean; objetSous: string | null; fenetre?: readonly Point2[] }): ResultatClic {
   const niveauId = ui.niveauId;
   const pts = ui.pointsEnCours;
   const base = { niveauId };
@@ -358,6 +358,15 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       const extremite = distance(pts[0]!, extremites[0]!) < 1e-9 ? "a" : "b";
       // Les murs joints suivent (D-047) ; Alt : étirer le mur seul.
       return emettre([{ type: "transformer.etirer", params: { id: o.id, extremite, point, ...(o.classe === "mur" && !options.alt ? { entrainer: true } : {}) } }], o.classe === "mur" && !options.alt ? "Étirer (murs joints entraînés)" : "Étirer");
+    }
+    case "etirer-fenetre": {
+      // Fenêtre polygonale (D-116) : tracée au lasso dans le plan ; puis point de base et destination.
+      if (!options.fenetre || options.fenetre.length < 3) return attendre([], "Glissez pour entourer les sommets à étirer.");
+      if (pts.length === 0) return attendre([point], "Cliquez la destination.");
+      const dx = Math.round((point.x - pts[0]!.x) * 1e9) / 1e9;
+      const dy = Math.round((point.y - pts[0]!.y) * 1e9) / 1e9;
+      if (Math.hypot(dx, dy) < 1e-9) return attendre(pts, "Destination confondue avec la base : cliquez ailleurs.");
+      return emettre([{ type: "transformer.etirerFenetre", params: { niveauId, fenetre: options.fenetre.map((q) => ({ x: q.x, y: q.y })), dx, dy } }], `Étirer par fenêtre (${fmt(Math.hypot(dx, dy))} m)`);
     }
     case "ajuster":
     case "prolonger": {

@@ -45,6 +45,7 @@ import { convertirEsquisse } from "../esquisse/conversion.js";
 import { arrondirSommets } from "../esquisse/arrondir.js";
 import { affecterZone } from "./zones.js";
 import { alignerSelection } from "./transformer.js";
+import { etirerFenetre } from "./etirer-fenetre.js";
 import { tremieEscalier } from "./tremie.js";
 import { changerClasse } from "./changer-classe.js";
 import { joindreMurs, scinderMur } from "./mur.js";
@@ -213,6 +214,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "transformer.miroir": reducteursTransformer.miroir,
   "transformer.echelle": reducteursTransformer.echelle,
   "transformer.etirer": reducteursTransformer.etirer,
+  "transformer.etirerFenetre": (etat, p, ctx) => etirerFenetre(etat, p, ctx),
   "transformer.ajuster": reducteursTransformer.ajuster,
   "transformer.prolonger": reducteursTransformer.prolonger,
   "transformer.decaler": reducteursTransformer.decaler,
