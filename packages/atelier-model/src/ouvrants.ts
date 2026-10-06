@@ -15,22 +15,41 @@ export interface OuvrantPorte {
   cote: "gauche" | "droite";
   /**
    * Nature du vantail (D-047) : battante (absent), double (deux vantaux battants, la charnière est sans objet),
-   * coulissante (le vantail glisse vers la charnière — début ou fin —, côté de pose = `cote`).
+   * coulissante (le vantail glisse vers la charnière — début ou fin —, côté de pose = `cote`) ; pliante (D-152 :
+   * `panneaux` repliés vers la charnière, du côté `cote`) ; pivotante (D-152 : axe de pivot à `decalagePivot` du
+   * tableau de la charnière, le vantail balaie les deux côtés du mur).
    */
-  type?: "battante" | "double" | "coulissante";
+  type?: "battante" | "double" | "coulissante" | "pliante" | "pivotante";
+  /** Porte pliante (D-152) : nombre de panneaux saisi (2 à 12). */
+  panneaux?: number;
+  /** Porte pivotante (D-152) : distance de l'axe de pivot au tableau de la charnière (0 < d < largeur). */
+  decalagePivot?: { value: number; unit: "m" };
 }
+
+export const TYPES_VANTAIL = ["battante", "double", "coulissante", "pliante", "pivotante"] as const;
 
 export const OUVRANT_CONVENTION: Readonly<OuvrantPorte> = { charniere: "debut", cote: "gauche" };
 
 /** Lecture validée de `params.ouvrant` (absent ou null : non renseigné). */
-export function lireOuvrant(brut: unknown, chemin = "params.ouvrant"): OuvrantPorte | null {
+export function lireOuvrant(brut: unknown, chemin = "params.ouvrant", largeur?: number): OuvrantPorte | null {
   if (brut === undefined || brut === null) return null;
   const b = brut as Record<string, unknown>;
-  if (typeof brut !== "object" || Array.isArray(brut) || (b["charniere"] !== "debut" && b["charniere"] !== "fin") || (b["cote"] !== "gauche" && b["cote"] !== "droite") || (b["type"] !== undefined && b["type"] !== "battante" && b["type"] !== "double" && b["type"] !== "coulissante")) {
-    throw new ErreurCommande("invalide", chemin, "ouvrant : { charniere: « debut » | « fin », cote: « gauche » | « droite », type?: « battante » | « double » | « coulissante » } ou null");
+  if (typeof brut !== "object" || Array.isArray(brut) || (b["charniere"] !== "debut" && b["charniere"] !== "fin") || (b["cote"] !== "gauche" && b["cote"] !== "droite") || (b["type"] !== undefined && !(TYPES_VANTAIL as readonly unknown[]).includes(b["type"]))) {
+    throw new ErreurCommande("invalide", chemin, "ouvrant : { charniere: « debut » | « fin », cote: « gauche » | « droite », type?: « battante » | « double » | « coulissante » | « pliante » | « pivotante » } ou null");
   }
   const type = b["type"] as OuvrantPorte["type"];
-  return { charniere: b["charniere"], cote: b["cote"], ...(type && type !== "battante" ? { type } : {}) };
+  const out: OuvrantPorte = { charniere: b["charniere"], cote: b["cote"], ...(type && type !== "battante" ? { type } : {}) };
+  if (type === "pliante") {
+    const n = b["panneaux"];
+    if (typeof n !== "number" || !Number.isInteger(n) || n < 2 || n > 12) throw new ErreurCommande("invalide", `${chemin}.panneaux`, "porte pliante : nombre de panneaux entier de 2 à 12 requis");
+    out.panneaux = n;
+  }
+  if (type === "pivotante") {
+    const d = b["decalagePivot"] as { value?: unknown; unit?: unknown } | undefined;
+    if (!d || typeof d.value !== "number" || d.unit !== "m" || !(d.value > 0) || (largeur !== undefined && !(d.value < largeur))) throw new ErreurCommande("invalide", `${chemin}.decalagePivot`, "porte pivotante : distance de l'axe de pivot au tableau requise, entre 0 et la largeur de la porte (exclues)");
+    out.decalagePivot = { value: d.value, unit: "m" };
+  }
+  return out;
 }
 
 export interface BattantPorte {
@@ -100,6 +119,24 @@ export function symbolePorte(etat: ModeleAtelier, porte: Occurrence<"porte">): {
     const a1 = cross(b.ferme, b.ouvert) > 0 ? deg(b.ferme) : deg(b.ouvert);
     const a2 = cross(ferme2, b.ouvert) > 0 ? deg(ferme2) : deg(b.ouvert);
     return { vantaux: [v1, v2], arcs: [arc(b.charniere, w, a1), arc(autre, w, a2)], explicite: b.explicite };
+  }
+  if (type === "pliante") {
+    // Panneaux repliés vers la charnière en accordéon (symbole conventionnel : plis à 60° du plan du mur).
+    const n = b.ouvrant.panneaux ?? 2;
+    const l = b.largeur / n;
+    const pts: Vec[] = [];
+    for (let k = 0; k <= n; k++) pts.push(add(add(b.charniere, mul(b.ferme, k * l * 0.5)), mul(b.ouvert, k % 2 ? l * Math.sin(Math.PI / 3) : 0)));
+    return { vantaux: [pts], arcs: [], explicite: b.explicite };
+  }
+  if (type === "pivotante") {
+    // Vantail ouvert à 90° autour de l'axe de pivot : la grande part balaie le côté d'ouverture, la petite l'autre.
+    const d = b.ouvrant.decalagePivot?.value ?? b.largeur / 4;
+    const pivot = add(b.charniere, mul(b.ferme, d));
+    const contre = mul(b.ouvert, -1);
+    const a1 = cross(b.ferme, b.ouvert) > 0 ? deg(b.ferme) : deg(b.ouvert);
+    const retour = mul(b.ferme, -1);
+    const a2 = cross(retour, contre) > 0 ? deg(retour) : deg(contre);
+    return { vantaux: [[add(pivot, mul(contre, d)), add(pivot, mul(b.ouvert, b.largeur - d))]], arcs: [arc(pivot, b.largeur - d, a1), arc(pivot, d, a2)], explicite: b.explicite };
   }
   if (type === "coulissante") {
     // Vantail : le long de la baie, légèrement en retrait de la face de pose ; flèche vers la charnière (sens d'ouverture).

@@ -383,6 +383,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
           let placementRemplissage: number;
           let panneau: number;
           let operation = "$";
+          let operationLibre = "$";
           const ouvrant = ouv.classe === "porte" ? ouv.params.ouvrant : null;
           if (ouvrant) {
             // Sens renseigné (D-037) : repère propre à la porte, Y dans le sens d'ouverture, X le long de la baie ;
@@ -396,7 +397,9 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
             const pa = surAxe(sAutre);
             const gaucheVu = (pa.x - pc.x) * x.x + (pa.y - pc.y) * x.y > 0; // l'autre tableau du côté +X : charnière à gauche
             const origine = gaucheVu ? pc : pa;
-            operation = ouvrant.type === "double" ? ".DOUBLE_DOOR_SINGLE_SWING." : ouvrant.type === "coulissante" ? (gaucheVu ? ".SLIDING_TO_LEFT." : ".SLIDING_TO_RIGHT.") : gaucheVu ? ".SINGLE_SWING_LEFT." : ".SINGLE_SWING_RIGHT.";
+            operation = ouvrant.type === "double" ? ".DOUBLE_DOOR_SINGLE_SWING." : ouvrant.type === "coulissante" ? (gaucheVu ? ".SLIDING_TO_LEFT." : ".SLIDING_TO_RIGHT.") : ouvrant.type === "pliante" ? (gaucheVu ? ".FOLDING_TO_LEFT." : ".FOLDING_TO_RIGHT.") : ouvrant.type === "pivotante" ? ".USERDEFINED." : gaucheVu ? ".SINGLE_SWING_LEFT." : ".SINGLE_SWING_RIGHT.";
+            // Pivotante (D-152) : pas de valeur IFC dédiée, type libre nommé.
+            if (ouvrant.type === "pivotante") operationLibre = chaineStep("PIVOTING");
             const etage = o.niveauId ? etages.get(o.niveauId) : undefined;
             placementRemplissage = s.ajouter(`IFCLOCALPLACEMENT(${ref(etage ? etage.placement : placementBat)},${ref(s.ajouter(`IFCAXIS2PLACEMENT3D(${ref(pt3(origine.x, origine.y, 0))},${ref(axeZ)},${ref(dir3(x.x, x.y, 0))})`))})`);
             panneau = cintre ? extrusionElevation({ x: 0, y: 0 }, { x: 1, y: 0 }, profilEn(0), -ep / 2, ep / 2) : boite({ x: 0, y: 0 }, { x: 1, y: 0 }, 0, w, -ep / 2, ep / 2, zb, zb + ouv.params.hauteur.value);
@@ -409,7 +412,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
           // Porte à sens renseigné : placement propre à la porte, le corps détaillé n'y est pas réécrit (panneau seul).
           // Baie cintrée (D-141) : panneau au profil de la baie, la menuiserie détaillée n'y est pas réécrite.
           const corps = menuiserie && !ouvrant && !cintre ? corpsMenuiserie(w, ouv.params.hauteur.value, menuiserie, ep, ouv.classe === "porte").map((k) => boite(va, vu, c - w / 2 + k.s0, c - w / 2 + k.s1, centre - k.e / 2, centre + k.e / 2, zb + k.z0, zb + k.z1)) : [panneau];
-          const remplissage = s.ajouter(`${classeIfc}(${gid(ouv.id)},$,${opt(ouv.params.repere ?? ouv.id)},$,$,${ref(placementRemplissage)},${ref(forme([corpsSolide(corps)]))},${opt(ouv.params.repere)},${reelStep(ouv.params.hauteur.value)},${reelStep(w)},${ouv.classe === "porte" ? ".DOOR." : ".WINDOW."},${operation},$)`);
+          const remplissage = s.ajouter(`${classeIfc}(${gid(ouv.id)},$,${opt(ouv.params.repere ?? ouv.id)},$,$,${ref(placementRemplissage)},${ref(forme([corpsSolide(corps)]))},${opt(ouv.params.repere)},${reelStep(ouv.params.hauteur.value)},${reelStep(w)},${ouv.classe === "porte" ? ".DOOR." : ".WINDOW."},${operation},${operationLibre})`);
           s.ajouter(`IFCRELFILLSELEMENT(${gid(`rel-remplit|${ouv.id}`)},$,$,$,${ref(ouverture)},${ref(remplissage)})`);
           produits.set(ouv.id, remplissage);
           contenir(o.niveauId, remplissage);

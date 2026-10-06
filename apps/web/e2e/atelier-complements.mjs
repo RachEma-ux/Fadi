@@ -2276,6 +2276,30 @@ await page.waitForSelector(".plan2d");
   check("baie cintrée : arc surbaissé de flèche 0,25 m enregistré", r0.status === 200 && cintre?.type === "surbaisse" && Math.abs((cintre?.fleche?.value ?? 0) - 0.25) < 1e-9, `${r0.status} · ${JSON.stringify(cintre)}`);
 }
 
+// Porte pivotante (D-152) : vantail choisi dans l'inspecteur, distance du pivot saisie avant l'envoi.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const x0 = murA.params.a.x - 490;
+  const y0 = murA.params.a.y - 490;
+  const r0 = await lot(pid, `pivot-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "mur.tracer", params: { id: "mur-pivot-e2e", niveauId: murA.niveauId, a: P(x0, y0), b: P(x0 + 5, y0), epaisseur: m(0.2), hauteur: m(2.5) } },
+    { type: "ouverture.poser", params: { id: "porte-pivot-e2e", classe: "porte", murHoteId: "mur-pivot-e2e", position: 0.5, largeur: m(1.2), hauteur: m(2.1), ouvrant: { charniere: "debut", cote: "gauche" } } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("porte-pivot-e2e");
+  await page.locator('[data-champ="vantail"]').selectOption("pivotante");
+  await page.locator("[data-ouvrant-pivot]").fill("30 cm");
+  await page.locator("[data-ouvrant-appliquer]").click();
+  let ouv = null;
+  for (let k = 0; k < 30 && ouv?.type !== "pivotante"; k++) {
+    ouv = (await modele(pid)).modele.objets["porte-pivot-e2e"]?.params.ouvrant ?? null;
+    if (ouv?.type !== "pivotante") await page.waitForTimeout(500);
+  }
+  check("porte pivotante : pivot à 0,30 m du tableau enregistré", r0.status === 200 && ouv?.type === "pivotante" && Math.abs((ouv?.decalagePivot?.value ?? 0) - 0.3) < 1e-9, `${r0.status} · ${JSON.stringify(ouv)}`);
+}
+
 // Murs et ouvertures dans un bloc (D-150) : un mur et sa porte deviennent un bloc ; l'occurrence les dessine au plan.
 {
   await page.keyboard.press("Escape");

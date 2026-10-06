@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../../../lib/api";
-import { aire, chaineFermee, etendueEspace, niveauxTraverses, niveauxOrdonnes, cleTremie, bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, longueurSaisie, nombreSaisi, objetsSemblables, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { aire, chaineFermee, etendueEspace, niveauxTraverses, niveauxOrdonnes, cleTremie, bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, longueurSaisie, nombreSaisi, objetsSemblables, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type OuvrantPorte, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -965,9 +965,17 @@ function OuvertureHote({ o, etat, desactive, onCommandes }: { o: Occurrence<"por
   const nomMur = (m: Occurrence<"mur">) => `${m.id}${m.niveauId && m.niveauId !== o.niveauId ? ` (${etat.niveaux[m.niveauId]?.nom ?? m.niveauId})` : ""}`;
   const ouvrant = o.classe === "porte" ? (o.params.ouvrant ?? null) : undefined;
   const valeur = ouvrant ? `${ouvrant.charniere}-${ouvrant.cote}` : "";
+  // Porte pliante ou pivotante (D-152) : nombre de panneaux et distance du pivot saisis, jamais supposés.
+  const [extra, setExtra] = useState({ panneaux: String(ouvrant?.panneaux ?? ""), pivot: ouvrant?.decalagePivot ? String(ouvrant.decalagePivot.value).replace(".", ",") : "" });
+  const [typeChoisi, setTypeChoisi] = useState<OuvrantPorte["type"] | null>(null);
+  const complement = (type: string | undefined) => {
+    if (type === "pliante") return { panneaux: Number(extra.panneaux) };
+    if (type === "pivotante") return { decalagePivot: { value: longueurSaisie(extra.pivot), unit: "m" } };
+    return {};
+  };
   const fixer = (v: string, type = ouvrant?.type) => {
     const [charniere, cote] = v ? v.split("-") : [];
-    onCommandes([{ type: "ouverture.modifier", params: { id: o.id, params: { ouvrant: v ? { charniere, cote, ...(type && type !== "battante" ? { type } : {}) } : null } } }], v ? `Sens d'ouverture : ${OUVRANTS.find(([k]) => k === v)?.[1]}${type && type !== "battante" ? ` (${type})` : ""}` : "Sens d'ouverture non renseigné");
+    onCommandes([{ type: "ouverture.modifier", params: { id: o.id, params: { ouvrant: v ? { charniere, cote, ...(type && type !== "battante" ? { type, ...complement(type) } : {}) } : null } } }], v ? `Sens d'ouverture : ${OUVRANTS.find(([k]) => k === v)?.[1]}${type && type !== "battante" ? ` (${type})` : ""}` : "Sens d'ouverture non renseigné");
   };
   const [rep, setRep] = useState({ nombre: "", entraxe: "" });
   return (
@@ -1000,11 +1008,23 @@ function OuvertureHote({ o, etat, desactive, onCommandes }: { o: Occurrence<"por
           {ouvrant && (
             <>
               <label htmlFor={`vantail-${o.id}`}>Vantail</label>
-              <select id={`vantail-${o.id}`} value={ouvrant.type ?? "battante"} disabled={desactive} data-champ="vantail" onChange={(e) => fixer(valeur, e.target.value as "battante")}>
+              <select id={`vantail-${o.id}`} value={typeChoisi ?? ouvrant.type ?? "battante"} disabled={desactive} data-champ="vantail" onChange={(e) => { const t = e.target.value as "battante"; if ((t as string) === "pliante" || (t as string) === "pivotante") setTypeChoisi(t); else { setTypeChoisi(null); fixer(valeur, t); } }}>
                 <option value="battante">battant (un vantail)</option>
                 <option value="double">double (deux vantaux battants)</option>
                 <option value="coulissante">coulissant (glisse vers la charnière)</option>
+                <option value="pliante">pliant (panneaux en accordéon)</option>
+                <option value="pivotante">pivotant (axe décalé du tableau)</option>
               </select>
+              {((typeChoisi ?? ouvrant.type) === "pliante" || (typeChoisi ?? ouvrant.type) === "pivotante") && (
+                <span className="ver-actions">
+                  {(typeChoisi ?? ouvrant.type) === "pliante" ? (
+                    <label>Panneaux<input type="number" min={2} max={12} step={1} value={extra.panneaux} disabled={desactive} onChange={(e) => setExtra({ ...extra, panneaux: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-ouvrant-panneaux /></label>
+                  ) : (
+                    <label>Pivot à (m du tableau)<input inputMode="decimal" value={extra.pivot} disabled={desactive} onChange={(e) => setExtra({ ...extra, pivot: e.target.value })} onKeyDown={(e) => e.stopPropagation()} data-ouvrant-pivot /></label>
+                  )}
+                  <button type="button" disabled={desactive} onClick={() => { fixer(valeur, typeChoisi ?? ouvrant.type); setTypeChoisi(null); }} data-ouvrant-appliquer>Appliquer</button>
+                </span>
+              )}
             </>
           )}
           {ouvrant && (
