@@ -254,7 +254,7 @@ function etagerCopies(r: ResultatCommande, k: number): ResultatCommande {
     if (o.classe === "escalier") throw new ErreurCommande("precondition", "etages", `${id} : un escalier ne se répète pas d'un niveau à l'autre (niveaux de départ et d'arrivée à redéfinir)`);
     const niveauId = monte(o.niveauId, id);
     touches.add(niveauId);
-    if (o.classe === "mur" && o.params.niveauHautId) objets[id] = { ...o, niveauId, params: { ...o.params, niveauHautId: monte(o.params.niveauHautId, `${id} (niveau haut)`) } };
+    if ((o.classe === "mur" || o.classe === "espace") && o.params.niveauHautId) objets[id] = { ...o, niveauId, params: { ...o.params, niveauHautId: monte(o.params.niveauHautId, `${id} (niveau haut)`) } } as OccurrenceQuelconque;
     else objets[id] = { ...o, niveauId } as OccurrenceQuelconque;
   }
   return { etat: { ...etat, objets }, effets: { ...r.effets, niveauxTouches: [...new Set([...r.effets.niveauxTouches, ...touches])] } };
@@ -276,9 +276,9 @@ function versNiveau(r: ResultatCommande, ids: readonly string[], niveauCible: st
     if (o.niveauId === niveauCible) return;
     if (o.niveauId === null) throw new ErreurCommande("precondition", "cibles", `${id} : objet sans niveau`);
     if (o.classe === "escalier") throw new ErreurCommande("precondition", "cibles", `${id} : un escalier ne change pas de niveau (niveaux de départ et d'arrivée à redéfinir)`);
-    if (o.classe === "mur" && o.params.niveauHautId) {
+    if ((o.classe === "mur" || o.classe === "espace") && o.params.niveauHautId) {
       const haut = etat.niveaux[o.params.niveauHautId];
-      if (haut && haut.elevation <= cible.elevation) throw new ErreurCommande("precondition", "niveauCible", `mur ${id} : son niveau haut « ${haut.nom} » ne serait plus au-dessus du niveau « ${cible.nom} »`);
+      if (haut && haut.elevation <= cible.elevation) throw new ErreurCommande("precondition", "niveauCible", `${o.classe} ${id} : son niveau haut « ${haut.nom} » ne serait plus au-dessus du niveau « ${cible.nom} »`);
     }
     touches.add(o.niveauId);
     changes.push(id);
@@ -1282,6 +1282,12 @@ export function dupliquerNiveau(etat: ModeleAtelier, p: Brut, ctx: ContexteComma
     if (copie.classe === "mur" && copie.params.niveauHautId) {
       const haut = etat.niveaux[copie.params.niveauHautId];
       copie = { ...copie, params: { ...copie.params, niveauHautId: null, hauteur: haut && haut.elevation > source.elevation ? { value: Math.round((haut.elevation - source.elevation) * 1e6) / 1e6, unit: "m" } : copie.params.hauteur } };
+    }
+    // Espace sur plusieurs niveaux (D-142) : la copie garde son étendue en hauteur propre.
+    if (copie.classe === "espace" && copie.params.niveauHautId) {
+      const haut = etat.niveaux[copie.params.niveauHautId];
+      const { niveauHautId: _h, ...reste } = copie.params;
+      copie = { ...copie, params: { ...reste, ...(haut && haut.elevation > source.elevation ? { hauteur: { value: Math.round((haut.elevation - source.elevation) * 1e6) / 1e6, unit: "m" as const } } : {}) } };
     }
     if (copie.classe === "escalier") copie = { ...copie, params: { ...copie.params, niveauDepartId: nouveau, niveauArriveeId: null } };
     objets[id] = copie;

@@ -7,6 +7,7 @@
 import { aire, aireNette, longueurAxeMur } from "./geometrie.js";
 import type { ModeleAtelier } from "./modele.js";
 import { niveauxOrdonnes, objetsDeClasse } from "./modele.js";
+import { espacesTraversant, etendueEspace, niveauxTraverses, type EspaceTraversant } from "./espaces-volume.js";
 import { TOLERANCE_AIRE_ABS, TOLERANCE_AIRE_REL } from "./unites.js";
 
 export interface QuantitePiece {
@@ -36,6 +37,13 @@ export interface QuantitesNiveau {
   poteaux: number;
   escaliers: number;
   solides: number;
+  /**
+   * Espaces du niveau (D-142) : aire calculée, étendue et volume quand la hauteur ou le niveau haut est connu,
+   * niveaux traversés ; clé absente sans espace.
+   */
+  espaces?: { id: string; nom: string; aire: number; hauteur?: number; volume?: number; niveauxTraverses?: string[] }[];
+  /** Espaces d'autres niveaux qui traversent celui-ci (vides, gaines) : signalés, aucune surface déduite. */
+  traversants?: EspaceTraversant[];
 }
 
 export interface Quantites {
@@ -45,6 +53,19 @@ export interface Quantites {
 
 const arrondi = (v: number) => Math.round(v * 1e6) / 1e6;
 const parId = <T extends { id: string }>(a: T, b: T) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+
+function espacesDuNiveau(etat: ModeleAtelier, niveauId: string): Pick<QuantitesNiveau, "espaces" | "traversants"> {
+  const espaces = objetsDeClasse(etat, "espace", niveauId)
+    .sort(parId)
+    .map((e) => {
+      const a = arrondi(e.params.polygones.reduce((s, c) => s + aireNette(c.contour, c.trous), 0));
+      const ext = etendueEspace(etat, e);
+      const traverses = niveauxTraverses(etat, e);
+      return { id: e.id, nom: e.params.nom, aire: a, ...(ext ? { hauteur: arrondi(ext[1] - ext[0]), volume: arrondi(a * (ext[1] - ext[0])) } : {}), ...(traverses.length ? { niveauxTraverses: traverses } : {}) };
+    });
+  const traversants = espacesTraversant(etat, niveauId);
+  return { ...(espaces.length ? { espaces } : {}), ...(traversants.length ? { traversants } : {}) };
+}
 
 export function quantites(etat: ModeleAtelier): Quantites {
   const niveaux: QuantitesNiveau[] = niveauxOrdonnes(etat).map((n) => {
@@ -113,6 +134,7 @@ export function quantites(etat: ModeleAtelier): Quantites {
       poteaux: objetsDeClasse(etat, "poteau", n.id).length,
       escaliers: objetsDeClasse(etat, "escalier", n.id).length,
       solides: objetsDeClasse(etat, "solide", n.id).length,
+      ...espacesDuNiveau(etat, n.id),
     };
   });
   const somme = (f: (q: QuantitesNiveau) => number) => arrondi(niveaux.reduce((s, q) => s + f(q), 0));

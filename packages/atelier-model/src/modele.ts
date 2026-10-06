@@ -155,6 +155,8 @@ export interface ParamsEspace {
   etiquette: Point2 | null;
   /** Hauteur propre déclarée (D-059). */
   hauteur?: Longueur;
+  /** Espace sur plusieurs niveaux (D-142) : monte jusqu'à ce niveau (double hauteur, vide, gaine) ; exclusif de `hauteur`. */
+  niveauHautId?: string;
 }
 
 export interface ParamsZone extends Contour {

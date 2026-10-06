@@ -4,7 +4,7 @@
  * clic ou au cadre. Toute modification passe par `onCommandes` (bus de commandes) ; rien n'est écrit ici.
  */
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { tolerancesAdaptatives, abscissesIntersections, effacerPortion, aireNette, centroide, cleTremie, pointDansPolygone, tremiesRetenues, cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pointsSpline, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { espacesTraversant, tolerancesAdaptatives, abscissesIntersections, effacerPortion, aireNette, centroide, cleTremie, pointDansPolygone, tremiesRetenues, cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pointsSpline, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
@@ -121,6 +121,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   );
   // Accrochage aussi sur les traits des références externes du niveau (DA-05-11), qui restent non sélectionnables.
   const externesNiveau = useMemo(() => externes.filter((x) => x.niveauId === ui.niveauId), [externes, ui.niveauId]);
+  const traversants = useMemo(() => (ui.niveauId ? espacesTraversant(etat, ui.niveauId) : []), [etat, ui.niveauId]);
   const cache = useMemo(() => avecExternes(segmentsDuNiveau(etat, ui.niveauId), externesNiveau), [etat, ui.niveauId, externesNiveau]);
   // Repère de saisie (D-091) : les accrochages polaires suivent son orientation.
   const accs = useMemo(() => (ui.repere ? { ...ui.accrochages, angleRepere: ui.repere.angle } : ui.accrochages), [ui.accrochages, ui.repere]);
@@ -555,6 +556,22 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
             .map((x) => (
               <path key={x.id} data-reference-externe={x.id} d={x.traits.map((t) => { const a = pr.vers(t.a); const b = pr.vers(t.b); return `M${a.x.toFixed(1)} ${a.y.toFixed(1)}L${b.x.toFixed(1)} ${b.y.toFixed(1)}`; }).join("")} />
             ))}
+        </g>
+      )}
+      {/* Espaces d'un niveau inférieur qui traversent ce niveau (D-142) : contour en tirets et mention « vide », non sélectionnables. */}
+      {traversants.length > 0 && (
+        <g className="plan-vides" pointerEvents="none" aria-hidden="true">
+          {traversants.map((t) => {
+            const e = etat.objets[t.id];
+            if (!e || e.classe !== "espace") return null;
+            const c = pr.vers(centroide(e.params.polygones[0]!.contour));
+            return (
+              <g key={t.id} data-vide-traversant={t.id}>
+                {e.params.polygones.map((pg, i) => <path key={i} d={chemin(pr, pg.contour)} fill="none" stroke="#5b7468" strokeDasharray="2 4" strokeWidth={1} />)}
+                {pr.echelle >= 6 && <text x={c.x} y={c.y} fontSize={11} textAnchor="middle" fill="#5b7468">{`Vide : ${t.nom}`}</text>}
+              </g>
+            );
+          })}
         </g>
       )}
       <g className="plan-objets" id={idObjets}>

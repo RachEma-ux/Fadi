@@ -9,6 +9,7 @@
  * produit aucun volume : l'objet reste en plan, rien n'est inventé.
  */
 import { contenuPlace, contoursArchitecture } from "../blocs-places.js";
+import { etendueEspace } from "../espaces-volume.js";
 import { arcCintre, flecheCintre, profilBaie } from "../cintres.js";
 import { aireSignee, facesMur, hoteOuverture, longueurAxeMur, normalise, perp, pointsArc, sub, type Vec } from "../geometrie.js";
 import { contourMurCourbeRaccorde, raccordMur } from "../raccords.js";
@@ -678,10 +679,13 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
       t.surface(o.params.contour, o.params.trous, z + 0.01);
       opacite = 0.5;
       break;
-    case "espace":
-      for (const pg of o.params.polygones) t.surface(pg.contour, pg.trous, z + 0.012);
-      opacite = 0.35;
+    case "espace": {
+      // Étendue verticale connue (D-142 : hauteur propre ou niveau haut) : volume translucide ; sinon surface.
+      const ext = etendueEspace(etat, o);
+      for (const pg of o.params.polygones) ext ? t.prisme(pg.contour, pg.trous, ext[0] + 0.012, ext[1] - 0.012) : t.surface(pg.contour, pg.trous, z + 0.012);
+      opacite = ext ? 0.18 : 0.35;
       break;
+    }
     case "esquisse": {
       // Une esquisse fermée n'a pas de volume ; seule l'extrusion (commande) en fait un solide.
       void pointsArc;

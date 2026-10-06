@@ -2276,6 +2276,43 @@ await page.waitForSelector(".plan2d");
   check("baie cintrée : arc surbaissé de flèche 0,25 m enregistré", r0.status === 200 && cintre?.type === "surbaisse" && Math.abs((cintre?.fleche?.value ?? 0) - 0.25) < 1e-9, `${r0.status} · ${JSON.stringify(cintre)}`);
 }
 
+// Espace sur plusieurs niveaux (D-142) : niveau haut choisi dans l'inspecteur, niveaux traversés annoncés.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const md = (await modele(pid)).modele;
+  const bas = md.niveaux[murA.niveauId];
+  const dessus = Object.values(md.niveaux).filter((n) => n.elevation > bas.elevation).sort((a, b) => a.elevation - b.elevation);
+  if (dessus.length < 2) {
+    const r = await lot(pid, `niv-${Date.now()}`, (await modele(pid)).revision, [
+      { type: "niveau.creer", params: { id: "niv-e2e-1", nom: "Haut 1", elevation: bas.elevation + 50, hauteur: 3 } },
+      { type: "niveau.creer", params: { id: "niv-e2e-2", nom: "Haut 2", elevation: bas.elevation + 53, hauteur: 3 } },
+    ]);
+    if (r.status !== 200) console.log("niveaux", r.status, JSON.stringify(r.body).slice(0, 200));
+  }
+  const md2 = (await modele(pid)).modele;
+  const au = Object.values(md2.niveaux).filter((n) => n.elevation > bas.elevation).sort((a, b) => a.elevation - b.elevation);
+  const x0 = murA.params.a.x - 350;
+  const y0 = murA.params.a.y - 350;
+  const r0 = await lot(pid, `atrium-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "objet.creer", params: { id: "atrium-e2e", classe: "espace", niveauId: murA.niveauId, params: { polygones: [{ contour: [P(x0, y0), P(x0 + 4, y0), P(x0 + 4, y0 + 3), P(x0, y0 + 3)], trous: [] }], nom: "Atrium e2e" } } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("atrium-e2e");
+  await page.locator("[data-espace-niveaux] > summary").click();
+  await page.locator("[data-espace-niveau-haut]").selectOption(au[1].id);
+  await page.locator("[data-espace-niveaux-appliquer]").click();
+  let haut = null;
+  for (let k = 0; k < 30 && !haut; k++) {
+    haut = (await modele(pid)).modele.objets["atrium-e2e"]?.params.niveauHautId ?? null;
+    if (!haut) await page.waitForTimeout(500);
+  }
+  await page.waitForTimeout(500);
+  const annonce = await page.locator("[data-espace-traverses]").textContent().catch(() => "");
+  check("espace sur plusieurs niveaux : niveau haut enregistré, niveau intermédiaire traversé", r0.status === 200 && haut === au[1].id && annonce.includes(au[0].nom), `${r0.status} · ${haut} · ${annonce}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

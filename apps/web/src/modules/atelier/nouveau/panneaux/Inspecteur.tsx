@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../../../lib/api";
-import { aire, chaineFermee, cleTremie, bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, longueurSaisie, nombreSaisi, objetsSemblables, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { aire, chaineFermee, etendueEspace, niveauxTraverses, niveauxOrdonnes, cleTremie, bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, longueurSaisie, nombreSaisi, objetsSemblables, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -194,6 +194,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       )}
       {o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.centre && (o as Occurrence<"esquisse">).params.rayon && !desactive && <AxesCentre key={`axes-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <CintreBaie key={`cintre-${o.id}`} o={o as Occurrence<"fenetre">} desactive={desactive} onCommandes={onCommandes} />}
+      {o.classe === "espace" && <EspaceNiveaux key={`espn-${o.id}`} o={o as Occurrence<"espace">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "dalle" && <PenteDalle key={`pente-${o.id}`} o={o as Occurrence<"dalle">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "poteau" && <SectionPoteau key={`sec-${o.id}`} o={o as Occurrence<"poteau">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "escalier" && !desactive && <TremieEscalier o={o as Occurrence<"escalier">} etat={etat} onCommandes={onCommandes} />}
@@ -1594,6 +1595,34 @@ function TangentesCourbe({ o, onCommandes }: { o: Occurrence<"esquisse">; onComm
 }
 
 /** Menuiserie paramétrée d'une fenêtre (D-101) : valeurs saisies, aucune par défaut ; vide = non évaluée. */
+/** Espace sur plusieurs niveaux (D-142) : niveau haut (double hauteur, vide, gaine), niveaux traversés, volume. */
+function EspaceNiveaux({ o, etat, desactive, onCommandes }: { o: Occurrence<"espace">; etat: ModeleAtelier; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const bas = o.niveauId ? etat.niveaux[o.niveauId]?.elevation : undefined;
+  const dessus = niveauxOrdonnes(etat).filter((n) => bas !== undefined && n.elevation > bas);
+  const [haut, setHaut] = useState(o.params.niveauHautId ?? "");
+  const ext = etendueEspace(etat, o);
+  const traverses = niveauxTraverses(etat, o).map((id) => etat.niveaux[id]?.nom ?? id);
+  return (
+    <details className="inspecteur-historique" data-espace-niveaux>
+      <summary>Hauteur de l'espace ({ext ? `${String(Math.round((ext[1] - ext[0]) * 1000) / 1000).replace(".", ",")} m` : "non évaluée"})</summary>
+      <div className="nav-formulaire-altimetrie">
+        <label>Monte jusqu'au niveau
+          <select value={haut} disabled={desactive || !dessus.length} onChange={(e) => setHaut(e.target.value)} data-espace-niveau-haut>
+            <option value="">— aucun (hauteur propre ou non évaluée) —</option>
+            {dessus.map((n) => <option key={n.id} value={n.id}>{n.nom}</option>)}
+          </select>
+        </label>
+        <p className="inspecteur-aide" data-espace-traverses>{traverses.length ? `Niveaux traversés : ${traverses.join(", ")} (vide signalé sur leurs plans, aucune surface déduite).` : "Aucun niveau traversé."}</p>
+        {!desactive && (
+          <button type="button" disabled={haut === (o.params.niveauHautId ?? "")} data-espace-niveaux-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: haut ? { niveauHautId: haut, hauteur: null } : { niveauHautId: null } } }], `Niveau haut de ${o.id}`)}>
+            Appliquer
+          </button>
+        )}
+      </div>
+    </details>
+  );
+}
+
 /** Haut de baie (D-141) : droit, plein cintre, surbaissé (flèche saisie) ou ogive ; la hauteur va jusqu'à la clé. */
 function CintreBaie({ o, desactive, onCommandes }: { o: Occurrence<"fenetre">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
   const c = o.params.cintre ?? null;

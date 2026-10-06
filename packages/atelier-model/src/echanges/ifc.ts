@@ -19,6 +19,7 @@ import { referentielDu } from "../commandes/referentiels.js";
 import { altimetrieDu } from "../commandes/altimetrie.js";
 import { aireNette, facesMur, flecheCorde, hoteOuverture, normalise, perp, pointsPolyligne, pointsRenflement, sub, type Vec } from "../geometrie.js";
 import { profilBaie } from "../cintres.js";
+import { etendueEspace } from "../espaces-volume.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, maillageObjet } from "../projection/maillage.js";
@@ -525,7 +526,9 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
       case "piece":
       case "espace": {
         const contours = o.classe === "piece" ? [{ contour: o.params.contour, trous: o.params.trous }] : o.params.polygones;
-        const hauteur = o.niveauId ? etat.niveaux[o.niveauId]?.hauteur : null;
+        // Espace en volume (D-142) : étendue de sa hauteur propre ou jusqu'à son niveau haut ; sinon hauteur d'étage.
+        const ext = o.classe === "espace" ? etendueEspace(etat, o) : null;
+        const hauteur = ext ? ext[1] - ext[0] : o.niveauId ? etat.niveaux[o.niveauId]?.hauteur : null;
         const reps: number[] = [];
         if (hauteur) reps.push(corpsSolide(contours.map((c) => extrusionContour(c.contour, c.trous, 0, hauteur))));
         reps.push(s.ajouter(`IFCSHAPEREPRESENTATION(${ref(emprise)},'FootPrint','Curve2D',${liste(contours.map((c) => polyligne2(c.contour, true)))})`));

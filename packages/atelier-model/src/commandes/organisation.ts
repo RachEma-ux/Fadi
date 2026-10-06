@@ -59,9 +59,9 @@ export const reducteursNiveau = {
       let objetsR = { ...etat.objets };
       for (const o of objetsDuNiveau(etat, id)) {
         if (o.classe === "escalier") throw new ErreurCommande("precondition", "reaffecterA", `${o.id} : un escalier ne change pas de niveau (niveaux de départ et d'arrivée à redéfinir)`);
-        if (o.classe === "mur" && o.params.niveauHautId) {
+        if ((o.classe === "mur" || o.classe === "espace") && o.params.niveauHautId) {
           const haut = etat.niveaux[o.params.niveauHautId];
-          if (haut && haut.elevation <= cible.elevation) throw new ErreurCommande("precondition", "reaffecterA", `mur ${o.id} : son niveau haut « ${haut.nom} » ne serait plus au-dessus de « ${cible.nom} »`);
+          if (haut && haut.elevation <= cible.elevation) throw new ErreurCommande("precondition", "reaffecterA", `${o.classe} ${o.id} : son niveau haut « ${haut.nom} » ne serait plus au-dessus de « ${cible.nom} »`);
         }
         objetsR = { ...objetsR, [o.id]: { ...o, niveauId: reaffecterA } as OccurrenceQuelconque };
       }
@@ -76,7 +76,7 @@ export const reducteursNiveau = {
       throw new ErreurCommande("precondition", "id", `le niveau ${id} contient ${objets.length} objet(s) : indiquer avecObjets = true pour les supprimer avec lui, ou reaffecterA`);
     }
     for (const o of Object.values(etat.objets)) {
-      if ((o.classe === "mur" && o.params.niveauHautId === id) || (o.classe === "escalier" && (o.params.niveauArriveeId === id || o.params.niveauDepartId === id) && o.niveauId !== id)) {
+      if (((o.classe === "mur" || o.classe === "espace") && o.params.niveauHautId === id) || (o.classe === "escalier" && (o.params.niveauArriveeId === id || o.params.niveauDepartId === id) && o.niveauId !== id)) {
         throw new ErreurCommande("precondition", "id", `${o.id} référence le niveau ${id} (niveau haut ou d'arrivée) : à modifier d'abord`);
       }
     }

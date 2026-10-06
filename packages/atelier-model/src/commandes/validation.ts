@@ -27,6 +27,15 @@ function renflementsDe(p: Brut, forme: string, n: number, ferme: boolean): { ren
   return r.some((x) => x !== 0) ? { renflements: r } : {};
 }
 
+/** Espace sur plusieurs niveaux (D-142) : niveau haut connu, exclusif d'une hauteur propre ; absent : clé omise. */
+function niveauHautEspace(etat: ModeleAtelier, p: Brut): { niveauHautId?: string } {
+  const id = lire.chaineOuNull(p, "niveauHautId");
+  if (id === null) return {};
+  if (!etat.niveaux[id]) throw new ErreurCommande("precondition", "niveauHautId", `niveau inconnu : ${id}`);
+  if (p["hauteur"] !== undefined && p["hauteur"] !== null) throw new ErreurCommande("invalide", "niveauHautId", "espace : hauteur propre ou niveau haut, pas les deux");
+  return { niveauHautId: id };
+}
+
 /** Hauteur propre d'une pièce ou d'un espace (D-059) : clé présente seulement si déclarée. */
 const hauteurPropre = (p: Brut): { hauteur?: Longueur } => {
   const h = lire.longueur(p, "hauteur", { optionnel: true, strict: true });
@@ -132,7 +141,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       ...hauteurPropre(p),
     };
   },
-  espace(_etat, p) {
+  espace(etat, p) {
     const polys = p["polygones"];
     if (!Array.isArray(polys) || polys.length === 0) throw new ErreurCommande("invalide", "polygones", "« polygones » requis (au moins un contour)");
     const polygones = polys.map((poly, i) => {
@@ -148,6 +157,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       notes: lire.chaineOuNull(p, "notes"),
       etiquette: lire.point(p, "etiquette", { optionnel: true }),
       ...hauteurPropre(p),
+      ...niveauHautEspace(etat, p),
     };
   },
   zone(_etat, p) {

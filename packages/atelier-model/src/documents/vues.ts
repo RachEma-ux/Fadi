@@ -18,6 +18,7 @@ import { traitsMenuiseriePlan } from "../menuiserie.js";
 import { polygoneMurRaccorde } from "../raccords.js";
 import { battantPorte, symbolePorte } from "../ouvrants.js";
 import { separationsCouches } from "../compositions.js";
+import { espacesTraversant } from "../espaces-volume.js";
 import { extremitesCotation } from "../references.js";
 import type { Angle, Longueur, Point2 } from "../unites.js";
 import { ErreurCommande, lire } from "../commandes/base.js";
@@ -506,6 +507,13 @@ function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue, options: 
     for (const sep of separationsCouches(etat, o, vides)) c.ligne(sep.a, sep.b, "fin", o.id);
   }
   symbolesPlan(c, etat, objets);
+  // Espaces d'un niveau inférieur qui traversent celui-ci (D-142 : double hauteur, vide, gaine) : contour en trait
+  // caché et mention « vide », sans déduction de surface.
+  for (const tr of espacesTraversant(etat, niveau.id)) {
+    const e = etat.objets[tr.id] as Occurrence<"espace">;
+    for (const pg of e.params.polygones) c.poly(pg.contour, true, "cache", null, e.id);
+    c.texte(centroide(e.params.polygones[0]!.contour), `Vide : ${tr.nom} (depuis ${etat.niveaux[tr.niveauOrigineId]?.nom ?? tr.niveauOrigineId})`, 2.2, e.id);
+  }
   annotations2D(c, etat, objets, v.echelle);
   marquesDeCentre(c, objets, v.echelle);
   if (!v.hauteurCoupe) c.avertissements.add(`Hauteur de coupe : ${fmt(h)} m au-dessus du niveau (convention de dessin par défaut, réglable).`);

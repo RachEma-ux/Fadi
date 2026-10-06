@@ -255,6 +255,10 @@ export function planifierReprise(source: ModeleAtelier, cible: ModeleAtelier, op
       p["niveauHautId"] = null;
       rapport.remarques.push(`Mur ${o.id} : niveau haut non repris, lien retiré.`);
     }
+    if (o.classe === "espace" && typeof p["niveauHautId"] === "string" && !table.has(p["niveauHautId"] as string)) {
+      delete p["niveauHautId"];
+      rapport.remarques.push(`Espace ${o.id} : niveau haut non repris, lien retiré (étendue non évaluée).`);
+    }
     if (o.classe === "escalier" && typeof p["niveauArriveeId"] === "string" && !table.has(o.params.niveauArriveeId ?? "")) {
       p["niveauArriveeId"] = null;
       rapport.remarques.push(`Escalier ${o.id} : niveau d'arrivée non repris, lien retiré.`);

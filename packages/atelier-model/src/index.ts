@@ -6,6 +6,7 @@ export * from "./raccords.js";
 export * from "./ouvrants.js";
 export * from "./menuiserie.js";
 export * from "./cintres.js";
+export * from "./espaces-volume.js";
 export * from "./annexe-c.js";
 export * from "./classification-regle.js";
 export { profilFerme } from "./commandes/hachures-associees.js";
