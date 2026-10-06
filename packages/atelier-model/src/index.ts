@@ -10,6 +10,7 @@ export * from "./espaces-volume.js";
 export * from "./reservations.js";
 export * from "./dalles.js";
 export * from "./presse-papiers.js";
+export * from "./solides-forme.js";
 export * from "./annexe-c.js";
 export * from "./classification-regle.js";
 export { profilFerme } from "./commandes/hachures-associees.js";

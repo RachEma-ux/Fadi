@@ -65,9 +65,14 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
       const pente = pe ? { ...pe, direction: { value: t.type === "rotation" ? Math.round((pe.direction.value + rot) * 1e9) / 1e9 : t.type === "miroir" ? Math.round((2 * axeMiroir(t) - pe.direction.value) * 1e9) / 1e9 : pe.direction.value, unit: "deg" as const } } : undefined;
       return { ...o, params: { ...o.params, ...contourT(o.params, t), ...(pente ? { pente } : {}) } };
     }
+    case "solide": {
+      // Extrusion oblique (D-148) : la direction de l'inclinaison suit la rotation ou le miroir.
+      const inc = o.params.inclinaison;
+      const inclinaison = inc ? { ...inc, direction: { value: t.type === "rotation" ? Math.round((inc.direction.value + rot) * 1e9) / 1e9 : t.type === "miroir" ? Math.round((2 * axeMiroir(t) - inc.direction.value) * 1e9) / 1e9 : inc.direction.value, unit: "deg" as const } } : undefined;
+      return { ...o, params: { ...o.params, ...contourT(o.params, t), ...(inclinaison ? { inclinaison } : {}) } };
+    }
     case "toiture":
     case "zone":
-    case "solide":
     case "reference-plan":
       return { ...o, params: { ...o.params, ...contourT(o.params, t) } } as OccurrenceQuelconque;
     case "piece":
@@ -218,6 +223,12 @@ function echelleNonUniforme(o: OccurrenceQuelconque, t: Transformation & { type:
       const pe = o.params.pente;
       const pente = pe ? { ...pe, direction: { value: dir(pe.direction.value), unit: "deg" as const } } : undefined;
       return { ...o, params: { ...o.params, ...contourT(o.params, t), ...(pente ? { pente } : {}) } };
+    }
+    case "solide": {
+      // Dépouille et inclinaison (D-148) : angles gardés, direction d'inclinaison transformée.
+      const inc = o.params.inclinaison;
+      const s = affine(o, T, fx, fy) as Occurrence<"solide">;
+      return inc ? { ...s, params: { ...s.params, inclinaison: { ...inc, direction: { value: dir(inc.direction.value), unit: "deg" as const } } } } : s;
     }
     default:
       // Contours, axes, points d'insertion : transformation affine des positions, dimensions typées gardées.

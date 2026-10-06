@@ -97,7 +97,7 @@ export function faceLaterale(etat: ModeleAtelier, o: OccurrenceQuelconque, p: { 
     contour = o.params.contour;
     z0 = z + o.params.decalageBase.value;
     z1 = z0 + o.params.epaisseur.value;
-  } else if (o.classe === "solide" && o.params.ferme && o.params.hauteur && !o.params.sourceId) {
+  } else if (o.classe === "solide" && o.params.ferme && o.params.hauteur && !o.params.sourceId && !o.params.depouille && !o.params.inclinaison) {
     contour = o.params.contour;
     z0 = z + o.params.decalageBase.value;
     z1 = z0 + o.params.hauteur.value;

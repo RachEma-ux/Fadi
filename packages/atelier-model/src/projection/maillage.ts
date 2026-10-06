@@ -11,6 +11,7 @@
 import { contenuPlace, contoursArchitecture } from "../blocs-places.js";
 import { etendueEspace } from "../espaces-volume.js";
 import { anneauRetombee, etendueDalle } from "../dalles.js";
+import { faceHauteSolide, formeLibre } from "../solides-forme.js";
 import { arcCintre, flecheCintre, profilBaie } from "../cintres.js";
 import { aireSignee, facesMur, hoteOuverture, longueurAxeMur, normalise, perp, pointsArc, sub, type Vec } from "../geometrie.js";
 import { contourMurCourbeRaccorde, raccordMur } from "../raccords.js";
@@ -212,6 +213,30 @@ class Tampon {
         const i = decal + k;
         const j = decal + ((k + 1) % r.length);
         this.quad(bas[i]!, bas[j]!, haut[j]!, haut[i]!);
+      }
+      decal += r.length;
+    }
+  }
+  /**
+   * Volume réglé entre deux faces horizontales de même topologie (D-148 : dépouille, extrusion oblique) : face
+   * basse (contour, trous) à z0, face haute (mêmes nombres de sommets) à z1, côtés en quadrilatères.
+   */
+  loft(bas: readonly Vec[], trousBas: readonly (readonly Vec[])[], haut: readonly Vec[], trousHaut: readonly (readonly Vec[])[], z0: number, z1: number): void {
+    if (bas.length < 3 || bas.length !== haut.length || !(z1 > z0)) return;
+    const anneauxB = [bas, ...trousBas];
+    const anneauxH = [haut, ...trousHaut];
+    const triB = trianguler(bas, trousBas);
+    const triH = trianguler(haut, trousHaut);
+    const ib = anneauxB.flat().map((p) => this.sommet(p.x, p.y, z0));
+    const ih = anneauxH.flat().map((p) => this.sommet(p.x, p.y, z1));
+    for (let k = 0; k < triH.length; k += 3) this.indices.push(ih[triH[k]!]!, ih[triH[k + 1]!]!, ih[triH[k + 2]!]!);
+    for (let k = 0; k < triB.length; k += 3) this.indices.push(ib[triB[k]!]!, ib[triB[k + 2]!]!, ib[triB[k + 1]!]!);
+    let decal = 0;
+    for (const r of anneauxB) {
+      for (let k = 0; k < r.length; k++) {
+        const i = decal + k;
+        const j = decal + ((k + 1) % r.length);
+        this.quad(ib[i]!, ib[j]!, ih[j]!, ih[i]!);
       }
       decal += r.length;
     }
@@ -654,7 +679,11 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
       const h = o.params.hauteur?.value;
       if (!h) break;
       const z0 = z + o.params.decalageBase.value;
-      if (o.params.ferme) t.prisme(o.params.contour, o.params.trous, z0, z0 + h);
+      if (o.params.ferme && formeLibre(o.params)) {
+        // Dépouille ou extrusion oblique (D-148) : volume réglé entre la face basse et la face haute.
+        const fh = faceHauteSolide(o.params);
+        if (fh) t.loft(o.params.contour, o.params.trous, fh.contour, fh.trous, z0, z0 + h);
+      } else if (o.params.ferme) t.prisme(o.params.contour, o.params.trous, z0, z0 + h);
       else if (o.params.epaisseur) {
         // Chemin ouvert épaissi (garde-corps, murets) : une boîte par segment.
         const ep = o.params.epaisseur.value;

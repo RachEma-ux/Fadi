@@ -44,6 +44,7 @@ export function corpsDe(etat: ModeleAtelier, o: OccurrenceQuelconque): Corps[] {
     case "solide": {
       const h = o.params.hauteur?.value;
       if (!h) return [];
+      if (o.params.ferme && (o.params.depouille || o.params.inclinaison)) return []; // D-148 : faces non verticales, non évaluées ici
       const z0 = z + o.params.decalageBase.value;
       if (o.params.ferme) return [c(o.params.contour, o.params.trous, z0, z0 + h)];
       const ep = o.params.epaisseur?.value;

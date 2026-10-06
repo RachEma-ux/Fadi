@@ -2276,6 +2276,31 @@ await page.waitForSelector(".plan2d");
   check("baie cintrée : arc surbaissé de flèche 0,25 m enregistré", r0.status === 200 && cintre?.type === "surbaisse" && Math.abs((cintre?.fleche?.value ?? 0) - 0.25) < 1e-9, `${r0.status} · ${JSON.stringify(cintre)}`);
 }
 
+// Extrusion avec dépouille et oblique (D-148) : saisie dans l'inspecteur d'un solide.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const x0 = murA.params.a.x - 450;
+  const y0 = murA.params.a.y - 450;
+  const r0 = await lot(pid, `dep-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "objet.creer", params: { id: "solide-dep-e2e", classe: "solide", niveauId: murA.niveauId, params: { contour: [P(x0, y0), P(x0 + 4, y0), P(x0 + 4, y0 + 4), P(x0, y0 + 4)], trous: [], ferme: true, hauteur: m(1) } } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("solide-dep-e2e");
+  await page.locator("[data-forme-solide] > summary").click();
+  await page.locator('[data-forme-champ="depouille"]').fill("10");
+  await page.locator('[data-forme-champ="inclinaison"]').fill("15");
+  await page.locator('[data-forme-champ="direction"]').fill("90");
+  await page.locator("[data-forme-appliquer]").click();
+  let p = null;
+  for (let k = 0; k < 30 && !p?.inclinaison; k++) {
+    p = (await modele(pid)).modele.objets["solide-dep-e2e"]?.params ?? null;
+    if (!p?.inclinaison) await page.waitForTimeout(500);
+  }
+  check("solide : dépouille 10° et inclinaison 15° vers 90° enregistrées", r0.status === 200 && p?.depouille?.value === 10 && p?.inclinaison?.angle?.value === 15 && p?.inclinaison?.direction?.value === 90, `${r0.status} · ${JSON.stringify({ d: p?.depouille, i: p?.inclinaison })}`);
+}
+
 // Presse-papiers (D-147) : Ctrl+C sur une sélection, Ctrl+V ici (décalé de 1 m) puis dans le projet voisin.
 {
   await page.keyboard.press("Escape");

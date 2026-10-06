@@ -10,9 +10,10 @@ import { lireMenuiserie } from "../menuiserie.js";
 import { lireCintre, type Cintre } from "../cintres.js";
 import { distance, longueurAxeMur, pointDansPolygone } from "../geometrie.js";
 import { anneauRetombee } from "../dalles.js";
+import { faceHauteSolide } from "../solides-forme.js";
 import { USAGES_DALLE, type ModeleAtelier, type ParamsParClasse } from "../modele.js";
 import type { Classe } from "../ontologie.js";
-import { TOLERANCE_REDUCTEUR, type Longueur } from "../unites.js";
+import { TOLERANCE_REDUCTEUR, type Angle, type Longueur } from "../unites.js";
 import { ErreurCommande, lire } from "./base.js";
 
 type Brut = Record<string, unknown>;
@@ -198,6 +199,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       nom: lire.chaineOuNull(p, "nom"),
       couleur: lire.chaineOuNull(p, "couleur"),
       ...sourceSolide(_etat, p),
+      ...formeSolide(p, ferme),
     };
   },
   esquisse(_etat, p) {
@@ -323,6 +325,30 @@ function cintreOuverture(p: Brut, largeur: number): { cintre?: Cintre } {
  * Tangentes imposées d'une courbe (D-082) : une entrée par point, `null` = tangente libre (courbe passant par les
  * points) ; vecteur en mètres (direction et intensité). Absent, ou toutes libres : clé omise.
  */
+/** Dépouille et inclinaison d'un solide fermé (D-148) : angles saisis, face haute contrôlée. */
+function formeSolide(p: Brut, ferme: boolean): { depouille?: Angle; inclinaison?: { angle: Angle; direction: Angle } } {
+  const dep = lire.angle(p, "depouille", { optionnel: true });
+  const brut = p["inclinaison"];
+  let inclinaison: { angle: Angle; direction: Angle } | undefined;
+  if (brut !== undefined && brut !== null) {
+    if (typeof brut !== "object" || Array.isArray(brut)) throw new ErreurCommande("invalide", "inclinaison", "inclinaison : { angle, direction }");
+    const q = brut as Brut;
+    const angle = lire.angle(q, "angle")!;
+    if (!(angle.value > 0 && angle.value <= 60)) throw new ErreurCommande("invalide", "inclinaison.angle", "inclinaison entre 0 (exclu) et 60°");
+    inclinaison = { angle: { value: angle.value, unit: "deg" }, direction: { value: (lire.angle(q, "direction", { optionnel: true }) ?? { value: 0 }).value, unit: "deg" } };
+  }
+  const depouille = dep && dep.value !== 0 ? { value: dep.value, unit: "deg" as const } : undefined;
+  if (!depouille && !inclinaison) return {};
+  if (depouille && !(Math.abs(depouille.value) < 60)) throw new ErreurCommande("invalide", "depouille", "dépouille entre −60° et 60°");
+  if (!ferme) throw new ErreurCommande("invalide", depouille ? "depouille" : "inclinaison", "dépouille et inclinaison réservées aux solides fermés");
+  const h = lire.longueur(p, "hauteur", { optionnel: true });
+  if (!h || !(h.value > 0)) throw new ErreurCommande("invalide", "hauteur", "dépouille ou inclinaison : hauteur du solide requise");
+  const c = contour(p);
+  if (depouille && c.trous.length) throw new ErreurCommande("invalide", "depouille", "dépouille d'un solide à trous : non prise en charge");
+  if (!faceHauteSolide({ ...c, hauteur: h, ...(depouille ? { depouille } : {}), ...(inclinaison ? { inclinaison } : {}) })) throw new ErreurCommande("invalide", "depouille", "dépouille trop forte pour cette hauteur : la face haute se retourne");
+  return { ...(depouille ? { depouille } : {}), ...(inclinaison ? { inclinaison } : {}) };
+}
+
 /** Solide associé (D-114) : esquisse source au profil fermé ; absente : solide libre. */
 function sourceSolide(etat: ModeleAtelier, p: Brut): { sourceId?: string } {
   const id = p["sourceId"];

@@ -195,6 +195,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.centre && (o as Occurrence<"esquisse">).params.rayon && !desactive && <AxesCentre key={`axes-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <CintreBaie key={`cintre-${o.id}`} o={o as Occurrence<"fenetre">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "espace" && <EspaceNiveaux key={`espn-${o.id}`} o={o as Occurrence<"espace">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
+      {o.classe === "solide" && (o as Occurrence<"solide">).params.ferme && <FormeSolide key={`forme-${o.id}`} o={o as Occurrence<"solide">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "texte" && <OrientationTexte key={`orient-${o.id}`} o={o as Occurrence<"texte">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "dalle" && <SensRetombeeDalle key={`retombee-${o.id}`} o={o as Occurrence<"dalle">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "dalle" && <PenteDalle key={`pente-${o.id}`} o={o as Occurrence<"dalle">} desactive={desactive} onCommandes={onCommandes} />}
@@ -1651,6 +1652,34 @@ function CintreBaie({ o, desactive, onCommandes }: { o: Occurrence<"fenetre">; d
         <p className="inspecteur-aide">La hauteur de la baie est mesurée de l'allège à la clé de l'arc.</p>
         {!desactive && (
           <button type="button" disabled={!valide} data-cintre-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { cintre: type === "droit" ? null : type === "surbaisse" ? { type, fleche: { value: f, unit: "m" } } : { type } } } }], `Haut de baie de ${o.id}`)}>
+            Appliquer
+          </button>
+        )}
+      </div>
+    </details>
+  );
+}
+
+/** Dépouille et extrusion oblique d'un solide fermé (D-148) : angles saisis, vides = droit. */
+function FormeSolide({ o, desactive, onCommandes }: { o: Occurrence<"solide">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const f = (v: number | undefined) => (v === undefined ? "" : String(v).replace(".", ","));
+  const [dep, setDep] = useState(f(o.params.depouille?.value));
+  const [inc, setInc] = useState(f(o.params.inclinaison?.angle.value));
+  const [dir, setDir] = useState(f(o.params.inclinaison?.direction.value) || "0");
+  const d = dep.trim() ? nombreSaisi(dep) : 0;
+  const a = inc.trim() ? nombreSaisi(inc) : 0;
+  const r = nombreSaisi(dir);
+  const valide = d !== null && a !== null && r !== null && Math.abs(d) < 60 && a >= 0 && a <= 60;
+  return (
+    <details className="inspecteur-historique" data-forme-solide>
+      <summary>Extrusion {o.params.depouille ? `· dépouille ${f(o.params.depouille.value)}°` : ""}{o.params.inclinaison ? ` · inclinée ${f(o.params.inclinaison.angle.value)}° vers ${f(o.params.inclinaison.direction.value)}°` : ""}{!o.params.depouille && !o.params.inclinaison ? "droite" : ""}</summary>
+      <div className="nav-formulaire-altimetrie">
+        <label>Dépouille (°, + resserre, − évase)<input inputMode="decimal" value={dep} disabled={desactive} onChange={(e) => setDep(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-forme-champ="depouille" /></label>
+        <label>Inclinaison de l'axe (°)<input inputMode="decimal" value={inc} disabled={desactive} onChange={(e) => setInc(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-forme-champ="inclinaison" /></label>
+        <label>Direction de l'inclinaison (°)<input inputMode="decimal" value={dir} disabled={desactive} onChange={(e) => setDir(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-forme-champ="direction" /></label>
+        {!valide && <p className="inspecteur-aide">Dépouille entre −60° et 60°, inclinaison de 0 à 60°.</p>}
+        {!desactive && (
+          <button type="button" disabled={!valide} data-forme-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { depouille: d ? { value: d, unit: "deg" } : null, inclinaison: a ? { angle: { value: a, unit: "deg" }, direction: { value: r, unit: "deg" } } : null } } }], `Extrusion de ${o.id}`)}>
             Appliquer
           </button>
         )}

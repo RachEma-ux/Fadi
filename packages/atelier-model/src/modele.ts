@@ -198,6 +198,10 @@ export interface ParamsSolide extends Contour {
   couleur: string | null;
   /** Solide associé (D-114) : esquisse fermée dont il suit le profil ; absent : solide libre. */
   sourceId?: string;
+  /** Dépouille (D-148), degrés : > 0 la face haute se resserre, < 0 elle s'évase ; absente = droite. */
+  depouille?: Angle;
+  /** Extrusion oblique (D-148) : axe penché de `angle` (degrés) vers `direction` (degrés, 0 = +x) ; absente = verticale. */
+  inclinaison?: { angle: Angle; direction: Angle };
 }
 
 export type FormeEsquisse = "ligne" | "polyligne" | "arc" | "cercle" | "rectangle" | "polygone" | "spline" | "construction" | "hachure" | "ellipse";
