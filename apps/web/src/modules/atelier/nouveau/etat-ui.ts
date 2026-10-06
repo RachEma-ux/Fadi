@@ -70,6 +70,8 @@ export interface EtatUi {
   repere: { origine: Point2; angle: number } | null;
   /** Ensembles d'affichage personnels (préréglages nommés), conservés sur l'appareil et synchronisés avec le compte (D-118). */
   ensembles: EnsembleLocal[];
+  /** Styles graphiques par classe en 3D (D-135) : couleur et opacité choisies pour soi ; affichage seulement. */
+  stylesClasses: Record<string, { couleur: string | null; opacite: number | null }>;
 }
 
 export interface FiltresAffichage {
@@ -84,7 +86,7 @@ export interface EnsembleLocal extends FiltresAffichage {
 
 const CLE_PREFS = "fadi.atelier.prefs";
 
-function lirePrefs(): Partial<Pick<EtatUi, "affichage" | "accrochages" | "favoris" | "parametresOutil" | "filtres" | "ensembles">> {
+function lirePrefs(): Partial<Pick<EtatUi, "affichage" | "accrochages" | "favoris" | "parametresOutil" | "filtres" | "ensembles" | "stylesClasses">> {
   try {
     const raw = typeof localStorage !== "undefined" ? localStorage.getItem(CLE_PREFS) : null;
     return raw ? (JSON.parse(raw) as Partial<EtatUi>) : {};
@@ -95,7 +97,7 @@ function lirePrefs(): Partial<Pick<EtatUi, "affichage" | "accrochages" | "favori
 
 function ecrirePrefs(e: EtatUi): void {
   try {
-    localStorage?.setItem(CLE_PREFS, JSON.stringify({ affichage: e.affichage, accrochages: e.accrochages, favoris: e.favoris, parametresOutil: e.parametresOutil, filtres: e.filtres, ensembles: e.ensembles }));
+    localStorage?.setItem(CLE_PREFS, JSON.stringify({ affichage: e.affichage, accrochages: e.accrochages, favoris: e.favoris, parametresOutil: e.parametresOutil, filtres: e.filtres, ensembles: e.ensembles, stylesClasses: e.stylesClasses }));
   } catch {
     /* stockage indisponible : préférences non conservées */
   }
@@ -121,6 +123,7 @@ let etat: EtatUi = {
   aide: "",
   filtres: { classesMasquees: prefs.filtres?.classesMasquees ?? [], calquesMasques: prefs.filtres?.calquesMasques ?? [] },
   ensembles: Array.isArray(prefs.ensembles) ? prefs.ensembles : [],
+  stylesClasses: prefs.stylesClasses && typeof prefs.stylesClasses === "object" ? prefs.stylesClasses : {},
   isolement: null,
   repere: null,
 };
@@ -132,7 +135,7 @@ export const etatUi = {
   set(patch: Partial<EtatUi> | ((e: EtatUi) => Partial<EtatUi>)): void {
     const p = typeof patch === "function" ? patch(etat) : patch;
     etat = { ...etat, ...p };
-    if ("affichage" in p || "accrochages" in p || "favoris" in p || "parametresOutil" in p || "filtres" in p || "ensembles" in p) ecrirePrefs(etat);
+    if ("affichage" in p || "accrochages" in p || "favoris" in p || "parametresOutil" in p || "filtres" in p || "ensembles" in p || "stylesClasses" in p) ecrirePrefs(etat);
     for (const fn of ecouteurs) fn();
   },
   subscribe(fn: () => void): () => void {

@@ -6,7 +6,7 @@
  */
 import type { Vector3 } from "three";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { areteLaPlusProche, etendueMur, importerBcf, lireZip, maillageObjet, normaleExterieure, pousserArete, vues3D, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { CLASSES, areteLaPlusProche, etendueMur, importerBcf, lireZip, maillageObjet, normaleExterieure, pousserArete, vues3D, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { Scene3D, type OptionsScene, type Presentation, type VueTechnique } from "./scene3d";
 
@@ -236,7 +236,8 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
 
   useEffect(() => {
     if (pret) sceneRef.current?.majModele(etat);
-  }, [etat, pret]);
+    if (pret) sceneRef.current?.majStyles(ui.stylesClasses);
+  }, [etat, pret, ui.stylesClasses]);
 
   useEffect(() => {
     if (pret) sceneRef.current?.majExternes(externes);
@@ -590,6 +591,7 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
           <input type="checkbox" checked={options.aretes} onChange={(e) => setOptions({ aretes: e.target.checked })} />
           Arêtes
         </label>
+        <StylesClasses etat={etat} styles={ui.stylesClasses} />
         <label className="vue3d-case" title="Arêtes vues en trait plein, arêtes cachées en tirets, faces non dessinées">
           <input type="checkbox" checked={!!options.filaire} data-filaire onChange={(e) => setOptions({ filaire: e.target.checked })} />
           Filaire
@@ -662,5 +664,38 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
         {erreur ? `Rendu 3D indisponible : ${erreur}` : !pret ? "Préparation de la vue 3D…" : deplace ? (deplace.axe === "r" ? `Rotation : ${fmt(deplace.d)}°` : `Déplacement ${deplace.axe.toUpperCase()} : ${fmt(deplace.d)} m`) : pousse ? (pousse.cle === "face" || pousse.cle === "face-refusee" ? `Face : ${pousse.valeur > 0 ? "+" : ""}${fmt(pousse.valeur)} m${pousse.cle === "face-refusee" ? " (refusé : forme croisée)" : ""}` : `${pousse.cle === "hauteur" ? "Hauteur" : "Épaisseur"} : ${fmt(pousse.valeur)} m`) : mesure.length === 2 ? `Distance : ${fmt(mesure[0]!.distanceTo(mesure[1]!))} m (Δx ${fmt(mesure[1]!.x - mesure[0]!.x)} · Δy ${fmt(mesure[1]!.y - mesure[0]!.y)} · Δz ${fmt(mesure[1]!.z - mesure[0]!.z)})` : mesure.length === 1 ? "Mesure : cliquez le second point." : `${moteur === "webgpu" ? "WebGPU" : "WebGL2"}${webgpu && moteur !== "webgpu" ? " (WebGPU indisponible, repli)" : ""}`}
       </p>
     </div>
+  );
+}
+
+/** Styles graphiques par classe (D-135, DA-18-04) : couleur et opacité choisies pour soi, enregistrées sur l'appareil. */
+function StylesClasses({ etat, styles }: { etat: ModeleAtelier; styles: EtatUi["stylesClasses"] }) {
+  const classes = [...new Set(Object.values(etat.objets).map((o) => o.classe))].filter((c) => !["porte", "fenetre", "ouverture", "cotation", "texte", "etiquette"].includes(c)).sort();
+  const maj = (c: string, patch: Partial<{ couleur: string | null; opacite: number | null }>) =>
+    etatUi.set((u) => {
+      const s = { couleur: null, opacite: null, ...u.stylesClasses[c], ...patch };
+      const suivant = { ...u.stylesClasses };
+      if (s.couleur === null && s.opacite === null) delete suivant[c];
+      else suivant[c] = s;
+      return { stylesClasses: suivant };
+    });
+  return (
+    <details className="vue3d-styles" data-styles-classes>
+      <summary>Styles par classe{Object.keys(styles).length ? ` (${Object.keys(styles).length})` : ""}</summary>
+      <ul>
+        {classes.map((c) => (
+          <li key={c}>
+            <label>
+              {CLASSES[c as keyof typeof CLASSES]?.libelle ?? c}
+              <input type="color" value={styles[c]?.couleur ?? "#bbbbbb"} data-style-couleur={c} onChange={(e) => maj(c, { couleur: e.target.value })} />
+            </label>
+            <select value={styles[c]?.opacite ?? ""} aria-label={`Opacité ${c}`} data-style-opacite={c} onChange={(e) => maj(c, { opacite: e.target.value ? Number(e.target.value) : null })}>
+              <option value="">opacité d'origine</option>
+              {[1, 0.75, 0.5, 0.25].map((v) => <option key={v} value={v}>{Math.round(v * 100)} %</option>)}
+            </select>
+            {styles[c] && <button type="button" className="lien" onClick={() => maj(c, { couleur: null, opacite: null })}>Rétablir</button>}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }

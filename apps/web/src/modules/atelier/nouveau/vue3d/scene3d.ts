@@ -74,6 +74,8 @@ export interface MesuresRendu {
   pointDeVue?: () => { position: { x: number; y: number; z: number }; cible: { x: number; y: number; z: number } };
   /** Mode filaire actif (recette, D-133). */
   filaire?: boolean;
+  /** Nombre de classes à style propre (recette, D-135). */
+  styles?: number;
   /** Position écran d'un point du modèle (recette : face latérale poussée, D-125). */
   versEcran?: (p: { x: number; y: number; z: number }) => { x: number; y: number } | null;
 }
@@ -227,6 +229,18 @@ export class Scene3D {
     return m;
   }
 
+  private styles: Record<string, { couleur: string | null; opacite: number | null }> = {};
+
+  /** Styles graphiques par classe (D-135) : les tampons sont reconstruits avec les couleurs choisies. */
+  majStyles(styles: Record<string, { couleur: string | null; opacite: number | null }>): void {
+    if (JSON.stringify(styles) === JSON.stringify(this.styles)) return;
+    this.styles = { ...styles };
+    const etat = this.etat;
+    this.etat = null;
+    if (etat) this.majModele(etat);
+    this.mesures.styles = Object.keys(this.styles).length;
+  }
+
   /** Reconstruit les tampons groupés à partir du modèle. */
   majModele(etat: ModeleAtelier): void {
     if (etat === this.etat) return;
@@ -243,8 +257,11 @@ export class Scene3D {
     const parLot = new Map<string, Maillage[]>();
     const tous: Maillage[] = [];
     for (const o of Object.values(etat.objets) as OccurrenceQuelconque[]) {
-      const m = this.maillage(etat, o, cleNiveaux);
-      if (!m) continue;
+      const brut = this.maillage(etat, o, cleNiveaux);
+      if (!brut) continue;
+      // Style graphique par classe (D-135) : couleur et opacité choisies pour soi, affichage seulement.
+      const st = this.styles[o.classe];
+      const m = st && (st.couleur || st.opacite !== null) ? { ...brut, couleur: st.couleur ?? brut.couleur, opacite: st.opacite ?? brut.opacite } : brut;
       tous.push(m);
       const cle = `${m.niveauId ?? "-"}|${m.couleur}|${m.opacite}|${classeEclate(o.classe)}|${o.groupeId ?? ""}`;
       const l = parLot.get(cle) ?? [];

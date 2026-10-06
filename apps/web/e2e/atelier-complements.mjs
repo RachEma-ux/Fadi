@@ -2174,6 +2174,21 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
 }
 
+// Styles graphiques par classe en 3D (D-135) : couleur des murs choisie pour soi, puis rétablie.
+{
+  await page.keyboard.press("Escape");
+  await page.locator('.barre-mode button:has-text("3D")').click();
+  await page.waitForFunction(() => !!window.fadiMesures3D?.versEcran, null, { timeout: 30000 }).catch(() => {});
+  await page.locator("[data-styles-classes] > summary").click();
+  await page.locator('[data-style-couleur="mur"]').fill("#cc3300");
+  const applique = await page.waitForFunction(() => window.fadiMesures3D?.styles === 1, null, { timeout: 5000 }).then(() => true, () => false);
+  await page.screenshot({ path: `${OUT}/3d-styles.png` });
+  await page.locator('[data-styles-classes] li:has([data-style-couleur="mur"]) button.lien').click();
+  const retabli = await page.waitForFunction(() => window.fadiMesures3D?.styles === 0, null, { timeout: 5000 }).then(() => true, () => false);
+  await page.locator('.barre-mode button:has-text("Plan")').click().catch(() => {});
+  check("styles par classe en 3D : couleur des murs appliquée puis rétablie", applique && retabli, `${applique} · ${retabli}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];
