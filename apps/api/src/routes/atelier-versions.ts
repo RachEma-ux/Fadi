@@ -474,7 +474,10 @@ atelierVersionsRouter.get("/publications/:publicationId", async (req, res) => {
   const ecarts = Object.keys(pub.catalogues).filter((k) => k !== "modeleAtelier" && actuels[k] !== undefined && actuels[k] !== pub.catalogues[k]).map((k) => ({ catalogue: k, publie: pub.catalogues[k], actuel: actuels[k] }));
   const instantane = (await db.select({ modele: atelierVersions.modele }).from(atelierVersions).where(eq(atelierVersions.id, pub.versionId)))[0]?.modele as unknown as ModeleAtelier | undefined;
   const niveaux = Object.values(instantane?.niveaux ?? {}).sort((a, b) => a.elevation - b.elevation).map((n) => ({ id: n.id, nom: n.nom }));
-  res.json({ ...pub, createdAt: pub.createdAt.toISOString(), version, niveaux, cataloguesActuels: actuels, ecarts, base: `/projects/${project.id}/atelier/publications/${pub.id}/fichiers` });
+  // Repère cadastral publié (D-138) : système et origine locale, pour un calage explicite côté référence.
+  const parcelle = instantane?.site?.parcelle ?? null;
+  const repere = parcelle ? { crs: parcelle.crs, origineLocale: { x: parcelle.origineLocale.x, y: parcelle.origineLocale.y } } : null;
+  res.json({ ...pub, createdAt: pub.createdAt.toISOString(), version, niveaux, repere, cataloguesActuels: actuels, ecarts, base: `/projects/${project.id}/atelier/publications/${pub.id}/fichiers` });
 });
 
 atelierVersionsRouter.get("/publications/:publicationId/fichiers/:volumeId", async (req, res) => {

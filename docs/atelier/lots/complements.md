@@ -210,3 +210,4 @@ Sélection des semblables et multi-niveaux (`selection-semblables.test.ts`, e2e,
 Styles graphiques par classe en 3D (e2e, D-135).
 Mise à jour d'une variante depuis son tronc (`atelier-commands.test.ts`, e2e `atelier-versions.mjs`, D-136).
 Décalage d'altitude des références externes (`refexterne.test.ts`, e2e, D-137).
+Calage cadastral des références externes (`refexterne.test.ts`, e2e, D-138).

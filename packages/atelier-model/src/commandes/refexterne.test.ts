@@ -84,3 +84,17 @@ describe("décalage d'altitude d'une référence externe (D-137, DA-05-11)", () 
     expect(() => appliquerLot(r, lot([{ type: "refexterne.rattacher", params: { id: "voisin", decalageAltitude: 3 } }], "x"))).toThrow(/longueur en mètres/);
   });
 });
+
+describe("calage par le repère cadastral (D-138, DA-05-11)", () => {
+  it("même système : différence des origines locales ; sinon motif, rien supposé", async () => {
+    const { calageCadastral } = await import("./refexterne.js");
+    const a = { crs: "EPSG:2154", origineLocale: { x: 651000, y: 6862000 } };
+    const b = { crs: "EPSG:2154", origineLocale: { x: 650980.5, y: 6862010 } };
+    expect(calageCadastral(a, b)).toEqual({ position: { x: 19.5, y: -10 }, angle: 0 });
+    expect(calageCadastral(a, { ...b, crs: "EPSG:26191" })).toMatchObject({ motif: expect.stringMatching(/systèmes différents/) });
+    expect(calageCadastral(null, b)).toMatchObject({ motif: expect.stringMatching(/source/) });
+    // Un point de la source au point cadastral (651010 ; 6862005) tombe bien en local cible à (29,5 ; −5).
+    const c = calageCadastral(a, b) as { position: { x: number; y: number } };
+    expect(versRepereProjet({ x: 10, y: 5 }, { position: pt(c.position.x, c.position.y), angle: { value: 0, unit: "deg" } })).toEqual({ x: 29.5, y: -5 });
+  });
+});

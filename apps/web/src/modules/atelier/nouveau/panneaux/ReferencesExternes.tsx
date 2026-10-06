@@ -7,7 +7,7 @@
  */
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { pt, type Commande } from "@parcours/atelier-model";
+import { calageCadastral, pt, type Commande } from "@parcours/atelier-model";
 import { api, type ReferenceExterneEtat } from "../../../../lib/api";
 import type { AtelierClient } from "../../bus/atelier-client";
 import { messageErreur } from "./Versions";
@@ -235,6 +235,25 @@ export function ReferencesExternes({ projectId, niveaux, niveauId, references, r
             Rotation (degrés, sens trigonométrique)
             <input value={angle} onChange={(e) => setAngle(e.target.value)} inputMode="decimal" data-refext="angle" />
           </label>
+          {publication.data && (
+            <button
+              type="button"
+              data-refext-caler
+              onClick={() => {
+                // Calage par le repère cadastral (D-138) : même système des deux côtés, sinon rien n'est supposé.
+                const p = client.getSnapshot().etat.site.parcelle;
+                const c = calageCadastral(publication.data?.repere ?? null, p ? { crs: p.crs, origineLocale: p.origineLocale } : null);
+                if ("motif" in c) setMessage({ texte: `Calage cadastral impossible : ${c.motif}.`, erreur: true });
+                else {
+                  setPosition(`${String(c.position.x).replace(".", ",")};${String(c.position.y).replace(".", ",")}`);
+                  setAngle("0");
+                  setMessage({ texte: "Position calée par le repère cadastral des deux projets (même système, sans rotation).", erreur: false });
+                }
+              }}
+            >
+              Caler par le repère cadastral
+            </button>
+          )}
           </>)}
           {aReparer ? (
             <button type="button" className="primaire" disabled={!publication.data || !niveauSourceId} onClick={() => void repointer(aReparer)} data-refext="repointer">

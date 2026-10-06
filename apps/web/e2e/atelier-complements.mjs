@@ -222,6 +222,9 @@ await page.locator('[data-refext="source"]').selectOption(voisin);
 await page.locator('[data-refext="publication"]').selectOption(pub1.body.id);
 await page.waitForSelector('[data-refext="niveau-source"]', { timeout: 15000 });
 await page.locator('[data-refext="niveau-source"]').selectOption({ index: 1 });
+// Calage par le repère cadastral (D-138) : le voisin est une copie de P.118 (même parcelle, même système) → 0 ; 0.
+await page.locator("[data-refext-caler]").click();
+check("calage cadastral : position déduite des deux origines locales (même système)", (await page.locator('[data-refext="position"]').inputValue()) === "0;0", await page.locator('[data-refext="position"]').inputValue());
 await page.locator('[data-refext="position"]').fill("25;0");
 await page.locator('[data-refext="angle"]').fill("0");
 await axe("références externes", "details.refext");

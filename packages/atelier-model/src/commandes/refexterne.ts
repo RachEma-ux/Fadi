@@ -100,3 +100,16 @@ export function versRepereProjet(p: { x: number; y: number }, ref: Pick<ParamsRe
   const s = Math.sin(a);
   return { x: Math.round((ref.position.x + p.x * c - p.y * s) * 1e6) / 1e6, y: Math.round((ref.position.y + p.x * s + p.y * c) * 1e6) / 1e6 };
 }
+
+/**
+ * Calage par le repère cadastral (D-138, DA-05-11) : quand les deux projets déclarent leur parcelle dans le même
+ * système de coordonnées, la position de la source dans le repère local du projet est la différence de leurs origines
+ * locales (`local = cadastral − origineLocale` des deux côtés, sans rotation). Sinon : motif, aucun calage supposé.
+ */
+export function calageCadastral(source: { crs: string; origineLocale: { x: number; y: number } } | null, cible: { crs: string; origineLocale: { x: number; y: number } } | null): { position: { x: number; y: number }; angle: 0 } | { motif: string } {
+  if (!source) return { motif: "la source ne déclare pas de repère cadastral (parcelle)" };
+  if (!cible) return { motif: "ce projet ne déclare pas de repère cadastral (parcelle)" };
+  if (source.crs !== cible.crs) return { motif: `systèmes différents (${source.crs} et ${cible.crs}) : conversion non faite` };
+  const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
+  return { position: { x: r6(source.origineLocale.x - cible.origineLocale.x), y: r6(source.origineLocale.y - cible.origineLocale.y) }, angle: 0 };
+}
