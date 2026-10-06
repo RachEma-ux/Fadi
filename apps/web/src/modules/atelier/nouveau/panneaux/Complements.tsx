@@ -151,7 +151,7 @@ export function CreerBloc({ sel, etat, readOnly, onCommandes }: { sel: Occurrenc
   const refusees = sel.filter((o) => !(CLASSES_BLOC as readonly string[]).includes(o.classe));
   const points = sel.flatMap((o) => {
     const p = o.params as unknown as Record<string, unknown>;
-    return [...((p["points"] as { x: number; y: number }[] | undefined) ?? []), ...((p["contour"] as { x: number; y: number }[] | undefined) ?? []), ...(p["position"] ? [p["position"] as { x: number; y: number }] : []), ...(p["centre"] ? [p["centre"] as { x: number; y: number }] : [])];
+    return [...((p["points"] as { x: number; y: number }[] | undefined) ?? []), ...((p["contour"] as { x: number; y: number }[] | undefined) ?? []), ...(p["position"] ? [p["position"] as { x: number; y: number }] : []), ...(p["centre"] ? [p["centre"] as { x: number; y: number }] : []), ...(p["point"] ? [p["point"] as { x: number; y: number }] : [])];
   });
   const base = points.length ? rectangleEnglobant(points).min : { x: 0, y: 0 };
   const existantes = bibliotheques(etat).map((b) => b.nom).filter((n) => n !== "Sans bibliothèque");
@@ -159,7 +159,7 @@ export function CreerBloc({ sel, etat, readOnly, onCommandes }: { sel: Occurrenc
     <details className="inspecteur-bloc">
       <summary>Créer un bloc ou un composant</summary>
       {refusees.length > 0 ? (
-        <p className="inspecteur-alerte" role="note">Un bloc ne contient que des esquisses, textes, solides et occurrences de blocs : retirez {refusees.map((o) => o.id).slice(0, 3).join(", ")}{refusees.length > 3 ? "…" : ""} de la sélection.</p>
+        <p className="inspecteur-alerte" role="note">Un bloc ne contient que des esquisses, textes, solides, poteaux, dalles et occurrences de blocs : retirez {refusees.map((o) => o.id).slice(0, 3).join(", ")}{refusees.length > 3 ? "…" : ""} de la sélection.</p>
       ) : (
         <form
           onSubmit={(e) => {

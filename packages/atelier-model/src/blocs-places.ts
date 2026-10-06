@@ -62,6 +62,29 @@ export function definitionsImbriquees(etat: ModeleAtelier, defId: string): Set<s
 
 
 /**
+ * Contours (dans le repère du bloc) d'un poteau ou d'une dalle contenus dans un bloc (D-108) : section rectangulaire
+ * orientée du poteau ; contour et trous de la dalle. `null` pour les autres classes.
+ */
+export function contoursArchitecture(classe: string, params: Record<string, unknown>): { contour: Vec[]; trous: Vec[][] } | null {
+  if (classe === "poteau") {
+    const q = params as { point?: Vec; largeur?: { value: number }; profondeur?: { value: number }; angle?: { value: number } };
+    if (!q.point || !q.largeur || !q.profondeur) return null;
+    const a = ((q.angle?.value ?? 0) * Math.PI) / 180;
+    const u = { x: Math.cos(a), y: Math.sin(a) };
+    const n = { x: -u.y, y: u.x };
+    const lx = q.largeur.value / 2;
+    const ly = q.profondeur.value / 2;
+    const c = (s: number, o: number): Vec => ({ x: q.point!.x + u.x * s + n.x * o, y: q.point!.y + u.y * s + n.y * o });
+    return { contour: [c(-lx, -ly), c(lx, -ly), c(lx, ly), c(-lx, ly)], trous: [] };
+  }
+  if (classe === "dalle") {
+    const q = params as { contour?: Vec[]; trous?: Vec[][] };
+    return q.contour && q.contour.length >= 3 ? { contour: q.contour, trous: q.trous ?? [] } : null;
+  }
+  return null;
+}
+
+/**
  * Traits d'une occurrence de bloc dans le modèle (D-102) : polylignes du contenu placé (tracés, contours, axes ;
  * cercles et arcs discrétisés), pour l'accrochage et la sélection au plan.
  */
@@ -70,7 +93,10 @@ export function traitsBloc(etat: ModeleAtelier, o: { params: object; definitionI
   const P = (v: Vec) => pt(Math.round(v.x * 1e9) / 1e9, Math.round(v.y * 1e9) / 1e9);
   for (const e of contenuPlace(etat, o.definitionId, o.params as unknown as Placement)) {
     const q = e.params as { points?: Vec[]; contour?: Vec[]; a?: Vec; b?: Vec; forme?: string; ferme?: boolean; centre?: Vec | null; rayon?: { value: number } | null; angleDebut?: { value: number } | null; angleFin?: { value: number } | null };
-    if (q.centre && q.rayon && (q.forme === "cercle" || q.forme === "arc")) {
+    const archi = contoursArchitecture(e.classe, e.params);
+    if (archi) {
+      for (const c of [archi.contour, ...archi.trous]) out.push({ points: c.map((v) => P(e.tr(v))), ferme: true });
+    } else if (q.centre && q.rayon && (q.forme === "cercle" || q.forme === "arc")) {
       out.push({ points: pointsArc(q.centre, q.rayon.value, q.forme === "arc" ? (q.angleDebut?.value ?? 0) : 0, q.forme === "arc" ? (q.angleFin?.value ?? 360) : 360).map((v) => P(e.tr(v))), ferme: false, courbe: true });
     } else if (Array.isArray(q.points) && q.points.length >= 2) {
       const pts = q.forme === "rectangle" && q.points.length === 2 ? [q.points[0]!, { x: q.points[1]!.x, y: q.points[0]!.y }, q.points[1]!, { x: q.points[0]!.x, y: q.points[1]!.y }] : q.points;
@@ -93,7 +119,9 @@ export function sommetsBloc(etat: ModeleAtelier, o: { params: object; definition
   };
   for (const e of contenuPlace(etat, o.definitionId, o.params as unknown as Placement)) {
     const q = e.params as { points?: Vec[]; contour?: Vec[]; a?: Vec; b?: Vec; point?: Vec; forme?: string; centre?: Vec | null };
-    if (q.centre && (q.forme === "cercle" || q.forme === "arc" || q.forme === "ellipse")) ajouter(e.tr(q.centre));
+    const archi = contoursArchitecture(e.classe, e.params);
+    if (archi) for (const v of archi.contour) ajouter(e.tr(v));
+    else if (q.centre && (q.forme === "cercle" || q.forme === "arc" || q.forme === "ellipse")) ajouter(e.tr(q.centre));
     else if (Array.isArray(q.points) && q.points.length) {
       const pts = q.forme === "rectangle" && q.points.length === 2 ? [q.points[0]!, { x: q.points[1]!.x, y: q.points[0]!.y }, q.points[1]!, { x: q.points[0]!.x, y: q.points[1]!.y }] : q.points;
       for (const v of pts) ajouter(e.tr(v));

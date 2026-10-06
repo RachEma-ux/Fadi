@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -200,6 +200,9 @@ function Bloc2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"bloc-occ
     <g className={classes(`obj-bloc${def ? "" : " bloc-absent"}`, selectionne, survole)} data-objet={o.id} stroke={couleur} fill="none" strokeWidth={selectionne ? 2 : 1}>
       {contenu.map((e, i) => {
         const { tr, k } = e;
+        // Poteaux et dalles d'un bloc (D-108) : section ou contour, avec les trous.
+        const archi = contoursArchitecture(e.classe, e.params);
+        if (archi) return <path key={i} d={[archi.contour, ...archi.trous].map((x) => chemin(pr, x.map(tr))).join(" ")} />;
         const pts = (Array.isArray(e.params["points"]) ? e.params["points"] : Array.isArray(e.params["contour"]) ? e.params["contour"] : []) as { x: number; y: number }[];
         if (e.params["forme"] === "cercle" && e.params["centre"] && e.params["rayon"]) {
           const q = pr.vers(tr(e.params["centre"] as { x: number; y: number }));

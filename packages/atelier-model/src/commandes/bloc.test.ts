@@ -227,3 +227,32 @@ describe("bloc redéfini et cotes rattachées (D-102)", () => {
     expect(r.effets.referencesAReparer).toEqual([referenceExtremite("k", "b")]);
   });
 });
+
+describe("poteaux et dalles dans un bloc (D-108, DA-05-06)", () => {
+  it("bloc d'un poteau et d'une dalle : volumes placés (rotation, échelle), traits au plan, sommets ; décomposition en vrais objets", async () => {
+    const { sommetsBloc, traitsBloc } = await import("../blocs-places.js");
+    const e = appliquerLot(socle(), lot([
+      { type: "poteau.creer", params: { id: "p", niveauId: "rdc", point: pt(10, 10), formeId: "rectangle", largeur: m(0.2), profondeur: m(0.2), hauteur: m(3) } },
+      { type: "dalle.creer", params: { id: "d", niveauId: "rdc", contour: [pt(10, 10), pt(12, 10), pt(12, 11), pt(10, 11)], trous: [], epaisseur: m(0.2) } },
+    ], "o")).etat;
+    expect(() => appliquerLot(e, lot([{ type: "bloc.definir", params: { id: "x", nom: "X", cibles: ["w"], pointDeBase: pt(10, 10) } }]))).toThrow(/poteaux, dalles/);
+    const r = appliquerLot(e, lot([
+      { type: "bloc.definir", params: { id: "b", nom: "Kiosque", cibles: ["p", "d"], pointDeBase: pt(10, 10) } },
+      { type: "bloc.placer", params: { id: "o1", definitionId: "b", niveauId: "rdc", position: pt(0, 0), angle: { value: 90, unit: "deg" }, echelle: 2 } },
+    ], "b")).etat;
+    const mai = maillageObjet(r, r.objets["o1"]!)!;
+    let zMax = 0;
+    let yMax = -Infinity;
+    for (let i = 0; i < mai.positions.length; i += 3) {
+      zMax = Math.max(zMax, mai.positions[i + 2]!);
+      yMax = Math.max(yMax, mai.positions[i + 1]!);
+    }
+    expect(zMax).toBeCloseTo(6, 9); // poteau de 3 m à l'échelle 2
+    expect(yMax).toBeCloseTo(4, 9); // dalle de 2 m de long tournée de 90° et doublée
+    expect(traitsBloc(r, r.objets["o1"]!)).toHaveLength(2);
+    expect(sommetsBloc(r, r.objets["o1"]!).length).toBe(8); // quatre coins de la section du poteau, quatre de la dalle
+    const dec = appliquerLot(r, lot([{ type: "transformer.decomposer", params: { cibles: ["o1"] } }], "dec")).etat;
+    expect(Object.values(dec.objets).filter((o) => o.classe === "poteau")).toHaveLength(2);
+    expect(Object.values(dec.objets).filter((o) => o.classe === "dalle")).toHaveLength(2);
+  });
+});

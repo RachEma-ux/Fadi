@@ -8,7 +8,7 @@
  * solide montent de `decalageBase` sur leur épaisseur / hauteur. Une hauteur absente (« non évaluée ») ne
  * produit aucun volume : l'objet reste en plan, rien n'est inventé.
  */
-import { contenuPlace } from "../blocs-places.js";
+import { contenuPlace, contoursArchitecture } from "../blocs-places.js";
 import { aireSignee, facesMur, hoteOuverture, longueurAxeMur, normalise, perp, pointsArc, sub, type Vec } from "../geometrie.js";
 import { contourMurCourbeRaccorde, raccordMur } from "../raccords.js";
 import { corpsMenuiserie } from "../menuiserie.js";
@@ -521,6 +521,20 @@ function gardeCorpsMaillage(o: Occurrence<"garde-corps">, z: number, t: Tampon):
 function blocMaillage(etat: ModeleAtelier, o: Occurrence<"bloc-occurrence">, z: number, t: Tampon): void {
   for (const { classe, params, tr, k } of contenuPlace(etat, o.definitionId, o.params)) {
     const e = { classe, params };
+    // Poteaux et dalles d'un bloc (D-108) : prismes de leur section ou contour, hauteurs à l'échelle du bloc.
+    if (e.classe === "poteau") {
+      const h = (e.params["hauteur"] as { value: number } | null)?.value;
+      const c = contoursArchitecture("poteau", e.params);
+      if (h && c) t.prisme(c.contour.map(tr), [], z, z + h * k);
+      continue;
+    }
+    if (e.classe === "dalle") {
+      const c = contoursArchitecture("dalle", e.params);
+      const ep = (e.params["epaisseur"] as { value: number } | undefined)?.value;
+      const base = ((e.params["decalageBase"] as { value: number } | undefined)?.value ?? 0) * k;
+      if (c && ep) t.prisme(c.contour.map(tr), c.trous.map((x) => x.map(tr)), z + base, z + base + ep * k);
+      continue;
+    }
     if (e.classe !== "solide") continue;
     const h = (e.params["hauteur"] as { value: number } | null)?.value;
     const contour = e.params["contour"] as Vec[] | undefined;

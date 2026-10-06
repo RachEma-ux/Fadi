@@ -21,7 +21,9 @@ type Brut = Record<string, unknown>;
  * Classes admises dans un bloc ou un composant : du dessin, des solides et (D-078) des occurrences d'autres blocs
  * (blocs imbriqués, sans cycle) ; jamais un élément hébergeant (mur…).
  */
-export const CLASSES_BLOC = ["esquisse", "texte", "solide", "bloc-occurrence"] as const;
+// Poteaux et dalles (D-108) : objets d'architecture admis dans un bloc (volume, plan, décomposition) ; les murs et
+// ouvertures, liés entre eux (raccords, hôtes), restent refusés.
+export const CLASSES_BLOC = ["esquisse", "texte", "solide", "bloc-occurrence", "poteau", "dalle"] as const;
 /** Profondeur d'imbrication au plus (au-delà : refus à la définition, rien dessiné au-delà). */
 export const PROFONDEUR_BLOCS = 8;
 
@@ -84,7 +86,7 @@ function contenuDepuis(etat: ModeleAtelier, cibles: string[], base: Point2): Con
   return cibles.map((id, i) => {
     const o = etat.objets[id];
     if (!o) throw new ErreurCommande("precondition", `cibles[${i}]`, `objet inconnu : ${id}`);
-    if (!(CLASSES_BLOC as readonly string[]).includes(o.classe)) throw new ErreurCommande("precondition", `cibles[${i}]`, `classe « ${o.classe} » refusée dans un bloc (esquisses, textes, solides et occurrences de blocs seulement)`);
+    if (!(CLASSES_BLOC as readonly string[]).includes(o.classe)) throw new ErreurCommande("precondition", `cibles[${i}]`, `classe « ${o.classe} » refusée dans un bloc (esquisses, textes, solides, poteaux, dalles et occurrences de blocs seulement)`);
     const relatif = transformerOccurrence(o, { type: "translation", dx: -base.x, dy: -base.y });
     return { classe: o.classe as ContenuBloc["classe"], params: relatif.params as unknown as Record<string, unknown>, calqueId: o.calqueId, ...(o.classe === "bloc-occurrence" ? { definitionId: o.definitionId } : {}) };
   });

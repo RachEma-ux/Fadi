@@ -565,7 +565,7 @@ function ChoixBloc({ etat, ui }: { etat: ModeleAtelier; ui: EtatUi }) {
     <div className="choix-bloc">
       <label htmlFor="recherche-bloc">Rechercher dans les bibliothèques</label>
       <input id="recherche-bloc" value={recherche} onChange={(e) => setRecherche(e.target.value)} onKeyDown={(e) => e.stopPropagation()} placeholder="nom, bibliothèque, classification" />
-      {groupes.length === 0 && <p className="inspecteur-aide">Aucun bloc : sélectionnez des esquisses ou des solides et « Créer un bloc ou un composant ».</p>}
+      {groupes.length === 0 && <p className="inspecteur-aide">Aucun bloc : sélectionnez des esquisses, solides, poteaux ou dalles et « Créer un bloc ou un composant ».</p>}
       {groupes.map((g) => (
         <fieldset key={g.nom}>
           <legend>{g.nom}</legend>

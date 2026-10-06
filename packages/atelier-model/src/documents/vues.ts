@@ -12,7 +12,7 @@ import { pointsPolyligne, aireNette, centroide, facesMur, hoteOuverture, longueu
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { lignesHachure, motifHachure, pointsHachure } from "../hachures.js";
-import { contenuPlace } from "../blocs-places.js";
+import { contenuPlace, contoursArchitecture } from "../blocs-places.js";
 import { etendueMur, geometrieToiture, maillageObjet, type Maillage } from "../projection/maillage.js";
 import { traitsMenuiseriePlan } from "../menuiserie.js";
 import { polygoneMurRaccorde } from "../raccords.js";
@@ -452,6 +452,12 @@ function dessinerBloc(c: Collecteur, etat: ModeleAtelier, o: Occurrence<"bloc-oc
   for (const { classe, params, tr, k } of contenuPlace(etat, o.definitionId, o.params)) {
     const e = { classe, params };
     const pts = Array.isArray(e.params["points"]) ? (e.params["points"] as Vec[]) : Array.isArray(e.params["contour"]) ? (e.params["contour"] as Vec[]) : [];
+    const archi = contoursArchitecture(e.classe, e.params);
+    if (archi) {
+      // Poteaux et dalles d'un bloc (D-108) : section ou contour, avec les trous.
+      for (const x of [archi.contour, ...archi.trous]) c.poly(x.map(tr), true, "vue", null, o.id);
+      continue;
+    }
     if (e.classe === "esquisse" && e.params["forme"] === "cercle" && e.params["centre"] && e.params["rayon"]) c.cercle(tr(e.params["centre"] as Vec), (e.params["rayon"] as Longueur).value * k, "fin", o.id);
     else if (e.classe === "esquisse" && e.params["forme"] === "rectangle" && pts.length === 2) {
       const [q1, q2] = [pts[0]!, pts[1]!];
