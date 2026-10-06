@@ -3,6 +3,7 @@
  * objets référencés. Retourne des paramètres typés ou lève `ErreurCommande` (400 côté API) — jamais de valeur
  * par défaut inventée pour une grandeur physique (R3) : une hauteur absente reste `null`.
  */
+import { REFERENCE_EXTERNE, versRepereProjet, type ParamsReferenceExterne } from "./refexterne.js";
 import { contourFerme } from "./changer-classe.js";
 import { profilFerme } from "./hachures-associees.js";
 import { lireOuvrant } from "../ouvrants.js";
@@ -235,8 +236,27 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
   "reference-plan"(_etat, p) {
     return { ...contour(p), source: lire.chaineOuNull(p, "source"), echelle: lire.nombre(p, "echelle", { optionnel: true, min: 0 }), nom: lire.chaineOuNull(p, "nom") };
   },
-  cotation(_etat, p) {
-    return { a: lire.point(p, "a")!, b: lire.point(p, "b")!, decalage: lire.longueur(p, "decalage", { optionnel: true }) ?? { value: 0, unit: "m" } };
+  cotation(etat, p) {
+    const base = { a: lire.point(p, "a")!, b: lire.point(p, "b")!, decalage: lire.longueur(p, "decalage", { optionnel: true }) ?? { value: 0, unit: "m" as const } };
+    const ex = p["externe"];
+    if (ex === undefined || ex === null) return base;
+    // Cote sur une référence externe (D-153) : extrémités en repère de la source, position dérivée du calage.
+    if (typeof ex !== "object" || Array.isArray(ex)) throw new ErreurCommande("invalide", "externe", "externe : { referenceId, a, b }");
+    const q = ex as Brut;
+    const referenceId = lire.chaine(q, "referenceId");
+    const def = etat.definitions[referenceId];
+    if (!def || def.classe !== REFERENCE_EXTERNE) throw new ErreurCommande("precondition", "externe.referenceId", `référence externe inconnue : ${referenceId}`);
+    const ref = def.params as unknown as ParamsReferenceExterne;
+    const point = (k: "a" | "b") => {
+      const v = q[k] as { x?: unknown; y?: unknown } | undefined;
+      if (!v || typeof v.x !== "number" || typeof v.y !== "number" || !Number.isFinite(v.x) || !Number.isFinite(v.y)) throw new ErreurCommande("invalide", `externe.${k}`, "point de la source { x, y } en mètres attendu");
+      return { x: v.x, y: v.y };
+    };
+    const sa = point("a");
+    const sb = point("b");
+    const revisionSource = typeof q["revisionSource"] === "number" ? (q["revisionSource"] as number) : ref.revisionSource;
+    const P = (v: { x: number; y: number }) => { const r = versRepereProjet(v, ref); return { x: r.x, y: r.y, frame: "local" as const, unit: "m" as const }; };
+    return { ...base, a: P(sa), b: P(sb), externe: { referenceId, a: sa, b: sb, revisionSource, ...(revisionSource !== ref.revisionSource ? { aVerifier: true as const } : {}) } };
   },
   texte(_etat, p) {
     // Orientation (D-146) : ramenée dans ]−180, 180] ; nulle ou absente : clé omise.

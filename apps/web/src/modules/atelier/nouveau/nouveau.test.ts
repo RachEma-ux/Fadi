@@ -200,6 +200,14 @@ describe("accrochages du plan 2D", () => {
     expect(a.point.y).toBeCloseTo(0);
   });
 
+  it("cote posée sur les traits d'une référence externe (D-153) : extrémités en repère de la source", () => {
+    const e = appliquer(socle(), [{ type: "refexterne.rattacher", params: { id: "voisin", nom: "Voisin", projetSourceId: "s", publicationId: "pub", revisionSource: 2, empreinteSource: "x", niveauSourceId: "r", niveauId: "rdc", position: pt(50, 0), angle: { value: 90, unit: "deg" }, calqueId: null } }]);
+    const r = clic("cotation", pt(49, 2), e, ui({ outil: "cotation", pointsEnCours: [pt(50, 0), pt(50, 4)] }), { ...opts, referenceExterneAu: (q) => (q.x === 50 ? "voisin" : null) });
+    expect(r.commandes).toHaveLength(1);
+    expect((r.commandes[0]!.params as { externe: unknown }).externe).toMatchObject({ referenceId: "voisin", a: { x: 0, y: 0 }, b: { x: 4, y: 0 } });
+    expect(appliquer(e, r.commandes).objets[(r.commandes[0]!.params as { id: string }).id]).toBeTruthy();
+  });
+
   it("tangente (D-151) : depuis le point précédent, point de contact sur un cercle ; arc : seulement dans ses angles", () => {
     expect(pointsTangence(pt(0, 0), { x: 2, y: 0 }, 1).map((q) => [Math.round(q.x * 1e6) / 1e6, Math.round(q.y * 1e6) / 1e6])).toEqual([[1.5, -0.866025], [1.5, 0.866025]]);
     expect(pointsTangence(pt(0, 0), { x: 2, y: 0 }, 1, 90, 180)).toHaveLength(1);

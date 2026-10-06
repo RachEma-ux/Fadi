@@ -3,6 +3,7 @@
  * le contour fermé de sa source s'il a changé (même commande, même révision) ; source supprimée ou devenue ouverte :
  * la hachure garde son dernier contour et perd le lien (dit dans les effets). Une hachure verrouillée ne suit pas.
  */
+import { REFERENCE_EXTERNE, versRepereProjet, type ParamsReferenceExterne } from "./refexterne.js";
 import { pointsArc, pointsEllipse, pointsPolyligne, pointsSpline } from "../geometrie.js";
 import type { Contour, ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { pt, type Point2 } from "../unites.js";
@@ -85,6 +86,31 @@ export function suivreHachures(etat: ModeleAtelier, effets: Effets): { etat: Mod
     if (pts.every((q, i) => q.x === a.params.points[i]?.x && q.y === a.params.points[i]?.y) && a.params.points.length === 2) continue;
     objets = { ...objets, [a.id]: { ...a, params: { ...a.params, points: pts } } };
     modifies.push(a.id);
+  }
+  // Cotes sur une référence externe (D-153) : extrémités recalculées par le calage courant ; source épinglée sur une
+  // autre publication : « à vérifier » ; référence détachée : la cote garde sa dernière position et perd le lien.
+  for (const o of Object.values(etat.objets)) {
+    if (o.classe !== "cotation" || !o.params.externe || o.verrouille) continue;
+    const k = o as Occurrence<"cotation">;
+    const ex = k.params.externe!;
+    const def = etat.definitions[ex.referenceId];
+    if (!def || def.classe !== REFERENCE_EXTERNE) {
+      const { externe: _e, ...reste } = k.params;
+      void _e;
+      objets = { ...objets, [k.id]: { ...k, params: reste } };
+      modifies.push(k.id);
+      continue;
+    }
+    const ref = def.params as unknown as ParamsReferenceExterne;
+    const P = (v: { x: number; y: number }) => { const r = versRepereProjet(v, ref); return pt(r.x, r.y); };
+    const a = P(ex.a);
+    const b = P(ex.b);
+    const aVerifier = ex.revisionSource !== ref.revisionSource;
+    if (a.x === k.params.a.x && a.y === k.params.a.y && b.x === k.params.b.x && b.y === k.params.b.y && aVerifier === !!ex.aVerifier) continue;
+    const { aVerifier: _v, ...exReste } = ex;
+    void _v;
+    objets = { ...objets, [k.id]: { ...k, params: { ...k.params, a, b, externe: { ...exReste, ...(aVerifier ? { aVerifier: true as const } : {}) } } } };
+    modifies.push(k.id);
   }
   if (!modifies.length) return { etat, effets };
   return { etat: { ...etat, objets }, effets: { ...effets, modifies: [...new Set([...effets.modifies, ...modifies])] } };

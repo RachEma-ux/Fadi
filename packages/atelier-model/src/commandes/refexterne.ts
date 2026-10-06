@@ -101,6 +101,16 @@ export function versRepereProjet(p: { x: number; y: number }, ref: Pick<ParamsRe
   return { x: Math.round((ref.position.x + p.x * c - p.y * s) * 1e6) / 1e6, y: Math.round((ref.position.y + p.x * s + p.y * c) * 1e6) / 1e6 };
 }
 
+/** Conversion inverse (D-153) : repère local du projet → repère local de la source (translation inverse, puis rotation). */
+export function versRepereSource(p: { x: number; y: number }, ref: Pick<ParamsReferenceExterne, "position" | "angle">): { x: number; y: number } {
+  const a = (ref.angle.value * Math.PI) / 180;
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  const dx = p.x - ref.position.x;
+  const dy = p.y - ref.position.y;
+  return { x: Math.round((dx * c + dy * s) * 1e6) / 1e6, y: Math.round((-dx * s + dy * c) * 1e6) / 1e6 };
+}
+
 /**
  * Calage par le repère cadastral (D-138, DA-05-11) : quand les deux projets déclarent leur parcelle dans le même
  * système de coordonnées, la position de la source dans le repère local du projet est la différence de leurs origines

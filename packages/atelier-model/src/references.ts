@@ -170,7 +170,8 @@ export function extremitesCotation(etat: ModeleAtelier, cotationId: string): { a
   if (!o || o.classe !== "cotation") return null;
   let a = o.params.a;
   let b = o.params.b;
-  let aReparer = false;
+  // Cote sur une référence externe dont la source a été réépinglée (D-153) : à vérifier.
+  let aReparer = !!o.params.externe?.aVerifier;
   let rattachees = 0;
   for (const ref of Object.values(etat.references)) {
     if (ref.proprietaireId !== cotationId) continue;

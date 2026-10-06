@@ -261,6 +261,11 @@ export interface ParamsCotation {
   a: Point2;
   b: Point2;
   decalage: Longueur;
+  /**
+   * Cote rattachée à une référence externe (D-153) : extrémités dans le repère local de la source, a et b dérivés par
+   * le calage de la référence ; `aVerifier` quand la référence épingle depuis une autre publication de la source.
+   */
+  externe?: { referenceId: string; a: { x: number; y: number }; b: { x: number; y: number }; revisionSource: number; aVerifier?: true };
 }
 
 export interface ParamsTexte {

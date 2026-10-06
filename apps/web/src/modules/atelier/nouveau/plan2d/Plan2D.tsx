@@ -6,7 +6,7 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { espacesTraversant, tolerancesAdaptatives, abscissesIntersections, effacerPortion, aireNette, centroide, cleTremie, pointDansPolygone, tremiesRetenues, cercleTroisPoints, polygoneMurCourbe, renflementTroisPoints, distance, intersectionSegments, proposerPlancher, rectangleEnglobant, simplifierTrace, ellipseTroisPoints, pointsEllipse, polygoneMur, polygoneRegulier, pointsSpline, pt, raisonVerrou, rectangleTroisPoints, type Commande, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
-import { accrocher, avecExternes, objetSousPointeur, segmentsDuNiveau, type Accroche } from "./accrochage";
+import { accrocher, avecExternes, objetSousPointeur, PREFIXE_EXTERNE, segmentsDuNiveau, type Accroche } from "./accrochage";
 import { clic, objetsDansCadre, objetsDansLasso, type ResultatClic } from "./outils-2d";
 import { chemin, projecteur } from "./projecteur";
 import { Croisements2D, Definitions2D, Objet2D } from "./rendu";
@@ -102,6 +102,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     };
   }, []);
 
+  const pointsExternes = useRef(new Map<string, string>());
   const pr = projecteur(ui.vue, taille.w, taille.h);
   const rayon = 12 / ui.vue.echelle;
 
@@ -484,7 +485,11 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
     const depuis = ui.pointsEnCours[ui.pointsEnCours.length - 1] ?? null;
     const a = e.pointerType === "touch" || !accroche ? accrocher(p, cache, accs, rayon * (e.pointerType === "touch" ? 2 : 1), depuis) : accroche;
     const sous = objetSousPointeur(p, cache, etat, ui.niveauId, rayon)?.objetId ?? null;
-    const r = clic(ui.outil, a.point, etat, ui, { rayon, alt: e.altKey, objetSous: sous, ...(fenetreEtirer ? { fenetre: fenetreEtirer } : {}) });
+    // Points accrochés aux traits d'une référence externe (D-153) : la cote posée dessus suit la référence.
+    if (a.objetId?.startsWith(PREFIXE_EXTERNE)) pointsExternes.current.set(`${a.point.x};${a.point.y}`, a.objetId.slice(PREFIXE_EXTERNE.length));
+    const referenceExterneAu = (q: Point2) => pointsExternes.current.get(`${q.x};${q.y}`) ?? null;
+    const r = clic(ui.outil, a.point, etat, ui, { rayon, alt: e.altKey, objetSous: sous, referenceExterneAu, ...(fenetreEtirer ? { fenetre: fenetreEtirer } : {}) });
+    if (!r.pointsEnCours.length) pointsExternes.current.clear();
     if (ui.outil === "etirer-fenetre" && r.commandes.length) setFenetreEtirer(null);
     onResultat(r);
   }

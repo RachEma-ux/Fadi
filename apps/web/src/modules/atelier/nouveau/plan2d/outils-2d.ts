@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { commeEsquisse, raisonNonContraignable, estFormeFermee, longueurSaisie, axesDesMurs, pointsEllipse, tremiesRetenues, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { versRepereSource, type ParamsReferenceExterne, commeEsquisse, raisonNonContraignable, estFormeFermee, longueurSaisie, axesDesMurs, pointsEllipse, tremiesRetenues, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -91,7 +91,7 @@ function rattachementAuPoint(etat: ModeleAtelier, niveauId: string, p: Point2): 
   return null;
 }
 
-export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: EtatUi, options: { rayon: number; alt?: boolean; objetSous: string | null; fenetre?: readonly Point2[] }): ResultatClic {
+export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: EtatUi, options: { rayon: number; alt?: boolean; objetSous: string | null; fenetre?: readonly Point2[]; referenceExterneAu?: (p: Point2) => string | null }): ResultatClic {
   const niveauId = ui.niveauId;
   const pts = ui.pointsEnCours;
   const base = { niveauId };
@@ -564,6 +564,15 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
         if (r) commandes.push({ type: "cotation.rattacher", params: { id, referenceId: referenceExtremite(id, cle), objetId: r.objetId, caracteristique: r.caracteristique } });
       }
       const n = commandes.length - 1;
+      // Cote sur une référence externe (D-153) : les deux extrémités accrochées aux traits d'une même référence, sans
+      // objet du projet : extrémités gardées en repère de la source, la cote suit le calage de la référence.
+      const refA = n === 0 ? (options.referenceExterneAu?.(a) ?? null) : null;
+      const def = refA ? etat.definitions[refA] : undefined;
+      if (refA && def && options.referenceExterneAu?.(b) === refA) {
+        const ref = def.params as unknown as ParamsReferenceExterne;
+        commandes[0] = { type: "cotation.creer", params: { ...base, id, a, b, decalage: m(decalage), externe: { referenceId: refA, a: versRepereSource(a, ref), b: versRepereSource(b, ref) } } };
+        return emettre(commandes, `Cote ${fmt(l)} m`, `Cote posée sur la référence « ${def.nom} » : elle suivra son calage.`);
+      }
       return emettre(commandes, `Cote ${fmt(l)} m`, n ? `Cote posée, ${n} extrémité(s) rattachée(s) : elle suivra les objets.` : "Cote posée, libre (aucune extrémité sur un objet).");
     }
     case "texte":
