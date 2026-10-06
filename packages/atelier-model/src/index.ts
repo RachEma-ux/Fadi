@@ -63,3 +63,4 @@ export { aireCommune, corpsDe, interferences, type Corps, type Interference } fr
 export { areteLaPlusProche, normaleExterieure, pousserArete } from "./pousser-face.js";
 export { chaineFermee } from "./esquisse/chaines.js";
 export { longueurSaisie } from "./automatisation/longueur-saisie.js";
+export { objetsSemblables } from "./selection-semblables.js";

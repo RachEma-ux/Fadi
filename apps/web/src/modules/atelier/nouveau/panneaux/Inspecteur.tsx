@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../../../lib/api";
-import { aire, chaineFermee, cleTremie, bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, longueurSaisie, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { aire, chaineFermee, cleTremie, bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, longueurSaisie, nombreSaisi, objetsSemblables, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -174,6 +174,13 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {(o.classe === "fenetre" || o.classe === "porte") && <MenuiserieFenetre key={`men-${o.id}`} o={o as Occurrence<"fenetre">} desactive={desactive} onCommandes={onCommandes} />}
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && !desactive && <JumelerOuverture key={`jum-${o.id}`} o={o as Occurrence<"porte">} onCommandes={onCommandes} />}
       <GroupeSelection sel={[o]} etat={etat} readOnly={readOnly || verrouille} onCommandes={onCommandes} />
+      {/* Sélection des semblables (D-134) : même classe et même type, sur ce niveau ou sur tous. */}
+      <p className="inspecteur-aide" data-semblables>
+        Sélectionner les semblables :{" "}
+        <button type="button" className="lien" data-semblables-niveau onClick={() => { const ids = objetsSemblables(etat, o.id); etatUi.selectionner(ids); etatUi.set({ aide: `${ids.length} objet(s) semblable(s) sur ce niveau.` }); }}>ce niveau</button>
+        {" · "}
+        <button type="button" className="lien" data-semblables-tous onClick={() => { const ids = objetsSemblables(etat, o.id, { tousNiveaux: true }); etatUi.selectionner(ids); etatUi.set({ aide: `${ids.length} objet(s) semblable(s) sur ${new Set(ids.map((i) => etat.objets[i]?.niveauId)).size} niveau(x) : les transformations s'appliquent à tous.` }); }}>tous les niveaux</button>
+      </p>
       <Classification key={`classif-${o.id}`} sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />
       {!(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && o.niveauId && <VersNiveau sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "zone" && <SyntheseZoneVue o={o as Occurrence<"zone">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
@@ -552,6 +559,7 @@ function SelectionMultiple({ sel, etat, readOnly, onCommandes }: { sel: Occurren
     <section className="inspecteur" aria-label="Inspecteur : sélection multiple">
       <header className="inspecteur-tete">
         <h3>{sel.length} objets sélectionnés</h3>
+        {new Set(sel.map((o) => o.niveauId)).size > 1 && <p className="inspecteur-aide" data-multi-niveaux={new Set(sel.map((o) => o.niveauId)).size}>Sur {new Set(sel.map((o) => o.niveauId)).size} niveaux (seuls ceux du niveau affiché sont visibles au plan).</p>}
       </header>
       <ul className="inspecteur-compte">
         {[...parClasse].map(([c, n]) => <li key={c}>{CLASSES[c as keyof typeof CLASSES]?.libelle ?? c} : {n}</li>)}

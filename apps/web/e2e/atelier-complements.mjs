@@ -2162,6 +2162,18 @@ await page.waitForSelector(".plan2d");
   check("vue 3D filaire : activée puis retirée (arêtes cachées en tirets)", actif && retire, `${actif} · ${retire}`);
 }
 
+// Sélection des semblables sur tous les niveaux (D-134) : murs du même type, sélection multi-niveaux.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  await selectionner(murA.id);
+  await page.locator("[data-semblables-tous]").click();
+  const n = Number(await page.locator("[data-multi-niveaux]").getAttribute("data-multi-niveaux", { timeout: 5000 }).catch(() => "0"));
+  const titre = (await page.locator(".inspecteur h3").first().textContent().catch(() => "")) ?? "";
+  check("semblables : murs du même type sélectionnés sur plusieurs niveaux", n > 1 && /objets sélectionnés/.test(titre), `${n} · ${titre}`);
+  await page.keyboard.press("Escape");
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];
