@@ -2108,6 +2108,23 @@ await page.waitForSelector(".plan2d");
   check("contrainte entre murs : perpendicularité ajoutée depuis l'inspecteur, murs résolus", r0.status === 200 && pv !== null, `${r0.status} · ${pv}`);
 }
 
+// Longueur saisie avec son unité (D-130) : « 250 mm » dans l'épaisseur d'un mur, convertie en 0,25 m.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  await selectionner(murA.id);
+  const champ = page.locator(`.inspecteur input[id="${murA.id}-epaisseur"]`);
+  await champ.fill("250 mm");
+  await champ.press("Enter");
+  let ep = null;
+  for (let k = 0; k < 30 && ep !== 0.25; k++) {
+    ep = (await modele(pid)).modele.objets[murA.id]?.params.epaisseur?.value ?? null;
+    if (ep !== 0.25) await page.waitForTimeout(500);
+  }
+  const affiche = await champ.inputValue().catch(() => "");
+  check("longueur saisie en millimètres : convertie explicitement en mètres (0,25 m)", ep === 0.25 && affiche === "0,25", `${ep} · ${affiche}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

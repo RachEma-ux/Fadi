@@ -202,3 +202,4 @@ Chaînes jointives proposées comme profils (`esquisse/chaines.test.ts`, e2e, D-
 Accrochage 3D de la mesure (e2e, D-127).
 Résolution champ par champ des conflits (`sync-champs.test.ts`, D-128).
 Contraintes avec des murs (`contrainte-murs.test.ts`, e2e, D-129).
+Longueurs saisies avec leur unité (`longueur-saisie.test.ts`, e2e, D-130).

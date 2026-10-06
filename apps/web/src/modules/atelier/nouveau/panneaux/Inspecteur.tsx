@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../../../lib/api";
-import { aire, chaineFermee, cleTremie, bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { aire, chaineFermee, cleTremie, bibliotheques, reconnaitreForme, pointsSpline, proposerPlancher, MOTIFS_HACHURE, MOTIF_HACHURE_DEFAUT, CLASSES, contourFerme, longueurSaisie, nombreSaisi, raisonVerrou, commandesNumerotationPieces, syntheseZone, compositionMur, FONCTIONS_COUCHE, type Commande, type CoucheParoi, type FonctionCouche, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
@@ -482,6 +482,7 @@ function Champ({ id, cle, valeur, etat, desactive, onValider }: { id: string; cl
       </div>
     );
   }
+  const lire = (x: string) => ((estGrandeur ? unite === "m" : valeur === null) ? longueurSaisie(x) : nombreSaisi(x));
   const valider = () => {
     const t = texte.trim();
     if (numerique) {
@@ -490,14 +491,15 @@ function Champ({ id, cle, valeur, etat, desactive, onValider }: { id: string; cl
         if (valeur === null || cle === "hauteur") onValider(null);
         return;
       }
-      // Un nombre ou un calcul (« 2,5 + 0,3 », D-049), évalué par l'analyseur sûr des scripts.
-      const n = nombreSaisi(t);
+      // Un nombre ou un calcul (« 2,5 + 0,3 », D-049), évalué par l'analyseur sûr des scripts ; une longueur peut
+      // porter son unité (« 250 mm », « 10 ft », « 3'6" », D-130), convertie explicitement en mètres.
+      const n = lire(t);
       if (n === null) return;
       setTexte(String(n).replace(".", ","));
       onValider(estGrandeur || valeur === null ? { value: n, unit: unite ?? "m" } : n);
     } else onValider(t === "" ? null : t);
   };
-  const inchange = numerique ? nombreSaisi(texte) === brut || (texte === "" && brut === null) : texte === (brut ?? "");
+  const inchange = numerique ? lire(texte) === brut || (texte === "" && brut === null) : texte === (brut ?? "");
   return (
     <div className="champ">
       <dt><label htmlFor={id}>{libelle}</label></dt>

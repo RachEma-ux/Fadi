@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { estFormeFermee, axesDesMurs, pointsEllipse, tremiesRetenues, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { estFormeFermee, longueurSaisie, axesDesMurs, pointsEllipse, tremiesRetenues, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -667,7 +667,8 @@ export function saisie(outil: string, texte: string, pts: Point2[], curseur: Poi
     cible = pt(Math.round((dernier.x + dx * Math.cos(a) - dy * Math.sin(a)) * 1e9) / 1e9, Math.round((dernier.y + dx * Math.sin(a) + dy * Math.cos(a)) * 1e9) / 1e9);
   }
   else {
-    const l = Number(t);
+    // Longueur avec son unité (D-130) : « 250mm », « 10ft », « 3'6" » convertis en mètres.
+    const l = longueurSaisie(t) ?? Number.NaN;
     if (!(l > 0)) return null;
     const dir = curseur && distance(curseur, dernier) > 1e-6 ? { x: (curseur.x - dernier.x) / distance(curseur, dernier), y: (curseur.y - dernier.y) / distance(curseur, dernier) } : { x: 1, y: 0 };
     cible = pt(dernier.x + dir.x * l, dernier.y + dir.y * l);
