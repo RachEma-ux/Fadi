@@ -3,6 +3,7 @@
  * avec provenance et statut, relations porteuses de sens, références topologiques, site (parcelle, emprise,
  * hypothèses, sources, structure déclarée). Objet immuable : les réducteurs retournent un nouvel état.
  */
+import type { Cintre } from "./cintres.js";
 import type { OuvrantPorte } from "./ouvrants.js";
 import type { Menuiserie } from "./menuiserie.js";
 import type { Classe } from "./ontologie.js";
@@ -77,6 +78,8 @@ export interface ParamsOuverture {
   ouvrant?: OuvrantPorte | null;
   /** Fenêtre et porte : menuiserie paramétrée (D-101, D-113) ; absente : panneau simple, menuiserie non évaluée. */
   menuiserie?: Menuiserie | null;
+  /** Haut cintré (D-141) : plein cintre, surbaissé ou ogive ; absent : baie rectangulaire. `hauteur` va jusqu'à la clé. */
+  cintre?: Cintre | null;
 }
 
 export interface Contour {

@@ -193,6 +193,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         </button>
       )}
       {o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.centre && (o as Occurrence<"esquisse">).params.rayon && !desactive && <AxesCentre key={`axes-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
+      {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <CintreBaie key={`cintre-${o.id}`} o={o as Occurrence<"fenetre">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "dalle" && <PenteDalle key={`pente-${o.id}`} o={o as Occurrence<"dalle">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "poteau" && <SectionPoteau key={`sec-${o.id}`} o={o as Occurrence<"poteau">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "escalier" && !desactive && <TremieEscalier o={o as Occurrence<"escalier">} etat={etat} onCommandes={onCommandes} />}
@@ -1593,6 +1594,40 @@ function TangentesCourbe({ o, onCommandes }: { o: Occurrence<"esquisse">; onComm
 }
 
 /** Menuiserie paramétrée d'une fenêtre (D-101) : valeurs saisies, aucune par défaut ; vide = non évaluée. */
+/** Haut de baie (D-141) : droit, plein cintre, surbaissé (flèche saisie) ou ogive ; la hauteur va jusqu'à la clé. */
+function CintreBaie({ o, desactive, onCommandes }: { o: Occurrence<"fenetre">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const c = o.params.cintre ?? null;
+  const [type, setType] = useState<string>(c?.type ?? "droit");
+  const [fleche, setFleche] = useState(c?.fleche ? String(c.fleche.value).replace(".", ",") : "");
+  const f = type === "surbaisse" ? longueurSaisie(fleche) : null;
+  const w = o.params.largeur.value;
+  const valide = type !== "surbaisse" || (f !== null && f > 0 && f < w / 2);
+  const libelles: Record<string, string> = { droit: "droit", "plein-cintre": "plein cintre", surbaisse: "surbaissé", ogive: "ogive" };
+  return (
+    <details className="inspecteur-historique" data-cintre-baie>
+      <summary>Haut de baie ({libelles[c?.type ?? "droit"]})</summary>
+      <div className="nav-formulaire-altimetrie">
+        <label>Forme
+          <select value={type} disabled={desactive} onChange={(e) => setType(e.target.value)} data-cintre-type>
+            <option value="droit">Droit (rectangulaire)</option>
+            <option value="plein-cintre">Plein cintre (demi-cercle)</option>
+            <option value="surbaisse">Arc surbaissé</option>
+            <option value="ogive">Ogive (arc brisé équilatéral)</option>
+          </select>
+        </label>
+        {type === "surbaisse" && <label>Flèche de l'arc (m)<input inputMode="decimal" value={fleche} disabled={desactive} onChange={(e) => setFleche(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-cintre-fleche /></label>}
+        {!valide && fleche !== "" && <p className="inspecteur-aide">Flèche entre 0 et la demi-largeur ({String(w / 2).replace(".", ",")} m) exclues.</p>}
+        <p className="inspecteur-aide">La hauteur de la baie est mesurée de l'allège à la clé de l'arc.</p>
+        {!desactive && (
+          <button type="button" disabled={!valide} data-cintre-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { cintre: type === "droit" ? null : type === "surbaisse" ? { type, fleche: { value: f, unit: "m" } } : { type } } } }], `Haut de baie de ${o.id}`)}>
+            Appliquer
+          </button>
+        )}
+      </div>
+    </details>
+  );
+}
+
 /** Pente d'une dalle (D-140) : angle (0 à 60°) et direction de montée (0° = +x) ; l'épaisseur reste verticale. */
 function PenteDalle({ o, desactive, onCommandes }: { o: Occurrence<"dalle">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
   const p = o.params.pente ?? null;

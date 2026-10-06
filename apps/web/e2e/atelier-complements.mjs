@@ -2251,6 +2251,31 @@ await page.waitForSelector(".plan2d");
   check("dalle inclinée : pente de 5° vers 90° enregistrée", r0.status === 200 && pente?.angle?.value === 5 && pente?.direction?.value === 90, `${r0.status} · ${JSON.stringify(pente)}`);
 }
 
+// Baie cintrée (D-141) : arc surbaissé choisi dans l'inspecteur d'une fenêtre, flèche saisie.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const x0 = murA.params.a.x - 330;
+  const y0 = murA.params.a.y - 330;
+  const r0 = await lot(pid, `cintre-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "mur.tracer", params: { id: "mur-cintre-e2e", niveauId: murA.niveauId, a: P(x0, y0), b: P(x0 + 5, y0), epaisseur: m(0.2), hauteur: m(3) } },
+    { type: "ouverture.poser", params: { id: "baie-cintre-e2e", classe: "fenetre", murHoteId: "mur-cintre-e2e", position: 0.5, largeur: m(1.2), hauteur: m(1.6), allege: m(0.9) } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("baie-cintre-e2e");
+  await page.locator("[data-cintre-baie] > summary").click();
+  await page.locator("[data-cintre-type]").selectOption("surbaisse");
+  await page.locator("[data-cintre-fleche]").fill("25 cm");
+  await page.locator("[data-cintre-appliquer]").click();
+  let cintre = null;
+  for (let k = 0; k < 30 && !cintre; k++) {
+    cintre = (await modele(pid)).modele.objets["baie-cintre-e2e"]?.params.cintre ?? null;
+    if (!cintre) await page.waitForTimeout(500);
+  }
+  check("baie cintrée : arc surbaissé de flèche 0,25 m enregistré", r0.status === 200 && cintre?.type === "surbaisse" && Math.abs((cintre?.fleche?.value ?? 0) - 0.25) < 1e-9, `${r0.status} · ${JSON.stringify(cintre)}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

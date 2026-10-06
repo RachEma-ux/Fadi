@@ -7,6 +7,7 @@ import { contourFerme } from "./changer-classe.js";
 import { profilFerme } from "./hachures-associees.js";
 import { lireOuvrant } from "../ouvrants.js";
 import { lireMenuiserie } from "../menuiserie.js";
+import { lireCintre, type Cintre } from "../cintres.js";
 import { distance, longueurAxeMur } from "../geometrie.js";
 import { USAGES_DALLE, type ModeleAtelier, type ParamsParClasse } from "../modele.js";
 import type { Classe } from "../ontologie.js";
@@ -292,7 +293,15 @@ function ouverture(etat: ModeleAtelier, p: Brut): ParamsParClasse["porte"] {
     hauteur: lire.longueur(p, "hauteur", { strict: true })!,
     allege: lire.longueur(p, "allege", { optionnel: true }),
     repere: lire.chaineOuNull(p, "repere"),
+    ...cintreOuverture(p, largeur.value),
   };
+}
+
+/** Haut cintré (D-141) : absent ou null, baie rectangulaire (clé omise). */
+function cintreOuverture(p: Brut, largeur: number): { cintre?: Cintre } {
+  const hauteur = lire.longueur(p, "hauteur", { strict: true })!.value;
+  const c = lireCintre(p["cintre"], largeur, hauteur);
+  return c ? { cintre: c } : {};
 }
 
 /**

@@ -4,6 +4,7 @@
  * jamais remplacée. Ordre déterministe (niveau, puis identifiant) : deux générations à la même révision donnent
  * les mêmes octets.
  */
+import { aireBaie, LIBELLES_CINTRE } from "../cintres.js";
 import { distance } from "../geometrie.js";
 import type { ModeleAtelier, Occurrence } from "../modele.js";
 import { niveauxOrdonnes, objetsDeClasse, ouverturesDuMur } from "../modele.js";
@@ -45,7 +46,7 @@ function ouvertures(etat: ModeleAtelier, classe: "porte" | "fenetre"): Cellule[]
   for (const n of niveauxOrdonnes(etat)) {
     for (const o of objetsDeClasse(etat, classe, n.id).sort(parId)) {
       const mur = etat.objets[o.params.murHoteId];
-      lignes.push([n.nom, o.params.repere ?? null, o.id, mur?.id ?? `${o.params.murHoteId} (absent)`, r3(o.params.largeur.value), r3(o.params.hauteur.value), o.params.allege ? r3(o.params.allege.value) : null, o.definitionId ?? null, o.phase ?? null]);
+      lignes.push([n.nom, o.params.repere ?? null, o.id, mur?.id ?? `${o.params.murHoteId} (absent)`, r3(o.params.largeur.value), r3(o.params.hauteur.value), o.params.allege ? r3(o.params.allege.value) : null, o.params.cintre ? LIBELLES_CINTRE[o.params.cintre.type] : "droit", o.definitionId ?? null, o.phase ?? null]);
     }
   }
   return lignes;
@@ -61,7 +62,7 @@ function surfaceNette(etat: ModeleAtelier, m: Occurrence<"mur">): number | null 
     if (bas !== undefined && haut !== undefined && haut > bas) H = haut - bas;
   }
   if (H === null) return null;
-  const vides = ouverturesDuMur(etat, m.id).reduce((s, o) => s + o.params.largeur.value * o.params.hauteur.value, 0);
+  const vides = ouverturesDuMur(etat, m.id).reduce((s, o) => s + aireBaie(o.params.cintre, o.params.largeur.value, o.params.hauteur.value), 0); // baie cintrée : aire exacte du profil (D-141)
   return r2(Math.max(0, L * H - vides));
 }
 
@@ -82,10 +83,11 @@ export function genererTableau(etat: ModeleAtelier, type: TypeTableau): Tableau 
     }
     case "portes":
     case "fenetres":
-      colonnes = ["Niveau", "Repère", "Identifiant", "Mur hôte", "Largeur", "Hauteur", "Allège", "Type", "Phase"];
-      unites = [null, null, null, null, "m", "m", "m", null, null];
+      // Haut de baie (D-141) : « droit » ou le cintre ; la hauteur va jusqu'à la clé.
+      colonnes = ["Niveau", "Repère", "Identifiant", "Mur hôte", "Largeur", "Hauteur", "Allège", "Haut", "Type", "Phase"];
+      unites = [null, null, null, null, "m", "m", "m", null, null, null];
       lignes = ouvertures(etat, type === "portes" ? "porte" : "fenetre");
-      total = ["Total", null, `${lignes.length} ${type === "portes" ? "porte(s)" : "fenêtre(s)"}`, null, null, null, null, null, null];
+      total = ["Total", null, `${lignes.length} ${type === "portes" ? "porte(s)" : "fenêtre(s)"}`, null, null, null, null, null, null, null];
       break;
     case "murs": {
       colonnes = ["Niveau", "Identifiant", "Type", "Extérieur", "Longueur d'axe", "Épaisseur", "Hauteur", "Surface nette d'une face", "Phase"];

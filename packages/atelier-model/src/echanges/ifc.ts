@@ -18,6 +18,7 @@
 import { referentielDu } from "../commandes/referentiels.js";
 import { altimetrieDu } from "../commandes/altimetrie.js";
 import { aireNette, facesMur, flecheCorde, hoteOuverture, normalise, perp, pointsPolyligne, pointsRenflement, sub, type Vec } from "../geometrie.js";
+import { profilBaie } from "../cintres.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, maillageObjet } from "../projection/maillage.js";
@@ -249,6 +250,16 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
     const position = s.ajouter(`IFCAXIS2PLACEMENT3D(${ref(pt3(o.x, o.y, za))},${ref(axeZ)},${ref(dir3(u.x, u.y, 0))})`);
     return s.ajouter(`IFCEXTRUDEDAREASOLID(${ref(profil)},${ref(position)},${ref(axeZ)},${reelStep(zb - za)})`);
   };
+  /**
+   * Profil d'élévation (s le long de `u`, z) extrudé à travers l'épaisseur, des décalages o0 à o1 selon perp(u)
+   * (baies cintrées, D-141) : repère local X = u, Z = −perp(u), donc Y = haut.
+   */
+  const extrusionElevation = (o: Vec, u: Vec, profil: readonly { s: number; z: number }[], o0: number, o1: number) => {
+    const n = perp(u);
+    const prof = s.ajouter(`IFCARBITRARYCLOSEDPROFILEDEF(.AREA.,$,${ref(polyligne2(profil.map((q) => ({ x: q.s, y: q.z })), true))})`);
+    const position = s.ajouter(`IFCAXIS2PLACEMENT3D(${ref(pt3(o.x + n.x * o1, o.y + n.y * o1, 0))},${ref(dir3(-n.x, -n.y, 0))},${ref(dir3(u.x, u.y, 0))})`);
+    return s.ajouter(`IFCEXTRUDEDAREASOLID(${ref(prof)},${ref(position)},${ref(axeZ)},${reelStep(o1 - o0)})`);
+  };
   const corpsSolide = (items: number[]) => s.ajouter(`IFCSHAPEREPRESENTATION(${ref(corps)},'Body','SweptSolid',${liste(items)})`);
   /** Maillage pur → IfcTriangulatedFaceSet en coordonnées de l'étage. */
   const corpsMaille = (o: OccurrenceQuelconque): number | null => {
@@ -354,7 +365,9 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
           const w = ouv.params.largeur.value;
           const zb = (etendue?.[0] ?? z0(o.niveauId)) - z0(o.niveauId) + (ouv.params.allege?.value ?? 0);
           const marge = 0.01 + (o.params.renflement ? flecheCorde(o.params, ouv.params.largeur.value) : 0);
-          const vide = boite(va, vu, c - w / 2, c + w / 2, Math.min(oG, oD) - marge, Math.max(oG, oD) + marge, zb, zb + ouv.params.hauteur.value);
+          const cintre = ouv.params.cintre;
+          const profilEn = (s0: number) => profilBaie(cintre, w, ouv.params.hauteur.value).map((q) => ({ s: s0 + q.s, z: zb + q.z }));
+          const vide = cintre ? extrusionElevation(va, vu, profilEn(c - w / 2), Math.min(oG, oD) - marge, Math.max(oG, oD) + marge) : boite(va, vu, c - w / 2, c + w / 2, Math.min(oG, oD) - marge, Math.max(oG, oD) + marge, zb, zb + ouv.params.hauteur.value);
           const ouverture = s.ajouter(`IFCOPENINGELEMENT(${gid(`vide|${ouv.id}`)},$,${chaineStep(`Vide ${ouv.params.repere ?? ouv.id}`)},$,$,${ref(placementDe(o.niveauId))},${ref(forme([corpsSolide([vide])]))},$,.OPENING.)`);
           s.ajouter(`IFCRELVOIDSELEMENT(${gid(`rel-vide|${ouv.id}`)},$,$,$,${ref(id)},${ref(ouverture)})`);
           if (ouv.classe === "ouverture") {
@@ -384,15 +397,16 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
             operation = ouvrant.type === "double" ? ".DOUBLE_DOOR_SINGLE_SWING." : ouvrant.type === "coulissante" ? (gaucheVu ? ".SLIDING_TO_LEFT." : ".SLIDING_TO_RIGHT.") : gaucheVu ? ".SINGLE_SWING_LEFT." : ".SINGLE_SWING_RIGHT.";
             const etage = o.niveauId ? etages.get(o.niveauId) : undefined;
             placementRemplissage = s.ajouter(`IFCLOCALPLACEMENT(${ref(etage ? etage.placement : placementBat)},${ref(s.ajouter(`IFCAXIS2PLACEMENT3D(${ref(pt3(origine.x, origine.y, 0))},${ref(axeZ)},${ref(dir3(x.x, x.y, 0))})`))})`);
-            panneau = boite({ x: 0, y: 0 }, { x: 1, y: 0 }, 0, w, -ep / 2, ep / 2, zb, zb + ouv.params.hauteur.value);
+            panneau = cintre ? extrusionElevation({ x: 0, y: 0 }, { x: 1, y: 0 }, profilEn(0), -ep / 2, ep / 2) : boite({ x: 0, y: 0 }, { x: 1, y: 0 }, 0, w, -ep / 2, ep / 2, zb, zb + ouv.params.hauteur.value);
           } else {
-            panneau = boite(va, vu, c - w / 2, c + w / 2, centre - ep / 2, centre + ep / 2, zb, zb + ouv.params.hauteur.value);
+            panneau = cintre ? extrusionElevation(va, vu, profilEn(c - w / 2), centre - ep / 2, centre + ep / 2) : boite(va, vu, c - w / 2, c + w / 2, centre - ep / 2, centre + ep / 2, zb, zb + ouv.params.hauteur.value);
             placementRemplissage = placementDe(o.niveauId);
           }
           // Menuiserie paramétrée (D-101) : corps en dormant, montants et vitrages au lieu du panneau simple.
           const menuiserie = ouv.classe === "fenetre" || ouv.classe === "porte" ? ouv.params.menuiserie : null;
           // Porte à sens renseigné : placement propre à la porte, le corps détaillé n'y est pas réécrit (panneau seul).
-          const corps = menuiserie && !ouvrant ? corpsMenuiserie(w, ouv.params.hauteur.value, menuiserie, ep, ouv.classe === "porte").map((k) => boite(va, vu, c - w / 2 + k.s0, c - w / 2 + k.s1, centre - k.e / 2, centre + k.e / 2, zb + k.z0, zb + k.z1)) : [panneau];
+          // Baie cintrée (D-141) : panneau au profil de la baie, la menuiserie détaillée n'y est pas réécrite.
+          const corps = menuiserie && !ouvrant && !cintre ? corpsMenuiserie(w, ouv.params.hauteur.value, menuiserie, ep, ouv.classe === "porte").map((k) => boite(va, vu, c - w / 2 + k.s0, c - w / 2 + k.s1, centre - k.e / 2, centre + k.e / 2, zb + k.z0, zb + k.z1)) : [panneau];
           const remplissage = s.ajouter(`${classeIfc}(${gid(ouv.id)},$,${opt(ouv.params.repere ?? ouv.id)},$,$,${ref(placementRemplissage)},${ref(forme([corpsSolide(corps)]))},${opt(ouv.params.repere)},${reelStep(ouv.params.hauteur.value)},${reelStep(w)},${ouv.classe === "porte" ? ".DOOR." : ".WINDOW."},${operation},$)`);
           s.ajouter(`IFCRELFILLSELEMENT(${gid(`rel-remplit|${ouv.id}`)},$,$,$,${ref(ouverture)},${ref(remplissage)})`);
           produits.set(ouv.id, remplissage);

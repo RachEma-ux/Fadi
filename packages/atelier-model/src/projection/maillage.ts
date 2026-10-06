@@ -9,6 +9,7 @@
  * produit aucun volume : l'objet reste en plan, rien n'est inventé.
  */
 import { contenuPlace, contoursArchitecture } from "../blocs-places.js";
+import { arcCintre, flecheCintre, profilBaie } from "../cintres.js";
 import { aireSignee, facesMur, hoteOuverture, longueurAxeMur, normalise, perp, pointsArc, sub, type Vec } from "../geometrie.js";
 import { contourMurCourbeRaccorde, raccordMur } from "../raccords.js";
 import { corpsMenuiserie } from "../menuiserie.js";
@@ -220,6 +221,26 @@ class Tampon {
     const ids = [contour, ...trous].flat().map((p) => this.sommet(p.x, p.y, z));
     for (let k = 0; k < tri.length; k += 3) this.indices.push(ids[tri[k]!]!, ids[tri[k + 1]!]!, ids[tri[k + 2]!]!);
   }
+  /**
+   * Profil d'élévation épaissi (D-141) : polygone (s le long de `u`, z) en sens trigonométrique, extrudé selon `n`
+   * entre les décalages o0 et o1 (baies cintrées, écoinçons au-dessus d'un arc).
+   */
+  profilEpais(origine: Vec, u: Vec, n: Vec, profil: readonly { s: number; z: number }[], o0: number, o1: number): void {
+    if (profil.length < 3 || !(o1 > o0)) return;
+    const plan = profil.map((q) => ({ x: q.s, y: q.z }));
+    const tri = trianguler(plan, []);
+    const p = (q: { s: number; z: number }, o: number) => this.sommet(origine.x + u.x * q.s + n.x * o, origine.y + u.y * q.s + n.y * o, q.z);
+    const avant = profil.map((q) => p(q, o0));
+    const arriere = profil.map((q) => p(q, o1));
+    for (let k = 0; k < tri.length; k += 3) {
+      this.indices.push(avant[tri[k]!]!, avant[tri[k + 1]!]!, avant[tri[k + 2]!]!);
+      this.indices.push(arriere[tri[k]!]!, arriere[tri[k + 2]!]!, arriere[tri[k + 1]!]!);
+    }
+    for (let i = 0; i < profil.length; i++) {
+      const j = (i + 1) % profil.length;
+      this.quad(arriere[i]!, arriere[j]!, avant[j]!, avant[i]!);
+    }
+  }
   /** Boîte orientée le long d'un axe : abscisses s0..s1 sur `u`, décalages o0..o1 sur `n`, hauteurs z0..z1. */
   boite(origine: Vec, u: Vec, n: Vec, s0: number, s1: number, o0: number, o1: number, z0: number, z1: number): void {
     if (!(s1 > s0) || !(o1 > o0) || !(z1 > z0)) return;
@@ -295,8 +316,10 @@ function murMaillage(etat: ModeleAtelier, mur: Occurrence<"mur">, t: Tampon): vo
   const oG = (f.gauche[0].x - a.x) * n.x + (f.gauche[0].y - a.y) * n.y;
   const oD = (f.droite[0].x - a.x) * n.x + (f.droite[0].y - a.y) * n.y;
   const [o0, o1] = [Math.min(oG, oD), Math.max(oG, oD)];
-  // Vides des ouvertures hébergées, en abscisse le long de l'axe.
-  const vides = videsOuvertures(etat, mur, L, z0);
+  // Vides des ouvertures hébergées, en abscisse le long de l'axe ; écoinçons des baies cintrées (D-141).
+  const ecoincons: { s: number; z: number }[][] = [];
+  const vides = videsOuvertures(etat, mur, L, z0, ecoincons);
+  for (const tri of ecoincons) if (tri.every((q) => q.z <= z1 + 1e-9)) t.profilEpais(a, u, n, tri, o0, o1);
   const coupures = [...new Set([0, L, ...vides.flatMap((v) => [v.s0, v.s1])])].filter((s) => s >= 0 && s <= L).sort((x, y) => x - y);
   const r: { gauche: [number, number]; droite: [number, number]; pointes?: [Vec | null, Vec | null] } = raccordMur(etat, mur) ?? { gauche: [0, L], droite: [0, L] };
   for (let k = 0; k + 1 < coupures.length; k++) {
@@ -326,14 +349,31 @@ function murMaillage(etat: ModeleAtelier, mur: Occurrence<"mur">, t: Tampon): vo
   }
 }
 
-/** Vides des ouvertures d'un mur, en abscisse le long de l'axe (corde ou arc) et en altitude. */
-function videsOuvertures(etat: ModeleAtelier, mur: Occurrence<"mur">, L: number, z0: number): { s0: number; s1: number; zb: number; zt: number }[] {
+/**
+ * Vides des ouvertures d'un mur, en abscisse le long de l'axe (corde ou arc) et en altitude. Baie cintrée (D-141) :
+ * une tranche par corde de l'arc, vidée jusqu'au plus haut de ses deux extrémités ; `ecoincons` rend les triangles
+ * pleins entre la corde et ce plus haut (mur droit : ils referment exactement le polygone de l'arc).
+ */
+function videsOuvertures(etat: ModeleAtelier, mur: Occurrence<"mur">, L: number, z0: number, ecoincons?: { s: number; z: number }[][]): { s0: number; s1: number; zb: number; zt: number }[] {
   const vides: { s0: number; s1: number; zb: number; zt: number }[] = [];
   for (const o of Object.values(etat.objets)) {
     if ((o.classe !== "porte" && o.classe !== "fenetre" && o.classe !== "ouverture") || o.params.murHoteId !== mur.id) continue;
     const c = o.params.position * L;
     const zb = z0 + (o.params.allege?.value ?? 0);
-    vides.push({ s0: Math.max(0, c - o.params.largeur.value / 2), s1: Math.min(L, c + o.params.largeur.value / 2), zb, zt: zb + o.params.hauteur.value });
+    const w = o.params.largeur.value;
+    if (!o.params.cintre) {
+      vides.push({ s0: Math.max(0, c - w / 2), s1: Math.min(L, c + w / 2), zb, zt: zb + o.params.hauteur.value });
+      continue;
+    }
+    const arc = arcCintre(o.params.cintre, w, o.params.hauteur.value).map((q) => ({ s: c - w / 2 + q.s, z: zb + q.z })).reverse();
+    for (let k = 0; k + 1 < arc.length; k++) {
+      const p = arc[k]!;
+      const q = arc[k + 1]!;
+      if (q.s - p.s < 1e-9) continue;
+      vides.push({ s0: Math.max(0, p.s), s1: Math.min(L, q.s), zb, zt: Math.max(p.z, q.z) });
+      // Triangle au-dessus de la corde, sous le plus haut, en sens trigonométrique (s, z).
+      if (ecoincons && Math.abs(p.z - q.z) > 1e-9) ecoincons.push(p.z < q.z ? [p, q, { s: p.s, z: q.z }] : [p, q, { s: q.s, z: p.z }]);
+    }
   }
   return vides;
 }
@@ -359,9 +399,24 @@ function ouvertureMaillage(etat: ModeleAtelier, o: Occurrence<"porte" | "fenetre
   const zb = etendue[0] + (o.params.allege?.value ?? 0);
   // Menuiserie paramétrée (D-101) : dormant, montants et vitrages ; sinon un panneau simple.
   const m = o.classe === "fenetre" || o.classe === "porte" ? o.params.menuiserie : null;
+  const cintre = o.params.cintre;
+  const w = o.params.largeur.value;
+  const h = o.params.hauteur.value;
+  const s0 = c - w / 2;
+  // Baie cintrée (D-141) : panneau au profil de la baie ; avec menuiserie, les pièces s'arrêtent aux naissances et un
+  // tympan cintré ferme l'arc.
+  const naissance = cintre ? h - flecheCintre(cintre, w) : h;
   if (m) {
-    const s0 = c - o.params.largeur.value / 2;
-    for (const k of corpsMenuiserie(o.params.largeur.value, o.params.hauteur.value, m, e, o.classe === "porte")) t.boite(a, u, n, s0 + k.s0, s0 + k.s1, centre - k.e / 2, centre + k.e / 2, zb + k.z0, zb + k.z1);
+    for (const k of corpsMenuiserie(w, h, m, e, o.classe === "porte")) {
+      const z1 = Math.min(k.z1, naissance);
+      if (z1 > k.z0 + 1e-9) t.boite(a, u, n, s0 + k.s0, s0 + k.s1, centre - k.e / 2, centre + k.e / 2, zb + k.z0, zb + z1);
+    }
+    // L'arc, de la naissance droite à la naissance gauche, refermé par sa corde : sens trigonométrique.
+    if (cintre) t.profilEpais(a, u, n, arcCintre(cintre, w, h).map((q) => ({ s: s0 + q.s, z: zb + q.z })), centre - e / 2, centre + e / 2);
+    return;
+  }
+  if (cintre) {
+    t.profilEpais(a, u, n, profilBaie(cintre, w, h).map((q) => ({ s: s0 + q.s, z: zb + q.z })), centre - e / 2, centre + e / 2);
     return;
   }
   t.boite(a, u, n, c - o.params.largeur.value / 2, c + o.params.largeur.value / 2, centre - e / 2, centre + e / 2, zb, zb + o.params.hauteur.value);
