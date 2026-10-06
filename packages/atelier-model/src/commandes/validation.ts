@@ -8,7 +8,8 @@ import { profilFerme } from "./hachures-associees.js";
 import { lireOuvrant } from "../ouvrants.js";
 import { lireMenuiserie } from "../menuiserie.js";
 import { lireCintre, type Cintre } from "../cintres.js";
-import { distance, longueurAxeMur } from "../geometrie.js";
+import { distance, longueurAxeMur, pointDansPolygone } from "../geometrie.js";
+import { anneauRetombee } from "../dalles.js";
 import { USAGES_DALLE, type ModeleAtelier, type ParamsParClasse } from "../modele.js";
 import type { Classe } from "../ontologie.js";
 import { TOLERANCE_REDUCTEUR, type Longueur } from "../unites.js";
@@ -93,7 +94,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
   ouverture: (etat, p) => ouverture(etat, p),
   dalle(_etat, p) {
     const usage = p["usage"] === undefined || p["usage"] === null ? null : lire.enumeration(p, "usage", USAGES_DALLE);
-    return { ...contour(p), epaisseur: lire.longueur(p, "epaisseur", { strict: true })!, decalageBase: lire.longueur(p, "decalageBase", { optionnel: true }) ?? { value: 0, unit: "m" }, nom: lire.chaineOuNull(p, "nom"), ...(usage ? { usage } : {}), ...penteDalle(p) };
+    return { ...contour(p), epaisseur: lire.longueur(p, "epaisseur", { strict: true })!, decalageBase: lire.longueur(p, "decalageBase", { optionnel: true }) ?? { value: 0, unit: "m" }, nom: lire.chaineOuNull(p, "nom"), ...(usage ? { usage } : {}), ...penteDalle(p), ...sensDalle(p), ...retombeeDalle(p) };
   },
   toiture(_etat, p) {
     return {
@@ -390,6 +391,30 @@ function penteDalle(p: Brut): { pente?: { angle: { value: number; unit: "deg" };
   if (!(angle.value > 0 && angle.value <= 60)) throw new ErreurCommande("invalide", "pente.angle", "pente entre 0 (exclu) et 60°");
   const direction = lire.angle(q, "direction", { optionnel: true }) ?? { value: 0, unit: "deg" as const };
   return { pente: { angle: { value: angle.value, unit: "deg" }, direction: { value: direction.value, unit: "deg" } } };
+}
+
+/** Sens de l'épaisseur d'une dalle (D-144) : « bas » ou absent (vers le haut, clé omise). */
+function sensDalle(p: Brut): { sens?: "bas" } {
+  const v = p["sens"];
+  if (v === undefined || v === null || v === "haut") return {};
+  if (v !== "bas") throw new ErreurCommande("invalide", "sens", "sens de l'épaisseur : « haut » ou « bas »");
+  return { sens: "bas" };
+}
+
+/** Retombée de rive (D-144) : largeur et hauteur > 0 ; l'anneau doit tenir dans la dalle sans toucher ses trémies. */
+function retombeeDalle(p: Brut): { retombee?: { largeur: Longueur; hauteur: Longueur } } {
+  const brut = p["retombee"];
+  if (brut === undefined || brut === null) return {};
+  if (typeof brut !== "object" || Array.isArray(brut)) throw new ErreurCommande("invalide", "retombee", "retombée : { largeur, hauteur }");
+  const q = brut as Brut;
+  const largeur = lire.longueur(q, "largeur", { strict: true })!;
+  const hauteur = lire.longueur(q, "hauteur", { strict: true })!;
+  if (p["pente"] !== undefined && p["pente"] !== null) throw new ErreurCommande("invalide", "retombee", "retombée de rive : non prise en charge sur une dalle inclinée");
+  const c = contour(p);
+  const anneau = anneauRetombee({ contour: c.contour, retombee: { largeur, hauteur } });
+  if (!anneau) throw new ErreurCommande("invalide", "retombee.largeur", "retombée plus large que la dalle ne le permet (contour intérieur retourné)");
+  for (const [i, t] of c.trous.entries()) if (t.some((s) => !pointDansPolygone(s, anneau.interieur))) throw new ErreurCommande("invalide", "retombee.largeur", `la trémie ${i + 1} touche la retombée de rive`);
+  return { retombee: { largeur, hauteur } };
 }
 
 /** Formes de section des poteaux qui demandent une épaisseur de paroi (D-139). */

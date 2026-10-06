@@ -19,6 +19,7 @@ import { polygoneMurRaccorde } from "../raccords.js";
 import { battantPorte, symbolePorte } from "../ouvrants.js";
 import { separationsCouches } from "../compositions.js";
 import { espacesTraversant } from "../espaces-volume.js";
+import { anneauRetombee } from "../dalles.js";
 import { extremitesCotation } from "../references.js";
 import type { Angle, Longueur, Point2 } from "../unites.js";
 import { ErreurCommande, lire } from "../commandes/base.js";
@@ -507,6 +508,12 @@ function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue, options: 
     for (const sep of separationsCouches(etat, o, vides)) c.ligne(sep.a, sep.b, "fin", o.id);
   }
   symbolesPlan(c, etat, objets);
+  // Retombées de rive (D-144) : sous la dalle, donc cachées vues du dessus : contour intérieur en trait caché.
+  for (const o of objets) {
+    if (o.classe !== "dalle") continue;
+    const r = anneauRetombee(o.params);
+    if (r) c.poly(r.interieur, true, "cache", null, o.id);
+  }
   // Espaces d'un niveau inférieur qui traversent celui-ci (D-142 : double hauteur, vide, gaine) : contour en trait
   // caché et mention « vide », sans déduction de surface.
   for (const tr of espacesTraversant(etat, niveau.id)) {

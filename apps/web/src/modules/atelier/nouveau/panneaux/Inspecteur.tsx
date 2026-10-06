@@ -195,6 +195,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.centre && (o as Occurrence<"esquisse">).params.rayon && !desactive && <AxesCentre key={`axes-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <CintreBaie key={`cintre-${o.id}`} o={o as Occurrence<"fenetre">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "espace" && <EspaceNiveaux key={`espn-${o.id}`} o={o as Occurrence<"espace">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
+      {o.classe === "dalle" && <SensRetombeeDalle key={`retombee-${o.id}`} o={o as Occurrence<"dalle">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "dalle" && <PenteDalle key={`pente-${o.id}`} o={o as Occurrence<"dalle">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "poteau" && <SectionPoteau key={`sec-${o.id}`} o={o as Occurrence<"poteau">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "escalier" && !desactive && <TremieEscalier o={o as Occurrence<"escalier">} etat={etat} onCommandes={onCommandes} />}
@@ -1649,6 +1650,40 @@ function CintreBaie({ o, desactive, onCommandes }: { o: Occurrence<"fenetre">; d
         <p className="inspecteur-aide">La hauteur de la baie est mesurée de l'allège à la clé de l'arc.</p>
         {!desactive && (
           <button type="button" disabled={!valide} data-cintre-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { cintre: type === "droit" ? null : type === "surbaisse" ? { type, fleche: { value: f, unit: "m" } } : { type } } } }], `Haut de baie de ${o.id}`)}>
+            Appliquer
+          </button>
+        )}
+      </div>
+    </details>
+  );
+}
+
+/** Sens de l'épaisseur et retombée de rive d'une dalle (D-144) : valeurs saisies, aucune par défaut. */
+function SensRetombeeDalle({ o, desactive, onCommandes }: { o: Occurrence<"dalle">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const r = o.params.retombee ?? null;
+  const [sens, setSens] = useState<string>(o.params.sens ?? "haut");
+  const [largeur, setLargeur] = useState(r ? String(r.largeur.value).replace(".", ",") : "");
+  const [hauteur, setHauteur] = useState(r ? String(r.hauteur.value).replace(".", ",") : "");
+  const l = longueurSaisie(largeur);
+  const h = longueurSaisie(hauteur);
+  const avecRetombee = largeur !== "" || hauteur !== "";
+  const valide = !avecRetombee || (l !== null && l > 0 && h !== null && h > 0);
+  const f = (v: number) => String(v).replace(".", ",");
+  return (
+    <details className="inspecteur-historique" data-dalle-retombee>
+      <summary>Épaisseur {o.params.sens === "bas" ? "sous la base" : "sur la base"}{r ? ` · retombée ${f(r.largeur.value)} × ${f(r.hauteur.value)} m` : ""}</summary>
+      <div className="nav-formulaire-altimetrie">
+        <label>Sens de l'épaisseur
+          <select value={sens} disabled={desactive} onChange={(e) => setSens(e.target.value)} data-dalle-sens>
+            <option value="haut">Vers le haut (dessous à la base)</option>
+            <option value="bas">Vers le bas (dessus à la base)</option>
+          </select>
+        </label>
+        <label>Retombée de rive : largeur (m)<input inputMode="decimal" value={largeur} disabled={desactive} onChange={(e) => setLargeur(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-retombee-champ="largeur" /></label>
+        <label>Retombée de rive : hauteur sous la dalle (m)<input inputMode="decimal" value={hauteur} disabled={desactive} onChange={(e) => setHauteur(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-retombee-champ="hauteur" /></label>
+        {!valide && <p className="inspecteur-aide">Largeur et hauteur de la retombée toutes deux positives, ou toutes deux vides (sans retombée).</p>}
+        {!desactive && (
+          <button type="button" disabled={!valide} data-dalle-retombee-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { sens: sens === "bas" ? "bas" : null, retombee: avecRetombee ? { largeur: { value: l, unit: "m" }, hauteur: { value: h, unit: "m" } } : null } } }], `Épaisseur et retombée de ${o.id}`)}>
             Appliquer
           </button>
         )}

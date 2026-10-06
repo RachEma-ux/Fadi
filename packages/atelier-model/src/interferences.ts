@@ -8,6 +8,7 @@
  * Contrôle à la demande (bouton « Contrôler les interférences ») : des corps génériques se recouvrent souvent à dessein
  * (rampes en gradins, garde-corps posés), ce ne sont donc pas des collisions d'architecture permanentes.
  */
+import { anneauRetombee, etendueDalle } from "./dalles.js";
 import { aireSignee, cross, normalise, perp, polygoneMur, polygoneMurCourbe, sub, type Vec } from "./geometrie.js";
 import type { ModeleAtelier, OccurrenceQuelconque } from "./modele.js";
 import { etendueMur, trianguler } from "./projection/maillage.js";
@@ -73,8 +74,10 @@ export function corpsDe(etat: ModeleAtelier, o: OccurrenceQuelconque): Corps[] {
     }
     case "dalle": {
       if (o.params.pente) return []; // dalle inclinée (D-140) : prisme non vertical, non évaluée ici
-      const z0 = z + o.params.decalageBase.value;
-      return [c(o.params.contour, o.params.trous, z0, z0 + o.params.epaisseur.value)];
+      // Sens de l'épaisseur et retombée de rive (D-144).
+      const e = etendueDalle(o.params);
+      const r = anneauRetombee(o.params);
+      return [c(o.params.contour, o.params.trous, z + e.bas, z + e.haut), ...(r && o.params.retombee ? [c(r.contour, [r.interieur], z + e.bas - o.params.retombee.hauteur.value, z + e.bas)] : [])];
     }
     default:
       return [];

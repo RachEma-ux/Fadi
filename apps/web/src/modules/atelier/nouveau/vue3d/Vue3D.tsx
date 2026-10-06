@@ -6,7 +6,7 @@
  */
 import type { Vector3 } from "three";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CLASSES, areteLaPlusProche, etendueMur, importerBcf, lireZip, maillageObjet, normaleExterieure, pousserArete, vues3D, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { CLASSES, areteLaPlusProche, etendueDalle, etendueMur, importerBcf, lireZip, maillageObjet, normaleExterieure, pousserArete, vues3D, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { Scene3D, type OptionsScene, type Presentation, type VueTechnique } from "./scene3d";
 
@@ -89,8 +89,10 @@ export function faceLaterale(etat: ModeleAtelier, o: OccurrenceQuelconque, p: { 
   if (o.classe === "dalle") {
     if (o.params.pente) return null; // dalle inclinée (D-140) : faces latérales non verticales
     contour = o.params.contour;
-    z0 = z + o.params.decalageBase.value;
-    z1 = z0 + o.params.epaisseur.value;
+    // Sens de l'épaisseur (D-144) : le dessus peut être à la base.
+    const e = etendueDalle(o.params);
+    z0 = z + e.bas;
+    z1 = z + e.haut;
   } else if (o.classe === "toiture" && o.params.type === "plate") {
     contour = o.params.contour;
     z0 = z + o.params.decalageBase.value;

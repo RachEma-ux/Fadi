@@ -2276,6 +2276,33 @@ await page.waitForSelector(".plan2d");
   check("baie cintrée : arc surbaissé de flèche 0,25 m enregistré", r0.status === 200 && cintre?.type === "surbaisse" && Math.abs((cintre?.fleche?.value ?? 0) - 0.25) < 1e-9, `${r0.status} · ${JSON.stringify(cintre)}`);
 }
 
+// Dalle à retombée de rive, épaisseur vers le bas (D-144) : saisie dans l'inspecteur, rive cachée tracée au plan.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const x0 = murA.params.a.x - 370;
+  const y0 = murA.params.a.y - 370;
+  const r0 = await lot(pid, `retombee-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "dalle.creer", params: { id: "dalle-retombee-e2e", niveauId: murA.niveauId, contour: [P(x0, y0), P(x0 + 6, y0), P(x0 + 6, y0 + 4), P(x0, y0 + 4)], trous: [], epaisseur: m(0.2) } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("dalle-retombee-e2e");
+  await page.locator("[data-dalle-retombee] > summary").click();
+  await page.locator("[data-dalle-sens]").selectOption("bas");
+  await page.locator('[data-retombee-champ="largeur"]').fill("25 cm");
+  await page.locator('[data-retombee-champ="hauteur"]').fill("0,3");
+  await page.locator("[data-dalle-retombee-appliquer]").click();
+  let p = null;
+  for (let k = 0; k < 30 && !p?.retombee; k++) {
+    p = (await modele(pid)).modele.objets["dalle-retombee-e2e"]?.params ?? null;
+    if (!p?.retombee) await page.waitForTimeout(500);
+  }
+  await page.waitForSelector('[data-objet="dalle-retombee-e2e"] [data-retombee]', { state: "attached", timeout: 10000 }).catch(() => {});
+  const trace = await page.locator('[data-objet="dalle-retombee-e2e"] [data-retombee]').count();
+  check("dalle : épaisseur vers le bas et retombée de rive 0,25 × 0,30 m enregistrées, rive cachée au plan", r0.status === 200 && p?.sens === "bas" && p?.retombee?.largeur?.value === 0.25 && p?.retombee?.hauteur?.value === 0.3 && trace === 1, `${r0.status} · ${JSON.stringify({ sens: p?.sens, retombee: p?.retombee })} · ${trace}`);
+}
+
 // Espace sur plusieurs niveaux (D-142) : niveau haut choisi dans l'inspecteur, niveaux traversés annoncés.
 {
   await page.keyboard.press("Escape");

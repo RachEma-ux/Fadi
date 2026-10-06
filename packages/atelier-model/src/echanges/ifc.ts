@@ -20,6 +20,7 @@ import { altimetrieDu } from "../commandes/altimetrie.js";
 import { aireNette, facesMur, flecheCorde, hoteOuverture, normalise, perp, pointsPolyligne, pointsRenflement, sub, type Vec } from "../geometrie.js";
 import { profilBaie } from "../cintres.js";
 import { etendueEspace } from "../espaces-volume.js";
+import { anneauRetombee, etendueDalle } from "../dalles.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, maillageObjet } from "../projection/maillage.js";
@@ -437,7 +438,10 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         break; // écrites avec leur mur hôte
       case "dalle": {
         // Dalle inclinée (D-140) : maillage (tessellation) ; sinon extrusion du contour.
-        const rep = o.params.pente ? corpsMaille(o) : corpsSolide([extrusionContour(o.params.contour, o.params.trous, o.params.decalageBase.value, o.params.epaisseur.value)]);
+        // Sens de l'épaisseur et retombée de rive (D-144) : deux extrusions dans le même corps.
+        const ed = etendueDalle(o.params);
+        const anneau = anneauRetombee(o.params);
+        const rep = o.params.pente ? corpsMaille(o) : corpsSolide([extrusionContour(o.params.contour, o.params.trous, ed.bas, o.params.epaisseur.value), ...(anneau && o.params.retombee ? [extrusionContour(anneau.contour, [anneau.interieur], ed.bas - o.params.retombee.hauteur.value, o.params.retombee.hauteur.value)] : [])]);
         const id = s.ajouter(`IFCSLAB(${gid(o.id)},$,${opt(nom ?? o.id)},$,$,${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.FLOOR.)`);
         produits.set(o.id, id);
         contenir(o.niveauId, id);

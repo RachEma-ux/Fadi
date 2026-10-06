@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { anneauRetombee, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -80,6 +80,17 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
     case "dalle":
     case "zone":
     case "reference-plan": {
+      // Retombée de rive (D-144) : contour intérieur de la bande, sous la dalle, en tirets fins.
+      const anneau = o.classe === "dalle" ? anneauRetombee(o.params) : null;
+      if (anneau) {
+        const d = chemin(pr, o.params.contour) + o.params.trous.map((t) => " " + chemin(pr, t)).join("");
+        return (
+          <g className={classes("obj-dalle", selectionne, survole)} data-objet={o.id}>
+            <path d={d} fill={COULEURS["dalle"]} fillOpacity={0.25} fillRule="evenodd" stroke={COULEURS["dalle"] ?? "#666"} strokeDasharray="6 4" strokeWidth={selectionne ? 2.5 : 1} />
+            <path d={chemin(pr, anneau.interieur)} fill="none" stroke={COULEURS["dalle"] ?? "#666"} strokeDasharray="2 3" strokeWidth={0.8} data-retombee />
+          </g>
+        );
+      }
       const d = chemin(pr, o.params.contour) + o.params.trous.map((t) => " " + chemin(pr, t)).join("");
       return <path d={d} className={classes(`obj-${o.classe}`, selectionne, survole)} fill={o.classe === "zone" || o.classe === "reference-plan" ? "none" : COULEURS[o.classe]} fillOpacity={0.25} fillRule="evenodd" stroke={COULEURS[o.classe] ?? "#666"} strokeDasharray={o.classe === "dalle" ? "6 4" : o.classe === "zone" ? "2 3" : undefined} strokeWidth={selectionne ? 2.5 : 1} data-objet={o.id} />;
     }

@@ -98,6 +98,10 @@ export interface ParamsDalle extends Contour {
    * hauteur de base au point le plus bas et monte selon la pente ; l'épaisseur reste mesurée à la verticale.
    */
   pente?: PenteDalle;
+  /** Sens de l'épaisseur (D-144) : « bas » = dessus à la base (épaisseur sous la base) ; absent = vers le haut. */
+  sens?: "bas";
+  /** Retombée de rive (D-144) : bande sous la dalle le long du contour extérieur ; absente = aucune. */
+  retombee?: { largeur: Longueur; hauteur: Longueur };
 }
 
 export interface PenteDalle {

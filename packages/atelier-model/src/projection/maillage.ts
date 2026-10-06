@@ -10,6 +10,7 @@
  */
 import { contenuPlace, contoursArchitecture } from "../blocs-places.js";
 import { etendueEspace } from "../espaces-volume.js";
+import { anneauRetombee, etendueDalle } from "../dalles.js";
 import { arcCintre, flecheCintre, profilBaie } from "../cintres.js";
 import { aireSignee, facesMur, hoteOuverture, longueurAxeMur, normalise, perp, pointsArc, sub, type Vec } from "../geometrie.js";
 import { contourMurCourbeRaccorde, raccordMur } from "../raccords.js";
@@ -588,7 +589,7 @@ function blocMaillage(etat: ModeleAtelier, o: Occurrence<"bloc-occurrence">, z: 
     if (e.classe === "dalle") {
       const c = contoursArchitecture("dalle", e.params);
       const ep = (e.params["epaisseur"] as { value: number } | undefined)?.value;
-      const base = ((e.params["decalageBase"] as { value: number } | undefined)?.value ?? 0) * k;
+      const base = ((e.params["decalageBase"] as { value: number } | undefined)?.value ?? 0) * k - (e.params["sens"] === "bas" && ep ? ep * k : 0);
       if (c && ep) t.prisme(c.contour.map(tr), c.trous.map((x) => x.map(tr)), z + base, z + base + ep * k);
       continue;
     }
@@ -618,8 +619,14 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
       if (o.classe === "fenetre") opacite = 0.55;
       break;
     case "dalle":
-      t.prisme(o.params.contour, o.params.trous, z + o.params.decalageBase.value, z + o.params.decalageBase.value + o.params.epaisseur.value, o.params.pente ? releveDalle(o.params.contour, o.params.pente) : undefined);
+    {
+      // Sens de l'épaisseur et retombée de rive (D-144).
+      const e = etendueDalle(o.params);
+      t.prisme(o.params.contour, o.params.trous, z + e.bas, z + e.haut, o.params.pente ? releveDalle(o.params.contour, o.params.pente) : undefined);
+      const r = anneauRetombee(o.params);
+      if (r && o.params.retombee) t.prisme(r.contour, [r.interieur], z + e.bas - o.params.retombee.hauteur.value, z + e.bas);
       break;
+    }
     case "toiture": {
       const z0 = z + o.params.decalageBase.value;
       const geo = o.params.type !== "plate" && o.params.pente ? geometrieToiture(o.params.contour, o.params.type, o.params.pente.value) : null;
