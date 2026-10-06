@@ -5,7 +5,7 @@
  * (R10). Clavier : Échap, Entrée, Suppr, Ctrl/⌘ Z / Maj Z / Y, Ctrl/⌘ K, raccourcis d'outil, saisie de précision.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { CLASSES, ensemblesPartages, ErreurCommande, exporterBibliotheque, niveauxOrdonnes, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { CLASSES, commandesColler, copierSelection, ensemblesPartages, lirePressePapiers, ErreurCommande, exporterBibliotheque, niveauxOrdonnes, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../../lib/api";
@@ -61,6 +61,8 @@ const FAMILLES_BARRE: Famille[] = ["creer", "modifier", "documenter", "analyser"
 function champSaisie(t: EventTarget | null): boolean {
   return t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || (t instanceof HTMLElement && t.isContentEditable);
 }
+
+const CLE_PRESSE_PAPIERS = "fadi-atelier-presse-papiers";
 
 export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedReference = false, code = "", nomProjet = "", harmonie = false }: PropsAtelierNouveau) {
   const online = useOnline();
@@ -131,6 +133,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
     if (restants.length !== ui.selection.length) etatUi.set({ selection: restants });
   }, [etat.objets, ui.selection]);
 
+  const presseLocal = useRef<string | null>(null);
   const executer = useCallback(
     async (commandes: Commande[], label: string, selectionnerCrees = true) => {
       if (commandes.length === 0) return;
@@ -290,6 +293,44 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         void client.retablir();
         return;
       }
+      // Presse-papiers (D-147) : Ctrl+C copie la sélection (mémorisée dans ce navigateur, et en texte dans le
+      // presse-papiers du système) ; Ctrl+V la colle sur le niveau actif, ici ou dans un autre projet.
+      if (mod && e.key.toLowerCase() === "c" && u.selection.length) {
+        e.preventDefault();
+        const pp = copierSelection(client.getSnapshot().etat, u.selection, projectId);
+        const texte = JSON.stringify(pp);
+        try {
+          localStorage.setItem(CLE_PRESSE_PAPIERS, texte);
+        } catch {
+          /* stockage indisponible : le presse-papiers du système suffit dans cette page */
+        }
+        presseLocal.current = texte;
+        void navigator.clipboard?.writeText(texte).catch(() => {});
+        etatUi.set({ aide: `${pp.objets.length} objet(s) copié(s)${pp.remarques.length ? ` (${pp.remarques.join(" ")})` : ""} — Ctrl+V pour coller sur le niveau actif, ici ou dans un autre projet.` });
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "v") {
+        if (readOnly || !u.niveauId) return;
+        let texte: string | null = presseLocal.current;
+        try {
+          texte = localStorage.getItem(CLE_PRESSE_PAPIERS) ?? texte;
+        } catch {
+          /* stockage indisponible */
+        }
+        const pp = lirePressePapiers(texte);
+        e.preventDefault();
+        if (!pp) {
+          etatUi.set({ aide: "Presse-papiers vide : copiez d'abord une sélection (Ctrl+C)." });
+          return;
+        }
+        // Même projet et même niveau : collé décalé de 1 m pour ne pas recouvrir l'original.
+        const surPlace = pp.projetId === projectId && pp.objets.some((o) => o.niveauId === u.niveauId);
+        const r = commandesColler(client.getSnapshot().etat, pp, u.niveauId, surPlace ? { dx: 1, dy: -1 } : undefined);
+        void executer(r.commandes, `Coller ${r.ids.length} objet(s)`).then(() => {
+          etatUi.set({ aide: `${r.ids.length} objet(s) collé(s)${surPlace ? " (décalés de 1 m)" : ""}.${r.remarques.length ? ` ${r.remarques.join(" ")}` : ""}` });
+        });
+        return;
+      }
       if (mod && e.key.toLowerCase() === "a") {
         e.preventDefault();
         etatUi.selectionner(Object.values(etat.objets).filter((o) => o.niveauId === u.niveauId).map((o) => o.id));
@@ -357,7 +398,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
     };
     window.addEventListener("keydown", surTouche);
     return () => window.removeEventListener("keydown", surTouche);
-  }, [client, etat, readOnly, executer, appliquerResultat, choisir, finir, cadrer, validerPrecision, setPrecision]);
+  }, [client, etat, readOnly, projectId, executer, appliquerResultat, choisir, finir, cadrer, validerPrecision, setPrecision]);
 
   const outilsBarre = useMemo(() => {
     const visibles = outilsVisibles(ui.affichage);

@@ -2276,6 +2276,43 @@ await page.waitForSelector(".plan2d");
   check("baie cintrée : arc surbaissé de flèche 0,25 m enregistré", r0.status === 200 && cintre?.type === "surbaisse" && Math.abs((cintre?.fleche?.value ?? 0) - 0.25) < 1e-9, `${r0.status} · ${JSON.stringify(cintre)}`);
 }
 
+// Presse-papiers (D-147) : Ctrl+C sur une sélection, Ctrl+V ici (décalé de 1 m) puis dans le projet voisin.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const x0 = murA.params.a.x - 430;
+  const y0 = murA.params.a.y - 430;
+  const r0 = await lot(pid, `pp-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "objet.creer", params: { id: "pp-e2e", classe: "esquisse", niveauId: murA.niveauId, params: { forme: "polygone", points: [P(x0, y0), P(x0 + 1, y0), P(x0 + 1, y0 + 1)], ferme: true, centre: null, rayon: null, angleDebut: null, angleFin: null, motif: null } } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("pp-e2e");
+  await page.evaluate(() => document.activeElement?.blur?.());
+  await page.keyboard.press("Control+c");
+  await page.keyboard.press("Control+v");
+  let copie = null;
+  for (let k = 0; k < 30 && !copie; k++) {
+    copie = (await modele(pid)).modele.objets["pp-e2e-c1"] ?? null;
+    if (!copie) await page.waitForTimeout(500);
+  }
+  const ici = r0.status === 200 && !!copie && Math.abs(copie.params.points[0].x - (x0 + 1)) < 1e-9 && Math.abs(copie.params.points[0].y - (y0 - 1)) < 1e-9;
+  await ouvrir(voisin);
+  await page.evaluate(() => document.activeElement?.blur?.());
+  await page.keyboard.press("Control+v");
+  let ailleurs = null;
+  for (let k = 0; k < 30 && !ailleurs; k++) {
+    ailleurs = (await modele(voisin)).modele.objets["pp-e2e"] ?? null;
+    if (!ailleurs) await page.waitForTimeout(500);
+  }
+  check("presse-papiers : collé ici décalé de 1 m, puis dans un autre projet aux mêmes coordonnées", ici && !!ailleurs && Math.abs(ailleurs.params.points[0].x - x0) < 1e-9, `${r0.status} · ici ${ici} · voisin ${JSON.stringify(ailleurs?.params.points?.[0] ?? null)}`);
+  await attendreEnregistre().catch(() => {});
+  await ouvrir(pid).catch(async () => {
+    console.log(`(retour au projet : ${await page.locator(".barre-sync").textContent().catch(() => "?")} — rechargement)`);
+    await ouvrir(pid);
+  });
+}
+
 // Orientation d'un texte (D-146) : saisie dans l'inspecteur, texte tourné au plan.
 {
   await page.keyboard.press("Escape");
