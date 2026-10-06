@@ -402,6 +402,27 @@ function Esquisse2D({ o, pr, selectionne, survole }: { o: Occurrence<"esquisse">
           </g>
         );
       }
+      // Motif importé (D-121) : une famille de traits par ligne de définition, pas en mètres modèle.
+      if (p.motifLignes?.length && p.points.length >= 3) {
+        const base = `motif-${o.id.replace(/[^\w-]/g, "_")}`;
+        const d = chemin(pr, p.points);
+        return (
+          <g data-motif-importe={p.motifLignes.length}>
+            <defs>
+              {p.motifLignes.map((f, k) => {
+                const w = Math.max(2, f.pas * pr.echelle);
+                return (
+                  <pattern key={k} id={`${base}-${k}`} width={w} height={w} patternUnits="userSpaceOnUse" patternTransform={`rotate(${-f.angle + 90})`}>
+                    <line x1="0" y1="0" x2="0" y2={w} stroke="#355e52" strokeWidth="1" />
+                  </pattern>
+                );
+              })}
+            </defs>
+            {p.motifLignes.map((_, k) => <path key={k} d={d} fill={`url(#${base}-${k})`} stroke="none" pointerEvents="none" />)}
+            <path d={d} {...commun} data-motif={p.motif ?? ""} />
+          </g>
+        );
+      }
       return <path d={chemin(pr, p.points)} {...commun} fill={`url(#hachure-${motifHachure(p.motif).id})`} data-motif={motifHachure(p.motif).id} />;
     }
     case "rectangle": {

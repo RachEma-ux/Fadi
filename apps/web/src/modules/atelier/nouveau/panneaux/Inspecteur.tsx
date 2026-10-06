@@ -140,7 +140,19 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
         {Object.entries(avecFacultatifs(o.classe, params)).map(([cle, valeur]) => {
           if (cle === "ouvrant" || cle === "menuiserie" || (cle === "murHoteId" && (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture"))) return null; // contrôles dédiés ci-dessous
           if (cle === "motif" && !(o.classe === "esquisse" && o.params.forme === "hachure")) return null; // motif : hachures seulement (D-072)
-          if (cle === "degrade") return null; // dégradé : contrôle dédié ci-dessous (D-120)
+          if (cle === "degrade" || cle === "motifLignes") return null; // dégradé (D-120), lignes de motif importé (D-121)
+          if (cle === "motif" && o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.motifLignes) {
+            const n = (o as Occurrence<"esquisse">).params.motifLignes!.length;
+            return (
+              <div className="champ" key={cle} data-motif-importe>
+                <dt>Motif de hachure</dt>
+                <dd>
+                  « {String(valeur ?? "sans nom")} » importé : {n} ligne(s) de définition, pas en mètres du dessin.{" "}
+                  {!desactive && <button type="button" className="lien" data-motif-catalogue onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { motif: null, motifLignes: null } } }], `Motif du catalogue pour ${o.id}`)}>Revenir au catalogue</button>}
+                </dd>
+              </div>
+            );
+          }
           if (GEOMETRIQUES.has(cle)) return <ResumeGeometrie key={cle} cle={cle} valeur={valeur} />;
           return <Champ key={cle} id={`${o.id}-${cle}`} cle={cle} valeur={valeur} etat={etat} desactive={parametresFiges} onValider={(v) => modifier(cle, v)} />;
         })}

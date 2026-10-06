@@ -201,6 +201,11 @@ export interface ParamsEsquisse {
    * `angle` ; il remplace le motif. Convention graphique, jamais une donnée de projet. Absent : motif de traits.
    */
   degrade?: DegradeHachure;
+  /**
+   * Lignes d'un motif nommé importé (D-121, DXF) : familles de traits parallèles (angle en degrés, pas en mètres
+   * modèle — le motif suit le dessin, pas la feuille) ; absent : motif du catalogue désigné par `motif`.
+   */
+  motifLignes?: { angle: number; pas: number }[];
 }
 
 export interface DegradeHachure {

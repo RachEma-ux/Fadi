@@ -204,6 +204,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       ...tangentesDe(p, forme, points.length),
       ...sourceHachure(_etat, p, forme),
       ...degradeDe(p, forme),
+      ...motifLignesDe(p, forme),
     };
   },
   "reference-plan"(_etat, p) {
@@ -305,6 +306,22 @@ function sourceHachure(etat: ModeleAtelier, p: Brut, forme: string): { sourceId?
   if (typeof id !== "string" || !etat.objets[id]) throw new ErreurCommande("precondition", "sourceId", `objet source inconnu : ${String(id)}`);
   if (!contourFerme(etat.objets[id]!)) throw new ErreurCommande("precondition", "sourceId", `${id} n'a pas de contour fermé (dalle, pièce, zone, polygone ou rectangle)`);
   return { sourceId: id };
+}
+
+/** Lignes d'un motif importé (D-121) : hachures seulement, une à huit familles (angle, pas en m) ; null les retire. */
+function motifLignesDe(p: Brut, forme: string): { motifLignes?: { angle: number; pas: number }[] } {
+  const brut = p["motifLignes"];
+  if (brut === undefined || brut === null) return {};
+  if (forme !== "hachure") throw new ErreurCommande("invalide", "motifLignes", "lignes de motif réservées aux hachures");
+  if (!Array.isArray(brut) || brut.length < 1 || brut.length > 8) throw new ErreurCommande("invalide", "motifLignes", "une à huit lignes de motif { angle, pas }");
+  return {
+    motifLignes: brut.map((x, i) => {
+      const q = (x ?? {}) as Brut;
+      const angle = q["angle"];
+      if (typeof angle !== "number" || !Number.isFinite(angle)) throw new ErreurCommande("invalide", `motifLignes[${i}].angle`, "angle en degrés");
+      return { angle, pas: lire.nombre(q, "pas", { min: 1e-5, max: 1000 })! };
+    }),
+  };
 }
 
 /** Dégradé (D-120) : hachures seulement ; deux gris entre 0 (noir) et 1 (blanc) et un angle ; null le retire. */

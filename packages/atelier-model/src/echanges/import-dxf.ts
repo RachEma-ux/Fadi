@@ -539,6 +539,9 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
           // Dégradé (D-120) : drapeau 450, angle 460 (radians), couleurs vraies 421 ramenées à leur gris (luminance) ;
           // sans deux couleurs lisibles, la hachure reste pleine (rien d'inventé).
           const couleurs = (num(e, 450, 0) ?? 0) === 1 ? champsDegrade(e.champs) : [];
+          // Motif nommé (D-121) : ses lignes de définition (78 ; 53, 45/46 par ligne) gardées en mètres modèle, sauf
+          // motif plein ou dégradé ; les tirets (49) sont rendus en traits continus et signalés.
+          const lignesMotif = plein ? null : lignesMotifDxf(e.champs, P);
           const degrade = couleurs.length >= 2 ? { de: couleurs[0]!, a: couleurs[1]!, angle: { value: Math.round((((num(e, 460, 0) ?? 0) * 180) / Math.PI) * 1e6) / 1e6, unit: "deg" } } : null;
           const boucles: { x: number; y: number }[][] = [];
           let k = champs.findIndex((c) => c.code === 91);
@@ -611,10 +614,10 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
           const exterieurs = boucles.filter((bq, u) => !boucles.some((o, v) => v !== u && contient(o, bq[0]!)));
           for (const bq of exterieurs) {
             const pts = distincts(bq.map((q) => P(q.x, q.y)));
-            if (pts.length >= 3) poser("esquisse.hachure", { points: pts, ferme: true, motif: plein ? "plein" : motif, calqueId: calqueDe(e), ...(degrade ? { degrade } : {}) });
+            if (pts.length >= 3) poser("esquisse.hachure", { points: pts, ferme: true, motif: plein ? "plein" : motif, calqueId: calqueDe(e), ...(degrade ? { degrade } : lignesMotif?.familles.length ? { motifLignes: lignesMotif.familles } : {}) });
           }
           const ilots = boucles.length - exterieurs.length;
-          compter("HATCH", true, `contour extérieur en hachure, ${degrade ? "dégradé" : "motif nommé"}${ilots ? ` ; ${ilots} îlot(s) non porté(s)` : ""}${nonLus ? ` ; ${nonLus} arête(s) elliptique(s) ou spline ignorée(s)` : ""}`);
+          compter("HATCH", true, `contour extérieur en hachure, ${degrade ? "dégradé" : lignesMotif?.familles.length ? `motif nommé et ses ${lignesMotif.familles.length} ligne(s) de définition${lignesMotif.tirets ? " (tirets rendus en traits continus)" : ""}` : "motif nommé"}${ilots ? ` ; ${ilots} îlot(s) non porté(s)` : ""}${nonLus ? ` ; ${nonLus} arête(s) elliptique(s) ou spline ignorée(s)` : ""}`);
           break;
         }
         case "DIMENSION": {
@@ -809,4 +812,44 @@ function champsDegrade(champs: readonly { code: number; valeur: string }[]): num
       return Math.round(((0.299 * r + 0.587 * g + 0.114 * b) / 255) * 1000) / 1000;
     })
     .filter((x) => Number.isFinite(x));
+}
+
+/**
+ * Lignes de définition du motif d'un HATCH (D-121) : pour chaque ligne (après le code 78), angle (53) et décalage
+ * entre deux traits (45, 46), déjà mis à l'échelle et tournés par le fichier ; transformés comme les points
+ * (bloc, unité) puis ramenés à un angle et un pas (distance entre traits, m). Au plus huit lignes ; pas nul ignoré.
+ */
+function lignesMotifDxf(champs: readonly { code: number; valeur: string }[], P: (x: number, y: number) => Point2): { familles: { angle: number; pas: number }[]; tirets: boolean } {
+  const k78 = champs.findIndex((c) => c.code === 78);
+  if (k78 < 0) return { familles: [], tirets: false };
+  const n = Math.min(8, Number.parseInt(champs[k78]!.valeur, 10) || 0);
+  const familles: { angle: number; pas: number }[] = [];
+  let tirets = false;
+  let k = k78 + 1;
+  const lire = (code: number): number | null => {
+    while (k < champs.length && champs[k]!.code !== code && champs[k]!.code !== 53) k++;
+    if (k >= champs.length || champs[k]!.code !== code) return null;
+    return Number.parseFloat(champs[k++]!.valeur);
+  };
+  for (let i = 0; i < n; i++) {
+    while (k < champs.length && champs[k]!.code !== 53) k++;
+    if (k >= champs.length) break;
+    const angle = Number.parseFloat(champs[k++]!.valeur);
+    const ox = lire(45) ?? 0;
+    const oy = lire(46) ?? 0;
+    const nd = lire(79) ?? 0;
+    if (nd > 0) tirets = true;
+    const L = 1000;
+    const o = P(0, 0);
+    const d = P(L * Math.cos((angle * Math.PI) / 180), L * Math.sin((angle * Math.PI) / 180));
+    const off = P(ox * L, oy * L);
+    const dx = d.x - o.x;
+    const dy = d.y - o.y;
+    const ld = Math.hypot(dx, dy);
+    if (!(ld > 0) || !Number.isFinite(angle)) continue;
+    const pas = Math.abs(((off.x - o.x) * -dy + (off.y - o.y) * dx) / ld) / L;
+    if (!(pas > 1e-6)) continue;
+    familles.push({ angle: Math.round(((Math.atan2(dy, dx) * 180) / Math.PI) * 1e6) / 1e6, pas: Math.round(pas * 1e9) / 1e9 });
+  }
+  return { familles, tirets };
 }

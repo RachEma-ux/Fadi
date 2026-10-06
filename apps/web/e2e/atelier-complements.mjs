@@ -1899,6 +1899,30 @@ await page.waitForSelector(".plan2d");
   check("dégradé de hachure : saisi dans l'inspecteur, enregistré, dessiné dans le plan", r0.status === 200 && d?.de === 0.1 && d?.a === 0.9 && d?.angle?.value === 45 && dessine, `${r0.status} · ${JSON.stringify(d)} · ${dessine}`);
 }
 
+// Motif DXF nommé importé (D-121) : lignes de définition dessinées dans le plan, retour au catalogue depuis l'inspecteur.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const ax = murA.params.a.x;
+  const ay = murA.params.a.y;
+  const r0 = await lot(pid, `motif-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "esquisse.hachure", params: { id: "hach-ansi", niveauId: murA.niveauId, points: [P(ax - 230, ay - 230), P(ax - 226, ay - 230), P(ax - 226, ay - 228), P(ax - 230, ay - 228)], motif: "ANSI31", motifLignes: [{ angle: 45, pas: 0.2 }] } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("hach-ansi");
+  const plan = await page.waitForSelector('.plan2d [data-motif-importe="1"]', { state: "attached", timeout: 10000 }).then(() => true, () => false);
+  const libelle = (await page.locator(".inspecteur [data-motif-importe]").textContent().catch(() => "")) ?? "";
+  await page.locator("[data-motif-catalogue]").click();
+  let retour = false;
+  for (let k = 0; k < 30 && !retour; k++) {
+    const o = (await modele(pid)).modele.objets["hach-ansi"];
+    retour = !!o && !o.params.motifLignes && !o.params.motif;
+    if (!retour) await page.waitForTimeout(500);
+  }
+  check("motif DXF importé : dessiné par ses lignes, signalé dans l'inspecteur, retour au catalogue", r0.status === 200 && plan && /ANSI31/.test(libelle) && retour, `${r0.status} · ${plan} · ${libelle} · ${retour}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

@@ -191,3 +191,4 @@ Ajuster des formes fermées et des splines, extrémité imposée (`ajuster-forme
 Ensembles personnels synchronisés entre appareils (`app.test.ts`, `nouveau.test.ts`, e2e, D-118).
 États de calques versionnés (`etats-calques.test.ts`, e2e, D-119).
 Dégradés de hachure (`degrade.test.ts`, e2e, D-120).
+Motifs DXF nommés importés (`motifs-importes.test.ts`, e2e, D-121).

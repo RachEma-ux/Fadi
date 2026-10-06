@@ -428,6 +428,8 @@ function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly Occu
         // Motif de hachure (D-072) : pas papier converti à l'échelle de la vue ; sans échelle, contour seul.
         // Dégradé (D-120) : bandes de gris, à toute échelle ; il remplace le motif.
         if (p.forme === "hachure" && p.degrade) for (const b of bandesDegrade(p.points, p.degrade)) c.poly(b.points, true, null, "degrade", o.id, b.gris);
+        // Motif importé (D-121) : ses lignes en mètres modèle, à toute échelle.
+        else if (p.forme === "hachure" && p.motifLignes) for (const f of p.motifLignes) for (const [a, b] of lignesHachure([p.points], f.angle, f.pas)) c.ligne(a, b, "fin", o.id);
         else if (p.forme === "hachure" && echelle) {
           const m = motifHachure(p.motif);
           if (!m.connu) c.avertissements.add(`Motif de hachure inconnu « ${p.motif} » : dessiné avec le motif « ${m.motif.libelle} ».`);
