@@ -143,6 +143,17 @@ describe("main levée : lissage adaptatif (D-107)", () => {
   });
 });
 
+describe("rejet de la paume (D-109)", () => {
+  it("doigt ignoré pendant le stylet et une seconde après ; souris et stylet jamais ignorés", async () => {
+    const { toucherRejete } = await import("./plan2d/Plan2D");
+    expect(toucherRejete("touch", 5000, { actif: true, dernier: 4000 })).toBe(true);
+    expect(toucherRejete("touch", 5000, { actif: false, dernier: 4500 })).toBe(true);
+    expect(toucherRejete("touch", 5000, { actif: false, dernier: 3500 })).toBe(false);
+    expect(toucherRejete("mouse", 5000, { actif: true, dernier: 4999 })).toBe(false);
+    expect(toucherRejete("pen", 5000, { actif: true, dernier: 4999 })).toBe(false);
+  });
+});
+
 let n = 0;
 function appliquer(etat: ModeleAtelier, commandes: Commande[]): ModeleAtelier {
   n += 1;

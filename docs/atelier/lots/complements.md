@@ -179,3 +179,4 @@ Té et jonction avec un mur courbe (`murs-courbes.test.ts`, D-105).
 Fenêtre d'angle sans poteau (`fenetres.test.ts`, D-106).
 Lissage adaptatif de la main levée (`esquisse/lissage.test.ts`, `nouveau.test.ts`, D-107).
 Poteaux et dalles dans un bloc (`bloc.test.ts`, D-108).
+Rejet de la paume au plan (`nouveau.test.ts`, e2e, D-109).

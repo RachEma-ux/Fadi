@@ -1655,6 +1655,35 @@ await page.waitForSelector(".plan2d");
   check("calque gelé : ses objets quittent le plan, dégelé ils reviennent", rg.status === 200 && avant === 1 && gele && pendant === 0 && apres === 1, `${rg.status} · ${avant} → ${pendant} → ${apres} · ${gele}`);
 }
 
+// Rejet de la paume (D-109) : stylet posé, un glisser du doigt ne déplace pas la vue ; une seconde après, si.
+// (Outil de tracé : au doigt, un glisser déplace la vue.)
+{
+  await page.keyboard.press("Escape");
+  await choisirOutil("ligne", "Ligne", "ligne");
+  const zone = await page.locator(".plan2d").boundingBox();
+  const cible = '.plan2d .plan-objets [data-objet]';
+  const avant = await page.locator(cible).first().boundingBox();
+  const geste = (type, id, x0, y0, dx) => page.evaluate(([type, id, x0, y0, dx]) => {
+    const el = document.querySelector(".plan2d");
+    const ev = (nom, x, y) => el.dispatchEvent(new PointerEvent(nom, { pointerId: id, pointerType: type, clientX: x, clientY: y, bubbles: true, isPrimary: true, button: 0, buttons: nom === "pointerup" ? 0 : 1 }));
+    ev("pointerdown", x0, y0);
+    for (let k = 1; k <= 5; k++) ev("pointermove", x0 + (dx * k) / 5, y0);
+    ev("pointerup", x0 + dx, y0);
+  }, [type, id, x0, y0, dx]);
+  const cx = zone.x + zone.width / 2;
+  const cy = zone.y + zone.height / 2;
+  await page.evaluate(([x, y]) => document.querySelector(".plan2d").dispatchEvent(new PointerEvent("pointerdown", { pointerId: 7, pointerType: "pen", clientX: x, clientY: y, bubbles: true, isPrimary: true, button: 0, buttons: 1 })), [cx - 200, cy - 150]);
+  await geste("touch", 8, cx, cy, 120);
+  const pendant = await page.locator(cible).first().boundingBox();
+  await page.evaluate(([x, y]) => document.querySelector(".plan2d").dispatchEvent(new PointerEvent("pointerup", { pointerId: 7, pointerType: "pen", clientX: x, clientY: y, bubbles: true, isPrimary: true, button: 0, buttons: 0 })), [cx - 200, cy - 150]);
+  await page.waitForTimeout(1200);
+  await geste("touch", 9, cx, cy, 120);
+  await page.waitForTimeout(200);
+  const apres = await page.locator(cible).first().boundingBox();
+  await page.keyboard.press("Escape");
+  check("rejet de la paume : doigt ignoré pendant le stylet, glisser du doigt actif ensuite", !!avant && !!pendant && Math.abs(pendant.x - avant.x) < 1 && !!apres && Math.abs(apres.x - avant.x) > 50, `${avant?.x} → ${pendant?.x} → ${apres?.x}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

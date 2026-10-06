@@ -49,6 +49,10 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   const idObjets = `plan-objets-${useId().replace(/:/g, "")}`;
   const [lasso, setLasso] = useState<Point2[] | null>(null);
   const lassoPoints = useRef<Point2[]>([]);
+  // Rejet de la paume (D-109) : pendant qu'un stylet touche l'écran, et une seconde après, les contacts du doigt
+  // (paume posée) sont ignorés ; leurs identifiants sont retenus pour ignorer aussi leurs mouvements.
+  const stylet = useRef<{ actif: boolean; dernier: number }>({ actif: false, dernier: -Infinity });
+  const ignores = useRef(new Set<number>());
   // Instants des points du tracé (ms) : lissage adaptatif de la main levée (D-107).
   const lassoInstants = useRef<number[]>([]);
   const [decalage, setDecalage] = useState<{ dx: number; dy: number; accroche: Accroche } | null>(null);
@@ -164,6 +168,7 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   }
 
   function surMouvement(e: ReactPointerEvent<SVGSVGElement>) {
+    if (ignores.current.has(e.pointerId)) return;
     const { sx, sy } = pointEcran(e);
     if (pointeurs.current.has(e.pointerId)) pointeurs.current.set(e.pointerId, { x: sx, y: sy });
     if (pincement.current && pointeurs.current.size >= 2) {
@@ -256,6 +261,11 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   }
 
   function surAppui(e: ReactPointerEvent<SVGSVGElement>) {
+    if (e.pointerType === "pen") stylet.current = { actif: true, dernier: e.timeStamp };
+    else if (toucherRejete(e.pointerType, e.timeStamp, stylet.current)) {
+      ignores.current.add(e.pointerId);
+      return;
+    }
     const el = svgRef.current;
     if (!el) return;
     try {
@@ -334,6 +344,8 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
   }
 
   function surRelache(e: ReactPointerEvent<SVGSVGElement>) {
+    if (ignores.current.delete(e.pointerId)) return;
+    if (e.pointerType === "pen") stylet.current = { actif: false, dernier: e.timeStamp };
     const { sx, sy } = pointEcran(e);
     pointeurs.current.delete(e.pointerId);
     if (pincement.current) {
@@ -483,6 +495,8 @@ export function Plan2D({ etat, ui, readOnly, onResultat, onTerminer, onCommandes
       onPointerDown={surAppui}
       onPointerUp={surRelache}
       onPointerCancel={(e) => {
+        ignores.current.delete(e.pointerId);
+        if (e.pointerType === "pen") stylet.current = { actif: false, dernier: e.timeStamp };
         pointeurs.current.delete(e.pointerId);
         pincement.current = null;
         glisse.current = null;
@@ -773,6 +787,11 @@ export function gommer(trace: readonly Point2[], etat: ModeleAtelier, cache: { s
   const ids = [...touches].filter((id) => !verrouilles.includes(id)).sort();
   if (!ids.length) return { message: verrouilles.length ? `Esquisses verrouillées, non gommées : ${verrouilles.join(", ")}.` : "Aucun trait d'esquisse traversé." };
   return { commandes: ids.map((id) => ({ type: "objet.supprimer", params: { id } })), label: `Gommer ${ids.length} esquisse(s)${verrouilles.length ? ` (${verrouilles.length} verrouillée(s) gardée(s))` : ""}` };
+}
+
+/** Rejet de la paume (D-109) : un contact du doigt est ignoré pendant qu'un stylet touche l'écran et 1 s après. */
+export function toucherRejete(type: string, instant: number, stylet: { actif: boolean; dernier: number }, delai = 1000): boolean {
+  return type === "touch" && (stylet.actif || instant - stylet.dernier < delai);
 }
 
 /**
