@@ -67,13 +67,16 @@ export function definitionsImbriquees(etat: ModeleAtelier, defId: string): Set<s
  */
 export function contoursArchitecture(classe: string, params: Record<string, unknown>): { contour: Vec[]; trous: Vec[][] } | null {
   if (classe === "poteau") {
-    const q = params as { point?: Vec; largeur?: { value: number }; profondeur?: { value: number }; angle?: { value: number }; formeId?: string; epaisseurProfil?: { value: number } };
+    const q = params as { point?: Vec; largeur?: { value: number }; profondeur?: { value: number }; angle?: { value: number }; formeId?: string; epaisseurProfil?: { value: number }; miroir?: boolean };
     if (!q.point || !q.largeur || !q.profondeur) return null;
     const a = ((q.angle?.value ?? 0) * Math.PI) / 180;
     const u = { x: Math.cos(a), y: Math.sin(a) };
     const n = { x: -u.y, y: u.x };
     const c = (s: number, o: number): Vec => ({ x: q.point!.x + u.x * s + n.x * o, y: q.point!.y + u.y * s + n.y * o });
-    return { contour: sectionPoteau(q.formeId ?? "rectangle", q.largeur.value, q.profondeur.value, q.epaisseurProfil?.value ?? null).map(([s, o]) => c(s, o)), trous: [] };
+    // Section retournée (D-146) : axe local y retourné, sens direct rétabli.
+    const sec = sectionPoteau(q.formeId ?? "rectangle", q.largeur.value, q.profondeur.value, q.epaisseurProfil?.value ?? null);
+    const placee = q.miroir ? sec.map(([s, o]) => [s, -o] as [number, number]).reverse() : sec;
+    return { contour: placee.map(([s, o]) => c(s, o)), trous: [] };
   }
   if (classe === "dalle") {
     const q = params as { contour?: Vec[]; trous?: Vec[][] };

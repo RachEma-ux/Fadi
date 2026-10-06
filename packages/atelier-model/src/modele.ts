@@ -183,6 +183,8 @@ export interface ParamsPoteau {
   angle: Angle;
   nom: string | null;
   statutConception: string | null;
+  /** Section retournée (D-146) : profilé L symétrisé (retournement de l'axe local y avant rotation) ; absent = non. */
+  miroir?: true;
 }
 
 export interface ParamsSolide extends Contour {
@@ -260,6 +262,8 @@ export interface ParamsCotation {
 export interface ParamsTexte {
   position: Point2;
   texte: string;
+  /** Orientation (D-146), degrés, sens direct depuis +x ; absente = horizontale. */
+  angle?: Angle;
 }
 
 export interface ParamsEtiquette {

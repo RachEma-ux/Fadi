@@ -183,6 +183,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" },
       nom: lire.chaineOuNull(p, "nom"),
       statutConception: lire.chaineOuNull(p, "statutConception"),
+      ...(p["miroir"] === true && formeId === "L" && ep ? { miroir: true as const } : {}),
     };
   },
   solide(_etat, p) {
@@ -236,7 +237,10 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     return { a: lire.point(p, "a")!, b: lire.point(p, "b")!, decalage: lire.longueur(p, "decalage", { optionnel: true }) ?? { value: 0, unit: "m" } };
   },
   texte(_etat, p) {
-    return { position: lire.point(p, "position")!, texte: lire.chaine(p, "texte") };
+    // Orientation (D-146) : ramenée dans ]−180, 180] ; nulle ou absente : clé omise.
+    const a = lire.angle(p, "angle", { optionnel: true });
+    const v = a ? Math.round((((((a.value + 180) % 360) + 360) % 360) - 180) * 1e9) / 1e9 : 0;
+    return { position: lire.point(p, "position")!, texte: lire.chaine(p, "texte"), ...(v ? { angle: { value: v === -180 ? 180 : v, unit: "deg" as const } } : {}) };
   },
   etiquette(etat, p) {
     const objetId = lire.chaineOuNull(p, "objetId");

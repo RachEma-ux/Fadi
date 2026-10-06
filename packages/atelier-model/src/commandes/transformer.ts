@@ -78,8 +78,17 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
       // Échelle (D-088) : l'axe est mis à l'échelle, les dimensions typées (largeur, hauteur à franchir, contremarches)
       // sont gardées comme pour les murs ; le giron suit la longueur ; aucune règle de confort appliquée.
       return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
-    case "poteau":
-      return { ...o, params: { ...o.params, point: T(o.params.point), angle: { value: t.type === "miroir" ? Math.round((2 * axeMiroir(t) - o.params.angle.value) * 1e9) / 1e9 : o.params.angle.value + rot, unit: "deg" } } };
+    case "poteau": {
+      if (t.type !== "miroir") return { ...o, params: { ...o.params, point: T(o.params.point), angle: { value: o.params.angle.value + rot, unit: "deg" } } };
+      // Symétrie (D-146) : image = rotation (2φ − θ) ∘ retournement de l'axe local y. Rectangle, cercle, I : invariants ;
+      // T et U (symétriques selon x → −x) : demi-tour en plus ; L (sans symétrie) : section retournée (`miroir`).
+      const profile = !!o.params.epaisseurProfil;
+      const demiTour = profile && (o.params.formeId === "T" || o.params.formeId === "U") ? 180 : 0;
+      const angle = Math.round(((((2 * axeMiroir(t) - o.params.angle.value + demiTour + 180) % 360) + 360) % 360 - 180) * 1e9) / 1e9;
+      const { miroir: _m, ...reste } = o.params;
+      const retourne = profile && o.params.formeId === "L" ? !o.params.miroir : !!o.params.miroir;
+      return { ...o, params: { ...reste, point: T(o.params.point), angle: { value: angle, unit: "deg" }, ...(retourne ? { miroir: true as const } : {}) } };
+    }
     case "esquisse": {
       const q = o.params;
       // Un rectangle (deux coins, côtés parallèles aux axes) tourné ou symétrisé devient un polygone (D-046).
@@ -118,7 +127,19 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
     }
     case "cotation":
       return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
-    case "texte":
+    case "texte": {
+      // Orientation (D-146) : suit la rotation ; au miroir, réfléchie puis ramenée lisible (]−90°, 90°]).
+      const a0 = o.params.angle?.value ?? 0;
+      let a = t.type === "rotation" ? a0 + rot : t.type === "miroir" ? 2 * axeMiroir(t) - a0 : a0;
+      if (t.type === "miroir") {
+        a = ((((a + 180) % 360) + 360) % 360) - 180;
+        if (a > 90 + 1e-9) a -= 180;
+        else if (a <= -90 + 1e-9) a += 180;
+      }
+      a = Math.round((((((a + 180) % 360) + 360) % 360) - 180) * 1e9) / 1e9;
+      const { angle: _a, ...reste } = o.params;
+      return { ...o, params: { ...reste, position: T(o.params.position), ...(a ? { angle: { value: a, unit: "deg" as const } } : {}) } };
+    }
     case "etiquette":
       return { ...o, params: { ...o.params, position: T(o.params.position) } } as OccurrenceQuelconque;
     case "bloc-occurrence": {
@@ -200,12 +221,12 @@ function echelleNonUniforme(o: OccurrenceQuelconque, t: Transformation & { type:
     }
     default:
       // Contours, axes, points d'insertion : transformation affine des positions, dimensions typées gardées.
-      return affine(o, T);
+      return affine(o, T, fx, fy);
   }
 }
 
 /** Positions d'une occurrence transformées par T (classes à contour, axe ou point, sans paramètre d'orientation). */
-function affine(o: OccurrenceQuelconque, T: (q: Point2) => Point2): OccurrenceQuelconque {
+function affine(o: OccurrenceQuelconque, T: (q: Point2) => Point2, fx0: number, fy0: number): OccurrenceQuelconque {
   const c = (x: Contour): Contour => ({ contour: x.contour.map(T), trous: x.trous.map((h) => h.map(T)) });
   switch (o.classe) {
     case "toiture":
@@ -223,6 +244,7 @@ function affine(o: OccurrenceQuelconque, T: (q: Point2) => Point2): OccurrenceQu
     case "poteau":
       return { ...o, params: { ...o.params, point: T(o.params.point) } };
     case "texte":
+      return { ...o, params: { ...o.params, position: T(o.params.position), ...(o.params.angle ? { angle: { value: Math.round(((Math.atan2(Math.sin((o.params.angle.value * Math.PI) / 180) * fy0, Math.cos((o.params.angle.value * Math.PI) / 180) * fx0) * 180) / Math.PI) * 1e9) / 1e9, unit: "deg" as const } } : {}) } };
     case "etiquette":
       return { ...o, params: { ...o.params, position: T(o.params.position) } } as OccurrenceQuelconque;
     case "garde-corps":

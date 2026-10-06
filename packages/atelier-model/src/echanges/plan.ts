@@ -107,7 +107,7 @@ function dessiner(d: Dxf, etat: ModeleAtelier, o: OccurrenceQuelconque): void {
       d.ligne(calque, o.params.a, o.params.b);
       return;
     case "texte":
-      d.texte(calque, o.params.position, 0.25, o.params.texte);
+      d.texte(calque, o.params.position, 0.25, o.params.texte, o.params.angle?.value ?? 0);
       return;
     case "etiquette":
       d.texte(calque, o.params.position, 0.2, o.params.texte);

@@ -458,8 +458,11 @@ export function commandesImportDxf(etat: ModeleAtelier, texte: string, options: 
             compter(e.type, false, "textes vides ignorés");
             break;
           }
-          poser("texte.creer", { position: P(num(e, 10, 0)!, num(e, 20, 0)!), texte: t.slice(0, 500), calqueId: calqueDe(e) });
-          compter(e.type, true, "position et contenu repris ; hauteur, rotation et style non portés");
+          // Rotation (D-146) : code 50, en degrés pour TEXT et ATTRIB, en radians pour MTEXT.
+          const r50 = num(e, 50, 0) ?? 0;
+          const rot = (e.type === "MTEXT" ? (r50 * 180) / Math.PI : r50) + (sim?.rotation ?? 0);
+          poser("texte.creer", { position: P(num(e, 10, 0)!, num(e, 20, 0)!), texte: t.slice(0, 500), calqueId: calqueDe(e), ...(Math.abs(rot) > 1e-9 ? { angle: { value: Math.round(rot * 1e6) / 1e6, unit: "deg" } } : {}) });
+          compter(e.type, true, "position, contenu et rotation repris ; hauteur et style non portés");
           break;
         }
         case "INSERT": {

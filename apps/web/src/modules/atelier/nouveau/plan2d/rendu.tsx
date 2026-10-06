@@ -194,8 +194,10 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
     case "texte":
     case "etiquette": {
       const p = pr.vers(o.params.position);
+      // Orientation (D-146) : sens direct du modèle, y écran inversé.
+      const angle = o.classe === "texte" ? (o.params.angle?.value ?? 0) : 0;
       return (
-        <text x={p.x} y={p.y} fontSize={Math.max(9, Math.min(14, pr.echelle * 0.4))} className={classes("obj-texte", selectionne, survole)} fill={selectionne ? "#b3872f" : COULEURS["texte"]} data-objet={o.id}>
+        <text x={p.x} y={p.y} transform={angle ? `rotate(${-angle} ${p.x} ${p.y})` : undefined} fontSize={Math.max(9, Math.min(14, pr.echelle * 0.4))} className={classes("obj-texte", selectionne, survole)} fill={selectionne ? "#b3872f" : COULEURS["texte"]} data-objet={o.id}>
           {o.params.texte}
         </text>
       );

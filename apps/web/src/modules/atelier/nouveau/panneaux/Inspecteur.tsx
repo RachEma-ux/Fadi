@@ -195,6 +195,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {o.classe === "esquisse" && (o as Occurrence<"esquisse">).params.centre && (o as Occurrence<"esquisse">).params.rayon && !desactive && <AxesCentre key={`axes-${o.id}`} o={o as Occurrence<"esquisse">} onCommandes={onCommandes} />}
       {(o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") && <CintreBaie key={`cintre-${o.id}`} o={o as Occurrence<"fenetre">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "espace" && <EspaceNiveaux key={`espn-${o.id}`} o={o as Occurrence<"espace">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
+      {o.classe === "texte" && <OrientationTexte key={`orient-${o.id}`} o={o as Occurrence<"texte">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "dalle" && <SensRetombeeDalle key={`retombee-${o.id}`} o={o as Occurrence<"dalle">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "dalle" && <PenteDalle key={`pente-${o.id}`} o={o as Occurrence<"dalle">} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "poteau" && <SectionPoteau key={`sec-${o.id}`} o={o as Occurrence<"poteau">} desactive={desactive} onCommandes={onCommandes} />}
@@ -1658,6 +1659,22 @@ function CintreBaie({ o, desactive, onCommandes }: { o: Occurrence<"fenetre">; d
   );
 }
 
+/** Orientation d'un texte (D-146) : angle en degrés depuis l'horizontale, sens direct. */
+function OrientationTexte({ o, desactive, onCommandes }: { o: Occurrence<"texte">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+  const [v, setV] = useState(String(o.params.angle?.value ?? 0).replace(".", ","));
+  const a = nombreSaisi(v);
+  return (
+    <div className="nav-formulaire-altimetrie" data-orientation-texte>
+      <label>Orientation (°)<input inputMode="decimal" value={v} disabled={desactive} onChange={(e) => setV(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-texte-angle /></label>
+      {!desactive && (
+        <button type="button" disabled={a === null || a === (o.params.angle?.value ?? 0)} data-texte-angle-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { angle: a ? { value: a, unit: "deg" } : null } } }], `Orientation de ${o.id}`)}>
+          Orienter
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** Sens de l'épaisseur et retombée de rive d'une dalle (D-144) : valeurs saisies, aucune par défaut. */
 function SensRetombeeDalle({ o, desactive, onCommandes }: { o: Occurrence<"dalle">; desactive: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
   const r = o.params.retombee ?? null;
@@ -1722,6 +1739,7 @@ function SectionPoteau({ o, desactive, onCommandes }: { o: Occurrence<"poteau">;
   const connue = ["rectangle", "cercle", "I", "T", "L", "U"].includes(o.params.formeId) ? o.params.formeId : "rectangle";
   const [forme, setForme] = useState(o.params.formeId === "rond" ? "cercle" : connue);
   const [ep, setEp] = useState(o.params.epaisseurProfil ? String(o.params.epaisseurProfil.value).replace(".", ",") : "");
+  const [retournee, setRetournee] = useState(!!o.params.miroir);
   const profile = ["I", "T", "L", "U"].includes(forme);
   const e = profile ? longueurSaisie(ep) : null;
   const valide = !profile || (e !== null && e > 0);
@@ -1738,8 +1756,10 @@ function SectionPoteau({ o, desactive, onCommandes }: { o: Occurrence<"poteau">;
         </select>
       </label>
       {profile && <label>Épaisseur des parois (m)<input inputMode="decimal" value={ep} disabled={desactive} onChange={(ev) => setEp(ev.target.value)} onKeyDown={(ev) => ev.stopPropagation()} data-section-epaisseur /></label>}
+      {/* Cornière retournée (D-146) : la seule section sans axe de symétrie. */}
+      {forme === "L" && <label className="case"><input type="checkbox" checked={retournee} disabled={desactive} onChange={(ev) => setRetournee(ev.target.checked)} data-section-miroir /> Cornière retournée (symétrique)</label>}
       {!desactive && (
-        <button type="button" disabled={!valide} data-section-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { formeId: forme === "rectangle" && !["cercle", "rond", "I", "T", "L", "U"].includes(o.params.formeId) ? o.params.formeId : forme, epaisseurProfil: profile ? { value: e, unit: "m" } : null } } }], `Section de ${o.id}`)}>
+        <button type="button" disabled={!valide} data-section-appliquer onClick={() => onCommandes([{ type: "objet.modifier", params: { id: o.id, params: { formeId: forme === "rectangle" && !["cercle", "rond", "I", "T", "L", "U"].includes(o.params.formeId) ? o.params.formeId : forme, epaisseurProfil: profile ? { value: e, unit: "m" } : null, miroir: forme === "L" && retournee ? true : null } } }], `Section de ${o.id}`)}>
           Appliquer la section
         </button>
       )}

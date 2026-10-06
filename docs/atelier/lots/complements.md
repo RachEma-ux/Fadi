@@ -218,3 +218,4 @@ Espaces sur plusieurs niveaux (`espaces-volume.test.ts`, e2e, D-142).
 Réservation par zone, notifications de verrous (`reservations.test.ts`, API, e2e versions, D-143).
 Sens d'épaisseur et retombées de rive des dalles (`dalles-retombees.test.ts`, e2e, D-144).
 Échelle non uniforme (`echelle-non-uniforme.test.ts`, e2e, D-145).
+Symétrie des profilés et orientation des textes (`symetrie-textes-poteaux.test.ts`, e2e, D-146).

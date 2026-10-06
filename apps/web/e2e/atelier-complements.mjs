@@ -2276,6 +2276,28 @@ await page.waitForSelector(".plan2d");
   check("baie cintrée : arc surbaissé de flèche 0,25 m enregistré", r0.status === 200 && cintre?.type === "surbaisse" && Math.abs((cintre?.fleche?.value ?? 0) - 0.25) < 1e-9, `${r0.status} · ${JSON.stringify(cintre)}`);
 }
 
+// Orientation d'un texte (D-146) : saisie dans l'inspecteur, texte tourné au plan.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const r0 = await lot(pid, `texte-or-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "texte.creer", params: { id: "texte-oriente-e2e", niveauId: murA.niveauId, position: P(murA.params.a.x - 410, murA.params.a.y - 410), texte: "Nord" } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("texte-oriente-e2e");
+  await page.locator("[data-texte-angle]").fill("45");
+  await page.locator("[data-texte-angle-appliquer]").click();
+  let angle = null;
+  for (let k = 0; k < 30 && angle === null; k++) {
+    angle = (await modele(pid)).modele.objets["texte-oriente-e2e"]?.params.angle?.value ?? null;
+    if (angle === null) await page.waitForTimeout(500);
+  }
+  await page.waitForFunction(() => (document.querySelector('.plan2d text[data-objet="texte-oriente-e2e"]')?.getAttribute("transform") ?? "").startsWith("rotate(-45"), null, { timeout: 10000 }).catch(() => {});
+  const transform = await page.locator('.plan2d text[data-objet="texte-oriente-e2e"]').getAttribute("transform").catch(() => null);
+  check("texte orienté à 45° depuis l'inspecteur, tourné au plan", r0.status === 200 && angle === 45 && (transform ?? "").startsWith("rotate(-45"), `${r0.status} · ${angle} · ${transform}`);
+}
+
 // Échelle non uniforme (D-145) : outil Échelle, centre cliqué, « 2;1 » tapé : largeur doublée, hauteur gardée.
 {
   await page.keyboard.press("Escape");

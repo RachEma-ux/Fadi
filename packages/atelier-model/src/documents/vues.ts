@@ -404,7 +404,7 @@ function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly Occu
         break;
       }
       case "texte":
-        c.texte(o.params.position, o.params.texte, 2.5, o.id, { ancre: "debut" });
+        c.texte(o.params.position, o.params.texte, 2.5, o.id, { ancre: "debut", angle: o.params.angle?.value ?? 0 });
         break;
       case "etiquette": {
         c.texte(o.params.position, o.params.texte, 2.2, o.id, { ancre: "debut" });

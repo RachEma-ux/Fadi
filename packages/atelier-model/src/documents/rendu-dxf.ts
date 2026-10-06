@@ -52,7 +52,7 @@ export class Dxf {
     this.paire(30, 0);
     this.paire(40, r);
   }
-  texte(calque: string, p: Vec, hauteur: number, texte: string): void {
+  texte(calque: string, p: Vec, hauteur: number, texte: string, angle = 0): void {
     this.paire(0, "TEXT");
     this.paire(8, calque);
     this.paire(10, p.x);
@@ -60,6 +60,7 @@ export class Dxf {
     this.paire(30, 0);
     this.paire(40, hauteur);
     this.paire(1, texte.replace(/[\r\n]+/g, " ").slice(0, 250));
+    if (angle) this.paire(50, angle); // orientation (D-146), degrés
   }
 }
 
