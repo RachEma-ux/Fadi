@@ -675,6 +675,12 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: Mo
           })}
         </dl>
       )}
+      {ui.outil === "sommet" && (
+        <label className="case" title="Posé sur le sommet d'une autre esquisse ou d'un mur, le sommet y reste lié (contrainte de coïncidence)">
+          <input type="checkbox" checked={ui.parametresOutil["aimanterContrainte"] === true} data-aimanter-contrainte onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, aimanterContrainte: e.target.checked } }))} />
+          Aimanter (contrainte de coïncidence)
+        </label>
+      )}
       {ui.outil === "repeter" && (
         <label className="case" title="Les paramètres sont gardés : modifier le pas ou le nombre recalcule les copies">
           <input type="checkbox" checked={ui.parametresOutil["reseauAssocie"] === true} data-reseau-associe onChange={(e) => etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, reseauAssocie: e.target.checked } }))} />

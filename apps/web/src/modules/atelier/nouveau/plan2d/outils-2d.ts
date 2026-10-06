@@ -3,7 +3,7 @@
  * points ou s'il émet un lot de commandes (annexe B). Fonctions pures sur l'état du modèle et l'état d'affichage :
  * le composant React ne fait que les appeler et transmettre les commandes au bus.
  */
-import { estFormeFermee, longueurSaisie, axesDesMurs, pointsEllipse, tremiesRetenues, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { commeEsquisse, raisonNonContraignable, estFormeFermee, longueurSaisie, axesDesMurs, pointsEllipse, tremiesRetenues, longueurAxeMur, projectionSurAxeMur, renflementTroisPoints, arcTangent, boucles, proposerPlancher, caracteristiqueAuPoint, cercleTroisPoints, commandesTrame, ellipseTroisPoints, lireEntraxes, polygoneRegulier, pointsSpline, rectangleTroisPoints, detecterPieces, distance, projectionSurSegment, pt, referenceExtremite, type AxeMur, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import type { EtatUi } from "../etat-ui";
 
 export interface ResultatClic {
@@ -42,6 +42,17 @@ function murSous(etat: ModeleAtelier, niveauId: string, p: Point2, rayon: number
     if (d <= rayon && (!meilleur || d < meilleur.d)) meilleur = { mur: o, t: pr.t, d };
   }
   return meilleur ? { mur: meilleur.mur, t: meilleur.t } : null;
+}
+
+/** Sommet d'une autre esquisse contraignable (ou d'un mur droit) confondu avec un point (D-131). */
+function sommetConfondu(etat: ModeleAtelier, niveauId: string, p: Point2, sauf: string): { id: string; index: number } | null {
+  for (const o of Object.values(etat.objets)) {
+    if (o.id === sauf || o.niveauId !== niveauId || raisonNonContraignable(etat, o.id)) continue;
+    const e = commeEsquisse(o);
+    const i = e ? e.params.points.findIndex((q) => distance(q, p) <= 1e-9) : -1;
+    if (i >= 0) return { id: o.id, index: i };
+  }
+  return null;
 }
 
 /** Limite droite (axe de mur droit, d'escalier, ligne d'esquisse) la plus proche d'un point (D-117). */
@@ -473,7 +484,12 @@ export function clic(outil: string, point: Point2, etat: ModeleAtelier, ui: Etat
       }
       const k = sommets.findIndex((q) => distance(q, pts[0]!) < 1e-9);
       if (k < 0) return attendre([], "Sommet introuvable : recommencez.");
-      return emettre([{ type: "transformer.pointsDeControle", params: { id: o.id, index: k, point, ...(options.alt ? {} : { entrainer: true }) } }], options.alt ? "Déplacer un sommet" : "Déplacer un sommet (sommets confondus entraînés)");
+      const deplacer: Commande = { type: "transformer.pointsDeControle", params: { id: o.id, index: k, point, ...(options.alt ? {} : { entrainer: true }) } };
+      // Aimantation (D-131, case de l'outil) : posé sur le sommet d'une autre esquisse (ou d'un mur droit), le sommet
+      // y reste lié par une contrainte de coïncidence, dans le même lot.
+      const cible = ui.parametresOutil["aimanterContrainte"] === true && commeEsquisse(o) ? sommetConfondu(etat, niveauId, point, o.id) : null;
+      if (cible) return emettre([deplacer, { type: "contrainte.ajouter", params: { type: "coincidence", objetA: o.id, a: `sommet[${k}]`, objetB: cible.id, b: `sommet[${cible.index}]` } }], "Déplacer un sommet (aimanté : coïncidence)");
+      return emettre([deplacer], options.alt ? "Déplacer un sommet" : "Déplacer un sommet (sommets confondus entraînés)");
     }
     case "decaler": {
       if (ui.selection.length === 0) return attendre([], "Sélectionnez des murs ou des lignes, tapez la distance puis Entrée, puis cliquez le côté.");

@@ -766,3 +766,21 @@ describe("pousser / tirer une face latérale en 3D (D-125)", () => {
     expect((apres.objets["p"] as Occurrence<"poteau">).params.largeur.value).toBe(0.6);
   });
 });
+
+describe("aimantation d'un sommet avec contrainte (D-131)", () => {
+  it("sommet posé sur celui d'une autre ligne : déplacement et coïncidence dans le même lot", () => {
+    const etat = appliquerLot(modeleVide(), { requestId: "r", baseRevision: 0, contract: CONTRAT_COMMANDES, label: "r", commands: [
+      { type: "niveau.creer", params: { id: "n", nom: "R", elevation: 0, hauteur: 3 } },
+      { type: "objet.creer", params: { id: "a", classe: "esquisse", niveauId: "n", params: { forme: "ligne", points: [pt(0, 0), pt(2, 0)], ferme: false } } },
+      { type: "objet.creer", params: { id: "b", classe: "esquisse", niveauId: "n", params: { forme: "ligne", points: [pt(3, 1), pt(5, 1)], ferme: false } } },
+    ] }).etat;
+    const u = (po: Record<string, unknown>, pts: ReturnType<typeof pt>[] = []): EtatUi => ({ ...etatUi.get(), outil: "sommet", niveauId: "n", selection: ["a"], pointsEnCours: pts, parametresOutil: { ...po } });
+    const r1 = clic("sommet", pt(2, 0), etat, u({ aimanterContrainte: true }), { rayon: 0.1, objetSous: "a" });
+    const r2 = clic("sommet", pt(3, 1), etat, u({ aimanterContrainte: true }, r1.pointsEnCours), { rayon: 0.1, objetSous: "b" });
+    expect(r2.commandes.map((c) => c.type)).toEqual(["transformer.pointsDeControle", "contrainte.ajouter"]);
+    const apres = appliquerLot(etat, { requestId: "a", baseRevision: 1, contract: CONTRAT_COMMANDES, label: "a", commands: r2.commandes }).etat;
+    expect(Object.values(apres.relations).filter((x) => x.kind === "contrainte")).toHaveLength(1);
+    const sans = clic("sommet", pt(3, 1), etat, u({}, r1.pointsEnCours), { rayon: 0.1, objetSous: "b" });
+    expect(sans.commandes).toHaveLength(1);
+  });
+});
