@@ -75,7 +75,7 @@ export interface ParamsOuverture {
   repere: string | null;
   /** Porte seulement : sens d'ouverture (D-037) ; absent ou null : non renseigné. */
   ouvrant?: OuvrantPorte | null;
-  /** Fenêtre seulement : menuiserie paramétrée (D-101) ; absente : panneau simple, menuiserie non évaluée. */
+  /** Fenêtre et porte : menuiserie paramétrée (D-101, D-113) ; absente : panneau simple, menuiserie non évaluée. */
   menuiserie?: Menuiserie | null;
 }
 

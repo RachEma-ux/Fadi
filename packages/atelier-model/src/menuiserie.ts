@@ -17,10 +17,15 @@ export interface Menuiserie {
   vitrage?: { epaisseur: Longueur; composition: string | null };
   /** Nombre de vantaux (1 à 6) ; plus d'un : exige un dormant (largeur des montants). */
   vantaux?: number;
+  /**
+   * Porte (D-113) : hauteur du seuil (traverse basse du dormant) ; absent : pas de seuil. Une porte dont la
+   * menuiserie porte un vitrage est une porte-fenêtre (vantaux vitrés) ; sans vitrage, ses vantaux sont pleins.
+   */
+  seuil?: Longueur;
 }
 
 /** Lecture validée ; `null` / absent : pas de menuiserie paramétrée. */
-export function lireMenuiserie(brut: unknown, c: { largeur: number; hauteur: number; epaisseurMur: number }): Menuiserie | null {
+export function lireMenuiserie(brut: unknown, c: { largeur: number; hauteur: number; epaisseurMur: number; porte?: boolean }): Menuiserie | null {
   if (brut === undefined || brut === null) return null;
   if (typeof brut !== "object" || Array.isArray(brut)) throw new ErreurCommande("invalide", "menuiserie", "menuiserie : objet { dormant, vitrage, vantaux }");
   const p = brut as Brut;
@@ -53,12 +58,19 @@ export function lireMenuiserie(brut: unknown, c: { largeur: number; hauteur: num
     }
     out.vantaux = n;
   }
+  if (p["seuil"] !== undefined && p["seuil"] !== null) {
+    if (!c.porte) throw new ErreurCommande("invalide", "menuiserie.seuil", "seuil réservé aux portes");
+    if (!out.dormant) throw new ErreurCommande("precondition", "menuiserie.seuil", "seuil : renseigner le dormant");
+    const seuil = lire.longueur(p, "seuil", { strict: true })!;
+    if (!(seuil.value > 0) || seuil.value >= c.hauteur / 4) throw new ErreurCommande("invalide", "menuiserie.seuil", `hauteur du seuil entre 0 et le quart de la baie (${c.hauteur / 4} m)`);
+    out.seuil = seuil;
+  }
   return Object.keys(out).length ? out : null;
 }
 
 /** Boîte de menuiserie : abscisse le long de la baie [s0, s1], altitude depuis le bas de la baie [z0, z1], profondeur ±e/2. */
 export interface BoiteMenuiserie {
-  role: "dormant" | "montant" | "vitrage";
+  role: "dormant" | "montant" | "vitrage" | "vantail";
   s0: number;
   s1: number;
   z0: number;
@@ -66,24 +78,30 @@ export interface BoiteMenuiserie {
   e: number;
 }
 
-/** Corps de la fenêtre : dormant (montants, appui, traverse haute), montants entre vantaux, un vitrage par vantail. */
-export function corpsMenuiserie(largeur: number, hauteur: number, m: Menuiserie, epaisseurPanneau: number): BoiteMenuiserie[] {
+/**
+ * Corps de la fenêtre : dormant (montants, appui, traverse haute), montants entre vantaux, un vitrage par vantail.
+ * Porte (D-113) : pas d'appui, un seuil s'il est renseigné ; vantaux vitrés (porte-fenêtre) ou pleins.
+ */
+export function corpsMenuiserie(largeur: number, hauteur: number, m: Menuiserie, epaisseurPanneau: number, porte = false): BoiteMenuiserie[] {
   const out: BoiteMenuiserie[] = [];
   const ev = m.vitrage?.epaisseur.value ?? epaisseurPanneau;
+  const remplissage: BoiteMenuiserie["role"] = porte && !m.vitrage ? "vantail" : "vitrage";
   if (!m.dormant) {
-    out.push({ role: "vitrage", s0: 0, s1: largeur, z0: 0, z1: hauteur, e: ev });
+    out.push({ role: remplissage, s0: 0, s1: largeur, z0: 0, z1: hauteur, e: ev });
     return out;
   }
   const l = m.dormant.largeur.value;
   const e = m.dormant.epaisseur.value;
+  const bas = porte ? (m.seuil?.value ?? 0) : l;
   out.push({ role: "dormant", s0: 0, s1: l, z0: 0, z1: hauteur, e }, { role: "dormant", s0: largeur - l, s1: largeur, z0: 0, z1: hauteur, e });
-  out.push({ role: "dormant", s0: l, s1: largeur - l, z0: 0, z1: l, e }, { role: "dormant", s0: l, s1: largeur - l, z0: hauteur - l, z1: hauteur, e });
+  if (bas > 0) out.push({ role: "dormant", s0: l, s1: largeur - l, z0: 0, z1: bas, e });
+  out.push({ role: "dormant", s0: l, s1: largeur - l, z0: hauteur - l, z1: hauteur, e });
   const n = m.vantaux ?? 1;
   const w = (largeur - 2 * l - (n - 1) * l) / n;
   for (let i = 0; i < n; i++) {
     const s0 = l + i * (w + l);
-    out.push({ role: "vitrage", s0, s1: s0 + w, z0: l, z1: hauteur - l, e: ev });
-    if (i + 1 < n) out.push({ role: "montant", s0: s0 + w, s1: s0 + w + l, z0: l, z1: hauteur - l, e });
+    out.push({ role: remplissage, s0, s1: s0 + w, z0: bas, z1: hauteur - l, e: ev });
+    if (i + 1 < n) out.push({ role: "montant", s0: s0 + w, s1: s0 + w + l, z0: bas, z1: hauteur - l, e });
   }
   return out;
 }

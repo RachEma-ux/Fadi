@@ -58,3 +58,25 @@ describe("menuiserie paramétrée d'une fenêtre (D-101, DA-07-03)", () => {
     expect(avec).toBeGreaterThan(sans);
   });
 });
+
+describe("menuiserie de porte, porte-fenêtre (D-113, DA-05-15)", () => {
+  it("porte : pas d'appui, seuil s'il est renseigné ; vantaux pleins, ou vitrés (porte-fenêtre) ; seuil refusé sur une fenêtre", () => {
+    const sansVitrage = corpsMenuiserie(1.6, 2.2, { dormant: { largeur: m(0.06), epaisseur: m(0.07) }, vantaux: 2 }, 0.04, true);
+    expect(sansVitrage.filter((k) => k.role === "dormant")).toHaveLength(3); // montants et traverse haute
+    expect(sansVitrage.filter((k) => k.role === "vantail").map((k) => k.z0)).toEqual([0, 0]);
+    const pf = corpsMenuiserie(1.6, 2.2, { dormant: { largeur: m(0.06), epaisseur: m(0.07) }, vitrage: { epaisseur: m(0.024), composition: null }, vantaux: 2, seuil: m(0.02) }, 0.04, true);
+    expect(pf.filter((k) => k.role === "dormant")).toHaveLength(4);
+    expect(pf.filter((k) => k.role === "vitrage").every((k) => k.z0 === 0.02)).toBe(true);
+    const e = appliquerLot(base(), lot([{ type: "ouverture.poser", params: { id: "p", classe: "porte", murHoteId: "w", position: 0.2, largeur: m(1.6), hauteur: m(2.2) } }], "p")).etat;
+    const r = appliquerLot(e, lot([{ type: "objet.modifier", params: { id: "p", params: { menuiserie: { dormant: { largeur: m(0.06), epaisseur: m(0.07) }, vitrage: { epaisseur: m(0.024), composition: "4/16/4" }, vantaux: 2, seuil: m(0.02) } } } }], "m")).etat;
+    expect((r.objets["p"] as Occurrence<"porte">).params.menuiserie?.seuil?.value).toBe(0.02);
+    expect(() => appliquerLot(e, lot([{ type: "objet.modifier", params: { id: "f", params: { menuiserie: { dormant: { largeur: m(0.06), epaisseur: m(0.07) }, seuil: m(0.02) } } } }], "x"))).toThrow(/seuil réservé aux portes/);
+    expect(() => appliquerLot(e, lot([{ type: "objet.modifier", params: { id: "p", params: { menuiserie: { seuil: m(0.02) } } } }], "y"))).toThrow(/renseigner le dormant/);
+    const simple = maillageObjet(e, e.objets["p"]!)!;
+    const detail = maillageObjet(r, r.objets["p"]!)!;
+    expect(detail.indices.length).toBe(simple.indices.length * 7); // 4 dormants + 1 montant + 2 vitrages
+    const ifc = exporterIfc(r, { projet: { id: "p", nom: "t", code: "T" }, revision: 1, horodatage: "2026-10-06T00:00:00" }).contenu;
+    expect(ifc).toMatch(/'PorteFenetre',\$,IFCBOOLEAN\(\.T\.\)/);
+    expect(ifc).toMatch(/'Seuil',\$,IFCPOSITIVELENGTHMEASURE\(0\.02\)/);
+  });
+});

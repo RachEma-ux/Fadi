@@ -357,10 +357,10 @@ function ouvertureMaillage(etat: ModeleAtelier, o: Occurrence<"porte" | "fenetre
   const c = position * L;
   const zb = etendue[0] + (o.params.allege?.value ?? 0);
   // Menuiserie paramétrée (D-101) : dormant, montants et vitrages ; sinon un panneau simple.
-  const m = o.classe === "fenetre" ? o.params.menuiserie : null;
+  const m = o.classe === "fenetre" || o.classe === "porte" ? o.params.menuiserie : null;
   if (m) {
     const s0 = c - o.params.largeur.value / 2;
-    for (const k of corpsMenuiserie(o.params.largeur.value, o.params.hauteur.value, m, e)) t.boite(a, u, n, s0 + k.s0, s0 + k.s1, centre - k.e / 2, centre + k.e / 2, zb + k.z0, zb + k.z1);
+    for (const k of corpsMenuiserie(o.params.largeur.value, o.params.hauteur.value, m, e, o.classe === "porte")) t.boite(a, u, n, s0 + k.s0, s0 + k.s1, centre - k.e / 2, centre + k.e / 2, zb + k.z0, zb + k.z1);
     return;
   }
   t.boite(a, u, n, c - o.params.largeur.value / 2, c + o.params.largeur.value / 2, centre - e / 2, centre + e / 2, zb, zb + o.params.hauteur.value);

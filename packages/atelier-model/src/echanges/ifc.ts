@@ -389,8 +389,9 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
             placementRemplissage = placementDe(o.niveauId);
           }
           // Menuiserie paramétrée (D-101) : corps en dormant, montants et vitrages au lieu du panneau simple.
-          const menuiserie = ouv.classe === "fenetre" ? ouv.params.menuiserie : null;
-          const corps = menuiserie ? corpsMenuiserie(w, ouv.params.hauteur.value, menuiserie, ep).map((k) => boite(va, vu, c - w / 2 + k.s0, c - w / 2 + k.s1, centre - k.e / 2, centre + k.e / 2, zb + k.z0, zb + k.z1)) : [panneau];
+          const menuiserie = ouv.classe === "fenetre" || ouv.classe === "porte" ? ouv.params.menuiserie : null;
+          // Porte à sens renseigné : placement propre à la porte, le corps détaillé n'y est pas réécrit (panneau seul).
+          const corps = menuiserie && !ouvrant ? corpsMenuiserie(w, ouv.params.hauteur.value, menuiserie, ep, ouv.classe === "porte").map((k) => boite(va, vu, c - w / 2 + k.s0, c - w / 2 + k.s1, centre - k.e / 2, centre + k.e / 2, zb + k.z0, zb + k.z1)) : [panneau];
           const remplissage = s.ajouter(`${classeIfc}(${gid(ouv.id)},$,${opt(ouv.params.repere ?? ouv.id)},$,$,${ref(placementRemplissage)},${ref(forme([corpsSolide(corps)]))},${opt(ouv.params.repere)},${reelStep(ouv.params.hauteur.value)},${reelStep(w)},${ouv.classe === "porte" ? ".DOOR." : ".WINDOW."},${operation},$)`);
           s.ajouter(`IFCRELFILLSELEMENT(${gid(`rel-remplit|${ouv.id}`)},$,$,$,${ref(ouverture)},${ref(remplissage)})`);
           produits.set(ouv.id, remplissage);
@@ -405,6 +406,8 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
               menuiserie.vitrage ? `#${prop("VitrageEpaisseur", lg(menuiserie.vitrage.epaisseur.value))}` : null,
               menuiserie.vitrage?.composition ? `#${prop("VitrageComposition", label(menuiserie.vitrage.composition))}` : null,
               menuiserie.vantaux ? `#${prop("Vantaux", `IFCCOUNTMEASURE(${menuiserie.vantaux})`)}` : null,
+              menuiserie.seuil ? `#${prop("Seuil", lg(menuiserie.seuil.value))}` : null,
+              ouv.classe === "porte" ? `#${prop("PorteFenetre", `IFCBOOLEAN(${menuiserie.vitrage ? ".T." : ".F."})`)}` : null,
             ]);
           }
           compter(ouv.classe, ouv.classe === "porte" ? "IfcDoor" : "IfcWindow", "SweptSolid (panneau) + IfcOpeningElement", true, ouv.classe === "porte" && !ouvrant ? "sens d'ouverture non renseigné : OperationType non écrit" : undefined);

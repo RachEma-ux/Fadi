@@ -339,6 +339,13 @@ function Ouverture2D({ o, etat, pr, selectionne, survole }: { o: Occurrence<"por
     return (
       <g className={classes("obj-porte", selectionne, survole)} data-objet={o.id} data-ouvrant={bt.explicite ? `${bt.ouvrant.charniere}-${bt.ouvrant.cote}${bt.ouvrant.type && bt.ouvrant.type !== "battante" ? `-${bt.ouvrant.type}` : ""}` : "non-renseigne"} stroke={couleur} strokeWidth={selectionne ? 2 : 1} fill="none">
         {sym.vantaux.map((v, i) => <path key={`v${i}`} d={chemin(pr, v, false)} />)}
+        {/* Dormant de porte (D-113) : montants dans la profondeur du dormant. */}
+        {o.params.menuiserie && (() => {
+          const q0 = dec(p1, 0);
+          const q1 = dec(p1, 1);
+          const ln = Math.hypot(q1.x - q0.x, q1.y - q0.y) || 1;
+          return traitsMenuiseriePlan(dec(p1, 0.5), { x: ux, y: uy }, { x: (q1.x - q0.x) / ln, y: (q1.y - q0.y) / ln }, w, o.params.menuiserie).map((r, i) => <path key={`m${i}`} d={chemin(pr, r)} fill="currentColor" fillOpacity={0.25} data-menuiserie />);
+        })()}
         {sym.arcs.map((a, i) => <path key={`a${i}`} d={chemin(pr, a, false)} strokeDasharray={bt.explicite ? undefined : "2 2"} strokeWidth={0.8} />)}
       </g>
     );

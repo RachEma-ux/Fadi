@@ -282,6 +282,13 @@ function symbolesPlan(c: Collecteur, etat: ModeleAtelier, objets: readonly Occur
         // Seuil : sur la face opposée au battant.
         const fs = bt.ouvrant.cote === "gauche" ? 0 : 1;
         c.ligne(k.dec(k.p1, fs), k.dec(k.p2, fs), "fin", o.id);
+        // Dormant de porte (D-113).
+        if (o.params.menuiserie) {
+          const q0 = k.dec(k.p1, 0);
+          const q1 = k.dec(k.p1, 1);
+          const ln = Math.hypot(q1.x - q0.x, q1.y - q0.y) || 1;
+          for (const r of traitsMenuiseriePlan(k.dec(k.p1, 0.5), k.u, { x: (q1.x - q0.x) / ln, y: (q1.y - q0.y) / ln }, k.w, o.params.menuiserie)) c.poly(r, true, "vue", null, o.id);
+        }
         break;
       }
       case "fenetre": {

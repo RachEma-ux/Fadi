@@ -67,7 +67,10 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
   porte: (etat, p) => {
     const o = ouverture(etat, p);
     const ouvrant = lireOuvrant(p["ouvrant"]);
-    return ouvrant ? { ...o, ouvrant } : o;
+    // Menuiserie de porte (D-113) : dormant, seuil, vantaux pleins ou vitrés (porte-fenêtre).
+    const hote = etat.objets[o.murHoteId] as { params: { epaisseur: { value: number } } };
+    const menuiserie = lireMenuiserie(p["menuiserie"], { largeur: o.largeur.value, hauteur: o.hauteur.value, epaisseurMur: hote.params.epaisseur.value, porte: true });
+    return { ...o, ...(ouvrant ? { ouvrant } : {}), ...(menuiserie ? { menuiserie } : {}) };
   },
   fenetre: (etat, p) => {
     const o = ouverture(etat, p);
