@@ -511,7 +511,8 @@ export type Transformation =
   | { type: "translation"; dx: number; dy: number }
   | { type: "rotation"; centre: Vec; angleDeg: number }
   | { type: "miroir"; a: Vec; b: Vec }
-  | { type: "echelle"; centre: Vec; facteur: number };
+  /** Échelle (facteurY : échelle non uniforme, D-145 ; absent = facteur sur les deux axes). */
+  | { type: "echelle"; centre: Vec; facteur: number; facteurY?: number };
 
 export function appliquerTransformation(p: Vec, t: Transformation): Vec {
   switch (t.type) {
@@ -532,7 +533,7 @@ export function appliquerTransformation(p: Vec, t: Transformation): Vec {
       return add(t.a, sub(along, perpV));
     }
     case "echelle":
-      return { x: t.centre.x + (p.x - t.centre.x) * t.facteur, y: t.centre.y + (p.y - t.centre.y) * t.facteur };
+      return { x: t.centre.x + (p.x - t.centre.x) * t.facteur, y: t.centre.y + (p.y - t.centre.y) * (t.facteurY ?? t.facteur) };
   }
 }
 

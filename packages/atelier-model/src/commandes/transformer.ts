@@ -45,6 +45,7 @@ const axeMiroir = (t: { a: { x: number; y: number }; b: { x: number; y: number }
 
 /** Applique une transformation géométrique aux paramètres d'une occurrence (sans toucher aux dimensions typées). */
 export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation): OccurrenceQuelconque {
+  if (t.type === "echelle" && t.facteurY !== undefined) return echelleNonUniforme(o, t as Transformation & { type: "echelle"; facteurY: number });
   const T = (q: Point2) => transformerPoint2(q, t);
   const rot = t.type === "rotation" ? t.angleDeg : 0;
   switch (o.classe) {
@@ -143,6 +144,94 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
   }
 }
 
+/**
+ * Échelle non uniforme (D-145, DA-02-05) : facteurs fx, fy autour d'un centre. Les dimensions typées (épaisseurs,
+ * largeurs, hauteurs) sont gardées comme pour l'échelle uniforme ; seules les positions et les tracés changent.
+ * Refusée, en nommant l'objet, pour ce qui ne garde pas sa nature : arc, segment en arc, ellipse tournée en biais,
+ * mur courbe, occurrence de bloc (échelle scalaire), objet importé (maillage), hachure à motif importé.
+ */
+function echelleNonUniforme(o: OccurrenceQuelconque, t: Transformation & { type: "echelle"; facteurY: number }): OccurrenceQuelconque {
+  const T = (q: Point2) => transformerPoint2(q, t);
+  const fx = t.facteur;
+  const fy = t.facteurY;
+  const refus = (motif: string) => new ErreurCommande("precondition", "facteurY", `${o.id} : ${motif} — échelle non uniforme refusée`);
+  // Direction (degrés) transformée par la partie linéaire.
+  const dir = (deg: number) => { const r = (deg * Math.PI) / 180; return Math.round(((Math.atan2(Math.sin(r) * fy, Math.cos(r) * fx) * 180) / Math.PI) * 1e9) / 1e9; };
+  switch (o.classe) {
+    case "mur":
+      if (o.params.renflement) throw refus("mur courbe (l'arc ne resterait pas un arc)");
+      return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
+    case "bloc-occurrence":
+      throw refus("occurrence de bloc (échelle scalaire)");
+    case "objet-importe":
+      throw refus("représentation importée");
+    case "esquisse": {
+      const q = o.params;
+      if (q.forme === "arc") throw refus("arc");
+      if (q.renflements?.some((x) => x !== 0)) throw refus("segment en arc");
+      if (q.motifLignes) throw refus("hachure à motif importé");
+      let forme = q.forme;
+      let rayon = q.rayon;
+      let rayonB = q.rayonB ?? null;
+      let rotation = q.rotation ?? null;
+      if (q.forme === "cercle" || q.forme === "ellipse") {
+        const rot = q.forme === "ellipse" ? (rotation?.value ?? 0) : 0;
+        const droit = Math.abs(((rot % 90) + 90) % 90) < 1e-9 || Math.abs((((rot % 90) + 90) % 90) - 90) < 1e-9;
+        if (!droit) throw refus("ellipse tournée en biais");
+        // Demi-axes le long de x et de y avant échelle, puis grand axe / petit axe après.
+        const r = q.rayon!.value;
+        const rb = q.forme === "ellipse" ? q.rayonB!.value : r;
+        const surX = q.forme === "cercle" || Math.abs(((rot % 180) + 180) % 180) < 1e-9;
+        const ax = (surX ? r : rb) * fx;
+        const ay = (surX ? rb : r) * fy;
+        forme = "ellipse";
+        rayon = { value: Math.round(Math.max(ax, ay) * 1e9) / 1e9, unit: "m" };
+        rayonB = { value: Math.round(Math.min(ax, ay) * 1e9) / 1e9, unit: "m" };
+        rotation = { value: ax >= ay ? 0 : 90, unit: "deg" };
+      } else if (q.rayon) throw refus(`forme « ${q.forme} » à rayon`);
+      const tangentes = q.tangentes ? q.tangentes.map((v) => (v ? { x: Math.round(v.x * fx * 1e9) / 1e9, y: Math.round(v.y * fy * 1e9) / 1e9 } : null)) : undefined;
+      const degrade = q.degrade ? { ...q.degrade, angle: { value: dir(q.degrade.angle.value), unit: "deg" as const } } : undefined;
+      return { ...o, params: { ...q, forme, ...(tangentes ? { tangentes } : {}), ...(degrade ? { degrade } : {}), points: q.points.map(T), centre: q.centre ? T(q.centre) : null, rayon, ...(forme === "ellipse" ? { rayonB, rotation } : {}) } } as OccurrenceQuelconque;
+    }
+    case "dalle": {
+      const pe = o.params.pente;
+      const pente = pe ? { ...pe, direction: { value: dir(pe.direction.value), unit: "deg" as const } } : undefined;
+      return { ...o, params: { ...o.params, ...contourT(o.params, t), ...(pente ? { pente } : {}) } };
+    }
+    default:
+      // Contours, axes, points d'insertion : transformation affine des positions, dimensions typées gardées.
+      return affine(o, T);
+  }
+}
+
+/** Positions d'une occurrence transformées par T (classes à contour, axe ou point, sans paramètre d'orientation). */
+function affine(o: OccurrenceQuelconque, T: (q: Point2) => Point2): OccurrenceQuelconque {
+  const c = (x: Contour): Contour => ({ contour: x.contour.map(T), trous: x.trous.map((h) => h.map(T)) });
+  switch (o.classe) {
+    case "toiture":
+    case "zone":
+    case "solide":
+    case "reference-plan":
+      return { ...o, params: { ...o.params, ...c(o.params) } } as OccurrenceQuelconque;
+    case "piece":
+      return { ...o, params: { ...o.params, ...c(o.params), etiquette: o.params.etiquette ? T(o.params.etiquette) : null } };
+    case "espace":
+      return { ...o, params: { ...o.params, polygones: o.params.polygones.map(c), etiquette: o.params.etiquette ? T(o.params.etiquette) : null } };
+    case "escalier":
+    case "cotation":
+      return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } } as OccurrenceQuelconque;
+    case "poteau":
+      return { ...o, params: { ...o.params, point: T(o.params.point) } };
+    case "texte":
+    case "etiquette":
+      return { ...o, params: { ...o.params, position: T(o.params.position) } } as OccurrenceQuelconque;
+    case "garde-corps":
+      return { ...o, params: { ...o.params, points: o.params.points.map(T) } };
+    default:
+      return o; // ouvertures : elles suivent leur mur (position relative)
+  }
+}
+
 function lireTransformation(p: Brut, type: "translation" | "rotation" | "miroir" | "echelle"): Transformation {
   switch (type) {
     case "translation": {
@@ -160,7 +249,9 @@ function lireTransformation(p: Brut, type: "translation" | "rotation" | "miroir"
     }
     case "echelle": {
       const facteur = lire.nombre(p, "facteur", { min: 1e-6 })!;
-      return { type, centre: lire.point(p, "centre")!, facteur };
+      // Échelle non uniforme (D-145) : facteurY distinct de facteur (sinon, échelle uniforme).
+      const facteurY = p["facteurY"] === undefined || p["facteurY"] === null ? undefined : lire.nombre(p, "facteurY", { min: 1e-6 })!;
+      return { type, centre: lire.point(p, "centre")!, facteur, ...(facteurY !== undefined && Math.abs(facteurY - facteur) > 1e-12 ? { facteurY } : {}) };
     }
   }
 }

@@ -663,6 +663,13 @@ export function saisie(outil: string, texte: string, pts: Point2[], curseur: Poi
   const dernier = pts[pts.length - 1] ?? null;
   const paire = /^(-?\d+(?:\.\d+)?)[;x](-?\d+(?:\.\d+)?)$/.exec(t);
   if (outil === "echelle") {
+    // « fx;fy » (ou « fx x fy ») : échelle non uniforme (D-145) ; un seul nombre : uniforme.
+    const deux = /^(\d+(?:\.\d+)?)[;x](\d+(?:\.\d+)?)$/.exec(texte.replace(/\s+/g, "").replace(/,/g, "."));
+    if (deux && dernier) {
+      const [fx, fy] = [Number(deux[1]), Number(deux[2])];
+      if (!(fx > 0) || !(fy > 0)) return null;
+      return emettre([{ type: "transformer.echelle", params: { centre: dernier, facteur: fx, facteurY: fy }, cibles: ui.selection }], `Échelle × ${fx} en x, × ${fy} en y`);
+    }
     const facteur = Number(t);
     if (!(facteur > 0) || !dernier) return null;
     return emettre([{ type: "transformer.echelle", params: { centre: dernier, facteur }, cibles: ui.selection }], `Échelle × ${facteur}`);

@@ -2276,6 +2276,42 @@ await page.waitForSelector(".plan2d");
   check("baie cintrée : arc surbaissé de flèche 0,25 m enregistré", r0.status === 200 && cintre?.type === "surbaisse" && Math.abs((cintre?.fleche?.value ?? 0) - 0.25) < 1e-9, `${r0.status} · ${JSON.stringify(cintre)}`);
 }
 
+// Échelle non uniforme (D-145) : outil Échelle, centre cliqué, « 2;1 » tapé : largeur doublée, hauteur gardée.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const P = (x, y) => ({ x, y, frame: "local", unit: "m" });
+  const x0 = murA.params.a.x - 390;
+  const y0 = murA.params.a.y - 390;
+  const r0 = await lot(pid, `ech-${Date.now()}`, (await modele(pid)).revision, [
+    { type: "objet.creer", params: { id: "ech-e2e", classe: "esquisse", niveauId: murA.niveauId, params: { forme: "polygone", points: [P(x0, y0), P(x0 + 2, y0), P(x0 + 2, y0 + 1), P(x0, y0 + 1)], ferme: true, centre: null, rayon: null, angleDebut: null, angleFin: null, motif: null } } },
+  ]);
+  await ouvrir(pid);
+  await selectionner("ech-e2e");
+  // Palette ouverte sans Échap (qui viderait la sélection) : l'outil Échelle exige une sélection.
+  await page.mouse.move(2, 2);
+  await page.keyboard.press("Control+k");
+  await page.locator(".palette-champ").waitFor({ state: "visible", timeout: 5000 });
+  await page.locator(".palette-champ").fill("échelle");
+  await page.waitForFunction(() => (document.querySelector(".palette-resultats li")?.textContent ?? "").includes("Échelle"), null, { timeout: 5000 }).catch(() => {});
+  await page.keyboard.press("Enter");
+  const outilOk = await page.waitForFunction(() => (document.querySelector(".plan2d")?.getAttribute("aria-label") ?? "").endsWith("outil echelle") || (document.querySelector(".atelier-n-outils .outil.est-actif")?.textContent ?? "").includes("Échelle"), null, { timeout: 5000 }).then(() => true, () => false);
+  const cadre = await page.locator(".plan2d").boundingBox();
+  await page.mouse.click(cadre.x + cadre.width * 0.3, cadre.y + cadre.height * 0.3);
+  await page.keyboard.type("2;1");
+  await page.keyboard.press("Enter");
+  let pts = null;
+  for (let k = 0; k < 30; k++) {
+    pts = (await modele(pid)).modele.objets["ech-e2e"]?.params.points ?? null;
+    if (pts && Math.abs(Math.max(...pts.map((q) => q.x)) - Math.min(...pts.map((q) => q.x)) - 4) < 1e-6) break;
+    await page.waitForTimeout(500);
+  }
+  const larg = pts ? Math.max(...pts.map((q) => q.x)) - Math.min(...pts.map((q) => q.x)) : null;
+  const haut = pts ? Math.max(...pts.map((q) => q.y)) - Math.min(...pts.map((q) => q.y)) : null;
+  check("échelle non uniforme : « 2;1 » double la largeur, garde la hauteur", r0.status === 200 && outilOk && Math.abs(larg - 4) < 1e-6 && Math.abs(haut - 1) < 1e-6, `${r0.status} · outil ${outilOk} · ${larg} × ${haut}`);
+  await page.keyboard.press("Escape");
+}
+
 // Dalle à retombée de rive, épaisseur vers le bas (D-144) : saisie dans l'inspecteur, rive cachée tracée au plan.
 {
   await page.keyboard.press("Escape");

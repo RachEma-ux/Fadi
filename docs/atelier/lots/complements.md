@@ -217,3 +217,4 @@ Baies cintrées (`baies-cintrees.test.ts`, e2e, D-141).
 Espaces sur plusieurs niveaux (`espaces-volume.test.ts`, e2e, D-142).
 Réservation par zone, notifications de verrous (`reservations.test.ts`, API, e2e versions, D-143).
 Sens d'épaisseur et retombées de rive des dalles (`dalles-retombees.test.ts`, e2e, D-144).
+Échelle non uniforme (`echelle-non-uniforme.test.ts`, e2e, D-145).

@@ -248,6 +248,10 @@ describe("outils de tracé", () => {
     const r2 = saisie("mur", "3;-1", [pt(1, 1)], null, etat, ui({ pointsEnCours: [pt(1, 1)] }), opts);
     expect((r2!.commandes[0]!.params as { b: { x: number; y: number } }).b).toMatchObject({ x: 4, y: 0 });
     expect(saisie("mur", "abc", [pt(1, 1)], null, etat, ui(), opts)).toBeNull();
+    // Échelle non uniforme (D-145) : « fx;fy » avec virgules décimales.
+    const e = saisie("echelle", "1,5;0,5", [pt(1, 1)], null, etat, ui({ outil: "echelle", selection: ["x"] }), opts)!;
+    expect(e.commandes[0]).toMatchObject({ type: "transformer.echelle", params: { facteur: 1.5, facteurY: 0.5 }, cibles: ["x"] });
+    expect((saisie("echelle", "2", [pt(1, 1)], null, etat, ui({ outil: "echelle", selection: ["x"] }), opts)!.commandes[0]!.params as { facteurY?: number }).facteurY).toBeUndefined();
   });
 
   it("pose une porte sur le mur cliqué, jamais hors du mur", () => {
