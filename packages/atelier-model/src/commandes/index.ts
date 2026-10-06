@@ -240,7 +240,20 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "definition.supprimer": (etat, p) => reducteursDefinition.supprimer(etat, p),
   "definition.substituer": (etat, p) => reducteursDefinition.substituer(etat, p),
   "propriete.definir": (etat, p) => definirPropriete(etat, p),
-  "classification.affecter": (etat, p) => affecterClassification(etat, p),
+  // Plusieurs objets d'un coup (D-112, classification par règle) : `ids` au lieu de `id`, mêmes contrôles pour chacun.
+  "classification.affecter": (etat, p) => {
+    if (!Array.isArray(p["ids"])) return affecterClassification(etat, p);
+    const ids = (p["ids"] as unknown[]).filter((x): x is string => typeof x === "string");
+    if (!ids.length || ids.length > 5000) throw new ErreurCommande("invalide", "ids", "de 1 à 5000 objets");
+    let courant = etat;
+    let effets = effetsVides();
+    for (const id of ids) {
+      const r = affecterClassification(courant, { ...p, id });
+      courant = r.etat;
+      effets = fusionnerEffets(effets, r.effets);
+    }
+    return { etat: courant, effets };
+  },
   "reference.reparer": (etat, p) => reparerReference(etat, p),
   // Documents dérivés (lot 5) : vues et feuilles
   ...reducteursDocuments,

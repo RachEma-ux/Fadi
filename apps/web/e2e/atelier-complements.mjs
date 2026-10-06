@@ -1684,6 +1684,29 @@ await page.waitForSelector(".plan2d");
   check("rejet de la paume : doigt ignoré pendant le stylet, glisser du doigt actif ensuite", !!avant && !!pendant && Math.abs(pendant.x - avant.x) < 1 && !!apres && Math.abs(apres.x - avant.x) > 50, `${avant?.x} → ${pendant?.x} → ${apres?.x}`);
 }
 
+// Classer par règle (D-112) : murs du niveau actif, proposition affichée, un seul lot.
+{
+  await page.keyboard.press("Escape");
+  await attendreEnregistre().catch(() => {});
+  const avant = await modele(pid);
+  await page.locator("[data-classer-regle] > summary").click();
+  await page.locator('[data-regle="classe"]').selectOption("mur");
+  await page.locator("[data-classer-regle] input[type=checkbox]").first().check();
+  await page.locator('[data-regle="systeme"]').fill("E2E");
+  await page.locator('[data-regle="code"]').fill("R-1");
+  const n = Number(await page.locator("[data-regle-proposition]").getAttribute("data-regle-proposition").catch(() => "0"));
+  await page.locator("[data-regle-appliquer]").click();
+  let classes = 0;
+  let rev = avant.revision;
+  for (let k = 0; k < 30 && classes < n; k++) {
+    const md = await modele(pid);
+    classes = Object.values(md.modele.objets).filter((o) => o.proprietes?.["classification:E2E"]?.valeur === "R-1").length;
+    rev = md.revision;
+    if (classes < n) await page.waitForTimeout(500);
+  }
+  check("classer par règle : murs du niveau actif proposés puis classés en un seul lot", n > 0 && classes === n && rev === avant.revision + 1, `${n} · ${classes} · r${avant.revision} → r${rev}`);
+}
+
 // Cycle : le voisin ne peut pas référencer une publication de ce projet, qui le référence déjà.
 const pubA = (await api("post", `/projects/${pid}/atelier/publications`, { nom: "Compléments v1" })).body;
 const niveauA = Object.keys((await modele(pid)).modele.niveaux)[0];

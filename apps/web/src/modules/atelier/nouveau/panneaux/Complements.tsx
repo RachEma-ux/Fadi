@@ -6,7 +6,10 @@
 import { useState } from "react";
 import {
   bibliotheques,
+  CLASSES,
   CLASSES_BLOC,
+  proposerClassification,
+  type Classe,
   contraintesDe,
   CLASSE_REFERENTIEL,
   lireReferentielCsv,
@@ -117,6 +120,45 @@ export function Classification({ sel, etat, readOnly, onCommandes }: { sel: Occu
           </div>
         )}
       </details>
+    </details>
+  );
+}
+
+/**
+ * Classer par règle (D-112, DA-06-08) : classe Fadi, type et niveau facultatifs, système et code ; la proposition
+ * (objets visés, déjà classés écartés, verrouillés) s'affiche avant toute commande ; « Appliquer » envoie un seul lot.
+ */
+export function ClasserParRegle({ etat, niveauId, onCommandes }: { etat: ModeleAtelier; niveauId: string | null; onCommandes: OnCommandes }) {
+  const referentiels = Object.values(etat.definitions).filter((d) => d.classe === CLASSE_REFERENTIEL).map((d) => d.params as unknown as ParamsReferentiel);
+  const presentes = [...new Set(Object.values(etat.objets).map((o) => o.classe))].sort() as Classe[];
+  const [classe, setClasse] = useState<Classe | "">("");
+  const [type, setType] = useState("");
+  const [niveauSeul, setNiveauSeul] = useState(false);
+  const [systeme, setSysteme] = useState(referentiels[0]?.systeme ?? "");
+  const [code, setCode] = useState("");
+  const [remplacer, setRemplacer] = useState(false);
+  const types = classe ? [...new Set(Object.values(etat.objets).filter((o) => o.classe === classe && o.definitionId).map((o) => o.definitionId!))] : [];
+  const p = classe ? proposerClassification(etat, { classe, systeme, code, definitionId: type || null, niveauId: niveauSeul ? niveauId : null, remplacer }) : null;
+  const ref = referentiels.find((r) => r.systeme === systeme.trim()) ?? null;
+  const codeConnu = !ref || !code.trim() || code.trim() in ref.codes;
+  return (
+    <details className="inspecteur-classification" data-classer-regle>
+      <summary>Classer par règle</summary>
+      <div className="classif-formulaire">
+        <label>Classe<select value={classe} onChange={(e) => { setClasse(e.target.value as Classe | ""); setType(""); }} data-regle="classe"><option value="">—</option>{presentes.map((c) => <option key={c} value={c}>{CLASSES[c].libelle}</option>)}</select></label>
+        {types.length > 0 && <label>Type<select value={type} onChange={(e) => setType(e.target.value)} data-regle="type"><option value="">tous</option>{types.map((t) => <option key={t} value={t}>{etat.definitions[t]?.nom ?? t}</option>)}</select></label>}
+        <label className="case"><input type="checkbox" checked={niveauSeul} onChange={(e) => setNiveauSeul(e.target.checked)} /> Niveau actif seulement</label>
+        <label>Système<input list="regle-systemes" value={systeme} maxLength={80} onChange={(e) => setSysteme(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-regle="systeme" /></label>
+        <datalist id="regle-systemes">{referentiels.map((r) => <option key={r.systeme} value={r.systeme} />)}</datalist>
+        <label>Code<input value={code} maxLength={60} onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-regle="code" /></label>
+        <label className="case"><input type="checkbox" checked={remplacer} onChange={(e) => setRemplacer(e.target.checked)} /> Remplacer un code déjà posé</label>
+        {p && (
+          <p className="inspecteur-aide" data-regle-proposition={p.cibles.length}>
+            Proposition : {p.cibles.length} objet(s) à classer{p.dejaClasses.length ? ` ; ${p.dejaClasses.length} déjà classé(s) dans ce système, écarté(s)` : ""}{p.verrouilles.length ? ` ; ${p.verrouilles.length} verrouillé(s), écarté(s)` : ""}.{!codeConnu ? " Code absent du référentiel chargé : il serait refusé." : ""}
+          </p>
+        )}
+        <button type="button" disabled={!p || !p.commandes.length || !codeConnu} data-regle-appliquer onClick={() => p && onCommandes(p.commandes, p.label)}>Appliquer la proposition</button>
+      </div>
     </details>
   );
 }
