@@ -19,7 +19,7 @@ import { ReferencesExternes } from "./panneaux/ReferencesExternes";
 import { atelierClient } from "../bus/atelier-client";
 import { actionImmediate, lotSuppression, OUTILS_IMMEDIATS } from "./actions";
 import { etatUi, useEtatUi, visibleSelonFiltres, type NiveauAffichage, type PanneauMobile } from "./etat-ui";
-import { FAMILLES, OUTILS, OUTILS_PAR_ID, outilsVisibles, type Famille, type Outil } from "./outils";
+import { FAMILLES, OUTILS_PAR_ID, outilsVisibles, type Famille, type Outil } from "./outils";
 import { Inspecteur } from "./panneaux/Inspecteur";
 import { Modifications } from "./panneaux/Modifications";
 import { Navigateur } from "./panneaux/Navigateur";
@@ -27,6 +27,8 @@ import { brancherSyncEnsembles } from "./sync-ensembles";
 import { Palette } from "./panneaux/Palette";
 import { segmentsDuNiveau } from "./plan2d/accrochage";
 import { saisie, terminer, type ResultatClic } from "./plan2d/outils-2d";
+import { CadrePanneau, ColonnePanneaux, Instructeur } from "./panneaux/Canevas";
+import { outilDeTouche } from "./raccourcis";
 import { cadrerNiveau, Plan2D } from "./plan2d/Plan2D";
 import "./atelier-nouveau.css";
 
@@ -133,6 +135,20 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
     if (restants.length !== ui.selection.length) etatUi.set({ selection: restants });
   }, [etat.objets, ui.selection]);
 
+  // Grille des outils étendus (D-156) : fermée au clic extérieur et à Échap.
+  const [etendus, setEtendus] = useState(false);
+  const etenduOuvert = useRef(false);
+  etenduOuvert.current = etendus;
+  const grilleEtendus = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!etendus) return;
+    const surClic = (e: PointerEvent) => {
+      const t = e.target as Node | null;
+      if (grilleEtendus.current && t && !grilleEtendus.current.contains(t) && !(t instanceof Element && t.closest("[data-outils-etendus]"))) setEtendus(false);
+    };
+    window.addEventListener("pointerdown", surClic);
+    return () => window.removeEventListener("pointerdown", surClic);
+  }, [etendus]);
   const presseLocal = useRef<string | null>(null);
   const executer = useCallback(
     async (commandes: Commande[], label: string, selectionnerCrees = true) => {
@@ -346,7 +362,9 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           // Échap termine une chaîne déjà commencée (murs enchaînés) sans créer de contour incomplet.
           if (["polyligne", "spline", "garde-corps"].includes(u.outil) && r.commandes.length) appliquerResultat(r);
           else etatUi.set({ pointsEnCours: [], aide: "" });
-        } else if (u.outil !== "selection") etatUi.choisirOutil("selection");
+        } else if (u.disposition === "canevas" && etenduOuvert.current) setEtendus(false);
+        // Disposition Canevas (D-156) : Échap revient à l'outil précédent ; disposition classique : à la Sélection.
+        else if (u.outil !== "selection") etatUi.choisirOutil(u.disposition === "canevas" && u.outilPrecedent !== u.outil ? u.outilPrecedent : "selection");
         else etatUi.selectionner([]);
         return;
       }
@@ -389,7 +407,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         return;
       }
       if (e.key.length === 1) {
-        const o = OUTILS.find((x) => x.raccourci === e.key.toLowerCase());
+        const o = outilDeTouche(e.key, u.raccourcis);
         if (o) {
           e.preventDefault();
           choisir(o);
@@ -436,7 +454,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   }
 
   return (
-    <div className={`atelier-n panneau-${ui.panneauMobile}${ui.mode === "documents" ? " mode-documents" : ""}`} data-affichage={ui.affichage}>
+    <div className={`atelier-n panneau-${ui.panneauMobile}${ui.mode === "documents" ? " mode-documents" : ""} disposition-${ui.disposition}${ui.outilsReplies ? " outils-replies" : ""}`} data-affichage={ui.affichage} data-panneau={ui.disposition === "canevas" ? (ui.panneauFlottant ?? "") : undefined}>
       <header className="atelier-n-barre" aria-label="Barre de l'Atelier">
         <label className="barre-niveau">
           <span className="sr-only">Niveau actif</span>
@@ -487,6 +505,10 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           </div>
         </details>
         <button type="button" onClick={cadrer} title="Cadrer le niveau (0)">Cadrer</button>
+        {/* Disposition (D-156) : grille à cinq repères ou canevas plein écran à panneaux flottants. */}
+        <button type="button" aria-pressed={ui.disposition === "canevas"} data-disposition-canevas onClick={() => etatUi.set((u) => ({ disposition: u.disposition === "canevas" ? "classique" : "canevas", panneauFlottant: null }))} title="Canevas plein écran : outils et panneaux flottent sur le dessin">
+          Canevas
+        </button>
         <details
           className="barre-exports"
           onToggle={(e) => {
@@ -602,22 +624,50 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         </span>
       </header>
 
-      <div className="atelier-n-outils" role="toolbar" aria-label="Outils">
+      <div className="atelier-n-outils" role="toolbar" aria-label="Outils" aria-orientation={ui.disposition === "canevas" ? "vertical" : "horizontal"}>
+        {ui.disposition === "canevas" && (
+          <>
+            <button type="button" className="outil outil-replier" aria-expanded={!ui.outilsReplies} data-replier-outils onClick={() => etatUi.set((u) => ({ outilsReplies: !u.outilsReplies }))} title={ui.outilsReplies ? "Déplier la barre d'outils" : "Replier la barre d'outils"}>
+              <span aria-hidden="true">{ui.outilsReplies ? "»" : "«"}</span> <span className="outil-libelle">{ui.outilsReplies ? "Outils" : "Replier"}</span>
+            </button>
+            <button type="button" className="outil" onClick={() => etatUi.set({ paletteOuverte: true })} title="Rechercher un outil (Ctrl K)">
+              <span aria-hidden="true">⌕</span> <span className="outil-libelle">Rechercher</span>
+            </button>
+          </>
+        )}
         <button type="button" className={`outil${ui.outil === "selection" ? " est-actif" : ""}`} aria-pressed={ui.outil === "selection"} onClick={() => etatUi.choisirOutil("selection")} title="Sélection (V)">
           <span aria-hidden="true">↖</span> <span className="outil-libelle">Sélection</span>
         </button>
         {outilsBarre.favoris.filter((o) => o.id !== "selection").map((o) => (
           <BoutonOutil key={o.id} o={o} actif={ui.outil === o.id} raison={disponibilite(o)} onChoisir={choisir} />
         ))}
-        {outilsBarre.parFamille.map(([f, liste]) => (
-          <details key={f} className="outils-famille">
-            <summary>{FAMILLES[f]}</summary>
-            <div className="outils-famille-liste">
-              {liste.map((o) => <BoutonOutil key={o.id} o={o} actif={ui.outil === o.id} raison={disponibilite(o)} onChoisir={choisir} />)}
-            </div>
-          </details>
-        ))}
+        {ui.disposition !== "canevas" &&
+          outilsBarre.parFamille.map(([f, liste]) => (
+            <details key={f} className="outils-famille">
+              <summary>{FAMILLES[f]}</summary>
+              <div className="outils-famille-liste">
+                {liste.map((o) => <BoutonOutil key={o.id} o={o} actif={ui.outil === o.id} raison={disponibilite(o)} onChoisir={choisir} />)}
+              </div>
+            </details>
+          ))}
+        {ui.disposition === "canevas" && (
+          <button type="button" className="outil" aria-expanded={etendus} aria-controls={etendus ? "canevas-outils-etendus" : undefined} data-outils-etendus onClick={() => setEtendus(!etendus)} title="Outils étendus">
+            <span aria-hidden="true">…</span> <span className="outil-libelle">Plus d'outils</span>
+          </button>
+        )}
       </div>
+      {ui.disposition === "canevas" && etendus && (
+        <div className="canevas-etendus" id="canevas-outils-etendus" role="dialog" aria-label="Outils étendus" data-grille-outils ref={grilleEtendus}>
+          {outilsBarre.parFamille.map(([f, liste]) => (
+            <section key={f} aria-label={FAMILLES[f]}>
+              <h4>{FAMILLES[f]}</h4>
+              <div className="canevas-grille">
+                {liste.map((o) => <BoutonOutil key={o.id} o={o} actif={ui.outil === o.id} raison={disponibilite(o)} onChoisir={(x) => { setEtendus(false); choisir(x); }} />)}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
 
       <aside className="atelier-n-gauche" aria-label="Navigateur">
         <Navigateur etat={etat} ui={ui} readOnly={readOnly} onCommandes={(c, l) => void executer(c, l, false)} onCentrer={centrerSur} />
@@ -635,7 +685,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         ) : (
           <Plan2D etat={etatAffiche} ui={ui} readOnly={readOnly} onResultat={appliquerResultat} onTerminer={finir} onCommandes={(c, l) => void executer(c, l, false)} externes={consultation ? [] : externes} />
         )}
-        {ui.mode === "2d" && (ui.pointsEnCours.length > 0 || precision) && (
+        {ui.mode === "2d" && (ui.disposition === "canevas" || ui.pointsEnCours.length > 0 || precision) && (
           <form
             className="saisie-precision"
             onSubmit={(e) => {
@@ -643,7 +693,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
               validerPrecision();
             }}
           >
-            <label htmlFor="saisie-precision">Longueur ou dx;dy</label>
+            <label htmlFor="saisie-precision">{ui.disposition === "canevas" ? "Mesures" : "Longueur ou dx;dy"}</label>
             <input
               id="saisie-precision"
               ref={champPrecision}
@@ -678,7 +728,23 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         </div>
       </aside>
 
+      {ui.disposition === "canevas" && (
+        <>
+          <ColonnePanneaux ui={ui} alertes={lotsEnDifficulte} />
+          {ui.panneauFlottant === "instructeur" && (
+            <CadrePanneau id="instructeur" titre="Instructeur">
+              <Instructeur ui={ui} />
+            </CadrePanneau>
+          )}
+        </>
+      )}
       <footer className="atelier-n-etat" aria-live="polite">
+        {ui.disposition === "canevas" && (
+          <span className="canevas-bas">
+            <button type="button" className="lien" data-aide-instructeur onClick={() => etatUi.basculerPanneau("instructeur")} title="Aide de l'outil actif">?</button>
+            <span className="canevas-langue" title="L'interface de Fadi est en français.">Français</span>
+          </span>
+        )}
         {protectedReference && !readOnly && (
           <span className="atelier-n-reference" role="note" title={`La référence reste intacte : votre première modification validée ouvre une copie de travail (« ${DRAWING_COPY_NAME} ») et s’y enregistre.`}>
             {PROTECTED_REFERENCE_MESSAGE}

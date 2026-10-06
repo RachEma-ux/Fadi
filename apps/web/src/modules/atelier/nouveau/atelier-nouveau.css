@@ -2282,3 +2282,263 @@
   padding: 0;
   border: 1px solid var(--atelier-ligne);
 }
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Disposition « Canevas » (D-156) : le dessin occupe toute la zone ; outils, colonne de panneaux, panneau ouvert et
+   barre du bas partagent la même cellule de grille et flottent par-dessus, sans jamais redimensionner le canevas.
+   --------------------------------------------------------------------------------------------------------------- */
+.atelier-n.disposition-canevas {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "barre" "travail";
+  --flottant-fond: var(--surface, #fff);
+  --flottant-ombre: 0 6px 18px rgba(24, 61, 50, 0.16);
+  --colonne-l: 6.5rem;
+}
+.atelier-n.disposition-canevas > .atelier-n-travail {
+  grid-area: travail;
+  display: block;
+}
+.atelier-n.disposition-canevas > .atelier-n-onglets {
+  display: none;
+}
+/* Barre d'outils verticale flottante, repliable ; l'outil actif porte une barre colorée. */
+.atelier-n.disposition-canevas > .atelier-n-outils {
+  grid-area: travail;
+  justify-self: start;
+  align-self: start;
+  z-index: 6;
+  margin: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 2px;
+  max-height: calc(100% - 4.5rem);
+  overflow-y: auto;
+  padding: 0.25rem;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+}
+.atelier-n.disposition-canevas .atelier-n-outils .outil {
+  min-height: 44px;
+  min-width: 44px;
+  justify-content: flex-start;
+  border-left: 3px solid transparent;
+}
+.atelier-n.disposition-canevas .atelier-n-outils .outil.est-actif {
+  border-left-color: var(--atelier-accent);
+}
+.atelier-n.disposition-canevas.outils-replies .atelier-n-outils .outil:not(.outil-replier):not(.est-actif) {
+  display: none;
+}
+.atelier-n.disposition-canevas.outils-replies .atelier-n-outils .outil-libelle {
+  display: none;
+}
+/* Grille des outils étendus : ancrée à droite de la barre d'outils. */
+.atelier-n.disposition-canevas > .canevas-etendus {
+  grid-area: travail;
+  justify-self: start;
+  align-self: start;
+  z-index: 8;
+  margin: 0.5rem 0 0 calc(0.5rem + 11rem);
+  max-width: min(36rem, calc(100% - 12rem));
+  max-height: calc(100% - 4.5rem);
+  overflow-y: auto;
+  padding: 0.6rem;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+}
+.canevas-etendus h4 {
+  margin: 0.4rem 0 0.2rem;
+  font-size: 0.78rem;
+  color: var(--atelier-doux);
+}
+.canevas-grille {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+}
+.canevas-grille .outil {
+  min-height: 44px;
+  flex-direction: column;
+  font-size: 0.78rem;
+  text-align: center;
+}
+/* Colonne d'icônes de panneaux : étiquette sous chaque icône, défilante. */
+.atelier-n.disposition-canevas > .canevas-colonne {
+  grid-area: travail;
+  justify-self: end;
+  align-self: start;
+  z-index: 6;
+  margin: 0.5rem;
+  width: var(--colonne-l);
+  max-height: calc(100% - 4.5rem);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.25rem;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+}
+.canevas-icone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  min-height: 44px;
+  padding: 0.3rem 0.2rem;
+  border: 0;
+  border-right: 3px solid transparent;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.canevas-icone[aria-pressed="true"] {
+  border-right-color: var(--atelier-accent);
+  background: color-mix(in srgb, var(--atelier-accent) 10%, transparent);
+}
+.canevas-picto {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.canevas-etiquette {
+  font-size: 0.72rem;
+  text-align: center;
+}
+/* Panneau ouvert : à gauche de la colonne, défilement interne, poignée de repli en bas. Les repères existants
+   (navigateur, inspecteur, modifications, versions) sont affichés dans ce même emplacement. */
+.atelier-n.disposition-canevas > .canevas-panneau,
+.atelier-n.disposition-canevas > .atelier-n-gauche,
+.atelier-n.disposition-canevas > .atelier-n-droite {
+  grid-area: travail;
+  justify-self: end;
+  align-self: start;
+  z-index: 7;
+  margin: 0.5rem calc(var(--colonne-l) + 1rem) 0 0;
+  width: min(23rem, calc(100% - var(--colonne-l) - 5rem));
+  max-height: calc(100% - 5rem);
+  overflow-y: auto;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+}
+.atelier-n.disposition-canevas > .atelier-n-gauche,
+.atelier-n.disposition-canevas > .atelier-n-droite,
+.atelier-n.disposition-canevas > .atelier-n-droite > div {
+  display: none;
+}
+.atelier-n.disposition-canevas[data-panneau="outliner"] > .atelier-n-gauche,
+.atelier-n.disposition-canevas[data-panneau="entite"] > .atelier-n-droite,
+.atelier-n.disposition-canevas[data-panneau="modifications"] > .atelier-n-droite,
+.atelier-n.disposition-canevas[data-panneau="versions"] > .atelier-n-droite,
+.atelier-n.disposition-canevas[data-panneau="entite"] > .atelier-n-droite > .droite-inspecteur,
+.atelier-n.disposition-canevas[data-panneau="modifications"] > .atelier-n-droite > .droite-modifications,
+.atelier-n.disposition-canevas[data-panneau="versions"] > .atelier-n-droite > .droite-versions {
+  display: block;
+}
+.canevas-panneau-tete {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  background: var(--flottant-fond);
+  border-bottom: 1px solid var(--atelier-ligne);
+}
+.canevas-panneau-tete h3 {
+  margin: 0;
+}
+.canevas-fermer {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+.canevas-panneau-corps {
+  padding: 0.6rem;
+}
+.canevas-poignee {
+  display: block;
+  width: 100%;
+  height: 10px;
+  border: 0;
+  background: var(--atelier-accent);
+  opacity: 0.55;
+  cursor: pointer;
+}
+.instructeur ol,
+.instructeur ul {
+  padding-left: 1.2rem;
+  margin: 0.3rem 0 0.6rem;
+}
+.instructeur-outil {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0 0 0.4rem;
+}
+/* Barre du bas flottante : aide, langue, état, champ Mesures toujours présent. */
+.atelier-n.disposition-canevas > .atelier-n-etat {
+  grid-area: travail;
+  align-self: end;
+  z-index: 5;
+  margin: 0 calc(var(--colonne-l) + 1rem) 0.5rem 0.5rem;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+}
+.canevas-bas {
+  display: inline-flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+.canevas-bas .lien {
+  min-width: 32px;
+  font-weight: 600;
+}
+.canevas-langue {
+  color: var(--atelier-doux);
+}
+.atelier-n.disposition-canevas .saisie-precision {
+  right: calc(var(--colonne-l) + 1rem);
+  bottom: 4rem;
+  z-index: 6;
+}
+/* Téléphone : panneaux en surcouche sur toute la largeur restante, barre d'outils compacte. */
+@media (max-width: 760px) {
+  .atelier-n.disposition-canevas {
+    --colonne-l: 4.2rem;
+  }
+  .atelier-n.disposition-canevas > .canevas-panneau,
+  .atelier-n.disposition-canevas > .atelier-n-gauche,
+  .atelier-n.disposition-canevas > .atelier-n-droite {
+    /* Pleine largeur moins la barre d'outils (à gauche) et la colonne (à droite). */
+    width: calc(100% - var(--colonne-l) - 5rem);
+    margin-right: calc(var(--colonne-l) + 1rem);
+  }
+  .atelier-n.disposition-canevas .atelier-n-outils .outil-libelle,
+  .canevas-etiquette {
+    display: none;
+  }
+  .atelier-n.disposition-canevas > .canevas-etendus {
+    margin-left: 4rem;
+    max-width: calc(100% - 4.5rem - var(--colonne-l));
+  }
+  .canevas-grille {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

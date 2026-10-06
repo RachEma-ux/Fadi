@@ -72,7 +72,42 @@ export interface EtatUi {
   ensembles: EnsembleLocal[];
   /** Styles graphiques par classe en 3D (D-135) : couleur et opacité choisies pour soi ; affichage seulement. */
   stylesClasses: Record<string, { couleur: string | null; opacite: number | null }>;
+  /** Disposition (D-156), panneau flottant ouvert, barre d'outils repliée, outil précédent (Échap en Canevas). */
+  disposition: Disposition;
+  panneauFlottant: PanneauFlottant | null;
+  outilsReplies: boolean;
+  outilPrecedent: string;
+  /** Réglages de navigation (D-157). */
+  navigation: ReglagesNavigation;
+  /** Raccourcis personnalisés (D-158) : identifiant d'outil → touche ; vide = raccourci par défaut. */
+  raccourcis: Record<string, string>;
+  /** Objets masqués pour soi (D-159), et pile des masquages pour « réafficher le dernier ». */
+  masques: string[];
+  pileMasques: string[][];
+  /** Ombres en 3D (D-159) : option d'affichage locale. */
+  ombres: boolean;
 }
+
+/** Disposition de l'Atelier (D-156) : grille à cinq repères (défaut) ou canevas plein écran à panneaux flottants. */
+export type Disposition = "classique" | "canevas";
+/** Panneaux flottants exclusifs de la disposition Canevas (D-156). */
+export type PanneauFlottant = "instructeur" | "entite" | "outliner" | "modifications" | "versions" | "affichage" | "navigation" | "raccourcis" | "modele";
+
+/** Réglages de navigation (D-157), propres à l'appareil. */
+export interface ReglagesNavigation {
+  peripherique: "souris" | "trackpad";
+  /** Geste à deux doigts (tactile et trackpad) en 3D : orbite ou panoramique (le pincement zoome toujours). */
+  deuxDoigts: "orbite" | "pan";
+  inverserZoom: boolean;
+  inverserPan: boolean;
+  inverserOrbite: boolean;
+  /** Facteurs de sensibilité (0,25 à 4 ; 1 = normal). */
+  sensibiliteZoom: number;
+  sensibilitePan: number;
+  sensibiliteOrbite: number;
+}
+
+export const NAVIGATION_DEFAUT: ReglagesNavigation = { peripherique: "souris", deuxDoigts: "orbite", inverserZoom: false, inverserPan: false, inverserOrbite: false, sensibiliteZoom: 1, sensibilitePan: 1, sensibiliteOrbite: 1 };
 
 export interface FiltresAffichage {
   classesMasquees: string[];
@@ -86,7 +121,9 @@ export interface EnsembleLocal extends FiltresAffichage {
 
 const CLE_PREFS = "fadi.atelier.prefs";
 
-function lirePrefs(): Partial<Pick<EtatUi, "affichage" | "accrochages" | "favoris" | "parametresOutil" | "filtres" | "ensembles" | "stylesClasses">> {
+const CLES_PERSISTEES = ["affichage", "accrochages", "favoris", "parametresOutil", "filtres", "ensembles", "stylesClasses", "disposition", "outilsReplies", "navigation", "raccourcis", "ombres"] as const;
+
+function lirePrefs(): Partial<Pick<EtatUi, (typeof CLES_PERSISTEES)[number]>> {
   try {
     const raw = typeof localStorage !== "undefined" ? localStorage.getItem(CLE_PREFS) : null;
     return raw ? (JSON.parse(raw) as Partial<EtatUi>) : {};
@@ -97,7 +134,7 @@ function lirePrefs(): Partial<Pick<EtatUi, "affichage" | "accrochages" | "favori
 
 function ecrirePrefs(e: EtatUi): void {
   try {
-    localStorage?.setItem(CLE_PREFS, JSON.stringify({ affichage: e.affichage, accrochages: e.accrochages, favoris: e.favoris, parametresOutil: e.parametresOutil, filtres: e.filtres, ensembles: e.ensembles, stylesClasses: e.stylesClasses }));
+    localStorage?.setItem(CLE_PREFS, JSON.stringify(Object.fromEntries(CLES_PERSISTEES.map((k) => [k, e[k]]))));
   } catch {
     /* stockage indisponible : préférences non conservées */
   }
@@ -126,6 +163,15 @@ let etat: EtatUi = {
   stylesClasses: prefs.stylesClasses && typeof prefs.stylesClasses === "object" ? prefs.stylesClasses : {},
   isolement: null,
   repere: null,
+  disposition: prefs.disposition === "canevas" ? "canevas" : "classique",
+  panneauFlottant: null,
+  outilsReplies: prefs.outilsReplies === true,
+  outilPrecedent: "selection",
+  navigation: { ...NAVIGATION_DEFAUT, ...(prefs.navigation && typeof prefs.navigation === "object" ? prefs.navigation : {}) },
+  raccourcis: prefs.raccourcis && typeof prefs.raccourcis === "object" ? prefs.raccourcis : {},
+  masques: [],
+  pileMasques: [],
+  ombres: prefs.ombres === true,
 };
 
 const ecouteurs = new Set<() => void>();
@@ -135,7 +181,7 @@ export const etatUi = {
   set(patch: Partial<EtatUi> | ((e: EtatUi) => Partial<EtatUi>)): void {
     const p = typeof patch === "function" ? patch(etat) : patch;
     etat = { ...etat, ...p };
-    if ("affichage" in p || "accrochages" in p || "favoris" in p || "parametresOutil" in p || "filtres" in p || "ensembles" in p || "stylesClasses" in p) ecrirePrefs(etat);
+    if (CLES_PERSISTEES.some((k) => k in p)) ecrirePrefs(etat);
     for (const fn of ecouteurs) fn();
   },
   subscribe(fn: () => void): () => void {
@@ -144,7 +190,11 @@ export const etatUi = {
   },
   /** Choisir un outil remet le tracé en cours à zéro ; la sélection est conservée (les transformations s'y appliquent). */
   choisirOutil(outil: string, aide = ""): void {
-    etatUi.set({ outil, pointsEnCours: [], aide, paletteOuverte: false });
+    etatUi.set((e) => ({ outil, pointsEnCours: [], aide, paletteOuverte: false, ...(e.outil !== outil ? { outilPrecedent: e.outil } : {}) }));
+  },
+  /** Panneau flottant exclusif (D-156) : en ouvrir un ferme l'autre ; le rouvrir le ferme. */
+  basculerPanneau(p: PanneauFlottant): void {
+    etatUi.set((e) => ({ panneauFlottant: e.panneauFlottant === p ? null : p }));
   },
   selectionner(ids: string[], ajouter = false): void {
     etatUi.set((e) => ({ selection: ajouter ? [...new Set([...e.selection, ...ids])] : ids }));
