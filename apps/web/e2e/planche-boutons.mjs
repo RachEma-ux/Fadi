@@ -261,7 +261,8 @@ async function auditer(nom, vp, tactile) {
   }
 
   // 7. Instructeur et « ? ».
-  await cliquer(T("[data-planche-panneau-icone]"));
+  // Téléphone : la colonne de panneaux est masquée, le « ? » de la petite barre du haut ouvre l'Instructeur.
+  await cliquer((await T("[data-planche-panneau-icone]").isVisible()) ? T("[data-planche-panneau-icone]") : T("[data-planche-aide]"));
   check(`${nom} : bouton Instructeur ouvre le panneau`, (await p.locator('[data-planche-panneau="instructeur"]').count()) === 1);
   await cliquer(p.locator('[data-planche-panneau="instructeur"] .canevas-fermer'));
   check(`${nom} : bouton × du panneau le ferme`, (await p.locator('[data-planche-panneau="instructeur"]').count()) === 0);

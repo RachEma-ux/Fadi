@@ -205,13 +205,21 @@
   box-shadow: var(--flottant-ombre);
 }
 .planche-brouillon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   margin: 0;
-  font-size: 0.82rem;
   color: #7a4a00;
 }
 .planche-haut button {
   min-width: 44px;
   min-height: 44px;
+}
+.planche-haut .planche-aide {
+  display: none;
+  font-weight: 600;
 }
 
 /* Barre d'outils verticale flottante ; l'outil actif porte un liseré à gauche (relevé : bleu). */
@@ -732,22 +740,41 @@
     min-height: 44px;
   }
   /* Surcouches qui restent sur le dessin : brouillon (pastille), annuler / rétablir, Détacher, grille, panneau. */
+  /* Petite barre du haut : brouillon (icône), détacher, aide — 3 icônes, rien d'autre. */
   .planche-haut {
     justify-self: start;
     margin: 0.5rem;
-    max-width: calc(100% - var(--colonne-l) - 1.5rem);
-    flex-wrap: wrap;
-    padding: 0.2rem 0.35rem;
+    gap: 2px;
+    padding: 2px;
     border-radius: 8px;
   }
-  .planche-brouillon {
-    flex: 1 1 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .planche-haut .planche-aide {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
-  .planche-detacher-libelle {
+  .planche-haut button {
+    border: 0;
+    background: transparent;
+  }
+  .planche-detacher {
+    padding: 0;
+    width: 44px;
+  }
+  .planche-detacher-libelle,
+  .planche-colonne {
     display: none;
+  }
+  .planche-annuler-retablir {
+    flex: none;
+    gap: 2px;
+  }
+  .planche-annuler-retablir button {
+    min-width: 44px;
+    min-height: 44px;
+    border: 1px solid var(--atelier-ligne, #dce5df);
+    border-radius: 6px;
+    background: #fff;
   }
   /* Grille, colonne et panneau sont des enfants du volet dans le DOM : ici en surcouche absolue sur le dessin. */
   .planche-grille {

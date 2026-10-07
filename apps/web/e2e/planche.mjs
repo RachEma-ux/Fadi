@@ -116,7 +116,7 @@ await ouvrir(pid);
 await mesurer("ouverture de la Planche (chargement de three.js compris)", () => ouvrirPlanche());
 check("Planche ouverte : vue three.js, barre d'outils, barre d'état et champ Mesures", (await page.locator("[data-planche-vue] canvas").count()) === 1 && (await page.locator(".planche-outils").isVisible()) && (await page.locator("[data-planche-etat]").isVisible()) && (await page.locator("[data-planche-mesures]").isVisible()));
 check("bouton « Planche » marqué actif", (await page.locator("[data-mode-planche]").getAttribute("aria-pressed")) === "true");
-check("brouillon local annoncé comme tel (C6)", ((await page.locator("[data-planche-brouillon]").textContent()) ?? "").includes("Brouillon local"));
+check("brouillon local annoncé comme tel (C6)", ((await page.locator("[data-planche-brouillon]").textContent()) ?? "").includes("Brouillon local") && ((await page.locator("[data-planche-brouillon]").getAttribute("title")) ?? "").includes("Brouillon local"));
 check("barre d'état en région aria-live", (await page.locator("[data-planche-etat]").getAttribute("aria-live")) === "polite");
 check("desktop (souris) : barre de modificateurs tactile masquée", !(await page.locator("[data-planche-modificateurs]").isVisible()));
 const vide = await etat();

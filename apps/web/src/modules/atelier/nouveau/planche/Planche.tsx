@@ -71,6 +71,8 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   const [panneau, setPanneau] = useState<"instructeur" | null>(null);
   const [recent, setRecent] = useState<string | null>(null);
   const [tactile, setTactile] = useState(false);
+  // Téléphone (≤ 760 px) : annuler / rétablir vivent dans le volet bas, l'aide dans la barre du haut.
+  const [etroit, setEtroit] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
   const [majVerrouillee, setMajVerrouillee] = useState(false);
   const [webgl, setWebgl] = useState<"ok" | "indisponible">("ok");
   // Volet bas (téléphone) : replié, la consigne tient sur une ligne ; déployé, consigne complète et flèches.
@@ -322,6 +324,13 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     o.observe(pied);
     if (volet) o.observe(volet);
     return () => o.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 760px)");
+    const maj = () => setEtroit(mq.matches);
+    mq.addEventListener("change", maj);
+    return () => mq.removeEventListener("change", maj);
   }, []);
 
   // --- Vue three.js : créée une fois, détruite au démontage.
@@ -624,6 +633,18 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
 
   const recentOutil = recent ? outilParId(recent) : null;
 
+  /** Annuler / rétablir : barre du haut (ordinateur) ou volet bas (téléphone), jamais les deux. */
+  const annulerRetablir = (
+    <div className="barre-groupe planche-annuler-retablir" role="group" aria-label={`${t("planche.annuler")} / ${t("planche.retablir")}`}>
+      <button type="button" onClick={annulerPas} disabled={hist.passe.length === 0} title={t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" })} data-planche-annuler>
+        ↶<span className="sr-only">{t("planche.annuler")}</span>
+      </button>
+      <button type="button" onClick={retablirPas} disabled={hist.futur.length === 0} title={t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" })} data-planche-retablir>
+        ↷<span className="sr-only">{t("planche.retablir")}</span>
+      </button>
+    </div>
+  );
+
   /** Touches d'état à l'écran (tactile) : un appui = enfoncée puis relâchée. */
   const boutonsTouches = (touches: [Touche, string, string][]) =>
     touches.map(([touche, libelle, aide]) => (
@@ -676,17 +697,15 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       </div>
 
       <div className="planche-haut">
-        <p className="planche-brouillon" role="note" title={stockageDisponible() ? t("planche.brouillon.aide") : t("planche.brouillon.indisponible")} data-planche-brouillon>
-          {t("planche.brouillon")}
+        <p className="planche-brouillon" role="note" title={`${t("planche.brouillon")} — ${stockageDisponible() ? t("planche.brouillon.aide") : t("planche.brouillon.indisponible")}`} data-planche-brouillon>
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 3h7l5 5v13H7z" />
+            <path d="M14 3v5h5" />
+            <path d="M10 13h6M10 17h6" />
+          </svg>
+          <span className="sr-only">{t("planche.brouillon")}</span>
         </p>
-        <div className="barre-groupe" role="group" aria-label={`${t("planche.annuler")} / ${t("planche.retablir")}`}>
-          <button type="button" onClick={annulerPas} disabled={hist.passe.length === 0} title={t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" })} data-planche-annuler>
-            ↶<span className="sr-only">{t("planche.annuler")}</span>
-          </button>
-          <button type="button" onClick={retablirPas} disabled={hist.futur.length === 0} title={t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" })} data-planche-retablir>
-            ↷<span className="sr-only">{t("planche.retablir")}</span>
-          </button>
-        </div>
+        {!etroit && annulerRetablir}
         <button
           type="button"
           className="planche-detacher"
@@ -697,6 +716,9 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
         >
           <span aria-hidden="true" className="outil-picto">{detache === "non" ? "⧉" : "⤡"}</span>
           <span className="planche-detacher-libelle" aria-hidden="true">{detache === "non" ? t("planche.detacher.court") : detache === "fenetre" ? t("planche.rattacher.court") : t("planche.plein-ecran.quitter.court")}</span>
+        </button>
+        <button type="button" className="planche-aide" aria-pressed={panneau === "instructeur"} onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("panneau.instructeur")} aria-label={t("panneau.instructeur")} data-planche-aide>
+          <span aria-hidden="true" className="canevas-picto">?</span>
         </button>
       </div>
 
@@ -760,6 +782,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           <span className="planche-consigne">{vue.consigne}</span>
           {etatBarre && <span className="planche-message" data-planche-message> | {etatBarre}</span>}
         </p>
+        {etroit && annulerRetablir}
         <button type="button" className="planche-volet-bascule" aria-expanded={volet} onClick={() => setVolet(!volet)} title={volet ? t("planche.volet.moins.aide") : t("planche.volet.plus.aide")} data-planche-volet-bascule>
           {volet ? t("planche.volet.moins") : t("planche.volet.plus")}
         </button>
