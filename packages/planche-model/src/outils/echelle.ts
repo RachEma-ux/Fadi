@@ -48,20 +48,27 @@ export interface Poignee {
   readonly axes: readonly Axe[];
 }
 
-/** Les 26 poignées de la boîte (3 × 3 × 3 − centre). */
+/**
+ * Les 26 poignées de la boîte (3 × 3 × 3 − centre). Une sélection PLATE dans un axe (face au sol, arête…) n'a pas
+ * d'épaisseur à mettre à l'échelle : cet axe ne porte aucune poignée (comme les 8 poignées d'une forme 2D dans
+ * SketchUp), sinon trois poignées coïncideraient et celle qui porte l'axe plat refuserait toute dimension cible.
+ */
 export function poignees(b: Boite): Poignee[] {
   const coord = (axe: Axe, i: number): number => (i === 0 ? b.min[axe] : i === 2 ? b.max[axe] : b.centre[axe]);
+  const plats = AXES.filter((a) => b.max[a] - b.min[a] < EPS);
+  const actifs = AXES.filter((a) => !plats.includes(a));
   const r: Poignee[] = [];
   for (let i = 0; i < 3; i++)
     for (let j = 0; j < 3; j++)
       for (let k = 0; k < 3; k++) {
         if (i === 1 && j === 1 && k === 1) continue;
         const idx = { x: i, y: j, z: k };
+        if (plats.some((a) => idx[a] !== 1)) continue;
         const axes = AXES.filter((a) => idx[a] !== 1);
         const opp = (a: Axe): number => (idx[a] === 1 ? coord(a, 1) : coord(a, 2 - idx[a]));
         r.push({
           id: `${i}${j}${k}`,
-          genre: axes.length === 3 ? "coin" : axes.length === 2 ? "arete" : "face",
+          genre: axes.length === actifs.length ? "coin" : axes.length === 1 ? "face" : "arete",
           position: v3(coord("x", i), coord("y", j), coord("z", k)),
           ancre: v3(opp("x"), opp("y"), opp("z")),
           axes,

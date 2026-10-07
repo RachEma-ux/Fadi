@@ -81,3 +81,28 @@ describe("Décalage (§4.19)", () => {
     expect(Object.keys(contexte(p.modele).faces).length).toBeGreaterThan(0);
   });
 });
+
+describe("Décalage — arête seule : le côté du curseur est respecté", () => {
+  const bas = (m: ReturnType<typeof sol>) => aretes(m).find((a) => m.racine.sommets[a.a]!.position.y === 0 && m.racine.sommets[a.b]!.position.y === 0)!.id;
+  const ys = (m: ReturnType<typeof sol>) => Object.values(m.racine.sommets).map((s) => Math.round(s.position.y * 1e6) / 1e6);
+  it("arête basse présélectionnée, point de mesure à l'extérieur (2;-1), « 1 » → arête à y = -1, aucune face nouvelle", () => {
+    const m = sol();
+    const p = partie(machineDecalage, m, [bas(m)]).jouer(survolVers(v3(2, -1, 0)), clicVers(v3(2, -1, 0)), saisie("1"));
+    expect(ys(p.modele)).toContain(-1);
+    expect(faces(p.modele)).toHaveLength(1);
+  });
+  it("arête basse présélectionnée, point de mesure à l'intérieur (2;1), « 1 » → arête à y = 1 (la face est divisée)", () => {
+    const m = sol();
+    const p = partie(machineDecalage, m, [bas(m)]).jouer(clicVers(v3(2, 1, 0)), saisie("1"));
+    expect(ys(p.modele)).toContain(1);
+    expect(faces(p.modele)).toHaveLength(2);
+  });
+  it("arête cliquée sans présélection, puis curseur à l'extérieur et clic → arête du côté du curseur, distance du curseur", () => {
+    const m = sol();
+    const p = partie(machineDecalage, m).jouer(survolVers(v3(2, 0, 0)), clicVers(v3(2, 0, 0)), survolVers(v3(2, -0.7, 0)));
+    expect(p.vue().mesures?.valeur).toMatch(/0[.,]70/);
+    p.jouer(clicVers(v3(2, -0.7, 0)));
+    expect(ys(p.modele)).toContain(-0.7);
+    expect(faces(p.modele)).toHaveLength(1);
+  });
+});

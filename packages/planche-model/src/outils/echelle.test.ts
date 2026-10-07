@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ajouterRectangle, modeleVide } from "../geometrie-libre.js";
 import { v3 } from "../vecteur.js";
 import { etape } from "./commun-formes.js";
 import { machineEchelle, poignees } from "./echelle.js";
@@ -104,5 +105,27 @@ describe("Échelle (§4.18)", () => {
     const { m } = sel(4, 3, 2.7);
     const p = partie(machineEchelle, m).jouer(clicVers(v3(2, 1.5, 2.7)));
     expect(p.selection.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Échelle — sélection plate", () => {
+  it("une face au sol n'a que 8 poignées : 4 coins (uniformes, x et y) et 4 milieux (un axe), aucune sur z", () => {
+    const hs = poignees({ min: v3(0, 0, 0), max: v3(4, 3, 0), centre: v3(2, 1.5, 0) });
+    expect(hs).toHaveLength(8);
+    expect(hs.filter((h) => h.genre === "coin")).toHaveLength(4);
+    expect(hs.filter((h) => h.genre === "face")).toHaveLength(4);
+    expect(hs.every((h) => !h.axes.includes("z"))).toBe(true);
+    const milieu = hs.find((h) => h.position.x === 4 && h.position.y === 1.5);
+    expect(milieu?.axes).toEqual(["x"]);
+    expect(milieu?.ancre).toEqual(v3(0, 1.5, 0));
+  });
+  it("face au sol : poignée du milieu du bord droit + « 10m » → largeur 10, hauteur inchangée", () => {
+    const m = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
+    const ids = Object.keys(m.racine.faces);
+    const p = partie(machineEchelle, m, ids).jouer(clicVers(v3(4, 1.5, 0)), survolVers(v3(6, 1.5, 0)), saisie("10m"));
+    const e = emprise(p.modele);
+    expect(e.max.x).toBeCloseTo(10, 6);
+    expect(e.max.y).toBeCloseTo(3, 6);
+    expect(p.operations).toHaveLength(1);
   });
 });

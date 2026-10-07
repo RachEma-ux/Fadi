@@ -10,8 +10,8 @@
  */
 import { type Id, contexte, decaler, decalerAretes } from "../geometrie-libre.js";
 import { analyserSaisie } from "../saisie-vcb.js";
-import { type Vec3, EPS, TOL, add, cross, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
-import { baseDuPlan } from "../geometrie-libre.js";
+import { type Vec3, AXE_Z, EPS, TOL, cross, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
+import { baseDuPlan, facesDeLArete } from "../geometrie-libre.js";
 import {
   type Derniere,
   contexteSaisie,
@@ -72,6 +72,27 @@ export function distanceAuContour(contour: readonly Vec3[], n: Vec3, p: Vec3): n
     d = Math.min(d, Math.hypot(P.x - (a.x + abx * t), P.y - (a.y + aby * t)));
   }
   return dedans ? d : -d;
+}
+
+/**
+ * Plan de décalage d'une chaîne d'arêtes : le plan de la chaîne si elle n'est pas rectiligne, sinon celui d'une face
+ * bordant la première arête, sinon le plan qui contient l'arête et fait face au rayon de visée (jamais un plan qui
+ * contiendrait le rayon : le point visé retomberait sur l'arête et le côté du curseur serait perdu).
+ */
+function normaleChaine(ctx: ContexteOutil, c: ReturnType<typeof contexte>, aretes: readonly Id[], A: Vec3, B: Vec3, r: Rayon): Vec3 {
+  const d = sub(B, A);
+  for (const id of aretes) {
+    const a = c.aretes[id];
+    if (!a) continue;
+    const w = cross(d, sub((c.sommets[a.b] as { position: Vec3 }).position, (c.sommets[a.a] as { position: Vec3 }).position));
+    if (len(w) > 1e-6) return normalize(w);
+  }
+  const premiere = aretes[0];
+  const face = premiere !== undefined ? facesDeLArete(ctx.modele, premiere, optionsDans(ctx))[0] : undefined;
+  const f = face !== undefined ? c.faces[face] : undefined;
+  if (f) return f.normale;
+  const n = cross(d, cross(r.direction, d));
+  return len(n) > 1e-9 ? normalize(n) : AXE_Z;
 }
 
 /** Point visé dans le plan du décalage : intersection du rayon avec ce plan. */
@@ -170,16 +191,10 @@ export const machineDecalage: MachineOutil<EtatDecalage> = {
           if (!premiere) return { etat };
           const A = (c.sommets[premiere.a] as { position: Vec3 }).position;
           const B = (c.sommets[premiere.b] as { position: Vec3 }).position;
-          let n: Vec3 | null = null;
-          for (const id of pre) {
-            const a = c.aretes[id];
-            if (!a) continue;
-            const w = cross(sub(B, A), sub((c.sommets[a.b] as { position: Vec3 }).position, (c.sommets[a.a] as { position: Vec3 }).position));
-            if (len(w) > 1e-6) n = normalize(w);
-          }
-          n = n ?? (el?.genre === "face" ? el.normale : normalize(cross(sub(B, A), sub(add(A, ev.rayon.direction), A))));
+          const n = normaleChaine(ctx, c, pre, A, B, ev.rayon);
           const p = intersectionRayonPlan(ev.rayon, { origine: A, normale: n }) ?? A;
-          return { etat: { ...etat, etape: 2, aretes: pre, face: null, normale: n, origine: p, contour: [A, B], distance: 0, cote: p, texte: null, erreur: null } };
+          const e2: EtatDecalage = { ...etat, etape: 2, aretes: pre, face: null, normale: n, origine: p, contour: [A, B], distance: 0, cote: p, texte: null, erreur: null };
+          return { etat: { ...e2, distance: nouvelleDistance(e2, p) } };
         }
         if (!el || !cible) return { etat: { ...etat, erreur: null } };
         if (el.genre === "face" && cible.genre === "face") {
@@ -197,9 +212,10 @@ export const machineDecalage: MachineOutil<EtatDecalage> = {
           if (!a) return { etat };
           const A = (c.sommets[a.a] as { position: Vec3 }).position;
           const B = (c.sommets[a.b] as { position: Vec3 }).position;
-          const n = normalize(cross(sub(B, A), ev.rayon.direction));
+          const n = normaleChaine(ctx, c, ids, A, B, ev.rayon);
           const P = intersectionRayonPlan(ev.rayon, { origine: A, normale: n }) ?? A;
-          return { etat: { ...etat, etape: 2, aretes: ids, face: null, normale: n, origine: P, contour: [A, B], distance: 0, cote: P, texte: null, erreur: null }, selection: ids };
+          const e2: EtatDecalage = { ...etat, etape: 2, aretes: ids, face: null, normale: n, origine: P, contour: [A, B], distance: 0, cote: P, texte: null, erreur: null };
+          return { etat: { ...e2, distance: nouvelleDistance(e2, P) }, selection: ids };
         }
         return { etat };
       }
