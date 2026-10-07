@@ -308,9 +308,21 @@ export class VuePlanche {
     this.inference = vue?.inference && vue.inference.type !== "aucune" ? vue.inference : null;
     if (vue) {
       const lineaire = vue.inference && INFERENCES_LINEAIRES.has(vue.inference.type);
-      const couleur = lineaire ? vue.inference!.couleur : "#000000";
+      const direction = lineaire ? vue.inference!.direction : undefined;
+      // Une ligne d'aperçu prend la couleur de l'inférence seulement si elle est elle-même parallèle à la direction
+      // inférée (la ligne en cours de tracé l'est par construction ; une arête dont on glisse une extrémité, non).
+      const parallele = (l: readonly Vec3[]): boolean => {
+        if (!direction) return !!lineaire;
+        const a = l[0] as Vec3;
+        const b = l[l.length - 1] as Vec3;
+        const u = new THREE.Vector3(b.x - a.x, b.y - a.y, b.z - a.z);
+        const n = u.length();
+        if (n < 1e-9) return false;
+        return Math.abs(u.dot(v3(direction).normalize())) / n > 0.9999;
+      };
       for (const l of vue.apercu.lignes) {
         if (l.length < 2) continue;
+        const couleur = (l.length === 2 ? parallele(l) : !!lineaire) ? vue.inference!.couleur : "#000000";
         this.groupeApercu.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(l.map(v3)), new THREE.LineBasicMaterial({ color: couleur, depthTest: false })));
       }
       // Poignées d'extrémité (Sélection) : carrés pleins, taille écran constante, toujours visibles.
