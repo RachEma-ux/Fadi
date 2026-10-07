@@ -320,7 +320,7 @@ export function AccueilPage() {
               <span className="eyebrow">Reprendre mon projet</span>
               <div className="resume-card-top">
                 <h2 id="resume-heading">
-                  {mostRecent.code} — {mostRecent.name}
+                  <span translate="no">{mostRecent.code} — {mostRecent.name}</span>
                 </h2>
                 <span className="resume-badges">
                   <span className={`badge badge-${doneCount === steps.length && steps.length ? "done" : startedCount > 0 ? "active" : "new"}`} title="Avancement du Parcours : état des 21 étapes">

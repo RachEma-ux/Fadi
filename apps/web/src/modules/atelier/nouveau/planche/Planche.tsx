@@ -10,7 +10,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { analyserSaisie, machineParId, modeleVide, outilParId, rechercherOutil, type ContexteOutil, type EvenementOutil, type Modele, type Outil, type Touche, type VueOutil } from "@parcours/planche-model";
 import { useEtatUi } from "../etat-ui";
 import { ChoixPeripherique } from "../panneaux/Navigation";
-import { LANGUE_INTERFACE, NOM_LANGUE, t } from "../messages";
+import { t } from "../messages";
+import { ChoixLangue } from "../../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
 import { commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
@@ -620,7 +621,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       <footer className="planche-bas">
         <span className="canevas-bas">
           <button type="button" className="lien" onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("bas.aide")} aria-label={t("bas.aide")}>?</button>
-          <span className="canevas-langue" title={t("bas.langue")} lang={LANGUE_INTERFACE}>{NOM_LANGUE[LANGUE_INTERFACE]}</span>
+          <ChoixLangue className="canevas-langue" />
           <ChoixPeripherique ui={ui} />
         </span>
         <p className="planche-etat" aria-live="polite" aria-label={t("planche.etat")} data-planche-etat>

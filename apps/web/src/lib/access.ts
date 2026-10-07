@@ -9,6 +9,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api, canWrite, type EditingLock, type ProjectRole } from "./api";
 import { useAuth } from "./auth-context";
+import { LOCALE } from "./i18n";
 
 export interface ProjectAccess {
   role: ProjectRole;
@@ -42,5 +43,5 @@ export const READ_ONLY_HINT = "Projet partagé en lecture : vous pouvez tout con
 
 /** Le message d'un projet dont l'édition est réservée par quelqu'un d'autre. */
 export function lockedHint(lock: EditingLock): string {
-  return `Édition réservée par ${lock.email} jusqu'à ${new Date(lock.expiresAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} : lecture et commentaires seulement, jusqu'à ce qu'il rende la main ou que la réservation expire.`;
+  return `Édition réservée par ${lock.email} jusqu'à ${new Date(lock.expiresAt).toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit" })} : lecture et commentaires seulement, jusqu'à ce qu'il rende la main ou que la réservation expire.`;
 }

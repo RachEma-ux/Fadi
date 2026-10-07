@@ -13,8 +13,9 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { api, type HarmonieDecisionInput, type HarmonieProposal, type ParcoursStep, type SiteObservationsInput } from "../../lib/api";
 import { SiteDataFold, SiteHero } from "./SiteHarmonie";
+import { LOCALE } from "../../lib/i18n";
 
-const fmt = (v: number) => v.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+const fmt = (v: number) => v.toLocaleString(LOCALE, { maximumFractionDigits: 2 });
 
 /** `toast()` du prototype : un message d'état éphémère en bas de l'écran. */
 export function HarmonieToast({ text, onDone }: { text: string | null; onDone: () => void }) {
@@ -159,7 +160,7 @@ function ProposalCard({
       {q.decision.history.length > 0 && (
         <small className="h7-muted">
           Version {q.decision.decisionVersion}
-          {q.decision.updatedAt ? ` · ${new Date(q.decision.updatedAt).toLocaleString("fr-FR")}` : ""}
+          {q.decision.updatedAt ? ` · ${new Date(q.decision.updatedAt).toLocaleString(LOCALE)}` : ""}
           {q.decision.owner ? ` · ${q.decision.owner}` : ""}
         </small>
       )}
@@ -476,7 +477,7 @@ export function HarmoniePanel({
         </details>
         <footer className="h7-footer">
           Révision {step.content.harmonie.revision}
-          {step.content.harmonie.generatedAt ? ` · ${new Date(step.content.harmonie.generatedAt).toLocaleString("fr-FR")}` : ""}
+          {step.content.harmonie.generatedAt ? ` · ${new Date(step.content.harmonie.generatedAt).toLocaleString(LOCALE)}` : ""}
           {step.deliverable ? ` · ${step.deliverable}` : ""}
         </footer>
       </div>

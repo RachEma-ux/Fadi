@@ -917,11 +917,13 @@ describe("menu principal : enregistrement et partage (D-160)", () => {
   });
 });
 
-describe("catalogue de messages de l'ergonomie (D-161)", () => {
-  it("français seul livré ; chaque clé a un texte ; paramètres remplacés ; panneaux du Canevas tirés du catalogue", async () => {
+describe("catalogue de messages de l'ergonomie (D-161, D-163)", () => {
+  it("français et anglais ; chaque clé a un texte ; paramètres remplacés ; panneaux du Canevas tirés du catalogue", async () => {
     const { CATALOGUE, LANGUE_INTERFACE, t } = await import("./messages");
     const { PANNEAUX_CANEVAS } = await import("./panneaux/Canevas");
-    expect(Object.keys(CATALOGUE)).toEqual(["fr"]);
+    expect(Object.keys(CATALOGUE)).toEqual(["fr", "en"]);
+    expect(Object.keys(CATALOGUE.en).sort()).toEqual(Object.keys(CATALOGUE.fr).sort());
+    expect(t("panneau.fermer", { titre: "Navigation" }, "en")).toBe("Close the Navigation panel");
     expect(LANGUE_INTERFACE).toBe("fr");
     for (const [cle, texte] of Object.entries(CATALOGUE.fr)) expect(texte.trim(), cle).not.toBe("");
     expect(t("panneau.fermer", { titre: "Navigation" })).toBe("Fermer le panneau Navigation");

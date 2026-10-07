@@ -7,6 +7,7 @@ import { App } from "./App";
 import { AuthProvider } from "./lib/auth-context";
 import { registerMutationDefaults } from "./lib/mutations";
 import { persistOptions } from "./lib/query-persister";
+import { demarrerLangue } from "./lib/i18n/demarrer";
 import { reachability } from "./lib/reachability";
 import "./style.css";
 
@@ -49,7 +50,10 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
 const root = document.getElementById("root");
 if (!root) throw new Error("Application root missing");
 
-createRoot(root).render(
+// Langue de l'interface (D-163) : le dictionnaire anglais est prêt avant le premier rendu.
+void demarrerLangue()
+  .catch(() => undefined)
+  .then(() => createRoot(root).render(
   <StrictMode>
     <PersistQueryClientProvider
       client={queryClient}
@@ -66,4 +70,4 @@ createRoot(root).render(
       </BrowserRouter>
     </PersistQueryClientProvider>
   </StrictMode>,
-);
+));

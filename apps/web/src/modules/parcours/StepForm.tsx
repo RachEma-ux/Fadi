@@ -8,8 +8,9 @@
 import { useEffect, useState } from "react";
 import { DECISION_CHOICES, financeKpis, scoreKpis } from "@parcours/domain-model";
 import type { ParcoursFieldValue, ParcoursFormField, ParcoursStep } from "../../lib/api";
+import { LOCALE } from "../../lib/i18n";
 
-const nf = new Intl.NumberFormat("fr-FR");
+const nf = new Intl.NumberFormat(LOCALE);
 
 function toInputValue(v: ParcoursFieldValue | undefined): string {
   if (v === null || v === undefined) return "";

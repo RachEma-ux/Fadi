@@ -235,3 +235,4 @@ Panneaux Affichage, Info modèle, Matériaux, arborescence, ombres — tranche 4
 Menu principal, enregistrer maintenant, partage après enregistrement — tranche 5 (`nouveau.test.ts`, `atelier-canevas.mjs`, D-160).
 Qualité de l'ergonomie : messages, clavier, cibles, recette mobile — tranche 6 (`nouveau.test.ts`, `atelier-canevas.mjs`, D-161) ; compte rendu `ergonomie/compte-rendu.md`.
 Scènes et Styles depuis le Canevas ; « Synchronisé » seulement quand toutes les écritures sont acceptées (`atelier-canevas.mjs`, `parcours-scenario.mjs`, D-162).
+Interface bilingue français / anglais (`traduire.test.ts`, `interface-anglais.mjs`, D-163).

@@ -1,7 +1,11 @@
 # Fadi development rules
 
 - Preserve the authoritative Parcours workflow: 21 steps numbered 01–21, original phases, labels and mobile card presentation.
-- Keep the user-facing application in French. Integrate Harmonie inside each relevant step.
+- The user-facing application is bilingual French / English (owner decision of 2026-10-07, D-163). French stays the
+  source language: write user-facing text in French in the code, then add its English translation to
+  `apps/web/src/lib/i18n/en.json` (and `messages.ts` for the Atelier ergonomics catalogue); `apps/web/e2e/interface-anglais.mjs`
+  reports any interface text left in French. Project data, examples, produced documents (PDF, DXF, IFC, reports) and the
+  prototype Plot tool stay in their own language. Integrate Harmonie inside each relevant step.
 - Keep geometry independent of React. Do not silently omit unsupported model elements.
 - Treat the supplied geometry package as a traceable extraction, not proof of correctness.
 - Do not invent regulatory, structural or source-project data. Distinguish hypotheses, requirements and recommendations (`packages/domain-model`) — they are never the same thing.

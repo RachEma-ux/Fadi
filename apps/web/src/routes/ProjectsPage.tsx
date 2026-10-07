@@ -156,7 +156,7 @@ export function ProjectsPage() {
               .map((p) => (
                 <li key={p.id}>
                   <Link to={`/projets/${p.id}`}>
-                    <strong>{p.code}</strong> — {p.name}
+                    <strong>{p.code}</strong> — <span translate="no">{p.name}</span>
                   </Link>
                   <small>Révision du modèle : {p.modelRevision}</small>
                 </li>
@@ -175,7 +175,7 @@ export function ProjectsPage() {
               .map((p) => (
                 <li key={p.id} data-role={p.role}>
                   <Link to={`/projets/${p.id}`}>
-                    <strong>{p.code}</strong> — {p.name}
+                    <strong>{p.code}</strong> — <span translate="no">{p.name}</span>
                   </Link>
                   <small>
                     {ROLE_LABEL[p.role ?? "lecteur"]} · partagé par {p.ownerEmail ?? "son propriétaire"} · révision du modèle : {p.modelRevision}

@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api, type NotificationItem } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
+import { LOCALE } from "../lib/i18n";
 
 const KIND_LABEL: Record<NotificationItem["kind"], string> = { acces: "Accès", commentaire: "Commentaire", reservation: "Réservation", modification: "Modification", verrou: "Verrou", peremption: "Document périmé" };
 
@@ -80,7 +81,7 @@ export function NotificationBell() {
                   <Link to={targetOf(n)} onClick={() => setOpen(false)}>
                     {n.text}
                   </Link>
-                  <small>{new Date(n.at).toLocaleString("fr-FR")}</small>
+                  <small>{new Date(n.at).toLocaleString(LOCALE)}</small>
                 </li>
               ))}
             </ul>

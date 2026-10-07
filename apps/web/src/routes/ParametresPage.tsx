@@ -14,6 +14,7 @@ import { localStore } from "../lib/local-store";
 import { QUERY_CACHE_VERSION } from "../lib/query-persister";
 import { forgetMaptilerKey, maptilerKey, MAPTILER_KEY_STORAGE, useMaptilerKey } from "../lib/maptiler";
 import { useOnline } from "../components/SyncIndicator";
+import { ChoixLangue } from "../components/ChoixLangue";
 
 type KeyState = "absente" | "session" | "locale";
 
@@ -295,6 +296,11 @@ export function ParametresPage() {
             Mes projets
           </Link>
         </div>
+      </section>
+      <section className="panel settings-section" aria-labelledby="settings-langue" data-settings-langue>
+        <h2 id="settings-langue">Langue de l'interface</h2>
+        <p className="panel-sub">Français ou anglais, pour cet appareil. Les données du projet, les exemples et les documents produits restent dans leur langue.</p>
+        <ChoixLangue />
       </section>
       <MaptilerSettings />
       <LocalDataSettings />

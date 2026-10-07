@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type ParcelTransmission } from "../../lib/api";
 import { atelierClientExistant } from "../atelier/bus/atelier-client";
 import { useProjectAccess } from "../../lib/access";
+import { LOCALE } from "../../lib/i18n";
 
 const SLOT_ID = "fadi-harmonie-slot";
 
@@ -105,8 +106,8 @@ const STATUS_LABEL: Record<ParcelTransmission["status"], string> = {
   "setback-pending": "Recul à recalculer",
 };
 
-const m2 = (v: number) => `${v.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²`;
-const m = (v: number) => `${v.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`;
+const m2 = (v: number) => `${v.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²`;
+const m = (v: number) => `${v.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`;
 
 export function ParcelleTool({ projectId, harmonie = null }: { projectId: string; /** Étape 01 : le panneau Harmonie, placé dans la colonne gauche de l'outil (prototype), sous l'outil tant que la colonne n'est pas prête. */ harmonie?: ReactNode }) {
   const queryClient = useQueryClient();
@@ -219,7 +220,7 @@ export function ParcelleTool({ projectId, harmonie = null }: { projectId: string
   const summary = current
     ? [current.name, `${current.boundaryCount} bornes`, current.area !== null ? m2(current.area) : null, current.perimeter !== null ? m(current.perimeter) : null].filter(Boolean).join(" · ")
     : null;
-  const status = !ready ? "Chargement de l’outil…" : transmitting ? "Transmission au modèle…" : transmission ? `${STATUS_LABEL[transmission.status]} · ${new Date(transmission.at).toLocaleString("fr-FR")}` : "Fichiers enregistrés dans ce projet";
+  const status = !ready ? "Chargement de l’outil…" : transmitting ? "Transmission au modèle…" : transmission ? `${STATUS_LABEL[transmission.status]} · ${new Date(transmission.at).toLocaleString(LOCALE)}` : "Fichiers enregistrés dans ce projet";
 
   return (
     <section className="parcelle-tool" aria-label="Parcelle / Site existant">

@@ -2,7 +2,9 @@
 
 Fadi is the web application that replaces the Parcours V8.19 prototype (a single 18 MB HTML file) for the
 project workflow (21 steps), the architectural workshop (Atelier) and the modules around them. The user-facing
-application is in French; this file and `docs/architecture.md` are the developer entry points.
+application is bilingual French / English (French is the source language; English is chosen per device in the top
+bar, the sign-in pages or Settings, see "Languages" below); this file and `docs/architecture.md` are the developer entry
+points.
 
 ## Status
 
@@ -44,6 +46,22 @@ end-to-end scenario on every screen at desktop and phone widths — no critical 
 decision (Conserver / Extraire / Adapter / Remplacer), its location in Fadi, its proof and the remaining
 limits. `docs/migration/etapes/NN.md` are the per-step sheets (generated), `docs/migration/reference.md` the
 verified inventory of the prototype, `docs/migration/captures/` the screenshots (reference vs. webapp).
+
+## Languages
+
+The interface is written in French in the code and displayed in French (default) or English (D-163). The choice is a
+per-device preference (`localStorage` key `fadi.langue`), offered in the top bar, on the sign-in and sign-up pages, in
+Settings and in the Atelier Canvas bottom bar; changing it reloads the page.
+
+- `apps/web/src/lib/i18n/` — `index.ts` (language, locale for numbers and dates), `traduire.ts` (pure translator: exact
+  strings, `{0}` templates taken from the code, composed texts translated piece by piece, guard against rewriting data),
+  `dom.ts` (display adapter: text nodes and readable attributes translated as React renders them; `translate="no"`
+  blocks are never touched), `demarrer.ts` (loads `en.json` on demand before the first render; browser dialogs too),
+  `en.json` (French → English dictionary, about 6,600 entries).
+- What is not translated: project data (names, entries, comments), the worked examples and the building library
+  content, produced documents (PDF, DXF, SVG, IFC, HTML reports), the prototype Plot tool, server logs.
+- Adding a text: write it in French, add its English to `en.json`, run `apps/web/e2e/interface-anglais.mjs`, which lists
+  any interface text still in French (`residus-anglais.txt`) and fails above 2 %.
 
 ## Start
 

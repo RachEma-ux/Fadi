@@ -20,6 +20,7 @@ import { ApiError, api, type CompassInput, type DesignReviewView } from "../../l
 import { maptilerKey, satellitePreview, type SatellitePreview } from "../../lib/maptiler";
 import { HarmonieToast } from "../parcours/HarmoniePanel";
 import { TextConflictsTable } from "../programmation/TextConflicts";
+import { LOCALE } from "../../lib/i18n";
 
 type Tab = "synthesis" | "levels" | "rooms" | "assumptions" | "flow";
 const TABS: [Tab, string][] = [
@@ -33,7 +34,7 @@ const TABS: [Tab, string][] = [
 /** Sources des événements de transmission, comme `log(p, kind, …)` du prototype (modèle, programme, parcelle, revue, MapTiler). */
 const EVENT_SOURCE: Record<string, string> = { modele: "modèle", programme: "programme", parcelle: "parcelle", revue: "revue", maptiler: "MapTiler" };
 
-const fmt = (v: number | null | undefined, n = 2) => (Number.isFinite(v as number) ? (v as number).toLocaleString("fr-FR", { maximumFractionDigits: n }) : "Non renseigné");
+const fmt = (v: number | null | undefined, n = 2) => (Number.isFinite(v as number) ? (v as number).toLocaleString(LOCALE, { maximumFractionDigits: n }) : "Non renseigné");
 
 /** `compassHTML` : références directionnelles du bâtiment — saisie, enregistrement, état calculé par le moteur. */
 /**
@@ -138,7 +139,7 @@ function MapCollect({ projectId, view, onSaved }: { projectId: string; view: Des
       <p id="v62-map-status" role="status" className="h7-muted">
         {status ??
           (e
-            ? `Altitude de service : ${fmt(e.value)} m · ${new Date(e.at).toLocaleString("fr-FR")} · précision topographique non garantie.`
+            ? `Altitude de service : ${fmt(e.value)} m · ${new Date(e.at).toLocaleString(LOCALE)} · précision topographique non garantie.`
             : "Aucune collecte externe effectuée dans ce fichier. La clé configurée dans Parcelle sera utilisée à votre demande.")}
       </p>
       <p className="h7-muted">
@@ -178,7 +179,7 @@ function SiteObservationForm({ projectId, view, onSaved }: { projectId: string; 
           </button>
           {view.siteContext?.observation && (
             <span className="h7-muted site-observation-status">
-              {view.siteContext.observationStatus} · {new Date(view.siteContext.observedAt).toLocaleString("fr-FR")}
+              {view.siteContext.observationStatus} · {new Date(view.siteContext.observedAt).toLocaleString(LOCALE)}
             </span>
           )}
         </div>
@@ -453,7 +454,7 @@ function InlineReport({
               <p>Ce tableau est un contrôle du dossier à la date de l’édition, pas un compte-rendu de tests indépendants du logiciel.</p>
               {view.review && (
                 <p className="h7-muted">
-                  Revue archivée : {view.review.name} · {new Date(view.review.at).toLocaleString("fr-FR")} · modèle {view.review.modelSignature} · {view.review.counts.rooms} zones ·{" "}
+                  Revue archivée : {view.review.name} · {new Date(view.review.at).toLocaleString(LOCALE)} · modèle {view.review.modelSignature} · {view.review.counts.rooms} zones ·{" "}
                   {view.history.length} revue(s) antérieure(s).
                 </p>
               )}
@@ -478,7 +479,7 @@ function InlineReport({
                     <tbody>
                       {view.events.map((e, i) => (
                         <tr key={`${e.at}-${i}`}>
-                          <td>{new Date(e.at).toLocaleString("fr-FR")}</td>
+                          <td>{new Date(e.at).toLocaleString(LOCALE)}</td>
                           <td>{EVENT_SOURCE[e.kind] ?? e.kind}</td>
                           <td>
                             {e.label}

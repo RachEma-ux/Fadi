@@ -1,12 +1,12 @@
 /**
- * Catalogue de messages de la couche d'ergonomie (D-161) : libellés de la disposition Canevas, des panneaux et du
- * menu principal, regroupés pour être relus et traduits d'un seul endroit. Seul le français est livré : AGENTS.md
- * impose une application en français ; ouvrir une autre langue est une décision du maître d'ouvrage. Pur.
+ * Catalogue de messages de la couche d'ergonomie (D-161, D-163) : libellés de la disposition Canevas, des panneaux
+ * et du menu principal, en français (langue source) et en anglais. Le reste de l'interface est traduit à
+ * l'affichage par le dictionnaire `lib/i18n/en.json`. Pur.
  */
-export type Langue = "fr";
+import { LANGUE, type Langue } from "../../../lib/i18n";
 
-export const LANGUE_INTERFACE: Langue = "fr";
-export const NOM_LANGUE: Record<Langue, string> = { fr: "Français" };
+export type { Langue };
+export const LANGUE_INTERFACE: Langue = LANGUE;
 
 const FR = {
   "canevas.panneaux": "Panneaux",
@@ -27,7 +27,6 @@ const FR = {
   "panneau.fermer": "Fermer le panneau {titre}",
   "panneau.replier": "Replier le panneau {titre}",
   "bas.aide": "Aide de l'outil actif",
-  "bas.langue": "L'interface de Fadi est en français.",
   "menu.titre": "Menu principal",
   "menu.fichier": "☰ Fichier",
   "menu.enregistrer": "Enregistrer maintenant",
@@ -84,7 +83,7 @@ const FR = {
   "planche.instructeur.modificateurs": "Touches modificatrices",
   "planche.instructeur.apres": "Ensuite",
   "planche.instructeur.releve": "Statut du relevé : {statut}",
-  "planche.instructeur.echap": "Échap : annule l'opération en cours ; sans opération en cours, revient à l'outil précédent.",
+  "planche.instructeur.echap": "Échap : annule l'opération en cours et garde l'outil ; sans opération en cours, seuls Orbite, Panoramique et Zoom reviennent à l'outil précédent.",
   "planche.camera.fov": "Champ de vision : {valeur}°",
   "planche.outil.choisi": "Outil : {outil}.",
   "planche.edition": "Édition : {nom}",
@@ -92,7 +91,87 @@ const FR = {
 
 export type CleMessage = keyof typeof FR;
 
-export const CATALOGUE: Record<Langue, Record<CleMessage, string>> = { fr: FR };
+const EN: Record<CleMessage, string> = {
+  "canevas.panneaux": "Panels",
+  "panneau.instructeur": "Instructor",
+  "panneau.entite": "Entity info",
+  "panneau.outliner": "Navigator",
+  "panneau.modifications": "Changes",
+  "panneau.versions": "Versions",
+  "panneau.affichage": "Display",
+  "panneau.materiaux": "Materials",
+  "panneau.modele": "Model info",
+  "panneau.navigation": "Navigation",
+  "panneau.raccourcis": "Shortcuts",
+  "panneau.scenes": "Scenes",
+  "panneau.styles": "Styles",
+  "panneau.scenes.aide": "Saved 3D views (scenes): opened in the 3D view",
+  "panneau.styles.aide": "Display styles by class: opened in the 3D view",
+  "panneau.fermer": "Close the {titre} panel",
+  "panneau.replier": "Collapse the {titre} panel",
+  "bas.aide": "Help for the active tool",
+  "menu.titre": "Main menu",
+  "menu.fichier": "☰ File",
+  "menu.enregistrer": "Save now",
+  "menu.exporter": "Export…",
+  "menu.importer": "Import…",
+  "menu.imprimer": "Print (sheets as PDF)…",
+  "menu.partager": "Share…",
+  "menu.projets": "Open another project…",
+  "mode.planche": "Board",
+  "mode.planche.aide": "Board: free geometry (edges and faces), local draft",
+  "planche.chargement": "Loading the Board…",
+  "planche.brouillon": "Local draft — not saved in the project (batch 7)",
+  "planche.brouillon.aide": "The Board drawing is kept in this browser only; it is neither sent to the server nor shared.",
+  "planche.brouillon.indisponible": "Local storage unavailable: the draft is kept in this page only.",
+  "planche.outils": "Board tools",
+  "planche.rechercher": "Search for a tool",
+  "planche.plus": "More tools",
+  "planche.recents": "Recent tool",
+  "planche.grille": "Extended tools",
+  "planche.prevu": "{outil}: planned for batch {lot}.",
+  "planche.prevu.court": "batch {lot}",
+  "planche.lecture": "{outil}: read-only project (navigation and selection only).",
+  "planche.annuler": "Undo",
+  "planche.retablir": "Redo",
+  "planche.annuler.titre": "Undo {operation} (Ctrl Z)",
+  "planche.retablir.titre": "Redo {operation} (Ctrl Y)",
+  "planche.rien.annuler": "Nothing to undo.",
+  "planche.rien.retablir": "Nothing to redo.",
+  "planche.annule": "Undone: {operation}.",
+  "planche.retabli": "Redone: {operation}.",
+  "planche.vue": "Board drawing area: click to use the active tool; middle button = orbit, Shift + middle button = pan, wheel = zoom",
+  "planche.webgl": "3D view unavailable: this browser does not provide WebGL2.",
+  "planche.etat": "Status bar",
+  "planche.mesures": "Measurements",
+  "planche.mesures.aide": "Type a value (without clicking in the field), then Enter",
+  "planche.saisie.refusee": "Input not recognised: {texte}",
+  "planche.saisie.inactive": "The Measurements field accepts no value at this step.",
+  "planche.modificateurs": "Modifier keys",
+  "planche.mod.maj": "Shift",
+  "planche.mod.ctrl": "Ctrl",
+  "planche.mod.alt": "Alt",
+  "planche.mod.droite": "Right arrow: red axis",
+  "planche.mod.gauche": "Left arrow: green axis",
+  "planche.mod.haut": "Up arrow: blue axis",
+  "planche.mod.bas": "Down arrow: parallel / perpendicular",
+  "planche.mod.maj.aide": "Shift held while the button is pressed; long press: locked until the next press",
+  "planche.recherche.titre": "Search for a tool (Shift + -)",
+  "planche.recherche.champ": "Tool name (French or English)",
+  "planche.recherche.vide": "No tool found.",
+  "planche.fermer": "Close",
+  "planche.instructeur.aucun": "No active tool.",
+  "planche.instructeur.etapes": "Operation",
+  "planche.instructeur.modificateurs": "Modifier keys",
+  "planche.instructeur.apres": "Next",
+  "planche.instructeur.releve": "Survey status: {statut}",
+  "planche.instructeur.echap": "Esc: cancels the operation in progress and keeps the tool; with nothing in progress, only Orbit, Pan and Zoom return to the previous tool.",
+  "planche.camera.fov": "Field of view: {valeur}°",
+  "planche.outil.choisi": "Tool: {outil}.",
+  "planche.edition": "Editing: {nom}",
+};
+
+export const CATALOGUE: Record<Langue, Record<CleMessage, string>> = { fr: FR, en: EN };
 
 /** Message du catalogue, avec remplacement des paramètres `{nom}` ; une clé sans paramètre fourni reste visible. */
 export function t(cle: CleMessage, params: Record<string, string> = {}, langue: Langue = LANGUE_INTERFACE): string {

@@ -7,9 +7,10 @@ import { useMemo, useState } from "react";
 import type { ModeleAtelier } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { arborescence, infoModele, masquer, materiauxEnUsage, reafficherDernier, reafficherTout, type NoeudArbre } from "../panneaux-modele";
+import { LOCALE } from "../../../../lib/i18n";
 
-const nombre = (n: number) => n.toLocaleString("fr-FR");
-const metres = (v: number) => `${v.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`;
+const nombre = (n: number) => n.toLocaleString(LOCALE);
+const metres = (v: number) => `${v.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`;
 
 export function masquerSelection(ui: EtatUi): void {
   const r = masquer(ui, ui.selection);

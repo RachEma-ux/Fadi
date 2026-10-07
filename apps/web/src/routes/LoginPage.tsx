@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { describeAuthError, useAuth } from "../lib/auth-context";
+import { ChoixLangue } from "../components/ChoixLangue";
 
 export function LoginPage() {
   const { user, login } = useAuth();
@@ -30,6 +31,7 @@ export function LoginPage() {
 
   return (
     <main className="auth-page">
+      <ChoixLangue className="choix-langue choix-langue-auth" />
       <h1>Connexion</h1>
       <form onSubmit={onSubmit} noValidate>
         <label htmlFor="login-email">E-mail</label>

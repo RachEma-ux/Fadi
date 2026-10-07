@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { champsEnConflit, interferences, reprendreChamps, type Commande, type Enveloppe, type Interference, type ModeleAtelier, type TypeProbleme } from "@parcours/atelier-model";
 import { api, type ProjectComment } from "../../../../lib/api";
 import type { InstantaneClient } from "../../bus/atelier-client";
+import { LOCALE } from "../../../../lib/i18n";
 
 export interface PropsModifications {
   projectId: string;
@@ -194,7 +195,7 @@ function FilEntree({ projectId, revision, commentaires }: { projectId: string; r
             <ul>
               {commentaires.map((c) => (
                 <li key={c.id}>
-                  <span className="nav-detail">{c.authorEmail} · {new Date(c.createdAt).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}</span> {c.body}
+                  <span className="nav-detail">{c.authorEmail} · {new Date(c.createdAt).toLocaleString(LOCALE, { dateStyle: "short", timeStyle: "short" })}</span> {c.body}
                 </li>
               ))}
             </ul>

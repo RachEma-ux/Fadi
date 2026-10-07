@@ -5,7 +5,8 @@ ensuite `docs/atelier-cahier-des-charges.md` et suis son mode d'emploi (section 
 
 ## Projet
 
-Application web en français : Parcours de 21 étapes, Atelier architectural, Programmation, Analyses métier,
+Application web bilingue français / anglais (D-163 ; le français est la langue source, l'anglais vient du dictionnaire
+`apps/web/src/lib/i18n/en.json`) : Parcours de 21 étapes, Atelier architectural, Programmation, Analyses métier,
 Documents, Collaboration. Monorepo npm : `packages/domain-model` (entités, repères, règles métier pures),
 `packages/core-geometry` (géométrie pure), `packages/atelier-model` (chantier Atelier), `apps/api` (Express 5,
 PostgreSQL + PostGIS, Drizzle), `apps/web` (React 19, Vite, TanStack Query, Dexie, service worker). Entrées
@@ -18,7 +19,11 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
 
 ## Règles essentielles (le détail est dans AGENTS.md)
 
-- Les 21 étapes (01–21, phases, libellés, cartes mobiles) sont intouchables ; Harmonie reste dans les étapes.
+- Les 21 étapes (01–21, phases, libellés, cartes mobiles) sont intouchables ; Harmonie reste dans les étapes. L'anglais
+  n'en est qu'un affichage traduit : les libellés source restent ceux du français.
+- Interface bilingue : tout nouveau texte d'interface s'écrit en français dans le code et reçoit sa traduction dans
+  `apps/web/src/lib/i18n/en.json` ; la recette `interface-anglais.mjs` relève ce qui resterait en français. Données du
+  projet, exemples et documents produits ne sont pas traduits.
 - Jamais de donnée réglementaire, structurelle ou de projet inventée ; exigence, hypothèse et recommandation
   sont trois choses distinctes ; une valeur absente est « non évaluée ».
 - Repères `cadastral`, `geographic`, `local` tagués ; conversions explicites ; jamais mélangés.

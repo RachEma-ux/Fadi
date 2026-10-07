@@ -18,6 +18,7 @@ import { libelleCleReservation } from "@parcours/atelier-model";
 import { api, ApiError, type AtelierFusionEssai, type AtelierMiseAJourEssai } from "../../../../lib/api";
 import type { AtelierClient } from "../../bus/atelier-client";
 import { etatUi } from "../etat-ui";
+import { LOCALE } from "../../../../lib/i18n";
 
 export interface PropsVersions {
   projectId: string;
@@ -41,7 +42,7 @@ export function messageErreur(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-const date = (iso: string) => new Date(iso).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+const date = (iso: string) => new Date(iso).toLocaleString(LOCALE, { dateStyle: "short", timeStyle: "short" });
 
 function ResumeDifference({ d, etat, libelle }: { d: DifferenceModeles; etat: ModeleAtelier; libelle: string }) {
   if (d.identiques) return <p className="ver-diff" data-diff="identique">{libelle} : identique à l'état courant.</p>;

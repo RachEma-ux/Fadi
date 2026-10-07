@@ -1,6 +1,6 @@
 # @parcours/planche-model
 
-Noyau pur du mode **Planche** de l'Atelier (D-163 à D-167) : géométrie libre 3D type SketchUp pour le Web,
+Noyau pur du mode **Planche** de l'Atelier (D-164 à D-168) : géométrie libre 3D type SketchUp pour le Web,
 grammaire du champ Mesures, inférences et catalogue déclaratif des outils. Aucune dépendance (ni React, ni three,
 ni DOM). Spécification : `docs/planche/cahier-planche.md` ; relevés de référence : `docs/planche/reference/`.
 

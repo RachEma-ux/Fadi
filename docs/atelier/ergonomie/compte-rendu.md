@@ -14,6 +14,7 @@ aucune règle d'`AGENTS.md` ni du cahier des charges de l'Atelier n'est modifié
 | 4 | D-159 | Panneaux Affichage (masquer / réafficher, isolement, ombres d'affichage en 3D), Info modèle, Matériaux (lecture), arborescence dans le navigateur | `nouveau.test.ts`, `atelier-canevas.mjs` |
 | 5 | D-160 | Menu principal : enregistrer maintenant (Ctrl + S), exporter, importer, imprimer (feuilles en PDF), partager après enregistrement confirmé, ouvrir un autre projet | `nouveau.test.ts`, `atelier-canevas.mjs` (dont hors-ligne) |
 | 6 | D-161 | Qualité : catalogue de messages (français), focus des panneaux au clavier (ouverture, Échap, retour à l'icône), Entrée active le bouton focalisé hors tracé, cibles de 24 px au moins dans les panneaux et 44 px pour les outils et icônes au téléphone, recette desktop + mobile, axe-core | `nouveau.test.ts`, `atelier-canevas.mjs` |
+| — | D-163 | Interface bilingue français / anglais (décision du maître d'ouvrage du 07/10/2026) : choix de la langue par appareil, dictionnaire anglais, couche de traduction de l'affichage, catalogue `messages.ts` en deux langues | `traduire.test.ts`, `interface-anglais.mjs` |
 | — | D-162 | Scènes (vues 3D enregistrées) et Styles par classe accessibles depuis la colonne ; indicateur « Synchronisé » affiché seulement quand toutes les écritures sont acceptées | `atelier-canevas.mjs`, `parcours-scenario.mjs` |
 
 ## Métriques de succès (étape 0)
@@ -30,8 +31,8 @@ publiées par `parcours-scenario.mjs`.
 
 ## Écarts déclarés (décisions du maître d'ouvrage ou données à spécifier)
 
-- **Interface anglaise** : non livrée — `AGENTS.md` impose une application en français. Le catalogue `messages.ts`
-  regroupe les libellés de la couche d'ergonomie ; ouvrir une autre langue est une décision à prendre.
+- **Interface anglaise** : livrée par D-163 sur décision du maître d'ouvrage (07/10/2026) ; `AGENTS.md` est adapté. Les
+  données du projet, les exemples, la bibliothèque des bâtiments et les documents produits restent en français.
 - **Matériaux peints sur une face** (pot de peinture, création de matériaux) : non livrés — ce serait une nouvelle
   donnée du modèle typé à spécifier ; le panneau Matériaux lit les compositions de murs (D-026).
 - **Ombres** : option d'affichage (lumière de direction fixe), **pas** une étude d'ensoleillement : orientation, date

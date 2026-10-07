@@ -12,8 +12,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { WriteFieldset } from "../../components/WriteFieldset";
 import { api, ApiError, type SurfaceTransferView } from "../../lib/api";
 import { appliedCase } from "./ProgrammeCase";
+import { LOCALE } from "../../lib/i18n";
 
-const fmt = (v: number) => v.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+const fmt = (v: number) => v.toLocaleString(LOCALE, { maximumFractionDigits: 2 });
 
 export function ProgrammeTransferFold({ projectId, onApplied }: { projectId: string; onApplied: (message: string) => void }) {
   const queryClient = useQueryClient();

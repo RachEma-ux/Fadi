@@ -57,7 +57,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
           {niveaux.map((n) => (
             <li key={n.id}>
               <button type="button" aria-pressed={n.id === ui.niveauId} className={n.id === ui.niveauId ? "est-actif" : ""} onClick={() => etatUi.set({ niveauId: n.id, selection: [], pointsEnCours: [] })}>
-                <span>{n.nom}</span>
+                <span translate="no">{n.nom}</span>
                 <span className="nav-detail">{fmt(n.elevation)} m{altimetrie ? ` · ${fmt(Math.round((altimetrie.altitude + n.elevation) * 1000) / 1000)} m ${altimetrie.systeme}` : ""}</span>
               </button>
             </li>
@@ -128,7 +128,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
             {calques.map((c) => (
               <li key={c.id} style={c.profondeur ? { paddingLeft: `${c.profondeur * 0.9}rem` } : undefined} data-calque-profondeur={c.profondeur}>
                 <span className="nav-pastille" style={{ background: c.couleur ?? "transparent" }} aria-hidden="true" />
-                <span className="nav-nom">{c.nom}</span>
+                <span className="nav-nom" translate="no">{c.nom}</span>
                 <button type="button" className="nav-bascule" aria-pressed={c.visible} title={c.visible ? "Masquer" : "Afficher"} disabled={readOnly} onClick={() => onCommandes([{ type: "calque.modifier", params: { id: c.id, visible: !c.visible } }], `${c.visible ? "Masquer" : "Afficher"} ${c.nom}`)}>
                   {c.visible ? "◉" : "○"}
                   <span className="sr-only">{c.visible ? `Masquer ${c.nom}` : `Afficher ${c.nom}`}</span>
@@ -188,7 +188,7 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
                       onCentrer(o.id);
                     }}
                   >
-                    {nomObjet(o)}
+                    <span translate="no">{nomObjet(o)}</span>
                   </button>
                 </li>
               ))}

@@ -132,6 +132,14 @@ identified, versioned engine (`core-geometry` today). No B-Rep kernel (OCCT) ent
 owner's licence decision; it would serve free-form shape operations only, behind the same engine interface.
 See `packages/core-geometry/README.md` for exactly which Canvas/SVG functions are kept and why.
 
+### Interface languages (D-163)
+
+French is the source language of every user-facing text; English is a display translation (`apps/web/src/lib/i18n`):
+a pure translator (exact strings, `{0}` templates taken from the code, composed texts piece by piece, guarded so that
+project data is not rewritten) and a DOM adapter that translates text nodes and readable attributes as React renders
+them, outside `translate="no"` blocks. The language is a per-device preference; numbers and dates follow it
+(`LOCALE`). Data, examples and produced documents are not translated.
+
 ## Code reuse: decided function by function
 
 Reuse is not estimated in advance; it is established by inventory, one function at a time, sorted into

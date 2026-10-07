@@ -140,6 +140,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche-modification.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de l'interface anglaise — relevé des textes restés en français (apps/web/e2e/interface-anglais.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/interface-anglais.mjs 2>&1 | tee -a e2e.log
       - name: Sauvegarde puis restauration vérifiées (scripts/verify-restore.sh) sur la base du scénario
         env:
           PGPASSWORD: fadi_ci_password
