@@ -277,10 +277,14 @@ await tel.locator('[data-planche-outil="ligne"]').tap();
 check("mobile : outil Ligne choisi au toucher", (await etat(tel)).outil === "ligne");
 await toucher({ x: 0, y: 0, z: 0 });
 check("mobile : premier point posé au toucher (étape 2)", (await etat(tel)).etape === 2, JSON.stringify(await etat(tel)));
+// Refonte responsive : les flèches sont dans le volet déployé (« Plus »), la consigne complète aussi.
+await tel.locator("[data-planche-volet-bascule]").tap();
+check("mobile : « Plus » déploie le volet et révèle les flèches", await tel.locator('[data-planche-mod="FlecheDroite"]').isVisible());
 await tel.locator('[data-planche-mod="FlecheDroite"]').tap();
 check("mobile : bouton → = verrou de direction rouge (bascule)", (await etat(tel)).fleche === "FlecheDroite");
 await tel.locator('[data-planche-mod="FlecheDroite"]').tap();
 check("mobile : second appui sur → = déverrouillé", (await etat(tel)).fleche === null);
+await tel.locator("[data-planche-volet-bascule]").tap();
 // Sans survol au doigt, la direction est donnée par une coordonnée relative au champ Mesures (`<dx;dy;dz>`).
 await mesurer("carré de 4 m au toucher (coordonnées relatives)", async () => {
   for (const s of ["<4;0;0>", "<0;4;0>", "<-4;0;0>", "<0;-4;0>"]) {

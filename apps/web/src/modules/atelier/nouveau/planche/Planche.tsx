@@ -73,11 +73,19 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   const [tactile, setTactile] = useState(false);
   const [majVerrouillee, setMajVerrouillee] = useState(false);
   const [webgl, setWebgl] = useState<"ok" | "indisponible">("ok");
+  // Volet bas (téléphone) : replié, la consigne tient sur une ligne ; déployé, consigne complète et flèches.
+  const [volet, setVolet] = useState(false);
+  // Plan détaché : fenêtre séparée (Document Picture-in-Picture, bureau) ou plein écran (repli, téléphone).
+  const [detache, setDetache] = useState<"non" | "fenetre" | "plein-ecran">("non");
+  const fenetreRef = useRef<Window | null>(null);
+  const emplacementRef = useRef<HTMLDivElement | null>(null);
+  const clavierRef = useRef<{ touche: (e: KeyboardEvent) => void; relache: (e: KeyboardEvent) => void; perte: () => void } | null>(null);
   const brouillonCharge = useRef(false);
 
   const hoteRef = useRef<HTMLDivElement | null>(null);
   const racineRef = useRef<HTMLDivElement | null>(null);
   const piedRef = useRef<HTMLDivElement | null>(null);
+  const voletRef = useRef<HTMLDivElement | null>(null);
   const vueRef = useRef<VuePlanche | null>(null);
   const champMesures = useRef<HTMLInputElement | null>(null);
   const grilleDom = useRef<HTMLDivElement | null>(null);
@@ -302,11 +310,17 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     const racine = racineRef.current;
     const pied = piedRef.current;
     if (!racine || !pied) return;
-    const mesurer = () => racine.style.setProperty("--pied-h", `${Math.ceil(pied.getBoundingClientRect().height)}px`);
+    const volet = voletRef.current;
+    const mesurer = () => {
+      racine.style.setProperty("--pied-h", `${Math.ceil(pied.getBoundingClientRect().height)}px`);
+      // Téléphone : le volet entier (outils + pied) ; au bureau il n'a pas de boîte (`display: contents`) → 0.
+      racine.style.setProperty("--volet-h", `${Math.ceil(volet?.getBoundingClientRect().height ?? 0)}px`);
+    };
     mesurer();
     if (typeof ResizeObserver === "undefined") return;
     const o = new ResizeObserver(mesurer);
     o.observe(pied);
+    if (volet) o.observe(volet);
     return () => o.disconnect();
   }, []);
 
@@ -450,15 +464,122 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       for (const touche of [...touchesTenues.current]) envoyerTouche(touche, "relachee");
       setMajVerrouillee(false);
     };
-    window.addEventListener("keydown", surTouche);
-    window.addEventListener("keyup", surRelache);
-    window.addEventListener("blur", surPerte);
+    // Les mêmes écouteurs servent la fenêtre du plan détaché (elle partage l'état : même brouillon, même historique).
+    clavierRef.current = { touche: surTouche, relache: surRelache, perte: surPerte };
+    const fenetres = [window, ...(fenetreRef.current ? [fenetreRef.current] : [])];
+    for (const w of fenetres) {
+      w.addEventListener("keydown", surTouche);
+      w.addEventListener("keyup", surRelache);
+      w.addEventListener("blur", surPerte);
+    }
     return () => {
-      window.removeEventListener("keydown", surTouche);
-      window.removeEventListener("keyup", surRelache);
-      window.removeEventListener("blur", surPerte);
+      for (const w of fenetres) {
+        w.removeEventListener("keydown", surTouche);
+        w.removeEventListener("keyup", surRelache);
+        w.removeEventListener("blur", surPerte);
+      }
     };
   }, [annulerPas, retablirPas, envoyerTouche, echap, choisirOutil, setTexte]);
+
+  // --- Plan détachable : le nœud de la vue (canvas three.js, surcouches, écouteurs) est DÉPLACÉ dans une fenêtre
+  // Document Picture-in-Picture — même contexte JavaScript, donc même brouillon et même historique, sans
+  // synchronisation ; la fenêtre principale garde outils, Instructeur et barre d'état. Sans cette API (Firefox,
+  // Safari, téléphone), « Détacher » passe la Planche en plein écran.
+  const rattacher = useCallback(() => {
+    const w = fenetreRef.current;
+    if (w) {
+      fenetreRef.current = null;
+      const hote = hoteRef.current;
+      const emplacement = emplacementRef.current;
+      if (hote && emplacement && hote.parentNode !== emplacement) emplacement.appendChild(hote);
+      const c = clavierRef.current;
+      if (c) {
+        w.removeEventListener("keydown", c.touche);
+        w.removeEventListener("keyup", c.relache);
+        w.removeEventListener("blur", c.perte);
+      }
+      try {
+        w.close();
+      } catch {
+        // déjà fermée par le navigateur
+      }
+      setDetache("non");
+      setMessage(t("planche.rattache"));
+      hote?.focus({ preventScroll: true });
+      return;
+    }
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+  }, []);
+
+  const detacher = useCallback(async () => {
+    const hote = hoteRef.current;
+    const racine = racineRef.current;
+    if (!hote || !racine) return;
+    const dpip = (window as Window & { documentPictureInPicture?: { requestWindow: (options: { width: number; height: number }) => Promise<Window> } }).documentPictureInPicture;
+    if (dpip && window.matchMedia("(min-width: 761px)").matches) {
+      try {
+        const w = await dpip.requestWindow({ width: 1040, height: 700 });
+        for (const feuille of Array.from(document.styleSheets)) {
+          try {
+            const style = w.document.createElement("style");
+            style.textContent = Array.from(feuille.cssRules)
+              .map((r) => r.cssText)
+              .join("\n");
+            w.document.head.appendChild(style);
+          } catch {
+            if (feuille.href) {
+              const lien = w.document.createElement("link");
+              lien.rel = "stylesheet";
+              lien.href = feuille.href;
+              w.document.head.appendChild(lien);
+            }
+          }
+        }
+        const base = w.document.createElement("style");
+        base.textContent = "html,body{margin:0;height:100%;overflow:hidden;background:#f4f6f8}.planche-vue{height:100%}";
+        w.document.head.appendChild(base);
+        w.document.documentElement.lang = document.documentElement.lang;
+        w.document.title = `Fadi · ${t("mode.planche")}`;
+        w.document.body.appendChild(hote);
+        const c = clavierRef.current;
+        if (c) {
+          w.addEventListener("keydown", c.touche);
+          w.addEventListener("keyup", c.relache);
+          w.addEventListener("blur", c.perte);
+        }
+        w.addEventListener("pagehide", () => {
+          if (fenetreRef.current === w) rattacher();
+        });
+        fenetreRef.current = w;
+        setDetache("fenetre");
+        setMessage(null);
+        hote.focus({ preventScroll: true });
+        return;
+      } catch {
+        // fenêtre refusée (geste requis, politique) : plein écran ci-dessous
+      }
+    }
+    try {
+      await racine.requestFullscreen();
+    } catch {
+      setMessage(t("planche.detacher.impossible"));
+    }
+  }, [rattacher]);
+
+  useEffect(() => {
+    const maj = () => setDetache(document.fullscreenElement === racineRef.current ? "plein-ecran" : fenetreRef.current ? "fenetre" : "non");
+    document.addEventListener("fullscreenchange", maj);
+    return () => {
+      document.removeEventListener("fullscreenchange", maj);
+      const w = fenetreRef.current;
+      fenetreRef.current = null;
+      try {
+        w?.close();
+      } catch {
+        // déjà fermée
+      }
+    };
+  }, []);
 
   // Grille « … » fermée au clic extérieur.
   useEffect(() => {
@@ -503,18 +624,55 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
 
   const recentOutil = recent ? outilParId(recent) : null;
 
-  return (
-    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}`} data-planche data-outil-actif={outilId}>
-      <div
-        ref={hoteRef}
-        className="planche-vue"
-        tabIndex={0}
-        role="application"
-        aria-label={t("planche.vue")}
-        aria-roledescription="zone de dessin"
-        data-planche-vue
+  /** Touches d'état à l'écran (tactile) : un appui = enfoncée puis relâchée. */
+  const boutonsTouches = (touches: [Touche, string, string][]) =>
+    touches.map(([touche, libelle, aide]) => (
+      <button
+        key={touche}
+        type="button"
+        title={aide}
+        aria-label={aide}
+        data-planche-mod={touche}
+        onClick={() => {
+          envoyerTouche(touche, "enfoncee");
+          envoyerTouche(touche, "relachee");
+        }}
       >
-        {webgl === "indisponible" && <p className="planche-webgl" role="alert">{t("planche.webgl")}</p>}
+        {libelle}
+      </button>
+    ));
+
+  return (
+    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${detache !== "non" ? " est-detache" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
+      {/* Le nœud `.planche-vue` est déplacé tel quel dans la fenêtre détachée, puis rendu ici ; la carte d'état
+          vient APRÈS lui (React n'insère alors jamais avant un nœud absent du document). */}
+      <div ref={emplacementRef} className="planche-vue-cadre" data-planche-cadre>
+        <div
+          ref={hoteRef}
+          className="planche-vue"
+          tabIndex={0}
+          role="application"
+          aria-label={t("planche.vue")}
+          aria-roledescription="zone de dessin"
+          data-planche-vue
+        >
+          {webgl === "indisponible" && <p className="planche-webgl" role="alert">{t("planche.webgl")}</p>}
+        </div>
+        {detache === "fenetre" && (
+          <div className="planche-detache" role="status" data-planche-detache-carte>
+            <h3>{t("planche.detache.titre")}</h3>
+            <p>{t("planche.detache.texte")}</p>
+            <div className="barre-groupe">
+              <button type="button" className="planche-detache-afficher" onClick={() => fenetreRef.current?.focus()}>
+                {t("planche.detache.afficher")}
+              </button>
+              <button type="button" onClick={rattacher} data-planche-rattacher>
+                {t("planche.rattacher")}
+              </button>
+            </div>
+            <p className="inspecteur-aide">{t("planche.detache.aide")}</p>
+          </div>
+        )}
       </div>
 
       <div className="planche-haut">
@@ -529,8 +687,25 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
             ↷<span className="sr-only">{t("planche.retablir")}</span>
           </button>
         </div>
+        <button
+          type="button"
+          className="planche-detacher"
+          onClick={() => (detache === "non" ? void detacher() : rattacher())}
+          title={detache === "non" ? t("planche.detacher.aide") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter")}
+          aria-label={detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter")}
+          data-planche-detacher
+        >
+          <span aria-hidden="true" className="outil-picto">{detache === "non" ? "⧉" : "⤡"}</span>
+          <span className="planche-detacher-libelle" aria-hidden="true">{detache === "non" ? t("planche.detacher.court") : detache === "fenetre" ? t("planche.rattacher.court") : t("planche.plein-ecran.quitter.court")}</span>
+        </button>
       </div>
 
+      {/* Volet : au bureau, `display: contents` (barre d'outils à gauche, pied en bas, comme avant) ; au téléphone,
+          un seul volet bas dans le flux — outils en rangée, consigne, touches, Mesures — rien ne recouvre le dessin. */}
+      <div className="planche-volet" ref={voletRef} data-planche-volet>
+      <div className="planche-poignee" aria-hidden="true">
+        <span />
+      </div>
       <div className="planche-outils" role="toolbar" aria-label={t("planche.outils")} aria-orientation="vertical">
         <button type="button" className="outil outil-fixe-haut" onClick={() => setRecherche(true)} title={t("planche.recherche.titre")} aria-label={t("planche.recherche.titre")} data-planche-recherche>
           <span aria-hidden="true" className="outil-picto">⌕</span>
@@ -579,6 +754,23 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       )}
 
       <div className="planche-pied" ref={piedRef} data-planche-pied>
+      <footer className="planche-bas">
+        <p className="planche-etat" aria-live="polite" aria-label={t("planche.etat")} data-planche-etat>
+          {dans && <span className="planche-contexte" data-planche-contexte>{t("planche.edition", { nom: nomOccurrence(hist.present.modele, dans) })} | </span>}
+          <span className="planche-consigne">{vue.consigne}</span>
+          {etatBarre && <span className="planche-message" data-planche-message> | {etatBarre}</span>}
+        </p>
+        <button type="button" className="planche-volet-bascule" aria-expanded={volet} onClick={() => setVolet(!volet)} title={volet ? t("planche.volet.moins.aide") : t("planche.volet.plus.aide")} data-planche-volet-bascule>
+          {volet ? t("planche.volet.moins") : t("planche.volet.plus")}
+        </button>
+        <span className="canevas-bas">
+          <button type="button" className="lien" onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("bas.aide")} aria-label={t("bas.aide")}>?</button>
+          <ChoixLangue className="canevas-langue" />
+          <ChoixPeripherique ui={ui} />
+        </span>
+      </footer>
+
+      <div className="planche-saisie">
       <div className="planche-modificateurs" role="toolbar" aria-label={t("planche.modificateurs")} data-planche-modificateurs>
         <button
           type="button"
@@ -609,43 +801,20 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
         >
           {t("planche.mod.maj")}
         </button>
-        {(
-          [
-            ["Ctrl", t("planche.mod.ctrl"), t("planche.mod.ctrl")],
-            ["Alt", t("planche.mod.alt"), t("planche.mod.alt")],
+        {boutonsTouches([
+          ["Ctrl", t("planche.mod.ctrl"), t("planche.mod.ctrl")],
+          ["Alt", t("planche.mod.alt"), t("planche.mod.alt")],
+        ])}
+        <span className="planche-fleches" role="group" aria-label={t("planche.mod.fleches")}>
+          {boutonsTouches([
             ["FlecheGauche", "←", t("planche.mod.gauche")],
             ["FlecheHaut", "↑", t("planche.mod.haut")],
             ["FlecheDroite", "→", t("planche.mod.droite")],
             ["FlecheBas", "↓", t("planche.mod.bas")],
-          ] as [Touche, string, string][]
-        ).map(([touche, libelle, aide]) => (
-          <button
-            key={touche}
-            type="button"
-            title={aide}
-            aria-label={aide}
-            data-planche-mod={touche}
-            onClick={() => {
-              envoyerTouche(touche, "enfoncee");
-              envoyerTouche(touche, "relachee");
-            }}
-          >
-            {libelle}
-          </button>
-        ))}
+          ])}
+        </span>
       </div>
 
-      <footer className="planche-bas">
-        <span className="canevas-bas">
-          <button type="button" className="lien" onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("bas.aide")} aria-label={t("bas.aide")}>?</button>
-          <ChoixLangue className="canevas-langue" />
-          <ChoixPeripherique ui={ui} />
-        </span>
-        <p className="planche-etat" aria-live="polite" aria-label={t("planche.etat")} data-planche-etat>
-          {dans && <span className="planche-contexte" data-planche-contexte>{t("planche.edition", { nom: nomOccurrence(hist.present.modele, dans) })} | </span>}
-          <span className="planche-consigne">{vue.consigne}</span>
-          {etatBarre && <span className="planche-message" data-planche-message> | {etatBarre}</span>}
-        </p>
         <form
           className="planche-mesures"
           onSubmit={(e) => {
@@ -669,7 +838,8 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           <span id="planche-mesures-aide" className="sr-only">{t("planche.mesures.aide")}</span>
           <button type="submit" className="planche-ok">OK</button>
         </form>
-      </footer>
+      </div>
+      </div>
       </div>
 
       {recherche && (

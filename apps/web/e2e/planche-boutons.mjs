@@ -236,6 +236,11 @@ async function auditer(nom, vp, tactile) {
     await cliquer(p.locator(`.planche-outils ${esc("ligne")}`).first());
     const pt = await ecran({ x: 5, y: 5, z: 0 }, p);
     await p.touchscreen.tap(pt.x, pt.y);
+    // Les flèches vivent dans le volet déployé (refonte responsive) : « Plus » les révèle, « Réduire » les range.
+    const bascule = T("[data-planche-volet-bascule]");
+    const flechesCachees = !(await T('[data-planche-mod="FlecheDroite"]').isVisible());
+    if (flechesCachees) await cliquer(bascule);
+    check("téléphone : « Plus » déploie le volet (flèches visibles, consigne complète)", flechesCachees && (await T('[data-planche-mod="FlecheDroite"]').isVisible()) && (await bascule.getAttribute("aria-expanded")) === "true");
     const fleches = [["FlecheDroite", "FlecheDroite"], ["FlecheGauche", "FlecheGauche"], ["FlecheHaut", "FlecheHaut"], ["FlecheBas", "FlecheBas"]];
     const ko = [];
     for (const [id, attendu] of fleches) {
@@ -245,6 +250,8 @@ async function auditer(nom, vp, tactile) {
       await cliquer(T(`[data-planche-mod="${id}"]`));
     }
     check("téléphone : boutons ← ↑ → ↓ verrouillent puis libèrent la direction", ko.length === 0, ko.join(" ; "));
+    await cliquer(bascule);
+    check("téléphone : « Réduire » replie le volet (flèches rangées)", !(await T('[data-planche-mod="FlecheDroite"]').isVisible()));
     await cliquer(T('[data-planche-mod="Alt"]'));
     await cliquer(T('[data-planche-mod="Maj"]'));
     check("téléphone : boutons Alt et Maj répondent sans erreur", (await outilActif(p)) === "ligne");

@@ -15,8 +15,67 @@
   overflow: hidden;
   background: #f4f6f8;
 }
-.planche > * {
+.planche > *,
+.planche-volet > * {
   grid-area: vue;
+}
+/* Volet : au bureau, transparent pour la grille (`display: contents`) ; au téléphone, un vrai bloc en bas (plus bas). */
+.planche-volet {
+  display: contents;
+}
+.planche-poignee,
+.planche-volet-bascule {
+  display: none;
+}
+.planche-vue-cadre {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+/* Plan détaché : le nœud de la vue est parti dans la fenêtre séparée ; la carte d'état prend sa place. */
+.planche-detache {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(32rem, calc(100% - 2rem));
+  height: fit-content;
+  padding: 1.25rem 1.5rem;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 10px;
+}
+.planche-detache h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+.planche-detache p {
+  margin: 0 0 0.8rem;
+}
+.planche-detache .barre-groupe {
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+.planche-detache .barre-groupe button {
+  min-height: 44px;
+  padding: 0 1rem;
+}
+.planche-detache-afficher {
+  background: var(--atelier-accent, #173f35);
+  border-color: var(--atelier-accent, #173f35);
+  color: #fff;
+}
+.planche:fullscreen {
+  background: #f4f6f8;
+}
+.planche-detacher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  padding: 0 0.6rem;
+  white-space: nowrap;
 }
 .planche-vue {
   position: relative;
@@ -290,13 +349,34 @@
   z-index: 6;
   margin: 0 calc(var(--colonne-l) + 1rem) 0.5rem 0.5rem;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.4rem;
   pointer-events: none;
 }
+.planche-pied > .planche-bas {
+  flex: 1 1 24rem;
+  min-width: 0;
+  width: auto;
+}
+.planche-pied > .planche-saisie {
+  flex: none;
+}
 .planche-pied > * {
   pointer-events: auto;
+}
+/* Touches d'état (tactile) et champ Mesures sur une même rangée, sous la barre d'état. */
+.planche-saisie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+.planche-fleches {
+  display: inline-flex;
+  gap: 4px;
 }
 
 /* Barre de modificateurs au toucher (C18, P-12) : visible sur appareil tactile seulement. */
@@ -307,6 +387,13 @@
   overflow-x: auto;
   gap: 4px;
   padding: 0.25rem;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+}
+.planche-mesures {
+  padding: 0.25rem 0.5rem;
   background: var(--flottant-fond);
   border: 1px solid var(--atelier-ligne, #dce5df);
   border-radius: 8px;
@@ -369,6 +456,9 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
+}
+.planche-bas .canevas-bas {
+  order: 1;
 }
 .planche-mesures label {
   white-space: nowrap;
@@ -436,45 +526,259 @@
   }
 }
 
-/* Téléphone : libellés masqués, panneau en surcouche, barre du bas sur deux lignes. */
+/* Téléphone (≤ 760 px) : le plan prend tout l'écran ; outils, consigne, touches et Mesures vivent dans UN volet bas
+   dans le flux (replié : 1 rangée d'outils + 1 ligne de consigne + touches et Mesures ; déployé : consigne complète,
+   message et flèches). Plus rien ne se superpose au dessin ni ne se chevauche ; cibles de 44 px partout. */
 @media (max-width: 760px) {
   .planche {
     --colonne-l: 3.6rem;
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "vue" "volet";
+    background: #e9ebe6;
   }
-  .planche .outil-libelle,
+  .planche-volet {
+    display: flex;
+    flex-direction: column;
+    grid-area: volet;
+    min-width: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    background: var(--flottant-fond);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    box-shadow: 0 -6px 18px rgba(24, 61, 50, 0.16);
+  }
+  .planche-volet > * {
+    grid-area: auto;
+  }
+  .planche-poignee {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    pointer-events: none;
+  }
+  .planche-poignee span {
+    display: block;
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--atelier-ligne-forte, #b7c9c0);
+  }
+  /* Outils : une rangée défilante (Rechercher et Plus épinglés aux extrémités), pictogramme au-dessus du libellé. */
+  .planche-outils {
+    justify-self: auto;
+    align-self: auto;
+    margin: 0;
+    flex-direction: row;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0.5rem;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    scrollbar-width: none;
+  }
+  .planche-outils::-webkit-scrollbar {
+    display: none;
+  }
+  .planche-outils .outil {
+    flex: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    width: 56px;
+    min-height: 52px;
+    padding: 0.15rem 0;
+    border-left: 1px solid transparent;
+    border-bottom: 3px solid transparent;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .planche-outils .outil.est-actif {
+    border-color: transparent;
+    border-bottom-color: #1a5fd6;
+    color: #1a5fd6;
+  }
+  .planche-outils .outil-picto {
+    width: auto;
+    font-size: 1.25rem;
+  }
+  .planche-outils .outil-libelle {
+    display: block;
+    max-width: 52px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.66rem;
+  }
+  .planche-outils .outil-lot {
+    display: none;
+  }
+  .planche-outils .outil-fixe-haut {
+    left: 0;
+    top: auto;
+  }
+  .planche-outils .outil-fixe-bas {
+    right: 0;
+    bottom: auto;
+  }
+  .planche-separateur {
+    width: 1px;
+    height: auto;
+    margin: 0.5rem 0.2rem;
+  }
+  /* Pied dans le volet : consigne sur une ligne + « Plus », puis touches et Mesures. */
+  .planche-pied {
+    align-self: stretch;
+    justify-self: auto;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem 0.5rem;
+  }
+  .planche-pied > .planche-bas,
+  .planche-pied > .planche-saisie {
+    flex: none;
+  }
+  .planche-pied > *,
+  .planche-saisie > * {
+    min-width: 0;
+  }
+  .planche-bas {
+    width: auto;
+  }
+  .planche-bas,
+  .planche-modificateurs,
+  .planche-mesures {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+  .planche-bas {
+    gap: 0.4rem;
+    min-height: 44px;
+  }
+  .planche-etat {
+    font-size: 0.85rem;
+  }
+  .planche.volet-ouvert .planche-etat {
+    white-space: normal;
+  }
+  .planche-volet-bascule {
+    display: inline-block;
+    flex: none;
+    min-height: 44px;
+    padding: 0 0.6rem;
+    border: 0;
+    background: transparent;
+    color: #1a5fd6;
+    font-weight: 600;
+  }
   .planche .canevas-etiquette,
   .planche .canevas-langue,
   .planche .canevas-peripherique {
     display: none;
   }
+  .planche-bas .lien {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .planche-saisie {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+  .planche-modificateurs {
+    display: flex;
+    flex: none;
+    overflow: visible;
+  }
+  .planche-fleches {
+    display: none;
+  }
+  .planche.volet-ouvert .planche-saisie {
+    flex-wrap: wrap;
+  }
+  .planche.volet-ouvert .planche-fleches {
+    display: flex;
+    flex-basis: 100%;
+    order: 2;
+  }
+  .planche.volet-ouvert .planche-fleches button {
+    flex: 1 1 0;
+  }
+  .planche-mesures {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .planche-mesures label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .planche-mesures input {
+    flex: 1 1 3rem;
+    width: 3rem;
+    min-width: 0;
+    min-height: 44px;
+  }
+  /* Surcouches qui restent sur le dessin : brouillon (pastille), annuler / rétablir, Détacher, grille, panneau. */
+  .planche-haut {
+    justify-self: start;
+    margin: 0.5rem;
+    max-width: calc(100% - var(--colonne-l) - 1.5rem);
+    flex-wrap: wrap;
+    padding: 0.2rem 0.35rem;
+    border-radius: 8px;
+  }
+  .planche-brouillon {
+    flex: 1 1 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .planche-detacher-libelle {
+    display: none;
+  }
+  /* Grille, colonne et panneau sont des enfants du volet dans le DOM : ici en surcouche absolue sur le dessin. */
   .planche-grille {
-    margin-left: 4rem;
-    max-width: calc(100% - 4.5rem - var(--colonne-l));
+    position: absolute;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: calc(var(--volet-h, 15rem) + 0.5rem);
+    margin: 0;
+    width: auto;
+    max-width: none;
+    max-height: calc(100% - var(--volet-h, 15rem) - 1rem);
   }
   .planche-grille .canevas-grille {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+  .planche-colonne {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    margin: 0;
+  }
   .planche-panneau {
-    width: calc(100% - var(--colonne-l) - 5rem);
+    position: absolute;
+    top: 0.5rem;
+    right: calc(var(--colonne-l) + 1rem);
+    margin: 0;
+    width: calc(100% - var(--colonne-l) - 2rem);
+    max-height: calc(100% - var(--volet-h, 15rem) - 1rem);
   }
-  .planche-haut {
-    margin-left: 4rem;
-    max-width: calc(100% - 4.5rem - var(--colonne-l) - 1rem);
-    justify-self: start;
-  }
-  .planche-pied {
-    margin-right: 0.5rem;
-  }
-  .planche-bas {
-    flex-wrap: wrap;
-  }
-  .planche-etat {
-    flex-basis: 100%;
-    order: -1;
-    white-space: normal;
-  }
-  .planche-mesures input {
-    width: 6.5rem;
+  .planche-recherche-fond {
+    padding-top: 1rem;
   }
 }
 
