@@ -308,10 +308,36 @@ export class VuePlanche {
     this.inference = vue?.inference && vue.inference.type !== "aucune" ? vue.inference : null;
     if (vue) {
       const lineaire = vue.inference && INFERENCES_LINEAIRES.has(vue.inference.type);
-      const couleur = lineaire ? vue.inference!.couleur : "#000000";
+      const direction = lineaire ? vue.inference!.direction : undefined;
+      // Une ligne d'aperçu prend la couleur de l'inférence seulement si elle est elle-même parallèle à la direction
+      // inférée (la ligne en cours de tracé l'est par construction ; une arête dont on glisse une extrémité, non).
+      const parallele = (l: readonly Vec3[]): boolean => {
+        if (!direction) return !!lineaire;
+        const a = l[0] as Vec3;
+        const b = l[l.length - 1] as Vec3;
+        const u = new THREE.Vector3(b.x - a.x, b.y - a.y, b.z - a.z);
+        const n = u.length();
+        if (n < 1e-9) return false;
+        return Math.abs(u.dot(v3(direction).normalize())) / n > 0.9999;
+      };
       for (const l of vue.apercu.lignes) {
         if (l.length < 2) continue;
+        const couleur = (l.length === 2 ? parallele(l) : !!lineaire) ? vue.inference!.couleur : "#000000";
         this.groupeApercu.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(l.map(v3)), new THREE.LineBasicMaterial({ color: couleur, depthTest: false })));
+      }
+      // Trajet en pointillé (Sélection : de la position d'origine de l'extrémité glissée au curseur).
+      for (const l of vue.apercu.pointilles ?? []) {
+        if (l.length < 2) continue;
+        const fin = l[l.length - 1] as Vec3;
+        const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints(l.map(v3)), new THREE.LineDashedMaterial({ color: "#5b7468", dashSize: this.metresParPixel(fin) * 6, gapSize: this.metresParPixel(fin) * 4, depthTest: false }));
+        ligne.computeLineDistances();
+        this.groupeApercu.add(ligne);
+      }
+      // Poignées d'extrémité (Sélection) : carrés pleins, taille écran constante, toujours visibles.
+      if (vue.apercu.points && vue.apercu.points.length) {
+        const poignees = new THREE.Points(new THREE.BufferGeometry().setFromPoints(vue.apercu.points.map(v3)), new THREE.PointsMaterial({ color: COULEUR_SELECTION, size: 10, sizeAttenuation: false, depthTest: false }));
+        poignees.renderOrder = 10;
+        this.groupeApercu.add(poignees);
       }
       if (vue.apercu.faces.length) {
         const faces: FaceVisible[] = vue.apercu.faces.filter((f) => f.length >= 3).map((f, i) => ({ id: `apercu-${i}`, exterieur: f, trous: [], normale: normaleNewell(f) }));
@@ -645,6 +671,9 @@ export class VuePlanche {
       if (g.id !== e.pointerId) return;
       g.dernier = p;
       if (!g.glisse && Math.hypot(p.x - g.depart.x, p.y - g.depart.y) >= SEUIL_GLISSER_PX) g.glisse = true;
+      // Au doigt, le glisser tient lieu de survol : l'aperçu (ligne, rectangle, inférence) suit le doigt, et le
+      // relâcher pose le point là où le doigt s'arrête — appuyer-glisser-lâcher, sans touche ni saisie.
+      if (e.pointerType === "touch") this.emettre("survol", p);
       this.emettre("glisser", p);
       this.majInfobulle();
       return;

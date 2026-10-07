@@ -2713,3 +2713,25 @@
   overflow: hidden;
   min-height: 0;
 }
+/* Téléphone en mode Planche : la barre des modes tient sur UNE rangée défilante (pastilles), le dessin gagne la place. */
+@media (max-width: 760px) {
+  .atelier-n.mode-planche > .atelier-n-barre {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 0.35rem 0.6rem;
+  }
+  .atelier-n.mode-planche > .atelier-n-barre::-webkit-scrollbar {
+    display: none;
+  }
+  .atelier-n.mode-planche > .atelier-n-barre > * {
+    flex: none;
+  }
+  .atelier-n.mode-planche > .atelier-n-barre button,
+  .atelier-n.mode-planche > .atelier-n-barre select,
+  .atelier-n.mode-planche > .atelier-n-barre > summary {
+    min-height: 40px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+}

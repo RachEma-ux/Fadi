@@ -124,6 +124,29 @@ await page.mouse.move(a2.x, a2.y, { steps: 5 });
 await page.keyboard.type("4;3"); await page.keyboard.press("Enter");
 check("rectangle 4 × 3 posé", (await etat()).faces === 1, JSON.stringify(await etat()));
 
+// Sélection (Espace) : clic sur une arête → ses deux extrémités sont des poignées ; glisser l'une déplace le sommet
+// (l'arête reste sélectionnée pendant le geste) ; Annuler remet le rectangle en place.
+await page.keyboard.press(" ");
+check("Espace : outil Sélection", (await etat()).outil === "selection");
+const bord = await ecran({ x: 2, y: 0, z: 0 });
+await page.mouse.move(bord.x, bord.y, { steps: 3 }); await page.mouse.click(bord.x, bord.y);
+const selArete = await page.evaluate(() => window.fadiPlanche.selection());
+check("Sélection : clic sur l'arête basse → 1 arête sélectionnée", selArete.length === 1 && selArete[0].startsWith("a"), JSON.stringify(selArete));
+const coin40 = await ecran({ x: 4, y: 0, z: 0 });
+const vers = await ecran({ x: 5, y: -1, z: 0 });
+await page.mouse.move(coin40.x, coin40.y, { steps: 3 });
+await page.mouse.down();
+await page.mouse.move(vers.x, vers.y, { steps: 8 });
+const pendant = await page.evaluate(() => window.fadiPlanche.selection());
+check("poignée glissée : l'arête reste sélectionnée pendant le geste", pendant.length === 1 && pendant[0] === selArete[0], JSON.stringify(pendant));
+await page.mouse.up();
+let som = (await sommetsTous()).map((q) => `${Math.round(q.x * 100) / 100};${Math.round(q.y * 100) / 100}`);
+check("poignée relâchée : le sommet (4;0) est déplacé vers (5;-1), 4 sommets", som.includes("5;-1") && !som.includes("4;0") && som.length === 4, som.join(" "));
+await page.locator("[data-planche-annuler]").click();
+som = (await sommetsTous()).map((q) => `${Math.round(q.x * 100) / 100};${Math.round(q.y * 100) / 100}`);
+check("Annuler : le sommet revient en (4;0)", som.includes("4;0") && !som.includes("5;-1"), som.join(" "));
+await page.keyboard.press("Escape");
+
 // Déplacer (M) : clic sur la face (base), → verrou rouge, « 2 » Entrée.
 await page.keyboard.press("m");
 check("touche M : outil Déplacer", (await etat()).outil === "deplacer");

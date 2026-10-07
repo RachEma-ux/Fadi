@@ -23,9 +23,10 @@ const clic = (x: number, y: number, n: 1 | 2 | 3 = 1): EvenementOutil => ({
   ...(n === 3 ? { triple: true } : {}),
 });
 const touche = (t: "Maj" | "Ctrl" | "Suppr", etat: "enfoncee" | "relachee" = "enfoncee"): EvenementOutil => ({ genre: "touche", touche: t, etat });
+// Hors de tout sommet du rectangle de test : un appui sur une extrémité sélectionnée saisirait sa poignée.
 const ecran = (genre: "appui" | "glisser" | "relache", x: number, y: number): EvenementOutil => ({
   genre,
-  rayon: rayon(0, 0),
+  rayon: rayon(-5, -5),
   tolerance: TOLE,
   ecran: { x, y },
 });
@@ -252,5 +253,63 @@ describe("Registre des machines de tracé", () => {
       expect(outilParId(id)).not.toBeNull();
       expect(machineParId(id)?.id).toBe(id);
     }
+  });
+});
+
+describe("Sélection — poignées d'extrémité d'une arête", () => {
+  const monde = (genre: "appui" | "glisser" | "relache", x: number, y: number): EvenementOutil => ({ genre, rayon: rayon(x, y), tolerance: TOLE, ecran: { x: x * 100, y: y * 100 } });
+  const areteEn = (m: Modele, x: number, y: number) => {
+    const p = new Pilote(machineSelection, m).envoyer(clic(x, y));
+    return p;
+  };
+
+  it("une arête sélectionnée montre ses deux extrémités ; une face seule n'en montre aucune", () => {
+    const m = rectangle();
+    const p = areteEn(m, 2, 0); // arête basse (0;0) → (4;0)
+    expect(p.selection).toHaveLength(1);
+    expect(trie((p.vue.apercu.points ?? []).map((q) => `${q.x};${q.y}`))).toEqual(["0;0", "4;0"]);
+    const f = new Pilote(machineSelection, m).envoyer(clic(2, 1.5));
+    expect(f.vue.apercu.points ?? []).toHaveLength(0);
+  });
+
+  it("glisser une extrémité : l'arête reste sélectionnée et l'aperçu suit le curseur ; relâcher déplace le sommet", () => {
+    const m = rectangle();
+    const p = areteEn(m, 2, 0);
+    const [arete] = p.selection;
+    p.envoyer(monde("appui", 4, 0), monde("glisser", 5, -1));
+    expect(p.selection).toEqual([arete]);
+    const v = p.vue;
+    expect(v.apercu.lignes.length).toBeGreaterThanOrEqual(2); // les deux arêtes du coin suivent le point
+    expect(v.apercu.lignes.every((l) => Math.abs((l[1] as Vec3).x - 5) < 1e-6 && Math.abs((l[1] as Vec3).y + 1) < 1e-6)).toBe(true);
+    expect(v.consigne).toMatch(/Glissez/);
+    expect(v.apercu.pointilles).toEqual([[v3(4, 0, 0), v3(5, -1, 0)]]);
+    // L'inférence part de l'autre extrémité (0;0) : glissé en (6;0), le segment futur est sur l'axe rouge.
+    p.envoyer(monde("glisser", 6, 0));
+    expect(p.vue.inference?.type).toBe("axe-x");
+    expect(p.vue.inference?.origineLigne).toEqual(v3(0, 0, 0));
+    p.envoyer(monde("glisser", 5, -1));
+    p.envoyer(monde("relache", 5, -1));
+    const t = p.transitions[p.transitions.length - 1] as Transition<unknown>;
+    expect(t.operation).toBe("Déplacer un point");
+    expect(p.selection).toEqual([arete]);
+    const positions = Object.values(p.modele.racine.sommets).map((s) => `${s.position.x};${s.position.y}`);
+    expect(positions).toContain("5;-1");
+    expect(positions).not.toContain("4;0");
+    expect(compter(p.modele.racine).aretes).toBe(4);
+    // Le clic émis par le navigateur après le relâchement ne change pas la sélection.
+    p.envoyer(clic(2, 1.5));
+    expect(p.selection).toEqual([arete]);
+  });
+
+  it("un appui loin des extrémités reste un cadre ; Échap annule un glisser de poignée", () => {
+    const m = rectangle();
+    const p = areteEn(m, 2, 0);
+    const avant = p.modele;
+    p.envoyer(monde("appui", 4, 0), monde("glisser", 6, 2), { genre: "echap" }, monde("relache", 6, 2));
+    expect(p.modele).toBe(avant);
+    const q = areteEn(m, 2, 0);
+    q.envoyer(monde("appui", 2, 0.5), monde("glisser", 3, 1));
+    expect(q.vue.apercu.cadre).toBeDefined();
+    expect(q.vue.apercu.lignes).toHaveLength(0);
   });
 });

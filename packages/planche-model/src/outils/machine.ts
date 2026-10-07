@@ -78,6 +78,10 @@ export interface VueOutil {
     readonly cadre?: { readonly de: { x: number; y: number }; readonly a: { x: number; y: number }; readonly genre: "fenetre" | "croisee" };
     /** (Ajout lot 2, optionnel) Contour du Lasso à l'écran (pixels), curseur compris ; carré rouge au premier point. */
     readonly contour?: { readonly points: readonly { x: number; y: number }[]; readonly genre: "fenetre" | "croisee" };
+    /** (Ajout, optionnel) Poignées (monde) : petits carrés aux extrémités d'une arête sélectionnée, à glisser. */
+    readonly points?: readonly Vec3[];
+    /** (Ajout, optionnel) Lignes en pointillé (monde) : trajet d'un point glissé, de sa position d'origine au curseur. */
+    readonly pointilles?: readonly (readonly Vec3[])[];
   };
   /** Ids sélectionnés / survolés, à surligner. */
   readonly selection: readonly string[];

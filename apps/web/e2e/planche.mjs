@@ -116,7 +116,7 @@ await ouvrir(pid);
 await mesurer("ouverture de la Planche (chargement de three.js compris)", () => ouvrirPlanche());
 check("Planche ouverte : vue three.js, barre d'outils, barre d'état et champ Mesures", (await page.locator("[data-planche-vue] canvas").count()) === 1 && (await page.locator(".planche-outils").isVisible()) && (await page.locator("[data-planche-etat]").isVisible()) && (await page.locator("[data-planche-mesures]").isVisible()));
 check("bouton « Planche » marqué actif", (await page.locator("[data-mode-planche]").getAttribute("aria-pressed")) === "true");
-check("brouillon local annoncé comme tel (C6)", ((await page.locator("[data-planche-brouillon]").textContent()) ?? "").includes("Brouillon local"));
+check("brouillon local annoncé comme tel (C6)", ((await page.locator("[data-planche-brouillon]").textContent()) ?? "").includes("Brouillon local") && ((await page.locator("[data-planche-brouillon]").getAttribute("title")) ?? "").includes("Brouillon local"));
 check("barre d'état en région aria-live", (await page.locator("[data-planche-etat]").getAttribute("aria-live")) === "polite");
 check("desktop (souris) : barre de modificateurs tactile masquée", !(await page.locator("[data-planche-modificateurs]").isVisible()));
 const vide = await etat();
@@ -257,7 +257,7 @@ await page.locator('.barre-mode button:text-is("Plan")').click();
 await page.waitForSelector(".plan2d .plan-objets [data-objet]", { timeout: 15000 });
 check("retour en Plan : le plan de l'Atelier est affiché, la Planche est fermée", (await page.locator("[data-planche]").count()) === 0 && (await page.locator(".plan2d").isVisible()));
 
-// 9. Mobile (390 × 844, tactile) : barre de modificateurs, cibles ≥ 44 px, carré au toucher.
+// 9. Mobile (390 × 844, tactile) : barre de modificateurs (≥ 36 px, bande compacte), cibles ≥ 44 px ailleurs, carré au toucher.
 const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, storageState: await ctx.storageState() });
 const tel = await mobile.newPage();
 ecouter(tel);
@@ -269,18 +269,41 @@ const toucher = async (q) => {
 };
 await toucher({ x: -3, y: -3, z: 0 }); // premier toucher (Sélection, dans le vide) : l'interface passe en mode tactile
 check("mobile : barre de modificateurs visible au toucher (C18, P-12)", await tel.locator("[data-planche-modificateurs]").isVisible());
-const petites = await tel.locator("[data-planche-modificateurs] button:visible, .planche-outils .outil:visible, .planche-colonne .canevas-icone:visible, .planche-haut button:visible").evaluateAll((els) => els.filter((e) => { const r = e.getBoundingClientRect(); return r.width < 44 || r.height < 44; }).map((e) => e.getAttribute("data-planche-mod") ?? e.getAttribute("data-planche-outil") ?? e.className));
-check("mobile : modificateurs, outils et panneaux d'au moins 44 px", petites.length === 0, petites.join(", "));
+const petites = await tel.locator("[data-planche-modificateurs] button:visible, .planche-outils .outil:visible, .planche-colonne .canevas-icone:visible, .planche-haut button:visible").evaluateAll((els) => els.filter((e) => { const r = e.getBoundingClientRect(); const min = e.closest(".planche-pied") ? 36 : 44; return r.width < min || r.height < min; }).map((e) => e.getAttribute("data-planche-mod") ?? e.getAttribute("data-planche-outil") ?? e.className));
+check("mobile : outils et panneaux d'au moins 44 px, modificateurs d'au moins 36 px", petites.length === 0, petites.join(", "));
 const barreMod = await boite("[data-planche-modificateurs]", tel);
 check("mobile : la barre de modificateurs tient dans l'écran", !!barreMod && barreMod.x >= 0 && barreMod.x + barreMod.width <= 390 + 1, JSON.stringify(barreMod));
 await tel.locator('[data-planche-outil="ligne"]').tap();
 check("mobile : outil Ligne choisi au toucher", (await etat(tel)).outil === "ligne");
 await toucher({ x: 0, y: 0, z: 0 });
 check("mobile : premier point posé au toucher (étape 2)", (await etat(tel)).etape === 2, JSON.stringify(await etat(tel)));
+// Au doigt, l'aperçu suit le glisser et le relâcher pose le point : appuyer-glisser-lâcher, sans touche ni saisie.
+{
+  const b = await boite("[data-planche-vue] canvas", tel);
+  const de = await tel.evaluate((q) => window.fadiPlanche.versEcran(q), { x: 0, y: 0, z: 0 });
+  const a = await tel.evaluate((q) => window.fadiPlanche.versEcran(q), { x: 4, y: 0, z: 0 });
+  const cdp = await tel.context().newCDPSession(tel);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: b.x + de.x + 2, y: b.y + de.y + 2 }] });
+  for (let i = 1; i <= 8; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: b.x + de.x + ((a.x - de.x) * i) / 8, y: b.y + de.y + ((a.y - de.y) * i) / 8 }] });
+  await tel.waitForTimeout(100);
+  const pendant = await tel.locator("[data-planche-mesures]").inputValue();
+  check("mobile : pendant le glisser au doigt, l'aperçu suit (Mesures ≈ 4,00 m)", /4,00/.test(pendant), pendant);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await tel.waitForTimeout(100);
+  const nbAretes = await tel.evaluate(() => Object.keys(window.fadiPlanche.modele().racine.aretes).length);
+  check("mobile : relâcher le doigt pose la seconde extrémité (1 arête)", nbAretes === 1 && (await etat(tel)).etape === 2, `${nbAretes} arête(s)`);
+  await cdp.detach();
+  await tel.keyboard.press("Escape");
+  await toucher({ x: 0, y: 0, z: 0 });
+}
+// Refonte responsive : les flèches et la consigne sont dans le panneau Instructeur (« ? » du bas).
+await tel.locator(".canevas-bas .lien").first().tap();
+check("mobile : « ? » ouvre le panneau et révèle les flèches", await tel.locator('[data-planche-mod="FlecheDroite"]').isVisible());
 await tel.locator('[data-planche-mod="FlecheDroite"]').tap();
 check("mobile : bouton → = verrou de direction rouge (bascule)", (await etat(tel)).fleche === "FlecheDroite");
 await tel.locator('[data-planche-mod="FlecheDroite"]').tap();
 check("mobile : second appui sur → = déverrouillé", (await etat(tel)).fleche === null);
+await tel.locator('[data-planche-panneau="instructeur"] .canevas-fermer').tap();
 // Sans survol au doigt, la direction est donnée par une coordonnée relative au champ Mesures (`<dx;dy;dz>`).
 await mesurer("carré de 4 m au toucher (coordonnées relatives)", async () => {
   for (const s of ["<4;0;0>", "<0;4;0>", "<-4;0;0>", "<0;-4;0>"]) {
