@@ -116,3 +116,18 @@ propositions du chef de projet retenues (voir D-167). Choix propres au lot 3 : v
 > Suivez-moi, Retourner, Diviser — dans le mode Planche, en brouillon local. Contrôles : typecheck, 399 + 87 + 87 tests, build,
 > recettes navigateur desktop et mobile verts ; CI à confirmer. Décisions prises par délégation : D-167. Acceptez-vous le lot 3
 > et l'ouverture du lot 4 (Mètre, Cotes, Rapporteur, Axes, Texte, Plan de coupe, caméras) ?
+
+## Contrôle des boutons de la Planche (7 octobre 2026, après la fusion)
+
+Retour d'une capture sur téléphone : la barre d'outils passait **sous la barre de touches (Maj, Ctrl, Alt, flèches) et sur la
+barre d'état**, et « Plus d'outils » (la grille : Suivez-moi, Retourner, Décalage, Diviser…) n'était plus atteignable. Cause : hauteur
+maximale « fixe » de la barre d'outils (`100% − 5,5 rem`) alors que le bas de l'écran est bien plus haut au téléphone. Correction : la
+barre de touches et la barre d'état forment un **pied** dans le flux dont la hauteur réelle est mesurée (`--pied-h`) ; la barre
+d'outils et les panneaux s'arrêtent au-dessus, la barre d'outils défile avec « Rechercher » et « Plus d'outils » **épinglés** (toujours
+visibles) ; à la souris les boutons font 36 px et tout tient sans défiler à 864 px de haut (le tactile garde 44 px).
+
+Nouvelle recette `apps/web/e2e/planche-boutons.mjs` (à la CI), ordinateur et téléphone : aucun bouton recouvert, aucune
+superposition des barres, cibles ≥ 44 px au toucher, les 12 boutons de la barre d'outils (10 actifs, 2 grisés « prévu au lot »), les 33 boutons de
+la grille (14 actifs, 19 grisés), recherche (ouvrir, Échap, choisir, Fermer), OK du champ Mesures, Annuler / Rétablir (désactivé
+au départ), touches Ctrl / ← ↑ → ↓ / Alt / Maj au téléphone, Instructeur et « ? », sélecteurs, Plan / 3D / Documents / Planche,
+Fichier, Enregistrer, Canevas. À noter : sur téléphone les sélecteurs de langue et de périphérique sont masqués par la mise en page.

@@ -164,7 +164,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: calc(100% - 5.5rem);
+  max-height: calc(100% - var(--pied-h, 5.5rem) - 1.5rem);
   overflow-y: auto;
   padding: 0.25rem;
   background: var(--flottant-fond);
@@ -224,7 +224,7 @@
   z-index: 8;
   margin: 0.5rem 0 0 calc(0.5rem + 11rem);
   max-width: min(36rem, calc(100% - 12rem));
-  max-height: calc(100% - 5.5rem);
+  max-height: calc(100% - var(--pied-h, 5.5rem) - 1.5rem);
   overflow-y: auto;
   padding: 0.6rem;
   background: var(--flottant-fond);
@@ -268,7 +268,7 @@
   z-index: 7;
   margin: 0.5rem calc(var(--colonne-l) + 1rem) 0 0;
   width: min(23rem, calc(100% - var(--colonne-l) - 5rem));
-  max-height: calc(100% - 6rem);
+  max-height: calc(100% - var(--pied-h, 5.5rem) - 1.5rem);
   overflow-y: auto;
   background: var(--flottant-fond);
   border: 1px solid var(--atelier-ligne, #dce5df);
@@ -282,13 +282,29 @@
   margin-left: 0.3rem;
 }
 
+/* Pied : barre de modificateurs (tactile) AU-DESSUS de la barre d'état, dans le flux — sa hauteur réelle est mesurée
+   (`--pied-h`) pour que la barre d'outils et les panneaux s'arrêtent au-dessus d'elle. */
+.planche-pied {
+  align-self: end;
+  justify-self: stretch;
+  z-index: 6;
+  margin: 0 calc(var(--colonne-l) + 1rem) 0.5rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  pointer-events: none;
+}
+.planche-pied > * {
+  pointer-events: auto;
+}
+
 /* Barre de modificateurs au toucher (C18, P-12) : visible sur appareil tactile seulement. */
 .planche-modificateurs {
   display: none;
-  justify-self: center;
-  align-self: end;
-  z-index: 6;
-  margin-bottom: 4.6rem;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
   gap: 4px;
   padding: 0.25rem;
   background: var(--flottant-fond);
@@ -321,9 +337,8 @@
 
 /* Barre du bas : aide, langue, périphérique, barre d'état, champ Mesures. */
 .planche-bas {
-  align-self: end;
-  z-index: 5;
-  margin: 0 calc(var(--colonne-l) + 1rem) 0.5rem 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -447,9 +462,11 @@
     max-width: calc(100% - 4.5rem - var(--colonne-l) - 1rem);
     justify-self: start;
   }
+  .planche-pied {
+    margin-right: 0.5rem;
+  }
   .planche-bas {
     flex-wrap: wrap;
-    margin-right: 0.5rem;
   }
   .planche-etat {
     flex-basis: 100%;
@@ -459,7 +476,28 @@
   .planche-mesures input {
     width: 6.5rem;
   }
-  .planche-modificateurs {
-    margin-bottom: 7.5rem;
+}
+
+/* Recherche et « Plus d'outils » restent toujours visibles dans la barre d'outils défilante (haut / bas). */
+.planche-outils .outil-fixe-haut,
+.planche-outils .outil-fixe-bas {
+  position: sticky;
+  z-index: 1;
+  background: var(--flottant-fond);
+}
+.planche-outils .outil-fixe-haut {
+  top: 0;
+}
+.planche-outils .outil-fixe-bas {
+  bottom: 0;
+}
+
+/* Souris (pointeur précis) : la barre d'outils tient en entier sans défiler ; le tactile garde des cibles de 44 px. */
+.planche-outils {
+  scroll-padding-block: 3rem;
+}
+@media (pointer: fine) and (hover: hover) {
+  .planche-outils .outil {
+    min-height: 36px;
   }
 }

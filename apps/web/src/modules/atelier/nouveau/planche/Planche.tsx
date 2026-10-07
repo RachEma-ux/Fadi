@@ -76,6 +76,8 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   const brouillonCharge = useRef(false);
 
   const hoteRef = useRef<HTMLDivElement | null>(null);
+  const racineRef = useRef<HTMLDivElement | null>(null);
+  const piedRef = useRef<HTMLDivElement | null>(null);
   const vueRef = useRef<VuePlanche | null>(null);
   const champMesures = useRef<HTMLInputElement | null>(null);
   const grilleDom = useRef<HTMLDivElement | null>(null);
@@ -294,6 +296,20 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   const validerRef = useRef(valider);
   validerRef.current = valider;
 
+  // --- Hauteur réelle du pied (barre de modificateurs + barre d'état) : la barre d'outils et les panneaux s'arrêtent au-dessus,
+  // sans jamais passer sous lui ni le recouvrir (téléphone : la barre d'état tient sur plusieurs lignes).
+  useEffect(() => {
+    const racine = racineRef.current;
+    const pied = piedRef.current;
+    if (!racine || !pied) return;
+    const mesurer = () => racine.style.setProperty("--pied-h", `${Math.ceil(pied.getBoundingClientRect().height)}px`);
+    mesurer();
+    if (typeof ResizeObserver === "undefined") return;
+    const o = new ResizeObserver(mesurer);
+    o.observe(pied);
+    return () => o.disconnect();
+  }, []);
+
   // --- Vue three.js : créée une fois, détruite au démontage.
   useEffect(() => {
     const hote = hoteRef.current;
@@ -488,7 +504,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   const recentOutil = recent ? outilParId(recent) : null;
 
   return (
-    <div className={`planche${tactile ? " planche-tactile" : ""}`} data-planche data-outil-actif={outilId}>
+    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}`} data-planche data-outil-actif={outilId}>
       <div
         ref={hoteRef}
         className="planche-vue"
@@ -516,7 +532,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       </div>
 
       <div className="planche-outils" role="toolbar" aria-label={t("planche.outils")} aria-orientation="vertical">
-        <button type="button" className="outil" onClick={() => setRecherche(true)} title={t("planche.recherche.titre")} aria-label={t("planche.recherche.titre")} data-planche-recherche>
+        <button type="button" className="outil outil-fixe-haut" onClick={() => setRecherche(true)} title={t("planche.recherche.titre")} aria-label={t("planche.recherche.titre")} data-planche-recherche>
           <span aria-hidden="true" className="outil-picto">⌕</span>
           <span className="outil-libelle" aria-hidden="true">{t("planche.rechercher")}</span>
         </button>
@@ -527,7 +543,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
             {boutonOutil(recentOutil)}
           </>
         )}
-        <button type="button" className="outil" aria-expanded={grille} aria-controls={grille ? "planche-grille" : undefined} onClick={() => setGrille(!grille)} title={t("planche.plus")} aria-label={t("planche.plus")} data-planche-plus>
+        <button type="button" className="outil outil-fixe-bas" aria-expanded={grille} aria-controls={grille ? "planche-grille" : undefined} onClick={() => setGrille(!grille)} title={t("planche.plus")} aria-label={t("planche.plus")} data-planche-plus>
           <span aria-hidden="true" className="outil-picto">⋯</span>
           <span className="outil-libelle" aria-hidden="true">{t("planche.plus")}</span>
         </button>
@@ -562,6 +578,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
         </section>
       )}
 
+      <div className="planche-pied" ref={piedRef} data-planche-pied>
       <div className="planche-modificateurs" role="toolbar" aria-label={t("planche.modificateurs")} data-planche-modificateurs>
         <button
           type="button"
@@ -653,6 +670,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           <button type="submit" className="planche-ok">OK</button>
         </form>
       </footer>
+      </div>
 
       {recherche && (
         <RechercheOutil

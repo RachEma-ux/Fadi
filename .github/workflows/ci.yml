@@ -144,6 +144,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/interface-anglais.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des boutons de la Planche, ordinateur et téléphone (apps/web/e2e/planche-boutons.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/planche-boutons.mjs 2>&1 | tee -a e2e.log
       - name: Sauvegarde puis restauration vérifiées (scripts/verify-restore.sh) sur la base du scénario
         env:
           PGPASSWORD: fadi_ci_password
