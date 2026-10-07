@@ -88,6 +88,8 @@ const FR = {
   "planche.outil.choisi": "Outil : {outil}.",
   "planche.edition": "Édition : {nom}",
   // Volet bas (téléphone) et plan détachable (lot 7, refonte responsive).
+  "planche.outils.deplier": "Afficher les libellés des outils",
+  "planche.outils.replier": "Masquer les libellés",
   "planche.volet.plus": "Plus",
   "planche.volet.moins": "Réduire",
   "planche.volet.plus.aide": "Déployer le volet : consigne complète et flèches",
@@ -188,6 +190,8 @@ const EN: Record<CleMessage, string> = {
   "planche.camera.fov": "Field of view: {valeur}°",
   "planche.outil.choisi": "Tool: {outil}.",
   "planche.edition": "Editing: {nom}",
+  "planche.outils.deplier": "Show tool labels",
+  "planche.outils.replier": "Hide labels",
   "planche.volet.plus": "More",
   "planche.volet.moins": "Collapse",
   "planche.volet.plus.aide": "Expand the sheet: full instruction and arrow keys",

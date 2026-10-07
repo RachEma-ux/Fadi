@@ -77,6 +77,8 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   const [webgl, setWebgl] = useState<"ok" | "indisponible">("ok");
   // Volet bas (téléphone) : replié, la consigne tient sur une ligne ; déployé, consigne complète et flèches.
   const [volet, setVolet] = useState(false);
+  // Rail d'outils replié par défaut (pictogrammes seuls, libellés en info-bulle) ; « » » affiche les libellés.
+  const [outilsReplies, setOutilsReplies] = useState(true);
   // Plan détaché : fenêtre séparée (Document Picture-in-Picture, bureau) ou plein écran (repli, téléphone).
   const [detache, setDetache] = useState<"non" | "fenetre" | "plein-ecran">("non");
   const fenetreRef = useRef<Window | null>(null);
@@ -664,7 +666,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     ));
 
   return (
-    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${detache !== "non" ? " est-detache" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
+    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${detache !== "non" ? " est-detache" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
       {/* Le nœud `.planche-vue` est déplacé tel quel dans la fenêtre détachée, puis rendu ici ; la carte d'état
           vient APRÈS lui (React n'insère alors jamais avant un nœud absent du document). */}
       <div ref={emplacementRef} className="planche-vue-cadre" data-planche-cadre>
@@ -728,7 +730,11 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       <div className="planche-poignee" aria-hidden="true">
         <span />
       </div>
-      <div className="planche-outils" role="toolbar" aria-label={t("planche.outils")} aria-orientation="vertical">
+      <div className="planche-outils" role="toolbar" aria-label={t("planche.outils")} aria-orientation="vertical" data-planche-outils-replies={outilsReplies}>
+        <button type="button" className="outil outil-fixe-haut planche-outils-bascule" aria-expanded={!outilsReplies} onClick={() => setOutilsReplies(!outilsReplies)} title={outilsReplies ? t("planche.outils.deplier") : t("planche.outils.replier")} aria-label={outilsReplies ? t("planche.outils.deplier") : t("planche.outils.replier")} data-planche-outils-bascule>
+          <span aria-hidden="true" className="outil-picto">{outilsReplies ? "»" : "«"}</span>
+          <span className="outil-libelle" aria-hidden="true">{t("planche.outils.replier")}</span>
+        </button>
         <button type="button" className="outil outil-fixe-haut" onClick={() => setRecherche(true)} title={t("planche.recherche.titre")} aria-label={t("planche.recherche.titre")} data-planche-recherche>
           <span aria-hidden="true" className="outil-picto">⌕</span>
           <span className="outil-libelle" aria-hidden="true">{t("planche.rechercher")}</span>
