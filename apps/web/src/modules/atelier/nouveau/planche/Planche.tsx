@@ -637,27 +637,6 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
 
   const recentOutil = recent ? outilParId(recent) : null;
 
-  /** Aide, langue, périphérique : barre d'état (ordinateur) ou rangée de saisie du volet (téléphone). */
-  const canevasBas = (
-    <span className="canevas-bas">
-      <button type="button" className="lien" onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("bas.aide")} aria-label={t("bas.aide")}>?</button>
-      <ChoixLangue className="canevas-langue" />
-      <ChoixPeripherique ui={ui} />
-    </span>
-  );
-
-  /** Annuler / rétablir, dans la barre du haut. */
-  const annulerRetablir = (
-    <div className="barre-groupe planche-annuler-retablir" role="group" aria-label={`${t("planche.annuler")} / ${t("planche.retablir")}`}>
-      <button type="button" onClick={annulerPas} disabled={hist.passe.length === 0} title={t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" })} data-planche-annuler>
-        ↶<span className="sr-only">{t("planche.annuler")}</span>
-      </button>
-      <button type="button" onClick={retablirPas} disabled={hist.futur.length === 0} title={t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" })} data-planche-retablir>
-        ↷<span className="sr-only">{t("planche.retablir")}</span>
-      </button>
-    </div>
-  );
-
   /** Touches d'état à l'écran (tactile) : un appui = enfoncée puis relâchée. */
   const boutonsTouches = (touches: [Touche, string, string][]) =>
     touches.map(([touche, libelle, aide]) => (
@@ -675,6 +654,45 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
         {libelle}
       </button>
     ));
+
+  /** Aide « ? » : barre d'état (ordinateur) ou rangée de saisie du volet (téléphone). */
+  const aideBouton = <button type="button" className="lien" onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("bas.aide")} aria-label={t("bas.aide")}>?</button>;
+  /** Langue et périphérique : barre d'état (ordinateur) ou barre du haut (téléphone). */
+  const choix = (
+    <>
+      <ChoixLangue className="canevas-langue" />
+      <ChoixPeripherique ui={ui} />
+    </>
+  );
+  const canevasBas = (
+    <span className="canevas-bas">
+      {aideBouton}
+      {choix}
+    </span>
+  );
+  /** Flèches de direction : touches modificatrices (ordinateur tactile) ou panneau Instructeur (téléphone). */
+  const fleches = (
+    <span className="planche-fleches" role="group" aria-label={t("planche.mod.fleches")}>
+      {boutonsTouches([
+        ["FlecheGauche", "←", t("planche.mod.gauche")],
+        ["FlecheHaut", "↑", t("planche.mod.haut")],
+        ["FlecheDroite", "→", t("planche.mod.droite")],
+        ["FlecheBas", "↓", t("planche.mod.bas")],
+      ])}
+    </span>
+  );
+
+  /** Annuler / rétablir, dans la barre du haut. */
+  const annulerRetablir = (
+    <div className="barre-groupe planche-annuler-retablir" role="group" aria-label={`${t("planche.annuler")} / ${t("planche.retablir")}`}>
+      <button type="button" onClick={annulerPas} disabled={hist.passe.length === 0} title={t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" })} data-planche-annuler>
+        ↶<span className="sr-only">{t("planche.annuler")}</span>
+      </button>
+      <button type="button" onClick={retablirPas} disabled={hist.futur.length === 0} title={t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" })} data-planche-retablir>
+        ↷<span className="sr-only">{t("planche.retablir")}</span>
+      </button>
+    </div>
+  );
 
   return (
     <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${colonneRepliee ? " colonne-repliee" : ""}${detache !== "non" ? " est-detache" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
@@ -719,6 +737,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           <span className="sr-only">{t("planche.brouillon")}</span>
         </p>
         {annulerRetablir}
+        {etroit && <span className="planche-haut-choix">{choix}</span>}
         <button
           type="button"
           className="planche-detacher"
@@ -789,6 +808,16 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
             <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.instructeur") })}>×</button>
           </header>
           <div className="canevas-panneau-corps">
+            {etroit && (
+              <div className="planche-panneau-consigne" data-planche-panneau-consigne>
+                <p>
+                  {dans && <span className="planche-contexte">{t("planche.edition", { nom: nomOccurrence(hist.present.modele, dans) })} | </span>}
+                  {vue.consigne}
+                </p>
+                {etatBarre && <p className="planche-message">{etatBarre}</p>}
+                {fleches}
+              </div>
+            )}
             <InstructeurPlanche outil={outil} raison={outil ? raisonDe(outil) : null} />
           </div>
         </section>
@@ -808,7 +837,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       </footer>
 
       <div className="planche-saisie">
-      {etroit && canevasBas}
+      {etroit && <span className="canevas-bas">{aideBouton}</span>}
       <div className="planche-modificateurs" role="toolbar" aria-label={t("planche.modificateurs")} data-planche-modificateurs>
         <button
           type="button"
@@ -843,14 +872,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           ["Ctrl", t("planche.mod.ctrl"), t("planche.mod.ctrl")],
           ["Alt", t("planche.mod.alt"), t("planche.mod.alt")],
         ])}
-        <span className="planche-fleches" role="group" aria-label={t("planche.mod.fleches")}>
-          {boutonsTouches([
-            ["FlecheGauche", "←", t("planche.mod.gauche")],
-            ["FlecheHaut", "↑", t("planche.mod.haut")],
-            ["FlecheDroite", "→", t("planche.mod.droite")],
-            ["FlecheBas", "↓", t("planche.mod.bas")],
-          ])}
-        </span>
+        {!etroit && fleches}
       </div>
 
         <form

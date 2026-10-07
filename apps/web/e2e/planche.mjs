@@ -296,14 +296,14 @@ check("mobile : premier point posé au toucher (étape 2)", (await etat(tel)).et
   await tel.keyboard.press("Escape");
   await toucher({ x: 0, y: 0, z: 0 });
 }
-// Refonte responsive : les flèches sont dans le volet déployé (« Plus »), la consigne complète aussi.
-await tel.locator("[data-planche-volet-bascule]").tap();
-check("mobile : « Plus » déploie le volet et révèle les flèches", await tel.locator('[data-planche-mod="FlecheDroite"]').isVisible());
+// Refonte responsive : les flèches et la consigne sont dans le panneau Instructeur (« ? » du bas).
+await tel.locator(".canevas-bas .lien").first().tap();
+check("mobile : « ? » ouvre le panneau et révèle les flèches", await tel.locator('[data-planche-mod="FlecheDroite"]').isVisible());
 await tel.locator('[data-planche-mod="FlecheDroite"]').tap();
 check("mobile : bouton → = verrou de direction rouge (bascule)", (await etat(tel)).fleche === "FlecheDroite");
 await tel.locator('[data-planche-mod="FlecheDroite"]').tap();
 check("mobile : second appui sur → = déverrouillé", (await etat(tel)).fleche === null);
-await tel.locator("[data-planche-volet-bascule]").tap();
+await tel.locator('[data-planche-panneau="instructeur"] .canevas-fermer').tap();
 // Sans survol au doigt, la direction est donnée par une coordonnée relative au champ Mesures (`<dx;dy;dz>`).
 await mesurer("carré de 4 m au toucher (coordonnées relatives)", async () => {
   for (const s of ["<4;0;0>", "<0;4;0>", "<-4;0;0>", "<0;-4;0>"]) {
