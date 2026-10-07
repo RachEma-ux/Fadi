@@ -503,6 +503,7 @@ export const machineSelection: MachineOutil<EtatSelection> = {
         faces: [],
         ...(etat.cadre ? { cadre: { de: etat.cadre.de, a: etat.cadre.a, genre: genreCadre(etat.cadre.de, etat.cadre.a) } } : {}),
         ...(points.length > 0 ? { points } : {}),
+        ...(g ? { pointilles: [[g.depuis, g.courant]] } : {}),
       },
       selection: ctx.selection,
       // Aucune pré-surbrillance au survol (obs).

@@ -325,6 +325,14 @@ export class VuePlanche {
         const couleur = (l.length === 2 ? parallele(l) : !!lineaire) ? vue.inference!.couleur : "#000000";
         this.groupeApercu.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(l.map(v3)), new THREE.LineBasicMaterial({ color: couleur, depthTest: false })));
       }
+      // Trajet en pointillé (Sélection : de la position d'origine de l'extrémité glissée au curseur).
+      for (const l of vue.apercu.pointilles ?? []) {
+        if (l.length < 2) continue;
+        const fin = l[l.length - 1] as Vec3;
+        const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints(l.map(v3)), new THREE.LineDashedMaterial({ color: "#5b7468", dashSize: this.metresParPixel(fin) * 6, gapSize: this.metresParPixel(fin) * 4, depthTest: false }));
+        ligne.computeLineDistances();
+        this.groupeApercu.add(ligne);
+      }
       // Poignées d'extrémité (Sélection) : carrés pleins, taille écran constante, toujours visibles.
       if (vue.apercu.points && vue.apercu.points.length) {
         const poignees = new THREE.Points(new THREE.BufferGeometry().setFromPoints(vue.apercu.points.map(v3)), new THREE.PointsMaterial({ color: COULEUR_SELECTION, size: 10, sizeAttenuation: false, depthTest: false }));
