@@ -348,8 +348,7 @@ const capture = (nom) => page.screenshot({ path: `${OUT}/planche-${nom}.png` });
     await page.mouse.move(cx, cy); await page.mouse.down(); await page.mouse.move(cx, cy - 150, { steps: 10 }); await page.mouse.up(); await page.waitForTimeout(40);
     const apres = (await etat()).camera.position;
     note("marcher", "glisser vers le haut : la caméra avance, hauteur conservée", Math.hypot(apres.x - avant.x, apres.y - avant.y) > 0.01 && Math.abs(apres.z - avant.z) < 1e-6, JSON.stringify({ avant, apres }));
-    await page.keyboard.press("Escape"); note("marcher", "Échap : retour à l'outil précédent (Regarder autour)", (await etat()).outil === "regarder-autour", (await etat()).outil);
-    await page.keyboard.press("Escape"); note("regarder-autour", "Échap : retour à Sélection (Positionner la caméra, temporaire, n'est jamais rendu)", (await etat()).outil === "selection", (await etat()).outil);
+    await page.keyboard.press("Escape"); note("marcher", "Échap : retour à l'outil précédent (Sélection, actif avant Marcher)", (await etat()).outil === "selection", (await etat()).outil);
     await capture("lot4-camera");
   }
 }
