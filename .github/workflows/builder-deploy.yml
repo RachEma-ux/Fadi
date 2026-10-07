@@ -24,6 +24,9 @@ on:
 
 permissions:
   contents: read
+  # L'URL du tunnel est aussi publiée comme « deployment status » (environment_url) : lisible par l'API GitHub
+  # pendant que le job tourne, sans attendre la fin du run ni ouvrir les journaux.
+  deployments: write
 
 jobs:
   deploy:
@@ -209,6 +212,27 @@ jobs:
           echo "    ou passez du Wi-Fi aux données mobiles — le nom vient d'être créé et certains résolveurs gardent"
           echo "    quelques minutes une première réponse négative."
           echo "============================================"
+
+      - name: Publish the URL as a deployment status (readable through the API)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f app_url.txt ] || exit 0
+          TUNNEL_URL=$(cat app_url.txt)
+          API="https://api.github.com/repos/${{ github.repository }}"
+          DEP_ID=$(curl -sS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
+            "$API/deployments" \
+            -d "{\"ref\":\"${{ github.sha }}\",\"environment\":\"recette\",\"auto_merge\":false,\"required_contexts\":[],\"transient_environment\":true,\"description\":\"Builder Deploy #${{ github.run_number }}\"}" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id", ""))')
+          if [ -n "$DEP_ID" ]; then
+            curl -sS -o /dev/null -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" \
+              "$API/deployments/$DEP_ID/statuses" \
+              -d "{\"state\":\"success\",\"environment_url\":\"$TUNNEL_URL\",\"description\":\"En ligne ${{ github.event.inputs.duration }} min à partir de la publication\",\"auto_inactive\":true}"
+            echo "✅ Deployment status publié : $TUNNEL_URL"
+          else
+            echo "⚠️ Deployment non créé (droits ?) : l'URL reste dans le résumé et les journaux."
+          fi
 
       - name: Deployment summary
         if: always()
