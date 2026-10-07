@@ -257,7 +257,7 @@ await page.locator('.barre-mode button:text-is("Plan")').click();
 await page.waitForSelector(".plan2d .plan-objets [data-objet]", { timeout: 15000 });
 check("retour en Plan : le plan de l'Atelier est affiché, la Planche est fermée", (await page.locator("[data-planche]").count()) === 0 && (await page.locator(".plan2d").isVisible()));
 
-// 9. Mobile (390 × 844, tactile) : barre de modificateurs, cibles ≥ 44 px, carré au toucher.
+// 9. Mobile (390 × 844, tactile) : barre de modificateurs (≥ 36 px, bande compacte), cibles ≥ 44 px ailleurs, carré au toucher.
 const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, storageState: await ctx.storageState() });
 const tel = await mobile.newPage();
 ecouter(tel);
@@ -269,8 +269,8 @@ const toucher = async (q) => {
 };
 await toucher({ x: -3, y: -3, z: 0 }); // premier toucher (Sélection, dans le vide) : l'interface passe en mode tactile
 check("mobile : barre de modificateurs visible au toucher (C18, P-12)", await tel.locator("[data-planche-modificateurs]").isVisible());
-const petites = await tel.locator("[data-planche-modificateurs] button:visible, .planche-outils .outil:visible, .planche-colonne .canevas-icone:visible, .planche-haut button:visible").evaluateAll((els) => els.filter((e) => { const r = e.getBoundingClientRect(); return r.width < 44 || r.height < 44; }).map((e) => e.getAttribute("data-planche-mod") ?? e.getAttribute("data-planche-outil") ?? e.className));
-check("mobile : modificateurs, outils et panneaux d'au moins 44 px", petites.length === 0, petites.join(", "));
+const petites = await tel.locator("[data-planche-modificateurs] button:visible, .planche-outils .outil:visible, .planche-colonne .canevas-icone:visible, .planche-haut button:visible").evaluateAll((els) => els.filter((e) => { const r = e.getBoundingClientRect(); const min = e.closest(".planche-pied") ? 36 : 44; return r.width < min || r.height < min; }).map((e) => e.getAttribute("data-planche-mod") ?? e.getAttribute("data-planche-outil") ?? e.className));
+check("mobile : outils et panneaux d'au moins 44 px, modificateurs d'au moins 36 px", petites.length === 0, petites.join(", "));
 const barreMod = await boite("[data-planche-modificateurs]", tel);
 check("mobile : la barre de modificateurs tient dans l'écran", !!barreMod && barreMod.x >= 0 && barreMod.x + barreMod.width <= 390 + 1, JSON.stringify(barreMod));
 await tel.locator('[data-planche-outil="ligne"]').tap();

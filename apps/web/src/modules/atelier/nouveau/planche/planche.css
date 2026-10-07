@@ -779,7 +779,27 @@
     flex: 1 1 3rem;
     width: 3rem;
     min-width: 0;
-    min-height: 44px;
+    min-height: 36px;
+    padding: 0 0.4rem;
+  }
+  /* Bande du bas la plus basse possible : une rangée de 36 px, sans marge superflue. */
+  .planche-pied {
+    padding: 2px 0.3rem;
+  }
+  .planche-saisie {
+    gap: 3px;
+  }
+  .planche-saisie .canevas-bas .lien,
+  .planche-modificateurs button,
+  .planche-ok {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0 0.3rem;
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+  .planche-modificateurs {
+    gap: 3px;
   }
   /* Surcouches qui restent sur le dessin : brouillon (pastille), annuler / rétablir, Détacher, grille, panneau. */
   /* Barre du haut pleine largeur : brouillon, annuler, rétablir … détacher. */

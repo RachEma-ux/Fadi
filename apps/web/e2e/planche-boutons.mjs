@@ -1,7 +1,7 @@
 /**
  * Recette des BOUTONS de la Planche (contrôle exhaustif), sur ordinateur (1536 × 864) puis en émulation téléphone
  * (390 × 844, tactile) : disposition (aucun bouton recouvert par un autre élément, aucune superposition des barres,
- * cibles ≥ 44 px au toucher, barre d'outils défilante avec « Rechercher » et « Plus d'outils » toujours visibles) ;
+ * cibles ≥ 44 px au toucher (≥ 36 px dans la bande du bas), barre d'outils défilante avec « Rechercher » et « Plus d'outils » toujours visibles) ;
  * chaque bouton de la barre d'outils, de la grille « … », de la recherche, annuler / rétablir, OK du champ Mesures,
  * touches modificatrices (téléphone), Instructeur et « ? », sélecteurs, modes Plan / 3D / Documents / Planche, Fichier,
  * Canevas, Harmonie. Aucune commande émise, aucune erreur JavaScript.
@@ -132,7 +132,7 @@ async function auditer(nom, vp, tactile) {
   };
   const T = (sel) => p.locator(sel).first();
 
-  // 1. Disposition : aucun bouton recouvert (après défilement dans sa zone), cibles ≥ 44 px au toucher.
+  // 1. Disposition : aucun bouton recouvert (après défilement dans sa zone), cibles ≥ 44 px au toucher (≥ 36 px dans la bande du bas, volontairement compacte).
   if (tactile) { const e = await ecran({ x: -3, y: -3, z: 0 }, p); await p.touchscreen.tap(e.x, e.y); }
   const boutons = await p.locator("[data-planche] button:visible, [data-planche] input:visible, [data-planche] select:visible").count();
   const defauts = [];
@@ -144,10 +144,10 @@ async function auditer(nom, vp, tactile) {
       const x = Math.min(Math.max(q.x + q.width / 2, 0), innerWidth - 1), y = Math.min(Math.max(q.y + q.height / 2, 0), innerHeight - 1);
       const top = document.elementFromPoint(x, y);
       const nom = (e.getAttribute("data-planche-outil") ?? e.getAttribute("data-planche-mod") ?? e.getAttribute("aria-label") ?? e.textContent ?? "").trim().slice(0, 30);
-      return { nom, libre: top === e || e.contains(top) || !!(top && top.contains(e)), petit: tact && e.tagName === "BUTTON" && (q.width < 43.5 || q.height < 43.5), hors: q.right > innerWidth + 1 || q.left < -1 };
+      return { nom, libre: top === e || e.contains(top) || !!(top && top.contains(e)), petit: tact && e.tagName === "BUTTON" && (e.closest(".planche-pied") ? (q.width < 35.5 || q.height < 35.5) : (q.width < 43.5 || q.height < 43.5)), hors: q.right > innerWidth + 1 || q.left < -1 };
     }, tactile);
     if (!r.libre) defauts.push(`${r.nom} recouvert`);
-    if (r.petit) defauts.push(`${r.nom} < 44 px`);
+    if (r.petit) defauts.push(`${r.nom} trop petit`);
     if (r.hors) defauts.push(`${r.nom} hors de l'écran`);
   }
   check(`${nom} : ${boutons} boutons et champs de la Planche accessibles, non recouverts${tactile ? ", ≥ 44 px" : ""}`, defauts.length === 0, defauts.join(" ; "));
