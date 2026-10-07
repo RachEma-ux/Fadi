@@ -79,6 +79,8 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   const [volet, setVolet] = useState(false);
   // Rail d'outils replié par défaut (pictogrammes seuls, libellés en info-bulle) ; « » » affiche les libellés.
   const [outilsReplies, setOutilsReplies] = useState(true);
+  // Colonne de panneaux (droite) : étiquettes affichées par défaut au téléphone, « » » les replie.
+  const [colonneRepliee, setColonneRepliee] = useState(false);
   // Plan détaché : fenêtre séparée (Document Picture-in-Picture, bureau) ou plein écran (repli, téléphone).
   const [detache, setDetache] = useState<"non" | "fenetre" | "plein-ecran">("non");
   const fenetreRef = useRef<Window | null>(null);
@@ -635,7 +637,16 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
 
   const recentOutil = recent ? outilParId(recent) : null;
 
-  /** Annuler / rétablir : barre du haut (ordinateur) ou volet bas (téléphone), jamais les deux. */
+  /** Aide, langue, périphérique : barre d'état (ordinateur) ou rangée de saisie du volet (téléphone). */
+  const canevasBas = (
+    <span className="canevas-bas">
+      <button type="button" className="lien" onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("bas.aide")} aria-label={t("bas.aide")}>?</button>
+      <ChoixLangue className="canevas-langue" />
+      <ChoixPeripherique ui={ui} />
+    </span>
+  );
+
+  /** Annuler / rétablir, dans la barre du haut. */
   const annulerRetablir = (
     <div className="barre-groupe planche-annuler-retablir" role="group" aria-label={`${t("planche.annuler")} / ${t("planche.retablir")}`}>
       <button type="button" onClick={annulerPas} disabled={hist.passe.length === 0} title={t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" })} data-planche-annuler>
@@ -666,7 +677,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     ));
 
   return (
-    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${detache !== "non" ? " est-detache" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
+    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${colonneRepliee ? " colonne-repliee" : ""}${detache !== "non" ? " est-detache" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
       {/* Le nœud `.planche-vue` est déplacé tel quel dans la fenêtre détachée, puis rendu ici ; la carte d'état
           vient APRÈS lui (React n'insère alors jamais avant un nœud absent du document). */}
       <div ref={emplacementRef} className="planche-vue-cadre" data-planche-cadre>
@@ -707,7 +718,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           </svg>
           <span className="sr-only">{t("planche.brouillon")}</span>
         </p>
-        {!etroit && annulerRetablir}
+        {annulerRetablir}
         <button
           type="button"
           className="planche-detacher"
@@ -719,9 +730,6 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           <span aria-hidden="true" className="outil-picto">{detache === "non" ? "⧉" : "⤡"}</span>
           <span className="planche-detacher-libelle" aria-hidden="true">{detache === "non" ? t("planche.detacher.court") : detache === "fenetre" ? t("planche.rattacher.court") : t("planche.plein-ecran.quitter.court")}</span>
         </button>
-        <button type="button" className="planche-aide" aria-pressed={panneau === "instructeur"} onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("panneau.instructeur")} aria-label={t("panneau.instructeur")} data-planche-aide>
-          <span aria-hidden="true" className="canevas-picto">?</span>
-        </button>
       </div>
 
       {/* Volet : au bureau, `display: contents` (barre d'outils à gauche, pied en bas, comme avant) ; au téléphone,
@@ -730,14 +738,16 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       <div className="planche-poignee" aria-hidden="true">
         <span />
       </div>
+      <div className="planche-recherche-carte">
+        <button type="button" className="outil" onClick={() => setRecherche(true)} title={t("planche.recherche.titre")} aria-label={t("planche.recherche.titre")} data-planche-recherche>
+          <span aria-hidden="true" className="outil-picto">⌕</span>
+          <span className="outil-libelle" aria-hidden="true">{t("planche.rechercher")}</span>
+        </button>
+      </div>
       <div className="planche-outils" role="toolbar" aria-label={t("planche.outils")} aria-orientation="vertical" data-planche-outils-replies={outilsReplies}>
         <button type="button" className="outil outil-fixe-haut planche-outils-bascule" aria-expanded={!outilsReplies} onClick={() => setOutilsReplies(!outilsReplies)} title={outilsReplies ? t("planche.outils.deplier") : t("planche.outils.replier")} aria-label={outilsReplies ? t("planche.outils.deplier") : t("planche.outils.replier")} data-planche-outils-bascule>
           <span aria-hidden="true" className="outil-picto">{outilsReplies ? "»" : "«"}</span>
           <span className="outil-libelle" aria-hidden="true">{t("planche.outils.replier")}</span>
-        </button>
-        <button type="button" className="outil outil-fixe-haut" onClick={() => setRecherche(true)} title={t("planche.recherche.titre")} aria-label={t("planche.recherche.titre")} data-planche-recherche>
-          <span aria-hidden="true" className="outil-picto">⌕</span>
-          <span className="outil-libelle" aria-hidden="true">{t("planche.rechercher")}</span>
         </button>
         {barre.map((o) => boutonOutil(o))}
         {recentOutil && (
@@ -764,6 +774,9 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       )}
 
       <nav className="planche-colonne" aria-label={t("canevas.panneaux")}>
+        <button type="button" className="canevas-icone planche-colonne-bascule" aria-expanded={!colonneRepliee} onClick={() => setColonneRepliee(!colonneRepliee)} title={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} aria-label={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} data-planche-colonne-bascule>
+          <span aria-hidden="true" className="canevas-picto">{colonneRepliee ? "«" : "»"}</span>
+        </button>
         <button type="button" className="canevas-icone" aria-pressed={panneau === "instructeur"} onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("panneau.instructeur")} data-planche-panneau-icone="instructeur">
           <span aria-hidden="true" className="canevas-picto">?</span>
           <span className="canevas-etiquette">{t("panneau.instructeur")}</span>
@@ -788,18 +801,14 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           <span className="planche-consigne">{vue.consigne}</span>
           {etatBarre && <span className="planche-message" data-planche-message> | {etatBarre}</span>}
         </p>
-        {etroit && annulerRetablir}
         <button type="button" className="planche-volet-bascule" aria-expanded={volet} onClick={() => setVolet(!volet)} title={volet ? t("planche.volet.moins.aide") : t("planche.volet.plus.aide")} data-planche-volet-bascule>
           {volet ? t("planche.volet.moins") : t("planche.volet.plus")}
         </button>
-        <span className="canevas-bas">
-          <button type="button" className="lien" onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("bas.aide")} aria-label={t("bas.aide")}>?</button>
-          <ChoixLangue className="canevas-langue" />
-          <ChoixPeripherique ui={ui} />
-        </span>
+        {!etroit && canevasBas}
       </footer>
 
       <div className="planche-saisie">
+      {etroit && canevasBas}
       <div className="planche-modificateurs" role="toolbar" aria-label={t("planche.modificateurs")} data-planche-modificateurs>
         <button
           type="button"

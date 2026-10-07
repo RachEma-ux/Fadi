@@ -266,9 +266,9 @@ async function auditer(nom, vp, tactile) {
   check(`${nom} : bouton Instructeur ouvre le panneau`, (await p.locator('[data-planche-panneau="instructeur"]').count()) === 1);
   await cliquer(p.locator('[data-planche-panneau="instructeur"] .canevas-fermer'));
   check(`${nom} : bouton × du panneau le ferme`, (await p.locator('[data-planche-panneau="instructeur"]').count()) === 0);
-  await cliquer(p.locator(".planche-bas .lien").first());
+  await cliquer(p.locator(".canevas-bas .lien").first());
   check(`${nom} : bouton « ? » ouvre l'Instructeur`, (await p.locator('[data-planche-panneau="instructeur"]').count()) === 1);
-  await cliquer(p.locator(".planche-bas .lien").first());
+  await cliquer(p.locator(".canevas-bas .lien").first());
   check(`${nom} : « ? » le referme`, (await p.locator('[data-planche-panneau="instructeur"]').count()) === 0);
 
   // 8. Sélecteurs de la barre du bas (ordinateur ; masqués sur téléphone par la mise en page).

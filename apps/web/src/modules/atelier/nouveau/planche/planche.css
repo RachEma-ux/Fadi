@@ -222,16 +222,36 @@
   font-weight: 600;
 }
 
+/* Carte « Rechercher » au-dessus du rail (même aspect), puis le rail d'outils. */
+.planche-recherche-carte {
+  justify-self: start;
+  align-self: start;
+  z-index: 6;
+  margin: 0.5rem 0.5rem 0;
+  padding: 0.25rem;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+}
+.planche.outils-replies .planche-recherche-carte .outil-libelle {
+  display: none;
+}
+.planche.outils-replies .planche-recherche-carte .outil {
+  justify-content: center;
+  padding-left: 0.15rem;
+  padding-right: 0.15rem;
+}
 /* Barre d'outils verticale flottante ; l'outil actif porte un liseré à gauche (relevé : bleu). */
 .planche-outils {
   justify-self: start;
   align-self: start;
   z-index: 6;
-  margin: 0.5rem;
+  margin: calc(0.5rem + 44px + 0.75rem) 0.5rem 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: calc(100% - var(--pied-h, 5.5rem) - 1.5rem);
+  max-height: calc(100% - var(--pied-h, 5.5rem) - 44px - 2.5rem);
   overflow-y: auto;
   padding: 0.25rem;
   background: var(--flottant-fond);
@@ -328,6 +348,12 @@
   border: 1px solid var(--atelier-ligne, #dce5df);
   border-radius: 8px;
   box-shadow: var(--flottant-ombre);
+}
+.planche.colonne-repliee .planche-colonne .canevas-etiquette {
+  display: none;
+}
+.planche-colonne-bascule .canevas-picto {
+  font-weight: 700;
 }
 .planche-panneau {
   justify-self: end;
@@ -579,7 +605,7 @@
   .planche-outils {
     position: absolute;
     left: 0.5rem;
-    top: 4rem;
+    top: calc(48px + 0.5rem + 52px + 0.5rem);
     bottom: calc(var(--volet-h, 10rem) + 0.5rem);
     justify-self: auto;
     align-self: auto;
@@ -653,34 +679,39 @@
     color: #1a5fd6;
     font-weight: 600;
   }
-  .planche .canevas-etiquette,
-  .planche .canevas-langue,
-  .planche .canevas-peripherique {
-    display: none;
+  .planche-saisie .canevas-bas {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .planche-saisie .canevas-bas select {
+    min-height: 44px;
+    max-width: 6rem;
+  }
+  .planche-saisie .canevas-bas .lien {
+    min-width: 44px;
+    min-height: 44px;
   }
   .planche-bas .lien {
     min-width: 44px;
     min-height: 44px;
   }
   .planche-saisie {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     justify-content: flex-start;
   }
   .planche-modificateurs {
     display: flex;
-    flex: none;
+    flex: 1 1 100%;
+    order: 3;
     overflow: visible;
   }
   .planche-fleches {
     display: none;
   }
-  .planche.volet-ouvert .planche-saisie {
-    flex-wrap: wrap;
-  }
   .planche.volet-ouvert .planche-fleches {
     display: flex;
-    flex-basis: 100%;
-    order: 2;
+    flex: 1 1 auto;
   }
   .planche.volet-ouvert .planche-fleches button {
     flex: 1 1 0;
@@ -703,29 +734,87 @@
     min-height: 44px;
   }
   /* Surcouches qui restent sur le dessin : brouillon (pastille), annuler / rétablir, Détacher, grille, panneau. */
-  /* Petite barre du haut : brouillon (icône), détacher, aide — 3 icônes, rien d'autre. */
+  /* Barre du haut pleine largeur : brouillon, annuler, rétablir … détacher. */
   .planche-haut {
-    justify-self: start;
-    margin: 0.5rem;
-    gap: 2px;
-    padding: 2px;
-    border-radius: 8px;
-  }
-  .planche-haut .planche-aide {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    justify-self: stretch;
+    margin: 0;
+    max-width: none;
+    gap: 4px;
+    padding: 2px 0.5rem;
+    border: 0;
+    border-bottom: 1px solid var(--atelier-ligne, #dce5df);
+    border-radius: 0;
+    box-shadow: none;
   }
   .planche-haut button {
     border: 0;
     background: transparent;
   }
   .planche-detacher {
+    margin-left: auto;
     padding: 0;
     width: 44px;
   }
-  .planche-detacher-libelle,
+  .planche-detacher-libelle {
+    display: none;
+  }
+  /* Rechercher au-dessus du rail, sous la barre du haut. */
+  .planche-recherche-carte {
+    position: absolute;
+    left: 0.5rem;
+    top: calc(48px + 0.5rem);
+    margin: 0;
+    z-index: 6;
+  }
+  /* Colonne de panneaux à droite : icône carrée, étiquette flottante à sa gauche ; « » » replie les étiquettes. */
   .planche-colonne {
+    position: absolute;
+    right: 0.5rem;
+    top: calc(48px + 0.5rem);
+    width: auto;
+    margin: 0;
+    padding: 0;
+    gap: 0.5rem;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    align-items: flex-end;
+  }
+  .planche-colonne .canevas-icone {
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .planche-colonne .canevas-picto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: var(--flottant-fond);
+    border: 1px solid var(--atelier-ligne, #dce5df);
+    border-radius: 6px;
+    box-shadow: var(--flottant-ombre);
+  }
+  .planche-colonne .canevas-icone[aria-pressed="true"] .canevas-picto {
+    border-right: 3px solid var(--atelier-accent, #173f35);
+    background: color-mix(in srgb, var(--atelier-accent, #173f35) 10%, #fff);
+  }
+  .planche .canevas-etiquette {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    background: var(--flottant-fond);
+    border-radius: 999px;
+    box-shadow: var(--flottant-ombre);
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .planche.colonne-repliee .planche-colonne .canevas-etiquette {
     display: none;
   }
   .planche-annuler-retablir {
@@ -753,18 +842,13 @@
   .planche-grille .canevas-grille {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .planche-colonne {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    margin: 0;
-  }
   .planche-panneau {
     position: absolute;
-    top: 0.5rem;
-    right: calc(var(--colonne-l) + 1rem);
+    top: calc(48px + 0.5rem);
+    right: calc(44px + 1rem);
     margin: 0;
-    width: calc(100% - var(--colonne-l) - 2rem);
+    width: calc(100% - 44px - 4.75rem);
+    left: 3.75rem;
     max-height: calc(100% - var(--volet-h, 15rem) - 1rem);
   }
   .planche-recherche-fond {
@@ -785,14 +869,6 @@
 .planche-outils .outil-fixe-haut.planche-outils-bascule {
   top: 0;
   z-index: 2;
-}
-.planche-outils .outil-fixe-haut:not(.planche-outils-bascule) {
-  top: 44px;
-}
-@media (pointer: fine) and (hover: hover) {
-  .planche-outils .outil-fixe-haut:not(.planche-outils-bascule) {
-    top: 36px;
-  }
 }
 
 /* Recherche et « Plus d'outils » restent toujours visibles dans la barre d'outils défilante (haut / bas). */
