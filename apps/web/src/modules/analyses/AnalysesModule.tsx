@@ -9,8 +9,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { CHECK_STATUS_LABELS, type CheckStatus, type TraceableCheck } from "@parcours/domain-model";
 import { api, type AnalysesView } from "../../lib/api";
+import { LOCALE } from "../../lib/i18n";
 
-const fmt = (v: number | null | undefined, digits = 2) => (Number.isFinite(v as number) ? (v as number).toLocaleString("fr-FR", { maximumFractionDigits: digits }) : "Non renseigné");
+const fmt = (v: number | null | undefined, digits = 2) => (Number.isFinite(v as number) ? (v as number).toLocaleString(LOCALE, { maximumFractionDigits: digits }) : "Non renseigné");
 const m2 = (v: number | null | undefined, digits = 2) => (Number.isFinite(v as number) ? `${fmt(v, digits)} m²` : "Non renseigné");
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
@@ -94,7 +95,7 @@ export function AnalysesModule({ projectId }: { projectId: string }) {
       <section className="biz-card" aria-labelledby="analyses-title">
         <h2 id="analyses-title">Contrôles traçables</h2>
         <p className="biz-sub">
-          Révision du modèle {v.modelRevision} · empreinte {v.nativeHash} · entrées {v.inputHash} · calculé le {new Date(v.computedAt).toLocaleString("fr-FR")} · profil {v.profileLabel}
+          Révision du modèle {v.modelRevision} · empreinte {v.nativeHash} · entrées {v.inputHash} · calculé le {new Date(v.computedAt).toLocaleString(LOCALE)} · profil {v.profileLabel}
         </p>
         <p className="analyses-totals">
           {STATUS_ORDER.map((s) => (
@@ -310,7 +311,7 @@ export function AnalysesModule({ projectId }: { projectId: string }) {
                     <td>{m2(s.sums.programme)}</td>
                     <td>{m2(s.sums.total)}</td>
                     <td>{s.current ? "—" : `${s.deltaProgramme > 0 ? "+" : ""}${fmt(s.deltaProgramme)} m²`}</td>
-                    <td>{s.current ? "Courante" : `Archivée le ${new Date(s.archived ?? s.updated).toLocaleDateString("fr-FR")}`}</td>
+                    <td>{s.current ? "Courante" : `Archivée le ${new Date(s.archived ?? s.updated).toLocaleDateString(LOCALE)}`}</td>
                   </tr>
                 ))}
               </tbody>

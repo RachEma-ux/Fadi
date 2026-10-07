@@ -68,7 +68,7 @@ export function HarmoniePage() {
             <div>
               <span className="eyebrow">État des choix Harmonie</span>
               <h2 id="harmonie-project-heading">
-                {project.code} — {project.name}
+                <span translate="no">{project.code} — {project.name}</span>
               </h2>
             </div>
             {projects.length > 1 && (
@@ -77,7 +77,7 @@ export function HarmoniePage() {
                 <select value={project.id} onChange={(e) => setParams({ projet: e.target.value })}>
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.code} — {p.name}
+                      <span translate="no">{p.code} — {p.name}</span>
                       {p.role && p.role !== "proprietaire" ? ` (partagé par ${p.ownerEmail ?? "…"})` : ""}
                     </option>
                   ))}

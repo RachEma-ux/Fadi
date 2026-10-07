@@ -665,7 +665,7 @@ function ApplyDialog({ detail, s, projectId, projectName, onClose }: { detail: B
       <form className="bl" onSubmit={submit}>
         <h2>Utiliser le programme de ce cas</h2>
         <p>
-          <b>{c.title}</b>
+          <b translate="no">{c.title}</b>
           <br />
           {s.label} · {fmt(programmeCaseSums(s.spaces).total)} m² de travail
         </p>
@@ -782,7 +782,7 @@ export function BuildingCasePage() {
           <span className="bl-kicker">
             {c.profile.label} → {c.subtype}
           </span>
-          <h1>{c.title}</h1>
+          <h1 translate="no">{c.title}</h1>
           <p>{c.summary}</p>
           <Tag>{c.sourceKey ? "Source conservée + compléments" : "Cas hypothétique"}</Tag>
           <Tag>Scénarios non validés</Tag>
@@ -940,7 +940,7 @@ export function BuildingLibraryPage() {
                 <article className="bl-case-card" key={c.id}>
                   <Tag cls={c.sourceKey ? "source" : "hyp"}>{c.origin}</Tag>
                   <div className="bl-small">{c.subtype}</div>
-                  <h3>{c.title}</h3>
+                  <h3 translate="no">{c.title}</h3>
                   <p>
                     {c.capacity === null ? (
                       "Capacité à définir"

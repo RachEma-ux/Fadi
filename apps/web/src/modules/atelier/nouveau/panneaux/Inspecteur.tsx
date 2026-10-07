@@ -13,6 +13,7 @@ import { EditeurProfilVertical } from "./ProfilVertical";
 import { ContrainteVerticale, PosesObjet } from "./Poses";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
+import { LOCALE } from "../../../../lib/i18n";
 
 export interface PropsInspecteur {
   etat: ModeleAtelier;
@@ -831,7 +832,7 @@ function HistoriqueObjet({ projectId, objetId }: { projectId: string; objetId: s
         <ol>
           {historique.data.entrees.map((h) => (
             <li key={h.journalId} data-historique={h.action}>
-              <strong>{ACTIONS[h.action]}</strong> · {h.label} <span className="nav-detail">r{h.revision} · {new Date(h.date).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}{h.auteur ? ` · ${h.auteur}` : ""}{h.successeurs.length ? ` · remplacé par ${h.successeurs.join(", ")}` : ""}</span>
+              <strong>{ACTIONS[h.action]}</strong> · {h.label} <span className="nav-detail">r{h.revision} · {new Date(h.date).toLocaleString(LOCALE, { dateStyle: "short", timeStyle: "short" })}{h.auteur ? ` · ${h.auteur}` : ""}{h.successeurs.length ? ` · remplacé par ${h.successeurs.join(", ")}` : ""}</span>
             </li>
           ))}
         </ol>

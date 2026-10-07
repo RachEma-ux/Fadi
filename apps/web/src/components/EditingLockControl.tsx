@@ -10,9 +10,10 @@ import { useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../lib/api";
 import { useProjectAccess } from "../lib/access";
+import { LOCALE } from "../lib/i18n";
 
 const RENEW_EVERY_MS = 5 * 60_000;
-const hhmm = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const hhmm = (iso: string) => new Date(iso).toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit" });
 
 export function EditingLockControl({ projectId, onMessage }: { projectId: string; onMessage: (text: string | null) => void }) {
   const queryClient = useQueryClient();

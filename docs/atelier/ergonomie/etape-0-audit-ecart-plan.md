@@ -10,7 +10,7 @@ tâches T0.1 (audit), T0.2 (écart) et T0.3 (périmètre).
 |---|---|---|---|
 | Canvas plein écran, panneaux flottants exclusifs | Cahier Atelier §5.8 (UX1) : cinq repères **permanents** (navigateur, zone de travail, commandes, inspecteur, modifications) | Conflit partiel | **Disposition « Canevas » optionnelle**, choisie par l'utilisateur (préférence locale) ; la disposition actuelle reste celle par défaut. Dans le mode Canevas, les cinq repères restent présents en permanence sous forme d'icônes étiquetées et s'ouvrent en panneaux flottants : aucun repère n'est retiré. |
 | Échap revient à l'outil précédent | Comportement actuel : Échap termine le tracé, puis revient à Sélection (e2e existants) | Changement de l'existant | Gardé tel quel en disposition classique ; en disposition Canevas, Échap sans tracé en cours revient à l'outil précédent. |
-| i18n : français par défaut **et anglais** | `AGENTS.md` : « Keep the user-facing application in French » | **Conflit** | Structure de catalogue de messages prête (français) ; **aucune interface anglaise livrée** — décision du maître d'ouvrage si l'anglais doit être ouvert. |
+| i18n : français par défaut **et anglais** | `AGENTS.md` : « Keep the user-facing application in French » (règle d'origine) | Conflit levé le 07/10/2026 | Le maître d'ouvrage a ouvert l'anglais : interface bilingue livrée par D-163, `AGENTS.md` adapté (français langue source, anglais par dictionnaire). |
 | Matériaux (pot de peinture, créer / modifier des matériaux) | Modèle typé (R3 : rien d'inventé ; matériaux portés par les compositions de murs, D-026) ; contrainte du cahier SketchUp : ne pas changer le modèle sans nécessité | Conflit partiel | Panneau **Matériaux en lecture** (matériaux déclarés dans les compositions, en usage) et styles d'affichage par classe (D-135) ; pas de matériau peint sur une face (nouvelle donnée de modèle à spécifier). |
 | Sauvegarde manuelle « Save » | R9 : chaque lot validé est enregistré (révision) ; file locale hors ligne | Compatible | « Enregistrer maintenant » = envoi immédiat de la file locale ; l'état reste visible (déjà présent). |
 | Orbite à la molette maintenue | Plan 2D (pas d'orbite) et 3D (OrbitControls) | Compatible | 2D : molette maintenue = panoramique (comme aujourd'hui) ; 3D : molette maintenue = orbite, Maj = panoramique. |
@@ -73,7 +73,7 @@ n'est pas modifié.
 | 27 | Scènes, styles, ombres, info modèle | Partiel | Vues 3D et styles existent ; ombres et info modèle en tranche 4. |
 | 28 | Sauvegarde auto + manuelle, alerte | Partiel | Auto et alerte existent ; « Enregistrer maintenant » en tranche 5. |
 | 29 | Menu principal (nouveau, ouvrir, exporter, importer, imprimer…) | Partiel | Exporter / importer existent ; menu en tranche 5. |
-| 30 | i18n | Partiel | Français ; anglais non livré (conflit §1). |
+| 30 | i18n | Existe | Français et anglais (D-163). |
 | 31 | Accessibilité, performance, tests | Partiel | axe-core et recettes existent ; tranche 6. |
 
 ## 4. Plan par tranches (T0.3)

@@ -5,6 +5,7 @@ import { api, type CurrentUser } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { NotificationBell } from "../components/NotificationBell";
 import { Icon, type IconName } from "../components/Icon";
+import { ChoixLangue } from "../components/ChoixLangue";
 
 /** Initiales pour l'avatar : du nom affiché s'il est saisi (deux premiers mots), sinon de l'adresse (deux segments, ou deux lettres). */
 export function initialsFrom(user: Pick<CurrentUser, "email" | "displayName">): string {
@@ -70,7 +71,7 @@ export function AppShell() {
             </svg>
           </span>
           <span className="app-brand-text">
-            Parcours
+            <span translate="no">Parcours</span>
             <small>Architecture &amp; projets</small>
           </span>
         </div>
@@ -139,6 +140,7 @@ export function AppShell() {
             <input id="global-search" type="search" placeholder="Rechercher un projet, un document…" value={query} onChange={(e) => setQuery(e.target.value)} />
           </form>
           <div className="app-topbar-right">
+            <ChoixLangue />
             <NotificationBell />
             <button type="button" className="avatar app-topbar-avatar" aria-label="Paramètres du compte" onClick={() => navigate("/parametres")}>
               {user ? initialsFrom(user) : ""}

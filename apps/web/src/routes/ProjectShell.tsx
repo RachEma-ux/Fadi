@@ -18,6 +18,7 @@ import { ProgrammeHypothesesPage, ProgrammeModelLinksPage } from "../modules/pro
 import { ProgrammeRepartition, ProgrammeTransfer } from "../modules/programmation/ProgrammeRepartition";
 import { ParcelleTool } from "../modules/projets-sources/ParcelleTool";
 import { ProjectSources } from "../modules/projets-sources/StepSources";
+import { LOCALE } from "../lib/i18n";
 
 // Le moteur de l'Atelier (scripts, markup, feuille de style) n'est chargé qu'à la première ouverture de l'Atelier.
 // L'Atelier architectural (modèle typé, lots 3a–4) : three.js n'est chargé qu'à l'ouverture de la vue 3D.
@@ -73,7 +74,7 @@ export function ProjectShell() {
     <div className="project-shell">
       <header className="project-header">
         <h1>
-          {project.code} — {project.name}
+          <span translate="no">{project.code} — {project.name}</span>
         </h1>
         <span className="project-header-meta">
           <span title={previewQuery.data?.nativeHash ? `Empreinte du modèle dessiné (révision ${project.modelRevision})` : undefined}>
@@ -109,7 +110,7 @@ export function ProjectShell() {
 
       {(!online || projectQuery.isError) && (
         <p className="offline-banner" role="status">
-          Lecture hors-ligne : données lues le {new Date(projectQuery.dataUpdatedAt).toLocaleString("fr-FR")}. Le dessin de l’Atelier s’enregistre localement ; les formulaires et arbitrages attendront
+          Lecture hors-ligne : données lues le {new Date(projectQuery.dataUpdatedAt).toLocaleString(LOCALE)}. Le dessin de l’Atelier s’enregistre localement ; les formulaires et arbitrages attendront
           le retour du réseau.
         </p>
       )}

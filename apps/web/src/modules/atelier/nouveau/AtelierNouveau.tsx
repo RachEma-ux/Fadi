@@ -31,12 +31,13 @@ import { CadrePanneau, ColonnePanneaux, Instructeur } from "./panneaux/Canevas";
 import { ChoixPeripherique, ReglagesNavigationPanneau } from "./panneaux/Navigation";
 import { RaccourcisPanneau } from "./panneaux/Raccourcis";
 import { MenuPrincipal } from "./panneaux/MenuPrincipal";
-import { LANGUE_INTERFACE, NOM_LANGUE, t as msg } from "./messages";
+import { t as msg } from "./messages";
 import { messageEnregistrement, partagePossible, type EtatEnregistrement } from "./fichier";
 import { AffichagePanneau, InfoModelePanneau, MateriauxPanneau } from "./panneaux/Affichage";
 import { libelleTouche, outilDeTouche, raccourciDe } from "./raccourcis";
 import { cadrerNiveau, Plan2D } from "./plan2d/Plan2D";
 import "./atelier-nouveau.css";
+import { ChoixLangue } from "../../../components/ChoixLangue";
 
 // three.js n'est chargé qu'à la première ouverture de la vue 3D.
 const Vue3D = lazy(() => import("./vue3d/Vue3D").then((m) => ({ default: m.Vue3D })));
@@ -795,32 +796,32 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         <>
           <ColonnePanneaux ui={ui} alertes={lotsEnDifficulte} />
           {ui.panneauFlottant === "instructeur" && (
-            <CadrePanneau id="instructeur" titre="Instructeur">
+            <CadrePanneau id="instructeur" titre={msg("panneau.instructeur")}>
               <Instructeur ui={ui} />
             </CadrePanneau>
           )}
           {ui.panneauFlottant === "navigation" && (
-            <CadrePanneau id="navigation" titre="Navigation">
+            <CadrePanneau id="navigation" titre={msg("panneau.navigation")}>
               <ReglagesNavigationPanneau ui={ui} />
             </CadrePanneau>
           )}
           {ui.panneauFlottant === "raccourcis" && (
-            <CadrePanneau id="raccourcis" titre="Raccourcis">
+            <CadrePanneau id="raccourcis" titre={msg("panneau.raccourcis")}>
               <RaccourcisPanneau ui={ui} />
             </CadrePanneau>
           )}
           {ui.panneauFlottant === "affichage" && (
-            <CadrePanneau id="affichage" titre="Affichage">
+            <CadrePanneau id="affichage" titre={msg("panneau.affichage")}>
               <AffichagePanneau ui={ui} etat={etat} />
             </CadrePanneau>
           )}
           {ui.panneauFlottant === "materiaux" && (
-            <CadrePanneau id="materiaux" titre="Matériaux">
+            <CadrePanneau id="materiaux" titre={msg("panneau.materiaux")}>
               <MateriauxPanneau etat={etat} />
             </CadrePanneau>
           )}
           {ui.panneauFlottant === "modele" && (
-            <CadrePanneau id="modele" titre="Info modèle">
+            <CadrePanneau id="modele" titre={msg("panneau.modele")}>
               <InfoModelePanneau etat={etat} revision={consultation ? null : inst.revisionServeur} />
             </CadrePanneau>
           )}
@@ -830,7 +831,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         {ui.disposition === "canevas" && (
           <span className="canevas-bas">
             <button type="button" className="lien" data-aide-instructeur onClick={() => etatUi.basculerPanneau("instructeur")} title={msg("bas.aide")} aria-label={msg("bas.aide")}>?</button>
-            <span className="canevas-langue" title={msg("bas.langue")} lang={LANGUE_INTERFACE}>{NOM_LANGUE[LANGUE_INTERFACE]}</span>
+            <ChoixLangue className="canevas-langue" />
             <ChoixPeripherique ui={ui} />
           </span>
         )}

@@ -22,6 +22,7 @@ import { adoptStep, clearConflict, MUTATION_KEYS, recordConflict, type DecideVar
 import type { LotEnAttente } from "@parcours/atelier-model";
 import { deciderLot, useFileAtelier } from "../modules/atelier/bus/etat-projet";
 import { useSyncConflicts } from "./SyncIndicator";
+import { LOCALE } from "../lib/i18n";
 
 const STATUS_LABEL: Record<HarmonieProposalStatus, string> = {
   proposed: "proposée",
@@ -57,7 +58,7 @@ function FieldConflict({ projectId, c, labelOf }: { projectId: string; c: SyncCo
   const canRetry = c.stepNumber !== null && c.attempted !== null && Object.keys(c.attempted).length > 0;
   return (
     <li data-conflict={c.id} data-kind="saisie">
-      <b>{c.where}</b> · {new Date(c.at).toLocaleString("fr-FR")} — {c.message}
+      <b>{c.where}</b> · {new Date(c.at).toLocaleString(LOCALE)} — {c.message}
       {keys.length > 0 && (
         <table className="conflict-table">
           <thead>
@@ -118,7 +119,7 @@ function DecisionConflict({ projectId, c }: { projectId: string; c: SyncConflict
   const d = c.decision!;
   return (
     <li data-conflict={c.id} data-kind="arbitrage">
-      <b>{c.where}</b> · {new Date(c.at).toLocaleString("fr-FR")} — {c.message}
+      <b>{c.where}</b> · {new Date(c.at).toLocaleString(LOCALE)} — {c.message}
       <small>
         Votre arbitrage : {STATUS_LABEL[d.input.status]}
         {d.input.notes ? ` · motif / adaptation : ${d.input.notes}` : ""}
@@ -150,7 +151,7 @@ function ModelConflictItem({ projectId, c }: { projectId: string; c: LotEnAttent
   const motif = c.detail && typeof c.detail["message"] === "string" ? (c.detail["message"] as string) : c.detail && Array.isArray(c.detail["conflits"]) ? ((c.detail["conflits"] as { motif?: string }[])[0]?.motif ?? "") : "";
   return (
     <li data-conflict={c.enveloppe.requestId} data-kind="modele">
-      <b>Atelier · {c.enveloppe.label || "lot de commandes"}</b> · {new Date(c.creeA).toLocaleString("fr-FR")} — {c.etat === "conflit" ? "ne s’applique plus sur la version du serveur" : "refusé par le serveur"}
+      <b>Atelier · {c.enveloppe.label || "lot de commandes"}</b> · {new Date(c.creeA).toLocaleString(LOCALE)} — {c.etat === "conflit" ? "ne s’applique plus sur la version du serveur" : "refusé par le serveur"}
       {motif ? ` (${motif})` : ""}. Le lot est conservé sur cet appareil.
       <span className="conflict-actions">
         <button type="button" className="button-secondary" onClick={() => deciderLot(projectId, c.enveloppe.requestId, "abandonner")}>

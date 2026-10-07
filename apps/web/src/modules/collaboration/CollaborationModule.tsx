@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { api, ApiError, ROLE_LABEL, type MemberRole, type ProjectComment } from "../../lib/api";
 import { MUTATION_KEYS, type CommentVars } from "../../lib/mutations";
+import { LOCALE } from "../../lib/i18n";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const KIND_LABEL: Record<string, string> = {
@@ -60,7 +61,7 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
   const repliesOf = (id: string) => comments.filter((c) => c.parentId === id).sort((x, y) => (x.createdAt < y.createdAt ? -1 : x.createdAt > y.createdAt ? 1 : 0));
   const meta = (c: ProjectComment) => (
     <div className="comment-meta">
-      <b>{c.authorEmail}</b> · {new Date(c.createdAt).toLocaleString("fr-FR")}
+      <b>{c.authorEmail}</b> · {new Date(c.createdAt).toLocaleString(LOCALE)}
       {c.stepNumber !== null && stepNumber === null && !c.parentId && (
         <>
           {" · "}
@@ -280,7 +281,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
                   ROLE_LABEL[m.role]
                 )}
               </td>
-              <td>{new Date(m.createdAt).toLocaleDateString("fr-FR")}</td>
+              <td>{new Date(m.createdAt).toLocaleDateString(LOCALE)}</td>
               <td>
                 {isOwner ? (
                   <>
@@ -385,7 +386,7 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
             <b className="collab-lock">{v.access.lock ? `réservée par ${v.access.lock.email === v.access.you ? "vous" : v.access.lock.email}` : "libre"}</b>
             <small>
               {v.access.lock
-                ? `jusqu’à ${new Date(v.access.lock.expiresAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · depuis ${new Date(v.access.lock.since).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
+                ? `jusqu’à ${new Date(v.access.lock.expiresAt).toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit" })} · depuis ${new Date(v.access.lock.since).toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit" })}`
                 : "réservation optionnelle, 30 min prolongeables"}
             </small>
           </div>
@@ -400,7 +401,7 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
             <span>Modèle</span>
             <b>Révision {v.sync.modelRevision}</b>
             <small>
-              {v.sync.lastModelWrite ? `dernière écriture ${new Date(v.sync.lastModelWrite).toLocaleString("fr-FR")}` : "aucune écriture"} · {v.sync.journalEntries} modification(s) au journal
+              {v.sync.lastModelWrite ? `dernière écriture ${new Date(v.sync.lastModelWrite).toLocaleString(LOCALE)}` : "aucune écriture"} · {v.sync.journalEntries} modification(s) au journal
             </small>
           </div>
           <div className="biz-kpi">
@@ -453,7 +454,7 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
             <tbody>
               {journal.map((e, i) => (
                 <tr key={`${e.at}-${e.kind}-${i}`} data-kind={e.kind}>
-                  <td>{new Date(e.at).toLocaleString("fr-FR")}</td>
+                  <td>{new Date(e.at).toLocaleString(LOCALE)}</td>
                   <td>
                     <span className="h7-chip">{KIND_LABEL[e.kind] ?? e.kind}</span>
                   </td>

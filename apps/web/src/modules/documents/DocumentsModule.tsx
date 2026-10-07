@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api, type DocumentDescriptor, type DocumentsView } from "../../lib/api";
+import { LOCALE } from "../../lib/i18n";
 
 const GROUPS: { id: DocumentDescriptor["group"]; title: string; note: string }[] = [
   { id: "harmonie", title: "Rapports Harmonie", note: "Documents HTML autonomes des choix par étape (feuille du prototype), produits depuis l'état courant des propositions et des arbitrages." },
@@ -48,7 +49,7 @@ function DocumentRow({ projectId, d, onProduced }: { projectId: string; d: Docum
       <td>
         {d.produced ? (
           <>
-            {new Date(d.produced.producedAt).toLocaleString("fr-FR")}
+            {new Date(d.produced.producedAt).toLocaleString(LOCALE)}
             <br />
             <small>
               {d.produced.count} production(s) · empreinte {d.produced.inputHash}

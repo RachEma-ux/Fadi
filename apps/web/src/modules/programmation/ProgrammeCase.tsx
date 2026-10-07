@@ -16,6 +16,7 @@ import { fmtLib, type BuildingScenario, type LibrarySpace } from "@parcours/doma
 import { api, ApiError, type ProgrammeCaseView, type ProgrammeView as ProgrammeViewData } from "../../lib/api";
 import { ProgrammeView } from "../bibliotheque/BuildingLibraryPage";
 import "../bibliotheque/building-library.css";
+import { LOCALE } from "../../lib/i18n";
 
 const fmt = fmtLib;
 
@@ -192,7 +193,7 @@ export function ProgrammeCaseEditor({ projectId, view }: { projectId: string; vi
               {(a.history ?? []).length ? (
                 (a.history ?? []).map((x) => (
                   <tr key={x.revision}>
-                    <td>{new Date(x.archived).toLocaleString("fr-FR")}</td>
+                    <td>{new Date(x.archived).toLocaleString(LOCALE)}</td>
                     <td>
                       {x.title} · {x.scenarioLabel}
                     </td>

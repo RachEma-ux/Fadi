@@ -13,10 +13,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { WriteFieldset } from "../../components/WriteFieldset";
 import { api, ApiError, type ProgrammeMode, type ProgrammeView } from "../../lib/api";
 import { ProgrammeCaseEditor, ProgrammeTransmission, appliedCase } from "./ProgrammeCase";
+import { LOCALE } from "../../lib/i18n";
 
-const m2 = (v: number) => `${v.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m²`;
-const m2cents = (v: number) => `${v.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²`;
-const pct = (v: number) => `${v.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+const m2 = (v: number) => `${v.toLocaleString(LOCALE, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} m²`;
+const m2cents = (v: number) => `${v.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²`;
+const pct = (v: number) => `${v.toLocaleString(LOCALE, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
 
 function RatioInput({ family, value, onCommit }: { family: string; value: number; onCommit: (v: number) => void }) {
   const [draft, setDraft] = useState(String(value));

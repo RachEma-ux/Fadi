@@ -10,6 +10,7 @@ import { useRef, useState, type DragEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useProjectAccess } from "../../lib/access";
 import { api, ApiError, type StepFile } from "../../lib/api";
+import { LOCALE } from "../../lib/i18n";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
@@ -118,7 +119,7 @@ export function StepSources({ projectId, stepNumber }: { projectId: string; step
                   <div>
                     <div className="source-name">{r.name}</div>
                     <div className="source-meta">
-                      {humanSize(r.size)} · {r.type || "type inconnu"} · ajouté le {new Date(r.addedAt).toLocaleString("fr-FR")}
+                      {humanSize(r.size)} · {r.type || "type inconnu"} · ajouté le {new Date(r.addedAt).toLocaleString(LOCALE)}
                     </div>
                   </div>
                   <div className="source-actions">
@@ -170,7 +171,7 @@ export function ProjectSources({ projectId, stepTitle }: { projectId: string; st
               <div>
                 <div className="source-name">{r.name}</div>
                 <div className="source-meta">
-                  {humanSize(r.size)} · {r.type || "type inconnu"} · ajouté le {new Date(r.addedAt).toLocaleString("fr-FR")}
+                  {humanSize(r.size)} · {r.type || "type inconnu"} · ajouté le {new Date(r.addedAt).toLocaleString(LOCALE)}
                 </div>
               </div>
               <div className="source-actions">

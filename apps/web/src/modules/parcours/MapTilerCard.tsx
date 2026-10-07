@@ -14,8 +14,9 @@ import { api, ApiError, type HarmonieProposal, type ParcoursStep, type SiteView 
 import { adoptStep } from "../../lib/mutations";
 import { collectCenterElevation, collectElevationPoints, maptilerKey, mercator, satelliteMosaic, useMaptilerKey, type LonLat, type SatelliteMosaic } from "../../lib/maptiler";
 import { useProjectAccess } from "../../lib/access";
+import { LOCALE } from "../../lib/i18n";
 
-const fmt = (x: number) => x.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+const fmt = (x: number) => x.toLocaleString(LOCALE, { maximumFractionDigits: 2 });
 const toLonLat = (c: { lon: number; lat: number }): LonLat => [c.lon, c.lat];
 
 /** « Connexion MapTiler » : la clé déjà configurée dans Parcelle est réutilisée ; une nouvelle clé reste en session sauf choix explicite. */
