@@ -218,6 +218,7 @@ const delta = (a, b) => ({ faces: b.faces - a.faces, aretes: b.aretes - a.aretes
     await cliquer({ x: 2, y: 0, z: 0 }); e = await etat(); note("selection", "clic sur une arête : 1 arête", e.selection.length === 1 && e.selection[0].startsWith("a"));
     await doubleCliquer({ x: 2, y: 1.5, z: 0 }); e = await etat(); note("selection", "double-clic sur une face : face + 4 arêtes", e.selection.length === 5, String(e.selection.length));
     await page.keyboard.down("Control"); await cliquer({ x: 7, y: 1, z: 0 }); await page.keyboard.up("Control"); e = await etat(); note("selection", "Ctrl + clic : ajoute (6)", e.selection.length === 6, String(e.selection.length));
+    await page.waitForTimeout(450); // > délai du double-clic (400 ms) : même point que le clic précédent
     await page.keyboard.down("Shift"); await cliquer({ x: 7, y: 1, z: 0 }); await page.keyboard.up("Shift"); e = await etat(); note("selection", "Maj + clic : bascule (5)", e.selection.length === 5, String(e.selection.length));
     await cliquer({ x: -3, y: -3, z: 0 }); e = await etat(); note("selection", "clic dans le vide : sélection vidée", e.selection.length === 0);
     const coins = await Promise.all([{ x: 0, y: 0, z: 0 }, { x: 4, y: 0, z: 0 }, { x: 4, y: 3, z: 0 }, { x: 0, y: 3, z: 0 }].map(ecran));
