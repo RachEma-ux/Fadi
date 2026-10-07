@@ -21,7 +21,7 @@ import "./planche.css";
 declare global {
   interface Window {
     /** Instrumentation de la recette (lecture seule) : modèle du brouillon, outil actif, projection écran. */
-    fadiPlanche?: { modele: () => Modele; outil: () => string; etatOutil: () => unknown; pas: () => number; versEcran: (p: { x: number; y: number; z: number }) => { x: number; y: number } | null };
+    fadiPlanche?: { modele: () => Modele; outil: () => string; etatOutil: () => unknown; selection: () => readonly string[]; pas: () => number; versEcran: (p: { x: number; y: number; z: number }) => { x: number; y: number } | null };
   }
 }
 
@@ -363,6 +363,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       modele: () => histRef.current.present.modele,
       outil: () => outilRef.current,
       etatOutil: () => etatMachineRef.current,
+      selection: () => selectionRef.current,
       pas: () => histRef.current.passe.length,
       versEcran: (p) => vueRef.current?.versEcran(p) ?? null,
     };

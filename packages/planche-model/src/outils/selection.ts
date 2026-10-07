@@ -6,6 +6,9 @@
  * contexte d'édition. Triple-clic : tout le connecté. Cadre gauche → droite = fenêtre (entièrement contenu), droite →
  * gauche = croisée (touché), via `ctx.entitesDansCadre`. Maj = basculer, Ctrl = ajouter, Maj + Ctrl = retirer
  * (maintenus). Échap : sort du contexte d'édition, sinon vide la sélection ; Suppr : efface la sélection.
+ * Poignées : une arête sélectionnée montre ses deux extrémités ; appuyer sur l'une et la glisser déplace ce sommet
+ * (la géométrie connectée s'étire, comme Déplacer sur un sommet), l'arête reste surlignée pendant le geste et le
+ * point suit l'inférence ; relâcher pose le point (un pas d'annulation « Déplacer un point »).
  *
  * Ce module porte aussi les aides communes aux outils de tracé (visée par rayon, scène aplatie, consignes du
  * catalogue, conversion monde → contexte d'édition).
@@ -23,6 +26,7 @@ import {
   baseDuPlan,
   composer,
   contexte,
+  deplacer,
   effacerEntites,
   entitesConnectees,
   facesDeLArete,
@@ -30,8 +34,9 @@ import {
   matriceMonde,
   transformerNormale,
 } from "../geometrie-libre.js";
+import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import type { ContexteSaisie } from "../saisie-vcb.js";
-import { type Vec3, EPS, add, dist, dot, normalize, scale, sub } from "../vecteur.js";
+import { type Vec3, EPS, TOL, add, dist, dot, normalize, scale, sub } from "../vecteur.js";
 import type { ContexteOutil, EvenementOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
 
 // ————————————————————————————————————————————————————————————— Aides communes (catalogue)
@@ -264,6 +269,69 @@ export function combiner(courante: readonly Id[], ids: readonly Id[], mod: Modif
   return [...s];
 }
 
+// ————————————————————————————————————————————————————————————— Poignées d'extrémité
+
+export interface Poignee {
+  /** Sommet du contexte d'édition. */
+  readonly sommet: Id;
+  /** Position monde. */
+  readonly point: Vec3;
+}
+
+/** Conversion du repère du contexte d'édition vers le monde (identité à la racine). */
+function versMonde(ctx: ContexteOutil): (p: Vec3) => Vec3 {
+  if (ctx.dans === undefined) return (p) => p;
+  const M = matriceMonde(ctx.modele, ctx.dans);
+  return M ? (p) => appliquer(M, p) : (p) => p;
+}
+
+/** Extrémités (sommets) des arêtes sélectionnées du contexte d'édition, en coordonnées monde, sans doublon. */
+export function poignees(ctx: ContexteOutil): Poignee[] {
+  const c = contexte(ctx.modele, ctx.dans);
+  const W = versMonde(ctx);
+  const vus = new Set<Id>();
+  const r: Poignee[] = [];
+  for (const id of ctx.selection) {
+    const a = c.aretes[id];
+    if (!a) continue;
+    for (const s of [a.a, a.b]) {
+      if (vus.has(s)) continue;
+      const som = c.sommets[s];
+      if (!som) continue;
+      vus.add(s);
+      r.push({ sommet: s, point: W(som.position) });
+    }
+  }
+  return r;
+}
+
+/** Écart entre un rayon et un point. */
+function ecartRayonPoint(r: Rayon, P: Vec3): number {
+  const V = normalize(r.direction);
+  const s = Math.max(0, dot(sub(P, r.origine), V));
+  return dist(add(r.origine, scale(V, s)), P);
+}
+
+/** Poignée visée par le rayon (la plus proche dans une tolérance élargie, cible au doigt), ou `null`. */
+export function poigneeVisee(ctx: ContexteOutil, r: Rayon, tolerance: number): Poignee | null {
+  let meilleure: { p: Poignee; d: number } | null = null;
+  for (const p of poignees(ctx)) {
+    const d = ecartRayonPoint(r, p.point);
+    if (d <= tolerance * 1.5 && (!meilleure || d < meilleure.d)) meilleure = { p, d };
+  }
+  return meilleure ? meilleure.p : null;
+}
+
+/** Glisser d'une poignée en cours. */
+export interface GlisserPoignee {
+  readonly sommet: Id;
+  /** Position monde d'origine. */
+  readonly depuis: Vec3;
+  /** Position monde courante (inférée). */
+  readonly courant: Vec3;
+  readonly inference: Inference | null;
+}
+
 // ————————————————————————————————————————————————————————————— Machine Sélection
 
 export interface EtatSelection {
@@ -275,7 +343,25 @@ export interface EtatSelection {
   readonly cadre: { readonly de: Point2; readonly a: Point2 } | null;
   /** Le clic qui suit le relâchement d'un cadre est ignoré. */
   readonly ignorerClic: boolean;
+  /** Poignée d'extrémité en cours de glisser. */
+  readonly poignee: GlisserPoignee | null;
 }
+
+/** Aperçu du glisser d'une poignée : chaque arête du sommet, de son autre extrémité au point courant. */
+function lignesPoignee(ctx: ContexteOutil, g: GlisserPoignee): Vec3[][] {
+  const c = contexte(ctx.modele, ctx.dans);
+  const W = versMonde(ctx);
+  const r: Vec3[][] = [];
+  for (const a of Object.values(c.aretes)) {
+    const autre = a.a === g.sommet ? a.b : a.b === g.sommet ? a.a : null;
+    if (!autre) continue;
+    const s = c.sommets[autre];
+    if (s) r.push([W(s.position), g.courant]);
+  }
+  return r;
+}
+
+const CONSIGNE_POIGNEE = "Glissez l'extrémité ; relâchez pour la poser (Échap : annuler).";
 
 const genreCadre = (de: Point2, a: Point2): "fenetre" | "croisee" => (a.x >= de.x ? "fenetre" : "croisee");
 
@@ -318,7 +404,7 @@ function modificateur(etat: EtatSelection, ev: Extract<EvenementOutil, { genre: 
 
 export const machineSelection: MachineOutil<EtatSelection> = {
   id: "selection",
-  initial: () => ({ maj: false, ctrl: false, appui: null, cadre: null, ignorerClic: false }),
+  initial: () => ({ maj: false, ctrl: false, appui: null, cadre: null, ignorerClic: false, poignee: null }),
 
   traiter(etat, ev, ctx): Transition<EtatSelection> {
     switch (ev.genre) {
@@ -332,14 +418,34 @@ export const machineSelection: MachineOutil<EtatSelection> = {
       }
       case "survol":
         return etat.ignorerClic ? { etat: { ...etat, ignorerClic: false } } : { etat };
-      case "appui":
-        return { etat: { ...etat, appui: ev.ecran, cadre: null, ignorerClic: false } };
+      case "appui": {
+        const p = poigneeVisee(ctx, ev.rayon, ev.tolerance);
+        const poignee: GlisserPoignee | null = p ? { sommet: p.sommet, depuis: p.point, courant: p.point, inference: null } : null;
+        return { etat: { ...etat, appui: ev.ecran, cadre: null, ignorerClic: false, poignee } };
+      }
       case "glisser": {
         if (!etat.appui) return { etat };
+        if (etat.poignee) {
+          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), depart: etat.poignee.depuis });
+          return { etat: { ...etat, poignee: { ...etat.poignee, courant: i.point, inference: i } } };
+        }
         if (!etat.cadre && distance2(etat.appui, ev.ecran) <= SEUIL_GLISSER) return { etat };
         return { etat: { ...etat, cadre: { de: etat.appui, a: ev.ecran } } };
       }
       case "relache": {
+        if (etat.poignee) {
+          const g = etat.poignee;
+          const suite: EtatSelection = { ...etat, appui: null, cadre: null, poignee: null, ignorerClic: true };
+          if (dist(g.courant, g.depuis) <= TOL) return { etat: suite };
+          const L = versContexteEdition(ctx);
+          const v = sub(L(g.courant), L(g.depuis));
+          try {
+            const r = deplacer(ctx.modele, [g.sommet], v, optionsDans(ctx));
+            return { etat: suite, modele: r.modele, selection: ctx.selection, operation: "Déplacer un point" };
+          } catch {
+            return { etat: suite };
+          }
+        }
         const cadre = etat.cadre ? { de: etat.cadre.de, a: ev.ecran } : null;
         const suite: EtatSelection = { ...etat, appui: null, cadre: null, ignorerClic: cadre !== null };
         if (!cadre) return { etat: suite };
@@ -352,7 +458,7 @@ export const machineSelection: MachineOutil<EtatSelection> = {
         if (etat.ignorerClic) return { etat: { ...etat, ignorerClic: false } };
         return clicSelection(etat, ev, ctx, etat);
       case "echap": {
-        if (etat.cadre || etat.appui) return { etat: { ...etat, appui: null, cadre: null } };
+        if (etat.cadre || etat.appui || etat.poignee) return { etat: { ...etat, appui: null, cadre: null, poignee: null } };
         if (ctx.dans !== undefined) {
           const ch = cheminOccurrence(ctx.modele, ctx.dans);
           return { etat, dans: ch.length >= 2 ? (ch[ch.length - 2] as Id) : null, selection: [] };
@@ -366,14 +472,18 @@ export const machineSelection: MachineOutil<EtatSelection> = {
 
   vue(etat, ctx): VueOutil {
     const e = etapeCatalogue("selection", 0);
+    const g = etat.poignee;
+    // Poignées : extrémités des arêtes sélectionnées ; pendant le glisser, celle qui bouge suit le curseur.
+    const points = poignees(ctx).map((p) => (g && p.sommet === g.sommet ? g.courant : p.point));
     return {
-      consigne: e.consigne ?? "",
+      consigne: g ? CONSIGNE_POIGNEE : (e.consigne ?? ""),
       mesures: mesuresVides(e, ctx),
-      inference: null,
+      inference: g?.inference ?? null,
       apercu: {
-        lignes: [],
+        lignes: g ? lignesPoignee(ctx, g) : [],
         faces: [],
         ...(etat.cadre ? { cadre: { de: etat.cadre.de, a: etat.cadre.a, genre: genreCadre(etat.cadre.de, etat.cadre.a) } } : {}),
+        ...(points.length > 0 ? { points } : {}),
       },
       selection: ctx.selection,
       // Aucune pré-surbrillance au survol (obs).

@@ -313,6 +313,12 @@ export class VuePlanche {
         if (l.length < 2) continue;
         this.groupeApercu.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(l.map(v3)), new THREE.LineBasicMaterial({ color: couleur, depthTest: false })));
       }
+      // Poignées d'extrémité (Sélection) : carrés pleins, taille écran constante, toujours visibles.
+      if (vue.apercu.points && vue.apercu.points.length) {
+        const poignees = new THREE.Points(new THREE.BufferGeometry().setFromPoints(vue.apercu.points.map(v3)), new THREE.PointsMaterial({ color: COULEUR_SELECTION, size: 10, sizeAttenuation: false, depthTest: false }));
+        poignees.renderOrder = 10;
+        this.groupeApercu.add(poignees);
+      }
       if (vue.apercu.faces.length) {
         const faces: FaceVisible[] = vue.apercu.faces.filter((f) => f.length >= 3).map((f, i) => ({ id: `apercu-${i}`, exterieur: f, trous: [], normale: normaleNewell(f) }));
         this.groupeApercu.add(new THREE.Mesh(geometrieFaces(faces), new THREE.MeshBasicMaterial({ color: "#7d98c4", transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false })));
