@@ -2689,3 +2689,27 @@
   outline: 2px solid var(--atelier-accent, #1f6f5c);
   outline-offset: 2px;
 }
+
+/* Mode Planche (cahier-planche MO-1, lot 2) : la Planche occupe toute la zone de travail, en disposition Canevas
+   propre (outils, panneaux et barre du bas dans `planche/planche.css`) ; les repères du Plan et de la 3D sont
+   masqués sans être démontés (comme le mode Documents), quelle que soit la disposition choisie. */
+.atelier-n.mode-planche {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "barre" "travail";
+}
+.atelier-n.mode-planche > .atelier-n-outils,
+.atelier-n.mode-planche > .atelier-n-gauche,
+.atelier-n.mode-planche > .atelier-n-droite,
+.atelier-n.mode-planche > .atelier-n-onglets,
+.atelier-n.mode-planche > .atelier-n-etat,
+.atelier-n.mode-planche .atelier-n-barre > [hidden] {
+  display: none !important;
+}
+.atelier-n.mode-planche > .atelier-n-travail {
+  display: block;
+  grid-area: travail;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}

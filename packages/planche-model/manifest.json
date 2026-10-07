@@ -1,0 +1,7 @@
+{
+  "name": "@parcours/planche-model",
+  "version": "0.1.0",
+  "description": "Planche (mode de l'Atelier) : géométrie libre 3D type SketchUp (sommets, arêtes, faces collantes, groupes), grammaire du champ Mesures, inférences, catalogue des outils — aucune dépendance d'interface.",
+  "contracts": {},
+  "allowedDependencies": []
+}

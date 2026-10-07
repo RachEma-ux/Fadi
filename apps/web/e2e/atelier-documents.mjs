@@ -338,7 +338,7 @@ await page.waitForFunction(() => document.querySelector('[data-detail="feuille"]
 check("Atelier : la feuille affiche « À jour » après production", (await page.locator('[data-detail="feuille"] [data-fraicheur]').getAttribute("data-fraicheur")) === "a-jour");
 
 // Une commande qui change le dessin : la feuille devient périmée (dessin modifié).
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 await page.locator(`.nav-objets button[data-objet="${gc.id}"]`).click();
 await page.locator("#phase-objet").selectOption("");
 await enregistre();

@@ -134,7 +134,7 @@ await page.waitForSelector(".vue3d canvas", { timeout: 30000 });
 await page.waitForTimeout(1500);
 await page.screenshot({ path: `${OUT}/6-import-ifc-3d.png` });
 check("3D : la maquette importée s'affiche sans erreur", erreursPage.length === 0, erreursPage.join(" | "));
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 
 // Import DXF 2D.
 const dxf = [

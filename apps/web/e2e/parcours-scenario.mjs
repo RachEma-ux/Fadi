@@ -615,7 +615,7 @@ for (const vue of ["Plan (dessus)", "Coupe nord–sud", "Coupe est–ouest", "Fa
 check("acceptation · vues techniques (plan, coupes N–S / E–O, 4 façades) : chacune rendue, aucune erreur JavaScript", techViews.length === 0 && consoleErrors.length === errorsBeforeAcceptance, techViews.join(" "));
 await page.locator('.vue3d-commandes select[aria-label="Vue"]').selectOption({ label: "Perspective" });
 // Mezzanine modifiée en plan : un mur dessiné, enregistré sur le serveur, relu en 3D (niveau actif) et en vue éclatée.
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 await choisirNiveau("Mezzanine");
 const mezzBefore = await wallsOn(atelierPid, "mezz");
 await tracerMur(0.4, 0.45, "2,5;0");
@@ -630,7 +630,7 @@ for (const presentation of ["Niveau actif", "Éclaté"]) {
 }
 check("acceptation · mezzanine relue en 3D (niveau actif) puis en vue éclatée : images non vides, aucune erreur JavaScript", (await page.evaluate(() => window.fadiMesures3D.triangles)) > 0 && consoleErrors.length === errorsBeforeAcceptance);
 await page.locator('.vue3d-commandes select[aria-label="Présentation"]').selectOption({ label: "Bâtiment" });
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 // Hauteur du mur dessiné (encore sélectionné) : 2,40 m dans l'inspecteur, persistée.
 const heightField = page.locator('.inspecteur input[id$="-hauteur"]');
 let heightChanged = false;
@@ -646,7 +646,7 @@ await page.keyboard.press("Escape");
 await page.keyboard.press("u");
 await page.waitForTimeout(300);
 check("acceptation · Pousser / tirer : outil activé en vue 3D, aide affichée", (await page.locator('.barre-mode button[aria-pressed="true"]').textContent()) === "3D" && /cliquez un mur, un poteau, un solide, une dalle ou une toiture et glissez/.test(await page.locator(".atelier-n-etat").textContent()));
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 // Annuler / rétablir persistés sur la mezzanine (la hauteur), puis relecture sur un autre appareil à la même révision.
 const beforeUndoMezz = await wallsOn(atelierPid, "mezz");
 await raccourci("Control+z");
@@ -686,7 +686,7 @@ await page.locator(".barre-exports > summary").click();
 const [pngDownload] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator('[data-export="png"]').click()]);
 const pngRegistered = await page.waitForFunction(() => window.__fadiExports?.some((e) => e.kind === "png"), null, { timeout: 15000 }).then(() => true).catch(() => false);
 check("acceptation · export PNG de la vue 3D : téléchargé et enregistré au catalogue", /\.png$/.test(pngDownload.suggestedFilename()) && pngRegistered, pngDownload.suggestedFilename());
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 const catalogueDocs = (await (await page.request.get(`${BASE}/projects/${atelierPid}/documents`)).json()).documents;
 const drawingDocs = catalogueDocs.filter((d) => d.group === "dessins");
 const surfacesDoc = catalogueDocs.find((d) => d.kind === "tableau-surfaces");
@@ -1107,7 +1107,7 @@ await page.goto(`${atelierUrl}?module=atelier`);
 await atelierPret();
 await page.waitForFunction(() => /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
 await choisirNiveau("RDC");
-await page.locator('.barre-mode button:has-text("Plan")').click();
+await page.locator('.barre-mode button:text-is("Plan")').click();
 const drawWall = (fx) => tracerMur(fx, 0.62, "2;0");
 const lotsLocaux = () => page.evaluate(() => new Promise((resolve) => { const req = indexedDB.open("fadi-local"); req.onsuccess = () => { const tx = req.result.transaction("lots"); const all = tx.objectStore("lots").getAll(); all.onsuccess = () => resolve(all.result.map((e) => `${e.label} · ${e.etat}`)); }; }));
 const wallsBeforeOffline = await rdcWallsOf(atelierPid);
