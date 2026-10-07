@@ -154,13 +154,20 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
         poserDans(tr.dans ?? undefined);
         change = true;
       }
-      if (ev.genre !== "survol") setMessage(null);
+      // Un survol ou le simple relâchement d'une touche (Ctrl après Ctrl + Z) n'efface pas le message en cours.
+      if (ev.genre !== "survol" && !(ev.genre === "touche" && ev.etat === "relachee")) setMessage(null);
       rafraichir();
+      // Outil demandé par la machine (Diviser rend la main à Sélection) : appliqué après la transition.
+      if (tr.outil !== undefined && tr.outil !== outilRef.current) {
+        demandeOutilRef.current(tr.outil);
+        change = true;
+      }
       return change;
     },
     [contexte, poserHistorique, poserDans, rafraichir, readOnly, setSelection],
   );
 
+  const demandeOutilRef = useRef<(id: string) => void>(() => undefined);
   const choisirOutil = useCallback(
     (id: string) => {
       const o = outilParId(id);
@@ -182,6 +189,8 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     },
     [readOnly, rafraichir, setTexte],
   );
+
+  demandeOutilRef.current = choisirOutil;
 
   const annulerPas = useCallback(() => {
     const op = operationAAnnuler(histRef.current);
@@ -222,7 +231,11 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     [envoyer],
   );
 
-  /** Échap : annule l'opération en cours ; sans effet de l'outil, revient à l'outil précédent (D-156, Canevas). */
+  /**
+   * Échap (décision P-5, comportement relevé C23) : annule l'opération en cours et GARDE l'outil ; sans opération en
+   * cours, un outil de dessin ou de modification reste actif, Sélection vide la sélection, et seuls les outils de caméra
+   * (Orbite, Panoramique, Zoom) rendent l'outil précédent. D-156 reste inchangé pour Plan / 3D.
+   */
   const echap = useCallback(() => {
     if (grilleRef.current) {
       setGrille(false);
@@ -239,14 +252,16 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       enCours = change && (JSON.stringify(etatMachineRef.current) !== avant || dansRef.current !== dansAvant);
     }
     if (enCours) return;
-    const precedent = precedentRef.current;
-    const o = outilParId(precedent);
-    if (precedent !== outilRef.current && o && !disponibilite(o, { lecture: readOnly })) choisirOutil(precedent);
-    else if (outilRef.current !== "selection") choisirOutil("selection");
-    else {
-      setSelection([]);
-      rafraichir();
+    if (estOutilCamera(outilRef.current)) {
+      const precedent = precedentRef.current;
+      const o = outilParId(precedent);
+      if (precedent !== outilRef.current && o && !disponibilite(o, { lecture: readOnly })) choisirOutil(precedent);
+      else choisirOutil("selection");
+      return;
     }
+    // Outil de dessin, de modification ou Sélection : l'outil reste actif ; la sélection est vidée.
+    setSelection([]);
+    rafraichir();
   }, [choisirOutil, envoyer, rafraichir, readOnly, setSelection, setTexte]);
 
   /** Entrée : valide la saisie du champ Mesures (ou transmet Entrée à l'outil quand le champ est vide). */

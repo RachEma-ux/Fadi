@@ -70,9 +70,29 @@ describe("Planche — barre, grille et disponibilité (R20)", () => {
   });
 
   it("la grille regroupe tous les outils « grille » par section, sans doublon", () => {
-    const ids = sectionsGrille().flatMap((s) => s.outils.map((o) => o.id));
+    const sans = () => false;
+    const ids = sectionsGrille(OUTILS, sans).flatMap((s) => s.outils.map((o) => o.id));
     expect(ids.sort()).toEqual(OUTILS.filter((o) => o.emplacement === "grille").map((o) => o.id).sort());
     expect(sectionsGrille().map((s) => s.libelle)).toContain("Dessin");
+  });
+
+  it("lot 3 : Diviser (menu contextuel, lot 5) est aussi offert dans la grille dès que sa machine existe", () => {
+    expect(outil("diviser").emplacement).toBe("menu-contextuel");
+    const avec = sectionsGrille().flatMap((s) => s.outils.map((o) => o.id));
+    expect(avec).toContain("diviser");
+    expect(sectionsGrille(OUTILS, () => false).flatMap((s) => s.outils.map((o) => o.id))).not.toContain("diviser");
+    expect(new Set(avec).size).toBe(avec.length);
+  });
+
+  it("lot 3 : les 8 outils de modification ont une machine d'états et sont disponibles ; en lecture seule ils sont refusés", () => {
+    for (const id of ["pousser-tirer", "deplacer", "faire-pivoter", "echelle", "decalage", "suivez-moi", "retourner", "diviser"]) {
+      expect(disponibilite(outil(id), { lecture: false }), id).toBeNull();
+      expect(disponibilite(outil(id), { lecture: true }), id).toContain("lecture seule");
+    }
+    // Les lots suivants restent grisés, avec leur lot.
+    expect(disponibilite(outil("metre"), { lecture: false })).toContain("lot 4");
+    expect(disponibilite(outil("peinture"), { lecture: false })).toContain("lot 5");
+    expect(disponibilite(outil("enveloppe-exterieure"), { lecture: false })).toContain("lot 6");
   });
 
   it("un outil sans machine d'états est indisponible avec son lot ; les caméras de l'interface restent actives", () => {

@@ -1,6 +1,7 @@
 # Lot Planche 2 — Rendu three.js, outils de dessin et champ Mesures — compte rendu
 
-**Statut : code livré sur la branche `planche/lot-1`, non commité ; demande d'acceptation en attente de la CI** (7 octobre
+**Statut : code livré et commité sur la branche `planche/lot-1` ; recette navigateur exécutée et verte (lot 3, 7 octobre 2026) ;
+écarts tranchés par délégation du maître d'ouvrage (D-167) ; acceptation formelle non consignée (le lot 3 a été demandé)** (7 octobre
 2026). Cadre : `docs/planche/cahier-planche.md` §8 (lot 2), §4.1–4.14, §4.34–4.35, §5 ; décisions MO-1 à MO-5 (§1.2) ;
 décisions ouvertes §10.
 
@@ -90,8 +91,8 @@ Autres écarts déclarés (sans décision bloquante) :
   clavier de l'Atelier y est coupé, sauf Ctrl + S), alors que §4.35 prévoit les deux ; raccourcis attribuables
   (CA-RCH-2) non livrés.
 - **Locale du champ Mesures** : proposition P-3 appliquée (virgule décimale, point-virgule de liste) ; la forme
-  `4,3` du relevé anglais y est **une** longueur (4,3 m) et la recette tape `4;3`. Unités anglo-saxonnes refusées
-  tant que P-4 n'est pas tranchée (la proposition est de les accepter).
+  `4,3` du relevé anglais y est **une** longueur (4,3 m) et la recette tape `4;3`. Unités anglo-saxonnes : le champ Mesures
+  les accepte déjà (`5'`, `10"`, `2 ft`) — P-4 tranchée dans ce sens (D-167).
 - **Comportements documentés ou de l'Instructor livrés comme choix Fadi déclarés** (C3, à confirmer par un relevé) :
   coordonnées `[x;y;z]` et `<dx;dy;dz>` (L-3), composante vide et valeurs négatives du Rectangle (L-20), `Ns` du
   Polygone et `Nr` de l'Arc 2 points (L-34), boucle fermée de Main levée → face et Ctrl ± (L-19), Ctrl + Maj de la
@@ -129,3 +130,10 @@ ni « prototype » ni « vérifiée ». Le code du lot 1 est commité (`c8a863a`
 > Playwright et CI à faire tourner. Décisions demandées : écarts 1 à 5 ci-dessus (P-5, CA-MLV-2, angle du rectangle
 > tourné, P-7, panneaux) et confirmation de P-2, P-3, P-4, P-11, P-12 telles qu'appliquées. Acceptez-vous le lot 2 et
 > l'ouverture du lot 3 (outils de modification) ?
+
+
+## Suite (7 octobre 2026)
+
+Écarts 1 à 5 tranchés par délégation, voir D-167 : Échap = comportement relevé (appliqué au lot 3), CA-MLV-2 corrigé, angle du
+rectangle tourné gardé, Texte 3D au lot 5, panneaux au lot 5. La recette `planche.mjs`, jamais lancée au lot 2, a été exécutée au
+lot 3 : elle a révélé un défaut (message « Annulé : … » effacé au relâchement de Ctrl) corrigé dans `Planche.tsx`.

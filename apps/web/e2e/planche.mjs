@@ -1,8 +1,8 @@
 /**
- * Recette du mode « Planche » de l'Atelier (cahier-planche §8, lot 2) sur desktop (1536 px) puis en émulation mobile
+ * Recette du mode « Planche » de l'Atelier (cahier-planche §8, lots 2 et 3) sur desktop (1536 px) puis en émulation mobile
  * (390 px, tactile) : ouverture de la Planche, Ligne au clavier (L) et carré tracé par « 4 » Entrée × 4 → une face,
  * Rectangle « 4;3 » (locale française : point-virgule de liste, P-3), Annuler / Rétablir locaux, Échap, recherche
- * Maj + -, Zoom « 60 », brouillon local relu après rechargement ; au toucher, barre de modificateurs visible et cibles
+ * Maj + -, Zoom « 60 », lot 3 (Pousser/Tirer « 2,7 » puis Diviser « 4 »), brouillon local relu après rechargement ; au toucher, barre de modificateurs visible et cibles
  * ≥ 44 px ; aucune requête POST vers /commands (brouillon local, C6) ; axe-core sans violation critique ou sérieuse.
  *
  * L'état est lu par l'instrumentation de la Planche (`window.fadiPlanche` : modèle du brouillon, outil actif, état de
@@ -170,7 +170,7 @@ check("Annuler : opération annoncée dans la barre d'état", ((await page.locat
 await page.keyboard.press("Control+y");
 check("Rétablir : le rectangle revient", (await etat()).faces === 2);
 
-// 5. Échap : pendant un tracé, annule l'opération et garde l'outil ; sans tracé, retour à l'outil précédent.
+// 5. Échap : pendant un tracé, annule l'opération et garde l'outil ; sans tracé, l'outil reste actif (P-5).
 const c3 = await ecran({ x: 6, y: 6, z: 0 });
 await page.mouse.move(c3.x, c3.y, { steps: 4 });
 await page.mouse.click(c3.x, c3.y);
@@ -179,8 +179,8 @@ await page.keyboard.press("Escape");
 const apresEchap = await etat();
 check("Échap pendant le tracé : étape 1, outil Rectangle gardé, rien de créé", apresEchap.outil === "rectangle" && apresEchap.etape === 1 && apresEchap.faces === 2 && apresEchap.aretes === rect.aretes, JSON.stringify(apresEchap));
 await page.keyboard.press("Escape");
-// Écart à trancher (P-5) : le relevé (C23) garde l'outil ; l'interface livrée suit D-156 (outil précédent).
-check("Échap sans tracé : retour à l'outil précédent (Ligne) — comportement D-156, écart C23 / P-5 déclaré", (await etat()).outil === "ligne", (await etat()).outil);
+// Décision P-5 (comportement relevé C23) : sans tracé, Échap garde l'outil de dessin actif.
+check("Échap sans tracé : l'outil Rectangle reste actif (décision P-5, comportement relevé)", (await etat()).outil === "rectangle", (await etat()).outil);
 
 // 6. Recherche (Maj + -) : noms français et anglais ; outil choisi depuis la liste.
 await page.locator("[data-planche-vue]").focus();
@@ -207,6 +207,41 @@ await page.keyboard.press("Enter");
 check("Zoom « 60 » : champ de vision 60° annoncé (CA-CAM-2)", ((await page.locator("[data-planche-message]").textContent().catch(() => "")) ?? "").includes("60,00°"), await consigne());
 await page.keyboard.press("Escape");
 check("Zoom puis Échap : outil précédent (Cercle) (CA-CAM-1)", (await etat()).outil === "cercle", (await etat()).outil);
+// 7 bis. Lot 3 — outils de modification : Pousser/Tirer au clavier (P) puis Diviser par la recherche ; toujours en brouillon local.
+const avantLot3 = await etat();
+await page.locator("[data-planche-vue]").focus();
+await page.keyboard.press("p");
+check("touche P : outil Pousser/Tirer", (await etat()).outil === "pousser-tirer", (await etat()).outil);
+await mesurer("Pousser/Tirer : rectangle 4 × 3 tiré de 2,7 m au champ Mesures", async () => {
+  const f = await ecran({ x: 8, y: 2, z: 0 });
+  await page.mouse.move(f.x, f.y, { steps: 4 });
+  await page.mouse.click(f.x, f.y);
+  check("Pousser/Tirer : face choisie (étape 2), consigne « fixer la face »", (await etat()).etape === 2 && (await consigne()).includes("fixer la face"), await consigne());
+  await page.keyboard.type("2,7");
+  await page.keyboard.press("Enter");
+});
+const boiteLot3 = await etat();
+check("Pousser/Tirer « 2,7 » (CA-PPT-1) : rectangle devenu boîte fermée, 6 faces de plus que le carré", boiteLot3.faces === avantLot3.faces + 5 && boiteLot3.aretes === avantLot3.aretes + 8, JSON.stringify({ avant: avantLot3, apres: boiteLot3 }));
+check("Pousser/Tirer : une seule opération (un pas d'annulation), outil gardé à l'étape 1", boiteLot3.pas === avantLot3.pas + 1 && boiteLot3.outil === "pousser-tirer" && boiteLot3.etape === 1, `${avantLot3.pas} → ${boiteLot3.pas}`);
+await page.keyboard.press("Shift+Minus");
+await page.locator("#planche-recherche-champ").fill("diviser");
+await page.keyboard.press("Enter");
+check("recherche « diviser » : outil Diviser, champ Segments à 5", (await etat()).outil === "diviser" && (await page.locator("[data-planche-mesures]").inputValue()) === "5", `${(await etat()).outil} / ${await page.locator("[data-planche-mesures]").inputValue()}`);
+const bord = await ecran({ x: 2, y: 0, z: 0 });
+await page.mouse.move(bord.x, bord.y, { steps: 4 });
+await page.mouse.click(bord.x, bord.y);
+await page.keyboard.type("4");
+await page.keyboard.press("Enter");
+const divise = await etat();
+check("Diviser « 4 » (CA-DIV-1) : l'arête du carré est coupée en 4 (3 arêtes de plus), la face est conservée", divise.aretes === boiteLot3.aretes + 3 && divise.faces === boiteLot3.faces, JSON.stringify(divise));
+check("Diviser terminé : l'outil Sélection est rétabli", divise.outil === "selection", divise.outil);
+check("Diviser : une opération de plus dans l'historique local", divise.pas === boiteLot3.pas + 1, `${boiteLot3.pas} → ${divise.pas}`);
+await page.keyboard.press("Control+z");
+await page.keyboard.press("Control+z");
+check("Annuler ×2 : retour au carré et au rectangle (aucune commande émise)", (await etat()).faces === avantLot3.faces && (await etat()).aretes === avantLot3.aretes, JSON.stringify(await etat()));
+await page.keyboard.press("Control+y");
+await page.keyboard.press("Control+y");
+check("Rétablir ×2 : Pousser/Tirer et Diviser reviennent", (await etat()).faces === divise.faces && (await etat()).aretes === divise.aretes, JSON.stringify(await etat()));
 await page.screenshot({ path: `${OUT}/planche-desktop.png` });
 await axe("mode Planche (desktop)");
 
@@ -216,7 +251,7 @@ enPlanche = false;
 await ouvrir(pid);
 await ouvrirPlanche();
 await page.waitForFunction(() => Object.keys(window.fadiPlanche.modele().racine.faces).length > 0, null, { timeout: 10000 }).catch(() => {});
-check("brouillon local relu après rechargement : 2 faces", (await etat()).faces === 2, JSON.stringify(await etat()));
+check("brouillon local relu après rechargement : mêmes faces et arêtes (Pousser/Tirer et Diviser compris)", (await etat()).faces === divise.faces && (await etat()).aretes === divise.aretes, JSON.stringify(await etat()));
 enPlanche = false;
 await page.locator('.barre-mode button:text-is("Plan")').click();
 await page.waitForSelector(".plan2d .plan-objets [data-objet]", { timeout: 15000 });

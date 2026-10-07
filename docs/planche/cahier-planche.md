@@ -309,7 +309,8 @@ proposés : virgule décimale, point-virgule de liste — décision P-3).
   doc [S12], nv. Longueur modifiable seulement si la courbe ne borde pas de face : doc.
 - Échantillonnage du trajet (distance minimale entre points) : non relevé — choix Fadi déclaré (fiche du lot 2).
 - CA-MLV-1 : glisser de A à B → une courbe d'au moins 2 arêtes, sélectionnée en entier par un clic. CA-MLV-2 : flèche
-  ↑ avant le tracé → tous les points dans un plan vertical.
+  → ou ← avant le tracé → tous les points dans un plan vertical (↑ donne le plan horizontal, comme pour Rectangle et Cercle ;
+  critère corrigé le 07/10/2026, D-167).
 
 ### 4.6 Rectangle — *Rectangle* · `R` · lot 2 · obs [OD §5, OM §12]
 
@@ -1395,6 +1396,10 @@ fichier daté dans ce dossier.
 ---
 
 ## 10. Décisions restant au maître d'ouvrage
+
+> **Mise à jour du 7 octobre 2026 : toutes les décisions ci-dessous ont été tranchées par délégation du maître d'ouvrage,
+> conformément à la proposition du chef de projet (P-1 à P-12) — voir D-167 dans `docs/atelier/decisions.md`.** Le tableau
+> garde l'historique des questions.
 
 Aucune ne bloque le lot 1 (noyau pur) : le noyau est paramétré là où une décision manque. Chaque décision tranchée est
 consignée dans `docs/atelier/decisions.md`.

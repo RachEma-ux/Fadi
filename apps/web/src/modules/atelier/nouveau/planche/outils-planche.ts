@@ -36,8 +36,15 @@ const SECTIONS: { libelle: string; familles: readonly Outil["famille"][] }[] = [
   { libelle: "Caméra", familles: ["camera"] },
 ];
 
-export function sectionsGrille(catalogue: readonly Outil[] = OUTILS): { libelle: string; outils: Outil[] }[] {
-  const grille = catalogue.filter((o) => o.emplacement === "grille");
+/**
+ * Un outil du menu contextuel (Diviser) n'est atteignable que par ce menu, livré au lot 5 (§5.8) : tant qu'il n'existe
+ * pas, un outil de menu contextuel dont la machine est livrée est AUSSI offert dans la grille (choix Fadi, lot 3).
+ */
+export function sectionsGrille(
+  catalogue: readonly Outil[] = OUTILS,
+  aMachine: (id: string) => boolean = (id) => machineParId(id) !== undefined,
+): { libelle: string; outils: Outil[] }[] {
+  const grille = catalogue.filter((o) => o.emplacement === "grille" || (o.emplacement === "menu-contextuel" && aMachine(o.id)));
   return SECTIONS.map((s) => ({ libelle: s.libelle, outils: grille.filter((o) => s.familles.includes(o.famille)) })).filter((s) => s.outils.length > 0);
 }
 
