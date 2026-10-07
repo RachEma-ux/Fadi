@@ -140,10 +140,14 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche-modification.mjs 2>&1 | tee -a e2e.log
-      - name: Recette outil par outil de la Planche — 22 machines, caméra, outils prévus, brouillon (apps/web/e2e/planche-outils.mjs)
+      - name: Recette outil par outil de la Planche — 22 machines, caméra, grille sans outil grisé, brouillon (apps/web/e2e/planche-outils.mjs)
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche-outils.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/planche-lots-4-6.mjs 2>&1 | tee -a e2e.log
       - name: Recette de l'interface anglaise — relevé des textes restés en français (apps/web/e2e/interface-anglais.mjs)
         run: |
           set -o pipefail

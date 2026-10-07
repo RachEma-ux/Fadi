@@ -52,6 +52,8 @@ import {
   v3,
 } from "./vecteur.js";
 
+import { type Annotations, type AnnotationsMutables, ANNOTATIONS_VIDES, genreAnnotation } from "./annotations.js";
+
 // ————————————————————————————————————————————————————————————— Types publics
 
 export type Id = string;
@@ -98,6 +100,10 @@ export interface Occurrence {
   readonly id: Id;
   readonly definition: Id;
   readonly transformation: Matrice4;
+  /** Matière posée sur l'objet (Peinture de l'extérieur) : affichée sur ses faces sans matière. */
+  readonly materiau?: string;
+  /** Balise (calque de l'Atelier, P-9). */
+  readonly balise?: string;
 }
 
 export interface Contexte {
@@ -121,6 +127,8 @@ export interface Modele {
   readonly racine: Contexte;
   readonly definitions: Readonly<Record<Id, Definition>>;
   readonly prochainId: number;
+  /** Annotations et attributs (lots 4 à 6) ; absent = aucune. */
+  readonly annotations?: Annotations;
 }
 
 export interface Rapport {
@@ -504,8 +512,13 @@ class Travail {
   private readonly origines = new Map<Ctx, Contexte>();
   private readonly sales = new Set<Ctx>();
 
+  annotations: AnnotationsMutables;
+  annotationsSales = false;
+
   constructor(private readonly modele: Modele) {
     this.prochain = modele.prochainId;
+    const a = modele.annotations ?? ANNOTATIONS_VIDES;
+    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, ...(a.repere ? { repere: a.repere } : {}) };
     this.racine = versCtx(modele.racine);
     this.origines.set(this.racine, modele.racine);
     this.definitions = new Map();
@@ -585,7 +598,32 @@ class Travail {
           ? ancienne
           : Object.freeze({ id: d.id, nom: d.nom, genre: d.genre, contenu });
     }
-    return Object.freeze({ racine: this.figer(this.racine), definitions: Object.freeze(definitions), prochainId: this.prochain });
+    const base = { racine: this.figer(this.racine), definitions: Object.freeze(definitions), prochainId: this.prochain };
+    if (!this.annotationsSales) return Object.freeze(this.modele.annotations ? { ...base, annotations: this.modele.annotations } : base);
+    const a = this.annotations;
+    const annotations: Annotations = Object.freeze({
+      guides: Object.freeze({ ...a.guides }),
+      cotes: Object.freeze({ ...a.cotes }),
+      textes: Object.freeze({ ...a.textes }),
+      plansDeCoupe: Object.freeze({ ...a.plansDeCoupe }),
+      materiaux: Object.freeze({ ...a.materiaux }),
+      balises: Object.freeze({ ...a.balises }),
+      ...(a.repere ? { repere: a.repere } : {}),
+    });
+    return Object.freeze({ ...base, annotations });
+  }
+
+  /** Efface les annotations dont l'identifiant est donné (ids géométriques ignorés). */
+  effacerAnnotations(ids: readonly Id[]): void {
+    for (const id of ids) {
+      const g = genreAnnotation(id);
+      if (!g) continue;
+      const rec = g === "guide" ? this.annotations.guides : g === "cote" ? this.annotations.cotes : g === "texte" ? this.annotations.textes : g === "plan" ? this.annotations.plansDeCoupe : g === "materiau" ? this.annotations.materiaux : this.annotations.balises;
+      if (id in rec) {
+        delete (rec as Record<Id, unknown>)[id];
+        this.annotationsSales = true;
+      }
+    }
   }
 }
 
@@ -625,6 +663,13 @@ function aplatir(m: Modele): Map<Id, string> {
   for (const d of Object.values(m.definitions)) {
     r.set(d.id, JSON.stringify({ id: d.id, nom: d.nom, genre: d.genre }));
     ajouter(d.contenu);
+  }
+  const a = m.annotations;
+  if (a) {
+    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises]) {
+      for (const [id, v] of Object.entries(rec)) r.set(id, JSON.stringify(v));
+    }
+    if (a.repere) r.set("repere", JSON.stringify(a.repere));
   }
   return r;
 }
@@ -2023,7 +2068,185 @@ export function effacerEntites(m: Modele, ids: readonly Id[], o: OptionsContexte
       c.occurrences.delete(id);
     }
     effacerAretesInterne(t, c, etendreAuxCourbes(c, ids.filter((id) => c.aretes.has(id))));
+    t.effacerAnnotations(ids);
   });
+}
+
+// ————————————————————————————————————————————————————————————— Annotations et attributs (lots 4 à 6)
+
+/** Modifie les annotations en un pas : `fn` reçoit la copie mutable et un générateur d'identifiants préfixés. */
+export function modifierAnnotations<X>(m: Modele, fn: (a: AnnotationsMutables, id: (prefixe: string) => Id) => X): Resultat & { extra: X } {
+  return operer(m, undefined, (t) => {
+    t.annotationsSales = true;
+    return fn(t.annotations, (p) => t.id(p));
+  });
+}
+
+/** Peinture : pose (ou retire, `null`) la matière recto des faces données du contexte. */
+export function peindreFaces(m: Modele, faces: readonly Id[], materiau: Id | null, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of faces) {
+      const f = c.faces.get(id);
+      if (!f) continue;
+      const { materiauRecto: _ancien, ...reste } = f;
+      c.faces.set(id, materiau ? { ...reste, materiauRecto: materiau } : reste);
+    }
+  });
+}
+
+/** Peinture d'un objet de l'extérieur : la matière est posée sur l'occurrence (ses faces sans matière la montrent). */
+export function peindreOccurrences(m: Modele, occurrences: readonly Id[], materiau: Id | null, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of occurrences) {
+      const occ = c.occurrences.get(id);
+      if (!occ) continue;
+      const { materiau: _ancien, ...reste } = occ;
+      c.occurrences.set(id, materiau ? { ...reste, materiau } : reste);
+    }
+  });
+}
+
+/** Peinture Maj : remplace, dans TOUS les contextes, la matière des faces qui portent `cible` (undefined = défaut). */
+export function peindreFacesPartout(m: Modele, cible: Id | undefined, materiau: Id | null): Resultat {
+  return operer(m, undefined, (t) => {
+    for (const c of t.tousContextes()) {
+      let touche = false;
+      for (const f of c.faces.values()) {
+        if (f.materiauRecto !== cible) continue;
+        const { materiauRecto: _ancien, ...reste } = f;
+        c.faces.set(f.id, materiau ? { ...reste, materiauRecto: materiau } : reste);
+        touche = true;
+      }
+      if (touche) t.salir(c);
+    }
+  });
+}
+
+/** Balise Ctrl : toutes les occurrences d'une définition (composant), dans tous les contextes. */
+export function baliserDefinition(m: Modele, definition: Id, balise: Id | null): Resultat {
+  return operer(m, undefined, (t) => {
+    for (const c of t.tousContextes()) {
+      let touche = false;
+      for (const o of c.occurrences.values()) {
+        if (o.definition !== definition) continue;
+        const { balise: _ancienne, ...reste } = o;
+        c.occurrences.set(o.id, balise ? { ...reste, balise } : reste);
+        touche = true;
+      }
+      if (touche) t.salir(c);
+    }
+  });
+}
+
+/** Balise : pose (ou retire, `null`) la balise des occurrences données du contexte. */
+export function baliserOccurrences(m: Modele, occurrences: readonly Id[], balise: Id | null, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of occurrences) {
+      const occ = c.occurrences.get(id);
+      if (!occ) continue;
+      const { balise: _ancienne, ...reste } = occ;
+      c.occurrences.set(id, balise ? { ...reste, balise } : reste);
+    }
+  });
+}
+
+/**
+ * Redimensionner la Planche (Mètre, distance saisie après une mesure point à point) : toute la géométrie, les
+ * occurrences et les annotations sont mises à l'échelle `facteur` autour de l'origine du repère stocké. Jamais le
+ * modèle du bâtiment ni la parcelle : la Planche seulement (cahier §4.27).
+ */
+export function redimensionner(m: Modele, facteur: number): Resultat {
+  if (!(facteur > EPS) || !Number.isFinite(facteur)) throw new RangeError("Le facteur de redimensionnement doit être strictement positif.");
+  const k = facteur;
+  const e = (p: Vec3): Vec3 => scale(p, k);
+  return operer(m, undefined, (t) => {
+    for (const c of t.tousContextes()) {
+      t.salir(c);
+      for (const s of c.sommets.values()) c.sommets.set(s.id, { ...s, position: e(s.position) });
+      for (const kc of c.courbes.values()) c.courbes.set(kc.id, { ...kc, centre: e(kc.centre), rayon: kc.rayon * k });
+      for (const o of c.occurrences.values()) {
+        const M = [...o.transformation];
+        M[3] = (M[3] as number) * k;
+        M[7] = (M[7] as number) * k;
+        M[11] = (M[11] as number) * k;
+        c.occurrences.set(o.id, { ...o, transformation: M });
+      }
+    }
+    const a = t.annotations;
+    t.annotationsSales = true;
+    for (const g of Object.values(a.guides)) {
+      a.guides[g.id] = g.genre === "ligne" ? { ...g, origine: e(g.origine) } : g.genre === "segment" ? { ...g, origine: e(g.origine), fin: e(g.fin) } : { ...g, origine: e(g.origine) };
+    }
+    for (const ct of Object.values(a.cotes)) {
+      a.cotes[ct.id] = ct.genre === "lineaire" ? { ...ct, a: e(ct.a), b: e(ct.b), position: e(ct.position) } : { ...ct, centre: e(ct.centre), rayon: ct.rayon * k, position: e(ct.position) };
+    }
+    for (const tx of Object.values(a.textes)) if (tx.genre === "repere") a.textes[tx.id] = { ...tx, ancre: e(tx.ancre), position: e(tx.position) };
+    for (const pc of Object.values(a.plansDeCoupe)) a.plansDeCoupe[pc.id] = { ...pc, origine: e(pc.origine) };
+    if (a.repere) a.repere = { ...a.repere, origine: e(a.repere.origine) };
+  });
+}
+
+/** Faces d'un maillage reconverti (lot 6) : chaque face = [contour extérieur, ...trous], points monde. */
+export type FacesPolygonales = readonly (readonly (readonly Vec3[])[])[];
+
+/**
+ * Crée un groupe (ou composant) à la racine à partir de faces planes polygonales déjà cohérentes (arêtes partagées
+ * par deux faces, aucun croisement) : construction directe, sans la logique de collage. Les sommets à moins de
+ * `tolerance` sont confondus.
+ */
+export function creerGroupeDepuisFaces(
+  m: Modele,
+  faces: FacesPolygonales,
+  o: { readonly nom?: string; readonly genre?: GenreDefinition; readonly tolerance?: number; readonly materiau?: string; readonly materiauxFaces?: readonly (string | undefined)[] } = {},
+): ResultatGroupe {
+  const tol = o.tolerance ?? 1e-7;
+  const r = operer(m, undefined, (t, c) => {
+    const contenu: Ctx = { sommets: new Map(), aretes: new Map(), faces: new Map(), courbes: new Map(), occurrences: new Map() };
+    const cellule = (p: Vec3): string => `${Math.round(p.x / tol)}|${Math.round(p.y / tol)}|${Math.round(p.z / tol)}`;
+    const index = new Map<string, Id>();
+    const sommet = (p: Vec3): Id => {
+      const k = cellule(p);
+      let id = index.get(k);
+      if (!id) {
+        id = t.id("s");
+        contenu.sommets.set(id, { id, position: p });
+        index.set(k, id);
+      }
+      return id;
+    };
+    const aretes = new Map<string, Id>();
+    const arete = (u: Id, w: Id): void => {
+      const k = cle(u, w);
+      if (aretes.has(k)) return;
+      const id = t.id("a");
+      aretes.set(k, id);
+      contenu.aretes.set(id, { id, a: u, b: w });
+    };
+    faces.forEach((boucles, i) => {
+      const ids = boucles.map((b) => {
+        const s: Id[] = [];
+        for (const p of b) {
+          const id = sommet(p);
+          if (s[s.length - 1] !== id) s.push(id);
+        }
+        while (s.length > 1 && s[0] === s[s.length - 1]) s.pop();
+        return s;
+      }).filter((b) => b.length >= 3);
+      const ext = ids[0];
+      if (!ext) return;
+      for (const b of ids) for (let j = 0; j < b.length; j++) arete(b[j] as Id, b[(j + 1) % b.length] as Id);
+      const id = t.id("f");
+      const n = newell(ext.map((s) => (contenu.sommets.get(s) as Sommet).position));
+      const mat = o.materiauxFaces?.[i];
+      contenu.faces.set(id, { id, exterieur: ext, trous: ids.slice(1), normale: normalize(n), ...(mat ? { materiauRecto: mat } : {}) });
+    });
+    const def = t.id("d");
+    const occ = t.id("o");
+    t.definitions.set(def, { id: def, nom: o.nom ?? "Groupe", genre: o.genre ?? "groupe", contenu: t.salir(contenu) });
+    c.occurrences.set(occ, { id: occ, definition: def, transformation: IDENTITE, ...(o.materiau ? { materiau: o.materiau } : {}) });
+    return { occurrence: occ, definition: def };
+  });
+  return { modele: r.modele, rapport: r.rapport, occurrence: r.extra.occurrence, definition: r.extra.definition };
 }
 
 export interface AttributsVisibilite {

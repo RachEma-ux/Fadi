@@ -79,7 +79,7 @@ const retour = (e: EtatPousserTirer): EtatPousserTirer => ({ ...e, etape: 1, fac
 function viseeDistance(e: EtatPousserTirer, ctx: ContexteOutil, r: Rayon, tolerance: number): { distance: number; inference: Inference } {
   const n = e.normale as Vec3;
   const o = e.origine as Vec3;
-  const i = inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele), depart: o, verrou: { genre: "direction", direction: n, type: "parallele" } });
+  const i = inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele), depart: o, verrou: { genre: "direction", direction: n, type: "parallele" }, ...(ctx.repere ? { axes: ctx.repere } : {}) });
   return { distance: dot(n, sub(i.point, o)), inference: i };
 }
 

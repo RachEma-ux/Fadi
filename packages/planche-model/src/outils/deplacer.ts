@@ -99,6 +99,7 @@ function inferer3(e: EtatDeplacer, ctx: ContexteOutil, ev: Extract<EvenementOuti
     tolerance: ev.tolerance,
     geometrie: geometrieVisible(ctx.modele),
     modeAlt: e.modeAlt,
+    ...(ctx.repere ? { axes: ctx.repere } : {}),
     ...(e.base ? { depart: e.base } : {}),
     ...(v ? { verrou: v } : {}),
     ...(e.areteReference ? { areteReference: e.areteReference } : {}),

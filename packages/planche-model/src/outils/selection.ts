@@ -110,6 +110,8 @@ export function scene(m: Modele): readonly ElementScene[] {
       });
     }
     for (const o of Object.values(c.occurrences)) {
+      const bal = o.balise ? m.annotations?.balises[o.balise] : undefined;
+      if (bal && !bal.visible) continue;
       const d = m.definitions[o.definition];
       if (d) parcourir(d.contenu, composer(M, o.transformation), [...chemin, o.id]);
     }
@@ -117,6 +119,50 @@ export function scene(m: Modele): readonly ElementScene[] {
   parcourir(m.racine, IDENTITE, []);
   caches.set(m, r);
   return r;
+}
+
+/** Écart entre un rayon et un point. */
+function ecartRayonPointLibre(r: Rayon, P: Vec3): number {
+  const V = normalize(r.direction);
+  const s = Math.max(0, dot(sub(P, r.origine), V));
+  return dist(add(r.origine, scale(V, s)), P);
+}
+
+/**
+ * Annotation visée par le rayon (lot 4) : plan de coupe (rayon ∩ plan dans son rectangle), cote ou texte avec repère
+ * (près de son texte), guide (près de la ligne, du segment ou du point). La plus proche de la caméra gagne.
+ */
+export function viserAnnotation(m: Modele, r: Rayon, tolerance: number): Id | null {
+  const a = m.annotations;
+  if (!a) return null;
+  const V = normalize(r.direction);
+  let meilleur: { id: Id; t: number } | null = null;
+  const retenir = (id: Id, t: number): void => {
+    if (t > 0 && (!meilleur || t < meilleur.t)) meilleur = { id, t };
+  };
+  for (const p of Object.values(a.plansDeCoupe)) {
+    const den = dot(p.normale, V);
+    if (Math.abs(den) < 1e-9) continue;
+    const t = dot(p.normale, sub(p.origine, r.origine)) / den;
+    if (t <= 0) continue;
+    const X = sub(add(r.origine, scale(V, t)), p.origine);
+    if (Math.abs(dot(X, p.u)) <= p.demiU && Math.abs(dot(X, p.w)) <= p.demiW) retenir(p.id, t);
+  }
+  const pres = (id: Id, P: Vec3, tol: number): void => {
+    if (ecartRayonPointLibre(r, P) <= tol) retenir(id, Math.max(0, dot(sub(P, r.origine), V)));
+  };
+  for (const c of Object.values(a.cotes)) pres(c.id, c.position, tolerance * 3);
+  for (const t of Object.values(a.textes)) if (t.genre === "repere") pres(t.id, t.position, tolerance * 3);
+  for (const g of Object.values(a.guides)) {
+    if (g.genre === "point") pres(g.id, g.origine, tolerance * 2);
+    else {
+      const d = g.genre === "ligne" ? g.direction : normalize(sub(g.fin, g.origine));
+      const L = g.genre === "ligne" ? 1e4 : dist(g.fin, g.origine);
+      const x = ecartRayonSegment(r, g.genre === "ligne" ? sub(g.origine, scale(d, L)) : g.origine, add(g.origine, scale(d, L)));
+      if (x.d <= tolerance) retenir(g.id, x.t);
+    }
+  }
+  return meilleur ? (meilleur as { id: Id }).id : null;
 }
 
 /** Écart entre un rayon et un segment, et abscisse du point le plus proche le long du rayon. */
@@ -403,6 +449,9 @@ export function clicSelection<E>(etat: E, ev: Extract<EvenementOutil, { genre: "
   const el = viser(ctx.modele, ev.rayon, ev.tolerance);
   const c = el ? cibleDans(el, ctx.dans) : null;
   if (!c) {
+    // Annotation (plan de coupe, cote, texte, guide) : sélectionnée comme une entité (Suppr l'efface).
+    const an = viserAnnotation(ctx.modele, ev.rayon, ev.tolerance);
+    if (an) return { etat, selection: combiner(ctx.selection, [an], mod) };
     // Vide, ou hors du contexte d'édition : sortir du contexte (obs indirect) et tout désélectionner.
     if (ctx.dans !== undefined) {
       const ch = cheminOccurrence(ctx.modele, ctx.dans);
@@ -445,7 +494,7 @@ export const machineSelection: MachineOutil<EtatSelection> = {
       case "glisser": {
         if (!etat.appui) return { etat };
         if (etat.poignee) {
-          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), depart: etat.poignee.ancre });
+          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), depart: etat.poignee.ancre, ...(ctx.repere ? { axes: ctx.repere } : {}) });
           return { etat: { ...etat, poignee: { ...etat.poignee, courant: i.point, inference: i } } };
         }
         if (!etat.cadre && distance2(etat.appui, ev.ecran) <= SEUIL_GLISSER) return { etat };

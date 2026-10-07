@@ -66,7 +66,7 @@ export const approchee = (i: Inference | null): boolean => !i || i.type === "auc
 export const prefixe = (i: Inference | null): string => (approchee(i) ? "~ " : "");
 
 export function contexteSaisie(attendu: AttenduSaisie, ctx: ContexteOutil, extra: Partial<ContexteSaisie> = {}): ContexteSaisie {
-  return { ...extra, attendu, separateurDecimal: ctx.separateurDecimal };
+  return { ...extra, attendu, separateurDecimal: ctx.separateurDecimal, ...(ctx.repere ? { repere: ctx.repere } : {}) };
 }
 
 export function mesures(
@@ -180,7 +180,7 @@ interface Viser {
 /** Inférence libre (accrochages, axes depuis `depart`), et normale du plan inféré : face survolée, sinon sol. */
 export function viserLibre(ctx: ContexteOutil, ev: Viser, depart?: Vec3): { inference: Inference; normale: Vec3 } {
   const geometrie = geometrieVisible(ctx.modele);
-  const inference = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie, ...(depart ? { depart } : {}) });
+  const inference = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie, ...(depart ? { depart } : {}), ...(ctx.repere ? { axes: ctx.repere } : {}) });
   let normale = AXE_Z;
   if (inference.type === "sur-face" && inference.entite !== undefined) {
     const f = geometrie.faces.find((x) => x.id === inference.entite);

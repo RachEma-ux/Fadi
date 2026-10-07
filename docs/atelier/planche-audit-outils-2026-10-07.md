@@ -125,3 +125,9 @@ y = −0,7.
 - `packages/planche-model/src/outils/decalage.ts` + tests : plan de décalage d'une arête seule (D2).
 - `apps/web/e2e/planche-outils.mjs` : recette outil par outil (123 vérifications), ajoutée à la CI après
   `planche-modification.mjs`.
+
+## Suite (7 octobre 2026, après l'audit)
+
+Les 20 outils « prévus » relevés ici (lots 4, 5 et 6) ont été implémentés sur la branche `planche/lots-4-6` (D-170) : la section 23 de
+`planche-outils.mjs` vérifie désormais qu'aucun outil de la grille n'est grisé, et la recette `planche-lots-4-6.mjs` (117 vérifications)
+teste chacun d'eux individuellement. Comptes rendus : `docs/planche/lots/lot-4.md`, `lot-5.md`, `lot-6.md`.

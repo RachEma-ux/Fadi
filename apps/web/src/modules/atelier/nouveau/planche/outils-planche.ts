@@ -8,12 +8,16 @@ import { OUTILS, machineParId, normaliserRaccourci, outilParId, outilParRaccourc
 import { t } from "../messages";
 
 /** Outils de caméra pris en charge par l'interface (navigation D-157) ; ils n'ont pas de machine d'états. */
-export type OutilCamera = "orbite" | "panoramique" | "zoom";
-export const OUTILS_CAMERA: ReadonlySet<string> = new Set<OutilCamera>(["orbite", "panoramique", "zoom"]);
+export type OutilCamera = "orbite" | "panoramique" | "zoom" | "zoom-etendu" | "zoom-fenetre" | "positionner-camera" | "regarder-autour" | "marcher";
+export const OUTILS_CAMERA: ReadonlySet<string> = new Set<OutilCamera>(["orbite", "panoramique", "zoom", "zoom-etendu", "zoom-fenetre", "positionner-camera", "regarder-autour", "marcher"]);
+/** Outils de caméra temporaires (§4.34) : après l'action, l'outil précédent revient (Positionner la caméra → Regarder autour). */
+export const OUTILS_CAMERA_TEMPORAIRES: ReadonlySet<string> = new Set(["zoom-etendu", "zoom-fenetre", "positionner-camera"]);
 export const estOutilCamera = (id: string): id is OutilCamera => OUTILS_CAMERA.has(id);
+/** Outils de solides (lot 6) : le moteur booléen (manifold-3d) est chargé à la demande au premier choix de l'un d'eux. */
+export const OUTILS_SOLIDES: ReadonlySet<string> = new Set(["enveloppe-exterieure", "union", "soustraction", "ajuster", "intersection", "scinder"]);
 
 /** Outils permis à un lecteur (C25) : navigation et sélection seulement. */
-const OUTILS_LECTURE: ReadonlySet<string> = new Set(["selection", "lasso", "orbite", "panoramique", "zoom"]);
+const OUTILS_LECTURE: ReadonlySet<string> = new Set(["selection", "lasso", "metre", "orbite", "panoramique", "zoom", "zoom-etendu", "zoom-fenetre", "positionner-camera", "regarder-autour", "marcher"]);
 
 /** Ordre relevé de la barre de gauche (cahier-planche §3.2) ; un outil « barre » absent de la liste est ajouté à la fin. */
 const ORDRE_BARRE = ["selection", "gomme", "ligne", "rectangle", "pousser-tirer", "deplacer", "faire-pivoter", "echelle", "peinture", "orbite", "panoramique", "metre"];
@@ -119,6 +123,11 @@ const PICTOS: Readonly<Record<string, string>> = {
   retourner: "⇋",
   diviser: "÷",
   "enveloppe-exterieure": "⬚",
+  union: "∪",
+  soustraction: "⊖",
+  ajuster: "⊘",
+  intersection: "∩",
+  scinder: "⫛",
   peinture: "▨",
   "echantillon-matiere": "◉",
   metre: "↔",
