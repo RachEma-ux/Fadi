@@ -113,6 +113,8 @@ export interface Transition<E> {
   readonly operation?: string;
   /** (Ajout lot 2, optionnel) Nouveau contexte d'édition : id d'occurrence, ou `null` = retour à la racine. */
   readonly dans?: string | null;
+  /** (Ajout lot 3, optionnel) Outil à activer après cette transition (Diviser rend la main à Sélection). */
+  readonly outil?: string;
 }
 
 export interface MachineOutil<E> {

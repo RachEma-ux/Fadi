@@ -2143,3 +2143,242 @@ export function inverserMatrice(M: Matrice4): Matrice4 | null {
   const tz = -(r[6] * t.x + r[7] * t.y + r[8] * t.z);
   return [r[0], r[1], r[2], tx, r[3], r[4], r[5], ty, r[6], r[7], r[8], tz, 0, 0, 0, 1];
 }
+
+// --- Lot 3 : outils de modification ---
+// Primitives ajoutées pour Diviser, Décalage d'arêtes et Suivez-moi (src/outils/diviser.ts, decalage.ts, suivez-moi.ts).
+
+/** Diviser : l'arête (ou un tronçon de courbe) est découpée en `segments` arêtes égales ; les faces bordantes gagnent les sommets. */
+export function diviser(m: Modele, arete: Id, segments: number, o: OptionsContexte = {}): Resultat {
+  if (!Number.isInteger(segments) || segments < 1 || segments > 9999) {
+    throw new RangeError("Le nombre de segments doit être un entier entre 1 et 9999.");
+  }
+  return operer(m, o.dans, (t, c) => {
+    const a = c.aretes.get(arete);
+    if (!a) throw new Error(`Arête inconnue : ${arete}`);
+    const A = pos(c, a.a);
+    const B = pos(c, a.b);
+    // De la fin vers le début : `couperArete` garde l'identifiant sur le premier tronçon.
+    for (let k = segments - 1; k >= 1; k--) couperArete(t, c, arete, lerp(A, B, k / segments));
+  });
+}
+
+interface Chaine {
+  readonly sommets: readonly Id[];
+  readonly ferme: boolean;
+}
+
+/** Chaîne ordonnée de sommets formée par des arêtes continues (ouverte ou fermée) ; `RangeError` sinon. */
+function chaineOrdonnee(c: Ctx, ids: readonly Id[]): Chaine {
+  const aretes = [...new Set(ids)].map((id) => c.aretes.get(id)).filter((a): a is Arete => a !== undefined);
+  if (aretes.length === 0) throw new RangeError("Aucune arête à suivre.");
+  const incident = new Map<Id, Arete[]>();
+  for (const a of aretes) for (const s of [a.a, a.b]) incident.set(s, [...(incident.get(s) ?? []), a]);
+  for (const l of incident.values()) if (l.length > 2) throw new RangeError("Les arêtes se ramifient : une chaîne continue est nécessaire.");
+  const bouts = [...incident.entries()].filter(([, l]) => l.length === 1).map(([s]) => s);
+  if (bouts.length !== 0 && bouts.length !== 2) throw new RangeError("Les arêtes ne forment pas une chaîne continue.");
+  const depart = bouts[0] ?? (aretes[0] as Arete).a;
+  const sommets: Id[] = [depart];
+  const vues = new Set<Id>();
+  let courant = depart;
+  for (;;) {
+    const suivante = (incident.get(courant) ?? []).find((a) => !vues.has(a.id));
+    if (!suivante) break;
+    vues.add(suivante.id);
+    courant = suivante.a === courant ? suivante.b : suivante.a;
+    if (courant === depart) break;
+    sommets.push(courant);
+  }
+  if (vues.size !== aretes.length) throw new RangeError("Les arêtes ne forment pas une chaîne continue.");
+  return { sommets, ferme: bouts.length === 0 };
+}
+
+/** Intersection de deux droites coplanaires (p + t·d, q + u·e) ; null si parallèles. */
+function intersectionDroites(p: Vec3, d: Vec3, q: Vec3, e: Vec3): Vec3 | null {
+  const w = cross(d, e);
+  const w2 = dot(w, w);
+  if (w2 < 1e-18) return null;
+  const t = dot(cross(sub(q, p), e), w) / w2;
+  return add(p, scale(d, t));
+}
+
+/**
+ * Décalage d'arêtes continues (Offset sur des arêtes présélectionnées) : polyligne parallèle à `|distance|`, du côté de
+ * `cote`, prolongée jusqu'aux intersections ; AUCUNE face créée. Le plan est celui de la chaîne (arêtes non
+ * colinéaires), sinon celui de la face bordante, sinon celui qui contient l'arête et le point `cote`.
+ */
+export function decalerAretes(m: Modele, aretes: readonly Id[], distance: number, cote: Vec3, o: OptionsContexte = {}): Resultat {
+  if (!(Math.abs(distance) > EPS)) throw new RangeError("La distance de décalage doit être non nulle.");
+  return operer(m, o.dans, (t, c) => {
+    const ch = chaineOrdonnee(c, aretes);
+    const P = ch.sommets.map((s) => pos(c, s));
+    const n0 = ch.ferme ? P.length : P.length - 1;
+    const dirs: Vec3[] = [];
+    for (let i = 0; i < n0; i++) dirs.push(normalize(sub(P[(i + 1) % P.length] as Vec3, P[i] as Vec3)));
+    let n: Vec3 | null = null;
+    for (let i = 0; i + 1 < dirs.length && !n; i++) {
+      const w = cross(dirs[i] as Vec3, dirs[i + 1] as Vec3);
+      if (len(w) > 1e-6) n = normalize(w);
+    }
+    if (!n) {
+      const premiere = [...c.aretes.values()].find((a) => aretes.includes(a.id));
+      const f = premiere ? facesDeArete(c, premiere)[0] : undefined;
+      if (f) n = f.normale;
+    }
+    if (!n) {
+      const w = cross(dirs[0] as Vec3, sub(cote, P[0] as Vec3));
+      n = len(w) > 1e-9 ? normalize(w) : AXE_Z;
+    }
+    const lateral = (d: Vec3): Vec3 => normalize(cross(n as Vec3, d));
+    // Côté du curseur : sens de la perpendiculaire de la première arête qui rapproche de `cote`.
+    const signe = dot(lateral(dirs[0] as Vec3), sub(cote, P[0] as Vec3)) >= 0 ? 1 : -1;
+    const decal = (i: number): Vec3 => scale(lateral(dirs[i] as Vec3), signe * Math.abs(distance));
+    const Q: Vec3[] = [];
+    for (let i = 0; i < P.length; i++) {
+      const prec = ch.ferme ? (i - 1 + n0) % n0 : i - 1;
+      const suiv = i < n0 ? i : -1;
+      if (prec < 0) Q.push(add(P[i] as Vec3, decal(suiv)));
+      else if (suiv < 0) Q.push(add(P[i] as Vec3, decal(prec)));
+      else {
+        const X = intersectionDroites(
+          add(P[i] as Vec3, decal(prec)),
+          dirs[prec] as Vec3,
+          add(P[i] as Vec3, decal(suiv)),
+          dirs[suiv] as Vec3,
+        );
+        Q.push(X ?? add(P[i] as Vec3, decal(suiv)));
+      }
+    }
+    const segments: SegmentSource[] = [];
+    for (let i = 0; i < n0; i++) segments.push({ a: Q[i] as Vec3, b: Q[(i + 1) % Q.length] as Vec3 });
+    insererGeometrie(t, c, segments, [], false);
+  });
+}
+
+/** Chemin d'un Suivez-moi : le contour extérieur d'une face, ou des arêtes continues. */
+export type CheminSuivi = { readonly face: Id } | { readonly aretes: readonly Id[] };
+
+/** Glisse `pts` le long de `dir` jusqu'au plan (normale `nrm`, passant par `o`). */
+function glisserSurPlan(pts: readonly Vec3[], dir: Vec3, nrm: Vec3, o: Vec3): Vec3[] {
+  const den = dot(nrm, dir);
+  if (Math.abs(den) < 1e-9) throw new RangeError("Le profil est parallèle au chemin : il ne peut pas être extrudé.");
+  return pts.map((p) => add(p, scale(dir, dot(nrm, sub(o, p)) / den)));
+}
+
+function volumeSigne(polys: readonly (readonly Vec3[])[]): number {
+  let v = 0;
+  for (const p of polys) for (let i = 1; i + 1 < p.length; i++) v += dot(p[0] as Vec3, cross(p[i] as Vec3, p[i + 1] as Vec3)) / 6;
+  return v;
+}
+
+/**
+ * Suivez-moi (Follow Me) : le profil (une face, contour extérieur sans trou) est extrudé sur tout le chemin ; coins à
+ * onglet (plans bissecteurs), faces latérales planes. Chemin fermé : surface fermée sans capuchon ; chemin ouvert :
+ * capuchons aux deux bouts. La face du profil est consommée (retirée, ses arêtes orphelines aussi). Si le chemin est
+ * une face dont la surface est recouverte par le balayage, elle se découpe comme toute géométrie collante.
+ */
+export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (t, c) => {
+    const F = c.faces.get(profil);
+    if (!F) throw new Error(`Face de profil inconnue : ${profil}`);
+    if (F.trous.length > 0) throw new RangeError("Le profil ne doit pas avoir de trou.");
+    let ch: Chaine;
+    if ("face" in chemin) {
+      if (chemin.face === profil) throw new RangeError("Le chemin et le profil doivent être distincts.");
+      const G = c.faces.get(chemin.face);
+      if (!G) throw new Error(`Face du chemin inconnue : ${chemin.face}`);
+      ch = { sommets: G.exterieur, ferme: true };
+    } else ch = chaineOrdonnee(c, chemin.aretes);
+    const profilPts = F.exterieur.map((s) => pos(c, s));
+    const nP = normalize(F.normale);
+    const centre = scale(profilPts.reduce((a, p) => add(a, p), v3(0, 0, 0)), 1 / profilPts.length);
+    // Sommets de passage colinéaires (arête coupée par un autre dessin) : ignorés, sinon ils découpent les faces.
+    const brut = ch.sommets.map((s) => pos(c, s));
+    const base = brut.filter((p, i) => {
+      const interieur = ch.ferme || (i > 0 && i < brut.length - 1);
+      if (!interieur) return true;
+      const avant = sub(p, brut[(i - 1 + brut.length) % brut.length] as Vec3);
+      const apres = sub(brut[(i + 1) % brut.length] as Vec3, p);
+      return !(colineaires(avant, apres, 1e-9) && dot(avant, apres) > 0);
+    });
+    const N = base.length;
+    if (N < 2) throw new RangeError("Le chemin est trop court.");
+
+    // Départ et sens : le sommet du chemin le plus proche du profil, avec une première direction non parallèle au profil.
+    let meilleur: { pts: Vec3[]; ecart: number; angle: number } | null = null;
+    const candidats: { pts: Vec3[] }[] = [];
+    if (ch.ferme) {
+      for (let s = 0; s < N; s++) {
+        candidats.push({ pts: Array.from({ length: N }, (_, k) => base[(s + k) % N] as Vec3) });
+        candidats.push({ pts: Array.from({ length: N }, (_, k) => base[(((s - k) % N) + N) % N] as Vec3) });
+      }
+    } else {
+      candidats.push({ pts: base }, { pts: [...base].reverse() });
+    }
+    for (const cand of candidats) {
+      const d0 = normalize(sub(cand.pts[1] as Vec3, cand.pts[0] as Vec3));
+      const angle = Math.abs(dot(d0, nP));
+      if (angle < 0.2) continue;
+      const ecart = Math.min(...profilPts.map((p) => dist(p, cand.pts[0] as Vec3)), dist(centre, cand.pts[0] as Vec3));
+      if (!meilleur || ecart < meilleur.ecart - 1e-9 || (Math.abs(ecart - meilleur.ecart) <= 1e-9 && angle > meilleur.angle + 1e-9)) {
+        meilleur = { pts: cand.pts, ecart, angle };
+      }
+    }
+    if (!meilleur) throw new RangeError("Le profil est parallèle au chemin : il ne peut pas être extrudé.");
+    const V = meilleur.pts;
+    const nSeg = ch.ferme ? N : N - 1;
+    const d: Vec3[] = [];
+    for (let i = 0; i < nSeg; i++) d.push(normalize(sub(V[(i + 1) % N] as Vec3, V[i] as Vec3)));
+    const plan = (i: number): { n: Vec3; o: Vec3 } => {
+      const k = i % N;
+      if (!ch.ferme && (i === 0 || i === N - 1)) return { n: d[i === 0 ? 0 : nSeg - 1] as Vec3, o: V[k] as Vec3 };
+      const a = d[(i - 1 + nSeg) % nSeg] as Vec3;
+      const b = d[i % nSeg] as Vec3;
+      const bis = add(a, b);
+      if (len(bis) < 1e-9) throw new RangeError("Le chemin revient sur lui-même : onglet impossible.");
+      return { n: normalize(bis), o: V[k] as Vec3 };
+    };
+    const sections: Vec3[][] = [];
+    const p0 = plan(0);
+    sections.push(glisserSurPlan(profilPts, d[0] as Vec3, p0.n, p0.o));
+    for (let i = 1; i <= nSeg; i++) {
+      if (ch.ferme && i === nSeg) {
+        sections.push(sections[0] as Vec3[]);
+        break;
+      }
+      const pi = plan(i);
+      sections.push(glisserSurPlan(sections[i - 1] as Vec3[], d[i - 1] as Vec3, pi.n, pi.o));
+    }
+    const k = profilPts.length;
+    let polys: Vec3[][] = [];
+    for (let i = 0; i < nSeg; i++) {
+      const S = sections[i] as Vec3[];
+      const E = sections[i + 1] as Vec3[];
+      for (let j = 0; j < k; j++) polys.push([S[j] as Vec3, S[(j + 1) % k] as Vec3, E[(j + 1) % k] as Vec3, E[j] as Vec3]);
+    }
+    if (!ch.ferme) {
+      polys.push([...(sections[0] as Vec3[])].reverse());
+      polys.push([...(sections[nSeg] as Vec3[])]);
+    }
+    polys = polys.filter((p) => len(newell(p)) > 1e-12);
+    if (volumeSigne(polys) < 0) polys = polys.map((p) => [...p].reverse());
+
+    // Le profil est consommé : sa face et celles de ses arêtes qu'aucune autre face ne borde disparaissent AVANT le
+    // balayage, sinon elles découperaient les faces coplanaires du résultat.
+    const aretesProfil: Id[] = [];
+    for (let i = 0; i < F.exterieur.length; i++) {
+      const a = areteEntre(c, F.exterieur[i] as Id, F.exterieur[(i + 1) % F.exterieur.length] as Id);
+      if (a && facesDeArete(c, a).every((g) => g.id === profil)) aretesProfil.push(a.id);
+    }
+    c.faces.delete(profil);
+    if (aretesProfil.length) effacerAretesInterne(t, c, aretesProfil);
+    // Sommets du profil laissés sur une arête voisine (profil dessiné sur un bord) : recollés si colinéaires.
+    for (const s of F.exterieur) cicatriser(c, s);
+    const segments: SegmentSource[] = [];
+    const sources: Source[] = [];
+    for (const p of polys) {
+      for (let i = 0; i < p.length; i++) segments.push({ a: p[i] as Vec3, b: p[(i + 1) % p.length] as Vec3 });
+      sources.push({ exterieur: p, trous: [], normale: normalize(newell(p)), role: "face" });
+    }
+    insererGeometrie(t, c, segments, sources, false);
+  });
+}
