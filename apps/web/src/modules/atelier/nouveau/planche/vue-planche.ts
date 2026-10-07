@@ -645,6 +645,9 @@ export class VuePlanche {
       if (g.id !== e.pointerId) return;
       g.dernier = p;
       if (!g.glisse && Math.hypot(p.x - g.depart.x, p.y - g.depart.y) >= SEUIL_GLISSER_PX) g.glisse = true;
+      // Au doigt, le glisser tient lieu de survol : l'aperçu (ligne, rectangle, inférence) suit le doigt, et le
+      // relâcher pose le point là où le doigt s'arrête — appuyer-glisser-lâcher, sans touche ni saisie.
+      if (e.pointerType === "touch") this.emettre("survol", p);
       this.emettre("glisser", p);
       this.majInfobulle();
       return;

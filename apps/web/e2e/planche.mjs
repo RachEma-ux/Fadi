@@ -277,6 +277,25 @@ await tel.locator('[data-planche-outil="ligne"]').tap();
 check("mobile : outil Ligne choisi au toucher", (await etat(tel)).outil === "ligne");
 await toucher({ x: 0, y: 0, z: 0 });
 check("mobile : premier point posé au toucher (étape 2)", (await etat(tel)).etape === 2, JSON.stringify(await etat(tel)));
+// Au doigt, l'aperçu suit le glisser et le relâcher pose le point : appuyer-glisser-lâcher, sans touche ni saisie.
+{
+  const b = await boite("[data-planche-vue] canvas", tel);
+  const de = await tel.evaluate((q) => window.fadiPlanche.versEcran(q), { x: 0, y: 0, z: 0 });
+  const a = await tel.evaluate((q) => window.fadiPlanche.versEcran(q), { x: 4, y: 0, z: 0 });
+  const cdp = await tel.context().newCDPSession(tel);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: b.x + de.x + 2, y: b.y + de.y + 2 }] });
+  for (let i = 1; i <= 8; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: b.x + de.x + ((a.x - de.x) * i) / 8, y: b.y + de.y + ((a.y - de.y) * i) / 8 }] });
+  await tel.waitForTimeout(100);
+  const pendant = await tel.locator("[data-planche-mesures]").inputValue();
+  check("mobile : pendant le glisser au doigt, l'aperçu suit (Mesures ≈ 4,00 m)", /4,00/.test(pendant), pendant);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await tel.waitForTimeout(100);
+  const nbAretes = await tel.evaluate(() => Object.keys(window.fadiPlanche.modele().racine.aretes).length);
+  check("mobile : relâcher le doigt pose la seconde extrémité (1 arête)", nbAretes === 1 && (await etat(tel)).etape === 2, `${nbAretes} arête(s)`);
+  await cdp.detach();
+  await tel.keyboard.press("Escape");
+  await toucher({ x: 0, y: 0, z: 0 });
+}
 // Refonte responsive : les flèches sont dans le volet déployé (« Plus »), la consigne complète aussi.
 await tel.locator("[data-planche-volet-bascule]").tap();
 check("mobile : « Plus » déploie le volet et révèle les flèches", await tel.locator('[data-planche-mod="FlecheDroite"]').isVisible());
