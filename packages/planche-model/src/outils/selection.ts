@@ -327,6 +327,11 @@ export interface GlisserPoignee {
   readonly sommet: Id;
   /** Position monde d'origine. */
   readonly depuis: Vec3;
+  /**
+   * Autre extrémité (monde) de l'arête sélectionnée dont on glisse le sommet : l'inférence part de là, c'est le
+   * segment dans sa future position qui s'aligne sur les axes (« Sur l'axe vert » = le segment est sur l'axe vert).
+   */
+  readonly ancre: Vec3;
   /** Position monde courante (inférée). */
   readonly courant: Vec3;
   readonly inference: Inference | null;
@@ -359,6 +364,20 @@ function lignesPoignee(ctx: ContexteOutil, g: GlisserPoignee): Vec3[][] {
     if (s) r.push([W(s.position), g.courant]);
   }
   return r;
+}
+
+/** Autre extrémité (monde) de la première arête sélectionnée portant le sommet ; à défaut, le sommet lui-même. */
+function ancreDe(ctx: ContexteOutil, p: Poignee): Vec3 {
+  const c = contexte(ctx.modele, ctx.dans);
+  const W = versMonde(ctx);
+  for (const id of ctx.selection) {
+    const a = c.aretes[id];
+    if (!a) continue;
+    const autre = a.a === p.sommet ? a.b : a.b === p.sommet ? a.a : null;
+    const s = autre ? c.sommets[autre] : undefined;
+    if (s) return W(s.position);
+  }
+  return p.point;
 }
 
 const CONSIGNE_POIGNEE = "Glissez l'extrémité ; relâchez pour la poser (Échap : annuler).";
@@ -420,13 +439,13 @@ export const machineSelection: MachineOutil<EtatSelection> = {
         return etat.ignorerClic ? { etat: { ...etat, ignorerClic: false } } : { etat };
       case "appui": {
         const p = poigneeVisee(ctx, ev.rayon, ev.tolerance);
-        const poignee: GlisserPoignee | null = p ? { sommet: p.sommet, depuis: p.point, courant: p.point, inference: null } : null;
+        const poignee: GlisserPoignee | null = p ? { sommet: p.sommet, depuis: p.point, ancre: ancreDe(ctx, p), courant: p.point, inference: null } : null;
         return { etat: { ...etat, appui: ev.ecran, cadre: null, ignorerClic: false, poignee } };
       }
       case "glisser": {
         if (!etat.appui) return { etat };
         if (etat.poignee) {
-          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), depart: etat.poignee.depuis });
+          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), depart: etat.poignee.ancre });
           return { etat: { ...etat, poignee: { ...etat.poignee, courant: i.point, inference: i } } };
         }
         if (!etat.cadre && distance2(etat.appui, ev.ecran) <= SEUIL_GLISSER) return { etat };

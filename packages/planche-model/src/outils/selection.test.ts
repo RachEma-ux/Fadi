@@ -282,6 +282,11 @@ describe("Sélection — poignées d'extrémité d'une arête", () => {
     expect(v.apercu.lignes.length).toBeGreaterThanOrEqual(2); // les deux arêtes du coin suivent le point
     expect(v.apercu.lignes.every((l) => Math.abs((l[1] as Vec3).x - 5) < 1e-6 && Math.abs((l[1] as Vec3).y + 1) < 1e-6)).toBe(true);
     expect(v.consigne).toMatch(/Glissez/);
+    // L'inférence part de l'autre extrémité (0;0) : glissé en (6;0), le segment futur est sur l'axe rouge.
+    p.envoyer(monde("glisser", 6, 0));
+    expect(p.vue.inference?.type).toBe("axe-x");
+    expect(p.vue.inference?.origineLigne).toEqual(v3(0, 0, 0));
+    p.envoyer(monde("glisser", 5, -1));
     p.envoyer(monde("relache", 5, -1));
     const t = p.transitions[p.transitions.length - 1] as Transition<unknown>;
     expect(t.operation).toBe("Déplacer un point");
