@@ -125,6 +125,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   // Lot 4 : texte d'annotation en cours de saisie (outil Texte) : l'interface tient le champ, la machine reçoit `saisie`.
   const [edition, setEdition] = useState<{ id: string; texte: string } | null>(null);
   const editionRef = useRef<HTMLTextAreaElement | null>(null);
+  const validerEditionRef = useRef<() => void>(() => undefined);
   const [recent, setRecent] = useState<string | null>(null);
   const [tactile, setTactile] = useState(false);
   // Téléphone (≤ 760 px) : annuler / rétablir vivent dans le volet bas, l'aide dans la barre du haut.
@@ -398,6 +399,15 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     }
   }, [poserHistorique, rafraichir, readOnly, setSelection]);
 
+  /** Fin de la saisie d'un texte (Entrée, bouton, clic dans le dessin) : le texte tapé remplace la proposition, zone fermée. */
+  const validerEdition = useCallback(() => {
+    const texte = editionRef.current?.value;
+    setEdition(null);
+    if (texte !== undefined) envoyer({ genre: "saisie", texte });
+    hoteRef.current?.focus({ preventScroll: true });
+  }, [envoyer]);
+  validerEditionRef.current = validerEdition;
+
   const envoyerTouche = useCallback(
     (touche: Touche, etat: "enfoncee" | "relachee") => {
       if (etat === "enfoncee") touchesTenues.current.add(touche);
@@ -525,6 +535,12 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       v = new VuePlanche(hote, {
         evenement: (ev) => {
           if (ev.genre === "survol" && texteRef.current?.statut === "valide") setTexte(null);
+          // Saisie de texte ouverte (§4.31) : un clic dans le dessin valide le texte tapé et ferme la zone ; ce clic ne va pas
+          // à l'outil (il « termine », il ne commence pas une autre annotation).
+          if (editionRef.current && (ev.genre === "clic" || ev.genre === "appui")) {
+            if (ev.genre === "clic") validerEditionRef.current();
+            return;
+          }
           envoyer(ev);
         },
         outilCamera: () => (estOutilCamera(outilRef.current) ? (outilRef.current as OutilCamera) : null),
@@ -1106,10 +1122,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           data-planche-texte-edition
           onSubmit={(e) => {
             e.preventDefault();
-            const texte = editionRef.current?.value ?? edition.texte;
-            setEdition(null);
-            envoyer({ genre: "saisie", texte });
-            hoteRef.current?.focus({ preventScroll: true });
+            validerEdition();
           }}
         >
           <label htmlFor="planche-texte-edition">{t("planche.texte.aide")}</label>

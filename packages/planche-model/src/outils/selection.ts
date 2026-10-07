@@ -132,7 +132,7 @@ function ecartRayonPointLibre(r: Rayon, P: Vec3): number {
  * Annotation visée par le rayon (lot 4) : plan de coupe (rayon ∩ plan dans son rectangle), cote ou texte avec repère
  * (près de son texte), guide (près de la ligne, du segment ou du point). La plus proche de la caméra gagne.
  */
-export function viserAnnotation(m: Modele, r: Rayon, tolerance: number): Id | null {
+export function viserAnnotation(m: Modele, r: Rayon, tolerance: number, ecran?: { x: number; y: number }): Id | null {
   const a = m.annotations;
   if (!a) return null;
   const V = normalize(r.direction);
@@ -152,7 +152,11 @@ export function viserAnnotation(m: Modele, r: Rayon, tolerance: number): Id | nu
     if (ecartRayonPointLibre(r, P) <= tol) retenir(id, Math.max(0, dot(sub(P, r.origine), V)));
   };
   for (const c of Object.values(a.cotes)) pres(c.id, c.position, tolerance * 3);
-  for (const t of Object.values(a.textes)) if (t.genre === "repere") pres(t.id, t.position, tolerance * 3);
+  for (const t of Object.values(a.textes)) {
+    if (t.genre === "repere") pres(t.id, t.position, tolerance * 3);
+    // Texte écran : étiquette posée en pixels depuis son coin haut gauche ; le clic la vise dans une boîte de 160 × 28 px.
+    else if (ecran && ecran.x >= t.ecran.x - 4 && ecran.x <= t.ecran.x + 160 && ecran.y >= t.ecran.y - 4 && ecran.y <= t.ecran.y + 28) retenir(t.id, 1e-6);
+  }
   for (const g of Object.values(a.guides)) {
     if (g.genre === "point") pres(g.id, g.origine, tolerance * 2);
     else {
@@ -450,7 +454,7 @@ export function clicSelection<E>(etat: E, ev: Extract<EvenementOutil, { genre: "
   const c = el ? cibleDans(el, ctx.dans) : null;
   if (!c) {
     // Annotation (plan de coupe, cote, texte, guide) : sélectionnée comme une entité (Suppr l'efface).
-    const an = viserAnnotation(ctx.modele, ev.rayon, ev.tolerance);
+    const an = viserAnnotation(ctx.modele, ev.rayon, ev.tolerance, ev.ecran);
     if (an) return { etat, selection: combiner(ctx.selection, [an], mod) };
     // Vide, ou hors du contexte d'édition : sortir du contexte (obs indirect) et tout désélectionner.
     if (ctx.dans !== undefined) {

@@ -24,6 +24,7 @@ chacune, effacées par Suppr comme une entité, à l'échelle avec le redimensio
 | L4.7 | **Zoom étendu** (`Ctrl+Maj+E`, immédiat), **Zoom fenêtre** (`Maj+W`, temporaire), **Positionner la caméra** (décalage de hauteur 1,68 m, puis Regarder autour), **Regarder autour** (pivot sur place, Hauteur d'œil au champ Mesures), **Marcher** (avancer / tourner, Maj = vertical et latéral, Ctrl = courir) | `vue-planche.ts`, `outils-planche.ts`, `Planche.tsx` | PL-04-06 |
 | L4.8 | Noyau : `Annotations` (`annotations.ts`), `modifierAnnotations`, `redimensionner`, annotations dans `aplatir` / `effacerEntites` ; `ContexteOutil.repere` / `lecture` ; `Transition.outilPrecedent` / `editerTexte` ; `VueOutil.apercu.etiquettes` / `plan` / `rapporteur` ; `viserAnnotation` (sélection et Suppr d'une annotation) ; registre `registre-mesure.ts` | `geometrie-libre.ts`, `outils/machine.ts`, `outils/selection.ts` | PL-01-01 (extension) |
 | L4.9 | Rendu : guides en pointillé, cotes avec lignes d'attache et étiquettes DOM (`.planche-etiquette`), textes, rectangles des plans de coupe, repère de saisie (axes déplacés), étiquettes d'aperçu ; `cadrer`, `zoomFenetre`, `positionnerCamera`, `regarder`, `marcher`, `hauteurOeil`, `emprise` | `vue-planche.ts`, `planche.css` | PL-02-07 (extension) |
+| L4.11 | Dictionnaire anglais : libellés, consignes et messages des 20 outils (105 entrées, `en.json`) | `apps/web/src/lib/i18n/en.json` | — |
 | L4.10 | Recette navigateur `planche-lots-4-6.mjs` (inscrite à la CI après `planche-outils.mjs`) ; `planche-outils.mjs` : plus aucun outil grisé ; `planche.test.ts` : les 20 outils disponibles | `apps/web/e2e/`, `.github/workflows/ci.yml` | — |
 
 **Non livré** (déclaré) : Info entité des cotes et textes (police, taille, extrémités : lot 5, panneaux) ; menu contextuel des axes
@@ -60,11 +61,11 @@ création (CA-TXT-1, choix déclaré).
 - **Mètre** : la ligne de guide depuis une arête est infinie (relevé) ; entre deux points libres, le guide est fini (segment) ;
   entre deux points accrochés (extrémités) il n'y a pas de guide mais une mesure, qui ouvre le redimensionnement ; le
   redimensionnement demande une confirmation par Entrée et agit sur **toute** la Planche (géométrie, occurrences, annotations).
-- **Cotes** : étiquette « 4,00 m » (deux décimales, virgule) ; pas d'Info entité ; la cote suit ses sommets quand elle leur est associée.
+- **Cotes** : étiquette « 4,00 m » (deux décimales, virgule) ; pas d'Info entité ; la cote suit ses sommets quand elle leur est associée (points accrochés à la racine ; dans un groupe ouvert, coordonnées figées).
 - **Rapporteur** : accrochage à 15° à ±1,5° comme Faire pivoter ; Ctrl bascule la création des guides.
 - **Axes** : le repère est une donnée de la Planche (annulable, R5) ; les inférences d'axes et les couleurs suivent le repère.
-- **Texte** : la saisie se fait dans une zone de texte flottante (Entrée valide, Maj + Entrée = retour à la ligne, Échap garde le
-  texte proposé) ; texte écran proposé « Saisissez le texte ».
+- **Texte** : la saisie se fait dans une zone de texte flottante (Entrée, bouton ou clic dans le dessin valident ; Maj + Entrée =
+  retour à la ligne ; Échap garde le texte proposé) ; texte écran proposé « Saisissez le texte », visé par la position écran du clic.
 - **Plan de coupe** : rectangle du plan = étendue de la face visée (ou 1 m autour du point) ; une seule coupe rendue à la fois
   (le dernier plan actif) ; la barre Inverser / Coupe active / Effacer remplace le menu contextuel.
 - **Caméra** : Zoom étendu ne change pas l'outil actif ; Zoom fenêtre rend l'outil précédent ; Positionner la caméra enchaîne

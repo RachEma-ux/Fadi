@@ -360,16 +360,19 @@ export class VuePlanche {
     this.groupeAxes.matrixWorldNeedsUpdate = true;
   }
 
-  /** Plans de coupe actifs : plans de découpe du rendu (le côté de la normale est caché ; Inverser retourne le sens). */
+  /**
+   * Plan de coupe rendu : une seule coupe à la fois (§4.32), le DERNIER plan actif (ordre de création) ; le côté de la
+   * normale est caché, Inverser retourne le sens. Les autres plans actifs restent visibles sans couper.
+   */
   private majCoupe(modele: Modele): void {
-    const plans: THREE.Plane[] = [];
-    for (const p of Object.values(modele.annotations?.plansDeCoupe ?? {})) {
-      if (!p.actif) continue;
-      const s = p.inverse ? 1 : -1;
-      const n = v3(p.normale).multiplyScalar(s);
-      plans.push(new THREE.Plane(n, -n.dot(v3(p.origine))));
+    const actifs = Object.values(modele.annotations?.plansDeCoupe ?? {}).filter((p) => p.actif);
+    const p = actifs[actifs.length - 1];
+    if (!p) {
+      this.moteur.clippingPlanes = [];
+      return;
     }
-    this.moteur.clippingPlanes = plans;
+    const n = v3(p.normale).multiplyScalar(p.inverse ? 1 : -1);
+    this.moteur.clippingPlanes = [new THREE.Plane(n, -n.dot(v3(p.origine)))];
   }
 
   /** Guides, cotes, textes, plans de coupe (lot 4) ; les annotations sélectionnées sont en couleur de sélection / orange. */

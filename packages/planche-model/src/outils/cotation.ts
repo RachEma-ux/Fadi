@@ -14,6 +14,10 @@ import { contexteSaisie, formaterLongueur, mesures, messageErreur } from "./comm
 import { consigneDe, sommetEn, viseeElement, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
 
+/** Association à un sommet (la cote suit ses déplacements) : point accroché, à la racine seulement — dans un groupe ouvert, la
+ * cote garde ses coordonnées de création (choix déclaré, PL-04-02). */
+const associable = (ctx: ContexteOutil, i: Inference): boolean => ctx.dans === undefined && POINTS_ACCROCHES.has(i.type);
+
 export const ID_COTATION = "cotation";
 const POINTS_ACCROCHES = new Set(["extremite", "milieu", "intersection", "centre", "origine"]);
 
@@ -80,7 +84,7 @@ export const machineCotation: MachineOutil<EtatCotation> = {
         }
         if (etat.etape === 2) {
           if (etat.a && dist(i.point, etat.a) < 1e-9) return { etat: { ...etat, inference: i, erreur: "Choisissez un second point distinct." } };
-          return { etat: { ...etat, etape: 3, b: i.point, sommets: [etat.sommets[0], POINTS_ACCROCHES.has(i.type) ? sommetEn(ctx, i.point) : undefined], inference: i, erreur: null } };
+          return { etat: { ...etat, etape: 3, b: i.point, sommets: [etat.sommets[0], associable(ctx, i) ? sommetEn(ctx, i.point) : undefined], inference: i, erreur: null } };
         }
         // Étape 1 : arête ou courbe visée (hors accrochage ponctuel), sinon premier point.
         if (!POINTS_ACCROCHES.has(i.type)) {
@@ -93,7 +97,7 @@ export const machineCotation: MachineOutil<EtatCotation> = {
             if (ar) return { etat: { ...etat, etape: 3, a: el.a, b: el.b, sommets: [ar.a, ar.b], diametre: null, inference: i, erreur: null } };
           }
         }
-        return { etat: { ...etat, etape: 2, a: i.point, b: null, sommets: [POINTS_ACCROCHES.has(i.type) ? sommetEn(ctx, i.point) : undefined, undefined], diametre: null, inference: i, erreur: null } };
+        return { etat: { ...etat, etape: 2, a: i.point, b: null, sommets: [associable(ctx, i) ? sommetEn(ctx, i.point) : undefined, undefined], diametre: null, inference: i, erreur: null } };
       }
       case "saisie":
         return { etat: { ...etat, erreur: "Le champ Mesures n'est pas utilisé par l'outil Cotes." } };

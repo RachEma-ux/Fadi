@@ -16,6 +16,7 @@ import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, add, cross, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
 import { contexteSaisie, formaterLongueur, formaterNombre, mesures, messageErreur, prefixe } from "./commun-formes.js";
 import { type VerrouFleche, axeDeToucheFleche, consigneDe, libelleMesuresDe, reference, vueModif } from "./commun-modif.js";
+import { REPERE_MODELE } from "./axes.js";
 import type { ContexteOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
 
 export const ID_METRE = "metre";
@@ -142,11 +143,13 @@ function creer(e: EtatMetre, ctx: ContexteOutil, arrivee: Vec3, accroche: boolea
 }
 
 /** Point d'arrivée pour une distance saisie : depuis le départ, dans la direction du curseur (ou de l'axe verrouillé). */
-function arriveeSaisie(e: EtatMetre, valeur: number): Vec3 | null {
+function arriveeSaisie(e: EtatMetre, ctx: ContexteOutil, valeur: number): Vec3 | null {
   const depart = e.depart as Vec3;
   const v = verrouCourant(e);
   let d: Vec3 | null = null;
-  if (v?.genre === "axe") d = v.axe === "x" ? { x: 1, y: 0, z: 0 } : v.axe === "y" ? { x: 0, y: 1, z: 0 } : { x: 0, y: 0, z: 1 };
+  // Verrou d'axe résolu dans le repère de saisie (Axes, R5), comme l'inférence et les saisies « [x;y;z] ».
+  const R = ctx.repere ?? REPERE_MODELE;
+  if (v?.genre === "axe") d = v.axe === "x" ? R.x : v.axe === "y" ? R.y : R.z;
   else if (v?.genre === "direction") d = v.direction;
   else if (e.inference) d = sub(e.inference.point, depart);
   if (!d || len(d) < 1e-12) return null;
@@ -196,7 +199,7 @@ export const machineMetre: MachineOutil<EtatMetre> = {
         if (res.genre === "erreur") return { etat: { ...etat, texte: ev.texte, erreur: res.message } };
         if (res.genre !== "longueur") return { etat: { ...etat, texte: ev.texte, erreur: `Saisie « ${ev.texte} » non reconnue.` } };
         if (etat.etape === 2 && etat.depart) {
-          const p = arriveeSaisie(etat, res.valeur);
+          const p = arriveeSaisie(etat, ctx, res.valeur);
           if (!p) return { etat: { ...etat, texte: ev.texte, erreur: "Orientez le curseur (ou verrouillez un axe avec une flèche) pour donner la direction." } };
           return creer({ ...etat, texte: ev.texte }, ctx, p, false);
         }

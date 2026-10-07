@@ -8,6 +8,7 @@ import { clicVers, partie, saisie, survolVers, touche } from "./essais-modificat
 import { machineMetre } from "./metre.js";
 import { machinePlanDeCoupe, modifierPlanDeCoupe } from "./plan-de-coupe.js";
 import { machineRapporteur } from "./rapporteur.js";
+import { viserAnnotation } from "./selection.js";
 import { machineTexte } from "./texte.js";
 import type { EvenementOutil } from "./machine.js";
 
@@ -142,6 +143,31 @@ describe("Axes — CA-AXE", () => {
     const p = partie(machineAxes, sol()).jouer(survolVers(v3(2, 1, 0)), double(v3(2, 1, 0)));
     expect(p.modele.annotations?.repere?.origine).toEqual({ x: 2, y: 1, z: 0 });
     expect(p.modele.annotations?.repere?.x).toEqual({ x: 1, y: 0, z: 0 });
+  });
+});
+
+describe("Mètre et Sélection — remarques de revue (lots 4 à 6)", () => {
+  it("verrou d'axe (→) puis « 2 » : la direction suit le repère de saisie des Axes (rouge vers +y), comme les saisies « [x;y;z] »", () => {
+    const axes = partie(machineAxes, sol()).jouer(clicVers(v3(1, 2, 0)), survolVers(v3(1, 5, 0)), clicVers(v3(1, 5, 0)), survolVers(v3(-2, 2, 0)), clicVers(v3(-2, 2, 0)));
+    const repere = axes.modele.annotations!.repere!;
+    const p = partie(machineMetre, axes.modele);
+    p.ctx = () => ({ modele: p.modele, selection: p.selection, separateurDecimal: p.separateurDecimal, repere });
+    p.jouer(survolVers(v3(6, 5, 0)), clicVers(v3(6, 5, 0)), touche("FlecheDroite"), survolVers(v3(7, 6, 0)), saisie("2"));
+    const g = guides(p.modele);
+    expect(g).toHaveLength(1);
+    expect(g[0]!.genre).toBe("segment");
+    if (g[0]!.genre === "segment") {
+      expect(g[0]!.fin.x).toBeCloseTo(6, 9);
+      expect(g[0]!.fin.y).toBeCloseTo(7, 9);
+    }
+  });
+  it("un texte écran (pixels) est visé par la position écran du clic, donc sélectionnable et effaçable", () => {
+    const p = partie(machineTexte, sol()).jouer(survolVers(v3(9, 9, 0)), { ...(clicVers(v3(9, 9, 0)) as Extract<EvenementOutil, { genre: "clic" }>), ecran: { x: 300, y: 200 } });
+    const id = Object.keys(p.modele.annotations!.textes)[0]!;
+    const loin = { origine: v3(50, 50, 50), direction: v3(0, 0, -1) };
+    expect(viserAnnotation(p.modele, loin, 0.05, { x: 340, y: 210 })).toBe(id);
+    expect(viserAnnotation(p.modele, loin, 0.05, { x: 100, y: 100 })).toBeNull();
+    expect(viserAnnotation(p.modele, loin, 0.05)).toBeNull();
   });
 });
 
