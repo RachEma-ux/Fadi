@@ -32,6 +32,19 @@ l'ouvrir dans un visualiseur tiers » — les trois premiers points sont joués 
   (4) matrice IFC complétée, rapport par classe ✅ ; (5) fiches à l'état prototype (« vérifiée » après relecture,
   « disponible » après acceptation).
 
+## Relecture de la PR #96 (Codex, 8 octobre 2026)
+
+Six constats, tous corrigés et couverts par des tests : (1) une trame supprimée seule laissait ses poutres avec un
+`trameId` orphelin — elle détache d'abord ce qu'elle a généré ; (2) `materiau` prenait « acier » par défaut sur une
+poutre ou une plaque — requis désormais (rien d'inventé) ; (3) les armatures acceptaient 10 000 barres mais n'en
+dessinaient que 400 — 400 au plus, toutes dessinées ; (4) un coulage acceptait tout élément par sa classe — réservé au
+béton déclaré (`materiau = beton`, ou propriété « materiau » d'un poteau ou d'une dalle ; la trame enregistre le
+matériau choisi sur ses poteaux) ; (5) la virgule décimale des axes de trame était prise pour un séparateur — « ; » ou
+espace seulement ; (6) une section de catalogue à parois incompatibles passait sans contrôle — refusée. En CI : nom
+d'étape, cases des ontologies à 24 px (axe-core), outil de trame renommé `trame-structure` (il masquait la trame d'axes
+du socle), panneau des outils d'ontologie visible au-dessus de la sélection, liens `node_modules` commis par erreur
+retirés.
+
 ## Non fait (déclaré)
 
 - **Visualiseur tiers** : l'ouverture de l'IFC dans un logiciel externe n'est pas en CI (réimport et contrôle de schéma
