@@ -5,6 +5,8 @@ tranche (objets, menu contextuel, panneaux §6) livrée sur `planche/lot-5` (D-1
 CI GitHub et acceptation du maître d'ouvrage en attente** (8 octobre 2026). Cadre : `cahier-planche.md` §8 (lot 5),
 §5.6, §5.8, §6, §4.14, §4.24, §4.25, §4.33, décisions P-7, P-8, P-9 (D-170) et choix de la seconde tranche (D-171).
 
+> **Accepté par le maître d'ouvrage le 8 octobre 2026 (D-174)** ; fiches du lot à l'état « disponible ».
+
 ## Seconde tranche (D-171) — objets, menu contextuel, panneaux
 
 | Tâche | Contenu | Fichiers | Fiche |

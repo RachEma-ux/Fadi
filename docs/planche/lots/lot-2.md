@@ -5,6 +5,8 @@
 2026). Cadre : `docs/planche/cahier-planche.md` §8 (lot 2), §4.1–4.14, §4.34–4.35, §5 ; décisions MO-1 à MO-5 (§1.2) ;
 décisions ouvertes §10.
 
+> **Accepté par le maître d'ouvrage le 8 octobre 2026 (D-174)** ; fiches du lot à l'état « disponible ».
+
 ## Ce qui est livré
 
 Le mode **Planche** s'ouvre depuis l'Atelier (bouton « Planche » à côté de Plan / 3D / Documents). Il dessine la

@@ -4,6 +4,8 @@
 navigateur exécutées ici ; CI GitHub et acceptation du maître d'ouvrage en attente** (7 octobre 2026). Cadre :
 `docs/planche/cahier-planche.md` §8 (lot 3), §4.15–4.21, §4.26, §5.4 ; décisions déléguées : D-167.
 
+> **Accepté par le maître d'ouvrage le 8 octobre 2026 (D-174)** ; fiches du lot à l'état « disponible ».
+
 ## Ce qui est livré
 
 Huit outils de modification, chacun une machine d'états **pure** (`packages/planche-model/src/outils/`) ; l'interface

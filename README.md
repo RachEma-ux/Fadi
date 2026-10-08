@@ -108,7 +108,8 @@ machine or hosting account and a domain name.
 Atelier rebuild (DrawAll V4.1): `docs/atelier-drawall.md` is the accepted proposal (clean rebuild, one Atelier, P.118
 imported one way), `docs/atelier-cahier-des-charges.md` the execution specification for Claude Code (rules, contracts,
 lots, acceptance, team organisation), `docs/drawall/` the DrawAll V4.1 reference documents and `docs/atelier/` the
-follow-up folder (capability sheets, decisions, measurements, lot reports). `CLAUDE.md` is the entry point for Claude Code.
+follow-up folder (capability sheets, decisions, measurements, lot reports). `CLAUDE.md` is the entry point for Claude Code. P1 lots (Atelier 0–9, Planche 1–7) were accepted on 8 October 2026 (D-174); `docs/atelier-cahier-p2.md` is the
+*proposed* P2 specification (structure, mechanical, timber, sheet metal, MEP, surfaces, coordination), not started.
 
 Temporary public instance (`.github/workflows/builder-deploy.yml`, "Builder Deploy"): launched by hand from
 GitHub → Actions → Builder Deploy → *Run workflow* (pick the branch and the duration, 5–30 min). The run builds

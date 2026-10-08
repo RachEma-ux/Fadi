@@ -4,6 +4,8 @@
 et acceptation du maître d'ouvrage en attente** (7 octobre 2026). Cadre : `cahier-planche.md` §8 (lot 6), §4.22, §4.23,
 MO-4 (« booléen de maillage »), D-013 (manifold-3d, Apache-2.0).
 
+> **Accepté par le maître d'ouvrage le 8 octobre 2026 (D-174)** ; fiches du lot à l'état « disponible ».
+
 ## Ce qui est livré
 
 | Tâche | Contenu | Fichiers | Fiche |

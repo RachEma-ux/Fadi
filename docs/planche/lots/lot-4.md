@@ -6,6 +6,8 @@ recettes navigateur exécutées ici ; CI GitHub et acceptation du maître d'ouvr
 l'implémentation des 20 outils « prévus » (grisés avec leur lot) en une fois ; les trois lots sont livrés ensemble mais
 restent trois comptes rendus et trois jeux de critères.
 
+> **Accepté par le maître d'ouvrage le 8 octobre 2026 (D-174)** ; fiches du lot à l'état « disponible ».
+
 ## Ce qui est livré
 
 Onze outils : six machines d'états **pures** (`packages/planche-model/src/outils/`) et cinq outils de caméra tenus par la vue
