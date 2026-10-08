@@ -11,7 +11,7 @@ import { pool } from "../db/client.js";
 import { basculerAncienMoteur } from "../db/bascule.js";
 
 const app = createApp();
-const CONTRAT = "atelier-commands/1";
+const CONTRAT = "atelier-commands/2";
 const m = (value: number) => ({ value, unit: "m" });
 const pt = (x: number, y: number) => ({ x, y, frame: "local", unit: "m" });
 
