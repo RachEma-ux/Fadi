@@ -104,6 +104,19 @@ describe("noyau exact (P2-1, D-177) — opérations", () => {
     expect(r.faces).toBe(6);
   });
 
+  it("STEP à plusieurs solides : comptés, importés un par un par leur rang, refusés en bloc", () => {
+    const deux = M.executer({ type: "booleen", op: "union", a: { extrusion: { profil: carre(1), z0: 0, hauteur: 1 } }, b: { extrusion: { profil: [{ x: 3, y: 0 }, { x: 5, y: 0 }, { x: 5, y: 2 }, { x: 3, y: 2 }], z0: 0, hauteur: 1 } } });
+    expect(deux.solides).toBe(2);
+    const step = M.exporterStep(deux.brep);
+    expect(M.compterSolidesStep(step)).toBe(2);
+    const volumes = [0, 1].map((i) => M.executer({ type: "import-step", step, solide: i }).volume).sort((a, b) => a - b);
+    expect(volumes[0]).toBeCloseTo(1, 6);
+    expect(volumes[1]).toBeCloseTo(4, 6);
+    expect(() => M.executer({ type: "import-step", step })).toThrow(/2 solides/);
+    expect(() => M.executer({ type: "import-step", step, solide: 2 })).toThrow(/hors du fichier/);
+    expect(() => validerOperation({ type: "import-step", step, solide: -1 })).toThrow(/rang/);
+  });
+
   it("mailler un brep relu donne le même maillage que le résultat", () => {
     const c = M.executer({ type: "extrusion", extrusion: { profil: carre(1), z0: 0, hauteur: 1 } });
     expect(M.mailler(c.brep)).toEqual(c.maillage);

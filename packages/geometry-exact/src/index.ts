@@ -38,7 +38,7 @@ export type OperationExacte =
   | { type: "booleen"; op: "union" | "soustraction" | "intersection"; a: OperandeExacte; b: OperandeExacte }
   | { type: "trou"; solide: { brep: string; pose?: Pose }; centre: Point3; direction: Point3; diametre: number; profondeur: number | null }
   | { type: "coque"; solide: { brep: string; pose?: Pose }; epaisseur: number; ouvrirDessus: boolean }
-  | { type: "import-step"; step: string };
+  | { type: "import-step"; step: string; solide?: number };
 
 export interface MaillageExact { positions: number[]; indices: number[] }
 
@@ -165,7 +165,11 @@ export function validerOperation(brut: unknown): OperationExacte {
       const s = o["step"];
       if (typeof s !== "string" || !/^ISO-10303-21;/.test(s.trimStart())) throw new ErreurExacte("step", "fichier STEP (ISO-10303-21) attendu");
       if (s.length > 64 * 1024 * 1024) throw new ErreurExacte("step", "fichier trop volumineux (64 Mo au plus)");
-      return { type: "import-step", step: s };
+      // `solide` : rang (0..n−1) du solide retenu dans un fichier qui en contient plusieurs (un objet par solide).
+      const sol = o["solide"];
+      if (sol === undefined || sol === null) return { type: "import-step", step: s };
+      if (typeof sol !== "number" || !Number.isInteger(sol) || sol < 0) throw new ErreurExacte("solide", "rang de solide entier ≥ 0 attendu");
+      return { type: "import-step", step: s, solide: sol };
     }
     default:
       throw new ErreurExacte("type", `opération inconnue : ${String(o["type"])}`);
@@ -289,9 +293,16 @@ export class MoteurExact {
           forme = garder(k.cut(s, cavite));
           break;
         }
-        case "import-step":
-          forme = garder(k.importStep(op.step));
+        case "import-step": {
+          const tout = garder(k.importStep(op.step));
+          const sols = k.getSubShapes(tout, "solid");
+          if (op.solide !== undefined) {
+            if (op.solide >= sols.length) throw new ErreurExacte("solide", `rang ${op.solide} hors du fichier (${sols.length} solide(s))`);
+            forme = garder(sols[op.solide]!);
+          } else if (sols.length > 1) throw new ErreurExacte("solide", `${sols.length} solides dans le fichier : importez-les un par un (champ « solide »)`);
+          else forme = tout;
           break;
+        }
       }
       return this.solide(forme);
     } finally {
@@ -312,6 +323,13 @@ export class MoteurExact {
   }
 
   /** Maillage seul d'un brep (relecture, documents). */
+  /** Nombre de solides d'un fichier STEP (un `solide-exact` par solide à l'import ; 0 si le fichier n'en contient aucun). */
+  compterSolidesStep(step: string): number {
+    const op = validerOperation({ type: "import-step", step }) as { step: string };
+    const s = this.k.importStep(op.step);
+    try { return this.k.getSubShapes(s, "solid").length; } finally { this.k.release(s); }
+  }
+
   mailler(brepBase64: string): MaillageExact {
     const s = this.k.fromBREPBinary(depuisBase64(brep(brepBase64, "brep")));
     try { return this.maillage(s); } finally { this.k.release(s); }

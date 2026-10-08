@@ -3,7 +3,7 @@ import { appliquerLot, CONTRAT_COMMANDES, CONTRATS_ACCEPTES } from "./commandes/
 import { ErreurCommande } from "./commandes/base.js";
 import { modeleVide } from "./modele.js";
 import { maillageObjet } from "./projection/maillage.js";
-import { emprisePosee, positionsPosees, volumeMaillage } from "./solide-exact.js";
+import { allegerCommandeExacte, emprisePosee, positionsPosees, volumeMaillage } from "./solide-exact.js";
 import { exporterIfc } from "./echanges/ifc.js";
 import { quantites } from "./quantites.js";
 import type { Occurrence } from "./modele.js";
@@ -74,5 +74,18 @@ describe("solide exact (P2-1) — modèle pur", () => {
   it("emprisePosee / volumeMaillage : helpers purs", () => {
     expect(emprisePosee({ positions: [1, 0, 0] }, { x: 0, y: 0 }, 90)[0]!.y).toBeCloseTo(1, 9);
     expect(volumeMaillage({ positions: P, indices: I })).toBeCloseTo(1, 12);
+  });
+});
+
+describe("allègement d'une commande exacte pour le serveur", () => {
+  it("retire la géométrie recalculée par le serveur, garde l'opération et l'empreinte ; les autres commandes passent telles quelles", () => {
+    const c = { type: "solideExact.creer", params: { ...base({ nom: "Tube", operation: { type: "revolution", sources: ["esq-1"], libelle: "Révolution", entrees: { type: "revolution" } } }) } };
+    const a = allegerCommandeExacte(c);
+    expect(Object.keys(a.params).sort()).toEqual(["empreinteBrep", "niveauId", "nom", "operation"]);
+    expect(a.params["empreinteBrep"]).toBe("0123456789abcdef");
+    expect((a.params["operation"] as unknown as { entrees: unknown }).entrees).toEqual({ type: "revolution" });
+    expect(c.params["brep"]).toBe(BREP);
+    const m = { type: "mur.tracer", params: { a: 1 } };
+    expect(allegerCommandeExacte(m)).toBe(m);
   });
 });

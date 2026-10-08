@@ -387,14 +387,22 @@ atelierCommandsRouter.post("/import-step", raw({ type: () => true, limit: LIMITE
   }
   const step = octets.toString("utf8");
   try {
+    // Un `solide-exact` par solide du fichier (assemblage ou corps disjoints) : chaque commande désigne son rang ; un
+    // fichier sans solide est refusé nommément.
+    const nombre = (await moteurExact()).compterSolidesStep(step);
+    if (!nombre) {
+      invalide(res, "Le fichier STEP ne contient aucun solide.", "fichier");
+      return;
+    }
+    const nom = source.replace(/\.(step|stp)$/i, "");
     const sortie = await db.transaction(async (tx) => {
       await lockProject(tx, project.id);
-      const commande = { type: TYPE_CREER_EXACT, params: { niveauId, nom: source.replace(/\.(step|stp)$/i, ""), operation: { type: "import-step", sources: [], libelle: `Import STEP ${source}`, entrees: { type: "import-step", step } } } };
-      const r = await appliquerCommandesInternes(tx, project.id, req.user!.id, [commande], `Import STEP ${source}`);
+      const commandes = Array.from({ length: nombre }, (_, i) => ({ type: TYPE_CREER_EXACT, params: { niveauId, nom: nombre === 1 ? nom : `${nom} (${i + 1}/${nombre})`, operation: { type: "import-step", sources: [], libelle: `Import STEP ${source}${nombre === 1 ? "" : ` — solide ${i + 1}/${nombre}`}`, entrees: { type: "import-step", step, solide: i } } } }));
+      const r = await appliquerCommandesInternes(tx, project.id, req.user!.id, commandes, `Import STEP ${source}`);
       return { revision: r.revision, reponse: r.reponse };
     });
     void traiterEvenements(project.id).catch(() => undefined);
-    res.json({ source, revision: sortie.revision, effets: (sortie.reponse as { effets?: unknown }).effets ?? null });
+    res.json({ source, solides: nombre, revision: sortie.revision, effets: (sortie.reponse as { effets?: unknown }).effets ?? null });
   } catch (err) {
     if (err instanceof EchecLot) {
       res.status(err.resultat.status).json(err.resultat.reponse);

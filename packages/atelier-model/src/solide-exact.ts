@@ -38,3 +38,18 @@ export function volumeMaillage(maillage: { positions: readonly number[]; indices
   }
   return Math.abs(v) / 6;
 }
+
+/** Commande minimale (type + params) telle que le bus la transporte. */
+type CommandeBrute = { type: string; params: Record<string, unknown>; cibles?: string[] };
+
+/**
+ * Version « transport » d'une commande `solideExact.creer` : le serveur recalcule brep, maillage, volume, aire, faces et
+ * moteur depuis `operation.entrees` et n'en lit que l'empreinte annoncée ; les envoyer ferait dépasser la taille admise
+ * d'un lot dès qu'un solide est détaillé. Le réducteur local, lui, garde la commande complète. Toute autre commande
+ * est rendue telle quelle.
+ */
+export function allegerCommandeExacte<C extends CommandeBrute>(c: C): C {
+  if (c.type !== "solideExact.creer") return c;
+  const { brep: _b, maillage: _m, volume: _v, aire: _a, faces: _f, moteur: _mo, versionMoteur: _vm, ...reste } = c.params;
+  return { ...c, params: reste };
+}

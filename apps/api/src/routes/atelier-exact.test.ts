@@ -95,6 +95,15 @@ describe("Solides exacts (P2-1) : revalidation par le serveur, STEP, IFC", () =>
     const importe = Object.values(m3.objets as Record<string, { classe: string; params: { nom: string; volume: number; operation: { type: string } } }>).find((x) => x.classe === "solide-exact" && x.params.operation.type === "import-step")!;
     expect(importe.params.nom).toBe("piece");
     expect(importe.params.volume).toBeCloseTo(12, 6);
+    // Deux solides disjoints dans un seul STEP : deux objets, nommés par leur rang.
+    const deux = M.executer({ type: "booleen", op: "union", a: { extrusion: { profil: carre(1, 0, 0), z0: 0, hauteur: 1 } }, b: { extrusion: { profil: carre(2, 5, 0), z0: 0, hauteur: 1 } } });
+    const imp2 = await client.post(`${base}/import-step?niveauId=rdc`).set("X-File-Name", "deux.step").set("Content-Type", "application/octet-stream").send(Buffer.from(M.exporterStep(deux.brep)));
+    expect(imp2.status, JSON.stringify(imp2.body)).toBe(200);
+    expect(imp2.body.solides).toBe(2);
+    const m4 = (await client.get(`${base}/model`)).body.modele;
+    const parts = Object.values(m4.objets as Record<string, { classe: string; params: { nom: string; volume: number } }>).filter((x) => x.classe === "solide-exact" && /^deux \(/.test(x.params.nom));
+    expect(parts.map((x) => x.params.nom).sort()).toEqual(["deux (1/2)", "deux (2/2)"]);
+    expect(parts.map((x) => x.params.volume).sort((a, b) => a - b).map((v) => Math.round(v * 1e6) / 1e6)).toEqual([1, 4]);
     expect((await client.post(`${base}/import-step`).send("ISO-10303-21;")).status).toBe(400);
     expect((await client.get(`${base}/solides-exacts/inconnu/export.step`)).status).toBe(404);
 
@@ -102,6 +111,6 @@ describe("Solides exacts (P2-1) : revalidation par le serveur, STEP, IFC", () =>
     const ifc = await client.get(`/projects/${pid}/documents/atelier/modele.ifc`);
     expect(ifc.status).toBe(200);
     expect(ifc.text).toContain("Fadi_SolideExact");
-    expect((ifc.text.match(/'solide-exact'/g) ?? []).length).toBe(3);
+    expect((ifc.text.match(/'solide-exact'/g) ?? []).length).toBe(5); // se-1, se-5, piece, deux (1/2), deux (2/2)
   }, 120000);
 });
