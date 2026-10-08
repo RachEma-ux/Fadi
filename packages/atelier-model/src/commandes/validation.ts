@@ -21,6 +21,9 @@ import { enveloppeConvexe } from "../echanges/import-ifc.js";
 import { emprisePosee } from "../solide-exact.js";
 import { empriseMaillage, POSE_NULLE, positionsPosees3 } from "../ontologies/mechanical/geometrie.js";
 import { DDL_LIAISON, TYPES_LIAISON } from "../ontologies/mechanical/liaisons.js";
+import { AVEC_AILE, AVEC_EPAISSEUR, FORMES_SECTION, sectionDepuisCatalogue } from "../ontologies/structure/sections.js";
+import type { LigneCatalogue } from "../catalogues/csv-source.js";
+import type { SectionStructure } from "../modele.js";
 
 type Brut = Record<string, unknown>;
 
@@ -416,6 +419,136 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     if ((type === "distance" || type === "glissiere") && valeur !== null && valeur < 0) throw new ErreurCommande("invalide", "valeur", "valeur négative refusée");
     return { type, a, b, pa: lireVecteur3(p, "pa", { x: 0, y: 0, z: 0 }), da: dir("da", { x: 0, y: 0, z: 1 }), ea: dir("ea", { x: 1, y: 0, z: 0 }), pb: lireVecteur3(p, "pb", { x: 0, y: 0, z: 0 }), db: dir("db", { x: 0, y: 0, z: 1 }), eb: dir("eb", { x: 1, y: 0, z: 0 }), valeur, etat: lire.chaineOuNull(p, "etat"), ddl: DDL_LIAISON[type] };
   },
+  // Ontologie structure (P2-3).
+  poutre(etat, p) {
+    const a = lire.point(p, "a")!, b = lire.point(p, "b")!;
+    const za = lire.nombre(p, "za", { optionnel: true }) ?? 0;
+    const zb = lire.nombre(p, "zb", { optionnel: true }) ?? za;
+    if (Math.hypot(b.x - a.x, b.y - a.y, zb - za) < TOLERANCE_REDUCTEUR) throw new ErreurCommande("invalide", "b", "élément de longueur nulle");
+    const trameId = lire.chaineOuNull(p, "trameId");
+    if (trameId !== null && etat.objets[trameId]?.classe !== "trame") throw new ErreurCommande("precondition", "trameId", `trame inconnue : ${trameId}`);
+    return {
+      nom: lire.chaineOuNull(p, "nom"),
+      role: lire.enumeration(p, "role", ["poutre", "longrine", "contreventement", "tirant", "lisse", "panne", "chevron", "diagonale"] as const, "poutre"),
+      a, b, za, zb,
+      section: lireSection(etat, p, "section"),
+      rotation: lire.angle(p, "rotation", { optionnel: true }) ?? { value: 0, unit: "deg" },
+      materiau: lire.enumeration(p, "materiau", ["acier", "beton", "bois", "autre"] as const, "acier"),
+      materiauNom: lire.chaineOuNull(p, "materiauNom"),
+      prefabrique: lire.booleen(p, "prefabrique", false),
+      trameId,
+    };
+  },
+  trame(_etat, p) {
+    const axes = (cle: string) => {
+      const v = p[cle];
+      if (!Array.isArray(v) || v.length < 1 || v.length > 200) throw new ErreurCommande("invalide", cle, `« ${cle} » : liste de 1 à 200 axes { nom, position }`);
+      const out = v.map((x, i) => {
+        const q = x as { nom?: unknown; position?: unknown };
+        if (!q || typeof q.nom !== "string" || !q.nom.trim() || typeof q.position !== "number" || !Number.isFinite(q.position)) throw new ErreurCommande("invalide", `${cle}[${i}]`, "axe { nom, position (m) } attendu");
+        return { nom: q.nom.trim(), position: q.position };
+      });
+      const noms = new Set(out.map((x) => x.nom));
+      if (noms.size !== out.length) throw new ErreurCommande("invalide", cle, "noms d'axes en double");
+      for (let i = 0; i + 1 < out.length; i++) if (Math.abs(out[i]!.position - out[i + 1]!.position) < TOLERANCE_REDUCTEUR) throw new ErreurCommande("invalide", cle, "deux axes confondus");
+      return out;
+    };
+    const g = p["generation"];
+    let generation: { poteaux: number; poutres: number; hauteur: number } | null = null;
+    if (g && typeof g === "object") {
+      const q = g as { poteaux?: unknown; poutres?: unknown; hauteur?: unknown };
+      if (typeof q.poteaux !== "number" || typeof q.poutres !== "number" || typeof q.hauteur !== "number") throw new ErreurCommande("invalide", "generation", "{ poteaux, poutres, hauteur } attendu");
+      generation = { poteaux: q.poteaux, poutres: q.poutres, hauteur: q.hauteur };
+    }
+    return { nom: lire.chaine(p, "nom").trim() || "Trame", origine: lire.point(p, "origine")!, angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" }, files: axes("files"), rangs: axes("rangs"), generation };
+  },
+  plaque(_etat, p) {
+    const contour = lire.points(p, "contour", { min: 3 });
+    if (Math.abs(contour.reduce((acc, q, i) => { const r = contour[(i + 1) % contour.length]!; return acc + q.x * r.y - r.x * q.y; }, 0)) < 1e-6) throw new ErreurCommande("invalide", "contour", "contour dégénéré (aire nulle)");
+    return {
+      nom: lire.chaineOuNull(p, "nom"),
+      contour,
+      trous: lire.trous(p),
+      epaisseur: lire.longueur(p, "epaisseur", { strict: true })!,
+      z: lire.nombre(p, "z", { optionnel: true }) ?? 0,
+      materiau: lire.enumeration(p, "materiau", ["acier", "beton", "bois", "autre"] as const, "acier"),
+      materiauNom: lire.chaineOuNull(p, "materiauNom"),
+      prefabrique: lire.booleen(p, "prefabrique", false),
+    };
+  },
+  "assemblage-structurel"(etat, p) {
+    const elements = p["elements"];
+    if (!Array.isArray(elements) || !elements.length || elements.length > 4 || !elements.every((x) => typeof x === "string")) throw new ErreurCommande("invalide", "elements", "« elements » : 1 à 4 identifiants d'éléments (poutres, poteaux, plaques)");
+    for (const e of elements as string[]) {
+      const o = etat.objets[e];
+      if (!o) throw new ErreurCommande("precondition", "elements", `objet inconnu : ${e}`);
+      if (o.classe !== "poutre" && o.classe !== "poteau" && o.classe !== "plaque") throw new ErreurCommande("precondition", "elements", `${e} (${o.classe}) : un assemblage relie des poutres, poteaux ou plaques`);
+    }
+    const pl = p["platine"];
+    if (!pl || typeof pl !== "object") throw new ErreurCommande("invalide", "platine", "« platine » : { largeur, hauteur, epaisseur } (m) requis");
+    const q = pl as Brut;
+    const platine = { largeur: lire.longueur(q, "largeur", { strict: true })!, hauteur: lire.longueur(q, "hauteur", { strict: true })!, epaisseur: lire.longueur(q, "epaisseur", { strict: true })! };
+    const bb = p["boulons"];
+    let boulons: { rangees: number; parRangee: number; diametre: { value: number; unit: "m" }; entraxe: { value: number; unit: "m" }; longueur: { value: number; unit: "m" } } | null = null;
+    if (bb !== undefined && bb !== null) {
+      if (typeof bb !== "object") throw new ErreurCommande("invalide", "boulons", "« boulons » : { rangees, parRangee, diametre, entraxe, longueur }");
+      const r = bb as Brut;
+      boulons = { rangees: lire.nombre(r, "rangees", { entier: true, min: 1, max: 20 })!, parRangee: lire.nombre(r, "parRangee", { entier: true, min: 1, max: 20 })!, diametre: lire.longueur(r, "diametre", { strict: true })!, entraxe: lire.longueur(r, "entraxe", { strict: true })!, longueur: lire.longueur(r, "longueur", { strict: true })! };
+      if (boulons.entraxe.value <= boulons.diametre.value) throw new ErreurCommande("invalide", "boulons.entraxe", "entraxe inférieur au diamètre des boulons");
+    }
+    return {
+      nom: lire.chaineOuNull(p, "nom"),
+      type: lire.enumeration(p, "type", ["platine-about", "platine-pied", "gousset", "cornieres", "eclisse"] as const),
+      elements: [...new Set(elements as string[])],
+      position: lire.point(p, "position")!,
+      z: lire.nombre(p, "z", { optionnel: true }) ?? 0,
+      angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" },
+      platine,
+      boulons,
+    };
+  },
+  soudure(etat, p) {
+    const a = lire.objet(etat, p, "a"), b = lire.objet(etat, p, "b");
+    if (a === b) throw new ErreurCommande("invalide", "b", "une soudure relie deux éléments différents");
+    for (const [cle, id] of [["a", a], ["b", b]] as const) {
+      const c = etat.objets[id]!.classe;
+      if (c !== "poutre" && c !== "poteau" && c !== "plaque") throw new ErreurCommande("precondition", cle, `${id} (${c}) : une soudure relie des poutres, poteaux ou plaques`);
+    }
+    return {
+      type: lire.enumeration(p, "type", ["angle", "bout-a-bout", "bouchon"] as const, "angle"),
+      a, b,
+      gorge: lire.longueur(p, "gorge", { strict: true })!,
+      longueur: lire.longueur(p, "longueur", { strict: true })!,
+      position: lire.point(p, "position")!,
+      z: lire.nombre(p, "z", { optionnel: true }) ?? 0,
+      intermittente: lire.booleen(p, "intermittente", false),
+    };
+  },
+  armature(etat, p) {
+    const hoteId = lire.chaineOuNull(p, "hoteId");
+    if (hoteId !== null) {
+      const h = etat.objets[hoteId];
+      if (!h) throw new ErreurCommande("precondition", "hoteId", `objet inconnu : ${hoteId}`);
+      if (!["poutre", "poteau", "plaque", "dalle"].includes(h.classe)) throw new ErreurCommande("precondition", "hoteId", `${hoteId} (${h.classe}) : une armature s'héberge dans une poutre, un poteau, une plaque ou une dalle`);
+    }
+    const forme = lire.enumeration(p, "forme", ["droite", "cadre", "etrier", "epingle", "u"] as const, "droite");
+    const points = lire.points(p, "points", { min: 2 });
+    if ((forme === "cadre" || forme === "etrier") && points.length < 3) throw new ErreurCommande("invalide", "points", "cadre ou étrier : au moins trois points");
+    const nombre = lire.nombre(p, "nombre", { entier: true, min: 1, max: 10000, optionnel: true }) ?? 1;
+    const espacement = lire.longueur(p, "espacement", { optionnel: true, strict: true });
+    if (nombre > 1 && !espacement) throw new ErreurCommande("invalide", "espacement", "plusieurs barres : espacement requis");
+    return { nom: lire.chaineOuNull(p, "nom"), hoteId, forme, diametre: lire.longueur(p, "diametre", { strict: true })!, points, z: lire.nombre(p, "z", { optionnel: true }) ?? 0, nombre, espacement, nuance: lire.chaineOuNull(p, "nuance") };
+  },
+  coulage(etat, p) {
+    const el = p["elements"] ?? [];
+    if (!Array.isArray(el) || !el.every((x) => typeof x === "string")) throw new ErreurCommande("invalide", "elements", "« elements » : liste d'identifiants");
+    for (const e of el as string[]) {
+      const o = etat.objets[e];
+      if (!o) throw new ErreurCommande("precondition", "elements", `objet inconnu : ${e}`);
+      if (!["poutre", "poteau", "plaque", "dalle"].includes(o.classe)) throw new ErreurCommande("precondition", "elements", `${e} (${o.classe}) : un coulage groupe des poutres, poteaux, plaques ou dalles`);
+    }
+    return { nom: lire.chaine(p, "nom").trim() || "Coulage", numero: lire.chaineOuNull(p, "numero"), elements: [...new Set(el as string[])], prefabrique: lire.booleen(p, "prefabrique", false) };
+  },
   "bloc-occurrence"(_etat, p) {
     return { position: lire.point(p, "position")!, angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" }, echelle: lire.nombre(p, "echelle", { optionnel: true, min: 0 }) ?? 1, ...(lire.booleen(p, "miroir", false) ? { miroir: true as const } : {}) };
   },
@@ -599,6 +732,45 @@ function tangentesDe(p: Brut, forme: string, n: number): { tangentes?: ({ x: num
     return { x: q.x, y: q.y };
   });
   return t.some((x) => x !== null) ? { tangentes: t } : {};
+}
+
+/**
+ * Section de structure (P2-3) : soit saisie { forme, largeur, hauteur, epaisseur?, epaisseurAile? } (m), soit tirée
+ * d'un catalogue sourcé du projet { catalogueId, designation } (D-180). Rien n'est supposé : une dimension requise
+ * par la forme et absente refuse la commande.
+ */
+function lireSection(etat: ModeleAtelier, p: Brut, cle: string): SectionStructure {
+  const v = p[cle];
+  if (!v || typeof v !== "object") throw new ErreurCommande("invalide", cle, `« ${cle} » : section { forme, largeur, hauteur, … } ou { catalogueId, designation } requise`);
+  const q = v as Brut;
+  if (typeof q["catalogueId"] === "string") {
+    const cat = etat.definitions[q["catalogueId"]];
+    if (!cat || cat.classe !== ("catalogue" as typeof cat.classe)) throw new ErreurCommande("precondition", `${cle}.catalogueId`, `catalogue inconnu : ${q["catalogueId"]}`);
+    const designation = lire.chaine(q, "designation").trim();
+    const lignes = (cat.params["lignes"] as LigneCatalogue[] | undefined) ?? [];
+    const ligne = lignes.find((l) => String(l.valeurs["designation"] ?? "").trim().toLowerCase() === designation.toLowerCase());
+    if (!ligne) throw new ErreurCommande("precondition", `${cle}.designation`, `« ${designation} » absent du catalogue ${cat.nom}`);
+    try { return sectionDepuisCatalogue(cat.id, ligne); } catch (e) { throw new ErreurCommande("precondition", `${cle}.designation`, e instanceof Error ? e.message : String(e)); }
+  }
+  const forme = lire.enumeration(q, "forme", FORMES_SECTION);
+  const largeur = lire.longueur(q, "largeur", { strict: true })!;
+  const hauteur = forme === "cercle" ? largeur : lire.longueur(q, "hauteur", { strict: true })!;
+  const epaisseur = lire.longueur(q, "epaisseur", { optionnel: true, strict: true });
+  const epaisseurAile = lire.longueur(q, "epaisseurAile", { optionnel: true, strict: true });
+  if (AVEC_EPAISSEUR.includes(forme) && !epaisseur) throw new ErreurCommande("invalide", `${cle}.epaisseur`, `${forme} : épaisseur d'âme (ou de paroi) requise`);
+  if (AVEC_AILE.includes(forme) && !epaisseurAile && !epaisseur) throw new ErreurCommande("invalide", `${cle}.epaisseurAile`, `${forme} : épaisseur d'aile requise`);
+  if (epaisseur && epaisseur.value * 2 >= Math.min(largeur.value, hauteur.value)) throw new ErreurCommande("invalide", `${cle}.epaisseur`, "épaisseur incompatible avec les dimensions de la section");
+  const masse = lire.nombre(q, "masseLineique", { optionnel: true, min: 0 });
+  const profilBrut = q["profil"];
+  const profil = profilBrut && typeof profilBrut === "object" ? (profilBrut as { catalogueId?: unknown; designation?: unknown; source?: unknown }) : null;
+  return {
+    forme, largeur, hauteur,
+    epaisseur: AVEC_EPAISSEUR.includes(forme) ? epaisseur : null,
+    epaisseurAile: AVEC_AILE.includes(forme) ? (epaisseurAile ?? epaisseur) : null,
+    profil: profil && typeof profil.catalogueId === "string" && typeof profil.designation === "string" && typeof profil.source === "string" ? { catalogueId: profil.catalogueId, designation: profil.designation, source: profil.source } : null,
+    // Masse linéique : seulement si elle vient d'un catalogue sourcé (profil), jamais saisie à la main (R3).
+    masseLineique: profil && typeof profil.source === "string" && masse ? masse : null,
+  };
 }
 
 /** Vecteur 3D { x, y, z } (m ou direction), valeur par défaut si absent. */

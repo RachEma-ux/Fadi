@@ -184,6 +184,26 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
     }
     case "liaison":
       return o;
+    // Ontologie structure (P2-3) : les tracés et positions suivent ; les sections (dimensions typées) ne changent pas.
+    case "poutre":
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'un élément de structure refusée (section typée)`);
+      return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b), ...(t.type === "miroir" ? { rotation: { value: -o.params.rotation.value, unit: "deg" as const } } : {}) } };
+    case "trame": {
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'une trame refusée (entraxes typés)`);
+      const angle = t.type === "miroir" ? 2 * axeMiroir(t) - o.params.angle.value : o.params.angle.value + rot;
+      return { ...o, params: { ...o.params, origine: T(o.params.origine), angle: { value: Math.round(angle * 1e9) / 1e9, unit: "deg" }, ...(t.type === "miroir" ? { rangs: o.params.rangs.map((r) => ({ ...r, position: -r.position })) } : {}) } };
+    }
+    case "plaque":
+      return { ...o, params: { ...o.params, ...contourT(o.params, t) } };
+    case "assemblage-structurel":
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'un assemblage structurel refusée (platine et boulons typés)`);
+      return { ...o, params: { ...o.params, position: T(o.params.position), angle: { value: Math.round((t.type === "miroir" ? 2 * axeMiroir(t) - o.params.angle.value : o.params.angle.value + rot) * 1e9) / 1e9, unit: "deg" } } };
+    case "soudure":
+      return { ...o, params: { ...o.params, position: T(o.params.position) } };
+    case "armature":
+      return { ...o, params: { ...o.params, points: o.params.points.map(T) } };
+    case "coulage":
+      return o;
     case "solide-exact": {
       // Pose en plan (P2-1) : translation et rotation autour de z ; miroir et échelle d'un B-rep : refusés (le modèle
       // pur ne transforme pas le brep ; une opération exacte le ferait).
@@ -233,6 +253,15 @@ function echelleNonUniforme(o: OccurrenceQuelconque, t: Transformation & { type:
     case "assemblage":
     case "liaison":
       throw refus("objet mécanique (P2-2)");
+    case "poutre":
+    case "trame":
+    case "assemblage-structurel":
+    case "soudure":
+    case "armature":
+    case "coulage":
+      throw refus("objet de structure (P2-3 : sections et entraxes typés)");
+    case "plaque":
+      return { ...o, params: { ...o.params, ...contourT(o.params, t) } };
     case "esquisse": {
       const q = o.params;
       if (q.forme === "arc") throw refus("arc");

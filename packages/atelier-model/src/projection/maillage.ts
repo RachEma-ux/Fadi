@@ -20,6 +20,7 @@ import { corpsMenuiserie } from "../menuiserie.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { positionsPosees } from "../solide-exact.js";
 import { positionsPosees3 } from "../ontologies/mechanical/geometrie.js";
+import { maillageArmature, maillageAssemblageStructurel, maillagePoutre } from "../ontologies/structure/geometrie.js";
 
 export interface Maillage {
   objetId: string;
@@ -49,6 +50,10 @@ export const COULEURS_3D: Record<string, string> = {
   "objet-importe": "#b9c4cc",
   "solide-exact": "#8fa3b8",
   "piece-mecanique": "#9aa5b1",
+  poutre: "#8a7f72",
+  plaque: "#7a8794",
+  "assemblage-structurel": "#6f7d8c",
+  armature: "#9c6b3c",
 };
 
 // ---------------------------------------------------------------------------
@@ -701,6 +706,26 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
     }
     case "assemblage":
     case "liaison":
+      break;
+    // Ontologie structure (P2-3) : maillages purs dans le repère du niveau (z relatif), copiés dans le tampon.
+    case "poutre":
+    case "plaque":
+    case "assemblage-structurel":
+    case "armature": {
+      const m = o.classe === "poutre" ? maillagePoutre(o.params) : o.classe === "assemblage-structurel" ? maillageAssemblageStructurel(o.params) : o.classe === "armature" ? maillageArmature(o.params) : null;
+      if (o.classe === "plaque") {
+        t.prisme(o.params.contour, o.params.trous, z + o.params.z, z + o.params.z + o.params.epaisseur.value);
+        break;
+      }
+      if (!m) break;
+      const base = t.positions.length / 3;
+      for (let i = 0; i < m.positions.length; i += 3) t.sommet(m.positions[i]!, m.positions[i + 1]!, z + m.positions[i + 2]!);
+      for (const i of m.indices) t.indices.push(base + i);
+      break;
+    }
+    case "trame":
+    case "soudure":
+    case "coulage":
       break;
     case "solide-exact": {
       // Maillage dérivé du brep par le noyau exact (P2-1), posé (position, angle) ; z relatif au niveau.

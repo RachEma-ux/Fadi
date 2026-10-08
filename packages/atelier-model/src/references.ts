@@ -8,6 +8,7 @@ import type { ModeleAtelier, OccurrenceQuelconque, Reference } from "./modele.js
 import { CLASSES } from "./ontologie.js";
 import { sommetsBloc } from "./blocs-places.js";
 import { pt, type Point2 } from "./unites.js";
+import { intersectionsTrame } from "./ontologies/structure/trame.js";
 
 const milieu = (a: Point2, b: Point2): Point2 => pt((a.x + b.x) / 2, (a.y + b.y) / 2);
 
@@ -92,6 +93,25 @@ export function pointCaracteristique(etat: ModeleAtelier, objetId: string, carac
     case "assemblage":
       return nom === "centre" ? o.params.position : null;
     case "liaison":
+      return null;
+    case "poutre":
+      if (nom === "arete-debut") return o.params.a;
+      if (nom === "arete-fin") return o.params.b;
+      if (nom === "axe" || nom === "centre") return milieu(o.params.a, o.params.b);
+      return null;
+    case "trame":
+      if (nom === "centre") return o.params.origine;
+      if (nom === "sommet" && index !== null) return intersectionsTrame(o.params)[index]?.point ?? null;
+      return null;
+    case "plaque":
+      return nom === "centre" || nom === "contour" ? (() => { const c = centroide(o.params.contour); return pt(c.x, c.y); })() : null;
+    case "assemblage-structurel":
+    case "soudure":
+      return nom === "centre" ? o.params.position : null;
+    case "armature":
+      if (nom === "sommet" && index !== null) return o.params.points[index] ?? null;
+      return nom === "centre" ? (() => { const c = centroide(o.params.points); return pt(c.x, c.y); })() : null;
+    case "coulage":
       return null;
     case "cotation":
     case "texte":

@@ -38,7 +38,7 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
 - Proposition acceptée : `docs/atelier-drawall.md`. Référentiel : `docs/drawall/`.
 - Lots P1 (Atelier 0–9, Planche 1–7) acceptés le 8 octobre 2026 (D-174). Étape P2 : cahier `docs/atelier-cahier-p2.md`
   **validé** (D-176), lots **P2-0 et P2-1 livrés et acceptés** (`docs/atelier/lots/p2-lot-0.md`, `p2-lot-1.md`,
-  D-182, D-183), lot **P2-2 livré** (`p2-lot-2.md`, D-184 : porte P1 → P2 passée sur bâtiment + mécanique) ; exécution
+  D-182, D-183), lot **P2-2 livré** (`p2-lot-2.md`, D-184 : porte P1 → P2 passée sur bâtiment + mécanique), lot **P2-3 livré** (`p2-lot-3.md`, D-185 : ontologie `structure`) ; exécution
   continue avec décisions 10.1 déléguées au chef de projet (D-183, consignées une à une) ; décisions D-177 (OCCT = composant LGPL chargé séparément, licences
   amendées), D-178 (solveur écrit), D-179 (DWG / DGN renoncés), D-180 (catalogues CSV sourcés,
   `docs/atelier/catalogues/`), D-181 (projet mixte P.118-M). Ordre imposé P2-0 → P2-1 → P2-2 → porte P1 → P2 ; un lot à
@@ -47,6 +47,10 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
   familles, réducteurs) ; activation par projet (`ontologie.activer`, `etat.ontologies`) — une classe d'une ontologie
   inactive est refusée ; une pièce copie la géométrie de sa source, le solveur tourne dans le réducteur (navigateur et
   serveur) ; une ontologie n'importe jamais une autre ontologie directement.
+- Ontologie structure (P2-3) : `packages/atelier-model/src/ontologies/structure/` (sections, géométrie de balayage, trame,
+  assemblages soudés dérivés, réducteurs) ; identifiant `structure` activable par projet, le poteau reste au socle
+  `building.structure` ; génération de trame après aperçu et accord ; sections saisies ou de catalogue sourcé, masse
+  linéique sourcée seule retenue ; aucune constante normative (test) ; géométrie seulement, aucune vérification.
 - Noyau exact (P2-1) : `packages/geometry-exact` (occt-wasm) est le seul endroit qui importe `occt-wasm` ; le `.wasm`
   (LGPL) reste un fichier séparé, jamais chargé à l'ouverture (Web Worker à la demande, `exact/moteur-exact.ts`) ; le
   serveur (`apps/api/src/lib/atelier-exact.ts`) recalcule chaque `solideExact.creer` et fait autorité ; `occt-wasm`

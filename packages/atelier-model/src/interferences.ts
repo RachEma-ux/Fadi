@@ -14,6 +14,7 @@ import type { ModeleAtelier, OccurrenceQuelconque } from "./modele.js";
 import { etendueMur, trianguler } from "./projection/maillage.js";
 import { contoursArchitecture } from "./blocs-places.js";
 import { empriseMaillage, positionsPosees3 } from "./ontologies/mechanical/geometrie.js";
+import { empriseXY, maillagePoutre } from "./ontologies/structure/geometrie.js";
 
 export interface Corps {
   objetId: string;
@@ -89,6 +90,17 @@ export function corpsDe(etat: ModeleAtelier, o: OccurrenceQuelconque): Corps[] {
       const repere = asm && asm.classe === "assemblage" ? { position: asm.params.position, angleDeg: asm.params.angle.value, z: asm.params.z } : null;
       const e = empriseMaillage(positionsPosees3(o.params.maillage, o.params.pose, repere));
       return [c(o.params.emprise, [], z + e.z0, z + e.z1)];
+    }
+    case "plaque":
+      return [c(o.params.contour, o.params.trous, z + o.params.z, z + o.params.z + o.params.epaisseur.value)];
+    case "poutre": {
+      // Élément horizontal (P2-3) : boîte de son emprise en plan entre ses z extrêmes ; incliné : non évalué ici.
+      if (Math.abs(o.params.za - o.params.zb) > 1e-9) return [];
+      const m = maillagePoutre(o.params);
+      if (!m.indices.length) return [];
+      let z0 = Infinity, z1 = -Infinity;
+      for (let i = 2; i < m.positions.length; i += 3) { z0 = Math.min(z0, m.positions[i]!); z1 = Math.max(z1, m.positions[i]!); }
+      return [c(empriseXY(m), [], z + z0, z + z1)];
     }
     default:
       return [];

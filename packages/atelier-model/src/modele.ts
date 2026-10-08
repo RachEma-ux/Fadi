@@ -409,6 +409,134 @@ export interface ParamsLiaison {
   ddl: number;
 }
 
+// ---------------------------------------------------------------------------
+// Ontologie structure (P2-3, DA-08-01 à 19, DA-03-14, DA-10-10)
+// ---------------------------------------------------------------------------
+
+export type FormeSection = "rectangle" | "cercle" | "I" | "H" | "T" | "L" | "U" | "tube";
+export type MateriauStructure = "acier" | "beton" | "bois" | "autre";
+
+/**
+ * Section d'un élément de structure : forme et dimensions saisies (m) ou copiées d'une ligne de catalogue sourcé
+ * (D-180). Aucune valeur par défaut : une dimension absente refuse la commande. `profil` garde la provenance
+ * (catalogue du projet, désignation, source citée) ; `masseLineique` (kg/m) n'existe que sourcée par le catalogue.
+ */
+export interface SectionStructure {
+  forme: FormeSection;
+  /** Dimension dans le plan de la section selon l'axe local y (largeur d'aile, côté, diamètre). */
+  largeur: Longueur;
+  /** Dimension selon l'axe local z (hauteur de section) ; égale à la largeur pour un cercle. */
+  hauteur: Longueur;
+  /** Épaisseur d'âme (I, H, T, L, U) ou de paroi (tube) ; absente pour rectangle et cercle. */
+  epaisseur: Longueur | null;
+  /** Épaisseur d'aile (I, H, T, U) ; absente sinon. */
+  epaisseurAile: Longueur | null;
+  profil: { catalogueId: string; designation: string; source: string } | null;
+  masseLineique: number | null;
+}
+
+export type RolePoutre = "poutre" | "longrine" | "contreventement" | "tirant" | "lisse" | "panne" | "chevron" | "diagonale";
+
+/** Élément linéaire de structure (DA-08-01, 03, 06, 07, 08) : axe 3D (a → b, altitudes relatives au niveau), section, matériau déclaré. */
+export interface ParamsPoutre {
+  nom: string | null;
+  role: RolePoutre;
+  a: Point2;
+  b: Point2;
+  /** Altitude de l'axe en a et en b, relative au niveau (m) : différentes pour un élément incliné. */
+  za: number;
+  zb: number;
+  section: SectionStructure;
+  /** Rotation de la section autour de l'axe (degrés) ; 0 = hauteur verticale. */
+  rotation: Angle;
+  materiau: MateriauStructure;
+  /** Nom déclaré du matériau (nuance, classe), sans propriété inventée. */
+  materiauNom: string | null;
+  /** Élément préfabriqué (DA-08-15) ; sinon coulé ou monté en place. */
+  prefabrique: boolean;
+  trameId: string | null;
+}
+
+export interface AxeTrame {
+  nom: string;
+  /** Position le long de la direction de la trame (files : selon u ; rangs : selon n), m depuis l'origine. */
+  position: number;
+}
+
+/** Trame structurale (DA-08-04, 05) : origine, orientation, files (selon u) et rangs (selon n) nommés ; génération contrôlée de poteaux et de poutres. */
+export interface ParamsTrame {
+  nom: string;
+  origine: Point2;
+  angle: Angle;
+  files: AxeTrame[];
+  rangs: AxeTrame[];
+  /** Dernière génération faite depuis cette trame (compte des objets créés), null tant qu'aucune. */
+  generation: { poteaux: number; poutres: number; hauteur: number } | null;
+}
+
+/** Plaque (DA-08-09) : contour dans le plan, épaisseur, base relative au niveau. */
+export interface ParamsPlaque extends Contour {
+  nom: string | null;
+  epaisseur: Longueur;
+  z: number;
+  materiau: MateriauStructure;
+  materiauNom: string | null;
+  prefabrique: boolean;
+}
+
+export type TypeAssemblageStructurel = "platine-about" | "platine-pied" | "gousset" | "cornieres" | "eclisse";
+
+/** Assemblage paramétrique (DA-08-10, 12, 13) : géométrie seulement (platine, boulons) ; aucune vérification de résistance. */
+export interface ParamsAssemblageStructurel {
+  nom: string | null;
+  type: TypeAssemblageStructurel;
+  /** Éléments reliés (poutres, poteaux), 1 à 4. */
+  elements: string[];
+  position: Point2;
+  z: number;
+  angle: Angle;
+  platine: { largeur: Longueur; hauteur: Longueur; epaisseur: Longueur };
+  boulons: { rangees: number; parRangee: number; diametre: Longueur; entraxe: Longueur; longueur: Longueur } | null;
+}
+
+export type TypeSoudure = "angle" | "bout-a-bout" | "bouchon";
+
+/** Soudure (DA-08-11, DA-10-10) : relie deux éléments ; gorge et longueur saisies ; symbole en plan, pas de volume. */
+export interface ParamsSoudure {
+  type: TypeSoudure;
+  a: string;
+  b: string;
+  gorge: Longueur;
+  longueur: Longueur;
+  position: Point2;
+  z: number;
+  intermittente: boolean;
+}
+
+export type FormeArmature = "droite" | "cadre" | "etrier" | "epingle" | "u";
+
+/** Armature (DA-08-14, 18) : barres comme objets ; tracé en plan, diamètre, nombre et espacement saisis ; nuance déclarée. */
+export interface ParamsArmature {
+  nom: string | null;
+  hoteId: string | null;
+  forme: FormeArmature;
+  diametre: Longueur;
+  points: Point2[];
+  z: number;
+  nombre: number;
+  /** Espacement entre barres répétées (m) ; null pour une barre unique. */
+  espacement: Longueur | null;
+  nuance: string | null;
+}
+
+/** Coulage (DA-08-16) ou lot préfabriqué (DA-08-15) : groupe d'éléments en béton. */
+export interface ParamsCoulage {
+  nom: string;
+  numero: string | null;
+  elements: string[];
+  prefabrique: boolean;
+}
+
 export interface ParamsParClasse {
   mur: ParamsMur;
   porte: ParamsOuverture;
@@ -434,6 +562,13 @@ export interface ParamsParClasse {
   "piece-mecanique": ParamsPieceMecanique;
   assemblage: ParamsAssemblage;
   liaison: ParamsLiaison;
+  poutre: ParamsPoutre;
+  trame: ParamsTrame;
+  plaque: ParamsPlaque;
+  "assemblage-structurel": ParamsAssemblageStructurel;
+  soudure: ParamsSoudure;
+  armature: ParamsArmature;
+  coulage: ParamsCoulage;
 }
 
 export interface Occurrence<C extends Classe = Classe> {

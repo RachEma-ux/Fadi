@@ -24,6 +24,14 @@ Légende : **C** conservé · **T** transformé (dit au rapport) · **O** omis (
 
 | Classe | IFC export | IFC import | DXF export (vues) | DXF import | Paquet natif |
 | --- | --- | --- | --- | --- | --- |
+| poutre (P2-3) | C `IfcBeam` (.BEAM., rôles poutre / longrine) ou `IfcMember` (.BRACE. / .RAFTER. / .PURLIN. / .USERDEFINED.), corps tessellé du balayage de section ; rôle, section, profil, source, masse linéique, matériau en `Fadi_Structure` | — (`objet-importe`, classe d'origine conservée) | T : bande de la largeur de section et axe | — | C |
+| trame (P2-3) | C `IfcGrid` .RECTANGULAR. (files = UAxes, rangs = VAxes, `IfcGridAxis` sur polylignes) | O : non relue (déclaré) | T : axes et bulles | — | C |
+| plaque (P2-3) | C `IfcPlate` tessellée ; épaisseur, matériau, préfabriqué en `Fadi_Structure` | — (`objet-importe`) | T : contour | — | C |
+| assemblage-structurel (P2-3) | T `IfcElementAssembly` .USERDEFINED. (ObjectType `assemblage-structurel:<type>`), platine et boulons tessellés dans un seul produit ; éléments, platine, boulons en `Fadi_AssemblageStructurel` (pas d'`IfcMechanicalFastener` unitaire) | — (`objet-importe`) | T : platine en plan | — | C |
+| soudure (P2-3) | T `IfcFastener` .WELD. placé, sans volume ; type, gorge, longueur, éléments en `Fadi_Soudure` | O : non relue (sans volume) | T : symbole | — | C |
+| assemblage soudé (dérivé, DA-10-10) | C `IfcElementAssembly` .WELDED. agrégeant ses éléments (`IfcRelAggregates`), `Fadi_AssemblageSoude` | — | — | — | — (recalculé) |
+| armature (P2-3) | C `IfcReinforcingBar` (Ø nominal, aire, longueur développée, .MAIN. / .STIRRUP. / .LIGATURE.), une par objet, nombre et espacement en `Fadi_Armature` ; corps tessellé simplifié | — (`objet-importe`) | T : tracé pointillé | — | C |
+| coulage (P2-3) | C `IfcGroup` (ObjectType coulage / lot-prefabrique) + `IfcRelAssignsToGroup` ; `Fadi_Coulage` | O | — | — | C |
 | assemblage (P2-2) | C `IfcElementAssembly` (Tag = numéro) agrégeant ses pièces par `IfcRelAggregates` ; liaisons et diagnostic en `Fadi_Assemblage` | — (revient en représentations importées) | T : repère (croix et nom) | — | C (repère, pièces, liaisons) |
 | piece-mecanique (P2-2) | T `IfcBuildingElementProxy` (ObjectType `piece-mecanique`, Tag = référence), maillage posé (`IfcTriangulatedFaceSet`) ; référence, numéro, matériau, volume, empreinte brep en `Fadi_Piece` | — (`objet-importe`) | T : emprise (enveloppe convexe) | — | C (brep, maillage, pose, provenance) ; STEP : via la source exacte |
 | liaison (P2-2) | O : portée par `Fadi_Assemblage` (type, pièces, valeur), pas un produit | — | — | — | C |

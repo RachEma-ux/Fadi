@@ -4,7 +4,7 @@
  * d'objet priment sur l'orthogonal, qui prime sur la grille. Fonctions pures : testables sans DOM.
  */
 import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointDansPolygone, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
-import { contoursArchitecture, pt, traitsBloc } from "@parcours/atelier-model";
+import { contoursArchitecture, intersectionsTrame, pt, segmentsTrame, traitsBloc } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
 export type TypeAccroche = "extremite" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "tangente" | "intersection" | "proche" | "parallele" | "orthogonal" | "grille" | "libre";
@@ -131,6 +131,27 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
         break;
       case "assemblage":
         centres.push({ p: o.params.position, objetId: o.id });
+        break;
+      // Ontologie structure (P2-3).
+      case "poutre":
+        segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
+        break;
+      case "trame":
+        for (const i of intersectionsTrame(o.params)) centres.push({ p: i.point, objetId: o.id });
+        for (const sg of segmentsTrame(o.params, 1.5)) segments.push({ a: sg.a, b: sg.b, objetId: o.id, courbe: true });
+        break;
+      case "plaque":
+        contour(o.params.contour, o.id, true);
+        for (const t of o.params.trous) contour(t, o.id);
+        break;
+      case "assemblage-structurel":
+      case "soudure":
+        centres.push({ p: o.params.position, objetId: o.id });
+        break;
+      case "armature":
+        if (o.params.points.length >= 2) contour(o.params.points, o.id, o.params.forme === "cadre" || o.params.forme === "etrier");
+        break;
+      case "coulage":
         break;
       case "cotation":
         segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
@@ -307,6 +328,12 @@ export function objetSousPointeur(p: Point2, cache: ReturnType<typeof segmentsDu
       const d = Math.max(0, dist(p, c) - o.params.largeur.value / 2);
       if (d <= rayon && (!meilleur || d < meilleur.distance + 1e-9)) meilleur = { objetId: o.id, distance: Math.max(0, d - 1e-6) };
     } else if (o.classe === "texte" || o.classe === "etiquette") {
+      const d = dist(p, o.params.position);
+      if (d <= rayon * 2 && (!meilleur || d < meilleur.distance)) meilleur = { objetId: o.id, distance: d };
+    } else if (o.classe === "plaque" && o.params.contour.length >= 3 && pointDansPolygone(p, o.params.contour)) {
+      const d = rayon - 1e-6;
+      if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };
+    } else if (o.classe === "assemblage-structurel" || o.classe === "soudure") {
       const d = dist(p, o.params.position);
       if (d <= rayon * 2 && (!meilleur || d < meilleur.distance)) meilleur = { objetId: o.id, distance: d };
     } else if ((o.classe === "solide-exact" || o.classe === "piece-mecanique") && o.params.emprise.length >= 3 && pointDansPolygone(p, o.params.emprise)) {

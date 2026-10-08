@@ -23,6 +23,7 @@ export const FAMILLES_REPRISE = {
   espaces: ["piece", "espace", "zone"],
   dessin: ["esquisse", "cotation", "texte", "etiquette", "reference-plan", "solide", "bloc-occurrence", "objet-importe", "solide-exact"],
   mecanique: ["piece-mecanique", "assemblage", "liaison"],
+  structure: ["poutre", "trame", "plaque", "assemblage-structurel", "soudure", "armature", "coulage"],
 } as const;
 /**
  * `documents` : vues et feuilles ; `definitions` : la bibliothèque de définitions de la source (types, blocs,

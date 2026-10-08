@@ -62,6 +62,7 @@ import { dupliquerNiveau, reducteursTransformer } from "./transformer.js";
 import { verifierModele } from "../archive.js";
 import { reducteursRefExterne } from "./refexterne.js";
 import { controlerLiaisons, reducteursMecanique } from "../ontologies/mechanical/index.js";
+import { controlerStructure, reducteursStructure } from "../ontologies/structure/index.js";
 
 const triplet = (classe: Classe, prefixe: string, creer = "creer"): Record<string, Reducteur> => ({
   [`${prefixe}.${creer}`]: (etat, p, ctx) => creerOccurrence(etat, p, ctx, classe),
@@ -212,6 +213,8 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   ...triplet("solide-exact", "solideExact"),
   // Ontologie mécanique (P2-2) : activation, pièces, assemblages, liaisons, familles, règles, catalogues.
   ...reducteursMecanique,
+  // Ontologie structure (P2-3) : éléments, trames (génération contrôlée), plaques, assemblages, soudures, armatures, coulages.
+  ...reducteursStructure,
   // Esquisse : une commande par forme + modifier / supprimer
   ...Object.fromEntries(FORMES.map((forme) => [`esquisse.${forme}`, ((etat, p, ctx) => creerOccurrence(etat, { ...p, params: { ...((p["params"] as Record<string, unknown> | undefined) ?? p), forme } }, ctx, "esquisse")) as Reducteur])),
   "esquisse.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "esquisse"),
@@ -353,6 +356,8 @@ export function appliquerCommande(etat: ModeleAtelier, commande: Commande, ctx: 
   let r = reducteur(etat, commande.params, ctx, commande.cibles ?? []);
   const cl = controlerLiaisons(etat, r.etat, ctx);
   r = { etat: cl.etat, effets: fusionnerEffets(r.effets, cl.effets) };
+  const cs = controlerStructure(etat, r.etat, ctx);
+  r = { etat: cs.etat, effets: fusionnerEffets(r.effets, cs.effets) };
   const c00 = controlerContraintes(etat, r.etat, commande.type, r.effets, ctx);
   // Contraintes verticales (D-155) : avant le contrôle des verrous, pour qu'un porté verrouillé refuse le lot.
   const c0 = commande.type === "interne.restaurer" ? c00 : suivrePoses(c00.etat, c00.effets);

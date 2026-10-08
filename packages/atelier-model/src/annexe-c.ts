@@ -24,6 +24,13 @@ export const ANNEXE_C: Partial<Record<Classe, readonly string[]>> = {
   "solide-exact": ["IfcBuildingElementProxy"],
   "piece-mecanique": ["IfcBuildingElementProxy", "IfcDistributionElement"],
   assemblage: ["IfcElementAssembly"],
+  poutre: ["IfcBeam", "IfcMember"],
+  trame: ["IfcGrid"],
+  plaque: ["IfcPlate"],
+  "assemblage-structurel": ["IfcElementAssembly", "IfcPlate", "IfcMechanicalFastener"],
+  soudure: ["IfcFastener"],
+  armature: ["IfcReinforcingBar"],
+  coulage: ["IfcGroup"],
   cotation: ["IfcAnnotation"],
   texte: ["IfcAnnotation"],
 };
