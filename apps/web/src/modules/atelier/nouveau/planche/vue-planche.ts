@@ -309,6 +309,12 @@ export class VuePlanche {
     this.redimensionner();
   }
 
+  /** Image PNG de la vue (menu principal, lot 7) : rendu puis lecture immédiate du tampon. */
+  capture(): Promise<Blob | null> {
+    this.rendre();
+    return new Promise((resolve) => this.canvas.toBlob((b) => resolve(b), "image/png"));
+  }
+
   detruire(): void {
     this.observateur?.disconnect();
     cancelAnimationFrame(this.demande);

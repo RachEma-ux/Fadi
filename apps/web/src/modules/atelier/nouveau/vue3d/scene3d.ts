@@ -22,6 +22,14 @@ const estEclate = (p: Presentation | undefined) => p === "eclate" || p === "ecla
 const ORDRE_ECLATE_CLASSES = ["dalle", "mur", "poteau", "escalier", "garde-corps", "piece", "espace", "zone", "solide", "bloc-occurrence", "objet-importe", "toiture"];
 const classeEclate = (c: string) => (c === "porte" || c === "fenetre" || c === "ouverture" ? "mur" : c);
 
+/** Maillage d'un objet de Planche (coordonnées de la Planche, m) à poser sous son niveau de référence. */
+export interface MaillagePlanche3D {
+  plancheId: string;
+  niveauId: string | null;
+  positions: readonly number[];
+  triangles: readonly number[];
+}
+
 export interface OptionsScene {
   vue: VueTechnique;
   presentation: Presentation;
@@ -71,6 +79,8 @@ export interface MesuresRendu {
   chapeaux?: number;
   /** Nombre de références externes dessinées en 3D. */
   externes?: number;
+  /** Nombre de maillages de Planches (lot 7) dessinés en 3D. */
+  planches?: number;
   /** Poignées du manipulateur affichées (0 ou 2) et position écran d'une flèche (instrumentation de la recette). */
   poignees?: number;
   localiserPoignee?: (axe: "x" | "y" | "z" | "r" | "c") => { x: number; y: number } | null;
@@ -142,6 +152,10 @@ export class Scene3D {
   /** Références externes (DA-05-11) : traits gris au niveau de rattachement, ni sélectionnables ni accrochables en 3D. */
   private externes: readonly { niveauId: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number } }[]; decalage?: number }[] = [];
   private lignesExternes: THREE.LineSegments[] = [];
+  /** Planches (lot 7, P-1) : maillages en lecture seule, ni sélectionnables ni accrochables, posés sous leur niveau de référence. */
+  private planches: readonly MaillagePlanche3D[] = [];
+  private meshesPlanches: THREE.Mesh[] = [];
+  private matPlanche = new THREE.MeshStandardMaterial({ color: "#9aa5b1", transparent: true, opacity: 0.85, side: THREE.DoubleSide, flatShading: true });
   private matExternes = new THREE.LineBasicMaterial({ color: "#8a8f98", transparent: true, opacity: 0.9 });
   private cleChapeaux = "";
   private cache = new WeakMap<object, { cle: string; m: Maillage | null }>();
@@ -344,6 +358,7 @@ export class Scene3D {
     this.maillagesCourants = tous;
     this.cleChapeaux = "";
     this.poserExternes();
+    this.poserPlanches();
     const e = englobant(tous);
     if (e) this.boite.set(new THREE.Vector3(...e.min), new THREE.Vector3(...e.max));
     else this.boite.set(new THREE.Vector3(-10, -10, 0), new THREE.Vector3(10, 10, 3));
@@ -716,10 +731,51 @@ export class Scene3D {
     this.rendre();
   }
 
+  /** Maillages des Planches (lot 7) : un Mesh par objet, dans le groupe du niveau de référence (sinon la scène). */
+  majPlanches(liste: readonly MaillagePlanche3D[]): void {
+    this.planches = liste;
+    this.poserPlanches();
+    this.rendre();
+  }
+
+  private poserPlanches(): void {
+    for (const m of this.meshesPlanches) {
+      m.parent?.remove(m);
+      m.geometry.dispose();
+    }
+    this.meshesPlanches = [];
+    const etat = this.etat;
+    if (!etat) return;
+    this.matPlanche.clippingPlanes = this.plans;
+    for (const pl of this.planches) {
+      const n = pl.niveauId ? etat.niveaux[pl.niveauId] : undefined;
+      const parent = pl.niveauId ? this.groupes.get(pl.niveauId) : this.scene;
+      if (!parent || !pl.triangles.length) continue;
+      const z = n ? n.elevation : 0;
+      const pos = new Float32Array(pl.triangles.length * 3);
+      for (let i = 0; i < pl.triangles.length; i++) {
+        const k = pl.triangles[i]! * 3;
+        pos.set([pl.positions[k]!, pl.positions[k + 1]!, pl.positions[k + 2]! + z], i * 3);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      geo.computeVertexNormals();
+      const mesh = new THREE.Mesh(geo, this.matPlanche);
+      mesh.userData["referenceExterne"] = true;
+      mesh.userData["planche"] = pl.plancheId;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      parent.add(mesh);
+      this.meshesPlanches.push(mesh);
+    }
+    this.mesures.planches = this.meshesPlanches.length;
+  }
+
   /** Traits des références externes, posés dans le groupe de leur niveau (éclaté et masquage suivent). */
   majExternes(liste: readonly { niveauId: string; traits: readonly { a: { x: number; y: number }; b: { x: number; y: number } }[]; decalage?: number }[]): void {
     this.externes = liste;
     this.poserExternes();
+    this.poserPlanches();
     this.rendre();
   }
 

@@ -749,7 +749,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
       <main className="atelier-n-travail" ref={zone}>
         {planche ? (
           <Suspense fallback={<p role="status" className="vue3d-etat">{msg("planche.chargement")}</p>}>
-            <Planche projectId={projectId} readOnly={readOnly} />
+            <Planche projectId={projectId} readOnly={readOnly} etat={etat} plancheId={ui.plancheId} onCommandes={consultation ? undefined : (c, l) => executer(c, l, false)} />
           </Suspense>
         ) : ui.mode === "documents" ? (
           <Suspense fallback={<p role="status" className="vue3d-etat">Chargement des documents…</p>}>

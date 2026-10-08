@@ -16,6 +16,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { lireIfc } from "../../src/lib/atelier-ifc.js";
 import { CONTRAT_COMMANDES, appliquerLot, commandesImportIfc, exporterIfc, importerModeleNatif, modeleVide, objetsDeClasse, type Commande, type JeuNatif, type ModeleAtelier } from "@parcours/atelier-model";
+import { ajouterRectangle, grouper, modeleVide as plancheVide, pousserTirer } from "@parcours/planche-model";
 
 const ici = dirname(fileURLToPath(import.meta.url));
 const sortie = process.argv[2] ?? join(ici, "sortie");
@@ -48,7 +49,12 @@ function petit(): ModeleAtelier {
     { type: "texte.creer", params: { id: "x1", niveauId: "rdc", position: pt(4, 2), texte: "Séjour — 34 m²" } },
     { type: "cotation.creer", params: { id: "k1", niveauId: "rdc", a: pt(0, -1), b: pt(8, -1) } },
   ]);
-  return appliquer(base, [{ type: "zone.creer", params: { id: "z1", niveauId: "rdc", contour: [pt(0, 0), pt(8, 0), pt(8, 6), pt(0, 6)], trous: [], nom: "Logement" } }]);
+  const avecZone = appliquer(base, [{ type: "zone.creer", params: { id: "z1", niveauId: "rdc", contour: [pt(0, 0), pt(8, 0), pt(8, 6), pt(0, 6)], trous: [], nom: "Logement" } }]);
+  // Planche (lot 7, P-1) : une boîte 2 × 2 × 1 groupée en composant solide, rattachée au rez → un IfcBuildingElementProxy tessellé.
+  const r = ajouterRectangle(plancheVide(), { x: 10, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }, { x: 0, y: 2, z: 0 }).modele;
+  const b = pousserTirer(r, Object.keys(r.racine.faces)[0]!, 1).modele;
+  const planche = grouper(b, [...Object.keys(b.racine.faces), ...Object.keys(b.racine.aretes)], { nom: "Boîte", genre: "composant" }).modele;
+  return appliquer(avecZone, [{ type: "planche.creer", params: { id: "pl1", nom: "Esquisse", niveauId: "rdc", modele: JSON.parse(JSON.stringify(planche)) } }]);
 }
 
 const options = (code: string) => ({ projet: { id: `corpus-${code}`, nom: `Corpus ${code}`, code }, revision: 1, horodatage: "2026-10-04T00:00:00" });
@@ -58,7 +64,7 @@ let ecarts = 0;
   const etat = petit();
   const { contenu, rapport } = exporterIfc(etat, options("PETIT"));
   writeFileSync(join(sortie, "petit.ifc"), contenu);
-  writeFileSync(join(sortie, "petit.attendus.json"), JSON.stringify({ IfcBuildingStorey: 3, IfcWall: 4, IfcDoor: 1, IfcWindow: 1, IfcOpeningElement: 2, IfcSlab: 2, IfcRoof: 1, IfcStair: 1, IfcColumn: 1, IfcSpace: 2, IfcZone: 1, IfcRailing: 1, IfcAnnotation: 2, IfcMapConversion: 0 }));
+  writeFileSync(join(sortie, "petit.attendus.json"), JSON.stringify({ IfcBuildingStorey: 3, IfcWall: 4, IfcDoor: 1, IfcWindow: 1, IfcOpeningElement: 2, IfcSlab: 2, IfcRoof: 1, IfcStair: 1, IfcColumn: 1, IfcSpace: 2, IfcZone: 1, IfcRailing: 1, IfcAnnotation: 2, IfcBuildingElementProxy: 1, IfcMapConversion: 0 }));
   writeFileSync(join(sortie, "petit.rapport.json"), JSON.stringify(rapport, null, 1));
   const reference = join(ici, "petit.attendu.ifc");
   if (mettreAJour) writeFileSync(reference, contenu);

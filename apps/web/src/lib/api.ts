@@ -890,6 +890,14 @@ export const api = {
   accepterAtelierProposition: (projectId: string, id: string, body: { requestId: string; baseRevision: number }) => request<{ revision: number }>(`/projects/${projectId}/atelier/assistant/propositions/${encodeURIComponent(id)}/accepter`, { method: "POST", body: JSON.stringify(body) }),
   refuserAtelierProposition: (projectId: string, id: string) => request<{ statut: string }>(`/projects/${projectId}/atelier/assistant/propositions/${encodeURIComponent(id)}/refuser`, { method: "POST", body: "{}" }),
   getAtelierProblemes: (projectId: string) => request<AtelierProblemesResponse>(`/projects/${projectId}/atelier/problemes`),
+  /** IFC d'une seule Planche (lot 7) : fichier binaire, nom proposé par le serveur. */
+  getPlancheIfc: async (projectId: string, plancheId: string): Promise<{ blob: Blob; nom: string }> => {
+    const res = await fetch(`/projects/${projectId}/atelier/planches/${encodeURIComponent(plancheId)}/export.ifc`, { credentials: "include" });
+    if (!res.ok) throw new ApiError(res.status, `http_${res.status}`, res.status === 404 ? "Planche introuvable" : null, null);
+    const dispo = res.headers.get("content-disposition") ?? "";
+    const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(dispo);
+    return { blob: await res.blob(), nom: m ? decodeURIComponent(m[1]!) : "planche.ifc" };
+  },
   postAtelierCommands: (projectId: string, enveloppe: AtelierEnveloppe) =>
     request<AtelierCommandsResponse>(`/projects/${projectId}/atelier/commands`, { method: "POST", body: JSON.stringify(enveloppe) }),
   postAtelierEssai: (projectId: string, enveloppe: AtelierEnveloppe) =>
@@ -904,7 +912,7 @@ export const api = {
 export interface AtelierEnveloppe {
   requestId: string;
   baseRevision: number;
-  contract: "atelier-commands/1";
+  contract: "atelier-commands/1" | "atelier-commands/2";
   label: string;
   commands: { type: string; params: Record<string, unknown>; cibles?: string[] }[];
 }

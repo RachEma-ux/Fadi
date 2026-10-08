@@ -25,9 +25,11 @@ import {
   contexte as contexteDe,
   copier,
   cross,
+  differencePlanche,
   diviser,
   eclater,
   effacerEntites,
+  empreintePlanche,
   etendreSelection,
   genreAnnotation,
   grouper,
@@ -69,7 +71,10 @@ import {
   type Transition,
   type VueOutil,
 } from "@parcours/planche-model";
-import { useEtatUi } from "../etat-ui";
+import { etatUi, useEtatUi } from "../etat-ui";
+import { planches as planchesDe, type Commande, type ModeleAtelier } from "@parcours/atelier-model";
+import { api } from "../../../../lib/api";
+import { MenuPlanche } from "./menu-planche";
 import { ChoixPeripherique } from "../panneaux/Navigation";
 import { t } from "../messages";
 import { ChoixLangue } from "../../../../components/ChoixLangue";
@@ -111,10 +116,25 @@ declare global {
 export interface PropsPlanche {
   projectId: string;
   readOnly: boolean;
+  /** Lot 7 : modèle de l'Atelier (les Planches sont des définitions « planche »), Planche ouverte, envoi des commandes. */
+  etat?: ModeleAtelier;
+  plancheId?: string | null;
+  onCommandes?: (commandes: Commande[], label: string) => Promise<unknown> | void;
 }
 
 /** Locale française du champ Mesures : virgule décimale, point-virgule de liste (proposition P-3, cahier §5.3). */
 const SEPARATEUR_DECIMAL = "," as const;
+/** Téléchargement d'un fichier produit dans la page (IFC de la Planche, PNG de la vue). */
+function telechargerFichier(blob: Blob, nom: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nom;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
 type Panneau = "instructeur" | "materiaux" | "balises" | "objets" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur";
 type PanneauObjets = "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur";
 /** Panneaux du lot 5 (§6), derrière une seule icône « Objets » : la colonne reste courte (téléphone, Zoom étendu). */
@@ -149,13 +169,22 @@ function champSaisie(cible: EventTarget | null): boolean {
 
 const virgule = (n: number, d = 2) => n.toFixed(d).replace(".", ",");
 
-export function Planche({ projectId, readOnly }: PropsPlanche) {
+export function Planche({ projectId, readOnly, etat, plancheId = null, onCommandes }: PropsPlanche) {
   const ui = useEtatUi();
   const navigationRef = useRef(ui.navigation);
   navigationRef.current = ui.navigation;
 
   // --- État de l'outil et du brouillon (refs = source de vérité synchrone ; états = rendu).
   const histRef = useRef<Historique>(historiqueInitial(modeleVide()));
+  // Lot 7 : Planche ouverte (définition « planche » du projet) ; null = brouillon local (projet sans Planche).
+  const plancheIdRef = useRef<string | null>(null);
+  const onCommandesRef = useRef(onCommandes);
+  onCommandesRef.current = onCommandes;
+  const readOnlyRef = useRef(readOnly);
+  readOnlyRef.current = readOnly;
+  const listePlanches = useMemo(() => (etat ? planchesDe(etat) : []), [etat]);
+  const plancheCourante = useMemo(() => (plancheId ? listePlanches.find((d) => d.id === plancheId) ?? null : null), [listePlanches, plancheId]);
+  const niveauxProjet = useMemo(() => (etat ? Object.values(etat.niveaux).sort((a, b) => a.ordre - b.ordre || (a.id < b.id ? -1 : 1)) : []), [etat]);
   const [hist, setHist] = useState(histRef.current);
   const outilRef = useRef(OUTIL_INITIAL());
   const precedentRef = useRef(outilRef.current);
@@ -299,11 +328,23 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     setDans(id);
   }, []);
 
-  const poserHistorique = useCallback((h: Historique) => {
-    const changeModele = h.present.modele !== histRef.current.present.modele;
+  const poserHistorique = useCallback((h: Historique, options: { libelle?: string; envoyer?: boolean } = {}) => {
+    const avant = histRef.current.present.modele;
+    const changeModele = h.present.modele !== avant;
     histRef.current = h;
     setHist(h);
     if (changeModele) vueRef.current?.majModele(h.present.modele);
+    // Lot 7 : chaque pas (opération, annulation, rétablissement) devient une commande `planche.operation` du projet —
+    // différence structurelle + empreinte d'arrivée, validée par le serveur avec la même fonction pure (R9).
+    const id = plancheIdRef.current;
+    const envoyer = onCommandesRef.current;
+    if (changeModele && options.envoyer !== false && id && envoyer && !readOnlyRef.current) {
+      const delta = differencePlanche(avant, h.present.modele);
+      if (delta) {
+        const libelle = options.libelle ?? h.present.operation ?? libelleOutil(outilRef.current);
+        void Promise.resolve(envoyer([{ type: "planche.operation", params: { id, libelle, delta, empreinteApres: empreintePlanche(h.present.modele) } }], libelle)).catch((err: unknown) => setMessage(t("planche.persistance.refus", { motif: err instanceof Error ? err.message : String(err) })));
+      }
+    }
   }, []);
 
   /** Envoie un événement à la machine de l'outil actif ; renvoie `true` si l'état, le modèle ou la sélection a changé. */
@@ -442,7 +483,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       setMessage(t("planche.rien.annuler"));
       return;
     }
-    poserHistorique(h);
+    poserHistorique(h, { libelle: t("planche.annule", { operation: op ?? "" }) });
     etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
     setSelection([]);
     poserDans(undefined);
@@ -457,7 +498,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       setMessage(t("planche.rien.retablir"));
       return;
     }
-    poserHistorique(h);
+    poserHistorique(h, { libelle: t("planche.retabli", { operation: op ?? "" }) });
     etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
     setSelection([]);
     poserDans(undefined);
@@ -1198,7 +1239,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     brouillonCharge.current = false;
     void chargerBrouillon(projectId).then((m) => {
       if (annule) return;
-      if (m && histRef.current.passe.length === 0 && histRef.current.futur.length === 0) poserHistorique(historiqueInitial(m));
+      if (m && !plancheIdRef.current && histRef.current.passe.length === 0 && histRef.current.futur.length === 0) poserHistorique(historiqueInitial(m), { envoyer: false });
       brouillonCharge.current = true;
       rafraichir();
     });
@@ -1207,10 +1248,74 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     };
   }, [projectId, poserHistorique, rafraichir]);
   useEffect(() => {
-    if (!brouillonCharge.current || readOnly) return;
+    if (!brouillonCharge.current || readOnly || plancheIdRef.current) return;
     const minuterie = window.setTimeout(() => void enregistrerBrouillon(projectId, hist.present.modele), 300);
     return () => window.clearTimeout(minuterie);
   }, [hist.present.modele, projectId, readOnly]);
+
+  // --- Lot 7 : Planche ouverte. Sans Planche dans le projet, le brouillon local reste ; sinon la première s'ouvre.
+  useEffect(() => {
+    if (!etat) return;
+    if (plancheId && listePlanches.some((d) => d.id === plancheId)) return;
+    const suivante = listePlanches[0]?.id ?? null;
+    if (suivante !== plancheId) etatUi.set({ plancheId: suivante });
+  }, [etat, listePlanches, plancheId]);
+  // Modèle de la Planche ouverte : adopté à l'ouverture et quand le projet le change (autre poste, lot refusé) ; nos
+  // propres pas y sont déjà (le bus les applique localement) et se reconnaissent à l'empreinte.
+  useEffect(() => {
+    if (!plancheCourante) {
+      plancheIdRef.current = null;
+      return;
+    }
+    const changement = plancheIdRef.current !== plancheCourante.id;
+    plancheIdRef.current = plancheCourante.id;
+    if (!changement && empreintePlanche(histRef.current.present.modele) === plancheCourante.params.empreinte) return;
+    poserHistorique(historiqueInitial(plancheCourante.params.modele), { envoyer: false });
+    etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+    setSelection([]);
+    poserDans(undefined);
+    setMessage(changement ? null : t("planche.persistance.maj"));
+    rafraichir();
+  }, [plancheCourante, poserDans, poserHistorique, rafraichir, setSelection]);
+  const commanderPlanche = useCallback((commandes: Commande[], libelle: string, puis?: () => void) => {
+    const envoyer = onCommandesRef.current;
+    if (!envoyer || readOnlyRef.current) return;
+    void Promise.resolve(envoyer(commandes, libelle))
+      .then(() => puis?.())
+      .catch((err: unknown) => setMessage(t("planche.persistance.refus", { motif: err instanceof Error ? err.message : String(err) })));
+  }, []);
+  const actionsMenu = useMemo(
+    () => ({
+      ouvrir: (id: string) => etatUi.set({ plancheId: id }),
+      creer: (nom: string, depuisBrouillon: boolean) => {
+        const id = `planche-${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`;
+        const modele = depuisBrouillon ? histRef.current.present.modele : undefined;
+        commanderPlanche([{ type: "planche.creer", params: { id, nom, ...(modele ? { modele } : {}) } }], t("planche.nouvelle"), () => {
+          etatUi.set({ plancheId: id });
+          setMessage(t("planche.persistance.enregistree"));
+        });
+      },
+      renommer: (id: string, nom: string, niveauId: string | null) => commanderPlanche([{ type: "planche.renommer", params: { id, nom, niveauId } }], t("planche.renommer")),
+      copier: (source: string, nom: string) => {
+        const id = `planche-${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`;
+        commanderPlanche([{ type: "planche.copier", params: { id, source, nom } }], t("planche.enregistrer-sous"), () => etatUi.set({ plancheId: id }));
+      },
+      supprimer: (id: string) => commanderPlanche([{ type: "planche.supprimer", params: { id } }], t("planche.supprimer")),
+      exporterIfc: async (id: string) => {
+        try {
+          const { blob, nom } = await api.getPlancheIfc(projectId, id);
+          telechargerFichier(blob, nom);
+        } catch (err) {
+          setMessage(t("planche.export.echec", { motif: err instanceof Error ? err.message : String(err) }));
+        }
+      },
+      telechargerPng: async () => {
+        const blob = await vueRef.current?.capture();
+        if (blob) telechargerFichier(blob, `${plancheCourante?.params.nom ?? "planche"}.png`.replace(/[^\w.-]+/g, "_"));
+      },
+    }),
+    [commanderPlanche, plancheCourante, projectId],
+  );
 
   // --- Clavier (fenêtre) : touches d'état, annuler / rétablir, Échap, Entrée, frappe au champ Mesures, raccourcis.
   useEffect(() => {
@@ -1587,14 +1692,15 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       </div>
 
       <div className="planche-haut">
-        <p className="planche-brouillon" role="note" title={`${t("planche.brouillon")} — ${stockageDisponible() ? t("planche.brouillon.aide") : t("planche.brouillon.indisponible")}`} data-planche-brouillon>
+        {etat && <MenuPlanche planches={listePlanches} courante={plancheCourante} niveaux={niveauxProjet} lecture={readOnly} brouillonNonVide={Object.keys(hist.present.modele.racine.aretes).length + Object.keys(hist.present.modele.racine.occurrences).length > 0} actions={actionsMenu} />}
+        {!plancheCourante && <p className="planche-brouillon" role="note" title={`${t("planche.brouillon")} — ${stockageDisponible() ? t("planche.brouillon.aide") : t("planche.brouillon.indisponible")}`} data-planche-brouillon>
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M7 3h7l5 5v13H7z" />
             <path d="M14 3v5h5" />
             <path d="M10 13h6M10 17h6" />
           </svg>
           <span className="sr-only">{t("planche.brouillon")}</span>
-        </p>
+        </p>}
         {annulerRetablir}
         {etroit && <span className="planche-haut-choix">{choix}</span>}
         <button

@@ -5,7 +5,10 @@
 import type { ModeleAtelier, Probleme } from "../modele.js";
 import { estAngle, estLongueur, estPoint2, type Angle, type Longueur, type Point2 } from "../unites.js";
 
-export const CONTRAT_COMMANDES = "atelier-commands/1" as const;
+/** Contrat courant (lot 7 de la Planche : commandes `planche.*`). Les lots écrits sous `/1` restent acceptés : mêmes commandes, mêmes réducteurs. */
+export const CONTRAT_COMMANDES = "atelier-commands/2" as const;
+export const CONTRATS_ACCEPTES = ["atelier-commands/1", "atelier-commands/2"] as const;
+export type ContratCommandes = (typeof CONTRATS_ACCEPTES)[number];
 
 export interface Commande {
   type: string;
@@ -16,7 +19,7 @@ export interface Commande {
 export interface Enveloppe {
   requestId: string;
   baseRevision: number;
-  contract: typeof CONTRAT_COMMANDES;
+  contract: ContratCommandes;
   label: string;
   commands: Commande[];
 }

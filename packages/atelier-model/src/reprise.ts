@@ -161,7 +161,7 @@ export function planifierReprise(source: ModeleAtelier, cible: ModeleAtelier, op
   if (options.familles.includes("definitions")) {
     const avant = definitionsUtilisees.size;
     for (const d of Object.values(source.definitions)) {
-      if (["vue", "feuille", "reference-externe", "vue-3d", "referentiel-classification", "ensemble-affichage", "etat-calques"].includes(d.classe as string)) continue;
+      if (["vue", "feuille", "reference-externe", "vue-3d", "planche", "referentiel-classification", "ensemble-affichage", "etat-calques"].includes(d.classe as string)) continue;
       const bib = (d.params as { bibliotheque?: string | null }).bibliotheque ?? null;
       if (options.bibliotheque && bib !== options.bibliotheque) continue;
       definitionsUtilisees.add(d.id);

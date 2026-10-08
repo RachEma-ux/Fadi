@@ -30,6 +30,8 @@ import { connexionsDuNiveau, polygoneMurRaccorde, raccordMur, type ExtremiteConn
 import { corpsMenuiserie } from "../menuiserie.js";
 import { contoursArchitecture } from "../blocs-places.js";
 import { controleClassesIfc } from "../annexe-c.js";
+import { planches } from "../commandes/planches.js";
+import { maillagesPlanche } from "@parcours/planche-model";
 
 export const SCHEMA_IFC = "IFC4X3_ADD2";
 
@@ -587,6 +589,37 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         compter("reference-plan", "—", "—", false, "référence de plan : omise (fond de dessin)");
         break;
     }
+  }
+
+  // Planches (cahier-planche lot 7, P-1 / D-167) : chaque objet de la racine d'une Planche devient un
+  // IfcBuildingElementProxy tessellé — solides (lot 6) orientés vers l'extérieur avec leur volume en propriété,
+  // objets non solides et géométrie libre sans volume (« non évalué ») ; posé sous l'étage de référence de la Planche
+  // (ses coordonnées sont relatives à l'altitude de ce niveau), sinon sous le bâtiment. Hors métrés par construction.
+  for (const pl of planches(etat)) {
+    const niveauId = pl.params.niveauId && etages.has(pl.params.niveauId) ? pl.params.niveauId : null;
+    let n = 0;
+    for (const mesh of maillagesPlanche(pl.params.modele)) {
+      if (!mesh.triangles.length) continue;
+      const coords: string[] = [];
+      for (let i = 0; i < mesh.positions.length; i += 3) coords.push(`(${reelStep(mesh.positions[i]!)},${reelStep(mesh.positions[i + 1]!)},${reelStep(mesh.positions[i + 2]!)})`);
+      const liste3 = s.ajouter(`IFCCARTESIANPOINTLIST3D((${coords.join(",")}),$)`);
+      const tri: string[] = [];
+      for (let k = 0; k < mesh.triangles.length; k += 3) tri.push(`(${mesh.triangles[k]! + 1},${mesh.triangles[k + 1]! + 1},${mesh.triangles[k + 2]! + 1})`);
+      const fs = s.ajouter(`IFCTRIANGULATEDFACESET(${ref(liste3)},$,${mesh.solide ? ".T." : "$"},(${tri.join(",")}),$)`);
+      const rep = s.ajouter(`IFCSHAPEREPRESENTATION(${ref(corps)},'Body','Tessellation',${liste([fs])})`);
+      const id = s.ajouter(`IFCBUILDINGELEMENTPROXY(${gid(`planche|${pl.id}|${mesh.id}`)},$,${chaineStep(`${pl.params.nom} — ${mesh.nom}`)},$,${chaineStep("Planche")},${ref(placementDe(niveauId))},${ref(forme([rep]))},$,.NOTDEFINED.)`);
+      contenir(niveauId, id);
+      pset(id, "Fadi_Planche", [
+        `#${prop("Planche", label(pl.params.nom))}`,
+        `#${prop("Identifiant", `IFCIDENTIFIER(${chaineStep(`${pl.id}|${mesh.id}`)})`)}`,
+        `#${prop("Genre", label(mesh.genre))}`,
+        `#${prop("Solide", `IFCBOOLEAN(${mesh.solide ? ".T." : ".F."})`)}`,
+        mesh.volume !== null ? `#${prop("Volume", `IFCVOLUMEMEASURE(${reelStep(mesh.volume)})`)}` : null,
+      ]);
+      n++;
+    }
+    compter("planche", "IfcBuildingElementProxy", n ? "Tessellation" : "—", n > 0, "Planche (géométrie libre, P-1) : un proxy tessellé par objet de la racine et un pour la géométrie libre ; volume des seuls solides ; hors métrés");
+    if (!n) remarques.add(`Planche « ${pl.params.nom} » vide : aucun proxy écrit.`);
   }
 
   // Zones : groupes des pièces / espaces qu'elles contiennent (relation « contient »).

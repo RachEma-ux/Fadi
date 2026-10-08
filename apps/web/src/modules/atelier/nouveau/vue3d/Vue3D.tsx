@@ -6,9 +6,10 @@
  */
 import type { Vector3 } from "three";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CLASSES, areteLaPlusProche, etendueDalle, etendueMur, importerBcf, lireZip, maillageObjet, normaleExterieure, pousserArete, vues3D, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { planches as planchesDe, CLASSES, areteLaPlusProche, etendueDalle, etendueMur, importerBcf, lireZip, maillageObjet, normaleExterieure, pousserArete, vues3D, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { maillagesPlanche } from "@parcours/planche-model";
 import { etatUi, type EtatUi } from "../etat-ui";
-import { Scene3D, type OptionsScene, type Presentation, type VueTechnique } from "./scene3d";
+import { type MaillagePlanche3D, Scene3D, type OptionsScene, type Presentation, type VueTechnique } from "./scene3d";
 
 export interface PropsVue3D {
   etat: ModeleAtelier;
@@ -256,6 +257,22 @@ export function Vue3D({ etat, ui, readOnly, onCommandes, externes = SANS_EXTERNE
   useEffect(() => {
     if (pret) sceneRef.current?.majExternes(externes);
   }, [externes, pret]);
+
+  // Planches du projet (lot 7, P-1) : représentation en lecture seule, recalculée quand une Planche change (empreinte).
+  const planchesMaillees = useMemo((): MaillagePlanche3D[] => {
+    const out: MaillagePlanche3D[] = [];
+    for (const pl of planchesDe(etat)) {
+      try {
+        for (const m of maillagesPlanche(pl.params.modele)) out.push({ plancheId: pl.id, niveauId: pl.params.niveauId, positions: m.positions, triangles: m.triangles });
+      } catch {
+        /* une Planche illisible n'empêche pas la vue 3D */
+      }
+    }
+    return out;
+  }, [etat]);
+  useEffect(() => {
+    if (pret) sceneRef.current?.majPlanches(planchesMaillees);
+  }, [planchesMaillees, pret]);
 
   // Vue 3D enregistrée à rejouer (D-053) : son point de vue est posé après l'application de ses réglages.
   const [rejeu, setRejeu] = useState(0);

@@ -88,7 +88,7 @@ export const reducteursNiveau = {
     // Vues 3D enregistrées (D-053) qui retenaient ce niveau comme niveau actif : elles n'en retiennent plus aucun.
     let definitions = r.etat.definitions;
     for (const d of Object.values(definitions)) {
-      if (((d.classe as string) !== "vue-3d" && (d.classe as string) !== "ensemble-affichage") || (d.params as { niveauId?: string | null }).niveauId !== id) continue;
+      if (((d.classe as string) !== "vue-3d" && (d.classe as string) !== "ensemble-affichage" && (d.classe as string) !== "planche") || (d.params as { niveauId?: string | null }).niveauId !== id) continue;
       definitions = { ...definitions, [d.id]: { ...d, params: { ...d.params, niveauId: null }, version: d.version + 1 } };
       r.effets.modifies.push(d.id);
     }
@@ -626,7 +626,7 @@ export const reducteursDefinition = {
     const id = lire.chaine(p, "id");
     const d = etat.definitions[id];
     if (!d) throw new ErreurCommande("precondition", "id", `définition inconnue : ${id}`);
-    if (["vue", "feuille", "reference-externe", "vue-3d", "referentiel-classification", "ensemble-affichage", "etat-calques"].includes(d.classe as string)) throw new ErreurCommande("precondition", "id", `${d.nom} : utiliser la commande propre aux ${d.classe === "reference-externe" ? "références externes (refexterne.detacher)" : d.classe === "vue-3d" ? "vues 3D (vue3d.supprimer)" : d.classe === "referentiel-classification" ? "référentiels (referentiel.retirer)" : d.classe === "ensemble-affichage" ? "ensembles d'affichage (ensemble.supprimer)" : d.classe === "etat-calques" ? "états de calques (etatCalques.supprimer)" : "vues et feuilles"}`);
+    if (["vue", "feuille", "reference-externe", "vue-3d", "planche", "referentiel-classification", "ensemble-affichage", "etat-calques"].includes(d.classe as string)) throw new ErreurCommande("precondition", "id", `${d.nom} : utiliser la commande propre aux ${d.classe === "reference-externe" ? "références externes (refexterne.detacher)" : d.classe === "vue-3d" ? "vues 3D (vue3d.supprimer)" : d.classe === "referentiel-classification" ? "référentiels (referentiel.retirer)" : d.classe === "ensemble-affichage" ? "ensembles d'affichage (ensemble.supprimer)" : d.classe === "etat-calques" ? "états de calques (etatCalques.supprimer)" : "vues et feuilles"}`);
     const occ = occurrencesDe(etat, id);
     const detacher = lire.booleen(p, "detacher", false);
     // Bloc placé dans un autre bloc (D-078) : la définition qui l'imbrique est nommée.
@@ -653,7 +653,7 @@ export const reducteursDefinition = {
     if (ancienne.id === nouvelle.id) throw new ErreurCommande("invalide", "nouvelle", "définition identique");
     const blocs = ["bloc", "composant"];
     const compatibles = ancienne.classe === nouvelle.classe || (blocs.includes(ancienne.classe as string) && blocs.includes(nouvelle.classe as string));
-    if (!compatibles || ["vue", "feuille", "reference-externe", "vue-3d", "referentiel-classification", "ensemble-affichage", "etat-calques"].includes(ancienne.classe as string)) throw new ErreurCommande("precondition", "nouvelle", `« ${nouvelle.nom} » (${nouvelle.classe}) ne peut pas remplacer « ${ancienne.nom} » (${ancienne.classe})`);
+    if (!compatibles || ["vue", "feuille", "reference-externe", "vue-3d", "planche", "referentiel-classification", "ensemble-affichage", "etat-calques"].includes(ancienne.classe as string)) throw new ErreurCommande("precondition", "nouvelle", `« ${nouvelle.nom} » (${nouvelle.classe}) ne peut pas remplacer « ${ancienne.nom} » (${ancienne.classe})`);
     const objets = { ...etat.objets };
     const effets = effetsVides();
     for (const o of occurrencesDe(etat, ancienne.id)) {

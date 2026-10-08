@@ -5,6 +5,7 @@
  * la moindre anomalie refuse l'archive en entier avec la liste des erreurs — jamais de correction silencieuse.
  */
 import { lireParamsVue3D } from "./commandes/vues3d.js";
+import { lireParamsPlanche } from "./commandes/planches.js";
 import { lireParamsReferentiel } from "./commandes/referentiels.js";
 import { lireParamsEnsemble } from "./commandes/ensembles.js";
 import { lireParamsEtatCalques } from "./commandes/etats-calques.js";
@@ -63,7 +64,7 @@ export function verifierModele(brut: unknown): ResultatVerification {
   }
   for (const [id, d] of Object.entries(table("definitions")) as [string, Brut][]) {
     const classe = d["classe"];
-    if ((!estClasse(classe) && !["bloc", "composant", "vue", "feuille", "reference-externe", "vue-3d", "referentiel-classification", "ensemble-affichage", "etat-calques"].includes(classe as string)) || typeof d["nom"] !== "string" || !estRecord(d["params"]) || !estNombre(d["version"])) erreurs.push(`definitions.${id} : définition invalide`);
+    if ((!estClasse(classe) && !["bloc", "composant", "vue", "feuille", "reference-externe", "vue-3d", "planche", "referentiel-classification", "ensemble-affichage", "etat-calques"].includes(classe as string)) || typeof d["nom"] !== "string" || !estRecord(d["params"]) || !estNombre(d["version"])) erreurs.push(`definitions.${id} : définition invalide`);
     else modele.definitions[id] = { id, classe: classe as ModeleAtelier["definitions"][string]["classe"], nom: d["nom"], params: d["params"], version: d["version"] };
   }
   // Les objets sont validés contre le modèle candidat complet (un hôte peut être déclaré après son ouverture).
@@ -149,9 +150,9 @@ export function verifierModele(brut: unknown): ResultatVerification {
   }
   // Vues 3D enregistrées (D-053) et référentiels de classification (D-065) : paramètres revalidés comme par la commande.
   for (const d of Object.values(modele.definitions)) {
-    if (d.classe !== "vue-3d" && d.classe !== "referentiel-classification" && d.classe !== "ensemble-affichage" && d.classe !== "etat-calques") continue;
+    if (d.classe !== "vue-3d" && d.classe !== "referentiel-classification" && d.classe !== "ensemble-affichage" && d.classe !== "etat-calques" && d.classe !== "planche") continue;
     try {
-      d.params = (d.classe === "vue-3d" ? lireParamsVue3D(modele, d.params) : d.classe === "ensemble-affichage" ? lireParamsEnsemble(modele, d.params) : d.classe === "etat-calques" ? lireParamsEtatCalques(modele, d.params) : lireParamsReferentiel(d.params)) as unknown as Record<string, unknown>;
+      d.params = (d.classe === "vue-3d" ? lireParamsVue3D(modele, d.params) : d.classe === "planche" ? lireParamsPlanche(modele, d.params) : d.classe === "ensemble-affichage" ? lireParamsEnsemble(modele, d.params) : d.classe === "etat-calques" ? lireParamsEtatCalques(modele, d.params) : lireParamsReferentiel(d.params)) as unknown as Record<string, unknown>;
     } catch (err) {
       erreurs.push(`definitions.${d.id} : ${err instanceof Error ? err.message : String(err)}`);
     }

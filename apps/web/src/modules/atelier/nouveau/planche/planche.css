@@ -1293,3 +1293,85 @@
   min-width: 32px;
   min-height: 32px;
 }
+
+/* Lot 7 — menu principal de la Planche (Planches nommées, IFC, PNG). */
+.planche-menu-principal {
+  position: relative;
+}
+.planche-menu-bouton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 14rem;
+  min-height: 36px;
+  padding: 0 0.6rem;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+}
+.planche-menu-titre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.planche-menu-liste {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 31;
+  min-width: 17rem;
+}
+.planche-menu-liste .planche-menu-entete {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--atelier-texte-faible, #556);
+}
+.planche-menu-liste button[role="menuitemradio"][aria-checked="true"] {
+  font-weight: 600;
+}
+.planche-menu-liste button[role="menuitem"],
+.planche-menu-liste button[role="menuitemradio"] {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 36px;
+  padding: 0.3rem 0.6rem;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  color: inherit;
+}
+.planche-menu-liste button[role="menuitem"]:hover,
+.planche-menu-liste button[role="menuitemradio"]:hover {
+  background: var(--atelier-survol, rgba(31, 122, 87, 0.12));
+}
+.planche-menu-liste button[role="menuitem"]:disabled {
+  opacity: 0.5;
+}
+.planche-menu-volet {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+  padding: 0.5rem;
+  border-top: 1px solid var(--atelier-ligne, #dce5df);
+}
+.planche-menu-volet label {
+  display: grid;
+  gap: 0.2rem;
+}
+@media (max-width: 760px) {
+  .planche-menu-bouton {
+    max-width: 9rem;
+  }
+  .planche-menu-liste {
+    position: fixed;
+    left: 0.5rem;
+    right: 0.5rem;
+    top: 56px;
+    min-width: 0;
+  }
+}

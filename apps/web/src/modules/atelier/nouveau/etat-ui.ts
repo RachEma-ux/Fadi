@@ -82,6 +82,8 @@ export interface EtatUi {
   panneauFlottant: PanneauFlottant | null;
   outilsReplies: boolean;
   outilPrecedent: string;
+  /** Planche ouverte dans le mode Planche (lot 7) : identifiant de la définition « planche », ou null (brouillon local). */
+  plancheId: string | null;
   /** Réglages de navigation (D-157). */
   navigation: ReglagesNavigation;
   /** Raccourcis personnalisés (D-158) : identifiant d'outil → touche ; vide = raccourci par défaut. */
@@ -172,6 +174,7 @@ let etat: EtatUi = {
   panneauFlottant: null,
   outilsReplies: prefs.outilsReplies === true,
   outilPrecedent: "selection",
+  plancheId: null,
   navigation: lireReglagesNavigation(prefs.navigation, NAVIGATION_DEFAUT),
   raccourcis: prefs.raccourcis && typeof prefs.raccourcis === "object" ? prefs.raccourcis : {},
   masques: [],
