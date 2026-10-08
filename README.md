@@ -110,7 +110,7 @@ imported one way), `docs/atelier-cahier-des-charges.md` the execution specificat
 lots, acceptance, team organisation), `docs/drawall/` the DrawAll V4.1 reference documents and `docs/atelier/` the
 follow-up folder (capability sheets, decisions, measurements, lot reports). `CLAUDE.md` is the entry point for Claude Code. P1 lots (Atelier 0–9, Planche 1–7) were accepted on 8 October 2026 (D-174); `docs/atelier-cahier-p2.md` is the
 P2 specification (structure, mechanical, timber, sheet metal, MEP, surfaces, coordination), validated on 8 October 2026 (D-176);
-lot P2-0 (framing, sheets, OCCT / solver / mixed-scene benches, reduced P1 gate) is delivered, the next lots wait for the owner's go.
+lot P2-0 (framing, sheets, OCCT / solver / mixed-scene benches, reduced P1 gate) is delivered and accepted, lot P2-1 (exact kernel: `packages/geometry-exact` on occt-wasm, `solide-exact` class, server-side recomputation, STEP export / import) is delivered (D-182); the next lots wait for the owner's go.
 
 Temporary public instance (`.github/workflows/builder-deploy.yml`, "Builder Deploy"): launched by hand from
 GitHub → Actions → Builder Deploy → *Run workflow* (pick the branch and the duration, 5–30 min). The run builds

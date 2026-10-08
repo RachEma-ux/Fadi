@@ -898,6 +898,21 @@ export const api = {
     const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(dispo);
     return { blob: await res.blob(), nom: m ? decodeURIComponent(m[1]!) : "planche.ifc" };
   },
+  /** STEP AP242 d'un solide exact (P2-1), posé comme dans le modèle, produit par le noyau exact du serveur. */
+  getSolideExactStep: async (projectId: string, objetId: string): Promise<{ blob: Blob; nom: string }> => {
+    const res = await fetch(`/projects/${projectId}/atelier/solides-exacts/${encodeURIComponent(objetId)}/export.step`, { credentials: "include" });
+    if (!res.ok) throw new ApiError(res.status, `http_${res.status}`, res.status === 404 ? "Solide exact introuvable" : null, null);
+    const dispo = res.headers.get("content-disposition") ?? "";
+    const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(dispo);
+    return { blob: await res.blob(), nom: m ? decodeURIComponent(m[1]!) : "solide.step" };
+  },
+  /** Import d'un fichier STEP (P2-1) : un solide exact sur le niveau, calculé par le serveur. */
+  importStep: async (projectId: string, niveauId: string, fichier: File): Promise<{ source: string; revision: number }> => {
+    const res = await fetch(`/projects/${projectId}/atelier/import-step?niveauId=${encodeURIComponent(niveauId)}`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/octet-stream", "X-File-Name": encodeURIComponent(fichier.name) }, body: await fichier.arrayBuffer() });
+    const corps = (await res.json().catch(() => null)) as { source?: string; revision?: number; message?: string; details?: { message: string }[]; conflits?: { motif: string }[] } | null;
+    if (!res.ok) throw new ApiError(res.status, `http_${res.status}`, corps?.message ?? corps?.details?.[0]?.message ?? corps?.conflits?.[0]?.motif ?? null, null);
+    return { source: corps?.source ?? fichier.name, revision: corps?.revision ?? 0 };
+  },
   postAtelierCommands: (projectId: string, enveloppe: AtelierEnveloppe) =>
     request<AtelierCommandsResponse>(`/projects/${projectId}/atelier/commands`, { method: "POST", body: JSON.stringify(enveloppe) }),
   postAtelierEssai: (projectId: string, enveloppe: AtelierEnveloppe) =>
@@ -912,7 +927,7 @@ export const api = {
 export interface AtelierEnveloppe {
   requestId: string;
   baseRevision: number;
-  contract: "atelier-commands/1" | "atelier-commands/2";
+  contract: "atelier-commands/1" | "atelier-commands/2" | "atelier-commands/3";
   label: string;
   commands: { type: string; params: Record<string, unknown>; cibles?: string[] }[];
 }

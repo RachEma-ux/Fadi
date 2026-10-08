@@ -13,6 +13,7 @@ import { EditeurProfilVertical } from "./ProfilVertical";
 import { ContrainteVerticale, PosesObjet } from "./Poses";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
+import { FicheSolideExact, OutilSolideExact } from "./SolideExact";
 import { LOCALE } from "../../../../lib/i18n";
 
 export interface PropsInspecteur {
@@ -67,7 +68,7 @@ const LIBELLES: Record<string, string> = {
 };
 
 /** Paramètres géométriques édités au plan, pas dans l'inspecteur (on les résume). */
-const GEOMETRIQUES = new Set(["a", "b", "contour", "trous", "points", "polygones", "point", "centre", "positionTexte", "maillage", "empreinte", "ifcClasse", "globalId", "source"]);
+const GEOMETRIQUES = new Set(["a", "b", "contour", "trous", "points", "polygones", "point", "centre", "positionTexte", "maillage", "empreinte", "ifcClasse", "globalId", "source", "brep", "emprise", "operation", "empreinteBrep", "moteur", "versionMoteur", "volume", "aire", "faces", "position"]);
 
 const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(3).replace(/0+$/, "").replace(".", ","));
 
@@ -93,14 +94,14 @@ function InspecteurSelection({ etat, ui, readOnly, onCommandes, projectId }: Pro
   if (sel.length > 1) return <SelectionMultiple sel={sel} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />;
   return (
     <>
-      <FicheObjet o={sel[0]!} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
+      <FicheObjet o={sel[0]!} etat={etat} readOnly={readOnly} onCommandes={onCommandes}  projectId={projectId} />
       {projectId && sel[0]!.classe === "piece" && <EspaceProgramme key={`prog-${sel[0]!.id}`} projectId={projectId} pieceId={`${sel[0]!.niveauId}|${sel[0]!.id}`} readOnly={readOnly} />}
       {projectId && <HistoriqueObjet key={sel[0]!.id} projectId={projectId} objetId={sel[0]!.id} />}
     </>
   );
 }
 
-function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconque; etat: ModeleAtelier; readOnly: boolean; onCommandes: PropsInspecteur["onCommandes"] }) {
+function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: OccurrenceQuelconque; etat: ModeleAtelier; readOnly: boolean; onCommandes: PropsInspecteur["onCommandes"]; projectId?: string }) {
   const description = CLASSES[o.classe];
   const calque = o.calqueId ? etat.calques[o.calqueId] : null;
   const verrouille = !!calque?.verrouille;
@@ -112,7 +113,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
   const verrouObjet = raisonVerrou(etat, o);
   const desactive = readOnly || verrouille || !!verrouObjet;
   // Représentation importée (R16) : paramètres en lecture seule ; calque, phase et transformations restent possibles.
-  const parametresFiges = desactive || o.classe === "objet-importe";
+  const parametresFiges = desactive || o.classe === "objet-importe" || o.classe === "solide-exact";
 
   return (
     <section className="inspecteur" aria-label={`Inspecteur : ${description.libelle}`}>
@@ -213,6 +214,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes }: { o: OccurrenceQuelconqu
       {o.classe === "mur" && !desactive && <ScinderEnParts o={o as Occurrence<"mur">} onCommandes={onCommandes} />}
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
+      {o.classe === "solide-exact" && projectId && <FicheSolideExact o={o} projectId={projectId} />}
       {(o.classe === "esquisse" || (o.classe === "mur" && !(o as Occurrence<"mur">).params.renflement)) && <Contraintes sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || o.classe === "solide" || o.classe === "texte") && <CreerBloc sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {Object.keys(o.proprietes).length > 0 && (
@@ -658,6 +660,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   poteau: [{ cle: "taille", libelle: "Section", unite: "m" }, { cle: "hauteur", libelle: "Hauteur", unite: "m" }],
   solide: [{ cle: "hauteurSolide", libelle: "Hauteur d'extrusion", unite: "m" }],
   extruder: [{ cle: "hauteurSolide", libelle: "Hauteur d'extrusion", unite: "m" }, { cle: "epaisseurProfil", libelle: "Épaisseur d'un profil ouvert", unite: "m" }],
+  "solide-exact": [{ cle: "angleRevolution", libelle: "Angle de révolution", unite: "°" }, { cle: "hauteurExacte", libelle: "Hauteur (lissage, trajet)", unite: "m" }, { cle: "epaisseurExacte", libelle: "Épaisseur de coque", unite: "m" }, { cle: "diametreExacte", libelle: "Diamètre du trou", unite: "m" }, { cle: "profondeurExacte", libelle: "Profondeur du trou (0 = traversant)", unite: "m" }, { cle: "xTrou", libelle: "Centre du trou x", unite: "m" }, { cle: "yTrou", libelle: "Centre du trou y", unite: "m" }],
   decaler: [{ cle: "distanceDecalage", libelle: "Distance", unite: "m" }],
   bloc: [{ cle: "angleBloc", libelle: "Angle", unite: "°" }],
   repeter: [{ cle: "repetitions", libelle: "Nombre de copies" }, { cle: "pasX", libelle: "Pas en x", unite: "m" }, { cle: "pasY", libelle: "Pas en y", unite: "m" }, { cle: "etagesReseau", libelle: "Étages au-dessus (réseau 3D)" }],
@@ -736,6 +739,7 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: Mo
         </label>
       )}
       {ui.outil === "plancher" && <PropositionsPlancherVue etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "solide-exact" && <OutilSolideExact etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "contour" && (
         <div className="champ">
           <label htmlFor="outil-formeContour">Créer</label>

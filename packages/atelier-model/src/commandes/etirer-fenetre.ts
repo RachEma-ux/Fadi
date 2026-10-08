@@ -60,6 +60,8 @@ export function effetFenetre(o: OccurrenceQuelconque, dedans: (q: Point2) => boo
     }
     case "objet-importe":
       return parPoints(o.params.empreinte) === "tous" ? { type: "deplacer" } : { type: "aucun" };
+    case "solide-exact":
+      return parPoints(o.params.emprise) === "tous" ? { type: "deplacer" } : { type: "aucun" };
     case "espace": {
       const tous = o.params.polygones.flatMap((c) => [...c.contour, ...c.trous.flat()]);
       return parPoints(tous) === "tous" ? { type: "deplacer" } : { type: "aucun" };

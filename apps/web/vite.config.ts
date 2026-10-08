@@ -72,6 +72,9 @@ function serviceWorkerBuildId(): Plugin {
  */
 export default defineConfig({
   plugins: [serviceWorkerBuildId()],
+  // Workers en modules ES (P2-1) : le Worker du noyau exact importe occt-wasm, dont le chargeur découpe son code ;
+  // le format IIFE par défaut de Vite refuse ce découpage. Le `.wasm` reste un fichier séparé (`?url`, D-177).
+  worker: { format: "es" },
   // Le même identifiant de build, lisible par l'application (page Paramètres : « Version »).
   define: { __FADI_BUILD__: JSON.stringify(buildId()) },
   server: {

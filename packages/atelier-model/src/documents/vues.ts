@@ -183,7 +183,7 @@ export interface VueGeneree {
   mesures: { triangles: number; primitives: number };
 }
 
-const PHYSIQUES = new Set<OccurrenceQuelconque["classe"]>(["mur", "porte", "fenetre", "dalle", "toiture", "escalier", "poteau", "solide", "garde-corps", "bloc-occurrence", "objet-importe"]);
+const PHYSIQUES = new Set<OccurrenceQuelconque["classe"]>(["mur", "porte", "fenetre", "dalle", "toiture", "escalier", "poteau", "solide", "garde-corps", "bloc-occurrence", "objet-importe", "solide-exact"]);
 /** Objet physique d'une vue ; un espace IFC importé n'est pas de la matière (ni coupé, ni occultant). */
 const physique = (o: OccurrenceQuelconque): boolean => PHYSIQUES.has(o.classe) && !(o.classe === "objet-importe" && o.params.ifcClasse.toLowerCase() === "ifcspace");
 const POCHES = new Set<string>(["mur", "poteau", "dalle", "toiture", "escalier"]);

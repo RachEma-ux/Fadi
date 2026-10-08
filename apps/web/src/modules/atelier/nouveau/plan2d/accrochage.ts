@@ -3,7 +3,7 @@
  * orthogonal, grille. Rayon à l'écran (12 px, D-012) converti en mètres par l'échelle de la vue. Les accrochages
  * d'objet priment sur l'orthogonal, qui prime sur la grille. Fonctions pures : testables sans DOM.
  */
-import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointDansPolygone, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
 import { contoursArchitecture, pt, traitsBloc } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
@@ -122,6 +122,9 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
       case "objet-importe":
         // Emprise de la représentation importée : sélection et accrochage sur son contour.
         if (o.params.empreinte.length >= 2) contour(o.params.empreinte, o.id);
+        break;
+      case "solide-exact":
+        if (o.params.emprise.length >= 2) contour(o.params.emprise, o.id);
         break;
       case "cotation":
         segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
@@ -300,6 +303,11 @@ export function objetSousPointeur(p: Point2, cache: ReturnType<typeof segmentsDu
     } else if (o.classe === "texte" || o.classe === "etiquette") {
       const d = dist(p, o.params.position);
       if (d <= rayon * 2 && (!meilleur || d < meilleur.distance)) meilleur = { objetId: o.id, distance: d };
+    } else if (o.classe === "solide-exact" && o.params.emprise.length >= 3 && pointDansPolygone(p, o.params.emprise)) {
+      // Solide exact (P2-1) : cliquable sur toute son emprise, comme un mur sur son épaisseur ; un trait qui la
+      // traverse (esquisse, axe) garde la priorité à égalité.
+      const d = rayon - 1e-6;
+      if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };
     }
   }
   return meilleur;

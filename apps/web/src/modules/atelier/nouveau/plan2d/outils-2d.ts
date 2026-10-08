@@ -806,6 +806,9 @@ function objetsEntierementDans(etat: ModeleAtelier, niveauId: string | null, ded
       case "objet-importe":
         pts = o.params.empreinte;
         break;
+      case "solide-exact":
+        pts = o.params.emprise;
+        break;
       case "espace":
         pts = o.params.polygones.flatMap((pg) => pg.contour);
         break;

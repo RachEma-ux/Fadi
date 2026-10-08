@@ -39,6 +39,7 @@ import { projectOr404, type AccessibleProject } from "../lib/owned-project.js";
 import { lockProject } from "../lib/step-rows.js";
 import { EchecLot, appliquerCommandesInternes, validerDansTransaction, type ResultatValidation } from "../lib/atelier-validation.js";
 import { lireIfc } from "../lib/atelier-ifc.js";
+import { moteurExact, revaliderSolidesExacts, TYPE_CREER_EXACT } from "../lib/atelier-exact.js";
 import { journalDepuis } from "../lib/atelier-versions.js";
 
 export const atelierCommandsRouter = Router({ mergeParams: true });
@@ -269,6 +270,13 @@ atelierCommandsRouter.post("/commands/essai", corps, async (req, res) => {
     res.status(409).json({ erreur: "conflit", motif: "revision", baseRevision: enveloppe.baseRevision, revisionCourante: project.modelRevision, conflits: [] });
     return;
   }
+  if (enveloppe.commands.some((c) => c.type === TYPE_CREER_EXACT)) {
+    const refus = await revaliderSolidesExacts(enveloppe.commands);
+    if (refus) {
+      res.status(refus.status).json({ ...refus.reponse, baseRevision: enveloppe.baseRevision, revisionCourante: project.modelRevision });
+      return;
+    }
+  }
   try {
     const r = appliquerLot(etat, enveloppe);
     res.json({ ok: true, revision: project.modelRevision, effets: r.effets, parCommande: r.parCommande, problemes: r.effets.problemes, referencesAReparer: r.effets.referencesAReparer });
@@ -322,6 +330,71 @@ atelierCommandsRouter.post("/import-ifc", raw({ type: () => true, limit: LIMITE_
     });
     if (sortie.lots) void traiterEvenements(project.id).catch(() => undefined);
     res.json({ source, revision: sortie.revision, lots: sortie.lots, rapport: sortie.rapport });
+  } catch (err) {
+    if (err instanceof EchecLot) {
+      res.status(err.resultat.status).json(err.resultat.reponse);
+      return;
+    }
+    throw err;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Solides exacts (P2-1, D-177) : STEP AP242 par le noyau exact du serveur
+// ---------------------------------------------------------------------------
+
+/** STEP d'un solide exact, posé (position, angle) comme dans le modèle. */
+atelierCommandsRouter.get("/solides-exacts/:objetId/export.step", async (req, res) => {
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  const charge = await chargerModele(db, project.id);
+  const objetId = req.params["objetId"] as string;
+  const o = charge?.etat.objets[objetId];
+  if (!charge || !o || o.classe !== "solide-exact") {
+    res.status(404).json({ erreur: "solide-exact-inconnu", message: `Solide exact inconnu : ${objetId}` });
+    return;
+  }
+  const M = await moteurExact();
+  const step = M.exporterStep(o.params.brep, { x: o.params.position.x, y: o.params.position.y, angleDeg: o.params.angle.value });
+  const nom = `${project.code}_${o.params.nom ?? o.id}.step`.replace(/[\\/\u0000-\u001f"]/g, "_");
+  res.setHeader("Content-Type", "application/step; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${nom.replace(/[^\x20-\x7e]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(nom)}`);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.send(step);
+});
+
+const LIMITE_STEP = 64 * 1024 * 1024;
+
+/** Import d'un fichier STEP : un solide exact (opération `import-step`) sur le niveau demandé, calculé par le serveur. */
+atelierCommandsRouter.post("/import-step", raw({ type: () => true, limit: LIMITE_STEP }), async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const octets = Buffer.isBuffer(req.body) ? (req.body as Buffer) : Buffer.alloc(0);
+  const niveauId = typeof req.query["niveauId"] === "string" ? (req.query["niveauId"] as string) : null;
+  let source = "import.step";
+  try {
+    source = decodeURIComponent(req.get("X-File-Name") ?? "import.step").replace(/[\\/\u0000-\u001f]/g, "_").slice(0, 120) || "import.step";
+  } catch {
+    source = "import.step";
+  }
+  if (!niveauId) {
+    invalide(res, "« niveauId » requis (niveau qui reçoit le solide).", "niveauId");
+    return;
+  }
+  if (!octets.length || !octets.subarray(0, 64).toString("latin1").startsWith("ISO-10303-21")) {
+    invalide(res, "Fichier STEP attendu (ISO-10303-21, texte).", "fichier");
+    return;
+  }
+  const step = octets.toString("utf8");
+  try {
+    const sortie = await db.transaction(async (tx) => {
+      await lockProject(tx, project.id);
+      const commande = { type: TYPE_CREER_EXACT, params: { niveauId, nom: source.replace(/\.(step|stp)$/i, ""), operation: { type: "import-step", sources: [], libelle: `Import STEP ${source}`, entrees: { type: "import-step", step } } } };
+      const r = await appliquerCommandesInternes(tx, project.id, req.user!.id, [commande], `Import STEP ${source}`);
+      return { revision: r.revision, reponse: r.reponse };
+    });
+    void traiterEvenements(project.id).catch(() => undefined);
+    res.json({ source, revision: sortie.revision, effets: (sortie.reponse as { effets?: unknown }).effets ?? null });
   } catch (err) {
     if (err instanceof EchecLot) {
       res.status(err.resultat.status).json(err.resultat.reponse);

@@ -207,6 +207,8 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   ...triplet("reference-plan", "referencePlan"),
   ...triplet("garde-corps", "gardeCorps"),
   ...triplet("objet-importe", "objetImporte"),
+  // Solide exact (P2-1) : créé par le navigateur avec le noyau exact, revalidé par le serveur (même noyau, même empreinte).
+  ...triplet("solide-exact", "solideExact"),
   // Esquisse : une commande par forme + modifier / supprimer
   ...Object.fromEntries(FORMES.map((forme) => [`esquisse.${forme}`, ((etat, p, ctx) => creerOccurrence(etat, { ...p, params: { ...((p["params"] as Record<string, unknown> | undefined) ?? p), forme } }, ctx, "esquisse")) as Reducteur])),
   "esquisse.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "esquisse"),

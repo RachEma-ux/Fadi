@@ -637,6 +637,22 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
             </button>
             <button
               type="button"
+              data-export="step"
+              disabled={!ui.selection.some((id) => etat.objets[id]?.classe === "solide-exact")}
+              title="Sélectionnez un solide exact : STEP AP242 produit par le noyau exact du serveur"
+              onClick={(e) => {
+                (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+                const id = ui.selection.find((x) => etat.objets[x]?.classe === "solide-exact");
+                if (!id) return;
+                void api.getSolideExactStep(projectId, id)
+                  .then(({ blob, nom }) => { const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = nom; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); etatUi.set({ aide: `STEP téléchargé : ${nom}` }); })
+                  .catch((err: unknown) => setErreur(err instanceof Error ? err.message : String(err)));
+              }}
+            >
+              Solide exact sélectionné · STEP
+            </button>
+            <button
+              type="button"
               data-export="bibliotheque"
               onClick={(e) => {
                 // Fichier de bibliothèque (D-050) : types, blocs et composants du projet, calques de leur contenu.

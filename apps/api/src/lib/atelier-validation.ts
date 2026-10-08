@@ -12,6 +12,7 @@ import { atelierCommands, atelierLocks, projects, users, type JournalKind } from
 import { EVENEMENT_COMMANDE_VALIDEE, enregistrerEvenement } from "./atelier-events.js";
 import { chargerModele, creerModeleVide, persisterDifferentiel } from "./atelier-modele.js";
 import { controlerRattachements } from "./atelier-refexterne.js";
+import { revaliderSolidesExacts, TYPE_CREER_EXACT } from "./atelier-exact.js";
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -58,6 +59,11 @@ export async function validerDansTransaction(tx: Tx, projectId: string, auteurId
   if (enveloppe.commands.some((c) => c.type === "refexterne.rattacher")) {
     const refus = await controlerRattachements(tx, projectId, auteurId, enveloppe.commands);
     if (refus) throw new EchecLot({ ...refus, revision: courant.modelRevision });
+  }
+  // Solides exacts (P2-1) : le serveur recalcule chaque opération avec le même noyau et écrit ses propres résultats.
+  if (enveloppe.commands.some((c) => c.type === TYPE_CREER_EXACT)) {
+    const refus = await revaliderSolidesExacts(enveloppe.commands);
+    if (refus) throw new EchecLot({ status: refus.status, revision: courant.modelRevision, reponse: { ...refus.reponse, baseRevision: enveloppe.baseRevision, revisionCourante: courant.modelRevision } });
   }
   let resultat;
   try {
