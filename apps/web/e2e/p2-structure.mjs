@@ -67,10 +67,10 @@ await page.locator('[data-ontologie="structure"]').check();
 await enregistre();
 check("activation : l'ontologie structure est activée par une commande du journal (ontologies = [structure])", JSON.stringify((await modele()).modele.ontologies) === JSON.stringify(["structure"]), JSON.stringify((await modele()).modele.ontologies));
 await page.locator(".barre-palette").click();
-await page.locator(".palette-champ").fill("trame");
+await page.locator(".palette-champ").fill("trame structurale");
 await page.waitForTimeout(200);
 const palette = (await page.locator(".palette").textContent()) ?? "";
-check("palette : « Trame » proposée (synonymes grid, ossature), sans ruban ni écran nouveau", /Trame/.test(palette) && navigations.length === 0, `${palette.slice(0, 120)} · navigations ${navigations.length}`);
+check("palette : « Trame structurale » proposée (synonymes grid, trame de poteaux), sans ruban ni écran nouveau", /Trame structurale/.test(palette) && navigations.length === 0, `${palette.slice(0, 120)} · navigations ${navigations.length}`);
 const outilsApres = await page.evaluate(() => document.querySelectorAll(".barre-outils button, .barre-famille button").length);
 check("barre : l'activation ajoute les outils de structure à la barre (T01)", outilsApres >= outilsAvant, `${outilsAvant} → ${outilsApres}`);
 

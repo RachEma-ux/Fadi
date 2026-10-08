@@ -80,7 +80,8 @@ export function Inspecteur(props: PropsInspecteur) {
   if (sel.length === 0) return <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} />;
   // Outil qui agit sur la sélection (répéter, décaler, réseau sur trajectoire…) avec des paramètres : ses champs
   // restent accessibles au-dessus de la sélection (D-058). Les outils de dessin gardent l'inspecteur de la sélection.
-  if (ui.outil !== "selection" && (OUTILS_PAR_ID[ui.outil]?.condition ?? "").startsWith("selection") && (PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0) {
+  // Outils des ontologies activables (P2-2 à P2-4) : leur panneau (formulaire) agit sur la sélection, il reste visible au-dessus d'elle.
+  if (ui.outil !== "selection" && (OUTILS_PAR_ID[ui.outil]?.condition ?? "").startsWith("selection") && ((PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0 || !!OUTILS_PAR_ID[ui.outil]?.ontologie)) {
     return (
       <>
         <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} />
@@ -757,7 +758,7 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: Mo
       {ui.outil === "assemblage" && <OutilAssemblage etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "liaison" && <OutilLiaison etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "poutre" && <OutilPoutre key={`poutre-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
-      {ui.outil === "trame" && <OutilTrame etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "trame-structure" && <OutilTrame etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "plaque" && <OutilPlaque etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "assemblage-structurel" && <OutilAssemblageStructurel etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "soudure" && <OutilSoudure etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
