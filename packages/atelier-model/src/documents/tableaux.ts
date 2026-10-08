@@ -13,13 +13,16 @@ import { assemblagesSoudes } from "../ontologies/structure/soudures.js";
 import { aireBois, designationBois } from "../ontologies/timber/sections.js";
 import { longueurElementBois, volumePanneauClt } from "../ontologies/timber/geometrie.js";
 import { developpe, parametresPli, tablePliage } from "../ontologies/sheetmetal/pliage.js";
+import { designationReseau } from "../ontologies/mep/sections.js";
+import { longueurSegment } from "../ontologies/mep/geometrie.js";
+import { connexionDuPort, portsDe } from "../ontologies/mep/connectivite.js";
 import type { ModeleAtelier, Occurrence } from "../modele.js";
 import { niveauxOrdonnes, objetsDeClasse, ouverturesDuMur } from "../modele.js";
 import { quantites } from "../quantites.js";
 import { echapperXml } from "./rendu-svg.js";
 import { empreinteDe } from "./empreinte.js";
 
-export type TypeTableau = "pieces" | "portes" | "fenetres" | "murs" | "composants" | "nomenclature" | "structure" | "armatures" | "assemblagesStructure" | "bois" | "pliage" | "synthese";
+export type TypeTableau = "pieces" | "portes" | "fenetres" | "murs" | "composants" | "nomenclature" | "structure" | "armatures" | "assemblagesStructure" | "bois" | "pliage" | "reseau" | "synthese";
 export const TABLEAUX: Record<TypeTableau, string> = {
   pieces: "Tableau des pièces",
   portes: "Tableau des portes",
@@ -32,6 +35,7 @@ export const TABLEAUX: Record<TypeTableau, string> = {
   assemblagesStructure: "Assemblages de structure et soudures",
   bois: "Liste des pièces de bois",
   pliage: "Table de pliage et développés",
+  reseau: "Nomenclature de réseau",
   synthese: "Synthèse des quantités par niveau",
 };
 
@@ -230,6 +234,22 @@ export function genererTableau(etat: ModeleAtelier, type: TypeTableau): Tableau 
         }
       }
       total = ["Total", null, null, null, null, null, null, null, null, null, `${objetsDeClasse(etat, "tole").length} tôle(s)`, null];
+      break;
+    }
+    case "reseau": {
+      // Nomenclature de réseau (P2-5, DA-12) : segments, raccords, vannes, équipements, supports ; ports libres comptés ; masse non évaluée.
+      colonnes = ["Niveau", "Classe", "Objet", "Repère", "Système", "Type", "Section", "Longueur", "Fluide", "Matériau", "Spécification", "Source", "Ports", "Ports libres", "Masse"];
+      unites = [null, null, null, null, null, null, null, "m", null, null, null, null, "u", "u", "kg"];
+      const spec = (id: string | null) => (id ? (etat.definitions[id]?.nom ?? id) : null);
+      const libres = (o: Occurrence<"segment-reseau"> | Occurrence<"raccord-reseau"> | Occurrence<"vanne"> | Occurrence<"equipement-reseau">) => portsDe(o).filter((p) => !connexionDuPort(etat, o.id, p.id)).length;
+      for (const n of niveauxOrdonnes(etat)) {
+        for (const o of objetsDeClasse(etat, "segment-reseau", n.id).sort(parId)) lignes.push([n.nom, "segment", o.params.nom ?? o.id, o.params.repere, o.params.systeme, null, designationReseau(o.params.section, o.params.profil), r3(longueurSegment(o.params)), o.params.fluide, o.params.materiau, spec(o.params.specificationId), o.params.profil?.source ?? null, 2, libres(o), null]);
+        for (const o of objetsDeClasse(etat, "raccord-reseau", n.id).sort(parId)) lignes.push([n.nom, "raccord", o.params.nom ?? o.id, null, o.params.systeme, o.params.type, designationReseau(o.params.section, o.params.profil), null, o.params.fluide, o.params.materiau, spec(o.params.specificationId), o.params.profil?.source ?? null, o.params.ports.length, libres(o), null]);
+        for (const o of objetsDeClasse(etat, "vanne", n.id).sort(parId)) lignes.push([n.nom, "vanne", o.params.nom ?? o.id, o.params.repere, "tuyau", o.params.type, designationReseau(o.params.section, o.params.profil), r3(o.params.longueur.value), o.params.fluide, o.params.materiau, spec(o.params.specificationId), o.params.profil?.source ?? null, o.params.type === "trois-voies" ? 3 : 2, libres(o), null]);
+        for (const o of objetsDeClasse(etat, "equipement-reseau", n.id).sort(parId)) lignes.push([n.nom, "équipement", o.params.nom, o.params.repere, [...new Set(o.params.ports.map((p) => p.systeme ?? "tuyau"))].sort().join(" + "), `${o.params.type} (${o.params.categorie})`, `${Math.round(o.params.longueur.value * 1000)} × ${Math.round(o.params.largeur.value * 1000)} × ${Math.round(o.params.hauteur.value * 1000)} mm`, null, [...new Set(o.params.ports.map((p) => p.fluide).filter((f): f is string => !!f))].sort().join(", ") || null, null, null, null, o.params.ports.length, libres(o), null]);
+        for (const o of objetsDeClasse(etat, "support-reseau", n.id).sort(parId)) lignes.push([n.nom, "support", o.params.nom ?? o.id, null, null, o.params.type, null, o.params.longueur ? r3(o.params.longueur.value) : null, null, null, null, null, null, null, null]);
+      }
+      total = ["Total", null, `${lignes.length} ligne(s)`, null, null, null, null, r3(lignes.filter((l) => l[1] === "segment").reduce((acc, l) => acc + (typeof l[7] === "number" ? l[7] : 0), 0)), null, null, null, null, lignes.reduce((acc, l) => acc + (typeof l[12] === "number" ? l[12] : 0), 0), lignes.reduce((acc, l) => acc + (typeof l[13] === "number" ? l[13] : 0), 0), null];
       break;
     }
     case "synthese": {

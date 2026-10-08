@@ -143,6 +143,10 @@ documentsRouter.get("/atelier/quantites.html", async (req, res) => {
   await produceAtelier(req, res, "atelier-quantites");
 });
 
+documentsRouter.get("/atelier/pid.svg", async (req, res) => {
+  await produceAtelier(req, res, "atelier-pid");
+});
+
 documentsRouter.get("/atelier/:dossier/:fichier", async (req, res) => {
   const dossier = req.params["dossier"] as string;
   const fichier = req.params["fichier"] as string;

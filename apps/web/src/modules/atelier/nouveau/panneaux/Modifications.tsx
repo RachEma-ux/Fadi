@@ -35,6 +35,7 @@ const TYPES: Record<TypeProbleme, string> = {
   import: "Import",
   "collision-mecanique": "Collision pièce / bâtiment",
   regle: "Règle de conception non tenue",
+  reseau: "Connexion de réseau incompatible",
 };
 
 export function Modifications({ projectId, instantane, readOnly, onDecider, onAller, onConsulterRevision, onReprendre }: PropsModifications) {

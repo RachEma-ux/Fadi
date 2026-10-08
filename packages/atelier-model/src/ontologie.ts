@@ -7,7 +7,7 @@
 
 import type { ModeleAtelier } from "./modele.js";
 
-export type Ontologie = "building.architecture" | "building.structure" | "drawing" | "annotation" | "projet" | "mechanical" | "structure" | "timber" | "sheetmetal";
+export type Ontologie = "building.architecture" | "building.structure" | "drawing" | "annotation" | "projet" | "mechanical" | "structure" | "timber" | "sheetmetal" | "mep";
 
 export type Classe =
   | "mur"
@@ -45,7 +45,12 @@ export type Classe =
   | "ossature"
   | "panneau-clt"
   | "assemblage-bois"
-  | "tole";
+  | "tole"
+  | "segment-reseau"
+  | "raccord-reseau"
+  | "vanne"
+  | "equipement-reseau"
+  | "support-reseau";
 
 export type KindRelation =
   | "heberge-par" // ouverture → mur hôte
@@ -57,7 +62,8 @@ export type KindRelation =
   | "reference" // annotation → caractéristique d'objet
   | "programme" // pièce → espace programmé (liaison Programmation)
   | "contrainte" // esquisse → esquisse : contrainte géométrique (lot 5, jeu borné)
-  | "pose"; // objet porté → porteur : contrainte verticale (D-155)
+  | "pose" // objet porté → porteur : contrainte verticale (D-155)
+  | "connecte"; // réseau (P2-5) : port d'un objet → port d'un autre (params { portA, portB })
 
 export interface DescriptionClasse {
   classe: Classe;
@@ -114,6 +120,13 @@ export const CLASSES: Readonly<Record<Classe, DescriptionClasse>> = {
   "assemblage-bois": { classe: "assemblage-bois", ontologie: "timber", libelle: "Assemblage bois", ifc: "IfcFastener", caracteristiques: ["centre"], parNiveau: true },
   // Ontologie tôlerie (P2-4, DA-11) : tôle pliée, développé dérivé.
   tole: { classe: "tole", ontologie: "sheetmetal", libelle: "Tôle pliée", ifc: "IfcPlate", caracteristiques: ["centre"], parNiveau: true },
+  // Ontologie réseaux (P2-5, DA-12, DA-03-16) : segments routés (gaine, tuyau, chemin de câbles, conduit), raccords,
+  // vannes, équipements, supports ; ports typés reliés par la relation « connecte ».
+  "segment-reseau": { classe: "segment-reseau", ontologie: "mep", libelle: "Segment de réseau", ifc: "IfcPipeSegment", caracteristiques: ["arete-debut", "arete-fin", "axe", "sommet"], parNiveau: true },
+  "raccord-reseau": { classe: "raccord-reseau", ontologie: "mep", libelle: "Raccord", ifc: "IfcPipeFitting", caracteristiques: ["centre"], parNiveau: true },
+  vanne: { classe: "vanne", ontologie: "mep", libelle: "Vanne", ifc: "IfcValve", caracteristiques: ["centre"], parNiveau: true },
+  "equipement-reseau": { classe: "equipement-reseau", ontologie: "mep", libelle: "Équipement de réseau", ifc: "IfcFlowTerminal", caracteristiques: ["centre"], parNiveau: true },
+  "support-reseau": { classe: "support-reseau", ontologie: "mep", libelle: "Support de réseau", ifc: "IfcDiscreteAccessory", caracteristiques: ["centre"], parNiveau: true },
 };
 
 export const CLASSES_OUVERTURE: readonly Classe[] = ["porte", "fenetre", "ouverture"];
@@ -129,8 +142,8 @@ export function estOuverture(classe: Classe): classe is "porte" | "fenetre" | "o
 /** Ontologies activées par défaut dans tout projet (Architecture V4 §4) : le bâtiment, la structure réduite au poteau, le dessin, l'annotation. */
 export const ONTOLOGIES_ACTIVEES: readonly Ontologie[] = ["building.architecture", "building.structure", "drawing", "annotation", "projet"];
 /** Ontologies qu'un projet active ou désactive lui-même (cahier P2 §4, T01) : les autres font le socle. */
-export const ONTOLOGIES_ACTIVABLES: readonly Ontologie[] = ["mechanical", "structure", "timber", "sheetmetal"];
-export const LIBELLES_ONTOLOGIE: Record<Ontologie, string> = { "building.architecture": "Bâtiment (architecture)", "building.structure": "Structure du socle (poteau)", drawing: "Dessin", annotation: "Annotation", projet: "Projet", mechanical: "Mécanique et assemblages", structure: "Structure (charpente, béton, assemblages)", timber: "Bois (ossature, CLT, assemblages)", sheetmetal: "Tôlerie (plis, développés)" };
+export const ONTOLOGIES_ACTIVABLES: readonly Ontologie[] = ["mechanical", "structure", "timber", "sheetmetal", "mep"];
+export const LIBELLES_ONTOLOGIE: Record<Ontologie, string> = { "building.architecture": "Bâtiment (architecture)", "building.structure": "Structure du socle (poteau)", drawing: "Dessin", annotation: "Annotation", projet: "Projet", mechanical: "Mécanique et assemblages", structure: "Structure (charpente, béton, assemblages)", timber: "Bois (ossature, CLT, assemblages)", sheetmetal: "Tôlerie (plis, développés)", mep: "Réseaux (gaines, tuyaux, chemins de câbles)" };
 
 /** Ontologies actives d'un projet : le socle, plus celles que le projet a activées (`ontologie.activer`). */
 export function ontologiesActives(etat: Pick<ModeleAtelier, "ontologies">): readonly Ontologie[] {

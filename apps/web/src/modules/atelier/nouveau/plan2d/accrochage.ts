@@ -4,7 +4,7 @@
  * d'objet priment sur l'orthogonal, qui prime sur la grille. Fonctions pures : testables sans DOM.
  */
 import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointDansPolygone, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
-import { contoursArchitecture, empriseTole, intersectionsTrame, pt, segmentsTrame, traitsBloc } from "@parcours/atelier-model";
+import { contoursArchitecture, empriseEquipement, empriseTole, intersectionsTrame, traceSegment, pt, segmentsTrame, traitsBloc } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
 export type TypeAccroche = "extremite" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "tangente" | "intersection" | "proche" | "parallele" | "orthogonal" | "grille" | "libre";
@@ -168,6 +168,19 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
       case "tole":
         centres.push({ p: o.params.position, objetId: o.id });
         contour(empriseTole(o.params), o.id, true);
+        break;
+      // Ontologie réseaux (P2-5).
+      case "segment-reseau":
+        contour(traceSegment(o.params), o.id, false);
+        break;
+      case "raccord-reseau":
+      case "vanne":
+      case "support-reseau":
+        centres.push({ p: o.params.position, objetId: o.id });
+        break;
+      case "equipement-reseau":
+        centres.push({ p: o.params.position, objetId: o.id });
+        contour(empriseEquipement(o.params), o.id, true);
         break;
       case "cotation":
         segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
@@ -349,6 +362,12 @@ export function objetSousPointeur(p: Point2, cache: ReturnType<typeof segmentsDu
     } else if (o.classe === "plaque" && o.params.contour.length >= 3 && pointDansPolygone(p, o.params.contour)) {
       const d = rayon - 1e-6;
       if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };
+    } else if (o.classe === "equipement-reseau" && pointDansPolygone(p, empriseEquipement(o.params))) {
+      const d = rayon - 1e-6;
+      if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };
+    } else if (o.classe === "raccord-reseau" || o.classe === "vanne" || o.classe === "support-reseau") {
+      const d = dist(p, o.params.position);
+      if (d <= rayon * 2 && (!meilleur || d < meilleur.distance)) meilleur = { objetId: o.id, distance: d };
     } else if (o.classe === "tole" && pointDansPolygone(p, empriseTole(o.params))) {
       const d = rayon - 1e-6;
       if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };

@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { anneauRetombee, architectureBloc, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, segmentsTrame, separationsCouches, empriseTole, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { anneauRetombee, architectureBloc, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, segmentsTrame, separationsCouches, empriseTole, empriseEquipement, traceSegment, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -221,6 +221,53 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
           <path d={chemin(pr, pts)} transform={`rotate(${o.params.angle.value} ${c.x} ${c.y})`} fill="none" stroke="#8c96a0" strokeWidth={0.6} strokeDasharray="3 3" />
           <rect x={c.x - L / 2} y={c.y - W / 2} width={L} height={W} fill="#8c96a0" fillOpacity={0.35} stroke={selectionne ? "#b3872f" : "#4c5a68"} strokeWidth={selectionne ? 2 : 1} />
           <title>{`Tôle pliée · ${o.params.nom ?? o.id} · ${o.params.plis.length} pli(s)`}</title>
+        </g>
+      );
+    }
+    // Ontologie réseaux (P2-5) : tracé en plan des segments (largeur de la section), symboles de schéma pour le reste.
+    case "segment-reseau": {
+      const pts = traceSegment(o.params).map((q) => pr.vers(q));
+      const w = Math.max(2, (o.params.section.forme === "circulaire" ? o.params.section.diametre.value : o.params.section.largeur.value) * pr.echelle);
+      const couleur = selectionne ? "#b3872f" : o.params.systeme === "gaine" ? "#4f8fb3" : o.params.systeme === "tuyau" ? "#2f6f9f" : "#7a6f3f";
+      const d = pts.map((q, i) => `${i ? "L" : "M"}${q.x},${q.y}`).join(" ");
+      return (
+        <g className={classes("obj-segment-reseau", selectionne, survole)} data-objet={o.id} data-systeme={o.params.systeme}>
+          <path d={d} fill="none" stroke={couleur} strokeOpacity={0.35} strokeWidth={w} strokeLinecap="butt" strokeLinejoin="round" />
+          <path d={d} fill="none" stroke={couleur} strokeWidth={selectionne ? 2 : 1} strokeDasharray={o.params.systeme === "chemin-de-cables" || o.params.systeme === "conduit" ? "6 3" : undefined} />
+          <title>{`Segment de réseau · ${o.params.nom ?? o.id} · ${o.params.systeme}${o.params.fluide ? ` · ${o.params.fluide}` : ""}`}</title>
+        </g>
+      );
+    }
+    case "raccord-reseau": {
+      const c = pr.vers(o.params.position);
+      return (
+        <g className={classes("obj-raccord-reseau", selectionne, survole)} data-objet={o.id}>
+          <circle cx={c.x} cy={c.y} r={5} fill="#fff" stroke={selectionne ? "#b3872f" : "#2f6f9f"} strokeWidth={1.2} />
+          <title>{`Raccord · ${o.params.nom ?? o.id} · ${o.params.type}`}</title>
+        </g>
+      );
+    }
+    case "vanne": {
+      const c = pr.vers(o.params.position);
+      return (
+        <g className={classes("obj-vanne", selectionne, survole)} data-objet={o.id} transform={`rotate(${-o.params.angle.value} ${c.x} ${c.y})`}>
+          <path d={`M${c.x - 7},${c.y - 5} L${c.x + 7},${c.y + 5} L${c.x + 7},${c.y - 5} L${c.x - 7},${c.y + 5} Z`} fill="#fff" stroke={selectionne ? "#b3872f" : "#b3661e"} strokeWidth={1.2} />
+          <title>{`Vanne · ${o.params.nom ?? o.id} · ${o.params.type}`}</title>
+        </g>
+      );
+    }
+    case "equipement-reseau":
+      return (
+        <path d={chemin(pr, empriseEquipement(o.params))} className={classes("obj-equipement-reseau", selectionne, survole)} fill="#6a7f90" fillOpacity={0.35} stroke={selectionne ? "#b3872f" : "#3f4a55"} strokeWidth={selectionne ? 2.5 : 1} data-objet={o.id}>
+          <title>{`Équipement · ${o.params.nom} · ${o.params.type}`}</title>
+        </path>
+      );
+    case "support-reseau": {
+      const c = pr.vers(o.params.position);
+      return (
+        <g className={classes("obj-support-reseau", selectionne, survole)} data-objet={o.id}>
+          <rect x={c.x - 4} y={c.y - 4} width={8} height={8} fill="#7d7d7d" stroke={selectionne ? "#b3872f" : "#3f4a55"} strokeWidth={1} />
+          <title>{`Support · ${o.params.nom ?? o.id} · ${o.params.type}`}</title>
         </g>
       );
     }
