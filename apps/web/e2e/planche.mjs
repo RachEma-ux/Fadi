@@ -198,8 +198,16 @@ await page.keyboard.press("Enter");
 check("recherche « cercle » puis Entrée : outil Cercle, boîte fermée", (await etat()).outil === "cercle" && (await page.locator("[data-planche-recherche-dialogue]").count()) === 0);
 
 // 7. Zoom « 60 » : champ de vision de la vue, sans commande (CA-CAM-2) ; Échap → outil précédent (CA-CAM-1).
+// La boîte précédente (« cercle ») doit être démontée avant de rouvrir : sinon Maj + - tombe pendant la fermeture (course
+// relevée en CI : la frappe allait à l'ancienne boîte, puis Entrée au champ Mesures).
+await page.waitForSelector("[data-planche-recherche-dialogue]", { state: "detached", timeout: 5000 });
+await page.waitForFunction(() => document.activeElement?.hasAttribute("data-planche-vue"), null, { timeout: 5000 }).catch(() => {});
 await page.keyboard.press("Shift+Minus");
+await page.waitForSelector("[data-planche-recherche-dialogue]", { timeout: 5000 });
 await page.locator("#planche-recherche-champ").fill("zoom");
+// La liste se recalcule après la frappe : Entrée seulement quand « Zoom » est en tête (sinon Entrée tombait sur une liste
+// pas encore rafraîchie — échec intermittent relevé à l'audit, D-169).
+await page.waitForFunction(() => document.querySelector("#planche-recherche-liste [role=option]")?.id === "planche-recherche-zoom", null, { timeout: 5000 }).catch(() => {});
 await page.keyboard.press("Enter");
 check("recherche « zoom » : outil Zoom", (await etat()).outil === "zoom");
 await page.keyboard.type("60");

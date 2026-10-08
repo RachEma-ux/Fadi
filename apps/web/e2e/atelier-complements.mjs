@@ -2427,7 +2427,8 @@ await page.waitForSelector(".plan2d");
   await page.route("**/atelier/commands", async (route) => {
     if (route.request().method() !== "POST") return route.continue();
     await route.fetch().catch(() => {}); // le serveur valide…
-    await route.abort("connectionreset"); // …mais la réponse n'arrive jamais
+    // …mais la réponse n'arrive jamais ; si `unroute` est passé entre-temps, la route est déjà traitée (course relevée en CI).
+    await route.abort("connectionreset").catch(() => {});
   });
   await page.evaluate(() => document.activeElement?.blur?.());
   await page.keyboard.press("Control+v");
