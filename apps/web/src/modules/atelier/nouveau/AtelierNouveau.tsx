@@ -531,7 +531,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
             {niveaux.map((n) => <option key={n.id} value={n.id}>{n.nom} ({fmt(n.elevation)} m)</option>)}
           </select>
         </label>
-        <div className="barre-groupe barre-mode" role="group" aria-label="Plan, 3D, documents ou Planche">
+        <div className="barre-groupe barre-mode" role="group" aria-label={msg("mode.groupe")}>
           <button type="button" aria-pressed={ui.mode === "2d"} onClick={() => etatUi.set({ mode: "2d" })}>Plan</button>
           <button type="button" aria-pressed={ui.mode === "3d"} onClick={() => etatUi.set({ mode: "3d" })}>3D</button>
           <button type="button" aria-pressed={ui.mode === "documents"} onClick={() => etatUi.set({ mode: "documents", pointsEnCours: [] })}>Documents</button>
