@@ -2993,14 +2993,18 @@ export function boiteOccurrence(m: Modele, occurrence: Id): { min: Vec3; max: Ve
 }
 
 /** Arêtes (monde) de la géométrie masquée : faces, arêtes et objets masqués, pour l'option « voir la géométrie masquée ». */
-export function aretesMasquees(m: Modele): { a: Vec3; b: Vec3 }[] {
+export function aretesMasquees(m: Modele, quoi: { readonly objets?: boolean; readonly geometrie?: boolean } = { objets: true, geometrie: true }): { a: Vec3; b: Vec3 }[] {
   const r: { a: Vec3; b: Vec3 }[] = [];
+  const objets = quoi.objets !== false;
+  const geometrie = quoi.geometrie !== false;
   const parcourir = (c: Contexte, M: Matrice4, toutMasque: boolean, profondeur: number): void => {
     if (profondeur > 32) return;
     const p = (s: Id): Vec3 => appliquer(M, (c.sommets[s] as Sommet).position);
-    for (const a of Object.values(c.aretes)) if (toutMasque || a.masquee) r.push({ a: p(a.a), b: p(a.b) });
+    // Dans un objet masqué, toutes ses arêtes relèvent des « objets masqués » ; ailleurs, arêtes et faces masquées
+    // une à une relèvent de la « géométrie masquée » (panneau Affichage, deux cases indépendantes).
+    for (const a of Object.values(c.aretes)) if ((toutMasque && objets) || (!toutMasque && a.masquee && geometrie)) r.push({ a: p(a.a), b: p(a.b) });
     for (const f of Object.values(c.faces)) {
-      if (toutMasque || !f.masquee) continue;
+      if (toutMasque || !f.masquee || !geometrie) continue;
       for (const b of [f.exterieur, ...f.trous]) for (let i = 0; i < b.length; i++) r.push({ a: p(b[i] as Id), b: p(b[(i + 1) % b.length] as Id) });
     }
     for (const o of Object.values(c.occurrences)) {

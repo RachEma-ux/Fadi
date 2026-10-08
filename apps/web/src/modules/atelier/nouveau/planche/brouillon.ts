@@ -4,7 +4,7 @@
  * enregistré dans le projet ». Rien n'est envoyé au serveur : les commandes Planche arrivent au lot 7. Lecture
  * tolérante : un brouillon illisible est ignoré (jamais une erreur bloquante).
  */
-import type { Modele } from "@parcours/planche-model";
+import { lireModelePlanche, type Modele } from "@parcours/planche-model";
 import { localStore } from "../../../../lib/local-store";
 
 export const FORMAT_BROUILLON = "planche-brouillon/1";
@@ -16,19 +16,14 @@ export function serialiserBrouillon(modele: Modele, maintenant = new Date()): st
 }
 
 const estObjet = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
-const CHAMPS_CONTEXTE = ["sommets", "aretes", "faces", "courbes", "occurrences"] as const;
 
-/** Modèle d'un brouillon sérialisé, ou `null` s'il est absent, d'un autre format ou mal formé. */
+/** Modèle d'un brouillon sérialisé, ou `null` s'il est absent, d'un autre format ou mal formé (lecture validée du noyau, lot 7). */
 export function lireBrouillon(texte: string | null): Modele | null {
   if (!texte) return null;
   try {
     const brut: unknown = JSON.parse(texte);
     if (!estObjet(brut) || brut["format"] !== FORMAT_BROUILLON) return null;
-    const m = brut["modele"];
-    if (!estObjet(m) || !estObjet(m["racine"]) || !estObjet(m["definitions"]) || typeof m["prochainId"] !== "number") return null;
-    const racine = m["racine"];
-    if (!CHAMPS_CONTEXTE.every((k) => estObjet(racine[k]))) return null;
-    return m as unknown as Modele;
+    return lireModelePlanche(brut["modele"]);
   } catch {
     return null;
   }

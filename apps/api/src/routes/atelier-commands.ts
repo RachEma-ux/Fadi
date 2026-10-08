@@ -21,7 +21,7 @@ import {
   collisions,
   commandesImportIfc,
   etatARevision,
-  CONTRAT_COMMANDES,
+  CONTRAT_COMMANDES, exporterIfc, planches as planchesDe, CONTRATS_ACCEPTES,
   ErreurCommande,
   referencesAReparer,
   type Commande,
@@ -55,7 +55,7 @@ const commandeSchema = z.object({
 const enveloppeSchema = z.object({
   requestId: z.string().min(1).max(64),
   baseRevision: z.number().int().min(0),
-  contract: z.literal(CONTRAT_COMMANDES),
+  contract: z.enum(CONTRATS_ACCEPTES),
   label: z.string().max(200).default(""),
   commands: z.array(commandeSchema).min(1).max(500),
 });
@@ -132,6 +132,26 @@ atelierCommandsRouter.get("/model", async (req, res) => {
     return;
   }
   res.json({ revision: project.modelRevision, nativeId: charge.nativeId, modele: charge.etat });
+});
+
+/** IFC d'une seule Planche (cahier-planche lot 7) : le modèle réduit à cette Planche (niveaux et site gardés, objets omis). */
+atelierCommandsRouter.get("/planches/:plancheId/export.ifc", async (req, res) => {
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  const charge = await chargerModele(db, project.id);
+  const plancheId = req.params["plancheId"] as string;
+  const planche = charge ? planchesDe(charge.etat).find((d) => d.id === plancheId) : undefined;
+  if (!charge || !planche) {
+    res.status(404).json({ erreur: "planche-inconnue", message: `Planche inconnue : ${plancheId}` });
+    return;
+  }
+  const seule = { ...charge.etat, objets: {}, relations: {}, groupes: {}, references: {}, problemes: {}, definitions: { [planche.id]: planche } };
+  const { contenu } = exporterIfc(seule, { projet: { id: project.id, nom: project.name, code: project.code }, revision: project.modelRevision, horodatage: new Date(0).toISOString() });
+  const nom = `${project.code}_${planche.params.nom}.ifc`.replace(/[\\/\u0000-\u001f"]/g, "_");
+  res.setHeader("Content-Type", "application/x-step; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${nom.replace(/[^\x20-\x7e]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(nom)}`);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.send(contenu);
 });
 
 atelierCommandsRouter.get("/model/niveaux/:niveauId", async (req, res) => {

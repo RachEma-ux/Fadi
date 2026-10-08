@@ -211,7 +211,7 @@ describe("lot atomique, inverse et détection de pièces", () => {
 
   it("refuse une commande inconnue et un contrat non pris en charge", () => {
     expect(() => appliquerLot(socle(), lot([{ type: "mur.voler", params: {} }]))).toThrow(/inconnue/);
-    expect(() => appliquerLot(socle(), { ...lot([{ type: "mur.tracer", params: murParams(0, 0, 4, 0) }]), contract: "atelier-commands/2" as never })).toThrow(/contrat/);
+    expect(() => appliquerLot(socle(), { ...lot([{ type: "mur.tracer", params: murParams(0, 0, 4, 0) }]), contract: "atelier-commands/0" as never })).toThrow(/contrat/);
   });
 
   it("refuse de supprimer un niveau qui porte des objets, puis le supprime avec eux", () => {

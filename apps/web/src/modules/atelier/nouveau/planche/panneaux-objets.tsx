@@ -680,10 +680,10 @@ export function NavigateurPlanche({ modele, selection, dans, lecture, onSelectio
         {arbre.length === 0 && <li className="inspecteur-aide">{t("planche.navigateur.vide")}</li>}
         {arbre.map((n) => (
           <li key={n.id} role="treeitem" aria-selected={choisis.has(n.id)} aria-level={n.profondeur + 1} className={`${choisis.has(n.id) ? "est-actif" : ""}${dans === n.id ? " est-ouvert" : ""}`} style={{ paddingLeft: `${n.profondeur * 0.9}rem` }} data-planche-navigateur-objet={n.id}>
-            <button type="button" className="canevas-icone planche-deplier" aria-label={deplies.has(n.id) ? "Replier" : "Déplier"} disabled={n.enfants === 0} onClick={() => setDeplies((s) => { const d = new Set(s); if (d.has(n.id)) d.delete(n.id); else d.add(n.id); return d; })}>
+            <button type="button" className="canevas-icone planche-deplier" aria-label={deplies.has(n.id) ? t("planche.navigateur.replier") : t("planche.navigateur.deplier")} disabled={n.enfants === 0} onClick={() => setDeplies((s) => { const d = new Set(s); if (d.has(n.id)) d.delete(n.id); else d.add(n.id); return d; })}>
               {n.enfants === 0 ? "·" : deplies.has(n.id) ? "▾" : "▸"}
             </button>
-            <button type="button" className="planche-ligne-choix" onClick={() => onSelectionner(n.id, n.parent)} onDoubleClick={() => onEntrer(n.id)} title={t("planche.navigateur.entrer")}>
+            <button type="button" className="planche-ligne-choix" onClick={() => onSelectionner(n.id, n.parent)} onDoubleClick={() => !n.verrouille && onEntrer(n.id)} title={n.verrouille ? t("planche.navigateur.verrouille") : t("planche.navigateur.entrer")}>
               <span aria-hidden="true">{n.genre === "composant" ? "◈" : "▣"}</span> {n.nom}
               {n.verrouille && <span aria-label={t("planche.info.verrouille")}> 🔒</span>}
               {n.masquee && <span className="inspecteur-aide"> ({t("planche.info.masque")})</span>}

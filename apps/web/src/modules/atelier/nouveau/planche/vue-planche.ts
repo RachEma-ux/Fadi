@@ -309,6 +309,12 @@ export class VuePlanche {
     this.redimensionner();
   }
 
+  /** Image PNG de la vue (menu principal, lot 7) : rendu puis lecture immédiate du tampon. */
+  capture(): Promise<Blob | null> {
+    this.rendre();
+    return new Promise((resolve) => this.canvas.toBlob((b) => resolve(b), "image/png"));
+  }
+
   detruire(): void {
     this.observateur?.disconnect();
     cancelAnimationFrame(this.demande);
@@ -402,7 +408,7 @@ export class VuePlanche {
       this.groupeModele.add(arriere);
     }
     if (o.objetsMasques || o.geometrieMasquee) {
-      const masquees = aretesMasquees(modele);
+      const masquees = aretesMasquees(modele, { objets: o.objetsMasques, geometrie: o.geometrieMasquee });
       if (masquees.length) {
         const l = new THREE.LineSegments(geometrieSegments(masquees.map((s) => [s.a, s.b] as const)), new THREE.LineDashedMaterial({ color: "#8a8a8a", dashSize: 0.15, gapSize: 0.1 }));
         l.computeLineDistances();
@@ -856,11 +862,17 @@ export class VuePlanche {
   // Caméra
 
   get champDeVision(): number {
-    return this.camera.fov;
+    return this.projectionParallele ? this.fovPerspective : this.camera.fov;
   }
 
   set champDeVision(degres: number) {
-    this.camera.fov = Math.min(120, Math.max(1, degres));
+    const fov = Math.min(120, Math.max(1, degres));
+    // En projection parallèle (émulée par une caméra à 1°), le champ réglé est celui de la perspective de retour.
+    if (this.projectionParallele) {
+      this.fovPerspective = fov;
+      return;
+    }
+    this.camera.fov = fov;
     this.camera.updateProjectionMatrix();
     this.rendre();
   }

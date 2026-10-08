@@ -48,6 +48,7 @@ const LIBELLES_DEFINITIONS: Record<string, string> = {
   vue: "Vues",
   feuille: "Feuilles",
   "vue-3d": "Vues 3D",
+  planche: "Planches",
   "reference-externe": "Références externes",
   "ensemble-affichage": "Ensembles d'affichage",
   "etat-calques": "États de calques",

@@ -21,6 +21,8 @@ import {
   appliquerDifferentiel,
   commandeInverse,
   CONTRAT_COMMANDES,
+  CONTRATS_ACCEPTES,
+  type ContratCommandes,
   differentiel,
   effetsVides,
   ErreurCommande,
@@ -41,6 +43,7 @@ import { suivreHachures } from "./hachures-associees.js";
 import { reducteursPose, suivrePoses } from "./poses.js";
 import { reducteursDocuments } from "./documents.js";
 import { reducteursVues3D } from "./vues3d.js";
+import { reducteursPlanche } from "./planches.js";
 import { reducteursReferentiel } from "./referentiels.js";
 import { reducteursEnsemble } from "./ensembles.js";
 import { reducteursEtatCalques } from "./etats-calques.js";
@@ -270,6 +273,7 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   // Documents dérivés (lot 5) : vues et feuilles
   ...reducteursDocuments,
   ...reducteursVues3D,
+  ...reducteursPlanche,
   ...reducteursReferentiel,
   ...reducteursEnsemble,
   ...reducteursEtatCalques,
@@ -360,7 +364,7 @@ export interface ResultatLot {
 
 /** Applique un lot de commandes de façon atomique : une erreur laisse l'état de départ intact (immuable). */
 export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): ResultatLot {
-  if (enveloppe.contract !== CONTRAT_COMMANDES) throw new ErreurCommande("invalide", "contract", `contrat non pris en charge : ${enveloppe.contract} (attendu ${CONTRAT_COMMANDES})`);
+  if (!(CONTRATS_ACCEPTES as readonly string[]).includes(enveloppe.contract)) throw new ErreurCommande("invalide", "contract", `contrat non pris en charge : ${enveloppe.contract} (attendu ${CONTRAT_COMMANDES})`);
   if (!Array.isArray(enveloppe.commands) || enveloppe.commands.length === 0) throw new ErreurCommande("invalide", "commands", "lot vide");
   if (enveloppe.commands.length > 500) throw new ErreurCommande("invalide", "commands", "lot trop grand (500 commandes maximum)");
   const ctx: ContexteCommande = { ids: generateurIds(enveloppe.requestId) };
@@ -400,7 +404,7 @@ export function identifiantsCibles(enveloppe: Enveloppe): string[] {
   return [...ids];
 }
 
-export { CONTRAT_COMMANDES, ErreurCommande, TYPE_RESTAURER, generateurIds, differentiel, appliquerDifferentiel, commandeInverse };
+export { CONTRAT_COMMANDES, CONTRATS_ACCEPTES, type ContratCommandes, ErreurCommande, TYPE_RESTAURER, generateurIds, differentiel, appliquerDifferentiel, commandeInverse };
 export type { Commande, Enveloppe, Effets, ContexteCommande, InstantaneDiff, Reducteur };
 export { detecterPieces, descendantsCalque, type PropositionPiece } from "./organisation.js";
 export { transformerOccurrence } from "./transformer.js";

@@ -105,6 +105,13 @@ const capture = (nom) => page.screenshot({ path: `${OUT}/planche-${nom}.png` });
   await focus(); await page.keyboard.press("Control+c"); note("presse-papiers", "Ctrl + C : 1 entité copiée", (await etat()).pressePapiers === 1 && /copiée/.test((await message()) ?? ""), (await message()) ?? "");
   await page.keyboard.press("Control+v"); await page.waitForTimeout(60);
   e = await etat();
+  // Couper puis coller : la géométrie coupée est bien recollée (l'instantané d'avant l'effacement sert de source).
+  await page.keyboard.press("Control+x"); await page.waitForTimeout(60);
+  const apresCoupe = await etat();
+  await page.keyboard.press("Control+v"); await page.waitForTimeout(80);
+  const apresRecolle = await etat();
+  note("presse-papiers", "Ctrl + X puis Ctrl + V : l'objet coupé disparaît puis est recollé (2 occurrences)", apresCoupe.occurrences.length === 1 && apresRecolle.occurrences.length === 2 && apresRecolle.selection.length === 1, `${apresCoupe.occurrences.length} → ${apresRecolle.occurrences.length}`);
+  e = await etat();
   note("presse-papiers", "Ctrl + V : 2 occurrences de la même définition (liées), la copie sélectionnée", e.occurrences.length === 2 && e.definitions.length === 1 && e.selection.length === 1 && e.selection[0] !== e.occurrences[0].id, JSON.stringify(e.occurrences.map((o) => o.definition)));
   // Menu contextuel sur la copie (x ∈ [1 ; 3]) : clic droit à x = 2,5.
   await clicDroit({ x: 2.5, y: 1, z: 1 });

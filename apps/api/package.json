@@ -16,6 +16,7 @@
     "@parcours/atelier-model": "0.1.0",
     "@parcours/core-geometry": "0.1.0",
     "@parcours/domain-model": "0.1.0",
+    "@parcours/planche-model": "0.1.0",
     "cookie": "~1.0.2",
     "cors": "~2.8.5",
     "dotenv": "~17.2.3",
