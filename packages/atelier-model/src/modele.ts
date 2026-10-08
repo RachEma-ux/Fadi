@@ -514,8 +514,9 @@ export function modeleVide(): ModeleAtelier {
   };
 }
 
+/** Niveaux par `ordre`, puis par identifiant à ordre égal : un ordre total, indépendant de l'ordre de lecture. */
 export function niveauxOrdonnes(etat: ModeleAtelier): Niveau[] {
-  return Object.values(etat.niveaux).sort((a, b) => a.ordre - b.ordre);
+  return Object.values(etat.niveaux).sort((a, b) => a.ordre - b.ordre || (a.id < b.id ? -1 : 1));
 }
 
 export function objetsDuNiveau(etat: ModeleAtelier, niveauId: string): OccurrenceQuelconque[] {

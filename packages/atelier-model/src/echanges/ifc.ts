@@ -636,7 +636,8 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   // Connexions des murs (D-038) : extrémités partagées, tés, croisements — IfcRelConnectsPathElements.
   const TYPE_CONNEXION: Record<ExtremiteConnexion, string> = { debut: ".ATSTART.", fin: ".ATEND.", courant: ".ATPATH." };
   let connexions = 0;
-  for (const niveauId of [...Object.keys(etat.niveaux), null]) {
+  // Niveaux par ordre puis identifiant : ne dépend pas de l'ordre d'insertion de la table (reproductibilité du fichier).
+  for (const niveauId of [...niveaux.map((n) => n.id), null]) {
     for (const c of connexionsDuNiveau(etat, niveauId)) {
       const ia = produits.get(c.a);
       const ib = produits.get(c.b);
