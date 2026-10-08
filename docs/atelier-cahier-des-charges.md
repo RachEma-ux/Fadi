@@ -565,6 +565,8 @@ aide située relue, `docs/architecture.md` et `README.md` à jour, dossier de re
 
 Interface de moteur, OCCT WASM en Web Worker, représentation `brep`, DA-04 restantes, DA-03-01 / 12 ; fiches
 avant code ; aucune dépendance OCCT ajoutée au dépôt avant la décision écrite du maître d'ouvrage.
+**Livré le 8 octobre 2026 comme lot P2-1 du cahier P2 (D-177 pour la licence, D-182 pour la livraison) :
+`packages/geometry-exact`, classe `solide-exact`, recalcul serveur, STEP ; compte rendu `docs/atelier/lots/p2-lot-1.md`.**
 
 ---
 

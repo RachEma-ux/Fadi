@@ -83,6 +83,12 @@ export function modifierOccurrence(etat: ModeleAtelier, p: Brut, ctx: ContexteCo
   // R16 : une représentation importée n'a pas de paramètres à éditer — elle se transforme (déplacer, tourner, miroir,
   // échelle, copier) et s'organise (calque, groupe, phase, propriétés), rien de plus.
   if (existant.classe === "objet-importe" && Object.keys(patch).length) throw new ErreurCommande("precondition", "params", "représentation importée : paramètres non modifiables (seules les transformations et l'organisation s'appliquent)");
+  // P2-1 : la géométrie d'un solide exact (brep, maillage, volume…) ne se modifie que par une nouvelle opération du
+  // noyau, revalidée par le serveur ; ici seuls le nom, la couleur et la pose se changent.
+  if (existant.classe === "solide-exact") {
+    const interdites = Object.keys(patch).filter((k) => !["nom", "couleur", "position", "angle"].includes(k));
+    if (interdites.length) throw new ErreurCommande("precondition", "params", `solide exact : seuls nom, couleur, position et angle se modifient (refusé : ${interdites.join(", ")}) — la géométrie passe par une opération exacte`);
+  }
   const params = validerParams(etat, existant.classe, { ...(existant.params as unknown as Brut), ...patch });
   const effets0: string[] = [];
   const proprietes = p["proprietes"] === undefined ? existant.proprietes : { ...existant.proprietes, ...lireProprietes(p) };

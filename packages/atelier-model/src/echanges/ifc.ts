@@ -504,6 +504,23 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         compter(o.classe, libelle, rep ? "Tessellation" : "—", true, rep ? (o.classe === "solide" ? "rôle porté par ObjectType et Fadi_Solide.Role (jamais reclassé)" : undefined) : "sans volume (hauteur non renseignée) : sans représentation");
         break;
       }
+      case "solide-exact": {
+        // Solide exact (P2-1) : proxy tessellé depuis le maillage dérivé du brep ; moteur, version, empreinte et volume
+        // en propriétés (la géométrie canonique B-rep s'échange en STEP, pas en IFC).
+        const rep = corpsMaille(o);
+        const id = s.ajouter(`IFCBUILDINGELEMENTPROXY(${gid(o.id)},$,${opt(o.params.nom ?? o.id)},$,${chaineStep("solide-exact")},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.NOTDEFINED.)`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        pset(id, "Fadi_SolideExact", [
+          `#${prop("Moteur", label(`${o.params.moteur} ${o.params.versionMoteur}`))}`,
+          `#${prop("EmpreinteBrep", `IFCIDENTIFIER(${chaineStep(o.params.empreinteBrep)})`)}`,
+          `#${prop("Volume", `IFCVOLUMEMEASURE(${reelStep(o.params.volume)})`)}`,
+          `#${prop("Operation", label(o.params.operation.type))}`,
+        ]);
+        compter("solide-exact", "IfcBuildingElementProxy", rep ? "Tessellation" : "—", true, "solide exact : tessellation du B-rep (STEP pour la géométrie exacte), volume et empreinte en Fadi_SolideExact");
+        break;
+      }
       case "objet-importe": {
         // Représentation importée : réécrite telle quelle (maillage), GlobalId d'origine conservé, classe d'origine
         // en ObjectType et en propriété — jamais reclassée en objet paramétrique.
@@ -707,7 +724,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   const contenu = [...entete, ...s.lignes, "ENDSEC;", "END-ISO-10303-21;", ""].join("\n");
   // Contrôle croisé annexe C (D-111) : une classe IFC déclarée différente de l'annexe C est nommée, jamais suivie.
   for (const x of controleClassesIfc(etat)) remarques.add(`${x.message}.`);
-  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
+  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
   return {
     contenu,
     rapport: {

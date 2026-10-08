@@ -17,6 +17,8 @@ import { USAGES_DALLE, type ModeleAtelier, type ParamsParClasse } from "../model
 import type { Classe } from "../ontologie.js";
 import { TOLERANCE_REDUCTEUR, type Angle, type Longueur } from "../unites.js";
 import { ErreurCommande, lire } from "./base.js";
+import { enveloppeConvexe } from "../echanges/import-ifc.js";
+import { emprisePosee } from "../solide-exact.js";
 
 type Brut = Record<string, unknown>;
 
@@ -310,6 +312,43 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       maillage: { positions: positions as number[], indices: indices as number[] },
       empreinte: lire.points(p, "empreinte", { optionnel: true }),
       source: lire.chaineOuNull(p, "source"),
+    };
+  },
+  "solide-exact"(_etat, p) {
+    const m = p["maillage"] as { positions?: unknown; indices?: unknown } | undefined;
+    const positions = m?.positions;
+    const indices = m?.indices;
+    if (!Array.isArray(positions) || positions.length % 3 !== 0 || positions.length < 9 || positions.length > 1_500_000 || !positions.every((v) => typeof v === "number" && Number.isFinite(v))) throw new ErreurCommande("invalide", "maillage.positions", "maillage : coordonnées finies par triplets attendues");
+    const n = positions.length / 3;
+    if (!Array.isArray(indices) || indices.length % 3 !== 0 || indices.length < 3 || !indices.every((v) => Number.isInteger(v) && v >= 0 && v < n)) throw new ErreurCommande("invalide", "maillage.indices", "maillage : triangles d'indices entiers valides attendus");
+    const brep = lire.chaine(p, "brep");
+    if (!/^[A-Za-z0-9+/=]+$/.test(brep) || brep.length > 8_000_000) throw new ErreurCommande("invalide", "brep", "brep binaire en base64 attendu (8 Mo au plus)");
+    const empreinteBrep = lire.chaine(p, "empreinteBrep");
+    if (!/^[0-9a-f]{16}$/.test(empreinteBrep)) throw new ErreurCommande("invalide", "empreinteBrep", "empreinte FNV-1a 64 attendue (16 caractères hexadécimaux)");
+    const volume = lire.nombre(p, "volume", { min: 0 })!;
+    const aire = lire.nombre(p, "aire", { min: 0 })!;
+    const faces = lire.nombre(p, "faces", { min: 1, entier: true })!;
+    const op = (p["operation"] ?? {}) as Record<string, unknown>;
+    const sources = Array.isArray(op["sources"]) ? (op["sources"] as unknown[]).filter((x): x is string => typeof x === "string") : [];
+    const position = lire.point(p, "position", { optionnel: true }) ?? { x: 0, y: 0, frame: "local", unit: "m" };
+    const angle = lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" };
+    const maillage = { positions: positions as number[], indices: indices as number[] };
+    return {
+      nom: lire.chaineOuNull(p, "nom"),
+      couleur: lire.chaineOuNull(p, "couleur"),
+      brep,
+      moteur: lire.chaine(p, "moteur"),
+      versionMoteur: lire.chaine(p, "versionMoteur"),
+      empreinteBrep,
+      maillage,
+      volume,
+      aire,
+      faces,
+      position,
+      angle,
+      // Emprise toujours recalculée (jamais prise du client) : enveloppe convexe du maillage posé.
+      emprise: enveloppeConvexe(emprisePosee(maillage, position, angle.value)).map((q) => ({ x: q.x, y: q.y, frame: "local" as const, unit: "m" as const })),
+      operation: { type: typeof op["type"] === "string" ? (op["type"] as string) : "inconnue", sources, libelle: typeof op["libelle"] === "string" ? (op["libelle"] as string) : "" },
     };
   },
   "bloc-occurrence"(_etat, p) {

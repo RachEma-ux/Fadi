@@ -1,6 +1,6 @@
 # Cahier des charges P2 — DrawAll universel : ontologies métier au-delà de l'architecture
 
-**Version 1.0 — 8 octobre 2026 — validé par le maître d'ouvrage (D-176), lot P2-0 engagé.**
+**Version 1.1 — 8 octobre 2026 — validé par le maître d'ouvrage (D-176) ; lot P2-0 livré et accepté, lot P2-1 livré (D-182) ; P2-2 attend son engagement.**
 **Statut : validé (D-176), décisions de la section 6 prises (D-177 à D-181) ; seul le lot P2-0 est engagé, les lots
 suivants sont acceptés un à un. Le cahier Atelier (`docs/atelier-cahier-des-charges.md`) et le cahier
 Planche (`docs/planche/cahier-planche.md`) restent inchangés : ce document s'y ajoute, il ne les modifie pas.**

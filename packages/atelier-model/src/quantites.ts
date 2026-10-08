@@ -37,6 +37,8 @@ export interface QuantitesNiveau {
   poteaux: number;
   escaliers: number;
   solides: number;
+  /** Solides exacts (P2-1) : nombre et volume annoncé par le noyau (m³, arrondi). */
+  solidesExacts: { nombre: number; volume: number };
   /**
    * Espaces du niveau (D-142) : aire calculée, étendue et volume quand la hauteur ou le niveau haut est connu,
    * niveaux traversés ; clé absente sans espace.
@@ -134,6 +136,7 @@ export function quantites(etat: ModeleAtelier): Quantites {
       poteaux: objetsDeClasse(etat, "poteau", n.id).length,
       escaliers: objetsDeClasse(etat, "escalier", n.id).length,
       solides: objetsDeClasse(etat, "solide", n.id).length,
+      solidesExacts: (() => { const se = objetsDeClasse(etat, "solide-exact", n.id); return { nombre: se.length, volume: arrondi(se.reduce((s, o) => s + o.params.volume, 0)) }; })(),
       ...espacesDuNiveau(etat, n.id),
     };
   });

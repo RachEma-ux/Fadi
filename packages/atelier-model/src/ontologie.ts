@@ -27,7 +27,8 @@ export type Classe =
   | "etiquette"
   | "bloc-occurrence"
   | "garde-corps"
-  | "objet-importe";
+  | "objet-importe"
+  | "solide-exact";
 
 export type KindRelation =
   | "heberge-par" // ouverture → mur hôte
@@ -73,6 +74,7 @@ export const CLASSES: Readonly<Record<Classe, DescriptionClasse>> = {
   "garde-corps": { classe: "garde-corps", ontologie: "building.architecture", libelle: "Garde-corps", ifc: "IfcRailing", caracteristiques: ["sommet"], parNiveau: true },
   "objet-importe": { classe: "objet-importe", ontologie: "building.architecture", libelle: "Objet importé (IFC)", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre"], parNiveau: true },
   "bloc-occurrence": { classe: "bloc-occurrence", ontologie: "drawing", libelle: "Occurrence de bloc", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre", "sommet"], parNiveau: true },
+  "solide-exact": { classe: "solide-exact", ontologie: "drawing", libelle: "Solide exact", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre"], parNiveau: true },
 };
 
 export const CLASSES_OUVERTURE: readonly Classe[] = ["porte", "fenetre", "ouverture"];

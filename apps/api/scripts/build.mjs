@@ -19,7 +19,9 @@ import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-const external = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies }).filter((name) => !name.startsWith("@parcours/"));
+// P2-1 (D-177) : `occt-wasm` reste externe — son chargeur localise `occt-wasm.wasm` (binaire LGPL, remplaçable) à
+// côté de lui dans node_modules ; intégré au bundle, il le chercherait à côté de dist/server.js.
+const external = [...Object.keys({ ...pkg.dependencies, ...pkg.devDependencies }).filter((name) => !name.startsWith("@parcours/")), "occt-wasm"];
 
 mkdirSync(join(root, "dist"), { recursive: true });
 await build({
@@ -36,6 +38,7 @@ await build({
   alias: {
     "@parcours/domain-model": join(root, "../../packages/domain-model/src/index.ts"),
     "@parcours/core-geometry": join(root, "../../packages/core-geometry/src/index.ts"),
+    "@parcours/geometry-exact": join(root, "../../packages/geometry-exact/src/index.ts"),
   },
   logLevel: "info",
 });

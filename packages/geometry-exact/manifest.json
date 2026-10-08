@@ -1,0 +1,7 @@
+{
+  "name": "@parcours/geometry-exact",
+  "version": "0.1.0",
+  "description": "Noyau exact (P2-1, D-177) : opérations B-rep par OCCT en WebAssembly (occt-wasm, binaire LGPL-2.1 chargé séparément et remplaçable), représentation brep binaire + maillage dérivé + volume, export / import STEP AP242 — aucune dépendance d'interface, jamais sur le chemin d'ouverture.",
+  "contracts": { "solide-exact": 1 },
+  "allowedDependencies": ["occt-wasm"]
+}

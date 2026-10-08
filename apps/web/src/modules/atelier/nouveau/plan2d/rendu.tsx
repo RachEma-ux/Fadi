@@ -58,6 +58,15 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
       const ep = Math.max(2, o.params.epaisseur.value * pr.echelle);
       return <path d={chemin(pr, o.params.points, o.params.ferme)} className={classes("obj-garde-corps", selectionne, survole)} fill="none" stroke={selectionne ? "#b3872f" : "#4f625b"} strokeWidth={ep} strokeDasharray={o.params.remplissage === "barreaudage" ? `${Math.max(1, ep / 2)} ${Math.max(1, ep / 2)}` : undefined} data-objet={o.id} />;
     }
+    case "solide-exact": {
+      // Solide exact (P2-1) : emprise du maillage posé (enveloppe convexe), trait plein bleu-gris, volume au survol.
+      if (o.params.emprise.length < 3) return null;
+      return (
+        <path d={chemin(pr, o.params.emprise)} className={classes("obj-solide-exact", selectionne, survole)} fill="#8fa3b8" fillOpacity={0.22} stroke={selectionne ? "#b3872f" : "#4c6177"} strokeWidth={selectionne ? 2.5 : 1.2} data-objet={o.id}>
+          <title>{`Solide exact${o.params.nom ? ` · ${o.params.nom}` : ""} · ${o.params.volume.toFixed(3)} m³`}</title>
+        </path>
+      );
+    }
     case "objet-importe": {
       // Représentation importée : emprise (enveloppe convexe) en tirets, classe IFC d'origine au survol.
       if (o.params.empreinte.length < 2) return null;

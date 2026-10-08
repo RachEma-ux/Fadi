@@ -321,6 +321,31 @@ export interface ParamsObjetImporte {
   source: string | null;
 }
 
+/**
+ * Solide exact (P2-1, D-177) : géométrie canonique **B-rep** (binaire OCCT en base64, repère local du niveau, z
+ * relatif au niveau, avant pose) produite par le noyau `@parcours/geometry-exact` et revalidée par le serveur ;
+ * maillage, volume, aire, faces : dérivés du brep par le même noyau (jamais recalculés par le modèle pur) ; pose en
+ * plan (position, angle autour de z) appliquée à l'usage ; emprise = enveloppe convexe du maillage posé. Une
+ * seule géométrie canonique (R15) : un objet paramétrique n'est jamais converti en brep, son extrusion sert d'opérande.
+ */
+export interface ParamsSolideExact {
+  nom: string | null;
+  couleur: string | null;
+  brep: string;
+  moteur: string;
+  versionMoteur: string;
+  empreinteBrep: string;
+  maillage: { positions: number[]; indices: number[] };
+  volume: number;
+  aire: number;
+  faces: number;
+  position: Point2;
+  angle: Angle;
+  emprise: Point2[];
+  /** Opération d'origine (provenance) : type, objets sources, libellé ; jamais rejouée par le modèle. */
+  operation: { type: string; sources: string[]; libelle: string };
+}
+
 export interface ParamsParClasse {
   mur: ParamsMur;
   porte: ParamsOuverture;
@@ -342,6 +367,7 @@ export interface ParamsParClasse {
   "bloc-occurrence": ParamsBlocOccurrence;
   "garde-corps": ParamsGardeCorps;
   "objet-importe": ParamsObjetImporte;
+  "solide-exact": ParamsSolideExact;
 }
 
 export interface Occurrence<C extends Classe = Classe> {

@@ -13,6 +13,7 @@
  * suivis par relecture du journal (`GET /journal?apres=`) ; une entrée d'autrui relit le modèle et rejoue la file.
  */
 import {
+  allegerCommandeExacte,
   appliquerLot,
   cibleAnnulation,
   cibleRetablissement,
@@ -304,7 +305,9 @@ export class AtelierClient {
         this.majLot(lot.enveloppe.requestId, { etat: "synchronisation" });
         const enveloppe: Enveloppe = { ...lot.enveloppe, baseRevision: this.instantane.revisionServeur };
         try {
-          const reponse = await api.postAtelierCommands(this.projectId, enveloppe);
+          // Charge utile : une commande `solideExact.creer` part sans sa géométrie (le serveur la recalcule et n'en lit
+          // que l'empreinte) ; le lot local, lui, reste complet (réducteur, cache serveur).
+          const reponse = await api.postAtelierCommands(this.projectId, { ...enveloppe, commands: enveloppe.commands.map(allegerCommandeExacte) });
           await localStore.removeLot(this.projectId, lot.enveloppe.requestId);
           // L'état serveur local avance du lot validé : on l'applique au cache serveur.
           const base = await this.etatServeurLocal();

@@ -166,6 +166,15 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
     }
     case "garde-corps":
       return { ...o, params: { ...o.params, points: o.params.points.map(T) } };
+    case "solide-exact": {
+      // Pose en plan (P2-1) : translation et rotation autour de z ; miroir et échelle d'un B-rep : refusés (le modèle
+      // pur ne transforme pas le brep ; une opération exacte le ferait).
+      if (t.type === "miroir") throw new ErreurCommande("precondition", "type", `${o.id} : miroir d'un solide exact refusé (P2-1)`);
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'un solide exact refusée (P2-1)`);
+      const angle = { value: Math.round((o.params.angle.value + rot) * 1e9) / 1e9, unit: "deg" as const };
+      const position = T(o.params.position);
+      return { ...o, params: { ...o.params, position, angle, emprise: o.params.emprise.map(T) } };
+    }
     case "objet-importe": {
       const pos = [...o.params.maillage.positions];
       for (let i = 0; i < pos.length; i += 3) {
@@ -200,6 +209,8 @@ function echelleNonUniforme(o: OccurrenceQuelconque, t: Transformation & { type:
       throw refus("occurrence de bloc (échelle scalaire)");
     case "objet-importe":
       throw refus("représentation importée");
+    case "solide-exact":
+      throw refus("solide exact (B-rep)");
     case "esquisse": {
       const q = o.params;
       if (q.forme === "arc") throw refus("arc");

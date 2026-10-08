@@ -12,7 +12,7 @@ import { pool } from "../db/client.js";
 import { lireIfc } from "../lib/atelier-ifc.js";
 
 const app = createApp();
-const CONTRAT = "atelier-commands/2";
+const CONTRAT = "atelier-commands/3";
 
 async function resetDb() {
   await pool.query(

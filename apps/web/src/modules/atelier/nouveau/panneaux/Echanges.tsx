@@ -70,6 +70,20 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
   const entreeIfc = useRef<HTMLInputElement | null>(null);
   const entreeCsv = useRef<HTMLInputElement | null>(null);
   const entreeBib = useRef<HTMLInputElement | null>(null);
+  const entreeStep = useRef<HTMLInputElement | null>(null);
+  // STEP (P2-1, D-177) : un solide exact calculé par le serveur sur le niveau courant.
+  const importerStep = async (f: File) => {
+    if (!niveauId) return void onErreur("Créez ou choisissez d'abord un niveau : le solide importé s'y pose.");
+    try {
+      await synchroniser(client);
+      onAide(`Lecture de ${f.name} par le noyau exact du serveur…`);
+      const r = await api.importStep(projectId, niveauId, f);
+      await client.relireServeur(r.revision);
+      onAide(`Solide exact importé de ${r.source} (révision ${r.revision}) : il apparaît sur le niveau, sélectionnez-le pour lire son volume.`);
+    } catch (err) {
+      onErreur(err instanceof Error ? err.message : String(err));
+    }
+  };
   // Fichier de bibliothèque (D-050) : repris comme une bibliothèque partagée (homonymes réutilisés, provenance fichier).
   const importerBibliotheque = async (f: File) => {
     try {
@@ -135,6 +149,9 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
           <button type="button" data-import="proprietes" disabled={desactive} title={motif ?? "CSV : id ; propriete ; valeur ; unite"} onClick={(e) => { fermerMenu(e); entreeCsv.current?.click(); }}>
             Propriétés (CSV)…
           </button>
+          <button type="button" data-import="step" disabled={desactive || !niveauId} title={motif ?? (!niveauId ? "Créez d'abord un niveau" : "Solide exact (STEP AP242) calculé par le serveur")} onClick={(e) => { fermerMenu(e); entreeStep.current?.click(); }}>
+            Solide exact (STEP)…
+          </button>
           <button type="button" data-import="bibliotheque" disabled={desactive} title={motif ?? "Fichier .fadi-bibliotheque.json exporté d'un autre projet"} onClick={(e) => { fermerMenu(e); entreeBib.current?.click(); }}>
             Bibliothèque de définitions…
           </button>
@@ -151,6 +168,19 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
           const f = e.currentTarget.files?.[0];
           e.currentTarget.value = "";
           if (f) void importerIfc(f);
+        }}
+      />
+      <input
+        ref={entreeStep}
+        type="file"
+        accept=".step,.stp"
+        hidden
+        aria-label="Fichier STEP à importer"
+        data-entree="step"
+        onChange={(e) => {
+          const f = e.currentTarget.files?.[0];
+          e.currentTarget.value = "";
+          if (f) void importerStep(f);
         }}
       />
       <input

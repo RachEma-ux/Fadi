@@ -18,6 +18,7 @@ import { aireSignee, facesMur, hoteOuverture, longueurAxeMur, normalise, perp, p
 import { contourMurCourbeRaccorde, raccordMur } from "../raccords.js";
 import { corpsMenuiserie } from "../menuiserie.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
+import { positionsPosees } from "../solide-exact.js";
 
 export interface Maillage {
   objetId: string;
@@ -45,6 +46,7 @@ export const COULEURS_3D: Record<string, string> = {
   "garde-corps": "#6f7f78",
   "bloc-occurrence": "#b8a88a",
   "objet-importe": "#b9c4cc",
+  "solide-exact": "#8fa3b8",
 };
 
 // ---------------------------------------------------------------------------
@@ -683,6 +685,15 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
       for (let i = 0; i < p.length; i += 3) t.sommet(p[i]!, p[i + 1]!, z + p[i + 2]!);
       for (const i of o.params.maillage.indices) t.indices.push(base + i);
       if (o.params.ifcClasse.toLowerCase() === "ifcspace") opacite = 0.2;
+      break;
+    }
+    case "solide-exact": {
+      // Maillage dérivé du brep par le noyau exact (P2-1), posé (position, angle) ; z relatif au niveau.
+      const p = positionsPosees(o.params.maillage, o.params.position, o.params.angle.value);
+      const base = t.positions.length / 3;
+      for (let i = 0; i < p.length; i += 3) t.sommet(p[i]!, p[i + 1]!, z + p[i + 2]!);
+      for (const i of o.params.maillage.indices) t.indices.push(base + i);
+      if (o.params.couleur) couleur = o.params.couleur;
       break;
     }
     case "solide": {
