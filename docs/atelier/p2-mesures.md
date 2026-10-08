@@ -71,11 +71,14 @@ le lot P2-1 écrira son propre Worker (comme ici) plutôt que de dépendre de ce
 | 16. fusion de deux cubes disjoints (compound) | 4,1 | 54,4 | 12 / 2 | 2 | 2 | 24 (35,4 ms) | ✔ |
 | 17. cube − cylindre tangent intérieur (arête de contact) | 20,5 | 205,7 | 20 / 4 | 0,21460184 | 0,21460184 | 128 (41,3 ms) | ✔ |
 | 18. tore ∩ cube | 17,9 | 167 | 1 / 1 | 0,07895684 | 0,07895684 | 1456 (53,2 ms) | ✔ |
-| 19. section plane d'un cube à 45° | 6,4 | 73,3 | 0 / 0 | 0 | — | 0 (8,6 ms) | ✔ |
+| 19. section plane d'un cube à 45° (plan z = y ; attendu : 4 arêtes, périmètre 2 (1 + √2) = 4,828 m) | 4,6 | 69,7 | 0 / 0 · 4 arêtes, 4,82842712 m | 0 | — | 0 (3,9 ms) | ✔ |
 | 20. chaîne : (cube − trou) ∪ cylindre, congé, tessellation | 31,9 | 240,9 | 13 / 1 | 1,01562694 | — | 976 (68,4 ms) | ✔ |
 
 **20 / 20 valides** (`isValid` vrai et volume à 1e-4 m³ de la valeur attendue quand elle est calculable à la
-main), 0 erreur, 0 délai dépassé. Le « max » est la première exécution (compilation JIT des
+main ; le cas 19, sans volume, est jugé sur sa topologie : 4 arêtes et un périmètre à 1e-4 m de 2 (1 + √2) — la
+première version du banc posait les quatre sommets du plan de coupe à z = 0,5, une section horizontale rapportée comme
+valide avec un résultat vide ; corrigé à la relecture de la PR #93 et remesuré, seule la ligne 19 change), 0 erreur, 0
+délai dépassé. Le « max » est la première exécution (compilation JIT des
 fonctions touchées) : la médiane est la valeur de régime. Trois constats à retenir pour P2-1 :
 
 1. `fuse` de deux solides rend un **compound** même quand le résultat est connexe ; `fillet` exige un solide : il faut
@@ -116,7 +119,7 @@ concentricité, plan.
 | D5. coïncidence seule : 3 ddl de rotation | résolu, sous-contraint | résolu, sous-contraint | 0,03 |
 | D6. parallèle posée deux fois (redondante compatible, sous-contrainte) | résolu, sous-contraint et redondant | résolu, sous-contraint et redondant | 0,01 |
 
-**Critère D-178 : 12 / 12 cas résolus, 46,11 ms au plus (< 100 ms), 7 / 7 diagnostics
+**Critère D-178 : 12 / 12 cas résolus en moins de 100 ms (le banc met désormais la limite dans le verdict de chaque cas et sort en échec si un cas de référence la dépasse — relecture de la PR #93 ; sur cette machine partagée le maximum varie de 46 à 78 ms d'une exécution à l'autre, le cas 6 ou 8 selon le moment), 7 / 7 diagnostics
 corrects.** Leçon à inscrire dans le solveur produit : une contrainte d'angle à 0° ou 180° écrite avec le produit
 scalaire a un gradient nul à la solution (le rang ne la compte pas, cas D0) ; elle doit être posée comme un
 parallélisme (produit vectoriel). Les « redondances compatibles » viennent de ce même parallélisme (3 équations de
@@ -132,14 +135,19 @@ Variante B = scène P.118 du lot 0 (instanciée) ; variante M = B + une CTA (231
 | --- | --- | --- |
 | Objets / géométries | 1517 / 1 | 1748 / 232 |
 | Draw calls / triangles par trame | 24 / 18204 | 255 / 39764 |
-| Construction de la scène | 45 ms | 84 ms |
-| Première image depuis la navigation | 1117 ms | 720 ms |
-| Trame p50 / p95 (rendu + readPixels, logiciel) | 159,1 / 194,4 ms | 181,1 / 213,7 ms |
-| Sélection (lancer de rayon) p95 | 0,65 ms | 1,45 ms |
-| Tas JS | 8 Mo | 10 Mo |
+| Construction de la scène | 30 ms | 50 ms |
+| Première image depuis la navigation | 874 ms | 612 ms |
+| Trame p50 / p95 (rendu + readPixels, logiciel) | 160,6 / 262,8 ms | 187,3 / 237,7 ms |
+| Sélection (lancer de rayon) p95 | 1 ms | 1,6 ms |
+| Tas JS | 8 Mo | 9 Mo |
+
+Mesures reprises après correction de la scène M à la relecture de la PR #93 : la translation `base` du local technique
+était appliquée deux fois aux gaines (points de la courbe puis maillage), qui partaient de (12, …, 12) au lieu de se
+raccorder à la CTA en (6, …, 6) ; corrigé, les gaines partent du caisson, et les chiffres ci-dessus sont ceux de la
+scène corrigée (même nombre d'objets, de draw calls et de triangles ; trame et sélection remesurées).
 
 Lecture : la machine double les triangles et multiplie les draw calls par 10 (maillages fins non instanciés) pour
-+ 10 % de temps de trame en rendu logiciel ; la sélection double. Le coût est dans le nombre de maillages, pas dans les
++ 15 % de temps de trame médian en rendu logiciel (p95 dans le bruit de SwiftShader) ; la sélection coûte 1,5 fois plus. Le coût est dans le nombre de maillages, pas dans les
 triangles : P2-2 instanciera les pièces répétées (fixations) par définition, comme le bâtiment l'est par classe.
 Comme au lot 0, ces chiffres valent pour SwiftShader ; sur GPU réel ils restent à mesurer (section 6).
 

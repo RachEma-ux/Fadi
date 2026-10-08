@@ -64,22 +64,25 @@ export function lireNombre(texte: string): number | null {
 }
 
 export function validerCatalogueCsv(texte: string, colonnesAttendues?: readonly string[]): RapportCatalogueCsv {
-  const lignes = texte
+  // Lignes physiques du fichier : les lignes vides sont ignorées sans renuméroter les suivantes, un refus désigne
+  // la ligne telle que l'éditeur de la source la voit (contrat des catalogues, D-180).
+  const physiques = texte
     .replace(/^﻿/, "")
     .replace(/\r\n?/g, "\n")
     .split("\n")
-    .filter((l) => l.trim() !== "");
-  if (!lignes.length) throw new Error("Fichier vide.");
-  const entete = lignes[0]!;
+    .map((l, i) => ({ l, numero: i + 1 }))
+    .filter(({ l }) => l.trim() !== "");
+  if (!physiques.length) throw new Error("Fichier vide.");
+  const entete = physiques[0]!.l;
   const sep = (entete.match(/;/g)?.length ?? 0) >= (entete.match(/,/g)?.length ?? 0) ? ";" : ",";
   const colonnes = cellules(entete, sep).map(normaliser);
   for (const c of COLONNES_SOURCE) if (!colonnes.includes(c)) throw new Error(`Colonne obligatoire absente de l'en-tête : « ${c} ».`);
   if (colonnesAttendues) for (const c of colonnesAttendues) if (!colonnes.includes(normaliser(c))) throw new Error(`Colonne attendue absente de l'en-tête : « ${c} ».`);
   const refus: RapportCatalogueCsv["refus"] = [];
   const retenues: LigneCatalogue[] = [];
-  for (let i = 1; i < lignes.length; i++) {
-    const cells = cellules(lignes[i]!, sep);
-    const numero = i + 1;
+  for (let i = 1; i < physiques.length; i++) {
+    const { l: ligne, numero } = physiques[i]!;
+    const cells = cellules(ligne, sep);
     if (cells.length !== colonnes.length) {
       refus.push({ ligne: numero, motif: `${cells.length} cellule(s) pour ${colonnes.length} colonne(s).` });
       continue;
@@ -106,5 +109,5 @@ export function validerCatalogueCsv(texte: string, colonnesAttendues?: readonly 
     }
     retenues.push({ numero, valeurs, source: { source: String(valeurs.source), edition: String(valeurs.edition), page: String(valeurs.page) } });
   }
-  return { colonnes, lignes: lignes.length - 1, retenues, refus, importable: refus.length === 0 };
+  return { colonnes, lignes: physiques.length - 1, retenues, refus, importable: refus.length === 0 };
 }

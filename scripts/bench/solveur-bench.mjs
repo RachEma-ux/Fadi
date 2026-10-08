@@ -138,8 +138,11 @@ const degeneres = [
   { nom: 'D6. parallèle posée deux fois (redondante compatible, sous-contrainte)', attendu: 'résolu, sous-contraint et redondant', pieces: [piece('bati', true), piece('p', false, [0, 0, 0])], contraintes: [{ type: 'parallele', a: 0, b: 1, da: Z, db: Z }, { type: 'parallele', a: 0, b: 1, da: Z, db: Z }] },
 ];
 const rapport = { node: process.version, tolerance: TOL, methode: 'Gauss-Newton amorti (Levenberg-Marquardt), jacobienne par différences finies, rang par élimination de Gauss (pivot partiel)', reference: [], degeneres: [] };
-for (const cas of reference) { const r = resoudre(cas); rapport.reference.push({ nom: cas.nom, pieces: cas.pieces.length, ...r }); console.log(`${r.residu <= TOL ? '✓' : '✗'} ${cas.nom} — ${r.inconnues} inconnues, ${r.equations} éq., rang ${r.rang}, ${r.iterations} it., ${r.ms} ms, ${r.diagnostic}`); }
+// Critère D-178 : résidu sous la tolérance ET moins de 100 ms par cas de référence ; un cas hors critère met le banc en échec.
+const LIMITE_MS = 100;
+for (const cas of reference) { const r = resoudre(cas); const ok = r.residu <= TOL && r.ms < LIMITE_MS; rapport.reference.push({ nom: cas.nom, pieces: cas.pieces.length, ...r, ok }); console.log(`${ok ? '✓' : '✗'} ${cas.nom} — ${r.inconnues} inconnues, ${r.equations} éq., rang ${r.rang}, ${r.iterations} it., ${r.ms} ms${r.ms < LIMITE_MS ? '' : ` (> ${LIMITE_MS} ms)`}, ${r.diagnostic}`); }
 for (const cas of degeneres) { const r = resoudre(cas); const ok = r.diagnostic === cas.attendu; rapport.degeneres.push({ nom: cas.nom, attendu: cas.attendu, ...r, ok }); console.log(`${ok ? '✓' : '✗'} ${cas.nom} — attendu « ${cas.attendu} », obtenu « ${r.diagnostic} » (${r.ms} ms)`); }
-rapport.synthese = { referenceResolus: rapport.reference.filter((r) => r.residu <= TOL).length, referenceMaxMs: Math.max(...rapport.reference.map((r) => r.ms)), degeneresCorrects: rapport.degeneres.filter((r) => r.ok).length };
+rapport.synthese = { limiteMs: LIMITE_MS, referenceResolus: rapport.reference.filter((r) => r.residu <= TOL).length, referenceSousLimite: rapport.reference.filter((r) => r.ok).length, referenceMaxMs: Math.max(...rapport.reference.map((r) => r.ms)), degeneresCorrects: rapport.degeneres.filter((r) => r.ok).length };
 console.log(JSON.stringify(rapport.synthese));
 if (OUT) fs.writeFileSync(OUT, JSON.stringify(rapport, null, 2));
+if (rapport.synthese.referenceSousLimite !== reference.length || rapport.synthese.degeneresCorrects !== degeneres.length) { console.error(`✗ critère D-178 non tenu : ${rapport.synthese.referenceSousLimite} / ${reference.length} cas de référence résolus en moins de ${LIMITE_MS} ms, ${rapport.synthese.degeneresCorrects} / ${degeneres.length} diagnostics.`); process.exit(1); }

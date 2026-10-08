@@ -32,6 +32,8 @@ try {
   const vol = (s) => round(k.getVolume(s) * 1e6) / 1e6;
   const faces = (s) => k.getSubShapes(s, 'face').length;
   const solids = (s) => k.getSubShapes(s, 'solid').length;
+  const aretes = (s) => k.getSubShapes(s, 'edge').length;
+  const longueur = (s) => k.getLength(s); // somme des longueurs d'arêtes (getLength : propriétés linéaires de la forme)
   const tri = (s) => { const m = k.tessellate(s, { linearDeflection: 0.01, angularDeflection: 0.5 }); return m.triangleCount ?? (m.indices ? m.indices.length / 3 : null); };
   const box = (dx, dy, dz, x = 0, y = 0, z = 0) => k.translate(k.makeBox(dx, dy, dz), x, y, z);
   const cyl = (r, h, x = 0, y = 0, z = 0) => k.translate(k.makeCylinder(r, h), x, y, z);
@@ -57,22 +59,26 @@ try {
     ['16. fusion de deux cubes disjoints (compound)', () => k.fuse(box(1, 1, 1), box(1, 1, 1, 2, 0, 0)), 2],
     ['17. cube − cylindre tangent intérieur (arête de contact)', () => k.cut(box(1, 1, 1), cyl(0.5, 2, 0.5, 0.5, -0.5)), 1 - Math.PI * 0.25],
     ['18. tore ∩ cube', () => k.common(k.translate(k.makeTorus(0.4, 0.1), 0.5, 0.5, 0.5), box(1, 1, 1)), 2 * Math.PI * Math.PI * 0.4 * 0.01],
-    ['19. section plane d\'un cube à 45°', () => k.section ? k.section(box(1, 1, 1), k.makeFace(k.makeWire([k.makeLineEdge({ x: -1, y: -1, z: 0.5 }, { x: 2, y: -1, z: 0.5 }), k.makeLineEdge({ x: 2, y: -1, z: 0.5 }, { x: 2, y: 2, z: 0.5 }), k.makeLineEdge({ x: 2, y: 2, z: 0.5 }, { x: -1, y: 2, z: 0.5 }), k.makeLineEdge({ x: -1, y: 2, z: 0.5 }, { x: -1, y: -1, z: 0.5 })]))) : (() => { throw new Error('section absent'); })(), null],
+    // Plan z = y (incliné à 45° sur xy, passant par l'arête y = z = 0 → y = z = 1) : la section du cube est un rectangle 1 × √2, 4 arêtes.
+    ['19. section plane d\'un cube à 45°', () => k.section ? k.section(box(1, 1, 1), k.makeFace(k.makeWire([k.makeLineEdge({ x: -1, y: -1, z: -1 }, { x: 2, y: -1, z: -1 }), k.makeLineEdge({ x: 2, y: -1, z: -1 }, { x: 2, y: 2, z: 2 }), k.makeLineEdge({ x: 2, y: 2, z: 2 }, { x: -1, y: 2, z: 2 }), k.makeLineEdge({ x: -1, y: 2, z: 2 }, { x: -1, y: -1, z: -1 })]))) : (() => { throw new Error('section absent'); })(), null, { aretes: 4, longueur: 2 * (1 + Math.SQRT2) }],
     ['20. chaîne : (cube − trou) ∪ cylindre, congé, tessellation', () => { const b = k.cut(box(1, 1, 1), cyl(0.2, 2, 0.5, 0.5, -0.5)); const u0 = k.fuse(b, cyl(0.3, 0.5, 0.5, 0.5, 1)); const u = k.getSubShapes(u0, 'solid')[0]; /* fuse rend un compound : le congé exige un solide (constat du banc) */ return k.fillet(u, k.getSubShapes(u, 'edge').slice(0, 4), 0.02); }, null],
   ];
   const resultats = [];
   const selection = CAS === 'all' ? cas : (/^\d+$/.test(CAS) ? [cas[Number(CAS)]] : []);
-  for (const [nom, fn, attendu] of selection) {
-    const r = { nom, attendu: attendu === null ? null : round(attendu * 1e6) / 1e6 };
+  for (const [nom, fn, attendu, topologie] of selection) {
+    const r = { nom, attendu: attendu === null ? null : round(attendu * 1e6) / 1e6, ...(topologie ? { topologieAttendue: topologie } : {}) };
     try {
       const times = []; let s = null;
       for (let i = 0; i < REP; i++) { const t = performance.now(); s = fn(); times.push(performance.now() - t); }
       r.medianMs = round(med(times)); r.maxMs = round(Math.max(...times));
-      r.valide = k.isValid(s); r.faces = faces(s); r.solides = solids(s);
+      r.valide = k.isValid(s); r.faces = faces(s); r.solides = solids(s); r.aretes = aretes(s);
+      if (topologie) r.longueurAretes = round(longueur(s) * 1e6) / 1e6;
       try { r.volume = vol(s); } catch (e) { r.volume = null; }
       try { const t = performance.now(); r.triangles = tri(s); r.tessellationMs = round(performance.now() - t); } catch (e) { r.triangles = null; r.tessellationErreur = String(e); }
       r.ecartVolume = (attendu !== null && r.volume !== null) ? round(Math.abs(r.volume - attendu) * 1e6) / 1e6 : null;
-      r.statut = r.valide && (r.ecartVolume === null || r.ecartVolume < 1e-4) ? 'ok' : 'écart';
+      // Un cas sans volume attendu doit annoncer sa topologie (arêtes, longueur) : un résultat vide n'est jamais « ok » par défaut.
+      const topologieOk = !topologie || (r.aretes === topologie.aretes && Math.abs(r.longueurAretes - topologie.longueur) < 1e-4);
+      r.statut = r.valide && (r.ecartVolume === null || r.ecartVolume < 1e-4) && topologieOk ? 'ok' : 'écart';
     } catch (e) { r.statut = 'erreur'; r.erreur = String(e && e.message ? e.message : e).slice(0, 200); }
     resultats.push(r);
   }

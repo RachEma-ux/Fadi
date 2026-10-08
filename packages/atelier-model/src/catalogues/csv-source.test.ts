@@ -19,6 +19,12 @@ describe("catalogues sourcés (D-180)", () => {
     expect(r.retenues).toHaveLength(1);
   });
 
+  it("désigne un refus par son numéro de ligne physique, lignes vides comprises", () => {
+    const r = validerCatalogueCsv(`${ENTETE}\n\nA;100;55;Catalogue X;2024;p. 12\n\nB;120;60;;2024;p. 13\n`);
+    expect(r.refus).toEqual([{ ligne: 5, motif: "« source » vide." }]);
+    expect(r.retenues).toHaveLength(1);
+  });
+
   it("refuse une cellule numérique non numérique mais admet la cellule vide (non évaluée)", () => {
     const r = validerCatalogueCsv(`${ENTETE}\nA;abc;;Catalogue X;2024;p. 12\nB;;;Catalogue X;2024;p. 13\n`);
     expect(r.refus).toEqual([{ ligne: 2, motif: "« hauteur_mm » n'est pas un nombre (« abc »)." }]);
