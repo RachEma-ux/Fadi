@@ -28,6 +28,9 @@ import { designationSection } from "../ontologies/structure/sections.js";
 import { longueurBarre } from "../ontologies/structure/geometrie.js";
 import { segmentsTrame } from "../ontologies/structure/trame.js";
 import { assemblagesSoudes } from "../ontologies/structure/soudures.js";
+import { designationBois } from "../ontologies/timber/sections.js";
+import { longueurElementBois } from "../ontologies/timber/geometrie.js";
+import { developpe, tablePliage } from "../ontologies/sheetmetal/pliage.js";
 import { empreinte } from "../documents/empreinte.js";
 import { compositionMur, lireCouches } from "../compositions.js";
 import { connexionsDuNiveau, polygoneMurRaccorde, raccordMur, type ExtremiteConnexion } from "../raccords.js";
@@ -662,6 +665,81 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
       case "coulage":
         // Groupe (plus bas) : IfcGroup assignant ses éléments.
         break;
+      // Ontologie bois (P2-4) : pièces typées par rôle, panneaux CLT en murs / dalles, ossatures agrégées plus bas.
+      case "element-bois": {
+        const rep = corpsMaille(o);
+        const role = o.params.role;
+        const L = longueurElementBois(o.params);
+        const membre: Record<string, string> = { montant: ".STUD.", lisse: ".PLATE.", sabliere: ".PLATE.", traverse: ".PLATE.", linteau: ".PLATE.", appui: ".PLATE.", poteau: ".POST.", panne: ".PURLIN.", chevron: ".RAFTER.", faitiere: ".PURLIN.", diagonale: ".BRACE.", entretoise: ".STRUT.", autre: ".USERDEFINED." };
+        const id = role === "poutre" || role === "solive"
+          ? s.ajouter(`IFCBEAM(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(`bois:${role}`)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},${opt(o.params.repere)},${role === "solive" ? ".JOIST." : ".BEAM."})`)
+          : s.ajouter(`IFCMEMBER(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(`bois:${role}`)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},${opt(o.params.repere)},${membre[role] ?? ".USERDEFINED."})`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        const sec = o.params.section;
+        if (sec.essence) { const mat = materiauIfc(sec.essence); associationsMateriau.set(mat, [...(associationsMateriau.get(mat) ?? []), id]); }
+        pset(id, "Fadi_Bois", [
+          `#${prop("Role", label(role))}`,
+          `#${prop("Section", label(designationBois(sec)))}`,
+          `#${prop("Largeur", `IFCPOSITIVELENGTHMEASURE(${reelStep(sec.largeur.value)})`)}`,
+          `#${prop("Hauteur", `IFCPOSITIVELENGTHMEASURE(${reelStep(sec.hauteur.value)})`)}`,
+          sec.essence ? `#${prop("Essence", label(sec.essence))}` : null,
+          sec.classe ? `#${prop("Classe", label(sec.classe))}` : null,
+          sec.profil ? `#${prop("SourceSection", texte(sec.profil.source))}` : null,
+          `#${prop("Longueur", `IFCPOSITIVELENGTHMEASURE(${reelStep(L)})`)}`,
+          o.params.ossatureId ? `#${prop("Ossature", label(o.params.ossatureId))}` : null,
+        ]);
+        compter("element-bois", role === "poutre" || role === "solive" ? "IfcBeam" : "IfcMember", rep ? "Tessellation" : "—", true, "pièce de bois : corps tessellé, rôle en PredefinedType, essence en IfcMaterial, section et source en Fadi_Bois");
+        break;
+      }
+      case "panneau-clt": {
+        const rep = corpsMaille(o);
+        const id = o.params.pose === "mur"
+          ? s.ajouter(`IFCWALL(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep("CLT")},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.SOLIDWALL.)`)
+          : s.ajouter(`IFCSLAB(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep("CLT")},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.FLOOR.)`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        if (o.params.essence) { const mat = materiauIfc(o.params.essence); associationsMateriau.set(mat, [...(associationsMateriau.get(mat) ?? []), id]); }
+        pset(id, "Fadi_CLT", [`#${prop("Epaisseur", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.epaisseur.value)})`)}`, `#${prop("Couches", `IFCINTEGER(${o.params.couches})`)}`, o.params.classe ? `#${prop("Classe", label(o.params.classe))}` : null, o.params.profil ? `#${prop("SourceFiche", texte(o.params.profil.source))}` : null]);
+        compter("panneau-clt", o.params.pose === "mur" ? "IfcWall" : "IfcSlab", rep ? "Tessellation" : "—", true, "panneau CLT : IfcWall .SOLIDWALL. (vertical) ou IfcSlab .FLOOR. (plancher), ObjectType CLT, couches en Fadi_CLT");
+        break;
+      }
+      case "assemblage-bois": {
+        const rep = o.params.platine ? corpsMaille(o) : null;
+        const pl = s.ajouter(`IFCLOCALPLACEMENT(${ref(placementDe(o.niveauId))},${ref(s.ajouter(`IFCAXIS2PLACEMENT3D(${ref(pt3(o.params.position.x, o.params.position.y, o.params.z))},$,$)`))})`);
+        const id = o.params.nature === "bois-bois"
+          ? s.ajouter(`IFCFASTENER(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(`bois-bois:${o.params.type}`)},${ref(pl)},$,$,.USERDEFINED.)`)
+          : s.ajouter(`IFCDISCRETEACCESSORY(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(`bois-metal:${o.params.type}`)},${ref(rep ? placementDe(o.niveauId) : pl)},${rep ? ref(forme([rep])) : "$"},$,.USERDEFINED.)`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        pset(id, "Fadi_AssemblageBois", [`#${prop("Type", label(o.params.type))}`, `#${prop("Nature", label(o.params.nature))}`, `#${prop("Pieces", label(`${o.params.a};${o.params.b}`))}`, ...o.params.quincaillerie.map((q, i) => `#${prop(`Quincaillerie_${i + 1}`, label(`${q.designation} × ${q.nombre}${q.source ? ` (${q.source})` : ""}`))}`)]);
+        compter("assemblage-bois", o.params.nature === "bois-bois" ? "IfcFastener" : "IfcDiscreteAccessory", rep ? "Tessellation" : "—", true, "assemblage bois : IfcFastener (bois–bois, placé) ou IfcDiscreteAccessory (bois–métal, platine tessellée) ; quincaillerie déclarée en Fadi_AssemblageBois");
+        break;
+      }
+      case "ossature":
+        // Agrégat (plus bas) : IfcElementAssembly de ses pièces.
+        break;
+      // Ontologie tôlerie (P2-4) : tôle pliée en IfcPlate .SHEET., développé en propriétés.
+      case "tole": {
+        const rep = corpsMaille(o);
+        const id = s.ajouter(`IFCPLATE(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep("tole")},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},${opt(o.params.repere)},.SHEET.)`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        const dev = developpe(o.params, tablePliage(o.params, etat.definitions as Record<string, { classe: string; params: Record<string, unknown> }>));
+        pset(id, "Fadi_Tole", [
+          `#${prop("Epaisseur", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.epaisseur.value)})`)}`,
+          o.params.materiau ? `#${prop("Materiau", label(o.params.materiau))}` : null,
+          `#${prop("Plis", `IFCINTEGER(${o.params.plis.length})`)}`,
+          ...o.params.plis.map((pli) => `#${prop(`Pli_${pli.bord}`, label(`${reelStep(pli.angle.value)} deg, aile ${reelStep(pli.longueur.value)}`))}`),
+          dev.nonEvalues.length ? `#${prop("Developpe", label("non évalué (paramètres de pliage absents)"))}` : `#${prop("Developpe", label(`${reelStep(dev.encombrement.longueur)} x ${reelStep(dev.encombrement.largeur)}`))}`,
+        ]);
+        compter("tole", "IfcPlate", rep ? "Tessellation" : "—", true, "tôle pliée : IfcPlate .SHEET. tessellée (face, zones pliées, ailes), plis et développé en Fadi_Tole");
+        break;
+      }
       case "objet-importe": {
         // Représentation importée : réécrite telle quelle (maillage), GlobalId d'origine conservé, classe d'origine
         // en ObjectType et en propriété — jamais reclassée en objet paramétrique.
@@ -789,6 +867,16 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   }
 
   for (const [niveauId, ids] of espacesParEtage) s.ajouter(`IFCRELAGGREGATES(${gid(`rel-espaces|${niveauId}`)},$,$,$,${ref(etages.get(niveauId)!.id)},${liste(ids)})`);
+  // Ossatures (P2-4) : IfcElementAssembly .USERDEFINED. agrégeant leurs pièces.
+  for (const oss of objets.filter((o): o is Occurrence<"ossature"> => o.classe === "ossature")) {
+    const membres = objets.filter((o): o is Occurrence<"element-bois"> => o.classe === "element-bois" && o.params.ossatureId === oss.id).map((o) => produits.get(o.id)).filter((x): x is number => x !== undefined);
+    const id = s.ajouter(`IFCELEMENTASSEMBLY(${gid(oss.id)},$,${chaineStep(oss.params.nom)},$,${chaineStep(`ossature:${oss.params.genre}`)},${ref(placementDe(oss.niveauId))},$,$,$,.USERDEFINED.)`);
+    produits.set(oss.id, id);
+    contenir(oss.niveauId, id);
+    if (membres.length) s.ajouter(`IFCRELAGGREGATES(${gid(`rel-ossature|${oss.id}`)},$,$,$,${ref(id)},${liste(membres)})`);
+    pset(id, "Fadi_Ossature", [`#${prop("Genre", label(oss.params.genre))}`, `#${prop("Hote", label(oss.params.hoteId))}`, `#${prop("Entraxe", `IFCPOSITIVELENGTHMEASURE(${reelStep(oss.params.entraxe.value)})`)}`, `#${prop("Pieces", `IFCINTEGER(${membres.length})`)}`]);
+    compter("ossature", "IfcElementAssembly", "—", true, "ossature : IfcElementAssembly agrégeant ses pièces (IfcRelAggregates), hôte et entraxe en Fadi_Ossature");
+  }
   // Coulages (P2-3, DA-08-15 / 16) : IfcGroup assignant ses éléments ; assemblages soudés (DA-10-10) : IfcElementAssembly .WELDED.
   for (const c of objets.filter((o): o is Occurrence<"coulage"> => o.classe === "coulage")) {
     const id = s.ajouter(`IFCGROUP(${gid(c.id)},$,${chaineStep(c.params.nom)},$,${chaineStep(c.params.prefabrique ? "lot-prefabrique" : "coulage")})`);
@@ -886,7 +974,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   const contenu = [...entete, ...s.lignes, "ENDSEC;", "END-ISO-10303-21;", ""].join("\n");
   // Contrôle croisé annexe C (D-111) : une classe IFC déclarée différente de l'annexe C est nommée, jamais suivie.
   for (const x of controleClassesIfc(etat)) remarques.add(`${x.message}.`);
-  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "assemblage", "piece-mecanique", "liaison", "trame", "poutre", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "assemblage-soude", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
+  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "assemblage", "piece-mecanique", "liaison", "trame", "poutre", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "assemblage-soude", "ossature", "element-bois", "panneau-clt", "assemblage-bois", "tole", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
   return {
     contenu,
     rapport: {

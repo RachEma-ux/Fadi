@@ -4,7 +4,7 @@
  * d'objet priment sur l'orthogonal, qui prime sur la grille. Fonctions pures : testables sans DOM.
  */
 import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointDansPolygone, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
-import { contoursArchitecture, intersectionsTrame, pt, segmentsTrame, traitsBloc } from "@parcours/atelier-model";
+import { contoursArchitecture, empriseTole, intersectionsTrame, pt, segmentsTrame, traitsBloc } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
 export type TypeAccroche = "extremite" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "tangente" | "intersection" | "proche" | "parallele" | "orthogonal" | "grille" | "libre";
@@ -152,6 +152,22 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
         if (o.params.points.length >= 2) contour(o.params.points, o.id, o.params.forme === "cadre" || o.params.forme === "etrier");
         break;
       case "coulage":
+        break;
+      // Ontologies bois et tôlerie (P2-4).
+      case "element-bois":
+        segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
+        break;
+      case "ossature":
+      case "assemblage-bois":
+        centres.push({ p: o.params.position, objetId: o.id });
+        break;
+      case "panneau-clt":
+        if (o.params.pose === "mur" && o.params.a && o.params.b) segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
+        else { contour(o.params.contour, o.id, true); for (const t of o.params.trous) contour(t, o.id); }
+        break;
+      case "tole":
+        centres.push({ p: o.params.position, objetId: o.id });
+        contour(empriseTole(o.params), o.id, true);
         break;
       case "cotation":
         segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
@@ -333,7 +349,13 @@ export function objetSousPointeur(p: Point2, cache: ReturnType<typeof segmentsDu
     } else if (o.classe === "plaque" && o.params.contour.length >= 3 && pointDansPolygone(p, o.params.contour)) {
       const d = rayon - 1e-6;
       if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };
-    } else if (o.classe === "assemblage-structurel" || o.classe === "soudure") {
+    } else if (o.classe === "tole" && pointDansPolygone(p, empriseTole(o.params))) {
+      const d = rayon - 1e-6;
+      if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };
+    } else if (o.classe === "panneau-clt" && o.params.pose === "plancher" && o.params.contour.length >= 3 && pointDansPolygone(p, o.params.contour)) {
+      const d = rayon - 1e-6;
+      if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };
+    } else if (o.classe === "assemblage-structurel" || o.classe === "soudure" || o.classe === "ossature" || o.classe === "assemblage-bois") {
       const d = dist(p, o.params.position);
       if (d <= rayon * 2 && (!meilleur || d < meilleur.distance)) meilleur = { objetId: o.id, distance: d };
     } else if ((o.classe === "solide-exact" || o.classe === "piece-mecanique") && o.params.emprise.length >= 3 && pointDansPolygone(p, o.params.emprise)) {

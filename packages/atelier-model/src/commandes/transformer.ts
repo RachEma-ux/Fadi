@@ -204,6 +204,21 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
       return { ...o, params: { ...o.params, points: o.params.points.map(T) } };
     case "coulage":
       return o;
+    // Ontologies bois et tôlerie (P2-4).
+    case "element-bois":
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'une pièce de bois refusée (section typée)`);
+      return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b), ...(t.type === "miroir" ? { rotation: { value: -o.params.rotation.value, unit: "deg" as const } } : {}) } };
+    case "ossature":
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'une ossature refusée (entraxe typé)`);
+      return { ...o, params: { ...o.params, position: T(o.params.position) } };
+    case "panneau-clt":
+      if (t.type === "echelle" && o.params.pose === "mur") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'un panneau CLT vertical refusée (épaisseur et hauteur typées)`);
+      return { ...o, params: { ...o.params, a: o.params.a ? T(o.params.a) : null, b: o.params.b ? T(o.params.b) : null, ...contourT({ contour: o.params.contour, trous: o.params.trous }, t) } };
+    case "assemblage-bois":
+      return { ...o, params: { ...o.params, position: T(o.params.position) } };
+    case "tole":
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'une tôle refusée (épaisseur et plis typés)`);
+      return { ...o, params: { ...o.params, position: T(o.params.position), angle: { value: Math.round((t.type === "miroir" ? 2 * axeMiroir(t) - o.params.angle.value : o.params.angle.value + rot) * 1e9) / 1e9, unit: "deg" } } };
     case "solide-exact": {
       // Pose en plan (P2-1) : translation et rotation autour de z ; miroir et échelle d'un B-rep : refusés (le modèle
       // pur ne transforme pas le brep ; une opération exacte le ferait).
@@ -262,6 +277,14 @@ function echelleNonUniforme(o: OccurrenceQuelconque, t: Transformation & { type:
       throw refus("objet de structure (P2-3 : sections et entraxes typés)");
     case "plaque":
       return { ...o, params: { ...o.params, ...contourT(o.params, t) } };
+    case "element-bois":
+    case "ossature":
+    case "assemblage-bois":
+    case "tole":
+      throw refus("objet bois ou tôle (P2-4 : sections, entraxes et plis typés)");
+    case "panneau-clt":
+      if (o.params.pose === "mur") throw refus("panneau CLT vertical");
+      return { ...o, params: { ...o.params, ...contourT({ contour: o.params.contour, trous: o.params.trous }, t) } };
     case "esquisse": {
       const q = o.params;
       if (q.forme === "arc") throw refus("arc");

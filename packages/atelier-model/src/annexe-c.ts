@@ -31,6 +31,11 @@ export const ANNEXE_C: Partial<Record<Classe, readonly string[]>> = {
   soudure: ["IfcFastener"],
   armature: ["IfcReinforcingBar"],
   coulage: ["IfcGroup"],
+  "element-bois": ["IfcMember", "IfcBeam", "IfcColumn"],
+  ossature: ["IfcElementAssembly"],
+  "panneau-clt": ["IfcWall", "IfcSlab", "IfcPlate"],
+  "assemblage-bois": ["IfcFastener", "IfcDiscreteAccessory"],
+  tole: ["IfcPlate"],
   cotation: ["IfcAnnotation"],
   texte: ["IfcAnnotation"],
 };

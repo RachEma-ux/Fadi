@@ -537,6 +537,119 @@ export interface ParamsCoulage {
   prefabrique: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// Ontologie bois (P2-4, DA-09-01 à 08)
+// ---------------------------------------------------------------------------
+
+export type RoleBois = "montant" | "lisse" | "sabliere" | "traverse" | "linteau" | "appui" | "poteau" | "poutre" | "solive" | "entretoise" | "panne" | "chevron" | "faitiere" | "diagonale" | "autre";
+
+/** Section d'une pièce de bois : rectangle (largeur × hauteur, m) saisi ou tiré d'un catalogue sourcé ; essence et classe déclarées (noms seulement). */
+export interface SectionBois {
+  largeur: Longueur;
+  hauteur: Longueur;
+  profil: { catalogueId: string; designation: string; source: string } | null;
+  essence: string | null;
+  classe: string | null;
+}
+
+/** Pièce de bois (DA-09-01) : axe 3D, section, rôle ; `ossatureId` si générée par une ossature ; `repere` de débit. */
+export interface ParamsElementBois {
+  nom: string | null;
+  role: RoleBois;
+  a: Point2;
+  b: Point2;
+  za: number;
+  zb: number;
+  section: SectionBois;
+  rotation: Angle;
+  ossatureId: string | null;
+  repere: string | null;
+}
+
+export type GenreOssature = "mur" | "toit";
+
+/** Ossature (DA-09-02, 07, 08) : hôte (mur ou toiture), entraxe, sections ; génération contrôlée après aperçu. */
+export interface ParamsOssature {
+  nom: string;
+  genre: GenreOssature;
+  hoteId: string;
+  position: Point2;
+  entraxe: Longueur;
+  sectionMontant: SectionBois;
+  /** Section des lisses, sablières, linteaux, appuis (mur) ou des pannes (toit) ; null : celle des montants / chevrons. */
+  sectionLisse: SectionBois | null;
+  generation: { elements: number } | null;
+}
+
+export type PoseClt = "mur" | "plancher";
+
+/** Panneau CLT (DA-09-03) : vertical (axe a → b, hauteur) ou horizontal (contour) ; épaisseur et nombre de couches déclarés. */
+export interface ParamsPanneauClt {
+  nom: string | null;
+  pose: PoseClt;
+  a: Point2 | null;
+  b: Point2 | null;
+  hauteur: Longueur | null;
+  contour: Point2[];
+  trous: Point2[][];
+  z: number;
+  epaisseur: Longueur;
+  couches: number;
+  essence: string | null;
+  classe: string | null;
+  profil: { catalogueId: string; designation: string; source: string } | null;
+}
+
+export type TypeAssemblageBois = "tenon-mortaise" | "mi-bois" | "embrevement" | "queue-d-aronde" | "enture" | "equerre" | "sabot" | "plaque" | "ferrure" | "boulon-broche" | "vis";
+export type NatureAssemblageBois = "bois-bois" | "bois-metal";
+
+/** Assemblage bois (DA-09-04 / 05 / 06) : deux pièces, type, quincaillerie déclarée ; platine dessinée pour le bois–métal. */
+export interface ParamsAssemblageBois {
+  nom: string | null;
+  type: TypeAssemblageBois;
+  nature: NatureAssemblageBois;
+  a: string;
+  b: string;
+  position: Point2;
+  z: number;
+  quincaillerie: { designation: string; nombre: number; source: string | null }[];
+  platine: { largeur: Longueur; hauteur: Longueur; epaisseur: Longueur } | null;
+}
+
+// ---------------------------------------------------------------------------
+// Ontologie tôlerie (P2-4, DA-11-01 à 05)
+// ---------------------------------------------------------------------------
+
+export type BordTole = "x0" | "x1" | "y0" | "y1";
+
+/** Pli sur un bord de la face de base : angle signé (> 0 vers le haut), longueur d'aile au-delà de la zone pliée, rayon intérieur propre facultatif. */
+export interface PliTole {
+  bord: BordTole;
+  angle: Angle;
+  longueur: Longueur;
+  rayon: Longueur | null;
+}
+
+/**
+ * Tôle pliée (DA-11-01 / 02) : face de base (longueur × largeur) posée (position, angle, z), épaisseur, rayon intérieur,
+ * plis ; paramètres de pliage : table sourcée du projet (catalogue) ou facteur K déclaré avec sa source ; null → développé
+ * « non évalué » (R3 : aucune valeur de pliage n'est connue du code).
+ */
+export interface ParamsTole {
+  nom: string | null;
+  repere: string | null;
+  position: Point2;
+  angle: Angle;
+  z: number;
+  longueur: Longueur;
+  largeur: Longueur;
+  epaisseur: Longueur;
+  materiau: string | null;
+  rayonInterieur: Longueur;
+  plis: PliTole[];
+  pliage: { catalogueId: string } | { facteurK: number; source: string } | null;
+}
+
 export interface ParamsParClasse {
   mur: ParamsMur;
   porte: ParamsOuverture;
@@ -569,6 +682,11 @@ export interface ParamsParClasse {
   soudure: ParamsSoudure;
   armature: ParamsArmature;
   coulage: ParamsCoulage;
+  "element-bois": ParamsElementBois;
+  ossature: ParamsOssature;
+  "panneau-clt": ParamsPanneauClt;
+  "assemblage-bois": ParamsAssemblageBois;
+  tole: ParamsTole;
 }
 
 export interface Occurrence<C extends Classe = Classe> {

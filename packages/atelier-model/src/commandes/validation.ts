@@ -24,7 +24,8 @@ import { DDL_LIAISON, TYPES_LIAISON } from "../ontologies/mechanical/liaisons.js
 import { AVEC_AILE, AVEC_EPAISSEUR, FORMES_SECTION, sectionDepuisCatalogue } from "../ontologies/structure/sections.js";
 import { estBetonDeclare } from "../ontologies/structure/beton.js";
 import type { LigneCatalogue } from "../catalogues/csv-source.js";
-import type { SectionStructure } from "../modele.js";
+import type { SectionBois, SectionStructure } from "../modele.js";
+import { sectionBoisDepuisCatalogue } from "../ontologies/timber/sections.js";
 
 type Brut = Record<string, unknown>;
 
@@ -551,6 +552,122 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     }
     return { nom: lire.chaine(p, "nom").trim() || "Coulage", numero: lire.chaineOuNull(p, "numero"), elements: [...new Set(el as string[])], prefabrique: lire.booleen(p, "prefabrique", false) };
   },
+  // Ontologie bois (P2-4).
+  "element-bois"(etat, p) {
+    const a = lire.point(p, "a")!, b = lire.point(p, "b")!;
+    const za = lire.nombre(p, "za", { optionnel: true }) ?? 0;
+    const zb = lire.nombre(p, "zb", { optionnel: true }) ?? za;
+    if (Math.hypot(b.x - a.x, b.y - a.y, zb - za) < TOLERANCE_REDUCTEUR) throw new ErreurCommande("invalide", "b", "pièce de longueur nulle");
+    const ossatureId = lire.chaineOuNull(p, "ossatureId");
+    if (ossatureId !== null && etat.objets[ossatureId]?.classe !== "ossature") throw new ErreurCommande("precondition", "ossatureId", `ossature inconnue : ${ossatureId}`);
+    return {
+      nom: lire.chaineOuNull(p, "nom"),
+      role: lire.enumeration(p, "role", ROLES_BOIS, "autre"),
+      a, b, za, zb,
+      section: lireSectionBois(etat, p, "section"),
+      rotation: lire.angle(p, "rotation", { optionnel: true }) ?? { value: 0, unit: "deg" },
+      ossatureId,
+      repere: lire.chaineOuNull(p, "repere"),
+    };
+  },
+  ossature(etat, p) {
+    const genre = lire.enumeration(p, "genre", ["mur", "toit"] as const);
+    const hoteId = lire.objet(etat, p, "hoteId");
+    const hote = etat.objets[hoteId]!;
+    if (genre === "mur" && hote.classe !== "mur") throw new ErreurCommande("precondition", "hoteId", `${hoteId} (${hote.classe}) : une ossature de mur se génère depuis un mur`);
+    if (genre === "toit" && hote.classe !== "toiture") throw new ErreurCommande("precondition", "hoteId", `${hoteId} (${hote.classe}) : une charpente se génère depuis une toiture`);
+    const g = p["generation"];
+    let generation: { elements: number } | null = null;
+    if (g && typeof g === "object") { const q = g as { elements?: unknown }; if (typeof q.elements !== "number") throw new ErreurCommande("invalide", "generation", "{ elements } attendu"); generation = { elements: q.elements }; }
+    return {
+      nom: lire.chaine(p, "nom").trim() || (genre === "mur" ? "Ossature" : "Charpente"),
+      genre, hoteId,
+      position: lire.point(p, "position")!,
+      entraxe: lire.longueur(p, "entraxe", { strict: true })!,
+      sectionMontant: lireSectionBois(etat, p, "sectionMontant"),
+      sectionLisse: p["sectionLisse"] === undefined || p["sectionLisse"] === null ? null : lireSectionBois(etat, p, "sectionLisse"),
+      generation,
+    };
+  },
+  "panneau-clt"(etat, p) {
+    const pose = lire.enumeration(p, "pose", ["mur", "plancher"] as const);
+    const epaisseur = lire.longueur(p, "epaisseur", { strict: true })!;
+    const couches = lire.nombre(p, "couches", { entier: true, min: 1, max: 15 })!;
+    const profil = lireProfilCatalogue(etat, p, "profil");
+    const commun = { nom: lire.chaineOuNull(p, "nom"), pose, z: lire.nombre(p, "z", { optionnel: true }) ?? 0, epaisseur, couches, essence: lire.chaineOuNull(p, "essence"), classe: lire.chaineOuNull(p, "classe"), profil };
+    if (pose === "mur") {
+      const a = lire.point(p, "a")!, b = lire.point(p, "b")!;
+      if (Math.hypot(b.x - a.x, b.y - a.y) < TOLERANCE_REDUCTEUR) throw new ErreurCommande("invalide", "b", "panneau de longueur nulle");
+      return { ...commun, a, b, hauteur: lire.longueur(p, "hauteur", { strict: true })!, contour: [], trous: [] };
+    }
+    const contour = lire.points(p, "contour", { min: 3 });
+    return { ...commun, a: null, b: null, hauteur: null, contour, trous: lire.trous(p) };
+  },
+  "assemblage-bois"(etat, p) {
+    const a = lire.objet(etat, p, "a"), b = lire.objet(etat, p, "b");
+    if (a === b) throw new ErreurCommande("invalide", "b", "un assemblage relie deux pièces différentes");
+    for (const [cle, id] of [["a", a], ["b", b]] as const) {
+      const c = etat.objets[id]!.classe;
+      if (c !== "element-bois" && c !== "panneau-clt" && c !== "poteau" && c !== "poutre") throw new ErreurCommande("precondition", cle, `${id} (${c}) : un assemblage bois relie des pièces de bois, panneaux CLT, poteaux ou poutres`);
+    }
+    const type = lire.enumeration(p, "type", ["tenon-mortaise", "mi-bois", "embrevement", "queue-d-aronde", "enture", "equerre", "sabot", "plaque", "ferrure", "boulon-broche", "vis"] as const);
+    const nature: "bois-bois" | "bois-metal" = ["tenon-mortaise", "mi-bois", "embrevement", "queue-d-aronde", "enture"].includes(type) ? "bois-bois" : "bois-metal";
+    const q = p["quincaillerie"] ?? [];
+    if (!Array.isArray(q)) throw new ErreurCommande("invalide", "quincaillerie", "liste { designation, nombre, source? } attendue");
+    const quincaillerie = q.map((x, i) => {
+      const r = x as { designation?: unknown; nombre?: unknown; source?: unknown };
+      if (!r || typeof r.designation !== "string" || !r.designation.trim() || typeof r.nombre !== "number" || !Number.isInteger(r.nombre) || r.nombre < 1) throw new ErreurCommande("invalide", `quincaillerie[${i}]`, "{ designation, nombre ≥ 1, source? } attendu");
+      return { designation: r.designation.trim(), nombre: r.nombre, source: typeof r.source === "string" && r.source.trim() ? r.source.trim() : null };
+    });
+    const pl = p["platine"];
+    let platine: { largeur: Longueur; hauteur: Longueur; epaisseur: Longueur } | null = null;
+    if (pl && typeof pl === "object") { const r = pl as Brut; platine = { largeur: lire.longueur(r, "largeur", { strict: true })!, hauteur: lire.longueur(r, "hauteur", { strict: true })!, epaisseur: lire.longueur(r, "epaisseur", { strict: true })! }; }
+    if (nature === "bois-bois" && platine) throw new ErreurCommande("invalide", "platine", "un assemblage bois–bois n'a pas de platine");
+    return { nom: lire.chaineOuNull(p, "nom"), type, nature, a, b, position: lire.point(p, "position")!, z: lire.nombre(p, "z", { optionnel: true }) ?? 0, quincaillerie, platine };
+  },
+  // Ontologie tôlerie (P2-4).
+  tole(etat, p) {
+    const longueur = lire.longueur(p, "longueur", { strict: true })!, largeur = lire.longueur(p, "largeur", { strict: true })!, epaisseur = lire.longueur(p, "epaisseur", { strict: true })!;
+    if (epaisseur.value >= Math.min(longueur.value, largeur.value) / 2) throw new ErreurCommande("invalide", "epaisseur", "épaisseur incompatible avec la face de base");
+    const plisBrut = p["plis"] ?? [];
+    if (!Array.isArray(plisBrut) || plisBrut.length > 4) throw new ErreurCommande("invalide", "plis", "liste de 0 à 4 plis { bord, angle, longueur, rayon? } (un par bord)");
+    const bords = new Set<string>();
+    const plis = plisBrut.map((x, i) => {
+      const r = x as Brut;
+      const bord = lire.enumeration(r, "bord", ["x0", "x1", "y0", "y1"] as const);
+      if (bords.has(bord)) throw new ErreurCommande("invalide", `plis[${i}].bord`, `deux plis sur le bord ${bord}`);
+      bords.add(bord);
+      const angle = lire.angle(r, "angle")!;
+      if (Math.abs(angle.value) < 1e-9 || Math.abs(angle.value) > 180) throw new ErreurCommande("invalide", `plis[${i}].angle`, "angle de pli entre −180° et 180°, non nul");
+      return { bord, angle, longueur: lire.longueur(r, "longueur", { strict: true })!, rayon: lire.longueur(r, "rayon", { optionnel: true, strict: true }) };
+    });
+    const pb = p["pliage"];
+    let pliage: { catalogueId: string } | { facteurK: number; source: string } | null = null;
+    if (pb && typeof pb === "object") {
+      const r = pb as Brut;
+      if (typeof r["catalogueId"] === "string") {
+        const cat = etat.definitions[r["catalogueId"]];
+        if (!cat || cat.classe !== "catalogue") throw new ErreurCommande("precondition", "pliage.catalogueId", `table de pliage inconnue : ${r["catalogueId"]}`);
+        pliage = { catalogueId: cat.id };
+      } else {
+        const k = lire.nombre(r, "facteurK", { min: 0, max: 1 });
+        const source = lire.chaine(r, "source").trim();
+        if (!source) throw new ErreurCommande("invalide", "pliage.source", "un facteur K déclaré porte sa source (R3)");
+        pliage = { facteurK: k!, source };
+      }
+    }
+    return {
+      nom: lire.chaineOuNull(p, "nom"),
+      repere: lire.chaineOuNull(p, "repere"),
+      position: lire.point(p, "position")!,
+      angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" },
+      z: lire.nombre(p, "z", { optionnel: true }) ?? 0,
+      longueur, largeur, epaisseur,
+      materiau: lire.chaineOuNull(p, "materiau"),
+      rayonInterieur: lire.longueur(p, "rayonInterieur", { strict: true })!,
+      plis, pliage,
+    };
+  },
   "bloc-occurrence"(_etat, p) {
     return { position: lire.point(p, "position")!, angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" }, echelle: lire.nombre(p, "echelle", { optionnel: true, min: 0 }) ?? 1, ...(lire.booleen(p, "miroir", false) ? { miroir: true as const } : {}) };
   },
@@ -772,6 +889,46 @@ function lireSection(etat: ModeleAtelier, p: Brut, cle: string): SectionStructur
     profil: profil && typeof profil.catalogueId === "string" && typeof profil.designation === "string" && typeof profil.source === "string" ? { catalogueId: profil.catalogueId, designation: profil.designation, source: profil.source } : null,
     // Masse linéique : seulement si elle vient d'un catalogue sourcé (profil), jamais saisie à la main (R3).
     masseLineique: profil && typeof profil.source === "string" && masse ? masse : null,
+  };
+}
+
+const ROLES_BOIS = ["montant", "lisse", "sabliere", "traverse", "linteau", "appui", "poteau", "poutre", "solive", "entretoise", "panne", "chevron", "faitiere", "diagonale", "autre"] as const;
+
+/** Provenance catalogue facultative { catalogueId, designation } → { catalogueId, designation, source } (ligne trouvée) ou null. */
+function lireProfilCatalogue(etat: ModeleAtelier, p: Brut, cle: string): { catalogueId: string; designation: string; source: string } | null {
+  const v = p[cle];
+  if (v === undefined || v === null) return null;
+  if (typeof v !== "object") throw new ErreurCommande("invalide", cle, `« ${cle} » : { catalogueId, designation } attendu`);
+  const q = v as Brut;
+  if (typeof q["source"] === "string" && typeof q["catalogueId"] === "string" && typeof q["designation"] === "string") return { catalogueId: q["catalogueId"], designation: q["designation"], source: q["source"] };
+  const cat = etat.definitions[lire.chaine(q, "catalogueId")];
+  if (!cat || cat.classe !== "catalogue") throw new ErreurCommande("precondition", `${cle}.catalogueId`, `catalogue inconnu : ${String(q["catalogueId"])}`);
+  const designation = lire.chaine(q, "designation").trim();
+  const ligne = ((cat.params["lignes"] as LigneCatalogue[] | undefined) ?? []).find((l) => String(l.valeurs["designation"] ?? "").trim().toLowerCase() === designation.toLowerCase());
+  if (!ligne) throw new ErreurCommande("precondition", `${cle}.designation`, `« ${designation} » absent du catalogue ${cat.nom}`);
+  return { catalogueId: cat.id, designation: String(ligne.valeurs["designation"]).trim(), source: `${ligne.source.source}, ${ligne.source.edition}, ${ligne.source.page}` };
+}
+
+/** Section de bois (P2-4) : { largeur, hauteur, essence?, classe? } (m) ou { catalogueId, designation } (catalogue sourcé). */
+function lireSectionBois(etat: ModeleAtelier, p: Brut, cle: string): SectionBois {
+  const v = p[cle];
+  if (!v || typeof v !== "object") throw new ErreurCommande("invalide", cle, `« ${cle} » : section { largeur, hauteur } ou { catalogueId, designation } requise`);
+  const q = v as Brut;
+  if (typeof q["catalogueId"] === "string" && typeof q["source"] !== "string") {
+    const cat = etat.definitions[q["catalogueId"]];
+    if (!cat || cat.classe !== "catalogue") throw new ErreurCommande("precondition", `${cle}.catalogueId`, `catalogue inconnu : ${q["catalogueId"]}`);
+    const designation = lire.chaine(q, "designation").trim();
+    const ligne = ((cat.params["lignes"] as LigneCatalogue[] | undefined) ?? []).find((l) => String(l.valeurs["designation"] ?? "").trim().toLowerCase() === designation.toLowerCase());
+    if (!ligne) throw new ErreurCommande("precondition", `${cle}.designation`, `« ${designation} » absent du catalogue ${cat.nom}`);
+    try { return sectionBoisDepuisCatalogue(cat.id, ligne); } catch (e) { throw new ErreurCommande("precondition", `${cle}.designation`, e instanceof Error ? e.message : String(e)); }
+  }
+  const profil = q["profil"] && typeof q["profil"] === "object" ? (q["profil"] as { catalogueId?: unknown; designation?: unknown; source?: unknown }) : null;
+  return {
+    largeur: lire.longueur(q, "largeur", { strict: true })!,
+    hauteur: lire.longueur(q, "hauteur", { strict: true })!,
+    profil: profil && typeof profil.catalogueId === "string" && typeof profil.designation === "string" && typeof profil.source === "string" ? { catalogueId: profil.catalogueId, designation: profil.designation, source: profil.source } : null,
+    essence: lire.chaineOuNull(q, "essence"),
+    classe: lire.chaineOuNull(q, "classe"),
   };
 }
 
