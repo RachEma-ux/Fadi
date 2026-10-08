@@ -1,8 +1,9 @@
 # Dossier de recette — Atelier Architecture (DrawAll V4.1), lots 0 à 9
 
 Établi le 4 octobre 2026 par le chef de projet (exécution continue décidée en D-010). Ce dossier dit **ce qui est
-livré, où en est la preuve, ce que vous pouvez vérifier vous-même, et ce qu'il vous reste à décider**. Rien n'y est
-déclaré « disponible » : cet état n'est posé qu'après votre acceptation (R8, D-007).
+livré, où en est la preuve, ce que vous pouvez vérifier vous-même, et ce qu'il vous reste à décider**. Rien n'y était
+déclaré « disponible » avant votre acceptation (R8, D-007) ; **acceptation donnée le 8 octobre 2026 (D-174)** : les fiches sont
+à l'état « disponible » depuis cette date.
 
 ## 1. Ce qui est livré
 
@@ -20,7 +21,7 @@ déclaré « disponible » : cet état n'est posé qu'après votre acceptation (
 | 9 | Recette : essai « calcul tardif » ajouté, aide située relue et testée, fiches mises à jour, protocole T17 / T18, documentation | `lots/lot-9.md`, ce dossier, `protocole-mesures.md` |
 | + | Compléments : historique d'un objet, consultation d'un état passé, réutilisation de modèle, références externes ; raccords de murs, coupes remplies en 3D, lasso, fusions successives, vues et nomenclatures déplaçables sur feuille, annotations des coupes et façades | `lots/complements.md` |
 
-Décisions du chef de projet : D-001 à D-163 (`decisions.md`). Fiches : les 71 à l'état « prototype » (code présent,
+Décisions du chef de projet : D-001 à D-163 (`decisions.md`). Fiches : les 71 à l'état « disponible » depuis le 8 octobre 2026 (D-174 ; code présent,
 preuve liée) ; DA-05-11 et DA-21-09 réalisées par les compléments, avec leurs écarts déclarés.
 
 ## 2. Contrôles automatiques (état au 4 octobre 2026)
@@ -103,7 +104,7 @@ Toutes ces étapes tournent dans `.github/workflows/ci.yml` (jobs `validate`, `e
 
 | Décision | État | Effet tant qu'elle n'est pas prise |
 | --- | --- | --- |
-| Acceptation des lots 0 à 9 | à prendre | Les fiches restent « prototype » ; aucune n'est « disponible » |
+| Acceptation des lots 0 à 9 | **prise le 8 octobre 2026 (D-174)** | Les 71 fiches sont passées à « disponible » avec leur preuve liée ; les limites de la section 7 restent déclarées |
 | Licence OCCT et lot optionnel | ouverte | Pas de B-rep exact (DA-03-01 -d, DA-04 restantes) ; aucune dépendance OCCT dans le dépôt |
 | Fournisseur de modèle de langage et clé | ouverte | L'assistant reste déterministe (règles de Fadi) — conforme à D4 |
 | Stockage objet et hébergement | ouverte | Les volumes (publications) sont en base derrière une interface ; `docs/deploiement.md` décrit l'hébergement |

@@ -4,6 +4,8 @@
 exécutés ici ; CI GitHub et acceptation du maître d'ouvrage en attente** (8 octobre 2026). Cadre : `cahier-planche.md`
 §8 (lot 7), §5.7, §7.1, décisions P-1 et P-6 (D-167), choix du lot consignés en D-172.
 
+> **Accepté par le maître d'ouvrage le 8 octobre 2026 (D-174)** ; fiches du lot à l'état « disponible ».
+
 ## Ce qui est livré
 
 | Tâche | Contenu | Fichiers | Fiche |

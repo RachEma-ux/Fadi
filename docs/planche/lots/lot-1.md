@@ -4,6 +4,8 @@
 livrera, comment le vérifier et ce qui sera demandé au maître d'ouvrage ; il sera réécrit en compte rendu à la fin du
 lot (fait, non fait, mesures, décisions).
 
+> **Accepté par le maître d'ouvrage le 8 octobre 2026 (D-174)** ; fiches du lot à l'état « disponible ».
+
 Cadre : `docs/planche/cahier-planche.md` §8 (lot 1), décisions MO-1 à MO-5 (§1.2). **Aucune interface** : rien ne
 change dans `apps/web` ni dans `apps/api` ; le mode Planche n'apparaît pas encore dans l'Atelier.
 
