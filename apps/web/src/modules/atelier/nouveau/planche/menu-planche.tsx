@@ -15,6 +15,8 @@ export interface ActionsMenuPlanche {
   copier(id: string, nom: string): void;
   supprimer(id: string): void;
   exporterIfc(id: string): Promise<void>;
+  /** OBJ / STL (P-6, D-173) : maillages de la Planche ouverte, écrits dans la page. */
+  exporterMaillage(format: "obj" | "stl"): void;
   telechargerPng(): Promise<void>;
 }
 
@@ -102,6 +104,8 @@ export function MenuPlanche({ planches, courante, niveaux, lecture, brouillonNon
             <li role="none" className="avec-separateur">
               <button type="button" role="menuitem" disabled={!courante || occupe !== null} data-planche-exporter-ifc onClick={() => courante && void action("ifc", () => actions.exporterIfc(courante.id)).then(fermer)}>{occupe === "ifc" ? t("planche.export.en-cours") : t("planche.exporter-ifc")}</button>
             </li>
+            <li role="none"><button type="button" role="menuitem" disabled={!courante} data-planche-exporter-obj onClick={() => { actions.exporterMaillage("obj"); fermer(); }}>{t("planche.exporter-obj")}</button></li>
+            <li role="none"><button type="button" role="menuitem" disabled={!courante} data-planche-exporter-stl onClick={() => { actions.exporterMaillage("stl"); fermer(); }}>{t("planche.exporter-stl")}</button></li>
             <li role="none"><button type="button" role="menuitem" disabled={occupe !== null} data-planche-telecharger-png onClick={() => void action("png", () => actions.telechargerPng()).then(fermer)}>{t("planche.telecharger-png")}</button></li>
           </ul>
           {volet && (

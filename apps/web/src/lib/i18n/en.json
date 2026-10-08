@@ -2065,6 +2065,8 @@
 "Exporter ce schéma SVG": "Export this SVG diagram",
 "Exporter l'historique (CSV)": "Export the history (CSV)",
 "Exporter la Planche en IFC": "Export the Planche to IFC",
+"Exporter la Planche en OBJ": "Export the Planche to OBJ",
+"Exporter la Planche en STL": "Export the Planche to STL",
 "Exporter la bibliothèque JSON": "Export the JSON library",
 "Exporter la synthèse des choix Harmonie": "Export the summary of Harmonie choices",
 "Exporter le bilan": "Export the review",

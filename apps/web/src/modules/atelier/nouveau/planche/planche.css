@@ -1322,6 +1322,8 @@
   top: calc(100% + 4px);
   z-index: 31;
   min-width: 17rem;
+  max-height: calc(100vh - 5rem);
+  overflow-y: auto;
 }
 .planche-menu-liste .planche-menu-entete {
   padding: 0.3rem 0.6rem;
@@ -1374,4 +1376,8 @@
     top: 56px;
     min-width: 0;
   }
+}
+/* Menu principal ouvert : la barre du haut passe au-dessus du pied et des volets (le menu est dans son contexte d'empilement). */
+.planche-haut:has(.planche-menu-liste) {
+  z-index: 40;
 }
