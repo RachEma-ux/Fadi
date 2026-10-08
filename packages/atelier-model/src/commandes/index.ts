@@ -61,6 +61,7 @@ import { affecterClassification, affecterPhase, definirPropriete, rattacherRefer
 import { dupliquerNiveau, reducteursTransformer } from "./transformer.js";
 import { verifierModele } from "../archive.js";
 import { reducteursRefExterne } from "./refexterne.js";
+import { controlerLiaisons, reducteursMecanique } from "../ontologies/mechanical/index.js";
 
 const triplet = (classe: Classe, prefixe: string, creer = "creer"): Record<string, Reducteur> => ({
   [`${prefixe}.${creer}`]: (etat, p, ctx) => creerOccurrence(etat, p, ctx, classe),
@@ -209,6 +210,8 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   ...triplet("objet-importe", "objetImporte"),
   // Solide exact (P2-1) : créé par le navigateur avec le noyau exact, revalidé par le serveur (même noyau, même empreinte).
   ...triplet("solide-exact", "solideExact"),
+  // Ontologie mécanique (P2-2) : activation, pièces, assemblages, liaisons, familles, règles, catalogues.
+  ...reducteursMecanique,
   // Esquisse : une commande par forme + modifier / supprimer
   ...Object.fromEntries(FORMES.map((forme) => [`esquisse.${forme}`, ((etat, p, ctx) => creerOccurrence(etat, { ...p, params: { ...((p["params"] as Record<string, unknown> | undefined) ?? p), forme } }, ctx, "esquisse")) as Reducteur])),
   "esquisse.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "esquisse"),
@@ -347,7 +350,9 @@ export function appliquerCommande(etat: ModeleAtelier, commande: Commande, ctx: 
   const reducteur = REDUCTEURS[commande.type];
   if (!reducteur) throw new ErreurCommande("inconnue", "type", `commande inconnue : ${commande.type}`);
   if (typeof commande.params !== "object" || commande.params === null) throw new ErreurCommande("invalide", "params", "paramètres requis");
-  const r = reducteur(etat, commande.params, ctx, commande.cibles ?? []);
+  let r = reducteur(etat, commande.params, ctx, commande.cibles ?? []);
+  const cl = controlerLiaisons(etat, r.etat, ctx);
+  r = { etat: cl.etat, effets: fusionnerEffets(r.effets, cl.effets) };
   const c00 = controlerContraintes(etat, r.etat, commande.type, r.effets, ctx);
   // Contraintes verticales (D-155) : avant le contrôle des verrous, pour qu'un porté verrouillé refuse le lot.
   const c0 = commande.type === "interne.restaurer" ? c00 : suivrePoses(c00.etat, c00.effets);

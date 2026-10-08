@@ -7,7 +7,7 @@ import type { Cintre } from "./cintres.js";
 import type { ProfilVertical } from "./profils-verticaux.js";
 import type { OuvrantPorte } from "./ouvrants.js";
 import type { Menuiserie } from "./menuiserie.js";
-import type { Classe } from "./ontologie.js";
+import type { Classe, Ontologie } from "./ontologie.js";
 import type { Angle, Longueur, Point2, SommetParcelle, Surface } from "./unites.js";
 
 export type Provenance = "saisie" | "import" | "calcul" | "regle";
@@ -346,6 +346,69 @@ export interface ParamsSolideExact {
   operation: { type: string; sources: string[]; libelle: string };
 }
 
+/** Pose rigide 3D (P2-2) : translation (m) et rotation vectorielle (rad, axe × angle) dans le repère de l'assemblage. */
+export interface Pose3 { x: number; y: number; z: number; rx: number; ry: number; rz: number }
+export interface Vecteur3 { x: number; y: number; z: number }
+
+/**
+ * Pièce mécanique (P2-2, DA-10-01) : géométrie canonique copiée de sa source à la création (brep exact et maillage
+ * d'un `solide-exact`, ou maillage dérivé d'un solide paramétrique), jamais recalculée par le modèle ; posée dans son
+ * assemblage (pose rigide) ; emprise en plan dérivée (enveloppe convexe du maillage posé, repère du niveau).
+ */
+export interface ParamsPieceMecanique {
+  nom: string;
+  /** Référence (numéro de pièce, DA-10-13 / 14) ; null tant que non numérotée. */
+  reference: string | null;
+  numero: number | null;
+  /** Matériau déclaré (nom seulement : aucune propriété inventée, R3). */
+  materiau: string | null;
+  /** Objet source de la géométrie (provenance) ; peut avoir disparu. */
+  sourceId: string | null;
+  brep: string | null;
+  empreinteBrep: string | null;
+  moteur: string | null;
+  versionMoteur: string | null;
+  maillage: { positions: number[]; indices: number[] };
+  volume: number | null;
+  assemblageId: string | null;
+  /** Pièce fixe (bâti) : le solveur ne la déplace pas. */
+  fixe: boolean;
+  pose: Pose3;
+  emprise: Point2[];
+}
+
+/** Assemblage (P2-2, DA-10-06 / 07) : repère dans le niveau (position, angle autour de z, décalage z), numérotation, éclaté. */
+export interface ParamsAssemblage {
+  nom: string;
+  numero: string | null;
+  position: Point2;
+  angle: Angle;
+  z: number;
+  /** Diagnostic du dernier solveur sur cet assemblage (bien contraint, sous-contraint…), null sans liaison. */
+  diagnostic: string | null;
+}
+
+export type TypeLiaison = "encastrement" | "pivot" | "glissiere" | "rotule" | "coincidence" | "concentrique" | "parallele" | "angle" | "distance" | "plan";
+
+/** Liaison entre deux pièces d'un même assemblage (DA-10-08 / 09) : références locales (point, axe, direction secondaire), valeur de pilotage. */
+export interface ParamsLiaison {
+  type: TypeLiaison;
+  a: string;
+  b: string;
+  pa: Vecteur3;
+  da: Vecteur3;
+  ea: Vecteur3;
+  pb: Vecteur3;
+  db: Vecteur3;
+  eb: Vecteur3;
+  /** Pilotage : angle (°) pour pivot / angle, course ou distance (m) pour glissière / distance ; null sinon. */
+  valeur: number | null;
+  /** Diagnostic du solveur après la dernière résolution ; null tant que non résolue. */
+  etat: string | null;
+  /** Degrés de liberté laissés par la liaison. */
+  ddl: number;
+}
+
 export interface ParamsParClasse {
   mur: ParamsMur;
   porte: ParamsOuverture;
@@ -368,6 +431,9 @@ export interface ParamsParClasse {
   "garde-corps": ParamsGardeCorps;
   "objet-importe": ParamsObjetImporte;
   "solide-exact": ParamsSolideExact;
+  "piece-mecanique": ParamsPieceMecanique;
+  assemblage: ParamsAssemblage;
+  liaison: ParamsLiaison;
 }
 
 export interface Occurrence<C extends Classe = Classe> {
@@ -388,7 +454,7 @@ export interface Occurrence<C extends Classe = Classe> {
 export type OccurrenceQuelconque = { [C in Classe]: Occurrence<C> }[Classe];
 
 /** Définitions : types d'objets, blocs et composants (lot 5), vues et feuilles des documents dérivés (lot 5). */
-export type ClasseDefinition = Classe | "bloc" | "composant" | "vue" | "feuille" | "reference-externe" | "vue-3d" | "referentiel-classification" | "ensemble-affichage" | "etat-calques" | "planche";
+export type ClasseDefinition = Classe | "bloc" | "composant" | "vue" | "feuille" | "reference-externe" | "vue-3d" | "referentiel-classification" | "ensemble-affichage" | "etat-calques" | "planche" | "famille" | "regle" | "catalogue";
 
 export interface Definition {
   id: string;
@@ -500,7 +566,9 @@ export type TypeProbleme =
   | "reference-a-reparer"
   | "sans-correspondance"
   | "piece-non-fermee"
-  | "import";
+  | "import"
+  | "collision-mecanique"
+  | "regle";
 
 export interface Probleme {
   id: string;
@@ -522,6 +590,8 @@ export interface ModeleAtelier {
   site: Site;
   /** Propriétés de projet (méta du prototype conservées, provenance `import`). */
   proprietes: Record<string, Propriete>;
+  /** Ontologies activées par le projet en plus du socle (P2-2, `ontologie.activer`) ; absent : socle seul. */
+  ontologies?: Ontologie[];
 }
 
 export function modeleVide(): ModeleAtelier {

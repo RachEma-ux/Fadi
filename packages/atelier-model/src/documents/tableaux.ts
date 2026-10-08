@@ -12,13 +12,14 @@ import { quantites } from "../quantites.js";
 import { echapperXml } from "./rendu-svg.js";
 import { empreinteDe } from "./empreinte.js";
 
-export type TypeTableau = "pieces" | "portes" | "fenetres" | "murs" | "composants" | "synthese";
+export type TypeTableau = "pieces" | "portes" | "fenetres" | "murs" | "composants" | "nomenclature" | "synthese";
 export const TABLEAUX: Record<TypeTableau, string> = {
   pieces: "Tableau des pièces",
   portes: "Tableau des portes",
   fenetres: "Tableau des fenêtres",
   murs: "Tableau des murs",
   composants: "Tableau des composants",
+  nomenclature: "Nomenclature des assemblages",
   synthese: "Synthèse des quantités par niveau",
 };
 
@@ -112,6 +113,22 @@ export function genererTableau(etat: ModeleAtelier, type: TypeTableau): Tableau 
         const niveaux = [...new Set(occ.map((o) => (o.niveauId ? (etat.niveaux[o.niveauId]?.nom ?? o.niveauId) : "—")))].sort();
         lignes.push([d.id, d.classe === "composant" ? "composant" : "bloc", d.nom, (d.params["classification"] as string | undefined) ?? "non classé", occ.length, niveaux.join(", ")]);
       }
+      break;
+    }
+    case "nomenclature": {
+      // Nomenclature (P2-2, DA-10-14 / 15 / 16) : une ligne par pièce d'assemblage, dans l'ordre des numéros ; masse
+      // « non évaluée » tant qu'aucune densité sourcée n'est fournie (R3).
+      colonnes = ["Assemblage", "N°", "Référence", "Pièce", "Matériau", "Volume", "Quantité", "Niveau", "Liaisons"];
+      unites = [null, null, null, null, null, "m³", "u", null, null];
+      const asms = objetsDeClasse(etat, "assemblage").sort(parId);
+      for (const a of asms) {
+        const pieces = objetsDeClasse(etat, "piece-mecanique").filter((o) => o.params.assemblageId === a.id).sort((x, y) => (x.params.numero ?? 1e9) - (y.params.numero ?? 1e9) || (x.id < y.id ? -1 : 1));
+        for (const pc of pieces) {
+          const liaisons = objetsDeClasse(etat, "liaison").filter((l) => l.params.a === pc.id || l.params.b === pc.id).length;
+          lignes.push([a.params.nom, pc.params.numero, pc.params.reference, pc.params.nom, pc.params.materiau, pc.params.volume === null ? null : r3(pc.params.volume), 1, pc.niveauId ? (etat.niveaux[pc.niveauId]?.nom ?? pc.niveauId) : "—", liaisons]);
+        }
+      }
+      total = ["Total", null, null, `${lignes.length} pièce(s)`, null, r3(lignes.reduce((s, l) => s + (typeof l[5] === "number" ? l[5] : 0), 0)), lignes.length, null, null];
       break;
     }
     case "synthese": {

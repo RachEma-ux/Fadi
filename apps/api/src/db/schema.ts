@@ -401,6 +401,8 @@ export const atelierSite = pgTable("atelier_site", {
   sources: jsonb("sources").$type<unknown[]>().notNull().default([]),
   structure: jsonb("structure").$type<Record<string, unknown> | null>(),
   proprietes: jsonb("proprietes").$type<Record<string, unknown>>().notNull().default({}),
+  /** Ontologies activées par le projet en plus du socle (P2-2) ; null = socle seul. */
+  ontologies: jsonb("ontologies").$type<string[] | null>(),
   /** Identifiant natif conservé pour les consommateurs de l'analyse (liaisons, empreintes). */
   nativeId: text("native_id").notNull().default("modele-type"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

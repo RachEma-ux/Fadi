@@ -807,8 +807,14 @@ function objetsEntierementDans(etat: ModeleAtelier, niveauId: string | null, ded
         pts = o.params.empreinte;
         break;
       case "solide-exact":
+      case "piece-mecanique":
         pts = o.params.emprise;
         break;
+      case "assemblage":
+        pts = [o.params.position];
+        break;
+      case "liaison":
+        continue;
       case "espace":
         pts = o.params.polygones.flatMap((pg) => pg.contour);
         break;

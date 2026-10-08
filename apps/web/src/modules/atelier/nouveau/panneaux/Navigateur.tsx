@@ -7,7 +7,7 @@ import { ProprietesCible } from "./Inspecteur";
 import { ClasserParRegle, EtatsCalques } from "./Complements";
 import { Arborescence } from "./Affichage";
 import { useMemo, useState } from "react";
-import { altimetrieDu, descendantsCalque, CLASSES, ensemblesPartages, niveauxOrdonnes, type Classe, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { altimetrieDu, descendantsCalque, CLASSES, ensemblesPartages, LIBELLES_ONTOLOGIE, niveauxOrdonnes, ONTOLOGIES_ACTIVABLES, ontologiesActives, type Classe, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { etatUi, type EtatUi, type FiltresAffichage } from "../etat-ui";
 import { normaliser } from "../outils";
 
@@ -107,6 +107,24 @@ export function Navigateur({ etat, ui, readOnly, onCommandes, onCentrer }: Props
             </div>
           </form>
         )}
+      </section>
+
+      <section aria-labelledby="nav-ontologies" data-ontologies>
+        <h3 id="nav-ontologies">Ontologies</h3>
+        <ul className="nav-liste nav-ontologies">
+          {ONTOLOGIES_ACTIVABLES.map((o) => {
+            const active = ontologiesActives(etat).includes(o);
+            return (
+              <li key={o}>
+                <label className="case">
+                  <input type="checkbox" checked={active} disabled={readOnly} data-ontologie={o} onChange={(e) => onCommandes([{ type: e.target.checked ? "ontologie.activer" : "ontologie.desactiver", params: { nom: o } }], `${e.target.checked ? "Activer" : "Désactiver"} l'ontologie ${LIBELLES_ONTOLOGIE[o]}`)} />
+                  {LIBELLES_ONTOLOGIE[o]}
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="nav-site">Une ontologie activée ajoute ses outils à la palette et à la barre, ses classes à l'inspecteur ; aucun écran ni ruban nouveau.</p>
       </section>
 
       <section aria-labelledby="nav-site">

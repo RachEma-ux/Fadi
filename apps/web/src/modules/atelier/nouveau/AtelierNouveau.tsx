@@ -5,7 +5,7 @@
  * (R10). Clavier : Échap, Entrée, Suppr, Ctrl/⌘ Z / Maj Z / Y, Ctrl/⌘ K, raccourcis d'outil, saisie de précision.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { CLASSES, commandesColler, copierSelection, ensemblesPartages, lirePressePapiers, ErreurCommande, exporterBibliotheque, niveauxOrdonnes, type Commande, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { CLASSES, commandesColler, copierSelection, ensemblesPartages, lirePressePapiers, ErreurCommande, exporterBibliotheque, niveauxOrdonnes, type Commande, type ModeleAtelier, type OccurrenceQuelconque, LIBELLES_ONTOLOGIE, ontologiesActives } from "@parcours/atelier-model";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../../lib/api";
@@ -215,12 +215,13 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   const disponibilite = useCallback(
     (o: Outil): string | null => {
       if (readOnly && (o.famille === "creer" || o.famille === "modifier" || o.famille === "documenter")) return "Projet en lecture seule.";
+      if (o.ontologie && !ontologiesActives(etat).includes(o.ontologie)) return `${o.libelle} : activez l'ontologie « ${LIBELLES_ONTOLOGIE[o.ontologie]} » dans le navigateur (section Ontologies).`;
       if (o.condition === "niveau" && !ui.niveauId) return "Créez ou choisissez d'abord un niveau.";
       if ((o.condition === "selection" || o.condition === "selection-mur" || o.condition === "selection-ligne") && ui.selection.length === 0) return `${o.libelle} : sélectionnez d'abord un ou plusieurs objets.`;
       if (o.condition === "selection-mur" && !ui.selection.some((id) => etat.objets[id]?.classe === "mur")) return `${o.libelle} : sélectionnez un mur.`;
       return null;
     },
-    [readOnly, ui.niveauId, ui.selection, etat.objets],
+    [readOnly, ui.niveauId, ui.selection, etat.objets, etat.ontologies],
   );
 
   const cadrer = useCallback(() => {
@@ -449,11 +450,13 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   }, [client, etat, readOnly, projectId, executer, appliquerResultat, choisir, finir, cadrer, validerPrecision, setPrecision]);
 
   const outilsBarre = useMemo(() => {
-    const visibles = outilsVisibles(ui.affichage);
+    // Une ontologie activée ajoute ses outils à la barre à leur famille (T01, maquette P2-0) ; désactivée, ils n'y sont pas.
+    const actives = ontologiesActives(etat);
+    const visibles = outilsVisibles(ui.affichage).filter((o) => !o.ontologie || actives.includes(o.ontologie));
     const favoris = ui.favoris.map((id) => OUTILS_PAR_ID[id]).filter((o): o is Outil => !!o);
     const parFamille = FAMILLES_BARRE.map((f) => [f, visibles.filter((o) => o.famille === f && !ui.favoris.includes(o.id))] as const).filter(([, l]) => l.length);
     return { favoris, parFamille };
-  }, [ui.affichage, ui.favoris]);
+  }, [ui.affichage, ui.favoris, etat.ontologies]);
 
   const lotsEnDifficulte = inst.lots.filter((l) => l.etat === "conflit" || l.etat === "refuse").length;
   const enAttente = inst.lots.filter((l) => l.etat === "local" || l.etat === "synchronisation").length;

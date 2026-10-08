@@ -75,3 +75,10 @@ export { longueurSaisie } from "./automatisation/longueur-saisie.js";
 export { objetsSemblables } from "./selection-semblables.js";
 export * from "./catalogues/csv-source.js";
 export * from "./solide-exact.js";
+// Ontologie mécanique (P2-2).
+export { resoudre as resoudreContraintes, type ContrainteSolveur, type Diagnostic, type PoseRigide, type ResultatSolveur } from "./ontologies/mechanical/solveur.js";
+export { developperLiaison, DDL_LIAISON, LIBELLES_LIAISON, PILOTAGE, TYPES_LIAISON } from "./ontologies/mechanical/liaisons.js";
+export { empriseMaillage, pointPose, positionsPosees3, POSE_NULLE, type RepereAssemblage } from "./ontologies/mechanical/geometrie.js";
+export { controlerRegle, evaluerFamille, type ParamsFamille, type ParamsRegle } from "./ontologies/mechanical/familles.js";
+export { liaisonsDe, piecesDe, repereAssemblage, resoudreAssemblage } from "./ontologies/mechanical/index.js";
+

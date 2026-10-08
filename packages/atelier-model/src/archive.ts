@@ -11,7 +11,7 @@ import { lireParamsEnsemble } from "./commandes/ensembles.js";
 import { lireParamsEtatCalques } from "./commandes/etats-calques.js";
 import { lireParamsVue } from "./documents/vues.js";
 import { lireParamsFeuille } from "./documents/feuilles.js";
-import { estClasse } from "./ontologie.js";
+import { estClasse, estOntologie } from "./ontologie.js";
 import { ErreurCommande } from "./commandes/base.js";
 import { validerParams } from "./commandes/validation.js";
 import { modeleVide, type ModeleAtelier, type OccurrenceQuelconque } from "./modele.js";
@@ -64,7 +64,7 @@ export function verifierModele(brut: unknown): ResultatVerification {
   }
   for (const [id, d] of Object.entries(table("definitions")) as [string, Brut][]) {
     const classe = d["classe"];
-    if ((!estClasse(classe) && !["bloc", "composant", "vue", "feuille", "reference-externe", "vue-3d", "planche", "referentiel-classification", "ensemble-affichage", "etat-calques"].includes(classe as string)) || typeof d["nom"] !== "string" || !estRecord(d["params"]) || !estNombre(d["version"])) erreurs.push(`definitions.${id} : définition invalide`);
+    if ((!estClasse(classe) && !["bloc", "composant", "vue", "feuille", "reference-externe", "vue-3d", "planche", "referentiel-classification", "ensemble-affichage", "etat-calques", "famille", "regle", "catalogue"].includes(classe as string)) || typeof d["nom"] !== "string" || !estRecord(d["params"]) || !estNombre(d["version"])) erreurs.push(`definitions.${id} : définition invalide`);
     else modele.definitions[id] = { id, classe: classe as ModeleAtelier["definitions"][string]["classe"], nom: d["nom"], params: d["params"], version: d["version"] };
   }
   // Les objets sont validés contre le modèle candidat complet (un hôte peut être déclaré après son ouverture).
@@ -137,6 +137,11 @@ export function verifierModele(brut: unknown): ResultatVerification {
     }
   }
   if (estRecord(brut["proprietes"])) modele.proprietes = brut["proprietes"] as ModeleAtelier["proprietes"];
+  if (brut["ontologies"] !== undefined) {
+    const o = brut["ontologies"];
+    if (!Array.isArray(o) || !o.every(estOntologie)) erreurs.push("ontologies : liste d'ontologies connues attendue");
+    else if (o.length) modele.ontologies = [...new Set(o)];
+  }
   // Vues puis feuilles (une feuille place des vues) : paramètres revalidés comme par les commandes.
   for (const classe of ["vue", "feuille"] as const) {
     for (const d of Object.values(modele.definitions)) {

@@ -206,6 +206,7 @@ export interface InstantaneDiff {
   crees: Partial<Record<Cle, string[]>>;
   site?: ModeleAtelier["site"];
   proprietes?: ModeleAtelier["proprietes"];
+  ontologies?: ModeleAtelier["ontologies"] | null;
 }
 
 /** Ce qu'il faut pour revenir de `apres` à `avant` : entrées modifiées ou supprimées (valeur d'avant) et entrées créées (à retirer). */
@@ -224,6 +225,7 @@ export function differentiel(avant: ModeleAtelier, apres: ModeleAtelier): Instan
   }
   if (avant.site !== apres.site) diff.site = avant.site;
   if (avant.proprietes !== apres.proprietes) diff.proprietes = avant.proprietes;
+  if (avant.ontologies !== apres.ontologies) diff.ontologies = avant.ontologies ?? null;
   return diff;
 }
 
@@ -240,6 +242,10 @@ export function appliquerDifferentiel(etat: ModeleAtelier, diff: InstantaneDiff)
   }
   if (diff.site) suivant.site = diff.site;
   if (diff.proprietes) suivant.proprietes = diff.proprietes;
+  if (diff.ontologies !== undefined) {
+    if (diff.ontologies === null) delete suivant.ontologies;
+    else suivant.ontologies = diff.ontologies;
+  }
   return suivant;
 }
 

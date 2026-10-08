@@ -2735,3 +2735,10 @@
     white-space: nowrap;
   }
 }
+
+/* P2-2 : ontologie mécanique — outils et fiches dans l'inspecteur, vecteurs compacts. */
+.outil-mecanique .champ-vecteur .vecteur { display: inline-flex; gap: 0.25rem; }
+.outil-mecanique .champ-vecteur input { width: 4.2rem; }
+.nav-ontologies li { list-style: none; }
+.fiche-mecanique [data-liaison] input { width: 5rem; }
+.obj-piece-mecanique.est-survole { filter: brightness(1.08); }

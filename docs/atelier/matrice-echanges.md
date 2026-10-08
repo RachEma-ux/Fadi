@@ -24,6 +24,9 @@ Légende : **C** conservé · **T** transformé (dit au rapport) · **O** omis (
 
 | Classe | IFC export | IFC import | DXF export (vues) | DXF import | Paquet natif |
 | --- | --- | --- | --- | --- | --- |
+| assemblage (P2-2) | C `IfcElementAssembly` (Tag = numéro) agrégeant ses pièces par `IfcRelAggregates` ; liaisons et diagnostic en `Fadi_Assemblage` | — (revient en représentations importées) | T : repère (croix et nom) | — | C (repère, pièces, liaisons) |
+| piece-mecanique (P2-2) | T `IfcBuildingElementProxy` (ObjectType `piece-mecanique`, Tag = référence), maillage posé (`IfcTriangulatedFaceSet`) ; référence, numéro, matériau, volume, empreinte brep en `Fadi_Piece` | — (`objet-importe`) | T : emprise (enveloppe convexe) | — | C (brep, maillage, pose, provenance) ; STEP : via la source exacte |
+| liaison (P2-2) | O : portée par `Fadi_Assemblage` (type, pièces, valeur), pas un produit | — | — | — | C |
 | solide-exact (P2-1) | T `IfcBuildingElementProxy`, type `Fadi_SolideExact`, maillage dérivé (`IfcTriangulatedFaceSet`) ; brep, moteur, version et empreinte en propriétés | — (un solide IFC importé reste `objet-importe`) | T : emprise (enveloppe convexe) | — | C (brep, pose, provenance) ; STEP : C (brep exact + pose) |
 | niveau | C `IfcBuildingStorey` (`Elevation`, placement) | C : même altitude ± 5 mm = niveau existant, sinon niveau « IFC · nom » créé | T : une vue par niveau | — (niveau d'accueil choisi) | C |
 | mur | C `IfcWall` + `IfcWallType`, repère propre au mur ; corps `SweptSolid` (contour raccordé aux angles et tés) vidé par les ouvertures ; axe `Axis` ; `Pset_WallCommon` ; composition : `IfcMaterialLayerSet` (type) et `IfcMaterialLayerSetUsage` (mur cohérent) ; connexions `IfcRelConnectsPathElements` (extrémités, tés, croisements ; D-038) | T : représentation importée (maillage, vides déjà soustraits) | T : poché, contour de l'union | — | C |

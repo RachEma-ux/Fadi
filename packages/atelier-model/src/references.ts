@@ -87,6 +87,12 @@ export function pointCaracteristique(etat: ModeleAtelier, objetId: string, carac
       return nom === "centre" && o.params.empreinte.length ? (() => { const c = centroide(o.params.empreinte); return pt(c.x, c.y); })() : null;
     case "solide-exact":
       return nom === "centre" && o.params.emprise.length ? (() => { const c = centroide(o.params.emprise); return pt(c.x, c.y); })() : null;
+    case "piece-mecanique":
+      return nom === "centre" && o.params.emprise.length ? (() => { const c = centroide(o.params.emprise); return pt(c.x, c.y); })() : null;
+    case "assemblage":
+      return nom === "centre" ? o.params.position : null;
+    case "liaison":
+      return null;
     case "cotation":
     case "texte":
     case "etiquette":

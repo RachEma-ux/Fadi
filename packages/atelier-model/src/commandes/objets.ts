@@ -8,7 +8,7 @@
 import { longueurAxeMur } from "../geometrie.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque, Propriete, Reference } from "../modele.js";
 import { ouverturesDuMur, referencesVers } from "../modele.js";
-import { CLASSES, estClasse, estOuverture, type Classe } from "../ontologie.js";
+import { CLASSES, estClasse, estOuverture, LIBELLES_ONTOLOGIE, ontologiesActives, type Classe } from "../ontologie.js";
 import { ErreurCommande, effetsVides, lire, nouveauProbleme, type ContexteCommande, type Effets, type ResultatCommande } from "./base.js";
 import { validerParams } from "./validation.js";
 
@@ -35,6 +35,8 @@ export function creerOccurrence(etat: ModeleAtelier, p: Brut, ctx: ContexteComma
   const classe = classeForcee ?? (p["classe"] as Classe);
   if (!estClasse(classe)) throw new ErreurCommande("invalide", "classe", `classe inconnue : ${String(p["classe"])}`);
   const description = CLASSES[classe];
+  // Ontologie activable (P2-2, T01) : ses classes n'entrent dans le projet qu'une fois l'ontologie activée.
+  if (!ontologiesActives(etat).includes(description.ontologie)) throw new ErreurCommande("precondition", "classe", `${description.libelle} : ontologie « ${LIBELLES_ONTOLOGIE[description.ontologie]} » non activée dans ce projet (ontologie.activer)`);
   const params = validerParams(etat, classe, (p["params"] as Brut | undefined) ?? p);
   const idDemande = lire.chaineOuNull(p, "id");
   if (idDemande !== null && etat.objets[idDemande]) throw new ErreurCommande("precondition", "id", `identifiant déjà utilisé : ${idDemande}`);
@@ -88,6 +90,11 @@ export function modifierOccurrence(etat: ModeleAtelier, p: Brut, ctx: ContexteCo
   if (existant.classe === "solide-exact") {
     const interdites = Object.keys(patch).filter((k) => !["nom", "couleur", "position", "angle"].includes(k));
     if (interdites.length) throw new ErreurCommande("precondition", "params", `solide exact : seuls nom, couleur, position et angle se modifient (refusé : ${interdites.join(", ")}) — la géométrie passe par une opération exacte`);
+  }
+  // P2-2 : la géométrie d'une pièce mécanique est une copie de sa source ; elle se refait par une nouvelle pièce.
+  if (existant.classe === "piece-mecanique") {
+    const interdites = Object.keys(patch).filter((k) => ["brep", "maillage", "volume", "empreinteBrep", "moteur", "versionMoteur", "emprise"].includes(k));
+    if (interdites.length) throw new ErreurCommande("precondition", "params", `pièce mécanique : géométrie non modifiable (refusé : ${interdites.join(", ")}) — créer une nouvelle pièce depuis une autre source`);
   }
   const params = validerParams(etat, existant.classe, { ...(existant.params as unknown as Brut), ...patch });
   const effets0: string[] = [];

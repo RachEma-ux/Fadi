@@ -521,6 +521,45 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         compter("solide-exact", "IfcBuildingElementProxy", rep ? "Tessellation" : "—", true, "solide exact : tessellation du B-rep (STEP pour la géométrie exacte), volume et empreinte en Fadi_SolideExact");
         break;
       }
+      case "piece-mecanique": {
+        // Pièce mécanique (P2-2) : proxy tessellé (maillage posé), référence, numéro, matériau et pose en propriétés ;
+        // agrégée à son assemblage (IfcElementAssembly) plus bas.
+        const rep = corpsMaille(o);
+        const id = s.ajouter(`IFCBUILDINGELEMENTPROXY(${gid(o.id)},$,${opt(o.params.nom)},$,${chaineStep("piece-mecanique")},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},${opt(o.params.reference)},.NOTDEFINED.)`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        pset(id, "Fadi_Piece", [
+          o.params.reference ? `#${prop("Reference", label(o.params.reference))}` : null,
+          o.params.numero !== null ? `#${prop("Numero", `IFCINTEGER(${o.params.numero})`)}` : null,
+          o.params.materiau ? `#${prop("Materiau", label(o.params.materiau))}` : null,
+          o.params.volume !== null ? `#${prop("Volume", `IFCVOLUMEMEASURE(${reelStep(o.params.volume)})`)}` : null,
+          o.params.assemblageId ? `#${prop("Assemblage", label(o.params.assemblageId))}` : null,
+          `#${prop("Fixe", `IFCBOOLEAN(${o.params.fixe ? ".T." : ".F."})`)}`,
+          o.params.empreinteBrep ? `#${prop("EmpreinteBrep", `IFCIDENTIFIER(${chaineStep(o.params.empreinteBrep)})`)}` : null,
+        ]);
+        compter("piece-mecanique", "IfcBuildingElementProxy", rep ? "Tessellation" : "—", true, "pièce mécanique : tessellation posée (STEP pour la géométrie exacte), référence et matériau en Fadi_Piece ; agrégée à son IfcElementAssembly");
+        break;
+      }
+      case "assemblage": {
+        const id = s.ajouter(`IFCELEMENTASSEMBLY(${gid(o.id)},$,${opt(o.params.nom)},$,${opt(o.params.numero)},${ref(placementDe(o.niveauId))},$,${opt(o.params.numero)},$,.USERDEFINED.)`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        const liaisons = objets.filter((l): l is Occurrence<"liaison"> => l.classe === "liaison" && (etat.objets[l.params.a] as Occurrence<"piece-mecanique"> | undefined)?.params.assemblageId === o.id);
+        pset(id, "Fadi_Assemblage", [
+          `#${prop("Position", label(`${reelStep(o.params.position.x)};${reelStep(o.params.position.y)};${reelStep(o.params.z)}`))}`,
+          `#${prop("Angle", `IFCPLANEANGLEMEASURE(${reelStep(o.params.angle.value)})`)}`,
+          `#${prop("Liaisons", `IFCINTEGER(${liaisons.length})`)}`,
+          o.params.diagnostic ? `#${prop("Diagnostic", label(o.params.diagnostic))}` : null,
+          ...liaisons.map((l) => `#${prop(`Liaison_${l.id}`, label(`${l.params.type} ${l.params.a} / ${l.params.b}${l.params.valeur !== null ? ` = ${reelStep(l.params.valeur)}` : ""}`))}`),
+        ]);
+        compter("assemblage", "IfcElementAssembly", "—", true, "assemblage : IfcElementAssembly agrégeant ses pièces (IfcRelAggregates) ; liaisons et diagnostic en Fadi_Assemblage");
+        break;
+      }
+      case "liaison":
+        compter("liaison", "—", "—", false, "liaison : portée par les propriétés Fadi_Assemblage de son assemblage (pas un produit IFC)");
+        break;
       case "objet-importe": {
         // Représentation importée : réécrite telle quelle (maillage), GlobalId d'origine conservé, classe d'origine
         // en ObjectType et en propriété — jamais reclassée en objet paramétrique.
@@ -648,6 +687,11 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   }
 
   for (const [niveauId, ids] of espacesParEtage) s.ajouter(`IFCRELAGGREGATES(${gid(`rel-espaces|${niveauId}`)},$,$,$,${ref(etages.get(niveauId)!.id)},${liste(ids)})`);
+  // Assemblages (P2-2) : chaque assemblage agrège ses pièces.
+  for (const a of objets.filter((o): o is Occurrence<"assemblage"> => o.classe === "assemblage")) {
+    const membres = objets.filter((o): o is Occurrence<"piece-mecanique"> => o.classe === "piece-mecanique" && o.params.assemblageId === a.id).map((o) => produits.get(o.id)).filter((x): x is number => x !== undefined);
+    if (membres.length && produits.get(a.id) !== undefined) s.ajouter(`IFCRELAGGREGATES(${gid(`rel-assemblage|${a.id}`)},$,$,$,${ref(produits.get(a.id)!)},${liste(membres)})`);
+  }
   // Contenance spatiale, typage, propriétés.
   for (const [structure, elements] of contenus) s.ajouter(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid(`rel-contenu|${structure}`)},$,$,$,${liste(elements)},${ref(structure)})`);
   for (const [type, objetsTypes] of typage) s.ajouter(`IFCRELDEFINESBYTYPE(${gid(`rel-type|${type}`)},$,$,$,${liste(objetsTypes)},${ref(type)})`);
@@ -724,7 +768,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   const contenu = [...entete, ...s.lignes, "ENDSEC;", "END-ISO-10303-21;", ""].join("\n");
   // Contrôle croisé annexe C (D-111) : une classe IFC déclarée différente de l'annexe C est nommée, jamais suivie.
   for (const x of controleClassesIfc(etat)) remarques.add(`${x.message}.`);
-  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
+  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "assemblage", "piece-mecanique", "liaison", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
   return {
     contenu,
     rapport: {
