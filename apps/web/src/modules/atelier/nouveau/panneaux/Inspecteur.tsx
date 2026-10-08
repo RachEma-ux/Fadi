@@ -15,6 +15,7 @@ import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
 import { FicheSolideExact, OutilSolideExact } from "./SolideExact";
 import { FicheAssemblage, FicheLiaison, FichePieceMecanique, OutilAssemblage, OutilLiaison, OutilPieceMecanique } from "./Mecanique";
+import { FicheArmature, FicheAssemblageStructurel, FicheCoulage, FichePlaque, FichePoutre, FicheSoudure, FicheTrame, OutilArmature, OutilAssemblageStructurel, OutilCoulage, OutilPlaque, OutilPoutre, OutilSoudure, OutilTrame } from "./Structure";
 import { LOCALE } from "../../../../lib/i18n";
 
 export interface PropsInspecteur {
@@ -79,7 +80,8 @@ export function Inspecteur(props: PropsInspecteur) {
   if (sel.length === 0) return <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} />;
   // Outil qui agit sur la sélection (répéter, décaler, réseau sur trajectoire…) avec des paramètres : ses champs
   // restent accessibles au-dessus de la sélection (D-058). Les outils de dessin gardent l'inspecteur de la sélection.
-  if (ui.outil !== "selection" && (OUTILS_PAR_ID[ui.outil]?.condition ?? "").startsWith("selection") && (PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0) {
+  // Outils des ontologies activables (P2-2 à P2-4) : leur panneau (formulaire) agit sur la sélection, il reste visible au-dessus d'elle.
+  if (ui.outil !== "selection" && (OUTILS_PAR_ID[ui.outil]?.condition ?? "").startsWith("selection") && ((PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0 || !!OUTILS_PAR_ID[ui.outil]?.ontologie)) {
     return (
       <>
         <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} />
@@ -114,7 +116,8 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
   const verrouObjet = raisonVerrou(etat, o);
   const desactive = readOnly || verrouille || !!verrouObjet;
   // Représentation importée (R16) : paramètres en lecture seule ; calque, phase et transformations restent possibles.
-  const parametresFiges = desactive || o.classe === "objet-importe" || o.classe === "solide-exact" || o.classe === "piece-mecanique" || o.classe === "liaison";
+  const STRUCTURE = ["poutre", "trame", "plaque", "assemblage-structurel", "soudure", "armature", "coulage"];
+  const parametresFiges = desactive || o.classe === "objet-importe" || o.classe === "solide-exact" || o.classe === "piece-mecanique" || o.classe === "liaison" || STRUCTURE.includes(o.classe);
 
   return (
     <section className="inspecteur" aria-label={`Inspecteur : ${description.libelle}`}>
@@ -219,6 +222,13 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
       {o.classe === "piece-mecanique" && <FichePieceMecanique o={o as Occurrence<"piece-mecanique">} etat={etat} />}
       {o.classe === "assemblage" && <FicheAssemblage o={o as Occurrence<"assemblage">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "liaison" && <FicheLiaison o={o as Occurrence<"liaison">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
+      {o.classe === "poutre" && <FichePoutre o={o as Occurrence<"poutre">} etat={etat} />}
+      {o.classe === "trame" && <FicheTrame key={`trame-${o.id}`} o={o as Occurrence<"trame">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
+      {o.classe === "plaque" && <FichePlaque o={o as Occurrence<"plaque">} />}
+      {o.classe === "assemblage-structurel" && <FicheAssemblageStructurel o={o as Occurrence<"assemblage-structurel">} etat={etat} />}
+      {o.classe === "soudure" && <FicheSoudure o={o as Occurrence<"soudure">} etat={etat} />}
+      {o.classe === "armature" && <FicheArmature o={o as Occurrence<"armature">} etat={etat} />}
+      {o.classe === "coulage" && <FicheCoulage o={o as Occurrence<"coulage">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || (o.classe === "mur" && !(o as Occurrence<"mur">).params.renflement)) && <Contraintes sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || o.classe === "solide" || o.classe === "texte") && <CreerBloc sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {Object.keys(o.proprietes).length > 0 && (
@@ -747,6 +757,13 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: Mo
       {ui.outil === "piece-mecanique" && <OutilPieceMecanique etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "assemblage" && <OutilAssemblage etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "liaison" && <OutilLiaison etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "poutre" && <OutilPoutre key={`poutre-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "trame-structure" && <OutilTrame etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "plaque" && <OutilPlaque etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "assemblage-structurel" && <OutilAssemblageStructurel etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "soudure" && <OutilSoudure etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "armature" && <OutilArmature key={`armature-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "coulage" && <OutilCoulage etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "contour" && (
         <div className="champ">
           <label htmlFor="outil-formeContour">Créer</label>

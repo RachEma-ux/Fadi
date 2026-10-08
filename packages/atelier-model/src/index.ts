@@ -82,3 +82,9 @@ export { empriseMaillage, pointPose, positionsPosees3, POSE_NULLE, type RepereAs
 export { controlerRegle, evaluerFamille, type ParamsFamille, type ParamsRegle } from "./ontologies/mechanical/familles.js";
 export { liaisonsDe, piecesDe, repereAssemblage, resoudreAssemblage } from "./ontologies/mechanical/index.js";
 
+// Ontologie structure (P2-3).
+export { AVEC_AILE, AVEC_EPAISSEUR, aireSection, contourSection, designationSection, formeDepuisDesignation, FORMES_SECTION, LIBELLES_FORME, sectionDepuisCatalogue, trousSection } from "./ontologies/structure/sections.js";
+export { longueurBarre, longueurPoutre, maillageArmature, maillageAssemblageStructurel, maillagePoutre, repereElement, volumeMaillage } from "./ontologies/structure/geometrie.js";
+export { intersectionsTrame, nommerAxes, planGeneration, pointTrame, repereTrame, segmentsTrame, type PlanGeneration } from "./ontologies/structure/trame.js";
+export { assemblagesSoudes, type AssemblageSoude } from "./ontologies/structure/soudures.js";
+export { controlerStructure, ELEMENTS_BETON, ELEMENTS_STRUCTURE, objetsDeTrame } from "./ontologies/structure/index.js";

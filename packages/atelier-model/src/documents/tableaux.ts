@@ -5,14 +5,18 @@
  * les mêmes octets.
  */
 import { aireBaie, LIBELLES_CINTRE } from "../cintres.js";
-import { distance } from "../geometrie.js";
+import { aire, aireNette, distance } from "../geometrie.js";
+import { contoursArchitecture } from "../blocs-places.js";
+import { aireSection, designationSection } from "../ontologies/structure/sections.js";
+import { longueurBarre, longueurPoutre } from "../ontologies/structure/geometrie.js";
+import { assemblagesSoudes } from "../ontologies/structure/soudures.js";
 import type { ModeleAtelier, Occurrence } from "../modele.js";
 import { niveauxOrdonnes, objetsDeClasse, ouverturesDuMur } from "../modele.js";
 import { quantites } from "../quantites.js";
 import { echapperXml } from "./rendu-svg.js";
 import { empreinteDe } from "./empreinte.js";
 
-export type TypeTableau = "pieces" | "portes" | "fenetres" | "murs" | "composants" | "nomenclature" | "synthese";
+export type TypeTableau = "pieces" | "portes" | "fenetres" | "murs" | "composants" | "nomenclature" | "structure" | "armatures" | "assemblagesStructure" | "synthese";
 export const TABLEAUX: Record<TypeTableau, string> = {
   pieces: "Tableau des pièces",
   portes: "Tableau des portes",
@@ -20,6 +24,9 @@ export const TABLEAUX: Record<TypeTableau, string> = {
   murs: "Tableau des murs",
   composants: "Tableau des composants",
   nomenclature: "Nomenclature des assemblages",
+  structure: "Nomenclature de structure",
+  armatures: "Nomenclature des armatures",
+  assemblagesStructure: "Assemblages de structure et soudures",
   synthese: "Synthèse des quantités par niveau",
 };
 
@@ -129,6 +136,58 @@ export function genererTableau(etat: ModeleAtelier, type: TypeTableau): Tableau 
         }
       }
       total = ["Total", null, null, `${lignes.length} pièce(s)`, null, r3(lignes.reduce((s, l) => s + (typeof l[5] === "number" ? l[5] : 0), 0)), lignes.length, null, null];
+      break;
+    }
+    case "structure": {
+      // Nomenclature de structure (P2-3, DA-08-17 / 19) : poteaux, éléments linéaires et plaques ; masse « non évaluée »
+      // sans masse linéique sourcée (R3) ; source du profil citée telle quelle.
+      colonnes = ["Niveau", "Élément", "Classe", "Nom", "Rôle", "Section", "Source du profil", "Matériau", "Longueur", "Volume", "Masse", "Préfabriqué", "Trame", "Coulage"];
+      unites = [null, null, null, null, null, null, null, null, "m", "m³", "kg", null, null, null];
+      const coulages = objetsDeClasse(etat, "coulage");
+      const coulageDe = (id: string) => coulages.find((c) => c.params.elements.includes(id))?.params.nom ?? null;
+      for (const n of niveauxOrdonnes(etat)) {
+        for (const o of objetsDeClasse(etat, "poteau", n.id).sort(parId)) {
+          const c = contoursArchitecture("poteau", o.params as unknown as Record<string, unknown>);
+          const h = o.params.hauteur?.value ?? null;
+          const vol = c && h ? aire(c.contour) * h : null;
+          lignes.push([n.nom, o.id, "poteau", o.params.nom, "poteau", `${o.params.formeId} ${Math.round(o.params.largeur.value * 1000)} × ${Math.round(o.params.profondeur.value * 1000)}${o.params.epaisseurProfil ? ` e ${Math.round(o.params.epaisseurProfil.value * 1000)}` : ""} mm`, null, ((o.proprietes["materiauNom"]?.valeur ?? o.proprietes["materiau"]?.valeur) as string | undefined) ?? null, h === null ? null : r3(h), vol === null ? null : r3(vol), null, "non", (o.proprietes["trame"]?.valeur as string | undefined) ?? null, coulageDe(o.id)]);
+        }
+        for (const o of objetsDeClasse(etat, "poutre", n.id).sort(parId)) {
+          const L = longueurPoutre(o.params);
+          const sec = o.params.section;
+          lignes.push([n.nom, o.id, "poutre", o.params.nom, o.params.role, designationSection(sec), sec.profil?.source ?? null, o.params.materiauNom ?? o.params.materiau, r3(L), r3(aireSection(sec) * L), sec.masseLineique === null ? null : r2(sec.masseLineique * L), o.params.prefabrique ? "oui" : "non", o.params.trameId, coulageDe(o.id)]);
+        }
+        for (const o of objetsDeClasse(etat, "plaque", n.id).sort(parId)) {
+          lignes.push([n.nom, o.id, "plaque", o.params.nom, "plaque", `e ${Math.round(o.params.epaisseur.value * 1000)} mm`, null, o.params.materiauNom ?? o.params.materiau, null, r3(aireNette(o.params.contour, o.params.trous) * o.params.epaisseur.value), null, o.params.prefabrique ? "oui" : "non", null, coulageDe(o.id)]);
+        }
+      }
+      const masses = lignes.map((l) => l[10]).filter((v): v is number => typeof v === "number");
+      total = ["Total", `${lignes.length} élément(s)`, null, null, null, null, null, null, r3(lignes.reduce((acc, l) => acc + (typeof l[8] === "number" ? l[8] : 0), 0)), r3(lignes.reduce((acc, l) => acc + (typeof l[9] === "number" ? l[9] : 0), 0)), masses.length === lignes.length && lignes.length ? r2(masses.reduce((acc, v) => acc + v, 0)) : null, null, null, null];
+      break;
+    }
+    case "armatures": {
+      // Nomenclature des armatures (DA-08-14 / 18) : diamètre, longueur développée, nombre ; masse non évaluée (aucune densité sourcée).
+      colonnes = ["Niveau", "Armature", "Nom", "Hôte", "Forme", "Diamètre", "Longueur unitaire", "Nombre", "Longueur totale", "Nuance", "Masse"];
+      unites = [null, null, null, null, null, "mm", "m", "u", "m", null, "kg"];
+      for (const n of niveauxOrdonnes(etat)) {
+        for (const o of objetsDeClasse(etat, "armature", n.id).sort(parId)) {
+          const Lu = longueurBarre(o.params);
+          lignes.push([n.nom, o.id, o.params.nom, o.params.hoteId, o.params.forme, Math.round(o.params.diametre.value * 1000), r3(Lu), o.params.nombre, r3(Lu * o.params.nombre), o.params.nuance, null]);
+        }
+      }
+      total = ["Total", `${lignes.length} armature(s)`, null, null, null, null, null, lignes.reduce((acc, l) => acc + (typeof l[7] === "number" ? l[7] : 0), 0), r3(lignes.reduce((acc, l) => acc + (typeof l[8] === "number" ? l[8] : 0), 0)), null, null];
+      break;
+    }
+    case "assemblagesStructure": {
+      // Assemblages paramétriques (DA-08-10 / 12 / 13) et assemblages soudés dérivés (DA-10-10).
+      colonnes = ["Nature", "Assemblage", "Nom ou type", "Éléments", "Platine", "Boulons", "Diamètre des boulons", "Soudures", "Longueur de cordon"];
+      unites = [null, null, null, null, "mm", "u", "mm", "u", "m"];
+      for (const o of objetsDeClasse(etat, "assemblage-structurel").sort(parId)) {
+        const b = o.params.boulons;
+        lignes.push(["paramétrique", o.id, o.params.nom ?? o.params.type, o.params.elements.join(", "), `${Math.round(o.params.platine.largeur.value * 1000)} × ${Math.round(o.params.platine.hauteur.value * 1000)} × ${Math.round(o.params.platine.epaisseur.value * 1000)}`, b ? b.rangees * b.parRangee : 0, b ? Math.round(b.diametre.value * 1000) : null, null, null]);
+      }
+      for (const w of assemblagesSoudes(etat)) lignes.push(["soudé", w.id, `assemblage soudé ${w.elements[0]}`, w.elements.join(", "), null, null, null, w.soudures.length, r3(w.longueur)]);
+      total = ["Total", `${lignes.length} assemblage(s)`, null, null, null, lignes.reduce((acc, l) => acc + (typeof l[5] === "number" ? l[5] : 0), 0), null, lignes.reduce((acc, l) => acc + (typeof l[7] === "number" ? l[7] : 0), 0), r3(lignes.reduce((acc, l) => acc + (typeof l[8] === "number" ? l[8] : 0), 0))];
       break;
     }
     case "synthese": {

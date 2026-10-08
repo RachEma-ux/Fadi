@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { anneauRetombee, architectureBloc, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { anneauRetombee, architectureBloc, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, segmentsTrame, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -91,6 +91,78 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
       );
     }
     case "liaison":
+      return null;
+    // Ontologie structure (P2-3).
+    case "poutre": {
+      // Élément linéaire : bande de la largeur de section le long de l'axe, trait d'axe ; rôle et section au survol.
+      const a = pr.vers(o.params.a), b = pr.vers(o.params.b);
+      const w = Math.max(2, o.params.section.largeur.value * pr.echelle);
+      const couleur = selectionne ? "#b3872f" : o.params.materiau === "beton" ? "#8a8378" : o.params.materiau === "bois" ? "#a0763f" : "#55606b";
+      return (
+        <g className={classes("obj-poutre", selectionne, survole)} data-objet={o.id} data-role={o.params.role}>
+          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={couleur} strokeOpacity={0.35} strokeWidth={w} strokeLinecap="butt" />
+          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={couleur} strokeWidth={selectionne ? 2 : 1} strokeDasharray={o.params.role === "poutre" || o.params.role === "longrine" ? undefined : "6 3"} />
+          <title>{`Élément de structure · ${o.params.nom ?? o.id} · ${o.params.role} · ${o.params.section.profil?.designation ?? o.params.section.forme}`}</title>
+        </g>
+      );
+    }
+    case "trame": {
+      // Trame : axes en trait mixte, bulles nommées en bout de chaque file et rang.
+      const segs = segmentsTrame(o.params, 1.5);
+      const couleur = selectionne ? "#b3872f" : "#7a6a3a";
+      return (
+        <g className={classes("obj-trame", selectionne, survole)} data-objet={o.id}>
+          {segs.map((sg) => {
+            const a = pr.vers(sg.a), b = pr.vers(sg.b);
+            return (
+              <g key={`${sg.genre}-${sg.nom}`}>
+                <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={couleur} strokeWidth={selectionne ? 1.5 : 0.8} strokeDasharray="12 4 2 4" />
+                <circle cx={a.x} cy={a.y} r={9} fill="#fff" stroke={couleur} strokeWidth={1} />
+                <text x={a.x} y={a.y + 3.5} fontSize={10} textAnchor="middle" fill="#3a3020">{sg.nom}</text>
+              </g>
+            );
+          })}
+          <title>{`Trame · ${o.params.nom} · ${o.params.files.length} file(s) × ${o.params.rangs.length} rang(s)`}</title>
+        </g>
+      );
+    }
+    case "plaque":
+      return (
+        <path d={chemin(pr, o.params.contour) + o.params.trous.map((t) => chemin(pr, t)).join("")} fillRule="evenodd" className={classes("obj-plaque", selectionne, survole)} fill="#7a8794" fillOpacity={0.35} stroke={selectionne ? "#b3872f" : "#4c5a68"} strokeWidth={selectionne ? 2.5 : 1} data-objet={o.id}>
+          <title>{`Plaque${o.params.nom ? ` · ${o.params.nom}` : ""} · ${Math.round(o.params.epaisseur.value * 1000)} mm`}</title>
+        </path>
+      );
+    case "assemblage-structurel": {
+      // Platine vue en plan : trait de son épaisseur, tourné de l'angle ; carré de repère.
+      const c = pr.vers(o.params.position);
+      const l = Math.max(6, o.params.platine.largeur.value * pr.echelle), e = Math.max(2, o.params.platine.epaisseur.value * pr.echelle);
+      return (
+        <g className={classes("obj-assemblage-structurel", selectionne, survole)} data-objet={o.id} transform={`rotate(${-o.params.angle.value} ${c.x} ${c.y})`}>
+          <rect x={c.x - e / 2} y={c.y - l / 2} width={e} height={l} fill="#6f7d8c" stroke={selectionne ? "#b3872f" : "#3f4a55"} strokeWidth={selectionne ? 2 : 1} />
+          <rect x={c.x - 6} y={c.y - 6} width={12} height={12} fill="none" stroke={selectionne ? "#b3872f" : "#3f4a55"} strokeWidth={0.8} />
+          <title>{`Assemblage structurel · ${o.params.nom ?? o.params.type}`}</title>
+        </g>
+      );
+    }
+    case "soudure": {
+      // Symbole de soudure (triangle plein, convention de dessin) à la position du cordon.
+      const c = pr.vers(o.params.position);
+      return (
+        <g className={classes("obj-soudure", selectionne, survole)} data-objet={o.id}>
+          <path d={`M${c.x - 6},${c.y + 5} L${c.x + 6},${c.y + 5} L${c.x},${c.y - 6} Z`} fill={selectionne ? "#b3872f" : "#3f4a55"} />
+          <title>{`Soudure · ${o.params.type} · gorge ${Math.round(o.params.gorge.value * 1000)} mm · ${o.params.longueur.value} m`}</title>
+        </g>
+      );
+    }
+    case "armature": {
+      const pts = o.params.forme === "cadre" || o.params.forme === "etrier" ? [...o.params.points, o.params.points[0]!] : o.params.points;
+      return (
+        <polyline points={pts.map((q) => { const v = pr.vers(q); return `${v.x},${v.y}`; }).join(" ")} className={classes("obj-armature", selectionne, survole)} fill="none" stroke={selectionne ? "#b3872f" : "#9c6b3c"} strokeWidth={selectionne ? 2 : 1} strokeDasharray="2 3" data-objet={o.id}>
+          <title>{`Armature · ${o.params.nombre} × Ø ${Math.round(o.params.diametre.value * 1000)} mm`}</title>
+        </polyline>
+      );
+    }
+    case "coulage":
       return null;
     case "objet-importe": {
       // Représentation importée : emprise (enveloppe convexe) en tirets, classe IFC d'origine au survol.

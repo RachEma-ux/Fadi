@@ -24,6 +24,10 @@ import { anneauRetombee, etendueDalle } from "../dalles.js";
 import type { Definition, ModeleAtelier, Niveau, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { etendueMur, maillageObjet } from "../projection/maillage.js";
+import { designationSection } from "../ontologies/structure/sections.js";
+import { longueurBarre } from "../ontologies/structure/geometrie.js";
+import { segmentsTrame } from "../ontologies/structure/trame.js";
+import { assemblagesSoudes } from "../ontologies/structure/soudures.js";
 import { empreinte } from "../documents/empreinte.js";
 import { compositionMur, lireCouches } from "../compositions.js";
 import { connexionsDuNiveau, polygoneMurRaccorde, raccordMur, type ExtremiteConnexion } from "../raccords.js";
@@ -560,6 +564,104 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
       case "liaison":
         compter("liaison", "—", "—", false, "liaison : portée par les propriétés Fadi_Assemblage de son assemblage (pas un produit IFC)");
         break;
+      // Ontologie structure (P2-3, DA-03-14) : classes IFC de structure, corps tessellés depuis le maillage pur ;
+      // section, profil sourcé, matériau déclaré et masse linéique (si sourcée) en Fadi_Structure.
+      case "poutre": {
+        const rep = corpsMaille(o);
+        const estPoutre = o.params.role === "poutre" || o.params.role === "longrine";
+        const L = Math.hypot(o.params.b.x - o.params.a.x, o.params.b.y - o.params.a.y, o.params.zb - o.params.za);
+        const id = estPoutre
+          ? s.ajouter(`IFCBEAM(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(o.params.role)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.BEAM.)`)
+          : s.ajouter(`IFCMEMBER(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(o.params.role)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,${o.params.role === "contreventement" || o.params.role === "diagonale" ? ".BRACE." : o.params.role === "chevron" ? ".RAFTER." : o.params.role === "panne" ? ".PURLIN." : ".USERDEFINED."})`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        const sec = o.params.section;
+        pset(id, "Fadi_Structure", [
+          `#${prop("Role", label(o.params.role))}`,
+          `#${prop("Section", label(designationSection(sec)))}`,
+          `#${prop("Forme", label(sec.forme))}`,
+          `#${prop("Largeur", `IFCPOSITIVELENGTHMEASURE(${reelStep(sec.largeur.value)})`)}`,
+          `#${prop("Hauteur", `IFCPOSITIVELENGTHMEASURE(${reelStep(sec.hauteur.value)})`)}`,
+          sec.epaisseur ? `#${prop("EpaisseurAme", `IFCPOSITIVELENGTHMEASURE(${reelStep(sec.epaisseur.value)})`)}` : null,
+          sec.epaisseurAile ? `#${prop("EpaisseurAile", `IFCPOSITIVELENGTHMEASURE(${reelStep(sec.epaisseurAile.value)})`)}` : null,
+          sec.profil ? `#${prop("Profil", label(sec.profil.designation))}` : null,
+          sec.profil ? `#${prop("SourceProfil", texte(sec.profil.source))}` : null,
+          sec.masseLineique !== null ? `#${prop("MasseLineique", `IFCMASSPERLENGTHMEASURE(${reelStep(sec.masseLineique)})`)}` : null,
+          `#${prop("Longueur", `IFCPOSITIVELENGTHMEASURE(${reelStep(L)})`)}`,
+          `#${prop("Materiau", label(o.params.materiauNom ?? o.params.materiau))}`,
+          `#${prop("Prefabrique", `IFCBOOLEAN(${o.params.prefabrique ? ".T." : ".F."})`)}`,
+          o.params.trameId ? `#${prop("Trame", label(o.params.trameId))}` : null,
+        ]);
+        compter("poutre", estPoutre ? "IfcBeam" : "IfcMember", rep ? "Tessellation" : "—", true, "élément de structure : corps tessellé du balayage de section ; section, profil sourcé et matériau en Fadi_Structure");
+        break;
+      }
+      case "plaque": {
+        const rep = corpsMaille(o);
+        const id = s.ajouter(`IFCPLATE(${gid(o.id)},$,${opt(nom ?? o.id)},$,$,${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.USERDEFINED.)`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        pset(id, "Fadi_Structure", [`#${prop("Epaisseur", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.epaisseur.value)})`)}`, `#${prop("Materiau", label(o.params.materiauNom ?? o.params.materiau))}`, `#${prop("Prefabrique", `IFCBOOLEAN(${o.params.prefabrique ? ".T." : ".F."})`)}`]);
+        compter("plaque", "IfcPlate", rep ? "Tessellation" : "—", true);
+        break;
+      }
+      case "armature": {
+        const rep = corpsMaille(o);
+        const Lu = longueurBarre(o.params);
+        const d = o.params.diametre.value;
+        const id = s.ajouter(`IFCREINFORCINGBAR(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(o.params.forme)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,${opt(o.params.nuance)},${reelStep(d)},${reelStep((Math.PI * d * d) / 4)},${reelStep(Lu)},${o.params.forme === "cadre" || o.params.forme === "etrier" ? ".STIRRUP." : o.params.forme === "epingle" || o.params.forme === "u" ? ".LIGATURE." : ".MAIN."},$)`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        pset(id, "Fadi_Armature", [`#${prop("Nombre", `IFCINTEGER(${o.params.nombre})`)}`, o.params.espacement ? `#${prop("Espacement", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.espacement.value)})`)}` : null, o.params.hoteId ? `#${prop("Hote", label(o.params.hoteId))}` : null, `#${prop("LongueurTotale", `IFCPOSITIVELENGTHMEASURE(${reelStep(Lu * o.params.nombre)})`)}`]);
+        compter("armature", "IfcReinforcingBar", rep ? "Tessellation" : "—", true, "armature : une IfcReinforcingBar par objet (nombre et espacement en Fadi_Armature), diamètre et longueur nominaux");
+        break;
+      }
+      case "assemblage-structurel": {
+        const rep = corpsMaille(o);
+        const id = s.ajouter(`IFCELEMENTASSEMBLY(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(`assemblage-structurel:${o.params.type}`)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,$,.USERDEFINED.)`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        const b = o.params.boulons;
+        pset(id, "Fadi_AssemblageStructurel", [
+          `#${prop("Type", label(o.params.type))}`,
+          `#${prop("Elements", label(o.params.elements.join(";")))}`,
+          `#${prop("Platine", label(`${reelStep(o.params.platine.largeur.value)} x ${reelStep(o.params.platine.hauteur.value)} x ${reelStep(o.params.platine.epaisseur.value)}`))}`,
+          b ? `#${prop("Boulons", `IFCINTEGER(${b.rangees * b.parRangee})`)}` : null,
+          b ? `#${prop("DiametreBoulons", `IFCPOSITIVELENGTHMEASURE(${reelStep(b.diametre.value)})`)}` : null,
+          b ? `#${prop("Entraxe", `IFCPOSITIVELENGTHMEASURE(${reelStep(b.entraxe.value)})`)}` : null,
+        ]);
+        compter("assemblage-structurel", "IfcElementAssembly", rep ? "Tessellation" : "—", true, "assemblage paramétrique : platine et boulons tessellés dans un IfcElementAssembly (géométrie seulement, aucune vérification) ; éléments reliés en Fadi_AssemblageStructurel");
+        break;
+      }
+      case "soudure": {
+        const pl = s.ajouter(`IFCLOCALPLACEMENT(${ref(placementDe(o.niveauId))},${ref(s.ajouter(`IFCAXIS2PLACEMENT3D(${ref(pt3(o.params.position.x, o.params.position.y, o.params.z))},$,$)`))})`);
+        const id = s.ajouter(`IFCFASTENER(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(`soudure:${o.params.type}`)},${ref(pl)},$,$,.WELD.)`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        pset(id, "Fadi_Soudure", [`#${prop("Type", label(o.params.type))}`, `#${prop("Gorge", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.gorge.value)})`)}`, `#${prop("Longueur", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.longueur.value)})`)}`, `#${prop("Elements", label(`${o.params.a};${o.params.b}`))}`, `#${prop("Intermittente", `IFCBOOLEAN(${o.params.intermittente ? ".T." : ".F."})`)}`]);
+        compter("soudure", "IfcFastener", "—", true, "soudure : IfcFastener .WELD. placé, sans volume (gorge et longueur en Fadi_Soudure)");
+        break;
+      }
+      case "trame": {
+        const segs = segmentsTrame(o.params, 1);
+        const axes = (genre: "file" | "rang") => segs.filter((x) => x.genre === genre).map((x) => s.ajouter(`IFCGRIDAXIS(${chaineStep(x.nom)},${ref(polyligne2([x.a, x.b], false))},.T.)`));
+        const u = axes("file"), v = axes("rang");
+        const courbes = segs.map((x) => polyligne2([x.a, x.b], false));
+        const rep = s.ajouter(`IFCSHAPEREPRESENTATION(${ref(emprise)},'FootPrint','GeometricCurveSet',${liste([s.ajouter(`IFCGEOMETRICCURVESET(${liste(courbes)})`)])})`);
+        const id = s.ajouter(`IFCGRID(${gid(o.id)},$,${chaineStep(o.params.nom)},$,$,${ref(placementDe(o.niveauId))},${ref(forme([rep]))},${liste(u)},${liste(v)},$,.RECTANGULAR.)`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        compter("trame", "IfcGrid", "GeometricCurveSet", true, "trame : IfcGrid (files = UAxes, rangs = VAxes), objets générés exportés par leur classe");
+        break;
+      }
+      case "coulage":
+        // Groupe (plus bas) : IfcGroup assignant ses éléments.
+        break;
       case "objet-importe": {
         // Représentation importée : réécrite telle quelle (maillage), GlobalId d'origine conservé, classe d'origine
         // en ObjectType et en propriété — jamais reclassée en objet paramétrique.
@@ -687,6 +789,22 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   }
 
   for (const [niveauId, ids] of espacesParEtage) s.ajouter(`IFCRELAGGREGATES(${gid(`rel-espaces|${niveauId}`)},$,$,$,${ref(etages.get(niveauId)!.id)},${liste(ids)})`);
+  // Coulages (P2-3, DA-08-15 / 16) : IfcGroup assignant ses éléments ; assemblages soudés (DA-10-10) : IfcElementAssembly .WELDED.
+  for (const c of objets.filter((o): o is Occurrence<"coulage"> => o.classe === "coulage")) {
+    const id = s.ajouter(`IFCGROUP(${gid(c.id)},$,${chaineStep(c.params.nom)},$,${chaineStep(c.params.prefabrique ? "lot-prefabrique" : "coulage")})`);
+    const membres = c.params.elements.map((e) => produits.get(e)).filter((x): x is number => x !== undefined);
+    if (membres.length) s.ajouter(`IFCRELASSIGNSTOGROUP(${gid(`rel-coulage|${c.id}`)},$,$,$,${liste(membres)},$,${ref(id)})`);
+    pset(id, "Fadi_Coulage", [c.params.numero ? `#${prop("Numero", label(c.params.numero))}` : null, `#${prop("Prefabrique", `IFCBOOLEAN(${c.params.prefabrique ? ".T." : ".F."})`)}`, `#${prop("Elements", `IFCINTEGER(${c.params.elements.length})`)}`]);
+    compter("coulage", "IfcGroup", "—", true, "coulage ou lot préfabriqué : IfcGroup, membres par IfcRelAssignsToGroup");
+  }
+  for (const w of assemblagesSoudes(etat)) {
+    const membres = w.elements.map((e) => produits.get(e)).filter((x): x is number => x !== undefined);
+    if (!membres.length) continue;
+    const id = s.ajouter(`IFCELEMENTASSEMBLY(${gid(w.id)},$,${chaineStep(`Assemblage soudé ${w.elements[0]}`)},$,${chaineStep("assemblage-soude")},${ref(placementDe(etat.objets[w.elements[0]!]?.niveauId ?? null))},$,$,$,.WELDED.)`);
+    s.ajouter(`IFCRELAGGREGATES(${gid(`rel-soude|${w.id}`)},$,$,$,${ref(id)},${liste(membres)})`);
+    pset(id, "Fadi_AssemblageSoude", [`#${prop("Soudures", `IFCINTEGER(${w.soudures.length})`)}`, `#${prop("LongueurCordon", `IFCPOSITIVELENGTHMEASURE(${reelStep(w.longueur)})`)}`]);
+    compter("assemblage-soude", "IfcElementAssembly", "—", true, "assemblage soudé (dérivé des soudures) : IfcElementAssembly .WELDED. agrégeant ses éléments");
+  }
   // Assemblages (P2-2) : chaque assemblage agrège ses pièces.
   for (const a of objets.filter((o): o is Occurrence<"assemblage"> => o.classe === "assemblage")) {
     const membres = objets.filter((o): o is Occurrence<"piece-mecanique"> => o.classe === "piece-mecanique" && o.params.assemblageId === a.id).map((o) => produits.get(o.id)).filter((x): x is number => x !== undefined);
@@ -768,7 +886,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   const contenu = [...entete, ...s.lignes, "ENDSEC;", "END-ISO-10303-21;", ""].join("\n");
   // Contrôle croisé annexe C (D-111) : une classe IFC déclarée différente de l'annexe C est nommée, jamais suivie.
   for (const x of controleClassesIfc(etat)) remarques.add(`${x.message}.`);
-  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "assemblage", "piece-mecanique", "liaison", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
+  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "assemblage", "piece-mecanique", "liaison", "trame", "poutre", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "assemblage-soude", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
   return {
     contenu,
     rapport: {

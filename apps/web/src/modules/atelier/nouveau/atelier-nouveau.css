@@ -2742,3 +2742,13 @@
 .nav-ontologies li { list-style: none; }
 .fiche-mecanique [data-liaison] input { width: 5rem; }
 .obj-piece-mecanique.est-survole { filter: brightness(1.08); }
+
+/* Ontologie structure (P2-3) : outils et fiches dans l'inspecteur, éditeur de section. */
+.outil-structure .champ-vecteur .vecteur { display: inline-flex; gap: 0.25rem; }
+.outil-structure .champ-vecteur input { width: 4.2rem; }
+.editeur-section, .generation-trame { border: 1px solid var(--bordure, #c9d3cf); border-radius: 6px; padding: 0.4rem 0.6rem; margin: 0.5rem 0; }
+.editeur-section legend, .generation-trame legend { font-weight: 600; font-size: 0.9em; padding: 0 0.3rem; }
+
+/* Ontologies activables (P2-2 à P2-4) : cases à cocher de 24 px au moins (axe-core target-size, WCAG 2.5.8). */
+.nav-ontologies .case { min-height: 1.75rem; display: flex; align-items: center; gap: 0.5rem; padding: 0.2rem 0; }
+.nav-ontologies .case input[type="checkbox"] { width: 1.5rem; height: 1.5rem; margin: 0; }

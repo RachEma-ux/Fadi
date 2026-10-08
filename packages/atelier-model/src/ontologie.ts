@@ -7,7 +7,7 @@
 
 import type { ModeleAtelier } from "./modele.js";
 
-export type Ontologie = "building.architecture" | "building.structure" | "drawing" | "annotation" | "projet" | "mechanical";
+export type Ontologie = "building.architecture" | "building.structure" | "drawing" | "annotation" | "projet" | "mechanical" | "structure";
 
 export type Classe =
   | "mur"
@@ -33,7 +33,14 @@ export type Classe =
   | "solide-exact"
   | "piece-mecanique"
   | "assemblage"
-  | "liaison";
+  | "liaison"
+  | "poutre"
+  | "trame"
+  | "plaque"
+  | "assemblage-structurel"
+  | "soudure"
+  | "armature"
+  | "coulage";
 
 export type KindRelation =
   | "heberge-par" // ouverture → mur hôte
@@ -85,6 +92,16 @@ export const CLASSES: Readonly<Record<Classe, DescriptionClasse>> = {
   "piece-mecanique": { classe: "piece-mecanique", ontologie: "mechanical", libelle: "Pièce mécanique", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre"], parNiveau: true },
   assemblage: { classe: "assemblage", ontologie: "mechanical", libelle: "Assemblage", ifc: "IfcElementAssembly", caracteristiques: ["centre"], parNiveau: true },
   liaison: { classe: "liaison", ontologie: "mechanical", libelle: "Liaison", ifc: "IfcAnnotation", caracteristiques: [], parNiveau: false },
+  // Ontologie structure (P2-3, DA-08) : éléments linéaires (poutres, contreventements…), trames, plaques, assemblages
+  // paramétriques (géométrie seulement), soudures, armatures, coulages. Le poteau du socle (`building.structure`)
+  // reste la classe des poteaux : la trame en crée, l'assemblage structurel les relie.
+  poutre: { classe: "poutre", ontologie: "structure", libelle: "Élément de structure", ifc: "IfcBeam", caracteristiques: ["arete-debut", "arete-fin", "axe", "centre"], parNiveau: true },
+  trame: { classe: "trame", ontologie: "structure", libelle: "Trame", ifc: "IfcGrid", caracteristiques: ["centre", "sommet"], parNiveau: true },
+  plaque: { classe: "plaque", ontologie: "structure", libelle: "Plaque", ifc: "IfcPlate", caracteristiques: ["contour", "centre"], parNiveau: true },
+  "assemblage-structurel": { classe: "assemblage-structurel", ontologie: "structure", libelle: "Assemblage structurel", ifc: "IfcElementAssembly", caracteristiques: ["centre"], parNiveau: true },
+  soudure: { classe: "soudure", ontologie: "structure", libelle: "Soudure", ifc: "IfcFastener", caracteristiques: ["centre"], parNiveau: true },
+  armature: { classe: "armature", ontologie: "structure", libelle: "Armature", ifc: "IfcReinforcingBar", caracteristiques: ["sommet", "centre"], parNiveau: true },
+  coulage: { classe: "coulage", ontologie: "structure", libelle: "Coulage", ifc: "IfcGroup", caracteristiques: [], parNiveau: true },
 };
 
 export const CLASSES_OUVERTURE: readonly Classe[] = ["porte", "fenetre", "ouverture"];
@@ -100,8 +117,8 @@ export function estOuverture(classe: Classe): classe is "porte" | "fenetre" | "o
 /** Ontologies activées par défaut dans tout projet (Architecture V4 §4) : le bâtiment, la structure réduite au poteau, le dessin, l'annotation. */
 export const ONTOLOGIES_ACTIVEES: readonly Ontologie[] = ["building.architecture", "building.structure", "drawing", "annotation", "projet"];
 /** Ontologies qu'un projet active ou désactive lui-même (cahier P2 §4, T01) : les autres font le socle. */
-export const ONTOLOGIES_ACTIVABLES: readonly Ontologie[] = ["mechanical"];
-export const LIBELLES_ONTOLOGIE: Record<Ontologie, string> = { "building.architecture": "Bâtiment (architecture)", "building.structure": "Structure", drawing: "Dessin", annotation: "Annotation", projet: "Projet", mechanical: "Mécanique et assemblages" };
+export const ONTOLOGIES_ACTIVABLES: readonly Ontologie[] = ["mechanical", "structure"];
+export const LIBELLES_ONTOLOGIE: Record<Ontologie, string> = { "building.architecture": "Bâtiment (architecture)", "building.structure": "Structure du socle (poteau)", drawing: "Dessin", annotation: "Annotation", projet: "Projet", mechanical: "Mécanique et assemblages", structure: "Structure (charpente, béton, assemblages)" };
 
 /** Ontologies actives d'un projet : le socle, plus celles que le projet a activées (`ontologie.activer`). */
 export function ontologiesActives(etat: Pick<ModeleAtelier, "ontologies">): readonly Ontologie[] {
