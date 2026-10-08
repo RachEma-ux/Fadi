@@ -12,6 +12,8 @@
  * - Échap annule l'opération en cours (sinon : sans effet, l'interface gère le retour à l'outil précédent).
  */
 import type { Modele } from "../geometrie-libre.js";
+import type { Maillage } from "../maillage.js";
+import type { Repere } from "../annotations.js";
 import type { Inference, ModeAlt, Verrou } from "../inference.js";
 import type { ContexteSaisie } from "../saisie-vcb.js";
 import type { Vec3 } from "../vecteur.js";
@@ -82,6 +84,12 @@ export interface VueOutil {
     readonly points?: readonly Vec3[];
     /** (Ajout, optionnel) Lignes en pointillé (monde) : trajet d'un point glissé, de sa position d'origine au curseur. */
     readonly pointilles?: readonly (readonly Vec3[])[];
+    /** (Lot 4) Étiquettes de texte à afficher près d'un point monde (longueur du Mètre, angle du Rapporteur…). */
+    readonly etiquettes?: readonly { readonly point: Vec3; readonly texte: string }[];
+    /** (Lot 4) Plan de coupe en aperçu : rectangle à languettes sur la face survolée (origine, normale, demi-tailles). */
+    readonly plan?: { readonly origine: Vec3; readonly normale: Vec3; readonly u: Vec3; readonly w: Vec3; readonly demiU: number; readonly demiW: number; readonly couleur: string };
+    /** (Lot 4) Rapporteur en aperçu : centre, normale, rayon, direction de départ, angle balayé (rad). */
+    readonly rapporteur?: { readonly centre: Vec3; readonly normale: Vec3; readonly rayon: number; readonly depart: Vec3; readonly angle: number; readonly couleur: string };
   };
   /** Ids sélectionnés / survolés, à surligner. */
   readonly selection: readonly string[];
@@ -103,6 +111,25 @@ export interface ContexteOutil {
   readonly entitesDansContour?: (contour: readonly { x: number; y: number }[], genre: "fenetre" | "croisee") => readonly string[];
   /** (Ajout lot 2, optionnel) Occurrence (groupe / composant) en cours d'édition ; absent = racine (§5.6). */
   readonly dans?: string;
+  /** (Lot 5) Matière courante du pot de peinture (id dans `annotations.materiaux`) ; absent = matière par défaut. */
+  readonly materiauCourant?: string;
+  /** (Lot 5) Balise choisie dans le panneau Balises ; absent = aucune. */
+  readonly baliseCourante?: string;
+  /** (Lot 4) Repère de saisie courant (Axes) ; absent = repère du modèle. */
+  readonly repere?: Repere;
+  /** (Lot 6) Moteur booléen injecté par l'interface (manifold-3d) ; absent = outils de solides indisponibles. */
+  readonly booleens?: AdaptateurBooleens;
+  /** (Lot 4) Hauteur d'œil courante (m) pour les outils caméra, lue par la vue. */
+  readonly hauteurOeil?: number;
+  /** Lecteur (droit `read`, C25) : mesure sans rien créer (CA-MET-4). */
+  readonly lecture?: boolean;
+}
+
+/** Moteur booléen de maillages (lot 6, MO-4) : synchrone une fois chargé ; les maillages sont en coordonnées monde. */
+export interface AdaptateurBooleens {
+  union(a: Maillage, b: Maillage): Maillage;
+  difference(a: Maillage, b: Maillage): Maillage;
+  intersection(a: Maillage, b: Maillage): Maillage;
 }
 
 export interface Transition<E> {
@@ -119,6 +146,14 @@ export interface Transition<E> {
   readonly dans?: string | null;
   /** (Ajout lot 3, optionnel) Outil à activer après cette transition (Diviser rend la main à Sélection). */
   readonly outil?: string;
+  /** (Lot 4) `true` : revenir à l'outil précédent (Axes, outils temporaires). */
+  readonly outilPrecedent?: boolean;
+  /** (Lot 5) Nouvelle matière courante du pot de peinture (Prélever) ; `null` = matière par défaut. */
+  readonly materiauCourant?: string | null;
+  /** (Lot 5) Nouvelle balise courante (Alt = prélever). */
+  readonly baliseCourante?: string | null;
+  /** (Lot 4) Texte à faire saisir par l'interface (outil Texte) : l'interface renvoie le résultat par `saisie`. */
+  readonly editerTexte?: { readonly id: string; readonly texte: string };
 }
 
 export interface MachineOutil<E> {

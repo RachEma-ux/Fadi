@@ -79,6 +79,7 @@ function inferenceLigne(e: EtatLigne, ctx: ContexteOutil, r: Rayon, tolerance: n
     ...(e.etape === 2 && e.depart ? { depart: e.depart } : {}),
     ...(v ? { verrou: v } : {}),
     ...(e.areteReference ? { areteReference: e.areteReference } : {}),
+      ...(ctx.repere ? { axes: ctx.repere } : {}),
   });
 }
 

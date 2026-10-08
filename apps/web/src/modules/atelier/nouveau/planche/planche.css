@@ -962,3 +962,177 @@
     min-height: 36px;
   }
 }
+
+/* ——— Lots 4 à 6 : étiquettes (cotes, textes), barre du plan de coupe, saisie de texte, panneaux Matériaux / Balises,
+   boîte Texte 3D. Les étiquettes sont posées par la vue (`placerEtiquettes`) en coordonnées écran. */
+.planche-etiquettes {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.planche-etiquette {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 0.1rem 0.3rem;
+  font: 12px/1.3 system-ui, sans-serif;
+  color: #1c1c1c;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 3px;
+  white-space: pre;
+  pointer-events: none;
+}
+.planche-etiquette-cote {
+  color: #1a3a6e;
+}
+.planche-etiquette-texte {
+  border: 1px solid #8a8a8a;
+}
+.planche-etiquette-ecran {
+  transform: none;
+}
+.planche-etiquette-apercu {
+  opacity: 0.8;
+  border: 1px dashed #8a8a8a;
+}
+.planche-etiquette.est-selectionne {
+  outline: 2px solid #1a5fd6;
+}
+.planche[data-outil-actif="zoom-fenetre"] .planche-vue {
+  cursor: crosshair;
+}
+.planche[data-outil-actif="regarder-autour"] .planche-vue,
+.planche[data-outil-actif="marcher"] .planche-vue,
+.planche[data-outil-actif="positionner-camera"] .planche-vue {
+  cursor: move;
+}
+.planche-coupe-barre {
+  justify-self: center;
+  align-self: start;
+  z-index: 7;
+  margin-top: 3.4rem;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.3rem 0.6rem;
+  background: var(--flottant-fond);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+  font-size: 0.9rem;
+}
+.planche-coupe-barre button {
+  min-height: 36px;
+}
+.planche-coupe-barre button[aria-pressed="true"] {
+  background: color-mix(in srgb, #1a5fd6 18%, transparent);
+}
+.planche-texte-edition {
+  justify-self: center;
+  align-self: end;
+  z-index: 8;
+  margin-bottom: calc(var(--pied-h, 5.5rem) + 0.75rem);
+  display: grid;
+  gap: 0.3rem;
+  width: min(24rem, calc(100% - 2rem));
+  padding: 0.5rem 0.6rem;
+  background: var(--flottant-fond);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+}
+.planche-texte-edition label {
+  font-size: 0.8rem;
+  color: #555;
+}
+.planche-texte-edition textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+.planche-liste-panneau ul {
+  list-style: none;
+  margin: 0 0 0.6rem;
+  padding: 0;
+}
+.planche-liste-panneau li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0 0.3rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.planche-liste-panneau li.est-actif {
+  background: color-mix(in srgb, #1a5fd6 12%, transparent);
+}
+.planche-ligne-choix {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 36px;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.planche-pastille {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  flex: none;
+}
+.planche-creation {
+  display: grid;
+  gap: 0.35rem;
+}
+.planche-creation h4 {
+  margin: 0.2rem 0 0;
+}
+.planche-creation label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+.planche-creation input:not([type="color"]) {
+  flex: 1;
+  min-height: 36px;
+}
+.planche-creation button {
+  min-height: 40px;
+}
+.planche-texte3d {
+  display: grid;
+  gap: 0.4rem;
+}
+.planche-texte3d h3 {
+  margin: 0;
+}
+.planche-texte3d textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+}
+.planche-texte3d-champs {
+  display: grid;
+  gap: 0.3rem;
+}
+.planche-texte3d-champs label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.planche-texte3d-champs input:not([type="checkbox"]) {
+  width: 7rem;
+  min-height: 36px;
+}
+.planche-texte3d .barre-groupe button {
+  min-height: 44px;
+}

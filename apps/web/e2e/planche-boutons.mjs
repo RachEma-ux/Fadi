@@ -201,8 +201,10 @@ async function auditer(nom, vp, tactile) {
     await cliquer(p.locator(`[data-planche-grille] ${esc(o.id)}`).first(), o.indispo);
     const apres = await outilActif(p);
     const ferme = (await p.locator("[data-planche-grille]").count()) === 0;
+    // Lots 4 à 6 : Zoom étendu agit sans devenir l'outil actif ; Texte 3D ouvre une boîte de dialogue (refermée par Annuler).
     if (o.indispo) { if (apres !== avant) echecsGrille.push(`${o.id} (grisé) a changé l'outil`); if (!ferme) await cliquer(T("[data-planche-plus]")); }
-    else if (apres !== o.id || !ferme) echecsGrille.push(`${o.id} : outil=${apres}, grille ${ferme ? "fermée" : "restée ouverte"}`);
+    else if ((o.id === "zoom-etendu" ? apres !== avant : apres !== o.id) || !ferme) echecsGrille.push(`${o.id} : outil=${apres}, grille ${ferme ? "fermée" : "restée ouverte"}`);
+    if ((await p.locator("[data-planche-texte3d]").count()) === 1) await cliquer(p.locator("[data-planche-texte3d-annuler]"));
   }
   check(`${nom} : ${grille.length} boutons de la grille (${grille.filter((o) => !o.indispo).length} actifs dont Suivez-moi, Retourner, Décalage, Diviser ; ${grille.filter((o) => o.indispo).length} grisés)`, echecsGrille.length === 0 && ["decalage", "suivez-moi", "retourner", "diviser"].every((id) => grille.some((o) => o.id === id && !o.indispo)), echecsGrille.join(" ; "));
   if ((await p.locator("[data-planche-grille]").count()) === 1) await cliquer(T("[data-planche-plus]"));

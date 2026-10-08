@@ -100,6 +100,11 @@ export interface ContexteSaisie {
   readonly separateurDecimal?: "." | ",";
   /** Polygone (attendu `rayon`) : mode de rayon et nombre de côtés, pour calculer le rayon au sommet. */
   readonly polygone?: { readonly mode: "inscrit" | "circonscrit"; readonly cotes: number };
+  /**
+   * Repère de saisie (outil Axes, R5) : un point absolu `[x;y;z]` est lu depuis son origine le long de ses axes, un
+   * point relatif `<dx;dy;dz>` le long de ses axes ; les coordonnées retournées sont dans le repère stocké.
+   */
+  readonly repere?: { readonly origine: Vec3; readonly x: Vec3; readonly y: Vec3; readonly z: Vec3 };
 }
 
 export interface Angle {
@@ -587,6 +592,13 @@ function essayer(forme: Forme, t: string, loc: Locale, ctx: ContexteSaisie): Res
  * Analyse une saisie du champ Mesures selon ce que l'outil attend.
  * Ne lève jamais d'exception : toute anomalie donne `{ genre: 'erreur', message }`.
  */
+/** Point saisi converti du repère de saisie vers le repère stocké. */
+function dansLeRepere(r: Extract<ResultatSaisie, { genre: "point" }>, rep: NonNullable<ContexteSaisie["repere"]>): ResultatSaisie {
+  const { x, y, z } = r.point;
+  const v = v3(x * rep.x.x + y * rep.y.x + z * rep.z.x, x * rep.x.y + y * rep.y.y + z * rep.z.y, x * rep.x.z + y * rep.y.z + z * rep.z.z);
+  return { ...r, point: r.reference === "absolue" ? v3(v.x + rep.origine.x, v.y + rep.origine.y, v.z + rep.origine.z) : v };
+}
+
 export function analyserSaisie(texte: string, contexte: ContexteSaisie): ResultatSaisie {
   try {
     const loc: Locale = { dec: contexte.separateurDecimal ?? ".", uniteModele: contexte.uniteModele ?? "m" };
@@ -596,7 +608,7 @@ export function analyserSaisie(texte: string, contexte: ContexteSaisie): Resulta
     if (t === "") return erreur("Saisie vide.");
     for (const forme of FORMES_PAR_ATTENDU[contexte.attendu]) {
       const r = essayer(forme, t, loc, contexte);
-      if (r !== null) return r;
+      if (r !== null) return r.genre === "point" && contexte.repere ? dansLeRepere(r, contexte.repere) : r;
     }
     return erreur(`Saisie « ${t} » non reconnue : attendu ${MSG_FORME[contexte.attendu]}.`);
   } catch {

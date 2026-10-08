@@ -108,13 +108,13 @@ export const machineMainLevee: MachineOutil<EtatMainLevee> = {
         return { etat };
       }
       case "survol": {
-        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele) });
+        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...(ctx.repere ? { axes: ctx.repere } : {}) });
         const f = i.type === "sur-face" ? geometrieVisible(ctx.modele).faces.find((x) => x.id === i.entite) : undefined;
         return { etat: { ...etat, faceSurvolee: f ? normalize(f.normale) : etat.faceSurvolee, ignorerClic: false } };
       }
       case "appui": {
         const geo = geometrieVisible(ctx.modele);
-        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geo });
+        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geo, ...(ctx.repere ? { axes: ctx.repere } : {}) });
         const face = i.type === "sur-face" ? geo.faces.find((x) => x.id === i.entite) : undefined;
         const normale = etat.verrou?.normale ?? (face ? normalize(face.normale) : AXE_Z);
         const plan: PlanDessin = { origine: i.point, normale };

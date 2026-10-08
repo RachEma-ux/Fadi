@@ -1,7 +1,7 @@
 /**
  * Recette outil par outil de la Planche (desktop 1536 × 864, souris + clavier) : chaque outil livré (22 machines
  * d'états + Orbite, Panoramique, Zoom) est activé seul (touche ou recherche) et son effet sur le modèle est vérifié
- * par l'instrumentation `window.fadiPlanche` (lecture seule) ; les outils prévus sont grisés avec leur lot ; annuler /
+ * par l'instrumentation `window.fadiPlanche` (lecture seule) ; plus aucun outil n'est grisé (lots 4 à 6 : recette planche-lots-4-6.mjs) ; annuler /
  * rétablir et le brouillon local sont relus. Toute coordonnée visée reste dans le canevas (|x| ≤ 8, |y| ≤ 8 autour
  * de l'origine dans la vue par défaut).
  *
@@ -361,14 +361,14 @@ const delta = (a, b) => ({ faces: b.faces - a.faces, aretes: b.aretes - a.aretes
     await page.keyboard.press("Escape"); note("zoom", "Échap : retour à l'outil précédent (Panoramique)", (await etat()).outil === "panoramique", (await etat()).outil);
   }
 }
-// ——— 23. Outils prévus (sans machine) : grisés avec le lot, non activables
+// ——— 23. Outils prévus : plus aucun outil grisé (lots 4 à 6 livrés) ; la recette des lots 4 à 6 teste chacun d'eux
 {
   await page.keyboard.press(" "); await page.locator("[data-planche-plus]").click(); await page.waitForSelector("[data-planche-grille]");
   const grises = await page.locator("[data-planche-grille] button[disabled], [data-planche-grille] button[aria-disabled=true]").count();
-  const titres = await page.locator("[data-planche-grille] button[disabled], [data-planche-grille] button[aria-disabled=true]").evaluateAll((els) => els.map((e) => e.getAttribute("title") ?? ""));
-  note("prevus", "grille « … » : les 19 outils de grille sans machine sont grisés avec leur lot", grises === 19 && titres.every((t) => /prévu/.test(t)), `${grises} grisés ; ${titres.slice(0, 3).join(" | ")}`);
+  const total = await page.locator("[data-planche-grille] button[data-planche-outil]").count();
+  note("prevus", "grille « … » : aucun outil grisé (lots 4 à 6 livrés)", grises === 0 && total >= 30, `${grises} grisés sur ${total}`);
   await page.keyboard.press("Escape");
-  await parRecherche("mètre", "metre"); note("prevus", "recherche « mètre » puis Entrée : outil non activé, motif annoncé", (await etat()).outil !== "metre" && /prévu|lot/i.test((await message()) ?? ""), (await message()) ?? "");
+  await parRecherche("mètre", "metre"); note("prevus", "recherche « mètre » puis Entrée : Mètre activé", (await etat()).outil === "metre", (await etat()).outil);
   await page.keyboard.press("Escape");
 }
 // ——— 24. Annuler / Rétablir et brouillon

@@ -115,6 +115,8 @@ export interface FaceVisible {
   readonly trous: readonly (readonly Vec3[])[];
   readonly normale: Vec3;
   readonly dansObjet?: boolean;
+  /** Matière affichée : celle de la face, sinon celle de l'objet le plus proche qui en porte une (lot 5). */
+  readonly materiau?: Id;
 }
 
 export interface CentreVisible {
@@ -545,26 +547,31 @@ export function geometrieVisible(m: Modele): GeometrieVisible {
   const aretes: AreteVisible[] = [];
   const faces: FaceVisible[] = [];
   const centres: CentreVisible[] = [];
-  const parcourir = (c: Contexte, M: Matrice4, dansObjet: boolean, profondeur: number): void => {
+  const balises = m.annotations?.balises;
+  const parcourir = (c: Contexte, M: Matrice4, dansObjet: boolean, profondeur: number, materiau: Id | undefined): void => {
     if (profondeur > 32) return;
     const p = (s: Id): Vec3 => appliquer(M, (c.sommets[s] as { position: Vec3 }).position);
     const marque = dansObjet ? { dansObjet: true } : {};
     for (const a of Object.values(c.aretes)) if (!a.masquee) aretes.push({ id: a.id, a: p(a.a), b: p(a.b), ...marque });
     for (const f of Object.values(c.faces)) {
+      const mat = f.materiauRecto ?? materiau;
       faces.push({
         id: f.id,
         exterieur: f.exterieur.map(p),
         trous: f.trous.map((b) => b.map(p)),
         normale: transformerNormale(M, f.normale),
         ...marque,
+        ...(mat ? { materiau: mat } : {}),
       });
     }
     for (const k of Object.values(c.courbes)) centres.push({ id: k.id, position: appliquer(M, k.centre), ...marque });
     for (const o of Object.values(c.occurrences)) {
+      // Balise masquée (calque invisible, P-9) : l'objet n'est ni affiché ni accroché.
+      if (o.balise && balises && balises[o.balise] && !balises[o.balise]!.visible) continue;
       const d = m.definitions[o.definition];
-      if (d) parcourir(d.contenu, composer(M, o.transformation), true, profondeur + 1);
+      if (d) parcourir(d.contenu, composer(M, o.transformation), true, profondeur + 1, o.materiau ?? materiau);
     }
   };
-  parcourir(m.racine, IDENTITE, false, 0);
+  parcourir(m.racine, IDENTITE, false, 0, undefined);
   return { aretes, faces, centres };
 }

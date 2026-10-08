@@ -8,7 +8,7 @@
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
 import * as THREE from "three";
-import { COULEURS, baseDuPlan, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Vec3, type VueOutil } from "@parcours/planche-model";
+import { COULEURS, COULEUR_MATERIAU_DEFAUT, baseDuPlan, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Vec3, type VueOutil } from "@parcours/planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
 import { borneSensibilite, facteurPan, interpreterMolette } from "../navigation";
 import type { OutilCamera } from "./outils-planche";
@@ -43,11 +43,29 @@ export interface RappelsVuePlanche {
   navigation(): ReglagesNavigation;
   /** Premier pointeur tactile rencontré (affichage de la barre de modificateurs). */
   tactile?(): void;
+  /** Fin d'un outil de caméra temporaire (Zoom fenêtre, Positionner la caméra) : l'interface choisit l'outil suivant. */
+  finOutilCamera?(id: OutilCamera): void;
+  /** Hauteur d'œil demandée (m) pour Positionner la caméra. */
+  hauteurOeil?(): number;
 }
+
+/** Étiquette de texte posée sur un point monde (ou fixée en pixels). */
+interface Etiquette {
+  readonly el: HTMLDivElement;
+  readonly point?: Vec3;
+  readonly ecran?: Point2;
+}
+
+/** Hauteur d'œil par défaut relevée (« Height Offset ~ 1,68 m »). */
+export const HAUTEUR_OEIL_DEFAUT = 1.68;
 
 type Point2 = { x: number; y: number };
 type Geste =
   | { genre: "outil"; id: number; depart: Point2; dernier: Point2; glisse: boolean }
+  | { genre: "fenetre"; id: number; depart: Point2; dernier: Point2 }
+  | { genre: "positionner"; id: number; depart: Point2; dernier: Point2; glisse: boolean }
+  | { genre: "regarder"; id: number; dernier: Point2 }
+  | { genre: "marcher"; id: number; depart: Point2; dernier: Point2 }
   | { genre: "orbite" | "pan" | "zoom"; id: number; dernier: Point2 }
   | { genre: "deux"; distance: number; centre: Point2 };
 
@@ -77,19 +95,44 @@ export function trianglesFace(f: FaceVisible): Vec3[] {
   return sortie;
 }
 
-function geometrieFaces(faces: readonly FaceVisible[]): THREE.BufferGeometry {
+function geometrieFaces(faces: readonly FaceVisible[], couleurDe?: (f: FaceVisible) => string): THREE.BufferGeometry {
   const pos: number[] = [];
   const nor: number[] = [];
+  const col: number[] = [];
+  const c = new THREE.Color();
   for (const f of faces) {
+    if (couleurDe) c.set(couleurDe(f));
     for (const p of trianglesFace(f)) {
       pos.push(p.x, p.y, p.z);
       nor.push(f.normale.x, f.normale.y, f.normale.z);
+      if (couleurDe) col.push(c.r, c.g, c.b);
     }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3));
+  if (couleurDe) g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
   return g;
+}
+
+/** Rectangle d'un plan de coupe : contour, quatre languettes aux coins, petite flèche du côté coupé. */
+function rectanglePlan(origine: Vec3, u: Vec3, w: Vec3, demiU: number, demiW: number, couleur: string, normale: THREE.Vector3, pas: number): THREE.Object3D[] {
+  const O = v3(origine);
+  const U = v3(u);
+  const W = v3(w);
+  const coin = (su: number, sw: number): THREE.Vector3 => O.clone().add(U.clone().multiplyScalar(su * demiU)).add(W.clone().multiplyScalar(sw * demiW));
+  const mat = new THREE.LineBasicMaterial({ color: couleur, depthTest: false });
+  const r: THREE.Object3D[] = [new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([coin(-1, -1), coin(1, -1), coin(1, 1), coin(-1, 1)]), mat)];
+  const l = Math.min(demiU, demiW) * 0.25;
+  for (const [su, sw] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
+    const c = coin(su, sw);
+    const a = c.clone().add(U.clone().multiplyScalar(-su * l));
+    const b = c.clone().add(W.clone().multiplyScalar(-sw * l));
+    r.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a, c, b]), new THREE.LineBasicMaterial({ color: couleur, depthTest: false })));
+  }
+  const fl = pas * 25;
+  r.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints([O, O.clone().add(normale.clone().normalize().multiplyScalar(fl))]), mat));
+  return r;
 }
 
 function geometrieSegments(segments: readonly (readonly [Vec3, Vec3])[]): THREE.BufferGeometry {
@@ -146,6 +189,13 @@ export class VuePlanche {
   private readonly groupeModele = new THREE.Group();
   private readonly groupeSelection = new THREE.Group();
   private readonly groupeApercu = new THREE.Group();
+  private readonly groupeAnnotations = new THREE.Group();
+  private groupeAxes: THREE.Group;
+  private readonly etiquettesDom: HTMLDivElement;
+  private etiquettesFixes: Etiquette[] = [];
+  private etiquettesApercu: Etiquette[] = [];
+  private modele: Modele | null = null;
+  private cleSelection = "";
   private readonly sol: THREE.Mesh;
   private readonly lanceur = new THREE.Raycaster();
   private readonly demiAxes: { ligne: THREE.Line; direction: THREE.Vector3 }[] = [];
@@ -183,7 +233,9 @@ export class VuePlanche {
     this.contourDepart.setAttribute("width", "8");
     this.contourDepart.setAttribute("height", "8");
     this.contourSvg.append(this.contourLigne, this.contourDepart);
-    this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre);
+    this.etiquettesDom = document.createElement("div");
+    this.etiquettesDom.className = "planche-etiquettes";
+    this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre, this.etiquettesDom);
     // WebGL2 (three.js ≥ r163 n'a plus de repli WebGL1) : une erreur ici est remontée à l'interface.
     this.moteur = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     hote.append(this.canvas, this.surcouche);
@@ -197,7 +249,8 @@ export class VuePlanche {
     // Sol neutre : sous les faces posées à z = 0 (dessiné d'abord, sans écrire la profondeur).
     this.sol = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshBasicMaterial({ color: COULEUR_SOL, depthWrite: false }));
     this.sol.renderOrder = -1;
-    this.scene.add(this.sol, this.axes(), this.groupeModele, this.groupeSelection, this.groupeApercu);
+    this.groupeAxes = this.axes();
+    this.scene.add(this.sol, this.groupeAxes, this.groupeModele, this.groupeAnnotations, this.groupeSelection, this.groupeApercu);
 
     this.camera.up.set(0, 0, 1);
     this.camera.position.set(9, -12, 7);
@@ -278,21 +331,172 @@ export class VuePlanche {
   /** Remplace la géométrie affichée par celle du modèle (aplatie : racine et occurrences). */
   majModele(modele: Modele): void {
     vider(this.groupeModele);
+    this.modele = modele;
     this.geometrie = geometrieVisible(modele);
-    const g = geometrieFaces(this.geometrie.faces);
-    const recto = new THREE.MeshLambertMaterial({ color: COULEUR_RECTO, side: THREE.FrontSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    const materiaux = modele.annotations?.materiaux ?? {};
+    const couleurDe = (f: FaceVisible): string => (f.materiau ? materiaux[f.materiau]?.couleur ?? COULEUR_MATERIAU_DEFAUT : COULEUR_RECTO);
+    const g = geometrieFaces(this.geometrie.faces, couleurDe);
+    const recto = new THREE.MeshLambertMaterial({ color: "#ffffff", vertexColors: true, side: THREE.FrontSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
     const verso = new THREE.MeshLambertMaterial({ color: COULEUR_VERSO, side: THREE.BackSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
     this.facesRecto = new THREE.Mesh(g, recto);
     this.facesVerso = new THREE.Mesh(g.clone(), verso);
     const aretes = new THREE.LineSegments(geometrieSegments(this.geometrie.aretes.map((a) => [a.a, a.b] as const)), new THREE.LineBasicMaterial({ color: COULEUR_ARETE }));
     this.groupeModele.add(this.facesRecto, this.facesVerso, aretes);
+    this.majAxes(modele);
+    this.majAnnotations(modele, this.cleSelection ? this.cleSelection.split("|") : []);
+    this.majCoupe(modele);
     this.rendre();
+  }
+
+  /** Axes de dessin au repère de saisie (outil Axes) : origine et orientation du repère, ou repère du modèle. */
+  private majAxes(modele: Modele): void {
+    const r = modele.annotations?.repere;
+    const o = r?.origine ?? { x: 0, y: 0, z: 0 };
+    const x = r?.x ?? { x: 1, y: 0, z: 0 };
+    const y = r?.y ?? { x: 0, y: 1, z: 0 };
+    const z = r?.z ?? { x: 0, y: 0, z: 1 };
+    this.groupeAxes.matrixAutoUpdate = false;
+    this.groupeAxes.matrix.makeBasis(v3(x), v3(y), v3(z)).setPosition(v3(o));
+    this.groupeAxes.matrixWorldNeedsUpdate = true;
+  }
+
+  /**
+   * Plan de coupe rendu : une seule coupe à la fois (§4.32), le DERNIER plan actif (ordre de création) ; le côté de la
+   * normale est caché, Inverser retourne le sens. Les autres plans actifs restent visibles sans couper.
+   */
+  private majCoupe(modele: Modele): void {
+    const actifs = Object.values(modele.annotations?.plansDeCoupe ?? {}).filter((p) => p.actif);
+    const p = actifs[actifs.length - 1];
+    if (!p) {
+      this.moteur.clippingPlanes = [];
+      return;
+    }
+    const n = v3(p.normale).multiplyScalar(p.inverse ? 1 : -1);
+    this.moteur.clippingPlanes = [new THREE.Plane(n, -n.dot(v3(p.origine)))];
+  }
+
+  /** Guides, cotes, textes, plans de coupe (lot 4) ; les annotations sélectionnées sont en couleur de sélection / orange. */
+  private majAnnotations(modele: Modele, selection: readonly string[]): void {
+    vider(this.groupeAnnotations);
+    for (const e of this.etiquettesFixes) e.el.remove();
+    this.etiquettesFixes = [];
+    const a = modele.annotations;
+    if (!a) return;
+    const sel = new Set(selection);
+    const pas = this.metresParPixel(this.cible);
+    const tirets = (couleur: string, pts: Vec3[], taille = 8): THREE.Line => {
+      const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts.map(v3)), new THREE.LineDashedMaterial({ color: couleur, dashSize: pas * taille, gapSize: pas * (taille * 0.6) }));
+      l.computeLineDistances();
+      l.frustumCulled = false;
+      return l;
+    };
+    const plein = (couleur: string, pts: Vec3[]): THREE.Line => new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts.map(v3)), new THREE.LineBasicMaterial({ color: couleur }));
+    const etiquette = (texte: string, point: Vec3, classe: string): void => {
+      const el = document.createElement("div");
+      el.className = `planche-etiquette ${classe}`;
+      el.textContent = texte;
+      this.etiquettesDom.append(el);
+      this.etiquettesFixes.push({ el, point });
+    };
+    const cs = (id: string, defaut: string): string => (sel.has(id) ? COULEUR_SELECTION : defaut);
+    for (const g of Object.values(a.guides)) {
+      const c = cs(g.id, "#222222");
+      if (g.genre === "ligne") {
+        const L = 1000;
+        const d = v3(g.direction);
+        this.groupeAnnotations.add(tirets(c, [{ x: g.origine.x - d.x * L, y: g.origine.y - d.y * L, z: g.origine.z - d.z * L }, { x: g.origine.x + d.x * L, y: g.origine.y + d.y * L, z: g.origine.z + d.z * L }]));
+      } else if (g.genre === "segment") this.groupeAnnotations.add(tirets(c, [g.origine, g.fin]));
+      else {
+        const r = pas * 5;
+        const o = g.origine;
+        this.groupeAnnotations.add(plein(c, [{ x: o.x - r, y: o.y, z: o.z }, { x: o.x + r, y: o.y, z: o.z }]), plein(c, [{ x: o.x, y: o.y - r, z: o.z }, { x: o.x, y: o.y + r, z: o.z }]), plein(c, [{ x: o.x, y: o.y, z: o.z - r }, { x: o.x, y: o.y, z: o.z + r }]));
+      }
+    }
+    const fmt = (v: number): string => `${v.toFixed(2).replace(".", ",")} m`;
+    const sommetMonde = (id: string): Vec3 | null => {
+      const s = modele.racine.sommets[id];
+      return s ? s.position : null;
+    };
+    for (const c of Object.values(a.cotes)) {
+      const couleur = cs(c.id, "#333333");
+      if (c.genre === "lineaire") {
+        const A = (c.sommets && sommetMonde(c.sommets[0])) ?? c.a;
+        const B = (c.sommets && sommetMonde(c.sommets[1])) ?? c.b;
+        const d = v3(B).sub(v3(A));
+        const L = d.length();
+        if (L < 1e-9) continue;
+        d.normalize();
+        const off = v3(c.position).sub(v3(A));
+        off.sub(d.clone().multiplyScalar(off.dot(d)));
+        const A2 = v3(A).add(off);
+        const B2 = v3(B).add(off);
+        this.groupeAnnotations.add(plein(couleur, [A, A2]), plein(couleur, [B, B2]), plein(couleur, [A2, B2]));
+        etiquette(fmt(L), A2.clone().add(B2).multiplyScalar(0.5), "planche-etiquette-cote");
+      } else {
+        this.groupeAnnotations.add(plein(couleur, [c.centre, c.position]));
+        etiquette(`⌀ ${fmt(2 * c.rayon)}`, c.position, "planche-etiquette-cote");
+      }
+    }
+    for (const t of Object.values(a.textes)) {
+      if (t.genre === "repere") {
+        this.groupeAnnotations.add(plein(cs(t.id, "#333333"), [t.ancre, t.position]));
+        etiquette(t.texte, t.position, `planche-etiquette-texte${sel.has(t.id) ? " est-selectionne" : ""}`);
+      } else {
+        const el = document.createElement("div");
+        el.className = `planche-etiquette planche-etiquette-texte planche-etiquette-ecran${sel.has(t.id) ? " est-selectionne" : ""}`;
+        el.textContent = t.texte;
+        this.etiquettesDom.append(el);
+        this.etiquettesFixes.push({ el, ecran: t.ecran });
+      }
+    }
+    for (const p of Object.values(a.plansDeCoupe)) {
+      const couleur = sel.has(p.id) ? "#e8891c" : "#8a8a8a";
+      this.groupeAnnotations.add(...rectanglePlan(p.origine, p.u, p.w, p.demiU, p.demiW, couleur, p.inverse ? v3(p.normale).multiplyScalar(-1) : v3(p.normale), pas));
+    }
+  }
+
+  /** Projection des étiquettes (appelée à chaque rendu). */
+  private placerEtiquettes(): void {
+    for (const e of [...this.etiquettesFixes, ...this.etiquettesApercu]) {
+      const p = e.point ? this.versEcran(e.point) : e.ecran ?? null;
+      if (!p || p.x < -200 || p.y < -200 || p.x > this.largeur + 200 || p.y > this.hauteur + 200) {
+        e.el.style.display = "none";
+        continue;
+      }
+      Object.assign(e.el.style, { display: "block", left: `${p.x}px`, top: `${p.y}px` });
+    }
+  }
+
+  /** Emprise (monde) de la géométrie visible, ou null si la Planche est vide. */
+  emprise(): { min: Vec3; max: Vec3 } | null {
+    const pts: Vec3[] = [];
+    for (const a of this.geometrie.aretes) pts.push(a.a, a.b);
+    for (const f of this.geometrie.faces) pts.push(...f.exterieur);
+    if (pts.length === 0) return null;
+    const min = { x: Infinity, y: Infinity, z: Infinity };
+    const max = { x: -Infinity, y: -Infinity, z: -Infinity };
+    for (const p of pts) {
+      min.x = Math.min(min.x, p.x);
+      min.y = Math.min(min.y, p.y);
+      min.z = Math.min(min.z, p.z);
+      max.x = Math.max(max.x, p.x);
+      max.y = Math.max(max.y, p.y);
+      max.z = Math.max(max.z, p.z);
+    }
+    return { min, max };
   }
 
   /** Surcouches de l'outil : sélection et survol, aperçu, inférence, cadre de sélection. */
   majSurcouche(vue: VueOutil | null, selection: readonly string[]): void {
     vider(this.groupeSelection);
     vider(this.groupeApercu);
+    for (const e of this.etiquettesApercu) e.el.remove();
+    this.etiquettesApercu = [];
+    const cle = [...(vue?.selection ?? selection)].join("|");
+    if (cle !== this.cleSelection && this.modele) {
+      this.cleSelection = cle;
+      this.majAnnotations(this.modele, cle ? cle.split("|") : []);
+    }
     const choisis = new Set(vue?.selection ?? selection);
     const survoles = new Set((vue?.survol ?? []).filter((id) => !choisis.has(id)));
     for (const [ids, couleur, opacite] of [
@@ -349,6 +553,37 @@ export class VuePlanche {
         const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints([v3(inf.origineLigne), v3(inf.point)]), new THREE.LineDashedMaterial({ color: inf.couleur, dashSize: this.metresParPixel(inf.point) * 6, gapSize: this.metresParPixel(inf.point) * 4, depthTest: false }));
         ligne.computeLineDistances();
         this.groupeApercu.add(ligne);
+      }
+      for (const e of vue.apercu.etiquettes ?? []) {
+        const el = document.createElement("div");
+        el.className = "planche-etiquette planche-etiquette-apercu";
+        el.textContent = e.texte;
+        this.etiquettesDom.append(el);
+        this.etiquettesApercu.push({ el, point: e.point });
+      }
+      if (vue.apercu.plan) {
+        const p = vue.apercu.plan;
+        this.groupeApercu.add(...rectanglePlan(p.origine, p.u, p.w, p.demiU, p.demiW, p.couleur, v3(p.normale), this.metresParPixel(p.origine)));
+      }
+      if (vue.apercu.rapporteur) {
+        const r = vue.apercu.rapporteur;
+        const rayon = this.metresParPixel(r.centre) * 70;
+        const n = v3(r.normale).normalize();
+        const u = v3(r.depart).normalize();
+        const w = new THREE.Vector3().crossVectors(n, u);
+        const pts: THREE.Vector3[] = [];
+        for (let i = 0; i <= 72; i++) {
+          const a = (i / 72) * Math.PI * 2;
+          pts.push(v3(r.centre).add(u.clone().multiplyScalar(rayon * Math.cos(a))).add(w.clone().multiplyScalar(rayon * Math.sin(a))));
+        }
+        this.groupeApercu.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: r.couleur, depthTest: false })));
+        for (let i = 0; i < 24; i++) {
+          const a = (i / 24) * Math.PI * 2;
+          const k = i % 6 === 0 ? 0.8 : 0.9;
+          const p1 = v3(r.centre).add(u.clone().multiplyScalar(rayon * k * Math.cos(a))).add(w.clone().multiplyScalar(rayon * k * Math.sin(a)));
+          const p2 = v3(r.centre).add(u.clone().multiplyScalar(rayon * Math.cos(a))).add(w.clone().multiplyScalar(rayon * Math.sin(a)));
+          this.groupeApercu.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1, p2]), new THREE.LineBasicMaterial({ color: r.couleur, depthTest: false })));
+        }
       }
       this.majCadre(vue.apercu.cadre ?? null);
       this.majContour(vue.apercu.contour ?? null);
@@ -414,6 +649,7 @@ export class VuePlanche {
       this.ajusterAxes();
       this.moteur.render(this.scene, this.camera);
       this.placerMarqueur();
+      this.placerEtiquettes();
     });
   }
 
@@ -569,6 +805,103 @@ export class VuePlanche {
   }
 
   /** Zoom ancré sur le point visé (facteur > 1 : rapprocher). */
+  /** Zoom étendu : cadre l'emprise dans la zone libre du canevas (marges en px : rail à gauche, panneaux à droite). */
+  cadrer(boite: { min: Vec3; max: Vec3 }, marges: { gauche: number; droite: number; haut: number; bas: number } = { gauche: 0, droite: 0, haut: 0, bas: 0 }): void {
+    const centre = new THREE.Vector3((boite.min.x + boite.max.x) / 2, (boite.min.y + boite.max.y) / 2, (boite.min.z + boite.max.z) / 2);
+    const rayon = Math.max(0.5, new THREE.Vector3(boite.max.x - boite.min.x, boite.max.y - boite.min.y, boite.max.z - boite.min.z).length() / 2);
+    const libreL = Math.max(50, this.largeur - marges.gauche - marges.droite);
+    const libreH = Math.max(50, this.hauteur - marges.haut - marges.bas);
+    const fovV = (this.camera.fov * Math.PI) / 180;
+    const fovH = 2 * Math.atan(Math.tan(fovV / 2) * this.camera.aspect);
+    const fovLibreV = 2 * Math.atan(Math.tan(fovV / 2) * (libreH / this.hauteur));
+    const fovLibreH = 2 * Math.atan(Math.tan(fovH / 2) * (libreL / this.largeur));
+    const d = rayon / Math.sin(Math.min(fovLibreV, fovLibreH) / 2);
+    const dir = new THREE.Vector3().subVectors(this.camera.position, this.cible).normalize();
+    if (dir.lengthSq() < 1e-9) dir.set(0.6, -0.7, 0.4).normalize();
+    this.cible.copy(centre);
+    this.camera.position.copy(centre.clone().add(dir.multiplyScalar(d)));
+    this.camera.lookAt(this.cible);
+    this.camera.updateMatrixWorld();
+    this.panoramique((marges.gauche - marges.droite) / 2, (marges.haut - marges.bas) / 2);
+    this.rendre();
+  }
+
+  /** Zoom fenêtre : la zone écran [de, a] remplit la vue. */
+  zoomFenetre(de: Point2, a: Point2): void {
+    const cx = (de.x + a.x) / 2;
+    const cy = (de.y + a.y) / 2;
+    const lx = Math.max(8, Math.abs(a.x - de.x));
+    const ly = Math.max(8, Math.abs(a.y - de.y));
+    const p = this.pointVise({ x: cx, y: cy });
+    this.cible.copy(p);
+    this.camera.lookAt(this.cible);
+    this.zoomer(Math.min(this.largeur / lx, this.hauteur / ly));
+    this.rendre();
+  }
+
+  /** Positionner la caméra : œil au-dessus du point, à `hauteur`, regard horizontal dans la direction courante (ou vers `vers`). */
+  positionnerCamera(point: Vec3, hauteur: number, vers?: Vec3): void {
+    const oeil = new THREE.Vector3(point.x, point.y, point.z + hauteur);
+    let dir: THREE.Vector3;
+    if (vers) dir = new THREE.Vector3(vers.x - point.x, vers.y - point.y, 0);
+    else dir = new THREE.Vector3().subVectors(this.cible, this.camera.position).setZ(0);
+    if (dir.lengthSq() < 1e-9) dir.set(0, 1, 0);
+    dir.normalize();
+    this.camera.position.copy(oeil);
+    this.cible.copy(oeil.clone().add(dir.multiplyScalar(10)));
+    this.camera.lookAt(this.cible);
+    this.rendre();
+  }
+
+  /** Regarder autour : la caméra pivote sur place (lacet autour de la verticale, tangage borné). */
+  regarder(dxPx: number, dyPx: number): void {
+    const dir = new THREE.Vector3().subVectors(this.cible, this.camera.position);
+    const l = dir.length() || 10;
+    const yaw = Math.atan2(dir.y, dir.x) - dxPx * 0.004;
+    const pitch = Math.max(-1.4, Math.min(1.4, Math.asin(Math.max(-1, Math.min(1, dir.z / l))) + dyPx * 0.004));
+    const nd = new THREE.Vector3(Math.cos(pitch) * Math.cos(yaw), Math.cos(pitch) * Math.sin(yaw), Math.sin(pitch)).multiplyScalar(l);
+    this.cible.copy(this.camera.position.clone().add(nd));
+    this.camera.lookAt(this.cible);
+    this.rendre();
+  }
+
+  /** Marcher : haut / bas = avancer / reculer, gauche / droite = tourner ; Maj = monter / descendre et latéral ; Ctrl = courir. */
+  marcher(dxPx: number, dyPx: number, options: { courir?: boolean; vertical?: boolean }): void {
+    const vitesse = (options.courir ? 3 : 1) * 0.0015;
+    const avant = new THREE.Vector3().subVectors(this.cible, this.camera.position).setZ(0);
+    if (avant.lengthSq() < 1e-9) avant.set(0, 1, 0);
+    avant.normalize();
+    const droite = new THREE.Vector3(avant.y, -avant.x, 0);
+    const d = new THREE.Vector3();
+    if (options.vertical) d.add(new THREE.Vector3(0, 0, -dyPx * vitesse)).add(droite.multiplyScalar(dxPx * vitesse));
+    else {
+      d.add(avant.clone().multiplyScalar(-dyPx * vitesse));
+      this.regarder(dxPx * 0.25, 0);
+    }
+    this.camera.position.add(d);
+    this.cible.add(d);
+    this.camera.lookAt(this.cible);
+    this.rendre();
+  }
+
+  /** Hauteur d'œil (m) : altitude de la caméra. */
+  /** Position de la caméra et champ de vision (instrumentation de la recette). */
+  etatCamera(): { position: Vec3; champDeVision: number } {
+    const p = this.camera.position;
+    return { position: { x: p.x, y: p.y, z: p.z }, champDeVision: this.champDeVision };
+  }
+
+  get hauteurOeil(): number {
+    return this.camera.position.z;
+  }
+  set hauteurOeil(z: number) {
+    const dz = z - this.camera.position.z;
+    this.camera.position.z = z;
+    this.cible.z += dz;
+    this.camera.lookAt(this.cible);
+    this.rendre();
+  }
+
   zoomer(facteur: number, ecran?: Point2): void {
     if (!(facteur > 0) || !Number.isFinite(facteur)) return;
     const p = ecran ? this.pointVise(ecran) : this.cible.clone();
@@ -624,7 +957,12 @@ export class VuePlanche {
     if (e.button !== 0) return;
     const camera = this.rappels.outilCamera();
     if (camera) {
-      this.geste = { genre: camera === "panoramique" || (camera === "orbite" && e.shiftKey) ? "pan" : camera === "zoom" ? "zoom" : "orbite", id: e.pointerId, dernier: p };
+      if (camera === "zoom-fenetre") this.geste = { genre: "fenetre", id: e.pointerId, depart: p, dernier: p };
+      else if (camera === "positionner-camera") this.geste = { genre: "positionner", id: e.pointerId, depart: p, dernier: p, glisse: false };
+      else if (camera === "regarder-autour") this.geste = { genre: "regarder", id: e.pointerId, dernier: p };
+      else if (camera === "marcher") this.geste = { genre: "marcher", id: e.pointerId, depart: p, dernier: p };
+      else if (camera === "zoom-etendu") return;
+      else this.geste = { genre: camera === "panoramique" || (camera === "orbite" && e.shiftKey) ? "pan" : camera === "zoom" ? "zoom" : "orbite", id: e.pointerId, dernier: p };
       return;
     }
     // Au toucher, pas de survol : le point touché est d'abord survolé (inférence), puis appuyé.
@@ -660,6 +998,22 @@ export class VuePlanche {
       const dx = p.x - g.dernier.x;
       const dy = p.y - g.dernier.y;
       g.dernier = p;
+      if (g.genre === "fenetre") {
+        this.majCadre({ de: g.depart, a: p, genre: "fenetre" });
+        return;
+      }
+      if (g.genre === "positionner") {
+        if (Math.hypot(p.x - g.depart.x, p.y - g.depart.y) >= SEUIL_GLISSER_PX) g.glisse = true;
+        return;
+      }
+      if (g.genre === "regarder") {
+        this.regarder(dx, dy);
+        return;
+      }
+      if (g.genre === "marcher") {
+        this.marcher((p.x - g.depart.x) * 0.2, (p.y - g.depart.y) * 0.2, { courir: e.ctrlKey, vertical: e.shiftKey });
+        return;
+      }
       if (g.genre === "orbite") {
         const s = borneSensibilite(nav.sensibiliteOrbite) * (nav.inverserOrbite ? -1 : 1);
         this.orbiter(dx * s, dy * s);
@@ -704,7 +1058,20 @@ export class VuePlanche {
       this.majInfobulle();
       return;
     }
-    if (g && g.genre !== "outil" && g.id === e.pointerId) this.geste = null;
+    if (g && g.genre !== "outil" && g.id === e.pointerId) {
+      this.geste = null;
+      if (g.genre === "fenetre") {
+        this.majCadre(null);
+        if (Math.hypot(p.x - g.depart.x, p.y - g.depart.y) >= SEUIL_GLISSER_PX) this.zoomFenetre(g.depart, p);
+        this.rappels.finOutilCamera?.("zoom-fenetre");
+      } else if (g.genre === "positionner") {
+        const h = this.rappels.hauteurOeil?.() ?? HAUTEUR_OEIL_DEFAUT;
+        const A = versVec3(this.pointVise(g.depart));
+        if (g.glisse) this.positionnerCamera(A, h, versVec3(this.pointVise(p)));
+        else this.positionnerCamera(A, h);
+        this.rappels.finOutilCamera?.("positionner-camera");
+      }
+    }
   };
 
   private surAnnulation = (e: PointerEvent): void => {

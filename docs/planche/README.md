@@ -35,9 +35,9 @@ en direct).
 | 1 | Noyau pur `packages/planche-model` : géométrie libre, champ Mesures, inférences, catalogue des outils (sans interface) | Codé et commité sur `planche/lot-1` (D-164) ; fiches PL-01-01 à PL-01-04 encore « spécifiée » (preuve des tests du lot 1 à lier) ; compte rendu `lots/lot-1.md` encore prévisionnel |
 | 2 | Rendu three.js, outils de dessin et champ Mesures dans le mode Planche | Codé et commité sur `planche/lot-1` (D-165) ; fiches PL-02-01 à PL-02-07 « prototype » ; compte rendu `lots/lot-2.md` ; recette `apps/web/e2e/planche.mjs` **exécutée et verte** (lot 3) ; écarts du lot 2 tranchés par délégation (D-167) ; acceptation formelle non consignée (l'ouverture du lot 3 a été demandée) |
 | 3 | Outils de modification : Pousser/Tirer, Déplacer, Faire pivoter, Échelle, Décalage, Suivez-moi, Retourner, Diviser | Codé sur `planche/lot-3` (D-166, D-167) ; fiches PL-03-01 à PL-03-07 « prototype » ; compte rendu `lots/lot-3.md` ; recettes `planche.mjs` et `planche-modification.mjs` vertes ici ; CI GitHub et acceptation en attente |
-| 4 | Mesure, annotation, caméra | À spécifier |
-| 5 | Groupes, composants, matériaux, balises, panneaux | À spécifier |
-| 6 | Solides (manifold-3d) | À spécifier |
+| 4 | Mesure, annotation, caméra : Mètre, Cotes, Rapporteur, Axes, Texte, Plan de coupe, Zoom étendu, Zoom fenêtre, Positionner la caméra, Regarder autour, Marcher | Codé sur `planche/lots-4-6` (D-170) ; fiches PL-04-01 à PL-04-06 « prototype » ; compte rendu `lots/lot-4.md` ; recette `planche-lots-4-6.mjs` verte ici ; CI et acceptation en attente |
+| 5 | Matériaux, balises, texte 3D (les quatre outils « prévus » : Pot de peinture, Prélever la matière, Balise, Texte 3D ; panneaux Matériaux et Balises ; Ctrl + G) — le reste du lot 5 (composants par boîte, Rendre unique, Éclater, autres panneaux, menu contextuel) reste à faire | Codé sur `planche/lots-4-6` (D-170, P-7 / P-8 / P-9) ; fiches PL-05-01 à PL-05-03 ; compte rendu `lots/lot-5.md` ; partiel |
+| 6 | Solides (manifold-3d) : Enveloppe extérieure, Union, Soustraction, Ajuster, Intersection, Scinder — booléens de maillage | Codé sur `planche/lots-4-6` (D-170) ; fiche PL-06-01 ; compte rendu `lots/lot-6.md` ; vrai moteur testé en Node et au navigateur |
 | 7 | Persistance par commandes, IFC, recette Playwright ordinateur et téléphone, axe-core | À spécifier |
 
 Un lot à la fois, acceptation du maître d'ouvrage entre deux lots. Décisions ouvertes : `cahier-planche.md` §10.

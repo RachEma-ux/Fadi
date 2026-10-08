@@ -140,7 +140,7 @@ export function vueModif(a: ArgsVue): VueOutil {
   };
 }
 
-export const saisieDe = (attendu: ContexteSaisie["attendu"], ctx: ContexteOutil): ContexteSaisie => ({ attendu, separateurDecimal: ctx.separateurDecimal });
+export const saisieDe = (attendu: ContexteSaisie["attendu"], ctx: ContexteOutil): ContexteSaisie => ({ attendu, separateurDecimal: ctx.separateurDecimal, ...(ctx.repere ? { repere: ctx.repere } : {}) });
 
 /** Contour d'un polygone (fermé) et segments reliant deux contours : aperçu d'une extrusion. */
 export function apercuPrisme(contour: readonly Vec3[], dep: Vec3): Apercu {

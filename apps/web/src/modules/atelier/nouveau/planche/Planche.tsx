@@ -7,21 +7,61 @@
  * `vue()`. Brouillon LOCAL (C6) : aucun envoi au serveur, aucune commande ; annuler / rétablir local.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { analyserSaisie, machineParId, modeleVide, outilParId, rechercherOutil, type ContexteOutil, type EvenementOutil, type Modele, type Outil, type Touche, type VueOutil } from "@parcours/planche-model";
+import {
+  COULEUR_MATERIAU_DEFAUT,
+  EXTRUSION_TEXTE_3D,
+  HAUTEUR_TEXTE_3D,
+  analyserSaisie,
+  configurerTexte3D,
+  effacerEntites,
+  genreAnnotation,
+  grouper,
+  machineParId,
+  modeleVide,
+  modifierAnnotations,
+  modifierPlanDeCoupe,
+  outilParId,
+  rechercherOutil,
+  type AdaptateurBooleens,
+  type ContexteOutil,
+  type EtatTexte3D,
+  type EvenementOutil,
+  type Modele,
+  type Outil,
+  type ParametresTexte3D,
+  type Touche,
+  type Transition,
+  type VueOutil,
+} from "@parcours/planche-model";
 import { useEtatUi } from "../etat-ui";
 import { ChoixPeripherique } from "../panneaux/Navigation";
 import { t } from "../messages";
 import { ChoixLangue } from "../../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
-import { commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
-import { VuePlanche } from "./vue-planche";
+import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
+import { HAUTEUR_OEIL_DEFAUT, VuePlanche } from "./vue-planche";
+import { chargerBooleens } from "./booleens-manifold";
 import "./planche.css";
 
 declare global {
   interface Window {
     /** Instrumentation de la recette (lecture seule) : modèle du brouillon, outil actif, projection écran. */
-    fadiPlanche?: { modele: () => Modele; outil: () => string; etatOutil: () => unknown; selection: () => readonly string[]; pas: () => number; versEcran: (p: { x: number; y: number; z: number }) => { x: number; y: number } | null };
+    fadiPlanche?: {
+      modele: () => Modele;
+      outil: () => string;
+      etatOutil: () => unknown;
+      selection: () => readonly string[];
+      pas: () => number;
+      versEcran: (p: { x: number; y: number; z: number }) => { x: number; y: number } | null;
+      /** Lots 4 à 6 : matière et balise courantes, hauteur d'œil, moteur booléen chargé, emprise et caméra. */
+      materiau: () => string | null;
+      balise: () => string | null;
+      hauteurOeil: () => number;
+      booleens: () => "absent" | "chargement" | "ok" | "echec";
+      emprise: () => { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } | null;
+      camera: () => { position: { x: number; y: number; z: number }; champDeVision: number };
+    };
   }
 }
 
@@ -57,7 +97,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   const dansRef = useRef<string | undefined>(undefined);
   const [dans, setDans] = useState<string | undefined>(undefined);
   const selectionRef = useRef<readonly string[]>([]);
-  const [vue, setVue] = useState<VueOutil>(() => vueParDefaut(outilRef.current, 35));
+  const [vue, setVue] = useState<VueOutil>(() => vueParDefaut(outilRef.current, 35, HAUTEUR_OEIL_DEFAUT));
   const texteRef = useRef<TexteMesures>(null);
   const [texte, setTexteEtat] = useState<TexteMesures>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -68,7 +108,24 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   const rechercheRef = useRef(false);
   rechercheRef.current = recherche;
   // Panneaux exclusifs, fermés à l'ouverture (comme le Canevas, D-156) : le dessin reste dégagé.
-  const [panneau, setPanneau] = useState<"instructeur" | null>(null);
+  const [panneau, setPanneau] = useState<"instructeur" | "materiaux" | "balises" | null>(null);
+  // Lot 5 : matière et balise courantes (panneaux Matériaux / Balises) ; `null` = matière par défaut / aucune balise.
+  const materiauRef = useRef<string | null>(null);
+  const [materiau, setMateriauEtat] = useState<string | null>(null);
+  const baliseRef = useRef<string | null>(null);
+  const [balise, setBaliseEtat] = useState<string | null>(null);
+  // Lot 6 : moteur booléen (manifold-3d) chargé à la demande, au premier choix d'un outil de solides.
+  const booleensRef = useRef<AdaptateurBooleens | null>(null);
+  const [booleens, setBooleens] = useState<"absent" | "chargement" | "ok" | "echec">("absent");
+  const booleensEtatRef = useRef(booleens);
+  booleensEtatRef.current = booleens;
+  // Lot 4 : hauteur d'œil (Positionner la caméra, Regarder autour, Marcher), réglable au champ Mesures.
+  const hauteurOeilRef = useRef(HAUTEUR_OEIL_DEFAUT);
+  const [, setHauteurOeilEtat] = useState(HAUTEUR_OEIL_DEFAUT);
+  // Lot 4 : texte d'annotation en cours de saisie (outil Texte) : l'interface tient le champ, la machine reçoit `saisie`.
+  const [edition, setEdition] = useState<{ id: string; texte: string } | null>(null);
+  const editionRef = useRef<HTMLTextAreaElement | null>(null);
+  const validerEditionRef = useRef<() => void>(() => undefined);
   const [recent, setRecent] = useState<string | null>(null);
   const [tactile, setTactile] = useState(false);
   // Téléphone (≤ 760 px) : annuler / rétablir vivent dans le volet bas, l'aide dans la barre du haut.
@@ -105,6 +162,19 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   const setSelection = useCallback((s: readonly string[]) => {
     selectionRef.current = s;
   }, []);
+  const setMateriau = useCallback((id: string | null) => {
+    materiauRef.current = id;
+    setMateriauEtat(id);
+  }, []);
+  const setBalise = useCallback((id: string | null) => {
+    baliseRef.current = id;
+    setBaliseEtat(id);
+  }, []);
+  const setHauteurOeil = useCallback((h: number) => {
+    hauteurOeilRef.current = h;
+    setHauteurOeilEtat(h);
+    if (vueRef.current) vueRef.current.hauteurOeil = h;
+  }, []);
 
   const contexte = useCallback(
     (): ContexteOutil => ({
@@ -114,8 +184,14 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       entitesDansCadre: (de, a, genre) => vueRef.current?.entitesDansCadre(de, a, genre) ?? [],
       entitesDansContour: (contour, genre) => vueRef.current?.entitesDansContour(contour, genre) ?? [],
       ...(dansRef.current !== undefined ? { dans: dansRef.current } : {}),
+      ...(materiauRef.current ? { materiauCourant: materiauRef.current } : {}),
+      ...(baliseRef.current ? { baliseCourante: baliseRef.current } : {}),
+      ...(histRef.current.present.modele.annotations?.repere ? { repere: histRef.current.present.modele.annotations.repere } : {}),
+      ...(booleensRef.current ? { booleens: booleensRef.current } : {}),
+      hauteurOeil: hauteurOeilRef.current,
+      lecture: readOnly,
     }),
-    [],
+    [readOnly],
   );
 
   /** Recalcule la vue de l'outil actif (machine, sinon catalogue) et met les surcouches à jour. */
@@ -123,9 +199,9 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     const m = machineParId(outilRef.current);
     let v: VueOutil;
     try {
-      v = m ? m.vue(etatMachineRef.current, contexte()) : vueParDefaut(outilRef.current, vueRef.current?.champDeVision ?? 35);
+      v = m ? m.vue(etatMachineRef.current, contexte()) : vueParDefaut(outilRef.current, vueRef.current?.champDeVision ?? 35, hauteurOeilRef.current);
     } catch (err) {
-      v = { ...vueParDefaut(outilRef.current, 35), erreur: `Erreur de l'outil : ${err instanceof Error ? err.message : String(err)}` };
+      v = { ...vueParDefaut(outilRef.current, 35, hauteurOeilRef.current), erreur: `Erreur de l'outil : ${err instanceof Error ? err.message : String(err)}` };
     }
     setVue(v);
     vueRef.current?.majSurcouche(m ? v : null, selectionRef.current);
@@ -171,6 +247,18 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
         poserDans(tr.dans ?? undefined);
         change = true;
       }
+      if (tr.materiauCourant !== undefined) {
+        setMateriau(tr.materiauCourant);
+        change = true;
+      }
+      if (tr.baliseCourante !== undefined) {
+        setBalise(tr.baliseCourante);
+        change = true;
+      }
+      if (tr.editerTexte) {
+        setEdition({ id: tr.editerTexte.id, texte: tr.editerTexte.texte });
+        change = true;
+      }
       // Un survol ou le simple relâchement d'une touche (Ctrl après Ctrl + Z) n'efface pas le message en cours.
       if (ev.genre !== "survol" && !(ev.genre === "touche" && ev.etat === "relachee")) setMessage(null);
       rafraichir();
@@ -178,15 +266,31 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       if (tr.outil !== undefined && tr.outil !== outilRef.current) {
         demandeOutilRef.current(tr.outil);
         change = true;
+      } else if (tr.outilPrecedent) {
+        // Axes et outils temporaires : retour à l'outil précédent (Sélection à défaut).
+        retourOutilRef.current();
+        change = true;
       }
       return change;
     },
-    [contexte, poserHistorique, poserDans, rafraichir, readOnly, setSelection],
+    [contexte, poserHistorique, poserDans, rafraichir, readOnly, setSelection, setMateriau, setBalise],
   );
 
-  const demandeOutilRef = useRef<(id: string) => void>(() => undefined);
+  /** Applique une transition produite hors machine (barre du plan de coupe, panneaux) : un pas d'historique. */
+  const appliquer = useCallback(
+    (tr: Transition<unknown>, operation: string) => {
+      if (tr.modele && tr.modele !== histRef.current.present.modele && !readOnly) poserHistorique(enregistrer(histRef.current, tr.modele, tr.operation ?? operation, tr.remplaceDernier === true));
+      if (tr.selection) setSelection(tr.selection);
+      setMessage(null);
+      rafraichir();
+    },
+    [poserHistorique, rafraichir, readOnly, setSelection],
+  );
+
+  const demandeOutilRef = useRef<(id: string, options?: { garderPrecedent?: boolean }) => void>(() => undefined);
+  const retourOutilRef = useRef<() => void>(() => undefined);
   const choisirOutil = useCallback(
-    (id: string) => {
+    (id: string, options: { garderPrecedent?: boolean } = {}) => {
       const o = outilParId(id);
       if (!o) return;
       const raison = disponibilite(o, { lecture: readOnly });
@@ -195,7 +299,33 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
         return;
       }
       setGrille(false);
-      if (id !== outilRef.current) precedentRef.current = outilRef.current;
+      setEdition(null);
+      // Zoom étendu (§4.30) : action immédiate, l'outil actif ne change pas.
+      if (id === "zoom-etendu") {
+        const v = vueRef.current;
+        const boite = v?.emprise();
+        if (v && boite) v.cadrer(boite, margesVue(racineRef.current));
+        setMessage(boite ? null : t("planche.zoom-etendu.vide"));
+        if (o.emplacement === "grille") setRecent(id);
+        rafraichir();
+        return;
+      }
+      // Lot 6 : le moteur booléen (manifold-3d) est chargé au premier outil de solides, jamais à l'ouverture (MO-4).
+      if (OUTILS_SOLIDES.has(id) && !booleensRef.current) {
+        setBooleens("chargement");
+        void chargerBooleens().then(
+          (b) => {
+            booleensRef.current = b;
+            setBooleens("ok");
+            rafraichir();
+          },
+          (err: unknown) => {
+            setBooleens("echec");
+            setMessage(t("planche.solides.echec", { motif: err instanceof Error ? err.message : String(err) }));
+          },
+        );
+      }
+      if (id !== outilRef.current && !options.garderPrecedent) precedentRef.current = outilRef.current;
       outilRef.current = id;
       etatMachineRef.current = machineParId(id)?.initial() ?? null;
       setOutilId(id);
@@ -208,6 +338,14 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   );
 
   demandeOutilRef.current = choisirOutil;
+  /** Retour à l'outil précédent s'il est disponible, sinon Sélection. */
+  const retourOutil = useCallback(() => {
+    const precedent = precedentRef.current;
+    const o = outilParId(precedent);
+    if (precedent !== outilRef.current && o && !disponibilite(o, { lecture: readOnly }) && !OUTILS_CAMERA_TEMPORAIRES.has(precedent)) choisirOutil(precedent);
+    else choisirOutil("selection");
+  }, [choisirOutil, readOnly]);
+  retourOutilRef.current = retourOutil;
 
   const annulerPas = useCallback(() => {
     const op = operationAAnnuler(histRef.current);
@@ -239,6 +377,37 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     rafraichir();
   }, [poserDans, poserHistorique, rafraichir, setSelection]);
 
+  /** Ctrl + G : la sélection devient un groupe (un pas) ; l'ouverture d'un groupe reste le double-clic de Sélection. */
+  const grouperSelection = useCallback(() => {
+    if (readOnly) return;
+    const sel = selectionRef.current.filter((id) => genreAnnotation(id) === null);
+    if (sel.length === 0) {
+      setMessage(t("planche.groupe.vide"));
+      return;
+    }
+    try {
+      const m = histRef.current.present.modele;
+      const n = Object.keys(m.definitions).length + 1;
+      const r = grouper(m, sel, { nom: `Groupe ${n}`, ...(dansRef.current !== undefined ? { dans: dansRef.current } : {}) });
+      poserHistorique(enregistrer(histRef.current, r.modele, t("planche.groupe.operation"), false));
+      setSelection([r.occurrence]);
+      etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+      setMessage(t("planche.groupe.cree"));
+      rafraichir();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+    }
+  }, [poserHistorique, rafraichir, readOnly, setSelection]);
+
+  /** Fin de la saisie d'un texte (Entrée, bouton, clic dans le dessin) : le texte tapé remplace la proposition, zone fermée. */
+  const validerEdition = useCallback(() => {
+    const texte = editionRef.current?.value;
+    setEdition(null);
+    if (texte !== undefined) envoyer({ genre: "saisie", texte });
+    hoteRef.current?.focus({ preventScroll: true });
+  }, [envoyer]);
+  validerEditionRef.current = validerEdition;
+
   const envoyerTouche = useCallback(
     (touche: Touche, etat: "enfoncee" | "relachee") => {
       if (etat === "enfoncee") touchesTenues.current.add(touche);
@@ -259,6 +428,13 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       return;
     }
     setTexte(null);
+    if (edition) {
+      // Échap pendant la saisie d'un texte : le texte proposé reste (§4.26).
+      setEdition(null);
+      envoyer({ genre: "echap" });
+      hoteRef.current?.focus({ preventScroll: true });
+      return;
+    }
     const m = machineParId(outilRef.current);
     let enCours = false;
     if (m) {
@@ -270,23 +446,36 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     }
     if (enCours) return;
     if (estOutilCamera(outilRef.current)) {
-      const precedent = precedentRef.current;
-      const o = outilParId(precedent);
-      if (precedent !== outilRef.current && o && !disponibilite(o, { lecture: readOnly })) choisirOutil(precedent);
-      else choisirOutil("selection");
+      retourOutil();
+      return;
+    }
+    // Texte 3D : Échap sur la boîte de dialogue rend l'outil précédent (CA-T3D-3).
+    if (outilRef.current === "texte-3d" && (etatMachineRef.current as EtatTexte3D | null)?.boite) {
+      retourOutil();
       return;
     }
     // Outil de dessin, de modification ou Sélection : l'outil reste actif ; la sélection est vidée.
     setSelection([]);
     rafraichir();
-  }, [choisirOutil, envoyer, rafraichir, readOnly, setSelection, setTexte]);
+  }, [edition, envoyer, rafraichir, retourOutil, setSelection, setTexte]);
 
   /** Entrée : valide la saisie du champ Mesures (ou transmet Entrée à l'outil quand le champ est vide). */
   const valider = useCallback(() => {
-    const saisie = texteRef.current?.texte.trim() ?? "";
+    // Une saisie déjà validée n'est pas renvoyée : Entrée seule va à l'outil (confirmation du Mètre, fin de chaîne).
+    const saisie = texteRef.current?.statut === "frappe" ? texteRef.current.texte.trim() : "";
     if (!saisie) {
       envoyerTouche("Entree", "enfoncee");
       envoyerTouche("Entree", "relachee");
+      return;
+    }
+    if (outilRef.current === "positionner-camera" || outilRef.current === "regarder-autour" || outilRef.current === "marcher") {
+      const r = analyserSaisie(saisie, { attendu: "longueur", separateurDecimal: SEPARATEUR_DECIMAL });
+      if (r.genre === "longueur" && r.valeur > 0) {
+        setHauteurOeil(r.valeur);
+        setMessage(t("planche.camera.hauteur", { valeur: virgule(r.valeur) }));
+        setTexte({ texte: saisie, statut: "valide" });
+        rafraichir();
+      } else setMessage(r.genre === "erreur" ? r.message : t("planche.saisie.refusee", { texte: saisie }));
       return;
     }
     if (outilRef.current === "zoom") {
@@ -306,7 +495,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     }
     envoyer({ genre: "saisie", texte: saisie });
     setTexte({ texte: saisie, statut: "valide" });
-  }, [envoyer, envoyerTouche, rafraichir, setTexte, vue.mesures]);
+  }, [envoyer, envoyerTouche, rafraichir, setHauteurOeil, setTexte, vue.mesures]);
   const validerRef = useRef(valider);
   validerRef.current = valider;
 
@@ -346,11 +535,24 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       v = new VuePlanche(hote, {
         evenement: (ev) => {
           if (ev.genre === "survol" && texteRef.current?.statut === "valide") setTexte(null);
+          // Saisie de texte ouverte (§4.31) : un clic dans le dessin valide le texte tapé et ferme la zone ; ce clic ne va pas
+          // à l'outil (il « termine », il ne commence pas une autre annotation).
+          if (editionRef.current && (ev.genre === "clic" || ev.genre === "appui")) {
+            if (ev.genre === "clic") validerEditionRef.current();
+            return;
+          }
           envoyer(ev);
         },
         outilCamera: () => (estOutilCamera(outilRef.current) ? (outilRef.current as OutilCamera) : null),
         navigation: () => navigationRef.current,
         tactile: () => setTactile(true),
+        // Outils de caméra temporaires (§4.34) : Zoom fenêtre rend l'outil précédent, Positionner la caméra enchaîne
+        // sur Regarder autour (l'outil précédent reste celui d'avant Positionner).
+        finOutilCamera: (id) => {
+          if (id === "positionner-camera") demandeOutilRef.current("regarder-autour", { garderPrecedent: true });
+          else retourOutilRef.current();
+        },
+        hauteurOeil: () => hauteurOeilRef.current,
       });
     } catch {
       setWebgl("indisponible");
@@ -366,6 +568,12 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       selection: () => selectionRef.current,
       pas: () => histRef.current.passe.length,
       versEcran: (p) => vueRef.current?.versEcran(p) ?? null,
+      materiau: () => materiauRef.current,
+      balise: () => baliseRef.current,
+      hauteurOeil: () => hauteurOeilRef.current,
+      booleens: () => (booleensRef.current ? "ok" : booleensEtatRef.current),
+      emprise: () => vueRef.current?.emprise() ?? null,
+      camera: () => vueRef.current?.etatCamera() ?? { position: { x: 0, y: 0, z: 0 }, champDeVision: 35 },
     };
     return () => {
       v.detruire();
@@ -412,6 +620,12 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       if (mod && !e.altKey && cle === "y") {
         e.preventDefault();
         retablirPas();
+        return;
+      }
+      // Ctrl + G (§5.6, lot 5) : créer un groupe de la sélection ; le groupe est ensuite baliser / solide.
+      if (mod && !e.altKey && !e.shiftKey && cle === "g") {
+        e.preventDefault();
+        grouperSelection();
         return;
       }
       const etat = toucheEtat(e.key);
@@ -493,7 +707,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
         w.removeEventListener("blur", surPerte);
       }
     };
-  }, [annulerPas, retablirPas, envoyerTouche, echap, choisirOutil, setTexte]);
+  }, [annulerPas, retablirPas, envoyerTouche, echap, choisirOutil, setTexte, grouperSelection]);
 
   // --- Plan détachable : le nœud de la vue (canvas three.js, surcouches, écouteurs) est DÉPLACÉ dans une fenêtre
   // Document Picture-in-Picture — même contexte JavaScript, donc même brouillon et même historique, sans
@@ -607,10 +821,17 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   }, [grille]);
 
   const outil = outilParId(outilId);
+  const etatTexte3D = outilId === "texte-3d" ? (etatMachineRef.current as EtatTexte3D | null) : null;
+  // Plan de coupe sélectionné seul (§4.28) : barre Inverser / Coupe active / Effacer.
+  const planSelectionne = useMemo(() => {
+    const sel = vue.selection.length ? vue.selection : selectionRef.current;
+    const id = sel.find((x) => genreAnnotation(x) === "plan");
+    return id ? hist.present.modele.annotations?.plansDeCoupe[id] ?? null : null;
+  }, [vue.selection, hist.present.modele]);
   const barre = useMemo(() => outilsBarre(), []);
   const sections = useMemo(() => sectionsGrille(), []);
   const raisonDe = (o: Outil) => disponibilite(o, { lecture: readOnly });
-  const etatBarre = vue.erreur ?? message;
+  const etatBarre = OUTILS_SOLIDES.has(outilId) && booleens === "chargement" ? t("planche.solides.chargement") : vue.erreur ?? message;
   const valeurMesures = texte?.texte ?? vue.mesures?.valeur ?? "";
 
   const boutonOutil = (o: Outil, dansGrille = false) => {
@@ -801,7 +1022,143 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           <span aria-hidden="true" className="canevas-picto">?</span>
           <span className="canevas-etiquette">{t("panneau.instructeur")}</span>
         </button>
+        <button type="button" className="canevas-icone" aria-pressed={panneau === "materiaux"} onClick={() => setPanneau(panneau === "materiaux" ? null : "materiaux")} title={t("panneau.materiaux")} data-planche-panneau-icone="materiaux">
+          <span aria-hidden="true" className="canevas-picto">▨</span>
+          <span className="canevas-etiquette">{t("panneau.materiaux")}</span>
+        </button>
+        <button type="button" className="canevas-icone" aria-pressed={panneau === "balises"} onClick={() => setPanneau(panneau === "balises" ? null : "balises")} title={t("panneau.balises")} data-planche-panneau-icone="balises">
+          <span aria-hidden="true" className="canevas-picto">⌖</span>
+          <span className="canevas-etiquette">{t("panneau.balises")}</span>
+        </button>
       </nav>
+      {panneau === "materiaux" && (
+        <section className="planche-panneau" aria-label={t("panneau.materiaux")} data-planche-panneau="materiaux">
+          <header className="canevas-panneau-tete">
+            <h3>{t("panneau.materiaux")}</h3>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.materiaux") })}>×</button>
+          </header>
+          <div className="canevas-panneau-corps">
+            <PanneauMateriaux
+              modele={hist.present.modele}
+              courant={materiau}
+              lecture={readOnly}
+              onChoisir={(id) => {
+                setMateriau(id);
+                if (!readOnly) choisirOutil("peinture");
+              }}
+              onCreer={(nom, couleur) => {
+                const r = modifierAnnotations(histRef.current.present.modele, (a, id) => {
+                  const k = id("m");
+                  a.materiaux[k] = { id: k, nom, couleur };
+                  return k;
+                });
+                appliquer({ etat: null, modele: r.modele }, t("planche.materiau.nouveau"));
+                setMateriau(r.extra);
+              }}
+            />
+          </div>
+        </section>
+      )}
+      {panneau === "balises" && (
+        <section className="planche-panneau" aria-label={t("panneau.balises")} data-planche-panneau="balises">
+          <header className="canevas-panneau-tete">
+            <h3>{t("panneau.balises")}</h3>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.balises") })}>×</button>
+          </header>
+          <div className="canevas-panneau-corps">
+            <PanneauBalises
+              modele={hist.present.modele}
+              courante={balise}
+              lecture={readOnly}
+              onChoisir={(id) => {
+                setBalise(id);
+                if (!readOnly) choisirOutil("balise");
+              }}
+              onVisible={(id, visible) => {
+                const b = histRef.current.present.modele.annotations?.balises[id];
+                if (!b) return;
+                const r = modifierAnnotations(histRef.current.present.modele, (a) => {
+                  a.balises[id] = { ...b, visible };
+                });
+                appliquer({ etat: null, modele: r.modele }, t("planche.balise.visible"));
+              }}
+              onCreer={(nom, couleur) => {
+                const r = modifierAnnotations(histRef.current.present.modele, (a, id) => {
+                  const k = id("b");
+                  a.balises[k] = { id: k, nom, couleur, visible: true };
+                  return k;
+                });
+                appliquer({ etat: null, modele: r.modele }, t("planche.balise.nouvelle"));
+                setBalise(r.extra);
+              }}
+            />
+          </div>
+        </section>
+      )}
+      {planSelectionne && (
+        <div className="planche-coupe-barre" role="toolbar" aria-label={t("planche.coupe.selectionne")} data-planche-coupe>
+          <span>{t("planche.coupe.selectionne")}</span>
+          <button type="button" onClick={() => appliquer(modifierPlanDeCoupe(contexte(), planSelectionne.id, { inverse: !planSelectionne.inverse }), t("planche.coupe.inverser"))} data-planche-coupe-inverser>
+            {t("planche.coupe.inverser")}
+          </button>
+          <button type="button" aria-pressed={planSelectionne.actif} onClick={() => appliquer(modifierPlanDeCoupe(contexte(), planSelectionne.id, { actif: !planSelectionne.actif }), t("planche.coupe.active"))} data-planche-coupe-active>
+            {t("planche.coupe.active")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const r = effacerEntites(histRef.current.present.modele, [planSelectionne.id]);
+              appliquer({ etat: null, modele: r.modele, selection: [] }, t("planche.coupe.effacer"));
+            }}
+            data-planche-coupe-effacer
+          >
+            {t("planche.coupe.effacer")}
+          </button>
+        </div>
+      )}
+      {edition && (
+        <form
+          className="planche-texte-edition"
+          data-planche-texte-edition
+          onSubmit={(e) => {
+            e.preventDefault();
+            validerEdition();
+          }}
+        >
+          <label htmlFor="planche-texte-edition">{t("planche.texte.aide")}</label>
+          <textarea
+            id="planche-texte-edition"
+            ref={editionRef}
+            defaultValue={edition.texte}
+            rows={2}
+            autoFocus
+            onFocus={(e) => e.currentTarget.select()}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                echap();
+              } else if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
+          />
+          <button type="submit" className="planche-ok">{t("planche.texte.valider")}</button>
+        </form>
+      )}
+      {outilId === "texte-3d" && etatTexte3D?.boite && (
+        <DialogueTexte3D
+          etat={etatTexte3D}
+          onOk={(p) => {
+            const e = configurerTexte3D(etatTexte3D, p);
+            etatMachineRef.current = e;
+            rafraichir();
+            if (!e.boite) hoteRef.current?.focus({ preventScroll: true });
+          }}
+          onAnnuler={retourOutil}
+        />
+      )}
       {panneau === "instructeur" && (
         <section className="planche-panneau" aria-label={t("panneau.instructeur")} data-planche-panneau="instructeur">
           <header className="canevas-panneau-tete">
@@ -935,13 +1292,15 @@ function nomOccurrence(m: Modele, id: string): string {
 }
 
 /** Vue d'un outil sans machine d'états (caméra) : consigne et champ Mesures relevés dans le catalogue. */
-function vueParDefaut(id: string, champDeVision: number): VueOutil {
+function vueParDefaut(id: string, champDeVision: number, hauteurOeil: number): VueOutil {
   const o = outilParId(id);
   const etape = o?.etapes[0];
   const mesures =
     id === "zoom" && etape?.libelleMesures
       ? { libelle: etape.libelleMesures, valeur: `${virgule(champDeVision)}°`, saisie: { attendu: "champ-vision" as const, separateurDecimal: SEPARATEUR_DECIMAL } }
-      : null;
+      : (id === "positionner-camera" || id === "regarder-autour" || id === "marcher") && etape?.libelleMesures
+        ? { libelle: id === "positionner-camera" ? t("planche.camera.decalage") : t("planche.camera.oeil"), valeur: `${virgule(hauteurOeil)} m`, saisie: { attendu: "longueur" as const, separateurDecimal: SEPARATEUR_DECIMAL } }
+        : null;
   return { consigne: etape?.consigne ?? o?.libelle ?? "", mesures, inference: null, apercu: { lignes: [], faces: [] }, selection: [], survol: [], erreur: null };
 }
 
@@ -1058,6 +1417,174 @@ function RechercheOutil({ lecture, onFermer, onChoisir }: { lecture: boolean; on
         </ul>
         <button type="button" className="planche-recherche-fermer" onClick={onFermer}>{t("planche.fermer")}</button>
       </div>
+    </div>
+  );
+}
+
+/** Marges (px) occupées par la barre d'outils et la colonne de droite : Zoom étendu cadre la zone restante. */
+function margesVue(racine: HTMLElement | null): { gauche: number; droite: number; haut: number; bas: number } {
+  if (!racine) return { gauche: 0, droite: 0, haut: 0, bas: 0 };
+  const r = racine.getBoundingClientRect();
+  const boite = (sel: string) => racine.querySelector(sel)?.getBoundingClientRect() ?? null;
+  const outils = boite(".planche-outils");
+  const colonne = boite(".planche-colonne");
+  const panneau = boite(".planche-panneau");
+  const haut = boite(".planche-haut");
+  const pied = boite(".planche-pied");
+  const etroit = window.matchMedia("(max-width: 760px)").matches;
+  return {
+    gauche: etroit || !outils ? 0 : Math.max(0, outils.right - r.left),
+    droite: etroit ? 0 : Math.max(colonne ? r.right - colonne.left : 0, panneau ? r.right - panneau.left : 0),
+    haut: haut ? Math.max(0, haut.bottom - r.top) : 0,
+    bas: pied ? Math.max(0, r.bottom - pied.top) : 0,
+  };
+}
+
+/** Panneau Matériaux (lot 5, P-8) : couleurs unies de la Planche ; un clic choisit la matière et active le Pot de peinture. */
+function PanneauMateriaux({ modele, courant, lecture, onChoisir, onCreer }: { modele: Modele; courant: string | null; lecture: boolean; onChoisir: (id: string | null) => void; onCreer: (nom: string, couleur: string) => void }) {
+  const materiaux = Object.values(modele.annotations?.materiaux ?? {});
+  const [nom, setNom] = useState("");
+  const [couleur, setCouleur] = useState("#c8a060");
+  return (
+    <div className="planche-liste-panneau" data-planche-materiaux>
+      <ul role="listbox" aria-label={t("panneau.materiaux")}>
+        <li role="option" aria-selected={courant === null} className={courant === null ? "est-actif" : undefined} onClick={() => onChoisir(null)} data-planche-materiau="">
+          <span className="planche-pastille" style={{ background: COULEUR_MATERIAU_DEFAUT }} aria-hidden="true" />
+          {t("planche.materiau.defaut")}
+        </li>
+        {materiaux.map((m) => (
+          <li key={m.id} role="option" aria-selected={courant === m.id} className={courant === m.id ? "est-actif" : undefined} onClick={() => onChoisir(m.id)} data-planche-materiau={m.id}>
+            <span className="planche-pastille" style={{ background: m.couleur }} aria-hidden="true" />
+            {m.nom}
+          </li>
+        ))}
+      </ul>
+      {materiaux.length === 0 && <p className="inspecteur-aide">{t("planche.materiau.aucun")}</p>}
+      {!lecture && (
+        <form
+          className="planche-creation"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const n = nom.trim() || `${t("planche.materiau.nouveau")} ${materiaux.length + 1}`;
+            onCreer(n, couleur);
+            setNom("");
+          }}
+          data-planche-materiau-creation
+        >
+          <h4>{t("planche.materiau.nouveau")}</h4>
+          <label>
+            {t("planche.materiau.nom")}
+            <input value={nom} onChange={(e) => setNom(e.target.value)} autoComplete="off" data-planche-materiau-nom />
+          </label>
+          <label>
+            {t("planche.materiau.couleur")}
+            <input type="color" value={couleur} onChange={(e) => setCouleur(e.target.value)} data-planche-materiau-couleur />
+          </label>
+          <button type="submit" data-planche-materiau-creer>{t("planche.materiau.creer")}</button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+/** Panneau Balises (lot 5, P-9 : une balise = un calque) : visibilité, balise courante pour l'outil Balise. */
+function PanneauBalises({ modele, courante, lecture, onChoisir, onVisible, onCreer }: { modele: Modele; courante: string | null; lecture: boolean; onChoisir: (id: string) => void; onVisible: (id: string, visible: boolean) => void; onCreer: (nom: string, couleur: string) => void }) {
+  const balises = Object.values(modele.annotations?.balises ?? {});
+  const [nom, setNom] = useState("");
+  const [couleur, setCouleur] = useState("#2f7bd6");
+  return (
+    <div className="planche-liste-panneau" data-planche-balises>
+      <ul role="listbox" aria-label={t("panneau.balises")}>
+        {balises.map((b) => (
+          <li key={b.id} role="option" aria-selected={courante === b.id} className={courante === b.id ? "est-actif" : undefined} data-planche-balise={b.id}>
+            <input type="checkbox" checked={b.visible} disabled={lecture} aria-label={`${t("planche.balise.visible")} — ${b.nom}`} onChange={(e) => onVisible(b.id, e.target.checked)} data-planche-balise-visible />
+            <button type="button" className="planche-ligne-choix" onClick={() => onChoisir(b.id)}>
+              <span className="planche-pastille" style={{ background: b.couleur }} aria-hidden="true" />
+              {b.nom}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {balises.length === 0 && <p className="inspecteur-aide">{t("planche.balise.aucune")}</p>}
+      {!lecture && (
+        <form
+          className="planche-creation"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const n = nom.trim() || `${t("planche.balise.nouvelle")} ${balises.length + 1}`;
+            onCreer(n, couleur);
+            setNom("");
+          }}
+          data-planche-balise-creation
+        >
+          <h4>{t("planche.balise.nouvelle")}</h4>
+          <label>
+            {t("planche.materiau.nom")}
+            <input value={nom} onChange={(e) => setNom(e.target.value)} autoComplete="off" data-planche-balise-nom />
+          </label>
+          <label>
+            {t("planche.materiau.couleur")}
+            <input type="color" value={couleur} onChange={(e) => setCouleur(e.target.value)} data-planche-balise-couleur />
+          </label>
+          <button type="submit" data-planche-balise-creer>{t("planche.balise.creer")}</button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+/** Boîte Texte 3D (§4.14, P-7 : police géométrique intégrée) : texte, hauteur, plein, extrusion ; OK place au curseur. */
+function DialogueTexte3D({ etat, onOk, onAnnuler }: { etat: EtatTexte3D; onOk: (p: ParametresTexte3D) => void; onAnnuler: () => void }) {
+  const [texte, setTexteLocal] = useState(etat.texte);
+  const [hauteur, setHauteur] = useState(virgule(etat.hauteur || HAUTEUR_TEXTE_3D));
+  const [plein, setPlein] = useState(etat.plein);
+  const [extrusion, setExtrusion] = useState(virgule(etat.extrusion ?? EXTRUSION_TEXTE_3D));
+  const champ = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => champ.current?.focus(), []);
+  const nombre = (v: string) => Number(v.replace(",", ".").trim());
+  return (
+    <div className="planche-recherche-fond" onPointerDown={(e) => e.target === e.currentTarget && onAnnuler()}>
+      <form
+        className="planche-recherche planche-texte3d"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("planche.texte3d.titre")}
+        data-planche-texte3d
+        onSubmit={(e) => {
+          e.preventDefault();
+          onOk({ texte, hauteur: nombre(hauteur), plein, extrusion: nombre(extrusion) });
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            onAnnuler();
+          }
+        }}
+      >
+        <h3>{t("planche.texte3d.titre")}</h3>
+        <label htmlFor="planche-texte3d-texte" className="sr-only">{t("planche.texte3d.texte")}</label>
+        <textarea id="planche-texte3d-texte" ref={champ} value={texte} placeholder={t("planche.texte3d.texte")} rows={2} onChange={(e) => setTexteLocal(e.target.value)} data-planche-texte3d-texte />
+        <div className="planche-texte3d-champs">
+          <label>
+            {t("planche.texte3d.hauteur")}
+            <input inputMode="decimal" value={hauteur} onChange={(e) => setHauteur(e.target.value)} data-planche-texte3d-hauteur />
+          </label>
+          <label>
+            <input type="checkbox" checked={plein} onChange={(e) => setPlein(e.target.checked)} data-planche-texte3d-plein /> {t("planche.texte3d.plein")}
+          </label>
+          <label>
+            {t("planche.texte3d.extrusion")}
+            <input inputMode="decimal" value={extrusion} onChange={(e) => setExtrusion(e.target.value)} data-planche-texte3d-extrusion />
+          </label>
+        </div>
+        <p className="inspecteur-aide">{t("planche.texte3d.police")}</p>
+        {etat.erreur && <p className="planche-message" role="alert">{etat.erreur}</p>}
+        <div className="barre-groupe">
+          <button type="submit" data-planche-texte3d-ok>{t("planche.texte3d.ok")}</button>
+          <button type="button" onClick={onAnnuler} data-planche-texte3d-annuler>{t("planche.texte3d.annuler")}</button>
+        </div>
+      </form>
     </div>
   );
 }

@@ -89,10 +89,18 @@ describe("Planche — barre, grille et disponibilité (R20)", () => {
       expect(disponibilite(outil(id), { lecture: false }), id).toBeNull();
       expect(disponibilite(outil(id), { lecture: true }), id).toContain("lecture seule");
     }
-    // Les lots suivants restent grisés, avec leur lot.
-    expect(disponibilite(outil("metre"), { lecture: false })).toContain("lot 4");
-    expect(disponibilite(outil("peinture"), { lecture: false })).toContain("lot 5");
-    expect(disponibilite(outil("enveloppe-exterieure"), { lecture: false })).toContain("lot 6");
+  });
+
+  it("lots 4 à 6 : les 20 outils « prévus » ont une machine (ou sont des caméras) et sont disponibles ; Mètre et caméras restent permis en lecture seule", () => {
+    const lot4 = ["metre", "cotation", "rapporteur", "axes", "texte", "plan-de-coupe", "zoom-etendu", "zoom-fenetre", "positionner-camera", "regarder-autour", "marcher"];
+    const lot5 = ["peinture", "echantillon-matiere", "balise", "texte-3d"];
+    const lot6 = ["enveloppe-exterieure", "union", "soustraction", "ajuster", "intersection", "scinder"];
+    expect([...lot4, ...lot5, ...lot6]).toHaveLength(21);
+    for (const id of [...lot4, ...lot5, ...lot6]) expect(disponibilite(outil(id), { lecture: false }), id).toBeNull();
+    for (const id of ["metre", "zoom-etendu", "zoom-fenetre", "positionner-camera", "regarder-autour", "marcher"]) expect(disponibilite(outil(id), { lecture: true }), id).toBeNull();
+    for (const id of ["cotation", "peinture", "balise", "texte-3d", "union"]) expect(disponibilite(outil(id), { lecture: true }), id).toContain("lecture seule");
+    // Plus aucun outil de la grille n'est grisé.
+    expect(sectionsGrille().flatMap((s) => s.outils).filter((o) => disponibilite(o, { lecture: false }))).toEqual([]);
   });
 
   it("un outil sans machine d'états est indisponible avec son lot ; les caméras de l'interface restent actives", () => {
