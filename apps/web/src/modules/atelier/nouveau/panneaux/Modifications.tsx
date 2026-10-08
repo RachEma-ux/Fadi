@@ -33,6 +33,8 @@ const TYPES: Record<TypeProbleme, string> = {
   "sans-correspondance": "Sans correspondance à l'import",
   "piece-non-fermee": "Pièce non fermée",
   import: "Import",
+  "collision-mecanique": "Collision pièce / bâtiment",
+  regle: "Règle de conception non tenue",
 };
 
 export function Modifications({ projectId, instantane, readOnly, onDecider, onAller, onConsulterRevision, onReprendre }: PropsModifications) {

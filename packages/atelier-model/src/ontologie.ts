@@ -5,7 +5,9 @@
  * commandes qui les créent (`commandes/`).
  */
 
-export type Ontologie = "building.architecture" | "building.structure" | "drawing" | "annotation" | "projet";
+import type { ModeleAtelier } from "./modele.js";
+
+export type Ontologie = "building.architecture" | "building.structure" | "drawing" | "annotation" | "projet" | "mechanical";
 
 export type Classe =
   | "mur"
@@ -28,7 +30,10 @@ export type Classe =
   | "bloc-occurrence"
   | "garde-corps"
   | "objet-importe"
-  | "solide-exact";
+  | "solide-exact"
+  | "piece-mecanique"
+  | "assemblage"
+  | "liaison";
 
 export type KindRelation =
   | "heberge-par" // ouverture → mur hôte
@@ -75,6 +80,11 @@ export const CLASSES: Readonly<Record<Classe, DescriptionClasse>> = {
   "objet-importe": { classe: "objet-importe", ontologie: "building.architecture", libelle: "Objet importé (IFC)", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre"], parNiveau: true },
   "bloc-occurrence": { classe: "bloc-occurrence", ontologie: "drawing", libelle: "Occurrence de bloc", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre", "sommet"], parNiveau: true },
   "solide-exact": { classe: "solide-exact", ontologie: "drawing", libelle: "Solide exact", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre"], parNiveau: true },
+  // Ontologie mécanique (P2-2) : pièce (géométrie canonique = brep ou maillage copié de sa source, posée dans son
+  // assemblage), assemblage (repère dans le niveau, numérotation, éclaté), liaison (contraintes entre deux pièces).
+  "piece-mecanique": { classe: "piece-mecanique", ontologie: "mechanical", libelle: "Pièce mécanique", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre"], parNiveau: true },
+  assemblage: { classe: "assemblage", ontologie: "mechanical", libelle: "Assemblage", ifc: "IfcElementAssembly", caracteristiques: ["centre"], parNiveau: true },
+  liaison: { classe: "liaison", ontologie: "mechanical", libelle: "Liaison", ifc: "IfcAnnotation", caracteristiques: [], parNiveau: false },
 };
 
 export const CLASSES_OUVERTURE: readonly Classe[] = ["porte", "fenetre", "ouverture"];
@@ -87,5 +97,17 @@ export function estOuverture(classe: Classe): classe is "porte" | "fenetre" | "o
   return CLASSES_OUVERTURE.includes(classe);
 }
 
-/** Ontologies activées par projet (Architecture V4 §4) : Fadi active le bâtiment et, pour le poteau, la structure. */
+/** Ontologies activées par défaut dans tout projet (Architecture V4 §4) : le bâtiment, la structure réduite au poteau, le dessin, l'annotation. */
 export const ONTOLOGIES_ACTIVEES: readonly Ontologie[] = ["building.architecture", "building.structure", "drawing", "annotation", "projet"];
+/** Ontologies qu'un projet active ou désactive lui-même (cahier P2 §4, T01) : les autres font le socle. */
+export const ONTOLOGIES_ACTIVABLES: readonly Ontologie[] = ["mechanical"];
+export const LIBELLES_ONTOLOGIE: Record<Ontologie, string> = { "building.architecture": "Bâtiment (architecture)", "building.structure": "Structure", drawing: "Dessin", annotation: "Annotation", projet: "Projet", mechanical: "Mécanique et assemblages" };
+
+/** Ontologies actives d'un projet : le socle, plus celles que le projet a activées (`ontologie.activer`). */
+export function ontologiesActives(etat: Pick<ModeleAtelier, "ontologies">): readonly Ontologie[] {
+  return [...ONTOLOGIES_ACTIVEES, ...(etat.ontologies ?? [])];
+}
+
+export function estOntologie(v: unknown): v is Ontologie {
+  return typeof v === "string" && Object.prototype.hasOwnProperty.call(LIBELLES_ONTOLOGIE, v);
+}

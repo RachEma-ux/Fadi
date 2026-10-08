@@ -19,6 +19,8 @@ import { TOLERANCE_REDUCTEUR, type Angle, type Longueur } from "../unites.js";
 import { ErreurCommande, lire } from "./base.js";
 import { enveloppeConvexe } from "../echanges/import-ifc.js";
 import { emprisePosee } from "../solide-exact.js";
+import { empriseMaillage, POSE_NULLE, positionsPosees3 } from "../ontologies/mechanical/geometrie.js";
+import { DDL_LIAISON, TYPES_LIAISON } from "../ontologies/mechanical/liaisons.js";
 
 type Brut = Record<string, unknown>;
 
@@ -351,6 +353,69 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       operation: { type: typeof op["type"] === "string" ? (op["type"] as string) : "inconnue", sources, libelle: typeof op["libelle"] === "string" ? (op["libelle"] as string) : "" },
     };
   },
+  "piece-mecanique"(etat, p) {
+    const m = p["maillage"] as { positions?: unknown; indices?: unknown } | undefined;
+    const positions = m?.positions;
+    const indices = m?.indices;
+    if (!Array.isArray(positions) || positions.length % 3 !== 0 || positions.length < 9 || positions.length > 1_500_000 || !positions.every((v) => typeof v === "number" && Number.isFinite(v))) throw new ErreurCommande("invalide", "maillage.positions", "maillage : coordonnées finies par triplets attendues");
+    const n = positions.length / 3;
+    if (!Array.isArray(indices) || indices.length % 3 !== 0 || indices.length < 3 || !indices.every((v) => Number.isInteger(v) && v >= 0 && v < n)) throw new ErreurCommande("invalide", "maillage.indices", "maillage : triangles d'indices entiers valides attendus");
+    const brep = lire.chaineOuNull(p, "brep");
+    if (brep !== null && (!/^[A-Za-z0-9+/=]+$/.test(brep) || brep.length > 8_000_000)) throw new ErreurCommande("invalide", "brep", "brep binaire en base64 attendu (8 Mo au plus)");
+    const assemblageId = lire.chaineOuNull(p, "assemblageId");
+    if (assemblageId !== null && etat.objets[assemblageId]?.classe !== "assemblage") throw new ErreurCommande("precondition", "assemblageId", `assemblage inconnu : ${assemblageId}`);
+    const pose = lirePose3(p);
+    const asm = assemblageId ? (etat.objets[assemblageId] as { params: { position: { x: number; y: number }; angle: { value: number }; z: number } }) : null;
+    const repere = asm ? { position: asm.params.position as never, angleDeg: asm.params.angle.value, z: asm.params.z } : null;
+    const maillage = { positions: positions as number[], indices: indices as number[] };
+    const numero = lire.nombre(p, "numero", { optionnel: true, entier: true, min: 1 });
+    return {
+      nom: lire.chaine(p, "nom").trim() || "Pièce",
+      reference: lire.chaineOuNull(p, "reference"),
+      numero,
+      materiau: lire.chaineOuNull(p, "materiau"),
+      sourceId: lire.chaineOuNull(p, "sourceId"),
+      brep,
+      empreinteBrep: lire.chaineOuNull(p, "empreinteBrep"),
+      moteur: lire.chaineOuNull(p, "moteur"),
+      versionMoteur: lire.chaineOuNull(p, "versionMoteur"),
+      maillage,
+      volume: lire.nombre(p, "volume", { optionnel: true, min: 0 }),
+      assemblageId,
+      fixe: lire.booleen(p, "fixe", false),
+      pose,
+      // Emprise toujours recalculée : enveloppe convexe du maillage posé dans le repère du niveau.
+      emprise: empriseMaillage(positionsPosees3(maillage, pose, repere)).emprise,
+    };
+  },
+  assemblage(_etat, p) {
+    return {
+      nom: lire.chaine(p, "nom").trim() || "Assemblage",
+      numero: lire.chaineOuNull(p, "numero"),
+      position: lire.point(p, "position", { optionnel: true }) ?? { x: 0, y: 0, frame: "local", unit: "m" },
+      angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" },
+      z: lire.nombre(p, "z", { optionnel: true }) ?? 0,
+      diagnostic: lire.chaineOuNull(p, "diagnostic"),
+    };
+  },
+  liaison(etat, p) {
+    const type = lire.enumeration(p, "type", TYPES_LIAISON);
+    const a = lire.objet(etat, p, "a");
+    const b = lire.objet(etat, p, "b");
+    if (a === b) throw new ErreurCommande("invalide", "b", "une liaison relie deux pièces différentes");
+    const pa = etat.objets[a]!, pb = etat.objets[b]!;
+    if (pa.classe !== "piece-mecanique" || pb.classe !== "piece-mecanique") throw new ErreurCommande("precondition", pa.classe !== "piece-mecanique" ? "a" : "b", "une liaison relie deux pièces mécaniques");
+    if (!pa.params.assemblageId || pa.params.assemblageId !== pb.params.assemblageId) throw new ErreurCommande("precondition", "b", "les deux pièces doivent appartenir au même assemblage");
+    const dir = (cle: string, defaut: { x: number; y: number; z: number }) => {
+      const v = lireVecteur3(p, cle, defaut);
+      if (Math.hypot(v.x, v.y, v.z) < 1e-9) throw new ErreurCommande("invalide", cle, `« ${cle} » : direction nulle`);
+      return v;
+    };
+    const valeur = lire.nombre(p, "valeur", { optionnel: true });
+    if (type === "distance" && valeur === null) throw new ErreurCommande("invalide", "valeur", "distance : valeur (m) requise");
+    if ((type === "distance" || type === "glissiere") && valeur !== null && valeur < 0) throw new ErreurCommande("invalide", "valeur", "valeur négative refusée");
+    return { type, a, b, pa: lireVecteur3(p, "pa", { x: 0, y: 0, z: 0 }), da: dir("da", { x: 0, y: 0, z: 1 }), ea: dir("ea", { x: 1, y: 0, z: 0 }), pb: lireVecteur3(p, "pb", { x: 0, y: 0, z: 0 }), db: dir("db", { x: 0, y: 0, z: 1 }), eb: dir("eb", { x: 1, y: 0, z: 0 }), valeur, etat: lire.chaineOuNull(p, "etat"), ddl: DDL_LIAISON[type] };
+  },
   "bloc-occurrence"(_etat, p) {
     return { position: lire.point(p, "position")!, angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" }, echelle: lire.nombre(p, "echelle", { optionnel: true, min: 0 }) ?? 1, ...(lire.booleen(p, "miroir", false) ? { miroir: true as const } : {}) };
   },
@@ -534,6 +599,31 @@ function tangentesDe(p: Brut, forme: string, n: number): { tangentes?: ({ x: num
     return { x: q.x, y: q.y };
   });
   return t.some((x) => x !== null) ? { tangentes: t } : {};
+}
+
+/** Vecteur 3D { x, y, z } (m ou direction), valeur par défaut si absent. */
+function lireVecteur3(p: Brut, cle: string, defaut: { x: number; y: number; z: number }): { x: number; y: number; z: number } {
+  const v = p[cle];
+  if (v === undefined || v === null) return { ...defaut };
+  const q = v as { x?: unknown; y?: unknown; z?: unknown };
+  if (typeof v !== "object" || ![q.x, q.y, q.z].every((c) => typeof c === "number" && Number.isFinite(c))) throw new ErreurCommande("invalide", cle, `« ${cle} » : vecteur { x, y, z } attendu`);
+  return { x: q.x as number, y: q.y as number, z: q.z as number };
+}
+
+/** Pose rigide 3D (P2-2) : { x, y, z, rx, ry, rz }, nulle par défaut ; rotation vectorielle en radians. */
+function lirePose3(p: Brut): { x: number; y: number; z: number; rx: number; ry: number; rz: number } {
+  const v = p["pose"];
+  if (v === undefined || v === null) return { ...POSE_NULLE };
+  if (typeof v !== "object") throw new ErreurCommande("invalide", "pose", "« pose » : { x, y, z, rx, ry, rz } attendu");
+  const q = v as Record<string, unknown>;
+  const out = { ...POSE_NULLE };
+  for (const k of Object.keys(out) as (keyof typeof out)[]) {
+    const c = q[k];
+    if (c === undefined || c === null) continue;
+    if (typeof c !== "number" || !Number.isFinite(c)) throw new ErreurCommande("invalide", `pose.${k}`, "nombre attendu");
+    out[k] = c;
+  }
+  return out;
 }
 
 export function validerParams<C extends Classe>(etat: ModeleAtelier, classe: C, params: Brut): ParamsParClasse[C] {

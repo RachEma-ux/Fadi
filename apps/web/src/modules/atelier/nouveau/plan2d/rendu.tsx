@@ -67,6 +67,31 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
         </path>
       );
     }
+    case "piece-mecanique": {
+      // Pièce mécanique (P2-2) : emprise du maillage posé (enveloppe convexe), gris acier ; numéro au survol.
+      if (o.params.emprise.length < 3) return null;
+      return (
+        <path d={chemin(pr, o.params.emprise)} className={classes("obj-piece-mecanique", selectionne, survole)} fill="#9aa5b1" fillOpacity={0.3} stroke={selectionne ? "#b3872f" : "#55606b"} strokeWidth={selectionne ? 2.5 : 1.2} data-objet={o.id}>
+          <title>{`Pièce mécanique · ${o.params.nom}${o.params.reference ? ` · ${o.params.reference}` : ""}`}</title>
+        </path>
+      );
+    }
+    case "assemblage": {
+      // Assemblage (P2-2) : repère (croix) et nom à sa position ; ses pièces se dessinent elles-mêmes.
+      const c = pr.vers(o.params.position);
+      const r = 7;
+      return (
+        <g className={classes("obj-assemblage", selectionne, survole)} data-objet={o.id}>
+          <line x1={c.x - r} y1={c.y} x2={c.x + r} y2={c.y} stroke={selectionne ? "#b3872f" : "#55606b"} strokeWidth={selectionne ? 2.5 : 1.5} />
+          <line x1={c.x} y1={c.y - r} x2={c.x} y2={c.y + r} stroke={selectionne ? "#b3872f" : "#55606b"} strokeWidth={selectionne ? 2.5 : 1.5} />
+          <circle cx={c.x} cy={c.y} r={r + 3} fill="none" stroke={selectionne ? "#b3872f" : "#55606b"} strokeWidth={1} />
+          <text x={c.x + r + 5} y={c.y - 4} fontSize={11} fill="#3a4550">{o.params.nom}</text>
+          <title>{`Assemblage · ${o.params.nom}${o.params.diagnostic ? ` · ${o.params.diagnostic}` : ""}`}</title>
+        </g>
+      );
+    }
+    case "liaison":
+      return null;
     case "objet-importe": {
       // Représentation importée : emprise (enveloppe convexe) en tirets, classe IFC d'origine au survol.
       if (o.params.empreinte.length < 2) return null;

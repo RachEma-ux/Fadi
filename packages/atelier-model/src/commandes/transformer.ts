@@ -166,6 +166,24 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
     }
     case "garde-corps":
       return { ...o, params: { ...o.params, points: o.params.points.map(T) } };
+    case "assemblage": {
+      // Assemblage (P2-2) : son repère se déplace et tourne ; les pièces suivent (emprises recalculées par le réducteur).
+      if (t.type === "miroir") throw new ErreurCommande("precondition", "type", `${o.id} : miroir d'un assemblage refusé (P2-2)`);
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'un assemblage refusée (P2-2)`);
+      return { ...o, params: { ...o.params, position: T(o.params.position), angle: { value: Math.round((o.params.angle.value + rot) * 1e9) / 1e9, unit: "deg" } } };
+    }
+    case "piece-mecanique": {
+      // Pièce (P2-2) : hors assemblage, sa pose suit la transformation en plan ; dans un assemblage, c'est l'assemblage
+      // (ou une liaison pilotée) qui la déplace ; miroir et échelle d'une géométrie copiée : refusés.
+      if (t.type === "miroir") throw new ErreurCommande("precondition", "type", `${o.id} : miroir d'une pièce mécanique refusé (P2-2)`);
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'une pièce mécanique refusée (P2-2)`);
+      if (o.params.assemblageId) throw new ErreurCommande("precondition", "cibles", `${o.id} : pièce d'un assemblage — déplacer l'assemblage ou piloter une liaison`);
+      const q = T({ x: o.params.pose.x, y: o.params.pose.y, frame: "local", unit: "m" });
+      const pose = { ...o.params.pose, x: q.x, y: q.y, rz: Math.round((o.params.pose.rz + (rot * Math.PI) / 180) * 1e12) / 1e12 };
+      return { ...o, params: { ...o.params, pose, emprise: o.params.emprise.map(T) } };
+    }
+    case "liaison":
+      return o;
     case "solide-exact": {
       // Pose en plan (P2-1) : translation et rotation autour de z ; miroir et échelle d'un B-rep : refusés (le modèle
       // pur ne transforme pas le brep ; une opération exacte le ferait).
@@ -211,6 +229,10 @@ function echelleNonUniforme(o: OccurrenceQuelconque, t: Transformation & { type:
       throw refus("représentation importée");
     case "solide-exact":
       throw refus("solide exact (B-rep)");
+    case "piece-mecanique":
+    case "assemblage":
+    case "liaison":
+      throw refus("objet mécanique (P2-2)");
     case "esquisse": {
       const q = o.params;
       if (q.forme === "arc") throw refus("arc");

@@ -14,6 +14,7 @@ import { ContrainteVerticale, PosesObjet } from "./Poses";
 import { OUTILS_PAR_ID } from "../outils";
 import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheOccurrenceBloc } from "./Complements";
 import { FicheSolideExact, OutilSolideExact } from "./SolideExact";
+import { FicheAssemblage, FicheLiaison, FichePieceMecanique, OutilAssemblage, OutilLiaison, OutilPieceMecanique } from "./Mecanique";
 import { LOCALE } from "../../../../lib/i18n";
 
 export interface PropsInspecteur {
@@ -113,7 +114,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
   const verrouObjet = raisonVerrou(etat, o);
   const desactive = readOnly || verrouille || !!verrouObjet;
   // Représentation importée (R16) : paramètres en lecture seule ; calque, phase et transformations restent possibles.
-  const parametresFiges = desactive || o.classe === "objet-importe" || o.classe === "solide-exact";
+  const parametresFiges = desactive || o.classe === "objet-importe" || o.classe === "solide-exact" || o.classe === "piece-mecanique" || o.classe === "liaison";
 
   return (
     <section className="inspecteur" aria-label={`Inspecteur : ${description.libelle}`}>
@@ -215,6 +216,9 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
       {o.classe === "solide-exact" && projectId && <FicheSolideExact o={o} projectId={projectId} />}
+      {o.classe === "piece-mecanique" && <FichePieceMecanique o={o as Occurrence<"piece-mecanique">} etat={etat} />}
+      {o.classe === "assemblage" && <FicheAssemblage o={o as Occurrence<"assemblage">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
+      {o.classe === "liaison" && <FicheLiaison o={o as Occurrence<"liaison">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || (o.classe === "mur" && !(o as Occurrence<"mur">).params.renflement)) && <Contraintes sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || o.classe === "solide" || o.classe === "texte") && <CreerBloc sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {Object.keys(o.proprietes).length > 0 && (
@@ -740,6 +744,9 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: Mo
       )}
       {ui.outil === "plancher" && <PropositionsPlancherVue etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "solide-exact" && <OutilSolideExact etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "piece-mecanique" && <OutilPieceMecanique etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "assemblage" && <OutilAssemblage etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "liaison" && <OutilLiaison etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "contour" && (
         <div className="champ">
           <label htmlFor="outil-formeContour">Créer</label>

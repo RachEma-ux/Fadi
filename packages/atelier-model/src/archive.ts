@@ -11,7 +11,7 @@ import { lireParamsEnsemble } from "./commandes/ensembles.js";
 import { lireParamsEtatCalques } from "./commandes/etats-calques.js";
 import { lireParamsVue } from "./documents/vues.js";
 import { lireParamsFeuille } from "./documents/feuilles.js";
-import { estClasse } from "./ontologie.js";
+import { estClasse, estOntologie } from "./ontologie.js";
 import { ErreurCommande } from "./commandes/base.js";
 import { validerParams } from "./commandes/validation.js";
 import { modeleVide, type ModeleAtelier, type OccurrenceQuelconque } from "./modele.js";
@@ -137,6 +137,11 @@ export function verifierModele(brut: unknown): ResultatVerification {
     }
   }
   if (estRecord(brut["proprietes"])) modele.proprietes = brut["proprietes"] as ModeleAtelier["proprietes"];
+  if (brut["ontologies"] !== undefined) {
+    const o = brut["ontologies"];
+    if (!Array.isArray(o) || !o.every(estOntologie)) erreurs.push("ontologies : liste d'ontologies connues attendue");
+    else if (o.length) modele.ontologies = [...new Set(o)];
+  }
   // Vues puis feuilles (une feuille place des vues) : paramètres revalidés comme par les commandes.
   for (const classe of ["vue", "feuille"] as const) {
     for (const d of Object.values(modele.definitions)) {

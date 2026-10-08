@@ -126,6 +126,12 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
       case "solide-exact":
         if (o.params.emprise.length >= 2) contour(o.params.emprise, o.id);
         break;
+      case "piece-mecanique":
+        if (o.params.emprise.length >= 2) contour(o.params.emprise, o.id);
+        break;
+      case "assemblage":
+        centres.push({ p: o.params.position, objetId: o.id });
+        break;
       case "cotation":
         segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
         break;
@@ -303,7 +309,7 @@ export function objetSousPointeur(p: Point2, cache: ReturnType<typeof segmentsDu
     } else if (o.classe === "texte" || o.classe === "etiquette") {
       const d = dist(p, o.params.position);
       if (d <= rayon * 2 && (!meilleur || d < meilleur.distance)) meilleur = { objetId: o.id, distance: d };
-    } else if (o.classe === "solide-exact" && o.params.emprise.length >= 3 && pointDansPolygone(p, o.params.emprise)) {
+    } else if ((o.classe === "solide-exact" || o.classe === "piece-mecanique") && o.params.emprise.length >= 3 && pointDansPolygone(p, o.params.emprise)) {
       // Solide exact (P2-1) : cliquable sur toute son emprise, comme un mur sur son épaisseur ; un trait qui la
       // traverse (esquisse, axe) garde la priorité à égalité.
       const d = rayon - 1e-6;

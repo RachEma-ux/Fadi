@@ -19,6 +19,7 @@ import { contourMurCourbeRaccorde, raccordMur } from "../raccords.js";
 import { corpsMenuiserie } from "../menuiserie.js";
 import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.js";
 import { positionsPosees } from "../solide-exact.js";
+import { positionsPosees3 } from "../ontologies/mechanical/geometrie.js";
 
 export interface Maillage {
   objetId: string;
@@ -47,6 +48,7 @@ export const COULEURS_3D: Record<string, string> = {
   "bloc-occurrence": "#b8a88a",
   "objet-importe": "#b9c4cc",
   "solide-exact": "#8fa3b8",
+  "piece-mecanique": "#9aa5b1",
 };
 
 // ---------------------------------------------------------------------------
@@ -687,6 +689,19 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
       if (o.params.ifcClasse.toLowerCase() === "ifcspace") opacite = 0.2;
       break;
     }
+    case "piece-mecanique": {
+      // Pièce mécanique (P2-2) : maillage copié de la source, posé dans son assemblage puis dans le niveau.
+      const asm = o.params.assemblageId ? etat.objets[o.params.assemblageId] : undefined;
+      const repere = asm && asm.classe === "assemblage" ? { position: asm.params.position, angleDeg: asm.params.angle.value, z: asm.params.z } : null;
+      const p = positionsPosees3(o.params.maillage, o.params.pose, repere);
+      const base = t.positions.length / 3;
+      for (let i = 0; i < p.length; i += 3) t.sommet(p[i]!, p[i + 1]!, z + p[i + 2]!);
+      for (const i of o.params.maillage.indices) t.indices.push(base + i);
+      break;
+    }
+    case "assemblage":
+    case "liaison":
+      break;
     case "solide-exact": {
       // Maillage dérivé du brep par le noyau exact (P2-1), posé (position, angle) ; z relatif au niveau.
       const p = positionsPosees(o.params.maillage, o.params.position, o.params.angle.value);

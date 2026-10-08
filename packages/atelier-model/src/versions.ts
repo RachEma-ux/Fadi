@@ -13,13 +13,14 @@
  *   par la dalle du niveau d'arrivée). Le contrôle d'interférence des corps (D-124) est à la demande : `interferences`.
  */
 import { compositionMur } from "./compositions.js";
+import { interferences } from "./interferences.js";
 import type { Commande, InstantaneDiff } from "./commandes/index.js";
 import { appliquerDifferentiel, ErreurCommande, TYPE_RESTAURER } from "./commandes/index.js";
 import type { Primitive } from "./documents/dessin.js";
 
 import { serialisationStable } from "./documents/empreinte.js";
 import { longueurAxeMur, pointDansPolygone } from "./geometrie.js";
-import type { ModeleAtelier, OccurrenceQuelconque } from "./modele.js";
+import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "./modele.js";
 
 /** Un dessin quelconque (vue générée, feuille composée) : ses primitives. */
 export interface Dessin {
@@ -223,7 +224,7 @@ export function analyserFusion(tronc: readonly EffetsJournal[], variante: readon
 
 // --- Collisions d'architecture -----------------------------------------------------------------------------------
 
-export type TypeCollision = "ouverture-hors-mur" | "ouverture-trop-haute" | "ouvertures-chevauchantes" | "escalier-contre-dalle" | "composition-incoherente";
+export type TypeCollision = "ouverture-hors-mur" | "ouverture-trop-haute" | "ouvertures-chevauchantes" | "escalier-contre-dalle" | "composition-incoherente" | "piece-batiment";
 
 export interface Collision {
   type: TypeCollision;
@@ -287,6 +288,17 @@ export function collisions(etat: ModeleAtelier): Collision[] {
       if (d.classe !== "dalle" || d.niveauId !== arrivee.id) continue;
       const touche = points.some((p) => pointDansPolygone(p, d.params.contour) && !d.params.trous.some((t) => pointDansPolygone(p, t)));
       if (touche) out.push({ type: "escalier-contre-dalle", objets: [o.id, d.id], niveauId: arrivee.id, message: `escalier ${o.id} : la dalle ${d.id} du niveau « ${arrivee.nom} » traverse la volée (trémie absente)` });
+    }
+  }
+  // Pièces mécaniques (P2-2, cahier P2 §4 « coordination ») : une pièce qui occupe le volume d'un mur, d'une dalle ou
+  // d'un poteau est signalée (volume commun), jamais corrigée ; deux pièces entre elles ne le sont pas ici.
+  if (objets.some((o) => o.classe === "piece-mecanique")) {
+    for (const i of interferences(etat)) {
+      const [p, q] = i.objets.map((id) => etat.objets[id]);
+      const piece = p?.classe === "piece-mecanique" ? p : q?.classe === "piece-mecanique" ? q : null;
+      const autre = piece === p ? q : p;
+      if (!piece || !autre || autre.classe === "piece-mecanique") continue;
+      out.push({ type: "piece-batiment", objets: [piece.id, autre.id], niveauId: i.niveauId, message: `pièce ${(piece as Occurrence<"piece-mecanique">).params.nom} (${piece.id}) : ${Math.round(i.volume * 1000) / 1000} m³ en commun avec ${autre.classe} ${autre.id} — réservation ou déplacement à décider` });
     }
   }
   return out.sort((x, y) => (x.type < y.type ? -1 : x.type > y.type ? 1 : x.objets[0]! < y.objets[0]! ? -1 : 1));

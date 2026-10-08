@@ -13,6 +13,7 @@ import { aireSignee, cross, normalise, perp, polygoneMur, polygoneMurCourbe, sub
 import type { ModeleAtelier, OccurrenceQuelconque } from "./modele.js";
 import { etendueMur, trianguler } from "./projection/maillage.js";
 import { contoursArchitecture } from "./blocs-places.js";
+import { empriseMaillage, positionsPosees3 } from "./ontologies/mechanical/geometrie.js";
 
 export interface Corps {
   objetId: string;
@@ -79,6 +80,15 @@ export function corpsDe(etat: ModeleAtelier, o: OccurrenceQuelconque): Corps[] {
       const e = etendueDalle(o.params);
       const r = anneauRetombee(o.params);
       return [c(o.params.contour, o.params.trous, z + e.bas, z + e.haut), ...(r && o.params.retombee ? [c(r.contour, [r.interieur], z + e.bas - o.params.retombee.hauteur.value, z + e.bas)] : [])];
+    }
+    case "piece-mecanique": {
+      // Pièce mécanique (P2-2) : prisme de son emprise convexe entre les z extrêmes du maillage posé (déclaré : enveloppe,
+      // pas la forme exacte) ; contrôlée contre tout corps du bâtiment.
+      if (o.params.emprise.length < 3) return [];
+      const asm = o.params.assemblageId ? etat.objets[o.params.assemblageId] : undefined;
+      const repere = asm && asm.classe === "assemblage" ? { position: asm.params.position, angleDeg: asm.params.angle.value, z: asm.params.z } : null;
+      const e = empriseMaillage(positionsPosees3(o.params.maillage, o.params.pose, repere));
+      return [c(o.params.emprise, [], z + e.z0, z + e.z1)];
     }
     default:
       return [];
@@ -148,7 +158,7 @@ export function interferences(etat: ModeleAtelier, options: { niveauId?: string 
       const a = corps[i]!;
       const b = corps[j]!;
       if (a.objetId === b.objetId) continue;
-      const controlee = a.classe === "solide" || b.classe === "solide" || (a.classe === "poteau" && b.classe === "poteau");
+      const controlee = a.classe === "solide" || b.classe === "solide" || (a.classe === "poteau" && b.classe === "poteau") || a.classe === "piece-mecanique" || b.classe === "piece-mecanique";
       if (!controlee) continue;
       const dz = Math.min(a.z1, b.z1) - Math.max(a.z0, b.z0);
       if (dz <= 1e-6) continue;

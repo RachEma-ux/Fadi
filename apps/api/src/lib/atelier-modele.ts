@@ -59,6 +59,7 @@ export async function chargerModele(q: Querier, projectId: string): Promise<Mode
     problemes: Object.fromEntries(problemes.map((p): [string, Probleme] => [p.id, { id: p.id, type: p.type as Probleme["type"], objetId: p.objetId, message: p.message }])),
     site: site(siteRow),
     proprietes: siteRow.proprietes as ModeleAtelier["proprietes"],
+    ...(Array.isArray(siteRow.ontologies) && siteRow.ontologies.length ? { ontologies: siteRow.ontologies as NonNullable<ModeleAtelier["ontologies"]> } : {}),
   };
   return { etat, nativeId: siteRow.nativeId };
 }
@@ -94,6 +95,7 @@ export async function remplacerModele(tx: Tx, projectId: string, etat: ModeleAte
     sources: etat.site.sources,
     structure: etat.site.structure,
     proprietes: etat.proprietes as unknown as Record<string, unknown>,
+    ontologies: etat.ontologies?.length ? etat.ontologies : null,
     nativeId,
     updatedAt: new Date(),
   });
@@ -141,10 +143,11 @@ export async function persisterDifferentiel(tx: Tx, projectId: string, avant: Mo
   await sync("groupes", atelierGroupes, apres.groupes, (g) => ({ projectId, id: g.id, nom: g.nom, verrouille: g.verrouille === true, proprietes: g.proprietes ?? null, reseau: (g.reseau as unknown as Record<string, unknown> | undefined) ?? null }));
   await sync("references", atelierReferences, apres.references, (r) => ({ projectId, id: r.id, proprietaireId: r.proprietaireId, objetId: r.objetId, caracteristique: r.caracteristique, etat: r.etat, propositions: r.propositions }));
   await sync("problemes", atelierProblemes, apres.problemes, (p) => ({ projectId, id: p.id, type: p.type, objetId: p.objetId, message: p.message }));
-  if (diff.site || diff.proprietes) {
+  if (diff.site || diff.proprietes || diff.ontologies !== undefined) {
     await tx
       .update(atelierSite)
       .set({
+        ontologies: apres.ontologies?.length ? apres.ontologies : null,
         parcelle: apres.site.parcelle as unknown as Record<string, unknown> | null,
         emprise: apres.site.emprise as unknown as Record<string, unknown> | null,
         hypotheses: apres.site.hypotheses,

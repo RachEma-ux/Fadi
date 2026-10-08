@@ -26,6 +26,7 @@ import { ErreurCommande, lire } from "../commandes/base.js";
 import { bornesPrimitives, decouper, type Bornes, type Primitive, type Remplissage, type Trait } from "./dessin.js";
 import { empreinteDe } from "./empreinte.js";
 import { contoursUnion, projeterMaillages, type Camera, type ResultatProjection } from "./visibilite.js";
+import { centreMaillage } from "../ontologies/mechanical/geometrie.js";
 
 export type TypeVue = "plan" | "coupe" | "facade" | "masse" | "detail" | "axonometrie";
 export const TYPES_VUE: readonly TypeVue[] = ["plan", "coupe", "facade", "masse", "detail", "axonometrie"];
@@ -77,6 +78,11 @@ export interface ParamsVue {
    */
   azimut?: Angle | null;
   inclinaison?: Angle | null;
+  /**
+   * Éclaté (P2-2, DA-10-16) : les pièces de l'assemblage s'écartent de son centre de `distance` (m) le long de la
+   * direction centre → pièce, avec une bulle par pièce numérotée ; axonométrie seulement. Absent : vue assemblée.
+   */
+  eclate?: { assemblageId: string; distance: number } | null;
   /** Calques masqués dans cette vue seulement (D-057), en plus des calques masqués du projet. Absent = aucun. */
   calquesMasques?: string[];
 }
@@ -158,6 +164,14 @@ export function lireParamsVue(etat: ModeleAtelier, p: Brut): ParamsVue {
     if (!(inclinaison.value > 0 && inclinaison.value < 90)) throw new ErreurCommande("invalide", "inclinaison", "inclinaison : strictement entre 0° et 90°");
     axo = { azimut, inclinaison };
   }
+  let eclate: { assemblageId: string; distance: number } | null = null;
+  if (p["eclate"] !== undefined && p["eclate"] !== null) {
+    if (type !== "axonometrie") throw new ErreurCommande("invalide", "eclate", "éclaté : vue axonométrique seulement");
+    const e = p["eclate"] as Brut;
+    const assemblageId = lire.chaine(e, "assemblageId");
+    if (etat.objets[assemblageId]?.classe !== "assemblage") throw new ErreurCommande("precondition", "eclate.assemblageId", `assemblage inconnu : ${assemblageId}`);
+    eclate = { assemblageId, distance: lire.nombre(e, "distance", { min: 0 })! };
+  }
   let calquesMasques: string[] = [];
   if (p["calquesMasques"] !== undefined && p["calquesMasques"] !== null) {
     const v = p["calquesMasques"];
@@ -165,7 +179,7 @@ export function lireParamsVue(etat: ModeleAtelier, p: Brut): ParamsVue {
     for (const c of v as string[]) if (!etat.calques[c]) throw new ErreurCommande("precondition", "calquesMasques", `calque inconnu : ${c}`);
     calquesMasques = [...new Set(v as string[])].sort();
   }
-  const base = { type, titre, echelle, niveauId, hauteurCoupe, ligneA, ligneB, profondeur, orientation, cadreMin, cadreMax, lignesCachees, phases, ...(axo ?? {}), ...(calquesMasques.length ? { calquesMasques } : {}) };
+  const base = { type, titre, echelle, niveauId, hauteurCoupe, ligneA, ligneB, profondeur, orientation, cadreMin, cadreMax, lignesCachees, phases, ...(axo ?? {}), ...(calquesMasques.length ? { calquesMasques } : {}), ...(eclate ? { eclate } : {}) };
   // Une vue sans annotation garde exactement la forme d'avant (empreintes inchangées).
   return annotations.length ? { ...base, annotations } : base;
 }
@@ -183,7 +197,7 @@ export interface VueGeneree {
   mesures: { triangles: number; primitives: number };
 }
 
-const PHYSIQUES = new Set<OccurrenceQuelconque["classe"]>(["mur", "porte", "fenetre", "dalle", "toiture", "escalier", "poteau", "solide", "garde-corps", "bloc-occurrence", "objet-importe", "solide-exact"]);
+const PHYSIQUES = new Set<OccurrenceQuelconque["classe"]>(["mur", "porte", "fenetre", "dalle", "toiture", "escalier", "poteau", "solide", "garde-corps", "bloc-occurrence", "objet-importe", "solide-exact", "piece-mecanique"]);
 /** Objet physique d'une vue ; un espace IFC importé n'est pas de la matière (ni coupé, ni occultant). */
 const physique = (o: OccurrenceQuelconque): boolean => PHYSIQUES.has(o.classe) && !(o.classe === "objet-importe" && o.params.ifcClasse.toLowerCase() === "ifcspace");
 const POCHES = new Set<string>(["mur", "poteau", "dalle", "toiture", "escalier"]);
@@ -571,8 +585,34 @@ function genererCoupeOuFacade(c: Collecteur, etat: ModeleAtelier, v: ParamsVue):
   }
   const maillages = maillagesDe(etat, objets);
   const garde = new Set(maillages.map((m) => m.objetId));
+  // Éclaté (P2-2) : chaque pièce de l'assemblage s'écarte du centre de l'assemblage ; une bulle porte son numéro.
+  const bulles: { centre: [number, number, number]; texte: string }[] = [];
+  if (v.type === "axonometrie" && v.eclate) {
+    const pieces = maillages.filter((m) => etat.objets[m.objetId]?.classe === "piece-mecanique" && (etat.objets[m.objetId] as Occurrence<"piece-mecanique">).params.assemblageId === v.eclate!.assemblageId);
+    const centres = new Map(pieces.map((m) => [m.objetId, centreMaillage(m.positions)] as const));
+    const g: [number, number, number] = [0, 0, 0];
+    for (const cc of centres.values()) { g[0] += cc[0] / centres.size; g[1] += cc[1] / centres.size; g[2] += cc[2] / centres.size; }
+    for (const m of pieces) {
+      const cc = centres.get(m.objetId)!;
+      const d: [number, number, number] = [cc[0] - g[0], cc[1] - g[1], cc[2] - g[2]];
+      const n = Math.hypot(d[0], d[1], d[2]) || 1;
+      const t = [(d[0] / n) * v.eclate.distance, (d[1] / n) * v.eclate.distance, (d[2] / n) * v.eclate.distance];
+      for (let i = 0; i < m.positions.length; i += 3) { m.positions[i]! += t[0]!; m.positions[i + 1]! += t[1]!; m.positions[i + 2]! += t[2]!; }
+      const o = etat.objets[m.objetId] as Occurrence<"piece-mecanique">;
+      bulles.push({ centre: [cc[0] + t[0]!, cc[1] + t[1]!, cc[2] + t[2]!], texte: o.params.numero !== null ? String(o.params.numero) : o.params.nom });
+    }
+    c.avertissements.add(`Éclaté : pièces écartées de ${v.eclate.distance} m du centre de l'assemblage (présentation, pas une position).`);
+  }
   const r = projeterMaillages(maillages, camera, { coupe, profondeurMax: v.type === "coupe" ? (v.profondeur?.value ?? null) : null, lignesCachees: v.lignesCachees });
   verserProjection(c, etat, r, () => "vue");
+  for (const b of bulles) {
+    const d = [b.centre[0] - camera.origine[0], b.centre[1] - camera.origine[1], b.centre[2] - camera.origine[2]];
+    const x = d[0]! * camera.droite[0] + d[1]! * camera.droite[1] + d[2]! * camera.droite[2];
+    const y = d[0]! * camera.haut[0] + d[1]! * camera.haut[1] + d[2]! * camera.haut[2];
+    c.cercle({ x: x + 0.6, y: y + 0.6 }, 0.25, "annotation", null);
+    c.ligne({ x, y }, { x: x + 0.42, y: y + 0.42 }, "annotation", null);
+    c.texte({ x: x + 0.6, y: y + 0.6 - 0.08 }, b.texte, 2.5, null, { ancre: "milieu" });
+  }
   const b = bornesPrimitives(c.primitives);
   if (b && v.type !== "axonometrie") reperesNiveaux(c, etat, b.min.x, b.max.x);
   const sansVolume = objets.filter((o) => !garde.has(o.id)).length;

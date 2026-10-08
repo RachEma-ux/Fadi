@@ -1,7 +1,6 @@
 # Projet mixte de référence « P.118-M » — scénario à valider (D-181)
 
-**Statut : scénario proposé en P2-0, à valider par le maître d'ouvrage (le scénario, pas la géométrie). Construction du
-projet au lot P2-2 (mécanique) et P2-5 (réseaux) ; la porte P1 → P2 se joue dessus (cahier P2 §1, §5).**
+**Statut : scénario validé par délégation (D-183) ; machine construite au lot P2-2 (recette `apps/web/e2e/porte-p1-p2.mjs`), réseau au lot P2-5. Correction D-184 : le « Local technique » de P.118 est au R+1 (pièce E09), pas au rez-de-chaussée ; la CTA y est posée. En attendant les gaines (P2-5), la gaine G1 est représentée par une pièce provisoire qui traverse un mur (collision attendue).**
 
 ## 1. Pourquoi un projet mixte
 

@@ -22,6 +22,8 @@ export const ANNEXE_C: Partial<Record<Classe, readonly string[]>> = {
   poteau: ["IfcColumn"],
   solide: ["IfcBuildingElementProxy"],
   "solide-exact": ["IfcBuildingElementProxy"],
+  "piece-mecanique": ["IfcBuildingElementProxy", "IfcDistributionElement"],
+  assemblage: ["IfcElementAssembly"],
   cotation: ["IfcAnnotation"],
   texte: ["IfcAnnotation"],
 };
