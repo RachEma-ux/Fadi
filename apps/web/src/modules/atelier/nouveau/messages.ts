@@ -36,6 +36,7 @@ const FR = {
   "menu.partager": "Partager…",
   "menu.projets": "Ouvrir un autre projet…",
   // Mode Planche (cahier-planche, lot 2).
+  "mode.groupe": "Plan, 3D, documents ou Planche",
   "mode.planche": "Planche",
   "mode.planche.aide": "Planche : géométrie libre (arêtes et faces), brouillon local",
   "planche.chargement": "Chargement de la Planche…",
@@ -416,6 +417,7 @@ const EN: Record<CleMessage, string> = {
   "menu.imprimer": "Print (sheets as PDF)…",
   "menu.partager": "Share…",
   "menu.projets": "Open another project…",
+  "mode.groupe": "Plan, 3D, documents or Board",
   "mode.planche": "Board",
   "mode.planche.aide": "Board: free geometry (edges and faces), local draft",
   "planche.chargement": "Loading the Board…",
