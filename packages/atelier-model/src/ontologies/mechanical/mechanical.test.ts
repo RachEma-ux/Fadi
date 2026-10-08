@@ -198,3 +198,41 @@ describe("solveur : cas de référence du banc P2-0 (D-178)", () => {
     expect(r3.diagnostic).toBe("sur-contraint incompatible");
   });
 });
+
+describe("relecture #95 : pose conservée au rattachement, pose du solide exact, problème effacé après réparation", () => {
+  it("une pièce libre qui entre dans un assemblage posé (position, angle) garde son emprise dans le niveau ; un solide exact posé donne une pièce posée au même endroit", () => {
+    const e0 = lot(base(), [
+      { type: "ontologie.activer", params: { nom: "mechanical" } },
+      { type: "transformer.deplacer", params: { dx: 6, dy: 1 }, cibles: ["se-socle"] },
+      { type: "transformer.tourner", params: { centre: pt(7, 1.5), angle: { value: 30, unit: "deg" } }, cibles: ["se-socle"] },
+      { type: "pieceMecanique.creer", params: { id: "p-libre", sourceId: "se-socle" } },
+    ]).etat;
+    const se = e0.objets["se-socle"] as Occurrence<"solide-exact">;
+    const libre = objet<"piece-mecanique">(e0, "p-libre");
+    // Même emprise que le solide exact posé (pose cuite dans le maillage copié).
+    const cx = (pts: { x: number; y: number }[]) => pts.reduce((s, q) => s + q.x, 0) / pts.length;
+    expect(cx(libre.params.emprise)).toBeCloseTo(cx(se.params.emprise), 6);
+    const e1 = lot(e0, [{ type: "assemblage.creer", params: { id: "a2", niveauId: "n1", nom: "Bâti", position: pt(5, 5), angle: { value: 90, unit: "deg" }, z: 0.4, pieces: ["p-libre"] } }]).etat;
+    const apres = objet<"piece-mecanique">(e1, "p-libre");
+    expect(apres.params.assemblageId).toBe("a2");
+    // La pose est réexprimée dans le repère de l'assemblage : l'emprise dans le niveau ne bouge pas.
+    expect(cx(apres.params.emprise)).toBeCloseTo(cx(libre.params.emprise), 6);
+    expect(apres.params.pose.z).toBeCloseTo(-0.4, 9);
+    const r = Math.hypot(apres.params.pose.rx, apres.params.pose.ry, apres.params.pose.rz);
+    expect((r * 180) / Math.PI).toBeCloseTo(90, 6); // 90° de l'assemblage retranchés, 0° de pose propre
+  });
+  it("une liaison signalée « à réparer » (pièce passée dans un autre assemblage) voit son problème effacé quand la pièce revient", () => {
+    const e0 = lot(base(), [
+      { type: "ontologie.activer", params: { nom: "mechanical" } },
+      { type: "assemblage.creer", params: { id: "a1", niveauId: "n1", nom: "A", position: pt(0, 0) } },
+      { type: "assemblage.creer", params: { id: "a2", niveauId: "n1", nom: "B", position: pt(10, 0) } },
+      { type: "pieceMecanique.creer", params: { id: "p1", sourceId: "se-socle", assemblageId: "a1", fixe: true } },
+      { type: "pieceMecanique.creer", params: { id: "p2", sourceId: "se-pale", assemblageId: "a1" } },
+      { type: "liaison.creer", params: { id: "l1", type: "encastrement", a: "p1", b: "p2" } },
+    ]).etat;
+    const e1 = lot(e0, [{ type: "assemblage.rattacher", params: { id: "a2", pieces: ["p2"] } }]).etat;
+    expect(Object.values(e1.problemes).filter((p) => p.objetId === "l1")).toHaveLength(1);
+    const e2 = lot(e1, [{ type: "assemblage.rattacher", params: { id: "a1", pieces: ["p2"] } }]).etat;
+    expect(Object.values(e2.problemes).filter((p) => p.objetId === "l1")).toHaveLength(0);
+  });
+});

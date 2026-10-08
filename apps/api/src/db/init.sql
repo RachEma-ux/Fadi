@@ -42,8 +42,6 @@ CREATE INDEX IF NOT EXISTS projects_owner_id_idx ON projects (owner_id);
 -- Colonnes ajoutées après la création initiale de la table (import d'exemples
 -- Parcours) : IF NOT EXISTS les rend sûres à rejouer sur une base existante.
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS source_example_id text;
--- P2-2 : ontologies activées par le projet en plus du socle (mechanical…), null = socle seul.
-ALTER TABLE atelier_site ADD COLUMN IF NOT EXISTS ontologies jsonb;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS source_attachment jsonb;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS parcels_initialized boolean NOT NULL DEFAULT false;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS parcel_transmission jsonb;
@@ -295,6 +293,9 @@ CREATE TABLE IF NOT EXISTS atelier_site (
   native_id text NOT NULL DEFAULT 'modele-type',
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+-- P2-2 : ontologies activées par le projet en plus du socle (mechanical…), null = socle seul. Après la création de
+-- la table (base neuve) ; IF NOT EXISTS pour une base existante.
+ALTER TABLE atelier_site ADD COLUMN IF NOT EXISTS ontologies jsonb;
 
 CREATE TABLE IF NOT EXISTS atelier_commands (
   id text PRIMARY KEY,

@@ -11,7 +11,8 @@ import { creerOccurrence, modifierOccurrence, supprimerIds, supprimerOccurrence 
 import { maillageObjet } from "../../projection/maillage.js";
 import { validerCatalogueCsv } from "../../catalogues/csv-source.js";
 import { developperLiaison, DDL_LIAISON, RANG_LIAISON, TYPES_LIAISON } from "./liaisons.js";
-import { empriseMaillage, poseVersRigide, positionsPosees3, rigideVersPose, type RepereAssemblage } from "./geometrie.js";
+import { changerRepere, empriseMaillage, poseVersRigide, positionsPosees3, rigideVersPose, type RepereAssemblage } from "./geometrie.js";
+import { positionsPosees } from "../../solide-exact.js";
 import { resoudre, type ContrainteSolveur, type PieceSolveur } from "./solveur.js";
 import { controlerRegle, estNomParametre, evaluerFamille, type ParamsFamille, type ParamsRegle } from "./familles.js";
 
@@ -72,7 +73,10 @@ function geometrieSource(etat: ModeleAtelier, sourceId: string): Pick<ParamsPiec
   const o = etat.objets[sourceId];
   if (!o) throw new ErreurCommande("precondition", "sourceId", `objet inconnu : ${sourceId}`);
   if (o.classe === "solide-exact") {
-    return { brep: o.params.brep, empreinteBrep: o.params.empreinteBrep, moteur: o.params.moteur, versionMoteur: o.params.versionMoteur, maillage: { positions: [...o.params.maillage.positions], indices: [...o.params.maillage.indices] }, volume: o.params.volume };
+    // Pose en plan du solide exact (position, angle) cuite dans le maillage copié : la pièce naît là où le solide est
+    // dessiné, comme pour les autres sources ; le brep reste canonique (géométrie, pas pose).
+    const positions = positionsPosees(o.params.maillage, o.params.position, o.params.angle.value).map((v) => Math.round(v * 1e9) / 1e9);
+    return { brep: o.params.brep, empreinteBrep: o.params.empreinteBrep, moteur: o.params.moteur, versionMoteur: o.params.versionMoteur, maillage: { positions, indices: [...o.params.maillage.indices] }, volume: o.params.volume };
   }
   if (o.classe === "solide" || o.classe === "poteau" || o.classe === "bloc-occurrence" || o.classe === "piece-mecanique") {
     const m = maillageObjet(etat, o);
@@ -247,7 +251,7 @@ export const reducteursMecanique: Record<string, Reducteur> = {
   "famille.definir": (etat, p, ctx) => {
     const id = lire.chaineOuNull(p, "id") ?? ctx.ids.nouveau("famille");
     const existante = etat.definitions[id];
-    if (existante && existante.classe !== ("famille" as Definition["classe"])) throw new ErreurCommande("precondition", "id", `${id} n'est pas une famille`);
+    if (existante && existante.classe !== "famille") throw new ErreurCommande("precondition", "id", `${id} n'est pas une famille`);
     const nom = lire.chaine(p, "nom").trim();
     if (!nom) throw new ErreurCommande("invalide", "nom", "nom requis");
     const brut = p["parametres"];
@@ -276,7 +280,7 @@ export const reducteursMecanique: Record<string, Reducteur> = {
     if (active !== null && !(active in configurations)) throw new ErreurCommande("precondition", "active", `configuration inconnue : ${active}`);
     const params: ParamsFamille = { parametres, configurations, active };
     try { evaluerFamille(params, null); for (const c of Object.keys(configurations)) evaluerFamille(params, c); } catch (e) { throw new ErreurCommande("invalide", "parametres", e instanceof Error ? e.message : String(e)); }
-    const def: Definition = { id, classe: "famille" as Definition["classe"], nom, params: params as unknown as Record<string, unknown>, version: (existante?.version ?? 0) + 1 };
+    const def: Definition = { id, classe: "famille", nom, params: params as unknown as Record<string, unknown>, version: (existante?.version ?? 0) + 1 };
     const effets = effetsVides();
     (existante ? effets.modifies : effets.crees).push(id);
     return { etat: { ...etat, definitions: { ...etat.definitions, [id]: def } }, effets };
@@ -284,7 +288,7 @@ export const reducteursMecanique: Record<string, Reducteur> = {
   "famille.configurer": (etat, p) => {
     const id = lire.chaine(p, "id");
     const d = etat.definitions[id];
-    if (!d || d.classe !== ("famille" as Definition["classe"])) throw new ErreurCommande("precondition", "id", `famille inconnue : ${id}`);
+    if (!d || d.classe !== ("famille")) throw new ErreurCommande("precondition", "id", `famille inconnue : ${id}`);
     const f = d.params as unknown as ParamsFamille;
     const active = lire.chaineOuNull(p, "active");
     if (active !== null && !(active in f.configurations)) throw new ErreurCommande("precondition", "active", `configuration inconnue : ${active}`);
@@ -299,10 +303,10 @@ export const reducteursMecanique: Record<string, Reducteur> = {
     const expression = lire.chaine(p, "expression").trim();
     const message = lire.chaine(p, "message").trim();
     const familleId = lire.chaineOuNull(p, "familleId");
-    if (familleId && etat.definitions[familleId]?.classe !== ("famille" as Definition["classe"])) throw new ErreurCommande("precondition", "familleId", `famille inconnue : ${familleId}`);
+    if (familleId && etat.definitions[familleId]?.classe !== ("famille")) throw new ErreurCommande("precondition", "familleId", `famille inconnue : ${familleId}`);
     if (!/(<=|>=|=|<|>)/.test(expression)) throw new ErreurCommande("invalide", "expression", "comparaison attendue (<=, >=, <, >, =)");
     const params: ParamsRegle = { expression, message, familleId };
-    const def: Definition = { id, classe: "regle" as Definition["classe"], nom, params: params as unknown as Record<string, unknown>, version: (existante?.version ?? 0) + 1 };
+    const def: Definition = { id, classe: "regle", nom, params: params as unknown as Record<string, unknown>, version: (existante?.version ?? 0) + 1 };
     const effets = effetsVides();
     (existante ? effets.modifies : effets.crees).push(id);
     return { etat: { ...etat, definitions: { ...etat.definitions, [id]: def } }, effets };
@@ -311,7 +315,7 @@ export const reducteursMecanique: Record<string, Reducteur> = {
   "regles.controler": (etat, _p, ctx) => {
     const problemes = Object.fromEntries(Object.entries(etat.problemes).filter(([, pb]) => pb.type !== "regle"));
     const effets = effetsVides();
-    for (const d of Object.values(etat.definitions).filter((x) => x.classe === ("regle" as Definition["classe"])).sort((a, b) => (a.id < b.id ? -1 : 1))) {
+    for (const d of Object.values(etat.definitions).filter((x) => x.classe === ("regle")).sort((a, b) => (a.id < b.id ? -1 : 1))) {
       const r = d.params as unknown as ParamsRegle;
       const fam = r.familleId ? (etat.definitions[r.familleId]?.params as unknown as ParamsFamille | undefined) : undefined;
       let message: string | null;
@@ -330,7 +334,7 @@ export const reducteursMecanique: Record<string, Reducteur> = {
     if (!rapport.importable) throw new ErreurCommande("invalide", "csv", `catalogue refusé : ${rapport.refus.map((r) => `ligne ${r.ligne} (${r.motif})`).join(" ; ")}`);
     const id = lire.chaineOuNull(p, "id") ?? ctx.ids.nouveau("catalogue");
     const existant = etat.definitions[id];
-    const def: Definition = { id, classe: "catalogue" as Definition["classe"], nom, params: { ontologie, colonnes: rapport.colonnes, lignes: rapport.retenues }, version: (existant?.version ?? 0) + 1 };
+    const def: Definition = { id, classe: "catalogue", nom, params: { ontologie, colonnes: rapport.colonnes, lignes: rapport.retenues }, version: (existant?.version ?? 0) + 1 };
     const effets = effetsVides();
     (existant ? effets.modifies : effets.crees).push(id);
     return { etat: { ...etat, definitions: { ...etat.definitions, [id]: def } }, effets };
@@ -342,10 +346,14 @@ function rattacherPieces(etat: ModeleAtelier, assemblageId: string, pieces: read
   if (!estAssemblage(asm)) throw new ErreurCommande("precondition", "id", `assemblage inconnu : ${assemblageId}`);
   const objets = { ...etat.objets };
   const effets = effetsVides();
+  const vers = repereAssemblage(etat, assemblageId);
   for (const id of pieces) {
     const o = objets[id];
     if (!estPiece(o)) throw new ErreurCommande("precondition", "pieces", `${id} n'est pas une pièce mécanique`);
-    objets[id] = { ...o, niveauId: asm.niveauId, params: { ...o.params, assemblageId } };
+    // La pièce reste où elle est dans le niveau : sa pose est réexprimée dans le repère du nouvel assemblage.
+    const de = o.params.assemblageId === assemblageId ? vers : repereAssemblage(etat, o.params.assemblageId);
+    const pose = o.params.assemblageId === assemblageId ? o.params.pose : changerRepere(o.params.pose, de, vers);
+    objets[id] = { ...o, niveauId: asm.niveauId, params: { ...o.params, assemblageId, pose } };
     effets.modifies.push(id);
   }
   return enchainer({ etat: { ...etat, objets }, effets }, (e) => resoudreAssemblage(e, assemblageId));
@@ -371,9 +379,13 @@ export function controlerLiaisons(avant: ModeleAtelier, etat: ModeleAtelier, ctx
   for (const l of Object.values(etat.objets) as OccurrenceQuelconque[]) {
     if (!estLiaison(l)) continue;
     const a = etat.objets[l.params.a], b = etat.objets[l.params.b];
-    const deja = Object.values(problemes).some((pb) => pb.objetId === l.id && pb.type === "reference-a-reparer");
-    if (estPiece(a) && estPiece(b) && a.params.assemblageId === b.params.assemblageId) continue;
-    if (deja) continue;
+    const anciens = Object.entries(problemes).filter(([, pb]) => pb.objetId === l.id && pb.type === "reference-a-reparer");
+    if (estPiece(a) && estPiece(b) && a.params.assemblageId === b.params.assemblageId) {
+      // Liaison redevenue valide (pièce revenue dans l'assemblage, références réparées) : le problème s'efface.
+      if (anciens.length) { problemes = Object.fromEntries(Object.entries(problemes).filter(([k]) => !anciens.some(([id]) => id === k))); }
+      continue;
+    }
+    if (anciens.length) continue;
     const pb = nouveauProbleme(ctx.ids, "reference-a-reparer", l.id, `liaison ${l.id} : ${!estPiece(a) || !estPiece(b) ? "une pièce a disparu" : "pièces de deux assemblages différents"} — à réparer`);
     problemes = { ...problemes, [pb.id]: pb };
     effets.problemes.push(pb);

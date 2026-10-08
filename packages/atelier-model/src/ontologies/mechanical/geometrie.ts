@@ -67,3 +67,43 @@ export function versRepereAssemblage(p: { x: number; y: number }, repere: Repere
   const dx = p.x - repere.position.x, dy = p.y - repere.position.y;
   return { x: c * dx - s * dy, y: s * dx + c * dy };
 }
+
+// Composition de rotations (vecteurs de rotation ↔ matrices), pour changer une pièce de repère d'assemblage.
+type M3 = [number, number, number, number, number, number, number, number, number];
+function matriceDe(w: V3): M3 {
+  const th = Math.hypot(w[0], w[1], w[2]);
+  if (th < 1e-12) return [1, 0, 0, 0, 1, 0, 0, 0, 1];
+  const [kx, ky, kz] = [w[0] / th, w[1] / th, w[2] / th];
+  const c = Math.cos(th), s = Math.sin(th), v = 1 - c;
+  return [c + kx * kx * v, kx * ky * v - kz * s, kx * kz * v + ky * s, ky * kx * v + kz * s, c + ky * ky * v, ky * kz * v - kx * s, kz * kx * v - ky * s, kz * ky * v + kx * s, c + kz * kz * v];
+}
+function vecteurDe(m: M3): V3 {
+  const c = Math.max(-1, Math.min(1, (m[0] + m[4] + m[8] - 1) / 2));
+  const th = Math.acos(c);
+  if (th < 1e-9) return [0, 0, 0];
+  if (Math.PI - th < 1e-6) {
+    // Demi-tour : axe depuis la diagonale.
+    const ax = Math.sqrt(Math.max(0, (m[0] + 1) / 2)), ay = Math.sqrt(Math.max(0, (m[4] + 1) / 2)), az = Math.sqrt(Math.max(0, (m[8] + 1) / 2));
+    return [ax * Math.PI, (m[1] < 0 ? -ay : ay) * Math.PI, (m[2] < 0 ? -az : az) * Math.PI];
+  }
+  const k = th / (2 * Math.sin(th));
+  return [(m[7] - m[5]) * k, (m[2] - m[6]) * k, (m[3] - m[1]) * k];
+}
+const produit = (a: M3, b: M3): M3 => [0, 1, 2].flatMap((i) => [0, 1, 2].map((j) => a[i * 3]! * b[j]! + a[i * 3 + 1]! * b[3 + j]! + a[i * 3 + 2]! * b[6 + j]!)) as M3;
+
+/**
+ * Pose d'une pièce exprimée dans un autre repère d'assemblage (null = repère du niveau), sans déplacer la pièce dans
+ * le niveau : utilisée quand une pièce libre entre dans un assemblage ou change d'assemblage (P2-2, Codex #95).
+ */
+export function changerRepere(pose: Pose3, de: RepereAssemblage | null, vers: RepereAssemblage | null): Pose3 {
+  const thDe = de ? (de.angleDeg * Math.PI) / 180 : 0, thVers = vers ? (vers.angleDeg * Math.PI) / 180 : 0;
+  // Translation : repère du niveau via `de`, puis inverse de `vers`.
+  const [x, y, z] = pointPose([0, 0, 0], pose, de);
+  const t = vers ? versRepereAssemblage({ x, y }, vers) : { x, y };
+  const dz = z - (vers?.z ?? 0);
+  // Rotation : R(w') = Rz(θde − θvers) · R(w).
+  const d = thDe - thVers;
+  const w = vecteurDe(produit(matriceDe([0, 0, d]), matriceDe([pose.rx, pose.ry, pose.rz])));
+  const r = (v: number) => Math.round(v * 1e12) / 1e12;
+  return { x: r(t.x), y: r(t.y), z: r(dz), rx: r(w[0]), ry: r(w[1]), rz: r(w[2]) };
+}

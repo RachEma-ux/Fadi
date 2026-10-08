@@ -27,6 +27,17 @@ D-180 (catalogues sourcés), D-181 (projet mixte P.118-M). Fiches : DA-10-01 à 
 - Solveur : cas de référence du banc (pivot 30°, distance seule, deux distances incompatibles) rejoués dans
   `mechanical.test.ts` ; sur la CTA, 2 à 9 itérations, résidu < 5 µm.
 
+## Relecture de la PR #95 (Codex, 8 octobre 2026)
+
+Cinq constats, tous corrigés et couverts par des tests : (1) `init.sql` ajoutait la colonne `ontologies` avant la
+création de `atelier_site` sur une base neuve — déplacé après ; (2) une pièce libre rattachée à un assemblage posé
+(position, angle, z) sautait du transform de l'assemblage — sa pose est réexprimée dans le nouveau repère
+(`changerRepere`, composition des rotations), l'emprise dans le niveau ne bouge pas ; (3) les définitions `famille`,
+`regle`, `catalogue` manquaient au schéma d'archive (`ClasseDefinition`, `verifierModele`) — ajoutées, plus de cast ;
+(4) une pièce créée depuis un solide exact déplacé ou tourné naissait à l'emplacement canonique — la pose en plan du
+solide est cuite dans le maillage copié ; (5) le problème « à réparer » d'une liaison redevenue valide restait affiché —
+effacé par le contrôle après commande. Le nom d'étape de la CI contenait « : » non cité (YAML invalide) — cité.
+
 ## Non fait (déclaré)
 
 - **Flexiblocs (DA-05-08), cellules (DA-05-10), studios de pièces (DA-05-13), bibliothèques intelligentes
