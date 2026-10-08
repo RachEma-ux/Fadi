@@ -314,7 +314,9 @@ check("manipulateur 3D : l'anneau tourne la sélection autour de son centre, un 
 await page.waitForTimeout(400);
 const poigneesMur = await page.evaluate(() => window.fadiMesures3D?.poignees ?? 0);
 const modeleZ = (await modele(pid)).modele;
-const dalle = Object.values(modeleZ.objets).find((o) => o.classe === "dalle" && !(o.calqueId && modeleZ.calques[o.calqueId]?.verrouille));
+// La dalle doit être sur le niveau affiché (celui de murA) : le Navigateur ne liste que les objets du niveau courant, et
+// l'ordre de lecture du modèle (par identifiant) ne garantit plus que la première dalle y soit.
+const dalle = Object.values(modeleZ.objets).find((o) => o.classe === "dalle" && o.niveauId === murA.niveauId && !(o.calqueId && modeleZ.calques[o.calqueId]?.verrouille));
 let elevation = null;
 let journalZ = "";
 if (dalle) {
