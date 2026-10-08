@@ -15,6 +15,7 @@ exécutés ici ; CI GitHub et acceptation du maître d'ouvrage en attente** (8 o
 | L7.5 | **Menu principal** (§7.1) dans la barre du haut : Ouvrir (liste des Planches, niveau affiché), Nouvelle Planche…, Renommer / niveau de référence…, Enregistrer sous…, Supprimer (confirmation), **Exporter la Planche en IFC**, **Télécharger la vue (PNG)** ; ordinateur et téléphone | `menu-planche.tsx`, `planche.css`, `messages.ts` | PL-07-02 |
 | L7.6 | **IFC** (C14, P-6) : chaque objet de la racine d'une Planche est un `IfcBuildingElementProxy` tessellé (`IfcTriangulatedFaceSet`, ObjectType « Planche », `Fadi_Planche` : Planche, Identifiant, Genre, Solide, Volume des seuls solides), posé sous l'étage de référence (sinon le bâtiment) ; la géométrie libre forme un proxy « Géométrie libre » ; dans l'IFC du projet (`modele.ifc`) et dans l'IFC d'une Planche seule (`GET /projects/:id/atelier/planches/:plancheId/export.ifc`) ; corpus `petit.ifc` enrichi d'une Planche (référence régénérée, effectif `IfcBuildingElementProxy: 1`) validé par IfcOpenShell en CI | `echanges/ifc.ts`, `routes/atelier-commands.ts`, `test-corpus/ifc/generer.ts`, `petit.attendu.ifc` | PL-07-03 |
 | L7.7 | **3D de l'Atelier** : les Planches sont dessinées en lecture seule (maillages gris, ni sélectionnables ni accrochables) dans le groupe de leur niveau de référence ; `fadiMesures3D.planches` les compte | `vue3d/scene3d.ts`, `Vue3D.tsx` | PL-07-02 |
+| L7.9 | **OBJ / STL** (P-6, D-173) : `exporterObj`, `exporterStl` (noyau pur, `echanges.ts`), entrées du menu ☰, message « {format} écrit : N objet(s), N triangle(s) » | `packages/planche-model/src/echanges.ts`, `menu-planche.tsx`, `Planche.tsx` | PL-07-03 |
 | L7.8 | Tests : `delta.test.ts` (aller-retour, empreinte stable, lecture validée), `planches.test.ts` (commandes, inverse), `atelier-planches.test.ts` (API : idempotence, 409 révision / empreinte, journal, annuler, IFC relu par web-ifc — nombre de proxys et **volume** égaux à ceux de la Planche, altitude du niveau de référence, IFC d'une Planche seule, renommer / copier / supprimer / doublon) ; recette `planche-lot-7.mjs` (ordinateur, hors ligne, téléphone, axe-core, 31 vérifications) câblée en CI | `packages/*/src`, `apps/api/src/routes`, `apps/web/e2e` | — |
 
 ## Critères du cahier (lot 7) et preuves
@@ -50,7 +51,9 @@ exécutés ici ; CI GitHub et acceptation du maître d'ouvrage en attente** (8 o
 - **IFC** : `IfcBuildingElementProxy` (C14) et non un reclassement ; volume écrit pour les seuls solides (lot 6), les
   autres objets et la géométrie libre sont tessellés sans volume (« non évalué ») ; les Planches ne produisent
   aucune quantité dans `quantites.html` (ce ne sont pas des objets).
-- **PNG** : image du canevas de la Planche telle qu'affichée ; **OBJ / STL** (P-6) : non livrés, à décider.
+- **PNG** : image du canevas de la Planche telle qu'affichée ; **OBJ / STL** (P-6, D-173) : livrés en ASCII depuis le menu ☰
+  (`exporterObj` / `exporterStl` du noyau : mètres, Z vers le haut, un objet OBJ par maillage, un `solid` STL par Planche,
+  texte reproductible) ; DWG / SKP et les autres formats de SketchUp restent exclus.
 - Menu principal : entrées de SketchUp sans équivalent Fadi (Trimble Connect, 3D Warehouse, emplacement, imprimer)
   non reproduites (C13, C17, P-2) ; « Partager » et « Accueil » restent ceux du projet.
 

@@ -10,3 +10,4 @@ export * from "./catalogue-outils.js";
 export * from "./outils/index.js";
 export * from "./delta.js";
 export * from "./representation.js";
+export * from "./echanges.js";

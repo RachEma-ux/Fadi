@@ -157,6 +157,13 @@ async function axe(nom, selecteur, p = page) {
   note("ifc", "IFC d'une Planche seule : un IfcBuildingElementProxy pour la géométrie libre, aucun mur", ifcSeule.status === 200 && nbProxy === 1 && !/IFCWALL\(/.test(ifcSeule.text), `${nbProxy} proxy(s)`);
   const ifcProjet = await api("get", `/projects/${pid}/documents/atelier/modele.ifc`);
   note("ifc", "IFC du projet : les 2 Planches y sont (2 proxys « Planche »), avec les murs", ((ifcProjet.text.match(/,'Planche',/g) ?? []).length === 2) && /IFCWALL\(/.test(ifcProjet.text), String((ifcProjet.text.match(/,'Planche',/g) ?? []).length));
+  const [obj] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), menu("exporter-obj")]);
+  const objTexte = await (await import("node:fs/promises")).readFile(await obj.path(), "utf8");
+  const nbFaces = (await etat()).faces;
+  note("obj", "Exporter la Planche en OBJ : fichier .obj, 2 triangles par face libre, 4 sommets par face, commentaire d'unités", /\.obj$/.test(obj.suggestedFilename()) && (objTexte.match(/^f /gm) ?? []).length === 2 * nbFaces && (objTexte.match(/^v /gm) ?? []).length === 4 * nbFaces && /mètres/.test(objTexte), `${obj.suggestedFilename()} ; ${(objTexte.match(/^f /gm) ?? []).length} f pour ${nbFaces} face(s)`);
+  const [stl] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), menu("exporter-stl")]);
+  const stlTexte = await (await import("node:fs/promises")).readFile(await stl.path(), "utf8");
+  note("stl", "Exporter la Planche en STL : solid ASCII, 2 facets par face libre", /\.stl$/.test(stl.suggestedFilename()) && /^solid /.test(stlTexte) && (stlTexte.match(/facet normal/g) ?? []).length === 2 * nbFaces, `${stl.suggestedFilename()} ; ${(stlTexte.match(/facet normal/g) ?? []).length} facets`);
   const [png] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), menu("telecharger-png")]);
   note("png", "Télécharger la vue : un fichier .png", /\.png$/.test(png.suggestedFilename()), png.suggestedFilename());
   // Supprimer la variante (ouverte d'abord).

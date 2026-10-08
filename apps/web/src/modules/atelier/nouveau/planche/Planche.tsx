@@ -32,6 +32,8 @@ import {
   effacerEntites,
   empreintePlanche,
   etendreSelection,
+  exporterObj,
+  exporterStl,
   genreAnnotation,
   grouper,
   intersecterAvecModele,
@@ -1333,6 +1335,12 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         } catch (err) {
           setMessage(t("planche.export.echec", { motif: err instanceof Error ? err.message : String(err) }));
         }
+      },
+      exporterMaillage: (format: "obj" | "stl") => {
+        const nom = plancheCourante?.params.nom ?? "planche";
+        const r = format === "obj" ? exporterObj(histRef.current.present.modele, nom) : exporterStl(histRef.current.present.modele, nom);
+        telechargerFichier(new Blob([r.contenu], { type: "text/plain;charset=utf-8" }), `${nom}.${format}`.replace(/[^\w.-]+/g, "_"));
+        setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }));
       },
       telechargerPng: async () => {
         const blob = await vueRef.current?.capture();
