@@ -11,18 +11,54 @@ import {
   COULEUR_MATERIAU_DEFAUT,
   EXTRUSION_TEXTE_3D,
   HAUTEUR_TEXTE_3D,
+  IDENTITE,
+  adoucirAretes,
+  adoucirLisser,
+  afficherTout,
+  aire,
   analyserSaisie,
+  appliquer as appliquerMatrice,
+  baliserOccurrences,
+  boiteOccurrence,
+  cibleDans,
   configurerTexte3D,
+  contexte as contexteDe,
+  copier,
+  cross,
+  diviser,
+  eclater,
   effacerEntites,
+  etendreSelection,
   genreAnnotation,
   grouper,
+  intersecterAvecModele,
+  inverserFaces,
   machineParId,
+  masquerEntites,
+  matriceMonde,
   modeleVide,
   modifierAnnotations,
+  modifierDefinition,
   modifierPlanDeCoupe,
+  nombreOccurrences,
+  normalize,
+  opererSolides,
+  orienterFaces,
   outilParId,
+  peindreFacesCote,
+  peindreOccurrences,
   rechercherOutil,
+  rendreUnique,
+  renommerOccurrence,
+  sub,
+  verrouillerOccurrences,
+  viser,
+  viserAnnotation,
   type AdaptateurBooleens,
+  type MetadonneesDefinition,
+  type ReglagesPlanche,
+  type Scene,
+  type Vec3,
   type ContexteOutil,
   type EtatTexte3D,
   type EvenementOutil,
@@ -40,7 +76,8 @@ import { ChoixLangue } from "../../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
 import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
-import { HAUTEUR_OEIL_DEFAUT, VuePlanche } from "./vue-planche";
+import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
+import { DialogueComposant, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { chargerBooleens } from "./booleens-manifold";
 import "./planche.css";
 
@@ -61,6 +98,12 @@ declare global {
       booleens: () => "absent" | "chargement" | "ok" | "echec";
       emprise: () => { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } } | null;
       camera: () => { position: { x: number; y: number; z: number }; champDeVision: number };
+      /** Lot 5 (objets) : contexte d'édition, panneau ouvert, options d'affichage, menu contextuel ouvert, presse-papiers. */
+      dans: () => string | undefined;
+      panneau: () => string | null;
+      options: () => OptionsAffichage;
+      menu: () => readonly string[] | null;
+      pressePapiers: () => number;
     };
   }
 }
@@ -72,6 +115,31 @@ export interface PropsPlanche {
 
 /** Locale française du champ Mesures : virgule décimale, point-virgule de liste (proposition P-3, cahier §5.3). */
 const SEPARATEUR_DECIMAL = "," as const;
+type Panneau = "instructeur" | "materiaux" | "balises" | "objets" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur";
+type PanneauObjets = "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur";
+/** Panneaux du lot 5 (§6), derrière une seule icône « Objets » : la colonne reste courte (téléphone, Zoom étendu). */
+const LISTE_PANNEAUX_OBJETS: readonly (readonly [PanneauObjets, string])[] = [
+  ["info-entite", "ⓘ"],
+  ["composants", "❖"],
+  ["styles", "◐"],
+  ["ombres", "☀"],
+  ["scenes", "🎞"],
+  ["affichage", "👁"],
+  ["adoucir", "◠"],
+  ["info-modele", "⚙"],
+  ["navigateur", "☰"],
+];
+const PANNEAUX_OBJETS: ReadonlySet<string> = new Set(LISTE_PANNEAUX_OBJETS.map(([id]) => id));
+/** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
+const CLE_PRECISION = "fadi.planche.precision";
+function lirePrecision(): number {
+  try {
+    const v = Number(window.localStorage.getItem(CLE_PRECISION));
+    return Number.isInteger(v) && v >= 0 && v <= 6 ? v : 2;
+  } catch {
+    return 2;
+  }
+}
 
 type TexteMesures = { texte: string; statut: "frappe" | "valide" } | null;
 
@@ -108,7 +176,26 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
   const rechercheRef = useRef(false);
   rechercheRef.current = recherche;
   // Panneaux exclusifs, fermés à l'ouverture (comme le Canevas, D-156) : le dessin reste dégagé.
-  const [panneau, setPanneau] = useState<"instructeur" | "materiaux" | "balises" | null>(null);
+  const [panneau, setPanneauEtat] = useState<Panneau | null>(null);
+  const panneauRef = useRef<Panneau | null>(null);
+  const setPanneau = useCallback((p: Panneau | null) => {
+    panneauRef.current = p;
+    setPanneauEtat(p);
+  }, []);
+  // Lot 5 (objets, §5.8 / §6) : options d'affichage de la vue (R10 : jamais écrites dans la Planche), menu contextuel,
+  // boîte « Créer un composant », presse-papiers (ids + contexte), dernières entités masquées (« Réafficher ▸ Dernier »).
+  const [options, setOptionsEtat] = useState<OptionsAffichage>(OPTIONS_AFFICHAGE_DEFAUT);
+  const [menu, setMenuEtat] = useState<{ x: number; y: number; entrees: EntreeMenu[] } | null>(null);
+  const menuRef = useRef<{ x: number; y: number; entrees: EntreeMenu[] } | null>(null);
+  const setMenu = useCallback((m: { x: number; y: number; entrees: EntreeMenu[] } | null) => {
+    menuRef.current = m;
+    setMenuEtat(m);
+  }, []);
+  const [dialogueComposant, setDialogueComposant] = useState(false);
+  const pressePapiers = useRef<{ ids: readonly string[]; dans: string | undefined } | null>(null);
+  const derniersMasques = useRef<{ ids: readonly string[]; dans: string | undefined } | null>(null);
+  const [precision, setPrecision] = useState(() => lirePrecision());
+  const [camera, setCamera] = useState<{ projection: "perspective" | "parallele"; champDeVision: number }>({ projection: "perspective", champDeVision: 35 });
   // Lot 5 : matière et balise courantes (panneaux Matériaux / Balises) ; `null` = matière par défaut / aucune balise.
   const materiauRef = useRef<string | null>(null);
   const [materiau, setMateriauEtat] = useState<string | null>(null);
@@ -287,6 +374,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
     [poserHistorique, rafraichir, readOnly, setSelection],
   );
 
+
   const demandeOutilRef = useRef<(id: string, options?: { garderPrecedent?: boolean }) => void>(() => undefined);
   const retourOutilRef = useRef<() => void>(() => undefined);
   const choisirOutil = useCallback(
@@ -398,6 +486,521 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       setMessage(err instanceof Error ? err.message : String(err));
     }
   }, [poserHistorique, rafraichir, readOnly, setSelection]);
+
+  /** Options d'affichage (Styles, Ombres, Affichage, touche K) : la vue d'abord, l'état ensuite ; rien dans le modèle (R10). */
+  const majOptions = useCallback((o: Partial<OptionsAffichage>) => {
+    vueRef.current?.majOptions(o);
+    setOptionsEtat((prev) => ({ ...prev, ...o }));
+  }, []);
+
+  /** Opération sur les objets hors machine (menu contextuel, panneaux) : un pas d'historique, machine réinitialisée. */
+  const operer = useCallback(
+    (nom: string, fn: (m: Modele, dans: string | undefined) => { modele: Modele; selection?: readonly string[]; message?: string | null } | null) => {
+      if (readOnly) return;
+      try {
+        const r = fn(histRef.current.present.modele, dansRef.current);
+        if (!r) return;
+        if (r.modele !== histRef.current.present.modele) poserHistorique(enregistrer(histRef.current, r.modele, nom, false));
+        if (r.selection) setSelection(r.selection);
+        etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+        setMessage(r.message ?? null);
+        rafraichir();
+      } catch (err) {
+        setMessage(err instanceof Error ? err.message : String(err));
+      }
+    },
+    [poserHistorique, rafraichir, readOnly, setSelection],
+  );
+  const o = useCallback(() => (dansRef.current !== undefined ? { dans: dansRef.current } : {}), []);
+  const selectionDe = useCallback((genre: "faces" | "aretes" | "occurrences", m = histRef.current.present.modele) => {
+    const c = contexteDe(m, dansRef.current);
+    return selectionRef.current.filter((id) => c[genre][id]);
+  }, []);
+
+  const effacerSelection = useCallback(() => operer(t("planche.menu.effacer"), (m) => ({ modele: effacerEntites(m, selectionRef.current, o()).modele, selection: [] })), [operer, o]);
+  const masquerSelection = useCallback(
+    () =>
+      operer(t("planche.menu.masquer"), (m, dans) => {
+        const ids = selectionRef.current.filter((id) => genreAnnotation(id) === null);
+        derniersMasques.current = { ids, dans };
+        return { modele: masquerEntites(m, ids, o()).modele, selection: [] };
+      }),
+    [operer, o],
+  );
+  const reafficher = useCallback(
+    (quoi: "tout" | "selection" | "dernier") =>
+      operer(t("planche.affichage.reafficher"), (m) => {
+        const r =
+          quoi === "tout"
+            ? afficherTout(m)
+            : quoi === "selection"
+              ? masquerEntites(m, selectionRef.current, o(), false)
+              : derniersMasques.current
+                ? masquerEntites(m, derniersMasques.current.ids, derniersMasques.current.dans !== undefined ? { dans: derniersMasques.current.dans } : {}, false)
+                : null;
+        if (!r || r.rapport.modifies.length === 0) return { modele: m, message: t("planche.affichage.rien-masque") };
+        if (quoi === "dernier") derniersMasques.current = null;
+        return { modele: r.modele, message: t("planche.affichage.reaffiche", { nombre: String(r.rapport.modifies.length) }) };
+      }),
+    [operer, o],
+  );
+  const verrouillerSelection = useCallback((verrou: boolean) => operer(t(verrou ? "planche.menu.verrouiller" : "planche.menu.deverrouiller"), (m) => ({ modele: verrouillerOccurrences(m, selectionDe("occurrences", m), verrou, o()).modele })), [operer, o, selectionDe]);
+  const ouvrirOccurrence = useCallback(
+    (id: string) => {
+      poserDans(id);
+      setSelection([]);
+      etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+      setMessage(null);
+      rafraichir();
+    },
+    [poserDans, rafraichir, setSelection],
+  );
+  const eclaterSelection = useCallback(
+    () =>
+      operer(t("planche.menu.eclater"), (m) => {
+        const occs = selectionDe("occurrences", m);
+        if (occs.length === 0) return { modele: m, message: t("planche.eclater.objet") };
+        let courant = m;
+        const crees: string[] = [];
+        for (const id of occs) {
+          const r = eclater(courant, id);
+          courant = r.modele;
+          crees.push(...r.rapport.crees);
+        }
+        return { modele: courant, selection: crees };
+      }),
+    [operer, selectionDe],
+  );
+  const rendreUniqueSelection = useCallback(
+    () =>
+      operer(t("planche.menu.rendre-unique"), (m) => {
+        const c = contexteDe(m, dansRef.current);
+        const occs = selectionDe("occurrences", m);
+        if (occs.every((id) => nombreOccurrences(m, c.occurrences[id]!.definition) <= 1)) return { modele: m, message: t("planche.unique.deja") };
+        let courant = m;
+        for (const id of occs) courant = rendreUnique(courant, id).modele;
+        return { modele: courant };
+      }),
+    [operer, selectionDe],
+  );
+  const creerComposant = useCallback(
+    (p: ParametresComposant) => {
+      setDialogueComposant(false);
+      operer(t("planche.menu.composant"), (m) => {
+        const sel = selectionRef.current.filter((id) => genreAnnotation(id) === null);
+        if (sel.length === 0) return { modele: m, message: t("planche.composant.vide") };
+        const { nom, ...meta } = p;
+        const r = grouper(m, sel, { genre: "composant", nom, ...meta, ...o() });
+        return { modele: r.modele, selection: [r.occurrence], message: t("planche.composant.cree") };
+      });
+      hoteRef.current?.focus({ preventScroll: true });
+    },
+    [operer, o],
+  );
+  const ouvrirDialogueComposant = useCallback(() => {
+    if (readOnly) return;
+    if (selectionRef.current.filter((id) => genreAnnotation(id) === null).length === 0) {
+      setMessage(t("planche.composant.vide"));
+      return;
+    }
+    setDialogueComposant(true);
+  }, [readOnly]);
+  const intersecterSelection = useCallback(
+    () =>
+      operer(t("planche.menu.intersection"), (m) => {
+        const r = intersecterAvecModele(m, selectionRef.current, o());
+        return { modele: r.modele, message: r.extra > 0 ? t("planche.intersection.resultat", { nombre: String(r.extra) }) : t("planche.intersection.aucune") };
+      }),
+    [operer, o],
+  );
+  const inverserSelection = useCallback(() => operer(t("planche.menu.inverser-faces"), (m) => ({ modele: inverserFaces(m, selectionDe("faces", m), o()).modele })), [operer, o, selectionDe]);
+  const orienterSelection = useCallback(
+    () =>
+      operer(t("planche.menu.orienter-faces"), (m) => {
+        const faces = selectionDe("faces", m);
+        if (faces.length === 0) return null;
+        const r = orienterFaces(m, faces[0]!, o());
+        return { modele: r.modele, message: t("planche.orienter.resultat", { nombre: String(r.extra) }) };
+      }),
+    [operer, o, selectionDe],
+  );
+  const adoucirSelection = useCallback((adoucie: boolean) => operer(t(adoucie ? "planche.menu.adoucir" : "planche.menu.durcir"), (m) => ({ modele: adoucirAretes(m, selectionRef.current, adoucie, o()).modele })), [operer, o]);
+  const adoucirLisserSelection = useCallback(
+    (angle: number, coplanaires: boolean) =>
+      operer(t("planche.menu.adoucir-lisser"), (m) => {
+        const r = adoucirLisser(m, selectionRef.current, angle, coplanaires, o());
+        return { modele: r.modele, message: t("planche.adoucir.resultat", { nombre: String(r.extra) }) };
+      }),
+    [operer, o],
+  );
+  const diviserSelection = useCallback(
+    () =>
+      operer(t("planche.menu.diviser"), (m) => {
+        const aretes = selectionDe("aretes", m);
+        if (aretes.length === 0) return null;
+        let courant = m;
+        for (const id of aretes) courant = diviser(courant, id, 2, o()).modele;
+        return { modele: courant, selection: [] };
+      }),
+    [operer, o, selectionDe],
+  );
+  const coqueSelection = useCallback(
+    () =>
+      operer(t("planche.menu.coque"), (m) => {
+        const occs = selectionDe("occurrences", m);
+        if (occs.length !== 2) return { modele: m, message: t("planche.coque.deux") };
+        const r = opererSolides(contexte(), "enveloppe-exterieure", occs[0]!, occs[1]!);
+        return { modele: r.modele, selection: r.crees };
+      }),
+    [operer, contexte, selectionDe],
+  );
+  const etendre = useCallback(
+    (mode: Parameters<typeof etendreSelection>[2]) => {
+      const ids = etendreSelection(histRef.current.present.modele, selectionRef.current, mode, dansRef.current);
+      setSelection(ids);
+      setMessage(mode === "tout" ? t("planche.selection.tout", { nombre: String(ids.length) }) : null);
+      rafraichir();
+    },
+    [rafraichir, setSelection],
+  );
+  /** Points monde de la sélection (sommets des arêtes et faces, boîtes des objets) : Zoom sur la sélection. */
+  const boiteSelection = useCallback((): { min: Vec3; max: Vec3 } | null => {
+    const m = histRef.current.present.modele;
+    const c = contexteDe(m, dansRef.current);
+    const M = dansRef.current ? matriceMonde(m, dansRef.current) ?? IDENTITE : IDENTITE;
+    const pts: Vec3[] = [];
+    const sommet = (id: string) => {
+      const sm = c.sommets[id];
+      if (sm) pts.push(appliquerMatrice(M, sm.position));
+    };
+    for (const id of selectionRef.current) {
+      const a = c.aretes[id];
+      const f = c.faces[id];
+      if (a) {
+        sommet(a.a);
+        sommet(a.b);
+      } else if (f) {
+        for (const sid of f.exterieur) sommet(sid);
+      } else if (c.occurrences[id]) {
+        const b = boiteOccurrence(m, id);
+        if (b) pts.push(b.min, b.max);
+      }
+    }
+    if (pts.length === 0) return null;
+    const min = { x: Infinity, y: Infinity, z: Infinity };
+    const max = { x: -Infinity, y: -Infinity, z: -Infinity };
+    for (const p of pts) {
+      min.x = Math.min(min.x, p.x);
+      min.y = Math.min(min.y, p.y);
+      min.z = Math.min(min.z, p.z);
+      max.x = Math.max(max.x, p.x);
+      max.y = Math.max(max.y, p.y);
+      max.z = Math.max(max.z, p.z);
+    }
+    return { min, max };
+  }, []);
+  const zoomSelection = useCallback(() => {
+    const b = boiteSelection();
+    if (b) vueRef.current?.cadrer(b, margesVue(racineRef.current));
+  }, [boiteSelection]);
+  /** Face de la sélection en coordonnées monde : centre et normale (Aligner la vue, Aligner les axes). */
+  const faceMonde = useCallback((): { centre: Vec3; normale: Vec3; u: Vec3 } | null => {
+    const m = histRef.current.present.modele;
+    const c = contexteDe(m, dansRef.current);
+    const id = selectionRef.current.find((x) => c.faces[x]);
+    if (!id) return null;
+    const f = c.faces[id]!;
+    const M = dansRef.current ? matriceMonde(m, dansRef.current) ?? IDENTITE : IDENTITE;
+    const pts: Vec3[] = [];
+    for (const sid of f.exterieur) {
+      const sm = c.sommets[sid];
+      if (sm) pts.push(appliquerMatrice(M, sm.position));
+    }
+    if (pts.length < 2) return null;
+    const centre = pts.reduce((acc, p) => ({ x: acc.x + p.x / pts.length, y: acc.y + p.y / pts.length, z: acc.z + p.z / pts.length }), { x: 0, y: 0, z: 0 });
+    const origine = appliquerMatrice(M, { x: 0, y: 0, z: 0 });
+    const normale = normalize(sub(appliquerMatrice(M, f.normale), origine));
+    const u = normalize(sub(pts[1]!, pts[0]!));
+    return { centre, normale, u };
+  }, []);
+  const alignerVue = useCallback(() => {
+    const f = faceMonde();
+    if (!f) {
+      setMessage(t("planche.aligner-vue.face"));
+      return;
+    }
+    const v = vueRef.current;
+    if (!v) return;
+    const etat = v.etatCamera();
+    const d = Math.max(3, Math.hypot(etat.position.x - etat.cible.x, etat.position.y - etat.cible.y, etat.position.z - etat.cible.z));
+    v.appliquerScene({ position: { x: f.centre.x + f.normale.x * d, y: f.centre.y + f.normale.y * d, z: f.centre.z + f.normale.z * d }, cible: f.centre, champDeVision: etat.champDeVision, projection: etat.projection });
+  }, [faceMonde]);
+  const alignerAxes = useCallback(
+    () =>
+      operer(t("planche.menu.aligner-axes"), (m) => {
+        const f = faceMonde();
+        if (!f) return { modele: m, message: t("planche.aligner-axes.face") };
+        const z = f.normale;
+        const x = normalize(sub(f.u, { x: z.x * (f.u.x * z.x + f.u.y * z.y + f.u.z * z.z), y: z.y * (f.u.x * z.x + f.u.y * z.y + f.u.z * z.z), z: z.z * (f.u.x * z.x + f.u.y * z.y + f.u.z * z.z) }));
+        const y = cross(z, x);
+        return { modele: modifierAnnotations(m, (a) => void (a.repere = { origine: f.centre, x, y, z })).modele };
+      }),
+    [operer, faceMonde],
+  );
+  const aireDe = useCallback(
+    (quoi: "selection" | "balise" | "materiau") => {
+      const m = histRef.current.present.modele;
+      const c = contexteDe(m, dansRef.current);
+      let faces = selectionDe("faces", m);
+      if (quoi !== "selection") {
+        const occ = dansRef.current ? Object.values(m.definitions).flatMap((d) => Object.values(d.contenu.occurrences)).find((x) => x.id === dansRef.current) ?? m.racine.occurrences[dansRef.current] : undefined;
+        const ref = faces[0] ? (quoi === "materiau" ? c.faces[faces[0]]?.materiauRecto ?? occ?.materiau : occ?.balise) : undefined;
+        faces = Object.values(c.faces)
+          .filter((f) => (quoi === "materiau" ? (f.materiauRecto ?? occ?.materiau) === ref : (occ?.balise ?? undefined) === ref))
+          .map((f) => f.id);
+      }
+      if (faces.length === 0) {
+        setMessage(t("planche.aire.aucune"));
+        return;
+      }
+      const total = faces.reduce((acc, id) => acc + aire(m, id, o()), 0);
+      setMessage(t("planche.aire.resultat", { valeur: `${total.toFixed(precision).replace(".", SEPARATEUR_DECIMAL)} m²`, nombre: String(faces.length) }));
+    },
+    [o, precision, selectionDe],
+  );
+  const copierSelection = useCallback(
+    (couper: boolean) => {
+      const ids = selectionRef.current.filter((id) => genreAnnotation(id) === null);
+      if (ids.length === 0) {
+        setMessage(t("planche.presse-papiers.vide"));
+        return;
+      }
+      pressePapiers.current = { ids, dans: dansRef.current };
+      if (couper) effacerSelection();
+      else setMessage(t("planche.presse-papiers.copie", { nombre: String(ids.length) }));
+    },
+    [effacerSelection],
+  );
+  const collerSelection = useCallback(
+    () =>
+      operer(t("planche.presse-papiers.colle"), (m, dans) => {
+        const pp = pressePapiers.current;
+        if (!pp || pp.dans !== dans) return { modele: m, message: t("planche.presse-papiers.vide") };
+        const r = copier(m, pp.ids, { x: 1, y: 0, z: 0 }, { copies: 1 }, o());
+        return { modele: r.modele, selection: r.rapport.crees, message: t("planche.presse-papiers.colle") };
+      }),
+    [operer, o],
+  );
+
+  /** Clic droit dans le dessin (§5.8) : l'entité visée rejoint la sélection si elle n'y est pas ; menu de Sélection. */
+  const ouvrirMenuContextuel = useCallback(
+    (p: { x: number; y: number }, rayon: Parameters<typeof viser>[1], tolerance: number) => {
+      const m = histRef.current.present.modele;
+      const dans = dansRef.current;
+      const annotation = viserAnnotation(m, rayon, tolerance, p);
+      const el = annotation ? null : viser(m, rayon, tolerance);
+      const cible = el ? cibleDans(el, dans) : null;
+      const vise = annotation ?? cible?.id ?? null;
+      if (vise && !selectionRef.current.includes(vise)) {
+        setSelection([vise]);
+        rafraichir();
+      }
+      const sel = vise ? (selectionRef.current.includes(vise) ? selectionRef.current : [vise]) : selectionRef.current;
+      const c = contexteDe(m, dans);
+      const faces = sel.filter((id) => c.faces[id]);
+      const aretes = sel.filter((id) => c.aretes[id]);
+      const occs = sel.filter((id) => c.occurrences[id]);
+      const geometrie = faces.length + aretes.length + occs.length > 0;
+      const verrouille = occs.length > 0 && occs.every((id) => c.occurrences[id]!.verrouille);
+      const unObjet = occs.length === 1 ? c.occurrences[occs[0]!]! : null;
+      const def = unObjet ? m.definitions[unObjet.definition] : undefined;
+      const adoucies = aretes.length > 0 && aretes.every((id) => c.aretes[id]!.adoucie);
+      const rect = hoteRef.current?.getBoundingClientRect();
+      const x = p.x + (rect?.left ?? 0);
+      const y = p.y + (rect?.top ?? 0);
+      const entrees: EntreeMenu[] = [];
+      if (sel.length === 0) {
+        entrees.push({ id: "rien", libelle: t("planche.menu.rien"), grise: true });
+        entrees.push({ id: "coller", libelle: t("planche.menu.coller"), grise: !pressePapiers.current || readOnly, action: collerSelection });
+        entrees.push({ id: "afficher-tout", libelle: t("planche.menu.afficher"), grise: readOnly, action: () => reafficher("tout") });
+        setMenu({ x, y, entrees });
+        return;
+      }
+      entrees.push({ id: "info", libelle: t("planche.menu.info"), action: () => setPanneau("info-entite") });
+      entrees.push({ id: "effacer", libelle: t("planche.menu.effacer"), grise: readOnly || verrouille, action: effacerSelection });
+      if (geometrie) {
+        entrees.push({ id: "masquer", libelle: t("planche.menu.masquer"), grise: readOnly, action: masquerSelection });
+        if (occs.length > 0) entrees.push({ id: verrouille ? "deverrouiller" : "verrouiller", libelle: t(verrouille ? "planche.menu.deverrouiller" : "planche.menu.verrouiller"), grise: readOnly, action: () => verrouillerSelection(!verrouille) });
+        entrees.push({
+          id: "selectionner",
+          libelle: t("planche.menu.selectionner"),
+          separateurAvant: true,
+          sous: [
+            { id: "sel-aretes", libelle: t("planche.menu.sel.aretes"), grise: faces.length === 0, action: () => etendre("aretes-bordantes") },
+            { id: "sel-faces", libelle: t("planche.menu.sel.faces"), grise: aretes.length === 0 && faces.length === 0, action: () => etendre("faces-connectees") },
+            { id: "sel-tout", libelle: t("planche.menu.sel.tout"), action: () => etendre("tout-connecte") },
+            { id: "sel-balise", libelle: t("planche.menu.sel.balise"), grise: occs.length === 0, action: () => etendre("meme-balise") },
+            { id: "sel-materiau", libelle: t("planche.menu.sel.materiau"), action: () => etendre("meme-materiau") },
+            { id: "sel-deselectionner", libelle: t("planche.menu.sel.deselectionner"), grise: faces.length === 0, action: () => etendre("deselectionner-faces") },
+            { id: "sel-inverser", libelle: t("planche.menu.sel.inverser"), action: () => etendre("inverser") },
+          ],
+        });
+        entrees.push({
+          id: "aire",
+          libelle: t("planche.menu.aire"),
+          grise: faces.length === 0,
+          sous: [
+            { id: "aire-selection", libelle: t("planche.menu.aire.selection"), action: () => aireDe("selection") },
+            { id: "aire-balise", libelle: t("planche.menu.aire.balise"), action: () => aireDe("balise") },
+            { id: "aire-materiau", libelle: t("planche.menu.aire.materiau"), action: () => aireDe("materiau") },
+          ],
+        });
+        entrees.push({ id: "composant", libelle: t("planche.menu.composant"), separateurAvant: true, grise: readOnly, action: ouvrirDialogueComposant });
+        entrees.push({ id: "groupe", libelle: t("planche.menu.groupe"), grise: readOnly, action: grouperSelection });
+        entrees.push({ id: "intersection", libelle: t("planche.menu.intersection"), grise: readOnly || (faces.length === 0 && occs.length === 0), sous: [{ id: "intersection-modele", libelle: t("planche.menu.intersection.modele"), action: intersecterSelection }] });
+        if (faces.length > 0) {
+          entrees.push({ id: "aligner-vue", libelle: t("planche.menu.aligner-vue"), separateurAvant: true, action: alignerVue });
+          entrees.push({ id: "aligner-axes", libelle: t("planche.menu.aligner-axes"), grise: readOnly, action: alignerAxes });
+          entrees.push({ id: "inverser-faces", libelle: t("planche.menu.inverser-faces"), grise: readOnly, action: inverserSelection });
+          entrees.push({ id: "orienter-faces", libelle: t("planche.menu.orienter-faces"), grise: readOnly, action: orienterSelection });
+          entrees.push({ id: "texture-unique", libelle: t("planche.menu.texture-unique"), grise: true });
+        }
+        if (aretes.length > 0) {
+          entrees.push({ id: adoucies ? "durcir" : "adoucir", libelle: t(adoucies ? "planche.menu.durcir" : "planche.menu.adoucir"), separateurAvant: true, grise: readOnly, action: () => adoucirSelection(!adoucies) });
+          entrees.push({ id: "diviser", libelle: t("planche.menu.diviser"), grise: readOnly, action: diviserSelection });
+        }
+        if (occs.length > 0) {
+          const composant = def?.genre === "composant";
+          entrees.push({ id: "modifier", libelle: t(composant ? "planche.menu.modifier-composant" : "planche.menu.modifier-groupe"), separateurAvant: true, grise: !unObjet || verrouille, action: () => unObjet && ouvrirOccurrence(unObjet.id) });
+          entrees.push({ id: "eclater", libelle: t("planche.menu.eclater"), grise: readOnly || verrouille, action: eclaterSelection });
+          entrees.push({ id: "rendre-unique", libelle: t("planche.menu.rendre-unique"), grise: readOnly || !def || nombreOccurrences(m, def.id) <= 1, action: rendreUniqueSelection });
+          entrees.push({ id: "coque", libelle: t("planche.menu.coque"), grise: readOnly || occs.length !== 2 || booleensEtatRef.current !== "ok", action: coqueSelection });
+          entrees.push({ id: "adoucir-lisser", libelle: t("planche.menu.adoucir-lisser"), grise: readOnly, action: () => setPanneau("adoucir") });
+          entrees.push({ id: "reinitialiser-echelle", libelle: t("planche.menu.reinitialiser-echelle"), grise: true });
+          entrees.push({ id: "reinitialiser-inclinaison", libelle: t("planche.menu.reinitialiser-inclinaison"), grise: true });
+          entrees.push({ id: "changer-axes", libelle: t("planche.menu.changer-axes"), grise: true });
+        }
+        entrees.push({ id: "zoom-selection", libelle: t("planche.menu.zoom-selection"), separateurAvant: true, action: zoomSelection });
+      }
+      setMenu({ x, y, entrees });
+    },
+    [
+      adoucirSelection,
+      aireDe,
+      alignerAxes,
+      alignerVue,
+      collerSelection,
+      coqueSelection,
+      diviserSelection,
+      eclaterSelection,
+      effacerSelection,
+      etendre,
+      grouperSelection,
+      intersecterSelection,
+      inverserSelection,
+      masquerSelection,
+      orienterSelection,
+      ouvrirDialogueComposant,
+      ouvrirOccurrence,
+      rafraichir,
+      readOnly,
+      reafficher,
+      rendreUniqueSelection,
+      setMenu,
+      setPanneau,
+      setSelection,
+      verrouillerSelection,
+      zoomSelection,
+    ],
+  );
+  const fermerMenu = useCallback(() => {
+    setMenu(null);
+    hoteRef.current?.focus({ preventScroll: true });
+  }, [setMenu]);
+  const menuRappel = useRef(ouvrirMenuContextuel);
+  menuRappel.current = ouvrirMenuContextuel;
+
+  /** Scènes (§6.8) : caméra enregistrée dans la Planche (annotation « v »), un pas chacune. */
+  const ajouterScene = useCallback(
+    () =>
+      operer(t("planche.scenes.ajouter"), (m) => {
+        const v = vueRef.current;
+        if (!v) return null;
+        const cam = v.etatCamera();
+        const r = modifierAnnotations(m, (a, id) => {
+          const i = id("v");
+          a.scenes[i] = { id: i, nom: t("planche.scenes.nom", { numero: String(Object.keys(a.scenes).length + 1) }), position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: vueRef.current?.lireOptions().ombres ?? false };
+          return i;
+        });
+        return { modele: r.modele, selection: [r.extra] };
+      }),
+    [operer],
+  );
+  const mettreAJourScene = useCallback(
+    (id: string) =>
+      operer(t("planche.scenes.mettre-a-jour"), (m) => {
+        const v = vueRef.current;
+        const s = m.annotations?.scenes?.[id];
+        if (!v || !s) return null;
+        const cam = v.etatCamera();
+        return { modele: modifierAnnotations(m, (a) => void (a.scenes[id] = { ...s, position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: v.lireOptions().ombres })).modele };
+      }),
+    [operer],
+  );
+  const supprimerScene = useCallback((id: string) => operer(t("planche.scenes.supprimer"), (m) => ({ modele: modifierAnnotations(m, (a) => void delete a.scenes[id]).modele, selection: selectionRef.current.filter((x) => x !== id) })), [operer]);
+  const appliquerScene = useCallback(
+    (s: Scene) => {
+      const v = vueRef.current;
+      if (!v) return;
+      v.appliquerScene(s);
+      if (s.ombres !== undefined) majOptions({ ombres: s.ombres });
+      setCamera({ projection: s.projection, champDeVision: s.champDeVision });
+      setSelection([s.id]);
+      rafraichir();
+    },
+    [majOptions, rafraichir, setSelection],
+  );
+  const vueStandard = useCallback((nom: VueStandard) => {
+    vueRef.current?.vueStandard(nom);
+    if (vueRef.current) setCamera({ projection: vueRef.current.projection, champDeVision: vueRef.current.champDeVision });
+  }, []);
+  const poserProjection = useCallback((p: "perspective" | "parallele") => {
+    if (vueRef.current) vueRef.current.projection = p;
+    setCamera((c) => ({ ...c, projection: p }));
+  }, []);
+  const poserChampDeVision = useCallback(
+    (deg: number) => {
+      if (vueRef.current) vueRef.current.champDeVision = deg;
+      setCamera((c) => ({ ...c, champDeVision: deg }));
+      rafraichir();
+    },
+    [rafraichir],
+  );
+  const poserPrecision = useCallback((d: number) => {
+    setPrecision(d);
+    try {
+      window.localStorage.setItem(CLE_PRECISION, String(d));
+    } catch {
+      /* stockage indisponible : la préférence ne survit pas à la session */
+    }
+  }, []);
+  const poserReglages = useCallback((r: ReglagesPlanche) => operer(t("planche.infomodele.enregistre"), (m) => ({ modele: modifierAnnotations(m, (a) => void (a.reglages = r)).modele, message: t("planche.infomodele.enregistre") })), [operer]);
+  const actionsInfo = useMemo(
+    () => ({
+      renommerOccurrence: (id: string, nom: string) => operer(t("planche.info.nom"), (m) => ({ modele: renommerOccurrence(m, id, nom, o()).modele })),
+      modifierDefinition: (def: string, meta: MetadonneesDefinition & { nom?: string }) => operer(t("planche.composants.modifier"), (m) => ({ modele: modifierDefinition(m, def, meta).modele })),
+      verrouiller: (id: string, verrou: boolean) => operer(t(verrou ? "planche.menu.verrouiller" : "planche.menu.deverrouiller"), (m) => ({ modele: verrouillerOccurrences(m, [id], verrou, o()).modele })),
+      masquer: (ids: string[], masquee: boolean) => operer(t(masquee ? "planche.menu.masquer" : "planche.menu.afficher"), (m, dans) => {
+        if (masquee) derniersMasques.current = { ids, dans };
+        return { modele: masquerEntites(m, ids, o(), masquee).modele, ...(masquee ? { selection: [] as string[] } : {}) };
+      }),
+      materiauFace: (id: string, cote: "recto" | "verso", materiau: string | null) => operer(t("planche.info.materiau"), (m) => ({ modele: peindreFacesCote(m, [id], cote, materiau, o()).modele })),
+      materiauObjet: (id: string, materiau: string | null) => operer(t("planche.info.materiau"), (m) => ({ modele: peindreOccurrences(m, [id], materiau, o()).modele })),
+      balise: (id: string, balise: string | null) => operer(t("planche.info.balise"), (m) => ({ modele: baliserOccurrences(m, [id], balise, o()).modele })),
+      renommerPlan: (id: string, nom: string) => operer(t("planche.info.nom"), () => ({ modele: modifierPlanDeCoupe(contexte(), id, { nom }).modele ?? histRef.current.present.modele })),
+    }),
+    [contexte, o, operer],
+  );
 
   /** Fin de la saisie d'un texte (Entrée, bouton, clic dans le dessin) : le texte tapé remplace la proposition, zone fermée. */
   const validerEdition = useCallback(() => {
@@ -553,6 +1156,8 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           else retourOutilRef.current();
         },
         hauteurOeil: () => hauteurOeilRef.current,
+        menuContextuel: (p, rayon, tolerance) => menuRappel.current(p, rayon, tolerance),
+        dans: () => dansRef.current,
       });
     } catch {
       setWebgl("indisponible");
@@ -574,6 +1179,11 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       booleens: () => (booleensRef.current ? "ok" : booleensEtatRef.current),
       emprise: () => vueRef.current?.emprise() ?? null,
       camera: () => vueRef.current?.etatCamera() ?? { position: { x: 0, y: 0, z: 0 }, champDeVision: 35 },
+      dans: () => dansRef.current,
+      panneau: () => panneauRef.current,
+      options: () => vueRef.current?.lireOptions() ?? OPTIONS_AFFICHAGE_DEFAUT,
+      menu: () => menuRef.current?.entrees.map((e) => e.id) ?? null,
+      pressePapiers: () => pressePapiers.current?.ids.length ?? 0,
     };
     return () => {
       v.detruire();
@@ -626,6 +1236,33 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
       if (mod && !e.altKey && !e.shiftKey && cle === "g") {
         e.preventDefault();
         grouperSelection();
+        return;
+      }
+      // Lot 5 (objets) : G composant, K arêtes arrière, Ctrl + A tout, Ctrl + Maj + I inverser, Ctrl + C / X / V presse-papiers.
+      if (!mod && !e.altKey && !e.shiftKey && cle === "g" && !dansMesures && !texteRef.current) {
+        e.preventDefault();
+        ouvrirDialogueComposant();
+        return;
+      }
+      if (!mod && !e.altKey && !e.shiftKey && cle === "k" && !dansMesures && !texteRef.current) {
+        e.preventDefault();
+        majOptions({ aretesArriere: !(vueRef.current?.lireOptions().aretesArriere ?? false) });
+        return;
+      }
+      if (mod && !e.altKey && !dansMesures && cle === "a") {
+        e.preventDefault();
+        etendre("tout");
+        return;
+      }
+      if (mod && !e.altKey && e.shiftKey && !dansMesures && cle === "i") {
+        e.preventDefault();
+        etendre("inverser");
+        return;
+      }
+      if (mod && !e.altKey && !e.shiftKey && !dansMesures && (cle === "c" || cle === "x" || cle === "v")) {
+        e.preventDefault();
+        if (cle === "v") collerSelection();
+        else copierSelection(cle === "x");
         return;
       }
       const etat = toucheEtat(e.key);
@@ -707,7 +1344,7 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
         w.removeEventListener("blur", surPerte);
       }
     };
-  }, [annulerPas, retablirPas, envoyerTouche, echap, choisirOutil, setTexte, grouperSelection]);
+  }, [annulerPas, retablirPas, envoyerTouche, echap, choisirOutil, setTexte, grouperSelection, ouvrirDialogueComposant, majOptions, etendre, collerSelection, copierSelection]);
 
   // --- Plan détachable : le nœud de la vue (canvas three.js, surcouches, écouteurs) est DÉPLACÉ dans une fenêtre
   // Document Picture-in-Picture — même contexte JavaScript, donc même brouillon et même historique, sans
@@ -1030,6 +1667,10 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           <span aria-hidden="true" className="canevas-picto">⌖</span>
           <span className="canevas-etiquette">{t("panneau.balises")}</span>
         </button>
+        <button type="button" className="canevas-icone" aria-pressed={panneau === "objets" || (panneau !== null && PANNEAUX_OBJETS.has(panneau))} onClick={() => setPanneau(panneau === "objets" || (panneau !== null && PANNEAUX_OBJETS.has(panneau)) ? null : "objets")} title={t("panneau.objets")} data-planche-panneau-icone="objets">
+          <span aria-hidden="true" className="canevas-picto">▤</span>
+          <span className="canevas-etiquette">{t("panneau.objets")}</span>
+        </button>
       </nav>
       {panneau === "materiaux" && (
         <section className="planche-panneau" aria-label={t("panneau.materiaux")} data-planche-panneau="materiaux">
@@ -1095,6 +1736,90 @@ export function Planche({ projectId, readOnly }: PropsPlanche) {
           </div>
         </section>
       )}
+
+      {panneau === "objets" && (
+        <section className="planche-panneau" aria-label={t("panneau.objets")} data-planche-panneau="objets">
+          <header className="canevas-panneau-tete">
+            <h3>{t("panneau.objets")}</h3>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.objets") })}>×</button>
+          </header>
+          <div className="canevas-panneau-corps planche-choix-panneaux">
+            {LISTE_PANNEAUX_OBJETS.map(([id, picto]) => (
+              <button key={id} type="button" className="canevas-icone" onClick={() => setPanneau(id)} title={t(`panneau.${id}` as "panneau.info-entite")} data-planche-panneau-icone={id}>
+                <span aria-hidden="true" className="canevas-picto">{picto}</span>
+                <span className="canevas-etiquette">{t(`panneau.${id}` as "panneau.info-entite")}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      {panneau && PANNEAUX_OBJETS.has(panneau) && (
+        <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
+          <header className="canevas-panneau-tete">
+            <button type="button" className="lien planche-retour-panneaux" onClick={() => setPanneau("objets")} title={t("panneau.objets")} aria-label={t("panneau.objets")} data-planche-panneaux-retour>◂</button>
+            <h3>{t(`panneau.${panneau}` as "panneau.info-entite")}</h3>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}>×</button>
+          </header>
+          <div className="canevas-panneau-corps">
+            {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} actions={actionsInfo} />}
+            {panneau === "composants" && (
+              <PanneauComposants
+                modele={hist.present.modele}
+                lecture={readOnly}
+                onModifier={actionsInfo.modifierDefinition}
+                onSelectionner={(def) => {
+                  const m = histRef.current.present.modele;
+                  const c = contexteDe(m, dansRef.current);
+                  setSelection(Object.values(c.occurrences).filter((occ) => occ.definition === def && !occ.masquee).map((occ) => occ.id));
+                  rafraichir();
+                }}
+              />
+            )}
+            {panneau === "styles" && <PanneauStyles options={options} onOptions={majOptions} />}
+            {panneau === "ombres" && <PanneauOmbres options={options} onOptions={majOptions} latitudeParcelle={null} />}
+            {panneau === "affichage" && (
+              <PanneauAffichage
+                options={options}
+                onOptions={majOptions}
+                onReafficher={reafficher}
+                onSupprimerGuides={() => operer(t("planche.affichage.supprimer-guides"), (m) => ({ modele: modifierAnnotations(m, (a) => void (a.guides = {})).modele, selection: selectionRef.current.filter((id) => genreAnnotation(id) !== "guide") }))}
+                lecture={readOnly}
+              />
+            )}
+            {panneau === "scenes" && (
+              <PanneauScenes modele={hist.present.modele} lecture={readOnly} projection={camera.projection} champDeVision={camera.champDeVision} onAjouter={ajouterScene} onMettreAJour={mettreAJourScene} onAppliquer={appliquerScene} onSupprimer={supprimerScene} onVueStandard={vueStandard} onProjection={poserProjection} onChampDeVision={poserChampDeVision} />
+            )}
+            {panneau === "adoucir" && <PanneauAdoucir selection={vue.selection ?? selectionRef.current} lecture={readOnly} onAppliquer={adoucirLisserSelection} />}
+            {panneau === "info-modele" && <PanneauInfoModele modele={hist.present.modele} lecture={readOnly} precision={precision} onPrecision={poserPrecision} onReglages={poserReglages} />}
+            {panneau === "navigateur" && (
+              <NavigateurPlanche
+                modele={hist.present.modele}
+                selection={vue.selection ?? selectionRef.current}
+                dans={dans}
+                lecture={readOnly}
+                onSelectionner={(id, d) => {
+                  if (d !== dansRef.current) poserDans(d);
+                  setSelection([id]);
+                  rafraichir();
+                }}
+                onEntrer={(id) => {
+                  poserDans(id);
+                  setSelection([]);
+                  rafraichir();
+                }}
+                onCibler={(id) => {
+                  const b = boiteOccurrence(histRef.current.present.modele, id);
+                  if (b) vueRef.current?.cadrer(b, margesVue(racineRef.current));
+                }}
+                onMasquer={(id, d, masquee) => operer(t(masquee ? "planche.menu.masquer" : "planche.menu.afficher"), (m) => ({ modele: masquerEntites(m, [id], d !== undefined ? { dans: d } : {}, masquee).modele }))}
+                onSupprimer={(id, d) => operer(t("planche.menu.effacer"), (m) => ({ modele: effacerEntites(m, [id], d !== undefined ? { dans: d } : {}).modele, selection: selectionRef.current.filter((x) => x !== id) }))}
+              />
+            )}
+          </div>
+        </section>
+      )}
+      {menu && <MenuContextuel x={menu.x} y={menu.y} entrees={menu.entrees} onFermer={fermerMenu} />}
+      {dialogueComposant && <DialogueComposant nomDefaut={`${t("planche.composant.defaut")} ${Object.values(hist.present.modele.definitions).filter((d) => d.genre === "composant").length + 1}`} onCreer={creerComposant} onAnnuler={() => setDialogueComposant(false)} />}
       {planSelectionne && (
         <div className="planche-coupe-barre" role="toolbar" aria-label={t("planche.coupe.selectionne")} data-planche-coupe>
           <span>{t("planche.coupe.selectionne")}</span>

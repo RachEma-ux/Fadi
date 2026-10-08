@@ -16,6 +16,7 @@ export { TEXTE_PAR_DEFAUT_ECRAN } from "./texte.js";
 export { configurerTexte3D, facesDuTexte3D, HAUTEUR_TEXTE_3D, EXTRUSION_TEXTE_3D, type ParametresTexte3D, type EtatTexte3D } from "./texte-3d.js";
 export { opererSolides, type OperationSolide, type EtatSolide } from "./solides.js";
 export { materiauVise } from "./peinture.js";
+export { viser, viserAnnotation, cibleDans, etendreSelection, type Cible, type ModeSelectionEtendue } from "./selection.js";
 export { formaterAire as _formaterAire } from "./metre.js";
 
 export const MACHINES: ReadonlyMap<string, MachineOutil<any>> = new Map(
