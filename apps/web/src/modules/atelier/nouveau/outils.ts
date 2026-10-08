@@ -146,8 +146,9 @@ export function rechercherOutils(texte: string): Outil[] {
 function score(o: Outil, q: string): number {
   const l = normaliser(o.libelle);
   if (l === q) return 100;
+  // Un synonyme exact (« pan » pour Panoramique) prime sur un libellé qui commence par le mot (Panneau CLT).
+  if (o.synonymes.some((s) => normaliser(s) === q)) return 90;
   if (l.startsWith(q)) return 80;
-  if (o.synonymes.some((s) => normaliser(s) === q)) return 70;
   if (l.includes(q)) return 50;
   if (o.synonymes.some((s) => normaliser(s).includes(q))) return 40;
   if (normaliser(o.aide).includes(q) || normaliser(o.fiche).includes(q) || normaliser(o.famille).includes(q)) return 10;
