@@ -50,7 +50,8 @@ export function developperLiaison(l: ParamsLiaison): ContrainteSolveur[] {
     case "plan": return [{ type: "plan", a, b, pa, da, pb }];
     case "rotule": return [{ type: "coincidence", a, b, pa, pb }];
     case "encastrement": return [{ type: "coincidence", a, b, pa, pb }, { type: "parallele", a, b, da, db }, { type: "parallele", a, b, da: ea, db: eb }];
-    case "pivot": return [{ type: "concentrique", a, b, pa, da, pb, db }, { type: "plan", a, b, pa, da, pb }, angleOuParallele(ea, eb, valeur)];
+    // Pivot : angle orienté autour de l'axe (P2-6) — le signe de la rotation est tenu, une trajectoire ne se retourne pas.
+    case "pivot": return [{ type: "concentrique", a, b, pa, da, pb, db }, { type: "plan", a, b, pa, da, pb }, { type: "angle-oriente", a, b, da: ea, db: eb, axe: da, deg: valeur }];
     case "glissiere": {
       const na = normalise3(cross(da, ea));
       return [{ type: "parallele", a, b, da, db }, { type: "parallele", a, b, da: ea, db: eb }, { type: "plan", a, b, pa, da: ea, pb }, { type: "plan", a, b, pa, da: na, pb }, { type: "decalage", a, b, pa, da, pb, d: valeur }];

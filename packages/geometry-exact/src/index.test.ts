@@ -85,6 +85,35 @@ describe("noyau exact (P2-1, D-177) — opérations", () => {
     expect(ferme.volume).toBeCloseTo(1 - 0.96 ** 3, 6);
   });
 
+  it("surface : grille plane 2 × 2 de 1 m épaissie de 0,1 m → plaque de volume 0,1 ; grille bombée 3 × 3 → volume > 0", () => {
+    const plane = M.executer({ type: "surface", controle: [{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }, { x: 1, y: 1, z: 0 }], lignes: 2, colonnes: 2, epaisseur: 0.1 });
+    expect(plane.volume).toBeCloseTo(0.1, 4);
+    const pts: { x: number; y: number; z: number }[] = [];
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) pts.push({ x: i, y: j, z: i === 1 && j === 1 ? 0.5 : 0 });
+    const bombee = M.executer({ type: "surface", controle: pts, lignes: 3, colonnes: 3, epaisseur: 0.05 });
+    expect(bombee.volume).toBeGreaterThan(0.15);
+    expect(bombee.solides).toBe(1);
+    expect(() => M.executer({ type: "surface", controle: pts, lignes: 2, colonnes: 2, epaisseur: 0.05 })).toThrow(ErreurExacte);
+  });
+
+  it("patch : face tendue sur un quadrilatère gauche, épaissie de 0,1 → volume ≈ aire × épaisseur", () => {
+    const contour = [{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 1, y: 1, z: 0.3 }, { x: 0, y: 1, z: 0 }];
+    const s = M.executer({ type: "patch", contour, epaisseur: 0.1 });
+    expect(s.volume).toBeGreaterThan(0.09);
+    expect(s.volume).toBeLessThan(0.13);
+    expect(s.solides).toBe(1);
+  });
+
+  it("congé de 0,1 m sur toutes les arêtes d'un cube de 1 m : volume 1 − (arêtes) + (sommets) ; rayon trop grand refusé", () => {
+    const c = M.executer({ type: "extrusion", extrusion: { profil: carre(1), z0: 0, hauteur: 1 } });
+    const s = M.executer({ type: "conge", solide: { brep: c.brep }, rayon: 0.1 });
+    // Cube arrondi : 1 − 12·(1 − π/4)·r²·(1 − 2r) − 8·(1 − π/6)·r³ … expression exacte : (1−2r)³ + 3(1−2r)²·2r + 3(1−2r)·π r² + 4/3 π r³
+    const r = 0.1, a = 1 - 2 * r;
+    expect(s.volume).toBeCloseTo(a ** 3 + 3 * a * a * 2 * r + 3 * a * Math.PI * r * r + (4 / 3) * Math.PI * r ** 3, 5);
+    expect(s.faces).toBe(26);
+    expect(() => M.executer({ type: "conge", solide: { brep: c.brep }, rayon: 0.8 })).toThrow(ErreurExacte);
+  });
+
   it("opérande posée : soustraction avec un brep tourné de 90° et translaté, export STEP posé", () => {
     const a = M.executer({ type: "extrusion", extrusion: { profil: carre(4), z0: 0, hauteur: 1 } });
     const outil = M.executer({ type: "extrusion", extrusion: { profil: [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 1 }, { x: 0, y: 1 }], z0: 0, hauteur: 1 } });

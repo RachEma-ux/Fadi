@@ -4,7 +4,7 @@
  * aucun ruban. Le solveur tourne dans le réducteur (navigateur et serveur) : la fiche montre son diagnostic.
  */
 import { useState } from "react";
-import { DDL_LIAISON, LIBELLES_LIAISON, liaisonsDe, PILOTAGE, piecesDe, TYPES_LIAISON, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type TypeLiaison } from "@parcours/atelier-model";
+import { DDL_LIAISON, inertieAssemblage, inertiePiece, LIBELLES_LIAISON, liaisonsDe, PILOTAGE, piecesDe, premierObstacle, trajectoire, TYPES_LIAISON, type Commande, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque, type TypeLiaison } from "@parcours/atelier-model";
 import { etatUi, type EtatUi } from "../etat-ui";
 import { LOCALE } from "../../../../lib/i18n";
 
@@ -135,8 +135,18 @@ export function OutilLiaison({ etat, ui, readOnly, onCommandes }: { etat: Modele
   );
 }
 
-export function FichePieceMecanique({ o, etat }: { o: Occurrence<"piece-mecanique">; etat: ModeleAtelier }) {
+export function FichePieceMecanique({ o, etat, readOnly = true, onCommandes }: { o: Occurrence<"piece-mecanique">; etat: ModeleAtelier; readOnly?: boolean; onCommandes?: OnCommandes }) {
   const asm = o.params.assemblageId ? etat.objets[o.params.assemblageId] : undefined;
+  const [mv, setMv] = useState(o.params.masseVolumique ? String(o.params.masseVolumique.valeur) : "");
+  const [source, setSource] = useState(o.params.masseVolumique?.source ?? "");
+  const inertie = inertiePiece(etat, o);
+  const mvNombre = Number(mv.replace(",", "."));
+  const declarer = () => {
+    if (!onCommandes) return;
+    if (!mv.trim()) { onCommandes([{ type: "pieceMecanique.modifier", params: { id: o.id, params: { masseVolumique: null } } }], `${o.params.nom} : masse volumique retirée`); return; }
+    if (!Number.isFinite(mvNombre) || mvNombre <= 0 || !source.trim()) return;
+    onCommandes([{ type: "pieceMecanique.modifier", params: { id: o.id, params: { masseVolumique: { valeur: mvNombre, source: source.trim() } } } }], `${o.params.nom} : masse volumique ${mvNombre} kg/m³`);
+  };
   const liaisons = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((l): l is Occurrence<"liaison"> => l.classe === "liaison" && (l.params.a === o.id || l.params.b === o.id));
   const p = o.params.pose;
   const angle = (Math.hypot(p.rx, p.ry, p.rz) * 180) / Math.PI;
@@ -147,11 +157,20 @@ export function FichePieceMecanique({ o, etat }: { o: Occurrence<"piece-mecaniqu
         <div className="champ"><dt>Assemblage</dt><dd>{asm && asm.classe === "assemblage" ? asm.params.nom : "aucun (pièce libre)"}{o.params.fixe ? " · fixe" : ""}</dd></div>
         <div className="champ"><dt>Matériau</dt><dd>{o.params.materiau ?? "non évalué"}</dd></div>
         <div className="champ"><dt>Volume</dt><dd data-piece-volume>{o.params.volume === null ? "non évalué" : `${fmt(o.params.volume)} m³`}</dd></div>
-        <div className="champ"><dt>Masse</dt><dd>non évaluée (aucune densité sourcée)</dd></div>
+        <div className="champ"><dt>Masse</dt><dd data-piece-masse>{inertie.masse === null ? "non évaluée (aucune masse volumique sourcée)" : `${fmt(inertie.masse, 2)} kg (${o.params.masseVolumique!.valeur} kg/m³, ${o.params.masseVolumique!.source})`}</dd></div>
+        <div className="champ"><dt>Centre de volume</dt><dd>({fmt(inertie.centre[0])} ; {fmt(inertie.centre[1])} ; {fmt(inertie.centre[2])}) m</dd></div>
+        <div className="champ"><dt>Inertie au centre</dt><dd data-piece-inertie>{inertie.inertie ? `Ixx ${fmt(inertie.inertie[0]!, 3)} · Iyy ${fmt(inertie.inertie[4]!, 3)} · Izz ${fmt(inertie.inertie[8]!, 3)} kg·m²` : `géométrique seulement : ${fmt(inertie.inertieGeometrique[0]!, 4)} · ${fmt(inertie.inertieGeometrique[4]!, 4)} · ${fmt(inertie.inertieGeometrique[8]!, 4)} m⁵`}</dd></div>
         <div className="champ"><dt>Pose</dt><dd data-piece-pose>({fmt(p.x)} ; {fmt(p.y)} ; {fmt(p.z)}) m · {fmt(angle, 1)}°</dd></div>
         <div className="champ"><dt>Source</dt><dd>{o.params.sourceId ?? "—"}{o.params.empreinteBrep ? <> · brep <code>{o.params.empreinteBrep}</code></> : null}</dd></div>
         <div className="champ"><dt>Liaisons</dt><dd>{liaisons.length ? liaisons.map((l) => `${LIBELLES_LIAISON[l.params.type]} (${l.id})`).join(", ") : "aucune"}</dd></div>
       </dl>
+      <fieldset className="editeur-section" data-piece-masse-volumique>
+        <legend>Masse volumique déclarée (kg/m³) et sa source</legend>
+        <div className="champ"><label htmlFor={`mv-${o.id}`}>Masse volumique (kg/m³ ; vide : non évaluée)</label><input id={`mv-${o.id}`} inputMode="decimal" value={mv} disabled={readOnly || !onCommandes} onChange={(e) => setMv(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-piece-mv /></div>
+        <div className="champ"><label htmlFor={`mvs-${o.id}`}>Source (fiche matière, norme citée…)</label><input id={`mvs-${o.id}`} value={source} maxLength={160} disabled={readOnly || !onCommandes} onChange={(e) => setSource(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-piece-mv-source /></div>
+        <div className="boutons"><button type="button" data-piece-mv-appliquer disabled={readOnly || !onCommandes || (!!mv.trim() && (!Number.isFinite(mvNombre) || mvNombre <= 0 || !source.trim()))} onClick={declarer}>Déclarer</button></div>
+        <p className="inspecteur-aide">Aucune densité n'est connue du code : sans valeur sourcée, masse et inertie massique restent « non évaluées ».</p>
+      </fieldset>
       <p className="inspecteur-aide">Géométrie copiée de sa source : elle se refait par une nouvelle pièce, jamais par un paramètre ; la pose vient du solveur quand une liaison la tient.</p>
     </div>
   );
@@ -167,8 +186,10 @@ export function FicheAssemblage({ o, etat, readOnly, onCommandes }: { o: Occurre
         <div className="champ"><dt>Liaisons</dt><dd>{liaisons.length}</dd></div>
         <div className="champ"><dt>Diagnostic du solveur</dt><dd data-assemblage-diagnostic>{o.params.diagnostic ?? "aucune liaison"}</dd></div>
         <div className="champ"><dt>Repère</dt><dd>({fmt(o.params.position.x)} ; {fmt(o.params.position.y)}) m · {fmt(o.params.angle.value, 2)}° · z {fmt(o.params.z)} m</dd></div>
+        <InertieAssemblageLigne etat={etat} id={o.id} />
       </dl>
       {liaisons.map((l) => <PilotageLiaison key={l.id} l={l} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />)}
+      <AnimationAssemblage key={`anim-${o.id}`} liaisons={liaisons} etat={etat} />
       <div className="boutons">
         <button type="button" data-assemblage-numeroter disabled={readOnly || !onCommandes || !pieces.length} onClick={() => onCommandes?.([{ type: "assemblage.numeroter", params: { id: o.id } }], `Numéroter ${o.params.nom}`)}>Numéroter les pièces</button>
       </div>
@@ -203,6 +224,82 @@ function PilotageLiaison({ l, etat, readOnly, onCommandes }: { l: Occurrence<"li
   );
 }
 
+function InertieAssemblageLigne({ etat, id }: { etat: ModeleAtelier; id: string }) {
+  const a = inertieAssemblage(etat, id);
+  if (!a.pieces.length) return null;
+  return (
+    <div className="champ"><dt>Masse et inertie</dt><dd data-assemblage-inertie>{a.masse === null ? `non évaluées (masse volumique manquante : ${a.nonEvaluees.length} pièce(s))` : `${fmt(a.masse, 2)} kg · centre (${fmt(a.centreDeMasse![0])} ; ${fmt(a.centreDeMasse![1])} ; ${fmt(a.centreDeMasse![2])}) m · Izz ${fmt(a.inertie![8]!, 3)} kg·m²`}</dd></div>
+  );
+}
+
+/** Depuis la fiche de l'assemblage (les liaisons n'ont pas de niveau : on les anime d'ici) : une liaison pilotable au choix. */
+function AnimationAssemblage({ liaisons, etat }: { liaisons: Occurrence<"liaison">[]; etat: ModeleAtelier }) {
+  const pilotables = liaisons.filter((l) => !!PILOTAGE[l.params.type]);
+  const [id, setId] = useState(pilotables[0]?.id ?? "");
+  const l = pilotables.find((x) => x.id === id) ?? pilotables[0];
+  if (!l) return null;
+  return (
+    <div data-animation-assemblage>
+      {pilotables.length > 1 && (
+        <div className="champ"><label htmlFor={`anim-liaison-${l.id}`}>Liaison animée</label>
+          <select id={`anim-liaison-${l.id}`} value={l.id} onChange={(e) => setId(e.target.value)} data-animation-liaison-choix>{pilotables.map((x) => <option key={x.id} value={x.id}>{LIBELLES_LIAISON[x.params.type]} {x.id}</option>)}</select>
+        </div>
+      )}
+      <AnimationLiaison key={`anim-${l.id}`} o={l} etat={etat} />
+    </div>
+  );
+}
+
+/** Animation d'un mécanisme (DA-17-04, 05, 06) : trajectoire dérivée d'une liaison pilotée (rien n'est écrit), analyse de mouvement, course libre. */
+function AnimationLiaison({ o, etat }: { o: Occurrence<"liaison">; etat: ModeleAtelier }) {
+  const pilotage = PILOTAGE[o.params.type];
+  const [de, setDe] = useState(String(o.params.valeur ?? 0));
+  const [a, setA] = useState(String((o.params.valeur ?? 0) + (pilotage?.unite === "deg" ? 90 : 0.5)));
+  const [nombre, setNombre] = useState("7");
+  const [pas, setPas] = useState(0);
+  const [resultat, setResultat] = useState<ReturnType<typeof trajectoire> | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
+  if (!pilotage) return null;
+  const calculer = () => {
+    try { setResultat(trajectoire(etat, o.id, Number(de.replace(",", ".")), Number(a.replace(",", ".")), Number(nombre), { collisions: true })); setPas(0); setErreur(null); }
+    catch (e) { setErreur(e instanceof Error ? e.message : String(e)); setResultat(null); }
+  };
+  const obstacle = resultat ? premierObstacle(resultat) : null;
+  const courant = resultat?.pas[pas];
+  // Aperçu : emprises des pièces au pas courant (repère du niveau), trajectoire des centres en pointillé.
+  const emprises = courant ? Object.entries(courant.emprises) : [];
+  const tous = resultat ? resultat.pas.flatMap((p) => Object.values(p.emprises).flat()) : [];
+  const xs = tous.map((q) => q.x), ys = tous.map((q) => q.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const marge = Math.max(0.2, (Math.max(x1 - x0, y1 - y0) || 1) * 0.1);
+  return (
+    <fieldset className="editeur-section" data-animation-liaison>
+      <legend>Animation du mécanisme</legend>
+      <div className="champ"><label htmlFor={`anim-de-${o.id}`}>De ({pilotage.unite === "deg" ? "°" : "m"})</label><input id={`anim-de-${o.id}`} inputMode="decimal" value={de} onChange={(e) => setDe(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-animation-de /></div>
+      <div className="champ"><label htmlFor={`anim-a-${o.id}`}>À ({pilotage.unite === "deg" ? "°" : "m"})</label><input id={`anim-a-${o.id}`} inputMode="decimal" value={a} onChange={(e) => setA(e.target.value)} onKeyDown={(e) => e.stopPropagation()} data-animation-a /></div>
+      <div className="champ"><label htmlFor={`anim-n-${o.id}`}>Pas (2 à 200)</label><input id={`anim-n-${o.id}`} inputMode="numeric" value={nombre} onChange={(e) => setNombre(e.target.value)} onKeyDown={(e) => e.stopPropagation()} /></div>
+      <div className="boutons"><button type="button" data-animation-calculer onClick={calculer}>Calculer la trajectoire</button></div>
+      {erreur && <p className="inspecteur-alerte" role="alert">{erreur}</p>}
+      {resultat && courant && (
+        <>
+          <p className="inspecteur-meta" data-animation-bilan>
+            {resultat.pas.length} pas · {resultat.echecs.length} non résolu(s) · {obstacle ? `premier obstacle au pas ${obstacle.indice + 1} (${fmt(obstacle.valeur, 2)} ${pilotage.unite === "deg" ? "°" : "m"})${obstacle.objets ? ` : ${obstacle.objets.join(" × ")}` : ""}` : "course libre sur toute la plage"}
+          </p>
+          <div className="champ"><label htmlFor={`anim-pas-${o.id}`}>Pas courant : {pas + 1} — valeur {fmt(courant.valeur, 2)} {pilotage.unite === "deg" ? "°" : "m"}</label>
+            <input id={`anim-pas-${o.id}`} type="range" min={0} max={resultat.pas.length - 1} step={1} value={pas} onChange={(e) => setPas(Number(e.target.value))} data-animation-pas />
+          </div>
+          <svg className="animation-apercu" viewBox={`${x0 - marge} ${-(y1 + marge)} ${x1 - x0 + 2 * marge} ${y1 - y0 + 2 * marge}`} role="img" aria-label="Aperçu de la trajectoire" data-animation-apercu>
+            {resultat.pas.map((p, i) => Object.entries(p.emprises).map(([id, e]) => <polygon key={`${i}-${id}`} points={e.map((q) => `${q.x},${-q.y}`).join(" ")} fill="none" stroke="#8c96a0" strokeOpacity={0.35} strokeWidth={0.01} />))}
+            {emprises.map(([id, e]) => <polygon key={id} points={e.map((q) => `${q.x},${-q.y}`).join(" ")} fill={courant.collisions.some((c) => c.objets.includes(id)) ? "#c0504d" : "#4f8fb3"} fillOpacity={0.5} stroke="#2f3f4f" strokeWidth={0.02} data-animation-piece={id} />)}
+          </svg>
+          {courant.collisions.length > 0 && <p className="inspecteur-alerte" role="note" data-animation-collisions>{courant.collisions.map((c) => `${c.objets.join(" × ")} : ${fmt(c.volume, 4)} m³`).join(" ; ")}</p>}
+          <p className="inspecteur-aide">Dérivé : rien n'est écrit au modèle ; les volumes communs sont signalés, jamais corrigés.</p>
+        </>
+      )}
+    </fieldset>
+  );
+}
+
 export function FicheLiaison({ o, etat, readOnly, onCommandes }: { o: Occurrence<"liaison">; etat: ModeleAtelier; readOnly: boolean; onCommandes?: OnCommandes }) {
   return (
     <div className="fiche-mecanique" data-fiche-liaison>
@@ -211,6 +308,7 @@ export function FicheLiaison({ o, etat, readOnly, onCommandes }: { o: Occurrence
         <div className="champ"><dt>État</dt><dd data-liaison-etat>{o.params.etat ?? "non résolue"}</dd></div>
         <PilotageLiaison l={o} etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
       </dl>
+      <AnimationLiaison key={`anim-${o.id}`} o={o} etat={etat} />
     </div>
   );
 }

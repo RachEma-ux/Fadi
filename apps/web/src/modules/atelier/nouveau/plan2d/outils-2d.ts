@@ -849,6 +849,23 @@ function objetsEntierementDans(etat: ModeleAtelier, niveauId: string | null, ded
       case "support-reseau":
         pts = [o.params.position];
         break;
+      case "plafond":
+      case "coque":
+      case "reservation":
+      case "installation-chantier":
+        pts = o.params.contour;
+        break;
+      case "rampe":
+      case "mur-rideau":
+      case "echelle":
+        pts = [o.params.a, o.params.b];
+        break;
+      case "terrain":
+        pts = o.params.points.map((q) => ({ x: q.x, y: q.y, frame: "local" as const, unit: "m" as const }));
+        break;
+      case "surface-libre":
+        pts = o.params.sommets.map((q) => ({ x: q.x, y: q.y, frame: "local" as const, unit: "m" as const }));
+        break;
       case "panneau-clt":
         pts = o.params.pose === "mur" && o.params.a && o.params.b ? [o.params.a, o.params.b] : o.params.contour;
         break;

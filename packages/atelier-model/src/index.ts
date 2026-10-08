@@ -102,3 +102,8 @@ export { empriseEquipement, longueurSegment, maillageEquipementReseau, maillageR
 export { CLASSES_RESEAU, connexionDuPort, connexions, etatConnexions, incompatibilites, portDe, portsDe, portsLibres, reseauxConnexes, TOLERANCE_PORT, type PortAbsolu } from "./ontologies/mep/connectivite.js";
 export { schemaPid, svgPid, type SchemaPid } from "./ontologies/mep/pid.js";
 export { portsCoude, specifications, supportsDe } from "./ontologies/mep/index.js";
+export { delaunay, proprietesMasse, subdiviserLoop, triangulerFaces } from "./geometrie-3d.js";
+export { altitudeTerrain, controleDepuisMaillage, empriseSurfaceLibre, empriseTerrain, facesSubdivisees, longueurRampe, maillageCoque, maillageEchelle, maillageMurRideau, maillagePlafond, maillageRampe, maillageSurfaceLibre, maillageTerrain, nombreProfilsMurRideau, penteRampe, trianglesTerrain } from "./batiment-p2.js";
+export { collisionsOntologies, controlesSpecification, type CollisionOntologies, type ControleSpecification } from "./coordination.js";
+export { etatPourValeur, premierObstacle, trajectoire, type PasCinematique, type Trajectoire } from "./ontologies/mechanical/cinematique.js";
+export { inertieAssemblage, inertiePiece, type InertieAssemblage, type InertiePiece } from "./ontologies/mechanical/inerties.js";

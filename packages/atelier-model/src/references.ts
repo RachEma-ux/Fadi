@@ -127,6 +127,20 @@ export function pointCaracteristique(etat: ModeleAtelier, objetId: string, carac
     case "equipement-reseau":
     case "support-reseau":
       return nom === "centre" ? o.params.position : null;
+    case "plafond":
+    case "coque":
+    case "reservation":
+    case "installation-chantier":
+      return nom === "contour" || nom === "centre" ? (o.params.contour.length ? (() => { const c = centroide(o.params.contour); return pt(c.x, c.y); })() : null) : null;
+    case "rampe":
+    case "echelle":
+      return nom === "depart" ? o.params.a : nom === "arrivee" ? o.params.b : nom === "axe" ? milieu(o.params.a, o.params.b) : null;
+    case "mur-rideau":
+      return nom === "arete-debut" ? o.params.a : nom === "arete-fin" ? o.params.b : nom === "axe" ? milieu(o.params.a, o.params.b) : null;
+    case "terrain":
+      return nom === "sommet" && index !== null && o.params.points[index] ? pt(o.params.points[index]!.x, o.params.points[index]!.y) : nom === "contour" || nom === "centre" ? (() => { const c = centroide(o.params.points.map((q) => ({ x: q.x, y: q.y }))); return pt(c.x, c.y); })() : null;
+    case "surface-libre":
+      return nom === "sommet" && index !== null && o.params.sommets[index] ? pt(o.params.sommets[index]!.x, o.params.sommets[index]!.y) : nom === "centre" ? (() => { const c = centroide(o.params.sommets.map((q) => ({ x: q.x, y: q.y }))); return pt(c.x, c.y); })() : null;
     case "segment-reseau": {
       const s = o.params.sommets, a = s[0]!, b = s[s.length - 1]!;
       const P = (q: { x: number; y: number }): Point2 => ({ x: q.x, y: q.y, frame: "local", unit: "m" });

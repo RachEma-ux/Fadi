@@ -19,6 +19,7 @@ import { FicheArmature, FicheAssemblageStructurel, FicheCoulage, FichePlaque, Fi
 import { FicheAssemblageBois, FicheElementBois, FicheOssature, FichePanneauClt, OutilAssemblageBois, OutilElementBois, OutilOssature, OutilPanneauClt } from "./Bois";
 import { FicheTole, OutilTole } from "./Tolerie";
 import { FicheReseau, FicheSupportReseau, OutilConnexionReseau, OutilEquipementReseau, OutilRaccordReseau, OutilSegmentReseau, OutilSpecificationReseau, OutilSupportReseau, OutilVanne } from "./Reseaux";
+import { FicheBatimentP2, FicheSurfaceLibre, OutilCoque, OutilEchelle, OutilInstallationChantier, OutilMurRideau, OutilPlafond, OutilRampe, OutilReservation, OutilSurfaceLibre, OutilTerrain } from "./BatimentP2";
 import { LOCALE } from "../../../../lib/i18n";
 
 export interface PropsInspecteur {
@@ -85,7 +86,7 @@ export function Inspecteur(props: PropsInspecteur) {
   // restent accessibles au-dessus de la sélection (D-058). Les outils de dessin gardent l'inspecteur de la sélection.
   // Outils des ontologies activables (P2-2 à P2-5) : leur panneau (formulaire) agit sur la sélection ou s'en sert
   // (polyligne à router, objets à connecter), il reste visible au-dessus d'elle.
-  if (ui.outil !== "selection" && (((OUTILS_PAR_ID[ui.outil]?.condition ?? "").startsWith("selection") && (PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0) || !!OUTILS_PAR_ID[ui.outil]?.ontologie)) {
+  if (ui.outil !== "selection" && (((OUTILS_PAR_ID[ui.outil]?.condition ?? "").startsWith("selection") && (PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0) || !!OUTILS_PAR_ID[ui.outil]?.ontologie || !!OUTILS_PAR_ID[ui.outil]?.panneau)) {
     return (
       <>
         <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} />
@@ -120,7 +121,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
   const verrouObjet = raisonVerrou(etat, o);
   const desactive = readOnly || verrouille || !!verrouObjet;
   // Représentation importée (R16) : paramètres en lecture seule ; calque, phase et transformations restent possibles.
-  const STRUCTURE = ["poutre", "trame", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "element-bois", "ossature", "panneau-clt", "assemblage-bois", "tole", "segment-reseau", "raccord-reseau", "vanne", "equipement-reseau", "support-reseau"];
+  const STRUCTURE = ["poutre", "trame", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "element-bois", "ossature", "panneau-clt", "assemblage-bois", "tole", "segment-reseau", "raccord-reseau", "vanne", "equipement-reseau", "support-reseau", "terrain", "surface-libre"];
   const parametresFiges = desactive || o.classe === "objet-importe" || o.classe === "solide-exact" || o.classe === "piece-mecanique" || o.classe === "liaison" || STRUCTURE.includes(o.classe);
 
   return (
@@ -223,7 +224,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
       {o.classe === "mur" && <CompositionParoi o={o as Occurrence<"mur">} etat={etat} desactive={desactive} onCommandes={onCommandes} />}
       {o.classe === "bloc-occurrence" && <FicheOccurrenceBloc o={o} etat={etat} />}
       {o.classe === "solide-exact" && projectId && <FicheSolideExact o={o} projectId={projectId} />}
-      {o.classe === "piece-mecanique" && <FichePieceMecanique o={o as Occurrence<"piece-mecanique">} etat={etat} />}
+      {o.classe === "piece-mecanique" && <FichePieceMecanique key={`pm-${o.id}`} o={o as Occurrence<"piece-mecanique">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "assemblage" && <FicheAssemblage o={o as Occurrence<"assemblage">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "liaison" && <FicheLiaison o={o as Occurrence<"liaison">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "poutre" && <FichePoutre o={o as Occurrence<"poutre">} etat={etat} />}
@@ -240,6 +241,8 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
       {o.classe === "tole" && <FicheTole o={o as Occurrence<"tole">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "segment-reseau" || o.classe === "raccord-reseau" || o.classe === "vanne" || o.classe === "equipement-reseau") && <FicheReseau o={o as Occurrence<"segment-reseau">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {o.classe === "support-reseau" && <FicheSupportReseau o={o as Occurrence<"support-reseau">} etat={etat} />}
+      {(o.classe === "plafond" || o.classe === "coque" || o.classe === "rampe" || o.classe === "echelle" || o.classe === "mur-rideau" || o.classe === "terrain" || o.classe === "reservation" || o.classe === "installation-chantier") && <FicheBatimentP2 o={o} etat={etat} />}
+      {o.classe === "surface-libre" && <FicheSurfaceLibre key={`sl-${o.id}`} o={o as Occurrence<"surface-libre">} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || (o.classe === "mur" && !(o as Occurrence<"mur">).params.renflement)) && <Contraintes sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || o.classe === "solide" || o.classe === "texte") && <CreerBloc sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {Object.keys(o.proprietes).length > 0 && (
@@ -685,7 +688,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   poteau: [{ cle: "taille", libelle: "Section", unite: "m" }, { cle: "hauteur", libelle: "Hauteur", unite: "m" }],
   solide: [{ cle: "hauteurSolide", libelle: "Hauteur d'extrusion", unite: "m" }],
   extruder: [{ cle: "hauteurSolide", libelle: "Hauteur d'extrusion", unite: "m" }, { cle: "epaisseurProfil", libelle: "Épaisseur d'un profil ouvert", unite: "m" }],
-  "solide-exact": [{ cle: "angleRevolution", libelle: "Angle de révolution", unite: "°" }, { cle: "hauteurExacte", libelle: "Hauteur (lissage, trajet)", unite: "m" }, { cle: "epaisseurExacte", libelle: "Épaisseur de coque", unite: "m" }, { cle: "diametreExacte", libelle: "Diamètre du trou", unite: "m" }, { cle: "profondeurExacte", libelle: "Profondeur du trou (0 = traversant)", unite: "m" }, { cle: "xTrou", libelle: "Centre du trou x", unite: "m" }, { cle: "yTrou", libelle: "Centre du trou y", unite: "m" }],
+  "solide-exact": [{ cle: "angleRevolution", libelle: "Angle de révolution", unite: "°" }, { cle: "hauteurExacte", libelle: "Hauteur (lissage, trajet)", unite: "m" }, { cle: "epaisseurExacte", libelle: "Épaisseur de coque", unite: "m" }, { cle: "diametreExacte", libelle: "Diamètre du trou", unite: "m" }, { cle: "profondeurExacte", libelle: "Profondeur du trou (0 = traversant)", unite: "m" }, { cle: "xTrou", libelle: "Centre du trou x", unite: "m" }, { cle: "yTrou", libelle: "Centre du trou y", unite: "m" }, { cle: "rayonExacte", libelle: "Rayon de congé", unite: "m" }],
   decaler: [{ cle: "distanceDecalage", libelle: "Distance", unite: "m" }],
   bloc: [{ cle: "angleBloc", libelle: "Angle", unite: "°" }],
   repeter: [{ cle: "repetitions", libelle: "Nombre de copies" }, { cle: "pasX", libelle: "Pas en x", unite: "m" }, { cle: "pasY", libelle: "Pas en y", unite: "m" }, { cle: "etagesReseau", libelle: "Étages au-dessus (réseau 3D)" }],
@@ -787,6 +790,15 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: Mo
       {ui.outil === "support-reseau" && <OutilSupportReseau etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "connexion-reseau" && <OutilConnexionReseau key={`cx-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "specification-reseau" && <OutilSpecificationReseau etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "plafond" && <OutilPlafond key={`pl-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "coque" && <OutilCoque key={`cq-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "rampe" && <OutilRampe key={`ra-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "echelle" && <OutilEchelle key={`ec-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "mur-rideau" && <OutilMurRideau key={`mr-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "terrain" && <OutilTerrain etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "reservation" && <OutilReservation key={`rv-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "installation-chantier" && <OutilInstallationChantier key={`ic-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "surface-libre" && <OutilSurfaceLibre key={`sl-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "contour" && (
         <div className="champ">
           <label htmlFor="outil-formeContour">Créer</label>

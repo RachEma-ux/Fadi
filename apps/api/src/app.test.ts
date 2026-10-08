@@ -1582,7 +1582,7 @@ describe("Dessins techniques et exports de l'Atelier au catalogue des documents"
     let docs = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; group: string; label: string; href: string; freshness: string | null; stepNumber: number | null; produced: { modelRevision: number } }[];
     let entry = docs.find((d) => d.kind === `dessin:${id}`)!;
     expect(entry).toMatchObject({ group: "dessins", label: "Dessin technique DXF · RDC · dessin plan · révision 1", href: `/projects/${pid}/documents/dessins/${id}`, freshness: "a-jour", stepNumber: 10, produced: { modelRevision: 1 } });
-    expect(docs).toHaveLength(51);
+    expect(docs).toHaveLength(53);
     // Le fichier est servi tel quel, en pièce jointe.
     const file = await client.get(`/projects/${pid}/documents/dessins/${id}`);
     expect(file.status).toBe(200);
@@ -1604,7 +1604,7 @@ describe("Dessins techniques et exports de l'Atelier au catalogue des documents"
     // Retrait du catalogue.
     expect((await client.delete(`/projects/${pid}/documents/dessins/${id}`)).status).toBe(204);
     expect((await client.get(`/projects/${pid}/documents/dessins/${id}`)).status).toBe(404);
-    expect(((await client.get(`/projects/${pid}/documents`)).body.documents as unknown[]).length).toBe(50);
+    expect(((await client.get(`/projects/${pid}/documents`)).body.documents as unknown[]).length).toBe(52);
   }, 30_000);
 });
 
@@ -1614,8 +1614,8 @@ describe("Documents — catalogue, productions et actualité", () => {
     const imported = await client.post("/examples/p118-exemple-complet/import");
     const pid = imported.body.id as string;
     const first = (await client.get(`/projects/${pid}/documents`)).body;
-    // 1 synthèse + 21 rapports d'étape + bilan + 6 plans + tableau des surfaces + programme CSV + fiches de l'exemple + dossier complet de l'exemple + archive + 14 tableaux et quantités de l'Atelier + schéma P&ID + maquette IFC.
-    expect(first.documents).toHaveLength(50);
+    // 1 synthèse + 21 rapports d'étape + bilan + 6 plans + tableau des surfaces + programme CSV + fiches de l'exemple + dossier complet de l'exemple + archive + 16 tableaux et quantités de l'Atelier + schéma P&ID + maquette IFC.
+    expect(first.documents).toHaveLength(52);
     expect(first.modelRevision).toBe(1);
     expect(first.documents.every((d: { freshness: unknown; produced: unknown; current: { modelRevision: number; inputHash: string } }) => d.freshness === null && d.produced === null && d.current.modelRevision === 1 && /^([0-9a-f]{8}|[0-9a-f]{16})$/.test(d.current.inputHash))).toBe(true);
     const kinds = first.documents.map((d: { kind: string }) => d.kind);

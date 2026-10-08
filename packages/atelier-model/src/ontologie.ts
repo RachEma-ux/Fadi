@@ -50,7 +50,16 @@ export type Classe =
   | "raccord-reseau"
   | "vanne"
   | "equipement-reseau"
-  | "support-reseau";
+  | "support-reseau"
+  | "plafond"
+  | "coque"
+  | "rampe"
+  | "echelle"
+  | "mur-rideau"
+  | "terrain"
+  | "reservation"
+  | "installation-chantier"
+  | "surface-libre";
 
 export type KindRelation =
   | "heberge-par" // ouverture → mur hôte
@@ -127,6 +136,17 @@ export const CLASSES: Readonly<Record<Classe, DescriptionClasse>> = {
   vanne: { classe: "vanne", ontologie: "mep", libelle: "Vanne", ifc: "IfcValve", caracteristiques: ["centre"], parNiveau: true },
   "equipement-reseau": { classe: "equipement-reseau", ontologie: "mep", libelle: "Équipement de réseau", ifc: "IfcFlowTerminal", caracteristiques: ["centre"], parNiveau: true },
   "support-reseau": { classe: "support-reseau", ontologie: "mep", libelle: "Support de réseau", ifc: "IfcDiscreteAccessory", caracteristiques: ["centre"], parNiveau: true },
+  // Bâtiment P2 (P2-6, DA-07-08, 09, 11, 13, 14, 18, 19, 21, 23) : socle d'architecture, toujours actif.
+  plafond: { classe: "plafond", ontologie: "building.architecture", libelle: "Plafond", ifc: "IfcCovering", caracteristiques: ["contour"], parNiveau: true },
+  coque: { classe: "coque", ontologie: "building.architecture", libelle: "Coque", ifc: "IfcRoof", caracteristiques: ["contour", "centre"], parNiveau: true },
+  rampe: { classe: "rampe", ontologie: "building.architecture", libelle: "Rampe", ifc: "IfcRamp", caracteristiques: ["depart", "arrivee", "axe"], parNiveau: true },
+  echelle: { classe: "echelle", ontologie: "building.architecture", libelle: "Échelle", ifc: "IfcStair", caracteristiques: ["depart", "arrivee"], parNiveau: true },
+  "mur-rideau": { classe: "mur-rideau", ontologie: "building.architecture", libelle: "Mur-rideau", ifc: "IfcCurtainWall", caracteristiques: ["arete-debut", "arete-fin", "axe"], parNiveau: true },
+  terrain: { classe: "terrain", ontologie: "building.architecture", libelle: "Terrain", ifc: "IfcGeographicElement", caracteristiques: ["sommet", "contour"], parNiveau: true },
+  reservation: { classe: "reservation", ontologie: "building.architecture", libelle: "Réservation", ifc: "IfcOpeningElement", caracteristiques: ["contour", "centre"], parNiveau: true },
+  "installation-chantier": { classe: "installation-chantier", ontologie: "building.architecture", libelle: "Installation de chantier", ifc: "IfcBuildingElementProxy", caracteristiques: ["contour", "centre"], parNiveau: true },
+  // Surfaces et formes libres (P2-6, DA-03-03, 05, 06, 07, 20) : maillage de contrôle subdivisé, édition directe des sommets.
+  "surface-libre": { classe: "surface-libre", ontologie: "drawing", libelle: "Surface libre", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre", "sommet"], parNiveau: true },
 };
 
 export const CLASSES_OUVERTURE: readonly Classe[] = ["porte", "fenetre", "ouverture"];

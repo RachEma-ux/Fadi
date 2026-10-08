@@ -66,6 +66,7 @@ import { controlerStructure, reducteursStructure } from "../ontologies/structure
 import { controlerBois, reducteursBois } from "../ontologies/timber/index.js";
 import { reducteursTolerie } from "../ontologies/sheetmetal/index.js";
 import { controlerReseau, reducteursReseaux } from "../ontologies/mep/index.js";
+import { reducteursBatimentP2 } from "./batiment-p2.js";
 
 const triplet = (classe: Classe, prefixe: string, creer = "creer"): Record<string, Reducteur> => ({
   [`${prefixe}.${creer}`]: (etat, p, ctx) => creerOccurrence(etat, p, ctx, classe),
@@ -223,6 +224,16 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   ...reducteursTolerie,
   // Ontologie réseaux (P2-5) : segments routés, raccords, vannes, équipements, supports, connexions, spécifications.
   ...reducteursReseaux,
+  // Bâtiment P2 et surfaces libres (P2-6).
+  ...triplet("plafond", "plafond"),
+  ...triplet("coque", "coque"),
+  ...triplet("rampe", "rampe"),
+  ...triplet("echelle", "echelle"),
+  ...triplet("mur-rideau", "murRideau"),
+  ...triplet("terrain", "terrain"),
+  ...triplet("reservation", "reservation"),
+  ...triplet("installation-chantier", "installationChantier"),
+  ...reducteursBatimentP2,
   // Esquisse : une commande par forme + modifier / supprimer
   ...Object.fromEntries(FORMES.map((forme) => [`esquisse.${forme}`, ((etat, p, ctx) => creerOccurrence(etat, { ...p, params: { ...((p["params"] as Record<string, unknown> | undefined) ?? p), forme } }, ctx, "esquisse")) as Reducteur])),
   "esquisse.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "esquisse"),
@@ -413,7 +424,7 @@ export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): Resulta
 export function identifiantsCibles(enveloppe: Enveloppe): string[] {
   const ids = new Set<string>();
   for (const c of enveloppe.commands) {
-    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir", "ancienne", "nouvelle", "zoneId", "dalleId", "murA", "murB", "groupeId", "calqueCible", "a", "b", "porteId"]) {
+    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir", "ancienne", "nouvelle", "zoneId", "dalleId", "murA", "murB", "groupeId", "calqueCible", "a", "b", "porteId", "sourceId", "hoteId", "pourId"]) {
       const v = c.params[k];
       if (typeof v === "string") ids.add(v);
     }

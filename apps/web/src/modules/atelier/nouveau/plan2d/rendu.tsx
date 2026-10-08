@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { anneauRetombee, architectureBloc, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, segmentsTrame, separationsCouches, empriseTole, empriseEquipement, traceSegment, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { anneauRetombee, architectureBloc, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, segmentsTrame, separationsCouches, empriseTole, empriseEquipement, traceSegment, empriseTerrain, empriseSurfaceLibre, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -269,6 +269,68 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
           <rect x={c.x - 4} y={c.y - 4} width={8} height={8} fill="#7d7d7d" stroke={selectionne ? "#b3872f" : "#3f4a55"} strokeWidth={1} />
           <title>{`Support · ${o.params.nom ?? o.id} · ${o.params.type}`}</title>
         </g>
+      );
+    }
+    // Bâtiment P2 (P2-6) : contours en plan, axes épaissis, emprises dérivées.
+    case "plafond":
+    case "coque":
+    case "installation-chantier": {
+      const couleur = o.classe === "plafond" ? "#b9b1a3" : o.classe === "coque" ? "#9fb3c8" : "#d9a441";
+      return (
+        <path d={chemin(pr, o.params.contour) + o.params.trous.map((t) => chemin(pr, t)).join("")} fillRule="evenodd" className={classes(`obj-${o.classe}`, selectionne, survole)} fill={couleur} fillOpacity={o.classe === "installation-chantier" ? 0.25 : 0.18} stroke={selectionne ? "#b3872f" : couleur} strokeWidth={selectionne ? 2.5 : 1} strokeDasharray={o.classe === "plafond" ? "8 4" : o.classe === "installation-chantier" ? "4 3" : undefined} data-objet={o.id}>
+          <title>{`${o.classe === "plafond" ? "Plafond" : o.classe === "coque" ? "Coque" : "Installation de chantier"} · ${o.params.nom ?? o.id}`}</title>
+        </path>
+      );
+    }
+    case "reservation": {
+      return (
+        <path d={chemin(pr, o.params.contour)} className={classes("obj-reservation", selectionne, survole)} fill={o.params.statut === "accordee" ? "#7fb069" : o.params.statut === "refusee" ? "#c0504d" : "#e0b84a"} fillOpacity={0.35} stroke={selectionne ? "#b3872f" : "#3f4a55"} strokeWidth={selectionne ? 2.5 : 1} strokeDasharray="3 2" data-objet={o.id} data-statut={o.params.statut}>
+          <title>{`Réservation · ${o.params.nom ?? o.id} · ${o.params.statut}`}</title>
+        </path>
+      );
+    }
+    case "rampe":
+    case "mur-rideau": {
+      const a = pr.vers(o.params.a), b = pr.vers(o.params.b);
+      const w = Math.max(2, (o.classe === "rampe" ? o.params.largeur.value : o.params.profondeurProfil.value) * pr.echelle);
+      return (
+        <g className={classes(`obj-${o.classe}`, selectionne, survole)} data-objet={o.id}>
+          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={o.classe === "rampe" ? "#8a8f98" : "#4f8fb3"} strokeOpacity={0.35} strokeWidth={w} />
+          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={selectionne ? "#b3872f" : o.classe === "rampe" ? "#5b6068" : "#2f6f9f"} strokeWidth={selectionne ? 2 : 1} />
+          {o.classe === "rampe" && <polygon points={`${b.x},${b.y} ${b.x - 6 * Math.sign(b.x - a.x || 1)},${b.y - 4} ${b.x - 6 * Math.sign(b.x - a.x || 1)},${b.y + 4}`} fill={selectionne ? "#b3872f" : "#5b6068"} />}
+          <title>{`${o.classe === "rampe" ? "Rampe" : "Mur-rideau"} · ${o.params.nom ?? o.id}`}</title>
+        </g>
+      );
+    }
+    case "echelle": {
+      const c = pr.vers(o.params.a);
+      const W = Math.max(4, o.params.largeur.value * pr.echelle);
+      return (
+        <g className={classes("obj-echelle", selectionne, survole)} data-objet={o.id}>
+          <rect x={c.x - W / 2} y={c.y - 3} width={W} height={6} fill="#fff" stroke={selectionne ? "#b3872f" : "#3f4a55"} strokeWidth={1.2} />
+          <line x1={c.x - W / 2} y1={c.y} x2={c.x + W / 2} y2={c.y} stroke={selectionne ? "#b3872f" : "#3f4a55"} strokeWidth={1} />
+          <title>{`Échelle · ${o.params.nom ?? o.id} · ${o.params.hauteur.value} m`}</title>
+        </g>
+      );
+    }
+    case "terrain": {
+      const emp = empriseTerrain(o.params);
+      if (emp.length < 3) return null;
+      return (
+        <g className={classes("obj-terrain", selectionne, survole)} data-objet={o.id}>
+          <path d={chemin(pr, emp)} fill="#8fae6b" fillOpacity={0.15} stroke={selectionne ? "#b3872f" : "#6f8f4b"} strokeWidth={selectionne ? 2 : 1} strokeDasharray="2 3" />
+          {o.params.points.slice(0, 400).map((q, i) => { const v = pr.vers(q); return <circle key={i} cx={v.x} cy={v.y} r={1.5} fill="#6f8f4b" />; })}
+          <title>{`Terrain · ${o.params.nom ?? o.id} · ${o.params.points.length} points`}</title>
+        </g>
+      );
+    }
+    case "surface-libre": {
+      const emp = empriseSurfaceLibre(o.params);
+      if (emp.length < 3) return null;
+      return (
+        <path d={chemin(pr, emp)} className={classes("obj-surface-libre", selectionne, survole)} fill="#b388c8" fillOpacity={0.25} stroke={selectionne ? "#b3872f" : "#7d5a93"} strokeWidth={selectionne ? 2.5 : 1} data-objet={o.id}>
+          <title>{`Surface libre · ${o.params.nom ?? o.id} · ${o.params.niveaux} subdivision(s)`}</title>
+        </path>
       );
     }
     case "objet-importe": {

@@ -3,7 +3,7 @@
  * orthogonal, grille. Rayon à l'écran (12 px, D-012) converti en mètres par l'échelle de la vue. Les accrochages
  * d'objet priment sur l'orthogonal, qui prime sur la grille. Fonctions pures : testables sans DOM.
  */
-import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointDansPolygone, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2 } from "@parcours/atelier-model";
+import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointDansPolygone, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2, empriseTerrain, empriseSurfaceLibre } from "@parcours/atelier-model";
 import { contoursArchitecture, empriseEquipement, empriseTole, intersectionsTrame, traceSegment, pt, segmentsTrame, traitsBloc } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
@@ -181,6 +181,25 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
       case "equipement-reseau":
         centres.push({ p: o.params.position, objetId: o.id });
         contour(empriseEquipement(o.params), o.id, true);
+        break;
+      // Bâtiment P2 (P2-6).
+      case "plafond":
+      case "coque":
+      case "reservation":
+      case "installation-chantier":
+        contour(o.params.contour, o.id, true);
+        for (const t of o.params.trous) contour(t, o.id);
+        break;
+      case "rampe":
+      case "mur-rideau":
+      case "echelle":
+        segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
+        break;
+      case "terrain":
+        contour(empriseTerrain(o.params), o.id, true);
+        break;
+      case "surface-libre":
+        contour(empriseSurfaceLibre(o.params), o.id, true);
         break;
       case "cotation":
         segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
@@ -362,6 +381,15 @@ export function objetSousPointeur(p: Point2, cache: ReturnType<typeof segmentsDu
     } else if (o.classe === "plaque" && o.params.contour.length >= 3 && pointDansPolygone(p, o.params.contour)) {
       const d = rayon - 1e-6;
       if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };
+    } else if ((o.classe === "plafond" || o.classe === "coque" || o.classe === "reservation" || o.classe === "installation-chantier") && o.params.contour.length >= 3 && pointDansPolygone(p, o.params.contour)) {
+      const d = rayon - 1e-6;
+      if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };
+    } else if ((o.classe === "terrain" && pointDansPolygone(p, empriseTerrain(o.params))) || (o.classe === "surface-libre" && pointDansPolygone(p, empriseSurfaceLibre(o.params)))) {
+      const d = rayon - 1e-6;
+      if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };
+    } else if (o.classe === "echelle") {
+      const d = dist(p, o.params.a);
+      if (d <= rayon * 2 && (!meilleur || d < meilleur.distance)) meilleur = { objetId: o.id, distance: d };
     } else if (o.classe === "equipement-reseau" && pointDansPolygone(p, empriseEquipement(o.params))) {
       const d = rayon - 1e-6;
       if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };

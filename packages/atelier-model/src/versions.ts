@@ -14,6 +14,8 @@
  */
 import { compositionMur } from "./compositions.js";
 import { interferences } from "./interferences.js";
+import { collisionsOntologies, controlesSpecification } from "./coordination.js";
+import { CLASSES } from "./ontologie.js";
 import type { Commande, InstantaneDiff } from "./commandes/index.js";
 import { appliquerDifferentiel, ErreurCommande, TYPE_RESTAURER } from "./commandes/index.js";
 import type { Primitive } from "./documents/dessin.js";
@@ -224,7 +226,7 @@ export function analyserFusion(tronc: readonly EffetsJournal[], variante: readon
 
 // --- Collisions d'architecture -----------------------------------------------------------------------------------
 
-export type TypeCollision = "ouverture-hors-mur" | "ouverture-trop-haute" | "ouvertures-chevauchantes" | "escalier-contre-dalle" | "composition-incoherente" | "piece-batiment";
+export type TypeCollision = "ouverture-hors-mur" | "ouverture-trop-haute" | "ouvertures-chevauchantes" | "escalier-contre-dalle" | "composition-incoherente" | "piece-batiment" | "ontologies" | "specification";
 
 export interface Collision {
   type: TypeCollision;
@@ -301,5 +303,17 @@ export function collisions(etat: ModeleAtelier): Collision[] {
       out.push({ type: "piece-batiment", objets: [piece.id, autre.id], niveauId: i.niveauId, message: `pièce ${(piece as Occurrence<"piece-mecanique">).params.nom} (${piece.id}) : ${Math.round(i.volume * 1000) / 1000} m³ en commun avec ${autre.classe} ${autre.id} — réservation ou déplacement à décider` });
     }
   }
+  // Coordination entre ontologies (P2-6, cahier P2 §4) : réseau × bâtiment, structure × réseau, bois × réseau… — signalées,
+  // jamais corrigées ; une réservation accordée qui couvre le volume commun l'exempte (nommée pour information).
+  for (const c of collisionsOntologies(etat)) {
+    if (c.reservationId) continue;
+    const p = etat.objets[c.objets[0]!], q = etat.objets[c.objets[1]!];
+    if (!p || !q) continue;
+    if (p.classe === "piece-mecanique" || q.classe === "piece-mecanique") continue; // déjà signalée (piece-batiment)
+    const nom = (o: OccurrenceQuelconque) => `${CLASSES[o.classe].libelle.toLowerCase()} ${(o.params as { nom?: string | null }).nom ?? o.id}`;
+    out.push({ type: "ontologies", objets: [p.id, q.id], niveauId: c.niveauId, message: `${nom(p)} × ${nom(q)} : ${Math.round(c.volume * 1000) / 1000} m³ en commun (${c.familles[0]} / ${c.familles[1]}) — réservation ou déplacement à décider` });
+  }
+  // Contrôles de spécification (DA-17-14).
+  for (const s of controlesSpecification(etat)) out.push({ type: "specification", objets: [s.objetId], niveauId: etat.objets[s.objetId]?.niveauId ?? null, message: `${s.objetId} : ${s.motif}` });
   return out.sort((x, y) => (x.type < y.type ? -1 : x.type > y.type ? 1 : x.objets[0]! < y.objets[0]! ? -1 : 1));
 }
