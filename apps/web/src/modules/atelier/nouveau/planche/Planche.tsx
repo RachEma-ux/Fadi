@@ -15,6 +15,7 @@ import {
   adoucirAretes,
   adoucirLisser,
   afficherTout,
+  appliquerDeltaPlanche,
   aire,
   analyserSaisie,
   appliquer as appliquerMatrice,
@@ -221,7 +222,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     setMenuEtat(m);
   }, []);
   const [dialogueComposant, setDialogueComposant] = useState(false);
-  const pressePapiers = useRef<{ ids: readonly string[]; dans: string | undefined } | null>(null);
+  const pressePapiers = useRef<{ ids: readonly string[]; dans: string | undefined; source: Modele } | null>(null);
   const derniersMasques = useRef<{ ids: readonly string[]; dans: string | undefined } | null>(null);
   const [precision, setPrecision] = useState(() => lirePrecision());
   const [camera, setCamera] = useState<{ projection: "perspective" | "parallele"; champDeVision: number }>({ projection: "perspective", champDeVision: 35 });
@@ -816,7 +817,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         setMessage(t("planche.presse-papiers.vide"));
         return;
       }
-      pressePapiers.current = { ids, dans: dansRef.current };
+      // Le modèle d'avant l'effacement est gardé : un Ctrl + X puis Ctrl + V recolle bien la géométrie coupée.
+      pressePapiers.current = { ids, dans: dansRef.current, source: histRef.current.present.modele };
       if (couper) effacerSelection();
       else setMessage(t("planche.presse-papiers.copie", { nombre: String(ids.length) }));
     },
@@ -827,8 +829,25 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       operer(t("planche.presse-papiers.colle"), (m, dans) => {
         const pp = pressePapiers.current;
         if (!pp || pp.dans !== dans) return { modele: m, message: t("planche.presse-papiers.vide") };
-        const r = copier(m, pp.ids, { x: 1, y: 0, z: 0 }, { copies: 1 }, o());
-        return { modele: r.modele, selection: r.rapport.crees, message: t("planche.presse-papiers.colle") };
+        const c = contexteDe(m, dans);
+        const presentes = pp.ids.every((id) => c.sommets[id] || c.aretes[id] || c.faces[id] || c.courbes[id] || c.occurrences[id]);
+        if (presentes) {
+          const r = copier(m, pp.ids, { x: 1, y: 0, z: 0 }, { copies: 1 }, o());
+          return { modele: r.modele, selection: r.rapport.crees, message: t("planche.presse-papiers.colle") };
+        }
+        // Entités coupées (ou effacées depuis) : copiées dans l'instantané d'origine avec des identifiants frais pour les
+        // deux modèles, puis la différence (les seules créations) est reportée dans le modèle courant.
+        const source: Modele = { ...pp.source, prochainId: Math.max(pp.source.prochainId, m.prochainId) };
+        const r = copier(source, pp.ids, { x: 1, y: 0, z: 0 }, { copies: 1 }, o());
+        const delta = differencePlanche(source, r.modele);
+        if (!delta) return { modele: m, message: t("planche.presse-papiers.vide") };
+        const defs: Record<string, (typeof m.definitions)[string]> = {};
+        for (const id of r.rapport.crees) {
+          const occ = contexteDe(r.modele, dans).occurrences[id];
+          if (occ && !m.definitions[occ.definition] && r.modele.definitions[occ.definition]) defs[occ.definition] = r.modele.definitions[occ.definition]!;
+        }
+        const colle = appliquerDeltaPlanche(m, { ...delta, definitions: { ...(delta.definitions ?? {}), ...defs } });
+        return { modele: colle, selection: r.rapport.crees, message: t("planche.presse-papiers.colle") };
       }),
     [operer, o],
   );
