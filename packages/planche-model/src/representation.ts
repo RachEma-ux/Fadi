@@ -4,7 +4,7 @@
  * géométrie libre de la racine. Les solides (lot 6) sont maillés orientés vers l'extérieur avec leur volume ; les
  * objets non solides et les faces libres sont triangulés face par face, sans volume (« non évalué »).
  */
-import { appliquer, contexte, estSolide, matriceMonde, positionsFace, transformerNormale, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
+import { appliquer, composer, contexte, estSolide, matriceMonde, positionsFace, transformerNormale, type Contexte, type Id, type Matrice4, type Modele } from "./geometrie-libre.js";
 import { maillageDuSolide, motifNonSolide, triangulerFace, volumeDuMaillage } from "./maillage.js";
 import { normalize, type Vec3 } from "./vecteur.js";
 
@@ -22,7 +22,14 @@ export interface MaillagePlanche {
   readonly triangles: readonly number[];
 }
 
-function triangulerContexte(c: Contexte, M: Matrice4 | null, positions: number[], triangles: number[]): void {
+function triangulerContexte(m: Modele, c: Contexte, M: Matrice4 | null, positions: number[], triangles: number[], profondeur = 0): void {
+  if (profondeur > 32) return;
+  // Occurrences imbriquées (un groupe qui contient un composant…) : descendues avec leur transformation composée.
+  for (const o of Object.values(c.occurrences)) {
+    if (o.masquee) continue;
+    const d = m.definitions[o.definition];
+    if (d) triangulerContexte(m, d.contenu, M ? composer(M, o.transformation) : o.transformation, positions, triangles, profondeur + 1);
+  }
   for (const f of Object.values(c.faces)) {
     if (f.masquee) continue;
     const p = positionsFace(c, f);
@@ -55,13 +62,16 @@ export function maillagesPlanche(m: Modele): MaillagePlanche[] {
     } else {
       const positions: number[] = [];
       const triangles: number[] = [];
-      triangulerContexte(contexte(m, o.id), matriceMonde(m, o.id), positions, triangles);
+      triangulerContexte(m, contexte(m, o.id), matriceMonde(m, o.id), positions, triangles);
       if (triangles.length) sortie.push({ id: o.id, nom, genre: def.genre, solide: false, volume: null, positions, triangles });
     }
   }
   const positions: number[] = [];
   const triangles: number[] = [];
-  triangulerContexte(m.racine, null, positions, triangles);
+  for (const f of Object.values(m.racine.faces)) if (!f.masquee) {
+    triangulerContexte(m, { ...m.racine, occurrences: {} }, null, positions, triangles);
+    break;
+  }
   if (triangles.length) sortie.push({ id: "racine", nom: "Géométrie libre", genre: "racine", solide: false, volume: null, positions, triangles });
   return sortie;
 }

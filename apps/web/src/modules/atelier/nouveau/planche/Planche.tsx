@@ -181,6 +181,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const plancheIdRef = useRef<string | null>(null);
   const onCommandesRef = useRef(onCommandes);
   onCommandesRef.current = onCommandes;
+  const etatRef = useRef(etat);
+  etatRef.current = etat;
   const readOnlyRef = useRef(readOnly);
   readOnlyRef.current = readOnly;
   const listePlanches = useMemo(() => (etat ? planchesDe(etat) : []), [etat]);
@@ -1309,7 +1311,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       creer: (nom: string, depuisBrouillon: boolean) => {
         const id = `planche-${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`;
         const modele = depuisBrouillon ? histRef.current.present.modele : undefined;
+        // Le bus signale un refus (nom en double…) sans rejeter la promesse : le rappel vérifie que la Planche existe.
         commanderPlanche([{ type: "planche.creer", params: { id, nom, ...(modele ? { modele } : {}) } }], t("planche.nouvelle"), () => {
+          if (!etatRef.current?.definitions[id]) return;
           etatUi.set({ plancheId: id });
           setMessage(t("planche.persistance.enregistree"));
         });
@@ -1317,7 +1321,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       renommer: (id: string, nom: string, niveauId: string | null) => commanderPlanche([{ type: "planche.renommer", params: { id, nom, niveauId } }], t("planche.renommer")),
       copier: (source: string, nom: string) => {
         const id = `planche-${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36)}`;
-        commanderPlanche([{ type: "planche.copier", params: { id, source, nom } }], t("planche.enregistrer-sous"), () => etatUi.set({ plancheId: id }));
+        commanderPlanche([{ type: "planche.copier", params: { id, source, nom } }], t("planche.enregistrer-sous"), () => {
+          if (etatRef.current?.definitions[id]) etatUi.set({ plancheId: id });
+        });
       },
       supprimer: (id: string) => commanderPlanche([{ type: "planche.supprimer", params: { id } }], t("planche.supprimer")),
       exporterIfc: async (id: string) => {

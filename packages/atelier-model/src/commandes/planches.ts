@@ -127,6 +127,7 @@ export const reducteursPlanche: Record<string, Reducteur> = {
     const empreinteApres = lire.chaine(p, "empreinteApres");
     if (!/^[0-9a-f]{16}$/.test(empreinteApres)) throw new ErreurCommande("invalide", "empreinteApres", "empreinte attendue : 16 caractères hexadécimaux");
     const modele = appliquerDeltaPlanche(d.params.modele, delta);
+    if (!lireModelePlanche(modele)) throw new ErreurCommande("precondition", "delta", "le delta laisse la Planche incohérente (référence vers un sommet ou une définition absente)");
     const obtenue = empreintePlanche(modele);
     if (obtenue !== empreinteApres) throw new ErreurCommande("precondition", "empreinteApres", `la Planche « ${d.params.nom} » a changé depuis cette opération (${libelle || "opération"}) : empreinte ${obtenue} obtenue, ${empreinteApres} annoncée`);
     const params: ParamsPlanche = { ...d.params, modele, empreinte: obtenue };

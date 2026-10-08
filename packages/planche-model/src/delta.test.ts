@@ -55,3 +55,17 @@ describe("lot 7 — delta, empreinte et lecture du modèle de la Planche", () =>
     expect(estDeltaPlanche({ prochainId: 4, annotations: { repere: null } })).toBe(true);
   });
 });
+
+describe("lot 7 — représentation hors Planche (maillagesPlanche)", () => {
+  it("un composant imbriqué dans un groupe sans face propre est maillé (récursion), la géométrie libre aussi", async () => {
+    const { maillagesPlanche } = await import("./representation.js");
+    const a = boite(modeleVide());
+    const composant = grouper(a, [...Object.keys(a.racine.faces), ...Object.keys(a.racine.aretes)], { nom: "Boîte", genre: "composant" });
+    const groupe = grouper(composant.modele, [composant.occurrence], { nom: "Conteneur" }).modele;
+    const avecLibre = ajouterRectangle(groupe, v3(10, 0, 0), v3(1, 0, 0), v3(0, 1, 0)).modele;
+    const maillages = maillagesPlanche(avecLibre);
+    expect(maillages.map((m) => m.genre)).toEqual(["groupe", "racine"]);
+    expect(maillages[0]!.triangles.length).toBe(12 * 3);
+    expect(maillages[1]!.triangles.length).toBe(2 * 3);
+  });
+});

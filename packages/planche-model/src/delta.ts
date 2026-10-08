@@ -194,23 +194,59 @@ export function empreintePlanche(m: Modele): string {
 }
 
 const estObjet = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
-const estContexte = (c: unknown): c is Contexte => estObjet(c) && CLES_CONTEXTE.every((k) => estObjet(c[k]));
+const estNombre = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+const estId = (v: unknown): v is Id => typeof v === "string" && v.length > 0 && v.length <= 64;
+const estVec3 = (v: unknown): boolean => estObjet(v) && estNombre(v["x"]) && estNombre(v["y"]) && estNombre(v["z"]);
+const estBoucle = (v: unknown): boolean => Array.isArray(v) && v.length >= 3 && v.every(estId);
 
-/** Modèle de la Planche lu d'une valeur quelconque (JSON reçu, brouillon), ou `null` s'il est mal formé. */
+/** Validateurs d'entités (valeurs reçues d'un client : jamais crues sur parole). */
+export const validateursEntites: Record<(typeof CLES_CONTEXTE)[number], (id: Id, v: unknown) => boolean> = {
+  sommets: (id, v) => estObjet(v) && v["id"] === id && estVec3(v["position"]),
+  aretes: (id, v) => estObjet(v) && v["id"] === id && estId(v["a"]) && estId(v["b"]) && v["a"] !== v["b"] && (v["courbe"] === undefined || estId(v["courbe"])),
+  faces: (id, v) => estObjet(v) && v["id"] === id && estBoucle(v["exterieur"]) && Array.isArray(v["trous"]) && v["trous"].every(estBoucle) && estVec3(v["normale"]),
+  courbes: (id, v) => estObjet(v) && v["id"] === id && ["cercle", "polygone", "arc"].includes(v["genre"] as string) && Array.isArray(v["aretes"]) && v["aretes"].every(estId) && estVec3(v["centre"]) && estNombre(v["rayon"]) && estVec3(v["normale"]),
+  occurrences: (id, v) => estObjet(v) && v["id"] === id && estId(v["definition"]) && Array.isArray(v["transformation"]) && v["transformation"].length === 16 && v["transformation"].every(estNombre),
+};
+
+function estContexte(c: unknown): c is Contexte {
+  if (!estObjet(c)) return false;
+  for (const k of CLES_CONTEXTE) {
+    const table = c[k];
+    if (!estObjet(table)) return false;
+    for (const [id, v] of Object.entries(table)) if (!validateursEntites[k](id, v)) return false;
+  }
+  // Références internes : arêtes vers des sommets du contexte, boucles de faces vers des sommets.
+  const ctx = c as unknown as Contexte;
+  for (const a of Object.values(ctx.aretes)) if (!ctx.sommets[a.a] || !ctx.sommets[a.b]) return false;
+  for (const f of Object.values(ctx.faces)) for (const b of [f.exterieur, ...f.trous]) for (const s of b) if (!ctx.sommets[s]) return false;
+  return true;
+}
+
+const estDefinition = (id: Id, d: unknown): d is Definition => estObjet(d) && d["id"] === id && typeof d["nom"] === "string" && (d["genre"] === "groupe" || d["genre"] === "composant") && estContexte(d["contenu"]);
+
+/** Modèle de la Planche lu d'une valeur quelconque (JSON reçu, brouillon), ou `null` s'il est mal formé : chaque sommet, arête, face, courbe, occurrence et définition est vérifié, ainsi que les références internes. */
 export function lireModelePlanche(brut: unknown): Modele | null {
-  if (!estObjet(brut) || !estContexte(brut["racine"]) || !estObjet(brut["definitions"]) || typeof brut["prochainId"] !== "number" || !Number.isInteger(brut["prochainId"]) || (brut["prochainId"] as number) < 0) return null;
-  for (const d of Object.values(brut["definitions"])) if (!estObjet(d) || typeof d["id"] !== "string" || typeof d["nom"] !== "string" || !estContexte(d["contenu"])) return null;
+  if (!estObjet(brut) || !estContexte(brut["racine"]) || !estObjet(brut["definitions"]) || !estNombre(brut["prochainId"]) || !Number.isInteger(brut["prochainId"]) || (brut["prochainId"] as number) < 0) return null;
+  const definitions = brut["definitions"];
+  for (const [id, d] of Object.entries(definitions)) if (!estDefinition(id, d)) return null;
+  const occurrences = (c: Contexte) => Object.values(c.occurrences);
+  for (const o of [...occurrences(brut["racine"]), ...Object.values(definitions).flatMap((d) => occurrences((d as Definition).contenu))]) if (!definitions[o.definition]) return null;
   const an = brut["annotations"];
   if (an !== undefined && !estObjet(an)) return null;
+  if (an) {
+    for (const k of CLES_ANNOTATIONS) if (an[k] !== undefined && !(estObjet(an[k]) && Object.entries(an[k] as object).every(([id, v]) => estObjet(v) && v["id"] === id))) return null;
+    if (an["repere"] !== undefined && !(estObjet(an["repere"]) && estVec3(an["repere"]["origine"]))) return null;
+    if (an["reglages"] !== undefined && !estObjet(an["reglages"])) return null;
+  }
   return brut as unknown as Modele;
 }
 
 /** Forme d'un delta reçu : tables d'objets ou de `null`, `prochainId` entier ; le contenu des entrées n'est pas revalidé ici. */
 export function estDeltaPlanche(v: unknown): v is DeltaPlanche {
   if (!estObjet(v)) return false;
-  const table = (t: unknown) => estObjet(t) && Object.values(t).every((x) => x === null || estObjet(x));
-  if (v["racine"] !== undefined && (!estObjet(v["racine"]) || !Object.entries(v["racine"]).every(([k, t]) => (CLES_CONTEXTE as readonly string[]).includes(k) && table(t)))) return false;
-  if (v["definitions"] !== undefined && !table(v["definitions"])) return false;
+  const table = (t: unknown, valide: (id: Id, x: unknown) => boolean = (_id, x) => estObjet(x)) => estObjet(t) && Object.entries(t).every(([id, x]) => x === null || valide(id, x));
+  if (v["racine"] !== undefined && (!estObjet(v["racine"]) || !Object.entries(v["racine"]).every(([k, t]) => (CLES_CONTEXTE as readonly string[]).includes(k) && table(t, validateursEntites[k as (typeof CLES_CONTEXTE)[number]])))) return false;
+  if (v["definitions"] !== undefined && !table(v["definitions"], (id, x) => estDefinition(id, x))) return false;
   if (v["annotations"] !== undefined) {
     const an = v["annotations"];
     if (!estObjet(an)) return false;
