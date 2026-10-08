@@ -156,6 +156,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche-lot-7.mjs 2>&1 | tee -a e2e.log
+      - name: Porte P1 réduite (P2-0) — un projet, un écran, bâtiment + esquisse + Planche + feuille + version (apps/web/e2e/porte-p1-reduite.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/porte-p1-reduite.mjs 2>&1 | tee -a e2e.log
       - name: Recette de l'interface anglaise — relevé des textes restés en français (apps/web/e2e/interface-anglais.mjs)
         run: |
           set -o pipefail

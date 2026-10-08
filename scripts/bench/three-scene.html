@@ -16,7 +16,7 @@
 <body>
 <script type="module">
 // Banc L0.4 — scène équivalente à P.118 : 6 niveaux, 220 murs, 210 ouvertures, 120 poteaux, 967 solides.
-// Paramètres d'URL : variant=A|B, backend=webgl2|webgpu, frames=300, picks=100, sync=readpixels|none
+// Paramètres d'URL : variant=A|B|M, backend=webgl2|webgpu, frames=300, picks=100, sync=readpixels|none
 //   A : murs et solides en Mesh individuels (une BoxGeometry chacun), ouvertures et poteaux en InstancedMesh par niveau.
 //   B : InstancedMesh pour toute classe d'objets, par niveau (6 niveaux × 4 classes = 24 maillages).
 const params = new URLSearchParams(location.search);
@@ -66,7 +66,7 @@ try {
   let meshCount = 0, instancedMeshCount = 0, instanceCount = 0, objectCount = 0, geometryCount = 1;
   for (const c of classes) {
     const total = COUNTS[c.name];
-    const instanced = variant === 'B' || c.name === 'opening' || c.name === 'column';
+    const instanced = variant === 'B' || variant === 'M' || c.name === 'opening' || c.name === 'column';
     for (let l = 0; l < LEVELS; l++) {
       const n = Math.floor(total / LEVELS) + (l < total % LEVELS ? 1 : 0);
       if (instanced) {
@@ -98,6 +98,30 @@ try {
         }
       }
     }
+  }
+  // Variante M (P2-0, D-181) : scène B + une machine (CTA simplifiée : caisson, ventilateur à 24 pales, moteur, panneau,
+  // 200 éléments de fixation) dans un local technique du niveau 0, et deux gaines (tubes de 40 segments) vers deux pièces.
+  // Maillages fins (cylindres 48 segments, tore 32 × 16) pour peser le coût d'une ontologie mécanique dans la scène bâtiment.
+  let machine = null;
+  if (variant === 'M') {
+    const g = new THREE.Group(); g.name = 'machine-cta';
+    const mMetal = new THREE.MeshStandardMaterial({ color: 0x9aa5b1, metalness: 0.6, roughness: 0.4 });
+    const mGaine = new THREE.MeshStandardMaterial({ color: 0xb8c4d0 });
+    const base = { x: 6, y: 0, z: 6 };
+    const add = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(base.x + x, base.y + y, base.z + z); m.rotation.set(rx, ry, rz); m.userData.kind = 'machine'; g.add(m); geometryCount++; meshCount++; objectCount++; return m; };
+    add(new THREE.BoxGeometry(2.4, 1.6, 1.2), mMetal, 0, 0.9, 0);                         // caisson
+    add(new THREE.CylinderGeometry(0.5, 0.5, 0.3, 48), mMetal, 0, 0.9, 0.75, Math.PI / 2); // moyeu du ventilateur
+    for (let i = 0; i < 24; i++) add(new THREE.BoxGeometry(0.04, 0.45, 0.12), mMetal, 0.5 * Math.cos(i / 24 * Math.PI * 2) * 0.6, 0.9 + 0.3 * Math.sin(i / 24 * Math.PI * 2), 0.78, 0, 0, i / 24 * Math.PI * 2); // pales
+    add(new THREE.TorusGeometry(0.62, 0.03, 16, 32), mMetal, 0, 0.9, 0.75);                // virole
+    add(new THREE.CylinderGeometry(0.18, 0.18, 0.5, 48), mMetal, 0, 0.9, -0.9, Math.PI / 2); // moteur
+    add(new THREE.BoxGeometry(1.0, 1.2, 0.03), mMetal, 1.4, 0.9, 0);                        // panneau coulissant
+    for (let i = 0; i < 200; i++) add(new THREE.CylinderGeometry(0.008, 0.008, 0.03, 12), mMetal, -1.15 + (i % 20) * 0.12, 0.15 + Math.floor(i / 20) * 0.16, 0.61, Math.PI / 2); // fixations
+    // Deux gaines : polylignes 3D, tubes de 40 segments radiaux
+    const gaine = (pts) => { const curve = new THREE.CatmullRomCurve3(pts.map((p) => new THREE.Vector3(p[0], p[1], p[2]))); /* coordonnées locales : `add` applique `base` */ curve.curveType = 'centripetal'; add(new THREE.TubeGeometry(curve, 64, 0.16, 40, false), mGaine, 0, 0, 0); };
+    gaine([[0, 1.7, 0], [0, 2.8, 0], [0, 2.8, 8], [6, 2.8, 8], [6, 2.2, 8]]);
+    gaine([[1.2, 1.7, 0], [1.2, 2.9, 0], [14, 2.9, 0], [14, 2.9, 5], [14, 2.3, 5]]);
+    levelGroups[0].add(g);
+    machine = { elements: g.children.length };
   }
   const tScene = performance.now();
 
@@ -172,7 +196,7 @@ try {
   window.__benchResult = {
     variant, backend, frames: FRAMES, viewport: [W, H], pixelRatio: renderer.getPixelRatio(),
     threeRevision: THREE.REVISION, glInfo,
-    scene: { levels: LEVELS, counts: COUNTS, objects: objectCount, meshes: meshCount, instancedMeshes: instancedMeshCount, instances: instanceCount, geometries: geometryCount },
+    scene: { levels: LEVELS, counts: COUNTS, machine, objects: objectCount, meshes: meshCount, instancedMeshes: instancedMeshCount, instances: instanceCount, geometries: geometryCount },
     timingsMs: {
       navigationToScriptStart: t0, importThree: tImport - t0, buildScene: tScene - tImport, createRenderer: tRenderer - tScene,
       firstRender: tFirst - tRenderer, firstFrameSinceNavigation: tFirst, orbitTotal: tOrbit - tFirst,

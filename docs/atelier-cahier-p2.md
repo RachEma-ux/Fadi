@@ -1,8 +1,8 @@
 # Cahier des charges P2 — DrawAll universel : ontologies métier au-delà de l'architecture
 
-**Version 0.1 — 8 octobre 2026 — proposition du chef de projet, à valider par le maître d'ouvrage.**
-**Statut : proposition (D-175). Aucun code P2 n'est écrit avant la validation de ce cahier et l'arbitrage de la
-licence OCCT (Exigences V4, annexe D.3). Le cahier Atelier (`docs/atelier-cahier-des-charges.md`) et le cahier
+**Version 1.0 — 8 octobre 2026 — validé par le maître d'ouvrage (D-176), lot P2-0 engagé.**
+**Statut : validé (D-176), décisions de la section 6 prises (D-177 à D-181) ; seul le lot P2-0 est engagé, les lots
+suivants sont acceptés un à un. Le cahier Atelier (`docs/atelier-cahier-des-charges.md`) et le cahier
 Planche (`docs/planche/cahier-planche.md`) restent inchangés : ce document s'y ajoute, il ne les modifie pas.**
 
 Documents de référence : Concept V4 (`docs/drawall/DrawAll_v4.1_Concept.md`, §2 universalité, §6 modules, §12
@@ -155,13 +155,13 @@ surfaces maillées ; la porte P1 → P2 se joue alors avec des pièces paramétr
 
 | Décision | Pourquoi elle bloque | Lot |
 | --- | --- | --- |
-| **Validation de ce cahier** (écart au périmètre, 10.1-8) | Chaque lot ajoute des entrées DA hors du cahier Atelier | P2-0 |
-| **Licence OCCT** : LGPL avec WASM chargé séparément, licence commerciale, ou renoncer au noyau exact | D.3 « bloquante » ; conditionne P2-1, P2-2, P2-6, STEP | P2-1 |
-| **Solveur de contraintes** : solveur écrit et borné, bibliothèque sous licence admise, ou D-Cubed (commercial) | D.3 « à évaluer » ; mesure comparative en P2-0, choix à prendre ensuite | P2-2 |
-| **DWG / DGN** : renoncer (déclaré), SDK commercial, ou bibliothèque GPL isolée dans un service séparé | aucune bibliothèque libre sous licence admise | P2-7 |
-| **Sources des valeurs de catalogue** (profils, diamètres, pliage, assemblages) | R3 : rien n'est inventé ; sans source, les catalogues sont livrés vides | P2-2 à P2-5 |
-| **Fournisseur de modèle de langage** | inchangé depuis P1 : sans lui, génération déterministe seulement | P2-8 |
-| **Corpus de preuve P2** : un projet mixte de référence (bâtiment + machine + réseau) fourni ou construit | la porte P1 → P2 se prouve sur un cas mixte, pas sur P.118 seul | P2-0, porte |
+| **Validation de ce cahier** (écart au périmètre, 10.1-8) | Chaque lot ajoute des entrées DA hors du cahier Atelier — **prise le 8 octobre 2026 (D-176) : cahier validé, seul P2-0 engagé** | P2-0 |
+| **Licence OCCT** : LGPL avec WASM chargé séparément, licence commerciale, ou renoncer au noyau exact | D.3 « bloquante » ; conditionne P2-1, P2-2, P2-6, STEP — **prise (D-177) : composant LGPL chargé séparément, liste des licences amendée** | P2-1 |
+| **Solveur de contraintes** : solveur écrit et borné, bibliothèque sous licence admise, ou D-Cubed (commercial) | D.3 « à évaluer » ; mesure comparative en P2-0 — **prise (D-178) : solveur écrit et borné, critères de banc fixés** | P2-2 |
+| **DWG / DGN** : renoncer (déclaré), SDK commercial, ou bibliothèque GPL isolée dans un service séparé | aucune bibliothèque libre sous licence admise — **prise (D-179) : renoncés en P2, déclarés** | P2-7 |
+| **Sources des valeurs de catalogue** (profils, diamètres, pliage, assemblages) | R3 : rien n'est inventé ; sans source, les catalogues sont livrés vides — **prise (D-180) : gabarits CSV sourcés, trois fichiers de départ à fournir** | P2-2 à P2-5 |
+| **Fournisseur de modèle de langage** | inchangé depuis P1 : sans lui, génération déterministe seulement — reste ouverte | P2-8 |
+| **Corpus de preuve P2** : un projet mixte de référence (bâtiment + machine + réseau) fourni ou construit | la porte P1 → P2 se prouve sur un cas mixte, pas sur P.118 seul — **prise (D-181) : « P.118-M » construit par le chef de projet, scénario à valider** | P2-0, porte |
 
 ## 7. Risques et parades
 

@@ -73,3 +73,4 @@ export { areteLaPlusProche, normaleExterieure, pousserArete } from "./pousser-fa
 export { chaineFermee } from "./esquisse/chaines.js";
 export { longueurSaisie } from "./automatisation/longueur-saisie.js";
 export { objetsSemblables } from "./selection-semblables.js";
+export * from "./catalogues/csv-source.js";

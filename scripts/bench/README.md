@@ -41,3 +41,16 @@ Chaque script imprime un JSON (et l'écrit avec `--out`). `three-scene.html` est
 Notes : dans Chromium, `gl.finish()` est un simple `flush` ; la synchronisation de trame se fait par un
 `readPixels` 1×1 (`--sync readpixels`, défaut) ; `--sync none` mesure le seul coût CPU de `render()`. Le rendu
 headless est logiciel (SwiftShader) : base de comparaison, pas seuil.
+
+## Banc P2-0 (D-177, D-178, D-181) — `docs/atelier/p2-mesures.md`
+
+```sh
+cd "$BENCH" && npm i occt-wasm@5.6.1          # hors dépôt, comme ci-dessus
+cd <racine du dépôt>
+# OCCT dans Chromium : chaîne de licence, init (fil principal et Worker), 20 cas difficiles (un cas par page, délai par cas)
+BENCH_DIR="$BENCH" node scripts/bench/occt-browser-bench.mjs --repetitions 5 --limite 30000 --out "$BENCH/out/occt-browser.json"
+# Solveur de contraintes écrit (Levenberg-Marquardt) : 12 cas de référence + 7 cas dégénérés
+node scripts/bench/solveur-bench.mjs --out "$BENCH/out/solveur.json"
+# Scène mixte bâtiment + machine + gaines (variante M) comparée à la scène bâtiment (B)
+BENCH_DIR="$BENCH" node scripts/bench/three-bench.mjs --frames 300 --variants B,M --no-webgpu --out "$BENCH/out/three-mixte.json"
+```

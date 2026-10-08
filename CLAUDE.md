@@ -36,9 +36,11 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
 
 - Cahier des charges : `docs/atelier-cahier-des-charges.md` (règles R1–R20, contrats, lots, organisation).
 - Proposition acceptée : `docs/atelier-drawall.md`. Référentiel : `docs/drawall/`.
-- Lots P1 (Atelier 0–9, Planche 1–7) acceptés le 8 octobre 2026 (D-174). Étape P2 (ontologies structure,
-  mécanique, bois, tôlerie, réseaux, surfaces, coordination) : cahier **proposé** `docs/atelier-cahier-p2.md`
-  (D-175) ; aucun code P2 avant sa validation et l'arbitrage de la licence OCCT.
+- Lots P1 (Atelier 0–9, Planche 1–7) acceptés le 8 octobre 2026 (D-174). Étape P2 : cahier `docs/atelier-cahier-p2.md`
+  **validé** (D-176), lot **P2-0 livré** (`docs/atelier/lots/p2-lot-0.md`, `p2-mesures.md`) ; décisions D-177 (OCCT =
+  composant LGPL chargé séparément, licences amendées), D-178 (solveur écrit), D-179 (DWG / DGN renoncés), D-180
+  (catalogues CSV sourcés, `docs/atelier/catalogues/`), D-181 (projet mixte P.118-M). Ordre imposé P2-0 → P2-1 → P2-2 →
+  porte P1 → P2 ; un lot à la fois, chaque lot suivant attend son engagement par le maître d'ouvrage.
 - Suivi : `docs/atelier/` (fiches de capacité, décisions, mesures, maquette, comptes rendus de lot).
 - Un lot à la fois ; acceptation du maître d'ouvrage entre deux lots ; les décisions de la section 10.1 du
   cahier lui appartiennent : s'arrêter et demander, ne pas inventer.

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette P2-0 — activation d'une ontologie dans l'Atelier</title>
+<style>
+  :root { --fond: #f6f5f2; --carte: #fff; --trait: #d8d4cc; --texte: #1d1d1b; --sourd: #6b6964; --accent: #2b5d8a; --accent2: #8a4b2b; --ok: #2f7d4a; }
+  * { box-sizing: border-box; } html, body { margin: 0; background: var(--fond); color: var(--texte); font: 14px/1.4 system-ui, sans-serif; }
+  header.barre { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 12px; background: var(--carte); border-bottom: 1px solid var(--trait); }
+  .groupe { display: flex; gap: 4px; border: 1px solid var(--trait); border-radius: 6px; padding: 2px; }
+  .groupe button, .bouton { border: 0; background: transparent; padding: 4px 10px; border-radius: 4px; font: inherit; cursor: pointer; }
+  .groupe button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .palette { flex: 1; min-width: 180px; border: 1px solid var(--trait); border-radius: 6px; padding: 4px 10px; color: var(--sourd); background: var(--fond); }
+  .onto { display: flex; gap: 6px; align-items: center; } .onto label { display: inline-flex; gap: 4px; align-items: center; padding: 2px 8px; border: 1px solid var(--trait); border-radius: 999px; background: var(--carte); }
+  .onto label.active { border-color: var(--accent); background: #e8eff6; } .onto .p2 { border-style: dashed; color: var(--sourd); }
+  main { display: grid; grid-template-columns: 220px 1fr 300px; gap: 10px; padding: 10px; min-height: calc(100vh - 110px); }
+  aside, section { background: var(--carte); border: 1px solid var(--trait); border-radius: 8px; padding: 10px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--sourd); margin: 0 0 8px; }
+  ul { margin: 0; padding-left: 18px; } li { margin: 2px 0; } .cls { color: var(--accent2); }
+  .zone { display: flex; flex-direction: column; } .zone .dessin { flex: 1; border: 1px dashed var(--trait); border-radius: 6px; position: relative; background: repeating-linear-gradient(0deg, transparent 0 24px, #eee 24px 25px), repeating-linear-gradient(90deg, transparent 0 24px, #eee 24px 25px); min-height: 360px; }
+  .dessin svg { width: 100%; height: 100%; position: absolute; inset: 0; }
+  .outils { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; } .outils button { border: 1px solid var(--trait); background: var(--fond); border-radius: 6px; padding: 4px 8px; font: inherit; }
+  .outils button.mec { border-color: var(--accent2); color: var(--accent2); } .outils button.off { opacity: .45; text-decoration: line-through; }
+  .insp dl { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin: 0; } .insp dt { color: var(--sourd); } .insp dd { margin: 0; } .insp .err { color: var(--accent2); }
+  .pb { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--trait); } .pb li.coll { color: var(--accent2); }
+  .note { font-size: 12px; color: var(--sourd); padding: 8px 12px; }
+  .niveau { font-size: 12px; color: var(--sourd); }
+  @media (max-width: 480px) {
+    main { grid-template-columns: 1fr; } aside.nav { order: 3; } aside.insp { order: 2; } .zone .dessin { min-height: 260px; }
+    header.barre { position: sticky; top: 0; } .palette { min-width: 0; width: 100%; }
+    nav.onglets { position: sticky; bottom: 0; display: flex; gap: 4px; background: var(--carte); border-top: 1px solid var(--trait); padding: 6px; }
+    nav.onglets button { flex: 1; border: 1px solid var(--trait); background: var(--fond); border-radius: 6px; padding: 8px 4px; font: inherit; }
+  }
+  @media (min-width: 481px) { nav.onglets { display: none; } }
+</style>
+</head>
+<body>
+<header class="barre" aria-label="Barre de l'Atelier">
+  <div class="groupe" role="group" aria-label="Plan, 3D, documents ou Planche">
+    <button aria-pressed="true">Plan</button><button>3D</button><button>Documents</button><button>Planche</button>
+  </div>
+  <div class="palette">Rechercher un outil… <kbd>Ctrl K</kbd> — « poutre », « liaison », « gaine », « push/pull »</div>
+  <div class="groupe" role="group" aria-label="Niveau d'affichage">
+    <button aria-pressed="true">Essentiel</button><button>Contextuel</button><button>Complet</button>
+  </div>
+  <div class="onto" aria-label="Ontologies du projet">
+    <span class="niveau">Ontologies :</span>
+    <label class="active"><input type="checkbox" checked disabled> bâtiment</label>
+    <label class="active"><input type="checkbox" checked> mécanique</label>
+    <label class="p2"><input type="checkbox"> structure (P2-3)</label>
+    <label class="p2"><input type="checkbox"> réseaux (P2-5)</label>
+  </div>
+</header>
+<p class="note">Maquette statique P2-0 (D-176) : activer l'ontologie <strong>mécanique</strong> ajoute ses outils à la palette et à la barre, ses classes au navigateur et à l'inspecteur, ses problèmes au panneau — <strong>sans nouvel écran, sans édition, sans ruban</strong> (T01, UX1–UX4). Le niveau « Essentiel » ne change pas de contenu : les outils mécaniques y apparaissent à leur place par famille.</p>
+<main>
+  <aside class="nav" aria-label="Navigateur">
+    <h2>Projet P.118-M</h2>
+    <ul>
+      <li>Niveaux : Rez · Étage 1 · … (6)</li>
+      <li>Calques : Architecture · Mécanique · Réseaux</li>
+      <li>Objets par classe
+        <ul>
+          <li>mur (220) · porte (120) · fenêtre (90) · pièce (74)</li>
+          <li class="cls">assemblage (1) : CTA · local technique</li>
+          <li class="cls">pièce mécanique (4) : socle, caisson, ventilateur, panneau</li>
+          <li class="cls">liaison (2) : pivot (ventilateur), glissière (panneau)</li>
+          <li>gaine (2) · réservation (1)</li>
+        </ul>
+      </li>
+      <li>Documents : plan RDC · coupe A · feuille A1 · nomenclature CTA</li>
+    </ul>
+  </aside>
+  <section class="zone" aria-label="Zone de travail">
+    <div class="outils" role="toolbar" aria-label="Outils (famille Créer)">
+      <button>Mur</button><button>Porte</button><button>Dalle</button><button>Esquisse</button>
+      <button class="mec">Pièce</button><button class="mec">Assemblage</button><button class="mec">Liaison</button><button class="mec">Pièce standard (catalogue)</button>
+      <button class="off" title="Ontologie non activée">Poutre</button><button class="off" title="Ontologie non activée">Gaine</button>
+    </div>
+    <div class="dessin" aria-label="Plan du rez-de-chaussée (extrait)">
+      <svg viewBox="0 0 600 360" role="img" aria-label="Local technique avec la CTA et deux gaines">
+        <g fill="none" stroke="#333" stroke-width="6"><path d="M40 40 H560 V320 H40 Z"/><path d="M300 40 V200 H560"/></g>
+        <g fill="#404040"><rect x="37" y="37" width="526" height="6"/></g>
+        <text x="60" y="70" font-size="13" fill="#555">Local technique · 6,0 × 4,2 m</text>
+        <text x="330" y="240" font-size="13" fill="#555">Bureau 1.12</text>
+        <g stroke="#8a4b2b" fill="#f3e6de" stroke-width="2"><rect x="80" y="120" width="150" height="80" rx="3"/><circle cx="230" cy="160" r="26"/><rect x="90" y="110" width="60" height="6"/></g>
+        <text x="86" y="150" font-size="12" fill="#8a4b2b">CTA · assemblage</text>
+        <text x="86" y="166" font-size="11" fill="#8a4b2b">pivot ↻ · glissière ↔</text>
+        <g stroke="#2b5d8a" stroke-width="10" fill="none" stroke-linecap="round"><path d="M230 120 V80 H420 V200"/><path d="M160 200 V260 H330 V320"/></g>
+        <g stroke="#c0392b" stroke-width="2" fill="none"><circle cx="300" cy="80" r="14"/><line x1="290" y1="70" x2="310" y2="90"/></g>
+        <text x="318" y="72" font-size="11" fill="#c0392b">collision : gaine × mur sans réservation</text>
+        <g stroke="#2f7d4a" stroke-width="2" fill="none" stroke-dasharray="4 3"><rect x="316" y="300" width="28" height="24"/></g>
+        <text x="350" y="318" font-size="11" fill="#2f7d4a">réservation 300 × 250</text>
+      </svg>
+    </div>
+    <p class="niveau">Cycle d'un geste : sélection → paramètres → aperçu → contrôle → validation. Accrochages et saisie de précision identiques pour un mur et pour une pièce.</p>
+  </section>
+  <aside class="insp" aria-label="Inspecteur et modifications">
+    <h2>Inspecteur — liaison « pivot ventilateur »</h2>
+    <dl>
+      <dt>Classe</dt><dd>liaison · pivot</dd>
+      <dt>Pièces</dt><dd>caisson ↔ ventilateur</dd>
+      <dt>Axe</dt><dd>Y du caisson (concentricité + plan)</dd>
+      <dt>Angle piloté</dt><dd>45 °</dd>
+      <dt>Diagnostic</dt><dd>bien contraint · 1 ddl (rotation)</dd>
+      <dt>Source</dt><dd>conception (aucun catalogue)</dd>
+      <dt>Masse</dt><dd class="err">non évaluée (densité sans source)</dd>
+    </dl>
+    <div class="pb">
+      <h2>Modifications et problèmes</h2>
+      <ul>
+        <li>r 1 247 · enregistré · 2 documents à recalculer</li>
+        <li class="coll">Collision : gaine G1 traverse le mur M-118-042 sans réservation — objet, cause, action : poser une réservation</li>
+        <li>Sous-contraint : panneau coulissant, 1 ddl restant (course)</li>
+        <li>Nomenclature CTA : 4 pièces, 0 pièce standard (catalogue vide — importer un CSV sourcé)</li>
+      </ul>
+    </div>
+  </aside>
+</main>
+<nav class="onglets" aria-label="Panneaux (téléphone)"><button>Projet</button><button aria-pressed="true">Plan</button><button>Inspecteur</button><button>Problèmes</button></nav>
+</body>
+</html>

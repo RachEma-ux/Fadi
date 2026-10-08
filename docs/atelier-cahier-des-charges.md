@@ -124,7 +124,7 @@ les comptes rendus.
 | R12 | Une référence (cotation, ouverture, contrainte) rendue incertaine passe « à réparer » avec des propositions ; jamais de rattachement silencieux. | §5.2 Architecture V4, T05 |
 | R13 | Droits relus par le serveur à chaque requête (`read` / `comment` / `write` / `owner`), 404 sans accès, 403 motivé, 423 pendant une réservation d'édition d'autrui. Les équipiers ne contournent jamais un refus. | T10 |
 | R14 | Rendu 3D : WebGL2 (three.js) par défaut ; WebGPU uniquement derrière un réglage avec repli automatique. Aucun chiffre de performance annoncé avant mesure ; les mesures sont imprimées par le scénario (`⏱`). | D2, Concept §11 |
-| R15 | Géométrie canonique **paramétrique** pour les objets du bâtiment ; solides, symboles et maillages dérivés par un moteur identifié et versionné. Aucun objet n'a deux géométries canoniques. OCCT absent du dépôt tant que le maître d'ouvrage n'a pas tranché la licence. | D1 |
+| R15 | Géométrie canonique **paramétrique** pour les objets du bâtiment ; solides, symboles et maillages dérivés par un moteur identifié et versionné. Aucun objet n'a deux géométries canoniques. OCCT absent du dépôt tant que le maître d'ouvrage n'a pas tranché la licence — **tranchée le 8 octobre 2026 (D-177) : composant LGPL chargé séparément, lot P2-1**. | D1 |
 | R16 | IFC 4.3 : conformité **testée** (corpus, validation en CI), jamais le mot « certifié ». Un objet importé d'IFC n'a pas d'historique paramétrique inventé. | D5 |
 | R17 | Pas de CRDT sur la géométrie ; réservation, variantes et fusion par rejeu validé. Yjs au plus pour le texte d'annotation, et seulement si le lot 0 l'a retenu. | D3 |
 | R18 | Jamais de secret, de `node_modules`, de build (`dist/`), ni du HTML de référence `Parcours_V8_19_Escalier_B_Mezzanine.html` dans un commit. Les clés MapTiler des utilisateurs ne transitent jamais par l'API ni dans un rapport. | AGENTS.md |
@@ -647,7 +647,8 @@ avant code ; aucune dépendance OCCT ajoutée au dépôt avant la décision écr
 ### 10.2 Déléguées au chef de projet (décider, consigner dans `decisions.md`)
 
 Bibliothèques (dans la liste des licences admises : MIT, Apache-2.0, BSD, MPL-2.0 ; LGPL seulement pour un outil
-de test non lié au produit), structure interne des paquets, nommage, ordre des tâches à l'intérieur d'un lot,
+de test non lié au produit **ou, depuis D-177, pour un composant binaire chargé à l'exécution depuis une URL
+séparée, remplaçable par l'utilisateur et non modifié — le cas d'OCCT en WebAssembly**), structure interne des paquets, nommage, ordre des tâches à l'intérieur d'un lot,
 tolérances par défaut des opérations (documentées dans les fiches), choix web-ifc ou écriture directe (sur la
 base des mesures du lot 0), Yjs retenu ou non pour les annotations (lot 0).
 
