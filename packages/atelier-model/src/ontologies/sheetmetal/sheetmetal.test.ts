@@ -49,6 +49,9 @@ describe("ontologie tôlerie (P2-4) : isolation, pliage sourcé, développé", (
   });
   it("table de pliage sourcée du projet : ligne de l'angle exact (déduction) sinon ligne générique (K) ; matériau ou épaisseur inconnus → non évalué", () => {
     expect(validerCatalogueCsv(TABLE).importable).toBe(true);
+    // Un catalogue d'une autre ontologie n'est pas une table de pliage.
+    const eBois = lot(base(), [{ type: "catalogue.importer", params: { id: "bois", nom: "Sections bois", ontologie: "timber", csv: "designation;largeur_mm;hauteur_mm;source;edition;page\n45x145;45;145;Y;2025;p. 4\n" } }]).etat;
+    expect(() => lot(eBois, [tole("tx", { pliage: { catalogueId: "bois" } })])).toThrow(/n'est pas une table de pliage/);
     const e0 = lot(base(), [{ type: "catalogue.importer", params: { id: "tab", nom: "Table W", ontologie: "sheetmetal", csv: TABLE } }, tole("t1", { pliage: { catalogueId: "tab" } })]).etat;
     const t = T(e0, "t1");
     const table = (e0.definitions["tab"]!.params["lignes"] as never) as Parameters<typeof parametresPli>[2];

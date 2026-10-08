@@ -51,6 +51,11 @@ describe("pièces, ossature de mur générée après aperçu, charpente, CLT, as
     expect(montants.some((e) => Math.abs(e.a.x - 1.4775) < 1e-6)).toBe(true);
     expect(montants.some((e) => Math.abs(e.a.x - 2.5225) < 1e-6)).toBe(true);
     expect(montants.every((e) => Math.abs(e.za - 0.145) < 1e-9 && Math.abs(e.zb - (2.7 - 0.145)) < 1e-9)).toBe(true);
+    // Repères de débit numérotés par rôle : LI01, SA01, MO01, MO02…, LI (linteau) 01, AP01.
+    expect(plan.find((e) => e.role === "lisse")!.repere).toBe("LI01");
+    expect(plan.find((e) => e.role === "sabliere")!.repere).toBe("SA01");
+    expect(montants.map((e) => e.repere)).toEqual(montants.map((_, i) => `MO${String(i + 1).padStart(2, "0")}`));
+    expect(plan.find((e) => e.role === "appui")!.repere).toBe("AP01");
   });
   it("mur de P.118 avec une fenêtre → ossature : aperçu puis accord, pièces rattachées, rejeu sans doublon, liste des pièces, IfcElementAssembly", () => {
     const e0 = lot(base(), [
@@ -86,6 +91,13 @@ describe("pièces, ossature de mur générée après aperçu, charpente, CLT, as
     expect(contenu).toContain("IFCRELASSOCIATESMATERIAL(");
     const e3 = lot(e2, [{ type: "ossature.supprimer", params: { id: "os1", avecObjets: true } }]).etat;
     expect(Object.values(e3.objets).filter((o) => o.classe === "element-bois" || o.classe === "ossature")).toHaveLength(0);
+  });
+  it("provenance d'une section : jamais reprise du client — la ligne du catalogue est relue et sa source recalculée, catalogue inconnu refusé", () => {
+    const e = lot(base(), [{ type: "catalogue.importer", params: { id: "cat", nom: "Sections Y", ontologie: "timber", csv: CSV } }]).etat;
+    const e1 = lot(e, [{ type: "elementBois.creer", params: { id: "b", niveauId: "n1", role: "poutre", a: pt(0, 0), b: pt(3, 0), za: 2.5, zb: 2.5, section: { largeur: m(0.045), hauteur: m(0.145), profil: { catalogueId: "cat", designation: "45x145", source: "source inventée par le client" } } } }]).etat;
+    expect((e1.objets["b"] as Occurrence<"element-bois">).params.section.profil?.source).toBe("Fournisseur bois Y, 2025, p. 4");
+    expect(() => lot(e, [{ type: "elementBois.creer", params: { id: "b2", niveauId: "n1", role: "poutre", a: pt(0, 0), b: pt(3, 0), za: 2.5, zb: 2.5, section: { largeur: m(0.045), hauteur: m(0.145), profil: { catalogueId: "inconnu", designation: "45x145", source: "x" } } } }])).toThrow(/catalogue inconnu/);
+    expect(() => lot(e, [{ type: "panneauClt.creer", params: { id: "c", niveauId: "n1", pose: "mur", a: pt(0, 0), b: pt(3, 0), hauteur: m(2.7), epaisseur: m(0.1), couches: 5, profil: { catalogueId: "cat", designation: "absente", source: "x" } } }])).toThrow(/absent du catalogue/);
   });
   it("mur sans hauteur : la génération exige la hauteur (rien n'est supposé) ; section de catalogue sourcé pour les pièces", () => {
     const e0 = lot(base(), [

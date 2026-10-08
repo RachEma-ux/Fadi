@@ -23,8 +23,9 @@ export function planOssatureMur(mur: { a: Point2; b: Point2 }, hauteur: number, 
   const at = (s: number) => P(mur.a.x + u.x * s, mur.a.y + u.y * s);
   const hl = lisse.hauteur.value, lm = montant.largeur.value;
   const out: ElementPlanifie[] = [];
-  let n = 0;
-  const rep = (role: RoleBois) => `${role.slice(0, 2).toUpperCase()}${String(++n).padStart(2, "0")}`;
+  // Repères de débit numérotés par rôle (LI01, SA01, MO01, MO02…).
+  const compteurs = new Map<RoleBois, number>();
+  const rep = (role: RoleBois) => { const k = (compteurs.get(role) ?? 0) + 1; compteurs.set(role, k); return `${role.slice(0, 2).toUpperCase()}${String(k).padStart(2, "0")}`; };
   // Lisses basse et haute sur toute la longueur.
   out.push({ role: "lisse", a: at(0), b: at(L), za: r6(hl / 2), zb: r6(hl / 2), section: lisse, rotation: 0, repere: rep("lisse") });
   out.push({ role: "sabliere", a: at(0), b: at(L), za: r6(hauteur - hl / 2), zb: r6(hauteur - hl / 2), section: lisse, rotation: 0, repere: rep("sabliere") });
@@ -73,8 +74,9 @@ export function planCharpente(toit: { contour: readonly Point2[]; z0: number }, 
   const d = (p: { x: number; y: number }) => (p.x - e0.x) * nv.x + (p.y - e0.y) * nv.y;
   const at = (sv: number, dv: number) => P(e0.x + u.x * sv + nv.x * dv, e0.y + u.y * sv + nv.y * dv);
   const out: ElementPlanifie[] = [];
-  let n = 0;
-  const rep = (role: RoleBois) => `${role.slice(0, 2).toUpperCase()}${String(++n).padStart(2, "0")}`;
+  // Repères de débit numérotés par rôle (LI01, SA01, MO01, MO02…).
+  const compteurs = new Map<RoleBois, number>();
+  const rep = (role: RoleBois) => { const k = (compteurs.get(role) ?? 0) + 1; compteurs.set(role, k); return `${role.slice(0, 2).toUpperCase()}${String(k).padStart(2, "0")}`; };
   const hc = chevron.hauteur.value, hp = panne.hauteur.value;
   // Pannes sablières : arêtes du contour dont les deux extrémités sont à l'égout (hauteur nulle).
   for (let i = 0; i < c.length; i++) {

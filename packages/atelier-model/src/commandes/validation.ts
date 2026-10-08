@@ -648,6 +648,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       if (typeof r["catalogueId"] === "string") {
         const cat = etat.definitions[r["catalogueId"]];
         if (!cat || cat.classe !== "catalogue") throw new ErreurCommande("precondition", "pliage.catalogueId", `table de pliage inconnue : ${r["catalogueId"]}`);
+        if (cat.params["ontologie"] !== "sheetmetal") throw new ErreurCommande("precondition", "pliage.catalogueId", `${cat.nom} n'est pas une table de pliage (catalogue de l'ontologie ${String(cat.params["ontologie"] ?? "?")})`);
         pliage = { catalogueId: cat.id };
       } else {
         const k = lire.nombre(r, "facteurK", { min: 0, max: 1 });
@@ -880,15 +881,15 @@ function lireSection(etat: ModeleAtelier, p: Brut, cle: string): SectionStructur
   if (AVEC_AILE.includes(forme) && !epaisseurAile && !epaisseur) throw new ErreurCommande("invalide", `${cle}.epaisseurAile`, `${forme} : épaisseur d'aile requise`);
   if (epaisseur && epaisseur.value * 2 >= Math.min(largeur.value, hauteur.value)) throw new ErreurCommande("invalide", `${cle}.epaisseur`, "épaisseur incompatible avec les dimensions de la section");
   const masse = lire.nombre(q, "masseLineique", { optionnel: true, min: 0 });
-  const profilBrut = q["profil"];
-  const profil = profilBrut && typeof profilBrut === "object" ? (profilBrut as { catalogueId?: unknown; designation?: unknown; source?: unknown }) : null;
+  // Provenance facultative : relue dans le catalogue (source recalculée), jamais recopiée du client.
+  const profil = lireProfilCatalogue(etat, q, "profil");
   return {
     forme, largeur, hauteur,
     epaisseur: AVEC_EPAISSEUR.includes(forme) ? epaisseur : null,
     epaisseurAile: AVEC_AILE.includes(forme) ? (epaisseurAile ?? epaisseur) : null,
-    profil: profil && typeof profil.catalogueId === "string" && typeof profil.designation === "string" && typeof profil.source === "string" ? { catalogueId: profil.catalogueId, designation: profil.designation, source: profil.source } : null,
+    profil,
     // Masse linéique : seulement si elle vient d'un catalogue sourcé (profil), jamais saisie à la main (R3).
-    masseLineique: profil && typeof profil.source === "string" && masse ? masse : null,
+    masseLineique: profil && masse ? masse : null,
   };
 }
 
@@ -900,7 +901,7 @@ function lireProfilCatalogue(etat: ModeleAtelier, p: Brut, cle: string): { catal
   if (v === undefined || v === null) return null;
   if (typeof v !== "object") throw new ErreurCommande("invalide", cle, `« ${cle} » : { catalogueId, designation } attendu`);
   const q = v as Brut;
-  if (typeof q["source"] === "string" && typeof q["catalogueId"] === "string" && typeof q["designation"] === "string") return { catalogueId: q["catalogueId"], designation: q["designation"], source: q["source"] };
+  // La source n'est jamais reprise du client : la ligne du catalogue est relue et sa provenance recalculée (R3).
   const cat = etat.definitions[lire.chaine(q, "catalogueId")];
   if (!cat || cat.classe !== "catalogue") throw new ErreurCommande("precondition", `${cle}.catalogueId`, `catalogue inconnu : ${String(q["catalogueId"])}`);
   const designation = lire.chaine(q, "designation").trim();
@@ -922,11 +923,11 @@ function lireSectionBois(etat: ModeleAtelier, p: Brut, cle: string): SectionBois
     if (!ligne) throw new ErreurCommande("precondition", `${cle}.designation`, `« ${designation} » absent du catalogue ${cat.nom}`);
     try { return sectionBoisDepuisCatalogue(cat.id, ligne); } catch (e) { throw new ErreurCommande("precondition", `${cle}.designation`, e instanceof Error ? e.message : String(e)); }
   }
-  const profil = q["profil"] && typeof q["profil"] === "object" ? (q["profil"] as { catalogueId?: unknown; designation?: unknown; source?: unknown }) : null;
   return {
     largeur: lire.longueur(q, "largeur", { strict: true })!,
     hauteur: lire.longueur(q, "hauteur", { strict: true })!,
-    profil: profil && typeof profil.catalogueId === "string" && typeof profil.designation === "string" && typeof profil.source === "string" ? { catalogueId: profil.catalogueId, designation: profil.designation, source: profil.source } : null,
+    // Provenance facultative : relue dans le catalogue, jamais recopiée du client.
+    profil: lireProfilCatalogue(etat, q, "profil"),
     essence: lire.chaineOuNull(q, "essence"),
     classe: lire.chaineOuNull(q, "classe"),
   };
