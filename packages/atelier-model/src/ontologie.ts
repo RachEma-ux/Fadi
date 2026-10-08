@@ -7,7 +7,7 @@
 
 import type { ModeleAtelier } from "./modele.js";
 
-export type Ontologie = "building.architecture" | "building.structure" | "drawing" | "annotation" | "projet" | "mechanical" | "structure";
+export type Ontologie = "building.architecture" | "building.structure" | "drawing" | "annotation" | "projet" | "mechanical" | "structure" | "timber" | "sheetmetal";
 
 export type Classe =
   | "mur"
@@ -40,7 +40,12 @@ export type Classe =
   | "assemblage-structurel"
   | "soudure"
   | "armature"
-  | "coulage";
+  | "coulage"
+  | "element-bois"
+  | "ossature"
+  | "panneau-clt"
+  | "assemblage-bois"
+  | "tole";
 
 export type KindRelation =
   | "heberge-par" // ouverture → mur hôte
@@ -102,6 +107,13 @@ export const CLASSES: Readonly<Record<Classe, DescriptionClasse>> = {
   soudure: { classe: "soudure", ontologie: "structure", libelle: "Soudure", ifc: "IfcFastener", caracteristiques: ["centre"], parNiveau: true },
   armature: { classe: "armature", ontologie: "structure", libelle: "Armature", ifc: "IfcReinforcingBar", caracteristiques: ["sommet", "centre"], parNiveau: true },
   coulage: { classe: "coulage", ontologie: "structure", libelle: "Coulage", ifc: "IfcGroup", caracteristiques: [], parNiveau: true },
+  // Ontologie bois (P2-4, DA-09) : éléments, ossatures (mur, toit) à génération contrôlée, panneaux CLT, assemblages.
+  "element-bois": { classe: "element-bois", ontologie: "timber", libelle: "Élément bois", ifc: "IfcMember", caracteristiques: ["arete-debut", "arete-fin", "axe", "centre"], parNiveau: true },
+  ossature: { classe: "ossature", ontologie: "timber", libelle: "Ossature bois", ifc: "IfcElementAssembly", caracteristiques: ["centre"], parNiveau: true },
+  "panneau-clt": { classe: "panneau-clt", ontologie: "timber", libelle: "Panneau CLT", ifc: "IfcWall", caracteristiques: ["centre", "contour"], parNiveau: true },
+  "assemblage-bois": { classe: "assemblage-bois", ontologie: "timber", libelle: "Assemblage bois", ifc: "IfcFastener", caracteristiques: ["centre"], parNiveau: true },
+  // Ontologie tôlerie (P2-4, DA-11) : tôle pliée, développé dérivé.
+  tole: { classe: "tole", ontologie: "sheetmetal", libelle: "Tôle pliée", ifc: "IfcPlate", caracteristiques: ["centre"], parNiveau: true },
 };
 
 export const CLASSES_OUVERTURE: readonly Classe[] = ["porte", "fenetre", "ouverture"];
@@ -117,8 +129,8 @@ export function estOuverture(classe: Classe): classe is "porte" | "fenetre" | "o
 /** Ontologies activées par défaut dans tout projet (Architecture V4 §4) : le bâtiment, la structure réduite au poteau, le dessin, l'annotation. */
 export const ONTOLOGIES_ACTIVEES: readonly Ontologie[] = ["building.architecture", "building.structure", "drawing", "annotation", "projet"];
 /** Ontologies qu'un projet active ou désactive lui-même (cahier P2 §4, T01) : les autres font le socle. */
-export const ONTOLOGIES_ACTIVABLES: readonly Ontologie[] = ["mechanical", "structure"];
-export const LIBELLES_ONTOLOGIE: Record<Ontologie, string> = { "building.architecture": "Bâtiment (architecture)", "building.structure": "Structure du socle (poteau)", drawing: "Dessin", annotation: "Annotation", projet: "Projet", mechanical: "Mécanique et assemblages", structure: "Structure (charpente, béton, assemblages)" };
+export const ONTOLOGIES_ACTIVABLES: readonly Ontologie[] = ["mechanical", "structure", "timber", "sheetmetal"];
+export const LIBELLES_ONTOLOGIE: Record<Ontologie, string> = { "building.architecture": "Bâtiment (architecture)", "building.structure": "Structure du socle (poteau)", drawing: "Dessin", annotation: "Annotation", projet: "Projet", mechanical: "Mécanique et assemblages", structure: "Structure (charpente, béton, assemblages)", timber: "Bois (ossature, CLT, assemblages)", sheetmetal: "Tôlerie (plis, développés)" };
 
 /** Ontologies actives d'un projet : le socle, plus celles que le projet a activées (`ontologie.activer`). */
 export function ontologiesActives(etat: Pick<ModeleAtelier, "ontologies">): readonly Ontologie[] {

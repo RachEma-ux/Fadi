@@ -88,3 +88,12 @@ export { longueurBarre, longueurPoutre, maillageArmature, maillageAssemblageStru
 export { intersectionsTrame, nommerAxes, planGeneration, pointTrame, repereTrame, segmentsTrame, type PlanGeneration } from "./ontologies/structure/trame.js";
 export { assemblagesSoudes, type AssemblageSoude } from "./ontologies/structure/soudures.js";
 export { controlerStructure, ELEMENTS_BETON, ELEMENTS_STRUCTURE, objetsDeTrame } from "./ontologies/structure/index.js";
+// Géométrie 3D partagée et ontologies bois / tôlerie (P2-4).
+export { balayer as balayerSection, cylindre, fusionner as fusionnerMaillages, type MaillageBrut } from "./geometrie-3d.js";
+export { aireBois, contourBois, designationBois, sectionBoisDepuisCatalogue } from "./ontologies/timber/sections.js";
+export { longueurElementBois, maillageElementBois, maillagePanneauClt, volumePanneauClt } from "./ontologies/timber/geometrie.js";
+export { planCharpente, planOssatureMur, type BaieMur, type ElementPlanifie } from "./ontologies/timber/ossature.js";
+export { baiesDuMur, controlerBois, elementsDeOssature, planOssature } from "./ontologies/timber/index.js";
+export { developpe, parametresPli, tablePliage, type Developpe, type LignePli, type ParametresPli } from "./ontologies/sheetmetal/pliage.js";
+export { empriseTole, maillageTole, profilPli } from "./ontologies/sheetmetal/geometrie.js";
+export { developpeTole } from "./ontologies/sheetmetal/index.js";

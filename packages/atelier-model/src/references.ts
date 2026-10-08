@@ -113,6 +113,18 @@ export function pointCaracteristique(etat: ModeleAtelier, objetId: string, carac
       return nom === "centre" ? (() => { const c = centroide(o.params.points); return pt(c.x, c.y); })() : null;
     case "coulage":
       return null;
+    case "element-bois":
+      if (nom === "arete-debut") return o.params.a;
+      if (nom === "arete-fin") return o.params.b;
+      if (nom === "axe" || nom === "centre") return milieu(o.params.a, o.params.b);
+      return null;
+    case "ossature":
+    case "assemblage-bois":
+    case "tole":
+      return nom === "centre" ? o.params.position : null;
+    case "panneau-clt":
+      if (o.params.pose === "mur" && o.params.a && o.params.b) return nom === "centre" || nom === "contour" ? milieu(o.params.a, o.params.b) : null;
+      return nom === "centre" || nom === "contour" ? (() => { const c = centroide(o.params.contour); return pt(c.x, c.y); })() : null;
     case "cotation":
     case "texte":
     case "etiquette":

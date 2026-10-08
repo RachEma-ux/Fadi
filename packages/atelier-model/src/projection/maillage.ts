@@ -21,6 +21,8 @@ import type { ModeleAtelier, Occurrence, OccurrenceQuelconque } from "../modele.
 import { positionsPosees } from "../solide-exact.js";
 import { positionsPosees3 } from "../ontologies/mechanical/geometrie.js";
 import { maillageArmature, maillageAssemblageStructurel, maillagePoutre } from "../ontologies/structure/geometrie.js";
+import { maillageAssemblageBois, maillageElementBois, maillagePanneauClt } from "../ontologies/timber/geometrie.js";
+import { maillageTole } from "../ontologies/sheetmetal/geometrie.js";
 
 export interface Maillage {
   objetId: string;
@@ -54,6 +56,10 @@ export const COULEURS_3D: Record<string, string> = {
   plaque: "#7a8794",
   "assemblage-structurel": "#6f7d8c",
   armature: "#9c6b3c",
+  "element-bois": "#b8905a",
+  "panneau-clt": "#c9a877",
+  "assemblage-bois": "#6f7d8c",
+  tole: "#8c96a0",
 };
 
 // ---------------------------------------------------------------------------
@@ -726,6 +732,21 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
     case "trame":
     case "soudure":
     case "coulage":
+      break;
+    // Ontologies bois et tôlerie (P2-4).
+    case "element-bois":
+    case "panneau-clt":
+    case "assemblage-bois":
+    case "tole": {
+      if (o.classe === "panneau-clt" && o.params.pose === "plancher") { t.prisme(o.params.contour, o.params.trous, z + o.params.z, z + o.params.z + o.params.epaisseur.value); break; }
+      const m = o.classe === "element-bois" ? maillageElementBois(o.params) : o.classe === "panneau-clt" ? maillagePanneauClt(o.params) : o.classe === "tole" ? maillageTole(o.params) : maillageAssemblageBois(o.params);
+      if (!m || !m.indices.length) break;
+      const base = t.positions.length / 3;
+      for (let i = 0; i < m.positions.length; i += 3) t.sommet(m.positions[i]!, m.positions[i + 1]!, z + m.positions[i + 2]!);
+      for (const i of m.indices) t.indices.push(base + i);
+      break;
+    }
+    case "ossature":
       break;
     case "solide-exact": {
       // Maillage dérivé du brep par le noyau exact (P2-1), posé (position, angle) ; z relatif au niveau.

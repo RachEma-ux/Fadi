@@ -16,6 +16,8 @@ import { ChoixPhase, ChoixVerrou, Classification, Contraintes, CreerBloc, FicheO
 import { FicheSolideExact, OutilSolideExact } from "./SolideExact";
 import { FicheAssemblage, FicheLiaison, FichePieceMecanique, OutilAssemblage, OutilLiaison, OutilPieceMecanique } from "./Mecanique";
 import { FicheArmature, FicheAssemblageStructurel, FicheCoulage, FichePlaque, FichePoutre, FicheSoudure, FicheTrame, OutilArmature, OutilAssemblageStructurel, OutilCoulage, OutilPlaque, OutilPoutre, OutilSoudure, OutilTrame } from "./Structure";
+import { FicheAssemblageBois, FicheElementBois, FicheOssature, FichePanneauClt, OutilAssemblageBois, OutilElementBois, OutilOssature, OutilPanneauClt } from "./Bois";
+import { FicheTole, OutilTole } from "./Tolerie";
 import { LOCALE } from "../../../../lib/i18n";
 
 export interface PropsInspecteur {
@@ -116,7 +118,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
   const verrouObjet = raisonVerrou(etat, o);
   const desactive = readOnly || verrouille || !!verrouObjet;
   // Représentation importée (R16) : paramètres en lecture seule ; calque, phase et transformations restent possibles.
-  const STRUCTURE = ["poutre", "trame", "plaque", "assemblage-structurel", "soudure", "armature", "coulage"];
+  const STRUCTURE = ["poutre", "trame", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "element-bois", "ossature", "panneau-clt", "assemblage-bois", "tole"];
   const parametresFiges = desactive || o.classe === "objet-importe" || o.classe === "solide-exact" || o.classe === "piece-mecanique" || o.classe === "liaison" || STRUCTURE.includes(o.classe);
 
   return (
@@ -229,6 +231,11 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
       {o.classe === "soudure" && <FicheSoudure o={o as Occurrence<"soudure">} etat={etat} />}
       {o.classe === "armature" && <FicheArmature o={o as Occurrence<"armature">} etat={etat} />}
       {o.classe === "coulage" && <FicheCoulage o={o as Occurrence<"coulage">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
+      {o.classe === "element-bois" && <FicheElementBois o={o as Occurrence<"element-bois">} etat={etat} />}
+      {o.classe === "ossature" && <FicheOssature key={`oss-${o.id}`} o={o as Occurrence<"ossature">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
+      {o.classe === "panneau-clt" && <FichePanneauClt o={o as Occurrence<"panneau-clt">} />}
+      {o.classe === "assemblage-bois" && <FicheAssemblageBois o={o as Occurrence<"assemblage-bois">} etat={etat} />}
+      {o.classe === "tole" && <FicheTole o={o as Occurrence<"tole">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || (o.classe === "mur" && !(o as Occurrence<"mur">).params.renflement)) && <Contraintes sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || o.classe === "solide" || o.classe === "texte") && <CreerBloc sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {Object.keys(o.proprietes).length > 0 && (
@@ -764,6 +771,11 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: Mo
       {ui.outil === "soudure" && <OutilSoudure etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "armature" && <OutilArmature key={`armature-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "coulage" && <OutilCoulage etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "element-bois" && <OutilElementBois key={`bois-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "ossature" && <OutilOssature etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "panneau-clt" && <OutilPanneauClt key={`clt-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "assemblage-bois" && <OutilAssemblageBois etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "tole" && <OutilTole etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "contour" && (
         <div className="champ">
           <label htmlFor="outil-formeContour">Créer</label>

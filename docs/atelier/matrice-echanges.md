@@ -24,6 +24,11 @@ Légende : **C** conservé · **T** transformé (dit au rapport) · **O** omis (
 
 | Classe | IFC export | IFC import | DXF export (vues) | DXF import | Paquet natif |
 | --- | --- | --- | --- | --- | --- |
+| element-bois (P2-4) | C `IfcMember` (PredefinedType par rôle : STUD, PLATE, POST, PURLIN, RAFTER, BRACE, STRUT) ou `IfcBeam` (.BEAM. / .JOIST.), corps tessellé ; essence en `IfcMaterial` ; section, source, longueur en `Fadi_Bois` | — (`objet-importe`) | T : bande de section ou section en plan | — | C |
+| ossature (P2-4) | C `IfcElementAssembly` .USERDEFINED. (ObjectType `ossature:<genre>`) agrégeant ses pièces ; `Fadi_Ossature` | — | T : étiquette | — | C |
+| panneau-clt (P2-4) | C `IfcWall` .SOLIDWALL. (vertical) ou `IfcSlab` .FLOOR. (plancher), ObjectType CLT, tessellé ; `Fadi_CLT` | — (`objet-importe`) | T : trait épais ou contour | — | C |
+| assemblage-bois (P2-4) | T `IfcFastener` .USERDEFINED. (bois–bois, placé) ou `IfcDiscreteAccessory` .USERDEFINED. (bois–métal, platine tessellée) ; quincaillerie en `Fadi_AssemblageBois` | O / — | T : symbole | — | C |
+| tole (P2-4) | C `IfcPlate` .SHEET. tessellée (face, zones pliées, ailes) ; plis et développé en `Fadi_Tole` | — (`objet-importe`) | T : face et emprise des ailes | — | C (développé recalculé) |
 | poutre (P2-3) | C `IfcBeam` (.BEAM., rôles poutre / longrine) ou `IfcMember` (.BRACE. / .RAFTER. / .PURLIN. / .USERDEFINED.), corps tessellé du balayage de section ; rôle, section, profil, source, masse linéique, matériau en `Fadi_Structure` | — (`objet-importe`, classe d'origine conservée) | T : bande de la largeur de section et axe | — | C |
 | trame (P2-3) | C `IfcGrid` .RECTANGULAR. (files = UAxes, rangs = VAxes, `IfcGridAxis` sur polylignes) | O : non relue (déclaré) | T : axes et bulles | — | C |
 | plaque (P2-3) | C `IfcPlate` tessellée ; épaisseur, matériau, préfabriqué en `Fadi_Structure` | — (`objet-importe`) | T : contour | — | C |

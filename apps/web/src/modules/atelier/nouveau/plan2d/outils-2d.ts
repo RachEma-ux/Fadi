@@ -832,6 +832,17 @@ function objetsEntierementDans(etat: ModeleAtelier, niveauId: string | null, ded
       case "armature":
         pts = o.params.points;
         break;
+      case "element-bois":
+        pts = [o.params.a, o.params.b];
+        break;
+      case "ossature":
+      case "assemblage-bois":
+      case "tole":
+        pts = [o.params.position];
+        break;
+      case "panneau-clt":
+        pts = o.params.pose === "mur" && o.params.a && o.params.b ? [o.params.a, o.params.b] : o.params.contour;
+        break;
       case "espace":
         pts = o.params.polygones.flatMap((pg) => pg.contour);
         break;

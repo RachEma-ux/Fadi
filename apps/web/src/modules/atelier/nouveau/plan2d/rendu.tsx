@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { anneauRetombee, architectureBloc, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, segmentsTrame, separationsCouches, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { anneauRetombee, architectureBloc, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, segmentsTrame, separationsCouches, empriseTole, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -164,6 +164,66 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
     }
     case "coulage":
       return null;
+    // Ontologies bois et tôlerie (P2-4).
+    case "element-bois": {
+      const a = pr.vers(o.params.a), b = pr.vers(o.params.b);
+      const w = Math.max(2, o.params.section.largeur.value * pr.echelle);
+      const vertical = Math.hypot(b.x - a.x, b.y - a.y) < 1;
+      if (vertical) {
+        const d = Math.max(3, (o.params.section.largeur.value * pr.echelle) / 2), e = Math.max(3, (o.params.section.hauteur.value * pr.echelle) / 2);
+        return <rect x={a.x - d} y={a.y - e} width={2 * d} height={2 * e} transform={`rotate(${-o.params.rotation.value} ${a.x} ${a.y})`} className={classes("obj-element-bois", selectionne, survole)} fill="#b8905a" stroke={selectionne ? "#b3872f" : "#6b4f2a"} strokeWidth={selectionne ? 2 : 0.8} data-objet={o.id} data-role={o.params.role}><title>{`Pièce de bois · ${o.params.nom ?? o.id} · ${o.params.role}`}</title></rect>;
+      }
+      return (
+        <g className={classes("obj-element-bois", selectionne, survole)} data-objet={o.id} data-role={o.params.role}>
+          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={selectionne ? "#b3872f" : "#b8905a"} strokeOpacity={0.55} strokeWidth={w} strokeLinecap="butt" />
+          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={selectionne ? "#b3872f" : "#6b4f2a"} strokeWidth={selectionne ? 1.5 : 0.8} />
+          <title>{`Pièce de bois · ${o.params.nom ?? o.id} · ${o.params.role}`}</title>
+        </g>
+      );
+    }
+    case "ossature": {
+      const c = pr.vers(o.params.position);
+      return (
+        <g className={classes("obj-ossature", selectionne, survole)} data-objet={o.id}>
+          <rect x={c.x - 8} y={c.y - 8} width={16} height={16} fill="#fff" stroke={selectionne ? "#b3872f" : "#6b4f2a"} strokeWidth={1} />
+          <path d={`M${c.x - 5},${c.y + 5} L${c.x - 5},${c.y - 5} M${c.x},${c.y + 5} L${c.x},${c.y - 5} M${c.x + 5},${c.y + 5} L${c.x + 5},${c.y - 5}`} stroke="#6b4f2a" strokeWidth={1} />
+          <text x={c.x + 11} y={c.y - 3} fontSize={11} fill="#4a3a20">{o.params.nom}</text>
+          <title>{`Ossature bois · ${o.params.nom} · ${o.params.genre}`}</title>
+        </g>
+      );
+    }
+    case "panneau-clt": {
+      if (o.params.pose === "mur" && o.params.a && o.params.b) {
+        const a = pr.vers(o.params.a), b = pr.vers(o.params.b);
+        return <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={selectionne ? "#b3872f" : "#c9a877"} strokeWidth={Math.max(3, o.params.epaisseur.value * pr.echelle)} strokeLinecap="butt" className={classes("obj-panneau-clt", selectionne, survole)} data-objet={o.id}><title>{`Panneau CLT · ${o.params.nom ?? o.id}`}</title></line>;
+      }
+      return (
+        <path d={chemin(pr, o.params.contour) + o.params.trous.map((t) => chemin(pr, t)).join("")} fillRule="evenodd" className={classes("obj-panneau-clt", selectionne, survole)} fill="#c9a877" fillOpacity={0.35} stroke={selectionne ? "#b3872f" : "#8a6a3a"} strokeWidth={selectionne ? 2.5 : 1} data-objet={o.id}>
+          <title>{`Panneau CLT · ${o.params.nom ?? o.id}`}</title>
+        </path>
+      );
+    }
+    case "assemblage-bois": {
+      const c = pr.vers(o.params.position);
+      return (
+        <g className={classes("obj-assemblage-bois", selectionne, survole)} data-objet={o.id}>
+          <circle cx={c.x} cy={c.y} r={5} fill={o.params.nature === "bois-metal" ? "#6f7d8c" : "#b8905a"} stroke={selectionne ? "#b3872f" : "#3f4a55"} strokeWidth={1} />
+          <title>{`Assemblage bois · ${o.params.nom ?? o.params.type}`}</title>
+        </g>
+      );
+    }
+    case "tole": {
+      const pts = empriseTole(o.params);
+      const c = pr.vers(o.params.position);
+      const L = o.params.longueur.value * pr.echelle, W = o.params.largeur.value * pr.echelle;
+      return (
+        <g className={classes("obj-tole", selectionne, survole)} data-objet={o.id} transform={`rotate(${-o.params.angle.value} ${c.x} ${c.y})`}>
+          <path d={chemin(pr, pts)} transform={`rotate(${o.params.angle.value} ${c.x} ${c.y})`} fill="none" stroke="#8c96a0" strokeWidth={0.6} strokeDasharray="3 3" />
+          <rect x={c.x - L / 2} y={c.y - W / 2} width={L} height={W} fill="#8c96a0" fillOpacity={0.35} stroke={selectionne ? "#b3872f" : "#4c5a68"} strokeWidth={selectionne ? 2 : 1} />
+          <title>{`Tôle pliée · ${o.params.nom ?? o.id} · ${o.params.plis.length} pli(s)`}</title>
+        </g>
+      );
+    }
     case "objet-importe": {
       // Représentation importée : emprise (enveloppe convexe) en tirets, classe IFC d'origine au survol.
       if (o.params.empreinte.length < 2) return null;

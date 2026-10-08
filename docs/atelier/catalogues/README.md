@@ -20,8 +20,8 @@ fournit, et porte sa référence (R3 : rien d'inventé ; exigence, hypothèse et
 | --- | --- | --- |
 | `gabarits/profils-acier.csv` | `structure` (P2-3) — colonne `forme` facultative (I, H, T, L, U, tube, cercle, rectangle), sinon déduite du préfixe de la désignation (IPE / HE / UPN / L…) ; `masse_kg_m` facultative (sans elle, masse « non évaluée ») | Catalogue public d'un producteur de profilés (dimensions des IPE, HEA, HEB, UPN…). Les normes EN 10365 et Eurocodes sont payantes et ne sont pas recopiées. |
 | `gabarits/tubes-raccords.csv` | `mep` (P2-5) | Catalogue fabricant de tubes et raccords (diamètres nominaux, épaisseurs). EN 10220 / ISO 4200 payantes. |
-| `gabarits/sections-bois.csv` | `timber` (P2-4) | Sections commerciales d'un fournisseur ; fiche technique d'un fabricant pour le CLT. |
-| `gabarits/table-pliage.csv` | `sheetmetal` (P2-4) | Table de pliage de l'atelier partenaire (matériau, rayon, facteur K) ; propre à chaque atelier, sinon le catalogue reste vide. |
+| `gabarits/sections-bois.csv` | `timber` (P2-4) — colonnes `designation`, `largeur_mm`, `hauteur_mm` requises ; `essence`, `classe_resistance`, `type` déclaratives | Sections commerciales d'un fournisseur ; fiche technique d'un fabricant pour le CLT. |
+| `gabarits/table-pliage.csv` | `sheetmetal` (P2-4) — correspondance par `materiau`, `epaisseur_mm`, `rayon_interieur_mm` ; `angle_deg` + `deduction_pli_mm` pour une ligne d'angle exact, sinon `facteur_k` générique | Table de pliage de l'atelier partenaire (matériau, rayon, facteur K) ; propre à chaque atelier, sinon le catalogue reste vide. |
 
 Un catalogue importé est une donnée **du projet** (versionnée, journalisée), pas du produit : deux projets peuvent
 porter deux catalogues différents du même fournisseur.

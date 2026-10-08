@@ -197,7 +197,7 @@ export interface VueGeneree {
   mesures: { triangles: number; primitives: number };
 }
 
-const PHYSIQUES = new Set<OccurrenceQuelconque["classe"]>(["mur", "porte", "fenetre", "dalle", "toiture", "escalier", "poteau", "solide", "garde-corps", "bloc-occurrence", "objet-importe", "solide-exact", "piece-mecanique", "poutre", "plaque", "assemblage-structurel", "armature"]);
+const PHYSIQUES = new Set<OccurrenceQuelconque["classe"]>(["mur", "porte", "fenetre", "dalle", "toiture", "escalier", "poteau", "solide", "garde-corps", "bloc-occurrence", "objet-importe", "solide-exact", "piece-mecanique", "poutre", "plaque", "assemblage-structurel", "armature", "element-bois", "panneau-clt", "assemblage-bois", "tole"]);
 /** Objet physique d'une vue ; un espace IFC importé n'est pas de la matière (ni coupé, ni occultant). */
 const physique = (o: OccurrenceQuelconque): boolean => PHYSIQUES.has(o.classe) && !(o.classe === "objet-importe" && o.params.ifcClasse.toLowerCase() === "ifcspace");
 const POCHES = new Set<string>(["mur", "poteau", "dalle", "toiture", "escalier"]);
@@ -328,6 +328,16 @@ function symbolesPlan(c: Collecteur, etat: ModeleAtelier, objets: readonly Occur
         c.ligne(k.dec(k.p1, 0), k.dec(k.p2, 1), "cache", o.id);
         break;
       }
+      // Ontologie bois (P2-4) : l'ossature n'a pas de corps (ses pièces en ont), l'assemblage bois–bois non plus (symbole).
+      case "ossature": {
+        const p = o.params.position;
+        c.poly([{ x: p.x - 0.1, y: p.y - 0.1 }, { x: p.x + 0.1, y: p.y - 0.1 }, { x: p.x + 0.1, y: p.y + 0.1 }, { x: p.x - 0.1, y: p.y + 0.1 }], true, "fin", null, o.id);
+        c.texte({ x: p.x + 0.15, y: p.y }, o.params.nom, 2.5, o.id, { ancre: "debut" });
+        break;
+      }
+      case "assemblage-bois":
+        if (!o.params.platine) c.cercle(o.params.position, 0.06, "vue", o.id);
+        break;
       case "piece": {
         c.poly(o.params.contour, true, "fin", null, o.id);
         for (const t of o.params.trous) c.poly(t, true, "fin", null, o.id);

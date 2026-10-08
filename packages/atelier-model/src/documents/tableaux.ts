@@ -10,13 +10,16 @@ import { contoursArchitecture } from "../blocs-places.js";
 import { aireSection, designationSection } from "../ontologies/structure/sections.js";
 import { longueurBarre, longueurPoutre } from "../ontologies/structure/geometrie.js";
 import { assemblagesSoudes } from "../ontologies/structure/soudures.js";
+import { aireBois, designationBois } from "../ontologies/timber/sections.js";
+import { longueurElementBois, volumePanneauClt } from "../ontologies/timber/geometrie.js";
+import { developpe, parametresPli, tablePliage } from "../ontologies/sheetmetal/pliage.js";
 import type { ModeleAtelier, Occurrence } from "../modele.js";
 import { niveauxOrdonnes, objetsDeClasse, ouverturesDuMur } from "../modele.js";
 import { quantites } from "../quantites.js";
 import { echapperXml } from "./rendu-svg.js";
 import { empreinteDe } from "./empreinte.js";
 
-export type TypeTableau = "pieces" | "portes" | "fenetres" | "murs" | "composants" | "nomenclature" | "structure" | "armatures" | "assemblagesStructure" | "synthese";
+export type TypeTableau = "pieces" | "portes" | "fenetres" | "murs" | "composants" | "nomenclature" | "structure" | "armatures" | "assemblagesStructure" | "bois" | "pliage" | "synthese";
 export const TABLEAUX: Record<TypeTableau, string> = {
   pieces: "Tableau des pièces",
   portes: "Tableau des portes",
@@ -27,6 +30,8 @@ export const TABLEAUX: Record<TypeTableau, string> = {
   structure: "Nomenclature de structure",
   armatures: "Nomenclature des armatures",
   assemblagesStructure: "Assemblages de structure et soudures",
+  bois: "Liste des pièces de bois",
+  pliage: "Table de pliage et développés",
   synthese: "Synthèse des quantités par niveau",
 };
 
@@ -188,6 +193,43 @@ export function genererTableau(etat: ModeleAtelier, type: TypeTableau): Tableau 
       }
       for (const w of assemblagesSoudes(etat)) lignes.push(["soudé", w.id, `assemblage soudé ${w.elements[0]}`, w.elements.join(", "), null, null, null, w.soudures.length, r3(w.longueur)]);
       total = ["Total", `${lignes.length} assemblage(s)`, null, null, null, lignes.reduce((acc, l) => acc + (typeof l[5] === "number" ? l[5] : 0), 0), null, lignes.reduce((acc, l) => acc + (typeof l[7] === "number" ? l[7] : 0), 0), r3(lignes.reduce((acc, l) => acc + (typeof l[8] === "number" ? l[8] : 0), 0))];
+      break;
+    }
+    case "bois": {
+      // Liste des pièces de bois (P2-4, DA-09) : pièces, panneaux CLT et quincaillerie des assemblages ; masse non évaluée.
+      colonnes = ["Niveau", "Repère", "Pièce", "Classe", "Rôle", "Section", "Essence", "Classe de résistance", "Source", "Longueur", "Volume", "Ossature", "Masse"];
+      unites = [null, null, null, null, null, null, null, null, null, "m", "m³", null, "kg"];
+      for (const n of niveauxOrdonnes(etat)) {
+        for (const o of objetsDeClasse(etat, "element-bois", n.id).sort(parId)) {
+          const L = longueurElementBois(o.params);
+          const sec = o.params.section;
+          lignes.push([n.nom, o.params.repere, o.params.nom ?? o.id, "pièce", o.params.role, designationBois(sec), sec.essence, sec.classe, sec.profil?.source ?? null, r3(L), r3(aireBois(sec) * L), o.params.ossatureId, null]);
+        }
+        for (const o of objetsDeClasse(etat, "panneau-clt", n.id).sort(parId)) {
+          lignes.push([n.nom, null, o.params.nom ?? o.id, "panneau CLT", o.params.pose, `${o.params.couches} couches, e ${Math.round(o.params.epaisseur.value * 1000)} mm`, o.params.essence, o.params.classe, o.params.profil?.source ?? null, o.params.pose === "mur" && o.params.a && o.params.b ? r3(Math.hypot(o.params.b.x - o.params.a.x, o.params.b.y - o.params.a.y)) : null, r3(volumePanneauClt(o.params)), null, null]);
+        }
+        for (const o of objetsDeClasse(etat, "assemblage-bois", n.id).sort(parId)) {
+          for (const q of o.params.quincaillerie) lignes.push([n.nom, null, `${o.params.nom ?? o.id} : ${q.designation}`, "quincaillerie", o.params.type, `× ${q.nombre}`, null, null, q.source, null, null, null, null]);
+        }
+      }
+      total = ["Total", null, `${lignes.length} ligne(s)`, null, null, null, null, null, null, r3(lignes.reduce((acc, l) => acc + (typeof l[9] === "number" ? l[9] : 0), 0)), r3(lignes.reduce((acc, l) => acc + (typeof l[10] === "number" ? l[10] : 0), 0)), null, null];
+      break;
+    }
+    case "pliage": {
+      // Table de pliage et développés (P2-4, DA-11-03 à 05) : un pli par ligne, paramètres sourcés ou « non évalués ».
+      colonnes = ["Tôle", "Repère", "Matériau", "Épaisseur", "Bord", "Angle", "Rayon intérieur", "Facteur K", "Allongement", "Source", "Développé (L × l)", "Aire développée"];
+      unites = [null, null, null, "mm", null, "°", "mm", null, "mm", null, "mm", "m²"];
+      for (const o of objetsDeClasse(etat, "tole").sort(parId)) {
+        const table = tablePliage(o.params, etat.definitions as Record<string, { classe: string; params: Record<string, unknown> }>);
+        const dev = developpe(o.params, table);
+        const enc = dev.nonEvalues.length ? null : `${Math.round(dev.encombrement.longueur * 1000)} × ${Math.round(dev.encombrement.largeur * 1000)}`;
+        if (!o.params.plis.length) lignes.push([o.params.nom ?? o.id, o.params.repere, o.params.materiau, Math.round(o.params.epaisseur.value * 1000), null, null, null, null, null, null, enc, dev.nonEvalues.length ? null : r3(dev.aire)]);
+        for (const pli of o.params.plis) {
+          const pr = parametresPli(o.params, pli, table);
+          lignes.push([o.params.nom ?? o.id, o.params.repere, o.params.materiau, Math.round(o.params.epaisseur.value * 1000), pli.bord, pli.angle.value, Math.round(pr.rayon * 1000), pr.facteurK, pr.allongement === null ? null : r2(pr.allongement * 1000), pr.source, enc, dev.nonEvalues.length ? null : r3(dev.aire)]);
+        }
+      }
+      total = ["Total", null, null, null, null, null, null, null, null, null, `${objetsDeClasse(etat, "tole").length} tôle(s)`, null];
       break;
     }
     case "synthese": {
