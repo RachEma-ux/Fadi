@@ -1340,7 +1340,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         const nom = plancheCourante?.params.nom ?? "planche";
         const r = format === "obj" ? exporterObj(histRef.current.present.modele, nom) : exporterStl(histRef.current.present.modele, nom);
         telechargerFichier(new Blob([r.contenu], { type: "text/plain;charset=utf-8" }), `${nom}.${format}`.replace(/[^\w.-]+/g, "_"));
-        setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }));
+        const omis = r.omis.aretesLibres + r.omis.annotations > 0 ? ` ${t("planche.export.omis", { aretes: String(r.omis.aretesLibres), annotations: String(r.omis.annotations) })}` : "";
+        setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }) + omis);
       },
       telechargerPng: async () => {
         const blob = await vueRef.current?.capture();

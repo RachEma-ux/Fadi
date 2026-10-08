@@ -4,8 +4,32 @@
  * même modèle, mêmes octets. L'OBJ garde un objet (`o`) par maillage ; le STL, un solide unique avec les normales des
  * triangles. Les entités hors géométrie (cotes, textes, guides) ne sont pas exportées.
  */
-import type { Modele } from "./geometrie-libre.js";
+import type { Contexte, Id, Modele } from "./geometrie-libre.js";
 import { maillagesPlanche, type MaillagePlanche } from "./representation.js";
+
+/** Ce que l'export de maillage laisse de côté : arêtes libres (sans face) à tous les niveaux, annotations. */
+export interface OmisExport {
+  readonly aretesLibres: number;
+  readonly annotations: number;
+}
+
+function aretesLibresDe(c: Contexte): number {
+  const bordees = new Set<string>();
+  const cle = (a: Id, b: Id) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+  for (const f of Object.values(c.faces)) for (const b of [f.exterieur, ...f.trous]) for (let i = 0; i < b.length; i++) bordees.add(cle(b[i] as Id, b[(i + 1) % b.length] as Id));
+  let n = 0;
+  for (const a of Object.values(c.aretes)) if (!bordees.has(cle(a.a, a.b))) n++;
+  return n;
+}
+
+/** Entités hors maillage : comptées pour prévenir (jamais exportées en silence). */
+export function omisExport(m: Modele): OmisExport {
+  let aretesLibres = aretesLibresDe(m.racine);
+  for (const d of Object.values(m.definitions)) aretesLibres += aretesLibresDe(d.contenu);
+  const an = m.annotations;
+  const annotations = an ? Object.keys(an.guides ?? {}).length + Object.keys(an.cotes ?? {}).length + Object.keys(an.textes ?? {}).length : 0;
+  return { aretesLibres, annotations };
+}
 
 const reel = (x: number): string => {
   const s = (Math.abs(x) < 5e-7 ? 0 : x).toFixed(6);
@@ -20,6 +44,8 @@ export interface ExportMaillage {
   /** Maillages écrits (objets et géométrie libre) et triangles. */
   readonly objets: number;
   readonly triangles: number;
+  /** Laissé de côté par le format (déclaré à l'utilisateur). */
+  readonly omis: OmisExport;
 }
 
 /** Wavefront OBJ : sommets `v` (m), faces triangulaires `f` indexées à partir de 1, un `o` par maillage. */
@@ -37,7 +63,7 @@ export function exporterObj(m: Modele, nom = "Planche"): ExportMaillage {
     }
     base += mesh.positions.length / 3;
   }
-  return { contenu: lignes.join("\n") + "\n", objets: maillages.length, triangles };
+  return { contenu: lignes.join("\n") + "\n", objets: maillages.length, triangles, omis: omisExport(m) };
 }
 
 function normaleTriangle(p: readonly number[], a: number, b: number, c: number): [number, number, number] {
@@ -71,5 +97,5 @@ export function exporterStl(m: Modele, nom = "Planche"): ExportMaillage {
   };
   for (const mesh of maillages) ecrire(mesh);
   lignes.push(`endsolid ${nomObj(nom)}`);
-  return { contenu: lignes.join("\n") + "\n", objets: maillages.length, triangles };
+  return { contenu: lignes.join("\n") + "\n", objets: maillages.length, triangles, omis: omisExport(m) };
 }

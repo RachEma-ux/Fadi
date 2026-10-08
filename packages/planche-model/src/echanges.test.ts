@@ -40,6 +40,16 @@ describe("lot 7 — exports OBJ et STL (P-6, D-173)", () => {
     expect((r.contenu.match(/vertex /g) ?? []).length).toBe(42);
   });
 
+  it("entités hors maillage comptées : arête libre et guide signalés, rien n'est perdu en silence", async () => {
+    const { ajouterSegment: ajouterLigne, modifierAnnotations } = await import("./geometrie-libre.js");
+    const m0 = boiteEtFace();
+    const m1 = ajouterLigne(m0, v3(8, 0, 0), v3(9, 0, 0)).modele;
+    const m2 = modifierAnnotations(m1, (an, id) => { const i = id("g"); an.guides[i] = { id: i, genre: "point", position: v3(0, 0, 0) } as never; }).modele;
+    const r = exporterObj(m2);
+    expect(r.omis).toEqual({ aretesLibres: 1, annotations: 1 });
+    expect(exporterObj(m0).omis).toEqual({ aretesLibres: 0, annotations: 0 });
+  });
+
   it("Planche vide : fichiers valides sans triangle", () => {
     expect(exporterObj(modeleVide()).triangles).toBe(0);
     expect(exporterStl(modeleVide()).contenu).toBe("solid Planche\nendsolid Planche\n");
