@@ -22,6 +22,7 @@ import { emprisePosee } from "../solide-exact.js";
 import { empriseMaillage, POSE_NULLE, positionsPosees3 } from "../ontologies/mechanical/geometrie.js";
 import { DDL_LIAISON, TYPES_LIAISON } from "../ontologies/mechanical/liaisons.js";
 import { AVEC_AILE, AVEC_EPAISSEUR, FORMES_SECTION, sectionDepuisCatalogue } from "../ontologies/structure/sections.js";
+import { estBetonDeclare } from "../ontologies/structure/beton.js";
 import type { LigneCatalogue } from "../catalogues/csv-source.js";
 import type { SectionStructure } from "../modele.js";
 
@@ -433,7 +434,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       a, b, za, zb,
       section: lireSection(etat, p, "section"),
       rotation: lire.angle(p, "rotation", { optionnel: true }) ?? { value: 0, unit: "deg" },
-      materiau: lire.enumeration(p, "materiau", ["acier", "beton", "bois", "autre"] as const, "acier"),
+      materiau: lire.enumeration(p, "materiau", ["acier", "beton", "bois", "autre"] as const),
       materiauNom: lire.chaineOuNull(p, "materiauNom"),
       prefabrique: lire.booleen(p, "prefabrique", false),
       trameId,
@@ -471,7 +472,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       trous: lire.trous(p),
       epaisseur: lire.longueur(p, "epaisseur", { strict: true })!,
       z: lire.nombre(p, "z", { optionnel: true }) ?? 0,
-      materiau: lire.enumeration(p, "materiau", ["acier", "beton", "bois", "autre"] as const, "acier"),
+      materiau: lire.enumeration(p, "materiau", ["acier", "beton", "bois", "autre"] as const),
       materiauNom: lire.chaineOuNull(p, "materiauNom"),
       prefabrique: lire.booleen(p, "prefabrique", false),
     };
@@ -534,7 +535,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     const forme = lire.enumeration(p, "forme", ["droite", "cadre", "etrier", "epingle", "u"] as const, "droite");
     const points = lire.points(p, "points", { min: 2 });
     if ((forme === "cadre" || forme === "etrier") && points.length < 3) throw new ErreurCommande("invalide", "points", "cadre ou étrier : au moins trois points");
-    const nombre = lire.nombre(p, "nombre", { entier: true, min: 1, max: 10000, optionnel: true }) ?? 1;
+    const nombre = lire.nombre(p, "nombre", { entier: true, min: 1, max: 400, optionnel: true }) ?? 1;
     const espacement = lire.longueur(p, "espacement", { optionnel: true, strict: true });
     if (nombre > 1 && !espacement) throw new ErreurCommande("invalide", "espacement", "plusieurs barres : espacement requis");
     return { nom: lire.chaineOuNull(p, "nom"), hoteId, forme, diametre: lire.longueur(p, "diametre", { strict: true })!, points, z: lire.nombre(p, "z", { optionnel: true }) ?? 0, nombre, espacement, nuance: lire.chaineOuNull(p, "nuance") };
@@ -546,6 +547,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       const o = etat.objets[e];
       if (!o) throw new ErreurCommande("precondition", "elements", `objet inconnu : ${e}`);
       if (!["poutre", "poteau", "plaque", "dalle"].includes(o.classe)) throw new ErreurCommande("precondition", "elements", `${e} (${o.classe}) : un coulage groupe des poutres, poteaux, plaques ou dalles`);
+      if (!estBetonDeclare(o)) throw new ErreurCommande("precondition", "elements", `${e} (${o.classe}) : matériau béton non déclaré (materiau = beton, ou propriété « materiau » pour un poteau ou une dalle)`);
     }
     return { nom: lire.chaine(p, "nom").trim() || "Coulage", numero: lire.chaineOuNull(p, "numero"), elements: [...new Set(el as string[])], prefabrique: lire.booleen(p, "prefabrique", false) };
   },

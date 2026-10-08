@@ -172,7 +172,7 @@ export function longueurBarre(p: Pick<ParamsArmature, "points" | "forme">): numb
   return L;
 }
 
-/** Maillage des barres d'une armature : une boîte carrée (côté = diamètre) par segment, répétée `nombre` fois selon la normale au premier segment. */
+/** Maillage des barres d'une armature : une boîte carrée (côté = diamètre) par segment, répétée `nombre` fois (400 au plus, validateur) selon la normale au premier segment. */
 export function maillageArmature(p: ParamsArmature): MaillageBrut {
   const d = p.diametre.value;
   const pts: Point2[] = p.forme === "cadre" || p.forme === "etrier" ? [...p.points, p.points[0]!] : p.points;
@@ -181,7 +181,7 @@ export function maillageArmature(p: ParamsArmature): MaillageBrut {
   const dir = Math.hypot(first.x - p0.x, first.y - p0.y) || 1;
   const nx = -(first.y - p0.y) / dir, ny = (first.x - p0.x) / dir;
   const parts: MaillageBrut[] = [];
-  const nb = Math.max(1, Math.min(p.nombre, 400));
+  const nb = Math.max(1, p.nombre); // toutes les barres acceptées (≤ 400, validateur) sont dessinées
   for (let k = 0; k < nb; k++) {
     const off = p.espacement && nb > 1 ? k * p.espacement.value : 0;
     for (let i = 0; i + 1 < pts.length; i++) {

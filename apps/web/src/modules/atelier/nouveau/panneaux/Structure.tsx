@@ -131,7 +131,7 @@ export function OutilPoutre({ etat, ui, readOnly, onCommandes }: { etat: ModeleA
   );
 }
 
-const lireAxes = (texte: string): number[] => texte.split(/[;,\s]+/).map((x) => Number(x.replace(",", "."))).filter((x) => Number.isFinite(x));
+const lireAxes = (texte: string): number[] => texte.split(/\s*;\s*|\s+/).filter((x) => x.trim()).map((x) => Number(x.replace(",", "."))).filter((x) => Number.isFinite(x)); // « ; » ou espace sépare ; la virgule reste décimale
 
 /** Outil Trame (DA-08-04 / 05) : origine, orientation, files et rangs ; la génération se fait depuis la fiche de la trame, après aperçu. */
 export function OutilTrame({ etat, ui, readOnly, onCommandes }: { etat: ModeleAtelier; ui: EtatUi; readOnly: boolean; onCommandes?: OnCommandes }) {

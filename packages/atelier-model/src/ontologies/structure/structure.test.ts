@@ -48,7 +48,7 @@ describe("ontologie structure (P2-3) : isolation et activation", () => {
   });
   it("les classes de structure sont refusées tant que l'ontologie n'est pas activée ; le poteau du socle reste disponible", () => {
     const e0 = lot(modeleVide(), [{ type: "niveau.creer", params: { id: "n1", nom: "RDC", elevation: 0, hauteur: 3 } }]).etat;
-    expect(() => lot(e0, [{ type: "poutre.creer", params: { id: "b1", niveauId: "n1", a: pt(0, 0), b: pt(6, 0), section: RECT } }])).toThrow(/non activée/);
+    expect(() => lot(e0, [{ type: "poutre.creer", params: { id: "b1", niveauId: "n1", a: pt(0, 0), b: pt(6, 0), section: RECT, materiau: "beton" } }])).toThrow(/non activée/);
     const e1 = lot(e0, [{ type: "poteau.creer", params: { id: "c1", niveauId: "n1", point: pt(0, 0), formeId: "rectangle", largeur: m(0.3), profondeur: m(0.3), hauteur: m(3), angle: { value: 0, unit: "deg" } } }]).etat;
     expect(e1.objets["c1"]?.classe).toBe("poteau");
     const e2 = lot(e1, [{ type: "ontologie.activer", params: { nom: "structure" } }, { type: "poutre.creer", params: { id: "b1", niveauId: "n1", a: pt(0, 0), b: pt(6, 0), za: 3, section: RECT, materiau: "beton" } }]).etat;
@@ -91,6 +91,8 @@ describe("sections et géométrie pure", () => {
     expect(() => sectionDepuisCatalogue("cat", rapport.retenues[2]!)).not.toThrow();
     expect(formeDepuisDesignation("UPN 120")).toBe("U");
     expect(formeDepuisDesignation("Z 100")).toBeNull();
+    const tube = validerCatalogueCsv("designation;forme;hauteur_mm;largeur_mm;epaisseur_ame_mm;source;edition;page\nRHS 100x100;tube;100;100;60;Doc;2024;p. 2\n");
+    expect(() => sectionDepuisCatalogue("cat", tube.retenues[0]!)).toThrow(/incompatible/);
     const sans = validerCatalogueCsv("designation;largeur_mm;source;edition;page\nIPE 300;150;Doc;2024;p. 1\n");
     expect(() => sectionDepuisCatalogue("cat", sans.retenues[0]!)).toThrow(/hauteur_mm absente/);
   });
@@ -99,12 +101,13 @@ describe("sections et géométrie pure", () => {
 describe("éléments, trame, plaque, assemblage, soudure, armature, coulage", () => {
   it("une poutre se crée avec une section saisie ; son maillage a le volume aire × longueur ; sans dimension requise elle est refusée", () => {
     const e = lot(base(), [{ type: "poutre.creer", params: { id: "b1", niveauId: "n1", nom: "P1", a: pt(0, 0), b: pt(6, 0), za: 2.8, section: IPE, materiau: "acier", materiauNom: "S355 (déclaré)" } }]).etat;
+    expect(() => lot(base(), [{ type: "poutre.creer", params: { id: "b9", niveauId: "n1", a: pt(0, 0), b: pt(6, 0), section: RECT } }])).toThrow(/materiau/);
     const b = objet<"poutre">(e, "b1");
     expect(b.params.zb).toBe(2.8);
     const mail = maillageObjet(e, b)!;
     expect(volumeMaillage(mail)).toBeCloseTo(aireSection(b.params.section) * 6, 9);
-    expect(() => lot(base(), [{ type: "poutre.creer", params: { id: "b2", niveauId: "n1", a: pt(0, 0), b: pt(6, 0), section: { forme: "I", largeur: m(0.1), hauteur: m(0.2) } } }])).toThrow(/épaisseur/);
-    expect(() => lot(base(), [{ type: "poutre.creer", params: { id: "b3", niveauId: "n1", a: pt(0, 0), b: pt(0, 0), section: RECT } }])).toThrow(/longueur nulle/);
+    expect(() => lot(base(), [{ type: "poutre.creer", params: { id: "b2", niveauId: "n1", a: pt(0, 0), b: pt(6, 0), section: { forme: "I", largeur: m(0.1), hauteur: m(0.2) }, materiau: "acier" } }])).toThrow(/épaisseur/);
+    expect(() => lot(base(), [{ type: "poutre.creer", params: { id: "b3", niveauId: "n1", a: pt(0, 0), b: pt(0, 0), section: RECT, materiau: "acier" } }])).toThrow(/longueur nulle/);
   });
   it("la trame planifie (aperçu) puis génère poteaux et poutres après accord ; rejouée, elle ne crée aucun doublon ; sa suppression avec objets retire ce qu'elle a généré", () => {
     const trame = { id: "t1", niveauId: "n1", nom: "T", origine: pt(10, 10), angle: { value: 0, unit: "deg" }, files: nommerAxes([0, 6, 12], "file"), rangs: nommerAxes([0, 5], "rang") };
@@ -126,6 +129,13 @@ describe("éléments, trame, plaque, assemblage, soudure, armature, coulage", ()
     expect(Object.values(e3.objets).filter((o) => o.classe === "poteau" || o.classe === "poutre")).toHaveLength(13);
     const e4 = lot(e3, [{ type: "trame.supprimer", params: { id: "t1", avecObjets: true } }]).etat;
     expect(Object.values(e4.objets).filter((o) => o.classe === "poteau" || o.classe === "poutre" || o.classe === "trame")).toHaveLength(0);
+    // Supprimée seule : les objets générés restent, détachés (plus de trameId ni de propriété trame), et restent modifiables.
+    const e5 = lot(e3, [{ type: "trame.supprimer", params: { id: "t1" } }]).etat;
+    const restants = Object.values(e5.objets).filter((o): o is Occurrence<"poutre"> => o.classe === "poutre");
+    expect(restants).toHaveLength(7);
+    expect(restants.every((p) => p.params.trameId === null)).toBe(true);
+    expect(Object.values(e5.objets).filter((o) => o.classe === "poteau").every((o) => o.proprietes["trame"] === undefined)).toBe(true);
+    expect(() => lot(e5, [{ type: "poutre.modifier", params: { id: restants[0]!.id, params: { role: "longrine" } } }])).not.toThrow();
   });
   it("catalogue sourcé importé dans le projet → poutre par désignation : section du catalogue, masse linéique sourcée, nomenclature avec masse et source", () => {
     const e = lot(base(), [
@@ -140,7 +150,7 @@ describe("éléments, trame, plaque, assemblage, soudure, armature, coulage", ()
     expect(ligne[5]).toBe("IPE 200");
     expect(ligne[6]).toBe("Catalogue producteur X, 2024, p. 12");
     expect(ligne[10]).toBeCloseTo(22.4 * 5, 6);
-    expect(() => lot(e, [{ type: "poutre.creer", params: { id: "b2", niveauId: "n1", a: pt(0, 0), b: pt(5, 0), section: { catalogueId: "cat-acier", designation: "IPE 999" } } }])).toThrow(/absent du catalogue/);
+    expect(() => lot(e, [{ type: "poutre.creer", params: { id: "b2", niveauId: "n1", a: pt(0, 0), b: pt(5, 0), section: { catalogueId: "cat-acier", designation: "IPE 999" }, materiau: "acier" } }])).toThrow(/absent du catalogue/);
     // Une masse linéique saisie à la main (sans profil sourcé) n'est jamais retenue (R3).
     const e2 = lot(e, [{ type: "poutre.creer", params: { id: "b3", niveauId: "n1", a: pt(0, 0), b: pt(5, 0), section: { ...RECT, masseLineique: 50 }, materiau: "beton" } }]).etat;
     expect(objet<"poutre">(e2, "b3").params.section.masseLineique).toBeNull();
@@ -148,9 +158,9 @@ describe("éléments, trame, plaque, assemblage, soudure, armature, coulage", ()
   });
   it("plaque, assemblage paramétrique (platine + boulons), soudures → assemblage soudé dérivé, armature (longueur développée), coulage", () => {
     const e = lot(base(), [
-      { type: "poteau.creer", params: { id: "c1", niveauId: "n1", point: pt(0, 0), formeId: "rectangle", largeur: m(0.3), profondeur: m(0.3), hauteur: m(3), angle: { value: 0, unit: "deg" } } },
-      { type: "poutre.creer", params: { id: "b1", niveauId: "n1", a: pt(0, 0), b: pt(6, 0), za: 2.8, section: IPE } },
-      { type: "poutre.creer", params: { id: "b2", niveauId: "n1", a: pt(6, 0), b: pt(6, 5), za: 2.8, section: IPE } },
+      { type: "poteau.creer", params: { id: "c1", niveauId: "n1", point: pt(0, 0), formeId: "rectangle", largeur: m(0.3), profondeur: m(0.3), hauteur: m(3), angle: { value: 0, unit: "deg" }, proprietes: { materiau: { valeur: "béton C25/30 (déclaré)", provenance: "saisie", statut: "declaree" } } } },
+      { type: "poutre.creer", params: { id: "b1", niveauId: "n1", a: pt(0, 0), b: pt(6, 0), za: 2.8, section: IPE, materiau: "acier" } },
+      { type: "poutre.creer", params: { id: "b2", niveauId: "n1", a: pt(6, 0), b: pt(6, 5), za: 2.8, section: IPE, materiau: "acier" } },
       { type: "plaque.creer", params: { id: "pl1", niveauId: "n1", nom: "Platine", contour: [pt(0, 0), pt(0.5, 0), pt(0.5, 0.5), pt(0, 0.5)], epaisseur: m(0.02), z: 3, materiau: "acier" } },
       { type: "assemblageStructurel.creer", params: { id: "as1", niveauId: "n1", type: "platine-about", elements: ["b1", "c1"], position: pt(0.15, 0), z: 2.8, angle: { value: 0, unit: "deg" }, platine: { largeur: m(0.2), hauteur: m(0.3), epaisseur: m(0.015) }, boulons: { rangees: 3, parRangee: 2, diametre: m(0.016), entraxe: m(0.07), longueur: m(0.06) } } },
       { type: "soudure.creer", params: { id: "w1", type: "angle", a: "b1", b: "b2", gorge: m(0.005), longueur: m(0.3), position: pt(6, 0), z: 2.8 } },
@@ -158,6 +168,8 @@ describe("éléments, trame, plaque, assemblage, soudure, armature, coulage", ()
       { type: "armature.creer", params: { id: "ar1", niveauId: "n1", hoteId: "pl1", forme: "cadre", diametre: m(0.01), points: [pt(0.05, 0.05), pt(0.45, 0.05), pt(0.45, 0.45), pt(0.05, 0.45)], z: 3.01, nombre: 4, espacement: m(0.1), nuance: "B500B (déclarée)" } },
       { type: "coulage.creer", params: { id: "co1", niveauId: "n1", nom: "Coulage 1", elements: ["c1"] } },
     ]).etat;
+    // Un élément dont le béton n'est pas déclaré (poutre acier) est refusé dans un coulage.
+    expect(() => lot(e, [{ type: "coulage.affecter", params: { id: "co1", elements: ["c1", "b2"] } }])).toThrow(/béton non déclaré/);
     expect(volumeMaillage(maillageObjet(e, objet<"plaque">(e, "pl1"))!)).toBeCloseTo(0.25 * 0.02, 9);
     const as = maillageObjet(e, objet<"assemblage-structurel">(e, "as1"))!;
     expect(volumeMaillage(as)).toBeGreaterThan(0.2 * 0.3 * 0.015);
@@ -169,7 +181,7 @@ describe("éléments, trame, plaque, assemblage, soudure, armature, coulage", ()
     const ta = genererTableau(e, "armatures");
     expect(ta.lignes[0]![8]).toBeCloseTo(6.4, 9);
     expect(ta.lignes[0]![10]).toBeNull();
-    const e2 = lot(e, [{ type: "coulage.affecter", params: { id: "co1", elements: ["c1", "b1"] } }]).etat;
+    const e2 = lot(lot(e, [{ type: "poutre.modifier", params: { id: "b1", params: { materiau: "beton" } } }]).etat, [{ type: "coulage.affecter", params: { id: "co1", elements: ["c1", "b1"] } }]).etat;
     expect(objet<"coulage">(e2, "co1").params.elements).toEqual(["c1", "b1"]);
     const ts = genererTableau(e2, "structure");
     expect(ts.lignes.find((l) => l[1] === "b1")![13]).toBe("Coulage 1");
@@ -192,8 +204,8 @@ describe("éléments, trame, plaque, assemblage, soudure, armature, coulage", ()
     const e = lot(base(), [
       { type: "trame.creer", params: { id: "t1", niveauId: "n1", nom: "T", origine: pt(0, 0), files: [{ nom: "A", position: 0 }, { nom: "B", position: 6 }], rangs: [{ nom: "1", position: 0 }, { nom: "2", position: 5 }] } },
       { type: "trame.generer", params: { id: "t1", hauteur: m(3), materiau: "acier", sectionPoteau: { formeId: "rectangle", largeur: m(0.2), profondeur: m(0.2) }, sectionPoutre: IPE } },
-      { type: "poutre.creer", params: { id: "d1", niveauId: "n1", role: "contreventement", a: pt(0, 0), b: pt(6, 0), za: 0, zb: 2.8, section: { forme: "L", largeur: m(0.06), hauteur: m(0.06), epaisseur: m(0.006) } } },
-      { type: "plaque.creer", params: { id: "pl1", niveauId: "n1", contour: [pt(0, 0), pt(0.5, 0), pt(0.5, 0.5), pt(0, 0.5)], epaisseur: m(0.02), z: 3 } },
+      { type: "poutre.creer", params: { id: "d1", niveauId: "n1", role: "contreventement", a: pt(0, 0), b: pt(6, 0), za: 0, zb: 2.8, section: { forme: "L", largeur: m(0.06), hauteur: m(0.06), epaisseur: m(0.006) }, materiau: "acier" } },
+      { type: "plaque.creer", params: { id: "pl1", niveauId: "n1", contour: [pt(0, 0), pt(0.5, 0), pt(0.5, 0.5), pt(0, 0.5)], epaisseur: m(0.02), z: 3, materiau: "beton" } },
       { type: "armature.creer", params: { id: "ar1", niveauId: "n1", diametre: m(0.012), points: [pt(0, 0), pt(6, 0)], z: 0.05, nombre: 5, espacement: m(0.15) } },
       { type: "soudure.creer", params: { id: "w1", a: "d1", b: "pl1", gorge: m(0.004), longueur: m(0.1), position: pt(0, 0) } },
       { type: "coulage.creer", params: { id: "co1", niveauId: "n1", nom: "Coulage 1", elements: ["pl1"], prefabrique: true } },
@@ -217,7 +229,7 @@ describe("éléments, trame, plaque, assemblage, soudure, armature, coulage", ()
   it("coordination : une pièce mécanique dans le volume d'une poutre est une interférence ; déplacement d'une poutre par transformation", () => {
     const e0 = lot(base(), [
       { type: "ontologie.activer", params: { nom: "mechanical" } },
-      { type: "poutre.creer", params: { id: "b1", niveauId: "n1", a: pt(0, 0), b: pt(6, 0), za: 1, section: RECT } },
+      { type: "poutre.creer", params: { id: "b1", niveauId: "n1", a: pt(0, 0), b: pt(6, 0), za: 1, section: RECT, materiau: "beton" } },
       { type: "solide.extruder", params: { id: "s1", niveauId: "n1", contour: [pt(2, -0.5), pt(3, -0.5), pt(3, 0.5), pt(2, 0.5)], ferme: true, hauteur: m(2), decalageBase: m(0), epaisseur: null, role: "solid", nom: "bloc", couleur: null } },
     ]).etat;
     const e1 = lot(e0, [{ type: "pieceMecanique.creer", params: { id: "p1", sourceId: "s1" } }]).etat;

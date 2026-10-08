@@ -55,7 +55,7 @@ describe("Ontologie structure (P2-3) : trame, catalogue sourcé, assemblages, ar
     expect((await client.get(`${base}/model`)).body.modele.ontologies).toEqual(["structure"]);
 
     // Trame 3 × 2 générée par le serveur : 6 poteaux (socle) et 7 poutres, en tête ; rejouée : aucun doublon.
-    const gen = { type: "trame.generer", params: { id: "t1", hauteur: m(3), materiau: "acier", materiauNom: "S355 (déclaré)", sectionPoteau: { formeId: "I", largeur: m(0.2), profondeur: m(0.2), epaisseurProfil: m(0.01) }, sectionPoutre: IPE } };
+    const gen = { type: "trame.generer", params: { id: "t1", hauteur: m(3), materiau: "beton", materiauNom: "C30/37 (déclaré)", sectionPoteau: { formeId: "I", largeur: m(0.2), profondeur: m(0.2), epaisseurProfil: m(0.01) }, sectionPoutre: IPE } };
     rev = await post("trame", rev, [{ type: "trame.creer", params: { id: "t1", niveauId: "rdc", nom: "T", origine: pt(10, 10), files: [{ nom: "A", position: 0 }, { nom: "B", position: 6 }, { nom: "C", position: 12 }], rangs: [{ nom: "1", position: 0 }, { nom: "2", position: 5 }] } }, gen], "Trame et génération");
     let modele = (await client.get(`${base}/model`)).body.modele;
     const classes = () => Object.values(modele.objets as Record<string, { classe: string }>).map((o) => o.classe);
@@ -74,7 +74,7 @@ describe("Ontologie structure (P2-3) : trame, catalogue sourcé, assemblages, ar
     modele = (await client.get(`${base}/model`)).body.modele;
     expect(modele.objets["b-cat"].params.section.masseLineique).toBe(22.4);
     expect(modele.objets["b-cat"].params.section.profil.source).toBe("Catalogue producteur X, 2024, p. 12");
-    const inconnue = await client.post(`${base}/commands`).send(enveloppe("inc", rev, [{ type: "poutre.creer", params: { id: "b-x", niveauId: "rdc", a: pt(0, 0), b: pt(1, 0), section: { catalogueId: "cat-acier", designation: "IPE 999" } } }]));
+    const inconnue = await client.post(`${base}/commands`).send(enveloppe("inc", rev, [{ type: "poutre.creer", params: { id: "b-x", niveauId: "rdc", a: pt(0, 0), b: pt(1, 0), section: { catalogueId: "cat-acier", designation: "IPE 999" }, materiau: "acier" } }]));
     expect(inconnue.status).toBe(409);
 
     // Plaque, assemblage paramétrique, soudures, armature, coulage.

@@ -150,7 +150,7 @@ export function genererTableau(etat: ModeleAtelier, type: TypeTableau): Tableau 
           const c = contoursArchitecture("poteau", o.params as unknown as Record<string, unknown>);
           const h = o.params.hauteur?.value ?? null;
           const vol = c && h ? aire(c.contour) * h : null;
-          lignes.push([n.nom, o.id, "poteau", o.params.nom, "poteau", `${o.params.formeId} ${Math.round(o.params.largeur.value * 1000)} × ${Math.round(o.params.profondeur.value * 1000)}${o.params.epaisseurProfil ? ` e ${Math.round(o.params.epaisseurProfil.value * 1000)}` : ""} mm`, null, (o.proprietes["materiau"]?.valeur as string | undefined) ?? null, h === null ? null : r3(h), vol === null ? null : r3(vol), null, "non", (o.proprietes["trame"]?.valeur as string | undefined) ?? null, coulageDe(o.id)]);
+          lignes.push([n.nom, o.id, "poteau", o.params.nom, "poteau", `${o.params.formeId} ${Math.round(o.params.largeur.value * 1000)} × ${Math.round(o.params.profondeur.value * 1000)}${o.params.epaisseurProfil ? ` e ${Math.round(o.params.epaisseurProfil.value * 1000)}` : ""} mm`, null, ((o.proprietes["materiauNom"]?.valeur ?? o.proprietes["materiau"]?.valeur) as string | undefined) ?? null, h === null ? null : r3(h), vol === null ? null : r3(vol), null, "non", (o.proprietes["trame"]?.valeur as string | undefined) ?? null, coulageDe(o.id)]);
         }
         for (const o of objetsDeClasse(etat, "poutre", n.id).sort(parId)) {
           const L = longueurPoutre(o.params);

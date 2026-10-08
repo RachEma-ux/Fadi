@@ -9,6 +9,7 @@ import type { ModeleAtelier, Occurrence, OccurrenceQuelconque, ParamsTrame } fro
 import { effetsVides, ErreurCommande, fusionnerEffets, lire, nouveauProbleme, type ContexteCommande, type Reducteur, type ResultatCommande } from "../../commandes/base.js";
 import { creerOccurrence, modifierOccurrence, supprimerIds, supprimerOccurrence } from "../../commandes/objets.js";
 import { planGeneration } from "./trame.js";
+import { estBetonDeclare } from "./beton.js";
 
 type Brut = Record<string, unknown>;
 const brutsDe = (p: Brut): Brut => ((p["params"] as Brut | undefined) ?? p);
@@ -79,9 +80,20 @@ export const reducteursStructure: Record<string, Reducteur> = {
   "trame.supprimer": (etat, p, ctx) => {
     const id = lire.objet(etat, p, "id");
     if (!estTrame(etat.objets[id])) throw new ErreurCommande("precondition", "id", `${id} n'est pas une trame`);
-    const generes = lire.booleen(p, "avecObjets", false) ? objetsDeTrame(etat, id) : [];
+    const avecObjets = lire.booleen(p, "avecObjets", false);
     let r: ResultatCommande = { etat, effets: effetsVides() };
-    for (const o of generes) r = enchainer(r, (e) => (e.objets[o.id] ? supprimerElement(e, o.id, ctx) : { etat: e, effets: effetsVides() }));
+    if (avecObjets) for (const o of objetsDeTrame(etat, id)) r = enchainer(r, (e) => (e.objets[o.id] ? supprimerElement(e, o.id, ctx) : { etat: e, effets: effetsVides() }));
+    else {
+      // Trame supprimée seule : ses poteaux et poutres restent, détachés (plus de trameId ni de propriété trame).
+      const objets = { ...etat.objets };
+      const effets = effetsVides();
+      for (const o of objetsDeTrame(etat, id)) {
+        if (o.classe === "poutre") objets[o.id] = { ...o, params: { ...o.params, trameId: null } };
+        else { const proprietes = { ...o.proprietes }; delete proprietes["trame"]; objets[o.id] = { ...o, proprietes }; }
+        effets.modifies.push(o.id);
+      }
+      r = { etat: { ...etat, objets }, effets };
+    }
     return enchainer(r, (e) => supprimerIds(e, [id], ctx));
   },
   /**
@@ -109,7 +121,7 @@ export const reducteursStructure: Record<string, Reducteur> = {
       if (!sp || typeof sp !== "object") throw new ErreurCommande("invalide", "sectionPoteau", "« sectionPoteau » : { formeId, largeur, profondeur, epaisseurProfil? } requis");
       for (const q of plan.poteaux) {
         if (dejaPoteau(q.point)) continue;
-        r = enchainer(r, (e) => creerOccurrence(e, { niveauId: trame.niveauId, calqueId: trame.calqueId, params: { ...(sp as Brut), point: q.point, hauteur, angle: trame.params.angle, nom: `${trame.params.nom} ${q.file}${q.rang}` }, proprietes: { trame: { valeur: id, provenance: "calcul", statut: "declaree" }, materiau: { valeur: materiauNom ?? materiau, provenance: "saisie", statut: "declaree" } } }, ctx, "poteau"));
+        r = enchainer(r, (e) => creerOccurrence(e, { niveauId: trame.niveauId, calqueId: trame.calqueId, params: { ...(sp as Brut), point: q.point, hauteur, angle: trame.params.angle, nom: `${trame.params.nom} ${q.file}${q.rang}` }, proprietes: { trame: { valeur: id, provenance: "calcul", statut: "declaree" }, materiau: { valeur: materiau, provenance: "saisie", statut: "declaree" }, ...(materiauNom ? { materiauNom: { valeur: materiauNom, provenance: "saisie", statut: "declaree" } } : {}) } }, ctx, "poteau"));
         poteaux++;
       }
     }
@@ -148,6 +160,7 @@ export const reducteursStructure: Record<string, Reducteur> = {
       const o = etat.objets[el];
       if (!o) throw new ErreurCommande("precondition", "elements", `objet inconnu : ${el}`);
       if (!(ELEMENTS_BETON as readonly string[]).includes(o.classe)) throw new ErreurCommande("precondition", "elements", `${el} (${o.classe}) : un coulage groupe des poutres, poteaux, plaques ou dalles`);
+      if (!estBetonDeclare(o)) throw new ErreurCommande("precondition", "elements", `${el} (${o.classe}) : matériau béton non déclaré (materiau = beton, ou propriété « materiau » pour un poteau ou une dalle)`);
       for (const autre of Object.values(etat.objets) as OccurrenceQuelconque[]) {
         if (autre.classe === "coulage" && autre.id !== id && autre.params.elements.includes(el)) {
           const prev = objets[autre.id] as Occurrence<"coulage">;

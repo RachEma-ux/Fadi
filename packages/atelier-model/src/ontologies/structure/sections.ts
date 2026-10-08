@@ -94,6 +94,8 @@ export function sectionDepuisCatalogue(catalogueId: string, ligne: LigneCatalogu
   const epaisseurAile = mm(v["epaisseur_aile_mm"]);
   if (AVEC_EPAISSEUR.includes(forme) && (epaisseur === null || epaisseur <= 0)) throw new Error(`${designation} : epaisseur_ame_mm absente du catalogue (non évaluée)`);
   if (AVEC_AILE.includes(forme) && (epaisseurAile === null || epaisseurAile <= 0)) throw new Error(`${designation} : epaisseur_aile_mm absente du catalogue (non évaluée)`);
+  if (epaisseur !== null && AVEC_EPAISSEUR.includes(forme) && epaisseur * 2 >= Math.min(largeur, hauteur)) throw new Error(`${designation} : épaisseur d'âme incompatible avec les dimensions de la section (catalogue)`);
+  if (epaisseurAile !== null && AVEC_AILE.includes(forme) && epaisseurAile * 2 >= hauteur) throw new Error(`${designation} : épaisseur d'aile incompatible avec la hauteur de la section (catalogue)`);
   const masse = v["masse_kg_m"];
   return {
     forme,
