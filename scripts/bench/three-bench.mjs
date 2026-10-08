@@ -21,6 +21,8 @@ const OUT = arg('--out', null);
 const SYNC = arg('--sync', 'readpixels');
 const vp = arg('--viewport', '1536x864').split('x').map(Number);
 const VIEWPORT = { width: vp[0], height: vp[1] };
+const VARIANTS = arg('--variants', 'A,B').split(','); // P2-0 : --variants B,M (M = scène mixte bâtiment + machine + gaines)
+const NO_WEBGPU = argv.includes('--no-webgpu');
 
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.json': 'application/json', '.wasm': 'application/wasm' };
 const server = http.createServer((req, res) => {
@@ -82,7 +84,7 @@ const report = {
 
 const browser = await chromium.launch({ channel: 'chromium', headless: true, args: baseArgs });
 report.bench.browser = `${browser.browserType().name()} ${browser.version()} (Playwright ${(await import('playwright/package.json', { with: { type: 'json' } })).default.version}, headless)`;
-for (const variant of ['A', 'B']) {
+for (const variant of VARIANTS) {
   report.webgl2[variant] = await runScene(browser, variant, 'webgl2');
   console.error(`WebGL2 variante ${variant} : première image ${report.webgl2[variant].timingsMs?.firstFrameSinceNavigation?.toFixed(0)} ms, trame p95 ${report.webgl2[variant].frame?.renderPlusSync?.p95?.toFixed(1)} ms, draw calls ${report.webgl2[variant].drawCalls?.lastFrame?.calls}`);
 }
@@ -104,7 +106,7 @@ await browser.close();
 // WebGPU : essais successifs de drapeaux ; le banc WebGPU n'est lancé que si un adaptateur existe.
 let gpuBrowser = null, gpuArgs = null;
 for (const extra of webgpuArgSets.slice(1)) {
-  if (report.webgpu.probes.some((p) => p.adapter)) break;
+  if (NO_WEBGPU || report.webgpu.probes.some((p) => p.adapter)) break;
   const b = await chromium.launch({ channel: 'chromium', headless: true, args: [...baseArgs, ...extra] });
   const probe = await probeWebGPU(b);
   report.webgpu.probes.push({ args: extra, ...probe });
@@ -112,7 +114,7 @@ for (const extra of webgpuArgSets.slice(1)) {
 }
 if (gpuBrowser) {
   report.webgpu.launchArgs = gpuArgs;
-  for (const variant of ['A', 'B']) {
+  for (const variant of VARIANTS) {
     report.webgpu[variant] = await runScene(gpuBrowser, variant, 'webgpu');
     console.error(`WebGPU variante ${variant} : ${report.webgpu[variant].error ? 'ERREUR ' + report.webgpu[variant].error.slice(0, 200) : 'trame p95 ' + report.webgpu[variant].frame?.renderPlusSync?.p95?.toFixed(1) + ' ms'}`);
   }

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Banc P2-0 — occt-wasm dans Chromium</title>
+<!-- occt-wasm/worker importe « comlink » par spécificateur nu : hors bundler, un import map est nécessaire (constat du banc). -->
+<script type="importmap">{"imports":{"comlink":"/node_modules/comlink/dist/esm/comlink.mjs"}}</script></head>
+<body>
+<script type="module">
+// Banc P2-0 (D-177) — occt-wasm chargé dans le navigateur : téléchargement + initialisation du .wasm servi comme fichier
+// séparé (mode LGPL « composant remplaçable »), dans le fil principal puis dans un Web Worker ; 20 cas de géométrie
+// difficiles (booléens coplanaires, tangents, minces, multi-trous, révolution, balayage, lissage, congés, coques).
+// Paramètres d'URL : repetitions=5
+const params = new URLSearchParams(location.search);
+const REP = Number(params.get('repetitions') || 5);
+const CAS = params.get('cas') || 'all'; // init | <index> | worker | all
+window.__benchResult = null; window.__benchError = null;
+const med = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+const round = (x) => Math.round(x * 100) / 100;
+try {
+  const t0 = performance.now();
+  const { OcctKernel } = await import('/node_modules/occt-wasm/dist/index.js');
+  const tImport = performance.now();
+  const wasmUrl = '/node_modules/occt-wasm/dist/occt-wasm.wasm';
+  const tFetch0 = performance.now();
+  const resp = await fetch(wasmUrl); const bytes = new Uint8Array(await resp.arrayBuffer());
+  const tFetch = performance.now();
+  const mem0 = performance.memory ? performance.memory.usedJSHeapSize : null;
+  const tInit0 = performance.now();
+  const k = await OcctKernel.init({ wasm: bytes });
+  const tInit = performance.now();
+  const mem1 = performance.memory ? performance.memory.usedJSHeapSize : null;
+
+  const vol = (s) => round(k.getVolume(s) * 1e6) / 1e6;
+  const faces = (s) => k.getSubShapes(s, 'face').length;
+  const solids = (s) => k.getSubShapes(s, 'solid').length;
+  const tri = (s) => { const m = k.tessellate(s, { linearDeflection: 0.01, angularDeflection: 0.5 }); return m.triangleCount ?? (m.indices ? m.indices.length / 3 : null); };
+  const box = (dx, dy, dz, x = 0, y = 0, z = 0) => k.translate(k.makeBox(dx, dy, dz), x, y, z);
+  const cyl = (r, h, x = 0, y = 0, z = 0) => k.translate(k.makeCylinder(r, h), x, y, z);
+  const circleWire = (r, z) => k.makeWire([k.makeCircleEdge({ x: 0, y: 0, z }, { x: 0, y: 0, z: 1 }, r)]);
+  const rectWire = (w, h, z) => k.makeWire([k.makeLineEdge({ x: -w / 2, y: -h / 2, z }, { x: w / 2, y: -h / 2, z }), k.makeLineEdge({ x: w / 2, y: -h / 2, z }, { x: w / 2, y: h / 2, z }), k.makeLineEdge({ x: w / 2, y: h / 2, z }, { x: -w / 2, y: h / 2, z }), k.makeLineEdge({ x: -w / 2, y: h / 2, z }, { x: -w / 2, y: -h / 2, z })]);
+  // Cas : nom, fonction → forme, volume attendu (m³, null si non calculable à la main)
+  const cas = [
+    ['1. mur − ouverture (référence lot 0)', () => k.cut(box(4, 0.2, 3), box(1, 0.3, 2.1, 1.5, -0.05, 0.45)), 4 * 0.2 * 3 - 1 * 0.2 * 2.1],
+    ['2. faces coplanaires : cube − cube affleurant', () => k.cut(box(1, 1, 1), box(0.5, 0.5, 1, 0, 0, 0)), 1 - 0.25],
+    ['3. cylindres tangents fusionnés', () => k.fuse(cyl(0.5, 1), cyl(0.5, 1, 1, 0, 0)), 2 * Math.PI * 0.25],
+    ['4. plaque à 25 trous (cutAll)', () => { const p = box(1, 1, 0.02); const trous = []; for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) trous.push(cyl(0.03, 0.1, 0.1 + i * 0.2, 0.1 + j * 0.2, -0.04)); return k.cutAll ? k.cutAll(p, trous) : trous.reduce((s, t) => k.cut(s, t), p); }, 1 * 1 * 0.02 - 25 * Math.PI * 0.03 * 0.03 * 0.02],
+    ['5. lame mince 1 mm dans un bloc', () => k.cut(box(1, 1, 1), box(0.001, 1.2, 1.2, 0.5, -0.1, -0.1)), 1 - 0.001],
+    ['6. intersection (common) sphère ∩ cube', () => k.common(box(1, 1, 1), k.translate(k.makeSphere(0.6), 0.5, 0.5, 0.5)), null],
+    ['7. cube − sphère tangente à une face', () => k.cut(box(1, 1, 1), k.translate(k.makeSphere(0.3), 0.5, 0.5, 1)), 1 - (2 / 3) * Math.PI * 0.027],
+    ['8. révolution d\'un rectangle décalé (tube, volume 2π·0,5·0,2·1)', () => k.revolve(k.makeFace(k.translate(rectWire(0.2, 1, 0), 0.5, 0, 0)), { point: { x: 0, y: 0, z: 0 }, direction: { x: 0, y: 1, z: 0 } }, 2 * Math.PI), 2 * Math.PI * 0.5 * 0.2 * 1],
+    ['9. balayage d\'un cercle le long d\'une ligne coudée', () => k.sweep(circleWire(0.05, 0), k.makeWire([k.makeLineEdge({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }), k.makeLineEdge({ x: 0, y: 0, z: 1 }, { x: 1, y: 0, z: 1 })])), null],
+    ['10. lissage carré → cercle (solide)', () => k.loft([rectWire(1, 1, 0), circleWire(0.4, 1)], true, false), null],
+    ['11. congé sur les 12 arêtes d\'un cube', () => { const b = box(1, 1, 1); return k.fillet(b, k.getSubShapes(b, 'edge'), 0.1); }, null],
+    ['12. coque (shell) d\'un cube, paroi 20 mm', () => { const b = box(1, 1, 1); const f = k.getSubShapes(b, 'face'); return k.shell(b, [f[5]], -0.02, 1e-4); }, null],
+    ['13. fuseAll de 50 boîtes alignées', () => { const bs = []; for (let i = 0; i < 50; i++) bs.push(box(0.5, 0.5, 0.5, i * 0.5, 0, 0)); return k.fuseAll ? k.fuseAll(bs) : bs.reduce((s, b) => k.fuse(s, b)); }, 50 * 0.125],
+    ['14. cube − cylindre traversant (trou)', () => k.cut(box(1, 1, 1), cyl(0.2, 2, 0.5, 0.5, -0.5)), 1 - Math.PI * 0.04],
+    ['15. cube − cube identique (résultat vide)', () => k.cut(box(1, 1, 1), box(1, 1, 1)), 0],
+    ['16. fusion de deux cubes disjoints (compound)', () => k.fuse(box(1, 1, 1), box(1, 1, 1, 2, 0, 0)), 2],
+    ['17. cube − cylindre tangent intérieur (arête de contact)', () => k.cut(box(1, 1, 1), cyl(0.5, 2, 0.5, 0.5, -0.5)), 1 - Math.PI * 0.25],
+    ['18. tore ∩ cube', () => k.common(k.translate(k.makeTorus(0.4, 0.1), 0.5, 0.5, 0.5), box(1, 1, 1)), 2 * Math.PI * Math.PI * 0.4 * 0.01],
+    ['19. section plane d\'un cube à 45°', () => k.section ? k.section(box(1, 1, 1), k.makeFace(k.makeWire([k.makeLineEdge({ x: -1, y: -1, z: 0.5 }, { x: 2, y: -1, z: 0.5 }), k.makeLineEdge({ x: 2, y: -1, z: 0.5 }, { x: 2, y: 2, z: 0.5 }), k.makeLineEdge({ x: 2, y: 2, z: 0.5 }, { x: -1, y: 2, z: 0.5 }), k.makeLineEdge({ x: -1, y: 2, z: 0.5 }, { x: -1, y: -1, z: 0.5 })]))) : (() => { throw new Error('section absent'); })(), null],
+    ['20. chaîne : (cube − trou) ∪ cylindre, congé, tessellation', () => { const b = k.cut(box(1, 1, 1), cyl(0.2, 2, 0.5, 0.5, -0.5)); const u0 = k.fuse(b, cyl(0.3, 0.5, 0.5, 0.5, 1)); const u = k.getSubShapes(u0, 'solid')[0]; /* fuse rend un compound : le congé exige un solide (constat du banc) */ return k.fillet(u, k.getSubShapes(u, 'edge').slice(0, 4), 0.02); }, null],
+  ];
+  const resultats = [];
+  const selection = CAS === 'all' ? cas : (/^\d+$/.test(CAS) ? [cas[Number(CAS)]] : []);
+  for (const [nom, fn, attendu] of selection) {
+    const r = { nom, attendu: attendu === null ? null : round(attendu * 1e6) / 1e6 };
+    try {
+      const times = []; let s = null;
+      for (let i = 0; i < REP; i++) { const t = performance.now(); s = fn(); times.push(performance.now() - t); }
+      r.medianMs = round(med(times)); r.maxMs = round(Math.max(...times));
+      r.valide = k.isValid(s); r.faces = faces(s); r.solides = solids(s);
+      try { r.volume = vol(s); } catch (e) { r.volume = null; }
+      try { const t = performance.now(); r.triangles = tri(s); r.tessellationMs = round(performance.now() - t); } catch (e) { r.triangles = null; r.tessellationErreur = String(e); }
+      r.ecartVolume = (attendu !== null && r.volume !== null) ? round(Math.abs(r.volume - attendu) * 1e6) / 1e6 : null;
+      r.statut = r.valide && (r.ecartVolume === null || r.ecartVolume < 1e-4) ? 'ok' : 'écart';
+    } catch (e) { r.statut = 'erreur'; r.erreur = String(e && e.message ? e.message : e).slice(0, 200); }
+    resultats.push(r);
+  }
+  const mem2 = performance.memory ? performance.memory.usedJSHeapSize : null;
+  // Web Worker : même .wasm chargé dans un Worker module écrit ici (l'API `occt-wasm/worker` importe « comlink » par
+  // spécificateur nu et les import maps ne s'appliquent pas aux Workers : hors bundler elle ne se charge pas — constat du banc ;
+  // sous Vite / esbuild le spécificateur est résolu). Mesure : spawn + init dans le Worker, puis `cut` mur − ouverture.
+  let worker = null;
+  if (CAS === 'all' || CAS === 'worker') try {
+    const code = `import { OcctKernel } from '${location.origin}/node_modules/occt-wasm/dist/index.js';
+      const t0 = performance.now(); const resp = await fetch('${location.origin}${wasmUrl}'); const bytes = new Uint8Array(await resp.arrayBuffer());
+      const t1 = performance.now(); const k = await OcctKernel.init({ wasm: bytes }); const t2 = performance.now();
+      const a = k.makeBox(4, 0.2, 3); const b = k.makeBoxFromCorners({ x: 1.5, y: -0.05, z: 0.45 }, { x: 2.5, y: 0.25, z: 2.55 });
+      const times = []; let c; for (let i = 0; i < ${REP}; i++) { const t = performance.now(); c = k.cut(a, b); times.push(performance.now() - t); }
+      const m = k.tessellate(c); postMessage({ fetchMs: t1 - t0, initMs: t2 - t1, cutTimes: times, triangles: m.triangleCount, positions: m.positions }, [m.positions.buffer]);`;
+    const url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
+    const tw0 = performance.now();
+    const w = new Worker(url, { type: 'module' });
+    const msg = await new Promise((res, rej) => { w.onmessage = (e) => res(e.data); w.onerror = (e) => rej(new Error(e.message || 'erreur du Worker')); setTimeout(() => rej(new Error('Worker : délai de 60 s dépassé')), 60000); });
+    const tw1 = performance.now();
+    worker = { statut: 'ok', totalMs: round(tw1 - tw0), fetchMs: round(msg.fetchMs), initMs: round(msg.initMs), cutMedianMs: round(med(msg.cutTimes)), triangles: msg.triangles, maillageTransfere: msg.positions.byteLength, apiWorkerOcct: 'non chargeable hors bundler (comlink par spécificateur nu dans le Worker)' };
+    w.terminate();
+  } catch (e) { worker = { statut: 'erreur', erreur: String(e && e.message ? e.message : e).slice(0, 300) }; }
+  window.__benchResult = {
+    wasmBytes: bytes.length, importMs: round(tImport - t0), fetchMs: round(tFetch - tFetch0), initMs: round(tInit - tInit0),
+    heapMB: mem0 !== null ? { avantInit: round(mem0 / 1048576), apresInit: round(mem1 / 1048576), apresCas: round(mem2 / 1048576) } : null,
+    repetitions: REP, cas: resultats, worker,
+    ok: resultats.filter((r) => r.statut === 'ok').length, ecarts: resultats.filter((r) => r.statut === 'écart').length, erreurs: resultats.filter((r) => r.statut === 'erreur').length,
+    userAgent: navigator.userAgent, hardwareConcurrency: navigator.hardwareConcurrency,
+  };
+} catch (e) { window.__benchError = String(e && e.stack ? e.stack : e); }
+</script>
+</body>
+</html>
