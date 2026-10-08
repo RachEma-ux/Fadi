@@ -77,12 +77,12 @@ function connecter(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande): Resulta
 }
 
 /** Ports d'un coude déduits de deux directions (vers l'amont et vers l'aval), bras de longueur L : géométrie seulement. */
-export function portsCoude(dirAmont: Point3Reseau, dirAval: Point3Reseau, L: number, section: SectionReseau | null = null): PortReseau[] {
+export function portsCoude(dirAmont: Point3Reseau, dirAval: Point3Reseau, L: number, section: SectionReseau | null, systeme: SystemeReseau): PortReseau[] {
   const n = (d: Point3Reseau): Point3Reseau => { const k = Math.hypot(d.x, d.y, d.z) || 1; return { x: d.x / k, y: d.y / k, z: d.z / k }; };
   const u = n(dirAmont), v = n(dirAval);
   return [
-    { id: "1", dx: u.x * L, dy: u.y * L, dz: u.z * L, sens: "indifferent", section, systeme: null, fluide: null },
-    { id: "2", dx: v.x * L, dy: v.y * L, dz: v.z * L, sens: "indifferent", section, systeme: null, fluide: null },
+    { id: "1", dx: u.x * L, dy: u.y * L, dz: u.z * L, sens: "indifferent", section, systeme, fluide: null },
+    { id: "2", dx: v.x * L, dy: v.y * L, dz: v.z * L, sens: "indifferent", section, systeme, fluide: null },
   ];
 }
 
@@ -121,7 +121,7 @@ function router(etat: ModeleAtelier, p: Brut, ctx: ContexteCommande): ResultatCo
   if (coude) {
     for (let i = 1; i < sommets.length - 1; i++) {
       const q = sommets[i]!;
-      const ports = portsCoude(dir(q, sommets[i - 1]!), dir(q, sommets[i + 1]!), coude.value);
+      const ports = portsCoude(dir(q, sommets[i - 1]!), dir(q, sommets[i + 1]!), coude.value, null, lire.enumeration(b, "systeme", ["gaine", "tuyau", "chemin-de-cables", "conduit"] as const));
       const id = `${lire.chaineOuNull(b, "id") ?? ctx.ids.nouveau("raccord-reseau")}${lire.chaineOuNull(b, "id") ? `-c${i}` : ""}`;
       r = enchainer(r, (s) => creerOccurrence(s, { id, niveauId, calqueId: p["calqueId"] ?? null, params: { nom: `${prefixe} coude ${i}`, type: "coude", systeme: commun.systeme, position: { x: q.x, y: q.y, frame: "local", unit: "m" }, z: q.z, angle: { value: 0, unit: "deg" }, section: commun.section, ports, fluide: commun.fluide, materiau: commun.materiau, specificationId: commun.specificationId } }, ctx, "raccord-reseau"));
       coudes.push(id);

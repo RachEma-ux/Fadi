@@ -46,9 +46,11 @@ export function maillageSegmentReseau(p: ParamsSegmentReseau): MaillageBrut {
 /** Raccord : un bras plein de la section du port, du centre au port. */
 export function maillageRaccordReseau(p: ParamsRaccordReseau): MaillageBrut {
   const c: V3 = [p.position.x, p.position.y, p.z];
+  // Même rotation en plan que `portsDe` (angle du raccord) : les bras dessinés et exportés suivent les ports.
+  const r = (p.angle.value * Math.PI) / 180, cr = Math.cos(r), sr = Math.sin(r);
   const parts = p.ports.map((port) => {
     const s = port.section ?? p.section;
-    const fin: V3 = [c[0] + port.dx, c[1] + port.dy, c[2] + port.dz];
+    const fin: V3 = [c[0] + cr * port.dx - sr * port.dy, c[1] + sr * port.dx + cr * port.dy, c[2] + port.dz];
     if (Math.hypot(port.dx, port.dy, port.dz) < 1e-9) return null;
     return balayer(contourSection(s), [], c, fin);
   }).filter((m): m is MaillageBrut => !!m);

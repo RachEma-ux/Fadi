@@ -662,6 +662,7 @@ export type SectionReseau = { forme: "circulaire"; diametre: Longueur; epaisseur
 /** Provenance catalogue d'une section (tubes-raccords.csv sourcé, D-180) : diamètre nominal déclaré par le catalogue. */
 export interface ProfilReseau { catalogueId: string; designation: string; source: string; diametreNominal: string | null }
 /** Point 3D du repère local du niveau (m) : z relatif au niveau. */
+/** Point 3D en **repère local du niveau** (m ; z depuis l'élévation du niveau) — jamais cadastral ni géographique : un point étiqueté d'un autre repère est refusé à la validation. */
 export interface Point3Reseau { x: number; y: number; z: number }
 /**
  * Port d'un raccord ou d'un équipement : position relative au point de pose (déjà tournée de l'angle de l'objet à la
@@ -674,7 +675,8 @@ export interface PortReseau {
   dz: number;
   sens: SensPort;
   section: SectionReseau | null;
-  systeme: SystemeReseau | null;
+  /** Système déclaré du port (jamais supposé : la validation le refuse absent). */
+  systeme: SystemeReseau;
   fluide: string | null;
 }
 

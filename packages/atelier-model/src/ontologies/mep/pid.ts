@@ -68,8 +68,10 @@ export function svgPid(etat: ModeleAtelier, revision: number, titre = "Schéma d
   parts.push(`<text x="${M}" y="30" font-size="16" font-weight="600">${echapperXml(titre)}</text>`);
   parts.push(`<text x="${M}" y="48" font-size="11" fill="#4a5a55">Révision ${revision} · ${sch.reseaux.length} réseau(x) · ${sch.aretes.length} segment(s) · ${sch.noeuds.length} nœud(s) · ${sch.portsLibres.length} port(s) libre(s) · ${sch.connexionsInvalides.length} connexion(s) incompatible(s)</text>`);
   for (const a of sch.aretes) {
-    const ax = X(a.de.x), ay = Y(a.de.y), bx = X(a.a.x), by = Y(a.a.y);
-    parts.push(`<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#1a1a1a" stroke-width="1.6"${a.sens === "indifferent" ? "" : ` marker-end="url(#fleche)"`} data-segment="${echapperXml(a.id)}"/>`);
+    // Sens b-vers-a : la flèche part du dernier sommet vers le premier (extrémités inversées).
+    const inverse = a.sens === "b-vers-a";
+    const ax = X(inverse ? a.a.x : a.de.x), ay = Y(inverse ? a.a.y : a.de.y), bx = X(inverse ? a.de.x : a.a.x), by = Y(inverse ? a.de.y : a.a.y);
+    parts.push(`<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#1a1a1a" stroke-width="1.6"${a.sens === "indifferent" ? "" : ` marker-end="url(#fleche)"`} data-segment="${echapperXml(a.id)}" data-sens="${a.sens}"/>`);
     parts.push(`<text x="${(ax + bx) / 2}" y="${(ay + by) / 2 - 4}" font-size="9" text-anchor="middle" fill="#2b3a35">${echapperXml(`${a.nom} · ${a.libelle}`)}</text>`);
   }
   for (const n of sch.noeuds) {

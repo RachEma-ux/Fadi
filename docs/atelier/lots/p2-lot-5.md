@@ -32,6 +32,15 @@ MEP réimporté.
   (test) ✅ ; (3) aucune constante normative (DN, débit, pression : test) ✅ ; (4) matrice IFC complétée ✅ ; (5) fiches
   prototype.
 
+## Relecture de la PR #98 (Codex, 4 constats — corrigés)
+
+| Constat | Correction |
+| --- | --- |
+| Les sommets de réseau `Point3Reseau` ne portent pas de repère : des coordonnées cadastrales ou géographiques passées par l'API seraient lues comme locales. | Les sommets 3D sont **par définition en repère local du niveau** (documenté sur le type) ; `lireSommets3` refuse désormais tout point étiqueté d'un autre repère (`frame` ≠ `local`) : conversion explicite en amont, jamais de réinterprétation silencieuse (test). |
+| Un port d'équipement sans `systeme` devenait un port de tuyauterie (`?? "tuyau"`) : valeur inventée qui pilotait compatibilité, connexion automatique, nomenclature et IFC. | Le système d'un port est **déclaré** : un raccord ou une vanne le transmet à ses ports (c'est le leur), un équipement doit le donner port par port — refus nommé sinon (`PortReseau.systeme` non nul, test). L'outil Équipement l'envoyait déjà. |
+| Les bras des raccords étaient maillés sans la rotation `angle` appliquée aux ports : ports et dessin divergeaient pour un raccord tourné. | `maillageRaccordReseau` applique la même rotation en plan que `portsDe` (test : raccord à 90°, bras le long de y). |
+| Un segment `b-vers-a` était fléché de a vers b sur le P&ID. | Les extrémités du trait sont inversées pour ce sens (attribut `data-sens` ; test). |
+
 ## Non fait (déclaré)
 
 - **Collisions** réseau × bâtiment ou structure et **réservations** : P2-6 (coordination), comme le cahier le prévoit.

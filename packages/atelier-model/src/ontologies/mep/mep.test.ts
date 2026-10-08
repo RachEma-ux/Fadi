@@ -13,7 +13,7 @@ import { connexions, etatConnexions, incompatibilites, portsDe, portsLibres, res
 import { schemaPid, svgPid } from "./pid.js";
 import { designationReseau, sectionReseauDepuisCatalogue } from "./sections.js";
 import { validerCatalogueCsv } from "../../catalogues/csv-source.js";
-import { longueurSegment } from "./geometrie.js";
+import { longueurSegment, maillageRaccordReseau } from "./geometrie.js";
 
 const pt = (x: number, y: number) => ({ x, y, frame: "local" as const, unit: "m" as const });
 const m = (value: number) => ({ value, unit: "m" as const });
@@ -245,5 +245,42 @@ describe("spécifications, supports, géométrie, documents, IFC", () => {
     expect((ifc.contenu.match(/IFCRELCONNECTSPORTS\(/g) ?? []).length).toBe(4);
     expect((ifc.contenu.match(/IFCDISTRIBUTIONPORT\(/g) ?? []).length).toBe(13);
     expect(ifc.rapport.remarques.some((r: string) => /13 port\(s\) de réseau/.test(r))).toBe(true);
+  });
+});
+
+describe("relecture Codex de la PR #98 : repère des sommets, système des ports, raccords tournés, flèches du P&ID", () => {
+  it("un sommet 3D étiqueté d'un repère autre que local est refusé (jamais réinterprété) ; sans étiquette, repère local du niveau", () => {
+    expect(() => lot(base(), [{ type: "segmentReseau.creer", params: { id: "s", niveauId: "n1", systeme: "tuyau", sommets: [{ x: 0, y: 0, z: 2.5, frame: "cadastral" }, P3(4, 0, 2.5)], section: D50 } }])).toThrow(/repère « cadastral » refusé/);
+    const e = lot(base(), [{ type: "segmentReseau.creer", params: { id: "s", niveauId: "n1", systeme: "tuyau", sommets: [{ x: 0, y: 0, z: 2.5, frame: "local" }, P3(4, 0, 2.5)], section: D50 } }]).etat;
+    expect(O<"segment-reseau">(e, "s").params.sommets[0]).toEqual(P3(0, 0, 2.5));
+  });
+  it("port d'équipement sans système : refus nommé ; port de raccord sans système : celui du raccord", () => {
+    expect(() => lot(base(), [{ type: "equipementReseau.creer", params: { id: "p1", niveauId: "n1", nom: "Pompe", type: "pompe", categorie: "mouvement", position: pt(4, 3.7), z: 2.2, longueur: m(0.6), largeur: m(0.4), hauteur: m(0.6), ports: [{ id: "asp", dy: -0.5, sens: "entree", section: D50 }] } }])).toThrow(/système requis/);
+    const e = lot(base(), [{ type: "raccordReseau.creer", params: { id: "r", niveauId: "n1", type: "coude", systeme: "gaine", position: pt(0, 0), z: 2.5, section: { forme: "rectangulaire", largeur: m(0.3), hauteur: m(0.2) }, ports: [{ id: "1", dx: -0.1 }, { id: "2", dy: 0.1 }] } }]).etat;
+    expect(O<"raccord-reseau">(e, "r").params.ports.every((p) => p.systeme === "gaine")).toBe(true);
+    expect(portsDe(O<"raccord-reseau">(e, "r")).every((p) => p.systeme === "gaine")).toBe(true);
+  });
+  it("raccord tourné de 90° : les bras maillés suivent les ports (bras de −x vers −y… même rotation que portsDe)", () => {
+    const e = lot(base(), [{ type: "raccordReseau.creer", params: { id: "r", niveauId: "n1", type: "coude", systeme: "tuyau", position: pt(0, 0), z: 2.5, angle: { value: 90, unit: "deg" }, section: D50, ports: [{ id: "1", dx: -0.2 }, { id: "2", dy: 0.2 }] } }]).etat;
+    const r = O<"raccord-reseau">(e, "r");
+    const mm = maillageRaccordReseau(r.params);
+    const xs = mm.positions.filter((_, i) => i % 3 === 0), ys = mm.positions.filter((_, i) => i % 3 === 1);
+    // Port 1 (dx −0,2) tourné de 90° → (0, −0,2) ; port 2 (dy 0,2) → (−0,2, 0) : le maillage s'étend en y ∈ [−0,2, 0] et x ∈ [−0,2, 0] (jamais x > 0,03 ni y > 0,03).
+    expect(Math.min(...ys)).toBeCloseTo(-0.2, 2);
+    expect(Math.min(...xs)).toBeCloseTo(-0.2, 2);
+    expect(Math.max(...xs)).toBeLessThan(0.04);
+    expect(Math.max(...ys)).toBeLessThan(0.04);
+    const ports = portsDe(r);
+    expect(ports.find((p) => p.id === "1")!.position.y).toBeCloseTo(-0.2, 9);
+    expect(ports.find((p) => p.id === "2")!.position.x).toBeCloseTo(-0.2, 9);
+  });
+  it("P&ID : un segment b-vers-a est fléché du dernier sommet vers le premier", () => {
+    const e = lot(base(), [{ type: "segmentReseau.creer", params: { id: "s", niveauId: "n1", systeme: "tuyau", sommets: [P3(0, 0, 2.5), P3(4, 0, 2.5)], section: D50, sens: "b-vers-a" } }]).etat;
+    const svg = svgPid(e, 1);
+    const ligne = /<line ([^>]*)data-segment="s"[^>]*>/.exec(svg)![1]!;
+    const x1 = Number(/x1="([^"]+)"/.exec(ligne)![1]), x2 = Number(/x2="([^"]+)"/.exec(ligne)![1]);
+    expect(svg).toContain('data-sens="b-vers-a"');
+    expect(x1).toBeGreaterThan(x2); // de x = 4 (b) vers x = 0 (a)
+    expect(ligne).toContain("marker-end");
   });
 });

@@ -59,7 +59,7 @@ export function portsDe(o: OccurrenceQuelconque): PortAbsolu[] {
     case "equipement-reseau": {
       const p = o.params;
       const { u, n } = repereEquipement(p);
-      return p.ports.map((port) => ({ objetId: o.id, classe: "equipement-reseau" as const, id: port.id, position: { x: p.position.x + u[0] * port.dx + n[0] * port.dy, y: p.position.y + u[1] * port.dx + n[1] * port.dy, z: p.z + port.dz }, sens: port.sens, section: port.section ?? { forme: "circulaire", diametre: { value: 0, unit: "m" }, epaisseur: null }, systeme: port.systeme ?? "tuyau", fluide: port.fluide }));
+      return p.ports.map((port) => ({ objetId: o.id, classe: "equipement-reseau" as const, id: port.id, position: { x: p.position.x + u[0] * port.dx + n[0] * port.dy, y: p.position.y + u[1] * port.dx + n[1] * port.dy, z: p.z + port.dz }, sens: port.sens, section: port.section ?? { forme: "circulaire", diametre: { value: 0, unit: "m" }, epaisseur: null }, systeme: port.systeme, fluide: port.fluide }));
     }
     default:
       return [];

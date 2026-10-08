@@ -988,6 +988,9 @@ const SYSTEMES_RESEAU = ["gaine", "tuyau", "chemin-de-cables", "conduit"] as con
 function lireSommets3(p: Brut, cle: string, min: number): { x: number; y: number; z: number }[] {
   const v = p[cle];
   if (!Array.isArray(v) || v.length < min || !v.every((q) => q && typeof q === "object" && [(q as { x?: unknown }).x, (q as { y?: unknown }).y, (q as { z?: unknown }).z].every((c) => typeof c === "number" && Number.isFinite(c)))) throw new ErreurCommande("invalide", cle, `« ${cle} » : liste d'au moins ${min} points { x, y, z } (m, z depuis le niveau)`);
+  // Repère : les sommets 3D sont dans le repère local du niveau par définition ; un point étiqueté d'un autre repère
+  // (cadastral, géographique) n'est jamais réinterprété en silence — conversion explicite en amont (AGENTS.md, repères tagués).
+  v.forEach((q, i) => { const f = (q as { frame?: unknown }).frame; if (f !== undefined && f !== "local") throw new ErreurCommande("invalide", `${cle}[${i}].frame`, `repère « ${String(f)} » refusé : les sommets 3D sont en repère local du niveau (convertissez explicitement)`); });
   return (v as { x: number; y: number; z: number }[]).map((q) => ({ x: q.x, y: q.y, z: q.z }));
 }
 
@@ -1036,7 +1039,10 @@ function lirePorts(etat: ModeleAtelier, p: Brut, cle: string, systeme: SystemeRe
     if (ids.has(id)) throw new ErreurCommande("invalide", `${cle}[${i}].id`, `port « ${id} » en double`);
     ids.add(id);
     for (const k of ["dx", "dy", "dz"]) if (q[k] !== undefined && q[k] !== null && (typeof q[k] !== "number" || !Number.isFinite(q[k] as number))) throw new ErreurCommande("invalide", `${cle}[${i}].${k}`, "nombre attendu");
-    const sys = q["systeme"] === undefined || q["systeme"] === null ? null : lire.enumeration(q, "systeme", SYSTEMES_RESEAU);
+    // Le système d'un port d'équipement est déclaré, jamais supposé (un port sans système deviendrait un port de tuyauterie : refus nommé).
+    // Raccord ou vanne : le port hérite du système déclaré de l'objet ; équipement (aucun système propre) : le port doit le déclarer.
+    if ((q["systeme"] === undefined || q["systeme"] === null) && !systeme) throw new ErreurCommande("invalide", `${cle}[${i}].systeme`, `port « ${id} » : système requis (${SYSTEMES_RESEAU.join(" | ")}) — aucun système n'est supposé`);
+    const sys = q["systeme"] === undefined || q["systeme"] === null ? systeme! : lire.enumeration(q, "systeme", SYSTEMES_RESEAU);
     const section = q["section"] === undefined || q["section"] === null ? null : lireSectionReseau(etat, q, "section", sys ?? systeme).section;
     return { id, dx: (q["dx"] as number | undefined) ?? 0, dy: (q["dy"] as number | undefined) ?? 0, dz: (q["dz"] as number | undefined) ?? 0, sens: lire.enumeration(q, "sens", ["entree", "sortie", "indifferent"] as const, "indifferent"), section, systeme: sys, fluide: lire.chaineOuNull(q, "fluide") };
   });
