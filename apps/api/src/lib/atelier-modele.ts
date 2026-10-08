@@ -30,15 +30,17 @@ const site = (row: typeof atelierSite.$inferSelect): ModeleAtelier["site"] => ({
 export async function chargerModele(q: Querier, projectId: string): Promise<ModeleCharge | null> {
   const siteRow = (await q.select().from(atelierSite).where(eq(atelierSite.projectId, projectId)).limit(1))[0];
   if (!siteRow) return null;
+  // Ordre stable par identifiant : sans ORDER BY, Postgres peut renvoyer les lignes dans un ordre différent d'une lecture à
+  // l'autre, et tout ce qui parcourt `Object.keys(etat.…)` (export IFC reproductible, documents, empreintes) en dépend.
   const [niveaux, objets, relations, definitions, calques, groupes, references, problemes] = await Promise.all([
-    q.select().from(atelierNiveaux).where(eq(atelierNiveaux.projectId, projectId)),
-    q.select().from(atelierObjets).where(eq(atelierObjets.projectId, projectId)),
-    q.select().from(atelierRelations).where(eq(atelierRelations.projectId, projectId)),
-    q.select().from(atelierDefinitions).where(eq(atelierDefinitions.projectId, projectId)),
-    q.select().from(atelierCalques).where(eq(atelierCalques.projectId, projectId)),
-    q.select().from(atelierGroupes).where(eq(atelierGroupes.projectId, projectId)),
-    q.select().from(atelierReferences).where(eq(atelierReferences.projectId, projectId)),
-    q.select().from(atelierProblemes).where(eq(atelierProblemes.projectId, projectId)),
+    q.select().from(atelierNiveaux).where(eq(atelierNiveaux.projectId, projectId)).orderBy(atelierNiveaux.ordre, atelierNiveaux.id),
+    q.select().from(atelierObjets).where(eq(atelierObjets.projectId, projectId)).orderBy(atelierObjets.id),
+    q.select().from(atelierRelations).where(eq(atelierRelations.projectId, projectId)).orderBy(atelierRelations.id),
+    q.select().from(atelierDefinitions).where(eq(atelierDefinitions.projectId, projectId)).orderBy(atelierDefinitions.id),
+    q.select().from(atelierCalques).where(eq(atelierCalques.projectId, projectId)).orderBy(atelierCalques.ordre, atelierCalques.id),
+    q.select().from(atelierGroupes).where(eq(atelierGroupes.projectId, projectId)).orderBy(atelierGroupes.id),
+    q.select().from(atelierReferences).where(eq(atelierReferences.projectId, projectId)).orderBy(atelierReferences.id),
+    q.select().from(atelierProblemes).where(eq(atelierProblemes.projectId, projectId)).orderBy(atelierProblemes.id),
   ]);
   const etat: ModeleAtelier = {
     ...modeleVide(),
