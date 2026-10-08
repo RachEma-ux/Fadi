@@ -100,6 +100,7 @@ export function scene(m: Modele): readonly ElementScene[] {
       r.push({ genre: "arete", id: a.id, chemin, a: p(a.a), b: p(a.b), masquee: a.masquee === true, adoucie: a.adoucie === true });
     }
     for (const f of Object.values(c.faces)) {
+      if (f.masquee) continue;
       r.push({
         genre: "face",
         id: f.id,
@@ -110,6 +111,7 @@ export function scene(m: Modele): readonly ElementScene[] {
       });
     }
     for (const o of Object.values(c.occurrences)) {
+      if (o.masquee) continue;
       const bal = o.balise ? m.annotations?.balises[o.balise] : undefined;
       if (bal && !bal.visible) continue;
       const d = m.definitions[o.definition];
@@ -565,3 +567,52 @@ export const machineSelection: MachineOutil<EtatSelection> = {
     };
   },
 };
+
+// ————————————————————————————————————————————————————————————— Sélectionner ▸ (menu contextuel, lot 5)
+
+export type ModeSelectionEtendue = "aretes-bordantes" | "faces-connectees" | "tout-connecte" | "meme-balise" | "meme-materiau" | "deselectionner-faces" | "inverser" | "tout";
+
+/** Sous-menu « Sélectionner ▸ » du menu contextuel (§5.8) : nouvelle sélection à partir de la sélection courante. */
+export function etendreSelection(m: Modele, selection: readonly Id[], mode: ModeSelectionEtendue, dans?: Id): Id[] {
+  const c = contexte(m, dans);
+  const visibles = (ids: Iterable<Id>): Id[] => [...ids].filter((id) => !(c.faces[id]?.masquee || c.aretes[id]?.masquee || c.occurrences[id]?.masquee));
+  const tout = visibles([...Object.keys(c.faces), ...Object.keys(c.aretes), ...Object.keys(c.occurrences)]);
+  const sel = new Set(selection.filter((id) => c.faces[id] || c.aretes[id] || c.occurrences[id]));
+  switch (mode) {
+    case "tout":
+      return tout;
+    case "inverser":
+      return tout.filter((id) => !sel.has(id));
+    case "deselectionner-faces":
+      return [...sel].filter((id) => !c.faces[id]);
+    case "aretes-bordantes": {
+      const r = new Set(sel);
+      for (const id of sel) {
+        const f = c.faces[id];
+        if (f) for (const a of aretesDeFace(m, id, dans !== undefined ? { dans } : {})) r.add(a);
+      }
+      return visibles(r);
+    }
+    case "faces-connectees": {
+      const r = new Set(sel);
+      for (const id of sel) if (c.faces[id] || c.aretes[id]) for (const e of entitesConnectees(m, id, dans !== undefined ? { dans } : {})) if (c.faces[e]) r.add(e);
+      return visibles(r);
+    }
+    case "tout-connecte": {
+      const r = new Set(sel);
+      for (const id of sel) if (c.faces[id] || c.aretes[id]) for (const e of entitesConnectees(m, id, dans !== undefined ? { dans } : {})) r.add(e);
+      return visibles(r);
+    }
+    case "meme-balise": {
+      const balises = new Set([...sel].map((id) => c.occurrences[id]?.balise ?? null));
+      return visibles(Object.values(c.occurrences).filter((o) => balises.has(o.balise ?? null)).map((o) => o.id));
+    }
+    case "meme-materiau": {
+      const mats = new Set([...sel].map((id) => c.faces[id]?.materiauRecto ?? c.occurrences[id]?.materiau ?? null));
+      const r: Id[] = [];
+      for (const f of Object.values(c.faces)) if (mats.has(f.materiauRecto ?? null)) r.push(f.id);
+      for (const o of Object.values(c.occurrences)) if (mats.has(o.materiau ?? null)) r.push(o.id);
+      return visibles(r);
+    }
+  }
+}

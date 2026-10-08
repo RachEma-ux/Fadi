@@ -1136,3 +1136,160 @@
 .planche-texte3d .barre-groupe button {
   min-height: 44px;
 }
+
+/* Lot 5 (objets) — menu contextuel de Sélection (§5.8), boîte « Créer un composant », panneaux §6. */
+.planche-menu {
+  position: fixed;
+  z-index: 30;
+  min-width: 15rem;
+  max-width: 17rem;
+  max-height: calc(100vh - 1rem);
+  overflow-y: auto;
+  padding: 0.25rem;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+}
+.planche-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.planche-menu li.avec-separateur {
+  border-top: 1px solid var(--atelier-ligne, #dce5df);
+  margin-top: 0.2rem;
+  padding-top: 0.2rem;
+}
+.planche-menu button[role="menuitem"] {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 36px;
+  padding: 0.3rem 0.6rem;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  color: inherit;
+}
+.planche-menu button[role="menuitem"]:hover,
+.planche-menu button[role="menuitem"]:focus-visible {
+  background: var(--atelier-survol, rgba(31, 122, 87, 0.12));
+}
+.planche-menu button[role="menuitem"]:disabled {
+  opacity: 0.5;
+}
+.planche-menu-sous {
+  margin-left: 0.8rem !important;
+  border-left: 2px solid var(--atelier-ligne, #dce5df);
+}
+.planche-dialogue {
+  display: grid;
+  gap: 0.5rem;
+}
+.planche-dialogue label,
+.planche-options label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.planche-dialogue-options {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+}
+.planche-info,
+.planche-options,
+.planche-navigateur {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.92rem;
+}
+.planche-info dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.2rem 0.6rem;
+  margin: 0;
+}
+.planche-info dt {
+  color: var(--atelier-texte-faible, #556);
+}
+.planche-info dd {
+  margin: 0;
+}
+.planche-bascule {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 32px;
+}
+.planche-ligne-choix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.planche-vues-standard {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.3rem;
+}
+.planche-vues-standard button {
+  min-height: 36px;
+}
+.planche-navigateur ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 0.6rem;
+}
+.planche-navigateur li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
+  min-height: 32px;
+}
+.planche-navigateur li.est-actif > .lien,
+.planche-navigateur li.est-actif > button:first-of-type {
+  font-weight: 600;
+}
+.planche-navigateur .est-masque {
+  opacity: 0.55;
+}
+.planche-chevron {
+  min-width: 24px;
+}
+.planche-champ-effacable {
+  display: flex;
+  gap: 0.3rem;
+}
+.planche-champ-effacable input {
+  flex: 1;
+  min-width: 0;
+}
+.planche-composants li {
+  display: grid;
+  gap: 0.25rem;
+}
+.planche-choix-panneaux {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+.planche-choix-panneaux .canevas-icone {
+  flex-direction: column;
+  min-height: 64px;
+}
+.planche-choix-panneaux .canevas-etiquette {
+  position: static;
+  font-size: 0.8rem;
+  text-align: center;
+}
+.planche-retour-panneaux {
+  min-width: 32px;
+  min-height: 32px;
+}

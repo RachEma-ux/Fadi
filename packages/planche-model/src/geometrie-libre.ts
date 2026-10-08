@@ -80,6 +80,8 @@ export interface Face {
   readonly normale: Vec3;
   readonly materiauRecto?: string;
   readonly materiauVerso?: string;
+  /** Masquée (menu contextuel « Masquer », lot 5) : ni affichée, ni accrochée, ni sélectionnable. */
+  readonly masquee?: boolean;
 }
 
 export type GenreCourbe = "cercle" | "polygone" | "arc";
@@ -104,6 +106,12 @@ export interface Occurrence {
   readonly materiau?: string;
   /** Balise (calque de l'Atelier, P-9). */
   readonly balise?: string;
+  /** Nom de l'occurrence (Info entité, lot 5). */
+  readonly nom?: string;
+  /** Masquée (lot 5) : ni affichée, ni accrochée, ni sélectionnable, jusqu'à « Réafficher ». */
+  readonly masquee?: boolean;
+  /** Verrouillée (lot 5) : aucune transformation, aucun effacement, aucune édition tant que le verrou tient. */
+  readonly verrouille?: boolean;
 }
 
 export interface Contexte {
@@ -116,7 +124,14 @@ export interface Contexte {
 
 export type GenreDefinition = "groupe" | "composant";
 
-export interface Definition {
+/** Options de la boîte « Créer un composant » (§5.6) ; `collerA` et les interrupteurs sont conservés tels quels (effets nv, déclarés). */
+export interface MetadonneesDefinition {
+  readonly description?: string;
+  readonly collerA?: "aucun" | "tout" | "horizontal" | "vertical" | "incline";
+  readonly decouperOuverture?: boolean;
+  readonly faceCamera?: boolean;
+}
+export interface Definition extends MetadonneesDefinition {
   readonly id: Id;
   readonly nom: string;
   readonly genre: GenreDefinition;
@@ -475,12 +490,20 @@ interface Ctx {
   occurrences: Map<Id, Occurrence>;
 }
 
-interface DefTravail {
+interface DefTravail extends MetadonneesDefinition {
   id: Id;
   nom: string;
   genre: GenreDefinition;
   contenu: Ctx;
 }
+
+const META_DEF = ["description", "collerA", "decouperOuverture", "faceCamera"] as const;
+function metaDe(d: MetadonneesDefinition): MetadonneesDefinition {
+  const r: Record<string, unknown> = {};
+  for (const k of META_DEF) if (d[k] !== undefined) r[k] = d[k];
+  return r as MetadonneesDefinition;
+}
+const memeMeta = (a: MetadonneesDefinition, b: MetadonneesDefinition): boolean => META_DEF.every((k) => a[k] === b[k]);
 
 const versCtx = (c: Contexte): Ctx => ({
   sommets: new Map(Object.entries(c.sommets)),
@@ -518,14 +541,14 @@ class Travail {
   constructor(private readonly modele: Modele) {
     this.prochain = modele.prochainId;
     const a = modele.annotations ?? ANNOTATIONS_VIDES;
-    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, ...(a.repere ? { repere: a.repere } : {}) };
+    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
     this.racine = versCtx(modele.racine);
     this.origines.set(this.racine, modele.racine);
     this.definitions = new Map();
     for (const d of Object.values(modele.definitions)) {
       const contenu = versCtx(d.contenu);
       this.origines.set(contenu, d.contenu);
-      this.definitions.set(d.id, { id: d.id, nom: d.nom, genre: d.genre, contenu });
+      this.definitions.set(d.id, { id: d.id, nom: d.nom, genre: d.genre, contenu, ...metaDe(d) });
     }
   }
 
@@ -577,7 +600,7 @@ class Travail {
     const id = this.id("d");
     const pourOcc = garderIds ? def.contenu : copie;
     if (garderIds) this.definitions.set(def.id, { ...def, contenu: copie });
-    this.definitions.set(id, { id, nom: `${def.nom}#1`, genre: def.genre, contenu: pourOcc });
+    this.definitions.set(id, { id, nom: `${def.nom}#1`, genre: def.genre, contenu: pourOcc, ...metaDe(def) });
     ctx.occurrences.set(occId, { ...occ, definition: id });
     return this.salir(pourOcc);
   }
@@ -594,9 +617,9 @@ class Travail {
       const ancienne = this.modele.definitions[d.id];
       const contenu = this.figer(d.contenu);
       definitions[d.id] =
-        ancienne && ancienne.contenu === contenu && ancienne.nom === d.nom && ancienne.genre === d.genre
+        ancienne && ancienne.contenu === contenu && ancienne.nom === d.nom && ancienne.genre === d.genre && memeMeta(ancienne, d)
           ? ancienne
-          : Object.freeze({ id: d.id, nom: d.nom, genre: d.genre, contenu });
+          : Object.freeze({ id: d.id, nom: d.nom, genre: d.genre, contenu, ...metaDe(d) });
     }
     const base = { racine: this.figer(this.racine), definitions: Object.freeze(definitions), prochainId: this.prochain };
     if (!this.annotationsSales) return Object.freeze(this.modele.annotations ? { ...base, annotations: this.modele.annotations } : base);
@@ -609,6 +632,8 @@ class Travail {
       materiaux: Object.freeze({ ...a.materiaux }),
       balises: Object.freeze({ ...a.balises }),
       ...(a.repere ? { repere: a.repere } : {}),
+      ...(Object.keys(a.scenes).length ? { scenes: Object.freeze({ ...a.scenes }) } : {}),
+      ...(a.reglages ? { reglages: a.reglages } : {}),
     });
     return Object.freeze({ ...base, annotations });
   }
@@ -618,7 +643,7 @@ class Travail {
     for (const id of ids) {
       const g = genreAnnotation(id);
       if (!g) continue;
-      const rec = g === "guide" ? this.annotations.guides : g === "cote" ? this.annotations.cotes : g === "texte" ? this.annotations.textes : g === "plan" ? this.annotations.plansDeCoupe : g === "materiau" ? this.annotations.materiaux : this.annotations.balises;
+      const rec = g === "guide" ? this.annotations.guides : g === "cote" ? this.annotations.cotes : g === "texte" ? this.annotations.textes : g === "plan" ? this.annotations.plansDeCoupe : g === "materiau" ? this.annotations.materiaux : g === "scene" ? this.annotations.scenes : this.annotations.balises;
       if (id in rec) {
         delete (rec as Record<Id, unknown>)[id];
         this.annotationsSales = true;
@@ -666,10 +691,11 @@ function aplatir(m: Modele): Map<Id, string> {
   }
   const a = m.annotations;
   if (a) {
-    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises]) {
+    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}]) {
       for (const [id, v] of Object.entries(rec)) r.set(id, JSON.stringify(v));
     }
     if (a.repere) r.set("repere", JSON.stringify(a.repere));
+    if (a.reglages) r.set("reglages", JSON.stringify(a.reglages));
   }
   return r;
 }
@@ -1643,7 +1669,16 @@ function fusionnerSommets(c: Ctx, deplaces: ReadonlySet<Id>): void {
   }
 }
 
+/** Un objet verrouillé (§5.6, lot 5) ne se transforme pas, ne se copie pas et ne s'efface pas. */
+function refuserVerrouilles(c: Ctx, entites: readonly Id[]): void {
+  for (const id of entites) {
+    const occ = c.occurrences.get(id);
+    if (occ?.verrouille) throw new Error(`L'objet ${occ.nom ? `« ${occ.nom} » ` : ""}est verrouillé : déverrouillez-le (Info entité ou menu contextuel) pour le modifier.`);
+  }
+}
+
 function transformerSurPlace(t: Travail, c: Ctx, entites: readonly Id[], M: Matrice4): void {
+  refuserVerrouilles(c, entites);
   const S = sommetsDe(c, entites);
   for (const s of S) c.sommets.set(s, { id: s, position: appliquer(M, pos(c, s)) });
   const det = determinant3(M);
@@ -1676,6 +1711,7 @@ function transformerSurPlace(t: Travail, c: Ctx, entites: readonly Id[], M: Matr
 }
 
 function copierTransforme(t: Travail, c: Ctx, entites: readonly Id[], matrices: readonly Matrice4[]): void {
+  refuserVerrouilles(c, entites);
   const faces = entites.map((id) => c.faces.get(id)).filter((f): f is Face => f !== undefined);
   const aretes = new Map<Id, Arete>();
   for (const id of entites) {
@@ -1828,7 +1864,7 @@ export interface ResultatGroupe extends Resultat {
 export function grouper(
   m: Modele,
   entites: readonly Id[],
-  o: OptionsContexte & { readonly genre?: GenreDefinition; readonly nom?: string } = {},
+  o: OptionsContexte & MetadonneesDefinition & { readonly genre?: GenreDefinition; readonly nom?: string } = {},
 ): ResultatGroupe {
   const r = operer(m, o.dans, (t, c) => {
     const faces = new Set(entites.filter((id) => c.faces.has(id)));
@@ -1897,7 +1933,7 @@ export function grouper(
     for (const s of [...c.sommets.keys()]) if (!sommetsDehors.has(s)) c.sommets.delete(s);
     const genre = o.genre ?? "groupe";
     const def = t.id("d");
-    t.definitions.set(def, { id: def, nom: o.nom ?? (genre === "groupe" ? "Groupe" : "Composant"), genre, contenu: g });
+    t.definitions.set(def, { id: def, nom: o.nom ?? (genre === "groupe" ? "Groupe" : "Composant"), genre, contenu: g, ...metaDe(o) });
     const occ = t.id("o");
     c.occurrences.set(occ, { id: occ, definition: def, transformation: IDENTITE });
     return { occ, def };
@@ -1913,6 +1949,7 @@ export function eclater(m: Modele, occurrence: Id): Resultat {
   return operer(m, dans, (t, c) => {
     const occ = c.occurrences.get(occurrence);
     if (!occ) throw new Error(`Occurrence inconnue : ${occurrence}`);
+    refuserVerrouilles(c, [occurrence]);
     const def = t.definitions.get(occ.definition);
     if (!def) throw new Error(`Définition inconnue : ${occ.definition}`);
     c.occurrences.delete(occurrence);
@@ -2063,6 +2100,7 @@ export function effacerAretes(m: Modele, aretes: readonly Id[], o: OptionsContex
  */
 export function effacerEntites(m: Modele, ids: readonly Id[], o: OptionsContexte = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
+    refuserVerrouilles(c, ids);
     for (const id of ids) {
       c.faces.delete(id);
       c.occurrences.delete(id);
@@ -2090,6 +2128,20 @@ export function peindreFaces(m: Modele, faces: readonly Id[], materiau: Id | nul
       if (!f) continue;
       const { materiauRecto: _ancien, ...reste } = f;
       c.faces.set(id, materiau ? { ...reste, materiauRecto: materiau } : reste);
+    }
+  });
+}
+
+/** Info entité (lot 5) : matière d'un côté donné (recto ou verso) des faces ; `null` rend le côté à la matière par défaut. */
+export function peindreFacesCote(m: Modele, faces: readonly Id[], cote: "recto" | "verso", materiau: Id | null, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of faces) {
+      const f = c.faces.get(id);
+      if (!f) continue;
+      const { materiauRecto, materiauVerso, ...reste } = f;
+      const recto = cote === "recto" ? materiau : materiauRecto ?? null;
+      const verso = cote === "verso" ? materiau : materiauVerso ?? null;
+      c.faces.set(id, { ...reste, ...(recto ? { materiauRecto: recto } : {}), ...(verso ? { materiauVerso: verso } : {}) });
     }
   });
 }
@@ -2604,4 +2656,358 @@ export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: Options
     }
     insererGeometrie(t, c, segments, sources, false);
   });
+}
+
+// ————————————————————————————————————————————————————————————— Objets : visibilité, verrou, adoucissement, orientation (lot 5)
+
+const sansFaux = <T extends object>(o: T, cle: keyof T, v: boolean): T => {
+  const r = { ...o } as Record<string, unknown>;
+  if (v) r[cle as string] = true;
+  else delete r[cle as string];
+  return r as T;
+};
+
+/** Masquer (`masquee = true`) ou réafficher des faces, arêtes (et leurs courbes) et objets du contexte. */
+export function masquerEntites(m: Modele, ids: readonly Id[], o: OptionsContexte = {}, masquee = true): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of new Set([...ids, ...etendreAuxCourbes(c, ids.filter((x) => c.aretes.has(x) || c.courbes.has(x)))])) {
+      const f = c.faces.get(id);
+      if (f) c.faces.set(id, sansFaux(f, "masquee", masquee));
+      const a = c.aretes.get(id);
+      if (a) c.aretes.set(id, sansFaux(a, "masquee", masquee));
+      const occ = c.occurrences.get(id);
+      if (occ) c.occurrences.set(id, sansFaux(occ, "masquee", masquee));
+    }
+  });
+}
+
+export const afficherEntites = (m: Modele, ids: readonly Id[], o: OptionsContexte = {}): Resultat => masquerEntites(m, ids, o, false);
+
+/** Réafficher tout (panneau Affichage) : toutes les faces, arêtes et objets masqués de tous les contextes. */
+export function afficherTout(m: Modele): Resultat {
+  const t = new Travail(m);
+  for (const c of t.tousContextes()) {
+    const ids = [...[...c.faces.values()].filter((f) => f.masquee), ...[...c.aretes.values()].filter((a) => a.masquee), ...[...c.occurrences.values()].filter((o) => o.masquee)].map((e) => e.id);
+    if (ids.length === 0) continue;
+    t.salir(c);
+    for (const id of ids) {
+      const f = c.faces.get(id);
+      if (f) c.faces.set(id, sansFaux(f, "masquee", false));
+      const a = c.aretes.get(id);
+      if (a) c.aretes.set(id, sansFaux(a, "masquee", false));
+      const occ = c.occurrences.get(id);
+      if (occ) c.occurrences.set(id, sansFaux(occ, "masquee", false));
+    }
+  }
+  const modele = t.fermer();
+  return { modele, rapport: differences(m, modele) };
+}
+
+/** Verrouiller / déverrouiller des objets (groupes, composants). */
+export function verrouillerOccurrences(m: Modele, ids: readonly Id[], verrou: boolean, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of ids) {
+      const occ = c.occurrences.get(id);
+      if (occ) c.occurrences.set(id, sansFaux(occ, "verrouille", verrou));
+    }
+  });
+}
+
+/** Nom d'une occurrence (Info entité). */
+export function renommerOccurrence(m: Modele, id: Id, nom: string, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    const occ = c.occurrences.get(id);
+    if (!occ) throw new Error(`Occurrence inconnue : ${id}`);
+    const n = nom.trim();
+    const { nom: _ancien, ...reste } = occ;
+    c.occurrences.set(id, n ? { ...reste, nom: n } : reste);
+  });
+}
+
+/** Nom, description et options d'une définition (boîte « Modifier les détails du composant », Info entité). */
+export function modifierDefinition(m: Modele, definition: Id, meta: MetadonneesDefinition & { readonly nom?: string }): Resultat {
+  const t = new Travail(m);
+  const d = t.definitions.get(definition);
+  if (!d) throw new Error(`Définition inconnue : ${definition}`);
+  const nom = meta.nom?.trim();
+  t.definitions.set(definition, { ...d, ...metaDe({ ...metaDe(d), ...meta }), ...(nom ? { nom } : {}) });
+  // `fermer` ne relit les métadonnées que si la définition change : forcer la comparaison.
+  const modele = t.fermer();
+  return { modele, rapport: differences(m, modele) };
+}
+
+/** Adoucir (ou durcir) des arêtes : la vue ne trace pas une arête adoucie entre deux faces. */
+export function adoucirAretes(m: Modele, ids: readonly Id[], adoucie: boolean, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of aretesDeSelection(c, ids)) {
+      const a = c.aretes.get(id);
+      if (a) c.aretes.set(id, sansFaux(a, "adoucie", adoucie));
+    }
+  });
+}
+
+/** Arêtes désignées par une sélection : arêtes, arêtes des faces et des courbes. */
+function aretesDeSelection(c: Ctx, ids: readonly Id[]): Id[] {
+  const r = new Set<Id>();
+  for (const id of ids) {
+    if (c.aretes.has(id)) r.add(id);
+    const f = c.faces.get(id);
+    if (f) for (const a of c.aretes.values()) if ([f.exterieur, ...f.trous].some((b) => boucleContient(b, a.a, a.b))) r.add(a.id);
+    const k = c.courbes.get(id);
+    if (k) for (const a of k.aretes) r.add(a);
+  }
+  return [...r];
+}
+
+const cleSommets = (a: Id, b: Id): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
+/**
+ * Adoucir / lisser (panneau §6.10) : parmi les arêtes de la sélection bordées par exactement deux faces, celles dont l'angle
+ * dièdre est au plus `angleDeg` (et, si `coplanaires`, celles entre faces coplanaires) sont adoucies ; les autres durcies.
+ * Renvoie le nombre d'arêtes adoucies.
+ */
+export function adoucirLisser(m: Modele, ids: readonly Id[], angleDeg: number, coplanaires: boolean, o: OptionsContexte = {}): Resultat & { extra: number } {
+  return operer(m, o.dans, (_t, c) => {
+    let n = 0;
+    for (const id of aretesDeSelection(c, ids)) {
+      const a = c.aretes.get(id);
+      if (!a) continue;
+      const fs = facesDeArete(c, a);
+      if (fs.length !== 2) continue;
+      const cosinus = Math.max(-1, Math.min(1, dot(fs[0]!.normale, fs[1]!.normale)));
+      const angle = (Math.acos(cosinus) * 180) / Math.PI;
+      const douce = angle <= angleDeg + 1e-9 && (angle > 1e-6 || coplanaires);
+      c.aretes.set(id, sansFaux(a, "adoucie", douce));
+      if (douce) n++;
+    }
+    return n;
+  });
+}
+
+/** Inverser plusieurs faces (menu contextuel). */
+export function inverserFaces(m: Modele, faces: readonly Id[], o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    for (const id of faces) {
+      const f = c.faces.get(id);
+      if (f) c.faces.set(id, inverser(f));
+    }
+  });
+}
+
+/**
+ * Orienter les faces (menu contextuel) : les faces connectées à la face de référence prennent une orientation cohérente
+ * avec elle (une arête partagée est parcourue dans les deux sens par deux faces bien orientées). Renvoie le nombre de
+ * faces retournées.
+ */
+export function orienterFaces(m: Modele, face: Id, o: OptionsContexte = {}): Resultat & { extra: number } {
+  return operer(m, o.dans, (_t, c) => {
+    const ref = c.faces.get(face);
+    if (!ref) throw new Error(`Face inconnue : ${face}`);
+    const sens = (f: Face): Map<string, 1 | -1> => {
+      const r = new Map<string, 1 | -1>();
+      for (const b of [f.exterieur, ...f.trous]) for (let i = 0; i < b.length; i++) {
+        const x = b[i] as Id, y = b[(i + 1) % b.length] as Id;
+        r.set(cleSommets(x, y), x < y ? 1 : -1);
+      }
+      return r;
+    };
+    const vus = new Set<Id>([face]);
+    const file: Id[] = [face];
+    let n = 0;
+    while (file.length) {
+      const f = c.faces.get(file.shift() as Id)!;
+      const sf = sens(f);
+      for (const [cle, dir] of sf) {
+        for (const g of c.faces.values()) {
+          if (vus.has(g.id)) continue;
+          const sg = sens(g);
+          const d2 = sg.get(cle);
+          if (d2 === undefined) continue;
+          vus.add(g.id);
+          if (d2 === dir) {
+            c.faces.set(g.id, inverser(g));
+            n++;
+          }
+          file.push(g.id);
+        }
+      }
+    }
+    return n;
+  });
+}
+
+// ————————————————————————————————————————————————————————————— Intersection des faces avec le modèle (lot 5)
+
+interface FaceMonde {
+  readonly exterieur: readonly Vec3[];
+  readonly trous: readonly (readonly Vec3[])[];
+  readonly normale: Vec3;
+}
+
+function facesMondeDe(m: Modele, c: Contexte, M: Matrice4, profondeur: number, sortie: FaceMonde[]): void {
+  if (profondeur > 32) return;
+  const p = (s: Id): Vec3 => appliquer(M, (c.sommets[s] as Sommet).position);
+  for (const f of Object.values(c.faces)) if (!f.masquee) sortie.push({ exterieur: f.exterieur.map(p), trous: f.trous.map((b) => b.map(p)), normale: normalize(transformerNormale(M, f.normale)) });
+  for (const o of Object.values(c.occurrences)) {
+    const d = m.definitions[o.definition];
+    if (d && !o.masquee) facesMondeDe(m, d.contenu, composer(M, o.transformation), profondeur + 1, sortie);
+  }
+}
+
+function dedansPolygone2(q: { x: number; y: number }, poly: readonly { x: number; y: number }[]): boolean {
+  let dedans = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i]!, b = poly[j]!;
+    if (a.y > q.y !== b.y > q.y && q.x < ((b.x - a.x) * (q.y - a.y)) / (b.y - a.y) + a.x) dedans = !dedans;
+  }
+  return dedans;
+}
+
+/** Portions de la droite p + t·d intérieures à la face (polygone troué), en paramètres t croissants. */
+function intervallesDansFace(p: Vec3, d: Vec3, f: FaceMonde): [number, number][] {
+  const { u, w } = baseDuPlan(f.normale);
+  const o = f.exterieur[0] as Vec3;
+  const en2 = (q: Vec3): { x: number; y: number } => ({ x: dot(sub(q, o), u), y: dot(sub(q, o), w) });
+  const P = en2(p);
+  const D = { x: dot(d, u), y: dot(d, w) };
+  if (Math.hypot(D.x, D.y) < 1e-12) return [];
+  const boucles = [f.exterieur, ...f.trous].map((b) => b.map(en2));
+  const ts: number[] = [];
+  for (const b of boucles) {
+    for (let i = 0; i < b.length; i++) {
+      const a = b[i]!, c = b[(i + 1) % b.length]!;
+      const e = { x: c.x - a.x, y: c.y - a.y };
+      const den = D.x * e.y - D.y * e.x;
+      if (Math.abs(den) < 1e-12) continue;
+      const s = ((a.x - P.x) * e.y - (a.y - P.y) * e.x) / den;
+      const r = ((a.x - P.x) * D.y - (a.y - P.y) * D.x) / den;
+      if (r >= -1e-9 && r <= 1 + 1e-9) ts.push(s);
+    }
+  }
+  ts.sort((x, y) => x - y);
+  const r: [number, number][] = [];
+  for (let i = 0; i + 1 < ts.length; i++) {
+    const t0 = ts[i]!, t1 = ts[i + 1]!;
+    if (t1 - t0 < 1e-9) continue;
+    const milieu = { x: P.x + D.x * ((t0 + t1) / 2), y: P.y + D.y * ((t0 + t1) / 2) };
+    const dedans = dedansPolygone2(milieu, boucles[0]!) && !boucles.slice(1).some((h) => dedansPolygone2(milieu, h));
+    if (dedans) r.push([t0, t1]);
+  }
+  return r;
+}
+
+/** Segments d'intersection de deux faces planes non coplanaires (coordonnées monde). */
+function intersectionFaces(f: FaceMonde, g: FaceMonde): { a: Vec3; b: Vec3 }[] {
+  const n1 = f.normale, n2 = g.normale;
+  const d = cross(n1, n2);
+  if (len(d) < 1e-9) return [];
+  const dir = normalize(d);
+  const d1 = dot(n1, f.exterieur[0] as Vec3), d2 = dot(n2, g.exterieur[0] as Vec3);
+  const c = dot(n1, n2);
+  const k = 1 - c * c;
+  const p0 = add(scale(n1, (d1 - d2 * c) / k), scale(n2, (d2 - d1 * c) / k));
+  const A = intervallesDansFace(p0, dir, f);
+  const B = intervallesDansFace(p0, dir, g);
+  const r: { a: Vec3; b: Vec3 }[] = [];
+  for (const [a0, a1] of A) for (const [b0, b1] of B) {
+    const t0 = Math.max(a0, b0), t1 = Math.min(a1, b1);
+    if (t1 - t0 > TOL) r.push({ a: add(p0, scale(dir, t0)), b: add(p0, scale(dir, t1)) });
+  }
+  return r;
+}
+
+/**
+ * Intersection des faces > Avec le modèle (§5.6) : les faces de l'objet (occurrence du contexte, avec ses sous-objets)
+ * qui pénètrent la géométrie libre du contexte y ajoutent des arêtes le long de la pénétration (les faces traversées
+ * sont découpées) ; l'objet lui-même n'est pas modifié. Sans objet (géométrie libre sélectionnée), les faces libres
+ * sélectionnées sont intersectées avec les objets du contexte. Renvoie le nombre de segments ajoutés.
+ */
+export function intersecterAvecModele(m: Modele, ids: readonly Id[], o: OptionsContexte = {}): Resultat & { extra: number } {
+  const c0 = contexte(m, o.dans);
+  const objets = ids.filter((id) => c0.occurrences[id]);
+  const facesLibres = ids.filter((id) => c0.faces[id]);
+  const sources: FaceMonde[] = [];
+  const cibles: FaceMonde[] = [];
+  const faceMonde = (f: Face): FaceMonde => ({ exterieur: f.exterieur.map((s) => (c0.sommets[s] as Sommet).position), trous: f.trous.map((b) => b.map((s) => (c0.sommets[s] as Sommet).position)), normale: normalize(f.normale) });
+  if (objets.length) {
+    for (const id of objets) {
+      const occ = c0.occurrences[id] as Occurrence;
+      const d = m.definitions[occ.definition];
+      if (d) facesMondeDe(m, d.contenu, occ.transformation, 1, sources);
+    }
+    for (const f of Object.values(c0.faces)) if (!f.masquee) cibles.push(faceMonde(f));
+  } else {
+    for (const id of facesLibres) sources.push(faceMonde(c0.faces[id] as Face));
+    for (const occ of Object.values(c0.occurrences)) {
+      const d = m.definitions[occ.definition];
+      if (d && !occ.masquee) facesMondeDe(m, d.contenu, occ.transformation, 1, cibles);
+    }
+    // Sans objet en face, les faces libres sélectionnées se coupent entre elles.
+    if (cibles.length === 0) for (const f of Object.values(c0.faces)) if (!f.masquee && !facesLibres.includes(f.id)) cibles.push(faceMonde(f));
+  }
+  const segments: { a: Vec3; b: Vec3 }[] = [];
+  for (const s0 of sources) for (const c of cibles) segments.push(...intersectionFaces(s0, c));
+  if (segments.length === 0) return { ...operer(m, o.dans, () => 0) };
+  // Les segments sont posés dans le contexte d'édition (géométrie libre) : les faces traversées sont découpées.
+  return operer(m, o.dans, (t, c) => {
+    insererGeometrie(t, c, segments, [], true);
+    return segments.length;
+  });
+}
+
+/** Boîte englobante (monde) d'une occurrence, avec ses sous-objets ; null si elle est vide ou inconnue. */
+export function boiteOccurrence(m: Modele, occurrence: Id): { min: Vec3; max: Vec3 } | null {
+  let trouvee: { M: Matrice4; occ: Occurrence } | null = null;
+  const chercher = (c: Contexte, M: Matrice4, profondeur: number): void => {
+    if (trouvee || profondeur > 32) return;
+    for (const o of Object.values(c.occurrences)) {
+      if (o.id === occurrence) {
+        trouvee = { M: composer(M, o.transformation), occ: o };
+        return;
+      }
+      const d = m.definitions[o.definition];
+      if (d) chercher(d.contenu, composer(M, o.transformation), profondeur + 1);
+    }
+  };
+  chercher(m.racine, IDENTITE, 0);
+  if (!trouvee) return null;
+  const t = trouvee as { M: Matrice4; occ: Occurrence };
+  const d = m.definitions[t.occ.definition];
+  if (!d) return null;
+  const min = { x: Infinity, y: Infinity, z: Infinity };
+  const max = { x: -Infinity, y: -Infinity, z: -Infinity };
+  const visiter = (c: Contexte, M: Matrice4, profondeur: number): void => {
+    if (profondeur > 32) return;
+    for (const s of Object.values(c.sommets)) {
+      const q = appliquer(M, s.position);
+      min.x = Math.min(min.x, q.x); min.y = Math.min(min.y, q.y); min.z = Math.min(min.z, q.z);
+      max.x = Math.max(max.x, q.x); max.y = Math.max(max.y, q.y); max.z = Math.max(max.z, q.z);
+    }
+    for (const o of Object.values(c.occurrences)) {
+      const dd = m.definitions[o.definition];
+      if (dd) visiter(dd.contenu, composer(M, o.transformation), profondeur + 1);
+    }
+  };
+  visiter(d.contenu, t.M, 0);
+  return Number.isFinite(min.x) ? { min, max } : null;
+}
+
+/** Arêtes (monde) de la géométrie masquée : faces, arêtes et objets masqués, pour l'option « voir la géométrie masquée ». */
+export function aretesMasquees(m: Modele): { a: Vec3; b: Vec3 }[] {
+  const r: { a: Vec3; b: Vec3 }[] = [];
+  const parcourir = (c: Contexte, M: Matrice4, toutMasque: boolean, profondeur: number): void => {
+    if (profondeur > 32) return;
+    const p = (s: Id): Vec3 => appliquer(M, (c.sommets[s] as Sommet).position);
+    for (const a of Object.values(c.aretes)) if (toutMasque || a.masquee) r.push({ a: p(a.a), b: p(a.b) });
+    for (const f of Object.values(c.faces)) {
+      if (toutMasque || !f.masquee) continue;
+      for (const b of [f.exterieur, ...f.trous]) for (let i = 0; i < b.length; i++) r.push({ a: p(b[i] as Id), b: p(b[(i + 1) % b.length] as Id) });
+    }
+    for (const o of Object.values(c.occurrences)) {
+      const d = m.definitions[o.definition];
+      if (d) parcourir(d.contenu, composer(M, o.transformation), toutMasque || o.masquee === true, profondeur + 1);
+    }
+  };
+  parcourir(m.racine, IDENTITE, false, 0);
+  return r;
 }

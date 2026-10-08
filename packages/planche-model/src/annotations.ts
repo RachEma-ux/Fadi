@@ -84,6 +84,29 @@ export interface Repere {
   readonly z: Vec3;
 }
 
+/** Scène (panneau §6.8) : caméra enregistrée par commande, comme une vue 3D (D-053). */
+export interface Scene {
+  readonly id: Id;
+  readonly nom: string;
+  readonly position: Vec3;
+  readonly cible: Vec3;
+  readonly champDeVision: number;
+  readonly projection: "perspective" | "parallele";
+  /** Ombres affichées dans la scène (sinon option d'affichage, R10). */
+  readonly ombres?: boolean;
+}
+
+/** Réglages de la Planche (panneau Info modèle §6.11) : données de la Planche ; la précision d'affichage reste une préférence (R10). */
+export interface ReglagesPlanche {
+  readonly accrochageLongueur: number | null;
+  readonly accrochageAngle: number | null;
+  readonly extremitesTexte: "aucune" | "barre" | "fleche-ouverte" | "fleche-fermee" | "point";
+  readonly alignerTexte: "ecran" | "epingle";
+  readonly extremitesCote: "aucune" | "barre" | "fleche-ouverte" | "fleche-fermee" | "point";
+  readonly alignerCote: "dessus" | "centre" | "exterieur" | "ecran";
+}
+export const REGLAGES_DEFAUT: ReglagesPlanche = { accrochageLongueur: 0.01, accrochageAngle: 15, extremitesTexte: "fleche-fermee", alignerTexte: "epingle", extremitesCote: "barre", alignerCote: "centre" };
+
 export interface Annotations {
   readonly guides: Readonly<Record<Id, Guide>>;
   readonly cotes: Readonly<Record<Id, Cote>>;
@@ -93,6 +116,10 @@ export interface Annotations {
   readonly balises: Readonly<Record<Id, Balise>>;
   /** Absent : repère du modèle (origine, axes canoniques). */
   readonly repere?: Repere;
+  /** Scènes enregistrées (lot 5). */
+  readonly scenes?: Readonly<Record<Id, Scene>>;
+  /** Réglages de la Planche (lot 5) ; absent = `REGLAGES_DEFAUT`. */
+  readonly reglages?: ReglagesPlanche;
 }
 
 export const ANNOTATIONS_VIDES: Annotations = Object.freeze({
@@ -113,13 +140,17 @@ export interface AnnotationsMutables {
   materiaux: Record<Id, Materiau>;
   balises: Record<Id, Balise>;
   repere?: Repere;
+  scenes: Record<Id, Scene>;
+  reglages?: ReglagesPlanche;
 }
 
 export const annotationsDe = (a: Annotations | undefined): Annotations => a ?? ANNOTATIONS_VIDES;
 
 /** Genre d'annotation d'après le préfixe de l'identifiant (ou null pour une entité géométrique). */
-export function genreAnnotation(id: Id): "guide" | "cote" | "texte" | "plan" | "materiau" | "balise" | null {
+export function genreAnnotation(id: Id): "guide" | "cote" | "texte" | "plan" | "materiau" | "balise" | "scene" | null {
   switch (id.charAt(0)) {
+    case "v":
+      return "scene";
     case "g":
       return "guide";
     case "c":

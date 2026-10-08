@@ -103,6 +103,8 @@ export const LIBELLE_PLAN_CONTRAINT: Libelle = { en: "Constrained on Plane", fr:
 export const RANG_POINTS: readonly TypeInference[] = ["extremite", "milieu", "intersection", "centre", "origine"];
 
 export interface AreteVisible {
+  /** Arête adoucie (Adoucir / lisser, lot 5) : non tracée par la vue. */
+  readonly adoucie?: boolean;
   readonly id: Id;
   readonly a: Vec3;
   readonly b: Vec3;
@@ -117,6 +119,8 @@ export interface FaceVisible {
   readonly dansObjet?: boolean;
   /** Matière affichée : celle de la face, sinon celle de l'objet le plus proche qui en porte une (lot 5). */
   readonly materiau?: Id;
+  /** Balise de l'objet le plus proche qui en porte une (couleur par balise, lot 5). */
+  readonly balise?: Id;
 }
 
 export interface CentreVisible {
@@ -548,12 +552,13 @@ export function geometrieVisible(m: Modele): GeometrieVisible {
   const faces: FaceVisible[] = [];
   const centres: CentreVisible[] = [];
   const balises = m.annotations?.balises;
-  const parcourir = (c: Contexte, M: Matrice4, dansObjet: boolean, profondeur: number, materiau: Id | undefined): void => {
+  const parcourir = (c: Contexte, M: Matrice4, dansObjet: boolean, profondeur: number, materiau: Id | undefined, balise: Id | undefined): void => {
     if (profondeur > 32) return;
     const p = (s: Id): Vec3 => appliquer(M, (c.sommets[s] as { position: Vec3 }).position);
     const marque = dansObjet ? { dansObjet: true } : {};
-    for (const a of Object.values(c.aretes)) if (!a.masquee) aretes.push({ id: a.id, a: p(a.a), b: p(a.b), ...marque });
+    for (const a of Object.values(c.aretes)) if (!a.masquee) aretes.push({ id: a.id, a: p(a.a), b: p(a.b), ...marque, ...(a.adoucie ? { adoucie: true } : {}) });
     for (const f of Object.values(c.faces)) {
+      if (f.masquee) continue;
       const mat = f.materiauRecto ?? materiau;
       faces.push({
         id: f.id,
@@ -562,16 +567,18 @@ export function geometrieVisible(m: Modele): GeometrieVisible {
         normale: transformerNormale(M, f.normale),
         ...marque,
         ...(mat ? { materiau: mat } : {}),
+        ...(balise ? { balise } : {}),
       });
     }
     for (const k of Object.values(c.courbes)) centres.push({ id: k.id, position: appliquer(M, k.centre), ...marque });
     for (const o of Object.values(c.occurrences)) {
-      // Balise masquée (calque invisible, P-9) : l'objet n'est ni affiché ni accroché.
+      // Objet masqué (lot 5) ou balise masquée (calque invisible, P-9) : l'objet n'est ni affiché ni accroché.
+      if (o.masquee) continue;
       if (o.balise && balises && balises[o.balise] && !balises[o.balise]!.visible) continue;
       const d = m.definitions[o.definition];
-      if (d) parcourir(d.contenu, composer(M, o.transformation), true, profondeur + 1, o.materiau ?? materiau);
+      if (d) parcourir(d.contenu, composer(M, o.transformation), true, profondeur + 1, o.materiau ?? materiau, o.balise ?? balise);
     }
   };
-  parcourir(m.racine, IDENTITE, false, 0, undefined);
+  parcourir(m.racine, IDENTITE, false, 0, undefined, undefined);
   return { aretes, faces, centres };
 }

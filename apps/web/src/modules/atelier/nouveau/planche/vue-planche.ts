@@ -8,7 +8,7 @@
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
 import * as THREE from "three";
-import { COULEURS, COULEUR_MATERIAU_DEFAUT, baseDuPlan, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Vec3, type VueOutil } from "@parcours/planche-model";
+import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Scene, type Vec3, type VueOutil } from "@parcours/planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
 import { borneSensibilite, facteurPan, interpreterMolette } from "../navigation";
 import type { OutilCamera } from "./outils-planche";
@@ -47,7 +47,36 @@ export interface RappelsVuePlanche {
   finOutilCamera?(id: OutilCamera): void;
   /** Hauteur d'œil demandée (m) pour Positionner la caméra. */
   hauteurOeil?(): number;
+  /** Clic droit (menu contextuel, §5.8) : position écran et rayon de visée. */
+  menuContextuel?(p: Point2, rayon: Rayon, tolerance: number): void;
+  /** Occurrence en cours d'édition (§5.6) : les objets verrouillés sélectionnés y sont cherchés. */
+  dans?(): string | undefined;
 }
+
+/** Options d'affichage (panneaux Styles, Affichage, Ombres — état de vue, R10). */
+export interface OptionsAffichage {
+  readonly aretes: boolean;
+  readonly aretesArriere: boolean;
+  readonly rayonsX: boolean;
+  readonly modeFace: "ombre" | "monochrome" | "filaire" | "lignes-cachees";
+  readonly couleurParBalise: boolean;
+  readonly ombres: boolean;
+  readonly ombresSol: boolean;
+  readonly guides: boolean;
+  readonly axes: boolean;
+  readonly plansDeCoupe: boolean;
+  readonly objetsMasques: boolean;
+  readonly geometrieMasquee: boolean;
+  readonly sol: boolean;
+  /** Heure (0–24) et jour de l'année (1–365) du soleil ; latitude en degrés (parcelle, sinon 46 par défaut déclaré). */
+  readonly heure: number;
+  readonly jour: number;
+  readonly latitude: number;
+}
+export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, sol: true, heure: 13.5, jour: 312, latitude: 46 };
+
+/** Vues standard (panneau Scènes) : direction de la caméra vers la cible, « sud » = −y du quadrillage (D-017). */
+export type VueStandard = "dessus" | "sud" | "est" | "nord" | "ouest" | "dessous" | "iso";
 
 /** Étiquette de texte posée sur un point monde (ou fixée en pixels). */
 interface Etiquette {
@@ -197,6 +226,10 @@ export class VuePlanche {
   private modele: Modele | null = null;
   private cleSelection = "";
   private readonly sol: THREE.Mesh;
+  private readonly soleil: THREE.DirectionalLight;
+  private options: OptionsAffichage = OPTIONS_AFFICHAGE_DEFAUT;
+  private projectionParallele = false;
+  private fovPerspective = CHAMP_DE_VISION_INITIAL;
   private readonly lanceur = new THREE.Raycaster();
   private readonly demiAxes: { ligne: THREE.Line; direction: THREE.Vector3 }[] = [];
   private facesRecto: THREE.Mesh | null = null;
@@ -243,9 +276,17 @@ export class VuePlanche {
 
     this.scene.background = new THREE.Color(COULEUR_FOND);
     this.scene.add(new THREE.HemisphereLight("#ffffff", "#9aa0a8", 2.2));
-    const soleil = new THREE.DirectionalLight("#ffffff", 1.2);
-    soleil.position.set(-30, -50, 80);
-    this.scene.add(soleil);
+    this.soleil = new THREE.DirectionalLight("#ffffff", 1.2);
+    this.soleil.position.set(-30, -50, 80);
+    this.soleil.castShadow = false;
+    this.soleil.shadow.mapSize.set(2048, 2048);
+    this.soleil.shadow.camera.near = 1;
+    this.soleil.shadow.camera.far = 400;
+    this.soleil.shadow.camera.left = this.soleil.shadow.camera.bottom = -60;
+    this.soleil.shadow.camera.right = this.soleil.shadow.camera.top = 60;
+    this.scene.add(this.soleil, this.soleil.target);
+    this.moteur.shadowMap.enabled = false;
+    this.moteur.shadowMap.type = THREE.PCFSoftShadowMap;
     // Sol neutre : sous les faces posées à z = 0 (dessiné d'abord, sans écrire la profondeur).
     this.sol = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshBasicMaterial({ color: COULEUR_SOL, depthWrite: false }));
     this.sol.renderOrder = -1;
@@ -333,15 +374,44 @@ export class VuePlanche {
     vider(this.groupeModele);
     this.modele = modele;
     this.geometrie = geometrieVisible(modele);
+    const o = this.options;
     const materiaux = modele.annotations?.materiaux ?? {};
-    const couleurDe = (f: FaceVisible): string => (f.materiau ? materiaux[f.materiau]?.couleur ?? COULEUR_MATERIAU_DEFAUT : COULEUR_RECTO);
+    const balises = modele.annotations?.balises ?? {};
+    const couleurDe = (f: FaceVisible): string => {
+      if (o.modeFace === "monochrome" || o.modeFace === "lignes-cachees") return COULEUR_RECTO;
+      if (o.couleurParBalise) return f.balise ? balises[f.balise]?.couleur ?? COULEUR_RECTO : COULEUR_RECTO;
+      return f.materiau ? materiaux[f.materiau]?.couleur ?? COULEUR_MATERIAU_DEFAUT : COULEUR_RECTO;
+    };
     const g = geometrieFaces(this.geometrie.faces, couleurDe);
-    const recto = new THREE.MeshLambertMaterial({ color: "#ffffff", vertexColors: true, side: THREE.FrontSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
-    const verso = new THREE.MeshLambertMaterial({ color: COULEUR_VERSO, side: THREE.BackSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    const transparent = o.rayonsX;
+    const base = { vertexColors: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, transparent, opacity: transparent ? 0.45 : 1, depthWrite: !transparent };
+    const recto = o.modeFace === "lignes-cachees" ? new THREE.MeshBasicMaterial({ color: "#ffffff", side: THREE.FrontSide, ...base }) : new THREE.MeshLambertMaterial({ color: "#ffffff", side: THREE.FrontSide, ...base });
+    const verso = new THREE.MeshLambertMaterial({ color: o.modeFace === "lignes-cachees" ? "#ffffff" : COULEUR_VERSO, side: THREE.BackSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, transparent, opacity: transparent ? 0.45 : 1, depthWrite: !transparent });
     this.facesRecto = new THREE.Mesh(g, recto);
     this.facesVerso = new THREE.Mesh(g.clone(), verso);
-    const aretes = new THREE.LineSegments(geometrieSegments(this.geometrie.aretes.map((a) => [a.a, a.b] as const)), new THREE.LineBasicMaterial({ color: COULEUR_ARETE }));
-    this.groupeModele.add(this.facesRecto, this.facesVerso, aretes);
+    this.facesRecto.castShadow = this.facesRecto.receiveShadow = o.ombres;
+    this.facesVerso.receiveShadow = o.ombres;
+    const segments = this.geometrie.aretes.filter((a) => !a.adoucie).map((a) => [a.a, a.b] as const);
+    if (o.modeFace !== "filaire") this.groupeModele.add(this.facesRecto, this.facesVerso);
+    if (o.aretes || o.modeFace === "filaire" || o.modeFace === "lignes-cachees") this.groupeModele.add(new THREE.LineSegments(geometrieSegments(segments), new THREE.LineBasicMaterial({ color: COULEUR_ARETE })));
+    if (o.aretesArriere && o.modeFace !== "filaire") {
+      // Arêtes arrière (K) : les arêtes cachées par les faces, en pointillé léger (tracées sans test de profondeur sous les pleines).
+      const arriere = new THREE.LineSegments(geometrieSegments(segments), new THREE.LineDashedMaterial({ color: "#6a6a6a", dashSize: 0.12, gapSize: 0.08, depthTest: false, transparent: true, opacity: 0.6 }));
+      arriere.computeLineDistances();
+      arriere.renderOrder = -2;
+      this.groupeModele.add(arriere);
+    }
+    if (o.objetsMasques || o.geometrieMasquee) {
+      const masquees = aretesMasquees(modele);
+      if (masquees.length) {
+        const l = new THREE.LineSegments(geometrieSegments(masquees.map((s) => [s.a, s.b] as const)), new THREE.LineDashedMaterial({ color: "#8a8a8a", dashSize: 0.15, gapSize: 0.1 }));
+        l.computeLineDistances();
+        this.groupeModele.add(l);
+      }
+    }
+    this.sol.visible = o.sol;
+    this.sol.receiveShadow = o.ombres && o.ombresSol;
+    this.groupeAxes.visible = o.axes;
     this.majAxes(modele);
     this.majAnnotations(modele, this.cleSelection ? this.cleSelection.split("|") : []);
     this.majCoupe(modele);
@@ -400,6 +470,7 @@ export class VuePlanche {
     };
     const cs = (id: string, defaut: string): string => (sel.has(id) ? COULEUR_SELECTION : defaut);
     for (const g of Object.values(a.guides)) {
+      if (!this.options.guides) break;
       const c = cs(g.id, "#222222");
       if (g.genre === "ligne") {
         const L = 1000;
@@ -450,6 +521,7 @@ export class VuePlanche {
       }
     }
     for (const p of Object.values(a.plansDeCoupe)) {
+      if (!this.options.plansDeCoupe) break;
       const couleur = sel.has(p.id) ? "#e8891c" : "#8a8a8a";
       this.groupeAnnotations.add(...rectanglePlan(p.origine, p.u, p.w, p.demiU, p.demiW, couleur, p.inverse ? v3(p.normale).multiplyScalar(-1) : v3(p.normale), pas));
     }
@@ -508,6 +580,20 @@ export class VuePlanche {
       const aretes = this.geometrie.aretes.filter((a) => ids.has(a.id));
       if (faces.length) this.groupeSelection.add(new THREE.Mesh(geometrieFaces(faces), new THREE.MeshBasicMaterial({ color: couleur, transparent: true, opacity: opacite, side: THREE.DoubleSide, depthWrite: false })));
       if (aretes.length) this.groupeSelection.add(new THREE.LineSegments(geometrieSegments(aretes.map((a) => [a.a, a.b] as const)), new THREE.LineBasicMaterial({ color: couleur, depthTest: false })));
+    }
+    // Objets sélectionnés : boîte englobante (bleue ; rouge si l'objet est verrouillé, §5.6).
+    if (this.modele) {
+      const c = contexte(this.modele, this.rappels.dans?.());
+      for (const id of choisis) {
+        const occ = c.occurrences[id];
+        if (!occ) continue;
+        const b = boiteOccurrence(this.modele, id);
+        if (!b) continue;
+        const boite = new THREE.Box3(v3(b.min), v3(b.max));
+        const aide = new THREE.Box3Helper(boite, new THREE.Color(occ.verrouille ? "#d0342c" : COULEUR_SELECTION));
+        (aide.material as THREE.LineBasicMaterial).depthTest = false;
+        this.groupeSelection.add(aide);
+      }
     }
     this.inference = vue?.inference && vue.inference.type !== "aucune" ? vue.inference : null;
     if (vue) {
@@ -886,9 +972,106 @@ export class VuePlanche {
 
   /** Hauteur d'œil (m) : altitude de la caméra. */
   /** Position de la caméra et champ de vision (instrumentation de la recette). */
-  etatCamera(): { position: Vec3; champDeVision: number } {
-    const p = this.camera.position;
-    return { position: { x: p.x, y: p.y, z: p.z }, champDeVision: this.champDeVision };
+  etatCamera(): { position: Vec3; cible: Vec3; champDeVision: number; projection: "perspective" | "parallele" } {
+    // En projection parallèle (émulée par une caméra éloignée à champ de 1°), la position rendue est celle de la caméra
+    // en perspective équivalente : les scènes enregistrent des positions à l'échelle du modèle et se rappellent exactement.
+    let p: { x: number; y: number; z: number } = this.camera.position;
+    if (this.projectionParallele) {
+      const direction = this.camera.position.clone().sub(this.cible);
+      const demiHauteur = direction.length() * Math.tan((1 * Math.PI) / 360);
+      const d = demiHauteur / Math.tan((this.fovPerspective * Math.PI) / 360);
+      p = this.cible.clone().add(direction.normalize().multiplyScalar(d));
+    }
+    return { position: { x: p.x, y: p.y, z: p.z }, cible: { x: this.cible.x, y: this.cible.y, z: this.cible.z }, champDeVision: this.projectionParallele ? this.fovPerspective : this.champDeVision, projection: this.projectionParallele ? "parallele" : "perspective" };
+  }
+
+  /** Options d'affichage (Styles, Affichage, Ombres) : état de vue, jamais une donnée. */
+  majOptions(options: Partial<OptionsAffichage>): void {
+    this.options = { ...this.options, ...options };
+    this.moteur.shadowMap.enabled = this.options.ombres;
+    this.soleil.castShadow = this.options.ombres;
+    this.majSoleil();
+    if (this.modele) this.majModele(this.modele);
+    else this.rendre();
+  }
+
+  lireOptions(): OptionsAffichage {
+    return this.options;
+  }
+
+  /** Position du soleil d'après l'heure, le jour de l'année et la latitude (formule de déclinaison simplifiée, nv). */
+  private majSoleil(): void {
+    const o = this.options;
+    const decl = (23.44 * Math.PI) / 180 * Math.sin(((2 * Math.PI) / 365) * (o.jour - 81));
+    const lat = (o.latitude * Math.PI) / 180;
+    const h = ((o.heure - 12) * 15 * Math.PI) / 180;
+    const sinAlt = Math.sin(lat) * Math.sin(decl) + Math.cos(lat) * Math.cos(decl) * Math.cos(h);
+    const alt = Math.asin(Math.max(-1, Math.min(1, sinAlt)));
+    const cosAz = (Math.sin(decl) - Math.sin(alt) * Math.sin(lat)) / (Math.cos(alt) * Math.cos(lat) || 1e-9);
+    let az = Math.acos(Math.max(-1, Math.min(1, cosAz)));
+    if (h > 0) az = 2 * Math.PI - az;
+    // Azimut depuis le nord (+y) vers l'est (+x) ; le soleil vient de cette direction, à l'altitude calculée.
+    const d = 120;
+    const z = Math.max(0.05, Math.sin(alt));
+    this.soleil.position.set(Math.sin(az) * Math.cos(alt) * d, Math.cos(az) * Math.cos(alt) * d, z * d);
+    this.soleil.target.position.set(0, 0, 0);
+    this.soleil.intensity = this.options.ombres ? 1.6 : 1.2;
+  }
+
+  /** Projection : la projection parallèle est rendue par une perspective très fermée (1°) depuis loin — approximation déclarée. */
+  get projection(): "perspective" | "parallele" {
+    return this.projectionParallele ? "parallele" : "perspective";
+  }
+
+  set projection(p: "perspective" | "parallele") {
+    if ((p === "parallele") === this.projectionParallele) return;
+    const direction = this.camera.position.clone().sub(this.cible);
+    const distance = direction.length();
+    if (p === "parallele") {
+      this.fovPerspective = this.camera.fov;
+      const demiHauteur = distance * Math.tan((this.camera.fov * Math.PI) / 360);
+      this.camera.fov = 1;
+      const d2 = demiHauteur / Math.tan((1 * Math.PI) / 360);
+      this.camera.position.copy(this.cible).add(direction.normalize().multiplyScalar(d2));
+      this.camera.far = Math.max(20000, d2 * 4);
+      this.projectionParallele = true;
+    } else {
+      const demiHauteur = distance * Math.tan((1 * Math.PI) / 360);
+      this.camera.fov = this.fovPerspective;
+      const d2 = demiHauteur / Math.tan((this.camera.fov * Math.PI) / 360);
+      this.camera.position.copy(this.cible).add(direction.normalize().multiplyScalar(d2));
+      this.camera.far = 20000;
+      this.projectionParallele = false;
+    }
+    this.camera.lookAt(this.cible);
+    this.camera.updateProjectionMatrix();
+    this.rendre();
+  }
+
+  /** Applique une scène enregistrée (position, cible, champ de vision, projection). */
+  appliquerScene(s: Pick<Scene, "position" | "cible" | "champDeVision" | "projection">): void {
+    this.projection = "perspective";
+    this.cible.set(s.cible.x, s.cible.y, s.cible.z);
+    this.camera.position.set(s.position.x, s.position.y, s.position.z);
+    this.camera.fov = Math.min(120, Math.max(1, s.champDeVision));
+    this.camera.lookAt(this.cible);
+    this.camera.updateProjectionMatrix();
+    if (s.projection === "parallele") this.projection = "parallele";
+    this.rendre();
+  }
+
+  /** Vue standard autour de la cible courante, à la même distance (sud = −y, D-017). */
+  vueStandard(nom: VueStandard): void {
+    // Plan et élévations en projection parallèle (dessin d'architecte) ; « Iso » rend la perspective.
+    this.projection = nom === "iso" ? "perspective" : "parallele";
+    const d = Math.max(1, this.camera.position.distanceTo(this.cible));
+    const dir: Record<VueStandard, [number, number, number]> = { dessus: [0, 0, 1], dessous: [0, 0, -1], sud: [0, -1, 0], nord: [0, 1, 0], est: [1, 0, 0], ouest: [-1, 0, 0], iso: [1, -1, 0.8] };
+    const v = new THREE.Vector3(...dir[nom]).normalize().multiplyScalar(d);
+    this.camera.position.copy(this.cible).add(v);
+    this.camera.up.set(0, nom === "dessus" || nom === "dessous" ? 1 : 0, nom === "dessus" || nom === "dessous" ? 0 : 1);
+    this.camera.lookAt(this.cible);
+    this.camera.updateProjectionMatrix();
+    this.rendre();
   }
 
   get hauteurOeil(): number {
@@ -952,6 +1135,11 @@ export class VuePlanche {
     if (e.button === 1) {
       e.preventDefault();
       this.geste = { genre: e.shiftKey ? "pan" : "orbite", id: e.pointerId, dernier: p };
+      return;
+    }
+    if (e.button === 2) {
+      e.preventDefault();
+      this.rappels.menuContextuel?.(p, this.rayon(p), this.tolerance(p));
       return;
     }
     if (e.button !== 0) return;
