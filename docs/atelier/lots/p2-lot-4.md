@@ -30,6 +30,18 @@ l'inspecteur, développé lu dans la fiche et dans la table de pliage.
   (tests) ✅ ; (3) aucune constante normative (classes de bois, densités, facteurs K, rayons : tests) ✅ ; (4) matrice IFC
   complétée ✅ ; (5) fiches prototype.
 
+## Relecture de la PR #97 (Codex, 8 octobre 2026)
+
+Quatre constats, tous corrigés et couverts par des tests : (1) la provenance d'une section (`profil`) pouvait être
+recopiée du client avec une source inventée — elle est toujours relue dans le catalogue et sa source recalculée
+(structure, bois, CLT ; catalogue inconnu ou désignation absente : refus nommé) ; (2) une table de pliage acceptait un
+catalogue d'une autre ontologie — réservée aux catalogues `sheetmetal` ; (3) les repères de débit partageaient un seul
+compteur (LI01, SA02, MO03…) — un compteur par rôle (LI01, SA01, MO01…) ; (4) l'ossature et l'assemblage bois–bois
+n'apparaissaient pas dans les vues générées (plans, feuilles, DXF) — dessinés en symboles. En CI : un synonyme exact
+d'outil prime sur un libellé qui commence par le mot (« pan » → Panoramique, pas Panneau CLT) ; les synonymes
+« trame » et « réseau » de Répéter sont retirés (la palette activait Répéter au lieu de la trame d'axes dans la recette
+des compléments).
+
 ## Non fait (déclaré)
 
 - **Montants courts** (allèges, impostes), entretoises, doublage des rives ; **fermes et arbalétriers**, pannes
