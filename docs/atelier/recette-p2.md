@@ -3,8 +3,8 @@
 Établi le 9 octobre 2026 par le chef de projet (exécution continue décidée en D-183, décisions 10.1 déléguées et
 consignées une à une, D-184 à D-190). Ce dossier dit **ce qui est livré en P2, où en est la preuve, ce que vous pouvez
 vérifier vous-même, et ce qu'il vous reste à décider**. Il complète `recette.md` (lots 0 à 9, acceptés le 8 octobre
-2026, D-174) : les fiches P2 sont à l'état **prototype** ; elles passeront à « vérifiée » puis « disponible » après
-votre acceptation (R8, cahier P2 §8).
+2026, D-174). **Lots P2-2 à P2-8 acceptés le 9 octobre 2026 (D-193)** : les 125 fiches P2 sont passées à l'état
+« disponible » (R8, cahier P2 §8) ; les limites du §7 et les mesures T17 / T18 restent telles que déclarées.
 
 ## 1. Ce qui est livré
 
@@ -20,7 +20,7 @@ votre acceptation (R8, cahier P2 §8).
 | P2-7 | Annotations de fabrication, cotes tolérancées, étiquettes intelligentes, isométrique, feuilles gabarits, tableaux perçages / ferraillage / débit, nuages de points LAS / XYZ ; DGN / DWG renoncés | `lots/p2-lot-7.md` | D-189, D-179 |
 | P2-8 | Graphes visuels de génération contrôlée, règles par ontologie, ce dossier | `lots/p2-lot-8.md` | D-190 |
 
-Fiches : 125 à l'état prototype (P2), 137 disponibles (P1), DA-22-02 renoncée, DA-22-10 sans objet ; index dans
+Fiches : 125 disponibles (P2, acceptées D-193), 137 disponibles (P1), DA-22-02 renoncée, DA-22-10 sans objet ; index dans
 `docs/atelier-cahier-p2.md` annexe B.
 
 ## 2. Contrôles automatiques (état au 9 octobre 2026, PR #101 et ses bases #98 à #100)
@@ -107,7 +107,7 @@ Toutes ces étapes tournent dans `.github/workflows/ci.yml` (jobs `validate`, `e
 
 | Décision | État | Effet tant qu'elle n'est pas prise |
 | --- | --- | --- |
-| Acceptation des lots P2-2 à P2-8 | **à prendre** (P2-0 et P2-1 acceptés, D-182, D-183) | Les 125 fiches P2 restent « prototype » ; les décisions déléguées D-184 à D-190 sont à confirmer ou à amender |
+| Acceptation des lots P2-2 à P2-8 | **prise le 9 octobre 2026 (D-193)** (P2-0 et P2-1 : D-182, D-183) | Les 125 fiches P2 sont « disponible » ; les décisions déléguées D-184 à D-190 sont confirmées ; P2 clos, aucune suite engagée |
 | Fournisseur de modèle de langage et clé | ouverte (inchangée depuis P1) | Génération déterministe seulement : règles de Fadi, scripts, graphes |
 | Catalogues sourcés (sections, tubes, essences, tables de pliage) | **D-180** : CSV sourcés, vides par défaut | Sans catalogue, les sections sont saisies ; les développés sans paramètres de pliage sont « non évalués » |
 | DWG / DGN | **D-179** : renoncés, déclarés | Aucun échange DWG / DGN |

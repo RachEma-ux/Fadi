@@ -1,8 +1,8 @@
 # Cahier des charges P2 — DrawAll universel : ontologies métier au-delà de l'architecture
 
-**Version 1.9 — 9 octobre 2026 — validé par le maître d'ouvrage (D-176) ; lots P2-0 et P2-1 livrés et acceptés (D-182, D-183) ; lot P2-2 livré et porte P1 → P2 passée sur le périmètre bâtiment + mécanique (D-184) ; lot P2-3 (structure) livré (D-185) ; lot P2-4 (bois et tôlerie) livré (D-186) ; lot P2-5 (réseaux) livré (D-187) ; lot P2-6 (surfaces, bâtiment P2, coordination) livré (D-188) ; lot P2-7 (documentation et échanges P2) livré (D-189) ; lot P2-8 (automatisation P2 : graphes de génération, règles par ontologie, dossier de recette P2 `docs/atelier/recette-p2.md`) livré (D-190) — **P2 livré en entier, acceptation des lots P2-2 à P2-8 à prendre** ; exécution continue, décisions 10.1 déléguées (D-183).**
-**Statut : validé (D-176), décisions de la section 6 prises (D-177 à D-181) ; seul le lot P2-0 est engagé, les lots
-suivants sont acceptés un à un. Le cahier Atelier (`docs/atelier-cahier-des-charges.md`) et le cahier
+**Version 1.10 — 9 octobre 2026 — validé par le maître d'ouvrage (D-176) ; lots P2-0 et P2-1 livrés et acceptés (D-182, D-183) ; lot P2-2 livré et porte P1 → P2 passée sur le périmètre bâtiment + mécanique (D-184) ; lot P2-3 (structure) livré (D-185) ; lot P2-4 (bois et tôlerie) livré (D-186) ; lot P2-5 (réseaux) livré (D-187) ; lot P2-6 (surfaces, bâtiment P2, coordination) livré (D-188) ; lot P2-7 (documentation et échanges P2) livré (D-189) ; lot P2-8 (automatisation P2 : graphes de génération, règles par ontologie, dossier de recette P2 `docs/atelier/recette-p2.md`) livré (D-190) — **P2 livré en entier ; lots P2-2 à P2-8 acceptés le 9 octobre 2026 (D-193), 125 fiches « disponible », P2 clos** ; la délégation D-183 (décisions 10.1, consignées D-184 à D-190) est éteinte avec P2.**
+**Statut : validé (D-176), décisions de la section 6 prises (D-177 à D-181) ; les neuf lots P2-0 à P2-8 sont livrés et
+acceptés (D-182, D-183, D-193) ; P2 est clos, aucun lot suivant n'est engagé. Le cahier Atelier (`docs/atelier-cahier-des-charges.md`) et le cahier
 Planche (`docs/planche/cahier-planche.md`) restent inchangés : ce document s'y ajoute, il ne les modifie pas.**
 
 Documents de référence : Concept V4 (`docs/drawall/DrawAll_v4.1_Concept.md`, §2 universalité, §6 modules, §12
