@@ -23,6 +23,7 @@ import { positionsPosees3 } from "../ontologies/mechanical/geometrie.js";
 import { maillageArmature, maillageAssemblageStructurel, maillagePoutre } from "../ontologies/structure/geometrie.js";
 import { maillageAssemblageBois, maillageElementBois, maillagePanneauClt } from "../ontologies/timber/geometrie.js";
 import { maillageTole } from "../ontologies/sheetmetal/geometrie.js";
+import { maillageEquipementReseau, maillageRaccordReseau, maillageSegmentReseau, maillageSupportReseau, maillageVanne } from "../ontologies/mep/geometrie.js";
 
 export interface Maillage {
   objetId: string;
@@ -60,6 +61,11 @@ export const COULEURS_3D: Record<string, string> = {
   "panneau-clt": "#c9a877",
   "assemblage-bois": "#6f7d8c",
   tole: "#8c96a0",
+  "segment-reseau": "#4f8fb3",
+  "raccord-reseau": "#3f7a9c",
+  vanne: "#b3661e",
+  "equipement-reseau": "#6a7f90",
+  "support-reseau": "#7d7d7d",
 };
 
 // ---------------------------------------------------------------------------
@@ -748,6 +754,20 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
     }
     case "ossature":
       break;
+    // Ontologie réseaux (P2-5) : maillages purs dans le repère du niveau.
+    case "segment-reseau":
+    case "raccord-reseau":
+    case "vanne":
+    case "equipement-reseau":
+    case "support-reseau": {
+      const porte = o.classe === "support-reseau" ? etat.objets[o.params.porteId] : undefined;
+      const m = o.classe === "segment-reseau" ? maillageSegmentReseau(o.params) : o.classe === "raccord-reseau" ? maillageRaccordReseau(o.params) : o.classe === "vanne" ? maillageVanne(o.params) : o.classe === "equipement-reseau" ? maillageEquipementReseau(o.params) : maillageSupportReseau(o.params, porte?.classe === "segment-reseau" ? porte.params.section : null);
+      if (!m.indices.length) break;
+      const base = t.positions.length / 3;
+      for (let i = 0; i < m.positions.length; i += 3) t.sommet(m.positions[i]!, m.positions[i + 1]!, z + m.positions[i + 2]!);
+      for (const i of m.indices) t.indices.push(base + i);
+      break;
+    }
     case "solide-exact": {
       // Maillage dérivé du brep par le noyau exact (P2-1), posé (position, angle) ; z relatif au niveau.
       const p = positionsPosees(o.params.maillage, o.params.position, o.params.angle.value);

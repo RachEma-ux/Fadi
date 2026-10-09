@@ -650,6 +650,116 @@ export interface ParamsTole {
   pliage: { catalogueId: string } | { facteurK: number; source: string } | null;
 }
 
+// ---------------------------------------------------------------------------
+// Ontologie réseaux (P2-5, DA-12-01 à 14, 16 à 21 ; DA-03-16)
+// ---------------------------------------------------------------------------
+
+export type SystemeReseau = "gaine" | "tuyau" | "chemin-de-cables" | "conduit";
+export type SensPort = "entree" | "sortie" | "indifferent";
+export type SensSegment = "a-vers-b" | "b-vers-a" | "indifferent";
+/** Section d'un segment ou d'un port : circulaire (diamètre extérieur, épaisseur facultative) ou rectangulaire. */
+export type SectionReseau = { forme: "circulaire"; diametre: Longueur; epaisseur: Longueur | null } | { forme: "rectangulaire"; largeur: Longueur; hauteur: Longueur };
+/** Provenance catalogue d'une section (tubes-raccords.csv sourcé, D-180) : diamètre nominal déclaré par le catalogue. */
+export interface ProfilReseau { catalogueId: string; designation: string; source: string; diametreNominal: string | null }
+/** Point 3D du repère local du niveau (m) : z relatif au niveau. */
+/** Point 3D en **repère local du niveau** (m ; z depuis l'élévation du niveau) — jamais cadastral ni géographique : un point étiqueté d'un autre repère est refusé à la validation. */
+export interface Point3Reseau { x: number; y: number; z: number }
+/**
+ * Port d'un raccord ou d'un équipement : position relative au point de pose (déjà tournée de l'angle de l'objet à la
+ * lecture), sens, section propre (null : celle de l'objet), système et fluide propres (null : ceux de l'objet).
+ */
+export interface PortReseau {
+  id: string;
+  dx: number;
+  dy: number;
+  dz: number;
+  sens: SensPort;
+  section: SectionReseau | null;
+  /** Système déclaré du port (jamais supposé : la validation le refuse absent). */
+  systeme: SystemeReseau;
+  fluide: string | null;
+}
+
+/** Segment routé (DA-12-02, 04, 06, 13, 14) : polyligne 3D, section, fluide et matériau déclarés, spécification facultative. */
+export interface ParamsSegmentReseau {
+  nom: string | null;
+  repere: string | null;
+  systeme: SystemeReseau;
+  sommets: Point3Reseau[];
+  section: SectionReseau;
+  profil: ProfilReseau | null;
+  fluide: string | null;
+  materiau: string | null;
+  sens: SensSegment;
+  specificationId: string | null;
+}
+
+export type TypeRaccordReseau = "coude" | "te" | "croix" | "reduction" | "manchon" | "bouchon";
+export const PORTS_PAR_RACCORD: Record<TypeRaccordReseau, number> = { coude: 2, te: 3, croix: 4, reduction: 2, manchon: 2, bouchon: 1 };
+
+/** Raccord (DA-12-08) : type, ports explicites autour du point de pose ; section nominale. */
+export interface ParamsRaccordReseau {
+  nom: string | null;
+  type: TypeRaccordReseau;
+  systeme: SystemeReseau;
+  position: Point2;
+  z: number;
+  angle: Angle;
+  section: SectionReseau;
+  ports: PortReseau[];
+  profil: ProfilReseau | null;
+  fluide: string | null;
+  materiau: string | null;
+  specificationId: string | null;
+}
+
+export type TypeVanne = "arret" | "reglage" | "anti-retour" | "securite" | "trois-voies";
+
+/** Vanne (DA-12-09) : sur un tuyau, longueur face à face saisie, deux ports (trois pour une trois-voies). */
+export interface ParamsVanne {
+  nom: string | null;
+  repere: string | null;
+  type: TypeVanne;
+  position: Point2;
+  z: number;
+  angle: Angle;
+  section: SectionReseau;
+  longueur: Longueur;
+  fluide: string | null;
+  materiau: string | null;
+  specificationId: string | null;
+  profil: ProfilReseau | null;
+}
+
+export type CategorieEquipement = "terminal" | "mouvement" | "conversion" | "stockage" | "traitement" | "controle";
+
+/** Équipement (DA-12-10, 11) : boîte posée, type déclaré, catégorie IFC, ports explicites (système et fluide par port). */
+export interface ParamsEquipementReseau {
+  nom: string;
+  repere: string | null;
+  type: string;
+  categorie: CategorieEquipement;
+  position: Point2;
+  z: number;
+  angle: Angle;
+  longueur: Longueur;
+  largeur: Longueur;
+  hauteur: Longueur;
+  ports: PortReseau[];
+}
+
+export type TypeSupport = "collier" | "suspente" | "rail" | "console";
+
+/** Support (DA-12-12) : attaché à un segment, point d'accrochage, longueur de suspente facultative. */
+export interface ParamsSupportReseau {
+  nom: string | null;
+  type: TypeSupport;
+  porteId: string;
+  position: Point2;
+  z: number;
+  longueur: Longueur | null;
+}
+
 export interface ParamsParClasse {
   mur: ParamsMur;
   porte: ParamsOuverture;
@@ -687,6 +797,11 @@ export interface ParamsParClasse {
   "panneau-clt": ParamsPanneauClt;
   "assemblage-bois": ParamsAssemblageBois;
   tole: ParamsTole;
+  "segment-reseau": ParamsSegmentReseau;
+  "raccord-reseau": ParamsRaccordReseau;
+  vanne: ParamsVanne;
+  "equipement-reseau": ParamsEquipementReseau;
+  "support-reseau": ParamsSupportReseau;
 }
 
 export interface Occurrence<C extends Classe = Classe> {
@@ -707,7 +822,7 @@ export interface Occurrence<C extends Classe = Classe> {
 export type OccurrenceQuelconque = { [C in Classe]: Occurrence<C> }[Classe];
 
 /** Définitions : types d'objets, blocs et composants (lot 5), vues et feuilles des documents dérivés (lot 5). */
-export type ClasseDefinition = Classe | "bloc" | "composant" | "vue" | "feuille" | "reference-externe" | "vue-3d" | "referentiel-classification" | "ensemble-affichage" | "etat-calques" | "planche" | "famille" | "regle" | "catalogue";
+export type ClasseDefinition = Classe | "bloc" | "composant" | "vue" | "feuille" | "reference-externe" | "vue-3d" | "referentiel-classification" | "ensemble-affichage" | "etat-calques" | "planche" | "famille" | "regle" | "catalogue" | "specification";
 
 export interface Definition {
   id: string;
@@ -720,7 +835,7 @@ export interface Definition {
 
 export interface Relation {
   id: string;
-  kind: "heberge-par" | "delimitee-par" | "joint-a" | "relie" | "contient" | "correspond-a" | "programme" | "contrainte" | "pose";
+  kind: "heberge-par" | "delimitee-par" | "joint-a" | "relie" | "contient" | "correspond-a" | "programme" | "contrainte" | "pose" | "connecte";
   sourceId: string;
   targetId: string;
   params: Record<string, unknown>;
@@ -821,7 +936,8 @@ export type TypeProbleme =
   | "piece-non-fermee"
   | "import"
   | "collision-mecanique"
-  | "regle";
+  | "regle"
+  | "reseau";
 
 export interface Probleme {
   id: string;

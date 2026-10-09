@@ -31,6 +31,9 @@ import { assemblagesSoudes } from "../ontologies/structure/soudures.js";
 import { designationBois } from "../ontologies/timber/sections.js";
 import { longueurElementBois } from "../ontologies/timber/geometrie.js";
 import { developpe, tablePliage } from "../ontologies/sheetmetal/pliage.js";
+import { designationReseau } from "../ontologies/mep/sections.js";
+import { longueurSegment } from "../ontologies/mep/geometrie.js";
+import { connexions as connexionsReseau, portsDe, reseauxConnexes } from "../ontologies/mep/connectivite.js";
 import { empreinte } from "../documents/empreinte.js";
 import { compositionMur, lireCouches } from "../compositions.js";
 import { connexionsDuNiveau, polygoneMurRaccorde, raccordMur, type ExtremiteConnexion } from "../raccords.js";
@@ -740,6 +743,85 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         compter("tole", "IfcPlate", rep ? "Tessellation" : "—", true, "tôle pliée : IfcPlate .SHEET. tessellée (face, zones pliées, ailes), plis et développé en Fadi_Tole");
         break;
       }
+      // Ontologie réseaux (P2-5) : segments, raccords, vannes, équipements, supports ; ports et connexions plus bas.
+      case "segment-reseau": {
+        const rep = corpsMaille(o);
+        const p = o.params;
+        const L = longueurSegment(p);
+        const entite = p.systeme === "tuyau" ? "IFCPIPESEGMENT" : p.systeme === "gaine" ? "IFCDUCTSEGMENT" : "IFCCABLECARRIERSEGMENT";
+        const type = p.systeme === "chemin-de-cables" ? ".CABLETRAYSEGMENT." : p.systeme === "conduit" ? ".CONDUITSEGMENT." : ".RIGIDSEGMENT.";
+        const id = s.ajouter(`${entite}(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(`reseau:${p.systeme}`)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},${opt(p.repere)},${type})`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        if (p.materiau) { const mat = materiauIfc(p.materiau); associationsMateriau.set(mat, [...(associationsMateriau.get(mat) ?? []), id]); }
+        pset(id, "Fadi_Reseau", [
+          `#${prop("Systeme", label(p.systeme))}`,
+          `#${prop("Section", label(designationReseau(p.section, p.profil)))}`,
+          p.section.forme === "circulaire" ? `#${prop("DiametreExterieur", `IFCPOSITIVELENGTHMEASURE(${reelStep(p.section.diametre.value)})`)}` : `#${prop("Largeur", `IFCPOSITIVELENGTHMEASURE(${reelStep(p.section.largeur.value)})`)}`,
+          p.section.forme === "circulaire" ? (p.section.epaisseur ? `#${prop("Epaisseur", `IFCPOSITIVELENGTHMEASURE(${reelStep(p.section.epaisseur.value)})`)}` : null) : `#${prop("Hauteur", `IFCPOSITIVELENGTHMEASURE(${reelStep(p.section.hauteur.value)})`)}`,
+          p.profil?.diametreNominal ? `#${prop("DiametreNominal", label(p.profil.diametreNominal))}` : null,
+          p.profil ? `#${prop("SourceSection", texte(p.profil.source))}` : null,
+          p.fluide ? `#${prop("Fluide", label(p.fluide))}` : null,
+          `#${prop("Sens", label(p.sens))}`,
+          p.specificationId ? `#${prop("Specification", label(etat.definitions[p.specificationId]?.nom ?? p.specificationId))}` : null,
+          `#${prop("Longueur", `IFCPOSITIVELENGTHMEASURE(${reelStep(L)})`)}`,
+          `#${prop("Sommets", `IFCINTEGER(${p.sommets.length})`)}`,
+        ]);
+        compter("segment-reseau", entite === "IFCPIPESEGMENT" ? "IfcPipeSegment" : entite === "IFCDUCTSEGMENT" ? "IfcDuctSegment" : "IfcCableCarrierSegment", rep ? "Tessellation" : "—", true, "segment de réseau : corps balayé tessellé, système en entité IFC, section, fluide, sens et source en Fadi_Reseau ; ports IfcDistributionPort emboîtés");
+        break;
+      }
+      case "raccord-reseau": {
+        const rep = corpsMaille(o);
+        const p = o.params;
+        const entite = p.systeme === "tuyau" ? "IFCPIPEFITTING" : p.systeme === "gaine" ? "IFCDUCTFITTING" : "IFCCABLECARRIERFITTING";
+        const typeTube: Record<string, string> = { coude: ".BEND.", te: ".JUNCTION.", croix: ".JUNCTION.", reduction: ".TRANSITION.", manchon: ".CONNECTOR.", bouchon: ".USERDEFINED." };
+        const typeCable: Record<string, string> = { coude: ".BEND.", te: ".TEE.", croix: ".CROSS.", reduction: ".REDUCER.", manchon: ".USERDEFINED.", bouchon: ".USERDEFINED." };
+        const id = s.ajouter(`${entite}(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(`raccord:${p.type}`)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,${(entite === "IFCCABLECARRIERFITTING" ? typeCable : typeTube)[p.type] ?? ".USERDEFINED."})`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        if (p.materiau) { const mat = materiauIfc(p.materiau); associationsMateriau.set(mat, [...(associationsMateriau.get(mat) ?? []), id]); }
+        pset(id, "Fadi_Reseau", [`#${prop("Systeme", label(p.systeme))}`, `#${prop("Type", label(p.type))}`, `#${prop("Section", label(designationReseau(p.section, p.profil)))}`, p.profil ? `#${prop("SourceSection", texte(p.profil.source))}` : null, p.fluide ? `#${prop("Fluide", label(p.fluide))}` : null, `#${prop("Ports", `IFCINTEGER(${p.ports.length})`)}`]);
+        compter("raccord-reseau", entite === "IFCPIPEFITTING" ? "IfcPipeFitting" : entite === "IFCDUCTFITTING" ? "IfcDuctFitting" : "IfcCableCarrierFitting", rep ? "Tessellation" : "—", true, "raccord : un bras tessellé par port, type en PredefinedType (BEND, JUNCTION, TRANSITION…)");
+        break;
+      }
+      case "vanne": {
+        const rep = corpsMaille(o);
+        const p = o.params;
+        const types: Record<string, string> = { arret: ".ISOLATING.", reglage: ".REGULATING.", "anti-retour": ".CHECK.", securite: ".SAFETYCUTOFF.", "trois-voies": ".DIVERTING." };
+        const id = s.ajouter(`IFCVALVE(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(`vanne:${p.type}`)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},${opt(p.repere)},${types[p.type] ?? ".USERDEFINED."})`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        pset(id, "Fadi_Reseau", [`#${prop("Type", label(p.type))}`, `#${prop("Section", label(designationReseau(p.section, p.profil)))}`, `#${prop("LongueurFaceAFace", `IFCPOSITIVELENGTHMEASURE(${reelStep(p.longueur.value)})`)}`, p.fluide ? `#${prop("Fluide", label(p.fluide))}` : null, p.materiau ? `#${prop("Materiau", label(p.materiau))}` : null]);
+        compter("vanne", "IfcValve", rep ? "Tessellation" : "—", true, "vanne : IfcValve typée (ISOLATING, REGULATING, CHECK, SAFETYCUTOFF, DIVERTING), corps tessellé");
+        break;
+      }
+      case "equipement-reseau": {
+        const rep = corpsMaille(o);
+        const p = o.params;
+        const entites: Record<string, [string, string]> = { terminal: ["IFCFLOWTERMINAL", "IfcFlowTerminal"], mouvement: ["IFCFLOWMOVINGDEVICE", "IfcFlowMovingDevice"], conversion: ["IFCENERGYCONVERSIONDEVICE", "IfcEnergyConversionDevice"], stockage: ["IFCFLOWSTORAGEDEVICE", "IfcFlowStorageDevice"], traitement: ["IFCFLOWTREATMENTDEVICE", "IfcFlowTreatmentDevice"], controle: ["IFCFLOWCONTROLLER", "IfcFlowController"] };
+        const [entite, lisible] = entites[p.categorie] ?? entites["terminal"]!;
+        const id = s.ajouter(`${entite}(${gid(o.id)},$,${chaineStep(p.nom)},$,${chaineStep(`equipement:${p.type}`)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"})`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        pset(id, "Fadi_Reseau", [`#${prop("Type", label(p.type))}`, `#${prop("Categorie", label(p.categorie))}`, p.repere ? `#${prop("Repere", label(p.repere))}` : null, `#${prop("Encombrement", label(`${reelStep(p.longueur.value)} x ${reelStep(p.largeur.value)} x ${reelStep(p.hauteur.value)}`))}`, `#${prop("Ports", `IFCINTEGER(${p.ports.length})`)}`]);
+        compter("equipement-reseau", lisible, rep ? "Tessellation" : "—", true, "équipement : entité IFC par catégorie (terminal, mouvement, conversion, stockage, traitement, contrôle), boîte tessellée, type déclaré en ObjectType");
+        break;
+      }
+      case "support-reseau": {
+        const rep = corpsMaille(o);
+        const p = o.params;
+        const id = s.ajouter(`IFCDISCRETEACCESSORY(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(`support:${p.type}`)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.USERDEFINED.)`);
+        produits.set(o.id, id);
+        contenir(o.niveauId, id);
+        identite(id, o);
+        pset(id, "Fadi_Reseau", [`#${prop("Type", label(p.type))}`, `#${prop("Porte", label(p.porteId))}`, p.longueur ? `#${prop("Longueur", `IFCPOSITIVELENGTHMEASURE(${reelStep(p.longueur.value)})`)}` : null]);
+        compter("support-reseau", "IfcDiscreteAccessory", rep ? "Tessellation" : "—", true, "support de réseau : IfcDiscreteAccessory .USERDEFINED. (ObjectType support:<type>), segment porté en Fadi_Reseau");
+        break;
+      }
       case "objet-importe": {
         // Représentation importée : réécrite telle quelle (maillage), GlobalId d'origine conservé, classe d'origine
         // en ObjectType et en propriété — jamais reclassée en objet paramétrique.
@@ -898,6 +980,40 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
     const membres = objets.filter((o): o is Occurrence<"piece-mecanique"> => o.classe === "piece-mecanique" && o.params.assemblageId === a.id).map((o) => produits.get(o.id)).filter((x): x is number => x !== undefined);
     if (membres.length && produits.get(a.id) !== undefined) s.ajouter(`IFCRELAGGREGATES(${gid(`rel-assemblage|${a.id}`)},$,$,$,${ref(produits.get(a.id)!)},${liste(membres)})`);
   }
+  // Réseaux (P2-5) : un IfcDistributionPort par port (emboîté par IfcRelNests), une IfcRelConnectsPorts par connexion,
+  // un IfcDistributionSystem par composante connexe (membres par IfcRelAssignsToGroup).
+  const portsIfc = new Map<string, number>();
+  const SENS: Record<string, string> = { entree: ".SINK.", sortie: ".SOURCE.", indifferent: ".SOURCEANDSINK." };
+  const TYPE_PORT: Record<string, string> = { tuyau: ".PIPE.", gaine: ".DUCT.", "chemin-de-cables": ".CABLECARRIER.", conduit: ".CABLECARRIER." };
+  let nbPorts = 0;
+  for (const o of objets.filter((x) => x.classe === "segment-reseau" || x.classe === "raccord-reseau" || x.classe === "vanne" || x.classe === "equipement-reseau").sort((x, y) => (x.id < y.id ? -1 : 1))) {
+    const hote = produits.get(o.id);
+    if (hote === undefined) continue;
+    const ids: number[] = [];
+    for (const port of portsDe(o)) {
+      const pl = s.ajouter(`IFCLOCALPLACEMENT(${ref(placementDe(o.niveauId))},${ref(s.ajouter(`IFCAXIS2PLACEMENT3D(${ref(pt3(port.position.x, port.position.y, port.position.z))},$,$)`))})`);
+      const id = s.ajouter(`IFCDISTRIBUTIONPORT(${gid(`port|${o.id}|${port.id}`)},$,${chaineStep(port.id)},$,${chaineStep(designationReseau(port.section))},${ref(pl)},$,${SENS[port.sens] ?? ".NOTDEFINED."},${TYPE_PORT[port.systeme] ?? ".NOTDEFINED."},$)`);
+      portsIfc.set(`${o.id}|${port.id}`, id);
+      ids.push(id);
+      nbPorts++;
+    }
+    if (ids.length) s.ajouter(`IFCRELNESTS(${gid(`rel-ports|${o.id}`)},$,$,$,${ref(hote)},${liste(ids)})`);
+  }
+  let nbConnexions = 0;
+  for (const c of connexionsReseau(etat)) {
+    const a = portsIfc.get(`${c.sourceId}|${String(c.params["portA"])}`), b = portsIfc.get(`${c.targetId}|${String(c.params["portB"])}`);
+    if (a === undefined || b === undefined) continue;
+    s.ajouter(`IFCRELCONNECTSPORTS(${gid(`rel-connexion-reseau|${c.id}`)},$,$,$,${ref(a)},${ref(b)},$)`);
+    nbConnexions++;
+  }
+  for (const r of reseauxConnexes(etat)) {
+    const membres = r.objets.map((id) => produits.get(id)).filter((x): x is number => x !== undefined);
+    if (!membres.length) continue;
+    const sys = s.ajouter(`IFCDISTRIBUTIONSYSTEM(${gid(r.id)},$,${chaineStep(r.id)},$,${chaineStep(`${r.systemes.join("+")}${r.fluides.length ? `:${r.fluides.join(",")}` : ""}`)},$,.USERDEFINED.)`);
+    s.ajouter(`IFCRELASSIGNSTOGROUP(${gid(`rel-reseau|${r.id}`)},$,$,$,${liste(membres)},$,${ref(sys)})`);
+    compter("reseau-connexe", "IfcDistributionSystem", "—", true, "réseau (composante connexe dérivée des connexions) : IfcDistributionSystem .USERDEFINED. (ObjectType systèmes:fluides), membres par IfcRelAssignsToGroup");
+  }
+  if (nbPorts) remarques.add(`${nbPorts} port(s) de réseau écrits (IfcDistributionPort emboîtés par IfcRelNests) et ${nbConnexions} connexion(s) (IfcRelConnectsPorts) ; sens en FlowDirection, système en PredefinedType.`);
   // Contenance spatiale, typage, propriétés.
   for (const [structure, elements] of contenus) s.ajouter(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid(`rel-contenu|${structure}`)},$,$,$,${liste(elements)},${ref(structure)})`);
   for (const [type, objetsTypes] of typage) s.ajouter(`IFCRELDEFINESBYTYPE(${gid(`rel-type|${type}`)},$,$,$,${liste(objetsTypes)},${ref(type)})`);
@@ -974,7 +1090,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   const contenu = [...entete, ...s.lignes, "ENDSEC;", "END-ISO-10303-21;", ""].join("\n");
   // Contrôle croisé annexe C (D-111) : une classe IFC déclarée différente de l'annexe C est nommée, jamais suivie.
   for (const x of controleClassesIfc(etat)) remarques.add(`${x.message}.`);
-  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "assemblage", "piece-mecanique", "liaison", "trame", "poutre", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "assemblage-soude", "ossature", "element-bois", "panneau-clt", "assemblage-bois", "tole", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
+  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "assemblage", "piece-mecanique", "liaison", "trame", "poutre", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "assemblage-soude", "ossature", "element-bois", "panneau-clt", "assemblage-bois", "tole", "segment-reseau", "raccord-reseau", "vanne", "equipement-reseau", "support-reseau", "reseau-connexe", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
   return {
     contenu,
     rapport: {

@@ -65,6 +65,7 @@ import { controlerLiaisons, reducteursMecanique } from "../ontologies/mechanical
 import { controlerStructure, reducteursStructure } from "../ontologies/structure/index.js";
 import { controlerBois, reducteursBois } from "../ontologies/timber/index.js";
 import { reducteursTolerie } from "../ontologies/sheetmetal/index.js";
+import { controlerReseau, reducteursReseaux } from "../ontologies/mep/index.js";
 
 const triplet = (classe: Classe, prefixe: string, creer = "creer"): Record<string, Reducteur> => ({
   [`${prefixe}.${creer}`]: (etat, p, ctx) => creerOccurrence(etat, p, ctx, classe),
@@ -220,6 +221,8 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   // Ontologies bois et tôlerie (P2-4).
   ...reducteursBois,
   ...reducteursTolerie,
+  // Ontologie réseaux (P2-5) : segments routés, raccords, vannes, équipements, supports, connexions, spécifications.
+  ...reducteursReseaux,
   // Esquisse : une commande par forme + modifier / supprimer
   ...Object.fromEntries(FORMES.map((forme) => [`esquisse.${forme}`, ((etat, p, ctx) => creerOccurrence(etat, { ...p, params: { ...((p["params"] as Record<string, unknown> | undefined) ?? p), forme } }, ctx, "esquisse")) as Reducteur])),
   "esquisse.modifier": (etat, p, ctx) => modifierOccurrence(etat, p, ctx, "esquisse"),
@@ -365,6 +368,8 @@ export function appliquerCommande(etat: ModeleAtelier, commande: Commande, ctx: 
   r = { etat: cs.etat, effets: fusionnerEffets(r.effets, cs.effets) };
   const cb = controlerBois(etat, r.etat, ctx);
   r = { etat: cb.etat, effets: fusionnerEffets(r.effets, cb.effets) };
+  const cr = controlerReseau(etat, r.etat, ctx);
+  r = { etat: cr.etat, effets: fusionnerEffets(r.effets, cr.effets) };
   const c00 = controlerContraintes(etat, r.etat, commande.type, r.effets, ctx);
   // Contraintes verticales (D-155) : avant le contrôle des verrous, pour qu'un porté verrouillé refuse le lot.
   const c0 = commande.type === "interne.restaurer" ? c00 : suivrePoses(c00.etat, c00.effets);
@@ -408,7 +413,7 @@ export function appliquerLot(etat: ModeleAtelier, enveloppe: Enveloppe): Resulta
 export function identifiantsCibles(enveloppe: Enveloppe): string[] {
   const ids = new Set<string>();
   for (const c of enveloppe.commands) {
-    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir", "ancienne", "nouvelle", "zoneId", "dalleId", "murA", "murB", "groupeId", "calqueCible"]) {
+    for (const k of ["id", "id1", "id2", "murHoteId", "limiteId", "autreId", "objetId", "referenceId", "vueId", "definitionId", "objetA", "objetB", "redefinir", "ancienne", "nouvelle", "zoneId", "dalleId", "murA", "murB", "groupeId", "calqueCible", "a", "b", "porteId"]) {
       const v = c.params[k];
       if (typeof v === "string") ids.add(v);
     }

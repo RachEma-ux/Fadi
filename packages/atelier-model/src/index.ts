@@ -97,3 +97,8 @@ export { baiesDuMur, controlerBois, elementsDeOssature, planOssature } from "./o
 export { developpe, parametresPli, tablePliage, type Developpe, type LignePli, type ParametresPli } from "./ontologies/sheetmetal/pliage.js";
 export { empriseTole, maillageTole, profilPli } from "./ontologies/sheetmetal/geometrie.js";
 export { developpeTole } from "./ontologies/sheetmetal/index.js";
+export { airePassage, designationReseau, encombrement, sectionReseauDepuisCatalogue, sectionsEgales } from "./ontologies/mep/sections.js";
+export { empriseEquipement, longueurSegment, maillageEquipementReseau, maillageRaccordReseau, maillageSegmentReseau, maillageSupportReseau, maillageVanne, traceSegment } from "./ontologies/mep/geometrie.js";
+export { CLASSES_RESEAU, connexionDuPort, connexions, etatConnexions, incompatibilites, portDe, portsDe, portsLibres, reseauxConnexes, TOLERANCE_PORT, type PortAbsolu } from "./ontologies/mep/connectivite.js";
+export { schemaPid, svgPid, type SchemaPid } from "./ontologies/mep/pid.js";
+export { portsCoude, specifications, supportsDe } from "./ontologies/mep/index.js";

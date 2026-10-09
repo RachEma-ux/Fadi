@@ -840,6 +840,15 @@ function objetsEntierementDans(etat: ModeleAtelier, niveauId: string | null, ded
       case "tole":
         pts = [o.params.position];
         break;
+      case "segment-reseau":
+        pts = o.params.sommets.map((q) => ({ x: q.x, y: q.y, frame: "local" as const, unit: "m" as const }));
+        break;
+      case "raccord-reseau":
+      case "vanne":
+      case "equipement-reseau":
+      case "support-reseau":
+        pts = [o.params.position];
+        break;
       case "panneau-clt":
         pts = o.params.pose === "mur" && o.params.a && o.params.b ? [o.params.a, o.params.b] : o.params.contour;
         break;

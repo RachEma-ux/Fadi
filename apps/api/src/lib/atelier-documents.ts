@@ -20,6 +20,7 @@ import {
   pdfVue,
   rapportQuantitesHtml,
   svgFeuille,
+  svgPid,
   svgVue,
   TABLEAUX,
   type Definition,
@@ -97,6 +98,16 @@ export function atelierDocumentDescriptors(project: OwnedProject, etat: ModeleAt
       current: { modelRevision: rev, inputHash: genererTableau(etat, t).empreinte },
     });
   }
+  // Schéma de principe P&ID (P2-5, DA-12-16) : vue dérivée des objets de réseau ; empreinte sur le SVG lui-même.
+  out.push({
+    kind: "atelier-pid",
+    group: "atelier",
+    label: "SVG · Schéma de principe (P&ID dérivé des réseaux)",
+    fileName: `${code}_pid.svg`,
+    href: `${base}/pid.svg`,
+    stepNumber: 10,
+    current: { modelRevision: rev, inputHash: empreinte(svgPid(etat, 0)) },
+  });
   out.push({
     kind: "atelier-ifc",
     group: "atelier",
@@ -157,5 +168,6 @@ export function rendreDocumentAtelier(kind: string, project: OwnedProject, etat:
   m = /^atelier-tableau-(\w+)$/.exec(kind);
   if (m && m[1]! in TABLEAUX) return { body: csvTableau(genererTableau(etat, m[1] as TypeTableau)), type: "text/csv; charset=utf-8" };
   if (kind === "atelier-quantites") return { body: rapportQuantitesHtml(etat, projetDe(project), rev), type: "text/html; charset=utf-8" };
+  if (kind === "atelier-pid") return { body: svgPid(etat, rev), type: "image/svg+xml; charset=utf-8" };
   return null;
 }

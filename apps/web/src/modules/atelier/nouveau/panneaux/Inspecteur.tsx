@@ -18,6 +18,7 @@ import { FicheAssemblage, FicheLiaison, FichePieceMecanique, OutilAssemblage, Ou
 import { FicheArmature, FicheAssemblageStructurel, FicheCoulage, FichePlaque, FichePoutre, FicheSoudure, FicheTrame, OutilArmature, OutilAssemblageStructurel, OutilCoulage, OutilPlaque, OutilPoutre, OutilSoudure, OutilTrame } from "./Structure";
 import { FicheAssemblageBois, FicheElementBois, FicheOssature, FichePanneauClt, OutilAssemblageBois, OutilElementBois, OutilOssature, OutilPanneauClt } from "./Bois";
 import { FicheTole, OutilTole } from "./Tolerie";
+import { FicheReseau, FicheSupportReseau, OutilConnexionReseau, OutilEquipementReseau, OutilRaccordReseau, OutilSegmentReseau, OutilSpecificationReseau, OutilSupportReseau, OutilVanne } from "./Reseaux";
 import { LOCALE } from "../../../../lib/i18n";
 
 export interface PropsInspecteur {
@@ -82,8 +83,9 @@ export function Inspecteur(props: PropsInspecteur) {
   if (sel.length === 0) return <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} />;
   // Outil qui agit sur la sélection (répéter, décaler, réseau sur trajectoire…) avec des paramètres : ses champs
   // restent accessibles au-dessus de la sélection (D-058). Les outils de dessin gardent l'inspecteur de la sélection.
-  // Outils des ontologies activables (P2-2 à P2-4) : leur panneau (formulaire) agit sur la sélection, il reste visible au-dessus d'elle.
-  if (ui.outil !== "selection" && (OUTILS_PAR_ID[ui.outil]?.condition ?? "").startsWith("selection") && ((PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0 || !!OUTILS_PAR_ID[ui.outil]?.ontologie)) {
+  // Outils des ontologies activables (P2-2 à P2-5) : leur panneau (formulaire) agit sur la sélection ou s'en sert
+  // (polyligne à router, objets à connecter), il reste visible au-dessus d'elle.
+  if (ui.outil !== "selection" && (((OUTILS_PAR_ID[ui.outil]?.condition ?? "").startsWith("selection") && (PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0) || !!OUTILS_PAR_ID[ui.outil]?.ontologie)) {
     return (
       <>
         <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} />
@@ -118,7 +120,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
   const verrouObjet = raisonVerrou(etat, o);
   const desactive = readOnly || verrouille || !!verrouObjet;
   // Représentation importée (R16) : paramètres en lecture seule ; calque, phase et transformations restent possibles.
-  const STRUCTURE = ["poutre", "trame", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "element-bois", "ossature", "panneau-clt", "assemblage-bois", "tole"];
+  const STRUCTURE = ["poutre", "trame", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "element-bois", "ossature", "panneau-clt", "assemblage-bois", "tole", "segment-reseau", "raccord-reseau", "vanne", "equipement-reseau", "support-reseau"];
   const parametresFiges = desactive || o.classe === "objet-importe" || o.classe === "solide-exact" || o.classe === "piece-mecanique" || o.classe === "liaison" || STRUCTURE.includes(o.classe);
 
   return (
@@ -236,6 +238,8 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
       {o.classe === "panneau-clt" && <FichePanneauClt o={o as Occurrence<"panneau-clt">} />}
       {o.classe === "assemblage-bois" && <FicheAssemblageBois o={o as Occurrence<"assemblage-bois">} etat={etat} />}
       {o.classe === "tole" && <FicheTole o={o as Occurrence<"tole">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
+      {(o.classe === "segment-reseau" || o.classe === "raccord-reseau" || o.classe === "vanne" || o.classe === "equipement-reseau") && <FicheReseau o={o as Occurrence<"segment-reseau">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
+      {o.classe === "support-reseau" && <FicheSupportReseau o={o as Occurrence<"support-reseau">} etat={etat} />}
       {(o.classe === "esquisse" || (o.classe === "mur" && !(o as Occurrence<"mur">).params.renflement)) && <Contraintes sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || o.classe === "solide" || o.classe === "texte") && <CreerBloc sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {Object.keys(o.proprietes).length > 0 && (
@@ -776,6 +780,13 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: Mo
       {ui.outil === "panneau-clt" && <OutilPanneauClt key={`clt-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "assemblage-bois" && <OutilAssemblageBois etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "tole" && <OutilTole etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "segment-reseau" && <OutilSegmentReseau key={`seg-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "raccord-reseau" && <OutilRaccordReseau etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "vanne" && <OutilVanne etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "equipement-reseau" && <OutilEquipementReseau etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "support-reseau" && <OutilSupportReseau etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "connexion-reseau" && <OutilConnexionReseau key={`cx-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "specification-reseau" && <OutilSpecificationReseau etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "contour" && (
         <div className="champ">
           <label htmlFor="outil-formeContour">Créer</label>

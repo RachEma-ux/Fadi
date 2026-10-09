@@ -122,6 +122,16 @@ export function pointCaracteristique(etat: ModeleAtelier, objetId: string, carac
     case "assemblage-bois":
     case "tole":
       return nom === "centre" ? o.params.position : null;
+    case "raccord-reseau":
+    case "vanne":
+    case "equipement-reseau":
+    case "support-reseau":
+      return nom === "centre" ? o.params.position : null;
+    case "segment-reseau": {
+      const s = o.params.sommets, a = s[0]!, b = s[s.length - 1]!;
+      const P = (q: { x: number; y: number }): Point2 => ({ x: q.x, y: q.y, frame: "local", unit: "m" });
+      return nom === "arete-debut" || nom === "sommet" ? P(a) : nom === "arete-fin" ? P(b) : nom === "axe" ? milieu(P(a), P(b)) : null;
+    }
     case "panneau-clt":
       if (o.params.pose === "mur" && o.params.a && o.params.b) return nom === "centre" || nom === "contour" ? milieu(o.params.a, o.params.b) : null;
       return nom === "centre" || nom === "contour" ? (() => { const c = centroide(o.params.contour); return pt(c.x, c.y); })() : null;

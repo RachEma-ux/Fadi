@@ -219,6 +219,22 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
     case "tole":
       if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'une tôle refusée (épaisseur et plis typés)`);
       return { ...o, params: { ...o.params, position: T(o.params.position), angle: { value: Math.round((t.type === "miroir" ? 2 * axeMiroir(t) - o.params.angle.value : o.params.angle.value + rot) * 1e9) / 1e9, unit: "deg" } } };
+    // Ontologie réseaux (P2-5) : sections et ports typés — translation, rotation et miroir du tracé ; échelle refusée.
+    case "segment-reseau":
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'un segment de réseau refusée (section typée)`);
+      return { ...o, params: { ...o.params, sommets: o.params.sommets.map((q) => { const r = T({ x: q.x, y: q.y, frame: "local", unit: "m" }); return { x: r.x, y: r.y, z: q.z }; }) } };
+    case "raccord-reseau":
+    case "vanne":
+    case "equipement-reseau": {
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'un objet de réseau refusée (section et ports typés)`);
+      if (t.type === "miroir") throw new ErreurCommande("precondition", "type", `${o.id} : miroir d'un objet de réseau refusé (ports orientés)`);
+      const pose = { position: T(o.params.position), angle: { value: Math.round((o.params.angle.value + rot) * 1e9) / 1e9, unit: "deg" as const } };
+      if (o.classe === "raccord-reseau") return { ...o, params: { ...o.params, ...pose } };
+      if (o.classe === "vanne") return { ...o, params: { ...o.params, ...pose } };
+      return { ...o, params: { ...o.params, ...pose } };
+    }
+    case "support-reseau":
+      return { ...o, params: { ...o.params, position: T(o.params.position) } };
     case "solide-exact": {
       // Pose en plan (P2-1) : translation et rotation autour de z ; miroir et échelle d'un B-rep : refusés (le modèle
       // pur ne transforme pas le brep ; une opération exacte le ferait).
@@ -282,6 +298,12 @@ function echelleNonUniforme(o: OccurrenceQuelconque, t: Transformation & { type:
     case "assemblage-bois":
     case "tole":
       throw refus("objet bois ou tôle (P2-4 : sections, entraxes et plis typés)");
+    case "segment-reseau":
+    case "raccord-reseau":
+    case "vanne":
+    case "equipement-reseau":
+    case "support-reseau":
+      throw refus("objet de réseau (P2-5 : sections et ports typés)");
     case "panneau-clt":
       if (o.params.pose === "mur") throw refus("panneau CLT vertical");
       return { ...o, params: { ...o.params, ...contourT({ contour: o.params.contour, trous: o.params.trous }, t) } };

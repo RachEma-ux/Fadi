@@ -26,6 +26,9 @@ import { estBetonDeclare } from "../ontologies/structure/beton.js";
 import type { LigneCatalogue } from "../catalogues/csv-source.js";
 import type { SectionBois, SectionStructure } from "../modele.js";
 import { sectionBoisDepuisCatalogue } from "../ontologies/timber/sections.js";
+import type { PortReseau, ProfilReseau, SectionReseau, SystemeReseau } from "../modele.js";
+import { PORTS_PAR_RACCORD } from "../modele.js";
+import { sectionReseauDepuisCatalogue } from "../ontologies/mep/sections.js";
 
 type Brut = Record<string, unknown>;
 
@@ -669,6 +672,53 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       plis, pliage,
     };
   },
+  // Ontologie réseaux (P2-5) : rien n'est supposé — section, fluide, matériau, sens viennent du projet ou de sa spécification.
+  "segment-reseau"(etat, p) {
+    const systeme = lire.enumeration(p, "systeme", SYSTEMES_RESEAU);
+    const sommets = lireSommets3(p, "sommets", 2);
+    for (let i = 1; i < sommets.length; i++) if (Math.hypot(sommets[i]!.x - sommets[i - 1]!.x, sommets[i]!.y - sommets[i - 1]!.y, sommets[i]!.z - sommets[i - 1]!.z) < TOLERANCE_REDUCTEUR) throw new ErreurCommande("invalide", "sommets", `tronçon ${i} de longueur nulle`);
+    const sec = lireSectionReseau(etat, p, "section", systeme);
+    const spec = lireSpecification(etat, p, systeme, sec);
+    return {
+      nom: lire.chaineOuNull(p, "nom"), repere: lire.chaineOuNull(p, "repere"), systeme, sommets,
+      section: sec.section, profil: sec.profil,
+      fluide: lire.chaineOuNull(p, "fluide") ?? spec.fluide ?? sec.fluide, materiau: lire.chaineOuNull(p, "materiau") ?? spec.materiau ?? sec.materiau,
+      sens: lire.enumeration(p, "sens", ["a-vers-b", "b-vers-a", "indifferent"] as const, "indifferent"), specificationId: spec.id,
+    };
+  },
+  "raccord-reseau"(etat, p) {
+    const type = lire.enumeration(p, "type", ["coude", "te", "croix", "reduction", "manchon", "bouchon"] as const);
+    const systeme = lire.enumeration(p, "systeme", SYSTEMES_RESEAU);
+    const sec = lireSectionReseau(etat, p, "section", systeme);
+    const ports = lirePorts(etat, p, "ports", systeme);
+    if (ports.length !== PORTS_PAR_RACCORD[type]) throw new ErreurCommande("invalide", "ports", `un raccord « ${type} » porte ${PORTS_PAR_RACCORD[type]} port(s), ${ports.length} donné(s)`);
+    if (type === "reduction" && !ports.some((x) => x.section)) throw new ErreurCommande("invalide", "ports", "une réduction déclare la section propre d'au moins un port");
+    const spec = lireSpecification(etat, p, systeme, sec);
+    return { nom: lire.chaineOuNull(p, "nom"), type, systeme, position: lire.point(p, "position")!, z: lire.nombre(p, "z", { optionnel: true }) ?? 0, angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" }, section: sec.section, ports, profil: sec.profil, fluide: lire.chaineOuNull(p, "fluide") ?? spec.fluide ?? sec.fluide, materiau: lire.chaineOuNull(p, "materiau") ?? spec.materiau ?? sec.materiau, specificationId: spec.id };
+  },
+  vanne(etat, p) {
+    const sec = lireSectionReseau(etat, p, "section", "tuyau");
+    const spec = lireSpecification(etat, p, "tuyau", sec);
+    const longueur = lire.longueur(p, "longueur", { strict: true })!;
+    return { nom: lire.chaineOuNull(p, "nom"), repere: lire.chaineOuNull(p, "repere"), type: lire.enumeration(p, "type", ["arret", "reglage", "anti-retour", "securite", "trois-voies"] as const), position: lire.point(p, "position")!, z: lire.nombre(p, "z", { optionnel: true }) ?? 0, angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" }, section: sec.section, longueur, fluide: lire.chaineOuNull(p, "fluide") ?? spec.fluide ?? sec.fluide, materiau: lire.chaineOuNull(p, "materiau") ?? spec.materiau ?? sec.materiau, specificationId: spec.id, profil: sec.profil };
+  },
+  "equipement-reseau"(etat, p) {
+    const nom = lire.chaine(p, "nom").trim();
+    if (!nom) throw new ErreurCommande("invalide", "nom", "nom requis");
+    const type = lire.chaine(p, "type").trim();
+    if (!type) throw new ErreurCommande("invalide", "type", "type déclaré requis (pompe, ventilateur, centrale…)");
+    const ports = lirePorts(etat, p, "ports", null);
+    for (const [i, x] of ports.entries()) if (!x.section) throw new ErreurCommande("invalide", `ports[${i}].section`, "chaque port d'un équipement déclare sa section");
+    return { nom, repere: lire.chaineOuNull(p, "repere"), type, categorie: lire.enumeration(p, "categorie", ["terminal", "mouvement", "conversion", "stockage", "traitement", "controle"] as const), position: lire.point(p, "position")!, z: lire.nombre(p, "z", { optionnel: true }) ?? 0, angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" }, longueur: lire.longueur(p, "longueur", { strict: true })!, largeur: lire.longueur(p, "largeur", { strict: true })!, hauteur: lire.longueur(p, "hauteur", { strict: true })!, ports };
+  },
+  "support-reseau"(etat, p) {
+    const porteId = lire.objet(etat, p, "porteId");
+    if (etat.objets[porteId]!.classe !== "segment-reseau") throw new ErreurCommande("precondition", "porteId", `${porteId} n'est pas un segment de réseau`);
+    const type = lire.enumeration(p, "type", ["collier", "suspente", "rail", "console"] as const);
+    const longueur = lire.longueur(p, "longueur", { optionnel: true, strict: true });
+    if (type === "suspente" && !longueur) throw new ErreurCommande("invalide", "longueur", "une suspente déclare sa longueur");
+    return { nom: lire.chaineOuNull(p, "nom"), type, porteId, position: lire.point(p, "position")!, z: lire.nombre(p, "z", { optionnel: true }) ?? 0, longueur };
+  },
   "bloc-occurrence"(_etat, p) {
     return { position: lire.point(p, "position")!, angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" }, echelle: lire.nombre(p, "echelle", { optionnel: true, min: 0 }) ?? 1, ...(lire.booleen(p, "miroir", false) ? { miroir: true as const } : {}) };
   },
@@ -931,6 +981,86 @@ function lireSectionBois(etat: ModeleAtelier, p: Brut, cle: string): SectionBois
     essence: lire.chaineOuNull(q, "essence"),
     classe: lire.chaineOuNull(q, "classe"),
   };
+}
+
+const SYSTEMES_RESEAU = ["gaine", "tuyau", "chemin-de-cables", "conduit"] as const;
+
+function lireSommets3(p: Brut, cle: string, min: number): { x: number; y: number; z: number }[] {
+  const v = p[cle];
+  if (!Array.isArray(v) || v.length < min || !v.every((q) => q && typeof q === "object" && [(q as { x?: unknown }).x, (q as { y?: unknown }).y, (q as { z?: unknown }).z].every((c) => typeof c === "number" && Number.isFinite(c)))) throw new ErreurCommande("invalide", cle, `« ${cle} » : liste d'au moins ${min} points { x, y, z } (m, z depuis le niveau)`);
+  // Repère : les sommets 3D sont dans le repère local du niveau par définition ; un point étiqueté d'un autre repère
+  // (cadastral, géographique) n'est jamais réinterprété en silence — conversion explicite en amont (AGENTS.md, repères tagués).
+  v.forEach((q, i) => { const f = (q as { frame?: unknown }).frame; if (f !== undefined && f !== "local") throw new ErreurCommande("invalide", `${cle}[${i}].frame`, `repère « ${String(f)} » refusé : les sommets 3D sont en repère local du niveau (convertissez explicitement)`); });
+  return (v as { x: number; y: number; z: number }[]).map((q) => ({ x: q.x, y: q.y, z: q.z }));
+}
+
+/** Section de réseau (P2-5) : { forme: "circulaire", diametre, epaisseur? } / { forme: "rectangulaire", largeur, hauteur } (m) ou { catalogueId, designation }. */
+function lireSectionReseau(etat: ModeleAtelier, p: Brut, cle: string, systeme: SystemeReseau | null): { section: SectionReseau; profil: ProfilReseau | null; fluide: string | null; materiau: string | null } {
+  const v = p[cle];
+  if (!v || typeof v !== "object") throw new ErreurCommande("invalide", cle, `« ${cle} » : section { forme, diametre | largeur, hauteur } ou { catalogueId, designation } requise`);
+  const q = v as Brut;
+  if (typeof q["catalogueId"] === "string" && typeof q["designation"] === "string" && q["forme"] === undefined) {
+    const cat = etat.definitions[q["catalogueId"]];
+    if (!cat || cat.classe !== "catalogue") throw new ErreurCommande("precondition", `${cle}.catalogueId`, `catalogue inconnu : ${q["catalogueId"]}`);
+    const designation = q["designation"].trim();
+    const ligne = ((cat.params["lignes"] as LigneCatalogue[] | undefined) ?? []).find((l) => String(l.valeurs["designation"] ?? "").trim().toLowerCase() === designation.toLowerCase());
+    if (!ligne) throw new ErreurCommande("precondition", `${cle}.designation`, `« ${designation} » absent du catalogue ${cat.nom}`);
+    try { return sectionReseauDepuisCatalogue(cat.id, ligne); } catch (e) { throw new ErreurCommande("precondition", `${cle}.designation`, e instanceof Error ? e.message : String(e)); }
+  }
+  const forme = lire.enumeration(q, "forme", ["circulaire", "rectangulaire"] as const);
+  if (forme === "rectangulaire" && systeme === "tuyau") throw new ErreurCommande("invalide", `${cle}.forme`, "un tuyau est circulaire");
+  // Provenance facultative : relue dans le catalogue (source et DN recalculés), jamais recopiée du client (R3).
+  let profil: ProfilReseau | null = null;
+  if (q["profil"] !== undefined && q["profil"] !== null) {
+    const base = lireProfilCatalogue(etat, q, "profil")!;
+    const cat = etat.definitions[base.catalogueId]!;
+    const ligne = ((cat.params["lignes"] as LigneCatalogue[] | undefined) ?? []).find((l) => String(l.valeurs["designation"] ?? "").trim().toLowerCase() === base.designation.toLowerCase());
+    const dn = ligne?.valeurs["diametre_nominal"];
+    profil = { ...base, diametreNominal: typeof dn === "string" && dn.trim() ? dn.trim() : null };
+  }
+  if (forme === "circulaire") {
+    const diametre = lire.longueur(q, "diametre", { strict: true })!;
+    const epaisseur = lire.longueur(q, "epaisseur", { optionnel: true, strict: true });
+    if (epaisseur && epaisseur.value * 2 >= diametre.value) throw new ErreurCommande("invalide", `${cle}.epaisseur`, "épaisseur incompatible avec le diamètre");
+    return { section: { forme, diametre, epaisseur }, profil, fluide: null, materiau: null };
+  }
+  return { section: { forme, largeur: lire.longueur(q, "largeur", { strict: true })!, hauteur: lire.longueur(q, "hauteur", { strict: true })! }, profil, fluide: null, materiau: null };
+}
+
+/** Ports déclarés d'un raccord ou d'un équipement : identifiants uniques, décalages finis, sens, section / système / fluide propres facultatifs. */
+function lirePorts(etat: ModeleAtelier, p: Brut, cle: string, systeme: SystemeReseau | null): PortReseau[] {
+  const v = p[cle];
+  if (!Array.isArray(v) || !v.length || v.length > 8) throw new ErreurCommande("invalide", cle, `« ${cle} » : liste de 1 à 8 ports { id, dx, dy, dz, sens?, section?, systeme?, fluide? }`);
+  const ids = new Set<string>();
+  return v.map((x, i) => {
+    if (!x || typeof x !== "object") throw new ErreurCommande("invalide", `${cle}[${i}]`, "port attendu");
+    const q = x as Brut;
+    const id = lire.chaineOuNull(q, "id") ?? String(i + 1);
+    if (ids.has(id)) throw new ErreurCommande("invalide", `${cle}[${i}].id`, `port « ${id} » en double`);
+    ids.add(id);
+    for (const k of ["dx", "dy", "dz"]) if (q[k] !== undefined && q[k] !== null && (typeof q[k] !== "number" || !Number.isFinite(q[k] as number))) throw new ErreurCommande("invalide", `${cle}[${i}].${k}`, "nombre attendu");
+    // Le système d'un port d'équipement est déclaré, jamais supposé (un port sans système deviendrait un port de tuyauterie : refus nommé).
+    // Raccord ou vanne : le port hérite du système déclaré de l'objet ; équipement (aucun système propre) : le port doit le déclarer.
+    if ((q["systeme"] === undefined || q["systeme"] === null) && !systeme) throw new ErreurCommande("invalide", `${cle}[${i}].systeme`, `port « ${id} » : système requis (${SYSTEMES_RESEAU.join(" | ")}) — aucun système n'est supposé`);
+    const sys = q["systeme"] === undefined || q["systeme"] === null ? systeme! : lire.enumeration(q, "systeme", SYSTEMES_RESEAU);
+    const section = q["section"] === undefined || q["section"] === null ? null : lireSectionReseau(etat, q, "section", sys ?? systeme).section;
+    return { id, dx: (q["dx"] as number | undefined) ?? 0, dy: (q["dy"] as number | undefined) ?? 0, dz: (q["dz"] as number | undefined) ?? 0, sens: lire.enumeration(q, "sens", ["entree", "sortie", "indifferent"] as const, "indifferent"), section, systeme: sys, fluide: lire.chaineOuNull(q, "fluide") };
+  });
+}
+
+/** Spécification suivie (DA-12-07) : même système ; avec un catalogue, la section vient de ce catalogue et sa désignation est admise. */
+function lireSpecification(etat: ModeleAtelier, p: Brut, systeme: SystemeReseau, sec: { section: SectionReseau; profil: ProfilReseau | null }): { id: string | null; fluide: string | null; materiau: string | null } {
+  const id = lire.chaineOuNull(p, "specificationId");
+  if (id === null) return { id: null, fluide: null, materiau: null };
+  const d = etat.definitions[id];
+  if (!d || d.classe !== "specification") throw new ErreurCommande("precondition", "specificationId", `spécification inconnue : ${id}`);
+  const q = d.params as { systeme?: string; fluide?: string | null; materiau?: string | null; catalogueId?: string | null; designations?: string[] };
+  if (q.systeme !== systeme) throw new ErreurCommande("precondition", "specificationId", `spécification ${d.nom} : système ${q.systeme}, objet ${systeme}`);
+  if (q.catalogueId) {
+    if (!sec.profil || sec.profil.catalogueId !== q.catalogueId) throw new ErreurCommande("precondition", "section", `spécification ${d.nom} : section à prendre dans son catalogue (${etat.definitions[q.catalogueId]?.nom ?? q.catalogueId})`);
+    if (q.designations?.length && !q.designations.some((x) => x.toLowerCase() === sec.profil!.designation.toLowerCase())) throw new ErreurCommande("precondition", "section", `spécification ${d.nom} : désignation « ${sec.profil.designation} » non admise (${q.designations.join(", ")})`);
+  }
+  return { id, fluide: q.fluide ?? null, materiau: q.materiau ?? null };
 }
 
 /** Vecteur 3D { x, y, z } (m ou direction), valeur par défaut si absent. */
