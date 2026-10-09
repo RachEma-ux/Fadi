@@ -2739,8 +2739,8 @@
   position: relative;
   display: inline-flex;
 }
-.barre-plan > button::after {
-  content: "▾";
+/* Chevron décoratif (span aria-hidden dans le bouton : un contenu généré en CSS entrerait dans le nom accessible). */
+.barre-plan-chevron {
   margin-left: 0.35em;
   font-size: 0.8em;
   opacity: 0.8;

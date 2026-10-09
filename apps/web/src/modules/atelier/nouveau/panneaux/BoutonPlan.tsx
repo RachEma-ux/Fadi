@@ -97,6 +97,7 @@ export function BoutonPlan({ actif, niveaux, niveauId, fmt, onMode, onNiveau }: 
         }}
       >
         Plan
+        <span aria-hidden="true" className="barre-plan-chevron">▾</span>
       </button>
       {ouvert && (
         <ul id={idListe} className="barre-plan-liste" role="menu" aria-label={t("plan.niveaux")} ref={liste} data-plan-niveaux onKeyDown={surClavierListe}>

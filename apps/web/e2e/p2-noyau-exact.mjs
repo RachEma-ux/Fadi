@@ -9,6 +9,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
+import { allerEnPlan } from "./lib-barre.mjs";
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
@@ -133,7 +134,7 @@ await page.waitForSelector("canvas", { timeout: 30000 });
 await page.waitForTimeout(800);
 await page.screenshot({ path: `${OUT}/p2-1-3d.png` });
 check("3D : vue rendue avec les solides exacts, aucune erreur JavaScript", erreurs.length === 0, erreurs.join(" ; "));
-await page.getByRole("button", { name: "Plan", exact: true }).click();
+await allerEnPlan(page); // D-195 : Plan active le mode et ouvre la liste des niveaux (Échap la referme)
 await page.waitForSelector(".plan2d", { timeout: 30000 });
 
 // IFC : proxys tessellés avec Fadi_SolideExact.
