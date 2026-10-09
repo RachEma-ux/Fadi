@@ -1202,7 +1202,11 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 760px)");
-    const maj = () => setEtroit(mq.matches);
+    // En passant au format téléphone (rotation, fenêtre rétrécie), la colonne se replie aussi en icônes.
+    const maj = () => {
+      setEtroit(mq.matches);
+      if (mq.matches) setColonneRepliee(true);
+    };
     mq.addEventListener("change", maj);
     return () => mq.removeEventListener("change", maj);
   }, []);
