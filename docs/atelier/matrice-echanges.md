@@ -48,6 +48,7 @@ Légende : **C** conservé · **T** transformé (dit au rapport) · **O** omis (
 | cotation mécanique (P2-7, `prefixe`, `tolerance`) | O : texte tolérancé non porté par `IfcAnnotation` .DIMENSION. (déclaré) | — | T : texte « Ø1000 +0,1/−0,05 » | T : texte tolérancé sur la cote | C |
 | étiquette intelligente (P2-7, `champ`) | C `IfcAnnotation` .TEXT. (texte résolu à l'export) | — | T : texte résolu | T : texte résolu | C |
 | nuage-de-points (P2-7) | O : omis de l'IFC (relevé, pas un objet de l'ouvrage ; D-189) | — (lecture LAS / XYZ / PTS par `POST /atelier/nuages`, E57 et LAZ refusés) | O | T : croix fines de la tranche (5 000 au plus) | C (échantillon décimé, origine déclarée) |
+| définitions `graphe` et `regle` (P2-8) | O : hors IFC (recettes de génération et règles du projet, pas des objets de l'ouvrage ; D-190) | — | — | — | C (archive du modèle, `verifierModele`) |
 | poutre (P2-3) | C `IfcBeam` (.BEAM., rôles poutre / longrine) ou `IfcMember` (.BRACE. / .RAFTER. / .PURLIN. / .USERDEFINED.), corps tessellé du balayage de section ; rôle, section, profil, source, masse linéique, matériau en `Fadi_Structure` | — (`objet-importe`, classe d'origine conservée) | T : bande de la largeur de section et axe | — | C |
 | trame (P2-3) | C `IfcGrid` .RECTANGULAR. (files = UAxes, rangs = VAxes, `IfcGridAxis` sur polylignes) | O : non relue (déclaré) | T : axes et bulles | — | C |
 | plaque (P2-3) | C `IfcPlate` tessellée ; épaisseur, matériau, préfabriqué en `Fadi_Structure` | — (`objet-importe`) | T : contour | — | C |

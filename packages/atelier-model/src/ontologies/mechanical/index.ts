@@ -5,7 +5,7 @@
  * autre ontologie directement : tout passe par le modèle typé (`modele.ts`, `objets.ts`).
  */
 import type { Definition, ModeleAtelier, Occurrence, OccurrenceQuelconque, ParamsLiaison, ParamsPieceMecanique, Pose3 } from "../../modele.js";
-import { CLASSES, LIBELLES_ONTOLOGIE, ONTOLOGIES_ACTIVABLES, estOntologie, ontologiesActives, type Ontologie } from "../../ontologie.js";
+import { CLASSES, LIBELLES_ONTOLOGIE, ONTOLOGIES_ACTIVABLES, estClasse, estOntologie, ontologiesActives, type Ontologie } from "../../ontologie.js";
 import { effetsVides, ErreurCommande, fusionnerEffets, lire, nouveauProbleme, type ContexteCommande, type Reducteur, type ResultatCommande } from "../../commandes/base.js";
 import { creerOccurrence, modifierOccurrence, supprimerIds, supprimerOccurrence } from "../../commandes/objets.js";
 import { maillageObjet } from "../../projection/maillage.js";
@@ -305,7 +305,14 @@ export const reducteursMecanique: Record<string, Reducteur> = {
     const familleId = lire.chaineOuNull(p, "familleId");
     if (familleId && etat.definitions[familleId]?.classe !== ("famille")) throw new ErreurCommande("precondition", "familleId", `famille inconnue : ${familleId}`);
     if (!/(<=|>=|=|<|>)/.test(expression)) throw new ErreurCommande("invalide", "expression", "comparaison attendue (<=, >=, <, >, =)");
-    const params: ParamsRegle = { expression, message, familleId };
+    // Règle par ontologie (P2-8, DA-19-05) : classe du socle ou d'une ontologie active ; contrôlée sur chaque occurrence.
+    const classe = lire.chaineOuNull(p, "classe");
+    if (classe !== null) {
+      if (familleId) throw new ErreurCommande("invalide", "classe", "une règle porte sur une famille ou sur une classe, pas les deux");
+      if (!estClasse(classe)) throw new ErreurCommande("invalide", "classe", `classe inconnue : ${classe}`);
+      if (!ontologiesActives(etat).includes(CLASSES[classe].ontologie)) throw new ErreurCommande("precondition", "classe", `${CLASSES[classe].libelle} : ontologie « ${LIBELLES_ONTOLOGIE[CLASSES[classe].ontologie]} » non activée dans ce projet (ontologie.activer)`);
+    }
+    const params: ParamsRegle = { expression, message, familleId, classe };
     const def: Definition = { id, classe: "regle", nom, params: params as unknown as Record<string, unknown>, version: (existante?.version ?? 0) + 1 };
     const effets = effetsVides();
     (existante ? effets.modifies : effets.crees).push(id);
@@ -313,9 +320,9 @@ export const reducteursMecanique: Record<string, Reducteur> = {
   },
   /** Contrôle des règles sur les valeurs évaluées de leur famille : un problème « regle » par règle violée (jamais corrigé). */
   "regles.controler": (etat, _p, ctx) => {
-    const problemes = Object.fromEntries(Object.entries(etat.problemes).filter(([, pb]) => pb.type !== "regle"));
+    const problemes = Object.fromEntries(Object.entries(etat.problemes).filter(([, pb]) => pb.type !== "regle" || pb.objetId !== null || pb.message.includes("non évalué")));
     const effets = effetsVides();
-    for (const d of Object.values(etat.definitions).filter((x) => x.classe === ("regle")).sort((a, b) => (a.id < b.id ? -1 : 1))) {
+    for (const d of Object.values(etat.definitions).filter((x) => x.classe === ("regle") && !(x.params as unknown as ParamsRegle).classe).sort((a, b) => (a.id < b.id ? -1 : 1))) {
       const r = d.params as unknown as ParamsRegle;
       const fam = r.familleId ? (etat.definitions[r.familleId]?.params as unknown as ParamsFamille | undefined) : undefined;
       let message: string | null;

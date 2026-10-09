@@ -13,7 +13,8 @@ export interface ParamsFamille {
   /** Configuration active (état du modèle, DA-06-06) ; null : expressions seules. */
   active: string | null;
 }
-export interface ParamsRegle { expression: string; message: string; familleId: string | null }
+/** Règle de conception : sur une famille (`familleId`, P2-2) ou sur chaque occurrence d'une classe d'ontologie (`classe`, P2-8). */
+export interface ParamsRegle { expression: string; message: string; familleId: string | null; classe?: string | null }
 
 const NOM = /^[A-Za-z_][A-Za-z0-9_]{0,39}$/;
 export const estNomParametre = (n: string): boolean => NOM.test(n);

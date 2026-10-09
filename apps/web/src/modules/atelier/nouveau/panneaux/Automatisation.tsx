@@ -5,14 +5,17 @@
  * langage n'est configuré) → séquence inspectable, journal des hypothèses, essais (trois au plus), aperçu des objets
  * affectés et des documents à recalculer → **rien n'est écrit** tant que l'utilisateur n'accepte pas.
  * Scripts : bibliothèque versionnée (intégrés + projet) ; paramètres typés ; essai à blanc puis exécution par les
- * mêmes commandes et les mêmes refus qu'un geste.
+ * mêmes commandes et les mêmes refus qu'un geste. P2-8 : graphes visuels de génération contrôlée (même boucle, même
+ * bloc de proposition) et règles par ontologie.
  */
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ModeleAtelier, ParametreScript, ScriptAtelier } from "@parcours/atelier-model";
+import type { Commande, ModeleAtelier, ParametreScript, ScriptAtelier } from "@parcours/atelier-model";
 import { api, type AtelierProposition, type AtelierScript } from "../../../../lib/api";
 import type { AtelierClient } from "../../bus/atelier-client";
 import { EditeurScript } from "./EditeurScript";
+import { Graphes } from "./Graphes";
+import { Regles } from "./Regles";
 import { messageErreur } from "./Versions";
 
 export interface PropsAutomatisation {
@@ -22,6 +25,8 @@ export interface PropsAutomatisation {
   revision: number;
   niveauId: string | null;
   readOnly: boolean;
+  /** Commandes du modèle (règles, graphes du projet : définitions versionnées avec le modèle). */
+  onCommandes: (commandes: Commande[], label: string) => void;
 }
 
 const SUGGESTIONS = ["Feuilles et quantités", "Annoter les réserves Harmonie", "Détecter les pièces du niveau actif", "Trame de poteaux 4 x 3 tous les 6 m", "Corriger les ouvertures hors mur"];
@@ -61,7 +66,7 @@ function Apercu({ effets, documents, commandes }: { effets: AtelierProposition["
   );
 }
 
-export function Automatisation({ projectId, client, etat, revision, niveauId, readOnly }: PropsAutomatisation) {
+export function Automatisation({ projectId, client, etat, revision, niveauId, readOnly, onCommandes }: PropsAutomatisation) {
   const qc = useQueryClient();
   const [intention, setIntention] = useState("");
   const [proposition, setProposition] = useState<(AtelierProposition & { documentsARecalculer?: { kind: string; label: string }[] }) | null>(null);
@@ -137,6 +142,7 @@ export function Automatisation({ projectId, client, etat, revision, niveauId, re
           <p className="auto-statut">
             {STATUTS[proposition.statut]}
             {proposition.depuisCache ? " · séquence déjà validée (cache)" : ""}
+            {proposition.generateur === "graphes-fadi/1" ? " · graphe de génération" : ""}
           </p>
           <p>{proposition.explication}</p>
           {proposition.iterations.length > 0 && (
@@ -186,6 +192,9 @@ export function Automatisation({ projectId, client, etat, revision, niveauId, re
           )}
         </div>
       )}
+
+      <Graphes projectId={projectId} etat={etat} niveauId={niveauId} readOnly={readOnly} synchroniser={synchroniser} onProposition={(p) => setProposition(p)} onCommandes={onCommandes} onErreur={setErreur} />
+      <Regles etat={etat} readOnly={readOnly} onCommandes={onCommandes} />
 
       <h3>Scripts</h3>
       {scripts.isError ? (

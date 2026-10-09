@@ -8,7 +8,10 @@
  *   essayé à blanc ou validé par le même cœur transactionnel que `POST /commands` (mêmes droits, mêmes refus) ;
  * - `POST /assistant/propositions` (boucle contrôlée : proposer → essai → corriger ≤ 3 fois ; rien n'est écrit dans
  *   le modèle), `GET /assistant/propositions`, `POST …/:id/accepter` (accord explicite → exécution validée),
- *   `POST …/:id/refuser`.
+ *   `POST …/:id/refuser` ;
+ * - `GET /graphes` (graphes de génération intégrés + définitions `graphe` du modèle, P2-8), `POST /graphes/:id/proposer` :
+ *   le graphe est compilé en script, ses règles contrôlées, puis la **même boucle contrôlée** produit une proposition
+ *   (essai à blanc, journal, aperçu) acceptée ou refusée par les routes de l'assistant ; rien n'est écrit ici.
  * Les scripts et l'assistant héritent des droits de l'utilisateur ; aucun accès direct aux tables du modèle.
  */
 import { randomUUID } from "node:crypto";
@@ -19,6 +22,10 @@ import {
   CONTRAT_COMMANDES,
   ErreurCommande,
   ErreurScript,
+  GRAPHES_INTEGRES,
+  graphesDuProjet,
+  grapheDe,
+  proposerGraphe,
   SCRIPTS_INTEGRES,
   VERSION_REGLES,
   appliquerLot,
@@ -233,6 +240,57 @@ atelierAutomatisationRouter.post("/assistant/propositions", async (req, res) => 
   await db.insert(atelierPropositions).values(row);
   const docs = proposition.statut === "proposee" && proposition.commandes.length ? await documentsARecalculer(project) : [];
   res.status(201).json({ ...versJson(row), documentsARecalculer: docs, fournisseur: null, regles: VERSION_REGLES });
+});
+
+// ---------------------------------------------------------------------------
+// Graphes de génération contrôlée (P2-8, DA-19-03 à 05)
+// ---------------------------------------------------------------------------
+
+atelierAutomatisationRouter.get("/graphes", async (req, res) => {
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  const etat = (await chargerModele(db, project.id))?.etat;
+  res.json({
+    integres: GRAPHES_INTEGRES.map((g) => ({ ...g, origine: "integre" })),
+    projet: etat ? graphesDuProjet(etat).map((g) => ({ ...g, origine: "projet" })) : [],
+    regles: VERSION_REGLES,
+  });
+});
+
+const propositionGrapheSchema = z.object({ parametres: z.record(z.string(), z.unknown()).default({}), niveauId: z.string().max(200).nullable().optional() });
+
+atelierAutomatisationRouter.post("/graphes/:grapheId/proposer", async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const p = propositionGrapheSchema.safeParse(req.body ?? {});
+  if (!p.success) return void invalide(res, "body", "parametres (objet) et niveauId attendus");
+  const charge = (await chargerModele(db, project.id)) ?? (await db.transaction((tx) => creerModeleVide(tx, project.id, `fadi-${project.id}`)));
+  const graphe = grapheDe(charge.etat, req.params["grapheId"] as string);
+  if (!graphe) return void res.status(404).json({ erreur: "graphe-inconnu" });
+  const proposition = proposerGraphe(graphe, charge.etat, p.data.parametres, p.data.niveauId ?? null);
+  const row = {
+    id: randomUUID(),
+    projectId: project.id,
+    intention: proposition.intention,
+    cle: proposition.cle,
+    generateur: proposition.generateur,
+    regle: proposition.regle,
+    explication: proposition.explication,
+    commandes: proposition.commandes as unknown[],
+    hypotheses: proposition.hypotheses as unknown[],
+    iterations: proposition.iterations as unknown[],
+    effets: proposition.effets as unknown as Record<string, unknown> | null,
+    statut: proposition.statut,
+    depuisCache: proposition.depuisCache,
+    revisionBase: project.modelRevision,
+    revisionResultat: null,
+    authorId: req.user!.id,
+    createdAt: new Date(),
+    decidedAt: null,
+  };
+  await db.insert(atelierPropositions).values(row);
+  const docs = proposition.statut === "proposee" && proposition.commandes.length ? await documentsARecalculer(project) : [];
+  res.status(201).json({ ...versJson(row), documentsARecalculer: docs, graphe: { id: graphe.id, nom: graphe.nom, version: graphe.version } });
 });
 
 atelierAutomatisationRouter.get("/assistant/propositions", async (req, res) => {

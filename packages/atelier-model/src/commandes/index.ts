@@ -67,6 +67,8 @@ import { controlerBois, reducteursBois } from "../ontologies/timber/index.js";
 import { reducteursTolerie } from "../ontologies/sheetmetal/index.js";
 import { controlerReseau, reducteursReseaux } from "../ontologies/mep/index.js";
 import { reducteursBatimentP2 } from "./batiment-p2.js";
+import { reducteursGraphes } from "./graphes.js";
+import { controlerReglesClasses } from "../automatisation/regles-classes.js";
 
 const triplet = (classe: Classe, prefixe: string, creer = "creer"): Record<string, Reducteur> => ({
   [`${prefixe}.${creer}`]: (etat, p, ctx) => creerOccurrence(etat, p, ctx, classe),
@@ -217,6 +219,8 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   ...triplet("solide-exact", "solideExact"),
   // Ontologie mécanique (P2-2) : activation, pièces, assemblages, liaisons, familles, règles, catalogues.
   ...reducteursMecanique,
+  // Graphes de génération du projet (P2-8) : définitions versionnées avec le modèle, proposées par la boucle contrôlée.
+  ...reducteursGraphes,
   // Ontologie structure (P2-3) : éléments, trames (génération contrôlée), plaques, assemblages, soudures, armatures, coulages.
   ...reducteursStructure,
   // Ontologies bois et tôlerie (P2-4).
@@ -383,6 +387,9 @@ export function appliquerCommande(etat: ModeleAtelier, commande: Commande, ctx: 
   r = { etat: cb.etat, effets: fusionnerEffets(r.effets, cb.effets) };
   const cr = controlerReseau(etat, r.etat, ctx);
   r = { etat: cr.etat, effets: fusionnerEffets(r.effets, cr.effets) };
+  // Règles par ontologie (P2-8) : chaque occurrence d'une classe visée est rejugée après chaque commande ; jamais corrigée.
+  const cg = controlerReglesClasses(etat, r.etat, ctx);
+  r = { etat: cg.etat, effets: fusionnerEffets(r.effets, cg.effets) };
   const c00 = controlerContraintes(etat, r.etat, commande.type, r.effets, ctx);
   // Contraintes verticales (D-155) : avant le contrôle des verrous, pour qu'un porté verrouillé refuse le lot.
   const c0 = commande.type === "interne.restaurer" ? c00 : suivrePoses(c00.etat, c00.effets);

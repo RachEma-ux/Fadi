@@ -1006,7 +1006,7 @@ export interface Occurrence<C extends Classe = Classe> {
 export type OccurrenceQuelconque = { [C in Classe]: Occurrence<C> }[Classe];
 
 /** Définitions : types d'objets, blocs et composants (lot 5), vues et feuilles des documents dérivés (lot 5). */
-export type ClasseDefinition = Classe | "bloc" | "composant" | "vue" | "feuille" | "reference-externe" | "vue-3d" | "referentiel-classification" | "ensemble-affichage" | "etat-calques" | "planche" | "famille" | "regle" | "catalogue" | "specification";
+export type ClasseDefinition = Classe | "bloc" | "composant" | "vue" | "feuille" | "reference-externe" | "vue-3d" | "referentiel-classification" | "ensemble-affichage" | "etat-calques" | "planche" | "famille" | "regle" | "catalogue" | "specification" | "graphe";
 
 export interface Definition {
   id: string;
