@@ -814,11 +814,15 @@
     gap: 3px;
   }
   /* Surcouches qui restent sur le dessin : brouillon (pastille), annuler / rétablir, Détacher, grille, panneau. */
-  /* Barre du haut pleine largeur : brouillon, annuler, rétablir … détacher. */
+  /* Barre du haut pleine largeur : brouillon, annuler, rétablir … détacher, sur une rangée qui défile au doigt
+     plutôt que d'être coupée au bord de l'écran. */
   .planche-haut {
     justify-self: stretch;
     margin: 0;
     max-width: none;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
     gap: 4px;
     padding: 2px 0.5rem;
     border: 0;
@@ -831,9 +835,16 @@
     background: transparent;
   }
   .planche-detacher {
+    flex: none;
     margin-left: auto;
     padding: 0;
     width: 44px;
+  }
+  .planche-haut > * {
+    flex: none;
+  }
+  .planche-haut .planche-menu-bouton {
+    max-width: 7.5rem;
   }
   .planche-detacher-libelle {
     display: none;
@@ -962,7 +973,9 @@
   top: 0;
 }
 .planche-outils .outil-fixe-bas {
-  bottom: 0;
+  /* Couvre aussi le rembourrage du rail : aucun bout d'outil ne dépasse sous « … ». */
+  bottom: -0.25rem;
+  padding-bottom: 0.25rem;
 }
 
 /* Souris (pointeur précis) : la barre d'outils tient en entier sans défiler ; le tactile garde des cibles de 44 px. */

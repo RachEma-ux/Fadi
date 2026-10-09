@@ -2800,26 +2800,43 @@
   overflow: hidden;
   min-height: 0;
 }
-/* Téléphone en mode Planche : la barre des modes tient sur UNE rangée défilante (pastilles), le dessin gagne la place. */
+/* Téléphone, tous les modes : la barre de l'Atelier tient sur UNE rangée défilante (pastilles) au lieu de quatre
+   rangées empilées ; le dessin, la 3D, les documents et la Planche gagnent la place. Rien n'est retiré : on fait
+   défiler la rangée du doigt. Les menus qui s'y ouvrent (Fichier, Exporter, Accrochages…) sortent en surcouche fixe. */
 @media (max-width: 760px) {
-  .atelier-n.mode-planche > .atelier-n-barre {
+  .atelier-n > .atelier-n-barre {
+    /* Bloc conteneur des menus en position absolue : ils restent dans la rangée défilante, sans élargir la page. */
+    position: relative;
     flex-wrap: nowrap;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     scrollbar-width: none;
     padding: 0.35rem 0.6rem;
   }
-  .atelier-n.mode-planche > .atelier-n-barre::-webkit-scrollbar {
+  .atelier-n > .atelier-n-barre::-webkit-scrollbar {
     display: none;
   }
-  .atelier-n.mode-planche > .atelier-n-barre > * {
+  .atelier-n > .atelier-n-barre > * {
     flex: none;
   }
-  .atelier-n.mode-planche > .atelier-n-barre button,
-  .atelier-n.mode-planche > .atelier-n-barre select,
-  .atelier-n.mode-planche > .atelier-n-barre > summary {
+  .atelier-n > .atelier-n-barre button,
+  .atelier-n > .atelier-n-barre select,
+  .atelier-n > .atelier-n-barre > details > summary {
     min-height: 40px;
     border-radius: 999px;
     white-space: nowrap;
+  }
+  .atelier-n > .atelier-n-barre .barre-palette {
+    flex: none;
+  }
+  .atelier-n > .atelier-n-barre > details[open] > div {
+    position: fixed;
+    left: 0.5rem;
+    right: 0.5rem;
+    top: auto;
+    max-height: 60dvh;
+    overflow-y: auto;
+    z-index: 60;
   }
 }
 
