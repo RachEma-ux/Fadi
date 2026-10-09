@@ -159,7 +159,9 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
     case "annotation-fabrication":
       return { ...o, params: { ...o.params, position: T(o.params.position), attache: o.params.attache ? T(o.params.attache) : null } } as OccurrenceQuelconque;
     case "nuage-de-points": {
-      // Le nuage suit la transformation en plan point par point (z inchangé) ; la translation d'origine déclarée est mise à jour d'autant.
+      // Un relevé ne se tourne, ne se retourne ni ne se met à l'échelle : son origine déclarée est une translation (local =
+      // fichier − origine), seule une translation la garde vraie (relecture Codex #100) ; refus nommé sinon.
+      if (t.type !== "translation") throw new ErreurCommande("precondition", "type", `${o.id} : seule une translation est admise sur un nuage de points (l'origine déclarée du relevé est une translation ; une rotation ou une échelle la rendrait fausse)`);
       const pts = o.params.points.map((q) => { const t = T({ x: q.x, y: q.y, frame: "local", unit: "m" }); return { x: t.x, y: t.y, z: q.z }; });
       const d = T({ x: 0, y: 0, frame: "local", unit: "m" });
       const min = { x: Math.min(...pts.map((q) => q.x)), y: Math.min(...pts.map((q) => q.y)), z: o.params.bornes.min.z }, max = { x: Math.max(...pts.map((q) => q.x)), y: Math.max(...pts.map((q) => q.y)), z: o.params.bornes.max.z };

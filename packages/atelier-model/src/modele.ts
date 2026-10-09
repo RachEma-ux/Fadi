@@ -375,9 +375,16 @@ export interface ParamsSolideExact {
   angle: Angle;
   emprise: Point2[];
   /** Opération d'origine (provenance) : type, objets sources, libellé ; jamais rejouée par le modèle. */
-  /** Opération d'origine ; `entrees` (P2-7) : paramètres exacts tels que reçus et recalculés par le serveur, pour les documents dérivés (perçages). */
-  operation: { type: string; sources: string[]; libelle: string; entrees?: Record<string, unknown> };
+  /**
+   * Opération d'origine ; `entrees` (P2-7) : paramètres exacts tels que reçus (le serveur les retire après recalcul) ;
+   * `percage` : le trou d'une opération « trou », conservé par le serveur **après** recalcul pour le tableau des perçages
+   * (centre et direction dans le repère du solide, Ø et profondeur en m ; profondeur null : traversant).
+   */
+  operation: { type: string; sources: string[]; libelle: string; entrees?: Record<string, unknown>; percage?: Percage };
 }
+
+/** Perçage d'une opération exacte « trou » (P2-7, DA-15-18), dans le repère du solide. */
+export interface Percage { centre: Vecteur3; direction: Vecteur3; diametre: number; profondeur: number | null }
 
 /** Pose rigide 3D (P2-2) : translation (m) et rotation vectorielle (rad, axe × angle) dans le repère de l'assemblage. */
 export interface Pose3 { x: number; y: number; z: number; rx: number; ry: number; rz: number }

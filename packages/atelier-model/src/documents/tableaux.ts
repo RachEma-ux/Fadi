@@ -301,12 +301,15 @@ export function genererTableau(etat: ModeleAtelier, type: TypeTableau): Tableau 
       unites = [null, null, null, "m", "m", "m", "mm", "mm", null];
       for (const n of niveauxOrdonnes(etat)) {
         for (const o of objetsDeClasse(etat, "solide-exact", n.id).sort(parId)) {
+          // Perçage conservé par le serveur (`operation.percage`) ou encore dans les entrées (navigateur, avant envoi).
           const e = o.params.operation.entrees;
-          if (!e || e["type"] !== "trou") continue;
-          const c = e["centre"] as { x: number; y: number; z: number } | undefined, d = e["direction"] as { x: number; y: number; z: number } | undefined;
-          const diam = typeof e["diametre"] === "number" ? (e["diametre"] as number) : null, prof = typeof e["profondeur"] === "number" ? (e["profondeur"] as number) : null;
-          if (!c || diam === null) continue;
-          lignes.push([n.nom, o.params.nom ?? o.id, `T${lignes.length + 1}`, r3(c.x + o.params.position.x), r3(c.y + o.params.position.y), r3(c.z), Math.round(diam * 1000), prof === null ? "traversant" : Math.round(prof * 1000), d ? `(${r2(d.x)} ; ${r2(d.y)} ; ${r2(d.z)})` : null]);
+          const pc = o.params.operation.percage ?? (e && e["type"] === "trou" && e["centre"] && typeof e["diametre"] === "number" ? { centre: e["centre"] as { x: number; y: number; z: number }, direction: (e["direction"] as { x: number; y: number; z: number } | undefined) ?? { x: 0, y: 0, z: -1 }, diametre: e["diametre"] as number, profondeur: typeof e["profondeur"] === "number" ? (e["profondeur"] as number) : null } : null);
+          if (!pc) continue;
+          // Pose du solide (position, rotation autour de z) appliquée au centre et à la direction : coordonnées de fabrication dans le niveau.
+          const th = ((o.params.angle?.value ?? 0) * Math.PI) / 180, cs = Math.cos(th), sn = Math.sin(th);
+          const cx = o.params.position.x + pc.centre.x * cs - pc.centre.y * sn, cy = o.params.position.y + pc.centre.x * sn + pc.centre.y * cs;
+          const d = { x: pc.direction.x * cs - pc.direction.y * sn, y: pc.direction.x * sn + pc.direction.y * cs, z: pc.direction.z };
+          lignes.push([n.nom, o.params.nom ?? o.id, `T${lignes.length + 1}`, r3(cx), r3(cy), r3(pc.centre.z), Math.round(pc.diametre * 1000), pc.profondeur === null ? "traversant" : Math.round(pc.profondeur * 1000), `(${r2(d.x)} ; ${r2(d.y)} ; ${r2(d.z)})`]);
         }
       }
       total = ["Total", `${lignes.length} perçage(s)`, null, null, null, null, null, null, null];

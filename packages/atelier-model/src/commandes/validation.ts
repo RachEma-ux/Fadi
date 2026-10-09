@@ -24,7 +24,7 @@ import { DDL_LIAISON, TYPES_LIAISON } from "../ontologies/mechanical/liaisons.js
 import { AVEC_AILE, AVEC_EPAISSEUR, FORMES_SECTION, sectionDepuisCatalogue } from "../ontologies/structure/sections.js";
 import { estBetonDeclare } from "../ontologies/structure/beton.js";
 import type { LigneCatalogue } from "../catalogues/csv-source.js";
-import type { SectionBois, SectionStructure } from "../modele.js";
+import type { Percage, SectionBois, SectionStructure, Vecteur3 } from "../modele.js";
 import { sectionBoisDepuisCatalogue } from "../ontologies/timber/sections.js";
 import type { PortReseau, ProfilReseau, SectionReseau, SystemeReseau } from "../modele.js";
 import { PORTS_PAR_RACCORD } from "../modele.js";
@@ -404,6 +404,8 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     const sources = Array.isArray(op["sources"]) ? (op["sources"] as unknown[]).filter((x): x is string => typeof x === "string") : [];
     // Entrées de l'opération (P2-7) : gardées telles que reçues (déjà validées par le noyau côté serveur) pour les documents dérivés (tableau des perçages).
     const entrees = op["entrees"] !== undefined && op["entrees"] !== null && typeof op["entrees"] === "object" ? (op["entrees"] as Record<string, unknown>) : undefined;
+    // Perçage (P2-7) : porté par `operation.percage` (posé par le serveur après recalcul) ou dérivé d'entrées « trou » encore présentes.
+    const percage = lirePercage(op["percage"] ?? (entrees && entrees["type"] === "trou" ? entrees : undefined));
     const position = lire.point(p, "position", { optionnel: true }) ?? { x: 0, y: 0, frame: "local", unit: "m" };
     const angle = lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" };
     const maillage = { positions: positions as number[], indices: indices as number[] };
@@ -422,7 +424,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       angle,
       // Emprise toujours recalculée (jamais prise du client) : enveloppe convexe du maillage posé.
       emprise: enveloppeConvexe(emprisePosee(maillage, position, angle.value)).map((q) => ({ x: q.x, y: q.y, frame: "local" as const, unit: "m" as const })),
-      operation: { type: typeof op["type"] === "string" ? (op["type"] as string) : "inconnue", sources, libelle: typeof op["libelle"] === "string" ? (op["libelle"] as string) : "", ...(entrees ? { entrees } : {}) },
+      operation: { type: typeof op["type"] === "string" ? (op["type"] as string) : "inconnue", sources, libelle: typeof op["libelle"] === "string" ? (op["libelle"] as string) : "", ...(entrees ? { entrees } : {}), ...(percage ? { percage } : {}) },
     };
   },
   "piece-mecanique"(etat, p) {
@@ -1110,6 +1112,23 @@ function lireProfilCatalogue(etat: ModeleAtelier, p: Brut, cle: string): { catal
 }
 
 /** Section de bois (P2-4) : { largeur, hauteur, essence?, classe? } (m) ou { catalogueId, designation } (catalogue sourcé). */
+/** Perçage d'une opération exacte « trou » : centre, direction non nulle, Ø > 0, profondeur > 0 ou null (traversant) ; sinon rien. */
+function lirePercage(brut: unknown): Percage | undefined {
+  if (!brut || typeof brut !== "object") return undefined;
+  const q = brut as Record<string, unknown>;
+  const v3 = (v: unknown, cle: string): Vecteur3 => {
+    const o = (v ?? {}) as Record<string, unknown>;
+    for (const k of ["x", "y", "z"]) if (typeof o[k] !== "number" || !Number.isFinite(o[k] as number)) throw new ErreurCommande("invalide", `operation.percage.${cle}`, "{ x, y, z } attendu");
+    return { x: o["x"] as number, y: o["y"] as number, z: o["z"] as number };
+  };
+  const centre = v3(q["centre"], "centre"), direction = v3(q["direction"], "direction");
+  if (Math.hypot(direction.x, direction.y, direction.z) < 1e-9) throw new ErreurCommande("invalide", "operation.percage.direction", "direction nulle");
+  if (typeof q["diametre"] !== "number" || !(q["diametre"] > 0)) throw new ErreurCommande("invalide", "operation.percage.diametre", "diamètre strictement positif (m) attendu");
+  const pf = q["profondeur"];
+  if (pf !== null && pf !== undefined && (typeof pf !== "number" || !(pf > 0))) throw new ErreurCommande("invalide", "operation.percage.profondeur", "profondeur strictement positive (m) ou null (traversant)");
+  return { centre, direction, diametre: q["diametre"], profondeur: pf === undefined ? null : (pf as number | null) };
+}
+
 function lireSectionBois(etat: ModeleAtelier, p: Brut, cle: string): SectionBois {
   const v = p[cle];
   if (!v || typeof v !== "object") throw new ErreurCommande("invalide", cle, `« ${cle} » : section { largeur, hauteur } ou { catalogueId, designation } requise`);

@@ -542,6 +542,8 @@ function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue, options: 
   const zc = niveau.elevation + h;
   const objets = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => o.niveauId === niveau.id && retenu(etat, o, v)).sort((a, b) => (a.id < b.id ? -1 : 1));
   const camera: Camera = { origine: [0, 0, zc], regard: [0, 0, -1], droite: [1, 0, 0], haut: [0, 1, 0] };
+  // Nuages de points (P2-7) : dessinés d'abord, derrière la projection du modèle (couche de fond, jamais par-dessus).
+  annotations2D(c, etat, objets.filter((o) => o.classe === "nuage-de-points"), v.echelle);
   const r = projeterMaillages(maillagesDe(etat, objets, new Set(["porte", "fenetre"])), camera, { coupe: true, profondeurMax: h + 0.6, lignesCachees: false });
   verserProjection(c, etat, r, (o) => (o && (o.classe === "mur" || o.classe === "poteau" || o.classe === "dalle" || o.classe === "toiture") ? "vue" : "fin"));
   // Couches des parois coupées (composition cohérente du type, D-026) : séparations en trait fin, hors des baies coupées.
@@ -574,7 +576,7 @@ function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue, options: 
     for (const pg of e.params.polygones) c.poly(pg.contour, true, "cache", null, e.id);
     c.texte(centroide(e.params.polygones[0]!.contour), `Vide : ${tr.nom} (depuis ${etat.niveaux[tr.niveauOrigineId]?.nom ?? tr.niveauOrigineId})`, 2.2, e.id);
   }
-  annotations2D(c, etat, objets, v.echelle);
+  annotations2D(c, etat, objets.filter((o) => o.classe !== "nuage-de-points"), v.echelle);
   marquesDeCentre(c, objets, v.echelle);
   if (!v.hauteurCoupe) c.avertissements.add(`Hauteur de coupe : ${fmt(h)} m au-dessus du niveau (convention de dessin par défaut, réglable).`);
   const sansHauteur = objets.filter((o) => o.classe === "mur" && !o.params.hauteur && !o.params.niveauHautId).length;
@@ -693,6 +695,20 @@ function genererCoupeOuFacade(c: Collecteur, etat: ModeleAtelier, v: ParamsVue):
     c.cercle({ x: x + 0.6, y: y + 0.6 }, 0.25, "annotation", null);
     c.ligne({ x, y }, { x: x + 0.42, y: y + 0.42 }, "annotation", null);
     c.texte({ x: x + 0.6, y: y + 0.6 - 0.08 }, b.texte, 2.5, null, { ancre: "milieu" });
+  }
+  // Annotations 3D (P2-7, DA-15-11) : portées par une altitude, projetées par la caméra de l'axonométrie (position et
+  // attache à z du niveau + z), puis tracées en primitives comme en plan.
+  if (v.type === "axonometrie") {
+    const proj = (q: { x: number; y: number }, z: number): Point2 => {
+      const d = [q.x - camera.origine[0], q.y - camera.origine[1], z - camera.origine[2]];
+      return { x: d[0]! * camera.droite[0] + d[1]! * camera.droite[1] + d[2]! * camera.droite[2], y: d[0]! * camera.haut[0] + d[1]! * camera.haut[1] + d[2]! * camera.haut[2], frame: "local", unit: "m" };
+    };
+    const h3 = (3 / 1000) * (c.echelle ?? 50);
+    for (const o of (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((x): x is Occurrence<"annotation-fabrication"> => x.classe === "annotation-fabrication" && x.params.z !== null && retenu(etat, x, v)).sort((a, b) => (a.id < b.id ? -1 : 1))) {
+      const z = (o.niveauId ? (etat.niveaux[o.niveauId]?.elevation ?? 0) : 0) + o.params.z!;
+      const p = { ...o.params, position: proj(o.params.position, z), attache: o.params.attache ? proj(o.params.attache, z) : null };
+      tracerAnnotation({ ligne: (a, b) => c.ligne(a, b, "annotation", o.id), cadre: (x0, y0, x1, y1) => c.poly([{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }], true, "annotation", null, o.id), texte: (q, t, ancre) => c.texte(q, t, 2.2, o.id, { ancre: ancre ?? "milieu" }) }, p, h3);
+    }
   }
   const b = bornesPrimitives(c.primitives);
   if (b && v.type !== "axonometrie") reperesNiveaux(c, etat, b.min.x, b.max.x);

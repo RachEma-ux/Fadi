@@ -77,6 +77,10 @@ describe("annotations mécaniques et de fabrication (P2-7, DA-15-03, 08 à 16)",
     const axo = genererVue(e, lireParamsVue(e, { type: "axonometrie", titre: "A", echelle: 50, azimut: { value: 30, unit: "deg" }, inclinaison: { value: 30, unit: "deg" } }));
     expect(axo.objets).toContain("sd");
     expect(axo.objets).not.toContain("tg");
+    // … et dessinée : symbole projeté par la caméra de l'axonométrie (relecture Codex #100), texte compris.
+    expect(axo.primitives.filter((p) => p.objetId === "sd").length).toBeGreaterThan(6);
+    expect(axo.primitives.some((p) => p.objetId === "sd" && p.type === "texte")).toBe(true);
+    expect(axo.primitives.some((p) => p.objetId === "tg")).toBe(false);
     expect(() => lot(base(), [{ type: "annotationFabrication.creer", params: { id: "x", niveauId: "n1", type: "tolerance-geometrique", caracteristique: "position", valeur: m(0.1), references: ["a1"], position: pt(0, 0) } }])).toThrow(/lettres de référence/);
     expect(() => lot(base(), [{ type: "annotationFabrication.creer", params: { id: "x", niveauId: "n1", type: "etat-de-surface", parametre: "Ra", valeur: 0, position: pt(0, 0) } }])).toThrow(/> 0/);
     const e2 = lot(e, [{ type: "transformer.deplacer", params: { dx: 1, dy: 0 }, cibles: ["tg"] }]).etat;
@@ -103,13 +107,18 @@ describe("tableaux de production (P2-7, DA-15-18, DA-16-09, DA-16-16) et feuille
     { type: "segmentReseau.creer", params: { id: "s2", niveauId: "n1", nom: "EF 2", repere: "EF-02", systeme: "tuyau", sommets: [P3(4, 6, 2.5), P3(4, 6, 0.5)], section: D50, fluide: "eau froide" } },
     { type: "vanne.creer", params: { id: "v1", niveauId: "n1", nom: "V1", repere: "V-01", type: "arret", position: pt(4, 6), z: 0.3, section: D50, longueur: m(0.2), fluide: "eau froide" } },
     { type: "solideExact.creer", params: { id: "se", niveauId: "n1", nom: "Platine", brep: "QlJFUA==", moteur: "occt-wasm", versionMoteur: "5.6.1", empreinteBrep: "0123456789abcdef", maillage: { positions: P, indices: I }, volume: 1, aire: 6, faces: 7, position: pt(10, 10), operation: { type: "trou", sources: ["se0"], libelle: "Trou Ø 0,02", entrees: { type: "trou", solide: { brep: "QlJFUA==" }, centre: { x: 0.5, y: 0.5, z: 1 }, direction: { x: 0, y: 0, z: -1 }, diametre: 0.02, profondeur: null } } } },
+    // Forme serveur (entrées retirées après recalcul, perçage conservé) ; solide tourné de 90° : la pose s'applique au centre et à la direction.
+    { type: "solideExact.creer", params: { id: "se2", niveauId: "n1", nom: "Platine tournée", brep: "QlJFUA==", moteur: "occt-wasm", versionMoteur: "5.6.1", empreinteBrep: "0123456789abcdef", maillage: { positions: P, indices: I }, volume: 1, aire: 6, faces: 7, position: pt(20, 20), angle: { value: 90, unit: "deg" }, operation: { type: "trou", sources: ["se0"], libelle: "Trou Ø 0,02", percage: { centre: { x: 1, y: 0, z: 1 }, direction: { x: 1, y: 0, z: 0 }, diametre: 0.02, profondeur: 0.05 } } } },
   ]).etat;
   it("18 tableaux ; perçages (trous des opérations exactes), feuille de ferraillage (segments, plis, longueur développée géométrique, allongement non évalué), liste de débit (groupée par désignation et longueur)", () => {
     expect(tableauxDisponibles()).toHaveLength(18);
     const e = scene();
     const perc = genererTableau(e, "percages");
-    expect(perc.lignes).toHaveLength(1);
+    expect(perc.lignes).toHaveLength(2);
     expect(perc.lignes[0]!.slice(1)).toEqual(["Platine", "T1", 10.5, 10.5, 1, 20, "traversant", "(0 ; 0 ; -1)"]);
+    // Perçage serveur, solide tourné de 90° : (1 ; 0) → (0 ; 1) autour du solide, direction tournée de même (relecture Codex #100).
+    expect(perc.lignes[1]!.slice(1)).toEqual(["Platine tournée", "T2", 20, 21, 1, 20, 50, "(0 ; 1 ; 0)"]);
+    expect(() => lot(base(), [{ type: "solideExact.creer", params: { id: "x", niveauId: "n1", brep: "QlJFUA==", moteur: "occt-wasm", versionMoteur: "5.6.1", empreinteBrep: "0123456789abcdef", maillage: { positions: P, indices: I }, volume: 1, aire: 6, faces: 7, operation: { type: "trou", sources: [], libelle: "x", percage: { centre: { x: 0, y: 0, z: 0 }, direction: { x: 0, y: 0, z: 0 }, diametre: 0.02, profondeur: null } } } }])).toThrow(/direction nulle/);
     const fer = genererTableau(e, "ferraillage");
     expect(fer.lignes.map((l) => [l[1], l[3], l[4], l[6], l[7], l[8], l[9], l[11]])).toEqual([
       ["C1", "cadre", 10, 4, "400 + 400 + 400 + 400", 4, 1.6, "non évaluée"],
@@ -206,6 +215,13 @@ describe("nuages de points (P2-7, DA-22-07 à 10) : lecture LAS / XYZ, décimati
     expect(nu.params.coupeZ).toBe(1.2);
     const vue = genererVue(e, lireParamsVue(e, { type: "plan", titre: "P", echelle: 50, niveauId: "n1" }));
     expect(vue.primitives.filter((p) => p.objetId === "nu" && p.type === "ligne")).toHaveLength(25 * 2); // 25 points à z = 1,2, deux traits par croix
+    // Derrière le modèle : les croix du nuage précèdent toute primitive du mur (relecture Codex #100).
+    const eMur = lot(e, [{ type: "mur.tracer", params: { id: "w", niveauId: "n1", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(2.6) } }]).etat;
+    const prims = genererVue(eMur, lireParamsVue(eMur, { type: "plan", titre: "P", echelle: 50, niveauId: "n1" })).primitives;
+    expect(prims.findIndex((p) => p.objetId === "nu")).toBeLessThan(prims.findIndex((p) => p.objetId === "w"));
+    expect(prims.filter((p) => p.objetId === "nu").length).toBe(50);
+    // Rotation, miroir, échelle : refusés (l'origine déclarée est une translation).
+    expect(() => lot(e, [{ type: "transformer.tourner", params: { centre: pt(0, 0), angle: { value: 90, unit: "deg" } }, cibles: ["nu"] }])).toThrow(/seule une translation/);
     expect(vue.avertissements.some((a) => /Nuage « Relevé » : 25 point/.test(a))).toBe(true);
     const e2 = lot(e, [{ type: "transformer.deplacer", params: { dx: 10, dy: 0 }, cibles: ["nu"] }]).etat;
     expect(O<"nuage-de-points">(e2, "nu").params.points[0]).toEqual(P3(10, 0, 1.2));

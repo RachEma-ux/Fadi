@@ -55,6 +55,18 @@ describe("Solides exacts (P2-1) : revalidation par le serveur, STEP, IFC", () =>
     expect(o.params.brep.length).toBeGreaterThan(100);
     expect(o.params.operation).toEqual({ type: "extrusion", sources: [], libelle: "Extrusion exacte" });
     expect(o.params.emprise.length).toBe(4);
+    // Perçage (P2-7, relecture Codex #100) : les entrées sont retirées, mais le trou validé par le noyau est conservé
+    // (`operation.percage`) et le tableau des perçages le porte, avec la pose du solide.
+    const rt = await client.post(`${base}/commands`).send(enveloppe("se-t", rev, [{ type: "solideExact.creer", params: { id: "se-t", niveauId: "rdc", nom: "Percée", position: { x: 10, y: 0, frame: "local", unit: "m" }, operation: { type: "trou", sources: ["se-1"], libelle: "Trou", entrees: { type: "trou", solide: { brep: o.params.brep }, centre: { x: 1, y: 1, z: 1.5 }, direction: { x: 0, y: 0, z: -1 }, diametre: 0.05, profondeur: null } } } }]));
+    expect(rt.status, JSON.stringify(rt.body)).toBe(200);
+    rev = rt.body.revision;
+    const ot = (await client.get(`${base}/model`)).body.modele.objets["se-t"];
+    expect(ot.params.operation.entrees).toBeUndefined();
+    expect(ot.params.operation.percage).toEqual({ centre: { x: 1, y: 1, z: 1.5 }, direction: { x: 0, y: 0, z: -1 }, diametre: 0.05, profondeur: null });
+    expect(ot.params.volume).toBeLessThan(12);
+    const perc = await client.get(`/projects/${pid}/documents/atelier/tableaux/percages.csv`);
+    expect(perc.status).toBe(200);
+    expect(perc.text).toMatch(/"Percée";"T1";11;1;1\.5;50;"traversant";"\(0 ; 0 ; -1\)"/);
 
     // Même opération dans le navigateur (même noyau) : même empreinte → acceptée ; empreinte fausse → 409 exact.
     const M = await MoteurExact.charger();
@@ -111,6 +123,6 @@ describe("Solides exacts (P2-1) : revalidation par le serveur, STEP, IFC", () =>
     const ifc = await client.get(`/projects/${pid}/documents/atelier/modele.ifc`);
     expect(ifc.status).toBe(200);
     expect(ifc.text).toContain("Fadi_SolideExact");
-    expect((ifc.text.match(/'solide-exact'/g) ?? []).length).toBe(5); // se-1, se-5, piece, deux (1/2), deux (2/2)
+    expect((ifc.text.match(/'solide-exact'/g) ?? []).length).toBe(6); // se-1, se-t (percée), se-5, piece, deux (1/2), deux (2/2)
   }, 120000);
 });
