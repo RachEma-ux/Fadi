@@ -167,8 +167,11 @@ function lirePrecision(): number {
 
 type TexteMesures = { texte: string; statut: "frappe" | "valide" } | null;
 
+/** Champ de saisie, dans la page comme dans la fenêtre détachée (autre document : `instanceof` n'y vaut rien). */
 function champSaisie(cible: EventTarget | null): boolean {
-  return cible instanceof HTMLInputElement || cible instanceof HTMLTextAreaElement || cible instanceof HTMLSelectElement || (cible instanceof HTMLElement && cible.isContentEditable);
+  const el = cible as HTMLElement | null;
+  if (!el || typeof el.tagName !== "string") return false;
+  return el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable === true;
 }
 
 const virgule = (n: number, d = 2) => n.toFixed(d).replace(".", ",");

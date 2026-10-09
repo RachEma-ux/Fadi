@@ -80,6 +80,11 @@ await fenetre.locator(`[data-planche-outil="${outil}"]`).first().click();
 check(`détachée : un clic sur l'outil « ${outil} » le choisit`, (await fenetre.locator("[data-planche]").getAttribute("data-outil-actif")) === outil);
 await fenetre.locator('[data-planche-panneau-icone="materiaux"]').click();
 check("détachée : la colonne ouvre le panneau Matériaux", (await compte('[data-planche-panneau="materiaux"]')) === 1);
+// Champ créé APRÈS le détachement (autre document) : la frappe y reste, sans déclencher de raccourci d'outil.
+const champ = fenetre.locator('[data-planche-panneau="materiaux"] input[type="text"], [data-planche-panneau="materiaux"] input:not([type])').first();
+await champ.click();
+await champ.pressSequentially("gk12");
+check("détachée : la frappe dans un champ du panneau reste dans le champ (aucun raccourci)", (await champ.inputValue()) === "gk12" && (await fenetre.locator("[data-planche]").getAttribute("data-outil-actif")) === outil, await champ.inputValue());
 await page.screenshot({ path: `${OUT}/planche-detachee.png` });
 await fenetre.locator('[data-planche-panneau="materiaux"] .canevas-fermer').click();
 await fenetre.locator("[data-planche-detacher]").click();
