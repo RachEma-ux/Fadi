@@ -47,7 +47,7 @@ const choisirId = async (id, selecteurFiche) => { await page.locator(".nav-filtr
 const choisirObjet = async (texte, selecteurFiche) => { await page.locator(".nav-filtre").evaluate((el) => el.blur()); await page.keyboard.press("Escape"); await page.locator(".nav-filtre").fill(texte); await page.locator(`.nav-objets button:has-text("${texte}")`).first().click(); await page.waitForSelector(selecteurFiche, { timeout: 10000 }); await page.locator(".nav-filtre").fill(""); };
 const outil = async (recherche, selecteur, garderSelection = false) => {
   if (!garderSelection) { await page.locator(".nav-filtre").evaluate((el) => el.blur()); await page.locator(".plan2d").focus().catch(() => {}); await page.keyboard.press("Escape"); await page.keyboard.press("Escape"); await page.waitForTimeout(200); }
-  await page.locator(".barre-palette").click(); await page.locator(".palette-champ").fill(recherche); await page.keyboard.press("Enter");
+  await page.locator("[data-palette-bouton]").click(); await page.locator(".palette-champ").fill(recherche); await page.keyboard.press("Enter");
   try { await page.waitForSelector(selecteur, { timeout: 15000 }); } catch (e) { console.log("  ↳ outil non affiché :", recherche, "| actif =", await page.evaluate(() => document.querySelector(".atelier-n")?.dataset.outilActif)); throw e; }
 };
 const classe = (mod, c) => Object.values(mod.objets).filter((o) => o.classe === c);
@@ -69,7 +69,7 @@ await enregistre();
 await page.locator('[data-ontologie="mechanical"]').check();
 await enregistre();
 check("activation : ontologies réseaux et mécanique activées depuis le navigateur (bâtiment + machine + réseau dans un même projet)", JSON.stringify([...((await modele()).modele.ontologies ?? [])].sort()) === JSON.stringify(["mechanical", "mep"]), JSON.stringify((await modele()).modele.ontologies));
-await page.locator(".barre-palette").click();
+await page.locator("[data-palette-bouton]").click();
 await page.locator(".palette-champ").fill("plafond");
 await page.waitForTimeout(200);
 check("palette : « Plafond » proposé (socle, sans ontologie ni écran nouveau)", /Plafond/.test((await page.locator(".palette").textContent()) ?? "") && navigations.length === 0);

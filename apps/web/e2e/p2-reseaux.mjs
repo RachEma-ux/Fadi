@@ -45,7 +45,7 @@ const recharger = async () => { await page.reload(); await page.waitForSelector(
 const choisirObjet = async (texte, selecteurFiche) => { await page.locator(".nav-filtre").evaluate((el) => el.blur()); await page.keyboard.press("Escape"); await page.locator(".nav-filtre").fill(texte); await page.locator(`.nav-objets button:has-text("${texte}")`).first().click(); await page.waitForSelector(selecteurFiche, { timeout: 10000 }); await page.locator(".nav-filtre").fill(""); };
 const outil = async (recherche, selecteur, garderSelection = false) => {
   if (!garderSelection) { await page.locator(".nav-filtre").evaluate((el) => el.blur()); await page.locator(".plan2d").focus().catch(() => {}); await page.keyboard.press("Escape"); await page.keyboard.press("Escape"); await page.waitForTimeout(200); }
-  await page.locator(".barre-palette").click(); await page.locator(".palette-champ").fill(recherche); await page.keyboard.press("Enter");
+  await page.locator("[data-palette-bouton]").click(); await page.locator(".palette-champ").fill(recherche); await page.keyboard.press("Enter");
   try { await page.waitForSelector(selecteur, { timeout: 15000 }); } catch (e) { console.log("  ↳ outil non affiché :", recherche, "| actif =", await page.evaluate(() => document.querySelector(".atelier-n")?.dataset.outilActif), "| sélection =", await page.evaluate(() => document.querySelectorAll(".plan2d .est-selectionne").length)); throw e; }
 };
 const CSV = "designation;diametre_exterieur_mm;epaisseur_mm;diametre_nominal;fluide;materiau;source;edition;page\nTube 60,3 x 2,9;60,3;2,9;DN 50;eau;acier;Catalogue tubes T;2025;p. 7\nTube 33,7 x 2,6;33,7;2,6;DN 25;eau;acier;Catalogue tubes T;2025;p. 7\n";
@@ -65,7 +65,7 @@ await page.waitForTimeout(300);
 await page.locator('[data-ontologie="mep"]').check();
 await enregistre();
 check("activation : ontologie réseaux activée par une commande du journal (ontologies = [mep])", JSON.stringify((await modele()).modele.ontologies) === JSON.stringify(["mep"]), JSON.stringify((await modele()).modele.ontologies));
-await page.locator(".barre-palette").click();
+await page.locator("[data-palette-bouton]").click();
 await page.locator(".palette-champ").fill("tuyau");
 await page.waitForTimeout(200);
 check("palette : « Segment de réseau » proposé pour « tuyau », sans écran nouveau", /Segment de réseau/.test((await page.locator(".palette").textContent()) ?? "") && navigations.length === 0);

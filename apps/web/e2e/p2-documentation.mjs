@@ -46,7 +46,7 @@ const recharger = async () => { await page.reload(); await page.waitForSelector(
 const choisirId = async (id, selecteurFiche) => { await page.locator(".nav-filtre").evaluate((el) => el.blur()); await page.keyboard.press("Escape"); await page.locator(".nav-filtre").fill(id); await page.locator(`.nav-objets button[data-objet="${id}"]`).first().click(); await page.waitForSelector(selecteurFiche, { timeout: 10000 }); await page.locator(".nav-filtre").fill(""); };
 const outil = async (recherche, selecteur, garderSelection = false) => {
   if (!garderSelection) { await page.locator(".nav-filtre").evaluate((el) => el.blur()); await page.locator(".plan2d").focus().catch(() => {}); await page.keyboard.press("Escape"); await page.keyboard.press("Escape"); await page.waitForTimeout(200); }
-  await page.locator(".barre-palette").click(); await page.locator(".palette-champ").fill(recherche); await page.keyboard.press("Enter");
+  await page.locator("[data-palette-bouton]").click(); await page.locator(".palette-champ").fill(recherche); await page.keyboard.press("Enter");
   try { await page.waitForSelector(selecteur, { timeout: 15000 }); } catch (e) { console.log("  ↳ outil non affiché :", recherche, "| actif =", await page.evaluate(() => document.querySelector(".atelier-n")?.dataset.outilActif)); throw e; }
 };
 const classe = (mod, c) => Object.values(mod.objets).filter((o) => o.classe === c);

@@ -10,6 +10,7 @@
 import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
+import { allerEnPlan } from "./lib-barre.mjs";
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
@@ -68,7 +69,7 @@ check("bâtiment : un mur tracé au clavier (M, clic, 4, Entrée) et enregistré
 
 // 2. Dessin : une ligne d'esquisse depuis la palette (Ctrl K, « ligne », Entrée, deux clics).
 await page.keyboard.press("Escape");
-await page.locator(".barre-palette").click();
+await page.locator("[data-palette-bouton]").click();
 await page.locator(".palette-champ").fill("ligne");
 await page.keyboard.press("Enter");
 await page.mouse.click(cx + 60, cy + 80);
@@ -109,7 +110,7 @@ const feuilles = Object.values((await modele()).modele.definitions).filter((d) =
 check("documents : une feuille créée (définition du modèle, même journal)", feuilles >= 1, `${feuilles} feuille(s)`);
 
 // 5. Collaboration : version nommée depuis le panneau de droite.
-await page.getByRole("button", { name: "Plan", exact: true }).click();
+await allerEnPlan(page); // D-195 : Plan active le mode et ouvre la liste des niveaux (Échap la referme)
 await page.waitForSelector(".plan2d", { timeout: 30000 });
 await page.locator("#ver-nom").fill("Porte P1 réduite");
 await page.locator('.ver-form:has(#ver-nom) button[type="submit"]').click();

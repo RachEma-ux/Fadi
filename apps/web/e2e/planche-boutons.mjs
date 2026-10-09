@@ -280,7 +280,7 @@ async function auditer(nom, vp, tactile) {
     check("ordinateur : sélecteur de langue présent", (await p.locator("[data-choix-langue]").count()) >= 1);
   }
 
-  // 9. Boutons de la barre du haut de l'Atelier : Plan / 3D / Documents / Planche, Fichier, Canevas, Harmonie.
+  // 9. Boutons de la barre du haut de l'Atelier : Plan / 3D / Documents / Planche, Fichier, Canevas (roue ⚙), Harmonie (menu Fichier).
   for (const mode of ["Plan", "3D", "Documents"]) {
     enPlanche = false;
     await cliquer(p.locator(`.barre-mode button:text-is("${mode}")`));
@@ -289,24 +289,36 @@ async function auditer(nom, vp, tactile) {
     await ouvrirPlanche(p, tactile);
   }
   await cliquer(p.locator("[data-menu-principal] summary").first());
+  // D-195 : en Planche, Fichier ne propose plus Exporter / Importer (la Planche a ses propres échanges) : 4 commandes.
   const items = await p.locator("[data-menu-principal] button[data-menu]").evaluateAll((els) => els.map((e) => e.getAttribute("data-menu")));
-  check(`${nom} : bouton Fichier ouvre le menu principal (${items.length} commandes : ${items.join(", ")})`, items.length >= 5 && (await p.locator('[data-menu-principal] button[data-menu="enregistrer"]').first().isVisible()), items.join(","));
+  check(`${nom} : bouton Fichier ouvre le menu principal (${items.length} commandes : ${items.join(", ")})`, items.length >= 4 && (await p.locator('[data-menu-principal] button[data-menu="enregistrer"]').first().isVisible()), items.join(","));
   await cliquer(p.locator('[data-menu-principal] button[data-menu="enregistrer"]').first());
   await p.waitForTimeout(400);
   check(`${nom} : « Enregistrer maintenant » répond (le menu se referme)`, !(await p.locator("[data-menu-principal]").first().evaluate((e) => e.hasAttribute("open"))));
   const nbPlanche = () => p.locator("[data-planche]").count();
-  await cliquer(p.locator('.atelier-n button:has-text("Canevas")').first());
+  // Canevas vit sous la roue ⚙ (D-195) : ouvrir la roue, basculer, refermer.
+  const basculer = async () => {
+    await cliquer(p.locator("[data-reglages] > summary").first());
+    await cliquer(p.locator("[data-disposition-canevas]").first());
+    await p.evaluate(() => { for (const d of document.querySelectorAll(".atelier-n-barre details[open]")) d.removeAttribute("open"); });
+  };
+  await basculer();
   await p.waitForTimeout(500);
   const apresCanevas = await nbPlanche();
-  await cliquer(p.locator('.atelier-n button:has-text("Canevas")').first());
+  await basculer();
   await p.waitForTimeout(500);
-  check(`${nom} : bouton Canevas bascule la disposition (aller-retour) sans perdre la Planche`, apresCanevas === 1 && (await nbPlanche()) === 1, `${apresCanevas} / ${await nbPlanche()}`);
-  const harmonie = p.getByRole("button", { name: /^\s*[◈◇]?\s*Harmonie\s*$/ }).first();
-  if ((await harmonie.count()) > 0) {
+  check(`${nom} : bouton Canevas (roue ⚙) bascule la disposition (aller-retour) sans perdre la Planche`, apresCanevas === 1 && (await nbPlanche()) === 1, `${apresCanevas} / ${await nbPlanche()}`);
+  // Harmonie est une entrée du menu Fichier (D-195), présente à l'étape 10 du Parcours seulement.
+  await cliquer(p.locator("[data-menu-principal] summary").first());
+  const harmonie = p.locator("#atelier-harmonie-button").first();
+  if ((await harmonie.count()) > 0 && (await harmonie.isVisible())) {
     await cliquer(harmonie);
     await p.waitForTimeout(500);
-    check(`${nom} : bouton Harmonie répond (la page reste utilisable, aucune erreur)`, (await p.locator("body").isVisible()) && erreursPage.length === 0, erreursPage.slice(0, 2).join(" | "));
-  } else console.log(`(${nom} : pas de bouton Harmonie dans la barre du haut à cette largeur)`);
+    check(`${nom} : entrée Harmonie du menu Fichier répond (la page reste utilisable, aucune erreur)`, (await p.locator("body").isVisible()) && erreursPage.length === 0, erreursPage.slice(0, 2).join(" | "));
+  } else {
+    await p.evaluate(() => { for (const d of document.querySelectorAll(".atelier-n-barre details[open]")) d.removeAttribute("open"); });
+    console.log(`(${nom} : pas d'entrée Harmonie dans Fichier hors de l'étape 10)`);
+  }
   await c.close();
 }
 

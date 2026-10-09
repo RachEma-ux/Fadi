@@ -11,6 +11,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/planche.mjs
  */
 import { createRequire } from "node:module";
+import { allerEnPlan } from "./lib-barre.mjs";
 import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
@@ -261,7 +262,7 @@ await ouvrirPlanche();
 await page.waitForFunction(() => Object.keys(window.fadiPlanche.modele().racine.faces).length > 0, null, { timeout: 10000 }).catch(() => {});
 check("brouillon local relu après rechargement : mêmes faces et arêtes (Pousser/Tirer et Diviser compris)", (await etat()).faces === divise.faces && (await etat()).aretes === divise.aretes, JSON.stringify(await etat()));
 enPlanche = false;
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 await page.waitForSelector(".plan2d .plan-objets [data-objet]", { timeout: 15000 });
 check("retour en Plan : le plan de l'Atelier est affiché, la Planche est fermée", (await page.locator("[data-planche]").count()) === 0 && (await page.locator(".plan2d").isVisible()));
 

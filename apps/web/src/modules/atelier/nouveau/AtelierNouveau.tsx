@@ -18,7 +18,7 @@ import { Reprise } from "./panneaux/Reprise";
 import { ReferencesExternes } from "./panneaux/ReferencesExternes";
 import { atelierClient } from "../bus/atelier-client";
 import { actionImmediate, lotSuppression, OUTILS_IMMEDIATS } from "./actions";
-import { etatUi, useEtatUi, visibleSelonFiltres, type NiveauAffichage, type PanneauMobile } from "./etat-ui";
+import { etatUi, useEtatUi, visibleSelonFiltres, type PanneauMobile } from "./etat-ui";
 import { FAMILLES, OUTILS_PAR_ID, outilsVisibles, type Famille, type Outil } from "./outils";
 import { Inspecteur } from "./panneaux/Inspecteur";
 import { Modifications } from "./panneaux/Modifications";
@@ -30,7 +30,9 @@ import { saisie, terminer, type ResultatClic } from "./plan2d/outils-2d";
 import { CadrePanneau, ColonnePanneaux, Instructeur } from "./panneaux/Canevas";
 import { ChoixPeripherique, ReglagesNavigationPanneau } from "./panneaux/Navigation";
 import { RaccourcisPanneau } from "./panneaux/Raccourcis";
-import { MenuPrincipal } from "./panneaux/MenuPrincipal";
+import { MenuPrincipal, fermerMenus, sousMenuExclusif } from "./panneaux/MenuPrincipal";
+import { BoutonPlan } from "./panneaux/BoutonPlan";
+import { Reglages } from "./panneaux/Reglages";
 import { t as msg } from "./messages";
 import { messageEnregistrement, partagePossible, type EtatEnregistrement } from "./fichier";
 import { AffichagePanneau, InfoModelePanneau, MateriauxPanneau } from "./panneaux/Affichage";
@@ -160,6 +162,17 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
     window.addEventListener("pointerdown", surClic);
     return () => window.removeEventListener("pointerdown", surClic);
   }, [etendus]);
+  // Menus de la barre (Fichier, ⚙ : <details> de premier niveau) : un clic hors du menu le referme (D-195), comme la
+  // liste des niveaux. Les sous-menus de Fichier ne sont pas touchés ici : ils s'excluent entre eux au basculement.
+  useEffect(() => {
+    const surClic = (e: PointerEvent) => {
+      const c = e.target as Node | null;
+      if (!c) return;
+      for (const d of Array.from(document.querySelectorAll<HTMLDetailsElement>(".atelier-n-barre > details[open]"))) if (!d.contains(c)) d.removeAttribute("open");
+    };
+    window.addEventListener("pointerdown", surClic);
+    return () => window.removeEventListener("pointerdown", surClic);
+  }, []);
   const presseLocal = useRef<string | null>(null);
   const executer = useCallback(
     async (commandes: Commande[], label: string, selectionnerCrees = true) => {
@@ -526,166 +539,92 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
     );
   }
 
-  return (
-    <div className={`atelier-n panneau-${ui.panneauMobile}${ui.mode === "documents" ? " mode-documents" : ""}${planche ? " mode-planche" : ""} disposition-${ui.disposition}${ui.outilsReplies ? " outils-replies" : ""}`} data-affichage={ui.affichage} data-outil-actif={ui.outil} data-panneau={ui.disposition === "canevas" && !planche ? (ui.panneauFlottant ?? "") : undefined}>
-      <header className="atelier-n-barre" aria-label="Barre de l'Atelier">
-        <MenuPrincipal
-          lecture={readOnly}
-          onEnregistrer={() => void enregistrerMaintenant()}
-          onPartager={() => void partager()}
-          onDocuments={() => etatUi.set({ mode: "documents", pointsEnCours: [], aide: "Imprimer : choisissez une feuille ou une vue, puis téléchargez-la en PDF." })}
-          onProjets={() => navigate("/projets")}
-          echanges={!documents}
-        />
-        <label className="barre-niveau" hidden={horsDessin}>
-          <span className="sr-only">Niveau actif</span>
-          <select value={ui.niveauId ?? ""} onChange={(e) => etatUi.set({ niveauId: e.target.value, selection: [], pointsEnCours: [] })}>
-            {niveaux.map((n) => <option key={n.id} value={n.id}>{n.nom} ({fmt(n.elevation)} m)</option>)}
-          </select>
-        </label>
-        <div className="barre-groupe barre-mode" role="group" aria-label={msg("mode.groupe")}>
-          <button type="button" aria-pressed={ui.mode === "2d"} onClick={() => etatUi.set({ mode: "2d" })}>Plan</button>
-          <button type="button" aria-pressed={ui.mode === "3d"} onClick={() => etatUi.set({ mode: "3d" })}>3D</button>
-          <button type="button" aria-pressed={ui.mode === "documents"} onClick={() => etatUi.set({ mode: "documents", pointsEnCours: [] })}>Documents</button>
-          <button type="button" aria-pressed={planche} data-mode-planche title={msg("mode.planche.aide")} onClick={() => etatUi.set({ mode: "planche", pointsEnCours: [], paletteOuverte: false })}>{msg("mode.planche")}</button>
-        </div>
-        {/* En mode Planche, annuler / rétablir est celui du brouillon local (dans la Planche) ; ces boutons agissent sur le journal de l'Atelier. */}
-        <div className="barre-groupe" role="group" aria-label="Annuler et rétablir" hidden={planche}>
-          <button type="button" onClick={() => void client.annuler()} disabled={readOnly} title="Annuler (Ctrl/⌘ Z)">↶<span className="sr-only">Annuler</span></button>
-          <button type="button" onClick={() => void client.retablir()} disabled={readOnly} title="Rétablir (Ctrl/⌘ Maj Z)">↷<span className="sr-only">Rétablir</span></button>
-        </div>
-        <button type="button" className="barre-palette" hidden={horsDessin} onClick={() => etatUi.set({ paletteOuverte: true })}>
-          <span className="palette-long">Rechercher un outil</span>
-          <span className="palette-court" aria-hidden="true">Outils…</span> <kbd>Ctrl K</kbd>
-        </button>
-        <label className="barre-affichage" hidden={horsDessin}>
-          <span>Affichage</span>
-          <select aria-label="Niveau d'affichage des outils" value={ui.affichage} onChange={(e) => etatUi.set({ affichage: e.target.value as NiveauAffichage })}>
-            <option value="essentiel">Essentiel</option>
-            <option value="contextuel">Contextuel</option>
-            <option value="complet">Complet</option>
-          </select>
-        </label>
-        <details className="barre-accrochages" hidden={horsDessin}>
-          <summary>Accrochages</summary>
-          <div className="accrochages-liste">
-            {(["extremite", "milieu", "centre", "perpendiculaire", "intersection", "proche", "parallele", "orthogonal", "grille"] as const).map((k) => (
-              <label key={k}>
-                <input type="checkbox" checked={ui.accrochages[k] === true} data-accrochage={k} onChange={(e) => etatUi.set((u) => ({ accrochages: { ...u.accrochages, [k]: e.target.checked } }))} />
-                {{ extremite: "Extrémité", milieu: "Milieu", centre: "Centre", perpendiculaire: "Perpendiculaire et tangente", intersection: "Intersection", proche: "Proche (tracés et faces de murs)", parallele: "Parallèle (arête survolée)", orthogonal: `Polaire (${ui.accrochages.pasPolaire ?? 45}°)`, grille: "Grille" }[k]}
-              </label>
-            ))}
-            <label>
-              Pas polaire
-              <select value={String(ui.accrochages.pasPolaire ?? 45)} data-pas-polaire onChange={(e) => etatUi.set((u) => ({ accrochages: { ...u.accrochages, pasPolaire: Number(e.target.value) } }))}>
-                {[5, 10, 15, 22.5, 30, 45, 90].map((v) => <option key={v} value={String(v)}>{String(v).replace(".", ",")}°</option>)}
-              </select>
-            </label>
-            <label>
-              Pas de grille (m)
-              <input type="number" min={0.01} step="any" value={ui.accrochages.pasGrille} onChange={(e) => Number.isFinite(e.target.valueAsNumber) && e.target.valueAsNumber > 0 && etatUi.set((u) => ({ accrochages: { ...u.accrochages, pasGrille: e.target.valueAsNumber } }))} />
-            </label>
-          </div>
-        </details>
-        <button type="button" onClick={cadrer} title="Cadrer le niveau (0)" hidden={horsDessin}>Cadrer</button>
-        {/* Disposition (D-156) : grille à cinq repères ou canevas plein écran à panneaux flottants. */}
-        <button type="button" aria-pressed={ui.disposition === "canevas"} data-disposition-canevas hidden={documents} onClick={() => etatUi.set((u) => ({ disposition: u.disposition === "canevas" ? "classique" : "canevas", panneauFlottant: null }))} title="Canevas plein écran : outils et panneaux flottent sur le dessin">
-          Canevas
-        </button>
-        {/* Exports et imports portent sur le modèle de l'Atelier ; ceux de la Planche arrivent au lot 7 (masqués ici). */}
-        <details
-          className="barre-exports"
-          hidden={horsDessin}
-          onToggle={(e) => {
-            // Menu ouvert vers l'intérieur de l'Atelier, même quand la barre passe sur deux lignes.
-            const d = e.currentTarget;
-            const boite = d.closest(".atelier-n")?.getBoundingClientRect();
-            const r = d.getBoundingClientRect();
-            d.dataset["cote"] = boite && r.left - boite.left < boite.width / 2 ? "gauche" : "droite";
-          }}
-        >
-          <summary>Exporter</summary>
-          <div className="exports-liste">
-            {([
-              ["dxf", "Plan du niveau · DXF"],
-              ["svg", "Plan affiché · SVG"],
-              ["csv", "Quantités · CSV"],
-              ["json", "Modèle · JSON"],
-              ["png", "Vue 3D · PNG"],
-              ["bcf", "Vues 3D · BCF"],
-            ] as [TypeExport, string][]).map(([t, libelle]) => (
+  // Sous-menus Exporter / Importer du menu Fichier (D-195) : rendus une seule fois, hors de la rangée.
+  const menuExports = (
+      <details className="barre-exports" data-sous-menu onToggle={sousMenuExclusif}>
+            <summary data-menu="exporter">Exporter</summary>
+            <div className="exports-liste">
+              {([
+                ["dxf", "Plan du niveau · DXF"],
+                ["svg", "Plan affiché · SVG"],
+                ["csv", "Quantités · CSV"],
+                ["json", "Modèle · JSON"],
+                ["png", "Vue 3D · PNG"],
+                ["bcf", "Vues 3D · BCF"],
+              ] as [TypeExport, string][]).map(([t, libelle]) => (
+                <button
+                  key={t}
+                  type="button"
+                  data-export={t}
+                  disabled={readOnly || (t === "png" && ui.mode !== "3d") || (t === "svg" && ui.mode !== "2d")}
+                  title={t === "png" && ui.mode !== "3d" ? "Passez en 3D pour exporter l'image de la vue" : t === "svg" && ui.mode !== "2d" ? "Passez en Plan pour exporter le dessin" : undefined}
+                  onClick={(e) => {
+                    fermerMenus(e.currentTarget);
+                    void exporter(t, { projectId, code, etat, niveauId: ui.niveauId, mode: ui.mode === "planche" ? "documents" : ui.mode })
+                      .then((nom) => etatUi.set({ aide: `Exporté et enregistré au catalogue des documents : ${nom}` }))
+                      .catch((err: unknown) => setErreur(err instanceof Error ? err.message : String(err)));
+                  }}
+                >
+                  {libelle}
+                </button>
+              ))}
               <button
-                key={t}
                 type="button"
-                data-export={t}
-                disabled={readOnly || (t === "png" && ui.mode !== "3d") || (t === "svg" && ui.mode !== "2d")}
-                title={t === "png" && ui.mode !== "3d" ? "Passez en 3D pour exporter l'image de la vue" : t === "svg" && ui.mode !== "2d" ? "Passez en Plan pour exporter le dessin" : undefined}
+                data-export="ifc"
+                disabled={readOnly}
                 onClick={(e) => {
-                  (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
-                  void exporter(t, { projectId, code, etat, niveauId: ui.niveauId, mode: ui.mode === "planche" ? "documents" : ui.mode })
-                    .then((nom) => etatUi.set({ aide: `Exporté et enregistré au catalogue des documents : ${nom}` }))
+                  fermerMenus(e.currentTarget);
+                  etatUi.set({ aide: "Production de la maquette IFC…" });
+                  void exporterMaquetteIfc(client, { projectId, code, nomProjet })
+                    .then((r) => {
+                      etatUi.set({ aide: `Maquette IFC produite et inscrite au catalogue des documents : ${r.fichier ?? ""}` });
+                      setRapportEchange(r);
+                    })
                     .catch((err: unknown) => setErreur(err instanceof Error ? err.message : String(err)));
                 }}
               >
-                {libelle}
+                Maquette IFC 4.3 · rapport
               </button>
-            ))}
-            <button
-              type="button"
-              data-export="ifc"
-              disabled={readOnly}
-              onClick={(e) => {
-                (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
-                etatUi.set({ aide: "Production de la maquette IFC…" });
-                void exporterMaquetteIfc(client, { projectId, code, nomProjet })
-                  .then((r) => {
-                    etatUi.set({ aide: `Maquette IFC produite et inscrite au catalogue des documents : ${r.fichier ?? ""}` });
-                    setRapportEchange(r);
-                  })
-                  .catch((err: unknown) => setErreur(err instanceof Error ? err.message : String(err)));
-              }}
-            >
-              Maquette IFC 4.3 · rapport
-            </button>
-            <button
-              type="button"
-              data-export="step"
-              disabled={!ui.selection.some((id) => etat.objets[id]?.classe === "solide-exact")}
-              title="Sélectionnez un solide exact : STEP AP242 produit par le noyau exact du serveur"
-              onClick={(e) => {
-                (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
-                const id = ui.selection.find((x) => etat.objets[x]?.classe === "solide-exact");
-                if (!id) return;
-                void api.getSolideExactStep(projectId, id)
-                  .then(({ blob, nom }) => { const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = nom; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); etatUi.set({ aide: `STEP téléchargé : ${nom}` }); })
-                  .catch((err: unknown) => setErreur(err instanceof Error ? err.message : String(err)));
-              }}
-            >
-              Solide exact sélectionné · STEP
-            </button>
-            <button
-              type="button"
-              data-export="bibliotheque"
-              onClick={(e) => {
-                // Fichier de bibliothèque (D-050) : types, blocs et composants du projet, calques de leur contenu.
-                (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
-                const f = exporterBibliotheque(etat, nomProjet);
-                const url = URL.createObjectURL(new Blob([JSON.stringify(f, null, 2)], { type: "application/json" }));
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `Bibliotheque_${code.replace(/[^A-Za-z0-9._-]+/g, "_")}.fadi-bibliotheque.json`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 2000);
-                etatUi.set({ aide: `${f.definitions.length} définition(s) exportée(s) en fichier de bibliothèque.` });
-              }}
-            >
-              Bibliothèque de définitions · fichier
-            </button>
-          </div>
-        </details>
-        {!horsDessin && <MenuImport
+              <button
+                type="button"
+                data-export="step"
+                disabled={!ui.selection.some((id) => etat.objets[id]?.classe === "solide-exact")}
+                title="Sélectionnez un solide exact : STEP AP242 produit par le noyau exact du serveur"
+                onClick={(e) => {
+                  fermerMenus(e.currentTarget);
+                  const id = ui.selection.find((x) => etat.objets[x]?.classe === "solide-exact");
+                  if (!id) return;
+                  void api.getSolideExactStep(projectId, id)
+                    .then(({ blob, nom }) => { const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = nom; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); etatUi.set({ aide: `STEP téléchargé : ${nom}` }); })
+                    .catch((err: unknown) => setErreur(err instanceof Error ? err.message : String(err)));
+                }}
+              >
+                Solide exact sélectionné · STEP
+              </button>
+              <button
+                type="button"
+                data-export="bibliotheque"
+                onClick={(e) => {
+                  // Fichier de bibliothèque (D-050) : types, blocs et composants du projet, calques de leur contenu.
+                  fermerMenus(e.currentTarget);
+                  const f = exporterBibliotheque(etat, nomProjet);
+                  const url = URL.createObjectURL(new Blob([JSON.stringify(f, null, 2)], { type: "application/json" }));
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `Bibliotheque_${code.replace(/[^A-Za-z0-9._-]+/g, "_")}.fadi-bibliotheque.json`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  setTimeout(() => URL.revokeObjectURL(url), 2000);
+                  etatUi.set({ aide: `${f.definitions.length} définition(s) exportée(s) en fichier de bibliothèque.` });
+                }}
+              >
+                Bibliothèque de définitions · fichier
+              </button>
+            </div>
+          </details>
+  );
+  const menuImports = <MenuImport
           client={client}
           projectId={projectId}
           etat={etat}
@@ -695,13 +634,44 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           onRapport={setRapportEchange}
           onErreur={setErreur}
           onAide={(aide) => etatUi.set({ aide })}
-        />}
+        />;
+
+  return (
+    <div className={`atelier-n panneau-${ui.panneauMobile}${ui.mode === "documents" ? " mode-documents" : ""}${planche ? " mode-planche" : ""} disposition-${ui.disposition}${ui.outilsReplies ? " outils-replies" : ""}`} data-affichage={ui.affichage} data-outil-actif={ui.outil} data-panneau={ui.disposition === "canevas" && !planche ? (ui.panneauFlottant ?? "") : undefined}>
+      <header className="atelier-n-barre" aria-label="Barre de l'Atelier">
+        <MenuPrincipal
+          lecture={readOnly}
+          onEnregistrer={() => void enregistrerMaintenant()}
+          onPartager={() => void partager()}
+          onDocuments={() => etatUi.set({ mode: "documents", pointsEnCours: [], aide: "Imprimer : choisissez une feuille ou une vue, puis téléchargez-la en PDF." })}
+          onProjets={() => navigate("/projets")}
+          exports={horsDessin ? null : menuExports}
+          imports={horsDessin ? null : menuImports}
+          onHarmonie={harmonie && !documents ? () => window.AtelierHarmonyPage?.open() : undefined}
+        />
+        <div className="barre-groupe barre-mode" role="group" aria-label={msg("mode.groupe")}>
+          {/* Plan : deux fonctions (D-195) — activer le mode et choisir le niveau dans sa liste ; plus de sélecteur séparé. */}
+          <BoutonPlan
+            actif={ui.mode === "2d"}
+            niveaux={niveaux}
+            niveauId={ui.niveauId}
+            fmt={fmt}
+            onMode={() => { if (ui.mode !== "2d") etatUi.set({ mode: "2d" }); }}
+            onNiveau={(id) => etatUi.set({ niveauId: id, selection: [], pointsEnCours: [] })}
+          />
+          <button type="button" aria-pressed={ui.mode === "3d"} onClick={() => etatUi.set({ mode: "3d" })}>3D</button>
+          <button type="button" aria-pressed={ui.mode === "documents"} onClick={() => etatUi.set({ mode: "documents", pointsEnCours: [] })}>Documents</button>
+          <button type="button" aria-pressed={planche} data-mode-planche title={msg("mode.planche.aide")} onClick={() => etatUi.set({ mode: "planche", pointsEnCours: [], paletteOuverte: false })}>{msg("mode.planche")}</button>
+        </div>
+        {/* En mode Planche, annuler / rétablir est celui du brouillon local (dans la Planche) ; ces boutons agissent sur le journal de l'Atelier. */}
+        <div className="barre-groupe" role="group" aria-label="Annuler et rétablir" hidden={planche}>
+          <button type="button" onClick={() => void client.annuler()} disabled={readOnly} title="Annuler (Ctrl/⌘ Z)">↶<span className="sr-only">Annuler</span></button>
+          <button type="button" onClick={() => void client.retablir()} disabled={readOnly} title="Rétablir (Ctrl/⌘ Maj Z)">↷<span className="sr-only">Rétablir</span></button>
+        </div>
+        <button type="button" onClick={cadrer} title="Cadrer le niveau (0)" hidden={horsDessin}>Cadrer</button>
+        {/* ⚙ (D-195) : affichage des outils, accrochages, disposition Canevas — les réglages ont quitté la rangée. */}
+        {!documents && <Reglages ui={ui} dessin={!horsDessin} documents={documents} />}
         {rapportEchange && <RapportEchangeDialogue rapport={rapportEchange} onFermer={() => setRapportEchange(null)} />}
-        {harmonie && !documents && (
-          <button type="button" id="atelier-harmonie-button" className="barre-harmonie" aria-controls="atelier-harmonie-page" aria-expanded="false" onClick={() => window.AtelierHarmonyPage?.open()}>
-            ◈ Harmonie
-          </button>
-        )}
         {consultation && (
           <span className="barre-consultation" role="status" data-consultation={consultation.libelle}>
             Consultation : {consultation.libelle} — lecture seule
@@ -727,15 +697,14 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
 
       <div className="atelier-n-outils" role="toolbar" aria-label="Outils" aria-orientation={ui.disposition === "canevas" ? "vertical" : "horizontal"}>
         {ui.disposition === "canevas" && (
-          <>
             <button type="button" className="outil outil-replier" aria-expanded={!ui.outilsReplies} data-replier-outils onClick={() => etatUi.set((u) => ({ outilsReplies: !u.outilsReplies }))} title={ui.outilsReplies ? "Déplier la barre d'outils" : "Replier la barre d'outils"}>
               <span aria-hidden="true">{ui.outilsReplies ? "»" : "«"}</span> <span className="outil-libelle">{ui.outilsReplies ? "Outils" : "Replier"}</span>
             </button>
-            <button type="button" className="outil" onClick={() => etatUi.set({ paletteOuverte: true })} title="Rechercher un outil (Ctrl K)">
-              <span aria-hidden="true">⌕</span> <span className="outil-libelle">Rechercher</span>
-            </button>
-          </>
         )}
+        {/* Palette (Ctrl K) : depuis le rail dans les deux dispositions (D-195 : le bouton de la rangée du haut a disparu). */}
+        <button type="button" className="outil outil-palette" data-palette-bouton onClick={() => etatUi.set({ paletteOuverte: true })} title="Rechercher un outil (Ctrl K)">
+          <span aria-hidden="true">⌕</span> <span className="outil-libelle">Rechercher</span>
+        </button>
         <button type="button" className={`outil${ui.outil === "selection" ? " est-actif" : ""}`} aria-pressed={ui.outil === "selection"} onClick={() => etatUi.choisirOutil("selection")} title="Sélection (V)">
           <span aria-hidden="true">↖</span> <span className="outil-libelle">Sélection</span>
         </button>

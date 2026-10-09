@@ -66,7 +66,7 @@ const outilsAvant = await page.evaluate(() => document.querySelectorAll(".barre-
 await page.locator('[data-ontologie="structure"]').check();
 await enregistre();
 check("activation : l'ontologie structure est activée par une commande du journal (ontologies = [structure])", JSON.stringify((await modele()).modele.ontologies) === JSON.stringify(["structure"]), JSON.stringify((await modele()).modele.ontologies));
-await page.locator(".barre-palette").click();
+await page.locator("[data-palette-bouton]").click();
 await page.locator(".palette-champ").fill("trame structurale");
 await page.waitForTimeout(200);
 const palette = (await page.locator(".palette").textContent()) ?? "";

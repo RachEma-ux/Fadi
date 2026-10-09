@@ -8,6 +8,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-canevas.mjs
  */
 import { createRequire } from "node:module";
+import { allerEnPlan, basculerCanevas, fermerMenus } from "./lib-barre.mjs";
 import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
@@ -60,7 +61,7 @@ const pid = (await api("post", `/projects/${reference}/copies`, { name: "P.118 �
 // 1. Disposition Canevas : le dessin occupe toute la zone ; les panneaux flottent sans le redimensionner.
 await ouvrir(pid);
 const avant = await boite(".atelier-n-travail");
-await page.locator("[data-disposition-canevas]").click();
+await basculerCanevas(page);
 await page.waitForSelector(".atelier-n.disposition-canevas");
 const travail = await boite(".atelier-n-travail");
 const racine = await boite(".atelier-n");
@@ -182,7 +183,7 @@ await page.keyboard.up("Shift");
 const v3 = await vue();
 check("3D souris : Maj + molette maintenue = panoramique", ecart(v1.cible, v3.cible) > 0.05);
 await page.screenshot({ path: `${OUT}/canevas-navigation.png` });
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 await page.waitForSelector(".plan2d .plan-objets [data-objet]");
 
 // 5 ter. Outils de vue et de saisie (D-158) : raccourcis configurables, Rapporteur, Zoom, Zoom étendu, Panoramique.
@@ -299,7 +300,7 @@ await page.screenshot({ path: `${OUT}/canevas-ombres.png` });
 await page.locator("[data-ombres]").uncheck();
 await page.waitForFunction(() => window.fadiMesures3D?.ombres?.actives === false, null, { timeout: 10000 }).catch(() => {});
 check("Ombres désactivées", (await page.evaluate(() => window.fadiMesures3D?.ombres?.actives)) === false);
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 await page.waitForSelector(".plan2d .plan-objets [data-objet]");
 // Clavier (D-161) : Entrée sur une icône ouvre son panneau et y place le focus ; Échap le ferme et rend le focus.
 await page.locator('[data-panneau-icone="navigation"]').focus();
@@ -351,13 +352,13 @@ check("Ctrl + S : enregistrer maintenant (sans la boîte d'enregistrement du nav
 await menu("exporter");
 check("Exporter… ouvre le menu des exports", await page.locator(".barre-exports[open]").count() === 1);
 await page.keyboard.press("Escape");
-await page.evaluate(() => document.querySelector(".barre-exports")?.removeAttribute("open"));
+await fermerMenus(page); // Fichier et son sous-menu (D-195) se referment ensemble
 await menu("importer");
 check("Importer… ouvre le menu des imports", await page.locator(".barre-imports[open]").count() === 1);
-await page.evaluate(() => document.querySelector(".barre-imports")?.removeAttribute("open"));
+await fermerMenus(page);
 await menu("imprimer");
 check("Imprimer : bascule vers les documents (feuilles en PDF)", (await page.locator('.barre-mode button:has-text("Documents")').getAttribute("aria-pressed")) === "true");
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 await page.waitForSelector(".plan2d .plan-objets [data-objet]");
 // Hors-ligne : une modification reste sur l'appareil, le partage est différé et le dit.
 await ctx.setOffline(true);
@@ -385,11 +386,11 @@ check("Scènes : vue 3D ouverte sur les vues enregistrées", (await page.locator
 await page.locator('[data-acces-3d="styles"]').click();
 await page.waitForSelector("[data-styles-classes][open]", { timeout: 15000 }).catch(() => {});
 check("Styles : réglage des styles par classe déplié", (await page.locator("[data-styles-classes][open]").count()) === 1);
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 await page.waitForSelector(".plan2d .plan-objets [data-objet]");
 
 // Retour à la disposition classique (préférence locale).
-await page.locator("[data-disposition-canevas]").click();
+await basculerCanevas(page);
 check("retour à la disposition classique", await page.locator(".atelier-n.disposition-classique").count() === 1);
 check("aucune erreur JavaScript dans la page", erreursPage.length === 0, erreursPage.slice(0, 3).join(" | "));
 await browser.close();

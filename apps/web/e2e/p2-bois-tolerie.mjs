@@ -45,7 +45,7 @@ const recharger = async () => { await page.reload(); await page.waitForSelector(
 const choisirObjet = async (texte, selecteurFiche) => { await page.keyboard.press("Escape"); await page.locator(".nav-filtre").fill(texte); await page.locator(`.nav-objets button:has-text("${texte}")`).first().click(); await page.waitForSelector(selecteurFiche, { timeout: 10000 }); await page.locator(".nav-filtre").fill(""); };
 const outil = async (recherche, selecteur, garderSelection = false) => {
   if (!garderSelection) { await page.locator(".nav-filtre").evaluate((el) => el.blur()); await page.locator(".plan2d").focus().catch(() => {}); await page.keyboard.press("Escape"); await page.keyboard.press("Escape"); await page.waitForTimeout(200); }
-  await page.locator(".barre-palette").click(); await page.locator(".palette-champ").fill(recherche); await page.keyboard.press("Enter");
+  await page.locator("[data-palette-bouton]").click(); await page.locator(".palette-champ").fill(recherche); await page.keyboard.press("Enter");
   try { await page.waitForSelector(selecteur, { timeout: 15000 }); } catch (e) { console.log("  ↳ outil non affiché :", recherche, "| actif =", await page.evaluate(() => document.querySelector(".atelier-n")?.dataset.outilActif), "| sélection =", await page.evaluate(() => document.querySelectorAll(".plan2d .est-selectionne").length)); throw e; }
 };
 
@@ -72,7 +72,7 @@ await enregistre();
 await page.locator('[data-ontologie="sheetmetal"]').check();
 await enregistre();
 check("activation : bois puis tôlerie activées par deux commandes du journal (ontologies = [timber, sheetmetal])", JSON.stringify((await modele()).modele.ontologies) === JSON.stringify(["timber", "sheetmetal"]), JSON.stringify((await modele()).modele.ontologies));
-await page.locator(".barre-palette").click();
+await page.locator("[data-palette-bouton]").click();
 await page.locator(".palette-champ").fill("ossature");
 await page.waitForTimeout(200);
 check("palette : « Ossature bois » et « Tôle pliée » proposées, sans écran nouveau", /Ossature bois/.test((await page.locator(".palette").textContent()) ?? "") && navigations.length === 0);
