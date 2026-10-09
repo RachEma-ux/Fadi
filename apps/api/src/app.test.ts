@@ -527,14 +527,17 @@ describe("Atelier — modèle typé de l'exemple", () => {
     expect(Object.keys(model.body.modele.calques)).toContain("Escaliers");
     expect(model.body.modele.site.parcelle.origineLocale.frame).toBe("cadastral");
 
-    const stale = await client.post(`/projects/${pid}/atelier/commands`).send(lot(0, [{ type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3.2) } }]));
+    // Écritures : sur une copie de travail — la référence refuse toute écriture du modèle (D-194).
+    const work = (await client.post(`/projects/${pid}/copies`).send({ name: "Copie de travail" })).body.id as string;
+    const stale = await client.post(`/projects/${work}/atelier/commands`).send(lot(0, [{ type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3.2) } }]));
     expect(stale.status).toBe(409);
     expect(stale.body.motif).toBe("revision");
 
-    const saved = await client.post(`/projects/${pid}/atelier/commands`).send(lot(1, [{ type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3.2), calqueId: "Murs" } }]));
+    const saved = await client.post(`/projects/${work}/atelier/commands`).send(lot(1, [{ type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3.2), calqueId: "Murs" } }]));
     expect(saved.status).toBe(200);
     expect(saved.body.revision).toBe(2);
-    expect(murs((await client.get(`/projects/${pid}/atelier/model`)).body.modele)).toBe(40);
+    expect(murs((await client.get(`/projects/${work}/atelier/model`)).body.modele)).toBe(40);
+    expect(murs((await client.get(`/projects/${pid}/atelier/model`)).body.modele)).toBe(39); // la référence n'a pas bougé
 
     // Un projet vierge n'a pas de modèle ; un autre utilisateur n'accède pas à celui-ci.
     const blank = await client.post("/projects").send({ code: "P.906", name: "Vierge" });
@@ -1561,7 +1564,8 @@ describe("Analyses métier — quantités, contrôles traçables, scénarios", (
 describe("Dessins techniques et exports de l'Atelier au catalogue des documents", () => {
   it("registers a DXF export with its level, view and model revision, lists it as up to date, flags it stale after a model write, serves and deletes it, and enforces access", async () => {
     const client = await registerAndLogin("dessins@example.com");
-    const pid = (await client.post("/examples/p118-exemple-complet/import")).body.id as string;
+    const ref = (await client.post("/examples/p118-exemple-complet/import")).body.id as string;
+    const pid = (await client.post(`/projects/${ref}/copies`).send({ name: "P.118 dessins" })).body.id as string; // la référence refuse toute écriture du modèle (D-194)
     const dxf = "0\nSECTION\n2\nENTITIES\n0\nLINE\n8\nMurs\n10\n0\n20\n0\n30\n0\n11\n4\n21\n0\n31\n0\n0\nENDSEC\n0\nEOF\n";
     const view = { schema: 14, mode: "volume", tech: "plan", levelScope: "level", activeLevel: "rdc" };
     const created = await client
@@ -1582,7 +1586,7 @@ describe("Dessins techniques et exports de l'Atelier au catalogue des documents"
     let docs = (await client.get(`/projects/${pid}/documents`)).body.documents as { kind: string; group: string; label: string; href: string; freshness: string | null; stepNumber: number | null; produced: { modelRevision: number } }[];
     let entry = docs.find((d) => d.kind === `dessin:${id}`)!;
     expect(entry).toMatchObject({ group: "dessins", label: "Dessin technique DXF · RDC · dessin plan · révision 1", href: `/projects/${pid}/documents/dessins/${id}`, freshness: "a-jour", stepNumber: 10, produced: { modelRevision: 1 } });
-    expect(docs).toHaveLength(56);
+    expect(docs).toHaveLength(55); // 56 sur la référence ; la copie n'offre pas « Fiches d'espaces de l'exemple résolu »
     // Le fichier est servi tel quel, en pièce jointe.
     const file = await client.get(`/projects/${pid}/documents/dessins/${id}`);
     expect(file.status).toBe(200);
@@ -1604,7 +1608,7 @@ describe("Dessins techniques et exports de l'Atelier au catalogue des documents"
     // Retrait du catalogue.
     expect((await client.delete(`/projects/${pid}/documents/dessins/${id}`)).status).toBe(204);
     expect((await client.get(`/projects/${pid}/documents/dessins/${id}`)).status).toBe(404);
-    expect(((await client.get(`/projects/${pid}/documents`)).body.documents as unknown[]).length).toBe(55);
+    expect(((await client.get(`/projects/${pid}/documents`)).body.documents as unknown[]).length).toBe(54); // 55 sur la référence (fiches de l'exemple en plus)
   }, 30_000);
 });
 
@@ -1658,10 +1662,14 @@ describe("Documents — catalogue, productions et actualité", () => {
     await client.get(`/projects/${pid}/archive`);
     expect((await docOf("bilan-batiment")).freshness).toBe("a-jour");
     expect((await docOf("archive-projet")).freshness).toBe("a-jour");
-    const revisionAvant = (await client.get(`/projects/${pid}/atelier/model`)).body.revision as number;
-    const put = await client.post(`/projects/${pid}/atelier/commands`).send(lot(revisionAvant, [{ type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3.2), calqueId: "Murs" } }]));
+    // Une écriture de l'Atelier périme les documents du modèle — sur une copie de travail, la référence étant refusée (D-194).
+    const work = (await client.post(`/projects/${pid}/copies`).send({ name: "Copie de travail" })).body.id as string;
+    await client.get(`/projects/${work}/archive`);
+    expect((await client.get(`/projects/${work}/documents/surfaces`)).status).toBe(200);
+    const revisionAvant = (await client.get(`/projects/${work}/atelier/model`)).body.revision as number;
+    const put = await client.post(`/projects/${work}/atelier/commands`).send(lot(revisionAvant, [{ type: "mur.tracer", params: { niveauId: "rdc", a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3.2), calqueId: "Murs" } }]));
     expect(put.status).toBe(200);
-    const after = (await client.get(`/projects/${pid}/documents`)).body;
+    const after = (await client.get(`/projects/${work}/documents`)).body;
     expect(after.modelRevision).toBe(2);
     expect(after.documents.find((d: { kind: string }) => d.kind === "archive-projet").freshness).toBe("perime");
     expect(after.documents.find((d: { kind: string }) => d.kind === "tableau-surfaces").freshness).toBe("perime");

@@ -338,7 +338,7 @@ describe("échanges IFC (lot 6)", () => {
   it("P.118 exporté au catalogue (IFC 4.3, reproductible), réimporté dans un autre projet en représentations, avec rapport ; réimport sans doublon", async () => {
     const client = await registerAndLogin("ifc@example.com");
     const imported = await client.post("/examples/p118-exemple-complet/import");
-    const pid = imported.body.id as string;
+    const pid = (await client.post(`/projects/${imported.body.id as string}/copies`).send({ name: "P.118 IFC" })).body.id as string; // la référence refuse toute écriture du modèle (D-194)
     const lireTexte = (res: request.Response) => res.text ?? "";
     const ifc = await client.get(`/projects/${pid}/documents/atelier/modele.ifc`);
     expect(ifc.status).toBe(200);
@@ -524,7 +524,7 @@ describe("versions, variantes, publications, verrous (lot 7)", () => {
   it("publication figée (T12) : version, catalogues et documents retrouvés exactement ; restaurable après des modifications", async () => {
     const client = await registerAndLogin("publication@example.com");
     const imported = await client.post("/examples/p118-exemple-complet/import");
-    const pid = imported.body.id as string;
+    const pid = (await client.post(`/projects/${imported.body.id as string}/copies`).send({ name: "P.118 publication" })).body.id as string; // la référence refuse toute écriture du modèle (D-194)
     const avant = (await modele(client, pid)).modele;
     const pub = await client.post(`/projects/${pid}/atelier/publications`).send({ nom: "Permis de construire" });
     expect(pub.status).toBe(201);
@@ -755,7 +755,8 @@ describe("compléments : historique d'un objet, réutilisation de modèle", () =
 
   it("reprise depuis un autre projet : aperçu sans écriture, exécution en une révision, source modifiée entre-temps → 409, source illisible → 404", async () => {
     const client = await registerAndLogin("reprise@example.com");
-    const source = (await client.post("/examples/p118-exemple-complet/import")).body.id as string;
+    const reference = (await client.post("/examples/p118-exemple-complet/import")).body.id as string;
+    const source = (await client.post(`/projects/${reference}/copies`).send({ name: "P.118 source" })).body.id as string; // modifiée plus bas : la référence refuse toute écriture (D-194)
     const cible = await projetVide(client);
     expect((await client.post(`/projects/${cible}/atelier/commands`).send(enveloppe("c0", 0, [niveau]))).status).toBe(200);
     const corps = { source: { projectId: source }, options: { familles: ["architecture"], niveaux: ["rdc"] } };
@@ -953,5 +954,56 @@ describe("problèmes : classes IFC à vérifier (D-111)", () => {
     const p = (await owner.get(`/projects/${pid}/atelier/problemes`)).body;
     expect(p.classesIfc).toHaveLength(1);
     expect(p.classesIfc[0]).toMatchObject({ objetId: "m1", declaree: "IfcDoor", attendues: ["IfcWall"] });
+  });
+});
+
+describe("référence protégée : refus serveur (D-016 tranchée, D-194)", () => {
+  it("refuse toute écriture du modèle sur la référence importée (403 reference-protegee, rien d'écrit), laisse lire, essayer, copier, et accepte la même écriture sur la copie", async () => {
+    const client = await registerAndLogin("reference@example.com");
+    const ref = (await client.post("/examples/p118-exemple-complet/import")).body.id as string;
+    expect((await client.get(`/projects/${ref}`)).body.exampleMode).toBe("reference");
+    const avant = (await client.get(`/projects/${ref}/atelier/model`)).body as { revision: number; modele: { objets: Record<string, unknown> } };
+    expect(avant.revision).toBe(1);
+    const nbObjets = Object.keys(avant.modele.objets).length;
+    const lot = enveloppe("ref-1", 1, [{ type: "mur.tracer", params: { id: "m-ref", niveauId: Object.keys((avant.modele as { niveaux?: Record<string, unknown> }).niveaux ?? { rdc: 1 })[0], a: pt(0, 0), b: pt(4, 0), epaisseur: m(0.2), hauteur: m(3.2) } }], "Mur sur la référence");
+
+    // Commandes, annuler / rétablir, imports, nuages : refusés nommément, même motif, même message que l'Atelier.
+    const refus = await client.post(`/projects/${ref}/atelier/commands`).send(lot);
+    expect(refus.status).toBe(403);
+    expect(refus.body).toMatchObject({ error: "forbidden", motif: "reference-protegee", role: "proprietaire" });
+    expect(refus.body.message).toMatch(/^Exemple protégé : la référence n'est jamais modifiée/);
+    expect((await client.post(`/projects/${ref}/atelier/commands/annuler`).send({ requestId: "ref-a", baseRevision: 1 })).body.motif).toBe("reference-protegee");
+    expect((await client.post(`/projects/${ref}/atelier/commands/retablir`).send({ requestId: "ref-r", baseRevision: 1 })).body.motif).toBe("reference-protegee");
+    expect((await client.post(`/projects/${ref}/atelier/import-ifc`).set("Content-Type", "application/x-step").send("ISO-10303-21;")).body.motif).toBe("reference-protegee");
+    expect((await client.post(`/projects/${ref}/atelier/import-step`).set("Content-Type", "application/x-step").send("ISO-10303-21;")).body.motif).toBe("reference-protegee");
+    expect((await client.post(`/projects/${ref}/atelier/nuages`).set("Content-Type", "text/plain").send("0 0 0\n")).body.motif).toBe("reference-protegee");
+    // Scripts exécutés, propositions acceptées, reprise, restauration : refusés aussi (ils écrivent le modèle par le même chemin).
+    const script = { id: "s-ref", nom: "Mur", version: 0, parametres: [], commandes: [{ type: "mur.tracer", params: { id: "m-s", niveauId: "rdc", a: pt(0, 0), b: pt(1, 0), epaisseur: m(0.2), hauteur: m(3) } }] };
+    const cree = await client.post(`/projects/${ref}/atelier/scripts`).send({ script });
+    expect(cree.status).toBe(201); // la bibliothèque n'est pas le modèle
+    expect((await client.post(`/projects/${ref}/atelier/scripts/s-ref/executer`).send({ requestId: "ref-s", baseRevision: 1 })).body.motif).toBe("reference-protegee");
+    expect((await client.post(`/projects/${ref}/atelier/reprise`).send({ source: { projectId: ref }, options: {}, empreinteSource: "x", requestId: "ref-p", baseRevision: 1 })).body.motif).toBe("reference-protegee");
+    expect((await client.post(`/projects/${ref}/atelier/versions/v0/restaurer`).send({ requestId: "ref-v", baseRevision: 1 })).body.motif).toBe("reference-protegee");
+
+    // Rien n'a été écrit : même révision, même nombre d'objets, journal vide de ces requêtes.
+    const apres = (await client.get(`/projects/${ref}/atelier/model`)).body as { revision: number; modele: { objets: Record<string, unknown> } };
+    expect(apres.revision).toBe(1);
+    expect(Object.keys(apres.modele.objets).length).toBe(nbObjets);
+
+    // Ce qui n'écrit pas le modèle reste permis : lecture, essai à blanc, proposition de l'assistant, version nommée, publication, copie.
+    expect((await client.post(`/projects/${ref}/atelier/commands/essai`).send(lot)).status).toBe(200);
+    const prop = await client.post(`/projects/${ref}/atelier/assistant/propositions`).send({ intention: "feuilles et quantités" });
+    expect(prop.status).toBe(201);
+    expect((await client.post(`/projects/${ref}/atelier/assistant/propositions/${prop.body.id}/accepter`).send({ requestId: "ref-acc", baseRevision: 1 })).body.motif).toBe("reference-protegee");
+    expect((await client.post(`/projects/${ref}/atelier/versions`).send({ nom: "Référence" })).status).toBe(201);
+    expect((await client.post(`/projects/${ref}/atelier/publications`).send({ nom: "Référence publiée" })).status).toBe(201);
+    const copie = await client.post(`/projects/${ref}/copies`).send({ name: "Copie de travail" });
+    expect(copie.status).toBe(201);
+    const wid = copie.body.id as string;
+    expect((await client.get(`/projects/${wid}`)).body.exampleMode).toBe("editable");
+    const ok = await client.post(`/projects/${wid}/atelier/commands`).send(lot);
+    expect(ok.status).toBe(200);
+    expect(ok.body.revision).toBe(2);
+    expect((await client.get(`/projects/${ref}/atelier/model`)).body.revision).toBe(1);
   });
 });

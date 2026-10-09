@@ -65,6 +65,7 @@ les droits du demandeur) et en 3D ; mention « hors ligne » sur la dernière re
 | Hachures et cotes DXF | `HATCH` → hachure du contour extérieur (motif nommé) ; `DIMENSION` linéaires et alignées → cotes. | idem |
 | IFC : type, matériaux, propriétés | Propriétés `ifc:type`, `ifc:materiaux` (couches et épaisseurs), `ifc:epaisseurCouches`, `ifc:<Pset>.<nom>` (avec la mesure IFC). | test API « P.118 exporté… » (fichier `test-corpus/ifc/materiaux-mm.ifc`, en millimètres) |
 | IFC : annotations | Textes et traits du niveau ; les textes du P.118 exporté reviennent à l'identique. | idem |
+| Refus serveur sur la référence protégée (D-016 → D-194, 9 octobre 2026, après P2) | Niveau d'accès `modify` (`lib/owned-project.ts`) : sur un projet `example_mode = 'reference'`, toute route qui écrit le modèle (commandes, annuler / rétablir, imports IFC / STEP, nuages, restaurations, reprise, fusion dans le tronc, scripts exécutés, propositions acceptées) répond 403 `reference-protegee` sans rien écrire ; lecture, essais à blanc, propositions, versions, publications, verrous et copies restent permis. L'interface ne change pas (copie automatique à la première modification). | test API « référence protégée : refus serveur » (`atelier-commands.test.ts`) |
 
 ## Composition des parois (D-026)
 

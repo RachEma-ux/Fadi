@@ -245,7 +245,7 @@ atelierCommandsRouter.get("/problemes", async (req, res) => {
 // ---------------------------------------------------------------------------
 
 atelierCommandsRouter.post("/commands", corps, async (req, res) => {
-  const project = await projectOr404(req, res, "write");
+  const project = await projectOr404(req, res, "modify");
   if (!project) return;
   const parsed = enveloppeSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -305,7 +305,7 @@ const LOTS_IMPORT_MAX = 60;
  * la tranche, facultatif), `X-Nuage-Points` (plafond de l'échantillon, facultatif).
  */
 atelierCommandsRouter.post("/nuages", raw({ type: () => true, limit: LIMITE_IFC }), async (req, res) => {
-  const project = await projectOr404(req, res, "write");
+  const project = await projectOr404(req, res, "modify");
   if (!project) return;
   const octets = Buffer.isBuffer(req.body) ? (req.body as Buffer) : Buffer.alloc(0);
   let source = "releve.las";
@@ -351,7 +351,7 @@ atelierCommandsRouter.post("/nuages", raw({ type: () => true, limit: LIMITE_IFC 
 });
 
 atelierCommandsRouter.post("/import-ifc", raw({ type: () => true, limit: LIMITE_IFC }), async (req, res) => {
-  const project = await projectOr404(req, res, "write");
+  const project = await projectOr404(req, res, "modify");
   if (!project) return;
   const octets = Buffer.isBuffer(req.body) ? (req.body as Buffer) : Buffer.alloc(0);
   const brut = req.get("X-File-Name") ?? "import.ifc";
@@ -421,7 +421,7 @@ const LIMITE_STEP = 64 * 1024 * 1024;
 
 /** Import d'un fichier STEP : un solide exact (opération `import-step`) sur le niveau demandé, calculé par le serveur. */
 atelierCommandsRouter.post("/import-step", raw({ type: () => true, limit: LIMITE_STEP }), async (req, res) => {
-  const project = await projectOr404(req, res, "write");
+  const project = await projectOr404(req, res, "modify");
   if (!project) return;
   const octets = Buffer.isBuffer(req.body) ? (req.body as Buffer) : Buffer.alloc(0);
   const niveauId = typeof req.query["niveauId"] === "string" ? (req.query["niveauId"] as string) : null;
@@ -485,7 +485,7 @@ async function cibleRetablissement(projectId: string, journalId?: string) {
 }
 
 async function inverser(req: Request, res: Response, mode: "annuler" | "retablir"): Promise<void> {
-  const project = await projectOr404(req, res, "write");
+  const project = await projectOr404(req, res, "modify");
   if (!project) return;
   const parsed = inverseSchema.safeParse(req.body);
   if (!parsed.success) {
