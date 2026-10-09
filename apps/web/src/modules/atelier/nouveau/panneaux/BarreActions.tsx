@@ -176,6 +176,9 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
     const el = racine.current;
     if (!pas || !el) return;
     e.preventDefault();
+    // La flèche déplace la barre et rien d'autre : les claviers de la fenêtre (outils de la Planche — Retourner, etc. —,
+    // raccourcis de l'Atelier) ne doivent pas la recevoir aussi.
+    e.stopPropagation();
     const p = positionCourante();
     memoriser(borner({ x: p.x + pas.x, y: p.y + pas.y }, tailleDe(el), zoneDe(el)));
   };

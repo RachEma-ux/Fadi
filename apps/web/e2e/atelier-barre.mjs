@@ -304,6 +304,21 @@ const actionsPlanche = await page.locator("[data-planche] [data-barre-actions] [
 check("Planche : une seule barre, dans la Planche : Annuler, Rétablir, Détacher", (await page.locator("[data-barre-actions]").count()) === 1 && actionsPlanche.join(",") === "annuler,retablir,detacher" && (await page.locator("[data-barre-actions] [data-planche-annuler]").count()) === 1 && (await page.locator("[data-barre-actions] [data-planche-detacher]").count()) === 1, actionsPlanche.join(","));
 check("Planche : la barre du haut n'a plus ni Annuler / Rétablir ni Détacher", (await page.locator(".planche-haut [data-planche-annuler], .planche-haut [data-planche-detacher]").count()) === 0);
 check("Planche : Annuler est inactif sans opération", await page.locator("[data-barre-actions] [data-planche-annuler]").isDisabled());
+// Les flèches sur la poignée déplacent la barre sans atteindre le clavier de la Planche (outils comme Retourner).
+await page.locator('[data-planche-outil="retourner"]').first().click().catch(() => {});
+const consigneAvant = await page.locator("[data-planche-etat]").textContent().catch(() => "");
+const bAvantFleche = await barre();
+await page.locator("[data-barre-actions-poignee]").focus();
+await page.keyboard.press("ArrowLeft");
+await page.keyboard.press("ArrowUp");
+await page.waitForTimeout(120);
+const bApresFleche = await barre();
+check("Planche : les flèches sur la poignée déplacent la barre sans agir sur le dessin (Annuler toujours inactif, consigne inchangée)", Math.abs(bAvantFleche.x - 16 - bApresFleche.x) <= 1 && Math.abs(bAvantFleche.y - 16 - bApresFleche.y) <= 1 && (await page.locator("[data-barre-actions] [data-planche-annuler]").isDisabled()) && (await page.locator("[data-planche-etat]").textContent().catch(() => "")) === consigneAvant, `${fmt(bAvantFleche)} → ${fmt(bApresFleche)}`);
+await page.keyboard.press("Escape");
+await ouvrirReglages(page);
+await page.locator("[data-barre-actions-defaut]").click();
+await fermerMenus(page);
+await page.waitForTimeout(150);
 const bPlanche = await barre();
 const pied = await boite("[data-planche-pied]");
 const planche = await boite("[data-planche]");
