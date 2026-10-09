@@ -39,7 +39,12 @@ function pointsCommuns(a: readonly Vec[], b: readonly Vec[]): Vec[] {
 function reservationCouvrant(etat: ModeleAtelier, i: Interference): string | null {
   const [a, b] = i.objets.map((id) => etat.objets[id]).map((o) => (o ? corpsDe(etat, o) : []));
   if (!a?.length || !b?.length) return null;
+  // Une réservation ne couvre que la paire qu'elle vise (relecture Codex #99) : son hôte déclaré et, s'il est donné, le
+  // réseau concerné doivent être les deux objets en collision ; une réservation d'un autre mur voisin n'exempte rien.
+  const paire = new Set(i.objets);
   for (const r of reservations(etat)) {
+    if (r.o.params.hoteId !== null && !paire.has(r.o.params.hoteId)) continue;
+    if (r.o.params.pourId !== null && !paire.has(r.o.params.pourId)) continue;
     const ok = a.some((ca) => b.some((cb) => {
       const z0 = Math.max(ca.z0, cb.z0), z1 = Math.min(ca.z1, cb.z1);
       if (z0 < r.z0 - 1e-6 || z1 > r.z1 + 1e-6) return false;

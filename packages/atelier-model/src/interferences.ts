@@ -118,7 +118,14 @@ export function corpsDe(etat: ModeleAtelier, o: OccurrenceQuelconque): Corps[] {
     case "echelle":
     case "mur-rideau":
     case "installation-chantier":
-    case "surface-libre": {
+    case "surface-libre":
+    case "support-reseau":
+    case "assemblage-structurel":
+    case "armature":
+    case "assemblage-bois":
+    case "terrain": {
+      // Toute classe maillée des ontologies activables ou du bâtiment P2 (relecture Codex #99) ; un terrain d'épaisseur nulle
+      // ou une surface libre ouverte n'ont pas d'épaisseur : aucun corps (dit par z1 − z0).
       const m = maillageObjet(etat, o);
       if (!m || !m.indices.length) return [];
       const e = empriseMaillage(m.positions);

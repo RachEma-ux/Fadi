@@ -31,6 +31,8 @@ import { PORTS_PAR_RACCORD } from "../modele.js";
 import { sectionReseauDepuisCatalogue } from "../ontologies/mep/sections.js";
 
 type Brut = Record<string, unknown>;
+/** Faces subdivisées admises au plus pour une surface libre (triangles × 4ⁿ). */
+const BUDGET_SUBDIVISION = 200_000;
 
 /** Renflements d'une polyligne (D-063) : un par segment, |b| ≤ 1 (demi-cercle au plus) ; tous nuls : clé absente. */
 function renflementsDe(p: Brut, forme: string, n: number, ferme: boolean): { renflements?: number[] } {
@@ -737,6 +739,8 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
   },
   coque(_etat, p) {
     const c = contour(p);
+    // Le dôme est maillé sur le seul contour : un trou serait rebouché en silence (relecture Codex #99) → refus nommé.
+    if (c.trous.length) throw new ErreurCommande("invalide", "trous", "coque : les trous ne sont pas construits (dôme sur le contour seul) — contour sans trou attendu");
     return { ...c, nom: lire.chaineOuNull(p, "nom"), decalageBase: lire.longueur(p, "decalageBase", { optionnel: true }) ?? { value: 0, unit: "m" }, fleche: lire.longueur(p, "fleche", { strict: true })!, epaisseur: lire.longueur(p, "epaisseur", { strict: true })!, materiau: lire.chaineOuNull(p, "materiau") };
   },
   rampe(_etat, p) {
@@ -795,6 +799,9 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     const faces = (f as number[][]).map((x) => [...x]);
     if (faces.length > 50000) throw new ErreurCommande("invalide", "faces", "50 000 faces au plus");
     const niveaux = lire.nombre(p, "niveaux", { optionnel: true, entier: true, min: 0, max: 4 }) ?? 1;
+    // Budget de subdivision (relecture Codex #99) : triangles × 4ⁿ bornés, sinon la surface lissée épuise la mémoire du navigateur et du serveur.
+    const triangles = faces.reduce((s, f) => s + (f.length === 4 ? 2 : 1), 0);
+    if (triangles * 4 ** niveaux > BUDGET_SUBDIVISION) throw new ErreurCommande("invalide", "niveaux", `surface libre : ${triangles} triangle(s) × 4^${niveaux} = ${triangles * 4 ** niveaux} faces subdivisées, plus que ${BUDGET_SUBDIVISION} — réduisez le niveau de subdivision ou le maillage de contrôle`);
     const o = p["origine"];
     const origine = o && typeof o === "object" && typeof (o as { classe?: unknown }).classe === "string" && typeof (o as { id?: unknown }).id === "string" ? { classe: (o as { classe: string }).classe, id: (o as { id: string }).id } : null;
     return { nom: lire.chaineOuNull(p, "nom"), sommets, faces, niveaux, origine, ferme: lire.booleen(p, "ferme", false) };

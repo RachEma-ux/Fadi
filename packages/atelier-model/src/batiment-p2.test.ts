@@ -8,6 +8,7 @@ import { maillageObjet } from "./projection/maillage.js";
 import { delaunay, proprietesMasse, subdiviserLoop, triangulerFaces, volumeMaillage } from "./geometrie-3d.js";
 import { altitudeTerrain, facesSubdivisees, nombreProfilsMurRideau, penteRampe } from "./batiment-p2.js";
 import { collisionsOntologies, controlesSpecification } from "./coordination.js";
+import { corpsDe } from "./interferences.js";
 import { collisions } from "./versions.js";
 import { inertieAssemblage, inertiePiece } from "./ontologies/mechanical/inerties.js";
 import { premierObstacle, trajectoire } from "./ontologies/mechanical/cinematique.js";
@@ -144,6 +145,14 @@ describe("surfaces libres (DA-03-03, 05, 06, 07, 20) : subdivision, édition dir
     expect(() => lot(e, [{ type: "surfaceLibre.deplacerSommet", params: { id: "sl", index: 9, dz: 1 } }])).toThrow(/index/);
     expect(() => lot(e, [{ type: "surfaceLibre.subdiviser", params: { id: "sl", niveaux: 5 } }])).toThrow(/niveaux/);
   });
+  it("relecture Codex #99 : budget de subdivision (triangles × 4ⁿ ≤ 200 000) refusé nommément ; coque à trous refusée", () => {
+    // Grille 30 × 20 : 551 quads = 1 102 triangles ; × 4⁴ = 282 112 > 200 000 ; × 4³ = 70 528 admis.
+    const grand = { sommets: Array.from({ length: 600 }, (_, i) => P3(i % 30, Math.floor(i / 30), 0)), faces: Array.from({ length: 551 }, (_, i) => { const r = Math.floor(i / 29), c = i % 29; const a = r * 30 + c; return [a, a + 1, a + 31, a + 30]; }) };
+    expect(() => lot(base(), [{ type: "surfaceLibre.creer", params: { id: "x", niveauId: "n1", ...grand, niveaux: 4 } }])).toThrow(/200 ?000|200000/);
+    const e = lot(base(), [{ type: "surfaceLibre.creer", params: { id: "x", niveauId: "n1", ...grand, niveaux: 3 } }]).etat;
+    expect(() => lot(e, [{ type: "surfaceLibre.subdiviser", params: { id: "x", niveaux: 4 } }])).toThrow(/subdivis/);
+    expect(() => lot(base(), [{ type: "coque.creer", params: { id: "c", niveauId: "n1", contour: carre(0, 0, 10), trous: [carre(4, 4, 2)], fleche: m(2), epaisseur: m(0.1) } }])).toThrow(/trous/);
+  });
   it("conversion métier explicite depuis un solide : maillage de contrôle dédoublonné, origine nommée ; le solide reste", () => {
     const e = lot(base(), [{ type: "objet.creer", params: { id: "s", classe: "solide", niveauId: "n1", params: { contour: carre(0, 0, 2), trous: [], ferme: true, hauteur: m(1) } } }]).etat;
     const e1 = lot(e, [{ type: "surfaceLibre.depuisObjet", params: { id: "sl", sourceId: "s", niveaux: 1 } }]).etat;
@@ -163,6 +172,19 @@ describe("coordination (cahier P2 §4, DA-17-14) : collisions entre ontologies, 
     { type: "mur.tracer", params: { id: "w", niveauId: "n1", a: pt(-1, 1), b: pt(5, 1), epaisseur: m(0.2), hauteur: m(3) } },
     { type: "segmentReseau.creer", params: { id: "g", niveauId: "n1", systeme: "gaine", sommets: [P3(2, -1, 1.5), P3(2, 3, 1.5)], section: { forme: "rectangulaire", largeur: m(0.4), hauteur: m(0.3) } } },
   ]).etat;
+  it("relecture Codex #99 : un support de réseau, une armature ou un terrain épais noyés dans un mur sont des corps (classes maillées toutes retenues)", () => {
+    const e = lot(scene(), [
+      { type: "supportReseau.creer", params: { id: "sp", porteId: "g", type: "console", position: pt(2, 1), z: 1.5, longueur: m(0.5) } },
+      { type: "terrain.creer", params: { id: "t", niveauId: "n1", points: [P3(-2, 0, 1.6), P3(6, 0, 1.6), P3(6, 2, 1.6), P3(-2, 2, 1.6)], epaisseur: m(0.5) } },
+    ]).etat;
+    expect(corpsDe(e, e.objets["sp"]!).length).toBeGreaterThan(0); // support maillé : un corps (volume commun sous le seuil de signalement, mais présent)
+    expect(corpsDe(e, e.objets["t"]!).length).toBe(1);
+    expect(corpsDe(e, lot(base(), [{ type: "terrain.creer", params: { id: "t0", niveauId: "n1", points: [P3(0, 0, 0), P3(1, 0, 0), P3(0, 1, 0)] } }]).etat.objets["t0"]!)).toHaveLength(0); // épaisseur nulle : surface, pas de corps
+    // Terrain épais (z 1,1 → 1,6) × gaine (z 1,35 → 1,65) : volume commun 0,4 × 2 × 0,25 = 0,2 m³ signalé (terrain = bâtiment, gaine = réseau).
+    const tg = collisionsOntologies(e).find((c) => c.objets.includes("t") && c.objets.includes("g"));
+    expect(tg).toBeDefined();
+    expect(tg!.volume).toBeCloseTo(0.2, 2);
+  });
   it("une gaine qui traverse un mur : collision « ontologies » (réseau / bâtiment) signalée, jamais corrigée", () => {
     const e = scene();
     const c = collisionsOntologies(e);
@@ -188,6 +210,11 @@ describe("coordination (cahier P2 §4, DA-17-14) : collisions entre ontologies, 
     expect(collisionsOntologies(petite)[0]!.reservationId).toBeNull();
     const basse = lot(e, [{ type: "reservation.creer", params: { id: "rv", niveauId: "n1", contour: carre(1.7, 0.8, 0.6), trous: [], hoteId: "w", z: 0.2, hauteur: m(0.4), statut: "accordee" } }]).etat;
     expect(collisionsOntologies(basse)[0]!.reservationId).toBeNull();
+    // Relecture Codex #99 : une réservation accordée pour un autre hôte (ou un autre réseau) n'exempte pas cette paire.
+    const autreHote = lot(e, [{ type: "mur.tracer", params: { id: "w2", niveauId: "n1", a: pt(-1, 5), b: pt(5, 5), epaisseur: m(0.2), hauteur: m(3) } }, { type: "reservation.creer", params: { id: "rv", niveauId: "n1", contour: carre(1.7, 0.8, 0.6), trous: [], hoteId: "w2", z: 1.3, hauteur: m(0.4), statut: "accordee" } }]).etat;
+    expect(collisionsOntologies(autreHote)[0]!.reservationId).toBeNull();
+    const autreReseau = lot(e, [{ type: "segmentReseau.creer", params: { id: "g2", niveauId: "n1", systeme: "gaine", sommets: [P3(20, 0, 2.5), P3(24, 0, 2.5)], section: { forme: "rectangulaire", largeur: m(0.4), hauteur: m(0.3) } } }, { type: "reservation.creer", params: { id: "rv", niveauId: "n1", contour: carre(1.7, 0.8, 0.6), trous: [], hoteId: "w", pourId: "g2", z: 1.3, hauteur: m(0.4), statut: "accordee" } }]).etat;
+    expect(collisionsOntologies(autreReseau)[0]!.reservationId).toBeNull();
     expect(() => lot(e, [{ type: "reservation.creer", params: { id: "x", niveauId: "n1", contour: carre(0, 0, 1), trous: [], hoteId: "g", hauteur: m(0.4) } }])).toThrow(/hôte/);
   });
   it("contrôles de spécification : segment sans spécification alors qu'une existe pour son système ; fluide contredit", () => {
