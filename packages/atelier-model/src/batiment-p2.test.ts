@@ -178,7 +178,7 @@ describe("coordination (cahier P2 §4, DA-17-14) : collisions entre ontologies, 
       { type: "terrain.creer", params: { id: "t", niveauId: "n1", points: [P3(-2, 0, 1.6), P3(6, 0, 1.6), P3(6, 2, 1.6), P3(-2, 2, 1.6)], epaisseur: m(0.5) } },
     ]).etat;
     expect(corpsDe(e, e.objets["sp"]!).length).toBeGreaterThan(0); // support maillé : un corps (volume commun sous le seuil de signalement, mais présent)
-    expect(corpsDe(e, e.objets["t"]!).length).toBe(1);
+    expect(corpsDe(e, e.objets["t"]!).length).toBe(2); // un prisme par triangle du semis (4 points → 2 triangles), pas l'enveloppe entre z extrêmes
     expect(corpsDe(e, lot(base(), [{ type: "terrain.creer", params: { id: "t0", niveauId: "n1", points: [P3(0, 0, 0), P3(1, 0, 0), P3(0, 1, 0)] } }]).etat.objets["t0"]!)).toHaveLength(0); // épaisseur nulle : surface, pas de corps
     // Terrain épais (z 1,1 → 1,6) × gaine (z 1,35 → 1,65) : volume commun 0,4 × 2 × 0,25 = 0,2 m³ signalé (terrain = bâtiment, gaine = réseau).
     const tg = collisionsOntologies(e).find((c) => c.objets.includes("t") && c.objets.includes("g"));

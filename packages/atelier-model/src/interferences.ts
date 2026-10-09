@@ -16,6 +16,7 @@ import { CLASSES } from "./ontologie.js";
 import { contoursArchitecture } from "./blocs-places.js";
 import { empriseMaillage, positionsPosees3 } from "./ontologies/mechanical/geometrie.js";
 import { empriseXY, maillagePoutre } from "./ontologies/structure/geometrie.js";
+import { delaunay } from "./geometrie-3d.js";
 
 export interface Corps {
   objetId: string;
@@ -122,14 +123,25 @@ export function corpsDe(etat: ModeleAtelier, o: OccurrenceQuelconque): Corps[] {
     case "support-reseau":
     case "assemblage-structurel":
     case "armature":
-    case "assemblage-bois":
-    case "terrain": {
-      // Toute classe maillée des ontologies activables ou du bâtiment P2 (relecture Codex #99) ; un terrain d'épaisseur nulle
-      // ou une surface libre ouverte n'ont pas d'épaisseur : aucun corps (dit par z1 − z0).
+    case "assemblage-bois": {
+      // Toute classe maillée des ontologies activables ou du bâtiment P2 (relecture Codex #99) ; une surface libre ouverte
+      // n'a pas d'épaisseur : aucun corps (dit par z1 − z0).
       const m = maillageObjet(etat, o);
       if (!m || !m.indices.length) return [];
       const e = empriseMaillage(m.positions);
       return e.emprise.length >= 3 && e.z1 - e.z0 > 1e-9 ? [c(e.emprise, [], e.z0, e.z1)] : [];
+    }
+    case "terrain": {
+      // Un terrain d'épaisseur nulle est une surface : aucun corps. Épais, il est la couche sous sa surface : un prisme par
+      // triangle du semis (z haut du triangle → z bas − épaisseur), jamais l'enveloppe entre ses z extrêmes (un terrain en
+      // pente ne « contient » pas ce qui est au-dessus de sa surface).
+      const ep = o.params.epaisseur.value;
+      if (!(ep > 1e-9) || o.params.points.length < 3) return [];
+      const pts = o.params.points;
+      return delaunay(pts).map(([i, j, k]) => {
+        const zs = [pts[i]!.z, pts[j]!.z, pts[k]!.z];
+        return c([{ x: pts[i]!.x, y: pts[i]!.y }, { x: pts[j]!.x, y: pts[j]!.y }, { x: pts[k]!.x, y: pts[k]!.y }], [], z + Math.min(...zs) - ep, z + Math.max(...zs));
+      });
     }
     default:
       return [];
