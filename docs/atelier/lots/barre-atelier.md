@@ -22,10 +22,29 @@ et Cadrer y restent jusqu'au lot B).
 
 ## Lot B — barre d'actions flottante
 
-(à compléter à la livraison du lot B)
+Rangée résultante : **Fichier · Plan · 3D · Documents · Planche · ⚙ · état d'enregistrement** — Annuler / Rétablir et
+Cadrer ont quitté la rangée pour la barre d'actions flottante ; ⚙ gagne la section « Barre d'actions » et reste présente
+en Documents (elle n'y propose que cette section).
+
+| Sujet | Résultat | Preuve |
+| --- | --- | --- |
+| Barre d'actions | `panneaux/BarreActions.tsx` (`[data-barre-actions]`, rôle `toolbar`) : poignée ⠿, groupe « Annuler et rétablir », puis les actions du mode. Atelier (rendue par `AtelierNouveau.tsx`) : Annuler / Rétablir du journal (`client.annuler()` / `retablir()`, inactifs en lecture seule) et **Cadrer** (Plan : le niveau, `cadrer()` ; 3D : la vue, `cadrerVue3D()`) ; en Documents, Annuler / Rétablir seulement. Planche (rendue dans sa racine par `Planche.tsx`) : Annuler / Rétablir du brouillon local (`data-planche-annuler` / `-retablir`, inactifs sans opération) et **Détacher / Rattacher / Quitter le plein écran** (`data-planche-detacher`) ; la barre du haut de la Planche ne garde que le menu, la pastille brouillon et le choix étroit. | `atelier-barre.mjs` (Plan, 3D, Documents, Planche) ; `planche-boutons.mjs` (annuler / rétablir de la Planche) |
+| Flotte sans redimensionner | `position: fixed`, `z-index` 45 (au-dessus des panneaux flottants, sous les menus ouverts) ; la zone de dessin garde ses dimensions, barre affichée ou non. | `atelier-barre.mjs` (« sans le redimensionner ») |
+| Déplacement libre | Poignée : pointeur capturé (souris et doigt, `touch-action: none`), flèches au clavier (16 px, 64 px avec Maj) ; bornage pur `barre-actions-position.ts` (`borner`, marge 4 px) — seule contrainte : la barre reste **entière** dans la zone visible, ramenée au relâchement, au redimensionnement, à la rotation et sous le clavier virtuel (`visualViewport`). | `barre-actions-position.test.ts` (6 tests) ; `atelier-barre.mjs` (glisser hors écran en haut à gauche et en bas à droite, clavier, fenêtre réduite, téléphone 390 × 844 et rotation 844 × 390) |
+| Position par défaut | Coin bas droit de la zone de dessin (`.atelier-n-travail` ; Planche : sa racine, au-dessus du pied et hors de la colonne de panneaux si elle descend jusque-là), recalculée au redimensionnement (`ResizeObserver`) tant que rien n'est mémorisé (`data-position="defaut"`). | `atelier-barre.mjs` |
+| Mémoire sur l'appareil | `etat-ui.ts` : `barreActions` (`{x, y}` ou `null`) et `barreActionsVisible` dans les préférences persistées (`fadi.atelier.prefs`, relecture défensive `lirePosition`) ; une position mémorisée sur un grand écran est ramenée dans celui du téléphone. | `atelier-barre.mjs` (rechargement, téléphone) |
+| ⚙ « Barre d'actions » | Case « Afficher la barre d'actions » (`data-barre-actions-visible`, mémorisée) et « Remettre la barre à sa position par défaut » (`data-barre-actions-defaut`, inactif quand elle y est). | `atelier-barre.mjs`, `planche-detachee-documents.mjs` (Documents : ⚙ ne propose que cette section) |
+| Planche détachée | La barre vit dans la racine de la Planche : elle part dans la fenêtre séparée (et dans le plein écran) et en revient ; ses écouteurs sont reposés sur la fenêtre qui la porte (`fenetreCle`). | `atelier-barre.mjs` (cadre de même origine simulant Document Picture-in-Picture), `planche-detachee-documents.mjs` |
+| Raccourcis | Ctrl Z, Ctrl Maj Z, 0 inchangés ; Cadrer rend la même échelle que la touche 0. | `atelier-barre.mjs` |
+| Messages | `messages.ts` : `reglages.actions`, `reglages.actions.afficher`, `reglages.actions.defaut`, `actions.barre`, `actions.deplacer`, `actions.deplacer.aide`, `actions.cadrer`, `actions.cadrer.niveau`, `actions.cadrer.vue` (FR / EN). | `interface-anglais.mjs` |
+| Accessibilité | Rôle `toolbar` nommé, poignée nommée (bouton, focusable, flèches), groupe nommé, boutons nommés (texte visible ou `sr-only`), cibles 44 px au téléphone ; axe-core sans violation critique ou sérieuse (ordinateur et téléphone). | `atelier-barre.mjs` |
+| CI | Nouvelle étape « Recette de la barre de l'Atelier » (`apps/web/e2e/atelier-barre.mjs`) après `planche-detachee-documents.mjs`. | `.github/workflows/ci.yml` |
 
 ## Contrôles
 
+- Lot B : `npm run typecheck` ✅ · tests web 112 ✅ (6 nouveaux) · `npm run build` ✅ · recettes rejouées en local sur la
+  version livrée : `atelier-barre` 55, `planche-detachee-documents` 23, `planche-boutons` 62, `planche` 54 ; les autres
+  tournent en CI.
 - Lot A : `npm run typecheck` ✅ · tests web 106 ✅ · `npm run build` ✅ · douze recettes rejouées en local sur la version
   livrée (`atelier-nouveau` 41, `atelier-echanges` 17, `atelier-canevas` 71, `planche-boutons` 62, `atelier-complements`
   133, `parcours-scenario` 326, `interface-anglais` 7, `atelier-versions` 28, `atelier-documents` 23, `planche` 54,
@@ -36,3 +55,5 @@ et Cadrer y restent jusqu'au lot B).
 - Déplacement libre des rails d'outils, barres par famille d'outils, personnalisation élément par élément de la barre
   (propositions discutées, hors périmètre de ce lot).
 - Les niveaux du mode 3D restent choisis par le bouton Plan (le mode 3D suit le niveau actif) : pas de liste propre à 3D.
+- Clavier virtuel : la barre suit la zone visuelle (`visualViewport`) ; sans clavier virtuel dans le navigateur sans écran de
+  la CI, ce cas n'est couvert que par le test unitaire du bornage (zone décalée).

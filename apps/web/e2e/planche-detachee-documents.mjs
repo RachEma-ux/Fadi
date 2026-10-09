@@ -4,13 +4,14 @@
  *   fenêtre séparée ; ses boutons y répondent (outil choisi, panneau ouvert) ; Rattacher la ramène dans la page.
  *   La fenêtre Document Picture-in-Picture est simulée par un cadre de même origine (le navigateur sans écran n'en
  *   ouvre pas) : même contrat — une `Window` séparée, avec son propre document.
- * - Le mode Documents ne garde dans la barre que Fichier, les modes, annuler / rétablir et l'état d'enregistrement ;
- *   le niveau actif se choisit dans la liste des documents ; les raccourcis d'outils n'y agissent pas.
+ * - Le mode Documents ne garde dans la barre que Fichier, les modes, ⚙ (barre d'actions seulement) et l'état
+ *   d'enregistrement ; annuler / rétablir sont dans la barre d'actions flottante (D-195) ; le niveau actif se choisit
+ *   dans la liste des documents ; les raccourcis d'outils n'y agissent pas.
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/planche-detachee-documents.mjs
  */
 import { chromium } from "playwright";
-import { allerEnPlan, fermerMenus, ouvrirFichier } from "./lib-barre.mjs";
+import { allerEnPlan, fermerMenus, ouvrirFichier, ouvrirReglages } from "./lib-barre.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -101,11 +102,15 @@ check("rattachée : les boutons répondent toujours dans la page", (await page.l
 await page.locator('.barre-mode button:has-text("Documents")').click();
 await page.waitForSelector(".atelier-docs", { timeout: 30000 });
 const affiche = (sel) => page.locator(sel).first().isVisible();
-const masques = { niveaux: "[data-plan-niveaux]", palette: "[data-palette-bouton]", reglages: "[data-reglages]", affichage: ".barre-affichage", accrochages: ".accrochages-liste", cadrer: '.atelier-n-barre button:text-is("Cadrer")', canevas: "[data-disposition-canevas]", exporter: ".barre-exports", importer: ".barre-imports", harmonie: "#atelier-harmonie-button", echelle: ".etat-echelle" };
+// D-195 : ⚙ reste (barre d'actions) mais sans affichage, accrochages ni Canevas ; Cadrer n'est pas dans la barre d'actions.
+const masques = { niveaux: "[data-plan-niveaux]", palette: "[data-palette-bouton]", affichage: "#reglages-affichage", accrochages: "#reglages-accrochages", cadrer: '[data-barre-actions] [data-action="cadrer"]', canevas: "[data-disposition-canevas]", exporter: ".barre-exports", importer: ".barre-imports", harmonie: "#atelier-harmonie-button", echelle: ".etat-echelle" };
+await ouvrirReglages(page);
 const restes = [];
 for (const [nom, sel] of Object.entries(masques)) if ((await page.locator(sel).count()) && (await affiche(sel))) restes.push(nom);
-check("Documents : liste des niveaux, recherche d'outil, roue ⚙ (affichage, accrochages, canevas), cadrer, échanges du modèle, Harmonie et échelle du plan absents", restes.length === 0, restes.join(", "));
-check("Documents : Fichier, modes, annuler / rétablir et état d'enregistrement restent", (await affiche("[data-menu-principal]")) && (await affiche(".barre-mode")) && (await affiche('[aria-label="Annuler et rétablir"]')) && (await affiche(".barre-sync")));
+check("Documents : liste des niveaux, recherche d'outil, réglages du dessin (affichage, accrochages, canevas), cadrer, échanges du modèle, Harmonie et échelle du plan absents", restes.length === 0, restes.join(", "));
+check("Documents : ⚙ ne propose que la barre d'actions", (await affiche("#reglages-actions")) && (await page.locator("[data-reglages] .reglages-section").count()) === 1);
+await fermerMenus(page);
+check("Documents : Fichier, modes, ⚙, état d'enregistrement et la barre d'actions (annuler / rétablir) restent", (await affiche("[data-menu-principal]")) && (await affiche(".barre-mode")) && (await affiche("[data-reglages]")) && (await affiche('[data-barre-actions] [aria-label="Annuler et rétablir"]')) && (await affiche(".barre-sync")));
 await page.locator("[data-menu-principal] > summary").click();
 check("Documents : le menu Fichier n'offre plus Exporter / Importer du modèle, garde Imprimer", (await page.locator('[data-menu="exporter"]').count()) === 0 && (await page.locator('[data-menu="importer"]').count()) === 0 && (await page.locator('[data-menu="imprimer"]').count()) === 1);
 await page.locator("[data-menu-principal] > summary").click();
@@ -151,10 +156,8 @@ await p2.waitForSelector("[data-planche-vue] canvas", { timeout: 30000 });
 await p2.waitForTimeout(800);
 check("téléphone, Planche : colonne de panneaux en icônes (les étiquettes ne recouvrent plus le dessin)", (await p2.locator("[data-planche]").getAttribute("class")).includes("colonne-repliee") && !(await p2.locator(".planche-colonne .canevas-etiquette").first().isVisible()));
 check("téléphone, Planche : la page ne déborde pas en largeur", !(await deborde()));
-const det = p2.locator("[data-planche-detacher]");
-await det.scrollIntoViewIfNeeded();
-const rd = await det.boundingBox();
-check("téléphone, Planche : « Détacher » s'atteint en faisant défiler la barre du haut", !!rd && rd.x + rd.width <= 391);
+const rd = await p2.locator("[data-barre-actions] [data-planche-detacher]").boundingBox();
+check("téléphone, Planche : « Détacher » est dans la barre d'actions flottante, entière dans l'écran (D-195)", !!rd && rd.x >= 0 && rd.x + rd.width <= 391 && rd.y >= 0 && rd.y + rd.height <= 845, JSON.stringify(rd));
 const nbOutils = await p2.locator("[data-planche-outil]").count();
 const dernier = p2.locator(".planche-outils [data-planche-outil]").last();
 await dernier.scrollIntoViewIfNeeded();
