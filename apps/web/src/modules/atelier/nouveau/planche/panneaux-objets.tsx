@@ -37,12 +37,14 @@ export function MenuContextuel({ x, y, entrees, onFermer }: { x: number; y: numb
         onFermer();
       }
     };
-    window.addEventListener("pointerdown", fermer, true);
-    window.addEventListener("keydown", clavier, true);
+    // Fenêtre où vit le menu (page ou Planche détachée).
+    const w = ref.current?.ownerDocument.defaultView ?? window;
+    w.addEventListener("pointerdown", fermer, true);
+    w.addEventListener("keydown", clavier, true);
     ref.current?.querySelector<HTMLButtonElement>("button:not([disabled])")?.focus();
     return () => {
-      window.removeEventListener("pointerdown", fermer, true);
-      window.removeEventListener("keydown", clavier, true);
+      w.removeEventListener("pointerdown", fermer, true);
+      w.removeEventListener("keydown", clavier, true);
     };
   }, [onFermer]);
   // Le menu reste dans la fenêtre.

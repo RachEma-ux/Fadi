@@ -45,11 +45,13 @@ export function MenuPlanche({ planches, courante, niveaux, lecture, brouillonNon
         setVolet(null);
       }
     };
-    window.addEventListener("pointerdown", fermer, true);
-    window.addEventListener("keydown", clavier, true);
+    // Fenêtre où vit le menu (page ou Planche détachée).
+    const w = ref.current?.ownerDocument.defaultView ?? window;
+    w.addEventListener("pointerdown", fermer, true);
+    w.addEventListener("keydown", clavier, true);
     return () => {
-      window.removeEventListener("pointerdown", fermer, true);
-      window.removeEventListener("keydown", clavier, true);
+      w.removeEventListener("pointerdown", fermer, true);
+      w.removeEventListener("keydown", clavier, true);
     };
   }, [ouvert]);
   const fermer = () => {

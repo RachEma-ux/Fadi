@@ -10,6 +10,8 @@ export interface PropsMenuPrincipal {
   onPartager: () => void;
   onDocuments: () => void;
   onProjets: () => void;
+  /** Exporter / Importer (échanges du modèle) : absents hors du dessin (Documents, Planche), où ces menus n'existent pas. */
+  echanges?: boolean;
 }
 
 /** Ouvre un menu existant de la barre (Exporter, Importer) et place le focus sur sa première entrée. */
@@ -20,7 +22,7 @@ export function ouvrirMenuBarre(selecteur: string): void {
   requestAnimationFrame(() => d.querySelector<HTMLElement>("button:not([disabled]), input:not([disabled]), label")?.focus());
 }
 
-export function MenuPrincipal({ lecture, onEnregistrer, onPartager, onDocuments, onProjets }: PropsMenuPrincipal) {
+export function MenuPrincipal({ lecture, onEnregistrer, onPartager, onDocuments, onProjets, echanges = true }: PropsMenuPrincipal) {
   const fermer = (e: React.MouseEvent<HTMLElement>) => (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
   return (
     <details className="barre-menu" data-menu-principal>
@@ -29,8 +31,8 @@ export function MenuPrincipal({ lecture, onEnregistrer, onPartager, onDocuments,
         <button type="button" data-menu="enregistrer" disabled={lecture} onClick={(e) => { fermer(e); onEnregistrer(); }}>
           {t("menu.enregistrer")} <kbd>Ctrl S</kbd>
         </button>
-        <button type="button" data-menu="exporter" onClick={(e) => { fermer(e); ouvrirMenuBarre(".barre-exports"); }}>{t("menu.exporter")}</button>
-        <button type="button" data-menu="importer" disabled={lecture} onClick={(e) => { fermer(e); ouvrirMenuBarre(".barre-imports"); }}>{t("menu.importer")}</button>
+        {echanges && <button type="button" data-menu="exporter" onClick={(e) => { fermer(e); ouvrirMenuBarre(".barre-exports"); }}>{t("menu.exporter")}</button>}
+        {echanges && <button type="button" data-menu="importer" disabled={lecture} onClick={(e) => { fermer(e); ouvrirMenuBarre(".barre-imports"); }}>{t("menu.importer")}</button>}
         <button type="button" data-menu="imprimer" onClick={(e) => { fermer(e); onDocuments(); }}>{t("menu.imprimer")}</button>
         <button type="button" data-menu="partager" onClick={(e) => { fermer(e); onPartager(); }}>{t("menu.partager")}</button>
         <button type="button" data-menu="projets" onClick={(e) => { fermer(e); onProjets(); }}>{t("menu.projets")}</button>
