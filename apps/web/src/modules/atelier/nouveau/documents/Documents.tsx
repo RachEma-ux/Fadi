@@ -235,7 +235,7 @@ export function Documents({ projectId, code, nomProjet, etat, revision, readOnly
           {!readOnly && (
             <>
               <button type="button" className="docs-ajout" data-nouvelle="feuille" onClick={creerFeuille}>Nouvelle feuille</button>
-              <details className="docs-nouvelle" data-gabarits>
+              <details className="docs-gabarits" data-gabarits>
                 <summary>Feuille gabarit (vue + nomenclatures)</summary>
                 <div className="docs-nouvelle-liste" onClick={(e) => (e.target as HTMLElement).closest("button") && e.currentTarget.closest("details")?.removeAttribute("open")}>
                   <button type="button" data-gabarit="atelier" disabled={!niveau} onClick={() => creerGabarit("atelier")}>Plan d'atelier (pièces, perçages)</button>

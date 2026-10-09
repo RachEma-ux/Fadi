@@ -1173,6 +1173,7 @@
   color: #4a6157;
 }
 .docs-nouvelle > summary,
+.docs-gabarits > summary,
 .docs-ajout,
 .docs-lien {
   display: inline-flex;
@@ -1431,7 +1432,8 @@
   }
   .docs-item,
   .doc-bouton,
-  .docs-nouvelle > summary {
+  .docs-nouvelle > summary,
+  .docs-gabarits > summary {
     min-height: 44px;
   }
 }
