@@ -123,7 +123,9 @@
   font-size: 0.85em;
 }
 .sync-attente {
-  color: var(--atelier-accent);
+  /* Doré foncé : l'accent (#b3872f) à 0,85 em ne tient pas le contraste 4,5:1 (axe-core, recette documents en CI). */
+  color: #7a5a1c;
+  font-weight: 600;
 }
 .sync-alerte {
   color: #a33a2b;
