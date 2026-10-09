@@ -14,6 +14,8 @@ import { lireParamsFeuille } from "./documents/feuilles.js";
 import { estClasse, estOntologie } from "./ontologie.js";
 import { ErreurCommande } from "./commandes/base.js";
 import { validerParams } from "./commandes/validation.js";
+import { validerGraphe } from "./automatisation/graphes-validation.js";
+import { ErreurScript } from "./automatisation/scripts.js";
 import { modeleVide, type ModeleAtelier, type OccurrenceQuelconque } from "./modele.js";
 
 type Brut = Record<string, unknown>;
@@ -64,8 +66,17 @@ export function verifierModele(brut: unknown): ResultatVerification {
   }
   for (const [id, d] of Object.entries(table("definitions")) as [string, Brut][]) {
     const classe = d["classe"];
-    if ((!estClasse(classe) && !["bloc", "composant", "vue", "feuille", "reference-externe", "vue-3d", "planche", "referentiel-classification", "ensemble-affichage", "etat-calques", "famille", "regle", "catalogue", "specification"].includes(classe as string)) || typeof d["nom"] !== "string" || !estRecord(d["params"]) || !estNombre(d["version"])) erreurs.push(`definitions.${id} : définition invalide`);
-    else modele.definitions[id] = { id, classe: classe as ModeleAtelier["definitions"][string]["classe"], nom: d["nom"], params: d["params"], version: d["version"] };
+    if ((!estClasse(classe) && !["bloc", "composant", "vue", "feuille", "reference-externe", "vue-3d", "planche", "referentiel-classification", "ensemble-affichage", "etat-calques", "famille", "regle", "catalogue", "specification", "graphe"].includes(classe as string)) || typeof d["nom"] !== "string" || !estRecord(d["params"]) || !estNombre(d["version"])) erreurs.push(`definitions.${id} : définition invalide`);
+    else if (classe === "graphe") {
+      // Graphe de génération (P2-8) : relu par le même validateur que `graphe.definir` (relecture Codex #101) ; une définition
+      // mal formée ou cyclique refuse l'archive nommément plutôt que de faire échouer le panneau d'automatisation.
+      try {
+        const g = validerGraphe({ ...(d["params"] as Record<string, unknown>), id, nom: d["nom"], version: d["version"] });
+        modele.definitions[id] = { id, classe: "graphe", nom: g.nom, params: { description: g.description, noeuds: g.noeuds, liens: g.liens }, version: d["version"] };
+      } catch (err) {
+        erreurs.push(`definitions.${id} : graphe invalide (${err instanceof ErreurScript ? `${err.chemin} : ${err.message}` : String(err)})`);
+      }
+    } else modele.definitions[id] = { id, classe: classe as ModeleAtelier["definitions"][string]["classe"], nom: d["nom"], params: d["params"], version: d["version"] };
   }
   // Les objets sont validés contre le modèle candidat complet (un hôte peut être déclaré après son ouverture).
   const objetsBruts = table("objets");

@@ -13,6 +13,7 @@ Documents de pilotage : `docs/atelier-cahier-des-charges.md` (exécution), `docs
 | `lots/lot-N.md` | Compte rendu de chaque lot : fait, non fait, matrice de propriété, tests, mesures, décisions prises, décisions à prendre, ce que le maître d'ouvrage peut vérifier | chef de projet |
 | `matrice-echanges.md` | Matrice d'échanges IFC / DXF / PDF / paquet natif (lot 6) | équipier « IFC » |
 | `recette.md` | Dossier de recette finale (lot 9) | chef de projet |
+| `recette-p2.md` | Dossier de recette P2 (lot P2-8) : livré, contrôles, T01–T20 rejouées sur P2, parcours guidé, décisions ouvertes | chef de projet |
 
 États d'une fiche : `à spécifier` → `spécifiée` → `prototype` → `vérifiée` → `disponible` (ce dernier posé
 uniquement après acceptation du maître d'ouvrage).

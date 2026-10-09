@@ -38,7 +38,7 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
 - Proposition acceptée : `docs/atelier-drawall.md`. Référentiel : `docs/drawall/`.
 - Lots P1 (Atelier 0–9, Planche 1–7) acceptés le 8 octobre 2026 (D-174). Étape P2 : cahier `docs/atelier-cahier-p2.md`
   **validé** (D-176), lots **P2-0 et P2-1 livrés et acceptés** (`docs/atelier/lots/p2-lot-0.md`, `p2-lot-1.md`,
-  D-182, D-183), lot **P2-2 livré** (`p2-lot-2.md`, D-184 : porte P1 → P2 passée sur bâtiment + mécanique), lot **P2-3 livré** (`p2-lot-3.md`, D-185 : ontologie `structure`), lot **P2-4 livré** (`p2-lot-4.md`, D-186 : ontologies `timber` et `sheetmetal`), lot **P2-5 livré** (`p2-lot-5.md`, D-187 : ontologie `mep`), lot **P2-6 livré** (`p2-lot-6.md`, D-188 : bâtiment P2, surfaces libres, coordination, cinématique, inerties), lot **P2-7 livré** (`p2-lot-7.md`, D-189 : annotations de fabrication, isométriques, feuilles gabarits, perçages / ferraillage / débit, nuages de points) ; exécution
+  D-182, D-183), lot **P2-2 livré** (`p2-lot-2.md`, D-184 : porte P1 → P2 passée sur bâtiment + mécanique), lot **P2-3 livré** (`p2-lot-3.md`, D-185 : ontologie `structure`), lot **P2-4 livré** (`p2-lot-4.md`, D-186 : ontologies `timber` et `sheetmetal`), lot **P2-5 livré** (`p2-lot-5.md`, D-187 : ontologie `mep`), lot **P2-6 livré** (`p2-lot-6.md`, D-188 : bâtiment P2, surfaces libres, coordination, cinématique, inerties), lot **P2-7 livré** (`p2-lot-7.md`, D-189 : annotations de fabrication, isométriques, feuilles gabarits, perçages / ferraillage / débit, nuages de points), lot **P2-8 livré** (`p2-lot-8.md`, D-190 : graphes de génération contrôlée, règles par ontologie, dossier de recette P2 `docs/atelier/recette-p2.md` — **P2 livré en entier, acceptation des lots P2-2 à P2-8 à prendre**) ; exécution
   continue avec décisions 10.1 déléguées au chef de projet (D-183, consignées une à une) ; décisions D-177 (OCCT = composant LGPL chargé séparément, licences
   amendées), D-178 (solveur écrit), D-179 (DWG / DGN renoncés), D-180 (catalogues CSV sourcés,
   `docs/atelier/catalogues/`), D-181 (projet mixte P.118-M). Ordre imposé P2-0 → P2-1 → P2-2 → porte P1 → P2 ; un lot à
@@ -73,6 +73,13 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
   `tolerance` ; étiquette intelligente `champ`) ; vue `isometrique` ; `feuille.gabarit` ; tableaux `percages`, `ferraillage`,
   `debit` ; `src/echanges/nuage.ts` (LAS / XYZ / PTS lus sans bibliothèque, décimés, E57 / LAZ refusés) et classe
   `nuage-de-points` posée par une origine **déclarée** (`POST /atelier/nuages`) ; DGN / DWG renoncés (D-179).
+- Automatisation P2 (P2-8) : `src/automatisation/graphes.ts` (graphe de génération = nœuds paramètre / calcul / série /
+  niveaux / règle / commande + liens « qui lit quoi » ; `validerGraphe` sans cycle, `compilerGraphe` → `ScriptAtelier`,
+  `proposerGraphe` → **même boucle contrôlée** que l'assistant, aucune correction automatique) ; graphes du projet =
+  définitions `graphe` (`commandes/graphes.ts`) ; `src/automatisation/regles-classes.ts` (règle `regle.definir { classe }`
+  contrôlée sur chaque occurrence après chaque commande, problèmes rattachés, jamais corrigés — aucune règle fournie par
+  Fadi, R3) ; routes `GET /atelier/graphes`, `POST /atelier/graphes/:id/proposer` (accord par les routes de l'assistant) ;
+  `panneaux/Graphes.tsx` (vue SVG + éditeur visuel), `panneaux/Regles.tsx`.
 - Noyau exact (P2-1) : `packages/geometry-exact` (occt-wasm) est le seul endroit qui importe `occt-wasm` ; le `.wasm`
   (LGPL) reste un fichier séparé, jamais chargé à l'ouverture (Web Worker à la demande, `exact/moteur-exact.ts`) ; le
   serveur (`apps/api/src/lib/atelier-exact.ts`) recalcule chaque `solideExact.creer` et fait autorité ; `occt-wasm`

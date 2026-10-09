@@ -820,7 +820,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           <Versions projectId={projectId} client={client} etat={inst.etat} revision={inst.revisionServeur} selection={ui.selection} niveauId={ui.niveauId} readOnly={readOnlyProjet || protectedReference} consultation={consultation?.libelle ?? null} onConsulter={(libelle, e) => { setConsultation({ libelle, etat: e }); etatUi.set({ selection: [] }); }} />
           <Reprise projectId={projectId} client={client} readOnly={readOnlyProjet || protectedReference} />
           <ReferencesExternes projectId={projectId} client={client} niveaux={niveauxTries} niveauId={ui.niveauId} references={signatureRefs ? referencesExternes.data?.references ?? [] : []} readOnly={readOnlyProjet || protectedReference || consultation !== null || inst.horsLigne} horsLigne={inst.horsLigne} />
-          <Automatisation projectId={projectId} client={client} etat={inst.etat} revision={inst.revisionServeur} niveauId={ui.niveauId} readOnly={readOnly || protectedReference} />
+          <Automatisation projectId={projectId} client={client} etat={inst.etat} revision={inst.revisionServeur} niveauId={ui.niveauId} readOnly={readOnly || protectedReference} onCommandes={(c, l) => void executer(c, l, false)} />
         </div>
       </aside>
 
