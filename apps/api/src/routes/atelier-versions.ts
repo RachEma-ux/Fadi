@@ -158,7 +158,7 @@ async function restaurer(req: Request, res: Response, project: AccessibleProject
 }
 
 atelierVersionsRouter.post("/versions/:versionId/restaurer", async (req, res) => {
-  const project = await projectOr404(req, res, "write");
+  const project = await projectOr404(req, res, "modify");
   if (!project) return;
   const v = await versionDe(project.id, req.params["versionId"] as string);
   if (!v) return void res.status(404).json({ erreur: "version-inconnue" });
@@ -250,7 +250,7 @@ atelierVersionsRouter.post("/variantes", async (req, res) => {
   res.status(201).json({ id: created.id, name: created.name, nom: p.data.nom, forkRevision: project.modelRevision });
 });
 
-async function contexteFusion(req: Request, res: Response, need: "read" | "write") {
+async function contexteFusion(req: Request, res: Response, need: "read" | "modify") {
   const tronc = await projectOr404(req, res, need);
   if (!tronc) return null;
   const varianteId = req.params["varianteId"] as string;
@@ -389,7 +389,7 @@ atelierVersionsRouter.post("/variantes/:varianteId/mise-a-jour", async (req, res
 const fusionSchema = z.object({ baseRevision: z.number().int().min(0), strategie: z.enum(["refuser-conflits", "variante-prioritaire"]).default("refuser-conflits") });
 
 atelierVersionsRouter.post("/variantes/:varianteId/fusion", async (req, res) => {
-  const ctx = await contexteFusion(req, res, "write");
+  const ctx = await contexteFusion(req, res, "modify");
   if (!ctx) return;
   const p = fusionSchema.safeParse(req.body ?? {});
   if (!p.success) return void invalide(res, "baseRevision requise ; stratégie : refuser-conflits ou variante-prioritaire");
@@ -499,7 +499,7 @@ atelierVersionsRouter.get("/publications/:publicationId/fichiers/:volumeId", asy
 });
 
 atelierVersionsRouter.post("/publications/:publicationId/restaurer", async (req, res) => {
-  const project = await projectOr404(req, res, "write");
+  const project = await projectOr404(req, res, "modify");
   if (!project) return;
   const pub = await publicationDe(project.id, req.params["publicationId"] as string);
   if (!pub) return void res.status(404).json({ erreur: "publication-inconnue" });
@@ -690,7 +690,7 @@ atelierVersionsRouter.post("/reprise/apercu", async (req, res) => {
 });
 
 atelierVersionsRouter.post("/reprise", async (req, res) => {
-  const project = await projectOr404(req, res, "write");
+  const project = await projectOr404(req, res, "modify");
   if (!project) return;
   const p = repriseSchema.safeParse(req.body ?? {});
   if (!p.success || !p.data.requestId || p.data.baseRevision === undefined || !p.data.empreinteSource) return void invalide(res, "source, options, empreinteSource, requestId et baseRevision requis");

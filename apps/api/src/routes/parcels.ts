@@ -177,7 +177,8 @@ const transmitSchema = z.object({ data: snapshotSchema.optional() });
  * provoque aucune écriture (rechargement de la page, clics sans saisie).
  */
 parcelsRouter.post("/:parcelId/transmit", async (req, res) => {
-  const project = await projectOr404(req, res, "write");
+  // Écrit le modèle typé (commandes internes) : refusé sur la référence protégée (403 reference-protegee, D-194).
+  const project = await projectOr404(req, res, "modify");
   if (!project) return;
   const id = req.params["parcelId"] as string;
   if (!ID_PATTERN.test(id)) {

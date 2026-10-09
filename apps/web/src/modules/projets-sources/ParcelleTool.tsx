@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type ParcelTransmission } from "../../lib/api";
+import { api, ApiError, type ParcelTransmission } from "../../lib/api";
 import { atelierClientExistant } from "../atelier/bus/atelier-client";
 import { useProjectAccess } from "../../lib/access";
 import { LOCALE } from "../../lib/i18n";
@@ -128,6 +128,8 @@ export function ParcelleTool({ projectId, harmonie = null }: { projectId: string
   }, [ready, harmonie !== null]);
   const [frameError, setFrameError] = useState<string | null>(null);
   const [transmitting, setTransmitting] = useState(false);
+  // Refus nommé du serveur (référence protégée, D-194) : affiché, et la signature n'est plus retentée.
+  const [refus, setRefus] = useState<string | null>(null);
   const parcelsQuery = useQuery({ queryKey: ["parcels", projectId], queryFn: () => api.listParcels(projectId) });
   const access = useProjectAccess(projectId);
 
@@ -183,8 +185,12 @@ export function ParcelleTool({ projectId, harmonie = null }: { projectId: string
             atelierClientExistant(projectId)?.relireServeur(),
           ]);
         }
-      } catch {
-        /* nouvelle tentative au prochain tour */
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 403 && (err.body as { motif?: string } | null)?.motif === "reference-protegee") {
+          last = captured.signature; // la référence n'est jamais écrite : inutile de réessayer
+          if (!disposed) setRefus("Exemple protégé : la parcelle de la référence n'est pas transmise au modèle. Travaillez dans une copie du projet.");
+        }
+        /* sinon, nouvelle tentative au prochain tour */
       } finally {
         busy = false;
         if (!disposed) setTransmitting(false);
@@ -232,6 +238,11 @@ export function ParcelleTool({ projectId, harmonie = null }: { projectId: string
       {frameError && (
         <p className="h7-error" role="alert">
           {frameError}
+        </p>
+      )}
+      {refus && (
+        <p className="v62-alert" role="status">
+          {refus}
         </p>
       )}
       {!access.canWrite && <p className="h7-muted access-readonly-hint">Lecture seule : la parcelle se consulte et s’exporte ; son enregistrement est réservé au propriétaire et aux éditeurs (le serveur refuse toute écriture).</p>}

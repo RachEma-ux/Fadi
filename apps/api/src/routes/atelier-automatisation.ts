@@ -159,7 +159,7 @@ atelierAutomatisationRouter.post("/scripts/:scriptId/essai", async (req, res) =>
 const executerSchema = z.object({ requestId: z.string().min(1).max(64), baseRevision: z.number().int().min(0) });
 
 atelierAutomatisationRouter.post("/scripts/:scriptId/executer", async (req, res) => {
-  const project = await projectOr404(req, res, "write");
+  const project = await projectOr404(req, res, "modify");
   if (!project) return;
   const e = executerSchema.safeParse(req.body ?? {});
   if (!e.success) return void invalide(res, "body", "requestId et baseRevision requis");
@@ -305,7 +305,7 @@ async function propositionDe(projectId: string, id: string) {
 }
 
 atelierAutomatisationRouter.post("/assistant/propositions/:propositionId/accepter", async (req, res) => {
-  const project = await projectOr404(req, res, "write");
+  const project = await projectOr404(req, res, "modify");
   if (!project) return;
   const e = executerSchema.safeParse(req.body ?? {});
   if (!e.success) return void invalide(res, "body", "requestId et baseRevision requis");

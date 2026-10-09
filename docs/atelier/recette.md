@@ -110,7 +110,7 @@ Toutes ces étapes tournent dans `.github/workflows/ci.yml` (jobs `validate`, `e
 | Stockage objet et hébergement | ouverte | Les volumes (publications) sont en base derrière une interface ; `docs/deploiement.md` décrit l'hébergement |
 | Compte buildingSMART (validation IFC) | ouverte | Conformité IFC **testée** par IfcOpenShell en CI, jamais « certifiée » |
 | Ouverture du fichier IFC dans un visualiseur tiers | constat attendu | Critère d'acceptation du lot 6 |
-| Refus serveur des commandes sur la référence protégée (D-016) | à trancher | La protection reste côté interface (copie automatique à la première modification) |
+| Refus serveur des commandes sur la référence protégée (D-016) | **tranchée le 9 octobre 2026 (D-194)** | Le serveur refuse (403 `reference-protegee`) toute écriture du modèle sur la référence ; la copie automatique de l'interface reste le chemin normal |
 | Règles réglementaires ou valeurs structurelles | aucune introduite | R3 : rien n'est inventé ; toute règle viendra de vous, avec sa source |
 
 ## 7. Limites connues (non faites, déclarées)

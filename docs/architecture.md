@@ -317,7 +317,7 @@ at install so offline opening does not depend on what was visited online. Around
 Harmonie page shows the state of each project's choices (read from the steps already served) and the settings
 page what is really configurable (account, MapTiler key, data kept by the browser, build version); the
 protected P.118 reference behaves as in the prototype in the Atelier (the first committed modification goes
-to an automatic working copy through the engine's own `P118Resolved` seam). MapTiler (satellite background,
+to an automatic working copy through the engine's own `P118Resolved` seam); since D-194 the server itself refuses any model write on the reference (403 `reference-protegee`), so a direct API call cannot alter it either. MapTiler (satellite background,
 altimetry) is called from the browser with the user's key, on request, and simulated in CI. The Playwright
 scenario also runs axe-core on every screen at desktop and phone widths (no critical or serious violation).
 Items still open are listed under « Limites restantes » in the matrix (regulatory checks beyond the
