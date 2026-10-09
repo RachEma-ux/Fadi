@@ -157,6 +157,8 @@ check("Fichier : enregistrer, exporter, importer, imprimer, partager, projets (E
 await page.locator(".barre-exports > summary").click();
 check("Exporter : le sous-menu s'ouvre dans Fichier avec ses formats", (await page.locator(".barre-exports[open]").count()) === 1 && (await page.locator(".barre-exports [data-export]").count()) >= 3, `${await page.locator(".barre-exports [data-export]").count()} exports`);
 await page.locator(".barre-imports > summary").click();
+// L'accordéon se referme au basculement (événement différé) : laisser Exporter se replier avant de vérifier.
+await page.waitForFunction(() => document.querySelectorAll(".barre-exports[open]").length === 0, null, { timeout: 2000 }).catch(() => {});
 check("Importer : le sous-menu s'ouvre avec ses formats et referme Exporter (accordéon, après le clic)", (await page.locator(".barre-imports[open]").count()) === 1 && (await page.locator(".barre-imports [data-import]").count()) >= 2 && (await page.locator(".barre-exports[open]").count()) === 0, `imports ${await page.locator(".barre-imports[open]").count()} · exports ${await page.locator(".barre-exports[open]").count()}`);
 await page.mouse.click(LARGEUR / 2, HAUTEUR - 10);
 await page.waitForTimeout(150); // les sous-menus se replient au basculement (événement différé)
