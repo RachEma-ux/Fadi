@@ -10,7 +10,7 @@ export interface PropsMenuPrincipal {
   onPartager: () => void;
   onDocuments: () => void;
   onProjets: () => void;
-  /** Exporter / Importer (échanges du modèle) : absents hors du dessin (Documents, Planche), où ces menus n'existent pas. */
+  /** Exporter / Importer (échanges du modèle) : absents en mode Documents, où ces menus ne sont pas affichés. */
   echanges?: boolean;
 }
 

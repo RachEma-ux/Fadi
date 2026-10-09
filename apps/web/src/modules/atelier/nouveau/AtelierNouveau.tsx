@@ -535,7 +535,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           onPartager={() => void partager()}
           onDocuments={() => etatUi.set({ mode: "documents", pointsEnCours: [], aide: "Imprimer : choisissez une feuille ou une vue, puis téléchargez-la en PDF." })}
           onProjets={() => navigate("/projets")}
-          echanges={!horsDessin}
+          echanges={!documents}
         />
         <label className="barre-niveau" hidden={horsDessin}>
           <span className="sr-only">Niveau actif</span>
