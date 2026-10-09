@@ -863,6 +863,12 @@ function objetsEntierementDans(etat: ModeleAtelier, niveauId: string | null, ded
       case "terrain":
         pts = o.params.points.map((q) => ({ x: q.x, y: q.y, frame: "local" as const, unit: "m" as const }));
         break;
+      case "annotation-fabrication":
+        pts = [o.params.position];
+        break;
+      case "nuage-de-points":
+        pts = [{ x: o.params.bornes.min.x, y: o.params.bornes.min.y }, { x: o.params.bornes.max.x, y: o.params.bornes.max.y }];
+        break;
       case "surface-libre":
         pts = o.params.sommets.map((q) => ({ x: q.x, y: q.y, frame: "local" as const, unit: "m" as const }));
         break;

@@ -10,6 +10,7 @@ import { hoteOuverture, pointsArc, pointsEllipse, pointsSpline, type Vec } from 
 import { type ModeleAtelier, type OccurrenceQuelconque } from "../modele.js";
 import { quantites } from "../quantites.js";
 import { Dxf } from "../documents/rendu-dxf.js";
+import { texteAnnotation, texteEtiquette } from "../annotations-fabrication.js";
 import { polygoneMurRaccorde } from "../raccords.js";
 import { contoursArchitecture } from "../blocs-places.js";
 
@@ -110,7 +111,11 @@ function dessiner(d: Dxf, etat: ModeleAtelier, o: OccurrenceQuelconque): void {
       d.texte(calque, o.params.position, 0.25, o.params.texte, o.params.angle?.value ?? 0);
       return;
     case "etiquette":
-      d.texte(calque, o.params.position, 0.2, o.params.texte);
+      d.texte(calque, o.params.position, 0.2, texteEtiquette(etat, o));
+      return;
+    case "annotation-fabrication":
+      // Symbole de fabrication (P2-7) : texte dérivé en DXF (le tracé du symbole est propre aux vues générées).
+      d.texte(calque, o.params.position, 0.2, texteAnnotation(o.params));
       return;
     default:
       return;

@@ -20,6 +20,7 @@ import { FicheAssemblageBois, FicheElementBois, FicheOssature, FichePanneauClt, 
 import { FicheTole, OutilTole } from "./Tolerie";
 import { FicheReseau, FicheSupportReseau, OutilConnexionReseau, OutilEquipementReseau, OutilRaccordReseau, OutilSegmentReseau, OutilSpecificationReseau, OutilSupportReseau, OutilVanne } from "./Reseaux";
 import { FicheBatimentP2, FicheSurfaceLibre, OutilCoque, OutilEchelle, OutilInstallationChantier, OutilMurRideau, OutilPlafond, OutilRampe, OutilReservation, OutilSurfaceLibre, OutilTerrain } from "./BatimentP2";
+import { FicheAnnotationFabrication, FicheCotationMecanique, FicheEtiquetteIntelligente, FicheNuageDePoints, OutilAnnotationFabrication, OutilNuageDePoints } from "./Documentation";
 import { LOCALE } from "../../../../lib/i18n";
 
 export interface PropsInspecteur {
@@ -29,6 +30,8 @@ export interface PropsInspecteur {
   onCommandes: (commandes: Commande[], label: string) => void;
   /** Projet (historique d'un objet, DA-21-06) ; absent dans les tests. */
   projectId?: string;
+  /** Relecture du modèle après une écriture faite par le serveur hors commande locale (nuage de points, P2-7). */
+  onRelire?: (revision: number) => Promise<void> | void;
 }
 
 /** Libellés des paramètres canoniques (ceux qui ne figurent pas ici gardent leur nom technique). */
@@ -81,7 +84,7 @@ const fmt = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(3).repla
 export function Inspecteur(props: PropsInspecteur) {
   const { etat, ui } = props;
   const sel = ui.selection.map((id) => etat.objets[id]).filter((o): o is OccurrenceQuelconque => !!o);
-  if (sel.length === 0) return <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} />;
+  if (sel.length === 0) return <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} projectId={props.projectId} onRelire={props.onRelire} />;
   // Outil qui agit sur la sélection (répéter, décaler, réseau sur trajectoire…) avec des paramètres : ses champs
   // restent accessibles au-dessus de la sélection (D-058). Les outils de dessin gardent l'inspecteur de la sélection.
   // Outils des ontologies activables (P2-2 à P2-5) : leur panneau (formulaire) agit sur la sélection ou s'en sert
@@ -89,7 +92,7 @@ export function Inspecteur(props: PropsInspecteur) {
   if (ui.outil !== "selection" && (((OUTILS_PAR_ID[ui.outil]?.condition ?? "").startsWith("selection") && (PARAMS_OUTIL[ui.outil]?.length ?? 0) > 0) || !!OUTILS_PAR_ID[ui.outil]?.ontologie || !!OUTILS_PAR_ID[ui.outil]?.panneau)) {
     return (
       <>
-        <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} />
+        <ParametresOutil etat={etat} ui={ui} readOnly={props.readOnly} onCommandes={props.onCommandes} projectId={props.projectId} onRelire={props.onRelire} />
         <InspecteurSelection {...props} />
       </>
     );
@@ -121,7 +124,7 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
   const verrouObjet = raisonVerrou(etat, o);
   const desactive = readOnly || verrouille || !!verrouObjet;
   // Représentation importée (R16) : paramètres en lecture seule ; calque, phase et transformations restent possibles.
-  const STRUCTURE = ["poutre", "trame", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "element-bois", "ossature", "panneau-clt", "assemblage-bois", "tole", "segment-reseau", "raccord-reseau", "vanne", "equipement-reseau", "support-reseau", "terrain", "surface-libre"];
+  const STRUCTURE = ["poutre", "trame", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "element-bois", "ossature", "panneau-clt", "assemblage-bois", "tole", "segment-reseau", "raccord-reseau", "vanne", "equipement-reseau", "support-reseau", "terrain", "surface-libre", "annotation-fabrication", "nuage-de-points"];
   const parametresFiges = desactive || o.classe === "objet-importe" || o.classe === "solide-exact" || o.classe === "piece-mecanique" || o.classe === "liaison" || STRUCTURE.includes(o.classe);
 
   return (
@@ -243,6 +246,10 @@ function FicheObjet({ o, etat, readOnly, onCommandes, projectId }: { o: Occurren
       {o.classe === "support-reseau" && <FicheSupportReseau o={o as Occurrence<"support-reseau">} etat={etat} />}
       {(o.classe === "plafond" || o.classe === "coque" || o.classe === "rampe" || o.classe === "echelle" || o.classe === "mur-rideau" || o.classe === "terrain" || o.classe === "reservation" || o.classe === "installation-chantier") && <FicheBatimentP2 o={o} etat={etat} />}
       {o.classe === "surface-libre" && <FicheSurfaceLibre key={`sl-${o.id}`} o={o as Occurrence<"surface-libre">} readOnly={desactive} onCommandes={onCommandes} />}
+      {o.classe === "annotation-fabrication" && <FicheAnnotationFabrication o={o as Occurrence<"annotation-fabrication">} etat={etat} />}
+      {o.classe === "nuage-de-points" && <FicheNuageDePoints key={`nu-${o.id}`} o={o as Occurrence<"nuage-de-points">} readOnly={desactive} onCommandes={onCommandes} />}
+      {o.classe === "cotation" && <FicheCotationMecanique key={`cm-${o.id}`} o={o as Occurrence<"cotation">} readOnly={desactive} onCommandes={onCommandes} />}
+      {o.classe === "etiquette" && <FicheEtiquetteIntelligente key={`ei-${o.id}`} o={o as Occurrence<"etiquette">} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || (o.classe === "mur" && !(o as Occurrence<"mur">).params.renflement)) && <Contraintes sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {(o.classe === "esquisse" || o.classe === "solide" || o.classe === "texte") && <CreerBloc sel={[o]} etat={etat} readOnly={desactive} onCommandes={onCommandes} />}
       {Object.keys(o.proprietes).length > 0 && (
@@ -703,7 +710,7 @@ const PARAMS_OUTIL: Record<string, { cle: string; libelle: string; unite?: strin
   "chanfrein-sommet": [{ cle: "distanceChanfrein", libelle: "Distance", unite: "m" }],
 };
 
-function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: ModeleAtelier; ui: EtatUi; readOnly?: boolean; onCommandes?: (commandes: Commande[], label: string) => void }) {
+function ParametresOutil({ etat, ui, readOnly = false, onCommandes, projectId, onRelire }: { etat: ModeleAtelier; ui: EtatUi; readOnly?: boolean; onCommandes?: (commandes: Commande[], label: string) => void; projectId?: string; onRelire?: (revision: number) => Promise<void> | void }) {
   const outil = OUTILS_PAR_ID[ui.outil];
   const champs = PARAMS_OUTIL[ui.outil] ?? [];
   const niveau = ui.niveauId ? etat.niveaux[ui.niveauId] : null;
@@ -799,6 +806,8 @@ function ParametresOutil({ etat, ui, readOnly = false, onCommandes }: { etat: Mo
       {ui.outil === "reservation" && <OutilReservation key={`rv-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "installation-chantier" && <OutilInstallationChantier key={`ic-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
       {ui.outil === "surface-libre" && <OutilSurfaceLibre key={`sl-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "annotation-fabrication" && <OutilAnnotationFabrication key={`af-${ui.selection.join(",")}`} etat={etat} ui={ui} readOnly={readOnly} onCommandes={onCommandes} />}
+      {ui.outil === "nuage-de-points" && <OutilNuageDePoints etat={etat} ui={ui} readOnly={readOnly} projectId={projectId ?? null} onRelire={onRelire} />}
       {ui.outil === "contour" && (
         <div className="champ">
           <label htmlFor="outil-formeContour">Créer</label>

@@ -7,6 +7,7 @@
 import type { ModeleAtelier, OccurrenceQuelconque, Propriete } from "../modele.js";
 import { niveauxOrdonnes } from "../modele.js";
 import { pointsPolyligne } from "../geometrie.js";
+import { texteAnnotation } from "../annotations-fabrication.js";
 import type { Point2 } from "../unites.js";
 import { RANG_NATIF } from "../import/natif.js";
 
@@ -125,6 +126,9 @@ function projeterObjet(o: OccurrenceQuelconque, push: (niveauId: string | null, 
       return;
     case "etiquette":
       push(o.niveauId, "texts", { ...base, kind: "text", x: o.params.position.x, y: o.params.position.y, text: o.params.texte, objectId: o.params.objetId ?? undefined });
+      return;
+    case "annotation-fabrication":
+      push(o.niveauId, "texts", { ...base, kind: "text", x: o.params.position.x, y: o.params.position.y, text: texteAnnotation(o.params), objectId: o.params.objetId ?? undefined, role: `fabrication:${o.params.type}` });
       return;
     case "esquisse":
       push(o.niveauId, "paths", { ...base, kind: "path", role: `esquisse:${o.params.forme}`, points: (o.params.renflements ? pointsPolyligne(o.params.points, o.params.ferme, o.params.renflements) : o.params.points).map(paire), holes: [], closed: o.params.ferme, cadSolid: false });

@@ -267,6 +267,9 @@ export interface ParamsCotation {
   a: Point2;
   b: Point2;
   decalage: Longueur;
+  /** Cote mécanique (P2-7, DA-15-03, 12) : préfixe (Ø, R, □, M) et tolérance dimensionnelle saisie (m, écarts supérieur et inférieur) ; absents : cote nue. */
+  prefixe?: "Ø" | "R" | "□" | "M" | null;
+  tolerance?: { plus: number; moins: number } | null;
   /**
    * Cote rattachée à une référence externe (D-153) : extrémités dans le repère local de la source, a et b dérivés par
    * le calage de la référence ; `aVerifier` quand la référence épingle depuis une autre publication de la source.
@@ -285,7 +288,36 @@ export interface ParamsEtiquette {
   position: Point2;
   texte: string;
   objetId: string | null;
+  /**
+   * Étiquette intelligente (P2-7, DA-15-08) : gabarit lu sur l'objet visé, `{nom}`, `{repere}`, `{classe}`, `{section}`,
+   * `{longueur}`, `{volume}`, `{numero}`, `{niveau}` ; absent : texte saisi tel quel.
+   */
+  champ?: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Annotations de fabrication (P2-7, DA-15-09 à 16)
+// ---------------------------------------------------------------------------
+
+export type CaracteristiqueGeometrique = "planeite" | "rectitude" | "circularite" | "cylindricite" | "parallelisme" | "perpendicularite" | "inclinaison" | "position" | "coaxialite" | "symetrie" | "profil-ligne" | "profil-surface";
+export type CordonSoudure = "bout-a-bout" | "angle" | "v" | "demi-v" | "u" | "j" | "bouchon" | "point" | "ligne";
+
+/**
+ * Annotation de fabrication : symbole normalisé **dessiné** (trait, cadre, flèche) avec ses valeurs saisies ; le code ne
+ * porte aucune valeur de tolérance ni de rugosité par défaut (R3). Position en plan, point d'attache facultatif
+ * (flèche), altitude facultative (annotation 3D, DA-15-11 : dessinée aussi en axonométrie).
+ */
+export type ParamsAnnotationFabrication = {
+  objetId: string | null;
+  position: Point2;
+  attache: Point2 | null;
+  z: number | null;
+} & (
+  | { type: "tolerance-geometrique"; caracteristique: CaracteristiqueGeometrique; valeur: Longueur; references: string[] }
+  | { type: "soudure"; cordon: CordonSoudure; taille: Longueur | null; longueur: Longueur | null; cote: "fleche" | "oppose" | "deux-cotes"; peripherique: boolean; chantier: boolean; procede: string | null }
+  | { type: "etat-de-surface"; parametre: "Ra" | "Rz" | "Rt"; valeur: number; procede: string | null; stries: string | null }
+  | { type: "specialiste"; famille: string; texte: string }
+);
 
 export interface ParamsBlocOccurrence {
   position: Point2;
@@ -343,8 +375,16 @@ export interface ParamsSolideExact {
   angle: Angle;
   emprise: Point2[];
   /** Opération d'origine (provenance) : type, objets sources, libellé ; jamais rejouée par le modèle. */
-  operation: { type: string; sources: string[]; libelle: string };
+  /**
+   * Opération d'origine ; `entrees` (P2-7) : paramètres exacts tels que reçus (le serveur les retire après recalcul) ;
+   * `percage` : le trou d'une opération « trou », conservé par le serveur **après** recalcul pour le tableau des perçages
+   * (centre et direction dans le repère du solide, Ø et profondeur en m ; profondeur null : traversant).
+   */
+  operation: { type: string; sources: string[]; libelle: string; entrees?: Record<string, unknown>; percage?: Percage };
 }
+
+/** Perçage d'une opération exacte « trou » (P2-7, DA-15-18), dans le repère du solide. */
+export interface Percage { centre: Vecteur3; direction: Vecteur3; diametre: number; profondeur: number | null }
 
 /** Pose rigide 3D (P2-2) : translation (m) et rotation vectorielle (rad, axe × angle) dans le repère de l'assemblage. */
 export interface Pose3 { x: number; y: number; z: number; rx: number; ry: number; rz: number }
@@ -872,6 +912,27 @@ export interface ParamsSurfaceLibre {
   ferme: boolean;
 }
 
+/**
+ * Nuage de points (P2-7, DA-22-08, 09) : échantillon décimé d'un relevé (LAS / XYZ / PTS lus par `echanges/nuage.ts`),
+ * dans le repère local du niveau après une **translation d'origine explicite** (le repère du relevé n'est jamais
+ * deviné) ; le fichier d'origine reste la source (nom, nombre de points, pas de décimation). Tranche horizontale
+ * (`coupeZ`, `epaisseurCoupe`) pour relever les plans (DA-22-07) ; affiché derrière le modèle, jamais converti.
+ */
+export interface ParamsNuageDePoints {
+  nom: string;
+  source: string;
+  format: "las" | "xyz" | "pts";
+  nombrePoints: number;
+  pas: number;
+  /** Points de l'échantillon, repère local du niveau (après translation d'origine). */
+  points: Point3Reseau[];
+  /** Translation appliquée aux coordonnées du fichier (m) : local = fichier − origine. */
+  origine: Point3Reseau;
+  bornes: { min: Point3Reseau; max: Point3Reseau };
+  coupeZ: number | null;
+  epaisseurCoupe: Longueur;
+}
+
 export interface ParamsParClasse {
   mur: ParamsMur;
   porte: ParamsOuverture;
@@ -890,6 +951,8 @@ export interface ParamsParClasse {
   cotation: ParamsCotation;
   texte: ParamsTexte;
   etiquette: ParamsEtiquette;
+  "annotation-fabrication": ParamsAnnotationFabrication;
+  "nuage-de-points": ParamsNuageDePoints;
   "bloc-occurrence": ParamsBlocOccurrence;
   "garde-corps": ParamsGardeCorps;
   "objet-importe": ParamsObjetImporte;

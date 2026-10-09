@@ -152,6 +152,8 @@ export function pointCaracteristique(etat: ModeleAtelier, objetId: string, carac
     case "cotation":
     case "texte":
     case "etiquette":
+    case "annotation-fabrication":
+    case "nuage-de-points":
       return null;
   }
 }

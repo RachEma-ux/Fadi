@@ -739,6 +739,20 @@ export const api = {
     }
     return body as { source: string; revision: number; lots: number; rapport: import("@parcours/atelier-model").RapportEchange };
   },
+  /** Nuage de points (P2-7) : LAS / XYZ / PTS lu par le serveur, posé par la translation d'origine déclarée, journalisé. */
+  importAtelierNuage: async (projectId: string, file: Blob, fileName: string, options: { niveauId: string; origine: { x: number; y: number; z: number }; nom?: string; coupeZ?: number | null; points?: number }): Promise<{ source: string; revision: number; lecture: { format: string; version: string | null; nombrePoints: number; retenus: number; pas: number; bornes: { min: { x: number; y: number; z: number }; max: { x: number; y: number; z: number } }; avertissements: string[] } }> => {
+    const headers: Record<string, string> = { "Content-Type": "application/octet-stream", "X-File-Name": encodeURIComponent(fileName), "X-Nuage-Niveau": options.niveauId, "X-Nuage-Origine": encodeURIComponent(JSON.stringify(options.origine)) };
+    if (options.nom) headers["X-Nuage-Nom"] = encodeURIComponent(options.nom);
+    if (options.coupeZ !== undefined && options.coupeZ !== null) headers["X-Nuage-Coupe"] = String(options.coupeZ);
+    if (options.points) headers["X-Nuage-Points"] = String(options.points);
+    const res = await fetch(`/projects/${projectId}/atelier/nuages`, { method: "POST", credentials: "include", headers, body: file });
+    const body: unknown = await res.json().catch(() => null);
+    if (!res.ok) {
+      const b = body as { erreur?: string; error?: string; message?: string; details?: { message?: string }[] } | null;
+      throw new ApiError(res.status, b?.erreur ?? b?.error ?? `http_${res.status}`, b?.message ?? b?.details?.[0]?.message ?? null, body);
+    }
+    return body as never;
+  },
   deleteDrawingExport: (projectId: string, exportId: string) => request<void>(`/projects/${projectId}/documents/dessins/${encodeURIComponent(exportId)}`, { method: "DELETE" }),
   stepFileUrl: (projectId: string, stepNumber: number, fileId: string) => `/projects/${projectId}/steps/${stepNumber}/files/${encodeURIComponent(fileId)}`,
   deleteStepFile: (projectId: string, stepNumber: number, fileId: string) => request<void>(`/projects/${projectId}/steps/${stepNumber}/files/${encodeURIComponent(fileId)}`, { method: "DELETE" }),

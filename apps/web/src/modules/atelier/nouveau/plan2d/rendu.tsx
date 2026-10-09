@@ -4,7 +4,7 @@
  * dessinés ; la sélection et le survol sont des états d'affichage.
  */
 import { memo } from "react";
-import { anneauRetombee, architectureBloc, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, segmentsTrame, separationsCouches, empriseTole, empriseEquipement, traceSegment, empriseTerrain, empriseSurfaceLibre, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
+import { anneauRetombee, architectureBloc, contoursArchitecture, facesMurRaccordees, traitsMenuiseriePlan, hoteOuverture, longueurAxeMur, polygoneMurCourbe, portionAxeMur, pointsPolyligne, contenuPlace, motifHachure, MOTIFS_HACHURE, battantPorte, centroide, symbolePorte, croisementsDuNiveau, extremitesCotation, facesMur, geometrieToiture, pointsArc, pointsSpline, polygoneMurRaccorde, segmentsTrame, separationsCouches, empriseTole, empriseEquipement, traceSegment, empriseTerrain, empriseSurfaceLibre, texteAnnotation, texteEtiquette, texteCotation, coupeNuage, type ModeleAtelier, type Occurrence, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { chemin, type Projecteur } from "./projecteur";
 
 export interface PropsObjet {
@@ -453,7 +453,7 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
       const sb2 = pr.vers(b2);
       const mid = { x: (sa2.x + sb2.x) / 2, y: (sa2.y + sb2.y) / 2 };
       const angle = (Math.atan2(sb2.y - sa2.y, sb2.x - sa2.x) * 180) / Math.PI;
-      const texte = `${l.toFixed(2).replace(".", ",")} m${ext.aReparer ? " · à réparer" : ""}`;
+      const texte = `${o.params.prefixe || o.params.tolerance ? texteCotation(o.params, l) : `${l.toFixed(2).replace(".", ",")} m`}${ext.aReparer ? " · à réparer" : ""}`;
       const couleur = ext.aReparer ? "#b42318" : COULEURS["cotation"];
       return (
         <g className={classes(`obj-cotation${ext.aReparer ? " cotation-a-reparer" : ""}`, selectionne, survole)} data-objet={o.id} data-rattachees={ext.rattachees} stroke={couleur} strokeWidth={selectionne ? 2 : 0.8} fill="none">
@@ -466,6 +466,33 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
         </g>
       );
     }
+    case "annotation-fabrication": {
+      // Symbole de fabrication (P2-7) : texte dérivé encadré, flèche vers l'objet annoté.
+      const p = pr.vers(o.params.position);
+      const att = o.params.attache ? pr.vers(o.params.attache) : null;
+      const t = texteAnnotation(o.params);
+      const w = Math.max(24, t.length * 6.2);
+      return (
+        <g className={classes("obj-annotation-fabrication", selectionne, survole)} data-objet={o.id} data-type={o.params.type}>
+          {att && <line x1={p.x} y1={p.y} x2={att.x} y2={att.y} stroke={selectionne ? "#b3872f" : "#5a4a8a"} strokeWidth={1} markerEnd="url(#fleche-annotation)" />}
+          <rect x={p.x} y={p.y - 12} width={w} height={14} fill="#fff" stroke={selectionne ? "#b3872f" : "#5a4a8a"} strokeWidth={selectionne ? 1.6 : 0.8} />
+          <text x={p.x + 3} y={p.y - 1} fontSize={10} fill={selectionne ? "#b3872f" : "#2f2a4a"}>{t}</text>
+          <title>{`Annotation de fabrication · ${t}`}</title>
+        </g>
+      );
+    }
+    case "nuage-de-points": {
+      // Nuage (P2-7) : points de la tranche (ou de l'échantillon) derrière le modèle, 3 000 au plus à l'écran.
+      const pts = (o.params.coupeZ === null ? o.params.points.map((q) => ({ x: q.x, y: q.y })) : coupeNuage(o.params.points, o.params.coupeZ, o.params.epaisseurCoupe.value));
+      const pas = Math.max(1, Math.ceil(pts.length / 3000));
+      const d = pts.filter((_, i) => i % pas === 0).map((q) => { const v = pr.vers(q); return `M${v.x - 1},${v.y}h2`; }).join("");
+      return (
+        <g className={classes("obj-nuage-de-points", selectionne, survole)} data-objet={o.id} data-points={pts.length}>
+          <path d={d} stroke={selectionne ? "#b3872f" : "#7a8a99"} strokeWidth={2} fill="none" strokeLinecap="round" />
+          <title>{`Nuage de points · ${o.params.nom} · ${pts.length} point(s) ${o.params.coupeZ === null ? "(échantillon)" : `à z ${o.params.coupeZ} m`}`}</title>
+        </g>
+      );
+    }
     case "texte":
     case "etiquette": {
       const p = pr.vers(o.params.position);
@@ -473,7 +500,7 @@ export const Objet2D = memo(function Objet2D({ o, etat, pr, selectionne, survole
       const angle = o.classe === "texte" ? (o.params.angle?.value ?? 0) : 0;
       return (
         <text x={p.x} y={p.y} transform={angle ? `rotate(${-angle} ${p.x} ${p.y})` : undefined} fontSize={Math.max(9, Math.min(14, pr.echelle * 0.4))} className={classes("obj-texte", selectionne, survole)} fill={selectionne ? "#b3872f" : COULEURS["texte"]} data-objet={o.id}>
-          {o.params.texte}
+          {o.classe === "etiquette" ? texteEtiquette(etat, o) : o.params.texte}
         </text>
       );
     }
@@ -741,6 +768,9 @@ export function Definitions2D() {
     <defs>
       <marker id="fleche-escalier" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
         <path d="M0 0 L8 4 L0 8 Z" fill="#6b8f7f" />
+      </marker>
+      <marker id="fleche-annotation" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+        <path d="M0 0 L8 4 L0 8 Z" fill="#5a4a8a" />
       </marker>
       {/* Motifs de hachure (D-072) : un motif SVG par famille ; à l'écran, 1 mm papier ≈ 3 px. */}
       {Object.entries(MOTIFS_HACHURE).map(([id, m]) => m.points ? (

@@ -37,7 +37,7 @@ type Descripteur = Omit<DocumentDescriptor, "produced" | "freshness">;
 export const FORMATS_VUE = ["pdf", "dxf", "svg"] as const;
 export type FormatDocument = (typeof FORMATS_VUE)[number];
 
-const TYPES_LIBELLES: Record<string, string> = { plan: "plan", coupe: "coupe", facade: "façade", masse: "plan de masse", detail: "détail" };
+const TYPES_LIBELLES: Record<string, string> = { plan: "plan", coupe: "coupe", facade: "façade", masse: "plan de masse", detail: "détail", axonometrie: "axonométrie", isometrique: "isométrique de tuyauterie" };
 const FORMAT_LIBELLE: Record<FormatDocument, string> = { pdf: "PDF", dxf: "DXF", svg: "SVG" };
 
 /** Nom de fichier sûr : lettres sans accents, chiffres, tirets. */

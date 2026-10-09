@@ -52,6 +52,7 @@ export function effetFenetre(o: OccurrenceQuelconque, dedans: (q: Point2) => boo
       return dedans(o.params.point) ? { type: "deplacer" } : { type: "aucun" };
     case "texte":
     case "etiquette":
+    case "annotation-fabrication":
     case "bloc-occurrence":
       return dedans(o.params.position) ? { type: "deplacer" } : { type: "aucun" };
     case "garde-corps": {

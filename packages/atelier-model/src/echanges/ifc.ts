@@ -36,6 +36,7 @@ import { longueurSegment } from "../ontologies/mep/geometrie.js";
 import { connexions as connexionsReseau, portsDe, reseauxConnexes } from "../ontologies/mep/connectivite.js";
 import { empreinte } from "../documents/empreinte.js";
 import { facesSubdivisees, longueurRampe, nombreProfilsMurRideau, penteRampe, trianglesTerrain } from "../batiment-p2.js";
+import { texteAnnotation, texteEtiquette } from "../annotations-fabrication.js";
 import { compositionMur, lireCouches } from "../compositions.js";
 import { connexionsDuNiveau, polygoneMurRaccorde, raccordMur, type ExtremiteConnexion } from "../raccords.js";
 import { corpsMenuiserie } from "../menuiserie.js";
@@ -961,11 +962,14 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
       case "cotation":
       case "texte":
       case "etiquette":
+      case "annotation-fabrication":
       case "esquisse": {
         let item: number;
-        if (o.classe === "texte" || o.classe === "etiquette") {
+        if (o.classe === "texte" || o.classe === "etiquette" || o.classe === "annotation-fabrication") {
+          // Étiquette intelligente et annotation de fabrication (P2-7) : texte dérivé des valeurs saisies.
+          const t = o.classe === "texte" ? o.params.texte : o.classe === "etiquette" ? texteEtiquette(etat, o) : texteAnnotation(o.params);
           const p = s.ajouter(`IFCAXIS2PLACEMENT2D(${ref(s.ajouter(`IFCCARTESIANPOINT((${reelStep(o.params.position.x)},${reelStep(o.params.position.y)}))`))},$)`);
-          item = s.ajouter(`IFCTEXTLITERAL(${chaineStep(o.params.texte)},${ref(p)},.LEFT.)`);
+          item = s.ajouter(`IFCTEXTLITERAL(${chaineStep(t)},${ref(p)},.LEFT.)`);
         } else if (o.classe === "cotation") item = polyligne2([o.params.a, o.params.b], false);
         else {
           // Segments en arc (D-063) : discrétisés pour l'annotation (polyligne IFC).
@@ -977,8 +981,8 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
           item = polyligne2(pts, o.params.ferme || o.params.forme === "polygone");
         }
         const rep = s.ajouter(`IFCSHAPEREPRESENTATION(${ref(annotation)},'Annotation','Annotation2D',${liste([item])})`);
-        const type = o.classe === "cotation" ? ".DIMENSION." : o.classe === "esquisse" ? ".USERDEFINED." : ".TEXT.";
-        const id = s.ajouter(`IFCANNOTATION(${gid(o.id)},$,${opt(o.id)},$,${o.classe === "esquisse" ? chaineStep(`esquisse ${o.params.forme}`) : "$"},${ref(placementDe(o.niveauId))},${ref(forme([rep]))},${type})`);
+        const type = o.classe === "cotation" ? ".DIMENSION." : o.classe === "esquisse" ? ".USERDEFINED." : o.classe === "annotation-fabrication" ? ".SYMBOL." : ".TEXT.";
+        const id = s.ajouter(`IFCANNOTATION(${gid(o.id)},$,${opt(o.id)},$,${o.classe === "esquisse" ? chaineStep(`esquisse ${o.params.forme}`) : o.classe === "annotation-fabrication" ? chaineStep(`fabrication:${o.params.type}`) : "$"},${ref(placementDe(o.niveauId))},${ref(forme([rep]))},${type})`);
         produits.set(o.id, id);
         contenir(o.niveauId, id);
         compter(o.classe, "IfcAnnotation", "Annotation2D", true, o.classe === "cotation" ? "export seulement ; valeur et rattachements non portés" : o.classe === "esquisse" ? "export seulement ; arcs et cercles omis, contraintes non portées" : "export seulement");
@@ -986,6 +990,9 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
       }
       case "reference-plan":
         compter("reference-plan", "—", "—", false, "référence de plan : omise (fond de dessin)");
+        break;
+      case "nuage-de-points":
+        compter("nuage-de-points", "—", "—", false, "nuage de points : omis de l'IFC (relevé, pas un objet de l'ouvrage ; déclaré D-189)");
         break;
     }
   }
@@ -1178,7 +1185,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   const contenu = [...entete, ...s.lignes, "ENDSEC;", "END-ISO-10303-21;", ""].join("\n");
   // Contrôle croisé annexe C (D-111) : une classe IFC déclarée différente de l'annexe C est nommée, jamais suivie.
   for (const x of controleClassesIfc(etat)) remarques.add(`${x.message}.`);
-  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "assemblage", "piece-mecanique", "liaison", "trame", "poutre", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "assemblage-soude", "ossature", "element-bois", "panneau-clt", "assemblage-bois", "tole", "segment-reseau", "raccord-reseau", "vanne", "equipement-reseau", "support-reseau", "reseau-connexe", "plafond", "coque", "rampe", "echelle", "mur-rideau", "terrain", "reservation", "installation-chantier", "surface-libre", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
+  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "assemblage", "piece-mecanique", "liaison", "trame", "poutre", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "assemblage-soude", "ossature", "element-bois", "panneau-clt", "assemblage-bois", "tole", "segment-reseau", "raccord-reseau", "vanne", "equipement-reseau", "support-reseau", "reseau-connexe", "plafond", "coque", "rampe", "echelle", "mur-rideau", "terrain", "reservation", "installation-chantier", "surface-libre", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "annotation-fabrication", "esquisse", "reference-plan", "nuage-de-points"];
   return {
     contenu,
     rapport: {

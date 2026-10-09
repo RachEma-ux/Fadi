@@ -56,7 +56,11 @@ export async function revaliderSolidesExacts(commandes: Commande[]): Promise<Ref
     }
     const op = (params["operation"] as Brut | undefined) ?? {};
     const { entrees: _e, ...operation } = op;
-    Object.assign(params, { brep: r.brep, maillage: r.maillage, volume: r.volume, aire: r.aire, faces: r.faces, moteur: r.moteur, versionMoteur: r.versionMoteur, empreinteBrep: r.empreinte, operation: { ...operation, type: (entrees as { type?: string }).type ?? operation["type"] ?? "inconnue" } });
+    // Perçage (P2-7) : les entrées sont retirées (le brep y figure), mais le trou d'une opération « trou » est conservé
+    // tel que le noyau l'a validé, pour le tableau des perçages.
+    const e = entrees as { type?: string; centre?: unknown; direction?: unknown; diametre?: unknown; profondeur?: unknown };
+    const percage = e.type === "trou" ? { centre: e.centre, direction: e.direction, diametre: e.diametre, profondeur: e.profondeur ?? null } : undefined;
+    Object.assign(params, { brep: r.brep, maillage: r.maillage, volume: r.volume, aire: r.aire, faces: r.faces, moteur: r.moteur, versionMoteur: r.versionMoteur, empreinteBrep: r.empreinte, operation: { ...operation, type: e.type ?? operation["type"] ?? "inconnue", ...(percage ? { percage } : {}) } });
   }
   return null;
 }

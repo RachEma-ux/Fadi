@@ -3,7 +3,7 @@
  * orthogonal, grille. Rayon à l'écran (12 px, D-012) converti en mètres par l'échelle de la vue. Les accrochages
  * d'objet priment sur l'orthogonal, qui prime sur la grille. Fonctions pures : testables sans DOM.
  */
-import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointDansPolygone, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2, empriseTerrain, empriseSurfaceLibre } from "@parcours/atelier-model";
+import { facesMur, intersectionSegments, longueurAxeMur, pointAxeMur, pointDansPolygone, pointsEllipse, pointsRenflement, projectionSurSegment, type ModeleAtelier, type OccurrenceQuelconque, type Point2, empriseTerrain, empriseSurfaceLibre, coupeNuage } from "@parcours/atelier-model";
 import { contoursArchitecture, empriseEquipement, empriseTole, intersectionsTrame, traceSegment, pt, segmentsTrame, traitsBloc } from "@parcours/atelier-model";
 import type { Accrochages } from "../etat-ui";
 
@@ -204,6 +204,16 @@ export function segmentsDuNiveau(etat: ModeleAtelier, niveauId: string | null): 
       case "cotation":
         segments.push({ a: o.params.a, b: o.params.b, objetId: o.id });
         break;
+      case "annotation-fabrication":
+        centres.push({ p: o.params.position, objetId: o.id });
+        break;
+      case "nuage-de-points": {
+        // Relevé de plans (P2-7, DA-22-07) : les points de la tranche sont des points d'accrochage (2 000 au plus).
+        const pts = o.params.coupeZ === null ? [] : coupeNuage(o.params.points, o.params.coupeZ, o.params.epaisseurCoupe.value);
+        const pas = Math.max(1, Math.ceil(pts.length / 2000));
+        for (let i = 0; i < pts.length; i += pas) centres.push({ p: { x: pts[i]!.x, y: pts[i]!.y, frame: "local", unit: "m" }, objetId: o.id });
+        break;
+      }
       case "bloc-occurrence":
         // Contenu placé (D-102) : accrochage et sélection sur les traits du bloc ; les cotes s'y rattachent.
         for (const t of traitsBloc(etat, o)) {
@@ -387,6 +397,9 @@ export function objetSousPointeur(p: Point2, cache: ReturnType<typeof segmentsDu
     } else if ((o.classe === "terrain" && pointDansPolygone(p, empriseTerrain(o.params))) || (o.classe === "surface-libre" && pointDansPolygone(p, empriseSurfaceLibre(o.params)))) {
       const d = rayon - 1e-6;
       if (!meilleur || d < meilleur.distance) meilleur = { objetId: o.id, distance: d };
+    } else if (o.classe === "annotation-fabrication") {
+      const d = dist(p, o.params.position);
+      if (d <= rayon * 2 && (!meilleur || d < meilleur.distance)) meilleur = { objetId: o.id, distance: d };
     } else if (o.classe === "echelle") {
       const d = dist(p, o.params.a);
       if (d <= rayon * 2 && (!meilleur || d < meilleur.distance)) meilleur = { objetId: o.id, distance: d };

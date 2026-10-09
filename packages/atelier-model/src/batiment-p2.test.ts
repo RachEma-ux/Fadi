@@ -82,7 +82,7 @@ describe("bâtiment P2 (P2-6, DA-07) : classes à paramètres saisis, géométri
     expect(t.lignes[1]).toEqual(["RDC", "Grue G1", "grue", 36, 40, "2027-03-01", "2027-11-30", "gros œuvre"]);
     expect(t.lignes[0]![4]).toBeNull();
     expect(csvTableau(t)).toContain("Base vie");
-    expect(tableauxDisponibles()).toHaveLength(15);
+    expect(tableauxDisponibles()).toHaveLength(18);
   });
   it("tableau « rénovation » : objets comptés par phase déclarée, « non évaluée » sans phase", () => {
     const e = lot(base(), [
