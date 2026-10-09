@@ -811,7 +811,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
 
       <aside className="atelier-n-droite" aria-label="Inspecteur et modifications">
         <div className="droite-inspecteur">
-          <Inspecteur etat={etat} ui={ui} readOnly={readOnly} projectId={consultation ? undefined : projectId} onCommandes={(c, l) => void executer(c, l, false)} />
+          <Inspecteur etat={etat} ui={ui} readOnly={readOnly} projectId={consultation ? undefined : projectId} onCommandes={(c, l) => void executer(c, l, false)} onRelire={(rev) => client.relireServeur(rev)} />
         </div>
         <div className="droite-modifications">
           <Modifications projectId={projectId} instantane={inst} readOnly={readOnly} onDecider={(id, d) => void client.decider(id, d)} onReprendre={(id, commandes, label) => void client.decider(id, "abandonner").then(() => executer(commandes, label, false))} onAller={(id) => { etatUi.selectionner([id]); centrerSur(id); }} onConsulterRevision={(revision) => void api.getAtelierModelARevision(projectId, revision).then((r) => { setConsultation({ libelle: `révision ${revision}`, etat: r.modele }); etatUi.set({ selection: [] }); }).catch((err: unknown) => setErreur(err instanceof ApiError ? (err.serverMessage ?? `Révision ${revision} inaccessible`) : String(err)))} />

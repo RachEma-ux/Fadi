@@ -60,7 +60,7 @@ export interface PropsDocuments {
 
 type Choix = { type: "vue" | "feuille"; id: string } | { type: "tableau"; id: TypeTableau } | null;
 
-const LIBELLES_TYPE: Record<TypeVue, string> = { plan: "Plan", coupe: "Coupe", facade: "Façade", masse: "Plan de masse", detail: "Détail", axonometrie: "Axonométrie" };
+const LIBELLES_TYPE: Record<TypeVue, string> = { plan: "Plan", coupe: "Coupe", facade: "Façade", masse: "Plan de masse", detail: "Détail", axonometrie: "Axonométrie", isometrique: "Isométrique de tuyauterie" };
 const ORIENTATION_LIBELLE: Record<Orientation, string> = { nord: "nord", sud: "sud", est: "est", ouest: "ouest" };
 const PHASE_LIBELLE: Record<FiltrePhase, string> = { existant: "Existant", nouveau: "Nouveau", "a-demolir": "À démolir", "sans-phase": "Sans phase" };
 const fmt = (v: number) => (Math.round(v * 100) / 100).toString().replace(".", ",");
@@ -174,6 +174,8 @@ export function Documents({ projectId, code, nomProjet, etat, revision, readOnly
               : type === "axonometrie"
                 ? // Isométrie vue du sud-ouest : paramètres de dessin affichés et modifiables, pas des données du projet.
                   { type, titre: "Axonométrie sud-ouest", echelle: 100, azimut: { value: 225, unit: "deg" }, inclinaison: { value: 35.26, unit: "deg" }, lignesCachees: false }
+              : type === "isometrique"
+                ? { type, titre: `Isométrique de tuyauterie${niveau ? ` · ${niveau.nom}` : ""}`, echelle: 50, niveauId: niveau?.id ?? null }
               : { type, titre: `Détail · ${niveau?.nom ?? ""}`, echelle: 20, niveauId: niveau?.id, cadreMin: pt(cx - 2, cy - 2), cadreMax: pt(cx + 2, cy + 2) };
     void executer([{ type: "vue.creer", params: { id, ...params } }], `Nouvelle vue : ${String(params["titre"])}`, { type: "vue", id });
   };
@@ -182,6 +184,12 @@ export function Documents({ projectId, code, nomProjet, etat, revision, readOnly
     const id = nouvelId("feuille");
     const n = feuilles.length + 1;
     void executer([{ type: "feuille.creer", params: { id, titre: `Feuille ${n}`, numero: `A-${100 + n}`, format: "A3", orientation: "paysage" } }], `Nouvelle feuille A-${100 + n}`, { type: "feuille", id });
+  };
+  // Gabarits (P2-7) : vue + nomenclatures posées d'un coup ; niveau actif requis sauf pour l'isométrique.
+  const creerGabarit = (gabarit: string) => {
+    const id = nouvelId("feuille");
+    const vueId = nouvelId("vue");
+    void executer([{ type: "feuille.gabarit", params: { id, vueId, gabarit, niveauId: gabarit === "isometrique" ? (niveau?.id ?? null) : niveau?.id } }], `Feuille gabarit ${gabarit}`, { type: "feuille", id });
   };
 
   return (
@@ -200,6 +208,7 @@ export function Documents({ projectId, code, nomProjet, etat, revision, readOnly
                 ))}
                 <button type="button" data-nouvelle="masse" onClick={() => creerVue("masse")}>Plan de masse</button>
                 <button type="button" data-nouvelle="axonometrie" onClick={() => creerVue("axonometrie")}>Axonométrie (isométrie sud-ouest)</button>
+                <button type="button" data-nouvelle="isometrique" onClick={() => creerVue("isometrique")}>Isométrique de tuyauterie</button>
                 <button type="button" data-nouvelle="detail" disabled={!niveau} onClick={() => creerVue("detail")}>Détail du niveau actif</button>
               </div>
             </details>
@@ -223,7 +232,22 @@ export function Documents({ projectId, code, nomProjet, etat, revision, readOnly
         </section>
         <section>
           <h3>Feuilles</h3>
-          {!readOnly && <button type="button" className="docs-ajout" data-nouvelle="feuille" onClick={creerFeuille}>Nouvelle feuille</button>}
+          {!readOnly && (
+            <>
+              <button type="button" className="docs-ajout" data-nouvelle="feuille" onClick={creerFeuille}>Nouvelle feuille</button>
+              <details className="docs-nouvelle" data-gabarits>
+                <summary>Feuille gabarit (vue + nomenclatures)</summary>
+                <div className="docs-nouvelle-liste" onClick={(e) => (e.target as HTMLElement).closest("button") && e.currentTarget.closest("details")?.removeAttribute("open")}>
+                  <button type="button" data-gabarit="atelier" disabled={!niveau} onClick={() => creerGabarit("atelier")}>Plan d'atelier (pièces, perçages)</button>
+                  <button type="button" data-gabarit="production-acier" disabled={!niveau} onClick={() => creerGabarit("production-acier")}>Production acier (structure, assemblages, débit)</button>
+                  <button type="button" data-gabarit="production-beton" disabled={!niveau} onClick={() => creerGabarit("production-beton")}>Production béton (armatures, ferraillage)</button>
+                  <button type="button" data-gabarit="ferraillage" disabled={!niveau} onClick={() => creerGabarit("ferraillage")}>Feuille de ferraillage</button>
+                  <button type="button" data-gabarit="pliage" disabled={!niveau} onClick={() => creerGabarit("pliage")}>Feuille de pliage (tôles, débit)</button>
+                  <button type="button" data-gabarit="isometrique" onClick={() => creerGabarit("isometrique")}>Isométrique de tuyauterie</button>
+                </div>
+              </details>
+            </>
+          )}
           {feuilles.length === 0 && <p className="docs-vide">Aucune feuille.</p>}
           <ul>
             {feuilles.map((d) => {

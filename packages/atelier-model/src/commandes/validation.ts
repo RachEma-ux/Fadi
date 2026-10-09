@@ -33,6 +33,7 @@ import { sectionReseauDepuisCatalogue } from "../ontologies/mep/sections.js";
 type Brut = Record<string, unknown>;
 /** Faces subdivisées admises au plus pour une surface libre (triangles × 4ⁿ). */
 const BUDGET_SUBDIVISION = 200_000;
+const CHAMPS_ETIQUETTE = ["nom", "repere", "numero", "classe", "niveau", "section", "longueur", "volume"];
 
 /** Renflements d'une polyligne (D-063) : un par segment, |b| ≤ 1 (demi-cercle au plus) ; tous nuls : clé absente. */
 function renflementsDe(p: Brut, forme: string, n: number, ferme: boolean): { renflements?: number[] } {
@@ -263,7 +264,16 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     return { ...contour(p), source: lire.chaineOuNull(p, "source"), echelle: lire.nombre(p, "echelle", { optionnel: true, min: 0 }), nom: lire.chaineOuNull(p, "nom") };
   },
   cotation(etat, p) {
-    const base = { a: lire.point(p, "a")!, b: lire.point(p, "b")!, decalage: lire.longueur(p, "decalage", { optionnel: true }) ?? { value: 0, unit: "m" as const } };
+    // Cote mécanique (P2-7) : préfixe et tolérance saisis, jamais supposés.
+    const prefixe = p["prefixe"] === undefined || p["prefixe"] === null ? null : lire.enumeration(p, "prefixe", ["Ø", "R", "□", "M"] as const);
+    let tolerance: { plus: number; moins: number } | null = null;
+    if (p["tolerance"] !== undefined && p["tolerance"] !== null) {
+      const t = p["tolerance"] as Brut;
+      if (typeof t !== "object" || typeof t["plus"] !== "number" || typeof t["moins"] !== "number" || !Number.isFinite(t["plus"]) || !Number.isFinite(t["moins"])) throw new ErreurCommande("invalide", "tolerance", "tolérance { plus, moins } en mètres attendue (écart supérieur ≥ 0, écart inférieur ≥ 0)");
+      if ((t["plus"] as number) < 0 || (t["moins"] as number) < 0) throw new ErreurCommande("invalide", "tolerance", "écarts de tolérance ≥ 0 (le signe est porté par le champ)");
+      tolerance = { plus: t["plus"] as number, moins: t["moins"] as number };
+    }
+    const base = { a: lire.point(p, "a")!, b: lire.point(p, "b")!, decalage: lire.longueur(p, "decalage", { optionnel: true }) ?? { value: 0, unit: "m" as const }, ...(prefixe ? { prefixe } : {}), ...(tolerance ? { tolerance } : {}) };
     const ex = p["externe"];
     if (ex === undefined || ex === null) return base;
     // Cote sur une référence externe (D-153) : extrémités en repère de la source, position dérivée du calage.
@@ -293,7 +303,57 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
   etiquette(etat, p) {
     const objetId = lire.chaineOuNull(p, "objetId");
     if (objetId !== null && !etat.objets[objetId]) throw new ErreurCommande("precondition", "objetId", `objet inconnu : ${objetId}`);
-    return { position: lire.point(p, "position")!, texte: lire.chaine(p, "texte"), objetId };
+    // Étiquette intelligente (P2-7) : gabarit `{champ}` lu sur l'objet visé ; champs connus seulement.
+    const champ = lire.chaineOuNull(p, "champ");
+    if (champ !== null) {
+      if (objetId === null) throw new ErreurCommande("invalide", "champ", "un gabarit d'étiquette intelligente vise un objet (objetId)");
+      const cles = [...champ.matchAll(/\{([a-z]+)\}/g)].map((m) => m[1]!);
+      const inconnues = cles.filter((k) => !CHAMPS_ETIQUETTE.includes(k));
+      if (!cles.length) throw new ErreurCommande("invalide", "champ", `gabarit sans champ : ${CHAMPS_ETIQUETTE.map((k) => `{${k}}`).join(", ")}`);
+      if (inconnues.length) throw new ErreurCommande("invalide", "champ", `champ(s) inconnu(s) : ${inconnues.join(", ")}`);
+    }
+    return { position: lire.point(p, "position")!, texte: lire.chaineOuNull(p, "texte") ?? "", objetId, ...(champ ? { champ } : {}) };
+  },
+  "nuage-de-points"(_etat, p) {
+    const nom = lire.chaine(p, "nom").trim(), source = lire.chaine(p, "source").trim();
+    if (!nom || !source) throw new ErreurCommande("invalide", "source", "nom et fichier source requis");
+    const points = lireSommets3(p, "points", 1);
+    if (points.length > 20000) throw new ErreurCommande("invalide", "points", "20 000 points au plus dans l'échantillon (décimez à la lecture)");
+    const o = p["origine"];
+    const origine = o && typeof o === "object" && ["x", "y", "z"].every((k) => typeof (o as Record<string, unknown>)[k] === "number" && Number.isFinite((o as Record<string, number>)[k])) ? { x: (o as Record<string, number>)["x"]!, y: (o as Record<string, number>)["y"]!, z: (o as Record<string, number>)["z"]! } : null;
+    if (!origine) throw new ErreurCommande("invalide", "origine", "origine { x, y, z } (m) requise : translation explicite du repère du relevé vers le repère local (jamais devinée)");
+    const nombrePoints = lire.nombre(p, "nombrePoints", { entier: true, min: 1 })!;
+    const pas = lire.nombre(p, "pas", { optionnel: true, entier: true, min: 1 }) ?? 1;
+    if (points.length > nombrePoints) throw new ErreurCommande("invalide", "nombrePoints", "l'échantillon ne peut dépasser le nombre de points du fichier");
+    const min = { x: Infinity, y: Infinity, z: Infinity }, max = { x: -Infinity, y: -Infinity, z: -Infinity };
+    for (const q of points) { min.x = Math.min(min.x, q.x); min.y = Math.min(min.y, q.y); min.z = Math.min(min.z, q.z); max.x = Math.max(max.x, q.x); max.y = Math.max(max.y, q.y); max.z = Math.max(max.z, q.z); }
+    const coupeZ = lire.nombre(p, "coupeZ", { optionnel: true });
+    return { nom, source, format: lire.enumeration(p, "format", ["las", "xyz", "pts"] as const), nombrePoints, pas, points, origine, bornes: { min, max }, coupeZ, epaisseurCoupe: lire.longueur(p, "epaisseurCoupe", { optionnel: true }) ?? { value: 0.2, unit: "m" } };
+  },
+  "annotation-fabrication"(etat, p) {
+    const objetId = lire.chaineOuNull(p, "objetId");
+    if (objetId !== null && !etat.objets[objetId]) throw new ErreurCommande("precondition", "objetId", `objet inconnu : ${objetId}`);
+    const commun = { objetId, position: lire.point(p, "position")!, attache: lire.point(p, "attache", { optionnel: true }), z: lire.nombre(p, "z", { optionnel: true }) };
+    const type = lire.enumeration(p, "type", ["tolerance-geometrique", "soudure", "etat-de-surface", "specialiste"] as const);
+    switch (type) {
+      case "tolerance-geometrique": {
+        const refs = p["references"] === undefined || p["references"] === null ? [] : p["references"];
+        if (!Array.isArray(refs) || refs.length > 3 || !refs.every((r) => typeof r === "string" && /^[A-Z](-[A-Z])?$/.test(r))) throw new ErreurCommande("invalide", "references", "références : lettres de référence (A, B, A-B), trois au plus");
+        return { ...commun, type, caracteristique: lire.enumeration(p, "caracteristique", ["planeite", "rectitude", "circularite", "cylindricite", "parallelisme", "perpendicularite", "inclinaison", "position", "coaxialite", "symetrie", "profil-ligne", "profil-surface"] as const), valeur: lire.longueur(p, "valeur", { strict: true })!, references: refs as string[] };
+      }
+      case "soudure":
+        return { ...commun, type, cordon: lire.enumeration(p, "cordon", ["bout-a-bout", "angle", "v", "demi-v", "u", "j", "bouchon", "point", "ligne"] as const), taille: lire.longueur(p, "taille", { optionnel: true, strict: true }), longueur: lire.longueur(p, "longueur", { optionnel: true, strict: true }), cote: lire.enumeration(p, "cote", ["fleche", "oppose", "deux-cotes"] as const, "fleche"), peripherique: lire.booleen(p, "peripherique", false), chantier: lire.booleen(p, "chantier", false), procede: lire.chaineOuNull(p, "procede") };
+      case "etat-de-surface": {
+        const valeur = lire.nombre(p, "valeur", { min: 0 })!;
+        if (valeur <= 0) throw new ErreurCommande("invalide", "valeur", "rugosité > 0 (µm) attendue");
+        return { ...commun, type, parametre: lire.enumeration(p, "parametre", ["Ra", "Rz", "Rt"] as const), valeur, procede: lire.chaineOuNull(p, "procede"), stries: lire.chaineOuNull(p, "stries") };
+      }
+      case "specialiste": {
+        const famille = lire.chaine(p, "famille").trim(), texte = lire.chaine(p, "texte").trim();
+        if (!famille || !texte) throw new ErreurCommande("invalide", "texte", "famille et texte requis");
+        return { ...commun, type, famille, texte };
+      }
+    }
   },
   "garde-corps"(_etat, p) {
     const points = lire.points(p, "points", { min: 2 });
@@ -342,6 +402,8 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     const faces = lire.nombre(p, "faces", { min: 1, entier: true })!;
     const op = (p["operation"] ?? {}) as Record<string, unknown>;
     const sources = Array.isArray(op["sources"]) ? (op["sources"] as unknown[]).filter((x): x is string => typeof x === "string") : [];
+    // Entrées de l'opération (P2-7) : gardées telles que reçues (déjà validées par le noyau côté serveur) pour les documents dérivés (tableau des perçages).
+    const entrees = op["entrees"] !== undefined && op["entrees"] !== null && typeof op["entrees"] === "object" ? (op["entrees"] as Record<string, unknown>) : undefined;
     const position = lire.point(p, "position", { optionnel: true }) ?? { x: 0, y: 0, frame: "local", unit: "m" };
     const angle = lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" };
     const maillage = { positions: positions as number[], indices: indices as number[] };
@@ -360,7 +422,7 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       angle,
       // Emprise toujours recalculée (jamais prise du client) : enveloppe convexe du maillage posé.
       emprise: enveloppeConvexe(emprisePosee(maillage, position, angle.value)).map((q) => ({ x: q.x, y: q.y, frame: "local" as const, unit: "m" as const })),
-      operation: { type: typeof op["type"] === "string" ? (op["type"] as string) : "inconnue", sources, libelle: typeof op["libelle"] === "string" ? (op["libelle"] as string) : "" },
+      operation: { type: typeof op["type"] === "string" ? (op["type"] as string) : "inconnue", sources, libelle: typeof op["libelle"] === "string" ? (op["libelle"] as string) : "", ...(entrees ? { entrees } : {}) },
     };
   },
   "piece-mecanique"(etat, p) {

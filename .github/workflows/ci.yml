@@ -184,6 +184,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/p2-coordination.mjs 2>&1 | tee -a e2e.log
+      - name: "Lot P2-7 documentation — annotation de fabrication et cote tolérancée depuis l'inspecteur, étiquette intelligente, feuille gabarit production béton, isométrique de tuyauterie, nuage de points LAS lu et posé derrière le plan (apps/web/e2e/p2-documentation.mjs)"
+        run: |
+          set -o pipefail
+          OUT=atelier-captures node apps/web/e2e/p2-documentation.mjs 2>&1 | tee -a e2e.log
       - name: Recette de l'interface anglaise — relevé des textes restés en français (apps/web/e2e/interface-anglais.mjs)
         run: |
           set -o pipefail

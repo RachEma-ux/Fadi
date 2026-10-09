@@ -39,6 +39,7 @@ import { projectOr404, type AccessibleProject } from "../lib/owned-project.js";
 import { lockProject } from "../lib/step-rows.js";
 import { EchecLot, appliquerCommandesInternes, validerDansTransaction, type ResultatValidation } from "../lib/atelier-validation.js";
 import { lireIfc } from "../lib/atelier-ifc.js";
+import { ErreurNuage, lireNuage, MAX_POINTS_ECHANTILLON } from "@parcours/atelier-model";
 import { moteurExact, revaliderSolidesExacts, TYPE_CREER_EXACT } from "../lib/atelier-exact.js";
 import { journalDepuis } from "../lib/atelier-versions.js";
 
@@ -295,6 +296,59 @@ atelierCommandsRouter.post("/commands/essai", corps, async (req, res) => {
 
 const LIMITE_IFC = 64 * 1024 * 1024;
 const LOTS_IMPORT_MAX = 60;
+
+/**
+ * Nuage de points (P2-7, DA-22-08, 09) : fichier LAS / XYZ / PTS brut lu par le serveur (`lireNuage`, décimé à
+ * 20 000 points), posé dans le repère local du niveau par la translation d'origine **déclarée** (en-tête
+ * `X-Nuage-Origine`, JSON { x, y, z } en mètres ; jamais devinée), puis `nuageDePoints.creer` journalisé. E57 et LAZ :
+ * refus nommés. En-têtes : `X-File-Name`, `X-Nuage-Niveau` (identifiant du niveau), `X-Nuage-Nom`, `X-Nuage-Coupe` (z de
+ * la tranche, facultatif), `X-Nuage-Points` (plafond de l'échantillon, facultatif).
+ */
+atelierCommandsRouter.post("/nuages", raw({ type: () => true, limit: LIMITE_IFC }), async (req, res) => {
+  const project = await projectOr404(req, res, "write");
+  if (!project) return;
+  const octets = Buffer.isBuffer(req.body) ? (req.body as Buffer) : Buffer.alloc(0);
+  let source = "releve.las";
+  try { source = decodeURIComponent(req.get("X-File-Name") ?? "releve.las").replace(/[\\/\u0000-\u001f]/g, "_").slice(0, 120) || "releve.las"; } catch { source = "releve.las"; }
+  if (!octets.length) { invalide(res, "Fichier de nuage vide.", "fichier"); return; }
+  let origine: { x: number; y: number; z: number };
+  try {
+    const o = JSON.parse(decodeURIComponent(req.get("X-Nuage-Origine") ?? "")) as { x?: unknown; y?: unknown; z?: unknown };
+    if (![o.x, o.y, o.z].every((v) => typeof v === "number" && Number.isFinite(v))) throw new Error("origine");
+    origine = { x: o.x as number, y: o.y as number, z: o.z as number };
+  } catch {
+    invalide(res, "Origine { x, y, z } (m) requise dans l'en-tête X-Nuage-Origine : translation explicite du repère du relevé vers le repère local — jamais devinée.", "origine");
+    return;
+  }
+  const niveauId = (req.get("X-Nuage-Niveau") ?? "").slice(0, 80);
+  if (!niveauId) { invalide(res, "Niveau requis (en-tête X-Nuage-Niveau).", "niveauId"); return; }
+  const plafond = Math.max(100, Math.min(MAX_POINTS_ECHANTILLON, Number(req.get("X-Nuage-Points") ?? MAX_POINTS_ECHANTILLON) || MAX_POINTS_ECHANTILLON));
+  let lecture;
+  try {
+    lecture = lireNuage(source, new Uint8Array(octets.buffer, octets.byteOffset, octets.byteLength), plafond);
+  } catch (err) {
+    invalide(res, err instanceof ErreurNuage ? err.message : `Nuage illisible : ${err instanceof Error ? err.message : String(err)}`, "fichier");
+    return;
+  }
+  const coupeBrut = req.get("X-Nuage-Coupe");
+  const coupeZ = coupeBrut !== undefined && coupeBrut !== "" && Number.isFinite(Number(coupeBrut)) ? Number(coupeBrut) : null;
+  let nom = source.replace(/\.[^.]+$/, "");
+  try { nom = decodeURIComponent(req.get("X-Nuage-Nom") ?? "").slice(0, 80) || nom; } catch { /* nom par défaut */ }
+  const points = lecture.points.map((q) => ({ x: Math.round((q.x - origine.x) * 1000) / 1000, y: Math.round((q.y - origine.y) * 1000) / 1000, z: Math.round((q.z - origine.z) * 1000) / 1000 }));
+  try {
+    const sortie = await db.transaction(async (tx) => {
+      await lockProject(tx, project.id);
+      if (!(await chargerModele(tx, project.id))) await creerModeleVide(tx, project.id, `fadi-${project.id}`);
+      const r = await appliquerCommandesInternes(tx, project.id, req.user!.id, [{ type: "nuageDePoints.creer", params: { niveauId, nom, source, format: lecture.format, nombrePoints: lecture.nombrePoints, pas: lecture.pas, points, origine, coupeZ } }], `Nuage de points ${nom}`);
+      return r;
+    });
+    void traiterEvenements(project.id).catch(() => undefined);
+    res.json({ source, revision: sortie.revision, lecture: { format: lecture.format, version: lecture.version, nombrePoints: lecture.nombrePoints, retenus: points.length, pas: lecture.pas, bornes: lecture.bornes, avertissements: lecture.avertissements } });
+  } catch (err) {
+    if (err instanceof EchecLot) { res.status(err.resultat.status).json(err.resultat.reponse); return; }
+    throw err;
+  }
+});
 
 atelierCommandsRouter.post("/import-ifc", raw({ type: () => true, limit: LIMITE_IFC }), async (req, res) => {
   const project = await projectOr404(req, res, "write");

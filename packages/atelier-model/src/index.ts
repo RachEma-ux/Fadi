@@ -105,5 +105,7 @@ export { portsCoude, specifications, supportsDe } from "./ontologies/mep/index.j
 export { delaunay, proprietesMasse, subdiviserLoop, triangulerFaces } from "./geometrie-3d.js";
 export { altitudeTerrain, controleDepuisMaillage, empriseSurfaceLibre, empriseTerrain, facesSubdivisees, longueurRampe, maillageCoque, maillageEchelle, maillageMurRideau, maillagePlafond, maillageRampe, maillageSurfaceLibre, maillageTerrain, nombreProfilsMurRideau, penteRampe, trianglesTerrain } from "./batiment-p2.js";
 export { collisionsOntologies, controlesSpecification, type CollisionOntologies, type ControleSpecification } from "./coordination.js";
+export { coupeNuage, ErreurNuage, lireLas, lireNuage, lireXyz, MAX_POINTS_ECHANTILLON, type NuageLu } from "./echanges/nuage.js";
+export { champObjet, LIBELLES_CARACTERISTIQUE, LIBELLES_CORDON, SYMBOLES_CARACTERISTIQUE, texteAnnotation, texteCotation, texteEtiquette, tracerAnnotation, type TraceurSymbole } from "./annotations-fabrication.js";
 export { etatPourValeur, premierObstacle, trajectoire, type PasCinematique, type Trajectoire } from "./ontologies/mechanical/cinematique.js";
 export { inertieAssemblage, inertiePiece, type InertieAssemblage, type InertiePiece } from "./ontologies/mechanical/inerties.js";

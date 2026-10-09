@@ -133,6 +133,36 @@ export const reducteursDocuments: Record<string, Reducteur> = {
     if (!actuels.vues.some((v) => v.vueId === vueId)) throw new ErreurCommande("precondition", "vueId", `vue absente de la feuille : ${vueId}`);
     return poser(etat, { ...d, params: { ...actuels, vues: actuels.vues.filter((v) => v.vueId !== vueId) } as unknown as Brut, version: d.version + 1 }, false);
   },
+  /**
+   * Gabarits de feuille (P2-7, DA-14-13, 14, 15 ; DA-16-09 ; DA-11-04, 05) : une vue et les nomenclatures qui vont avec,
+   * posées sur une feuille A1 paysage — plan d'atelier (pièces mécaniques : plan + nomenclature des assemblages +
+   * perçages), production acier (plan + nomenclature de structure + assemblages / soudures + débit), production béton
+   * (plan + armatures + feuille de ferraillage), feuille de ferraillage (plan + ferraillage), feuille de pliage (plan +
+   * table de pliage + débit), isométrique (isométrique + nomenclature de réseau). Rien d'autre n'est rempli (auteur,
+   * date, indice restent à saisir) ; la feuille et sa vue sont des définitions ordinaires, modifiables ensuite.
+   */
+  "feuille.gabarit": (etat, p, ctx: ContexteCommande) => {
+    const gabarit = lire.enumeration(p, "gabarit", ["atelier", "production-acier", "production-beton", "ferraillage", "pliage", "isometrique"] as const);
+    const niveauId = lire.chaineOuNull(p, "niveauId");
+    if (gabarit !== "isometrique" && (!niveauId || !etat.niveaux[niveauId])) throw new ErreurCommande("precondition", "niveauId", "un gabarit de feuille dessine un niveau : niveauId requis");
+    if (niveauId !== null && !etat.niveaux[niveauId]) throw new ErreurCommande("precondition", "niveauId", `niveau inconnu : ${niveauId}`);
+    const niveau = niveauId ? etat.niveaux[niveauId]! : null;
+    const titres: Record<typeof gabarit, string> = { atelier: "Plan d'atelier", "production-acier": "Plan de production acier", "production-beton": "Plan de production béton", ferraillage: "Feuille de ferraillage", pliage: "Feuille de pliage", isometrique: "Isométrique de tuyauterie" };
+    const tableaux: Record<typeof gabarit, string[]> = { atelier: ["nomenclature", "percages"], "production-acier": ["structure", "assemblagesStructure", "debit"], "production-beton": ["armatures", "ferraillage"], ferraillage: ["ferraillage"], pliage: ["pliage", "debit"], isometrique: ["reseau"] };
+    const titre = lire.chaineOuNull(p, "titre") ?? `${titres[gabarit]}${niveau ? ` — ${niveau.nom}` : ""}`;
+    const numero = lire.chaineOuNull(p, "numero") ?? `${gabarit.toUpperCase().slice(0, 3)}-${String(Object.values(etat.definitions).filter((d) => d.classe === FEUILLE).length + 1).padStart(2, "0")}`;
+    const echelle = lire.nombre(p, "echelle", { optionnel: true, min: 1, max: 5000 }) ?? 50;
+    const vueId = lire.chaineOuNull(p, "vueId") ?? ctx.ids.nouveau("vue");
+    const feuilleId = lire.chaineOuNull(p, "id") ?? ctx.ids.nouveau("feuille");
+    if (etat.definitions[vueId] || etat.definitions[feuilleId]) throw new ErreurCommande("precondition", "id", "définition déjà existante");
+    const vue = lireParamsVue(etat, gabarit === "isometrique" ? { type: "isometrique", titre, echelle, niveauId } : { type: "plan", titre, echelle, niveauId, hauteurCoupe: { value: 1.2, unit: "m" } });
+    const r1 = poser(etat, { id: vueId, classe: VUE, nom: vue.titre, params: vue as unknown as Record<string, unknown>, version: 1 }, true);
+    // Vue à gauche (centre au tiers), nomenclatures empilées à droite ; format A1 paysage (841 × 594 mm).
+    const placementsTableaux = tableaux[gabarit].map((type, i) => ({ type, x: 560, y: 560 - i * 170 }));
+    const feuille = lireParamsFeuille(r1.etat, { titre, numero, format: "A1", orientation: "paysage", jeu: lire.chaineOuNull(p, "jeu") ?? gabarit, indice: null, auteur: null, date: null, vues: [{ vueId, x: 280, y: 320 }], tableaux: placementsTableaux });
+    const r2 = poser(r1.etat, { id: feuilleId, classe: FEUILLE, nom: `${feuille.numero} · ${feuille.titre}`, params: feuille as unknown as Record<string, unknown>, version: 1 }, true);
+    return { etat: r2.etat, effets: { ...r2.effets, crees: [...r1.effets.crees, ...r2.effets.crees] } };
+  },
   "feuille.supprimer": (etat, p) => {
     const id = lire.chaine(p, "id");
     definitionDe(etat, id, FEUILLE, "feuille");

@@ -27,9 +27,13 @@ import { bornesPrimitives, decouper, type Bornes, type Primitive, type Remplissa
 import { empreinteDe } from "./empreinte.js";
 import { contoursUnion, projeterMaillages, type Camera, type ResultatProjection } from "./visibilite.js";
 import { centreMaillage } from "../ontologies/mechanical/geometrie.js";
+import { texteCotation, texteEtiquette, tracerAnnotation } from "../annotations-fabrication.js";
+import { designationReseau } from "../ontologies/mep/sections.js";
+import { longueurSegment } from "../ontologies/mep/geometrie.js";
+import { coupeNuage } from "../echanges/nuage.js";
 
-export type TypeVue = "plan" | "coupe" | "facade" | "masse" | "detail" | "axonometrie";
-export const TYPES_VUE: readonly TypeVue[] = ["plan", "coupe", "facade", "masse", "detail", "axonometrie"];
+export type TypeVue = "plan" | "coupe" | "facade" | "masse" | "detail" | "axonometrie" | "isometrique";
+export const TYPES_VUE: readonly TypeVue[] = ["plan", "coupe", "facade", "masse", "detail", "axonometrie", "isometrique"];
 export type Orientation = "nord" | "sud" | "est" | "ouest";
 export const ORIENTATIONS: readonly Orientation[] = ["nord", "sud", "est", "ouest"];
 /** Phases de projet (DA-21 / lot 5) : un objet sans phase est dessiné dans toutes les vues. */
@@ -218,6 +222,8 @@ const altitude = (n: Niveau) => `${n.elevation >= 0 ? "+" : ""}${fmt(n.elevation
 
 class Collecteur {
   primitives: Primitive[] = [];
+  /** Dénominateur d'échelle de la vue (symboles dimensionnés sur la feuille). */
+  echelle: number | null = null;
   avertissements = new Set<string>();
   mesures = { triangles: 0 };
   ligne(a: Vec, b: Vec, trait: Trait, objetId: string | null): void {
@@ -384,7 +390,7 @@ function symbolesPlan(c: Collecteur, etat: ModeleAtelier, objets: readonly Occur
 
 /** Annotations, esquisses, références de plan et blocs d'un niveau (communs au plan et au détail). */
 /** Cote : lignes d'attache, ligne de cote décalée, traits obliques, valeur au milieu (même dessin partout). */
-function dessinerCote(c: Collecteur, a: Vec, b: Vec, d: number, objetId: string | null, trait: Trait, suffixe: string): void {
+function dessinerCote(c: Collecteur, a: Vec, b: Vec, d: number, objetId: string | null, trait: Trait, suffixe: string, texte: string | null = null): void {
   const L = Math.hypot(b.x - a.x, b.y - a.y);
   if (L < 1e-9) return;
   const u = { x: (b.x - a.x) / L, y: (b.y - a.y) / L };
@@ -399,7 +405,7 @@ function dessinerCote(c: Collecteur, a: Vec, b: Vec, d: number, objetId: string 
   let angle = (Math.atan2(u.y, u.x) * 180) / Math.PI;
   if (angle > 90) angle -= 180;
   if (angle <= -90) angle += 180;
-  c.texte({ x: (a2.x + b2.x) / 2 + n.x * 0.12, y: (a2.y + b2.y) / 2 + n.y * 0.12 }, `${fmt(L)}${suffixe}`, 2.2, objetId, { angle, trait });
+  c.texte({ x: (a2.x + b2.x) / 2 + n.x * 0.12, y: (a2.y + b2.y) / 2 + n.y * 0.12 }, `${texte ?? fmt(L)}${suffixe}`, 2.2, objetId, { angle, trait });
 }
 
 /**
@@ -424,14 +430,30 @@ function annotations2D(c: Collecteur, etat: ModeleAtelier, objets: readonly Occu
       case "cotation": {
         const ext = extremitesCotation(etat, o.id);
         if (!ext) break;
-        dessinerCote(c, ext.a, ext.b, o.params.decalage.value, o.id, ext.aReparer ? "a-reparer" : "annotation", ext.aReparer ? " · à réparer" : "");
+        // Cote mécanique (P2-7) : préfixe et tolérance saisis → texte en mm ; sinon cote nue en m.
+        const meca = o.params.prefixe || o.params.tolerance ? texteCotation(o.params, Math.hypot(ext.b.x - ext.a.x, ext.b.y - ext.a.y)) : null;
+        dessinerCote(c, ext.a, ext.b, o.params.decalage.value, o.id, ext.aReparer ? "a-reparer" : "annotation", ext.aReparer ? " · à réparer" : "", meca);
+        break;
+      }
+      case "nuage-de-points": {
+        // Nuage (P2-7, DA-22-07) : tranche à `coupeZ` (sinon tout l'échantillon) en croix fines, 5 000 points au plus par vue.
+        const pts = (o.params.coupeZ === null ? o.params.points.map((q) => ({ x: q.x, y: q.y })) : coupeNuage(o.params.points, o.params.coupeZ, o.params.epaisseurCoupe.value)).slice(0, 5000);
+        const r = (0.6 / 1000) * (c.echelle ?? 50);
+        for (const q of pts) { c.ligne({ x: q.x - r, y: q.y }, { x: q.x + r, y: q.y }, "fin", o.id); c.ligne({ x: q.x, y: q.y - r }, { x: q.x, y: q.y + r }, "fin", o.id); }
+        c.avertissements.add(`Nuage « ${o.params.nom } » : ${pts.length} point(s) dessinés${o.params.coupeZ === null ? " (tout l'échantillon)" : ` (tranche à ${fmt(o.params.coupeZ)} m)`} sur ${o.params.nombrePoints} du relevé ; aucune surface n'en est déduite.`);
+        break;
+      }
+      case "annotation-fabrication": {
+        // Symbole dessiné en primitives (P2-7, DA-15-09 à 16) : hauteur 3 mm sur la feuille, convertie en mètres par l'échelle du dessin.
+        const h = (3 / 1000) * (c.echelle ?? 50);
+        tracerAnnotation({ ligne: (a, b) => c.ligne(a, b, "annotation", o.id), cadre: (x0, y0, x1, y1) => c.poly([{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }], true, "annotation", null, o.id), texte: (q, t, ancre) => c.texte(q, t, 2.2, o.id, { ancre: ancre ?? "milieu" }) }, o.params, h);
         break;
       }
       case "texte":
         c.texte(o.params.position, o.params.texte, 2.5, o.id, { ancre: "debut", angle: o.params.angle?.value ?? 0 });
         break;
       case "etiquette": {
-        c.texte(o.params.position, o.params.texte, 2.2, o.id, { ancre: "debut" });
+        c.texte(o.params.position, texteEtiquette(etat, o), 2.2, o.id, { ancre: "debut" });
         const cible = o.params.objetId ? etat.objets[o.params.objetId] : undefined;
         if (cible && "contour" in cible.params) {
           const ct = centroide((cible.params as { contour: Point2[] }).contour);
@@ -559,6 +581,55 @@ function genererPlan(c: Collecteur, etat: ModeleAtelier, v: ParamsVue, options: 
   if (sansHauteur) c.avertissements.add(`${sansHauteur} mur(s) sans hauteur renseignée : non coupés, dessinés en contour seulement.`);
   for (const o of objets) if (o.classe === "mur" && !o.params.hauteur && !o.params.niveauHautId) c.poly(polygoneMurRaccorde(etat, o), true, "cache", null, o.id);
   c.mesures.triangles += r.triangles;
+}
+
+const RESEAU_ISO = new Set<OccurrenceQuelconque["classe"]>(["segment-reseau", "raccord-reseau", "vanne", "equipement-reseau"]);
+
+/**
+ * Isométrique de tuyauterie (P2-7, DA-14-11) : projection isométrique (axes x, y à ±30°, z vertical, aucune
+ * perspective) des réseaux en trait unique — segments en ligne, raccords en cercle, vannes en losange, équipements
+ * en rectangle — avec repère, désignation de section et longueur de chaque tronçon ; un niveau ou tous.
+ */
+function genererIsometrique(c: Collecteur, etat: ModeleAtelier, v: ParamsVue): void {
+  const C = Math.cos(Math.PI / 6), S = Math.sin(Math.PI / 6);
+  const alt = (id: string | null) => (id ? (etat.niveaux[id]?.elevation ?? 0) : 0);
+  const P = (x: number, y: number, z: number): Vec => ({ x: (x - y) * C, y: z + (x + y) * S });
+  const objets = (Object.values(etat.objets) as OccurrenceQuelconque[]).filter((o) => RESEAU_ISO.has(o.classe) && retenu(etat, o, v) && (!v.niveauId || o.niveauId === v.niveauId)).sort((a, b) => (a.id < b.id ? -1 : 1));
+  const r = (3 / 1000) * v.echelle; // 3 mm sur la feuille
+  for (const o of objets) {
+    const z0 = alt(o.niveauId);
+    switch (o.classe) {
+      case "segment-reseau": {
+        const pts = o.params.sommets.map((q) => P(q.x, q.y, z0 + q.z));
+        for (let i = 0; i + 1 < pts.length; i++) c.ligne(pts[i]!, pts[i + 1]!, "vue", o.id);
+        const m = pts[Math.floor(pts.length / 2) - (pts.length % 2 === 0 ? 1 : 0)]!, n = pts[Math.floor(pts.length / 2)]!;
+        c.texte({ x: (m.x + n.x) / 2 + r * 0.4, y: (m.y + n.y) / 2 + r * 0.4 }, `${o.params.repere ?? o.params.nom ?? o.id} · ${designationReseau(o.params.section, o.params.profil)} · ${fmt(longueurSegment(o.params))} m`, 2.0, o.id, { ancre: "debut" });
+        break;
+      }
+      case "raccord-reseau": {
+        const q = P(o.params.position.x, o.params.position.y, z0 + o.params.z);
+        c.cercle(q, r * 0.6, "vue", o.id);
+        c.texte({ x: q.x + r, y: q.y + r * 0.6 }, o.params.nom ?? o.params.type, 2.0, o.id, { ancre: "debut" });
+        break;
+      }
+      case "vanne": {
+        const q = P(o.params.position.x, o.params.position.y, z0 + o.params.z);
+        c.poly([{ x: q.x - r, y: q.y - r * 0.6 }, { x: q.x + r, y: q.y + r * 0.6 }, { x: q.x + r, y: q.y - r * 0.6 }, { x: q.x - r, y: q.y + r * 0.6 }], true, "vue", null, o.id);
+        c.texte({ x: q.x + r * 1.3, y: q.y + r * 0.6 }, `${o.params.repere ?? o.params.nom ?? o.id} · ${o.params.type}`, 2.0, o.id, { ancre: "debut" });
+        break;
+      }
+      case "equipement-reseau": {
+        const q = P(o.params.position.x, o.params.position.y, z0 + o.params.z);
+        c.poly([{ x: q.x - r * 1.5, y: q.y - r }, { x: q.x + r * 1.5, y: q.y - r }, { x: q.x + r * 1.5, y: q.y + r }, { x: q.x - r * 1.5, y: q.y + r }], true, "vue", null, o.id);
+        c.texte({ x: q.x + r * 1.8, y: q.y + r }, `${o.params.repere ?? o.params.nom} · ${o.params.type}`, 2.0, o.id, { ancre: "debut" });
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  if (!objets.length) c.avertissements.add("Isométrique : aucun objet de réseau retenu (ontologie réseaux inactive, niveau sans réseau ou calques masqués).");
+  c.avertissements.add("Isométrique : projection isométrique en trait unique (axes à 30°), longueurs portées en texte ; les longueurs ne se mesurent pas sur le dessin.");
 }
 
 function reperesNiveaux(c: Collecteur, etat: ModeleAtelier, xGauche: number, xDroite: number): void {
@@ -704,7 +775,7 @@ export function objetsVue(etat: ModeleAtelier, params: ParamsVue): string[] {
       if (o.niveauId !== params.niveauId || !retenu(etat, o, params)) continue;
       ids.add(o.id);
       if (o.classe === "bloc-occurrence" && o.definitionId) ids.add(o.definitionId);
-      if (o.classe === "etiquette" && o.params.objetId) ids.add(o.params.objetId);
+      if ((o.classe === "etiquette" || o.classe === "annotation-fabrication") && o.params.objetId) ids.add(o.params.objetId);
       if (o.classe === "porte" || o.classe === "fenetre" || o.classe === "ouverture") ids.add(o.params.murHoteId);
       // Type de mur composé : ses couches sont dessinées (D-026) ; un type sans couches ne change rien au dessin.
       if (o.classe === "mur" && o.definitionId && etat.definitions[o.definitionId]?.params["couches"]) ids.add(o.definitionId);
@@ -712,6 +783,10 @@ export function objetsVue(etat: ModeleAtelier, params: ParamsVue): string[] {
     for (const r of Object.values(etat.references)) if (ids.has(r.proprietaireId) && r.objetId) ids.add(r.objetId);
   } else if (params.type === "coupe" || params.type === "facade" || params.type === "axonometrie") {
     for (const o of tous) if (physique(o) && retenu(etat, o, params)) ids.add(o.id);
+    // Annotations 3D (P2-7, DA-15-11) : portées par une altitude, dessinées en axonométrie.
+    if (params.type === "axonometrie") for (const o of tous) if (o.classe === "annotation-fabrication" && o.params.z !== null && retenu(etat, o, params)) ids.add(o.id);
+  } else if (params.type === "isometrique") {
+    for (const o of tous) if (RESEAU_ISO.has(o.classe) && retenu(etat, o, params) && (!params.niveauId || o.niveauId === params.niveauId)) ids.add(o.id);
   } else {
     const niveaux = niveauxOrdonnes(etat);
     const ref = niveaux.filter((n) => n.elevation >= -1e-9).sort((a, b) => a.elevation - b.elevation)[0] ?? niveaux[0];
@@ -769,10 +844,12 @@ function dessinerExternes(c: Collecteur, etat: ModeleAtelier, niveauId: string, 
 
 export function genererVue(etat: ModeleAtelier, params: ParamsVue, definitionId: string | null = null, options: OptionsGeneration = {}): VueGeneree {
   const c = new Collecteur();
+  c.echelle = params.echelle;
   if ((params.type === "plan" || params.type === "detail") && !(params.niveauId && etat.niveaux[params.niveauId])) {
     c.avertissements.add("Niveau de la vue absent du modèle : vue à réparer.");
   } else if (params.type === "plan") genererPlan(c, etat, params, options);
   else if (params.type === "detail") genererDetail(c, etat, params, options);
+  else if (params.type === "isometrique") genererIsometrique(c, etat, params);
   else if (params.type === "coupe" || params.type === "facade" || params.type === "axonometrie") genererCoupeOuFacade(c, etat, params);
   else genererMasse(c, etat, params);
   for (const an of params.annotations ?? []) {

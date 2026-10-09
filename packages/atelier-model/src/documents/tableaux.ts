@@ -9,6 +9,7 @@ import { aire, aireNette, distance } from "../geometrie.js";
 import { contoursArchitecture } from "../blocs-places.js";
 import { aireSection, designationSection } from "../ontologies/structure/sections.js";
 import { longueurBarre, longueurPoutre } from "../ontologies/structure/geometrie.js";
+import { designationReseau as designationReseauDebit } from "../ontologies/mep/sections.js";
 import { assemblagesSoudes } from "../ontologies/structure/soudures.js";
 import { aireBois, designationBois } from "../ontologies/timber/sections.js";
 import { longueurElementBois, volumePanneauClt } from "../ontologies/timber/geometrie.js";
@@ -23,7 +24,7 @@ import { quantites } from "../quantites.js";
 import { echapperXml } from "./rendu-svg.js";
 import { empreinteDe } from "./empreinte.js";
 
-export type TypeTableau = "pieces" | "portes" | "fenetres" | "murs" | "composants" | "nomenclature" | "structure" | "armatures" | "assemblagesStructure" | "bois" | "pliage" | "reseau" | "renovation" | "chantier" | "synthese";
+export type TypeTableau = "pieces" | "portes" | "fenetres" | "murs" | "composants" | "nomenclature" | "structure" | "armatures" | "assemblagesStructure" | "bois" | "pliage" | "reseau" | "renovation" | "chantier" | "percages" | "ferraillage" | "debit" | "synthese";
 export const TABLEAUX: Record<TypeTableau, string> = {
   pieces: "Tableau des pièces",
   portes: "Tableau des portes",
@@ -39,6 +40,9 @@ export const TABLEAUX: Record<TypeTableau, string> = {
   reseau: "Nomenclature de réseau",
   renovation: "Objets par phase (rénovation)",
   chantier: "Installations de chantier",
+  percages: "Tableau des perçages",
+  ferraillage: "Feuille de ferraillage (pliage des barres)",
+  debit: "Liste de débit",
   synthese: "Synthèse des quantités par niveau",
 };
 
@@ -288,6 +292,64 @@ export function genererTableau(etat: ModeleAtelier, type: TypeTableau): Tableau 
         for (const o of objetsDeClasse(etat, "installation-chantier", n.id).sort(parId)) lignes.push([n.nom, o.params.nom, o.params.type, r2(aire(o.params.contour)), o.params.hauteur ? r3(o.params.hauteur.value) : null, o.params.debut, o.params.fin, o.params.phaseChantier]);
       }
       total = ["Total", `${lignes.length} installation(s)`, null, r2(lignes.reduce((acc, l) => acc + (typeof l[3] === "number" ? l[3] : 0), 0)), null, null, null, null];
+      break;
+    }
+    case "percages": {
+      // Tableau des perçages (P2-7, DA-15-18) : trous des opérations exactes (centre, Ø, profondeur) portés par les solides exacts et
+      // les pièces qui en sont issues ; aucune cote n'est inventée : un solide sans entrées d'opération n'a pas de ligne.
+      colonnes = ["Niveau", "Solide", "Repère", "x", "y", "z", "Diamètre", "Profondeur", "Direction"];
+      unites = [null, null, null, "m", "m", "m", "mm", "mm", null];
+      for (const n of niveauxOrdonnes(etat)) {
+        for (const o of objetsDeClasse(etat, "solide-exact", n.id).sort(parId)) {
+          const e = o.params.operation.entrees;
+          if (!e || e["type"] !== "trou") continue;
+          const c = e["centre"] as { x: number; y: number; z: number } | undefined, d = e["direction"] as { x: number; y: number; z: number } | undefined;
+          const diam = typeof e["diametre"] === "number" ? (e["diametre"] as number) : null, prof = typeof e["profondeur"] === "number" ? (e["profondeur"] as number) : null;
+          if (!c || diam === null) continue;
+          lignes.push([n.nom, o.params.nom ?? o.id, `T${lignes.length + 1}`, r3(c.x + o.params.position.x), r3(c.y + o.params.position.y), r3(c.z), Math.round(diam * 1000), prof === null ? "traversant" : Math.round(prof * 1000), d ? `(${r2(d.x)} ; ${r2(d.y)} ; ${r2(d.z)})` : null]);
+        }
+      }
+      total = ["Total", `${lignes.length} perçage(s)`, null, null, null, null, null, null, null];
+      break;
+    }
+    case "ferraillage": {
+      // Feuille de ferraillage (P2-7, DA-16-09) : une ligne par armature — forme, Ø, nombre, longueurs des segments, plis,
+      // longueur développée géométrique (axe de la barre, **sans** allongement ni rayon de pliage : non évalués, R3).
+      colonnes = ["Niveau", "Repère", "Hôte", "Forme", "Diamètre", "Nuance", "Nombre", "Segments", "Plis", "Longueur développée (axe)", "Longueur totale", "Allongement de pliage"];
+      unites = [null, null, null, null, "mm", null, "u", "mm", "u", "m", "m", null];
+      for (const n of niveauxOrdonnes(etat)) {
+        for (const o of objetsDeClasse(etat, "armature", n.id).sort(parId)) {
+          const pts = o.params.forme === "cadre" || o.params.forme === "etrier" ? [...o.params.points, o.params.points[0]!] : o.params.points;
+          const segs: number[] = [];
+          for (let i = 0; i + 1 < pts.length; i++) segs.push(Math.round(Math.hypot(pts[i + 1]!.x - pts[i]!.x, pts[i + 1]!.y - pts[i]!.y) * 1000));
+          const plis = Math.max(0, segs.length - 1) + (o.params.forme === "cadre" || o.params.forme === "etrier" ? 1 : 0);
+          const L = longueurBarre(o.params);
+          const hote = o.params.hoteId ? etat.objets[o.params.hoteId] : undefined;
+          lignes.push([n.nom, o.params.nom ?? o.id, hote ? ((hote.params as { nom?: string | null }).nom ?? hote.id) : null, o.params.forme, Math.round(o.params.diametre.value * 1000), o.params.nuance, o.params.nombre, segs.join(" + "), plis, r3(L), r3(L * o.params.nombre), NON_EVALUEE]);
+        }
+      }
+      total = ["Total", `${lignes.length} armature(s)`, null, null, null, null, lignes.reduce((acc, l) => acc + (typeof l[6] === "number" ? l[6] : 0), 0), null, null, null, r3(lignes.reduce((acc, l) => acc + (typeof l[10] === "number" ? l[10] : 0), 0)), null];
+      break;
+    }
+    case "debit": {
+      // Liste de débit (P2-7, DA-16-16) : pièces à longueur (barres de structure, pièces de bois, tronçons de réseau) et tôles,
+      // groupées par classe et désignation ; longueur unitaire et totale ; aucune chute ni surlongueur supposée.
+      colonnes = ["Classe", "Désignation", "Nombre", "Longueur unitaire", "Longueur totale", "Repères"];
+      unites = [null, null, "u", "m", "m", null];
+      const groupes = new Map<string, { classe: string; designation: string; longueurs: number[]; reperes: string[] }>();
+      const ajouter = (classe: string, designation: string, L: number, repere: string) => {
+        const cle = `${classe}|${designation}|${Math.round(L * 1000)}`;
+        const g = groupes.get(cle) ?? { classe, designation, longueurs: [], reperes: [] };
+        g.longueurs.push(L); g.reperes.push(repere); groupes.set(cle, g);
+      };
+      for (const o of objetsDeClasse(etat, "poutre")) ajouter("structure", designationSection(o.params.section), longueurPoutre(o.params), o.params.nom ?? o.id);
+      for (const o of objetsDeClasse(etat, "element-bois")) ajouter("bois", designationBois(o.params.section), longueurElementBois(o.params), o.params.repere ?? o.params.nom ?? o.id);
+      for (const o of objetsDeClasse(etat, "segment-reseau")) ajouter(`réseau ${o.params.systeme}`, designationReseauDebit(o.params.section, o.params.profil), longueurSegment(o.params), o.params.repere ?? o.params.nom ?? o.id);
+      for (const o of objetsDeClasse(etat, "tole")) ajouter("tôle", `e ${Math.round(o.params.epaisseur.value * 1000)} mm · ${Math.round(o.params.longueur.value * 1000)} × ${Math.round(o.params.largeur.value * 1000)}`, o.params.longueur.value, o.params.repere ?? o.params.nom ?? o.id);
+      for (const g of [...groupes.values()].sort((a, b) => (a.classe < b.classe ? -1 : a.classe > b.classe ? 1 : a.designation < b.designation ? -1 : a.designation > b.designation ? 1 : a.longueurs[0]! - b.longueurs[0]!))) {
+        lignes.push([g.classe, g.designation, g.longueurs.length, r3(g.longueurs[0]!), r3(g.longueurs.reduce((a, b) => a + b, 0)), g.reperes.sort().join(", ")]);
+      }
+      total = ["Total", `${lignes.length} ligne(s)`, lignes.reduce((acc, l) => acc + (typeof l[2] === "number" ? l[2] : 0), 0), null, r3(lignes.reduce((acc, l) => acc + (typeof l[4] === "number" ? l[4] : 0), 0)), null];
       break;
     }
     case "synthese": {

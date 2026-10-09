@@ -27,6 +27,8 @@ export type Classe =
   | "cotation"
   | "texte"
   | "etiquette"
+  | "annotation-fabrication"
+  | "nuage-de-points"
   | "bloc-occurrence"
   | "garde-corps"
   | "objet-importe"
@@ -103,6 +105,8 @@ export const CLASSES: Readonly<Record<Classe, DescriptionClasse>> = {
   cotation: { classe: "cotation", ontologie: "annotation", libelle: "Cotation", ifc: "IfcAnnotation", caracteristiques: [], parNiveau: true },
   texte: { classe: "texte", ontologie: "annotation", libelle: "Texte", ifc: "IfcAnnotation", caracteristiques: [], parNiveau: true },
   etiquette: { classe: "etiquette", ontologie: "annotation", libelle: "Étiquette", ifc: "IfcAnnotation", caracteristiques: [], parNiveau: true },
+  "annotation-fabrication": { classe: "annotation-fabrication", ontologie: "annotation", libelle: "Annotation de fabrication", ifc: "IfcAnnotation", caracteristiques: [], parNiveau: true },
+  "nuage-de-points": { classe: "nuage-de-points", ontologie: "drawing", libelle: "Nuage de points", ifc: "IfcGeographicElement", caracteristiques: [], parNiveau: true },
   "garde-corps": { classe: "garde-corps", ontologie: "building.architecture", libelle: "Garde-corps", ifc: "IfcRailing", caracteristiques: ["sommet"], parNiveau: true },
   "objet-importe": { classe: "objet-importe", ontologie: "building.architecture", libelle: "Objet importé (IFC)", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre"], parNiveau: true },
   "bloc-occurrence": { classe: "bloc-occurrence", ontologie: "drawing", libelle: "Occurrence de bloc", ifc: "IfcBuildingElementProxy", caracteristiques: ["centre", "sommet"], parNiveau: true },

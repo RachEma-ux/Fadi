@@ -267,6 +267,8 @@ export const REDUCTEURS: Record<string, Reducteur> = {
   "cotation.rattacher": (etat, p, ctx) => rattacherReference(etat, p, ctx),
   ...triplet("texte", "texte"),
   ...triplet("etiquette", "etiquette"),
+  ...triplet("annotation-fabrication", "annotationFabrication"),
+  ...triplet("nuage-de-points", "nuageDePoints"),
   // Organisation
   "calque.creer": (etat, p, ctx) => reducteursCalque.creer(etat, p, ctx),
   "calque.modifier": (etat, p) => reducteursCalque.modifier(etat, p),

@@ -232,7 +232,7 @@ check("tableau « Installations de chantier » : grue G1, 36 m², 40 m, du 2027-
 const ifc = await api("get", `/projects/${pid}/documents/atelier/modele.ifc`);
 const attendus = ["IFCCOVERING(", ".CEILING.", "IFCRAMP(", "IFCCURTAINWALL(", "IFCGEOGRAPHICELEMENT(", ".TERRAIN.", "IFCOPENINGELEMENT(", "IFCRELVOIDSELEMENT(", "IFCROOF(", "'chantier:grue'", "'Fadi_SurfaceLibre'"];
 check("IFC natif : IfcCovering .CEILING., IfcRamp, IfcCurtainWall, IfcGeographicElement .TERRAIN., IfcOpeningElement + IfcRelVoidsElement (réservation dans le mur), IfcRoof (coque), proxy de chantier, surface libre", ifc.status === 200 && attendus.every((a) => ifc.text.includes(a)), attendus.filter((a) => !ifc.text.includes(a)).join(", "));
-check("catalogue des documents : les deux tableaux de P2-6 s'ajoutent (15 tableaux de l'Atelier, 51 documents sur une copie de P.118 — sans les fiches de l'exemple résolu)", docs.filter((d) => d.kind.startsWith("atelier-tableau-")).length === 15 && docs.length === 51, `${docs.length} / ${docs.filter((d) => d.kind.startsWith("atelier-tableau-")).length}`);
+check("catalogue des documents : les deux tableaux de P2-6 s'ajoutent (18 tableaux de l'Atelier, 54 documents sur une copie de P.118 — sans les fiches de l'exemple résolu)", docs.filter((d) => d.kind.startsWith("atelier-tableau-")).length === 18 && docs.length === 54, `${docs.length} / ${docs.filter((d) => d.kind.startsWith("atelier-tableau-")).length}`);
 
 // 9. Un seul écran, un seul journal, bâtiment inchangé ; téléphone ; axe-core.
 await recharger();
