@@ -10,6 +10,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/planche-detachee-documents.mjs
  */
 import { chromium } from "playwright";
+import { allerEnPlan, fermerMenus, ouvrirFichier } from "./lib-barre.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -100,10 +101,10 @@ check("rattachée : les boutons répondent toujours dans la page", (await page.l
 await page.locator('.barre-mode button:has-text("Documents")').click();
 await page.waitForSelector(".atelier-docs", { timeout: 30000 });
 const affiche = (sel) => page.locator(sel).first().isVisible();
-const masques = { niveau: ".barre-niveau", palette: ".barre-palette", affichage: ".barre-affichage", accrochages: ".barre-accrochages", cadrer: '.atelier-n-barre button:text-is("Cadrer")', canevas: "[data-disposition-canevas]", exporter: ".barre-exports", importer: ".barre-imports", harmonie: "#atelier-harmonie-button", echelle: ".etat-echelle" };
+const masques = { niveaux: "[data-plan-niveaux]", palette: "[data-palette-bouton]", reglages: "[data-reglages]", affichage: ".barre-affichage", accrochages: ".accrochages-liste", cadrer: '.atelier-n-barre button:text-is("Cadrer")', canevas: "[data-disposition-canevas]", exporter: ".barre-exports", importer: ".barre-imports", harmonie: "#atelier-harmonie-button", echelle: ".etat-echelle" };
 const restes = [];
 for (const [nom, sel] of Object.entries(masques)) if ((await page.locator(sel).count()) && (await affiche(sel))) restes.push(nom);
-check("Documents : niveau, recherche d'outil, affichage, accrochages, cadrer, canevas, échanges du modèle, Harmonie et échelle du plan absents", restes.length === 0, restes.join(", "));
+check("Documents : liste des niveaux, recherche d'outil, roue ⚙ (affichage, accrochages, canevas), cadrer, échanges du modèle, Harmonie et échelle du plan absents", restes.length === 0, restes.join(", "));
 check("Documents : Fichier, modes, annuler / rétablir et état d'enregistrement restent", (await affiche("[data-menu-principal]")) && (await affiche(".barre-mode")) && (await affiche('[aria-label="Annuler et rétablir"]')) && (await affiche(".barre-sync")));
 await page.locator("[data-menu-principal] > summary").click();
 check("Documents : le menu Fichier n'offre plus Exporter / Importer du modèle, garde Imprimer", (await page.locator('[data-menu="exporter"]').count()) === 0 && (await page.locator('[data-menu="importer"]').count()) === 0 && (await page.locator('[data-menu="imprimer"]').count()) === 1);
@@ -118,7 +119,12 @@ await page.keyboard.press("Control+k");
 check("Documents : raccourcis d'outils et palette sans effet", (await page.locator(".atelier-n").getAttribute("data-outil-actif")) === outilAvant && (await page.locator(".palette-fond").count()) === 0);
 await page.screenshot({ path: `${OUT}/documents-barre.png` });
 await page.locator('.barre-mode button:text-is("Plan")').click();
-check("Plan : la barre complète revient, sur le niveau choisi dans Documents", (await affiche(".barre-niveau")) && (await affiche(".barre-palette")) && (await affiche(".barre-exports")) && (await page.locator(".barre-niveau select").inputValue()) === options[1]);
+const niveauCoche = await page.locator("[data-plan-niveaux] [aria-checked=\"true\"]").getAttribute("data-plan-niveau");
+await page.keyboard.press("Escape");
+await ouvrirFichier(page);
+const exportsDansFichier = await affiche(".barre-exports");
+await fermerMenus(page);
+check("Plan : la barre revient (roue ⚙, recherche d'outil au rail, Exporter sous Fichier) et la liste des niveaux de Plan est cochée sur le niveau choisi dans Documents", (await affiche("[data-reglages]")) && (await affiche("[data-palette-bouton]")) && exportsDansFichier && niveauCoche === options[1], `${niveauCoche} / ${options[1]}`);
 
 // 3. Téléphone (390 px) : barre de l'Atelier sur une rangée défilante, rien ne déborde de la page, tous les modes
 //    atteignables ; Planche : colonne de panneaux en icônes, barre du haut défilante, outils tous atteignables.

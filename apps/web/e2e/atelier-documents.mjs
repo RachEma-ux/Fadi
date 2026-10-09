@@ -7,6 +7,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-documents.mjs
  */
 import { createRequire } from "node:module";
+import { allerEnPlan } from "./lib-barre.mjs";
 import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
@@ -64,7 +65,7 @@ const outil = async (nom) => {
   await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
   await page.locator(".saisie-precision").waitFor({ state: "detached", timeout: 5000 }).catch(() => {});
-  await page.locator(".barre-palette").click();
+  await page.locator("[data-palette-bouton]").click();
   await page.locator(".palette-champ").fill(nom);
   await page.keyboard.press("Enter");
   await page.locator(".palette-champ").waitFor({ state: "detached", timeout: 5000 });
@@ -338,7 +339,7 @@ await page.waitForFunction(() => document.querySelector('[data-detail="feuille"]
 check("Atelier : la feuille affiche « À jour » après production", (await page.locator('[data-detail="feuille"] [data-fraicheur]').getAttribute("data-fraicheur")) === "a-jour");
 
 // Une commande qui change le dessin : la feuille devient périmée (dessin modifié).
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 await page.locator(`.nav-objets button[data-objet="${gc.id}"]`).click();
 await page.locator("#phase-objet").selectOption("");
 await enregistre();

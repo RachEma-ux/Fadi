@@ -7,6 +7,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-complements.mjs
  */
 import { readFileSync } from "node:fs";
+import { allerEnPlan, choisirAffichage, ouvrirExports, ouvrirImports } from "./lib-barre.mjs";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
 
@@ -140,7 +141,7 @@ const typeMur = (await modele(pid)).modele.definitions[murA.definitionId];
 check("composition du type : couches enregistrées, cohérentes avec l'épaisseur, dessinées dans le mur", typeMur?.params?.couches?.length === 2 && (await page.locator('.inspecteur-composition[data-composition="coherente"]').count()) === 1 && (await page.locator(`.plan2d [data-objet="${murA.id}"] .mur-couche`).count()) >= 1, `${JSON.stringify(typeMur?.params?.couches ?? null).slice(0, 160)} · ${murA.definitionId} · ${await page.locator(".inspecteur-composition").getAttribute("data-composition").catch(() => "?")} · ${((await page.locator(".inspecteur-composition").textContent().catch(() => "")) ?? "").slice(0, 200)} · ${((await page.locator(".etat-aide, .etat-erreur").first().textContent().catch(() => "")) ?? "").slice(0, 150)}`);
 
 // 2. Consulter un état passé (lecture seule), puis revenir.
-await page.locator('select[aria-label="Niveau d\'affichage des outils"]').selectOption("complet");
+await choisirAffichage(page, "complet");
 await page.locator(".mod-journal summary").click();
 const bouton = page.locator("[data-consulter-revision]").first();
 const revPassee = Number(await bouton.getAttribute("data-consulter-revision").catch(() => "NaN"));
@@ -422,7 +423,7 @@ await page.locator('[data-nouvelle="axonometrie"]').click();
 await page.waitForSelector('[data-detail="vue"] .docs-svg svg', { timeout: 60000 }).catch(() => {});
 await page.waitForFunction(() => (document.querySelector('[data-detail="vue"] .docs-svg svg')?.querySelectorAll("line, path, polyline").length ?? 0) > 10, null, { timeout: 60000 }).catch(() => {});
 check("axonométrie : vue créée et dessinée (projection parallèle)", (await page.locator('[data-detail="vue"] .docs-svg svg').locator("line, path, polyline").count()) > 10 && /projection parallèle/.test((await page.locator(".docs-avertissements").textContent().catch(() => "")) ?? ""));
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 await page.waitForSelector(".plan2d");
 
 // Croisement (D-034) : deux murs qui se traversent ; la zone commune est peinte d'un seul tenant dans le plan.
@@ -596,7 +597,7 @@ await page.waitForSelector(".plan2d");
   // Propriétés en tableau (D-045) : import CSV, une ligne refusée nominativement ; historique exporté en CSV.
   const cheminCsv = `${OUT}/proprietes-e2e.csv`;
   (await import("node:fs")).writeFileSync(cheminCsv, "id;propriete;valeur;unite\ncroix-h;Résistance au feu;EI 60;\ncroix-h;Épaisseur relevée;20;\n");
-  await page.locator(".barre-imports > summary").click();
+  await ouvrirImports(page);
   await page.locator('[data-entree="proprietes-csv"]').setInputFiles(cheminCsv);
   // L'import part en un lot : attendre qu'il soit enregistré sur le serveur (banc de CI chargé).
   let propsCroix = {};
@@ -613,14 +614,14 @@ await page.waitForSelector(".plan2d");
 
 // Fichier de bibliothèque (D-050) : exporté de ce projet, importé dans un projet neuf.
 {
-  await page.locator(".barre-exports > summary").click();
+  await ouvrirExports(page);
   const [dlBib] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator('[data-export="bibliotheque"]').click()]);
   const cheminBib = `${OUT}/bibliotheque-e2e.json`;
   await dlBib.saveAs(cheminBib);
   const neuf = (await api("post", "/projects", { code: "P.300", name: "Projet bibliothèque" })).body.id;
   const nv0 = await lot(neuf, `n-${Date.now()}`, 0, [{ type: "niveau.creer", params: { id: "rdc", nom: "RDC", elevation: 0 } }]);
   await ouvrir(neuf, false);
-  await page.locator(".barre-imports > summary").click();
+  await ouvrirImports(page);
   await page.locator('[data-entree="bibliotheque"]').setInputFiles(cheminBib);
   let defs = 0;
   for (let k = 0; k < 40 && !defs; k++) {
@@ -1017,7 +1018,7 @@ await page.waitForSelector(".plan2d");
   check("vue 3D : boîte de coupe et annotation enregistrées avec la vue", annotee && vueAnn?.params.boiteCoupe?.x1 === 0.6 && vueAnn?.params.annotations?.[0]?.texte === "Point e2e" && (await page.locator("[data-annotation]").count()) === 1, `${annotee} · ${JSON.stringify(vueAnn?.params?.boiteCoupe ?? null)} · ${JSON.stringify(vueAnn?.params?.annotations ?? null)}`);
   // Échange BCF (D-097) : export des vues 3D (.bcfzip, catalogue), réimport : une vue de plus, annotation et point repris.
   {
-    await page.locator(".barre-exports > summary").click();
+    await ouvrirExports(page);
     const [dlBcf] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator('[data-export="bcf"]').click()]);
     const bcfCatalogue = await page.waitForFunction(() => window.__fadiExports?.some((e) => e.kind === "bcf"), null, { timeout: 15000 }).then(() => true).catch(() => false);
     const chemin = await dlBcf.path();
@@ -1050,7 +1051,7 @@ await page.waitForSelector(".plan2d");
   await page.locator('[data-visite="quitter"]').click();
   const avance = v0 && v1 ? Math.hypot(v1.position.x - v0.position.x, v1.position.y - v0.position.y) : 0;
   check("visite à hauteur d'œil : caméra à niveau + 1,60 m, avance de 1 m au clavier sans changer de hauteur", !!v0 && Math.abs(v0.position.z - alt) < 1e-3 && Math.abs(avance - 1) < 0.01 && Math.abs(v1.position.z - v0.position.z) < 1e-6, `${JSON.stringify(v0?.position)} → ${JSON.stringify(v1?.position)} · œil ${alt}`);
-  await page.locator('.barre-mode button:text-is("Plan")').click();
+  await allerEnPlan(page);
   check("isolement : la sélection isolée pour soi en 3D, puis l'affichage complet revient", isole === "2" && quitte, `${isole} · ${quitte}`);
 }
 
@@ -2032,7 +2033,7 @@ await page.waitForSelector(".plan2d");
   }
   const journal = (await api("get", `/projects/${pid}/atelier/journal`)).body.entrees.at(-1)?.label ?? "";
   await page.locator("[data-isolement-quitter]").click().catch(() => {});
-  await page.locator('.barre-mode button:text-is("Plan")').click().catch(() => {});
+  await allerEnPlan(page).catch(() => {});
   check("pousser / tirer une face latérale : poteau élargi d'un côté en 3D", r0.status === 200 && !!fait && /Face de pot-face/.test(journal), `${r0.status} · ${JSON.stringify(cible)} · ${JSON.stringify(fait && { l: fait.largeur, p: fait.profondeur, pt: fait.point })} · ${journal}`);
 }
 
@@ -2068,7 +2069,7 @@ await page.waitForSelector(".plan2d");
   }
   const d = await page.evaluate(() => window.fadiMesures3D?.mesure3d ?? null);
   await page.locator("[data-isolement-quitter]").click().catch(() => {});
-  await page.locator('.barre-mode button:text-is("Plan")').click().catch(() => {});
+  await allerEnPlan(page).catch(() => {});
   check("accrochage 3D : coins du poteau accrochés, diagonale exacte (√2 m)", r0.status === 200 && ok && typeof d === "number" && Math.abs(d - Math.SQRT2) < 1e-6, `${r0.status} · ${ok} · ${d} · ${JSON.stringify(coins)}`);
 }
 
@@ -2175,7 +2176,7 @@ await page.waitForSelector(".plan2d");
   await page.screenshot({ path: `${OUT}/3d-filaire.png` });
   await page.locator("[data-filaire]").uncheck();
   const retire = await page.waitForFunction(() => window.fadiMesures3D?.filaire === false, null, { timeout: 5000 }).then(() => true, () => false);
-  await page.locator('.barre-mode button:text-is("Plan")').click().catch(() => {});
+  await allerEnPlan(page).catch(() => {});
   check("vue 3D filaire : activée puis retirée (arêtes cachées en tirets)", actif && retire, `${actif} · ${retire}`);
 }
 
@@ -2202,7 +2203,7 @@ await page.waitForSelector(".plan2d");
   await page.screenshot({ path: `${OUT}/3d-styles.png` });
   await page.locator('[data-styles-classes] li:has([data-style-couleur="mur"]) button.lien').click();
   const retabli = await page.waitForFunction(() => window.fadiMesures3D?.styles === 0, null, { timeout: 5000 }).then(() => true, () => false);
-  await page.locator('.barre-mode button:text-is("Plan")').click().catch(() => {});
+  await allerEnPlan(page).catch(() => {});
   check("styles par classe en 3D : couleur des murs appliquée puis rétablie", applique && retabli, `${applique} · ${retabli}`);
 }
 

@@ -6,6 +6,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-nouveau.mjs
  */
 import { chromium } from "playwright";
+import { allerEnPlan, ouvrirExports } from "./lib-barre.mjs";
 import { createRequire } from "node:module";
 import { mkdirSync } from "node:fs";
 
@@ -280,7 +281,7 @@ const hauteurApres = await page.locator('.inspecteur input[id$="-hauteur"]').inp
 check("pousser / tirer : la hauteur du mur a augmenté (> 3 m) et est enregistrée", Number(hauteurApres.replace(",", ".")) > 3, `${hauteurApres} ; ${murId} à ${JSON.stringify(pos)} ; sonde ${await page.evaluate((p) => window.fadiMesures3D.sonder(p.x, p.y), pos)}`);
 await page.screenshot({ path: `${OUT}/3b-pousser.png` });
 await page.keyboard.press("Escape");
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 await page.waitForSelector(".plan2d");
 await page.waitForTimeout(200);
 
@@ -327,18 +328,18 @@ await page.waitForFunction((r) => { const m = (document.querySelector(".barre-sy
 // Exports : DXF, SVG, CSV en plan, PNG en 3D — téléchargés et enregistrés au catalogue des documents (niveau, vue, révision).
 const exportsFaits = [];
 for (const kind of ["dxf", "svg", "csv"]) {
-  await page.locator(".barre-exports > summary").click();
+  await ouvrirExports(page);
   const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator(`[data-export="${kind}"]`).click()]);
   const enregistre = await page.waitForFunction((k) => window.__fadiExports?.some((e) => e.kind === k), kind, { timeout: 15000 }).then(() => true).catch(() => false);
   exportsFaits.push(`${kind}:${dl.suggestedFilename()}:${enregistre ? "catalogue" : "non"}`);
 }
 await page.locator('.barre-mode button:has-text("3D")').click();
 await page.waitForFunction(() => (window.fadiMesures3D?.triangles ?? 0) > 0, null, { timeout: 30000 });
-await page.locator(".barre-exports > summary").click();
+await ouvrirExports(page);
 const [dlPng] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator('[data-export="png"]').click()]);
 const pngOk = await page.waitForFunction(() => window.__fadiExports?.some((e) => e.kind === "png"), null, { timeout: 15000 }).then(() => true).catch(() => false);
 exportsFaits.push(`png:${dlPng.suggestedFilename()}:${pngOk ? "catalogue" : "non"}`);
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 const docsCatalogue = (await (await page.request.get(`${BASE}/projects/${url.split("/").pop()}/documents`)).json()).documents.filter((d) => d.group === "dessins");
 check("exports DXF, SVG, CSV et PNG : téléchargés et enregistrés au catalogue, « à jour » à la révision courante", exportsFaits.every((e) => /:catalogue$/.test(e)) && docsCatalogue.length === 4 && docsCatalogue.every((d) => d.freshness === "a-jour") && docsCatalogue.some((d) => /Dessin technique DXF · Essai lot 3a · dessin plan/.test(d.label)), `${exportsFaits.join(" ")} | ${docsCatalogue.map((d) => d.label).join(" ; ")}`);
 

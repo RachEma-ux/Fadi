@@ -6,6 +6,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/interface-anglais.mjs
  */
 import { writeFileSync } from "node:fs";
+import { allerEnPlan, basculerCanevas } from "./lib-barre.mjs";
 import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
@@ -119,7 +120,7 @@ for (const [nom, url] of ecrans) {
 }
 check("accueil : navigation principale en anglais", (await page.locator(".app-nav").textContent())?.includes("My projects"));
 // Atelier : disposition Canevas, panneaux, menu, 3D.
-await page.locator("[data-disposition-canevas]").click();
+await basculerCanevas(page);
 for (const p of ["instructeur", "outliner", "affichage", "materiaux", "modele", "navigation", "raccourcis"]) {
   await page.locator(`[data-panneau-icone="${p}"]`).click();
   await releve(`atelier-${p}`);
@@ -135,8 +136,8 @@ await page.locator('.barre-mode button:has-text("Documents")').click();
 await page.waitForTimeout(1500);
 await releve("atelier-documents");
 await page.screenshot({ path: `${OUT}/interface-anglais-atelier.png` });
-await page.locator('.barre-mode button:has-text("Plan")').click();
-await page.locator('[data-disposition-canevas]').click();
+await allerEnPlan(page);
+await basculerCanevas(page);
 
 const liste = [...residus].sort((a, b) => b[1].size - a[1].size).map(([t, s]) => `${t}\t${[...s].join(",")}`);
 writeFileSync(`${OUT}/residus-anglais.txt`, liste.join("\n"));

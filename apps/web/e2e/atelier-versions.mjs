@@ -7,6 +7,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-versions.mjs
  */
 import { createHash } from "node:crypto";
+import { allerEnPlan } from "./lib-barre.mjs";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
@@ -98,7 +99,7 @@ await page.waitForSelector(".vue3d canvas", { timeout: 30000 });
 check("mise en évidence en 3D : vue 3D ouverte, l'objet modifié sélectionné", (await page.locator(".etat-selection").textContent()).includes(murA.id));
 await page.waitForTimeout(800);
 await page.screenshot({ path: `${OUT}/7-version-evidence-3d.png` });
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 
 // Restaurer la version.
 await page.locator('.ver-liste [data-version] button:has-text("Restaurer")').first().click();
@@ -243,7 +244,7 @@ await page.locator(".docs-comparaison").scrollIntoViewIfNeeded();
 await page.screenshot({ path: `${OUT}/7-vue-comparee.png` });
 
 // Téléphone : panneau « problèmes » avec versions.
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(300);
 await page.locator('.atelier-n-onglets button').last().click();

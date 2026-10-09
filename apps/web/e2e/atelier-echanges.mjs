@@ -7,6 +7,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-echanges.mjs
  */
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { allerEnPlan, fermerMenus, ouvrirExports, ouvrirImports } from "./lib-barre.mjs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createRequire } from "node:module";
@@ -66,9 +67,9 @@ await page.waitForURL(/\/projets\/proj_/, { timeout: 60000 });
 const reference = page.url().split("?")[0];
 await page.goto(`${reference}?module=atelier`);
 await page.waitForSelector(".plan2d .plan-objets [data-objet]", { timeout: 30000 });
-await page.locator(".barre-imports > summary").click();
+await ouvrirImports(page);
 check("exemple protégé : import IFC et DXF désactivés (à faire dans une copie de travail)", (await page.locator('[data-import="ifc"]').isDisabled()) && (await page.locator('[data-import="dxf"]').isDisabled()));
-await page.locator(".barre-imports > summary").click();
+await fermerMenus(page);
 const copie = await page.request.post(`${BASE}/projects/${reference.split("/").pop()}/copies`, { data: { name: "P.118 · échanges" } });
 const pid = (await copie.json()).id;
 await page.goto(`${BASE}/projets/${pid}?module=atelier`);
@@ -76,7 +77,7 @@ await page.waitForSelector(".plan2d .plan-objets [data-objet]", { timeout: 30000
 await enregistre();
 
 // Export IFC : téléchargement, rapport, catalogue.
-await page.locator(".barre-exports > summary").click();
+await ouvrirExports(page);
 const [dl] = await mesurer("export IFC du P.118 (serveur + rapport)", () =>
   Promise.all([page.waitForEvent("download", { timeout: 60000 }), page.locator('[data-export="ifc"]').click()]),
 );
@@ -102,7 +103,7 @@ check("projet cible créé avec un niveau RDC (altitude 0)", lot === 200);
 await page.goto(`${BASE}/projets/${cible}?module=atelier`);
 await page.waitForSelector(".plan2d", { timeout: 30000 });
 await enregistre();
-await page.locator(".barre-imports > summary").click();
+await ouvrirImports(page);
 const [choix] = await Promise.all([page.waitForEvent("filechooser"), page.locator('[data-import="ifc"]').click()]);
 await mesurer("import IFC du P.118 (lecture web-ifc, 4 lots, relecture du modèle)", async () => {
   await choix.setFiles(cheminIfc);
@@ -134,7 +135,7 @@ await page.waitForSelector(".vue3d canvas", { timeout: 30000 });
 await page.waitForTimeout(1500);
 await page.screenshot({ path: `${OUT}/6-import-ifc-3d.png` });
 check("3D : la maquette importée s'affiche sans erreur", erreursPage.length === 0, erreursPage.join(" | "));
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 
 // Import DXF 2D.
 const dxf = [
@@ -149,7 +150,7 @@ const dxf = [
 ].join("\n");
 const cheminDxf = join(TMP, "terrasse.dxf");
 writeFileSync(cheminDxf, dxf);
-await page.locator(".barre-imports > summary").click();
+await ouvrirImports(page);
 await page.locator('[data-import="dxf"]').click();
 await page.locator(".echanges-dxf").waitFor();
 await axe("dialogue d'import DXF", ".echanges-dxf");
@@ -170,7 +171,7 @@ check("modèle : esquisses en mètres (8 m), calques « DXF · … », un groupe
 // Téléphone.
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(300);
-await page.locator(".barre-imports > summary").click();
+await ouvrirImports(page);
 check("390 px : menu Importer dans l'écran, sans défilement horizontal", await page.evaluate(() => {
   const r = document.querySelector(".barre-imports .exports-liste")?.getBoundingClientRect();
   return !!r && r.left >= 0 && r.right <= window.innerWidth + 1 && document.documentElement.scrollWidth <= window.innerWidth + 1;

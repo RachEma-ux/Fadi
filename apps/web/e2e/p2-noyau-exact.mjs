@@ -69,7 +69,7 @@ await page.waitForSelector(".plan2d [data-objet='profil-p21']", { timeout: 15000
 await page.keyboard.press("Escape");
 await calibrer();
 await cadreModele(-0.3, 1.3, 1.4, -0.3); // cadre fenêtre : profil et axe entièrement dedans, le mur (4 m) non
-await page.locator(".barre-palette").click();
+await page.locator("[data-palette-bouton]").click();
 await page.locator(".palette-champ").fill("solide exact");
 await page.keyboard.press("Enter");
 await page.waitForSelector("[data-outil-solide-exact]", { timeout: 15000 });
@@ -111,7 +111,7 @@ check("STEP téléchargé : ISO-10303-21, nom du fichier depuis le serveur", ste
 await page.keyboard.press("Escape");
 await cliquerModele(2.5, 0.5);
 await cliquerModele(0.6, 0.9, ["Shift"]);
-await page.locator(".barre-palette").click();
+await page.locator("[data-palette-bouton]").click();
 await page.locator(".palette-champ").fill("booléen");
 await page.keyboard.press("Enter");
 await page.waitForSelector("[data-outil-solide-exact]", { timeout: 15000 });

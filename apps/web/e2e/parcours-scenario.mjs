@@ -84,6 +84,7 @@
  * Variables : BASE_URL (défaut http://localhost:4173), CHROMIUM_PATH.
  */
 import { chromium } from "playwright";
+import { allerEnPlan, ouvrirExports, ouvrirFichier } from "./lib-barre.mjs";
 import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
@@ -618,7 +619,7 @@ for (const vue of ["Plan (dessus)", "Coupe nord–sud", "Coupe est–ouest", "Fa
 check("acceptation · vues techniques (plan, coupes N–S / E–O, 4 façades) : chacune rendue, aucune erreur JavaScript", techViews.length === 0 && consoleErrors.length === errorsBeforeAcceptance, techViews.join(" "));
 await page.locator('.vue3d-commandes select[aria-label="Vue"]').selectOption({ label: "Perspective" });
 // Mezzanine modifiée en plan : un mur dessiné, enregistré sur le serveur, relu en 3D (niveau actif) et en vue éclatée.
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 await choisirNiveau("Mezzanine");
 const mezzBefore = await wallsOn(atelierPid, "mezz");
 await tracerMur(0.4, 0.45, "2,5;0");
@@ -633,7 +634,7 @@ for (const presentation of ["Niveau actif", "Éclaté"]) {
 }
 check("acceptation · mezzanine relue en 3D (niveau actif) puis en vue éclatée : images non vides, aucune erreur JavaScript", (await page.evaluate(() => window.fadiMesures3D.triangles)) > 0 && consoleErrors.length === errorsBeforeAcceptance);
 await page.locator('.vue3d-commandes select[aria-label="Présentation"]').selectOption({ label: "Bâtiment" });
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 // Hauteur du mur dessiné (encore sélectionné) : 2,40 m dans l'inspecteur, persistée.
 const heightField = page.locator('.inspecteur input[id$="-hauteur"]');
 let heightChanged = false;
@@ -649,7 +650,7 @@ await page.keyboard.press("Escape");
 await page.keyboard.press("u");
 await page.waitForTimeout(300);
 check("acceptation · Pousser / tirer : outil activé en vue 3D, aide affichée", (await page.locator('.barre-mode button[aria-pressed="true"]').textContent()) === "3D" && /cliquez un mur, un poteau, un solide, une dalle ou une toiture et glissez/.test(await page.locator(".atelier-n-etat").textContent()));
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 // Annuler / rétablir persistés sur la mezzanine (la hauteur), puis relecture sur un autre appareil à la même révision.
 const beforeUndoMezz = await wallsOn(atelierPid, "mezz");
 await raccourci("Control+z");
@@ -677,7 +678,7 @@ await ctxDevice3.close();
 // Exports de la même révision : DXF, SVG, CSV (plan) et PNG (vue 3D), chacun téléchargé ET enregistré au catalogue avec niveau, vue et révision.
 const exported = [];
 for (const kind of ["dxf", "svg", "csv"]) {
-  await page.locator(".barre-exports > summary").click();
+  await ouvrirExports(page);
   const [download] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator(`[data-export="${kind}"]`).click()]);
   const registered = await page.waitForFunction((k) => window.__fadiExports?.some((e) => e.kind === k), kind, { timeout: 15000 }).then(() => true).catch(() => false);
   exported.push(`${kind}:${download.suggestedFilename()}:${registered ? "catalogue" : "non enregistré"}`);
@@ -685,11 +686,11 @@ for (const kind of ["dxf", "svg", "csv"]) {
 check("acceptation · exports DXF, SVG et CSV : téléchargés et enregistrés au catalogue (niveau mezzanine, dessin plan, révision courante)", exported.length === 3 && exported.every((e) => /:catalogue$/.test(e)), exported.join(" "));
 await page.locator('.barre-mode button:has-text("3D")').click();
 await page.waitForFunction(() => (window.fadiMesures3D?.triangles ?? 0) > 0, null, { timeout: 30000 });
-await page.locator(".barre-exports > summary").click();
+await ouvrirExports(page);
 const [pngDownload] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.locator('[data-export="png"]').click()]);
 const pngRegistered = await page.waitForFunction(() => window.__fadiExports?.some((e) => e.kind === "png"), null, { timeout: 15000 }).then(() => true).catch(() => false);
 check("acceptation · export PNG de la vue 3D : téléchargé et enregistré au catalogue", /\.png$/.test(pngDownload.suggestedFilename()) && pngRegistered, pngDownload.suggestedFilename());
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 const catalogueDocs = (await (await page.request.get(`${BASE}/projects/${atelierPid}/documents`)).json()).documents;
 const drawingDocs = catalogueDocs.filter((d) => d.group === "dessins");
 const surfacesDoc = catalogueDocs.find((d) => d.kind === "tableau-surfaces");
@@ -702,6 +703,7 @@ check("acceptation · aucune erreur JavaScript pendant l'acceptation", consoleEr
 await page.goto(`${exampleUrl}?module=parcours&etape=10`);
 await atelierPret();
 check("étape 10 (référence) : page « Atelier Architectural · ÉTAPE 10 / 21 · Concevoir / Tester », enveloppe de Fadi effacée, titre de l'étape replié sous le dessin", (await page.locator(".atelier-stage-title").textContent()) === "Atelier Architectural" && (await page.locator(".top-stage").textContent()) === "ÉTAPE 10 / 21 · Concevoir / Tester" && (await page.evaluate(() => document.body.classList.contains("atelier-immersive"))) && !(await page.locator(".app-sidebar").isVisible()) && (await page.locator(".stage10-fold > summary").textContent()) === "Étude de capacité architecturale");
+await ouvrirFichier(page);
 await page.locator("#atelier-harmonie-button").click();
 await page.waitForFunction(() => !document.getElementById("atelier-harmonie-page")?.hidden);
 await page.evaluate(() => { document.querySelector(".h7-panel-reference").open = true; });
@@ -721,9 +723,10 @@ await page.goto(`${variantUrl}?module=parcours&etape=10`);
 await atelierPret();
 check("étape 10 : l'Atelier est monté dans l'étape (même Atelier que le module)", (await page.locator(".atelier-n .plan2d").count()) === 1);
 // Sous-page « Harmonie du bâtiment » (V8.4) : depuis le bouton « Harmonie » de la barre de l'Atelier
+await ouvrirFichier(page);
 await page.locator("#atelier-harmonie-button").click();
 await page.waitForFunction(() => !document.getElementById("atelier-harmonie-page")?.hidden);
-check("étape 10 : « Harmonie » (barre de l'Atelier) ouvre la sous-page « Harmonie du bâtiment » (en-tête, 3 rubriques, Atelier masqué)", (await page.locator("#ah84-title").textContent()) === "Harmonie du bâtiment" && (await page.locator(".ah84-links button").count()) === 3 && !(await page.locator(".atelier-n").isVisible()));
+check("étape 10 : « Harmonie » (menu Fichier) ouvre la sous-page « Harmonie du bâtiment » (en-tête, 3 rubriques, Atelier masqué)", (await page.locator("#ah84-title").textContent()) === "Harmonie du bâtiment" && (await page.locator(".ah84-links button").count()) === 3 && !(await page.locator(".atelier-n").isVisible()));
 // Propositions localisées sur les locaux du modèle (flow-v62 / h7-app)
 await page.evaluate(() => { document.querySelector(".h7-panel").open = true; });
 await page.waitForSelector(".h7-locals");
@@ -1110,7 +1113,7 @@ await page.goto(`${atelierUrl}?module=atelier`);
 await atelierPret();
 await page.waitForFunction(() => /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
 await choisirNiveau("RDC");
-await page.locator('.barre-mode button:text-is("Plan")').click();
+await allerEnPlan(page);
 const drawWall = (fx) => tracerMur(fx, 0.62, "2;0");
 const lotsLocaux = () => page.evaluate(() => new Promise((resolve) => { const req = indexedDB.open("fadi-local"); req.onsuccess = () => { const tx = req.result.transaction("lots"); const all = tx.objectStore("lots").getAll(); all.onsuccess = () => resolve(all.result.map((e) => `${e.label} · ${e.etat}`)); }; }));
 const wallsBeforeOffline = await rdcWallsOf(atelierPid);

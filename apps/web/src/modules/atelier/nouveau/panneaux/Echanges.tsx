@@ -4,6 +4,8 @@
  * commandes d'esquisse), et le rapport de fidélité de chaque échange : conservé, transformé, omis, à réparer.
  */
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { fermerMenus, sousMenuExclusif } from "./MenuPrincipal";
 import { commandesImportDxf, commandesProprietesCsv, modeleDepuisBibliotheque, planifierReprise, exporterIfc, ErreurCommande, type ModeleAtelier, type RapportEchange, type RapportImportDxf, type UniteDxf } from "@parcours/atelier-model";
 import { api, ApiError } from "../../../../lib/api";
 import type { AtelierClient } from "../../bus/atelier-client";
@@ -110,7 +112,8 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
     }
   };
   const [dxfOuvert, setDxfOuvert] = useState(false);
-  const fermerMenu = (e: React.MouseEvent) => (e.currentTarget.closest("details") as HTMLDetailsElement | null)?.removeAttribute("open");
+  // Sous-menu de Fichier (D-195) : choisir une entrée referme Importer et Fichier.
+  const fermerMenu = (e: React.MouseEvent) => fermerMenus(e.currentTarget);
 
   const importerIfc = async (f: File) => {
     try {
@@ -129,16 +132,8 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
 
   return (
     <>
-      <details
-        className="barre-imports"
-        onToggle={(e) => {
-          const d = e.currentTarget;
-          const boite = d.closest(".atelier-n")?.getBoundingClientRect();
-          const r = d.getBoundingClientRect();
-          d.dataset["cote"] = boite && r.left - boite.left < boite.width / 2 ? "gauche" : "droite";
-        }}
-      >
-        <summary>Importer</summary>
+      <details className="barre-imports" data-sous-menu onToggle={sousMenuExclusif}>
+        <summary data-menu="importer">Importer</summary>
         <div className="exports-liste">
           <button type="button" data-import="ifc" disabled={desactive} title={motif} onClick={(e) => { fermerMenu(e); entreeIfc.current?.click(); }}>
             Maquette IFC…
@@ -157,6 +152,8 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
           </button>
         </div>
       </details>
+      {createPortal(
+        <>
       <input
         ref={entreeIfc}
         type="file"
@@ -221,6 +218,9 @@ export function MenuImport({ client, projectId, etat, niveauId, desactive, motif
           }}
           onAide={onAide}
         />
+      )}
+        </>,
+        document.body,
       )}
     </>
   );

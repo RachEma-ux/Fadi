@@ -68,7 +68,7 @@ check("bâtiment : un mur tracé au clavier (M, clic, 4, Entrée) et enregistré
 
 // 2. Dessin : une ligne d'esquisse depuis la palette (Ctrl K, « ligne », Entrée, deux clics).
 await page.keyboard.press("Escape");
-await page.locator(".barre-palette").click();
+await page.locator("[data-palette-bouton]").click();
 await page.locator(".palette-champ").fill("ligne");
 await page.keyboard.press("Enter");
 await page.mouse.click(cx + 60, cy + 80);

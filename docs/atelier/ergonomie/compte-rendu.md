@@ -16,6 +16,7 @@ aucune règle d'`AGENTS.md` ni du cahier des charges de l'Atelier n'est modifié
 | 6 | D-161 | Qualité : catalogue de messages (français), focus des panneaux au clavier (ouverture, Échap, retour à l'icône), Entrée active le bouton focalisé hors tracé, cibles de 24 px au moins dans les panneaux et 44 px pour les outils et icônes au téléphone, recette desktop + mobile, axe-core | `nouveau.test.ts`, `atelier-canevas.mjs` |
 | — | D-163 | Interface bilingue français / anglais (décision du maître d'ouvrage du 07/10/2026) : choix de la langue par appareil, dictionnaire anglais, couche de traduction de l'affichage, catalogue `messages.ts` en deux langues | `traduire.test.ts`, `interface-anglais.mjs` |
 | — | D-162 | Scènes (vues 3D enregistrées) et Styles par classe accessibles depuis la colonne ; indicateur « Synchronisé » affiché seulement quand toutes les écritures sont acceptées | `atelier-canevas.mjs`, `parcours-scenario.mjs` |
+| 7 | D-195 | Barre de l'Atelier réduite à Fichier · Plan (mode + liste des niveaux) · 3D · Documents · Planche · ⚙ · état ; Exporter / Importer / Harmonie dans Fichier ; affichage, accrochages et Canevas sous ⚙ ; barre d'actions flottante (Annuler, Rétablir, Cadrer ; Planche : Détacher) déplaçable et bornée à l'écran, mémorisée par appareil | `lots/barre-atelier.md`, recettes `planche-detachee-documents.mjs`, `planche-boutons.mjs`, `atelier-barre.mjs` |
 
 ## Métriques de succès (étape 0)
 

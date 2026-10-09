@@ -69,7 +69,7 @@ const outilsAvant = await compterOutils();
 await page.locator('[data-ontologie="mechanical"]').check();
 await enregistre();
 check("activation : l'ontologie mécanique est activée par une commande du même journal (ontologies = [mechanical])", JSON.stringify((await modele()).modele.ontologies) === JSON.stringify(["mechanical"]), JSON.stringify((await modele()).modele.ontologies));
-await page.locator(".barre-palette").click();
+await page.locator("[data-palette-bouton]").click();
 await page.locator(".palette-champ").fill("pièce mécanique");
 await page.waitForTimeout(200);
 const palette = (await page.locator(".palette").textContent()) ?? "";
