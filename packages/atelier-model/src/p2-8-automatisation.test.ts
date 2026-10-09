@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appliquerLot, CONTRAT_COMMANDES } from "./commandes/index.js";
 import type { Commande } from "./commandes/base.js";
 import { modeleVide, type ModeleAtelier } from "./modele.js";
-import { ancetres, compilerGraphe, controlerReglesGraphe, GRAPHES_INTEGRES, ordonner, proposerGraphe, validerGraphe, variablesLues, type GrapheGeneration } from "./automatisation/graphes.js";
+import { ancetres, compilerGraphe, controlerReglesGraphe, developperGraphe, GRAPHES_INTEGRES, ordonner, proposerGraphe, validerGraphe, variablesLues, type GrapheGeneration } from "./automatisation/graphes.js";
 import { controlesClasses, valeursObjet } from "./automatisation/regles-classes.js";
 import { graphesDuProjet, grapheDe } from "./commandes/graphes.js";
 import { verifierModele } from "./archive.js";
@@ -67,6 +67,25 @@ describe("graphes de génération contrôlée (P2-8, DA-19-03 / 04)", () => {
     expect(prop.hypotheses.some((h) => h.texte === "double = 4")).toBe(true);
     expect(prop.effets?.crees).toHaveLength(3);
     expect(prop.iterations).toEqual([{ numero: 1, commandes: 3, resultat: "valide", erreur: null }]);
+  });
+
+  it("branches indépendantes : chaque commande n'est répétée que par ses propres séries ancêtres (2 A puis 3 B, pas 6 × 2)", () => {
+    const g = validerGraphe({
+      id: "branches", nom: "Branches", noeuds: [
+        { id: "i", type: "serie", variable: "i", de: 1, a: 2, x: 0, y: 0 },
+        { id: "j", type: "serie", variable: "j", de: 1, a: 3, x: 0, y: 1 },
+        { id: "a", type: "commande", commande: { type: "texte.creer", params: { niveauId: "n1", position: pt("=i" as unknown as number, 0), texte: "A{i}" } }, x: 1, y: 0 },
+        { id: "b", type: "commande", commande: { type: "texte.creer", params: { niveauId: "n1", position: pt("=j" as unknown as number, 5), texte: "B{j}" } }, x: 1, y: 1 },
+        { id: "c", type: "commande", commande: { type: "texte.creer", params: { niveauId: "n1", position: pt(0, 9), texte: "C" } }, x: 1, y: 2 },
+      ],
+      liens: [{ de: "i", a: "a" }, { de: "j", a: "b" }],
+    });
+    const cmds = developperGraphe(g, base(), {});
+    expect(cmds.map((c) => (c.params as { texte: string }).texte)).toEqual(["C", "A1", "A2", "B1", "B2", "B3"]); // ordre topologique : C (sans parent) d'abord
+    expect(proposerGraphe(g, base(), {}, "n1").commandes).toHaveLength(6);
+    // Séries imbriquées (j relié à i) : produit cartésien pour la commande qui lit les deux.
+    const imbrique = validerGraphe({ ...g, id: "imbrique", liens: [{ de: "i", a: "j" }, { de: "j", a: "b" }, { de: "i", a: "a" }] });
+    expect(developperGraphe(imbrique, base(), {}).map((c) => (c.params as { texte: string }).texte)).toEqual(["C", "A1", "A2", "B1", "B2", "B3", "B1", "B2", "B3"]);
   });
 
   it("règles du graphe : non tenue → proposition échouée nommée, aucune commande, aucune correction silencieuse", () => {
@@ -137,6 +156,15 @@ describe("graphes de génération contrôlée (P2-8, DA-19-03 / 04)", () => {
     const archive = verifierModele(JSON.parse(JSON.stringify(e2)));
     expect(archive.ok, archive.ok ? "" : archive.erreurs.join(" ; ")).toBe(true);
     expect(archive.ok && grapheDe(archive.modele, "test")!.version).toBe(2);
+    // Archive avec un graphe mal formé (sans nœuds) ou cyclique : refusée nommément (relecture Codex #101).
+    const brut = JSON.parse(JSON.stringify(e2)) as { definitions: Record<string, { params: Record<string, unknown> }> };
+    brut.definitions["test"]!.params = {};
+    const refus = verifierModele(brut);
+    expect(refus.ok).toBe(false);
+    expect(!refus.ok && refus.erreurs.join(" ; ")).toMatch(/definitions.test : graphe invalide \(noeuds : 1 à 60 nœuds\)/);
+    const cyclique = JSON.parse(JSON.stringify(e2)) as { definitions: Record<string, { params: { liens: { de: string; a: string }[] } }> };
+    cyclique.definitions["test"]!.params.liens.push({ de: "c", a: "n" });
+    expect(!verifierModele(cyclique).ok).toBe(true);
     const e3 = lot(e2, [{ type: "graphe.supprimer", params: { id: "test" } }]).etat;
     expect(graphesDuProjet(e3)).toEqual([]);
     expect(proposerGraphe(grapheDe(e2, "test")!, e2, { nb: 2 }, "n1").commandes).toHaveLength(2);
