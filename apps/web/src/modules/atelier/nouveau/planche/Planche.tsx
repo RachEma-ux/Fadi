@@ -261,8 +261,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const [volet, setVolet] = useState(false);
   // Rail d'outils replié par défaut (pictogrammes seuls, libellés en info-bulle) ; « » » affiche les libellés.
   const [outilsReplies, setOutilsReplies] = useState(true);
-  // Colonne de panneaux (droite) : étiquettes affichées par défaut au téléphone, « » » les replie.
-  const [colonneRepliee, setColonneRepliee] = useState(false);
+  // Téléphone : icônes seules au départ (les étiquettes recouvraient le dessin) ; « « » les affiche.
+  const [colonneRepliee, setColonneRepliee] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
   // Plan détaché : fenêtre séparée (Document Picture-in-Picture, bureau) ou plein écran (repli, téléphone).
   const [detache, setDetache] = useState<"non" | "fenetre" | "plein-ecran">("non");
   const fenetreRef = useRef<Window | null>(null);

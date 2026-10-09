@@ -120,6 +120,42 @@ await page.screenshot({ path: `${OUT}/documents-barre.png` });
 await page.locator('.barre-mode button:text-is("Plan")').click();
 check("Plan : la barre complète revient, sur le niveau choisi dans Documents", (await affiche(".barre-niveau")) && (await affiche(".barre-palette")) && (await affiche(".barre-exports")) && (await page.locator(".barre-niveau select").inputValue()) === options[1]);
 
+// 3. Téléphone (390 px) : barre de l'Atelier sur une rangée défilante, rien ne déborde de la page, tous les modes
+//    atteignables ; Planche : colonne de panneaux en icônes, barre du haut défilante, outils tous atteignables.
+const tel = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, storageState: await ctx.storageState() });
+const p2 = await tel.newPage();
+p2.on("pageerror", (e) => erreursPage.push(e.message));
+await p2.goto(`${BASE}/projets/${pid}?module=atelier`);
+await p2.waitForSelector(".atelier-n-barre", { timeout: 30000 });
+await p2.waitForTimeout(1500);
+const hauteurBarre = (await p2.locator(".atelier-n-barre").boundingBox()).height;
+const deborde = () => p2.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+check("téléphone : la barre de l'Atelier tient sur une rangée (au lieu de quatre)", hauteurBarre < 70, `${Math.round(hauteurBarre)} px`);
+check("téléphone : la page ne déborde pas en largeur", !(await deborde()));
+const atteignables = [];
+for (const m of ["Plan", "3D", "Documents", "Planche"]) {
+  const b = p2.locator(`.barre-mode button:text-is("${m}")`);
+  await b.scrollIntoViewIfNeeded();
+  const r = await b.boundingBox();
+  if (r && r.x >= 0 && r.x + r.width <= 391) atteignables.push(m);
+}
+check("téléphone : chaque mode s'atteint en faisant défiler la barre", atteignables.length === 4, atteignables.join(", "));
+await p2.locator("[data-mode-planche]").tap();
+await p2.waitForSelector("[data-planche-vue] canvas", { timeout: 30000 });
+await p2.waitForTimeout(800);
+check("téléphone, Planche : colonne de panneaux en icônes (les étiquettes ne recouvrent plus le dessin)", (await p2.locator("[data-planche]").getAttribute("class")).includes("colonne-repliee") && !(await p2.locator(".planche-colonne .canevas-etiquette").first().isVisible()));
+check("téléphone, Planche : la page ne déborde pas en largeur", !(await deborde()));
+const det = p2.locator("[data-planche-detacher]");
+await det.scrollIntoViewIfNeeded();
+const rd = await det.boundingBox();
+check("téléphone, Planche : « Détacher » s'atteint en faisant défiler la barre du haut", !!rd && rd.x + rd.width <= 391);
+const nbOutils = await p2.locator("[data-planche-outil]").count();
+const dernier = p2.locator(".planche-outils [data-planche-outil]").last();
+await dernier.scrollIntoViewIfNeeded();
+check("téléphone, Planche : le dernier outil du rail s'atteint en faisant défiler", await dernier.isVisible(), `${nbOutils} outils`);
+await p2.screenshot({ path: `${OUT}/telephone-planche.png` });
+await tel.close();
+
 check("aucune erreur de page", erreursPage.length === 0, erreursPage.join(" | "));
 await browser.close();
 console.log(echecs ? `${echecs} échec(s)` : "Tout est vert.");
