@@ -18,11 +18,12 @@ import { longueurSegment } from "../ontologies/mep/geometrie.js";
 import { connexionDuPort, portsDe } from "../ontologies/mep/connectivite.js";
 import type { ModeleAtelier, Occurrence } from "../modele.js";
 import { niveauxOrdonnes, objetsDeClasse, ouverturesDuMur } from "../modele.js";
+import { CLASSES } from "../ontologie.js";
 import { quantites } from "../quantites.js";
 import { echapperXml } from "./rendu-svg.js";
 import { empreinteDe } from "./empreinte.js";
 
-export type TypeTableau = "pieces" | "portes" | "fenetres" | "murs" | "composants" | "nomenclature" | "structure" | "armatures" | "assemblagesStructure" | "bois" | "pliage" | "reseau" | "synthese";
+export type TypeTableau = "pieces" | "portes" | "fenetres" | "murs" | "composants" | "nomenclature" | "structure" | "armatures" | "assemblagesStructure" | "bois" | "pliage" | "reseau" | "renovation" | "chantier" | "synthese";
 export const TABLEAUX: Record<TypeTableau, string> = {
   pieces: "Tableau des pièces",
   portes: "Tableau des portes",
@@ -36,6 +37,8 @@ export const TABLEAUX: Record<TypeTableau, string> = {
   bois: "Liste des pièces de bois",
   pliage: "Table de pliage et développés",
   reseau: "Nomenclature de réseau",
+  renovation: "Objets par phase (rénovation)",
+  chantier: "Installations de chantier",
   synthese: "Synthèse des quantités par niveau",
 };
 
@@ -250,6 +253,41 @@ export function genererTableau(etat: ModeleAtelier, type: TypeTableau): Tableau 
         for (const o of objetsDeClasse(etat, "support-reseau", n.id).sort(parId)) lignes.push([n.nom, "support", o.params.nom ?? o.id, null, null, o.params.type, null, o.params.longueur ? r3(o.params.longueur.value) : null, null, null, null, null, null, null, null]);
       }
       total = ["Total", null, `${lignes.length} ligne(s)`, null, null, null, null, r3(lignes.filter((l) => l[1] === "segment").reduce((acc, l) => acc + (typeof l[7] === "number" ? l[7] : 0), 0)), null, null, null, null, lignes.reduce((acc, l) => acc + (typeof l[12] === "number" ? l[12] : 0), 0), lignes.reduce((acc, l) => acc + (typeof l[13] === "number" ? l[13] : 0), 0), null];
+      break;
+    }
+    case "renovation": {
+      // Objets par phase (P2-6, DA-07-21) : la phase est une chaîne déclarée sur l'objet (existant, démoli, neuf…) ; un
+      // objet sans phase est compté « non évaluée » ; aucune phase n'est déduite.
+      colonnes = ["Phase", "Classe", "Nombre", "Niveaux"];
+      unites = [null, null, "u", null];
+      const groupes = new Map<string, Map<string, { n: number; niveaux: Set<string> }>>();
+      const niveauNom = (id: string | null) => (id ? (etat.niveaux[id]?.nom ?? id) : "—");
+      for (const o of Object.values(etat.objets)) {
+        if (!(o.classe in CLASSES) || (CLASSES[o.classe].ontologie === "drawing" && o.classe !== "surface-libre")) continue;
+        const phase = o.phase ?? NON_EVALUEE;
+        const parClasse = groupes.get(phase) ?? new Map();
+        const g = parClasse.get(o.classe) ?? { n: 0, niveaux: new Set<string>() };
+        g.n++; g.niveaux.add(niveauNom(o.niveauId));
+        parClasse.set(o.classe, g); groupes.set(phase, parClasse);
+      }
+      for (const phase of [...groupes.keys()].sort((a, b) => (a === NON_EVALUEE ? 1 : b === NON_EVALUEE ? -1 : a < b ? -1 : 1))) {
+        const parClasse = groupes.get(phase)!;
+        for (const classe of [...parClasse.keys()].sort()) {
+          const g = parClasse.get(classe)!;
+          lignes.push([phase, CLASSES[classe as keyof typeof CLASSES].libelle, g.n, [...g.niveaux].sort().join(", ")]);
+        }
+      }
+      total = ["Total", `${groupes.size} phase(s)`, lignes.reduce((acc, l) => acc + (typeof l[2] === "number" ? l[2] : 0), 0), null];
+      break;
+    }
+    case "chantier": {
+      // Installations de chantier (P2-6, DA-07-23) : emprise, hauteur, période et phase déclarées ; hors métrés de l'ouvrage.
+      colonnes = ["Niveau", "Installation", "Type", "Emprise", "Hauteur", "Début", "Fin", "Phase de chantier"];
+      unites = [null, null, null, "m²", "m", null, null, null];
+      for (const n of niveauxOrdonnes(etat)) {
+        for (const o of objetsDeClasse(etat, "installation-chantier", n.id).sort(parId)) lignes.push([n.nom, o.params.nom, o.params.type, r2(aire(o.params.contour)), o.params.hauteur ? r3(o.params.hauteur.value) : null, o.params.debut, o.params.fin, o.params.phaseChantier]);
+      }
+      total = ["Total", `${lignes.length} installation(s)`, null, r2(lignes.reduce((acc, l) => acc + (typeof l[3] === "number" ? l[3] : 0), 0)), null, null, null, null];
       break;
     }
     case "synthese": {

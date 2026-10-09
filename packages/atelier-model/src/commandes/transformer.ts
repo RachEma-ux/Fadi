@@ -235,6 +235,25 @@ export function transformerOccurrence(o: OccurrenceQuelconque, t: Transformation
     }
     case "support-reseau":
       return { ...o, params: { ...o.params, position: T(o.params.position) } };
+    // Bâtiment P2 (P2-6).
+    case "plafond": return { ...o, params: { ...o.params, ...contourT({ contour: o.params.contour, trous: o.params.trous }, t) } };
+    case "coque": return { ...o, params: { ...o.params, ...contourT({ contour: o.params.contour, trous: o.params.trous }, t) } };
+    case "reservation": return { ...o, params: { ...o.params, ...contourT({ contour: o.params.contour, trous: o.params.trous }, t) } };
+    case "installation-chantier": return { ...o, params: { ...o.params, ...contourT({ contour: o.params.contour, trous: o.params.trous }, t) } };
+    case "rampe":
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle refusée (largeur et hauteur typées)`);
+      return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
+    case "echelle":
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle refusée (largeur, hauteur et entraxe typés)`);
+      return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
+    case "mur-rideau":
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle refusée (hauteur et entraxes typés)`);
+      return { ...o, params: { ...o.params, a: T(o.params.a), b: T(o.params.b) } };
+    case "terrain":
+      if (t.type === "echelle") throw new ErreurCommande("precondition", "facteur", `${o.id} : échelle d'un terrain refusée (altitudes relevées)`);
+      return { ...o, params: { ...o.params, points: o.params.points.map((q) => { const r = T({ x: q.x, y: q.y, frame: "local", unit: "m" }); return { x: r.x, y: r.y, z: q.z }; }) } };
+    case "surface-libre":
+      return { ...o, params: { ...o.params, sommets: o.params.sommets.map((q) => { const r = T({ x: q.x, y: q.y, frame: "local", unit: "m" }); return { x: r.x, y: r.y, z: t.type === "echelle" ? q.z * t.facteur : q.z }; }) } };
     case "solide-exact": {
       // Pose en plan (P2-1) : translation et rotation autour de z ; miroir et échelle d'un B-rep : refusés (le modèle
       // pur ne transforme pas le brep ; une opération exacte le ferait).
@@ -304,6 +323,16 @@ function echelleNonUniforme(o: OccurrenceQuelconque, t: Transformation & { type:
     case "equipement-reseau":
     case "support-reseau":
       throw refus("objet de réseau (P2-5 : sections et ports typés)");
+    case "plafond": return { ...o, params: { ...o.params, ...contourT({ contour: o.params.contour, trous: o.params.trous }, t) } };
+    case "coque": return { ...o, params: { ...o.params, ...contourT({ contour: o.params.contour, trous: o.params.trous }, t) } };
+    case "reservation": return { ...o, params: { ...o.params, ...contourT({ contour: o.params.contour, trous: o.params.trous }, t) } };
+    case "installation-chantier": return { ...o, params: { ...o.params, ...contourT({ contour: o.params.contour, trous: o.params.trous }, t) } };
+    case "rampe":
+    case "echelle":
+    case "mur-rideau":
+    case "terrain":
+    case "surface-libre":
+      throw refus("objet du bâtiment P2 (largeurs, entraxes et altitudes typés)");
     case "panneau-clt":
       if (o.params.pose === "mur") throw refus("panneau CLT vertical");
       return { ...o, params: { ...o.params, ...contourT({ contour: o.params.contour, trous: o.params.trous }, t) } };

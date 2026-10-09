@@ -86,4 +86,23 @@ describe("outil Solide exact — construction des opérations (P2-1)", () => {
     expect(c.ok && c.operation.entrees.type === "coque" && c.operation.entrees.ouvrirDessus).toBe(true);
     expect(construireOperation(etat, "coque", ["mur"], { epaisseurExacte: 0.02 }).ok).toBe(false);
   });
+  it("surface, patch et congé (P2-6) : grille 3 × 3 déduite d'un rectangle, contour relevé un sommet sur deux, rayon requis", () => {
+    const etat = modele();
+    expect(construireOperation(etat, "surface", ["rect"], { hauteurExacte: 0.3 }).ok).toBe(false); // épaisseur manquante
+    const s = construireOperation(etat, "surface", ["rect"], { hauteurExacte: 0.3, epaisseurExacte: 0.05 });
+    expect(s.ok).toBe(true);
+    if (!s.ok || s.operation.entrees.type !== "surface") return;
+    expect(s.operation.entrees.controle).toHaveLength(9);
+    expect(s.operation.entrees.controle[4]!.z).toBe(0.3);
+    expect(s.operation.entrees.controle.filter((p) => p.z === 0)).toHaveLength(8);
+    expect(construireOperation(etat, "surface", ["trajet"], { hauteurExacte: 0.3, epaisseurExacte: 0.05 }).ok).toBe(false);
+    const p = construireOperation(etat, "patch", ["rect"], { hauteurExacte: 0.2, epaisseurExacte: 0.05 });
+    expect(p.ok).toBe(true);
+    if (!p.ok || p.operation.entrees.type !== "patch") return;
+    expect(p.operation.entrees.contour.map((q) => q.z)).toEqual([0, 0.2, 0, 0.2]);
+    expect(construireOperation(etat, "conge", ["se"], {}).ok).toBe(false);
+    const c = construireOperation(etat, "conge", ["se"], { rayonExacte: 0.1 });
+    expect(c.ok && c.operation.entrees.type === "conge" && c.operation.entrees.rayon === 0.1 && c.operation.entrees.solide.pose?.angleDeg === 30).toBe(true);
+    expect(construireOperation(etat, "conge", ["mur"], { rayonExacte: 0.1 }).ok).toBe(false);
+  });
 });

@@ -2,7 +2,8 @@
  * Noyau exact (P2-1, D-177) — pur, sans interface.
  *
  * Opérations B-rep exécutées par OCCT compilé en WebAssembly (`occt-wasm`) : révolution, extrusion, balayage,
- * lissage, booléens, trou, coque, import STEP. Un résultat est un `SolideExact` : représentation canonique **brep**
+ * lissage, booléens, trou, coque, surface (grille de contrôle épaissie), patch (face non plane sur un contour 3D,
+ * épaissie), congé (toutes les arêtes), import STEP. Un résultat est un `SolideExact` : représentation canonique **brep**
  * (binaire OCCT, base64), maillage dérivé (positions, indices ; mètres, z vers le haut), volume, aire, nombre de
  * faces et de solides, nom et version du moteur, empreinte des octets brep. Le même code tourne dans le navigateur
  * (Web Worker) et dans l'API (Node) : le serveur recalcule l'opération et compare l'empreinte (R9, D-177).
@@ -38,6 +39,9 @@ export type OperationExacte =
   | { type: "booleen"; op: "union" | "soustraction" | "intersection"; a: OperandeExacte; b: OperandeExacte }
   | { type: "trou"; solide: { brep: string; pose?: Pose }; centre: Point3; direction: Point3; diametre: number; profondeur: number | null }
   | { type: "coque"; solide: { brep: string; pose?: Pose }; epaisseur: number; ouvrirDessus: boolean }
+  | { type: "surface"; controle: Point3[]; lignes: number; colonnes: number; epaisseur: number }
+  | { type: "patch"; contour: Point3[]; epaisseur: number }
+  | { type: "conge"; solide: { brep: string; pose?: Pose }; rayon: number }
   | { type: "import-step"; step: string; solide?: number };
 
 export interface MaillageExact { positions: number[]; indices: number[] }
@@ -161,6 +165,23 @@ export function validerOperation(brut: unknown): OperationExacte {
     }
     case "coque":
       return { type: "coque", solide: solideRef(o["solide"], "solide"), epaisseur: nombre(o["epaisseur"], "epaisseur", { min: 1e-6 }), ouvrirDessus: o["ouvrirDessus"] === true };
+    case "surface": {
+      // Surface B-spline (P2-6, DA-03-02) : grille de `lignes × colonnes` points de contrôle (≥ 2 × 2), épaissie.
+      const lignes = nombre(o["lignes"], "lignes", { min: 2, max: 64 }), colonnes = nombre(o["colonnes"], "colonnes", { min: 2, max: 64 });
+      if (!Number.isInteger(lignes) || !Number.isInteger(colonnes)) throw new ErreurExacte("lignes", "entiers attendus");
+      const controle = contour3(o["controle"], "controle", 4);
+      if (controle.length !== lignes * colonnes) throw new ErreurExacte("controle", `${lignes * colonnes} points attendus (lignes × colonnes)`);
+      return { type: "surface", controle, lignes, colonnes, epaisseur: nombre(o["epaisseur"], "epaisseur", { min: 1e-6 }) };
+    }
+    case "patch": {
+      // Patch (DA-03-04) : face non plane tendue sur un contour 3D fermé (≥ 3 points), épaissie.
+      const contour = contour3(o["contour"], "contour", 3);
+      for (let i = 0; i < contour.length; i++) { const a = contour[i]!, b = contour[(i + 1) % contour.length]!; if (Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) < 1e-9) throw new ErreurExacte(`contour[${i}]`, "deux sommets consécutifs confondus"); }
+      return { type: "patch", contour, epaisseur: nombre(o["epaisseur"], "epaisseur", { min: 1e-6 }) };
+    }
+    case "conge":
+      // Congé (DA-03-08) : rayon constant sur toutes les arêtes d'un solide ; le noyau refuse un rayon trop grand.
+      return { type: "conge", solide: solideRef(o["solide"], "solide"), rayon: nombre(o["rayon"], "rayon", { min: 1e-6 }) };
     case "import-step": {
       const s = o["step"];
       if (typeof s !== "string" || !/^ISO-10303-21;/.test(s.trimStart())) throw new ErreurExacte("step", "fichier STEP (ISO-10303-21) attendu");
@@ -291,6 +312,25 @@ export class MoteurExact {
           let cavite = garder(k.offset(s, -op.epaisseur, 1e-4, JoinType.Intersection));
           if (op.ouvrirDessus) cavite = garder(k.fuse(cavite, garder(k.translate(cavite, 0, 0, 2 * op.epaisseur))));
           forme = garder(k.cut(s, cavite));
+          break;
+        }
+        case "surface": {
+          const nappe = garder(k.bsplineSurface(op.controle, op.lignes, op.colonnes));
+          forme = garder(k.thicken(nappe, op.epaisseur, 1e-4));
+          break;
+        }
+        case "patch": {
+          const fil = garder(this.fil3(op.contour, true, garder));
+          const face = garder(k.makeNonPlanarFace(fil));
+          forme = garder(k.thicken(face, op.epaisseur, 1e-4));
+          break;
+        }
+        case "conge": {
+          const s = garder(this.unSolide(this.operande(op.solide, garder), garder));
+          const aretes = k.getSubShapes(s, "edge").map(garder);
+          if (!aretes.length) throw new ErreurExacte("solide", "aucune arête");
+          try { forme = garder(k.fillet(s, aretes, op.rayon)); }
+          catch (e) { throw new ErreurExacte("rayon", `congé impossible (rayon ${op.rayon} m trop grand pour ce solide ?) : ${(e as Error).message}`); }
           break;
         }
         case "import-step": {

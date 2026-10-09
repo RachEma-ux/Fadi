@@ -368,13 +368,15 @@ export interface ParamsPieceMecanique {
   empreinteBrep: string | null;
   moteur: string | null;
   versionMoteur: string | null;
-  maillage: { positions: number[]; indices: number[] };
+  maillage: { positions: number[]; indices: number[]};
   volume: number | null;
   assemblageId: string | null;
   /** Pièce fixe (bâti) : le solveur ne la déplace pas. */
   fixe: boolean;
   pose: Pose3;
   emprise: Point2[];
+  /** Masse volumique déclarée avec sa source (kg/m³) pour la masse et les inerties (DA-17-10) ; absente : « non évaluées ». */
+  masseVolumique?: { valeur: number; source: string } | null;
 }
 
 /** Assemblage (P2-2, DA-10-06 / 07) : repère dans le niveau (position, angle autour de z, décalage z), numérotation, éclaté. */
@@ -760,6 +762,116 @@ export interface ParamsSupportReseau {
   longueur: Longueur | null;
 }
 
+// ---------------------------------------------------------------------------
+// Bâtiment P2 et coordination (P2-6, DA-07-08, 09, 11, 13, 14, 18, 19, 21, 23 ; DA-17-14)
+// ---------------------------------------------------------------------------
+
+/** Plafond (DA-07-08) : contour en plan, hauteur sous plafond depuis le niveau, épaisseur ; suspendu ou non (déclaré). */
+export interface ParamsPlafond extends Contour {
+  nom: string | null;
+  hauteur: Longueur;
+  epaisseur: Longueur;
+  suspendu: boolean;
+  materiau: string | null;
+}
+
+/** Coque architecturale (DA-07-09) : contour en plan, base, flèche au centre (surface en dôme paraboloïdal déclaré), épaisseur. */
+export interface ParamsCoque extends Contour {
+  nom: string | null;
+  decalageBase: Longueur;
+  fleche: Longueur;
+  epaisseur: Longueur;
+  materiau: string | null;
+}
+
+/** Rampe (DA-07-11) : axe a → b, largeur, hauteur à franchir (montée de a vers b), épaisseur de la paillasse, base. */
+export interface ParamsRampe {
+  nom: string | null;
+  a: Point2;
+  b: Point2;
+  largeur: Longueur;
+  hauteurAFranchir: Longueur;
+  epaisseur: Longueur;
+  decalageBase: Longueur;
+  /** Pente déclarée en pourcentage (dérivée : hauteur / longueur) — jamais comparée à une règle. */
+}
+
+/** Échelle (DA-07-13) : pied en a, direction du mur d'appui vers b (plan), hauteur, largeur, entraxe des barreaux déclaré. */
+export interface ParamsEchelle {
+  nom: string | null;
+  a: Point2;
+  b: Point2;
+  hauteur: Longueur;
+  largeur: Longueur;
+  entraxeBarreaux: Longueur;
+  decalageBase: Longueur;
+  /** Crinoline déclarée (cage) : dessinée au-dessus de la hauteur donnée. */
+  crinolineDepuis: Longueur | null;
+}
+
+/** Mur-rideau (DA-07-14) : axe a → b, hauteur, trame des montants et des traverses, profils, base ; remplissage vitré par défaut. */
+export interface ParamsMurRideau {
+  nom: string | null;
+  a: Point2;
+  b: Point2;
+  hauteur: Longueur;
+  entraxeMontants: Longueur;
+  entraxeTraverses: Longueur;
+  /** Largeur et profondeur des profils (montants et traverses). */
+  largeurProfil: Longueur;
+  profondeurProfil: Longueur;
+  epaisseurVitrage: Longueur;
+  decalageBase: Longueur;
+  remplissage: "vitre" | "opaque";
+}
+
+/** Terrain (DA-07-18, 19) : semis de points 3D (z depuis le niveau), triangulé (Delaunay) ; aucune altitude interpolée hors du semis. */
+export interface ParamsTerrain {
+  nom: string | null;
+  points: Point3Reseau[];
+  /** Épaisseur de représentation sous la surface (m), déclarée ; 0 : surface seule. */
+  epaisseur: Longueur;
+  source: string | null;
+}
+
+/** Réservation (coordination, cahier P2 §4) : volume réservé dans un mur, une dalle ou un poteau pour un passage de réseau ; les collisions qu'elle couvre ne sont pas signalées. */
+export interface ParamsReservation extends Contour {
+  nom: string | null;
+  hoteId: string | null;
+  z: number;
+  hauteur: Longueur;
+  /** Réseau pour lequel la réservation est prévue (identifiant d'objet), facultatif. */
+  pourId: string | null;
+  statut: "demandee" | "accordee" | "refusee";
+}
+
+export type TypeInstallationChantier = "grue" | "base-vie" | "stockage" | "cloture" | "acces" | "levage" | "autre";
+
+/** Installation de chantier (DA-07-23) : emprise, type, hauteur, période déclarée (dates ISO), phase de chantier. */
+export interface ParamsInstallationChantier extends Contour {
+  nom: string;
+  type: TypeInstallationChantier;
+  hauteur: Longueur | null;
+  debut: string | null;
+  fin: string | null;
+  phaseChantier: string | null;
+}
+
+/**
+ * Surface libre (DA-03-03, 05, 06, 07, 20) : maillage de contrôle (sommets 3D relatifs au niveau, faces triangulaires ou
+ * quadrangulaires) subdivisé `niveaux` fois (Loop sur les triangles, après triangulation des quads) ; édition directe des
+ * sommets de contrôle (morphing) ; conversion métier explicite depuis un objet (`surfaceLibre.depuisObjet`).
+ */
+export interface ParamsSurfaceLibre {
+  nom: string | null;
+  sommets: Point3Reseau[];
+  faces: number[][];
+  niveaux: number;
+  /** Objet d'origine d'une conversion explicite (classe et identifiant), null pour une surface dessinée. */
+  origine: { classe: string; id: string } | null;
+  ferme: boolean;
+}
+
 export interface ParamsParClasse {
   mur: ParamsMur;
   porte: ParamsOuverture;
@@ -802,6 +914,15 @@ export interface ParamsParClasse {
   vanne: ParamsVanne;
   "equipement-reseau": ParamsEquipementReseau;
   "support-reseau": ParamsSupportReseau;
+  plafond: ParamsPlafond;
+  coque: ParamsCoque;
+  rampe: ParamsRampe;
+  echelle: ParamsEchelle;
+  "mur-rideau": ParamsMurRideau;
+  terrain: ParamsTerrain;
+  reservation: ParamsReservation;
+  "installation-chantier": ParamsInstallationChantier;
+  "surface-libre": ParamsSurfaceLibre;
 }
 
 export interface Occurrence<C extends Classe = Classe> {

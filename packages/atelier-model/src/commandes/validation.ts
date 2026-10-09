@@ -31,6 +31,8 @@ import { PORTS_PAR_RACCORD } from "../modele.js";
 import { sectionReseauDepuisCatalogue } from "../ontologies/mep/sections.js";
 
 type Brut = Record<string, unknown>;
+/** Faces subdivisées admises au plus pour une surface libre (triangles × 4ⁿ). */
+const BUDGET_SUBDIVISION = 200_000;
 
 /** Renflements d'une polyligne (D-063) : un par segment, |b| ≤ 1 (demi-cercle au plus) ; tous nuls : clé absente. */
 function renflementsDe(p: Brut, forme: string, n: number, ferme: boolean): { renflements?: number[] } {
@@ -382,6 +384,16 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
       reference: lire.chaineOuNull(p, "reference"),
       numero,
       materiau: lire.chaineOuNull(p, "materiau"),
+      // Masse volumique déclarée avec sa source (P2-6, DA-17-10) ; absente : masse et inertie « non évaluées » (R3).
+      masseVolumique: ((): { valeur: number; source: string } | null => {
+        const mv = p["masseVolumique"];
+        if (mv === undefined || mv === null) return null;
+        if (typeof mv !== "object") throw new ErreurCommande("invalide", "masseVolumique", "{ valeur (kg/m³), source } attendu");
+        const valeur = (mv as { valeur?: unknown }).valeur, source = (mv as { source?: unknown }).source;
+        if (typeof valeur !== "number" || !Number.isFinite(valeur) || valeur <= 0) throw new ErreurCommande("invalide", "masseVolumique.valeur", "masse volumique > 0 attendue (kg/m³)");
+        if (typeof source !== "string" || !source.trim()) throw new ErreurCommande("invalide", "masseVolumique.source", "source de la masse volumique requise (aucune densité n'est connue du code)");
+        return { valeur, source: source.trim() };
+      })(),
       sourceId: lire.chaineOuNull(p, "sourceId"),
       brep,
       empreinteBrep: lire.chaineOuNull(p, "empreinteBrep"),
@@ -718,6 +730,81 @@ export const VALIDATEURS: { [C in Classe]: (etat: ModeleAtelier, params: Brut) =
     const longueur = lire.longueur(p, "longueur", { optionnel: true, strict: true });
     if (type === "suspente" && !longueur) throw new ErreurCommande("invalide", "longueur", "une suspente déclare sa longueur");
     return { nom: lire.chaineOuNull(p, "nom"), type, porteId, position: lire.point(p, "position")!, z: lire.nombre(p, "z", { optionnel: true }) ?? 0, longueur };
+  },
+  // Bâtiment P2 (P2-6) : rien n'est supposé — hauteurs, épaisseurs, entraxes et flèches sont saisis.
+  plafond(_etat, p) {
+    const c = contour(p);
+    const epaisseur = lire.longueur(p, "epaisseur", { strict: true })!;
+    return { ...c, nom: lire.chaineOuNull(p, "nom"), hauteur: lire.longueur(p, "hauteur", { strict: true })!, epaisseur, suspendu: lire.booleen(p, "suspendu", false), materiau: lire.chaineOuNull(p, "materiau") };
+  },
+  coque(_etat, p) {
+    const c = contour(p);
+    // Le dôme est maillé sur le seul contour : un trou serait rebouché en silence (relecture Codex #99) → refus nommé.
+    if (c.trous.length) throw new ErreurCommande("invalide", "trous", "coque : les trous ne sont pas construits (dôme sur le contour seul) — contour sans trou attendu");
+    return { ...c, nom: lire.chaineOuNull(p, "nom"), decalageBase: lire.longueur(p, "decalageBase", { optionnel: true }) ?? { value: 0, unit: "m" }, fleche: lire.longueur(p, "fleche", { strict: true })!, epaisseur: lire.longueur(p, "epaisseur", { strict: true })!, materiau: lire.chaineOuNull(p, "materiau") };
+  },
+  rampe(_etat, p) {
+    const a = lire.point(p, "a")!, b = lire.point(p, "b")!;
+    if (distance(a, b) <= TOLERANCE_REDUCTEUR) throw new ErreurCommande("invalide", "b", "rampe de longueur nulle");
+    return { nom: lire.chaineOuNull(p, "nom"), a, b, largeur: lire.longueur(p, "largeur", { strict: true })!, hauteurAFranchir: lire.longueur(p, "hauteurAFranchir", { strict: true })!, epaisseur: lire.longueur(p, "epaisseur", { strict: true })!, decalageBase: lire.longueur(p, "decalageBase", { optionnel: true }) ?? { value: 0, unit: "m" } };
+  },
+  echelle(_etat, p) {
+    const a = lire.point(p, "a")!, b = lire.point(p, "b")!;
+    if (distance(a, b) <= TOLERANCE_REDUCTEUR) throw new ErreurCommande("invalide", "b", "direction de l'échelle indéterminée (a = b)");
+    const hauteur = lire.longueur(p, "hauteur", { strict: true })!;
+    const entraxe = lire.longueur(p, "entraxeBarreaux", { strict: true })!;
+    if (entraxe.value >= hauteur.value) throw new ErreurCommande("invalide", "entraxeBarreaux", "entraxe des barreaux supérieur à la hauteur");
+    const crin = lire.longueur(p, "crinolineDepuis", { optionnel: true, strict: true });
+    if (crin && crin.value >= hauteur.value) throw new ErreurCommande("invalide", "crinolineDepuis", "la crinoline commence au-dessus de l'échelle");
+    return { nom: lire.chaineOuNull(p, "nom"), a, b, hauteur, largeur: lire.longueur(p, "largeur", { strict: true })!, entraxeBarreaux: entraxe, decalageBase: lire.longueur(p, "decalageBase", { optionnel: true }) ?? { value: 0, unit: "m" }, crinolineDepuis: crin };
+  },
+  "mur-rideau"(_etat, p) {
+    const a = lire.point(p, "a")!, b = lire.point(p, "b")!;
+    if (distance(a, b) <= TOLERANCE_REDUCTEUR) throw new ErreurCommande("invalide", "b", "mur-rideau de longueur nulle");
+    const hauteur = lire.longueur(p, "hauteur", { strict: true })!;
+    const em = lire.longueur(p, "entraxeMontants", { strict: true })!, et = lire.longueur(p, "entraxeTraverses", { strict: true })!;
+    if (em.value > distance(a, b) + 1e-9) throw new ErreurCommande("invalide", "entraxeMontants", "entraxe des montants supérieur à la longueur");
+    if (et.value > hauteur.value + 1e-9) throw new ErreurCommande("invalide", "entraxeTraverses", "entraxe des traverses supérieur à la hauteur");
+    return { nom: lire.chaineOuNull(p, "nom"), a, b, hauteur, entraxeMontants: em, entraxeTraverses: et, largeurProfil: lire.longueur(p, "largeurProfil", { strict: true })!, profondeurProfil: lire.longueur(p, "profondeurProfil", { strict: true })!, epaisseurVitrage: lire.longueur(p, "epaisseurVitrage", { strict: true })!, decalageBase: lire.longueur(p, "decalageBase", { optionnel: true }) ?? { value: 0, unit: "m" }, remplissage: lire.enumeration(p, "remplissage", ["vitre", "opaque"] as const, "vitre") };
+  },
+  terrain(_etat, p) {
+    const points = lireSommets3(p, "points", 3);
+    if (points.length > 20000) throw new ErreurCommande("invalide", "points", "20 000 points au plus");
+    const cles = new Set(points.map((q) => `${Math.round(q.x * 1e6)}|${Math.round(q.y * 1e6)}`));
+    if (cles.size !== points.length) throw new ErreurCommande("invalide", "points", "deux points du semis ont la même position en plan");
+    return { nom: lire.chaineOuNull(p, "nom"), points, epaisseur: lire.longueur(p, "epaisseur", { optionnel: true }) ?? { value: 0, unit: "m" }, source: lire.chaineOuNull(p, "source") };
+  },
+  reservation(etat, p) {
+    const c = contour(p);
+    const hoteId = lire.chaineOuNull(p, "hoteId");
+    if (hoteId !== null) { const h = etat.objets[hoteId]; if (!h || !["mur", "dalle", "poteau", "poutre", "plaque", "panneau-clt", "toiture"].includes(h.classe)) throw new ErreurCommande("precondition", "hoteId", `${hoteId} : hôte d'une réservation = mur, dalle, poteau, poutre, plaque, panneau CLT ou toiture`); }
+    const pourId = lire.chaineOuNull(p, "pourId");
+    if (pourId !== null && !etat.objets[pourId]) throw new ErreurCommande("precondition", "pourId", `objet inconnu : ${pourId}`);
+    return { ...c, nom: lire.chaineOuNull(p, "nom"), hoteId, z: lire.nombre(p, "z", { optionnel: true }) ?? 0, hauteur: lire.longueur(p, "hauteur", { strict: true })!, pourId, statut: lire.enumeration(p, "statut", ["demandee", "accordee", "refusee"] as const, "demandee") };
+  },
+  "installation-chantier"(_etat, p) {
+    const c = contour(p);
+    const nom = lire.chaine(p, "nom").trim();
+    if (!nom) throw new ErreurCommande("invalide", "nom", "nom requis");
+    const date = (cle: string): string | null => { const v = lire.chaineOuNull(p, cle); if (v === null) return null; if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) throw new ErreurCommande("invalide", cle, "date ISO (AAAA-MM-JJ) attendue"); return v; };
+    const debut = date("debut"), fin = date("fin");
+    if (debut && fin && fin < debut) throw new ErreurCommande("invalide", "fin", "fin avant le début");
+    return { ...c, nom, type: lire.enumeration(p, "type", ["grue", "base-vie", "stockage", "cloture", "acces", "levage", "autre"] as const), hauteur: lire.longueur(p, "hauteur", { optionnel: true, strict: true }), debut, fin, phaseChantier: lire.chaineOuNull(p, "phaseChantier") };
+  },
+  "surface-libre"(_etat, p) {
+    const sommets = lireSommets3(p, "sommets", 3);
+    if (sommets.length > 50000) throw new ErreurCommande("invalide", "sommets", "50 000 sommets au plus");
+    const f = p["faces"];
+    if (!Array.isArray(f) || !f.length || !f.every((x) => Array.isArray(x) && x.length >= 3 && x.length <= 4 && x.every((i) => Number.isInteger(i) && (i as number) >= 0 && (i as number) < sommets.length))) throw new ErreurCommande("invalide", "faces", "liste de faces (3 ou 4 indices de sommets) requise");
+    const faces = (f as number[][]).map((x) => [...x]);
+    if (faces.length > 50000) throw new ErreurCommande("invalide", "faces", "50 000 faces au plus");
+    const niveaux = lire.nombre(p, "niveaux", { optionnel: true, entier: true, min: 0, max: 4 }) ?? 1;
+    // Budget de subdivision (relecture Codex #99) : triangles × 4ⁿ bornés, sinon la surface lissée épuise la mémoire du navigateur et du serveur.
+    const triangles = faces.reduce((s, f) => s + (f.length === 4 ? 2 : 1), 0);
+    if (triangles * 4 ** niveaux > BUDGET_SUBDIVISION) throw new ErreurCommande("invalide", "niveaux", `surface libre : ${triangles} triangle(s) × 4^${niveaux} = ${triangles * 4 ** niveaux} faces subdivisées, plus que ${BUDGET_SUBDIVISION} — réduisez le niveau de subdivision ou le maillage de contrôle`);
+    const o = p["origine"];
+    const origine = o && typeof o === "object" && typeof (o as { classe?: unknown }).classe === "string" && typeof (o as { id?: unknown }).id === "string" ? { classe: (o as { classe: string }).classe, id: (o as { id: string }).id } : null;
+    return { nom: lire.chaineOuNull(p, "nom"), sommets, faces, niveaux, origine, ferme: lire.booleen(p, "ferme", false) };
   },
   "bloc-occurrence"(_etat, p) {
     return { position: lire.point(p, "position")!, angle: lire.angle(p, "angle", { optionnel: true }) ?? { value: 0, unit: "deg" }, echelle: lire.nombre(p, "echelle", { optionnel: true, min: 0 }) ?? 1, ...(lire.booleen(p, "miroir", false) ? { miroir: true as const } : {}) };

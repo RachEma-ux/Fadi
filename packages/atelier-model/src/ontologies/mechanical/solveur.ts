@@ -17,6 +17,8 @@ export type ContrainteSolveur =
   | { type: "distance"; a: string; b: string; pa: V3; pb: V3; d: number }
   | { type: "parallele"; a: string; b: string; da: V3; db: V3 }
   | { type: "angle"; a: string; b: string; da: V3; db: V3; deg: number }
+  /** Angle orienté (P2-6) : angle signé de da vers db autour de l'axe `axe` de A (un pivot à +60° n'est pas à −60°). */
+  | { type: "angle-oriente"; a: string; b: string; da: V3; db: V3; axe: V3; deg: number }
   | { type: "concentrique"; a: string; b: string; pa: V3; da: V3; pb: V3; db: V3 }
   | { type: "plan"; a: string; b: string; pa: V3; da: V3; pb: V3 }
   /** Décalage signé : (pb − pa) · da = d (point de B à la distance d du plan (pa, da) de A, dans le sens de da). */
@@ -70,6 +72,12 @@ function residus(x: number[], pieces: Map<string, { fixe: boolean; i: number; po
       case "distance": r.push(norme(sub(versMonde(A, c.pa), versMonde(B, c.pb))) - c.d); break;
       case "parallele": { const w = cross(directionMonde(A, c.da), directionMonde(B, c.db)); r.push(w[0], w[1], w[2]); break; }
       case "angle": r.push(dot(directionMonde(A, c.da), directionMonde(B, c.db)) - Math.cos((c.deg * Math.PI) / 180)); break;
+      case "angle-oriente": {
+        const u = directionMonde(A, c.da), v = directionMonde(B, c.db), n = directionMonde(A, c.axe);
+        const t = (c.deg * Math.PI) / 180;
+        r.push(dot(u, v) - Math.cos(t), dot(cross(u, v), n) - Math.sin(t));
+        break;
+      }
       case "concentrique": {
         const u = directionMonde(A, c.da), v = directionMonde(B, c.db);
         const w = cross(u, v); r.push(w[0], w[1], w[2]);
@@ -135,7 +143,7 @@ const nrm = (v: readonly number[]) => Math.sqrt(v.reduce((s, a) => s + a * a, 0)
 
 /** Résout les poses des pièces libres depuis leur pose courante (point de départ) ; les pièces fixes sont le bâti. */
 /** Équations indépendantes qu'une contrainte apporte en position générale (un parallélisme en produit vectoriel en écrit 3, de rang 2). */
-export const RANG_INTRINSEQUE: Record<ContrainteSolveur["type"], number> = { coincidence: 3, distance: 1, parallele: 2, angle: 1, concentrique: 4, plan: 1, decalage: 1 };
+export const RANG_INTRINSEQUE: Record<ContrainteSolveur["type"], number> = { coincidence: 3, distance: 1, parallele: 2, angle: 1, "angle-oriente": 1, concentrique: 4, plan: 1, decalage: 1 };
 
 /**
  * Résout ; `equationsIndependantes` : nombre d'équations indépendantes attendu en position générale (somme des rangs des

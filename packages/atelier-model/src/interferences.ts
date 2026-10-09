@@ -11,10 +11,12 @@
 import { anneauRetombee, etendueDalle } from "./dalles.js";
 import { aireSignee, cross, normalise, perp, polygoneMur, polygoneMurCourbe, sub, type Vec } from "./geometrie.js";
 import type { ModeleAtelier, OccurrenceQuelconque } from "./modele.js";
-import { etendueMur, trianguler } from "./projection/maillage.js";
+import { etendueMur, maillageObjet, trianguler } from "./projection/maillage.js";
+import { CLASSES } from "./ontologie.js";
 import { contoursArchitecture } from "./blocs-places.js";
 import { empriseMaillage, positionsPosees3 } from "./ontologies/mechanical/geometrie.js";
 import { empriseXY, maillagePoutre } from "./ontologies/structure/geometrie.js";
+import { delaunay } from "./geometrie-3d.js";
 
 export interface Corps {
   objetId: string;
@@ -102,10 +104,58 @@ export function corpsDe(etat: ModeleAtelier, o: OccurrenceQuelconque): Corps[] {
       for (let i = 2; i < m.positions.length; i += 3) { z0 = Math.min(z0, m.positions[i]!); z1 = Math.max(z1, m.positions[i]!); }
       return [c(empriseXY(m), [], z + z0, z + z1)];
     }
+    // Coordination entre ontologies (P2-6, cahier P2 §4) : tout objet d'une ontologie activable ou du bâtiment P2 qui a
+    // un maillage devient un corps par son emprise convexe entre ses z extrêmes (déclaré : enveloppe, pas la forme).
+    case "segment-reseau":
+    case "raccord-reseau":
+    case "vanne":
+    case "equipement-reseau":
+    case "element-bois":
+    case "panneau-clt":
+    case "tole":
+    case "plafond":
+    case "coque":
+    case "rampe":
+    case "echelle":
+    case "mur-rideau":
+    case "installation-chantier":
+    case "surface-libre":
+    case "support-reseau":
+    case "assemblage-structurel":
+    case "armature":
+    case "assemblage-bois": {
+      // Toute classe maillée des ontologies activables ou du bâtiment P2 (relecture Codex #99) ; une surface libre ouverte
+      // n'a pas d'épaisseur : aucun corps (dit par z1 − z0).
+      const m = maillageObjet(etat, o);
+      if (!m || !m.indices.length) return [];
+      const e = empriseMaillage(m.positions);
+      return e.emprise.length >= 3 && e.z1 - e.z0 > 1e-9 ? [c(e.emprise, [], e.z0, e.z1)] : [];
+    }
+    case "terrain": {
+      // Un terrain d'épaisseur nulle est une surface : aucun corps. Épais, il est la couche sous sa surface : un prisme par
+      // triangle du semis (z haut du triangle → z bas − épaisseur), jamais l'enveloppe entre ses z extrêmes (un terrain en
+      // pente ne « contient » pas ce qui est au-dessus de sa surface).
+      const ep = o.params.epaisseur.value;
+      if (!(ep > 1e-9) || o.params.points.length < 3) return [];
+      const pts = o.params.points;
+      return delaunay(pts).map(([i, j, k]) => {
+        const zs = [pts[i]!.z, pts[j]!.z, pts[k]!.z];
+        return c([{ x: pts[i]!.x, y: pts[i]!.y }, { x: pts[j]!.x, y: pts[j]!.y }, { x: pts[k]!.x, y: pts[k]!.y }], [], z + Math.min(...zs) - ep, z + Math.max(...zs));
+      });
+    }
     default:
       return [];
   }
 }
+
+/** Ontologie d'une classe de corps (socle architecture et structure réduite confondus en « bâtiment »). */
+export function familleCorps(classe: OccurrenceQuelconque["classe"]): string {
+  const o = CLASSES[classe].ontologie;
+  return o === "building.architecture" || o === "building.structure" || o === "drawing" ? "batiment" : o;
+}
+
+/** Les deux corps sont-ils d'ontologies différentes (coordination P2-6) ? Le bâtiment face à un réseau, une structure, du bois… */
+export const ontologiesDifferentes = (a: Corps, b: Corps): boolean => familleCorps(a.classe) !== familleCorps(b.classe);
 
 /** Découpe d'un polygone par un triangle (fenêtre convexe), Sutherland–Hodgman. */
 function couperTriangle(poly: readonly Vec[], tri: readonly [Vec, Vec, Vec]): Vec[] {
@@ -170,7 +220,7 @@ export function interferences(etat: ModeleAtelier, options: { niveauId?: string 
       const a = corps[i]!;
       const b = corps[j]!;
       if (a.objetId === b.objetId) continue;
-      const controlee = a.classe === "solide" || b.classe === "solide" || (a.classe === "poteau" && b.classe === "poteau") || a.classe === "piece-mecanique" || b.classe === "piece-mecanique";
+      const controlee = a.classe === "solide" || b.classe === "solide" || (a.classe === "poteau" && b.classe === "poteau") || a.classe === "piece-mecanique" || b.classe === "piece-mecanique" || ontologiesDifferentes(a, b);
       if (!controlee) continue;
       const dz = Math.min(a.z1, b.z1) - Math.max(a.z0, b.z0);
       if (dz <= 1e-6) continue;

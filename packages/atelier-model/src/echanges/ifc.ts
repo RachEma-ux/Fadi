@@ -35,6 +35,7 @@ import { designationReseau } from "../ontologies/mep/sections.js";
 import { longueurSegment } from "../ontologies/mep/geometrie.js";
 import { connexions as connexionsReseau, portsDe, reseauxConnexes } from "../ontologies/mep/connectivite.js";
 import { empreinte } from "../documents/empreinte.js";
+import { facesSubdivisees, longueurRampe, nombreProfilsMurRideau, penteRampe, trianglesTerrain } from "../batiment-p2.js";
 import { compositionMur, lireCouches } from "../compositions.js";
 import { connexionsDuNiveau, polygoneMurRaccorde, raccordMur, type ExtremiteConnexion } from "../raccords.js";
 import { corpsMenuiserie } from "../menuiserie.js";
@@ -329,6 +330,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   const espacesParId = new Map<string, number>();
   const espacesParEtage = new Map<string, number[]>();
 
+  const reservationsAVider: { o: Occurrence<"reservation">; id: number }[] = [];
   for (const o of objets) {
     const nom = ("nom" in o.params && typeof o.params.nom === "string" && o.params.nom) || null;
     switch (o.classe) {
@@ -822,6 +824,85 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         compter("support-reseau", "IfcDiscreteAccessory", rep ? "Tessellation" : "—", true, "support de réseau : IfcDiscreteAccessory .USERDEFINED. (ObjectType support:<type>), segment porté en Fadi_Reseau");
         break;
       }
+      // Bâtiment P2 et coordination (P2-6, DA-07-08..23, DA-03-03) : entités IFC natives quand elles existent, proxy typé sinon.
+      case "plafond": {
+        const rep = corpsMaille(o);
+        const id = s.ajouter(`IFCCOVERING(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep("plafond")},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.CEILING.)`);
+        produits.set(o.id, id); contenir(o.niveauId, id); identite(id, o);
+        if (o.params.materiau) { const mat = materiauIfc(o.params.materiau); associationsMateriau.set(mat, [...(associationsMateriau.get(mat) ?? []), id]); }
+        pset(id, "Fadi_Plafond", [`#${prop("HauteurSousPlafond", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.hauteur.value)})`)}`, `#${prop("Epaisseur", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.epaisseur.value)})`)}`, `#${prop("Suspendu", `IFCBOOLEAN(${o.params.suspendu ? ".T." : ".F."})`)}`]);
+        compter("plafond", "IfcCovering", rep ? "Tessellation" : "—", true, "plafond : IfcCovering .CEILING. tessellé, hauteur sous plafond et suspension en Fadi_Plafond");
+        break;
+      }
+      case "coque": {
+        const rep = corpsMaille(o);
+        const id = s.ajouter(`IFCROOF(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep("coque")},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.FREEFORM.)`);
+        produits.set(o.id, id); contenir(o.niveauId, id); identite(id, o);
+        if (o.params.materiau) { const mat = materiauIfc(o.params.materiau); associationsMateriau.set(mat, [...(associationsMateriau.get(mat) ?? []), id]); }
+        pset(id, "Fadi_Coque", [`#${prop("Fleche", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.fleche.value)})`)}`, `#${prop("Epaisseur", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.epaisseur.value)})`)}`, `#${prop("Forme", label("paraboloïde déclaré"))}`]);
+        compter("coque", "IfcRoof", rep ? "Tessellation" : "—", true, "coque : IfcRoof .FREEFORM. tessellé (dôme paraboloïdal déclaré), flèche et épaisseur en Fadi_Coque");
+        break;
+      }
+      case "rampe": {
+        const rep = corpsMaille(o);
+        const pente = penteRampe(o.params);
+        const id = s.ajouter(`IFCRAMP(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep("rampe")},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.STRAIGHT_RUN_RAMP.)`);
+        produits.set(o.id, id); contenir(o.niveauId, id); identite(id, o);
+        pset(id, "Fadi_Rampe", [`#${prop("Longueur", `IFCPOSITIVELENGTHMEASURE(${reelStep(longueurRampe(o.params))})`)}`, `#${prop("Largeur", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.largeur.value)})`)}`, `#${prop("HauteurAFranchir", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.hauteurAFranchir.value)})`)}`, pente === null ? `#${prop("Pente", label("non évaluée"))}` : `#${prop("Pente", `IFCREAL(${reelStep(pente)})`)}`]);
+        compter("rampe", "IfcRamp", rep ? "Tessellation" : "—", true, "rampe : IfcRamp .STRAIGHT_RUN_RAMP. tessellée ; pente dérivée (%) en Fadi_Rampe, jamais comparée à une règle");
+        break;
+      }
+      case "echelle": {
+        const rep = corpsMaille(o);
+        const id = s.ajouter(`IFCSTAIR(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep("echelle")},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.LADDER.)`);
+        produits.set(o.id, id); contenir(o.niveauId, id); identite(id, o);
+        pset(id, "Fadi_Echelle", [`#${prop("Hauteur", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.hauteur.value)})`)}`, `#${prop("Largeur", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.largeur.value)})`)}`, `#${prop("EntraxeBarreaux", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.entraxeBarreaux.value)})`)}`, o.params.crinolineDepuis ? `#${prop("CrinolineDepuis", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.crinolineDepuis.value)})`)}` : null]);
+        compter("echelle", "IfcStair", rep ? "Tessellation" : "—", true, "échelle : IfcStair .LADDER. tessellée (montants, barreaux, crinoline déclarée), entraxe en Fadi_Echelle");
+        break;
+      }
+      case "mur-rideau": {
+        const rep = corpsMaille(o);
+        const n = nombreProfilsMurRideau(o.params);
+        const id = s.ajouter(`IFCCURTAINWALL(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep("mur-rideau")},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.NOTDEFINED.)`);
+        produits.set(o.id, id); contenir(o.niveauId, id); identite(id, o);
+        pset(id, "Fadi_MurRideau", [`#${prop("Hauteur", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.hauteur.value)})`)}`, `#${prop("EntraxeMontants", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.entraxeMontants.value)})`)}`, `#${prop("EntraxeTraverses", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.entraxeTraverses.value)})`)}`, `#${prop("Montants", `IFCCOUNTMEASURE(${n.montants})`)}`, `#${prop("Traverses", `IFCCOUNTMEASURE(${n.traverses})`)}`, `#${prop("Panneaux", `IFCCOUNTMEASURE(${n.panneaux})`)}`, `#${prop("Remplissage", label(o.params.remplissage))}`, `#${prop("EpaisseurVitrage", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.epaisseurVitrage.value)})`)}`]);
+        compter("mur-rideau", "IfcCurtainWall", rep ? "Tessellation" : "—", true, "mur-rideau : IfcCurtainWall tessellé (montants, traverses, remplissage), trame et comptes en Fadi_MurRideau");
+        break;
+      }
+      case "terrain": {
+        const rep = corpsMaille(o);
+        const id = s.ajouter(`IFCGEOGRAPHICELEMENT(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep("terrain")},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.TERRAIN.)`);
+        produits.set(o.id, id); contenir(o.niveauId, id); identite(id, o);
+        pset(id, "Fadi_Terrain", [`#${prop("Points", `IFCCOUNTMEASURE(${o.params.points.length})`)}`, `#${prop("Triangles", `IFCCOUNTMEASURE(${trianglesTerrain(o.params).length})`)}`, o.params.source ? `#${prop("Source", label(o.params.source))}` : `#${prop("Source", label("non déclarée"))}`]);
+        compter("terrain", "IfcGeographicElement", rep ? "Tessellation" : "—", true, "terrain : IfcGeographicElement .TERRAIN. (semis triangulé, Delaunay), source du semis en Fadi_Terrain ; aucune altitude hors du semis");
+        break;
+      }
+      case "reservation": {
+        // Réservation : IfcOpeningElement rattaché à son hôte (IfcRelVoidsElement) quand l'hôte est exporté ; statut en propriété.
+        const rep = corpsMaille(o);
+        const id = s.ajouter(`IFCOPENINGELEMENT(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep(`reservation:${o.params.statut}`)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.OPENING.)`);
+        produits.set(o.id, id); identite(id, o);
+        reservationsAVider.push({ o, id }); // IfcRelVoidsElement écrit après la boucle (l'hôte peut venir plus tard dans l'ordre des identifiants)
+        pset(id, "Fadi_Reservation", [`#${prop("Statut", label(o.params.statut))}`, o.params.hoteId ? `#${prop("Hote", label(o.params.hoteId))}` : null, o.params.pourId ? `#${prop("Pour", label(o.params.pourId))}` : null, `#${prop("Hauteur", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.hauteur.value)})`)}`]);
+        compter("reservation", "IfcOpeningElement", rep ? "Tessellation" : "—", true, "réservation : IfcOpeningElement .OPENING. (IfcRelVoidsElement vers l'hôte exporté, sinon posée sous le niveau), statut demandée / accordée / refusée en Fadi_Reservation");
+        break;
+      }
+      case "installation-chantier": {
+        const rep = corpsMaille(o);
+        const id = s.ajouter(`IFCBUILDINGELEMENTPROXY(${gid(o.id)},$,${opt(o.params.nom)},$,${chaineStep(`chantier:${o.params.type}`)},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.PROVISIONFORSPACE.)`);
+        produits.set(o.id, id); contenir(o.niveauId, id); identite(id, o);
+        pset(id, "Fadi_Chantier", [`#${prop("Type", label(o.params.type))}`, o.params.hauteur ? `#${prop("Hauteur", `IFCPOSITIVELENGTHMEASURE(${reelStep(o.params.hauteur.value)})`)}` : null, o.params.debut ? `#${prop("Debut", label(o.params.debut))}` : null, o.params.fin ? `#${prop("Fin", label(o.params.fin))}` : null, o.params.phaseChantier ? `#${prop("Phase", label(o.params.phaseChantier))}` : null]);
+        compter("installation-chantier", "IfcBuildingElementProxy", rep ? "Tessellation" : "—", true, "installation de chantier : proxy .PROVISIONFORSPACE. (ObjectType chantier:<type>), période et phase déclarées en Fadi_Chantier ; hors métrés de l'ouvrage");
+        break;
+      }
+      case "surface-libre": {
+        const rep = corpsMaille(o);
+        const id = s.ajouter(`IFCBUILDINGELEMENTPROXY(${gid(o.id)},$,${opt(nom ?? o.id)},$,${chaineStep("surface-libre")},${ref(placementDe(o.niveauId))},${rep ? ref(forme([rep])) : "$"},$,.NOTDEFINED.)`);
+        produits.set(o.id, id); contenir(o.niveauId, id); identite(id, o);
+        pset(id, "Fadi_SurfaceLibre", [`#${prop("SommetsControle", `IFCCOUNTMEASURE(${o.params.sommets.length})`)}`, `#${prop("FacesControle", `IFCCOUNTMEASURE(${o.params.faces.length})`)}`, `#${prop("Subdivisions", `IFCINTEGER(${o.params.niveaux})`)}`, `#${prop("FacesSubdivisees", `IFCCOUNTMEASURE(${facesSubdivisees(o.params)})`)}`, `#${prop("Fermee", `IFCBOOLEAN(${o.params.ferme ? ".T." : ".F."})`)}`, o.params.origine ? `#${prop("Origine", label(`${o.params.origine.classe} ${o.params.origine.id}`))}` : null]);
+        compter("surface-libre", "IfcBuildingElementProxy", rep ? "Tessellation" : "—", true, "surface libre : proxy tessellé (maillage subdivisé), maillage de contrôle et origine de conversion en Fadi_SurfaceLibre ; sans volume si ouverte");
+        break;
+      }
       case "objet-importe": {
         // Représentation importée : réécrite telle quelle (maillage), GlobalId d'origine conservé, classe d'origine
         // en ObjectType et en propriété — jamais reclassée en objet paramétrique.
@@ -907,6 +988,13 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
         compter("reference-plan", "—", "—", false, "référence de plan : omise (fond de dessin)");
         break;
     }
+  }
+
+  // Réservations (P2-6) : vide dans l'hôte exporté (IfcRelVoidsElement), sinon posée sous son niveau.
+  for (const { o, id } of reservationsAVider) {
+    const hote = o.params.hoteId ? produits.get(o.params.hoteId) : undefined;
+    if (hote !== undefined) s.ajouter(`IFCRELVOIDSELEMENT(${gid(`${o.id}-vide`)},$,$,$,${ref(hote)},${ref(id)})`);
+    else contenir(o.niveauId, id);
   }
 
   // Planches (cahier-planche lot 7, P-1 / D-167) : chaque objet de la racine d'une Planche devient un
@@ -1090,7 +1178,7 @@ export function exporterIfc(etat: ModeleAtelier, options: OptionsExportIfc): { c
   const contenu = [...entete, ...s.lignes, "ENDSEC;", "END-ISO-10303-21;", ""].join("\n");
   // Contrôle croisé annexe C (D-111) : une classe IFC déclarée différente de l'annexe C est nommée, jamais suivie.
   for (const x of controleClassesIfc(etat)) remarques.add(`${x.message}.`);
-  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "assemblage", "piece-mecanique", "liaison", "trame", "poutre", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "assemblage-soude", "ossature", "element-bois", "panneau-clt", "assemblage-bois", "tole", "segment-reseau", "raccord-reseau", "vanne", "equipement-reseau", "support-reseau", "reseau-connexe", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
+  const ordre = ["niveau", "mur", "porte", "fenetre", "ouverture", "dalle", "toiture", "escalier", "poteau", "piece", "espace", "zone", "solide", "solide-exact", "assemblage", "piece-mecanique", "liaison", "trame", "poutre", "plaque", "assemblage-structurel", "soudure", "armature", "coulage", "assemblage-soude", "ossature", "element-bois", "panneau-clt", "assemblage-bois", "tole", "segment-reseau", "raccord-reseau", "vanne", "equipement-reseau", "support-reseau", "reseau-connexe", "plafond", "coque", "rampe", "echelle", "mur-rideau", "terrain", "reservation", "installation-chantier", "surface-libre", "garde-corps", "bloc-occurrence", "objet-importe", "cotation", "texte", "etiquette", "esquisse", "reference-plan"];
   return {
     contenu,
     rapport: {

@@ -24,6 +24,7 @@ import { maillageArmature, maillageAssemblageStructurel, maillagePoutre } from "
 import { maillageAssemblageBois, maillageElementBois, maillagePanneauClt } from "../ontologies/timber/geometrie.js";
 import { maillageTole } from "../ontologies/sheetmetal/geometrie.js";
 import { maillageEquipementReseau, maillageRaccordReseau, maillageSegmentReseau, maillageSupportReseau, maillageVanne } from "../ontologies/mep/geometrie.js";
+import { maillageCoque, maillageEchelle, maillageInstallationChantier, maillageMurRideau, maillagePlafond, maillageRampe, maillageReservation, maillageSurfaceLibre, maillageTerrain } from "../batiment-p2.js";
 
 export interface Maillage {
   objetId: string;
@@ -66,6 +67,15 @@ export const COULEURS_3D: Record<string, string> = {
   vanne: "#b3661e",
   "equipement-reseau": "#6a7f90",
   "support-reseau": "#7d7d7d",
+  plafond: "#e6e2d8",
+  coque: "#c7c1b3",
+  rampe: "#a9a295",
+  echelle: "#6c7680",
+  "mur-rideau": "#9fc3d9",
+  terrain: "#8c9a6b",
+  reservation: "#d98c8c",
+  "installation-chantier": "#d9b84f",
+  "surface-libre": "#b8a0c8",
 };
 
 // ---------------------------------------------------------------------------
@@ -763,6 +773,25 @@ export function maillageObjet(etat: ModeleAtelier, o: OccurrenceQuelconque): Mai
       const porte = o.classe === "support-reseau" ? etat.objets[o.params.porteId] : undefined;
       const m = o.classe === "segment-reseau" ? maillageSegmentReseau(o.params) : o.classe === "raccord-reseau" ? maillageRaccordReseau(o.params) : o.classe === "vanne" ? maillageVanne(o.params) : o.classe === "equipement-reseau" ? maillageEquipementReseau(o.params) : maillageSupportReseau(o.params, porte?.classe === "segment-reseau" ? porte.params.section : null);
       if (!m.indices.length) break;
+      const base = t.positions.length / 3;
+      for (let i = 0; i < m.positions.length; i += 3) t.sommet(m.positions[i]!, m.positions[i + 1]!, z + m.positions[i + 2]!);
+      for (const i of m.indices) t.indices.push(base + i);
+      break;
+    }
+    // Bâtiment P2 et surfaces libres (P2-6) : maillages purs dans le repère du niveau.
+    case "plafond":
+    case "coque":
+    case "rampe":
+    case "echelle":
+    case "mur-rideau":
+    case "terrain":
+    case "reservation":
+    case "installation-chantier":
+    case "surface-libre": {
+      const m = o.classe === "plafond" ? maillagePlafond(o.params) : o.classe === "coque" ? maillageCoque(o.params) : o.classe === "rampe" ? maillageRampe(o.params) : o.classe === "echelle" ? maillageEchelle(o.params) : o.classe === "mur-rideau" ? maillageMurRideau(o.params) : o.classe === "terrain" ? maillageTerrain(o.params) : o.classe === "reservation" ? maillageReservation(o.params) : o.classe === "installation-chantier" ? maillageInstallationChantier(o.params) : maillageSurfaceLibre(o.params);
+      if (!m.indices.length) break;
+      if (o.classe === "mur-rideau" && o.params.remplissage === "vitre") opacite = 0.45;
+      if (o.classe === "reservation") opacite = 0.35;
       const base = t.positions.length / 3;
       for (let i = 0; i < m.positions.length; i += 3) t.sommet(m.positions[i]!, m.positions[i + 1]!, z + m.positions[i + 2]!);
       for (const i of m.indices) t.indices.push(base + i);

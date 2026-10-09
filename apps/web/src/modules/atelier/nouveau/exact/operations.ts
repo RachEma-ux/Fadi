@@ -7,7 +7,7 @@ import type { OperandeExacte, OperationExacte, Point2, Point3 } from "@parcours/
 import { contoursArchitecture, etendueDalle, etendueMur, facesMur, pointsPolyligne, type ModeleAtelier, type OccurrenceQuelconque } from "@parcours/atelier-model";
 import { contourEsquisse } from "../actions";
 
-export type TypeOperationExacte = "revolution" | "balayage" | "lissage" | "booleen" | "trou" | "coque";
+export type TypeOperationExacte = "revolution" | "balayage" | "lissage" | "booleen" | "trou" | "coque" | "surface" | "patch" | "conge";
 export const OPERATIONS_EXACTES: { id: TypeOperationExacte; libelle: string; aide: string }[] = [
   { id: "revolution", libelle: "Révolution", aide: "Sélectionnez une esquisse fermée (profil) et une ligne d'esquisse (axe) ; angle dans les paramètres." },
   { id: "balayage", libelle: "Balayage", aide: "Sélectionnez une esquisse fermée (profil) et une ligne ou polyligne ouverte (trajet) ; le profil est placé perpendiculairement au départ du trajet, à la hauteur donnée." },
@@ -15,6 +15,9 @@ export const OPERATIONS_EXACTES: { id: TypeOperationExacte; libelle: string; aid
   { id: "booleen", libelle: "Booléen exact", aide: "Sélectionnez deux objets : solides exacts, murs, dalles, poteaux ou solides fermés (le paramétrique reste canonique : son extrusion sert d'opérande)." },
   { id: "trou", libelle: "Trou", aide: "Sélectionnez un solide exact ; diamètre, profondeur (0 = traversant) et centre dans les paramètres (par défaut : centre de l'emprise)." },
   { id: "coque", libelle: "Coque", aide: "Sélectionnez un solide exact ; épaisseur de paroi dans les paramètres, dessus ouvert ou non." },
+  { id: "surface", libelle: "Surface (NURBS)", aide: "Sélectionnez une esquisse fermée à quatre sommets : grille de contrôle 3 × 3 (centre relevé de la hauteur donnée), surface B-spline épaissie de l'épaisseur donnée." },
+  { id: "patch", libelle: "Patch", aide: "Sélectionnez une esquisse fermée : face non plane tendue sur son contour (un sommet sur deux relevé de la hauteur donnée), épaissie de l'épaisseur donnée." },
+  { id: "conge", libelle: "Congé", aide: "Sélectionnez un solide exact ; rayon de congé dans les paramètres, appliqué à toutes ses arêtes (refusé s'il est trop grand pour le solide)." },
 ];
 
 export interface OperationConstruite { entrees: OperationExacte; sources: string[]; libelle: string; niveauId: string; type: TypeOperationExacte }
@@ -112,6 +115,41 @@ export function construireOperation(etat: ModeleAtelier, type: TypeOperationExac
       const op = params["booleenExact"] === "union" || params["booleenExact"] === "intersection" ? (params["booleenExact"] as "union" | "intersection") : "soustraction";
       const lib = op === "union" ? "Union" : op === "intersection" ? "Intersection" : "Soustraction";
       return { ok: true, operation: { type, niveauId, sources: [oa.id, ob.id], libelle: `${lib} exacte ${nomDe(oa)} / ${nomDe(ob)}`, entrees: { type: "booleen", op, a, b } } };
+    }
+    case "surface": {
+      const profilO = sel.find((o) => (contourEsquisse(etat, o.id)?.length ?? 0) === 4);
+      if (!profilO) return refus("Surface : sélectionnez une esquisse fermée à quatre sommets (la grille de contrôle en est déduite).");
+      const niveauId = niveauDe(profilO);
+      if (!niveauId) return refus("Surface : l'esquisse doit être sur un niveau.");
+      const epaisseur = nb(params, "epaisseurExacte", 0);
+      if (!(epaisseur > 0)) return refus("Surface : renseignez l'épaisseur (> 0).");
+      const h = nb(params, "hauteurExacte", 0);
+      const [p0, p1, p2x, p3] = contourEsquisse(etat, profilO.id)! as unknown as [Point2, Point2, Point2, Point2];
+      // Grille 3 × 3 bilinéaire sur le quadrilatère (lignes p0→p1, p3→p2), centre relevé de h : surface bombée déclarée.
+      const lerp = (a: Point2, b: Point2, t: number) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+      const controle: Point3[] = [];
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { const u = lerp(p0, p1, j / 2), v = lerp(p3, p2x, j / 2), q = lerp(u, v, i / 2); controle.push({ x: q.x, y: q.y, z: i === 1 && j === 1 ? h : 0 }); }
+      return { ok: true, operation: { type, niveauId, sources: [profilO.id], libelle: `Surface ${nomDe(profilO)} (flèche ${h} m, e ${epaisseur} m)`, entrees: { type: "surface", controle, lignes: 3, colonnes: 3, epaisseur } } };
+    }
+    case "patch": {
+      const profilO = sel.find((o) => (contourEsquisse(etat, o.id)?.length ?? 0) >= 3);
+      if (!profilO) return refus("Patch : sélectionnez une esquisse fermée (son contour, un sommet sur deux relevé, porte la face).");
+      const niveauId = niveauDe(profilO);
+      if (!niveauId) return refus("Patch : l'esquisse doit être sur un niveau.");
+      const epaisseur = nb(params, "epaisseurExacte", 0);
+      if (!(epaisseur > 0)) return refus("Patch : renseignez l'épaisseur (> 0).");
+      const h = nb(params, "hauteurExacte", 0);
+      const contour: Point3[] = contourEsquisse(etat, profilO.id)!.map((p, i) => ({ x: p.x, y: p.y, z: i % 2 === 1 ? h : 0 }));
+      return { ok: true, operation: { type, niveauId, sources: [profilO.id], libelle: `Patch ${nomDe(profilO)} (relief ${h} m, e ${epaisseur} m)`, entrees: { type: "patch", contour, epaisseur } } };
+    }
+    case "conge": {
+      const o = sel.find((x) => x.classe === "solide-exact");
+      if (!o || o.classe !== "solide-exact") return refus("Congé : sélectionnez un solide exact.");
+      const niveauId = niveauDe(o);
+      if (!niveauId) return refus("Le solide exact doit être sur un niveau.");
+      const rayon = nb(params, "rayonExacte", 0);
+      if (!(rayon > 0)) return refus("Congé : renseignez le rayon (> 0).");
+      return { ok: true, operation: { type, niveauId, sources: [o.id], libelle: `Congé r ${rayon} m de ${nomDe(o)}`, entrees: { type: "conge", solide: { brep: o.params.brep, pose: { x: o.params.position.x, y: o.params.position.y, angleDeg: o.params.angle.value } }, rayon } } };
     }
     case "trou":
     case "coque": {
