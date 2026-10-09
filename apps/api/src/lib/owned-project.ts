@@ -19,7 +19,8 @@ export type ProjectRole = "proprietaire" | "editeur" | "lecteur";
  * (`example_mode = 'reference'`, D-016 / D-194) n'est jamais écrite par l'Atelier, même par un appel direct à
  * l'API ; l'interface crée la copie de travail à la première modification, le serveur refuse le reste (403
  * `reference-protegee`). Les routes qui n'écrivent pas le modèle (essais à blanc, versions nommées,
- * publications, verrous, copies) restent en `write`.
+ * publications, verrous, copies) restent en `write` ; la transmission de la parcelle (étape 01), qui écrit le modèle par
+ * des commandes internes, est en `modify` comme les routes de l'Atelier.
  */
 export type ProjectNeed = "read" | "comment" | "write" | "modify" | "owner";
 
@@ -116,16 +117,17 @@ export async function projectOr404(req: Request, res: Response, need: ProjectNee
     res.status(403).json({ error: "forbidden", message: FORBIDDEN_MESSAGE[need], role: access.role });
     return null;
   }
+  // La référence protégée d'abord : son refus est inconditionnel, il ne dépend pas d'un verrou passager (423).
+  if (need === "modify" && estReferenceProtegee(access)) {
+    res.status(403).json({ error: "forbidden", motif: "reference-protegee", message: REFERENCE_PROTEGEE_MESSAGE, role: access.role });
+    return null;
+  }
   if (need === "write" || need === "modify") {
     const lock = activeLock(access);
     if (lock && lock.userId !== req.user!.id) {
       res.status(423).json({ error: "locked", message: lockedMessage(lock), lock });
       return null;
     }
-  }
-  if (need === "modify" && estReferenceProtegee(access)) {
-    res.status(403).json({ error: "forbidden", motif: "reference-protegee", message: REFERENCE_PROTEGEE_MESSAGE, role: access.role });
-    return null;
   }
   return access;
 }

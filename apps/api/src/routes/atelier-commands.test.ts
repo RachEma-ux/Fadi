@@ -984,6 +984,12 @@ describe("référence protégée : refus serveur (D-016 tranchée, D-194)", () =
     expect((await client.post(`/projects/${ref}/atelier/scripts/s-ref/executer`).send({ requestId: "ref-s", baseRevision: 1 })).body.motif).toBe("reference-protegee");
     expect((await client.post(`/projects/${ref}/atelier/reprise`).send({ source: { projectId: ref }, options: {}, empreinteSource: "x", requestId: "ref-p", baseRevision: 1 })).body.motif).toBe("reference-protegee");
     expect((await client.post(`/projects/${ref}/atelier/versions/v0/restaurer`).send({ requestId: "ref-v", baseRevision: 1 })).body.motif).toBe("reference-protegee");
+    // La transmission de la parcelle (étape 01) écrit le modèle par des commandes internes : refusée aussi.
+    const parcelles = (await client.get(`/projects/${ref}/parcels`)).body.files as { id: string }[];
+    expect(parcelles.length).toBeGreaterThan(0);
+    const transmit = await client.post(`/projects/${ref}/parcels/${parcelles[0]!.id}/transmit`).send({});
+    expect(transmit.status).toBe(403);
+    expect(transmit.body.motif).toBe("reference-protegee");
 
     // Rien n'a été écrit : même révision, même nombre d'objets, journal vide de ces requêtes.
     const apres = (await client.get(`/projects/${ref}/atelier/model`)).body as { revision: number; modele: { objets: Record<string, unknown> } };
@@ -997,6 +1003,14 @@ describe("référence protégée : refus serveur (D-016 tranchée, D-194)", () =
     expect((await client.post(`/projects/${ref}/atelier/assistant/propositions/${prop.body.id}/accepter`).send({ requestId: "ref-acc", baseRevision: 1 })).body.motif).toBe("reference-protegee");
     expect((await client.post(`/projects/${ref}/atelier/versions`).send({ nom: "Référence" })).status).toBe(201);
     expect((await client.post(`/projects/${ref}/atelier/publications`).send({ nom: "Référence publiée" })).status).toBe(201);
+    // Le refus est inconditionnel : un verrou d'édition posé par un autre membre ne le transforme pas en 423.
+    const editeur = await registerAndLogin("reference-editeur@example.com");
+    expect((await client.post(`/projects/${ref}/members`).send({ email: "reference-editeur@example.com", role: "editeur" })).status).toBe(201);
+    expect((await editeur.put(`/projects/${ref}/lock`).send({})).status).toBe(200);
+    const sousVerrou = await client.post(`/projects/${ref}/atelier/commands`).send(lot);
+    expect(sousVerrou.status).toBe(403);
+    expect(sousVerrou.body.motif).toBe("reference-protegee");
+    expect((await editeur.delete(`/projects/${ref}/lock`)).status).toBe(204);
     const copie = await client.post(`/projects/${ref}/copies`).send({ name: "Copie de travail" });
     expect(copie.status).toBe(201);
     const wid = copie.body.id as string;
