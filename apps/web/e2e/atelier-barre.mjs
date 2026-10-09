@@ -106,7 +106,8 @@ const rangee = await page.locator(".atelier-n-barre > *").evaluateAll((els) =>
     .map((e) => (e.hasAttribute("data-menu-principal") ? "Fichier" : e.classList.contains("barre-mode") ? "modes" : e.hasAttribute("data-reglages") ? "⚙" : e.classList.contains("barre-sync") ? "état" : `${e.tagName.toLowerCase()}.${e.className}`)),
 );
 check("rangée : Fichier · modes · ⚙ · état d'enregistrement, rien d'autre", rangee.join(" · ") === "Fichier · modes · ⚙ · état", rangee.join(" · "));
-const modes = await page.locator(".barre-mode button[aria-pressed]").evaluateAll((els) => els.map((e) => e.textContent.trim()));
+// Nom des boutons de mode : texte propre, hors chevron décoratif (span aria-hidden du bouton Plan).
+const modes = await page.locator(".barre-mode button[aria-pressed]").evaluateAll((els) => els.map((e) => Array.from(e.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join("").trim()));
 check("modes : Plan · 3D · Documents · Planche", modes.join(" · ") === "Plan · 3D · Documents · Planche", modes.join(" · "));
 check("le sélecteur de niveau indépendant a disparu", (await page.locator(".barre-niveau").count()) === 0);
 const textesRangee = await page.locator(".atelier-n-barre button:visible, .atelier-n-barre summary:visible").evaluateAll((els) => els.map((e) => e.textContent.trim()));
@@ -146,7 +147,7 @@ const focusListe = await page.evaluate(() => document.activeElement?.getAttribut
 await page.keyboard.press("ArrowDown");
 const focusSuivant = await page.evaluate(() => document.activeElement?.getAttribute("data-plan-niveau"));
 await page.keyboard.press("Escape");
-const focusRetour = await page.evaluate(() => document.activeElement?.textContent?.trim() === "Plan");
+const focusRetour = await page.evaluate(() => document.activeElement?.hasAttribute("data-bouton-plan") === true);
 check("clavier : Entrée ouvre la liste sur le niveau coché, flèche bas passe au suivant, Échap rend le focus à Plan", focusListe && !!focusSuivant && focusSuivant !== autre && focusRetour, `${focusListe} / ${focusSuivant} / ${focusRetour}`);
 
 // Fichier et ⚙.

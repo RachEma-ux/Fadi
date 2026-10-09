@@ -9,6 +9,7 @@
  */
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
+import { ecarterBarreActions } from "./lib-barre.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
@@ -28,6 +29,8 @@ const mesurer = async (nom, fn) => {
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? undefined });
 const ctx = await browser.newContext({ viewport: { width: 1536, height: 864 } });
 const page = await ctx.newPage();
+// D-195 : la barre d'actions flottante est rangée hors du dessin (la recette clique à des coordonnées projetées).
+await ecarterBarreActions(page);
 const erreursPage = [];
 // Brouillon local (C6) : aucune commande ne doit partir pendant que la Planche est ouverte.
 let enPlanche = false;

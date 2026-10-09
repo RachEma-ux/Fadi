@@ -39,6 +39,7 @@ en Documents (elle n'y propose que cette section).
 | Messages | `messages.ts` : `reglages.actions`, `reglages.actions.afficher`, `reglages.actions.defaut`, `actions.barre`, `actions.deplacer`, `actions.deplacer.aide`, `actions.cadrer`, `actions.cadrer.niveau`, `actions.cadrer.vue` (FR / EN). | `interface-anglais.mjs` |
 | Accessibilité | Rôle `toolbar` nommé, poignée nommée (bouton, focusable, flèches), groupe nommé, boutons nommés (texte visible ou `sr-only`), cibles 44 px au téléphone ; axe-core sans violation critique ou sérieuse (ordinateur et téléphone). | `atelier-barre.mjs` |
 | CI | Nouvelle étape « Recette de la barre de l'Atelier » (`apps/web/e2e/atelier-barre.mjs`) après `planche-detachee-documents.mjs`. | `.github/workflows/ci.yml` |
+| Recettes qui dessinent par coordonnées | La barre flotte par défaut au coin bas droit du dessin ; une recette qui clique à des coordonnées projetées du modèle (`versEcran`) la toucherait au lieu du dessin. `lib-barre.mjs` : `ecarterBarreActions(page)` range la barre en haut à gauche de la fenêtre (sur l'en-tête, hors du dessin) par la préférence mémorisée — le geste d'un utilisateur qui la glisse —, sans la masquer : ses boutons restent disponibles. Appliquée aux six recettes de la Planche (`planche`, `planche-outils`, `planche-modification`, `planche-lots-4-6`, `planche-lot-5`, `planche-lot-7`). | relecture locale des 27 recettes de la CI |
 
 ## Contrôles
 
