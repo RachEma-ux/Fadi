@@ -53,6 +53,8 @@ export interface PropsDocuments {
   revision: number;
   readOnly: boolean;
   niveauId: string | null;
+  /** Choix du niveau actif (plans, détails et gabarits du niveau) : la barre de l'Atelier ne l'affiche plus ici. */
+  onNiveau?: (niveauId: string) => void;
   onCommandes: (commandes: Commande[], label: string) => Promise<void> | void;
   /** Traits des références externes (lus avec les droits de l'utilisateur) ; absent : pas encore lus. */
   externes?: readonly TraitsExternes[];
@@ -127,7 +129,7 @@ function useGeneration<T>(cle: string, calcul: () => Promise<T>): { valeur: T | 
   return { valeur: etat?.valeur ?? null, enCours: etat?.cle !== cle, erreur: etat?.cle === cle ? etat.erreur : null };
 }
 
-export function Documents({ projectId, code, nomProjet, etat, revision, readOnly, niveauId, onCommandes, externes }: PropsDocuments) {
+export function Documents({ projectId, code, nomProjet, etat, revision, readOnly, niveauId, onNiveau, onCommandes, externes }: PropsDocuments) {
   const queryClient = useQueryClient();
   const catalogue = useQuery({ queryKey: ["documents", projectId], queryFn: () => api.getDocuments(projectId), staleTime: 5000 });
   const [choix, setChoix] = useState<Choix>(null);
@@ -195,6 +197,18 @@ export function Documents({ projectId, code, nomProjet, etat, revision, readOnly
   return (
     <div className="atelier-docs">
       <nav className="docs-liste" aria-label="Vues, feuilles et tableaux">
+        {!readOnly && onNiveau && niveaux.length > 0 && (
+          <label className="docs-niveau">
+            <span>Niveau actif</span>
+            <select value={niveau?.id ?? ""} onChange={(e) => onNiveau(e.target.value)} data-docs-niveau>
+              {niveaux.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.nom}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <section>
           <h3>Vues</h3>
           {!readOnly && (

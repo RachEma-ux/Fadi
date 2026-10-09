@@ -6,7 +6,8 @@
  * cette interface ne fait que traduire pointeur et clavier en `EvenementOutil`, appeler `traiter`, puis afficher
  * `vue()`. Brouillon LOCAL (C6) : aucun envoi au serveur, aucune commande ; annuler / rétablir local.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   COULEUR_MATERIAU_DEFAUT,
   EXTRUSION_TEXTE_3D,
@@ -166,8 +167,11 @@ function lirePrecision(): number {
 
 type TexteMesures = { texte: string; statut: "frappe" | "valide" } | null;
 
+/** Champ de saisie, dans la page comme dans la fenêtre détachée (autre document : `instanceof` n'y vaut rien). */
 function champSaisie(cible: EventTarget | null): boolean {
-  return cible instanceof HTMLInputElement || cible instanceof HTMLTextAreaElement || cible instanceof HTMLSelectElement || (cible instanceof HTMLElement && cible.isContentEditable);
+  const el = cible as HTMLElement | null;
+  if (!el || typeof el.tagName !== "string") return false;
+  return el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable === true;
 }
 
 const virgule = (n: number, d = 2) => n.toFixed(d).replace(".", ",");
@@ -263,6 +267,16 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const [detache, setDetache] = useState<"non" | "fenetre" | "plein-ecran">("non");
   const fenetreRef = useRef<Window | null>(null);
   const emplacementRef = useRef<HTMLDivElement | null>(null);
+  // Porte de la Planche : nœud stable où React rend TOUTE la Planche (dessin, barre d'outils, panneaux, pied). Le
+  // détachement déplace ce nœud dans la fenêtre séparée ; React y a posé ses écouteurs (portail), donc chaque bouton
+  // continue de répondre là-bas, sans remontage (même canvas, même brouillon, même historique).
+  const [porte] = useState(() => {
+    const d = document.createElement("div");
+    d.className = "planche-porte";
+    d.setAttribute("data-planche-porte", "");
+    return d;
+  });
+  const stylesObserveur = useRef<MutationObserver | null>(null);
   const clavierRef = useRef<{ touche: (e: KeyboardEvent) => void; relache: (e: KeyboardEvent) => void; perte: () => void } | null>(null);
   const brouillonCharge = useRef(false);
 
@@ -1485,17 +1499,25 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     };
   }, [annulerPas, retablirPas, envoyerTouche, echap, choisirOutil, setTexte, grouperSelection, ouvrirDialogueComposant, majOptions, etendre, collerSelection, copierSelection]);
 
-  // --- Plan détachable : le nœud de la vue (canvas three.js, surcouches, écouteurs) est DÉPLACÉ dans une fenêtre
-  // Document Picture-in-Picture — même contexte JavaScript, donc même brouillon et même historique, sans
-  // synchronisation ; la fenêtre principale garde outils, Instructeur et barre d'état. Sans cette API (Firefox,
-  // Safari, téléphone), « Détacher » passe la Planche en plein écran.
+  // --- Planche détachable : la porte (toute la Planche — dessin, barre d'outils, panneaux, barre d'état, Mesures) est
+  // DÉPLACÉE dans une fenêtre Document Picture-in-Picture — même contexte JavaScript, donc même brouillon et même
+  // historique, sans synchronisation ; la page garde une carte « Rattacher ». Sans cette API (Firefox, Safari,
+  // téléphone), « Détacher » passe la Planche en plein écran.
+  useLayoutEffect(() => {
+    const emplacement = emplacementRef.current;
+    if (emplacement && !fenetreRef.current && porte.parentNode !== emplacement) emplacement.appendChild(porte);
+    return () => porte.remove();
+  }, [porte]);
+
   const rattacher = useCallback(() => {
     const w = fenetreRef.current;
     if (w) {
       fenetreRef.current = null;
+      stylesObserveur.current?.disconnect();
+      stylesObserveur.current = null;
       const hote = hoteRef.current;
       const emplacement = emplacementRef.current;
-      if (hote && emplacement && hote.parentNode !== emplacement) emplacement.appendChild(hote);
+      if (emplacement && porte.parentNode !== emplacement) emplacement.appendChild(porte);
       const c = clavierRef.current;
       if (c) {
         w.removeEventListener("keydown", c.touche);
@@ -1513,7 +1535,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       return;
     }
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
-  }, []);
+  }, [porte]);
 
   const detacher = useCallback(async () => {
     const hote = hoteRef.current;
@@ -1523,7 +1545,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     if (dpip && window.matchMedia("(min-width: 761px)").matches) {
       try {
         const w = await dpip.requestWindow({ width: 1040, height: 700 });
-        for (const feuille of Array.from(document.styleSheets)) {
+        const copierFeuille = (feuille: CSSStyleSheet) => {
           try {
             const style = w.document.createElement("style");
             style.textContent = Array.from(feuille.cssRules)
@@ -1538,13 +1560,41 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
               w.document.head.appendChild(lien);
             }
           }
-        }
+        };
+        for (const feuille of Array.from(document.styleSheets)) copierFeuille(feuille);
+        // Feuilles chargées plus tard (panneaux chargés à la demande) : recopiées dès leur arrivée.
+        const observeur = new MutationObserver((mutations) => {
+          for (const m of mutations)
+            for (const n of Array.from(m.addedNodes)) {
+              if (n instanceof HTMLStyleElement && n.sheet) copierFeuille(n.sheet);
+              else if (n instanceof HTMLLinkElement && n.rel === "stylesheet") {
+                const lien = w.document.createElement("link");
+                lien.rel = "stylesheet";
+                lien.href = n.href;
+                w.document.head.appendChild(lien);
+              }
+            }
+        });
+        observeur.observe(document.head, { childList: true });
+        stylesObserveur.current = observeur;
         const base = w.document.createElement("style");
-        base.textContent = "html,body{margin:0;height:100%;overflow:hidden;background:#f4f6f8}.planche-vue{height:100%}";
+        base.textContent = "html,body{margin:0;height:100%;overflow:hidden;background:#f4f6f8}.planche-chaine{display:contents!important}.planche-porte>.planche{height:100vh}";
         w.document.head.appendChild(base);
-        w.document.documentElement.lang = document.documentElement.lang;
+        // Mêmes attributs de document (langue, thème) et même chaîne de classes ancêtres que dans la page : les
+        // variables et règles de l'Atelier (`.atelier-n …`) s'appliquent à l'identique ; chaque maillon est transparent.
+        for (const a of Array.from(document.documentElement.attributes)) w.document.documentElement.setAttribute(a.name, a.value);
+        w.document.body.className = document.body.className;
         w.document.title = `Fadi · ${t("mode.planche")}`;
-        w.document.body.appendChild(hote);
+        let parent: HTMLElement = w.document.body;
+        const ancetres: string[] = [];
+        for (let n = emplacementRef.current?.parentElement ?? null; n && n !== document.body; n = n.parentElement) ancetres.unshift(n.className);
+        for (const classe of ancetres) {
+          const maillon = w.document.createElement("div");
+          maillon.className = `${classe} planche-chaine`.trim();
+          parent.appendChild(maillon);
+          parent = maillon;
+        }
+        parent.appendChild(porte);
         const c = clavierRef.current;
         if (c) {
           w.addEventListener("keydown", c.touche);
@@ -1568,13 +1618,14 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     } catch {
       setMessage(t("planche.detacher.impossible"));
     }
-  }, [rattacher]);
+  }, [rattacher, porte]);
 
   useEffect(() => {
     const maj = () => setDetache(document.fullscreenElement === racineRef.current ? "plein-ecran" : fenetreRef.current ? "fenetre" : "non");
     document.addEventListener("fullscreenchange", maj);
     return () => {
       document.removeEventListener("fullscreenchange", maj);
+      stylesObserveur.current?.disconnect();
       const w = fenetreRef.current;
       fenetreRef.current = null;
       try {
@@ -1592,9 +1643,11 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       const c = e.target as Node | null;
       if (grilleDom.current && c && !grilleDom.current.contains(c) && !(c instanceof Element && c.closest("[data-planche-plus]"))) setGrille(false);
     };
-    window.addEventListener("pointerdown", surClic);
-    return () => window.removeEventListener("pointerdown", surClic);
-  }, [grille]);
+    // Fenêtre où vit la Planche (page ou fenêtre détachée).
+    const w = racineRef.current?.ownerDocument.defaultView ?? window;
+    w.addEventListener("pointerdown", surClic);
+    return () => w.removeEventListener("pointerdown", surClic);
+  }, [grille, detache]);
 
   const outil = outilParId(outilId);
   const etatTexte3D = outilId === "texte-3d" ? (etatMachineRef.current as EtatTexte3D | null) : null;
@@ -1692,11 +1745,30 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     </div>
   );
 
-  return (
+  const carteDetache =
+    detache === "fenetre" ? (
+      <div className="planche-detache-fond" data-planche-detache-fond>
+        <div className="planche-detache" role="status" data-planche-detache-carte>
+          <h3>{t("planche.detache.titre")}</h3>
+          <p>{t("planche.detache.texte")}</p>
+          <div className="barre-groupe">
+            <button type="button" className="planche-detache-afficher" onClick={() => fenetreRef.current?.focus()}>
+              {t("planche.detache.afficher")}
+            </button>
+            <button type="button" onClick={rattacher} data-planche-rattacher>
+              {t("planche.rattacher")}
+            </button>
+          </div>
+          <p className="inspecteur-aide">{t("planche.detache.aide")}</p>
+        </div>
+      </div>
+    ) : null;
+
+  // La Planche est rendue dans sa porte (portail) : dans la page, la porte est posée dans `emplacement` ; détachée,
+  // elle vit dans la fenêtre séparée et la carte d'état prend sa place ici.
+  const planche = (
     <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${colonneRepliee ? " colonne-repliee" : ""}${detache !== "non" ? " est-detache" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
-      {/* Le nœud `.planche-vue` est déplacé tel quel dans la fenêtre détachée, puis rendu ici ; la carte d'état
-          vient APRÈS lui (React n'insère alors jamais avant un nœud absent du document). */}
-      <div ref={emplacementRef} className="planche-vue-cadre" data-planche-cadre>
+      <div className="planche-vue-cadre" data-planche-cadre>
         <div
           ref={hoteRef}
           className="planche-vue"
@@ -1708,21 +1780,6 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         >
           {webgl === "indisponible" && <p className="planche-webgl" role="alert">{t("planche.webgl")}</p>}
         </div>
-        {detache === "fenetre" && (
-          <div className="planche-detache" role="status" data-planche-detache-carte>
-            <h3>{t("planche.detache.titre")}</h3>
-            <p>{t("planche.detache.texte")}</p>
-            <div className="barre-groupe">
-              <button type="button" className="planche-detache-afficher" onClick={() => fenetreRef.current?.focus()}>
-                {t("planche.detache.afficher")}
-              </button>
-              <button type="button" onClick={rattacher} data-planche-rattacher>
-                {t("planche.rattacher")}
-              </button>
-            </div>
-            <p className="inspecteur-aide">{t("planche.detache.aide")}</p>
-          </div>
-        )}
       </div>
 
       <div className="planche-haut">
@@ -2140,6 +2197,14 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         />
       )}
     </div>
+  );
+
+  return (
+    <>
+      <div ref={emplacementRef} className="planche-emplacement" data-planche-emplacement />
+      {carteDetache}
+      {createPortal(planche, porte)}
+    </>
   );
 }
 

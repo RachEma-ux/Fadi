@@ -4,7 +4,7 @@
  * Navigateur. Composants React purs : ils reçoivent le modèle et des rappels, n'appellent jamais le noyau en écriture
  * eux-mêmes (la Planche applique les opérations, un pas d'historique chacune).
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { REGLAGES_DEFAUT, aire, contexte, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, volume, type Id, type MetadonneesDefinition, type Modele, type ReglagesPlanche, type Scene } from "@parcours/planche-model";
 import { t } from "../messages";
 import type { OptionsAffichage, VueStandard } from "./vue-planche";
@@ -37,16 +37,23 @@ export function MenuContextuel({ x, y, entrees, onFermer }: { x: number; y: numb
         onFermer();
       }
     };
-    window.addEventListener("pointerdown", fermer, true);
-    window.addEventListener("keydown", clavier, true);
+    // Fenêtre où vit le menu (page ou Planche détachée).
+    const w = ref.current?.ownerDocument.defaultView ?? window;
+    w.addEventListener("pointerdown", fermer, true);
+    w.addEventListener("keydown", clavier, true);
     ref.current?.querySelector<HTMLButtonElement>("button:not([disabled])")?.focus();
     return () => {
-      window.removeEventListener("pointerdown", fermer, true);
-      window.removeEventListener("keydown", clavier, true);
+      w.removeEventListener("pointerdown", fermer, true);
+      w.removeEventListener("keydown", clavier, true);
     };
   }, [onFermer]);
-  // Le menu reste dans la fenêtre.
-  const style = { left: Math.min(x, window.innerWidth - 260), top: Math.max(8, Math.min(y, window.innerHeight - Math.min(window.innerHeight - 16, 36 * entrees.length + 16))) };
+  // Le menu reste dans SA fenêtre (page ou Planche détachée, souvent plus petite).
+  const [fenetre, setFenetre] = useState<Window>(window);
+  useLayoutEffect(() => {
+    const v = ref.current?.ownerDocument.defaultView;
+    if (v && v !== fenetre) setFenetre(v);
+  }, [fenetre]);
+  const style = { left: Math.min(x, fenetre.innerWidth - 260), top: Math.max(8, Math.min(y, fenetre.innerHeight - Math.min(fenetre.innerHeight - 16, 36 * entrees.length + 16))) };
   const rendre = (e: EntreeMenu) => (
     <li key={e.id} role="none" className={e.separateurAvant ? "avec-separateur" : undefined}>
       <button

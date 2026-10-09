@@ -1088,6 +1088,11 @@
 .atelier-n.mode-documents .atelier-n-onglets {
   display: none;
 }
+/* Barre : ce qui n'appartient pas aux documents est masqué (`hidden`), malgré l'affichage propre de chaque contrôle. */
+.atelier-n.mode-documents .atelier-n-barre > [hidden],
+.atelier-n.mode-documents .atelier-n-etat [hidden] {
+  display: none;
+}
 .atelier-n.mode-documents .atelier-n-travail {
   display: block;
   grid-area: travail;
@@ -1104,6 +1109,18 @@
   overflow-y: auto;
   border-right: 1px solid var(--atelier-ligne);
   padding: 0.5rem 0.6rem 1rem;
+}
+/* Niveau actif des plans, détails et gabarits : choisi ici, la barre de l'Atelier ne le montre pas en mode Documents. */
+.docs-niveau {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.3rem 0 0.2rem;
+  font-size: 0.8rem;
+  color: var(--atelier-doux);
+}
+.docs-niveau select {
+  min-height: 34px;
+  color: var(--atelier-encre);
 }
 .docs-liste h3 {
   margin: 0.8rem 0 0.35rem;

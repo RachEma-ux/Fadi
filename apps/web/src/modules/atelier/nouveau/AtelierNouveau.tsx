@@ -313,6 +313,9 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
       const mod = e.ctrlKey || e.metaKey;
       // Mode Planche : son propre clavier (raccourcis du catalogue, champ Mesures, annuler local) ; Ctrl+S reste.
       if (etatUi.get().mode === "planche" && !(mod && e.key.toLowerCase() === "s")) return;
+      // Mode Documents : pas d'outil de dessin ni de sélection du modèle ; seuls enregistrer, annuler et rétablir
+      // (les commandes des vues et feuilles passent par le journal de l'Atelier) restent au clavier.
+      if (etatUi.get().mode === "documents" && !(mod && ["s", "z", "y"].includes(e.key.toLowerCase()))) return;
       if (mod && e.key.toLowerCase() === "k") {
         e.preventDefault();
         etatUi.set((u) => ({ paletteOuverte: !u.paletteOuverte }));
@@ -493,6 +496,11 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
 
   const selection = ui.selection.map((id) => etat.objets[id]).filter((o): o is OccurrenceQuelconque => !!o);
   const planche = ui.mode === "planche";
+  // Mode Documents (cahier §5.9) : vues, feuilles, tableaux et leurs fichiers. La barre n'y garde que le menu Fichier,
+  // les modes, annuler / rétablir et l'état d'enregistrement : niveau actif (choisi dans Documents), outils de dessin,
+  // affichage, accrochages, cadrage, disposition, échanges du modèle et Harmonie appartiennent au dessin.
+  const documents = ui.mode === "documents";
+  const horsDessin = planche || documents;
 
   if (inst.chargement === "initial" || inst.chargement === "chargement") {
     return <p role="status" className="atelier-n-chargement">Chargement du modèle…</p>;
@@ -527,8 +535,9 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           onPartager={() => void partager()}
           onDocuments={() => etatUi.set({ mode: "documents", pointsEnCours: [], aide: "Imprimer : choisissez une feuille ou une vue, puis téléchargez-la en PDF." })}
           onProjets={() => navigate("/projets")}
+          echanges={!documents}
         />
-        <label className="barre-niveau" hidden={planche}>
+        <label className="barre-niveau" hidden={horsDessin}>
           <span className="sr-only">Niveau actif</span>
           <select value={ui.niveauId ?? ""} onChange={(e) => etatUi.set({ niveauId: e.target.value, selection: [], pointsEnCours: [] })}>
             {niveaux.map((n) => <option key={n.id} value={n.id}>{n.nom} ({fmt(n.elevation)} m)</option>)}
@@ -545,11 +554,11 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           <button type="button" onClick={() => void client.annuler()} disabled={readOnly} title="Annuler (Ctrl/⌘ Z)">↶<span className="sr-only">Annuler</span></button>
           <button type="button" onClick={() => void client.retablir()} disabled={readOnly} title="Rétablir (Ctrl/⌘ Maj Z)">↷<span className="sr-only">Rétablir</span></button>
         </div>
-        <button type="button" className="barre-palette" hidden={planche} onClick={() => etatUi.set({ paletteOuverte: true })}>
+        <button type="button" className="barre-palette" hidden={horsDessin} onClick={() => etatUi.set({ paletteOuverte: true })}>
           <span className="palette-long">Rechercher un outil</span>
           <span className="palette-court" aria-hidden="true">Outils…</span> <kbd>Ctrl K</kbd>
         </button>
-        <label className="barre-affichage" hidden={planche}>
+        <label className="barre-affichage" hidden={horsDessin}>
           <span>Affichage</span>
           <select aria-label="Niveau d'affichage des outils" value={ui.affichage} onChange={(e) => etatUi.set({ affichage: e.target.value as NiveauAffichage })}>
             <option value="essentiel">Essentiel</option>
@@ -557,7 +566,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
             <option value="complet">Complet</option>
           </select>
         </label>
-        <details className="barre-accrochages" hidden={planche}>
+        <details className="barre-accrochages" hidden={horsDessin}>
           <summary>Accrochages</summary>
           <div className="accrochages-liste">
             {(["extremite", "milieu", "centre", "perpendiculaire", "intersection", "proche", "parallele", "orthogonal", "grille"] as const).map((k) => (
@@ -578,15 +587,15 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
             </label>
           </div>
         </details>
-        <button type="button" onClick={cadrer} title="Cadrer le niveau (0)" hidden={planche}>Cadrer</button>
+        <button type="button" onClick={cadrer} title="Cadrer le niveau (0)" hidden={horsDessin}>Cadrer</button>
         {/* Disposition (D-156) : grille à cinq repères ou canevas plein écran à panneaux flottants. */}
-        <button type="button" aria-pressed={ui.disposition === "canevas"} data-disposition-canevas onClick={() => etatUi.set((u) => ({ disposition: u.disposition === "canevas" ? "classique" : "canevas", panneauFlottant: null }))} title="Canevas plein écran : outils et panneaux flottent sur le dessin">
+        <button type="button" aria-pressed={ui.disposition === "canevas"} data-disposition-canevas hidden={documents} onClick={() => etatUi.set((u) => ({ disposition: u.disposition === "canevas" ? "classique" : "canevas", panneauFlottant: null }))} title="Canevas plein écran : outils et panneaux flottent sur le dessin">
           Canevas
         </button>
         {/* Exports et imports portent sur le modèle de l'Atelier ; ceux de la Planche arrivent au lot 7 (masqués ici). */}
         <details
           className="barre-exports"
-          hidden={planche}
+          hidden={horsDessin}
           onToggle={(e) => {
             // Menu ouvert vers l'intérieur de l'Atelier, même quand la barre passe sur deux lignes.
             const d = e.currentTarget;
@@ -676,7 +685,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
             </button>
           </div>
         </details>
-        {!planche && <MenuImport
+        {!horsDessin && <MenuImport
           client={client}
           projectId={projectId}
           etat={etat}
@@ -688,7 +697,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           onAide={(aide) => etatUi.set({ aide })}
         />}
         {rapportEchange && <RapportEchangeDialogue rapport={rapportEchange} onFermer={() => setRapportEchange(null)} />}
-        {harmonie && (
+        {harmonie && !documents && (
           <button type="button" id="atelier-harmonie-button" className="barre-harmonie" aria-controls="atelier-harmonie-page" aria-expanded="false" onClick={() => window.AtelierHarmonyPage?.open()}>
             ◈ Harmonie
           </button>
@@ -748,7 +757,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           </button>
         )}
       </div>
-      {ui.disposition === "canevas" && etendus && !planche && (
+      {ui.disposition === "canevas" && etendus && !horsDessin && (
         <div className="canevas-etendus" id="canevas-outils-etendus" role="dialog" aria-label="Outils étendus" data-grille-outils ref={grilleEtendus}>
           {outilsBarre.parFamille.map(([f, liste]) => (
             <section key={f} aria-label={FAMILLES[f]}>
@@ -772,7 +781,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           </Suspense>
         ) : ui.mode === "documents" ? (
           <Suspense fallback={<p role="status" className="vue3d-etat">Chargement des documents…</p>}>
-            <Documents projectId={projectId} code={code} nomProjet={nomProjet} etat={etat} revision={inst.revisionServeur} readOnly={readOnly} niveauId={ui.niveauId} onCommandes={(c, l) => executer(c, l, false)} externes={documentsExternes} />
+            <Documents projectId={projectId} code={code} nomProjet={nomProjet} etat={etat} revision={inst.revisionServeur} readOnly={readOnly} niveauId={ui.niveauId} onNiveau={(id) => etatUi.set({ niveauId: id, selection: [], pointsEnCours: [] })} onCommandes={(c, l) => executer(c, l, false)} externes={documentsExternes} />
           </Suspense>
         ) : ui.mode === "3d" ? (
           <Suspense fallback={<p role="status" className="vue3d-etat">Chargement de la vue 3D…</p>}>
@@ -824,7 +833,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         </div>
       </aside>
 
-      {ui.disposition === "canevas" && !planche && (
+      {ui.disposition === "canevas" && !horsDessin && (
         <>
           <ColonnePanneaux ui={ui} alertes={lotsEnDifficulte} />
           {ui.panneauFlottant === "instructeur" && (
@@ -862,9 +871,9 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
       <footer className="atelier-n-etat" aria-live="polite">
         {ui.disposition === "canevas" && (
           <span className="canevas-bas">
-            <button type="button" className="lien" data-aide-instructeur onClick={() => etatUi.basculerPanneau("instructeur")} title={msg("bas.aide")} aria-label={msg("bas.aide")}>?</button>
+            {!documents && <button type="button" className="lien" data-aide-instructeur onClick={() => etatUi.basculerPanneau("instructeur")} title={msg("bas.aide")} aria-label={msg("bas.aide")}>?</button>}
             <ChoixLangue className="canevas-langue" />
-            <ChoixPeripherique ui={ui} />
+            {!documents && <ChoixPeripherique ui={ui} />}
           </span>
         )}
         {protectedReference && !readOnly && (
@@ -873,10 +882,10 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           </span>
         )}
         {erreur ? <span className="etat-erreur" role="alert">{erreur}</span> : <span className="etat-aide">{mesure ?? ui.aide}</span>}
-        {ui.repere && <button type="button" className="lien" data-repere-global onClick={() => etatUi.set({ repere: null, aide: "Repère global rétabli." })}>Repère global (x′ à {String(Math.round(ui.repere.angle * 100) / 100).replace(".", ",")}°)</button>}
-        <span className="etat-selection">{selection.length === 1 ? `${CLASSES[selection[0]!.classe].libelle} ${selection[0]!.id}` : selection.length > 1 ? `${selection.length} objets` : ""}</span>
-        {ui.curseur && ui.outil !== "selection" && <span className="etat-curseur">x {fmt(ui.curseur.x)} · y {fmt(ui.curseur.y)} m</span>}
-        <span className="etat-echelle">{Math.round(ui.vue.echelle)} px/m</span>
+        {ui.repere && !documents && <button type="button" className="lien" data-repere-global onClick={() => etatUi.set({ repere: null, aide: "Repère global rétabli." })}>Repère global (x′ à {String(Math.round(ui.repere.angle * 100) / 100).replace(".", ",")}°)</button>}
+        <span className="etat-selection" hidden={documents}>{selection.length === 1 ? `${CLASSES[selection[0]!.classe].libelle} ${selection[0]!.id}` : selection.length > 1 ? `${selection.length} objets` : ""}</span>
+        {ui.curseur && ui.outil !== "selection" && !documents && <span className="etat-curseur">x {fmt(ui.curseur.x)} · y {fmt(ui.curseur.y)} m</span>}
+        <span className="etat-echelle" hidden={documents}>{Math.round(ui.vue.echelle)} px/m</span>
       </footer>
 
       <nav className="atelier-n-onglets" aria-label="Panneaux">
@@ -888,7 +897,7 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
         ))}
       </nav>
 
-      {ui.paletteOuverte && <Palette ui={ui} disponibilite={disponibilite} onChoisir={choisir} />}
+      {ui.paletteOuverte && !horsDessin && <Palette ui={ui} disponibilite={disponibilite} onChoisir={choisir} />}
     </div>
   );
 }
