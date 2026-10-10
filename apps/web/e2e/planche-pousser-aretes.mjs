@@ -240,6 +240,30 @@ function aides(page) {
   check("cercle tiré dans son plan de 0,5 : disque + couronne, cercle décalé", e.faces === 2 && e.courbes === 2 && Math.abs(total - attendu) < 1e-6, JSON.stringify({ faces: e.faces, courbes: e.courbes, total, attendu }));
   await page.screenshot({ path: `${OUT}/4-couronne.png` });
 
+  // 6. Cercle tiré par son PÉRIMÈTRE vers le haut → tube (24 faces latérales lisses) posé sur le disque.
+  await vider();
+  await page.keyboard.press("c");
+  await cliquer({ x: 0, y: 0, z: 0 });
+  await survoler({ x: 1, y: 0, z: 0 });
+  await saisir("1");
+  const bord = await page.evaluate(() => {
+    const c = window.fadiPlanche.modele().racine;
+    const k = Object.values(c.courbes)[0];
+    const a = c.aretes[k.aretes[0]];
+    const A = c.sommets[a.a].position;
+    const B = c.sommets[a.b].position;
+    return { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
+  });
+  await page.keyboard.press("p");
+  await cliquer({ x: bord.x, y: bord.y, z: 0 });
+  await page.keyboard.press("ArrowUp");
+  await survoler({ x: bord.x, y: bord.y, z: 1 });
+  await saisir("2");
+  e = await etat();
+  const lisses = await page.evaluate(() => Object.values(window.fadiPlanche.modele().racine.aretes).filter((a) => a.adoucie).length);
+  check("cercle tiré par son périmètre, ↑ « 2 » : tube de 24 faces lisses sur le disque (25 faces), deux cercles", e.faces === 25 && lisses === 24 && e.courbes === 2 && e.liens === 1, JSON.stringify({ faces: e.faces, lisses, courbes: e.courbes, liens: e.liens }));
+  await page.screenshot({ path: `${OUT}/6-tube.png` });
+
   check("[desktop] aucune commande envoyée (brouillon local)", s.commandes.length === 0, s.commandes.join(" "));
   check("[desktop] aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
   await ctx.close();

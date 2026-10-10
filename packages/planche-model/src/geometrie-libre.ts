@@ -1595,7 +1595,7 @@ function contourPlanFerme(c: Ctx, ids: ReadonlySet<Id>): { sommets: readonly Id[
 }
 
 /** Exécute `calcul` (qui insère la surface) et enregistre le lien si l'on est à la racine et qu'aucune géométrie étrangère n'a été coupée. */
-function lier(t: Travail, c: Ctx, dans: Id | undefined, lien: Omit<Extrusion, "id" | "sommetsSources" | "sommetsCrees">, calcul: () => void): void {
+function lier(t: Travail, c: Ctx, dans: Id | undefined, lien: Omit<Extrusion, "id" | "sommetsSources" | "sommetsCrees" | "faces">, calcul: () => void): void {
   const avant = new Set(c.sommets.keys());
   calcul();
   if (dans !== undefined) return;
@@ -1610,8 +1610,15 @@ function lier(t: Travail, c: Ctx, dans: Id | undefined, lien: Omit<Extrusion, "i
   for (const s of c.sommets.keys()) if (!avant.has(s)) crees[s] = pos(c, s);
   if (etrangere(c, new Set([...Object.keys(sources), ...Object.keys(crees)]), Object.keys(crees))) return;
   const id = t.id("x");
-  t.annotations.extrusions[id] = { ...lien, id, sommetsSources: sources, sommetsCrees: crees };
+  t.annotations.extrusions[id] = { ...lien, id, sommetsSources: sources, sommetsCrees: crees, faces: facesTouchant(c, new Set(Object.keys(crees))) };
   t.annotationsSales = true;
+}
+
+/** Nombre de faces qui touchent l'un des sommets donnés. */
+function facesTouchant(c: Ctx, sommets: ReadonlySet<Id>): number {
+  let n = 0;
+  for (const f of c.faces.values()) if ([f.exterieur, ...f.trous].some((b) => b.some((s) => sommets.has(s)))) n++;
+  return n;
 }
 
 /** Une arête relie un sommet créé à un sommet hors du lien (géométrie étrangère rattachée à la surface). */
@@ -1634,6 +1641,10 @@ function actualiserExtrusions(t: Travail): void {
     t.annotationsSales = true;
   };
   for (const L of Object.values(liens)) {
+    if (!Array.isArray(L.sources) || !L.sommetsSources || !L.sommetsCrees) {
+      rompre(L.id); // lien mal formé (jamais produit par le noyau ; la lecture du modèle le refuse aussi)
+      continue;
+    }
     const sommetsSources = new Set<Id>();
     let ok = true;
     for (const id of L.sources) {
@@ -1654,12 +1665,13 @@ function actualiserExtrusions(t: Travail): void {
       rompre(L.id); // la surface elle-même a été modifiée
       continue;
     }
-    if (anciens.every((s) => egal(pos(c, s), L.sommetsSources[s] as Vec3))) continue;
+    // Topologie revérifiée à chaque opération, même sources immobiles : face effacée ou découpée, géométrie étrangère.
     const idsCrees = crees.map(([s]) => s);
-    if (etrangere(c, new Set([...sommetsSources, ...idsCrees]), idsCrees)) {
+    if (facesTouchant(c, new Set(idsCrees)) !== L.faces || etrangere(c, new Set([...sommetsSources, ...idsCrees]), idsCrees)) {
       rompre(L.id);
       continue;
     }
+    if (anciens.every((s) => egal(pos(c, s), L.sommetsSources[s] as Vec3))) continue;
     // Recalcul : la surface et ses arêtes (tout ce qui touche un sommet créé) sont retirées, puis balayées à nouveau.
     const set = new Set(idsCrees);
     for (const f of [...c.faces.values()]) if ([f.exterieur, ...f.trous].some((b) => b.some((s) => set.has(s)))) c.faces.delete(f.id);

@@ -211,6 +211,19 @@ export const validateursEntites: Record<(typeof CLES_CONTEXTE)[number], (id: Id,
   occurrences: (id, v) => estObjet(v) && v["id"] === id && estId(v["definition"]) && Array.isArray(v["transformation"]) && v["transformation"].length === 16 && v["transformation"].every(estNombre),
 };
 
+/** Lien de surface étendue (D-196) : genre, sources, vecteur ou distance, instantanés de positions — jamais cru sur parole. */
+export function estExtrusion(id: Id, v: unknown): boolean {
+  if (!estObjet(v) || v["id"] !== id) return false;
+  const positions = (t: unknown) => estObjet(t) && Object.entries(t).every(([k, p]) => estId(k) && estVec3(p));
+  const sources = v["sources"];
+  if (!Array.isArray(sources) || sources.length === 0 || !sources.every(estId)) return false;
+  if (typeof v["symetrique"] !== "boolean" || !positions(v["sommetsSources"]) || !positions(v["sommetsCrees"])) return false;
+  if (!estNombre(v["faces"]) || !Number.isInteger(v["faces"]) || (v["faces"] as number) < 0) return false;
+  if (v["genre"] === "balayage") return estVec3(v["vecteur"]);
+  if (v["genre"] === "couronne") return estNombre(v["distance"]);
+  return false;
+}
+
 function estContexte(c: unknown): c is Contexte {
   if (!estObjet(c)) return false;
   for (const k of CLES_CONTEXTE) {
@@ -238,6 +251,7 @@ export function lireModelePlanche(brut: unknown): Modele | null {
   if (an !== undefined && !estObjet(an)) return null;
   if (an) {
     for (const k of CLES_ANNOTATIONS) if (an[k] !== undefined && !(estObjet(an[k]) && Object.entries(an[k] as object).every(([id, v]) => estObjet(v) && v["id"] === id))) return null;
+    if (an["extrusions"] !== undefined && !Object.entries(an["extrusions"] as object).every(([id, v]) => estExtrusion(id, v))) return null;
     if (an["repere"] !== undefined && !(estObjet(an["repere"]) && estVec3(an["repere"]["origine"]))) return null;
     if (an["reglages"] !== undefined && !estObjet(an["reglages"])) return null;
   }
@@ -255,7 +269,7 @@ export function estDeltaPlanche(v: unknown): v is DeltaPlanche {
     if (!estObjet(an)) return false;
     for (const [k, t] of Object.entries(an)) {
       if ((CLES_ANNOTATIONS as readonly string[]).includes(k)) {
-        if (!table(t)) return false;
+        if (!(k === "extrusions" ? table(t, estExtrusion) : table(t))) return false;
       } else if (k === "repere" || k === "reglages") {
         if (!(t === null || estObjet(t))) return false;
       } else return false;

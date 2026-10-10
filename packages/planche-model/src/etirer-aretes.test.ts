@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { type Id, type Modele, aire, ajouterPolygone, ajouterRectangle, ajouterSegment, allongerArete, couronne, deplacer, effacerArete, etirerAretes, modeleVide } from "./geometrie-libre.js";
-import { appliquerDeltaPlanche, differencePlanche, empreintePlanche, lireModelePlanche } from "./delta.js";
+import { type Id, type Modele, aire, ajouterPolygone, ajouterRectangle, ajouterSegment, allongerArete, couronne, deplacer, effacerArete, effacerEntites, etirerAretes, modeleVide } from "./geometrie-libre.js";
+import { appliquerDeltaPlanche, differencePlanche, empreintePlanche, estDeltaPlanche, lireModelePlanche } from "./delta.js";
 import { v3 } from "./vecteur.js";
 
 const faces = (m: Modele) => Object.values(m.racine.faces);
@@ -192,7 +192,7 @@ describe("Lien surface ↔ arêtes sources (D-196)", () => {
     expect(aireTotale(d)).toBeCloseTo(airePolygone(24, Math.cos(Math.PI / 24) + 0.5), 9);
   });
 
-  it("modifier la surface elle-même ou effacer la source rompt le lien ; la surface reste", () => {
+  it("modifier la surface elle-même rompt le lien (la surface reste) ; effacer la source rompt le lien et, comme toute arête effacée, retire la face qu'elle bordait", () => {
     const m = ajouterSegment(modeleVide(), v3(0, 0, 0), v3(4, 0, 0)).modele;
     const src = premiere(m);
     const r = etirerAretes(m, [src], v3(0, 0, 2)).modele;
@@ -202,6 +202,29 @@ describe("Lien surface ↔ arêtes sources (D-196)", () => {
     expect(faces(d)).toHaveLength(1);
     const g = effacerArete(r, src).modele;
     expect(liens(g)).toHaveLength(0);
+    expect(faces(g)).toHaveLength(0);
+  });
+
+  it("face générée effacée, sources immobiles : le lien est rompu, déplacer ensuite la source ne recrée rien", () => {
+    const m = ajouterSegment(modeleVide(), v3(0, 0, 0), v3(4, 0, 0)).modele;
+    const src = premiere(m);
+    const r = etirerAretes(m, [src], v3(0, 0, 2)).modele;
+    const sansFace = effacerEntites(r, Object.keys(r.racine.faces)).modele;
+    expect(faces(sansFace)).toHaveLength(0);
+    expect(liens(sansFace)).toHaveLength(0);
+    const d = deplacer(sansFace, [src], v3(0, 1, 0)).modele;
+    expect(faces(d)).toHaveLength(0);
+  });
+
+  it("un lien mal formé est refusé à la lecture du modèle et dans un delta", () => {
+    const m = ajouterSegment(modeleVide(), v3(0, 0, 0), v3(4, 0, 0)).modele;
+    const r = etirerAretes(m, [premiere(m)], v3(0, 0, 2)).modele;
+    const brut = JSON.parse(JSON.stringify(r));
+    const id = Object.keys(brut.annotations.extrusions)[0] as string;
+    brut.annotations.extrusions[id] = { id };
+    expect(lireModelePlanche(brut)).toBeNull();
+    expect(estDeltaPlanche({ annotations: { extrusions: { x1: { id: "x1" } } } })).toBe(false);
+    expect(estDeltaPlanche(differencePlanche(m, r))).toBe(true);
   });
 
   it("le lien voyage dans le delta et la lecture du modèle", () => {

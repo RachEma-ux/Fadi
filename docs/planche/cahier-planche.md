@@ -509,7 +509,7 @@ saisissez la distance. \| Flèches = Verrouiller un axe. \| Alt = Des deux côt�
 arêtes. **Compléments (fadi, D-197)** : une courbe fermée tirée **dans son propre plan** donne une **couronne** (contour
 décalé en onglet, vers l'extérieur ou l'intérieur selon le curseur, Alt = des deux côtés) ; **↓** verrouille le déplacement
 le long de l'arête cliquée et **allonge** (ou raccourcit) la ligne ; la surface reste **liée** à ses arêtes sources (elle est
-recalculée quand elles bougent ; le lien se rompt si la surface elle-même est modifiée). CA-PPT-10 : cercle de rayon 1,
+recalculée quand elles bougent ; le lien se rompt si la surface elle-même est modifiée ; effacer une source retire, comme pour toute arête, les faces qu'elle bordait). CA-PPT-10 : cercle de rayon 1,
 tiré dans son plan de `0,5` vers l'extérieur → disque + couronne, contour décalé de rayon 1 + 0,5 / cos(π/24). CA-PPT-11 :
 segment de 4 m, ↓ puis `1` → une seule arête de 5 m. CA-PPT-12 : segment tiré de 2 m vers le haut puis l'arête source
 déplacée de 1 m → la surface suit (même aire, arête haute déplacée). CA-PPT-7 : segment de 4 m, ↑ puis `2,7` →

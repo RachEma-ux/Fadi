@@ -124,6 +124,8 @@ export interface Extrusion {
   /** Positions des sommets sources et des sommets créés au dernier calcul. */
   readonly sommetsSources: Readonly<Record<Id, Vec3>>;
   readonly sommetsCrees: Readonly<Record<Id, Vec3>>;
+  /** Nombre de faces touchant un sommet créé au dernier calcul (une face effacée ou découpée rompt le lien). */
+  readonly faces: number;
 }
 
 export interface Annotations {

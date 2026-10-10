@@ -217,11 +217,12 @@ function viseeVecteur(e: EtatPousserTirer, ctx: ContexteOutil, r: Rayon, toleran
 }
 
 /** Direction d'une distance tapée : axe verrouillé (sens du curseur, sinon +axe), sinon direction du curseur. */
-function directionSaisie(e: EtatPousserTirer): Vec3 | null {
+function directionSaisie(e: EtatPousserTirer, ctx: ContexteOutil): Vec3 | null {
   const v = e.vecteur;
   const fl = e.fleche?.verrou;
   if (fl && fl.genre === "axe") {
-    const a = VECTEUR_AXE[fl.axe];
+    // Axe du repère de dessin actif (Axes), sinon axe canonique.
+    const a = ctx.repere ? normalize(ctx.repere[fl.axe]) : VECTEUR_AXE[fl.axe];
     return v && len(v) > TOL && dot(v, a) < 0 ? scale(a, -1) : a;
   }
   if (fl && fl.genre === "direction") {
@@ -397,7 +398,7 @@ function saisir(e: EtatPousserTirer, ctx: ContexteOutil, texte: string): Transit
   if (res.genre !== "longueur") return { etat: { ...e, texte, erreur: `Saisie « ${texte} » non reconnue.` } };
   if (e.etape === 2 && e.face) return appliquer(e, ctx, e.face, res.valeur, texte, null);
   if (e.etape === 2 && e.aretes.length > 0 && e.origine) {
-    const d = directionSaisie(e);
+    const d = directionSaisie(e, ctx);
     if (!d) return { etat: { ...e, texte, erreur: "Orientez le curseur (ou verrouillez un axe avec une flèche) pour donner la direction." } };
     // La valeur tapée est exacte ; le curseur ne donne que le genre d'opération et le sens.
     return appliquerAretes(e, ctx, aValeur(paramsPour(e, ctx, scale(d, res.valeur)), res.valeur), texte, null);
