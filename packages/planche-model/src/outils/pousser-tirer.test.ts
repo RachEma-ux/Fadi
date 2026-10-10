@@ -3,7 +3,7 @@ import { type Id, aire, ajouterPolygone, ajouterRectangle, ajouterSegment, model
 import { v3 } from "../vecteur.js";
 import { etape } from "./commun-formes.js";
 import { aretes, boite, clicVers, contientPoint, emprise, faces, partie, saisie, sommets, survolVers, touche, volumeAbsolu, echap } from "./essais-modification.js";
-import { CONSIGNE_ARETE_SURVOL, CONSIGNE_ARETE_TIRAGE, CONSIGNE_TUBE_FACE, CONSIGNE_TUBE_TIRAGE, machinePousserTirer } from "./pousser-tirer.js";
+import { CONSIGNE_ARETE_SURVOL, CONSIGNE_ARETE_TIRAGE, CONSIGNE_TUBE_FACE, CONSIGNE_TUBE_TIRAGE, ERREUR_ALLONGER_COURBE, machinePousserTirer } from "./pousser-tirer.js";
 
 const sol = () => ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
 
@@ -245,6 +245,32 @@ describe("Modes explicites (lot Planche 8, D-201)", () => {
     expect(p.vue().options?.find((o) => o.id === "arete")?.valeur).toBe("allonger");
     p.jouer(survolVers(v3(5, 0, 0)), saisie("1"));
     expect(emprise(p.modele).max.x).toBeCloseTo(5, 9);
+  });
+
+  it("Allonger est grisé et refusé sur une courbe (pas d'arête droite isolée)", () => {
+    const m = ajouterPolygone(modeleVide(), v3(0, 0, 0), v3(0, 0, 1), 1, 24).modele;
+    const a = Math.PI / 24;
+    const p = partie(machinePousserTirer, m).jouer(clicVers(v3(Math.cos(a) * Math.cos(a), Math.cos(a) * Math.sin(a), 0)));
+    const arete = () => p.vue().options?.find((o) => o.id === "arete");
+    expect(arete()?.valeurs.find((v) => v.id === "allonger")?.disponible).toBe(false);
+    p.configurer("arete", "allonger");
+    expect(arete()?.valeur).toBe("normal");
+    expect(p.vue().erreur).toBe(ERREUR_ALLONGER_COURBE);
+    p.jouer(touche("FlecheBas"));
+    expect(arete()?.valeur).toBe("normal");
+  });
+
+  it("Allonger efface « Des deux côtés » : le mode symétrique ne revient pas après l'opération", () => {
+    const p = partie(machinePousserTirer, ajouterSegment(modeleVide(), v3(0, 0, 0), v3(4, 0, 0)).modele);
+    const arete = () => p.vue().options?.find((o) => o.id === "arete")?.valeur;
+    p.jouer(clicVers(v3(3.5, 0, 0)));
+    p.configurer("arete", "deux-cotes");
+    expect(arete()).toBe("deux-cotes");
+    p.configurer("arete", "allonger");
+    expect(arete()).toBe("allonger");
+    p.jouer(survolVers(v3(5, 0, 0)), saisie("1"));
+    expect(emprise(p.modele).max.x).toBeCloseTo(5, 9);
+    expect(arete()).toBe("normal");
   });
 
   it("Étirement par le bouton : la face avance et ses voisines s'étirent (pas de faces latérales)", () => {

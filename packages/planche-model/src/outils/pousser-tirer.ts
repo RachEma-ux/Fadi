@@ -447,6 +447,8 @@ const MODES_ARETE: readonly ModeArete[] = ["normal", "deux-cotes", "allonger"];
 export const modeFace = (e: EtatPousserTirer): ModeFace => (e.sansFond ? "tube" : e.etirement ? "etirement" : e.nouvelleFace ? "nouvelle-face" : "normal");
 export const modeArete = (e: EtatPousserTirer): ModeArete => (e.fleche?.touche === "FlecheBas" ? "allonger" : e.symetrique ? "deux-cotes" : "normal");
 
+export const ERREUR_ALLONGER_COURBE = "Allonger : seule une arête droite isolée peut être allongée.";
+
 /** Un seul chemin pour choisir un mode : touche, bouton de la barre d'options ou bouton au toucher. */
 function configurerPT(e: EtatPousserTirer, option: string, valeur: string): Transition<EtatPousserTirer> {
   if (option === "face" && (MODES_FACE as readonly string[]).includes(valeur)) {
@@ -456,9 +458,12 @@ function configurerPT(e: EtatPousserTirer, option: string, valeur: string): Tran
     const sansAllonger = e.fleche?.touche === "FlecheBas" ? null : e.fleche;
     if (valeur === "allonger") {
       if (!(e.etape === 2 && e.aretes.length > 0)) return { etat: { ...e, erreur: "Allonger : cliquez d'abord sur l'arête à allonger." } };
+      // Seule une arête droite isolée s'allonge : une courbe ou un contour donnerait une couronne ou une surface.
+      if (!e.droite) return { etat: { ...e, erreur: ERREUR_ALLONGER_COURBE } };
       const s = plusProche(e.segments, e.origine as Vec3);
       if (!s) return { etat: e };
-      return { etat: { ...e, fleche: { touche: "FlecheBas", verrou: { genre: "direction", direction: normalize(sub(s.b, s.a)), type: "parallele" } }, erreur: null } };
+      // Modes exclusifs : Allonger efface « Des deux côtés », qui ne revient pas après l'opération.
+      return { etat: { ...e, symetrique: false, fleche: { touche: "FlecheBas", verrou: { genre: "direction", direction: normalize(sub(s.b, s.a)), type: "parallele" } }, erreur: null } };
     }
     return { etat: { ...e, symetrique: valeur === "deux-cotes", fleche: sansAllonger, erreur: null } };
   }
@@ -486,7 +491,7 @@ function optionsPT(e: EtatPousserTirer): OptionOutil[] {
       valeurs: [
         { id: "normal", disponible: surArete },
         { id: "deux-cotes", disponible: surArete, raccourci: "Alt" },
-        { id: "allonger", disponible: tirageArete, raccourci: "↓" },
+        { id: "allonger", disponible: tirageArete && e.droite !== null, raccourci: "↓" },
       ],
     },
   ];
