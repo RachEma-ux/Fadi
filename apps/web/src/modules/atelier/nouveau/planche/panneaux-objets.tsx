@@ -687,7 +687,8 @@ export function NavigateurPlanche({
   /** Commandes du Navigateur (O-4, règle d'or) : barre en tête de l'arbre. */
   commandes?: readonly { id: string; picto: string; nom: string; raccourci: string; motif: string | null; executer: () => void }[];
   /** Objet dont le nom est en cours d'édition (F2, menu, barre). */
-  renommage?: Id | null;
+  /** Revue O-4 : chemin complet de la ligne à renommer (un objet imbriqué d'un composant figure sous chaque occurrence). */
+  renommage?: readonly Id[] | null;
   /** `chemin` : chemin complet du contexte (racine → dans), qui distingue les occurrences d'un même composant. */
   onSelectionner: (id: Id, dans: Id | undefined, chemin?: readonly Id[]) => void;
   onEntrer: (id: Id | undefined, chemin?: readonly Id[]) => void;
@@ -723,19 +724,11 @@ export function NavigateurPlanche({
     return rendre(undefined, 0);
   }, [modele, deplies, f]);
   // Un objet renommé est rendu visible : ses parents sont dépliés.
+  const cleRenommage = renommage ? renommage.join("/") : null;
   useEffect(() => {
-    if (!renommage || arbre.some((n) => n.id === renommage)) return;
-    const chemin: Id[] = [];
-    const chercher = (parent: Id | undefined, ch: Id[]): boolean => {
-      for (const o of Object.values(contexte(modele, parent).occurrences)) {
-        if (o.id === renommage) return chemin.push(...ch), true;
-        if (chercher(o.id, [...ch, o.id])) return true;
-      }
-      return false;
-    };
-    chercher(undefined, []);
-    if (chemin.length) setDeplies((s) => new Set([...s, ...chemin]));
-  }, [renommage, arbre, modele]);
+    if (!renommage || renommage.length < 2 || arbre.some((n) => n.chemin.join("/") === cleRenommage)) return;
+    setDeplies((s) => new Set([...s, ...renommage.slice(0, -1)]));
+  }, [renommage, cleRenommage, arbre]);
   const parentDe = (id: Id) => arbre.find((n) => n.id === id)?.parent;
   /** Zone de dépôt d'une ligne : bord haut / bas = à côté (même parent), milieu = dedans. */
   const zoneDe = (e: EvenementGlisse<HTMLElement>): "dans" | "avant" | "apres" => {
@@ -802,7 +795,7 @@ export function NavigateurPlanche({
               className={`${choisis.has(n.id) ? "est-actif" : ""}${dans === n.id ? " est-ouvert" : ""}${cible}`}
               style={{ paddingLeft: `${n.profondeur * 0.9}rem` }}
               data-planche-navigateur-objet={n.id}
-              draggable={!lecture && !n.verrouille && renommage !== n.id && onDeplacer !== undefined}
+              draggable={!lecture && !n.verrouille && cleRenommage !== n.chemin.join("/") && onDeplacer !== undefined}
               onDragStart={(e) => {
                 glisse.current = { id: n.id, parent: n.parent };
                 e.dataTransfer.setData(TYPE_GLISSE, n.id);
@@ -836,7 +829,7 @@ export function NavigateurPlanche({
               <button type="button" className="canevas-icone planche-deplier" aria-label={deplies.has(n.id) ? t("planche.navigateur.replier") : t("planche.navigateur.deplier")} disabled={n.enfants === 0} onClick={() => setDeplies((s) => { const d = new Set(s); if (d.has(n.id)) d.delete(n.id); else d.add(n.id); return d; })}>
                 {n.enfants === 0 ? "·" : deplies.has(n.id) ? "▾" : "▸"}
               </button>
-              {renommage === n.id ? (
+              {cleRenommage === n.chemin.join("/") ? (
                 <ChampRenommer
                   nom={n.nomPropre}
                   onValider={(nom) => {
