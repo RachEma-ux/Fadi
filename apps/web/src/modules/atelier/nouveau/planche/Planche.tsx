@@ -492,6 +492,17 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
    * même chemin `configurer` que les touches Ctrl / Alt / ↓ traitées par la machine. Aucun pas d'historique.
    */
   /**
+   * Lot 10a (EX-STATE-03, A-11) : remet l'outil à zéro quand le modèle change sous lui (annuler, rétablir, mise à jour
+   * venue du serveur) et dit si une opération était en cours — son aperçu, périmé, ne peut plus être validé.
+   */
+  const abandonnerOperation = useCallback((): boolean => {
+    const m = machineParId(outilRef.current);
+    const avant = etatMachineRef.current as { etape?: unknown } | null;
+    const initial = m?.initial() as { etape?: unknown } | undefined;
+    etatMachineRef.current = initial ?? null;
+    return typeof avant?.etape === "number" && avant.etape !== initial?.etape;
+  }, []);
+  /**
    * Lot 9 (EX-CMD-04) : touche de modification frappée seule — même chemin que les boutons d'options pour les outils qui
    * la déclarent (Pousser/Tirer) ; aucun pas d'historique, la vue annonce le mode ou le refus.
    */
@@ -598,10 +609,10 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       return;
     }
     poserHistorique(h, { libelle: t("planche.annule", { operation: op ?? "" }) });
-    etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+    const perime = abandonnerOperation();
     setSelection([]);
     poserDans(undefined);
-    setMessage(t("planche.annule", { operation: op ?? "" }));
+    setMessage(`${t("planche.annule", { operation: op ?? "" })}${perime ? ` ${t("planche.apercu.perime")}` : ""}`);
     rafraichir();
   }, [poserDans, poserHistorique, rafraichir, setSelection]);
 
@@ -613,10 +624,10 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       return;
     }
     poserHistorique(h, { libelle: t("planche.retabli", { operation: op ?? "" }) });
-    etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+    const perime = abandonnerOperation();
     setSelection([]);
     poserDans(undefined);
-    setMessage(t("planche.retabli", { operation: op ?? "" }));
+    setMessage(`${t("planche.retabli", { operation: op ?? "" })}${perime ? ` ${t("planche.apercu.perime")}` : ""}`);
     rafraichir();
   }, [poserDans, poserHistorique, rafraichir, setSelection]);
 
@@ -1550,10 +1561,10 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     plancheIdRef.current = plancheCourante.id;
     if (!changement && empreintePlanche(histRef.current.present.modele) === plancheCourante.params.empreinte) return;
     poserHistorique(historiqueInitial(plancheCourante.params.modele), { envoyer: false });
-    etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+    const perime = abandonnerOperation();
     setSelection([]);
     poserDans(undefined);
-    setMessage(changement ? null : t("planche.persistance.maj"));
+    setMessage(changement ? (perime ? t("planche.apercu.perime") : null) : `${t("planche.persistance.maj")}${perime ? ` ${t("planche.apercu.perime")}` : ""}`);
     rafraichir();
   }, [plancheCourante, poserDans, poserHistorique, rafraichir, setSelection]);
   const commanderPlanche = useCallback((commandes: Commande[], libelle: string, puis?: () => void) => {

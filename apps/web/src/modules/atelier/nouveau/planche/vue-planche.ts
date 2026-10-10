@@ -673,7 +673,11 @@ export class VuePlanche {
         this.groupeApercu.add(poignees);
       }
       if (vue.apercu.faces.length) {
-        const faces: FaceVisible[] = vue.apercu.faces.filter((f) => f.length >= 3).map((f, i) => ({ id: `apercu-${i}`, exterieur: f, trous: [], normale: normaleNewell(f) }));
+        // Lot 10a (EX-PREV-02) : les trous de l'aperçu sont rendus (une face trouée tirée montre ses trous).
+        const trous = vue.apercu.trous ?? [];
+        const faces: FaceVisible[] = vue.apercu.faces
+          .map((f, i) => ({ id: `apercu-${i}`, exterieur: f, trous: (trous[i] ?? []).filter((b) => b.length >= 3), normale: normaleNewell(f) }))
+          .filter((f) => f.exterieur.length >= 3);
         this.groupeApercu.add(new THREE.Mesh(geometrieFaces(faces), new THREE.MeshBasicMaterial({ color: "#7d98c4", transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false })));
       }
       // Ligne d'inférence pointillée (depuis le point de départ ou un point de référence).

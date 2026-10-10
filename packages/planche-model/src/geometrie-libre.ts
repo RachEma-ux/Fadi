@@ -1413,6 +1413,26 @@ function exigerDistance(d: number): void {
   if (Math.abs(d) >= EPS && Math.abs(d) < TOL) throw new RangeError(ERREUR_SOUS_TOLERANCE);
 }
 
+/**
+ * « Jusqu'à une face » (lot 10a, EX-PT-02) : distance signée, le long de la normale de `face`, qui amène son plan sur
+ * celui de `cible`. Refus nommés : face ou cible inconnue dans le contexte, cible = source, plans non parallèles.
+ */
+export const ERREUR_CIBLE_NON_PARALLELE = "Jusqu'à une face : la face cible doit être parallèle à la face poussée.";
+export const ERREUR_CIBLE_SOURCE = "Jusqu'à une face : choisissez une autre face que celle qui est poussée.";
+export const ERREUR_CIBLE_HORS_CONTEXTE = "Jusqu'à une face : la face cible doit être dans le même groupe ou composant que la face poussée.";
+export function distanceJusquAFace(m: Modele, face: Id, cible: Id, o: OptionsContexte = {}): number {
+  const c = contexte(m, o.dans);
+  const F = c.faces[face];
+  const G = c.faces[cible];
+  if (!F) throw new Error(`Face inconnue : ${face}`);
+  if (!G) throw new RangeError(ERREUR_CIBLE_HORS_CONTEXTE);
+  if (face === cible) throw new RangeError(ERREUR_CIBLE_SOURCE);
+  if (len(cross(F.normale, G.normale)) > 1e-9) throw new RangeError(ERREUR_CIBLE_NON_PARALLELE);
+  const p = (c.sommets[F.exterieur[0] as Id] as Sommet).position;
+  const q = (c.sommets[G.exterieur[0] as Id] as Sommet).position;
+  return dot(F.normale, sub(q, p));
+}
+
 export interface OptionsPousserTirer extends OptionsContexte {
   /** Ctrl : conserve la face de départ (nouvelle face de départ, arête à l'ancien niveau). */
   readonly nouvelleFace?: boolean;
@@ -1911,7 +1931,36 @@ function contourDecale(pts: readonly Vec3[], n: Vec3, d: number): Vec3[] | null 
     const v = sub(r[(i + 1) % N] as Vec3, r[i] as Vec3);
     if (dot(v, dirs[i] as Vec3) <= EPS) return null;
   }
-  return dot(newell(r), n) > 0 ? r : null;
+  if (dot(newell(r), n) <= 0) return null;
+  // Lot 10a (EX-PT-06, P-13) : sur une boucle concave, deux segments non voisins du contour décalé peuvent se croiser
+  // sans qu'aucun ne s'inverse ; le décalage est alors refusé en nommant les segments.
+  const croises = recoupementContour(r, n);
+  if (croises) throw new RangeError(`Le décalage se recoupe (segments ${croises[0] + 1} et ${croises[1] + 1} du contour) : réduisez la distance.`);
+  return r;
+}
+
+/** Premier couple de segments non voisins d'une boucle plane qui se coupent (indices), ou `null`. */
+export function recoupementContour(pts: readonly Vec3[], n: Vec3): [number, number] | null {
+  const u = normalize(Math.abs(n.x) < 0.9 ? cross(n, v3(1, 0, 0)) : cross(n, v3(0, 1, 0)));
+  const w = cross(n, u);
+  const q = pts.map((p) => ({ x: dot(p, u), y: dot(p, w) }));
+  const N = q.length;
+  const orient = (a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+  for (let i = 0; i < N; i++) {
+    const a = q[i]!;
+    const b = q[(i + 1) % N]!;
+    for (let j = i + 2; j < N; j++) {
+      if (i === 0 && j === N - 1) continue;
+      const c = q[j]!;
+      const d = q[(j + 1) % N]!;
+      const o1 = orient(a, b, c);
+      const o2 = orient(a, b, d);
+      const o3 = orient(c, d, a);
+      const o4 = orient(c, d, b);
+      if (o1 * o2 < -EPS && o3 * o4 < -EPS) return [i, j];
+    }
+  }
+  return null;
 }
 
 /** Couronne (cœur de `couronne`). */

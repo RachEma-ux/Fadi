@@ -14,7 +14,7 @@
  * l'axe verrouillé ; Alt = des deux côtés. Mêmes gestes ensuite que pour une face : correction par une distance tapée,
  * double-clic sur une autre arête = répéter, Échap.
  */
-import { type Id, ERREUR_ETIRER_ISOLEE, allongerArete, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, faceAVoisines, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
+import { type Id, ERREUR_ETIRER_ISOLEE, allongerArete, distanceJusquAFace, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, faceAVoisines, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, EPS, TOL, add, cross, dist, dot, egal, len, normalize, scale, sub } from "../vecteur.js";
@@ -24,6 +24,7 @@ import {
   contexteSaisie,
   corrigeable,
   formaterLongueur,
+  formaterNombre,
   intersectionRayonPlan,
   inferenceBrute,
   mesures,
@@ -32,7 +33,6 @@ import {
 } from "./commun-formes.js";
 import {
   VECTEUR_AXE,
-  apercuPrisme,
   axeDeToucheFleche,
   consigneDe,
   enLocal,
@@ -110,6 +110,8 @@ export interface EtatPousserTirer {
   readonly origine: Vec3 | null;
   /** Contour monde de la face (aperçu). */
   readonly contour: readonly Vec3[];
+  /** (Lot 10a, EX-PREV-02) Contours monde des trous de la face : l'aperçu les montre (P-09). */
+  readonly trousContour: readonly (readonly Vec3[])[];
   readonly survol: Id | null;
   readonly distance: number;
   readonly inference: Inference | null;
@@ -120,6 +122,8 @@ export interface EtatPousserTirer {
   readonly selectionAvant: readonly Id[];
   /** (Lot 10a, EX-NUM-02) « Inverser le sens » : la valeur tapée s'applique de l'autre côté, une seule fois. */
   readonly sens: 1 | -1;
+  /** (Lot 10a, EX-PT-02) Étendue : à la distance (curseur, saisie) ou « Jusqu'à une face » (clic sur une face parallèle). */
+  readonly jusquAFace: boolean;
 }
 
 function initial(): EtatPousserTirer {
@@ -140,6 +144,7 @@ function initial(): EtatPousserTirer {
     normale: null,
     origine: null,
     contour: [],
+    trousContour: [],
     survol: null,
     distance: 0,
     inference: null,
@@ -148,6 +153,7 @@ function initial(): EtatPousserTirer {
     derniere: null,
     selectionAvant: [],
     sens: 1,
+    jusquAFace: false,
   };
 }
 
@@ -164,6 +170,7 @@ const retour = (e: EtatPousserTirer): EtatPousserTirer => ({
   normale: null,
   origine: null,
   contour: [],
+  trousContour: [],
   distance: 0,
   inference: null,
   selectionAvant: [],
@@ -399,13 +406,21 @@ function apercuSpecial(e: EtatPousserTirer, p: ParamsArete): Apercu | null {
 }
 
 /** Aperçu du tube sans fond : contour translaté, montants et faces latérales seulement (ni fond ni dessus). */
-function apercuTube(contour: readonly Vec3[], dep: Vec3): Apercu {
-  const p = apercuPrisme(contour, dep);
-  const faces = contour.map((a, i) => {
-    const b = contour[(i + 1) % contour.length] as Vec3;
-    return [a, b, add(b, dep), add(a, dep)];
-  });
-  return { lignes: p.lignes, faces };
+/**
+ * Aperçu d'une face trouée (lot 10a, EX-PREV-02) : face d'arrivée avec ses trous, arêtes de chaque boucle, et — pour la
+ * Surface ouverte — les parois de chaque boucle, trous compris (P-09 : un anneau donne deux tubes).
+ */
+function apercuFace(contour: readonly Vec3[], trous: readonly (readonly Vec3[])[], dep: Vec3, genre: "prisme" | "tube" | "etirement"): Apercu {
+  const boucles = [contour, ...trous];
+  const hautes = boucles.map((b) => b.map((p) => add(p, dep)));
+  const lignes: Vec3[][] = hautes.map((h) => [...h, h[0] as Vec3]);
+  boucles.forEach((b, k) => b.forEach((p, i) => lignes.push([p, (hautes[k] as Vec3[])[i] as Vec3])));
+  if (genre !== "tube") return { lignes, faces: [hautes[0] as Vec3[]], trous: [hautes.slice(1)] };
+  const parois = boucles.flatMap((b) => b.map((a, i) => {
+    const c = b[(i + 1) % b.length] as Vec3;
+    return [a, c, add(c, dep), add(a, dep)];
+  }));
+  return { lignes, faces: parois };
 }
 
 /** Aperçu : parallélogrammes balayés par les segments. */
@@ -464,9 +479,16 @@ export const ERREUR_MAJ_ARETE = "Maj seul : « Surface ouverte » ne s'applique 
 export const ERREUR_ALLONGER_COURBE = "Allonger : seule une arête droite isolée peut être allongée.";
 
 /** Un seul chemin pour choisir un mode : touche, bouton de la barre d'options ou bouton au toucher. */
+export const ERREUR_FACE_HORS_EXTRUSION = "« Jusqu'à une face » ne s'applique qu'à l'extrusion normale d'une face.";
+export const CONSIGNE_JUSQU_A_FACE = "Jusqu'à une face : cliquez sur une face parallèle — la distance signée s'affiche avant de valider.";
 export const ERREUR_SENS_SANS_SOURCE = "Inverser le sens : cliquez d'abord sur la face ou l'arête à pousser ou à tirer.";
 
 function configurerPT(e: EtatPousserTirer, option: string, valeur: string): Transition<EtatPousserTirer> {
+  if (option === "etendue" && (valeur === "distance" || valeur === "face")) {
+    // « Jusqu'à une face » ne vaut que pour l'extrusion standard d'une face (V1 : to-face, extrusion seulement).
+    if (valeur === "face" && (e.sansFond || e.etirement || e.aretes.length > 0)) return { etat: { ...e, erreur: ERREUR_FACE_HORS_EXTRUSION } };
+    return { etat: { ...e, jusquAFace: valeur === "face", erreur: null } };
+  }
   if (option === "sens" && (valeur === "direct" || valeur === "inverse")) {
     if (e.etape !== 2) return { etat: { ...e, erreur: ERREUR_SENS_SANS_SOURCE } };
     return { etat: { ...e, sens: valeur === "inverse" ? -1 : 1, erreur: null } };
@@ -502,6 +524,7 @@ export type ActionExtrusion =
   | { readonly type: "set-operation"; readonly operation: OperationExtrusion }
   | { readonly type: "set-option"; readonly option: OptionExtrusion; readonly value: boolean }
   | { readonly type: "reverse-direction" }
+  | { readonly type: "set-extent"; readonly extent: "distance" | "to-face" }
   | { readonly type: "cancel" };
 
 export const ERREUR_CONSERVER_HORS_EXTRUSION = "« Conserver la face de départ » ne s'applique qu'à l'extrusion d'une face.";
@@ -511,6 +534,8 @@ export function actionExtrusion(e: EtatPousserTirer, a: ActionExtrusion): Transi
   switch (a.type) {
     case "cancel":
       return e.etape === 2 ? { etat: { ...retour(e), texte: null, erreur: null }, selection: e.selectionAvant } : { etat: e };
+    case "set-extent":
+      return configurerPT(e, "etendue", a.extent === "to-face" ? "face" : "distance");
     case "reverse-direction":
       return configurerPT(e, "sens", e.sens === 1 ? "inverse" : "direct");
     case "set-operation":
@@ -566,6 +591,15 @@ function optionsPT(e: EtatPousserTirer, ctx: ContexteOutil): OptionOutil[] {
         { id: "allonger", disponible: tirageArete && e.droite !== null, raccourci: "↓" },
       ],
     },
+    // Lot 10a (EX-PT-02) : étendue de l'extrusion d'une face.
+    {
+      id: "etendue",
+      valeur: e.jusquAFace ? "face" : "distance",
+      valeurs: [
+        { id: "distance", disponible: !surArete },
+        { id: "face", disponible: !surArete && !e.sansFond && !e.etirement },
+      ],
+    },
     // Lot 10a (EX-NUM-02) : sens de la valeur tapée, une fois la face ou l'arête acquise.
     {
       id: "sens",
@@ -578,12 +612,6 @@ function optionsPT(e: EtatPousserTirer, ctx: ContexteOutil): OptionOutil[] {
   ];
 }
 
-/** Aperçu de l'étirement : la face à sa nouvelle place et le trajet de ses sommets (pas de faces latérales). */
-function apercuEtirement(contour: readonly Vec3[], dep: Vec3): Apercu {
-  const haut = contour.map((p) => add(p, dep));
-  return { lignes: [[...haut, haut[0] as Vec3], ...contour.map((p, i) => [p, haut[i] as Vec3])], faces: [haut] };
-}
-
 export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
   id: ID_POUSSER_TIRER,
   initial,
@@ -594,6 +622,16 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         if (etat.etape === 2 && etat.aretes.length > 0 && etat.origine) {
           const v = viseeVecteur(etat, ctx, ev.rayon, ev.tolerance);
           return { etat: { ...etat, vecteur: v.vecteur, inference: v.inference, texte: null, erreur: null } };
+        }
+        if (etat.etape === 2 && etat.face && etat.jusquAFace) {
+          // Lot 10a : la face visée donne la distance signée (aperçu et champ) ; sinon l'aperçu reste où il est.
+          const { cible } = viseeElement(ctx, ev);
+          if (cible?.genre !== "face" || cible.id === etat.face) return { etat: { ...etat, erreur: null } };
+          try {
+            return { etat: { ...etat, distance: distanceJusquAFace(ctx.modele, etat.face, cible.id, optionsDans(ctx)), texte: null, erreur: null } };
+          } catch (err) {
+            return { etat: { ...etat, erreur: messageErreur(err) } };
+          }
         }
         if (etat.etape === 2 && etat.normale && etat.origine) {
           const v = viseeDistance(etat, ctx, ev.rayon, ev.tolerance);
@@ -611,6 +649,15 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         };
       }
       case "clic": {
+        if (etat.etape === 2 && etat.face && etat.jusquAFace) {
+          const { cible } = viseeElement(ctx, ev);
+          if (cible?.genre !== "face") return { etat: { ...etat, erreur: CONSIGNE_JUSQU_A_FACE } };
+          try {
+            return appliquer(etat, ctx, etat.face, distanceJusquAFace(ctx.modele, etat.face, cible.id, optionsDans(ctx)), null, null);
+          } catch (err) {
+            return { etat: { ...etat, erreur: messageErreur(err) } };
+          }
+        }
         if (etat.etape === 2 && etat.face) {
           const v = viseeDistance(etat, ctx, ev.rayon, ev.tolerance);
           return appliquer(etat, ctx, etat.face, v.distance, null, null);
@@ -658,7 +705,7 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         if (etat.etirement && !faceAVoisines(ctx.modele, cible.id, ctx.dans)) return { etat: { ...etat, erreur: ERREUR_ETIRER_ISOLEE } };
         const P = intersectionRayonPlan(ev.rayon, { origine: el.exterieur[0] as Vec3, normale: el.normale }) ?? (el.exterieur[0] as Vec3);
         return {
-          etat: { ...etat, etape: 2, face: cible.id, normale: normalize(el.normale), origine: P, contour: el.exterieur, distance: 0, inference: inferenceBrute(P), texte: null, erreur: null, selectionAvant: ctx.selection },
+          etat: { ...etat, etape: 2, face: cible.id, normale: normalize(el.normale), origine: P, contour: el.exterieur, trousContour: el.trous, distance: 0, inference: inferenceBrute(P), texte: null, erreur: null, selectionAvant: ctx.selection },
           selection: [cible.id],
         };
       }
@@ -711,6 +758,12 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
   },
 };
 
+/** Distance calculée (« Jusqu'à une face ») : au millimètre près quand le centimètre l'arrondirait (P-04 : 0,075 m). */
+function formaterDistanceExacte(d: number, sep: "." | ","): string {
+  const deux = formaterLongueur(d, sep);
+  return Math.abs(Number(d.toFixed(2)) - d) < 1e-9 ? deux : `${formaterNombre(d, 3, sep)} m`;
+}
+
 function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
   {
     const sep = ctx.separateurDecimal;
@@ -729,13 +782,20 @@ function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
     }
     const valeur =
       // Lot 10a (EX-NUM-02) : distance signée (négative = creuser), affichée avant toute validation.
-      etat.texte ?? (etat.etape === 2 ? `${prefixe(etat.inference)}${formaterLongueur(etat.distance, sep)}` : formaterLongueur(0, sep));
+      etat.texte ??
+      (etat.etape === 2
+        ? etat.jusquAFace
+          ? formaterDistanceExacte(etat.distance, sep)
+          : `${prefixe(etat.inference)}${formaterLongueur(etat.distance, sep)}`
+        : formaterLongueur(0, sep));
     const dep = etat.normale ? { x: etat.normale.x * etat.distance, y: etat.normale.y * etat.distance, z: etat.normale.z * etat.distance } : null;
     return vueModif({
       consigne:
         etat.etape === 1 && etat.survolArete
           ? CONSIGNE_ARETE_SURVOL
-          : etat.sansFond
+          : etat.etape === 2 && etat.jusquAFace
+            ? CONSIGNE_JUSQU_A_FACE
+            : etat.sansFond
             ? etat.etape === 1
               ? CONSIGNE_TUBE_FACE
               : CONSIGNE_TUBE_TIRAGE
@@ -745,10 +805,10 @@ function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
       apercu:
         etat.etape === 2 && dep && Math.abs(etat.distance) > TOL
           ? etat.sansFond
-            ? apercuTube(etat.contour, dep)
+            ? apercuFace(etat.contour, etat.trousContour, dep, "tube")
             : etat.etirement
-              ? apercuEtirement(etat.contour, dep)
-              : apercuPrisme(etat.contour, dep)
+              ? apercuFace(etat.contour, etat.trousContour, dep, "etirement")
+              : apercuFace(etat.contour, etat.trousContour, dep, "prisme")
           : { lignes: [], faces: [] },
       ctx,
       survol: etat.survol ? [etat.survol] : etat.survolArete ? [etat.survolArete] : [],

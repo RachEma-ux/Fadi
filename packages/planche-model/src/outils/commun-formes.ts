@@ -80,6 +80,8 @@ export function mesures(
 export interface Apercu {
   readonly lignes: readonly (readonly Vec3[])[];
   readonly faces: readonly (readonly Vec3[])[];
+  /** (Lot 10a) Trous de chaque face, au même rang que `faces`. */
+  readonly trous?: readonly (readonly (readonly Vec3[])[])[];
 }
 
 export const APERCU_VIDE: Apercu = { lignes: [], faces: [] };
