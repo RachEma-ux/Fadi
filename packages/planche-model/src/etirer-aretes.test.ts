@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Id, type Modele, aire, ajouterPolygone, ajouterRectangle, ajouterSegment, allongerArete, couronne, deplacer, effacerArete, effacerEntites, etirerAretes, modeleVide } from "./geometrie-libre.js";
+import { type Id, type Modele, aire, ajouterPolygone, ajouterRectangle, ajouterSegment, allongerArete, couronne, deplacer, effacerArete, effacerEntites, etirerAretes, modeleVide, tuberFace } from "./geometrie-libre.js";
 import { appliquerDeltaPlanche, differencePlanche, empreintePlanche, estDeltaPlanche, lireModelePlanche } from "./delta.js";
 import { v3 } from "./vecteur.js";
 
@@ -234,6 +234,30 @@ describe("Lien surface ↔ arêtes sources (D-196)", () => {
     expect(d).not.toBeNull();
     expect(empreintePlanche(appliquerDeltaPlanche(m, d!))).toBe(empreintePlanche(r));
     expect(lireModelePlanche(JSON.parse(JSON.stringify(r)))).not.toBeNull();
+  });
+});
+
+describe("Tube sans fond : clic sur la face avec Maj (D-199)", () => {
+  it("cercle : la face disparaît, le contour devient un tube ouvert aux deux bouts, lié à son cercle", () => {
+    const m = ajouterPolygone(modeleVide(), v3(0, 0, 0), v3(0, 0, 1), 1, 24).modele;
+    const face = Object.keys(m.racine.faces)[0] as Id;
+    const r = tuberFace(m, face, 2).modele;
+    expect(faces(r)).toHaveLength(24);
+    expect(faces(r).every((f) => Math.abs(f.normale.z) < 1e-9)).toBe(true);
+    expect(aretes(r).filter((a) => a.adoucie)).toHaveLength(24);
+    expect(Object.values(r.racine.courbes)).toHaveLength(2);
+    expect(liens(r)).toHaveLength(1);
+    expect(aireTotale(r)).toBeCloseTo(24 * 2 * Math.sin(Math.PI / 24) * 2, 9);
+  });
+
+  it("face trouée : extérieur et trou deviennent deux tubes ; distance négative = sens inverse", () => {
+    const m0 = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 4, 0)).modele;
+    const m = ajouterRectangle(m0, v3(1, 1, 0), v3(2, 0, 0), v3(0, 2, 0)).modele;
+    const anneau = Object.values(m.racine.faces).find((f) => f.trous.length === 1)?.id as Id;
+    const r = tuberFace(m, anneau, -1).modele;
+    expect(faces(r).filter((f) => Math.abs(f.normale.z) < 1e-9)).toHaveLength(8);
+    expect(faces(r).filter((f) => Math.abs(f.normale.z) > 0.5)).toHaveLength(1); // la face intérieure reste
+    expect(contient(r, 0, 0, -1)).toBe(true);
   });
 });
 

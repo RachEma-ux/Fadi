@@ -1564,6 +1564,29 @@ export function allongerArete(m: Modele, arete: Id, extremite: Id, longueur: num
   });
 }
 
+/**
+ * Tube sans fond (écart Fadi, D-199) : la face disparaît et ses contours (extérieur et trous) sont balayés de
+ * `distance` selon sa normale (< 0 : sens inverse). Avec un cercle, on obtient un tube ouvert aux deux bouts ; la surface
+ * reste liée à ses arêtes sources comme un Pousser/Tirer d'arêtes.
+ */
+export function tuberFace(m: Modele, face: Id, distance: number, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (t, c) => {
+    const F = c.faces.get(face);
+    if (!F) throw new Error(`Face inconnue : ${face}`);
+    if (Math.abs(distance) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
+    const ids = new Set<Id>();
+    for (const b of [F.exterieur, ...F.trous]) {
+      for (let i = 0; i < b.length; i++) {
+        const a = areteEntre(c, b[i] as Id, b[(i + 1) % b.length] as Id);
+        if (a) ids.add(a.id);
+      }
+    }
+    c.faces.delete(face);
+    const vecteur = scale(normalize(F.normale), distance);
+    lier(t, c, o.dans, { genre: "balayage", sources: [...ids], vecteur, symetrique: false }, () => balayerInterne(t, c, ids, vecteur, false));
+  });
+}
+
 /** Arêtes données, complétées par toute la courbe de chacune. */
 function aretesEtendues(c: Ctx, aretes: readonly Id[]): Set<Id> {
   const ids = new Set<Id>();

@@ -14,7 +14,7 @@
  * l'axe verrouillé ; Alt = des deux côtés. Mêmes gestes ensuite que pour une face : correction par une distance tapée,
  * double-clic sur une autre arête = répéter, Échap.
  */
-import { type Id, allongerArete, aretesDeLaCourbe, contexte, couronne, etirerAretes, newell, pousserTirer } from "../geometrie-libre.js";
+import { type Id, allongerArete, aretesDeLaCourbe, contexte, couronne, etirerAretes, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, EPS, TOL, add, cross, dist, dot, egal, len, normalize, scale, sub } from "../vecteur.js";
@@ -50,11 +50,14 @@ export const ID_POUSSER_TIRER = "pousser-tirer";
 
 /** Consignes du mode arêtes (écart Fadi, D-196 : absentes du relevé SketchUp). */
 export const CONSIGNE_ARETE_SURVOL = "Cliquez sur l'arête à étendre en surface. | Alt = Des deux côtés.";
+/** Consignes du tube sans fond (Maj sur une face, écart Fadi D-199). */
+export const CONSIGNE_TUBE_FACE = "Tube sans fond : cliquez sur la face dont le contour sera tiré. | Maj = Revenir au Pousser/Tirer normal.";
+export const CONSIGNE_TUBE_TIRAGE = "Tube sans fond : cliquez pour fixer la hauteur ou saisissez la distance. | Maj = Revenir au Pousser/Tirer normal.";
 export const CONSIGNE_ARETE_TIRAGE =
   "Cliquez pour fixer la surface ou saisissez la distance. | Flèches = Verrouiller un axe. | ↓ = Le long de l'arête (allonger). | Alt = Des deux côtés.";
 
 type ParamsPT =
-  | { readonly genre: "face"; readonly face: Id; readonly distance: number; readonly nouvelleFace: boolean }
+  | { readonly genre: "face"; readonly face: Id; readonly distance: number; readonly nouvelleFace: boolean; readonly sansFond?: boolean }
   /** `vecteur` dans le repère du contexte d'édition. */
   | { readonly genre: "aretes"; readonly aretes: readonly Id[]; readonly vecteur: Vec3; readonly symetrique: boolean }
   /** Courbe fermée tirée dans son plan : `distance` > 0 vers l'extérieur. */
@@ -89,6 +92,8 @@ export interface EtatPousserTirer {
   readonly nouvelleFace: boolean;
   /** Alt : mode étirement (bascule). */
   readonly etirement: boolean;
+  /** Maj sur une face (écart Fadi) : tube sans fond — la face disparaît, son contour est tiré. */
+  readonly sansFond: boolean;
   readonly face: Id | null;
   /** Mode arêtes (écart Fadi) : arêtes étendues, leurs segments monde (aperçu), vecteur monde visé. */
   readonly aretes: readonly Id[];
@@ -118,6 +123,7 @@ function initial(): EtatPousserTirer {
     etape: 1,
     nouvelleFace: false,
     etirement: false,
+    sansFond: false,
     face: null,
     aretes: [],
     segments: [],
@@ -175,12 +181,13 @@ function appliquer(
   if (Math.abs(distance) < EPS) return { etat: { ...retour(e), texte, erreur: "Distance nulle : rien n'a été poussé ni tiré." } };
   const base = remplace ? remplace.avant : ctx.modele;
   try {
-    const r = pousserTirer(base, face, distance, { ...optionsDans(ctx), nouvelleFace: e.nouvelleFace });
+    const sansFond = remplace?.params.genre === "face" ? remplace.params.sansFond === true : e.sansFond;
+    const r = sansFond ? tuberFace(base, face, distance, optionsDans(ctx)) : pousserTirer(base, face, distance, { ...optionsDans(ctx), nouvelleFace: e.nouvelleFace });
     const encore = contexte(r.modele, ctx.dans).faces[face] !== undefined;
     return {
-      etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: { genre: "face", face, distance, nouvelleFace: e.nouvelleFace } } },
+      etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: { genre: "face", face, distance, nouvelleFace: e.nouvelleFace, ...(sansFond ? { sansFond: true } : {}) } } },
       modele: r.modele,
-      selection: encore ? [face] : idsSelectionnables(r.rapport.crees).filter((id) => id.startsWith("f")),
+      selection: encore && !sansFond ? [face] : idsSelectionnables(r.rapport.crees).filter((id) => id.startsWith("f")),
       operation: "Pousser/Tirer",
       ...(remplace ? { remplaceDernier: true } : {}),
     };
@@ -374,6 +381,16 @@ function apercuSpecial(e: EtatPousserTirer, p: ParamsArete): Apercu | null {
   return null;
 }
 
+/** Aperçu du tube sans fond : contour translaté, montants et faces latérales seulement (ni fond ni dessus). */
+function apercuTube(contour: readonly Vec3[], dep: Vec3): Apercu {
+  const p = apercuPrisme(contour, dep);
+  const faces = contour.map((a, i) => {
+    const b = contour[(i + 1) % contour.length] as Vec3;
+    return [a, b, add(b, dep), add(a, dep)];
+  });
+  return { lignes: p.lignes, faces };
+}
+
 /** Aperçu : parallélogrammes balayés par les segments. */
 function apercuAretes(segments: readonly Segment[], v: Vec3, symetrique: boolean): Apercu {
   const depart = symetrique ? scale(v, -1) : { x: 0, y: 0, z: 0 };
@@ -492,6 +509,8 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         if (ev.etat !== "enfoncee") return { etat };
         const modeAretes = etat.etape === 2 ? etat.aretes.length > 0 : etat.survolArete !== null;
         if (ev.touche === "Ctrl") return { etat: { ...etat, nouvelleFace: !etat.nouvelleFace } };
+        // Maj (bascule, écart Fadi) : tube sans fond sur une face ; sans effet en mode arêtes.
+        if (ev.touche === "Maj") return modeAretes ? { etat } : { etat: { ...etat, sansFond: !etat.sansFond } };
         if (ev.touche === "Alt") return modeAretes ? { etat: { ...etat, symetrique: !etat.symetrique } } : { etat: { ...etat, etirement: !etat.etirement } };
         if (ev.touche === "FlecheBas" && etat.etape === 2 && etat.aretes.length > 0) {
           const s = plusProche(etat.segments, etat.origine as Vec3);
@@ -533,10 +552,17 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
       etat.texte ?? (etat.etape === 2 ? `${prefixe(etat.inference)}${formaterLongueur(Math.abs(etat.distance), sep)}` : formaterLongueur(0, sep));
     const dep = etat.normale ? { x: etat.normale.x * etat.distance, y: etat.normale.y * etat.distance, z: etat.normale.z * etat.distance } : null;
     return vueModif({
-      consigne: etat.etape === 1 && etat.survolArete ? CONSIGNE_ARETE_SURVOL : consigneDe(ID_POUSSER_TIRER, etat.etape - 1),
+      consigne:
+        etat.etape === 1 && etat.survolArete
+          ? CONSIGNE_ARETE_SURVOL
+          : etat.sansFond
+            ? etat.etape === 1
+              ? CONSIGNE_TUBE_FACE
+              : CONSIGNE_TUBE_TIRAGE
+            : consigneDe(ID_POUSSER_TIRER, etat.etape - 1),
       mesures: mesures(libelleMesuresDe(ID_POUSSER_TIRER, etat.etape - 1), valeur, contexteSaisie("longueur", ctx)),
       inference: etat.etape === 2 ? etat.inference : null,
-      apercu: etat.etape === 2 && dep && Math.abs(etat.distance) > TOL ? apercuPrisme(etat.contour, dep) : { lignes: [], faces: [] },
+      apercu: etat.etape === 2 && dep && Math.abs(etat.distance) > TOL ? (etat.sansFond ? apercuTube(etat.contour, dep) : apercuPrisme(etat.contour, dep)) : { lignes: [], faces: [] },
       ctx,
       survol: etat.survol ? [etat.survol] : etat.survolArete ? [etat.survolArete] : [],
       erreur: etat.erreur,

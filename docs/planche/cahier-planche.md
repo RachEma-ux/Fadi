@@ -512,7 +512,11 @@ le long de l'arête cliquée et **allonge** (ou raccourcit) la ligne ; la surfac
 recalculée quand elles bougent ; le lien se rompt si la surface elle-même est modifiée ; effacer une source retire, comme pour toute arête, les faces qu'elle bordait). CA-PPT-10 : cercle de rayon 1,
 tiré dans son plan de `0,5` vers l'extérieur → disque + couronne, contour décalé de rayon 1 + 0,5 / cos(π/24). CA-PPT-11 :
 segment de 4 m, ↓ puis `1` → une seule arête de 5 m. CA-PPT-12 : segment tiré de 2 m vers le haut puis l'arête source
-déplacée de 1 m → la surface suit (même aire, arête haute déplacée). CA-PPT-7 : segment de 4 m, ↑ puis `2,7` →
+déplacée de 1 m → la surface suit (même aire, arête haute déplacée). **Tube sans fond (fadi, D-199)** : **Maj** (bascule) puis clic sur une
+face → la face disparaît et son contour est tiré selon sa normale (cercle → tube ouvert aux deux bouts, lié à son cercle) ;
+consignes « Tube sans fond : cliquez sur la face dont le contour sera tiré. \| Maj = Revenir au Pousser/Tirer normal. » puis
+« Tube sans fond : cliquez pour fixer la hauteur ou saisissez la distance. \| … ». CA-PPT-13 : cercle de rayon 1, Maj, clic
+dans le cercle, `2` → 24 faces latérales, aucune face horizontale. CA-PPT-7 : segment de 4 m, ↑ puis `2,7` →
 une face verticale de 10,8 m², un pas d'annulation. CA-PPT-8 : arête d'un cercle de 24 segments, ↑ puis `2` → tube de 24
 faces lisses sur la face de base (25 faces). CA-PPT-9 : Alt puis ← et `1` sur un segment de 4 m → surface de 8 m².
 

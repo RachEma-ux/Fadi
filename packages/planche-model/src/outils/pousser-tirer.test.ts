@@ -3,7 +3,7 @@ import { type Id, aire, ajouterPolygone, ajouterRectangle, ajouterSegment, model
 import { v3 } from "../vecteur.js";
 import { etape } from "./commun-formes.js";
 import { aretes, boite, clicVers, contientPoint, emprise, faces, partie, saisie, sommets, survolVers, touche, volumeAbsolu, echap } from "./essais-modification.js";
-import { CONSIGNE_ARETE_SURVOL, CONSIGNE_ARETE_TIRAGE, machinePousserTirer } from "./pousser-tirer.js";
+import { CONSIGNE_ARETE_SURVOL, CONSIGNE_ARETE_TIRAGE, CONSIGNE_TUBE_FACE, CONSIGNE_TUBE_TIRAGE, machinePousserTirer } from "./pousser-tirer.js";
 
 const sol = () => ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
 
@@ -187,6 +187,25 @@ describe("Pousser/Tirer d'arêtes (écart Fadi, D-196)", () => {
     p.jouer(saisie("2"));
     expect(emprise(p.modele).max.x).toBeCloseTo(6, 9);
     expect(p.historique).toHaveLength(2);
+  });
+});
+
+describe("Tube sans fond (Maj sur une face, D-199)", () => {
+  it("Maj, clic dans le cercle, « 2 » : tube sans fond ni dessus ; correction « 3 » garde le tube ; Maj revient au normal", () => {
+    const m = ajouterPolygone(modeleVide(), v3(0, 0, 0), v3(0, 0, 1), 1, 24).modele;
+    const p = partie(machinePousserTirer, m).jouer(touche("Maj"));
+    expect(p.vue().consigne).toBe(CONSIGNE_TUBE_FACE);
+    p.jouer(clicVers(v3(0.2, 0.1, 0)));
+    expect(p.vue().consigne).toBe(CONSIGNE_TUBE_TIRAGE);
+    p.jouer(saisie("2"));
+    expect(faces(p.modele)).toHaveLength(24);
+    expect(emprise(p.modele).max.z).toBeCloseTo(2, 9);
+    p.jouer(saisie("3"));
+    expect(faces(p.modele)).toHaveLength(24);
+    expect(emprise(p.modele).max.z).toBeCloseTo(3, 9);
+    expect(p.historique).toHaveLength(2);
+    p.jouer(touche("Maj"));
+    expect(p.vue().consigne).toBe(etape("pousser-tirer", 0).consigne);
   });
 });
 
