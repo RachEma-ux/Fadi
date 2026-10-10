@@ -231,6 +231,9 @@ describe("Règle d'or — commandes d'objet livrées (Objets O-1, D-203)", () =>
     const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
     expect(source).toContain("...COMMANDES_OBJETS.map((c) =>");
     expect(source).toContain('"data-planche-commande": c.id');
+    // « Outils ▾ » : groupe « Objets » alimenté par la même liste ; nom visible sous l'icône dans la barre d'actions.
+    expect(source).toContain("commandes={COMMANDES_OBJETS.map((c) =>");
+    expect(source).toContain("texte: t(c.court)");
   });
 });
 

@@ -14,15 +14,17 @@ export interface CommandeObjet {
   readonly picto: string;
   /** Libellé au catalogue de messages. */
   readonly libelle: CleMessage;
+  /** Nom court, visible sous l'icône dans la barre d'actions. */
+  readonly court: CleMessage;
   /** Raccourci canonique (forme du catalogue : « Ctrl+Maj+G »). */
   readonly raccourci: string;
 }
 
 /** Ordre d'affichage dans la barre d'actions : créer un objet, puis le dissoudre. */
 export const COMMANDES_OBJETS: readonly CommandeObjet[] = [
-  { id: "groupe", picto: "⊞", libelle: "planche.menu.groupe", raccourci: "Ctrl+G" },
-  { id: "composant", picto: "❖", libelle: "planche.menu.composant", raccourci: "G" },
-  { id: "eclater", picto: "⊠", libelle: "planche.menu.eclater", raccourci: "Ctrl+Maj+G" },
+  { id: "groupe", picto: "⊞", libelle: "planche.menu.groupe", court: "planche.objets.court.groupe", raccourci: "Ctrl+G" },
+  { id: "composant", picto: "❖", libelle: "planche.menu.composant", court: "planche.objets.court.composant", raccourci: "G" },
+  { id: "eclater", picto: "⊠", libelle: "planche.menu.eclater", court: "planche.objets.court.eclater", raccourci: "Ctrl+Maj+G" },
 ];
 
 export const commandeObjet = (id: IdCommandeObjet): CommandeObjet => COMMANDES_OBJETS.find((c) => c.id === id) as CommandeObjet;

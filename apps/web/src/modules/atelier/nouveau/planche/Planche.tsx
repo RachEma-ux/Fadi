@@ -1859,17 +1859,6 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         onDocquee={setHautDocquee}
       />
     ));
-  const boutonOutils = (
-    <BoutonOutils
-      outilId={outilId}
-      raison={raisonDe}
-      onChoisir={choisirOutil}
-      barres={ui.barresOutils}
-      onAfficherBarre={afficherBarre}
-      onReinitialiser={() => etatUi.set((u) => ({ barresOutils: reinitialiserDisposition(u.barresOutils) }))}
-    />
-  );
-
   /** Objets O-1 (D-203) : état de la sélection pour la disponibilité commune au menu, à la barre et au clavier. */
   const etatSelectionObjets = (): EtatSelectionObjets => {
     const m = hist.present.modele;
@@ -1879,6 +1868,25 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     return { lecture: readOnly, entites: entites.length, objets: objets.length, verrouilles: objets.length > 0 && objets.every((id) => c.occurrences[id]!.verrouille) };
   };
   const executerObjet = (id: IdCommandeObjet) => (id === "groupe" ? grouperSelection() : id === "composant" ? ouvrirDialogueComposant() : eclaterSelection());
+
+  const boutonOutils = (
+    <BoutonOutils
+      commandes={[
+        ...COMMANDES_OBJETS.map((c) => {
+          const d = disponibiliteObjet(c.id, etatSelectionObjets());
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.objets.motif.vide"), executer: () => executerObjet(c.id) };
+        }),
+        // Objets O-2 : Fermer / Fermer tout, grisés hors d'un groupe ou d'un composant.
+        ...COMMANDES_CONTEXTE.map((c) => ({ id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: dans === undefined ? t("planche.contexte.motif") : null, executer: () => fermerContexte(c.id) })),
+      ]}
+      outilId={outilId}
+      raison={raisonDe}
+      onChoisir={choisirOutil}
+      barres={ui.barresOutils}
+      onAfficherBarre={afficherBarre}
+      onReinitialiser={() => etatUi.set((u) => ({ barresOutils: reinitialiserDisposition(u.barresOutils) }))}
+    />
+  );
 
   /** Barre d'actions flottante (D-195) : annuler / rétablir du brouillon local et Détacher ; elle suit la Planche détachée. */
   const libelleDetacher = detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter");
@@ -1894,6 +1902,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
             id: c.id,
             picto: c.picto,
             libelle: nom,
+            // Nom visible sous l'icône (règle d'or : bouton nommé au toucher, pas seulement un pictogramme).
+            texte: t(c.court),
             titre: d.disponible ? `${nom} (${afficherRaccourci(c.raccourci)})` : `${nom} — ${t(d.motif ?? "planche.objets.motif.vide")}`,
             onClick: () => executerObjet(c.id),
             disabled: !d.disponible,

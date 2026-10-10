@@ -201,6 +201,19 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   await page.keyboard.press("Control+g");
   await page.waitForTimeout(80);
   check("Ctrl+G : regroupé", (await objets(page)) === 1);
+  check("barre d'actions : nom visible sous l'icône (« Grouper », « Composant », « Éclater »)", ((await bouton(page, "groupe").textContent()) ?? "").includes("Grouper") && ((await bouton(page, "eclater").textContent()) ?? "").includes("Éclater"));
+  // « Outils ▾ » : groupe « Objets » ; Éclater depuis la liste.
+  await page.locator("[data-planche-outils-bouton]").click();
+  await page.locator('[data-outils-famille="objets"]').click();
+  const depuisListe = page.locator('[data-outils-commande="eclater"]');
+  check("« Outils ▾ » : groupe Objets avec Éclater et son raccourci", (await depuisListe.count()) === 1 && /Ctrl\+Maj\+G/.test((await depuisListe.textContent()) ?? ""), (await depuisListe.textContent()) ?? "");
+  await depuisListe.click();
+  await page.waitForTimeout(80);
+  check("Éclater depuis « Outils ▾ » : géométrie libre", (await objets(page)) === 0);
+  await vue.focus();
+  await page.keyboard.press("Control+a");
+  await page.keyboard.press("Control+g");
+  await page.waitForTimeout(80);
 
   // Control appuyé avant G dans Pousser/Tirer, sélection vide : « Nouvelle face » ne reste pas allumée.
   await page.keyboard.press("Escape");
