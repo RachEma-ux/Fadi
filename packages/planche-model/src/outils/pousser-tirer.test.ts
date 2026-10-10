@@ -3,7 +3,7 @@ import { type Id, ERREUR_ETIRER_ISOLEE, aire, ajouterPolygone, ajouterRectangle,
 import { v3 } from "../vecteur.js";
 import { etape } from "./commun-formes.js";
 import { aretes, boite, clicVers, contientPoint, emprise, faces, partie, saisie, sommets, survolVers, touche, volumeAbsolu, echap } from "./essais-modification.js";
-import { CONSIGNE_ARETE_SURVOL, CONSIGNE_ARETE_TIRAGE, CONSIGNE_TUBE_FACE, CONSIGNE_TUBE_TIRAGE, ERREUR_ALLONGER_COURBE, machinePousserTirer } from "./pousser-tirer.js";
+import { CONSIGNE_ARETE_SURVOL, CONSIGNE_ARETE_TIRAGE, CONSIGNE_TUBE_FACE, CONSIGNE_TUBE_TIRAGE, ERREUR_ALLONGER_COURBE, ERREUR_CONSERVER_HORS_EXTRUSION, actionExtrusion, machinePousserTirer } from "./pousser-tirer.js";
 
 const sol = () => ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
 
@@ -300,5 +300,27 @@ describe("Modes explicites (lot Planche 8, D-201)", () => {
     // En mode Normal, la même face se pousse comme avant (boîte).
     p.configurer("face", "normal").jouer(clicVers(v3(1, 1, 0)), saisie("1"));
     expect(faces(p.modele)).toHaveLength(6);
+  });
+});
+
+describe("Action d'extrusion typée (lot 9, EX-CMD-02 ; cas A-02, A-03)", () => {
+  it("A-03 : action, bouton et frappe seule donnent le même état", () => {
+    const parAction = partie(machinePousserTirer, sol());
+    parAction.etat = actionExtrusion(parAction.etat, { type: "set-operation", operation: "open-surface" }).etat;
+    const parBouton = partie(machinePousserTirer, sol()).configurer("face", "tube");
+    const parTouche = partie(machinePousserTirer, sol()).seule("Maj");
+    expect(parAction.vue().options).toEqual(parBouton.vue().options);
+    expect(parTouche.vue().options).toEqual(parBouton.vue().options);
+  });
+
+  it("A-02 : Étirement puis Surface ouverte — « Conserver la face » refusé avec son motif, aucun drapeau périmé", () => {
+    const p = partie(machinePousserTirer, sol());
+    p.etat = actionExtrusion(p.etat, { type: "set-operation", operation: "stretch-face" }).etat;
+    p.etat = actionExtrusion(p.etat, { type: "set-operation", operation: "open-surface" }).etat;
+    const t = actionExtrusion(p.etat, { type: "set-option", option: "keep-start-face", value: true });
+    expect(t.etat.erreur).toBe(ERREUR_CONSERVER_HORS_EXTRUSION);
+    expect(t.etat.nouvelleFace).toBe(false);
+    expect(t.etat.etirement).toBe(false);
+    expect(t.etat.sansFond).toBe(true);
   });
 });

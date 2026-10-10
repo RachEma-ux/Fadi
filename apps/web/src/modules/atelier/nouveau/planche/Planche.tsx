@@ -101,6 +101,8 @@ import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, afficherRaccourci, commenceS
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { BarreActions } from "../panneaux/BarreActions";
+import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
+import { useNavigationBarre } from "../navigation-barre";
 import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { BoutonOutils } from "./BoutonOutils";
@@ -330,6 +332,15 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const grilleDom = useRef<HTMLDivElement | null>(null);
   // Lot 9 (EX-CMD-04) : frappe seule d'un modificateur en attente ; envoi par référence (écouteurs posés une fois).
   const frappeRef = useRef<EtatFrappeSeule>(FRAPPE_SEULE_VIDE);
+  // Lot 9 (EX-CMD-06) : barres de la Planche au clavier — une halte de tabulation chacune, flèches entre les boutons.
+  const railRef = useRef<HTMLDivElement | null>(null);
+  const modificateursRef = useRef<HTMLDivElement | null>(null);
+  const coupeRef = useRef<HTMLDivElement | null>(null);
+  const optionsRef = useRef<HTMLDivElement | null>(null);
+  const naviguerRail = useNavigationBarre(railRef, "vertical");
+  const naviguerModificateurs = useNavigationBarre(modificateursRef);
+  const naviguerCoupe = useNavigationBarre(coupeRef);
+  const naviguerOptions = useNavigationBarre(optionsRef);
   const envoyerSeuleRef = useRef<(t: ModificateurSeul) => void>(() => {});
   const touchesTenues = useRef(new Set<Touche>());
 
@@ -666,6 +677,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const executerObjetRef = useRef<(id: IdCommandeObjet) => void>(() => {});
   const executerNavigateurRef = useRef<(id: IdCommandeNavigateur) => void>(() => {});
   const executerVueRef = useRef<(id: IdCommandeVue) => void>(() => {});
+  const executerCommandeRef = useRef<(c: EntreeRegistre) => void>(() => {});
   const etatVueRef = useRef<() => { entites: number; isole: boolean; dansObjet: boolean }>(() => ({ entites: 0, isole: false, dansObjet: false }));
   const selectionDe = useCallback((genre: "faces" | "aretes" | "occurrences", m = histRef.current.present.modele) => {
     const c = contexteDe(m, dansRef.current);
@@ -1630,26 +1642,12 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         eclaterSelection();
         return;
       }
-      // Objets O-5 : Alt + Maj + I isoler / quitter l'isolement, Alt + Maj + R masquer le reste du modèle (dans un objet ouvert).
-      if (!mod && e.altKey && e.shiftKey && !dansMesures && (e.code === "KeyI" || e.code === "KeyR")) {
+      // Lot 9 (EX-CMD-01) : registre unique — Alt + Maj + lettre (objets, Navigateur, vue, lien) et F2, une seule
+      // résolution (touche physique sous Alt pour macOS), la disponibilité de la famille fait foi.
+      const commande = commandeDuClavier(e);
+      if (commande && routeeParLeRegistre(commande) && !dansMesures) {
         e.preventDefault();
-        const id: IdCommandeVue = e.code === "KeyI" ? "isoler" : "masquer-reste";
-        if (disponibiliteVue(id, etatVueRef.current()).disponible) executerVueRef.current(id);
-        return;
-      }
-      // Objets O-4 : Alt + Maj + G nouveau groupe vide, Alt + Maj + V déplacer vers un groupe, F2 renommer.
-      if ((!mod && e.altKey && e.shiftKey && !dansMesures && (e.code === "KeyG" || e.code === "KeyV")) || (e.key === "F2" && !mod && !e.altKey && !e.shiftKey)) {
-        e.preventDefault();
-        const id: IdCommandeNavigateur = e.key === "F2" ? "renommer" : e.code === "KeyG" ? "groupe-vide" : "deplacer-vers";
-        if (disponibiliteNavigateur(id, etatSelectionObjetsRef.current()).disponible) executerNavigateurRef.current(id);
-        return;
-      }
-      // Objets O-3 : Alt + Maj + U rendre unique, Alt + Maj + D diviser, Alt + Maj + C diviser en segments (touche physique :
-      // sous macOS, Option change le caractère produit).
-      if (!mod && e.altKey && e.shiftKey && !dansMesures && (e.code === "KeyU" || e.code === "KeyD" || e.code === "KeyC")) {
-        e.preventDefault();
-        const id: IdCommandeObjet = e.code === "KeyU" ? "rendre-unique" : e.code === "KeyD" ? "diviser" : "diviser-courbe";
-        if (disponibiliteObjet(id, etatSelectionObjetsRef.current()).disponible) executerObjetRef.current(id);
+        executerCommandeRef.current(commande);
         return;
       }
       // Lot 5 (objets) : G composant, K arêtes arrière, Ctrl + A tout, Ctrl + Maj + I inverser, Ctrl + C / X / V presse-papiers.
@@ -1695,12 +1693,6 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       if (estRecherche(e)) {
         e.preventDefault();
         setRecherche(true);
-        return;
-      }
-      // Objets O-2 : Alt + Maj + K détache le lien de la surface sélectionnée (touche physique : Option change le caractère).
-      if (!mod && e.altKey && e.shiftKey && e.code === "KeyK" && !dansMesures) {
-        e.preventDefault();
-        detacherLienSelection();
         return;
       }
       // Objets O-2 : Maj + Échap ferme le groupe ouvert, Maj + Origine revient à la racine (avec n'importe quel outil).
@@ -1757,7 +1749,11 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       const r = relacheFrappe(frappeRef.current, etat ?? e.key);
       frappeRef.current = r.etat;
       // Jamais dans un champ (Mesures, recherche, dialogue) ni pendant une frappe de valeur : le texte garde ses touches.
-      if (r.seule && !champSaisie(e.target) && !rechercheRef.current && !texteRef.current) envoyerSeuleRef.current(r.seule);
+      // Ni depuis une barre (A-08 : Maj + flèches sur la poignée déplace la barre, ses flèches ne passent pas ici).
+      // (`closest` plutôt qu'`instanceof Element` : la fenêtre du plan détaché a ses propres constructeurs.)
+      const el = e.target as { closest?: (s: string) => unknown } | null;
+      const dansBarre = typeof el?.closest === "function" && el.closest('[role="toolbar"]') !== null;
+      if (r.seule && !dansBarre && !champSaisie(e.target) && !rechercheRef.current && !texteRef.current) envoyerSeuleRef.current(r.seule);
     };
     // §5.5 (choix Fadi) : à la perte du focus, les touches tenues sont relâchées (un Ctrl « collé » bloquerait tout).
     const surPerte = () => {
@@ -2087,6 +2083,21 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       return { id: c.id, picto: c.picto, nom, raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.objets.motif.vide"), executer: () => executerVue(c.id) };
     });
   executerVueRef.current = executerVue;
+  /** Lot 9 : exécution d'une entrée du registre au clavier, après la disponibilité de sa famille (mêmes motifs qu'ailleurs). */
+  executerCommandeRef.current = (c: EntreeRegistre) => {
+    const s = etatSelectionObjets();
+    if (c.famille === "objet") {
+      const id = c.id as IdCommandeObjet;
+      if (disponibiliteObjet(id, s).disponible) executerObjet(id);
+    } else if (c.famille === "navigateur") {
+      const id = c.id as IdCommandeNavigateur;
+      if (disponibiliteNavigateur(id, s).disponible) executerNavigateur(id);
+    } else if (c.famille === "vue") {
+      const id = c.id as IdCommandeVue;
+      if (disponibiliteVue(id, etatVue()).disponible) executerVue(id);
+    } else if (c.famille === "lien") detacherLienSelection();
+    else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
+  };
   etatVueRef.current = etatVue;
   etatSelectionObjetsRef.current = etatSelectionObjets;
   executerObjetRef.current = executerObjet;
@@ -2234,7 +2245,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
           <span className="outil-libelle" aria-hidden="true">{t("planche.rechercher")}</span>
         </button>
       </div>
-      <div className="planche-outils" role="toolbar" aria-label={t("planche.outils")} aria-orientation="vertical" data-planche-outils-replies={outilsReplies}>
+      <div ref={railRef} onKeyDown={naviguerRail} className="planche-outils" role="toolbar" aria-label={t("planche.outils")} aria-orientation="vertical" data-planche-outils-replies={outilsReplies}>
         <button type="button" className="outil outil-fixe-haut planche-outils-bascule" aria-expanded={!outilsReplies} onClick={() => setOutilsReplies(!outilsReplies)} title={outilsReplies ? t("planche.outils.deplier") : t("planche.outils.replier")} aria-label={outilsReplies ? t("planche.outils.deplier") : t("planche.outils.replier")} data-planche-outils-bascule>
           <span aria-hidden="true" className="outil-picto">{outilsReplies ? "»" : "«"}</span>
           <span className="outil-libelle" aria-hidden="true">{t("planche.outils.replier")}</span>
@@ -2449,7 +2460,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       )}
       {dialogueComposant && <DialogueComposant nomDefaut={`${t("planche.composant.defaut")} ${Object.values(hist.present.modele.definitions).filter((d) => d.genre === "composant").length + 1}`} onCreer={creerComposant} onAnnuler={() => setDialogueComposant(false)} />}
       {planSelectionne && (
-        <div className="planche-coupe-barre" role="toolbar" aria-label={t("planche.coupe.selectionne")} data-planche-coupe>
+        <div ref={coupeRef} onKeyDown={naviguerCoupe} className="planche-coupe-barre" role="toolbar" aria-label={t("planche.coupe.selectionne")} data-planche-coupe>
           <span>{t("planche.coupe.selectionne")}</span>
           <button type="button" onClick={() => appliquer(modifierPlanDeCoupe(contexte(), planSelectionne.id, { inverse: !planSelectionne.inverse }), t("planche.coupe.inverser"))} data-planche-coupe-inverser>
             {t("planche.coupe.inverser")}
@@ -2587,7 +2598,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       </footer>
 
       {vue.options && vue.options.length > 0 && (
-        <div className="planche-options-outil" role="group" aria-label={t("planche.options")} data-planche-options>
+        <div ref={optionsRef} onKeyDown={naviguerOptions} className="planche-options-outil" role="toolbar" aria-label={t("planche.options")} data-planche-options>
           {/* Écran étroit : seuls les groupes utilisables pour la cible courante (sinon trois rangées au téléphone). */}
           {vue.options.filter((o) => !etroit || o.valeurs.some((v) => v.disponible)).map((o) => (
             <span key={o.id} className="planche-option" role="group" aria-label={libelleOption(outilId, o.id)} data-planche-option={o.id}>
@@ -2615,7 +2626,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       )}
       <div className="planche-saisie">
       {etroit && <span className="canevas-bas">{aideBouton}</span>}
-      <div className="planche-modificateurs" role="toolbar" aria-label={t("planche.modificateurs")} data-planche-modificateurs>
+      <div ref={modificateursRef} onKeyDown={naviguerModificateurs} className="planche-modificateurs" role="toolbar" aria-label={t("planche.modificateurs")} data-planche-modificateurs>
         <button
           type="button"
           aria-pressed={majVerrouillee}

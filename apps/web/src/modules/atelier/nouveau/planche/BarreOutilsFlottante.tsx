@@ -12,6 +12,7 @@ import type { Outil } from "@parcours/planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { pasClavier } from "../panneaux/barre-actions-position";
 import { barreDe } from "./barres-outils";
+import { useNavigationBarre } from "../navigation-barre";
 import { borner, placerBarre, positionDefautBarre, positionDocquee, type Position, type Taille, type Zone } from "./barres-outils-disposition";
 import { titreOperation } from "./BoutonOutils";
 import { t } from "../messages";
@@ -48,6 +49,8 @@ function tailleDe(el: HTMLElement): Taille {
 export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, onChoisir, onFermer, reference, fenetreCle = "", onDocquee }: PropsBarreOutilsFlottante) {
   const ui = useEtatUi();
   const racine = useRef<HTMLDivElement | null>(null);
+  // Lot 9 (EX-CMD-06) : une halte de tabulation, flèches entre les opérations (motif W3C APG Toolbar).
+  const naviguer = useNavigationBarre(racine);
   const [glisser, setGlisser] = useState<Position | null>(null);
   const [defaut, setDefaut] = useState<{ pos: Position; largeur?: number } | null>(null);
   const depart = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
@@ -190,6 +193,7 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
       className={`planche-barre-outils${glisser ? " en-glisser" : ""}${telephone ? " est-docquee" : ""}`}
       role="toolbar"
       aria-label={t("outils.barre", { outil: nomOutil(outil) })}
+      onKeyDown={naviguer}
       style={style}
       data-barre-outils={id}
       data-barre-outils-docquee={telephone ? "" : undefined}

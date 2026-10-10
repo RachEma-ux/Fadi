@@ -256,6 +256,8 @@ export function raccourciClavier(c: Cle): string {
   // touche physique (`code`). Une lettre lisible dans `key` reste prioritaire (dispositions AZERTY, QWERTZ…).
   else if (c.altKey && !/^[a-z]$/i.test(c.key) && c.code && /^Key[A-Z]$/.test(c.code)) parts.push(c.code.slice(3));
   else if (c.key.length === 1) parts.push(c.key.toUpperCase());
+  // Lot 9 : touches de fonction (F2 Renommer) — le registre des commandes les résout comme les autres.
+  else if (/^F([1-9]|1[0-2])$/.test(c.key)) parts.push(c.key);
   else return "";
   return normaliserRaccourci(parts.join("+"));
 }

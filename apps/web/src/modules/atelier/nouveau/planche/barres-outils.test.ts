@@ -234,8 +234,8 @@ describe("Règle d'or — commandes d'objet livrées (Objets O-1, D-203)", () =>
     // « Outils ▾ » : groupe « Objets » alimenté par la même liste ; nom visible sous l'icône dans la barre d'actions.
     expect(source).toMatch(/commandes=\{\[\s*\.\.\.COMMANDES_OBJETS\.map\(\(c\) =>/);
     expect(source).toContain("texte: t(c.court)");
-    // Objets O-3 : les raccourcis Alt + Maj lisent la touche physique (macOS) et la disponibilité commune.
-    expect(source).toContain('e.code === "KeyU" ? "rendre-unique" : e.code === "KeyD" ? "diviser" : "diviser-courbe"');
+    // Lot 9 : les raccourcis passent par le registre unique (touche physique sous Alt, disponibilité de la famille).
+    expect(source).toContain("const commande = commandeDuClavier(e);");
     expect(source).toContain("if (c.contextuelle && !d.disponible) return [];");
   });
 });

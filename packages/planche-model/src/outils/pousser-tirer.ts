@@ -472,6 +472,52 @@ function configurerPT(e: EtatPousserTirer, option: string, valeur: string): Tran
   return { etat: e };
 }
 
+/**
+ * Action d'extrusion typée (lot 9, EX-CMD-02, contrat de la V1 adapté) : boutons, clavier et toucher envoient la même
+ * action sémantique, validée ici et non par l'interface (un bouton grisé n'est pas une barrière). Unions finies ; les
+ * opérations de la V1 qui ne sont pas encore livrées par Pousser/Tirer (balayage de profil, révolution, texte 3D, bande
+ * annulaire choisie à la main) sont hors de ce type.
+ */
+export type OperationExtrusion = "extrude-face" | "stretch-face" | "open-surface" | "sweep-edges" | "lengthen-edge";
+export type OptionExtrusion = "keep-start-face" | "symmetric";
+export type ActionExtrusion =
+  | { readonly type: "set-operation"; readonly operation: OperationExtrusion }
+  | { readonly type: "set-option"; readonly option: OptionExtrusion; readonly value: boolean }
+  | { readonly type: "cancel" };
+
+export const ERREUR_CONSERVER_HORS_EXTRUSION = "« Conserver la face de départ » ne s'applique qu'à l'extrusion d'une face.";
+export const ERREUR_SYMETRIQUE_HORS_ARETE = "« Des deux côtés » ne s'applique qu'au balayage d'arêtes.";
+
+export function actionExtrusion(e: EtatPousserTirer, a: ActionExtrusion): Transition<EtatPousserTirer> {
+  switch (a.type) {
+    case "cancel":
+      return e.etape === 2 ? { etat: { ...retour(e), texte: null, erreur: null }, selection: [] } : { etat: e };
+    case "set-operation":
+      switch (a.operation) {
+        case "extrude-face":
+          return configurerPT(e, "face", "normal");
+        case "stretch-face":
+          return configurerPT(e, "face", "etirement");
+        case "open-surface":
+          return configurerPT(e, "face", "tube");
+        case "sweep-edges":
+          return configurerPT(e, "arete", "normal");
+        case "lengthen-edge":
+          return configurerPT(e, "arete", "allonger");
+      }
+      return { etat: e };
+    case "set-option":
+      if (a.option === "keep-start-face") {
+        const m = modeFace(e);
+        // A-02 : après Étirement ou Surface ouverte, l'option est sans objet — refus nommé, aucun drapeau périmé.
+        if (m !== "normal" && m !== "nouvelle-face") return { etat: { ...e, erreur: ERREUR_CONSERVER_HORS_EXTRUSION } };
+        return configurerPT(e, "face", a.value ? "nouvelle-face" : "normal");
+      }
+      if (modeArete(e) === "allonger" || (e.etape === 2 && e.aretes.length === 0)) return { etat: { ...e, erreur: ERREUR_SYMETRIQUE_HORS_ARETE } };
+      return configurerPT(e, "arete", a.value ? "deux-cotes" : "normal");
+  }
+}
+
 /** Options affichées : les modes de face hors d'une arête, les modes d'arête sur une arête ; un mode hors de propos est grisé. */
 function optionsPT(e: EtatPousserTirer, ctx: ContexteOutil): OptionOutil[] {
   const surArete = e.etape === 2 ? e.aretes.length > 0 : e.survolArete !== null;

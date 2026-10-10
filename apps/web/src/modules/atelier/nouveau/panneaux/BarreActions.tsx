@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { t } from "../messages";
+import { useNavigationBarre } from "../navigation-barre";
 import { borner, pasClavier, positionParDefaut, type Position, type Taille, type Zone } from "./barre-actions-position";
 
 export interface ActionBarre {
@@ -57,6 +58,8 @@ function tailleDe(el: HTMLElement): Taille {
 export function BarreActions({ annuler, retablir, autres = [], reference, reserve, fenetreCle = "" }: PropsBarreActions) {
   const ui = useEtatUi();
   const racine = useRef<HTMLDivElement | null>(null);
+  // Lot 9 (EX-CMD-06) : une halte de tabulation, flèches entre les boutons (motif W3C APG Toolbar).
+  const naviguer = useNavigationBarre(racine);
   // Position pendant un glisser (non mémorisée avant le relâchement) ; null = position mémorisée ou par défaut.
   const [glisser, setGlisser] = useState<Position | null>(null);
   // Position par défaut calculée sur la zone de dessin (coin bas droit), tant que rien n'est mémorisé.
@@ -193,7 +196,7 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
     </button>
   );
   return (
-    <div ref={racine} className={`barre-actions${glisser ? " en-glisser" : ""}`} role="toolbar" aria-label={t("actions.barre")} style={style} data-barre-actions data-position={ui.barreActions ? "memorisee" : "defaut"}>
+    <div ref={racine} className={`barre-actions${glisser ? " en-glisser" : ""}`} role="toolbar" aria-label={t("actions.barre")} onKeyDown={naviguer} style={style} data-barre-actions data-position={ui.barreActions ? "memorisee" : "defaut"}>
       <button
         type="button"
         className="barre-actions-poignee"

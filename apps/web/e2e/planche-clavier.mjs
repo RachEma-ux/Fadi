@@ -2,7 +2,9 @@
  * Recette du clavier de la Planche (lot 9, EX-CMD-04 ; cas A-04 et A-06 de la V1), bureau 1536 px : dans Pousser/Tirer,
  * Maj, Ctrl et Alt ne basculent un mode que frappés seuls (appui puis relâchement sans autre touche ni geste). Maj seul
  * rétablit « Surface ouverte » ; Maj + F choisit Suivez-moi sans rien basculer ; Ctrl + Z, Maj + Tab et Ctrl + Alt
- * (AltGr) ne basculent rien ; un clic pendant l'appui consomme la frappe. Aucune erreur JavaScript.
+ * (AltGr) ne basculent rien ; un clic pendant l'appui consomme la frappe. Barres au clavier (A-07, W3C APG Toolbar) :
+ * une halte de tabulation, flèches entre les boutons sans rien envoyer au dessin ; Maj + flèche sur la poignée déplace la
+ * barre sans changer de mode (A-08). Aucune erreur JavaScript.
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/planche-clavier.mjs
  */
@@ -307,6 +309,28 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   check("A-04 : Maj + F choisit Suivez-moi, aucune bascule de Pousser/Tirer en chemin", apres !== "pousser-tirer" && /suivez|suivre/.test(apres), apres);
   await page.keyboard.press("p");
   check("retour à Pousser/Tirer : mode Normal intact", (await mode()) === "normal", await mode());
+  // A-07 : barres au clavier (W3C APG Toolbar) — une halte de tabulation, flèches entre les boutons, rien au dessin.
+  const rail = page.locator(".planche-outils[role='toolbar']");
+  const haltes = () => rail.evaluate((b) => [...b.querySelectorAll("button")].filter((x) => x.closest('[role="toolbar"]') === b && x.tabIndex === 0).length);
+  check("A-07 : rail d'outils — une seule halte de tabulation", (await haltes()) === 1, String(await haltes()));
+  await rail.locator("button[tabindex='0']").first().focus();
+  const avantFleche = await page.evaluate(() => document.activeElement?.textContent ?? "");
+  await page.keyboard.press("ArrowDown");
+  const apresFleche = await page.evaluate(() => document.activeElement?.textContent ?? "");
+  check("A-07 : flèche bas — le focus passe au bouton suivant du rail, toujours une seule halte", avantFleche !== apresFleche && (await haltes()) === 1 && (await page.evaluate(() => document.activeElement?.closest(".planche-outils") !== null)), `${avantFleche} → ${apresFleche}`);
+  check("A-07 : la flèche n'a pas atteint l'outil (aucun verrou d'axe)", await page.evaluate(() => (window.fadiPlanche.etatOutil()?.fleche ?? null) === null));
+  // A-08 : Maj + flèche sur la poignée de la barre d'actions déplace la barre, sans changer de mode.
+  await page.keyboard.press("Escape");
+  await vue.focus();
+  await page.keyboard.press("p");
+  const poignee = page.locator("[data-barre-actions-poignee]");
+  const avantBarre = await page.locator("[data-barre-actions]").boundingBox();
+  await poignee.focus();
+  await page.keyboard.down("Shift");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.up("Shift");
+  const apresBarre = await page.locator("[data-barre-actions]").boundingBox();
+  check("A-08 : Maj + flèche sur la poignée — la barre bouge, Pousser/Tirer reste en mode Normal", apresBarre.x > avantBarre.x && (await mode()) === "normal", `${avantBarre.x} → ${apresBarre.x}, ${await mode()}`);
   check("aucune commande envoyée (brouillon local)", s.commandes.length === 0, String(s.commandes.length));
   check("aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
   await ctx.close();
