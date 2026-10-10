@@ -170,7 +170,9 @@ describe("Pousser/Tirer d'arêtes (écart Fadi, D-196)", () => {
     const milieu = v3(Math.cos(a) * Math.cos(a), Math.cos(a) * Math.sin(a), 0);
     const p = partie(machinePousserTirer, m).jouer(clicVers(milieu), survolVers(v3(1.6, 0.1, 0)), saisie("0.5"));
     expect(faces(p.modele)).toHaveLength(2);
-    expect(emprise(p.modele).max.x).toBeGreaterThan(1.4);
+    // Distance tapée exacte même avec un curseur oblique : disque + couronne = polygone d'apothème cos(π/24) + 0,5.
+    const ap = Math.cos(Math.PI / 24) + 0.5;
+    expect(faces(p.modele).reduce((s, f) => s + aire(p.modele, f.id), 0)).toBeCloseTo(24 * ap * ap * Math.tan(Math.PI / 24), 9);
     // Vers l'intérieur : le curseur rentre dans le disque.
     const q = partie(machinePousserTirer, m).jouer(clicVers(milieu), survolVers(v3(0.4, 0.05, 0)), saisie("0.5"));
     expect(faces(q.modele)).toHaveLength(2);

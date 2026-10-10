@@ -1727,14 +1727,20 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     </span>
   );
   /** Flèches de direction : touches modificatrices (ordinateur tactile) ou panneau Instructeur (téléphone). */
+  // Tirage d'arête (D-197) : au téléphone, les flèches (verrou d'axe, ↓ = allonger) entrent dans la barre de modificateurs
+  // au lieu du seul panneau Instructeur, pour que le geste se fasse au doigt sans détour.
+  const etatTirage = etatMachineRef.current as { readonly etape?: number; readonly aretes?: readonly unknown[] } | null;
+  const flechesAuToucher = outilId === "pousser-tirer" && etatTirage?.etape === 2 && (etatTirage.aretes?.length ?? 0) > 0;
+  const boutonsFleches = () =>
+    boutonsTouches([
+      ["FlecheGauche", "←", t("planche.mod.gauche")],
+      ["FlecheHaut", "↑", t("planche.mod.haut")],
+      ["FlecheDroite", "→", t("planche.mod.droite")],
+      ["FlecheBas", "↓", t("planche.mod.bas")],
+    ]);
   const fleches = (
     <span className="planche-fleches" role="group" aria-label={t("planche.mod.fleches")}>
-      {boutonsTouches([
-        ["FlecheGauche", "←", t("planche.mod.gauche")],
-        ["FlecheHaut", "↑", t("planche.mod.haut")],
-        ["FlecheDroite", "→", t("planche.mod.droite")],
-        ["FlecheBas", "↓", t("planche.mod.bas")],
-      ])}
+      {boutonsFleches()}
     </span>
   );
 
@@ -2157,7 +2163,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
           ["Ctrl", t("planche.mod.ctrl"), t("planche.mod.ctrl")],
           ["Alt", t("planche.mod.alt"), t("planche.mod.alt")],
         ])}
-        {!etroit && fleches}
+        {!etroit ? fleches : flechesAuToucher && <span className="planche-fleches au-toucher" role="group" aria-label={t("planche.mod.fleches")}>{boutonsFleches()}</span>}
       </div>
 
         <form

@@ -399,7 +399,8 @@ function saisir(e: EtatPousserTirer, ctx: ContexteOutil, texte: string): Transit
   if (e.etape === 2 && e.aretes.length > 0 && e.origine) {
     const d = directionSaisie(e);
     if (!d) return { etat: { ...e, texte, erreur: "Orientez le curseur (ou verrouillez un axe avec une flèche) pour donner la direction." } };
-    return appliquerAretes(e, ctx, paramsPour(e, ctx, scale(d, res.valeur)), texte, null);
+    // La valeur tapée est exacte ; le curseur ne donne que le genre d'opération et le sens.
+    return appliquerAretes(e, ctx, aValeur(paramsPour(e, ctx, scale(d, res.valeur)), res.valeur), texte, null);
   }
   if (corrigeable(e.derniere, ctx)) {
     const d = e.derniere;
