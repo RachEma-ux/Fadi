@@ -7,6 +7,8 @@ import {
   appliquer,
   contexte,
   copier,
+  ERREUR_DEPLACER_CYCLE,
+  ERREUR_DEPLACER_MEME_CONTENU,
   deplacerVersContexte,
   grouper,
   grouperVide,
@@ -121,5 +123,25 @@ describe("Déplacer vers un groupe (O-4)", () => {
     expect(defParent.contenu.occurrences[objet.occurrence]).toBeDefined();
     const M = matriceMonde(r, objet.occurrence)!;
     expect(appliquer(M, v3(0, 0, 0))).toEqual(v3(0, 0, 0));
+  });
+});
+
+describe("Déplacer vers un groupe — revue de la PR (O-4)", () => {
+  it("cycle par un composant partagé : A contient une occurrence de B ; ranger A dans une autre occurrence de B est refusé", () => {
+    let m = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(1, 0, 0), v3(0, 1, 0)).modele;
+    const b = grouper(m, tout(m), { genre: "composant", nom: "B" });
+    m = copier(b.modele, [b.occurrence], v3(5, 0, 0)).modele;
+    const bDehors = Object.keys(contexte(m).occurrences).find((id) => id !== b.occurrence)!;
+    const a = grouper(m, [b.occurrence], { genre: "composant", nom: "A" });
+    expect(() => deplacerVersContexte(a.modele, [a.occurrence], bDehors)).toThrow(ERREUR_DEPLACER_CYCLE);
+  });
+
+  it("autre occurrence du composant qu'on édite : même contenu, refus (l'objet ne bouge dans aucune)", () => {
+    let m = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(1, 0, 0), v3(0, 1, 0)).modele;
+    const x = grouper(m, tout(m));
+    const k = grouper(x.modele, [x.occurrence], { genre: "composant", nom: "K" });
+    m = copier(k.modele, [k.occurrence], v3(5, 0, 0)).modele;
+    const k2 = Object.keys(contexte(m).occurrences).find((id) => id !== k.occurrence)!;
+    expect(() => deplacerVersContexte(m, [x.occurrence], k2, { dans: k.occurrence })).toThrow(ERREUR_DEPLACER_MEME_CONTENU);
   });
 });
