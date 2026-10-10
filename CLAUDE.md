@@ -86,6 +86,12 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
   serveur (`apps/api/src/lib/atelier-exact.ts`) recalcule chaque `solideExact.creer` et fait autorité ; `occt-wasm`
   est externe au bundle esbuild de l'API (`apps/api/scripts/build.mjs`). Les objets paramétriques ne sont jamais
   convertis en brep (R15) : leur extrusion sert d'opérande.
+- Barre de l'Atelier (D-195, `docs/atelier/lots/barre-atelier.md`) : rangée **Fichier · Plan · 3D · Documents · Planche · ⚙ ·
+  état d'enregistrement** ; Plan active le mode **et** ouvre la liste des niveaux (`panneaux/BoutonPlan.tsx`) ; Exporter /
+  Importer et Harmonie sont des entrées de Fichier ; ⚙ (`panneaux/Reglages.tsx`) range affichage des outils, accrochages,
+  Canevas et la barre d'actions ; Annuler / Rétablir / Cadrer (Planche : annuler / rétablir local, Détacher) vivent dans la
+  barre d'actions flottante (`panneaux/BarreActions.tsx`, bornage pur `barre-actions-position.ts`, position et affichage
+  mémorisés dans `etat-ui.ts`) ; aides de recette `apps/web/e2e/lib-barre.mjs`.
 - Suivi : `docs/atelier/` (fiches de capacité, décisions, mesures, maquette, comptes rendus de lot).
 - Un lot à la fois ; acceptation du maître d'ouvrage entre deux lots ; les décisions de la section 10.1 du
   cahier lui appartiennent : s'arrêter et demander, ne pas inventer.

@@ -33,6 +33,7 @@ import { RaccourcisPanneau } from "./panneaux/Raccourcis";
 import { MenuPrincipal, fermerMenus, sousMenuExclusif } from "./panneaux/MenuPrincipal";
 import { BoutonPlan } from "./panneaux/BoutonPlan";
 import { Reglages } from "./panneaux/Reglages";
+import { BarreActions, type ActionBarre } from "./panneaux/BarreActions";
 import { t as msg } from "./messages";
 import { messageEnregistrement, partagePossible, type EtatEnregistrement } from "./fichier";
 import { AffichagePanneau, InfoModelePanneau, MateriauxPanneau } from "./panneaux/Affichage";
@@ -514,6 +515,34 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
   // affichage, accrochages, cadrage, disposition, échanges du modèle et Harmonie appartiennent au dessin.
   const documents = ui.mode === "documents";
   const horsDessin = planche || documents;
+  // Barre d'actions flottante (D-195, lot B) : Annuler / Rétablir du journal de l'Atelier et Cadrer (Plan : le niveau,
+  // 3D : la vue) ; rien de plus en Documents. En Planche, la Planche rend la sienne (brouillon local, Détacher).
+  const actionsBarre: ActionBarre[] = horsDessin
+    ? []
+    : [
+        {
+          id: "cadrer",
+          picto: "⛶",
+          libelle: ui.mode === "3d" ? msg("actions.cadrer.vue") : msg("actions.cadrer.niveau"),
+          texte: msg("actions.cadrer"),
+          onClick: () => {
+            if (etatUi.get().mode === "3d") void import("./vue3d/scene3d").then((m) => m.cadrerVue3D());
+            else cadrer();
+          },
+        },
+      ];
+  const reglagesActions = (
+    <section className="reglages-section" aria-labelledby="reglages-actions">
+      <h3 id="reglages-actions">{msg("reglages.actions")}</h3>
+      <label>
+        <input type="checkbox" checked={ui.barreActionsVisible} data-barre-actions-visible onChange={(e) => etatUi.set({ barreActionsVisible: e.target.checked })} />
+        {msg("reglages.actions.afficher")}
+      </label>
+      <button type="button" data-barre-actions-defaut disabled={!ui.barreActions} onClick={() => etatUi.set({ barreActions: null })}>
+        {msg("reglages.actions.defaut")}
+      </button>
+    </section>
+  );
 
   if (inst.chargement === "initial" || inst.chargement === "chargement") {
     return <p role="status" className="atelier-n-chargement">Chargement du modèle…</p>;
@@ -663,14 +692,9 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
           <button type="button" aria-pressed={ui.mode === "documents"} onClick={() => etatUi.set({ mode: "documents", pointsEnCours: [] })}>Documents</button>
           <button type="button" aria-pressed={planche} data-mode-planche title={msg("mode.planche.aide")} onClick={() => etatUi.set({ mode: "planche", pointsEnCours: [], paletteOuverte: false })}>{msg("mode.planche")}</button>
         </div>
-        {/* En mode Planche, annuler / rétablir est celui du brouillon local (dans la Planche) ; ces boutons agissent sur le journal de l'Atelier. */}
-        <div className="barre-groupe" role="group" aria-label="Annuler et rétablir" hidden={planche}>
-          <button type="button" onClick={() => void client.annuler()} disabled={readOnly} title="Annuler (Ctrl/⌘ Z)">↶<span className="sr-only">Annuler</span></button>
-          <button type="button" onClick={() => void client.retablir()} disabled={readOnly} title="Rétablir (Ctrl/⌘ Maj Z)">↷<span className="sr-only">Rétablir</span></button>
-        </div>
-        <button type="button" onClick={cadrer} title="Cadrer le niveau (0)" hidden={horsDessin}>Cadrer</button>
-        {/* ⚙ (D-195) : affichage des outils, accrochages, disposition Canevas — les réglages ont quitté la rangée. */}
-        {!documents && <Reglages ui={ui} dessin={!horsDessin} documents={documents} />}
+        {/* ⚙ (D-195) : affichage des outils, accrochages, disposition Canevas, barre d'actions — les réglages ont quitté la
+            rangée ; Annuler / Rétablir et Cadrer vivent dans la barre d'actions flottante. */}
+        <Reglages ui={ui} dessin={!horsDessin} documents={documents} supplement={reglagesActions} />
         {rapportEchange && <RapportEchangeDialogue rapport={rapportEchange} onFermer={() => setRapportEchange(null)} />}
         {consultation && (
           <span className="barre-consultation" role="status" data-consultation={consultation.libelle}>
@@ -867,6 +891,14 @@ export function AtelierNouveau({ projectId, readOnly: readOnlyProjet, protectedR
       </nav>
 
       {ui.paletteOuverte && !horsDessin && <Palette ui={ui} disponibilite={disponibilite} onChoisir={choisir} />}
+      {!planche && (
+        <BarreActions
+          annuler={{ id: "annuler", picto: "↶", libelle: "Annuler", titre: "Annuler (Ctrl/⌘ Z)", onClick: () => void client.annuler(), disabled: readOnly }}
+          retablir={{ id: "retablir", picto: "↷", libelle: "Rétablir", titre: "Rétablir (Ctrl/⌘ Maj Z)", onClick: () => void client.retablir(), disabled: readOnly }}
+          autres={actionsBarre}
+          reference={zone}
+        />
+      )}
     </div>
   );
 }

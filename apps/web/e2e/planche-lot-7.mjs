@@ -10,6 +10,7 @@
 import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
+import { ecarterBarreActions } from "./lib-barre.mjs";
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
@@ -20,6 +21,8 @@ const note = (sujet, cas, ok, detail = "") => { resultats.push({ sujet, cas, ok,
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? undefined });
 const ctx = await browser.newContext({ viewport: { width: 1536, height: 864 }, acceptDownloads: true });
 const page = await ctx.newPage();
+// D-195 : la barre d'actions flottante est rangée hors du dessin (la recette clique à des coordonnées projetées).
+await ecarterBarreActions(page);
 const erreurs = [];
 page.on("pageerror", (e) => erreurs.push(e.message));
 page.on("dialog", (d) => void d.accept());

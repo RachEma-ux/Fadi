@@ -42,3 +42,21 @@ export const choisirAffichage = async (page, niveau) => {
   await page.locator('select[aria-label="Niveau d\'affichage des outils"]').selectOption(niveau);
   await fermerMenus(page);
 };
+/**
+ * Barre d'actions flottante (D-195, lot B) : à poser AVANT la première navigation. La barre flotte par défaut au coin
+ * bas droit du dessin ; une recette qui clique à des coordonnées projetées du modèle peut la toucher au lieu du
+ * dessin. On la range en haut à gauche de la fenêtre (sur l'en-tête de la page, hors du dessin) par la préférence
+ * mémorisée — le geste même qu'un utilisateur ferait en la glissant — sans la masquer : ses boutons
+ * (`[data-planche-annuler]`…) restent disponibles.
+ */
+export const ecarterBarreActions = (page) =>
+  page.addInitScript(() => {
+    try {
+      const cle = "fadi.atelier.prefs";
+      const prefs = JSON.parse(localStorage.getItem(cle) ?? "{}");
+      prefs.barreActions = { x: 4, y: 4 };
+      localStorage.setItem(cle, JSON.stringify(prefs));
+    } catch {
+      // stockage indisponible : la barre reste à sa position par défaut
+    }
+  });

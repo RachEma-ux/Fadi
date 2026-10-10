@@ -81,14 +81,6 @@
 .planche:fullscreen {
   background: #f4f6f8;
 }
-.planche-detacher {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  min-height: 44px;
-  padding: 0 0.6rem;
-  white-space: nowrap;
-}
 .planche-vue {
   position: relative;
   width: 100%;
@@ -695,9 +687,6 @@
     max-width: 5.5rem;
     font-size: 0.85rem;
   }
-  .planche-detacher {
-    margin-left: 0;
-  }
   .planche-panneau-consigne {
     margin: 0 0 0.6rem;
     padding: 0 0 0.6rem;
@@ -813,9 +802,9 @@
   .planche-modificateurs {
     gap: 3px;
   }
-  /* Surcouches qui restent sur le dessin : brouillon (pastille), annuler / rétablir, Détacher, grille, panneau. */
-  /* Barre du haut pleine largeur : brouillon, annuler, rétablir … détacher, sur une rangée qui défile au doigt
-     plutôt que d'être coupée au bord de l'écran. */
+  /* Surcouches qui restent sur le dessin : brouillon (pastille), menu, grille, panneau ; annuler / rétablir et
+     Détacher sont dans la barre d'actions flottante (D-195). Barre du haut pleine largeur, sur une rangée qui défile
+     au doigt plutôt que d'être coupée au bord de l'écran. */
   .planche-haut {
     justify-self: stretch;
     margin: 0;
@@ -834,20 +823,11 @@
     border: 0;
     background: transparent;
   }
-  .planche-detacher {
-    flex: none;
-    margin-left: auto;
-    padding: 0;
-    width: 44px;
-  }
   .planche-haut > * {
     flex: none;
   }
   .planche-haut .planche-menu-bouton {
     max-width: 7.5rem;
-  }
-  .planche-detacher-libelle {
-    display: none;
   }
   /* Rechercher au-dessus du rail, sous la barre du haut. */
   .planche-recherche-carte {
@@ -907,17 +887,6 @@
   }
   .planche.colonne-repliee .planche-colonne .canevas-etiquette {
     display: none;
-  }
-  .planche-annuler-retablir {
-    flex: none;
-    gap: 2px;
-  }
-  .planche-annuler-retablir button {
-    min-width: 44px;
-    min-height: 44px;
-    border: 1px solid var(--atelier-ligne, #dce5df);
-    border-radius: 6px;
-    background: #fff;
   }
   /* Grille, colonne et panneau sont des enfants du volet dans le DOM : ici en surcouche absolue sur le dessin. */
   .planche-grille {

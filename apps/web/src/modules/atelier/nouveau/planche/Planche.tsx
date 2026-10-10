@@ -87,6 +87,7 @@ import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./br
 import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
+import { BarreActions } from "../panneaux/BarreActions";
 import { chargerBooleens } from "./booleens-manifold";
 import "./planche.css";
 
@@ -1737,16 +1738,27 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     </span>
   );
 
-  /** Annuler / rétablir, dans la barre du haut. */
-  const annulerRetablir = (
-    <div className="barre-groupe planche-annuler-retablir" role="group" aria-label={`${t("planche.annuler")} / ${t("planche.retablir")}`}>
-      <button type="button" onClick={annulerPas} disabled={hist.passe.length === 0} title={t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" })} data-planche-annuler>
-        ↶<span className="sr-only">{t("planche.annuler")}</span>
-      </button>
-      <button type="button" onClick={retablirPas} disabled={hist.futur.length === 0} title={t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" })} data-planche-retablir>
-        ↷<span className="sr-only">{t("planche.retablir")}</span>
-      </button>
-    </div>
+  /** Barre d'actions flottante (D-195) : annuler / rétablir du brouillon local et Détacher ; elle suit la Planche détachée. */
+  const libelleDetacher = detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter");
+  const barreActions = (
+    <BarreActions
+      annuler={{ id: "annuler", picto: "↶", libelle: t("planche.annuler"), titre: t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" }), onClick: annulerPas, disabled: hist.passe.length === 0, attributs: { "data-planche-annuler": "" } }}
+      retablir={{ id: "retablir", picto: "↷", libelle: t("planche.retablir"), titre: t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" }), onClick: retablirPas, disabled: hist.futur.length === 0, attributs: { "data-planche-retablir": "" } }}
+      autres={[
+        {
+          id: "detacher",
+          picto: detache === "non" ? "⧉" : "⤡",
+          libelle: libelleDetacher,
+          titre: detache === "non" ? t("planche.detacher.aide") : libelleDetacher,
+          texte: detache === "non" ? t("planche.detacher.court") : detache === "fenetre" ? t("planche.rattacher.court") : t("planche.plein-ecran.quitter.court"),
+          onClick: () => (detache === "non" ? void detacher() : rattacher()),
+          attributs: { "data-planche-detacher": "" },
+        },
+      ]}
+      reference={racineRef}
+      reserve={{ bas: ".planche-volet, [data-planche-pied]", droite: ".planche-colonne" }}
+      fenetreCle={detache}
+    />
   );
 
   const carteDetache =
@@ -1796,20 +1808,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
           </svg>
           <span className="sr-only">{t("planche.brouillon")}</span>
         </p>}
-        {annulerRetablir}
         {etroit && <span className="planche-haut-choix">{choix}</span>}
-        <button
-          type="button"
-          className="planche-detacher"
-          onClick={() => (detache === "non" ? void detacher() : rattacher())}
-          title={detache === "non" ? t("planche.detacher.aide") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter")}
-          aria-label={detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter")}
-          data-planche-detacher
-        >
-          <span aria-hidden="true" className="outil-picto">{detache === "non" ? "⧉" : "⤡"}</span>
-          <span className="planche-detacher-libelle" aria-hidden="true">{detache === "non" ? t("planche.detacher.court") : detache === "fenetre" ? t("planche.rattacher.court") : t("planche.plein-ecran.quitter.court")}</span>
-        </button>
       </div>
+      {barreActions}
 
       {/* Volet : au bureau, `display: contents` (barre d'outils à gauche, pied en bas, comme avant) ; au téléphone,
           un seul volet bas dans le flux — outils en rangée, consigne, touches, Mesures — rien ne recouvre le dessin. */}

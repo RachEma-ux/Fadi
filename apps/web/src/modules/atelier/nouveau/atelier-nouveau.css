@@ -2985,6 +2985,90 @@
   }
 }
 
+/* Barre d'actions flottante (D-195, lot B) : Annuler, Rétablir, Cadrer (Planche : annuler / rétablir local, Détacher).
+   Position fixe : elle flotte au-dessus du dessin sans le redimensionner ; déplacée par sa poignée, elle reste entière
+   dans la zone visible (bornage en JS). Au-dessus du dessin, mais sous les surcouches que l'utilisateur ouvre (grille
+   d'outils et panneaux de la Planche, 6 et plus ; panneaux flottants du Canevas, 30 ; menus, 60) : ce qu'on ouvre passe
+   devant la barre, qui reste déplaçable. */
+.barre-actions {
+  position: fixed;
+  right: 1rem;
+  bottom: 3rem;
+  z-index: 5;
+  display: inline-flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 3px;
+  background: var(--flottant-fond, var(--surface, #fff));
+  color: var(--atelier-encre, #183d32);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(24, 61, 50, 0.16);
+  font-size: 0.9rem;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.barre-actions.en-glisser {
+  opacity: 0.92;
+  box-shadow: 0 10px 24px rgba(24, 61, 50, 0.28);
+}
+.barre-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.barre-actions button:hover:not(:disabled) {
+  background: #f1f5f2;
+  border-color: var(--atelier-ligne, #dce5df);
+}
+.barre-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.barre-actions .barre-groupe {
+  display: inline-flex;
+  gap: 2px;
+}
+.barre-actions-poignee {
+  min-width: 22px !important;
+  padding: 0 0.15rem !important;
+  color: var(--atelier-doux, #5b7468);
+  cursor: grab;
+  touch-action: none;
+}
+.barre-actions-poignee:active,
+.barre-actions.en-glisser .barre-actions-poignee {
+  cursor: grabbing;
+}
+.barre-actions-picto {
+  font-size: 1.15em;
+  line-height: 1;
+}
+@media (max-width: 760px) {
+  .barre-actions {
+    right: 0.6rem;
+    bottom: 6.6rem;
+  }
+  .barre-actions button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .barre-actions-poignee {
+    min-width: 44px !important;
+  }
+}
+
 /* P2-2 : ontologie mécanique — outils et fiches dans l'inspecteur, vecteurs compacts. */
 .outil-mecanique .champ-vecteur .vecteur { display: inline-flex; gap: 0.25rem; }
 .outil-mecanique .champ-vecteur input { width: 4.2rem; }
