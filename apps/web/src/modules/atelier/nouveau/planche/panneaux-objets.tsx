@@ -676,8 +676,9 @@ export function NavigateurPlanche({
   commandes?: readonly { id: string; picto: string; nom: string; raccourci: string; motif: string | null; executer: () => void }[];
   /** Objet dont le nom est en cours d'édition (F2, menu, barre). */
   renommage?: Id | null;
-  onSelectionner: (id: Id, dans: Id | undefined) => void;
-  onEntrer: (id: Id | undefined) => void;
+  /** `chemin` : chemin complet du contexte (racine → dans), qui distingue les occurrences d'un même composant. */
+  onSelectionner: (id: Id, dans: Id | undefined, chemin?: readonly Id[]) => void;
+  onEntrer: (id: Id | undefined, chemin?: readonly Id[]) => void;
   onCibler: (id: Id) => void;
   onMasquer: (id: Id, dans: Id | undefined, masquee: boolean) => void;
   onSupprimer: (id: Id, dans: Id | undefined) => void;
@@ -694,15 +695,16 @@ export function NavigateurPlanche({
   const f = filtre.trim().toLowerCase();
   const nomDe = (id: Id, defNom: string, nom?: string) => nom ?? `${defNom} (${id})`;
   const arbre = useMemo(() => {
-    const rendre = (parent: Id | undefined, profondeur: number): { id: Id; parent: Id | undefined; profondeur: number; nom: string; nomPropre: string; genre: string; masquee: boolean; verrouille: boolean; enfants: number }[] => {
+    const rendre = (parent: Id | undefined, profondeur: number, cheminParent: readonly Id[] = []): { id: Id; parent: Id | undefined; chemin: readonly Id[]; profondeur: number; nom: string; nomPropre: string; genre: string; masquee: boolean; verrouille: boolean; enfants: number }[] => {
       const c = contexte(modele, parent);
       const r: ReturnType<typeof rendre> = [];
       for (const o of Object.values(c.occurrences)) {
         const d = modele.definitions[o.definition];
         const nom = nomDe(o.id, d?.nom ?? "Objet", o.nom);
         const enfants = d ? Object.keys(d.contenu.occurrences).length : 0;
-        if (!f || nom.toLowerCase().includes(f)) r.push({ id: o.id, parent, profondeur, nom, nomPropre: o.nom ?? d?.nom ?? "", genre: d?.genre ?? "groupe", masquee: o.masquee === true, verrouille: o.verrouille === true, enfants });
-        if (profondeur < 16 && (deplies.has(o.id) || f)) r.push(...rendre(o.id, profondeur + 1));
+        const chemin = [...cheminParent, o.id];
+        if (!f || nom.toLowerCase().includes(f)) r.push({ id: o.id, parent, chemin, profondeur, nom, nomPropre: o.nom ?? d?.nom ?? "", genre: d?.genre ?? "groupe", masquee: o.masquee === true, verrouille: o.verrouille === true, enfants });
+        if (profondeur < 16 && (deplies.has(o.id) || f)) r.push(...rendre(o.id, profondeur + 1, chemin));
       }
       return r;
     };
@@ -781,7 +783,7 @@ export function NavigateurPlanche({
           const cible = survol?.id === n.id ? ` est-cible-${survol.zone}` : "";
           return (
             <li
-              key={n.id}
+              key={n.chemin.join("/")}
               role="treeitem"
               aria-selected={choisis.has(n.id)}
               aria-level={n.profondeur + 1}
@@ -832,7 +834,7 @@ export function NavigateurPlanche({
                   onAnnuler={() => onFinRenommage?.()}
                 />
               ) : (
-                <button type="button" className="planche-ligne-choix" onClick={() => onSelectionner(n.id, n.parent)} onDoubleClick={() => !n.verrouille && onEntrer(n.id)} title={n.verrouille ? t("planche.navigateur.verrouille") : `${t("planche.navigateur.entrer")} — ${t("planche.navigateur.glisser")}`}>
+                <button type="button" className="planche-ligne-choix" onClick={() => onSelectionner(n.id, n.parent, n.chemin.slice(0, -1))} onDoubleClick={() => !n.verrouille && onEntrer(n.id, n.chemin)} title={n.verrouille ? t("planche.navigateur.verrouille") : `${t("planche.navigateur.entrer")} — ${t("planche.navigateur.glisser")}`}>
                   <span aria-hidden="true">{n.genre === "composant" ? "◈" : "▣"}</span> {n.nom}
                   {n.verrouille && <span aria-label={t("planche.info.verrouille")}> 🔒</span>}
                   {n.masquee && <span className="inspecteur-aide"> ({t("planche.info.masque")})</span>}

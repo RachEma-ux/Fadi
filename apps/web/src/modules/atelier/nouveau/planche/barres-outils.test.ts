@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { OUTILS, normaliserRaccourci, outilParId } from "@parcours/planche-model";
 import { BARRES, FAMILLES, OBJET_DE, SECTIONS, barreDe, groupesOutils, libelleOperation, premierOutil } from "./barres-outils";
 import { CATALOGUE } from "../messages";
-import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, commandeObjet, raccourcisObjets } from "./commandes-objets";
+import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDE_DETACHER_LIEN, commandeObjet, raccourcisObjets } from "./commandes-objets";
 import { RACCOURCIS_FADI, afficherRaccourci, commenceSaisie, nomOutil, outilDuClavier, outilsBarre, pictoOutil, raccourciClavier, raccourciOutil, sectionsGrille, titreOutil, type Cle } from "./outils-planche";
 
 /** Outils présents dans la Planche : rail de gauche, grille « … » (y compris le menu contextuel offert dans la grille). */
@@ -175,7 +175,6 @@ describe("Règle d'or de la Planche (D-202, AGENTS.md) — icône propre, barre 
 const COMMANDES_EN_ATTENTE: Readonly<Record<string, "O-1" | "O-2" | "O-3" | "L9">> = {
   // Modifier (ouvrir l'objet) : son raccourci naturel (Entrée) dépend du routage par focus du registre (lot 9).
   modifier: "L9",
-  "detacher-lien": "L9",
   "adoucir-lisser": "L9",
   "afficher-tout": "L9",
   "aligner-axes": "L9",
@@ -200,7 +199,7 @@ describe("Règle d'or — commandes du menu de la Planche (D-202)", () => {
     const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
     const ids = new Set([...source.matchAll(/entrees\.push\(\{ id: "([a-z-]+)"/g)].map((m) => m[1]!).filter((id) => id !== "rien"));
     expect(ids.size).toBeGreaterThan(0);
-    const livrees = new Set<string>([...COMMANDES_OBJETS, ...COMMANDES_NAVIGATEUR].map((c) => c.id));
+    const livrees = new Set<string>([...COMMANDES_OBJETS, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN].map((c) => c.id));
     for (const id of ids) expect(COMMANDES_EN_ATTENTE[id] ?? (livrees.has(id) ? "livrée" : undefined), `commande « ${id} » au menu sans icône, barre ni raccourci, et absente de la liste`).toBeDefined();
     for (const id of livrees) expect(COMMANDES_EN_ATTENTE[id], `« ${id} » est livrée : la retirer de la liste d'attente`).toBeUndefined();
     for (const id of Object.keys(COMMANDES_EN_ATTENTE)) expect(ids.has(id), `« ${id} » n'est plus au menu : la retirer de la liste`).toBe(true);
@@ -259,6 +258,22 @@ describe("Règle d'or — commandes du contexte d'édition (Objets O-2, D-203)",
     const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
     expect(source).toContain("{COMMANDES_CONTEXTE.map((c) => (");
     expect(source).toContain('data-planche-fil');
+  });
+});
+
+describe("Règle d'or — Détacher le lien (Objets O-2, revue)", () => {
+  it("icône propre, bouton nommé dans la barre d'état (toucher), « Outils ▾ », raccourci sans collision", () => {
+    const pictos = new Set([...OUTILS.map((o) => pictoOutil(o.id)), ...COMMANDES_OBJETS.map((c) => c.picto), ...COMMANDES_CONTEXTE.map((c) => c.picto), "◈", "▣"]);
+    expect(pictos.has(COMMANDE_DETACHER_LIEN.picto)).toBe(false);
+    const outils = new Set(OUTILS.map((o) => raccourciOutil(o)).filter((r): r is string => r !== null).map(normaliserRaccourci));
+    const r = normaliserRaccourci(COMMANDE_DETACHER_LIEN.raccourci);
+    expect(outils.has(r)).toBe(false);
+    expect(RESERVES_PLANCHE).not.toContain(r);
+    const tous = raccourcisObjets();
+    expect(new Set(tous).size).toBe(tous.length);
+    const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
+    expect(source).toContain("data-planche-commande={COMMANDE_DETACHER_LIEN.id}");
+    expect(source).toContain("{ id: COMMANDE_DETACHER_LIEN.id, picto: COMMANDE_DETACHER_LIEN.picto");
   });
 });
 

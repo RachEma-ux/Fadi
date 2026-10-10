@@ -50,3 +50,7 @@ re-parentage ; décision 8 : cible partagée).
 - L'origine locale d'un groupe reste celle de son contexte : c'est le lot O-6.
 - La géométrie libre ne se range pas dans un groupe par cette commande. Pour l'y mettre : Couper, ouvrir le groupe, puis
   Coller.
+- Déplacer vers un groupe calcule le repère de départ et d'arrivée à partir de l'identifiant d'occurrence : dans un
+  composant à plusieurs occurrences qui contient un objet imbriqué, c'est la première occurrence qui sert de repère
+  (l'objet est rangé dans la définition commune, donc dans toutes ; seule sa position relative peut différer). Le chemin
+  complet introduit par la revue d'O-2 pour les outils sera étendu à cette commande avec le registre du lot 9.

@@ -26,7 +26,7 @@ interface Viser {
 /** Élément visé et ce qu'il représente dans le contexte d'édition (arête, face ou occurrence entière). */
 export function viseeElement(ctx: ContexteOutil, ev: Viser): { el: ElementScene | null; cible: Cible | null } {
   const el = viser(ctx.modele, ev.rayon, ev.tolerance);
-  return { el, cible: el ? cibleDans(el, ctx.dans) : null };
+  return { el, cible: el ? cibleDans(el, ctx.dans, ctx.chemin) : null };
 }
 
 /** Ids de la sélection qui existent dans le contexte d'édition (la sélection de l'interface peut être périmée). */

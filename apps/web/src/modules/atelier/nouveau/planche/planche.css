@@ -1837,6 +1837,22 @@
   }
 }
 
+/* Objets O-2 (revue) : Détacher le lien, bouton nommé de la barre d'état, à côté du statut « Liée aux arêtes sources ». */
+.planche-lien-detacher {
+  min-height: 36px;
+  padding: 0 0.6rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+  background: #fff;
+  white-space: nowrap;
+  cursor: pointer;
+}
+@media (max-width: 760px) {
+  .planche-lien-detacher {
+    min-height: 44px;
+  }
+}
+
 /* Objets O-4 : barre du Navigateur, cibles de glisser-déposer, renommage en place, « Déplacer vers un groupe… ». */
 .planche-navigateur-barre {
   display: flex;

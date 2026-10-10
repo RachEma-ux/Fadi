@@ -96,6 +96,20 @@ export const COMMANDES_CONTEXTE: readonly CommandeContexte[] = [
 ];
 
 /**
+ * Commande des liens d'extrusion (Objets O-2, EX-UI-06) : Détacher le lien. Sa barre est la barre d'état, à côté du statut
+ * « Liée aux arêtes sources » qu'elle lève (visible au toucher) ; elle figure aussi dans « Outils ▾ » et au menu.
+ */
+export interface CommandeLien {
+  readonly id: "detacher-lien";
+  readonly picto: string;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDE_DETACHER_LIEN: CommandeLien = { id: "detacher-lien", picto: "⛓", libelle: "planche.lien.detacher", court: "planche.lien.detacher.court", raccourci: "Alt+Maj+K" };
+
+
+/**
  * Commandes du Navigateur (Objets O-4) : Nouveau groupe vide, Déplacer vers un groupe…, Renommer. Leur barre est celle du
  * Navigateur (l'arbre qu'elles modifient) ; elles figurent aussi dans « Outils ▾ » et au menu contextuel.
  */
@@ -121,8 +135,8 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
   return { disponible: true, motif: null };
 }
 
-/** Raccourcis des commandes d'objet, de contexte et du Navigateur, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR].map((c) => normaliserRaccourci(c.raccourci));
+/** Raccourcis des commandes d'objet, de contexte, du Navigateur et de lien, normalisés (pour le contrôle des collisions). */
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
