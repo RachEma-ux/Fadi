@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { OUTILS, normaliserRaccourci, outilParId } from "@parcours/planche-model";
 import { BARRES, FAMILLES, OBJET_DE, SECTIONS, barreDe, groupesOutils, libelleOperation, premierOutil } from "./barres-outils";
 import { CATALOGUE } from "../messages";
-import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDE_DETACHER_LIEN, commandeObjet, raccourcisObjets } from "./commandes-objets";
+import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, commandeObjet, raccourcisObjets } from "./commandes-objets";
 import { RACCOURCIS_FADI, afficherRaccourci, commenceSaisie, nomOutil, outilDuClavier, outilsBarre, pictoOutil, raccourciClavier, raccourciOutil, sectionsGrille, titreOutil, type Cle } from "./outils-planche";
 
 /** Outils présents dans la Planche : rail de gauche, grille « … » (y compris le menu contextuel offert dans la grille). */
@@ -297,5 +297,27 @@ describe("Règle d'or — commandes du Navigateur (Objets O-4, D-206)", () => {
     expect(source).toContain("...commandesNavigateur(),");
     const navigateur = readFileSync(new URL("./panneaux-objets.tsx", import.meta.url), "utf8");
     expect(navigateur).toContain("data-planche-navigateur-barre");
+  });
+});
+
+describe("Règle d'or — commandes de vue (Objets O-5, D-207)", () => {
+  it("Isoler et Masquer le reste du modèle : icône propre, barre d'actions / fil d'Ariane et « Outils ▾ », raccourci sans collision", () => {
+    const pictos = new Set([...OUTILS.map((o) => pictoOutil(o.id)), ...[...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR].map((c) => c.picto), "◈", "▣", "⌖", "◉", "◌", "×"]);
+    for (const c of COMMANDES_VUE) {
+      expect(pictos.has(c.picto), `${c.id} partage son icône`).toBe(false);
+      pictos.add(c.picto);
+    }
+    const outils = new Set(OUTILS.map((o) => raccourciOutil(o)).filter((r): r is string => r !== null).map(normaliserRaccourci));
+    const tous = raccourcisObjets();
+    expect(new Set(tous).size).toBe(tous.length);
+    for (const c of COMMANDES_VUE) {
+      const r = normaliserRaccourci(c.raccourci);
+      expect(outils.has(r), `raccourci ${r} déjà pris par un outil`).toBe(false);
+      expect(RESERVES_PLANCHE).not.toContain(r);
+    }
+    const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
+    expect(source).toContain("...commandesVue(),");
+    expect(source).toContain('.filter((c) => c.id === "isoler" && c.motif === null)');
+    expect(source).toContain('COMMANDES_VUE.filter((c) => c.id === "masquer-reste")');
   });
 });

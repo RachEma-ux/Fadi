@@ -55,6 +55,8 @@ export interface RappelsVuePlanche {
   menuContextuel?(p: Point2, rayon: Rayon, tolerance: number): void;
   /** Occurrence en cours d'édition (§5.6) : les objets verrouillés sélectionnés y sont cherchés. */
   dans?(): string | undefined;
+  /** Isolement (Objets O-5) : contexte et entités isolés ; rien d'autre n'est rendu ni accroché. */
+  isolement?(): { readonly chemin: readonly string[]; readonly ids: readonly string[] } | null;
   /** Chemin complet du contexte ouvert (Objets O-2) : distingue les occurrences d'un même composant. */
   chemin?(): readonly string[];
 }
@@ -73,13 +75,17 @@ export interface OptionsAffichage {
   readonly plansDeCoupe: boolean;
   readonly objetsMasques: boolean;
   readonly geometrieMasquee: boolean;
+  /** Objets O-5 : dans un groupe ou composant ouvert, le reste du modèle n'est pas rendu (au lieu d'être délavé). */
+  readonly masquerReste: boolean;
+  /** Objets O-5 : dans un composant ouvert, ses autres occurrences ne sont pas rendues. */
+  readonly masquerSemblables: boolean;
   readonly sol: boolean;
   /** Heure (0–24) et jour de l'année (1–365) du soleil ; latitude en degrés (parcelle, sinon 46 par défaut déclaré). */
   readonly heure: number;
   readonly jour: number;
   readonly latitude: number;
 }
-export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, sol: true, heure: 13.5, jour: 312, latitude: 46 };
+export const OPTIONS_AFFICHAGE_DEFAUT: OptionsAffichage = { aretes: true, aretesArriere: false, rayonsX: false, modeFace: "ombre", couleurParBalise: false, ombres: false, ombresSol: true, guides: true, axes: true, plansDeCoupe: true, objetsMasques: false, geometrieMasquee: false, masquerReste: false, masquerSemblables: false, sol: true, heure: 13.5, jour: 312, latitude: 46 };
 
 /** Vues standard (panneau Scènes) : direction de la caméra vers la cible, « sud » = −y du quadrillage (D-017). */
 export type VueStandard = "dessus" | "sud" | "est" | "nord" | "ouest" | "dessous" | "iso";
@@ -381,6 +387,11 @@ export class VuePlanche {
     }
   }
 
+  /** Nombre de faces de la géométrie rendue (instrumentation de recette, Objets O-5). */
+  facesRendues(): number {
+    return this.geometrie.faces.length;
+  }
+
   /** Remplace la géométrie affichée par celle du modèle (aplatie : racine et occurrences). */
   majModele(modele: Modele): void {
     vider(this.groupeModele);
@@ -388,8 +399,8 @@ export class VuePlanche {
     // Objets O-2 (D-203) : contexte d'édition ouvert → le reste du modèle est délavé, l'objet ouvert entouré de pointillés.
     const dans = this.rappels.dans?.();
     const chemin = dans !== undefined ? (this.rappels.chemin?.() ?? cheminOccurrence(modele, dans)) : [];
-    this.geometrie = geometrieVisible(modele, { chemin });
     const o = this.options;
+    this.geometrie = geometrieVisible(modele, { chemin, isole: this.rappels.isolement?.() ?? null, masquerReste: o.masquerReste, masquerSemblables: o.masquerSemblables });
     const materiaux = modele.annotations?.materiaux ?? {};
     const balises = modele.annotations?.balises ?? {};
     const couleurDe = (f: FaceVisible): string => {
@@ -433,7 +444,8 @@ export class VuePlanche {
       arriere.renderOrder = -2;
       this.groupeModele.add(arriere);
     }
-    if (o.objetsMasques || o.geometrieMasquee) {
+    // Isolement (O-5) : seule la sélection est montrée — la surcouche des entités masquées se tait.
+    if ((o.objetsMasques || o.geometrieMasquee) && !this.rappels.isolement?.()) {
       const masquees = aretesMasquees(modele, { objets: o.objetsMasques, geometrie: o.geometrieMasquee });
       if (masquees.length) {
         const l = new THREE.LineSegments(geometrieSegments(masquees.map((s) => [s.a, s.b] as const)), new THREE.LineDashedMaterial({ color: "#8a8a8a", dashSize: 0.15, gapSize: 0.1 }));
