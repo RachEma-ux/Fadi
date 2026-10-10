@@ -14,7 +14,8 @@ import { pasClavier } from "../panneaux/barre-actions-position";
 import { barreDe } from "./barres-outils";
 import { borner, placerBarre, positionDefautBarre, positionDocquee, type Position, type Taille, type Zone } from "./barres-outils-disposition";
 import { titreOperation } from "./BoutonOutils";
-import { pictoOutil } from "./outils-planche";
+import { t } from "../messages";
+import { nomOutil, pictoOutil } from "./outils-planche";
 
 export interface PropsBarreOutilsFlottante {
   outil: Outil;
@@ -188,7 +189,7 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
       ref={racine}
       className={`planche-barre-outils${glisser ? " en-glisser" : ""}${telephone ? " est-docquee" : ""}`}
       role="toolbar"
-      aria-label={`Barre d'opérations — ${outil.libelle}`}
+      aria-label={t("outils.barre", { outil: nomOutil(outil) })}
       style={style}
       data-barre-outils={id}
       data-barre-outils-docquee={telephone ? "" : undefined}
@@ -197,8 +198,8 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
       <button
         type="button"
         className="planche-barre-outils-poignee"
-        aria-label={`Déplacer la barre ${outil.libelle}`}
-        title={telephone ? `Barre ${outil.libelle} rangée en bas de l'écran` : "Glisser pour déplacer ; flèches au clavier (Maj : plus vite)"}
+        aria-label={t("outils.barre.deplacer", { outil: nomOutil(outil) })}
+        title={telephone ? t("outils.barre.docquee", { outil: nomOutil(outil) }) : t("outils.barre.deplacer.aide")}
         disabled={telephone}
         data-barre-outils-poignee
         onPointerDown={surPointeur}
@@ -210,7 +211,7 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
         <span aria-hidden="true">⠿</span>
       </button>
       <span className="planche-barre-outils-titre" aria-hidden="true">
-        {pictoOutil(id)} {outil.libelle}
+        {pictoOutil(id)} {nomOutil(outil)}
       </span>
       <div className="planche-barre-outils-corps">
         {sections.map((s, i) => (
@@ -241,7 +242,7 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
           </div>
         ))}
       </div>
-      <button type="button" className="planche-barre-outils-fermer" aria-label={`Masquer la barre ${outil.libelle}`} title={`Masquer la barre ${outil.libelle}`} data-barre-outils-fermer onClick={onFermer}>
+      <button type="button" className="planche-barre-outils-fermer" aria-label={t("outils.barre.masquer", { outil: nomOutil(outil) })} title={t("outils.barre.masquer", { outil: nomOutil(outil) })} data-barre-outils-fermer onClick={onFermer}>
         <span aria-hidden="true">✕</span>
       </button>
     </div>

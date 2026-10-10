@@ -5,7 +5,7 @@
  * champ Mesures). Pur : ni DOM, ni React, ni three.js.
  */
 import { OUTILS, machineParId, normaliserRaccourci, outilParId, outilParRaccourci, type Outil, type Touche } from "@parcours/planche-model";
-import { t } from "../messages";
+import { LANGUE_INTERFACE, t, type Langue } from "../messages";
 
 /** Outils de caméra pris en charge par l'interface (navigation D-157) ; ils n'ont pas de machine d'états. */
 export type OutilCamera = "orbite" | "panoramique" | "zoom" | "zoom-etendu" | "zoom-fenetre" | "positionner-camera" | "regarder-autour" | "marcher";
@@ -141,6 +141,24 @@ export function outilParRaccourciFadi(raccourci: string, catalogue: readonly Out
   if (cible === "") return null;
   const id = Object.keys(RACCOURCIS_FADI).find((k) => normaliserRaccourci(RACCOURCIS_FADI[k]!) === cible);
   return id ? (catalogue.find((o) => o.id === id && o.raccourci === null) ?? null) : null;
+}
+
+/**
+ * Nom d'un outil dans la langue de l'interface (D-163) : le libellé français du catalogue, ou en anglais son nom de
+ * référence (`libelleSketchUp`). Écrit par le code et non par le traducteur du DOM, qui n'observe que la page : la
+ * Planche détachée (autre document) garde ainsi ses noms dans la langue choisie.
+ */
+export function nomOutil(o: Pick<Outil, "libelle" | "libelleSketchUp">, langue: Langue = LANGUE_INTERFACE): string {
+  return langue === "en" ? o.libelleSketchUp : o.libelle;
+}
+
+/** Raccourci affiché dans la langue de l'interface : notation canonique française (`Maj+L`), en anglais `Shift+L`. */
+export function afficherRaccourci(r: string, langue: Langue = LANGUE_INTERFACE): string {
+  if (langue !== "en") return r;
+  return r
+    .split("+")
+    .map((x) => (x === "Maj" ? "Shift" : x === "Espace" ? "Space" : x))
+    .join("+");
 }
 
 /** Titre d'un bouton d'outil : « Nom (raccourci) » (relevé, ou couche Fadi), suivi du motif d'indisponibilité. */

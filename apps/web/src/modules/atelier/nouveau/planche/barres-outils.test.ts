@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { OUTILS, normaliserRaccourci, outilParId } from "@parcours/planche-model";
 import { BARRES, FAMILLES, OBJET_DE, SECTIONS, barreDe, groupesOutils, libelleOperation, premierOutil } from "./barres-outils";
-import { RACCOURCIS_FADI, commenceSaisie, outilDuClavier, outilsBarre, pictoOutil, raccourciClavier, raccourciOutil, sectionsGrille, titreOutil, type Cle } from "./outils-planche";
+import { CATALOGUE } from "../messages";
+import { RACCOURCIS_FADI, afficherRaccourci, commenceSaisie, nomOutil, outilDuClavier, outilsBarre, pictoOutil, raccourciClavier, raccourciOutil, sectionsGrille, titreOutil, type Cle } from "./outils-planche";
 
 /** Outils présents dans la Planche : rail de gauche, grille « … » (y compris le menu contextuel offert dans la grille). */
 const outilsPlanche = () => {
@@ -117,5 +118,25 @@ describe("Couche de raccourcis Fadi (écart déclaré, D-198)", () => {
     expect(outilDuClavier(evenement("Maj+Espace"))?.id).toBe("lasso");
     expect(outilDuClavier(evenement("Maj+W"))?.id).toBe("zoom-fenetre");
     expect(outilDuClavier(evenement("Maj+Q"))).toBeNull();
+  });
+});
+
+describe("Barres d'outils — langue de l'interface écrite par le code (Planche détachée, D-163)", () => {
+  it("noms d'outils et raccourcis : français du catalogue, anglais de référence", () => {
+    expect(nomOutil(outilParId("main-levee")!, "fr")).toBe("Main levée");
+    expect(nomOutil(outilParId("main-levee")!, "en")).toBe("Freehand");
+    expect(afficherRaccourci("Maj+L", "fr")).toBe("Maj+L");
+    expect(afficherRaccourci("Maj+L", "en")).toBe("Shift+L");
+    expect(afficherRaccourci("Alt+Maj+P", "en")).toBe("Alt+Shift+P");
+    expect(afficherRaccourci("Maj+Espace", "en")).toBe("Shift+Space");
+    expect(afficherRaccourci("Ctrl+Maj+E", "en")).toBe("Ctrl+Shift+E");
+  });
+  it("familles et sections ont leur libellé dans les deux langues du catalogue de messages", () => {
+    for (const cle of [...FAMILLES.map((f) => f.cle), ...SECTIONS.map((s) => s.message)]) {
+      expect(CATALOGUE.fr[cle], cle).toBeTruthy();
+      expect(CATALOGUE.en[cle], cle).toBeTruthy();
+    }
+    expect(CATALOGUE.en["outils.famille.dessin"]).toBe("Draw");
+    expect(CATALOGUE.en["outils.section.mesurer"]).toBe("Measure / annotate");
   });
 });

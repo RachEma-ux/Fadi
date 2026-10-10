@@ -27,8 +27,9 @@ Outils ▾                                   bouton de la barre du haut de la Pl
 | Barres flottantes | Case « afficher » : la barre de l'outil flotte sur le dessin (`position: fixed`, z-index 5 comme la barre d'actions : au-dessus du dessin, sous les menus, la grille et les panneaux qu'on ouvre ; le dessin garde ses dimensions). Poignée ⠿ : souris et doigt (capture du pointeur), flèches (16 px, 64 px avec Maj) ; toujours entière dans la zone visible (bornage pur repris de `barre-actions-position.ts` : au relâchement, au redimensionnement, à la rotation, sous le clavier virtuel). Position par défaut : empilées sous la barre du haut, à droite du rail d'outils. ✕ masque (décoche « afficher »). Outil actif surligné (`aria-pressed`). Elles vivent dans la racine de la Planche : elles suivent la Planche détachée. | `planche/BarreOutilsFlottante.tsx`, `planche/barres-outils-disposition.ts` (+ test) |
 | Mémoire | `etat-ui.ts` : `barresOutils` (`visibles` dans l'ordre d'affichage, `positions` par outil) dans les préférences de l'appareil (`fadi.atelier.prefs`, même mécanisme que la barre d'actions, relecture défensive `lireBarresOutils`). « Réinitialiser la disposition » efface les positions, garde l'affichage. | `etat-ui.ts` |
 | Téléphone (≤ 760 px) | Une seule barre rendue — la dernière affichée —, rangée en bas, juste au-dessus du volet, sur toute la largeur (défilement horizontal dans la barre), cibles de 44 px, poignée retirée. La barre d'actions (position par défaut) s'écarte au-dessus d'elle. | `barres-outils-disposition.ts`, `BarreOutilsFlottante.tsx`, `Planche.tsx` |
+| Planche détachée | Le clavier de la Planche reconnaît un bouton focalisé sans `instanceof Element` (`commeElement`) : dans la fenêtre Document Picture-in-Picture, les nœuds créés après le détachement appartiennent à un autre « realm » ; Entrée / Espace sur un bouton y activent le bouton au lieu de valider la saisie (même correction pour la fermeture de la grille « ⋯ » au clic extérieur). | `Planche.tsx` |
 | Existant | Rail d'outils de gauche, grille « ⋯ », recherche, barre des touches modificatrices, barre d'actions et tous les attributs `data-*` inchangés ; nouveaux attributs : `data-planche-outils-bouton`, `data-planche-outils-liste`, `data-outils-recherche`, `-famille`, `-outil`, `-afficher`, `-barre`, `-section`, `-operation`, `-barre-visible`, `-reinitialiser` ; `data-barre-outils`, `data-barre-outils-poignee`, `-operation`, `-fermer`, `data-barre-outils-docquee`. | — |
-| Bilingue | Textes en français dans le code ; anglais en tête de `apps/web/src/lib/i18n/en.json` (35 entrées, dont les motifs `Maj+{0}` → `Shift+{0}` et `Alt+Maj+{0}` → `Alt+Shift+{0}`, et dix libellés d'outils du catalogue qui n'avaient pas de traduction : Rectangle pivoté, Arc 2 points, Arc 3 points, Secteur, Pousser/Tirer, Faire pivoter, Décalage, Suivez-moi, Retourner). | `en.json` |
+| Bilingue | Textes de la fonction au catalogue de messages de l'Atelier (`messages.ts`, clés `outils.*`, français et anglais, `t()`), et non au traducteur du DOM qui n'observe que la page : la Planche **détachée** (autre document) reste dans la langue choisie. Noms d'outils par `nomOutil` (libellé français du catalogue, ou `libelleSketchUp` en anglais) et raccourcis par `afficherRaccourci` (`Maj` → `Shift`, `Espace` → `Space` en anglais), aussi dans la liste de la recherche (Maj + -). `en.json` (en tête) ne garde que neuf libellés d'outils du catalogue qui n'avaient pas de traduction et que le rail affiche dans la page : Rectangle pivoté, Arc 2 points, Arc 3 points, Secteur, Pousser/Tirer, Faire pivoter, Décalage, Suivez-moi, Retourner. | `messages.ts`, `outils-planche.ts`, `en.json` |
 
 ## Correspondance outil → barre
 
@@ -82,14 +83,14 @@ quand Option de macOS change le caractère (Alt+Maj+P donne « ∏ ») ; une let
 
 ## Contrôles
 
-- `npm run typecheck` ✅ · `npm test` : planche-model 47 ✅, web 125 ✅ (dont 13 nouveaux : `barres-outils.test.ts` 8,
+- `npm run typecheck` ✅ · `npm test` : planche-model 47 ✅, web 127 ✅ (dont 15 nouveaux : `barres-outils.test.ts` 10,
   `barres-outils-disposition.test.ts` 5), core-geometry, domain-model, geometry-exact ✅, atelier-model 468 ✅ (un test
   documents a dépassé son délai une fois sous charge, vert relancé seul), API 98 ✅ avec une base PostgreSQL + PostGIS
   locale et les limites de débit de la CI (`AUTH_RATE_LIMIT=500`, `API_RATE_LIMIT=5000`) · `npm run build` ✅.
-- Recette `apps/web/e2e/planche-barre-outils.mjs` (ordinateur 1536 × 864, téléphone 390 × 844 tactile, anglais) : 53 ✅,
+- Recette `apps/web/e2e/planche-barre-outils.mjs` (ordinateur 1536 × 864, téléphone 390 × 844 tactile, anglais, Planche détachée simulée par un cadre de même origine — autre realm) : 57 ✅ ; le contrôle « Entrée sur un bouton créé dans la fenêtre » échoue sur l'ancien test `instanceof` et passe avec la correction,
   dont axe-core sans violation critique ou sérieuse (liste ouverte, barre affichée / rangée). Ajoutée à la CI.
 - Non-régression rejouée en local sur la version livrée : `planche-boutons` 62 ✅, `planche` 54 ✅, `atelier-barre` 56 ✅,
-  `planche-detachee-documents` 23 ✅, `interface-anglais` 7 ✅.
+  `planche-detachee-documents` 23 ✅, `interface-anglais` 7 ✅ (rejouées après les corrections de relecture : `planche-boutons`, `planche-detachee-documents`, `interface-anglais`).
 
 ## Limites (déclarées)
 

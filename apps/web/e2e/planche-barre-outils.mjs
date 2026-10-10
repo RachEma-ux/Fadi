@@ -262,6 +262,26 @@ await c.close();
 console.log("\n──── anglais ────");
 const ce = await browser.newContext({ viewport: vp, storageState: await ctx.storageState() });
 await ce.addInitScript(() => localStorage.setItem("fadi.langue", "en"));
+// Fenêtre séparée simulée (Document Picture-in-Picture) : un cadre de même origine — un autre « realm », comme la vraie
+// fenêtre (ses nœuds ne sont pas des `Element` de la page) ; le traducteur du DOM ne l'observe pas.
+await ce.addInitScript(() => {
+  Object.defineProperty(window, "documentPictureInPicture", {
+    configurable: true,
+    value: {
+      requestWindow: async ({ width, height }) => {
+        const f = document.createElement("iframe");
+        f.setAttribute("data-fenetre-detachee", "");
+        f.style.cssText = `position:fixed;left:0;top:0;width:${width}px;height:${height}px;border:2px solid #333;z-index:99999;background:#fff`;
+        document.body.appendChild(f);
+        f.contentWindow.close = () => {
+          f.contentWindow.dispatchEvent(new Event("pagehide"));
+          f.remove();
+        };
+        return f.contentWindow;
+      },
+    },
+  });
+});
 const pe = await ce.newPage();
 ecouter(pe);
 await ouvrir(pid, pe).catch(() => null);
@@ -282,6 +302,45 @@ const textes = await pe.evaluate(() => ({
   mainLevee: document.querySelector('[data-outils-barre="ligne"] [data-outils-operation="main-levee"]')?.getAttribute("title"),
 }));
 check("anglais : bouton, champ, familles, « show », sections, pied et raccourcis traduits", textes.bouton?.startsWith("Tools") && textes.champ === "Search for a tool…" && textes.dessin?.endsWith("Draw") && textes.afficher?.endsWith("show") && textes.sections.join("|") === "① Create|② Modify|③ Measure / annotate" && textes.pied === "⚙ Toolbars" && textes.reinit === "Reset the layout" && textes.mainLevee === "Freehand — Shift+L", JSON.stringify(textes));
+await pe.keyboard.press("Escape");
+
+// Planche détachée (autre document) : Entrée sur le bouton « Outils » ouvre la liste (pas de validation de la Planche),
+// et les textes, écrits par le code, restent en anglais.
+await pe.locator("[data-barre-actions] [data-planche-detacher]").click();
+await pe.waitForSelector("[data-fenetre-detachee]", { timeout: 10000 });
+const fen = pe.frameLocator("[data-fenetre-detachee]");
+await fen.locator(B).waitFor({ timeout: 10000 });
+await fen.locator(B).focus();
+await pe.keyboard.press("Enter");
+await pe.waitForTimeout(200);
+const focusChamp = await fen.locator("[data-outils-recherche]").evaluate((e) => e.ownerDocument.activeElement === e).catch(() => false);
+check("détachée : Entrée sur le bouton « Outils » ouvre la liste et place le focus dans le champ", (await fen.locator(L).count()) === 1 && (await fen.locator(B).getAttribute("aria-expanded")) === "true" && focusChamp);
+if ((await fen.locator('[data-outils-famille="dessin"]').getAttribute("aria-expanded")) !== "true") await fen.locator('[data-outils-famille="dessin"]').click();
+// L'état de la liste survit au détachement (même composant, déplacé) : Ligne peut être déjà dépliée.
+if ((await fen.locator('[data-outils-outil="ligne"]').getAttribute("aria-expanded")) !== "true") await fen.locator('[data-outils-outil="ligne"]').click();
+const textesDetache = await fen.locator(L).evaluate((l) => ({
+  bouton: l.ownerDocument.querySelector("[data-planche-outils-bouton]")?.textContent?.trim(),
+  champ: l.querySelector("[data-outils-recherche]")?.getAttribute("placeholder"),
+  dessin: l.querySelector('[data-outils-famille="dessin"]')?.textContent?.trim(),
+  ligne: l.querySelector('[data-outils-outil="main-levee"] .planche-outils-libelle')?.textContent?.trim(),
+  afficher: l.querySelector('[data-outils-afficher="main-levee"]')?.textContent?.trim(),
+  sections: Array.from(l.querySelectorAll('[data-outils-barre="ligne"] .planche-outils-section-titre')).map((e) => e.textContent.trim()),
+  mainLevee: l.querySelector('[data-outils-barre="ligne"] [data-outils-operation="main-levee"]')?.getAttribute("title"),
+  pied: l.querySelector(".planche-outils-pied-titre")?.textContent?.trim(),
+}));
+check("détachée, anglais : bouton, champ, familles, noms d'outils, « show », sections et raccourcis en anglais", textesDetache.bouton?.startsWith("Tools") && textesDetache.champ === "Search for a tool…" && textesDetache.dessin?.endsWith("Draw") && textesDetache.ligne === "Freehand" && textesDetache.afficher?.endsWith("show") && textesDetache.sections.join("|") === "① Create|② Modify|③ Measure / annotate" && textesDetache.mainLevee === "Freehand — Shift+L" && textesDetache.pied === "⚙ Toolbars", JSON.stringify(textesDetache));
+await fen.locator('[data-outils-barre="ligne"] [data-outils-operation="arc"]').focus();
+await pe.keyboard.press("Enter");
+check("détachée : Entrée sur une icône de la liste active l'outil (Arc) et referme la liste", (await outilActif(pe)) === "arc" && (await fen.locator(L).count()) === 0, await outilActif(pe));
+// Une barre affichée APRÈS le détachement : ses boutons naissent dans le document de la fenêtre (autre realm). Entrée
+// sur l'un d'eux doit l'activer, non être pris par la Planche pour valider la saisie (contrôle sans `instanceof`).
+await fen.locator(B).click();
+if ((await fen.locator('[data-outils-famille="dessin"]').getAttribute("aria-expanded")) !== "true") await fen.locator('[data-outils-famille="dessin"]').click();
+if ((await fen.locator('[data-outils-afficher="cercle"]').getAttribute("aria-checked")) !== "true") await fen.locator('[data-outils-afficher="cercle"]').click();
+await pe.keyboard.press("Escape");
+await fen.locator('[data-barre-outils="cercle"] [data-barre-outils-operation="polygone"]').focus();
+await pe.keyboard.press("Enter");
+check("détachée : Entrée sur un bouton créé dans la fenêtre (barre Cercle → Polygone) active ce bouton", (await outilActif(pe)) === "polygone", await outilActif(pe));
 await ce.close();
 
 check("aucune requête POST vers /commands pendant la Planche (brouillon local)", commandesEmises.length === 0, commandesEmises.slice(0, 3).join(" | "));

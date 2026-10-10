@@ -84,7 +84,7 @@ import { t } from "../messages";
 import { ChoixLangue } from "../../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
-import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
+import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { BarreActions } from "../panneaux/BarreActions";
@@ -176,6 +176,14 @@ function champSaisie(cible: EventTarget | null): boolean {
   const el = cible as HTMLElement | null;
   if (!el || typeof el.tagName !== "string") return false;
   return el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable === true;
+}
+
+/**
+ * Élément DOM sans `instanceof` : la Planche détachée vit dans une autre fenêtre (Document Picture-in-Picture), dont les
+ * nœuds ne sont pas des `Element` de la page (autre « realm ») — `instanceof Element` y serait toujours faux.
+ */
+function commeElement(x: EventTarget | null): Element | null {
+  return x !== null && typeof (x as Element).closest === "function" ? (x as Element) : null;
 }
 
 const virgule = (n: number, d = 2) => n.toFixed(d).replace(".", ",");
@@ -1453,7 +1461,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         return;
       }
       // Entrée ou Espace sur un bouton, un lien ou une liste : l'élément garde son action (clavier, D-161).
-      if ((e.key === "Enter" || e.key === " ") && cible instanceof Element && cible.closest("button, a[href], summary, select") && !texteRef.current) return;
+      if ((e.key === "Enter" || e.key === " ") && commeElement(cible)?.closest("button, a[href], summary, select") && !texteRef.current) return;
       if (e.key === "Enter") {
         e.preventDefault();
         validerRef.current();
@@ -1652,7 +1660,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     if (!grille) return;
     const surClic = (e: PointerEvent) => {
       const c = e.target as Node | null;
-      if (grilleDom.current && c && !grilleDom.current.contains(c) && !(c instanceof Element && c.closest("[data-planche-plus]"))) setGrille(false);
+      if (grilleDom.current && c && !grilleDom.current.contains(c) && !commeElement(c)?.closest("[data-planche-plus]")) setGrille(false);
     };
     // Fenêtre où vit la Planche (page ou fenêtre détachée).
     const w = racineRef.current?.ownerDocument.defaultView ?? window;
@@ -2382,7 +2390,7 @@ function RechercheOutil({ lecture, onFermer, onChoisir }: { lecture: boolean; on
             return (
               <li key={o.id} id={`planche-recherche-${o.id}`} role="option" aria-selected={i === rang} aria-disabled={raison ? true : undefined} className={i === rang ? "est-actif" : undefined} onPointerDown={(e) => e.preventDefault()} onClick={() => choisir(o)} title={titreOutil(o, raison)}>
                 <span aria-hidden="true" className="outil-picto">{pictoOutil(o.id)}</span> {o.libelle}
-                {raccourciOutil(o) && <kbd>{raccourciOutil(o)}</kbd>}
+                {raccourciOutil(o) && <kbd>{afficherRaccourci(raccourciOutil(o)!)}</kbd>}
                 {raison && <span className="outil-lot">{t("planche.prevu.court", { lot: lotPrevu(o) })}</span>}
               </li>
             );

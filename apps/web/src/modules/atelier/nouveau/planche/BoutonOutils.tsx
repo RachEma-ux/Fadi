@@ -13,7 +13,8 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { outilParId, type FamilleOutil, type Outil } from "@parcours/planche-model";
 import { barreDe, groupesOutils, libelleOperation, premierOutil, type SectionBarre } from "./barres-outils";
 import type { EtatBarresOutils } from "./barres-outils-disposition";
-import { pictoOutil, raccourciOutil } from "./outils-planche";
+import { t } from "../messages";
+import { afficherRaccourci, nomOutil, pictoOutil, raccourciOutil } from "./outils-planche";
 
 export interface PropsBoutonOutils {
   /** Outil actif (surligné dans la liste). */
@@ -132,7 +133,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
   };
 
   const operations = (o: Outil, sections: SectionBarre[]) => (
-    <div className="planche-outils-ops" role="group" aria-label={`Barre d'opérations — ${o.libelle}`} data-outils-barre={o.id}>
+    <div className="planche-outils-ops" role="group" aria-label={t("outils.barre", { outil: nomOutil(o) })} data-outils-barre={o.id}>
       {sections.map((s) => (
         <div key={s.cle} className="planche-outils-section" role="group" aria-label={`${s.numero} ${s.libelle}`} data-outils-section={s.cle}>
           <span className="planche-outils-section-titre" aria-hidden="true">
@@ -178,11 +179,11 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
         aria-haspopup="menu"
         aria-expanded={ouvert}
         aria-controls={ouvert ? idListe : undefined}
-        title="Outils par famille, barres d'opérations"
+        title={t("outils.bouton.aide")}
         data-planche-outils-bouton
         onClick={(e) => (ouvert ? fermer() : ouvrir(e.detail === 0))}
       >
-        Outils
+        {t("outils.bouton")}
         <span aria-hidden="true" className="planche-outils-chevron">▾</span>
       </button>
       {ouvert && (
@@ -193,8 +194,8 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
               ref={champ}
               type="search"
               value={requete}
-              placeholder="Rechercher un outil…"
-              aria-label="Rechercher un outil…"
+              placeholder={t("outils.recherche")}
+              aria-label={t("outils.recherche")}
               aria-controls={idListe}
               autoComplete="off"
               data-outils-nav
@@ -209,8 +210,8 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
               }}
             />
           </div>
-          <div id={idListe} className="planche-outils-arbre" role="menu" aria-label="Outils de la Planche par famille">
-            {filtre && groupes.length === 0 && <p className="inspecteur-aide" role="none">Aucun outil trouvé.</p>}
+          <div id={idListe} className="planche-outils-arbre" role="menu" aria-label={t("outils.menu")}>
+            {filtre && groupes.length === 0 && <p className="inspecteur-aide" role="none">{t("outils.aucun")}</p>}
             {groupes.map((g) => {
               const deplie = filtre || familles.has(g.famille);
               return (
@@ -229,20 +230,20 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
                       return (
                         <div key={o.id} className={`planche-outils-ligne${actif ? " est-actif" : ""}`} role="none" data-outils-ligne={o.id}>
                           <div className="planche-outils-tete" role="none">
-                            <button type="button" role="menuitem" className="planche-outils-nom" aria-expanded={ouverte} aria-current={actif ? "true" : undefined} title={`${libelleOperation(o)} — déplier la barre d'opérations`} data-outils-nav data-outils-outil={o.id} onClick={() => basculerOutil(o.id)}>
+                            <button type="button" role="menuitem" className="planche-outils-nom" aria-expanded={ouverte} aria-current={actif ? "true" : undefined} title={t("outils.deplier", { operation: libelleOperation(o) })} data-outils-nav data-outils-outil={o.id} onClick={() => basculerOutil(o.id)}>
                               <span aria-hidden="true" className="planche-outils-picto">{pictoOutil(o.id)}</span>
-                              <span className="planche-outils-libelle">{o.libelle}</span>
+                              <span className="planche-outils-libelle">{nomOutil(o)}</span>
                               {r && (
                                 <>
                                   <span aria-hidden="true"> · </span>
-                                  <kbd>{r}</kbd>
+                                  <kbd>{afficherRaccourci(r)}</kbd>
                                 </>
                               )}
                               <span aria-hidden="true" className="planche-outils-fleche">{ouverte ? "▾" : "▸"}</span>
                             </button>
-                            <button type="button" role="menuitemcheckbox" className="planche-outils-afficher" aria-checked={affichee} aria-label={`Afficher la barre ${o.libelle} sur le dessin`} title={`Afficher la barre ${o.libelle} sur le dessin`} data-outils-nav data-outils-afficher={o.id} onClick={() => onAfficherBarre(o.id, !affichee)}>
+                            <button type="button" role="menuitemcheckbox" className="planche-outils-afficher" aria-checked={affichee} aria-label={t("outils.afficher.aide", { outil: nomOutil(o) })} title={t("outils.afficher.aide", { outil: nomOutil(o) })} data-outils-nav data-outils-afficher={o.id} onClick={() => onAfficherBarre(o.id, !affichee)}>
                               <span aria-hidden="true" className="planche-outils-case">{affichee ? "☑" : "☐"}</span>
-                              <span aria-hidden="true">afficher</span>
+                              <span aria-hidden="true">{t("outils.afficher")}</span>
                             </button>
                           </div>
                           {ouverte && sections && operations(o, sections)}
@@ -254,22 +255,22 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
             })}
             <div className="planche-outils-pied" role="group" aria-label="Barres d'outils" data-outils-reglages>
               <span className="planche-outils-pied-titre" aria-hidden="true">
-                ⚙ Barres d'outils
+                ⚙ {t("outils.pied")}
               </span>
               {affichees.length === 0 && (
                 <span className="inspecteur-aide" role="none">
-                  Aucune barre affichée.
+                  {t("outils.pied.aucune")}
                 </span>
               )}
               {affichees.map((o) => (
-                <button key={o.id} type="button" role="menuitemcheckbox" aria-checked="true" className="planche-outils-afficher" aria-label={`Afficher la barre ${o.libelle} sur le dessin`} data-outils-nav data-outils-barre-visible={o.id} onClick={() => onAfficherBarre(o.id, false)}>
+                <button key={o.id} type="button" role="menuitemcheckbox" aria-checked="true" className="planche-outils-afficher" aria-label={t("outils.afficher.aide", { outil: nomOutil(o) })} data-outils-nav data-outils-barre-visible={o.id} onClick={() => onAfficherBarre(o.id, false)}>
                   <span aria-hidden="true" className="planche-outils-case">☑</span>
                   <span aria-hidden="true" className="planche-outils-picto">{pictoOutil(o.id)}</span>
-                  <span aria-hidden="true">{o.libelle}</span>
+                  <span aria-hidden="true">{nomOutil(o)}</span>
                 </button>
               ))}
               <button type="button" role="menuitem" className="planche-outils-reinitialiser" disabled={Object.keys(barres.positions).length === 0} data-outils-nav data-outils-reinitialiser onClick={onReinitialiser}>
-                Réinitialiser la disposition
+                {t("outils.reinitialiser")}
               </button>
             </div>
           </div>

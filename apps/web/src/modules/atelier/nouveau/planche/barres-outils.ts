@@ -10,25 +10,27 @@
  * partout le même pictogramme et le même raccourci (ceux de `outils-planche.ts`). Pur : ni DOM, ni React.
  */
 import { OUTILS, normaliserTexte, outilParId, type FamilleOutil, type Outil } from "@parcours/planche-model";
-import { raccourciOutil } from "./outils-planche";
+import { t, type CleMessage } from "../messages";
+import { afficherRaccourci, nomOutil, raccourciOutil } from "./outils-planche";
 
 /** Ordre des familles dans la liste : celui de la déclaration `FamilleOutil` du catalogue (sélection, dessin…). */
-export const FAMILLES: readonly { id: FamilleOutil; libelle: string }[] = [
-  { id: "selection", libelle: "Sélection" },
-  { id: "dessin", libelle: "Dessin" },
-  { id: "modification", libelle: "Modification" },
-  { id: "mesure", libelle: "Mesure" },
-  { id: "annotation", libelle: "Annotation" },
-  { id: "camera", libelle: "Caméra" },
-  { id: "solide", libelle: "Solides" },
-  { id: "materiau", libelle: "Matière" },
+export const FAMILLES: readonly { id: FamilleOutil; cle: CleMessage }[] = [
+  { id: "selection", cle: "outils.famille.selection" },
+  { id: "dessin", cle: "outils.famille.dessin" },
+  { id: "modification", cle: "outils.famille.modification" },
+  { id: "mesure", cle: "outils.famille.mesure" },
+  { id: "annotation", cle: "outils.famille.annotation" },
+  { id: "camera", cle: "outils.famille.camera" },
+  { id: "solide", cle: "outils.famille.solide" },
+  { id: "materiau", cle: "outils.famille.materiau" },
 ];
 
 export type CleSection = "creer" | "modifier" | "mesurer";
-export const SECTIONS: readonly { cle: CleSection; numero: string; libelle: string }[] = [
-  { cle: "creer", numero: "①", libelle: "Créer" },
-  { cle: "modifier", numero: "②", libelle: "Modifier" },
-  { cle: "mesurer", numero: "③", libelle: "Mesurer / annoter" },
+/** Sections ①②③ ; libellés au catalogue de messages (`t`, français et anglais). */
+export const SECTIONS: readonly { cle: CleSection; numero: string; message: CleMessage }[] = [
+  { cle: "creer", numero: "①", message: "outils.section.creer" },
+  { cle: "modifier", numero: "②", message: "outils.section.modifier" },
+  { cle: "mesurer", numero: "③", message: "outils.section.mesurer" },
 ];
 
 export type ObjetBarre = "aretes" | "surfaces" | "volumes" | "selection" | "solides" | "matiere" | "guides" | "annotations" | "camera";
@@ -143,13 +145,16 @@ export function barreDe(id: string): SectionBarre[] | null {
   const objet = OBJET_DE[id];
   if (!objet) return null;
   const b = BARRES[objet];
-  return SECTIONS.map((s) => ({ ...s, outils: b[s.cle].map((x) => outilParId(x)).filter((o): o is Outil => o !== null) }));
+  return SECTIONS.map((s) => ({ cle: s.cle, numero: s.numero, libelle: t(s.message), outils: b[s.cle].map((x) => outilParId(x)).filter((o): o is Outil => o !== null) }));
 }
 
-/** Libellé d'une opération : « Nom — raccourci » (même texte dans la liste, les barres flottantes et les infobulles). */
+/**
+ * Libellé d'une opération : « Nom — raccourci » (même texte dans la liste, les barres flottantes et les infobulles),
+ * dans la langue de l'interface (nom de référence et `Shift` en anglais).
+ */
 export function libelleOperation(o: Outil): string {
   const r = raccourciOutil(o);
-  return r ? `${o.libelle} — ${r}` : o.libelle;
+  return r ? `${nomOutil(o)} — ${afficherRaccourci(r)}` : nomOutil(o);
 }
 
 export interface GroupeFamille {
@@ -172,7 +177,7 @@ export function groupesOutils(requete = "", catalogue: readonly Outil[] = OUTILS
     const tout = [o.libelle, o.libelleSketchUp, o.id.replace(/-/g, " "), r ?? ""].map(normaliserTexte).join(" ");
     return mots.every((m) => tout.includes(m));
   };
-  return FAMILLES.map((f) => ({ famille: f.id, libelle: f.libelle, outils: catalogue.filter((o) => o.famille === f.id && retenu(o)) })).filter((g) => g.outils.length > 0);
+  return FAMILLES.map((f) => ({ famille: f.id, libelle: t(f.cle), outils: catalogue.filter((o) => o.famille === f.id && retenu(o)) })).filter((g) => g.outils.length > 0);
 }
 
 /** Premier outil retenu par une requête (Entrée dans le champ de recherche), ou `null`. */
