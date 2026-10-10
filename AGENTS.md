@@ -16,7 +16,9 @@
   and (3) a keyboard shortcut (surveyed SketchUp shortcut, otherwise the declared Fadi layer). The rule extends to every
   Planche command (Group, Explode, Isolate, Close group…) as each one is delivered, and to the single command registry
   of lot 9. It is enforced by tests (`apps/web/src/modules/atelier/nouveau/planche/barres-outils.test.ts`, « Règle
-  d'or »): a tool without its own icon, toolbar or shortcut fails CI. On touch screens the shortcut is complemented by a
+  d'or »): a tool without its own icon, toolbar or shortcut fails CI; every context-menu command of the Planche must be
+  listed with the lot that will give it its icon, toolbar and shortcut (O-1, O-2, O-3, L9), so no command can appear
+  without being accounted for. On touch screens the shortcut is complemented by a
   visible named button, never replaced by a hidden gesture.
 - Run npm run typecheck, npm test and npm run build for relevant code changes. Report checks that could not run.
 - Never commit secrets, node_modules or build outputs.

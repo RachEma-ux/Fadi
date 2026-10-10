@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { OUTILS, normaliserRaccourci, outilParId } from "@parcours/planche-model";
 import { BARRES, FAMILLES, OBJET_DE, SECTIONS, barreDe, groupesOutils, libelleOperation, premierOutil } from "./barres-outils";
 import { CATALOGUE } from "../messages";
@@ -162,5 +163,46 @@ describe("Règle d'or de la Planche (D-202, AGENTS.md) — icône propre, barre 
       expect(raccourcis.get(n), `${o.id} partage le raccourci ${r}`).toBeUndefined();
       raccourcis.set(n, o.id);
     }
+  });
+});
+
+/**
+ * Commandes de la Planche (menu contextuel de `Planche.tsx`) : la règle d'or s'y applique à leur livraison dans le
+ * registre unique. Tant qu'une commande n'a pas encore son icône, sa barre et son raccourci, elle figure ici avec le lot
+ * qui doit les lui donner (programme D-202) ; aucune commande ne peut apparaître au menu sans être inscrite.
+ */
+const COMMANDES_EN_ATTENTE: Readonly<Record<string, "O-1" | "O-2" | "O-3" | "L9">> = {
+  groupe: "O-1",
+  eclater: "O-1",
+  composant: "O-1",
+  modifier: "O-2",
+  "rendre-unique": "O-3",
+  diviser: "O-3",
+  "adoucir-lisser": "L9",
+  "afficher-tout": "L9",
+  "aligner-axes": "L9",
+  "aligner-vue": "L9",
+  "changer-axes": "L9",
+  coller: "L9",
+  coque: "L9",
+  effacer: "L9",
+  info: "L9",
+  intersection: "L9",
+  "inverser-faces": "L9",
+  masquer: "L9",
+  "orienter-faces": "L9",
+  "reinitialiser-echelle": "L9",
+  "reinitialiser-inclinaison": "L9",
+  "texture-unique": "L9",
+  "zoom-selection": "L9",
+};
+
+describe("Règle d'or — commandes du menu de la Planche (D-202)", () => {
+  it("chaque commande du menu contextuel est inscrite, avec le lot qui lui donnera icône, barre et raccourci", () => {
+    const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
+    const ids = new Set([...source.matchAll(/entrees\.push\(\{ id: "([a-z-]+)"/g)].map((m) => m[1]!).filter((id) => id !== "rien"));
+    expect(ids.size).toBeGreaterThan(0);
+    for (const id of ids) expect(COMMANDES_EN_ATTENTE[id], `commande « ${id} » au menu sans icône, barre ni raccourci, et absente de la liste`).toBeDefined();
+    for (const id of Object.keys(COMMANDES_EN_ATTENTE)) expect(ids.has(id), `« ${id} » n'est plus au menu : la retirer de la liste`).toBe(true);
   });
 });

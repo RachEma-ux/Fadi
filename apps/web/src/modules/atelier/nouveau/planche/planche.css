@@ -1694,8 +1694,9 @@
   }
 }
 
-/* Lot Planche 8 : barre d'options de l'outil actif (modes de Pousser/Tirer…), même chemin que les touches. */
-.planche-options {
+/* Lot Planche 8 : barre d'options de l'outil actif (modes de Pousser/Tirer…), même chemin que les touches. Classe propre
+   (`planche-options-outil`) : `.planche-options` reste celle des panneaux Styles, Ombres, Affichage, Scènes, Adoucir… */
+.planche-options-outil {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem 0.8rem;
@@ -1711,7 +1712,7 @@
    flux du volet. Au téléphone, elle flotte juste au-dessus du volet, à droite du rail d'outils : la zone de dessin garde
    sa taille quand on choisit un outil ou quand la cible passe d'une face à une arête (le point visé reste sous le doigt). */
 @media (max-width: 760px) {
-  .planche-options {
+  .planche-options-outil {
     position: absolute;
     left: calc(var(--colonne-l) + 1.25rem);
     right: 0.5rem;
