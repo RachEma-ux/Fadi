@@ -175,8 +175,6 @@ describe("Règle d'or de la Planche (D-202, AGENTS.md) — icône propre, barre 
 const COMMANDES_EN_ATTENTE: Readonly<Record<string, "O-1" | "O-2" | "O-3" | "L9">> = {
   // Modifier (ouvrir l'objet) : son raccourci naturel (Entrée) dépend du routage par focus du registre (lot 9).
   modifier: "L9",
-  "rendre-unique": "O-3",
-  diviser: "O-3",
   "adoucir-lisser": "L9",
   "afficher-tout": "L9",
   "aligner-axes": "L9",
@@ -209,7 +207,7 @@ describe("Règle d'or — commandes du menu de la Planche (D-202)", () => {
 });
 
 describe("Règle d'or — commandes d'objet livrées (Objets O-1, D-203)", () => {
-  it("Grouper, Créer un composant, Éclater : icône propre, place dans la barre d'actions, raccourci sans collision", () => {
+  it("Grouper, Créer un composant, Éclater, Rendre unique, Diviser, Diviser en segments : icône propre, place dans la barre d'actions, raccourci sans collision", () => {
     const pictosOutils = new Set(OUTILS.map((o) => pictoOutil(o.id)));
     const typesNavigateur = ["◈", "▣"];
     const pictos = new Set<string>();
@@ -224,8 +222,11 @@ describe("Règle d'or — commandes d'objet livrées (Objets O-1, D-203)", () =>
     const objets = raccourcisObjets();
     expect(new Set(objets).size).toBe(objets.length);
     for (const r of objets) expect(outils.has(r), `raccourci ${r} déjà pris par un outil`).toBe(false);
-    const eclater = normaliserRaccourci(commandeObjet("eclater").raccourci);
-    expect(RESERVES_PLANCHE).not.toContain(eclater);
+    for (const c of COMMANDES_OBJETS) {
+      if (c.id === "groupe" || c.id === "composant") continue;
+      expect(RESERVES_PLANCHE, `${c.id} reprend une touche de la Planche`).not.toContain(normaliserRaccourci(c.raccourci));
+    }
+    expect(commandeObjet("rendre-unique").raccourci).toBe("Alt+Maj+U");
     // Barre d'actions : les trois commandes y sont rendues depuis la même liste.
     const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
     expect(source).toContain("...COMMANDES_OBJETS.map((c) =>");
@@ -233,6 +234,9 @@ describe("Règle d'or — commandes d'objet livrées (Objets O-1, D-203)", () =>
     // « Outils ▾ » : groupe « Objets » alimenté par la même liste ; nom visible sous l'icône dans la barre d'actions.
     expect(source).toMatch(/commandes=\{\[\s*\.\.\.COMMANDES_OBJETS\.map\(\(c\) =>/);
     expect(source).toContain("texte: t(c.court)");
+    // Objets O-3 : les raccourcis Alt + Maj lisent la touche physique (macOS) et la disponibilité commune.
+    expect(source).toContain('e.code === "KeyU" ? "rendre-unique" : e.code === "KeyD" ? "diviser" : "diviser-courbe"');
+    expect(source).toContain("if (c.contextuelle && !d.disponible) return [];");
   });
 });
 

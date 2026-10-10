@@ -32,6 +32,7 @@ import {
   cross,
   differencePlanche,
   diviser,
+  diviserCourbes,
   eclater,
   effacerEntites,
   empreintePlanche,
@@ -621,6 +622,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     [poserHistorique, rafraichir, readOnly, setSelection],
   );
   const o = useCallback(() => (dansRef.current !== undefined ? { dans: dansRef.current } : {}), []);
+  // Objets O-3 : le clavier (Alt + Maj + U / D / C) lit la même disponibilité que la barre et le menu, posée au rendu.
+  const etatSelectionObjetsRef = useRef<() => EtatSelectionObjets>(() => ({ lecture: true, entites: 0, objets: 0, verrouilles: false }));
+  const executerObjetRef = useRef<(id: IdCommandeObjet) => void>(() => {});
   const selectionDe = useCallback((genre: "faces" | "aretes" | "occurrences", m = histRef.current.present.modele) => {
     const c = contexteDe(m, dansRef.current);
     return selectionRef.current.filter((id) => c[genre][id]);
@@ -703,14 +707,22 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         if (occs.length === 0) return { modele: m, message: t("planche.eclater.objet") };
         let courant = m;
         const crees: string[] = [];
+        // Objets O-3 : éclater dans le contexte réellement ouvert, et annoncer ce qui a été transmis.
+        const total = { faces: 0, objets: 0, balises: 0, perdue: false };
         for (const id of occs) {
-          const r = eclater(courant, id);
+          const r = eclater(courant, id, o());
           courant = r.modele;
           crees.push(...r.rapport.crees);
+          total.faces += r.extra.materiauFaces;
+          total.objets += r.extra.materiauObjets;
+          total.balises += r.extra.baliseObjets;
+          total.perdue ||= r.extra.baliseNonPortee;
         }
-        return { modele: courant, selection: crees };
+        const transferts = total.faces + total.objets + total.balises > 0 ? t("planche.eclater.transferts", { faces: String(total.faces), objets: String(total.objets), balises: String(total.balises) }) : "";
+        const message = [transferts, total.perdue ? t("planche.eclater.balise-perdue") : ""].filter(Boolean).join(" ");
+        return { modele: courant, selection: crees, message: message || null };
       }),
-    [operer, selectionDe],
+    [operer, o, selectionDe],
   );
   const rendreUniqueSelection = useCallback(
     () =>
@@ -720,7 +732,10 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         if (occs.every((id) => nombreOccurrences(m, c.occurrences[id]!.definition) <= 1)) return { modele: m, message: t("planche.unique.deja") };
         let courant = m;
         for (const id of occs) courant = rendreUnique(courant, id).modele;
-        return { modele: courant };
+        // Objets O-3 : le nom « #k » de la copie est annoncé.
+        const c2 = contexteDe(courant, dansRef.current);
+        const noms = occs.map((id) => courant.definitions[c2.occurrences[id]!.definition]?.nom).filter((n) => n !== undefined);
+        return { modele: courant, message: noms.length ? t("planche.unique.fait", { nom: noms.join(", ") }) : null };
       }),
     [operer, selectionDe],
   );
@@ -783,6 +798,17 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         let courant = m;
         for (const id of aretes) courant = diviser(courant, id, 2, o()).modele;
         return { modele: courant, selection: [] };
+      }),
+    [operer, o, selectionDe],
+  );
+  /** Objets O-3 : Diviser en segments (Explode Curve) — les courbes touchées par la sélection redeviennent des segments. */
+  const diviserCourbeSelection = useCallback(
+    () =>
+      operer(t("planche.menu.diviser-courbe"), (m) => {
+        const aretes = selectionDe("aretes", m);
+        if (aretes.length === 0) return null;
+        const r = diviserCourbes(m, aretes, o());
+        return { modele: r.modele, message: t("planche.courbe.divisee", { nombre: String(r.extra) }) };
       }),
     [operer, o, selectionDe],
   );
@@ -1030,6 +1056,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         if (aretes.length > 0) {
           entrees.push({ id: adoucies ? "durcir" : "adoucir", libelle: t(adoucies ? "planche.menu.durcir" : "planche.menu.adoucir"), separateurAvant: true, grise: readOnly, action: () => adoucirSelection(!adoucies) });
           entrees.push({ id: "diviser", libelle: t("planche.menu.diviser"), grise: readOnly, action: diviserSelection });
+          if (aretes.some((id) => c.aretes[id]?.courbe)) entrees.push({ id: "diviser-courbe", libelle: t("planche.menu.diviser-courbe"), grise: readOnly, action: diviserCourbeSelection });
         }
         if (occs.length > 0) {
           const composant = def?.genre === "composant";
@@ -1056,6 +1083,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       collerSelection,
       coqueSelection,
       diviserSelection,
+      diviserCourbeSelection,
       eclaterSelection,
       detacherLienSelection,
       effacerSelection,
@@ -1489,6 +1517,14 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         eclaterSelection();
         return;
       }
+      // Objets O-3 : Alt + Maj + U rendre unique, Alt + Maj + D diviser, Alt + Maj + C diviser en segments (touche physique :
+      // sous macOS, Option change le caractère produit).
+      if (!mod && e.altKey && e.shiftKey && !dansMesures && (e.code === "KeyU" || e.code === "KeyD" || e.code === "KeyC")) {
+        e.preventDefault();
+        const id: IdCommandeObjet = e.code === "KeyU" ? "rendre-unique" : e.code === "KeyD" ? "diviser" : "diviser-courbe";
+        if (disponibiliteObjet(id, etatSelectionObjetsRef.current()).disponible) executerObjetRef.current(id);
+        return;
+      }
       // Lot 5 (objets) : G composant, K arêtes arrière, Ctrl + A tout, Ctrl + Maj + I inverser, Ctrl + C / X / V presse-papiers.
       if (!mod && !e.altKey && !e.shiftKey && cle === "g" && !dansMesures && !texteRef.current) {
         e.preventDefault();
@@ -1881,9 +1917,27 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     const c = contexteDe(m, dans);
     const entites = selectionRef.current.filter((id) => genreAnnotation(id) === null);
     const objets = entites.filter((id) => c.occurrences[id]);
-    return { lecture: readOnly, entites: entites.length, objets: objets.length, verrouilles: objets.length > 0 && objets.every((id) => c.occurrences[id]!.verrouille) };
+    const aretes = entites.filter((id) => c.aretes[id]);
+    return {
+      lecture: readOnly,
+      entites: entites.length,
+      objets: objets.length,
+      verrouilles: objets.length > 0 && objets.every((id) => c.occurrences[id]!.verrouille),
+      partages: objets.filter((id) => nombreOccurrences(m, c.occurrences[id]!.definition) > 1).length,
+      aretes: aretes.length,
+      courbes: new Set(aretes.map((id) => c.aretes[id]!.courbe).filter(Boolean)).size,
+    };
   };
-  const executerObjet = (id: IdCommandeObjet) => (id === "groupe" ? grouperSelection() : id === "composant" ? ouvrirDialogueComposant() : eclaterSelection());
+  const executerObjet = (id: IdCommandeObjet) => {
+    if (id === "groupe") grouperSelection();
+    else if (id === "composant") ouvrirDialogueComposant();
+    else if (id === "eclater") eclaterSelection();
+    else if (id === "rendre-unique") rendreUniqueSelection();
+    else if (id === "diviser") diviserSelection();
+    else diviserCourbeSelection();
+  };
+  etatSelectionObjetsRef.current = etatSelectionObjets;
+  executerObjetRef.current = executerObjet;
 
   const boutonOutils = (
     <BoutonOutils
@@ -1913,8 +1967,10 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       annuler={{ id: "annuler", picto: "↶", libelle: t("planche.annuler"), titre: t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" }), onClick: annulerPas, disabled: hist.passe.length === 0, attributs: { "data-planche-annuler": "" } }}
       retablir={{ id: "retablir", picto: "↷", libelle: t("planche.retablir"), titre: t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" }), onClick: retablirPas, disabled: hist.futur.length === 0, attributs: { "data-planche-retablir": "" } }}
       autres={[
-        ...COMMANDES_OBJETS.map((c) => {
+        ...COMMANDES_OBJETS.flatMap((c) => {
           const d = disponibiliteObjet(c.id, etatSelectionObjets());
+          // Commandes d'arête (O-3) : présentes dans la barre seulement quand elles s'appliquent.
+          if (c.contextuelle && !d.disponible) return [];
           const nom = t(c.libelle);
           return {
             id: c.id,
