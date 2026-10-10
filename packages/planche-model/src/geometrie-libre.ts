@@ -2907,6 +2907,13 @@ export function deplacerVersContexte(m: Modele, ids: readonly Id[], cible: Id | 
   if (cible !== undefined && chemin.length === 0) throw new Error(`Occurrence inconnue : ${cible}`);
   if (ids.some((id) => chemin.includes(id))) throw new RangeError("Un objet ne peut pas être déplacé dans lui-même ni dans un de ses objets.");
   if (cible !== undefined && cheminVers(m, cible).length && new Travail(m).occurrence(cible).occ.verrouille) throw new RangeError("Le groupe d'arrivée est verrouillé : déverrouillez-le pour y ranger des objets.");
+  // Revue O-4 : un composant partagé peut contenir la définition d'arrivée sans que l'occurrence cible soit sous l'objet
+  // (une autre occurrence de B, hors de A) ; ranger A dedans rendrait la définition récursive. On suit les définitions.
+  if (cible !== undefined) {
+    const defCible = new Travail(m).occurrence(cible).occ.definition;
+    const ici = contexte(m, o.dans).occurrences;
+    if (ids.some((id) => ici[id] !== undefined && definitionsAtteintes(m, (ici[id] as Occurrence).definition).has(defCible))) throw new RangeError(ERREUR_DEPLACER_CYCLE);
+  }
   const source = o.dans === undefined ? IDENTITE : matriceMonde(m, o.dans);
   const arrivee = cible === undefined ? IDENTITE : matriceMonde(m, cible);
   const inverse = arrivee ? inverserMatrice(arrivee) : null;
@@ -2916,6 +2923,9 @@ export function deplacerVersContexte(m: Modele, ids: readonly Id[], cible: Id | 
   // recevrait ou perdrait l'objet avec celui qu'on édite.
   for (const id of [...(o.dans === undefined ? [] : cheminVers(m, o.dans)), ...chemin]) t.ouvrir(id);
   const src = t.ouvrir(o.dans);
+  // Revue O-4 : deux occurrences d'un même composant ouvrent le même contenu — « déplacer » de l'une à l'autre n'est pas
+  // un rangement (l'objet bougerait dans toutes) : refus.
+  if (t.ouvrir(cible) === src) throw new RangeError(ERREUR_DEPLACER_MEME_CONTENU);
   for (const id of ids) if (!src.occurrences.has(id)) throw new RangeError(`L'objet ${id} n'est pas dans le contexte ouvert : seuls les groupes et composants se déplacent vers un groupe.`);
   refuserVerrouilles(src, ids);
   const occs = ids.map((id) => src.occurrences.get(id) as Occurrence);
@@ -2931,6 +2941,23 @@ export function deplacerVersContexte(m: Modele, ids: readonly Id[], cible: Id | 
   actualiserExtrusions(t);
   const modele = t.fermer();
   return { modele, rapport: differences(m, modele), extra: { composantPartage } };
+}
+
+export const ERREUR_DEPLACER_CYCLE = "Un objet ne peut pas être rangé dans un objet qu'il contient (directement ou par un composant partagé).";
+export const ERREUR_DEPLACER_MEME_CONTENU = "Les objets sont déjà dans ce contenu : la cible est une autre occurrence du même composant.";
+
+/** Définitions atteintes depuis `def` (elle comprise), en descendant dans les occurrences de leur contenu. */
+export function definitionsAtteintes(m: Modele, def: Id): Set<Id> {
+  const vues = new Set<Id>();
+  const pile = [def];
+  while (pile.length) {
+    const d = pile.pop() as Id;
+    if (vues.has(d)) continue;
+    vues.add(d);
+    const contenu = m.definitions[d]?.contenu;
+    if (contenu) for (const oc of Object.values(contenu.occurrences)) pile.push(oc.definition);
+  }
+  return vues;
 }
 
 /** Chemin d'occurrences de la racine jusqu'à `occ` comprise ; vide si introuvable. */

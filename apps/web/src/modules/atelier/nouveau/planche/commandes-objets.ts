@@ -3,7 +3,7 @@
  * propre icône, sa place dans la barre d'actions flottante et un raccourci clavier (règle d'or, `AGENTS.md`) ; leur
  * disponibilité se calcule ici, sans React ni DOM, pour que le menu, la barre et le clavier disent la même chose.
  */
-import { type Modele, normaliserRaccourci } from "@parcours/planche-model";
+import { type Modele, contexte, definitionsAtteintes, normaliserRaccourci } from "@parcours/planche-model";
 import type { CleMessage } from "../messages";
 
 export type IdCommandeObjet = "groupe" | "composant" | "eclater" | "rendre-unique" | "diviser" | "diviser-courbe";
@@ -152,12 +152,26 @@ export interface CibleDeplacement {
 export function ciblesDeplacement(m: Modele, deplaces: readonly string[], dans: string | undefined, nom: (id: string, defNom: string) => string, racine: string): CibleDeplacement[] {
   const exclus = new Set(deplaces);
   const r: CibleDeplacement[] = dans === undefined ? [] : [{ id: undefined, nom: racine, profondeur: 0 }];
+  // Revue O-4 : ni une autre occurrence du composant d'où l'on part (même contenu), ni une définition contenue par un
+  // objet déplacé (cycle par un composant partagé).
+  const ici = contexte(m, dans).occurrences;
+  const interdites = new Set<string>(deplaces.flatMap((id) => (ici[id] ? [...definitionsAtteintes(m, ici[id]!.definition)] : [])));
+  let defDans: string | undefined;
+  const trouver = (c: Modele["racine"], p: number): void => {
+    if (p > 16 || defDans !== undefined) return;
+    for (const o of Object.values(c.occurrences)) {
+      if (o.id === dans) defDans = o.definition;
+      const d = m.definitions[o.definition];
+      if (d) trouver(d.contenu, p + 1);
+    }
+  };
+  if (dans !== undefined) trouver(m.racine, 0);
   const parcourir = (c: Modele["racine"], profondeur: number) => {
     if (profondeur > 16) return;
     for (const o of Object.values(c.occurrences)) {
       if (exclus.has(o.id)) continue;
       const d = m.definitions[o.definition];
-      if (o.id !== dans && !o.verrouille) r.push({ id: o.id, nom: nom(o.id, d?.nom ?? ""), profondeur: profondeur + 1 });
+      if (o.id !== dans && !o.verrouille && o.definition !== defDans && !interdites.has(o.definition)) r.push({ id: o.id, nom: nom(o.id, d?.nom ?? ""), profondeur: profondeur + 1 });
       if (d) parcourir(d.contenu, profondeur + 1);
     }
   };
