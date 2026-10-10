@@ -27,6 +27,7 @@ import {
   type Id,
   type Matrice4,
   type Modele,
+  type Occurrence,
   IDENTITE,
   appliquer,
   baseDuPlan,
@@ -577,19 +578,23 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
   // Objets O-5 : isolement (chemin du contexte d'isolement + entités retenues) ; composant ouvert pour les semblables.
   const iso = o.isole && o.isole.ids.length > 0 ? o.isole : null;
   const retenues = new Set(iso?.ids ?? []);
-  const ouverte = o.masquerSemblables && ouvert.length > 0 ? ouvert[ouvert.length - 1] : undefined;
+  // Composant ouvert : repéré par son chemin complet (une même occurrence enfant se répète sous chaque copie du parent).
   let defOuverte: Id | undefined;
-  if (ouverte !== undefined) {
-    const chercher = (c: Contexte, prof: number): void => {
-      if (prof > 32 || defOuverte !== undefined) return;
-      for (const oc of Object.values(c.occurrences)) {
-        if (oc.id === ouverte) defOuverte = m.definitions[oc.definition]?.genre === "composant" ? oc.definition : undefined;
-        const d = m.definitions[oc.definition];
-        if (d) chercher(d.contenu, prof + 1);
+  if (o.masquerSemblables && ouvert.length > 0) {
+    let c: Contexte | undefined = m.racine;
+    let def: Id | undefined;
+    for (const id of ouvert) {
+      const oc: Occurrence | undefined = c?.occurrences[id];
+      if (!oc) {
+        def = undefined;
+        break;
       }
-    };
-    chercher(m.racine, 0);
+      def = oc.definition;
+      c = m.definitions[def]?.contenu;
+    }
+    defOuverte = def !== undefined && m.definitions[def]?.genre === "composant" ? def : undefined;
   }
+  const estOuvert = (pile: readonly Id[]) => pile.length === ouvert.length && pile.every((id, i) => id === ouvert[i]);
   /** Où en est la pile par rapport à l'isolement : « libre » (tout montrer), « chemin » (passer), « niveau » (filtrer). */
   const etatIsolement = (pile: readonly Id[]): "libre" | "chemin" | "niveau" | "dehors" => {
     if (!iso) return "libre";
@@ -627,7 +632,7 @@ export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): Ge
     for (const oc of Object.values(c.occurrences)) {
       // Objet masqué (lot 5) ou balise masquée (calque invisible, P-9) : l'objet n'est ni affiché ni accroché.
       if (oc.masquee) continue;
-      if (defOuverte !== undefined && oc.definition === defOuverte && oc.id !== ouverte) continue;
+      if (defOuverte !== undefined && oc.definition === defOuverte && !estOuvert([...pile, oc.id])) continue;
       if (oc.balise && balises && balises[oc.balise] && !balises[oc.balise]!.visible) continue;
       const d = m.definitions[oc.definition];
       if (d) parcourir(d.contenu, composer(M, oc.transformation), true, profondeur + 1, oc.materiau ?? materiau, oc.balise ?? balise, [...pile, oc.id]);
