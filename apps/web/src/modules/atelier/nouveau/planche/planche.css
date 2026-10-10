@@ -765,6 +765,10 @@
   .planche.volet-ouvert .planche-fleches button {
     flex: 1 1 0;
   }
+  /* Tirage d'arête (D-197) : les flèches restent dans la barre de modificateurs, même volet fermé. */
+  .planche-modificateurs .planche-fleches.au-toucher {
+    display: inline-flex;
+  }
   .planche-mesures {
     flex: 1 1 auto;
     min-width: 0;

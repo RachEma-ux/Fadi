@@ -144,6 +144,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/planche-outils.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Pousser/Tirer d'arêtes de la Planche — surfaces, couronne, allongement, lien, téléphone (apps/web/e2e/planche-pousser-aretes.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-pousser-aretes node apps/web/e2e/planche-pousser-aretes.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         run: |
           set -o pipefail
