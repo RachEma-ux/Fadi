@@ -1753,7 +1753,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       // (`closest` plutôt qu'`instanceof Element` : la fenêtre du plan détaché a ses propres constructeurs.)
       const el = e.target as { closest?: (s: string) => unknown } | null;
       const dansBarre = typeof el?.closest === "function" && el.closest('[role="toolbar"]') !== null;
-      if (r.seule && !dansBarre && !champSaisie(e.target) && !rechercheRef.current && !texteRef.current) envoyerSeuleRef.current(r.seule);
+      if (r.seule && !dansBarre && !champSaisie(e.target) && !rechercheRef.current && texteRef.current?.statut !== "frappe") envoyerSeuleRef.current(r.seule);
     };
     // §5.5 (choix Fadi) : à la perte du focus, les touches tenues sont relâchées (un Ctrl « collé » bloquerait tout).
     const surPerte = () => {
