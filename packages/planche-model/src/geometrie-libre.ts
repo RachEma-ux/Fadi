@@ -590,6 +590,15 @@ class Travail {
     return this.salir(def.contenu);
   }
 
+  /** « Nom#k » libre (O-3) : le suffixe « #n » d'un nom déjà rendu unique est remplacé, jamais empilé (« #1#1 »). */
+  nomUnique(nom: string): string {
+    const base = nom.replace(/#\d+$/, "");
+    const pris = new Set([...this.definitions.values()].map((d) => d.nom));
+    let k = 1;
+    while (pris.has(`${base}#${k}`)) k++;
+    return `${base}#${k}`;
+  }
+
   /** Copie privée de la définition pour `occId` ; `garderIds` : l'occurrence garde le contenu d'origine. */
   rendreUnique(occId: Id, garderIds = false): Ctx {
     const { ctx, occ } = this.occurrence(occId);
@@ -600,7 +609,7 @@ class Travail {
     const id = this.id("d");
     const pourOcc = garderIds ? def.contenu : copie;
     if (garderIds) this.definitions.set(def.id, { ...def, contenu: copie });
-    this.definitions.set(id, { id, nom: `${def.nom}#1`, genre: def.genre, contenu: pourOcc, ...metaDe(def) });
+    this.definitions.set(id, { id, nom: this.nomUnique(def.nom), genre: def.genre, contenu: pourOcc, ...metaDe(def) });
     ctx.occurrences.set(occId, { ...occ, definition: id });
     return this.salir(pourOcc);
   }
@@ -877,6 +886,8 @@ interface Source {
   readonly normale: Vec3;
   readonly materiauRecto?: string | undefined;
   readonly materiauVerso?: string | undefined;
+  /** Face masquée reprise telle quelle (Éclater, O-3). */
+  readonly masquee?: boolean | undefined;
   /** 'face' : la région devient une face ; 'trou' : la région reste vide (perçage, mur raccourci). */
   readonly role: "face" | "trou";
   /** Identifiant à reprendre (face déplacée par Pousser/Tirer) s'il est libre. */
@@ -1057,6 +1068,7 @@ function reconstruirePlan(
     normale: Vec3,
     recto: string | undefined,
     verso: string | undefined,
+    masquee?: boolean,
   ): void => {
     const r = regions[ri] as (typeof regions)[number];
     const n = orienter(normale);
@@ -1068,6 +1080,7 @@ function reconstruirePlan(
       normale: n,
       ...(recto !== undefined ? { materiauRecto: recto } : {}),
       ...(verso !== undefined ? { materiauVerso: verso } : {}),
+      ...(masquee ? { masquee: true } : {}),
     };
     c.faces.set(id, f);
     faites.add(ri);
@@ -1111,7 +1124,7 @@ function reconstruirePlan(
       const pref = src.s.idPrefere;
       const id = pref !== undefined && !c.faces.has(pref) && !prises.has(pref) ? pref : t.id("f");
       prises.add(id);
-      poser(ri, id, src.s.normale, src.s.materiauRecto, src.s.materiauVerso);
+      poser(ri, id, src.s.normale, src.s.materiauRecto, src.s.materiauVerso, src.s.masquee);
       continue;
     }
     if (opts.auto) {
@@ -2197,7 +2210,9 @@ function copierTransforme(t: Travail, c: Ctx, entites: readonly Id[], matrices: 
     insererGeometrie(t, c, segments, sources, false);
     for (const occ of occs) {
       const id = t.id("o");
-      c.occurrences.set(id, { id, definition: occ.definition, transformation: composer(M, occ.transformation) });
+      // Objets O-3 : la copie garde nom, matière et balise de l'objet copié (le verrou et le masquage restent à l'original).
+      const { verrouille: _v, masquee: _m, ...attributs } = occ;
+      c.occurrences.set(id, { ...attributs, id, transformation: composer(M, occ.transformation) });
     }
   });
 }
@@ -2371,11 +2386,31 @@ export function grouper(
   return { modele: r.modele, rapport: r.rapport, occurrence: r.extra.occ, definition: r.extra.def };
 }
 
-/** Éclater (Explode) : la géométrie de l'occurrence revient, transformée et collante, dans le contexte. */
-export function eclater(m: Modele, occurrence: Id): Resultat {
-  const t0 = new Travail(m);
-  const { ctx } = t0.occurrence(occurrence);
-  const dans = ctx === t0.racine ? undefined : trouverOccurrenceDeDefinition(m, ctx, t0);
+/**
+ * Ce qu'Éclater a transmis (Objets O-3, D-205) : la matière de l'objet est posée sur les faces sans matière propre (recto,
+ * le côté qui l'affichait), la matière et la balise de l'objet sur les objets enfants qui n'en ont pas ; la géométrie nue
+ * de la Planche ne porte pas de balise, la balise de l'objet est alors perdue pour elle et l'interface le dit.
+ */
+export interface TransfertsEclater {
+  readonly materiauFaces: number;
+  readonly materiauObjets: number;
+  readonly baliseObjets: number;
+  /** L'objet avait une balise et de la géométrie nue qui ne peut pas la porter. */
+  readonly baliseNonPortee: boolean;
+}
+
+/**
+ * Éclater d'un niveau (O-3) : l'occurrence `occurrence` du contexte `o.dans` (absent : contexte qui la contient, retrouvé)
+ * est remplacée par son contenu, transformé ; les objets enfants gardent nom, matière, balise, masquage et verrou, les faces
+ * et arêtes leur matière et leur masquage. Refus : objet verrouillé.
+ */
+export function eclater(m: Modele, occurrence: Id, o: OptionsContexte = {}): Resultat & { extra: TransfertsEclater } {
+  let dans = o.dans;
+  if (dans === undefined) {
+    const t0 = new Travail(m);
+    const { ctx } = t0.occurrence(occurrence);
+    dans = ctx === t0.racine ? undefined : trouverOccurrenceDeDefinition(m, ctx, t0);
+  }
   return operer(m, dans, (t, c) => {
     const occ = c.occurrences.get(occurrence);
     if (!occ) throw new Error(`Occurrence inconnue : ${occurrence}`);
@@ -2405,22 +2440,40 @@ export function eclater(m: Modele, occurrence: Id): Resultat {
           : {}),
       };
     });
+    let materiauFaces = 0;
     const sources: Source[] = [...g.faces.values()].map((f) => {
       const p = positionsFaceCtx(g, f);
+      const recto = f.materiauRecto ?? occ.materiau;
+      if (f.materiauRecto === undefined && occ.materiau !== undefined) materiauFaces++;
       return {
         exterieur: p.exterieur.map((x) => appliquer(M, x)),
         trous: p.trous.map((b) => b.map((x) => appliquer(M, x))),
         normale: transformerNormale(M, f.normale),
-        materiauRecto: f.materiauRecto,
+        materiauRecto: recto,
         materiauVerso: f.materiauVerso,
+        masquee: f.masquee,
         role: "face",
       };
     });
     insererGeometrie(t, c, segments, sources, false);
+    let materiauObjets = 0;
+    let baliseObjets = 0;
     for (const io of g.occurrences.values()) {
       const id = t.id("o");
-      c.occurrences.set(id, { id, definition: io.definition, transformation: composer(M, io.transformation) });
+      const materiau = io.materiau ?? occ.materiau;
+      const balise = io.balise ?? occ.balise;
+      if (io.materiau === undefined && materiau !== undefined) materiauObjets++;
+      if (io.balise === undefined && balise !== undefined) baliseObjets++;
+      c.occurrences.set(id, {
+        ...io,
+        id,
+        transformation: composer(M, io.transformation),
+        ...(materiau !== undefined ? { materiau } : {}),
+        ...(balise !== undefined ? { balise } : {}),
+      });
     }
+    const baliseNonPortee = occ.balise !== undefined && (g.faces.size > 0 || g.aretes.size > 0);
+    return { materiauFaces, materiauObjets, baliseObjets, baliseNonPortee };
   });
 }
 
@@ -3173,6 +3226,34 @@ export function adoucirAretes(m: Modele, ids: readonly Id[], adoucie: boolean, o
       const a = c.aretes.get(id);
       if (a) c.aretes.set(id, sansFaux(a, "adoucie", adoucie));
     }
+  });
+}
+
+/**
+ * Diviser en segments (Explode Curve, Objets O-3) : chaque courbe touchée par la sélection (arête d'une courbe, ou la
+ * courbe) cesse d'en être une ; ses arêtes restent en place, chacune sélectionnable seule, et la gomme n'efface plus la
+ * courbe entière. Géométrie inchangée. Refus : aucune courbe dans la sélection. Renvoie le nombre de courbes divisées.
+ */
+export function diviserCourbes(m: Modele, ids: readonly Id[], o: OptionsContexte = {}): Resultat & { extra: number } {
+  return operer(m, o.dans, (_t, c) => {
+    const courbes = new Set<Id>();
+    for (const id of ids) {
+      if (c.courbes.has(id)) courbes.add(id);
+      const k = c.aretes.get(id)?.courbe;
+      if (k) courbes.add(k);
+    }
+    if (courbes.size === 0) throw new RangeError("Diviser en segments demande une courbe (cercle, polygone ou arc).");
+    for (const k of courbes) {
+      const courbe = c.courbes.get(k) as Courbe;
+      for (const a of courbe.aretes) {
+        const ar = c.aretes.get(a);
+        if (!ar) continue;
+        const { courbe: _k, ...reste } = ar;
+        c.aretes.set(a, reste);
+      }
+      c.courbes.delete(k);
+    }
+    return courbes.size;
   });
 }
 

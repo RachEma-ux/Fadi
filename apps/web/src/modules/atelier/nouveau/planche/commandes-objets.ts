@@ -6,7 +6,7 @@
 import { type Modele, normaliserRaccourci } from "@parcours/planche-model";
 import type { CleMessage } from "../messages";
 
-export type IdCommandeObjet = "groupe" | "composant" | "eclater";
+export type IdCommandeObjet = "groupe" | "composant" | "eclater" | "rendre-unique" | "diviser" | "diviser-courbe";
 
 export interface CommandeObjet {
   readonly id: IdCommandeObjet;
@@ -18,13 +18,21 @@ export interface CommandeObjet {
   readonly court: CleMessage;
   /** Raccourci canonique (forme du catalogue : « Ctrl+Maj+G »). */
   readonly raccourci: string;
+  /** Commande d'arête (O-3) : elle n'apparaît dans la barre d'actions que lorsqu'elle s'applique à la sélection. */
+  readonly contextuelle?: true;
 }
 
-/** Ordre d'affichage dans la barre d'actions : créer un objet, puis le dissoudre. */
+/**
+ * Ordre d'affichage dans la barre d'actions : créer un objet, le dissoudre, le rendre unique (O-3) ; puis les commandes
+ * d'arête d'O-3 (Diviser, Diviser en segments), présentes seulement quand la sélection en contient.
+ */
 export const COMMANDES_OBJETS: readonly CommandeObjet[] = [
   { id: "groupe", picto: "⊞", libelle: "planche.menu.groupe", court: "planche.objets.court.groupe", raccourci: "Ctrl+G" },
   { id: "composant", picto: "❖", libelle: "planche.menu.composant", court: "planche.objets.court.composant", raccourci: "G" },
   { id: "eclater", picto: "⊠", libelle: "planche.menu.eclater", court: "planche.objets.court.eclater", raccourci: "Ctrl+Maj+G" },
+  { id: "rendre-unique", picto: "⎘", libelle: "planche.menu.rendre-unique", court: "planche.objets.court.rendre-unique", raccourci: "Alt+Maj+U" },
+  { id: "diviser", picto: "⦙", libelle: "planche.menu.diviser", court: "planche.objets.court.diviser", raccourci: "Alt+Maj+D", contextuelle: true },
+  { id: "diviser-courbe", picto: "⌇", libelle: "planche.menu.diviser-courbe", court: "planche.objets.court.diviser-courbe", raccourci: "Alt+Maj+C", contextuelle: true },
 ];
 
 export const commandeObjet = (id: IdCommandeObjet): CommandeObjet => COMMANDES_OBJETS.find((c) => c.id === id) as CommandeObjet;
@@ -38,6 +46,12 @@ export interface EtatSelectionObjets {
   readonly objets: number;
   /** Tous les objets sélectionnés sont verrouillés. */
   readonly verrouilles: boolean;
+  /** Objets sélectionnés dont la définition a plusieurs occurrences (Rendre unique, O-3). */
+  readonly partages?: number;
+  /** Arêtes sélectionnées, directement ou par leurs faces (Diviser, O-3). */
+  readonly aretes?: number;
+  /** Courbes touchées par la sélection (Diviser en segments, O-3). */
+  readonly courbes?: number;
 }
 
 /** Disponibilité et motif (clé du catalogue de messages) quand la commande est grisée. */
@@ -48,6 +62,13 @@ export interface Disponibilite {
 
 export function disponibiliteObjet(id: IdCommandeObjet, s: EtatSelectionObjets): Disponibilite {
   if (s.lecture) return { disponible: false, motif: "planche.objets.motif.lecture" };
+  if (id === "rendre-unique") {
+    if (s.objets === 0) return { disponible: false, motif: "planche.objets.motif.eclater" };
+    if ((s.partages ?? 0) === 0) return { disponible: false, motif: "planche.objets.motif.unique" };
+    return { disponible: true, motif: null };
+  }
+  if (id === "diviser") return (s.aretes ?? 0) > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.objets.motif.arete" };
+  if (id === "diviser-courbe") return (s.courbes ?? 0) > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.objets.motif.courbe" };
   if (id === "eclater") {
     if (s.objets === 0) return { disponible: false, motif: "planche.objets.motif.eclater" };
     if (s.verrouilles) return { disponible: false, motif: "planche.objets.motif.verrouille" };

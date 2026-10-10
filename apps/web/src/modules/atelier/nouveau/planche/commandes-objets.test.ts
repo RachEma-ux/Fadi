@@ -13,6 +13,16 @@ describe("Commandes d'objet (Objets O-1, D-203)", () => {
     expect(disponibiliteObjet("eclater", { ...base, entites: 1, objets: 1, verrouilles: true }).motif).toBe("planche.objets.motif.verrouille");
     for (const c of COMMANDES_OBJETS) expect(disponibiliteObjet(c.id, { ...base, lecture: true, entites: 1, objets: 1 }).motif).toBe("planche.objets.motif.lecture");
   });
+  it("Objets O-3 : Rendre unique demande un objet partagé ; Diviser une arête ; Diviser en segments une courbe", () => {
+    expect(disponibiliteObjet("rendre-unique", { ...base, entites: 1, objets: 1, partages: 0 }).motif).toBe("planche.objets.motif.unique");
+    expect(disponibiliteObjet("rendre-unique", { ...base, entites: 1, objets: 1, partages: 1 }).disponible).toBe(true);
+    expect(disponibiliteObjet("diviser", { ...base, entites: 1 }).motif).toBe("planche.objets.motif.arete");
+    expect(disponibiliteObjet("diviser", { ...base, entites: 1, aretes: 1 }).disponible).toBe(true);
+    expect(disponibiliteObjet("diviser-courbe", { ...base, entites: 1, aretes: 1 }).motif).toBe("planche.objets.motif.courbe");
+    expect(disponibiliteObjet("diviser-courbe", { ...base, entites: 1, aretes: 1, courbes: 1 }).disponible).toBe(true);
+    // Les commandes d'arête sont contextuelles (barre d'actions), les commandes d'objet toujours présentes.
+    expect(COMMANDES_OBJETS.filter((c) => c.contextuelle).map((c) => c.id)).toEqual(["diviser", "diviser-courbe"]);
+  });
 
   it("grouper une surface liée à son arête rompt le lien, et le nombre de liens rompus est compté", () => {
     const ligne = ajouterSegment(modeleVide(), v3(0, 0, 0), v3(4, 0, 0)).modele;

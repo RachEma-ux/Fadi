@@ -5,7 +5,8 @@
  * grouper une surface liée à son arête annonce la rupture du lien ; Control appuyé avant G ne laisse plus « Nouvelle
  * face » allumée dans Pousser/Tirer. Objets O-2 : fil d'Ariane cliquable (Planche › …), Fermer (Maj+Échap) et Fermer
  * tout (Maj+Origine), objet verrouillé non ouvrable, statut « Liée aux arêtes sources » et « Détacher le lien » ; au
- * téléphone, le fil se superpose sans redimensionner le dessin. Brouillon local : aucune commande ; aucune erreur JavaScript.
+ * téléphone, le fil se superpose sans redimensionner le dessin. Objets O-3 : Rendre unique (Alt+Maj+U) nomme « #1 » puis
+ * « #2 » ; Diviser en segments (Alt+Maj+C) n'apparaît dans la barre qu'avec une courbe sélectionnée. Brouillon local : aucune commande ; aucune erreur JavaScript.
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/planche-objets.mjs
  */
@@ -339,6 +340,72 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   await page.waitForTimeout(80);
   check("[O-2] Détacher le lien : relation supprimée, statut retiré, message", (await etat()).liens === 0 && (await page.locator("[data-planche-lien]").count()) === 0 && /Lien détaché/.test(await message(page)), await message(page));
   check("[O-2] aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
+  await ctx.close();
+}
+
+// ————————————————————————————————————————————————————————————— Objets O-3 : Rendre unique « #k », Diviser en segments (desktop)
+{
+  const ctx = await browser.newContext({ viewport: { width: 1536, height: 864 }, locale: "fr-FR" });
+  const s = await preparer(ctx);
+  const { page } = s;
+  const { etat, cliquer, survoler, saisir } = aides(page);
+  await s.ouvrirPlanche();
+  const vue = page.locator("[data-planche-vue]");
+  await vue.focus();
+  const noms = () => page.evaluate(() => Object.values(window.fadiPlanche.modele().definitions).map((d) => d.nom).sort().join(","));
+  await page.keyboard.press("r");
+  await cliquer({ x: 0, y: 0, z: 0 });
+  await survoler({ x: 1, y: 1, z: 0 });
+  await saisir("2;2");
+  await page.keyboard.press(" ");
+  await vue.focus();
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Control+a");
+  await page.keyboard.press("Control+g");
+  await page.waitForTimeout(80);
+  const unique = bouton(page, "rendre-unique");
+  check("[O-3] Rendre unique dans la barre d'actions, grisé sur un objet unique, avec le motif", (await unique.count()) === 1 && (await unique.isDisabled()) && /déjà unique/.test((await unique.getAttribute("title")) ?? ""), (await unique.getAttribute("title")) ?? "");
+  await page.keyboard.press("Control+c");
+  await page.keyboard.press("Control+v");
+  await page.waitForTimeout(80);
+  check("[O-3] copie collée : Rendre unique actif, raccourci Alt+Maj+U", !(await unique.isDisabled()) && /Alt\+Maj\+U/.test((await unique.getAttribute("title")) ?? ""), (await unique.getAttribute("title")) ?? "");
+  const base = await noms();
+  await page.keyboard.press("Alt+Shift+KeyU");
+  await page.waitForTimeout(80);
+  check("[O-3] Alt+Maj+U : copie unique « Nom#1 », annoncée", (await noms()) === `${base},${base}#1` && (await message(page)).includes(`${base}#1`), `${await noms()} — ${await message(page)}`);
+  await page.keyboard.press("Control+v");
+  await page.waitForTimeout(80);
+  await unique.click();
+  await page.waitForTimeout(80);
+  check("[O-3] seconde copie rendue unique : « Nom#2 », jamais « #1#1 »", (await noms()) === `${base},${base}#1,${base}#2`, await noms());
+  // Diviser en segments : cercle de rayon 1, une arête sélectionnée, la commande apparaît dans la barre.
+  await page.keyboard.press("Escape");
+  await vue.focus();
+  check("[O-3] Diviser en segments absent de la barre sans courbe sélectionnée", (await bouton(page, "diviser-courbe").count()) === 0);
+  await page.keyboard.press("c");
+  await cliquer({ x: 6, y: 0, z: 0 });
+  await survoler({ x: 7, y: 0, z: 0 });
+  await saisir("1");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press(" ");
+  await vue.focus();
+  const avant = await etat();
+  check("[O-3] cercle tracé : une courbe à la racine", avant.courbes === 1, String(avant.courbes));
+  await cliquer({ x: 6, y: 1, z: 0 });
+  await page.waitForTimeout(80);
+  const segments = bouton(page, "diviser-courbe");
+  check("[O-3] arête de cercle sélectionnée : « Diviser en segments » et « Diviser » dans la barre d'actions", (await segments.count()) === 1 && (await bouton(page, "diviser").count()) === 1 && /Alt\+Maj\+C/.test((await segments.getAttribute("title")) ?? ""), (await segments.getAttribute("title")) ?? "");
+  await page.keyboard.press("Alt+Shift+KeyC");
+  await page.waitForTimeout(80);
+  const apres = await etat();
+  check("[O-3] Alt+Maj+C : la courbe devient des segments, arêtes et faces inchangées, message", apres.courbes === 0 && apres.aretes === avant.aretes && apres.faces === avant.faces && /segments/.test(await message(page)), `${apres.courbes} courbe(s), ${apres.aretes}/${avant.aretes} arêtes — ${await message(page)}`);
+  await page.locator("[data-planche-outils-bouton]").click();
+  await page.locator('[data-outils-famille="objets"]').click();
+  const listees = await page.locator("[data-outils-commande]").evaluateAll((l) => l.map((b) => b.getAttribute("data-outils-commande")));
+  check("[O-3] « Outils ▾ » : Rendre unique, Diviser et Diviser en segments listés avec leur raccourci", ["rendre-unique", "diviser", "diviser-courbe"].every((id) => listees.includes(id)) && /Alt\+Maj\+D/.test((await page.locator('[data-outils-commande="diviser"]').textContent()) ?? ""), listees.join(","));
+  await page.keyboard.press("Escape");
+  check("[O-3] aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
+  await page.screenshot({ path: `${OUT}/5-o3.png` });
   await ctx.close();
 }
 
