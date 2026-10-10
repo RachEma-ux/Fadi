@@ -52,7 +52,7 @@ import {
   v3,
 } from "./vecteur.js";
 
-import { type Annotations, type AnnotationsMutables, ANNOTATIONS_VIDES, genreAnnotation } from "./annotations.js";
+import { type Annotations, type AnnotationsMutables, type Extrusion, ANNOTATIONS_VIDES, genreAnnotation } from "./annotations.js";
 
 // ————————————————————————————————————————————————————————————— Types publics
 
@@ -541,7 +541,7 @@ class Travail {
   constructor(private readonly modele: Modele) {
     this.prochain = modele.prochainId;
     const a = modele.annotations ?? ANNOTATIONS_VIDES;
-    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
+    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
     this.racine = versCtx(modele.racine);
     this.origines.set(this.racine, modele.racine);
     this.definitions = new Map();
@@ -634,6 +634,7 @@ class Travail {
       ...(a.repere ? { repere: a.repere } : {}),
       ...(Object.keys(a.scenes).length ? { scenes: Object.freeze({ ...a.scenes }) } : {}),
       ...(a.reglages ? { reglages: a.reglages } : {}),
+      ...(Object.keys(a.extrusions).length ? { extrusions: Object.freeze({ ...a.extrusions }) } : {}),
     });
     return Object.freeze({ ...base, annotations });
   }
@@ -691,7 +692,7 @@ function aplatir(m: Modele): Map<Id, string> {
   }
   const a = m.annotations;
   if (a) {
-    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}]) {
+    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}]) {
       for (const [id, v] of Object.entries(rec)) r.set(id, JSON.stringify(v));
     }
     if (a.repere) r.set("repere", JSON.stringify(a.repere));
@@ -719,6 +720,7 @@ function operer<X>(m: Modele, dans: Id | undefined, fn: (t: Travail, c: Ctx) => 
   const t = new Travail(m);
   const c = t.ouvrir(dans);
   const extra = fn(t, c);
+  actualiserExtrusions(t);
   const modele = t.fermer();
   return { modele, rapport: differences(m, modele), extra };
 }
@@ -1505,76 +1507,294 @@ export interface OptionsEtirerAretes extends OptionsContexte {
 export function etirerAretes(m: Modele, aretes: readonly Id[], vecteur: Vec3, o: OptionsEtirerAretes = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
     if (len(vecteur) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
-    const ids = new Set<Id>();
-    for (const id of aretes) {
-      const a = c.aretes.get(id);
-      if (!a) throw new Error(`Arête inconnue : ${id}`);
-      const k = a.courbe ? c.courbes.get(a.courbe) : undefined;
-      for (const x of k ? k.aretes : [id]) ids.add(x);
+    const ids = aretesEtendues(c, aretes);
+    const ferme = contourPlanFerme(c, ids);
+    if (ferme && Math.abs(dot(ferme.normale, vecteur)) < 1e-9 * len(vecteur)) {
+      // Courbe fermée tirée dans son propre plan : couronne vers l'extérieur.
+      lier(t, c, o.dans, { genre: "couronne", sources: [...ids], distance: len(vecteur), symetrique: !!o.symetrique }, () =>
+        couronneInterne(t, c, ids, len(vecteur), !!o.symetrique),
+      );
+      return;
     }
-    const courbes = new Set<Id>();
-    for (const id of ids) {
-      const k = c.aretes.get(id)?.courbe;
-      if (k) courbes.add(k);
-    }
-    for (const kid of courbes) {
-      const k = c.courbes.get(kid) as Courbe;
-      if (k.genre !== "arc" && Math.abs(dot(normalize(k.normale), vecteur)) < 1e-9 * len(vecteur)) {
-        throw new RangeError("Une courbe fermée tirée dans son propre plan se recouvrirait : utilisez le Décalage pour une couronne.");
-      }
-    }
-    const depart = o.symetrique ? scale(vecteur, -1) : v3(0, 0, 0);
-    const course = o.symetrique ? scale(vecteur, 2) : vecteur;
-    // Sommets intérieurs d'un cercle ou d'un arc : les arêtes balayées depuis eux sont adoucies.
-    const usages = new Map<Id, number>();
-    for (const id of ids) {
-      const a = c.aretes.get(id) as Arete;
-      const k = a.courbe ? c.courbes.get(a.courbe) : undefined;
-      if (!k || k.genre === "polygone") continue;
-      for (const s of [a.a, a.b]) usages.set(s, (usages.get(s) ?? 0) + 1);
-    }
-    const lisse = (s: Id): boolean => (usages.get(s) ?? 0) >= 2;
-    const segments: SegmentSource[] = [];
-    const sources: Source[] = [];
-    const rails = new Set<Id>();
-    for (const id of ids) {
-      const a = c.aretes.get(id) as Arete;
-      const A = pos(c, a.a);
-      const B = pos(c, a.b);
-      const n = cross(sub(B, A), course);
-      if (len(n) < EPS * Math.max(1, len(sub(B, A)) * len(course))) continue; // parallèle : rien à balayer
-      const A0 = add(A, depart);
-      const B0 = add(B, depart);
-      const A1 = add(A0, course);
-      const B1 = add(B0, course);
-      const k = a.courbe ? c.courbes.get(a.courbe) : undefined;
-      const translatee = (cle: string, d: Vec3): SegmentSource["courbe"] =>
-        k ? { cle: `${k.id}${cle}`, genre: k.genre, centre: add(k.centre, d), rayon: k.rayon, normale: k.normale } : undefined;
-      const fin = translatee("+", add(depart, course));
-      segments.push({ a: A1, b: B1, ...(fin ? { courbe: fin } : {}) });
-      if (o.symetrique) {
-        const debut = translatee("-", depart);
-        segments.push({ a: A0, b: B0, ...(debut ? { courbe: debut } : {}) });
-      }
-      for (const [s, P0] of [[a.a, A0], [a.b, B0]] as const) {
-        if (rails.has(s)) continue;
-        rails.add(s);
-        segments.push({ a: P0, b: add(P0, course), ...(lisse(s) ? { adoucie: true } : {}) });
-      }
-      // Surface orientée vers l'extérieur d'une courbe (centre), sinon selon le sens de l'arête.
-      let nn = normalize(n);
-      if (k) {
-        const milieu = scale(add(A, B), 0.5);
-        const radial = sub(milieu, k.centre);
-        const r = sub(radial, scale(normalize(course), dot(radial, normalize(course))));
-        if (len(r) > EPS && dot(nn, r) < 0) nn = scale(nn, -1);
-      }
-      const quad = dot(cross(sub(B0, A0), course), nn) > 0 ? [A0, B0, B1, A1] : [A0, A1, B1, B0];
-      sources.push({ exterieur: quad, trous: [], normale: nn, role: "face" });
-    }
-    if (sources.length === 0) throw new RangeError("Le déplacement est parallèle aux arêtes : aucune surface à balayer.");
-    insererGeometrie(t, c, segments, sources, false);
+    lier(t, c, o.dans, { genre: "balayage", sources: [...ids], vecteur, symetrique: !!o.symetrique }, () => balayerInterne(t, c, ids, vecteur, !!o.symetrique));
   });
+}
+
+/**
+ * Couronne (écart Fadi, D-196) : un contour plan FERMÉ (cercle, polygone, ou chaîne d'arêtes) est décalé de `distance`
+ * dans son plan (> 0 vers l'extérieur, < 0 vers l'intérieur ; angles en onglet) et la bande entre les deux contours
+ * devient une surface trouée. `symetrique` : bande de −distance à +distance, le contour d'origine en ligne médiane.
+ * Un cercle ou un polygone décalé reste une courbe. Refus : contour ouvert ou gauche, décalage intérieur qui retourne
+ * la forme.
+ */
+export function couronne(m: Modele, aretes: readonly Id[], distance: number, o: OptionsEtirerAretes = {}): Resultat {
+  return operer(m, o.dans, (t, c) => {
+    if (Math.abs(distance) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
+    const ids = aretesEtendues(c, aretes);
+    lier(t, c, o.dans, { genre: "couronne", sources: [...ids], distance, symetrique: !!o.symetrique }, () => couronneInterne(t, c, ids, distance, !!o.symetrique));
+  });
+}
+
+/**
+ * Allonger (ou raccourcir) une arête droite dans son propre sens (écart Fadi, D-196) : l'extrémité `extremite` avance de
+ * `longueur` (< 0 : recule). Extrémité libre d'une arête sans face : l'arête est redessinée ; sinon un segment
+ * colinéaire est ajouté (raccourcir une arête reliée est refusé : Gomme ou Déplacer).
+ */
+export function allongerArete(m: Modele, arete: Id, extremite: Id, longueur: number, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (t, c) => {
+    const a = c.aretes.get(arete);
+    if (!a) throw new Error(`Arête inconnue : ${arete}`);
+    if (a.courbe) throw new RangeError("Une arête de courbe ne s'allonge pas : tirez-la pour l'étendre en surface.");
+    if (extremite !== a.a && extremite !== a.b) throw new RangeError("L'extrémité ne fait pas partie de l'arête.");
+    if (Math.abs(longueur) < EPS) throw new RangeError("Distance nulle : rien n'a été allongé.");
+    const autre = extremite === a.a ? a.b : a.a;
+    const E = pos(c, extremite);
+    const F = pos(c, autre);
+    const L = dist(E, F);
+    const nouveau = add(E, scale(normalize(sub(E, F)), longueur));
+    const libre = aretesDuSommet(c, extremite).length === 1 && facesDeArete(c, a).length === 0;
+    if (libre) {
+      if (longueur <= -L + EPS) throw new RangeError("Le raccourcissement dépasse la longueur de l'arête.");
+      effacerAretesInterne(t, c, [arete]);
+      insererGeometrie(t, c, [{ a: F, b: nouveau }], [], true);
+      return;
+    }
+    if (longueur < 0) throw new RangeError("Raccourcir une arête reliée à d'autres : utilisez la Gomme ou Déplacer.");
+    insererGeometrie(t, c, [{ a: E, b: nouveau }], [], true);
+  });
+}
+
+/** Arêtes données, complétées par toute la courbe de chacune. */
+function aretesEtendues(c: Ctx, aretes: readonly Id[]): Set<Id> {
+  const ids = new Set<Id>();
+  for (const id of aretes) {
+    const a = c.aretes.get(id);
+    if (!a) throw new Error(`Arête inconnue : ${id}`);
+    const k = a.courbe ? c.courbes.get(a.courbe) : undefined;
+    for (const x of k ? k.aretes : [id]) ids.add(x);
+  }
+  return ids;
+}
+
+/** Contour plan fermé formé par les arêtes (ordre des sommets, normale dans le sens trigonométrique), sinon null. */
+function contourPlanFerme(c: Ctx, ids: ReadonlySet<Id>): { sommets: readonly Id[]; normale: Vec3 } | null {
+  let ch: Chaine;
+  try {
+    ch = chaineOrdonnee(c, [...ids]);
+  } catch {
+    return null;
+  }
+  if (!ch.ferme || ch.sommets.length < 3) return null;
+  const pts = ch.sommets.map((s) => pos(c, s));
+  const nw = newell(pts);
+  if (len(nw) < EPS) return null;
+  const n = normalize(nw);
+  const pl = planCanonique(n, pts[0] as Vec3);
+  if (!pts.every((p) => surPlan(pl, p))) return null;
+  return { sommets: ch.sommets, normale: n };
+}
+
+/** Exécute `calcul` (qui insère la surface) et enregistre le lien si l'on est à la racine et qu'aucune géométrie étrangère n'a été coupée. */
+function lier(t: Travail, c: Ctx, dans: Id | undefined, lien: Omit<Extrusion, "id" | "sommetsSources" | "sommetsCrees">, calcul: () => void): void {
+  const avant = new Set(c.sommets.keys());
+  calcul();
+  if (dans !== undefined) return;
+  const sources: Record<Id, Vec3> = {};
+  for (const id of lien.sources) {
+    const a = c.aretes.get(id);
+    if (!a) return; // une source a été découpée : pas de lien
+    sources[a.a] = pos(c, a.a);
+    sources[a.b] = pos(c, a.b);
+  }
+  const crees: Record<Id, Vec3> = {};
+  for (const s of c.sommets.keys()) if (!avant.has(s)) crees[s] = pos(c, s);
+  if (etrangere(c, new Set([...Object.keys(sources), ...Object.keys(crees)]), Object.keys(crees))) return;
+  const id = t.id("x");
+  t.annotations.extrusions[id] = { ...lien, id, sommetsSources: sources, sommetsCrees: crees };
+  t.annotationsSales = true;
+}
+
+/** Une arête relie un sommet créé à un sommet hors du lien (géométrie étrangère rattachée à la surface). */
+function etrangere(c: Ctx, lien: ReadonlySet<Id>, crees: readonly Id[]): boolean {
+  const set = new Set(crees);
+  for (const a of c.aretes.values()) {
+    if (set.has(a.a) && !lien.has(a.b)) return true;
+    if (set.has(a.b) && !lien.has(a.a)) return true;
+  }
+  return false;
+}
+
+/** Après chaque opération : recalcule les surfaces dont les arêtes sources ont bougé ; rompt les liens devenus invalides. */
+function actualiserExtrusions(t: Travail): void {
+  const liens = t.annotations.extrusions;
+  if (Object.keys(liens).length === 0) return;
+  const c = t.racine;
+  const rompre = (id: Id): void => {
+    delete liens[id];
+    t.annotationsSales = true;
+  };
+  for (const L of Object.values(liens)) {
+    const sommetsSources = new Set<Id>();
+    let ok = true;
+    for (const id of L.sources) {
+      const a = c.aretes.get(id);
+      if (!a) {
+        ok = false;
+        break;
+      }
+      sommetsSources.add(a.a).add(a.b);
+    }
+    const anciens = Object.keys(L.sommetsSources);
+    if (!ok || sommetsSources.size !== anciens.length || anciens.some((s) => !sommetsSources.has(s))) {
+      rompre(L.id);
+      continue;
+    }
+    const crees = Object.entries(L.sommetsCrees);
+    if (crees.some(([s, p]) => !c.sommets.has(s) || !egal(pos(c, s), p))) {
+      rompre(L.id); // la surface elle-même a été modifiée
+      continue;
+    }
+    if (anciens.every((s) => egal(pos(c, s), L.sommetsSources[s] as Vec3))) continue;
+    const idsCrees = crees.map(([s]) => s);
+    if (etrangere(c, new Set([...sommetsSources, ...idsCrees]), idsCrees)) {
+      rompre(L.id);
+      continue;
+    }
+    // Recalcul : la surface et ses arêtes (tout ce qui touche un sommet créé) sont retirées, puis balayées à nouveau.
+    const set = new Set(idsCrees);
+    for (const f of [...c.faces.values()]) if ([f.exterieur, ...f.trous].some((b) => b.some((s) => set.has(s)))) c.faces.delete(f.id);
+    const bords = [...c.aretes.values()].filter((a) => set.has(a.a) || set.has(a.b)).map((a) => a.id);
+    // Les faces bordées seulement par les sources (ligne médiane d'une surface symétrique) tombent aussi.
+    for (const f of [...c.faces.values()]) {
+      if (f.exterieur.every((s) => sommetsSources.has(s)) && L.sources.some((id) => facesDeArete(c, c.aretes.get(id) as Arete).some((g) => g.id === f.id)) && L.symetrique) c.faces.delete(f.id);
+    }
+    effacerAretesInterne(t, c, bords);
+    delete liens[L.id];
+    t.annotationsSales = true;
+    const ids = new Set(L.sources);
+    try {
+      lier(t, c, undefined, { genre: L.genre, sources: L.sources, ...(L.vecteur ? { vecteur: L.vecteur } : {}), ...(L.distance !== undefined ? { distance: L.distance } : {}), symetrique: L.symetrique }, () =>
+        L.genre === "couronne" ? couronneInterne(t, c, ids, L.distance as number, L.symetrique) : balayerInterne(t, c, ids, L.vecteur as Vec3, L.symetrique),
+      );
+    } catch {
+      // Recalcul impossible (courbe devenue gauche, décalage retourné…) : la surface reste retirée, le lien est rompu.
+    }
+  }
+}
+
+/** Balayage d'arêtes le long d'un vecteur (cœur de `etirerAretes`). */
+function balayerInterne(t: Travail, c: Ctx, ids: ReadonlySet<Id>, vecteur: Vec3, symetrique: boolean): void {
+  for (const kid of new Set([...ids].map((id) => c.aretes.get(id)?.courbe).filter((k): k is Id => k !== undefined))) {
+    const k = c.courbes.get(kid) as Courbe;
+    if (k.genre !== "arc" && Math.abs(dot(normalize(k.normale), vecteur)) < 1e-9 * len(vecteur)) {
+      throw new RangeError("Une courbe fermée tirée dans son propre plan se recouvrirait : utilisez le Décalage pour une couronne.");
+    }
+  }
+  const depart = symetrique ? scale(vecteur, -1) : v3(0, 0, 0);
+  const course = symetrique ? scale(vecteur, 2) : vecteur;
+  // Sommets intérieurs d'un cercle ou d'un arc : les arêtes balayées depuis eux sont adoucies.
+  const usages = new Map<Id, number>();
+  for (const id of ids) {
+    const a = c.aretes.get(id) as Arete;
+    const k = a.courbe ? c.courbes.get(a.courbe) : undefined;
+    if (!k || k.genre === "polygone") continue;
+    for (const s of [a.a, a.b]) usages.set(s, (usages.get(s) ?? 0) + 1);
+  }
+  const lisse = (s: Id): boolean => (usages.get(s) ?? 0) >= 2;
+  const segments: SegmentSource[] = [];
+  const sources: Source[] = [];
+  const rails = new Set<Id>();
+  for (const id of ids) {
+    const a = c.aretes.get(id) as Arete;
+    const A = pos(c, a.a);
+    const B = pos(c, a.b);
+    const n = cross(sub(B, A), course);
+    if (len(n) < EPS * Math.max(1, len(sub(B, A)) * len(course))) continue; // parallèle : rien à balayer
+    const A0 = add(A, depart);
+    const B0 = add(B, depart);
+    const A1 = add(A0, course);
+    const B1 = add(B0, course);
+    const k = a.courbe ? c.courbes.get(a.courbe) : undefined;
+    const translatee = (cle: string, d: Vec3): SegmentSource["courbe"] =>
+      k ? { cle: `${k.id}${cle}`, genre: k.genre, centre: add(k.centre, d), rayon: k.rayon, normale: k.normale } : undefined;
+    const fin = translatee("+", add(depart, course));
+    segments.push({ a: A1, b: B1, ...(fin ? { courbe: fin } : {}) });
+    if (symetrique) {
+      const debut = translatee("-", depart);
+      segments.push({ a: A0, b: B0, ...(debut ? { courbe: debut } : {}) });
+    }
+    for (const [s, P0] of [[a.a, A0], [a.b, B0]] as const) {
+      if (rails.has(s)) continue;
+      rails.add(s);
+      segments.push({ a: P0, b: add(P0, course), ...(lisse(s) ? { adoucie: true } : {}) });
+    }
+    // Surface orientée vers l'extérieur d'une courbe (centre), sinon selon le sens de l'arête.
+    let nn = normalize(n);
+    if (k) {
+      const milieu = scale(add(A, B), 0.5);
+      const radial = sub(milieu, k.centre);
+      const r = sub(radial, scale(normalize(course), dot(radial, normalize(course))));
+      if (len(r) > EPS && dot(nn, r) < 0) nn = scale(nn, -1);
+    }
+    const quad = dot(cross(sub(B0, A0), course), nn) > 0 ? [A0, B0, B1, A1] : [A0, A1, B1, B0];
+    sources.push({ exterieur: quad, trous: [], normale: nn, role: "face" });
+  }
+  if (sources.length === 0) throw new RangeError("Le déplacement est parallèle aux arêtes : aucune surface à balayer.");
+  insererGeometrie(t, c, segments, sources, false);
+}
+
+/** Décalage en onglet d'un contour plan fermé orienté (sens trigonométrique autour de n) ; null si la forme se retourne. */
+function contourDecale(pts: readonly Vec3[], n: Vec3, d: number): Vec3[] | null {
+  const N = pts.length;
+  const dirs = pts.map((p, i) => normalize(sub(pts[(i + 1) % N] as Vec3, p)));
+  const ext = dirs.map((u) => normalize(cross(u, n)));
+  const r: Vec3[] = [];
+  for (let i = 0; i < N; i++) {
+    const j = (i - 1 + N) % N;
+    const P = pts[i] as Vec3;
+    const p1 = add(P, scale(ext[j] as Vec3, d));
+    const p2 = add(P, scale(ext[i] as Vec3, d));
+    r.push(intersectionDroites(p1, dirs[j] as Vec3, p2, dirs[i] as Vec3) ?? p2);
+  }
+  for (let i = 0; i < N; i++) {
+    const v = sub(r[(i + 1) % N] as Vec3, r[i] as Vec3);
+    if (dot(v, dirs[i] as Vec3) <= EPS) return null;
+  }
+  return dot(newell(r), n) > 0 ? r : null;
+}
+
+/** Couronne (cœur de `couronne`). */
+function couronneInterne(t: Travail, c: Ctx, ids: ReadonlySet<Id>, distance: number, symetrique: boolean): void {
+  const contour = contourPlanFerme(c, ids);
+  if (!contour) throw new RangeError("La couronne demande un contour plan fermé (cercle, polygone ou arêtes formant une boucle).");
+  const n = contour.normale;
+  const pts = contour.sommets.map((s) => pos(c, s));
+  const decale = (d: number): Vec3[] => {
+    if (Math.abs(d) < EPS) return pts;
+    const r = contourDecale(pts, n, d);
+    if (!r) throw new RangeError("Le décalage vers l'intérieur dépasse la forme : réduisez la distance.");
+    return r;
+  };
+  const a = decale(symetrique ? -Math.abs(distance) : 0);
+  const b = decale(symetrique ? Math.abs(distance) : distance);
+  const [interieur, exterieur] = Math.abs(dot(newell(a), n)) < Math.abs(dot(newell(b), n)) ? [a, b] : [b, a];
+  // Un cercle ou un polygone entier décalé reste une courbe (rayon à l'apothème décalé).
+  const kids = new Set([...ids].map((id) => c.aretes.get(id)?.courbe));
+  const k = kids.size === 1 ? c.courbes.get([...kids][0] as Id) : undefined;
+  const courbeDe = (boucle: Vec3[], cle: string): SegmentSource["courbe"] => {
+    if (!k || k.genre === "arc" || k.aretes.length !== ids.size) return undefined;
+    const apotheme = k.rayon * Math.cos(Math.PI / k.aretes.length);
+    const decalage = dot(sub(boucle[0] as Vec3, pts[0] as Vec3), normalize(sub(pts[0] as Vec3, k.centre)));
+    const rayon = (k.rayon * (apotheme + decalage * Math.cos(Math.PI / k.aretes.length))) / apotheme;
+    return { cle: `${k.id}${cle}`, genre: k.genre, centre: k.centre, rayon, normale: k.normale };
+  };
+  const segments: SegmentSource[] = [];
+  for (const [boucle, cle] of [[a, "-"], [b, "+"]] as const) {
+    if (boucle === pts) continue;
+    const kc = courbeDe(boucle, cle);
+    boucle.forEach((p, i) => segments.push({ a: p, b: boucle[(i + 1) % boucle.length] as Vec3, ...(kc ? { courbe: kc } : {}) }));
+  }
+  insererGeometrie(t, c, segments, [{ exterieur, trous: [[...interieur].reverse()], normale: n, role: "face" }], false);
 }
 
 export interface ResultatFace extends Resultat {

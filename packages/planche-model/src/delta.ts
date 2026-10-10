@@ -7,7 +7,7 @@
  * obtenue n'est pas celle annoncée (la Planche a changé entre-temps : 409). Les tables sont des `Record<Id, …>` :
  * une entrée du delta est la valeur d'après, ou `null` pour une suppression ; une clé absente est inchangée.
  */
-import type { Annotations, Balise, Cote, Guide, Materiau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
+import type { Annotations, Balise, Cote, Extrusion, Guide, Materiau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
 import type { Arete, Contexte, Courbe, Definition, Face, Id, Modele, Occurrence, Sommet } from "./geometrie-libre.js";
 
 export type DeltaTable<T> = Readonly<Record<Id, T | null>>;
@@ -28,6 +28,7 @@ export interface DeltaAnnotations {
   readonly materiaux?: DeltaTable<Materiau>;
   readonly balises?: DeltaTable<Balise>;
   readonly scenes?: DeltaTable<Scene>;
+  readonly extrusions?: DeltaTable<Extrusion>;
   /** `null` = repère retiré ; absent = inchangé. */
   readonly repere?: Repere | null;
   readonly reglages?: ReglagesPlanche | null;
@@ -42,7 +43,7 @@ export interface DeltaPlanche {
 }
 
 const CLES_CONTEXTE = ["sommets", "aretes", "faces", "courbes", "occurrences"] as const;
-const CLES_ANNOTATIONS = ["guides", "cotes", "textes", "plansDeCoupe", "materiaux", "balises", "scenes"] as const;
+const CLES_ANNOTATIONS = ["guides", "cotes", "textes", "plansDeCoupe", "materiaux", "balises", "scenes", "extrusions"] as const;
 
 function differenceTable<T>(a: Readonly<Record<Id, T>> | undefined, b: Readonly<Record<Id, T>> | undefined): DeltaTable<T> | undefined {
   if (a === b) return undefined;
@@ -133,6 +134,8 @@ export function appliquerDeltaPlanche(m: Modele, delta: DeltaPlanche): Modele {
   if (delta.annotations) {
     const an = { ...(m.annotations ?? annotationsVides()) } as Record<string, unknown>;
     for (const k of CLES_ANNOTATIONS) an[k] = appliquerTable((m.annotations?.[k] ?? {}) as Readonly<Record<Id, unknown>>, delta.annotations[k] as DeltaTable<unknown> | undefined) ?? {};
+    // Table facultative (D-196) : absente plutôt que vide, comme la produit le noyau.
+    if (Object.keys(an["extrusions"] as object).length === 0) delete an["extrusions"];
     if (delta.annotations.repere !== undefined) {
       if (delta.annotations.repere === null) delete an["repere"];
       else an["repere"] = delta.annotations.repere;

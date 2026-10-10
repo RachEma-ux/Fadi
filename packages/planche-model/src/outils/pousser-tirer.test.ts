@@ -163,4 +163,28 @@ describe("Pousser/Tirer d'arêtes (écart Fadi, D-196)", () => {
     expect(p.selection).toEqual([]);
     expect(p.vue().consigne).toBe(etape("pousser-tirer", 0).consigne);
   });
+
+  it("cercle tiré dans son plan → couronne vers l'extérieur (distance tapée, signe du curseur)", () => {
+    const m = ajouterPolygone(modeleVide(), v3(0, 0, 0), v3(0, 0, 1), 1, 24).modele;
+    const a = Math.PI / 24;
+    const milieu = v3(Math.cos(a) * Math.cos(a), Math.cos(a) * Math.sin(a), 0);
+    const p = partie(machinePousserTirer, m).jouer(clicVers(milieu), survolVers(v3(1.6, 0.1, 0)), saisie("0.5"));
+    expect(faces(p.modele)).toHaveLength(2);
+    expect(emprise(p.modele).max.x).toBeGreaterThan(1.4);
+    // Vers l'intérieur : le curseur rentre dans le disque.
+    const q = partie(machinePousserTirer, m).jouer(clicVers(milieu), survolVers(v3(0.4, 0.05, 0)), saisie("0.5"));
+    expect(faces(q.modele)).toHaveLength(2);
+    expect(emprise(q.modele).max.x).toBeCloseTo(1, 9);
+  });
+
+  it("↓ = le long de l'arête : la ligne s'allonge de la distance tapée", () => {
+    const p = partie(machinePousserTirer, segment()).jouer(clicVers(v3(3.5, 0, 0)), touche("FlecheBas"), survolVers(v3(5, 0, 0)), saisie("1"));
+    expect(faces(p.modele)).toHaveLength(0);
+    expect(aretes(p.modele)).toHaveLength(1);
+    expect(emprise(p.modele).max.x).toBeCloseTo(5, 9);
+    p.jouer(saisie("2"));
+    expect(emprise(p.modele).max.x).toBeCloseTo(6, 9);
+    expect(p.historique).toHaveLength(2);
+  });
 });
+

@@ -14,10 +14,10 @@
  * l'axe verrouillé ; Alt = des deux côtés. Mêmes gestes ensuite que pour une face : correction par une distance tapée,
  * double-clic sur une autre arête = répéter, Échap.
  */
-import { type Id, aretesDeLaCourbe, contexte, etirerAretes, pousserTirer } from "../geometrie-libre.js";
+import { type Id, allongerArete, aretesDeLaCourbe, contexte, couronne, etirerAretes, newell, pousserTirer } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
-import { type Vec3, EPS, TOL, add, dot, len, normalize, scale, sub } from "../vecteur.js";
+import { type Vec3, EPS, TOL, add, cross, dist, dot, egal, len, normalize, scale, sub } from "../vecteur.js";
 import {
   type Apercu,
   type Derniere,
@@ -50,12 +50,33 @@ export const ID_POUSSER_TIRER = "pousser-tirer";
 
 /** Consignes du mode arêtes (écart Fadi, D-196 : absentes du relevé SketchUp). */
 export const CONSIGNE_ARETE_SURVOL = "Cliquez sur l'arête à étendre en surface. | Alt = Des deux côtés.";
-export const CONSIGNE_ARETE_TIRAGE = "Cliquez pour fixer la surface ou saisissez la distance. | Flèches = Verrouiller un axe. | Alt = Des deux côtés.";
+export const CONSIGNE_ARETE_TIRAGE =
+  "Cliquez pour fixer la surface ou saisissez la distance. | Flèches = Verrouiller un axe. | ↓ = Le long de l'arête (allonger). | Alt = Des deux côtés.";
 
 type ParamsPT =
   | { readonly genre: "face"; readonly face: Id; readonly distance: number; readonly nouvelleFace: boolean }
   /** `vecteur` dans le repère du contexte d'édition. */
-  | { readonly genre: "aretes"; readonly aretes: readonly Id[]; readonly vecteur: Vec3; readonly symetrique: boolean };
+  | { readonly genre: "aretes"; readonly aretes: readonly Id[]; readonly vecteur: Vec3; readonly symetrique: boolean }
+  /** Courbe fermée tirée dans son plan : `distance` > 0 vers l'extérieur. */
+  | { readonly genre: "couronne"; readonly aretes: readonly Id[]; readonly distance: number; readonly symetrique: boolean }
+  /** Ligne tirée dans son propre sens : `longueur` > 0 allonge. */
+  | { readonly genre: "allonger"; readonly arete: Id; readonly extremite: Id; readonly longueur: number };
+
+type ParamsArete = Exclude<ParamsPT, { genre: "face" }>;
+
+/** Contour plan fermé des arêtes visées (monde) : normale, centre, et normale extérieure du segment cliqué. */
+interface Boucle {
+  readonly normale: Vec3;
+  readonly centre: Vec3;
+  readonly exterieur: Vec3;
+}
+
+/** Arête droite seule visée : extrémité la plus proche du clic (id du contexte) et direction monde vers elle. */
+interface Droite {
+  readonly arete: Id;
+  readonly extremite: Id;
+  readonly direction: Vec3;
+}
 
 interface Segment {
   readonly a: Vec3;
@@ -77,6 +98,8 @@ export interface EtatPousserTirer {
   readonly symetrique: boolean;
   readonly fleche: VerrouFleche | null;
   readonly survolArete: Id | null;
+  readonly boucle: Boucle | null;
+  readonly droite: Droite | null;
   /** Normale monde de la face et point cliqué sur elle. */
   readonly normale: Vec3 | null;
   readonly origine: Vec3 | null;
@@ -102,6 +125,8 @@ function initial(): EtatPousserTirer {
     symetrique: false,
     fleche: null,
     survolArete: null,
+    boucle: null,
+    droite: null,
     normale: null,
     origine: null,
     contour: [],
@@ -122,6 +147,8 @@ const retour = (e: EtatPousserTirer): EtatPousserTirer => ({
   segments: [],
   vecteur: null,
   fleche: null,
+  boucle: null,
+  droite: null,
   normale: null,
   origine: null,
   contour: [],
@@ -197,30 +224,153 @@ function directionSaisie(e: EtatPousserTirer): Vec3 | null {
     const a = VECTEUR_AXE[fl.axe];
     return v && len(v) > TOL && dot(v, a) < 0 ? scale(a, -1) : a;
   }
+  if (fl && fl.genre === "direction") {
+    const d = normalize(fl.direction);
+    return v && len(v) > TOL && dot(v, d) < 0 ? scale(d, -1) : d;
+  }
   return v && len(v) > TOL ? normalize(v) : null;
+}
+
+/** Segment le plus proche d'un point. */
+function plusProche(segments: readonly Segment[], p: Vec3): Segment | null {
+  let best: Segment | null = null;
+  let dmin = Infinity;
+  for (const s of segments) {
+    const ab = sub(s.b, s.a);
+    const t = Math.max(0, Math.min(1, dot(sub(p, s.a), ab) / Math.max(dot(ab, ab), 1e-18)));
+    const d = dist(add(s.a, scale(ab, t)), p);
+    if (d < dmin) {
+      dmin = d;
+      best = s;
+    }
+  }
+  return best;
+}
+
+/** Contour plan fermé formé par les segments (monde), avec la normale extérieure du segment le plus proche du clic. */
+function boucleDe(segments: readonly Segment[], clic: Vec3): Boucle | null {
+  if (segments.length < 3) return null;
+  const cle = (p: Vec3) => `${p.x.toFixed(6)};${p.y.toFixed(6)};${p.z.toFixed(6)}`;
+  const voisins = new Map<string, { p: Vec3; v: Vec3[] }>();
+  for (const s of segments) {
+    for (const [x, y] of [[s.a, s.b], [s.b, s.a]] as const) {
+      const k = cle(x);
+      const e = voisins.get(k) ?? { p: x, v: [] };
+      e.v.push(y);
+      voisins.set(k, e);
+    }
+  }
+  if ([...voisins.values()].some((e) => e.v.length !== 2)) return null;
+  const premier = segments[0] as Segment;
+  const ordre: Vec3[] = [premier.a];
+  let precedent = premier.a;
+  let courant = premier.b;
+  while (!egal(courant, premier.a) && ordre.length <= segments.length) {
+    ordre.push(courant);
+    const e = voisins.get(cle(courant));
+    if (!e) return null;
+    const suivant = egal(e.v[0] as Vec3, precedent) ? (e.v[1] as Vec3) : (e.v[0] as Vec3);
+    precedent = courant;
+    courant = suivant;
+  }
+  if (ordre.length !== segments.length) return null;
+  const nw = newell(ordre);
+  if (len(nw) < EPS) return null;
+  const n = normalize(nw);
+  if (ordre.some((p) => Math.abs(dot(n, sub(p, ordre[0] as Vec3))) > TOL)) return null;
+  const centre = scale(ordre.reduce((a, p) => add(a, p), { x: 0, y: 0, z: 0 }), 1 / ordre.length);
+  const s = plusProche(segments, clic) as Segment;
+  let ext = normalize(cross(sub(s.b, s.a), n));
+  if (dot(ext, sub(scale(add(s.a, s.b), 0.5), centre)) < 0) ext = scale(ext, -1);
+  return { normale: n, centre, exterieur: ext };
+}
+
+/** Arête droite seule (hors courbe) : extrémité la plus proche du clic. */
+function droiteDe(ctx: ContexteOutil, ids: readonly Id[], segments: readonly Segment[], clic: Vec3): Droite | null {
+  if (ids.length !== 1 || segments.length !== 1) return null;
+  const c = contexte(ctx.modele, ctx.dans);
+  const a = c.aretes[ids[0] as Id];
+  if (!a || a.courbe) return null;
+  const s = segments[0] as Segment;
+  const versA = dist(s.a, clic) <= dist(s.b, clic);
+  const [E, F] = versA ? [s.a, s.b] : [s.b, s.a];
+  // Extrémité du contexte : celle dont la position locale correspond à E.
+  const L = enLocal(ctx).point(E);
+  const pa = c.sommets[a.a]?.position;
+  const extremite = pa && dist(pa, L) < dist(c.sommets[a.b]?.position ?? L, L) ? a.a : a.b;
+  return { arete: a.id, extremite, direction: normalize(sub(E, F)) };
+}
+
+/** Ce que produit un déplacement monde `v` : allongement, couronne ou balayage. */
+function paramsPour(e: EtatPousserTirer, ctx: ContexteOutil, v: Vec3): ParamsArete {
+  const n = len(v);
+  const parallele = e.fleche?.verrou.genre === "direction";
+  if (e.droite && n > EPS && (parallele || len(cross(e.droite.direction, v)) < 1e-6 * n)) {
+    return { genre: "allonger", arete: e.droite.arete, extremite: e.droite.extremite, longueur: dot(v, e.droite.direction) };
+  }
+  if (e.boucle && n > EPS && Math.abs(dot(e.boucle.normale, v)) < 1e-6 * n) {
+    return { genre: "couronne", aretes: e.aretes, distance: dot(v, e.boucle.exterieur), symetrique: e.symetrique };
+  }
+  return { genre: "aretes", aretes: e.aretes, vecteur: enLocal(ctx).vecteur(e.origine as Vec3, v), symetrique: e.symetrique };
+}
+
+/** Même opération, à la nouvelle valeur (correction tapée juste après) ; le signe est conservé. */
+function aValeur(p: ParamsArete, valeur: number): ParamsArete {
+  if (p.genre === "aretes") return { ...p, vecteur: scale(normalize(p.vecteur), valeur) };
+  if (p.genre === "couronne") return { ...p, distance: Math.sign(p.distance || 1) * valeur };
+  return { ...p, longueur: Math.sign(p.longueur || 1) * valeur };
 }
 
 function appliquerAretes(
   e: EtatPousserTirer,
   ctx: ContexteOutil,
-  p: Extract<ParamsPT, { genre: "aretes" }>,
+  p: ParamsArete,
   texte: string | null,
   remplace: Derniere<ParamsPT> | null,
 ): Transition<EtatPousserTirer> {
-  if (len(p.vecteur) < EPS) return { etat: { ...retour(e), texte, erreur: "Distance nulle : rien n'a été poussé ni tiré." } };
+  const nulle = p.genre === "aretes" ? len(p.vecteur) < EPS : Math.abs(p.genre === "couronne" ? p.distance : p.longueur) < EPS;
+  if (nulle) return { etat: { ...retour(e), texte, erreur: "Distance nulle : rien n'a été poussé ni tiré." } };
   const base = remplace ? remplace.avant : ctx.modele;
+  const o = optionsDans(ctx);
   try {
-    const r = etirerAretes(base, p.aretes, p.vecteur, { ...optionsDans(ctx), symetrique: p.symetrique });
+    const r =
+      p.genre === "aretes"
+        ? etirerAretes(base, p.aretes, p.vecteur, { ...o, symetrique: p.symetrique })
+        : p.genre === "couronne"
+          ? couronne(base, p.aretes, p.distance, { ...o, symetrique: p.symetrique })
+          : allongerArete(base, p.arete, p.extremite, p.longueur, o);
     return {
       etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: p } },
       modele: r.modele,
-      selection: idsSelectionnables(r.rapport.crees).filter((id) => id.startsWith("f")),
+      selection: idsSelectionnables(r.rapport.crees).filter((id) => (p.genre === "allonger" ? id.startsWith("a") : id.startsWith("f"))),
       operation: "Pousser/Tirer",
       ...(remplace ? { remplaceDernier: true } : {}),
     };
   } catch (err) {
     return { etat: { ...retour(e), texte, erreur: messageErreur(err) } };
   }
+}
+
+/** Aperçu de l'allongement (segment prolongé) ou de la couronne (segments décalés dans le plan). */
+function apercuSpecial(e: EtatPousserTirer, p: ParamsArete): Apercu | null {
+  if (p.genre === "allonger" && e.droite) {
+    const s = e.segments[0] as Segment;
+    const E = dot(sub(s.a, s.b), e.droite.direction) > 0 ? s.a : s.b;
+    return { lignes: [[E, add(E, scale(e.droite.direction, p.longueur))]], faces: [] };
+  }
+  if (p.genre === "couronne" && e.boucle) {
+    const n = e.boucle.normale;
+    const lignes: Vec3[][] = [];
+    for (const s of e.segments) {
+      let ext = normalize(cross(sub(s.b, s.a), n));
+      if (dot(ext, sub(scale(add(s.a, s.b), 0.5), e.boucle.centre)) < 0) ext = scale(ext, -1);
+      const d = scale(ext, p.distance);
+      lignes.push([add(s.a, d), add(s.b, d)]);
+      if (p.symetrique) lignes.push([sub(s.a, d), sub(s.b, d)]);
+    }
+    return { lignes, faces: [] };
+  }
+  return null;
 }
 
 /** Aperçu : parallélogrammes balayés par les segments. */
@@ -249,13 +399,12 @@ function saisir(e: EtatPousserTirer, ctx: ContexteOutil, texte: string): Transit
   if (e.etape === 2 && e.aretes.length > 0 && e.origine) {
     const d = directionSaisie(e);
     if (!d) return { etat: { ...e, texte, erreur: "Orientez le curseur (ou verrouillez un axe avec une flèche) pour donner la direction." } };
-    const vecteur = enLocal(ctx).vecteur(e.origine, scale(d, res.valeur));
-    return appliquerAretes(e, ctx, { genre: "aretes", aretes: e.aretes, vecteur, symetrique: e.symetrique }, texte, null);
+    return appliquerAretes(e, ctx, paramsPour(e, ctx, scale(d, res.valeur)), texte, null);
   }
   if (corrigeable(e.derniere, ctx)) {
     const d = e.derniere;
     if (d.params.genre === "face") return appliquer(e, ctx, d.params.face, res.valeur, texte, d);
-    return appliquerAretes(e, ctx, { ...d.params, vecteur: scale(normalize(d.params.vecteur), res.valeur) }, texte, d);
+    return appliquerAretes(e, ctx, aValeur(d.params, res.valeur), texte, d);
   }
   return { etat: { ...e, texte, erreur: "Cliquez d'abord sur la face ou l'arête à pousser ou à tirer." } };
 }
@@ -293,8 +442,7 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         }
         if (etat.etape === 2 && etat.aretes.length > 0 && etat.origine) {
           const v = viseeVecteur(etat, ctx, ev.rayon, ev.tolerance);
-          const vecteur = enLocal(ctx).vecteur(etat.origine, v.vecteur);
-          return appliquerAretes({ ...etat, inference: v.inference }, ctx, { genre: "aretes", aretes: etat.aretes, vecteur, symetrique: etat.symetrique }, null, null);
+          return appliquerAretes({ ...etat, inference: v.inference }, ctx, paramsPour(etat, ctx, v.vecteur), null, null);
         }
         const { el, cible } = viseeElement(ctx, ev);
         if (el && el.genre === "arete" && cible) {
@@ -302,12 +450,26 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
             return { etat: { ...etat, erreur: "Double-cliquez sur le groupe pour y entrer, puis poussez ou tirez une de ses arêtes." } };
           }
           const ids = aretesDuClic(ctx, cible);
-          if (ev.double && etat.derniere?.params.genre === "aretes") {
-            return appliquerAretes(etat, ctx, { ...etat.derniere.params, aretes: ids }, null, null);
+          const der = etat.derniere?.params;
+          if (ev.double && (der?.genre === "aretes" || der?.genre === "couronne")) {
+            return appliquerAretes(etat, ctx, { ...der, aretes: ids }, null, null);
           }
           const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...(ctx.repere ? { axes: ctx.repere } : {}) });
+          const segments = segmentsMonde(ctx, ids);
           return {
-            etat: { ...etat, etape: 2, aretes: ids, segments: segmentsMonde(ctx, ids), origine: i.point, vecteur: null, inference: i, texte: null, erreur: null },
+            etat: {
+              ...etat,
+              etape: 2,
+              aretes: ids,
+              segments,
+              boucle: boucleDe(segments, i.point),
+              droite: droiteDe(ctx, ids, segments, i.point),
+              origine: i.point,
+              vecteur: null,
+              inference: i,
+              texte: null,
+              erreur: null,
+            },
             selection: ids,
           };
         }
@@ -329,6 +491,11 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         const modeAretes = etat.etape === 2 ? etat.aretes.length > 0 : etat.survolArete !== null;
         if (ev.touche === "Ctrl") return { etat: { ...etat, nouvelleFace: !etat.nouvelleFace } };
         if (ev.touche === "Alt") return modeAretes ? { etat: { ...etat, symetrique: !etat.symetrique } } : { etat: { ...etat, etirement: !etat.etirement } };
+        if (ev.touche === "FlecheBas" && etat.etape === 2 && etat.aretes.length > 0) {
+          const s = plusProche(etat.segments, etat.origine as Vec3);
+          if (!s || etat.fleche?.touche === "FlecheBas") return { etat: { ...etat, fleche: null } };
+          return { etat: { ...etat, fleche: { touche: "FlecheBas", verrou: { genre: "direction", direction: normalize(sub(s.b, s.a)), type: "parallele" } } } };
+        }
         const axe = axeDeToucheFleche(ev.touche);
         if (axe && etat.etape === 2 && etat.aretes.length > 0) {
           if (etat.fleche?.touche === ev.touche) return { etat: { ...etat, fleche: null } };
@@ -354,7 +521,7 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         consigne: CONSIGNE_ARETE_TIRAGE,
         mesures: mesures(libelleMesuresDe(ID_POUSSER_TIRER, 1), valeur, contexteSaisie("longueur", ctx)),
         inference: etat.inference,
-        apercu: v && len(v) > TOL ? apercuAretes(etat.segments, v, etat.symetrique) : { lignes: [], faces: [] },
+        apercu: v && len(v) > TOL ? (apercuSpecial(etat, paramsPour(etat, ctx, v)) ?? apercuAretes(etat.segments, v, etat.symetrique)) : { lignes: [], faces: [] },
         ctx,
         survol: [],
         erreur: etat.erreur,

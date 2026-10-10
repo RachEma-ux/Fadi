@@ -506,7 +506,13 @@ cercle et arc donnent une surface lisse. **Alt = des deux côtés** (de −d à 
 médiane). Correction par une distance tapée, double-clic = répéter, Échap : comme pour une face. Consignes : « Cliquez sur
 l'arête à étendre en surface. \| Alt = Des deux côtés. » (survol d'une arête) puis « Cliquez pour fixer la surface ou
 saisissez la distance. \| Flèches = Verrouiller un axe. \| Alt = Des deux côtés. ». Refus : déplacement parallèle aux
-arêtes ; courbe fermée tirée dans son propre plan (le Décalage fait la couronne). CA-PPT-7 : segment de 4 m, ↑ puis `2,7` →
+arêtes. **Compléments (fadi, D-197)** : une courbe fermée tirée **dans son propre plan** donne une **couronne** (contour
+décalé en onglet, vers l'extérieur ou l'intérieur selon le curseur, Alt = des deux côtés) ; **↓** verrouille le déplacement
+le long de l'arête cliquée et **allonge** (ou raccourcit) la ligne ; la surface reste **liée** à ses arêtes sources (elle est
+recalculée quand elles bougent ; le lien se rompt si la surface elle-même est modifiée). CA-PPT-10 : cercle de rayon 1,
+tiré dans son plan de `0,5` vers l'extérieur → disque + couronne, contour décalé de rayon 1 + 0,5 / cos(π/24). CA-PPT-11 :
+segment de 4 m, ↓ puis `1` → une seule arête de 5 m. CA-PPT-12 : segment tiré de 2 m vers le haut puis l'arête source
+déplacée de 1 m → la surface suit (même aire, arête haute déplacée). CA-PPT-7 : segment de 4 m, ↑ puis `2,7` →
 une face verticale de 10,8 m², un pas d'annulation. CA-PPT-8 : arête d'un cercle de 24 segments, ↑ puis `2` → tube de 24
 faces lisses sur la face de base (25 faces). CA-PPT-9 : Alt puis ← et `1` sur un segment de 4 m → surface de 8 m².
 
