@@ -551,7 +551,22 @@ function infererVerrouille(e: EntreeInference, v: Verrou, axes: AxesModele, c: C
  * Aplatit le modèle (racine + occurrences, transformations composées) en géométrie visible.
  * Les arêtes masquées sont exclues ; les entités d'un groupe/composant sont marquées `dansObjet`.
  */
-export function geometrieVisible(m: Modele, o: { readonly chemin?: readonly Id[] } = {}): GeometrieVisible {
+/**
+ * Options de vue de `geometrieVisible` (jamais écrites dans le modèle, R10) : contexte ouvert (O-2), isolement et
+ * « Masquer le reste du modèle » / « Masquer les composants semblables » (O-5).
+ */
+export interface OptionsGeometrieVisible {
+  /** Chemin du contexte ouvert (racine → occurrence) : ce qui n'est pas dessous est marqué `horsContexte`. */
+  readonly chemin?: readonly Id[];
+  /** Isolement (O-5) : seules les entités `ids` du contexte `chemin` (et tout le contenu des objets isolés) restent. */
+  readonly isole?: { readonly chemin: readonly Id[]; readonly ids: readonly Id[] } | null;
+  /** Masquer le reste du modèle (O-5) : ce qui est hors du contexte ouvert n'est pas rendu au lieu d'être délavé. */
+  readonly masquerReste?: boolean;
+  /** Masquer les composants semblables (O-5) : dans un composant ouvert, ses autres occurrences ne sont pas rendues. */
+  readonly masquerSemblables?: boolean;
+}
+
+export function geometrieVisible(m: Modele, o: OptionsGeometrieVisible = {}): GeometrieVisible {
   const aretes: AreteVisible[] = [];
   const faces: FaceVisible[] = [];
   const centres: CentreVisible[] = [];
@@ -559,13 +574,44 @@ export function geometrieVisible(m: Modele, o: { readonly chemin?: readonly Id[]
   // Objets O-2 : avec le chemin du contexte ouvert (racine → occurrence), tout ce qui n'est pas dessous est marqué.
   const ouvert = o.chemin ?? [];
   const dedans = (pile: readonly Id[]) => ouvert.length === 0 || (pile.length >= ouvert.length && ouvert.every((id, i) => pile[i] === id));
+  // Objets O-5 : isolement (chemin du contexte d'isolement + entités retenues) ; composant ouvert pour les semblables.
+  const iso = o.isole && o.isole.ids.length > 0 ? o.isole : null;
+  const retenues = new Set(iso?.ids ?? []);
+  const ouverte = o.masquerSemblables && ouvert.length > 0 ? ouvert[ouvert.length - 1] : undefined;
+  let defOuverte: Id | undefined;
+  if (ouverte !== undefined) {
+    const chercher = (c: Contexte, prof: number): void => {
+      if (prof > 32 || defOuverte !== undefined) return;
+      for (const oc of Object.values(c.occurrences)) {
+        if (oc.id === ouverte) defOuverte = m.definitions[oc.definition]?.genre === "composant" ? oc.definition : undefined;
+        const d = m.definitions[oc.definition];
+        if (d) chercher(d.contenu, prof + 1);
+      }
+    };
+    chercher(m.racine, 0);
+  }
+  /** Où en est la pile par rapport à l'isolement : « libre » (tout montrer), « chemin » (passer), « niveau » (filtrer). */
+  const etatIsolement = (pile: readonly Id[]): "libre" | "chemin" | "niveau" | "dehors" => {
+    if (!iso) return "libre";
+    const n = iso.chemin.length;
+    for (let i = 0; i < Math.min(n, pile.length); i++) if (pile[i] !== iso.chemin[i]) return "dehors";
+    if (pile.length < n) return "chemin";
+    if (pile.length === n) return "niveau";
+    return retenues.has(pile[n] as Id) ? "libre" : "dehors";
+  };
   const parcourir = (c: Contexte, M: Matrice4, dansObjet: boolean, profondeur: number, materiau: Id | undefined, balise: Id | undefined, pile: readonly Id[] = []): void => {
     if (profondeur > 32) return;
+    const isolement = etatIsolement(pile);
+    if (isolement === "dehors") return;
+    const hors = !dedans(pile);
     const p = (s: Id): Vec3 => appliquer(M, (c.sommets[s] as { position: Vec3 }).position);
-    const marque = { ...(dansObjet ? { dansObjet: true } : {}), ...(dedans(pile) ? {} : { horsContexte: true }) };
-    for (const a of Object.values(c.aretes)) if (!a.masquee) aretes.push({ id: a.id, a: p(a.a), b: p(a.b), ...marque, ...(a.adoucie ? { adoucie: true } : {}) });
+    const marque = { ...(dansObjet ? { dansObjet: true } : {}), ...(hors ? { horsContexte: true } : {}) };
+    // Ni la géométrie d'un contexte traversé pour atteindre l'isolement, ni le reste du modèle quand il est masqué.
+    const montrer = (id: Id) => isolement === "libre" || (isolement === "niveau" && retenues.has(id));
+    const rendre = !(o.masquerReste && hors);
+    for (const a of Object.values(c.aretes)) if (!a.masquee && rendre && montrer(a.id)) aretes.push({ id: a.id, a: p(a.a), b: p(a.b), ...marque, ...(a.adoucie ? { adoucie: true } : {}) });
     for (const f of Object.values(c.faces)) {
-      if (f.masquee) continue;
+      if (f.masquee || !rendre || !montrer(f.id)) continue;
       const mat = f.materiauRecto ?? materiau;
       faces.push({
         id: f.id,
@@ -577,10 +623,11 @@ export function geometrieVisible(m: Modele, o: { readonly chemin?: readonly Id[]
         ...(balise ? { balise } : {}),
       });
     }
-    for (const k of Object.values(c.courbes)) centres.push({ id: k.id, position: appliquer(M, k.centre), ...marque });
+    for (const k of Object.values(c.courbes)) if (rendre && (isolement === "libre" || k.aretes.some((a) => retenues.has(a)))) centres.push({ id: k.id, position: appliquer(M, k.centre), ...marque });
     for (const oc of Object.values(c.occurrences)) {
       // Objet masqué (lot 5) ou balise masquée (calque invisible, P-9) : l'objet n'est ni affiché ni accroché.
       if (oc.masquee) continue;
+      if (defOuverte !== undefined && oc.definition === defOuverte && oc.id !== ouverte) continue;
       if (oc.balise && balises && balises[oc.balise] && !balises[oc.balise]!.visible) continue;
       const d = m.definitions[oc.definition];
       if (d) parcourir(d.contenu, composer(M, oc.transformation), true, profondeur + 1, oc.materiau ?? materiau, oc.balise ?? balise, [...pile, oc.id]);

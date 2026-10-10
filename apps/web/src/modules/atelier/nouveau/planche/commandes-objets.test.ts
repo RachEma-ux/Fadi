@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, ajouterSegment, contexte, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/planche-model";
-import { COMMANDES_OBJETS, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, filAriane, liensRompus } from "./commandes-objets";
+import { COMMANDES_OBJETS, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -67,5 +67,15 @@ describe("Commandes du Navigateur (Objets O-4)", () => {
     const nom = (id: string) => id;
     expect(ciblesDeplacement(vide.modele, [b.occurrence], undefined, nom, "Planche").map((c) => c.id)).toEqual([vide.occurrence]);
     expect(ciblesDeplacement(vide.modele, [a.occurrence], b.occurrence, nom, "Planche").map((c) => c.id)).toEqual([undefined, vide.occurrence]);
+  });
+});
+
+describe("Commandes de vue (Objets O-5)", () => {
+  it("Isoler : avec une sélection ou pour lever l'isolement ; Masquer le reste : dans un objet ouvert", () => {
+    expect(disponibiliteVue("isoler", { entites: 0, isole: false, dansObjet: false }).motif).toBe("planche.objets.motif.isoler");
+    expect(disponibiliteVue("isoler", { entites: 2, isole: false, dansObjet: false }).disponible).toBe(true);
+    expect(disponibiliteVue("isoler", { entites: 0, isole: true, dansObjet: false }).disponible).toBe(true);
+    expect(disponibiliteVue("masquer-reste", { entites: 0, isole: false, dansObjet: false }).motif).toBe("planche.contexte.motif");
+    expect(disponibiliteVue("masquer-reste", { entites: 0, isole: false, dansObjet: true }).disponible).toBe(true);
   });
 });

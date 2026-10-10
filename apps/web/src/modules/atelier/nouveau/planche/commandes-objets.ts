@@ -122,7 +122,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte et du Navigateur, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, ...COMMANDES_VUE].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -169,4 +169,28 @@ export function filAriane(chemin: readonly string[], nom: (id: string) => string
 export function liensRompus(avant: Modele, apres: Modele): number {
   const n = (m: Modele) => Object.keys(m.annotations?.extrusions ?? {}).length;
   return Math.max(0, n(avant) - n(apres));
+}
+
+/**
+ * Commandes de vue (Objets O-5) : Isoler (bascule avec restauration : la vue seule change, rien n'est masqué dans le
+ * modèle) et Masquer le reste du modèle (bascule, effective dans un groupe ou un composant ouvert). Isoler vit dans la
+ * barre d'actions (avec une sélection, ou pendant l'isolement) ; Masquer le reste dans le fil d'Ariane ; toutes deux dans
+ * « Outils ▾ ».
+ */
+export type IdCommandeVue = "isoler" | "masquer-reste";
+export interface CommandeVue {
+  readonly id: IdCommandeVue;
+  readonly picto: string;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_VUE: readonly CommandeVue[] = [
+  { id: "isoler", picto: "⦿", libelle: "planche.menu.isoler", court: "planche.objets.court.isoler", raccourci: "Alt+Maj+I" },
+  { id: "masquer-reste", picto: "⬒", libelle: "planche.affichage.masquer-reste", court: "planche.objets.court.masquer-reste", raccourci: "Alt+Maj+R" },
+];
+
+export function disponibiliteVue(id: IdCommandeVue, s: { readonly entites: number; readonly isole: boolean; readonly dansObjet: boolean }): Disponibilite {
+  if (id === "isoler") return s.isole || s.entites > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.objets.motif.isoler" };
+  return s.dansObjet ? { disponible: true, motif: null } : { disponible: false, motif: "planche.contexte.motif" };
 }

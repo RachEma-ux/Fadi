@@ -473,6 +473,8 @@ export function PanneauAffichage({ options, onOptions, onReafficher, onSupprimer
       <h4>{t("planche.affichage.voir")}</h4>
       <Bascule cle="objetsMasques" libelle={t("planche.affichage.objets-masques")} options={options} onOptions={onOptions} />
       <Bascule cle="geometrieMasquee" libelle={t("planche.affichage.geometrie-masquee")} options={options} onOptions={onOptions} />
+      <Bascule cle="masquerReste" libelle={t("planche.affichage.masquer-reste")} options={options} onOptions={onOptions} />
+      <Bascule cle="masquerSemblables" libelle={t("planche.affichage.masquer-semblables")} options={options} onOptions={onOptions} />
       <Bascule cle="couleurParBalise" libelle={t("planche.affichage.couleur-balise")} options={options} onOptions={onOptions} />
       <Bascule cle="plansDeCoupe" libelle={t("planche.affichage.plans")} options={options} onOptions={onOptions} />
       <Bascule cle="axes" libelle={t("planche.affichage.axes")} options={options} onOptions={onOptions} />

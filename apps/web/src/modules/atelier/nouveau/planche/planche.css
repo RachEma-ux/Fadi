@@ -1871,3 +1871,25 @@
   max-height: 50vh;
   overflow-y: auto;
 }
+
+/* Objets O-5 : bandeau d'isolement (même forme que le fil d'Ariane) ; bouton de bascule enfoncé. */
+.planche-isolement {
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+.planche-fil-commande[aria-pressed="true"] {
+  background: var(--atelier-accent, #1f5f46);
+  color: #fff;
+}
+@media (max-width: 760px) {
+  /* Au téléphone, le bandeau se pose au-dessus du fil d'Ariane quand un objet est ouvert. */
+  .planche.dans-contexte .planche-isolement {
+    bottom: calc(var(--volet-h, 10rem) + 4rem);
+  }
+  .planche.est-isole .planche-options-outil {
+    bottom: calc(var(--volet-h, 10rem) + 0.5rem + 3.6rem);
+  }
+  .planche.est-isole.dans-contexte .planche-options-outil {
+    bottom: calc(var(--volet-h, 10rem) + 0.5rem + 7.2rem);
+  }
+}

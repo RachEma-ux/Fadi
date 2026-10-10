@@ -94,7 +94,7 @@ import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, afficherRaccourci, commenceS
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { BarreActions } from "../panneaux/BarreActions";
-import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { BoutonOutils } from "./BoutonOutils";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
@@ -123,6 +123,8 @@ declare global {
       panneau: () => string | null;
       options: () => OptionsAffichage;
       menu: () => readonly string[] | null;
+      /** Objets O-5 : nombre de faces rendues par la vue (isolement, masquer le reste). */
+      facesRendues: () => number;
       pressePapiers: () => number;
     };
   }
@@ -252,6 +254,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   // Objets O-4 : « Déplacer vers un groupe… » (objets à ranger et contexte d'où ils partent) et renommage au Navigateur.
   const [dialogueDeplacer, setDialogueDeplacer] = useState<{ ids: readonly string[]; dans: string | undefined } | null>(null);
   const [renommage, setRenommage] = useState<string | null>(null);
+  // Objets O-5 : isolement de la vue (contexte et entités isolés) ; jamais écrit dans le modèle, levé par la même commande.
+  const [isolement, setIsolementEtat] = useState<{ chemin: readonly string[]; ids: readonly string[] } | null>(null);
+  const isolementRef = useRef<{ chemin: readonly string[]; ids: readonly string[] } | null>(null);
   const pressePapiers = useRef<{ ids: readonly string[]; dans: string | undefined; source: Modele } | null>(null);
   const derniersMasques = useRef<{ ids: readonly string[]; dans: string | undefined } | null>(null);
   const [precision, setPrecision] = useState(() => lirePrecision());
@@ -624,6 +629,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const etatSelectionObjetsRef = useRef<() => EtatSelectionObjets>(() => ({ lecture: true, entites: 0, objets: 0, verrouilles: false }));
   const executerObjetRef = useRef<(id: IdCommandeObjet) => void>(() => {});
   const executerNavigateurRef = useRef<(id: IdCommandeNavigateur) => void>(() => {});
+  const executerVueRef = useRef<(id: IdCommandeVue) => void>(() => {});
+  const etatVueRef = useRef<() => { entites: number; isole: boolean; dansObjet: boolean }>(() => ({ entites: 0, isole: false, dansObjet: false }));
   const selectionDe = useCallback((genre: "faces" | "aretes" | "occurrences", m = histRef.current.present.modele) => {
     const c = contexteDe(m, dansRef.current);
     return selectionRef.current.filter((id) => c[genre][id]);
@@ -753,6 +760,24 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     },
     [operer, o],
   );
+  /** Objets O-5 : Isoler / Quitter l'isolement — la vue seule change, l'état de masquage du modèle est intact. */
+  const basculerIsolement = useCallback(() => {
+    const m = histRef.current.present.modele;
+    let suivant: { chemin: readonly string[]; ids: readonly string[] } | null = null;
+    if (!isolementRef.current) {
+      const ids = selectionRef.current.filter((id) => genreAnnotation(id) === null);
+      if (ids.length === 0) return;
+      suivant = { chemin: dansRef.current !== undefined ? cheminOccurrence(m, dansRef.current) : [], ids };
+    }
+    isolementRef.current = suivant;
+    setIsolementEtat(suivant);
+    vueRef.current?.majModele(m);
+    setMessage(t(suivant ? "planche.isolement.fait" : "planche.isolement.fin"));
+    rafraichir();
+  }, [rafraichir]);
+  const basculerMasquerReste = useCallback(() => {
+    majOptions({ masquerReste: !(vueRef.current?.lireOptions().masquerReste ?? false) });
+  }, [majOptions]);
   /** Objets O-4 : nouveau groupe vide, ouvert aussitôt pour y dessiner (écart Fadi déclaré). */
   const creerGroupeVide = useCallback(() => {
     if (readOnly) return;
@@ -1401,6 +1426,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         hauteurOeil: () => hauteurOeilRef.current,
         menuContextuel: (p, rayon, tolerance) => menuRappel.current(p, rayon, tolerance),
         dans: () => dansRef.current,
+        isolement: () => isolementRef.current,
       });
     } catch {
       setWebgl("indisponible");
@@ -1427,6 +1453,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       options: () => vueRef.current?.lireOptions() ?? OPTIONS_AFFICHAGE_DEFAUT,
       menu: () => menuRef.current?.entrees.map((e) => e.id) ?? null,
       pressePapiers: () => pressePapiers.current?.ids.length ?? 0,
+      facesRendues: () => vueRef.current?.facesRendues() ?? 0,
     };
     return () => {
       v.detruire();
@@ -1560,6 +1587,13 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       if (mod && !e.altKey && e.shiftKey && cle === "g") {
         e.preventDefault();
         eclaterSelection();
+        return;
+      }
+      // Objets O-5 : Alt + Maj + I isoler / quitter l'isolement, Alt + Maj + R masquer le reste du modèle (dans un objet ouvert).
+      if (!mod && e.altKey && e.shiftKey && !dansMesures && (e.code === "KeyI" || e.code === "KeyR")) {
+        e.preventDefault();
+        const id: IdCommandeVue = e.code === "KeyI" ? "isoler" : "masquer-reste";
+        if (disponibiliteVue(id, etatVueRef.current()).disponible) executerVueRef.current(id);
         return;
       }
       // Objets O-4 : Alt + Maj + G nouveau groupe vide, Alt + Maj + V déplacer vers un groupe, F2 renommer.
@@ -1988,6 +2022,16 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.objets.motif.vide"), executer: () => executerNavigateur(c.id) };
     });
   executerNavigateurRef.current = executerNavigateur;
+  const etatVue = () => ({ entites: etatSelectionObjets().entites, isole: isolement !== null, dansObjet: dans !== undefined });
+  const executerVue = (id: IdCommandeVue) => (id === "isoler" ? basculerIsolement() : basculerMasquerReste());
+  const commandesVue = () =>
+    COMMANDES_VUE.map((c) => {
+      const d = disponibiliteVue(c.id, etatVue());
+      const nom = c.id === "isoler" && isolement ? t("planche.menu.quitter-isolement") : t(c.libelle);
+      return { id: c.id, picto: c.picto, nom, raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.objets.motif.vide"), executer: () => executerVue(c.id) };
+    });
+  executerVueRef.current = executerVue;
+  etatVueRef.current = etatVue;
   etatSelectionObjetsRef.current = etatSelectionObjets;
   executerObjetRef.current = executerObjet;
 
@@ -2002,6 +2046,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         ...COMMANDES_CONTEXTE.map((c) => ({ id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: dans === undefined ? t("planche.contexte.motif") : null, executer: () => fermerContexte(c.id) })),
         // Objets O-4 : Nouveau groupe vide, Déplacer vers un groupe…, Renommer.
         ...commandesNavigateur(),
+        // Objets O-5 : Isoler, Masquer le reste du modèle.
+        ...commandesVue(),
       ]}
       outilId={outilId}
       raison={raisonDe}
@@ -2036,6 +2082,19 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
             attributs: { "data-planche-commande": c.id },
           };
         }),
+        // Objets O-5 : Isoler, présent avec une sélection ou pendant l'isolement (enfoncé), qui le lève.
+        ...commandesVue()
+          .filter((c) => c.id === "isoler" && c.motif === null)
+          .map((c) => ({
+            id: c.id,
+            picto: c.picto,
+            libelle: c.nom,
+            texte: t("planche.objets.court.isoler"),
+            titre: `${c.nom} (${afficherRaccourci(c.raccourci)})`,
+            onClick: c.executer,
+            pressed: isolement !== null,
+            attributs: { "data-planche-commande": c.id },
+          })),
         {
           id: "detacher",
           picto: detache === "non" ? "⧉" : "⤡",
@@ -2074,7 +2133,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   // La Planche est rendue dans sa porte (portail) : dans la page, la porte est posée dans `emplacement` ; détachée,
   // elle vit dans la fenêtre séparée et la carte d'état prend sa place ici.
   const planche = (
-    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${colonneRepliee ? " colonne-repliee" : ""}${detache !== "non" ? " est-detache" : ""}${dans !== undefined ? " dans-contexte" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
+    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${colonneRepliee ? " colonne-repliee" : ""}${detache !== "non" ? " est-detache" : ""}${dans !== undefined ? " dans-contexte" : ""}${isolement ? " est-isole" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
       <div className="planche-vue-cadre" data-planche-cadre>
         <div
           ref={hoteRef}
@@ -2436,7 +2495,20 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
               <span aria-hidden="true">{c.picto}</span>
             </button>
           ))}
+          {COMMANDES_VUE.filter((c) => c.id === "masquer-reste").map((c) => (
+            <button key={c.id} type="button" className="planche-fil-commande" aria-pressed={options.masquerReste} title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`} aria-label={t(c.libelle)} onClick={basculerMasquerReste} data-planche-commande={c.id}>
+              <span aria-hidden="true">{c.picto}</span>
+            </button>
+          ))}
         </nav>
+      )}
+      {isolement && (
+        <div className="planche-fil planche-isolement" role="status" data-planche-isolement>
+          <span>{t("planche.isolement.etat", { nombre: String(isolement.ids.length) })}</span>
+          <button type="button" className="planche-fil-commande" title={`${t("planche.menu.quitter-isolement")} (${afficherRaccourci(COMMANDES_VUE[0]!.raccourci)})`} aria-label={t("planche.menu.quitter-isolement")} onClick={basculerIsolement} data-planche-isolement-quitter>
+            <span aria-hidden="true">⦿</span>
+          </button>
+        </div>
       )}
       <footer className="planche-bas">
         <p className="planche-etat" aria-live="polite" aria-label={t("planche.etat")} data-planche-etat>

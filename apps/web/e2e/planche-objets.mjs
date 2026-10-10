@@ -8,7 +8,9 @@
  * téléphone, le fil se superpose sans redimensionner le dessin. Objets O-3 : Rendre unique (Alt+Maj+U) nomme « #1 » puis
  * « #2 » ; Diviser en segments (Alt+Maj+C) n'apparaît dans la barre qu'avec une courbe sélectionnée. Objets O-4 : groupe
  * vide (Alt+Maj+G) ouvert aussitôt et jamais purgé, « Déplacer vers un groupe… » (Alt+Maj+V) sans bouger à l'écran,
- * Renommer (F2) en place au Navigateur, glisser-déposer dans le Navigateur. Brouillon local : aucune commande ; aucune erreur JavaScript.
+ * Renommer (F2) en place au Navigateur, glisser-déposer dans le Navigateur. Objets O-5 : Isoler (Alt+Maj+I) puis
+ * Quitter l'isolement restaure la vue sans rien écrire au modèle ; Masquer le reste du modèle (Alt+Maj+R) dans un groupe
+ * ouvert, levé au retour à la racine. Brouillon local : aucune commande ; aucune erreur JavaScript.
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/planche-objets.mjs
  */
@@ -490,6 +492,73 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   check("[O-4] glissé sur « Établi » : rangé dedans", !(await racine()).includes(objet) && (await monde()) === avant, (await racine()).join(","));
   check("[O-4] aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
   await page.screenshot({ path: `${OUT}/6-o4.png` });
+  await ctx.close();
+}
+
+// ————————————————————————————————————————————————————————————— Objets O-5 : Isoler, Masquer le reste du modèle (desktop)
+{
+  const ctx = await browser.newContext({ viewport: { width: 1536, height: 864 }, locale: "fr-FR" });
+  const s = await preparer(ctx);
+  const { page } = s;
+  const { cliquer, survoler, saisir, ecran } = aides(page);
+  await s.ouvrirPlanche();
+  const vue = page.locator("[data-planche-vue]");
+  await vue.focus();
+  const rendues = () => page.evaluate(() => window.fadiPlanche.facesRendues());
+  const masquees = () => page.evaluate(() => JSON.stringify(window.fadiPlanche.modele()).split('"masquee":true').length - 1);
+  // Deux carrés groupés séparément et un troisième libre.
+  for (const x of [0, 3, 6]) {
+    await page.keyboard.press("r");
+    await cliquer({ x, y: 0, z: 0 });
+    await survoler({ x: x + 1, y: 1, z: 0 });
+    await saisir("1;1");
+    await page.keyboard.press(" ");
+    await vue.focus();
+    await page.keyboard.press("Escape");
+    if (x < 6) {
+      await cliquer({ x: x + 0.5, y: 0.5, z: 0 });
+      await page.keyboard.press("Control+g");
+      await page.waitForTimeout(60);
+      await page.keyboard.press("Escape");
+    }
+  }
+  const toutes = await rendues();
+  check("[O-5] trois carrés rendus, Isoler absent de la barre sans sélection", toutes === 3 && (await bouton(page, "isoler").count()) === 0, String(toutes));
+  // Masquer le carré libre avant l'isolement : il devra le rester après.
+  await cliquer({ x: 6.5, y: 0.5, z: 0 });
+  const libre = await ecran({ x: 6.5, y: 0.5, z: 0 });
+  await page.mouse.click(libre.x, libre.y, { button: "right" });
+  await page.locator('[data-planche-menu-contextuel] [data-planche-menu="masquer"]').click();
+  await page.waitForTimeout(80);
+  const avantIsolement = await masquees();
+  await cliquer({ x: 0.5, y: 0.5, z: 0 });
+  check("[O-5] objet sélectionné : Isoler dans la barre d'actions, raccourci Alt+Maj+I", (await bouton(page, "isoler").count()) === 1 && /Alt\+Maj\+I/.test((await bouton(page, "isoler").getAttribute("title")) ?? ""));
+  await page.keyboard.press("Alt+Shift+KeyI");
+  await page.waitForTimeout(80);
+  check("[O-5] Alt+Maj+I : seul l'objet isolé est rendu, bandeau d'isolement, bouton enfoncé", (await rendues()) === 1 && (await page.locator("[data-planche-isolement]").count()) === 1 && (await bouton(page, "isoler").getAttribute("aria-pressed")) === "true", String(await rendues()));
+  check("[O-5] l'isolement n'écrit rien dans le modèle", (await masquees()) === avantIsolement);
+  await page.locator("[data-planche-isolement-quitter]").click();
+  await page.waitForTimeout(80);
+  check("[O-5] Quitter l'isolement : la vue revient telle qu'avant (le carré masqué avant reste masqué)", (await rendues()) === 2 && (await page.locator("[data-planche-isolement]").count()) === 0 && (await masquees()) === avantIsolement, String(await rendues()));
+  // Masquer le reste du modèle : dans un groupe ouvert, le reste disparaît au lieu d'être délavé.
+  const sommet = await ecran({ x: 0.5, y: 0.5, z: 0 });
+  await page.waitForTimeout(700); // sinon le navigateur compte un triple-clic
+  await page.mouse.dblclick(sommet.x, sommet.y);
+  await page.waitForTimeout(100);
+  const reste = page.locator('[data-planche-fil] [data-planche-commande="masquer-reste"]');
+  check("[O-5] dans un groupe : bouton « Masquer le reste du modèle » dans le fil d'Ariane, raccourci Alt+Maj+R", (await reste.count()) === 1 && /Alt\+Maj\+R/.test((await reste.getAttribute("title")) ?? "") && (await rendues()) === 2);
+  await page.keyboard.press("Alt+Shift+KeyR");
+  await page.waitForTimeout(80);
+  check("[O-5] Alt+Maj+R : le reste du modèle n'est plus rendu, bouton enfoncé", (await rendues()) === 1 && (await reste.getAttribute("aria-pressed")) === "true", String(await rendues()));
+  await page.keyboard.press("Shift+Home");
+  await page.waitForTimeout(80);
+  check("[O-5] retour à la racine : tout est rendu de nouveau, aucun masquage résiduel", (await rendues()) === 2 && (await masquees()) === avantIsolement, String(await rendues()));
+  await page.locator("[data-planche-outils-bouton]").click();
+  await page.locator('[data-outils-famille="objets"]').click();
+  const listees = await page.locator("[data-outils-commande]").evaluateAll((l) => l.map((b) => b.getAttribute("data-outils-commande")));
+  check("[O-5] « Outils ▾ » : Isoler et Masquer le reste du modèle listés", listees.includes("isoler") && listees.includes("masquer-reste"), listees.join(","));
+  await page.keyboard.press("Escape");
+  check("[O-5] aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
   await ctx.close();
 }
 
