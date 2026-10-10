@@ -55,6 +55,8 @@ export interface RappelsVuePlanche {
   menuContextuel?(p: Point2, rayon: Rayon, tolerance: number): void;
   /** Occurrence en cours d'édition (§5.6) : les objets verrouillés sélectionnés y sont cherchés. */
   dans?(): string | undefined;
+  /** Chemin complet du contexte ouvert (Objets O-2) : distingue les occurrences d'un même composant. */
+  chemin?(): readonly string[];
 }
 
 /** Options d'affichage (panneaux Styles, Affichage, Ombres — état de vue, R10). */
@@ -385,7 +387,7 @@ export class VuePlanche {
     this.modele = modele;
     // Objets O-2 (D-203) : contexte d'édition ouvert → le reste du modèle est délavé, l'objet ouvert entouré de pointillés.
     const dans = this.rappels.dans?.();
-    const chemin = dans !== undefined ? cheminOccurrence(modele, dans) : [];
+    const chemin = dans !== undefined ? (this.rappels.chemin?.() ?? cheminOccurrence(modele, dans)) : [];
     this.geometrie = geometrieVisible(modele, { chemin });
     const o = this.options;
     const materiaux = modele.annotations?.materiaux ?? {};
@@ -414,7 +416,7 @@ export class VuePlanche {
       if (horsSegments.length) this.groupeModele.add(new THREE.LineSegments(geometrieSegments(horsSegments), new THREE.LineBasicMaterial({ color: COULEUR_ARETE_HORS_CONTEXTE, transparent: true, opacity: 0.6 })));
     }
     if (dans !== undefined) {
-      const b = boiteOccurrence(modele, dans);
+      const b = boiteOccurrence(modele, dans, chemin);
       if (b) {
         const pointilles = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(b.max.x - b.min.x || 1e-3, b.max.y - b.min.y || 1e-3, b.max.z - b.min.z || 1e-3)), new THREE.LineDashedMaterial({ color: COULEUR_CONTEXTE, dashSize: 0.1, gapSize: 0.07, depthTest: false }));
         pointilles.position.set((b.min.x + b.max.x) / 2, (b.min.y + b.max.y) / 2, (b.min.z + b.max.z) / 2);

@@ -2831,6 +2831,24 @@ export function matriceMonde(m: Modele, occurrence: Id): Matrice4 | null {
   return chercher(m.racine, IDENTITE, 0);
 }
 
+/**
+ * Matrice monde le long d'un chemin d'occurrences (racine → occurrence) ; null si une étape n'est pas dans le contexte
+ * de la précédente. Contrairement à `matriceMonde`, elle distingue les occurrences d'un composant qui partagent un
+ * objet imbriqué de même identifiant (Objets O-2).
+ */
+export function matriceChemin(m: Modele, chemin: readonly Id[]): Matrice4 | null {
+  let c: Contexte = m.racine;
+  let M: Matrice4 = IDENTITE;
+  for (const id of chemin) {
+    const occ = c.occurrences[id];
+    const d = occ ? m.definitions[occ.definition] : undefined;
+    if (!occ || !d) return null;
+    M = composer(M, occ.transformation);
+    c = d.contenu;
+  }
+  return M;
+}
+
 /** Inverse d'une transformation affine (null si singulière). */
 export function inverserMatrice(M: Matrice4): Matrice4 | null {
   const g = (i: number): number => M[i] ?? 0;
@@ -3386,8 +3404,22 @@ export function intersecterAvecModele(m: Modele, ids: readonly Id[], o: OptionsC
 }
 
 /** Boîte englobante (monde) d'une occurrence, avec ses sous-objets ; null si elle est vide ou inconnue. */
-export function boiteOccurrence(m: Modele, occurrence: Id): { min: Vec3; max: Vec3 } | null {
+export function boiteOccurrence(m: Modele, occurrence: Id, chemin?: readonly Id[]): { min: Vec3; max: Vec3 } | null {
   let trouvee: { M: Matrice4; occ: Occurrence } | null = null;
+  // Objets O-2 : avec le chemin complet, l'occurrence voulue d'un composant partagé (et non la première trouvée).
+  if (chemin && chemin.length > 0 && chemin[chemin.length - 1] === occurrence) {
+    let c: Contexte = m.racine;
+    let M: Matrice4 = IDENTITE;
+    for (const id of chemin) {
+      const o = c.occurrences[id];
+      if (!o) break;
+      M = composer(M, o.transformation);
+      if (id === occurrence) trouvee = { M, occ: o };
+      const d = m.definitions[o.definition];
+      if (!d) break;
+      c = d.contenu;
+    }
+  }
   const chercher = (c: Contexte, M: Matrice4, profondeur: number): void => {
     if (trouvee || profondeur > 32) return;
     for (const o of Object.values(c.occurrences)) {
@@ -3399,7 +3431,7 @@ export function boiteOccurrence(m: Modele, occurrence: Id): { min: Vec3; max: Ve
       if (d) chercher(d.contenu, composer(M, o.transformation), profondeur + 1);
     }
   };
-  chercher(m.racine, IDENTITE, 0);
+  if (!trouvee) chercher(m.racine, IDENTITE, 0);
   if (!trouvee) return null;
   const t = trouvee as { M: Matrice4; occ: Occurrence };
   const d = m.definitions[t.occ.definition];
