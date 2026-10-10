@@ -26,6 +26,21 @@ export interface PropsBoutonOutils {
   barres: EtatBarresOutils;
   onAfficherBarre: (id: string, afficher: boolean) => void;
   onReinitialiser: () => void;
+  /**
+   * Commandes de la Planche (Objets O-1, règle d'or) : un groupe « Objets » après les familles d'outils. Chaque commande
+   * garde son icône, son nom et son raccourci ; grisée, elle dit pourquoi.
+   */
+  commandes?: readonly CommandeListe[];
+}
+
+export interface CommandeListe {
+  readonly id: string;
+  readonly picto: string;
+  readonly nom: string;
+  readonly raccourci: string;
+  /** Motif d'indisponibilité (`null` = disponible). */
+  readonly motif: string | null;
+  readonly executer: () => void;
 }
 
 /** Bouton d'une opération : pictogramme propre à l'outil, « Nom — raccourci » en infobulle et en nom accessible. */
@@ -33,7 +48,7 @@ export function titreOperation(o: Outil, raison: string | null): string {
   return `${libelleOperation(o)}${raison ? ` — ${raison}` : ""}`;
 }
 
-export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBarre, onReinitialiser }: PropsBoutonOutils) {
+export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBarre, onReinitialiser, commandes = [] }: PropsBoutonOutils) {
   const [ouvert, setOuvert] = useState(false);
   const [requete, setRequete] = useState("");
   const [familles, setFamilles] = useState<ReadonlySet<FamilleOutil>>(() => new Set());
@@ -46,6 +61,12 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
   const idListe = useId();
   const groupes = useMemo(() => groupesOutils(requete), [requete]);
   const filtre = requete.trim() !== "";
+  const motsRequete = requete.trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").split(/\s+/).filter(Boolean);
+  const commandesRetenues = commandes.filter((c) => {
+    const texte = `${c.nom} ${c.raccourci} ${c.id}`.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+    return motsRequete.every((m) => texte.includes(m));
+  });
+  const [objetsDeplies, setObjetsDeplies] = useState(false);
 
   const fermer = (rendreFocus = true) => {
     setOuvert(false);
@@ -211,7 +232,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
             />
           </div>
           <div id={idListe} className="planche-outils-arbre" role="menu" aria-label={t("outils.menu")}>
-            {filtre && groupes.length === 0 && <p className="inspecteur-aide" role="none">{t("outils.aucun")}</p>}
+            {filtre && groupes.length === 0 && commandesRetenues.length === 0 && <p className="inspecteur-aide" role="none">{t("outils.aucun")}</p>}
             {groupes.map((g) => {
               const deplie = filtre || familles.has(g.famille);
               return (
@@ -253,6 +274,40 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
                 </div>
               );
             })}
+            {commandesRetenues.length > 0 && (
+              <div className="planche-outils-groupe" role="group" aria-label={t("outils.famille.objets")} data-outils-groupe="objets">
+                <button type="button" role="menuitem" className="planche-outils-famille" aria-expanded={filtre || objetsDeplies} data-outils-nav data-outils-famille="objets" onClick={() => !filtre && setObjetsDeplies(!objetsDeplies)}>
+                  <span aria-hidden="true" className="planche-outils-fleche">{filtre || objetsDeplies ? "▾" : "▸"}</span>
+                  {t("outils.famille.objets")}
+                </button>
+                {(filtre || objetsDeplies) &&
+                  commandesRetenues.map((c) => (
+                    <div key={c.id} className="planche-outils-ligne" role="none" data-outils-ligne={c.id}>
+                      <div className="planche-outils-tete" role="none">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className={`planche-outils-nom${c.motif ? " est-indisponible" : ""}`}
+                          aria-disabled={c.motif ? true : undefined}
+                          title={c.motif ? `${c.nom} — ${c.motif}` : `${c.nom} (${afficherRaccourci(c.raccourci)})`}
+                          data-outils-nav
+                          data-outils-commande={c.id}
+                          onClick={() => {
+                            if (c.motif) return;
+                            fermer(false);
+                            c.executer();
+                          }}
+                        >
+                          <span aria-hidden="true" className="planche-outils-picto">{c.picto}</span>
+                          <span className="planche-outils-libelle">{c.nom}</span>
+                          <span aria-hidden="true"> · </span>
+                          <kbd>{afficherRaccourci(c.raccourci)}</kbd>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
             <div className="planche-outils-pied" role="group" aria-label="Barres d'outils" data-outils-reglages>
               <span className="planche-outils-pied-titre" aria-hidden="true">
                 ⚙ {t("outils.pied")}

@@ -94,7 +94,7 @@ const bb = await boite(page, B);
 const bl = await boite(page, L);
 check("un clic ouvre la liste sous le bouton (aria-expanded, rôle menu)", (await page.locator(B).getAttribute("aria-expanded")) === "true" && (await page.locator(`${L} [role=menu]`).count()) === 1 && !!bl && !!bb && bl.y >= bb.y + bb.height - 1, JSON.stringify({ bb, bl }));
 const familles = await page.locator("[data-outils-famille]").evaluateAll((els) => els.map((e) => e.getAttribute("data-outils-famille")));
-check("un groupe par famille du catalogue, chacun avec sa flèche", familles.join(",") === "selection,dessin,modification,mesure,annotation,camera,solide,materiau", familles.join(","));
+check("un groupe par famille du catalogue, chacun avec sa flèche, puis le groupe des commandes « Objets » (D-203)", familles.join(",") === "selection,dessin,modification,mesure,annotation,camera,solide,materiau,objets", familles.join(","));
 await page.keyboard.press("Escape");
 check("Échap referme la liste (l'outil actif ne change pas)", (await liste()) === 0 && (await page.locator(B).getAttribute("aria-expanded")) === "false" && (await outilActif(page)) === "selection");
 await page.locator(B).click();
