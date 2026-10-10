@@ -1375,3 +1375,317 @@
 .planche-haut:has(.planche-menu-liste) {
   z-index: 40;
 }
+
+/* D-198 — bouton « Outils ▾ » de la barre du haut et sa liste par famille (barres d'opérations ① ② ③). */
+.planche-outils-menu {
+  position: relative;
+}
+.planche-outils-bouton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 36px;
+  padding: 0 0.6rem;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.planche-outils-bouton[aria-expanded="true"] {
+  background: color-mix(in srgb, #1a5fd6 10%, transparent);
+}
+.planche-outils-chevron {
+  font-size: 0.75em;
+}
+.planche-outils-liste {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 31;
+  width: min(26rem, calc(100vw - 1rem));
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  padding: 0.35rem;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+  text-align: left;
+}
+.planche-haut:has(.planche-outils-liste) {
+  z-index: 40;
+}
+.planche-outils-recherche {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.3rem 0.4rem;
+  border-bottom: 1px solid var(--atelier-ligne, #dce5df);
+}
+.planche-outils-recherche input {
+  flex: 1;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 0.5rem;
+  font: inherit;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+}
+.planche-outils-liste button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.planche-outils-liste button:hover:not(:disabled) {
+  background: var(--atelier-survol, rgba(31, 122, 87, 0.12));
+}
+.planche-outils-liste :focus-visible,
+.planche-barre-outils :focus-visible {
+  outline: 2px solid #1a5fd6;
+  outline-offset: 1px;
+}
+.planche-outils-liste button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.planche-outils-famille {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 36px;
+  margin-top: 0.25rem;
+  padding: 0 0.4rem;
+  font-weight: 600;
+  text-align: left;
+}
+.planche-outils-fleche {
+  display: inline-block;
+  width: 1em;
+  color: var(--atelier-doux, #5b7468);
+}
+.planche-outils-ligne {
+  margin-left: 0.9rem;
+  border-left: 3px solid transparent;
+}
+.planche-outils-ligne.est-actif {
+  border-left-color: #1a5fd6;
+}
+.planche-outils-tete {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.planche-outils-nom {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 0.4rem;
+  text-align: left;
+}
+.planche-outils-nom .planche-outils-fleche {
+  margin-left: auto;
+}
+.planche-outils-libelle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.planche-outils-liste kbd {
+  font-size: 0.78em;
+  color: var(--atelier-doux, #5b7468);
+}
+.planche-outils-picto {
+  display: inline-block;
+  width: 1.4rem;
+  text-align: center;
+}
+.planche-outils-afficher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 36px;
+  padding: 0 0.4rem;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+.planche-outils-case {
+  font-size: 1.1em;
+}
+.planche-outils-ops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.1rem 0 0.35rem 1.6rem;
+  padding: 0.3rem;
+  background: #f6f8fa;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+}
+.planche-outils-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.planche-outils-section + .planche-outils-section {
+  padding-left: 0.35rem;
+  border-left: 1px solid var(--atelier-ligne, #dce5df);
+}
+.planche-outils-section-titre {
+  font-size: 0.72rem;
+  color: var(--atelier-doux, #5b7468);
+}
+.planche-outils-icones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.planche-outils-op,
+.planche-barre-outils-op {
+  min-width: 36px;
+  min-height: 36px;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.planche-outils-liste .planche-outils-op.est-actif,
+.planche-barre-outils .planche-barre-outils-op.est-actif {
+  border-color: #1a5fd6;
+  background: color-mix(in srgb, #1a5fd6 14%, transparent);
+}
+.planche-outils-op.est-indisponible,
+.planche-barre-outils-op.est-indisponible {
+  opacity: 0.45;
+}
+.planche-outils-pied {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 0.4rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--atelier-ligne, #dce5df);
+}
+.planche-outils-pied-titre {
+  padding: 0 0.4rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.planche-outils-pied .planche-outils-afficher,
+.planche-outils-reinitialiser {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 0.4rem;
+  text-align: left;
+}
+
+/* D-198 — barres d'opérations flottantes : position fixe (au-dessus du dessin, sans le redimensionner), bornées en JS ;
+   sous les surcouches qu'on ouvre (menus, grille, panneaux), comme la barre d'actions. */
+.planche-barre-outils {
+  position: fixed;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100vw - 8px);
+  padding: 3px;
+  background: var(--flottant-fond, #fff);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(24, 61, 50, 0.16);
+  font-size: 0.9rem;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.planche-barre-outils.en-glisser {
+  opacity: 0.92;
+  box-shadow: 0 10px 24px rgba(24, 61, 50, 0.28);
+}
+.planche-barre-outils button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.3rem;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.planche-barre-outils button:hover:not(:disabled) {
+  background: #f1f5f2;
+  border-color: var(--atelier-ligne, #dce5df);
+}
+.planche-barre-outils-poignee {
+  min-width: 22px;
+  min-height: 36px;
+  color: var(--atelier-doux, #5b7468);
+  cursor: grab !important;
+  touch-action: none;
+}
+.planche-barre-outils.en-glisser .planche-barre-outils-poignee {
+  cursor: grabbing !important;
+}
+.planche-barre-outils-titre {
+  padding: 0 0.3rem;
+  font-size: 0.78rem;
+  color: var(--atelier-doux, #5b7468);
+  white-space: nowrap;
+}
+.planche-barre-outils-corps {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.planche-barre-outils-section {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.planche-barre-outils-separateur {
+  align-self: stretch;
+  width: 1px;
+  margin: 2px 4px;
+  background: var(--atelier-ligne, #dce5df);
+}
+.planche-barre-outils-numero {
+  font-size: 0.72rem;
+  color: var(--atelier-doux, #5b7468);
+}
+.planche-barre-outils-fermer {
+  min-width: 32px;
+  min-height: 36px;
+}
+/* Téléphone : rangée en bas, au-dessus du volet, une seule barre ; poignée inactive, cibles de 44 px. */
+.planche-barre-outils.est-docquee .planche-barre-outils-poignee {
+  display: none;
+}
+.planche-barre-outils.est-docquee .planche-barre-outils-titre {
+  display: none;
+}
+@media (max-width: 760px) {
+  .planche-outils-liste {
+    position: fixed;
+    left: 0.5rem;
+    right: 0.5rem;
+    top: 56px;
+    width: auto;
+    max-height: calc(100vh - 7rem);
+  }
+  .planche-outils-bouton,
+  .planche-outils-liste button,
+  .planche-barre-outils button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

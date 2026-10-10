@@ -93,9 +93,60 @@ export function disponibilite(o: Outil, { lecture, aMachine = (id) => machinePar
   return null;
 }
 
-/** Titre d'un bouton d'outil : « Nom (raccourci) » (relevé), suivi du motif d'indisponibilité. */
+/**
+ * Couche de raccourcis Fadi (écart Fadi déclaré, D-198, demande du maître d'ouvrage du 10 octobre 2026 : « chaque
+ * élément doit avoir un raccourci »). Les raccourcis du catalogue sont le relevé SketchUp et restent intouchés ; un
+ * outil dont le `raccourci` relevé vaut `null` reçoit ici une combinaison qui ne recouvre aucun raccourci relevé, ni
+ * une touche de la Planche (G, K, Ctrl…, Maj + -), ni la frappe au champ Mesures (`commenceSaisie` : X et x en sont,
+ * donc Maj + X est exclu) : **Maj + lettre** pour le dessin, la modification, les solides, la matière, la mesure et
+ * l'annotation ; **Alt + Maj + lettre** pour les trois outils de caméra restants. Liste : `docs/planche/lots/barre-outils.md`.
+ */
+export const RACCOURCIS_FADI: Readonly<Record<string, string>> = {
+  arc: "Maj+A",
+  balise: "Maj+B",
+  cotation: "Maj+C",
+  diviser: "Maj+D",
+  "enveloppe-exterieure": "Maj+E",
+  "suivez-moi": "Maj+F",
+  scinder: "Maj+G",
+  "arc-3-points": "Maj+H",
+  intersection: "Maj+I",
+  ajuster: "Maj+J",
+  "plan-de-coupe": "Maj+K",
+  "main-levee": "Maj+L",
+  "echantillon-matiere": "Maj+M",
+  secteur: "Maj+N",
+  rapporteur: "Maj+O",
+  polygone: "Maj+P",
+  "rectangle-pivote": "Maj+R",
+  soustraction: "Maj+S",
+  texte: "Maj+T",
+  union: "Maj+U",
+  retourner: "Maj+V",
+  axes: "Maj+Y",
+  "texte-3d": "Maj+Z",
+  "positionner-camera": "Alt+Maj+P",
+  "regarder-autour": "Alt+Maj+L",
+  marcher: "Alt+Maj+M",
+};
+
+/** Raccourci effectif d'un outil : celui du catalogue (relevé), sinon celui de la couche Fadi, sinon `null`. */
+export function raccourciOutil(o: Pick<Outil, "id" | "raccourci">): string | null {
+  return o.raccourci ?? RACCOURCIS_FADI[o.id] ?? null;
+}
+
+/** Outil désigné par un raccourci de la couche Fadi (forme canonique), ou `null`. */
+export function outilParRaccourciFadi(raccourci: string, catalogue: readonly Outil[] = OUTILS): Outil | null {
+  const cible = normaliserRaccourci(raccourci);
+  if (cible === "") return null;
+  const id = Object.keys(RACCOURCIS_FADI).find((k) => normaliserRaccourci(RACCOURCIS_FADI[k]!) === cible);
+  return id ? (catalogue.find((o) => o.id === id && o.raccourci === null) ?? null) : null;
+}
+
+/** Titre d'un bouton d'outil : « Nom (raccourci) » (relevé, ou couche Fadi), suivi du motif d'indisponibilité. */
 export function titreOutil(o: Outil, raison: string | null): string {
-  return `${o.libelle}${o.raccourci ? ` (${o.raccourci})` : ""}${raison ? ` — ${raison}` : ""}`;
+  const r = raccourciOutil(o);
+  return `${o.libelle}${r ? ` (${r})` : ""}${raison ? ` — ${raison}` : ""}`;
 }
 
 /** Pictogrammes (dessins propres à Fadi, §3.6 : choix Fadi). */
@@ -183,15 +234,18 @@ export function raccourciClavier(c: Cle): string {
   if (c.altKey) parts.push("Alt");
   if (c.shiftKey) parts.push("Maj");
   if (c.key === " " || c.key === "Spacebar") parts.push("Espace");
+  // Alt + lettre : sur macOS, Option change le caractère (Alt + Maj + P donne « ∏ ») ; la lettre est alors relue sur la
+  // touche physique (`code`). Une lettre lisible dans `key` reste prioritaire (dispositions AZERTY, QWERTZ…).
+  else if (c.altKey && !/^[a-z]$/i.test(c.key) && c.code && /^Key[A-Z]$/.test(c.code)) parts.push(c.code.slice(3));
   else if (c.key.length === 1) parts.push(c.key.toUpperCase());
   else return "";
   return normaliserRaccourci(parts.join("+"));
 }
 
-/** Outil désigné par un raccourci clavier (catalogue relevé), ou `null`. */
+/** Outil désigné par un raccourci clavier (catalogue relevé d'abord, puis couche Fadi), ou `null`. */
 export function outilDuClavier(c: Cle): Outil | null {
   const r = raccourciClavier(c);
-  return r ? outilParRaccourci(r) : null;
+  return r ? (outilParRaccourci(r) ?? outilParRaccourciFadi(r)) : null;
 }
 
 /** Recherche d'outil : Maj + - (relevé `Shift+-`), quelle que soit la disposition du clavier. */

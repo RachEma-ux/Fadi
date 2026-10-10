@@ -7,6 +7,7 @@ import { useSyncExternalStore } from "react";
 import type { Point2 } from "@parcours/atelier-model";
 import { lireReglagesNavigation } from "./navigation";
 import { lirePosition } from "./panneaux/barre-actions-position";
+import { lireBarresOutils, type EtatBarresOutils } from "./planche/barres-outils-disposition";
 
 export type NiveauAffichage = "essentiel" | "contextuel" | "complet";
 /** Plan, 3D, documents dérivés (vues, feuilles, tableaux — lot 5), ou Planche (géométrie libre, cahier-planche MO-1). */
@@ -98,6 +99,8 @@ export interface EtatUi {
   barreActions: { x: number; y: number } | null;
   /** Barre d'actions affichée (réglage ⚙). */
   barreActionsVisible: boolean;
+  /** Barres d'opérations flottantes de la Planche (D-198) : affichées et positions, mémorisées sur l'appareil. */
+  barresOutils: EtatBarresOutils;
 }
 
 /** Disposition de l'Atelier (D-156) : grille à cinq repères (défaut) ou canevas plein écran à panneaux flottants. */
@@ -133,7 +136,7 @@ export interface EnsembleLocal extends FiltresAffichage {
 
 const CLE_PREFS = "fadi.atelier.prefs";
 
-const CLES_PERSISTEES = ["affichage", "accrochages", "favoris", "parametresOutil", "filtres", "ensembles", "stylesClasses", "disposition", "outilsReplies", "navigation", "raccourcis", "ombres", "barreActions", "barreActionsVisible"] as const;
+const CLES_PERSISTEES = ["affichage", "accrochages", "favoris", "parametresOutil", "filtres", "ensembles", "stylesClasses", "disposition", "outilsReplies", "navigation", "raccourcis", "ombres", "barreActions", "barreActionsVisible", "barresOutils"] as const;
 
 function lirePrefs(): Partial<Pick<EtatUi, (typeof CLES_PERSISTEES)[number]>> {
   try {
@@ -187,6 +190,7 @@ let etat: EtatUi = {
   ombres: prefs.ombres === true,
   barreActions: lirePosition(prefs.barreActions),
   barreActionsVisible: prefs.barreActionsVisible !== false,
+  barresOutils: lireBarresOutils(prefs.barresOutils),
 };
 
 const ecouteurs = new Set<() => void>();
