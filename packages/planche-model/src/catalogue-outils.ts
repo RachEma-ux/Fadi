@@ -29,7 +29,8 @@ export type FamilleOutil =
 
 /** `menu-contextuel` : commande lancée depuis le clic droit (Divide). */
 export type EmplacementOutil = "barre" | "grille" | "menu-contextuel";
-export type StatutReleve = "observe" | "instructor" | "non-verifie";
+/** `fadi` : écart propre à Fadi, absent de SketchUp, déclaré (cahier-planche, légende des statuts). */
+export type StatutReleve = "observe" | "instructor" | "non-verifie" | "fadi";
 export type Offre = "gratuite" | "payante";
 
 export type ToucheModificatrice =
@@ -770,6 +771,9 @@ export const OUTILS: readonly Outil[] = [
     modificateurs: [
       m("Ctrl", "bascule", "Crée une nouvelle face de départ (arête conservée à l'ancien niveau).", "observe"),
       m("Alt", "bascule", "Mode étirement : étire les faces voisines au lieu d'en créer.", "instructor"),
+      m("Maj", "bascule", "Tube sans fond : la face cliquée disparaît et son contour est tiré en surface (écart Fadi).", "fadi"),
+      m("Alt", "bascule", "Sur une arête : surface des deux côtés (écart Fadi).", "fadi"),
+      m("Flèche bas", "bascule", "Sur une arête : le long de l'arête, pour l'allonger (écart Fadi).", "fadi"),
     ],
     inferences: ["extremite"],
     apresFin:
