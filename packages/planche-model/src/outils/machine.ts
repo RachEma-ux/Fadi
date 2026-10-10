@@ -124,6 +124,12 @@ export interface ContexteOutil {
   readonly entitesDansContour?: (contour: readonly { x: number; y: number }[], genre: "fenetre" | "croisee") => readonly string[];
   /** (Ajout lot 2, optionnel) Occurrence (groupe / composant) en cours d'édition ; absent = racine (§5.6). */
   readonly dans?: string;
+  /**
+   * (Objets O-2) Chemin complet du contexte ouvert (racine → `dans` compris). Dans un composant à plusieurs occurrences,
+   * un objet imbriqué a le même identifiant sous chacune : seul le chemin dit laquelle est ouverte (repère, visée).
+   * Absent : retrouvé depuis `dans` (première occurrence).
+   */
+  readonly chemin?: readonly string[];
   /** (Lot 5) Matière courante du pot de peinture (id dans `annotations.materiaux`) ; absent = matière par défaut. */
   readonly materiauCourant?: string;
   /** (Lot 5) Balise choisie dans le panneau Balises ; absent = aucune. */
@@ -157,6 +163,8 @@ export interface Transition<E> {
   readonly operation?: string;
   /** (Ajout lot 2, optionnel) Nouveau contexte d'édition : id d'occurrence, ou `null` = retour à la racine. */
   readonly dans?: string | null;
+  /** (Objets O-2) Chemin complet du nouveau contexte (racine → `dans`), quand `dans` est donné. */
+  readonly chemin?: readonly string[];
   /** (Ajout lot 3, optionnel) Outil à activer après cette transition (Diviser rend la main à Sélection). */
   readonly outil?: string;
   /** (Lot 4) `true` : revenir à l'outil précédent (Axes, outils temporaires). */

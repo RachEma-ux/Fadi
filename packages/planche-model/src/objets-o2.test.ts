@@ -1,8 +1,8 @@
 /** Objets O-2 (D-203) : géométrie hors du contexte ouvert, objet verrouillé non ouvrable, statut et détachement des liens. */
 import { describe, expect, it } from "vitest";
-import { type Id, ajouterRectangle, ajouterSegment, contexte, detacherLiens, etirerAretes, grouper, liensDesFaces, modeleVide, verrouillerOccurrences } from "./geometrie-libre.js";
+import { type Id, ajouterRectangle, ajouterSegment, appliquer, contexte, copier, detacherLiens, etirerAretes, grouper, liensDesFaces, matriceChemin, modeleVide, verrouillerOccurrences } from "./geometrie-libre.js";
 import { geometrieVisible } from "./inference.js";
-import { cheminOccurrence } from "./outils/selection.js";
+import { cheminContexte, cheminOccurrence, cibleDans, versContexteEdition } from "./outils/selection.js";
 import { machineSelection } from "./outils/selection.js";
 import { clicVers, partie } from "./outils/essais-modification.js";
 import { v3 } from "./vecteur.js";
@@ -51,5 +51,42 @@ describe("Contexte d'édition lisible (Objets O-2)", () => {
     expect(liensDesFaces(r, surface)).toHaveLength(0);
     expect(contexte(r).faces).toEqual(contexte(m).faces);
     expect(() => detacherLiens(r, liens)).toThrow(RangeError);
+  });
+});
+
+describe("Contexte ouvert dans un composant à plusieurs occurrences (Objets O-2, revue)", () => {
+  /** Composant { groupe { carré } } posé deux fois (à x = 0 et x = 10) : le groupe imbriqué a le même id sous les deux. */
+  function deuxOccurrences() {
+    const m0 = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(1, 0, 0), v3(0, 1, 0)).modele;
+    const c0 = contexte(m0);
+    const g = grouper(m0, [...Object.keys(c0.faces), ...Object.keys(c0.aretes)]);
+    const k = grouper(g.modele, [g.occurrence], { genre: "composant", nom: "Module" });
+    const m = copier(k.modele, [k.occurrence], v3(10, 0, 0)).modele;
+    const autre = Object.keys(contexte(m).occurrences).find((id) => id !== k.occurrence)!;
+    return { m, premiere: k.occurrence, seconde: autre, imbrique: g.occurrence };
+  }
+
+  it("le chemin complet distingue la seconde occurrence : repère, appartenance au contexte, chemin retrouvé", () => {
+    const { m, premiere, seconde, imbrique } = deuxOccurrences();
+    expect(cheminOccurrence(m, imbrique)).toEqual([premiere, imbrique]);
+    const ctx = { modele: m, selection: [], separateurDecimal: "." as const, dans: imbrique, chemin: [seconde, imbrique] };
+    expect(cheminContexte(ctx)).toEqual([seconde, imbrique]);
+    expect(appliquer(matriceChemin(m, [seconde, imbrique])!, v3(0, 0, 0)).x).toBeCloseTo(10, 9);
+    // Un point monde sous la seconde occurrence revient à l'origine du repère local.
+    expect(versContexteEdition(ctx)(v3(10, 0, 0)).x).toBeCloseTo(0, 9);
+    // Un élément sous la première occurrence n'est pas dans le contexte ouvert sous la seconde.
+    expect(cibleDans({ genre: "face", id: "f", chemin: [premiere, imbrique] } as never, imbrique, [seconde, imbrique])).toBeNull();
+    expect(cibleDans({ genre: "face", id: "f", chemin: [seconde, imbrique] } as never, imbrique, [seconde, imbrique])).toEqual({ genre: "face", id: "f" });
+  });
+
+  it("double-clic sous la seconde occurrence : le chemin rendu est celui de la seconde ; Échap remonte à elle", () => {
+    const { m, seconde, imbrique } = deuxOccurrences();
+    const ctx = { modele: m, selection: [], separateurDecimal: "." as const, dans: seconde, chemin: [seconde] };
+    const t = machineSelection.traiter(machineSelection.initial(), clicVers(v3(10.5, 0.5, 0), undefined, true), ctx);
+    expect(t.dans).toBe(imbrique);
+    expect(t.chemin).toEqual([seconde, imbrique]);
+    const sortie = machineSelection.traiter(machineSelection.initial(), { genre: "echap" }, { ...ctx, dans: imbrique, chemin: [seconde, imbrique] });
+    expect(sortie.dans).toBe(seconde);
+    expect(sortie.chemin).toEqual([seconde]);
   });
 });

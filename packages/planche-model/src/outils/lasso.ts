@@ -59,7 +59,7 @@ const repos = (etat: EtatLasso): EtatLasso => ({ ...etat, points: [], appui: nul
 function appliquerContour(etat: EtatLasso, points: readonly Point2[], ctx: Parameters<MachineOutil<EtatLasso>["traiter"]>[2]): Transition<EtatLasso> {
   const genre = genreContour(points);
   const bruts = ctx.entitesDansContour?.(points, genre) ?? [];
-  const ids: Id[] = normaliserIds(ctx.modele, ctx.dans, bruts, genre);
+  const ids: Id[] = normaliserIds(ctx.modele, ctx.dans, bruts, genre, ctx.chemin);
   return { etat: repos(etat), selection: combiner(ctx.selection, ids, etat) };
 }
 

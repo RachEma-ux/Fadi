@@ -95,8 +95,21 @@ export const COMMANDES_CONTEXTE: readonly CommandeContexte[] = [
   { id: "fermer-tout", picto: "⤒", libelle: "planche.contexte.fermer-tout", raccourci: "Maj+Origine" },
 ];
 
-/** Raccourcis des commandes d'objet et de contexte, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE].map((c) => normaliserRaccourci(c.raccourci));
+/**
+ * Commande des liens d'extrusion (Objets O-2, EX-UI-06) : Détacher le lien. Sa barre est la barre d'état, à côté du statut
+ * « Liée aux arêtes sources » qu'elle lève (visible au toucher) ; elle figure aussi dans « Outils ▾ » et au menu.
+ */
+export interface CommandeLien {
+  readonly id: "detacher-lien";
+  readonly picto: string;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDE_DETACHER_LIEN: CommandeLien = { id: "detacher-lien", picto: "⛓", libelle: "planche.lien.detacher", court: "planche.lien.detacher.court", raccourci: "Alt+Maj+K" };
+
+/** Raccourcis des commandes d'objet, de contexte et de lien, normalisés (pour le contrôle des collisions). */
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, COMMANDE_DETACHER_LIEN].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Étape du fil d'Ariane : `id` absent = racine de la Planche. */
 export interface EtapeFil {

@@ -45,7 +45,7 @@ import {
   inverserFaces,
   machineParId,
   masquerEntites,
-  matriceMonde,
+  matriceChemin,
   modeleVide,
   modifierAnnotations,
   modifierDefinition,
@@ -92,7 +92,7 @@ import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, afficherRaccourci, commenceS
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { BarreActions } from "../panneaux/BarreActions";
-import { COMMANDES_CONTEXTE, COMMANDES_OBJETS, disponibiliteObjet, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTEXTE, COMMANDES_OBJETS, COMMANDE_DETACHER_LIEN, disponibiliteObjet, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { BoutonOutils } from "./BoutonOutils";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
@@ -219,6 +219,10 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   // Contexte d'édition (groupe / composant ouvert, §5.6) : état d'interface, jamais une donnée (R10).
   const dansRef = useRef<string | undefined>(undefined);
   const [dans, setDans] = useState<string | undefined>(undefined);
+  // Objets O-2 (revue) : chemin complet du contexte ouvert (racine → dans) ; dans un composant à plusieurs occurrences,
+  // l'identifiant d'un objet imbriqué ne dit pas sous laquelle on l'a ouvert.
+  const cheminRef = useRef<readonly string[]>([]);
+  const [chemin, setChemin] = useState<readonly string[]>([]);
   const selectionRef = useRef<readonly string[]>([]);
   const [vue, setVue] = useState<VueOutil>(() => vueParDefaut(outilRef.current, 35, HAUTEUR_OEIL_DEFAUT));
   const texteRef = useRef<TexteMesures>(null);
@@ -338,7 +342,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       separateurDecimal: SEPARATEUR_DECIMAL,
       entitesDansCadre: (de, a, genre) => vueRef.current?.entitesDansCadre(de, a, genre) ?? [],
       entitesDansContour: (contour, genre) => vueRef.current?.entitesDansContour(contour, genre) ?? [],
-      ...(dansRef.current !== undefined ? { dans: dansRef.current } : {}),
+      ...(dansRef.current !== undefined ? { dans: dansRef.current, chemin: cheminRef.current } : {}),
       ...(materiauRef.current ? { materiauCourant: materiauRef.current } : {}),
       ...(baliseRef.current ? { baliseCourante: baliseRef.current } : {}),
       ...(histRef.current.present.modele.annotations?.repere ? { repere: histRef.current.present.modele.annotations.repere } : {}),
@@ -362,9 +366,12 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     vueRef.current?.majSurcouche(m ? v : null, selectionRef.current);
   }, [contexte]);
 
-  const poserDans = useCallback((id: string | undefined) => {
+  const poserDans = useCallback((id: string | undefined, ch?: readonly string[]) => {
+    const c = id === undefined ? [] : ch && ch[ch.length - 1] === id ? [...ch] : cheminOccurrence(histRef.current.present.modele, id);
     dansRef.current = id;
+    cheminRef.current = c;
     setDans(id);
+    setChemin(c);
   }, []);
   // Objets O-2 : ouvrir ou fermer un contexte redessine le modèle (reste délavé, boîte pointillée de l'objet ouvert).
   useEffect(() => {
@@ -415,7 +422,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         change = true;
       }
       if (tr.dans !== undefined) {
-        poserDans(tr.dans ?? undefined);
+        poserDans(tr.dans ?? undefined, tr.chemin);
         change = true;
       }
       if (tr.materiauCourant !== undefined) {
@@ -653,7 +660,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const verrouillerSelection = useCallback((verrou: boolean) => operer(t(verrou ? "planche.menu.verrouiller" : "planche.menu.deverrouiller"), (m) => ({ modele: verrouillerOccurrences(m, selectionDe("occurrences", m), verrou, o()).modele })), [operer, o, selectionDe]);
   const ouvrirOccurrence = useCallback(
     (id: string) => {
-      poserDans(id);
+      const ici = contexteDe(histRef.current.present.modele, dansRef.current).occurrences[id];
+      poserDans(id, ici ? [...cheminRef.current, id] : undefined);
       setSelection([]);
       etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
       setMessage(null);
@@ -664,10 +672,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   /** Objets O-2 : Fermer (un niveau) et Fermer tout (racine), avec n'importe quel outil ; la machine repart de zéro. */
   const fermerContexte = useCallback(
     (id: IdCommandeContexte) => {
-      const d = dansRef.current;
-      if (d === undefined) return;
-      const ch = cheminOccurrence(histRef.current.present.modele, d);
-      poserDans(id === "fermer-tout" || ch.length < 2 ? undefined : ch[ch.length - 2]);
+      if (dansRef.current === undefined) return;
+      const ch = cheminRef.current;
+      poserDans(id === "fermer-tout" || ch.length < 2 ? undefined : ch[ch.length - 2], ch.slice(0, -1));
       setSelection([]);
       etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
       setMessage(null);
@@ -677,7 +684,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   );
   const allerAuContexte = useCallback(
     (id: string | undefined) => {
-      poserDans(id);
+      poserDans(id, id === undefined ? [] : cheminRef.current.slice(0, cheminRef.current.indexOf(id) + 1));
       setSelection([]);
       etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
       rafraichir();
@@ -828,7 +835,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const boiteSelection = useCallback((): { min: Vec3; max: Vec3 } | null => {
     const m = histRef.current.present.modele;
     const c = contexteDe(m, dansRef.current);
-    const M = dansRef.current ? matriceMonde(m, dansRef.current) ?? IDENTITE : IDENTITE;
+    const M = dansRef.current ? matriceChemin(m, cheminRef.current) ?? IDENTITE : IDENTITE;
     const pts: Vec3[] = [];
     const sommet = (id: string) => {
       const sm = c.sommets[id];
@@ -871,7 +878,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     const id = selectionRef.current.find((x) => c.faces[x]);
     if (!id) return null;
     const f = c.faces[id]!;
-    const M = dansRef.current ? matriceMonde(m, dansRef.current) ?? IDENTITE : IDENTITE;
+    const M = dansRef.current ? matriceChemin(m, cheminRef.current) ?? IDENTITE : IDENTITE;
     const pts: Vec3[] = [];
     for (const sid of f.exterieur) {
       const sm = c.sommets[sid];
@@ -1348,6 +1355,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         hauteurOeil: () => hauteurOeilRef.current,
         menuContextuel: (p, rayon, tolerance) => menuRappel.current(p, rayon, tolerance),
         dans: () => dansRef.current,
+        chemin: () => cheminRef.current,
       });
     } catch {
       setWebgl("indisponible");
@@ -1560,6 +1568,12 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       if (estRecherche(e)) {
         e.preventDefault();
         setRecherche(true);
+        return;
+      }
+      // Objets O-2 : Alt + Maj + K détache le lien de la surface sélectionnée (touche physique : Option change le caractère).
+      if (!mod && e.altKey && e.shiftKey && e.code === "KeyK" && !dansMesures) {
+        e.preventDefault();
+        detacherLienSelection();
         return;
       }
       // Objets O-2 : Maj + Échap ferme le groupe ouvert, Maj + Origine revient à la racine (avec n'importe quel outil).
@@ -1895,6 +1909,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         onDocquee={setHautDocquee}
       />
     ));
+  /** Objets O-2 : une surface liée à ses arêtes sources est sélectionnée (à la racine, seul endroit des liens). */
+  const lienSelectionne = () => !readOnly && dans === undefined && liensDesFaces(hist.present.modele, selectionRef.current).length > 0;
   /** Objets O-1 (D-203) : état de la sélection pour la disponibilité commune au menu, à la barre et au clavier. */
   const etatSelectionObjets = (): EtatSelectionObjets => {
     const m = hist.present.modele;
@@ -1932,6 +1948,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         }),
         // Objets O-2 : Fermer / Fermer tout, grisés hors d'un groupe ou d'un composant.
         ...COMMANDES_CONTEXTE.map((c) => ({ id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: dans === undefined ? t("planche.contexte.motif") : null, executer: () => fermerContexte(c.id) })),
+        // Objets O-2 : Détacher le lien (EX-UI-06), grisé sans surface liée sélectionnée.
+        { id: COMMANDE_DETACHER_LIEN.id, picto: COMMANDE_DETACHER_LIEN.picto, nom: t(COMMANDE_DETACHER_LIEN.libelle), raccourci: COMMANDE_DETACHER_LIEN.raccourci, motif: lienSelectionne() ? null : t("planche.lien.motif"), executer: detacherLienSelection },
       ]}
       outilId={outilId}
       raison={raisonDe}
@@ -2222,13 +2240,13 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
                 selection={vue.selection ?? selectionRef.current}
                 dans={dans}
                 lecture={readOnly}
-                onSelectionner={(id, d) => {
-                  if (d !== dansRef.current) poserDans(d);
+                onSelectionner={(id, d, ch) => {
+                  if (d !== dansRef.current || (ch ?? []).join("/") !== cheminRef.current.join("/")) poserDans(d, ch);
                   setSelection([id]);
                   rafraichir();
                 }}
-                onEntrer={(id) => {
-                  poserDans(id);
+                onEntrer={(id, ch) => {
+                  poserDans(id, ch);
                   setSelection([]);
                   rafraichir();
                 }}
@@ -2335,7 +2353,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       {dans !== undefined && (
         <nav className="planche-fil" aria-label={t("planche.contexte.fil")} data-planche-fil>
           <ol>
-            {filAriane(cheminOccurrence(hist.present.modele, dans), (id) => nomOccurrence(hist.present.modele, id), t("planche.contexte.racine")).map((etape, i, tout) => (
+            {filAriane(chemin, (id) => nomOccurrence(hist.present.modele, id), t("planche.contexte.racine")).map((etape, i, tout) => (
               <li key={etape.id ?? "racine"}>
                 {i === tout.length - 1 ? (
                   <span aria-current="page" data-planche-fil-etape={etape.id ?? "racine"}>{etape.nom}</span>
@@ -2359,6 +2377,11 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
           {dans === undefined && liensDesFaces(hist.present.modele, selectionRef.current).length > 0 && <span className="planche-lien" data-planche-lien> | {t("planche.lien.lie")}</span>}
           {etatBarre && <span className="planche-message" data-planche-message> | {etatBarre}</span>}
         </p>
+        {lienSelectionne() && (
+          <button type="button" className="planche-lien-detacher" title={`${t(COMMANDE_DETACHER_LIEN.libelle)} (${afficherRaccourci(COMMANDE_DETACHER_LIEN.raccourci)})`} aria-label={t(COMMANDE_DETACHER_LIEN.libelle)} onClick={detacherLienSelection} data-planche-commande={COMMANDE_DETACHER_LIEN.id}>
+            <span aria-hidden="true">{COMMANDE_DETACHER_LIEN.picto}</span> {t(COMMANDE_DETACHER_LIEN.court)}
+          </button>
+        )}
         <button type="button" className="planche-volet-bascule" aria-expanded={volet} onClick={() => setVolet(!volet)} title={volet ? t("planche.volet.moins.aide") : t("planche.volet.plus.aide")} data-planche-volet-bascule>
           {volet ? t("planche.volet.moins") : t("planche.volet.plus")}
         </button>

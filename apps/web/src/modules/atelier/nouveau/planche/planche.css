@@ -1836,3 +1836,19 @@
     bottom: calc(var(--volet-h, 10rem) + 0.5rem + 3.6rem);
   }
 }
+
+/* Objets O-2 (revue) : Détacher le lien, bouton nommé de la barre d'état, à côté du statut « Liée aux arêtes sources ». */
+.planche-lien-detacher {
+  min-height: 36px;
+  padding: 0 0.6rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+  background: #fff;
+  white-space: nowrap;
+  cursor: pointer;
+}
+@media (max-width: 760px) {
+  .planche-lien-detacher {
+    min-height: 44px;
+  }
+}

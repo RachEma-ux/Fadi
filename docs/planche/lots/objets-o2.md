@@ -22,6 +22,16 @@
   (`detacherLiens` : la relation disparaît, la géométrie reste, un pas d'annulation). `liensDesFaces` au noyau.
 - **Menu contextuel** : un clic sur une entrée à sous-menu l'ouvre toujours (correctif d'O-1, conservé).
 
+- **Revue de la PR** (Codex) :
+  - **Détacher le lien** est livré selon la règle d'or : icône ⛓, bouton nommé « Détacher » dans la barre d'état à côté du
+    statut (accessible au toucher, le menu contextuel ne s'ouvrant qu'au clic droit), entrée d'« Outils ▾ », raccourci
+    **Alt+Maj+K**.
+  - **Chemin complet du contexte ouvert** : dans un composant à plusieurs occurrences, un objet imbriqué a le même
+    identifiant sous chacune. L'interface garde donc le chemin par lequel on est entré (double-clic, Navigateur, fil
+    d'Ariane) et le transmet aux outils (`ContexteOutil.chemin`), qui l'utilisent pour le repère (`matriceChemin`), la
+    visée (`cibleDans`), la sélection par cadre et la sortie d'un niveau. Le fil d'Ariane, le délavage et la boîte en
+    pointillés le suivent aussi. Sans chemin, l'ancien comportement (première occurrence trouvée) reste le repli.
+
 ## Contrôles
 
 | Contrôle | Résultat |
@@ -33,6 +43,9 @@
 
 ## Limites déclarées
 
-- « Modifier » (ouvrir l'objet) et « Détacher le lien » restent inscrits « en attente » dans le test de la règle d'or : leur
-  raccourci dépend du routage par focus du registre unique (lot 9).
+- « Modifier » (ouvrir l'objet) reste inscrit « en attente » dans le test de la règle d'or : son raccourci naturel (Entrée)
+  dépend du routage par focus du registre unique (lot 9).
+- Les opérations du noyau prennent toujours le contexte par son identifiant (`dans`) : dans un composant partagé, elles
+  éditent la définition commune, ce qui est le comportement attendu. Seuls le repère et la visée dépendent de l'occurrence
+  ouverte.
 - Le délavage est un rendu translucide simple ; il ne masque rien (« Isoler » est le lot O-5).
