@@ -151,6 +151,13 @@ function aides(page) {
   return { ecran, etat, survoler, cliquer, saisir, consigne, contient, segment, vider };
 }
 
+/** Pousser/Tirer actif et barre d'options affichée (lot 8) : elle réduit la zone de dessin, donc les points écran
+ * ne sont calculés qu'après ce changement de mise en page (sinon le toucher tombe à côté sur une machine lente). */
+async function outilPret(page) {
+  await page.locator("[data-planche-options]").waitFor({ state: "visible" });
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+}
+
 // ————————————————————————————————————————————————————————————— Desktop
 const presse = (page, opt, val) => page.locator(`[data-planche-option-valeur="${opt}:${val}"]`).getAttribute("aria-pressed");
 {
@@ -169,6 +176,7 @@ const presse = (page, opt, val) => page.locator(`[data-planche-option-valeur="${
     await survoler({ x: 1, y: 1, z: 0 });
     await saisir("4;3");
     await page.keyboard.press("p");
+    await outilPret(page);
     await cliquer({ x: 2, y: 1.5, z: 0 });
     await survoler({ x: 2, y: 1.5, z: 1 });
     await saisir("2");
@@ -186,6 +194,7 @@ const presse = (page, opt, val) => page.locator(`[data-planche-option-valeur="${
   check("prisme à toit incliné construit (6 faces, sommet (0;0;3))", e.faces === 6 && e.sommets.some((p) => p.x === 0 && p.z === 3), JSON.stringify({ faces: e.faces }));
 
   await page.keyboard.press("p");
+  await outilPret(page);
   check("barre d'options affichée avec Pousser/Tirer", await page.locator("[data-planche-options]").isVisible());
   check("mode Normal actif par défaut", (await presse(page, "face", "normal")) === "true");
   await page.locator('[data-planche-option-valeur="face:etirement"]').click();
@@ -238,6 +247,7 @@ const presse = (page, opt, val) => page.locator(`[data-planche-option-valeur="${
   await survoler({ x: 1, y: 1, z: 0 });
   await saisir("2;2");
   await page.keyboard.press("p");
+  await outilPret(page);
   const p0 = await ecran({ x: 1, y: 1, z: 0 });
   await page.touchscreen.tap(p0.x, p0.y);
   await saisir("1");
