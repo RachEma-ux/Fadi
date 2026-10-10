@@ -3,7 +3,9 @@
  * Éclater ont leur icône et leur bouton dans la barre d'actions, avec leur raccourci dans l'infobulle ; un bouton grisé
  * dit pourquoi ; Ctrl + G groupe, Ctrl + Maj + G éclate ; « Éclater » reste au menu, grisé, sur de la géométrie libre ;
  * grouper une surface liée à son arête annonce la rupture du lien ; Control appuyé avant G ne laisse plus « Nouvelle
- * face » allumée dans Pousser/Tirer. Brouillon local : aucune commande ; aucune erreur JavaScript.
+ * face » allumée dans Pousser/Tirer. Objets O-2 : fil d'Ariane cliquable (Planche › …), Fermer (Maj+Échap) et Fermer
+ * tout (Maj+Origine), objet verrouillé non ouvrable, statut « Liée aux arêtes sources » et « Détacher le lien » ; au
+ * téléphone, le fil se superpose sans redimensionner le dessin. Brouillon local : aucune commande ; aucune erreur JavaScript.
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/planche-objets.mjs
  */
@@ -249,6 +251,97 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   await ctx.close();
 }
 
+// ————————————————————————————————————————————————————————————— Objets O-2 : contexte lisible (desktop)
+{
+  const ctx = await browser.newContext({ viewport: { width: 1536, height: 864 }, locale: "fr-FR" });
+  const s = await preparer(ctx);
+  const { page } = s;
+  const { etat, cliquer, survoler, saisir, ecran } = aides(page);
+  await s.ouvrirPlanche();
+  const vue = page.locator("[data-planche-vue]");
+  await vue.focus();
+  const dans = () => page.evaluate(() => window.fadiPlanche.dans() ?? null);
+  // Boîte 2 × 2 × 1 groupée, puis le groupe dans un groupe (Établi › Cadre).
+  await page.keyboard.press("r");
+  await cliquer({ x: 0, y: 0, z: 0 });
+  await survoler({ x: 1, y: 1, z: 0 });
+  await saisir("2;2");
+  await page.keyboard.press("p");
+  await cliquer({ x: 1, y: 1, z: 0 });
+  await saisir("1");
+  await page.keyboard.press(" ");
+  await vue.focus();
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Control+a");
+  await page.keyboard.press("Control+g");
+  await page.keyboard.press("Control+g");
+  await page.waitForTimeout(80);
+  check("[O-2] aucun fil d'Ariane à la racine", (await page.locator("[data-planche-fil]").count()) === 0);
+  const sommet = await ecran({ x: 1, y: 1, z: 1 });
+  await page.waitForTimeout(700); // sinon le navigateur compte un triple-clic
+  await page.mouse.dblclick(sommet.x, sommet.y);
+  await page.waitForTimeout(100);
+  const fil = page.locator("[data-planche-fil]");
+  check("[O-2] double-clic : objet ouvert, fil d'Ariane « Planche › … » avec l'étape courante marquée", (await dans()) !== null && (await fil.count()) === 1 && (await fil.locator('[aria-current="page"]').count()) === 1 && /Planche/.test((await fil.textContent()) ?? ""), (await fil.textContent()) ?? "");
+  check("[O-2] Fermer et Fermer tout dans le fil, avec leur raccourci en infobulle", /Maj\+Échap/.test((await fil.locator('[data-planche-commande="fermer"]').getAttribute("title")) ?? "") && /Maj\+Origine/.test((await fil.locator('[data-planche-commande="fermer-tout"]').getAttribute("title")) ?? ""));
+  await page.waitForTimeout(700); // sinon le navigateur compte un triple-clic
+  await page.mouse.dblclick(sommet.x, sommet.y);
+  await page.waitForTimeout(100);
+  check("[O-2] second double-clic : le groupe intérieur est ouvert (trois étapes)", (await fil.locator("li").count()) === 3, String(await fil.locator("li").count()));
+  await page.screenshot({ path: `${OUT}/3-contexte-ouvert.png` });
+  await page.keyboard.press("Shift+Escape");
+  await page.waitForTimeout(80);
+  check("[O-2] Maj+Échap : remonte d'un niveau", (await fil.locator("li").count()) === 2, String(await fil.locator("li").count()));
+  await page.waitForTimeout(700); // sinon le navigateur compte un triple-clic
+  await page.mouse.dblclick(sommet.x, sommet.y);
+  await page.waitForTimeout(100);
+  await page.keyboard.press("Shift+Home");
+  await page.waitForTimeout(80);
+  check("[O-2] Maj+Origine : retour à la racine, fil d'Ariane fermé", (await dans()) === null && (await fil.count()) === 0);
+  await page.waitForTimeout(700); // sinon le navigateur compte un triple-clic
+  await page.mouse.dblclick(sommet.x, sommet.y);
+  await page.waitForTimeout(100);
+  await fil.locator('[data-planche-fil-etape="racine"]').click();
+  await page.waitForTimeout(80);
+  check("[O-2] clic sur « Planche » dans le fil : racine", (await dans()) === null);
+  // Objet verrouillé : le double-clic le sélectionne sans l'ouvrir.
+  await vue.focus();
+  await page.keyboard.press("Control+a");
+  await page.mouse.click(sommet.x, sommet.y, { button: "right" });
+  await page.locator('[data-planche-menu-contextuel] [data-planche-menu="verrouiller"]').click();
+  await page.waitForTimeout(80);
+  await page.waitForTimeout(700); // sinon le navigateur compte un triple-clic
+  await page.mouse.dblclick(sommet.x, sommet.y);
+  await page.waitForTimeout(100);
+  check("[O-2] objet verrouillé : double-clic sans ouverture", (await dans()) === null && (await page.evaluate(() => window.fadiPlanche.selection().length)) === 1);
+  // Surface liée à son arête : statut « Liée aux arêtes sources », puis « Détacher le lien ».
+  await page.keyboard.press("Escape");
+  await vue.focus();
+  await page.keyboard.press("l");
+  await cliquer({ x: 0, y: 4, z: 0 });
+  await survoler({ x: 1, y: 4, z: 0 });
+  await saisir("3");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("p");
+  await cliquer({ x: 1.5, y: 4, z: 0 });
+  await page.keyboard.press("ArrowUp");
+  await saisir("2");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press(" ");
+  await vue.focus();
+  await cliquer({ x: 1.5, y: 4, z: 1 });
+  check("[O-2] face de la surface sélectionnée : statut « Liée aux arêtes sources »", (await page.locator("[data-planche-lien]").count()) === 1);
+  const surface = await ecran({ x: 1.5, y: 4, z: 1 });
+  await page.mouse.click(surface.x, surface.y, { button: "right" });
+  const detacher = page.locator('[data-planche-menu-contextuel] [data-planche-menu="detacher-lien"]');
+  check("[O-2] menu : « Détacher le lien »", (await detacher.count()) === 1);
+  await detacher.click();
+  await page.waitForTimeout(80);
+  check("[O-2] Détacher le lien : relation supprimée, statut retiré, message", (await etat()).liens === 0 && (await page.locator("[data-planche-lien]").count()) === 0 && /Lien détaché/.test(await message(page)), await message(page));
+  check("[O-2] aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
+  await ctx.close();
+}
+
 // ————————————————————————————————————————————————————————————— Téléphone (390 px, tactile)
 {
   const ctx = await browser.newContext({ ...devices["iPhone 13"], locale: "fr-FR" });
@@ -273,6 +366,27 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   await bouton(page, "eclater").tap();
   await page.waitForTimeout(80);
   check("[téléphone] Éclater au doigt : géométrie libre", (await objets(page)) === 0);
+  // O-2 au téléphone : ouvrir un groupe affiche le fil d'Ariane par-dessus le dessin, sans le redimensionner.
+  await page.locator("[data-planche-vue]").focus();
+  await page.keyboard.press("Control+a");
+  await page.keyboard.press("Control+g");
+  await page.waitForTimeout(80);
+  const avant = await page.locator("[data-planche-vue]").boundingBox();
+  const id = await page.evaluate(() => Object.keys(window.fadiPlanche.modele().racine.occurrences)[0]);
+  const p = await (async () => {
+    const b = await page.locator("[data-planche-vue] canvas").first().boundingBox();
+    const e = await page.evaluate(() => window.fadiPlanche.versEcran({ x: 1, y: 1, z: 0 }));
+    return { x: b.x + e.x, y: b.y + e.y };
+  })();
+  await page.mouse.dblclick(p.x, p.y);
+  await page.waitForTimeout(120);
+  const apres = await page.locator("[data-planche-vue]").boundingBox();
+  const bf = await page.locator("[data-planche-fil]").boundingBox();
+  check("[téléphone] groupe ouvert : fil d'Ariane dans l'écran, zone de dessin inchangée", (await page.evaluate(() => window.fadiPlanche.dans())) === id && !!bf && bf.x >= 0 && bf.x + bf.width <= 391 && !!avant && !!apres && Math.abs(avant.height - apres.height) < 0.5, JSON.stringify({ bf, avant, apres }));
+  await page.screenshot({ path: `${OUT}/4-telephone-contexte.png` });
+  await page.locator('[data-planche-commande="fermer"]').tap();
+  await page.waitForTimeout(80);
+  check("[téléphone] Fermer au doigt : racine", (await page.evaluate(() => window.fadiPlanche.dans() ?? null)) === null);
   await page.screenshot({ path: `${OUT}/2-telephone.png` });
   check("[téléphone] aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
   await ctx.close();
