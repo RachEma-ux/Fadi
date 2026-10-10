@@ -124,6 +124,8 @@ export interface EtatPousserTirer {
   readonly sens: 1 | -1;
   /** (Lot 10a, EX-PT-02) Étendue : à la distance (curseur, saisie) ou « Jusqu'à une face » (clic sur une face parallèle). */
   readonly jusquAFace: boolean;
+  /** (Lot 10b, EX-LINK-02) Garder le lien de la surface à ses arêtes sources (racine seulement ; activé par défaut). */
+  readonly lier: boolean;
 }
 
 function initial(): EtatPousserTirer {
@@ -154,6 +156,7 @@ function initial(): EtatPousserTirer {
     selectionAvant: [],
     sens: 1,
     jusquAFace: false,
+    lier: true,
   };
 }
 
@@ -202,7 +205,7 @@ function appliquer(
     const sansFond = prec ? prec.sansFond === true : e.sansFond;
     const etirement = prec ? prec.etirement === true : e.etirement;
     const r = sansFond
-      ? tuberFace(base, face, distance, optionsDans(ctx))
+      ? tuberFace(base, face, distance, { ...optionsDans(ctx), lier: e.lier })
       : etirement
         ? etirerFace(base, face, distance, optionsDans(ctx))
         : pousserTirer(base, face, distance, { ...optionsDans(ctx), nouvelleFace: e.nouvelleFace });
@@ -367,9 +370,9 @@ function appliquerAretes(
   try {
     const r =
       p.genre === "aretes"
-        ? etirerAretes(base, p.aretes, p.vecteur, { ...o, symetrique: p.symetrique })
+        ? etirerAretes(base, p.aretes, p.vecteur, { ...o, symetrique: p.symetrique, lier: e.lier })
         : p.genre === "couronne"
-          ? couronne(base, p.aretes, p.distance, { ...o, symetrique: p.symetrique })
+          ? couronne(base, p.aretes, p.distance, { ...o, symetrique: p.symetrique, lier: e.lier })
           : allongerArete(base, p.arete, p.extremite, p.longueur, o);
     return {
       etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: p } },
@@ -479,11 +482,13 @@ export const ERREUR_MAJ_ARETE = "Maj seul : « Surface ouverte » ne s'applique 
 export const ERREUR_ALLONGER_COURBE = "Allonger : seule une arête droite isolée peut être allongée.";
 
 /** Un seul chemin pour choisir un mode : touche, bouton de la barre d'options ou bouton au toucher. */
+export const CONSIGNE_LIEN_RACINE = "Liens automatiques aux arêtes sources : à la racine de la Planche seulement — ici, la surface sera indépendante.";
 export const ERREUR_FACE_HORS_EXTRUSION = "« Jusqu'à une face » ne s'applique qu'à l'extrusion normale d'une face.";
 export const CONSIGNE_JUSQU_A_FACE = "Jusqu'à une face : cliquez sur une face parallèle — la distance signée s'affiche avant de valider.";
 export const ERREUR_SENS_SANS_SOURCE = "Inverser le sens : cliquez d'abord sur la face ou l'arête à pousser ou à tirer.";
 
 function configurerPT(e: EtatPousserTirer, option: string, valeur: string): Transition<EtatPousserTirer> {
+  if (option === "lien" && (valeur === "lie" || valeur === "independant")) return { etat: { ...e, lier: valeur === "lie", erreur: null } };
   if (option === "etendue" && (valeur === "distance" || valeur === "face")) {
     // « Jusqu'à une face » ne vaut que pour l'extrusion standard d'une face (V1 : to-face, extrusion seulement).
     if (valeur === "face" && (e.sansFond || e.etirement || e.aretes.length > 0)) return { etat: { ...e, erreur: ERREUR_FACE_HORS_EXTRUSION } };
@@ -519,7 +524,7 @@ function configurerPT(e: EtatPousserTirer, option: string, valeur: string): Tran
  * annulaire choisie à la main) sont hors de ce type.
  */
 export type OperationExtrusion = "extrude-face" | "stretch-face" | "open-surface" | "sweep-edges" | "lengthen-edge";
-export type OptionExtrusion = "keep-start-face" | "symmetric";
+export type OptionExtrusion = "keep-start-face" | "symmetric" | "keep-source-link";
 export type ActionExtrusion =
   | { readonly type: "set-operation"; readonly operation: OperationExtrusion }
   | { readonly type: "set-option"; readonly option: OptionExtrusion; readonly value: boolean }
@@ -553,6 +558,7 @@ export function actionExtrusion(e: EtatPousserTirer, a: ActionExtrusion): Transi
       }
       return { etat: e };
     case "set-option":
+      if (a.option === "keep-source-link") return configurerPT(e, "lien", a.value ? "lie" : "independant");
       if (a.option === "keep-start-face") {
         const m = modeFace(e);
         // A-02 : après Étirement ou Surface ouverte, l'option est sans objet — refus nommé, aucun drapeau périmé.
@@ -589,6 +595,15 @@ function optionsPT(e: EtatPousserTirer, ctx: ContexteOutil): OptionOutil[] {
         { id: "normal", disponible: surArete },
         { id: "deux-cotes", disponible: surArete, raccourci: "Alt" },
         { id: "allonger", disponible: tirageArete && e.droite !== null, raccourci: "↓" },
+      ],
+    },
+    // Lot 10b (EX-LINK-02) : lien aux arêtes sources — balayage d'arêtes, bande annulaire, Surface ouverte, à la racine.
+    {
+      id: "lien",
+      valeur: e.lier ? "lie" : "independant",
+      valeurs: [
+        { id: "lie", disponible: ctx.dans === undefined && (surArete || e.sansFond) },
+        { id: "independant", disponible: surArete || e.sansFond },
       ],
     },
     // Lot 10a (EX-PT-02) : étendue de l'extrusion d'une face.
@@ -771,7 +786,13 @@ function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
       const v = etat.vecteur;
       const valeur = etat.texte ?? `${prefixe(etat.inference)}${formaterLongueur(v ? len(v) : 0, sep)}`;
       return vueModif({
-        consigne: CONSIGNE_ARETE_TIRAGE,
+        // Lot 10b (EX-LINK-02, L-02) : dans un groupe, la restriction « racine seulement » est dite, la surface reste valide.
+        consigne: [
+          CONSIGNE_ARETE_TIRAGE,
+          // Lot 10b (EX-NUM-03, P-11) : en symétrique, la valeur est une distance par côté — le total est dit.
+          etat.symetrique && v ? `Des deux côtés : distance par côté, total ${formaterLongueur(2 * len(v), sep)}.` : "",
+          ctx.dans !== undefined ? CONSIGNE_LIEN_RACINE : "",
+        ].filter(Boolean).join(" "),
         mesures: mesures(libelleMesuresDe(ID_POUSSER_TIRER, 1), valeur, contexteSaisie("longueur", ctx)),
         inference: etat.inference,
         apercu: v && len(v) > TOL ? (apercuSpecial(etat, paramsPour(etat, ctx, v)) ?? apercuAretes(etat.segments, v, etat.symetrique)) : { lignes: [], faces: [] },
