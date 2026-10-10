@@ -336,6 +336,8 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   await vue.focus();
   await cliquer({ x: 1.5, y: 4, z: 1 });
   check("[O-2] face de la surface sélectionnée : statut « Liée aux arêtes sources »", (await page.locator("[data-planche-lien]").count()) === 1);
+  const boutonLien = page.locator('[data-planche-commande="detacher-lien"]');
+  check("[O-2] bouton « Détacher » nommé dans la barre d'état (toucher), raccourci Alt+Maj+K", (await boutonLien.count()) === 1 && (await boutonLien.isVisible()) && /Alt\+Maj\+K/.test((await boutonLien.getAttribute("title")) ?? ""), (await boutonLien.getAttribute("title")) ?? "");
   const surface = await ecran({ x: 1.5, y: 4, z: 1 });
   await page.mouse.click(surface.x, surface.y, { button: "right" });
   const detacher = page.locator('[data-planche-menu-contextuel] [data-planche-menu="detacher-lien"]');
