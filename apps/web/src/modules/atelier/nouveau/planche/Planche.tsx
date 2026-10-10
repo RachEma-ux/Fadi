@@ -596,7 +596,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     try {
       const m = histRef.current.present.modele;
       const n = Object.keys(m.definitions).length + 1;
-      const r = grouper(m, sel, { nom: `Groupe ${n}`, ...(dansRef.current !== undefined ? { dans: dansRef.current } : {}) });
+      // Objets O-6 : origine du groupe au coin de sa boîte englobante (axes parallèles à ceux du contexte).
+      const r = grouper(m, sel, { nom: `Groupe ${n}`, origine: "coin", ...(dansRef.current !== undefined ? { dans: dansRef.current } : {}) });
       poserHistorique(enregistrer(histRef.current, r.modele, t("planche.groupe.operation"), false));
       setSelection([r.occurrence]);
       const rompus = liensRompus(m, r.modele);
