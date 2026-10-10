@@ -52,7 +52,21 @@ import {
   v3,
 } from "./vecteur.js";
 
-import { type Annotations, type AnnotationsMutables, type Extrusion, ANNOTATIONS_VIDES, genreAnnotation } from "./annotations.js";
+import { type Annotations, type AnnotationsMutables, type Extrusion, type LienPiece, ANNOTATIONS_VIDES, genreAnnotation } from "./annotations.js";
+import {
+  type BoutPiece,
+  type PlacementPiece,
+  type RepereDePiece,
+  type SectionProfil,
+  type SourceSection,
+  matriceRepere,
+  normaleOnglet,
+  prismePiece,
+  repereSegment,
+  sectionPosee,
+  validerSection,
+  versLocal,
+} from "./profiles.js";
 
 // ————————————————————————————————————————————————————————————— Types publics
 
@@ -130,6 +144,21 @@ export interface MetadonneesDefinition {
   readonly collerA?: "aucun" | "tout" | "horizontal" | "vertical" | "incline";
   readonly decouperOuverture?: boolean;
   readonly faceCamera?: boolean;
+  /** (Lot L11) Pièce de profilé : de quoi régénérer la géométrie sur commande ; jamais une seconde géométrie. */
+  readonly piece?: MetadonneesPiece;
+}
+
+/** (Lot L11) Métadonnées d'une pièce de profilé, portées par sa définition (composant). */
+export interface MetadonneesPiece {
+  readonly designation: string;
+  /** Section telle que saisie ou lue au catalogue (avant rotation et placement). */
+  readonly section: SectionProfil;
+  readonly source: SourceSection;
+  readonly placement: PlacementPiece;
+  /** Longueur de l'axe (arête source), sans les décalages. */
+  readonly longueur: number;
+  /** Côté de la boucle (posée sur une boucle plane) : +1 côté +y, −1 côté −y, 0 centrée ; absent = point de placement. */
+  readonly cote?: -1 | 0 | 1;
 }
 export interface Definition extends MetadonneesDefinition {
   readonly id: Id;
@@ -500,7 +529,7 @@ interface DefTravail extends MetadonneesDefinition {
   contenu: Ctx;
 }
 
-const META_DEF = ["description", "collerA", "decouperOuverture", "faceCamera"] as const;
+const META_DEF = ["description", "collerA", "decouperOuverture", "faceCamera", "piece"] as const;
 function metaDe(d: MetadonneesDefinition): MetadonneesDefinition {
   const r: Record<string, unknown> = {};
   for (const k of META_DEF) if (d[k] !== undefined) r[k] = d[k];
@@ -544,7 +573,7 @@ class Travail {
   constructor(private readonly modele: Modele) {
     this.prochain = modele.prochainId;
     const a = modele.annotations ?? ANNOTATIONS_VIDES;
-    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
+    this.annotations = { guides: { ...a.guides }, cotes: { ...a.cotes }, textes: { ...a.textes }, plansDeCoupe: { ...a.plansDeCoupe }, materiaux: { ...a.materiaux }, balises: { ...a.balises }, scenes: { ...(a.scenes ?? {}) }, extrusions: { ...(a.extrusions ?? {}) }, pieces: { ...(a.pieces ?? {}) }, ...(a.repere ? { repere: a.repere } : {}), ...(a.reglages ? { reglages: a.reglages } : {}) };
     this.racine = versCtx(modele.racine);
     this.origines.set(this.racine, modele.racine);
     this.definitions = new Map();
@@ -647,6 +676,7 @@ class Travail {
       ...(Object.keys(a.scenes).length ? { scenes: Object.freeze({ ...a.scenes }) } : {}),
       ...(a.reglages ? { reglages: a.reglages } : {}),
       ...(Object.keys(a.extrusions).length ? { extrusions: Object.freeze({ ...a.extrusions }) } : {}),
+      ...(Object.keys(a.pieces).length ? { pieces: Object.freeze({ ...a.pieces }) } : {}),
     });
     return Object.freeze({ ...base, annotations });
   }
@@ -704,7 +734,7 @@ function aplatir(m: Modele): Map<Id, string> {
   }
   const a = m.annotations;
   if (a) {
-    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}]) {
+    for (const rec of [a.guides, a.cotes, a.textes, a.plansDeCoupe, a.materiaux, a.balises, a.scenes ?? {}, a.extrusions ?? {}, a.pieces ?? {}]) {
       for (const [id, v] of Object.entries(rec)) r.set(id, JSON.stringify(v));
     }
     if (a.repere) r.set("repere", JSON.stringify(a.repere));
@@ -733,6 +763,7 @@ function operer<X>(m: Modele, dans: Id | undefined, fn: (t: Travail, c: Ctx) => 
   const c = t.ouvrir(dans);
   const extra = fn(t, c);
   actualiserExtrusions(t);
+  actualiserPieces(t);
   const modele = t.fermer();
   return { modele, rapport: differences(m, modele), extra };
 }
@@ -3050,6 +3081,7 @@ export function deplacerVersContexte(m: Modele, ids: readonly Id[], cible: Id | 
   const passage = composer(inverse, source);
   for (const occ of occs) dst.occurrences.set(occ.id, { ...occ, transformation: composer(passage, occ.transformation) });
   actualiserExtrusions(t);
+  actualiserPieces(t);
   const modele = t.fermer();
   return { modele, rapport: differences(m, modele), extra: { composantPartage } };
 }
@@ -4009,4 +4041,283 @@ export function aretesMasquees(m: Modele, quoi: { readonly objets?: boolean; rea
   };
   parcourir(m.racine, IDENTITE, false, 0);
   return r;
+}
+
+// ————————————————————————————————————————————————————————————— Pièces de profilé (lot L11)
+
+/** Options de pose d'une pièce de profilé (lot L11). */
+export interface OptionsPiece extends OptionsContexte {
+  /** Désignation libre (« Montant », ligne de catalogue…) : nom du composant. */
+  readonly designation: string;
+  /** Provenance de la section : saisie, ou ligne d'un catalogue sourcé. */
+  readonly source: SourceSection;
+  /** Lien à l'arête source (défaut : oui) — à la racine de la Planche seulement, comme les liens d'extrusion. */
+  readonly lier?: boolean;
+}
+
+/** Options de pose sur une chaîne d'arêtes : onglets aux sommets partagés (défaut : oui). */
+export interface OptionsPiecesSurAretes extends OptionsPiece {
+  readonly onglets?: boolean;
+}
+
+/** Axe d'une pièce : une arête du contexte (liable) ou deux points. */
+export type SegmentPiece = { readonly arete: Id } | { readonly a: Vec3; readonly b: Vec3 };
+
+export interface ResultatPieces extends Resultat {
+  readonly occurrences: readonly Id[];
+}
+
+export const ERREUR_PIECE_DESIGNATION = "Une pièce de profilé demande une désignation.";
+export const ERREUR_PIECE_SOURCE = "Source de section invalide : « saisie », ou ligne de catalogue avec sa source et son édition.";
+export const ERREUR_BOUCLE_NON_PLANE = "La boucle d'arêtes n'est pas plane : la position extérieur / intérieur n'a pas de sens.";
+export const ERREUR_RECALCUL_PIECE = "La pièce ne peut plus être recalculée sur son arête (longueur nulle ou onglet impossible) : modification refusée.";
+
+function validerPiece(section: SectionProfil, o: OptionsPiece): void {
+  validerSection(section);
+  if (typeof o.designation !== "string" || o.designation.trim() === "") throw new RangeError(ERREUR_PIECE_DESIGNATION);
+  const s = o.source;
+  if (!s || (s.genre !== "saisie" && !(s.genre === "catalogue" && typeof s.source === "string" && s.source.trim() !== "" && typeof s.edition === "string" && s.edition.trim() !== ""))) {
+    throw new RangeError(ERREUR_PIECE_SOURCE);
+  }
+}
+
+/** Empreinte (FNV-1a, deux moitiés) du contenu d'une pièce : toute édition de sa géométrie la change. */
+function empreinteCtx(c: Ctx): string {
+  const texte = `${c.faces.size}|${c.aretes.size}|${[...c.sommets.values()].map((s) => `${s.position.x},${s.position.y},${s.position.z}`).sort().join(";")}`;
+  let h1 = 0x811c9dc5;
+  let h2 = 0xcbf29ce4;
+  for (let i = 0; i < texte.length; i++) {
+    const k = texte.charCodeAt(i);
+    h1 = Math.imul(h1 ^ k, 0x01000193) >>> 0;
+    h2 = Math.imul(h2 ^ ((k * 31 + (h1 & 0xff)) & 0xffff), 0x01000193) >>> 0;
+  }
+  return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
+}
+
+const memeMatrice = (a: readonly number[], b: readonly number[]): boolean => a.length === b.length && a.every((x, i) => Math.abs(x - (b[i] as number)) <= 1e-12);
+
+/** Géométrie d'une pièce en repère local, insérée dans un contenu neuf. */
+function contenuPiece(t: Travail, meta: MetadonneesPiece, r: RepereDePiece, debut: BoutPiece, fin: BoutPiece): Ctx {
+  const { parois, bouts } = prismePiece(sectionPosee(meta.section, meta.placement, meta.cote), r.longueur, debut, fin);
+  const contenu: Ctx = { sommets: new Map(), aretes: new Map(), faces: new Map(), courbes: new Map(), occurrences: new Map() };
+  insererBalayage(t, contenu, parois, bouts);
+  return contenu;
+}
+
+/** Bout d'une pièce sur une chaîne : onglet (plan bissecteur, en local) ou allongement. */
+function boutPiece(r: RepereDePiece, onglet: { avant: Vec3; apres: Vec3 } | null, decalage: number): BoutPiece {
+  if (!onglet) return { genre: "droit", decalage };
+  if (dot(normalize(onglet.avant), normalize(onglet.apres)) < Math.cos(Math.PI - (12 * Math.PI) / 180)) throw new RangeError(ERREUR_ONGLET_SINGULIER);
+  return { genre: "onglet", normale: versLocal(r, normaleOnglet(onglet.avant, onglet.apres)) };
+}
+
+/** Pose une pièce : définition (composant) portant ses métadonnées, occurrence au repère de l'axe. */
+function poserPieceInterne(t: Travail, c: Ctx, A: Vec3, B: Vec3, meta: Omit<MetadonneesPiece, "longueur">, ongletDebut: { avant: Vec3; apres: Vec3 } | null, ongletFin: { avant: Vec3; apres: Vec3 } | null, haut?: Vec3): { occ: Id; def: Id } {
+  const r = repereSegment(A, B, haut);
+  const complete: MetadonneesPiece = { ...meta, longueur: r.longueur };
+  const contenu = contenuPiece(t, complete, r, boutPiece(r, ongletDebut, meta.placement.decalageDebut), boutPiece(r, ongletFin, meta.placement.decalageFin));
+  const def = t.id("d");
+  t.definitions.set(def, { id: def, nom: meta.designation, genre: "composant", contenu, piece: complete });
+  const occ = t.id("o");
+  c.occurrences.set(occ, { id: occ, definition: def, transformation: matriceRepere(r) });
+  return { occ, def };
+}
+
+function lierPiece(t: Travail, c: Ctx, occ: Id, arete: Id, a: Id, b: Id, ongletDebut?: { arete: Id; sommet: Id }, ongletFin?: { arete: Id; sommet: Id }, haut?: Vec3): void {
+  const o = c.occurrences.get(occ) as Occurrence;
+  const d = t.definitions.get(o.definition) as DefTravail;
+  t.annotations.pieces[occ] = {
+    id: occ,
+    arete,
+    a,
+    b,
+    posA: pos(c, a),
+    posB: pos(c, b),
+    ...(ongletDebut ? { ongletDebut: { ...ongletDebut, pos: pos(c, ongletDebut.sommet) } } : {}),
+    ...(ongletFin ? { ongletFin: { ...ongletFin, pos: pos(c, ongletFin.sommet) } } : {}),
+    definition: o.definition,
+    transformation: o.transformation,
+    empreinte: empreinteCtx(d.contenu),
+    ...(haut ? { haut } : {}),
+  };
+  t.annotationsSales = true;
+}
+
+/**
+ * Pièce de profilé (lot L11) : la section (contour 2D, trous compris) est balayée le long de l'axe — une arête ou deux
+ * points — selon le placement (point de la section sur l'axe, rotation de 90°, décalages signés des extrémités). La
+ * pièce est un composant dont la définition porte ses métadonnées (désignation, section, source, placement, longueur).
+ * Posée sur une arête à la racine, elle lui est liée : elle suit l'arête tant qu'elle n'est pas modifiée elle-même.
+ */
+export function poserPiece(m: Modele, segment: SegmentPiece, section: SectionProfil, placement: PlacementPiece, o: OptionsPiece): ResultatGroupe {
+  validerPiece(section, o);
+  const r = operer(m, o.dans, (t, c) => {
+    const meta = { designation: o.designation.trim(), section, source: o.source, placement };
+    if (!("arete" in segment)) return poserPieceInterne(t, c, segment.a, segment.b, meta, null, null);
+    const a = c.aretes.get(segment.arete);
+    if (!a) throw new RangeError(`Arête inconnue : ${segment.arete}`);
+    const res = poserPieceInterne(t, c, pos(c, a.a), pos(c, a.b), meta, null, null);
+    if (o.lier !== false && o.dans === undefined) lierPiece(t, c, res.occ, a.id, a.a, a.b);
+    return res;
+  });
+  return { modele: r.modele, rapport: r.rapport, occurrence: r.extra.occ, definition: r.extra.def };
+}
+
+/**
+ * Pièces sur une chaîne d'arêtes continues (lot L11) : une pièce par arête, onglets aux sommets partagés (option, plans
+ * bissecteurs comme Suivez-moi). Sur une boucle plane, la position centre / extérieur / intérieur place la section du
+ * côté demandé (la hauteur suit alors la normale de la boucle, tournée vers +Z) ; une boucle non plane refuse extérieur
+ * et intérieur.
+ */
+export function poserPiecesSurAretes(m: Modele, aretes: readonly Id[], section: SectionProfil, placement: PlacementPiece, o: OptionsPiecesSurAretes): ResultatPieces {
+  validerPiece(section, o);
+  const r = operer(m, o.dans, (t, c) => {
+    const ch = chaineOrdonnee(c, aretes);
+    const V = ch.sommets;
+    const N = V.length;
+    const nSeg = ch.ferme ? N : N - 1;
+    const P = V.map((s) => pos(c, s));
+    const ids = Array.from({ length: nSeg }, (_, i) => (areteEntre(c, V[i] as Id, V[(i + 1) % N] as Id) as Arete).id);
+    let haut: Vec3 | undefined;
+    let cote: -1 | 0 | 1 | undefined;
+    const position = placement.position ?? "centre";
+    if (ch.ferme) {
+      const n = newell(P);
+      if (len(n) > EPS) {
+        const nn = normalize(n);
+        const plane = P.every((p) => Math.abs(dot(nn, sub(p, P[0] as Vec3))) <= TOL);
+        if (!plane && position !== "centre") throw new RangeError(ERREUR_BOUCLE_NON_PLANE);
+        if (plane) {
+          haut = nn.z < -1e-9 ? scale(nn, -1) : nn;
+          // Boucle dans le sens direct autour de `haut` : l'intérieur est du côté +y de chaque pièce (y = haut × x).
+          const direct = dot(haut, nn) > 0;
+          cote = position === "centre" ? 0 : (position === "interieur") === direct ? 1 : -1;
+        }
+      }
+    }
+    const meta = { designation: o.designation.trim(), section, source: o.source, placement, ...(cote !== undefined ? { cote } : {}) };
+    const onglets = o.onglets !== false;
+    const d = (i: number): Vec3 => sub(P[(((i % nSeg) + nSeg) % nSeg + 1) % N] as Vec3, P[((i % nSeg) + nSeg) % nSeg] as Vec3);
+    const occs: Id[] = [];
+    for (let i = 0; i < nSeg; i++) {
+      const avecDebut = onglets && (ch.ferme || i > 0);
+      const avecFin = onglets && (ch.ferme || i < nSeg - 1);
+      const res = poserPieceInterne(t, c, P[i] as Vec3, P[(i + 1) % N] as Vec3, meta, avecDebut ? { avant: d(i - 1), apres: d(i) } : null, avecFin ? { avant: d(i), apres: d(i + 1) } : null, haut);
+      occs.push(res.occ);
+      if (o.lier !== false && o.dans === undefined) {
+        const iPrec = (i - 1 + nSeg) % nSeg;
+        const iSuiv = (i + 1) % nSeg;
+        lierPiece(
+          t,
+          c,
+          res.occ,
+          ids[i] as Id,
+          V[i] as Id,
+          V[(i + 1) % N] as Id,
+          avecDebut ? { arete: ids[iPrec] as Id, sommet: V[iPrec] as Id } : undefined,
+          avecFin ? { arete: ids[iSuiv] as Id, sommet: V[(iSuiv + 1) % N] as Id } : undefined,
+          haut,
+        );
+      }
+    }
+    return occs;
+  });
+  return { modele: r.modele, rapport: r.rapport, occurrences: r.extra };
+}
+
+/**
+ * Pièces liées (lot L11) : après chaque opération, une pièce dont l'arête (ou une voisine d'onglet) a bougé est
+ * recalculée — repère, longueur, onglets — depuis ses métadonnées ; une pièce modifiée elle-même (déplacée, éditée,
+ * effacée), une arête disparue ou redécoupée rompent le lien. Si la forme change et que la définition est partagée,
+ * l'occurrence liée est d'abord rendue unique : une copie qui n'est pas issue de cette arête ne change jamais.
+ */
+function actualiserPieces(t: Travail): void {
+  const liens = t.annotations.pieces;
+  if (Object.keys(liens).length === 0) return;
+  const c = t.racine;
+  const rompre = (id: Id): void => {
+    delete liens[id];
+    t.annotationsSales = true;
+  };
+  for (const L of Object.values(liens).sort((x, y) => numId(x.id) - numId(y.id))) {
+    const occ = c.occurrences.get(L.id);
+    const arete = c.aretes.get(L.arete);
+    const def = occ ? t.definitions.get(occ.definition) : undefined;
+    if (!occ || !arete || !def?.piece || occ.definition !== L.definition || !memeMatrice(occ.transformation, L.transformation) || empreinteCtx(def.contenu) !== L.empreinte) {
+      rompre(L.id);
+      continue;
+    }
+    if (!((arete.a === L.a && arete.b === L.b) || (arete.a === L.b && arete.b === L.a))) {
+      rompre(L.id);
+      continue;
+    }
+    const voisin = (v: LienPiece["ongletDebut"], bout: Id): Vec3 | null | undefined => {
+      if (!v) return null;
+      const e = c.aretes.get(v.arete);
+      if (!e || !((e.a === v.sommet && e.b === bout) || (e.b === v.sommet && e.a === bout))) return undefined;
+      return pos(c, v.sommet);
+    };
+    const QA = voisin(L.ongletDebut, L.a);
+    const QB = voisin(L.ongletFin, L.b);
+    if (QA === undefined || QB === undefined) {
+      rompre(L.id);
+      continue;
+    }
+    const A = pos(c, L.a);
+    const B = pos(c, L.b);
+    const immobile = egal(A, L.posA) && egal(B, L.posB) && (QA === null || egal(QA, (L.ongletDebut as { pos: Vec3 }).pos)) && (QB === null || egal(QB, (L.ongletFin as { pos: Vec3 }).pos));
+    if (immobile) continue;
+    const meta = def.piece;
+    const calcul = (a: Vec3, b: Vec3, qa: Vec3 | null, qb: Vec3 | null) => {
+      const r = repereSegment(a, b, L.haut);
+      return {
+        r,
+        debut: boutPiece(r, qa ? { avant: sub(a, qa), apres: sub(b, a) } : null, meta.placement.decalageDebut),
+        fin: boutPiece(r, qb ? { avant: sub(b, a), apres: sub(qb, b) } : null, meta.placement.decalageFin),
+      };
+    };
+    let neuf: ReturnType<typeof calcul>;
+    try {
+      neuf = calcul(A, B, QA, QB);
+    } catch {
+      throw new RangeError(ERREUR_RECALCUL_PIECE);
+    }
+    const ancien = calcul(L.posA, L.posB, L.ongletDebut?.pos ?? null, L.ongletFin?.pos ?? null);
+    const memeBout = (x: BoutPiece, y: BoutPiece) => (x.genre === "droit" && y.genre === "droit") || (x.genre === "onglet" && y.genre === "onglet" && egal(x.normale, y.normale));
+    const memeForme = Math.abs(neuf.r.longueur - meta.longueur) <= 1e-12 && memeBout(neuf.debut, ancien.debut) && memeBout(neuf.fin, ancien.fin);
+    t.salir(c);
+    let defId = occ.definition;
+    if (!memeForme) {
+      if (t.nombreOccurrences(defId) > 1) {
+        t.rendreUnique(L.id);
+        defId = (c.occurrences.get(L.id) as Occurrence).definition;
+      }
+      let contenu: Ctx;
+      try {
+        contenu = contenuPiece(t, meta, neuf.r, neuf.debut, neuf.fin);
+      } catch {
+        throw new RangeError(ERREUR_RECALCUL_PIECE);
+      }
+      const d = t.definitions.get(defId) as DefTravail;
+      t.definitions.set(defId, { ...d, contenu, piece: { ...meta, longueur: neuf.r.longueur } });
+    }
+    const transformation = matriceRepere(neuf.r);
+    c.occurrences.set(L.id, { ...(c.occurrences.get(L.id) as Occurrence), transformation });
+    liens[L.id] = {
+      ...L,
+      definition: defId,
+      transformation,
+      empreinte: empreinteCtx((t.definitions.get(defId) as DefTravail).contenu),
+      posA: A,
+      posB: B,
+      ...(L.ongletDebut && QA ? { ongletDebut: { ...L.ongletDebut, pos: QA } } : {}),
+      ...(L.ongletFin && QB ? { ongletFin: { ...L.ongletFin, pos: QB } } : {}),
+    };
+    t.annotationsSales = true;
+  }
+}
+
+/** Pièces liées du modèle (lot L11) : identifiant d'occurrence → arête source. */
+export function piecesLiees(m: Modele): Readonly<Record<Id, LienPiece>> {
+  return m.annotations?.pieces ?? {};
 }

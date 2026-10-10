@@ -128,6 +128,31 @@ export interface Extrusion {
   readonly faces: number;
 }
 
+/**
+ * (Lot L11) Lien d'une pièce de profilé (occurrence de la racine) à son arête source : la pièce suit l'arête tant
+ * qu'elle n'est pas modifiée elle-même. Indexé par l'identifiant de l'occurrence ; l'arête n'est jamais portée par la
+ * définition, partagée entre copies.
+ */
+export interface LienPiece {
+  /** Identifiant de l'occurrence (pièce). */
+  readonly id: Id;
+  readonly arete: Id;
+  /** Sommets de l'arête dans le sens de la pièce (A → B) et leurs positions au dernier calcul. */
+  readonly a: Id;
+  readonly b: Id;
+  readonly posA: Vec3;
+  readonly posB: Vec3;
+  /** Arêtes voisines coupées en onglet au début / à la fin, et la position de leur autre sommet au dernier calcul. */
+  readonly ongletDebut?: { readonly arete: Id; readonly sommet: Id; readonly pos: Vec3 };
+  readonly ongletFin?: { readonly arete: Id; readonly sommet: Id; readonly pos: Vec3 };
+  /** Instantané de la pièce au dernier calcul : toute modification de la pièce elle-même rompt le lien. */
+  readonly definition: Id;
+  readonly transformation: readonly number[];
+  readonly empreinte: string;
+  /** Normale de la boucle (repère des pièces posées sur une boucle), sinon absente (« haut » = Z). */
+  readonly haut?: Vec3;
+}
+
 export interface Annotations {
   readonly guides: Readonly<Record<Id, Guide>>;
   readonly cotes: Readonly<Record<Id, Cote>>;
@@ -143,6 +168,8 @@ export interface Annotations {
   readonly reglages?: ReglagesPlanche;
   /** Surfaces liées à leurs arêtes sources (D-196) ; absent = aucune. */
   readonly extrusions?: Readonly<Record<Id, Extrusion>>;
+  /** (Lot L11) Pièces de profilé liées à leur arête source ; absent = aucune. */
+  readonly pieces?: Readonly<Record<Id, LienPiece>>;
 }
 
 export const ANNOTATIONS_VIDES: Annotations = Object.freeze({
@@ -166,6 +193,7 @@ export interface AnnotationsMutables {
   scenes: Record<Id, Scene>;
   reglages?: ReglagesPlanche;
   extrusions: Record<Id, Extrusion>;
+  pieces: Record<Id, LienPiece>;
 }
 
 export const annotationsDe = (a: Annotations | undefined): Annotations => a ?? ANNOTATIONS_VIDES;
