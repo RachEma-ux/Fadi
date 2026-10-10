@@ -4,10 +4,11 @@
  * Navigateur. Composants React purs : ils reçoivent le modèle et des rappels, n'appellent jamais le noyau en écriture
  * eux-mêmes (la Planche applique les opérations, un pas d'historique chacune).
  */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type DragEvent as EvenementGlisse, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { REGLAGES_DEFAUT, aire, contexte, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, volume, type Id, type MetadonneesDefinition, type Modele, type ReglagesPlanche, type Scene } from "@parcours/planche-model";
 import { t } from "../messages";
 import type { OptionsAffichage, VueStandard } from "./vue-planche";
+import { afficherRaccourci } from "./outils-planche";
 
 const virgule = (n: number, d = 2) => n.toFixed(d).replace(".", ",");
 
@@ -648,25 +649,54 @@ export function PanneauInfoModele({ modele, lecture, precision, onPrecision, onR
 // ---------------------------------------------------------------------------------------------------------------
 // Navigateur (arbre des contextes)
 
-export function NavigateurPlanche({ modele, selection, dans, lecture, onSelectionner, onEntrer, onCibler, onMasquer, onSupprimer }: {
+/** Glisser-déposer d'un objet du Navigateur (O-4) : objet glissé et contexte qui le contient. */
+const TYPE_GLISSE = "application/x-fadi-planche-objet";
+
+export function NavigateurPlanche({
+  modele,
+  selection,
+  dans,
+  lecture,
+  commandes = [],
+  renommage = null,
+  onSelectionner,
+  onEntrer,
+  onCibler,
+  onMasquer,
+  onSupprimer,
+  onRenommer,
+  onFinRenommage,
+  onDeplacer,
+}: {
   modele: Modele;
   selection: readonly Id[];
   dans: Id | undefined;
   lecture: boolean;
+  /** Commandes du Navigateur (O-4, règle d'or) : barre en tête de l'arbre. */
+  commandes?: readonly { id: string; picto: string; nom: string; raccourci: string; motif: string | null; executer: () => void }[];
+  /** Objet dont le nom est en cours d'édition (F2, menu, barre). */
+  /** Revue O-4 : chemin complet de la ligne à renommer (un objet imbriqué d'un composant figure sous chaque occurrence). */
+  renommage?: readonly Id[] | null;
   /** `chemin` : chemin complet du contexte (racine → dans), qui distingue les occurrences d'un même composant. */
   onSelectionner: (id: Id, dans: Id | undefined, chemin?: readonly Id[]) => void;
   onEntrer: (id: Id | undefined, chemin?: readonly Id[]) => void;
   onCibler: (id: Id) => void;
   onMasquer: (id: Id, dans: Id | undefined, masquee: boolean) => void;
   onSupprimer: (id: Id, dans: Id | undefined) => void;
+  onRenommer?: (id: Id, dans: Id | undefined, nom: string) => void;
+  onFinRenommage?: () => void;
+  /** Ranger `id` (du contexte `de`) dans `vers` (absent : la racine). */
+  onDeplacer?: (id: Id, de: Id | undefined, vers: Id | undefined) => void;
 }) {
   const [filtre, setFiltre] = useState("");
   const [deplies, setDeplies] = useState<Set<Id>>(() => new Set());
+  const [survol, setSurvol] = useState<{ id: Id | "racine"; zone: "dans" | "avant" | "apres" } | null>(null);
+  const glisse = useRef<{ id: Id; parent: Id | undefined } | null>(null);
   const choisis = new Set(selection);
   const f = filtre.trim().toLowerCase();
   const nomDe = (id: Id, defNom: string, nom?: string) => nom ?? `${defNom} (${id})`;
   const arbre = useMemo(() => {
-    const rendre = (parent: Id | undefined, profondeur: number, cheminParent: readonly Id[] = []): { id: Id; parent: Id | undefined; chemin: readonly Id[]; profondeur: number; nom: string; genre: string; masquee: boolean; verrouille: boolean; enfants: number }[] => {
+    const rendre = (parent: Id | undefined, profondeur: number, cheminParent: readonly Id[] = []): { id: Id; parent: Id | undefined; chemin: readonly Id[]; profondeur: number; nom: string; nomPropre: string; genre: string; masquee: boolean; verrouille: boolean; enfants: number }[] => {
       const c = contexte(modele, parent);
       const r: ReturnType<typeof rendre> = [];
       for (const o of Object.values(c.occurrences)) {
@@ -674,41 +704,224 @@ export function NavigateurPlanche({ modele, selection, dans, lecture, onSelectio
         const nom = nomDe(o.id, d?.nom ?? "Objet", o.nom);
         const enfants = d ? Object.keys(d.contenu.occurrences).length : 0;
         const chemin = [...cheminParent, o.id];
-        if (!f || nom.toLowerCase().includes(f)) r.push({ id: o.id, parent, chemin, profondeur, nom, genre: d?.genre ?? "groupe", masquee: o.masquee === true, verrouille: o.verrouille === true, enfants });
+        if (!f || nom.toLowerCase().includes(f)) r.push({ id: o.id, parent, chemin, profondeur, nom, nomPropre: o.nom ?? d?.nom ?? "", genre: d?.genre ?? "groupe", masquee: o.masquee === true, verrouille: o.verrouille === true, enfants });
         if (profondeur < 16 && (deplies.has(o.id) || f)) r.push(...rendre(o.id, profondeur + 1, chemin));
       }
       return r;
     };
     return rendre(undefined, 0);
   }, [modele, deplies, f]);
+  // Un objet renommé est rendu visible : ses parents sont dépliés.
+  const cleRenommage = renommage ? renommage.join("/") : null;
+  useEffect(() => {
+    if (!renommage || renommage.length < 2 || arbre.some((n) => n.chemin.join("/") === cleRenommage)) return;
+    setDeplies((s) => new Set([...s, ...renommage.slice(0, -1)]));
+  }, [renommage, cleRenommage, arbre]);
+  const parentDe = (id: Id) => arbre.find((n) => n.id === id)?.parent;
+  /** Zone de dépôt d'une ligne : bord haut / bas = à côté (même parent), milieu = dedans. */
+  const zoneDe = (e: EvenementGlisse<HTMLElement>): "dans" | "avant" | "apres" => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const y = (e.clientY - r.top) / Math.max(1, r.height);
+    return y < 0.25 ? "avant" : y > 0.75 ? "apres" : "dans";
+  };
+  const deposer = (vers: Id | undefined) => {
+    const g = glisse.current;
+    glisse.current = null;
+    setSurvol(null);
+    if (!g || !onDeplacer || g.id === vers || g.parent === vers) return;
+    onDeplacer(g.id, g.parent, vers);
+  };
   return (
     <div className="planche-navigateur" data-planche-navigateur>
+      {commandes.length > 0 && (
+        <div className="planche-navigateur-barre" role="toolbar" aria-label={t("planche.navigateur.barre")} data-planche-navigateur-barre>
+          {commandes.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className="canevas-icone"
+              disabled={c.motif !== null}
+              aria-label={c.nom}
+              title={c.motif ? `${c.nom} — ${c.motif}` : `${c.nom} (${afficherRaccourci(c.raccourci)})`}
+              onClick={c.executer}
+              data-planche-commande={c.id}
+            >
+              {c.picto}
+            </button>
+          ))}
+        </div>
+      )}
       <input value={filtre} onChange={(e) => setFiltre(e.target.value)} placeholder={t("planche.navigateur.rechercher")} aria-label={t("planche.navigateur.rechercher")} autoComplete="off" />
       <ul role="tree">
-        <li role="treeitem" aria-selected={dans === undefined} className={dans === undefined ? "est-actif" : undefined}>
+        <li
+          role="treeitem"
+          aria-selected={dans === undefined}
+          className={`${dans === undefined ? "est-actif" : ""}${survol?.id === "racine" ? " est-cible" : ""}`}
+          data-planche-navigateur-racine
+          onDragOver={(e) => {
+            if (!glisse.current || glisse.current.parent === undefined) return;
+            e.preventDefault();
+            setSurvol({ id: "racine", zone: "dans" });
+          }}
+          onDragLeave={() => setSurvol(null)}
+          onDrop={(e) => {
+            e.preventDefault();
+            deposer(undefined);
+          }}
+        >
           <button type="button" className="planche-ligne-choix" onClick={() => onEntrer(undefined)}>{t("planche.navigateur.racine")}</button>
         </li>
         {arbre.length === 0 && <li className="inspecteur-aide">{t("planche.navigateur.vide")}</li>}
-        {arbre.map((n) => (
-          <li key={n.chemin.join("/")} role="treeitem" aria-selected={choisis.has(n.id)} aria-level={n.profondeur + 1} className={`${choisis.has(n.id) ? "est-actif" : ""}${dans === n.id ? " est-ouvert" : ""}`} style={{ paddingLeft: `${n.profondeur * 0.9}rem` }} data-planche-navigateur-objet={n.id}>
-            <button type="button" className="canevas-icone planche-deplier" aria-label={deplies.has(n.id) ? t("planche.navigateur.replier") : t("planche.navigateur.deplier")} disabled={n.enfants === 0} onClick={() => setDeplies((s) => { const d = new Set(s); if (d.has(n.id)) d.delete(n.id); else d.add(n.id); return d; })}>
-              {n.enfants === 0 ? "·" : deplies.has(n.id) ? "▾" : "▸"}
-            </button>
-            <button type="button" className="planche-ligne-choix" onClick={() => onSelectionner(n.id, n.parent, n.chemin.slice(0, -1))} onDoubleClick={() => !n.verrouille && onEntrer(n.id, n.chemin)} title={n.verrouille ? t("planche.navigateur.verrouille") : t("planche.navigateur.entrer")}>
-              <span aria-hidden="true">{n.genre === "composant" ? "◈" : "▣"}</span> {n.nom}
-              {n.verrouille && <span aria-label={t("planche.info.verrouille")}> 🔒</span>}
-              {n.masquee && <span className="inspecteur-aide"> ({t("planche.info.masque")})</span>}
-            </button>
-            <button type="button" className="canevas-icone" aria-label={t("planche.navigateur.cibler")} title={t("planche.navigateur.cibler")} onClick={() => onCibler(n.id)}>⌖</button>
-            {!lecture && (
-              <>
-                <button type="button" className="canevas-icone" aria-label={t("planche.navigateur.masquer")} title={t("planche.navigateur.masquer")} onClick={() => onMasquer(n.id, n.parent, !n.masquee)} data-planche-navigateur-masquer>{n.masquee ? "◌" : "◉"}</button>
-                <button type="button" className="canevas-icone" aria-label={t("planche.navigateur.supprimer")} title={t("planche.navigateur.supprimer")} onClick={() => onSupprimer(n.id, n.parent)}>×</button>
-              </>
-            )}
-          </li>
-        ))}
+        {arbre.map((n) => {
+          const cible = survol?.id === n.id ? ` est-cible-${survol.zone}` : "";
+          return (
+            <li
+              key={n.chemin.join("/")}
+              role="treeitem"
+              aria-selected={choisis.has(n.id)}
+              aria-level={n.profondeur + 1}
+              className={`${choisis.has(n.id) ? "est-actif" : ""}${dans === n.id ? " est-ouvert" : ""}${cible}`}
+              style={{ paddingLeft: `${n.profondeur * 0.9}rem` }}
+              data-planche-navigateur-objet={n.id}
+              draggable={!lecture && !n.verrouille && cleRenommage !== n.chemin.join("/") && onDeplacer !== undefined}
+              onDragStart={(e) => {
+                glisse.current = { id: n.id, parent: n.parent };
+                e.dataTransfer.setData(TYPE_GLISSE, n.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragEnd={() => {
+                glisse.current = null;
+                setSurvol(null);
+              }}
+              onDragOver={(e) => {
+                const g = glisse.current;
+                if (!g || g.id === n.id) return;
+                const zone = n.verrouille ? (zoneDe(e) === "avant" ? "avant" : "apres") : zoneDe(e);
+                // Un objet ne se range pas dans lui-même ni dans un de ses descendants.
+                let p: Id | undefined = n.id;
+                while (p !== undefined) {
+                  if (p === g.id) return;
+                  p = parentDe(p);
+                }
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                setSurvol({ id: n.id, zone });
+              }}
+              onDragLeave={() => setSurvol((s) => (s?.id === n.id ? null : s))}
+              onDrop={(e) => {
+                e.preventDefault();
+                const zone = survol?.id === n.id ? survol.zone : "dans";
+                deposer(zone === "dans" ? n.id : n.parent);
+              }}
+            >
+              <button type="button" className="canevas-icone planche-deplier" aria-label={deplies.has(n.id) ? t("planche.navigateur.replier") : t("planche.navigateur.deplier")} disabled={n.enfants === 0} onClick={() => setDeplies((s) => { const d = new Set(s); if (d.has(n.id)) d.delete(n.id); else d.add(n.id); return d; })}>
+                {n.enfants === 0 ? "·" : deplies.has(n.id) ? "▾" : "▸"}
+              </button>
+              {cleRenommage === n.chemin.join("/") ? (
+                <ChampRenommer
+                  nom={n.nomPropre}
+                  onValider={(nom) => {
+                    onRenommer?.(n.id, n.parent, nom);
+                    onFinRenommage?.();
+                  }}
+                  onAnnuler={() => onFinRenommage?.()}
+                />
+              ) : (
+                <button type="button" className="planche-ligne-choix" onClick={() => onSelectionner(n.id, n.parent, n.chemin.slice(0, -1))} onDoubleClick={() => !n.verrouille && onEntrer(n.id, n.chemin)} title={n.verrouille ? t("planche.navigateur.verrouille") : `${t("planche.navigateur.entrer")} — ${t("planche.navigateur.glisser")}`}>
+                  <span aria-hidden="true">{n.genre === "composant" ? "◈" : "▣"}</span> {n.nom}
+                  {n.verrouille && <span aria-label={t("planche.info.verrouille")}> 🔒</span>}
+                  {n.masquee && <span className="inspecteur-aide"> ({t("planche.info.masque")})</span>}
+                </button>
+              )}
+              <button type="button" className="canevas-icone" aria-label={t("planche.navigateur.cibler")} title={t("planche.navigateur.cibler")} onClick={() => onCibler(n.id)}>⌖</button>
+              {!lecture && (
+                <>
+                  <button type="button" className="canevas-icone" aria-label={t("planche.navigateur.masquer")} title={t("planche.navigateur.masquer")} onClick={() => onMasquer(n.id, n.parent, !n.masquee)} data-planche-navigateur-masquer>{n.masquee ? "◌" : "◉"}</button>
+                  <button type="button" className="canevas-icone" aria-label={t("planche.navigateur.supprimer")} title={t("planche.navigateur.supprimer")} onClick={() => onSupprimer(n.id, n.parent)}>×</button>
+                </>
+              )}
+            </li>
+          );
+        })}
       </ul>
+    </div>
+  );
+}
+
+/** Champ de renommage en place (Entrée valide, Échap annule, la sortie du champ valide). */
+function ChampRenommer({ nom, onValider, onAnnuler }: { nom: string; onValider: (nom: string) => void; onAnnuler: () => void }) {
+  const [valeur, setValeur] = useState(nom);
+  const champ = useRef<HTMLInputElement | null>(null);
+  const fini = useRef(false);
+  useEffect(() => {
+    champ.current?.focus();
+    champ.current?.select();
+  }, []);
+  const terminer = (garder: boolean) => {
+    if (fini.current) return;
+    fini.current = true;
+    if (garder) onValider(valeur.trim());
+    else onAnnuler();
+  };
+  return (
+    <input
+      ref={champ}
+      className="planche-navigateur-nom"
+      value={valeur}
+      aria-label={t("planche.navigateur.nom")}
+      autoComplete="off"
+      data-planche-navigateur-nom
+      onChange={(e) => setValeur(e.target.value)}
+      onBlur={() => terminer(true)}
+      onKeyDown={(e) => {
+        e.stopPropagation();
+        if (e.key === "Enter") {
+          e.preventDefault();
+          terminer(true);
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          terminer(false);
+        }
+      }}
+    />
+  );
+}
+
+/** « Déplacer vers un groupe… » (O-4) : liste des cibles possibles, la racine en tête ; un clic range la sélection. */
+export function DialogueDeplacer({ cibles, onChoisir, onAnnuler }: { cibles: readonly { id: string | undefined; nom: string; profondeur: number }[]; onChoisir: (id: string | undefined) => void; onAnnuler: () => void }) {
+  const premier = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    premier.current?.focus();
+  }, []);
+  return (
+    <div className="planche-recherche-fond" onPointerDown={(e) => e.target === e.currentTarget && onAnnuler()}>
+      <div
+        className="planche-recherche planche-dialogue"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("planche.deplacer.titre")}
+        data-planche-deplacer
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            onAnnuler();
+          }
+        }}
+      >
+        <h3>{t("planche.deplacer.titre")}</h3>
+        <p className="inspecteur-aide">{cibles.length ? t("planche.deplacer.aide") : t("planche.deplacer.aucune")}</p>
+        <ul className="planche-deplacer-liste">
+          {cibles.map((c, i) => (
+            <li key={c.id ?? "racine"} style={{ paddingLeft: `${c.profondeur * 0.9}rem` }}>
+              <button type="button" ref={i === 0 ? premier : undefined} className="planche-ligne-choix" onClick={() => onChoisir(c.id)} data-planche-deplacer-cible={c.id ?? "racine"}>
+                {c.nom}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <button type="button" onClick={onAnnuler} data-planche-deplacer-annuler>{t("planche.deplacer.annuler")}</button>
+      </div>
     </div>
   );
 }

@@ -2868,6 +2868,113 @@ export function entitesConnectees(m: Modele, id: Id, o: OptionsContexte = {}): I
   return [...faces, ...aretes];
 }
 
+/**
+ * Groupe vide (Objets O-4, écart Fadi déclaré : SketchUp n'en crée pas) : une définition sans contenu et son occurrence à
+ * l'origine du contexte `o.dans`. Elle n'est jamais purgée tant qu'elle a une occurrence (seules les définitions sans
+ * occurrence le sont, `Travail.fermer`).
+ */
+export function grouperVide(m: Modele, o: OptionsContexte & { readonly genre?: GenreDefinition; readonly nom?: string } = {}): ResultatGroupe {
+  const r = operer(m, o.dans, (t, c) => {
+    const genre = o.genre ?? "groupe";
+    const def = t.id("d");
+    const contenu: Ctx = { sommets: new Map(), aretes: new Map(), faces: new Map(), courbes: new Map(), occurrences: new Map() };
+    t.definitions.set(def, { id: def, nom: o.nom ?? (genre === "groupe" ? "Groupe" : "Composant"), genre, contenu });
+    const occ = t.id("o");
+    c.occurrences.set(occ, { id: occ, definition: def, transformation: IDENTITE });
+    return { occ, def };
+  });
+  return { modele: r.modele, rapport: r.rapport, occurrence: r.extra.occ, definition: r.extra.def };
+}
+
+/** Ce que Déplacer vers un groupe doit annoncer (O-4). */
+export interface DeplacementContexte {
+  /** La cible est un composant à plusieurs occurrences : les objets déplacés apparaissent dans chacune. */
+  readonly composantPartage: number;
+}
+
+/**
+ * Déplacer vers un groupe (Objets O-4) : les objets `ids` du contexte `o.dans` passent dans le contexte de l'occurrence
+ * `cible` (absente : la racine) **sans bouger à l'écran** — nouvelle transformation = inverse(monde de la cible) × monde
+ * du contexte source × transformation propre. Un groupe cible partagé est d'abord rendu unique (I7) ; un composant cible
+ * partagé est édité en commun et le résultat le compte (`composantPartage`, à annoncer). Les identifiants sont gardés.
+ * Refus : objet verrouillé, objet inconnu du contexte, cible égale au contexte source, cible dans un objet déplacé
+ * (cycle), cible non inversible.
+ */
+export function deplacerVersContexte(m: Modele, ids: readonly Id[], cible: Id | undefined, o: OptionsContexte = {}): Resultat & { extra: DeplacementContexte } {
+  if (ids.length === 0) throw new RangeError("Déplacer vers un groupe demande au moins un objet.");
+  if (cible === o.dans) throw new RangeError("Les objets sont déjà dans ce contexte.");
+  const chemin = cible === undefined ? [] : cheminVers(m, cible);
+  if (cible !== undefined && chemin.length === 0) throw new Error(`Occurrence inconnue : ${cible}`);
+  if (ids.some((id) => chemin.includes(id))) throw new RangeError("Un objet ne peut pas être déplacé dans lui-même ni dans un de ses objets.");
+  if (cible !== undefined && cheminVers(m, cible).length && new Travail(m).occurrence(cible).occ.verrouille) throw new RangeError("Le groupe d'arrivée est verrouillé : déverrouillez-le pour y ranger des objets.");
+  // Revue O-4 : un composant partagé peut contenir la définition d'arrivée sans que l'occurrence cible soit sous l'objet
+  // (une autre occurrence de B, hors de A) ; ranger A dedans rendrait la définition récursive. On suit les définitions.
+  if (cible !== undefined) {
+    const defCible = new Travail(m).occurrence(cible).occ.definition;
+    const ici = contexte(m, o.dans).occurrences;
+    if (ids.some((id) => ici[id] !== undefined && definitionsAtteintes(m, (ici[id] as Occurrence).definition).has(defCible))) throw new RangeError(ERREUR_DEPLACER_CYCLE);
+  }
+  const source = o.dans === undefined ? IDENTITE : matriceMonde(m, o.dans);
+  const arrivee = cible === undefined ? IDENTITE : matriceMonde(m, cible);
+  const inverse = arrivee ? inverserMatrice(arrivee) : null;
+  if (!source || !inverse) throw new RangeError("Le repère de la cible n'est pas inversible : déplacement refusé.");
+  const t = new Travail(m);
+  // Les groupes partagés sur les deux chemins sont rendus uniques de haut en bas (I7) : sinon un groupe parent copié
+  // recevrait ou perdrait l'objet avec celui qu'on édite.
+  for (const id of [...(o.dans === undefined ? [] : cheminVers(m, o.dans)), ...chemin]) t.ouvrir(id);
+  const src = t.ouvrir(o.dans);
+  // Revue O-4 : deux occurrences d'un même composant ouvrent le même contenu — « déplacer » de l'une à l'autre n'est pas
+  // un rangement (l'objet bougerait dans toutes) : refus.
+  if (t.ouvrir(cible) === src) throw new RangeError(ERREUR_DEPLACER_MEME_CONTENU);
+  for (const id of ids) if (!src.occurrences.has(id)) throw new RangeError(`L'objet ${id} n'est pas dans le contexte ouvert : seuls les groupes et composants se déplacent vers un groupe.`);
+  refuserVerrouilles(src, ids);
+  const occs = ids.map((id) => src.occurrences.get(id) as Occurrence);
+  let composantPartage = 0;
+  if (cible !== undefined) {
+    const def = m.definitions[t.occurrence(cible).occ.definition];
+    if (def?.genre === "composant" && nombreOccurrences(m, def.id) > 1) composantPartage = nombreOccurrences(m, def.id);
+  }
+  for (const id of ids) src.occurrences.delete(id);
+  const dst = t.ouvrir(cible);
+  const passage = composer(inverse, source);
+  for (const occ of occs) dst.occurrences.set(occ.id, { ...occ, transformation: composer(passage, occ.transformation) });
+  actualiserExtrusions(t);
+  const modele = t.fermer();
+  return { modele, rapport: differences(m, modele), extra: { composantPartage } };
+}
+
+export const ERREUR_DEPLACER_CYCLE = "Un objet ne peut pas être rangé dans un objet qu'il contient (directement ou par un composant partagé).";
+export const ERREUR_DEPLACER_MEME_CONTENU = "Les objets sont déjà dans ce contenu : la cible est une autre occurrence du même composant.";
+
+/** Définitions atteintes depuis `def` (elle comprise), en descendant dans les occurrences de leur contenu. */
+export function definitionsAtteintes(m: Modele, def: Id): Set<Id> {
+  const vues = new Set<Id>();
+  const pile = [def];
+  while (pile.length) {
+    const d = pile.pop() as Id;
+    if (vues.has(d)) continue;
+    vues.add(d);
+    const contenu = m.definitions[d]?.contenu;
+    if (contenu) for (const oc of Object.values(contenu.occurrences)) pile.push(oc.definition);
+  }
+  return vues;
+}
+
+/** Chemin d'occurrences de la racine jusqu'à `occ` comprise ; vide si introuvable. */
+function cheminVers(m: Modele, occ: Id): Id[] {
+  const chercher = (c: Contexte, ch: Id[]): Id[] | null => {
+    if (ch.length > 32) return null;
+    for (const o of Object.values(c.occurrences)) {
+      if (o.id === occ) return [...ch, o.id];
+      const d = m.definitions[o.definition];
+      const r = d ? chercher(d.contenu, [...ch, o.id]) : null;
+      if (r) return r;
+    }
+    return null;
+  };
+  return chercher(m.racine, []) ?? [];
+}
+
 /** Matrice monde d'une occurrence (transformations composées depuis la racine) ; null si introuvable. */
 export function matriceMonde(m: Modele, occurrence: Id): Matrice4 | null {
   const chercher = (c: Contexte, M: Matrice4, prof: number): Matrice4 | null => {

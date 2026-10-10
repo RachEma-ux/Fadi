@@ -41,6 +41,8 @@ import {
   exporterStl,
   genreAnnotation,
   grouper,
+  grouperVide,
+  deplacerVersContexte,
   intersecterAvecModele,
   inverserFaces,
   machineParId,
@@ -90,9 +92,9 @@ import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationAR
 import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
 import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
-import { DialogueComposant, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
+import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { BarreActions } from "../panneaux/BarreActions";
-import { COMMANDES_CONTEXTE, COMMANDES_OBJETS, COMMANDE_DETACHER_LIEN, disponibiliteObjet, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDE_DETACHER_LIEN, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { BoutonOutils } from "./BoutonOutils";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
@@ -251,6 +253,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     setMenuEtat(m);
   }, []);
   const [dialogueComposant, setDialogueComposant] = useState(false);
+  // Objets O-4 : « Déplacer vers un groupe… » (objets à ranger et contexte d'où ils partent) et renommage au Navigateur.
+  const [dialogueDeplacer, setDialogueDeplacer] = useState<{ ids: readonly string[]; dans: string | undefined } | null>(null);
+  const [renommage, setRenommage] = useState<readonly string[] | null>(null);
   const pressePapiers = useRef<{ ids: readonly string[]; dans: string | undefined; source: Modele } | null>(null);
   const derniersMasques = useRef<{ ids: readonly string[]; dans: string | undefined } | null>(null);
   const [precision, setPrecision] = useState(() => lirePrecision());
@@ -625,6 +630,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   // Objets O-3 : le clavier (Alt + Maj + U / D / C) lit la même disponibilité que la barre et le menu, posée au rendu.
   const etatSelectionObjetsRef = useRef<() => EtatSelectionObjets>(() => ({ lecture: true, entites: 0, objets: 0, verrouilles: false }));
   const executerObjetRef = useRef<(id: IdCommandeObjet) => void>(() => {});
+  const executerNavigateurRef = useRef<(id: IdCommandeNavigateur) => void>(() => {});
   const selectionDe = useCallback((genre: "faces" | "aretes" | "occurrences", m = histRef.current.present.modele) => {
     const c = contexteDe(m, dansRef.current);
     return selectionRef.current.filter((id) => c[genre][id]);
@@ -754,6 +760,48 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     },
     [operer, o],
   );
+  /** Objets O-4 : nouveau groupe vide, ouvert aussitôt pour y dessiner (écart Fadi déclaré). */
+  const creerGroupeVide = useCallback(() => {
+    if (readOnly) return;
+    try {
+      const m = histRef.current.present.modele;
+      const r = grouperVide(m, { nom: `Groupe ${Object.keys(m.definitions).length + 1}`, ...o() });
+      poserHistorique(enregistrer(histRef.current, r.modele, t("planche.menu.groupe-vide"), false));
+      poserDans(r.occurrence, [...cheminRef.current, r.occurrence]);
+      setSelection([]);
+      etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+      setMessage(t("planche.groupe-vide.cree"));
+      rafraichir();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : String(err));
+    }
+  }, [o, poserDans, poserHistorique, rafraichir, readOnly, setSelection]);
+  /** Objets O-4 : ranger des objets dans un autre groupe (ou à la racine), sans qu'ils bougent à l'écran. */
+  const deplacerObjets = useCallback(
+    (ids: readonly string[], de: string | undefined, vers: string | undefined) =>
+      operer(t("planche.menu.deplacer-vers"), (m) => {
+        const r = deplacerVersContexte(m, ids, vers, de !== undefined ? { dans: de } : {});
+        const nomCible = vers === undefined ? t("planche.contexte.racine") : nomOccurrence(r.modele, vers);
+        const message = r.extra.composantPartage > 1 ? t("planche.deplacer.partage", { nom: nomCible, nombre: String(r.extra.composantPartage) }) : t("planche.deplacer.fait", { nom: nomCible });
+        return { modele: r.modele, selection: [], message };
+      }),
+    [operer],
+  );
+  const ouvrirDeplacer = useCallback(() => {
+    const m = histRef.current.present.modele;
+    const c = contexteDe(m, dansRef.current);
+    const ids = selectionRef.current.filter((id) => c.occurrences[id]);
+    if (ids.length === 0 || readOnly) return;
+    setDialogueDeplacer({ ids, dans: dansRef.current });
+  }, [readOnly]);
+  const ouvrirRenommage = useCallback(() => {
+    const c = contexteDe(histRef.current.present.modele, dansRef.current);
+    const ids = selectionRef.current.filter((id) => c.occurrences[id]);
+    if (ids.length !== 1 || readOnly) return;
+    setPanneau("navigateur");
+    // Revue O-4 : la ligne visée par son chemin complet (contexte ouvert + objet), pas par son seul identifiant.
+    setRenommage([...cheminRef.current, ids[0]!]);
+  }, [readOnly]);
   const ouvrirDialogueComposant = useCallback(() => {
     if (readOnly) return;
     if (selectionRef.current.filter((id) => genreAnnotation(id) === null).length === 0) {
@@ -1009,6 +1057,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         entrees.push({ id: "rien", libelle: t("planche.menu.rien"), grise: true });
         entrees.push({ id: "coller", libelle: t("planche.menu.coller"), grise: !pressePapiers.current || readOnly, action: collerSelection });
         entrees.push({ id: "afficher-tout", libelle: t("planche.menu.afficher"), grise: readOnly, action: () => reafficher("tout") });
+        entrees.push({ id: "groupe-vide", libelle: t("planche.menu.groupe-vide"), separateurAvant: true, grise: readOnly, action: creerGroupeVide });
         setMenu({ x, y, entrees });
         return;
       }
@@ -1062,6 +1111,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
           const composant = def?.genre === "composant";
           entrees.push({ id: "modifier", libelle: t(composant ? "planche.menu.modifier-composant" : "planche.menu.modifier-groupe"), separateurAvant: true, grise: !unObjet || verrouille, action: () => unObjet && ouvrirOccurrence(unObjet.id) });
           entrees.push({ id: "eclater", libelle: t("planche.menu.eclater"), grise: readOnly || verrouille, action: eclaterSelection });
+          entrees.push({ id: "renommer", libelle: t("planche.menu.renommer"), grise: readOnly || !unObjet, action: ouvrirRenommage });
+          entrees.push({ id: "deplacer-vers", libelle: t("planche.menu.deplacer-vers"), grise: readOnly || verrouille || faces.length + aretes.length > 0, action: ouvrirDeplacer });
           entrees.push({ id: "rendre-unique", libelle: t("planche.menu.rendre-unique"), grise: readOnly || !def || nombreOccurrences(m, def.id) <= 1, action: rendreUniqueSelection });
           entrees.push({ id: "coque", libelle: t("planche.menu.coque"), grise: readOnly || occs.length !== 2 || booleensEtatRef.current !== "ok", action: coqueSelection });
           entrees.push({ id: "adoucir-lisser", libelle: t("planche.menu.adoucir-lisser"), grise: readOnly, action: () => setPanneau("adoucir") });
@@ -1084,6 +1135,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       coqueSelection,
       diviserSelection,
       diviserCourbeSelection,
+      creerGroupeVide,
+      ouvrirRenommage,
+      ouvrirDeplacer,
       eclaterSelection,
       detacherLienSelection,
       effacerSelection,
@@ -1517,6 +1571,13 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         eclaterSelection();
         return;
       }
+      // Objets O-4 : Alt + Maj + G nouveau groupe vide, Alt + Maj + V déplacer vers un groupe, F2 renommer.
+      if ((!mod && e.altKey && e.shiftKey && !dansMesures && (e.code === "KeyG" || e.code === "KeyV")) || (e.key === "F2" && !mod && !e.altKey && !e.shiftKey)) {
+        e.preventDefault();
+        const id: IdCommandeNavigateur = e.key === "F2" ? "renommer" : e.code === "KeyG" ? "groupe-vide" : "deplacer-vers";
+        if (disponibiliteNavigateur(id, etatSelectionObjetsRef.current()).disponible) executerNavigateurRef.current(id);
+        return;
+      }
       // Objets O-3 : Alt + Maj + U rendre unique, Alt + Maj + D diviser, Alt + Maj + C diviser en segments (touche physique :
       // sous macOS, Option change le caractère produit).
       if (!mod && e.altKey && e.shiftKey && !dansMesures && (e.code === "KeyU" || e.code === "KeyD" || e.code === "KeyC")) {
@@ -1936,6 +1997,14 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     else if (id === "diviser") diviserSelection();
     else diviserCourbeSelection();
   };
+  const executerNavigateur = (id: IdCommandeNavigateur) => (id === "groupe-vide" ? creerGroupeVide() : id === "deplacer-vers" ? ouvrirDeplacer() : ouvrirRenommage());
+  /** Commandes du Navigateur avec leur disponibilité : barre du Navigateur et « Outils ▾ ». */
+  const commandesNavigateur = () =>
+    COMMANDES_NAVIGATEUR.map((c) => {
+      const d = disponibiliteNavigateur(c.id, etatSelectionObjets());
+      return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.objets.motif.vide"), executer: () => executerNavigateur(c.id) };
+    });
+  executerNavigateurRef.current = executerNavigateur;
   etatSelectionObjetsRef.current = etatSelectionObjets;
   executerObjetRef.current = executerObjet;
 
@@ -1950,6 +2019,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         ...COMMANDES_CONTEXTE.map((c) => ({ id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: dans === undefined ? t("planche.contexte.motif") : null, executer: () => fermerContexte(c.id) })),
         // Objets O-2 : Détacher le lien (EX-UI-06), grisé sans surface liée sélectionnée.
         { id: COMMANDE_DETACHER_LIEN.id, picto: COMMANDE_DETACHER_LIEN.picto, nom: t(COMMANDE_DETACHER_LIEN.libelle), raccourci: COMMANDE_DETACHER_LIEN.raccourci, motif: lienSelectionne() ? null : t("planche.lien.motif"), executer: detacherLienSelection },
+        // Objets O-4 : Nouveau groupe vide, Déplacer vers un groupe…, Renommer.
+        ...commandesNavigateur(),
       ]}
       outilId={outilId}
       raison={raisonDe}
@@ -2256,12 +2327,28 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
                 }}
                 onMasquer={(id, d, masquee) => operer(t(masquee ? "planche.menu.masquer" : "planche.menu.afficher"), (m) => ({ modele: masquerEntites(m, [id], d !== undefined ? { dans: d } : {}, masquee).modele }))}
                 onSupprimer={(id, d) => operer(t("planche.menu.effacer"), (m) => ({ modele: effacerEntites(m, [id], d !== undefined ? { dans: d } : {}).modele, selection: selectionRef.current.filter((x) => x !== id) }))}
+                commandes={commandesNavigateur()}
+                renommage={renommage}
+                onRenommer={(id, d, nom) => operer(t("planche.menu.renommer"), (m) => ({ modele: renommerOccurrence(m, id, nom, d !== undefined ? { dans: d } : {}).modele }))}
+                onFinRenommage={() => setRenommage(null)}
+                onDeplacer={(id, de, vers) => deplacerObjets([id], de, vers)}
               />
             )}
           </div>
         </section>
       )}
       {menu && <MenuContextuel x={menu.x} y={menu.y} entrees={menu.entrees} onFermer={fermerMenu} />}
+      {dialogueDeplacer && (
+        <DialogueDeplacer
+          cibles={ciblesDeplacement(hist.present.modele, dialogueDeplacer.ids, dialogueDeplacer.dans, (id) => nomOccurrence(hist.present.modele, id), t("planche.contexte.racine"))}
+          onChoisir={(vers) => {
+            const d = dialogueDeplacer;
+            setDialogueDeplacer(null);
+            deplacerObjets(d.ids, d.dans, vers);
+          }}
+          onAnnuler={() => setDialogueDeplacer(null)}
+        />
+      )}
       {dialogueComposant && <DialogueComposant nomDefaut={`${t("planche.composant.defaut")} ${Object.values(hist.present.modele.definitions).filter((d) => d.genre === "composant").length + 1}`} onCreer={creerComposant} onAnnuler={() => setDialogueComposant(false)} />}
       {planSelectionne && (
         <div className="planche-coupe-barre" role="toolbar" aria-label={t("planche.coupe.selectionne")} data-planche-coupe>
@@ -2515,7 +2602,7 @@ function nomOccurrence(m: Modele, id: string): string {
   const contextes = [m.racine, ...Object.values(m.definitions).map((d) => d.contenu)];
   for (const c of contextes) {
     const o = c.occurrences[id];
-    if (o) return m.definitions[o.definition]?.nom ?? id;
+    if (o) return o.nom ?? m.definitions[o.definition]?.nom ?? id;
   }
   return id;
 }
