@@ -1402,6 +1402,17 @@ function echantillonFace(c: Ctx, f: Face): Vec3 {
   return add(o, add(scale(u, e.x), scale(w, e.y)));
 }
 
+/**
+ * Garde numérique des opérations d'extrusion (lot 10a, EX-NUM-04) : une distance non finie (NaN, ±∞) est refusée au lieu
+ * d'entrer dans la géométrie ; une distance non nulle sous la tolérance de modélisation est refusée avec ce motif.
+ */
+export const ERREUR_DISTANCE_NON_FINIE = "Distance non finie : saisissez un nombre.";
+export const ERREUR_SOUS_TOLERANCE = `Distance sous la tolérance de modélisation (${TOL} m) : rien n'a été modifié.`;
+function exigerDistance(d: number): void {
+  if (!Number.isFinite(d)) throw new RangeError(ERREUR_DISTANCE_NON_FINIE);
+  if (Math.abs(d) >= EPS && Math.abs(d) < TOL) throw new RangeError(ERREUR_SOUS_TOLERANCE);
+}
+
 export interface OptionsPousserTirer extends OptionsContexte {
   /** Ctrl : conserve la face de départ (nouvelle face de départ, arête à l'ancien niveau). */
   readonly nouvelleFace?: boolean;
@@ -1417,6 +1428,7 @@ export function pousserTirer(m: Modele, face: Id, distance: number, o: OptionsPo
   return operer(m, o.dans, (t, c) => {
     const F = c.faces.get(face);
     if (!F) throw new Error(`Face inconnue : ${face}`);
+    exigerDistance(distance);
     if (Math.abs(distance) < EPS) return;
     const n = F.normale;
     const dep = scale(n, distance);
@@ -1519,6 +1531,7 @@ export interface OptionsEtirerAretes extends OptionsContexte {
  */
 export function etirerAretes(m: Modele, aretes: readonly Id[], vecteur: Vec3, o: OptionsEtirerAretes = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
+    exigerDistance(len(vecteur));
     if (len(vecteur) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
     const ids = aretesEtendues(c, aretes);
     const ferme = contourPlanFerme(c, ids);
@@ -1542,6 +1555,7 @@ export function etirerAretes(m: Modele, aretes: readonly Id[], vecteur: Vec3, o:
  */
 export function couronne(m: Modele, aretes: readonly Id[], distance: number, o: OptionsEtirerAretes = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
+    exigerDistance(distance);
     if (Math.abs(distance) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
     const ids = aretesEtendues(c, aretes);
     lier(t, c, o.dans, { genre: "couronne", sources: [...ids], distance, symetrique: !!o.symetrique }, () => couronneInterne(t, c, ids, distance, !!o.symetrique));
@@ -1559,6 +1573,7 @@ export function allongerArete(m: Modele, arete: Id, extremite: Id, longueur: num
     if (!a) throw new Error(`Arête inconnue : ${arete}`);
     if (a.courbe) throw new RangeError("Une arête de courbe ne s'allonge pas : tirez-la pour l'étendre en surface.");
     if (extremite !== a.a && extremite !== a.b) throw new RangeError("L'extrémité ne fait pas partie de l'arête.");
+    exigerDistance(longueur);
     if (Math.abs(longueur) < EPS) throw new RangeError("Distance nulle : rien n'a été allongé.");
     const autre = extremite === a.a ? a.b : a.a;
     const E = pos(c, extremite);
@@ -1586,6 +1601,7 @@ export function tuberFace(m: Modele, face: Id, distance: number, o: OptionsConte
   return operer(m, o.dans, (t, c) => {
     const F = c.faces.get(face);
     if (!F) throw new Error(`Face inconnue : ${face}`);
+    exigerDistance(distance);
     if (Math.abs(distance) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
     const ids = new Set<Id>();
     for (const b of [F.exterieur, ...F.trous]) {

@@ -116,6 +116,10 @@ export interface EtatPousserTirer {
   readonly texte: string | null;
   readonly erreur: string | null;
   readonly derniere: Derniere<ParamsPT> | null;
+  /** (Lot 10a, EX-STATE-01) Sélection avant l'opération : Échap la rend. */
+  readonly selectionAvant: readonly Id[];
+  /** (Lot 10a, EX-NUM-02) « Inverser le sens » : la valeur tapée s'applique de l'autre côté, une seule fois. */
+  readonly sens: 1 | -1;
 }
 
 function initial(): EtatPousserTirer {
@@ -142,6 +146,8 @@ function initial(): EtatPousserTirer {
     texte: null,
     erreur: null,
     derniere: null,
+    selectionAvant: [],
+    sens: 1,
   };
 }
 
@@ -160,6 +166,8 @@ const retour = (e: EtatPousserTirer): EtatPousserTirer => ({
   contour: [],
   distance: 0,
   inference: null,
+  selectionAvant: [],
+  sens: 1,
 });
 
 /** Distance signée le long de la normale visée par le rayon, avec l'inférence (accrochage sur les sommets existants). */
@@ -178,7 +186,9 @@ function appliquer(
   texte: string | null,
   remplace: Derniere<ParamsPT> | null,
 ): Transition<EtatPousserTirer> {
-  if (Math.abs(distance) < EPS) return { etat: { ...retour(e), texte, erreur: "Distance nulle : rien n'a été poussé ni tiré." } };
+  // Lot 10a (EX-STATE-01) : une opération refusée garde la face acquise et la valeur tapée ; on corrige sans recliquer.
+  const garder = remplace ? e : { ...e, texte };
+  if (Math.abs(distance) < EPS) return { etat: { ...garder, erreur: "Distance nulle : rien n'a été poussé ni tiré." } };
   const base = remplace ? remplace.avant : ctx.modele;
   try {
     const prec = remplace?.params.genre === "face" ? remplace.params : null;
@@ -198,7 +208,7 @@ function appliquer(
       ...(remplace ? { remplaceDernier: true } : {}),
     };
   } catch (err) {
-    return { etat: { ...retour(e), texte, erreur: messageErreur(err) } };
+    return { etat: { ...garder, erreur: messageErreur(err) } };
   }
 }
 
@@ -343,7 +353,8 @@ function appliquerAretes(
   remplace: Derniere<ParamsPT> | null,
 ): Transition<EtatPousserTirer> {
   const nulle = p.genre === "aretes" ? len(p.vecteur) < EPS : Math.abs(p.genre === "couronne" ? p.distance : p.longueur) < EPS;
-  if (nulle) return { etat: { ...retour(e), texte, erreur: "Distance nulle : rien n'a été poussé ni tiré." } };
+  const garder = remplace ? e : { ...e, texte };
+  if (nulle) return { etat: { ...garder, erreur: "Distance nulle : rien n'a été poussé ni tiré." } };
   const base = remplace ? remplace.avant : ctx.modele;
   const o = optionsDans(ctx);
   try {
@@ -361,7 +372,7 @@ function appliquerAretes(
       ...(remplace ? { remplaceDernier: true } : {}),
     };
   } catch (err) {
-    return { etat: { ...retour(e), texte, erreur: messageErreur(err) } };
+    return { etat: { ...garder, erreur: messageErreur(err) } };
   }
 }
 
@@ -419,12 +430,13 @@ function saisir(e: EtatPousserTirer, ctx: ContexteOutil, texte: string): Transit
   const res = analyserSaisie(texte, contexteSaisie("longueur", ctx));
   if (res.genre === "erreur") return { etat: { ...e, texte, erreur: res.message } };
   if (res.genre !== "longueur") return { etat: { ...e, texte, erreur: `Saisie « ${texte} » non reconnue.` } };
-  if (e.etape === 2 && e.face) return appliquer(e, ctx, e.face, res.valeur, texte, null);
+  if (e.etape === 2 && e.face) return appliquer(e, ctx, e.face, e.sens * res.valeur, texte, null);
   if (e.etape === 2 && e.aretes.length > 0 && e.origine) {
     const d = directionSaisie(e, ctx);
     if (!d) return { etat: { ...e, texte, erreur: "Orientez le curseur (ou verrouillez un axe avec une flèche) pour donner la direction." } };
     // La valeur tapée est exacte ; le curseur ne donne que le genre d'opération et le sens.
-    return appliquerAretes(e, ctx, aValeur(paramsPour(e, ctx, scale(d, res.valeur)), res.valeur), texte, null);
+    const dir = e.sens === 1 ? d : scale(d, -1);
+    return appliquerAretes(e, ctx, aValeur(paramsPour(e, ctx, scale(dir, res.valeur)), res.valeur), texte, null);
   }
   if (corrigeable(e.derniere, ctx)) {
     const d = e.derniere;
@@ -452,7 +464,13 @@ export const ERREUR_MAJ_ARETE = "Maj seul : « Surface ouverte » ne s'applique 
 export const ERREUR_ALLONGER_COURBE = "Allonger : seule une arête droite isolée peut être allongée.";
 
 /** Un seul chemin pour choisir un mode : touche, bouton de la barre d'options ou bouton au toucher. */
+export const ERREUR_SENS_SANS_SOURCE = "Inverser le sens : cliquez d'abord sur la face ou l'arête à pousser ou à tirer.";
+
 function configurerPT(e: EtatPousserTirer, option: string, valeur: string): Transition<EtatPousserTirer> {
+  if (option === "sens" && (valeur === "direct" || valeur === "inverse")) {
+    if (e.etape !== 2) return { etat: { ...e, erreur: ERREUR_SENS_SANS_SOURCE } };
+    return { etat: { ...e, sens: valeur === "inverse" ? -1 : 1, erreur: null } };
+  }
   if (option === "face" && (MODES_FACE as readonly string[]).includes(valeur)) {
     return { etat: { ...e, nouvelleFace: valeur === "nouvelle-face", etirement: valeur === "etirement", sansFond: valeur === "tube", erreur: null } };
   }
@@ -483,6 +501,7 @@ export type OptionExtrusion = "keep-start-face" | "symmetric";
 export type ActionExtrusion =
   | { readonly type: "set-operation"; readonly operation: OperationExtrusion }
   | { readonly type: "set-option"; readonly option: OptionExtrusion; readonly value: boolean }
+  | { readonly type: "reverse-direction" }
   | { readonly type: "cancel" };
 
 export const ERREUR_CONSERVER_HORS_EXTRUSION = "« Conserver la face de départ » ne s'applique qu'à l'extrusion d'une face.";
@@ -491,7 +510,9 @@ export const ERREUR_SYMETRIQUE_HORS_ARETE = "« Des deux côtés » ne s'appliqu
 export function actionExtrusion(e: EtatPousserTirer, a: ActionExtrusion): Transition<EtatPousserTirer> {
   switch (a.type) {
     case "cancel":
-      return e.etape === 2 ? { etat: { ...retour(e), texte: null, erreur: null }, selection: [] } : { etat: e };
+      return e.etape === 2 ? { etat: { ...retour(e), texte: null, erreur: null }, selection: e.selectionAvant } : { etat: e };
+    case "reverse-direction":
+      return configurerPT(e, "sens", e.sens === 1 ? "inverse" : "direct");
     case "set-operation":
       switch (a.operation) {
         case "extrude-face":
@@ -543,6 +564,15 @@ function optionsPT(e: EtatPousserTirer, ctx: ContexteOutil): OptionOutil[] {
         { id: "normal", disponible: surArete },
         { id: "deux-cotes", disponible: surArete, raccourci: "Alt" },
         { id: "allonger", disponible: tirageArete && e.droite !== null, raccourci: "↓" },
+      ],
+    },
+    // Lot 10a (EX-NUM-02) : sens de la valeur tapée, une fois la face ou l'arête acquise.
+    {
+      id: "sens",
+      valeur: e.sens === 1 ? "direct" : "inverse",
+      valeurs: [
+        { id: "direct", disponible: e.etape === 2 },
+        { id: "inverse", disponible: e.etape === 2 },
       ],
     },
   ];
@@ -614,6 +644,7 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
               inference: i,
               texte: null,
               erreur: null,
+              selectionAvant: ctx.selection,
             },
             selection: ids,
           };
@@ -627,7 +658,7 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         if (etat.etirement && !faceAVoisines(ctx.modele, cible.id, ctx.dans)) return { etat: { ...etat, erreur: ERREUR_ETIRER_ISOLEE } };
         const P = intersectionRayonPlan(ev.rayon, { origine: el.exterieur[0] as Vec3, normale: el.normale }) ?? (el.exterieur[0] as Vec3);
         return {
-          etat: { ...etat, etape: 2, face: cible.id, normale: normalize(el.normale), origine: P, contour: el.exterieur, distance: 0, inference: inferenceBrute(P), texte: null, erreur: null },
+          etat: { ...etat, etape: 2, face: cible.id, normale: normalize(el.normale), origine: P, contour: el.exterieur, distance: 0, inference: inferenceBrute(P), texte: null, erreur: null, selectionAvant: ctx.selection },
           selection: [cible.id],
         };
       }
@@ -648,7 +679,8 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         return { etat };
       }
       case "echap":
-        return etat.etape === 2 ? { etat: { ...retour(etat), texte: null, erreur: null }, selection: [] } : { etat };
+        // Lot 10a (EX-STATE-01) : Échap annule l'aperçu sans pas d'historique et rend la sélection d'avant l'opération.
+        return etat.etape === 2 ? { etat: { ...retour(etat), texte: null, erreur: null }, selection: etat.selectionAvant } : { etat };
       case "appui":
       case "glisser":
       case "relache":
@@ -696,7 +728,8 @@ function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
       });
     }
     const valeur =
-      etat.texte ?? (etat.etape === 2 ? `${prefixe(etat.inference)}${formaterLongueur(Math.abs(etat.distance), sep)}` : formaterLongueur(0, sep));
+      // Lot 10a (EX-NUM-02) : distance signée (négative = creuser), affichée avant toute validation.
+      etat.texte ?? (etat.etape === 2 ? `${prefixe(etat.inference)}${formaterLongueur(etat.distance, sep)}` : formaterLongueur(0, sep));
     const dep = etat.normale ? { x: etat.normale.x * etat.distance, y: etat.normale.y * etat.distance, z: etat.normale.z * etat.distance } : null;
     return vueModif({
       consigne:
