@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterSegment, contexte, etirerAretes, grouper, modeleVide, v3 } from "@parcours/planche-model";
-import { COMMANDES_OBJETS, disponibiliteObjet, liensRompus } from "./commandes-objets";
+import { COMMANDES_OBJETS, disponibiliteObjet, filAriane, liensRompus } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -23,5 +23,17 @@ describe("Commandes d'objet (Objets O-1, D-203)", () => {
     const g = grouper(tiree, [...Object.keys(c.faces), ...Object.keys(c.aretes)]);
     expect(liensRompus(tiree, g.modele)).toBe(1);
     expect(liensRompus(ligne, tiree)).toBe(0);
+  });
+});
+
+describe("Fil d'Ariane (Objets O-2)", () => {
+  it("racine, puis chaque objet du chemin dans l'ordre", () => {
+    const noms: Record<string, string> = { a: "Établi", b: "Cadre" };
+    expect(filAriane(["a", "b"], (id) => noms[id]!, "Planche")).toEqual([
+      { id: undefined, nom: "Planche" },
+      { id: "a", nom: "Établi" },
+      { id: "b", nom: "Cadre" },
+    ]);
+    expect(filAriane([], (id) => id, "Planche")).toEqual([{ id: undefined, nom: "Planche" }]);
   });
 });

@@ -45,7 +45,7 @@ function cibleGomme(ctx: ContexteOutil, r: Rayon, tolerance: number, mode: ModeG
       ? (a: { masquee: boolean; adoucie: boolean }) => a.masquee || a.adoucie
       : (a: { masquee: boolean; adoucie: boolean }) => !a.masquee && !a.adoucie;
   const el = viser(ctx.modele, r, tolerance, filtre);
-  const c = el ? cibleDans(el, ctx.dans) : null;
+  const c = el ? cibleDans(el, ctx.dans, ctx.chemin) : null;
   if (!c || c.genre === "face") return null;
   if (c.genre === "occurrence" && mode !== "effacer") return null;
   return c;

@@ -1695,6 +1695,35 @@ function lier(t: Travail, c: Ctx, dans: Id | undefined, lien: Omit<Extrusion, "i
   t.annotationsSales = true;
 }
 
+/**
+ * Liens d'extrusion (D-196) dont la surface créée touche l'une des faces données (racine seulement) : statut « Liée aux
+ * arêtes sources » de la sélection (Objets O-2, EX-UI-06).
+ */
+export function liensDesFaces(m: Modele, faces: readonly Id[]): Id[] {
+  const liens = m.annotations?.extrusions ?? {};
+  const c = m.racine;
+  const ids: Id[] = [];
+  for (const L of Object.values(liens)) {
+    const crees = new Set(Object.keys(L.sommetsCrees ?? {}));
+    if (faces.some((f) => {
+      const F = c.faces[f];
+      return !!F && [F.exterieur, ...F.trous].some((b) => b.some((s) => crees.has(s)));
+    })) ids.push(L.id);
+  }
+  return ids;
+}
+
+/** Détacher le lien (EX-UI-06, EX-LINK-03) : la relation disparaît, la géométrie reste telle quelle ; un pas d'annulation. */
+export function detacherLiens(m: Modele, liens: readonly Id[]): Resultat {
+  return operer(m, undefined, (t) => {
+    for (const id of liens) {
+      if (!t.annotations.extrusions[id]) throw new RangeError(`Lien inconnu : ${id}`);
+      delete t.annotations.extrusions[id];
+    }
+    t.annotationsSales = true;
+  });
+}
+
 /** Nombre de faces qui touchent l'un des sommets donnés. */
 function facesTouchant(c: Ctx, sommets: ReadonlySet<Id>): number {
   let n = 0;
@@ -2802,6 +2831,24 @@ export function matriceMonde(m: Modele, occurrence: Id): Matrice4 | null {
   return chercher(m.racine, IDENTITE, 0);
 }
 
+/**
+ * Matrice monde le long d'un chemin d'occurrences (racine → occurrence) ; null si une étape n'est pas dans le contexte
+ * de la précédente. Contrairement à `matriceMonde`, elle distingue les occurrences d'un composant qui partagent un
+ * objet imbriqué de même identifiant (Objets O-2).
+ */
+export function matriceChemin(m: Modele, chemin: readonly Id[]): Matrice4 | null {
+  let c: Contexte = m.racine;
+  let M: Matrice4 = IDENTITE;
+  for (const id of chemin) {
+    const occ = c.occurrences[id];
+    const d = occ ? m.definitions[occ.definition] : undefined;
+    if (!occ || !d) return null;
+    M = composer(M, occ.transformation);
+    c = d.contenu;
+  }
+  return M;
+}
+
 /** Inverse d'une transformation affine (null si singulière). */
 export function inverserMatrice(M: Matrice4): Matrice4 | null {
   const g = (i: number): number => M[i] ?? 0;
@@ -3357,8 +3404,22 @@ export function intersecterAvecModele(m: Modele, ids: readonly Id[], o: OptionsC
 }
 
 /** Boîte englobante (monde) d'une occurrence, avec ses sous-objets ; null si elle est vide ou inconnue. */
-export function boiteOccurrence(m: Modele, occurrence: Id): { min: Vec3; max: Vec3 } | null {
+export function boiteOccurrence(m: Modele, occurrence: Id, chemin?: readonly Id[]): { min: Vec3; max: Vec3 } | null {
   let trouvee: { M: Matrice4; occ: Occurrence } | null = null;
+  // Objets O-2 : avec le chemin complet, l'occurrence voulue d'un composant partagé (et non la première trouvée).
+  if (chemin && chemin.length > 0 && chemin[chemin.length - 1] === occurrence) {
+    let c: Contexte = m.racine;
+    let M: Matrice4 = IDENTITE;
+    for (const id of chemin) {
+      const o = c.occurrences[id];
+      if (!o) break;
+      M = composer(M, o.transformation);
+      if (id === occurrence) trouvee = { M, occ: o };
+      const d = m.definitions[o.definition];
+      if (!d) break;
+      c = d.contenu;
+    }
+  }
   const chercher = (c: Contexte, M: Matrice4, profondeur: number): void => {
     if (trouvee || profondeur > 32) return;
     for (const o of Object.values(c.occurrences)) {
@@ -3370,7 +3431,7 @@ export function boiteOccurrence(m: Modele, occurrence: Id): { min: Vec3; max: Ve
       if (d) chercher(d.contenu, composer(M, o.transformation), profondeur + 1);
     }
   };
-  chercher(m.racine, IDENTITE, 0);
+  if (!trouvee) chercher(m.racine, IDENTITE, 0);
   if (!trouvee) return null;
   const t = trouvee as { M: Matrice4; occ: Occurrence };
   const d = m.definitions[t.occ.definition];

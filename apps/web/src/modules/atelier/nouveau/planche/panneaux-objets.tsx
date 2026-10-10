@@ -653,8 +653,9 @@ export function NavigateurPlanche({ modele, selection, dans, lecture, onSelectio
   selection: readonly Id[];
   dans: Id | undefined;
   lecture: boolean;
-  onSelectionner: (id: Id, dans: Id | undefined) => void;
-  onEntrer: (id: Id | undefined) => void;
+  /** `chemin` : chemin complet du contexte (racine → dans), qui distingue les occurrences d'un même composant. */
+  onSelectionner: (id: Id, dans: Id | undefined, chemin?: readonly Id[]) => void;
+  onEntrer: (id: Id | undefined, chemin?: readonly Id[]) => void;
   onCibler: (id: Id) => void;
   onMasquer: (id: Id, dans: Id | undefined, masquee: boolean) => void;
   onSupprimer: (id: Id, dans: Id | undefined) => void;
@@ -665,15 +666,16 @@ export function NavigateurPlanche({ modele, selection, dans, lecture, onSelectio
   const f = filtre.trim().toLowerCase();
   const nomDe = (id: Id, defNom: string, nom?: string) => nom ?? `${defNom} (${id})`;
   const arbre = useMemo(() => {
-    const rendre = (parent: Id | undefined, profondeur: number): { id: Id; parent: Id | undefined; profondeur: number; nom: string; genre: string; masquee: boolean; verrouille: boolean; enfants: number }[] => {
+    const rendre = (parent: Id | undefined, profondeur: number, cheminParent: readonly Id[] = []): { id: Id; parent: Id | undefined; chemin: readonly Id[]; profondeur: number; nom: string; genre: string; masquee: boolean; verrouille: boolean; enfants: number }[] => {
       const c = contexte(modele, parent);
       const r: ReturnType<typeof rendre> = [];
       for (const o of Object.values(c.occurrences)) {
         const d = modele.definitions[o.definition];
         const nom = nomDe(o.id, d?.nom ?? "Objet", o.nom);
         const enfants = d ? Object.keys(d.contenu.occurrences).length : 0;
-        if (!f || nom.toLowerCase().includes(f)) r.push({ id: o.id, parent, profondeur, nom, genre: d?.genre ?? "groupe", masquee: o.masquee === true, verrouille: o.verrouille === true, enfants });
-        if (profondeur < 16 && (deplies.has(o.id) || f)) r.push(...rendre(o.id, profondeur + 1));
+        const chemin = [...cheminParent, o.id];
+        if (!f || nom.toLowerCase().includes(f)) r.push({ id: o.id, parent, chemin, profondeur, nom, genre: d?.genre ?? "groupe", masquee: o.masquee === true, verrouille: o.verrouille === true, enfants });
+        if (profondeur < 16 && (deplies.has(o.id) || f)) r.push(...rendre(o.id, profondeur + 1, chemin));
       }
       return r;
     };
@@ -688,11 +690,11 @@ export function NavigateurPlanche({ modele, selection, dans, lecture, onSelectio
         </li>
         {arbre.length === 0 && <li className="inspecteur-aide">{t("planche.navigateur.vide")}</li>}
         {arbre.map((n) => (
-          <li key={n.id} role="treeitem" aria-selected={choisis.has(n.id)} aria-level={n.profondeur + 1} className={`${choisis.has(n.id) ? "est-actif" : ""}${dans === n.id ? " est-ouvert" : ""}`} style={{ paddingLeft: `${n.profondeur * 0.9}rem` }} data-planche-navigateur-objet={n.id}>
+          <li key={n.chemin.join("/")} role="treeitem" aria-selected={choisis.has(n.id)} aria-level={n.profondeur + 1} className={`${choisis.has(n.id) ? "est-actif" : ""}${dans === n.id ? " est-ouvert" : ""}`} style={{ paddingLeft: `${n.profondeur * 0.9}rem` }} data-planche-navigateur-objet={n.id}>
             <button type="button" className="canevas-icone planche-deplier" aria-label={deplies.has(n.id) ? t("planche.navigateur.replier") : t("planche.navigateur.deplier")} disabled={n.enfants === 0} onClick={() => setDeplies((s) => { const d = new Set(s); if (d.has(n.id)) d.delete(n.id); else d.add(n.id); return d; })}>
               {n.enfants === 0 ? "·" : deplies.has(n.id) ? "▾" : "▸"}
             </button>
-            <button type="button" className="planche-ligne-choix" onClick={() => onSelectionner(n.id, n.parent)} onDoubleClick={() => !n.verrouille && onEntrer(n.id)} title={n.verrouille ? t("planche.navigateur.verrouille") : t("planche.navigateur.entrer")}>
+            <button type="button" className="planche-ligne-choix" onClick={() => onSelectionner(n.id, n.parent, n.chemin.slice(0, -1))} onDoubleClick={() => !n.verrouille && onEntrer(n.id, n.chemin)} title={n.verrouille ? t("planche.navigateur.verrouille") : t("planche.navigateur.entrer")}>
               <span aria-hidden="true">{n.genre === "composant" ? "◈" : "▣"}</span> {n.nom}
               {n.verrouille && <span aria-label={t("planche.info.verrouille")}> 🔒</span>}
               {n.masquee && <span className="inspecteur-aide"> ({t("planche.info.masque")})</span>}

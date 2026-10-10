@@ -31,7 +31,7 @@ import {
   entitesConnectees,
   facesDeLArete,
   inverserMatrice,
-  matriceMonde,
+  matriceChemin,
   transformerNormale,
 } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
@@ -247,10 +247,23 @@ export function viser(
 
 export type Cible = { readonly genre: "arete" | "face" | "occurrence"; readonly id: Id };
 
-/** Ce que l'élément représente dans le contexte d'édition `dans` ; `null` s'il est hors de ce contexte. */
-export function cibleDans(el: ElementScene, dans: Id | undefined): Cible | null {
-  const k = dans === undefined ? 0 : el.chemin.indexOf(dans) + 1;
-  if (dans !== undefined && k === 0) return null;
+/** Rang, dans le chemin d'un élément, du premier niveau sous le contexte ouvert ; -1 s'il est hors de ce contexte. */
+function rangSous(cheminElement: readonly Id[], dans: Id | undefined, chemin?: readonly Id[]): number {
+  if (dans === undefined) return 0;
+  // Objets O-2 : avec le chemin complet, l'élément doit être sous cette occurrence-là (pas sous une autre du même composant).
+  if (chemin && chemin.length > 0 && chemin[chemin.length - 1] === dans) {
+    if (cheminElement.length < chemin.length) return -1;
+    for (let i = 0; i < chemin.length; i++) if (cheminElement[i] !== chemin[i]) return -1;
+    return chemin.length;
+  }
+  const k = cheminElement.indexOf(dans);
+  return k < 0 ? -1 : k + 1;
+}
+
+/** Ce que l'élément représente dans le contexte d'édition `dans` (chemin complet si connu) ; `null` s'il est hors de ce contexte. */
+export function cibleDans(el: ElementScene, dans: Id | undefined, chemin?: readonly Id[]): Cible | null {
+  const k = rangSous(el.chemin, dans, chemin);
+  if (k < 0) return null;
   if (el.chemin.length === k) return { genre: el.genre, id: el.id };
   return { genre: "occurrence", id: el.chemin[k] as Id };
 }
@@ -270,10 +283,17 @@ export function cheminOccurrence(m: Modele, occ: Id): Id[] {
   return chercher(m.racine, []) ?? [];
 }
 
+/** Chemin complet du contexte ouvert (racine → `dans`) : celui de l'interface s'il est donné, sinon retrouvé. */
+export function cheminContexte(ctx: Pick<ContexteOutil, "modele" | "dans" | "chemin">): Id[] {
+  if (ctx.dans === undefined) return [];
+  if (ctx.chemin && ctx.chemin.length > 0 && ctx.chemin[ctx.chemin.length - 1] === ctx.dans) return [...ctx.chemin];
+  return cheminOccurrence(ctx.modele, ctx.dans);
+}
+
 /** Conversion d'un point monde vers le repère du contexte d'édition (identité à la racine). */
 export function versContexteEdition(ctx: ContexteOutil): (p: Vec3) => Vec3 {
   if (ctx.dans === undefined) return (p) => p;
-  const M = matriceMonde(ctx.modele, ctx.dans);
+  const M = matriceChemin(ctx.modele, cheminContexte(ctx));
   const inv = M ? inverserMatrice(M) : null;
   return inv ? (p) => appliquer(inv, p) : (p) => p;
 }
@@ -284,7 +304,7 @@ export const optionsDans = (ctx: ContexteOutil): { dans?: Id } => (ctx.dans !== 
  * Ids rendus par le rendu (cadre, contour) ramenés au contexte d'édition : entité interne → son occurrence ;
  * courbe : en fenêtre seulement si toutes ses arêtes sont dedans, en croisée dès qu'une arête est touchée.
  */
-export function normaliserIds(m: Modele, dans: Id | undefined, ids: readonly Id[], genre: "fenetre" | "croisee"): Id[] {
+export function normaliserIds(m: Modele, dans: Id | undefined, ids: readonly Id[], genre: "fenetre" | "croisee", chemin?: readonly Id[]): Id[] {
   const c = contexte(m, dans);
   const entree = new Set(ids);
   const r = new Set<Id>();
@@ -297,8 +317,8 @@ export function normaliserIds(m: Modele, dans: Id | undefined, ids: readonly Id[
     } else if (c.faces[id] || c.occurrences[id]) r.add(id);
     else {
       const ch = chemins.get(id) ?? cheminOccurrence(m, id);
-      const k = dans === undefined ? 0 : ch.indexOf(dans) + 1;
-      if ((dans === undefined || k > 0) && ch.length > k) r.add(ch[k] as Id);
+      const k = rangSous(ch, dans, chemin);
+      if (k >= 0 && ch.length > k) r.add(ch[k] as Id);
     }
   }
   return [...r];
@@ -333,7 +353,7 @@ export interface Poignee {
 /** Conversion du repère du contexte d'édition vers le monde (identité à la racine). */
 function versMonde(ctx: ContexteOutil): (p: Vec3) => Vec3 {
   if (ctx.dans === undefined) return (p) => p;
-  const M = matriceMonde(ctx.modele, ctx.dans);
+  const M = matriceChemin(ctx.modele, cheminContexte(ctx));
   return M ? (p) => appliquer(M, p) : (p) => p;
 }
 
@@ -449,23 +469,30 @@ export function idsDuClic(m: Modele, dans: Id | undefined, c: Cible, nombre: 1 |
   return [...k, ...faces];
 }
 
+/** Sortie d'un niveau du contexte ouvert : le parent et son chemin, ou la racine. */
+function sortieContexte(ctx: ContexteOutil): { dans: Id | null; chemin?: Id[] } {
+  const ch = cheminContexte(ctx);
+  return ch.length >= 2 ? { dans: ch[ch.length - 2] as Id, chemin: ch.slice(0, -1) } : { dans: null };
+}
+
 /** Clic de sélection (partagé avec le Lasso) : transition de sélection / contexte. */
 export function clicSelection<E>(etat: E, ev: Extract<EvenementOutil, { genre: "clic" }>, ctx: ContexteOutil, mod: Modificateurs): Transition<E> {
   const nombre: 1 | 2 | 3 = ev.triple ? 3 : ev.double ? 2 : 1;
   const el = viser(ctx.modele, ev.rayon, ev.tolerance);
-  const c = el ? cibleDans(el, ctx.dans) : null;
+  const c = el ? cibleDans(el, ctx.dans, ctx.chemin) : null;
   if (!c) {
     // Annotation (plan de coupe, cote, texte, guide) : sélectionnée comme une entité (Suppr l'efface).
     const an = viserAnnotation(ctx.modele, ev.rayon, ev.tolerance, ev.ecran);
     if (an) return { etat, selection: combiner(ctx.selection, [an], mod) };
     // Vide, ou hors du contexte d'édition : sortir du contexte (obs indirect) et tout désélectionner.
-    if (ctx.dans !== undefined) {
-      const ch = cheminOccurrence(ctx.modele, ctx.dans);
-      return { etat, dans: ch.length >= 2 ? (ch[ch.length - 2] as Id) : null, selection: [] };
-    }
+    if (ctx.dans !== undefined) return { etat, ...sortieContexte(ctx), selection: [] };
     return mod.maj || mod.ctrl ? { etat } : { etat, selection: [] };
   }
-  if (c.genre === "occurrence" && nombre === 2 && !mod.maj && !mod.ctrl) return { etat, dans: c.id, selection: [] };
+  if (c.genre === "occurrence" && nombre === 2 && !mod.maj && !mod.ctrl) {
+    // Objets O-2 (D-203) : un objet verrouillé ne s'ouvre pas ; il est seulement sélectionné (boîte rouge).
+    if (contexte(ctx.modele, ctx.dans).occurrences[c.id]?.verrouille) return { etat, selection: [c.id] };
+    return { etat, dans: c.id, chemin: [...cheminContexte(ctx), c.id], selection: [] };
+  }
   return { etat, selection: combiner(ctx.selection, idsDuClic(ctx.modele, ctx.dans, c, nombre), mod) };
 }
 
@@ -525,7 +552,7 @@ export const machineSelection: MachineOutil<EtatSelection> = {
         if (!cadre) return { etat: suite };
         const genre = genreCadre(cadre.de, cadre.a);
         const bruts = ctx.entitesDansCadre?.(cadre.de, cadre.a, genre) ?? [];
-        const ids = normaliserIds(ctx.modele, ctx.dans, bruts, genre);
+        const ids = normaliserIds(ctx.modele, ctx.dans, bruts, genre, ctx.chemin);
         return { etat: suite, selection: combiner(ctx.selection, ids, etat) };
       }
       case "clic":
@@ -533,10 +560,7 @@ export const machineSelection: MachineOutil<EtatSelection> = {
         return clicSelection(etat, ev, ctx, etat);
       case "echap": {
         if (etat.cadre || etat.appui || etat.poignee) return { etat: { ...etat, appui: null, cadre: null, poignee: null } };
-        if (ctx.dans !== undefined) {
-          const ch = cheminOccurrence(ctx.modele, ctx.dans);
-          return { etat, dans: ch.length >= 2 ? (ch[ch.length - 2] as Id) : null, selection: [] };
-        }
+        if (ctx.dans !== undefined) return { etat, ...sortieContexte(ctx), selection: [] };
         return { etat, selection: [] };
       }
       case "saisie":
