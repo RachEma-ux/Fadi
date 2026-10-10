@@ -1,4 +1,13 @@
 {
+"Rectangle pivoté": "Rotated Rectangle",
+"Arc 2 points": "2 Point Arc",
+"Arc 3 points": "3 Point Arc",
+"Secteur": "Pie",
+"Pousser/Tirer": "Push/Pull",
+"Faire pivoter": "Rotate",
+"Décalage": "Offset",
+"Suivez-moi": "Follow Me",
+"Retourner": "Flip",
 "% du total de travail": "% of the working total",
 "(WebGPU indisponible, repli)": "(WebGPU unavailable, fallback)",
 "(angles arrondis)": "(rounded corners)",

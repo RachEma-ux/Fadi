@@ -84,10 +84,13 @@ import { t } from "../messages";
 import { ChoixLangue } from "../../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
-import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
+import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { BarreActions } from "../panneaux/BarreActions";
+import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
+import { BoutonOutils } from "./BoutonOutils";
+import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
 import { chargerBooleens } from "./booleens-manifold";
 import "./planche.css";
 
@@ -175,6 +178,14 @@ function champSaisie(cible: EventTarget | null): boolean {
   return el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable === true;
 }
 
+/**
+ * Élément DOM sans `instanceof` : la Planche détachée vit dans une autre fenêtre (Document Picture-in-Picture), dont les
+ * nœuds ne sont pas des `Element` de la page (autre « realm ») — `instanceof Element` y serait toujours faux.
+ */
+function commeElement(x: EventTarget | null): Element | null {
+  return x !== null && typeof (x as Element).closest === "function" ? (x as Element) : null;
+}
+
 const virgule = (n: number, d = 2) => n.toFixed(d).replace(".", ",");
 
 export function Planche({ projectId, readOnly, etat, plancheId = null, onCommandes }: PropsPlanche) {
@@ -257,6 +268,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   // Téléphone (≤ 760 px) : annuler / rétablir vivent dans le volet bas, l'aide dans la barre du haut.
   const [etroit, setEtroit] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
   const [majVerrouillee, setMajVerrouillee] = useState(false);
+  // Barres d'opérations flottantes (D-198) : haut de la barre rangée en bas au téléphone (la barre d'actions s'en écarte).
+  const [hautDocquee, setHautDocquee] = useState<number | null>(null);
+  const afficherBarre = useCallback((id: string, afficher: boolean) => etatUi.set((u) => ({ barresOutils: basculerBarre(u.barresOutils, id, afficher) })), []);
   const [webgl, setWebgl] = useState<"ok" | "indisponible">("ok");
   // Volet bas (téléphone) : replié, la consigne tient sur une ligne ; déployé, consigne complète et flèches.
   const [volet, setVolet] = useState(false);
@@ -1447,7 +1461,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         return;
       }
       // Entrée ou Espace sur un bouton, un lien ou une liste : l'élément garde son action (clavier, D-161).
-      if ((e.key === "Enter" || e.key === " ") && cible instanceof Element && cible.closest("button, a[href], summary, select") && !texteRef.current) return;
+      if ((e.key === "Enter" || e.key === " ") && commeElement(cible)?.closest("button, a[href], summary, select") && !texteRef.current) return;
       if (e.key === "Enter") {
         e.preventDefault();
         validerRef.current();
@@ -1646,7 +1660,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     if (!grille) return;
     const surClic = (e: PointerEvent) => {
       const c = e.target as Node | null;
-      if (grilleDom.current && c && !grilleDom.current.contains(c) && !(c instanceof Element && c.closest("[data-planche-plus]"))) setGrille(false);
+      if (grilleDom.current && c && !grilleDom.current.contains(c) && !commeElement(c)?.closest("[data-planche-plus]")) setGrille(false);
     };
     // Fenêtre où vit la Planche (page ou fenêtre détachée).
     const w = racineRef.current?.ownerDocument.defaultView ?? window;
@@ -1744,6 +1758,36 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     </span>
   );
 
+  /** Barres d'opérations flottantes (D-198) : affichées par la liste « Outils ▾ » ; au téléphone, la dernière seulement, rangée en bas. */
+  const barresOutils = barresRendues(ui.barresOutils, etroit)
+    .map((id) => outilParId(id))
+    .filter((o): o is Outil => o !== null)
+    .map((o, rang) => (
+      <BarreOutilsFlottante
+        key={o.id}
+        outil={o}
+        rang={rang}
+        outilId={outilId}
+        telephone={etroit}
+        raison={raisonDe}
+        onChoisir={choisirOutil}
+        onFermer={() => afficherBarre(o.id, false)}
+        reference={racineRef}
+        fenetreCle={detache}
+        onDocquee={setHautDocquee}
+      />
+    ));
+  const boutonOutils = (
+    <BoutonOutils
+      outilId={outilId}
+      raison={raisonDe}
+      onChoisir={choisirOutil}
+      barres={ui.barresOutils}
+      onAfficherBarre={afficherBarre}
+      onReinitialiser={() => etatUi.set((u) => ({ barresOutils: reinitialiserDisposition(u.barresOutils) }))}
+    />
+  );
+
   /** Barre d'actions flottante (D-195) : annuler / rétablir du brouillon local et Détacher ; elle suit la Planche détachée. */
   const libelleDetacher = detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter");
   const barreActions = (
@@ -1762,8 +1806,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         },
       ]}
       reference={racineRef}
-      reserve={{ bas: ".planche-volet, [data-planche-pied]", droite: ".planche-colonne" }}
-      fenetreCle={detache}
+      reserve={{ bas: ".planche-volet, [data-planche-pied], [data-barre-outils-docquee]", droite: ".planche-colonne" }}
+      fenetreCle={`${detache}|${hautDocquee ?? ""}`}
     />
   );
 
@@ -1814,8 +1858,10 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
           </svg>
           <span className="sr-only">{t("planche.brouillon")}</span>
         </p>}
+        {boutonOutils}
         {etroit && <span className="planche-haut-choix">{choix}</span>}
       </div>
+      {barresOutils}
       {barreActions}
 
       {/* Volet : au bureau, `display: contents` (barre d'outils à gauche, pied en bas, comme avant) ; au téléphone,
@@ -2350,7 +2396,7 @@ function RechercheOutil({ lecture, onFermer, onChoisir }: { lecture: boolean; on
             return (
               <li key={o.id} id={`planche-recherche-${o.id}`} role="option" aria-selected={i === rang} aria-disabled={raison ? true : undefined} className={i === rang ? "est-actif" : undefined} onPointerDown={(e) => e.preventDefault()} onClick={() => choisir(o)} title={titreOutil(o, raison)}>
                 <span aria-hidden="true" className="outil-picto">{pictoOutil(o.id)}</span> {o.libelle}
-                {o.raccourci && <kbd>{o.raccourci}</kbd>}
+                {raccourciOutil(o) && <kbd>{afficherRaccourci(raccourciOutil(o)!)}</kbd>}
                 {raison && <span className="outil-lot">{t("planche.prevu.court", { lot: lotPrevu(o) })}</span>}
               </li>
             );
