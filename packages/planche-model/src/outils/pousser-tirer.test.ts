@@ -3,7 +3,7 @@ import { type Id, aire, ajouterPolygone, ajouterRectangle, ajouterSegment, model
 import { v3 } from "../vecteur.js";
 import { etape } from "./commun-formes.js";
 import { aretes, boite, clicVers, contientPoint, emprise, faces, partie, saisie, sommets, survolVers, touche, volumeAbsolu, echap } from "./essais-modification.js";
-import { CONSIGNE_ARETE_SURVOL, CONSIGNE_ARETE_TIRAGE, CONSIGNE_TUBE_FACE, CONSIGNE_TUBE_TIRAGE, machinePousserTirer } from "./pousser-tirer.js";
+import { CONSIGNE_ARETE_SURVOL, CONSIGNE_ARETE_TIRAGE, CONSIGNE_TUBE_FACE, CONSIGNE_TUBE_TIRAGE, ERREUR_ALLONGER_COURBE, machinePousserTirer } from "./pousser-tirer.js";
 
 const sol = () => ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
 
@@ -190,11 +190,12 @@ describe("Pousser/Tirer d'arêtes (écart Fadi, D-196)", () => {
   });
 });
 
-describe("Tube sans fond (Maj sur une face, D-199)", () => {
-  it("Maj, clic dans le cercle, « 2 » : tube sans fond ni dessus ; correction « 3 » garde le tube ; Maj revient au normal", () => {
+describe("Tube sans fond (option de la barre, D-199, D-201)", () => {
+  it("option Tube, clic dans le cercle, « 2 » : tube sans fond ni dessus ; correction « 3 » garde le tube ; Normal revient au relevé", () => {
     const m = ajouterPolygone(modeleVide(), v3(0, 0, 0), v3(0, 0, 1), 1, 24).modele;
-    const p = partie(machinePousserTirer, m).jouer(touche("Maj"));
+    const p = partie(machinePousserTirer, m).configurer("face", "tube");
     expect(p.vue().consigne).toBe(CONSIGNE_TUBE_FACE);
+    expect(p.vue().options?.find((o) => o.id === "face")?.valeur).toBe("tube");
     p.jouer(clicVers(v3(0.2, 0.1, 0)));
     expect(p.vue().consigne).toBe(CONSIGNE_TUBE_TIRAGE);
     p.jouer(saisie("2"));
@@ -204,8 +205,81 @@ describe("Tube sans fond (Maj sur une face, D-199)", () => {
     expect(faces(p.modele)).toHaveLength(24);
     expect(emprise(p.modele).max.z).toBeCloseTo(3, 9);
     expect(p.historique).toHaveLength(2);
-    p.jouer(touche("Maj"));
+    p.configurer("face", "normal");
     expect(p.vue().consigne).toBe(etape("pousser-tirer", 0).consigne);
+  });
+
+  it("Maj ne bascule plus le tube (Maj est la touche des raccourcis Fadi)", () => {
+    const m = ajouterPolygone(modeleVide(), v3(0, 0, 0), v3(0, 0, 1), 1, 24).modele;
+    const p = partie(machinePousserTirer, m).jouer(touche("Maj"));
+    expect(p.vue().options?.find((o) => o.id === "face")?.valeur).toBe("normal");
   });
 });
 
+describe("Modes explicites (lot Planche 8, D-201)", () => {
+  it("une touche et un bouton donnent le même mode ; les modes sont exclusifs", () => {
+    const a = partie(machinePousserTirer, sol()).jouer(touche("Alt"));
+    const b = partie(machinePousserTirer, sol()).configurer("face", "etirement");
+    expect(a.vue().options).toEqual(b.vue().options);
+    expect(a.vue().options?.find((o) => o.id === "face")?.valeur).toBe("etirement");
+    a.jouer(touche("Ctrl"));
+    expect(a.vue().options?.find((o) => o.id === "face")?.valeur).toBe("nouvelle-face");
+    a.configurer("face", "tube");
+    expect(a.vue().options?.find((o) => o.id === "face")?.valeur).toBe("tube");
+    a.configurer("face", "inconnu");
+    expect(a.vue().options?.find((o) => o.id === "face")?.valeur).toBe("tube");
+  });
+
+  it("disponibilité : modes de face hors arête, modes d'arête sur une arête, Allonger seulement pendant un tirage d'arête", () => {
+    const p = partie(machinePousserTirer, ajouterSegment(modeleVide(), v3(0, 0, 0), v3(4, 0, 0)).modele);
+    const dispo = (opt: string, val: string) => p.vue().options?.find((o) => o.id === opt)?.valeurs.find((v) => v.id === val)?.disponible;
+    expect(dispo("face", "etirement")).toBe(true);
+    expect(dispo("arete", "deux-cotes")).toBe(false);
+    p.jouer(survolVers(v3(3.5, 0, 0)));
+    expect(dispo("face", "etirement")).toBe(false);
+    expect(dispo("arete", "deux-cotes")).toBe(true);
+    expect(dispo("arete", "allonger")).toBe(false);
+    p.jouer(clicVers(v3(3.5, 0, 0)));
+    expect(dispo("arete", "allonger")).toBe(true);
+    p.configurer("arete", "allonger");
+    expect(p.vue().options?.find((o) => o.id === "arete")?.valeur).toBe("allonger");
+    p.jouer(survolVers(v3(5, 0, 0)), saisie("1"));
+    expect(emprise(p.modele).max.x).toBeCloseTo(5, 9);
+  });
+
+  it("Allonger est grisé et refusé sur une courbe (pas d'arête droite isolée)", () => {
+    const m = ajouterPolygone(modeleVide(), v3(0, 0, 0), v3(0, 0, 1), 1, 24).modele;
+    const a = Math.PI / 24;
+    const p = partie(machinePousserTirer, m).jouer(clicVers(v3(Math.cos(a) * Math.cos(a), Math.cos(a) * Math.sin(a), 0)));
+    const arete = () => p.vue().options?.find((o) => o.id === "arete");
+    expect(arete()?.valeurs.find((v) => v.id === "allonger")?.disponible).toBe(false);
+    p.configurer("arete", "allonger");
+    expect(arete()?.valeur).toBe("normal");
+    expect(p.vue().erreur).toBe(ERREUR_ALLONGER_COURBE);
+    p.jouer(touche("FlecheBas"));
+    expect(arete()?.valeur).toBe("normal");
+  });
+
+  it("Allonger efface « Des deux côtés » : le mode symétrique ne revient pas après l'opération", () => {
+    const p = partie(machinePousserTirer, ajouterSegment(modeleVide(), v3(0, 0, 0), v3(4, 0, 0)).modele);
+    const arete = () => p.vue().options?.find((o) => o.id === "arete")?.valeur;
+    p.jouer(clicVers(v3(3.5, 0, 0)));
+    p.configurer("arete", "deux-cotes");
+    expect(arete()).toBe("deux-cotes");
+    p.configurer("arete", "allonger");
+    expect(arete()).toBe("allonger");
+    p.jouer(survolVers(v3(5, 0, 0)), saisie("1"));
+    expect(emprise(p.modele).max.x).toBeCloseTo(5, 9);
+    expect(arete()).toBe("normal");
+  });
+
+  it("Étirement par le bouton : la face avance et ses voisines s'étirent (pas de faces latérales)", () => {
+    const p = partie(machinePousserTirer, boite(4, 3, 2)).configurer("face", "etirement").jouer(clicVers(v3(1, 1, 2)), saisie("1"));
+    expect(faces(p.modele)).toHaveLength(6);
+    expect(emprise(p.modele).max.z).toBeCloseTo(3, 9);
+    expect(aretes(p.modele)).toHaveLength(12);
+    p.jouer(saisie("2"));
+    expect(emprise(p.modele).max.z).toBeCloseTo(4, 9);
+    expect(p.historique).toHaveLength(2);
+  });
+});

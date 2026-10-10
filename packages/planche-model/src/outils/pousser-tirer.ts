@@ -14,7 +14,7 @@
  * l'axe verrouillé ; Alt = des deux côtés. Mêmes gestes ensuite que pour une face : correction par une distance tapée,
  * double-clic sur une autre arête = répéter, Échap.
  */
-import { type Id, allongerArete, aretesDeLaCourbe, contexte, couronne, etirerAretes, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
+import { type Id, allongerArete, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, EPS, TOL, add, cross, dist, dot, egal, len, normalize, scale, sub } from "../vecteur.js";
@@ -43,21 +43,21 @@ import {
   viseeElement,
   type VerrouFleche,
 } from "./commun-modif.js";
-import type { ContexteOutil, EvenementOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
+import type { ContexteOutil, EvenementOutil, MachineOutil, OptionOutil, Rayon, Transition, VueOutil } from "./machine.js";
 import { type Cible, idsDuClic, optionsDans, scene } from "./selection.js";
 
 export const ID_POUSSER_TIRER = "pousser-tirer";
 
 /** Consignes du mode arêtes (écart Fadi, D-196 : absentes du relevé SketchUp). */
 export const CONSIGNE_ARETE_SURVOL = "Cliquez sur l'arête à étendre en surface. | Alt = Des deux côtés.";
-/** Consignes du tube sans fond (Maj sur une face, écart Fadi D-199). */
-export const CONSIGNE_TUBE_FACE = "Tube sans fond : cliquez sur la face dont le contour sera tiré. | Maj = Revenir au Pousser/Tirer normal.";
-export const CONSIGNE_TUBE_TIRAGE = "Tube sans fond : cliquez pour fixer la hauteur ou saisissez la distance. | Maj = Revenir au Pousser/Tirer normal.";
+/** Consignes du tube sans fond (mode « Tube sans fond » de la barre d'options, écart Fadi D-199, D-201). */
+export const CONSIGNE_TUBE_FACE = "Tube sans fond : cliquez sur la face dont le contour sera tiré.";
+export const CONSIGNE_TUBE_TIRAGE = "Tube sans fond : cliquez pour fixer la hauteur ou saisissez la distance.";
 export const CONSIGNE_ARETE_TIRAGE =
   "Cliquez pour fixer la surface ou saisissez la distance. | Flèches = Verrouiller un axe. | ↓ = Le long de l'arête (allonger). | Alt = Des deux côtés.";
 
 type ParamsPT =
-  | { readonly genre: "face"; readonly face: Id; readonly distance: number; readonly nouvelleFace: boolean; readonly sansFond?: boolean }
+  | { readonly genre: "face"; readonly face: Id; readonly distance: number; readonly nouvelleFace: boolean; readonly sansFond?: boolean; readonly etirement?: boolean }
   /** `vecteur` dans le repère du contexte d'édition. */
   | { readonly genre: "aretes"; readonly aretes: readonly Id[]; readonly vecteur: Vec3; readonly symetrique: boolean }
   /** Courbe fermée tirée dans son plan : `distance` > 0 vers l'extérieur. */
@@ -181,11 +181,17 @@ function appliquer(
   if (Math.abs(distance) < EPS) return { etat: { ...retour(e), texte, erreur: "Distance nulle : rien n'a été poussé ni tiré." } };
   const base = remplace ? remplace.avant : ctx.modele;
   try {
-    const sansFond = remplace?.params.genre === "face" ? remplace.params.sansFond === true : e.sansFond;
-    const r = sansFond ? tuberFace(base, face, distance, optionsDans(ctx)) : pousserTirer(base, face, distance, { ...optionsDans(ctx), nouvelleFace: e.nouvelleFace });
+    const prec = remplace?.params.genre === "face" ? remplace.params : null;
+    const sansFond = prec ? prec.sansFond === true : e.sansFond;
+    const etirement = prec ? prec.etirement === true : e.etirement;
+    const r = sansFond
+      ? tuberFace(base, face, distance, optionsDans(ctx))
+      : etirement
+        ? etirerFace(base, face, distance, optionsDans(ctx))
+        : pousserTirer(base, face, distance, { ...optionsDans(ctx), nouvelleFace: e.nouvelleFace });
     const encore = contexte(r.modele, ctx.dans).faces[face] !== undefined;
     return {
-      etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: { genre: "face", face, distance, nouvelleFace: e.nouvelleFace, ...(sansFond ? { sansFond: true } : {}) } } },
+      etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: { genre: "face", face, distance, nouvelleFace: e.nouvelleFace, ...(sansFond ? { sansFond: true } : {}), ...(etirement ? { etirement: true } : {}) } } },
       modele: r.modele,
       selection: encore && !sansFond ? [face] : idsSelectionnables(r.rapport.crees).filter((id) => id.startsWith("f")),
       operation: "Pousser/Tirer",
@@ -428,6 +434,75 @@ function saisir(e: EtatPousserTirer, ctx: ContexteOutil, texte: string): Transit
   return { etat: { ...e, texte, erreur: "Cliquez d'abord sur la face ou l'arête à pousser ou à tirer." } };
 }
 
+// ————————————————————————————————————————————————————————————— Options explicites (lot Planche 8, D-201)
+
+/** Modes d'une face : Normal (relevé), Nouvelle face (Ctrl, relevé), Étirement (Alt, relevé), Tube sans fond (D-199). */
+export type ModeFace = "normal" | "nouvelle-face" | "etirement" | "tube";
+/** Modes d'une arête (écart Fadi) : Normal, Des deux côtés (Alt, D-196), Allonger (↓, D-197). */
+export type ModeArete = "normal" | "deux-cotes" | "allonger";
+
+const MODES_FACE: readonly ModeFace[] = ["normal", "nouvelle-face", "etirement", "tube"];
+const MODES_ARETE: readonly ModeArete[] = ["normal", "deux-cotes", "allonger"];
+
+export const modeFace = (e: EtatPousserTirer): ModeFace => (e.sansFond ? "tube" : e.etirement ? "etirement" : e.nouvelleFace ? "nouvelle-face" : "normal");
+export const modeArete = (e: EtatPousserTirer): ModeArete => (e.fleche?.touche === "FlecheBas" ? "allonger" : e.symetrique ? "deux-cotes" : "normal");
+
+export const ERREUR_ALLONGER_COURBE = "Allonger : seule une arête droite isolée peut être allongée.";
+
+/** Un seul chemin pour choisir un mode : touche, bouton de la barre d'options ou bouton au toucher. */
+function configurerPT(e: EtatPousserTirer, option: string, valeur: string): Transition<EtatPousserTirer> {
+  if (option === "face" && (MODES_FACE as readonly string[]).includes(valeur)) {
+    return { etat: { ...e, nouvelleFace: valeur === "nouvelle-face", etirement: valeur === "etirement", sansFond: valeur === "tube", erreur: null } };
+  }
+  if (option === "arete" && (MODES_ARETE as readonly string[]).includes(valeur)) {
+    const sansAllonger = e.fleche?.touche === "FlecheBas" ? null : e.fleche;
+    if (valeur === "allonger") {
+      if (!(e.etape === 2 && e.aretes.length > 0)) return { etat: { ...e, erreur: "Allonger : cliquez d'abord sur l'arête à allonger." } };
+      // Seule une arête droite isolée s'allonge : une courbe ou un contour donnerait une couronne ou une surface.
+      if (!e.droite) return { etat: { ...e, erreur: ERREUR_ALLONGER_COURBE } };
+      const s = plusProche(e.segments, e.origine as Vec3);
+      if (!s) return { etat: e };
+      // Modes exclusifs : Allonger efface « Des deux côtés », qui ne revient pas après l'opération.
+      return { etat: { ...e, symetrique: false, fleche: { touche: "FlecheBas", verrou: { genre: "direction", direction: normalize(sub(s.b, s.a)), type: "parallele" } }, erreur: null } };
+    }
+    return { etat: { ...e, symetrique: valeur === "deux-cotes", fleche: sansAllonger, erreur: null } };
+  }
+  return { etat: e };
+}
+
+/** Options affichées : les modes de face hors d'une arête, les modes d'arête sur une arête ; un mode hors de propos est grisé. */
+function optionsPT(e: EtatPousserTirer): OptionOutil[] {
+  const surArete = e.etape === 2 ? e.aretes.length > 0 : e.survolArete !== null;
+  const tirageArete = e.etape === 2 && e.aretes.length > 0;
+  return [
+    {
+      id: "face",
+      valeur: modeFace(e),
+      valeurs: [
+        { id: "normal", disponible: !surArete },
+        { id: "nouvelle-face", disponible: !surArete, raccourci: "Ctrl" },
+        { id: "etirement", disponible: !surArete, raccourci: "Alt" },
+        { id: "tube", disponible: !surArete },
+      ],
+    },
+    {
+      id: "arete",
+      valeur: modeArete(e),
+      valeurs: [
+        { id: "normal", disponible: surArete },
+        { id: "deux-cotes", disponible: surArete, raccourci: "Alt" },
+        { id: "allonger", disponible: tirageArete && e.droite !== null, raccourci: "↓" },
+      ],
+    },
+  ];
+}
+
+/** Aperçu de l'étirement : la face à sa nouvelle place et le trajet de ses sommets (pas de faces latérales). */
+function apercuEtirement(contour: readonly Vec3[], dep: Vec3): Apercu {
+  const haut = contour.map((p) => add(p, dep));
+  return { lignes: [[...haut, haut[0] as Vec3], ...contour.map((p, i) => [p, haut[i] as Vec3])], faces: [haut] };
+}
+
 export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
   id: ID_POUSSER_TIRER,
   initial,
@@ -508,14 +583,15 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
       case "touche": {
         if (ev.etat !== "enfoncee") return { etat };
         const modeAretes = etat.etape === 2 ? etat.aretes.length > 0 : etat.survolArete !== null;
-        if (ev.touche === "Ctrl") return { etat: { ...etat, nouvelleFace: !etat.nouvelleFace } };
-        // Maj (bascule, écart Fadi) : tube sans fond sur une face ; sans effet en mode arêtes.
-        if (ev.touche === "Maj") return modeAretes ? { etat } : { etat: { ...etat, sansFond: !etat.sansFond } };
-        if (ev.touche === "Alt") return modeAretes ? { etat: { ...etat, symetrique: !etat.symetrique } } : { etat: { ...etat, etirement: !etat.etirement } };
+        // Lot 8 : les touches passent par `configurer`, comme les boutons de la barre d'options et du toucher.
+        if (ev.touche === "Ctrl") return configurerPT(etat, "face", modeFace(etat) === "nouvelle-face" ? "normal" : "nouvelle-face");
+        if (ev.touche === "Alt") {
+          return modeAretes
+            ? configurerPT(etat, "arete", etat.symetrique ? "normal" : "deux-cotes")
+            : configurerPT(etat, "face", modeFace(etat) === "etirement" ? "normal" : "etirement");
+        }
         if (ev.touche === "FlecheBas" && etat.etape === 2 && etat.aretes.length > 0) {
-          const s = plusProche(etat.segments, etat.origine as Vec3);
-          if (!s || etat.fleche?.touche === "FlecheBas") return { etat: { ...etat, fleche: null } };
-          return { etat: { ...etat, fleche: { touche: "FlecheBas", verrou: { genre: "direction", direction: normalize(sub(s.b, s.a)), type: "parallele" } } } };
+          return configurerPT(etat, "arete", etat.fleche?.touche === "FlecheBas" ? "normal" : "allonger");
         }
         const axe = axeDeToucheFleche(ev.touche);
         if (axe && etat.etape === 2 && etat.aretes.length > 0) {
@@ -533,7 +609,17 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
     }
   },
 
+  configurer(etat, option, valeur): Transition<EtatPousserTirer> {
+    return configurerPT(etat, option, valeur);
+  },
+
   vue(etat, ctx): VueOutil {
+    return { ...vuePT(etat, ctx), options: optionsPT(etat) };
+  },
+};
+
+function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
+  {
     const sep = ctx.separateurDecimal;
     if (etat.etape === 2 && etat.aretes.length > 0) {
       const v = etat.vecteur;
@@ -562,10 +648,17 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
             : consigneDe(ID_POUSSER_TIRER, etat.etape - 1),
       mesures: mesures(libelleMesuresDe(ID_POUSSER_TIRER, etat.etape - 1), valeur, contexteSaisie("longueur", ctx)),
       inference: etat.etape === 2 ? etat.inference : null,
-      apercu: etat.etape === 2 && dep && Math.abs(etat.distance) > TOL ? (etat.sansFond ? apercuTube(etat.contour, dep) : apercuPrisme(etat.contour, dep)) : { lignes: [], faces: [] },
+      apercu:
+        etat.etape === 2 && dep && Math.abs(etat.distance) > TOL
+          ? etat.sansFond
+            ? apercuTube(etat.contour, dep)
+            : etat.etirement
+              ? apercuEtirement(etat.contour, dep)
+              : apercuPrisme(etat.contour, dep)
+          : { lignes: [], faces: [] },
       ctx,
       survol: etat.survol ? [etat.survol] : etat.survolArete ? [etat.survolArete] : [],
       erreur: etat.erreur,
     });
-  },
-};
+  }
+}

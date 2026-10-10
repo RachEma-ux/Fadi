@@ -32,6 +32,8 @@ export interface Partie<E> {
   outilDemande: string | undefined;
   separateurDecimal: "." | ",";
   jouer(...evs: EvenementOutil[]): Partie<E>;
+  /** (Lot 8) Choix d'une option, comme un bouton de la barre d'options. */
+  configurer(option: string, valeur: string): Partie<E>;
   vue(): VueOutil;
   ctx(): ContexteOutil;
 }
@@ -63,6 +65,10 @@ export function partie<E>(machine: MachineOutil<E>, modele: Modele = modeleVide(
           p.modele = t.modele;
         }
       }
+      return p;
+    },
+    configurer(option, valeur) {
+      if (machine.configurer) p.etat = machine.configurer(p.etat, option, valeur, p.ctx()).etat;
       return p;
     },
     vue: () => machine.vue(p.etat, p.ctx()),

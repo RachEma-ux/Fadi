@@ -65,6 +65,17 @@ export type EvenementOutil =
   | { readonly genre: "echap" };
 
 /** Ce que le rendu affiche ; jamais une donnée de projet (R10). */
+/**
+ * (Lot Planche 8) Option d'outil : un mode exclusif, choisi indifféremment par une touche, un bouton de la barre d'options
+ * ou un bouton au toucher — un seul chemin, `MachineOutil.configurer`. Les libellés viennent du catalogue de messages de
+ * l'interface (clé dérivée de l'outil, de l'option et de la valeur), le modèle n'en porte aucun.
+ */
+export interface OptionOutil {
+  readonly id: string;
+  readonly valeur: string;
+  readonly valeurs: readonly { readonly id: string; readonly disponible: boolean; readonly raccourci?: string }[];
+}
+
 export interface VueOutil {
   /** Consigne de la barre d'état (français, fidèle au relevé). */
   readonly consigne: string;
@@ -96,6 +107,8 @@ export interface VueOutil {
   readonly survol: readonly string[];
   /** Message d'erreur transitoire (saisie refusée…), annoncé par `aria-live`. */
   readonly erreur: string | null;
+  /** (Lot Planche 8) Options de l'outil actif, affichées en boutons (barre d'options, toucher). */
+  readonly options?: readonly OptionOutil[];
 }
 
 /** Contexte partagé fourni par le rendu à chaque événement. */
@@ -161,6 +174,8 @@ export interface MachineOutil<E> {
   initial(): E;
   traiter(etat: E, ev: EvenementOutil, ctx: ContexteOutil): Transition<E>;
   vue(etat: E, ctx: ContexteOutil): VueOutil;
+  /** (Lot Planche 8, facultatif) Choisit la valeur d'une option déclarée dans `VueOutil.options`. */
+  configurer?(etat: E, option: string, valeur: string, ctx: ContexteOutil): Transition<E>;
 }
 
 export type { Inference, ModeAlt, Verrou };

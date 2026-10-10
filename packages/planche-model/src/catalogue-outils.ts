@@ -771,7 +771,6 @@ export const OUTILS: readonly Outil[] = [
     modificateurs: [
       m("Ctrl", "bascule", "Crée une nouvelle face de départ (arête conservée à l'ancien niveau).", "observe"),
       m("Alt", "bascule", "Mode étirement : étire les faces voisines au lieu d'en créer.", "instructor"),
-      m("Maj", "bascule", "Tube sans fond : la face cliquée disparaît et son contour est tiré en surface (écart Fadi).", "fadi"),
       m("Alt", "bascule", "Sur une arête : surface des deux côtés (écart Fadi).", "fadi"),
       m("Flèche bas", "bascule", "Sur une arête : le long de l'arête, pour l'allonger (écart Fadi).", "fadi"),
     ],

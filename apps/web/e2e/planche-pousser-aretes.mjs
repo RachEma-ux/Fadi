@@ -150,6 +150,13 @@ function aides(page) {
   return { ecran, etat, survoler, cliquer, saisir, consigne, contient, segment, vider };
 }
 
+/** Pousser/Tirer actif et barre d'options affichée (lot 8) : elle réduit la zone de dessin, donc les points écran
+ * ne sont calculés qu'après ce changement de mise en page (sinon le toucher tombe à côté sur une machine lente). */
+async function outilPret(page) {
+  await page.locator("[data-planche-options]").waitFor({ state: "visible" });
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+}
+
 // ————————————————————————————————————————————————————————————— Desktop
 {
   const ctx = await browser.newContext({ viewport: { width: 1536, height: 864 }, locale: "fr-FR" });
@@ -163,6 +170,7 @@ function aides(page) {
   let e = await etat();
   check("segment de 4 m tracé", e.aretes === 1 && e.faces === 0, JSON.stringify({ aretes: e.aretes, faces: e.faces }));
   await page.keyboard.press("p");
+  await outilPret(page);
   await survoler({ x: 2, y: 0, z: 0 });
   check("survol d'une arête : consigne du mode arêtes", /étendre en surface/.test(await consigne()), await consigne());
   await cliquer({ x: 2, y: 0, z: 0 });
@@ -194,6 +202,7 @@ function aides(page) {
   await vider();
   await segment({ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, "4");
   await page.keyboard.press("p");
+  await outilPret(page);
   await cliquer({ x: 2, y: 0, z: 0 });
   await page.keyboard.press("Alt");
   await page.keyboard.press("ArrowLeft");
@@ -207,6 +216,7 @@ function aides(page) {
   await vider();
   await segment({ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, "4");
   await page.keyboard.press("p");
+  await outilPret(page);
   await cliquer({ x: 3.5, y: 0, z: 0 });
   await page.keyboard.press("ArrowDown");
   await survoler({ x: 5, y: 0, z: 0 });
@@ -231,6 +241,7 @@ function aides(page) {
     return { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
   });
   await page.keyboard.press("p");
+  await outilPret(page);
   await cliquer({ x: milieu.x, y: milieu.y, z: 0 });
   await survoler({ x: milieu.x * 1.6, y: milieu.y * 1.6, z: 0 });
   await saisir("0,5");
@@ -255,6 +266,7 @@ function aides(page) {
     return { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
   });
   await page.keyboard.press("p");
+  await outilPret(page);
   await cliquer({ x: bord.x, y: bord.y, z: 0 });
   await page.keyboard.press("ArrowUp");
   await survoler({ x: bord.x, y: bord.y, z: 1 });
@@ -264,16 +276,18 @@ function aides(page) {
   check("cercle tiré par son périmètre, ↑ « 2 » : tube de 24 faces lisses sur le disque (25 faces), deux cercles", e.faces === 25 && lisses === 24 && e.courbes === 2 && e.liens === 1, JSON.stringify({ faces: e.faces, lisses, courbes: e.courbes, liens: e.liens }));
   await page.screenshot({ path: `${OUT}/6-tube.png` });
 
-  // 7. Tube sans fond : Maj, clic DANS le cercle (sur la face), « 2 » → 24 faces latérales, ni fond ni dessus.
+  // 7. Tube sans fond : option « Tube sans fond » (lot 8 ; Maj avant), clic DANS le cercle, « 2 » → 24 faces latérales, ni fond ni dessus.
   await vider();
   await page.keyboard.press("c");
   await cliquer({ x: 0, y: 0, z: 0 });
   await survoler({ x: 1, y: 0, z: 0 });
   await saisir("1");
   await page.keyboard.press("p");
-  await page.keyboard.press("Shift");
+  await outilPret(page);
+  await page.locator('[data-planche-option-valeur="face:tube"]').click();
+  await page.locator("[data-planche-vue]").focus();
   await survoler({ x: 0.2, y: 0.1, z: 0 });
-  check("Maj sur une face : consigne du tube sans fond", /Tube sans fond/.test(await consigne()), await consigne());
+  check("option Tube sans fond : consigne du tube sans fond", /Tube sans fond/.test(await consigne()), await consigne());
   await cliquer({ x: 0.2, y: 0.1, z: 0 });
   await survoler({ x: 0.2, y: 0.1, z: 1 });
   await saisir("2");
@@ -281,7 +295,7 @@ function aides(page) {
   const horizontales = await page.evaluate(() => Object.values(window.fadiPlanche.modele().racine.faces).filter((f) => Math.abs(f.normale.z) > 0.5).length);
   check("tube sans fond : 24 faces latérales, aucune face horizontale, lié au cercle", e.faces === 24 && horizontales === 0 && e.liens === 1, JSON.stringify({ faces: e.faces, horizontales, liens: e.liens }));
   await page.screenshot({ path: `${OUT}/7-tube-sans-fond.png` });
-  await page.keyboard.press("Shift");
+  await page.locator('[data-planche-option-valeur="face:normal"]').click();
 
   check("[desktop] aucune commande envoyée (brouillon local)", s.commandes.length === 0, s.commandes.join(" "));
   check("[desktop] aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
@@ -298,10 +312,11 @@ function aides(page) {
   await segment({ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, "3");
   const barre = page.locator("[data-planche-modificateurs]");
   await page.keyboard.press("p");
+  await outilPret(page);
   const p = await ecran({ x: 1.5, y: 0, z: 0 });
   await page.touchscreen.tap(p.x, p.y);
-  await page.waitForTimeout(100);
   const haut = barre.locator('[data-planche-mod="FlecheHaut"]');
+  await haut.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
   check("[téléphone] après le toucher d'une arête, la barre de modificateurs porte ↑ et ↓", (await haut.isVisible()) && (await barre.locator('[data-planche-mod="FlecheBas"]').isVisible()));
   const bm = await barre.boundingBox();
   check("[téléphone] la barre de modificateurs tient dans l'écran avec les flèches", !!bm && bm.x >= 0 && bm.x + bm.width <= 390 + 1, JSON.stringify(bm));

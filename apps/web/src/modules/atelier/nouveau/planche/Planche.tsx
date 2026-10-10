@@ -80,7 +80,7 @@ import { planches as planchesDe, type Commande, type ModeleAtelier } from "@parc
 import { api } from "../../../../lib/api";
 import { MenuPlanche } from "./menu-planche";
 import { ChoixPeripherique } from "../panneaux/Navigation";
-import { t } from "../messages";
+import { CATALOGUE, type CleMessage, t } from "../messages";
 import { ChoixLangue } from "../../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
@@ -436,6 +436,21 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       return change;
     },
     [contexte, poserHistorique, poserDans, rafraichir, readOnly, setSelection, setMateriau, setBalise],
+  );
+
+  /**
+   * Lot Planche 8 : choix d'une option de l'outil actif (bouton de la barre d'options, au doigt comme à la souris) — le
+   * même chemin `configurer` que les touches Ctrl / Alt / ↓ traitées par la machine. Aucun pas d'historique.
+   */
+  const configurerOutil = useCallback(
+    (option: string, valeur: string) => {
+      const m = machineParId(outilRef.current);
+      if (!m?.configurer) return;
+      etatMachineRef.current = m.configurer(etatMachineRef.current, option, valeur, contexte()).etat;
+      rafraichir();
+      hoteRef.current?.focus({ preventScroll: true });
+    },
+    [contexte, rafraichir],
   );
 
   /** Applique une transition produite hors machine (barre du plan de coupe, panneaux) : un pas d'historique. */
@@ -2173,6 +2188,33 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         {!etroit && canevasBas}
       </footer>
 
+      {vue.options && vue.options.length > 0 && (
+        <div className="planche-options" role="group" aria-label={t("planche.options")} data-planche-options>
+          {/* Écran étroit : seuls les groupes utilisables pour la cible courante (sinon trois rangées au téléphone). */}
+          {vue.options.filter((o) => !etroit || o.valeurs.some((v) => v.disponible)).map((o) => (
+            <span key={o.id} className="planche-option" role="group" aria-label={libelleOption(outilId, o.id)} data-planche-option={o.id}>
+              <span className="planche-option-nom" aria-hidden="true">{libelleOption(outilId, o.id)}</span>
+              {o.valeurs.map((v) => {
+                const nom = libelleOption(outilId, o.id, v.id);
+                const titre = v.disponible ? (v.raccourci ? `${nom} (${v.raccourci})` : nom) : t("planche.option.indisponible", { option: nom });
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    aria-pressed={o.valeur === v.id}
+                    disabled={!v.disponible}
+                    title={titre}
+                    data-planche-option-valeur={`${o.id}:${v.id}`}
+                    onClick={() => configurerOutil(o.id, v.id)}
+                  >
+                    {nom}
+                  </button>
+                );
+              })}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="planche-saisie">
       {etroit && <span className="canevas-bas">{aideBouton}</span>}
       <div className="planche-modificateurs" role="toolbar" aria-label={t("planche.modificateurs")} data-planche-modificateurs>
@@ -2289,6 +2331,12 @@ function vueParDefaut(id: string, champDeVision: number, hauteurOeil: number): V
         ? { libelle: id === "positionner-camera" ? t("planche.camera.decalage") : t("planche.camera.oeil"), valeur: `${virgule(hauteurOeil)} m`, saisie: { attendu: "longueur" as const, separateurDecimal: SEPARATEUR_DECIMAL } }
         : null;
   return { consigne: etape?.consigne ?? o?.libelle ?? "", mesures, inference: null, apercu: { lignes: [], faces: [] }, selection: [], survol: [], erreur: null };
+}
+
+/** Libellé d'une option d'outil (ou d'une de ses valeurs) au catalogue de messages ; repli sur l'identifiant. */
+function libelleOption(outil: string, option: string, valeur?: string): string {
+  const cle = `planche.option.${outil}.${option}${valeur ? `.${valeur}` : ""}`;
+  return cle in CATALOGUE.fr ? t(cle as CleMessage) : (valeur ?? option);
 }
 
 const STATUTS: Record<Outil["statutReleve"], string> = { observe: "observé en direct", instructor: "texte de l'Instructeur, effet non constaté", "non-verifie": "non vérifié", fadi: "écart propre à Fadi" };

@@ -1587,6 +1587,50 @@ export function tuberFace(m: Modele, face: Id, distance: number, o: OptionsConte
   });
 }
 
+/**
+ * Étirement (Pousser/Tirer, mode Étirement — relevé « Alt = Mode étirement », effet réalisé au lot Planche 8, D-201) :
+ * les sommets de la face avancent de `distance` selon sa normale et les faces voisines les suivent — elles sont étirées
+ * au lieu de recevoir de nouvelles faces latérales. Une voisine qui deviendrait non plane, une face qui se retournerait
+ * ou s'annulerait : refus nommé, modèle inchangé (aucun pli ajouté, aucune correction). Les courbes dont tous les sommets
+ * suivent sont translatées.
+ */
+export function etirerFace(m: Modele, face: Id, distance: number, o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (_t, c) => {
+    const F = c.faces.get(face);
+    if (!F) throw new Error(`Face inconnue : ${face}`);
+    if (Math.abs(distance) < EPS) throw new RangeError("Distance nulle : rien n'a été étiré.");
+    const dep = scale(normalize(F.normale), distance);
+    const bouges = new Set<Id>([...F.exterieur, ...F.trous.flat()]);
+    const nouvelle = (s: Id): Vec3 => (bouges.has(s) ? add(pos(c, s), dep) : pos(c, s));
+    const voisines = [...c.faces.values()].filter((g) => g.id !== F.id && [g.exterieur, ...g.trous].some((b) => b.some((s) => bouges.has(s))));
+    const normales = new Map<Id, Vec3>();
+    for (const g of voisines) {
+      const ext = g.exterieur.map(nouvelle);
+      const nw = newell(ext);
+      if (len(nw) < EPS) throw new RangeError("L'étirement annulerait une face voisine : rien n'est modifié.");
+      const n = normalize(nw);
+      if (dot(n, g.normale) <= 0) throw new RangeError("L'étirement retournerait une face voisine : rien n'est modifié.");
+      const pl = planCanonique(n, ext[0] as Vec3);
+      for (const b of [g.exterieur, ...g.trous]) {
+        if (b.some((s) => !surPlan(pl, nouvelle(s)))) throw new RangeError("L'étirement rendrait une face voisine non plane : rien n'est modifié.");
+      }
+      normales.set(g.id, n);
+    }
+    for (const s of bouges) c.sommets.set(s, { id: s, position: nouvelle(s) });
+    for (const [id, n] of normales) {
+      const g = c.faces.get(id) as Face;
+      c.faces.set(id, { ...g, normale: n });
+    }
+    for (const k of [...c.courbes.values()]) {
+      const tous = k.aretes.every((aid) => {
+        const a = c.aretes.get(aid);
+        return a !== undefined && bouges.has(a.a) && bouges.has(a.b);
+      });
+      if (tous) c.courbes.set(k.id, { ...k, centre: add(k.centre, dep) });
+    }
+  });
+}
+
 /** Arêtes données, complétées par toute la courbe de chacune. */
 function aretesEtendues(c: Ctx, aretes: readonly Id[]): Set<Id> {
   const ids = new Set<Id>();
