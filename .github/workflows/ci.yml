@@ -172,6 +172,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-suivez-moi node apps/web/e2e/planche-suivez-moi.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Révolution (lot 10d) — méthode de Suivez-moi, axe présélectionné, aperçu, corrections 90 et 96s (apps/web/e2e/planche-revolution.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-revolution node apps/web/e2e/planche-revolution.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         run: |
           set -o pipefail
