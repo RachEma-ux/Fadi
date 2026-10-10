@@ -166,10 +166,13 @@ aucune régression des CA du lot 3.
   intérieur** par rapport au plan de la boucle.
 - **Pièce** = composant (`creerGroupeDepuisFaces`, genre `composant`) dont la définition porte des **métadonnées de
   pièce** : désignation, contour de section, source (ligne de catalogue : source, édition, page ; ou « saisie »),
-  placement, repère local, arête source éventuelle. Ces métadonnées **régénèrent** la géométrie sur commande explicite
-  (C8) ; elles ne sont pas une seconde géométrie.
-- **Lien** pièce ↔ arête source (comme les liens d'extrusion de D-197) : la pièce suit son arête tant qu'elle n'est pas
-  modifiée elle-même.
+  placement, repère local. Ces métadonnées **régénèrent** la géométrie sur commande explicite (C8) ; elles ne sont pas une
+  seconde géométrie. L'arête source n'est **pas** portée par la définition, partagée entre les copies d'un composant.
+- **Lien** pièce ↔ arête source (comme les liens d'extrusion de D-197) porté par l'**occurrence** (table d'annotations
+  indexée par l'identifiant d'occurrence) : la pièce suit son arête tant qu'elle n'est pas modifiée elle-même. Si la
+  régénération change la section ou la longueur et que la définition est partagée, l'occurrence liée est d'abord rendue
+  unique (`rendreUnique`) : une copie qui n'est pas issue de cette arête ne change jamais. Test : deux occurrences d'une
+  même définition, seule la première liée ; déplacer l'arête ne modifie que la première.
 - Onglets aux sommets partagés de `poserPiecesSurAretes` (plans bissecteurs, comme `suivezMoi`) — option.
 
 **Fichiers probables.** `packages/planche-model/src/profiles.ts` (+ test), `geometrie-libre.ts`
@@ -265,10 +268,14 @@ d'annulation par opération.
 ## L14 — Liste de débit de la Planche, repères et étiquettes
 
 **Portée.**
-- **Liste de débit** (panneau de la Planche et export CSV « ; ») : pièces groupées par désignation, longueur et angles de
-  coupe ; colonnes repère(s), désignation, nombre, longueur unitaire, longueur totale, angles, source ; portée « tout »
-  ou « sélection » (imbrications comprises) ; tri par colonne ; clic sur une ligne → sélection des pièces
-  (`etendreSelection` : modes `meme-definition`, `meme-designation`).
+- **Liste de débit** (panneau de la Planche et export CSV « ; ») : pièces groupées par **section** (définition de profil,
+  ou ligne de catalogue avec sa **source, édition, page** — deux catalogues portant la même désignation ne fusionnent
+  jamais), désignation, longueur et angles de coupe ; colonnes repère(s), désignation, nombre, longueur unitaire, longueur
+  totale, angles, source ; portée « tout » ou « sélection » (imbrications comprises) ; tri par colonne. Chaque ligne
+  **retient les identifiants des occurrences** qu'elle regroupe : un clic sur la ligne sélectionne **exactement** ces
+  occurrences (aucune extension par désignation ni par définition, qui sélectionnerait d'autres longueurs ou d'autres
+  coupes). Test : même désignation, deux longueurs → deux lignes ; clic sur l'une → seules ses occurrences ; même
+  désignation dans deux catalogues sourcés différents → deux lignes, masses distinctes.
 - **Masse** : seulement si la ligne de catalogue porte une `masse_kg_m` sourcée, **ou** si l'utilisateur déclare une
   masse volumique **avec sa source** (masse = aire dérivée du contour × longueur × masse volumique, règle de
   `inerties.ts`) ; sinon « non évaluée ». Aucune masse volumique fournie par Fadi.
