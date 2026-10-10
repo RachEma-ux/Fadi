@@ -1693,3 +1693,47 @@
     min-height: 44px;
   }
 }
+
+/* Lot Planche 8 : barre d'options de l'outil actif (modes de Pousser/Tirer…), même chemin que les touches. */
+.planche-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.8rem;
+  align-items: center;
+  padding: 0.3rem 0.6rem;
+  background: var(--atelier-fond, #fff);
+  border-top: 1px solid var(--atelier-ligne, #dce5df);
+  pointer-events: auto;
+}
+.planche-option {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.planche-option-nom {
+  font-size: 0.8rem;
+  color: var(--atelier-texte-doux, #4b5a52);
+  margin-right: 2px;
+}
+.planche-option button {
+  min-height: 36px;
+  padding: 0 0.55rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+.planche-option button[aria-pressed="true"] {
+  background: var(--atelier-accent-doux, #e3efe8);
+  border-color: var(--atelier-accent, #1f5f46);
+  font-weight: 600;
+}
+.planche-option button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.planche-option button:focus-visible {
+  outline: 2px solid var(--atelier-accent, #1f5f46);
+  outline-offset: 1px;
+}

@@ -264,16 +264,17 @@ function aides(page) {
   check("cercle tiré par son périmètre, ↑ « 2 » : tube de 24 faces lisses sur le disque (25 faces), deux cercles", e.faces === 25 && lisses === 24 && e.courbes === 2 && e.liens === 1, JSON.stringify({ faces: e.faces, lisses, courbes: e.courbes, liens: e.liens }));
   await page.screenshot({ path: `${OUT}/6-tube.png` });
 
-  // 7. Tube sans fond : Maj, clic DANS le cercle (sur la face), « 2 » → 24 faces latérales, ni fond ni dessus.
+  // 7. Tube sans fond : option « Tube sans fond » (lot 8 ; Maj avant), clic DANS le cercle, « 2 » → 24 faces latérales, ni fond ni dessus.
   await vider();
   await page.keyboard.press("c");
   await cliquer({ x: 0, y: 0, z: 0 });
   await survoler({ x: 1, y: 0, z: 0 });
   await saisir("1");
   await page.keyboard.press("p");
-  await page.keyboard.press("Shift");
+  await page.locator('[data-planche-option-valeur="face:tube"]').click();
+  await page.locator("[data-planche-vue]").focus();
   await survoler({ x: 0.2, y: 0.1, z: 0 });
-  check("Maj sur une face : consigne du tube sans fond", /Tube sans fond/.test(await consigne()), await consigne());
+  check("option Tube sans fond : consigne du tube sans fond", /Tube sans fond/.test(await consigne()), await consigne());
   await cliquer({ x: 0.2, y: 0.1, z: 0 });
   await survoler({ x: 0.2, y: 0.1, z: 1 });
   await saisir("2");
@@ -281,7 +282,7 @@ function aides(page) {
   const horizontales = await page.evaluate(() => Object.values(window.fadiPlanche.modele().racine.faces).filter((f) => Math.abs(f.normale.z) > 0.5).length);
   check("tube sans fond : 24 faces latérales, aucune face horizontale, lié au cercle", e.faces === 24 && horizontales === 0 && e.liens === 1, JSON.stringify({ faces: e.faces, horizontales, liens: e.liens }));
   await page.screenshot({ path: `${OUT}/7-tube-sans-fond.png` });
-  await page.keyboard.press("Shift");
+  await page.locator('[data-planche-option-valeur="face:normal"]').click();
 
   check("[desktop] aucune commande envoyée (brouillon local)", s.commandes.length === 0, s.commandes.join(" "));
   check("[desktop] aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));

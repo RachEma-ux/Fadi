@@ -7941,9 +7941,8 @@
 "Raccourcir une arête reliée à d'autres : utilisez la Gomme ou Déplacer.": "To shorten an edge connected to others, use the Eraser or Move.",
 "La couronne demande un contour plan fermé (cercle, polygone ou arêtes formant une boucle).": "A ring needs a closed planar outline (circle, polygon or edges forming a loop).",
 "Le décalage vers l'intérieur dépasse la forme : réduisez la distance.": "The inward offset goes beyond the shape: reduce the distance.",
-"Tube sans fond : cliquez sur la face dont le contour sera tiré. | Maj = Revenir au Pousser/Tirer normal.": "Bottomless tube: click the face whose outline will be pulled. | Shift = Back to normal Push/Pull.",
-"Tube sans fond : cliquez pour fixer la hauteur ou saisissez la distance. | Maj = Revenir au Pousser/Tirer normal.": "Bottomless tube: click to set the height or enter the distance. | Shift = Back to normal Push/Pull.",
-"Tube sans fond : la face cliquée disparaît et son contour est tiré en surface (écart Fadi).": "Bottomless tube: the clicked face disappears and its outline is pulled into a surface (Fadi deviation).",
+"Tube sans fond : cliquez sur la face dont le contour sera tiré.": "Bottomless tube: click the face whose outline will be pulled.",
+"Tube sans fond : cliquez pour fixer la hauteur ou saisissez la distance.": "Bottomless tube: click to set the height or enter the distance.",
 "Sur une arête : surface des deux côtés (écart Fadi).": "On an edge: surface on both sides (Fadi deviation).",
 "Sur une arête : le long de l'arête, pour l'allonger (écart Fadi).": "On an edge: along the edge, to extend it (Fadi deviation).",
 "écart propre à Fadi": "Fadi-specific deviation"
