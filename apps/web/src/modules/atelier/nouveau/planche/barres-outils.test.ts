@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { OUTILS, normaliserRaccourci, outilParId } from "@parcours/planche-model";
 import { BARRES, FAMILLES, OBJET_DE, SECTIONS, barreDe, groupesOutils, libelleOperation, premierOutil } from "./barres-outils";
 import { CATALOGUE } from "../messages";
+import { COMMANDES_OBJETS, commandeObjet, raccourcisObjets } from "./commandes-objets";
 import { RACCOURCIS_FADI, afficherRaccourci, commenceSaisie, nomOutil, outilDuClavier, outilsBarre, pictoOutil, raccourciClavier, raccourciOutil, sectionsGrille, titreOutil, type Cle } from "./outils-planche";
 
 /** Outils présents dans la Planche : rail de gauche, grille « … » (y compris le menu contextuel offert dans la grille). */
@@ -172,9 +173,6 @@ describe("Règle d'or de la Planche (D-202, AGENTS.md) — icône propre, barre 
  * qui doit les lui donner (programme D-202) ; aucune commande ne peut apparaître au menu sans être inscrite.
  */
 const COMMANDES_EN_ATTENTE: Readonly<Record<string, "O-1" | "O-2" | "O-3" | "L9">> = {
-  groupe: "O-1",
-  eclater: "O-1",
-  composant: "O-1",
   modifier: "O-2",
   "rendre-unique": "O-3",
   diviser: "O-3",
@@ -202,7 +200,34 @@ describe("Règle d'or — commandes du menu de la Planche (D-202)", () => {
     const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
     const ids = new Set([...source.matchAll(/entrees\.push\(\{ id: "([a-z-]+)"/g)].map((m) => m[1]!).filter((id) => id !== "rien"));
     expect(ids.size).toBeGreaterThan(0);
-    for (const id of ids) expect(COMMANDES_EN_ATTENTE[id], `commande « ${id} » au menu sans icône, barre ni raccourci, et absente de la liste`).toBeDefined();
+    const livrees = new Set<string>(COMMANDES_OBJETS.map((c) => c.id));
+    for (const id of ids) expect(COMMANDES_EN_ATTENTE[id] ?? (livrees.has(id) ? "livrée" : undefined), `commande « ${id} » au menu sans icône, barre ni raccourci, et absente de la liste`).toBeDefined();
+    for (const id of livrees) expect(COMMANDES_EN_ATTENTE[id], `« ${id} » est livrée : la retirer de la liste d'attente`).toBeUndefined();
     for (const id of Object.keys(COMMANDES_EN_ATTENTE)) expect(ids.has(id), `« ${id} » n'est plus au menu : la retirer de la liste`).toBe(true);
+  });
+});
+
+describe("Règle d'or — commandes d'objet livrées (Objets O-1, D-203)", () => {
+  it("Grouper, Créer un composant, Éclater : icône propre, place dans la barre d'actions, raccourci sans collision", () => {
+    const pictosOutils = new Set(OUTILS.map((o) => pictoOutil(o.id)));
+    const typesNavigateur = ["◈", "▣"];
+    const pictos = new Set<string>();
+    for (const c of COMMANDES_OBJETS) {
+      expect(pictosOutils.has(c.picto), `${c.id} partage son icône avec un outil`).toBe(false);
+      expect(typesNavigateur, `${c.id} reprend l'icône d'un type d'objet du Navigateur`).not.toContain(c.picto);
+      expect(pictos.has(c.picto), `${c.id} partage son icône`).toBe(false);
+      pictos.add(c.picto);
+    }
+    // Raccourcis : uniques entre eux, jamais celui d'un outil ; Ctrl+Maj+G n'est pris par aucune touche de la Planche.
+    const outils = new Set(OUTILS.map((o) => raccourciOutil(o)).filter((r): r is string => r !== null).map(normaliserRaccourci));
+    const objets = raccourcisObjets();
+    expect(new Set(objets).size).toBe(objets.length);
+    for (const r of objets) expect(outils.has(r), `raccourci ${r} déjà pris par un outil`).toBe(false);
+    const eclater = normaliserRaccourci(commandeObjet("eclater").raccourci);
+    expect(RESERVES_PLANCHE).not.toContain(eclater);
+    // Barre d'actions : les trois commandes y sont rendues depuis la même liste.
+    const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
+    expect(source).toContain("...COMMANDES_OBJETS.map((c) =>");
+    expect(source).toContain('"data-planche-commande": c.id');
   });
 });

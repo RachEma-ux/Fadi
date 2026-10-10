@@ -64,7 +64,9 @@ export function MenuContextuel({ x, y, entrees, onFermer }: { x: number; y: numb
         aria-expanded={e.sous ? ouvert === e.id : undefined}
         data-planche-menu={e.id}
         onClick={() => {
-          if (e.sous) setOuvert(ouvert === e.id ? null : e.id);
+          // Un clic ouvre toujours le sous-menu : le survol qui précède le clic l'a souvent déjà ouvert, et une bascule le
+          // refermait aussitôt (Objets O-1). Échap ou le survol d'une autre entrée le referment.
+          if (e.sous) setOuvert(e.id);
           else if (e.action) {
             e.action();
             onFermer();

@@ -304,7 +304,7 @@ await page.locator("[data-mode-planche]").click();
 await page.waitForSelector("[data-planche-vue] canvas", { timeout: 30000 });
 await page.waitForTimeout(400);
 const actionsPlanche = await page.locator("[data-planche] [data-barre-actions] [data-action]").evaluateAll((els) => els.map((e) => e.getAttribute("data-action")));
-check("Planche : une seule barre, dans la Planche : Annuler, Rétablir, Détacher", (await page.locator("[data-barre-actions]").count()) === 1 && actionsPlanche.join(",") === "annuler,retablir,detacher" && (await page.locator("[data-barre-actions] [data-planche-annuler]").count()) === 1 && (await page.locator("[data-barre-actions] [data-planche-detacher]").count()) === 1, actionsPlanche.join(","));
+check("Planche : une seule barre, dans la Planche : Annuler, Rétablir, Grouper, Créer un composant, Éclater, Détacher", (await page.locator("[data-barre-actions]").count()) === 1 && actionsPlanche.join(",") === "annuler,retablir,groupe,composant,eclater,detacher" && (await page.locator("[data-barre-actions] [data-planche-annuler]").count()) === 1 && (await page.locator("[data-barre-actions] [data-planche-detacher]").count()) === 1, actionsPlanche.join(","));
 check("Planche : la barre du haut n'a plus ni Annuler / Rétablir ni Détacher", (await page.locator(".planche-haut [data-planche-annuler], .planche-haut [data-planche-detacher]").count()) === 0);
 check("Planche : Annuler est inactif sans opération", await page.locator("[data-barre-actions] [data-planche-annuler]").isDisabled());
 // Les flèches sur la poignée déplacent la barre sans atteindre le clavier de la Planche (outils comme Retourner).

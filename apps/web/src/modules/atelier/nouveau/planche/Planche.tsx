@@ -88,6 +88,7 @@ import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, afficherRaccourci, commenceS
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { BarreActions } from "../panneaux/BarreActions";
+import { COMMANDES_OBJETS, disponibiliteObjet, liensRompus, type EtatSelectionObjets, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { BoutonOutils } from "./BoutonOutils";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
@@ -559,8 +560,12 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const grouperSelection = useCallback(() => {
     if (readOnly) return;
     const sel = selectionRef.current.filter((id) => genreAnnotation(id) === null);
+    // Objets O-1 (D-203) : Control, appuyé avant G, est aussi parvenu à l'outil (Pousser/Tirer : « Nouvelle face ») ;
+    // la machine est remise à zéro que le groupement réussisse ou non (le registre du lot 9 lira les modificateurs au relâchement).
+    etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
     if (sel.length === 0) {
       setMessage(t("planche.groupe.vide"));
+      rafraichir();
       return;
     }
     try {
@@ -569,8 +574,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       const r = grouper(m, sel, { nom: `Groupe ${n}`, ...(dansRef.current !== undefined ? { dans: dansRef.current } : {}) });
       poserHistorique(enregistrer(histRef.current, r.modele, t("planche.groupe.operation"), false));
       setSelection([r.occurrence]);
-      etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
-      setMessage(t("planche.groupe.cree"));
+      const rompus = liensRompus(m, r.modele);
+      setMessage(rompus > 0 ? `${t("planche.groupe.cree")} ${t("planche.objets.liens-rompus", { nombre: String(rompus) })}` : t("planche.groupe.cree"));
       rafraichir();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : String(err));
@@ -681,7 +686,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         if (sel.length === 0) return { modele: m, message: t("planche.composant.vide") };
         const { nom, ...meta } = p;
         const r = grouper(m, sel, { genre: "composant", nom, ...meta, ...o() });
-        return { modele: r.modele, selection: [r.occurrence], message: t("planche.composant.cree") };
+        const rompus = liensRompus(m, r.modele);
+        return { modele: r.modele, selection: [r.occurrence], message: rompus > 0 ? `${t("planche.composant.cree")} ${t("planche.objets.liens-rompus", { nombre: String(rompus) })}` : t("planche.composant.cree") };
       });
       hoteRef.current?.focus({ preventScroll: true });
     },
@@ -988,6 +994,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
           entrees.push({ id: "reinitialiser-inclinaison", libelle: t("planche.menu.reinitialiser-inclinaison"), grise: true });
           entrees.push({ id: "changer-axes", libelle: t("planche.menu.changer-axes"), grise: true });
         }
+        // Objets O-1 : Éclater reste visible, grisé, quand la sélection ne contient aucun objet (comme SketchUp).
+        if (occs.length === 0) entrees.push({ id: "eclater", libelle: t("planche.menu.eclater"), separateurAvant: true, grise: true });
         entrees.push({ id: "zoom-selection", libelle: t("planche.menu.zoom-selection"), separateurAvant: true, action: zoomSelection });
       }
       setMenu({ x, y, entrees });
@@ -1425,6 +1433,12 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         grouperSelection();
         return;
       }
+      // Ctrl + Maj + G (Objets O-1, D-203 ; convention Rhino / Tinkercad, miroir de Ctrl + G) : éclater les objets sélectionnés.
+      if (mod && !e.altKey && e.shiftKey && cle === "g") {
+        e.preventDefault();
+        eclaterSelection();
+        return;
+      }
       // Lot 5 (objets) : G composant, K arêtes arrière, Ctrl + A tout, Ctrl + Maj + I inverser, Ctrl + C / X / V presse-papiers.
       if (!mod && !e.altKey && !e.shiftKey && cle === "g" && !dansMesures && !texteRef.current) {
         e.preventDefault();
@@ -1531,7 +1545,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         w.removeEventListener("blur", surPerte);
       }
     };
-  }, [annulerPas, retablirPas, envoyerTouche, echap, choisirOutil, setTexte, grouperSelection, ouvrirDialogueComposant, majOptions, etendre, collerSelection, copierSelection]);
+  }, [annulerPas, retablirPas, envoyerTouche, echap, choisirOutil, setTexte, grouperSelection, eclaterSelection, ouvrirDialogueComposant, majOptions, etendre, collerSelection, copierSelection]);
 
   // --- Planche détachable : la porte (toute la Planche — dessin, barre d'outils, panneaux, barre d'état, Mesures) est
   // DÉPLACÉE dans une fenêtre Document Picture-in-Picture — même contexte JavaScript, donc même brouillon et même
@@ -1803,6 +1817,16 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     />
   );
 
+  /** Objets O-1 (D-203) : état de la sélection pour la disponibilité commune au menu, à la barre et au clavier. */
+  const etatSelectionObjets = (): EtatSelectionObjets => {
+    const m = hist.present.modele;
+    const c = contexteDe(m, dans);
+    const entites = selectionRef.current.filter((id) => genreAnnotation(id) === null);
+    const objets = entites.filter((id) => c.occurrences[id]);
+    return { lecture: readOnly, entites: entites.length, objets: objets.length, verrouilles: objets.length > 0 && objets.every((id) => c.occurrences[id]!.verrouille) };
+  };
+  const executerObjet = (id: IdCommandeObjet) => (id === "groupe" ? grouperSelection() : id === "composant" ? ouvrirDialogueComposant() : eclaterSelection());
+
   /** Barre d'actions flottante (D-195) : annuler / rétablir du brouillon local et Détacher ; elle suit la Planche détachée. */
   const libelleDetacher = detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter");
   const barreActions = (
@@ -1810,6 +1834,19 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       annuler={{ id: "annuler", picto: "↶", libelle: t("planche.annuler"), titre: t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" }), onClick: annulerPas, disabled: hist.passe.length === 0, attributs: { "data-planche-annuler": "" } }}
       retablir={{ id: "retablir", picto: "↷", libelle: t("planche.retablir"), titre: t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" }), onClick: retablirPas, disabled: hist.futur.length === 0, attributs: { "data-planche-retablir": "" } }}
       autres={[
+        ...COMMANDES_OBJETS.map((c) => {
+          const d = disponibiliteObjet(c.id, etatSelectionObjets());
+          const nom = t(c.libelle);
+          return {
+            id: c.id,
+            picto: c.picto,
+            libelle: nom,
+            titre: d.disponible ? `${nom} (${afficherRaccourci(c.raccourci)})` : `${nom} — ${t(d.motif ?? "planche.objets.motif.vide")}`,
+            onClick: () => executerObjet(c.id),
+            disabled: !d.disponible,
+            attributs: { "data-planche-commande": c.id },
+          };
+        }),
         {
           id: "detacher",
           picto: detache === "non" ? "⧉" : "⤡",
