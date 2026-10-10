@@ -25,6 +25,9 @@ import {
   cibleDans,
   configurerTexte3D,
   contexte as contexteDe,
+  cheminOccurrence,
+  detacherLiens,
+  liensDesFaces,
   copier,
   cross,
   differencePlanche,
@@ -88,7 +91,7 @@ import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, afficherRaccourci, commenceS
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { BarreActions } from "../panneaux/BarreActions";
-import { COMMANDES_OBJETS, disponibiliteObjet, liensRompus, type EtatSelectionObjets, type IdCommandeObjet } from "./commandes-objets";
+import { COMMANDES_CONTEXTE, COMMANDES_OBJETS, disponibiliteObjet, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { BoutonOutils } from "./BoutonOutils";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
@@ -362,6 +365,10 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     dansRef.current = id;
     setDans(id);
   }, []);
+  // Objets O-2 : ouvrir ou fermer un contexte redessine le modèle (reste délavé, boîte pointillée de l'objet ouvert).
+  useEffect(() => {
+    vueRef.current?.majModele(histRef.current.present.modele);
+  }, [dans]);
 
   const poserHistorique = useCallback((h: Historique, options: { libelle?: string; envoyer?: boolean } = {}) => {
     const avant = histRef.current.present.modele;
@@ -649,6 +656,38 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       rafraichir();
     },
     [poserDans, rafraichir, setSelection],
+  );
+  /** Objets O-2 : Fermer (un niveau) et Fermer tout (racine), avec n'importe quel outil ; la machine repart de zéro. */
+  const fermerContexte = useCallback(
+    (id: IdCommandeContexte) => {
+      const d = dansRef.current;
+      if (d === undefined) return;
+      const ch = cheminOccurrence(histRef.current.present.modele, d);
+      poserDans(id === "fermer-tout" || ch.length < 2 ? undefined : ch[ch.length - 2]);
+      setSelection([]);
+      etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+      setMessage(null);
+      rafraichir();
+    },
+    [poserDans, rafraichir, setSelection],
+  );
+  const allerAuContexte = useCallback(
+    (id: string | undefined) => {
+      poserDans(id);
+      setSelection([]);
+      etatMachineRef.current = machineParId(outilRef.current)?.initial() ?? null;
+      rafraichir();
+    },
+    [poserDans, rafraichir, setSelection],
+  );
+  const detacherLienSelection = useCallback(
+    () =>
+      operer(t("planche.lien.detacher"), (m) => {
+        const liens = liensDesFaces(m, selectionDe("faces", m));
+        if (liens.length === 0) return null;
+        return { modele: detacherLiens(m, liens).modele, message: t("planche.lien.detache") };
+      }),
+    [operer, selectionDe],
   );
   const eclaterSelection = useCallback(
     () =>
@@ -972,6 +1011,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         entrees.push({ id: "composant", libelle: t("planche.menu.composant"), separateurAvant: true, grise: readOnly, action: ouvrirDialogueComposant });
         entrees.push({ id: "groupe", libelle: t("planche.menu.groupe"), grise: readOnly, action: grouperSelection });
         entrees.push({ id: "intersection", libelle: t("planche.menu.intersection"), grise: readOnly || (faces.length === 0 && occs.length === 0), sous: [{ id: "intersection-modele", libelle: t("planche.menu.intersection.modele"), action: intersecterSelection }] });
+        // Objets O-2 (EX-UI-06) : surface liée à ses arêtes sources (racine seulement) → « Détacher le lien ».
+        if (dans === undefined && faces.length > 0 && liensDesFaces(m, faces).length > 0) entrees.push({ id: "detacher-lien", libelle: t("planche.lien.detacher"), separateurAvant: true, grise: readOnly, action: detacherLienSelection });
         if (faces.length > 0) {
           entrees.push({ id: "aligner-vue", libelle: t("planche.menu.aligner-vue"), separateurAvant: true, action: alignerVue });
           entrees.push({ id: "aligner-axes", libelle: t("planche.menu.aligner-axes"), grise: readOnly, action: alignerAxes });
@@ -1009,6 +1050,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       coqueSelection,
       diviserSelection,
       eclaterSelection,
+      detacherLienSelection,
       effacerSelection,
       etendre,
       grouperSelection,
@@ -1484,6 +1526,17 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         setRecherche(true);
         return;
       }
+      // Objets O-2 : Maj + Échap ferme le groupe ouvert, Maj + Origine revient à la racine (avec n'importe quel outil).
+      if (e.key === "Escape" && e.shiftKey && dansRef.current !== undefined) {
+        e.preventDefault();
+        fermerContexte("fermer");
+        return;
+      }
+      if (e.key === "Home" && e.shiftKey && !mod && dansRef.current !== undefined && !dansMesures) {
+        e.preventDefault();
+        fermerContexte("fermer-tout");
+        return;
+      }
       if (e.key === "Escape") {
         e.preventDefault();
         echap();
@@ -1545,7 +1598,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         w.removeEventListener("blur", surPerte);
       }
     };
-  }, [annulerPas, retablirPas, envoyerTouche, echap, choisirOutil, setTexte, grouperSelection, eclaterSelection, ouvrirDialogueComposant, majOptions, etendre, collerSelection, copierSelection]);
+  }, [annulerPas, retablirPas, envoyerTouche, echap, choisirOutil, setTexte, grouperSelection, eclaterSelection, fermerContexte, ouvrirDialogueComposant, majOptions, etendre, collerSelection, copierSelection]);
 
   // --- Planche détachable : la porte (toute la Planche — dessin, barre d'outils, panneaux, barre d'état, Mesures) est
   // DÉPLACÉE dans une fenêtre Document Picture-in-Picture — même contexte JavaScript, donc même brouillon et même
@@ -1885,7 +1938,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   // La Planche est rendue dans sa porte (portail) : dans la page, la porte est posée dans `emplacement` ; détachée,
   // elle vit dans la fenêtre séparée et la carte d'état prend sa place ici.
   const planche = (
-    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${colonneRepliee ? " colonne-repliee" : ""}${detache !== "non" ? " est-detache" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
+    <div ref={racineRef} className={`planche${tactile ? " planche-tactile" : ""}${volet ? " volet-ouvert" : ""}${outilsReplies ? " outils-replies" : ""}${colonneRepliee ? " colonne-repliee" : ""}${detache !== "non" ? " est-detache" : ""}${dans !== undefined ? " dans-contexte" : ""}`} data-planche data-outil-actif={outilId} data-planche-detache={detache}>
       <div className="planche-vue-cadre" data-planche-cadre>
         <div
           ref={hoteRef}
@@ -2213,10 +2266,31 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       )}
 
       <div className="planche-pied" ref={piedRef} data-planche-pied>
+      {dans !== undefined && (
+        <nav className="planche-fil" aria-label={t("planche.contexte.fil")} data-planche-fil>
+          <ol>
+            {filAriane(cheminOccurrence(hist.present.modele, dans), (id) => nomOccurrence(hist.present.modele, id), t("planche.contexte.racine")).map((etape, i, tout) => (
+              <li key={etape.id ?? "racine"}>
+                {i === tout.length - 1 ? (
+                  <span aria-current="page" data-planche-fil-etape={etape.id ?? "racine"}>{etape.nom}</span>
+                ) : (
+                  <button type="button" onClick={() => allerAuContexte(etape.id)} data-planche-fil-etape={etape.id ?? "racine"}>{etape.nom}</button>
+                )}
+              </li>
+            ))}
+          </ol>
+          {COMMANDES_CONTEXTE.map((c) => (
+            <button key={c.id} type="button" className="planche-fil-commande" title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`} aria-label={t(c.libelle)} onClick={() => fermerContexte(c.id)} data-planche-commande={c.id}>
+              <span aria-hidden="true">{c.picto}</span>
+            </button>
+          ))}
+        </nav>
+      )}
       <footer className="planche-bas">
         <p className="planche-etat" aria-live="polite" aria-label={t("planche.etat")} data-planche-etat>
           {dans && <span className="planche-contexte" data-planche-contexte>{t("planche.edition", { nom: nomOccurrence(hist.present.modele, dans) })} | </span>}
           <span className="planche-consigne">{vue.consigne}</span>
+          {dans === undefined && liensDesFaces(hist.present.modele, selectionRef.current).length > 0 && <span className="planche-lien" data-planche-lien> | {t("planche.lien.lie")}</span>}
           {etatBarre && <span className="planche-message" data-planche-message> | {etatBarre}</span>}
         </p>
         <button type="button" className="planche-volet-bascule" aria-expanded={volet} onClick={() => setVolet(!volet)} title={volet ? t("planche.volet.moins.aide") : t("planche.volet.plus.aide")} data-planche-volet-bascule>

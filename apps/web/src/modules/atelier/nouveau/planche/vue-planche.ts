@@ -8,7 +8,7 @@
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
 import * as THREE from "three";
-import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Scene, type Vec3, type VueOutil } from "@parcours/planche-model";
+import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Scene, type Vec3, type VueOutil } from "@parcours/planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
 import { borneSensibilite, facteurPan, interpreterMolette } from "../navigation";
 import type { OutilCamera } from "./outils-planche";
@@ -27,6 +27,10 @@ export const CHAMP_DE_VISION_INITIAL = 35;
 const COULEUR_RECTO = "#f0f0ee";
 const COULEUR_VERSO = "#a7b4c6";
 const COULEUR_ARETE = "#000000";
+/** Objets O-2 : géométrie hors du contexte ouvert (délavée) et boîte pointillée de l'objet ouvert. */
+const COULEUR_HORS_CONTEXTE = "#c3c9c5";
+const COULEUR_ARETE_HORS_CONTEXTE = "#a9b2ac";
+const COULEUR_CONTEXTE = "#5b6b63";
 const COULEUR_SELECTION = "#1a5fd6";
 const COULEUR_SURVOL = "#5b8fe8";
 const COULEUR_FOND = "#f4f6f8";
@@ -379,7 +383,10 @@ export class VuePlanche {
   majModele(modele: Modele): void {
     vider(this.groupeModele);
     this.modele = modele;
-    this.geometrie = geometrieVisible(modele);
+    // Objets O-2 (D-203) : contexte d'édition ouvert → le reste du modèle est délavé, l'objet ouvert entouré de pointillés.
+    const dans = this.rappels.dans?.();
+    const chemin = dans !== undefined ? cheminOccurrence(modele, dans) : [];
+    this.geometrie = geometrieVisible(modele, { chemin });
     const o = this.options;
     const materiaux = modele.annotations?.materiaux ?? {};
     const balises = modele.annotations?.balises ?? {};
@@ -388,7 +395,7 @@ export class VuePlanche {
       if (o.couleurParBalise) return f.balise ? balises[f.balise]?.couleur ?? COULEUR_RECTO : COULEUR_RECTO;
       return f.materiau ? materiaux[f.materiau]?.couleur ?? COULEUR_MATERIAU_DEFAUT : COULEUR_RECTO;
     };
-    const g = geometrieFaces(this.geometrie.faces, couleurDe);
+    const g = geometrieFaces(this.geometrie.faces.filter((f) => !f.horsContexte), couleurDe);
     const transparent = o.rayonsX;
     const base = { vertexColors: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, transparent, opacity: transparent ? 0.45 : 1, depthWrite: !transparent };
     const recto = o.modeFace === "lignes-cachees" ? new THREE.MeshBasicMaterial({ color: "#ffffff", side: THREE.FrontSide, ...base }) : new THREE.MeshLambertMaterial({ color: "#ffffff", side: THREE.FrontSide, ...base });
@@ -397,8 +404,25 @@ export class VuePlanche {
     this.facesVerso = new THREE.Mesh(g.clone(), verso);
     this.facesRecto.castShadow = this.facesRecto.receiveShadow = o.ombres;
     this.facesVerso.receiveShadow = o.ombres;
-    const segments = this.geometrie.aretes.filter((a) => !a.adoucie).map((a) => [a.a, a.b] as const);
+    const segments = this.geometrie.aretes.filter((a) => !a.adoucie && !a.horsContexte).map((a) => [a.a, a.b] as const);
     if (o.modeFace !== "filaire") this.groupeModele.add(this.facesRecto, this.facesVerso);
+    const delavees = this.geometrie.faces.filter((f) => f.horsContexte);
+    if (delavees.length) {
+      // Hors contexte : faces grises translucides, arêtes claires — visibles pour se repérer, jamais confondues avec l'objet ouvert.
+      if (o.modeFace !== "filaire") this.groupeModele.add(new THREE.Mesh(geometrieFaces(delavees), new THREE.MeshBasicMaterial({ color: COULEUR_HORS_CONTEXTE, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false })));
+      const horsSegments = this.geometrie.aretes.filter((a) => !a.adoucie && a.horsContexte).map((a) => [a.a, a.b] as const);
+      if (horsSegments.length) this.groupeModele.add(new THREE.LineSegments(geometrieSegments(horsSegments), new THREE.LineBasicMaterial({ color: COULEUR_ARETE_HORS_CONTEXTE, transparent: true, opacity: 0.6 })));
+    }
+    if (dans !== undefined) {
+      const b = boiteOccurrence(modele, dans);
+      if (b) {
+        const pointilles = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(b.max.x - b.min.x || 1e-3, b.max.y - b.min.y || 1e-3, b.max.z - b.min.z || 1e-3)), new THREE.LineDashedMaterial({ color: COULEUR_CONTEXTE, dashSize: 0.1, gapSize: 0.07, depthTest: false }));
+        pointilles.position.set((b.min.x + b.max.x) / 2, (b.min.y + b.max.y) / 2, (b.min.z + b.max.z) / 2);
+        pointilles.computeLineDistances();
+        pointilles.renderOrder = 3;
+        this.groupeModele.add(pointilles);
+      }
+    }
     if (o.aretes || o.modeFace === "filaire" || o.modeFace === "lignes-cachees") this.groupeModele.add(new THREE.LineSegments(geometrieSegments(segments), new THREE.LineBasicMaterial({ color: COULEUR_ARETE })));
     if (o.aretesArriere && o.modeFace !== "filaire") {
       // Arêtes arrière (K) : les arêtes cachées par les faces, en pointillé léger (tracées sans test de profondeur sous les pleines).
