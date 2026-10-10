@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ajouterRectangle, ajouterSegment, contexte, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/planche-model";
+import { ajouterRectangle, ajouterSegment, contexte, copier, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/planche-model";
 import { COMMANDES_OBJETS, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
@@ -77,5 +77,20 @@ describe("Commandes de vue (Objets O-5)", () => {
     expect(disponibiliteVue("isoler", { entites: 0, isole: true, dansObjet: false }).disponible).toBe(true);
     expect(disponibiliteVue("masquer-reste", { entites: 0, isole: false, dansObjet: false }).motif).toBe("planche.contexte.motif");
     expect(disponibiliteVue("masquer-reste", { entites: 0, isole: false, dansObjet: true }).disponible).toBe(true);
+  });
+});
+
+describe("Cibles de « Déplacer vers… » — revue de la PR (O-4)", () => {
+  it("ni l'autre occurrence du composant ouvert, ni une définition contenue par l'objet déplacé", () => {
+    const m0 = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(1, 0, 0), v3(0, 1, 0)).modele;
+    const c0 = contexte(m0);
+    const x = grouper(m0, [...Object.keys(c0.faces), ...Object.keys(c0.aretes)]);
+    const k = grouper(x.modele, [x.occurrence], { genre: "composant" });
+    const m = copier(k.modele, [k.occurrence], v3(5, 0, 0)).modele;
+    const k2 = Object.keys(contexte(m).occurrences).find((id) => id !== k.occurrence)!;
+    const nom = (id: string) => id;
+    expect(ciblesDeplacement(m, [x.occurrence], k.occurrence, nom, "Planche").map((c) => c.id)).toEqual([undefined]);
+    // Depuis la racine, ranger le composant K dans sa copie (même définition, donc cycle) n'est pas proposé.
+    expect(ciblesDeplacement(m, [k.occurrence], undefined, nom, "Planche").map((c) => c.id)).not.toContain(k2);
   });
 });

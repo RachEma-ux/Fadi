@@ -257,7 +257,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const [dialogueComposant, setDialogueComposant] = useState(false);
   // Objets O-4 : « Déplacer vers un groupe… » (objets à ranger et contexte d'où ils partent) et renommage au Navigateur.
   const [dialogueDeplacer, setDialogueDeplacer] = useState<{ ids: readonly string[]; dans: string | undefined } | null>(null);
-  const [renommage, setRenommage] = useState<string | null>(null);
+  const [renommage, setRenommage] = useState<readonly string[] | null>(null);
   // Objets O-5 : isolement de la vue (contexte et entités isolés) ; jamais écrit dans le modèle, levé par la même commande.
   const [isolement, setIsolementEtat] = useState<{ chemin: readonly string[]; ids: readonly string[] } | null>(null);
   const isolementRef = useRef<{ chemin: readonly string[]; ids: readonly string[] } | null>(null);
@@ -824,7 +824,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     const ids = selectionRef.current.filter((id) => c.occurrences[id]);
     if (ids.length !== 1 || readOnly) return;
     setPanneau("navigateur");
-    setRenommage(ids[0]!);
+    // Revue O-4 : la ligne visée par son chemin complet (contexte ouvert + objet), pas par son seul identifiant.
+    setRenommage([...cheminRef.current, ids[0]!]);
   }, [readOnly]);
   const ouvrirDialogueComposant = useCallback(() => {
     if (readOnly) return;
