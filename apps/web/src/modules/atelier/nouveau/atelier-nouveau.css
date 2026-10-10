@@ -3055,10 +3055,23 @@
   font-size: 1.15em;
   line-height: 1;
 }
+/* Objets O-1 : commandes d'objet de la Planche — icône et nom court empilés (bouton nommé, règle d'or). */
+.barre-actions button[data-planche-commande] {
+  flex-direction: column;
+  gap: 0;
+  padding: 2px 0.35rem;
+  line-height: 1.1;
+}
+.barre-actions button[data-planche-commande] .barre-actions-texte {
+  font-size: 0.68rem;
+}
 @media (max-width: 760px) {
   .barre-actions {
     right: 0.6rem;
     bottom: 6.6rem;
+    /* Au téléphone, la barre passe à la ligne plutôt que de sortir de l'écran (toujours bornée en JS). */
+    flex-wrap: wrap;
+    max-width: calc(100vw - 1.2rem);
   }
   .barre-actions button {
     min-width: 44px;

@@ -95,3 +95,7 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
 - Suivi : `docs/atelier/` (fiches de capacité, décisions, mesures, maquette, comptes rendus de lot).
 - Un lot à la fois ; acceptation du maître d'ouvrage entre deux lots ; les décisions de la section 10.1 du
   cahier lui appartiennent : s'arrêter et demander, ne pas inventer.
+- Planche, programme D-202 (`docs/planche/analyses/programme-lots.md` : L8 suite, Objets O-1 à O-6, L9, L10, L11–L14,
+  L16–L22) : **délégation D-203** — les lots s'enchaînent un à un sans attendre d'acceptation intermédiaire, chacun fusionné
+  CI verte et consigné (décision + compte rendu) ; **règle d'or** (`AGENTS.md`) : chaque outil et chaque commande livrée a
+  sa propre icône, une barre appropriée et un raccourci, contrôlés par test.
