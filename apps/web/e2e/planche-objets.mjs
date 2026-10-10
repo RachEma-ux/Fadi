@@ -6,7 +6,9 @@
  * face » allumée dans Pousser/Tirer. Objets O-2 : fil d'Ariane cliquable (Planche › …), Fermer (Maj+Échap) et Fermer
  * tout (Maj+Origine), objet verrouillé non ouvrable, statut « Liée aux arêtes sources » et « Détacher le lien » ; au
  * téléphone, le fil se superpose sans redimensionner le dessin. Objets O-3 : Rendre unique (Alt+Maj+U) nomme « #1 » puis
- * « #2 » ; Diviser en segments (Alt+Maj+C) n'apparaît dans la barre qu'avec une courbe sélectionnée. Brouillon local : aucune commande ; aucune erreur JavaScript.
+ * « #2 » ; Diviser en segments (Alt+Maj+C) n'apparaît dans la barre qu'avec une courbe sélectionnée. Objets O-4 : groupe
+ * vide (Alt+Maj+G) ouvert aussitôt et jamais purgé, « Déplacer vers un groupe… » (Alt+Maj+V) sans bouger à l'écran,
+ * Renommer (F2) en place au Navigateur, glisser-déposer dans le Navigateur. Brouillon local : aucune commande ; aucune erreur JavaScript.
  *
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/planche-objets.mjs
  */
@@ -406,6 +408,88 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   await page.keyboard.press("Escape");
   check("[O-3] aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
   await page.screenshot({ path: `${OUT}/5-o3.png` });
+  await ctx.close();
+}
+
+// ————————————————————————————————————————————————————————————— Objets O-4 : groupe vide, Déplacer vers…, Renommer, glisser-déposer (desktop)
+{
+  const ctx = await browser.newContext({ viewport: { width: 1536, height: 864 }, locale: "fr-FR" });
+  const s = await preparer(ctx);
+  const { page } = s;
+  const { cliquer, survoler, saisir } = aides(page);
+  await s.ouvrirPlanche();
+  const vue = page.locator("[data-planche-vue]");
+  await vue.focus();
+  const dans = () => page.evaluate(() => window.fadiPlanche.dans() ?? null);
+  const racine = () => page.evaluate(() => Object.keys(window.fadiPlanche.modele().racine.occurrences));
+  const monde = () =>
+    page.evaluate(() => {
+      // Sommets monde de toutes les faces (racine et objets), arrondis : « rien n'a bougé à l'écran ».
+      const m = window.fadiPlanche.modele();
+      const r = [];
+      const mul = (A, B) => A.map((_, i) => { const l = Math.floor(i / 4), c = i % 4; let x = 0; for (let k = 0; k < 4; k++) x += A[l * 4 + k] * B[k * 4 + c]; return x; });
+      const app = (M, p) => [M[0] * p.x + M[1] * p.y + M[2] * p.z + M[3], M[4] * p.x + M[5] * p.y + M[6] * p.z + M[7], M[8] * p.x + M[9] * p.y + M[10] * p.z + M[11]];
+      const parcourir = (c, M) => {
+        for (const f of Object.values(c.faces)) for (const s of f.exterieur) r.push(app(M, c.sommets[s].position).map((x) => x.toFixed(6)).join(","));
+        for (const o of Object.values(c.occurrences)) parcourir(m.definitions[o.definition].contenu, mul(M, o.transformation));
+      };
+      parcourir(m.racine, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+      return r.sort().join(";");
+    });
+  // Groupe vide : Alt + Maj + G, ouvert aussitôt.
+  await page.keyboard.press("Alt+Shift+KeyG");
+  await page.waitForTimeout(80);
+  const boite = await dans();
+  check("[O-4] Alt+Maj+G : groupe vide créé et ouvert, annoncé", boite !== null && (await racine()).length === 1 && /Groupe vide créé/.test(await message(page)), await message(page));
+  await page.keyboard.press("Shift+Escape");
+  await page.waitForTimeout(80);
+  check("[O-4] refermé vide : il reste dans le modèle (pas de purge)", (await dans()) === null && (await racine()).includes(boite));
+  // Un objet à la racine, rangé dans le groupe vide par « Déplacer vers un groupe… ».
+  await page.keyboard.press("r");
+  await cliquer({ x: 3, y: 0, z: 0 });
+  await survoler({ x: 4, y: 1, z: 0 });
+  await saisir("1;1");
+  await page.keyboard.press(" ");
+  await vue.focus();
+  await page.keyboard.press("Escape");
+  await cliquer({ x: 3.5, y: 0.5, z: 0 });
+  await page.keyboard.press("Control+g");
+  await page.waitForTimeout(80);
+  const objet = (await page.evaluate(() => window.fadiPlanche.selection()))[0];
+  const avant = await monde();
+  await page.keyboard.press("Alt+Shift+KeyV");
+  await page.waitForTimeout(80);
+  const dialogue = page.locator("[data-planche-deplacer]");
+  check("[O-4] Alt+Maj+V : « Déplacer vers un groupe » liste le groupe vide (pas l'objet lui-même)", (await dialogue.count()) === 1 && (await dialogue.locator(`[data-planche-deplacer-cible="${boite}"]`).count()) === 1 && (await dialogue.locator(`[data-planche-deplacer-cible="${objet}"]`).count()) === 0);
+  await dialogue.locator(`[data-planche-deplacer-cible="${boite}"]`).click();
+  await page.waitForTimeout(80);
+  const range = await page.evaluate(([b, o]) => { const m = window.fadiPlanche.modele(); return !!m.definitions[m.racine.occurrences[b].definition].contenu.occurrences[o]; }, [boite, objet]);
+  check("[O-4] objet rangé dans le groupe, sans bouger à l'écran, annoncé", range && (await racine()).length === 1 && (await monde()) === avant && /sans bouger/.test(await message(page)), await message(page));
+  // Renommer : F2 ouvre le Navigateur sur l'objet sélectionné.
+  await vue.focus();
+  await cliquer({ x: 3.5, y: 0.5, z: 0 });
+  await page.keyboard.press("F2");
+  await page.waitForTimeout(80);
+  const champ = page.locator("[data-planche-navigateur-nom]");
+  check("[O-4] F2 : Navigateur ouvert, champ de nom en place", (await champ.count()) === 1);
+  await champ.fill("Établi");
+  await champ.press("Enter");
+  await page.waitForTimeout(80);
+  check("[O-4] renommé « Établi »", await page.evaluate((b) => window.fadiPlanche.modele().racine.occurrences[b].nom === "Établi", boite));
+  const barre = page.locator("[data-planche-navigateur-barre]");
+  check("[O-4] barre du Navigateur : Nouveau groupe vide, Déplacer vers…, Renommer, avec leur raccourci", (await barre.locator("[data-planche-commande]").count()) === 3 && /Alt\+Maj\+G/.test((await barre.locator('[data-planche-commande="groupe-vide"]').getAttribute("title")) ?? "") && /F2/.test((await barre.locator('[data-planche-commande="renommer"]').getAttribute("title")) ?? ""));
+  // Glisser-déposer : l'objet sort du groupe vers la racine.
+  await page.locator(`[data-planche-navigateur-objet="${boite}"] .planche-deplier`).click();
+  const ligne = page.locator(`[data-planche-navigateur-objet="${objet}"]`);
+  check("[O-4] l'objet rangé apparaît sous « Établi » dans le Navigateur", (await ligne.count()) === 1);
+  await ligne.dragTo(page.locator("[data-planche-navigateur-racine]"));
+  await page.waitForTimeout(120);
+  check("[O-4] glissé sur « Planche (racine) » : l'objet revient à la racine, sans bouger", (await racine()).includes(objet) && (await monde()) === avant, (await racine()).join(","));
+  await page.locator(`[data-planche-navigateur-objet="${objet}"]`).dragTo(page.locator(`[data-planche-navigateur-objet="${boite}"]`));
+  await page.waitForTimeout(120);
+  check("[O-4] glissé sur « Établi » : rangé dedans", !(await racine()).includes(objet) && (await monde()) === avant, (await racine()).join(","));
+  check("[O-4] aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
+  await page.screenshot({ path: `${OUT}/6-o4.png` });
   await ctx.close();
 }
 

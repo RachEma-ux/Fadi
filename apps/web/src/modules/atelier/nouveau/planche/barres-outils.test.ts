@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { OUTILS, normaliserRaccourci, outilParId } from "@parcours/planche-model";
 import { BARRES, FAMILLES, OBJET_DE, SECTIONS, barreDe, groupesOutils, libelleOperation, premierOutil } from "./barres-outils";
 import { CATALOGUE } from "../messages";
-import { COMMANDES_CONTEXTE, COMMANDES_OBJETS, commandeObjet, raccourcisObjets } from "./commandes-objets";
+import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, commandeObjet, raccourcisObjets } from "./commandes-objets";
 import { RACCOURCIS_FADI, afficherRaccourci, commenceSaisie, nomOutil, outilDuClavier, outilsBarre, pictoOutil, raccourciClavier, raccourciOutil, sectionsGrille, titreOutil, type Cle } from "./outils-planche";
 
 /** Outils présents dans la Planche : rail de gauche, grille « … » (y compris le menu contextuel offert dans la grille). */
@@ -200,7 +200,7 @@ describe("Règle d'or — commandes du menu de la Planche (D-202)", () => {
     const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
     const ids = new Set([...source.matchAll(/entrees\.push\(\{ id: "([a-z-]+)"/g)].map((m) => m[1]!).filter((id) => id !== "rien"));
     expect(ids.size).toBeGreaterThan(0);
-    const livrees = new Set<string>(COMMANDES_OBJETS.map((c) => c.id));
+    const livrees = new Set<string>([...COMMANDES_OBJETS, ...COMMANDES_NAVIGATEUR].map((c) => c.id));
     for (const id of ids) expect(COMMANDES_EN_ATTENTE[id] ?? (livrees.has(id) ? "livrée" : undefined), `commande « ${id} » au menu sans icône, barre ni raccourci, et absente de la liste`).toBeDefined();
     for (const id of livrees) expect(COMMANDES_EN_ATTENTE[id], `« ${id} » est livrée : la retirer de la liste d'attente`).toBeUndefined();
     for (const id of Object.keys(COMMANDES_EN_ATTENTE)) expect(ids.has(id), `« ${id} » n'est plus au menu : la retirer de la liste`).toBe(true);
@@ -259,5 +259,28 @@ describe("Règle d'or — commandes du contexte d'édition (Objets O-2, D-203)",
     const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
     expect(source).toContain("{COMMANDES_CONTEXTE.map((c) => (");
     expect(source).toContain('data-planche-fil');
+  });
+});
+
+describe("Règle d'or — commandes du Navigateur (Objets O-4, D-206)", () => {
+  it("Nouveau groupe vide, Déplacer vers un groupe…, Renommer : icône propre, barre du Navigateur et « Outils ▾ », raccourci sans collision", () => {
+    const pictos = new Set([...OUTILS.map((o) => pictoOutil(o.id)), ...COMMANDES_OBJETS.map((c) => c.picto), ...COMMANDES_CONTEXTE.map((c) => c.picto), "◈", "▣", "⌖", "◉", "◌", "×"]);
+    for (const c of COMMANDES_NAVIGATEUR) {
+      expect(pictos.has(c.picto), `${c.id} partage son icône`).toBe(false);
+      pictos.add(c.picto);
+    }
+    const outils = new Set(OUTILS.map((o) => raccourciOutil(o)).filter((r): r is string => r !== null).map(normaliserRaccourci));
+    const tous = raccourcisObjets();
+    expect(new Set(tous).size).toBe(tous.length);
+    for (const c of COMMANDES_NAVIGATEUR) {
+      const r = normaliserRaccourci(c.raccourci);
+      expect(outils.has(r), `raccourci ${r} déjà pris par un outil`).toBe(false);
+      expect(RESERVES_PLANCHE).not.toContain(r);
+    }
+    const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
+    expect(source).toContain("commandes={commandesNavigateur()}");
+    expect(source).toContain("...commandesNavigateur(),");
+    const navigateur = readFileSync(new URL("./panneaux-objets.tsx", import.meta.url), "utf8");
+    expect(navigateur).toContain("data-planche-navigateur-barre");
   });
 });

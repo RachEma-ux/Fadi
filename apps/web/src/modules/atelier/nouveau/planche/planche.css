@@ -1836,3 +1836,38 @@
     bottom: calc(var(--volet-h, 10rem) + 0.5rem + 3.6rem);
   }
 }
+
+/* Objets O-4 : barre du Navigateur, cibles de glisser-déposer, renommage en place, « Déplacer vers un groupe… ». */
+.planche-navigateur-barre {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.4rem;
+}
+.planche-navigateur-barre .canevas-icone {
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  font-size: 1.05rem;
+}
+.planche-navigateur li.est-cible,
+.planche-navigateur li.est-cible-dans {
+  outline: 2px solid var(--accent, #2f6f4f);
+  outline-offset: -2px;
+}
+.planche-navigateur li.est-cible-avant {
+  box-shadow: inset 0 2px 0 var(--accent, #2f6f4f);
+}
+.planche-navigateur li.est-cible-apres {
+  box-shadow: inset 0 -2px 0 var(--accent, #2f6f4f);
+}
+.planche-navigateur-nom {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+}
+.planche-deplacer-liste {
+  list-style: none;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  max-height: 50vh;
+  overflow-y: auto;
+}

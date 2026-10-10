@@ -95,8 +95,61 @@ export const COMMANDES_CONTEXTE: readonly CommandeContexte[] = [
   { id: "fermer-tout", picto: "⤒", libelle: "planche.contexte.fermer-tout", raccourci: "Maj+Origine" },
 ];
 
-/** Raccourcis des commandes d'objet et de contexte, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE].map((c) => normaliserRaccourci(c.raccourci));
+/**
+ * Commandes du Navigateur (Objets O-4) : Nouveau groupe vide, Déplacer vers un groupe…, Renommer. Leur barre est celle du
+ * Navigateur (l'arbre qu'elles modifient) ; elles figurent aussi dans « Outils ▾ » et au menu contextuel.
+ */
+export type IdCommandeNavigateur = "groupe-vide" | "deplacer-vers" | "renommer";
+export interface CommandeNavigateur {
+  readonly id: IdCommandeNavigateur;
+  readonly picto: string;
+  readonly libelle: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_NAVIGATEUR: readonly CommandeNavigateur[] = [
+  { id: "groupe-vide", picto: "⊡", libelle: "planche.menu.groupe-vide", raccourci: "Alt+Maj+G" },
+  { id: "deplacer-vers", picto: "⇲", libelle: "planche.menu.deplacer-vers", raccourci: "Alt+Maj+V" },
+  { id: "renommer", picto: "✎", libelle: "planche.menu.renommer", raccourci: "F2" },
+];
+
+export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelectionObjets): Disponibilite {
+  if (s.lecture) return { disponible: false, motif: "planche.objets.motif.lecture" };
+  if (id === "groupe-vide") return { disponible: true, motif: null };
+  if (s.objets === 0 || s.objets !== s.entites) return { disponible: false, motif: id === "renommer" ? "planche.objets.motif.renommer" : "planche.objets.motif.deplacer" };
+  if (id === "renommer") return s.objets === 1 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.objets.motif.renommer" };
+  if (s.verrouilles) return { disponible: false, motif: "planche.objets.motif.verrouille" };
+  return { disponible: true, motif: null };
+}
+
+/** Raccourcis des commandes d'objet, de contexte et du Navigateur, normalisés (pour le contrôle des collisions). */
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR].map((c) => normaliserRaccourci(c.raccourci));
+
+/** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
+export interface CibleDeplacement {
+  readonly id: string | undefined;
+  readonly nom: string;
+  readonly profondeur: number;
+}
+
+/**
+ * Cibles de « Déplacer vers un groupe… » (O-4) : la racine puis chaque groupe ou composant de l'arbre, sauf le contexte
+ * d'où l'on part, les objets déplacés et tout ce qu'ils contiennent (un objet n'entre pas dans lui-même).
+ */
+export function ciblesDeplacement(m: Modele, deplaces: readonly string[], dans: string | undefined, nom: (id: string, defNom: string) => string, racine: string): CibleDeplacement[] {
+  const exclus = new Set(deplaces);
+  const r: CibleDeplacement[] = dans === undefined ? [] : [{ id: undefined, nom: racine, profondeur: 0 }];
+  const parcourir = (c: Modele["racine"], profondeur: number) => {
+    if (profondeur > 16) return;
+    for (const o of Object.values(c.occurrences)) {
+      if (exclus.has(o.id)) continue;
+      const d = m.definitions[o.definition];
+      if (o.id !== dans && !o.verrouille) r.push({ id: o.id, nom: nom(o.id, d?.nom ?? ""), profondeur: profondeur + 1 });
+      if (d) parcourir(d.contenu, profondeur + 1);
+    }
+  };
+  parcourir(m.racine, 0);
+  return r;
+}
 
 /** Étape du fil d'Ariane : `id` absent = racine de la Planche. */
 export interface EtapeFil {
