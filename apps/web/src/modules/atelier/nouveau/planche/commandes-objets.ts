@@ -57,8 +57,36 @@ export function disponibiliteObjet(id: IdCommandeObjet, s: EtatSelectionObjets):
   return { disponible: true, motif: null };
 }
 
-/** Raccourcis des commandes d'objet, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => COMMANDES_OBJETS.map((c) => normaliserRaccourci(c.raccourci));
+/**
+ * Commandes du contexte d'édition (Objets O-2) : Fermer remonte d'un niveau, Fermer tout revient à la racine. Leur barre
+ * est le fil d'Ariane (au-dessus du dessin, visible seulement dans un groupe ou un composant) ; leurs raccourcis
+ * marchent avec n'importe quel outil (Échap seul ne sort d'un objet qu'avec Sélection, comme SketchUp).
+ */
+export type IdCommandeContexte = "fermer" | "fermer-tout";
+export interface CommandeContexte {
+  readonly id: IdCommandeContexte;
+  readonly picto: string;
+  readonly libelle: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_CONTEXTE: readonly CommandeContexte[] = [
+  { id: "fermer", picto: "⤴", libelle: "planche.contexte.fermer", raccourci: "Maj+Échap" },
+  { id: "fermer-tout", picto: "⤒", libelle: "planche.contexte.fermer-tout", raccourci: "Maj+Origine" },
+];
+
+/** Raccourcis des commandes d'objet et de contexte, normalisés (pour le contrôle des collisions). */
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE].map((c) => normaliserRaccourci(c.raccourci));
+
+/** Étape du fil d'Ariane : `id` absent = racine de la Planche. */
+export interface EtapeFil {
+  readonly id: string | undefined;
+  readonly nom: string;
+}
+
+/** Fil d'Ariane du contexte ouvert : racine, puis chaque objet du chemin, le dernier étant le contexte courant. */
+export function filAriane(chemin: readonly string[], nom: (id: string) => string, racine: string): EtapeFil[] {
+  return [{ id: undefined, nom: racine }, ...chemin.map((id) => ({ id, nom: nom(id) }))];
+}
 
 /**
  * Liens d'extrusion rompus par une opération (Grouper, Créer un composant) : les surfaces liées à leurs arêtes sources

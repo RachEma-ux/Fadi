@@ -1754,3 +1754,85 @@
   outline: 2px solid var(--atelier-accent, #1f5f46);
   outline-offset: 1px;
 }
+
+/* Objets O-2 (D-203) : fil d'Ariane du contexte d'édition (W3C APG Breadcrumb : nav étiquetée, liste ordonnée,
+   aria-current sur l'étape courante) et commandes Fermer / Fermer tout. Superposé au dessin, comme la barre d'options. */
+.planche-fil {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.2rem 0.4rem;
+  background: var(--flottant-fond, #fff);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+  pointer-events: auto;
+}
+.planche-fil ol {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.planche-fil li {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.planche-fil li + li::before {
+  content: "›";
+  margin: 0 0.3rem;
+  color: var(--atelier-texte-doux, #4b5a52);
+}
+.planche-fil li button {
+  min-height: 36px;
+  padding: 0 0.45rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--atelier-accent, #1f5f46);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.planche-fil li [aria-current="page"] {
+  font-weight: 600;
+  padding: 0 0.45rem;
+}
+.planche-fil-commande {
+  min-width: 36px;
+  min-height: 36px;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+.planche-fil button:focus-visible {
+  outline: 2px solid var(--atelier-accent, #1f5f46);
+  outline-offset: 1px;
+}
+@media (max-width: 760px) {
+  .planche-fil {
+    position: absolute;
+    left: calc(var(--colonne-l) + 1.25rem);
+    right: 0.5rem;
+    bottom: calc(var(--volet-h, 10rem) + 0.5rem);
+    z-index: 7;
+  }
+  .planche-fil-commande,
+  .planche-fil li button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Dans un objet, la barre d'options de l'outil se pose au-dessus du fil d'Ariane. */
+  .planche.dans-contexte .planche-options-outil {
+    bottom: calc(var(--volet-h, 10rem) + 0.5rem + 3.6rem);
+  }
+}

@@ -465,7 +465,11 @@ export function clicSelection<E>(etat: E, ev: Extract<EvenementOutil, { genre: "
     }
     return mod.maj || mod.ctrl ? { etat } : { etat, selection: [] };
   }
-  if (c.genre === "occurrence" && nombre === 2 && !mod.maj && !mod.ctrl) return { etat, dans: c.id, selection: [] };
+  if (c.genre === "occurrence" && nombre === 2 && !mod.maj && !mod.ctrl) {
+    // Objets O-2 (D-203) : un objet verrouillé ne s'ouvre pas ; il est seulement sélectionné (boîte rouge).
+    if (contexte(ctx.modele, ctx.dans).occurrences[c.id]?.verrouille) return { etat, selection: [c.id] };
+    return { etat, dans: c.id, selection: [] };
+  }
   return { etat, selection: combiner(ctx.selection, idsDuClic(ctx.modele, ctx.dans, c, nombre), mod) };
 }
 

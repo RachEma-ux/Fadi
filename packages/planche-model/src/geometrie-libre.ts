@@ -1695,6 +1695,35 @@ function lier(t: Travail, c: Ctx, dans: Id | undefined, lien: Omit<Extrusion, "i
   t.annotationsSales = true;
 }
 
+/**
+ * Liens d'extrusion (D-196) dont la surface créée touche l'une des faces données (racine seulement) : statut « Liée aux
+ * arêtes sources » de la sélection (Objets O-2, EX-UI-06).
+ */
+export function liensDesFaces(m: Modele, faces: readonly Id[]): Id[] {
+  const liens = m.annotations?.extrusions ?? {};
+  const c = m.racine;
+  const ids: Id[] = [];
+  for (const L of Object.values(liens)) {
+    const crees = new Set(Object.keys(L.sommetsCrees ?? {}));
+    if (faces.some((f) => {
+      const F = c.faces[f];
+      return !!F && [F.exterieur, ...F.trous].some((b) => b.some((s) => crees.has(s)));
+    })) ids.push(L.id);
+  }
+  return ids;
+}
+
+/** Détacher le lien (EX-UI-06, EX-LINK-03) : la relation disparaît, la géométrie reste telle quelle ; un pas d'annulation. */
+export function detacherLiens(m: Modele, liens: readonly Id[]): Resultat {
+  return operer(m, undefined, (t) => {
+    for (const id of liens) {
+      if (!t.annotations.extrusions[id]) throw new RangeError(`Lien inconnu : ${id}`);
+      delete t.annotations.extrusions[id];
+    }
+    t.annotationsSales = true;
+  });
+}
+
 /** Nombre de faces qui touchent l'un des sommets donnés. */
 function facesTouchant(c: Ctx, sommets: ReadonlySet<Id>): number {
   let n = 0;

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { OUTILS, normaliserRaccourci, outilParId } from "@parcours/planche-model";
 import { BARRES, FAMILLES, OBJET_DE, SECTIONS, barreDe, groupesOutils, libelleOperation, premierOutil } from "./barres-outils";
 import { CATALOGUE } from "../messages";
-import { COMMANDES_OBJETS, commandeObjet, raccourcisObjets } from "./commandes-objets";
+import { COMMANDES_CONTEXTE, COMMANDES_OBJETS, commandeObjet, raccourcisObjets } from "./commandes-objets";
 import { RACCOURCIS_FADI, afficherRaccourci, commenceSaisie, nomOutil, outilDuClavier, outilsBarre, pictoOutil, raccourciClavier, raccourciOutil, sectionsGrille, titreOutil, type Cle } from "./outils-planche";
 
 /** Outils présents dans la Planche : rail de gauche, grille « … » (y compris le menu contextuel offert dans la grille). */
@@ -173,7 +173,9 @@ describe("Règle d'or de la Planche (D-202, AGENTS.md) — icône propre, barre 
  * qui doit les lui donner (programme D-202) ; aucune commande ne peut apparaître au menu sans être inscrite.
  */
 const COMMANDES_EN_ATTENTE: Readonly<Record<string, "O-1" | "O-2" | "O-3" | "L9">> = {
-  modifier: "O-2",
+  // Modifier (ouvrir l'objet) : son raccourci naturel (Entrée) dépend du routage par focus du registre (lot 9).
+  modifier: "L9",
+  "detacher-lien": "L9",
   "rendre-unique": "O-3",
   diviser: "O-3",
   "adoucir-lisser": "L9",
@@ -230,7 +232,28 @@ describe("Règle d'or — commandes d'objet livrées (Objets O-1, D-203)", () =>
     expect(source).toContain("...COMMANDES_OBJETS.map((c) =>");
     expect(source).toContain('"data-planche-commande": c.id');
     // « Outils ▾ » : groupe « Objets » alimenté par la même liste ; nom visible sous l'icône dans la barre d'actions.
-    expect(source).toContain("commandes={COMMANDES_OBJETS.map((c) =>");
+    expect(source).toMatch(/commandes=\{\[\s*\.\.\.COMMANDES_OBJETS\.map\(\(c\) =>/);
     expect(source).toContain("texte: t(c.court)");
+  });
+});
+
+describe("Règle d'or — commandes du contexte d'édition (Objets O-2, D-203)", () => {
+  it("Fermer et Fermer tout : icône propre, place dans le fil d'Ariane, raccourci sans collision", () => {
+    const pictos = new Set([...OUTILS.map((o) => pictoOutil(o.id)), ...COMMANDES_OBJETS.map((c) => c.picto), "◈", "▣"]);
+    for (const c of COMMANDES_CONTEXTE) {
+      expect(pictos.has(c.picto), `${c.id} partage son icône`).toBe(false);
+      pictos.add(c.picto);
+    }
+    const outils = new Set(OUTILS.map((o) => raccourciOutil(o)).filter((r): r is string => r !== null).map(normaliserRaccourci));
+    const tous = raccourcisObjets();
+    expect(new Set(tous).size).toBe(tous.length);
+    for (const c of COMMANDES_CONTEXTE) {
+      const r = normaliserRaccourci(c.raccourci);
+      expect(outils.has(r), `raccourci ${r} déjà pris par un outil`).toBe(false);
+      expect(RESERVES_PLANCHE).not.toContain(r);
+    }
+    const source = readFileSync(new URL("./Planche.tsx", import.meta.url), "utf8");
+    expect(source).toContain("{COMMANDES_CONTEXTE.map((c) => (");
+    expect(source).toContain('data-planche-fil');
   });
 });
