@@ -89,6 +89,7 @@ navigation (D-157). La Planche est **additive** : aucune fonction existante n'es
 | C25 | Droits et partage SketchUp. | R13. | Compatible | Lecteur : navigation, mesure sans guide, Info entité en lecture ; aucune commande. Partage : celui de Fadi (D-156 / tranche 5). |
 | C26 | Rendu 3D. | R14 (WebGL2 three.js par défaut). | Compatible | Lot 2 : three.js dans `apps/web` seulement ; aucun chiffre de performance sans mesure (`⏱`). |
 | C27 | Place dans le produit. | R2 (21 étapes intouchables), MO-1. | Compatible | Mode « Planche » de l'Atelier, aux mêmes endroits que l'Atelier (module `atelier`, étapes 10 et 11 en mode immersif) ; aucune étape modifiée. |
+| C28 | Chaque outil SketchUp a une icône, une place dans une barre et souvent un raccourci ; beaucoup n'en ont pas (Main levée, Polygone, Suivez-moi…) [OD, OM]. | **Règle d'or** du maître d'ouvrage (10/10/2026, D-202), `AGENTS.md`. | Écart déclaré, impératif | **Tout outil** de la Planche a (1) sa **propre icône**, jamais partagée, (2) sa **place dans une barre d'outils appropriée** (sa famille dans « Outils ▾ » et sa barre d'opérations, D-198) et (3) un **raccourci clavier** (relevé, sinon couche Fadi déclarée). La règle s'étend à **toute commande** (Grouper, Éclater, Isoler, Fermer le groupe…) à mesure de sa livraison, puis au registre unique du lot 9. Contrôle automatique : test « Règle d'or » de `barres-outils.test.ts` (un outil sans icône propre, sans barre ou sans raccourci fait échouer la CI ; chaque commande du menu contextuel est inscrite avec le lot qui lui donnera icône, barre et raccourci — Grouper, Éclater, Créer un composant au lot O-1 —, et une commande non inscrite fait échouer la CI). Au toucher, le raccourci est doublé d'un bouton nommé visible. |
 
 ---
 
@@ -522,8 +523,13 @@ dans le cercle, `2` → 24 faces latérales, aucune face horizontale.
 Face — Normal · Nouvelle face (Ctrl) · Étirement (Alt) · Tube sans fond ; Arête — Normal · Des deux côtés (Alt) · Allonger
 (↓). La touche, le bouton et le bouton au toucher font la même chose (`configurer`) ; un mode hors de propos est grisé. Le
 relevé donnait le texte « Alt = Mode étirement » sans effet constaté : l'**Étirement** déplace désormais la face et étire
-ses voisines au lieu de créer des faces latérales ; une voisine qui deviendrait non plane est refusée (pas de pli). CA-PPT-14
-à 17 : fiche PL-08-01. CA-PPT-7 : segment de 4 m, ↑ puis `2,7` →
+ses voisines au lieu de créer des faces latérales ; une voisine qui deviendrait non plane est refusée (pas de pli, plis
+programmés au lot 20). CA-PPT-14 à 17 : fiche PL-08-01. **Suite du lot 8 (D-202)** : une face **sans voisine dans le
+contexte courant** n'est pas étirée (option grisée, refus au clic : « Étirement : aucune face voisine dans ce contexte —
+utilisez Déplacer pour déplacer une face seule. ») ; « Tube sans fond » est renommé **« Surface ouverte »** ; la barre
+d'options se superpose au dessin et ne le redimensionne jamais (EX-UI-04). CA-PPT-18 : rectangle seul au sol, mode
+Étirement, clic → refus nommé, aucun pas d'annulation ; même face en Normal, `1` → boîte de 6 faces. CA-PPT-19 : au
+téléphone, choisir Pousser/Tirer ne change pas la hauteur de la zone de dessin. CA-PPT-7 : segment de 4 m, ↑ puis `2,7` →
 une face verticale de 10,8 m², un pas d'annulation. CA-PPT-8 : arête d'un cercle de 24 segments, ↑ puis `2` → tube de 24
 faces lisses sur la face de base (25 faces). CA-PPT-9 : Alt puis ← et `1` sur un segment de 4 m → surface de 8 m².
 

@@ -14,7 +14,7 @@
  * l'axe verrouillé ; Alt = des deux côtés. Mêmes gestes ensuite que pour une face : correction par une distance tapée,
  * double-clic sur une autre arête = répéter, Échap.
  */
-import { type Id, allongerArete, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
+import { type Id, ERREUR_ETIRER_ISOLEE, allongerArete, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, faceAVoisines, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, EPS, TOL, add, cross, dist, dot, egal, len, normalize, scale, sub } from "../vecteur.js";
@@ -50,9 +50,9 @@ export const ID_POUSSER_TIRER = "pousser-tirer";
 
 /** Consignes du mode arêtes (écart Fadi, D-196 : absentes du relevé SketchUp). */
 export const CONSIGNE_ARETE_SURVOL = "Cliquez sur l'arête à étendre en surface. | Alt = Des deux côtés.";
-/** Consignes du tube sans fond (mode « Tube sans fond » de la barre d'options, écart Fadi D-199, D-201). */
-export const CONSIGNE_TUBE_FACE = "Tube sans fond : cliquez sur la face dont le contour sera tiré.";
-export const CONSIGNE_TUBE_TIRAGE = "Tube sans fond : cliquez pour fixer la hauteur ou saisissez la distance.";
+/** Consignes de la surface ouverte (mode « Surface ouverte » de la barre d'options, ex-« tube sans fond », écart Fadi D-199, D-201, D-202). */
+export const CONSIGNE_TUBE_FACE = "Surface ouverte : cliquez sur la face dont le contour sera tiré (un cercle donne un tube sans fond).";
+export const CONSIGNE_TUBE_TIRAGE = "Surface ouverte : cliquez pour fixer la hauteur ou saisissez la distance — aucune face n'est ajoutée aux extrémités.";
 export const CONSIGNE_ARETE_TIRAGE =
   "Cliquez pour fixer la surface ou saisissez la distance. | Flèches = Verrouiller un axe. | ↓ = Le long de l'arête (allonger). | Alt = Des deux côtés.";
 
@@ -436,7 +436,7 @@ function saisir(e: EtatPousserTirer, ctx: ContexteOutil, texte: string): Transit
 
 // ————————————————————————————————————————————————————————————— Options explicites (lot Planche 8, D-201)
 
-/** Modes d'une face : Normal (relevé), Nouvelle face (Ctrl, relevé), Étirement (Alt, relevé), Tube sans fond (D-199). */
+/** Modes d'une face : Normal (relevé), Nouvelle face (Ctrl, relevé), Étirement (Alt, relevé), Surface ouverte (D-199, renommée D-202). */
 export type ModeFace = "normal" | "nouvelle-face" | "etirement" | "tube";
 /** Modes d'une arête (écart Fadi) : Normal, Des deux côtés (Alt, D-196), Allonger (↓, D-197). */
 export type ModeArete = "normal" | "deux-cotes" | "allonger";
@@ -471,9 +471,12 @@ function configurerPT(e: EtatPousserTirer, option: string, valeur: string): Tran
 }
 
 /** Options affichées : les modes de face hors d'une arête, les modes d'arête sur une arête ; un mode hors de propos est grisé. */
-function optionsPT(e: EtatPousserTirer): OptionOutil[] {
+function optionsPT(e: EtatPousserTirer, ctx: ContexteOutil): OptionOutil[] {
   const surArete = e.etape === 2 ? e.aretes.length > 0 : e.survolArete !== null;
   const tirageArete = e.etape === 2 && e.aretes.length > 0;
+  // Face visée (survolée ou cliquée) sans voisine dans le contexte courant : Étirement grisé (suite du lot 8).
+  const visee = e.etape === 2 ? e.face : e.survol;
+  const isolee = visee !== null && !faceAVoisines(ctx.modele, visee, ctx.dans);
   return [
     {
       id: "face",
@@ -481,7 +484,7 @@ function optionsPT(e: EtatPousserTirer): OptionOutil[] {
       valeurs: [
         { id: "normal", disponible: !surArete },
         { id: "nouvelle-face", disponible: !surArete, raccourci: "Ctrl" },
-        { id: "etirement", disponible: !surArete, raccourci: "Alt" },
+        { id: "etirement", disponible: !surArete && !isolee, raccourci: "Alt" },
         { id: "tube", disponible: !surArete },
       ],
     },
@@ -572,6 +575,8 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
           return { etat: { ...etat, erreur: "Double-cliquez sur le groupe pour y entrer, puis poussez ou tirez une de ses faces." } };
         }
         if (ev.double && etat.derniere?.params.genre === "face") return appliquer(etat, ctx, cible.id, etat.derniere.params.distance, null, null);
+        // Suite du lot 8 (EX-PT-03, EX-UI-05) : l'Étirement d'une face sans voisine est refusé dès le clic, avant tout aperçu.
+        if (etat.etirement && !faceAVoisines(ctx.modele, cible.id, ctx.dans)) return { etat: { ...etat, erreur: ERREUR_ETIRER_ISOLEE } };
         const P = intersectionRayonPlan(ev.rayon, { origine: el.exterieur[0] as Vec3, normale: el.normale }) ?? (el.exterieur[0] as Vec3);
         return {
           etat: { ...etat, etape: 2, face: cible.id, normale: normalize(el.normale), origine: P, contour: el.exterieur, distance: 0, inference: inferenceBrute(P), texte: null, erreur: null },
@@ -614,7 +619,7 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
   },
 
   vue(etat, ctx): VueOutil {
-    return { ...vuePT(etat, ctx), options: optionsPT(etat) };
+    return { ...vuePT(etat, ctx), options: optionsPT(etat, ctx) };
   },
 };
 

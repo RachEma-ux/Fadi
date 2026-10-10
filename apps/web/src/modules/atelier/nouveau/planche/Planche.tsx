@@ -2189,7 +2189,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       </footer>
 
       {vue.options && vue.options.length > 0 && (
-        <div className="planche-options" role="group" aria-label={t("planche.options")} data-planche-options>
+        <div className="planche-options-outil" role="group" aria-label={t("planche.options")} data-planche-options>
           {/* Écran étroit : seuls les groupes utilisables pour la cible courante (sinon trois rangées au téléphone). */}
           {vue.options.filter((o) => !etroit || o.valeurs.some((v) => v.disponible)).map((o) => (
             <span key={o.id} className="planche-option" role="group" aria-label={libelleOption(outilId, o.id)} data-planche-option={o.id}>

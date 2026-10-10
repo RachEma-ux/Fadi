@@ -287,7 +287,7 @@ async function outilPret(page) {
   await page.locator('[data-planche-option-valeur="face:tube"]').click();
   await page.locator("[data-planche-vue]").focus();
   await survoler({ x: 0.2, y: 0.1, z: 0 });
-  check("option Tube sans fond : consigne du tube sans fond", /Tube sans fond/.test(await consigne()), await consigne());
+  check("option Surface ouverte : consigne de la surface ouverte", /Surface ouverte/.test(await consigne()), await consigne());
   await cliquer({ x: 0.2, y: 0.1, z: 0 });
   await survoler({ x: 0.2, y: 0.1, z: 1 });
   await saisir("2");

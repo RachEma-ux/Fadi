@@ -11,5 +11,14 @@
 - Do not invent regulatory, structural or source-project data. Distinguish hypotheses, requirements and recommendations (`packages/domain-model`) — they are never the same thing.
 - Never mix the cadastral, geographic and local coordinate frames; convert explicitly and keep each value tagged with its frame (see `Coordinate` in `packages/domain-model`).
 - `docs/architecture.md` follows the objective brief (modular monolith, 7 modules, versioned domain model, reversible commands). Where a code change would contradict it, fix the plan or ask, don't silently diverge.
+- Planche golden rule (owner decision of 2026-10-10, D-202), mandatory: every Planche tool has (1) its own icon, never
+  shared with another tool, (2) a place in an appropriate toolbar (its family in « Outils ▾ » and its operations bar),
+  and (3) a keyboard shortcut (surveyed SketchUp shortcut, otherwise the declared Fadi layer). The rule extends to every
+  Planche command (Group, Explode, Isolate, Close group…) as each one is delivered, and to the single command registry
+  of lot 9. It is enforced by tests (`apps/web/src/modules/atelier/nouveau/planche/barres-outils.test.ts`, « Règle
+  d'or »): a tool without its own icon, toolbar or shortcut fails CI; every context-menu command of the Planche must be
+  listed with the lot that will give it its icon, toolbar and shortcut (O-1, O-2, O-3, L9), so no command can appear
+  without being accounted for. On touch screens the shortcut is complemented by a
+  visible named button, never replaced by a hidden gesture.
 - Run npm run typecheck, npm test and npm run build for relevant code changes. Report checks that could not run.
 - Never commit secrets, node_modules or build outputs.

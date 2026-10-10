@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Id, aire, ajouterPolygone, ajouterRectangle, ajouterSegment, modeleVide, pousserTirer } from "../geometrie-libre.js";
+import { type Id, ERREUR_ETIRER_ISOLEE, aire, ajouterPolygone, ajouterRectangle, ajouterSegment, modeleVide, pousserTirer } from "../geometrie-libre.js";
 import { v3 } from "../vecteur.js";
 import { etape } from "./commun-formes.js";
 import { aretes, boite, clicVers, contientPoint, emprise, faces, partie, saisie, sommets, survolVers, touche, volumeAbsolu, echap } from "./essais-modification.js";
@@ -281,5 +281,20 @@ describe("Modes explicites (lot Planche 8, D-201)", () => {
     p.jouer(saisie("2"));
     expect(emprise(p.modele).max.z).toBeCloseTo(4, 9);
     expect(p.historique).toHaveLength(2);
+  });
+
+  it("face isolée (suite du lot 8, D-202) : Étirement grisé au survol, refusé au clic avec le motif, rien n'est créé", () => {
+    const m = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(2, 0, 0), v3(0, 2, 0)).modele;
+    const p = partie(machinePousserTirer, m);
+    const dispo = () => p.vue().options?.find((o) => o.id === "face")?.valeurs.find((v) => v.id === "etirement")?.disponible;
+    expect(dispo()).toBe(true);
+    p.jouer(survolVers(v3(1, 1, 0)));
+    expect(dispo()).toBe(false);
+    p.configurer("face", "etirement").jouer(clicVers(v3(1, 1, 0)));
+    expect(p.vue().erreur).toBe(ERREUR_ETIRER_ISOLEE);
+    expect(p.historique).toHaveLength(1);
+    // En mode Normal, la même face se pousse comme avant (boîte).
+    p.configurer("face", "normal").jouer(clicVers(v3(1, 1, 0)), saisie("1"));
+    expect(faces(p.modele)).toHaveLength(6);
   });
 });

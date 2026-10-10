@@ -7928,6 +7928,7 @@
 "Cliquez d'abord sur la face ou l'arête à pousser ou à tirer.": "First click the face or edge to push or pull.",
 "Allonger : cliquez d'abord sur l'arête à allonger.": "Extend: first click the edge to extend.",
 "Allonger : seule une arête droite isolée peut être allongée.": "Extend: only a single straight edge can be extended.",
+"Étirement : aucune face voisine dans ce contexte — utilisez Déplacer pour déplacer une face seule.": "Stretch: no adjacent face in this context — use Move to move a single face.",
 "Double-cliquez sur le groupe pour y entrer, puis poussez ou tirez une de ses arêtes.": "Double-click the group to enter it, then push or pull one of its edges.",
 "Double-cliquez sur le groupe pour y entrer, puis poussez ou tirez une de ses faces.": "Double-click the group to enter it, then push or pull one of its faces.",
 "Distance nulle : rien n'a été poussé ni tiré.": "Zero distance: nothing was pushed or pulled.",
@@ -7943,8 +7944,8 @@
 "Raccourcir une arête reliée à d'autres : utilisez la Gomme ou Déplacer.": "To shorten an edge connected to others, use the Eraser or Move.",
 "La couronne demande un contour plan fermé (cercle, polygone ou arêtes formant une boucle).": "A ring needs a closed planar outline (circle, polygon or edges forming a loop).",
 "Le décalage vers l'intérieur dépasse la forme : réduisez la distance.": "The inward offset goes beyond the shape: reduce the distance.",
-"Tube sans fond : cliquez sur la face dont le contour sera tiré.": "Bottomless tube: click the face whose outline will be pulled.",
-"Tube sans fond : cliquez pour fixer la hauteur ou saisissez la distance.": "Bottomless tube: click to set the height or enter the distance.",
+"Surface ouverte : cliquez sur la face dont le contour sera tiré (un cercle donne un tube sans fond).": "Open surface: click the face whose outline will be pulled (a circle gives a bottomless tube).",
+"Surface ouverte : cliquez pour fixer la hauteur ou saisissez la distance — aucune face n'est ajoutée aux extrémités.": "Open surface: click to set the height or enter the distance — no face is added at the ends.",
 "Sur une arête : surface des deux côtés (écart Fadi).": "On an edge: surface on both sides (Fadi deviation).",
 "Sur une arête : le long de l'arête, pour l'allonger (écart Fadi).": "On an edge: along the edge, to extend it (Fadi deviation).",
 "écart propre à Fadi": "Fadi-specific deviation"
