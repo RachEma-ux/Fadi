@@ -107,6 +107,27 @@ export interface ReglagesPlanche {
 }
 export const REGLAGES_DEFAUT: ReglagesPlanche = { accrochageLongueur: 0.01, accrochageAngle: 15, extremitesTexte: "fleche-fermee", alignerTexte: "epingle", extremitesCote: "barre", alignerCote: "centre" };
 
+/**
+ * Lien d'une surface étendue depuis des arêtes (Pousser/Tirer d'arêtes, écart Fadi D-196) : quand les arêtes sources
+ * bougent, la surface est recalculée ; si la surface elle-même est modifiée (sommets créés déplacés ou effacés,
+ * géométrie étrangère rattachée), le lien est rompu et la surface devient de la géométrie libre ordinaire.
+ */
+export interface Extrusion {
+  readonly id: Id;
+  readonly genre: "balayage" | "couronne";
+  /** Arêtes sources (contexte racine). */
+  readonly sources: readonly Id[];
+  /** Balayage : déplacement ; couronne : `distance` (> 0 vers l'extérieur). */
+  readonly vecteur?: Vec3;
+  readonly distance?: number;
+  readonly symetrique: boolean;
+  /** Positions des sommets sources et des sommets créés au dernier calcul. */
+  readonly sommetsSources: Readonly<Record<Id, Vec3>>;
+  readonly sommetsCrees: Readonly<Record<Id, Vec3>>;
+  /** Nombre de faces touchant un sommet créé au dernier calcul (une face effacée ou découpée rompt le lien). */
+  readonly faces: number;
+}
+
 export interface Annotations {
   readonly guides: Readonly<Record<Id, Guide>>;
   readonly cotes: Readonly<Record<Id, Cote>>;
@@ -120,6 +141,8 @@ export interface Annotations {
   readonly scenes?: Readonly<Record<Id, Scene>>;
   /** Réglages de la Planche (lot 5) ; absent = `REGLAGES_DEFAUT`. */
   readonly reglages?: ReglagesPlanche;
+  /** Surfaces liées à leurs arêtes sources (D-196) ; absent = aucune. */
+  readonly extrusions?: Readonly<Record<Id, Extrusion>>;
 }
 
 export const ANNOTATIONS_VIDES: Annotations = Object.freeze({
@@ -142,6 +165,7 @@ export interface AnnotationsMutables {
   repere?: Repere;
   scenes: Record<Id, Scene>;
   reglages?: ReglagesPlanche;
+  extrusions: Record<Id, Extrusion>;
 }
 
 export const annotationsDe = (a: Annotations | undefined): Annotations => a ?? ANNOTATIONS_VIDES;
