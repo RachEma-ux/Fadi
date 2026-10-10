@@ -6,6 +6,32 @@ Planche de Fadi et implémente les mêmes fonctions dans la Planche de Fadi », 
 la critique externe transmise par le maître d'ouvrage, le code de `main` et des PR #109 et #110 (comptées comme état
 courant). DrawAll est hors périmètre sur instruction du maître d'ouvrage.
 
+## Mise à jour du 10 octobre 2026 (D-202) — décisions du maître d'ouvrage
+
+Le maître d'ouvrage a retenu toutes les recommandations du chef de projet (rapport « Grouper et Éclater SketchUp vers
+Planche », cahier « Extrusion Implementation Specification V1 ») et fixé la **règle d'or** de la Planche : chaque outil a
+sa propre icône, une place dans une barre d'outils appropriée et un raccourci clavier (`AGENTS.md`, cahier C28, test
+« Règle d'or »). Le cahier V1 est le **contrat de la famille d'extrusion native Planche** : chaque lot cite les
+exigences EX-xxx et les cas A / P / F / R / T / L / I qu'il couvre. Ordre d'exécution, un lot à la fois :
+
+| Ordre | Lot | Contenu | Exigences V1 couvertes |
+| --- | --- | --- | --- |
+| 1 | **L8 (suite)** | Étirement refusé sur une face sans voisine dans le contexte courant ; barre d'options superposée au dessin ; « Tube sans fond » renommé « Surface ouverte » ; règle d'or ; fixtures de régression | B0.1, B0.2 ; EX-PT-03, EX-PT-04, EX-UI-04 ; P-01, P-02, P-03, P-10, P-11, P-12, P-14, P-15, L-06 |
+| 2 | **Objets O-1** | Grouper / Éclater avec icônes et boutons dans la barre d'actions ; Éclater grisé sur géométrie libre ; message quand Grouper rompt un lien d'extrusion ; Ctrl avant G sans effet sur Pousser/Tirer | EX-UI-06 (en partie), EX-LINK-02 |
+| 3 | **Objets O-2** | Contexte d'édition lisible : délavage, boîte pointillée, fil d'Ariane cliquable, « Fermer » et « Fermer tout », statut Liée / Indépendant, objet verrouillé non ouvrable | EX-UI-03, EX-UI-06 |
+| 4 | **L9** | Registre unique des commandes (outils et commandes d'objet), `ExtrusionAction` typé, modificateurs reconnus au relâchement (Maj seul rétabli pour la Surface ouverte), routage par focus, barre APG ; avec **O-3** (Éclater sans perte, transfert annoncé de la matière et de la balise, « #k », « Diviser en segments », Ctrl+Maj+G), **O-4** (groupe vide, déplacer vers un groupe, glisser-déposer et renommage au Navigateur), **O-5** (Isoler avec restauration), **O-6** (origine locale des groupes) | B1.1, B1.2 ; EX-CMD-01 à 06 ; A-03 à A-08, I-08 |
+| 5 | **L10** | a) aperçu triangulé avec trous, pipeline unique aperçu / validation, Pousser/Tirer complet (« Jusqu'à une face », étendue signée affichée, Distance par côté), cycle de vie des liens ; b) Suivez-moi complet ; c) **Révolution comme méthode de Suivez-moi** (axe, angle, segments par tour, option « résultat en nouveau groupe ») — l'ancien **L15 est absorbé** | B1.4, B2.2, B2.3, B3.1, B3.2, B4.1 ; EX-PREV, EX-STATE-01 à 03, EX-NUM, EX-PT-01, 02, 05 à 07, EX-LINK, EX-FM, EX-RV ; A-10, A-11, P-01 à P-17, L-01 à L-06, F-01 à F-08, R-01 à R-04 |
+| 6 | **L11 à L14** | Chaîne des profilés (inchangée, ci-dessous) | — |
+| 7 | **L16 à L18** | Texte 3D orienté (B4.2, EX-TX, T-01 à T-04), compléments | B4.2 |
+| 8 | **L19** | Persistance, contextes transformés, exports, codes de diagnostic `EX_*`, plafond de complexité, mesures sur un bureau nommé et un Android réel, matrice d'acceptation complète : **la famille d'extrusion n'est déclarée complète qu'à ce lot** | B5.1, B5.2 ; EX-SAVE, EX-MODEL-02, 03, EX-SEC, EX-ERR, EX-PERF, EX-REL ; I-01 à I-10 |
+| 9 | **L20** | Étirement à plis : triangulation contrainte (concaves, trous), arêtes de pli, validation des intersections ; le pli ne franchit jamais un contexte, avertissement sur un composant partagé | EX-PT-03 complet ; P-05, P-06, P-07 |
+| 10 | **L21** | Extrusion multi-faces et épaississement d'une surface ouverte | Hors V1, inclus par décision D-202 |
+| 11 | **L22** | Taper, twist et loft, comme méthodes de Suivez-moi à section variable | Hors V1, inclus par décision D-202 |
+
+Jusqu'au lot 20, l'Étirement **refuse** une voisine qui deviendrait non plane (comportement honnête, refus atomique).
+Les écarts à SketchUp retenus (groupe vide au téléphone, Isoler avec restauration, fil d'Ariane, transfert annoncé à
+l'éclatement, re-parentage avec avertissement sur un composant partagé) sont des **écarts Fadi déclarés**.
+
 ## Principes
 
 - **Un lot = une PR**, petite, livrable seule, avec ses tests ; **un lot à la fois** ; acceptation du maître d'ouvrage

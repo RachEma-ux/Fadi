@@ -1701,9 +1701,25 @@
   gap: 0.35rem 0.8rem;
   align-items: center;
   padding: 0.3rem 0.6rem;
-  background: var(--atelier-fond, #fff);
-  border-top: 1px solid var(--atelier-ligne, #dce5df);
+  background: var(--flottant-fond, #fff);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
   pointer-events: auto;
+}
+/* Suite du lot 8 (EX-UI-04, D-202) : la barre d'options se SUPERPOSE au dessin, elle ne prend jamais de place dans le
+   flux du volet. Au téléphone, elle flotte juste au-dessus du volet, à droite du rail d'outils : la zone de dessin garde
+   sa taille quand on choisit un outil ou quand la cible passe d'une face à une arête (le point visé reste sous le doigt). */
+@media (max-width: 760px) {
+  .planche-options {
+    position: absolute;
+    left: calc(var(--colonne-l) + 1.25rem);
+    right: 0.5rem;
+    bottom: calc(var(--volet-h, 10rem) + 0.5rem);
+    z-index: 7;
+    max-height: 40vh;
+    overflow-y: auto;
+  }
 }
 .planche-option {
   display: inline-flex;

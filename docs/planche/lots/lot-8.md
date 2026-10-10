@@ -34,3 +34,26 @@
   le pli automatique.
 - Le tube sans fond n'a plus de touche : elle sera attribuée par le registre unique des commandes (lot 9).
 - Les barres d'opérations flottantes n'ont pas encore de section « Options » (lot 9).
+
+## Suite du lot 8 (D-202, 10 octobre 2026)
+
+Décidée par le maître d'ouvrage après l'analyse du cahier « Extrusion Implementation Specification V1 » et la recherche
+Grouper / Éclater.
+
+- **Étirement d'une face isolée refusé** (EX-PT-03, EX-UI-05) : `faceAVoisines(m, face, dans)` au noyau ; `etirerFace`
+  refuse avec `ERREUR_ETIRER_ISOLEE` (« aucune face voisine dans ce contexte — utilisez Déplacer ») ; la machine refuse dès
+  le clic en mode Étirement ; l'option Étirement est grisée quand la face survolée ou cliquée n'a pas de voisine. Les
+  voisines sont cherchées **dans le contexte courant** : une face isolée dans un groupe est refusée même si elle touche
+  visuellement une face extérieure.
+- **Barre d'options superposée au dessin** (EX-UI-04) : au téléphone (≤ 760 px), elle flotte au-dessus du volet, à droite
+  du rail d'outils ; elle ne prend plus de place dans le flux, la zone de dessin garde sa taille quand on choisit l'outil
+  ou que la cible passe d'une face à une arête (le point visé reste sous le doigt). Au bureau, elle était déjà en
+  surcouche ; elle prend l'aspect des autres barres flottantes (bord, rayon, ombre).
+- **« Tube sans fond » renommé « Surface ouverte »** (EX-PT-04), français et anglais (« Open surface ») ; la consigne
+  rappelle qu'un cercle donne un tube sans fond et qu'aucune face n'est ajoutée aux extrémités.
+- **Règle d'or** : `AGENTS.md`, cahier C28, test « Règle d'or » (`barres-outils.test.ts`).
+- **Fixtures de régression** (B0.2) : `fixtures-extrusion.test.ts` épingle P-01, P-02, P-03, P-10, P-11, P-12, P-14,
+  P-15 et L-06 aux cotes de la V1 ; F-01 est couvert par « CA-SUI-1 » (`modification-noyau.test.ts`).
+
+Limite déclarée maintenue : l'Étirement refuse une voisine qui deviendrait gauche ; l'Étirement à plis est programmé au
+lot 20 (D-202).

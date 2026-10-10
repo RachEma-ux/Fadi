@@ -1587,6 +1587,18 @@ export function tuberFace(m: Modele, face: Id, distance: number, o: OptionsConte
   });
 }
 
+/** Motif du refus de l'Étirement d'une face sans voisine (suite du lot 8, EX-PT-03). */
+export const ERREUR_ETIRER_ISOLEE = "Étirement : aucune face voisine dans ce contexte — utilisez Déplacer pour déplacer une face seule.";
+
+/** Vrai si la face partage au moins un sommet avec une autre face du contexte (`dans`) : seule condition pour l'étirer. */
+export function faceAVoisines(m: Modele, face: Id, dans?: Id): boolean {
+  const c = contexte(m, dans);
+  const F = c.faces[face];
+  if (!F) return false;
+  const siens = new Set<Id>([...F.exterieur, ...F.trous.flat()]);
+  return Object.values(c.faces).some((g) => g.id !== face && [g.exterieur, ...g.trous].some((b) => b.some((s) => siens.has(s))));
+}
+
 /**
  * Étirement (Pousser/Tirer, mode Étirement — relevé « Alt = Mode étirement », effet réalisé au lot Planche 8, D-201) :
  * les sommets de la face avancent de `distance` selon sa normale et les faces voisines les suivent — elles sont étirées
@@ -1603,6 +1615,8 @@ export function etirerFace(m: Modele, face: Id, distance: number, o: OptionsCont
     const bouges = new Set<Id>([...F.exterieur, ...F.trous.flat()]);
     const nouvelle = (s: Id): Vec3 => (bouges.has(s) ? add(pos(c, s), dep) : pos(c, s));
     const voisines = [...c.faces.values()].filter((g) => g.id !== F.id && [g.exterieur, ...g.trous].some((b) => b.some((s) => bouges.has(s))));
+    // Suite du lot 8 (EX-PT-03) : sans voisine dans le contexte courant, étirer reviendrait à déplacer la face.
+    if (voisines.length === 0) throw new RangeError(ERREUR_ETIRER_ISOLEE);
     const normales = new Map<Id, Vec3>();
     for (const g of voisines) {
       const ext = g.exterieur.map(nouvelle);

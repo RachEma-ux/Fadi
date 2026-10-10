@@ -246,9 +246,20 @@ const presse = (page, opt, val) => page.locator(`[data-planche-option-valeur="${
   await cliquer({ x: 0, y: 0, z: 0 });
   await survoler({ x: 1, y: 1, z: 0 });
   await saisir("2;2");
+  // CA-PPT-19 (suite du lot 8, D-202) : choisir Pousser/Tirer — la barre d'options apparaît — ne change pas la zone de dessin.
+  const avant = await page.locator("[data-planche-vue]").boundingBox();
   await page.keyboard.press("p");
   await outilPret(page);
+  const apres = await page.locator("[data-planche-vue]").boundingBox();
+  check("[téléphone] la barre d'options se superpose : zone de dessin inchangée", !!avant && !!apres && Math.abs(avant.height - apres.height) < 0.5 && Math.abs(avant.y - apres.y) < 0.5, JSON.stringify({ avant, apres }));
   const p0 = await ecran({ x: 1, y: 1, z: 0 });
+  // CA-PPT-18 : la face posée seule n'a pas de voisine — Étirement refusé dès le toucher, rien n'est créé.
+  await page.locator('[data-planche-option-valeur="face:etirement"]').tap();
+  await page.touchscreen.tap(p0.x, p0.y);
+  await page.waitForTimeout(80);
+  const message = (await page.locator("[data-planche-message]").textContent().catch(() => "")) ?? "";
+  check("[téléphone] Étirement d'une face seule : refus nommé, rien n'est créé", /aucune face voisine/.test(message) && (await etat()).faces === 1, message);
+  await page.locator('[data-planche-option-valeur="face:normal"]').tap();
   await page.touchscreen.tap(p0.x, p0.y);
   await saisir("1");
   const bouton = page.locator('[data-planche-option-valeur="face:etirement"]');

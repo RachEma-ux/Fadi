@@ -140,3 +140,27 @@ describe("Barres d'outils — langue de l'interface écrite par le code (Planche
     expect(CATALOGUE.en["outils.section.mesurer"]).toBe("Measure / annotate");
   });
 });
+
+describe("Règle d'or de la Planche (D-202, AGENTS.md) — icône propre, barre appropriée, raccourci clavier", () => {
+  it("chaque outil a sa propre icône, figure dans sa famille d'« Outils ▾ » et dans sa barre d'opérations, et a un raccourci", () => {
+    const familles = new Map(groupesOutils().flatMap((g) => g.outils.map((o) => [o.id, g.famille] as const)));
+    const icones = new Map<string, string>();
+    const raccourcis = new Map<string, string>();
+    for (const o of OUTILS) {
+      // 1. Icône propre, jamais partagée.
+      const icone = pictoOutil(o.id);
+      expect(icone, `${o.id} : icône manquante`).not.toBe("•");
+      expect(icones.get(icone), `${o.id} partage son icône ${icone}`).toBeUndefined();
+      icones.set(icone, o.id);
+      // 2. Barre appropriée : sa famille dans « Outils ▾ » et sa barre d'opérations, où il figure lui-même.
+      expect(familles.get(o.id), `${o.id} : absent d'« Outils ▾ »`).toBe(o.famille);
+      expect(barreDe(o.id)?.flatMap((s) => s.outils.map((x) => x.id)), `${o.id} : absent de sa barre d'opérations`).toContain(o.id);
+      // 3. Raccourci clavier, unique.
+      const r = raccourciOutil(o);
+      expect(r, `${o.id} : aucun raccourci clavier`).not.toBeNull();
+      const n = normaliserRaccourci(r as string);
+      expect(raccourcis.get(n), `${o.id} partage le raccourci ${r}`).toBeUndefined();
+      raccourcis.set(n, o.id);
+    }
+  });
+});
