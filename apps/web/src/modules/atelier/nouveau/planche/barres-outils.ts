@@ -38,7 +38,7 @@ export type ObjetBarre = "aretes" | "surfaces" | "volumes" | "selection" | "soli
 /** Contenu des barres, par objet (identifiants du catalogue). */
 export const BARRES: Readonly<Record<ObjetBarre, Readonly<Record<CleSection, readonly string[]>>>> = {
   aretes: {
-    creer: ["ligne", "main-levee", "arc-2-points", "arc", "arc-3-points"],
+    creer: ["ligne", "main-levee", "arc-2-points", "arc", "arc-3-points", "profiles-aretes"],
     modifier: ["deplacer", "pousser-tirer", "decalage", "diviser", "faire-pivoter", "echelle", "retourner", "suivez-moi", "gomme"],
     mesurer: ["metre", "cotation", "rapporteur", "texte"],
   },
@@ -48,7 +48,7 @@ export const BARRES: Readonly<Record<ObjetBarre, Readonly<Record<CleSection, rea
     mesurer: ["metre", "cotation", "rapporteur", "texte"],
   },
   volumes: {
-    creer: ["pousser-tirer", "suivez-moi", "texte-3d"],
+    creer: ["pousser-tirer", "suivez-moi", "texte-3d", "profile", "profiles-aretes"],
     modifier: ["deplacer", "faire-pivoter", "echelle", "retourner", "decalage", "peinture", "gomme"],
     mesurer: ["metre", "cotation", "plan-de-coupe", "texte"],
   },
@@ -108,6 +108,8 @@ export const OBJET_DE: Readonly<Record<string, ObjetBarre>> = {
   "pousser-tirer": "volumes",
   "suivez-moi": "volumes",
   "texte-3d": "volumes",
+  profile: "volumes",
+  "profiles-aretes": "volumes",
   "enveloppe-exterieure": "solides",
   intersection: "solides",
   union: "solides",

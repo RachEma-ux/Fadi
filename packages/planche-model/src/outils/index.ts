@@ -5,6 +5,7 @@ import { MACHINES_FORMES } from "./registre-formes.js";
 import { MACHINES_MODIFICATION } from "./registre-modification.js";
 import { MACHINES_MESURE } from "./registre-mesure.js";
 import { MACHINES_MATERIAU } from "./registre-materiau.js";
+import { MACHINES_PROFILES } from "./registre-profiles.js";
 
 export * from "./machine.js";
 export { poignees, type Poignee } from "./echelle.js";
@@ -20,7 +21,7 @@ export { viser, viserAnnotation, cibleDans, cheminOccurrence, cheminContexte, et
 export { formaterAire as _formaterAire } from "./metre.js";
 
 export const MACHINES: ReadonlyMap<string, MachineOutil<any>> = new Map(
-  [...MACHINES_TRACE, ...MACHINES_FORMES, ...MACHINES_MODIFICATION, ...MACHINES_MESURE, ...MACHINES_MATERIAU].map((m) => [m.id, m] as const),
+  [...MACHINES_TRACE, ...MACHINES_FORMES, ...MACHINES_MODIFICATION, ...MACHINES_MESURE, ...MACHINES_MATERIAU, ...MACHINES_PROFILES].map((m) => [m.id, m] as const),
 );
 
 export function machineParId(id: string): MachineOutil<any> | undefined {
@@ -28,3 +29,5 @@ export function machineParId(id: string): MachineOutil<any> | undefined {
 }
 export { FRAPPE_SEULE_VIDE, appuiFrappe, relacheFrappe, consommerFrappe, oublierFrappe, type EtatFrappeSeule } from "./modificateurs.js";
 export { actionExtrusion, type ActionExtrusion, type OperationExtrusion, type OptionExtrusion } from "./pousser-tirer.js";
+export { ERREUR_SANS_SECTION, CONSIGNE_PROFILE_1, CONSIGNE_PROFILE_2, type EtatProfile } from "./profile.js";
+export { ERREUR_SANS_ARETES, CONSIGNE_PROFILES_ARETES, type EtatProfilesAretes } from "./profiles-aretes.js";

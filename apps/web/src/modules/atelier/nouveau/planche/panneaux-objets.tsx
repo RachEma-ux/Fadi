@@ -4,6 +4,7 @@
  * Navigateur. Composants React purs : ils reçoivent le modèle et des rappels, n'appellent jamais le noyau en écriture
  * eux-mêmes (la Planche applique les opérations, un pas d'historique chacune).
  */
+import { texteSource } from "./sections-planche";
 import { type DragEvent as EvenementGlisse, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { REGLAGES_DEFAUT, aire, contexte, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/planche-model";
 import { t } from "../messages";
@@ -310,6 +311,17 @@ export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur
           <>
             <dt>{t("planche.info.volume")}</dt>
             <dd data-planche-info-volume>{fmtV(vol)}</dd>
+          </>
+        )}
+        {d?.piece && (
+          <>
+            {/* Lot L12 : pièce de profilé — désignation, longueur de l'axe et source de la section (saisie ou catalogue). */}
+            <dt>{t("planche.info.piece")}</dt>
+            <dd data-planche-info-piece>{d.piece.designation}</dd>
+            <dt>{t("planche.info.piece.longueur")}</dt>
+            <dd>{fmtL(d.piece.longueur)}</dd>
+            <dt>{t("planche.info.piece.source")}</dt>
+            <dd data-planche-info-source>{d.piece.source.genre === "saisie" ? t("planche.info.piece.saisie") : texteSource(d.piece.source)}</dd>
           </>
         )}
         <dt>{t("planche.info.occurrence")}</dt>

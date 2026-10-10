@@ -15,6 +15,7 @@ import type { Modele } from "../geometrie-libre.js";
 import type { Maillage } from "../maillage.js";
 import type { Repere } from "../annotations.js";
 import type { Inference, ModeAlt, Verrou } from "../inference.js";
+import type { SectionCourante } from "../profiles.js";
 import type { ContexteSaisie } from "../saisie-vcb.js";
 import type { Vec3 } from "../vecteur.js";
 
@@ -144,6 +145,8 @@ export interface ContexteOutil {
   readonly hauteurOeil?: number;
   /** Lecteur (droit `read`, C25) : mesure sans rien créer (CA-MET-4). */
   readonly lecture?: boolean;
+  /** (Lot L12) Section choisie pour les outils Profilé (catalogue sourcé, dimensions saisies ou face) ; absent = aucune. */
+  readonly sectionCourante?: SectionCourante;
 }
 
 /** Moteur booléen de maillages (lot 6, MO-4) : synchrone une fois chargé ; les maillages sont en coordonnées monde. */

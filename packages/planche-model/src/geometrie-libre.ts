@@ -4058,6 +4058,8 @@ export interface OptionsPiece extends OptionsContexte {
 /** Options de pose sur une chaîne d'arêtes : onglets aux sommets partagés (défaut : oui). */
 export interface OptionsPiecesSurAretes extends OptionsPiece {
   readonly onglets?: boolean;
+  /** (Lot L12) Arêtes colinéaires consécutives fusionnées en une seule pièce (non liée : elle couvre plusieurs arêtes). */
+  readonly fusionner?: boolean;
 }
 
 /** Axe d'une pièce : une arête du contexte (liable) ou deux points. */
@@ -4197,14 +4199,40 @@ export function poserPiecesSurAretes(m: Modele, aretes: readonly Id[], section: 
     }
     const meta = { designation: o.designation.trim(), section, source: o.source, placement, ...(cote !== undefined ? { cote } : {}) };
     const onglets = o.onglets !== false;
-    const d = (i: number): Vec3 => sub(P[(((i % nSeg) + nSeg) % nSeg + 1) % N] as Vec3, P[((i % nSeg) + nSeg) % nSeg] as Vec3);
-    const occs: Id[] = [];
+    // Tronçons : une arête chacun, ou (fusion, lot L12) les arêtes colinéaires consécutives réunies — de V[debut] à V[fin].
+    const dir = (i: number): Vec3 => sub(P[(i + 1) % N] as Vec3, P[i] as Vec3);
+    const troncons: { debut: number; fin: number; aretes: number[] }[] = [];
     for (let i = 0; i < nSeg; i++) {
-      const avecDebut = onglets && (ch.ferme || i > 0);
-      const avecFin = onglets && (ch.ferme || i < nSeg - 1);
-      const res = poserPieceInterne(t, c, P[i] as Vec3, P[(i + 1) % N] as Vec3, meta, avecDebut ? { avant: d(i - 1), apres: d(i) } : null, avecFin ? { avant: d(i), apres: d(i + 1) } : null, haut);
+      const dernier = troncons[troncons.length - 1];
+      if (o.fusionner && dernier && colineaires(dir(dernier.debut), dir(i), 1e-9) && dot(dir(dernier.debut), dir(i)) > 0) {
+        dernier.fin = (i + 1) % N;
+        dernier.aretes.push(i);
+      } else troncons.push({ debut: i, fin: (i + 1) % N, aretes: [i] });
+    }
+    if (o.fusionner && ch.ferme && troncons.length > 1) {
+      const premier = troncons[0] as (typeof troncons)[number];
+      const dernier = troncons[troncons.length - 1] as (typeof troncons)[number];
+      if (colineaires(dir(dernier.debut), dir(premier.debut), 1e-9) && dot(dir(dernier.debut), dir(premier.debut)) > 0) {
+        troncons[0] = { debut: dernier.debut, fin: premier.fin, aretes: [...dernier.aretes, ...premier.aretes] };
+        troncons.pop();
+      }
+    }
+    const nT = troncons.length;
+    const dT = (k: number): Vec3 => {
+      const t0 = troncons[((k % nT) + nT) % nT] as (typeof troncons)[number];
+      return sub(P[t0.fin] as Vec3, P[t0.debut] as Vec3);
+    };
+    const occs: Id[] = [];
+    for (let k = 0; k < nT; k++) {
+      const tr = troncons[k] as (typeof troncons)[number];
+      const ferme = ch.ferme && nT > 1;
+      const avecDebut = onglets && (ferme || k > 0);
+      const avecFin = onglets && (ferme || k < nT - 1);
+      const res = poserPieceInterne(t, c, P[tr.debut] as Vec3, P[tr.fin] as Vec3, meta, avecDebut ? { avant: dT(k - 1), apres: dT(k) } : null, avecFin ? { avant: dT(k), apres: dT(k + 1) } : null, haut);
       occs.push(res.occ);
-      if (o.lier !== false && o.dans === undefined) {
+      // Lien : seulement pour une pièce qui couvre une seule arête (ses voisines d'onglet sont les arêtes adjacentes).
+      if (o.lier !== false && o.dans === undefined && tr.aretes.length === 1) {
+        const i = tr.debut;
         const iPrec = (i - 1 + nSeg) % nSeg;
         const iSuiv = (i + 1) % nSeg;
         lierPiece(

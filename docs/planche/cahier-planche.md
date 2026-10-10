@@ -1380,6 +1380,19 @@ Détail : `docs/planche/lots/lot-1.md`.
 
 ---
 
+### 8 bis. Écarts Fadi — profilés (programme D-202, lots L11 à L14)
+
+La chaîne des profilés n'existe pas dans SketchUp : ses outils sont **propres à Fadi**, au statut `fadi` du catalogue.
+Leur référence est `docs/planche/reference/ecarts-fadi-profiles.md`.
+
+- **L11** (D-214) est le noyau « pièce de profilé » : une pièce est un composant qui porte sa section, sa source et son
+  placement, et qui reste lié à son arête source.
+- **L12** (D-215) livre les outils **Profilé** (Maj+Q) et **Profilés depuis arêtes** (Alt+Maj+Q), ainsi que le panneau
+  Profilés. La section y vient d'une ligne de catalogue sourcé, de dimensions saisies ou d'une face.
+
+Aucune donnée de profilé n'est fournie par Fadi (R3, D-180). Ctrl et Alt frappés seuls font défiler le placement et
+tournent la section : c'est un écart déclaré par rapport à MetalFab.
+
 ## 9. Lacunes du relevé à combler
 
 Chaque lacune est à relever en direct avant que le comportement soit codé comme un fait ; sinon le lot livre un choix

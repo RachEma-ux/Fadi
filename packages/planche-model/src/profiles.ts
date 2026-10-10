@@ -177,3 +177,14 @@ export function normaleOnglet(dAvant: Vec3, dApres: Vec3): Vec3 {
 export function versLocal(r: RepereDePiece, v: Vec3): Vec3 {
   return v3(dot(v, r.x), dot(v, r.y), dot(v, r.z));
 }
+
+/** (Lot L12) Section choisie dans l'interface pour les outils Profilé : désignation, contour et provenance. */
+export interface SectionCourante {
+  readonly designation: string;
+  readonly section: SectionProfil;
+  readonly source: SourceSection;
+}
+
+/** Points de placement dans l'ordre où Ctrl les fait défiler. */
+export const POINTS_PLACEMENT: readonly PointPlacement[] = ["centre", "haut-gauche", "haut-droite", "bas-droite", "bas-gauche"];
+export const POSITIONS_BOUCLE: readonly PositionBoucle[] = ["centre", "exterieur", "interieur"];
