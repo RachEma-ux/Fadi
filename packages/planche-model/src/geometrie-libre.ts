@@ -1489,6 +1489,94 @@ export function pousserTirer(m: Modele, face: Id, distance: number, o: OptionsPo
   });
 }
 
+export interface OptionsEtirerAretes extends OptionsContexte {
+  /** Des deux côtés : la surface s'étend de −vecteur à +vecteur autour des arêtes d'origine. */
+  readonly symetrique?: boolean;
+}
+
+/**
+ * Pousser/Tirer d'arêtes (écart propre à Fadi, D-196 ; SketchUp ne tire que des faces) : chaque arête balaie le
+ * parallélogramme qu'elle décrit le long de `vecteur` et devient une surface. Une arête d'une courbe (cercle, polygone,
+ * arc) entraîne toute sa courbe ; les arêtes balayées depuis un cercle ou un arc sont adoucies (surface lisse) et la
+ * courbe translatée reste une courbe. Les arêtes d'origine sont conservées (bord de la surface, ou ligne médiane en
+ * mode symétrique). Refus : déplacement parallèle à toutes les arêtes (rien à balayer) ; courbe fermée tirée dans son
+ * propre plan (la surface se recouvrirait — le Décalage fait la couronne).
+ */
+export function etirerAretes(m: Modele, aretes: readonly Id[], vecteur: Vec3, o: OptionsEtirerAretes = {}): Resultat {
+  return operer(m, o.dans, (t, c) => {
+    if (len(vecteur) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
+    const ids = new Set<Id>();
+    for (const id of aretes) {
+      const a = c.aretes.get(id);
+      if (!a) throw new Error(`Arête inconnue : ${id}`);
+      const k = a.courbe ? c.courbes.get(a.courbe) : undefined;
+      for (const x of k ? k.aretes : [id]) ids.add(x);
+    }
+    const courbes = new Set<Id>();
+    for (const id of ids) {
+      const k = c.aretes.get(id)?.courbe;
+      if (k) courbes.add(k);
+    }
+    for (const kid of courbes) {
+      const k = c.courbes.get(kid) as Courbe;
+      if (k.genre !== "arc" && Math.abs(dot(normalize(k.normale), vecteur)) < 1e-9 * len(vecteur)) {
+        throw new RangeError("Une courbe fermée tirée dans son propre plan se recouvrirait : utilisez le Décalage pour une couronne.");
+      }
+    }
+    const depart = o.symetrique ? scale(vecteur, -1) : v3(0, 0, 0);
+    const course = o.symetrique ? scale(vecteur, 2) : vecteur;
+    // Sommets intérieurs d'un cercle ou d'un arc : les arêtes balayées depuis eux sont adoucies.
+    const usages = new Map<Id, number>();
+    for (const id of ids) {
+      const a = c.aretes.get(id) as Arete;
+      const k = a.courbe ? c.courbes.get(a.courbe) : undefined;
+      if (!k || k.genre === "polygone") continue;
+      for (const s of [a.a, a.b]) usages.set(s, (usages.get(s) ?? 0) + 1);
+    }
+    const lisse = (s: Id): boolean => (usages.get(s) ?? 0) >= 2;
+    const segments: SegmentSource[] = [];
+    const sources: Source[] = [];
+    const rails = new Set<Id>();
+    for (const id of ids) {
+      const a = c.aretes.get(id) as Arete;
+      const A = pos(c, a.a);
+      const B = pos(c, a.b);
+      const n = cross(sub(B, A), course);
+      if (len(n) < EPS * Math.max(1, len(sub(B, A)) * len(course))) continue; // parallèle : rien à balayer
+      const A0 = add(A, depart);
+      const B0 = add(B, depart);
+      const A1 = add(A0, course);
+      const B1 = add(B0, course);
+      const k = a.courbe ? c.courbes.get(a.courbe) : undefined;
+      const translatee = (cle: string, d: Vec3): SegmentSource["courbe"] =>
+        k ? { cle: `${k.id}${cle}`, genre: k.genre, centre: add(k.centre, d), rayon: k.rayon, normale: k.normale } : undefined;
+      const fin = translatee("+", add(depart, course));
+      segments.push({ a: A1, b: B1, ...(fin ? { courbe: fin } : {}) });
+      if (o.symetrique) {
+        const debut = translatee("-", depart);
+        segments.push({ a: A0, b: B0, ...(debut ? { courbe: debut } : {}) });
+      }
+      for (const [s, P0] of [[a.a, A0], [a.b, B0]] as const) {
+        if (rails.has(s)) continue;
+        rails.add(s);
+        segments.push({ a: P0, b: add(P0, course), ...(lisse(s) ? { adoucie: true } : {}) });
+      }
+      // Surface orientée vers l'extérieur d'une courbe (centre), sinon selon le sens de l'arête.
+      let nn = normalize(n);
+      if (k) {
+        const milieu = scale(add(A, B), 0.5);
+        const radial = sub(milieu, k.centre);
+        const r = sub(radial, scale(normalize(course), dot(radial, normalize(course))));
+        if (len(r) > EPS && dot(nn, r) < 0) nn = scale(nn, -1);
+      }
+      const quad = dot(cross(sub(B0, A0), course), nn) > 0 ? [A0, B0, B1, A1] : [A0, A1, B1, B0];
+      sources.push({ exterieur: quad, trous: [], normale: nn, role: "face" });
+    }
+    if (sources.length === 0) throw new RangeError("Le déplacement est parallèle aux arêtes : aucune surface à balayer.");
+    insererGeometrie(t, c, segments, sources, false);
+  });
+}
+
 export interface ResultatFace extends Resultat {
   /** Face créée par l'opération (face intérieure pour un décalage vers l'intérieur). */
   readonly face: Id | undefined;

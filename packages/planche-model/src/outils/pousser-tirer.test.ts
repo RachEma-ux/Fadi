@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { type Id, ajouterRectangle, modeleVide, pousserTirer } from "../geometrie-libre.js";
+import { type Id, aire, ajouterPolygone, ajouterRectangle, ajouterSegment, modeleVide, pousserTirer } from "../geometrie-libre.js";
 import { v3 } from "../vecteur.js";
 import { etape } from "./commun-formes.js";
 import { aretes, boite, clicVers, contientPoint, emprise, faces, partie, saisie, sommets, survolVers, touche, volumeAbsolu, echap } from "./essais-modification.js";
-import { machinePousserTirer } from "./pousser-tirer.js";
+import { CONSIGNE_ARETE_SURVOL, CONSIGNE_ARETE_TIRAGE, machinePousserTirer } from "./pousser-tirer.js";
 
 const sol = () => ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
 
@@ -96,5 +96,71 @@ describe("Pousser/Tirer (§4.15)", () => {
   it("pousser jusqu'à une face opposée atteinte exactement perce (cohérence avec le noyau)", () => {
     const m = pousserTirer(sol(), Object.keys(sol().racine.faces)[0] as Id, 1).modele;
     expect(faces(m)).toHaveLength(6);
+  });
+});
+
+describe("Pousser/Tirer d'arêtes (écart Fadi, D-196)", () => {
+  const segment = () => ajouterSegment(modeleVide(), v3(0, 0, 0), v3(4, 0, 0)).modele;
+  const aireDe = (m: ReturnType<typeof segment>) => faces(m).reduce((s, f) => s + aire(m, f.id), 0);
+
+  it("survol puis clic sur une arête : consignes du mode arêtes", () => {
+    const p = partie(machinePousserTirer, segment()).jouer(survolVers(v3(2, 0, 0)));
+    expect(p.vue().consigne).toBe(CONSIGNE_ARETE_SURVOL);
+    p.jouer(clicVers(v3(2, 0, 0)));
+    expect(p.vue().consigne).toBe(CONSIGNE_ARETE_TIRAGE);
+    expect(p.vue().mesures?.libelle).toBe("Distance");
+  });
+
+  it("segment, ↑ puis 2,7 → face verticale de 10,8 m², un pas d'annulation", () => {
+    const p = partie(machinePousserTirer, segment()).jouer(clicVers(v3(2, 0, 0)), touche("FlecheHaut"), saisie("2.7"));
+    expect(faces(p.modele)).toHaveLength(1);
+    expect(aireDe(p.modele)).toBeCloseTo(10.8, 9);
+    expect(emprise(p.modele).max.z).toBeCloseTo(2.7, 9);
+    expect(p.operations).toEqual(["Pousser/Tirer"]);
+    expect(p.historique).toHaveLength(2);
+    expect(p.vue().consigne).toBe(etape("pousser-tirer", 0).consigne);
+  });
+
+  it("segment tiré au curseur dans le plan → rectangle plein", () => {
+    const p = partie(machinePousserTirer, segment()).jouer(clicVers(v3(2, 0, 0)), survolVers(v3(2, 3, 0)), clicVers(v3(2, 3, 0)));
+    expect(faces(p.modele)).toHaveLength(1);
+    expect(aireDe(p.modele)).toBeCloseTo(12, 6);
+  });
+
+  it("Alt = des deux côtés ; une distance tapée juste après corrige la surface (même pas d'annulation)", () => {
+    const p = partie(machinePousserTirer, segment()).jouer(clicVers(v3(2, 0, 0)), touche("Alt"), touche("FlecheGauche"), saisie("1"));
+    expect(aireDe(p.modele)).toBeCloseTo(8, 9);
+    expect(emprise(p.modele).min.y).toBeCloseTo(-1, 9);
+    p.jouer(saisie("2"));
+    expect(aireDe(p.modele)).toBeCloseTo(16, 9);
+    expect(p.historique).toHaveLength(2);
+    expect(p.operations).toEqual(["Pousser/Tirer (corrigé)"]);
+  });
+
+  it("double-clic sur une autre arête : même déplacement répété", () => {
+    let m = segment();
+    m = ajouterSegment(m, v3(0, 5, 0), v3(4, 5, 0)).modele;
+    const p = partie(machinePousserTirer, m).jouer(clicVers(v3(2, 0, 0)), touche("FlecheHaut"), saisie("1"));
+    p.jouer(clicVers(v3(2, 5, 0), undefined, true));
+    expect(faces(p.modele)).toHaveLength(2);
+    expect(aireDe(p.modele)).toBeCloseTo(8, 9);
+  });
+
+  it("arête d'un cercle : tout le cercle devient un tube", () => {
+    const m = ajouterPolygone(modeleVide(), v3(0, 0, 0), v3(0, 0, 1), 1, 24).modele;
+    const a = Math.PI / 24;
+    const milieu = v3(Math.cos(a) * Math.cos(a), Math.cos(a) * Math.sin(a), 0);
+    const p = partie(machinePousserTirer, m).jouer(clicVers(milieu), touche("FlecheHaut"), saisie("2"));
+    expect(faces(p.modele)).toHaveLength(25);
+    expect(emprise(p.modele).max.z).toBeCloseTo(2, 9);
+  });
+
+  it("sans direction : message ; Échap : rien d'appliqué", () => {
+    const p = partie(machinePousserTirer, segment()).jouer(clicVers(v3(2, 0, 0)), saisie("2"));
+    expect(p.vue().erreur).toMatch(/Orientez le curseur/);
+    expect(p.historique).toHaveLength(1);
+    p.jouer(echap);
+    expect(p.selection).toEqual([]);
+    expect(p.vue().consigne).toBe(etape("pousser-tirer", 0).consigne);
   });
 });

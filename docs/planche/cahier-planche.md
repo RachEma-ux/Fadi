@@ -498,6 +498,18 @@ proposés : virgule décimale, point-virgule de liste — décision P-3).
   latérale après un tirage de 0,5 → tirage de 0,5 de cette face. CA-PPT-6 : tirage puis `2,7` → une seule opération
   dans l'historique (un pas d'annulation).
 
+**Écart propre à Fadi — arêtes étendues en surfaces (fadi, D-196).** SketchUp ne tire que des faces. Dans la Planche, un
+clic sur une **arête** (segment, arête d'un cercle, d'un polygone, d'un arc, ou arête d'une présélection d'arêtes) l'étend
+en surface : l'arête balaie le déplacement visé (libre, inférence sur axes et sommets ; flèches → ← ↑ = verrouiller un axe),
+2ᵉ clic ou distance + Entrée (direction du curseur ou de l'axe verrouillé). Une arête de courbe entraîne toute la courbe ;
+cercle et arc donnent une surface lisse. **Alt = des deux côtés** (de −d à +d, l'arête d'origine reste comme ligne
+médiane). Correction par une distance tapée, double-clic = répéter, Échap : comme pour une face. Consignes : « Cliquez sur
+l'arête à étendre en surface. \| Alt = Des deux côtés. » (survol d'une arête) puis « Cliquez pour fixer la surface ou
+saisissez la distance. \| Flèches = Verrouiller un axe. \| Alt = Des deux côtés. ». Refus : déplacement parallèle aux
+arêtes ; courbe fermée tirée dans son propre plan (le Décalage fait la couronne). CA-PPT-7 : segment de 4 m, ↑ puis `2,7` →
+une face verticale de 10,8 m², un pas d'annulation. CA-PPT-8 : arête d'un cercle de 24 segments, ↑ puis `2` → tube de 24
+faces lisses sur la face de base (25 faces). CA-PPT-9 : Alt puis ← et `1` sur un segment de 4 m → surface de 8 m².
+
 ### 4.16 Déplacer — *Move* · `M` · lot 3 · obs [OM §2]
 
 | État | Consigne | Mesures |
