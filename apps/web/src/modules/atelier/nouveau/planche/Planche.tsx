@@ -80,6 +80,13 @@ import {
   type Touche,
   type Transition,
   type VueOutil,
+  FRAPPE_SEULE_VIDE,
+  appuiFrappe,
+  consommerFrappe,
+  oublierFrappe,
+  relacheFrappe,
+  type EtatFrappeSeule,
+  type ModificateurSeul,
 } from "@parcours/planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { planches as planchesDe, type Commande, type ModeleAtelier } from "@parcours/atelier-model";
@@ -321,6 +328,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const vueRef = useRef<VuePlanche | null>(null);
   const champMesures = useRef<HTMLInputElement | null>(null);
   const grilleDom = useRef<HTMLDivElement | null>(null);
+  // Lot 9 (EX-CMD-04) : frappe seule d'un modificateur en attente ; envoi par référence (écouteurs posés une fois).
+  const frappeRef = useRef<EtatFrappeSeule>(FRAPPE_SEULE_VIDE);
+  const envoyerSeuleRef = useRef<(t: ModificateurSeul) => void>(() => {});
   const touchesTenues = useRef(new Set<Touche>());
 
   const setTexte = useCallback((v: TexteMesures) => {
@@ -410,6 +420,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   /** Envoie un événement à la machine de l'outil actif ; renvoie `true` si l'état, le modèle ou la sélection a changé. */
   const envoyer = useCallback(
     (ev: EvenementOutil): boolean => {
+      // Lot 9 (EX-CMD-04) : un geste du pointeur pendant qu'un modificateur est tenu s'en sert — pas de frappe seule.
+      if (ev.genre === "clic" || ev.genre === "appui" || ev.genre === "glisser" || ev.genre === "relache") frappeRef.current = consommerFrappe(frappeRef.current);
       const m = machineParId(outilRef.current);
       if (!m) return false;
       const ctx = contexte();
@@ -468,6 +480,21 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
    * Lot Planche 8 : choix d'une option de l'outil actif (bouton de la barre d'options, au doigt comme à la souris) — le
    * même chemin `configurer` que les touches Ctrl / Alt / ↓ traitées par la machine. Aucun pas d'historique.
    */
+  /**
+   * Lot 9 (EX-CMD-04) : touche de modification frappée seule — même chemin que les boutons d'options pour les outils qui
+   * la déclarent (Pousser/Tirer) ; aucun pas d'historique, la vue annonce le mode ou le refus.
+   */
+  const envoyerSeule = useCallback(
+    (touche: ModificateurSeul) => {
+      const m = machineParId(outilRef.current);
+      if (!m?.modificateurSeul) return;
+      etatMachineRef.current = m.modificateurSeul(etatMachineRef.current, touche, contexte()).etat;
+      setMessage(null);
+      rafraichir();
+    },
+    [contexte, rafraichir],
+  );
+  envoyerSeuleRef.current = envoyerSeule;
   const configurerOutil = useCallback(
     (option: string, valeur: string) => {
       const m = machineParId(outilRef.current);
@@ -495,6 +522,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const retourOutilRef = useRef<() => void>(() => undefined);
   const choisirOutil = useCallback(
     (id: string, options: { garderPrecedent?: boolean } = {}) => {
+      frappeRef.current = consommerFrappe(frappeRef.current);
       const o = outilParId(id);
       if (!o) return;
       const raison = disponibilite(o, { lecture: readOnly });
@@ -1298,6 +1326,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
    * (Orbite, Panoramique, Zoom) rendent l'outil précédent. D-156 reste inchangé pour Plan / 3D.
    */
   const echap = useCallback(() => {
+    frappeRef.current = consommerFrappe(frappeRef.current);
     if (grilleRef.current) {
       setGrille(false);
       return;
@@ -1569,6 +1598,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   // --- Clavier (fenêtre) : touches d'état, annuler / rétablir, Échap, Entrée, frappe au champ Mesures, raccourcis.
   useEffect(() => {
     const surTouche = (e: KeyboardEvent) => {
+      // Lot 9 (EX-CMD-04) : toute touche passe par le suivi des frappes seules, même dans un champ (elle consomme alors).
+      const modif = toucheEtat(e.key);
+      frappeRef.current = appuiFrappe(frappeRef.current, modif === "Maj" || modif === "Ctrl" || modif === "Alt" ? modif : e.key || "?", e.repeat);
       const cible = e.target;
       const dansMesures = cible === champMesures.current;
       // C19 : jamais de capture quand le focus est dans un autre champ (recherche, réglages…).
@@ -1722,9 +1754,14 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     const surRelache = (e: KeyboardEvent) => {
       const etat = toucheEtat(e.key);
       if (etat && touchesTenues.current.has(etat)) envoyerTouche(etat, "relachee");
+      const r = relacheFrappe(frappeRef.current, etat ?? e.key);
+      frappeRef.current = r.etat;
+      // Jamais dans un champ (Mesures, recherche, dialogue) ni pendant une frappe de valeur : le texte garde ses touches.
+      if (r.seule && !champSaisie(e.target) && !rechercheRef.current && !texteRef.current) envoyerSeuleRef.current(r.seule);
     };
     // §5.5 (choix Fadi) : à la perte du focus, les touches tenues sont relâchées (un Ctrl « collé » bloquerait tout).
     const surPerte = () => {
+      frappeRef.current = oublierFrappe();
       for (const touche of [...touchesTenues.current]) envoyerTouche(touche, "relachee");
       setMajVerrouillee(false);
     };
@@ -1946,6 +1983,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         onClick={() => {
           envoyerTouche(touche, "enfoncee");
           envoyerTouche(touche, "relachee");
+          // Lot 9 : le bouton Ctrl / Alt au toucher vaut une frappe seule (bascule de Pousser/Tirer).
+          if (touche === "Ctrl" || touche === "Alt") envoyerSeule(touche);
         }}
       >
         {libelle}
@@ -2555,7 +2594,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
               <span className="planche-option-nom" aria-hidden="true">{libelleOption(outilId, o.id)}</span>
               {o.valeurs.map((v) => {
                 const nom = libelleOption(outilId, o.id, v.id);
-                const titre = v.disponible ? (v.raccourci ? `${nom} (${v.raccourci})` : nom) : t("planche.option.indisponible", { option: nom });
+                const titre = v.disponible ? (v.raccourci ? `${nom} (${afficherRaccourci(v.raccourci)})` : nom) : t("planche.option.indisponible", { option: nom });
                 return (
                   <button
                     key={v.id}
@@ -2592,7 +2631,11 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
               setMajVerrouillee(false);
               envoyerTouche("Maj", "relachee");
             } else if (performance.now() - debut >= 500) setMajVerrouillee(true);
-            else envoyerTouche("Maj", "relachee");
+            else {
+              envoyerTouche("Maj", "relachee");
+              // Lot 9 : un appui bref sur Maj au toucher vaut une frappe seule (Surface ouverte dans Pousser/Tirer).
+              envoyerSeule("Maj");
+            }
           }}
           onKeyDown={(e) => {
             // Au clavier, le bouton bascule le verrouillage de Maj.

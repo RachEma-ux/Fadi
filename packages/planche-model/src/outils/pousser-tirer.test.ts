@@ -46,7 +46,7 @@ describe("Pousser/Tirer (§4.15)", () => {
   });
 
   it("CA-PPT-4 : Ctrl puis 1 sur le dessus → une arête horizontale par face latérale à l'ancienne hauteur", () => {
-    const p = partie(machinePousserTirer, boite(4, 3, 2.7)).jouer(touche("Ctrl"), clicVers(v3(1, 1, 2.7)), saisie("1"));
+    const p = partie(machinePousserTirer, boite(4, 3, 2.7)).seule("Ctrl").jouer(clicVers(v3(1, 1, 2.7)), saisie("1"));
     const horizontales = aretes(p.modele).filter((a) => {
       const A = p.modele.racine.sommets[a.a]?.position;
       const B = p.modele.racine.sommets[a.b]?.position;
@@ -128,7 +128,7 @@ describe("Pousser/Tirer d'arêtes (écart Fadi, D-196)", () => {
   });
 
   it("Alt = des deux côtés ; une distance tapée juste après corrige la surface (même pas d'annulation)", () => {
-    const p = partie(machinePousserTirer, segment()).jouer(clicVers(v3(2, 0, 0)), touche("Alt"), touche("FlecheGauche"), saisie("1"));
+    const p = partie(machinePousserTirer, segment()).jouer(clicVers(v3(2, 0, 0))).seule("Alt").jouer(touche("FlecheGauche"), saisie("1"));
     expect(aireDe(p.modele)).toBeCloseTo(8, 9);
     expect(emprise(p.modele).min.y).toBeCloseTo(-1, 9);
     p.jouer(saisie("2"));
@@ -209,20 +209,24 @@ describe("Tube sans fond (option de la barre, D-199, D-201)", () => {
     expect(p.vue().consigne).toBe(etape("pousser-tirer", 0).consigne);
   });
 
-  it("Maj ne bascule plus le tube (Maj est la touche des raccourcis Fadi)", () => {
+  it("Maj à l'appui ne bascule rien (Maj + lettre reste un raccourci Fadi) ; Maj frappé seul bascule Surface ouverte (lot 9)", () => {
     const m = ajouterPolygone(modeleVide(), v3(0, 0, 0), v3(0, 0, 1), 1, 24).modele;
-    const p = partie(machinePousserTirer, m).jouer(touche("Maj"));
+    const p = partie(machinePousserTirer, m).jouer(touche("Maj"), touche("Ctrl"), touche("Alt"));
+    expect(p.vue().options?.find((o) => o.id === "face")?.valeur).toBe("normal");
+    p.seule("Maj");
+    expect(p.vue().options?.find((o) => o.id === "face")?.valeur).toBe("tube");
+    p.seule("Maj");
     expect(p.vue().options?.find((o) => o.id === "face")?.valeur).toBe("normal");
   });
 });
 
 describe("Modes explicites (lot Planche 8, D-201)", () => {
   it("une touche et un bouton donnent le même mode ; les modes sont exclusifs", () => {
-    const a = partie(machinePousserTirer, sol()).jouer(touche("Alt"));
+    const a = partie(machinePousserTirer, sol()).seule("Alt");
     const b = partie(machinePousserTirer, sol()).configurer("face", "etirement");
     expect(a.vue().options).toEqual(b.vue().options);
     expect(a.vue().options?.find((o) => o.id === "face")?.valeur).toBe("etirement");
-    a.jouer(touche("Ctrl"));
+    a.seule("Ctrl");
     expect(a.vue().options?.find((o) => o.id === "face")?.valeur).toBe("nouvelle-face");
     a.configurer("face", "tube");
     expect(a.vue().options?.find((o) => o.id === "face")?.valeur).toBe("tube");

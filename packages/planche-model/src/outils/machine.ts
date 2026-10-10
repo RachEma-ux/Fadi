@@ -177,6 +177,9 @@ export interface Transition<E> {
   readonly editerTexte?: { readonly id: string; readonly texte: string };
 }
 
+/** (Lot Planche 9, EX-CMD-04) Touche de modification enfoncée puis relâchée seule (sans autre touche ni geste). */
+export type ModificateurSeul = "Maj" | "Ctrl" | "Alt";
+
 export interface MachineOutil<E> {
   readonly id: string;
   initial(): E;
@@ -184,6 +187,12 @@ export interface MachineOutil<E> {
   vue(etat: E, ctx: ContexteOutil): VueOutil;
   /** (Lot Planche 8, facultatif) Choisit la valeur d'une option déclarée dans `VueOutil.options`. */
   configurer?(etat: E, option: string, valeur: string, ctx: ContexteOutil): Transition<E>;
+  /**
+   * (Lot Planche 9, facultatif) Bascule déclenchée par une touche de modification frappée seule : appui puis relâchement
+   * sans qu'aucune autre touche, aucun geste du pointeur ni aucune commande ne s'en soit servi (EX-CMD-04). Les outils
+   * qui l'implémentent ne lisent plus l'appui de cette touche ; les autres gardent leurs modificateurs maintenus.
+   */
+  modificateurSeul?(etat: E, touche: ModificateurSeul, ctx: ContexteOutil): Transition<E>;
 }
 
 export type { Inference, ModeAlt, Verrou };

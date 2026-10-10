@@ -1,7 +1,7 @@
 /** Aides de test des machines de modification (lot 3), importées par les *.test.ts seulement. */
 import { type Id, type Modele, aire, ajouterRectangle, contexte, modeleVide, pousserTirer } from "../geometrie-libre.js";
 import { type Vec3, normalize, scale, add, v3 } from "../vecteur.js";
-import type { ContexteOutil, EvenementOutil, MachineOutil, Rayon, Touche, VueOutil } from "./machine.js";
+import type { ContexteOutil, EvenementOutil, MachineOutil, ModificateurSeul, Rayon, Touche, VueOutil } from "./machine.js";
 
 export const TOLERANCE = 0.01;
 
@@ -34,6 +34,8 @@ export interface Partie<E> {
   jouer(...evs: EvenementOutil[]): Partie<E>;
   /** (Lot 8) Choix d'une option, comme un bouton de la barre d'options. */
   configurer(option: string, valeur: string): Partie<E>;
+  /** (Lot 9) Touche de modification frappée seule. */
+  seule(touche: ModificateurSeul): Partie<E>;
   vue(): VueOutil;
   ctx(): ContexteOutil;
 }
@@ -69,6 +71,10 @@ export function partie<E>(machine: MachineOutil<E>, modele: Modele = modeleVide(
     },
     configurer(option, valeur) {
       if (machine.configurer) p.etat = machine.configurer(p.etat, option, valeur, p.ctx()).etat;
+      return p;
+    },
+    seule(touche) {
+      if (machine.modificateurSeul) p.etat = machine.modificateurSeul(p.etat, touche, p.ctx()).etat;
       return p;
     },
     vue: () => machine.vue(p.etat, p.ctx()),

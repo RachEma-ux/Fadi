@@ -447,6 +447,8 @@ const MODES_ARETE: readonly ModeArete[] = ["normal", "deux-cotes", "allonger"];
 export const modeFace = (e: EtatPousserTirer): ModeFace => (e.sansFond ? "tube" : e.etirement ? "etirement" : e.nouvelleFace ? "nouvelle-face" : "normal");
 export const modeArete = (e: EtatPousserTirer): ModeArete => (e.fleche?.touche === "FlecheBas" ? "allonger" : e.symetrique ? "deux-cotes" : "normal");
 
+export const ERREUR_CTRL_ARETE = "Ctrl seul : « Conserver la face de départ » ne s'applique qu'à une face, pas à une arête.";
+export const ERREUR_MAJ_ARETE = "Maj seul : « Surface ouverte » ne s'applique qu'à une face, pas à une arête.";
 export const ERREUR_ALLONGER_COURBE = "Allonger : seule une arête droite isolée peut être allongée.";
 
 /** Un seul chemin pour choisir un mode : touche, bouton de la barre d'options ou bouton au toucher. */
@@ -485,7 +487,7 @@ function optionsPT(e: EtatPousserTirer, ctx: ContexteOutil): OptionOutil[] {
         { id: "normal", disponible: !surArete },
         { id: "nouvelle-face", disponible: !surArete, raccourci: "Ctrl" },
         { id: "etirement", disponible: !surArete && !isolee, raccourci: "Alt" },
-        { id: "tube", disponible: !surArete },
+        { id: "tube", disponible: !surArete, raccourci: "Maj" },
       ],
     },
     {
@@ -587,14 +589,8 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         return saisir(etat, ctx, ev.texte);
       case "touche": {
         if (ev.etat !== "enfoncee") return { etat };
-        const modeAretes = etat.etape === 2 ? etat.aretes.length > 0 : etat.survolArete !== null;
-        // Lot 8 : les touches passent par `configurer`, comme les boutons de la barre d'options et du toucher.
-        if (ev.touche === "Ctrl") return configurerPT(etat, "face", modeFace(etat) === "nouvelle-face" ? "normal" : "nouvelle-face");
-        if (ev.touche === "Alt") {
-          return modeAretes
-            ? configurerPT(etat, "arete", etat.symetrique ? "normal" : "deux-cotes")
-            : configurerPT(etat, "face", modeFace(etat) === "etirement" ? "normal" : "etirement");
-        }
+        // Lot 9 (EX-CMD-04) : Ctrl, Alt et Maj ne basculent plus à l'appui, mais frappés seuls (`modificateurSeul`) ;
+        // ainsi Ctrl + Z, Maj + F, Maj + Tab ou Maj + chiffre ne changent jamais de mode.
         if (ev.touche === "FlecheBas" && etat.etape === 2 && etat.aretes.length > 0) {
           return configurerPT(etat, "arete", etat.fleche?.touche === "FlecheBas" ? "normal" : "allonger");
         }
@@ -616,6 +612,20 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
 
   configurer(etat, option, valeur): Transition<EtatPousserTirer> {
     return configurerPT(etat, option, valeur);
+  },
+
+  // Lot 9 : les touches frappées seules passent par `configurer`, comme les boutons de la barre d'options et du toucher.
+  modificateurSeul(etat, touche): Transition<EtatPousserTirer> {
+    const modeAretes = etat.etape === 2 ? etat.aretes.length > 0 : etat.survolArete !== null;
+    if (touche === "Alt") {
+      return modeAretes
+        ? configurerPT(etat, "arete", etat.symetrique ? "normal" : "deux-cotes")
+        : configurerPT(etat, "face", modeFace(etat) === "etirement" ? "normal" : "etirement");
+    }
+    if (modeAretes) return { etat: { ...etat, erreur: touche === "Ctrl" ? ERREUR_CTRL_ARETE : ERREUR_MAJ_ARETE } };
+    if (touche === "Ctrl") return configurerPT(etat, "face", modeFace(etat) === "nouvelle-face" ? "normal" : "nouvelle-face");
+    // Maj seul rétabli (lot 9) : Surface ouverte, sans gêner Maj + lettre (raccourcis Fadi) ni Maj + chiffre.
+    return configurerPT(etat, "face", modeFace(etat) === "tube" ? "normal" : "tube");
   },
 
   vue(etat, ctx): VueOutil {
