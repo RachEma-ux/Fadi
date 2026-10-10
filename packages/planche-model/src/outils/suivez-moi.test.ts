@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { type Id, aire, ajouterRectangle, ajouterSegment, contexte, modeleVide, positionsFace } from "../geometrie-libre.js";
 import { dot, normalize, sub, v3 } from "../vecteur.js";
 import { etape } from "./commun-formes.js";
-import { clicVers, faces, partie } from "./essais-modification.js";
+import { clicVers, echap, faces, partie, survolVers } from "./essais-modification.js";
 import { machineSuivezMoi } from "./suivez-moi.js";
 
 function scenario() {
@@ -68,5 +68,40 @@ describe("Suivez-moi (§4.20)", () => {
     const c = partie(machineSuivezMoi, m, [sol]).jouer(clicVers(v3(50, 50, 50)));
     expect(c.vue().erreur).toMatch(/profil/);
     expect(c.historique).toHaveLength(1);
+  });
+
+  it("lot 10c (EX-PREV-01) : survoler le profil montre l'aperçu calculé par le noyau, rien n'est écrit ; Échap l'efface", () => {
+    const { m, sol } = scenario();
+    const p = partie(machineSuivezMoi, m, [sol]).jouer(survolVers(v3(0, 0.2, 0.3), v3(-1, 0, 0)));
+    expect(p.historique).toHaveLength(1);
+    expect(p.modele).toBe(m);
+    const ap = p.vue().apercu;
+    expect(ap?.faces?.length).toBe(16);
+    expect(ap?.trous?.length).toBe(16);
+    expect(p.jouer(echap).vue().apercu?.faces ?? []).toHaveLength(0);
+  });
+
+  it("lot 10c (EX-FM-06) : option Capuchons — « sans » sur chemin ouvert ne pose pas les deux faces d'about", () => {
+    let m = ajouterSegment(modeleVide(), v3(0, 0, 0), v3(3, 0, 0)).modele;
+    m = ajouterSegment(m, v3(3, 0, 0), v3(3, 2, 0)).modele;
+    const aretes = Object.keys(m.racine.aretes);
+    m = ajouterRectangle(m, v3(0, -0.1, 0), v3(0, 0.2, 0), v3(0, 0, 0.3)).modele;
+    const base = partie(machineSuivezMoi, m, aretes);
+    expect(base.vue().options?.find((o) => o.id === "bouchons")?.valeur).toBe("avec");
+    const sans = base.configurer("bouchons", "sans");
+    expect(sans.vue().options?.find((o) => o.id === "bouchons")?.valeur).toBe("sans");
+    const p = sans.jouer(clicVers(v3(0, 0, 0.15), v3(-1, 0, 0)));
+    expect(p.vue().erreur).toBeNull();
+    expect(faces(p.modele).length).toBe(2 * 4 + 2);
+  });
+
+  it("lot 10c : un profil refusé l'est dès le survol (motif affiché, pas d'aperçu)", () => {
+    // Profil coplanaire au chemin : le balayage est dégénéré.
+    let m = ajouterSegment(modeleVide(), v3(0, 0, 0), v3(3, 0, 0)).modele;
+    const aretes = Object.keys(m.racine.aretes);
+    m = ajouterRectangle(m, v3(0, -0.1, 0), v3(1, 0, 0), v3(0, 0.2, 0)).modele;
+    const p = partie(machineSuivezMoi, m, aretes).jouer(survolVers(v3(0.5, 0.05, 0)));
+    expect(p.vue().erreur).not.toBeNull();
+    expect(p.vue().apercu?.faces ?? []).toHaveLength(0);
   });
 });

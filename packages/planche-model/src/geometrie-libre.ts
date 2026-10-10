@@ -3261,17 +3261,65 @@ function volumeSigne(polys: readonly (readonly Vec3[])[]): number {
   return v;
 }
 
+/** Options de Suivez-moi (lot 10c). */
+export interface OptionsSuivezMoi extends OptionsContexte {
+  /** (EX-FM-06) Chemin ouvert : capuchons aux deux bouts (défaut) ; `false` = surface ouverte, sans capuchon. */
+  readonly bouchons?: boolean;
+}
+
+export const ERREUR_TROUS_JOINTIFS = "Le profil a des trous qui se touchent (ou touchent son contour) : balayage refusé.";
+export const ERREUR_CHEMIN_RECOUPE = "Le chemin repasse trop près de lui-même pour ce profil : le balayage se traverserait.";
+export const ERREUR_ONGLET_SINGULIER = "Coin trop aigu : l'onglet partirait à l'infini (angle de moins de 12°).";
+
 /**
- * Suivez-moi (Follow Me) : le profil (une face, contour extérieur sans trou) est extrudé sur tout le chemin ; coins à
- * onglet (plans bissecteurs), faces latérales planes. Chemin fermé : surface fermée sans capuchon ; chemin ouvert :
- * capuchons aux deux bouts. La face du profil est consommée (retirée, ses arêtes orphelines aussi). Si le chemin est
- * une face dont la surface est recouverte par le balayage, elle se découpe comme toute géométrie collante.
+ * Suivez-moi (Follow Me) : le profil (une face, avec ses trous — lot 10c, EX-FM-04) est extrudé sur tout le chemin ;
+ * coins à onglet (plans bissecteurs), faces latérales planes ; chaque boucle du profil (contour et trous) est balayée
+ * par la même transformation de section (EX-FM-05). Chemin fermé : surface fermée sans capuchon, couture soudée ;
+ * chemin ouvert : capuchons aux deux bouts, trous compris, sauf `bouchons: false` (surface ouverte, EX-FM-06). La face
+ * du profil est consommée (retirée, ses arêtes orphelines aussi). Refus atomiques : trous jointifs, demi-tour exact,
+ * coin trop aigu, chemin qui se recoupe (EX-FM-07). Si le chemin est une face dont la surface est recouverte par le
+ * balayage, elle se découpe comme toute géométrie collante.
  */
-export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: OptionsContexte = {}): Resultat {
+/**
+ * Le balayage se recouperait-il ? Deux segments non voisins du chemin plus proches que la largeur du profil
+ * (`rayon` : distance maximale du centre du profil à ses sommets) : leurs sections se chevaucheraient.
+ */
+function cheminSeRecoupe(V: readonly Vec3[], ferme: boolean, rayon: number): boolean {
+  const N = V.length;
+  const nSeg = ferme ? N : N - 1;
+  const distSegments = (p1: Vec3, q1: Vec3, p2: Vec3, q2: Vec3): number => {
+    // Distance minimale entre deux segments (échantillonnage fin, suffisant pour un test de contact à la tolérance).
+    let best = Infinity;
+    for (let i = 0; i <= 20; i++) {
+      const a = add(p1, scale(sub(q1, p1), i / 20));
+      const u = sub(q2, p2);
+      const l2 = dot(u, u);
+      const tt = l2 < EPS ? 0 : Math.max(0, Math.min(1, dot(sub(a, p2), u) / l2));
+      best = Math.min(best, dist(a, add(p2, scale(u, tt))));
+    }
+    return best;
+  };
+  for (let i = 0; i < nSeg; i++) {
+    for (let j = i + 2; j < nSeg; j++) {
+      if (ferme && i === 0 && j === nSeg - 1) continue;
+      if (distSegments(V[i] as Vec3, V[(i + 1) % N] as Vec3, V[j] as Vec3, V[(j + 1) % N] as Vec3) < 2 * rayon - 1e-9) return true;
+    }
+  }
+  return false;
+}
+
+export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: OptionsSuivezMoi = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
     const F = c.faces.get(profil);
     if (!F) throw new Error(`Face de profil inconnue : ${profil}`);
-    if (F.trous.length > 0) throw new RangeError("Le profil ne doit pas avoir de trou.");
+    // Lot 10c (EX-FM-04) : trous acceptés s'ils ne touchent ni le contour ni les autres trous.
+    const vus = new Set<Id>();
+    for (const b of [F.exterieur, ...F.trous]) {
+      for (const sId of b) {
+        if (vus.has(sId)) throw new RangeError(ERREUR_TROUS_JOINTIFS);
+        vus.add(sId);
+      }
+    }
     let ch: Chaine;
     if ("face" in chemin) {
       if (chemin.face === profil) throw new RangeError("Le chemin et le profil doivent être distincts.");
@@ -3280,6 +3328,7 @@ export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: Options
       ch = { sommets: G.exterieur, ferme: true };
     } else ch = chaineOrdonnee(c, chemin.aretes);
     const profilPts = F.exterieur.map((s) => pos(c, s));
+    const trousPts = F.trous.map((b) => b.map((s) => pos(c, s)));
     const nP = normalize(F.normale);
     const centre = scale(profilPts.reduce((a, p) => add(a, p), v3(0, 0, 0)), 1 / profilPts.length);
     // Sommets de passage colinéaires (arête coupée par un autre dessin) : ignorés, sinon ils découpent les faces.
@@ -3319,6 +3368,17 @@ export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: Options
     const nSeg = ch.ferme ? N : N - 1;
     const d: Vec3[] = [];
     for (let i = 0; i < nSeg; i++) d.push(normalize(sub(V[(i + 1) % N] as Vec3, V[i] as Vec3)));
+    // Lot 10c (EX-FM-05, 07) : un coin trop aigu donnerait un onglet sans borne ; un chemin qui se recoupe, un balayage
+    // qui se traverse. Refus avant toute écriture.
+    for (let i = 1; i < (ch.ferme ? nSeg + 1 : nSeg); i++) {
+      const a = d[(i - 1) % nSeg] as Vec3;
+      const b = d[i % nSeg] as Vec3;
+      const c2 = dot(a, b);
+      if (c2 < -1 + 1e-12) continue; // demi-tour exact : refusé plus bas par le plan bissecteur (message dédié)
+      if (c2 < Math.cos(Math.PI - (12 * Math.PI) / 180)) throw new RangeError(ERREUR_ONGLET_SINGULIER);
+    }
+    const rayon = Math.max(...profilPts.map((p) => dist(p, centre)));
+    if (cheminSeRecoupe(V, ch.ferme, rayon)) throw new RangeError(ERREUR_CHEMIN_RECOUPE);
     const plan = (i: number): { n: Vec3; o: Vec3 } => {
       const k = i % N;
       if (!ch.ferme && (i === 0 || i === N - 1)) return { n: d[i === 0 ? 0 : nSeg - 1] as Vec3, o: V[k] as Vec3 };
@@ -3328,30 +3388,50 @@ export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: Options
       if (len(bis) < 1e-9) throw new RangeError("Le chemin revient sur lui-même : onglet impossible.");
       return { n: normalize(bis), o: V[k] as Vec3 };
     };
-    const sections: Vec3[][] = [];
-    const p0 = plan(0);
-    sections.push(glisserSurPlan(profilPts, d[0] as Vec3, p0.n, p0.o));
-    for (let i = 1; i <= nSeg; i++) {
-      if (ch.ferme && i === nSeg) {
-        sections.push(sections[0] as Vec3[]);
-        break;
+    // Chaque boucle (contour puis trous) glisse de plan en plan : même transformation de section pour toutes.
+    const balayer = (boucle: readonly Vec3[]): Vec3[][] => {
+      const sections: Vec3[][] = [];
+      const p0 = plan(0);
+      sections.push(glisserSurPlan(boucle, d[0] as Vec3, p0.n, p0.o));
+      for (let i = 1; i <= nSeg; i++) {
+        if (ch.ferme && i === nSeg) {
+          sections.push(sections[0] as Vec3[]);
+          break;
+        }
+        const pi = plan(i);
+        sections.push(glisserSurPlan(sections[i - 1] as Vec3[], d[i - 1] as Vec3, pi.n, pi.o));
       }
-      const pi = plan(i);
-      sections.push(glisserSurPlan(sections[i - 1] as Vec3[], d[i - 1] as Vec3, pi.n, pi.o));
-    }
-    const k = profilPts.length;
-    let polys: Vec3[][] = [];
-    for (let i = 0; i < nSeg; i++) {
-      const S = sections[i] as Vec3[];
-      const E = sections[i + 1] as Vec3[];
-      for (let j = 0; j < k; j++) polys.push([S[j] as Vec3, S[(j + 1) % k] as Vec3, E[(j + 1) % k] as Vec3, E[j] as Vec3]);
-    }
-    if (!ch.ferme) {
-      polys.push([...(sections[0] as Vec3[])].reverse());
-      polys.push([...(sections[nSeg] as Vec3[])]);
-    }
-    polys = polys.filter((p) => len(newell(p)) > 1e-12);
-    if (volumeSigne(polys) < 0) polys = polys.map((p) => [...p].reverse());
+      return sections;
+    };
+    const parois = (sections: Vec3[][]): Vec3[][] => {
+      const k = (sections[0] as Vec3[]).length;
+      const r: Vec3[][] = [];
+      for (let i = 0; i < nSeg; i++) {
+        const S = sections[i] as Vec3[];
+        const E = sections[i + 1] as Vec3[];
+        for (let j = 0; j < k; j++) r.push([S[j] as Vec3, S[(j + 1) % k] as Vec3, E[(j + 1) % k] as Vec3, E[j] as Vec3]);
+      }
+      return r;
+    };
+    const sectionsExt = balayer(profilPts);
+    const sectionsTrous = trousPts.map(balayer);
+    let polys: Vec3[][] = parois(sectionsExt);
+    // Capuchons (chemin ouvert, sauf « sans capuchon ») : contour extérieur, trous compris.
+    const capuchons = !ch.ferme && o.bouchons !== false;
+    const capDebut = { ext: [...(sectionsExt[0] as Vec3[])].reverse(), trous: sectionsTrous.map((st) => [...(st[0] as Vec3[])].reverse()) };
+    const capFin = { ext: [...(sectionsExt[nSeg] as Vec3[])], trous: sectionsTrous.map((st) => [...(st[nSeg] as Vec3[])]) };
+    // Orientation : décidée sur la coque extérieure (parois + capuchons pleins) — les trous ont l'enroulement opposé et
+    // leurs parois regardent donc le vide (EX-FM-06 : normales du vide vers l'intérieur).
+    const coque = capuchons ? [...polys, capDebut.ext, capFin.ext] : polys;
+    let inverser = volumeSigne(coque) < 0;
+    if (!capuchons && ch.ferme === false) inverser = false; // surface ouverte : orientation du profil conservée
+    const orienter = (p: Vec3[]) => (inverser ? [...p].reverse() : p);
+    polys = polys.map(orienter);
+    const paroisTrous = sectionsTrous.flatMap((st) => parois(st)).map(orienter);
+    polys = [...polys, ...paroisTrous].filter((p) => len(newell(p)) > 1e-12);
+    const caps: { ext: Vec3[]; trous: Vec3[][] }[] = capuchons
+      ? [capDebut, capFin].map((cap) => ({ ext: orienter(cap.ext), trous: cap.trous.map(orienter) }))
+      : [];
 
     // Le profil est consommé : sa face et celles de ses arêtes qu'aucune autre face ne borde disparaissent AVANT le
     // balayage, sinon elles découperaient les faces coplanaires du résultat.
@@ -3369,6 +3449,10 @@ export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: Options
     for (const p of polys) {
       for (let i = 0; i < p.length; i++) segments.push({ a: p[i] as Vec3, b: p[(i + 1) % p.length] as Vec3 });
       sources.push({ exterieur: p, trous: [], normale: normalize(newell(p)), role: "face" });
+    }
+    for (const cap of caps) {
+      for (const b of [cap.ext, ...cap.trous]) for (let i = 0; i < b.length; i++) segments.push({ a: b[i] as Vec3, b: b[(i + 1) % b.length] as Vec3 });
+      sources.push({ exterieur: cap.ext, trous: cap.trous, normale: normalize(newell(cap.ext)), role: "face" });
     }
     insererGeometrie(t, c, segments, sources, false);
   });
