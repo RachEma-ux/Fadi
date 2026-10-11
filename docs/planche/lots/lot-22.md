@@ -10,9 +10,9 @@ hors V1, inclus par D-202). Référence des écarts : `docs/planche/reference/ec
     sa normale. La section passe linéairement de l'échelle 1 à `echelle` et tourne de `torsion` degrés autour du centre du
     profil. Sans torsion : un tronçon, parois planes ; avec torsion : 12 tronçons par défaut, parois gauches coupées en
     triangles.
-  - `loft(m, profilA, profilB, { segments })` relie deux faces sans trou de même nombre de sommets. Les sommets sont
-    appariés dans le même sens de parcours, en partant du couple le plus proche. Les deux profils sont consommés et
-    remplacés par la coque fermée.
+  - `loft(m, profilA, profilB, { segments, bouchons })` relie deux faces sans trou de même nombre de sommets. Les
+    sommets sont appariés dans le même sens de parcours, en partant du couple le plus proche. Les deux profils sont
+    consommés et remplacés par la coque, fermée par deux capuchons (option Capuchons « sans » : surface ouverte).
   - Refus codés (diagnostics L19) : longueur nulle, échelle ≤ 0, tronçons hors de 1 à 512, profils identiques ou
     incompatibles, complexité au-delà du plafond de 2 000 triangles.
 - **Outil Suivez-moi** : deux méthodes de plus, **Effilement** et **Loft**. Alt seul fait le tour Chemin → Révolution →
@@ -20,7 +20,8 @@ hors V1, inclus par D-202). Référence des écarts : `docs/planche/reference/ec
   Maj + F).
   - Effilement : survol du profil → aperçu ; clic → un pas « Effilement ». Le champ Mesures prend
     « longueur ; échelle ; torsion » (un champ vide garde sa valeur). Retapé juste après, il recalcule depuis le profil
-    d'origine en remplaçant le dernier pas.
+    d'origine en remplaçant le dernier pas. La longueur est en mètres monde, ramenée au contexte d'édition
+    (EX-MODEL-02) ; dans un contexte à l'échelle non uniforme, une torsion est refusée (l'angle n'y serait pas celui tapé).
   - Loft : clic sur le premier profil, puis sur le second (aperçu au survol) → un pas « Loft ». Le champ Mesures prend les
     tronçons « Ns » ; retapés juste après, ils corrigent le même pas.
 - Textes traduits (`messages.ts` FR / EN, `en.json`).

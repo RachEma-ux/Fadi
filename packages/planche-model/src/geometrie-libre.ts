@@ -5336,7 +5336,8 @@ export function effiler(m: Modele, profil: Id, o: OptionsEffiler): Resultat {
     exigerTrousDisjoints(F);
     const ext = F.exterieur.map((s) => pos(c, s));
     const trous = F.trous.map((b) => b.map((s) => pos(c, s)));
-    exigerComplexite(trianglesBalayage(ext.length + trous.reduce((n, b) => n + b.length, 0), N, o.bouchons !== false) * (Math.abs(torsion) > 1e-9 ? 2 : 1), o.plafondTriangles);
+    // Revue de #135 : `trianglesBalayage` compte déjà deux triangles par côté et par tronçon (parois gauches comprises).
+    exigerComplexite(trianglesBalayage(ext.length + trous.reduce((n, b) => n + b.length, 0), N, o.bouchons !== false), o.plafondTriangles);
     const n = normalize(F.normale);
     const C = scale(ext.reduce((a, p) => add(a, p), v3(0, 0, 0)), 1 / ext.length);
     const anneaux = (boucle: readonly Vec3[]): Vec3[][] => {
@@ -5357,9 +5358,10 @@ export function effiler(m: Modele, profil: Id, o: OptionsEffiler): Resultat {
 /**
  * Lot L22 : loft entre deux profils (faces sans trou, même nombre de sommets) — les sommets sont appariés dans le même
  * sens de parcours, en partant du couple le plus proche ; `segments` anneaux intermédiaires interpolés linéairement.
- * Les deux profils sont consommés et remplacés par la coque fermée (parois gauches coupées en triangles).
+ * Les deux profils sont consommés et remplacés par la coque (parois gauches coupées en triangles), fermée par deux
+ * capuchons sauf `bouchons: false` (surface ouverte, revue de #135).
  */
-export function loft(m: Modele, profilA: Id, profilB: Id, o: OptionsContexte & { readonly segments?: number; readonly plafondTriangles?: number } = {}): Resultat {
+export function loft(m: Modele, profilA: Id, profilB: Id, o: OptionsContexte & { readonly segments?: number; readonly plafondTriangles?: number; readonly bouchons?: boolean } = {}): Resultat {
   if (profilA === profilB) throw erreurPlanche("EX_SOURCE_INVALID", ERREUR_LOFT_PROFILS);
   const N = o.segments ?? 1;
   if (!Number.isInteger(N) || N < 1 || N > 512) throw erreurPlanche("EX_DISTANCE_INVALID", ERREUR_EFFILER_SEGMENTS);
@@ -5368,7 +5370,8 @@ export function loft(m: Modele, profilA: Id, profilB: Id, o: OptionsContexte & {
     const B = c.faces.get(profilB);
     if (!A || !B) throw erreurPlanche("EX_SOURCE_INVALID", ERREUR_LOFT_PROFILS);
     if (A.trous.length || B.trous.length || A.exterieur.length !== B.exterieur.length) throw erreurPlanche("EX_PROFILE_INVALID", ERREUR_LOFT_SOMMETS);
-    exigerComplexite(trianglesBalayage(A.exterieur.length, N, true) * 2, o.plafondTriangles);
+    // Revue de #135 : `trianglesBalayage` compte déjà deux triangles par côté et par tronçon.
+    exigerComplexite(trianglesBalayage(A.exterieur.length, N, o.bouchons !== false), o.plafondTriangles);
     const pa = A.exterieur.map((s) => pos(c, s));
     let pb = B.exterieur.map((s) => pos(c, s));
     const centre = (q: readonly Vec3[]) => scale(q.reduce((a, p) => add(a, p), v3(0, 0, 0)), 1 / q.length);
@@ -5396,6 +5399,6 @@ export function loft(m: Modele, profilA: Id, profilB: Id, o: OptionsContexte & {
       const u = j / N;
       anneaux.push(pa.map((p, i) => add(scale(p, 1 - u), scale(pb[i] as Vec3, u))));
     }
-    insererAnneaux(t, c, A, profilA, anneaux, [], true, profilB);
+    insererAnneaux(t, c, A, profilA, anneaux, [], o.bouchons !== false, profilB);
   });
 }

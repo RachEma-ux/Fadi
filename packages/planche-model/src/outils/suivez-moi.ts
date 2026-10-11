@@ -45,7 +45,7 @@ import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
 import { messageErreur } from "./commun-formes.js";
-import { consigneDe, enLocal, idsSelectionnables, pointsDe, saisieDe, selectionValide, vueModif, viseeElement } from "./commun-modif.js";
+import { consigneDe, distanceLocale, echelleDansPlan, enLocal, idsSelectionnables, normaleMonde, pointsDe, saisieDe, selectionValide, vueModif, viseeElement } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, ModificateurSeul, OptionOutil, Transition, VueOutil } from "./machine.js";
 import { optionsDans } from "./selection.js";
 
@@ -266,11 +266,24 @@ export const CONSIGNE_LOFT_1 = "Loft : cliquez sur le premier profil.";
 export const CONSIGNE_LOFT_2 = "Loft : cliquez sur le second profil.";
 export const ERREUR_SAISIE_EFFILEMENT = "Saisissez « longueur ; échelle ; torsion » (ex. 2;0,5;90) — un champ vide garde sa valeur.";
 
-/** Opération à section variable sur `m` : effilement du profil, ou loft entre les deux profils. */
+/**
+ * Opération à section variable sur `m` : effilement du profil, ou loft entre les deux profils. Revue de #135 : la longueur
+ * tapée est en mètres monde, ramenée le long de la normale locale du profil (EX-MODEL-02, refus nommé si une échelle non
+ * uniforme fausserait la dimension) ; une torsion dans un plan à l'échelle non uniforme est refusée de même (l'angle n'y
+ * serait pas celui tapé). Le loft, défini par ses deux profils, n'a rien à convertir ; il suit l'option Capuchons.
+ */
 function variable(etat: EtatSuivezMoi, ctx: ContexteOutil, m: Modele, profil: Id, second: Id | null): Modele {
-  if (etat.methode === "loft") return loft(m, profil, second as Id, { ...optionsDans(ctx), segments: etat.troncons }).modele;
+  if (etat.methode === "loft") return loft(m, profil, second as Id, { ...optionsDans(ctx), segments: etat.troncons, bouchons: etat.bouchons }).modele;
   const p = etat.effilement;
-  return effiler(m, profil, { ...optionsDans(ctx), longueur: p.longueur, echelle: p.echelle, torsion: p.torsion, bouchons: etat.bouchons }).modele;
+  const ctxBase = { ...ctx, modele: m };
+  const nLocale = contexte(m, ctx.dans).faces[profil]?.normale;
+  let longueur = p.longueur;
+  if (nLocale) {
+    const nMonde = normaleMonde(ctxBase, nLocale);
+    longueur = distanceLocale(ctxBase, nMonde, nLocale, p.longueur);
+    if (Math.abs(p.torsion) > 1e-9) echelleDansPlan(ctxBase, nMonde);
+  }
+  return effiler(m, profil, { ...optionsDans(ctx), longueur, echelle: p.echelle, torsion: p.torsion, bouchons: etat.bouchons }).modele;
 }
 
 /** « longueur ; échelle ; torsion » : virgule décimale ou point, champs vides gardés ; `null` si illisible. */

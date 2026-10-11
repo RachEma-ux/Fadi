@@ -79,3 +79,41 @@ describe("L22 — loft", () => {
     expect(() => loft(m, a, b)).toThrow(ERREUR_LOFT_SOMMETS);
   });
 });
+
+describe("L22 — revue de #135 : estimation comptée une fois, capuchons du loft", () => {
+  const piege = (g: () => unknown) => {
+    try {
+      g();
+    } catch (e) {
+      return codeDe(e);
+    }
+    return null;
+  };
+  const deuxProfils = () => {
+    let m = rect(0, 0, 0, 1, 1);
+    const a = Object.keys(m.racine.faces)[0] as Id;
+    m = ajouterRectangle(m, v3(0.25, 0.25, 1), v3(0.5, 0, 0), v3(0, 0.5, 0)).modele;
+    const b = Object.keys(m.racine.faces).find((f) => f !== a) as Id;
+    return { m, a, b };
+  };
+
+  it("effilement tordu : 4 sommets × 125 tronçons = 1 008 triangles avec capuchons — accepté au plafond 1 008, refusé à 1 007", () => {
+    const m = rect(0, 0, 0, 1, 1);
+    const f = Object.keys(m.racine.faces)[0] as Id;
+    expect(piege(() => effiler(m, f, { longueur: signeN(m, f), torsion: 90, segments: 125, plafondTriangles: 1008 }))).toBeNull();
+    expect(piege(() => effiler(m, f, { longueur: signeN(m, f), torsion: 90, segments: 125, plafondTriangles: 1007 }))).toBe("EX_COMPLEXITY_LIMIT");
+  });
+
+  it("loft : même estimation (1 008 à 125 tronçons) ; sans capuchons, 1 000 — et la coque reste ouverte, les deux profils consommés", () => {
+    const { m, a, b } = deuxProfils();
+    expect(piege(() => loft(m, a, b, { segments: 125, plafondTriangles: 1008 }))).toBeNull();
+    expect(piege(() => loft(m, a, b, { segments: 125, plafondTriangles: 1007 }))).toBe("EX_COMPLEXITY_LIMIT");
+    expect(piege(() => loft(m, a, b, { segments: 125, plafondTriangles: 1000, bouchons: false }))).toBeNull();
+    const ouvert = loft(m, a, b, { bouchons: false }).modele;
+    expect(Object.keys(contexte(ouvert).faces)).toHaveLength(4);
+    expect(contexte(ouvert).faces[a]).toBeUndefined();
+    expect(contexte(ouvert).faces[b]).toBeUndefined();
+    expect(solide(ouvert).solide).toBe(false);
+    expect(Object.keys(contexte(loft(m, a, b).modele).faces)).toHaveLength(6);
+  });
+});
