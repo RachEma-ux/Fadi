@@ -7990,5 +7990,11 @@
 "Rotation 90°": "Rotate 90°",
 "Intérieur": "Inside",
 "Onglets": "Miters",
-"Fusion des colinéaires": "Merge collinear"
+"Fusion des colinéaires": "Merge collinear",
+"Saisie": "Typed",
+"½ largeur": "½ width",
+"½ hauteur": "½ height",
+"+ Allonger": "+ Extend",
+"− Raccourcir": "− Shorten",
+"Couper après pose": "Cut after placing"
 }
