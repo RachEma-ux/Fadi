@@ -17,8 +17,9 @@ fiche `docs/planche/fiches/PL-17-01.md`.
 - **Aligner une face** (⫠ Alt+Maj+F, barre Volumes · Modifier) : on clique une face de la pièce, puis la face cible. La pièce
   glisse le long de la normale de la cible jusqu'à son plan (coplanaire à ± 1e-9). Des faces non parallèles sont refusées
   avec un motif.
-- **Échelle d'une pièce** : seulement le long de son axe (longueur et décalages). Un refus nommé s'affiche en travers et sur
-  une pièce coupée.
+- **Échelle d'une pièce** : le long de son axe (longueur et décalages). Un refus nommé s'affiche en travers et sur une
+  pièce coupée. **Repère « Pièce »** (option de l'outil Échelle) : une seule pièce, étirée par son facteur le long de
+  **son propre axe**, quelle que soit son orientation (diagonale comprise) ; deux facteurs distincts sont refusés.
 - **Inférence « axe de pièce »** : les axes des pièces sont proposés comme arêtes d'inférence à Déplacer.
 
 ## Arbitrage (risque du programme)

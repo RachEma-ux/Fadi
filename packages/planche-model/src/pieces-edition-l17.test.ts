@@ -6,6 +6,7 @@ import {
   ERREUR_ALIGNER_PARALLELE,
   ERREUR_ECHELLE_PIECE,
   ERREUR_ECHELLE_PIECE_COUPEE,
+  ERREUR_ECHELLE_PIECE_REPERE,
   ajouterSegment,
   alignerFacePiece,
   axesDesPieces,
@@ -17,6 +18,7 @@ import {
   piecesLiees,
   poserPiece,
   tournerPieceAxe,
+  verrouillerOccurrences,
   volume,
 } from "./geometrie-libre.js";
 import { geometrieVisible } from "./inference.js";
@@ -100,5 +102,32 @@ describe("Échelle d'une pièce (L17)", () => {
     const ax = axesDesPieces(p.modele);
     expect(ax).toHaveLength(1);
     expect([ax[0]!.a.x, ax[0]!.b.x]).toEqual([0, 3]);
+  });
+});
+
+describe("Revue de #130 — un objet verrouillé ne se modifie pas par les commandes de pièce", () => {
+  it("verrouillé : section, rotation axiale, allongement (Onglet) et échelle refusés ; déverrouillé : accepté", () => {
+    const a = poserPiece(modeleVide(), { a: v3(0, 0, 0), b: v3(2, 0, 0) }, rect(0.08, 0.04), PLACEMENT_DEFAUT, OPT);
+    const verrou = verrouillerOccurrences(a.modele, [a.occurrence], true).modele;
+    expect(() => changerSectionPiece(verrou, a.occurrence, rect(0.1, 0.05), { genre: "saisie" }, "100 × 50")).toThrow(/verrouillé/);
+    expect(() => tournerPieceAxe(verrou, a.occurrence, 90)).toThrow(/verrouillé/);
+    expect(() => mettreAEchelle(verrou, [a.occurrence], v3(0, 0, 0), v3(1.5, 1, 1))).toThrow(/verrouillé/);
+    expect(() => tournerPieceAxe(verrouillerOccurrences(verrou, [a.occurrence], false).modele, a.occurrence, 90)).not.toThrow();
+  });
+});
+
+describe("Revue de #130 — repère de la pièce : étirement le long d'un axe quelconque", () => {
+  it("pièce diagonale (1, 1, 0) : repère pièce, facteur 2 → longueur doublée, origine fixe ; sans repère pièce → refus", () => {
+    const a = poserPiece(modeleVide(), { a: v3(0, 0, 0), b: v3(1, 1, 0) }, rect(0.08, 0.04), PLACEMENT_DEFAUT, OPT);
+    expect(() => mettreAEchelle(a.modele, [a.occurrence], v3(0, 0, 0), v3(2, 1, 1))).toThrow(ERREUR_ECHELLE_PIECE);
+    const r = mettreAEchelle(a.modele, [a.occurrence], v3(0, 0, 0), v3(2, 1, 1), { axePiece: true });
+    expect(meta(r.modele, a.occurrence).longueur).toBeCloseTo(2 * Math.SQRT2, 9);
+  });
+
+  it("repère pièce : deux facteurs distincts sur une pièce refusés ; plusieurs pièces refusées", () => {
+    const a = poserPiece(modeleVide(), { a: v3(0, 0, 0), b: v3(1, 1, 0) }, rect(0.08, 0.04), PLACEMENT_DEFAUT, OPT);
+    expect(() => mettreAEchelle(a.modele, [a.occurrence], v3(0, 0, 0), v3(2, 3, 1), { axePiece: true })).toThrow(ERREUR_ECHELLE_PIECE_REPERE);
+    const b = poserPiece(a.modele, { a: v3(0, 2, 0), b: v3(1, 3, 0) }, rect(0.08, 0.04), PLACEMENT_DEFAUT, OPT);
+    expect(() => mettreAEchelle(b.modele, [a.occurrence, b.occurrence], v3(0, 0, 0), 2, { axePiece: true })).toThrow(ERREUR_ECHELLE_PIECE_REPERE);
   });
 });
