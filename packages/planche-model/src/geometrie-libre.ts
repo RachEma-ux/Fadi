@@ -52,6 +52,7 @@ import {
   v3,
 } from "./vecteur.js";
 
+import { erreurPlanche, exigerComplexite } from "./diagnostics.js";
 import { type Annotations, type AnnotationsMutables, type Extrusion, type LienPiece, ANNOTATIONS_VIDES, genreAnnotation } from "./annotations.js";
 import {
   type BoutPiece,
@@ -1457,8 +1458,8 @@ function echantillonFace(c: Ctx, f: Face): Vec3 {
 export const ERREUR_DISTANCE_NON_FINIE = "Distance non finie : saisissez un nombre.";
 export const ERREUR_SOUS_TOLERANCE = `Distance sous la tolérance de modélisation (${TOL} m) : rien n'a été modifié.`;
 function exigerDistance(d: number): void {
-  if (!Number.isFinite(d)) throw new RangeError(ERREUR_DISTANCE_NON_FINIE);
-  if (Math.abs(d) >= EPS && Math.abs(d) < TOL) throw new RangeError(ERREUR_SOUS_TOLERANCE);
+  if (!Number.isFinite(d)) throw erreurPlanche("EX_DISTANCE_INVALID", ERREUR_DISTANCE_NON_FINIE);
+  if (Math.abs(d) >= EPS && Math.abs(d) < TOL) throw erreurPlanche("EX_DISTANCE_INVALID", ERREUR_SOUS_TOLERANCE);
 }
 
 /**
@@ -1473,9 +1474,9 @@ export function distanceJusquAFace(m: Modele, face: Id, cible: Id, o: OptionsCon
   const F = c.faces[face];
   const G = c.faces[cible];
   if (!F) throw new Error(`Face inconnue : ${face}`);
-  if (!G) throw new RangeError(ERREUR_CIBLE_HORS_CONTEXTE);
-  if (face === cible) throw new RangeError(ERREUR_CIBLE_SOURCE);
-  if (len(cross(F.normale, G.normale)) > 1e-9) throw new RangeError(ERREUR_CIBLE_NON_PARALLELE);
+  if (!G) throw erreurPlanche("EX_CONTEXT_MISMATCH", ERREUR_CIBLE_HORS_CONTEXTE);
+  if (face === cible) throw erreurPlanche("EX_SOURCE_INVALID", ERREUR_CIBLE_SOURCE);
+  if (len(cross(F.normale, G.normale)) > 1e-9) throw erreurPlanche("EX_SOURCE_INVALID", ERREUR_CIBLE_NON_PARALLELE);
   const p = (c.sommets[F.exterieur[0] as Id] as Sommet).position;
   const q = (c.sommets[G.exterieur[0] as Id] as Sommet).position;
   return dot(F.normale, sub(q, p));
@@ -1605,7 +1606,7 @@ export interface OptionsEtirerAretes extends OptionsContexte {
 export function etirerAretes(m: Modele, aretes: readonly Id[], vecteur: Vec3, o: OptionsEtirerAretes = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
     exigerDistance(len(vecteur));
-    if (len(vecteur) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
+    if (len(vecteur) < EPS) throw erreurPlanche("EX_DISTANCE_INVALID", "Distance nulle : aucune surface à balayer.");
     const ids = aretesEtendues(c, aretes);
     const ferme = contourPlanFerme(c, ids);
     if (ferme && Math.abs(dot(ferme.normale, vecteur)) < 1e-9 * len(vecteur)) {
@@ -1629,7 +1630,7 @@ export function etirerAretes(m: Modele, aretes: readonly Id[], vecteur: Vec3, o:
 export function couronne(m: Modele, aretes: readonly Id[], distance: number, o: OptionsEtirerAretes = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
     exigerDistance(distance);
-    if (Math.abs(distance) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
+    if (Math.abs(distance) < EPS) throw erreurPlanche("EX_DISTANCE_INVALID", "Distance nulle : aucune surface à balayer.");
     const ids = aretesEtendues(c, aretes);
     lier(t, c, o.dans, { genre: "couronne", sources: [...ids], distance, symetrique: !!o.symetrique }, () => couronneInterne(t, c, ids, distance, !!o.symetrique), o.lier !== false);
   });
@@ -1644,10 +1645,10 @@ export function allongerArete(m: Modele, arete: Id, extremite: Id, longueur: num
   return operer(m, o.dans, (t, c) => {
     const a = c.aretes.get(arete);
     if (!a) throw new Error(`Arête inconnue : ${arete}`);
-    if (a.courbe) throw new RangeError("Une arête de courbe ne s'allonge pas : tirez-la pour l'étendre en surface.");
-    if (extremite !== a.a && extremite !== a.b) throw new RangeError("L'extrémité ne fait pas partie de l'arête.");
+    if (a.courbe) throw erreurPlanche("EX_SOURCE_INVALID", "Une arête de courbe ne s'allonge pas : tirez-la pour l'étendre en surface.");
+    if (extremite !== a.a && extremite !== a.b) throw erreurPlanche("EX_SOURCE_INVALID", "L'extrémité ne fait pas partie de l'arête.");
     exigerDistance(longueur);
-    if (Math.abs(longueur) < EPS) throw new RangeError("Distance nulle : rien n'a été allongé.");
+    if (Math.abs(longueur) < EPS) throw erreurPlanche("EX_DISTANCE_INVALID", "Distance nulle : rien n'a été allongé.");
     const autre = extremite === a.a ? a.b : a.a;
     const E = pos(c, extremite);
     const F = pos(c, autre);
@@ -1655,12 +1656,12 @@ export function allongerArete(m: Modele, arete: Id, extremite: Id, longueur: num
     const nouveau = add(E, scale(normalize(sub(E, F)), longueur));
     const libre = aretesDuSommet(c, extremite).length === 1 && facesDeArete(c, a).length === 0;
     if (libre) {
-      if (longueur <= -L + EPS) throw new RangeError("Le raccourcissement dépasse la longueur de l'arête.");
+      if (longueur <= -L + EPS) throw erreurPlanche("EX_DISTANCE_INVALID", "Le raccourcissement dépasse la longueur de l'arête.");
       effacerAretesInterne(t, c, [arete]);
       insererGeometrie(t, c, [{ a: F, b: nouveau }], [], true);
       return;
     }
-    if (longueur < 0) throw new RangeError("Raccourcir une arête reliée à d'autres : utilisez la Gomme ou Déplacer.");
+    if (longueur < 0) throw erreurPlanche("EX_SOURCE_INVALID", "Raccourcir une arête reliée à d'autres : utilisez la Gomme ou Déplacer.");
     insererGeometrie(t, c, [{ a: E, b: nouveau }], [], true);
   });
 }
@@ -1675,7 +1676,7 @@ export function tuberFace(m: Modele, face: Id, distance: number, o: OptionsConte
     const F = c.faces.get(face);
     if (!F) throw new Error(`Face inconnue : ${face}`);
     exigerDistance(distance);
-    if (Math.abs(distance) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
+    if (Math.abs(distance) < EPS) throw erreurPlanche("EX_DISTANCE_INVALID", "Distance nulle : aucune surface à balayer.");
     const ids = new Set<Id>();
     for (const b of [F.exterieur, ...F.trous]) {
       for (let i = 0; i < b.length; i++) {
@@ -1712,23 +1713,23 @@ export function etirerFace(m: Modele, face: Id, distance: number, o: OptionsCont
   return operer(m, o.dans, (_t, c) => {
     const F = c.faces.get(face);
     if (!F) throw new Error(`Face inconnue : ${face}`);
-    if (Math.abs(distance) < EPS) throw new RangeError("Distance nulle : rien n'a été étiré.");
+    if (Math.abs(distance) < EPS) throw erreurPlanche("EX_DISTANCE_INVALID", "Distance nulle : rien n'a été étiré.");
     const dep = scale(normalize(F.normale), distance);
     const bouges = new Set<Id>([...F.exterieur, ...F.trous.flat()]);
     const nouvelle = (s: Id): Vec3 => (bouges.has(s) ? add(pos(c, s), dep) : pos(c, s));
     const voisines = [...c.faces.values()].filter((g) => g.id !== F.id && [g.exterieur, ...g.trous].some((b) => b.some((s) => bouges.has(s))));
     // Suite du lot 8 (EX-PT-03) : sans voisine dans le contexte courant, étirer reviendrait à déplacer la face.
-    if (voisines.length === 0) throw new RangeError(ERREUR_ETIRER_ISOLEE);
+    if (voisines.length === 0) throw erreurPlanche("EX_SOURCE_INVALID", ERREUR_ETIRER_ISOLEE);
     const normales = new Map<Id, Vec3>();
     for (const g of voisines) {
       const ext = g.exterieur.map(nouvelle);
       const nw = newell(ext);
-      if (len(nw) < EPS) throw new RangeError("L'étirement annulerait une face voisine : rien n'est modifié.");
+      if (len(nw) < EPS) throw erreurPlanche("EX_SELF_INTERSECTION", "L'étirement annulerait une face voisine : rien n'est modifié.");
       const n = normalize(nw);
-      if (dot(n, g.normale) <= 0) throw new RangeError("L'étirement retournerait une face voisine : rien n'est modifié.");
+      if (dot(n, g.normale) <= 0) throw erreurPlanche("EX_SELF_INTERSECTION", "L'étirement retournerait une face voisine : rien n'est modifié.");
       const pl = planCanonique(n, ext[0] as Vec3);
       for (const b of [g.exterieur, ...g.trous]) {
-        if (b.some((s) => !surPlan(pl, nouvelle(s)))) throw new RangeError("L'étirement rendrait une face voisine non plane : rien n'est modifié.");
+        if (b.some((s) => !surPlan(pl, nouvelle(s)))) throw erreurPlanche("EX_SELF_INTERSECTION", "L'étirement rendrait une face voisine non plane : rien n'est modifié.");
       }
       normales.set(g.id, n);
     }
@@ -1905,7 +1906,7 @@ function actualiserExtrusions(t: Travail): void {
     } catch (err) {
       // Lot 10b (EX-LINK-03, L-04) : un recalcul qui produirait une géométrie invalide refuse la modification de la source
       // tout entière — le modèle précédent est conservé (l'opération lève, `operer` n'écrit rien).
-      throw new RangeError(`${ERREUR_RECALCUL_LIEN} ${err instanceof Error ? err.message : String(err)}`);
+      throw erreurPlanche("EX_LINK_UNAVAILABLE", `${ERREUR_RECALCUL_LIEN} ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 }
@@ -1917,7 +1918,7 @@ function balayerInterne(t: Travail, c: Ctx, ids: ReadonlySet<Id>, vecteur: Vec3,
   for (const kid of new Set([...ids].map((id) => c.aretes.get(id)?.courbe).filter((k): k is Id => k !== undefined))) {
     const k = c.courbes.get(kid) as Courbe;
     if (k.genre !== "arc" && Math.abs(dot(normalize(k.normale), vecteur)) < 1e-9 * len(vecteur)) {
-      throw new RangeError("Une courbe fermée tirée dans son propre plan se recouvrirait : utilisez le Décalage pour une couronne.");
+      throw erreurPlanche("EX_SELF_INTERSECTION", "Une courbe fermée tirée dans son propre plan se recouvrirait : utilisez le Décalage pour une couronne.");
     }
   }
   const depart = symetrique ? scale(vecteur, -1) : v3(0, 0, 0);
@@ -1969,7 +1970,7 @@ function balayerInterne(t: Travail, c: Ctx, ids: ReadonlySet<Id>, vecteur: Vec3,
     const quad = dot(cross(sub(B0, A0), course), nn) > 0 ? [A0, B0, B1, A1] : [A0, A1, B1, B0];
     sources.push({ exterieur: quad, trous: [], normale: nn, role: "face" });
   }
-  if (sources.length === 0) throw new RangeError("Le déplacement est parallèle aux arêtes : aucune surface à balayer.");
+  if (sources.length === 0) throw erreurPlanche("EX_DISTANCE_INVALID", "Le déplacement est parallèle aux arêtes : aucune surface à balayer.");
   insererGeometrie(t, c, segments, sources, false);
 }
 
@@ -1994,7 +1995,7 @@ function contourDecale(pts: readonly Vec3[], n: Vec3, d: number): Vec3[] | null 
   // Lot 10a (EX-PT-06, P-13) : sur une boucle concave, deux segments non voisins du contour décalé peuvent se croiser
   // sans qu'aucun ne s'inverse ; le décalage est alors refusé en nommant les segments.
   const croises = recoupementContour(r, n);
-  if (croises) throw new RangeError(`Le décalage se recoupe (segments ${croises[0] + 1} et ${croises[1] + 1} du contour) : réduisez la distance.`);
+  if (croises) throw erreurPlanche("EX_SELF_INTERSECTION", `Le décalage se recoupe (segments ${croises[0] + 1} et ${croises[1] + 1} du contour) : réduisez la distance.`);
   return r;
 }
 
@@ -2031,13 +2032,13 @@ export function recoupementContour(pts: readonly Vec3[], n: Vec3): [number, numb
 /** Couronne (cœur de `couronne`). */
 function couronneInterne(t: Travail, c: Ctx, ids: ReadonlySet<Id>, distance: number, symetrique: boolean): void {
   const contour = contourPlanFerme(c, ids);
-  if (!contour) throw new RangeError("La couronne demande un contour plan fermé (cercle, polygone ou arêtes formant une boucle).");
+  if (!contour) throw erreurPlanche("EX_PROFILE_INVALID", "La couronne demande un contour plan fermé (cercle, polygone ou arêtes formant une boucle).");
   const n = contour.normale;
   const pts = contour.sommets.map((s) => pos(c, s));
   const decale = (d: number): Vec3[] => {
     if (Math.abs(d) < EPS) return pts;
     const r = contourDecale(pts, n, d);
-    if (!r) throw new RangeError("Le décalage vers l'intérieur dépasse la forme : réduisez la distance.");
+    if (!r) throw erreurPlanche("EX_SELF_INTERSECTION", "Le décalage vers l'intérieur dépasse la forme : réduisez la distance.");
     return r;
   };
   const a = decale(symetrique ? -Math.abs(distance) : 0);
@@ -3296,12 +3297,12 @@ interface Chaine {
 /** Chaîne ordonnée de sommets formée par des arêtes continues (ouverte ou fermée) ; `RangeError` sinon. */
 function chaineOrdonnee(c: Ctx, ids: readonly Id[]): Chaine {
   const aretes = [...new Set(ids)].map((id) => c.aretes.get(id)).filter((a): a is Arete => a !== undefined);
-  if (aretes.length === 0) throw new RangeError("Aucune arête à suivre.");
+  if (aretes.length === 0) throw erreurPlanche("EX_SOURCE_INVALID", "Aucune arête à suivre.");
   const incident = new Map<Id, Arete[]>();
   for (const a of aretes) for (const s of [a.a, a.b]) incident.set(s, [...(incident.get(s) ?? []), a]);
-  for (const l of incident.values()) if (l.length > 2) throw new RangeError("Les arêtes se ramifient : une chaîne continue est nécessaire.");
+  for (const l of incident.values()) if (l.length > 2) throw erreurPlanche("EX_PATH_BRANCH", "Les arêtes se ramifient : une chaîne continue est nécessaire.");
   const bouts = [...incident.entries()].filter(([, l]) => l.length === 1).map(([s]) => s);
-  if (bouts.length !== 0 && bouts.length !== 2) throw new RangeError("Les arêtes ne forment pas une chaîne continue.");
+  if (bouts.length !== 0 && bouts.length !== 2) throw erreurPlanche("EX_PATH_DISCONNECTED", "Les arêtes ne forment pas une chaîne continue.");
   const depart = bouts[0] ?? (aretes[0] as Arete).a;
   const sommets: Id[] = [depart];
   const vues = new Set<Id>();
@@ -3314,7 +3315,7 @@ function chaineOrdonnee(c: Ctx, ids: readonly Id[]): Chaine {
     if (courant === depart) break;
     sommets.push(courant);
   }
-  if (vues.size !== aretes.length) throw new RangeError("Les arêtes ne forment pas une chaîne continue.");
+  if (vues.size !== aretes.length) throw erreurPlanche("EX_PATH_DISCONNECTED", "Les arêtes ne forment pas une chaîne continue.");
   return { sommets, ferme: bouts.length === 0 };
 }
 
@@ -3386,7 +3387,7 @@ export type CheminSuivi = { readonly face: Id } | { readonly aretes: readonly Id
 /** Glisse `pts` le long de `dir` jusqu'au plan (normale `nrm`, passant par `o`). */
 function glisserSurPlan(pts: readonly Vec3[], dir: Vec3, nrm: Vec3, o: Vec3): Vec3[] {
   const den = dot(nrm, dir);
-  if (Math.abs(den) < 1e-9) throw new RangeError("Le profil est parallèle au chemin : il ne peut pas être extrudé.");
+  if (Math.abs(den) < 1e-9) throw erreurPlanche("EX_PROFILE_INVALID", "Le profil est parallèle au chemin : il ne peut pas être extrudé.");
   return pts.map((p) => add(p, scale(dir, dot(nrm, sub(o, p)) / den)));
 }
 
@@ -3400,7 +3401,16 @@ function volumeSigne(polys: readonly (readonly Vec3[])[]): number {
 export interface OptionsSuivezMoi extends OptionsContexte {
   /** (EX-FM-06) Chemin ouvert : capuchons aux deux bouts (défaut) ; `false` = surface ouverte, sans capuchon. */
   readonly bouchons?: boolean;
+  /** Lot L19 (EX-PERF-02) : plafond de triangles produits ; défaut `PLAFOND_TRIANGLES`. */
+  readonly plafondTriangles?: number;
 }
+
+/**
+ * Lot L19 (EX-PERF-02) : estimation, avant génération, des triangles produits par un balayage de `sommetsProfil`
+ * sommets (contour et trous) le long de `sections` tronçons : deux triangles par côté et par tronçon, plus deux
+ * coiffes triangulées (au plus `sommetsProfil` triangles chacune).
+ */
+export const trianglesBalayage = (sommetsProfil: number, sections: number, coiffes: boolean): number => 2 * sommetsProfil * sections + (coiffes ? 2 * sommetsProfil : 0);
 
 export const ERREUR_TROUS_JOINTIFS = "Le profil a des trous qui se touchent (ou touchent son contour) : balayage refusé.";
 export const ERREUR_CHEMIN_RECOUPE = "Le chemin repasse trop près de lui-même pour ce profil : le balayage se traverserait.";
@@ -3471,7 +3481,7 @@ export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: Options
     exigerTrousDisjoints(F);
     let ch: Chaine;
     if ("face" in chemin) {
-      if (chemin.face === profil) throw new RangeError("Le chemin et le profil doivent être distincts.");
+      if (chemin.face === profil) throw erreurPlanche("EX_SOURCE_INVALID", "Le chemin et le profil doivent être distincts.");
       const G = c.faces.get(chemin.face);
       if (!G) throw new Error(`Face du chemin inconnue : ${chemin.face}`);
       ch = { sommets: G.exterieur, ferme: true };
@@ -3490,7 +3500,8 @@ export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: Options
       return !(colineaires(avant, apres, 1e-9) && dot(avant, apres) > 0);
     });
     const N = base.length;
-    if (N < 2) throw new RangeError("Le chemin est trop court.");
+    if (N < 2) throw erreurPlanche("EX_PATH_DISCONNECTED", "Le chemin est trop court.");
+    exigerComplexite(trianglesBalayage(profilPts.length + trousPts.reduce((n, b) => n + b.length, 0), ch.ferme ? N : N - 1, !ch.ferme && o.bouchons !== false), o.plafondTriangles);
 
     // Départ et sens : le sommet du chemin le plus proche du profil, avec une première direction non parallèle au profil.
     let meilleur: { pts: Vec3[]; ecart: number; angle: number } | null = null;
@@ -3512,7 +3523,7 @@ export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: Options
         meilleur = { pts: cand.pts, ecart, angle };
       }
     }
-    if (!meilleur) throw new RangeError("Le profil est parallèle au chemin : il ne peut pas être extrudé.");
+    if (!meilleur) throw erreurPlanche("EX_PROFILE_INVALID", "Le profil est parallèle au chemin : il ne peut pas être extrudé.");
     const V = meilleur.pts;
     const nSeg = ch.ferme ? N : N - 1;
     const d: Vec3[] = [];
@@ -3524,17 +3535,17 @@ export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: Options
       const b = d[i % nSeg] as Vec3;
       const c2 = dot(a, b);
       if (c2 < -1 + 1e-12) continue; // demi-tour exact : refusé plus bas par le plan bissecteur (message dédié)
-      if (c2 < Math.cos(Math.PI - (12 * Math.PI) / 180)) throw new RangeError(ERREUR_ONGLET_SINGULIER);
+      if (c2 < Math.cos(Math.PI - (12 * Math.PI) / 180)) throw erreurPlanche("EX_JOIN_INVALID", ERREUR_ONGLET_SINGULIER);
     }
     const rayon = Math.max(...profilPts.map((p) => dist(p, centre)));
-    if (cheminSeRecoupe(V, ch.ferme, rayon)) throw new RangeError(ERREUR_CHEMIN_RECOUPE);
+    if (cheminSeRecoupe(V, ch.ferme, rayon)) throw erreurPlanche("EX_SELF_INTERSECTION", ERREUR_CHEMIN_RECOUPE);
     const plan = (i: number): { n: Vec3; o: Vec3 } => {
       const k = i % N;
       if (!ch.ferme && (i === 0 || i === N - 1)) return { n: d[i === 0 ? 0 : nSeg - 1] as Vec3, o: V[k] as Vec3 };
       const a = d[(i - 1 + nSeg) % nSeg] as Vec3;
       const b = d[i % nSeg] as Vec3;
       const bis = add(a, b);
-      if (len(bis) < 1e-9) throw new RangeError("Le chemin revient sur lui-même : onglet impossible.");
+      if (len(bis) < 1e-9) throw erreurPlanche("EX_JOIN_INVALID", "Le chemin revient sur lui-même : onglet impossible.");
       return { n: normalize(bis), o: V[k] as Vec3 };
     };
     // Chaque boucle (contour puis trous) glisse de plan en plan : même transformation de section pour toutes.
@@ -3625,7 +3636,7 @@ function exigerTrousDisjoints(F: Face): void {
   const vus = new Set<Id>();
   for (const b of [F.exterieur, ...F.trous]) {
     for (const sId of b) {
-      if (vus.has(sId)) throw new RangeError(ERREUR_TROUS_JOINTIFS);
+      if (vus.has(sId)) throw erreurPlanche("EX_PROFILE_INVALID", ERREUR_TROUS_JOINTIFS);
       vus.add(sId);
     }
   }
@@ -3647,6 +3658,8 @@ export interface OptionsRevolution extends OptionsContexte {
   readonly segments?: number;
   /** Tour partiel : coiffes de début et de fin (défaut), trous compris ; `false` = surface ouverte. */
   readonly bouchons?: boolean;
+  /** Lot L19 (EX-PERF-02) : plafond de triangles produits ; défaut `PLAFOND_TRIANGLES`. */
+  readonly plafondTriangles?: number;
 }
 
 export const ANGLE_REVOLUTION_DEFAUT = 360;
@@ -3671,8 +3684,8 @@ export function ecartFacettage(rayon: number, parTour: number): number {
 
 /** Contrôle des paramètres de la Révolution (EX-RV-02, 03) ; lance une erreur de domaine. */
 export function validerParametresRevolution(angle: number, parTour: number): void {
-  if (!Number.isFinite(angle) || angle === 0 || Math.abs(angle) > 360 + 1e-9) throw new RangeError(ERREUR_REVOLUTION_ANGLE);
-  if (!Number.isInteger(parTour) || parTour < SEGMENTS_PAR_TOUR_MIN || parTour > SEGMENTS_PAR_TOUR_MAX) throw new RangeError(ERREUR_REVOLUTION_SEGMENTS);
+  if (!Number.isFinite(angle) || angle === 0 || Math.abs(angle) > 360 + 1e-9) throw erreurPlanche("EX_DISTANCE_INVALID", ERREUR_REVOLUTION_ANGLE);
+  if (!Number.isInteger(parTour) || parTour < SEGMENTS_PAR_TOUR_MIN || parTour > SEGMENTS_PAR_TOUR_MAX) throw erreurPlanche("EX_DISTANCE_INVALID", ERREUR_REVOLUTION_SEGMENTS);
 }
 
 /** Rotation de `p` d'angle `theta` (radians) autour de l'axe (origine `o`, direction unitaire `u`) — Rodrigues. */
@@ -3698,7 +3711,7 @@ export function revolution(m: Modele, profil: Id, axe: AxeRevolution, o: Options
   const angle = o.angle ?? ANGLE_REVOLUTION_DEFAUT;
   const parTour = o.segments ?? SEGMENTS_PAR_TOUR_DEFAUT;
   validerParametresRevolution(angle, parTour);
-  if (len(axe.direction) < EPS) throw new RangeError(ERREUR_REVOLUTION_AXE_NUL);
+  if (len(axe.direction) < EPS) throw erreurPlanche("EX_AXIS_INVALID", ERREUR_REVOLUTION_AXE_NUL);
   const u = normalize(axe.direction);
   const O = axe.origine;
   return operer(m, o.dans, (t, c) => {
@@ -3708,15 +3721,16 @@ export function revolution(m: Modele, profil: Id, axe: AxeRevolution, o: Options
     const nP = normalize(F.normale);
     const ext = F.exterieur.map((s) => pos(c, s));
     const trous = F.trous.map((b) => b.map((s) => pos(c, s)));
-    if (Math.abs(dot(nP, u)) > 1e-6 || Math.abs(dot(nP, sub(O, ext[0] as Vec3))) > TOL) throw new RangeError(ERREUR_REVOLUTION_AXE_PLAN);
+    if (Math.abs(dot(nP, u)) > 1e-6 || Math.abs(dot(nP, sub(O, ext[0] as Vec3))) > TOL) throw erreurPlanche("EX_AXIS_INVALID", ERREUR_REVOLUTION_AXE_PLAN);
     // Côté de l'axe dans le plan du profil : toute la matière d'un seul côté (les sommets sur l'axe sont permis).
     const w = normalize(cross(nP, u));
     const cote = (p: Vec3) => dot(sub(p, O), w);
     const cotes = ext.map(cote);
-    if (Math.min(...cotes) < -TOL && Math.max(...cotes) > TOL) throw new RangeError(ERREUR_REVOLUTION_AXE_TRAVERSE);
+    if (Math.min(...cotes) < -TOL && Math.max(...cotes) > TOL) throw erreurPlanche("EX_AXIS_INVALID", ERREUR_REVOLUTION_AXE_TRAVERSE);
     const surAxe = (p: Vec3) => Math.abs(cote(p)) <= TOL;
     const complet = Math.abs(Math.abs(angle) - 360) <= 1e-9;
     const k = complet ? parTour : segmentsRevolution(angle, parTour);
+    exigerComplexite(trianglesBalayage(ext.length + trous.reduce((n, b) => n + b.length, 0), k, !complet && o.bouchons !== false), o.plafondTriangles);
     const theta = (angle * Math.PI) / 180;
     const anneaux = (boucle: readonly Vec3[]): Vec3[][] => {
       const r: Vec3[][] = [];

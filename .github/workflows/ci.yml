@@ -206,6 +206,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-modification-l18 node apps/web/e2e/planche-modification-l18.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des diagnostics de l'extrusion (lot L19) — code stable et recours dans la barre d'état (apps/web/e2e/planche-diagnostics-l19.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-diagnostics-l19 node apps/web/e2e/planche-diagnostics-l19.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         run: |
           set -o pipefail
