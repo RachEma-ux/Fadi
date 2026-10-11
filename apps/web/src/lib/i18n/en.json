@@ -8203,5 +8203,8 @@
 "Tronçons": "Sections",
 "Longueur ; échelle ; torsion": "Length; scale; twist",
 "Effilement": "Taper",
-"Loft": "Loft"
+"Loft": "Loft",
+"Révolution : cliquez sur le profil à tourner autour de l'axe ({0}°, {1} segments par tour).": "Revolution: click the profile to revolve around the axis ({0}°, {1} segments per turn).",
+"Révolution : cliquez sur le profil à tourner autour de l'axe ({0}°, {1} segments par tour) — {2} segments, écart de facettage ≈ {3} mm.": "Revolution: click the profile to revolve around the axis ({0}°, {1} segments per turn) — {2} segments, faceting deviation ≈ {3} mm.",
+"Révolution : cliquez sur le profil à tourner autour de l'axe ({0}°, {1} segments par tour) — {2} segment, écart de facettage ≈ {3} mm.": "Revolution: click the profile to revolve around the axis ({0}°, {1} segments per turn) — {2} segment, faceting deviation ≈ {3} mm."
 }

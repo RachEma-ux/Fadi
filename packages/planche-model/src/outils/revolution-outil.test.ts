@@ -96,3 +96,16 @@ describe("Révolution, méthode de Suivez-moi (EX-RV-01)", () => {
     expect(q.jouer(echap).vue().consigne).toBe(CONSIGNE_AXE_1);
   });
 });
+
+describe("Revue de #124 — axe qui borde le profil", () => {
+  it("rectangle tourné autour de son propre bord : l'arête consommée, l'axe reste prêt pour le profil suivant", () => {
+    const m = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(1, 0, 0), v3(0, 0, 1)).modele;
+    const c = contexte(m);
+    const bord = Object.values(c.aretes).find((a) => Math.abs(c.sommets[a.a]!.position.x) < 1e-9 && Math.abs(c.sommets[a.b]!.position.x) < 1e-9)!;
+    const p = partie(machineSuivezMoi, m, [bord.id]).configurer("methode", "revolution").jouer(clicVers(v3(0.5, 0, 0.5), DEPUIS));
+    expect(p.operations).toEqual(["Révolution"]);
+    expect(contexte(p.modele).aretes[bord.id]).toBeUndefined();
+    expect(p.vue().consigne).toMatch(/^Révolution : cliquez sur le profil/);
+    expect(p.vue().consigne).not.toBe(CONSIGNE_AXE_1);
+  });
+});

@@ -45,7 +45,7 @@ import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
 import { messageErreur } from "./commun-formes.js";
-import { consigneDe, enLocal, idsSelectionnables, saisieDe, selectionValide, vueModif, viseeElement } from "./commun-modif.js";
+import { consigneDe, enLocal, idsSelectionnables, pointsDe, saisieDe, selectionValide, vueModif, viseeElement } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, ModificateurSeul, OptionOutil, Transition, VueOutil } from "./machine.js";
 import { optionsDans } from "./selection.js";
 
@@ -222,11 +222,18 @@ function traiterRevolution(etat: EtatSuivezMoi, ev: Parameters<MachineOutil<Etat
       if (!el || el.genre !== "face" || cible?.genre !== "face") return { etat: { ...etat, erreur: "Cliquez sur la face qui sert de profil." } };
       try {
         const r = tourner(etat, ctx, ctx.modele, cible.id, axe);
+        // L'arête présélectionnée comme axe reste sélectionnée : un autre profil peut tourner autour du même axe. Si elle
+        // bordait le profil et a été consommée avec lui, l'axe est gardé comme axe cliqué (mêmes points, monde).
+        let axeClique = etat.axeClique;
+        const areteAxe = etat.axeClique ? undefined : selectionValide(ctx).find((id) => contexte(ctx.modele, ctx.dans).aretes[id]);
+        if (areteAxe && !contexte(r.modele, ctx.dans).aretes[areteAxe]) {
+          const [a, b] = pointsDe(ctx.modele, [areteAxe]);
+          if (a && b) axeClique = { a, b };
+        }
         return {
-          etat: { ...etat, erreur: null, apercu: null, dernier: { modeleAvant: ctx.modele, modeleApres: r.modele, profil: cible.id, axe } },
+          etat: { ...etat, axeClique, erreur: null, apercu: null, dernier: { modeleAvant: ctx.modele, modeleApres: r.modele, profil: cible.id, axe } },
           modele: r.modele,
-          // L'arête présélectionnée comme axe reste sélectionnée : un autre profil peut tourner autour du même axe.
-          ...(etat.axeClique ? { selection: [] } : {}),
+          ...(axeClique ? { selection: [] } : {}),
           operation: "Révolution",
         };
       } catch (err) {
