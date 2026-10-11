@@ -18,7 +18,8 @@ seulement si tous les cas requis sont verts. Ce n'est pas le cas :
   **L20**. L'Étirement livré refuse explicitement ce qu'il ne sait pas faire (EX-REL-02), sans repli silencieux.
 - **I-10** : les mesures sur un vrai téléphone Android n'ont pas pu être faites, faute d'appareil dans l'environnement
   d'exécution. Les mesures de bureau (noyau) sont consignées, et les budgets de balayage n'y sont pas tenus
-  (`docs/planche/mesures/l19-extrusion.md`).
+  (`docs/planche/mesures/l19-extrusion.md`) : environ 100 s pour 10 000 triangles. Le plafond de complexité est donc
+  ramené à 2 000 triangles.
 - Quelques cas sont **partiels** : ils sont listés ci-dessous, avec ce qui manque.
 
 ## 15.1 Contrôles, clavier, état

@@ -43,10 +43,14 @@ export function codeDe(err: unknown): CodeDiagnostic | null {
 }
 
 /**
- * Plafond de complexité (EX-PERF-02) : nombre de triangles nouvellement produits par une opération. Budget produit
- * proposé par le cahier (200 000), à régler sur mesures ; au-delà, l'opération est refusée sans tronquer la géométrie.
+ * Plafond de complexité (EX-PERF-02) : nombre de triangles nouvellement produits par une opération ; au-delà,
+ * l'opération est refusée sans tronquer la géométrie. Le cahier propose 200 000, « à régler sur mesures ». Les mesures
+ * du lot L19 (`docs/planche/mesures/l19-extrusion.md`) montrent un coût quasi quadratique de l'insertion :
+ * ≈ 1 s pour 1 150 triangles, 3,3 s pour 1 900, 20 s pour 4 600 et ≈ 100 s pour 10 000 (Xeon 2,8 GHz, Node 22). Le
+ * plafond initial est donc fixé à 2 000 triangles (≈ 3 à 4 s au pire sur la machine de référence) jusqu'à
+ * l'optimisation du balayage ; il reste réglable par opération (`plafondTriangles`).
  */
-export const PLAFOND_TRIANGLES = 200_000;
+export const PLAFOND_TRIANGLES = 2_000;
 
 export const messagePlafond = (estimes: number, plafond: number): string =>
   `Opération trop complexe : environ ${Math.round(estimes)} triangles à produire, au-delà du plafond de ${plafond}. Réduisez le profil, le chemin, la segmentation ou le texte.`;

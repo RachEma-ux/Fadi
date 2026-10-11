@@ -59,7 +59,7 @@ describe("L19 — codes de diagnostic stables (EX-ERR-01)", () => {
 
 describe("L19 — plafond de complexité (EX-PERF-02)", () => {
   it("estimation avant génération ; au-delà du plafond, refus nommé EX_COMPLEXITY_LIMIT sans géométrie produite", () => {
-    expect(PLAFOND_TRIANGLES).toBe(200_000);
+    expect(PLAFOND_TRIANGLES).toBe(2_000);
     expect(trianglesBalayage(4, 48, false)).toBe(384);
     expect(() => exigerComplexite(PLAFOND_TRIANGLES)).not.toThrow();
     expect(codeDe(piege(() => exigerComplexite(PLAFOND_TRIANGLES + 1)))).toBe("EX_COMPLEXITY_LIMIT");
