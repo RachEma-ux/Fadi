@@ -62,4 +62,13 @@ describe("Masquer le reste du modèle (O-5)", () => {
     expect(xs(m, { chemin: [k.occurrence] })).toEqual([0, 4]);
     expect(xs(m, { chemin: [k.occurrence], masquerSemblables: true })).toEqual([0]);
   });
+
+  it("composant imbriqué dans un parent copié : seul le chemin ouvert reste, l'autre copie du parent est masquée", () => {
+    let m = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(1, 0, 0), v3(0, 1, 0)).modele;
+    const k = grouper(m, tout(m), { genre: "composant", nom: "Module" });
+    const p = grouper(k.modele, [k.occurrence], { genre: "composant", nom: "Parent" });
+    m = copier(p.modele, [p.occurrence], v3(4, 0, 0)).modele;
+    expect(xs(m, { chemin: [p.occurrence, k.occurrence] })).toEqual([0, 4]);
+    expect(xs(m, { chemin: [p.occurrence, k.occurrence], masquerSemblables: true })).toEqual([0]);
+  });
 });
