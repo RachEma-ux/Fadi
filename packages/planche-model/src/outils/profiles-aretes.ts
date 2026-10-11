@@ -63,6 +63,18 @@ function chaines(ctx: ContexteOutil): Id[][] {
   return r;
 }
 
+/** Chaîne fermée : chaque sommet de ses arêtes est partagé par exactement deux d'entre elles. */
+export function chaineFermee(ctx: ContexteOutil, g: readonly Id[]): boolean {
+  const c = contexte(ctx.modele, ctx.dans);
+  const degre = new Map<Id, number>();
+  for (const id of g) {
+    const a = c.aretes[id];
+    if (!a) return false;
+    for (const s of [a.a, a.b]) degre.set(s, (degre.get(s) ?? 0) + 1);
+  }
+  return [...degre.values()].every((d) => d === 2);
+}
+
 const cleDe = (e: EtatProfilesAretes, ctx: ContexteOutil): string =>
   JSON.stringify([selectionValide(ctx), ctx.sectionCourante?.designation ?? null, ctx.sectionCourante?.section ?? null, e.position, e.rotation90, e.onglets, e.fusion, e.coupe, e.decalage]);
 
@@ -87,12 +99,13 @@ function poserTout(e: EtatProfilesAretes, ctx: ContexteOutil): { modele: Modele;
     occurrences.push(...r.occurrences);
     for (const id of r.rapport.crees) crees.add(id);
     // Lot L13 : « couper après pose » (sans onglets) — chaque pièce coupée par la précédente de sa chaîne, la première
-    // par la dernière si elles se recouvrent (boucle) ; deux pièces qui ne se touchent pas sont laissées telles quelles.
+    // par la dernière seulement si la chaîne est fermée ; deux pièces qui ne se touchent pas sont laissées telles quelles.
     if (e.coupe && !e.onglets && r.occurrences.length > 1) {
       const occ = r.occurrences;
+      const fermee = occ.length >= 3 && chaineFermee(ctx, g);
       for (let k = 0; k < occ.length; k++) {
         const precedente = k === 0 ? occ[occ.length - 1] : occ[k - 1];
-        if (k === 0 && occ.length < 3) continue;
+        if (k === 0 && !fermee) continue;
         try {
           m = couperParProfil(m, occ[k] as Id, precedente as Id, ctx.booleens, optionsDans(ctx)).modele;
         } catch (err) {

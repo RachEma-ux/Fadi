@@ -7,12 +7,15 @@ import {
   ERREUR_ONGLET_GAUCHE,
   ERREUR_ONGLET_PARALLELE,
   ERREUR_PAS_UNE_PIECE,
+  ERREUR_PIECE_MISE_A_L_ECHELLE,
+  ERREUR_PIECE_RECOUPEE,
   ajouterSegment,
   allongerPiece,
   contexte,
   deplacer,
   demiSectionPiece,
   estSolide,
+  mettreAEchelle,
   modeleVide,
   ongletPieces,
   piecesLiees,
@@ -106,5 +109,26 @@ describe("Allonger / raccourcir (L13)", () => {
     const p2 = poser(p1.modele, v3(2, 0, 0), v3(2, 2, 0));
     const o = ongletPieces(p2.modele, p1.occurrence, p2.occurrence);
     expect(() => allongerPiece(o.modele, p1.occurrence, "fin", 0.1)).toThrow(ERREUR_BOUT_ONGLET);
+  });
+});
+
+describe("Revue de #127 — refus au lieu d'une régénération qui effacerait", () => {
+  it("onglet d'une pièce recoupée par un profil : refusé (la coupe ne se régénère pas)", () => {
+    const a = poser(modeleVide(), v3(0, 0, 0), v3(2, 0, 0));
+    const b = poser(a.modele, v3(2, 0, 0), v3(2, 3, 0));
+    const defB = contexte(b.modele).occurrences[b.occurrence]!.definition;
+    const d = b.modele.definitions[defB]!;
+    const m: Modele = { ...b.modele, definitions: { ...b.modele.definitions, [defB]: { ...d, piece: { ...d.piece!, coupesProfil: 1 } } } };
+    expect(() => ongletPieces(m, a.occurrence, b.occurrence)).toThrow(ERREUR_PIECE_RECOUPEE);
+  });
+
+  it("pièce mise à l'échelle : Onglet et Allonger refusent (l'échelle serait effacée sans le dire)", () => {
+    const a = poser(modeleVide(), v3(0, 0, 0), v3(2, 0, 0));
+    const b = poser(a.modele, v3(2, 0, 0), v3(2, 3, 0));
+    const m = mettreAEchelle(b.modele, [a.occurrence], v3(0, 0, 0), 1.5).modele;
+    expect(() => allongerPiece(m, a.occurrence, "fin", 0.2)).toThrow(ERREUR_PIECE_MISE_A_L_ECHELLE);
+    expect(() => ongletPieces(m, a.occurrence, b.occurrence)).toThrow(ERREUR_PIECE_MISE_A_L_ECHELLE);
+    // Une pièce seulement tournée garde un repère orthonormé : acceptée.
+    expect(() => allongerPiece(b.modele, b.occurrence, "fin", 0.2)).not.toThrow();
   });
 });

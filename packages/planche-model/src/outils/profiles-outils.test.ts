@@ -7,7 +7,7 @@ import { v3 } from "../vecteur.js";
 import { clicVers, echap, partie, saisie, survolVers, touche } from "./essais-modification.js";
 import type { ContexteOutil, MachineOutil } from "./machine.js";
 import { ERREUR_SANS_SECTION, machineProfile } from "./profile.js";
-import { ERREUR_SANS_ARETES, machineProfilesAretes } from "./profiles-aretes.js";
+import { ERREUR_SANS_ARETES, chaineFermee, machineProfilesAretes } from "./profiles-aretes.js";
 
 /** Section d'essai (donnée du test) : rectangle 0,10 × 0,05, saisie. */
 const SECTION: SectionCourante = {
@@ -151,5 +151,17 @@ describe("Revue de #126 — aperçus fidèles à la pose", () => {
     const m = ajouterSegment(modeleVide(), v3(0, 0, 0), v3(3, 0, 0)).modele;
     const q = avecSection(machineProfilesAretes, m, Object.keys(m.racine.aretes), creuse).jouer(survolVers(v3(1, 1, 1)));
     expect((q.vue().apercu.trous ?? []).filter((t) => t.length === 1)).toHaveLength(2);
+  });
+});
+
+describe("Revue de #127 — Couper après pose : rebouclage sur chaîne fermée seulement", () => {
+  it("rectangle fermé : fermée ; U ouvert de trois arêtes : ouverte (la première n'est pas coupée par la dernière)", () => {
+    let m = modeleVide();
+    const P = [v3(0, 0, 0), v3(4, 0, 0), v3(4, 3, 0), v3(0, 3, 0)];
+    for (let i = 0; i < 4; i++) m = ajouterSegment(m, P[i]!, P[(i + 1) % 4]!).modele;
+    const ids = Object.keys(m.racine.aretes) as Id[];
+    const ctx = partie(machineProfilesAretes, m, ids).ctx();
+    expect(chaineFermee(ctx, ids)).toBe(true);
+    expect(chaineFermee(ctx, ids.slice(0, 3))).toBe(false);
   });
 });
