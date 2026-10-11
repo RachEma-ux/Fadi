@@ -4469,6 +4469,8 @@ function axePiece(occ: Occurrence, meta: MetadonneesPiece): { debut: Vec3; fin: 
 
 /** Pièce du contexte : occurrence et définition portant des métadonnées de pièce, sinon erreur nommée. */
 function pieceDe(t: Travail, c: Ctx, id: Id): { occ: Occurrence; def: DefTravail; meta: MetadonneesPiece } {
+  // Revue de #130 : toutes les opérations qui passent par ici modifient la pièce ; un verrou la protège.
+  refuserVerrouilles(c, [id]);
   const occ = c.occurrences.get(id);
   const def = occ ? t.definitions.get(occ.definition) : undefined;
   if (!occ || !def?.piece) throw new RangeError(ERREUR_PAS_UNE_PIECE);

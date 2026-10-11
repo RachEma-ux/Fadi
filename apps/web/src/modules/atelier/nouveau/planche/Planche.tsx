@@ -2288,6 +2288,11 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         ...commandesNavigateur(),
         // Objets O-5 : Isoler, Masquer le reste du modèle.
         ...commandesVue(),
+        // Lot L17 (revue de #130) : les commandes de la pièce, mêmes disponibilités et exécution que le bloc de la pièce.
+        ...COMMANDES_PIECE.map((c) => {
+          const d = disponibiliteCommandePiece(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.piece.motif.piece"), executer: () => executerPiece(c.id) };
+        }),
         // Lot L14 (revue de #128) : les cinq commandes de débit, mêmes disponibilités et exécution que le panneau.
         ...COMMANDES_DEBIT.map((c) => {
           const d = disponibiliteCommandeDebit(c.id);
