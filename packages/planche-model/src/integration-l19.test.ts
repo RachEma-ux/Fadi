@@ -12,7 +12,9 @@ import {
   type Modele,
   ERREUR_DISTANCE_NON_FINIE,
   ERREUR_REVOLUTION_AXE_NUL,
+  ajouterPolygone,
   ajouterRectangle,
+  ajouterSegment,
   appliquer,
   contexte,
   grouper,
@@ -25,7 +27,7 @@ import {
 import { ERREUR_CONTEXTE_DEFORME, pointsDe } from "./outils/commun-modif.js";
 import { machinePousserTirer } from "./outils/pousser-tirer.js";
 import type { ContexteOutil, EvenementOutil } from "./outils/machine.js";
-import { clicVers, saisie } from "./outils/essais-modification.js";
+import { clicVers, saisie, survolVers, touche } from "./outils/essais-modification.js";
 import { type Vec3, dot, normalize, sub, v3 } from "./vecteur.js";
 
 const piege = (f: () => unknown): unknown => {
@@ -91,18 +93,21 @@ function groupeTransforme(M: Matrice4, a: Vec3 = v3(1, 0, 0), b: Vec3 = v3(0, 1,
   return { m, occ, face };
 }
 
-/** Pousser/Tirer joué dans le contexte `dans` : clic au centre monde de la face, puis distance tapée. */
-function pousserDans(m: Modele, dans: Id, centre: Vec3, normale: Vec3, texte: string) {
+/** Pousser/Tirer joué dans le contexte `dans` : les événements donnés, dans l'ordre. */
+function jouerDans(m: Modele, dans: Id, evs: readonly EvenementOutil[]) {
   let etat = machinePousserTirer.initial();
   let modele = m;
   const ctx = (): ContexteOutil => ({ modele, selection: [], separateurDecimal: ",", dans });
-  for (const ev of [clicVers(centre, normale), saisie(texte)] as EvenementOutil[]) {
+  for (const ev of evs) {
     const t = machinePousserTirer.traiter(etat, ev, ctx());
     etat = t.etat;
     if (t.modele) modele = t.modele;
   }
   return { modele, etat };
 }
+
+/** Pousser/Tirer joué dans le contexte `dans` : clic au centre monde de la face, puis distance tapée. */
+const pousserDans = (m: Modele, dans: Id, centre: Vec3, normale: Vec3, texte: string) => jouerDans(m, dans, [clicVers(centre, normale), saisie(texte)]);
 
 const epaisseur = (m: Modele, occ: Id, n: Vec3): number => {
   const pts = pointsDe(m, [occ]).map((p) => dot(p, n));
@@ -146,6 +151,45 @@ describe("L19 — extrusion dans un contexte transformé (EX-MODEL-02, I-01, I-0
     expect(r.etat.erreur).toBeNull();
     expect(epaisseur(r.modele, occ, v3(0, 0, 1))).toBeCloseTo(1, 9);
   });
+
+  const DEUX: Matrice4 = [2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1];
+  const etendueX = (m: Modele, occ: Id): number => Math.max(...pointsDe(m, [occ]).map((p) => p.x));
+
+  it("couronne dans un groupe × 2 : la distance tapée puis sa correction restent des mètres monde (revue de #132)", () => {
+    // 24-gone de rayon 1 (sommet en (1 ; 0 ; 0)) groupé puis mis à l'échelle × 2 : rayon monde 2.
+    const poly = ajouterPolygone(modeleVide(), v3(0, 0, 0), v3(0, 0, 1), 1, 24).modele;
+    const g = grouper(poly, [...Object.keys(poly.racine.faces), ...Object.keys(poly.racine.aretes)]);
+    const o = g.modele.racine.occurrences[g.occurrence]!;
+    const m: Modele = { ...g.modele, racine: { ...g.modele.racine, occurrences: { ...g.modele.racine.occurrences, [g.occurrence]: { ...o, transformation: DEUX } } } };
+    const occ = g.occurrence;
+    const a = Math.PI / 24;
+    const milieu = v3(2 * Math.cos(a) * Math.cos(a), 2 * Math.cos(a) * Math.sin(a), 0); // milieu monde de la première arête
+    // Couronne vers l'extérieur de 0,5 m monde, puis correction « 1 » : le rayon monde d'un sommet vaut 2 + d / cos(π/24).
+    const r = jouerDans(m, occ, [clicVers(milieu), survolVers(v3(3.2, 0.2, 0)), saisie("0,5")]);
+    expect(r.etat.erreur).toBeNull();
+    expect(etendueX(r.modele, occ)).toBeCloseTo(2 + 0.5 / Math.cos(a), 9);
+    const c = jouerDans(m, occ, [clicVers(milieu), survolVers(v3(3.2, 0.2, 0)), saisie("0,5"), saisie("1")]);
+    expect(c.etat.erreur).toBeNull();
+    expect(etendueX(c.modele, occ)).toBeCloseTo(2 + 1 / Math.cos(a), 9);
+  });
+
+  it("allongement dans un groupe à l'échelle (1 ; 2 ; 1) : la longueur tapée puis sa correction restent des mètres monde (revue de #132)", () => {
+    // Segment local (0 ; 0 ; 0) → (0 ; 1 ; 0) groupé puis étiré × 2 selon y : 2 m monde. L'allongement se mesure le long de
+    // l'arête, exact même sous échelle non uniforme ; une direction oubliée (x par défaut) donnerait 6 m au lieu de 4.
+    const M: Matrice4 = [1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    const seg = ajouterSegment(modeleVide(), v3(0, 0, 0), v3(0, 1, 0)).modele;
+    const g = grouper(seg, Object.keys(seg.racine.aretes));
+    const o = g.modele.racine.occurrences[g.occurrence]!;
+    const m: Modele = { ...g.modele, racine: { ...g.modele.racine, occurrences: { ...g.modele.racine.occurrences, [g.occurrence]: { ...o, transformation: M } } } };
+    const occ = g.occurrence;
+    const etendueY = (x: Modele): number => Math.max(...pointsDe(x, [occ]).map((q) => q.y));
+    const r = jouerDans(m, occ, [clicVers(v3(0, 1.8, 0)), touche("FlecheBas"), survolVers(v3(0, 3, 0)), saisie("1")]);
+    expect(r.etat.erreur).toBeNull();
+    expect(etendueY(r.modele)).toBeCloseTo(3, 9);
+    const c = jouerDans(m, occ, [clicVers(v3(0, 1.8, 0)), touche("FlecheBas"), survolVers(v3(0, 3, 0)), saisie("1"), saisie("2")]);
+    expect(c.etat.erreur).toBeNull();
+    expect(etendueY(c.modele)).toBeCloseTo(4, 9);
+  });
 });
 
 describe("L19 — persistance et deltas forgés (EX-SAVE-01, 03 ; EX-SEC-01)", () => {
@@ -187,6 +231,11 @@ describe("L19 — exports honnêtes (EX-SAVE-04, I-07)", () => {
     expect(ms.filter((x) => x.solide)).toHaveLength(1);
     expect(ms.find((x) => x.solide)?.volume).toBeCloseTo(1, 9);
     expect(exporterStl(g.modele).nonEtanches).toBe(0);
+    // Même boîte non groupée (géométrie libre de la racine, pas un « solide » reconnu) : fermée par sa topologie, donc
+    // étanche à l'export (revue de #132) — et la face tirée de 1 m garde sa signature de boîte.
+    expect(maillagesPlanche(boite).some((x) => x.solide)).toBe(false);
+    expect(exporterObj(boite).nonEtanches).toBe(0);
+    expect(exporterStl(boite).nonEtanches).toBe(0);
     // Surface ouverte : tube sans fond, aucun volume, compté non étanche à l'export.
     const t = tuberFace(r, f, 1).modele;
     const ouv = exporterObj(t);

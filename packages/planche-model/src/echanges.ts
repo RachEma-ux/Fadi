@@ -53,7 +53,32 @@ export interface ExportMaillage {
   readonly nonEtanches: number;
 }
 
-const nonEtanchesDe = (maillages: readonly MaillagePlanche[]): number => maillages.filter((x) => !x.solide && x.triangles.length > 0).length;
+/**
+ * Maillage fermé (revue de #132) : chaque arête, identifiée par ses deux extrémités (positions quantifiées, car les
+ * sommets sont dupliqués par face), est partagée par exactement deux triangles. L'orientation n'est pas exigée. Une
+ * jonction en T ou un bord libre rendent le maillage « non étanche » : on ne présente jamais un volume non prouvé.
+ */
+export function maillageFerme(positions: readonly number[], triangles: readonly number[]): boolean {
+  if (triangles.length < 12) return false; // un tétraèdre = 4 triangles au moins
+  const q = (v: number) => Math.round(v * 1e6);
+  const cle = (i: number) => `${q(positions[i * 3]!)},${q(positions[i * 3 + 1]!)},${q(positions[i * 3 + 2]!)}`;
+  const compte = new Map<string, number>();
+  for (let k = 0; k < triangles.length; k += 3) {
+    const s = [cle(triangles[k]!), cle(triangles[k + 1]!), cle(triangles[k + 2]!)];
+    for (let i = 0; i < 3; i++) {
+      const a = s[i]!;
+      const b = s[(i + 1) % 3]!;
+      if (a === b) return false; // triangle dégénéré
+      const e = a < b ? `${a}|${b}` : `${b}|${a}`;
+      compte.set(e, (compte.get(e) ?? 0) + 1);
+    }
+  }
+  for (const n of compte.values()) if (n !== 2) return false;
+  return true;
+}
+
+/** Non étanches : les maillages qui ne sont ni des solides reconnus, ni fermés par leur topologie (géométrie libre de la racine comprise). */
+const nonEtanchesDe = (maillages: readonly MaillagePlanche[]): number => maillages.filter((x) => x.triangles.length > 0 && !x.solide && !maillageFerme(x.positions, x.triangles)).length;
 
 /** Wavefront OBJ : sommets `v` (m), faces triangulaires `f` indexées à partir de 1, un `o` par maillage. */
 export function exporterObj(m: Modele, nom = "Planche"): ExportMaillage {
