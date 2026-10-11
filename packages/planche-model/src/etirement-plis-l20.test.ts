@@ -3,7 +3,27 @@
  * faces voisines qui ne restent pas planes (concavités et trous gardés), arêtes de pli, refus atomique.
  */
 import { describe, expect, it } from "vitest";
-import { type Id, type Modele, ajouterRectangle, ajouterSegment, aire, contexte, etirerFace, modeleVide, mettreAEchelle, pousserTirer, segmentCoupeTriangle } from "./geometrie-libre.js";
+import {
+  type Id,
+  type Modele,
+  ERREUR_PLI_TRIANGULATION,
+  ajouterRectangle,
+  ajouterSegment,
+  aire,
+  contexte,
+  copier,
+  etirerFace,
+  grouper,
+  instancesEditees,
+  modeleVide,
+  mettreAEchelle,
+  nombreInstances,
+  nombreOccurrences,
+  pousserTirer,
+  segmentCoupeTriangle,
+} from "./geometrie-libre.js";
+import { codeDe } from "./diagnostics.js";
+import { triangulerFace } from "./maillage.js";
 import { type Vec3, dot, v3 } from "./vecteur.js";
 
 const faces = (m: Modele) => Object.values(contexte(m).faces);
@@ -79,6 +99,56 @@ describe("L20 — Étirement à plis (EX-PT-03)", () => {
     expect(Math.abs(flancApres.normale.z)).toBeLessThan(Math.abs(flancAvant.normale.z));
   });
 
+  it("triangulation stricte (revue de #133) : un contour croisé n'est pas fini en éventail — [] en strict, secours d'affichage sinon", () => {
+    const pentagramme = [0, 1, 2, 3, 4].map((i) => {
+      const a = Math.PI / 2 + (i * 4 * Math.PI) / 5;
+      return v3(Math.cos(a), Math.sin(a), 0);
+    });
+    const croise = [v3(0, 0, 0), v3(2, 0, 0), v3(0, 2, 0), v3(2, 2, 0)];
+    const signe = (pts: readonly Vec3[], t: readonly number[], k: number) => {
+      const [a, b, c] = [pts[t[k]!]!, pts[t[k + 1]!]!, pts[t[k + 2]!]!];
+      return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    };
+    for (const pts of [pentagramme, croise]) {
+      const secours = triangulerFace(pts, [], v3(0, 0, 1));
+      expect(secours.length).toBeGreaterThan(0);
+      // L'affichage tolère un triangle retourné ; la somme des aires signées, elle, « télescope » et ne le voit pas.
+      expect([0, 3, 6].filter((k) => k < secours.length).some((k) => signe(pts, secours, k) < 0)).toBe(true);
+      expect(triangulerFace(pts, [], v3(0, 0, 1), { strict: true })).toEqual([]);
+    }
+    // Un vrai polygone (L concave percé) se triangule pareil dans les deux modes.
+    const L = [v3(0, 0, 0), v3(4, 0, 0), v3(4, 2, 0), v3(2, 2, 0), v3(2, 4, 0), v3(0, 4, 0)];
+    const trou = [v3(0.5, 0.5, 0), v3(0.5, 1.5, 0), v3(1.5, 1.5, 0), v3(1.5, 0.5, 0)];
+    expect(triangulerFace(L, [trou], v3(0, 0, 1), { strict: true })).toEqual(triangulerFace(L, [trou], v3(0, 0, 1)));
+  });
+
+  it("voisine au contour croisé : le pli est refusé (EX_PROFILE_INVALID) au lieu de produire des facettes hors de la face (revue de #133)", () => {
+    // Carré f90 (normale +z) et voisine f91 au contour croisé (0,0)(3,0)(3,1)(0,3)(0,2)(3,2), d'aire signée non nulle.
+    const S = (id: string, x: number, y: number) => [id, { id, position: v3(x, y, 0) }] as const;
+    const A = (id: string, a: string, b: string) => [id, { id, a, b }] as const;
+    const m0 = modeleVide();
+    const m: Modele = {
+      ...m0,
+      racine: {
+        ...m0.racine,
+        sommets: Object.fromEntries([S("s90", 0, 0), S("s91", 3, 0), S("s92", 3, -3), S("s93", 0, -3), S("s94", 3, 1), S("s95", 0, 3), S("s96", 0, 2), S("s97", 3, 2)]),
+        aretes: Object.fromEntries([A("a90", "s90", "s93"), A("a91", "s93", "s92"), A("a92", "s92", "s91"), A("a93", "s91", "s90"), A("a94", "s91", "s94"), A("a95", "s94", "s95"), A("a96", "s95", "s96"), A("a97", "s96", "s97"), A("a98", "s97", "s90")]),
+        faces: {
+          f90: { id: "f90", exterieur: ["s90", "s93", "s92", "s91"], trous: [], normale: v3(0, 0, 1) },
+          f91: { id: "f91", exterieur: ["s90", "s91", "s94", "s95", "s96", "s97"], trous: [], normale: v3(0, 0, 1) },
+        },
+      },
+    };
+    let erreur: unknown = null;
+    try {
+      etirerFace(m, "f90", 0.5);
+    } catch (e) {
+      erreur = e;
+    }
+    expect((erreur as Error)?.message).toBe(ERREUR_PLI_TRIANGULATION);
+    expect(codeDe(erreur)).toBe("EX_PROFILE_INVALID");
+  });
+
   it("refus atomique : un recoupement de pli est détecté (segment qui traverse un triangle) ; extrémités et contact exclus", () => {
     const a = v3(0, 0, 0), b = v3(1, 0, 0), c = v3(0, 1, 0);
     expect(segmentCoupeTriangle(v3(0.2, 0.2, -1), v3(0.2, 0.2, 1), a, b, c)).toBe(true);
@@ -109,5 +179,64 @@ describe("L20 — le pli ne franchit pas le contexte ; composant partagé annonc
     expect(etat.erreur).toBe("Composant partagé : l'étirement s'applique à ses 2 occurrences.");
     // La racine n'a pas reçu de géométrie : tout est resté dans la définition partagée.
     expect(Object.keys(modele.racine.faces)).toHaveLength(0);
+  });
+
+  /** Boîte 1 × 1 × 1 à la racine. */
+  const boite = () => {
+    const sol = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(1, 0, 0), v3(0, 1, 0)).modele;
+    const bas = Object.keys(sol.racine.faces)[0] as Id;
+    return pousserTirer(sol, bas, sol.racine.faces[bas]!.normale.z > 0 ? 1 : -1).modele;
+  };
+  const tout = (m: Modele) => [...Object.keys(m.racine.faces), ...Object.keys(m.racine.aretes)];
+  const nouvelleOccurrence = (crees: readonly Id[]) => crees.find((id) => id.startsWith("o")) as Id;
+
+  it("instances effectives (revue de #133) : composant posé deux fois dans un composant posé trois fois → 6, pas 2", () => {
+    const c = grouper(boite(), tout(boite()), { genre: "composant" });
+    const copie = copier(c.modele, [c.occurrence], v3(3, 0, 0), { copies: 1 });
+    const c2 = nouvelleOccurrence(copie.rapport.crees);
+    const p = grouper(copie.modele, [c.occurrence, c2], { genre: "composant" });
+    const m = copier(p.modele, [p.occurrence], v3(0, 10, 0), { copies: 2 }).modele;
+    expect(nombreOccurrences(m, c.definition)).toBe(2);
+    expect(nombreInstances(m, c.definition)).toBe(6);
+    expect(nombreInstances(m, p.definition)).toBe(3);
+    const cDans = Object.keys(contexte(m, p.occurrence).occurrences)[0] as Id;
+    expect(instancesEditees(m, cDans)).toBe(6);
+    expect(instancesEditees(m, p.occurrence)).toBe(3);
+    expect(instancesEditees(m, undefined)).toBe(0);
+  });
+
+  it("instances effectives : un groupe partagé est rendu unique par l'édition (1 à la racine) ; dans un composant posé trois fois, 3", () => {
+    const g = grouper(boite(), tout(boite()));
+    const copie = copier(g.modele, [g.occurrence], v3(3, 0, 0), { copies: 1 });
+    const g2 = nouvelleOccurrence(copie.rapport.crees);
+    expect(nombreOccurrences(copie.modele, g.definition)).toBe(2);
+    expect(instancesEditees(copie.modele, g.occurrence)).toBe(1);
+    const p = grouper(copie.modele, [g.occurrence, g2], { genre: "composant" });
+    const m = copier(p.modele, [p.occurrence], v3(0, 10, 0), { copies: 2 }).modele;
+    const gDans = Object.keys(contexte(m, p.occurrence).occurrences)[0] as Id;
+    expect(instancesEditees(m, gDans)).toBe(3);
+  });
+
+  it("étirement dans un groupe partagé : aucun avertissement, l'autre copie reste intacte (rendue unique par l'opération)", async () => {
+    const { machinePousserTirer } = await import("./outils/pousser-tirer.js");
+    const { clicVers, saisie } = await import("./outils/essais-modification.js");
+    const g = grouper(boite(), tout(boite()));
+    const copie = copier(g.modele, [g.occurrence], v3(3, 0, 0), { copies: 1 });
+    const g2 = nouvelleOccurrence(copie.rapport.crees);
+    const m = copie.modele;
+    const dans = g.occurrence;
+    let etat = machinePousserTirer.configurer!(machinePousserTirer.initial(), "face", "etirement", { modele: m, selection: [], separateurDecimal: "," }).etat;
+    let modele = m;
+    for (const ev of [clicVers(v3(0.5, 0.5, 1), v3(0, 0, 1)), saisie("0,5")]) {
+      const t = machinePousserTirer.traiter(etat, ev, { modele, selection: [], separateurDecimal: ",", dans });
+      etat = t.etat;
+      if (t.modele) modele = t.modele;
+    }
+    expect(modele).not.toBe(m);
+    expect(etat.erreur).toBeNull();
+    const hauteur = (occ: Id) => Math.max(...Object.values(contexte(modele, occ).sommets).map((s) => s.position.z));
+    expect(modele.racine.occurrences[dans]!.definition).not.toBe(modele.racine.occurrences[g2]!.definition);
+    expect(hauteur(dans)).toBeCloseTo(1.5, 9);
+    expect(hauteur(g2)).toBeCloseTo(1, 9);
   });
 });
