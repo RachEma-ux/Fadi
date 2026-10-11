@@ -7967,5 +7967,7 @@
 "Chemin": "Path",
 "Résultat en nouveau groupe": "Result in new group",
 "Non": "No",
-"Oui": "Yes"
+"Oui": "Yes",
+"Ctrl seul : « Conserver la face de départ » ne s'applique qu'à une face, pas à une arête.": "Ctrl alone: “Keep the starting face” applies to a face only, not to an edge.",
+"Maj seul : « Surface ouverte » ne s'applique qu'à une face, pas à une arête.": "Shift alone: “Open surface” applies to a face only, not to an edge."
 }
