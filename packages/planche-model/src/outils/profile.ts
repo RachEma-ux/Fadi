@@ -16,7 +16,7 @@ import { type Vec3, add, dist, len, normalize, scale, sub } from "../vecteur.js"
 import { messageErreur } from "./commun-formes.js";
 import { enLocal, saisieDe, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, ModificateurSeul, OptionOutil, Rayon, Touche, Transition, VueOutil } from "./machine.js";
-import { optionsDans } from "./selection.js";
+import { depuisContexteEdition, optionsDans } from "./selection.js";
 
 export const ID_PROFILE = "profile";
 
@@ -66,18 +66,26 @@ function poser(e: EtatProfile, ctx: ContexteOutil, A: Vec3, B: Vec3): Transition
   }
 }
 
-/** Aperçu de la pièce de A vers le curseur : prisme en coordonnées monde (lignes des parois). */
-function apercuPiece(e: EtatProfile, ctx: ContexteOutil): { lignes: Vec3[][]; faces: Vec3[][] } {
+/**
+ * Aperçu de la pièce de A vers le curseur : le prisme est construit dans le repère du contexte d'édition (comme la pose,
+ * même « haut » local), puis ramené au monde ; les bouts gardent leurs trous (section creuse ou face percée).
+ */
+function apercuPiece(e: EtatProfile, ctx: ContexteOutil): { lignes: Vec3[][]; faces: Vec3[][]; trous: Vec3[][][] } {
+  const vide = { lignes: [], faces: [], trous: [] };
   const s = ctx.sectionCourante;
-  if (!s || e.etape !== 2 || !e.depart || !e.inference || dist(e.depart, e.inference.point) < 1e-9) return { lignes: [], faces: [] };
+  if (!s || e.etape !== 2 || !e.depart || !e.inference || dist(e.depart, e.inference.point) < 1e-9) return vide;
   try {
-    const r = repereSegment(e.depart, e.inference.point);
+    const L = enLocal(ctx).point;
+    const W = depuisContexteEdition(ctx);
+    const r = repereSegment(L(e.depart), L(e.inference.point));
     const { parois, bouts } = prismePiece(sectionPosee(s.section, placementDe(e)), r.longueur, { genre: "droit", decalage: 0 }, { genre: "droit", decalage: 0 });
-    const monde = (p: Vec3): Vec3 => add(add(add(r.origine, scale(r.x, p.x)), scale(r.y, p.y)), scale(r.z, p.z));
+    const monde = (p: Vec3): Vec3 => W(add(add(add(r.origine, scale(r.x, p.x)), scale(r.y, p.y)), scale(r.z, p.z)));
     const faces = [...parois, ...bouts.map((b) => b.ext)].map((f) => f.map(monde));
-    return { lignes: faces.map((f) => [...f, f[0] as Vec3]), faces };
+    const trous = [...parois.map(() => [] as Vec3[][]), ...bouts.map((b) => b.trous.map((t) => t.map(monde)))];
+    const lignes = [...faces, ...trous.flat()].map((f) => [...f, f[0] as Vec3]);
+    return { lignes, faces, trous };
   } catch {
-    return { lignes: [], faces: [] };
+    return vide;
   }
 }
 
@@ -161,7 +169,7 @@ export const machineProfile: MachineOutil<EtatProfile> = {
       inference: etat.inference,
     });
     const ap = apercuPiece(etat, ctx);
-    return { ...v, options: options(etat), apercu: { ...v.apercu, lignes: ap.lignes, faces: ap.faces } };
+    return { ...v, options: options(etat), apercu: { ...v.apercu, lignes: ap.lignes, faces: ap.faces, trous: ap.trous } };
   },
 };
 
