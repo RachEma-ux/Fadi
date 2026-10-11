@@ -75,6 +75,15 @@ describe("Lot L18 — Faire pivoter : Maj, flèches après le 1er clic, axe par 
     expect(q.etat.branche).toBeNull();
   });
 
+  it("revue de #131 : la branche verrouillée ne contraint que le départ ; à l'étape 3 la cible est libre (90°, pas 0/180)", () => {
+    const m = boite(1, 1, 1);
+    const p = partie(machinePivoter, m, toutSelectionner(m)).jouer(clicVers(O, DEPUIS), touche("FlecheDroite"), clicVers(v3(1, 0.3, 0), DEPUIS));
+    expect(p.etat.etape).toBe(3);
+    p.jouer(survolVers(v3(0, 1, 0), DEPUIS));
+    expect(Math.abs(p.etat.angle)).toBeCloseTo(Math.PI / 2, 9); // radians : 90°, et non 0 ou π
+    expect(p.etat.inference?.verrouillee ?? false).toBe(false);
+  });
+
   it("glisser depuis le centre : axe quelconque (ici rouge), puis départ et 90° → la boîte tourne autour de x", () => {
     const m = boite(1, 1, 1);
     const p = partie(machinePivoter, m, toutSelectionner(m)).jouer(
