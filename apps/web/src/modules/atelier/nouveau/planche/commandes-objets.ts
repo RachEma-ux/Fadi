@@ -136,7 +136,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -237,6 +237,28 @@ export const COMMANDES_DEBIT: readonly CommandeDebit[] = [
   { id: "effacer-etiquettes", picto: "⌧", libelle: "planche.debit.effacer-etiquettes", court: "planche.debit.court.effacer-etiquettes", raccourci: "Alt+Maj+W" },
   { id: "exporter-debit", picto: "⇩", libelle: "planche.debit.exporter", court: "planche.debit.court.exporter", raccourci: "Alt+Maj+X" },
 ];
+
+/** Lot L17 : commandes d'édition d'une pièce (bloc de l'Info entité ; règle d'or : icône, barre, raccourci). */
+export type IdCommandePiece = "piece-section" | "piece-rotation";
+export interface CommandePiece {
+  readonly id: IdCommandePiece;
+  readonly picto: string;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_PIECE: readonly CommandePiece[] = [
+  { id: "piece-section", picto: "⇆", libelle: "planche.piece.section", court: "planche.piece.court.section", raccourci: "Alt+Maj+S" },
+  { id: "piece-rotation", picto: "⥁", libelle: "planche.piece.rotation", court: "planche.piece.court.rotation", raccourci: "Alt+Maj+H" },
+];
+
+/** Disponibilité des commandes de pièce : une seule pièce sélectionnée, hors lecture, une section choisie (section). */
+export function disponibilitePiece(id: IdCommandePiece, s: { readonly piece: boolean; readonly section: boolean; readonly lecture: boolean }): Disponibilite {
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (!s.piece) return { disponible: false, motif: "planche.piece.motif.piece" };
+  if (id === "piece-section" && !s.section) return { disponible: false, motif: "planche.piece.motif.section" };
+  return { disponible: true, motif: null };
+}
 
 /** Disponibilité des commandes de débit : une liste non vide (hors lecture pour les écritures) ; des étiquettes à effacer. */
 export function disponibiliteDebit(id: IdCommandeDebit, s: { readonly lignes: number; readonly etiquettes: number; readonly lecture: boolean }): Disponibilite {

@@ -1,7 +1,13 @@
 name: CI
+# Un seul run par commit : les branches de PR passent par `pull_request`, `push` ne couvre que `main`.
+# Un nouveau push sur la même branche annule le run dépassé (jamais sur `main`).
 on:
   push:
+    branches: [main]
   pull_request:
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 permissions:
   contents: read
 jobs:
@@ -192,6 +198,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-texte-3d node apps/web/e2e/planche-texte-3d.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de l'édition des pièces (lot L17) — section régénérée, rotation axiale, Aligner une face (apps/web/e2e/planche-pieces-edition.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-pieces-edition node apps/web/e2e/planche-pieces-edition.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         run: |
           set -o pipefail

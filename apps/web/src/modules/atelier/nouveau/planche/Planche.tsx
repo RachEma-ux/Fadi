@@ -98,6 +98,9 @@ import {
   reperesRenumerotes,
   trierDebit,
   type LigneDebit,
+  axesDesPieces,
+  changerSectionPiece,
+  tournerPieceAxe,
 } from "@parcours/planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { planches as planchesDe, type Commande, type LigneCatalogue, type ModeleAtelier } from "@parcours/atelier-model";
@@ -114,7 +117,7 @@ import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche,
 import { BarreActions } from "../panneaux/BarreActions";
 import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
 import { useNavigationBarre } from "../navigation-barre";
-import { disponibiliteDebit, type IdCommandeDebit, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
 import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panneau-debit";
@@ -297,6 +300,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   // Lot L12 : section des outils Profilé (catalogue sourcé du projet, dimensions saisies ou face), passée aux machines.
   const sectionRef = useRef<SectionCourante | null>(null);
   const [choixSection, setChoixSection] = useState<ChoixSection>({ mode: "catalogue", catalogueId: "", ligne: null, segments: "" });
+  const [angleRotation, setAngleRotation] = useState("90");
   const [erreurFace, setErreurFace] = useState<string | null>(null);
   // Lot L14 : réglages de la liste de débit (portée, renumérotation, masse volumique déclarée avec sa source, tri).
   const [reglagesDebit, setReglagesDebit] = useState<ReglagesDebit>(REGLAGES_DEBIT_DEFAUT);
@@ -2071,6 +2075,28 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     }
     operer(t("planche.debit.effacer-etiquettes"), (m) => ({ modele: effacerEtiquettesPieces(m).modele }));
   };
+  /** Lot L17 : pièce de profilé sélectionnée seule dans le contexte ouvert (bloc d'édition sous l'Info entité). */
+  const pieceSelectionnee = (): string | null => {
+    const sel = selectionRef.current;
+    if (sel.length !== 1) return null;
+    return axesDesPieces(hist.present.modele, dans !== undefined ? { dans } : {}).some((p) => p.occurrence === sel[0]) ? sel[0]! : null;
+  };
+  const disponibiliteCommandePiece = (id: IdCommandePiece) => disponibilitePiece(id, { piece: pieceSelectionnee() !== null, section: sectionCourante !== null, lecture: readOnly });
+  const executerPiece = (id: IdCommandePiece) => {
+    const piece = pieceSelectionnee();
+    if (!piece || !disponibiliteCommandePiece(id).disponible) return;
+    if (id === "piece-section") {
+      const s = sectionCourante!;
+      operer(t("planche.piece.section"), (m, d) => ({ modele: changerSectionPiece(m, piece, s.section, s.source, s.designation, d !== undefined ? { dans: d } : {}).modele, selection: [piece], message: t("planche.piece.applique", { designation: s.designation }) }));
+      return;
+    }
+    const angle = Number(angleRotation.replace(",", "."));
+    if (!Number.isFinite(angle) || angle === 0) {
+      setMessage(t("planche.piece.angle-invalide"));
+      return;
+    }
+    operer(t("planche.piece.rotation"), (m, d) => ({ modele: tournerPieceAxe(m, piece, angle, d !== undefined ? { dans: d } : {}).modele, selection: [piece], message: t("planche.piece.tournee", { angle: String(angle) }) }));
+  };
   const outil = outilParId(outilId);
   const etatTexte3D = outilId === "texte-3d" ? (etatMachineRef.current as EtatTexte3D | null) : null;
   // Plan de coupe sélectionné seul (§4.28) : barre Inverser / Coupe active / Effacer.
@@ -2239,6 +2265,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       const id = c.id as IdCommandeVue;
       if (disponibiliteVue(id, etatVue()).disponible) executerVue(id);
     } else if (c.famille === "debit") executerDebit(c.id as IdCommandeDebit);
+    else if (c.famille === "piece") executerPiece(c.id as IdCommandePiece);
     else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
@@ -2261,6 +2288,11 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         ...commandesNavigateur(),
         // Objets O-5 : Isoler, Masquer le reste du modèle.
         ...commandesVue(),
+        // Lot L17 (revue de #130) : les commandes de la pièce, mêmes disponibilités et exécution que le bloc de la pièce.
+        ...COMMANDES_PIECE.map((c) => {
+          const d = disponibiliteCommandePiece(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.piece.motif.piece"), executer: () => executerPiece(c.id) };
+        }),
         // Lot L14 (revue de #128) : les cinq commandes de débit, mêmes disponibilités et exécution que le panneau.
         ...COMMANDES_DEBIT.map((c) => {
           const d = disponibiliteCommandeDebit(c.id);
@@ -2763,6 +2795,38 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
           lecture={readOnly}
           {...(outilId === "profiles-aretes" ? { onPoser: () => void envoyer({ genre: "saisie", texte: "" }) } : {})}
         />
+      )}
+      {outilId !== "profile" && outilId !== "profiles-aretes" && pieceSelectionnee() !== null && (
+        <div className="planche-piece-edition" role="group" aria-label={t("planche.piece.titre")} data-planche-piece-edition>
+          <div className="planche-piece-commandes" role="toolbar" aria-label={t("planche.piece.titre")}>
+            <span className="planche-piece-titre">{t("planche.piece.titre")}</span>
+            {COMMANDES_PIECE.map((c) => {
+              const d = disponibiliteCommandePiece(c.id);
+              const nom = t(c.libelle);
+              return (
+                <button key={c.id} type="button" disabled={!d.disponible} title={d.disponible ? `${nom} (${afficherRaccourci(c.raccourci)})` : `${nom} — ${t(d.motif ?? "planche.piece.motif.piece")}`} aria-label={nom} onClick={() => executerPiece(c.id)} data-planche-commande={c.id}>
+                  <span aria-hidden="true">{c.picto}</span> {t(c.court)}
+                </button>
+              );
+            })}
+            <label className="planche-piece-angle">
+              <span>{t("planche.piece.angle")}</span>
+              <input inputMode="decimal" value={angleRotation} disabled={readOnly} onKeyDown={(e) => e.stopPropagation()} onChange={(e) => setAngleRotation(e.target.value)} data-planche-piece-angle />
+            </label>
+          </div>
+          <PanneauProfiles
+            catalogues={cataloguesProjet}
+            choix={choixSection}
+            onChoix={(c) => {
+              setErreurFace(null);
+              setChoixSection(c);
+            }}
+            section={sectionCourante}
+            erreur={erreurSection}
+            onFace={sectionDeLaFace}
+            lecture={readOnly}
+          />
+        </div>
       )}
       {vue.options && vue.options.length > 0 && (
         <div ref={optionsRef} onKeyDown={naviguerOptions} className="planche-options-outil" role="toolbar" aria-label={t("planche.options")} data-planche-options>

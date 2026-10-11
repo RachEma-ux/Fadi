@@ -253,6 +253,7 @@ export function estMetadonneesPiece(v: unknown): boolean {
   if (!estObjet(p) || !["centre", "haut-gauche", "haut-droite", "bas-droite", "bas-gauche"].includes(p["point"] as string)) return false;
   if (typeof p["rotation90"] !== "boolean" || !estNombre(p["decalageDebut"]) || !estNombre(p["decalageFin"])) return false;
   if (p["position"] !== undefined && !["centre", "exterieur", "interieur"].includes(p["position"] as string)) return false;
+  if (p["rotationAxe"] !== undefined && !estNombre(p["rotationAxe"])) return false;
   return v["cote"] === undefined || v["cote"] === -1 || v["cote"] === 0 || v["cote"] === 1;
 }
 

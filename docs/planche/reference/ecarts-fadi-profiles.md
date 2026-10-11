@@ -1,4 +1,4 @@
-# Écarts Fadi — profilés (outils propres à Fadi, lots L12 et L13)
+# Écarts Fadi — profilés (outils propres à Fadi, lots L12, L13 et L17)
 
 Ce document est la référence des outils de la chaîne des profilés : programme D-202, lots L11 à L14, décisions D-214 et
 D-215. Ces outils n'existent pas dans SketchUp, qui ne fait que les approcher avec des extensions de tiers comme
@@ -74,3 +74,19 @@ ou d'une face de la Planche (R3).
 - Une extrémité coupée en onglet, ou une pièce recoupée par un profil, refusent.
 - Le lien à l'arête source est gardé : le décalage fait partie des métadonnées.
 - Un pas. **Raccourci Fadi** : Alt+Maj+A.
+
+## § 7 — Édition des pièces (lot L17)
+
+- **Info entité d'une pièce** : un bloc d'édition reprend le choix de section du panneau Profilés (catalogue, saisie ou
+  face). Il porte deux commandes :
+  - **Appliquer la section** (⇆, Alt+Maj+S) régénère la géométrie depuis les métadonnées, avec le même axe, la même
+    longueur et les coupes d'onglet rejouées, et enregistre la nouvelle source. Une pièce recoupée par un profil
+    refuse ;
+  - **Rotation axiale** (⥁, Alt+Maj+H) tourne la section de l'angle saisi (90° par défaut) autour de l'axe.
+
+  Ces deux commandes gardent le lien à l'arête source.
+- **Aligner une face** (outil, ⫠, Alt+Maj+F) : on clique la face de la pièce, puis la face cible. La pièce glisse le
+  long de la normale de la face cible jusqu'à la coplanarité. Des faces non parallèles sont refusées.
+- **Échelle** : une pièce ne se met à l'échelle que le long de son axe ; les décalages suivent. En travers, ou sur une
+  pièce coupée, le refus est nommé.
+- **Déplacer** : inférence « axe de pièce » (extrémités, milieu, sur l'axe), à la racine.

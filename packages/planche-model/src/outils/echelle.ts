@@ -99,10 +99,12 @@ export interface EtatEchelle {
   readonly texte: string | null;
   readonly erreur: string | null;
   readonly derniere: Derniere<ParamsEchelle> | null;
+  /** (Revue de #130) Repère des facteurs : monde (axes du modèle) ou pièce (axe de la pièce de profilé). */
+  readonly repere: "monde" | "piece";
 }
 
 function initial(): EtatEchelle {
-  return { etape: 1, entites: [], survol: null, poignee: null, boite: null, depuisCentre: false, inverse: false, facteurs: v3(1, 1, 1), texte: null, erreur: null, derniere: null };
+  return { etape: 1, entites: [], survol: null, poignee: null, boite: null, depuisCentre: false, inverse: false, facteurs: v3(1, 1, 1), texte: null, erreur: null, derniere: null, repere: "monde" };
 }
 
 const retour = (e: EtatEchelle): EtatEchelle => ({ ...e, etape: 1, poignee: null, boite: null, facteurs: v3(1, 1, 1) });
@@ -207,7 +209,7 @@ function appliquer(e: EtatEchelle, ctx: ContexteOutil, params: ParamsEchelle, te
   const base = remplace ? remplace.avant : ctx.modele;
   try {
     const L = enLocal({ ...ctx, modele: base });
-    const r = mettreAEchelle(base, params.entites, L.point(params.ancre), params.facteurs, optionsDans(ctx));
+    const r = mettreAEchelle(base, params.entites, L.point(params.ancre), params.facteurs, { ...optionsDans(ctx), axePiece: e.repere === "piece" });
     return {
       etat: { ...retour(e), entites: params.entites, texte, erreur: null, derniere: { avant: base, apres: r.modele, params } },
       modele: r.modele,
@@ -316,6 +318,11 @@ export const machineEchelle: MachineOutil<EtatEchelle> = {
       valeur = uniforme(etat) ? f.x.toFixed(2).replace(".", ctx.separateurDecimal) : AXES.filter((a) => (etat.poignee as Poignee).axes.includes(a)).map((a) => f[a].toFixed(2).replace(".", ctx.separateurDecimal)).join(ctx.separateurDecimal === "," ? " ; " : ", ");
     }
     const m = etat.etape === 2 ? mesures(libelleMesuresDe(ID_ECHELLE, indice), valeur, contexteSaisie("echelle", ctx)) : null;
-    return vueModif({ consigne: consigneDe(ID_ECHELLE, indice), mesures: m, apercu: { lignes, faces: [] }, ctx, erreur: etat.erreur });
+    const v = vueModif({ consigne: consigneDe(ID_ECHELLE, indice), mesures: m, apercu: { lignes, faces: [] }, ctx, erreur: etat.erreur });
+    return { ...v, options: [{ id: "repere", valeur: etat.repere, valeurs: [{ id: "monde", disponible: true }, { id: "piece", disponible: true }] }] };
+  },
+  configurer(etat, option, valeur): Transition<EtatEchelle> {
+    if (option === "repere" && (valeur === "monde" || valeur === "piece")) return { etat: { ...etat, repere: valeur } };
+    return { etat };
   },
 };

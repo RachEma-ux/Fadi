@@ -2398,17 +2398,32 @@ export function tourner(
   });
 }
 
+/** Options de l'échelle : `axePiece` (repère de la pièce) étire une pièce de profilé le long de son propre axe. */
+export interface OptionsEchelle extends OptionsContexte {
+  readonly axePiece?: boolean;
+}
+
 /** Échelle autour d'une origine ; facteur négatif = miroir. */
 export function mettreAEchelle(
   m: Modele,
   entites: readonly Id[],
   origine: Vec3,
   facteurs: Vec3 | number,
-  o: OptionsContexte = {},
+  o: OptionsEchelle = {},
 ): Resultat {
   const f = typeof facteurs === "number" ? v3(facteurs, facteurs, facteurs) : facteurs;
   if (Math.abs(f.x * f.y * f.z) < EPS) throw new RangeError("Facteur d'échelle nul");
-  return operer(m, o.dans, (t, c) => transformerSurPlace(t, c, entites, echelle(origine, f)));
+  if (o.axePiece) return operer(m, o.dans, (t, c) => echellePieceSurAxe(t, c, entites, origine, f));
+  return operer(m, o.dans, (t, c) => {
+    // Lot L17 : une pièce de profilé ne se met à l'échelle que le long de son axe — sa section est une donnée sourcée.
+    const pieces = entites.filter((id) => {
+      const occ = c.occurrences.get(id);
+      return !!occ && !!t.definitions.get(occ.definition)?.piece;
+    });
+    const autres = entites.filter((id) => !pieces.includes(id));
+    if (autres.length) transformerSurPlace(t, c, autres, echelle(origine, f));
+    for (const id of pieces) echellePieceAxe(t, c, id, origine, f);
+  });
 }
 
 /** Retourner (Flip) par rapport au plan (origine, normale) ; `copie` = Ctrl. */
@@ -4460,6 +4475,8 @@ function axePiece(occ: Occurrence, meta: MetadonneesPiece): { debut: Vec3; fin: 
 
 /** Pièce du contexte : occurrence et définition portant des métadonnées de pièce, sinon erreur nommée. */
 function pieceDe(t: Travail, c: Ctx, id: Id): { occ: Occurrence; def: DefTravail; meta: MetadonneesPiece } {
+  // Revue de #130 : toutes les opérations qui passent par ici modifient la pièce ; un verrou la protège.
+  refuserVerrouilles(c, [id]);
   const occ = c.occurrences.get(id);
   const def = occ ? t.definitions.get(occ.definition) : undefined;
   if (!occ || !def?.piece) throw new RangeError(ERREUR_PAS_UNE_PIECE);
@@ -4668,4 +4685,123 @@ export function effacerEtiquettesPieces(m: Modele): Resultat {
   return modifierAnnotations(m, (a) => {
     for (const [id, tx] of Object.entries(a.textes)) if (tx.genre === "repere" && tx.etiquettePiece) delete a.textes[id];
   });
+}
+
+// ————————————————————————————————————————————————————————————— Édition des pièces (lot L17)
+
+export const ERREUR_ECHELLE_PIECE = "Échelle d'une pièce de profilé : seulement le long de son axe (sa section vient d'une source, elle ne se déforme pas).";
+export const ERREUR_ECHELLE_PIECE_REPERE = "Repère de la pièce : une seule pièce de profilé, étirée par un seul facteur sur son axe.";
+export const ERREUR_ECHELLE_PIECE_COUPEE = "Pièce coupée en onglet ou par un profil : l'échelle changerait ses coupes — refaites-les après.";
+export const ERREUR_ALIGNER_PARALLELE = "Faces non parallèles : l'alignement de face ne fait que translater la pièce le long de la normale de la face cible.";
+export const ERREUR_PIECE_SECTION_RECOUPEE = "Pièce recoupée par un profil : sa section ne peut pas être changée (la coupe ne se rejoue pas).";
+
+/** Échelle axiale d'une pièce : facteur le long de l'axe seulement ; extrémités et décalages mis à l'échelle. */
+function echellePieceAxe(t: Travail, c: Ctx, id: Id, origine: Vec3, f: Vec3): void {
+  const X = pieceDe(t, c, id);
+  const ax = axePiece(X.occ, X.meta);
+  const comp = [f.x, f.y, f.z];
+  const axe = [ax.x.x, ax.x.y, ax.x.z];
+  let facteur: number | null = null;
+  for (let k = 0; k < 3; k++) {
+    if (Math.abs((comp[k] as number) - 1) < 1e-12) continue;
+    if (Math.abs(Math.abs(axe[k] as number) - 1) > 1e-9 || facteur !== null) throw new RangeError(ERREUR_ECHELLE_PIECE);
+    facteur = comp[k] as number;
+  }
+  if (facteur === null) return;
+  if (facteur <= 0) throw new RangeError(ERREUR_ECHELLE_PIECE);
+  if (X.meta.coupeDebut || X.meta.coupeFin || X.meta.coupesProfil) throw new RangeError(ERREUR_ECHELLE_PIECE_COUPEE);
+  const S = echelle(origine, f);
+  const r = repereSegment(appliquer(S, ax.debut), appliquer(S, ax.fin), ax.haut);
+  const placement = { ...X.meta.placement, decalageDebut: X.meta.placement.decalageDebut * facteur, decalageFin: X.meta.placement.decalageFin * facteur };
+  const meta = { ...X.meta, placement };
+  const b = boutsDeMeta(meta);
+  regenererPiece(t, c, id, meta, r, b.debut, b.fin);
+}
+
+/**
+ * Repère de la pièce (revue de #130) : une seule pièce, étirée par son facteur le long de **son** axe, quelle que soit
+ * son orientation. Les extrémités sont projetées depuis l'origine ; la longueur et les décalages suivent le facteur.
+ * Le facteur est celui de l'unique axe de la poignée (ou uniforme) : deux facteurs distincts sont refusés.
+ */
+function echellePieceSurAxe(t: Travail, c: Ctx, entites: readonly Id[], origine: Vec3, f: Vec3): void {
+  if (entites.length !== 1) throw new RangeError(ERREUR_ECHELLE_PIECE_REPERE);
+  const id = entites[0] as Id;
+  const X = pieceDe(t, c, id);
+  const facteurs = [f.x, f.y, f.z].filter((v) => Math.abs(v - 1) > 1e-12);
+  if (facteurs.length === 0) return;
+  if (facteurs.some((v) => Math.abs(v - facteurs[0]!) > 1e-12)) throw new RangeError(ERREUR_ECHELLE_PIECE_REPERE);
+  const s = facteurs[0]!;
+  if (s <= 0) throw new RangeError(ERREUR_ECHELLE_PIECE);
+  if (X.meta.coupeDebut || X.meta.coupeFin || X.meta.coupesProfil) throw new RangeError(ERREUR_ECHELLE_PIECE_COUPEE);
+  const ax = axePiece(X.occ, X.meta);
+  const u = ax.x;
+  const etire = (P: Vec3): Vec3 => add(P, scale(u, (s - 1) * dot(sub(P, origine), u)));
+  const r = repereSegment(etire(ax.debut), etire(ax.fin), ax.haut);
+  const placement = { ...X.meta.placement, decalageDebut: X.meta.placement.decalageDebut * s, decalageFin: X.meta.placement.decalageFin * s };
+  const meta = { ...X.meta, placement };
+  const b = boutsDeMeta(meta);
+  regenererPiece(t, c, id, meta, r, b.debut, b.fin);
+}
+
+/**
+ * Changer la section d'une pièce (lot L17) : la géométrie est régénérée depuis les métadonnées — même axe, même
+ * longueur, mêmes coupes d'onglet (rejouées) ; la nouvelle source est enregistrée. Une pièce recoupée par un profil
+ * refuse (la coupe ne se rejoue pas). Le lien à l'arête source est gardé. Un pas.
+ */
+export function changerSectionPiece(m: Modele, piece: Id, section: SectionProfil, source: SourceSection, designation: string, o: OptionsContexte = {}): Resultat {
+  validerPiece(section, { designation, source });
+  return operer(m, o.dans, (t, c) => {
+    const X = pieceDe(t, c, piece);
+    if (X.meta.coupesProfil) throw new RangeError(ERREUR_PIECE_SECTION_RECOUPEE);
+    const meta: MetadonneesPiece = { ...X.meta, section, source, designation: designation.trim() };
+    const ax = axePiece(X.occ, X.meta);
+    const b = boutsDeMeta(meta);
+    regenererPiece(t, c, piece, meta, repereSegment(ax.debut, ax.fin, ax.haut), b.debut, b.fin, true);
+    const occ = c.occurrences.get(piece) as Occurrence;
+    const d = t.definitions.get(occ.definition) as DefTravail;
+    t.definitions.set(occ.definition, { ...d, nom: designation.trim() });
+  });
+}
+
+/** Rotation axiale d'une pièce (lot L17) : la section tourne de `angle` (°) autour de l'axe ; lien gardé ; un pas. */
+export function tournerPieceAxe(m: Modele, piece: Id, angle: number, o: OptionsContexte = {}): Resultat {
+  if (!Number.isFinite(angle) || Math.abs(angle) < 1e-12) throw new RangeError("Angle de rotation nul : rien à faire.");
+  return operer(m, o.dans, (t, c) => {
+    const X = pieceDe(t, c, piece);
+    if (X.meta.coupesProfil) throw new RangeError(ERREUR_PIECE_SECTION_RECOUPEE);
+    const r0 = ((X.meta.placement.rotationAxe ?? 0) + angle) % 360;
+    const meta: MetadonneesPiece = { ...X.meta, placement: { ...X.meta.placement, rotationAxe: Math.abs(r0) < 1e-12 ? 0 : r0 } };
+    const ax = axePiece(X.occ, X.meta);
+    const b = boutsDeMeta(meta);
+    regenererPiece(t, c, piece, meta, repereSegment(ax.debut, ax.fin, ax.haut), b.debut, b.fin, true);
+  });
+}
+
+/**
+ * Aligner une face de pièce sur une face cible (lot L17) : la pièce est translatée le long de la normale de la face
+ * cible jusqu'à ce que sa face soit coplanaire (faces parallèles, sens quelconque) ; sinon refus nommé. Les deux
+ * faces sont données en coordonnées du contexte (point et normale). La pièce, déplacée, quitte son lien. Un pas.
+ */
+export function alignerFacePiece(m: Modele, piece: Id, facePiece: { readonly point: Vec3; readonly normale: Vec3 }, cible: { readonly point: Vec3; readonly normale: Vec3 }, o: OptionsContexte = {}): Resultat {
+  const n = normalize(cible.normale);
+  if (Math.abs(Math.abs(dot(normalize(facePiece.normale), n)) - 1) > 1e-9) throw new RangeError(ERREUR_ALIGNER_PARALLELE);
+  const d = dot(sub(cible.point, facePiece.point), n);
+  return operer(m, o.dans, (t, c) => {
+    pieceDe(t, c, piece);
+    if (Math.abs(d) < 1e-12) return;
+    transformerSurPlace(t, c, [piece], translation(scale(n, d)));
+  });
+}
+
+/** Axes des pièces du contexte (lot L17) : segments pour l'inférence « axe de pièce » (extrémités, milieu, sur l'axe). */
+export function axesDesPieces(m: Modele, o: OptionsContexte = {}): { occurrence: Id; a: Vec3; b: Vec3 }[] {
+  const c = contexte(m, o.dans);
+  const r: { occurrence: Id; a: Vec3; b: Vec3 }[] = [];
+  for (const occ of Object.values(c.occurrences)) {
+    const meta = m.definitions[occ.definition]?.piece;
+    if (!meta) continue;
+    const ax = axePiece(occ, meta);
+    r.push({ occurrence: occ.id, a: ax.debut, b: ax.fin });
+  }
+  return r;
 }

@@ -136,6 +136,7 @@ export const RACCOURCIS_FADI: Readonly<Record<string, string>> = {
   onglet: "Alt+Maj+O",
   "coupe-profil": "Alt+Maj+B",
   "allonger-piece": "Alt+Maj+A",
+  "aligner-face": "Alt+Maj+F",
 };
 
 /** Raccourci effectif d'un outil : celui du catalogue (relevé), sinon celui de la couche Fadi, sinon `null`. */
@@ -202,6 +203,7 @@ const PICTOS: Readonly<Record<string, string>> = {
   onglet: "◸",
   "coupe-profil": "⧄",
   "allonger-piece": "⇿",
+  "aligner-face": "⫠",
   retourner: "⇋",
   diviser: "÷",
   "enveloppe-exterieure": "⬚",

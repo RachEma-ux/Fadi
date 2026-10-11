@@ -829,6 +829,24 @@ export const OUTILS: readonly Outil[] = [
     sourceReference: "ecarts-fadi-profiles.md § 6",
     statutReleve: "fadi",
   },
+  {
+    id: "aligner-face",
+    libelle: "Aligner une face",
+    libelleSketchUp: "Align Face",
+    famille: "modification",
+    raccourci: null,
+    emplacement: "grille",
+    etapes: [
+      e("Click the face of the member to align.", "Cliquez la face de la pièce à aligner.", null, null, "aucune"),
+      e("Click the target face: the member slides to its plane.", "Cliquez la face cible : la pièce glisse jusqu'à son plan.", null, null, "aucune"),
+    ],
+    modificateurs: [],
+    inferences: [],
+    apresFin: "La pièce est translatée le long de la normale de la face cible jusqu'à ce que sa face soit coplanaire ; faces non parallèles refusées. Un pas.",
+    offre: "gratuite",
+    sourceReference: "ecarts-fadi-profiles.md § 7",
+    statutReleve: "fadi",
+  },
 
   // ----- Modification
   {

@@ -11,7 +11,7 @@
  * réseau ; copie + réseau + ré-espacement = un seul pas d'annulation. Tampon : chaque clic pose une copie (un pas chacun).
  * Alt (pliage automatique) : bascule — le noyau plie toujours les faces devenues non planes.
  */
-import { type Id, type Reseau, contexte, copier, deplacer } from "../geometrie-libre.js";
+import { type Id, type Reseau, axesDesPieces, contexte, copier, deplacer } from "../geometrie-libre.js";
 import { type Inference, type ModeAlt, type Verrou, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, AXE_Z, EPS, TOL, add, cross, dot, len, normalize, scale, sub } from "../vecteur.js";
@@ -94,10 +94,14 @@ function cyclerCtrl(e: EtatDeplacer): ModeDeplacement {
 /** Inférence de destination (point de départ = base) avec verrous et mode Alt. */
 function inferer3(e: EtatDeplacer, ctx: ContexteOutil, ev: Extract<EvenementOutil, { genre: "survol" | "clic" }>): Inference {
   const v = verrouCourant(e);
+  // Lot L17 : inférence « axe de pièce » — à la racine, les axes des pièces de profilé s'ajoutent aux arêtes visées
+  // (extrémités, milieu, sur l'axe), comme des arêtes cachées au milieu de leur section.
+  const g = geometrieVisible(ctx.modele);
+  const axes = ctx.dans === undefined ? axesDesPieces(ctx.modele).map((x) => ({ id: `axe:${x.occurrence}`, a: x.a, b: x.b })) : [];
   return inferer({
     rayon: ev.rayon,
     tolerance: ev.tolerance,
-    geometrie: geometrieVisible(ctx.modele),
+    geometrie: axes.length ? { ...g, aretes: [...g.aretes, ...axes] } : g,
     modeAlt: e.modeAlt,
     ...(ctx.repere ? { axes: ctx.repere } : {}),
     ...(e.base ? { depart: e.base } : {}),

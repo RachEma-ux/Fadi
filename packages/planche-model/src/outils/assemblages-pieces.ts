@@ -9,10 +9,10 @@
  *   raccourcit. Option « Valeur » : saisie, demi-largeur ou demi-hauteur de la section (le clic applique alors aussitôt) ;
  *   option « Sens » + / − (pas Maj). Un pas par allongement.
  */
-import { type Id, type Modele, allongerPiece, contexte, demiSectionPiece, ongletPieces } from "../geometrie-libre.js";
+import { type Id, type Modele, alignerFacePiece, allongerPiece, contexte, demiSectionPiece, ongletPieces } from "../geometrie-libre.js";
 import { couperParProfil } from "../assemblages.js";
 import { analyserSaisie } from "../saisie-vcb.js";
-import { dot, normalize, sub, v3 } from "../vecteur.js";
+import { type Vec3, add, dot, normalize, scale, sub, v3 } from "../vecteur.js";
 import { messageErreur } from "./commun-formes.js";
 import { enLocal, saisieDe, viseeElement, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, EvenementOutil, MachineOutil, OptionOutil, Transition, VueOutil } from "./machine.js";
@@ -196,3 +196,61 @@ export const machineAllongerPiece: MachineOutil<EtatAllongerPiece> = {
   },
 };
 
+
+// ————————————————————————————————————————————————————————————— Aligner une face (lot L17)
+
+export const ID_ALIGNER_FACE = "aligner-face";
+export const CONSIGNES_ALIGNER_FACE = ["Cliquez la face de la pièce à aligner.", "Cliquez la face cible : la pièce glisse jusqu'à son plan."] as const;
+
+export interface EtatAlignerFace {
+  readonly piece: Id | null;
+  /** Face de la pièce visée (monde) : point d'impact et normale. */
+  readonly face: { readonly point: Vec3; readonly normale: Vec3 } | null;
+  readonly erreur: string | null;
+}
+
+/** Point d'impact du rayon sur la face visée et sa normale (monde). */
+function impactFace(ctx: ContexteOutil, ev: Extract<EvenementOutil, { genre: "clic" }>): { point: Vec3; normale: Vec3; occurrence: Id | null } | null {
+  const el = viser(ctx.modele, ev.rayon, ev.tolerance, () => false);
+  if (!el || el.genre !== "face") return null;
+  const n = normalize(el.normale);
+  const d = dot(n, ev.rayon.direction);
+  if (Math.abs(d) < 1e-12) return null;
+  const t = dot(n, sub(el.exterieur[0] as Vec3, ev.rayon.origine)) / d;
+  const c = cibleDans(el, ctx.dans, ctx.chemin);
+  return { point: add(ev.rayon.origine, scale(ev.rayon.direction, t)), normale: n, occurrence: c?.genre === "occurrence" ? c.id : null };
+}
+
+export const machineAlignerFace: MachineOutil<EtatAlignerFace> = {
+  id: ID_ALIGNER_FACE,
+  initial: () => ({ piece: null, face: null, erreur: null }),
+  traiter(etat, ev, ctx): Transition<EtatAlignerFace> {
+    switch (ev.genre) {
+      case "clic": {
+        const i = impactFace(ctx, ev);
+        if (!etat.piece) {
+          const piece = i?.occurrence ?? null;
+          const occ = piece ? contexte(ctx.modele, ctx.dans).occurrences[piece] : undefined;
+          if (!i || !occ || !ctx.modele.definitions[occ.definition]?.piece) return { etat: { ...etat, erreur: "Cliquez une face d'une pièce de profilé." } };
+          return { etat: { piece, face: { point: i.point, normale: i.normale }, erreur: null }, selection: [piece as Id] };
+        }
+        if (!i) return { etat: { ...etat, erreur: "Cliquez une face cible." } };
+        try {
+          const L = enLocal(ctx);
+          const vers = (f: { point: Vec3; normale: Vec3 }) => ({ point: L.point(f.point), normale: normalize(L.vecteur(f.point, f.normale)) });
+          const r = alignerFacePiece(ctx.modele, etat.piece, vers(etat.face as { point: Vec3; normale: Vec3 }), vers(i), optionsDans(ctx));
+          return { etat: { piece: null, face: null, erreur: null }, modele: r.modele, selection: [etat.piece], operation: "Aligner une face" };
+        } catch (err) {
+          return { etat: { ...etat, erreur: messageErreur(err) } };
+        }
+      }
+      case "echap":
+        return { etat: { piece: null, face: null, erreur: null }, selection: [] };
+      default:
+        return { etat };
+    }
+  },
+  vue(etat, ctx): VueOutil {
+    return vueModif({ consigne: etat.piece ? CONSIGNES_ALIGNER_FACE[1] : CONSIGNES_ALIGNER_FACE[0], mesures: null, ctx, erreur: etat.erreur });
+  },
+};
