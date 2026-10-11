@@ -8050,5 +8050,15 @@
 "« Conserver la face de départ » ne s'applique qu'à l'extrusion d'une face.": "“Keep the starting face” applies to face extrusion only.",
 "« Des deux côtés » ne s'applique qu'au balayage d'arêtes.": "“Both sides” applies to edge sweeps only.",
 "« Jusqu'à une face » ne s'applique qu'à l'extrusion normale d'une face.": "“Up to face” applies to normal face extrusion only.",
-"Le décalage se recoupe (segments {0} et {1} du contour) : réduisez la distance.": "The offset intersects itself (segments {0} and {1} of the contour): reduce the distance."
+"Le décalage se recoupe (segments {0} et {1} du contour) : réduisez la distance.": "The offset intersects itself (segments {0} and {1} of the contour): reduce the distance.",
+"Aligner une face": "Align Face",
+"Cliquez la face de la pièce à aligner.": "Click the face of the member to align.",
+"Cliquez la face cible : la pièce glisse jusqu'à son plan.": "Click the target face: the member slides to its plane.",
+"Échelle d'une pièce de profilé : seulement le long de son axe (sa section vient d'une source, elle ne se déforme pas).": "Scaling a profile member: along its axis only (its section comes from a source and is not distorted).",
+"Pièce coupée en onglet ou par un profil : l'échelle changerait ses coupes — refaites-les après.": "Member mitred or cut by a profile: scaling would change its cuts — redo them afterwards.",
+"Faces non parallèles : l'alignement de face ne fait que translater la pièce le long de la normale de la face cible.": "Faces not parallel: Align Face only translates the member along the target face's normal.",
+"Pièce recoupée par un profil : sa section ne peut pas être changée (la coupe ne se rejoue pas).": "Member cut by a profile: its section cannot be changed (the cut is not replayed).",
+"Angle de rotation nul : rien à faire.": "Zero rotation angle: nothing to do.",
+"Cliquez une face d'une pièce de profilé.": "Click a face of a profile member.",
+"Cliquez une face cible.": "Click a target face."
 }
