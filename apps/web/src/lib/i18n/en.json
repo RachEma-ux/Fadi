@@ -8179,5 +8179,14 @@
 "L'étirement annulerait une partie d'une face voisine : rien n'est modifié.": "The stretch would collapse part of a neighbouring face: nothing was changed.",
 "L'étirement retournerait une partie d'une face voisine : rien n'est modifié.": "The stretch would flip part of a neighbouring face: nothing was changed.",
 "Le pli d'une face voisine se recouperait : rien n'est modifié.": "The fold of a neighbouring face would intersect itself: nothing was changed.",
-"Composant partagé : l'étirement s'applique à ses {0} occurrences.": "Shared component: the stretch applies to its {0} occurrences."
+"Composant partagé : l'étirement s'applique à ses {0} occurrences.": "Shared component: the stretch applies to its {0} occurrences.",
+"Épaissir": "Thicken",
+"Cliquez une face de la surface à épaissir (une présélection de faces est épaissie d'un bloc).": "Click a face of the surface to thicken (a preselection of faces is thickened as a whole).",
+"Cliquez pour fixer l'épaisseur ou saisissez-la.": "Click to set the thickness or enter it.",
+"Cliquez une face de la surface à épaissir.": "Click a face of the surface to thicken.",
+"Cliquez d'abord une face de la surface à épaissir.": "First click a face of the surface to thicken.",
+"Épaisseur nulle : rien n'a été épaissi.": "Zero thickness: nothing was thickened.",
+"Choisissez au moins une face.": "Choose at least one face.",
+"Épaissir : une arête est partagée par plus de deux des faces choisies (surface non variété).": "Thicken: an edge is shared by more than two of the chosen faces (non-manifold surface).",
+"Épaissir : l'épaisseur ne peut pas être tenue en un sommet (faces opposées ou plus de trois plans non concourants).": "Thicken: the thickness cannot be held at a vertex (opposite faces or more than three non-concurrent planes)."
 }

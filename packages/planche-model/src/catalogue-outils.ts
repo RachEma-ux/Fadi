@@ -848,6 +848,26 @@ export const OUTILS: readonly Outil[] = [
     statutReleve: "fadi",
   },
 
+  {
+    id: "epaissir",
+    libelle: "Épaissir",
+    libelleSketchUp: "Thicken",
+    famille: "modification",
+    raccourci: null,
+    emplacement: "grille",
+    etapes: [
+      e("Click a face of the surface to thicken (a preselection of faces is thickened as a whole).", "Cliquez une face de la surface à épaissir (une présélection de faces est épaissie d'un bloc).", "Thickness", "Épaisseur", "longueur"),
+      e("Click to set the thickness or enter it.", "Cliquez pour fixer l'épaisseur ou saisissez-la.", "Thickness", "Épaisseur", "longueur"),
+    ],
+    modificateurs: [],
+    inferences: [],
+    apresFin:
+      "La surface devient un volume fermé : chaque face avance de l'épaisseur le long de sa normale (sommets décalés pour que les faces restent planes), des parois ferment les bords. Un pas ; une épaisseur retapée juste après corrige.",
+    offre: "gratuite",
+    sourceReference: "ecarts-fadi-extrusion.md § 1",
+    statutReleve: "fadi",
+  },
+
   // ----- Modification
   {
     id: "pousser-tirer",

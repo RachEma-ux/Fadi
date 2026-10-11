@@ -137,6 +137,8 @@ export const RACCOURCIS_FADI: Readonly<Record<string, string>> = {
   "coupe-profil": "Alt+Maj+B",
   "allonger-piece": "Alt+Maj+A",
   "aligner-face": "Alt+Maj+F",
+  // Lot L21 (D-202) : outil propre à Fadi.
+  epaissir: "Alt+Maj+J",
 };
 
 /** Raccourci effectif d'un outil : celui du catalogue (relevé), sinon celui de la couche Fadi, sinon `null`. */
@@ -204,6 +206,7 @@ const PICTOS: Readonly<Record<string, string>> = {
   "coupe-profil": "⧄",
   "allonger-piece": "⇿",
   "aligner-face": "⫠",
+  epaissir: "▥",
   retourner: "⇋",
   diviser: "÷",
   "enveloppe-exterieure": "⬚",
