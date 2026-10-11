@@ -494,7 +494,10 @@ function configurerPT(e: EtatPousserTirer, option: string, valeur: string): Tran
     return { etat: { ...e, sens: valeur === "inverse" ? -1 : 1, erreur: null } };
   }
   if (option === "face" && (MODES_FACE as readonly string[]).includes(valeur)) {
-    return { etat: { ...e, nouvelleFace: valeur === "nouvelle-face", etirement: valeur === "etirement", sansFond: valeur === "tube", erreur: null } };
+    // Revue #121 : « Jusqu'à une face » ne vaut que pour l'extrusion normale : passer en Étirement ou en Surface ouverte
+    // remet l'étendue à « Distance » (sinon la cible serait appliquée à un tube ou à un étirement).
+    const horsExtrusion = valeur === "etirement" || valeur === "tube";
+    return { etat: { ...e, nouvelleFace: valeur === "nouvelle-face", etirement: valeur === "etirement", sansFond: valeur === "tube", jusquAFace: horsExtrusion ? false : e.jusquAFace, erreur: null } };
   }
   if (option === "arete" && (MODES_ARETE as readonly string[]).includes(valeur)) {
     const sansAllonger = e.fleche?.touche === "FlecheBas" ? null : e.fleche;
