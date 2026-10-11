@@ -14,7 +14,7 @@
  * l'axe verrouillé ; Alt = des deux côtés. Mêmes gestes ensuite que pour une face : correction par une distance tapée,
  * double-clic sur une autre arête = répéter, Échap.
  */
-import { type Id, type Modele, ERREUR_ETIRER_ISOLEE, nombreOccurrences, allongerArete, distanceJusquAFace, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, faceAVoisines, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
+import { type Id, type Modele, ERREUR_ETIRER_ISOLEE, instancesEditees, allongerArete, distanceJusquAFace, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, faceAVoisines, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, EPS, TOL, add, cross, dist, dot, egal, len, normalize, scale, sub, v3 } from "../vecteur.js";
@@ -189,15 +189,11 @@ const retour = (e: EtatPousserTirer): EtatPousserTirer => ({
 /** Lot L20 : avertissement d'un étirement dans un composant partagé. */
 export const avertissementComposantPartage = (n: number): string => `Composant partagé : l'étirement s'applique à ses ${n} occurrences.`;
 
-/** Lot L20 : nombre d'occurrences de la définition éditée (`dans`), 0 à la racine. */
-function occurrencesPartagees(m: Modele, dans: Id | undefined): number {
-  if (dans === undefined) return 0;
-  for (const c of [m.racine, ...Object.values(m.definitions).map((d) => d.contenu)]) {
-    const o = c.occurrences[dans];
-    if (o) return nombreOccurrences(m, o.definition);
-  }
-  return 0;
-}
+/**
+ * Lot L20 : instances rendues que l'étirement modifie (`instancesEditees`, revue de #133 : composant compté à travers les
+ * composants qui le portent ; groupe partagé rendu unique par l'opération, donc non compté), 0 à la racine.
+ */
+const occurrencesPartagees = (m: Modele, dans: Id | undefined): number => instancesEditees(m, dans);
 
 /** Distance signée le long de la normale visée par le rayon, avec l'inférence (accrochage sur les sommets existants). */
 function viseeDistance(e: EtatPousserTirer, ctx: ContexteOutil, r: Rayon, tolerance: number): { distance: number; inference: Inference } {

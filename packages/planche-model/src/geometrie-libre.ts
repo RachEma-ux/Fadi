@@ -466,6 +466,48 @@ export function nombreOccurrences(m: Modele, definition: Id): number {
   return compte(m.racine) + Object.values(m.definitions).reduce((s, d) => s + compte(d.contenu), 0);
 }
 
+/**
+ * Revue de #133 : instances effectivement rendues d'une définition — chaque occurrence posée compte autant de fois que le
+ * contexte qui la porte est lui-même rendu (1 pour la racine, récursif pour une définition). Un composant posé une fois
+ * dans un composant posé trois fois a 1 occurrence (`nombreOccurrences`) mais 3 instances.
+ */
+export function nombreInstances(m: Modele, definition: Id): number {
+  const memo = new Map<Id, number>();
+  const compte = (c: Contexte, def: Id): number => Object.values(c.occurrences).filter((o) => o.definition === def).length;
+  const instances = (def: Id, pile: readonly Id[]): number => {
+    if (pile.includes(def)) return 0; // une définition ne se contient pas ; garde contre une boucle
+    const connu = memo.get(def);
+    if (connu !== undefined) return connu;
+    let n = compte(m.racine, def);
+    for (const d of Object.values(m.definitions)) {
+      const k = compte(d.contenu, def);
+      if (k > 0) n += k * instances(d.id, [...pile, def]);
+    }
+    memo.set(def, n);
+    return n;
+  };
+  return instances(definition, []);
+}
+
+/**
+ * Revue de #133 : nombre d'instances rendues que modifie une édition faite dans le contexte de l'occurrence `dans` (0 à la
+ * racine). Un composant est édité dans sa définition : toutes ses instances, y compris celles portées par les composants
+ * qui le contiennent. Un groupe partagé est d'abord rendu unique par l'opération (`Travail.ouvrir`) : seul compte le
+ * nombre de fois que le contexte qui porte l'occurrence éditée est rendu.
+ */
+export function instancesEditees(m: Modele, dans: Id | undefined): number {
+  if (dans === undefined) return 0;
+  const porteurs: [Id | undefined, Contexte][] = [[undefined, m.racine], ...Object.values(m.definitions).map((d) => [d.id, d.contenu] as [Id, Contexte])];
+  for (const [porteur, c] of porteurs) {
+    const o = c.occurrences[dans];
+    if (!o) continue;
+    const def = m.definitions[o.definition];
+    if (def?.genre === "composant") return nombreInstances(m, def.id);
+    return porteur === undefined ? 1 : nombreInstances(m, porteur);
+  }
+  return 0;
+}
+
 export function compter(c: Contexte): { sommets: number; aretes: number; faces: number; occurrences: number } {
   return {
     sommets: Object.keys(c.sommets).length,
@@ -1745,15 +1787,19 @@ function plisDeFace(c: Ctx, g: Face, nouvelle: (s: Id) => Vec3): Id[][][] {
   const boucles = [g.exterieur, ...g.trous];
   const ids = boucles.flat();
   const avant = (b: readonly Id[]) => b.map((s) => pos(c, s));
-  const tri = triangulerFace(avant(g.exterieur), g.trous.map(avant), g.normale);
-  const triangles: [Id, Id, Id][] = [];
-  for (let k = 0; k + 2 < tri.length; k += 3) triangles.push([ids[tri[k] as number] as Id, ids[tri[k + 1] as number] as Id, ids[tri[k + 2] as number] as Id]);
-  // La triangulation doit recouvrir exactement la face (aire du contour moins celle des trous), sinon elle a échoué.
+  // Revue de #133 : triangulation stricte (aucun éventail de secours, aucun triangle retourné) — une somme d'aires
+  // signées ne distingue pas un éventail qui se recouvre d'une vraie couverture.
+  const tri = triangulerFace(avant(g.exterieur), g.trous.map(avant), g.normale, { strict: true });
+  const orientes: [Id, Id, Id][] = [];
+  for (let k = 0; k + 2 < tri.length; k += 3) orientes.push([ids[tri[k] as number] as Id, ids[tri[k + 1] as number] as Id, ids[tri[k + 2] as number] as Id]);
+  // Chaque triangle est d'aire strictement positive dans le plan d'origine (oreilles seules) et l'ensemble recouvre
+  // exactement la face (aire du contour moins celle des trous), sinon la triangulation a échoué.
   const aireFace = Math.abs(dot(newell(avant(g.exterieur)), g.normale)) / 2 - g.trous.reduce((a, b) => a + Math.abs(dot(newell(avant(b)), g.normale)) / 2, 0);
-  const aireTri = triangles.reduce((a, [x, y, z]) => a + dot(cross(sub(pos(c, y), pos(c, x)), sub(pos(c, z), pos(c, x))), g.normale) / 2, 0);
-  if (triangles.length === 0 || Math.abs(aireTri - aireFace) > 1e-9 * Math.max(aireFace, 1e-12) + 1e-15) throw erreurPlanche("EX_PROFILE_INVALID", ERREUR_PLI_TRIANGULATION);
-  // Orientation : chaque triangle suit la normale d'origine.
-  const orientes = triangles.map(([x, y, z]) => (dot(cross(sub(pos(c, y), pos(c, x)), sub(pos(c, z), pos(c, x))), g.normale) >= 0 ? ([x, y, z] as [Id, Id, Id]) : ([x, z, y] as [Id, Id, Id])));
+  const airesTri = orientes.map(([x, y, z]) => dot(cross(sub(pos(c, y), pos(c, x)), sub(pos(c, z), pos(c, x))), g.normale) / 2);
+  const aireTri = airesTri.reduce((a, b) => a + b, 0);
+  if (orientes.length === 0 || airesTri.some((a) => a <= 0) || Math.abs(aireTri - aireFace) > 1e-9 * Math.max(aireFace, 1e-12) + 1e-15) {
+    throw erreurPlanche("EX_PROFILE_INVALID", ERREUR_PLI_TRIANGULATION);
+  }
   const P = (s: Id) => nouvelle(s);
   const normalesT = orientes.map(([x, y, z]) => cross(sub(P(y), P(x)), sub(P(z), P(x))));
   orientes.forEach(([x, y, z], i) => {
