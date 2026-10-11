@@ -8072,5 +8072,10 @@
 "« Conserver la face de départ » ne s'applique qu'à l'extrusion d'une face.": "“Keep the starting face” applies to face extrusion only.",
 "« Des deux côtés » ne s'applique qu'au balayage d'arêtes.": "“Both sides” applies to edge sweeps only.",
 "« Jusqu'à une face » ne s'applique qu'à l'extrusion normale d'une face.": "“Up to face” applies to normal face extrusion only.",
-"Le décalage se recoupe (segments {0} et {1} du contour) : réduisez la distance.": "The offset intersects itself (segments {0} and {1} of the contour): reduce the distance."
+"Le décalage se recoupe (segments {0} et {1} du contour) : réduisez la distance.": "The offset intersects itself (segments {0} and {1} of the contour): reduce the distance.",
+"Contexte déformé (échelle non uniforme) : cette opération n'y garderait pas ses dimensions. Utilisez un contexte non déformé ou transformez la géométrie explicitement.": "Distorted context (non-uniform scale): this operation would not keep its dimensions there. Use an undistorted context or transform the geometry explicitly.",
+"Opération trop complexe : environ {0} triangles à produire, au-delà du plafond de {1}. Réduisez le profil, le chemin, la segmentation ou le texte.": "Operation too complex: about {0} triangles to generate, beyond the ceiling of {1}. Reduce the profile, path, segmentation or text.",
+"Aucune arête à suivre.": "No edge to follow.",
+"Les arêtes se ramifient : une chaîne continue est nécessaire.": "The edges branch: a continuous chain is required.",
+"Les arêtes ne forment pas une chaîne continue.": "The edges do not form a continuous chain."
 }
