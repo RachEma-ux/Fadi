@@ -128,6 +128,9 @@ export const RACCOURCIS_FADI: Readonly<Record<string, string>> = {
   "positionner-camera": "Alt+Maj+P",
   "regarder-autour": "Alt+Maj+L",
   marcher: "Alt+Maj+M",
+  // Chaîne des profilés (lot L12, D-215) : outils propres à Fadi.
+  profile: "Maj+Q",
+  "profiles-aretes": "Alt+Maj+Q",
 };
 
 /** Raccourci effectif d'un outil : celui du catalogue (relevé), sinon celui de la couche Fadi, sinon `null`. */
@@ -189,6 +192,8 @@ const PICTOS: Readonly<Record<string, string>> = {
   echelle: "⤢",
   decalage: "⧈",
   "suivez-moi": "↬",
+  profile: "▰",
+  "profiles-aretes": "⫴",
   retourner: "⇋",
   diviser: "÷",
   "enveloppe-exterieure": "⬚",

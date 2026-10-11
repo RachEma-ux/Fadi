@@ -1909,3 +1909,65 @@
     bottom: calc(var(--volet-h, 10rem) + 0.5rem + 7.2rem);
   }
 }
+
+/* Lot L12 : panneau Profilés (section des outils Profilé) — même habillage que la barre d'options, au-dessus d'elle ;
+   au téléphone, il flotte dans la même colonne et défile s'il le faut (jamais de débord horizontal). */
+.planche-profiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.8rem;
+  align-items: flex-end;
+  padding: 0.35rem 0.6rem;
+  background: var(--flottant-fond, #fff);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+  pointer-events: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.planche-profiles-champ {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.8rem;
+  min-width: 0;
+}
+.planche-profiles-champ select,
+.planche-profiles-champ input {
+  min-height: 32px;
+  max-width: 14rem;
+  min-width: 0;
+}
+.planche-profiles-court input {
+  width: 4.5rem;
+}
+.planche-profiles-vide,
+.planche-profiles-etat {
+  margin: 0;
+  font-size: 0.85rem;
+  flex: 1 1 14rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.planche-profiles-erreur {
+  color: var(--atelier-erreur, #a1260d);
+}
+.planche-profiles button {
+  min-height: 36px;
+}
+@media (max-width: 760px) {
+  .planche-profiles {
+    position: absolute;
+    left: calc(var(--colonne-l) + 1.25rem);
+    right: 0.5rem;
+    top: 3.5rem;
+    z-index: 7;
+    max-height: 35vh;
+    overflow-y: auto;
+  }
+  .planche-profiles-champ select,
+  .planche-profiles-champ input {
+    max-width: 100%;
+  }
+}

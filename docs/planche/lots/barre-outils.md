@@ -71,13 +71,14 @@ Mètre T · Orbite O · Panoramique H · Zoom Z · Zoom étendu Ctrl+Maj+E · Zo
 | Maj+K | Plan de coupe | | Alt+Maj+L | Regarder autour |
 | Maj+L | Main levée | | Alt+Maj+M | Marcher |
 | Maj+M | Prélever la matière | | | |
-| Maj+N | Secteur | | | |
+| Maj+N | Secteur | | Alt+Maj+Q | Profilés depuis arêtes (lot L12) |
+| Maj+Q | Profilé (lot L12) | | | |
 
 Règles tenues (test `barres-outils.test.ts`) : la couche ne vise que les outils dont le raccourci relevé vaut `null`, et
 tous ; aucun raccourci partagé entre deux outils ; aucun ne reprend une touche propre à la Planche (G composant, K arêtes
 arrière, Ctrl+Z, Ctrl+Maj+Z, Ctrl+Y, Ctrl+G, Ctrl+A, Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+S, Ctrl+K, Ctrl+Maj+I, Maj+- recherche) ; aucun ne commence une saisie au
-champ Mesures (`commenceSaisie` accepte X majuscule : **Maj+X est exclu**, Maj+W est déjà Zoom fenêtre ; Maj+Q reste
-libre) ; chaque raccourci active son outil par `outilDuClavier`. Alt + lettre est relu sur la touche physique (`code`)
+champ Mesures (`commenceSaisie` accepte X majuscule : **Maj+X est exclu**, Maj+W est déjà Zoom fenêtre ; Maj+Q, libre
+jusque-là, est donné à Profilé au lot L12) ; chaque raccourci active son outil par `outilDuClavier`. Alt + lettre est relu sur la touche physique (`code`)
 quand Option de macOS change le caractère (Alt+Maj+P donne « ∏ ») ; une lettre lisible dans `key` reste prioritaire
 (AZERTY). Pendant une saisie au champ Mesures, les lettres continuent d'aller au champ (inchangé).
 

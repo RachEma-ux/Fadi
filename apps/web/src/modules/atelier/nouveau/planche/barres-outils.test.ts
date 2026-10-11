@@ -119,7 +119,10 @@ describe("Couche de raccourcis Fadi (écart déclaré, D-198)", () => {
     expect(outilDuClavier(evenement("L"))?.id).toBe("ligne");
     expect(outilDuClavier(evenement("Maj+Espace"))?.id).toBe("lasso");
     expect(outilDuClavier(evenement("Maj+W"))?.id).toBe("zoom-fenetre");
-    expect(outilDuClavier(evenement("Maj+Q"))).toBeNull();
+    // Chaîne des profilés (lot L12) : Maj + Q et Alt + Maj + Q, jusque-là libres.
+    expect(outilDuClavier(evenement("Maj+Q"))?.id).toBe("profile");
+    expect(outilDuClavier(evenement("Alt+Maj+Q"))?.id).toBe("profiles-aretes");
+    expect(outilDuClavier(evenement("Maj+J"))?.id).toBe("ajuster");
   });
 });
 

@@ -176,6 +176,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-revolution node apps/web/e2e/planche-revolution.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des outils Profilé (lot L12) — catalogue d'essai, Maj+Q, Info entité, Profilés depuis arêtes, téléphone (apps/web/e2e/planche-profiles.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-profiles node apps/web/e2e/planche-profiles.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         run: |
           set -o pipefail

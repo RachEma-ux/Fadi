@@ -87,9 +87,10 @@ import {
   relacheFrappe,
   type EtatFrappeSeule,
   type ModificateurSeul,
+  type SectionCourante,
 } from "@parcours/planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
-import { planches as planchesDe, type Commande, type ModeleAtelier } from "@parcours/atelier-model";
+import { planches as planchesDe, type Commande, type LigneCatalogue, type ModeleAtelier } from "@parcours/atelier-model";
 import { api } from "../../../../lib/api";
 import { MenuPlanche } from "./menu-planche";
 import { ChoixPeripherique } from "../panneaux/Navigation";
@@ -105,6 +106,8 @@ import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./r
 import { useNavigationBarre } from "../navigation-barre";
 import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
+import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
+import { type CataloguePlanche, sectionCatalogue, sectionDepuisFace, sectionSaisie } from "./sections-planche";
 import { BoutonOutils } from "./BoutonOutils";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
 import { chargerBooleens } from "./booleens-manifold";
@@ -279,6 +282,10 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const [materiau, setMateriauEtat] = useState<string | null>(null);
   const baliseRef = useRef<string | null>(null);
   const [balise, setBaliseEtat] = useState<string | null>(null);
+  // Lot L12 : section des outils Profilé (catalogue sourcé du projet, dimensions saisies ou face), passée aux machines.
+  const sectionRef = useRef<SectionCourante | null>(null);
+  const [choixSection, setChoixSection] = useState<ChoixSection>({ mode: "catalogue", catalogueId: "", ligne: null, segments: "" });
+  const [erreurFace, setErreurFace] = useState<string | null>(null);
   // Lot 6 : moteur booléen (manifold-3d) chargé à la demande, au premier choix d'un outil de solides.
   const booleensRef = useRef<AdaptateurBooleens | null>(null);
   const [booleens, setBooleens] = useState<"absent" | "chargement" | "ok" | "echec">("absent");
@@ -376,6 +383,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       ...(dansRef.current !== undefined ? { dans: dansRef.current, chemin: cheminRef.current } : {}),
       ...(materiauRef.current ? { materiauCourant: materiauRef.current } : {}),
       ...(baliseRef.current ? { baliseCourante: baliseRef.current } : {}),
+      ...(sectionRef.current ? { sectionCourante: sectionRef.current } : {}),
       ...(histRef.current.present.modele.annotations?.repere ? { repere: histRef.current.present.modele.annotations.repere } : {}),
       ...(booleensRef.current ? { booleens: booleensRef.current } : {}),
       hauteurOeil: hauteurOeilRef.current,
@@ -1945,6 +1953,47 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     return () => w.removeEventListener("pointerdown", surClic);
   }, [grille, detache]);
 
+  // Lot L12 : catalogues sourcés du projet (définitions `catalogue` de l'Atelier) et section courante des outils Profilé.
+  const cataloguesProjet = useMemo<CataloguePlanche[]>(
+    () =>
+      Object.values(etat?.definitions ?? {})
+        .filter((d) => d.classe === ("catalogue" as typeof d.classe))
+        .map((d) => {
+          const params = d.params as Record<string, unknown>;
+          const ontologie = typeof params["ontologie"] === "string" ? params["ontologie"] : undefined;
+          return { id: d.id, nom: d.nom, ...(ontologie ? { ontologie } : {}), lignes: (params["lignes"] as LigneCatalogue[] | undefined) ?? [] };
+        })
+        .sort((a, b) => a.nom.localeCompare(b.nom, "fr")),
+    [etat],
+  );
+  const { section: sectionCourante, erreur: erreurSection } = useMemo((): { section: SectionCourante | null; erreur: string | null } => {
+    try {
+      if (choixSection.mode === "face") return { section: choixSection.section, erreur: erreurFace };
+      if (choixSection.mode === "saisie") return { section: sectionSaisie(choixSection.dimensions), erreur: null };
+      const cat = cataloguesProjet.find((c) => c.id === choixSection.catalogueId) ?? cataloguesProjet[0];
+      const ligne = cat?.lignes.find((l) => l.numero === choixSection.ligne);
+      return cat && ligne ? { section: sectionCatalogue(cat, ligne, choixSection.segments), erreur: null } : { section: null, erreur: null };
+    } catch (err) {
+      return { section: null, erreur: err instanceof Error ? err.message : String(err) };
+    }
+  }, [choixSection, cataloguesProjet, erreurFace]);
+  useEffect(() => {
+    sectionRef.current = sectionCourante;
+    rafraichir();
+  }, [sectionCourante, rafraichir]);
+  const sectionDeLaFace = useCallback(() => {
+    const m = histRef.current.present.modele;
+    const c = contexteDe(m, dansRef.current);
+    const face = selectionRef.current.find((id) => c.faces[id]);
+    try {
+      if (!face) throw new Error(t("planche.profiles.face.aucune"));
+      setErreurFace(null);
+      setChoixSection({ mode: "face", section: sectionDepuisFace(m, face, dansRef.current) });
+    } catch (err) {
+      setErreurFace(err instanceof Error ? err.message : String(err));
+      setChoixSection({ mode: "face", section: null });
+    }
+  }, []);
   const outil = outilParId(outilId);
   const etatTexte3D = outilId === "texte-3d" ? (etatMachineRef.current as EtatTexte3D | null) : null;
   // Plan de coupe sélectionné seul (§4.28) : barre Inverser / Coupe active / Effacer.
@@ -2614,6 +2663,21 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         {!etroit && canevasBas}
       </footer>
 
+      {(outilId === "profile" || outilId === "profiles-aretes") && (
+        <PanneauProfiles
+          catalogues={cataloguesProjet}
+          choix={choixSection}
+          onChoix={(c) => {
+            setErreurFace(null);
+            setChoixSection(c);
+          }}
+          section={sectionCourante}
+          erreur={erreurSection}
+          onFace={sectionDeLaFace}
+          lecture={readOnly}
+          {...(outilId === "profiles-aretes" ? { onPoser: () => void envoyer({ genre: "saisie", texte: "" }) } : {})}
+        />
+      )}
       {vue.options && vue.options.length > 0 && (
         <div ref={optionsRef} onKeyDown={naviguerOptions} className="planche-options-outil" role="toolbar" aria-label={t("planche.options")} data-planche-options>
           {/* Écran étroit : seuls les groupes utilisables pour la cible courante (sinon trois rangées au téléphone). */}
