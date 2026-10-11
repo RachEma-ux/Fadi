@@ -35,7 +35,7 @@ export interface EtatProfilesAretes {
   readonly decalage: number;
   readonly erreur: string | null;
   /** Aperçu (faces monde) et la clé de ce qui l'a produit (sélection, section, options). */
-  readonly apercu: { readonly cle: string; readonly faces: readonly (readonly Vec3[])[] } | null;
+  readonly apercu: { readonly cle: string; readonly faces: readonly (readonly Vec3[])[]; readonly trous: readonly (readonly (readonly Vec3[])[])[] } | null;
 }
 
 /** Chaînes : composantes connexes des arêtes sélectionnées (le noyau refuse une chaîne qui se ramifie). */
@@ -135,10 +135,10 @@ export const machineProfilesAretes: MachineOutil<EtatProfilesAretes> = {
         if (etat.apercu?.cle === cle) return { etat };
         try {
           const r = poserTout(etat, ctx);
-          const faces = geometrieVisible(r.modele).faces.filter((f) => r.crees.has(f.id)).map((f) => f.exterieur);
-          return { etat: { ...etat, erreur: null, apercu: { cle, faces } } };
+          const vues = geometrieVisible(r.modele).faces.filter((f) => r.crees.has(f.id));
+          return { etat: { ...etat, erreur: null, apercu: { cle, faces: vues.map((f) => f.exterieur), trous: vues.map((f) => f.trous) } } };
         } catch (err) {
-          return { etat: { ...etat, erreur: messageErreur(err), apercu: { cle, faces: [] } } };
+          return { etat: { ...etat, erreur: messageErreur(err), apercu: { cle, faces: [], trous: [] } } };
         }
       }
       case "clic":
@@ -182,6 +182,6 @@ export const machineProfilesAretes: MachineOutil<EtatProfilesAretes> = {
       ctx,
       erreur: etat.erreur,
     });
-    return { ...v, options: options(etat), ...(etat.apercu ? { apercu: { ...v.apercu, faces: etat.apercu.faces, lignes: etat.apercu.faces.map((f) => [...f, f[0] as Vec3]) } } : {}) };
+    return { ...v, options: options(etat), ...(etat.apercu ? { apercu: { ...v.apercu, faces: etat.apercu.faces, trous: etat.apercu.trous, lignes: [...etat.apercu.faces, ...etat.apercu.trous.flat()].map((f) => [...f, f[0] as Vec3]) } } : {}) };
   },
 };
