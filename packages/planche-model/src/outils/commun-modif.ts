@@ -65,6 +65,32 @@ export function distanceLocale(ctx: ContexteOutil, nMonde: Vec3, nLocale: Vec3, 
   return dot(v, normalize(nLocale));
 }
 
+/**
+ * Revue de #134 : normale monde d'une normale locale du contexte d'édition (transposée de l'inverse de la partie
+ * linéaire), à l'orientation près — sert à convertir une distance monde face par face ; le sens vient de la face cliquée.
+ */
+export function normaleMonde(ctx: ContexteOutil, nLocale: Vec3): Vec3 {
+  if (ctx.dans === undefined) return normalize(nLocale);
+  const cx = vecteurLocal(ctx, v3(1, 0, 0));
+  const cy = vecteurLocal(ctx, v3(0, 1, 0));
+  const cz = vecteurLocal(ctx, v3(0, 0, 1));
+  return normalize(v3(dot(cx, nLocale), dot(cy, nLocale), dot(cz, nLocale)));
+}
+
+/**
+ * Revue de #134 : la même distance monde `|d|` pour plusieurs faces du contexte d'édition, exprimée le long de la normale
+ * locale de chacune, du côté `signe` (±1) de cette normale — refus nommé dès qu'une face ne garde pas sa normale (échelle
+ * non uniforme). À la racine : `signe · |d|` pour toutes.
+ */
+export function distancesLocales(ctx: ContexteOutil, faces: readonly Id[], signe: number, d: number): number[] {
+  const c = contexte(ctx.modele, ctx.dans);
+  return faces.map((id) => {
+    const f = c.faces[id];
+    if (!f) throw erreurPlanche("EX_SOURCE_INVALID", `Face inconnue : ${id}`);
+    return (signe < 0 ? -1 : 1) * Math.abs(distanceLocale(ctx, normaleMonde(ctx, f.normale), f.normale, Math.abs(d)));
+  });
+}
+
 /** Lot L19 : facteur d'échelle du contexte dans un plan (normale monde `n`), ou refus si l'échelle y est non uniforme. */
 export function echelleDansPlan(ctx: ContexteOutil, n: Vec3): number {
   if (ctx.dans === undefined) return 1;

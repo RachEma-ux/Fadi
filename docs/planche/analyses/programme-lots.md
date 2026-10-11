@@ -29,7 +29,7 @@ exigences EX-xxx et les cas A / P / F / R / T / L / I qu'il couvre. Ordre d'exé
 | 7 | **L16 à L18** — L16 livré (D-218, Texte 3D en volume), L17 livré (D-219, édition des pièces), L18 livré (D-220, compléments des outils de modification) — **L16 à L18 clos** | Texte 3D orienté (B4.2, EX-TX, T-01 à T-04), compléments | B4.2 |
 | 8 | **L19** — livré (D-221) ; famille d'extrusion **non** déclarée complète (L20, mesures sur téléphone, optimisation du balayage) | Persistance, contextes transformés, exports, codes de diagnostic `EX_*`, plafond de complexité, mesures sur un bureau nommé et un Android réel, matrice d'acceptation complète : **la famille d'extrusion n'est déclarée complète qu'à ce lot** | B5.1, B5.2 ; EX-SAVE, EX-MODEL-02, 03, EX-SEC, EX-ERR, EX-PERF, EX-REL ; I-01 à I-10 |
 | 9 | **L20** — livré (D-222) | Étirement à plis : triangulation contrainte (concaves, trous), arêtes de pli, validation des intersections ; le pli ne franchit jamais un contexte, avertissement sur un composant partagé | EX-PT-03 complet ; P-05, P-06, P-07 |
-| 10 | **L21** | Extrusion multi-faces et épaississement d'une surface ouverte | Hors V1, inclus par décision D-202 |
+| 10 | **L21** — livré (D-223) | Extrusion multi-faces et épaississement d'une surface ouverte | Hors V1, inclus par décision D-202 |
 | 11 | **L22** | Taper, twist et loft, comme méthodes de Suivez-moi à section variable | Hors V1, inclus par décision D-202 |
 
 Jusqu'au lot 20, l'Étirement **refuse** une voisine qui deviendrait non plane (comportement honnête, refus atomique).

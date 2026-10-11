@@ -48,7 +48,7 @@ export const BARRES: Readonly<Record<ObjetBarre, Readonly<Record<CleSection, rea
     mesurer: ["metre", "cotation", "rapporteur", "texte"],
   },
   volumes: {
-    creer: ["pousser-tirer", "suivez-moi", "texte-3d", "profile", "profiles-aretes"],
+    creer: ["pousser-tirer", "suivez-moi", "texte-3d", "profile", "profiles-aretes", "epaissir"],
     modifier: ["deplacer", "faire-pivoter", "echelle", "retourner", "decalage", "peinture", "gomme", "onglet", "coupe-profil", "allonger-piece", "aligner-face"],
     mesurer: ["metre", "cotation", "plan-de-coupe", "texte"],
   },
@@ -114,6 +114,7 @@ export const OBJET_DE: Readonly<Record<string, ObjetBarre>> = {
   "coupe-profil": "volumes",
   "allonger-piece": "volumes",
   "aligner-face": "volumes",
+  epaissir: "volumes",
   "enveloppe-exterieure": "solides",
   intersection: "solides",
   union: "solides",

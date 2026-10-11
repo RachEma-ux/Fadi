@@ -214,6 +214,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-etirement-plis node apps/web/e2e/planche-etirement-plis.mjs 2>&1 | tee -a e2e.log
+      - name: Recette d'Épaissir et de l'extrusion multi-faces (lot L21) (apps/web/e2e/planche-epaissir.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-epaissir node apps/web/e2e/planche-epaissir.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         run: |
           set -o pipefail

@@ -3,6 +3,7 @@ import { machineDecalage } from "./decalage.js";
 import { machineDeplacer } from "./deplacer.js";
 import { machineDiviser } from "./diviser.js";
 import { machineEchelle } from "./echelle.js";
+import { machineEpaissir } from "./epaissir.js";
 import { machinePivoter } from "./faire-pivoter.js";
 import type { MachineOutil } from "./machine.js";
 import { machinePousserTirer } from "./pousser-tirer.js";
@@ -18,4 +19,5 @@ export const MACHINES_MODIFICATION: readonly MachineOutil<any>[] = [
   machineSuivezMoi,
   machineRetourner,
   machineDiviser,
+  machineEpaissir,
 ];

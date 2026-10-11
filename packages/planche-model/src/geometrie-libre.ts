@@ -5084,3 +5084,173 @@ export function axesDesPieces(m: Modele, o: OptionsContexte = {}): { occurrence:
   }
   return r;
 }
+
+// ————————————————————————————————————————————————————————————— Lot L21 : extrusion multi-faces, épaississement
+
+export const ERREUR_FACES_VIDES = "Choisissez au moins une face.";
+
+/**
+ * Lot L21 : Pousser/Tirer de plusieurs faces en une opération (un pas d'annulation) — chaque face suit sa propre normale
+ * de la même distance, dans l'ordre donné (choix Fadi : comme plusieurs extrusions successives). Une face disparue en
+ * route (absorbée par l'extrusion d'une voisine) est ignorée.
+ */
+export function pousserTirerFaces(m: Modele, faces: readonly Id[], distance: number | readonly number[], o: OptionsPousserTirer = {}): Resultat {
+  if (faces.length === 0) throw erreurPlanche("EX_SOURCE_INVALID", ERREUR_FACES_VIDES);
+  // Revue de #134 : une distance par face (la même distance monde vaut une distance locale différente par face dans un
+  // contexte à l'échelle non uniforme), ou une seule pour toutes.
+  const distances = typeof distance === "number" ? faces.map(() => distance) : distance;
+  if (distances.length !== faces.length) throw erreurPlanche("EX_DISTANCE_INVALID", ERREUR_VALEURS_PAR_FACE);
+  let modele = m;
+  const crees = new Set<Id>();
+  const supprimes = new Set<Id>();
+  const modifies = new Set<Id>();
+  for (const [i, f] of faces.entries()) {
+    if (!contexte(modele, o.dans).faces[f]) continue;
+    const r = pousserTirer(modele, f, distances[i] as number, o);
+    modele = r.modele;
+    r.rapport.crees.forEach((x) => crees.add(x));
+    r.rapport.supprimes.forEach((x) => (crees.has(x) ? crees.delete(x) : supprimes.add(x)));
+    r.rapport.modifies.forEach((x) => modifies.add(x));
+  }
+  return { modele, rapport: { crees: [...crees], supprimes: [...supprimes], modifies: [...modifies] } };
+}
+
+export const ERREUR_EPAISSIR_NON_VARIETE = "Épaissir : une arête est partagée par plus de deux des faces choisies (surface non variété).";
+export const ERREUR_VALEURS_PAR_FACE = "Une valeur par face est attendue (autant de distances que de faces).";
+export const ERREUR_EPAISSIR_SENS = "Épaissir : toutes les faces doivent être épaissies du même côté de leur normale.";
+export const ERREUR_EPAISSIR_SOMMET = "Épaissir : l'épaisseur ne peut pas être tenue en un sommet (faces opposées ou plus de trois plans non concourants).";
+
+/**
+ * Résout w·nᵢ = eᵢ pour les normales données (moindres carrés), ou `null` si le système est singulier ou incompatible.
+ * Revue de #134 : une épaisseur par normale — dans un contexte à l'échelle non uniforme, la même épaisseur monde vaut
+ * une épaisseur locale différente pour chaque face.
+ */
+function decalageSommet(paires: readonly { readonly n: Vec3; readonly e: number }[]): Vec3 | null {
+  const n: Vec3[] = [];
+  const es: number[] = [];
+  for (const { n: x, e } of paires) {
+    if (n.some((y) => len(cross(x, y)) < 1e-9 && dot(x, y) > 0)) continue;
+    n.push(x);
+    es.push(e);
+  }
+  if (n.length === 1) return scale(n[0] as Vec3, es[0] as number);
+  // Équations normales (NᵀN) w = Nᵀ e, régularisées dans le plan des normales quand elles sont deux.
+  const A = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  const b = [0, 0, 0];
+  n.forEach((x, q) => {
+    const k = [x.x, x.y, x.z];
+    for (let i = 0; i < 3; i++) {
+      b[i] = (b[i] as number) + (k[i] as number) * (es[q] as number);
+      for (let j = 0; j < 3; j++) A[3 * i + j] = (A[3 * i + j] as number) + (k[i] as number) * (k[j] as number);
+    }
+  });
+  let w: Vec3;
+  if (n.length === 2) {
+    const [n0, n1] = n as [Vec3, Vec3];
+    const [e0, e1] = es as [number, number];
+    const c = dot(n0, n1);
+    if (1 + c < 1e-9) return null; // faces opposées
+    if (Math.abs(e0 - e1) <= 1e-12 * Math.max(Math.abs(e0), Math.abs(e1), 1)) w = scale(add(n0, n1), e0 / (1 + c));
+    else {
+      // w dans le plan des deux normales : w·n0 = e0 et w·n1 = e1.
+      const den = 1 - c * c;
+      if (den < 1e-12) return null;
+      w = add(scale(n0, (e0 - c * e1) / den), scale(n1, (e1 - c * e0) / den));
+    }
+  } else {
+    const d = (m: number[]) => m[0]! * (m[4]! * m[8]! - m[5]! * m[7]!) - m[1]! * (m[3]! * m[8]! - m[5]! * m[6]!) + m[2]! * (m[3]! * m[7]! - m[4]! * m[6]!);
+    const D = d(A);
+    if (Math.abs(D) < 1e-12) return null;
+    const col = (i: number) => A.map((v, k) => (k % 3 === i ? (b[Math.floor(k / 3)] as number) : v));
+    w = v3(d(col(0)) / D, d(col(1)) / D, d(col(2)) / D);
+  }
+  return n.every((x, q) => Math.abs(dot(w, x) - (es[q] as number)) <= 1e-9 * Math.max(Math.abs(es[q] as number), 1)) ? w : null;
+}
+
+/**
+ * Lot L21 : épaissir une surface (une ou plusieurs faces, ouverte ou non) d'une épaisseur `e` : chaque sommet est
+ * décalé de façon que chacune de ses faces avance exactement de `e` le long de sa normale (les faces décalées restent
+ * planes), puis la coque est fermée par des parois le long des arêtes de bord. Le résultat est un volume fermé : faces
+ * d'origine retournées vers l'intérieur (e > 0) ou faces décalées retournées (e < 0). Refus nommés : surface non
+ * variété, sommet où l'épaisseur ne peut pas être tenue, épaisseur nulle ou non finie.
+ */
+export function epaissir(m: Modele, faces: readonly Id[], e: number | readonly number[], o: OptionsContexte = {}): Resultat {
+  if (faces.length === 0) throw erreurPlanche("EX_SOURCE_INVALID", ERREUR_FACES_VIDES);
+  // Revue de #134 : une épaisseur par face (même épaisseur monde dans un contexte à l'échelle non uniforme) ou une seule.
+  const E = typeof e === "number" ? faces.map(() => e) : e;
+  if (E.length !== faces.length) throw erreurPlanche("EX_DISTANCE_INVALID", ERREUR_VALEURS_PAR_FACE);
+  for (const x of E) {
+    exigerDistance(x);
+    if (Math.abs(x) < EPS) throw erreurPlanche("EX_DISTANCE_INVALID", "Épaisseur nulle : rien n'a été épaissi.");
+  }
+  const signe = (E[0] as number) > 0 ? 1 : -1;
+  if (E.some((x) => (x > 0 ? 1 : -1) !== signe)) throw erreurPlanche("EX_DISTANCE_INVALID", ERREUR_EPAISSIR_SENS);
+  const epaisseurDe = new Map<Id, number>(faces.map((id, i) => [id, E[i] as number]));
+  return operer(m, o.dans, (t, c) => {
+    const F = faces.map((id) => {
+      const f = c.faces.get(id);
+      if (!f) throw erreurPlanche("EX_SOURCE_INVALID", `Face inconnue : ${id}`);
+      return f;
+    });
+    // Arêtes orientées de chaque boucle : une arête vue deux fois est intérieure à la surface, une fois = bord.
+    const usage = new Map<string, { x: Id; y: Id; n: number }>();
+    const cle = (x: Id, y: Id) => (x < y ? `${x}|${y}` : `${y}|${x}`);
+    for (const f of F) for (const b of [f.exterieur, ...f.trous]) b.forEach((x, i) => {
+      const y = b[(i + 1) % b.length] as Id;
+      const u = usage.get(cle(x, y));
+      if (u) u.n++;
+      else usage.set(cle(x, y), { x, y, n: 1 });
+    });
+    if ([...usage.values()].some((u) => u.n > 2)) throw erreurPlanche("EX_SOURCE_INVALID", ERREUR_EPAISSIR_NON_VARIETE);
+    // Décalage de chaque sommet.
+    const normalesDe = new Map<Id, { n: Vec3; e: number }[]>();
+    for (const f of F) for (const s of [f.exterieur, ...f.trous].flat()) normalesDe.set(s, [...(normalesDe.get(s) ?? []), { n: normalize(f.normale), e: epaisseurDe.get(f.id) as number }]);
+    const copie = new Map<Id, Id>();
+    for (const [s, ns] of normalesDe) {
+      const w = decalageSommet(ns);
+      if (!w) throw erreurPlanche("EX_SELF_INTERSECTION", ERREUR_EPAISSIR_SOMMET);
+      const id = t.id("s");
+      c.sommets.set(id, { id, position: add(pos(c, s), w) });
+      copie.set(s, id);
+    }
+    const arete = (x: Id, y: Id) => {
+      if (!areteEntre(c, x, y)) {
+        const id = t.id("a");
+        c.aretes.set(id, { id, a: x, b: y });
+      }
+    };
+    const C = (b: readonly Id[]) => b.map((s) => copie.get(s) as Id);
+    const inverse = (b: readonly Id[]) => [...b].reverse();
+    // Faces décalées (copies) et faces d'origine : l'une des deux nappes est retournée pour que la coque regarde dehors.
+    // Revue de #134 : la nappe retournée échange ses matières recto / verso, comme `inverser` (la matière du verso se
+    // retrouve sur le recto désormais visible).
+    const retournee = (f: Face): Face => {
+      const { materiauRecto: _r, materiauVerso: _v, ...reste } = f;
+      return { ...reste, ...inverser(f) };
+    };
+    for (const f of F) {
+      for (const b of [f.exterieur, ...f.trous]) C(b).forEach((x, i, a) => arete(x, a[(i + 1) % a.length] as Id));
+      const id = t.id("f");
+      if (signe > 0) {
+        c.faces.set(id, { ...f, id, exterieur: C(f.exterieur), trous: f.trous.map(C), normale: f.normale });
+        c.faces.set(f.id, retournee(f));
+      } else {
+        const inv = retournee(f);
+        c.faces.set(id, { ...inv, id, exterieur: C(inv.exterieur), trous: inv.trous.map(C) });
+      }
+    }
+    // Parois le long des arêtes de bord, orientées vers l'extérieur de la boucle (à droite du sens de parcours).
+    for (const u of usage.values()) {
+      if (u.n !== 1) continue;
+      const { x, y } = u;
+      const f = F.find((g) => [g.exterieur, ...g.trous].some((b) => b.some((s, i) => s === x && b[(i + 1) % b.length] === y))) as Face;
+      const dehors = cross(sub(pos(c, y), pos(c, x)), f.normale);
+      let quad: Id[] = [x, y, copie.get(y) as Id, copie.get(x) as Id];
+      if (dot(newell(quad.map((s) => pos(c, s))), dehors) < 0) quad = inverse(quad);
+      arete(x, copie.get(x) as Id);
+      arete(y, copie.get(y) as Id);
+      const id = t.id("f");
+      c.faces.set(id, { id, exterieur: quad, trous: [], normale: normalize(newell(quad.map((s) => pos(c, s)))), ...(f.materiauRecto ? { materiauRecto: f.materiauRecto } : {}), ...(f.materiauVerso ? { materiauVerso: f.materiauVerso } : {}) });
+    }
+  });
+}
