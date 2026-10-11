@@ -603,7 +603,8 @@ function optionsPT(e: EtatPousserTirer, ctx: ContexteOutil): OptionOutil[] {
     // Lot 10b (EX-LINK-02) : lien aux arêtes sources — balayage d'arêtes, bande annulaire, Surface ouverte, à la racine.
     {
       id: "lien",
-      valeur: e.lier ? "lie" : "independant",
+      // Dans un groupe, la surface est forcément indépendante : la valeur affichée est l'effective, la préférence est gardée.
+      valeur: e.lier && ctx.dans === undefined ? "lie" : "independant",
       valeurs: [
         { id: "lie", disponible: ctx.dans === undefined && (surArete || e.sansFond) },
         { id: "independant", disponible: surArete || e.sansFond },
@@ -795,7 +796,7 @@ function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
           // Lot 10b (EX-NUM-03, P-11) : en symétrique, la valeur est une distance par côté — le total est dit.
           etat.symetrique && v ? `Des deux côtés : distance par côté, total ${formaterLongueur(2 * len(v), sep)}.` : "",
           ctx.dans !== undefined ? CONSIGNE_LIEN_RACINE : "",
-        ].filter(Boolean).join(" "),
+        ].filter(Boolean).join(" · "), // « · » : chaque phrase est traduite à part par la couche DOM
         mesures: mesures(libelleMesuresDe(ID_POUSSER_TIRER, 1), valeur, contexteSaisie("longueur", ctx)),
         inference: etat.inference,
         apercu: v && len(v) > TOL ? (apercuSpecial(etat, paramsPour(etat, ctx, v)) ?? apercuAretes(etat.segments, v, etat.symetrique)) : { lignes: [], faces: [] },
@@ -820,9 +821,7 @@ function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
           : etat.etape === 2 && etat.jusquAFace
             ? CONSIGNE_JUSQU_A_FACE
             : etat.sansFond
-            ? etat.etape === 1
-              ? CONSIGNE_TUBE_FACE
-              : CONSIGNE_TUBE_TIRAGE
+            ? `${etat.etape === 1 ? CONSIGNE_TUBE_FACE : CONSIGNE_TUBE_TIRAGE}${ctx.dans !== undefined ? ` · ${CONSIGNE_LIEN_RACINE}` : ""}`
             : consigneDe(ID_POUSSER_TIRER, etat.etape - 1),
       mesures: mesures(libelleMesuresDe(ID_POUSSER_TIRER, etat.etape - 1), valeur, contexteSaisie("longueur", ctx)),
       inference: etat.etape === 2 ? etat.inference : null,
