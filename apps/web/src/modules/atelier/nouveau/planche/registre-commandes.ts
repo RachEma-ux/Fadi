@@ -6,10 +6,10 @@
  */
 import { normaliserRaccourci } from "@parcours/planche-model";
 import type { CleMessage } from "../messages";
-import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE } from "./commandes-objets";
+import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_PIECE, COMMANDES_OBJETS, COMMANDES_VUE } from "./commandes-objets";
 import { type Cle, raccourciClavier } from "./outils-planche";
 
-export type FamilleCommande = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit";
+export type FamilleCommande = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece";
 
 export interface EntreeRegistre {
   readonly id: string;
@@ -27,6 +27,7 @@ export const REGISTRE_COMMANDES: readonly EntreeRegistre[] = [
   ...COMMANDES_NAVIGATEUR.map((c) => ({ id: c.id, famille: "navigateur" as const, picto: c.picto, libelle: c.libelle, raccourci: c.raccourci })),
   ...COMMANDES_VUE.map((c) => ({ id: c.id, famille: "vue" as const, picto: c.picto, libelle: c.libelle, raccourci: c.raccourci })),
   ...COMMANDES_DEBIT.map((c) => ({ id: c.id, famille: "debit" as const, picto: c.picto, libelle: c.libelle, raccourci: c.raccourci })),
+  ...COMMANDES_PIECE.map((c) => ({ id: c.id, famille: "piece" as const, picto: c.picto, libelle: c.libelle, raccourci: c.raccourci })),
 ];
 
 /** Commande dont le raccourci correspond à l'événement clavier (touche physique relue sous Alt, macOS), sinon `null`. */

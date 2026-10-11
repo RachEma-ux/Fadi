@@ -47,6 +47,8 @@ export interface PlacementPiece {
   readonly decalageFin: number;
   /** Sur une boucle d'arêtes : côté de la boucle (défaut « centre ») ; remplace la composante horizontale de `point`. */
   readonly position?: PositionBoucle;
+  /** (Lot L17) Rotation axiale (°) de la section posée autour de l'axe de la pièce ; absente = 0. */
+  readonly rotationAxe?: number;
 }
 
 export const PLACEMENT_DEFAUT: PlacementPiece = Object.freeze({ point: "centre", rotation90: false, decalageDebut: 0, decalageFin: 0 });
@@ -99,7 +101,15 @@ export function sectionPosee(s: SectionProfil, p: PlacementPiece, cote?: -1 | 0 
   if (cote === -1) ay = y1;
   if (cote === 0) ay = (y0 + y1) / 2;
   const az = haut ? z1 : bas ? z0 : (z0 + z1) / 2;
-  const deplacer = (q: PointSection): PointSection => ({ y: q.y - ay, z: q.z - az });
+  // Lot L17 : la rotation axiale tourne la section posée autour de l'axe (l'origine du plan y z).
+  const a = ((p.rotationAxe ?? 0) * Math.PI) / 180;
+  const cs = Math.cos(a);
+  const sn = Math.sin(a);
+  const deplacer = (q: PointSection): PointSection => {
+    const y = q.y - ay;
+    const z = q.z - az;
+    return a === 0 ? { y, z } : { y: y * cs - z * sn, z: y * sn + z * cs };
+  };
   return { exterieur: ext.map(deplacer), trous: trous.map((b) => b.map(deplacer)) };
 }
 

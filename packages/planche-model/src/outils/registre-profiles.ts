@@ -2,6 +2,6 @@
 import type { MachineOutil } from "./machine.js";
 import { machineProfile } from "./profile.js";
 import { machineProfilesAretes } from "./profiles-aretes.js";
-import { machineAllongerPiece, machineCoupeProfil, machineOnglet } from "./assemblages-pieces.js";
+import { machineAlignerFace, machineAllongerPiece, machineCoupeProfil, machineOnglet } from "./assemblages-pieces.js";
 
-export const MACHINES_PROFILES: readonly MachineOutil<any>[] = [machineProfile, machineProfilesAretes, machineOnglet, machineCoupeProfil, machineAllongerPiece];
+export const MACHINES_PROFILES: readonly MachineOutil<any>[] = [machineProfile, machineProfilesAretes, machineOnglet, machineCoupeProfil, machineAllongerPiece, machineAlignerFace];

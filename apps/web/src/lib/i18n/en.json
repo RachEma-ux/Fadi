@@ -8028,5 +8028,14 @@
 "Repères renumérotés ({lignes} ligne(s)).": "Marks renumbered ({lignes} row(s)).",
 "{nombre} étiquette(s) posée(s).": "{nombre} label(s) placed.",
 "Gauche": "Left",
-"Droite": "Right"
+"Droite": "Right",
+"Appliquer la section choisie à la pièce": "Apply the chosen section to the member",
+"Rotation axiale de la pièce": "Axial rotation of the member",
+"Rotation axiale": "Axial rotation",
+"sélectionnez une seule pièce de profilé": "select a single profile member",
+"choisissez d'abord une section": "choose a section first",
+"Édition de la pièce": "Member editing",
+"Section appliquée : {designation}.": "Section applied: {designation}.",
+"Pièce tournée de {angle}° autour de son axe.": "Member rotated by {angle}° about its axis.",
+"Saisissez un angle non nul, en degrés.": "Enter a non-zero angle, in degrees."
 }
