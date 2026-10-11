@@ -13,6 +13,7 @@ import {
   copier,
   deplacer,
   estSolide,
+  inverserFace,
   modeleVide,
   piecesLiees,
   poserPiece,
@@ -232,4 +233,46 @@ describe("Mesure (⏱, déclarée au compte rendu)", () => {
     console.log(`⏱ L11 : pose de 200 pièces liées ${(t1 - t0).toFixed(0)} ms ; un déplacement d'arête ${(t2 - t1).toFixed(0)} ms`);
     expect(r.occurrences).toHaveLength(200);
   }, 120_000);
+});
+
+describe("Revue de #125 — empreinte complète, trous d'enroulement quelconque, normale de boucle recalculée", () => {
+  it("face de la pièce retournée (positions et nombres inchangés) : le lien est rompu, l'édition n'est pas écrasée", () => {
+    const { m, arete } = segment(modeleVide(), v3(0, 0, 0), v3(3, 0, 0));
+    const r = poserPiece(m, { arete }, SECTION, placement(), SAISIE);
+    const face = Object.keys(contexte(r.modele, r.occurrence).faces)[0]!;
+    const retourne = inverserFace(r.modele, face, { dans: r.occurrence }).modele;
+    const b = contexte(retourne).aretes[arete]!.b;
+    const m2 = deplacer(retourne, [b], v3(1, 0, 0)).modele;
+    expect(piecesLiees(m2)[r.occurrence]).toBeUndefined();
+    expect(volume(m2, r.occurrence)).not.toBeCloseTo(0.02, 6);
+  });
+
+  it("trou de même enroulement que le contour : parois du trou tournées vers le vide, volume juste", () => {
+    const tube: SectionProfil = {
+      exterieur: [{ y: -0.05, z: -0.05 }, { y: 0.05, z: -0.05 }, { y: 0.05, z: 0.05 }, { y: -0.05, z: 0.05 }],
+      trous: [[{ y: -0.04, z: -0.04 }, { y: 0.04, z: -0.04 }, { y: 0.04, z: 0.04 }, { y: -0.04, z: 0.04 }]],
+    };
+    const { m, arete } = segment(modeleVide(), v3(0, 0, 0), v3(2, 0, 0));
+    const r = poserPiece(m, { arete }, tube, placement(), SAISIE);
+    expect(estSolide(r.modele, r.occurrence)).toBe(true);
+    expect(volume(r.modele, r.occurrence)).toBeCloseTo(2 * (0.01 - 0.0064), 12);
+  });
+
+  it("boucle restée plane mais basculée : chaque section reste dans le plan de la boucle (normale recalculée)", () => {
+    let m = modeleVide();
+    const ids: Id[] = [];
+    const P = [v3(0, 0, 0), v3(4, 0, 0), v3(4, 3, 0), v3(0, 3, 0)];
+    for (let i = 0; i < 4; i++) {
+      const s = segment(m, P[i]!, P[(i + 1) % 4]!);
+      m = s.m;
+      ids.push(s.arete);
+    }
+    const r = poserPiecesSurAretes(m, ids, SECTION, placement({ position: "interieur" }), SAISIE);
+    const cote = Object.values(contexte(r.modele).sommets).filter((s) => s.position.x === 4).map((s) => s.id);
+    const m2 = deplacer(r.modele, cote, v3(0, 0, 1)).modele; // plan z = x / 4
+    expect(Object.keys(piecesLiees(m2))).toHaveLength(4);
+    const n = { x: 1 / Math.sqrt(17), y: 0, z: -4 / Math.sqrt(17) };
+    const d = geometrieVisible(m2).faces.flatMap((f) => f.exterieur).map((p) => Math.abs(p.x * n.x + p.y * n.y + p.z * n.z));
+    expect(Math.max(...d)).toBeLessThanOrEqual(0.025 + 1e-9); // demi-hauteur de la section centrée (ancien code : ≈ 0,0485)
+  });
 });
