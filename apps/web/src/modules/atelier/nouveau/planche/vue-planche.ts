@@ -444,7 +444,8 @@ export class VuePlanche {
       arriere.renderOrder = -2;
       this.groupeModele.add(arriere);
     }
-    if (o.objetsMasques || o.geometrieMasquee) {
+    // Isolement (O-5) : seule la sélection est montrée — la surcouche des entités masquées se tait.
+    if ((o.objetsMasques || o.geometrieMasquee) && !this.rappels.isolement?.()) {
       const masquees = aretesMasquees(modele, { objets: o.objetsMasques, geometrie: o.geometrieMasquee });
       if (masquees.length) {
         const l = new THREE.LineSegments(geometrieSegments(masquees.map((s) => [s.a, s.b] as const)), new THREE.LineDashedMaterial({ color: "#8a8a8a", dashSize: 0.15, gapSize: 0.1 }));
