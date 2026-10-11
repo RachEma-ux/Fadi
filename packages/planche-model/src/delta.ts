@@ -7,7 +7,7 @@
  * obtenue n'est pas celle annoncée (la Planche a changé entre-temps : 409). Les tables sont des `Record<Id, …>` :
  * une entrée du delta est la valeur d'après, ou `null` pour une suppression ; une clé absente est inchangée.
  */
-import type { Annotations, Balise, Cote, Extrusion, Guide, Materiau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
+import type { Annotations, Balise, Cote, Extrusion, Guide, LienPiece, Materiau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
 import type { Arete, Contexte, Courbe, Definition, Face, Id, Modele, Occurrence, Sommet } from "./geometrie-libre.js";
 
 export type DeltaTable<T> = Readonly<Record<Id, T | null>>;
@@ -29,6 +29,7 @@ export interface DeltaAnnotations {
   readonly balises?: DeltaTable<Balise>;
   readonly scenes?: DeltaTable<Scene>;
   readonly extrusions?: DeltaTable<Extrusion>;
+  readonly pieces?: DeltaTable<LienPiece>;
   /** `null` = repère retiré ; absent = inchangé. */
   readonly repere?: Repere | null;
   readonly reglages?: ReglagesPlanche | null;
@@ -43,7 +44,7 @@ export interface DeltaPlanche {
 }
 
 const CLES_CONTEXTE = ["sommets", "aretes", "faces", "courbes", "occurrences"] as const;
-const CLES_ANNOTATIONS = ["guides", "cotes", "textes", "plansDeCoupe", "materiaux", "balises", "scenes", "extrusions"] as const;
+const CLES_ANNOTATIONS = ["guides", "cotes", "textes", "plansDeCoupe", "materiaux", "balises", "scenes", "extrusions", "pieces"] as const;
 
 function differenceTable<T>(a: Readonly<Record<Id, T>> | undefined, b: Readonly<Record<Id, T>> | undefined): DeltaTable<T> | undefined {
   if (a === b) return undefined;
@@ -136,6 +137,7 @@ export function appliquerDeltaPlanche(m: Modele, delta: DeltaPlanche): Modele {
     for (const k of CLES_ANNOTATIONS) an[k] = appliquerTable((m.annotations?.[k] ?? {}) as Readonly<Record<Id, unknown>>, delta.annotations[k] as DeltaTable<unknown> | undefined) ?? {};
     // Table facultative (D-196) : absente plutôt que vide, comme la produit le noyau.
     if (Object.keys(an["extrusions"] as object).length === 0) delete an["extrusions"];
+    if (an["pieces"] !== undefined && Object.keys(an["pieces"] as object).length === 0) delete an["pieces"];
     if (delta.annotations.repere !== undefined) {
       if (delta.annotations.repere === null) delete an["repere"];
       else an["repere"] = delta.annotations.repere;
@@ -224,6 +226,35 @@ export function estExtrusion(id: Id, v: unknown): boolean {
   return false;
 }
 
+/** (Lot L11) Lien pièce ↔ arête source : identifiants, positions, instantané de la pièce — jamais cru sur parole. */
+export function estLienPiece(id: Id, v: unknown): boolean {
+  if (!estObjet(v) || v["id"] !== id) return false;
+  if (!estId(v["arete"]) || !estId(v["a"]) || !estId(v["b"]) || v["a"] === v["b"] || !estVec3(v["posA"]) || !estVec3(v["posB"])) return false;
+  const onglet = (o: unknown) => o === undefined || (estObjet(o) && estId(o["arete"]) && estId(o["sommet"]) && estVec3(o["pos"]));
+  if (!onglet(v["ongletDebut"]) || !onglet(v["ongletFin"])) return false;
+  if (!estId(v["definition"]) || typeof v["empreinte"] !== "string") return false;
+  const m = v["transformation"];
+  if (!Array.isArray(m) || m.length !== 16 || !m.every(estNombre)) return false;
+  return v["haut"] === undefined || estVec3(v["haut"]);
+}
+
+const estPointSection = (p: unknown): boolean => estObjet(p) && estNombre(p["y"]) && estNombre(p["z"]);
+const estBoucleSection = (b: unknown): boolean => Array.isArray(b) && b.length >= 3 && b.every(estPointSection);
+
+/** (Lot L11) Métadonnées de pièce portées par une définition : section, source, placement, longueur. */
+export function estMetadonneesPiece(v: unknown): boolean {
+  if (!estObjet(v) || typeof v["designation"] !== "string" || !estNombre(v["longueur"])) return false;
+  const s = v["section"];
+  if (!estObjet(s) || !estBoucleSection(s["exterieur"]) || !Array.isArray(s["trous"]) || !s["trous"].every(estBoucleSection)) return false;
+  const src = v["source"];
+  if (!estObjet(src) || !(src["genre"] === "saisie" || (src["genre"] === "catalogue" && typeof src["source"] === "string" && typeof src["edition"] === "string"))) return false;
+  const p = v["placement"];
+  if (!estObjet(p) || !["centre", "haut-gauche", "haut-droite", "bas-droite", "bas-gauche"].includes(p["point"] as string)) return false;
+  if (typeof p["rotation90"] !== "boolean" || !estNombre(p["decalageDebut"]) || !estNombre(p["decalageFin"])) return false;
+  if (p["position"] !== undefined && !["centre", "exterieur", "interieur"].includes(p["position"] as string)) return false;
+  return v["cote"] === undefined || v["cote"] === -1 || v["cote"] === 0 || v["cote"] === 1;
+}
+
 function estContexte(c: unknown): c is Contexte {
   if (!estObjet(c)) return false;
   for (const k of CLES_CONTEXTE) {
@@ -238,7 +269,8 @@ function estContexte(c: unknown): c is Contexte {
   return true;
 }
 
-const estDefinition = (id: Id, d: unknown): d is Definition => estObjet(d) && d["id"] === id && typeof d["nom"] === "string" && (d["genre"] === "groupe" || d["genre"] === "composant") && estContexte(d["contenu"]);
+const estDefinition = (id: Id, d: unknown): d is Definition =>
+  estObjet(d) && d["id"] === id && typeof d["nom"] === "string" && (d["genre"] === "groupe" || d["genre"] === "composant") && estContexte(d["contenu"]) && (d["piece"] === undefined || estMetadonneesPiece(d["piece"]));
 
 /** Modèle de la Planche lu d'une valeur quelconque (JSON reçu, brouillon), ou `null` s'il est mal formé : chaque sommet, arête, face, courbe, occurrence et définition est vérifié, ainsi que les références internes. */
 export function lireModelePlanche(brut: unknown): Modele | null {
@@ -252,6 +284,7 @@ export function lireModelePlanche(brut: unknown): Modele | null {
   if (an) {
     for (const k of CLES_ANNOTATIONS) if (an[k] !== undefined && !(estObjet(an[k]) && Object.entries(an[k] as object).every(([id, v]) => estObjet(v) && v["id"] === id))) return null;
     if (an["extrusions"] !== undefined && !Object.entries(an["extrusions"] as object).every(([id, v]) => estExtrusion(id, v))) return null;
+    if (an["pieces"] !== undefined && !Object.entries(an["pieces"] as object).every(([id, v]) => estLienPiece(id, v))) return null;
     if (an["repere"] !== undefined && !(estObjet(an["repere"]) && estVec3(an["repere"]["origine"]))) return null;
     if (an["reglages"] !== undefined && !estObjet(an["reglages"])) return null;
   }
@@ -269,7 +302,7 @@ export function estDeltaPlanche(v: unknown): v is DeltaPlanche {
     if (!estObjet(an)) return false;
     for (const [k, t] of Object.entries(an)) {
       if ((CLES_ANNOTATIONS as readonly string[]).includes(k)) {
-        if (!(k === "extrusions" ? table(t, estExtrusion) : table(t))) return false;
+        if (!(k === "extrusions" ? table(t, estExtrusion) : k === "pieces" ? table(t, estLienPiece) : table(t))) return false;
       } else if (k === "repere" || k === "reglages") {
         if (!(t === null || estObjet(t))) return false;
       } else return false;
