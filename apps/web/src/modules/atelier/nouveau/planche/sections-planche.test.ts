@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { LigneCatalogue } from "@parcours/atelier-model";
 import { aireSection, ajouterRectangle, contexte, effacerEntites, modeleVide, v3 } from "@parcours/planche-model";
-import { DIMENSIONS_VIDES, ErreurSection, sectionCatalogue, sectionDepuisFace, sectionSaisie, texteSource } from "./sections-planche";
+import { DIMENSIONS_VIDES, ERREUR_CATALOGUE_NON_BOIS, ErreurSection, sectionCatalogue, sectionDepuisFace, sectionSaisie, texteSource } from "./sections-planche";
 
 /** Lignes d'essai (données du test, non contractuelles) : la source le dit. */
 const SOURCE = { source: "Données d'essai, non contractuelles", edition: "2026", page: "1" };
@@ -38,7 +38,16 @@ describe("Section depuis une ligne de catalogue sourcé (L12)", () => {
     expect(s.section.exterieur).toHaveLength(32);
     expect(s.section.trous).toHaveLength(1);
     const b = ligne(6, { designation: "Bois essai", largeur_mm: 45, hauteur_mm: 145, essence: "essai" });
-    expect(aireSection(sectionCatalogue(CAT([b]), b).section)).toBeCloseTo(0.045 * 0.145, 12);
+    expect(aireSection(sectionCatalogue({ ...CAT([b]), ontologie: "timber" }, b).section)).toBeCloseTo(0.045 * 0.145, 12);
+  });
+
+  it("revue de #126 : le gabarit bois n'est ouvert que pour un catalogue déclaré « timber »", () => {
+    const b = ligne(7, { designation: "Ligne sans forme", largeur_mm: 45, hauteur_mm: 145 });
+    for (const ontologie of [undefined, "sheetmetal", "structure"]) {
+      const cat = { ...CAT([b]), ...(ontologie ? { ontologie } : {}) };
+      expect(() => sectionCatalogue(cat, b)).toThrow(ErreurSection);
+      expect(() => sectionCatalogue(cat, b)).toThrow(ERREUR_CATALOGUE_NON_BOIS);
+    }
   });
 });
 
