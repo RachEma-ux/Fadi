@@ -106,6 +106,9 @@ export interface EtatAllongerPiece {
 
 export const CONSIGNE_ALLONGER_1 = "Cliquez près de l'extrémité de la pièce à allonger ou raccourcir.";
 export const CONSIGNE_ALLONGER_2 = "Tapez l'allongement (négatif pour raccourcir), ou choisissez une demi-section.";
+/** Consignes complètes (une entrée de dictionnaire chacune), selon l'extrémité choisie. */
+export const CONSIGNE_ALLONGER_DEBUT = `${CONSIGNE_ALLONGER_2} (extrémité : début)`;
+export const CONSIGNE_ALLONGER_FIN = `${CONSIGNE_ALLONGER_2} (extrémité : fin)`;
 
 /** Extrémité de la pièce la plus proche du point visé (repère du contexte d'édition). */
 function boutVise(ctx: ContexteOutil, piece: Id, ev: Extract<EvenementOutil, { genre: "clic" }>): "debut" | "fin" {
@@ -183,7 +186,7 @@ export const machineAllongerPiece: MachineOutil<EtatAllongerPiece> = {
   vue(etat, ctx): VueOutil {
     const choisie = etat.piece !== null && etat.bout !== null;
     const v = vueModif({
-      consigne: choisie ? `${CONSIGNE_ALLONGER_2} (extrémité : ${etat.bout === "debut" ? "début" : "fin"})` : CONSIGNE_ALLONGER_1,
+      consigne: choisie ? (etat.bout === "debut" ? CONSIGNE_ALLONGER_DEBUT : CONSIGNE_ALLONGER_FIN) : CONSIGNE_ALLONGER_1,
       mesures: choisie ? { libelle: "Allongement", valeur: "", saisie: saisieDe("longueur", ctx) } : null,
       ctx,
       erreur: etat.erreur,
