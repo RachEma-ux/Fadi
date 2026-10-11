@@ -138,7 +138,10 @@ export function prismePiece(s: SectionProfil, longueur: number, debut: BoutPiece
     return x0 - (q.y * n.y + q.z * n.z) / n.x;
   };
   const anneau = (b: readonly PointSection[], bout: BoutPiece, x0: number, signe: -1 | 1): Vec3[] => b.map((q) => v3(xBout(bout, x0, q, signe), q.y, q.z));
-  const boucles = [s.exterieur, ...s.trous];
+  // Trous d'enroulement opposé au contour (la section ne l'impose pas) : sinon leurs parois regarderaient la matière.
+  const aire = (b: readonly PointSection[]): number => b.reduce((acc, q, i) => acc + q.y * (b[(i + 1) % b.length] as PointSection).z - (b[(i + 1) % b.length] as PointSection).y * q.z, 0);
+  const sensExt = Math.sign(aire(s.exterieur));
+  const boucles = [s.exterieur, ...s.trous.map((t) => (Math.sign(aire(t)) === sensExt ? [...t].reverse() : t))];
   const debuts = boucles.map((b) => anneau(b, debut, 0, -1));
   const fins = boucles.map((b) => anneau(b, fin, longueur, 1));
   for (let k = 0; k < boucles.length; k++) {
