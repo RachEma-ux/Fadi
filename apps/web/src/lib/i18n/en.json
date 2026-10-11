@@ -8026,5 +8026,7 @@
 "Liste de débit exportée ({lignes} ligne(s)).": "Cut list exported ({lignes} row(s)).",
 "Départ de la numérotation : un entier positif ou nul.": "Numbering start: a non-negative integer.",
 "Repères renumérotés ({lignes} ligne(s)).": "Marks renumbered ({lignes} row(s)).",
-"{nombre} étiquette(s) posée(s).": "{nombre} label(s) placed."
+"{nombre} étiquette(s) posée(s).": "{nombre} label(s) placed.",
+"Gauche": "Left",
+"Droite": "Right"
 }

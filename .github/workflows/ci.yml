@@ -188,6 +188,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-debit node apps/web/e2e/planche-debit.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du Texte 3D (lot L16) — aperçu en volume, alignement, pose sur une face verticale (apps/web/e2e/planche-texte-3d.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-texte-3d node apps/web/e2e/planche-texte-3d.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         run: |
           set -o pipefail
