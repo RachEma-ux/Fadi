@@ -196,13 +196,17 @@ const pieces = (page) =>
   check("une pièce 100 × 100 posée", (await pieces(page)).length === 1 && !!p0?.piece, "");
   // 2. Sélection de la pièce seule : le bloc d'édition paraît. Sous charge (CI), le clic ne doit partir qu'une fois l'outil
   // Sélection actif, et la sélection est attendue (un second clic si le premier n'a rien pris) avant de juger le bloc.
+  // Vue de loin, le dessus de la pièce (5 cm au-dessus de l'arête source) et l'arête se touchent presque à l'écran : on
+  // cadre d'abord tout le modèle (Zoom étendu, Ctrl + Maj + E), puis on vise la pièce jusqu'à ce qu'une occurrence soit prise.
   await selection();
   await page.waitForFunction(() => window.fadiPlanche.outil() === "selection", null, { timeout: 10000 });
-  await cliquer({ x: 1.5, y: 0, z: 0.05 });
-  const choisie = () => page.waitForFunction(() => (window.fadiPlanche.selection?.() ?? []).length > 0, null, { timeout: 5000 }).then(() => true, () => false);
-  if (!(await choisie())) {
-    await cliquer({ x: 1.5, y: 0, z: 0.05 });
-    await choisie();
+  await page.keyboard.press("Control+Shift+E");
+  await page.waitForTimeout(200);
+  const pieceChoisie = () =>
+    page.waitForFunction(() => (window.fadiPlanche.selection?.() ?? []).some((id) => id.startsWith("o")), null, { timeout: 3000 }).then(() => true, () => false);
+  for (const cible of [{ x: 1.5, y: 0, z: 0.05 }, { x: 1.5, y: 0.03, z: 0.05 }, { x: 1.2, y: -0.03, z: 0.05 }]) {
+    await cliquer(cible);
+    if (await pieceChoisie()) break;
   }
   const bloc = page.locator("[data-planche-piece-edition]");
   await bloc.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
