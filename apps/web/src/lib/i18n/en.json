@@ -8162,5 +8162,6 @@
 "Ce catalogue n'est pas déclaré « bois » (timber) : la ligne n'est pas lue comme une section de bois.": "This catalogue is not declared “timber”: the row is not read as a timber section.",
 "Tapez l'allongement (négatif pour raccourcir), ou choisissez une demi-section. (extrémité : début)": "Type the extension (negative to shorten), or choose a half section. (end: start)",
 "Tapez l'allongement (négatif pour raccourcir), ou choisissez une demi-section. (extrémité : fin)": "Type the extension (negative to shorten), or choose a half section. (end: end)",
-"Pièce mise à l'échelle : sa longueur et sa section ne correspondent plus à ses métadonnées — refusé.": "Scaled member: its length and section no longer match its metadata — refused."
+"Pièce mise à l'échelle : sa longueur et sa section ne correspondent plus à ses métadonnées — refusé.": "Scaled member: its length and section no longer match its metadata — refused.",
+"Repère de la pièce : une seule pièce de profilé, étirée par un seul facteur sur son axe.": "Frame of the member: a single profile member, stretched by a single factor along its axis."
 }
