@@ -98,6 +98,17 @@ describe("Option « Lien » de Pousser/Tirer (EX-LINK-02)", () => {
     const v = machinePousserTirer.vue(t.etat, ctx);
     expect(v.consigne).toContain(CONSIGNE_LIEN_RACINE);
     expect(v.options?.find((o) => o.id === "lien")?.valeurs.find((x) => x.id === "lie")?.disponible).toBe(false);
+    // La valeur affichée est l'effective : « Indépendante », même si la préférence « Liée » est gardée pour la racine.
+    expect(v.options?.find((o) => o.id === "lien")?.valeur).toBe("independant");
+    expect(machinePousserTirer.vue(t.etat, p.ctx()).options?.find((o) => o.id === "lien")?.valeur).toBe("lie");
+  });
+  it("L-02 : Surface ouverte dans un groupe — la consigne dit aussi la restriction", () => {
+    const { m, a } = ligne();
+    const g = grouper(m, [a]);
+    const p = partie(machinePousserTirer, g.modele).configurer("face", "tube");
+    const ctx = { ...p.ctx(), dans: g.occurrence };
+    expect(machinePousserTirer.vue(p.etat, ctx).consigne).toContain(CONSIGNE_LIEN_RACINE);
+    expect(machinePousserTirer.vue(p.etat, p.ctx()).consigne).not.toContain(CONSIGNE_LIEN_RACINE);
   });
 });
 
