@@ -14,7 +14,7 @@
  * l'axe verrouillé ; Alt = des deux côtés. Mêmes gestes ensuite que pour une face : correction par une distance tapée,
  * double-clic sur une autre arête = répéter, Échap.
  */
-import { type Id, ERREUR_ETIRER_ISOLEE, allongerArete, distanceJusquAFace, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, faceAVoisines, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
+import { type Id, type Modele, ERREUR_ETIRER_ISOLEE, instancesEditees, allongerArete, distanceJusquAFace, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, faceAVoisines, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, EPS, TOL, add, cross, dist, dot, egal, len, normalize, scale, sub, v3 } from "../vecteur.js";
@@ -186,6 +186,15 @@ const retour = (e: EtatPousserTirer): EtatPousserTirer => ({
   sens: 1,
 });
 
+/** Lot L20 : avertissement d'un étirement dans un composant partagé. */
+export const avertissementComposantPartage = (n: number): string => `Composant partagé : l'étirement s'applique à ses ${n} occurrences.`;
+
+/**
+ * Lot L20 : instances rendues que l'étirement modifie (`instancesEditees`, revue de #133 : composant compté à travers les
+ * composants qui le portent ; groupe partagé rendu unique par l'opération, donc non compté), 0 à la racine.
+ */
+const occurrencesPartagees = (m: Modele, dans: Id | undefined): number => instancesEditees(m, dans);
+
 /** Distance signée le long de la normale visée par le rayon, avec l'inférence (accrochage sur les sommets existants). */
 function viseeDistance(e: EtatPousserTirer, ctx: ContexteOutil, r: Rayon, tolerance: number): { distance: number; inference: Inference } {
   const n = e.normale as Vec3;
@@ -220,8 +229,12 @@ function appliquer(
         ? etirerFace(base, face, d, optionsDans(ctx))
         : pousserTirer(base, face, d, { ...optionsDans(ctx), nouvelleFace: e.nouvelleFace });
     const encore = contexte(r.modele, ctx.dans).faces[face] !== undefined;
+    // Lot L20 : l'étirement (et son pli) reste dans le contexte d'édition ; dans un composant partagé, il vaut pour
+    // toutes ses occurrences — la barre d'état le dit (avertissement, pas un refus : sémantique existante des composants).
+    const partage = etirement ? occurrencesPartagees(base, ctx.dans) : 0;
+    const avertissement = partage > 1 ? avertissementComposantPartage(partage) : null;
     return {
-      etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: { genre: "face", face, distance, nouvelleFace: e.nouvelleFace, ...(sansFond ? { sansFond: true } : {}), ...(etirement ? { etirement: true } : {}) } } },
+      etat: { ...retour(e), texte, erreur: avertissement, derniere: { avant: base, apres: r.modele, params: { genre: "face", face, distance, nouvelleFace: e.nouvelleFace, ...(sansFond ? { sansFond: true } : {}), ...(etirement ? { etirement: true } : {}) } } },
       modele: r.modele,
       selection: encore && !sansFond ? [face] : idsSelectionnables(r.rapport.crees).filter((id) => id.startsWith("f")),
       operation: "Pousser/Tirer",

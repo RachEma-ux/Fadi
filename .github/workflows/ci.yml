@@ -210,6 +210,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-diagnostics-l19 node apps/web/e2e/planche-diagnostics-l19.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de l'Étirement à plis (lot L20) — voisine percée pliée en facettes planes, trou gardé (apps/web/e2e/planche-etirement-plis.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-etirement-plis node apps/web/e2e/planche-etirement-plis.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         run: |
           set -o pipefail

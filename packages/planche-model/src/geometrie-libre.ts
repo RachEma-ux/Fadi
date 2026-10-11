@@ -53,6 +53,7 @@ import {
 } from "./vecteur.js";
 
 import { erreurPlanche, exigerComplexite } from "./diagnostics.js";
+import { triangulerFace } from "./maillage.js";
 import { type Annotations, type AnnotationsMutables, type Extrusion, type LienPiece, ANNOTATIONS_VIDES, genreAnnotation } from "./annotations.js";
 import {
   type BoutPiece,
@@ -463,6 +464,48 @@ function trouverOccurrence(m: Modele, id: Id): Occurrence | undefined {
 export function nombreOccurrences(m: Modele, definition: Id): number {
   const compte = (c: Contexte): number => Object.values(c.occurrences).filter((o) => o.definition === definition).length;
   return compte(m.racine) + Object.values(m.definitions).reduce((s, d) => s + compte(d.contenu), 0);
+}
+
+/**
+ * Revue de #133 : instances effectivement rendues d'une définition — chaque occurrence posée compte autant de fois que le
+ * contexte qui la porte est lui-même rendu (1 pour la racine, récursif pour une définition). Un composant posé une fois
+ * dans un composant posé trois fois a 1 occurrence (`nombreOccurrences`) mais 3 instances.
+ */
+export function nombreInstances(m: Modele, definition: Id): number {
+  const memo = new Map<Id, number>();
+  const compte = (c: Contexte, def: Id): number => Object.values(c.occurrences).filter((o) => o.definition === def).length;
+  const instances = (def: Id, pile: readonly Id[]): number => {
+    if (pile.includes(def)) return 0; // une définition ne se contient pas ; garde contre une boucle
+    const connu = memo.get(def);
+    if (connu !== undefined) return connu;
+    let n = compte(m.racine, def);
+    for (const d of Object.values(m.definitions)) {
+      const k = compte(d.contenu, def);
+      if (k > 0) n += k * instances(d.id, [...pile, def]);
+    }
+    memo.set(def, n);
+    return n;
+  };
+  return instances(definition, []);
+}
+
+/**
+ * Revue de #133 : nombre d'instances rendues que modifie une édition faite dans le contexte de l'occurrence `dans` (0 à la
+ * racine). Un composant est édité dans sa définition : toutes ses instances, y compris celles portées par les composants
+ * qui le contiennent. Un groupe partagé est d'abord rendu unique par l'opération (`Travail.ouvrir`) : seul compte le
+ * nombre de fois que le contexte qui porte l'occurrence éditée est rendu.
+ */
+export function instancesEditees(m: Modele, dans: Id | undefined): number {
+  if (dans === undefined) return 0;
+  const porteurs: [Id | undefined, Contexte][] = [[undefined, m.racine], ...Object.values(m.definitions).map((d) => [d.id, d.contenu] as [Id, Contexte])];
+  for (const [porteur, c] of porteurs) {
+    const o = c.occurrences[dans];
+    if (!o) continue;
+    const def = m.definitions[o.definition];
+    if (def?.genre === "composant") return nombreInstances(m, def.id);
+    return porteur === undefined ? 1 : nombreInstances(m, porteur);
+  }
+  return 0;
 }
 
 export function compter(c: Contexte): { sommets: number; aretes: number; faces: number; occurrences: number } {
@@ -1709,8 +1752,141 @@ export function faceAVoisines(m: Modele, face: Id, dans?: Id): boolean {
  * ou s'annulerait : refus nommé, modèle inchangé (aucun pli ajouté, aucune correction). Les courbes dont tous les sommets
  * suivent sont translatées.
  */
+/** Lot L20 : messages des refus du pli. */
+export const ERREUR_PLI_TRIANGULATION = "Une face voisine ne peut pas être triangulée pour le pli (contour dégénéré) : rien n'est modifié.";
+export const ERREUR_PLI_ANNULE = "L'étirement annulerait une partie d'une face voisine : rien n'est modifié.";
+export const ERREUR_PLI_RETOURNE = "L'étirement retournerait une partie d'une face voisine : rien n'est modifié.";
+export const ERREUR_PLI_RECOUPE = "Le pli d'une face voisine se recouperait : rien n'est modifié.";
+
+/** Intersection stricte d'un segment [p, q] et d'un triangle (a, b, c) — Möller–Trumbore, extrémités exclues. */
+export function segmentCoupeTriangle(p: Vec3, q: Vec3, a: Vec3, b: Vec3, c: Vec3): boolean {
+  const d = sub(q, p);
+  const e1 = sub(b, a);
+  const e2 = sub(c, a);
+  const h = cross(d, e2);
+  const det = dot(e1, h);
+  const echelle = len(e1) * len(e2) * len(d);
+  if (Math.abs(det) <= 1e-12 * Math.max(echelle, 1e-30)) return false;
+  const f = 1 / det;
+  const s = sub(p, a);
+  const u = f * dot(s, h);
+  const qv = cross(s, e1);
+  const v = f * dot(d, qv);
+  const t = f * dot(e2, qv);
+  const m = 1e-9;
+  return u > m && v > m && u + v < 1 - m && t > m && t < 1 - m;
+}
+
+/**
+ * Lot L20 : plis d'une face voisine qui ne reste pas plane. La face d'origine est triangulée dans son plan (découpe en
+ * oreilles avec ponts vers les trous : concavités et trous gardés, jamais d'éventail), chaque triangle est porté aux
+ * positions nouvelles, contrôlé (ni nul, ni retourné, ni recoupé par un autre triangle), puis les triangles coplanaires
+ * adjacents sont regroupés. Rend, par groupe, [contour, ...trous] en identifiants de sommets.
+ */
+function plisDeFace(c: Ctx, g: Face, nouvelle: (s: Id) => Vec3): Id[][][] {
+  const boucles = [g.exterieur, ...g.trous];
+  const ids = boucles.flat();
+  const avant = (b: readonly Id[]) => b.map((s) => pos(c, s));
+  // Revue de #133 : triangulation stricte (aucun éventail de secours, aucun triangle retourné) — une somme d'aires
+  // signées ne distingue pas un éventail qui se recouvre d'une vraie couverture.
+  const tri = triangulerFace(avant(g.exterieur), g.trous.map(avant), g.normale, { strict: true });
+  const orientes: [Id, Id, Id][] = [];
+  for (let k = 0; k + 2 < tri.length; k += 3) orientes.push([ids[tri[k] as number] as Id, ids[tri[k + 1] as number] as Id, ids[tri[k + 2] as number] as Id]);
+  // Chaque triangle est d'aire strictement positive dans le plan d'origine (oreilles seules) et l'ensemble recouvre
+  // exactement la face (aire du contour moins celle des trous), sinon la triangulation a échoué.
+  const aireFace = Math.abs(dot(newell(avant(g.exterieur)), g.normale)) / 2 - g.trous.reduce((a, b) => a + Math.abs(dot(newell(avant(b)), g.normale)) / 2, 0);
+  const airesTri = orientes.map(([x, y, z]) => dot(cross(sub(pos(c, y), pos(c, x)), sub(pos(c, z), pos(c, x))), g.normale) / 2);
+  const aireTri = airesTri.reduce((a, b) => a + b, 0);
+  if (orientes.length === 0 || airesTri.some((a) => a <= 0) || Math.abs(aireTri - aireFace) > 1e-9 * Math.max(aireFace, 1e-12) + 1e-15) {
+    throw erreurPlanche("EX_PROFILE_INVALID", ERREUR_PLI_TRIANGULATION);
+  }
+  const P = (s: Id) => nouvelle(s);
+  const normalesT = orientes.map(([x, y, z]) => cross(sub(P(y), P(x)), sub(P(z), P(x))));
+  orientes.forEach(([x, y, z], i) => {
+    const nt = normalesT[i] as Vec3;
+    const echelle = Math.max(dist(P(x), P(y)), dist(P(y), P(z)), dist(P(z), P(x)));
+    if (len(nt) <= 1e-12 * echelle * echelle) throw erreurPlanche("EX_SELF_INTERSECTION", ERREUR_PLI_ANNULE);
+    if (dot(nt, g.normale) <= 0) throw erreurPlanche("EX_SELF_INTERSECTION", ERREUR_PLI_RETOURNE);
+  });
+  // Pas de recoupement entre triangles qui ne partagent aucun sommet.
+  for (let i = 0; i < orientes.length; i++) {
+    const A = orientes[i] as [Id, Id, Id];
+    for (let j = i + 1; j < orientes.length; j++) {
+      const B = orientes[j] as [Id, Id, Id];
+      if (A.some((s) => B.includes(s))) continue;
+      const [a0, a1, a2] = A.map(P) as [Vec3, Vec3, Vec3];
+      const [b0, b1, b2] = B.map(P) as [Vec3, Vec3, Vec3];
+      const coupe =
+        [[a0, a1], [a1, a2], [a2, a0]].some(([p, q]) => segmentCoupeTriangle(p as Vec3, q as Vec3, b0, b1, b2)) ||
+        [[b0, b1], [b1, b2], [b2, b0]].some(([p, q]) => segmentCoupeTriangle(p as Vec3, q as Vec3, a0, a1, a2));
+      if (coupe) throw erreurPlanche("EX_SELF_INTERSECTION", ERREUR_PLI_RECOUPE);
+    }
+  }
+  // Regroupement des triangles coplanaires adjacents (union-find par arête partagée).
+  const parent = orientes.map((_, i) => i);
+  const racine = (i: number): number => (parent[i] === i ? i : (parent[i] = racine(parent[i] as number)));
+  const plans = orientes.map(([x], i) => planCanonique(normalize(normalesT[i] as Vec3), P(x)));
+  const parArete = new Map<string, number>();
+  const cle = (x: Id, y: Id) => (x < y ? `${x}|${y}` : `${y}|${x}`);
+  orientes.forEach((T, i) => {
+    for (let k = 0; k < 3; k++) {
+      const kk = cle(T[k] as Id, T[(k + 1) % 3] as Id);
+      const j = parArete.get(kk);
+      if (j === undefined) parArete.set(kk, i);
+      else if (memePlan(plans[i] as Plan, plans[j] as Plan)) parent[racine(i)] = racine(j);
+    }
+  });
+  const groupes = new Map<number, number[]>();
+  orientes.forEach((_, i) => {
+    const r = racine(i);
+    groupes.set(r, [...(groupes.get(r) ?? []), i]);
+  });
+  // Contours de chaque groupe : arêtes orientées qui n'y apparaissent qu'une fois, chaînées en boucles.
+  const resultat: Id[][][] = [];
+  for (const membres of [...groupes.values()].sort((a, b) => Math.min(...a) - Math.min(...b))) {
+    const aretes = new Map<string, [Id, Id]>();
+    for (const i of membres) {
+      const T = orientes[i] as [Id, Id, Id];
+      for (let k = 0; k < 3; k++) {
+        const x = T[k] as Id;
+        const y = T[(k + 1) % 3] as Id;
+        const inverse = `${y}>${x}`;
+        if (aretes.has(inverse)) aretes.delete(inverse);
+        else aretes.set(`${x}>${y}`, [x, y]);
+      }
+    }
+    const suivant = new Map<Id, Id[]>();
+    for (const [x, y] of aretes.values()) suivant.set(x, [...(suivant.get(x) ?? []), y]);
+    const loops: Id[][] = [];
+    const restantes = new Set(aretes.keys());
+    while (restantes.size > 0) {
+      const premiere = [...restantes][0] as string;
+      const [x0] = aretes.get(premiere) as [Id, Id];
+      const boucle: Id[] = [];
+      let x = x0;
+      for (let garde = 0; garde < 100000; garde++) {
+        const ys = (suivant.get(x) ?? []).filter((y) => restantes.has(`${x}>${y}`));
+        if (ys.length === 0) break;
+        const y = ys[0] as Id;
+        restantes.delete(`${x}>${y}`);
+        boucle.push(x);
+        x = y;
+        if (x === x0) break;
+      }
+      if (boucle.length >= 3) loops.push(boucle);
+    }
+    const nG = normalize(normalesT[membres[0] as number] as Vec3);
+    const aire = (b: Id[]) => dot(newell(b.map(P)), nG) / 2;
+    loops.sort((a, b) => Math.abs(aire(b)) - Math.abs(aire(a)));
+    const [ext, ...trous] = loops;
+    if (!ext) throw erreurPlanche("EX_PROFILE_INVALID", ERREUR_PLI_TRIANGULATION);
+    resultat.push([ext, ...trous]);
+  }
+  return resultat;
+}
+
 export function etirerFace(m: Modele, face: Id, distance: number, o: OptionsContexte = {}): Resultat {
-  return operer(m, o.dans, (_t, c) => {
+  return operer(m, o.dans, (t, c) => {
     const F = c.faces.get(face);
     if (!F) throw new Error(`Face inconnue : ${face}`);
     if (Math.abs(distance) < EPS) throw erreurPlanche("EX_DISTANCE_INVALID", "Distance nulle : rien n'a été étiré.");
@@ -1721,22 +1897,46 @@ export function etirerFace(m: Modele, face: Id, distance: number, o: OptionsCont
     // Suite du lot 8 (EX-PT-03) : sans voisine dans le contexte courant, étirer reviendrait à déplacer la face.
     if (voisines.length === 0) throw erreurPlanche("EX_SOURCE_INVALID", ERREUR_ETIRER_ISOLEE);
     const normales = new Map<Id, Vec3>();
+    // Lot L20 (EX-PT-03 complet) : une voisine qui ne reste pas plane est pliée — triangulation contrainte de sa forme
+    // d'origine (concavités et trous gardés), puis regroupement des triangles coplanaires adjacents ; les arêtes de pli
+    // sont créées. Toute voisine qui s'annulerait, se retournerait ou dont un pli se recouperait refuse l'opération
+    // entière (modèle inchangé).
+    const pliees: { face: Face; groupes: Id[][][] }[] = [];
     for (const g of voisines) {
       const ext = g.exterieur.map(nouvelle);
       const nw = newell(ext);
-      if (len(nw) < EPS) throw erreurPlanche("EX_SELF_INTERSECTION", "L'étirement annulerait une face voisine : rien n'est modifié.");
-      const n = normalize(nw);
-      if (dot(n, g.normale) <= 0) throw erreurPlanche("EX_SELF_INTERSECTION", "L'étirement retournerait une face voisine : rien n'est modifié.");
-      const pl = planCanonique(n, ext[0] as Vec3);
-      for (const b of [g.exterieur, ...g.trous]) {
-        if (b.some((s) => !surPlan(pl, nouvelle(s)))) throw erreurPlanche("EX_SELF_INTERSECTION", "L'étirement rendrait une face voisine non plane : rien n'est modifié.");
+      const n = len(nw) < EPS ? null : normalize(nw);
+      const pl = n ? planCanonique(n, ext[0] as Vec3) : null;
+      const plane = n !== null && pl !== null && [g.exterieur, ...g.trous].every((b) => b.every((s) => surPlan(pl, nouvelle(s))));
+      if (plane) {
+        if (dot(n as Vec3, g.normale) <= 0) throw erreurPlanche("EX_SELF_INTERSECTION", "L'étirement retournerait une face voisine : rien n'est modifié.");
+        normales.set(g.id, n as Vec3);
+        continue;
       }
-      normales.set(g.id, n);
+      pliees.push({ face: g, groupes: plisDeFace(c, g, nouvelle) });
     }
     for (const s of bouges) c.sommets.set(s, { id: s, position: nouvelle(s) });
     for (const [id, n] of normales) {
       const g = c.faces.get(id) as Face;
       c.faces.set(id, { ...g, normale: n });
+    }
+    for (const { face: g, groupes } of pliees) {
+      c.faces.delete(g.id);
+      groupes.forEach(([exterieur, ...trous], i) => {
+        for (const b of [exterieur as Id[], ...trous]) {
+          for (let k = 0; k < b.length; k++) {
+            const x = b[k] as Id;
+            const y = b[(k + 1) % b.length] as Id;
+            if (!areteEntre(c, x, y)) {
+              const id = t.id("a");
+              c.aretes.set(id, { id, a: x, b: y });
+            }
+          }
+        }
+        const id = i === 0 ? g.id : t.id("f");
+        const nf = normalize(newell((exterieur as Id[]).map((s) => pos(c, s))));
+        c.faces.set(id, { ...g, id, exterieur: exterieur as Id[], trous, normale: nf });
+      });
     }
     for (const k of [...c.courbes.values()]) {
       const tous = k.aretes.every((aid) => {

@@ -14,8 +14,7 @@ livrée et son état. Le commit testé est celui de la branche du lot L19 et de 
 **La famille d'extrusion n'est pas déclarée complète.** Le cahier ne permet de la déclarer complète qu'au lot L19 et
 seulement si tous les cas requis sont verts. Ce n'est pas le cas :
 
-- **P-05, P-06, P-07** (Étirement à plis : triangulation contrainte, faces concaves ou percées) sont l'objet du lot
-  **L20**. L'Étirement livré refuse explicitement ce qu'il ne sait pas faire (EX-REL-02), sans repli silencieux.
+- **P-05, P-06, P-07** (Étirement à plis) sont verts depuis le lot **L20** (D-222).
 - **I-10** : les mesures sur un vrai téléphone Android n'ont pas pu être faites, faute d'appareil dans l'environnement
   d'exécution. Les mesures de bureau (noyau) sont consignées, et les budgets de balayage n'y sont pas tenus
   (`docs/planche/mesures/l19-extrusion.md`) : environ 100 s pour 10 000 triangles. Le plafond de complexité est donc
@@ -45,7 +44,7 @@ seulement si tous les cas requis sont verts. Ce n'est pas le cas :
 | --- | --- | --- | --- |
 | P-01, P-02, P-03 | `fixtures-extrusion.test.ts` | L8 | vert |
 | P-04 | `pousser-tirer-l10a.test.ts`, `planche-pousser-l10a.mjs` | L10a | vert |
-| P-05, P-06, P-07 | — (Étirement à plis) | L20 | **ouvert** |
+| P-05, P-06, P-07 | `etirement-plis-l20.test.ts` (tronc de pyramide, voisine concave percée, voisine percée, refus du recoupement), `etirer-face.test.ts`, `planche-etirement-plis.mjs` | L20 | vert |
 | P-08 | `fixtures-extrusion.test.ts`, `integration-l19.test.ts` (Surface ouverte : aucun volume, export non étanche) | L8, L19 | vert |
 | P-09 | `pousser-tirer-l10a.test.ts`, `planche-pousser-l10a.mjs` | L10a | vert |
 | P-10, P-11, P-12 | `fixtures-extrusion.test.ts`, `liens-l10b.test.ts` | L8, L10b | vert |
@@ -82,7 +81,7 @@ seulement si tous les cas requis sont verts. Ce n'est pas le cas :
 
 ## Pour clore la famille
 
-1. Lot **L20** : P-05 à P-07.
+1. ~~Lot L20 : P-05 à P-07~~ — fait (D-222).
 2. Mesures sur un téléphone Android réel, de préférence le Galaxy S23 Ultra du maître d'ouvrage, ou un équivalent
    déclaré : le scénario de `mesures-l19.test.ts`, joué dans le navigateur. Seul le maître d'ouvrage peut les fournir.
 3. Optimisation du balayage, une fois les mesures faites (EX-PERF-01 : mesurer avant d'optimiser). L'insertion des

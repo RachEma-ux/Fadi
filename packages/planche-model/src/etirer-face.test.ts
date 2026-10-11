@@ -33,7 +33,7 @@ describe("Étirement réel (lot Planche 8, D-201)", () => {
     expect(sommets(normal).some((p) => Math.abs(p.x - 4) < 1e-9)).toBe(true);
   });
 
-  it("voisine qui deviendrait gauche : refus nommé, modèle inchangé", () => {
+  it("voisine qui deviendrait gauche : pliée en facettes planes (lot L20 ; refusée avant, lot 8)", () => {
     // F : carré au sol ; G : quadrilatère incliné partageant l'arête x = 1, dont le côté opposé n'est pas parallèle.
     let m = modeleVide();
     for (const [a, b] of [
@@ -47,7 +47,14 @@ describe("Étirement réel (lot Planche 8, D-201)", () => {
     ] as const) m = ajouterSegment(m, a, b).modele;
     expect(faces(m)).toHaveLength(2);
     const F = faceDe(m, (n) => Math.abs(n.z) > 0.99);
-    expect(() => etirerFace(m, F, 0.3)).toThrow(/non plane/);
+    // Lot L20 (EX-PT-03 complet) : la voisine gauche est triangulée et pliée ; chaque facette est plane.
+    const r = etirerFace(m, F, 0.3).modele;
+    expect(faces(r).length).toBe(3);
+    for (const f of faces(r)) {
+      const pts = [f.exterieur, ...f.trous].flat().map((id) => r.racine.sommets[id]!.position);
+      const d = f.normale.x * pts[0]!.x + f.normale.y * pts[0]!.y + f.normale.z * pts[0]!.z;
+      for (const p of pts) expect(Math.abs(f.normale.x * p.x + f.normale.y * p.y + f.normale.z * p.z - d)).toBeLessThan(1e-9);
+    }
   });
 
   it("distance nulle refusée (la face isolée, elle, est refusée depuis D-202 : voir plus bas)", () => {
