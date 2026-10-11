@@ -1539,6 +1539,11 @@ export function pousserTirer(m: Modele, face: Id, distance: number, o: OptionsPo
 export interface OptionsEtirerAretes extends OptionsContexte {
   /** Des deux côtés : la surface s'étend de −vecteur à +vecteur autour des arêtes d'origine. */
   readonly symetrique?: boolean;
+  /**
+   * (Lot 10b, EX-LINK-02) Lier la surface à ses arêtes sources (racine seulement). Absent = `true`, le comportement
+   * historique ; `false` = surface indépendante dès sa création.
+   */
+  readonly lier?: boolean;
 }
 
 /**
@@ -1559,10 +1564,10 @@ export function etirerAretes(m: Modele, aretes: readonly Id[], vecteur: Vec3, o:
       // Courbe fermée tirée dans son propre plan : couronne vers l'extérieur.
       lier(t, c, o.dans, { genre: "couronne", sources: [...ids], distance: len(vecteur), symetrique: !!o.symetrique }, () =>
         couronneInterne(t, c, ids, len(vecteur), !!o.symetrique),
-      );
+      o.lier !== false);
       return;
     }
-    lier(t, c, o.dans, { genre: "balayage", sources: [...ids], vecteur, symetrique: !!o.symetrique }, () => balayerInterne(t, c, ids, vecteur, !!o.symetrique));
+    lier(t, c, o.dans, { genre: "balayage", sources: [...ids], vecteur, symetrique: !!o.symetrique }, () => balayerInterne(t, c, ids, vecteur, !!o.symetrique), o.lier !== false);
   });
 }
 
@@ -1578,7 +1583,7 @@ export function couronne(m: Modele, aretes: readonly Id[], distance: number, o: 
     exigerDistance(distance);
     if (Math.abs(distance) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
     const ids = aretesEtendues(c, aretes);
-    lier(t, c, o.dans, { genre: "couronne", sources: [...ids], distance, symetrique: !!o.symetrique }, () => couronneInterne(t, c, ids, distance, !!o.symetrique));
+    lier(t, c, o.dans, { genre: "couronne", sources: [...ids], distance, symetrique: !!o.symetrique }, () => couronneInterne(t, c, ids, distance, !!o.symetrique), o.lier !== false);
   });
 }
 
@@ -1617,7 +1622,7 @@ export function allongerArete(m: Modele, arete: Id, extremite: Id, longueur: num
  * `distance` selon sa normale (< 0 : sens inverse). Avec un cercle, on obtient un tube ouvert aux deux bouts ; la surface
  * reste liée à ses arêtes sources comme un Pousser/Tirer d'arêtes.
  */
-export function tuberFace(m: Modele, face: Id, distance: number, o: OptionsContexte = {}): Resultat {
+export function tuberFace(m: Modele, face: Id, distance: number, o: OptionsContexte & { readonly lier?: boolean } = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
     const F = c.faces.get(face);
     if (!F) throw new Error(`Face inconnue : ${face}`);
@@ -1632,7 +1637,7 @@ export function tuberFace(m: Modele, face: Id, distance: number, o: OptionsConte
     }
     c.faces.delete(face);
     const vecteur = scale(normalize(F.normale), distance);
-    lier(t, c, o.dans, { genre: "balayage", sources: [...ids], vecteur, symetrique: false }, () => balayerInterne(t, c, ids, vecteur, false));
+    lier(t, c, o.dans, { genre: "balayage", sources: [...ids], vecteur, symetrique: false }, () => balayerInterne(t, c, ids, vecteur, false), o.lier !== false);
   });
 }
 
@@ -1725,10 +1730,10 @@ function contourPlanFerme(c: Ctx, ids: ReadonlySet<Id>): { sommets: readonly Id[
 }
 
 /** Exécute `calcul` (qui insère la surface) et enregistre le lien si l'on est à la racine et qu'aucune géométrie étrangère n'a été coupée. */
-function lier(t: Travail, c: Ctx, dans: Id | undefined, lien: Omit<Extrusion, "id" | "sommetsSources" | "sommetsCrees" | "faces">, calcul: () => void): void {
+function lier(t: Travail, c: Ctx, dans: Id | undefined, lien: Omit<Extrusion, "id" | "sommetsSources" | "sommetsCrees" | "faces">, calcul: () => void, actif = true): void {
   const avant = new Set(c.sommets.keys());
   calcul();
-  if (dans !== undefined) return;
+  if (dans !== undefined || !actif) return;
   const sources: Record<Id, Vec3> = {};
   for (const id of lien.sources) {
     const a = c.aretes.get(id);
@@ -1799,7 +1804,9 @@ function actualiserExtrusions(t: Travail): void {
     delete liens[id];
     t.annotationsSales = true;
   };
-  for (const L of Object.values(liens)) {
+  // Lot 10b (EX-LINK-04) : ordre stable — ordre de création (un lien qui dépend d'un autre est toujours créé après lui).
+  for (const L of Object.values(liens).sort((a, b) => numId(a.id) - numId(b.id))) {
+    if (!liens[L.id]) continue;
     if (!Array.isArray(L.sources) || !L.sommetsSources || !L.sommetsCrees) {
       rompre(L.id); // lien mal formé (jamais produit par le noyau ; la lecture du modèle le refuse aussi)
       continue;
@@ -1847,11 +1854,15 @@ function actualiserExtrusions(t: Travail): void {
       lier(t, c, undefined, { genre: L.genre, sources: L.sources, ...(L.vecteur ? { vecteur: L.vecteur } : {}), ...(L.distance !== undefined ? { distance: L.distance } : {}), symetrique: L.symetrique }, () =>
         L.genre === "couronne" ? couronneInterne(t, c, ids, L.distance as number, L.symetrique) : balayerInterne(t, c, ids, L.vecteur as Vec3, L.symetrique),
       );
-    } catch {
-      // Recalcul impossible (courbe devenue gauche, décalage retourné…) : la surface reste retirée, le lien est rompu.
+    } catch (err) {
+      // Lot 10b (EX-LINK-03, L-04) : un recalcul qui produirait une géométrie invalide refuse la modification de la source
+      // tout entière — le modèle précédent est conservé (l'opération lève, `operer` n'écrit rien).
+      throw new RangeError(`${ERREUR_RECALCUL_LIEN} ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 }
+
+export const ERREUR_RECALCUL_LIEN = "Modification refusée : la surface liée à ces arêtes ne pourrait pas être recalculée (détachez le lien pour modifier la source librement).";
 
 /** Balayage d'arêtes le long d'un vecteur (cœur de `etirerAretes`). */
 function balayerInterne(t: Travail, c: Ctx, ids: ReadonlySet<Id>, vecteur: Vec3, symetrique: boolean): void {
