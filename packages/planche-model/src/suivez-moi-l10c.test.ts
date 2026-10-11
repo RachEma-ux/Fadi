@@ -109,3 +109,22 @@ describe("F-08 — plusieurs trous ; refus atomiques (EX-FM-04, 07)", () => {
     expect(() => suivezMoi(recoupe.m, p.profil, { aretes: recoupe.aretes })).toThrow(ERREUR_CHEMIN_RECOUPE);
   });
 });
+
+describe("Revue de #123 — distance exacte entre segments, profil troué consommé en entier", () => {
+  it("long premier segment (100 m) et branche qui s'en approche à 1 cm vers x = 2,5 m : refusé (pas d'échantillonnage)", () => {
+    const p = profilTroue(modeleVide(), 0.04, []);
+    const pts = [v3(0, 0.02, 0.02), v3(100, 0.02, 0.02), v3(100, 5, 0.02), v3(2.5, 5, 0.02), v3(2.5, 0.03, 0.02)];
+    const ch = chemin(p.m, pts);
+    expect(() => suivezMoi(ch.m, p.profil, { aretes: ch.aretes })).toThrow(ERREUR_CHEMIN_RECOUPE);
+  });
+  it("profil troué décalé du départ du chemin : ni arête ni sommet du trou d'origine ne restent en fil de fer", () => {
+    const p = profilTroue(modeleVide(), 0.04, [[0.002, 0.002, 0.036]]);
+    const ch = chemin(p.m, [v3(0.5, 0.02, 0.02), v3(1.5, 0.02, 0.02)]);
+    const r = suivezMoi(ch.m, p.profil, { aretes: ch.aretes }).modele;
+    const c = contexte(r);
+    const bordees = new Set(Object.values(c.faces).flatMap((f) => [f.exterieur, ...f.trous].flatMap((b) => b.map((s, i) => [s, b[(i + 1) % b.length]].sort().join("|")))));
+    const orphelines = Object.entries(c.aretes).filter(([id, a]) => !ch.aretes.includes(id) && !bordees.has([a.a, a.b].sort().join("|")));
+    expect(orphelines).toHaveLength(0);
+    expect(Object.values(c.sommets).some((s) => Math.abs(s.position.x) < 1e-9)).toBe(false);
+  });
+});
