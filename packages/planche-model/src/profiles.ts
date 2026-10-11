@@ -25,7 +25,15 @@ export interface SectionProfil {
 /** Provenance de la section : saisie par l'utilisateur, ou ligne d'un catalogue sourcé (D-180). */
 export type SourceSection =
   | { readonly genre: "saisie" }
-  | { readonly genre: "catalogue"; readonly source: string; readonly edition: string; readonly page?: string; readonly ligne?: string };
+  | {
+      readonly genre: "catalogue";
+      readonly source: string;
+      readonly edition: string;
+      readonly page?: string;
+      readonly ligne?: string;
+      /** (Lot L14) Masse linéique (kg/m) lue dans la même ligne de catalogue sourcé ; absente = non fournie. */
+      readonly masseLineique?: number;
+    };
 
 export type PointPlacement = "centre" | "haut-gauche" | "haut-droite" | "bas-droite" | "bas-gauche";
 export type PositionBoucle = "centre" | "exterieur" | "interieur";

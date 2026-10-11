@@ -88,6 +88,15 @@ import {
   type EtatFrappeSeule,
   type ModificateurSeul,
   type SectionCourante,
+  csvDebit,
+  effacerEtiquettesPieces,
+  listeDebit,
+  numeroterPieces,
+  piecesDuModele,
+  poserEtiquettesPieces,
+  reperesRenumerotes,
+  trierDebit,
+  type LigneDebit,
 } from "@parcours/planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { planches as planchesDe, type Commande, type LigneCatalogue, type ModeleAtelier } from "@parcours/atelier-model";
@@ -104,9 +113,10 @@ import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche,
 import { BarreActions } from "../panneaux/BarreActions";
 import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
 import { useNavigationBarre } from "../navigation-barre";
-import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { disponibiliteDebit, type IdCommandeDebit, COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
+import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panneau-debit";
 import { type CataloguePlanche, sectionCatalogue, sectionDepuisFace, sectionSaisie } from "./sections-planche";
 import { BoutonOutils } from "./BoutonOutils";
 import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres-outils-disposition";
@@ -164,8 +174,8 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "instructeur" | "materiaux" | "balises" | "objets" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur";
-type PanneauObjets = "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur";
+type Panneau = "instructeur" | "materiaux" | "balises" | "objets" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
+type PanneauObjets = "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
 /** Panneaux du lot 5 (§6), derrière une seule icône « Objets » : la colonne reste courte (téléphone, Zoom étendu). */
 const LISTE_PANNEAUX_OBJETS: readonly (readonly [PanneauObjets, string])[] = [
   ["info-entite", "ⓘ"],
@@ -177,8 +187,13 @@ const LISTE_PANNEAUX_OBJETS: readonly (readonly [PanneauObjets, string])[] = [
   ["adoucir", "◠"],
   ["info-modele", "⚙"],
   ["navigateur", "☰"],
+  ["debit", "☷"],
 ];
 const PANNEAUX_OBJETS: ReadonlySet<string> = new Set(LISTE_PANNEAUX_OBJETS.map(([id]) => id));
+/** Lot L14 : pièces du modèle par occurrence (milieu de l'axe et repère, pour les étiquettes). */
+function piecesDuModeleParOcc(m: Modele) {
+  return new Map(piecesDuModele(m).map((p) => [p.occurrence, p] as const));
+}
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 const CLE_PRECISION = "fadi.planche.precision";
 function lirePrecision(): number {
@@ -286,6 +301,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const sectionRef = useRef<SectionCourante | null>(null);
   const [choixSection, setChoixSection] = useState<ChoixSection>({ mode: "catalogue", catalogueId: "", ligne: null, segments: "" });
   const [erreurFace, setErreurFace] = useState<string | null>(null);
+  // Lot L14 : réglages de la liste de débit (portée, renumérotation, masse volumique déclarée avec sa source, tri).
+  const [reglagesDebit, setReglagesDebit] = useState<ReglagesDebit>(REGLAGES_DEBIT_DEFAUT);
+  const [noteDebit, setNoteDebit] = useState<string | null>(null);
   // Lot 6 : moteur booléen (manifold-3d) chargé à la demande, au premier choix d'un outil de solides.
   const booleensRef = useRef<AdaptateurBooleens | null>(null);
   const [booleens, setBooleens] = useState<"absent" | "chargement" | "ok" | "echec">("absent");
@@ -1993,6 +2011,64 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       setChoixSection({ mode: "face", section: null });
     }
   }, []);
+  const lignesDebit = useMemo((): LigneDebit[] => {
+    const m = hist.present.modele;
+    const rho = Number(reglagesDebit.masseVolumique.replace(",", "."));
+    const masseVolumique = Number.isFinite(rho) && rho > 0 && reglagesDebit.sourceMasse.trim() ? { valeur: rho, source: reglagesDebit.sourceMasse.trim() } : null;
+    // Portée « sélection » : les objets de la racine choisis ; dans un objet ouvert, l'objet de la racine qui le contient.
+    const racine = dans === undefined ? (vue.selection ?? []).filter((id) => m.racine.occurrences[id]) : cheminRef.current.slice(0, 1);
+    const l = listeDebit(m, { portee: reglagesDebit.portee, selection: racine, masseVolumique });
+    return reglagesDebit.tri ? trierDebit(l, reglagesDebit.tri.colonne, reglagesDebit.tri.sens) : l;
+  }, [hist.present.modele, reglagesDebit, dans, vue.selection]);
+  const etiquettesPosees = useMemo(() => Object.values(hist.present.modele.annotations?.textes ?? {}).filter((x) => x.genre === "repere" && x.etiquettePiece).length, [hist.present.modele]);
+  const disponibiliteCommandeDebit = (id: IdCommandeDebit) => disponibiliteDebit(id, { lignes: lignesDebit.length, etiquettes: etiquettesPosees, lecture: readOnly });
+  /** Lot L14 : un clic sur une ligne sélectionne exactement ses occurrences du contexte ouvert (aucune extension). */
+  const selectionnerLigneDebit = (l: LigneDebit) => {
+    const chemin = cheminRef.current;
+    const ids: string[] = [];
+    let ailleurs = 0;
+    for (const c of l.chemins) {
+      const dedans = c.length === chemin.length + 1 && chemin.every((id, i) => c[i] === id);
+      if (dedans) ids.push(c[c.length - 1]!);
+      else ailleurs++;
+    }
+    setSelection(ids);
+    setNoteDebit(ailleurs > 0 ? t("planche.debit.note.ailleurs", { nombre: String(ailleurs) }) : null);
+    rafraichir();
+  };
+  const executerDebit = (id: IdCommandeDebit) => {
+    if (!disponibiliteCommandeDebit(id).disponible) return;
+    if (id === "liste-debit") {
+      setPanneau("debit");
+      return;
+    }
+    if (id === "exporter-debit") {
+      telechargerFichier(new Blob([csvDebit(lignesDebit)], { type: "text/csv;charset=utf-8" }), `${(plancheCourante?.params.nom ?? "planche").replace(/[^\w.-]+/g, "_")}-debit.csv`);
+      setNoteDebit(t("planche.debit.note.exporte", { lignes: String(lignesDebit.length) }));
+      return;
+    }
+    if (id === "renumeroter") {
+      const depart = Number.parseInt(reglagesDebit.depart, 10);
+      if (!Number.isInteger(depart) || depart < 0) {
+        setNoteDebit(t("planche.debit.note.depart"));
+        return;
+      }
+      operer(t("planche.debit.renumeroter"), (m) => ({ modele: numeroterPieces(m, reperesRenumerotes(lignesDebit, reglagesDebit.prefixe.trim(), depart)).modele, message: t("planche.debit.note.renumerote", { lignes: String(lignesDebit.length) }) }));
+      return;
+    }
+    if (id === "etiquettes") {
+      operer(t("planche.debit.etiquettes"), (m) => {
+        const pieces = piecesDuModeleParOcc(m);
+        const etiquettes = lignesDebit.flatMap((l) => l.occurrences).flatMap((o) => {
+          const p = pieces.get(o);
+          return p ? [{ occurrence: o, position: p.milieu, texte: p.repere ?? "?" }] : [];
+        });
+        return { modele: poserEtiquettesPieces(m, etiquettes).modele, message: t("planche.debit.note.etiquettes", { nombre: String(etiquettes.length) }) };
+      });
+      return;
+    }
+    operer(t("planche.debit.effacer-etiquettes"), (m) => ({ modele: effacerEtiquettesPieces(m).modele }));
+  };
   const outil = outilParId(outilId);
   const etatTexte3D = outilId === "texte-3d" ? (etatMachineRef.current as EtatTexte3D | null) : null;
   // Plan de coupe sélectionné seul (§4.28) : barre Inverser / Coupe active / Effacer.
@@ -2160,7 +2236,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     } else if (c.famille === "vue") {
       const id = c.id as IdCommandeVue;
       if (disponibiliteVue(id, etatVue()).disponible) executerVue(id);
-    } else if (c.famille === "lien") detacherLienSelection();
+    } else if (c.famille === "debit") executerDebit(c.id as IdCommandeDebit);
+    else if (c.famille === "lien") detacherLienSelection();
     else if (dans !== undefined) fermerContexte(c.id as IdCommandeContexte);
   };
   etatVueRef.current = etatVue;
@@ -2449,6 +2526,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
             <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}>×</button>
           </header>
           <div className="canevas-panneau-corps">
+            {panneau === "debit" && (
+              <PanneauDebit lignes={lignesDebit} reglages={reglagesDebit} onReglages={setReglagesDebit} onLigne={selectionnerLigneDebit} executer={executerDebit} disponibilite={disponibiliteCommandeDebit} lecture={readOnly} note={noteDebit} />
+            )}
             {panneau === "info-entite" && <PanneauInfoEntite modele={hist.present.modele} selection={vue.selection ?? selectionRef.current} dans={dans} lecture={readOnly} separateur={SEPARATEUR_DECIMAL} actions={actionsInfo} />}
             {panneau === "composants" && (
               <PanneauComposants

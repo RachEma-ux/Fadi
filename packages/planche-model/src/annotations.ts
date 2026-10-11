@@ -43,7 +43,7 @@ export type Cote =
 
 export type TexteAnnotation =
   /** Texte avec repère : ancre sur une entité (ou un point), position du texte, ligne de rappel entre les deux. */
-  | { readonly id: Id; readonly genre: "repere"; readonly ancre: Vec3; readonly entite?: Id; readonly position: Vec3; readonly texte: string }
+  | { readonly id: Id; readonly genre: "repere"; readonly ancre: Vec3; readonly entite?: Id; readonly position: Vec3; readonly texte: string; readonly etiquettePiece?: boolean }
   /** Texte écran : fixé en pixels, ne suit pas la caméra. */
   | { readonly id: Id; readonly genre: "ecran"; readonly ecran: { readonly x: number; readonly y: number }; readonly texte: string };
 

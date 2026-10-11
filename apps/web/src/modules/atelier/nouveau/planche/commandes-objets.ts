@@ -136,7 +136,7 @@ export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelecti
 }
 
 /** Raccourcis des commandes d'objet, de contexte, du Navigateur, de lien et de vue, normalisés (pour le contrôle des collisions). */
-export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE].map((c) => normaliserRaccourci(c.raccourci));
+export const raccourcisObjets = (): readonly string[] => [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN, ...COMMANDES_VUE, ...COMMANDES_DEBIT].map((c) => normaliserRaccourci(c.raccourci));
 
 /** Cible proposée par « Déplacer vers un groupe… » : `id` absent = racine. */
 export interface CibleDeplacement {
@@ -217,6 +217,35 @@ export const COMMANDES_VUE: readonly CommandeVue[] = [
   { id: "isoler", picto: "⦿", libelle: "planche.menu.isoler", court: "planche.objets.court.isoler", raccourci: "Alt+Maj+I" },
   { id: "masquer-reste", picto: "⬒", libelle: "planche.affichage.masquer-reste", court: "planche.objets.court.masquer-reste", raccourci: "Alt+Maj+R" },
 ];
+
+/**
+ * Lot L14 : commandes de la liste de débit de la Planche (règle d'or : icône, barre du panneau, raccourci). Ouvrir la
+ * liste, renuméroter les repères, poser les étiquettes, les effacer ensemble, exporter le CSV.
+ */
+export type IdCommandeDebit = "liste-debit" | "renumeroter" | "etiquettes" | "effacer-etiquettes" | "exporter-debit";
+export interface CommandeDebit {
+  readonly id: IdCommandeDebit;
+  readonly picto: string;
+  readonly libelle: CleMessage;
+  readonly court: CleMessage;
+  readonly raccourci: string;
+}
+export const COMMANDES_DEBIT: readonly CommandeDebit[] = [
+  { id: "liste-debit", picto: "☷", libelle: "planche.debit.ouvrir", court: "planche.debit.court.ouvrir", raccourci: "Alt+Maj+T" },
+  { id: "renumeroter", picto: "№", libelle: "planche.debit.renumeroter", court: "planche.debit.court.renumeroter", raccourci: "Alt+Maj+N" },
+  { id: "etiquettes", picto: "⌖", libelle: "planche.debit.etiquettes", court: "planche.debit.court.etiquettes", raccourci: "Alt+Maj+E" },
+  { id: "effacer-etiquettes", picto: "⌧", libelle: "planche.debit.effacer-etiquettes", court: "planche.debit.court.effacer-etiquettes", raccourci: "Alt+Maj+W" },
+  { id: "exporter-debit", picto: "⇩", libelle: "planche.debit.exporter", court: "planche.debit.court.exporter", raccourci: "Alt+Maj+X" },
+];
+
+/** Disponibilité des commandes de débit : une liste non vide (hors lecture pour les écritures) ; des étiquettes à effacer. */
+export function disponibiliteDebit(id: IdCommandeDebit, s: { readonly lignes: number; readonly etiquettes: number; readonly lecture: boolean }): Disponibilite {
+  if (id === "liste-debit") return { disponible: true, motif: null };
+  if (id === "exporter-debit") return s.lignes > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.debit.motif.vide" };
+  if (s.lecture) return { disponible: false, motif: "planche.debit.motif.lecture" };
+  if (id === "effacer-etiquettes") return s.etiquettes > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.debit.motif.sans-etiquette" };
+  return s.lignes > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.debit.motif.vide" };
+}
 
 export function disponibiliteVue(id: IdCommandeVue, s: { readonly entites: number; readonly isole: boolean; readonly dansObjet: boolean }): Disponibilite {
   if (id === "isoler") return s.isole || s.entites > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.objets.motif.isoler" };

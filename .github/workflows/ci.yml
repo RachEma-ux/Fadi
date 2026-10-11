@@ -184,6 +184,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-assemblages node apps/web/e2e/planche-assemblages.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la liste de débit (lot L14) — lignes, masse sourcée seulement, tri, sélection exacte, repères, étiquettes, CSV (apps/web/e2e/planche-debit.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-debit node apps/web/e2e/planche-debit.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         run: |
           set -o pipefail

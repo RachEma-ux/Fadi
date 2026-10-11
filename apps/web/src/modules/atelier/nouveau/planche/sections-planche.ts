@@ -130,7 +130,16 @@ const valeurMm = (v: string | number | null | undefined): number | null => (type
  */
 export function sectionCatalogue(cat: CataloguePlanche, ligne: LigneCatalogue, segments = ""): SectionCourante {
   const v = ligne.valeurs;
-  const source = { genre: "catalogue" as const, source: ligne.source.source, edition: ligne.source.edition, page: ligne.source.page, ligne: String(ligne.numero) };
+  // Lot L14 : la masse linéique n'est copiée que si la même ligne sourcée la porte (jamais supposée).
+  const masse = v["masse_kg_m"];
+  const source = {
+    genre: "catalogue" as const,
+    source: ligne.source.source,
+    edition: ligne.source.edition,
+    page: ligne.source.page,
+    ligne: String(ligne.numero),
+    ...(typeof masse === "number" && Number.isFinite(masse) && masse > 0 ? { masseLineique: masse } : {}),
+  };
   const designation = String(v["designation"] ?? "").trim();
   let section: SectionProfil;
   try {
