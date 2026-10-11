@@ -133,4 +133,17 @@ describe("P-13 — bande annulaire sur une boucle concave (EX-PT-06)", () => {
     expect(recoupementContour([v3(0, 0, 0), v3(1, 0, 0), v3(1, 1, 0), v3(0, 1, 0)], n)).toBeNull();
     expect(recoupementContour([v3(0, 0, 0), v3(1, 1, 0), v3(1, 0, 0), v3(0, 1, 0)], n)).toEqual([0, 2]);
   });
+  it("revue #121 : le détecteur vaut à toutes les échelles (nœud papillon de 1 mm et de 1 km)", () => {
+    const n = v3(0, 0, 1);
+    for (const k of [0.001, 1000]) {
+      expect(recoupementContour([v3(0, 0, 0), v3(k, k, 0), v3(k, 0, 0), v3(0, k, 0)], n)).toEqual([0, 2]);
+      expect(recoupementContour([v3(0, 0, 0), v3(k, 0, 0), v3(k, k, 0), v3(0, k, 0)], n)).toBeNull();
+    }
+  });
+  it("revue #121 : passer en Étirement ou en Surface ouverte remet l'étendue à « Distance »", () => {
+    for (const mode of ["etirement", "tube"]) {
+      const p = partie(machinePousserTirer, modeleVide()).configurer("etendue", "face").configurer("face", mode);
+      expect(p.vue().options?.find((o) => o.id === "etendue")?.valeur).toBe("distance");
+    }
+  });
 });

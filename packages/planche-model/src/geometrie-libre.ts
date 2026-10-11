@@ -1998,11 +1998,17 @@ export function recoupementContour(pts: readonly Vec3[], n: Vec3): [number, numb
       if (i === 0 && j === N - 1) continue;
       const c = q[j]!;
       const d = q[(j + 1) % N]!;
-      const o1 = orient(a, b, c);
-      const o2 = orient(a, b, d);
-      const o3 = orient(c, d, a);
-      const o4 = orient(c, d, b);
-      if (o1 * o2 < -EPS && o3 * o4 < -EPS) return [i, j];
+      // Revue #121 : chaque orientation est rapportée aux longueurs des deux segments (sinus de l'angle), si bien que le
+      // test vaut à toutes les échelles (un nœud papillon d'un millimètre est vu comme un de dix mètres).
+      const lab = Math.hypot(b.x - a.x, b.y - a.y);
+      const lcd = Math.hypot(d.x - c.x, d.y - c.y);
+      if (lab < 1e-15 || lcd < 1e-15) continue;
+      const o1 = orient(a, b, c) / (lab * lcd);
+      const o2 = orient(a, b, d) / (lab * lcd);
+      const o3 = orient(c, d, a) / (lab * lcd);
+      const o4 = orient(c, d, b) / (lab * lcd);
+      const SIN = 1e-9;
+      if (((o1 < -SIN && o2 > SIN) || (o1 > SIN && o2 < -SIN)) && ((o3 < -SIN && o4 > SIN) || (o3 > SIN && o4 < -SIN))) return [i, j];
     }
   }
   return null;
