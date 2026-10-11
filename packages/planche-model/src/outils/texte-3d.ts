@@ -109,11 +109,10 @@ export function facesDuTexte3D(p: ParametresTexte3D, origine: Vec3, plan: PlanTe
  * des lettres vers le haut du modèle (sur une face horizontale : vers +Y, ou −Y sous une face tournée vers le bas) ;
  * sinon le sol.
  */
-export function planDePose(ctx: ContexteOutil, i: Inference | null): PlanTexte3D {
-  if (!i || i.type !== "sur-face" || i.entite === undefined) return PLAN_SOL;
-  const f = geometrieVisible(ctx.modele).faces.find((x) => x.id === i.entite);
-  if (!f) return PLAN_SOL;
-  const n = normalize(f.normale);
+export function planDePose(_ctx: ContexteOutil, i: Inference | null): PlanTexte3D {
+  // La normale vient de l'inférence (face de l'occurrence visée), pas d'une recherche par identifiant (revue de #129).
+  if (!i || i.type !== "sur-face" || i.normale === undefined) return PLAN_SOL;
+  const n = normalize(i.normale);
   const Z = v3(0, 0, 1);
   let v = scale(n, -n.z);
   v = add(Z, v); // projection de Z sur le plan de la face
@@ -123,6 +122,11 @@ export function planDePose(ctx: ContexteOutil, i: Inference | null): PlanTexte3D
   }
   v = normalize(v);
   return { u: normalize(cross(v, n)), v, n };
+}
+
+/** Alignement mémorisé (préférence d'interface) : valeur inconnue → gauche (défaut). */
+export function lireAlignementTexte3D(valeur: unknown): AlignementTexte3D {
+  return valeur === "centre" || valeur === "droite" ? valeur : "gauche";
 }
 
 function optionsTexte(e: EtatTexte3D): OptionOutil[] {
