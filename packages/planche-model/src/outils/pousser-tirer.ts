@@ -31,21 +31,7 @@ import {
   messageErreur,
   prefixe,
 } from "./commun-formes.js";
-import {
-  VECTEUR_AXE,
-  axeDeToucheFleche,
-  consigneDe,
-  distanceLocale,
-  echelleDansPlan,
-  enLocal,
-  idsSelectionnables,
-  libelleMesuresDe,
-  selectionValide,
-  vecteurLocal,
-  vueModif,
-  viseeElement,
-  type VerrouFleche,
-} from "./commun-modif.js";
+import { axeDeToucheFleche, consigneDe, distanceLocale, distancesLocales, echelleDansPlan, enLocal, idsSelectionnables, libelleMesuresDe, normaleMonde, selectionValide, type VerrouFleche, VECTEUR_AXE, vecteurLocal, viseeElement, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, EvenementOutil, MachineOutil, OptionOutil, Rayon, Transition, VueOutil } from "./machine.js";
 import { type Cible, idsDuClic, optionsDans, scene } from "./selection.js";
 
@@ -60,7 +46,8 @@ export const CONSIGNE_ARETE_TIRAGE =
   "Cliquez pour fixer la surface ou saisissez la distance. | Flèches = Verrouiller un axe. | ↓ = Le long de l'arête (allonger). | Alt = Des deux côtés.";
 
 type ParamsPT =
-  | { readonly genre: "face"; readonly face: Id; readonly distance: number; readonly nouvelleFace: boolean; readonly sansFond?: boolean; readonly etirement?: boolean; readonly autres?: readonly Id[] }
+  /** `normale` (monde, face cliquée) gardée pour la correction tapée, qui rejoue après `retour` (revue de #134). */
+  | { readonly genre: "face"; readonly face: Id; readonly distance: number; readonly nouvelleFace: boolean; readonly sansFond?: boolean; readonly etirement?: boolean; readonly autres?: readonly Id[]; readonly normale?: Vec3 }
   /** Lot L19 : `vecteur` monde (ramené au contexte d'édition à l'application, EX-MODEL-02). */
   | { readonly genre: "aretes"; readonly aretes: readonly Id[]; readonly vecteur: Vec3; readonly symetrique: boolean; readonly normaleBoucle?: Vec3 }
   /**
@@ -225,16 +212,22 @@ function appliquer(
     const etirement = prec ? prec.etirement === true : e.etirement;
     // Lot L19 (EX-MODEL-02) : la distance tapée ou visée est en mètres monde ; dans un groupe transformé, elle est ramenée
     // le long de la normale locale de la face (refus nommé si une échelle non uniforme fausserait la dimension).
+    const ctxBase = { ...ctx, modele: base };
     const nLocale = contexte(base, ctx.dans).faces[face]?.normale;
-    const d = e.normale && nLocale ? distanceLocale({ ...ctx, modele: base }, e.normale, nLocale, distance) : distance;
-    // Lot L21 : en mode Normal (ou Conserver la face), les autres faces présélectionnées suivent dans la même opération.
+    // Normale monde de la face cliquée : celle des paramètres (une correction rejoue après `retour`, revue de #134), sinon
+    // celle de l'état, sinon dérivée de la face.
+    const nMonde = prec?.normale ?? e.normale ?? (nLocale ? normaleMonde(ctxBase, nLocale) : null);
+    const d = nMonde && nLocale ? distanceLocale(ctxBase, nMonde, nLocale, distance) : distance;
+    // Lot L21 : en mode Normal (ou Conserver la face), les autres faces présélectionnées suivent dans la même opération,
+    // chacune de la même distance monde le long de sa propre normale (revue de #134 : refus nommé si l'une ne la garde pas).
     const autres = prec ? (prec.autres ?? []) : e.autres;
+    const distances = autres.length > 0 ? [d, ...distancesLocales(ctxBase, autres, Math.sign(d) || 1, distance)] : [d];
     const r = sansFond
       ? tuberFace(base, face, d, { ...optionsDans(ctx), lier: e.lier })
       : etirement
         ? etirerFace(base, face, d, optionsDans(ctx))
         : autres.length > 0
-          ? pousserTirerFaces(base, [face, ...autres], d, { ...optionsDans(ctx), nouvelleFace: e.nouvelleFace })
+          ? pousserTirerFaces(base, [face, ...autres], distances, { ...optionsDans(ctx), nouvelleFace: e.nouvelleFace })
           : pousserTirer(base, face, d, { ...optionsDans(ctx), nouvelleFace: e.nouvelleFace });
     const encore = contexte(r.modele, ctx.dans).faces[face] !== undefined;
     // Lot L20 : l'étirement (et son pli) reste dans le contexte d'édition ; dans un composant partagé, il vaut pour
@@ -242,7 +235,7 @@ function appliquer(
     const partage = etirement ? occurrencesPartagees(base, ctx.dans) : 0;
     const avertissement = partage > 1 ? avertissementComposantPartage(partage) : null;
     return {
-      etat: { ...retour(e), texte, erreur: avertissement, derniere: { avant: base, apres: r.modele, params: { genre: "face", face, distance, nouvelleFace: e.nouvelleFace, ...(sansFond ? { sansFond: true } : {}), ...(etirement ? { etirement: true } : {}), ...(autres.length > 0 && !sansFond && !etirement ? { autres } : {}) } } },
+      etat: { ...retour(e), texte, erreur: avertissement, derniere: { avant: base, apres: r.modele, params: { genre: "face", face, distance, nouvelleFace: e.nouvelleFace, ...(sansFond ? { sansFond: true } : {}), ...(etirement ? { etirement: true } : {}), ...(autres.length > 0 && !sansFond && !etirement ? { autres } : {}), ...(nMonde ? { normale: nMonde } : {}) } } },
       modele: r.modele,
       selection: encore && !sansFond ? [face, ...autres.filter((f) => contexte(r.modele, ctx.dans).faces[f] !== undefined)] : idsSelectionnables(r.rapport.crees).filter((id) => id.startsWith("f")),
       operation: "Pousser/Tirer",
@@ -496,7 +489,8 @@ function saisir(e: EtatPousserTirer, ctx: ContexteOutil, texte: string): Transit
   }
   if (corrigeable(e.derniere, ctx)) {
     const d = e.derniere;
-    if (d.params.genre === "face") return appliquer(e, ctx, d.params.face, res.valeur, texte, d);
+    // Revue de #134 : la correction garde le côté de l'opération corrigée ; une valeur négative passe de l'autre côté.
+    if (d.params.genre === "face") return appliquer(e, ctx, d.params.face, Math.sign(d.params.distance || 1) * res.valeur, texte, d);
     return appliquerAretes(e, ctx, aValeur(d.params, res.valeur), texte, d);
   }
   return { etat: { ...e, texte, erreur: "Cliquez d'abord sur la face ou l'arête à pousser ou à tirer." } };

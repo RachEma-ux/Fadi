@@ -11,7 +11,7 @@ import { type Id, contexte, epaissir } from "../geometrie-libre.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, EPS, TOL, add, dist, dot, normalize, scale, sub } from "../vecteur.js";
 import { type Derniere, contexteSaisie, corrigeable, formaterLongueur, intersectionRayonPlan, mesures, messageErreur } from "./commun-formes.js";
-import { consigneDe, distanceLocale, libelleMesuresDe, selectionValide, vueModif, viseeElement } from "./commun-modif.js";
+import { consigneDe, distanceLocale, distancesLocales, libelleMesuresDe, selectionValide, vueModif, viseeElement } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
 import { optionsDans } from "./selection.js";
 
@@ -19,7 +19,11 @@ export const ID_EPAISSIR = "epaissir";
 
 interface ParamsEpaissir {
   readonly faces: readonly Id[];
+  /** Épaisseur monde, signée du côté de la normale monde de la face cliquée. */
   readonly epaisseur: number;
+  /** Normales monde et locale de la face cliquée, gardées pour la correction tapée (qui rejoue après `retour`, revue de #134). */
+  readonly normale?: Vec3;
+  readonly normaleLocale?: Vec3;
 }
 
 export interface EtatEpaissir {
@@ -58,12 +62,17 @@ function appliquer(e: EtatEpaissir, ctx: ContexteOutil, p: ParamsEpaissir, texte
   if (Math.abs(p.epaisseur) < EPS) return { etat: { ...e, texte, erreur: "Épaisseur nulle : rien n'a été épaissi." } };
   const base = remplace ? remplace.avant : ctx.modele;
   try {
-    const n = e.normale ?? null;
-    const nl = e.normaleLocale ?? null;
-    const local = n && nl ? distanceLocale({ ...ctx, modele: base }, n, nl, p.epaisseur) : p.epaisseur;
-    const r = epaissir(base, p.faces, local, optionsDans(ctx));
+    const ctxBase = { ...ctx, modele: base };
+    const n = p.normale ?? e.normale ?? null;
+    const nl = p.normaleLocale ?? e.normaleLocale ?? null;
+    // Épaisseur de la face cliquée ramenée au contexte (sens compris), puis la même épaisseur monde pour chaque face le long
+    // de sa propre normale (revue de #134 : refus nommé si une face ne garde pas sa normale).
+    const cliquee = n && nl ? distanceLocale(ctxBase, n, nl, p.epaisseur) : p.epaisseur;
+    const epaisseurs = distancesLocales(ctxBase, p.faces, Math.sign(cliquee) || 1, p.epaisseur);
+    const r = epaissir(base, p.faces, epaisseurs, optionsDans(ctx));
+    const params: ParamsEpaissir = { ...p, ...(n ? { normale: n } : {}), ...(nl ? { normaleLocale: nl } : {}) };
     return {
-      etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: p } },
+      etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params } },
       modele: r.modele,
       selection: [],
       operation: "Épaissir",
@@ -102,7 +111,8 @@ export const machineEpaissir: MachineOutil<EtatEpaissir> = {
         if (etat.etape === 2) return appliquer(etat, ctx, { faces: etat.faces, epaisseur: (etat.epaisseur < 0 ? -1 : 1) * res.valeur }, ev.texte, null);
         if (corrigeable(etat.derniere, ctx)) {
           const d = etat.derniere;
-          return appliquer({ ...etat }, ctx, { ...d.params, epaisseur: Math.sign(d.params.epaisseur || 1) * Math.abs(res.valeur) }, ev.texte, d);
+          // Revue de #134 : la correction garde le côté de l'opération corrigée ; une valeur négative passe de l'autre côté.
+          return appliquer({ ...etat }, ctx, { ...d.params, epaisseur: Math.sign(d.params.epaisseur || 1) * res.valeur }, ev.texte, d);
         }
         return { etat: { ...etat, texte: ev.texte, erreur: "Cliquez d'abord une face de la surface à épaissir." } };
       }
