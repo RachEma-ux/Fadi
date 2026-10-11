@@ -26,7 +26,7 @@ exigences EX-xxx et les cas A / P / F / R / T / L / I qu'il couvre. Ordre d'exé
 | 4 | **L9** — livré (D-209) | Registre unique des commandes (outils et commandes d'objet), `ExtrusionAction` typé, modificateurs reconnus au relâchement (Maj seul rétabli pour la Surface ouverte), routage par focus, barre APG | B1.1, B1.2 ; EX-CMD-01 à 06 ; A-03 à A-08, I-08 |
 | 5 | **L10** — 10a (D-210), 10b (D-211), 10c (D-212, Suivez-moi complet) et 10d (D-213, Révolution) livrés — **L10 clos** | a) aperçu triangulé avec trous, pipeline unique aperçu / validation, Pousser/Tirer complet (« Jusqu'à une face », étendue signée affichée, Distance par côté), cycle de vie des liens ; b) Suivez-moi complet ; c) **Révolution comme méthode de Suivez-moi** (axe, angle, segments par tour, option « résultat en nouveau groupe ») — l'ancien **L15 est absorbé** | B1.4, B2.2, B2.3, B3.1, B3.2, B4.1 ; EX-PREV, EX-STATE-01 à 03, EX-NUM, EX-PT-01, 02, 05 à 07, EX-LINK, EX-FM, EX-RV ; A-10, A-11, P-01 à P-17, L-01 à L-06, F-01 à F-08, R-01 à R-04 |
 | 6 | **L11 à L14** — livrés : L11 (D-214, noyau « pièce de profilé »), L12 (D-215, outils Profilé), L13 (D-216, onglet, coupe par profil, allonger), L14 (D-217, liste de débit) — **chaîne des profilés close** | Chaîne des profilés (inchangée, ci-dessous) | — |
-| 7 | **L16 à L18** — L16 livré (D-218, Texte 3D en volume), L17 livré (D-219, édition des pièces) | Texte 3D orienté (B4.2, EX-TX, T-01 à T-04), compléments | B4.2 |
+| 7 | **L16 à L18** — L16 livré (D-218, Texte 3D en volume), L17 livré (D-219, édition des pièces), L18 livré (D-220, compléments des outils de modification) — **L16 à L18 clos** | Texte 3D orienté (B4.2, EX-TX, T-01 à T-04), compléments | B4.2 |
 | 8 | **L19** | Persistance, contextes transformés, exports, codes de diagnostic `EX_*`, plafond de complexité, mesures sur un bureau nommé et un Android réel, matrice d'acceptation complète : **la famille d'extrusion n'est déclarée complète qu'à ce lot** | B5.1, B5.2 ; EX-SAVE, EX-MODEL-02, 03, EX-SEC, EX-ERR, EX-PERF, EX-REL ; I-01 à I-10 |
 | 9 | **L20** | Étirement à plis : triangulation contrainte (concaves, trous), arêtes de pli, validation des intersections ; le pli ne franchit jamais un contexte, avertissement sur un composant partagé | EX-PT-03 complet ; P-05, P-06, P-07 |
 | 10 | **L21** | Extrusion multi-faces et épaississement d'une surface ouverte | Hors V1, inclus par décision D-202 |
@@ -399,6 +399,8 @@ dans la fiche.
 ---
 
 ## L18 — Compléments des outils de modification
+
+**Statut : livré (D-220, `docs/planche/lots/lot-18.md`).** Statut de relevé affiché par touche dans l'Instructeur.
 
 **Portée.** Décalage d'une face à trous et Alt (chevauchements) ; Faire pivoter : Maj (verrou du rapporteur), flèches après
 le 1er clic, axe quelconque par glisser ; Retourner : Alt (axes de l'objet) ; Déplacer : poignées de rotation de la boîte.

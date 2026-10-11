@@ -2983,7 +2983,7 @@ function libelleOption(outil: string, option: string, valeur?: string): string {
   return cle in CATALOGUE.fr ? t(cle as CleMessage) : (valeur ?? option);
 }
 
-const STATUTS: Record<Outil["statutReleve"], string> = { observe: "observé en direct", instructor: "texte de l'Instructeur, effet non constaté", "non-verifie": "non vérifié", fadi: "écart propre à Fadi" };
+const STATUTS: Record<Outil["statutReleve"], CleMessage> = { observe: "planche.instructeur.statut.observe", instructor: "planche.instructeur.statut.instructor", "non-verifie": "planche.instructeur.statut.non-verifie", fadi: "planche.instructeur.statut.fadi" };
 const MODES: Record<string, string> = { bascule: "bascule", maintenu: "maintenu", appui: "à chaque appui" };
 
 /** Instructeur (§6.3) : l'outil actif expliqué depuis le catalogue — étapes, touches modificatrices, suite. */
@@ -3017,7 +3017,8 @@ function InstructeurPlanche({ outil, raison }: { outil: Outil | null; raison: st
             {outil.modificateurs.map((m, i) => (
               <li key={i}>
                 <kbd>{m.touche}</kbd>
-                {m.mode ? ` (${MODES[m.mode] ?? m.mode})` : ""} : {m.effet}
+                {m.mode ? ` (${MODES[m.mode] ?? m.mode})` : ""} : {m.effet}{" "}
+                <span className="inspecteur-statut" data-statut-modificateur={m.statutReleve}>({t("planche.instructeur.statut-modificateur", { statut: t(STATUTS[m.statutReleve]) })})</span>
               </li>
             ))}
           </ul>
@@ -3030,7 +3031,7 @@ function InstructeurPlanche({ outil, raison }: { outil: Outil | null; raison: st
         </>
       )}
       <p className="inspecteur-aide">{t("planche.instructeur.echap")}</p>
-      <p className="inspecteur-aide">{t("planche.instructeur.releve", { statut: STATUTS[outil.statutReleve] })}</p>
+      <p className="inspecteur-aide">{t("planche.instructeur.releve", { statut: t(STATUTS[outil.statutReleve]) })}</p>
     </div>
   );
 }

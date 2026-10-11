@@ -2067,37 +2067,102 @@ export interface ResultatFace extends Resultat {
   readonly face: Id | undefined;
 }
 
-/** Décalage (Offset) du contour extérieur : distance > 0 vers l'intérieur, < 0 vers l'extérieur. */
-export function decaler(m: Modele, face: Id, distance: number, o: OptionsContexte = {}): ResultatFace {
+/** Décalage d'une boucle plane, matière à gauche (autour de `n`) : chaque côté avance de `d` vers la matière. */
+function boucleDecalee(pts: readonly Vec3[], n: Vec3, distance: number): Vec3[] {
+  const k = pts.length;
+  const decale: Vec3[] = [];
+  for (let i = 0; i < k; i++) {
+    const prec = pts[(i - 1 + k) % k] as Vec3;
+    const ici = pts[i] as Vec3;
+    const suiv = pts[(i + 1) % k] as Vec3;
+    const d0 = normalize(sub(ici, prec));
+    const d1 = normalize(sub(suiv, ici));
+    const n0 = cross(n, d0);
+    const n1 = cross(n, d1);
+    const a0 = add(prec, scale(n0, distance));
+    const a1 = add(ici, scale(n1, distance));
+    const den = dot(cross(d0, d1), n);
+    if (Math.abs(den) < 1e-12) {
+      decale.push(add(ici, scale(n1, distance)));
+      continue;
+    }
+    const s = dot(cross(sub(a1, a0), d1), n) / den;
+    decale.push(add(a0, scale(d0, s)));
+  }
+  return decale;
+}
+
+/** Lot L18 : message de refus d'un décalage qui se chevauche (boucle nommée : extérieur ou trou k). */
+export const ERREUR_DECALAGE_CHEVAUCHEMENT = (ou: string): string =>
+  `Le décalage se chevauche (${ou}) : réduisez la distance, ou Alt pour autoriser le chevauchement.`;
+
+/** Deux segments plans (base u, w) qui se coupent strictement. */
+function segmentsSeCoupent(a: Vec3, b: Vec3, c: Vec3, d: Vec3, n: Vec3): boolean {
+  const { u, w } = baseDuPlan(n);
+  const q = (p: Vec3) => ({ x: dot(p, u), y: dot(p, w) });
+  const [A, B, C, D] = [q(a), q(b), q(c), q(d)];
+  const o = (p: { x: number; y: number }, r: { x: number; y: number }, s: { x: number; y: number }) => (r.x - p.x) * (s.y - p.y) - (r.y - p.y) * (s.x - p.x);
+  return o(A, B, C) * o(A, B, D) < -EPS && o(C, D, A) * o(C, D, B) < -EPS;
+}
+
+/** Point strictement dans un polygone plan (parité, base du plan de normale n). */
+function dansPolygone(p: Vec3, poly: readonly Vec3[], n: Vec3): boolean {
+  const { u, w } = baseDuPlan(n);
+  const P = { x: dot(p, u), y: dot(p, w) };
+  const q = poly.map((x) => ({ x: dot(x, u), y: dot(x, w) }));
+  let dedans = false;
+  for (let i = 0, j = q.length - 1; i < q.length; j = i++) {
+    const a = q[i] as { x: number; y: number };
+    const b = q[j] as { x: number; y: number };
+    if (a.y > P.y !== b.y > P.y && P.x < ((b.x - a.x) * (P.y - a.y)) / (b.y - a.y) + a.x) dedans = !dedans;
+  }
+  return dedans;
+}
+
+/**
+ * Décalage (Offset) d'une face : distance > 0 vers l'intérieur de la matière, < 0 vers l'extérieur. Lot L18 : les trous
+ * sont décalés avec le contour (chaque boucle avance de la même distance vers la matière : un trou s'agrandit quand le
+ * contour rentre). Sans `chevauchement`, un décalage dont une boucle se retourne, se recoupe ou en croise une autre est
+ * refusé en nommant la boucle (choix Fadi : SketchUp élague) ; avec `chevauchement` (Alt), les boucles sont insérées
+ * telles quelles et se coupent entre elles.
+ */
+export function decaler(m: Modele, face: Id, distance: number, o: OptionsContexte & { readonly chevauchement?: boolean } = {}): ResultatFace {
   const r = operer(m, o.dans, (t, c) => {
     const F = c.faces.get(face);
     if (!F) throw new Error(`Face inconnue : ${face}`);
     const n = F.normale;
-    const pts = F.exterieur.map((s) => pos(c, s));
-    const k = pts.length;
-    const decale: Vec3[] = [];
-    for (let i = 0; i < k; i++) {
-      const prec = pts[(i - 1 + k) % k] as Vec3;
-      const ici = pts[i] as Vec3;
-      const suiv = pts[(i + 1) % k] as Vec3;
-      const d0 = normalize(sub(ici, prec));
-      const d1 = normalize(sub(suiv, ici));
-      const n0 = cross(n, d0);
-      const n1 = cross(n, d1);
-      const a0 = add(prec, scale(n0, distance));
-      const a1 = add(ici, scale(n1, distance));
-      const den = dot(cross(d0, d1), n);
-      if (Math.abs(den) < 1e-12) {
-        decale.push(add(ici, scale(n1, distance)));
-        continue;
-      }
-      const s = dot(cross(sub(a1, a0), d1), n) / den;
-      decale.push(add(a0, scale(d0, s)));
+    // Matière à gauche : contour extérieur dans le sens direct autour de n, trous dans le sens inverse.
+    const oriente = (b: readonly Id[], direct: boolean): Vec3[] => {
+      const q = b.map((s) => pos(c, s));
+      return dot(newell(q), n) > 0 === direct ? q : [...q].reverse();
+    };
+    const ext = oriente(F.exterieur, true);
+    const trous = F.trous.map((b) => oriente(b, false));
+    const decale = boucleDecalee(ext, n, distance);
+    const trousDecales = trous.map((b) => boucleDecalee(b, n, distance));
+    const k = decale.length;
+    if (!o.chevauchement) {
+      const boucles = [decale, ...trousDecales];
+      const nom = (i: number) => (i === 0 ? "contour extérieur" : `trou ${i}`);
+      boucles.forEach((b, i) => {
+        const src = i === 0 ? ext : (trous[i - 1] as Vec3[]);
+        const retournee = b.some((p, j) => dot(sub(b[(j + 1) % b.length] as Vec3, p), sub(src[(j + 1) % src.length] as Vec3, src[j] as Vec3)) <= EPS);
+        if (retournee || dot(newell(b), newell(src)) <= 0 || recoupementContour(b, n)) throw new RangeError(ERREUR_DECALAGE_CHEVAUCHEMENT(nom(i)));
+      });
+      for (let i = 0; i < boucles.length; i++)
+        for (let j = i + 1; j < boucles.length; j++) {
+          const A = boucles[i] as Vec3[];
+          const B = boucles[j] as Vec3[];
+          const croise = A.some((p, x) => B.some((q, y) => segmentsSeCoupent(p, A[(x + 1) % A.length] as Vec3, q, B[(y + 1) % B.length] as Vec3, n)));
+          // Sans croisement, une boucle peut en englober une autre : un trou sorti du contour, ou deux trous emboîtés.
+          const englobe = i === 0 ? !dansPolygone(B[0] as Vec3, A, n) : dansPolygone(B[0] as Vec3, A, n) || dansPolygone(A[0] as Vec3, B, n);
+          if (croise || englobe) throw new RangeError(ERREUR_DECALAGE_CHEVAUCHEMENT(`${nom(i)} et ${nom(j)}`));
+        }
     }
-    const segments = decale.map((a, i) => ({ a, b: decale[(i + 1) % k] as Vec3 }));
+    const segments = [decale, ...trousDecales].flatMap((b) => b.map((a, i) => ({ a, b: b[(i + 1) % b.length] as Vec3 })));
     const sources: Source[] =
-      distance < 0
-        ? [{ exterieur: decale, trous: [], normale: n, materiauRecto: F.materiauRecto, materiauVerso: F.materiauVerso, role: "face" }]
+      distance < 0 && !(o.chevauchement && recoupementContour(decale, n))
+        ? [{ exterieur: decale, trous: o.chevauchement ? [] : trousDecales, normale: n, materiauRecto: F.materiauRecto, materiauVerso: F.materiauVerso, role: "face" }]
         : [];
     insererGeometrie(t, c, segments, sources, false);
     // Face dont le contour extérieur est le contour décalé.
