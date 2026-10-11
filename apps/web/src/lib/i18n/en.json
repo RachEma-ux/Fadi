@@ -8058,5 +8058,17 @@
 "« Conserver la face de départ » ne s'applique qu'à l'extrusion d'une face.": "“Keep the starting face” applies to face extrusion only.",
 "« Des deux côtés » ne s'applique qu'au balayage d'arêtes.": "“Both sides” applies to edge sweeps only.",
 "« Jusqu'à une face » ne s'applique qu'à l'extrusion normale d'une face.": "“Up to face” applies to normal face extrusion only.",
-"Le décalage se recoupe (segments {0} et {1} du contour) : réduisez la distance.": "The offset intersects itself (segments {0} and {1} of the contour): reduce the distance."
+"Le décalage se recoupe (segments {0} et {1} du contour) : réduisez la distance.": "The offset intersects itself (segments {0} and {1} of the contour): reduce the distance.",
+"Cliquez pour fixer la rotation ou saisissez l'angle (poignée de rotation de la boîte).": "Click to set the rotation or enter the angle (box rotation grip).",
+"Le décalage se chevauche ({0}) : réduisez la distance, ou Alt pour autoriser le chevauchement.": "The offset overlaps ({0}): reduce the distance, or press Alt to allow overlap.",
+"Angle nul : rien n'a été tourné.": "Zero angle: nothing was rotated.",
+"Saisie « {0} » non reconnue : un angle est attendu.": "Entry “{0}” not recognised: an angle is expected.",
+"Cet axe est perpendiculaire au plan de rotation : la branche ne peut pas s'y verrouiller.": "This axis is perpendicular to the rotation plane: the arm cannot lock to it.",
+"Glissez plus loin du centre pour définir l'axe de rotation.": "Drag further from the centre to define the rotation axis.",
+"Cliquez d'abord sur l'élément à faire pivoter.": "First click the element to rotate.",
+"Axes de l'objet : sélectionnez un seul groupe ou composant.": "Object axes: select a single group or component.",
+"contour extérieur": "outer contour",
+"trou {0}": "hole {0}",
+"contour extérieur et trou {0}": "outer contour and hole {0}",
+"trou {0} et trou {1}": "hole {0} and hole {1}"
 }
