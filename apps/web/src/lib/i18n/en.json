@@ -7956,5 +7956,7 @@
 "Étendue": "Extent",
 "Jusqu'à une face": "Up to face",
 "Direct": "Forward",
-"Inversé": "Reversed"
+"Inversé": "Reversed",
+"Ctrl seul : « Conserver la face de départ » ne s'applique qu'à une face, pas à une arête.": "Ctrl alone: “Keep the starting face” applies to a face only, not to an edge.",
+"Maj seul : « Surface ouverte » ne s'applique qu'à une face, pas à une arête.": "Shift alone: “Open surface” applies to a face only, not to an edge."
 }

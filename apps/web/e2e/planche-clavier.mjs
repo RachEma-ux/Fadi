@@ -331,6 +331,13 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   await page.keyboard.up("Shift");
   const apresBarre = await page.locator("[data-barre-actions]").boundingBox();
   check("A-08 : Maj + flèche sur la poignée — la barre bouge, Pousser/Tirer reste en mode Normal", apresBarre.x > avantBarre.x && (await mode()) === "normal", `${avantBarre.x} → ${apresBarre.x}, ${await mode()}`);
+  // Revue #120 : un clic hors du dessin (bouton « ? » de la barre d'état) pendant que Maj est tenue consomme la frappe.
+  await vue.focus();
+  await page.keyboard.down("Shift");
+  await page.locator(`.planche-bas button[title="${await page.evaluate(() => document.querySelector(".planche-bas button.lien")?.getAttribute("title") ?? "")}"]`).first().click();
+  await page.keyboard.up("Shift");
+  await page.waitForTimeout(40);
+  check("Maj tenue pendant un clic sur un bouton de l'interface : aucun mode basculé", (await mode()) === "normal", await mode());
   check("aucune commande envoyée (brouillon local)", s.commandes.length === 0, String(s.commandes.length));
   check("aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
   await ctx.close();
