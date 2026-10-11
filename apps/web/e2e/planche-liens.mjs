@@ -180,7 +180,16 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   await page.keyboard.press("Escape");
   await page.keyboard.press(" ");
   await vue.focus();
-  await cliquer({ x: 2, y: 0, z: 0 });
+  // L'arête seule, jamais la surface qu'elle porte : visée juste sous le pied du mur (le rendu peut faire gagner la face
+  // au pixel près sur l'arête même, et déplacer la surface elle-même rompt le lien — c'est voulu).
+  for (const dz of [-0.03, -0.06, 0]) {
+    await cliquer({ x: 2, y: 0, z: dz });
+    const sel = await page.evaluate(() => window.fadiPlanche.selection());
+    if (sel.length === 1 && sel[0].startsWith("a")) break;
+    await page.keyboard.press("Escape");
+  }
+  const selArete = await page.evaluate(() => window.fadiPlanche.selection());
+  check("L-01 : l'arête source seule est sélectionnée", selArete.length === 1 && selArete[0].startsWith("a"), JSON.stringify(selArete));
   await page.keyboard.press("m");
   await cliquer({ x: 2, y: 0, z: 0 });
   await survoler({ x: 2, y: 1, z: 0 });
