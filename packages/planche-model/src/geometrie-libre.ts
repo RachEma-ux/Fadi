@@ -4447,6 +4447,7 @@ export const ERREUR_ONGLET_PARALLELE = "Les deux pièces sont parallèles : elle
 export const ERREUR_ONGLET_GAUCHE = "Les axes des deux pièces ne se coupent pas (axes gauches) : onglet refusé.";
 export const ERREUR_BOUT_ONGLET = "Extrémité coupée en onglet : l'allonger déplacerait la coupe — refaites l'onglet après.";
 export const ERREUR_PIECE_RECOUPEE = "Pièce recoupée par un profil : sa géométrie ne se régénère plus depuis ses métadonnées.";
+export const ERREUR_PIECE_MISE_A_L_ECHELLE = "Pièce mise à l'échelle : sa longueur et sa section ne correspondent plus à ses métadonnées — refusé.";
 
 /** Axe d'une pièce dans son contexte : extrémités (x = 0 et x = longueur), direction, hauteur de son repère. */
 function axePiece(occ: Occurrence, meta: MetadonneesPiece): { debut: Vec3; fin: Vec3; x: Vec3; haut: Vec3 } {
@@ -4462,6 +4463,15 @@ function pieceDe(t: Travail, c: Ctx, id: Id): { occ: Occurrence; def: DefTravail
   const occ = c.occurrences.get(id);
   const def = occ ? t.definitions.get(occ.definition) : undefined;
   if (!occ || !def?.piece) throw new RangeError(ERREUR_PAS_UNE_PIECE);
+  // Repère orthonormé seulement : une pièce mise à l'échelle ne correspond plus à ses métadonnées (la régénérer
+  // effacerait l'échelle sans le dire).
+  const T = occ.transformation;
+  const col = (j: number) => v3(T[j] ?? 0, T[4 + j] ?? 0, T[8 + j] ?? 0);
+  const [cx, cy, cz] = [col(0), col(1), col(2)];
+  const tol = 1e-6;
+  if ([cx, cy, cz].some((v) => Math.abs(len(v) - 1) > tol) || Math.abs(dot(cx, cy)) > tol || Math.abs(dot(cx, cz)) > tol || Math.abs(dot(cy, cz)) > tol) {
+    throw new RangeError(ERREUR_PIECE_MISE_A_L_ECHELLE);
+  }
   return { occ, def, meta: def.piece };
 }
 
@@ -4499,6 +4509,7 @@ export function ongletPieces(m: Modele, a: Id, b: Id, o: OptionsContexte = {}): 
   return operer(m, o.dans, (t, c) => {
     const A = pieceDe(t, c, a);
     const B = pieceDe(t, c, b);
+    if (A.meta.coupesProfil || B.meta.coupesProfil) throw new RangeError(ERREUR_PIECE_RECOUPEE);
     const xa = axePiece(A.occ, A.meta);
     const xb = axePiece(B.occ, B.meta);
     const n = cross(xa.x, xb.x);
