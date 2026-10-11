@@ -8037,5 +8037,7 @@
 "Édition de la pièce": "Member editing",
 "Section appliquée : {designation}.": "Section applied: {designation}.",
 "Pièce tournée de {angle}° autour de son axe.": "Member rotated by {angle}° about its axis.",
-"Saisissez un angle non nul, en degrés.": "Enter a non-zero angle, in degrees."
+"Saisissez un angle non nul, en degrés.": "Enter a non-zero angle, in degrees.",
+"Ctrl seul : « Conserver la face de départ » ne s'applique qu'à une face, pas à une arête.": "Ctrl alone: “Keep the starting face” applies to a face only, not to an edge.",
+"Maj seul : « Surface ouverte » ne s'applique qu'à une face, pas à une arête.": "Shift alone: “Open surface” applies to a face only, not to an edge."
 }

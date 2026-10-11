@@ -349,7 +349,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     return d;
   });
   const stylesObserveur = useRef<MutationObserver | null>(null);
-  const clavierRef = useRef<{ touche: (e: KeyboardEvent) => void; relache: (e: KeyboardEvent) => void; perte: () => void } | null>(null);
+  const clavierRef = useRef<{ touche: (e: KeyboardEvent) => void; relache: (e: KeyboardEvent) => void; perte: () => void; pointeur: () => void } | null>(null);
   const brouillonCharge = useRef(false);
 
   const hoteRef = useRef<HTMLDivElement | null>(null);
@@ -1680,20 +1680,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         retablirPas();
         return;
       }
-      // Ctrl + G (§5.6, lot 5) : créer un groupe de la sélection ; le groupe est ensuite baliser / solide.
-      if (mod && !e.altKey && !e.shiftKey && cle === "g") {
-        e.preventDefault();
-        grouperSelection();
-        return;
-      }
-      // Ctrl + Maj + G (Objets O-1, D-203 ; convention Rhino / Tinkercad, miroir de Ctrl + G) : éclater les objets sélectionnés.
-      if (mod && !e.altKey && e.shiftKey && cle === "g") {
-        e.preventDefault();
-        eclaterSelection();
-        return;
-      }
-      // Lot 9 (EX-CMD-01) : registre unique — Alt + Maj + lettre (objets, Navigateur, vue, lien) et F2, une seule
-      // résolution (touche physique sous Alt pour macOS), la disponibilité de la famille fait foi.
+      // Lot 9 (EX-CMD-01) : registre unique — Ctrl + G (Grouper), Ctrl + Maj + G (Éclater), Alt + Maj + lettre (objets,
+      // Navigateur, vue, lien) et F2, une seule résolution (touche physique sous Alt pour macOS), la disponibilité de la
+      // famille fait foi (un objet verrouillé n'est pas éclaté).
       const commande = commandeDuClavier(e);
       if (commande && routeeParLeRegistre(commande) && !dansMesures) {
         e.preventDefault();
@@ -1812,18 +1801,24 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       setMajVerrouillee(false);
     };
     // Les mêmes écouteurs servent la fenêtre du plan détaché (elle partage l'état : même brouillon, même historique).
-    clavierRef.current = { touche: surTouche, relache: surRelache, perte: surPerte };
+    // Revue #120 : tout geste du pointeur, où qu'il tombe (bouton, panneau, barre), consomme la frappe en attente.
+    const surPointeur = () => {
+      frappeRef.current = consommerFrappe(frappeRef.current);
+    };
+    clavierRef.current = { touche: surTouche, relache: surRelache, perte: surPerte, pointeur: surPointeur };
     const fenetres = [window, ...(fenetreRef.current ? [fenetreRef.current] : [])];
     for (const w of fenetres) {
       w.addEventListener("keydown", surTouche);
       w.addEventListener("keyup", surRelache);
       w.addEventListener("blur", surPerte);
+      w.addEventListener("pointerdown", surPointeur, true);
     }
     return () => {
       for (const w of fenetres) {
         w.removeEventListener("keydown", surTouche);
         w.removeEventListener("keyup", surRelache);
         w.removeEventListener("blur", surPerte);
+        w.removeEventListener("pointerdown", surPointeur, true);
       }
     };
   }, [annulerPas, retablirPas, envoyerTouche, echap, choisirOutil, setTexte, grouperSelection, eclaterSelection, fermerContexte, ouvrirDialogueComposant, majOptions, etendre, collerSelection, copierSelection]);
@@ -1852,6 +1847,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         w.removeEventListener("keydown", c.touche);
         w.removeEventListener("keyup", c.relache);
         w.removeEventListener("blur", c.perte);
+        w.removeEventListener("pointerdown", c.pointeur, true);
       }
       try {
         w.close();
@@ -1929,6 +1925,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
           w.addEventListener("keydown", c.touche);
           w.addEventListener("keyup", c.relache);
           w.addEventListener("blur", c.perte);
+          w.addEventListener("pointerdown", c.pointeur, true);
         }
         w.addEventListener("pagehide", () => {
           if (fenetreRef.current === w) rattacher();
