@@ -87,6 +87,8 @@ export interface VueOutil {
   readonly apercu: {
     readonly lignes: readonly (readonly Vec3[])[];
     readonly faces: readonly (readonly Vec3[])[];
+    /** (Lot 10a, EX-PREV-02) Trous de chaque face d'aperçu, au même rang que `faces` (absent = aucun trou). */
+    readonly trous?: readonly (readonly (readonly Vec3[])[])[];
     /** Rectangle de sélection à l'écran (pixels) et son genre : fenêtre (gauche → droite) ou croisée. */
     readonly cadre?: { readonly de: { x: number; y: number }; readonly a: { x: number; y: number }; readonly genre: "fenetre" | "croisee" };
     /** (Ajout lot 2, optionnel) Contour du Lasso à l'écran (pixels), curseur compris ; carré rouge au premier point. */

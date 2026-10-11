@@ -14,7 +14,7 @@
  * l'axe verrouillé ; Alt = des deux côtés. Mêmes gestes ensuite que pour une face : correction par une distance tapée,
  * double-clic sur une autre arête = répéter, Échap.
  */
-import { type Id, ERREUR_ETIRER_ISOLEE, allongerArete, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, faceAVoisines, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
+import { type Id, ERREUR_ETIRER_ISOLEE, allongerArete, distanceJusquAFace, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, faceAVoisines, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, EPS, TOL, add, cross, dist, dot, egal, len, normalize, scale, sub } from "../vecteur.js";
@@ -24,6 +24,7 @@ import {
   contexteSaisie,
   corrigeable,
   formaterLongueur,
+  formaterNombre,
   intersectionRayonPlan,
   inferenceBrute,
   mesures,
@@ -32,7 +33,6 @@ import {
 } from "./commun-formes.js";
 import {
   VECTEUR_AXE,
-  apercuPrisme,
   axeDeToucheFleche,
   consigneDe,
   enLocal,
@@ -110,12 +110,20 @@ export interface EtatPousserTirer {
   readonly origine: Vec3 | null;
   /** Contour monde de la face (aperçu). */
   readonly contour: readonly Vec3[];
+  /** (Lot 10a, EX-PREV-02) Contours monde des trous de la face : l'aperçu les montre (P-09). */
+  readonly trousContour: readonly (readonly Vec3[])[];
   readonly survol: Id | null;
   readonly distance: number;
   readonly inference: Inference | null;
   readonly texte: string | null;
   readonly erreur: string | null;
   readonly derniere: Derniere<ParamsPT> | null;
+  /** (Lot 10a, EX-STATE-01) Sélection avant l'opération : Échap la rend. */
+  readonly selectionAvant: readonly Id[];
+  /** (Lot 10a, EX-NUM-02) « Inverser le sens » : la valeur tapée s'applique de l'autre côté, une seule fois. */
+  readonly sens: 1 | -1;
+  /** (Lot 10a, EX-PT-02) Étendue : à la distance (curseur, saisie) ou « Jusqu'à une face » (clic sur une face parallèle). */
+  readonly jusquAFace: boolean;
 }
 
 function initial(): EtatPousserTirer {
@@ -136,12 +144,16 @@ function initial(): EtatPousserTirer {
     normale: null,
     origine: null,
     contour: [],
+    trousContour: [],
     survol: null,
     distance: 0,
     inference: null,
     texte: null,
     erreur: null,
     derniere: null,
+    selectionAvant: [],
+    sens: 1,
+    jusquAFace: false,
   };
 }
 
@@ -158,8 +170,11 @@ const retour = (e: EtatPousserTirer): EtatPousserTirer => ({
   normale: null,
   origine: null,
   contour: [],
+  trousContour: [],
   distance: 0,
   inference: null,
+  selectionAvant: [],
+  sens: 1,
 });
 
 /** Distance signée le long de la normale visée par le rayon, avec l'inférence (accrochage sur les sommets existants). */
@@ -178,7 +193,9 @@ function appliquer(
   texte: string | null,
   remplace: Derniere<ParamsPT> | null,
 ): Transition<EtatPousserTirer> {
-  if (Math.abs(distance) < EPS) return { etat: { ...retour(e), texte, erreur: "Distance nulle : rien n'a été poussé ni tiré." } };
+  // Lot 10a (EX-STATE-01) : une opération refusée garde la face acquise et la valeur tapée ; on corrige sans recliquer.
+  const garder = remplace ? e : { ...e, texte };
+  if (Math.abs(distance) < EPS) return { etat: { ...garder, erreur: "Distance nulle : rien n'a été poussé ni tiré." } };
   const base = remplace ? remplace.avant : ctx.modele;
   try {
     const prec = remplace?.params.genre === "face" ? remplace.params : null;
@@ -198,7 +215,7 @@ function appliquer(
       ...(remplace ? { remplaceDernier: true } : {}),
     };
   } catch (err) {
-    return { etat: { ...retour(e), texte, erreur: messageErreur(err) } };
+    return { etat: { ...garder, erreur: messageErreur(err) } };
   }
 }
 
@@ -343,7 +360,8 @@ function appliquerAretes(
   remplace: Derniere<ParamsPT> | null,
 ): Transition<EtatPousserTirer> {
   const nulle = p.genre === "aretes" ? len(p.vecteur) < EPS : Math.abs(p.genre === "couronne" ? p.distance : p.longueur) < EPS;
-  if (nulle) return { etat: { ...retour(e), texte, erreur: "Distance nulle : rien n'a été poussé ni tiré." } };
+  const garder = remplace ? e : { ...e, texte };
+  if (nulle) return { etat: { ...garder, erreur: "Distance nulle : rien n'a été poussé ni tiré." } };
   const base = remplace ? remplace.avant : ctx.modele;
   const o = optionsDans(ctx);
   try {
@@ -361,7 +379,7 @@ function appliquerAretes(
       ...(remplace ? { remplaceDernier: true } : {}),
     };
   } catch (err) {
-    return { etat: { ...retour(e), texte, erreur: messageErreur(err) } };
+    return { etat: { ...garder, erreur: messageErreur(err) } };
   }
 }
 
@@ -388,13 +406,21 @@ function apercuSpecial(e: EtatPousserTirer, p: ParamsArete): Apercu | null {
 }
 
 /** Aperçu du tube sans fond : contour translaté, montants et faces latérales seulement (ni fond ni dessus). */
-function apercuTube(contour: readonly Vec3[], dep: Vec3): Apercu {
-  const p = apercuPrisme(contour, dep);
-  const faces = contour.map((a, i) => {
-    const b = contour[(i + 1) % contour.length] as Vec3;
-    return [a, b, add(b, dep), add(a, dep)];
-  });
-  return { lignes: p.lignes, faces };
+/**
+ * Aperçu d'une face trouée (lot 10a, EX-PREV-02) : face d'arrivée avec ses trous, arêtes de chaque boucle, et — pour la
+ * Surface ouverte — les parois de chaque boucle, trous compris (P-09 : un anneau donne deux tubes).
+ */
+function apercuFace(contour: readonly Vec3[], trous: readonly (readonly Vec3[])[], dep: Vec3, genre: "prisme" | "tube" | "etirement"): Apercu {
+  const boucles = [contour, ...trous];
+  const hautes = boucles.map((b) => b.map((p) => add(p, dep)));
+  const lignes: Vec3[][] = hautes.map((h) => [...h, h[0] as Vec3]);
+  boucles.forEach((b, k) => b.forEach((p, i) => lignes.push([p, (hautes[k] as Vec3[])[i] as Vec3])));
+  if (genre !== "tube") return { lignes, faces: [hautes[0] as Vec3[]], trous: [hautes.slice(1)] };
+  const parois = boucles.flatMap((b) => b.map((a, i) => {
+    const c = b[(i + 1) % b.length] as Vec3;
+    return [a, c, add(c, dep), add(a, dep)];
+  }));
+  return { lignes, faces: parois };
 }
 
 /** Aperçu : parallélogrammes balayés par les segments. */
@@ -419,12 +445,13 @@ function saisir(e: EtatPousserTirer, ctx: ContexteOutil, texte: string): Transit
   const res = analyserSaisie(texte, contexteSaisie("longueur", ctx));
   if (res.genre === "erreur") return { etat: { ...e, texte, erreur: res.message } };
   if (res.genre !== "longueur") return { etat: { ...e, texte, erreur: `Saisie « ${texte} » non reconnue.` } };
-  if (e.etape === 2 && e.face) return appliquer(e, ctx, e.face, res.valeur, texte, null);
+  if (e.etape === 2 && e.face) return appliquer(e, ctx, e.face, e.sens * res.valeur, texte, null);
   if (e.etape === 2 && e.aretes.length > 0 && e.origine) {
     const d = directionSaisie(e, ctx);
     if (!d) return { etat: { ...e, texte, erreur: "Orientez le curseur (ou verrouillez un axe avec une flèche) pour donner la direction." } };
     // La valeur tapée est exacte ; le curseur ne donne que le genre d'opération et le sens.
-    return appliquerAretes(e, ctx, aValeur(paramsPour(e, ctx, scale(d, res.valeur)), res.valeur), texte, null);
+    const dir = e.sens === 1 ? d : scale(d, -1);
+    return appliquerAretes(e, ctx, aValeur(paramsPour(e, ctx, scale(dir, res.valeur)), res.valeur), texte, null);
   }
   if (corrigeable(e.derniere, ctx)) {
     const d = e.derniere;
@@ -452,9 +479,25 @@ export const ERREUR_MAJ_ARETE = "Maj seul : « Surface ouverte » ne s'applique 
 export const ERREUR_ALLONGER_COURBE = "Allonger : seule une arête droite isolée peut être allongée.";
 
 /** Un seul chemin pour choisir un mode : touche, bouton de la barre d'options ou bouton au toucher. */
+export const ERREUR_FACE_HORS_EXTRUSION = "« Jusqu'à une face » ne s'applique qu'à l'extrusion normale d'une face.";
+export const CONSIGNE_JUSQU_A_FACE = "Jusqu'à une face : cliquez sur une face parallèle — la distance signée s'affiche avant de valider.";
+export const ERREUR_SENS_SANS_SOURCE = "Inverser le sens : cliquez d'abord sur la face ou l'arête à pousser ou à tirer.";
+
 function configurerPT(e: EtatPousserTirer, option: string, valeur: string): Transition<EtatPousserTirer> {
+  if (option === "etendue" && (valeur === "distance" || valeur === "face")) {
+    // « Jusqu'à une face » ne vaut que pour l'extrusion standard d'une face (V1 : to-face, extrusion seulement).
+    if (valeur === "face" && (e.sansFond || e.etirement || e.aretes.length > 0)) return { etat: { ...e, erreur: ERREUR_FACE_HORS_EXTRUSION } };
+    return { etat: { ...e, jusquAFace: valeur === "face", erreur: null } };
+  }
+  if (option === "sens" && (valeur === "direct" || valeur === "inverse")) {
+    if (e.etape !== 2) return { etat: { ...e, erreur: ERREUR_SENS_SANS_SOURCE } };
+    return { etat: { ...e, sens: valeur === "inverse" ? -1 : 1, erreur: null } };
+  }
   if (option === "face" && (MODES_FACE as readonly string[]).includes(valeur)) {
-    return { etat: { ...e, nouvelleFace: valeur === "nouvelle-face", etirement: valeur === "etirement", sansFond: valeur === "tube", erreur: null } };
+    // Revue #121 : « Jusqu'à une face » ne vaut que pour l'extrusion normale : passer en Étirement ou en Surface ouverte
+    // remet l'étendue à « Distance » (sinon la cible serait appliquée à un tube ou à un étirement).
+    const horsExtrusion = valeur === "etirement" || valeur === "tube";
+    return { etat: { ...e, nouvelleFace: valeur === "nouvelle-face", etirement: valeur === "etirement", sansFond: valeur === "tube", jusquAFace: horsExtrusion ? false : e.jusquAFace, erreur: null } };
   }
   if (option === "arete" && (MODES_ARETE as readonly string[]).includes(valeur)) {
     const sansAllonger = e.fleche?.touche === "FlecheBas" ? null : e.fleche;
@@ -483,6 +526,8 @@ export type OptionExtrusion = "keep-start-face" | "symmetric";
 export type ActionExtrusion =
   | { readonly type: "set-operation"; readonly operation: OperationExtrusion }
   | { readonly type: "set-option"; readonly option: OptionExtrusion; readonly value: boolean }
+  | { readonly type: "reverse-direction" }
+  | { readonly type: "set-extent"; readonly extent: "distance" | "to-face" }
   | { readonly type: "cancel" };
 
 export const ERREUR_CONSERVER_HORS_EXTRUSION = "« Conserver la face de départ » ne s'applique qu'à l'extrusion d'une face.";
@@ -491,7 +536,11 @@ export const ERREUR_SYMETRIQUE_HORS_ARETE = "« Des deux côtés » ne s'appliqu
 export function actionExtrusion(e: EtatPousserTirer, a: ActionExtrusion): Transition<EtatPousserTirer> {
   switch (a.type) {
     case "cancel":
-      return e.etape === 2 ? { etat: { ...retour(e), texte: null, erreur: null }, selection: [] } : { etat: e };
+      return e.etape === 2 ? { etat: { ...retour(e), texte: null, erreur: null }, selection: e.selectionAvant } : { etat: e };
+    case "set-extent":
+      return configurerPT(e, "etendue", a.extent === "to-face" ? "face" : "distance");
+    case "reverse-direction":
+      return configurerPT(e, "sens", e.sens === 1 ? "inverse" : "direct");
     case "set-operation":
       switch (a.operation) {
         case "extrude-face":
@@ -545,13 +594,25 @@ function optionsPT(e: EtatPousserTirer, ctx: ContexteOutil): OptionOutil[] {
         { id: "allonger", disponible: tirageArete && e.droite !== null, raccourci: "↓" },
       ],
     },
+    // Lot 10a (EX-PT-02) : étendue de l'extrusion d'une face.
+    {
+      id: "etendue",
+      valeur: e.jusquAFace ? "face" : "distance",
+      valeurs: [
+        { id: "distance", disponible: !surArete },
+        { id: "face", disponible: !surArete && !e.sansFond && !e.etirement },
+      ],
+    },
+    // Lot 10a (EX-NUM-02) : sens de la valeur tapée, une fois la face ou l'arête acquise.
+    {
+      id: "sens",
+      valeur: e.sens === 1 ? "direct" : "inverse",
+      valeurs: [
+        { id: "direct", disponible: e.etape === 2 },
+        { id: "inverse", disponible: e.etape === 2 },
+      ],
+    },
   ];
-}
-
-/** Aperçu de l'étirement : la face à sa nouvelle place et le trajet de ses sommets (pas de faces latérales). */
-function apercuEtirement(contour: readonly Vec3[], dep: Vec3): Apercu {
-  const haut = contour.map((p) => add(p, dep));
-  return { lignes: [[...haut, haut[0] as Vec3], ...contour.map((p, i) => [p, haut[i] as Vec3])], faces: [haut] };
 }
 
 export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
@@ -564,6 +625,16 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         if (etat.etape === 2 && etat.aretes.length > 0 && etat.origine) {
           const v = viseeVecteur(etat, ctx, ev.rayon, ev.tolerance);
           return { etat: { ...etat, vecteur: v.vecteur, inference: v.inference, texte: null, erreur: null } };
+        }
+        if (etat.etape === 2 && etat.face && etat.jusquAFace) {
+          // Lot 10a : la face visée donne la distance signée (aperçu et champ) ; sinon l'aperçu reste où il est.
+          const { cible } = viseeElement(ctx, ev);
+          if (cible?.genre !== "face" || cible.id === etat.face) return { etat: { ...etat, erreur: null } };
+          try {
+            return { etat: { ...etat, distance: distanceJusquAFace(ctx.modele, etat.face, cible.id, optionsDans(ctx)), texte: null, erreur: null } };
+          } catch (err) {
+            return { etat: { ...etat, erreur: messageErreur(err) } };
+          }
         }
         if (etat.etape === 2 && etat.normale && etat.origine) {
           const v = viseeDistance(etat, ctx, ev.rayon, ev.tolerance);
@@ -581,6 +652,15 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         };
       }
       case "clic": {
+        if (etat.etape === 2 && etat.face && etat.jusquAFace) {
+          const { cible } = viseeElement(ctx, ev);
+          if (cible?.genre !== "face") return { etat: { ...etat, erreur: CONSIGNE_JUSQU_A_FACE } };
+          try {
+            return appliquer(etat, ctx, etat.face, distanceJusquAFace(ctx.modele, etat.face, cible.id, optionsDans(ctx)), null, null);
+          } catch (err) {
+            return { etat: { ...etat, erreur: messageErreur(err) } };
+          }
+        }
         if (etat.etape === 2 && etat.face) {
           const v = viseeDistance(etat, ctx, ev.rayon, ev.tolerance);
           return appliquer(etat, ctx, etat.face, v.distance, null, null);
@@ -614,6 +694,7 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
               inference: i,
               texte: null,
               erreur: null,
+              selectionAvant: ctx.selection,
             },
             selection: ids,
           };
@@ -627,7 +708,7 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         if (etat.etirement && !faceAVoisines(ctx.modele, cible.id, ctx.dans)) return { etat: { ...etat, erreur: ERREUR_ETIRER_ISOLEE } };
         const P = intersectionRayonPlan(ev.rayon, { origine: el.exterieur[0] as Vec3, normale: el.normale }) ?? (el.exterieur[0] as Vec3);
         return {
-          etat: { ...etat, etape: 2, face: cible.id, normale: normalize(el.normale), origine: P, contour: el.exterieur, distance: 0, inference: inferenceBrute(P), texte: null, erreur: null },
+          etat: { ...etat, etape: 2, face: cible.id, normale: normalize(el.normale), origine: P, contour: el.exterieur, trousContour: el.trous, distance: 0, inference: inferenceBrute(P), texte: null, erreur: null, selectionAvant: ctx.selection },
           selection: [cible.id],
         };
       }
@@ -648,7 +729,8 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         return { etat };
       }
       case "echap":
-        return etat.etape === 2 ? { etat: { ...retour(etat), texte: null, erreur: null }, selection: [] } : { etat };
+        // Lot 10a (EX-STATE-01) : Échap annule l'aperçu sans pas d'historique et rend la sélection d'avant l'opération.
+        return etat.etape === 2 ? { etat: { ...retour(etat), texte: null, erreur: null }, selection: etat.selectionAvant } : { etat };
       case "appui":
       case "glisser":
       case "relache":
@@ -679,6 +761,12 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
   },
 };
 
+/** Distance calculée (« Jusqu'à une face ») : au millimètre près quand le centimètre l'arrondirait (P-04 : 0,075 m). */
+function formaterDistanceExacte(d: number, sep: "." | ","): string {
+  const deux = formaterLongueur(d, sep);
+  return Math.abs(Number(d.toFixed(2)) - d) < 1e-9 ? deux : `${formaterNombre(d, 3, sep)} m`;
+}
+
 function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
   {
     const sep = ctx.separateurDecimal;
@@ -696,13 +784,21 @@ function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
       });
     }
     const valeur =
-      etat.texte ?? (etat.etape === 2 ? `${prefixe(etat.inference)}${formaterLongueur(Math.abs(etat.distance), sep)}` : formaterLongueur(0, sep));
+      // Lot 10a (EX-NUM-02) : distance signée (négative = creuser), affichée avant toute validation.
+      etat.texte ??
+      (etat.etape === 2
+        ? etat.jusquAFace
+          ? formaterDistanceExacte(etat.distance, sep)
+          : `${prefixe(etat.inference)}${formaterLongueur(etat.distance, sep)}`
+        : formaterLongueur(0, sep));
     const dep = etat.normale ? { x: etat.normale.x * etat.distance, y: etat.normale.y * etat.distance, z: etat.normale.z * etat.distance } : null;
     return vueModif({
       consigne:
         etat.etape === 1 && etat.survolArete
           ? CONSIGNE_ARETE_SURVOL
-          : etat.sansFond
+          : etat.etape === 2 && etat.jusquAFace
+            ? CONSIGNE_JUSQU_A_FACE
+            : etat.sansFond
             ? etat.etape === 1
               ? CONSIGNE_TUBE_FACE
               : CONSIGNE_TUBE_TIRAGE
@@ -712,10 +808,10 @@ function vuePT(etat: EtatPousserTirer, ctx: ContexteOutil): VueOutil {
       apercu:
         etat.etape === 2 && dep && Math.abs(etat.distance) > TOL
           ? etat.sansFond
-            ? apercuTube(etat.contour, dep)
+            ? apercuFace(etat.contour, etat.trousContour, dep, "tube")
             : etat.etirement
-              ? apercuEtirement(etat.contour, dep)
-              : apercuPrisme(etat.contour, dep)
+              ? apercuFace(etat.contour, etat.trousContour, dep, "etirement")
+              : apercuFace(etat.contour, etat.trousContour, dep, "prisme")
           : { lignes: [], faces: [] },
       ctx,
       survol: etat.survol ? [etat.survol] : etat.survolArete ? [etat.survolArete] : [],

@@ -1402,6 +1402,37 @@ function echantillonFace(c: Ctx, f: Face): Vec3 {
   return add(o, add(scale(u, e.x), scale(w, e.y)));
 }
 
+/**
+ * Garde numérique des opérations d'extrusion (lot 10a, EX-NUM-04) : une distance non finie (NaN, ±∞) est refusée au lieu
+ * d'entrer dans la géométrie ; une distance non nulle sous la tolérance de modélisation est refusée avec ce motif.
+ */
+export const ERREUR_DISTANCE_NON_FINIE = "Distance non finie : saisissez un nombre.";
+export const ERREUR_SOUS_TOLERANCE = `Distance sous la tolérance de modélisation (${TOL} m) : rien n'a été modifié.`;
+function exigerDistance(d: number): void {
+  if (!Number.isFinite(d)) throw new RangeError(ERREUR_DISTANCE_NON_FINIE);
+  if (Math.abs(d) >= EPS && Math.abs(d) < TOL) throw new RangeError(ERREUR_SOUS_TOLERANCE);
+}
+
+/**
+ * « Jusqu'à une face » (lot 10a, EX-PT-02) : distance signée, le long de la normale de `face`, qui amène son plan sur
+ * celui de `cible`. Refus nommés : face ou cible inconnue dans le contexte, cible = source, plans non parallèles.
+ */
+export const ERREUR_CIBLE_NON_PARALLELE = "Jusqu'à une face : la face cible doit être parallèle à la face poussée.";
+export const ERREUR_CIBLE_SOURCE = "Jusqu'à une face : choisissez une autre face que celle qui est poussée.";
+export const ERREUR_CIBLE_HORS_CONTEXTE = "Jusqu'à une face : la face cible doit être dans le même groupe ou composant que la face poussée.";
+export function distanceJusquAFace(m: Modele, face: Id, cible: Id, o: OptionsContexte = {}): number {
+  const c = contexte(m, o.dans);
+  const F = c.faces[face];
+  const G = c.faces[cible];
+  if (!F) throw new Error(`Face inconnue : ${face}`);
+  if (!G) throw new RangeError(ERREUR_CIBLE_HORS_CONTEXTE);
+  if (face === cible) throw new RangeError(ERREUR_CIBLE_SOURCE);
+  if (len(cross(F.normale, G.normale)) > 1e-9) throw new RangeError(ERREUR_CIBLE_NON_PARALLELE);
+  const p = (c.sommets[F.exterieur[0] as Id] as Sommet).position;
+  const q = (c.sommets[G.exterieur[0] as Id] as Sommet).position;
+  return dot(F.normale, sub(q, p));
+}
+
 export interface OptionsPousserTirer extends OptionsContexte {
   /** Ctrl : conserve la face de départ (nouvelle face de départ, arête à l'ancien niveau). */
   readonly nouvelleFace?: boolean;
@@ -1417,6 +1448,7 @@ export function pousserTirer(m: Modele, face: Id, distance: number, o: OptionsPo
   return operer(m, o.dans, (t, c) => {
     const F = c.faces.get(face);
     if (!F) throw new Error(`Face inconnue : ${face}`);
+    exigerDistance(distance);
     if (Math.abs(distance) < EPS) return;
     const n = F.normale;
     const dep = scale(n, distance);
@@ -1519,6 +1551,7 @@ export interface OptionsEtirerAretes extends OptionsContexte {
  */
 export function etirerAretes(m: Modele, aretes: readonly Id[], vecteur: Vec3, o: OptionsEtirerAretes = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
+    exigerDistance(len(vecteur));
     if (len(vecteur) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
     const ids = aretesEtendues(c, aretes);
     const ferme = contourPlanFerme(c, ids);
@@ -1542,6 +1575,7 @@ export function etirerAretes(m: Modele, aretes: readonly Id[], vecteur: Vec3, o:
  */
 export function couronne(m: Modele, aretes: readonly Id[], distance: number, o: OptionsEtirerAretes = {}): Resultat {
   return operer(m, o.dans, (t, c) => {
+    exigerDistance(distance);
     if (Math.abs(distance) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
     const ids = aretesEtendues(c, aretes);
     lier(t, c, o.dans, { genre: "couronne", sources: [...ids], distance, symetrique: !!o.symetrique }, () => couronneInterne(t, c, ids, distance, !!o.symetrique));
@@ -1559,6 +1593,7 @@ export function allongerArete(m: Modele, arete: Id, extremite: Id, longueur: num
     if (!a) throw new Error(`Arête inconnue : ${arete}`);
     if (a.courbe) throw new RangeError("Une arête de courbe ne s'allonge pas : tirez-la pour l'étendre en surface.");
     if (extremite !== a.a && extremite !== a.b) throw new RangeError("L'extrémité ne fait pas partie de l'arête.");
+    exigerDistance(longueur);
     if (Math.abs(longueur) < EPS) throw new RangeError("Distance nulle : rien n'a été allongé.");
     const autre = extremite === a.a ? a.b : a.a;
     const E = pos(c, extremite);
@@ -1586,6 +1621,7 @@ export function tuberFace(m: Modele, face: Id, distance: number, o: OptionsConte
   return operer(m, o.dans, (t, c) => {
     const F = c.faces.get(face);
     if (!F) throw new Error(`Face inconnue : ${face}`);
+    exigerDistance(distance);
     if (Math.abs(distance) < EPS) throw new RangeError("Distance nulle : aucune surface à balayer.");
     const ids = new Set<Id>();
     for (const b of [F.exterieur, ...F.trous]) {
@@ -1895,7 +1931,42 @@ function contourDecale(pts: readonly Vec3[], n: Vec3, d: number): Vec3[] | null 
     const v = sub(r[(i + 1) % N] as Vec3, r[i] as Vec3);
     if (dot(v, dirs[i] as Vec3) <= EPS) return null;
   }
-  return dot(newell(r), n) > 0 ? r : null;
+  if (dot(newell(r), n) <= 0) return null;
+  // Lot 10a (EX-PT-06, P-13) : sur une boucle concave, deux segments non voisins du contour décalé peuvent se croiser
+  // sans qu'aucun ne s'inverse ; le décalage est alors refusé en nommant les segments.
+  const croises = recoupementContour(r, n);
+  if (croises) throw new RangeError(`Le décalage se recoupe (segments ${croises[0] + 1} et ${croises[1] + 1} du contour) : réduisez la distance.`);
+  return r;
+}
+
+/** Premier couple de segments non voisins d'une boucle plane qui se coupent (indices), ou `null`. */
+export function recoupementContour(pts: readonly Vec3[], n: Vec3): [number, number] | null {
+  const u = normalize(Math.abs(n.x) < 0.9 ? cross(n, v3(1, 0, 0)) : cross(n, v3(0, 1, 0)));
+  const w = cross(n, u);
+  const q = pts.map((p) => ({ x: dot(p, u), y: dot(p, w) }));
+  const N = q.length;
+  const orient = (a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+  for (let i = 0; i < N; i++) {
+    const a = q[i]!;
+    const b = q[(i + 1) % N]!;
+    for (let j = i + 2; j < N; j++) {
+      if (i === 0 && j === N - 1) continue;
+      const c = q[j]!;
+      const d = q[(j + 1) % N]!;
+      // Revue #121 : chaque orientation est rapportée aux longueurs des deux segments (sinus de l'angle), si bien que le
+      // test vaut à toutes les échelles (un nœud papillon d'un millimètre est vu comme un de dix mètres).
+      const lab = Math.hypot(b.x - a.x, b.y - a.y);
+      const lcd = Math.hypot(d.x - c.x, d.y - c.y);
+      if (lab < 1e-15 || lcd < 1e-15) continue;
+      const o1 = orient(a, b, c) / (lab * lcd);
+      const o2 = orient(a, b, d) / (lab * lcd);
+      const o3 = orient(c, d, a) / (lab * lcd);
+      const o4 = orient(c, d, b) / (lab * lcd);
+      const SIN = 1e-9;
+      if (((o1 < -SIN && o2 > SIN) || (o1 > SIN && o2 < -SIN)) && ((o3 < -SIN && o4 > SIN) || (o3 > SIN && o4 < -SIN))) return [i, j];
+    }
+  }
+  return null;
 }
 
 /** Couronne (cœur de `couronne`). */

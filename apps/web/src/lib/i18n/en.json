@@ -7952,6 +7952,22 @@
 "Origine des axes": "Axes origin",
 "Coin de la boîte englobante": "Bounding box corner",
 "Origine du contexte": "Context origin",
+"L'opération en cours est abandonnée : le modèle a changé sous elle, son aperçu ne peut plus être validé — reprenez la sélection.": "The operation in progress was abandoned: the model changed under it, its preview can no longer be applied — pick the selection again.",
+"Étendue": "Extent",
+"Jusqu'à une face": "Up to face",
+"Direct": "Forward",
+"Inversé": "Reversed",
 "Ctrl seul : « Conserver la face de départ » ne s'applique qu'à une face, pas à une arête.": "Ctrl alone: “Keep the starting face” applies to a face only, not to an edge.",
-"Maj seul : « Surface ouverte » ne s'applique qu'à une face, pas à une arête.": "Shift alone: “Open surface” applies to a face only, not to an edge."
+"Maj seul : « Surface ouverte » ne s'applique qu'à une face, pas à une arête.": "Shift alone: “Open surface” applies to a face only, not to an edge.",
+"Distance non finie : saisissez un nombre.": "Non-finite distance: enter a number.",
+"Distance sous la tolérance de modélisation ({0} m) : rien n'a été modifié.": "Distance below the modelling tolerance ({0} m): nothing was changed.",
+"Inverser le sens : cliquez d'abord sur la face ou l'arête à pousser ou à tirer.": "Reverse direction: first click the face or edge to push or pull.",
+"Jusqu'à une face : choisissez une autre face que celle qui est poussée.": "Up to face: choose a face other than the one being pushed.",
+"Jusqu'à une face : cliquez sur une face parallèle — la distance signée s'affiche avant de valider.": "Up to face: click a parallel face — the signed distance is shown before you confirm.",
+"Jusqu'à une face : la face cible doit être dans le même groupe ou composant que la face poussée.": "Up to face: the target face must be in the same group or component as the pushed face.",
+"Jusqu'à une face : la face cible doit être parallèle à la face poussée.": "Up to face: the target face must be parallel to the pushed face.",
+"« Conserver la face de départ » ne s'applique qu'à l'extrusion d'une face.": "“Keep the starting face” applies to face extrusion only.",
+"« Des deux côtés » ne s'applique qu'au balayage d'arêtes.": "“Both sides” applies to edge sweeps only.",
+"« Jusqu'à une face » ne s'applique qu'à l'extrusion normale d'une face.": "“Up to face” applies to normal face extrusion only.",
+"Le décalage se recoupe (segments {0} et {1} du contour) : réduisez la distance.": "The offset intersects itself (segments {0} and {1} of the contour): reduce the distance."
 }
