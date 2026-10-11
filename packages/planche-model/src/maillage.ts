@@ -98,8 +98,12 @@ function signeContour(idx: readonly number[], pts: readonly P2[]): number {
 /**
  * Triangule un polygone plan (contour extérieur + trous, points 3D) : retourne des triplets d'indices dans la
  * liste concaténée `[...exterieur, ...trous[0], …]`. Découpe en oreilles après liaison des trous par des ponts.
+ *
+ * Sans `strict`, un contour qui n'offre plus d'oreille (dégénéré, croisé) est fini en éventail de secours — assez
+ * pour un affichage, pas pour une géométrie. Avec `strict` (revue de #133 : plis de l'étirement), aucun éventail et
+ * aucun triangle retourné : la fonction rend `[]`, ce que l'appelant traite comme un échec de triangulation.
  */
-export function triangulerFace(exterieur: readonly Vec3[], trous: readonly (readonly Vec3[])[], normale?: Vec3): number[] {
+export function triangulerFace(exterieur: readonly Vec3[], trous: readonly (readonly Vec3[])[], normale?: Vec3, o: { readonly strict?: boolean } = {}): number[] {
   const n = normalize(normale ?? newell(exterieur));
   const { u, w } = baseDuPlan(n);
   const tous: Vec3[] = [...exterieur, ...trous.flat()];
@@ -151,13 +155,18 @@ export function triangulerFace(exterieur: readonly Vec3[], trous: readonly (read
       // Aucune oreille (contour dégénéré) : retirer un sommet plat, sinon éventail de secours.
       const plat = reste.findIndex((_, i) => Math.abs(aire2(pts[reste[(i - 1 + reste.length) % reste.length] as number] as P2, pts[reste[i] as number] as P2, pts[reste[(i + 1) % reste.length] as number] as P2)) <= 1e-14);
       if (plat >= 0) reste.splice(plat, 1);
+      else if (o.strict) return [];
       else {
         for (let i = 1; i + 1 < reste.length; i++) resultat.push(reste[0] as number, reste[i] as number, reste[i + 1] as number);
         reste.length = 0;
       }
     }
   }
-  if (reste.length === 3) resultat.push(reste[0] as number, reste[1] as number, reste[2] as number);
+  if (reste.length === 3) {
+    const s = aire2(pts[reste[0] as number] as P2, pts[reste[1] as number] as P2, pts[reste[2] as number] as P2);
+    if (o.strict && s < -1e-14) return []; // dernier triangle retourné : le contour se croisait
+    if (!o.strict || s > 1e-14) resultat.push(reste[0] as number, reste[1] as number, reste[2] as number);
+  }
   return resultat;
 }
 
