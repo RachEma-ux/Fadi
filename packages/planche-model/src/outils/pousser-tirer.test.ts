@@ -3,7 +3,7 @@ import { type Id, ERREUR_ETIRER_ISOLEE, aire, ajouterPolygone, ajouterRectangle,
 import { v3 } from "../vecteur.js";
 import { etape } from "./commun-formes.js";
 import { aretes, boite, clicVers, contientPoint, emprise, faces, partie, saisie, sommets, survolVers, touche, volumeAbsolu, echap } from "./essais-modification.js";
-import { CONSIGNE_ARETE_SURVOL, CONSIGNE_ARETE_TIRAGE, CONSIGNE_TUBE_FACE, CONSIGNE_TUBE_TIRAGE, ERREUR_ALLONGER_COURBE, machinePousserTirer } from "./pousser-tirer.js";
+import { CONSIGNE_ARETE_SURVOL, CONSIGNE_ARETE_TIRAGE, CONSIGNE_TUBE_FACE, CONSIGNE_TUBE_TIRAGE, ERREUR_ALLONGER_COURBE, ERREUR_CONSERVER_HORS_EXTRUSION, actionExtrusion, machinePousserTirer } from "./pousser-tirer.js";
 
 const sol = () => ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
 
@@ -46,7 +46,7 @@ describe("Pousser/Tirer (§4.15)", () => {
   });
 
   it("CA-PPT-4 : Ctrl puis 1 sur le dessus → une arête horizontale par face latérale à l'ancienne hauteur", () => {
-    const p = partie(machinePousserTirer, boite(4, 3, 2.7)).jouer(touche("Ctrl"), clicVers(v3(1, 1, 2.7)), saisie("1"));
+    const p = partie(machinePousserTirer, boite(4, 3, 2.7)).seule("Ctrl").jouer(clicVers(v3(1, 1, 2.7)), saisie("1"));
     const horizontales = aretes(p.modele).filter((a) => {
       const A = p.modele.racine.sommets[a.a]?.position;
       const B = p.modele.racine.sommets[a.b]?.position;
@@ -128,7 +128,7 @@ describe("Pousser/Tirer d'arêtes (écart Fadi, D-196)", () => {
   });
 
   it("Alt = des deux côtés ; une distance tapée juste après corrige la surface (même pas d'annulation)", () => {
-    const p = partie(machinePousserTirer, segment()).jouer(clicVers(v3(2, 0, 0)), touche("Alt"), touche("FlecheGauche"), saisie("1"));
+    const p = partie(machinePousserTirer, segment()).jouer(clicVers(v3(2, 0, 0))).seule("Alt").jouer(touche("FlecheGauche"), saisie("1"));
     expect(aireDe(p.modele)).toBeCloseTo(8, 9);
     expect(emprise(p.modele).min.y).toBeCloseTo(-1, 9);
     p.jouer(saisie("2"));
@@ -209,20 +209,24 @@ describe("Tube sans fond (option de la barre, D-199, D-201)", () => {
     expect(p.vue().consigne).toBe(etape("pousser-tirer", 0).consigne);
   });
 
-  it("Maj ne bascule plus le tube (Maj est la touche des raccourcis Fadi)", () => {
+  it("Maj à l'appui ne bascule rien (Maj + lettre reste un raccourci Fadi) ; Maj frappé seul bascule Surface ouverte (lot 9)", () => {
     const m = ajouterPolygone(modeleVide(), v3(0, 0, 0), v3(0, 0, 1), 1, 24).modele;
-    const p = partie(machinePousserTirer, m).jouer(touche("Maj"));
+    const p = partie(machinePousserTirer, m).jouer(touche("Maj"), touche("Ctrl"), touche("Alt"));
+    expect(p.vue().options?.find((o) => o.id === "face")?.valeur).toBe("normal");
+    p.seule("Maj");
+    expect(p.vue().options?.find((o) => o.id === "face")?.valeur).toBe("tube");
+    p.seule("Maj");
     expect(p.vue().options?.find((o) => o.id === "face")?.valeur).toBe("normal");
   });
 });
 
 describe("Modes explicites (lot Planche 8, D-201)", () => {
   it("une touche et un bouton donnent le même mode ; les modes sont exclusifs", () => {
-    const a = partie(machinePousserTirer, sol()).jouer(touche("Alt"));
+    const a = partie(machinePousserTirer, sol()).seule("Alt");
     const b = partie(machinePousserTirer, sol()).configurer("face", "etirement");
     expect(a.vue().options).toEqual(b.vue().options);
     expect(a.vue().options?.find((o) => o.id === "face")?.valeur).toBe("etirement");
-    a.jouer(touche("Ctrl"));
+    a.seule("Ctrl");
     expect(a.vue().options?.find((o) => o.id === "face")?.valeur).toBe("nouvelle-face");
     a.configurer("face", "tube");
     expect(a.vue().options?.find((o) => o.id === "face")?.valeur).toBe("tube");
@@ -296,5 +300,27 @@ describe("Modes explicites (lot Planche 8, D-201)", () => {
     // En mode Normal, la même face se pousse comme avant (boîte).
     p.configurer("face", "normal").jouer(clicVers(v3(1, 1, 0)), saisie("1"));
     expect(faces(p.modele)).toHaveLength(6);
+  });
+});
+
+describe("Action d'extrusion typée (lot 9, EX-CMD-02 ; cas A-02, A-03)", () => {
+  it("A-03 : action, bouton et frappe seule donnent le même état", () => {
+    const parAction = partie(machinePousserTirer, sol());
+    parAction.etat = actionExtrusion(parAction.etat, { type: "set-operation", operation: "open-surface" }).etat;
+    const parBouton = partie(machinePousserTirer, sol()).configurer("face", "tube");
+    const parTouche = partie(machinePousserTirer, sol()).seule("Maj");
+    expect(parAction.vue().options).toEqual(parBouton.vue().options);
+    expect(parTouche.vue().options).toEqual(parBouton.vue().options);
+  });
+
+  it("A-02 : Étirement puis Surface ouverte — « Conserver la face » refusé avec son motif, aucun drapeau périmé", () => {
+    const p = partie(machinePousserTirer, sol());
+    p.etat = actionExtrusion(p.etat, { type: "set-operation", operation: "stretch-face" }).etat;
+    p.etat = actionExtrusion(p.etat, { type: "set-operation", operation: "open-surface" }).etat;
+    const t = actionExtrusion(p.etat, { type: "set-option", option: "keep-start-face", value: true });
+    expect(t.etat.erreur).toBe(ERREUR_CONSERVER_HORS_EXTRUSION);
+    expect(t.etat.nouvelleFace).toBe(false);
+    expect(t.etat.etirement).toBe(false);
+    expect(t.etat.sansFond).toBe(true);
   });
 });

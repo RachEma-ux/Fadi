@@ -156,6 +156,10 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/planche-objets node apps/web/e2e/planche-objets.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du clavier de la Planche (lot 9) — frappes seules des modificateurs, barres au clavier (apps/web/e2e/planche-clavier.mjs)
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/planche-clavier node apps/web/e2e/planche-clavier.mjs 2>&1 | tee -a e2e.log
       - name: Recette des lots 4 à 6 de la Planche — mesure, annotations, caméra, matières, balises, texte 3D, solides (apps/web/e2e/planche-lots-4-6.mjs)
         run: |
           set -o pipefail

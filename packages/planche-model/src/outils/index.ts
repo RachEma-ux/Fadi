@@ -26,3 +26,5 @@ export const MACHINES: ReadonlyMap<string, MachineOutil<any>> = new Map(
 export function machineParId(id: string): MachineOutil<any> | undefined {
   return MACHINES.get(id);
 }
+export { FRAPPE_SEULE_VIDE, appuiFrappe, relacheFrappe, consommerFrappe, oublierFrappe, type EtatFrappeSeule } from "./modificateurs.js";
+export { actionExtrusion, type ActionExtrusion, type OperationExtrusion, type OptionExtrusion } from "./pousser-tirer.js";

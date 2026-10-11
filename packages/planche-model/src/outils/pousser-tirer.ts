@@ -447,6 +447,8 @@ const MODES_ARETE: readonly ModeArete[] = ["normal", "deux-cotes", "allonger"];
 export const modeFace = (e: EtatPousserTirer): ModeFace => (e.sansFond ? "tube" : e.etirement ? "etirement" : e.nouvelleFace ? "nouvelle-face" : "normal");
 export const modeArete = (e: EtatPousserTirer): ModeArete => (e.fleche?.touche === "FlecheBas" ? "allonger" : e.symetrique ? "deux-cotes" : "normal");
 
+export const ERREUR_CTRL_ARETE = "Ctrl seul : « Conserver la face de départ » ne s'applique qu'à une face, pas à une arête.";
+export const ERREUR_MAJ_ARETE = "Maj seul : « Surface ouverte » ne s'applique qu'à une face, pas à une arête.";
 export const ERREUR_ALLONGER_COURBE = "Allonger : seule une arête droite isolée peut être allongée.";
 
 /** Un seul chemin pour choisir un mode : touche, bouton de la barre d'options ou bouton au toucher. */
@@ -470,6 +472,52 @@ function configurerPT(e: EtatPousserTirer, option: string, valeur: string): Tran
   return { etat: e };
 }
 
+/**
+ * Action d'extrusion typée (lot 9, EX-CMD-02, contrat de la V1 adapté) : boutons, clavier et toucher envoient la même
+ * action sémantique, validée ici et non par l'interface (un bouton grisé n'est pas une barrière). Unions finies ; les
+ * opérations de la V1 qui ne sont pas encore livrées par Pousser/Tirer (balayage de profil, révolution, texte 3D, bande
+ * annulaire choisie à la main) sont hors de ce type.
+ */
+export type OperationExtrusion = "extrude-face" | "stretch-face" | "open-surface" | "sweep-edges" | "lengthen-edge";
+export type OptionExtrusion = "keep-start-face" | "symmetric";
+export type ActionExtrusion =
+  | { readonly type: "set-operation"; readonly operation: OperationExtrusion }
+  | { readonly type: "set-option"; readonly option: OptionExtrusion; readonly value: boolean }
+  | { readonly type: "cancel" };
+
+export const ERREUR_CONSERVER_HORS_EXTRUSION = "« Conserver la face de départ » ne s'applique qu'à l'extrusion d'une face.";
+export const ERREUR_SYMETRIQUE_HORS_ARETE = "« Des deux côtés » ne s'applique qu'au balayage d'arêtes.";
+
+export function actionExtrusion(e: EtatPousserTirer, a: ActionExtrusion): Transition<EtatPousserTirer> {
+  switch (a.type) {
+    case "cancel":
+      return e.etape === 2 ? { etat: { ...retour(e), texte: null, erreur: null }, selection: [] } : { etat: e };
+    case "set-operation":
+      switch (a.operation) {
+        case "extrude-face":
+          return configurerPT(e, "face", "normal");
+        case "stretch-face":
+          return configurerPT(e, "face", "etirement");
+        case "open-surface":
+          return configurerPT(e, "face", "tube");
+        case "sweep-edges":
+          return configurerPT(e, "arete", "normal");
+        case "lengthen-edge":
+          return configurerPT(e, "arete", "allonger");
+      }
+      return { etat: e };
+    case "set-option":
+      if (a.option === "keep-start-face") {
+        const m = modeFace(e);
+        // A-02 : après Étirement ou Surface ouverte, l'option est sans objet — refus nommé, aucun drapeau périmé.
+        if (m !== "normal" && m !== "nouvelle-face") return { etat: { ...e, erreur: ERREUR_CONSERVER_HORS_EXTRUSION } };
+        return configurerPT(e, "face", a.value ? "nouvelle-face" : "normal");
+      }
+      if (modeArete(e) === "allonger" || (e.etape === 2 && e.aretes.length === 0)) return { etat: { ...e, erreur: ERREUR_SYMETRIQUE_HORS_ARETE } };
+      return configurerPT(e, "arete", a.value ? "deux-cotes" : "normal");
+  }
+}
+
 /** Options affichées : les modes de face hors d'une arête, les modes d'arête sur une arête ; un mode hors de propos est grisé. */
 function optionsPT(e: EtatPousserTirer, ctx: ContexteOutil): OptionOutil[] {
   const surArete = e.etape === 2 ? e.aretes.length > 0 : e.survolArete !== null;
@@ -485,7 +533,7 @@ function optionsPT(e: EtatPousserTirer, ctx: ContexteOutil): OptionOutil[] {
         { id: "normal", disponible: !surArete },
         { id: "nouvelle-face", disponible: !surArete, raccourci: "Ctrl" },
         { id: "etirement", disponible: !surArete && !isolee, raccourci: "Alt" },
-        { id: "tube", disponible: !surArete },
+        { id: "tube", disponible: !surArete, raccourci: "Maj" },
       ],
     },
     {
@@ -587,14 +635,8 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
         return saisir(etat, ctx, ev.texte);
       case "touche": {
         if (ev.etat !== "enfoncee") return { etat };
-        const modeAretes = etat.etape === 2 ? etat.aretes.length > 0 : etat.survolArete !== null;
-        // Lot 8 : les touches passent par `configurer`, comme les boutons de la barre d'options et du toucher.
-        if (ev.touche === "Ctrl") return configurerPT(etat, "face", modeFace(etat) === "nouvelle-face" ? "normal" : "nouvelle-face");
-        if (ev.touche === "Alt") {
-          return modeAretes
-            ? configurerPT(etat, "arete", etat.symetrique ? "normal" : "deux-cotes")
-            : configurerPT(etat, "face", modeFace(etat) === "etirement" ? "normal" : "etirement");
-        }
+        // Lot 9 (EX-CMD-04) : Ctrl, Alt et Maj ne basculent plus à l'appui, mais frappés seuls (`modificateurSeul`) ;
+        // ainsi Ctrl + Z, Maj + F, Maj + Tab ou Maj + chiffre ne changent jamais de mode.
         if (ev.touche === "FlecheBas" && etat.etape === 2 && etat.aretes.length > 0) {
           return configurerPT(etat, "arete", etat.fleche?.touche === "FlecheBas" ? "normal" : "allonger");
         }
@@ -616,6 +658,20 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
 
   configurer(etat, option, valeur): Transition<EtatPousserTirer> {
     return configurerPT(etat, option, valeur);
+  },
+
+  // Lot 9 : les touches frappées seules passent par `configurer`, comme les boutons de la barre d'options et du toucher.
+  modificateurSeul(etat, touche): Transition<EtatPousserTirer> {
+    const modeAretes = etat.etape === 2 ? etat.aretes.length > 0 : etat.survolArete !== null;
+    if (touche === "Alt") {
+      return modeAretes
+        ? configurerPT(etat, "arete", etat.symetrique ? "normal" : "deux-cotes")
+        : configurerPT(etat, "face", modeFace(etat) === "etirement" ? "normal" : "etirement");
+    }
+    if (modeAretes) return { etat: { ...etat, erreur: touche === "Ctrl" ? ERREUR_CTRL_ARETE : ERREUR_MAJ_ARETE } };
+    if (touche === "Ctrl") return configurerPT(etat, "face", modeFace(etat) === "nouvelle-face" ? "normal" : "nouvelle-face");
+    // Maj seul rétabli (lot 9) : Surface ouverte, sans gêner Maj + lettre (raccourcis Fadi) ni Maj + chiffre.
+    return configurerPT(etat, "face", modeFace(etat) === "tube" ? "normal" : "tube");
   },
 
   vue(etat, ctx): VueOutil {
