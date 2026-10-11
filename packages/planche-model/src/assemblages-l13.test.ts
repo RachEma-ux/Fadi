@@ -15,7 +15,6 @@ import {
   deplacer,
   demiSectionPiece,
   estSolide,
-  mettreAEchelle,
   modeleVide,
   ongletPieces,
   piecesLiees,
@@ -125,7 +124,10 @@ describe("Revue de #127 — refus au lieu d'une régénération qui effacerait",
   it("pièce mise à l'échelle : Onglet et Allonger refusent (l'échelle serait effacée sans le dire)", () => {
     const a = poser(modeleVide(), v3(0, 0, 0), v3(2, 0, 0));
     const b = poser(a.modele, v3(2, 0, 0), v3(2, 3, 0));
-    const m = mettreAEchelle(b.modele, [a.occurrence], v3(0, 0, 0), 1.5).modele;
+    // Repère dont les colonnes portent une échelle 1,5 (ce que laisse une mise à l'échelle de l'occurrence).
+    const occA = b.modele.racine.occurrences[a.occurrence]!;
+    const T = occA.transformation.map((v, i) => (i % 4 !== 3 && i < 12 ? v * 1.5 : v));
+    const m: Modele = { ...b.modele, racine: { ...b.modele.racine, occurrences: { ...b.modele.racine.occurrences, [a.occurrence]: { ...occA, transformation: T } } } };
     expect(() => allongerPiece(m, a.occurrence, "fin", 0.2)).toThrow(ERREUR_PIECE_MISE_A_L_ECHELLE);
     expect(() => ongletPieces(m, a.occurrence, b.occurrence)).toThrow(ERREUR_PIECE_MISE_A_L_ECHELLE);
     // Une pièce seulement tournée garde un repère orthonormé : acceptée.
