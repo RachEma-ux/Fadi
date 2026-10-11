@@ -72,7 +72,7 @@ export function PanneauProfiles({
               <span>{t("planche.profiles.catalogue")}</span>
               <select value={cat?.id ?? ""} disabled={lecture} data-planche-profiles-catalogue onKeyDown={arreter} onChange={(e) => onChoix({ ...choix, catalogueId: e.target.value, ligne: null })}>
                 {catalogues.map((c) => (
-                  <option key={c.id} value={c.id}>{c.nom}</option>
+                  <option key={c.id} value={c.id} translate="no">{c.nom}</option>
                 ))}
               </select>
             </label>
@@ -81,7 +81,7 @@ export function PanneauProfiles({
               <select value={choix.ligne ?? ""} disabled={lecture} data-planche-profiles-ligne onKeyDown={arreter} onChange={(e) => onChoix({ ...choix, ligne: e.target.value === "" ? null : Number(e.target.value) })}>
                 <option value="">{t("planche.profiles.ligne.choisir")}</option>
                 {(cat?.lignes ?? []).map((l) => (
-                  <option key={l.numero} value={l.numero}>{String(l.valeurs["designation"] ?? t("planche.profiles.ligne.numero", { numero: String(l.numero) }))}</option>
+                  <option key={l.numero} value={l.numero} {...(l.valeurs["designation"] != null ? { translate: "no" as const } : {})}>{String(l.valeurs["designation"] ?? t("planche.profiles.ligne.numero", { numero: String(l.numero) }))}</option>
                 ))}
               </select>
             </label>
@@ -114,7 +114,14 @@ export function PanneauProfiles({
         </button>
       )}
       <output className={erreur ? "planche-profiles-etat planche-profiles-erreur" : "planche-profiles-etat"} aria-live="polite" data-planche-profiles-section={section ? "ok" : "aucune"}>
-        {section ? `${section.designation} — ${section.source.genre === "saisie" ? t("planche.info.piece.saisie") : texteSource(section.source)}` : (erreur ?? t("planche.profiles.aucune"))}
+        {/* Données du projet (désignation, source du catalogue) : jamais traduites par la couche DOM. */}
+        {section ? (
+          <>
+            <span translate="no">{section.designation}</span>
+            {" — "}
+            {section.source.genre === "saisie" ? t("planche.info.piece.saisie") : <span translate="no">{texteSource(section.source)}</span>}
+          </>
+        ) : (erreur ?? t("planche.profiles.aucune"))}
       </output>
       {onPoser && (
         <button type="button" disabled={lecture || !section} onClick={onPoser} data-planche-profiles-poser>

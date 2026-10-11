@@ -118,8 +118,12 @@ export function sectionSaisie(d: DimensionsSaisies): SectionCourante {
 export interface CataloguePlanche {
   readonly id: string;
   readonly nom: string;
+  /** Ontologie déclarée à l'import (`structure`, `timber`, `sheetmetal`, `mep`…) : seule `timber` ouvre le gabarit bois. */
+  readonly ontologie?: string;
   readonly lignes: readonly LigneCatalogue[];
 }
+
+export const ERREUR_CATALOGUE_NON_BOIS = "Ce catalogue n'est pas déclaré « bois » (timber) : la ligne n'est pas lue comme une section de bois.";
 
 const valeurMm = (v: string | number | null | undefined): number | null => (typeof v === "number" && Number.isFinite(v) && v > 0 ? v / 1000 : null);
 
@@ -150,8 +154,10 @@ export function sectionCatalogue(cat: CataloguePlanche, ligne: LigneCatalogue, s
     } else section = polygonale(s);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    // Gabarit bois : ni forme ni épaisseur — une section rectangulaire par nature (largeur × hauteur).
+    // Gabarit bois : ni forme ni épaisseur — une section rectangulaire par nature (largeur × hauteur). Seulement pour un
+    // catalogue déclaré `timber` : une ligne d'un autre catalogue n'est jamais devinée en bois.
     if (!/forme de section non déterminable/.test(message)) throw new ErreurSection(message);
+    if (cat.ontologie !== "timber") throw new ErreurSection(`${message} · ${ERREUR_CATALOGUE_NON_BOIS}`);
     try {
       section = { exterieur: contourBois(sectionBoisDepuisCatalogue(cat.id, ligne)).map(point), trous: [] };
     } catch (e2) {
