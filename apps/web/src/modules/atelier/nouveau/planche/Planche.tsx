@@ -1562,12 +1562,20 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   // Modèle de la Planche ouverte : adopté à l'ouverture et quand le projet le change (autre poste, lot refusé) ; nos
   // propres pas y sont déjà (le bus les applique localement) et se reconnaissent à l'empreinte.
   useEffect(() => {
+    // Objets O-5 : l'isolement porte des identifiants de la Planche quittée — il ne survit pas à un changement de Planche.
+    const quitterIsolement = () => {
+      if (!isolementRef.current) return;
+      isolementRef.current = null;
+      setIsolementEtat(null);
+    };
     if (!plancheCourante) {
       plancheIdRef.current = null;
+      quitterIsolement();
       return;
     }
     const changement = plancheIdRef.current !== plancheCourante.id;
     plancheIdRef.current = plancheCourante.id;
+    if (changement) quitterIsolement();
     if (!changement && empreintePlanche(histRef.current.present.modele) === plancheCourante.params.empreinte) return;
     poserHistorique(historiqueInitial(plancheCourante.params.modele), { envoyer: false });
     const perime = abandonnerOperation();
