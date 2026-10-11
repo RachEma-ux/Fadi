@@ -8045,5 +8045,7 @@
 "relevé : {statut}": "survey: {statut}",
 "observé en direct": "observed live",
 "texte de l'Instructeur, effet non constaté": "Instructor text, effect not observed",
-"non vérifié": "not verified"
+"non vérifié": "not verified",
+"Ctrl seul : « Conserver la face de départ » ne s'applique qu'à une face, pas à une arête.": "Ctrl alone: “Keep the starting face” applies to a face only, not to an edge.",
+"Maj seul : « Surface ouverte » ne s'applique qu'à une face, pas à une arête.": "Shift alone: “Open surface” applies to a face only, not to an edge."
 }
