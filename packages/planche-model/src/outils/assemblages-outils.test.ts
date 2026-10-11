@@ -4,7 +4,7 @@ import { ajouterSegment, contexte, modeleVide, poserPiece, type Id, type Modele 
 import { geometrieVisible } from "../inference.js";
 import { PLACEMENT_DEFAUT, type SectionProfil } from "../profiles.js";
 import { v3 } from "../vecteur.js";
-import { CONSIGNES_ONGLET, CONSIGNE_ALLONGER_1, machineAllongerPiece, machineOnglet } from "./assemblages-pieces.js";
+import { CONSIGNES_ONGLET, CONSIGNE_ALLONGER_1, CONSIGNE_ALLONGER_FIN, machineAllongerPiece, machineOnglet } from "./assemblages-pieces.js";
 import { clicVers, partie, rayonVers, saisie } from "./essais-modification.js";
 
 const S: SectionProfil = { exterieur: [{ y: -0.05, z: -0.05 }, { y: 0.05, z: -0.05 }, { y: 0.05, z: 0.05 }, { y: -0.05, z: 0.05 }], trous: [] };
@@ -34,7 +34,10 @@ describe("Allonger une pièce (machine, L13)", () => {
     const a = poserPiece(modeleVide(), { a: v3(0, 0, 0), b: v3(2, 0, 0) }, S, PLACEMENT_DEFAUT, OPT);
     const p = partie(machineAllongerPiece, a.modele);
     expect(p.vue().consigne).toBe(CONSIGNE_ALLONGER_1);
-    p.jouer(clicVers(v3(1.8, 0, 0.05)), saisie("0.3"));
+    p.jouer(clicVers(v3(1.8, 0, 0.05)));
+    // Revue de #127 : consigne complète (une entrée de dictionnaire), sans concaténation.
+    expect(p.vue().consigne).toBe(CONSIGNE_ALLONGER_FIN);
+    p.jouer(saisie("0.3"));
     expect(xmax(p.modele)).toBeCloseTo(2.3, 12);
     p.configurer("sens", "moins").jouer(saisie("0.1"));
     expect(xmax(p.modele)).toBeCloseTo(2.2, 12);
