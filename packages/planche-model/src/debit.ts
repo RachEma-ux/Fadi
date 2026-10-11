@@ -10,7 +10,7 @@
  */
 import { type Contexte, type Id, type Matrice4, type MetadonneesPiece, type Modele, IDENTITE, appliquer, composer } from "./geometrie-libre.js";
 import { type SourceSection, aireSection } from "./profiles.js";
-import { type Vec3, v3 } from "./vecteur.js";
+import { type Vec3, dot, len, v3 } from "./vecteur.js";
 
 export const NON_EVALUEE = "non évaluée";
 
@@ -40,7 +40,20 @@ export interface PieceDebit {
   readonly angles: readonly [number, number];
   /** Milieu de l'axe (monde), pour les étiquettes. */
   readonly milieu: Vec3;
+  /**
+   * (Revue de #128) Occurrence ou parent mis à l'échelle : la pièce rendue ne correspond plus à ses métadonnées. Sa
+   * longueur est mesurée le long de l'axe transformé ; sa masse n'est pas évaluée (section déformée possible).
+   */
+  readonly miseAEchelle: boolean;
 }
+
+/** Motif de la masse d'une ligne, structuré (l'interface le traduit ; les sources sont des données). */
+export type MotifMasse =
+  | { readonly genre: "sans-source" }
+  | { readonly genre: "recoupee" }
+  | { readonly genre: "echelle" }
+  | { readonly genre: "catalogue"; readonly source: string; readonly edition: string; readonly page?: string }
+  | { readonly genre: "volumique"; readonly source: string };
 
 export interface LigneDebit {
   readonly cle: string;
@@ -54,6 +67,8 @@ export interface LigneDebit {
   /** Masse totale de la ligne (kg), ou `null` (« non évaluée ») avec son motif. */
   readonly masse: number | null;
   readonly origineMasse: string;
+  readonly motifMasse: MotifMasse;
+  readonly miseAEchelle: boolean;
   /** Identifiants exacts des occurrences de la ligne (la sélection depuis la liste n'en ajoute aucune autre). */
   readonly occurrences: readonly Id[];
   readonly chemins: readonly (readonly Id[])[];
@@ -62,6 +77,14 @@ export interface LigneDebit {
 /** Longueur d'une pièce à l'axe : longueur de l'arête plus les allongements des extrémités coupées droit. */
 export function longueurPiece(meta: MetadonneesPiece): number {
   return meta.longueur + (meta.coupeDebut ? 0 : meta.placement.decalageDebut) + (meta.coupeFin ? 0 : meta.placement.decalageFin);
+}
+
+const colonne = (W: Matrice4, j: number): Vec3 => v3(W[j] ?? 0, W[4 + j] ?? 0, W[8 + j] ?? 0);
+/** Partie linéaire orthonormée (rotation, symétrie) : sans mise à l'échelle. */
+function orthonorme(W: Matrice4): boolean {
+  const c = [colonne(W, 0), colonne(W, 1), colonne(W, 2)] as const;
+  const tol = 1e-6;
+  return c.every((v) => Math.abs(len(v) - 1) <= tol) && Math.abs(dot(c[0], c[1])) <= tol && Math.abs(dot(c[0], c[2])) <= tol && Math.abs(dot(c[1], c[2])) <= tol;
 }
 
 /** Pièces du modèle (imbrications comprises) ; portée « sélection » : sous les occurrences de la racine données. */
@@ -79,7 +102,9 @@ export function piecesDuModele(m: Modele, o: Pick<OptionsDebit, "portee" | "sele
       if (d.piece) {
         const meta = d.piece;
         const a = [meta.coupeDebut?.angle ?? 0, meta.coupeFin?.angle ?? 0].sort((x, y) => y - x) as [number, number];
-        r.push({ occurrence: occ.id, chemin: ch, repere: occ.repere ?? null, meta, longueur: longueurPiece(meta), angles: a, milieu: appliquer(W, v3(meta.longueur / 2, 0, 0)) });
+        const echelle = !orthonorme(W);
+        const longueur = longueurPiece(meta) * (echelle ? len(colonne(W, 0)) : 1);
+        r.push({ occurrence: occ.id, chemin: ch, repere: occ.repere ?? null, meta, longueur, angles: a, milieu: appliquer(W, v3(meta.longueur / 2, 0, 0)), miseAEchelle: echelle });
       } else parcourir(d.contenu, W, ch, profondeur + 1);
     }
   };
@@ -90,11 +115,27 @@ export function piecesDuModele(m: Modele, o: Pick<OptionsDebit, "portee" | "sele
 const cleSource = (s: SourceSection) => (s.genre === "saisie" ? ["saisie"] : ["catalogue", s.source, s.edition, s.page ?? "", s.ligne ?? ""]);
 const arrondi = (x: number, pas: number) => Math.round(x / pas) * pas;
 
+/** Motif de la masse en français (CSV, données du projet). */
+export function texteMotifMasse(m: MotifMasse): string {
+  switch (m.genre) {
+    case "sans-source":
+      return `${NON_EVALUEE} : ni masse linéique sourcée, ni masse volumique déclarée avec sa source`;
+    case "recoupee":
+      return `${NON_EVALUEE} : pièce recoupée par un profil`;
+    case "echelle":
+      return `${NON_EVALUEE} : pièce mise à l'échelle (sa section peut ne plus être celle de la source)`;
+    case "catalogue":
+      return `masse linéique du catalogue (${m.source}, ${m.edition}${m.page ? `, p. ${m.page}` : ""})`;
+    case "volumique":
+      return `masse volumique déclarée (${m.source})`;
+  }
+}
+
 /** Lignes de la liste de débit, dans l'ordre : désignation, puis longueur décroissante. */
 export function listeDebit(m: Modele, o: OptionsDebit = { portee: "tout" }): LigneDebit[] {
   const groupes = new Map<string, PieceDebit[]>();
   for (const p of piecesDuModele(m, o)) {
-    const cle = JSON.stringify([p.meta.designation, p.meta.section, cleSource(p.meta.source), arrondi(p.longueur, 1e-9), arrondi(p.angles[0], 1e-6), arrondi(p.angles[1], 1e-6), !!p.meta.coupesProfil]);
+    const cle = JSON.stringify([p.meta.designation, p.meta.section, cleSource(p.meta.source), arrondi(p.longueur, 1e-9), arrondi(p.angles[0], 1e-6), arrondi(p.angles[1], 1e-6), !!p.meta.coupesProfil, p.miseAEchelle]);
     const g = groupes.get(cle);
     if (g) g.push(p);
     else groupes.set(cle, [p]);
@@ -105,15 +146,17 @@ export function listeDebit(m: Modele, o: OptionsDebit = { portee: "tout" }): Lig
     const total = ps.reduce((s, p) => s + p.longueur, 0);
     const src = p0.meta.source;
     let masse: number | null = null;
-    let origineMasse = `${NON_EVALUEE} : ni masse linéique sourcée, ni masse volumique déclarée avec sa source`;
-    if (p0.meta.coupesProfil) origineMasse = `${NON_EVALUEE} : pièce recoupée par un profil`;
+    let motifMasse: MotifMasse = { genre: "sans-source" };
+    if (p0.meta.coupesProfil) motifMasse = { genre: "recoupee" };
+    else if (p0.miseAEchelle) motifMasse = { genre: "echelle" };
     else if (src.genre === "catalogue" && typeof src.masseLineique === "number" && src.masseLineique > 0) {
       masse = src.masseLineique * total;
-      origineMasse = `masse linéique du catalogue (${src.source}, ${src.edition}${src.page ? `, p. ${src.page}` : ""})`;
+      motifMasse = { genre: "catalogue", source: src.source, edition: src.edition, ...(src.page ? { page: src.page } : {}) };
     } else if (o.masseVolumique && o.masseVolumique.valeur > 0 && o.masseVolumique.source.trim() !== "") {
       masse = aireSection(p0.meta.section) * total * o.masseVolumique.valeur;
-      origineMasse = `masse volumique déclarée (${o.masseVolumique.source.trim()})`;
+      motifMasse = { genre: "volumique", source: o.masseVolumique.source.trim() };
     }
+    const origineMasse = texteMotifMasse(motifMasse);
     lignes.push({
       cle,
       reperes: [...new Set(ps.map((p) => p.repere).filter((x): x is string => !!x))].sort((a, b) => a.localeCompare(b, "fr", { numeric: true })),
@@ -125,6 +168,8 @@ export function listeDebit(m: Modele, o: OptionsDebit = { portee: "tout" }): Lig
       source: src,
       masse,
       origineMasse,
+      motifMasse,
+      miseAEchelle: p0.miseAEchelle,
       occurrences: ps.map((p) => p.occurrence),
       chemins: ps.map((p) => p.chemin),
     });
@@ -173,4 +218,16 @@ export function reperesRenumerotes(lignes: readonly LigneDebit[], prefixe: strin
     for (const o of l.occurrences) r.push({ occurrence: o, repere: `${prefixe}${depart + i}` });
   });
   return r;
+}
+
+/**
+ * Étiquettes des lignes (revue de #128) : une par pièce physique, retrouvée par son **chemin** complet — deux instances
+ * d'un même composant portent le même identifiant d'occurrence imbriquée, chacune reçoit pourtant son étiquette.
+ */
+export function etiquettesDebit(m: Modele, lignes: readonly LigneDebit[]): { occurrence: Id; position: Vec3; texte: string }[] {
+  const parChemin = new Map(piecesDuModele(m).map((p) => [p.chemin.join("/"), p] as const));
+  return lignes.flatMap((l) => l.chemins).flatMap((c) => {
+    const p = parChemin.get(c.join("/"));
+    return p ? [{ occurrence: p.occurrence, position: p.milieu, texte: p.repere ?? "?" }] : [];
+  });
 }

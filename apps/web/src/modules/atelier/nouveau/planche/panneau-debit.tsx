@@ -4,11 +4,33 @@
  * exactement ses occurrences. Masse seulement avec une masse linéique sourcée ou une masse volumique déclarée avec sa
  * source ; sinon « non évaluée ». Barre du panneau : Renuméroter, Étiquettes, Effacer les étiquettes, Exporter le CSV.
  */
-import { type ColonneDebit, type LigneDebit, texteSourceDebit } from "@parcours/planche-model";
+import { type ColonneDebit, type LigneDebit, type MotifMasse, type SourceSection } from "@parcours/planche-model";
 import { LOCALE } from "../../../../lib/i18n";
 import { type CleMessage, t } from "../messages";
 import { COMMANDES_DEBIT, type Disponibilite, type IdCommandeDebit } from "./commandes-objets";
 import { afficherRaccourci } from "./outils-planche";
+
+/** Source lisible et traduite : les noms, éditions, pages et lignes sont des données ; seuls les mots sont traduits. */
+function texteSource(s: SourceSection): string {
+  if (s.genre === "saisie") return t("planche.info.piece.saisie");
+  return [s.source, s.edition, s.page ? t("planche.debit.source.page", { page: s.page }) : null, s.ligne ? t("planche.debit.source.ligne", { ligne: s.ligne }) : null].filter(Boolean).join(", ");
+}
+
+/** Motif de la masse, traduit. */
+function texteMotif(m: MotifMasse): string {
+  switch (m.genre) {
+    case "sans-source":
+      return t("planche.debit.motif-masse.sans-source");
+    case "recoupee":
+      return t("planche.debit.motif-masse.recoupee");
+    case "echelle":
+      return t("planche.debit.motif-masse.echelle");
+    case "catalogue":
+      return t("planche.debit.motif-masse.catalogue", { source: [m.source, m.edition, m.page ? t("planche.debit.source.page", { page: m.page }) : null].filter(Boolean).join(", ") });
+    case "volumique":
+      return t("planche.debit.motif-masse.volumique", { source: m.source });
+  }
+}
 
 const arreter = (e: { stopPropagation(): void }) => e.stopPropagation();
 const nombre = (v: number, d = 3) => v.toLocaleString(LOCALE, { maximumFractionDigits: d });
@@ -114,8 +136,8 @@ export function PanneauDebit({
                 <td>{nombre(l.longueurUnitaire)} m</td>
                 <td>{nombre(l.longueurTotale)} m</td>
                 <td>{`${nombre(l.angles[0], 1)}° / ${nombre(l.angles[1], 1)}°`}</td>
-                <td>{l.source.genre === "saisie" ? t("planche.info.piece.saisie") : texteSourceDebit(l.source)}</td>
-                <td title={l.origineMasse} data-planche-debit-masse>{l.masse === null ? t("planche.debit.non-evaluee") : `${nombre(l.masse, 2)} kg`}</td>
+                <td translate="no">{texteSource(l.source)}</td>
+                <td title={texteMotif(l.motifMasse)} data-planche-debit-masse>{l.masse === null ? t("planche.debit.non-evaluee") : `${nombre(l.masse, 2)} kg`}</td>
               </tr>
             ))}
           </tbody>
