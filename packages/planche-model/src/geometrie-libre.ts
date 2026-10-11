@@ -3329,16 +3329,36 @@ function cheminSeRecoupe(V: readonly Vec3[], ferme: boolean, rayon: number): boo
   const N = V.length;
   const nSeg = ferme ? N : N - 1;
   const distSegments = (p1: Vec3, q1: Vec3, p2: Vec3, q2: Vec3): number => {
-    // Distance minimale entre deux segments (échantillonnage fin, suffisant pour un test de contact à la tolérance).
-    let best = Infinity;
-    for (let i = 0; i <= 20; i++) {
-      const a = add(p1, scale(sub(q1, p1), i / 20));
-      const u = sub(q2, p2);
-      const l2 = dot(u, u);
-      const tt = l2 < EPS ? 0 : Math.max(0, Math.min(1, dot(sub(a, p2), u) / l2));
-      best = Math.min(best, dist(a, add(p2, scale(u, tt))));
+    // Distance minimale exacte entre deux segments (points les plus proches, paramètres bornés à [0, 1]).
+    const d1 = sub(q1, p1);
+    const d2 = sub(q2, p2);
+    const r = sub(p1, p2);
+    const a = dot(d1, d1);
+    const e = dot(d2, d2);
+    const f = dot(d2, r);
+    const borne = (x: number) => Math.max(0, Math.min(1, x));
+    let s = 0;
+    let u = 0;
+    if (a < EPS && e < EPS) return dist(p1, p2);
+    if (a < EPS) u = borne(f / e);
+    else {
+      const cc = dot(d1, r);
+      if (e < EPS) s = borne(-cc / a);
+      else {
+        const b = dot(d1, d2);
+        const den = a * e - b * b;
+        s = den > EPS * a * e ? borne((b * f - cc * e) / den) : 0;
+        u = (b * s + f) / e;
+        if (u < 0) {
+          u = 0;
+          s = borne(-cc / a);
+        } else if (u > 1) {
+          u = 1;
+          s = borne((b - cc) / a);
+        }
+      }
     }
-    return best;
+    return dist(add(p1, scale(d1, s)), add(p2, scale(d2, u)));
   };
   for (let i = 0; i < nSeg; i++) {
     for (let j = i + 2; j < nSeg; j++) {
@@ -3488,7 +3508,7 @@ function consommerProfil(t: Travail, c: Ctx, F: Face, profil: Id): void {
   c.faces.delete(profil);
   if (aretesProfil.length) effacerAretesInterne(t, c, aretesProfil);
   // Sommets du profil laissés sur une arête voisine (profil dessiné sur un bord) : recollés si colinéaires.
-  for (const s of F.exterieur) cicatriser(c, s);
+  for (const s of [...F.exterieur, ...F.trous.flat()]) cicatriser(c, s);
 }
 
 /** Insère les parois (polygones plans) et les capuchons (avec trous) d'un balayage, comme géométrie collante. */
