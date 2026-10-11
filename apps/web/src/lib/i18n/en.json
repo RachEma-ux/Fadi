@@ -8116,5 +8116,8 @@
 "Modification refusée : la surface liée à ces arêtes ne pourrait pas être recalculée (détachez le lien pour modifier la source librement).": "Change refused: the surface linked to these edges could not be recalculated (detach the link to edit the source freely).",
 "Liens automatiques aux arêtes sources : à la racine de la Planche seulement — ici, la surface sera indépendante.": "Automatic links to source edges: at the Planche root only — here, the surface will be independent.",
 "Des deux côtés : distance par côté, total {0}.": "Both sides: distance per side, total {0}.",
-"Modification refusée : la surface liée à ces arêtes ne pourrait pas être recalculée (détachez le lien pour modifier la source librement). {0}": "Change refused: the surface linked to these edges could not be recalculated (detach the link to edit the source freely). {0}"
+"Modification refusée : la surface liée à ces arêtes ne pourrait pas être recalculée (détachez le lien pour modifier la source librement). {0}": "Change refused: the surface linked to these edges could not be recalculated (detach the link to edit the source freely). {0}",
+"Révolution : cliquez sur le profil à tourner autour de l'axe ({0}°, {1} segments par tour).": "Revolution: click the profile to revolve around the axis ({0}°, {1} segments per turn).",
+"Révolution : cliquez sur le profil à tourner autour de l'axe ({0}°, {1} segments par tour) — {2} segments, écart de facettage ≈ {3} mm.": "Revolution: click the profile to revolve around the axis ({0}°, {1} segments per turn) — {2} segments, faceting deviation ≈ {3} mm.",
+"Révolution : cliquez sur le profil à tourner autour de l'axe ({0}°, {1} segments par tour) — {2} segment, écart de facettage ≈ {3} mm.": "Revolution: click the profile to revolve around the axis ({0}°, {1} segments per turn) — {2} segment, faceting deviation ≈ {3} mm."
 }
