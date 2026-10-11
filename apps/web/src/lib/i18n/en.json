@@ -8039,5 +8039,8 @@
 "« Conserver la face de départ » ne s'applique qu'à l'extrusion d'une face.": "“Keep the starting face” applies to face extrusion only.",
 "« Des deux côtés » ne s'applique qu'au balayage d'arêtes.": "“Both sides” applies to edge sweeps only.",
 "« Jusqu'à une face » ne s'applique qu'à l'extrusion normale d'une face.": "“Up to face” applies to normal face extrusion only.",
-"Le décalage se recoupe (segments {0} et {1} du contour) : réduisez la distance.": "The offset intersects itself (segments {0} and {1} of the contour): reduce the distance."
+"Le décalage se recoupe (segments {0} et {1} du contour) : réduisez la distance.": "The offset intersects itself (segments {0} and {1} of the contour): reduce the distance.",
+"Longueur unitaire (m)": "Unit length (m)",
+"Longueur totale (m)": "Total length (m)",
+"Angles de coupe (°)": "Cut angles (°)"
 }
