@@ -8174,5 +8174,10 @@
 "Modification refusée : la surface liée à ces arêtes ne pourrait pas être recalculée (détachez le lien pour modifier la source librement).": "Change refused: the surface linked to these edges could not be recalculated (detach the link to edit the source freely).",
 "Liens automatiques aux arêtes sources : à la racine de la Planche seulement — ici, la surface sera indépendante.": "Automatic links to source edges: at the Planche root only — here, the surface will be independent.",
 "Des deux côtés : distance par côté, total {0}.": "Both sides: distance per side, total {0}.",
-"Modification refusée : la surface liée à ces arêtes ne pourrait pas être recalculée (détachez le lien pour modifier la source librement). {0}": "Change refused: the surface linked to these edges could not be recalculated (detach the link to edit the source freely). {0}"
+"Modification refusée : la surface liée à ces arêtes ne pourrait pas être recalculée (détachez le lien pour modifier la source librement). {0}": "Change refused: the surface linked to these edges could not be recalculated (detach the link to edit the source freely). {0}",
+"Une face voisine ne peut pas être triangulée pour le pli (contour dégénéré) : rien n'est modifié.": "A neighbouring face cannot be triangulated for the fold (degenerate outline): nothing was changed.",
+"L'étirement annulerait une partie d'une face voisine : rien n'est modifié.": "The stretch would collapse part of a neighbouring face: nothing was changed.",
+"L'étirement retournerait une partie d'une face voisine : rien n'est modifié.": "The stretch would flip part of a neighbouring face: nothing was changed.",
+"Le pli d'une face voisine se recouperait : rien n'est modifié.": "The fold of a neighbouring face would intersect itself: nothing was changed.",
+"Composant partagé : l'étirement s'applique à ses {0} occurrences.": "Shared component: the stretch applies to its {0} occurrences."
 }
