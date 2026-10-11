@@ -4,7 +4,8 @@ import { ajouterRectangle, contexte, modeleVide, type Modele } from "../geometri
 import { geometrieVisible } from "../inference.js";
 import { v3, type Vec3 } from "../vecteur.js";
 import { clicVers, partie, survolVers } from "./essais-modification.js";
-import { configurerTexte3D, facesDuTexte3D, machineTexte3D, type EtatTexte3D } from "./texte-3d.js";
+import { configurerTexte3D, facesDuTexte3D, lireAlignementTexte3D, machineTexte3D, planDePose, PLAN_SOL, type EtatTexte3D } from "./texte-3d.js";
+import { type Inference } from "../inference.js";
 
 const P = { texte: "AB", hauteur: 0.3, plein: true, extrusion: 0.15 };
 const boite = (pts: readonly Vec3[]) => {
@@ -52,5 +53,19 @@ describe("Texte 3D (L16)", () => {
     expect(b[5]! - b[4]!).toBeGreaterThan(0.2); // les lettres montent selon z
     const ys = pts.map((q) => q.y * Math.sign(n.y));
     expect(Math.min(...ys)).toBeCloseTo(0, 9); // posé sur la face, extrudé vers l'extérieur
+  });
+
+  it("revue de #129 : la pose suit la normale de la face visée (inférence), non une recherche par identifiant", () => {
+    const i = { point: v3(0, 0, 0), type: "sur-face", couleur: "", libelle: { fr: "", en: "" }, verrouillee: false, entite: "f1", normale: v3(0, 1, 0) } as unknown as Inference;
+    const plan = planDePose({ modele: modeleVide(), selection: [] } as never, i);
+    expect(plan.n.y).toBeCloseTo(1, 9); // extrusion selon la normale de l'occurrence visée
+    expect(planDePose({ modele: modeleVide(), selection: [] } as never, { point: i.point, type: i.type, couleur: i.couleur, libelle: i.libelle, verrouillee: false, entite: "f1" } as Inference)).toBe(PLAN_SOL);
+  });
+
+  it("revue de #129 : l'alignement mémorisé est validé (valeur inconnue → gauche)", () => {
+    expect(lireAlignementTexte3D("centre")).toBe("centre");
+    expect(lireAlignementTexte3D("droite")).toBe("droite");
+    expect(lireAlignementTexte3D("au-milieu")).toBe("gauche");
+    expect(lireAlignementTexte3D(undefined)).toBe("gauche");
   });
 });

@@ -197,6 +197,11 @@ export interface Inference {
   readonly libelle: Libelle;
   readonly verrouillee: boolean;
   readonly entite?: Id;
+  /**
+   * (Revue de #129) Normale monde de la face **visée** (occurrence exacte). Une copie partagée d'un composant tournée
+   * ou symétrisée n'a pas la normale de la première occurrence : on la prend ici, sans la rechercher par identifiant.
+   */
+  readonly normale?: Vec3;
   /** Direction de la ligne d'inférence (inférences linéaires). */
   readonly direction?: Vec3;
   /** Origine de la ligne pointillée (départ ou point de référence). */
@@ -319,7 +324,7 @@ function pointBrut(e: EntreeInference, axes: AxesModele): Vec3 {
 function construire(
   type: TypeInference,
   point: Vec3,
-  options: { entite?: Id; dansObjet?: boolean; direction?: Vec3; origineLigne?: Vec3; libelle?: Libelle; verrouillee?: boolean; couleur?: string } = {},
+  options: { entite?: Id; normale?: Vec3; dansObjet?: boolean; direction?: Vec3; origineLigne?: Vec3; libelle?: Libelle; verrouillee?: boolean; couleur?: string } = {},
 ): Inference {
   return {
     point,
@@ -328,6 +333,7 @@ function construire(
     libelle: options.libelle ?? LIBELLES[type],
     verrouillee: options.verrouillee ?? false,
     ...(options.entite !== undefined ? { entite: options.entite } : {}),
+    ...(options.normale !== undefined ? { normale: options.normale } : {}),
     ...(options.direction !== undefined ? { direction: options.direction } : {}),
     ...(options.origineLigne !== undefined ? { origineLigne: options.origineLigne } : {}),
   };
@@ -469,7 +475,7 @@ export function inferer(e: EntreeInference): Inference {
   }
   // 4. face
   const f = faceTouchee(e);
-  if (f) return construire("sur-face", f.point, { entite: f.face.id, ...(f.face.dansObjet ? { dansObjet: true } : {}) });
+  if (f) return construire("sur-face", f.point, { entite: f.face.id, normale: f.face.normale, ...(f.face.dansObjet ? { dansObjet: true } : {}) });
   // 5. rien
   return construire("aucune", pointBrut(e, axes));
 }
