@@ -17,7 +17,7 @@
 import { type Id, ERREUR_ETIRER_ISOLEE, allongerArete, distanceJusquAFace, aretesDeLaCourbe, contexte, couronne, etirerAretes, etirerFace, faceAVoisines, newell, pousserTirer, tuberFace } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
-import { type Vec3, EPS, TOL, add, cross, dist, dot, egal, len, normalize, scale, sub } from "../vecteur.js";
+import { type Vec3, EPS, TOL, add, cross, dist, dot, egal, len, normalize, scale, sub, v3 } from "../vecteur.js";
 import {
   type Apercu,
   type Derniere,
@@ -35,10 +35,13 @@ import {
   VECTEUR_AXE,
   axeDeToucheFleche,
   consigneDe,
+  distanceLocale,
+  echelleDansPlan,
   enLocal,
   idsSelectionnables,
   libelleMesuresDe,
   selectionValide,
+  vecteurLocal,
   vueModif,
   viseeElement,
   type VerrouFleche,
@@ -58,8 +61,8 @@ export const CONSIGNE_ARETE_TIRAGE =
 
 type ParamsPT =
   | { readonly genre: "face"; readonly face: Id; readonly distance: number; readonly nouvelleFace: boolean; readonly sansFond?: boolean; readonly etirement?: boolean }
-  /** `vecteur` dans le repère du contexte d'édition. */
-  | { readonly genre: "aretes"; readonly aretes: readonly Id[]; readonly vecteur: Vec3; readonly symetrique: boolean }
+  /** Lot L19 : `vecteur` monde (ramené au contexte d'édition à l'application, EX-MODEL-02). */
+  | { readonly genre: "aretes"; readonly aretes: readonly Id[]; readonly vecteur: Vec3; readonly symetrique: boolean; readonly normaleBoucle?: Vec3 }
   /** Courbe fermée tirée dans son plan : `distance` > 0 vers l'extérieur. */
   | { readonly genre: "couronne"; readonly aretes: readonly Id[]; readonly distance: number; readonly symetrique: boolean }
   /** Ligne tirée dans son propre sens : `longueur` > 0 allonge. */
@@ -204,11 +207,15 @@ function appliquer(
     const prec = remplace?.params.genre === "face" ? remplace.params : null;
     const sansFond = prec ? prec.sansFond === true : e.sansFond;
     const etirement = prec ? prec.etirement === true : e.etirement;
+    // Lot L19 (EX-MODEL-02) : la distance tapée ou visée est en mètres monde ; dans un groupe transformé, elle est ramenée
+    // le long de la normale locale de la face (refus nommé si une échelle non uniforme fausserait la dimension).
+    const nLocale = contexte(base, ctx.dans).faces[face]?.normale;
+    const d = e.normale && nLocale ? distanceLocale({ ...ctx, modele: base }, e.normale, nLocale, distance) : distance;
     const r = sansFond
-      ? tuberFace(base, face, distance, { ...optionsDans(ctx), lier: e.lier })
+      ? tuberFace(base, face, d, { ...optionsDans(ctx), lier: e.lier })
       : etirement
-        ? etirerFace(base, face, distance, optionsDans(ctx))
-        : pousserTirer(base, face, distance, { ...optionsDans(ctx), nouvelleFace: e.nouvelleFace });
+        ? etirerFace(base, face, d, optionsDans(ctx))
+        : pousserTirer(base, face, d, { ...optionsDans(ctx), nouvelleFace: e.nouvelleFace });
     const encore = contexte(r.modele, ctx.dans).faces[face] !== undefined;
     return {
       etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: { genre: "face", face, distance, nouvelleFace: e.nouvelleFace, ...(sansFond ? { sansFond: true } : {}), ...(etirement ? { etirement: true } : {}) } } },
@@ -336,7 +343,7 @@ function droiteDe(ctx: ContexteOutil, ids: readonly Id[], segments: readonly Seg
 }
 
 /** Ce que produit un déplacement monde `v` : allongement, couronne ou balayage. */
-function paramsPour(e: EtatPousserTirer, ctx: ContexteOutil, v: Vec3): ParamsArete {
+function paramsPour(e: EtatPousserTirer, _ctx: ContexteOutil, v: Vec3): ParamsArete {
   const n = len(v);
   const parallele = e.fleche?.verrou.genre === "direction";
   if (e.droite && n > EPS && (parallele || len(cross(e.droite.direction, v)) < 1e-6 * n)) {
@@ -345,7 +352,7 @@ function paramsPour(e: EtatPousserTirer, ctx: ContexteOutil, v: Vec3): ParamsAre
   if (e.boucle && n > EPS && Math.abs(dot(e.boucle.normale, v)) < 1e-6 * n) {
     return { genre: "couronne", aretes: e.aretes, distance: dot(v, e.boucle.exterieur), symetrique: e.symetrique };
   }
-  return { genre: "aretes", aretes: e.aretes, vecteur: enLocal(ctx).vecteur(e.origine as Vec3, v), symetrique: e.symetrique };
+  return { genre: "aretes", aretes: e.aretes, vecteur: v, symetrique: e.symetrique, ...(e.boucle ? { normaleBoucle: e.boucle.normale } : {}) };
 }
 
 /** Même opération, à la nouvelle valeur (correction tapée juste après) ; le signe est conservé. */
@@ -368,12 +375,15 @@ function appliquerAretes(
   const base = remplace ? remplace.avant : ctx.modele;
   const o = optionsDans(ctx);
   try {
+    // Lot L19 (EX-MODEL-02) : valeurs monde ramenées au contexte d'édition (vecteur par la partie linéaire inverse,
+    // longueur le long de l'arête, distance de couronne par l'échelle du plan — refus nommé si elle n'est pas uniforme).
+    const ctxBase = { ...ctx, modele: base };
     const r =
       p.genre === "aretes"
-        ? etirerAretes(base, p.aretes, p.vecteur, { ...o, symetrique: p.symetrique, lier: e.lier })
+        ? etirerAretes(base, p.aretes, vecteurLocal(ctxBase, p.vecteur), { ...o, symetrique: p.symetrique, lier: e.lier })
         : p.genre === "couronne"
-          ? couronne(base, p.aretes, p.distance, { ...o, symetrique: p.symetrique, lier: e.lier })
-          : allongerArete(base, p.arete, p.extremite, p.longueur, o);
+          ? couronne(base, p.aretes, p.distance * (e.boucle ? echelleDansPlan(ctxBase, e.boucle.normale) : 1), { ...o, symetrique: p.symetrique, lier: e.lier })
+          : allongerArete(base, p.arete, p.extremite, Math.sign(p.longueur) * len(vecteurLocal(ctxBase, scale(e.droite?.direction ?? v3(1, 0, 0), Math.abs(p.longueur)))), o);
     return {
       etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: p } },
       modele: r.modele,

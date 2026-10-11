@@ -6,7 +6,8 @@
 import { type Contexte, type Id, type Modele, contexte } from "../geometrie-libre.js";
 import { type Inference, type Verrou, geometrieVisible } from "../inference.js";
 import { type ContexteSaisie } from "../saisie-vcb.js";
-import { type Vec3, add, egal, sub, v3 } from "../vecteur.js";
+import { type Vec3, add, cross, dot, egal, len, normalize, scale, sub, v3 } from "../vecteur.js";
+import { erreurPlanche } from "../diagnostics.js";
 import { APERCU_VIDE, type Apercu, etape } from "./commun-formes.js";
 import type { ContexteOutil, Rayon, Touche, VueOutil } from "./machine.js";
 import { type Cible, type ElementScene, cibleDans, scene, versContexteEdition, viser } from "./selection.js";
@@ -39,6 +40,43 @@ export function selectionValide(ctx: ContexteOutil): Id[] {
 export function enLocal(ctx: ContexteOutil): { point: (p: Vec3) => Vec3; vecteur: (origine: Vec3, v: Vec3) => Vec3 } {
   const L = versContexteEdition(ctx);
   return { point: L, vecteur: (o, v) => sub(L(add(o, v)), L(o)) };
+}
+
+/** Lot L19 (EX-MODEL-02) : refus nommé d'une opération qu'un contexte déformé ne permet pas de faire juste. */
+export const ERREUR_CONTEXTE_DEFORME =
+  "Contexte déformé (échelle non uniforme) : cette opération n'y garderait pas ses dimensions. Utilisez un contexte non déformé ou transformez la géométrie explicitement.";
+
+/** Lot L19 (EX-MODEL-02) : déplacement monde `v` exprimé dans le contexte d'édition (partie linéaire seule). */
+export function vecteurLocal(ctx: ContexteOutil, v: Vec3): Vec3 {
+  return enLocal(ctx).vecteur(v3(0, 0, 0), v);
+}
+
+/**
+ * Lot L19 (EX-MODEL-02) : distance monde `d` le long de la normale monde `nMonde`, exprimée le long de la normale locale
+ * `nLocale` de la même face. Translation, rotation, miroir et échelle uniforme : distance locale exacte (la distance
+ * affichée reste en mètres monde). Échelle non uniforme qui ne garde pas la direction : refus nommé, jamais une
+ * dimension faussée.
+ */
+export function distanceLocale(ctx: ContexteOutil, nMonde: Vec3, nLocale: Vec3, d: number): number {
+  if (ctx.dans === undefined) return d;
+  const v = vecteurLocal(ctx, scale(nMonde, d));
+  if (len(v) < 1e-15) return 0;
+  if (len(cross(normalize(v), normalize(nLocale))) > 1e-9) throw erreurPlanche("EX_CONTEXT_TRANSFORM_UNSUPPORTED", ERREUR_CONTEXTE_DEFORME);
+  return dot(v, normalize(nLocale));
+}
+
+/** Lot L19 : facteur d'échelle du contexte dans un plan (normale monde `n`), ou refus si l'échelle y est non uniforme. */
+export function echelleDansPlan(ctx: ContexteOutil, n: Vec3): number {
+  if (ctx.dans === undefined) return 1;
+  const a = Math.abs(n.x) < 0.9 ? v3(1, 0, 0) : v3(0, 1, 0);
+  const u = normalize(cross(n, a));
+  const w = normalize(cross(n, u));
+  const U = vecteurLocal(ctx, u);
+  const W = vecteurLocal(ctx, w);
+  if (Math.abs(len(U) - len(W)) > 1e-9 * Math.max(len(U), 1) || Math.abs(dot(U, W)) > 1e-9 * Math.max(len(U) * len(W), 1)) {
+    throw erreurPlanche("EX_CONTEXT_TRANSFORM_UNSUPPORTED", ERREUR_CONTEXTE_DEFORME);
+  }
+  return len(U);
 }
 
 /** Sommet du contexte d'édition situé en `p` (monde), s'il existe. */

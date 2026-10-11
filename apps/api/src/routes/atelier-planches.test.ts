@@ -122,4 +122,28 @@ describe("Planches (lot 7) : commandes, journal, IFC", () => {
     expect(fin.definitions.pl1.params.nom).toBe("Esquisse A");
     expect(fin.definitions.pl1.params.niveauId).toBeNull();
   });
+
+  it("lot L19 (EX-SEC-01, I-05, I-06) : delta forgé non fini ou à référence pendante refusé ; écriture par un non-membre refusée", async () => {
+    const client = await registerAndLogin("forge@example.com");
+    const pid = (await client.post("/projects").send({ code: "P.19", name: "Forge" })).body.id as string;
+    const brouillon = boite();
+    const r1 = await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("f1", 0, [{ type: "planche.creer", params: { id: "pl1", nom: "Esquisse", niveauId: null, modele: brouillon } }], "Nouvelle Planche"));
+    expect(r1.status).toBe(200);
+    // Coordonnée 1e400 : le JSON la lit comme Infinity ; le réducteur partagé refuse le delta (aucune géométrie non finie).
+    const brut = `{"requestId":"f2","baseRevision":1,"contract":"${CONTRAT}","label":"Forgé","commands":[{"type":"planche.operation","params":{"id":"pl1","libelle":"Forgé","delta":{"racine":{"sommets":{"s-forge":{"id":"s-forge","position":{"x":1e400,"y":0,"z":0}}}}},"empreinteApres":"0123456789abcdef"}}]}`;
+    const forge = await client.post(`/projects/${pid}/atelier/commands`).set("Content-Type", "application/json").send(brut);
+    expect([400, 409]).toContain(forge.status);
+    // Référence pendante : une occurrence vers une définition absente → précondition, rien n'est écrit.
+    const pendant = { racine: { occurrences: { o99: { id: "o99", definition: "d-absente", transformation: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] } } } };
+    const r3 = await client.post(`/projects/${pid}/atelier/commands`).send(enveloppe("f3", 1, [{ type: "planche.operation", params: { id: "pl1", libelle: "Pendant", delta: pendant, empreinteApres: "0123456789abcdef" } }], "Pendant"));
+    expect([400, 409]).toContain(r3.status);
+    const relu = (await client.get(`/projects/${pid}/atelier/model`)).body;
+    expect(relu.revision).toBe(1);
+    expect(relu.modele.definitions.pl1.params.empreinte).toBe(empreintePlanche(brouillon));
+    // Un autre compte, non membre du projet : aucune écriture possible.
+    const intrus = await registerAndLogin("intrus@example.com");
+    const r4 = await intrus.post(`/projects/${pid}/atelier/commands`).send(enveloppe("f4", 1, [{ type: "planche.operation", params: { id: "pl1", libelle: "Intrus", delta: differencePlanche(brouillon, plancheVide())!, empreinteApres: empreintePlanche(plancheVide()) } }], "Intrus"));
+    expect([403, 404]).toContain(r4.status);
+    expect((await client.get(`/projects/${pid}/atelier/model`)).body.revision).toBe(1);
+  });
 });

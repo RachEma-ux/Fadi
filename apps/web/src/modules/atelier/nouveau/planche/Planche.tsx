@@ -98,6 +98,7 @@ import {
   trierDebit,
   type LigneDebit,
   axesDesPieces,
+  separerDiagnostic,
   changerSectionPiece,
   tournerPieceAxe,
 } from "@parcours/planche-model";
@@ -1647,7 +1648,9 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         const r = format === "obj" ? exporterObj(histRef.current.present.modele, nom) : exporterStl(histRef.current.present.modele, nom);
         telechargerFichier(new Blob([r.contenu], { type: "text/plain;charset=utf-8" }), `${nom}.${format}`.replace(/[^\w.-]+/g, "_"));
         const omis = r.omis.aretesLibres + r.omis.annotations > 0 ? ` ${t("planche.export.omis", { aretes: String(r.omis.aretesLibres), annotations: String(r.omis.annotations) })}` : "";
-        setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }) + omis);
+        // Lot L19 (EX-SAVE-04) : une surface ouverte n'est jamais annoncée comme un solide étanche.
+        const ouverts = r.nonEtanches > 0 ? ` ${t("planche.export.non-etanches", { nombre: String(r.nonEtanches) })}` : "";
+        setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }) + omis + ouverts);
       },
       telechargerPng: async () => {
         const blob = await vueRef.current?.capture();
@@ -2753,7 +2756,17 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
           {dans && <span className="planche-contexte" data-planche-contexte>{t("planche.edition", { nom: nomOccurrence(hist.present.modele, dans) })} | </span>}
           <span className="planche-consigne">{vue.consigne}</span>
           {dans === undefined && liensDesFaces(hist.present.modele, selectionRef.current).length > 0 && <span className="planche-lien" data-planche-lien> | {t("planche.lien.lie")}</span>}
-          {etatBarre && <span className="planche-message" data-planche-message> | {etatBarre}</span>}
+          {etatBarre && (() => {
+            // Lot L19 (EX-ERR-01) : un refus codé montre son message, puis son recours traduit ; le code reste lisible.
+            const d = separerDiagnostic(etatBarre);
+            return (
+              <span className="planche-message" data-planche-message {...(d.code ? { "data-diagnostic": d.code } : {})}>
+                {" | "}
+                <span>{d.message}</span>
+                {d.code && <span className="planche-diagnostic"> — {t(`planche.diag.${d.code}` as CleMessage)} ({d.code})</span>}
+              </span>
+            );
+          })()}
         </p>
         {lienSelectionne() && (
           <button type="button" className="planche-lien-detacher" title={`${t(COMMANDE_DETACHER_LIEN.libelle)} (${afficherRaccourci(COMMANDE_DETACHER_LIEN.raccourci)})`} aria-label={t(COMMANDE_DETACHER_LIEN.libelle)} onClick={detacherLienSelection} data-planche-commande={COMMANDE_DETACHER_LIEN.id}>

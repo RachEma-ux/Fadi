@@ -46,7 +46,14 @@ export interface ExportMaillage {
   readonly triangles: number;
   /** Laissé de côté par le format (déclaré à l'utilisateur). */
   readonly omis: OmisExport;
+  /**
+   * Lot L19 (EX-SAVE-04) : maillages écrits qui ne sont pas des solides fermés (surfaces ouvertes, objets non étanches) —
+   * exportés comme surfaces, sans volume ; jamais présentés comme étanches (déclaré à l'utilisateur).
+   */
+  readonly nonEtanches: number;
 }
+
+const nonEtanchesDe = (maillages: readonly MaillagePlanche[]): number => maillages.filter((x) => !x.solide && x.triangles.length > 0).length;
 
 /** Wavefront OBJ : sommets `v` (m), faces triangulaires `f` indexées à partir de 1, un `o` par maillage. */
 export function exporterObj(m: Modele, nom = "Planche"): ExportMaillage {
@@ -63,7 +70,7 @@ export function exporterObj(m: Modele, nom = "Planche"): ExportMaillage {
     }
     base += mesh.positions.length / 3;
   }
-  return { contenu: lignes.join("\n") + "\n", objets: maillages.length, triangles, omis: omisExport(m) };
+  return { contenu: lignes.join("\n") + "\n", objets: maillages.length, triangles, omis: omisExport(m), nonEtanches: nonEtanchesDe(maillages) };
 }
 
 function normaleTriangle(p: readonly number[], a: number, b: number, c: number): [number, number, number] {
@@ -97,5 +104,5 @@ export function exporterStl(m: Modele, nom = "Planche"): ExportMaillage {
   };
   for (const mesh of maillages) ecrire(mesh);
   lignes.push(`endsolid ${nomObj(nom)}`);
-  return { contenu: lignes.join("\n") + "\n", objets: maillages.length, triangles, omis: omisExport(m) };
+  return { contenu: lignes.join("\n") + "\n", objets: maillages.length, triangles, omis: omisExport(m), nonEtanches: nonEtanchesDe(maillages) };
 }

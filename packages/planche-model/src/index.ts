@@ -12,5 +12,6 @@ export * from "./saisie-vcb.js";
 export * from "./catalogue-outils.js";
 export * from "./outils/index.js";
 export * from "./delta.js";
+export * from "./diagnostics.js";
 export * from "./representation.js";
 export * from "./echanges.js";

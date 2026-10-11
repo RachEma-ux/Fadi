@@ -3,6 +3,7 @@
  * Arcs, Secteur. Aucune logique d'outil ici : visée sur un plan, formatage du champ Mesures, lecture du
  * catalogue, géométrie des arcs, correction après coup.
  */
+import { type CodeDiagnostic, CODES_DIAGNOSTIC, codeDe } from "../diagnostics.js";
 import { type EtapeOutil, type Outil, INFERENCES, outilParId } from "../catalogue-outils.js";
 import type { Modele } from "../geometrie-libre.js";
 import { type Inference, COULEURS, LIBELLES, LIBELLE_PLAN_CONTRAINT, geometrieVisible, inferer } from "../inference.js";
@@ -317,8 +318,17 @@ export interface Derniere<P> {
 export const corrigeable = <P>(d: Derniere<P> | null, ctx: ContexteOutil): d is Derniere<P> => d !== null && d.apres === ctx.modele;
 
 export function messageErreur(e: unknown): string {
-  if (e instanceof RangeError && /segments/i.test(e.message)) return MSG_SEGMENTS;
-  return e instanceof Error ? `Opération impossible : ${e.message}` : "Opération impossible.";
+  if (e instanceof RangeError && !codeDe(e) && /segments/i.test(e.message)) return MSG_SEGMENTS;
+  // Lot L19 (EX-ERR-01) : le code stable suit le message entre crochets ; l'interface le détache et affiche son recours.
+  const code = codeDe(e);
+  return e instanceof Error ? `Opération impossible : ${e.message}${code ? ` [${code}]` : ""}` : "Opération impossible.";
+}
+
+/** Lot L19 : message et code de diagnostic d'un texte d'erreur d'outil (`null` : texte sans code). */
+export function separerDiagnostic(texte: string): { message: string; code: CodeDiagnostic | null } {
+  const m = / \[(EX_[A-Z_]+)\]$/.exec(texte);
+  const code = m && (CODES_DIAGNOSTIC as readonly string[]).includes(m[1] as string) ? (m[1] as CodeDiagnostic) : null;
+  return code ? { message: texte.slice(0, m!.index), code } : { message: texte, code: null };
 }
 
 export const fermer = (pts: readonly Vec3[]): Vec3[] => (pts.length ? [...pts, pts[0] as Vec3] : []);
