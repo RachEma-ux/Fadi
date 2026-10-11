@@ -128,4 +128,14 @@ describe("Échelle — sélection plate", () => {
     expect(e.max.y).toBeCloseTo(3, 6);
     expect(p.operations).toHaveLength(1);
   });
+
+  it("revue de #130 : repère « Pièce » exposé dans la barre d'options et appliqué à la pièce diagonale", () => {
+    const p = partie(machineEchelle, boite(4, 3, 2.7));
+    expect(p.vue().options?.[0]?.id).toBe("repere");
+    expect(p.vue().options?.[0]?.valeur).toBe("monde");
+    p.configurer("repere", "piece");
+    expect(p.vue().options?.[0]?.valeur).toBe("piece");
+    p.configurer("repere", "monde");
+    expect(p.vue().options?.[0]?.valeur).toBe("monde");
+  });
 });

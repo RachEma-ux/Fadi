@@ -2398,16 +2398,22 @@ export function tourner(
   });
 }
 
+/** Options de l'échelle : `axePiece` (repère de la pièce) étire une pièce de profilé le long de son propre axe. */
+export interface OptionsEchelle extends OptionsContexte {
+  readonly axePiece?: boolean;
+}
+
 /** Échelle autour d'une origine ; facteur négatif = miroir. */
 export function mettreAEchelle(
   m: Modele,
   entites: readonly Id[],
   origine: Vec3,
   facteurs: Vec3 | number,
-  o: OptionsContexte = {},
+  o: OptionsEchelle = {},
 ): Resultat {
   const f = typeof facteurs === "number" ? v3(facteurs, facteurs, facteurs) : facteurs;
   if (Math.abs(f.x * f.y * f.z) < EPS) throw new RangeError("Facteur d'échelle nul");
+  if (o.axePiece) return operer(m, o.dans, (t, c) => echellePieceSurAxe(t, c, entites, origine, f));
   return operer(m, o.dans, (t, c) => {
     // Lot L17 : une pièce de profilé ne se met à l'échelle que le long de son axe — sa section est une donnée sourcée.
     const pieces = entites.filter((id) => {
@@ -4684,6 +4690,7 @@ export function effacerEtiquettesPieces(m: Modele): Resultat {
 // ————————————————————————————————————————————————————————————— Édition des pièces (lot L17)
 
 export const ERREUR_ECHELLE_PIECE = "Échelle d'une pièce de profilé : seulement le long de son axe (sa section vient d'une source, elle ne se déforme pas).";
+export const ERREUR_ECHELLE_PIECE_REPERE = "Repère de la pièce : une seule pièce de profilé, étirée par un seul facteur sur son axe.";
 export const ERREUR_ECHELLE_PIECE_COUPEE = "Pièce coupée en onglet ou par un profil : l'échelle changerait ses coupes — refaites-les après.";
 export const ERREUR_ALIGNER_PARALLELE = "Faces non parallèles : l'alignement de face ne fait que translater la pièce le long de la normale de la face cible.";
 export const ERREUR_PIECE_SECTION_RECOUPEE = "Pièce recoupée par un profil : sa section ne peut pas être changée (la coupe ne se rejoue pas).";
@@ -4706,6 +4713,31 @@ function echellePieceAxe(t: Travail, c: Ctx, id: Id, origine: Vec3, f: Vec3): vo
   const S = echelle(origine, f);
   const r = repereSegment(appliquer(S, ax.debut), appliquer(S, ax.fin), ax.haut);
   const placement = { ...X.meta.placement, decalageDebut: X.meta.placement.decalageDebut * facteur, decalageFin: X.meta.placement.decalageFin * facteur };
+  const meta = { ...X.meta, placement };
+  const b = boutsDeMeta(meta);
+  regenererPiece(t, c, id, meta, r, b.debut, b.fin);
+}
+
+/**
+ * Repère de la pièce (revue de #130) : une seule pièce, étirée par son facteur le long de **son** axe, quelle que soit
+ * son orientation. Les extrémités sont projetées depuis l'origine ; la longueur et les décalages suivent le facteur.
+ * Le facteur est celui de l'unique axe de la poignée (ou uniforme) : deux facteurs distincts sont refusés.
+ */
+function echellePieceSurAxe(t: Travail, c: Ctx, entites: readonly Id[], origine: Vec3, f: Vec3): void {
+  if (entites.length !== 1) throw new RangeError(ERREUR_ECHELLE_PIECE_REPERE);
+  const id = entites[0] as Id;
+  const X = pieceDe(t, c, id);
+  const facteurs = [f.x, f.y, f.z].filter((v) => Math.abs(v - 1) > 1e-12);
+  if (facteurs.length === 0) return;
+  if (facteurs.some((v) => Math.abs(v - facteurs[0]!) > 1e-12)) throw new RangeError(ERREUR_ECHELLE_PIECE_REPERE);
+  const s = facteurs[0]!;
+  if (s <= 0) throw new RangeError(ERREUR_ECHELLE_PIECE);
+  if (X.meta.coupeDebut || X.meta.coupeFin || X.meta.coupesProfil) throw new RangeError(ERREUR_ECHELLE_PIECE_COUPEE);
+  const ax = axePiece(X.occ, X.meta);
+  const u = ax.x;
+  const etire = (P: Vec3): Vec3 => add(P, scale(u, (s - 1) * dot(sub(P, origine), u)));
+  const r = repereSegment(etire(ax.debut), etire(ax.fin), ax.haut);
+  const placement = { ...X.meta.placement, decalageDebut: X.meta.placement.decalageDebut * s, decalageFin: X.meta.placement.decalageFin * s };
   const meta = { ...X.meta, placement };
   const b = boutsDeMeta(meta);
   regenererPiece(t, c, id, meta, r, b.debut, b.fin);
