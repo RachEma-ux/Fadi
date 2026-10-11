@@ -5,7 +5,7 @@
  * eux-mêmes (la Planche applique les opérations, un pas d'historique chacune).
  */
 import { type DragEvent as EvenementGlisse, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { REGLAGES_DEFAUT, aire, contexte, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, volume, type Id, type MetadonneesDefinition, type Modele, type ReglagesPlanche, type Scene } from "@parcours/planche-model";
+import { REGLAGES_DEFAUT, aire, contexte, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/planche-model";
 import { t } from "../messages";
 import type { OptionsAffichage, VueStandard } from "./vue-planche";
 import { afficherRaccourci } from "./outils-planche";
@@ -97,6 +97,8 @@ export function MenuContextuel({ x, y, entrees, onFermer }: { x: number; y: numb
 
 export interface ParametresComposant extends MetadonneesDefinition {
   readonly nom: string;
+  /** Objets O-6 : origine des axes du composant (coin de la boîte englobante par défaut). */
+  readonly origine?: OrigineObjet;
 }
 
 export function DialogueComposant({ nomDefaut, onCreer, onAnnuler }: { nomDefaut: string; onCreer: (p: ParametresComposant) => void; onAnnuler: () => void }) {
@@ -104,6 +106,7 @@ export function DialogueComposant({ nomDefaut, onCreer, onAnnuler }: { nomDefaut
   const [description, setDescription] = useState("");
   const [options, setOptions] = useState(false);
   const [collerA, setCollerA] = useState<NonNullable<MetadonneesDefinition["collerA"]>>("aucun");
+  const [origine, setOrigine] = useState<OrigineObjet>("coin");
   const [decouper, setDecouper] = useState(false);
   const [faceCamera, setFaceCamera] = useState(false);
   const champ = useRef<HTMLInputElement | null>(null);
@@ -121,7 +124,7 @@ export function DialogueComposant({ nomDefaut, onCreer, onAnnuler }: { nomDefaut
         data-planche-composant
         onSubmit={(e) => {
           e.preventDefault();
-          onCreer({ nom: nom.trim() || nomDefaut, ...(description.trim() ? { description: description.trim() } : {}), collerA, ...(decouper ? { decouperOuverture: true } : {}), ...(faceCamera ? { faceCamera: true } : {}) });
+          onCreer({ nom: nom.trim() || nomDefaut, origine, ...(description.trim() ? { description: description.trim() } : {}), collerA, ...(decouper ? { decouperOuverture: true } : {}), ...(faceCamera ? { faceCamera: true } : {}) });
         }}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
@@ -148,6 +151,13 @@ export function DialogueComposant({ nomDefaut, onCreer, onAnnuler }: { nomDefaut
             <label>
               {t("planche.composant.description")}
               <input value={description} onChange={(e) => setDescription(e.target.value)} autoComplete="off" data-planche-composant-description />
+            </label>
+            <label>
+              {t("planche.composant.origine")}
+              <select value={origine} onChange={(e) => setOrigine(e.target.value as OrigineObjet)} data-planche-composant-origine>
+                <option value="coin">{t("planche.composant.origine.coin")}</option>
+                <option value="contexte">{t("planche.composant.origine.contexte")}</option>
+              </select>
             </label>
             <label>
               {t("planche.composant.coller")}

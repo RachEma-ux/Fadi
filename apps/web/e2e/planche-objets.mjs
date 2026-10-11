@@ -460,6 +460,8 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   await page.keyboard.press("Control+g");
   await page.waitForTimeout(80);
   const objet = (await page.evaluate(() => window.fadiPlanche.selection()))[0];
+  const origine = await page.evaluate((o) => { const T = window.fadiPlanche.modele().racine.occurrences[o].transformation; return [T[3], T[7], T[11]]; }, objet);
+  check("[O-6] Ctrl+G : origine du groupe au coin de sa boîte englobante (3, 0, 0)", Math.abs(origine[0] - 3) < 1e-4 && Math.abs(origine[1]) < 1e-4 && Math.abs(origine[2]) < 1e-4, origine.join(", "));
   const avant = await monde();
   await page.keyboard.press("Alt+Shift+KeyV");
   await page.waitForTimeout(80);

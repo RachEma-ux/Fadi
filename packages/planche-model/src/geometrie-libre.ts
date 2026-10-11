@@ -2303,13 +2303,37 @@ export interface ResultatGroupe extends Resultat {
 }
 
 /**
+ * Origine locale d'un nouvel objet (Objets O-6, D-208) : `"contexte"` = origine du contexte où il est créé (transformation
+ * identité, comportement historique) ; `"coin"` = coin minimal de sa boîte englobante (x, y, z les plus petits, axes
+ * parallèles à ceux du contexte), comme les axes par défaut d'un composant SketchUp. La position à l'écran ne change pas.
+ */
+export type OrigineObjet = "contexte" | "coin";
+
+/** Coin minimal de la boîte englobante d'un contenu de chantier (objets imbriqués compris) ; null s'il est vide. */
+function coinMinimal(t: Travail, c: Ctx, M: Matrice4 = IDENTITE, profondeur = 0): Vec3 | null {
+  if (profondeur > 32) return null;
+  let r: Vec3 | null = null;
+  const garder = (q: Vec3) => {
+    r = r ? v3(Math.min(r.x, q.x), Math.min(r.y, q.y), Math.min(r.z, q.z)) : q;
+  };
+  for (const s of c.sommets.values()) garder(appliquer(M, s.position));
+  for (const o of c.occurrences.values()) {
+    const d = t.definitions.get(o.definition);
+    const q = d ? coinMinimal(t, d.contenu, composer(M, o.transformation), profondeur + 1) : null;
+    if (q) garder(q);
+  }
+  return r;
+}
+
+/**
  * Grouper (Make Group / Make Component) : faces (avec leurs arêtes), arêtes, courbes et occurrences
  * passent dans une nouvelle définition. Une arête ou un sommet encore utilisé dehors est dupliqué.
+ * `origine` (O-6) : origine locale de l'objet créé, `"contexte"` par défaut.
  */
 export function grouper(
   m: Modele,
   entites: readonly Id[],
-  o: OptionsContexte & MetadonneesDefinition & { readonly genre?: GenreDefinition; readonly nom?: string } = {},
+  o: OptionsContexte & MetadonneesDefinition & { readonly genre?: GenreDefinition; readonly nom?: string; readonly origine?: OrigineObjet } = {},
 ): ResultatGroupe {
   const r = operer(m, o.dans, (t, c) => {
     const faces = new Set(entites.filter((id) => c.faces.has(id)));
@@ -2380,7 +2404,15 @@ export function grouper(
     const def = t.id("d");
     t.definitions.set(def, { id: def, nom: o.nom ?? (genre === "groupe" ? "Groupe" : "Composant"), genre, contenu: g, ...metaDe(o) });
     const occ = t.id("o");
-    c.occurrences.set(occ, { id: occ, definition: def, transformation: IDENTITE });
+    // Objets O-6 : origine au coin minimal de la boîte englobante — contenu ramené à l'origine, occurrence translatée d'autant.
+    const coin = o.origine === "coin" ? coinMinimal(t, g) : null;
+    if (coin && (Math.abs(coin.x) > EPS || Math.abs(coin.y) > EPS || Math.abs(coin.z) > EPS)) {
+      const retour = translation(scale(coin, -1));
+      for (const [id, sm] of g.sommets) g.sommets.set(id, { ...sm, position: sub(sm.position, coin) });
+      for (const [id, k] of g.courbes) g.courbes.set(id, { ...k, centre: sub(k.centre, coin) });
+      for (const [id, io] of g.occurrences) g.occurrences.set(id, { ...io, transformation: composer(retour, io.transformation) });
+      c.occurrences.set(occ, { id: occ, definition: def, transformation: translation(coin) });
+    } else c.occurrences.set(occ, { id: occ, definition: def, transformation: IDENTITE });
     return { occ, def };
   });
   return { modele: r.modele, rapport: r.rapport, occurrence: r.extra.occ, definition: r.extra.def };
