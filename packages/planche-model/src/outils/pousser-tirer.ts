@@ -63,10 +63,13 @@ type ParamsPT =
   | { readonly genre: "face"; readonly face: Id; readonly distance: number; readonly nouvelleFace: boolean; readonly sansFond?: boolean; readonly etirement?: boolean }
   /** Lot L19 : `vecteur` monde (ramené au contexte d'édition à l'application, EX-MODEL-02). */
   | { readonly genre: "aretes"; readonly aretes: readonly Id[]; readonly vecteur: Vec3; readonly symetrique: boolean; readonly normaleBoucle?: Vec3 }
-  /** Courbe fermée tirée dans son plan : `distance` > 0 vers l'extérieur. */
-  | { readonly genre: "couronne"; readonly aretes: readonly Id[]; readonly distance: number; readonly symetrique: boolean }
-  /** Ligne tirée dans son propre sens : `longueur` > 0 allonge. */
-  | { readonly genre: "allonger"; readonly arete: Id; readonly extremite: Id; readonly longueur: number };
+  /**
+   * Courbe fermée tirée dans son plan : `distance` > 0 vers l'extérieur (monde). `normaleBoucle` (monde) est gardée avec
+   * les paramètres : la correction tapée ensuite rejoue l'opération après `retour`, qui a oublié la boucle (revue de #132).
+   */
+  | { readonly genre: "couronne"; readonly aretes: readonly Id[]; readonly distance: number; readonly symetrique: boolean; readonly normaleBoucle?: Vec3 }
+  /** Ligne tirée dans son propre sens : `longueur` > 0 allonge (monde) ; `direction` (monde) gardée pour la même raison. */
+  | { readonly genre: "allonger"; readonly arete: Id; readonly extremite: Id; readonly longueur: number; readonly direction?: Vec3 };
 
 type ParamsArete = Exclude<ParamsPT, { genre: "face" }>;
 
@@ -364,10 +367,10 @@ function paramsPour(e: EtatPousserTirer, _ctx: ContexteOutil, v: Vec3): ParamsAr
   const n = len(v);
   const parallele = e.fleche?.verrou.genre === "direction";
   if (e.droite && n > EPS && (parallele || len(cross(e.droite.direction, v)) < 1e-6 * n)) {
-    return { genre: "allonger", arete: e.droite.arete, extremite: e.droite.extremite, longueur: dot(v, e.droite.direction) };
+    return { genre: "allonger", arete: e.droite.arete, extremite: e.droite.extremite, longueur: dot(v, e.droite.direction), direction: e.droite.direction };
   }
   if (e.boucle && n > EPS && Math.abs(dot(e.boucle.normale, v)) < 1e-6 * n) {
-    return { genre: "couronne", aretes: e.aretes, distance: dot(v, e.boucle.exterieur), symetrique: e.symetrique };
+    return { genre: "couronne", aretes: e.aretes, distance: dot(v, e.boucle.exterieur), symetrique: e.symetrique, normaleBoucle: e.boucle.normale };
   }
   return { genre: "aretes", aretes: e.aretes, vecteur: v, symetrique: e.symetrique, ...(e.boucle ? { normaleBoucle: e.boucle.normale } : {}) };
 }
@@ -395,12 +398,16 @@ function appliquerAretes(
     // Lot L19 (EX-MODEL-02) : valeurs monde ramenées au contexte d'édition (vecteur par la partie linéaire inverse,
     // longueur le long de l'arête, distance de couronne par l'échelle du plan — refus nommé si elle n'est pas uniforme).
     const ctxBase = { ...ctx, modele: base };
+    // Normale de la boucle et direction de l'arête : celles des paramètres (une correction rejoue après `retour`, qui les
+    // a effacées de l'état), sinon celles de l'état courant.
+    const normaleBoucle = p.genre === "couronne" ? (p.normaleBoucle ?? e.boucle?.normale) : undefined;
+    const directionArete = p.genre === "allonger" ? (p.direction ?? e.droite?.direction ?? v3(1, 0, 0)) : undefined;
     const r =
       p.genre === "aretes"
         ? etirerAretes(base, p.aretes, vecteurLocal(ctxBase, p.vecteur), { ...o, symetrique: p.symetrique, lier: e.lier })
         : p.genre === "couronne"
-          ? couronne(base, p.aretes, p.distance * (e.boucle ? echelleDansPlan(ctxBase, e.boucle.normale) : 1), { ...o, symetrique: p.symetrique, lier: e.lier })
-          : allongerArete(base, p.arete, p.extremite, Math.sign(p.longueur) * len(vecteurLocal(ctxBase, scale(e.droite?.direction ?? v3(1, 0, 0), Math.abs(p.longueur)))), o);
+          ? couronne(base, p.aretes, p.distance * (normaleBoucle ? echelleDansPlan(ctxBase, normaleBoucle) : 1), { ...o, symetrique: p.symetrique, lier: e.lier })
+          : allongerArete(base, p.arete, p.extremite, Math.sign(p.longueur) * len(vecteurLocal(ctxBase, scale(directionArete ?? v3(1, 0, 0), Math.abs(p.longueur)))), o);
     return {
       etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: p } },
       modele: r.modele,
