@@ -27,8 +27,8 @@ describe("Révolution, méthode de Suivez-moi (EX-RV-01)", () => {
     expect(option(p, "methode")).toBe("revolution");
     expect(option(p, "groupe")).toBe("non");
     expect(p.vue().consigne).toBe(CONSIGNE_AXE_1);
-    p.seule("Alt");
-    expect(option(p, "methode")).toBe("chemin");
+    p.seule("Alt"); // L22 : Effilement puis Loft avant de revenir à Chemin
+    expect(option(p, "methode")).toBe("effilement");
   });
 
   it("axe = arête présélectionnée : survol du profil → aperçu (192 faces, 48 segments, écart annoncé), rien d'écrit ; clic → un pas « Révolution »", () => {

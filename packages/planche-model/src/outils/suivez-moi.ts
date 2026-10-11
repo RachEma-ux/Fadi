@@ -17,6 +17,12 @@
  * validation, une nouvelle valeur corrige l'opération depuis la recette d'avant (profil d'origine, jamais le résultat
  * précédent) en remplaçant le dernier pas. Options (sans pas d'historique, valables pour la suite) : Capuchons (Ctrl
  * seul) pour un tour partiel, « Résultat en nouveau groupe » (Maj seul).
+ *
+ * Lot L22 (hors V1, D-202) : deux méthodes de plus, à section variable. **Effilement** : un clic sur le profil le balaie
+ * le long de sa normale, l'échelle passant de 1 à l'échelle d'arrivée et la section tournant de la torsion ; le champ
+ * Mesures prend « longueur ; échelle ; torsion » (ex. « 2;0,5;90 », champs vides gardés), avant ou juste après (correction
+ * depuis la recette, un pas). **Loft** : un clic sur le premier profil, puis sur le second (mêmes nombres de sommets,
+ * sans trou) ; le champ Mesures prend les tronçons « Ns ». Alt fait défiler les quatre méthodes.
  */
 import {
   type AxeRevolution,
@@ -28,6 +34,8 @@ import {
   contexte,
   ecartFacettage,
   grouper,
+  effiler,
+  loft,
   revolution,
   segmentsRevolution,
   suivezMoi,
@@ -53,7 +61,21 @@ export interface ApercuSuivezMoi {
   readonly ecart?: number;
 }
 
-export type MethodeSuivezMoi = "chemin" | "revolution";
+export type MethodeSuivezMoi = "chemin" | "revolution" | "effilement" | "loft";
+const METHODES: readonly MethodeSuivezMoi[] = ["chemin", "revolution", "effilement", "loft"];
+
+/** Lot L22 : paramètres de l'effilement et recette de la dernière opération à section variable (correction). */
+export interface ParamsEffilement {
+  readonly longueur: number;
+  readonly echelle: number;
+  readonly torsion: number;
+}
+export interface RecetteVariable {
+  readonly modeleAvant: Modele;
+  readonly modeleApres: Modele;
+  readonly profil: Id;
+  readonly second: Id | null;
+}
 
 /** (Lot 10d, EX-RV-04) Recette d'une Révolution validée : la correction repart du modèle d'avant et du profil d'origine. */
 export interface RecetteRevolution {
@@ -82,6 +104,11 @@ export interface EtatSuivezMoi {
   readonly inference: Inference | null;
   /** (Lot 10d) Dernière Révolution validée, corrigeable par le champ Mesures et les options. */
   readonly dernier: RecetteRevolution | null;
+  /** Lot L22 : réglages de l'effilement, tronçons du loft, premier profil du loft, dernière opération variable. */
+  readonly effilement: ParamsEffilement;
+  readonly troncons: number;
+  readonly premierProfil: Id | null;
+  readonly derniereVariable: RecetteVariable | null;
 }
 
 /** Chemin déduit de la présélection : une face, sinon des arêtes. */
@@ -225,9 +252,133 @@ function traiterRevolution(etat: EtatSuivezMoi, ev: Parameters<MachineOutil<Etat
   }
 }
 
+// ————————————————————————————————————————————————————————————— Effilement et loft (lot L22)
+
+export const CONSIGNE_EFFILEMENT = "Effilement : cliquez sur le profil";
+export const CONSIGNE_LOFT_1 = "Loft : cliquez sur le premier profil.";
+export const CONSIGNE_LOFT_2 = "Loft : cliquez sur le second profil.";
+export const ERREUR_SAISIE_EFFILEMENT = "Saisissez « longueur ; échelle ; torsion » (ex. 2;0,5;90) — un champ vide garde sa valeur.";
+
+/** Opération à section variable sur `m` : effilement du profil, ou loft entre les deux profils. */
+function variable(etat: EtatSuivezMoi, ctx: ContexteOutil, m: Modele, profil: Id, second: Id | null): Modele {
+  if (etat.methode === "loft") return loft(m, profil, second as Id, { ...optionsDans(ctx), segments: etat.troncons }).modele;
+  const p = etat.effilement;
+  return effiler(m, profil, { ...optionsDans(ctx), longueur: p.longueur, echelle: p.echelle, torsion: p.torsion, bouchons: etat.bouchons }).modele;
+}
+
+/** « longueur ; échelle ; torsion » : virgule décimale ou point, champs vides gardés ; `null` si illisible. */
+function lireEffilement(texte: string, p: ParamsEffilement, ctx: ContexteOutil): ParamsEffilement | null {
+  const parties = texte.split(";").map((x) => x.trim());
+  if (parties.length === 0 || parties.length > 3) return null;
+  const nombre = (x: string): number | null => {
+    const v = Number(x.replace(",", ".").replace(/°$/, ""));
+    return Number.isFinite(v) ? v : null;
+  };
+  let { longueur, echelle, torsion } = p;
+  if (parties[0]) {
+    const r = analyserSaisie(parties[0], saisieDe("longueur", ctx));
+    if (r.genre !== "longueur") return null;
+    longueur = r.valeur;
+  }
+  if (parties[1]) {
+    const v = nombre(parties[1]);
+    if (v === null) return null;
+    echelle = v;
+  }
+  if (parties[2]) {
+    const v = nombre(parties[2]);
+    if (v === null) return null;
+    torsion = v;
+  }
+  return { longueur, echelle, torsion };
+}
+
+function traiterVariable(etat: EtatSuivezMoi, ev: Parameters<MachineOutil<EtatSuivezMoi>["traiter"]>[1], ctx: ContexteOutil): Transition<EtatSuivezMoi> {
+  switch (ev.genre) {
+    case "survol": {
+      const { el, cible } = viseeElement(ctx, ev);
+      if (!el || el.genre !== "face" || cible?.genre !== "face") return { etat: { ...etat, erreur: null, apercu: null } };
+      if (etat.methode === "loft" && (!etat.premierProfil || etat.premierProfil === cible.id)) return { etat: { ...etat, apercu: null } };
+      if (etat.apercu?.profil === cible.id) return { etat };
+      try {
+        const m = variable(etat, ctx, ctx.modele, etat.methode === "loft" ? (etat.premierProfil as Id) : cible.id, etat.methode === "loft" ? cible.id : null);
+        const c0 = contexte(ctx.modele, ctx.dans);
+        const crees = Object.keys(contexte(m, ctx.dans).faces).filter((f) => !c0.faces[f]);
+        return { etat: { ...etat, erreur: null, apercu: apercuDe(ctx, m, crees, cible.id) } };
+      } catch (err) {
+        return { etat: { ...etat, erreur: messageErreur(err), apercu: null } };
+      }
+    }
+    case "clic": {
+      const { el, cible } = viseeElement(ctx, ev);
+      if (!el || el.genre !== "face" || cible?.genre !== "face") return { etat: { ...etat, erreur: "Cliquez sur la face qui sert de profil." } };
+      if (etat.methode === "loft" && !etat.premierProfil) return { etat: { ...etat, premierProfil: cible.id, erreur: null, apercu: null }, selection: [cible.id] };
+      const profil = etat.methode === "loft" ? (etat.premierProfil as Id) : cible.id;
+      const second = etat.methode === "loft" ? cible.id : null;
+      try {
+        const m = variable(etat, ctx, ctx.modele, profil, second);
+        return {
+          etat: { ...etat, erreur: null, apercu: null, premierProfil: null, derniereVariable: { modeleAvant: ctx.modele, modeleApres: m, profil, second } },
+          modele: m,
+          selection: [],
+          operation: etat.methode === "loft" ? "Loft" : "Effilement",
+        };
+      } catch (err) {
+        return { etat: { ...etat, erreur: messageErreur(err), apercu: null } };
+      }
+    }
+    case "saisie": {
+      let suite: EtatSuivezMoi | null = null;
+      if (etat.methode === "loft") {
+        const r = analyserSaisie(ev.texte, saisieDe("angle-arc", ctx));
+        if (r.genre === "segments" && Number.isInteger(r.nombre) && r.nombre >= 1 && r.nombre <= 512) suite = { ...etat, troncons: r.nombre };
+        else return { etat: { ...etat, erreur: "Saisissez des tronçons « Ns » (ex. 4s), de 1 à 512." } };
+      } else {
+        const p = lireEffilement(ev.texte, etat.effilement, ctx);
+        if (!p) return { etat: { ...etat, erreur: ERREUR_SAISIE_EFFILEMENT } };
+        suite = { ...etat, effilement: p };
+      }
+      // Correction juste après : recalcul depuis la recette (profil d'origine), le dernier pas est remplacé.
+      const d = etat.derniereVariable;
+      if (d && ctx.modele === d.modeleApres) {
+        try {
+          const m = variable(suite, { ...ctx, modele: d.modeleAvant }, d.modeleAvant, d.profil, d.second);
+          return { etat: { ...suite, erreur: null, apercu: null, derniereVariable: { ...d, modeleApres: m } }, modele: m, remplaceDernier: true, operation: etat.methode === "loft" ? "Loft" : "Effilement" };
+        } catch (err) {
+          return { etat: { ...etat, erreur: messageErreur(err) } };
+        }
+      }
+      return { etat: { ...suite, erreur: null, apercu: null, derniereVariable: null } };
+    }
+    case "echap":
+      return { etat: { ...etat, erreur: null, apercu: null, premierProfil: null, derniereVariable: null }, selection: [] };
+    default:
+      return { etat };
+  }
+}
+
+function vueVariable(etat: EtatSuivezMoi, ctx: ContexteOutil): VueOutil {
+  const p = etat.effilement;
+  const consigne =
+    etat.methode === "loft"
+      ? etat.premierProfil
+        ? CONSIGNE_LOFT_2
+        : CONSIGNE_LOFT_1
+      : `${CONSIGNE_EFFILEMENT} (longueur ${formaterNombre(p.longueur)} m, échelle ${formaterNombre(p.echelle)}, torsion ${formaterNombre(p.torsion)}°).`;
+  const v = vueModif({
+    consigne,
+    mesures: etat.methode === "loft"
+      ? { libelle: "Tronçons", valeur: `${etat.troncons}s`, saisie: saisieDe("angle-arc", ctx) }
+      : { libelle: "Longueur ; échelle ; torsion", valeur: `${formaterNombre(p.longueur)};${formaterNombre(p.echelle)};${formaterNombre(p.torsion)}`, saisie: saisieDe("longueur", ctx) },
+    ctx,
+    erreur: etat.erreur,
+  });
+  return { ...v, options: options(etat), ...(etat.apercu ? { apercu: { ...v.apercu, faces: etat.apercu.faces, trous: etat.apercu.trous } } : {}) };
+}
+
 function options(e: EtatSuivezMoi): OptionOutil[] {
   const r: OptionOutil[] = [
-    { id: "methode", valeur: e.methode, valeurs: [{ id: "chemin", disponible: true, raccourci: "Alt" }, { id: "revolution", disponible: true, raccourci: "Alt" }] },
+    { id: "methode", valeur: e.methode, valeurs: METHODES.map((id) => ({ id, disponible: true, raccourci: "Alt" })) },
     { id: "bouchons", valeur: e.bouchons ? "avec" : "sans", valeurs: [{ id: "avec", disponible: true, raccourci: "Ctrl" }, { id: "sans", disponible: true, raccourci: "Ctrl" }] },
   ];
   if (e.methode === "revolution") r.push({ id: "groupe", valeur: e.groupe ? "oui" : "non", valeurs: [{ id: "non", disponible: true, raccourci: "Maj" }, { id: "oui", disponible: true, raccourci: "Maj" }] });
@@ -249,10 +400,15 @@ export const machineSuivezMoi: MachineOutil<EtatSuivezMoi> = {
     axeClique: null,
     inference: null,
     dernier: null,
+    effilement: { longueur: 1, echelle: 0.5, torsion: 0 },
+    troncons: 1,
+    premierProfil: null,
+    derniereVariable: null,
   }),
 
   traiter(etat, ev, ctx): Transition<EtatSuivezMoi> {
     if (etat.methode === "revolution") return traiterRevolution(etat, ev, ctx);
+    if (etat.methode === "effilement" || etat.methode === "loft") return traiterVariable(etat, ev, ctx);
     switch (ev.genre) {
       case "survol": {
         const chemin = cheminPresélectionné(ctx);
@@ -289,8 +445,8 @@ export const machineSuivezMoi: MachineOutil<EtatSuivezMoi> = {
     let suite: EtatSuivezMoi | null = null;
     if (option === "bouchons" && (valeur === "avec" || valeur === "sans")) suite = { ...etat, bouchons: valeur === "avec", apercu: null, erreur: null };
     if (option === "groupe" && (valeur === "oui" || valeur === "non")) suite = { ...etat, groupe: valeur === "oui", apercu: null, erreur: null };
-    if (option === "methode" && (valeur === "chemin" || valeur === "revolution")) {
-      return { etat: { ...etat, methode: valeur, apercu: null, erreur: null, axeClique: null, inference: null, dernier: null } };
+    if (option === "methode" && (METHODES as readonly string[]).includes(valeur)) {
+      return { etat: { ...etat, methode: valeur as MethodeSuivezMoi, apercu: null, erreur: null, axeClique: null, inference: null, dernier: null, premierProfil: null, derniereVariable: null } };
     }
     // Une option ne crée jamais de pas d'historique : elle vaut pour la prochaine Révolution (ou pour une correction
     // par le champ Mesures, qui repart de la recette).
@@ -298,7 +454,7 @@ export const machineSuivezMoi: MachineOutil<EtatSuivezMoi> = {
   },
 
   modificateurSeul(etat, touche: ModificateurSeul, ctx): Transition<EtatSuivezMoi> {
-    if (touche === "Alt") return this.configurer!(etat, "methode", etat.methode === "chemin" ? "revolution" : "chemin", ctx);
+    if (touche === "Alt") return this.configurer!(etat, "methode", METHODES[(METHODES.indexOf(etat.methode) + 1) % METHODES.length] as string, ctx);
     if (touche === "Ctrl") return this.configurer!(etat, "bouchons", etat.bouchons ? "sans" : "avec", ctx);
     if (etat.methode === "revolution") return this.configurer!(etat, "groupe", etat.groupe ? "non" : "oui", ctx);
     return { etat };
@@ -306,6 +462,7 @@ export const machineSuivezMoi: MachineOutil<EtatSuivezMoi> = {
 
   vue(etat, ctx): VueOutil {
     if (etat.methode === "revolution") return vueRevolution(etat, ctx);
+    if (etat.methode === "effilement" || etat.methode === "loft") return vueVariable(etat, ctx);
     const v = vueModif({ consigne: consigneDe(ID_SUIVEZ_MOI, 0), mesures: null, ctx, erreur: etat.erreur });
     return {
       ...v,

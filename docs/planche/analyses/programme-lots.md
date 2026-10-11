@@ -30,7 +30,7 @@ exigences EX-xxx et les cas A / P / F / R / T / L / I qu'il couvre. Ordre d'exé
 | 8 | **L19** — livré (D-221) ; famille d'extrusion **non** déclarée complète (L20, mesures sur téléphone, optimisation du balayage) | Persistance, contextes transformés, exports, codes de diagnostic `EX_*`, plafond de complexité, mesures sur un bureau nommé et un Android réel, matrice d'acceptation complète : **la famille d'extrusion n'est déclarée complète qu'à ce lot** | B5.1, B5.2 ; EX-SAVE, EX-MODEL-02, 03, EX-SEC, EX-ERR, EX-PERF, EX-REL ; I-01 à I-10 |
 | 9 | **L20** — livré (D-222) | Étirement à plis : triangulation contrainte (concaves, trous), arêtes de pli, validation des intersections ; le pli ne franchit jamais un contexte, avertissement sur un composant partagé | EX-PT-03 complet ; P-05, P-06, P-07 |
 | 10 | **L21** — livré (D-223) | Extrusion multi-faces et épaississement d'une surface ouverte | Hors V1, inclus par décision D-202 |
-| 11 | **L22** | Taper, twist et loft, comme méthodes de Suivez-moi à section variable | Hors V1, inclus par décision D-202 |
+| 11 | **L22** — livré (D-224) | Taper, twist et loft, comme méthodes de Suivez-moi à section variable | Hors V1, inclus par décision D-202 |
 
 Jusqu'au lot 20, l'Étirement **refuse** une voisine qui deviendrait non plane (comportement honnête, refus atomique).
 Les écarts à SketchUp retenus (groupe vide au téléphone, Isoler avec restauration, fil d'Ariane, transfert annoncé à
