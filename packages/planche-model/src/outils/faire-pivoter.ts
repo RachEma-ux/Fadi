@@ -8,7 +8,7 @@
  * négatif = sens inverse. Ctrl (bascule) = copie. Après une copie, « x5 » = réseau polaire de 5 copies au même pas,
  * « /3 » = 3 intervalles ; retaper un angle corrige. Un réseau = un seul pas d'annulation.
  * Lot L18 : Maj maintenue avant le 1ᵉʳ clic garde le plan du rapporteur tel qu'il est (verrou relâché avec Maj) ; après
- * le 1ᵉʳ clic, ← / → / ↑ verrouillent la branche (départ et angle) sur l'axe vert / rouge / bleu projeté dans le plan
+ * le 1ᵉʳ clic, ← / → / ↑ verrouillent la branche (point de départ) sur l'axe vert / rouge / bleu projeté dans le plan
  * de rotation, un 2ᵉ appui la libère ; un glisser depuis le centre définit un axe de rotation quelconque (centre au
  * point d'appui, axe vers le point relâché), puis départ et angle comme d'habitude.
  */
@@ -173,7 +173,9 @@ export const machinePivoter: MachineOutil<EtatPivoter> = {
         }
         const c = etat.centre as Vec3;
         const inf0 = viserSurPlan(ctx, ev, { origine: c, normale: etat.normale }, c, etat.fleche !== null);
-        const inf = etat.branche ? { ...inf0, point: surBranche(etat, c, inf0.point), verrouillee: true } : inf0;
+        // Revue de #131 : la branche ne contraint que le point de départ (étape 2) ; à l'étape 3 la cible reste libre,
+        // sinon l'angle ne pourrait valoir que 0° ou 180°.
+        const inf = etat.branche && etat.etape === 2 ? { ...inf0, point: surBranche(etat, c, inf0.point), verrouillee: true } : inf0;
         if (etat.etape === 2) return { etat: { ...etat, inference: inf, texte: null, erreur: null } };
         const d = etat.depart as Vec3;
         const brut = angleSigne(sub(d, c), sub(inf.point, c), etat.normale);
@@ -196,7 +198,9 @@ export const machinePivoter: MachineOutil<EtatPivoter> = {
         }
         const c = etat.centre as Vec3;
         const inf0 = viserSurPlan(ctx, ev, { origine: c, normale: etat.normale }, c, etat.fleche !== null);
-        const inf = etat.branche ? { ...inf0, point: surBranche(etat, c, inf0.point), verrouillee: true } : inf0;
+        // Revue de #131 : la branche ne contraint que le point de départ (étape 2) ; à l'étape 3 la cible reste libre,
+        // sinon l'angle ne pourrait valoir que 0° ou 180°.
+        const inf = etat.branche && etat.etape === 2 ? { ...inf0, point: surBranche(etat, c, inf0.point), verrouillee: true } : inf0;
         if (etat.etape === 2) {
           if (dist(inf.point, c) <= TOL) return { etat: { ...etat, erreur: "Le point de départ doit être distinct du centre." } };
           return { etat: { ...etat, etape: 3, depart: inf.point, inference: inf, angle: 0, accroche: false, texte: null, erreur: null } };
