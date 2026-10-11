@@ -7951,5 +7951,10 @@
 "écart propre à Fadi": "Fadi-specific deviation",
 "Origine des axes": "Axes origin",
 "Coin de la boîte englobante": "Bounding box corner",
-"Origine du contexte": "Context origin"
+"Origine du contexte": "Context origin",
+"L'opération en cours est abandonnée : le modèle a changé sous elle, son aperçu ne peut plus être validé — reprenez la sélection.": "The operation in progress was abandoned: the model changed under it, its preview can no longer be applied — pick the selection again.",
+"Étendue": "Extent",
+"Jusqu'à une face": "Up to face",
+"Direct": "Forward",
+"Inversé": "Reversed"
 }
