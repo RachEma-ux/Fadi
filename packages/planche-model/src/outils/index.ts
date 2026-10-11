@@ -14,7 +14,7 @@ export { modifierPlanDeCoupe, couleurPlan } from "./plan-de-coupe.js";
 export { repereDepuis, REPERE_MODELE } from "./axes.js";
 export { formaterAire } from "./metre.js";
 export { TEXTE_PAR_DEFAUT_ECRAN } from "./texte.js";
-export { configurerTexte3D, facesDuTexte3D, HAUTEUR_TEXTE_3D, EXTRUSION_TEXTE_3D, type ParametresTexte3D, type EtatTexte3D } from "./texte-3d.js";
+export { configurerTexte3D, facesDuTexte3D, planDePose, lireAlignementTexte3D, PLAN_SOL, HAUTEUR_TEXTE_3D, EXTRUSION_TEXTE_3D, type AlignementTexte3D, type PlanTexte3D, type ParametresTexte3D, type EtatTexte3D } from "./texte-3d.js";
 export { opererSolides, type OperationSolide, type EtatSolide } from "./solides.js";
 export { materiauVise } from "./peinture.js";
 export { viser, viserAnnotation, cibleDans, cheminOccurrence, cheminContexte, etendreSelection, type Cible, type ModeSelectionEtendue } from "./selection.js";
