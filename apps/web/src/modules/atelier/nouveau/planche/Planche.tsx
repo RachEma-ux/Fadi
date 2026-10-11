@@ -1976,7 +1976,11 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     () =>
       Object.values(etat?.definitions ?? {})
         .filter((d) => d.classe === ("catalogue" as typeof d.classe))
-        .map((d) => ({ id: d.id, nom: d.nom, lignes: ((d.params as Record<string, unknown>)["lignes"] as LigneCatalogue[] | undefined) ?? [] }))
+        .map((d) => {
+          const params = d.params as Record<string, unknown>;
+          const ontologie = typeof params["ontologie"] === "string" ? params["ontologie"] : undefined;
+          return { id: d.id, nom: d.nom, ...(ontologie ? { ontologie } : {}), lignes: (params["lignes"] as LigneCatalogue[] | undefined) ?? [] };
+        })
         .sort((a, b) => a.nom.localeCompare(b.nom, "fr")),
     [etat],
   );
