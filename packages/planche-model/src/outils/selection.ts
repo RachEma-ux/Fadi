@@ -298,6 +298,13 @@ export function versContexteEdition(ctx: ContexteOutil): (p: Vec3) => Vec3 {
   return inv ? (p) => appliquer(inv, p) : (p) => p;
 }
 
+/** Conversion inverse : point du repère du contexte d'édition vers le monde (identité à la racine). */
+export function depuisContexteEdition(ctx: ContexteOutil): (p: Vec3) => Vec3 {
+  if (ctx.dans === undefined) return (p) => p;
+  const M = matriceChemin(ctx.modele, cheminContexte(ctx));
+  return M ? (p) => appliquer(M, p) : (p) => p;
+}
+
 export const optionsDans = (ctx: ContexteOutil): { dans?: Id } => (ctx.dans !== undefined ? { dans: ctx.dans } : {});
 
 /**

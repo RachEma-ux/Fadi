@@ -1,6 +1,7 @@
 /** Lot L12 : machines Profilé et Profilés depuis arêtes — section de l'interface, placement, un pas par pose. */
 import { describe, expect, it } from "vitest";
-import { type Id, type Modele, ajouterSegment, contexte, modeleVide, piecesLiees, volume } from "../geometrie-libre.js";
+import { type Id, type Modele, ajouterSegment, contexte, grouperVide, modeleVide, piecesLiees, tourner, volume } from "../geometrie-libre.js";
+import { geometrieVisible } from "../inference.js";
 import type { SectionCourante } from "../profiles.js";
 import { v3 } from "../vecteur.js";
 import { clicVers, echap, partie, saisie, survolVers, touche } from "./essais-modification.js";
@@ -120,5 +121,35 @@ describe("Profilés depuis arêtes (L12)", () => {
     expect(opt("position")).toBe("interieur");
     p.seule("Alt");
     expect(opt("rotation")).toBe("oui");
+  });
+});
+
+describe("Revue de #126 — aperçus fidèles à la pose", () => {
+  const cle = (p: { x: number; y: number; z: number }) => [p.x, p.y, p.z].map((x) => (Math.abs(x) < 1e-9 ? 0 : x).toFixed(6)).join(",");
+  it("dans un groupe tourné : l'aperçu a le même roulis que la pièce posée (repère du contexte, haut local)", () => {
+    const g = grouperVide(modeleVide());
+    const m = tourner(g.modele, [g.occurrence], v3(0, 0, 0), v3(1, 0, 0), Math.PI / 2).modele;
+    const p = avecSection(machineProfile, m);
+    const ctx0 = p.ctx;
+    p.ctx = (): ContexteOutil => ({ ...ctx0(), dans: g.occurrence });
+    p.jouer(clicVers(v3(0, 0, 0)), survolVers(v3(3, 0, 0)));
+    const apercu = new Set(p.vue().apercu.faces.flat().map(cle));
+    p.jouer(clicVers(v3(3, 0, 0)));
+    expect(p.operations).toEqual(["Profilé"]);
+    const pose = new Set(geometrieVisible(p.modele).faces.flatMap((f) => f.exterieur).map(cle));
+    expect(pose.size).toBe(8);
+    expect([...apercu].sort()).toEqual([...pose].sort());
+  });
+
+  it("section creuse : l'aperçu porte les trous des bouts (Profilé et Profilés depuis arêtes)", () => {
+    const creuse: SectionCourante = {
+      ...SECTION,
+      section: { ...SECTION.section, trous: [[{ y: -0.04, z: -0.015 }, { y: -0.04, z: 0.015 }, { y: 0.04, z: 0.015 }, { y: 0.04, z: -0.015 }]] },
+    };
+    const p = avecSection(machineProfile, modeleVide(), [], creuse).jouer(clicVers(v3(0, 0, 0)), survolVers(v3(3, 0, 0)));
+    expect((p.vue().apercu.trous ?? []).filter((t) => t.length === 1)).toHaveLength(2);
+    const m = ajouterSegment(modeleVide(), v3(0, 0, 0), v3(3, 0, 0)).modele;
+    const q = avecSection(machineProfilesAretes, m, Object.keys(m.racine.aretes), creuse).jouer(survolVers(v3(1, 1, 1)));
+    expect((q.vue().apercu.trous ?? []).filter((t) => t.length === 1)).toHaveLength(2);
   });
 });
