@@ -7956,5 +7956,8 @@
 "Étendue": "Extent",
 "Jusqu'à une face": "Up to face",
 "Direct": "Forward",
-"Inversé": "Reversed"
+"Inversé": "Reversed",
+"Lien": "Link",
+"Liée aux arêtes": "Linked to edges",
+"Indépendante": "Independent"
 }
