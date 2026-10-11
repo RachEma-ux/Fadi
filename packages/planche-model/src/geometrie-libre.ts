@@ -126,6 +126,8 @@ export interface Occurrence {
   readonly masquee?: boolean;
   /** Verrouillée (lot 5) : aucune transformation, aucun effacement, aucune édition tant que le verrou tient. */
   readonly verrouille?: boolean;
+  /** (Lot L14) Repère de pièce (liste de débit) : posé par la renumérotation, gardé par une copie. */
+  readonly repere?: string;
 }
 
 export interface Contexte {
@@ -4632,5 +4634,38 @@ export function remplacerContenuPiece(m: Modele, piece: Id, faces: FacesPolygona
       delete t.annotations.pieces[piece];
       t.annotationsSales = true;
     }
+  });
+}
+
+// ————————————————————————————————————————————————————————————— Repères et étiquettes des pièces (lot L14)
+
+/**
+ * Renumérotation des pièces (lot L14) : chaque occurrence reçoit son repère (un pas d'annulation). L'occurrence est
+ * cherchée dans tous les contextes ; une occurrence d'un composant partagé porte le repère dans toutes ses copies.
+ */
+export function numeroterPieces(m: Modele, affectations: readonly { readonly occurrence: Id; readonly repere: string }[]): Resultat {
+  return operer(m, undefined, (t) => {
+    for (const { occurrence, repere } of affectations) {
+      const { ctx, occ } = t.occurrence(occurrence);
+      t.salir(ctx).occurrences.set(occurrence, { ...occ, repere });
+    }
+  });
+}
+
+/** Étiquettes de pièces (lot L14) : un texte à repère par pièce, au milieu de son axe, portant son repère. */
+export function poserEtiquettesPieces(m: Modele, etiquettes: readonly { readonly occurrence: Id; readonly position: Vec3; readonly texte: string }[]): Resultat & { extra: Id[] } {
+  return modifierAnnotations(m, (a, id) =>
+    etiquettes.map((e) => {
+      const t = id("t");
+      a.textes[t] = { id: t, genre: "repere", ancre: e.position, entite: e.occurrence, position: add(e.position, v3(0, 0, 0.3)), texte: e.texte, etiquettePiece: true };
+      return t;
+    }),
+  );
+}
+
+/** Efface ensemble toutes les étiquettes de pièces (lot L14) ; les autres textes restent. */
+export function effacerEtiquettesPieces(m: Modele): Resultat {
+  return modifierAnnotations(m, (a) => {
+    for (const [id, tx] of Object.entries(a.textes)) if (tx.genre === "repere" && tx.etiquettePiece) delete a.textes[id];
   });
 }

@@ -76,6 +76,9 @@ Mètre T · Orbite O · Panoramique H · Zoom Z · Zoom étendu Ctrl+Maj+E · Zo
 | | | | Alt+Maj+B | Coupe par profil (lot L13) |
 | | | | Alt+Maj+A | Allonger une pièce (lot L13) |
 
+Commandes de la liste de débit (registre, lot L14) : Alt+Maj+T liste, Alt+Maj+N renuméroter, Alt+Maj+E étiquettes,
+Alt+Maj+W effacer les étiquettes, Alt+Maj+X exporter le CSV.
+
 Règles tenues (test `barres-outils.test.ts`) : la couche ne vise que les outils dont le raccourci relevé vaut `null`, et
 tous ; aucun raccourci partagé entre deux outils ; aucun ne reprend une touche propre à la Planche (G composant, K arêtes
 arrière, Ctrl+Z, Ctrl+Maj+Z, Ctrl+Y, Ctrl+G, Ctrl+A, Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+S, Ctrl+K, Ctrl+Maj+I, Maj+- recherche) ; aucun ne commence une saisie au

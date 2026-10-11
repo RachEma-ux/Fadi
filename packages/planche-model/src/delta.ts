@@ -248,6 +248,7 @@ export function estMetadonneesPiece(v: unknown): boolean {
   if (!estObjet(s) || !estBoucleSection(s["exterieur"]) || !Array.isArray(s["trous"]) || !s["trous"].every(estBoucleSection)) return false;
   const src = v["source"];
   if (!estObjet(src) || !(src["genre"] === "saisie" || (src["genre"] === "catalogue" && typeof src["source"] === "string" && typeof src["edition"] === "string"))) return false;
+  if (src["masseLineique"] !== undefined && !(estNombre(src["masseLineique"]) && (src["masseLineique"] as number) > 0)) return false;
   const p = v["placement"];
   if (!estObjet(p) || !["centre", "haut-gauche", "haut-droite", "bas-droite", "bas-gauche"].includes(p["point"] as string)) return false;
   if (typeof p["rotation90"] !== "boolean" || !estNombre(p["decalageDebut"]) || !estNombre(p["decalageFin"])) return false;

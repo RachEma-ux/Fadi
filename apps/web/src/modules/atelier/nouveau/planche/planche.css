@@ -1971,3 +1971,69 @@
     max-width: 100%;
   }
 }
+
+/* Lot L14 : liste de débit (panneau « Objets et vue ») — barre d'actions, réglages en grille, table défilante. */
+.planche-debit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.planche-debit-barre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.planche-debit-barre button {
+  min-height: 34px;
+  font-size: 0.85rem;
+}
+.planche-debit-reglages {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.35rem 0.6rem;
+}
+.planche-debit-champ {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.78rem;
+  min-width: 0;
+}
+.planche-debit-champ input,
+.planche-debit-champ select {
+  min-height: 30px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.planche-debit-table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.planche-debit-table th button {
+  font-size: 0.75rem;
+  padding: 2px 4px;
+  min-height: 0;
+  white-space: nowrap;
+}
+.planche-debit-table td,
+.planche-debit-table th {
+  padding: 3px 5px;
+  border-bottom: 1px solid var(--atelier-ligne, #dce5df);
+  text-align: left;
+  white-space: nowrap;
+}
+.planche-debit-table tbody tr {
+  cursor: pointer;
+}
+.planche-debit-table tbody tr:hover,
+.planche-debit-table tbody tr:focus-visible {
+  background: var(--atelier-survol, #eef4f0);
+}
+.planche-debit-table tfoot td {
+  font-weight: 600;
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ajouterRectangle, ajouterSegment, contexte, copier, etirerAretes, grouper, grouperVide, modeleVide, v3 } from "@parcours/planche-model";
-import { COMMANDES_OBJETS, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus } from "./commandes-objets";
+import { COMMANDES_DEBIT, COMMANDES_OBJETS, ciblesDeplacement, disponibiliteDebit, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, filAriane, liensRompus } from "./commandes-objets";
 
 const base = { lecture: false, entites: 0, objets: 0, verrouilles: false };
 
@@ -92,5 +92,18 @@ describe("Cibles de « Déplacer vers… » — revue de la PR (O-4)", () => {
     expect(ciblesDeplacement(m, [x.occurrence], k.occurrence, nom, "Planche").map((c) => c.id)).toEqual([undefined]);
     // Depuis la racine, ranger le composant K dans sa copie (même définition, donc cycle) n'est pas proposé.
     expect(ciblesDeplacement(m, [k.occurrence], undefined, nom, "Planche").map((c) => c.id)).not.toContain(k2);
+  });
+});
+
+describe("Liste de débit (lot L14) : commandes et disponibilités", () => {
+  it("ouvrir toujours ; exporter avec une liste non vide ; écritures hors lecture ; effacer avec des étiquettes", () => {
+    const s = { lignes: 2, etiquettes: 0, lecture: false };
+    expect(disponibiliteDebit("liste-debit", { ...s, lignes: 0 }).disponible).toBe(true);
+    expect(disponibiliteDebit("exporter-debit", { ...s, lignes: 0 }).motif).toBe("planche.debit.motif.vide");
+    expect(disponibiliteDebit("exporter-debit", { ...s, lecture: true }).disponible).toBe(true);
+    expect(disponibiliteDebit("renumeroter", { ...s, lecture: true }).motif).toBe("planche.debit.motif.lecture");
+    expect(disponibiliteDebit("effacer-etiquettes", s).motif).toBe("planche.debit.motif.sans-etiquette");
+    expect(disponibiliteDebit("effacer-etiquettes", { ...s, etiquettes: 3 }).disponible).toBe(true);
+    expect(COMMANDES_DEBIT.map((c) => c.raccourci)).toEqual(["Alt+Maj+T", "Alt+Maj+N", "Alt+Maj+E", "Alt+Maj+W", "Alt+Maj+X"]);
   });
 });
