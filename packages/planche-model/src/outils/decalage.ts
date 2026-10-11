@@ -6,7 +6,9 @@
  * anneau et une face intérieure. Double-clic sur une autre face : même distance (relevé). ARÊTES : arêtes continues
  * présélectionnées (ou arête cliquée), un clic place le point de mesure ; la polyligne parallèle est prolongée
  * jusqu'aux intersections et ne crée AUCUNE face. Après : étape 1 ; une valeur tapée juste après corrige (un seul pas).
- * Alt (autoriser le chevauchement) : bascule sans effet — le noyau ne traite que le contour extérieur, pas d'élagage.
+ * Lot L18 : une face à trous est décalée avec ses trous (chaque boucle avance vers la matière). Alt frappé seul (ou
+ * l'option Chevauchement) : Refusé (défaut, choix Fadi : un chevauchement est refusé en nommant la boucle) / Autorisé
+ * (boucles insérées telles quelles). Une correction par le champ Mesures garde le réglage de l'opération corrigée.
  */
 import { type Id, contexte, decaler, decalerAretes } from "../geometrie-libre.js";
 import { analyserSaisie } from "../saisie-vcb.js";
@@ -22,12 +24,12 @@ import {
   messageErreur,
 } from "./commun-formes.js";
 import { consigneDe, idsSelectionnables, libelleMesuresDe, selectionValide, vueModif, viseeElement } from "./commun-modif.js";
-import type { ContexteOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
+import type { ContexteOutil, MachineOutil, ModificateurSeul, OptionOutil, Rayon, Transition, VueOutil } from "./machine.js";
 import { idsDuClic, optionsDans } from "./selection.js";
 
 export const ID_DECALAGE = "decalage";
 
-type ParamsDec = { readonly face: Id; readonly distance: number } | { readonly aretes: readonly Id[]; readonly distance: number; readonly cote: Vec3 };
+type ParamsDec = { readonly face: Id; readonly distance: number; readonly chevauchement: boolean } | { readonly aretes: readonly Id[]; readonly distance: number; readonly cote: Vec3 };
 
 export interface EtatDecalage {
   readonly etape: 1 | 2;
@@ -114,9 +116,10 @@ function appliquerFace(e: EtatDecalage, ctx: ContexteOutil, face: Id, distance: 
   if (Math.abs(distance) < EPS) return { etat: { ...retour(e), texte, erreur: "Distance nulle : aucun décalage créé." } };
   const base = remplace ? remplace.avant : ctx.modele;
   try {
-    const r = decaler(base, face, distance, optionsDans(ctx));
+    const chevauchement = remplace && "face" in remplace.params ? remplace.params.chevauchement : e.alt;
+    const r = decaler(base, face, distance, { ...optionsDans(ctx), chevauchement });
     return {
-      etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: { face, distance } } },
+      etat: { ...retour(e), texte, erreur: null, derniere: { avant: base, apres: r.modele, params: { face, distance, chevauchement } } },
       modele: r.modele,
       selection: r.face ? [r.face] : [],
       operation: "Décalage",
@@ -222,7 +225,7 @@ export const machineDecalage: MachineOutil<EtatDecalage> = {
       case "saisie":
         return saisir(etat, ctx, ev.texte);
       case "touche":
-        return ev.etat === "enfoncee" && ev.touche === "Alt" ? { etat: { ...etat, alt: !etat.alt } } : { etat };
+        return { etat };
       case "echap":
         return etat.etape === 2 ? { etat: { ...retour(etat), texte: null, erreur: null }, selection: [] } : { etat };
       case "appui":
@@ -232,16 +235,30 @@ export const machineDecalage: MachineOutil<EtatDecalage> = {
     }
   },
 
+  configurer(etat, option, valeur): Transition<EtatDecalage> {
+    if (option === "chevauchement" && (valeur === "refuse" || valeur === "autorise")) return { etat: { ...etat, alt: valeur === "autorise", erreur: null } };
+    return { etat };
+  },
+
+  modificateurSeul(etat, touche: ModificateurSeul, ctx): Transition<EtatDecalage> {
+    return touche === "Alt" ? this.configurer!(etat, "chevauchement", etat.alt ? "refuse" : "autorise", ctx) : { etat };
+  },
+
   vue(etat, ctx): VueOutil {
     const presel = etat.etape === 1 && selectionValide(ctx).some((id) => contexte(ctx.modele, ctx.dans).aretes[id]);
     const indice = etat.etape === 2 ? 2 : presel ? 1 : 0;
     const valeur = etat.texte ?? (etat.etape === 2 ? `~ ${formaterLongueur(Math.abs(etat.distance), ctx.separateurDecimal)}` : formaterLongueur(0, ctx.separateurDecimal));
-    return vueModif({
+    const v = vueModif({
       consigne: consigneDe(ID_DECALAGE, indice),
       mesures: mesures(libelleMesuresDe(ID_DECALAGE, indice), valeur, contexteSaisie("longueur", ctx)),
       apercu: etat.etape === 2 && etat.cote && etat.origine && dist(etat.cote, etat.origine) > TOL ? { lignes: [[etat.origine, etat.cote]], faces: [] } : { lignes: [], faces: [] },
       ctx,
       erreur: etat.erreur,
     });
+    return { ...v, options: options(etat) };
   },
 };
+
+function options(e: EtatDecalage): OptionOutil[] {
+  return [{ id: "chevauchement", valeur: e.alt ? "autorise" : "refuse", valeurs: [{ id: "refuse", disponible: true, raccourci: "Alt" }, { id: "autorise", disponible: true, raccourci: "Alt" }] }];
+}

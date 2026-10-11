@@ -10,15 +10,22 @@
  * Après une copie : « x3 » / « 3x » = 3 copies au même pas, « /3 » = 3 intervalles ; retaper une distance ré-espace le
  * réseau ; copie + réseau + ré-espacement = un seul pas d'annulation. Tampon : chaque clic pose une copie (un pas chacun).
  * Alt (pliage automatique) : bascule — le noyau plie toujours les faces devenues non planes.
+ * Lot L18 (choix Fadi déclaré, le relevé ne décrit pas leur place) : un seul groupe ou composant sélectionné montre des
+ * poignées de rotation sur sa boîte englobante — 4 par face, à mi-chemin du centre de la face vers ses bords. Un clic
+ * sur une poignée fait pivoter l'objet autour de la normale de cette face passant par son centre : angle au curseur
+ * (accroché aux multiples de 15°) ou saisi, sens du curseur ; Échap abandonne.
  */
-import { type Id, type Reseau, axesDesPieces, contexte, copier, deplacer } from "../geometrie-libre.js";
+import { type Id, type Reseau, axesDesPieces, contexte, copier, deplacer, tourner } from "../geometrie-libre.js";
 import { type Inference, type ModeAlt, type Verrou, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, AXE_Z, EPS, TOL, add, cross, dot, len, normalize, scale, sub } from "../vecteur.js";
-import { type Derniere, contexteSaisie, corrigeable, formaterLongueur, mesures, messageErreur, prefixe } from "./commun-formes.js";
+import { type Derniere, angleSigne, contexteSaisie, corrigeable, formaterAngle, formaterLongueur, intersectionRayonPlan, mesures, messageErreur, prefixe } from "./commun-formes.js";
 import {
+  type Boite,
   VECTEUR_AXE,
   axeDeToucheFleche,
+  boiteDe,
+  pointsDe,
   consigneDe,
   enLocal,
   idsSelectionnables,
@@ -30,7 +37,7 @@ import {
   viseeElement,
   type VerrouFleche,
 } from "./commun-modif.js";
-import type { ContexteOutil, EvenementOutil, MachineOutil, Transition, VueOutil } from "./machine.js";
+import type { ContexteOutil, EvenementOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
 import { idsDuClic, optionsDans } from "./selection.js";
 
 export const ID_DEPLACER = "deplacer";
@@ -60,6 +67,75 @@ export interface EtatDeplacer {
   readonly texte: string | null;
   readonly erreur: string | null;
   readonly derniere: Derniere<ParamsDeplacement> | null;
+  /** Lot L18 : rotation par une poignée de la boîte (centre de la face, normale, point de départ, angle courant). */
+  readonly rotation: { readonly entites: readonly Id[]; readonly centre: Vec3; readonly normale: Vec3; readonly depart: Vec3; readonly angle: number; readonly accroche: boolean } | null;
+}
+
+/** Lot L18 : poignée de rotation d'une boîte (point monde, centre et normale de sa face). */
+export interface PoigneeRotation {
+  readonly point: Vec3;
+  readonly centre: Vec3;
+  readonly normale: Vec3;
+}
+
+/** Les 24 poignées de rotation d'une boîte : 4 par face, à mi-chemin du centre de la face vers ses bords. */
+export function poigneesRotation(b: Boite): PoigneeRotation[] {
+  const r: PoigneeRotation[] = [];
+  const demi = { x: (b.max.x - b.min.x) / 2, y: (b.max.y - b.min.y) / 2, z: (b.max.z - b.min.z) / 2 };
+  for (const axe of ["x", "y", "z"] as const) {
+    const [u, w] = (["x", "y", "z"] as const).filter((k) => k !== axe) as ["x" | "y" | "z", "x" | "y" | "z"];
+    for (const signe of [-1, 1]) {
+      const normale = scale(VECTEUR_AXE[axe], signe);
+      const centre = add(b.centre, scale(VECTEUR_AXE[axe], signe * demi[axe]));
+      for (const [k, s] of [[u, 1], [u, -1], [w, 1], [w, -1]] as const) r.push({ point: add(centre, scale(VECTEUR_AXE[k], (s * demi[k]) / 2)), centre, normale });
+    }
+  }
+  return r;
+}
+
+/** Poignée de rotation visée par un rayon (la plus proche de la caméra, à moins de 6 % de la boîte), ou `null`. */
+export function poigneeVisee(b: Boite, r: Rayon): PoigneeRotation | null {
+  const taille = Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z);
+  const rayon = Math.max(0.02, 0.06 * taille);
+  let meilleure: { p: PoigneeRotation; t: number } | null = null;
+  for (const p of poigneesRotation(b)) {
+    if (dot(p.normale, r.direction) >= 0) continue; // face vue de dos
+    const x = intersectionRayonPlan(r, { origine: p.centre, normale: p.normale });
+    if (!x || len(sub(x, p.point)) > rayon) continue;
+    const t = dot(sub(x, r.origine), normalize(r.direction));
+    if (!meilleure || t < meilleure.t) meilleure = { p, t };
+  }
+  return meilleure?.p ?? null;
+}
+
+/** Boîte de la sélection si elle est un seul groupe ou composant (poignées de rotation), sinon `null`. */
+function boiteObjet(ctx: ContexteOutil): Boite | null {
+  const sel = selectionValide(ctx);
+  return sel.length === 1 && (sel[0] as Id).startsWith("o") ? boiteDe(pointsDe(ctx.modele, sel)) : null;
+}
+
+const PAS_ACCROCHE = (15 * Math.PI) / 180;
+const TOL_ACCROCHE = (1.5 * Math.PI) / 180;
+
+function angleRotation(rot: NonNullable<EtatDeplacer["rotation"]>, r: Rayon): { angle: number; accroche: boolean } | null {
+  const x = intersectionRayonPlan(r, { origine: rot.centre, normale: rot.normale });
+  if (!x || len(sub(x, rot.centre)) <= TOL) return null;
+  const a = angleSigne(sub(rot.depart, rot.centre), sub(x, rot.centre), rot.normale);
+  const k = Math.round(a / PAS_ACCROCHE);
+  return Math.abs(a - k * PAS_ACCROCHE) <= TOL_ACCROCHE ? { angle: k * PAS_ACCROCHE, accroche: true } : { angle: a, accroche: false };
+}
+
+function tournerPoignee(e: EtatDeplacer, ctx: ContexteOutil, angle: number, texte: string | null): Transition<EtatDeplacer> {
+  const rot = e.rotation;
+  if (!rot) return { etat: e };
+  if (Math.abs(angle) < 1e-12) return { etat: { ...e, rotation: null, texte, erreur: "Angle nul : rien n'a été tourné." } };
+  try {
+    const L = enLocal(ctx);
+    const r = tourner(ctx.modele, rot.entites, L.point(rot.centre), normalize(L.vecteur(rot.centre, rot.normale)), angle, optionsDans(ctx));
+    return { etat: { ...retour(e), rotation: null, texte, erreur: null, derniere: null }, modele: r.modele, selection: rot.entites, operation: "Rotation" };
+  } catch (err) {
+    return { etat: { ...e, rotation: null, texte, erreur: messageErreur(err) } };
+  }
 }
 
 function initial(): EtatDeplacer {
@@ -78,10 +154,11 @@ function initial(): EtatDeplacer {
     texte: null,
     erreur: null,
     derniere: null,
+    rotation: null,
   };
 }
 
-const retour = (e: EtatDeplacer): EtatDeplacer => ({ ...e, etape: 1, mode: "deplacer", base: null, entites: [], sommet: false, fleche: null, verrouMaj: null, inference: null });
+const retour = (e: EtatDeplacer): EtatDeplacer => ({ ...e, etape: 1, mode: "deplacer", base: null, entites: [], sommet: false, fleche: null, verrouMaj: null, inference: null, rotation: null });
 
 const verrouCourant = (e: EtatDeplacer): Verrou | undefined => e.verrouMaj ?? e.fleche?.verrou;
 
@@ -175,6 +252,11 @@ function entitesDuClic(ctx: ContexteOutil, ev: Extract<EvenementOutil, { genre: 
 }
 
 function saisir(e: EtatDeplacer, ctx: ContexteOutil, texte: string): Transition<EtatDeplacer> {
+  if (e.rotation) {
+    const ra = analyserSaisie(texte, contexteSaisie("angle", ctx));
+    if (ra.genre !== "angle") return { etat: { ...e, texte, erreur: ra.genre === "erreur" ? ra.message : `Saisie « ${texte} » non reconnue : un angle est attendu.` } };
+    return tournerPoignee(e, ctx, (e.rotation.angle < 0 ? -1 : 1) * ra.radians, texte);
+  }
   const res = analyserSaisie(texte, contexteSaisie("distance-reseau", ctx));
   if (res.genre === "erreur") return { etat: { ...e, texte, erreur: res.message } };
   const L = enLocal(ctx);
@@ -217,10 +299,23 @@ export const machineDeplacer: MachineOutil<EtatDeplacer> = {
   traiter(etat, ev, ctx): Transition<EtatDeplacer> {
     switch (ev.genre) {
       case "survol": {
+        if (etat.rotation) {
+          const a = angleRotation(etat.rotation, ev.rayon);
+          return { etat: a ? { ...etat, rotation: { ...etat.rotation, ...a }, texte: null, erreur: null } : etat };
+        }
         const i = inferer3(etat, ctx, ev);
         return { etat: { ...etat, inference: i, areteReference: reference(etat.areteReference, i, ctx), texte: null, erreur: null } };
       }
       case "clic": {
+        if (etat.rotation) {
+          const a = angleRotation(etat.rotation, ev.rayon);
+          return tournerPoignee(etat, ctx, a ? a.angle : etat.rotation.angle, null);
+        }
+        if (etat.etape === 1 && etat.mode === "deplacer") {
+          const b = boiteObjet(ctx);
+          const p = b ? poigneeVisee(b, ev.rayon) : null;
+          if (p) return { etat: { ...etat, rotation: { entites: selectionValide(ctx), centre: p.centre, normale: p.normale, depart: p.point, angle: 0, accroche: true }, texte: null, erreur: null, derniere: null } };
+        }
         const i = inferer3(etat, ctx, ev);
         if (etat.etape === 1) {
           let entites = selectionValide(ctx);
@@ -276,6 +371,7 @@ export const machineDeplacer: MachineOutil<EtatDeplacer> = {
         return { etat };
       }
       case "echap":
+        if (etat.rotation) return { etat: { ...etat, rotation: null, texte: null, erreur: null } };
         if (etat.etape === 2) return { etat: { ...retour(etat), texte: null, erreur: null } };
         return { etat: { ...etat, mode: "deplacer" } };
       case "appui":
@@ -287,6 +383,22 @@ export const machineDeplacer: MachineOutil<EtatDeplacer> = {
 
   vue(etat, ctx): VueOutil {
     const sep = ctx.separateurDecimal;
+    if (etat.rotation) {
+      const rot = etat.rotation;
+      const R = len(sub(rot.depart, rot.centre));
+      const u0 = normalize(sub(rot.depart, rot.centre));
+      const w0 = normalize(cross(rot.normale, u0));
+      const cercle: Vec3[] = [];
+      for (let i = 0; i <= 48; i++) cercle.push(add(rot.centre, add(scale(u0, R * Math.cos((2 * Math.PI * i) / 48)), scale(w0, R * Math.sin((2 * Math.PI * i) / 48)))));
+      const fin = add(rot.centre, add(scale(u0, R * Math.cos(rot.angle)), scale(w0, R * Math.sin(rot.angle))));
+      return vueModif({
+        consigne: consigneDe(ID_DEPLACER, 7),
+        mesures: mesures(libelleMesuresDe(ID_DEPLACER, 7), etat.texte ?? `${rot.accroche ? "" : "~ "}${formaterAngle(Math.abs((rot.angle * 180) / Math.PI), sep)}`, contexteSaisie("angle", ctx)),
+        apercu: { lignes: [cercle, [rot.centre, rot.depart], [rot.centre, fin]], faces: [] },
+        ctx,
+        erreur: etat.erreur,
+      });
+    }
     const avecSel = selectionValide(ctx).length > 0;
     let indice: number;
     if (etat.etape === 1) indice = etat.mode === "tampon" ? 5 : etat.mode === "copier" ? 3 : avecSel ? 1 : 0;
@@ -294,6 +406,16 @@ export const machineDeplacer: MachineOutil<EtatDeplacer> = {
     const v = vecteurCurseur(etat);
     const valeur = etat.texte ?? (etat.etape === 2 && v ? `${prefixe(etat.inference)}${formaterLongueur(len(v), sep)}` : formaterLongueur(0, sep));
     const lignes: Vec3[][] = etat.etape === 2 && etat.base && etat.inference ? [[etat.base, etat.inference.point]] : [];
+    // Lot L18 : poignées de rotation (petites croix dans le plan de leur face) d'un seul objet sélectionné.
+    const bo = etat.etape === 1 && etat.mode === "deplacer" ? boiteObjet(ctx) : null;
+    if (bo) {
+      const t = Math.max(0.02, 0.06 * Math.max(bo.max.x - bo.min.x, bo.max.y - bo.min.y, bo.max.z - bo.min.z));
+      for (const p of poigneesRotation(bo)) {
+        const a = Math.abs(p.normale.z) > 0.5 ? VECTEUR_AXE.x : VECTEUR_AXE.z;
+        const b2 = normalize(cross(p.normale, a));
+        lignes.push([add(p.point, scale(a, -t)), add(p.point, scale(a, t))], [add(p.point, scale(b2, -t)), add(p.point, scale(b2, t))]);
+      }
+    }
     // Fantôme : contour monde des entités déplacées, translaté du vecteur courant.
     if (etat.etape === 2 && v && len(v) > TOL) {
       const c = contexte(ctx.modele, ctx.dans);

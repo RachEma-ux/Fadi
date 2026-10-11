@@ -5,12 +5,13 @@
  * plan survolé est mis en évidence. Clic sur un plan : miroir en place autour du centre. Ctrl (bascule) : retourner ET
  * copier. Glisser un plan en mode copie : la copie miroir est faite de l'autre côté d'un plan décalé ; le champ
  * Mesures donne le décalage (mesuré depuis le centre de la boîte, vers le côté du glisser — choix Fadi), qu'une
- * saisie ajuste. Flèches ← / → / ↑ : plan vert / rouge / bleu (retournement immédiat). Alt (axes de l'objet) non
- * modélisé. Fiche Instructeur absente du relevé : le texte de la barre d'état est celui du catalogue.
+ * saisie ajuste. Flèches ← / → / ↑ : plan vert / rouge / bleu (retournement immédiat). Lot L18 : Alt frappé seul (ou
+ * l'option Axes) bascule axes du contexte ↔ axes de l'objet quand la sélection est un seul groupe ou composant : les
+ * plans suivent alors ses axes propres et passent par le centre de sa boîte orientée. Fiche Instructeur absente du relevé : le texte de la barre d'état est celui du catalogue.
  */
-import { type Id, retourner } from "../geometrie-libre.js";
+import { type Id, appliquer, matriceChemin, retourner } from "../geometrie-libre.js";
 import { analyserSaisie } from "../saisie-vcb.js";
-import { type Vec3, add, dot, normalize, scale, sub } from "../vecteur.js";
+import { type Vec3, add, dot, len, normalize, scale, sub, v3 } from "../vecteur.js";
 import { type Derniere, contexteSaisie, corrigeable, formaterLongueur, intersectionRayonPlan, mesures, messageErreur } from "./commun-formes.js";
 import {
   type Boite,
@@ -26,8 +27,8 @@ import {
   vueModif,
   viseeElement,
 } from "./commun-modif.js";
-import type { ContexteOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
-import { SEUIL_GLISSER, distance2, idsDuClic, optionsDans } from "./selection.js";
+import type { ContexteOutil, MachineOutil, ModificateurSeul, OptionOutil, Rayon, Transition, VueOutil } from "./machine.js";
+import { SEUIL_GLISSER, cheminContexte, distance2, idsDuClic, optionsDans } from "./selection.js";
 
 export const ID_RETOURNER = "retourner";
 type Axe = "x" | "y" | "z";
@@ -49,15 +50,58 @@ export interface EtatRetourner {
   readonly erreur: string | null;
   /** Dernière copie miroir (corrigeable au champ Mesures tant que le modèle n'a pas changé : un seul pas). */
   readonly derniere: Derniere<{ readonly axe: Axe; readonly ids: readonly Id[]; readonly signe: 1 | -1 }> | null;
+  /** Lot L18 : plans selon les axes de l'objet (seul groupe ou composant sélectionné) plutôt que ceux du contexte. */
+  readonly objet: boolean;
 }
 
 function initial(): EtatRetourner {
-  return { entites: [], copie: false, survol: null, appui: null, glisse: null, ignorerClic: false, texte: null, erreur: null, derniere: null };
+  return { entites: [], copie: false, survol: null, appui: null, glisse: null, ignorerClic: false, texte: null, erreur: null, derniere: null, objet: false };
 }
 
 const COTE_PLAN = 1.5;
 
-/** Boîte de la sélection (ids présélectionnés, sinon ceux de l'état). */
+/** Repère des plans : centre et trois axes (monde), demi-côté des carrés affichés. */
+interface Repere {
+  readonly centre: Vec3;
+  readonly axes: Readonly<Record<Axe, Vec3>>;
+  readonly taille: number;
+}
+
+/** Lot L18 : axes monde propres d'un seul groupe ou composant sélectionné, sinon `null`. */
+function axesObjet(ctx: ContexteOutil, ids: readonly Id[]): Record<Axe, Vec3> | null {
+  if (ids.length !== 1 || !(ids[0] as Id).startsWith("o")) return null;
+  const M = matriceChemin(ctx.modele, [...cheminContexte(ctx), ids[0] as Id]);
+  if (!M) return null;
+  const o = appliquer(M, v3(0, 0, 0));
+  const axe = (v: Vec3): Vec3 => normalize(sub(appliquer(M, v), o));
+  const r = { x: axe(v3(1, 0, 0)), y: axe(v3(0, 1, 0)), z: axe(v3(0, 0, 1)) };
+  return len(r.x) > 0.5 && len(r.y) > 0.5 && len(r.z) > 0.5 ? r : null;
+}
+
+/** Repère de la sélection : boîte alignée sur le contexte, ou boîte orientée sur les axes de l'objet (lot L18). */
+function repereDe(e: EtatRetourner, ctx: ContexteOutil, cibles?: readonly Id[]): Repere | null {
+  const ids = cibles ?? (e.entites.length ? e.entites : selectionValide(ctx));
+  const pts = pointsDe(ctx.modele, ids);
+  const objet = e.objet ? axesObjet(ctx, ids) : null;
+  if (!objet) {
+    const b = boiteDe(pts);
+    return b ? { centre: b.centre, axes: VECTEUR_AXE, taille: Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z, 0.1) } : null;
+  }
+  if (pts.length === 0) return null;
+  let centre = v3(0, 0, 0);
+  let taille = 0.1;
+  for (const k of AXES) {
+    const a = objet[k];
+    const proj = pts.map((p) => dot(p, a));
+    const lo = Math.min(...proj);
+    const hi = Math.max(...proj);
+    centre = add(centre, scale(a, (lo + hi) / 2));
+    taille = Math.max(taille, hi - lo);
+  }
+  return { centre, axes: objet, taille };
+}
+
+/** Boîte alignée de la sélection (gardée pour la présence d'une sélection). */
 function boiteCourante(e: EtatRetourner, ctx: ContexteOutil): Boite | null {
   const ids = e.entites.length ? e.entites : selectionValide(ctx);
   return boiteDe(pointsDe(ctx.modele, ids));
@@ -68,16 +112,15 @@ function ids(e: EtatRetourner, ctx: ContexteOutil): Id[] {
 }
 
 /** Axe du plan de symétrie touché par le rayon : celui dont le point d'impact est dans le carré, le plus proche. */
-function planVise(b: Boite, r: Rayon): Axe | null {
-  const taille = Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z, 0.1);
-  const demi = Math.max(taille / 2, COTE_PLAN / 2) * 1.05;
+function planVise(b: Repere, r: Rayon): Axe | null {
+  const demi = Math.max(b.taille / 2, COTE_PLAN / 2) * 1.05;
   let meilleur: { axe: Axe; t: number } | null = null;
   for (const axe of AXES) {
-    const n = VECTEUR_AXE[axe];
+    const n = b.axes[axe];
     const P = intersectionRayonPlan(r, { origine: b.centre, normale: n });
     if (!P) continue;
     const d = sub(P, b.centre);
-    const hors = (["x", "y", "z"] as const).some((k) => k !== axe && Math.abs(d[k]) > demi);
+    const hors = AXES.some((k) => k !== axe && Math.abs(dot(d, b.axes[k])) > demi);
     if (hors) continue;
     const t = dot(sub(P, r.origine), normalize(r.direction));
     if (!meilleur || t < meilleur.t) meilleur = { axe, t };
@@ -97,12 +140,12 @@ function operer(
   const base = remplace ? remplace.avant : ctx.modele;
   const ctxBase: ContexteOutil = { ...ctx, modele: base };
   const cibles = remplace ? [...remplace.params.ids] : ids(e, ctx);
-  const b = boiteDe(pointsDe(base, cibles));
+  const b = repereDe(e, ctxBase, cibles);
   if (!b || cibles.length === 0) return { etat: { ...e, erreur: "Sélectionnez d'abord ce qu'il faut retourner." } };
   try {
     const L = enLocal(ctxBase);
-    const origine = add(b.centre, scale(VECTEUR_AXE[axe], decalage));
-    const r = retourner(base, cibles, { origine: L.point(origine), normale: L.vecteur(origine, VECTEUR_AXE[axe]) }, { ...optionsDans(ctx), copie });
+    const origine = add(b.centre, scale(b.axes[axe], decalage));
+    const r = retourner(base, cibles, { origine: L.point(origine), normale: L.vecteur(origine, b.axes[axe]) }, { ...optionsDans(ctx), copie });
     return {
       etat: {
         ...e,
@@ -124,9 +167,9 @@ function operer(
 }
 
 /** Décalage du plan miroir : projection du rayon sur la droite (centre, axe), signé. */
-function decalageVise(b: Boite, axe: Axe, r: Rayon): number {
+function decalageVise(b: Repere, axe: Axe, r: Rayon): number {
   const u = normalize(r.direction);
-  const a = VECTEUR_AXE[axe];
+  const a = b.axes[axe];
   const w = sub(r.origine, b.centre);
   const bb = dot(u, a);
   const d = dot(u, w);
@@ -141,7 +184,7 @@ export const machineRetourner: MachineOutil<EtatRetourner> = {
   initial,
 
   traiter(etat, ev, ctx): Transition<EtatRetourner> {
-    const b = boiteCourante(etat, ctx);
+    const b = boiteCourante(etat, ctx) ? repereDe(etat, ctx) : null;
     switch (ev.genre) {
       case "survol":
         return { etat: { ...etat, survol: b ? planVise(b, ev.rayon) : null, texte: null, erreur: null } };
@@ -207,18 +250,28 @@ export const machineRetourner: MachineOutil<EtatRetourner> = {
     }
   },
 
+  configurer(etat, option, valeur): Transition<EtatRetourner> {
+    if (option === "axes" && (valeur === "contexte" || valeur === "objet")) return { etat: { ...etat, objet: valeur === "objet", erreur: null } };
+    return { etat };
+  },
+
+  modificateurSeul(etat, touche: ModificateurSeul, ctx): Transition<EtatRetourner> {
+    if (touche !== "Alt") return { etat };
+    if (!etat.objet && !axesObjet(ctx, etat.entites.length ? etat.entites : selectionValide(ctx))) return { etat: { ...etat, erreur: ERREUR_AXES_OBJET } };
+    return this.configurer!(etat, "axes", etat.objet ? "contexte" : "objet", ctx);
+  },
+
   vue(etat, ctx): VueOutil {
-    const b = boiteCourante(etat, ctx);
+    const b = boiteCourante(etat, ctx) ? repereDe(etat, ctx) : null;
     const lignes: Vec3[][] = [];
     const faces: Vec3[][] = [];
     if (b) {
-      const taille = Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z, 0.1);
-      const demi = Math.max(taille / 2, COTE_PLAN / 2) * 1.05;
+      const demi = Math.max(b.taille / 2, COTE_PLAN / 2) * 1.05;
       const g = etat.glisse;
       for (const axe of AXES) {
         const decal = g && g.axe === axe ? g.decalage : 0;
-        const c = add(b.centre, scale(VECTEUR_AXE[axe], decal));
-        const [u, w] = AXES.filter((k) => k !== axe).map((k) => VECTEUR_AXE[k]) as [Vec3, Vec3];
+        const c = add(b.centre, scale(b.axes[axe], decal));
+        const [u, w] = AXES.filter((k) => k !== axe).map((k) => b.axes[k]) as [Vec3, Vec3];
         const coins = [
           add(add(c, scale(u, -demi)), scale(w, -demi)),
           add(add(c, scale(u, demi)), scale(w, -demi)),
@@ -231,12 +284,17 @@ export const machineRetourner: MachineOutil<EtatRetourner> = {
     }
     const indice = etat.glisse || corrigeable(etat.derniere, ctx) ? 2 : etat.copie ? 1 : 0;
     const decal = etat.glisse ? Math.abs(etat.glisse.decalage) : 0;
-    return vueModif({
+    const v = vueModif({
       consigne: consigneDe(ID_RETOURNER, indice),
       mesures: mesures(libelleMesuresDe(ID_RETOURNER, indice), etat.texte ?? formaterLongueur(decal, ctx.separateurDecimal), contexteSaisie("longueur", ctx)),
       apercu: { lignes, faces },
       ctx,
       erreur: etat.erreur,
     });
+    const objetPossible = axesObjet(ctx, etat.entites.length ? etat.entites : selectionValide(ctx)) !== null;
+    const opts: OptionOutil[] = [{ id: "axes", valeur: etat.objet && objetPossible ? "objet" : "contexte", valeurs: [{ id: "contexte", disponible: true, raccourci: "Alt" }, { id: "objet", disponible: objetPossible, raccourci: "Alt" }] }];
+    return { ...v, options: opts };
   },
 };
+
+export const ERREUR_AXES_OBJET = "Axes de l'objet : sélectionnez un seul groupe ou composant.";

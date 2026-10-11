@@ -7,11 +7,15 @@
  * rouge / bleue, un 2ᵉ appui le libère. Saisie : « 30 » = 30°, « 1:2 » = pente atan(1/2), sens = côté du curseur ;
  * négatif = sens inverse. Ctrl (bascule) = copie. Après une copie, « x5 » = réseau polaire de 5 copies au même pas,
  * « /3 » = 3 intervalles ; retaper un angle corrige. Un réseau = un seul pas d'annulation.
+ * Lot L18 : Maj maintenue avant le 1ᵉʳ clic garde le plan du rapporteur tel qu'il est (verrou relâché avec Maj) ; après
+ * le 1ᵉʳ clic, ← / → / ↑ verrouillent la branche (départ et angle) sur l'axe vert / rouge / bleu projeté dans le plan
+ * de rotation, un 2ᵉ appui la libère ; un glisser depuis le centre définit un axe de rotation quelconque (centre au
+ * point d'appui, axe vers le point relâché), puis départ et angle comme d'habitude.
  */
 import { type Id, tourner } from "../geometrie-libre.js";
 import type { Inference } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
-import { type Vec3, AXE_Z, TOL, add, cross, dist, len, normalize, scale, sub } from "../vecteur.js";
+import { type Vec3, AXE_Z, TOL, add, cross, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
 import {
   type Derniere,
   angleSigne,
@@ -35,7 +39,7 @@ import {
   viseeElement,
 } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, Transition, VueOutil } from "./machine.js";
-import { idsDuClic, optionsDans } from "./selection.js";
+import { SEUIL_GLISSER, distance2, idsDuClic, optionsDans } from "./selection.js";
 
 export const ID_PIVOTER = "faire-pivoter";
 const PAS_ACCROCHE = (15 * Math.PI) / 180;
@@ -67,13 +71,31 @@ export interface EtatPivoter {
   readonly texte: string | null;
   readonly erreur: string | null;
   readonly derniere: Derniere<ParamsPivoter> | null;
+  /** Lot L18 : plan du rapporteur gardé tant que Maj est maintenue (avant le 1ᵉʳ clic). */
+  readonly verrouMaj: Vec3 | null;
+  /** Lot L18 : branche verrouillée sur un axe après le 1ᵉʳ clic (direction dans le plan de rotation). */
+  readonly branche: { readonly touche: string; readonly direction: Vec3 } | null;
+  /** Lot L18 : glisser depuis le centre (axe quelconque) : point d'appui et point courant. */
+  readonly appui: { readonly ecran: { x: number; y: number }; readonly point: Vec3; readonly entites: readonly Id[] } | null;
+  readonly glisse: Vec3 | null;
+  /** Le clic qui suit un vrai glisser est ignoré. */
+  readonly ignorerClic: boolean;
 }
 
 function initial(): EtatPivoter {
-  return { etape: 1, copie: false, fleche: null, entites: [], centre: null, normale: AXE_Z, depart: null, angle: 0, accroche: false, inference: null, texte: null, erreur: null, derniere: null };
+  return { etape: 1, copie: false, fleche: null, entites: [], centre: null, normale: AXE_Z, depart: null, angle: 0, accroche: false, inference: null, texte: null, erreur: null, derniere: null, verrouMaj: null, branche: null, appui: null, glisse: null, ignorerClic: false };
 }
 
-const retour = (e: EtatPivoter): EtatPivoter => ({ ...e, etape: 1, centre: null, depart: null, angle: 0, accroche: false, inference: null, normale: e.fleche ? VECTEUR_AXE[e.fleche.axe] : AXE_Z });
+const retour = (e: EtatPivoter): EtatPivoter => ({ ...e, etape: 1, centre: null, depart: null, angle: 0, accroche: false, inference: null, normale: e.fleche ? VECTEUR_AXE[e.fleche.axe] : AXE_Z, branche: null, appui: null, glisse: null });
+
+export const ERREUR_BRANCHE_AXE = "Cet axe est perpendiculaire au plan de rotation : la branche ne peut pas s'y verrouiller.";
+
+/** Point de la branche : projeté sur l'axe verrouillé (lot L18), sinon tel quel. */
+function surBranche(e: EtatPivoter, c: Vec3, p: Vec3): Vec3 {
+  if (!e.branche) return p;
+  const d = e.branche.direction;
+  return add(c, scale(d, dot(sub(p, c), d)));
+}
 
 function ciblesDe(e: EtatPivoter, ctx: ContexteOutil): Id[] {
   return e.entites.length ? [...e.entites] : selectionValide(ctx);
@@ -110,7 +132,7 @@ function appliquer(e: EtatPivoter, ctx: ContexteOutil, p: ParamsPivoter, texte: 
 /** Plan de rotation (normale) d'une visée libre : verrou par flèche, sinon face survolée, sinon sol. */
 function normaleVisee(e: EtatPivoter, ctx: ContexteOutil, ev: Parameters<typeof viserLibre>[1]): { inference: Inference; normale: Vec3 } {
   const v = viserLibre(ctx, ev);
-  return { inference: v.inference, normale: e.fleche ? VECTEUR_AXE[e.fleche.axe] : v.normale };
+  return { inference: v.inference, normale: e.fleche ? VECTEUR_AXE[e.fleche.axe] : (e.verrouMaj ?? v.normale) };
 }
 
 function saisir(e: EtatPivoter, ctx: ContexteOutil, texte: string): Transition<EtatPivoter> {
@@ -150,7 +172,8 @@ export const machinePivoter: MachineOutil<EtatPivoter> = {
           return { etat: { ...etat, normale: v.normale, inference: v.inference, texte: null, erreur: null } };
         }
         const c = etat.centre as Vec3;
-        const inf = viserSurPlan(ctx, ev, { origine: c, normale: etat.normale }, c, etat.fleche !== null);
+        const inf0 = viserSurPlan(ctx, ev, { origine: c, normale: etat.normale }, c, etat.fleche !== null);
+        const inf = etat.branche ? { ...inf0, point: surBranche(etat, c, inf0.point), verrouillee: true } : inf0;
         if (etat.etape === 2) return { etat: { ...etat, inference: inf, texte: null, erreur: null } };
         const d = etat.depart as Vec3;
         const brut = angleSigne(sub(d, c), sub(inf.point, c), etat.normale);
@@ -158,6 +181,7 @@ export const machinePivoter: MachineOutil<EtatPivoter> = {
         return { etat: { ...etat, inference: inf, angle: a.angle, accroche: a.accroche, texte: null, erreur: null } };
       }
       case "clic": {
+        if (etat.ignorerClic) return { etat: { ...etat, ignorerClic: false } };
         if (etat.etape === 1) {
           let entites = etat.entites;
           let selection: readonly string[] | undefined;
@@ -171,7 +195,8 @@ export const machinePivoter: MachineOutil<EtatPivoter> = {
           return { etat: { ...etat, etape: 2, entites, centre: v.inference.point, normale: v.normale, inference: v.inference, angle: 0, texte: null, erreur: null, derniere: null }, ...(selection ? { selection } : {}) };
         }
         const c = etat.centre as Vec3;
-        const inf = viserSurPlan(ctx, ev, { origine: c, normale: etat.normale }, c, etat.fleche !== null);
+        const inf0 = viserSurPlan(ctx, ev, { origine: c, normale: etat.normale }, c, etat.fleche !== null);
+        const inf = etat.branche ? { ...inf0, point: surBranche(etat, c, inf0.point), verrouillee: true } : inf0;
         if (etat.etape === 2) {
           if (dist(inf.point, c) <= TOL) return { etat: { ...etat, erreur: "Le point de départ doit être distinct du centre." } };
           return { etat: { ...etat, etape: 3, depart: inf.point, inference: inf, angle: 0, accroche: false, texte: null, erreur: null } };
@@ -183,6 +208,10 @@ export const machinePivoter: MachineOutil<EtatPivoter> = {
       case "saisie":
         return saisir(etat, ctx, ev.texte);
       case "touche": {
+        if (ev.touche === "Maj") {
+          if (ev.etat === "relachee") return { etat: { ...etat, verrouMaj: null } };
+          return etat.etape === 1 && !etat.fleche ? { etat: { ...etat, verrouMaj: etat.normale } } : { etat };
+        }
         if (ev.etat !== "enfoncee") return { etat };
         if (ev.touche === "Ctrl") return { etat: { ...etat, copie: !etat.copie } };
         const axe = axeDeToucheFleche(ev.touche);
@@ -190,14 +219,45 @@ export const machinePivoter: MachineOutil<EtatPivoter> = {
           if (etat.fleche?.touche === ev.touche) return { etat: { ...etat, fleche: null, normale: AXE_Z } };
           return { etat: { ...etat, fleche: { touche: ev.touche, axe }, normale: VECTEUR_AXE[axe] } };
         }
+        if (axe && etat.etape >= 2) {
+          if (etat.branche?.touche === ev.touche) return { etat: { ...etat, branche: null, erreur: null } };
+          const A = VECTEUR_AXE[axe];
+          const dans = sub(A, scale(etat.normale, dot(A, etat.normale)));
+          if (len(dans) < 0.1) return { etat: { ...etat, erreur: ERREUR_BRANCHE_AXE } };
+          return { etat: { ...etat, branche: { touche: ev.touche, direction: normalize(dans) }, erreur: null } };
+        }
         return { etat };
       }
       case "echap":
         return etat.etape > 1 ? { etat: { ...retour(etat), texte: null, erreur: null } } : { etat };
-      case "appui":
-      case "glisser":
-      case "relache":
-        return { etat };
+      case "appui": {
+        if (etat.etape !== 1) return { etat };
+        let entites = etat.entites.length ? etat.entites : selectionValide(ctx);
+        if (entites.length === 0) {
+          const { cible } = viseeElement(ctx, ev);
+          entites = cible ? idsDuClic(ctx.modele, ctx.dans, cible, 1) : [];
+        }
+        return { etat: { ...etat, appui: { ecran: ev.ecran, point: viserLibre(ctx, ev).inference.point, entites }, glisse: null, ignorerClic: false } };
+      }
+      case "glisser": {
+        if (!etat.appui) return { etat };
+        if (!etat.glisse && distance2(etat.appui.ecran, ev.ecran) < SEUIL_GLISSER) return { etat };
+        const v = viserLibre(ctx, ev, etat.appui.point);
+        return { etat: { ...etat, glisse: v.inference.point, inference: v.inference, ignorerClic: true } };
+      }
+      case "relache": {
+        const a = etat.appui;
+        const g = etat.glisse;
+        if (!a || !g) return { etat: { ...etat, appui: null, glisse: null } };
+        const axe = sub(g, a.point);
+        if (len(axe) <= TOL) return { etat: { ...etat, appui: null, glisse: null, erreur: "Glissez plus loin du centre pour définir l'axe de rotation." } };
+        if (a.entites.length === 0) return { etat: { ...etat, appui: null, glisse: null, erreur: "Cliquez d'abord sur l'élément à faire pivoter." } };
+        // Axe quelconque : centre au point d'appui, normale du rapporteur = direction glissée ; le clic qui suit est ignoré.
+        return {
+          etat: { ...etat, etape: 2, entites: a.entites, centre: a.point, normale: normalize(axe), appui: null, glisse: null, ignorerClic: true, angle: 0, texte: null, erreur: null, derniere: null },
+          selection: a.entites,
+        };
+      }
     }
   },
 
@@ -218,8 +278,10 @@ export const machinePivoter: MachineOutil<EtatPivoter> = {
         lignes.push(cercle);
       }
       if (etat.depart) lignes.push([c, etat.depart]);
+      if (etat.branche) lignes.push([add(c, scale(etat.branche.direction, -R)), add(c, scale(etat.branche.direction, R))]);
       if (etat.inference && len(sub(etat.inference.point, c)) > TOL) lignes.push([c, etat.inference.point]);
     }
+    if (etat.appui && etat.glisse) lignes.push([etat.appui.point, etat.glisse]);
     const valeur = etat.texte ?? (etat.etape === 3 ? `${etat.accroche ? "" : "~ "}${formaterAngle(Math.abs((etat.angle * 180) / Math.PI), sep)}` : "");
     return vueModif({
       consigne: consigneDe(ID_PIVOTER, indice),
