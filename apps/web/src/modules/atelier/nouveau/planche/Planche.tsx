@@ -92,7 +92,7 @@ import {
   effacerEtiquettesPieces,
   listeDebit,
   numeroterPieces,
-  piecesDuModele,
+  etiquettesDebit,
   poserEtiquettesPieces,
   reperesRenumerotes,
   trierDebit,
@@ -194,10 +194,6 @@ const LISTE_PANNEAUX_OBJETS: readonly (readonly [PanneauObjets, string])[] = [
   ["debit", "☷"],
 ];
 const PANNEAUX_OBJETS: ReadonlySet<string> = new Set(LISTE_PANNEAUX_OBJETS.map(([id]) => id));
-/** Lot L14 : pièces du modèle par occurrence (milieu de l'axe et repère, pour les étiquettes). */
-function piecesDuModeleParOcc(m: Modele) {
-  return new Map(piecesDuModele(m).map((p) => [p.occurrence, p] as const));
-}
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 const CLE_PRECISION = "fadi.planche.precision";
 function lirePrecision(): number {
@@ -2066,11 +2062,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
     }
     if (id === "etiquettes") {
       operer(t("planche.debit.etiquettes"), (m) => {
-        const pieces = piecesDuModeleParOcc(m);
-        const etiquettes = lignesDebit.flatMap((l) => l.occurrences).flatMap((o) => {
-          const p = pieces.get(o);
-          return p ? [{ occurrence: o, position: p.milieu, texte: p.repere ?? "?" }] : [];
-        });
+        // Revue de #128 : une étiquette par pièce physique, retrouvée par son chemin (instances d'un même composant).
+        const etiquettes = etiquettesDebit(m, lignesDebit);
         return { modele: poserEtiquettesPieces(m, etiquettes).modele, message: t("planche.debit.note.etiquettes", { nombre: String(etiquettes.length) }) };
       });
       return;
@@ -2290,6 +2283,11 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         ...commandesNavigateur(),
         // Objets O-5 : Isoler, Masquer le reste du modèle.
         ...commandesVue(),
+        // Lot L14 (revue de #128) : les cinq commandes de débit, mêmes disponibilités et exécution que le panneau.
+        ...COMMANDES_DEBIT.map((c) => {
+          const d = disponibiliteCommandeDebit(c.id);
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.debit.motif.vide"), executer: () => executerDebit(c.id) };
+        }),
       ]}
       outilId={outilId}
       raison={raisonDe}
