@@ -1,7 +1,13 @@
 name: CI
+# Un seul run par commit : les branches de PR passent par `pull_request`, `push` ne couvre que `main`.
+# Un nouveau push sur la même branche annule le run dépassé (jamais sur `main`).
 on:
   push:
+    branches: [main]
   pull_request:
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 permissions:
   contents: read
 jobs:
