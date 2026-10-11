@@ -309,11 +309,24 @@ const [xa, ya] = centreAvant.split(";").map((t) => Number(t.trim().replace(",", 
 const [xb, yb] = centreApres.split(";").map((t) => Number(t.trim().replace(",", ".")));
 check("vue glissée sur la feuille : centre déplacé vers la droite et vers le bas (environ 40 × 16 px), enregistré", xb > xa && yb < ya && xb - xa < 120 && (xb - xa) / Math.max(1, ya - yb) > 1.5, `${nomVue} : ${centreAvant} → ${centreApres} ; boîte ${JSON.stringify(bp)} ; sous le pointeur ${sousPointeur}`);
 // Nomenclature placée sur la feuille : le tableau des portes, à une place libre, dessiné en grille.
-await page.locator('[data-placer="tableau"]').selectOption("portes");
-await page.locator('[data-placer="tableau-ok"]').click();
-await page.waitForSelector('[data-tableau-place="portes"]', { timeout: 30000 }).catch(() => {});
+// Le glissement précédent enregistre un lot et recompose la feuille : placer le tableau une fois la composition posée
+// (banc chargé : un placement envoyé pendant le recalcul peut être perdu — une seconde tentative au besoin).
+const feuilleLibre = () => page.waitForFunction(() => !document.querySelector('[data-detail="feuille"] [aria-busy="true"]'), null, { timeout: 60000 }).catch(() => {});
+for (let essai = 0; essai < 2; essai++) {
+  await feuilleLibre();
+  await page.locator('[data-placer="tableau"]').selectOption("portes");
+  await page.locator('[data-placer="tableau-ok"]').click();
+  const place = await page.waitForSelector('[data-tableau-place="portes"]', { timeout: 30000 }).then(() => true, () => false);
+  if (place) break;
+}
 await page.waitForFunction(() => /Tableau des portes/.test(document.querySelector('[data-detail="feuille"] .docs-svg svg')?.textContent ?? ""), null, { timeout: 60000 }).catch(() => {});
-check("nomenclature sur la feuille : tableau des portes placé et dessiné, déplaçable", (await page.locator('[data-tableau-place="portes"]').count()) === 1 && /Tableau des portes/.test((await page.locator('[data-detail="feuille"] .docs-svg svg').textContent()) ?? "") && (await page.locator('.feuille-poignee[data-tableau="portes"]').count()) === 1);
+await page.waitForFunction(() => document.querySelectorAll('.feuille-poignee[data-tableau="portes"]').length === 1, null, { timeout: 60000 }).catch(() => {});
+{
+  const places = await page.locator('[data-tableau-place="portes"]').count();
+  const dessine = /Tableau des portes/.test((await page.locator('[data-detail="feuille"] .docs-svg svg').textContent()) ?? "");
+  const poignees = await page.locator('.feuille-poignee[data-tableau="portes"]').count();
+  check("nomenclature sur la feuille : tableau des portes placé et dessiné, déplaçable", places === 1 && dessine && poignees === 1, `placé ${places}, dessiné ${dessine}, poignées ${poignees}`);
+}
 await page.waitForSelector('[data-detail="feuille"] .docs-svg svg', { timeout: 60000 });
 await page.locator(".docs-contenu").evaluate((e) => e.scrollTo(0, 0));
 await page.screenshot({ path: `${OUT}/5-documents-feuille.png` });
