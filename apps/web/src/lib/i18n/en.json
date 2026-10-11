@@ -7972,5 +7972,9 @@
 "« Conserver la face de départ » ne s'applique qu'à l'extrusion d'une face.": "“Keep the starting face” applies to face extrusion only.",
 "« Des deux côtés » ne s'applique qu'au balayage d'arêtes.": "“Both sides” applies to edge sweeps only.",
 "« Jusqu'à une face » ne s'applique qu'à l'extrusion normale d'une face.": "“Up to face” applies to normal face extrusion only.",
-"Le décalage se recoupe (segments {0} et {1} du contour) : réduisez la distance.": "The offset intersects itself (segments {0} and {1} of the contour): reduce the distance."
+"Le décalage se recoupe (segments {0} et {1} du contour) : réduisez la distance.": "The offset intersects itself (segments {0} and {1} of the contour): reduce the distance.",
+"Modification refusée : la surface liée à ces arêtes ne pourrait pas être recalculée (détachez le lien pour modifier la source librement).": "Change refused: the surface linked to these edges could not be recalculated (detach the link to edit the source freely).",
+"Liens automatiques aux arêtes sources : à la racine de la Planche seulement — ici, la surface sera indépendante.": "Automatic links to source edges: at the Planche root only — here, the surface will be independent.",
+"Des deux côtés : distance par côté, total {0}.": "Both sides: distance per side, total {0}.",
+"Modification refusée : la surface liée à ces arêtes ne pourrait pas être recalculée (détachez le lien pour modifier la source librement). {0}": "Change refused: the surface linked to these edges could not be recalculated (detach the link to edit the source freely). {0}"
 }
