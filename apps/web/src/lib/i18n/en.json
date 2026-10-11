@@ -7959,5 +7959,7 @@
 "Inversé": "Reversed",
 "Lien": "Link",
 "Liée aux arêtes": "Linked to edges",
-"Indépendante": "Independent"
+"Indépendante": "Independent",
+"Ctrl seul : « Conserver la face de départ » ne s'applique qu'à une face, pas à une arête.": "Ctrl alone: “Keep the starting face” applies to a face only, not to an edge.",
+"Maj seul : « Surface ouverte » ne s'applique qu'à une face, pas à une arête.": "Shift alone: “Open surface” applies to a face only, not to an edge."
 }
