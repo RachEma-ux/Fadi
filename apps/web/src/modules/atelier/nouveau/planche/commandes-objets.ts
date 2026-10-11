@@ -233,7 +233,7 @@ export interface CommandeDebit {
 export const COMMANDES_DEBIT: readonly CommandeDebit[] = [
   { id: "liste-debit", picto: "☷", libelle: "planche.debit.ouvrir", court: "planche.debit.court.ouvrir", raccourci: "Alt+Maj+T" },
   { id: "renumeroter", picto: "№", libelle: "planche.debit.renumeroter", court: "planche.debit.court.renumeroter", raccourci: "Alt+Maj+N" },
-  { id: "etiquettes", picto: "⌖", libelle: "planche.debit.etiquettes", court: "planche.debit.court.etiquettes", raccourci: "Alt+Maj+E" },
+  { id: "etiquettes", picto: "🏷", libelle: "planche.debit.etiquettes", court: "planche.debit.court.etiquettes", raccourci: "Alt+Maj+E" },
   { id: "effacer-etiquettes", picto: "⌧", libelle: "planche.debit.effacer-etiquettes", court: "planche.debit.court.effacer-etiquettes", raccourci: "Alt+Maj+W" },
   { id: "exporter-debit", picto: "⇩", libelle: "planche.debit.exporter", court: "planche.debit.court.exporter", raccourci: "Alt+Maj+X" },
 ];
