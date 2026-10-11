@@ -4109,7 +4109,18 @@ function validerPiece(section: SectionProfil, o: OptionsPiece): void {
 
 /** Empreinte (FNV-1a, deux moitiés) du contenu d'une pièce : toute édition de sa géométrie la change. */
 function empreinteCtx(c: Ctx): string {
-  const texte = `${c.faces.size}|${c.aretes.size}|${[...c.sommets.values()].map((s) => `${s.position.x},${s.position.y},${s.position.z}`).sort().join(";")}`;
+  // Tout ce qu'une édition peut changer : sommets, faces (boucles ordonnées — le sens compte —, normale, attributs) et
+  // arêtes (extrémités, attributs). Une édition qui garde positions et nombres (retourner une face, adoucir ou masquer
+  // une arête, changer une matière) change donc aussi l'empreinte, et rompt le lien.
+  const P = (id: Id): string => {
+    const q = c.sommets.get(id)?.position;
+    return q ? `${q.x},${q.y},${q.z}` : "?";
+  };
+  const faces = [...c.faces.values()]
+    .map((f) => `${[f.exterieur, ...f.trous].map((b) => b.map(P).join(">")).join("/")}^${f.normale.x},${f.normale.y},${f.normale.z}^${f.materiauRecto ?? ""}^${f.materiauVerso ?? ""}^${f.masquee ? 1 : 0}`)
+    .sort();
+  const aretes = [...c.aretes.values()].map((e) => `${[P(e.a), P(e.b)].sort().join("~")}^${e.adoucie ? 1 : 0}${e.masquee ? 1 : 0}`).sort();
+  const texte = `${c.faces.size}|${c.aretes.size}|${[...c.sommets.values()].map((s) => `${s.position.x},${s.position.y},${s.position.z}`).sort().join(";")}|${faces.join(";")}|${aretes.join(";")}`;
   let h1 = 0x811c9dc5;
   let h2 = 0xcbf29ce4;
   for (let i = 0; i < texte.length; i++) {
@@ -4294,8 +4305,21 @@ function actualiserPieces(t: Travail): void {
     const immobile = egal(A, L.posA) && egal(B, L.posB) && (QA === null || egal(QA, (L.ongletDebut as { pos: Vec3 }).pos)) && (QB === null || egal(QB, (L.ongletFin as { pos: Vec3 }).pos));
     if (immobile) continue;
     const meta = def.piece;
-    const calcul = (a: Vec3, b: Vec3, qa: Vec3 | null, qb: Vec3 | null) => {
-      const r = repereSegment(a, b, L.haut);
+    // Pièce de boucle : la normale de la boucle est recalculée depuis la chaîne source (voisines d'onglet), du même côté
+    // que l'ancienne — une boucle restée plane mais basculée garde ses sections dans son plan et ses onglets jointifs.
+    const haut = ((): Vec3 | undefined => {
+      if (!L.haut) return undefined;
+      const n0 = L.haut;
+      let somme = v3(0, 0, 0);
+      for (const n of [QA ? cross(sub(A, QA), sub(B, A)) : null, QB ? cross(sub(B, A), sub(QB, B)) : null]) {
+        if (!n || len(n) < 1e-12) continue;
+        const u = normalize(n);
+        somme = add(somme, dot(u, n0) < 0 ? scale(u, -1) : u);
+      }
+      return len(somme) < 1e-9 ? n0 : normalize(somme);
+    })();
+    const calcul = (a: Vec3, b: Vec3, qa: Vec3 | null, qb: Vec3 | null, h: Vec3 | undefined = haut) => {
+      const r = repereSegment(a, b, h);
       return {
         r,
         debut: boutPiece(r, qa ? { avant: sub(a, qa), apres: sub(b, a) } : null, meta.placement.decalageDebut),
@@ -4308,7 +4332,7 @@ function actualiserPieces(t: Travail): void {
     } catch {
       throw new RangeError(ERREUR_RECALCUL_PIECE);
     }
-    const ancien = calcul(L.posA, L.posB, L.ongletDebut?.pos ?? null, L.ongletFin?.pos ?? null);
+    const ancien = calcul(L.posA, L.posB, L.ongletDebut?.pos ?? null, L.ongletFin?.pos ?? null, L.haut);
     const memeBout = (x: BoutPiece, y: BoutPiece) => (x.genre === "droit" && y.genre === "droit") || (x.genre === "onglet" && y.genre === "onglet" && egal(x.normale, y.normale));
     const memeForme = Math.abs(neuf.r.longueur - meta.longueur) <= 1e-12 && memeBout(neuf.debut, ancien.debut) && memeBout(neuf.fin, ancien.fin);
     t.salir(c);
@@ -4334,6 +4358,7 @@ function actualiserPieces(t: Travail): void {
       definition: defId,
       transformation,
       empreinte: empreinteCtx((t.definitions.get(defId) as DefTravail).contenu),
+      ...(haut ? { haut } : {}),
       posA: A,
       posB: B,
       ...(L.ongletDebut && QA ? { ongletDebut: { ...L.ongletDebut, pos: QA } } : {}),
