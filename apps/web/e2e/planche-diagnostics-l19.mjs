@@ -172,7 +172,7 @@ function aides(page) {
   await cliquer({ x: 1, y: 1, z: 0 });
   await survoler({ x: 1, y: 1, z: 0.5 });
   const pas0 = (await etat()).pas;
-  await saisir("0,0001");
+  await saisir("0,0000005");
   const diag = page.locator('[data-planche-message][data-diagnostic="EX_DISTANCE_INVALID"]');
   check("distance sous la tolérance : refus codé EX_DISTANCE_INVALID avec son recours", (await diag.count()) === 1 && /valeur non nulle/.test((await diag.textContent()) ?? ""), (await page.locator("[data-planche-etat]").first().textContent()) ?? "");
   check("aucun pas d'historique pour le refus", (await etat()).pas === pas0, String((await etat()).pas - pas0));
