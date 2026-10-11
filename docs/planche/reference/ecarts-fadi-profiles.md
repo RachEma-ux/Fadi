@@ -1,4 +1,4 @@
-# Écarts Fadi — profilés (outils propres à Fadi, lot L12)
+# Écarts Fadi — profilés (outils propres à Fadi, lots L12 et L13)
 
 Ce document est la référence des outils de la chaîne des profilés : programme D-202, lots L11 à L14, décisions D-214 et
 D-215. Ces outils n'existent pas dans SketchUp, qui ne fait que les approcher avec des extensions de tiers comme
@@ -42,3 +42,35 @@ ou d'une face de la Planche (R3).
    un champ vide bloque la pose (« dimension manquante »). Le rond et le rond creux sont facettisés avec le nombre de
    segments saisi (24 par défaut, comme le Cercle).
 3. **Face de la Planche** : une face sélectionnée sert de contour, trous compris.
+
+## § 4 — Onglet (lot L13)
+
+- « Cliquez la première pièce. » puis « Cliquez la seconde pièce : les deux sont recoupées en onglet. »
+- Les axes des deux pièces doivent se couper. Leurs extrémités voisines sont ramenées au point de rencontre, puis
+  recoupées par le plan bissecteur.
+- L'angle de coupe de chaque extrémité est enregistré dans les métadonnées. Il est dérivé : 45° pour un angle droit,
+  30° pour deux pièces à 120°.
+- Axes parallèles, axes gauches ou onglet singulier (moins de 12°) : refus nommé.
+- Le lien aux arêtes sources est retiré, puisque la pièce est modifiée elle-même.
+- Un pas. **Raccourci Fadi** : Alt+Maj+O.
+
+## § 5 — Coupe par profil (lot L13)
+
+- « Cliquez la pièce à couper. » puis « Cliquez la pièce qui coupe (elle reste en place). »
+- La première pièce est coupée par le volume de la seconde : soustraction de maillages par manifold-3d (lot 6, MO-4),
+  moteur chargé au premier choix de l'outil.
+- La pièce coupée garde son occurrence, sa définition (rendue unique si elle est partagée) et ses métadonnées.
+  `coupesProfil` compte les coupes subies, et la géométrie ne se régénère plus depuis les seules métadonnées.
+- Profilés depuis arêtes reçoit l'option « Couper après pose », sans onglets : chaque pièce est coupée par la
+  précédente de sa chaîne.
+- Un pas. **Raccourci Fadi** : Alt+Maj+B.
+
+## § 6 — Allonger une pièce (lot L13)
+
+- « Cliquez près de l'extrémité de la pièce à allonger ou raccourcir. » Le champ Mesures prend l'allongement signé.
+- Option **Valeur** : saisie, demi-largeur ou demi-hauteur de la section posée. Avec une demi-section, le clic applique
+  aussitôt.
+- Option **Sens** : + ou − (ce n'est pas Maj, qui reste le verrou d'inférence).
+- Une extrémité coupée en onglet, ou une pièce recoupée par un profil, refusent.
+- Le lien à l'arête source est gardé : le décalage fait partie des métadonnées.
+- Un pas. **Raccourci Fadi** : Alt+Maj+A.

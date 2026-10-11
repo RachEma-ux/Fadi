@@ -15,6 +15,8 @@ export const OUTILS_CAMERA_TEMPORAIRES: ReadonlySet<string> = new Set(["zoom-ete
 export const estOutilCamera = (id: string): id is OutilCamera => OUTILS_CAMERA.has(id);
 /** Outils de solides (lot 6) : le moteur booléen (manifold-3d) est chargé à la demande au premier choix de l'un d'eux. */
 export const OUTILS_SOLIDES: ReadonlySet<string> = new Set(["enveloppe-exterieure", "union", "soustraction", "ajuster", "intersection", "scinder"]);
+/** Outils qui demandent le moteur booléen (chargé à leur premier choix) : solides, Coupe par profil et « couper après pose » (lot L13). */
+export const OUTILS_BOOLEENS: ReadonlySet<string> = new Set([...OUTILS_SOLIDES, "coupe-profil", "profiles-aretes"]);
 
 /** Outils permis à un lecteur (C25) : navigation et sélection seulement. */
 const OUTILS_LECTURE: ReadonlySet<string> = new Set(["selection", "lasso", "metre", "orbite", "panoramique", "zoom", "zoom-etendu", "zoom-fenetre", "positionner-camera", "regarder-autour", "marcher"]);
@@ -128,9 +130,12 @@ export const RACCOURCIS_FADI: Readonly<Record<string, string>> = {
   "positionner-camera": "Alt+Maj+P",
   "regarder-autour": "Alt+Maj+L",
   marcher: "Alt+Maj+M",
-  // Chaîne des profilés (lot L12, D-215) : outils propres à Fadi.
+  // Chaîne des profilés (lots L12 et L13, D-215, D-216) : outils propres à Fadi.
   profile: "Maj+Q",
   "profiles-aretes": "Alt+Maj+Q",
+  onglet: "Alt+Maj+O",
+  "coupe-profil": "Alt+Maj+B",
+  "allonger-piece": "Alt+Maj+A",
 };
 
 /** Raccourci effectif d'un outil : celui du catalogue (relevé), sinon celui de la couche Fadi, sinon `null`. */
@@ -194,6 +199,9 @@ const PICTOS: Readonly<Record<string, string>> = {
   "suivez-moi": "↬",
   profile: "▰",
   "profiles-aretes": "⫴",
+  onglet: "◸",
+  "coupe-profil": "⧄",
+  "allonger-piece": "⇿",
   retourner: "⇋",
   diviser: "÷",
   "enveloppe-exterieure": "⬚",

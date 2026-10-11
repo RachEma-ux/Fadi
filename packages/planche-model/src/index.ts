@@ -3,6 +3,7 @@ export { type Vec3, EPS, TOL, v3, ORIGINE, AXE_X, AXE_Y, AXE_Z, add, sub, scale,
 export * from "./geometrie-libre.js";
 export * from "./annotations.js";
 export * from "./profiles.js";
+export * from "./assemblages.js";
 export * from "./maillage.js";
 export * from "./police-geometrique.js";
 export * from "./inference.js";

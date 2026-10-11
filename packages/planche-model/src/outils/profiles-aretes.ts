@@ -6,9 +6,10 @@
  * n'est écrit) ; un clic, Entrée au champ Mesures vide ou le bouton « Poser » posent une pièce par arête, toutes
  * chaînes comprises, en **un seul pas d'historique**. Une longueur tapée règle le décalage des extrémités libres.
  * Options : position centre / extérieur / intérieur (Ctrl seul), rotation de 90° (Alt seul), onglets, fusion des
- * arêtes colinéaires. La coupe après pose est réservée au lot L13.
+ * arêtes colinéaires, et (lot L13) « couper après pose » sans onglets — chaque pièce coupée par la précédente.
  */
 import { type Id, type Modele, contexte, poserPiecesSurAretes } from "../geometrie-libre.js";
+import { ERREUR_COUPE_VIDE, couperParProfil } from "../assemblages.js";
 import { geometrieVisible } from "../inference.js";
 import { type PositionBoucle, PLACEMENT_DEFAUT, POSITIONS_BOUCLE } from "../profiles.js";
 import { analyserSaisie } from "../saisie-vcb.js";
@@ -28,6 +29,8 @@ export interface EtatProfilesAretes {
   readonly rotation90: boolean;
   readonly onglets: boolean;
   readonly fusion: boolean;
+  /** (Lot L13) Sans onglets : chaque pièce est coupée par la précédente (coupe par profil, moteur booléen). */
+  readonly coupe: boolean;
   /** Décalage signé des extrémités libres (m). */
   readonly decalage: number;
   readonly erreur: string | null;
@@ -61,7 +64,7 @@ function chaines(ctx: ContexteOutil): Id[][] {
 }
 
 const cleDe = (e: EtatProfilesAretes, ctx: ContexteOutil): string =>
-  JSON.stringify([selectionValide(ctx), ctx.sectionCourante?.designation ?? null, ctx.sectionCourante?.section ?? null, e.position, e.rotation90, e.onglets, e.fusion, e.decalage]);
+  JSON.stringify([selectionValide(ctx), ctx.sectionCourante?.designation ?? null, ctx.sectionCourante?.section ?? null, e.position, e.rotation90, e.onglets, e.fusion, e.coupe, e.decalage]);
 
 /** Pose sur toutes les chaînes, en enchaînant les opérations du noyau : un seul modèle d'arrivée (un pas). */
 function poserTout(e: EtatProfilesAretes, ctx: ContexteOutil): { modele: Modele; occurrences: Id[]; crees: Set<Id> } {
@@ -83,6 +86,20 @@ function poserTout(e: EtatProfilesAretes, ctx: ContexteOutil): { modele: Modele;
     m = r.modele;
     occurrences.push(...r.occurrences);
     for (const id of r.rapport.crees) crees.add(id);
+    // Lot L13 : « couper après pose » (sans onglets) — chaque pièce coupée par la précédente de sa chaîne, la première
+    // par la dernière si elles se recouvrent (boucle) ; deux pièces qui ne se touchent pas sont laissées telles quelles.
+    if (e.coupe && !e.onglets && r.occurrences.length > 1) {
+      const occ = r.occurrences;
+      for (let k = 0; k < occ.length; k++) {
+        const precedente = k === 0 ? occ[occ.length - 1] : occ[k - 1];
+        if (k === 0 && occ.length < 3) continue;
+        try {
+          m = couperParProfil(m, occ[k] as Id, precedente as Id, ctx.booleens, optionsDans(ctx)).modele;
+        } catch (err) {
+          if (!(err instanceof Error) || err.message !== ERREUR_COUPE_VIDE) throw err;
+        }
+      }
+    }
   }
   return { modele: m, occurrences, crees };
 }
@@ -102,12 +119,13 @@ function options(e: EtatProfilesAretes): OptionOutil[] {
     { id: "rotation", valeur: e.rotation90 ? "oui" : "non", valeurs: [{ id: "non", disponible: true, raccourci: "Alt" }, { id: "oui", disponible: true, raccourci: "Alt" }] },
     { id: "onglets", valeur: e.onglets ? "oui" : "non", valeurs: [{ id: "oui", disponible: true }, { id: "non", disponible: true }] },
     { id: "fusion", valeur: e.fusion ? "oui" : "non", valeurs: [{ id: "non", disponible: true }, { id: "oui", disponible: true }] },
+    { id: "coupe", valeur: e.coupe ? "oui" : "non", valeurs: [{ id: "non", disponible: true }, { id: "oui", disponible: !e.onglets }] },
   ];
 }
 
 export const machineProfilesAretes: MachineOutil<EtatProfilesAretes> = {
   id: ID_PROFILES_ARETES,
-  initial: () => ({ position: "centre", rotation90: false, onglets: true, fusion: false, decalage: 0, erreur: null, apercu: null }),
+  initial: () => ({ position: "centre", rotation90: false, onglets: true, fusion: false, coupe: false, decalage: 0, erreur: null, apercu: null }),
 
   traiter(etat, ev, ctx): Transition<EtatProfilesAretes> {
     switch (ev.genre) {
@@ -140,9 +158,10 @@ export const machineProfilesAretes: MachineOutil<EtatProfilesAretes> = {
 
   configurer(etat, option, valeur): Transition<EtatProfilesAretes> {
     if (option === "position" && (POSITIONS_BOUCLE as readonly string[]).includes(valeur)) return { etat: { ...etat, position: valeur as PositionBoucle, apercu: null } };
-    if ((option === "rotation" || option === "onglets" || option === "fusion") && (valeur === "oui" || valeur === "non")) {
+    if ((option === "rotation" || option === "onglets" || option === "fusion" || option === "coupe") && (valeur === "oui" || valeur === "non")) {
       const v = valeur === "oui";
-      return { etat: { ...etat, ...(option === "rotation" ? { rotation90: v } : option === "onglets" ? { onglets: v } : { fusion: v }), apercu: null } };
+      const champ = option === "rotation" ? { rotation90: v } : option === "onglets" ? { onglets: v, ...(v ? { coupe: false } : {}) } : option === "fusion" ? { fusion: v } : { coupe: v && !etat.onglets };
+      return { etat: { ...etat, ...champ, apercu: null } };
     }
     return { etat };
   },

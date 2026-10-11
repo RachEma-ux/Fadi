@@ -159,6 +159,18 @@ export interface MetadonneesPiece {
   readonly longueur: number;
   /** Côté de la boucle (posée sur une boucle plane) : +1 côté +y, −1 côté −y, 0 centrée ; absent = point de placement. */
   readonly cote?: -1 | 0 | 1;
+  /** (Lots L11–L13) Coupe d'une extrémité (onglet) : normale du plan en local et angle de coupe dérivé (°), jamais saisi. */
+  readonly coupeDebut?: CoupePiece;
+  readonly coupeFin?: CoupePiece;
+  /** (Lot L13) Nombre de coupes par profil subies : la géométrie n'est plus régénérable depuis les seules métadonnées. */
+  readonly coupesProfil?: number;
+}
+
+/** (Lot L13) Coupe d'une extrémité de pièce : plan passant par l'extrémité de l'axe. */
+export interface CoupePiece {
+  readonly normale: Vec3;
+  /** Angle entre le plan de coupe et la section droite (°) : 0 pour une coupe droite, 45 pour un onglet d'équerre. */
+  readonly angle: number;
 }
 export interface Definition extends MetadonneesDefinition {
   readonly id: Id;
@@ -4113,11 +4125,32 @@ function boutPiece(r: RepereDePiece, onglet: { avant: Vec3; apres: Vec3 } | null
   return { genre: "onglet", normale: versLocal(r, normaleOnglet(onglet.avant, onglet.apres)) };
 }
 
+/** Coupe dérivée d'un bout en onglet : normale locale et angle avec la section droite. */
+function coupeDe(b: BoutPiece): CoupePiece | undefined {
+  if (b.genre !== "onglet") return undefined;
+  const n = normalize(b.normale);
+  return { normale: n, angle: (Math.acos(Math.min(1, Math.abs(n.x))) * 180) / Math.PI };
+}
+function coupesDe(debut: BoutPiece, fin: BoutPiece): { coupeDebut?: CoupePiece; coupeFin?: CoupePiece } {
+  const cd = coupeDe(debut);
+  const cf = coupeDe(fin);
+  return { ...(cd ? { coupeDebut: cd } : {}), ...(cf ? { coupeFin: cf } : {}) };
+}
+/** Bouts d'une pièce relus de ses métadonnées : la coupe enregistrée, sinon l'allongement du placement. */
+function boutsDeMeta(meta: MetadonneesPiece): { debut: BoutPiece; fin: BoutPiece } {
+  return {
+    debut: meta.coupeDebut ? { genre: "onglet", normale: meta.coupeDebut.normale } : { genre: "droit", decalage: meta.placement.decalageDebut },
+    fin: meta.coupeFin ? { genre: "onglet", normale: meta.coupeFin.normale } : { genre: "droit", decalage: meta.placement.decalageFin },
+  };
+}
+
 /** Pose une pièce : définition (composant) portant ses métadonnées, occurrence au repère de l'axe. */
 function poserPieceInterne(t: Travail, c: Ctx, A: Vec3, B: Vec3, meta: Omit<MetadonneesPiece, "longueur">, ongletDebut: { avant: Vec3; apres: Vec3 } | null, ongletFin: { avant: Vec3; apres: Vec3 } | null, haut?: Vec3): { occ: Id; def: Id } {
   const r = repereSegment(A, B, haut);
-  const complete: MetadonneesPiece = { ...meta, longueur: r.longueur };
-  const contenu = contenuPiece(t, complete, r, boutPiece(r, ongletDebut, meta.placement.decalageDebut), boutPiece(r, ongletFin, meta.placement.decalageFin));
+  const debut = boutPiece(r, ongletDebut, meta.placement.decalageDebut);
+  const fin = boutPiece(r, ongletFin, meta.placement.decalageFin);
+  const complete: MetadonneesPiece = { ...meta, longueur: r.longueur, ...coupesDe(debut, fin) };
+  const contenu = contenuPiece(t, complete, r, debut, fin);
   const def = t.id("d");
   t.definitions.set(def, { id: def, nom: meta.designation, genre: "composant", contenu, piece: complete });
   const occ = t.id("o");
@@ -4327,7 +4360,10 @@ function actualiserPieces(t: Travail): void {
         throw new RangeError(ERREUR_RECALCUL_PIECE);
       }
       const d = t.definitions.get(defId) as DefTravail;
-      t.definitions.set(defId, { ...d, contenu, piece: { ...meta, longueur: neuf.r.longueur } });
+      const { coupeDebut: _cd, coupeFin: _cf, ...sansCoupes } = meta;
+      void _cd;
+      void _cf;
+      t.definitions.set(defId, { ...d, contenu, piece: { ...sansCoupes, longueur: neuf.r.longueur, ...coupesDe(neuf.debut, neuf.fin) } });
     }
     const transformation = matriceRepere(neuf.r);
     c.occurrences.set(L.id, { ...(c.occurrences.get(L.id) as Occurrence), transformation });
@@ -4348,4 +4384,191 @@ function actualiserPieces(t: Travail): void {
 /** Pièces liées du modèle (lot L11) : identifiant d'occurrence → arête source. */
 export function piecesLiees(m: Modele): Readonly<Record<Id, LienPiece>> {
   return m.annotations?.pieces ?? {};
+}
+
+// ————————————————————————————————————————————————————————————— Assemblages de pièces (lot L13)
+
+export const ERREUR_PAS_UNE_PIECE = "Choisissez une pièce de profilé (posée par Profilé ou Profilés depuis arêtes).";
+export const ERREUR_ONGLET_MEME_PIECE = "Choisissez deux pièces différentes.";
+export const ERREUR_ONGLET_PARALLELE = "Les deux pièces sont parallèles : elles ne se rejoignent pas, aucun onglet possible.";
+export const ERREUR_ONGLET_GAUCHE = "Les axes des deux pièces ne se coupent pas (axes gauches) : onglet refusé.";
+export const ERREUR_BOUT_ONGLET = "Extrémité coupée en onglet : l'allonger déplacerait la coupe — refaites l'onglet après.";
+export const ERREUR_PIECE_RECOUPEE = "Pièce recoupée par un profil : sa géométrie ne se régénère plus depuis ses métadonnées.";
+
+/** Axe d'une pièce dans son contexte : extrémités (x = 0 et x = longueur), direction, hauteur de son repère. */
+function axePiece(occ: Occurrence, meta: MetadonneesPiece): { debut: Vec3; fin: Vec3; x: Vec3; haut: Vec3 } {
+  const T = occ.transformation;
+  const g = (i: number) => T[i] ?? 0;
+  const O = v3(g(3), g(7), g(11));
+  const x = normalize(v3(g(0), g(4), g(8)));
+  return { debut: O, fin: add(O, scale(x, meta.longueur)), x, haut: normalize(v3(g(2), g(6), g(10))) };
+}
+
+/** Pièce du contexte : occurrence et définition portant des métadonnées de pièce, sinon erreur nommée. */
+function pieceDe(t: Travail, c: Ctx, id: Id): { occ: Occurrence; def: DefTravail; meta: MetadonneesPiece } {
+  const occ = c.occurrences.get(id);
+  const def = occ ? t.definitions.get(occ.definition) : undefined;
+  if (!occ || !def?.piece) throw new RangeError(ERREUR_PAS_UNE_PIECE);
+  return { occ, def, meta: def.piece };
+}
+
+/**
+ * Régénère une pièce de son contexte : nouveau contenu (rendue unique d'abord si sa définition est partagée), nouvelles
+ * métadonnées, nouveau repère. Le lien à l'arête source est retiré (`garderLien` : instantané mis à jour).
+ */
+function regenererPiece(t: Travail, c: Ctx, id: Id, meta: MetadonneesPiece, r: RepereDePiece, debut: BoutPiece, fin: BoutPiece, garderLien = false): void {
+  if (t.nombreOccurrences((c.occurrences.get(id) as Occurrence).definition) > 1) t.rendreUnique(id);
+  const occ = c.occurrences.get(id) as Occurrence;
+  const contenu = contenuPiece(t, meta, r, debut, fin);
+  const { coupeDebut: _cd, coupeFin: _cf, ...base } = meta;
+  void _cd;
+  void _cf;
+  const d = t.definitions.get(occ.definition) as DefTravail;
+  t.definitions.set(occ.definition, { ...d, contenu, piece: { ...base, longueur: r.longueur, ...coupesDe(debut, fin) } });
+  const transformation = matriceRepere(r);
+  t.salir(c).occurrences.set(id, { ...occ, transformation });
+  const lien = t.annotations.pieces[id];
+  if (lien) {
+    if (garderLien && t.racine === c) t.annotations.pieces[id] = { ...lien, definition: occ.definition, transformation, empreinte: empreinteCtx(contenu) };
+    else delete t.annotations.pieces[id];
+    t.annotationsSales = true;
+  }
+}
+
+/**
+ * Onglet (lot L13) : deux pièces dont les axes se coupent sont recoupées chacune par le plan bissecteur de leurs axes,
+ * leurs extrémités voisines ramenées au point de rencontre. L'angle de coupe de chaque extrémité est enregistré en
+ * métadonnée (dérivé). Axes parallèles ou gauches : refus nommé. Les liens aux arêtes sources sont retirés (la pièce
+ * est modifiée elle-même).
+ */
+export function ongletPieces(m: Modele, a: Id, b: Id, o: OptionsContexte = {}): Resultat {
+  if (a === b) throw new RangeError(ERREUR_ONGLET_MEME_PIECE);
+  return operer(m, o.dans, (t, c) => {
+    const A = pieceDe(t, c, a);
+    const B = pieceDe(t, c, b);
+    const xa = axePiece(A.occ, A.meta);
+    const xb = axePiece(B.occ, B.meta);
+    const n = cross(xa.x, xb.x);
+    if (len(n) < 1e-9) throw new RangeError(ERREUR_ONGLET_PARALLELE);
+    if (Math.abs(dot(normalize(n), sub(xb.debut, xa.debut))) > 1e-6) throw new RangeError(ERREUR_ONGLET_GAUCHE);
+    // Point de rencontre des deux droites (coplanaires, non parallèles).
+    const w = sub(xb.debut, xa.debut);
+    const ta = dot(cross(w, xb.x), n) / dot(n, n);
+    const P = add(xa.debut, scale(xa.x, ta));
+    const proche = (ax: typeof xa) => (dist(P, ax.debut) <= dist(P, ax.fin) ? "debut" : "fin");
+    const ba = proche(xa);
+    const bb = proche(xb);
+    const loinA = ba === "debut" ? xa.fin : xa.debut;
+    const loinB = bb === "debut" ? xb.fin : xb.debut;
+    const versP = sub(P, loinA);
+    const depuisP = sub(loinB, P);
+    const plan = boutPiece(repereSegment(loinA, P), { avant: versP, apres: depuisP }, 0); // contrôle de l'onglet singulier
+    void plan;
+    const nb = normaleOnglet(versP, depuisP);
+    for (const [id, X, ax, bout] of [
+      [a, A, xa, ba],
+      [b, B, xb, bb],
+    ] as const) {
+      const debutPt = bout === "debut" ? P : ax.debut;
+      const finPt = bout === "fin" ? P : ax.fin;
+      const r = repereSegment(debutPt, finPt, ax.haut);
+      const anciens = boutsDeMeta(X.meta);
+      const coupe: BoutPiece = { genre: "onglet", normale: versLocal(r, nb) };
+      regenererPiece(t, c, id, X.meta, r, bout === "debut" ? coupe : anciens.debut, bout === "fin" ? coupe : anciens.fin);
+    }
+  });
+}
+
+/**
+ * Allonger / raccourcir une pièce (lot L13) : l'extrémité `bout` s'allonge de `valeur` (m, négatif = raccourcir) le long
+ * de l'axe. Une extrémité coupée en onglet ou une pièce recoupée par un profil refusent ; le lien à l'arête source est
+ * gardé (le décalage fait partie des métadonnées que la régénération relit).
+ */
+export function allongerPiece(m: Modele, piece: Id, bout: "debut" | "fin", valeur: number, o: OptionsContexte = {}): Resultat {
+  if (!Number.isFinite(valeur) || Math.abs(valeur) < 1e-12) throw new RangeError("Allongement nul : rien à faire.");
+  return operer(m, o.dans, (t, c) => {
+    const X = pieceDe(t, c, piece);
+    if (X.meta.coupesProfil) throw new RangeError(ERREUR_PIECE_RECOUPEE);
+    if ((bout === "debut" ? X.meta.coupeDebut : X.meta.coupeFin) !== undefined) throw new RangeError(ERREUR_BOUT_ONGLET);
+    const placement = bout === "debut" ? { ...X.meta.placement, decalageDebut: X.meta.placement.decalageDebut + valeur } : { ...X.meta.placement, decalageFin: X.meta.placement.decalageFin + valeur };
+    const meta = { ...X.meta, placement };
+    const ax = axePiece(X.occ, X.meta);
+    const r = repereSegment(ax.debut, ax.fin, ax.haut);
+    const bouts = boutsDeMeta(meta);
+    regenererPiece(t, c, piece, meta, r, bouts.debut, bouts.fin, true);
+  });
+}
+
+/** Demi-largeur et demi-hauteur de la section posée d'une pièce (rotation comprise), en m. */
+export function demiSectionPiece(m: Modele, piece: Id, o: OptionsContexte = {}): { largeur: number; hauteur: number } {
+  const c = contexte(m, o.dans);
+  const occ = c.occurrences[piece];
+  const meta = occ ? m.definitions[occ.definition]?.piece : undefined;
+  if (!meta) throw new RangeError(ERREUR_PAS_UNE_PIECE);
+  const s = sectionPosee(meta.section, meta.placement, meta.cote);
+  const ys = s.exterieur.map((q) => q.y);
+  const zs = s.exterieur.map((q) => q.z);
+  return { largeur: (Math.max(...ys) - Math.min(...ys)) / 2, hauteur: (Math.max(...zs) - Math.min(...zs)) / 2 };
+}
+
+/**
+ * Remplace le contenu d'une pièce par des faces polygonales (repère local) — coupe par profil (lot L13). La définition
+ * est rendue unique si elle est partagée ; ses métadonnées sont gardées, `coupesProfil` incrémenté ; le lien à l'arête
+ * source est retiré.
+ */
+export function remplacerContenuPiece(m: Modele, piece: Id, faces: FacesPolygonales, o: OptionsContexte & { readonly tolerance?: number } = {}): Resultat {
+  const tol = o.tolerance ?? 1e-7;
+  return operer(m, o.dans, (t, c) => {
+    pieceDe(t, c, piece);
+    if (t.nombreOccurrences((c.occurrences.get(piece) as Occurrence).definition) > 1) t.rendreUnique(piece);
+    const occ = c.occurrences.get(piece) as Occurrence;
+    const d = t.definitions.get(occ.definition) as DefTravail;
+    const contenu: Ctx = { sommets: new Map(), aretes: new Map(), faces: new Map(), courbes: new Map(), occurrences: new Map() };
+    const index = new Map<string, Id>();
+    const sommet = (p: Vec3): Id => {
+      const k = `${Math.round(p.x / tol)}|${Math.round(p.y / tol)}|${Math.round(p.z / tol)}`;
+      let id = index.get(k);
+      if (!id) {
+        id = t.id("s");
+        contenu.sommets.set(id, { id, position: p });
+        index.set(k, id);
+      }
+      return id;
+    };
+    const aretes = new Set<string>();
+    for (const boucles of faces) {
+      const ids = boucles
+        .map((b) => {
+          const r: Id[] = [];
+          for (const p of b) {
+            const id = sommet(p);
+            if (r[r.length - 1] !== id) r.push(id);
+          }
+          while (r.length > 1 && r[0] === r[r.length - 1]) r.pop();
+          return r;
+        })
+        .filter((b) => b.length >= 3);
+      const ext = ids[0];
+      if (!ext) continue;
+      for (const b of ids) {
+        for (let j = 0; j < b.length; j++) {
+          const u = b[j] as Id;
+          const w = b[(j + 1) % b.length] as Id;
+          const k = cle(u, w);
+          if (aretes.has(k)) continue;
+          aretes.add(k);
+          const id = t.id("a");
+          contenu.aretes.set(id, { id, a: u, b: w });
+        }
+      }
+      const id = t.id("f");
+      contenu.faces.set(id, { id, exterieur: ext, trous: ids.slice(1), normale: normalize(newell(ext.map((s) => (contenu.sommets.get(s) as Sommet).position))) });
+    }
+    const meta = d.piece as MetadonneesPiece;
+    t.definitions.set(occ.definition, { ...d, contenu: t.salir(contenu), piece: { ...meta, coupesProfil: (meta.coupesProfil ?? 0) + 1 } });
+    if (t.annotations.pieces[piece]) {
+      delete t.annotations.pieces[piece];
+      t.annotationsSales = true;
+    }
+  });
 }

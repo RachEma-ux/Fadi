@@ -268,7 +268,10 @@ export function facesDuMaillage(mesh: Maillage, tolerance = 1e-6): { faces: Vec3
     const n0 = cross(sub(P(t[1]), A), sub(P(t[2]), A));
     if (len(n0) < EPS) return;
     const n = normalize(n0);
-    const k = mesh.facesParTriangle ? `f${mesh.facesParTriangle[i]}` : planCle(n, dot(n, A), tolerance * 10);
+    // Lot L13 : l'identifiant de face d'origine seul ne suffit pas — deux maillages opérandes numérotent leurs faces à
+    // partir de zéro, et deux faces de plans différents porteraient le même identifiant : le plan fait partie de la clé.
+    const plan = planCle(n, dot(n, A), tolerance * 10);
+    const k = mesh.facesParTriangle ? `f${mesh.facesParTriangle[i]}|${plan}` : plan;
     const g = groupes.get(k);
     if (g) g.push(i);
     else (groupes.set(k, [i]), normales.set(k, n));

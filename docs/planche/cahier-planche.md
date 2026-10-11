@@ -1389,6 +1389,8 @@ Leur référence est `docs/planche/reference/ecarts-fadi-profiles.md`.
   placement, et qui reste lié à son arête source.
 - **L12** (D-215) livre les outils **Profilé** (Maj+Q) et **Profilés depuis arêtes** (Alt+Maj+Q), ainsi que le panneau
   Profilés. La section y vient d'une ligne de catalogue sourcé, de dimensions saisies ou d'une face.
+- **L13** (D-216) livre **Onglet** (Alt+Maj+O), **Coupe par profil** (Alt+Maj+B) et **Allonger une pièce**
+  (Alt+Maj+A).
 
 Aucune donnée de profilé n'est fournie par Fadi (R3, D-180). Ctrl et Alt frappés seuls font défiler le placement et
 tournent la section : c'est un écart déclaré par rapport à MetalFab.
