@@ -9,12 +9,36 @@
  * Lot 10c (EX-FM-01, EX-PREV-01) : survoler une face candidate calcule le balayage par le noyau sur un modèle candidat
  * (rien n'est écrit) et en montre l'aperçu, trous compris ; un profil refusé l'est dès le survol, avec son motif ; le
  * clic ne valide qu'un aperçu valide. Option « Capuchons » (EX-FM-06) : avec (défaut) ou sans, sur chemin ouvert.
+ *
+ * Lot 10d (EX-RV-01 à 04) : la **Révolution** est une méthode nommée de Suivez-moi (option « Méthode », Alt seul), pas un
+ * quatrième outil ni une lettre de plus. L'axe est une arête présélectionnée ou deux points cliqués ; survoler puis
+ * cliquer le profil le tourne (même aperçu par modèle candidat, même consommation du profil). Le champ Mesures prend
+ * l'angle (−360° à +360°, zéro exclu ; défaut 360°) ou les segments par tour « Ns » (12 à 512 ; défaut 48) ; après la
+ * validation, une nouvelle valeur corrige l'opération depuis la recette d'avant (profil d'origine, jamais le résultat
+ * précédent) en remplaçant le dernier pas. Options (sans pas d'historique, valables pour la suite) : Capuchons (Ctrl
+ * seul) pour un tour partiel, « Résultat en nouveau groupe » (Maj seul).
  */
-import { type Id, type Modele, contexte, suivezMoi } from "../geometrie-libre.js";
-import type { Vec3 } from "../vecteur.js";
+import {
+  type AxeRevolution,
+  type Id,
+  type Modele,
+  ANGLE_REVOLUTION_DEFAUT,
+  ERREUR_REVOLUTION_AXE_NUL,
+  SEGMENTS_PAR_TOUR_DEFAUT,
+  contexte,
+  ecartFacettage,
+  grouper,
+  revolution,
+  segmentsRevolution,
+  suivezMoi,
+  validerParametresRevolution,
+} from "../geometrie-libre.js";
+import { type Inference, geometrieVisible, inferer } from "../inference.js";
+import { analyserSaisie } from "../saisie-vcb.js";
+import { type Vec3, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
 import { messageErreur } from "./commun-formes.js";
-import { consigneDe, selectionValide, vueModif, viseeElement } from "./commun-modif.js";
-import type { ContexteOutil, MachineOutil, OptionOutil, Transition, VueOutil } from "./machine.js";
+import { consigneDe, enLocal, idsSelectionnables, pointsDe, saisieDe, selectionValide, vueModif, viseeElement } from "./commun-modif.js";
+import type { ContexteOutil, MachineOutil, ModificateurSeul, OptionOutil, Transition, VueOutil } from "./machine.js";
 import { optionsDans } from "./selection.js";
 
 export const ID_SUIVEZ_MOI = "suivez-moi";
@@ -24,14 +48,40 @@ export interface ApercuSuivezMoi {
   readonly profil: Id;
   readonly faces: readonly (readonly Vec3[])[];
   readonly trous: readonly (readonly (readonly Vec3[])[])[];
+  /** (Lot 10d) Révolution : segments effectivement posés et écart de facettage estimé (m). */
+  readonly segments?: number;
+  readonly ecart?: number;
+}
+
+export type MethodeSuivezMoi = "chemin" | "revolution";
+
+/** (Lot 10d, EX-RV-04) Recette d'une Révolution validée : la correction repart du modèle d'avant et du profil d'origine. */
+export interface RecetteRevolution {
+  readonly modeleAvant: Modele;
+  readonly modeleApres: Modele;
+  readonly profil: Id;
+  readonly axe: AxeRevolution;
 }
 
 export interface EtatSuivezMoi {
   readonly erreur: string | null;
-  /** (Lot 10c) Capuchons sur un chemin ouvert. */
+  /** (Lot 10c) Capuchons sur un chemin ouvert ; (lot 10d) coiffes d'un tour partiel. */
   readonly bouchons: boolean;
   /** (Lot 10c) Aperçu du profil survolé, ou `null`. */
   readonly apercu: ApercuSuivezMoi | null;
+  /** (Lot 10d) Méthode : balayage le long d'un chemin, ou Révolution autour d'un axe. */
+  readonly methode: MethodeSuivezMoi;
+  /** (Lot 10d) Angle de révolution (degrés) et segments par tour complet. */
+  readonly angle: number;
+  readonly segments: number;
+  /** (Lot 10d) Résultat rangé dans un nouveau groupe. */
+  readonly groupe: boolean;
+  /** (Lot 10d) Axe cliqué (monde) : premier point, puis second ; `null` = pas encore commencé. */
+  readonly axeClique: { readonly a: Vec3; readonly b: Vec3 | null } | null;
+  /** (Lot 10d) Inférence du curseur pendant la pose de l'axe. */
+  readonly inference: Inference | null;
+  /** (Lot 10d) Dernière Révolution validée, corrigeable par le champ Mesures et les options. */
+  readonly dernier: RecetteRevolution | null;
 }
 
 /** Chemin déduit de la présélection : une face, sinon des arêtes. */
@@ -49,24 +99,167 @@ export const ERREUR_SANS_CHEMIN = "Présélectionnez d'abord le chemin : une fac
 /** Balayage candidat : le noyau calcule sur une copie immuable ; seul le rapport sert à l'aperçu. */
 function candidat(ctx: ContexteOutil, profil: Id, chemin: { face: Id } | { aretes: readonly Id[] }, bouchons: boolean): { modele: Modele; apercu: ApercuSuivezMoi } {
   const r = suivezMoi(ctx.modele, profil, chemin, { ...optionsDans(ctx), bouchons });
-  const c = contexte(r.modele, ctx.dans);
+  return { modele: r.modele, apercu: apercuDe(ctx, r.modele, r.rapport.crees, profil) };
+}
+
+function apercuDe(ctx: ContexteOutil, m: Modele, crees: readonly Id[], profil: Id): ApercuSuivezMoi {
+  const c = contexte(m, ctx.dans);
   const pos = (s: Id) => (c.sommets[s] as { position: Vec3 }).position;
-  const crees = r.rapport.crees.filter((id) => c.faces[id]);
-  return {
-    modele: r.modele,
-    apercu: { profil, faces: crees.map((id) => c.faces[id]!.exterieur.map(pos)), trous: crees.map((id) => c.faces[id]!.trous.map((b) => b.map(pos))) },
-  };
+  const faces = crees.filter((id) => c.faces[id]);
+  return { profil, faces: faces.map((id) => c.faces[id]!.exterieur.map(pos)), trous: faces.map((id) => c.faces[id]!.trous.map((b) => b.map(pos))) };
+}
+
+// ————————————————————————————————————————————————————————————— Révolution (lot 10d)
+
+/** Axe en repère du contexte d'édition : arête présélectionnée seule, sinon les deux points cliqués. */
+function axeDe(etat: EtatSuivezMoi, ctx: ContexteOutil): AxeRevolution | null {
+  const c = contexte(ctx.modele, ctx.dans);
+  const ids = selectionValide(ctx);
+  const aretes = ids.filter((id) => c.aretes[id]);
+  if (etat.axeClique === null && aretes.length === 1 && !ids.some((id) => c.faces[id])) {
+    const a = c.aretes[aretes[0] as Id]!;
+    const A = c.sommets[a.a]!.position;
+    return { origine: A, direction: sub(c.sommets[a.b]!.position, A) };
+  }
+  if (etat.axeClique?.b) {
+    const L = enLocal(ctx).point;
+    const A = L(etat.axeClique.a);
+    return { origine: A, direction: sub(L(etat.axeClique.b), A) };
+  }
+  return null;
+}
+
+/** Révolution candidate (ou validée) : groupée sur demande ; l'aperçu annonce segments et écart de facettage. */
+function tourner(etat: EtatSuivezMoi, ctx: ContexteOutil, m: Modele, profil: Id, axe: AxeRevolution): { modele: Modele; apercu: ApercuSuivezMoi } {
+  const r = revolution(m, profil, axe, { ...optionsDans(ctx), angle: etat.angle, segments: etat.segments, bouchons: etat.bouchons });
+  const c0 = contexte(m, ctx.dans);
+  const f = c0.faces[profil]!;
+  const u = normalize(axe.direction);
+  const rayon = Math.max(...f.exterieur.map((s) => {
+    const p = sub(c0.sommets[s]!.position, axe.origine);
+    return len(sub(p, scale(u, dot(p, u))));
+  }));
+  const complet = Math.abs(Math.abs(etat.angle) - 360) <= 1e-9;
+  const base = apercuDe(ctx, r.modele, r.rapport.crees, profil);
+  const apercu = { ...base, segments: complet ? etat.segments : segmentsRevolution(etat.angle, etat.segments), ecart: ecartFacettage(rayon, etat.segments) };
+  if (!etat.groupe) return { modele: r.modele, apercu };
+  const ids = idsSelectionnables(r.rapport.crees).filter((id) => !id.startsWith("o"));
+  return { modele: grouper(r.modele, ids, optionsDans(ctx)).modele, apercu };
+}
+
+/** Inférence du curseur pour poser l'axe (accrochage aux sommets, arêtes, axes du modèle). */
+function infererAxe(etat: EtatSuivezMoi, ctx: ContexteOutil, ev: { rayon: { origine: Vec3; direction: Vec3 }; tolerance: number }): Inference {
+  return inferer({
+    rayon: ev.rayon,
+    tolerance: ev.tolerance,
+    geometrie: geometrieVisible(ctx.modele),
+    ...(ctx.repere ? { axes: ctx.repere } : {}),
+    ...(etat.axeClique ? { depart: etat.axeClique.a } : {}),
+  });
+}
+
+/** Correction de la dernière Révolution (EX-RV-04) : recalcul depuis la recette, le dernier pas est remplacé. */
+function corriger(etat: EtatSuivezMoi, ctx: ContexteOutil): Transition<EtatSuivezMoi> | null {
+  const d = etat.dernier;
+  if (!d || ctx.modele !== d.modeleApres) return null;
+  try {
+    const r = tourner(etat, { ...ctx, modele: d.modeleAvant }, d.modeleAvant, d.profil, d.axe);
+    return { etat: { ...etat, erreur: null, apercu: null, dernier: { ...d, modeleApres: r.modele } }, modele: r.modele, remplaceDernier: true, operation: "Révolution" };
+  } catch (err) {
+    return { etat: { ...etat, erreur: messageErreur(err) } };
+  }
+}
+
+function traiterRevolution(etat: EtatSuivezMoi, ev: Parameters<MachineOutil<EtatSuivezMoi>["traiter"]>[1], ctx: ContexteOutil): Transition<EtatSuivezMoi> {
+  const axe = axeDe(etat, ctx);
+  switch (ev.genre) {
+    case "survol": {
+      if (!axe) return { etat: { ...etat, inference: infererAxe(etat, ctx, ev), apercu: null } };
+      const { el, cible } = viseeElement(ctx, ev);
+      if (!el || el.genre !== "face" || cible?.genre !== "face") return { etat: { ...etat, erreur: null, apercu: null, inference: null } };
+      if (etat.apercu?.profil === cible.id) return { etat };
+      try {
+        return { etat: { ...etat, erreur: null, inference: null, apercu: tourner(etat, ctx, ctx.modele, cible.id, axe).apercu } };
+      } catch (err) {
+        return { etat: { ...etat, erreur: messageErreur(err), apercu: null, inference: null } };
+      }
+    }
+    case "clic": {
+      if (!axe) {
+        const p = infererAxe(etat, ctx, ev).point;
+        if (!etat.axeClique) return { etat: { ...etat, axeClique: { a: p, b: null }, erreur: null } };
+        if (dist(p, etat.axeClique.a) <= 1e-9) return { etat: { ...etat, erreur: ERREUR_REVOLUTION_AXE_NUL } };
+        return { etat: { ...etat, axeClique: { a: etat.axeClique.a, b: p }, inference: null, erreur: null } };
+      }
+      const { el, cible } = viseeElement(ctx, ev);
+      if (!el || el.genre !== "face" || cible?.genre !== "face") return { etat: { ...etat, erreur: "Cliquez sur la face qui sert de profil." } };
+      try {
+        const r = tourner(etat, ctx, ctx.modele, cible.id, axe);
+        // L'arête présélectionnée comme axe reste sélectionnée : un autre profil peut tourner autour du même axe. Si elle
+        // bordait le profil et a été consommée avec lui, l'axe est gardé comme axe cliqué (mêmes points, monde).
+        let axeClique = etat.axeClique;
+        const areteAxe = etat.axeClique ? undefined : selectionValide(ctx).find((id) => contexte(ctx.modele, ctx.dans).aretes[id]);
+        if (areteAxe && !contexte(r.modele, ctx.dans).aretes[areteAxe]) {
+          const [a, b] = pointsDe(ctx.modele, [areteAxe]);
+          if (a && b) axeClique = { a, b };
+        }
+        return {
+          etat: { ...etat, axeClique, erreur: null, apercu: null, dernier: { modeleAvant: ctx.modele, modeleApres: r.modele, profil: cible.id, axe } },
+          modele: r.modele,
+          ...(axeClique ? { selection: [] } : {}),
+          operation: "Révolution",
+        };
+      } catch (err) {
+        return { etat: { ...etat, erreur: messageErreur(err), apercu: null } };
+      }
+    }
+    case "saisie": {
+      const res = analyserSaisie(ev.texte, saisieDe("angle-arc", ctx));
+      if (res.genre === "erreur") return { etat: { ...etat, erreur: res.message } };
+      const suite = res.genre === "angle" ? { ...etat, angle: res.degres } : res.genre === "segments" ? { ...etat, segments: res.nombre } : null;
+      if (!suite) return { etat: { ...etat, erreur: `Saisie « ${ev.texte} » non reconnue : un angle (ex. 90) ou des segments par tour (ex. 96s).` } };
+      try {
+        validerParametresRevolution(suite.angle, suite.segments);
+      } catch (err) {
+        return { etat: { ...etat, erreur: messageErreur(err) } };
+      }
+      return corriger(suite, ctx) ?? { etat: { ...suite, erreur: null, apercu: null, dernier: null } };
+    }
+    case "echap":
+      return { etat: { ...etat, erreur: null, apercu: null, axeClique: null, inference: null, dernier: null }, selection: [] };
+    default:
+      return { etat };
+  }
 }
 
 function options(e: EtatSuivezMoi): OptionOutil[] {
-  return [{ id: "bouchons", valeur: e.bouchons ? "avec" : "sans", valeurs: [{ id: "avec", disponible: true }, { id: "sans", disponible: true }] }];
+  const r: OptionOutil[] = [
+    { id: "methode", valeur: e.methode, valeurs: [{ id: "chemin", disponible: true, raccourci: "Alt" }, { id: "revolution", disponible: true, raccourci: "Alt" }] },
+    { id: "bouchons", valeur: e.bouchons ? "avec" : "sans", valeurs: [{ id: "avec", disponible: true, raccourci: "Ctrl" }, { id: "sans", disponible: true, raccourci: "Ctrl" }] },
+  ];
+  if (e.methode === "revolution") r.push({ id: "groupe", valeur: e.groupe ? "oui" : "non", valeurs: [{ id: "non", disponible: true, raccourci: "Maj" }, { id: "oui", disponible: true, raccourci: "Maj" }] });
+  return r;
 }
+
+const formaterNombre = (x: number): string => (Math.round(x * 1000) / 1000).toString();
 
 export const machineSuivezMoi: MachineOutil<EtatSuivezMoi> = {
   id: ID_SUIVEZ_MOI,
-  initial: () => ({ erreur: null, bouchons: true, apercu: null }),
+  initial: () => ({
+    erreur: null,
+    bouchons: true,
+    apercu: null,
+    methode: "chemin",
+    angle: ANGLE_REVOLUTION_DEFAUT,
+    segments: SEGMENTS_PAR_TOUR_DEFAUT,
+    groupe: false,
+    axeClique: null,
+    inference: null,
+    dernier: null,
+  }),
 
   traiter(etat, ev, ctx): Transition<EtatSuivezMoi> {
+    if (etat.methode === "revolution") return traiterRevolution(etat, ev, ctx);
     switch (ev.genre) {
       case "survol": {
         const chemin = cheminPresélectionné(ctx);
@@ -100,11 +293,26 @@ export const machineSuivezMoi: MachineOutil<EtatSuivezMoi> = {
   },
 
   configurer(etat, option, valeur): Transition<EtatSuivezMoi> {
-    if (option === "bouchons" && (valeur === "avec" || valeur === "sans")) return { etat: { ...etat, bouchons: valeur === "avec", apercu: null, erreur: null } };
+    let suite: EtatSuivezMoi | null = null;
+    if (option === "bouchons" && (valeur === "avec" || valeur === "sans")) suite = { ...etat, bouchons: valeur === "avec", apercu: null, erreur: null };
+    if (option === "groupe" && (valeur === "oui" || valeur === "non")) suite = { ...etat, groupe: valeur === "oui", apercu: null, erreur: null };
+    if (option === "methode" && (valeur === "chemin" || valeur === "revolution")) {
+      return { etat: { ...etat, methode: valeur, apercu: null, erreur: null, axeClique: null, inference: null, dernier: null } };
+    }
+    // Une option ne crée jamais de pas d'historique : elle vaut pour la prochaine Révolution (ou pour une correction
+    // par le champ Mesures, qui repart de la recette).
+    return { etat: suite ?? etat };
+  },
+
+  modificateurSeul(etat, touche: ModificateurSeul, ctx): Transition<EtatSuivezMoi> {
+    if (touche === "Alt") return this.configurer!(etat, "methode", etat.methode === "chemin" ? "revolution" : "chemin", ctx);
+    if (touche === "Ctrl") return this.configurer!(etat, "bouchons", etat.bouchons ? "sans" : "avec", ctx);
+    if (etat.methode === "revolution") return this.configurer!(etat, "groupe", etat.groupe ? "non" : "oui", ctx);
     return { etat };
   },
 
   vue(etat, ctx): VueOutil {
+    if (etat.methode === "revolution") return vueRevolution(etat, ctx);
     const v = vueModif({ consigne: consigneDe(ID_SUIVEZ_MOI, 0), mesures: null, ctx, erreur: etat.erreur });
     return {
       ...v,
@@ -113,3 +321,33 @@ export const machineSuivezMoi: MachineOutil<EtatSuivezMoi> = {
     };
   },
 };
+
+export const CONSIGNE_AXE_1 = "Révolution : cliquez le premier point de l'axe, ou présélectionnez une arête comme axe.";
+export const CONSIGNE_AXE_2 = "Révolution : cliquez le second point de l'axe.";
+export const CONSIGNE_PROFIL_REVOLUTION = "Révolution : cliquez sur le profil à tourner autour de l'axe";
+
+function vueRevolution(etat: EtatSuivezMoi, ctx: ContexteOutil): VueOutil {
+  const axe = axeDe(etat, ctx);
+  const reglage = `${formaterNombre(etat.angle)}°, ${etat.segments} segments par tour`;
+  let consigne = !axe ? (etat.axeClique ? CONSIGNE_AXE_2 : CONSIGNE_AXE_1) : `${CONSIGNE_PROFIL_REVOLUTION} (${reglage}).`;
+  if (axe && etat.apercu?.segments !== undefined) {
+    consigne = `${consigne.slice(0, -1)} — ${etat.apercu.segments} segment${etat.apercu.segments > 1 ? "s" : ""}, écart de facettage ≈ ${formaterNombre((etat.apercu.ecart ?? 0) * 1000)} mm.`;
+  }
+  const v = vueModif({
+    consigne,
+    mesures: { libelle: "Angle / segments", valeur: etat.dernier ? `${formaterNombre(etat.angle)}°` : "", saisie: saisieDe("angle-arc", ctx) },
+    ctx,
+    erreur: etat.erreur,
+    inference: etat.inference,
+  });
+  const lignes: Vec3[][] = [];
+  if (etat.axeClique) {
+    const fin = etat.axeClique.b ?? etat.inference?.point;
+    if (fin) lignes.push([etat.axeClique.a, fin]);
+  }
+  return {
+    ...v,
+    options: options(etat),
+    apercu: { ...v.apercu, pointilles: lignes, ...(etat.apercu ? { faces: etat.apercu.faces, trous: etat.apercu.trous } : {}) },
+  };
+}

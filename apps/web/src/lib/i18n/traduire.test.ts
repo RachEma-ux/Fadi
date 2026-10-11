@@ -34,6 +34,19 @@ describe("traduction de l'interface (D-163)", () => {
     expect(t.traduire("x 4,81 · y 7,46 m")).toBe("x 4.81 · y 7.46 m");
   });
 
+  it("consignes dynamiques de la Révolution (Suivez-moi) traduites en entier", () => {
+    const d = new Traducteur(dico as Record<string, string>);
+    expect(d.traduire("Révolution : cliquez sur le profil à tourner autour de l'axe (360°, 48 segments par tour).")).toBe(
+      "Revolution: click the profile to revolve around the axis (360°, 48 segments per turn).",
+    );
+    expect(d.traduire("Révolution : cliquez sur le profil à tourner autour de l'axe (90°, 48 segments par tour) — 12 segments, écart de facettage ≈ 4,282 mm.")).toBe(
+      "Revolution: click the profile to revolve around the axis (90°, 48 segments per turn) — 12 segments, faceting deviation ≈ 4.282 mm.",
+    );
+    expect(d.traduire("Révolution : cliquez sur le profil à tourner autour de l'axe (5°, 48 segments par tour) — 1 segment, écart de facettage ≈ 0,1 mm.")).toBe(
+      "Revolution: click the profile to revolve around the axis (5°, 48 segments per turn) — 1 segment, faceting deviation ≈ 0.1 mm.",
+    );
+  });
+
   it("le dictionnaire livré couvre l'interface courante et garde les paramètres", () => {
     const d = dico as Record<string, string>;
     expect(Object.keys(d).length).toBeGreaterThan(5000);

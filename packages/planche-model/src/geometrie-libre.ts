@@ -323,7 +323,10 @@ function dansRegion2(pt: P2, ext: readonly P2[], trous: readonly (readonly P2[])
 /** Point strictement intérieur d'une région (polygone à trous), par balayage horizontal. */
 function echantillon2(ext: readonly P2[], trous: readonly (readonly P2[])[]): P2 {
   const tous = [ext, ...trous];
-  const ys = [...new Set(tous.flat().map((p) => p.y))].sort((a, b) => a - b);
+  // Ordonnées distinctes à 1e-9 près : deux sommets « à la même hauteur » au bruit flottant près (géométrie tournée,
+  // lot 10d) placeraient sinon l'échantillon sur le bord, hors de la région.
+  const ys: number[] = [];
+  for (const v of tous.flat().map((p) => p.y).sort((a, b) => a - b)) if (ys.length === 0 || v - (ys[ys.length - 1] as number) > 1e-9) ys.push(v);
   const y = ys.length > 1 ? ((ys[0] as number) + (ys[1] as number)) / 2 : (ys[0] ?? 0);
   const xs: number[] = [];
   for (const b of tous) {
@@ -3339,13 +3342,7 @@ export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: Options
     const F = c.faces.get(profil);
     if (!F) throw new Error(`Face de profil inconnue : ${profil}`);
     // Lot 10c (EX-FM-04) : trous acceptés s'ils ne touchent ni le contour ni les autres trous.
-    const vus = new Set<Id>();
-    for (const b of [F.exterieur, ...F.trous]) {
-      for (const sId of b) {
-        if (vus.has(sId)) throw new RangeError(ERREUR_TROUS_JOINTIFS);
-        vus.add(sId);
-      }
-    }
+    exigerTrousDisjoints(F);
     let ch: Chaine;
     if ("face" in chemin) {
       if (chemin.face === profil) throw new RangeError("Le chemin et le profil doivent être distincts.");
@@ -3459,33 +3456,186 @@ export function suivezMoi(m: Modele, profil: Id, chemin: CheminSuivi, o: Options
       ? [capDebut, capFin].map((cap) => ({ ext: orienter(cap.ext), trous: cap.trous.map(orienter) }))
       : [];
 
-    // Le profil est consommé : sa face et celles de ses arêtes qu'aucune autre face ne borde disparaissent AVANT le
-    // balayage, sinon elles découperaient les faces coplanaires du résultat.
-    const aretesProfil: Id[] = [];
-    // Toutes les boucles du profil, trous compris : les bords d'un trou que seule la face du profil bordait partent aussi.
-    for (const boucle of [F.exterieur, ...F.trous]) {
-      for (let i = 0; i < boucle.length; i++) {
-        const a = areteEntre(c, boucle[i] as Id, boucle[(i + 1) % boucle.length] as Id);
-        if (a && facesDeArete(c, a).every((g) => g.id === profil)) aretesProfil.push(a.id);
-      }
-    }
-    c.faces.delete(profil);
-    if (aretesProfil.length) effacerAretesInterne(t, c, aretesProfil);
-    // Sommets du profil laissés sur une arête voisine (profil dessiné sur un bord) : recollés si colinéaires.
-    for (const s of [...F.exterieur, ...F.trous.flat()]) cicatriser(c, s);
-    const segments: SegmentSource[] = [];
-    const sources: Source[] = [];
-    for (const p of polys) {
-      for (let i = 0; i < p.length; i++) segments.push({ a: p[i] as Vec3, b: p[(i + 1) % p.length] as Vec3 });
-      sources.push({ exterieur: p, trous: [], normale: normalize(newell(p)), role: "face" });
-    }
-    for (const cap of caps) {
-      for (const b of [cap.ext, ...cap.trous]) for (let i = 0; i < b.length; i++) segments.push({ a: b[i] as Vec3, b: b[(i + 1) % b.length] as Vec3 });
-      sources.push({ exterieur: cap.ext, trous: cap.trous, normale: normalize(newell(cap.ext)), role: "face" });
-    }
-    insererGeometrie(t, c, segments, sources, false);
+    consommerProfil(t, c, F, profil);
+    insererBalayage(t, c, polys, caps);
   });
 }
+
+/**
+ * Le profil d'un balayage (Suivez-moi, Révolution) est consommé : sa face et celles de ses arêtes qu'aucune autre face ne
+ * borde disparaissent AVANT l'insertion, sinon elles découperaient les faces coplanaires du résultat.
+ */
+function consommerProfil(t: Travail, c: Ctx, F: Face, profil: Id): void {
+  const aretesProfil: Id[] = [];
+  for (const b of [F.exterieur, ...F.trous]) {
+    for (let i = 0; i < b.length; i++) {
+      const a = areteEntre(c, b[i] as Id, b[(i + 1) % b.length] as Id);
+      if (a && facesDeArete(c, a).every((g) => g.id === profil)) aretesProfil.push(a.id);
+    }
+  }
+  c.faces.delete(profil);
+  if (aretesProfil.length) effacerAretesInterne(t, c, aretesProfil);
+  // Sommets du profil laissés sur une arête voisine (profil dessiné sur un bord) : recollés si colinéaires.
+  for (const s of [...F.exterieur, ...F.trous.flat()]) cicatriser(c, s);
+}
+
+/** Insère les parois (polygones plans) et les capuchons (avec trous) d'un balayage, comme géométrie collante. */
+function insererBalayage(t: Travail, c: Ctx, polys: readonly Vec3[][], caps: readonly { ext: Vec3[]; trous: Vec3[][] }[]): void {
+  const segments: SegmentSource[] = [];
+  const sources: Source[] = [];
+  for (const p of polys) {
+    for (let i = 0; i < p.length; i++) segments.push({ a: p[i] as Vec3, b: p[(i + 1) % p.length] as Vec3 });
+    sources.push({ exterieur: p, trous: [], normale: normalize(newell(p)), role: "face" });
+  }
+  for (const cap of caps) {
+    for (const b of [cap.ext, ...cap.trous]) for (let i = 0; i < b.length; i++) segments.push({ a: b[i] as Vec3, b: b[(i + 1) % b.length] as Vec3 });
+    sources.push({ exterieur: cap.ext, trous: cap.trous, normale: normalize(newell(cap.ext)), role: "face" });
+  }
+  insererGeometrie(t, c, segments, sources, false);
+}
+
+/** Refus commun des balayages : trous qui se touchent ou touchent le contour (EX-FM-04). */
+function exigerTrousDisjoints(F: Face): void {
+  const vus = new Set<Id>();
+  for (const b of [F.exterieur, ...F.trous]) {
+    for (const sId of b) {
+      if (vus.has(sId)) throw new RangeError(ERREUR_TROUS_JOINTIFS);
+      vus.add(sId);
+    }
+  }
+}
+
+// ————————————————————————————————————————————————————————————— Révolution (lot 10d, EX-RV)
+
+/** Axe de révolution : un point et une direction (non nulle). */
+export interface AxeRevolution {
+  readonly origine: Vec3;
+  readonly direction: Vec3;
+}
+
+/** Options de la Révolution (lot 10d, EX-RV-02, 03). */
+export interface OptionsRevolution extends OptionsContexte {
+  /** Angle en degrés, de −360 à +360, zéro exclu ; défaut +360 (tour complet). */
+  readonly angle?: number;
+  /** Segments par tour complet : entier de 12 à 512 ; défaut 48. */
+  readonly segments?: number;
+  /** Tour partiel : coiffes de début et de fin (défaut), trous compris ; `false` = surface ouverte. */
+  readonly bouchons?: boolean;
+}
+
+export const ANGLE_REVOLUTION_DEFAUT = 360;
+export const SEGMENTS_PAR_TOUR_DEFAUT = 48;
+export const SEGMENTS_PAR_TOUR_MIN = 12;
+export const SEGMENTS_PAR_TOUR_MAX = 512;
+export const ERREUR_REVOLUTION_ANGLE = "Angle de révolution : entre −360° et +360°, zéro exclu.";
+export const ERREUR_REVOLUTION_SEGMENTS = "Segments par tour : un nombre entier de 12 à 512.";
+export const ERREUR_REVOLUTION_AXE_NUL = "Axe de révolution nul : donnez deux points distincts ou une arête.";
+export const ERREUR_REVOLUTION_AXE_PLAN = "L'axe de révolution doit être dans le plan du profil.";
+export const ERREUR_REVOLUTION_AXE_TRAVERSE = "Le profil traverse l'axe : la matière tournée se recouperait.";
+
+/** Nombre de segments d'un tour partiel (EX-RV-03) : max(1, ⌈N × |angle| / 360°⌉) ; un tour complet en a N. */
+export function segmentsRevolution(angle: number, parTour: number): number {
+  return Math.max(1, Math.ceil((parTour * Math.abs(angle)) / 360 - 1e-9));
+}
+
+/** Écart de facettage estimé (flèche de la corde) au rayon `rayon`, pour `parTour` segments par tour complet. */
+export function ecartFacettage(rayon: number, parTour: number): number {
+  return rayon * (1 - Math.cos(Math.PI / parTour));
+}
+
+/** Contrôle des paramètres de la Révolution (EX-RV-02, 03) ; lance une erreur de domaine. */
+export function validerParametresRevolution(angle: number, parTour: number): void {
+  if (!Number.isFinite(angle) || angle === 0 || Math.abs(angle) > 360 + 1e-9) throw new RangeError(ERREUR_REVOLUTION_ANGLE);
+  if (!Number.isInteger(parTour) || parTour < SEGMENTS_PAR_TOUR_MIN || parTour > SEGMENTS_PAR_TOUR_MAX) throw new RangeError(ERREUR_REVOLUTION_SEGMENTS);
+}
+
+/** Rotation de `p` d'angle `theta` (radians) autour de l'axe (origine `o`, direction unitaire `u`) — Rodrigues. */
+function tournerAutour(p: Vec3, o: Vec3, u: Vec3, theta: number): Vec3 {
+  const v = sub(p, o);
+  const cs = Math.cos(theta);
+  const sn = Math.sin(theta);
+  return add(o, add(add(scale(v, cs), scale(cross(u, v), sn)), scale(u, dot(u, v) * (1 - cs))));
+}
+
+/**
+ * Révolution (lot 10d, EX-RV-01 à 04) : méthode de Suivez-moi qui tourne le profil (une face, trous compris) autour d'un
+ * axe situé dans son plan, d'un angle de −360° à +360° (zéro exclu), en `segments` par tour complet. Elle partage les
+ * contrats du balayage (refus des trous jointifs, consommation du profil, insertion collante, orientation décidée sur la
+ * coque extérieure) mais ne passe pas par un chemin polygonal générique : chaque anneau est la rotation exacte du
+ * profil, le dernier tombe exactement sur l'angle demandé.
+ * - Tour complet : couture soudée (le dernier anneau est le premier), ni coiffe ni sommet en double.
+ * - Tour partiel : coiffes de début et de fin, trous compris, sauf `bouchons: false` (surface ouverte).
+ * - Profil qui touche l'axe : les sommets sur l'axe sont des pôles partagés ; aucune face d'aire nulle.
+ * - Refus : axe nul, axe hors du plan du profil, profil qui traverse l'axe, angle ou segments hors domaine.
+ */
+export function revolution(m: Modele, profil: Id, axe: AxeRevolution, o: OptionsRevolution = {}): Resultat {
+  const angle = o.angle ?? ANGLE_REVOLUTION_DEFAUT;
+  const parTour = o.segments ?? SEGMENTS_PAR_TOUR_DEFAUT;
+  validerParametresRevolution(angle, parTour);
+  if (len(axe.direction) < EPS) throw new RangeError(ERREUR_REVOLUTION_AXE_NUL);
+  const u = normalize(axe.direction);
+  const O = axe.origine;
+  return operer(m, o.dans, (t, c) => {
+    const F = c.faces.get(profil);
+    if (!F) throw new Error(`Face de profil inconnue : ${profil}`);
+    exigerTrousDisjoints(F);
+    const nP = normalize(F.normale);
+    const ext = F.exterieur.map((s) => pos(c, s));
+    const trous = F.trous.map((b) => b.map((s) => pos(c, s)));
+    if (Math.abs(dot(nP, u)) > 1e-6 || Math.abs(dot(nP, sub(O, ext[0] as Vec3))) > TOL) throw new RangeError(ERREUR_REVOLUTION_AXE_PLAN);
+    // Côté de l'axe dans le plan du profil : toute la matière d'un seul côté (les sommets sur l'axe sont permis).
+    const w = normalize(cross(nP, u));
+    const cote = (p: Vec3) => dot(sub(p, O), w);
+    const cotes = ext.map(cote);
+    if (Math.min(...cotes) < -TOL && Math.max(...cotes) > TOL) throw new RangeError(ERREUR_REVOLUTION_AXE_TRAVERSE);
+    const surAxe = (p: Vec3) => Math.abs(cote(p)) <= TOL;
+    const complet = Math.abs(Math.abs(angle) - 360) <= 1e-9;
+    const k = complet ? parTour : segmentsRevolution(angle, parTour);
+    const theta = (angle * Math.PI) / 180;
+    const anneaux = (boucle: readonly Vec3[]): Vec3[][] => {
+      const r: Vec3[][] = [];
+      for (let i = 0; i <= k; i++) {
+        if (complet && i === k) {
+          r.push(r[0] as Vec3[]);
+          break;
+        }
+        // Le dernier anneau d'un tour partiel tombe exactement sur l'angle demandé ; un sommet sur l'axe ne bouge pas.
+        const a = i === k ? theta : (theta * i) / k;
+        r.push(boucle.map((p) => (surAxe(p) ? p : tournerAutour(p, O, u, a))));
+      }
+      return r;
+    };
+    const parois = (A: Vec3[][]): Vec3[][] => {
+      const n = (A[0] as Vec3[]).length;
+      const r: Vec3[][] = [];
+      for (let i = 0; i < k; i++) {
+        const S = A[i] as Vec3[];
+        const E = A[i + 1] as Vec3[];
+        for (let j = 0; j < n; j++) {
+          const quad = [S[j] as Vec3, S[(j + 1) % n] as Vec3, E[(j + 1) % n] as Vec3, E[j] as Vec3];
+          // Pôles partagés : un sommet sur l'axe ne s'écarte pas — le quadrilatère devient un triangle, ou disparaît.
+          const poly = quad.filter((q, x) => dist(q, quad[(x + 1) % 4] as Vec3) > TOL);
+          if (poly.length >= 3 && len(newell(poly)) > 1e-12) r.push(poly);
+        }
+      }
+      return r;
+    };
+    const anneauxExt = anneaux(ext);
+    const anneauxTrous = trous.map(anneaux);
+    const coiffes = !complet && o.bouchons !== false;
+    const debut = { ext: [...(anneauxExt[0] as Vec3[])].reverse(), trous: anneauxTrous.map((a) => [...(a[0] as Vec3[])].reverse()) };
+    const fin = { ext: [...(anneauxExt[k] as Vec3[])], trous: anneauxTrous.map((a) => [...(a[k] as Vec3[])]) };
+    let polys = parois(anneauxExt);
+    const coque = coiffes ? [...polys, debut.ext, fin.ext] : polys;
+    const inverser = complet || coiffes ? volumeSigne(coque) < 0 : false;
+    const orienter = (p: Vec3[]) => (inverser ? [...p].reverse() : p);
+    polys = [...polys.map(orienter), ...anneauxTrous.flatMap(parois).map(orienter)];
+    const caps = coiffes ? [debut, fin].map((cap) => ({ ext: orienter(cap.ext), trous: cap.trous.map(orienter) })) : [];
+    consommerProfil(t, c, F, profil);
+    insererBalayage(t, c, polys, caps);
+  });
+}
+
 
 // ————————————————————————————————————————————————————————————— Objets : visibilité, verrou, adoucissement, orientation (lot 5)
 
