@@ -98,7 +98,7 @@ import { CATALOGUE, type CleMessage, t } from "../messages";
 import { ChoixLangue } from "../../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
-import { OUTILS_CAMERA_TEMPORAIRES, OUTILS_SOLIDES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
+import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { BarreActions } from "../panneaux/BarreActions";
@@ -572,8 +572,8 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
         rafraichir();
         return;
       }
-      // Lot 6 : le moteur booléen (manifold-3d) est chargé au premier outil de solides, jamais à l'ouverture (MO-4).
-      if (OUTILS_SOLIDES.has(id) && !booleensRef.current) {
+      // Lot 6 : le moteur booléen (manifold-3d) est chargé au premier outil qui le demande, jamais à l'ouverture (MO-4).
+      if (OUTILS_BOOLEENS.has(id) && !booleensRef.current) {
         setBooleens("chargement");
         void chargerBooleens().then(
           (b) => {
@@ -2005,7 +2005,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
   const barre = useMemo(() => outilsBarre(), []);
   const sections = useMemo(() => sectionsGrille(), []);
   const raisonDe = (o: Outil) => disponibilite(o, { lecture: readOnly });
-  const etatBarre = OUTILS_SOLIDES.has(outilId) && booleens === "chargement" ? t("planche.solides.chargement") : vue.erreur ?? message;
+  const etatBarre = OUTILS_BOOLEENS.has(outilId) && booleens === "chargement" ? t("planche.solides.chargement") : vue.erreur ?? message;
   const valeurMesures = texte?.texte ?? vue.mesures?.valeur ?? "";
 
   const boutonOutil = (o: Outil, dansGrille = false) => {

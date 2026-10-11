@@ -72,7 +72,9 @@ Mètre T · Orbite O · Panoramique H · Zoom Z · Zoom étendu Ctrl+Maj+E · Zo
 | Maj+L | Main levée | | Alt+Maj+M | Marcher |
 | Maj+M | Prélever la matière | | | |
 | Maj+N | Secteur | | Alt+Maj+Q | Profilés depuis arêtes (lot L12) |
-| Maj+Q | Profilé (lot L12) | | | |
+| Maj+Q | Profilé (lot L12) | | Alt+Maj+O | Onglet (lot L13) |
+| | | | Alt+Maj+B | Coupe par profil (lot L13) |
+| | | | Alt+Maj+A | Allonger une pièce (lot L13) |
 
 Règles tenues (test `barres-outils.test.ts`) : la couche ne vise que les outils dont le raccourci relevé vaut `null`, et
 tous ; aucun raccourci partagé entre deux outils ; aucun ne reprend une touche propre à la Planche (G composant, K arêtes
