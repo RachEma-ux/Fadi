@@ -24,6 +24,7 @@ import {
   boiteOccurrence,
   cibleDans,
   configurerTexte3D,
+  lireAlignementTexte3D,
   contexte as contexteDe,
   cheminOccurrence,
   detacherLiens,
@@ -549,6 +550,7 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       const m = machineParId(outilRef.current);
       if (!m?.configurer) return;
       etatMachineRef.current = m.configurer(etatMachineRef.current, option, valeur, contexte()).etat;
+      if (outilRef.current === "texte-3d" && option === "alignement") etatUi.set((u) => ({ parametresOutil: { ...u.parametresOutil, alignementTexte3D: lireAlignementTexte3D(valeur) } }));
       rafraichir();
       hoteRef.current?.focus({ preventScroll: true });
     },
@@ -609,6 +611,12 @@ export function Planche({ projectId, readOnly, etat, plancheId = null, onCommand
       if (id !== outilRef.current && !options.garderPrecedent) precedentRef.current = outilRef.current;
       outilRef.current = id;
       etatMachineRef.current = machineParId(id)?.initial() ?? null;
+      // Revue de #129 : l'alignement du Texte 3D survit à la réactivation (préférence d'interface, pas d'état d'outil).
+      if (id === "texte-3d") {
+        const m = machineParId(id);
+        const alignement = lireAlignementTexte3D(etatUi.get().parametresOutil["alignementTexte3D"]);
+        if (m?.configurer && etatMachineRef.current) etatMachineRef.current = m.configurer(etatMachineRef.current, "alignement", alignement, contexte()).etat;
+      }
       setOutilId(id);
       setTexte(null);
       setMessage(null);
