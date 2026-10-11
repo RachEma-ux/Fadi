@@ -1,7 +1,7 @@
 /** Lot L14 : liste de débit de la Planche — groupement exact, masse sourcée seulement, renumérotation, CSV. */
 import { describe, expect, it } from "vitest";
-import { csvDebit, listeDebit, reperesRenumerotes, trierDebit } from "./debit.js";
-import { type Id, type Modele, ajouterSegment, contexte, copier, effacerEtiquettesPieces, grouper, modeleVide, numeroterPieces, poserEtiquettesPieces, poserPiece, poserPiecesSurAretes } from "./geometrie-libre.js";
+import { csvDebit, etiquettesDebit, listeDebit, reperesRenumerotes, trierDebit } from "./debit.js";
+import { type Id, type Modele, ajouterSegment, contexte, copier, effacerEtiquettesPieces, grouper, mettreAEchelle, modeleVide, numeroterPieces, poserEtiquettesPieces, poserPiece, poserPiecesSurAretes } from "./geometrie-libre.js";
 import { PLACEMENT_DEFAUT, type SectionProfil, type SourceSection } from "./profiles.js";
 import { v3 } from "./vecteur.js";
 
@@ -90,5 +90,33 @@ describe("Liste de débit (L14)", () => {
     expect(csv.startsWith("﻿\"Repère(s)\";\"Désignation\";")).toBe(true);
     expect(csv).toContain('"Rect d\'essai";2;4;8;"45 / 45";"saisie";"non évaluée"');
     expect(csv.trim().split("\r\n").pop()).toBe('"Total";"2 ligne(s)";4;;14;;;');
+  });
+});
+
+describe("Revue de #128 — pièces mises à l'échelle, étiquettes par chemin", () => {
+  it("groupe mis à l'échelle le long de l'axe : ligne à part, longueur mesurée (×2), masse non évaluée (motif « echelle »)", () => {
+    const a = poserPiece(modeleVide(), { a: v3(0, 0, 0), b: v3(2, 0, 0) }, S, PLACEMENT_DEFAUT, { designation: "Profil X", source: CAT("Catalogue A", 10) });
+    const b = poserPiece(a.modele, { a: v3(0, 1, 0), b: v3(2, 1, 0) }, S, PLACEMENT_DEFAUT, { designation: "Profil X", source: CAT("Catalogue A", 10) });
+    const g = grouper(b.modele, [a.occurrence]);
+    const m = mettreAEchelle(g.modele, [g.occurrence], v3(0, 0, 0), v3(2, 1, 1)).modele;
+    const l = listeDebit(m);
+    expect(l).toHaveLength(2);
+    const ech = l.find((x) => x.miseAEchelle)!;
+    expect(ech.longueurUnitaire).toBeCloseTo(4, 9);
+    expect(ech.masse).toBeNull();
+    expect(ech.motifMasse.genre).toBe("echelle");
+    const normale = l.find((x) => !x.miseAEchelle)!;
+    expect(normale.longueurUnitaire).toBeCloseTo(2, 9);
+    expect(normale.masse).toBeCloseTo(20, 9);
+    expect(normale.motifMasse).toEqual({ genre: "catalogue", source: "Catalogue A", edition: "2026", page: "1" });
+  });
+
+  it("deux instances d'un même objet : une étiquette par pièce physique, chacune à sa position", () => {
+    const a = poserPiece(modeleVide(), { a: v3(0, 0, 0), b: v3(2, 0, 0) }, S, PLACEMENT_DEFAUT, SAISIE);
+    const g = grouper(a.modele, [a.occurrence]);
+    const m = copier(g.modele, [g.occurrence], v3(0, 5, 0)).modele;
+    const e = etiquettesDebit(m, listeDebit(m));
+    expect(e).toHaveLength(2);
+    expect(e.map((x) => Math.round(x.position.y)).sort()).toEqual([0, 5]);
   });
 });
