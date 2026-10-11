@@ -30,3 +30,16 @@ choix Fadi déclarés (statut « fadi » à l'Instructeur), révisables par un r
 - Chaque face suit sa propre normale, de la même distance, dans une seule opération (un pas d'annulation). Une
   correction tapée juste après vaut pour toutes.
 - Surface ouverte, Étirement et « Jusqu'à une face » restent des opérations sur une seule face.
+
+## 3. Effilement, torsion et loft (lot L22, D-224)
+
+- **Rôle.** Balayer à section variable, sans outil de plus : ce sont deux méthodes de Suivez-moi (Alt seul fait le tour
+  Chemin → Révolution → Effilement → Loft).
+- **Effilement.** Le profil (trous compris) est balayé le long de sa normale sur une longueur. Sa section passe de
+  l'échelle 1 à l'échelle d'arrivée et tourne de l'angle de torsion autour du centre du profil. Le champ Mesures prend
+  « longueur ; échelle ; torsion » ; un champ vide garde sa valeur.
+- **Loft.** Deux faces sans trou, de même nombre de sommets, sont reliées. Les sommets sont appariés dans le même sens de
+  parcours, en partant du couple le plus proche. Le champ Mesures prend les tronçons « Ns ».
+- **Correction.** Une valeur retapée juste après recalcule depuis le profil d'origine : un seul pas.
+- **Refus nommés** : longueur nulle, échelle ≤ 0, tronçons hors de 1 à 512, profils identiques ou incompatibles,
+  complexité au-delà du plafond.

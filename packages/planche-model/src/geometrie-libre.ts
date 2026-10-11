@@ -5254,3 +5254,151 @@ export function epaissir(m: Modele, faces: readonly Id[], e: number | readonly n
     }
   });
 }
+
+// ————————————————————————————————————————————————————————————— Lot L22 : effilement, torsion, loft
+
+export interface OptionsEffiler extends OptionsContexte {
+  /** Longueur du balayage le long de la normale du profil (m, signée). */
+  readonly longueur: number;
+  /** Échelle du profil à l'arrivée (1 = section constante) ; > 0. */
+  readonly echelle?: number;
+  /** Torsion totale autour de l'axe (degrés, signée). */
+  readonly torsion?: number;
+  /** Tronçons le long de la longueur : défaut 1 sans torsion, 12 avec ; entier de 1 à 512. */
+  readonly segments?: number;
+  /** Capuchons de début et de fin (défaut) ; `false` = surface ouverte. */
+  readonly bouchons?: boolean;
+  readonly plafondTriangles?: number;
+}
+
+export const ERREUR_EFFILER_ECHELLE = "Effiler : l'échelle d'arrivée doit être un nombre strictement positif.";
+export const ERREUR_EFFILER_SEGMENTS = "Effiler : les tronçons sont un nombre entier de 1 à 512.";
+export const ERREUR_LOFT_PROFILS = "Loft : deux faces différentes du même contexte sont nécessaires.";
+export const ERREUR_LOFT_SOMMETS = "Loft : les deux profils doivent avoir le même nombre de sommets et aucun trou.";
+
+/** Parois entre anneaux successifs : quadrilatère plan gardé, sinon coupé en deux triangles (torsion, loft gauche). */
+function paroisAnneaux(A: readonly (readonly Vec3[])[]): Vec3[][] {
+  const r: Vec3[][] = [];
+  for (let i = 0; i + 1 < A.length; i++) {
+    const S = A[i] as Vec3[];
+    const E = A[i + 1] as Vec3[];
+    const n = S.length;
+    for (let j = 0; j < n; j++) {
+      const quad = [S[j] as Vec3, S[(j + 1) % n] as Vec3, E[(j + 1) % n] as Vec3, E[j] as Vec3];
+      const nw = newell(quad);
+      if (len(nw) < 1e-12) continue;
+      const pl = planCanonique(normalize(nw), quad[0] as Vec3);
+      if (quad.every((q) => surPlan(pl, q))) r.push(quad);
+      else r.push([quad[0], quad[1], quad[2]] as Vec3[], [quad[0], quad[2], quad[3]] as Vec3[]);
+    }
+  }
+  return r;
+}
+
+/** Coque d'un balayage à anneaux (parois + capuchons), orientée vers l'extérieur, puis insérée à la place du profil. */
+function insererAnneaux(t: Travail, c: Ctx, F: Face, profil: Id, anneauxExt: Vec3[][], anneauxTrous: Vec3[][][], bouchons: boolean, autreProfil?: Id): void {
+  const k = anneauxExt.length - 1;
+  const debut = { ext: [...(anneauxExt[0] as Vec3[])].reverse(), trous: anneauxTrous.map((a) => [...(a[0] as Vec3[])].reverse()) };
+  const fin = { ext: [...(anneauxExt[k] as Vec3[])], trous: anneauxTrous.map((a) => [...(a[k] as Vec3[])]) };
+  let polys = paroisAnneaux(anneauxExt);
+  const coque = bouchons ? [...polys, debut.ext, fin.ext] : polys;
+  const inverser = bouchons ? volumeSigne(coque) < 0 : false;
+  const orienter = (p: Vec3[]) => (inverser ? [...p].reverse() : p);
+  polys = [...polys.map(orienter), ...anneauxTrous.flatMap(paroisAnneaux).map(orienter)];
+  const caps = bouchons ? [debut, fin].map((cap) => ({ ext: orienter(cap.ext), trous: cap.trous.map(orienter) })) : [];
+  consommerProfil(t, c, F, profil);
+  if (autreProfil !== undefined) {
+    const G = c.faces.get(autreProfil);
+    if (G) consommerProfil(t, c, G, autreProfil);
+  }
+  insererBalayage(t, c, polys, caps);
+}
+
+/**
+ * Lot L22 : effilement et torsion (méthodes de Suivez-moi à section variable). Le profil (une face, trous compris) est
+ * balayé le long de sa normale sur `longueur` ; sa section passe linéairement de l'échelle 1 à `echelle` et tourne de
+ * `torsion` degrés autour de l'axe (centre du profil). Parois planes gardées, gauches coupées en triangles ; capuchons
+ * de début et de fin sauf `bouchons: false`. Refus : longueur nulle ou non finie, échelle ≤ 0, tronçons hors domaine,
+ * trous jointifs, complexité au-delà du plafond.
+ */
+export function effiler(m: Modele, profil: Id, o: OptionsEffiler): Resultat {
+  exigerDistance(o.longueur);
+  if (Math.abs(o.longueur) < EPS) throw erreurPlanche("EX_DISTANCE_INVALID", "Longueur nulle : rien n'a été balayé.");
+  const s1 = o.echelle ?? 1;
+  if (!Number.isFinite(s1) || s1 <= 0) throw erreurPlanche("EX_DISTANCE_INVALID", ERREUR_EFFILER_ECHELLE);
+  const torsion = o.torsion ?? 0;
+  if (!Number.isFinite(torsion)) throw erreurPlanche("EX_DISTANCE_INVALID", ERREUR_DISTANCE_NON_FINIE);
+  const N = o.segments ?? (Math.abs(torsion) > 1e-9 ? 12 : 1);
+  if (!Number.isInteger(N) || N < 1 || N > 512) throw erreurPlanche("EX_DISTANCE_INVALID", ERREUR_EFFILER_SEGMENTS);
+  return operer(m, o.dans, (t, c) => {
+    const F = c.faces.get(profil);
+    if (!F) throw new Error(`Face de profil inconnue : ${profil}`);
+    exigerTrousDisjoints(F);
+    const ext = F.exterieur.map((s) => pos(c, s));
+    const trous = F.trous.map((b) => b.map((s) => pos(c, s)));
+    // Revue de #135 : `trianglesBalayage` compte déjà deux triangles par côté et par tronçon (parois gauches comprises).
+    exigerComplexite(trianglesBalayage(ext.length + trous.reduce((n, b) => n + b.length, 0), N, o.bouchons !== false), o.plafondTriangles);
+    const n = normalize(F.normale);
+    const C = scale(ext.reduce((a, p) => add(a, p), v3(0, 0, 0)), 1 / ext.length);
+    const anneaux = (boucle: readonly Vec3[]): Vec3[][] => {
+      const r: Vec3[][] = [];
+      for (let i = 0; i <= N; i++) {
+        const u = i / N;
+        const s = 1 + (s1 - 1) * u;
+        const th = (torsion * Math.PI * u) / 180;
+        const dep = scale(n, o.longueur * u);
+        r.push(boucle.map((p) => add(add(C, dep), sub(tournerAutour(add(C, scale(sub(p, C), s)), C, n, th), C))));
+      }
+      return r;
+    };
+    insererAnneaux(t, c, F, profil, anneaux(ext), trous.map(anneaux), o.bouchons !== false);
+  });
+}
+
+/**
+ * Lot L22 : loft entre deux profils (faces sans trou, même nombre de sommets) — les sommets sont appariés dans le même
+ * sens de parcours, en partant du couple le plus proche ; `segments` anneaux intermédiaires interpolés linéairement.
+ * Les deux profils sont consommés et remplacés par la coque (parois gauches coupées en triangles), fermée par deux
+ * capuchons sauf `bouchons: false` (surface ouverte, revue de #135).
+ */
+export function loft(m: Modele, profilA: Id, profilB: Id, o: OptionsContexte & { readonly segments?: number; readonly plafondTriangles?: number; readonly bouchons?: boolean } = {}): Resultat {
+  if (profilA === profilB) throw erreurPlanche("EX_SOURCE_INVALID", ERREUR_LOFT_PROFILS);
+  const N = o.segments ?? 1;
+  if (!Number.isInteger(N) || N < 1 || N > 512) throw erreurPlanche("EX_DISTANCE_INVALID", ERREUR_EFFILER_SEGMENTS);
+  return operer(m, o.dans, (t, c) => {
+    const A = c.faces.get(profilA);
+    const B = c.faces.get(profilB);
+    if (!A || !B) throw erreurPlanche("EX_SOURCE_INVALID", ERREUR_LOFT_PROFILS);
+    if (A.trous.length || B.trous.length || A.exterieur.length !== B.exterieur.length) throw erreurPlanche("EX_PROFILE_INVALID", ERREUR_LOFT_SOMMETS);
+    // Revue de #135 : `trianglesBalayage` compte déjà deux triangles par côté et par tronçon.
+    exigerComplexite(trianglesBalayage(A.exterieur.length, N, o.bouchons !== false), o.plafondTriangles);
+    const pa = A.exterieur.map((s) => pos(c, s));
+    let pb = B.exterieur.map((s) => pos(c, s));
+    const centre = (q: readonly Vec3[]) => scale(q.reduce((a, p) => add(a, p), v3(0, 0, 0)), 1 / q.length);
+    const ca = centre(pa);
+    const cb = centre(pb);
+    const axe = sub(cb, ca);
+    if (len(axe) < EPS) throw erreurPlanche("EX_SOURCE_INVALID", ERREUR_LOFT_PROFILS);
+    // Même sens de parcours autour de l'axe A → B, puis départ de B qui minimise l'écart (centres ramenés ensemble).
+    if (dot(newell(pa), axe) * dot(newell(pb), axe) < 0) pb = [...pb].reverse();
+    const k = pa.length;
+    let meilleur = 0;
+    let ecart = Infinity;
+    for (let d = 0; d < k; d++) {
+      let e = 0;
+      for (let i = 0; i < k; i++) {
+        const x = sub(pa[i] as Vec3, ca);
+        const y = sub(pb[(i + d) % k] as Vec3, cb);
+        e += len(sub(x, y)) ** 2;
+      }
+      if (e < ecart) (ecart = e), (meilleur = d);
+    }
+    pb = pa.map((_, i) => pb[(i + meilleur) % k] as Vec3);
+    const anneaux: Vec3[][] = [];
+    for (let j = 0; j <= N; j++) {
+      const u = j / N;
+      anneaux.push(pa.map((p, i) => add(scale(p, 1 - u), scale(pb[i] as Vec3, u))));
+    }
+    insererAnneaux(t, c, A, profilA, anneaux, [], o.bouchons !== false, profilB);
+  });
+}
