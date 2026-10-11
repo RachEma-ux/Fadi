@@ -317,11 +317,11 @@ export function PanneauInfoEntite({ modele, selection, dans, lecture, separateur
           <>
             {/* Lot L12 : pièce de profilé — désignation, longueur de l'axe et source de la section (saisie ou catalogue). */}
             <dt>{t("planche.info.piece")}</dt>
-            <dd data-planche-info-piece>{d.piece.designation}</dd>
+            <dd data-planche-info-piece translate="no">{d.piece.designation}</dd>
             <dt>{t("planche.info.piece.longueur")}</dt>
             <dd>{fmtL(d.piece.longueur)}</dd>
             <dt>{t("planche.info.piece.source")}</dt>
-            <dd data-planche-info-source>{d.piece.source.genre === "saisie" ? t("planche.info.piece.saisie") : texteSource(d.piece.source)}</dd>
+            <dd data-planche-info-source {...(d.piece.source.genre === "saisie" ? {} : { translate: "no" as const })}>{d.piece.source.genre === "saisie" ? t("planche.info.piece.saisie") : texteSource(d.piece.source)}</dd>
           </>
         )}
         <dt>{t("planche.info.occurrence")}</dt>
