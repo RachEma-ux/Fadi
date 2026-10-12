@@ -150,6 +150,9 @@ await page.locator('button[type="submit"]:has-text("Créer")').first().click();
 await page.locator('.project-list a:has-text("Étude test migration")').first().click();
 await page.waitForURL(/\/projets\/proj_/);
 const projectUrl = page.url().split("?")[0];
+// Le lien de la liste ouvre désormais l'accueil propre au dossier. La
+// caractérisation des 21 étapes entre explicitement dans le module Parcours.
+await page.goto(`${projectUrl}?module=parcours`);
 await page.waitForSelector(".overview-step");
 check("vue d'ensemble : 21 cartes", (await page.locator(".overview-step").count()) === 21);
 check("progression initiale 0 / 21", (await page.locator(".parcours-steps-summary").textContent()).includes("0 / 21"));
@@ -369,56 +372,47 @@ const exampleUrl = page.url().split("?")[0];
 const importToastSeen = await page.waitForFunction(() => /Exemple importé : votre copie/.test(document.querySelector(".h7-toast")?.textContent || ""), null, { timeout: 5000 }).then(() => true).catch(() => false);
 check("import de l'exemple : état « Import en cours… » visible sur la carte pendant la copie, puis message « Exemple importé : votre copie … est prête »", importProgressSeen, importToastSeen ? "toast vu" : "toast non observé (effacé avant la lecture)");
 check("exemple : 21 / 21 étapes terminées", (await page.locator(".parcours-steps-summary").textContent()).includes("21 / 21"));
-// Accueil (maquette) : enveloppe à icônes, « Espace de travail », « Importer » / « + Nouveau projet », carte « Reprendre mon projet » avec
-// l'aperçu conceptuel dessiné depuis le modèle réel, Mon parcours (6 phases, état réel), À poursuivre, « Voir les étapes », accès rapides
-// illustrés par les données du projet (parcelle transmise, répartition du programme, plan du RDC).
+// Les deux accueils partagent la vue d’ensemble du dossier explicitement consulté.
+// Le parcours complet et ses phases restent dans le dossier et son module dédié.
 await page.goto(`${BASE}/accueil`);
-await page.waitForSelector(".resume-preview-svg svg", { timeout: 30000 });
-check("accueil : barre latérale à icônes (Accueil, Mes projets, Parcours, Atelier, Documents, Bibliothèque ; Harmonie « Votre assistant de projet », Paramètres), « Espace de travail », recherche « un projet, un document », cloche et avatar", (await page.locator(".app-nav a").allTextContents()).map((t) => t.trim()).join("|") === "Accueil|Mes projets|Parcours|Atelier|Documents|Bibliothèque" && (await page.locator(".app-nav a svg").count()) === 6 && (await page.locator(".app-nav-secondary").textContent()).includes("Votre assistant de projet") && (await page.locator(".app-topbar-title").textContent()) === "Espace de travail" && (await page.locator("#global-search").getAttribute("placeholder")) === "Rechercher un projet, un document…" && (await page.locator(".app-topbar-avatar").count()) === 1);
-check("accueil : « Bonjour … », « Importer » et « + Nouveau projet » en tête", /^Bonjour .+,$/.test((await page.locator(".home-greeting h1").textContent()).trim()) && (await page.locator('.home-greeting-actions button:has-text("Importer")').count()) === 1 && (await page.locator('.home-greeting-actions a:has-text("Nouveau projet")').count()) === 1);
-// L'accueil se peint d'abord depuis le cache persistant (étapes relues avant l'import), puis se met à jour : attendre l'état réel
-// (badge « Parcours terminé », 6 phases terminées) avant de le lire, sans quoi la lecture dépend de la vitesse du banc.
-await page.waitForFunction(() => /Parcours terminé/.test(document.querySelector(".resume-card .badge")?.textContent ?? "") && document.querySelectorAll(".parcours-phase-termine").length === 6, null, { timeout: 20000 }).catch(() => {});
-const homePreviewCaption = await page.locator(".resume-preview figcaption").textContent();
-check("accueil · reprendre mon projet : « P.118 — Escalier B et mezzanine », badge « Parcours terminé », aperçu conceptuel = axonométrie éclatée du modèle réel (6 niveaux, 74 zones), « Reprendre le projet », « Ouvrir l’Atelier »", (await page.locator(".resume-card h2").textContent()) === "P.118 — Escalier B et mezzanine" && (await page.locator(".resume-card .badge").first().textContent()).includes("Parcours terminé") && /Aperçu conceptuel · 6 niveaux · 74 zones/.test(homePreviewCaption) && (await page.locator('.resume-preview-svg svg g[data-level]').count()) === 6 && (await page.locator('.resume-card-actions a:has-text("Reprendre le projet")').count()) === 1 && (await page.locator('.resume-card-actions a:has-text("Ouvrir l’Atelier")').count()) === 1, homePreviewCaption);
-// Validation technique à part de l'avancement : « Parcours terminé » ET les réserves calculées du bilan (7 pour l'exemple), lien vers l'étape 18 ; état d'enregistrement près de la carte.
-const validationBadge = await page.locator(".resume-card .badge-validation").textContent();
-check("accueil · validation technique distincte : badge « N réserves techniques ouvertes » (bilan du bâtiment conçu) à côté de « Parcours terminé », lien vers l'étape 18 ; « Synchronisé avec le serveur » sous la carte", /^\d+ réserves? techniques? ouvertes?$/.test(validationBadge.trim()) && Number(validationBadge.trim().split(" ")[0]) >= 7 && /etape=18$/.test(await page.locator(".resume-card .badge-validation").getAttribute("href")) && /Synchronisé avec le serveur/.test(await page.locator(".resume-card .sync-indicator").textContent()), validationBadge);
-check("accueil · Mon parcours : les 6 phases du prototype, toutes terminées pour l'exemple (3/3, 5/5, 4/4, 4/4, 3/3, 2/2), « À poursuivre » et « Voir les étapes »", (await page.locator(".parcours-phase").count()) === 6 && (await page.locator(".parcours-phase-termine").count()) === 6 && (await page.locator(".parcours-phase-link small").allTextContents()).join(" ") === "3/3 5/5 4/4 4/4 3/3 2/2" && (await page.locator(".home-pursue a").count()) >= 1 && (await page.locator('.home-see-steps').count()) === 1);
-await page.locator('.parcours-phase-toggle').nth(1).click();
-check("accueil · Mon parcours : déplier « Programmer » → ses 5 étapes (04 à 08) avec leur état", (await page.locator(".parcours-phase-steps li").count()) === 5 && (await page.locator(".parcours-phase-steps .parcours-step-number").allTextContents()).join(" ") === "04 05 06 07 08");
-// Les vignettes se remplissent à l'arrivée de leurs données (parcelle, programme, plan) : on les attend.
-await page.waitForFunction(() => {
-  const c = [...document.querySelectorAll(".quick-link-card .quick-thumb")];
-  return c.length === 3 && /4 sommets/.test(c[0].getAttribute("aria-label") ?? "") && /4 familles/.test(c[1].getAttribute("aria-label") ?? "") && !!c[2].querySelector("svg");
-}, null, { timeout: 20000 }).catch(() => {});
-check("accueil · accès rapides illustrés par les données : parcelle 118 transmise (4 sommets), 4 familles de surfaces du programme, plan du RDC du modèle", (await page.locator(".quick-link-card").count()) === 3 && /Parcelle 118 : contour transmis, 4 sommets/.test(await page.locator(".quick-link-card").nth(0).locator(".quick-thumb").getAttribute("aria-label")) && /Programme : 4 familles de surfaces/.test(await page.locator(".quick-link-card").nth(1).locator(".quick-thumb").getAttribute("aria-label")) && (await page.locator(".quick-link-card").nth(2).locator(".quick-thumb svg").count()) === 1);
-// Disposition de la maquette : carte et « Mon parcours » côte à côte, « Accès rapides » sur toute la largeur (3 cartes en ligne).
+await page.waitForSelector(".dossier-preview-svg svg", { timeout: 30000 });
+await page.locator('.dossier-primary-action a:has-text("Consulter le Parcours")').waitFor({ timeout: 20000 });
+check("accueil : barre verticale Projets et Collaboration indépendants, recherche de projet et état de plateforme", (await page.locator('.app-nav > a,.app-nav > button').allTextContents()).map((t) => t.trim()).join("|") === "Accueil|Projets|Collaboration" && (await page.getByRole("button", { name: "Rechercher un projet", exact: true }).count()) === 1 && (await page.getByRole("button", { name: "État de la plateforme", exact: true }).count()) === 1 && (await page.locator(".app-sidebar").isVisible()));
+check("accueil : salut dans la barre haute, Importer et Nouveau projet accessibles", /^Bonjour .+,$/.test((await page.locator(".fadi-topbar-title h1").textContent()).trim()) && (await page.locator('.workspace-entry-actions button:has-text("Importer")').count()) === 1 && (await page.locator('.workspace-entry-actions a:has-text("Nouveau projet")').count()) === 1);
+const homePreviewCaption = await page.locator(".dossier-preview figcaption").textContent();
+check("accueil : dernier dossier P.118 explicite, aperçu réel des 6 niveaux, action avant l’aperçu et Atelier secondaire", (await page.locator(".dossier-section-heading p").textContent()) === "P.118 — Escalier B et mezzanine" && (await page.locator('.dossier-preview-svg svg g[data-level]').count()) === 6 && /Aperçu conceptuel/.test(homePreviewCaption) && (await page.locator('.dossier-section-heading a').getAttribute("href")) === new URL(exampleUrl).pathname && (await page.locator('.dossier-card-footer a:has-text("Ouvrir l’Atelier")').count()) === 1 && await page.locator(".dossier-primary-action").evaluate((action) => !!(action.compareDocumentPosition(document.querySelector(".dossier-preview")) & Node.DOCUMENT_POSITION_FOLLOWING)), homePreviewCaption);
+await page.waitForFunction(() => /point\(s\) d’attention calculé\(s\)/.test(document.querySelector(".dossier-status-strip")?.textContent ?? ""), null, { timeout: 20000 });
+const dossierStates = await page.locator(".dossier-status-strip > div").allTextContents();
+check("accueil : 21 étapes terminées, revue technique calculée et envois en attente suivis séparément", dossierStates.length === 3 && /21 \/ 21 étapes terminées/.test(dossierStates[0]) && /Revue technique/.test(dossierStates[1]) && Number(/(\d+) point\(s\) d’attention/.exec(dossierStates[1])?.[1]) >= 7 && /Aucun envoi en attente/.test(dossierStates[2]), dossierStates.join(" | "));
+check("accueil : seule la vue d’ensemble est reprise, sans dupliquer phases, modules et documents du projet", (await page.locator(".dossier-overview").count()) === 1 && (await page.locator(".dossier-journey,.dossier-modules,.dossier-resources,.overview-step").count()) === 0);
 await page.setViewportSize({ width: 1536, height: 960 });
-await page.waitForTimeout(300);
-check("accueil (1536 px) : « Accès rapides » sous les deux colonnes, sur toute la largeur, 3 cartes en ligne ; rien ne centre la page verticalement", await page.evaluate(() => { const grid = document.querySelector(".home-grid").getBoundingClientRect(); const quick = document.querySelector(".quick-access").getBoundingClientRect(); const side = document.querySelector(".home-side-column").getBoundingClientRect(); const cols = getComputedStyle(document.querySelector(".quick-links")).gridTemplateColumns.split(" ").length; return Math.abs(quick.width - grid.width) < 2 && quick.top >= side.top && cols === 3 && document.querySelector(".home-greeting").getBoundingClientRect().top < 140; }));
+check("accueil (1536 px) : salut en haut, carte et barre visibles, sans débordement horizontal", await page.evaluate(() => document.querySelector(".fadi-topbar-title").getBoundingClientRect().top < 140 && document.querySelector(".dossier-overview").getBoundingClientRect().width > 0 && document.querySelector(".app-sidebar").getBoundingClientRect().width > 0 && document.documentElement.scrollWidth <= innerWidth + 1));
 await page.screenshot({ path: `${OUT}/00-accueil-desktop.png`, fullPage: true });
-// « Site ordinateur » de Chrome sur téléphone (980 px, fenêtre très haute) : une colonne, salut en haut (pas de centrage vertical), 3 accès rapides en ligne.
 await page.setViewportSize({ width: 980, height: 2000 });
-await page.waitForTimeout(300);
-check("accueil (980 px, site ordinateur sur téléphone) : salut en haut de page, une colonne (carte, Mon parcours, accès rapides en 3 colonnes)", await page.evaluate(() => { const g = document.querySelector(".home-greeting").getBoundingClientRect(); const hero = document.querySelector(".resume-card").getBoundingClientRect(); const side = document.querySelector(".home-side-column").getBoundingClientRect(); const cols = getComputedStyle(document.querySelector(".quick-links")).gridTemplateColumns.split(" ").length; return g.top < 140 && side.top >= hero.bottom && cols === 3 && document.documentElement.scrollWidth <= window.innerWidth + 1; }));
-// Nom du salut modifiable sur place (même réglage que Paramètres → Compte).
-await page.locator(".home-name-edit").click();
-await page.fill("#home-display-name", "Roch");
+check("accueil (980 px) : salut en haut et page sans défilement horizontal", await page.evaluate(() => document.querySelector(".fadi-topbar-title").getBoundingClientRect().top < 140 && document.documentElement.scrollWidth <= innerWidth + 1));
+// Le réglage du nom reste accessible depuis le salut et persiste dans le compte.
+await page.getByRole("button", { name: "Changer le nom affiché", exact: true }).click();
+await page.getByRole("dialog").waitFor();
+await page.getByLabel("Comment vous appeler ?", { exact: true }).fill("Roch");
 await page.locator('.home-name-form button[type="submit"]').click();
-await page.waitForFunction(() => document.querySelector(".home-greeting h1")?.textContent?.includes("Bonjour Roch,"), null, { timeout: 10000 });
-check("accueil : crayon à côté du salut → « Comment vous appeler ? » → « Bonjour Roch, », avatar « RO », barre latérale au nom", (await page.locator(".home-greeting h1").textContent()).trim() === "Bonjour Roch," && (await page.locator(".app-topbar-avatar").textContent()) === "RO" && (await page.locator(".app-user-name").textContent()).startsWith("Roch"));
+await page.waitForFunction(() => document.querySelector(".fadi-topbar-title h1")?.textContent?.includes("Bonjour Roch,"), null, { timeout: 10000 });
+check("accueil : nom édité → Bonjour Roch, avatar RO et compte mis à jour", (await page.locator(".fadi-topbar-title h1").textContent()).trim() === "Bonjour Roch," && (await page.locator(".app-user .avatar").textContent()) === "RO" && (await page.locator(".app-user-name").textContent()).startsWith("Roch"));
 await page.setViewportSize({ width: 390, height: 844 });
-await page.waitForTimeout(300);
 await page.screenshot({ path: `${OUT}/00-accueil-mobile.png`, fullPage: true });
-check("accueil (téléphone) : une colonne, sans défilement horizontal", await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+check("accueil (téléphone) : barre verticale conservée et aucun défilement horizontal", (await page.locator(".app-sidebar").isVisible()) && await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
 await page.setViewportSize({ width: 1280, height: 900 });
-await page.locator(".home-see-steps").click();
+// La page du projet conserve les six phases et leurs 21 liens d’origine.
+await page.locator(".dossier-section-heading a").click();
+await page.locator(".dossier-phases").waitFor();
+check("accueil du projet : 6 phases, états réels 3/3, 5/5, 4/4, 4/4, 3/3, 2/2 et lien de revue à l’étape 18", (await page.locator(".dossier-phases > li").count()) === 6 && (await page.locator(".dossier-phases summary small").allTextContents()).join(" ") === "3/3 5/5 4/4 4/4 3/3 2/2" && /etape=18$/.test(await page.locator(".dossier-review-link").getAttribute("href")));
+await page.locator(".dossier-phases summary").nth(1).click();
+check("accueil du projet : déplier Programmer donne les 5 étapes 04 à 08 avec leur état", (await page.locator(".dossier-phases details[open] li").count()) === 5 && (await page.locator(".dossier-phases details[open] li a > span").allTextContents()).map((text) => text.slice(0, 2)).join(" ") === "04 05 06 07 08");
+await page.locator('.dossier-primary-action a:has-text("Consulter le Parcours")').click();
 await page.waitForSelector(".overview-step");
-check("accueil : « Voir les étapes » → vue d'ensemble du projet", page.url().startsWith(exampleUrl) && (await page.locator(".overview-step").count()) === 21);
+check("action avant l’aperçu : Consulter le Parcours ouvre ses 21 cartes complètes", page.url().startsWith(exampleUrl) && new URL(page.url()).searchParams.get("module") === "parcours" && (await page.locator(".overview-step").count()) === 21);
 await page.waitForFunction(() => /empreinte [0-9a-f]{8}/.test(document.querySelector(".project-header-meta")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
 check("en-tête du projet : « Révision du modèle : 1 · empreinte <hash> » (détail technique déplacé hors de l'accueil)", /Révision du modèle : 1 · empreinte [0-9a-f]{8}/.test((await page.locator(".project-header-meta").textContent()).replace(/\s+/g, " ")));
-await page.goto(exampleUrl);
+await page.goto(`${exampleUrl}?module=parcours`);
 await page.waitForSelector(".parcours-steps-summary");
 await page.waitForSelector(".seed888", { timeout: 10000 });
 const [kmzDl] = await Promise.all([page.waitForEvent("download"), page.locator('.seed888 a:has-text("118_officiel.kmz")').click()]);
@@ -1495,8 +1489,8 @@ await page.fill("#display-name", "Roch Démo");
 await page.locator('.settings-name-form button[type="submit"]').click();
 await page.waitForFunction(() => /Nom enregistré/.test(document.querySelector(".settings-name-form small")?.textContent || ""), null, { timeout: 10000 });
 await page.goto(`${BASE}/accueil`);
-await page.waitForSelector(".home-greeting h1");
-check("Paramètres · nom affiché « Roch Démo » → accueil « Bonjour Roch Démo, », avatar « RD », barre latérale au nom", (await page.locator(".home-greeting h1").textContent()).trim() === "Bonjour Roch Démo," && (await page.locator(".app-topbar-avatar").textContent()) === "RD" && (await page.locator(".app-user-name").textContent()).startsWith("Roch Démo"));
+await page.waitForSelector(".fadi-topbar-title h1");
+check("Paramètres · nom affiché « Roch Démo » → accueil « Bonjour Roch Démo, », avatar « RD », barre latérale au nom", (await page.locator(".fadi-topbar-title h1").textContent()).trim() === "Bonjour Roch Démo," && (await page.locator(".app-user .avatar").textContent()) === "RD" && (await page.locator(".app-user-name").textContent()).startsWith("Roch Démo"));
 await page.goto(`${BASE}/parametres`);
 await page.waitForSelector(".settings-page", { timeout: 30000 });
 check("Paramètres : adresse du compte, clé MapTiler de session (6c) reconnue", (await page.locator(".settings-page").textContent()).includes(email) && (await page.locator(".settings-state").getAttribute("data-key-state")) === "session");
@@ -1583,10 +1577,10 @@ await pageFresh.fill('input[name="email"]', `fresh-${Date.now()}@example.com`);
 await pageFresh.fill('input[name="password"]', "scenario-pass-123");
 await pageFresh.click('button[type="submit"]');
 await pageFresh.waitForURL(/\/(projets|accueil)/);
-// Accueil d'un compte sans projet : l'exemple P.118 s'importe d'un geste (bouton avec suivi), avant « Créer mon premier projet ».
+// Accueil sans projet : importer P.118 ou créer un projet depuis les entrées de l’application.
 await pageFresh.goto(`${BASE}/accueil`);
 await pageFresh.waitForSelector(".home-empty-state", { timeout: 20000 });
-check("accueil sans projet : « Importer l’exemple P.118 et l’ouvrir » proposé en premier, puis « Créer mon premier projet »", (await pageFresh.locator('.home-empty-state button:has-text("Importer l’exemple P.118 et l’ouvrir")').count()) === 1 && (await pageFresh.locator('.home-empty-state a:has-text("Créer mon premier projet")').count()) === 1);
+check("accueil sans projet : Importer l’exemple P.118 et l’ouvrir, ou créer un nouveau projet", (await pageFresh.locator('.home-empty-state button:has-text("Importer l’exemple P.118 et l’ouvrir")').count()) === 1 && (await pageFresh.locator('.workspace-entry-actions a:has-text("Nouveau projet")').count()) === 1 && (await pageFresh.locator(".dossier-overview").count()) === 0);
 await pageFresh.goto(`${BASE}/bibliotheque/batiments/parcours_lot118`);
 await pageFresh.waitForSelector('.bl-hero button:has-text("Ouvrir le modèle P.118")', { timeout: 30000 });
 await pageFresh.locator('.bl-hero button:has-text("Ouvrir le modèle P.118")').click();
@@ -1600,7 +1594,8 @@ await ctxFresh.close();
 // 6n. Accessibilité : chaque écran de l'application, ordinateur puis téléphone (axe-core, WCAG 2.2 AA).
 const a11yScreens = [
   ["projets", `${BASE}/projets`, "#project-list-heading"],
-  ["accueil", `${BASE}/accueil`, ".home-page"],
+  ["accueil", `${BASE}/accueil`, '.fadi-home[data-home="application"]'],
+  ["accueil du projet", exampleUrl, '.fadi-home[data-home="project"]'],
   ["harmonie", `${BASE}/harmonie`, "main"],
   ["paramètres", `${BASE}/parametres`, "main"],
   ["vue d'ensemble", `${exampleUrl}?module=parcours`, ".overview-step"],
@@ -1684,7 +1679,7 @@ await page.goto(`${projectUrl}?module=parcours`);
 await page.waitForSelector(".overview-step");
 await page.screenshot({ path: `${OUT}/new-00-overview-mobile.png`, fullPage: true });
 // Présentation mobile du prototype : bandeau « Parcours du projet », grille des 21 étapes sur 3 colonnes qui défile horizontalement (`overview-grid`, 145 px minimum par colonne), en-tête de projet et recherche effacés.
-check("téléphone : bandeau « Parcours du projet » en tête, barre de navigation, en-tête de projet et recherche de Fadi effacés (rangée des modules conservée), grille 3 colonnes à défilement horizontal (cartes du prototype)", (await page.locator(".atelier-stage-header .atelier-stage-title").textContent()) === "Parcours du projet" && !(await page.locator(".project-header").isVisible()) && !(await page.locator(".app-topbar").isVisible()) && !(await page.locator(".app-sidebar").isVisible()) && (await page.locator(".module-nav").isVisible()) && (await page.locator(".overview-grid").evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(" ").length === 3 && g.scrollWidth > g.clientWidth)) && (await page.locator(".overview-step").count()) === 21);
+check("téléphone : bandeau « Parcours du projet », barre verticale conservée, en-tête de projet et recherche de Fadi effacés (rangée des modules conservée), grille 3 colonnes à défilement horizontal (cartes du prototype)", (await page.locator(".atelier-stage-header .atelier-stage-title").textContent()) === "Parcours du projet" && !(await page.locator(".project-header").isVisible()) && !(await page.locator(".app-topbar").isVisible()) && (await page.locator(".app-sidebar").isVisible()) && (await page.locator(".module-nav").isVisible()) && (await page.locator(".overview-grid").evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(" ").length === 3 && g.scrollWidth > g.clientWidth)) && (await page.locator(".overview-step").count()) === 21);
 // Remontée en haut de page à chaque changement de vue, comme `goto()` / `study()` / `overview()` du prototype : une étape ouverte depuis
 // le bas de la grille, « Suivante → » et « ← » repartent du bandeau (sans cela, la page restait au défilement de la grille).
 const atTop = () => page.evaluate(() => window.scrollY === 0 && document.querySelector(".atelier-stage-header").getBoundingClientRect().top >= 0);

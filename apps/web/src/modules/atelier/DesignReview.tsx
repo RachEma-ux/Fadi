@@ -504,7 +504,7 @@ function InlineReport({
 /** `designHTML(p)` : le pli de l'étape, avec le bilan en ligne et les outils directionnels. */
 export function DesignReviewFold({ projectId, roomsAction = false, request = null }: { projectId: string; roomsAction?: boolean; /** Demande venue du panneau de l'exemple (« Lire le bilan du bâtiment conçu », « Voir les capacités et ambiances ») : pli ouvert, bilan affiché sur l'onglet voulu. */ request?: { action: "building" | "rooms"; nonce: number } | null }) {
   const queryClient = useQueryClient();
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const query = useQuery({ queryKey: ["design-review", projectId], queryFn: () => api.getDesignReview(projectId) });
   const [open, setOpen] = useState(false);
   const [report, setReport] = useState(false);
@@ -513,24 +513,33 @@ export function DesignReviewFold({ projectId, roomsAction = false, request = nul
   // La demande peut arriver avant le bilan (requête encore en cours, pli pas encore monté) : elle est traitée une fois, dès que le pli existe.
   const handledNonce = useRef<number | null>(null);
   const ready = Boolean(query.data);
+  const requestedFromHome = searchParams.get("bilan") === "1";
   useEffect(() => {
-    if (!request || !ready || handledNonce.current === request.nonce) return;
-    handledNonce.current = request.nonce;
+    const nonce = request?.nonce ?? -1;
+    if ((!request && !requestedFromHome) || !ready || handledNonce.current === nonce) return;
     setOpen(true);
-    setReportTab(request.action === "rooms" ? "rooms" : "synthesis");
+    setReportTab(request?.action === "rooms" ? "rooms" : "synthesis");
     setReport(true);
     // Dans la sous-page « Harmonie du bâtiment », le bilan vit dans un pli (`#ah84-bilan`) : il s'ouvre aussi.
     const enclosing = foldRef.current?.closest<HTMLDetailsElement>("details.ah84-fold");
     if (enclosing && !enclosing.open) enclosing.open = true;
-    const id = window.setTimeout(() => foldRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 50);
+    const id = window.setTimeout(() => {
+      handledNonce.current = nonce;
+      foldRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
+      if (requestedFromHome) foldRef.current?.querySelector<HTMLElement>("summary")?.focus({ preventScroll: true });
+    }, 50);
     return () => window.clearTimeout(id);
-  }, [request, ready]);
+  }, [request, ready, requestedFromHome]);
   const [compass, setCompass] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const refresh = useMutation({
     mutationFn: () => api.refreshDesignReview(projectId),
     onSuccess: (next) => {
       queryClient.setQueryData(["design-review", projectId], next);
+      void queryClient.invalidateQueries({ queryKey: ["design-review-status", projectId] });
+      void queryClient.invalidateQueries({ queryKey: ["concept-preview", projectId] });
+      void queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      void queryClient.invalidateQueries({ queryKey: ["history"] });
       setToast("Bilan de conception actualisé sans lever les réserves.");
     },
     onError: () => setToast("La revue de conception n’a pas pu être actualisée."),
@@ -538,6 +547,9 @@ export function DesignReviewFold({ projectId, roomsAction = false, request = nul
   function adopt(next: DesignReviewView, text: string) {
     queryClient.setQueryData(["design-review", projectId], next);
     void queryClient.invalidateQueries({ queryKey: ["steps", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["design-review-status", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["concept-preview", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["project", projectId] });
     setToast(text);
   }
   function goto(step: number) {
@@ -553,7 +565,7 @@ export function DesignReviewFold({ projectId, roomsAction = false, request = nul
   return (
     <>
       <details className="h7-fold design-review-fold" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)} ref={foldRef}>
-        <summary>Bilan Harmonie du bâtiment conçu · modèle {r.nativeHash}</summary>
+        <summary tabIndex={0}>Bilan Harmonie du bâtiment conçu · modèle {r.nativeHash}</summary>
         <div className="h7-fold-body">
           <p>
             {r.floors.length} niveaux et {r.rooms.length} zones analysables depuis le modèle courant. Les réserves de la version précédente restent conservées ; les améliorations figurent dans les

@@ -49,6 +49,24 @@ designReviewRouter.get("/", async (req, res) => {
   });
 });
 
+/** Home reads technical review independently from image generation: an unavailable preview does not erase the review. */
+designReviewRouter.get("/status", async (req, res) => {
+  const project = await projectOr404(req, res, "read");
+  if (!project) return;
+  const ctx = await loadDesignContext(db, project, new Date().toISOString());
+  const review = ctx.harmony.designReviewV62 ?? null;
+  res.json({
+    computedAt: ctx.analysis.generatedAt,
+    issues: ctx.analysis.issues.length,
+    priorityIssues: ctx.analysis.issues.filter((issue) => issue.priority === "prioritaire").length,
+    auditGaps: ctx.audit.filter((entry) => entry.status === "Écart").length,
+    auditToDocument: ctx.audit.filter((entry) => entry.status === "À documenter").length,
+    reviewedAt: review?.at ?? null,
+    reviewStale: review ? ctx.analysis.stale : false,
+    modelRevision: project.modelRevision,
+  });
+});
+
 /** Aperçu conceptuel de la page d'accueil et du module Atelier : proportions calculées depuis le modèle réel, jamais un rendu. */
 designReviewRouter.get("/apercu", async (req, res) => {
   const project = await projectOr404(req, res, "read");

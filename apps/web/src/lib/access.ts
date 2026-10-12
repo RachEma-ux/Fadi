@@ -7,7 +7,7 @@
  * Le serveur reste seul juge : un refus arrive avec son motif, jamais caché.
  */
 import { useQuery } from "@tanstack/react-query";
-import { api, canWrite, type EditingLock, type ProjectRole } from "./api";
+import { ApiError, api, canWrite, type EditingLock, type ProjectRole } from "./api";
 import { useAuth } from "./auth-context";
 import { LOCALE } from "./i18n";
 
@@ -22,20 +22,24 @@ export interface ProjectAccess {
   lock: EditingLock | null;
   /** La réservation en cours est la vôtre. */
   holdsLock: boolean;
-  /** Projet lu depuis le cache sans rôle connu (ancienne lecture) : considéré propriétaire jusqu'à relecture. */
+  /** Un rôle absent reste inconnu : lecture conservatrice, jamais propriétaire par défaut. */
   known: boolean;
+}
+
+export function resolveProjectAccess(role: ProjectRole | undefined, lock: EditingLock | null, userId: string | undefined, now = Date.now(), readError?: unknown): ProjectAccess {
+  // Un refus récent prime sur un ancien rôle encore présent dans le cache de requêtes.
+  if (readError instanceof ApiError && [401, 403, 404].includes(readError.status)) role = undefined;
+  const active = lock && new Date(lock.expiresAt).getTime() > now ? lock : null;
+  const holdsLock = !!active && !!userId && active.userId === userId;
+  const known = role === "proprietaire" || role === "editeur" || role === "lecteur";
+  const mayEdit = known && canWrite(role);
+  return { role: role ?? "lecteur", canWrite: mayEdit && (!active || holdsLock), mayEdit, isOwner: role === "proprietaire", lock: active, holdsLock, known };
 }
 
 export function useProjectAccess(projectId: string): ProjectAccess {
   const q = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId) });
   const { user } = useAuth();
-  const role = q.data?.role;
-  const lock = q.data?.editingLock ?? null;
-  const active = lock && new Date(lock.expiresAt).getTime() > Date.now() ? lock : null;
-  const holdsLock = !!active && !!user && active.userId === user.id;
-  const lockedByOther = !!active && !holdsLock;
-  const mayEdit = canWrite(role);
-  return { role: role ?? "proprietaire", canWrite: mayEdit && !lockedByOther, mayEdit, isOwner: role === undefined || role === "proprietaire", lock: active, holdsLock, known: role !== undefined };
+  return resolveProjectAccess(q.data?.role, q.data?.editingLock ?? null, user?.id, Date.now(), q.error);
 }
 
 /** Le message d'un projet partagé en lecture, repris dans les écrans qui masquent leurs formulaires. */

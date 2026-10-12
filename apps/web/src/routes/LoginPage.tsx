@@ -1,17 +1,20 @@
 import { useState, type FormEvent } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { describeAuthError, useAuth } from "../lib/auth-context";
 import { ChoixLangue } from "../components/ChoixLangue";
 
 export function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (user) {
+  if (user && params.get("renouveler") !== "1") {
     return <Navigate to="/accueil" replace />;
   }
 
@@ -21,6 +24,7 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
+      void queryClient.invalidateQueries();
       navigate("/accueil");
     } catch (err) {
       setError(describeAuthError(err));

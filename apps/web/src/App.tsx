@@ -10,6 +10,7 @@ import { AccueilPage } from "./routes/AccueilPage";
 import { ProjectsPage } from "./routes/ProjectsPage";
 import { HarmoniePage } from "./routes/HarmoniePage";
 import { ParametresPage } from "./routes/ParametresPage";
+import { CollaborationPage } from "./routes/CollaborationPage";
 
 // Les pages lourdes (projet ouvert avec ses sept modules, bibliothèque des bâtiments) sont chargées à leur première ouverture ;
 // l'enveloppe (connexion, accueil, liste des projets) reste légère. Le moteur de l'Atelier est lui-même un morceau séparé.
@@ -51,6 +52,7 @@ export function App() {
         >
           <Route path="/accueil" element={<AccueilPage />} />
           <Route path="/projets" element={<ProjectsPage />} />
+          <Route path="/collaboration" element={<CollaborationPage />} />
           <Route
             path="/projets/:projectId"
             element={

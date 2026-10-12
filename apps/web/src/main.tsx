@@ -10,6 +10,7 @@ import { persistOptions } from "./lib/query-persister";
 import { demarrerLangue } from "./lib/i18n/demarrer";
 import { reachability } from "./lib/reachability";
 import "./style.css";
+import "./modules/accueil/accueil.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {

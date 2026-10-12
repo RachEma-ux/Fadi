@@ -1,0 +1,44 @@
+.fadi-dialog.fadi-history-dialog { width: min(1180px, calc(100vw - 32px)); max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); padding: 0; color: var(--ink); background: var(--surface); }
+.fadi-history-dialog .fadi-dialog-head { padding: 18px 22px; border-bottom: 1px solid var(--line); }
+.fadi-history-dialog .fadi-dialog-head h2 { margin: 0; overflow-wrap: anywhere; }
+.fadi-history-dialog .fadi-dialog-head button { min-width: 44px; min-height: 44px; flex: 0 0 auto; }
+.fadi-history-body { padding: 18px 22px 24px; min-width: 0; }
+.fadi-history-body > p:first-child { margin-top: 0; }
+.fadi-history-project { font-size: 1.1rem; font-weight: 700; overflow-wrap: anywhere; }
+.fadi-history-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.fadi-history-actions button { min-height: 44px; }
+.fadi-history-actions button:disabled { opacity: .65; cursor: default; }
+.fadi-history-reading, .fadi-history-coverage { color: var(--muted); font-size: .9rem; }
+.fadi-history-reading p { margin: 6px 0; }
+.fadi-history-count { font-weight: 600; }
+.fadi-history-error { color: #8b251d; }
+.fadi-history-message { padding: 16px; border: 1px solid var(--line); background: var(--cream); border-radius: 8px; }
+.fadi-history-table-region { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; overscroll-behavior-x: contain; }
+.fadi-history-table { width: 100%; min-width: 880px; border-collapse: collapse; table-layout: fixed; font-size: .88rem; }
+.fadi-history-table th, .fadi-history-table td { padding: 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.fadi-history-table th { background: var(--cream); font-weight: 650; }
+.fadi-history-table th:first-child { width: 216px; }
+.fadi-history-table th:last-child { width: 32%; }
+.fadi-history-table th label, .fadi-history-table th > span { display: block; margin-bottom: 6px; }
+.fadi-history-table th:first-child label { margin: 6px 0 2px; font-size: .8rem; }
+.fadi-history-table input, .fadi-history-table select { display: block; width: 100%; max-width: 100%; min-width: 0; min-height: 44px; border: 1px solid #82998e; border-radius: 5px; background: var(--surface); color: var(--ink); padding: 7px; font: inherit; }
+.fadi-history-table tbody tr:last-child td { border-bottom: 0; }
+.fadi-history-table time { white-space: normal; }
+.fadi-history-detail { margin-top: 8px; }
+.fadi-history-detail summary, .fadi-history-coverage summary { min-height: 44px; padding: 10px 0; cursor: pointer; }
+.fadi-history-detail-text { white-space: pre-wrap; }
+.fadi-history-detail dl { margin: 10px 0; }
+.fadi-history-detail dt { font-weight: 600; }
+.fadi-history-detail dd { margin: 0 0 8px; }
+.fadi-history-detail a, .fadi-history-message a { display: inline-block; padding: 10px 0; color: var(--forest-900); }
+.fadi-history-coverage { margin-top: 18px; }
+.fadi-history-coverage p { margin: 8px 0; }
+.fadi-history-body :is(input, select, button, a, summary, [tabindex]):focus-visible { outline: 3px solid #1683df; outline-offset: 3px; }
+.fadi-history-table-region:focus-visible { outline: 3px solid #1683df; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .fadi-dialog.fadi-history-dialog { width: calc(100vw - 16px); max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }
+  .fadi-history-dialog .fadi-dialog-head { padding: 14px; align-items: flex-start; }
+  .fadi-history-dialog .fadi-dialog-head h2 { font-size: 1.2rem; }
+  .fadi-history-body { padding: 14px; }
+  .fadi-history-actions button { flex: 1 1 170px; }
+}
