@@ -103,12 +103,12 @@ export function DossierDashboard({ projectId, applicationHome = false }: { proje
         </div>
         <figure className="dossier-preview">
           {queries.preview.data?.svg ? <div className="dossier-preview-svg" role="img" aria-label="Aperçu conceptuel du modèle de ce dossier" dangerouslySetInnerHTML={{ __html: queries.preview.data.svg }} /> : <div className="dossier-preview-placeholder"><Icon name="cube" size={38} /><p>{queries.preview.data ? "Aucun modèle dessiné pour l’instant. L’aperçu apparaîtra après les premiers éléments dans l’Atelier." : resourceLabel(queries.preview, connected)}</p></div>}
-          <figcaption><span>Aperçu conceptuel</span>{queries.preview.data && <span>Généré le {dateLabel(queries.preview.data.generatedAt)} · cette date concerne uniquement l’aperçu.</span>}</figcaption>
+          <figcaption><span>Aperçu conceptuel</span>{queries.preview.data?.svg && <span>Généré le {dateLabel(queries.preview.data.generatedAt)} · cette date concerne uniquement l’aperçu.</span>}</figcaption>
         </figure>
         <ResourceNote query={queries.preview} connected={connected} onRetry={() => void queries.preview.refetch()} label="l’aperçu" />
         <dl className="dossier-facts">
-          <div><dt>Parcelle</dt><dd>{!queries.steps.data ? resourceLabel(queries.steps, connected) : area == null ? "Parcelle non renseignée" : `${Math.round(area).toLocaleString()} m²`}</dd></div>
-          <div><dt>{reference ? "Programme de référence" : "Programme cible"}</dt><dd>{programmeArea == null ? resourceLabel(queries.programme, connected) : `${Math.round(programmeArea).toLocaleString()} m²`}</dd>{reference && <small>Non enregistré</small>}</div>
+          <div><dt>Parcelle</dt><dd>{!queries.steps.data ? resourceLabel(queries.steps, connected) : area == null || area <= 0 ? "Parcelle non renseignée" : `${Math.round(area).toLocaleString()} m²`}</dd></div>
+          <div><dt>{reference ? "Programme de référence" : "Programme cible"}</dt><dd>{programmeArea == null ? resourceLabel(queries.programme, connected) : `${Math.round(programmeArea).toLocaleString()} m²`}{reference && <small>Non enregistré</small>}</dd></div>
           <div><dt>Parcours</dt><dd>{done === null ? resourceLabel(queries.steps, connected) : `${done} / 21 étapes`}</dd></div>
         </dl>
         <ResourceReadings queries={queries} connected={connected} />

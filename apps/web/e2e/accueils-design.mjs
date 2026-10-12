@@ -124,6 +124,8 @@ try {
   await page.waitForURL(`${BASE}${dossierPath(a.id)}`);
   await primary(a.id).getByRole("link", { name: "Commencer le Parcours", exact: true }).waitFor();
   check("dossier vierge confirmé : Commencer le Parcours mène à 01", (await primary(a.id).getByRole("link").getAttribute("href")) === `${dossierPath(a.id)}?module=parcours&etape=1`);
+  check("dossier vierge : parcelle non renseignée, sans surface zéro présentée comme un relevé", (await overview(a.id).locator(".dossier-facts > div").first().textContent()).includes("Parcelle non renseignée"));
+  check("aperçu absent : aucune date de génération d’image annoncée", !(await overview(a.id).locator(".dossier-preview figcaption").textContent()).includes("Généré le"));
   check("accueil du projet : identité explicite, sans salut de l’application", (await page.locator(".fadi-topbar-title h1").textContent()).includes(a.code) && !(await page.locator('[data-home="project"]').textContent()).includes("Bienvenue dans Fadi"));
   check("Accueil n’est pas marqué actif sur le dossier", await page.locator('.app-nav a[href="/accueil"]').getAttribute("aria-current") !== "page");
 
