@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, ROLE_LABEL } from "../lib/api";
@@ -19,6 +19,10 @@ import { ProgrammeRepartition, ProgrammeTransfer } from "../modules/programmatio
 import { ParcelleTool } from "../modules/projets-sources/ParcelleTool";
 import { ProjectSources } from "../modules/projets-sources/StepSources";
 import { LOCALE } from "../lib/i18n";
+import { useAuth } from "../lib/auth-context";
+import { rememberDossier } from "../lib/last-dossier";
+import { DossierDashboard } from "../modules/accueil/DossierDashboard";
+import { denied } from "../modules/accueil/dossier-data";
 
 // Le moteur de l'Atelier (scripts, markup, feuille de style) n'est chargé qu'à la première ouverture de l'Atelier.
 // L'Atelier architectural (modèle typé, lots 3a–4) : three.js n'est chargé qu'à l'ouverture de la vue 3D.
@@ -29,13 +33,14 @@ export function ProjectShell() {
   if (!projectId) throw new Error("projectId manquant dans l'URL");
 
   // Relu toutes les minutes : une réservation d'édition posée ou rendue par quelqu'un d'autre se voit sans recharger.
-  const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), refetchInterval: 60_000 });
+  const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), refetchInterval: 60_000, staleTime: 30_000, retry: (count, error) => !denied(error) && count < 1 });
   const [lockMessage, setLockMessage] = useState<string | null>(null);
   const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
   // Empreinte du modèle dessiné (détail technique, montré ici plutôt que sur l'accueil) : même lecture que l'aperçu conceptuel.
-  const previewQuery = useQuery({ queryKey: ["concept-preview", projectId, projectQuery.data?.updatedAt], queryFn: () => api.getConceptPreview(projectId), enabled: !!projectQuery.data, staleTime: 5 * 60_000 });
+  const previewQuery = useQuery({ queryKey: ["concept-preview", projectId], queryFn: () => api.getConceptPreview(projectId), enabled: !!projectQuery.data && !denied(projectQuery.error), staleTime: 5 * 60_000 });
   const online = useOnline();
   const access = useProjectAccess(projectId);
+  const { user } = useAuth();
   // Un message porté par la navigation (copie de travail créée, projet importé…) : le Parcours affiche le sien, les autres modules celui-ci.
   const location = useLocation();
   const navigate = useNavigate();
@@ -45,7 +50,17 @@ export function ProjectShell() {
   // entre modules (« Comparer au modèle dessiné », « Ouvrir l’Atelier »…) et le rechargement le respectent.
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedModule = searchParams.get("module");
-  const activeModule = requestedModule && MODULES.some((m) => m.id === requestedModule) ? requestedModule : "parcours";
+  const activeModule = requestedModule && MODULES.some((m) => m.id === requestedModule) ? requestedModule : searchParams.has("etape") ? "parcours" : "accueil";
+  const requestedStep = Number(searchParams.get("etape"));
+  const requestedReview = activeModule === "parcours" && requestedStep === 11 && searchParams.get("bilan") === "1";
+  const recordedEntry = useRef<string | null>(null);
+  useEffect(() => {
+    if (user && projectQuery.data?.id === projectId && !denied(projectQuery.error) && recordedEntry.current !== `${user.id}:${location.key}`) {
+      recordedEntry.current = `${user.id}:${location.key}`;
+      const currentWork = activeModule === "accueil" ? undefined : requestedReview ? "review" : activeModule === "programmation" ? "programme" : activeModule === "atelier" ? "atelier" : "parcours";
+      rememberDossier(user.id, projectId, activeModule === "parcours" ? requestedStep : undefined, currentWork);
+    }
+  }, [user?.id, projectId, projectQuery.data?.id, projectQuery.error, activeModule, requestedStep, requestedReview, location.key]);
   // Module Atelier : page de l'Atelier Architectural (enveloppe effacée), comme aux étapes 10 / 11.
   useImmersive(activeModule === "atelier");
   const programmeView = searchParams.get("vue");
@@ -55,10 +70,14 @@ export function ProjectShell() {
     setSearchParams(next);
   }
 
+  if (activeModule === "accueil") {
+    return <main className="fadi-home" data-home="project"><DossierDashboard key={projectId} projectId={projectId} /></main>;
+  }
+
   if (projectQuery.isLoading) {
     return <p role="status">Chargement du projet…</p>;
   }
-  if (!projectQuery.data) {
+  if (!projectQuery.data || denied(projectQuery.error)) {
     return (
       <main>
         <p role="alert">Projet introuvable, ou vous n'y avez pas accès.</p>
@@ -73,9 +92,6 @@ export function ProjectShell() {
   return (
     <div className="project-shell">
       <header className="project-header">
-        <h1>
-          <span translate="no">{project.code} — {project.name}</span>
-        </h1>
         <span className="project-header-meta">
           <span title={previewQuery.data?.nativeHash ? `Empreinte du modèle dessiné (révision ${project.modelRevision})` : undefined}>
             Révision du modèle : {project.modelRevision}
@@ -118,6 +134,7 @@ export function ProjectShell() {
       <ConflictPanel projectId={projectId} />
 
       <nav aria-label="Modules du projet" className="module-nav">
+        <button type="button" onClick={() => setSearchParams(new URLSearchParams())}>Accueil du projet</button>
         {MODULES.map((m) => (
           <button key={m.id} type="button" aria-current={m.id === activeModule ? "page" : undefined} onClick={() => selectModule(m.id)}>
             {m.label}

@@ -29,7 +29,7 @@ import {
   type ModeleAtelier,
 } from "@parcours/atelier-model";
 import { ApiError, api, type AtelierJournalEntry } from "../../../lib/api";
-import { localStore, type LotEntry } from "../../../lib/local-store";
+import { localStore, queuePersistenceStore, type LotEntry } from "../../../lib/local-store";
 import { reachability } from "../../../lib/reachability";
 
 export type EtatChargement = "initial" | "chargement" | "pret" | "aucun-modele" | "erreur";
@@ -76,6 +76,9 @@ export class AtelierClient {
   private relancer = false;
   /** Lots retirés de la file par « Annuler » avant d'avoir été envoyés : « Rétablir » les rejoue (pile vidée par toute nouvelle action). */
   private refaireLocal: { commands: Commande[]; label: string }[] = [];
+  /** Une reprise échouée retrouve son conflit et sa saisie, sans reprise automatique implicite. */
+  private readonly conflitsEnReprise = new Map<string, LotEnAttente>();
+  private repriseEnCours = false;
 
   constructor(
     public readonly projectId: string,
@@ -90,6 +93,7 @@ export class AtelierClient {
     return () => this.ecouteurs.delete(fn);
   };
   getSnapshot = (): InstantaneClient => this.instantane;
+  setReadOnly(readOnly: boolean): void { if (this.instantane.readOnly !== readOnly) this.emettre({ readOnly }); }
 
   private emettre(patch: Partial<InstantaneClient>): void {
     this.instantane = { ...this.instantane, ...patch };
@@ -99,7 +103,9 @@ export class AtelierClient {
   // --- Cycle de vie ---
   async demarrer(): Promise<void> {
     this.emettre({ chargement: "chargement", erreur: null });
-    const lotsLocaux = (await localStore.lots(this.projectId)).map(depuisEntree);
+    let lotsLocaux: LotEnAttente[];
+    try { lotsLocaux = (await localStore.lots(this.projectId)).map(depuisEntree); }
+    catch { lotsLocaux = localStore.memoryLots(this.projectId).map(depuisEntree); }
     this.ordre = lotsLocaux.length;
     try {
       const reponse = await api.getAtelierModel(this.projectId);
@@ -152,7 +158,8 @@ export class AtelierClient {
     const r = appliquerLot(this.instantane.etat, enveloppe);
     const lot: LotEnAttente = { enveloppe, etat: "local", creeA: new Date().toISOString(), detail: null };
     this.emettre({ etat: r.etat, revision: this.instantane.revision + 1, lots: [...this.instantane.lots, lot], dernierEffets: r.effets });
-    await localStore.putLot(versEntree(this.projectId, lot, this.ordre++));
+    try { await localStore.putLot(versEntree(this.projectId, lot, this.ordre++)); }
+    catch { /* Le lot et l'aperçu restent en mémoire ; queuePersistenceStore expose l'échec et bloque l'envoi. */ }
     void this.envoyer();
     return { effets: r.effets, requestId: enveloppe.requestId };
   }
@@ -177,7 +184,7 @@ export class AtelierClient {
       const id = dernierLocal.enveloppe.requestId;
       this.emettre({ lots: this.instantane.lots.filter((l) => l.enveloppe.requestId !== id) });
       this.refaireLocal.push({ commands: dernierLocal.enveloppe.commands, label: dernierLocal.enveloppe.label });
-      await localStore.removeLot(this.projectId, id);
+      await this.retirerLotLocal(id);
       const base = await this.etatServeurLocal();
       const rejeu = rejouerLots(base, this.instantane.revisionServeur, this.instantane.lots);
       this.emettre({ etat: rejeu.etat, revision: this.instantane.revisionServeur + rejeu.rejoues.length, lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
@@ -234,10 +241,12 @@ export class AtelierClient {
 
   /** Décision explicite sur un lot en conflit ou refusé : le garder en le rejouant, ou l'abandonner. */
   async decider(requestId: string, decision: "rejouer" | "abandonner"): Promise<void> {
+    if (this.repriseEnCours || this.instantane.envoiEnCours) throw new ErreurCommande("precondition", "", "Attendez le résultat de l’opération en cours dans ce dossier.");
     const lot = this.instantane.lots.find((l) => l.enveloppe.requestId === requestId);
     if (!lot) return;
     if (decision === "abandonner") {
-      await localStore.removeLot(this.projectId, requestId);
+      this.conflitsEnReprise.delete(requestId);
+      await this.retirerLotLocal(requestId);
       const base = await this.etatServeurLocal();
       const restants = this.instantane.lots.filter((l) => l.enveloppe.requestId !== requestId);
       const rejeu = rejouerLots(base, this.instantane.revisionServeur, restants);
@@ -245,12 +254,68 @@ export class AtelierClient {
       await this.persisterLots();
       return;
     }
+    if (this.instantane.readOnly) throw new ErreurCommande("precondition", "", "La reprise exige un accès en écriture à ce projet.");
+    if (reachability.get() !== "reachable" || (typeof navigator !== "undefined" && !navigator.onLine)) throw new ErreurCommande("precondition", "", "Rétablissez la connexion avant de reprendre ce conflit.");
+    const persistence = queuePersistenceStore.get(this.projectId);
+    if (persistence.read !== "ready" || persistence.error || persistence.unsaved > 0) throw new ErreurCommande("precondition", "", "Réessayez la sauvegarde locale avant de reprendre ce conflit.");
+    // Une reprise explicite se fonde sur une lecture réussie du serveur.
+    // En cas d'erreur, le conflit d'origine n'a pas encore été modifié.
+    this.repriseEnCours = true;
+    this.emettre({ envoiEnCours: true });
+    try {
+      const actuel = await api.getAtelierModel(this.projectId);
+      // Les droits ou la connexion peuvent avoir changé pendant cette lecture.
+      if (this.instantane.readOnly || reachability.get() !== "reachable" || (typeof navigator !== "undefined" && !navigator.onLine)) throw new ErreurCommande("precondition", "", "La reprise exige un accès en écriture et une connexion au serveur.");
+      const base = actuel.modele;
+      this.etatServeurCache = base;
+      this.emettre({ revisionServeur: actuel.revision, nativeId: actuel.nativeId });
+      this.conflitsEnReprise.set(requestId, lot);
+      const restants = this.instantane.lots.map((l) => (l.enveloppe.requestId === requestId ? { ...l, etat: "local" as const, detail: null } : l));
+      const rejeu = rejouerLots(base, this.instantane.revisionServeur, restants);
+      this.emettre({ etat: rejeu.etat, revision: this.instantane.revisionServeur + rejeu.rejoues.length, lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
+      await this.persisterLots();
+      if (queuePersistenceStore.get(this.projectId).error || queuePersistenceStore.get(this.projectId).unsaved > 0) {
+        this.restaurerReprise(requestId);
+        await this.persisterLots();
+        throw new ErreurCommande("precondition", "", "Réessayez la sauvegarde locale avant de reprendre ce conflit.");
+      }
+      await this.envoyer();
+      // Si l'envoi n'a pas pu partir, la décision ne devient pas une reprise automatique ultérieure.
+      if (this.conflitsEnReprise.has(requestId)) {
+        this.restaurerReprise(requestId);
+        await this.persisterLots();
+      }
+    } catch (error) {
+      if (this.restaurerReprise(requestId)) await this.persisterLots();
+      throw error;
+    } finally {
+      this.repriseEnCours = false;
+      this.emettre({ envoiEnCours: false });
+    }
+  }
+
+  private restaurerReprise(requestId: string): boolean {
+    const original = this.conflitsEnReprise.get(requestId);
+    if (!original) return false;
+    this.majLot(requestId, { ...original, detail: { ...original.detail, message: "La reprise a échoué. Le conflit et votre saisie restent conservés ; réessayez après le rétablissement du service." } });
+    this.conflitsEnReprise.delete(requestId);
+    // Le brouillon en conflit n'est plus appliqué à l'aperçu comme s'il avait été accepté.
+    if (this.etatServeurCache) {
+      const rejeu = rejouerLots(this.etatServeurCache, this.instantane.revisionServeur, this.instantane.lots);
+      this.emettre({ etat: rejeu.etat, revision: this.instantane.revisionServeur + rejeu.rejoues.length, lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((item) => item.lot)] });
+    }
+    return true;
+  }
+
+  /** Réessaie la même file locale, sans refaire les commandes ni changer leurs identifiants. */
+  async reessayerSauvegarde(): Promise<void> {
+    const persisted = (await localStore.retryLots(this.projectId)).map(depuisEntree);
+    const merged = new Map(persisted.map((lot) => [lot.enveloppe.requestId, lot]));
+    for (const lot of this.instantane.lots) merged.set(lot.enveloppe.requestId, lot);
     const base = await this.etatServeurLocal();
-    const restants = this.instantane.lots.map((l) => (l.enveloppe.requestId === requestId ? { ...l, etat: "local" as const, detail: null } : l));
-    const rejeu = rejouerLots(base, this.instantane.revisionServeur, restants);
-    this.emettre({ etat: rejeu.etat, revision: this.instantane.revisionServeur + rejeu.rejoues.length, lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((i) => i.lot)] });
+    const rejeu = rejouerLots(base, this.instantane.revisionServeur, [...merged.values()]);
+    this.emettre({ etat: rejeu.etat, revision: this.instantane.revisionServeur + rejeu.rejoues.length, lots: [...rejeu.rejoues, ...rejeu.incompatibles.map((item) => item.lot)] });
     await this.persisterLots();
-    void this.envoyer();
   }
 
   // --- Synchronisation ---
@@ -272,8 +337,13 @@ export class AtelierClient {
 
   private async persisterLots(): Promise<void> {
     const lots = this.instantane.lots;
-    await Promise.all(lots.map((l, i) => localStore.putLot(versEntree(this.projectId, l, i))));
+    await Promise.allSettled(lots.map((l, i) => localStore.putLot(versEntree(this.projectId, l, i))));
     this.ordre = lots.length;
+  }
+
+  private async retirerLotLocal(requestId: string): Promise<void> {
+    try { await localStore.removeLot(this.projectId, requestId); }
+    catch { /* Le retrait reste à réessayer ; un reçu serveur ne devient pas un échec métier. */ }
   }
 
   async envoyer(): Promise<void> {
@@ -289,17 +359,21 @@ export class AtelierClient {
       } while (this.relancer && reachability.get() === "reachable");
     })().finally(() => {
       this.envoi = null;
+      // Un réveil peut survenir après le dernier test de la boucle mais avant ce nettoyage.
+      if (this.relancer && reachability.get() === "reachable") return this.envoyer();
     });
     return this.envoi;
   }
 
   private async envoyerSequence(): Promise<void> {
-    if (reachability.get() !== "reachable" || this.instantane.readOnly) return;
+    const persistence = queuePersistenceStore.get(this.projectId);
+    if (reachability.get() !== "reachable" || (typeof navigator !== "undefined" && !navigator.onLine) || this.instantane.readOnly || persistence.read !== "ready" || persistence.error || persistence.unsaved > 0 || (this.repriseEnCours && this.conflitsEnReprise.size === 0)) return;
     this.emettre({ envoiEnCours: true });
     let valides = 0;
     try {
       let garde = 0;
       while (garde++ < 1000) {
+        if (this.instantane.readOnly || reachability.get() !== "reachable" || (typeof navigator !== "undefined" && !navigator.onLine) || queuePersistenceStore.get(this.projectId).error || queuePersistenceStore.get(this.projectId).unsaved > 0) break;
         const lot = this.instantane.lots.find((l) => l.etat === "local");
         if (!lot) break;
         this.majLot(lot.enveloppe.requestId, { etat: "synchronisation" });
@@ -308,7 +382,8 @@ export class AtelierClient {
           // Charge utile : une commande `solideExact.creer` part sans sa géométrie (le serveur la recalcule et n'en lit
           // que l'empreinte) ; le lot local, lui, reste complet (réducteur, cache serveur).
           const reponse = await api.postAtelierCommands(this.projectId, { ...enveloppe, commands: enveloppe.commands.map(allegerCommandeExacte) });
-          await localStore.removeLot(this.projectId, lot.enveloppe.requestId);
+          await this.retirerLotLocal(lot.enveloppe.requestId);
+          this.conflitsEnReprise.delete(lot.enveloppe.requestId);
           // L'état serveur local avance du lot validé : on l'applique au cache serveur.
           const base = await this.etatServeurLocal();
           try {
@@ -328,6 +403,7 @@ export class AtelierClient {
               await this.relireServeur();
               continue;
             }
+            this.conflitsEnReprise.delete(lot.enveloppe.requestId);
             this.majLot(lot.enveloppe.requestId, { etat: "conflit", detail: (err.body as Record<string, unknown>) ?? { motif: err.serverMessage ?? "conflit" } });
             await this.relireServeur();
             continue;
@@ -335,12 +411,13 @@ export class AtelierClient {
           // 404 d'une source de référence externe (DA-05-11) : refus définitif, pas une panne réseau.
           const sourceInconnue = err instanceof ApiError && err.status === 404 && ["source-inconnue", "publication-inconnue"].includes(String((err.body as { erreur?: string } | null)?.erreur));
           if (err instanceof ApiError && (err.status === 400 || err.status === 403 || err.status === 423 || sourceInconnue)) {
+            this.conflitsEnReprise.delete(lot.enveloppe.requestId);
             this.majLot(lot.enveloppe.requestId, { etat: "refuse", detail: (err.body as Record<string, unknown>) ?? { message: err.serverMessage ?? `refusé (${err.status})` } });
             await this.relireServeur();
             continue;
           }
           // Réseau : le lot repasse « local » et attend la joignabilité.
-          this.majLot(lot.enveloppe.requestId, { etat: "local" });
+          if (!this.restaurerReprise(lot.enveloppe.requestId)) this.majLot(lot.enveloppe.requestId, { etat: "local" });
           break;
         }
       }
@@ -348,7 +425,7 @@ export class AtelierClient {
       await this.persisterLots();
       // Le journal suit les lots validés (annuler / rétablir s'y réfèrent).
       if (valides > 0) await this.chargerJournal();
-      this.emettre({ envoiEnCours: false });
+      this.emettre({ envoiEnCours: this.repriseEnCours });
     }
   }
 
@@ -384,7 +461,7 @@ export class AtelierClient {
       const j = await api.getAtelierJournal(this.projectId, Math.max(0, plusAncien - 50));
       const valides = new Set(j.entrees.map((e) => e.requestId));
       const restants = lots.filter((l) => !valides.has(l.enveloppe.requestId));
-      for (const l of lots) if (valides.has(l.enveloppe.requestId)) await localStore.removeLot(this.projectId, l.enveloppe.requestId);
+      for (const l of lots) if (valides.has(l.enveloppe.requestId)) await this.retirerLotLocal(l.enveloppe.requestId);
       return restants;
     } catch {
       return lots; // journal illisible : rejeu ordinaire
@@ -430,6 +507,6 @@ export function atelierClient(projectId: string, options: { readOnly?: boolean }
     c = new AtelierClient(projectId, options);
     clients.set(projectId, c);
     c.demarrage = c.demarrer();
-  }
+  } else if (options.readOnly !== undefined) c.setReadOnly(options.readOnly);
   return c;
 }

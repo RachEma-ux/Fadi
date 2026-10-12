@@ -1,155 +1,114 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { api, type CurrentUser } from "../lib/api";
+import { Link, NavLink, Outlet, useLocation, useMatch, useNavigate } from "react-router-dom";
+import { api } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
-import { NotificationBell } from "../components/NotificationBell";
-import { Icon, type IconName } from "../components/Icon";
-import { ChoixLangue } from "../components/ChoixLangue";
+import { useLastDossier } from "../lib/last-dossier";
+import { WorkspaceNavigation } from "../lib/workspace-navigation";
+import { Icon } from "../components/Icon";
+import { initialsFrom, shownName } from "../lib/user-display";
+import { HomeTopbar } from "../modules/accueil/HomeTopbar";
+import { denied } from "../modules/accueil/dossier-data";
 
-/** Initiales pour l'avatar : du nom affiché s'il est saisi (deux premiers mots), sinon de l'adresse (deux segments, ou deux lettres). */
-export function initialsFrom(user: Pick<CurrentUser, "email" | "displayName">): string {
-  const name = user.displayName?.trim();
-  if (name) {
-    const words = name.split(/\s+/).filter(Boolean);
-    const letters = words.length >= 2 ? [words[0]?.[0], words[1]?.[0]] : [name[0], name[1]];
-    return letters.filter(Boolean).join("").toUpperCase();
-  }
-  const local = user.email.split("@")[0] ?? user.email;
-  const parts = local.split(/[._-]+/).filter(Boolean);
-  const letters = parts.length >= 2 ? [parts[0]?.[0], parts[1]?.[0]] : [local[0], local[1]];
-  return letters.filter(Boolean).join("").toUpperCase();
-}
-
-/** Le nom montré dans la barre latérale et l'accueil : le nom affiché saisi, sinon ce que la personne a tapé avant le premier chiffre ou séparateur de son adresse (jamais un prénom inventé). */
-export function shownName(user: Pick<CurrentUser, "email" | "displayName">): string {
-  const name = user.displayName?.trim();
-  if (name) return name;
-  const local = user.email.split("@")[0] ?? user.email;
-  const alpha = local.match(/^[a-zA-Z]+/)?.[0] ?? local;
-  return alpha.charAt(0).toUpperCase() + alpha.slice(1);
-}
-
-const NAV: { to: string; label: string; icon: IconName; end?: boolean; module?: string }[] = [
-  { to: "/accueil", label: "Accueil", icon: "home" },
-  { to: "/projets", label: "Mes projets", icon: "folder", end: true },
-  { to: "", label: "Parcours", icon: "route", module: "parcours" },
-  { to: "", label: "Atelier", icon: "atelier", module: "atelier" },
-  { to: "", label: "Documents", icon: "file", module: "documents" },
-  { to: "/bibliotheque/batiments", label: "Bibliothèque", icon: "book" },
-];
+export { initialsFrom, shownName } from "../lib/user-display";
 
 export function AppShell() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+  const projectMatch = useMatch("/projets/:projectId");
+  const projectId = projectMatch?.params.projectId;
+  const last = useLastDossier(user?.id);
+  const [expanded, setExpanded] = useState(false);
+  const [projectsOpen, setProjectsOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ left: 68, top: 126 });
+  const projectButton = useRef<HTMLButtonElement>(null);
+  const flyout = useRef<HTMLDivElement>(null);
+  const focusedProjectItem = useRef<HTMLElement | null>(null);
+  const account = useRef<HTMLDivElement>(null);
+  const projects = useQuery({ queryKey: ["projects"], queryFn: api.listProjects, staleTime: 30_000 });
+  const collaborationActive = location.pathname === "/collaboration" || !!projectId && new URLSearchParams(location.search).get("module") === "collaboration";
 
-  // La liste des projets est réutilisée telle quelle par AccueilPage et
-  // ProjectsPage (même clé de requête "projects") : un seul aller réseau,
-  // mis en cache par TanStack Query, pas une resynchronisation séparée ici.
-  const projectsQuery = useQuery({ queryKey: ["projects"], queryFn: api.listProjects });
-  const mostRecent = [...(projectsQuery.data ?? [])].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
-
-  function moduleLink(moduleId: string): string {
-    return mostRecent ? `/projets/${mostRecent.id}?module=${moduleId}` : "/projets";
+  function openProjects() {
+    if (window.matchMedia("(max-width: 700px)").matches) setExpanded(false);
+    setAccountOpen(false);
+    setProjectsOpen(true);
   }
-
-  function onSearchSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    navigate(query.trim() ? `/projets?q=${encodeURIComponent(query.trim())}` : "/projets");
+  function closeProjects(restore = true) {
+    setProjectsOpen(false);
+    focusedProjectItem.current = null;
+    if (restore) projectButton.current?.focus();
   }
-
-  return (
-    <div className="app-shell">
-      <aside className="app-sidebar">
-        <div className="app-brand">
-          <span className="app-brand-mark" aria-hidden="true">
-            <svg width="34" height="34" viewBox="0 0 28 28" fill="none">
-              <path d="M14 2 26 9v10L14 26 2 19V9Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-              <path d="M14 2v24M2 9l12 7 12-7" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-            </svg>
-          </span>
-          <span className="app-brand-text">
-            <span translate="no">Parcours</span>
-            <small>Architecture &amp; projets</small>
-          </span>
-        </div>
-
-        <nav aria-label="Navigation principale" className="app-nav">
-          {NAV.map((item) => (
-            <NavLink key={item.label} to={item.module ? moduleLink(item.module) : item.to} end={item.end} className={({ isActive }) => (isActive ? "active" : undefined)}>
-              <Icon name={item.icon} />
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="app-nav-secondary">
-          <NavLink to="/harmonie" className={({ isActive }) => (isActive ? "active" : undefined)}>
-            <span className="sparkle" aria-hidden="true">
-              <Icon name="sparkle" />
-            </span>
-            <span>
-              Harmonie
-              <small>Votre assistant de projet</small>
-            </span>
-          </NavLink>
-          <NavLink to="/parametres" className={({ isActive }) => (isActive ? "active" : undefined)}>
-            <Icon name="gear" />
-            <span>Paramètres</span>
-          </NavLink>
-        </div>
-
-        <div className="app-user">
-          <button type="button" onClick={() => setMenuOpen((o) => !o)} aria-haspopup="true" aria-expanded={menuOpen} aria-label={user ? `Compte ${user.email}` : "Compte"}>
-            <span className="avatar" aria-hidden="true">
-              {user ? initialsFrom(user) : ""}
-            </span>
-            <span className="app-user-name">
-              {user ? shownName(user) : ""}
-              <small className="app-user-email">{user?.email}</small>
-            </span>
+  useEffect(() => { setProjectsOpen(false); setAccountOpen(false); }, [location.pathname, location.search]);
+  useLayoutEffect(() => {
+    if (!projectsOpen) return;
+    const position = () => {
+      const bounds = projectButton.current?.getBoundingClientRect();
+      if (bounds) setMenuPosition({ left: bounds.right + 10, top: Math.max(12, Math.min(bounds.top, window.innerHeight - 300)) });
+    };
+    position();
+    window.addEventListener("resize", position);
+    window.addEventListener("scroll", position, true);
+    flyout.current?.querySelector<HTMLElement>('[aria-current="page"], [role="menuitem"]')?.focus();
+    return () => { window.removeEventListener("resize", position); window.removeEventListener("scroll", position, true); };
+  }, [projectsOpen, expanded]);
+  useLayoutEffect(() => {
+    // A refreshed/revoked list must not leave keyboard focus on a removed link.
+    if (projectsOpen && focusedProjectItem.current && !focusedProjectItem.current.isConnected) closeProjects();
+  }, [projectsOpen, projects.data, projects.error]);
+  useEffect(() => {
+    if (!projectsOpen && !accountOpen) return;
+    const outside = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!flyout.current?.contains(target) && !projectButton.current?.contains(target)) setProjectsOpen(false);
+      if (!account.current?.contains(target)) setAccountOpen(false);
+    };
+    document.addEventListener("pointerdown", outside);
+    return () => document.removeEventListener("pointerdown", outside);
+  }, [projectsOpen, accountOpen]);
+  function menuKeys(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape" || event.key === "ArrowLeft") { event.preventDefault(); closeProjects(); return; }
+    if (event.key === "Tab") { event.preventDefault(); closeProjects(); if (!event.shiftKey) (projectButton.current?.nextElementSibling as HTMLElement | null)?.focus(); return; }
+    const items = [...(flyout.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
+    const index = items.indexOf(document.activeElement as HTMLElement);
+    const next = event.key === "ArrowDown" ? (index + 1) % items.length : event.key === "ArrowUp" ? (index - 1 + items.length) % items.length : event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : -1;
+    if (next >= 0) { event.preventDefault(); items[next]?.focus(); }
+  }
+  const collaborationLink = projectId || last?.projectId ? `/projets/${projectId ?? last?.projectId}?module=collaboration` : "/collaboration";
+  return <WorkspaceNavigation.Provider value={{ openProjects }}>
+    <div className="app-shell fadi-shell" data-sidebar={expanded ? "expanded" : "collapsed"}>
+      <a className="fadi-skip" href="#workspace-content">Aller au contenu</a>
+      <aside className="app-sidebar" aria-label="Barre latérale">
+        <Link to="/accueil" className="app-brand" aria-label="Fadi · Accueil" title="Fadi · Accueil"><Icon name="home" size={28} /><span className="sidebar-label app-brand-text" translate="no">Fadi</span></Link>
+        <button type="button" className="sidebar-toggle" aria-expanded={expanded} aria-controls="workspace-navigation" aria-label={expanded ? "Replier la barre latérale" : "Déplier la barre latérale"} title={expanded ? "Replier la barre latérale" : "Déplier la barre latérale"} onClick={() => { setExpanded(!expanded); closeProjects(false); }}>
+          <Icon name="chevron-right" size={18} /><span className="sidebar-label">Replier</span>
+        </button>
+        <nav id="workspace-navigation" aria-label="Navigation principale" className="app-nav">
+          <NavLink to="/accueil" className={({ isActive }) => isActive ? "active" : undefined} title="Accueil" aria-label="Accueil"><Icon name="home" /><span className="sidebar-label">Accueil</span></NavLink>
+          <button ref={projectButton} type="button" className={`sidebar-projects${location.pathname.startsWith("/projets") && !collaborationActive ? " active" : ""}`} aria-label="Projets" title="Projets" aria-haspopup="menu" aria-expanded={projectsOpen} aria-controls={projectsOpen ? "projects-menu" : undefined} onClick={() => projectsOpen ? closeProjects() : openProjects()} onKeyDown={(e) => { if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); openProjects(); } }}>
+            <Icon name="folder" /><span className="sidebar-label">Projets</span><Icon name="chevron-right" size={14} className="sidebar-label" />
           </button>
-          {menuOpen && (
-            <div role="menu" className="app-user-menu">
-              <button type="button" role="menuitem" onClick={() => navigate("/parametres")}>
-                Paramètres du compte
-              </button>
-              <button type="button" role="menuitem" onClick={() => void logout()}>
-                Se déconnecter
-              </button>
-            </div>
-          )}
+          <Link to={collaborationLink} className={collaborationActive ? "active" : undefined} aria-current={collaborationActive ? "page" : undefined} title="Collaboration" aria-label="Collaboration"><Icon name="people" /><span className="sidebar-label">Collaboration</span></Link>
+        </nav>
+        <div className="app-nav-secondary">
+          <NavLink to="/bibliotheque/batiments" title="Bibliothèque" aria-label="Bibliothèque" className={({ isActive }) => isActive ? "active" : undefined}><Icon name="book" /><span className="sidebar-label">Bibliothèque</span></NavLink>
+          <NavLink to="/parametres" title="Paramètres" aria-label="Paramètres" className={({ isActive }) => isActive ? "active" : undefined}><Icon name="gear" /><span className="sidebar-label">Paramètres</span></NavLink>
+        </div>
+        <div className="app-user" ref={account} onKeyDown={(e) => { if (e.key === "Escape") { setAccountOpen(false); account.current?.querySelector("button")?.focus(); } }}>
+          <button type="button" title={user ? shownName(user) : "Compte"} aria-label="Compte" aria-expanded={accountOpen} onClick={() => { if (window.matchMedia("(max-width: 700px)").matches) setExpanded(false); setAccountOpen(!accountOpen); setProjectsOpen(false); }}><span className="avatar" aria-hidden="true">{user ? initialsFrom(user) : ""}</span><span className="sidebar-label app-user-name" translate="no">{user ? shownName(user) : ""}</span></button>
+          {accountOpen && <div className="app-user-menu"><button type="button" onClick={() => navigate("/parametres")}>Paramètres du compte</button><button type="button" onClick={() => void logout()}>Se déconnecter</button></div>}
         </div>
       </aside>
-
-      <div className="app-main">
-        <header className="app-topbar">
-          <span className="app-topbar-title">Espace de travail</span>
-          <form role="search" onSubmit={onSearchSubmit}>
-            <label htmlFor="global-search" className="sr-only">
-              Rechercher un projet
-            </label>
-            <span className="app-search-icon" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                <circle cx="11" cy="11" r="7" />
-                <path d="m20 20-3.5-3.5" />
-              </svg>
-            </span>
-            <input id="global-search" type="search" placeholder="Rechercher un projet, un document…" value={query} onChange={(e) => setQuery(e.target.value)} />
-          </form>
-          <div className="app-topbar-right">
-            <ChoixLangue />
-            <NotificationBell />
-            <button type="button" className="avatar app-topbar-avatar" aria-label="Paramètres du compte" onClick={() => navigate("/parametres")}>
-              {user ? initialsFrom(user) : ""}
-            </button>
-          </div>
-        </header>
-
-        <Outlet />
-      </div>
+      {projectsOpen && <div id="projects-menu" className="projects-flyout" role="menu" aria-label="Projets" ref={flyout} style={{ left: menuPosition.left, top: menuPosition.top, maxWidth: `calc(100vw - ${menuPosition.left + 10}px)`, maxHeight: `calc(100dvh - ${menuPosition.top + 12}px)` }} onKeyDown={menuKeys} onFocusCapture={(event) => { focusedProjectItem.current = event.target.closest<HTMLElement>('[role="menuitem"]'); }}>
+        <p className="projects-flyout-title">Choisir un projet</p>
+        {projects.isPending && <p role="status">{projects.fetchStatus === "paused" ? "En attente de connexion" : "Chargement des projets…"}</p>}
+        {projects.isError && <><p role="alert">Impossible d’actualiser les projets.</p><button role="menuitem" type="button" onClick={() => void projects.refetch()}>Réessayer</button></>}
+        {projects.data?.length === 0 && <p>Aucun projet pour l’instant.</p>}
+        {!denied(projects.error) && projects.data?.map((p) => <Link key={p.id} role="menuitem" to={`/projets/${p.id}`} aria-current={projectId === p.id ? "page" : undefined} className="project-menu-item"><Icon name="folder" size={18} /><span translate="no"><strong>{p.code}</strong><span>{p.name}</span></span>{projectId === p.id && <Icon name="check" size={18} />}</Link>)}
+        <Link role="menuitem" className="projects-flyout-all" to="/projets"><Icon name="plus" size={18} />Tous les projets / Créer un projet</Link>
+      </div>}
+      <div className="app-main"><HomeTopbar projectId={projectId} /><div id="workspace-content" tabIndex={-1}><Outlet /></div></div>
     </div>
-  );
+  </WorkspaceNavigation.Provider>;
 }

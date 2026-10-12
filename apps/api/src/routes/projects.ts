@@ -24,9 +24,12 @@ import { membersRouter, ownerEmailOf } from "./members.js";
 import { lockRouter } from "./lock.js";
 import { archiveHash, recordProducedDocument } from "../lib/documents.js";
 import { loadStepContext } from "../lib/step-context.js";
+import { historyRouter } from "./history.js";
 
 export const projectsRouter = Router();
 projectsRouter.use(requireAuth);
+// L'historique de la plateforme doit précéder la route dynamique /:projectId.
+projectsRouter.use(historyRouter);
 
 const codePattern = /^[A-Za-z0-9._-]{1,64}$/;
 

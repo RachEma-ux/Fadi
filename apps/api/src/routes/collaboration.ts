@@ -17,26 +17,19 @@ import { and, asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { PARCOURS_STEPS } from "../data/parcours.js";
 import { db } from "../db/client.js";
-import { atelierCommands, parcels, producedDocuments, programmeCases, projectComments } from "../db/schema.js";
+import { atelierCommands, parcels, producedDocuments, programmeCases, projectComments, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { activeLock, projectOr404, type OwnedProject } from "../lib/owned-project.js";
 import { loadStepRows } from "../lib/step-rows.js";
 import { listMembers, ownerEmailOf } from "./members.js";
 import { contentOf } from "../lib/step-context.js";
+import { HISTORY_COMMAND_LIMIT, HISTORY_LIMIT, historyEvent, latestHistory, type RevisionEvent } from "../lib/history.js";
 
 export const collaborationRouter = Router({ mergeParams: true });
 collaborationRouter.use(requireAuth);
 
-export interface RevisionEvent {
-  at: string;
-  /** `harmonie` · `programme` · `modele` · `parcelle` · `revue` · `maptiler` · `document` · `commentaire` · `projet` */
-  kind: string;
-  label: string;
-  detail: string;
-  stepNumber: number | null;
-  revision: number | null;
-}
+export type { RevisionEvent } from "../lib/history.js";
 
 const STATUS_LABEL: Record<string, string> = {
   proposed: "proposée",
@@ -49,7 +42,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 /** Le journal des révisions du projet, relu depuis les dates que les données portent. */
-export async function revisionJournal(project: OwnedProject): Promise<RevisionEvent[]> {
+export async function revisionJournalSnapshot(project: OwnedProject) {
   const events: RevisionEvent[] = [];
   const pad2 = (n: number) => String(n).padStart(2, "0");
   events.push({
@@ -59,6 +52,8 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
     detail: `${project.code} — ${project.name}`,
     stepNumber: null,
     revision: null,
+    id: "created",
+    source: "record",
   });
 
   const rows = await loadStepRows(db, project.id);
@@ -102,8 +97,8 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
     }
   }
 
-  const cases = await db.select().from(programmeCases).where(eq(programmeCases.projectId, project.id)).orderBy(asc(programmeCases.revision));
-  for (const row of cases) {
+  const cases = await db.select().from(programmeCases).where(eq(programmeCases.projectId, project.id)).orderBy(desc(programmeCases.createdAt), desc(programmeCases.revision)).limit(HISTORY_LIMIT + 1);
+  for (const row of cases.slice(0, HISTORY_LIMIT)) {
     const a = row.data as { title?: string; scenarioLabel?: string; revision?: number; spaces?: unknown[] };
     events.push({
       at: row.createdAt.toISOString(),
@@ -112,6 +107,7 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
       detail: `${a.title ?? row.caseId} · ${a.scenarioLabel ?? row.scenarioId} · ${Array.isArray(a.spaces) ? a.spaces.length : 0} fiches`,
       stepNumber: 7,
       revision: a.revision ?? row.revision,
+      id: `programme:${row.revision}`,
     });
   }
   const transfers = (project.programmeState as { transfers?: { at?: string; from?: string; to?: string; amount?: number; reason?: string }[] } | null)?.transfers ?? [];
@@ -136,7 +132,7 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
       events.push({
         at: r.at,
         kind: "revue",
-        label: "Revue de conception rattachée aux entrées courantes",
+        label: "Revue de conception conservée",
         detail: `${r.name ?? "Revue"} · modèle ${r.modelSignature ?? "?"}`,
         stepNumber: 10,
         revision: null,
@@ -144,17 +140,17 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
   }
 
   // Journal des commandes de l'Atelier : chaque lot validé est une entrée de l'historique (50 dernières).
-  const journal = await db.select({ label: atelierCommands.label, kind: atelierCommands.kind, resultRevision: atelierCommands.resultRevision, createdAt: atelierCommands.createdAt }).from(atelierCommands).where(eq(atelierCommands.projectId, project.id)).orderBy(desc(atelierCommands.resultRevision)).limit(50);
-  for (const r of journal) {
+  const journal = await db.select({ id: atelierCommands.id, label: atelierCommands.label, kind: atelierCommands.kind, resultRevision: atelierCommands.resultRevision, createdAt: atelierCommands.createdAt, authorId: atelierCommands.authorId, authorLabel: users.email }).from(atelierCommands).leftJoin(users, eq(users.id, atelierCommands.authorId)).where(eq(atelierCommands.projectId, project.id)).orderBy(desc(atelierCommands.resultRevision)).limit(HISTORY_COMMAND_LIMIT + 1);
+  for (const r of journal.slice(0, HISTORY_COMMAND_LIMIT)) {
     const verbe = r.kind === "annulation" ? "Annulé" : r.kind === "retablissement" ? "Rétabli" : "Modèle";
-    events.push({ at: r.createdAt.toISOString(), kind: "modele", label: `${verbe} · ${r.label || "lot de commandes"}`, detail: `Atelier · révision ${r.resultRevision}`, stepNumber: 10, revision: r.resultRevision });
+    events.push({ id: `atelier:${r.id}`, at: r.createdAt.toISOString(), kind: "modele", label: `${verbe} · ${r.label || "lot de commandes"}`, detail: `Atelier · révision ${r.resultRevision}`, stepNumber: 10, revision: r.resultRevision, authorId: r.authorId, authorLabel: r.authorLabel, source: "ledger" });
   }
-  const parcelRows = await db.select({ id: parcels.id, name: parcels.name, revision: parcels.revision, updatedAt: parcels.updatedAt }).from(parcels).where(eq(parcels.projectId, project.id));
-  for (const p of parcelRows)
-    events.push({ at: p.updatedAt.toISOString(), kind: "parcelle", label: `Parcelle · ${p.name}`, detail: `Fichier ${p.id} · révision ${p.revision}`, stepNumber: 1, revision: p.revision });
+  const parcelRows = await db.select({ id: parcels.id, name: parcels.name, revision: parcels.revision, updatedAt: parcels.updatedAt }).from(parcels).where(eq(parcels.projectId, project.id)).orderBy(desc(parcels.updatedAt), asc(parcels.id)).limit(HISTORY_LIMIT + 1);
+  for (const p of parcelRows.slice(0, HISTORY_LIMIT))
+    events.push({ id: `parcelle:${p.id}:${p.revision}`, at: p.updatedAt.toISOString(), kind: "parcelle", label: `Parcelle · ${p.name}`, detail: `Fichier ${p.id} · révision ${p.revision}`, stepNumber: 1, revision: p.revision });
 
-  const docs = await db.select().from(producedDocuments).where(eq(producedDocuments.projectId, project.id));
-  for (const d of docs)
+  const docs = await db.select().from(producedDocuments).where(eq(producedDocuments.projectId, project.id)).orderBy(desc(producedDocuments.producedAt), asc(producedDocuments.kind)).limit(HISTORY_LIMIT + 1);
+  for (const d of docs.slice(0, HISTORY_LIMIT))
     events.push({
       at: d.producedAt.toISOString(),
       kind: "document",
@@ -162,6 +158,7 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
       detail: `${d.fileName} · révision du modèle ${d.modelRevision} · ${d.count} production(s)`,
       stepNumber: d.stepNumber,
       revision: d.modelRevision,
+      id: `document:${d.kind}:${d.producedAt.toISOString()}`,
     });
 
   // Collectes et observations du contexte (flow-v62 : `log(p,'MapTiler',…)`, `site-note`) : datées par les données déclarées elles-mêmes.
@@ -195,18 +192,36 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
       revision: null,
     });
 
-  const comments = await db.select().from(projectComments).where(eq(projectComments.projectId, project.id));
-  for (const c of comments)
+  const comments = await db.select().from(projectComments).where(eq(projectComments.projectId, project.id)).orderBy(desc(projectComments.createdAt), asc(projectComments.id)).limit(HISTORY_LIMIT + 1);
+  for (const c of comments.slice(0, HISTORY_LIMIT))
     events.push({
       at: c.createdAt.toISOString(),
       kind: "commentaire",
       label: `Commentaire · ${c.authorEmail}`,
-      detail: c.body.length > 140 ? `${c.body.slice(0, 140)}…` : c.body,
+      detail: c.body,
       stepNumber: c.stepNumber,
-      revision: null,
+      revision: c.atelierRevision,
+      id: `commentaire:${c.id}`,
+      authorId: c.authorId,
+      authorLabel: c.authorEmail,
+      source: "record",
     });
 
-  return events.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)).slice(0, 300);
+  const normalized = events.flatMap((event) => {
+    const normalizedEvent = historyEvent(event, project);
+    return normalizedEvent ? [normalizedEvent] : [];
+  });
+  const latest = latestHistory(normalized);
+  return {
+    ...latest,
+    truncated: latest.truncated || journal.length > HISTORY_COMMAND_LIMIT || [cases, parcelRows, docs, comments].some((rows) => rows.length > HISTORY_LIMIT),
+    omittedInvalidDates: events.length - normalized.length,
+  };
+}
+
+/** Contrat historique conservé pour les modules Collaboration et Transmission. */
+export async function revisionJournal(project: OwnedProject): Promise<RevisionEvent[]> {
+  return (await revisionJournalSnapshot(project)).events;
 }
 
 function commentView(c: typeof projectComments.$inferSelect, userId: string) {

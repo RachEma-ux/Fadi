@@ -99,6 +99,8 @@ async function releve(nom) {
 
 const ecrans = [
   ["accueil", "/accueil"],
+  ["accueil-projet", `/projets/${pid}`],
+  ["accueil-reprise", "/accueil"],
   ["projets", "/projets"],
   ["parametres", "/parametres"],
   ["harmonie", "/harmonie"],
@@ -116,9 +118,25 @@ for (const [nom, url] of ecrans) {
   await page.waitForLoadState("networkidle").catch(() => {});
   if (nom === "atelier") await page.waitForSelector(".plan2d .plan-objets [data-objet]", { timeout: 30000 });
   await releve(nom);
+  if (["accueil-projet", "accueil-reprise"].includes(nom)) {
+    // Les contrôles des deux contextes, leurs filtres et leurs états sont aussi
+    // de l’interface ; les données datées du journal restent des données.
+    const projectHome = nom === "accueil-projet";
+    for (const [kind, name] of [
+      ["recherche", projectHome ? "Search this project" : "Search for a project"],
+      ["historique", projectHome ? "Dossier history" : "Platform history"],
+      ["etat", projectHome ? "Dossier status" : "Platform status"],
+    ]) {
+      await page.getByRole("button", { name, exact: true }).click();
+      await page.getByRole("dialog").waitFor();
+      await page.waitForLoadState("networkidle").catch(() => {});
+      await releve(`${nom}-${kind}`);
+      await page.keyboard.press("Escape");
+    }
+  }
   if (["accueil", "etape-03", "analyses"].includes(nom)) await page.screenshot({ path: `${OUT}/interface-anglais-${nom}.png` });
 }
-check("accueil : navigation principale en anglais", (await page.locator(".app-nav").textContent())?.includes("My projects"));
+check("accueil : navigation principale en anglais", (await page.locator(".app-nav").textContent())?.includes("Projects"));
 // Atelier : disposition Canevas, panneaux, menu, 3D.
 await basculerCanevas(page);
 for (const p of ["instructeur", "outliner", "affichage", "materiaux", "modele", "navigation", "raccourcis"]) {
@@ -148,7 +166,7 @@ check(`textes d'interface restés en français : ${residus.size} distincts sur $
 await page.goto(`${BASE}/parametres`);
 await page.locator("[data-settings-langue] [data-choix-langue]").selectOption("fr");
 await page.waitForFunction(() => document.documentElement.lang === "fr");
-check("retour au français depuis les paramètres", (await page.locator(".app-nav").textContent())?.includes("Mes projets"));
+check("retour au français depuis les paramètres", (await page.locator(".app-nav").textContent())?.includes("Projets"));
 check("aucune erreur JavaScript", erreurs.length === 0, erreurs.slice(0, 3).join(" | "));
 await browser.close();
 console.log(echecs ? `\n${echecs} échec(s)` : "\nRecette de l'interface anglaise : tout est vert.");

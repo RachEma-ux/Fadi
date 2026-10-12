@@ -14,13 +14,30 @@
  */
 import type { QueryClient } from "@tanstack/react-query";
 import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type ParcoursStepStatus, type ProjectComment } from "./api";
-import { isNetworkError } from "./reachability";
+import { isNetworkError, reachability } from "./reachability";
 
 export const MUTATION_KEYS = {
   stepPatch: ["step-patch"] as const,
   decide: ["harmonie-decide"] as const,
   comment: ["comment-add"] as const,
 };
+
+const REPLAYABLE_KEYS = new Set<string>(Object.values(MUTATION_KEYS).map((key) => key[0]));
+interface ScopedMutation {
+  options: { mutationKey?: readonly unknown[] };
+  state: { variables?: unknown; status: string; isPaused: boolean };
+}
+/** Un autre projet, même en pause, ne doit jamais gonfler le compteur de ce dossier. */
+export function isProjectPendingMutation(mutation: ScopedMutation, projectId: string): boolean {
+  const variables = mutation.state.variables;
+  return mutation.state.status === "pending" && !!variables && typeof variables === "object" && "projectId" in variables && variables.projectId === projectId && (mutation.state.isPaused || REPLAYABLE_KEYS.has(String(mutation.options.mutationKey?.[0])));
+}
+
+export async function resumeProjectMutations(queryClient: QueryClient, projectId: string): Promise<void> {
+  if (reachability.get() !== "reachable" || (typeof navigator !== "undefined" && !navigator.onLine)) return;
+  const pending = queryClient.getMutationCache().getAll().filter((mutation) => isProjectPendingMutation(mutation, projectId) && mutation.state.isPaused);
+  await Promise.allSettled(pending.map((mutation) => mutation.continue()));
+}
 
 export interface StepPatchVars {
   projectId: string;
@@ -57,6 +74,11 @@ export interface SyncConflict {
   decision: { proposalId: string; input: HarmonieDecisionInput; expectedVersion: number | null } | null;
   /** Version d'arbitrage courante du serveur (arbitrage refusé). */
   currentVersion: number | null;
+}
+
+/** Sans valeur serveur pour chaque champ, une reprise n'aurait pas de précondition fiable. */
+export function canReplayFieldConflict(conflict: Pick<SyncConflict, "stepNumber" | "attempted" | "current">): boolean {
+  return conflict.stepNumber !== null && conflict.attempted !== null && conflict.current !== null && Object.keys(conflict.attempted).length > 0 && Object.keys(conflict.attempted).every((key) => Object.hasOwn(conflict.current!, key));
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -146,10 +168,23 @@ export function clearConflict(_queryClient: QueryClient, projectId: string, id: 
   writeConflicts(projectId, id === null ? [] : readConflicts(projectId).filter((c) => c.id !== id));
 }
 
+/** Une reprise n'efface son conflit antérieur que si un nouveau refus 409 l'a effectivement remplacé. */
+export function recordConflictRetryFailure(
+  queryClient: QueryClient, projectId: string, previousId: string, err: unknown, where: string, stepNumber: number | null,
+  tried: { attempted?: Record<string, ParcoursFieldValue>; decision?: SyncConflict["decision"] } = {},
+): boolean {
+  const replaced = recordConflict(queryClient, projectId, err, where, stepNumber, tried);
+  if (replaced) clearConflict(queryClient, projectId, previousId);
+  return replaced;
+}
+
 /** Une étape renvoyée par le serveur remplace la sienne dans la liste ; les effets amont / aval se relisent. */
 export function adoptStep(queryClient: QueryClient, projectId: string, updated: ParcoursStep) {
   queryClient.setQueryData<ParcoursStep[]>(["steps", projectId], (list) => (list ?? []).map((s) => (s.number === updated.number ? updated : s)));
   void queryClient.invalidateQueries({ queryKey: ["steps", projectId] });
+  // Seulement après la réponse acceptée : les lectures dérivées de ce dossier doivent retrouver leur propre état courant.
+  for (const key of ["design-review-status", "concept-preview", "programme", "documents", "project"]) void queryClient.invalidateQueries({ queryKey: [key, projectId] });
+  void queryClient.invalidateQueries({ queryKey: ["history"], predicate: (query) => query.queryKey[2] === projectId });
 }
 
 /**

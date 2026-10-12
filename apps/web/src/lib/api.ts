@@ -566,6 +566,34 @@ export interface RevisionEvent {
   revision: number | null;
 }
 
+export interface HistoryProject {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export interface HistoryEvent extends RevisionEvent {
+  id: string;
+  project: HistoryProject;
+  authorId: string | null;
+  authorLabel: string | null;
+  source: "snapshot" | "record" | "ledger";
+}
+
+export interface HistoryView {
+  scope: "project" | "platform";
+  project: HistoryProject | null;
+  events: HistoryEvent[];
+  readAt: string;
+  coverage: {
+    limit: number;
+    truncated: boolean;
+    omittedInvalidDates: number;
+    sources: string[];
+    notice: string;
+  };
+}
+
 export interface CollaborationView {
   access: { ownerEmail: string; you: string; role: ProjectRole; members: ProjectMember[]; lock: EditingLock | null; sharing: { available: boolean; reason: string } };
   sync: { modelRevision: number; journalEntries: number; lastModelWrite: string | null; offline: { available: boolean; reason: string } };
@@ -811,9 +839,11 @@ export const api = {
   /** Bilan Harmonie du bâtiment conçu (étapes 10 / 11). */
   getDesignReview: (projectId: string) => request<DesignReviewView>(`/projects/${projectId}/design-review`),
   getConceptPreview: (projectId: string) => request<ConceptPreview>(`/projects/${projectId}/design-review/apercu`),
+  getDesignReviewStatus: (projectId: string) => request<ConceptPreview["validation"] & { computedAt: string }>(`/projects/${encodeURIComponent(projectId)}/design-review/status`),
   getAnalyses: (projectId: string) => request<AnalysesView>(`/projects/${projectId}/analyses`),
   getDocuments: (projectId: string) => request<DocumentsView>(`/projects/${projectId}/documents`),
   getCollaboration: (projectId: string) => request<CollaborationView>(`/projects/${projectId}/collaboration`),
+  getHistory: (projectId?: string, signal?: AbortSignal) => request<HistoryView>(projectId ? `/projects/${encodeURIComponent(projectId)}/history` : "/projects/history", { signal }),
   listComments: (projectId: string, stepNumber: number | null) => request<ProjectComment[]>(`/projects/${projectId}/collaboration/comments${stepNumber === null ? "" : `?step=${stepNumber}`}`),
   addComment: (projectId: string, body: string, stepNumber: number | null, parentId: string | null = null, atelierRevision: number | null = null) =>
     request<ProjectComment>(`/projects/${projectId}/collaboration/comments`, { method: "POST", body: JSON.stringify({ body, stepNumber, parentId, ...(atelierRevision !== null ? { atelierRevision } : {}) }) }),
