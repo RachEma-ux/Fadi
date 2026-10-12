@@ -57,7 +57,7 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
 .fadi-topbar-title p { color: #d1e0d6; margin: 0; font-size: 13px; }
 .fadi-topbar-title p strong { font-weight: 500; margin-right: 7px; }
 .fadi-topbar-title p span { display: inline-block; }
-.fadi-topbar-title .home-name-edit { color: #fff; width: 44px; height: 44px; margin: -10px 0; vertical-align: middle; }
+.fadi-topbar-title .home-name-edit { color: #fff; background: transparent; border: 1px solid #ffffff45; width: 44px; height: 44px; margin: -10px 0; vertical-align: middle; }
 .fadi-topbar-title .home-name-edit:hover { color: #fff; background: #ffffff15; }
 .fadi-topbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .fadi-topbar-actions > button, .fadi-topbar-actions .notification-bell > button { border: 1px solid #ffffff45; color: white; background: #ffffff0c; min-height: 44px; border-radius: 8px; }

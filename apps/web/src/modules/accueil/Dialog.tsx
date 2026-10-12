@@ -11,7 +11,7 @@ export function Dialog({ title, onClose, children, className = "" }: { title: st
     dialog?.showModal();
     return () => { dialog?.close(); previous?.focus(); };
   }, []);
-  return <dialog ref={ref} className={`fadi-dialog ${className}`} aria-label={title} onCancel={(e) => { e.preventDefault(); closeRef.current(); }}>
+  return <dialog ref={ref} className={`fadi-dialog ${className}`} aria-label={title} onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeRef.current(); } }} onCancel={(e) => { e.preventDefault(); closeRef.current(); }}>
     <header className="fadi-dialog-head"><h2>{title}</h2><button type="button" onClick={onClose} aria-label="Fermer">×</button></header>
     {children}
   </dialog>;

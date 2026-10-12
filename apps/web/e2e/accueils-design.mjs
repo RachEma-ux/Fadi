@@ -162,6 +162,8 @@ try {
   await page.getByRole("searchbox", { name: "Rechercher un projet", exact: true }).fill(a.code);
   check("chercher un autre projet ne change pas le dernier dossier en arrière-plan", await overview(b.id).count() === 1 && await page.getByRole("dialog").getByRole("link").filter({ hasText: a.code }).count() === 1);
   await page.keyboard.press("Escape");
+  await page.getByRole("dialog", { name: "Rechercher un projet", exact: true }).waitFor({ state: "hidden" });
+  check("Échap ferme aussi la recherche après saisie et rend le focus à la loupe", await page.getByRole("button", { name: "Rechercher un projet", exact: true }).evaluate((el) => el === document.activeElement));
   await page.getByRole("button", { name: "Historique de la plateforme", exact: true }).click();
   await page.getByRole("dialog").waitFor();
   check("le journal de plateforme ne sélectionne pas un autre dossier", new URL(page.url()).pathname === "/accueil" && await overview(b.id).count() === 1);
