@@ -802,7 +802,7 @@ check("bilan : la réserve « Contexte extérieur non observé » est levée (6 
 await page.locator('.v62-tabs button:has-text("Transmission")').click();
 check("bilan · Transmission : « Preuves de contexte extérieur » OK (observation consignée par utilisateur)", /Preuves de contexte extérieur.{0,80}OK/.test((await page.locator(".v62-tab-content").textContent()).replace(/\s+/g, " ")));
 const eventsAfter = (await page.locator(".v62-events tbody tr").allTextContents()).map((t) => t.replace(/\s+/g, " "));
-check("bilan · Transmission : les événements datés du bilan y figurent (revue rattachée, altitude MapTiler du centre, observation déclarée)", eventsAfter.some((t) => /Revue de conception rattachée/.test(t)) && eventsAfter.some((t) => /MapTiler.*Altitude indicative du centre/.test(t)) && eventsAfter.some((t) => /Observation déclarée du contexte extérieur/.test(t)), eventsAfter.slice(0, 4).join(" | "));
+check("bilan · Transmission : les événements datés du bilan y figurent (revue conservée, altitude MapTiler du centre, observation déclarée)", eventsAfter.some((t) => /Revue de conception conservée/.test(t)) && eventsAfter.some((t) => /MapTiler.*Altitude indicative du centre/.test(t)) && eventsAfter.some((t) => /Observation déclarée du contexte extérieur/.test(t)), eventsAfter.slice(0, 4).join(" | "));
 await page.locator('button:has-text("Actualiser la revue de conception")').click();
 await page.waitForFunction(() => /Lecture documentaire courante/.test(document.querySelector("#v62-report header p")?.textContent || ""), null, { timeout: 10000 });
 const [bilanDl] = await Promise.all([page.waitForEvent("download"), page.locator('#v62-report a:has-text("Rapport HTML ↓")').click()]);
@@ -1056,10 +1056,32 @@ check("analyses : structure déclarée (3 exigences, 1 hypothèse, 2 représenta
 await page.locator(".analyses-module .biz-card").first().screenshot({ path: `${OUT}/analyses-desktop.png` });
 
 // 6i. Documents : catalogue des documents productibles, productions enregistrées et actualité (à jour / périmé)
+// L'accueil a déjà mis ce catalogue en cache avant les productions : sa présence dans le DOM ne confirme pas sa relecture.
+const referenceCatalogueRead = page.waitForResponse((r) => r.request().method() === "GET" && new URL(r.url()).pathname === `/projects/${examplePid}/documents`, { timeout: 30000 });
 await page.goto(`${exampleUrl}?module=documents`);
+const referenceCatalogueResponse = await referenceCatalogueRead;
+const referenceCatalogue = await referenceCatalogueResponse.json();
 await page.waitForSelector(".documents-table tbody tr", { timeout: 30000 });
+const referenceCatalogueRows = (referenceCatalogue.documents ?? []).map((d) => ({ kind: d.kind, freshness: d.freshness ?? "aucune", hash: d.produced?.inputHash ?? d.current.inputHash }));
+const referenceCatalogueRendered = await page.waitForFunction((expected) => {
+  const rows = Array.from(document.querySelectorAll(".documents-table tbody tr"));
+  return expected.length > 0 && rows.length === expected.length && expected.every((d) => {
+    const row = rows.find((r) => r.getAttribute("data-document") === d.kind);
+    return row?.getAttribute("data-freshness") === d.freshness && row.textContent.includes(d.hash);
+  });
+}, referenceCatalogueRows, { timeout: 15000 }).then(() => true).catch((error) => { console.log(`diagnostic catalogue référence : rendu non aligné sur la réponse ${referenceCatalogueResponse.status()} · ${String(error.message).split("\n")[0]}`); return false; });
 const docFreshness = async (kind) => page.locator(`tr[data-document="${kind}"]`).getAttribute("data-freshness");
-check("documents (référence) : 55 documents productibles (synthèse, 21 rapports d'étape, bilan, 6 plans, tableau des surfaces, programme, fiches, dossier complet de l'exemple, archive ; et les 19 tableaux et quantités de l'Atelier, le schéma P&ID, la maquette IFC) ; synthèse, archive et dossier complet produits par le scénario, à jour", (await page.locator(".documents-table tbody tr").count()) === 55 && (await page.locator('tr[data-document^="atelier-tableau-"]').count()) === 18 && (await page.locator('tr[data-document="atelier-ifc"]').count()) === 1 && /55 documents productibles/.test(await page.locator(".documents-module .biz-sub").first().textContent()) && (await page.locator('tr[data-document="dossier-exemple"]').count()) === 1 && (await page.locator('tr[data-document="fiches-espaces-csv"]').count()) === 1 && (await docFreshness("archive-projet")) === "a-jour" && (await docFreshness("dossier-exemple")) === "a-jour" && (await docFreshness("harmonie-synthese")) === "a-jour");
+const referenceDocumentState = {
+  rows: await page.locator(".documents-table tbody tr").count(),
+  atelierTables: await page.locator('tr[data-document^="atelier-tableau-"]').count(),
+  ifc: await page.locator('tr[data-document="atelier-ifc"]').count(),
+  summary: await page.locator(".documents-module .biz-sub").first().textContent(),
+  dossier: await page.locator('tr[data-document="dossier-exemple"]').count(),
+  fiches: await page.locator('tr[data-document="fiches-espaces-csv"]').count(),
+  archive: await docFreshness("archive-projet"), dossierFreshness: await docFreshness("dossier-exemple"), synthese: await docFreshness("harmonie-synthese"),
+};
+const referenceProductionEvidence = (referenceCatalogue.documents ?? []).filter((d) => ["archive-projet", "dossier-exemple", "harmonie-synthese"].includes(d.kind)).map((d) => ({ kind: d.kind, freshness: d.freshness, current: d.current, produced: d.produced }));
+check("documents (référence) : 55 documents productibles (synthèse, 21 rapports d'étape, bilan, 6 plans, tableau des surfaces, programme, fiches, dossier complet de l'exemple, archive ; et les 19 tableaux et quantités de l'Atelier, le schéma P&ID, la maquette IFC) ; synthèse, archive et dossier complet produits par le scénario, à jour", referenceCatalogueResponse.ok() && referenceCatalogueRendered && referenceDocumentState.rows === 55 && referenceDocumentState.atelierTables === 18 && referenceDocumentState.ifc === 1 && /55 documents productibles/.test(referenceDocumentState.summary) && referenceDocumentState.dossier === 1 && referenceDocumentState.fiches === 1 && referenceDocumentState.archive === "a-jour" && referenceDocumentState.dossierFreshness === "a-jour" && referenceDocumentState.synthese === "a-jour", JSON.stringify({ ui: referenceDocumentState, server: { status: referenceCatalogueResponse.status(), rendered: referenceCatalogueRendered, readAt: referenceCatalogue.computedAt, rows: referenceCatalogueRows.length, productions: referenceProductionEvidence } }));
 // Les productions du scénario (rapport de l'étape 02, synthèse, archive, bilan puis références directionnelles) ont eu lieu sur la variante : son catalogue (47 documents, sans les fiches de la référence) les reconnaît.
 await page.goto(`${variantUrl}?module=documents`);
 await page.waitForSelector(".documents-table tbody tr", { timeout: 30000 });

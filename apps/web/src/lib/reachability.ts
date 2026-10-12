@@ -59,10 +59,14 @@ export const reachability = {
   probeNow(): Promise<boolean> {
     return probe();
   },
-  /** Le navigateur a changé d'état réseau : TanStack suit, et un retour en ligne déclenche une sonde. */
+  /** Le navigateur a changé d'état réseau : TanStack suit, puis le retour en ligne réveille la file ou sonde le serveur. */
   browserOnlineChanged(): void {
     syncOnlineManager();
-    if (typeof navigator !== "undefined" && navigator.onLine && !reachable) void probe();
+    if (typeof navigator === "undefined" || !navigator.onLine) return;
+    if (!reachable) void probe();
+    // Une saisie hors ligne n'effectue aucun fetch : le dernier état serveur peut donc encore être « reachable ».
+    // Réveiller les clients ne valide aucun lot ; seule leur réponse serveur permet de retirer une écriture.
+    else emit();
   },
 };
 

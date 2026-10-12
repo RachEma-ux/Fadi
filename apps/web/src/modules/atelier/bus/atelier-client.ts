@@ -359,6 +359,8 @@ export class AtelierClient {
       } while (this.relancer && reachability.get() === "reachable");
     })().finally(() => {
       this.envoi = null;
+      // Un réveil peut survenir après le dernier test de la boucle mais avant ce nettoyage.
+      if (this.relancer && reachability.get() === "reachable") return this.envoyer();
     });
     return this.envoi;
   }

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { onlineManager } from "@tanstack/react-query";
 import { appliquerLot, CONTRAT_COMMANDES, modeleVide, type Commande } from "@parcours/atelier-model";
 import { ApiError, api, type AtelierEnveloppe } from "./api";
 import { localStore, LocalPersistenceError, queuePersistenceStore, type KeyValueEntry, type LotEntry, type ModelCacheEntry } from "./local-store";
@@ -47,7 +48,7 @@ beforeEach(() => {
   vi.spyOn(api, "getAtelierJournal").mockResolvedValue({ revision: 0, entrees: [] });
   vi.spyOn(api, "postAtelierCommands").mockImplementation(async (_projectId: string, envelope: AtelierEnveloppe) => ({ revision: 1, journalId: "accepted", applique: [], effets: appliquerLot(modeleVide(), { ...envelope, commands }).effets, problemes: [], referencesAReparer: [] }));
 });
-afterEach(() => { for (const c of clients.splice(0)) c.arreter();vi.restoreAllMocks();vi.unstubAllGlobals(); });
+afterEach(() => { for (const c of clients.splice(0)) c.arreter();onlineManager.setOnline(true);vi.restoreAllMocks();vi.unstubAllGlobals(); });
 
 describe("durabilité observable des lots locaux", () => {
   it("une lecture échouée est inconnue, pas une file vide", async () => {
@@ -102,6 +103,49 @@ describe("durabilité observable des lots locaux", () => {
 });
 
 describe("file Atelier et reprises explicites", () => {
+  it("un retour du navigateur en ligne envoie automatiquement le lot sauvegardé une seule fois", async () => {
+    vi.mocked(reachability.get).mockRestore();
+    vi.mocked(reachability.subscribe).mockRestore();
+    const browser = { onLine: true };vi.stubGlobal("navigator", browser);
+    const id = project(), c = await client(id);
+    let accept!: () => void;
+    const accepted = new Promise<void>((resolve) => { accept = resolve; });
+    let serverRevision = 0;
+    vi.mocked(api.postAtelierCommands).mockImplementation(async (projectId, envelope) => {
+      expect(projectId).toBe(id);
+      await accepted;
+      serverRevision += 1;
+      return { revision: serverRevision, journalId: "accepted", applique: [], effets: appliquerLot(modeleVide(), envelope).effets, problemes: [], referencesAReparer: [] };
+    });
+    vi.mocked(api.getAtelierModel).mockClear();vi.mocked(api.getAtelierJournal).mockClear();
+
+    browser.onLine = false;reachability.browserOnlineChanged();
+    const result = await c.executer(commands, "Créer RDC hors ligne");
+    expect(reachability.get()).toBe("reachable");
+    expect(onlineManager.isOnline()).toBe(false);
+    expect(api.postAtelierCommands).not.toHaveBeenCalled();
+    expect(api.getAtelierModel).not.toHaveBeenCalled();
+    expect(api.getAtelierJournal).not.toHaveBeenCalled();
+    expect([...disk.lots.values()].map((entry) => entry.requestId)).toEqual([result.requestId]);
+    expect(queuePersistenceStore.get(id)).toMatchObject({ read: "ready", unsaved: 0, error: null });
+
+    browser.onLine = true;reachability.browserOnlineChanged();reachability.browserOnlineChanged();
+    // Aucun appel manuel à envoyer : le même événement que dans main.tsx doit réveiller la file.
+    await vi.waitFor(() => expect(api.postAtelierCommands).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(api.postAtelierCommands).mock.calls[0]![1].requestId).toBe(result.requestId);
+    expect(serverRevision).toBe(0);
+    expect(c.getSnapshot().revisionServeur).toBe(0);
+    expect(c.getSnapshot().lots).toHaveLength(1);
+    accept();
+    await vi.waitFor(() => expect(c.getSnapshot()).toMatchObject({ revisionServeur: 1, lots: [], envoiEnCours: false }));
+
+    reachability.browserOnlineChanged();
+    await vi.waitFor(() => expect(c.getSnapshot().envoiEnCours).toBe(false));
+    expect(api.postAtelierCommands).toHaveBeenCalledTimes(1);
+    expect(serverRevision).toBe(1);
+    expect(disk.lots.size).toBe(0);
+    expect(onlineManager.isOnline()).toBe(true);
+  });
   it("préserve l'aperçu en mémoire sans envoyer un lot dont l'enregistrement a échoué", async () => {
     const id = project(), c = await client(id);disk.failPut = true;
     const result = await c.executer(commands, "Créer RDC");await c.envoyer();
