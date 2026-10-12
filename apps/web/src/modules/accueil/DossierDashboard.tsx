@@ -5,6 +5,8 @@ import { ConflictPanel } from "../../components/ConflictPanel";
 import { useProjectAccess, lockedHint, READ_ONLY_HINT } from "../../lib/access";
 import { useAuth } from "../../lib/auth-context";
 import { ApiError } from "../../lib/api";
+import { dossierReconnectHref } from "../../lib/dossier-return";
+import { reachability } from "../../lib/reachability";
 import { rememberedStep, rememberedWork, useLastDossier } from "../../lib/last-dossier";
 import { useWorkspaceNavigation } from "../../lib/workspace-navigation";
 import { useDossierQueries, type DossierQueries, dateLabel, denied, resourceLabel, dossierSubtitle } from "./dossier-data";
@@ -18,7 +20,7 @@ export function DossierDashboard({ projectId, applicationHome = false }: { proje
   const { user } = useAuth();
   const last = useLastDossier(user?.id);
   const { openProjects } = useWorkspaceNavigation();
-  const [operation, setOperation] = useState<DossierActionIntent | null>(null);
+  const [operation, setOperation] = useState<DossierActionIntent | "retry-project" | null>(null);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
   const [compare, setCompare] = useState(false);
   const comparison = useRef<HTMLDivElement>(null);
@@ -46,17 +48,39 @@ export function DossierDashboard({ projectId, applicationHome = false }: { proje
     } catch { setRecoveryError(intent === "retry-local" ? "La sauvegarde locale n’est toujours pas confirmée. Gardez cette page ouverte et réessayez." : "La reprise a échoué. Le travail en attente reste en mémoire ; réessayez cette opération."); }
     finally { setOperation(null); }
   }
+  async function recoverProject(intent: "reconnect" | "retry-project") {
+    if (operation || queries.project.isFetching || !sync.online || (typeof navigator !== "undefined" && !navigator.onLine)) return;
+    setOperation(intent);setRecoveryError(null);
+    try {
+      if (intent === "reconnect") {
+        const restored = await reachability.probeNow();
+        if (!restored || reachability.get() !== "reachable" || (typeof navigator !== "undefined" && !navigator.onLine)) {
+          setRecoveryError("La connexion n’est pas rétablie. Réessayez lorsque le serveur sera joignable.");
+          return;
+        }
+        setOperation("retry-project");
+      }
+      const result = await queries.project.refetch();
+      if (result.isError && !denied(result.error)) setRecoveryError("La lecture du dossier n’a pas pu être rétablie. Réessayez lorsque le service sera disponible.");
+    } catch { setRecoveryError("La lecture du dossier n’a pas pu être rétablie. Réessayez lorsque le service sera disponible."); }
+    finally { setOperation(null); }
+  }
   if (!project || denied(queries.project.error)) {
     const sessionExpired = queries.project.error instanceof ApiError && queries.project.error.status === 401;
     const forbidden = denied(queries.project.error);
-    const loading = !forbidden && !queries.project.isError && connected;
-    return <section className="panel dossier-unavailable" aria-busy={loading}>
+    const connectionUnavailable = !connected || queries.project.fetchStatus === "paused" || queries.project.error instanceof TypeError;
+    const loading = !forbidden && !connectionUnavailable && queries.project.isPending;
+    const busy = !!operation || queries.project.isFetching;
+    const waitingLabel = operation === "reconnect" ? "Vérification de la connexion…" : operation === "retry-project" || !loading && queries.project.isFetching ? "Lecture du dossier en cours…" : loading ? "Chargement du dossier…" : null;
+    return <section className="panel dossier-unavailable" aria-busy={loading || busy}>
       <h2>{applicationHome ? "Dernier dossier consulté" : "Dossier sélectionné"}</h2>
-      <p role={queries.project.isError ? "alert" : "status"}>{sessionExpired ? "Votre session doit être renouvelée pour consulter ce dossier." : forbidden ? "Ce dossier est introuvable ou vous n’y avez plus accès." : loading ? "Chargement du dossier…" : "Le dossier est indisponible et aucune copie lisible n’est disponible sur cet appareil."}</p>
+      <p id="unavailable-dossier-purpose" role={queries.project.isError ? "alert" : "status"}>{sessionExpired ? "Votre session doit être renouvelée pour consulter ce dossier." : forbidden ? "Ce dossier est introuvable ou vous n’y avez plus accès." : loading ? "Chargement du dossier…" : connectionUnavailable ? "La connexion au serveur est indisponible et aucune copie lisible de ce dossier n’est disponible sur cet appareil." : "La lecture du dossier a échoué. Aucune copie lisible n’est disponible sur cet appareil."}</p>
       <p>Aucun autre dossier n’a été sélectionné automatiquement.</p>
-      {sessionExpired ? <Link to="/connexion?renouveler=1" className="button-primary">Se reconnecter</Link> : <button type="button" className="button-primary" onClick={openProjects}>Choisir un projet</button>}
-      {!forbidden && <button type="button" className="button-secondary" disabled={queries.project.isFetching || !sync.online} onClick={() => void sync.reconnect().then(() => queries.project.refetch())}>Réessayer la lecture du dossier</button>}
-      <Link to="/projets">Retour aux projets</Link>
+      {!forbidden && !sync.online && <p>Reconnectez cet appareil à un réseau pour réessayer.</p>}
+      {recoveryError && <p role="alert" className="dossier-notice">{recoveryError}</p>}
+      {sessionExpired ? <Link to={dossierReconnectHref(projectId)} className="button-primary" aria-describedby="unavailable-dossier-purpose">Se reconnecter</Link> : forbidden ? <Link to="/projets" className="button-primary" aria-describedby="unavailable-dossier-purpose">Retour aux projets</Link> : <button type="button" className="button-primary" disabled={loading || busy || !sync.online} aria-describedby="unavailable-dossier-purpose" onClick={() => void recoverProject(connectionUnavailable ? "reconnect" : "retry-project")}>{waitingLabel ?? (connectionUnavailable ? "Rétablir la connexion" : "Réessayer la lecture du dossier")}</button>}
+      {!forbidden && <button type="button" className="button-secondary" onClick={openProjects}>Choisir un projet</button>}
+      {(!forbidden || sessionExpired) && <Link to="/projets">Retour aux projets</Link>}
     </section>;
   }
   const steps = completeSteps ? queries.steps.data! : null;

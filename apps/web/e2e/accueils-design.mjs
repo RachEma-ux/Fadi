@@ -257,6 +257,48 @@ try {
   check("rôle inconnu : pas d’action d’écriture ou de progression supposée autorisée", await primary(unknown.id).getByRole("link").count() === 0);
   await page.unroute(projectUrl);
 
+  // L'identité du dossier elle-même peut manquer : l'action doit reprendre
+  // cette lecture, respecter le refus d'accès ou renouveler la session.
+  const recovery = await api("post", "/projects", { code: "P.ACC.REPRISE", name: "Accueil — Reprise du dossier" });
+  const recoveryUrl = `${BASE}/projects/${recovery.id}`;
+  let dossierResponse = 500;
+  await page.route(recoveryUrl, async (route) => {
+    if (!dossierResponse) await route.continue();
+    else await route.fulfill({ status: dossierResponse, contentType: "application/json", body: JSON.stringify({ error: "ci_dossier_unavailable" }) });
+  });
+  await page.goto(`${BASE}${dossierPath(recovery.id)}`);
+  const unavailable = page.locator(".dossier-unavailable");
+  const retryDossier = unavailable.getByRole("button", { name: "Réessayer la lecture du dossier", exact: true });
+  await retryDossier.waitFor();
+  check("dossier non lu : la reprise prioritaire relit le dossier, sans inventer une vue d’ensemble", await retryDossier.getAttribute("class") === "button-primary" && await page.locator(".dossier-overview").count() === 0);
+  dossierResponse = 0;
+  await retryDossier.click();
+  await primary(recovery.id).getByRole("link", { name: "Commencer le Parcours", exact: true }).waitFor();
+  check("reprise de la lecture : le dossier demandé est effectivement ouvert", new URL(page.url()).pathname === dossierPath(recovery.id));
+
+  dossierResponse = 404;
+  await page.reload();
+  const returnToProjects = unavailable.getByRole("link", { name: "Retour aux projets", exact: true });
+  await returnToProjects.waitFor();
+  check("dossier devenu inaccessible : retour natif aux projets, aucune donnée du cache exposée", await returnToProjects.getAttribute("href") === "/projets" && await returnToProjects.getAttribute("class") === "button-primary" && await page.locator(".dossier-overview").count() === 0);
+
+  dossierResponse = 401;
+  await page.reload();
+  const reconnect = unavailable.getByRole("link", { name: "Se reconnecter", exact: true });
+  await reconnect.waitFor();
+  const loginDestination = new URL(await reconnect.getAttribute("href"), BASE);
+  check("session expirée : reconnexion prioritaire avec le dossier demandé comme destination", loginDestination.pathname === "/connexion" && loginDestination.searchParams.get("renouveler") === "1" && loginDestination.searchParams.get("returnTo") === dossierPath(recovery.id));
+  await reconnect.click();
+  await page.waitForURL((url) => url.pathname === "/connexion");
+  dossierResponse = 0;
+  await page.unroute(recoveryUrl);
+  await page.fill('input[name="email"]', `accueils-${run}@example.com`);
+  await page.fill('input[name="password"]', "accueils-design-ci-123");
+  await page.click('button[type="submit"]');
+  await page.waitForURL(`${BASE}${dossierPath(recovery.id)}`);
+  await primary(recovery.id).getByRole("link", { name: "Commencer le Parcours", exact: true }).waitFor();
+  check("session renouvelée : retour réel au même dossier et reprise du Parcours disponible", await overview(recovery.id).count() === 1);
+
   await page.setViewportSize({ width: 390, height: 844 });
   await openHome(b.id);
   await primary(b.id).getByRole("link").waitFor();

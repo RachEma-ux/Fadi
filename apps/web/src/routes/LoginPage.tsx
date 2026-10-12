@@ -2,12 +2,14 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { describeAuthError, useAuth } from "../lib/auth-context";
+import { safeDossierReturnTo } from "../lib/dossier-return";
 import { ChoixLangue } from "../components/ChoixLangue";
 
 export function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const destination = safeDossierReturnTo(params.get("returnTo")) ?? "/accueil";
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,7 +17,7 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   if (user && params.get("renouveler") !== "1") {
-    return <Navigate to="/accueil" replace />;
+    return <Navigate to={destination} replace />;
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -25,7 +27,7 @@ export function LoginPage() {
     try {
       await login(email, password);
       void queryClient.invalidateQueries();
-      navigate("/accueil");
+      navigate(destination);
     } catch (err) {
       setError(describeAuthError(err));
     } finally {

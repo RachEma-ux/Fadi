@@ -404,7 +404,7 @@ await page.setViewportSize({ width: 1280, height: 900 });
 // La page du projet conserve les six phases et leurs 21 liens d’origine.
 await page.locator(".dossier-section-heading a").click();
 await page.locator(".dossier-phases").waitFor();
-check("accueil du projet : 6 phases, états réels 3/3, 5/5, 4/4, 4/4, 3/3, 2/2 et lien de revue à l’étape 18", (await page.locator(".dossier-phases > li").count()) === 6 && (await page.locator(".dossier-phases summary small").allTextContents()).join(" ") === "3/3 5/5 4/4 4/4 3/3 2/2" && /etape=18$/.test(await page.locator(".dossier-review-link").getAttribute("href")));
+check("accueil du projet : 6 phases, états réels 3/3, 5/5, 4/4, 4/4, 3/3, 2/2 et lien de revue du même dossier à l’étape 11 (bilan)", (await page.locator(".dossier-phases > li").count()) === 6 && (await page.locator(".dossier-phases summary small").allTextContents()).join(" ") === "3/3 5/5 4/4 4/4 3/3 2/2" && (await page.locator(".dossier-review-link").getAttribute("href")) === `${new URL(exampleUrl).pathname}?module=parcours&etape=11&bilan=1`);
 await page.locator(".dossier-phases summary").nth(1).click();
 check("accueil du projet : déplier Programmer donne les 5 étapes 04 à 08 avec leur état", (await page.locator(".dossier-phases details[open] li").count()) === 5 && (await page.locator(".dossier-phases details[open] li a > span").allTextContents()).map((text) => text.slice(0, 2)).join(" ") === "04 05 06 07 08");
 await page.locator('.dossier-primary-action a:has-text("Consulter le Parcours")').click();
@@ -455,7 +455,7 @@ check("exemple étape 14 (référence) : réponses en lecture, montants importé
 const budgetText = (await page.locator(".reference-answers .ex81-budget").textContent()).replace(/[\u202f\u00a0]/g, " ");
 check("exemple étape 14 : budget du scénario — Investissement 24 000 000 → 26 400 000 MAD (scénario défavorable), « Décision du cas : … 2 400 000 MAD de besoin additionnel »", /Investissement24 000 000 MAD26 400 000 MAD/.test(budgetText) && /Décision du cas : le stress de CAPEX crée 2 400 000 MAD de besoin additionnel/.test(budgetText), budgetText.slice(0, 160));
 await page.screenshot({ path: `${OUT}/14-desktop-exemple.png`, fullPage: true });
-// « Essayer une variante en copie » (`copy()` du prototype, action du récit dans le panneau de l'exemple) : nouveau projet modifiable « P.118 — ma variante de l’exemple résolu », vue d'ensemble, l'original intact.
+// « Essayer une variante en copie » (`copy()` du prototype, action du récit dans le panneau de l'exemple) : nouveau projet modifiable « P.118 — ma variante de l’exemple résolu », Parcours complet, l'original intact.
 await page.locator("#h7-shortcut").click();
 await page.waitForFunction(() => document.querySelector(".h7-panel-reference")?.open, null, { timeout: 5000 });
 await page.locator('.ex81-actions button:has-text("Essayer une variante en copie")').click();
@@ -463,7 +463,7 @@ await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toStrin
 await page.waitForSelector(".parcours-steps-summary");
 const variantUrl = page.url().split("?")[0];
 const variantToast = await page.locator(".h7-toast").textContent().catch(() => "");
-check("« Essayer une variante en copie » → « P.118 — ma variante de l’exemple résolu » ouverte (21 / 21 étapes terminées), message de copie", (await page.locator(".project-header h1").textContent()) === "P.118 — ma variante de l’exemple résolu" && (await page.locator(".parcours-steps-summary").textContent()).includes("21 / 21 étapes terminées"), variantToast);
+check("« Essayer une variante en copie » → « P.118 — ma variante de l’exemple résolu » ouverte dans le Parcours (21 / 21 étapes terminées), message de copie", new URL(page.url()).searchParams.get("module") === "parcours" && (await page.locator(".fadi-topbar-title h1").textContent()) === "P.118 — ma variante de l’exemple résolu" && (await page.locator(".parcours-steps-summary").textContent()).includes("21 / 21 étapes terminées"), variantToast);
 await page.goto(`${variantUrl}?module=parcours&etape=14`);
 await page.waitForSelector(".biz-kpis");
 check("variante étape 14 : formulaire modifiable, KPI calculés depuis les montants importés (24 000 000)", (await page.locator(".biz-kpis").textContent()).replace(/[\u202f\u00a0]/g, " ").includes("24 000 000") && (await page.locator("#biz-f1").count()) === 1);
@@ -547,7 +547,7 @@ await atelierEnregistre();
 const copyProject = await (await page.request.get(`${BASE}/projects/${atelierPid}`)).json();
 const afterDraw = await rdcWallsOf(atelierPid);
 const referenceAfter = await rdcWalls();
-check("atelier de la référence : un mur dessiné → copie de travail créée automatiquement (« P.118 — copie de travail · Atelier », mode modifiable), écran basculé sur la copie, même module", copyProject.code === "P.118" && copyProject.name === "copie de travail · Atelier" && copyProject.exampleMode === "editable" && copyProject.sourceExampleId === "p118-exemple-complet" && page.url().includes("module=atelier") && (await page.locator(".project-header h1").textContent()) === "P.118 — copie de travail · Atelier", JSON.stringify({ name: copyProject.name, mode: copyProject.exampleMode, title: await page.locator(".project-header h1").textContent() }));
+check("atelier de la référence : un mur dessiné → copie de travail créée automatiquement (« P.118 — copie de travail · Atelier », mode modifiable), écran basculé sur la copie, même module", copyProject.code === "P.118" && copyProject.name === "copie de travail · Atelier" && copyProject.exampleMode === "editable" && copyProject.sourceExampleId === "p118-exemple-complet" && page.url().includes("module=atelier") && (await page.locator(".fadi-topbar-title h1").textContent()) === "P.118 — copie de travail · Atelier", JSON.stringify({ name: copyProject.name, mode: copyProject.exampleMode, title: await page.locator(".fadi-topbar-title h1").textContent() }));
 check("copie de travail : le mur dessiné y est enregistré → 40 murs, révision 2 ; la référence reste à 39 murs, révision 1", afterDraw.walls === 40 && afterDraw.revision === 2 && referenceAfter.walls === 39 && referenceAfter.revision === 1, JSON.stringify({ afterDraw, referenceAfter }));
 check("copie de travail : plus de note « Exemple protégé » (toast de navigation « Copie de travail créée automatiquement… »)", (await page.locator(".atelier-n-reference").count()) === 0, copyToastSeen ? "toast vu" : "toast non observé (effacé avant la lecture)");
 await page.screenshot({ path: `${OUT}/atelier-concevoir-wall-desktop.png`, fullPage: true });
@@ -942,7 +942,7 @@ await page.locator('#parcours-project-tools input[type="file"]').setInputFiles({
 await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toString().includes(examplePid), { timeout: 20000 });
 await page.waitForSelector(".overview-step");
 check("outils du projet : « Importer projet JSON » → nouveau dossier ouvert, toast du prototype", !page.url().includes(examplePid) && /Import créé dans un nouveau dossier/.test(await page.locator(".h7-toast").textContent().catch(() => "")));
-check("import : « Escalier B et mezzanine · import », 21 cartes", /Escalier B et mezzanine · import/.test(await page.locator("h1").first().textContent()) && (await page.locator(".overview-step").count()) === 21);
+check("import : « Escalier B et mezzanine · import », 21 cartes", /Escalier B et mezzanine · import/.test(await page.locator(".fadi-topbar-title h1").textContent()) && (await page.locator(".overview-step").count()) === 21);
 await page.goto(`${BASE}/projets`);
 await page.waitForSelector(".project-list");
 check("page Projets : « Importer projet JSON » et « Bibliothèque des bâtiments » dans l'en-tête", (await page.locator('.projects-heading button:has-text("Importer projet JSON")').count()) === 1 && (await page.locator('.projects-heading a:has-text("Bibliothèque des bâtiments")').count()) === 1);
@@ -972,7 +972,7 @@ await page.waitForURL((u) => /\/projets\/proj_/.test(u.toString()) && !u.toStrin
 await page.waitForSelector(".overview-step");
 const copyUrl = page.url().split("?")[0];
 const copyToast = await page.locator(".h7-toast").textContent().catch(() => "");
-const copyTitle = await page.locator("h1").first().textContent();
+const copyTitle = await page.locator(".fadi-topbar-title h1").textContent();
 const copySummary = await page.locator(".parcours-steps-summary").textContent();
 check("« Essayer une autre répartition en copie » → nouveau dossier « P.118 — ma variante de l’exemple résolu », mêmes étapes terminées que la référence, toast", copyTitle === "P.118 — ma variante de l’exemple résolu" && copySummary.includes(`${referenceDone} / 21`) && /Copie modifiable créée/.test(copyToast), `${copyTitle} | ${copySummary} (référence ${referenceDone}) | ${copyToast}`);
 await page.goto(`${copyUrl}?module=parcours&etape=7`);
@@ -1105,7 +1105,7 @@ check("collaboration : « Supprimer » (auteur) le commentaire d'origine → sa 
 // rechargement, conflit explicite (jamais de fusion), ouverture depuis le cache local du modèle.
 await page.goto(`${atelierUrl}?module=atelier`);
 await atelierPret();
-await page.waitForFunction(() => /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+await page.waitForFunction(() => document.querySelector('.sync-indicator[data-pending="0"]')?.textContent?.trim() === "Aucune écriture en attente sur cet appareil", null, { timeout: 15000 }).catch(() => {});
 await choisirNiveau("RDC");
 await allerEnPlan(page);
 const drawWall = (fx) => tracerMur(fx, 0.62, "2;0");
@@ -1117,13 +1117,13 @@ check("hors-ligne : l'en-tête du projet passe « Hors-ligne »", /^Hors-ligne/.
 await drawWall(0.45);
 await page.waitForFunction(() => document.querySelector(".barre-sync")?.dataset.etat === "hors-ligne" && /1 modification\(s\) enregistrée\(s\) localement/.test(document.querySelector(".barre-sync").textContent), null, { timeout: 10000 }).catch(() => {});
 const fileHorsLigne = await lotsLocaux();
-check("hors-ligne : un mur dessiné → « Hors-ligne · 1 modification(s) enregistrée(s) localement », lot conservé dans la file IndexedDB", /Hors-ligne · 1 modification\(s\) enregistrée\(s\) localement/.test(await page.locator(".barre-sync").textContent()) && fileHorsLigne.some((l) => /^Mur 2,00 m · local$/.test(l)) && /modification\(s\) enregistrée\(s\) localement/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify(fileHorsLigne));
+check("hors-ligne : mur enregistré localement dans l’Atelier et IndexedDB, en-tête « Hors-ligne · 1 modification(s) en attente »", /Hors-ligne · 1 modification\(s\) enregistrée\(s\) localement/.test(await page.locator(".barre-sync").textContent()) && fileHorsLigne.some((l) => /^Mur 2,00 m · local$/.test(l)) && (await page.locator('.sync-indicator[data-pending="1"]').textContent()).trim() === "Hors-ligne · 1 modification(s) en attente", JSON.stringify(fileHorsLigne));
 await ctx.setOffline(false);
 await page.waitForFunction(() => document.querySelector(".barre-sync")?.dataset.etat === "enregistre", null, { timeout: 20000 }).catch(() => {});
 await waitRevisionAbove(atelierPid, wallsBeforeOffline.revision);
 const wallsAfterOnline = await rdcWallsOf(atelierPid);
-await page.waitForFunction(() => /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
-check("retour du réseau : synchronisation automatique → « Enregistré », +1 mur et +1 révision sur le serveur, file vide", wallsAfterOnline.walls === wallsBeforeOffline.walls + 1 && wallsAfterOnline.revision === wallsBeforeOffline.revision + 1 && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()) && (await lotsLocaux()).length === 0, JSON.stringify({ wallsBeforeOffline, wallsAfterOnline }));
+await page.waitForFunction(() => document.querySelector('.sync-indicator[data-pending="0"]')?.textContent?.trim() === "Aucune écriture en attente sur cet appareil", null, { timeout: 15000 }).catch(() => {});
+check("retour du réseau : synchronisation automatique → « Enregistré », +1 mur et +1 révision sur le serveur, file vide", wallsAfterOnline.walls === wallsBeforeOffline.walls + 1 && wallsAfterOnline.revision === wallsBeforeOffline.revision + 1 && (await page.locator('.sync-indicator[data-pending="0"]').textContent()).trim() === "Aucune écriture en attente sur cet appareil" && (await lotsLocaux()).length === 0, JSON.stringify({ wallsBeforeOffline, wallsAfterOnline }));
 // Conflit du modèle : hors ligne, la hauteur d'un mur est modifiée ; pendant la coupure, un autre appareil supprime ce mur. Au retour, le
 // lot ne s'applique plus sur la version du serveur : il reste « conflit » sur l'appareil, listé dans le bandeau, jamais fusionné.
 const modeleAvantConflit = await modelOf(atelierPid);
@@ -1140,11 +1140,11 @@ await page.waitForSelector('.conflict-banner li[data-kind="modele"]', { timeout:
 const modelConflictText = (await page.locator('.conflict-banner li[data-kind="modele"]').textContent()).replace(/\s+/g, " ");
 check("retour du réseau : le lot ne s'applique plus → conflit du modèle listé (« Atelier · Mur : Hauteur … ne s’applique plus »), compté dans l'en-tête et dans l'Atelier", /Atelier · Mur : Hauteur/.test(modelConflictText) && /ne s’applique plus sur la version du serveur/.test(modelConflictText) && /1 conflit\(s\) à examiner/.test(await page.locator(".sync-indicator").textContent()) && /1 lot\(s\) à traiter/.test(await page.locator(".barre-sync").textContent()), modelConflictText.slice(0, 200));
 await page.locator('.conflict-banner li[data-kind="modele"] button:has-text("Garder le serveur")').click();
-await page.waitForFunction(() => !document.querySelector(".conflict-banner") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 20000 }).catch(() => {});
+await page.waitForFunction(() => !document.querySelector(".conflict-banner") && document.querySelector('.sync-indicator[data-pending="0"]')?.textContent?.trim() === "Aucune écriture en attente sur cet appareil", null, { timeout: 20000 }).catch(() => {});
 // La file IndexedDB se vide de façon asynchrone après l'abandon du lot : attendre qu'elle le soit.
 for (let k = 0; k < 40 && (await lotsLocaux()).length; k++) await page.waitForTimeout(250);
 const apresConflit = await modelOf(atelierPid);
-check("« Garder le serveur » : le lot est abandonné, le mur supprimé par l'autre appareil reste supprimé, en-tête synchronisé, file vide", !apresConflit.modele.objets[murConflit] && !(await page.locator(".conflict-banner").count()) && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()) && (await lotsLocaux()).length === 0, await page.locator(".sync-indicator").textContent());
+check("« Garder le serveur » : le lot est abandonné, le mur supprimé par l'autre appareil reste supprimé, en-tête sans écriture en attente sur cet appareil, file vide", !apresConflit.modele.objets[murConflit] && !(await page.locator(".conflict-banner").count()) && (await page.locator('.sync-indicator[data-pending="0"]').textContent()).trim() === "Aucune écriture en attente sur cet appareil" && (await lotsLocaux()).length === 0, await page.locator(".sync-indicator").textContent());
 const wallsResolved = await rdcWallsOf(atelierPid);
 // Serveur injoignable (route bloquée) puis rechargement de la page : la file locale est rejouée à l'ouverture.
 await page.route(/\/atelier\/commands/, (route) => route.abort());
@@ -1187,7 +1187,7 @@ await ctx.setOffline(true);
 await page.locator("#biz-f1").fill("Demande locale (saisie hors-ligne)");
 await page.locator("#biz-f1").blur();
 await page.waitForSelector(".offline-banner-inline", { timeout: 10000 });
-check("hors-ligne : une saisie d'étape est mise en attente (« 1 envoi(s) de cette étape en attente du réseau »), comptée dans l'en-tête", /^1 envoi\(s\) de cette étape en attente du réseau/.test(await page.locator(".offline-banner-inline").textContent()) && /Hors-ligne · 1 modification/.test(await page.locator(".sync-indicator").textContent()));
+check("hors-ligne : une saisie d'étape est mise en attente (« 1 envoi(s) de cette étape en attente du réseau »), comptée dans l'en-tête", /^1 envoi\(s\) de cette étape en attente du réseau/.test(await page.locator(".offline-banner-inline").textContent()) && (await page.locator('.sync-indicator[data-pending="1"]').textContent()).trim() === "Hors-ligne · 1 modification(s) en attente");
 await page.waitForTimeout(2500); // la mutation en pause est persistée avec le cache
 await page.reload();
 await page.waitForSelector("#biz-f1", { timeout: 20000 });
@@ -1208,7 +1208,7 @@ await axeCheck(page, "bandeau de conflit avec versions côte à côte");
 await page.locator('.conflict-banner button:has-text("Reprendre ma saisie")').first().click();
 await page.waitForFunction(() => document.querySelectorAll(".conflict-banner").length === 0, null, { timeout: 10000 });
 await page.waitForFunction(() => document.querySelector("#biz-f1")?.value === "Demande locale (saisie hors-ligne)", null, { timeout: 10000 }).catch(() => {});
-check("« Reprendre ma saisie » : renvoyée fondée sur la valeur courante → acceptée, bandeau retiré, en-tête synchronisé", (await page.inputValue("#biz-f1")) === "Demande locale (saisie hors-ligne)" && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()));
+check("« Reprendre ma saisie » : renvoyée fondée sur la valeur courante → acceptée, bandeau retiré, en-tête sans écriture en attente sur cet appareil", (await page.inputValue("#biz-f1")) === "Demande locale (saisie hors-ligne)" && (await page.locator('.sync-indicator[data-pending="0"]').textContent()).trim() === "Aucune écriture en attente sur cet appareil");
 // Arbitrage fondé sur une version périmée : un autre appareil arbitre pendant que l'écran garde l'ancienne version.
 await page.goto(`${projectUrl}?module=parcours&etape=3&harmonie=1`);
 await page.waitForSelector(".h7-proposal");
@@ -1223,7 +1223,7 @@ await page.locator('.conflict-banner button:has-text("Réappliquer sur la versio
 await page.waitForFunction(() => document.querySelectorAll(".conflict-banner").length === 0, null, { timeout: 10000 });
 await page.waitForFunction(async (pid) => (await (await fetch(`/projects/${pid}/steps/3`, { credentials: "include" })).json()).content.harmonie.proposals["H02-B"]?.decisionVersion === 2, testPid, { timeout: 10000 }).catch(() => {});
 const bDecision = (await (await page.request.get(`${BASE}/projects/${testPid}/steps/3`)).json()).content.harmonie.proposals["H02-B"];
-check("« Réappliquer » : B retenue sur la version courante (version 2, historique conservé), en-tête synchronisé", bDecision.status === "retained" && bDecision.decisionVersion === 2 && bDecision.history.some((h) => h.status === "adapted") && /Synchronisé avec le serveur/.test(await page.locator(".sync-indicator").textContent()), JSON.stringify({ status: bDecision.status, version: bDecision.decisionVersion, history: bDecision.history.length }));
+check("« Réappliquer » : B retenue sur la version courante (version 2, historique conservé), en-tête sans écriture en attente sur cet appareil", bDecision.status === "retained" && bDecision.decisionVersion === 2 && bDecision.history.some((h) => h.status === "adapted") && (await page.locator('.sync-indicator[data-pending="0"]').textContent()).trim() === "Aucune écriture en attente sur cet appareil", JSON.stringify({ status: bDecision.status, version: bDecision.decisionVersion, history: bDecision.history.length }));
 await page.goto(`${projectUrl}?module=parcours&etape=3`);
 await page.waitForSelector("#biz-f1");
 // Sans concurrence, la saisie rejouée passe : même scénario, personne n'a écrit entre-temps.
@@ -1232,7 +1232,7 @@ await page.locator("#biz-f2").fill("Offre concurrente (hors-ligne)");
 await page.locator("#biz-f2").blur();
 await page.waitForSelector(".offline-banner-inline", { timeout: 10000 });
 await ctx.setOffline(false);
-await page.waitForFunction(() => !document.querySelector(".offline-banner-inline") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 20000 }).catch(async (err) => {
+await page.waitForFunction(() => !document.querySelector(".offline-banner-inline") && document.querySelector('.sync-indicator[data-pending="0"]')?.textContent?.trim() === "Aucune écriture en attente sur cet appareil", null, { timeout: 20000 }).catch(async (err) => {
   console.log(`diagnostic f2 : indicateur « ${await page.locator(".sync-indicator").textContent()} » · bandeau inline « ${(await page.locator(".offline-banner-inline").allTextContents()).join(" | ")} » · conflits « ${(await page.locator(".conflict-banner").allTextContents()).join(" | ").replace(/\s+/g, " ").slice(0, 400)} » · PATCH : ${patchLog.join(" ; ")} · erreurs : ${consoleErrors.join(" | ")}`);
   throw err;
 });
@@ -1258,11 +1258,11 @@ await page.locator("#biz-f1").fill("Demande locale (serveur injoignable)");
 await page.locator("#biz-f1").blur();
 await page.waitForSelector(".offline-banner-inline", { timeout: 15000 });
 await page.waitForFunction(() => /Serveur injoignable/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 15000 });
-check("serveur injoignable (navigateur en ligne) : la saisie est mise en attente (« en attente du serveur (injoignable pour l’instant) »), en-tête « Serveur injoignable · 1 modification(s) en attente, reprise automatique » avec « Réessayer »", /en attente du serveur \(injoignable pour l’instant\)/.test(await page.locator(".offline-banner-inline").textContent()) && /Serveur injoignable · 1 modification\(s\) en attente, reprise automatique/.test(await page.locator(".sync-indicator").textContent()) && (await page.locator('.sync-indicator button:has-text("Réessayer")').count()) === 1);
+check("serveur injoignable (navigateur en ligne) : la saisie est mise en attente (« en attente du serveur (injoignable pour l’instant) »), en-tête « Serveur injoignable · 1 modification(s) en attente » avec « Réessayer »", /en attente du serveur \(injoignable pour l’instant\)/.test(await page.locator(".offline-banner-inline").textContent()) && (await page.locator('.sync-indicator[data-pending="1"][data-reachable="0"]').textContent()).replace(/Réessayer\s*$/, "").trim() === "Serveur injoignable · 1 modification(s) en attente" && (await page.locator('.sync-indicator button:has-text("Réessayer")').count()) === 1);
 await page.unroute(API_PATH);
 // La sonde /health s'espace de 3 s à 30 s (`lib/reachability.ts`) : la reprise peut attendre jusqu'à la sonde suivante ;
 // sur un banc de CI chargé, deux ou trois sondes peuvent être nécessaires.
-await page.waitForFunction(() => !document.querySelector(".offline-banner-inline") && /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 95000 }).catch(() => {});
+await page.waitForFunction(() => !document.querySelector(".offline-banner-inline") && document.querySelector('.sync-indicator[data-pending="0"]')?.textContent?.trim() === "Aucune écriture en attente sur cet appareil", null, { timeout: 95000 }).catch(() => {});
 // Lecture côté serveur par le contexte de requêtes de Playwright (jamais par la page : un service worker pourrait
 // répondre depuis son cache).
 const f1DuServeur = async () => (await (await page.request.get(`${BASE}/projects/${testPid}/steps/3`)).json()).content.fields.f1;
@@ -1272,7 +1272,7 @@ for (let k = 0; k < 30 && (await f1DuServeur()) !== "Demande locale (serveur inj
   const entete = (await page.locator(".sync-indicator").textContent()) ?? "";
   page.off("response", surReponse);
   page.off("requestfailed", surEchec);
-  check("serveur de nouveau joignable : reprise automatique (sonde /health), saisie enregistrée sur le serveur, en-tête synchronisé", f1Serveur === "Demande locale (serveur injoignable)" && /Synchronisé avec le serveur/.test(entete), `serveur : ${String(f1Serveur).slice(0, 60)} · en-tête : ${entete.slice(0, 120)} · requêtes : ${journalInjoignable.slice(-12).join(" ; ")}`);
+  check("serveur de nouveau joignable : reprise automatique (sonde /health), saisie enregistrée sur le serveur, en-tête sans écriture en attente sur cet appareil", f1Serveur === "Demande locale (serveur injoignable)" && entete.trim() === "Aucune écriture en attente sur cet appareil" && (await page.locator(".sync-indicator").getAttribute("data-pending")) === "0", `serveur : ${String(f1Serveur).slice(0, 60)} · en-tête : ${entete.slice(0, 120)} · requêtes : ${journalInjoignable.slice(-12).join(" ; ")}`);
 }
 
 // Session au démarrage : un serveur en erreur (503) ou limité n'efface pas l'utilisateur mémorisé — l'écran se relit du cache ;
@@ -1361,10 +1361,11 @@ if (popoverBox) await page2.screenshot({ path: `${OUT}/notifications-desktop.png
 check("notifications : consultées → plus de compteur (date de consultation conservée par compte)", (await page2.locator(".notification-count").count()) === 0);
 await page2.keyboard.press("Escape");
 await page2.locator('.shared-projects a:has-text("Étude test migration")').click();
-await page2.waitForSelector(".access-banner", { timeout: 15000 });
-check("lecteur : en-tête « lecteur · partagé par … » et bandeau « Projet partagé en lecture »", new RegExp(`lecteur · partagé par ${email}`).test(await page2.locator(".project-role").textContent()) && /Projet partagé en lecture/.test(await page2.locator(".access-banner").textContent()));
+await page2.waitForSelector(`.fadi-home[data-home="project"] .dossier-overview[data-project-id="${testPid}"]`, { timeout: 15000 });
+// Le lien du projet ouvre son accueil ; les rôles et les protections du formulaire sont vérifiés dans le Parcours.
 await page2.goto(`${projectUrl}?module=parcours&etape=2`);
 await page2.waitForSelector("#biz-f1");
+check("lecteur : en-tête « lecteur · partagé par … » et bandeau « Projet partagé en lecture »", new RegExp(`lecteur · partagé par ${email}`).test(await page2.locator(".project-role").textContent()) && /Projet partagé en lecture/.test(await page2.locator(".access-banner").textContent()));
 check("lecteur : saisies désactivées (fieldset), « Retenir » inactif, « Marquer terminée » inactif, pas d'import de sources", (await page2.locator("fieldset.biz-grid[disabled]").count()) === 1 && (await page2.locator("#biz-f1").isDisabled()) && (await page2.locator('.h7-proposal button:has-text("Retenir")').first().isDisabled()) && (await page2.locator('button:has-text("Marquer terminée")').isDisabled()) && (await page2.locator('.step-sources button:has-text("Importer des fichiers")').count()) === 0);
 check("lecteur : la valeur saisie par le propriétaire reste lisible", (await page2.inputValue("#biz-f1")).length > 0);
 await axeCheck(page2, "étape 02 en lecture seule (lecteur)");
@@ -1416,7 +1417,7 @@ await page.waitForSelector(".editing-lock-free", { timeout: 10000 });
 check("propriétaire : « Rendre la main » → édition libre", true);
 await page2.goto(`${projectUrl}?module=parcours&etape=2`);
 await page2.waitForFunction(() => document.querySelector(".project-role")?.textContent?.startsWith("éditeur") && !document.querySelector("#biz-f1")?.disabled, null, { timeout: 15000 });
-await page2.waitForFunction(() => /Synchronisé avec le serveur/.test(document.querySelector(".sync-indicator")?.textContent || ""), null, { timeout: 15000 }).catch(() => {});
+await page2.waitForFunction(() => document.querySelector('.sync-indicator[data-pending="0"]')?.textContent?.trim() === "Aucune écriture en attente sur cet appareil", null, { timeout: 15000 }).catch(() => {});
 await page2.waitForTimeout(600); // relectures (verrou, étapes) terminées avant la saisie
 const editorPatch = page2.waitForResponse((r) => r.request().method() === "PATCH" && /\/steps\/2$/.test(r.url()), { timeout: 15000 }).catch(() => null);
 await page2.fill("#biz-f1", "Zone UA (saisie de l'éditeur)");
@@ -1586,9 +1587,9 @@ await pageFresh.waitForSelector('.bl-hero button:has-text("Ouvrir le modèle P.1
 await pageFresh.locator('.bl-hero button:has-text("Ouvrir le modèle P.118")').click();
 await pageFresh.waitForURL(/\/projets\/proj_[^?]+\?module=parcours&etape=10/, { timeout: 60000 });
 const freshToast = await pageFresh.waitForFunction(() => /Exemple P\.118 importé/.test(document.querySelector(".h7-toast")?.textContent || ""), null, { timeout: 8000 }).then(() => true).catch(() => false); // s'efface de lui-même après 3,6 s
-await pageFresh.waitForSelector(".project-header h1", { timeout: 30000, state: "attached" }); // étape 10 : page de l'Atelier, en-tête de Fadi effacé
+await pageFresh.waitForSelector(".fadi-topbar-title h1", { timeout: 30000, state: "attached" }); // étape 10 : page de l'Atelier, en-tête de Fadi effacé
 await atelierPret(pageFresh);
-check("bibliothèque · cas P.118 sans l'exemple dans le compte : l'exemple est importé puis ouvert à l'étape 10, Atelier monté (toast « Exemple P.118 importé »)", (await pageFresh.locator(".project-header h1").textContent()) === "P.118 — Escalier B et mezzanine" && (await pageFresh.locator(".atelier-n .plan2d").count()) === 1, freshToast ? "toast vu" : "toast non observé (effacé avant la lecture)");
+check("bibliothèque · cas P.118 sans l'exemple dans le compte : l'exemple est importé puis ouvert à l'étape 10, Atelier monté (toast « Exemple P.118 importé »)", (await pageFresh.locator(".fadi-topbar-title h1").textContent()) === "P.118 — Escalier B et mezzanine" && (await pageFresh.locator(".atelier-n .plan2d").count()) === 1, freshToast ? "toast vu" : "toast non observé (effacé avant la lecture)");
 await ctxFresh.close();
 
 // 6n. Accessibilité : chaque écran de l'application, ordinateur puis téléphone (axe-core, WCAG 2.2 AA).
@@ -1678,8 +1679,8 @@ await page.setViewportSize({ width: 390, height: 844 });
 await page.goto(`${projectUrl}?module=parcours`);
 await page.waitForSelector(".overview-step");
 await page.screenshot({ path: `${OUT}/new-00-overview-mobile.png`, fullPage: true });
-// Présentation mobile du prototype : bandeau « Parcours du projet », grille des 21 étapes sur 3 colonnes qui défile horizontalement (`overview-grid`, 145 px minimum par colonne), en-tête de projet et recherche effacés.
-check("téléphone : bandeau « Parcours du projet », barre verticale conservée, en-tête de projet et recherche de Fadi effacés (rangée des modules conservée), grille 3 colonnes à défilement horizontal (cartes du prototype)", (await page.locator(".atelier-stage-header .atelier-stage-title").textContent()) === "Parcours du projet" && !(await page.locator(".project-header").isVisible()) && !(await page.locator(".app-topbar").isVisible()) && (await page.locator(".app-sidebar").isVisible()) && (await page.locator(".module-nav").isVisible()) && (await page.locator(".overview-grid").evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(" ").length === 3 && g.scrollWidth > g.clientWidth)) && (await page.locator(".overview-step").count()) === 21);
+// Présentation mobile du prototype : bandeau « Parcours du projet », grille des 21 étapes sur 3 colonnes qui défile horizontalement (`overview-grid`, 145 px minimum par colonne). Les barres de Fadi restent accessibles hors de l'Atelier immersif ; les métadonnées de projet s'effacent.
+check("téléphone : bandeau « Parcours du projet », barres verticale et supérieure de Fadi conservées, métadonnées de projet effacées (rangée des modules conservée), grille 3 colonnes à défilement horizontal (cartes du prototype)", (await page.locator(".atelier-stage-header .atelier-stage-title").textContent()) === "Parcours du projet" && !(await page.locator(".project-header").isVisible()) && (await page.locator(".app-topbar").isVisible()) && (await page.locator(".app-sidebar").isVisible()) && (await page.locator(".module-nav").isVisible()) && (await page.locator(".overview-grid").evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(" ").length === 3 && g.scrollWidth > g.clientWidth)) && (await page.locator(".overview-step").count()) === 21);
 // Remontée en haut de page à chaque changement de vue, comme `goto()` / `study()` / `overview()` du prototype : une étape ouverte depuis
 // le bas de la grille, « Suivante → » et « ← » repartent du bandeau (sans cela, la page restait au défilement de la grille).
 const atTop = () => page.evaluate(() => window.scrollY === 0 && document.querySelector(".atelier-stage-header").getBoundingClientRect().top >= 0);

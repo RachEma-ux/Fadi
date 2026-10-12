@@ -8545,5 +8545,11 @@
 "Dates et filtres : heure de Zurich (Europe/Zurich).": "Dates and filters: Zurich time (Europe/Zurich).",
 "Depuis · inclus": "From · inclusive",
 "Jusqu’à · inclus": "Until · inclusive",
-"Événements disponibles, du plus récent au plus ancien. Les filtres portent sur le relevé chargé.": "Available events, newest first. Filters apply to the loaded history."
+"Événements disponibles, du plus récent au plus ancien. Les filtres portent sur le relevé chargé.": "Available events, newest first. Filters apply to the loaded history.",
+"Lecture du dossier en cours…": "Reading the dossier…",
+"La connexion au serveur est indisponible et aucune copie lisible de ce dossier n’est disponible sur cet appareil.": "The server connection is unavailable and no readable copy of this dossier is available on this device.",
+"La lecture du dossier a échoué. Aucune copie lisible n’est disponible sur cet appareil.": "The dossier could not be read. No readable copy is available on this device.",
+"La connexion n’est pas rétablie. Réessayez lorsque le serveur sera joignable.": "The connection has not been restored. Try again when the server is reachable.",
+"La lecture du dossier n’a pas pu être rétablie. Réessayez lorsque le service sera disponible.": "The dossier still could not be read. Try again when the service is available.",
+"Reconnectez cet appareil à un réseau pour réessayer.": "Reconnect this device to a network to try again."
 }

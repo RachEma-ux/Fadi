@@ -8,26 +8,28 @@
 
 **Implementation status at creation of this record:** implementation in the Fadi application authorized and in progress.
 
+**Latest implementation checkpoint:** 13 October 2026, approximately 00:40 CEST (`2026-10-12 22:40 UTC`). The new Home recipe passed 49 CI checks; the final gate for the complete regression suite remains open. See Section 12.
+
 **Repository:** [RachEma-ux/Fadi](https://github.com/RachEma-ux/Fadi)
 
 **Archived interactive reference:** [Fadi-Accueil-Selecteur-Projets.html](./Fadi-Accueil-Selecteur-Projets.html)
 
-This document records the agreed design, the evolution of the local prototype and the evidence available before implementation in Fadi. The latest explicit validation of all three tasks was recorded in the conversation at approximately **23:21 CEST on 12 October 2026**. Earlier exchanges are documented in their design sequence; exact timestamps are not reconstructed.
+This document records the agreed design, the evolution of the local prototype and the subsequent implementation evidence in Fadi. The latest explicit validation of all three tasks was recorded in the conversation at approximately **23:21 CEST on 12 October 2026**. Earlier exchanges are documented in their design sequence; exact timestamps are not reconstructed. Implementation and CI corrections continued after midnight in Zurich, on **13 October 2026**; this does not change the original approval date.
 
 ## 1. What is approved, demonstrated and still being implemented
 
 The user has approved the complete design of **Tâche 1 — Dossier explicitement choisi**, **Tâche 2 — États fiables** and **Tâche 3 — Action utile avant l’aperçu**, and has instructed the work to proceed into Fadi. The earlier practice of preparing, adjusting and validating each task has therefore reached its implementation handoff.
 
-The archived HTML is the existing, unchanged reference for Tasks 1 and 2. **It does not yet implement the newly approved Task 3 action area or its full Parcours destination.** Its current “Poursuivre le Parcours” control remains in the overview card footer and opens a demonstration dialog for one step. That behavior must not be mistaken for the approved final requirement. Fadi implementation must put the contextual primary action before the preview and open the complete Parcours with the appropriate step selected.
+The archived HTML is the existing, unchanged reference for Tasks 1 and 2. **It does not implement the approved Task 3 action area or its full Parcours destination.** Its “Poursuivre le Parcours” control remains in the overview card footer and opens a demonstration dialog for one step. Task 3 was approved in prose and subsequently implemented in React: the Fadi application places the contextual primary action before the preview and opens the actual Parcours with the appropriate step selected. The historical HTML was not retrofitted.
 
-| Item | Status at this handoff |
+| Item | Recorded status |
 |---|---|
 | Tasks 1 and 2 design | Explicitly approved; represented in the archived prototype. |
 | Task 3 design | Explicitly approved; specified in Section 7 of this document. |
 | Existing HTML | Preserved as the examined reference, without a Task 3 retrofit. |
 | Prototype verification | 135 state, routing, callback and generated-markup checks passed. |
-| Fadi application changes | Authorized; in progress. Actual changes and verification belong in Section 12. |
-| Browser rendering and assistive technology verification | Not established by the 135 programmatic checks; must be recorded separately when performed. |
+| Fadi application changes | Implemented in [PR #136](https://github.com/RachEma-ux/Fadi/pull/136). The new Home recipe passed 49 checks; the complete regression gate remains open. See Section 12. |
+| Browser rendering and accessibility verification | The four application/project Home renders at desktop/mobile sizes were checked in CI and viewed by the implementation coordinator. All four axe runs reported no critical or serious violations. This is separate from the prototype's 135 checks and does not establish screen-reader or physical-device verification. |
 
 ### Archived reference identity
 
@@ -332,35 +334,35 @@ The checks execute application code and registered callbacks with a VM and minim
 
 Two test expectations were updated to reflect intentional copy changes: the generic cache wording became **“Aperçu · Copie en cache”**, and Home’s failed-saving notice was checked through **“Enregistrement non confirmé”**, its durable-saving explanation and recovery action. The DOM stub gained `scrollIntoView` for the new comparison behavior. These were test/harness adjustments, not suppressed application failures.
 
-The Task 3 action policy, placement and full Parcours destination require implementation-specific tests. They are approved requirements, not features proven by the archived reference’s 135 checks.
+The Task 3 action policy, placement and full Parcours destination have implementation-specific evidence in Section 12. They are approved requirements implemented in React, not features proven by the archived reference’s 135 checks.
 
 ## 10. Acceptance matrix
 
-“Prototype checked” below means the state/callback/generated-markup evidence described in Section 9. All rows are approved design requirements. Fadi status is deliberately left pending verification until actual implementation evidence is entered in Section 12.
+“Prototype checked” below means the state/callback/generated-markup evidence described in Section 9. All rows are approved design requirements. **CI3** refers to the dated [third implementation CI run](https://github.com/RachEma-ux/Fadi/actions/runs/38317114772): its new Home recipe completed 49 checks successfully, while the complete E2E gate remained open after legacy Parcours assertions stopped the broader recipe. “Implemented” describes the application code; each row identifies whether the relevant evidence is a browser result, a unit/API test or source integration. These statuses do not imply merge or deployment.
 
 | ID | Acceptance requirement | Archived prototype | Fadi implementation evidence |
 |---|---|---|---|
-| T1-01 | Choose a dossier explicitly through the right-opening “Projets” submenu. | Represented; selection and menu callbacks checked. | Pending. |
-| T1-02 | Project selection opens its dedicated Home; application Home stays a separate destination. | Represented and checked. | Pending. |
-| T1-03 | Project code/name and all actions correspond to the same dossier. | Represented and checked, including recent-dossier actions. | Pending. |
-| T1-04 | Return/reload preserve the intended dossier and last consultation without silent substitution. | Represented; storage, cross-tab and invalid-ID cases checked. | Pending. |
-| T1-05 | Keep the collapsed vertical rail on desktop/mobile; global menu items retain their hierarchy. | Markup and interaction logic checked; browser layout not established. | Pending. |
-| T1-06 | Application and project search have explicit distinct scope. | Represented; search/selection behavior checked. | Pending. |
-| T2-01 | Loading, confirmed empty and errors do not fabricate counters or content. | Represented and checked, including programme footer wording. | Pending. |
-| T2-02 | Progress, review and synchronization express independent facts. | Represented and checked. | Pending. |
-| T2-03 | Preserve available content and input during partial failure, cache refresh and failed saving. | Represented and checked. | Pending. |
-| T2-04 | Reconnect/sync do not freshen cached resources; successful-read dates are independent. | Represented; resource, reload and migration cases checked. | Pending. |
-| T2-05 | Home presents simultaneous scoped notices; each recovery changes only its own condition. | Represented and checked. | Pending. |
-| T2-06 | Comparison from Home opens and targets the correct dossier’s unresolved conflict. | Routing and focus/scroll calls checked. | Pending. |
-| T2-07 | Respect read-only, reservation, session and inaccessible-dossier conditions. | Simulated states and callbacks checked. | Real access integration pending. |
-| T2-08 | Dossier/platform histories distinguish accepted changes, partial coverage, empty results and errors. | Simulated events, filters, isolation and races checked. | Real history integration pending. |
-| T2-09 | Reference programme and unknown dates remain explicitly qualified on both Homes. | Represented and checked. | Pending. |
-| T3-01 | Place one shared contextual primary action inside the overview before the preview. | **Not yet implemented; old footer controls remain.** | Required now; pending verification. |
-| T3-02 | Choose the useful action from actual blockers, access and identified work. | **Approved policy; current HTML does not implement the complete policy.** | Required now; pending verification. |
-| T3-03 | Open the full 21-step Parcours with the correct known step selected. | **Not yet implemented; current control opens a step dialog.** | Required now; pending verification. |
-| T3-04 | New/complete/read-only cases use start/consultation actions appropriately. | Full Task 3 behavior not yet implemented. | Required now; pending verification. |
-| T3-05 | Handle combined save/connection/conflict blockers by confirmed successive outcomes. | Underlying Task 2 recovery behavior checked; contextual action progression pending. | Required now; pending verification. |
-| T3-06 | Preserve text/action/preview order, full-width mobile action and stable busy placement. | Task 3 layout not yet present. | Browser and interaction verification required. |
+| T1-01 | Choose a dossier explicitly through the right-opening “Projets” submenu. | Represented; selection and menu callbacks checked. | Implemented. CI3 passed native-link selection, keyboard opening, Escape/focus return and the right-opening mobile flyout checks. |
+| T1-02 | Project selection opens its dedicated Home; application Home stays a separate destination. | Represented and checked. | Implemented. CI3 passed both destinations and verified that application content does not become project content. |
+| T1-03 | Project code/name and all actions correspond to the same dossier. | Represented and checked, including recent-dossier actions. | Implemented through the shared scoped card. CI3 checked identity and the actual Parcours, programme, Atelier and review continuation destinations. |
+| T1-04 | Return/reload preserve the intended dossier and last consultation without silent substitution. | Represented; storage, cross-tab and invalid-ID cases checked. | Implemented. CI3 passed explicit choice, return, reload and per-user isolation. Storage/cross-tab edge cases have separate unit evidence. |
+| T1-05 | Keep the collapsed vertical rail on desktop/mobile; global menu items retain their hierarchy. | Markup and interaction logic checked; browser layout not established. | Implemented. CI3 verified the rail, independent Collaboration item and bounded flyout. Four desktop/mobile Home captures were viewed. |
+| T1-06 | Application and project search have explicit distinct scope. | Represented; search/selection behavior checked. | Implemented in the scoped SearchDialog. CI3 checked that application search does not select a dossier and that Escape closes the search and restores focus. The wider bilingual/dialog recipe still belongs to the final regression gate. |
+| T2-01 | Loading, confirmed empty and errors do not fabricate counters or content. | Represented and checked, including programme footer wording. | Implemented. CI3 passed sparse, loading, failed-read and confirmed-new cases, including absence of invented progress, area or preview-generation claims. |
+| T2-02 | Progress, review and synchronization express independent facts. | Represented and checked. | Implemented with separate query/service inputs and labels. State tests passed; CI3 confirmed independent resource readings. A successful upload is not used as technical approval. |
+| T2-03 | Preserve available content and input during partial failure, cache refresh and failed saving. | Represented and checked. | Implemented. CI3 retained programme content and its successful-read date after refresh failure. Local-save/input preservation has state and persistence test evidence; the complete failed-save browser sequence is not part of the 49 checks. |
+| T2-04 | Reconnect/sync do not freshen cached resources; successful-read dates are independent. | Represented; resource, reload and migration cases checked. | Implemented with per-resource timestamps. CI3 passed the failed-programme-refresh/unchanged-preview-date case; recovery and invalidation rules have unit evidence. |
+| T2-05 | Home presents simultaneous scoped notices; each recovery changes only its own condition. | Represented and checked. | Implemented in DossierDashboard and scoped recovery services. CI3 exercised a resource failure and its retry; combined-condition policies have unit evidence. |
+| T2-06 | Comparison from Home opens and targets the correct dossier’s unresolved conflict. | Routing and focus/scroll calls checked. | Implemented with the current project identifier and real ConflictPanel. Source and recovery-state checks cover the integration; a complete Home-to-conflict browser recovery remains unverified by CI3's new Home recipe. |
+| T2-07 | Respect read-only, reservation, session and inaccessible-dossier conditions. | Simulated states and callbacks checked. | Integrated with real server access checks. API/state tests passed and CI3 passed unknown-role handling. The complete set of access-state browser permutations is not claimed. |
+| T2-08 | Dossier/platform histories distinguish accepted changes, partial coverage, empty results and errors. | Simulated events, filters, isolation and races checked. | Real history routes and dialogs implemented. PostgreSQL tests cover access filtering/revocation, actual authors, idempotence and bounded results; view-model tests cover filters and Zurich boundaries. CI3 opened platform history without changing the dossier. All journal interaction states are not covered by that one browser check. |
+| T2-09 | Reference programme and unknown dates remain explicitly qualified on both Homes. | Represented and checked. | Implemented in the shared card. CI3 passed loading/reference/sparse-data wording and independent dates; unavailable area or generation dates are not invented. |
+| T3-01 | Place one shared contextual primary action inside the overview before the preview. | **Not implemented in the archived HTML; old footer controls remain.** | Implemented in React. CI3 verified source and visual order on both Homes at both viewport sizes. |
+| T3-02 | Choose the useful action from actual blockers, access and identified work. | **Approved policy; current HTML does not implement the complete policy.** | Implemented; action-resolver tests passed. CI3 verified nonsequential step 09 and explicitly remembered programme, Atelier and review work. |
+| T3-03 | Open the full 21-step Parcours with the correct known step selected. | **Not implemented in the archived HTML; its control opens a step dialog.** | Implemented. CI3 opened the real step 09, returned to all 21 original cards and confirmed that navigation did not complete a step. |
+| T3-04 | New/complete/read-only cases use start/consultation actions appropriately. | Full Task 3 behavior is absent from the archived HTML. | Implemented. CI3 verified the confirmed-new start action; complete/read-only consultation branches have resolver test evidence. |
+| T3-05 | Handle combined save/connection/conflict blockers by confirmed successive outcomes. | Underlying Task 2 recovery behavior checked; contextual action progression absent. | Implemented in the resolver and scoped recovery services, with state/persistence tests. The full combined-condition browser chain has not been established by the 49 Home checks. |
+| T3-06 | Preserve text/action/preview order, full-width mobile action and stable busy placement. | Task 3 layout is absent from the archived HTML. | Implemented. CI3 passed both Home layouts, full-width mobile actions, minimum 44 px targets and disabled loading state; all write-operation transitions are not part of that geometry check. |
 
 ## 11. Sources and reading this record
 
@@ -368,16 +370,16 @@ The Task 3 action policy, placement and full Parcours destination require implem
 - **Product source:** user-provided *Définition de produit — Fadi*, defining the evolving dossier, connected modules and 21-step Parcours.
 - **Process source:** user-provided *Méthodologie du processus de design dans ChatGPT*, emphasizing concrete reviewable outcomes, explicit decisions and separation of observed facts from proposed or unverified behavior.
 - **Interactive/source reference:** [Fadi-Accueil-Selecteur-Projets.html](./Fadi-Accueil-Selecteur-Projets.html), the exact archived file identified by size and hash in Section 1. Its embedded JavaScript, styles and fixtures support the statements about current prototype behavior.
-- **Implementation target:** [RachEma-ux/Fadi on GitHub](https://github.com/RachEma-ux/Fadi). Actual implementation files, revision and tests are to be recorded below after the work is performed.
-- **Verification evidence:** the five named local regression suites and their successful executions summarized in Section 9. Their 135 checks concern the reference; no result is transferred automatically to production code.
+- **Implementation:** [PR #136](https://github.com/RachEma-ux/Fadi/pull/136) in [RachEma-ux/Fadi](https://github.com/RachEma-ux/Fadi), with application files, checkpoint revision and CI results recorded in Section 12.
+- **Verification evidence:** the five local reference suites summarized in Section 9, and the separate application unit/API/browser results linked in Section 12. The prototype's 135 checks are not transferred automatically to production code.
 
 The fictional journal events are design fixtures. This document’s design decisions are user-approved requirements. Real repository changes and their tests are a third category, recorded next so that these kinds of evidence remain distinguishable.
 
-## 12. Fadi implementation log — implementation written, CI pending
+## 12. Fadi implementation log — Home recipe verified, final regression gate open
 
-**Authorized scope:** implement the validated Tasks 1, 2 and 3 in Fadi and archive the unchanged reference HTML together with this design record. Sections 1–11 preserve the design handoff and its prototype evidence; this section records the subsequent application work. The earlier acceptance matrix is not a claim that browser verification has since passed.
+**Authorized scope:** implement the validated Tasks 1, 2 and 3 in Fadi and archive the unchanged reference HTML together with this design record. The approval and prototype record remain dated 12 October 2026. The acceptance matrix and this section record subsequent implementation and evidence, including work after midnight in Zurich.
 
-**Current checkpoint:** the React implementation, data integration, translations and CI recipes have been written in the repository. Local checks have produced the results below. Full CI, database-backed integration, rendered behavior and accessibility verification remain pending. No completed commit, pull request, deployment or production migration is asserted by this checkpoint.
+**Current checkpoint — 13 October 2026, approximately 00:40 CEST (12 October 22:40 UTC):** the implementation is in [PR #136](https://github.com/RachEma-ux/Fadi/pull/136). [CI run 3](https://github.com/RachEma-ux/Fadi/actions/runs/38317114772) completed the new Home recipe with **49 successful checks**, including four desktop/mobile Home renders and four axe runs with no critical or serious violations. The implementation coordinator viewed all four screenshots. The validation and production-image jobs succeeded. The broader E2E recipe stopped on identified legacy Parcours expectations; those corrections and the complete regression gate remain in progress. Merge and deployment are not recorded as complete.
 
 ### 12.1 Repository and archived reference
 
@@ -386,7 +388,9 @@ The fictional journal events are design fixtures. This document’s design decis
 | Repository | [RachEma-ux/Fadi](https://github.com/RachEma-ux/Fadi) |
 | Working branch | `feat/home-design-2026-10-12` |
 | Base revision | `54c9af4436fe9dc792ffa3acd3dc95173e4883b9` |
-| Application change revision | Working-tree changes at this checkpoint; the implementation commit is to be recorded after it exists. |
+| Application checkpoint revision | [`b0a86cffbe6f8301337631b1dd82fbb9aa840b09`](https://github.com/RachEma-ux/Fadi/commit/b0a86cffbe6f8301337631b1dd82fbb9aa840b09) |
+| Pull request / final gate status | [PR #136](https://github.com/RachEma-ux/Fadi/pull/136) — consult its current checks for the later final regression result. |
+| Dated CI evidence | [Run 3 — 38317114772](https://github.com/RachEma-ux/Fadi/actions/runs/38317114772), checkpoint reviewed after Zurich midnight on 13 October 2026. |
 | Design record, actual repository path | `Design/Design Historique.md` |
 | Archived HTML | `Design/Fadi-Accueil-Selecteur-Projets.html` — reference revision 11 |
 | Verified HTML size | **346,134 bytes** |
@@ -399,11 +403,11 @@ The archived HTML remains byte-identical to the approved Tasks 1/2 reference. **
 | Area | Files and implemented behavior |
 |---|---|
 | Application routing and shell | [App.tsx](../apps/web/src/App.tsx), [AppShell.tsx](../apps/web/src/routes/AppShell.tsx), [ProjectShell.tsx](../apps/web/src/routes/ProjectShell.tsx), [CollaborationPage.tsx](../apps/web/src/routes/CollaborationPage.tsx) and [workspace-navigation.ts](../apps/web/src/lib/workspace-navigation.ts). `/accueil` is the application Home. `/projets/:projectId` without a module opens that project's dedicated Home. Existing module and step destinations remain explicit URL state. |
-| Vertical navigation | `AppShell.tsx` implements a rail collapsed by default, an expand/collapse control, an independent “Collaboration” entry and the “Projets” flyout to the right. Project items are native links. Keyboard movement, Escape, focus return and small-screen positioning are implemented. The rail remains part of the application and Parcours shell; existing immersive Atelier/drawing contexts retain their established treatment. Rendered behavior awaits CI verification. |
+| Vertical navigation | `AppShell.tsx` implements a rail collapsed by default, an expand/collapse control, an independent “Collaboration” entry and the “Projets” flyout to the right. Project items are native links. CI3 passed native selection, Escape/focus return and mobile flyout bounds; the four Home renders were viewed. The rail remains part of the application and Parcours shell; existing immersive Atelier/drawing contexts retain their established treatment. |
 | Last consultation | [last-dossier.ts](../apps/web/src/lib/last-dossier.ts) stores the last dossier, known step and explicitly visited work area per user, with per-project step/work remembrance. Safe enum validation ignores invalid work values, and storage events refresh the remembered maps across tabs. A deliberate project visit records that preference. Project creation/modification dates do not select a dossier. Application Home reads the remembered identifier; it does not substitute another project when access or loading fails. A persistence limitation is disclosed when the browser cannot confirm storage. |
 | Shared overview and separate Homes | [AccueilPage.tsx](../apps/web/src/routes/AccueilPage.tsx) and [DossierDashboard.tsx](../apps/web/src/modules/accueil/DossierDashboard.tsx). Both Homes use the same scoped overview card. Application Home adds the last dossier's identity and explicit project-Home link above it, application entry points and a contextual side panel. Phases, the project module grid and the document list belong to project Home. |
 | Top bar and search | [HomeTopbar.tsx](../apps/web/src/modules/accueil/HomeTopbar.tsx), [SearchDialog.tsx](../apps/web/src/modules/accueil/SearchDialog.tsx), [Dialog.tsx](../apps/web/src/modules/accueil/Dialog.tsx) and [user-display.ts](../apps/web/src/lib/user-display.ts). Application Home carries the greeting and editable display name; project Home carries the project identity and available subtitle. The magnifier searches projects at application level and the current project's modules, steps and documents at project level. Search alone does not change the last consultation. |
-| Presentation | [accueil.css](../apps/web/src/modules/accueil/accueil.css), [history.css](../apps/web/src/modules/accueil/history.css) and the existing [Icon.tsx](../apps/web/src/components/Icon.tsx). Shared colors, typography, card dimensions, visible focus treatment, mobile layout and action/preview order are implemented in source. |
+| Presentation | [accueil.css](../apps/web/src/modules/accueil/accueil.css), [history.css](../apps/web/src/modules/accueil/history.css) and the existing [Icon.tsx](../apps/web/src/components/Icon.tsx). Shared colors, typography, card dimensions, visible focus treatment, mobile layout and action/preview order are implemented. CI3 checked both Home layouts at 1280 × 900 and 390 × 844; the four captures were inspected and all four Home axe runs passed the critical/serious threshold. |
 
 ### 12.3 Reliable states and recovery integrated with application data
 
@@ -441,7 +445,7 @@ The approved alternate actions are also implemented from an **explicitly visited
 
 These links preserve permitted consultation for read-only or reserved dossiers. Recovery still precedes the remembered workspace when saving, connectivity or unresolved versions require it. A review warning alone does not choose the review action. Invalid or unrelated stored work values do not fabricate a destination.
 
-Source order and CSS implement text, action, then preview on desktop and mobile, with a full-width mobile action and tactile target sizing. Browser verification of the actual geometry, focus, disabled-operation behavior and responsive layout is pending.
+CI3 verified source and visual order on both Homes at **1280 × 900** and **390 × 844**, including a full-width mobile primary action, a target of at least **44 px**, a visible vertical rail and no page-level horizontal overflow. It also exercised disabled loading and focus restoration. These results cover the recorded Home scenarios; they do not establish every possible write-operation or conflict transition.
 
 ### 12.5 Real history, coverage and production qualifications
 
@@ -451,19 +455,19 @@ Dossier history combines retained dated records, comments and accepted Atelier b
 
 The dossier table has four columns: **Date et heure**, **Auteur**, **Domaine** and **Changement enregistré**. Platform history adds **Dossier** so events can be identified and filtered across projects. Filters combine with AND semantics and apply to the loaded, bounded history. Reversed dates, a filtered result with no matches, an empty successful response and a failed read remain distinct. Links open the dossier's current information, not a restorable historical version.
 
-History display and filtering now both use **Europe/Zurich**, preserving the design requirement independently of the device's local zone. The UI states **“Dates et filtres : heure de Zurich (Europe/Zurich).”**, with **“Depuis · inclus”** and **“Jusqu’à · inclus”** labels. Filter boundaries include the complete civil minute. The pure view-model tests cover boundary/midnight cases, the skipped spring hour and both repeated autumn minutes. Browser rendering of these controls remains part of the pending CI recipe.
+History display and filtering now both use **Europe/Zurich**, preserving the design requirement independently of the device's local zone. The UI states **“Dates et filtres : heure de Zurich (Europe/Zurich).”**, with **“Depuis · inclus”** and **“Jusqu’à · inclus”** labels. Filter boundaries include the complete civil minute. The four view-model tests passed, covering boundary/midnight cases, the skipped spring hour and both repeated autumn minutes. CI3 opened platform history without changing the selected dossier. The broader bilingual/dialog recipe and exhaustive journal-state browser interactions are not established by the 49 Home checks.
 
 The retained-record limitation remains explicit: snapshots and available journal sources are not a complete immutable audit or a complete set of recoverable versions. Missing authors and historical states cannot be reconstructed from absent data.
 
-### 12.6 Local verification evidence at this checkpoint
+### 12.6 Earlier local verification checkpoints
 
-Results below are recorded from the actual local task runs. The repository-wide typecheck, build and test counts were reported by the implementation coordinator; translation and recipe checks were also performed on the owned files. The counts overlap and **must not be added together as independent coverage totals**.
+Results below preserve the actual earlier local task runs. The repository-wide typecheck, build and test counts were reported by the implementation coordinator; translation and recipe checks were also performed on the owned files. **The local database limitation in this table was subsequently resolved by the normal CI PostGIS service, as recorded in Section 12.7.** These historical counts overlap with later runs and must not be added together as independent coverage totals.
 
 | Check | Actual observed result | Meaning and remaining limit |
 |---|---|---|
 | `npm run typecheck` | Passed once during this implementation. | Establishes that checkpoint's type correctness; later edits still need the final CI gate. |
 | `npm run build` | Passed during implementation and the subsequent full build completed with exit code 0. | Establishes those checkpoint builds; it is not a browser test or deployment. |
-| Repository-wide `npm test` | **1,541 tests passed, 1 test skipped; 12 database-dependent suites were blocked at import because `DATABASE_URL` was missing.** | The full test command was not green. This environment did not supply the disposable database required by those suites. |
+| Earlier local repository-wide `npm test` | **1,541 tests passed, 1 test skipped; 12 database-dependent suites were blocked at import because `DATABASE_URL` was missing.** | This local command was not green. Later CI validation ran the database-dependent suites successfully; the old import blockage is not the current CI status. |
 | Subsequent scoped state/access/persistence/mutation run | **41 tests passed.** | Checks the relevant state and scope logic at that run; does not replace the blocked database suites or browser coverage. |
 | Subsequent full web unit suite | **206 tests passed.** | The web suite passed at that checkpoint; final navigation and timezone refinements still require the final CI run. |
 | Explicit-work action resolver refinement | **21 resolver tests passed**, including the newly added workspace cases. | Confirms the pure action policy, not the rendered round trip through the application. |
@@ -475,12 +479,38 @@ Results below are recorded from the actual local task runs. The repository-wide 
 | Whitespace/error scan of owned QA files | `git diff --check` passed. | Does not validate behavior. |
 | Archived reference | Byte count and SHA-256 match the revision-11 reference above. | Preserves the exact prior HTML and its separate 135-check evidence. |
 
-No browser, local preview server or database service was started for this checkpoint. No browser installation or database mutation was used to bypass that environment limitation.
+No browser, preview server or database service was started in the local workspace for these checkpoints. The subsequent real browser and database checks ran through the repository's normal GitHub CI workflow.
 
-### 12.7 CI recipe and pending final evidence
+### 12.7 CI evidence — 13 October 2026 checkpoint
 
-The new [accueils-design.mjs](../apps/web/e2e/accueils-design.mjs) is wired into [ci.yml](../.github/workflows/ci.yml) before the existing [parcours-scenario.mjs](../apps/web/e2e/parcours-scenario.mjs). It uses a dedicated CI account and three created project fixtures. It checks explicit choice, keyboard/menu behavior, the two Homes, remembered selection and reload, per-user isolation, native Parcours routing, nonsequential continuation, preservation of all 21 steps, loading/error recovery, unknown permissions, independent resource freshness, mobile layout and axe accessibility. Its retained-programme failure scenario checks the old value and read date while the preview keeps its own date. Captures, results and axe output are written under the existing CI artifact tree.
+The new [accueils-design.mjs](../apps/web/e2e/accueils-design.mjs) runs in [ci.yml](../.github/workflows/ci.yml) before the existing [parcours-scenario.mjs](../apps/web/e2e/parcours-scenario.mjs). It uses a dedicated CI account and projects created for the recipe, including additional sparse/permission fixtures. Its full run completed successfully in [CI run 3](https://github.com/RachEma-ux/Fadi/actions/runs/38317114772). Captures, results and axe output are retained under the workflow's existing artifact tree.
 
-The existing Parcours recipe was adjusted for intentional Home changes: project links now open project Home, while tests requiring the complete workflow use `?module=parcours`; phase assertions belong to the project Home; the display-name flow remains covered. The original workflow cases and 21-step definitions were preserved. [Interface-anglais.mjs](../apps/web/e2e/interface-anglais.mjs) now audits both Homes and their search, history and status dialogs.
+| Evidence | Result at the dated checkpoint | Scope |
+|---|---|---|
+| [Validation job 115036555537](https://github.com/RachEma-ux/Fadi/actions/runs/38317114772/job/115036555537) | **SUCCESS** | Typecheck, database migration, tests, build and the IFC corpus check with IfcOpenShell completed. |
+| Completed CI test output in this implementation series | **1,699 passed, 1 skipped**, including **105 API tests** and **218 web tests**. | The API/web counts are included in the total. This CI evidence supersedes the earlier local database import blockage; it does not replace the separate E2E gate. |
+| Production-image job in [CI run 3](https://github.com/RachEma-ux/Fadi/actions/runs/38317114772) | **SUCCESS** | Docker production startup, health, SPA delivery and authentication checks completed. This is image verification, not deployment. |
+| New Home recipe, `accueils-design.mjs` | **49 checks passed; complete recipe success.** | Application/project Homes, selection, remembrance, real destinations, reliable reading states, layout, focus and runtime errors as detailed below. |
+| Application Home — desktop | **1280 × 900; composition checks passed; capture viewed.** | `application-desktop.png`; axe reported no critical or serious violations. |
+| Project Home — desktop | **1280 × 900; composition checks passed; capture viewed.** | `projet-desktop.png`; axe reported no critical or serious violations. |
+| Application Home — mobile viewport | **390 × 844; composition checks passed; capture viewed.** | `application-mobile.png`; axe reported no critical or serious violations. |
+| Project Home — mobile viewport | **390 × 844; composition checks passed; capture viewed.** | `projet-mobile.png`; axe reported no critical or serious violations. |
+| Broader existing E2E sequence | **Final gate open.** | The run stopped in the legacy Parcours recipe on expectations referring to the previous project header and review step. Later recipes are not recorded as completed. |
 
-**Pending:** run the normal GitHub CI with its disposable PostGIS service, review any failures, inspect the produced desktop/mobile screenshots and axe results, and record the final commit and CI run links. No rendered layout, assistive-technology result, deployment or production approval is claimed until that evidence exists. The coordinator will append the final CI evidence to this section.
+The successful Home recipe exercised explicit project choice with no automatic selection from creation dates; per-user last consultation and reload; native menu links; the right-opening flyout; Escape and focus return; separate application/project pages; and application search/platform history that leave the last dossier unchanged. It followed the actual **nonsequential step 09** through the real Parcours, returned to all 21 original cards and verified that navigation did not complete a step. Explicitly visited **programme**, **Atelier** and **review at step 11** supplied the appropriate continuation action and destination.
+
+The same recipe exercised sparse data, first-read loading, read failure and retry, unknown permissions, independent successful-read dates and retained programme content after an unsuccessful refresh. It checked that missing information did not become a fabricated zero area or preview-generation date. The four Home compositions preserved action-before-preview order, the vertical rail and bounded page width; mobile actions met the full-width and minimum-target checks. No JavaScript runtime errors were recorded during these recipe transitions.
+
+The implementation coordinator inspected the four actual CI screenshots. The corresponding axe runs checked the configured WCAG 2/2.1/2.2 A/AA tags and found **no critical or serious violations**. These results apply to those rendered states and viewport sizes; they do not establish screen-reader testing, physical-phone testing or accessibility of every application state.
+
+#### Corrections made from the CI evidence
+
+The first browser runs exposed concrete issues that were corrected before the successful Home recipe: definition-list markup, Escape handling from the search input with dialog close/focus restoration, contrast of the display-name edit icon, and wording that could imply a zero area or a generated preview when those data were absent. These were application fixes followed by the successful run, not removed checks.
+
+The broader Parcours recipe also contains expectations from the previous UI. CI3 stopped on a review expectation pointing to step **18** instead of the actual building review at **11**, and an old `.project-header h1` lookup after creating a variant/copy. The copy handler explicitly retains `?module=parcours`; the project identity is now in the shared top bar. Subsequent source review found later assertions using the previous synchronization label, a reader's bare project link as though it opened the Parcours, and the former mobile top-bar behavior. Those later assertions had not yet been reached in CI3. The recipe corrections preserve the authoritative step definitions and intended workflow: bare project links open project Home, while full-workflow checks use `?module=parcours`. [Interface-anglais.mjs](../apps/web/e2e/interface-anglais.mjs) includes the two Homes and their search/history/status dialogs, but its completion in the entire E2E sequence is not claimed at this checkpoint.
+
+#### Remaining final gate
+
+Complete the legacy Parcours expectation corrections, rerun the normal workflow and review the **entire** E2E sequence and any remaining artifacts. Record the final successful revision/run before treating the complete regression gate as closed. [PR #136](https://github.com/RachEma-ux/Fadi/pull/136) is the associated review and current-check entry point; this dated checkpoint does not silently adopt later statuses. **Merge, deployment and production acceptance remain unrecorded.**
+
+Five additional browser assertions have been prepared for the next revision: first dossier-read failure (500) and retry, hiding a cached dossier after an access refusal (404), and session renewal (401) through the actual login page with return to the same project. They have not yet run and are **not included in the 49 successful CI checks**. The related safe-return URL refinement passed **25 focused unit tests** and web typecheck locally; that result is separate from the pending browser recovery scenarios.
