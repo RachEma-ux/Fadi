@@ -18,7 +18,7 @@ export function RoadmapPreview({ projectId, steps, loading = false }: RoadmapPre
   return <section className="cockpit-preview panel" aria-label="Planning de référence du dossier">
     <header className="cockpit-preview-header">
       <h2>Planning de référence · Exemple illustratif sur 12 semaines</h2>
-      <div className="cockpit-status-legend" aria-label="Légende de l’avancement">
+      <div className="cockpit-status-legend" role="group" aria-label="Légende de l’avancement">
         <span><i className="cockpit-dot cockpit-dot-done" />Terminé</span>
         <span><i className="cockpit-dot cockpit-dot-doing" />En cours</span>
         <span><i className="cockpit-dot cockpit-dot-todo" />À faire</span>
