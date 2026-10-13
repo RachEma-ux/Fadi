@@ -17,7 +17,8 @@ export function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
   const projectMatch = useMatch("/projets/:projectId");
-  const projectId = projectMatch?.params.projectId;
+  const cockpitMatch = useMatch("/projets/:projectId/pilotage");
+  const projectId = projectMatch?.params.projectId ?? cockpitMatch?.params.projectId;
   const last = useLastDossier(user?.id);
   const [expanded, setExpanded] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
