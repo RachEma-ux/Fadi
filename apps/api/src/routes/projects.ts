@@ -10,6 +10,7 @@ import { EMPTY_STEP_CONTENT, PARCOURS_STEPS, exampleBaseDocuments } from "../dat
 import { activeLock, projectOr404 } from "../lib/owned-project.js";
 import { APPLICATION_VERSION, ArchiveModeleError, SOURCE_VERSION, exportProjectArchive, importProjectArchive } from "../lib/project-archive.js";
 import { parcoursStepsRouter } from "./parcours-steps.js";
+import { projectPlanningRouter } from "./project-planning.js";
 import { programmeRouter } from "./programme.js";
 import { atelierCommandsRouter } from "./atelier-commands.js";
 import { atelierVersionsRouter } from "./atelier-versions.js";
@@ -196,6 +197,7 @@ projectsRouter.post("/:projectId/copies", async (req, res) => {
 
 // --- Étapes du Parcours (module Parcours) et répartition (module Programmation)
 projectsRouter.use("/:projectId/steps", parcoursStepsRouter);
+projectsRouter.use("/:projectId/planning", projectPlanningRouter);
 projectsRouter.use("/:projectId/programme", programmeRouter);
 projectsRouter.use("/:projectId/atelier", atelierCommandsRouter);
 projectsRouter.use("/:projectId/atelier", atelierVersionsRouter);

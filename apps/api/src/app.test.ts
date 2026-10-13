@@ -2078,3 +2078,105 @@ describe("ensembles d'affichage personnels synchronisés entre appareils (D-118,
     expect((await agent().get("/preferences/atelier-ensembles")).status).toBe(401);
   });
 });
+
+
+describe("R2 · planning métier, versions et accès au dossier", () => {
+  const step = (expectedRevision: number, startDate: string | null = "2026-11-02", endDate: string | null = "2026-11-05") =>
+    ({ expectedRevision, startDate, endDate, responsible: "Architecte pilote", nextAction: "Confirmer la revue de l'étape" });
+
+  it("persiste le planning d'un seul projet et refuse une révision obsolète sans modifier le Parcours", async () => {
+    const alice = await registerAndLogin("plan-owner@example.com");
+    const p = (await alice.post("/projects").send({ code: "P.PLAN", name: "Projet de suivi" })).body;
+    const other = (await alice.post("/projects").send({ code: "P.OTHER", name: "Autre" })).body;
+    const endpoint = `/projects/${p.id}/planning`;
+    const initial = await alice.get(endpoint);
+    expect(initial.status).toBe(200);
+    expect(initial.body).toMatchObject({ projectId: p.id, revision: 0, steps: {}, baseline: null });
+    const saved = await alice.put(endpoint + "/steps/1").send(step(0));
+    expect(saved.status).toBe(200);
+    expect(saved.body).toMatchObject({ revision: 1, steps: { "1": { responsible: "Architecte pilote", startDate: "2026-11-02" } } });
+    expect((await alice.get(endpoint)).body.steps["1"].nextAction).toBe("Confirmer la revue de l'étape");
+    expect((await alice.get(`/projects/${other.id}/planning`)).body).toMatchObject({ revision: 0, steps: {}, baseline: null });
+    const conflict = await alice.put(endpoint + "/steps/2").send(step(0));
+    expect(conflict.status).toBe(409);
+    expect(conflict.body).toMatchObject({ error: "planning_conflict", current: { revision: 1 } });
+    expect((await alice.get(endpoint)).body.steps["2"]).toBeUndefined();
+    expect((await alice.get(`/projects/${p.id}/steps`)).body[0].status).toBe("a-faire");
+    expect((await alice.put(endpoint + "/steps/1").send(step(1, null, null))).status).toBe(200);
+    expect((await alice.get(endpoint)).body.steps["1"]).toMatchObject({ responsible: "Architecte pilote", startDate: null });
+    expect((await alice.put(endpoint + "/steps/1").send({ ...step(2, null, null), responsible: "", nextAction: "" })).body.steps["1"]).toBeUndefined();
+  });
+
+  it("valide strictement les dates, champs et droits des lecteurs; préserve l'édition sur une copie", async () => {
+    const alice = await registerAndLogin("plan-a@example.com");
+    const bob = await registerAndLogin("plan-b@example.com");
+    const outsider = await registerAndLogin("plan-outsider@example.com");
+    const p = (await alice.post("/projects").send({ code: "P.ACCESS", name: "Accès" })).body;
+    const endpoint = `/projects/${p.id}/planning`;
+    expect((await outsider.get(endpoint)).status).toBe(404);
+    expect((await outsider.put(endpoint + "/steps/1").send(step(0))).status).toBe(404);
+    expect((await request(app).get(endpoint)).status).toBe(401);
+    expect((await alice.put(endpoint + "/steps/1").send({ ...step(0), endDate: "2026-11-01" })).status).toBe(400);
+    expect((await alice.put(endpoint + "/steps/1").send({ ...step(0), startDate: "2026-02-30" })).status).toBe(400);
+    expect((await alice.put(endpoint + "/steps/23").send(step(0))).status).toBe(404);
+    expect((await alice.put(endpoint + "/steps/1").send({ ...step(0), unexpected: "no" })).status).toBe(400);
+    expect((await alice.post(`/projects/${p.id}/members`).send({ email: "plan-b@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await bob.get(endpoint)).status).toBe(200);
+    expect((await bob.put(endpoint + "/steps/1").send(step(0))).status).toBe(403);
+    expect((await bob.post(endpoint + "/baseline").send({ expectedRevision: 0 })).status).toBe(403);
+    expect((await alice.patch(`/projects/${p.id}/members/${(await bob.get("/auth/me")).body.id}`).send({ role: "editeur" })).status).toBe(200);
+    expect((await bob.put(endpoint + "/steps/1").send(step(0))).status).toBe(200);
+    await pool.query("UPDATE projects SET example_mode='reference' WHERE id=$1", [p.id]);
+    expect((await alice.put(endpoint + "/steps/2").send(step(1))).status).toBe(403);
+    expect((await alice.get(endpoint)).body.revision).toBe(1);
+  });
+
+  it("n'approuve qu'un planning complet et conserve chaque référence immuable", async () => {
+    const alice = await registerAndLogin("plan-baseline@example.com");
+    const p = (await alice.post("/projects").send({ code: "P.BASELINE", name: "Référence" })).body;
+    const endpoint = `/projects/${p.id}/planning`;
+    expect((await alice.post(endpoint + "/baseline").send({ expectedRevision: 0 })).status).toBe(409);
+    let revision = 0;
+    for (let n = 1; n <= 21; n++) {
+      const result = await alice.put(endpoint + `/steps/${n}`).send(step(revision));
+      expect(result.status).toBe(200);
+      revision = result.body.revision;
+    }
+    const approved = await alice.post(endpoint + "/baseline").send({ expectedRevision: revision });
+    expect(approved.status).toBe(200);
+    expect(approved.body.baseline.version).toBe(1);
+    expect(approved.body.baseline.steps["1"].startDate).toBe("2026-11-02");
+    revision = approved.body.revision;
+    expect((await alice.post(endpoint + "/baseline").send({ expectedRevision: revision - 1 })).status).toBe(409);
+    const changed = await alice.put(endpoint + "/steps/1").send(step(revision, "2026-12-01", "2026-12-04"));
+    expect(changed.status).toBe(200);
+    expect(changed.body.steps["1"].startDate).toBe("2026-12-01");
+    expect(changed.body.baseline.steps["1"].startDate).toBe("2026-11-02");
+    const history = await alice.get(endpoint + "/baselines");
+    expect(history.body).toHaveLength(1);
+    expect((await alice.get(endpoint + "/baselines/1")).body.steps["1"].startDate).toBe("2026-11-02");
+    const v2 = await alice.post(endpoint + "/baseline").send({ expectedRevision: changed.body.revision });
+    expect(v2.status).toBe(200);
+    expect(v2.body.baseline.version).toBe(2);
+    expect(v2.body.baseline.steps["1"].startDate).toBe("2026-12-01");
+    expect((await alice.get(endpoint + "/baselines")).body).toHaveLength(2);
+    expect((await alice.get(endpoint + "/baselines/1")).body.steps["1"].startDate).toBe("2026-11-02");
+
+    // Project copies and exported JSON must retain planning and historical baselines.
+    const archive = await alice.get(`/projects/${p.id}/archive`);
+    expect(archive.status).toBe(200);
+    expect(archive.body.planning.baselines).toHaveLength(2);
+    const imported = await alice.post("/projects/import").send(archive.body);
+    expect(imported.status).toBe(201);
+    const importedId = imported.body.projects[0].id;
+    expect((await alice.get(`/projects/${importedId}/planning`)).body.baseline.version).toBe(2);
+    expect((await alice.get(`/projects/${importedId}/planning/baselines/1`)).body.steps["1"].startDate).toBe("2026-11-02");
+
+    const copied = await alice.post(`/projects/${p.id}/copies`).send({ name: "Copie du planning" });
+    expect(copied.status).toBe(201);
+    expect((await alice.get(`/projects/${copied.body.id}/planning`)).body.steps["1"].startDate).toBe("2026-12-01");
+
+    const invalidArchive = { ...archive.body, planning: { ...archive.body.planning, steps: { "23": step(0) } } };
+    expect((await alice.post("/projects/import").send(invalidArchive)).status).toBe(422);
+  });
+});

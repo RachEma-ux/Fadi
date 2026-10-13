@@ -71,6 +71,21 @@ export interface ArchiveParcelFile {
   revision: number;
 }
 
+/** Extension optionnelle de l'archive V2 : le planning est indépendant des statuts du Parcours. */
+export interface ArchivePlanningStep {
+  startDate: string | null;
+  endDate: string | null;
+  responsible: string;
+  nextAction: string;
+}
+export type ArchivePlanningSteps = Record<string, ArchivePlanningStep>;
+export interface ArchivePlanning {
+  revision: number;
+  baselineVersion: number;
+  steps: ArchivePlanningSteps;
+  baselines: { version: number; steps: ArchivePlanningSteps; sourceRevision: number; createdAt: string; createdBy: string | null }[];
+}
+
 /**
  * Manifeste du paquet natif (lot 6, cahier §5.10) : ce qu'il faut savoir pour relire le paquet sans deviner —
  * versions des schémas et contrats, unités, repères (avec la conversion explicite cadastral ↔ local), identités et
@@ -129,6 +144,8 @@ export interface ProjectArchive {
   /** Manifeste du paquet natif (archives écrites depuis le lot 6) ; `null` pour une archive plus ancienne ou un export du prototype. */
   manifeste: ManifestePaquet | null;
   stageAttachments: ArchiveAttachment[];
+  /** R2 : absent des archives antérieures ; aucune date n'est inventée à l'import. */
+  planning?: ArchivePlanning | null;
   warnings: string[];
 }
 
@@ -407,6 +424,61 @@ export function manifesteOf(raw: unknown): ManifestePaquet | null {
 }
 
 /** Une archive Fadi relue : structure vérifiée, nom suffixé « · import », étapes bornées aux 21. */
+/** Validation stricte de l'extension, avant toute écriture base. */
+function archivePlanningOf(input: unknown): ArchivePlanning | null {
+  if (input === undefined || input === null) return null;
+  if (!isRecord(input)) throw new ArchiveError("Planning métier de l'archive invalide.");
+  const int = (n: unknown): n is number => Number.isSafeInteger(n) && (n as number) >= 0 && (n as number) < 1000000;
+  const date = (v: unknown): v is string | null => {
+    if (v === null) return true;
+    if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+    const t = new Date(v + "T00:00:00Z");
+    return Number.isFinite(t.getTime()) && t.toISOString().slice(0, 10) === v;
+  };
+  const parseSteps = (raw: unknown): ArchivePlanningSteps => {
+    if (!isRecord(raw) || Object.keys(raw).length > 21) throw new ArchiveError("Étapes du planning invalides.");
+    const output: ArchivePlanningSteps = {};
+    for (const [key, item] of Object.entries(raw)) {
+      const n = Number(key);
+      if (!/^(?:[1-9]|1[0-9]|2[01])$/.test(key) || !Number.isInteger(n) || !isRecord(item) ||
+        !date(item["startDate"]) || !date(item["endDate"]) ||
+        (item["startDate"] && item["endDate"] && item["endDate"] < item["startDate"]) ||
+        typeof item["responsible"] !== "string" || item["responsible"].length > 120 ||
+        typeof item["nextAction"] !== "string" || item["nextAction"].length > 1200) {
+        throw new ArchiveError("Une donnée du planning de l'archive est invalide.");
+      }
+      output[key] = {
+        startDate: item["startDate"] as string | null,
+        endDate: item["endDate"] as string | null,
+        responsible: item["responsible"],
+        nextAction: item["nextAction"],
+      };
+    }
+    return output;
+  };
+  const revision = input["revision"], baselineVersion = input["baselineVersion"], rawBaselines = input["baselines"];
+  if (!int(revision) || !int(baselineVersion) || revision < 1 ||
+    !Array.isArray(rawBaselines) || rawBaselines.length !== baselineVersion) {
+    throw new ArchiveError("Versions du planning de l'archive invalides.");
+  }
+  const steps = parseSteps(input["steps"]);
+  const baselines: ArchivePlanning["baselines"] = rawBaselines.map((entry, index) => {
+    if (!isRecord(entry) || entry["version"] !== index + 1 || !int(entry["sourceRevision"]) ||
+      entry["sourceRevision"] > revision || typeof entry["createdAt"] !== "string" ||
+      !Number.isFinite(Date.parse(entry["createdAt"])) ||
+      (entry["createdBy"] !== null && (typeof entry["createdBy"] !== "string" || entry["createdBy"].length > 128))) {
+      throw new ArchiveError("Historique des références du planning invalide.");
+    }
+    const snapshot = parseSteps(entry["steps"]);
+    if (Object.keys(snapshot).length !== 21 ||
+      Object.values(snapshot).some((s) => !s.startDate || !s.endDate)) {
+      throw new ArchiveError("Référence du planning incomplète dans l'archive.");
+    }
+    return { version: index + 1, sourceRevision: entry["sourceRevision"] as number, createdAt: entry["createdAt"] as string, createdBy: entry["createdBy"] as string | null, steps: snapshot };
+  });
+  return { revision, baselineVersion, steps, baselines };
+}
+
 function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly ParcoursStepDefinition[]): ProjectArchive {
   if (!(PROJECT_ARCHIVE_VERSIONS_LUES as readonly unknown[]).includes(raw["version"])) throw new ArchiveError(`Version d'archive non prise en charge : ${String(raw["version"])}.`);
   const project = raw["project"];
@@ -503,6 +575,7 @@ function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly Par
     modele,
     natif,
     manifeste: manifesteOf(raw["manifeste"]),
+    planning: archivePlanningOf(raw["planning"]),
     stageAttachments: attachmentsOf(raw["stageAttachments"], (f) => (validStep(Number(f["stepNumber"]), definitions.length) ? Number(f["stepNumber"]) : null)),
     warnings: Array.isArray(raw["warnings"]) ? raw["warnings"].filter((w): w is string => typeof w === "string") : [],
   };

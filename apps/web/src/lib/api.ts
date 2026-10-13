@@ -112,6 +112,31 @@ export interface Project {
   updatedAt: string;
 }
 
+/** Planning métier R2 : indépendant des statuts et formulaires Parcours. */
+export interface ProjectPlanningStep {
+  startDate: string | null;
+  endDate: string | null;
+  responsible: string;
+  nextAction: string;
+}
+export type ProjectPlanningSteps = Record<string, ProjectPlanningStep>;
+export interface ProjectPlanningBaseline {
+  version: number;
+  steps: ProjectPlanningSteps;
+  sourceRevision: number;
+  createdAt: string;
+  createdBy: string | null;
+}
+export interface ProjectPlanning {
+  projectId: string;
+  revision: number;
+  steps: ProjectPlanningSteps;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  baseline: ProjectPlanningBaseline | null;
+}
+export type ProjectPlanningInput = ProjectPlanningStep & { expectedRevision: number };
+
 export interface NotificationItem {
   id: string;
   at: string;
@@ -712,6 +737,17 @@ export const api = {
     request<Project>("/projects", { method: "POST", body: JSON.stringify({ code, name }) }),
   getProject: (id: string) => request<Project>(`/projects/${id}`),
   deleteProject: (id: string) => request<void>(`/projects/${id}`, { method: "DELETE" }),
+
+  // R2 : planning métier authentifié et versionné. Aucune date fictive n'est enregistrée.
+  getProjectPlanning: (projectId: string) => request<ProjectPlanning>(`/projects/${encodeURIComponent(projectId)}/planning`),
+  saveProjectPlanningStep: (projectId: string, step: number, data: ProjectPlanningInput) =>
+    request<ProjectPlanning>(`/projects/${encodeURIComponent(projectId)}/planning/steps/${step}`, { method: "PUT", body: JSON.stringify(data) }),
+  publishProjectPlanningBaseline: (projectId: string, expectedRevision: number) =>
+    request<ProjectPlanning>(`/projects/${encodeURIComponent(projectId)}/planning/baseline`, { method: "POST", body: JSON.stringify({ expectedRevision }) }),
+  listProjectPlanningBaselines: (projectId: string) =>
+    request<Omit<ProjectPlanningBaseline, "steps">[]>(`/projects/${encodeURIComponent(projectId)}/planning/baselines`),
+  getProjectPlanningBaseline: (projectId: string, version: number) =>
+    request<ProjectPlanningBaseline>(`/projects/${encodeURIComponent(projectId)}/planning/baselines/${version}`),
 
   listSteps: (projectId: string) => request<ParcoursStep[]>(`/projects/${projectId}/steps`),
   patchStep: (projectId: string, stepNumber: number, patch: { status?: ParcoursStepStatus; fields?: Record<string, ParcoursFieldValue>; baseline?: Record<string, ParcoursFieldValue> }) =>

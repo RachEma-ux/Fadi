@@ -10,7 +10,8 @@ describe("capacités du cockpit", () => {
   });
   it("conserve le contexte projet pour chaque outil disponible", () => {
     const available = COCKPIT_CAPABILITIES.filter((item) => item.state !== "planned");
-    expect(available.every((item) => cockpitCapabilityHref("project/1", item)?.startsWith("/projets/project%2F1?module="))).toBe(true);
+    expect(available.every((item) => cockpitCapabilityHref("project/1", item)?.startsWith("/projets/project%2F1"))).toBe(true);
+    expect(cockpitCapabilityHref("project/1", COCKPIT_CAPABILITIES.find((item) => item.key === "planning-edit")!)).toBe("/projets/project%2F1/pilotage");
     expect(available.some((item) => item.state === "limited")).toBe(true);
   });
 });

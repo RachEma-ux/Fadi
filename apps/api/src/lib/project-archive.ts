@@ -28,7 +28,7 @@ import {
   type ProgrammeMode,
   type ProjectArchive,
 } from "@parcours/domain-model";
-import { atelierCommands, parcels, programmeCases, programmeRepartitions, projects, projectSteps, stepFiles } from "../db/schema.js";
+import { atelierCommands, parcels, programmeCases, programmeRepartitions, projects, projectSteps, projectPlans, projectPlanBaselines, stepFiles } from "../db/schema.js";
 import { CONTRAT_COMMANDES, SCHEMA_IFC, TYPE_RESTAURER, empreinteDe, importerModeleNatif, verifierModele, type ModeleAtelier, type RapportImport } from "@parcours/atelier-model";
 import { chargerModele, remplacerModele } from "../lib/atelier-modele.js";
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS } from "../data/parcours.js";
@@ -88,6 +88,8 @@ export async function exportProjectArchive(q: Querier, project: ProjectRow, now:
   const rows = await loadStepRows(q, project.id);
   const [rep] = await q.select().from(programmeRepartitions).where(eq(programmeRepartitions.projectId, project.id)).limit(1);
   const cases = await q.select().from(programmeCases).where(eq(programmeCases.projectId, project.id)).orderBy(asc(programmeCases.revision));
+  const [planning] = await q.select().from(projectPlans).where(eq(projectPlans.projectId, project.id)).limit(1);
+  const planningBaselines = planning ? await q.select().from(projectPlanBaselines).where(eq(projectPlanBaselines.projectId, project.id)).orderBy(asc(projectPlanBaselines.version)) : [];
   const parcelRows = await q.select().from(parcels).where(eq(parcels.projectId, project.id)).orderBy(asc(parcels.number));
   const charge = await chargerModele(q, project.id);
   const files = await q.select().from(stepFiles).where(eq(stepFiles.projectId, project.id)).orderBy(asc(stepFiles.addedAt));
@@ -134,6 +136,7 @@ export async function exportProjectArchive(q: Querier, project: ProjectRow, now:
     natif: null,
     manifeste: manifestePaquet(project, (charge?.etat as ModeleAtelier | undefined) ?? null),
     stageAttachments,
+    planning: planning ? { revision: planning.revision, baselineVersion: planning.baselineVersion, steps: planning.steps, baselines: planningBaselines.map((b) => ({ version: b.version, steps: b.steps, sourceRevision: b.sourceRevision, createdAt: b.createdAt.toISOString(), createdBy: b.createdBy })) } : null,
     warnings,
   };
 }
@@ -193,6 +196,16 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
   if (!project) throw new Error("project insert returned nothing");
 
   await tx.insert(projectSteps).values(archive.steps.map((s) => ({ projectId: id, stepNumber: s.stepNumber, status: s.status, content: { ...s.content } as Record<string, unknown> })));
+
+  // R2 : copie / import de l’état courant ET des références figées ; jamais de planning fictif.
+  if (archive.planning) {
+    const plan = archive.planning;
+    await tx.insert(projectPlans).values({ projectId: id, revision: plan.revision, steps: plan.steps, baselineVersion: plan.baselineVersion, updatedAt: new Date(now), updatedBy: ownerId });
+    if (plan.baselines.length) {
+      await tx.insert(projectPlanBaselines).values(plan.baselines.map((b) => ({ projectId: id, version: b.version, steps: b.steps, sourceRevision: b.sourceRevision, createdAt: new Date(b.createdAt), createdBy: ownerId })));
+      warnings.push("Les références du planning ont été reprises avec leurs dates et versions ; leur auteur technique est réattribué au compte qui effectue la copie ou l’import.");
+    }
+  }
 
   if (archive.programmeRepartition) {
     const r = archive.programmeRepartition;
