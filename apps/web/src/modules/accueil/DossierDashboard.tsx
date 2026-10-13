@@ -1,53 +1,35 @@
-import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Icon, type IconName } from "../../components/Icon";
 import { ConflictPanel } from "../../components/ConflictPanel";
-import { useProjectAccess, lockedHint, READ_ONLY_HINT } from "../../lib/access";
-import { useAuth } from "../../lib/auth-context";
 import { ApiError } from "../../lib/api";
 import { dossierReconnectHref } from "../../lib/dossier-return";
 import { reachability } from "../../lib/reachability";
-import { rememberedStep, rememberedWork, useLastDossier } from "../../lib/last-dossier";
 import { useWorkspaceNavigation } from "../../lib/workspace-navigation";
 import { useDossierQueries, type DossierQueries, dateLabel, denied, resourceLabel, dossierSubtitle } from "./dossier-data";
-import { completeParcoursList, resolveDossierPrimaryAction, type DossierActionIntent } from "./dossier-state";
+import { completeParcoursList } from "./dossier-state";
 import { useDossierSync } from "./use-dossier-sync";
 
 export function DossierDashboard({ projectId, applicationHome = false }: { projectId: string; applicationHome?: boolean }) {
   const queries = useDossierQueries(projectId);
-  const access = useProjectAccess(projectId);
   const sync = useDossierSync(projectId);
-  const { user } = useAuth();
-  const last = useLastDossier(user?.id);
   const { openProjects } = useWorkspaceNavigation();
-  const [operation, setOperation] = useState<DossierActionIntent | "retry-project" | null>(null);
+  const [operation, setOperation] = useState<"reconnect" | "retry-project" | null>(null);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
-  const [compare, setCompare] = useState(false);
+  const [searchParams] = useSearchParams();
+  const compare = searchParams.get("conflits") === "1";
   const comparison = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!compare) return;
+    const frame = requestAnimationFrame(() => {
+      comparison.current?.focus();
+      comparison.current?.scrollIntoView({ block: "center" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [compare, projectId]);
   const project = queries.project.data;
   const connected = sync.online && sync.reachable;
   const completeSteps = completeParcoursList(queries.steps.data);
-  const action = resolveDossierPrimaryAction({
-    projectId,
-    access: { known: access.known && !denied(queries.project.error), canWrite: access.canWrite, locked: !!access.lock && !access.holdsLock },
-    steps: { status: queries.steps.data ? "ready" : queries.steps.isError ? "error" : "loading", data: queries.steps.data },
-    sync: operation ? { ...sync, busy: true, busyLabel: operation === "reconnect" ? "Vérification de la connexion…" : operation === "retry-local" ? "Enregistrement local en cours…" : "Actualisation en cours…" } : sync,
-    confirmedNew: !!project && !project.sourceExampleId && project.modelRevision === 0 && completeSteps && queries.steps.data!.every((s) => s.status === "a-faire" && !Object.values(s.content.fields ?? {}).some((value) => value !== null && value !== "")),
-    resumedStep: (last?.projectId === projectId ? last.step : user ? rememberedStep(user.id, projectId) : null) ?? undefined,
-    currentWork: (last?.projectId === projectId ? last.currentWork : user ? rememberedWork(user.id, projectId) : null) ?? undefined,
-  });
-  async function recover(intent: DossierActionIntent) {
-    if (operation || action.disabled) return;
-    if (intent === "review-conflicts") { setCompare(true); requestAnimationFrame(() => { comparison.current?.focus(); comparison.current?.scrollIntoView({ block: "center" }); }); return; }
-    setOperation(intent); setRecoveryError(null);
-    try {
-      if (intent === "retry-local" && !await sync.retryLocal()) setRecoveryError("La sauvegarde locale n’est toujours pas confirmée. Gardez cette page ouverte et réessayez.");
-      if (intent === "reconnect") { const ok = await sync.reconnect(); if (ok === false) setRecoveryError("Le serveur reste injoignable. Les modifications sont conservées en attente."); }
-      if (intent === "retry-steps") { const result = await queries.steps.refetch(); if (result.isError) setRecoveryError("L’avancement n’a pas pu être actualisé. Réessayez lorsque le serveur sera disponible."); }
-      if (intent === "retry-access") { const result = await queries.project.refetch(); if (result.isError) setRecoveryError("Les droits du dossier n’ont pas pu être vérifiés."); }
-    } catch { setRecoveryError(intent === "retry-local" ? "La sauvegarde locale n’est toujours pas confirmée. Gardez cette page ouverte et réessayez." : "La reprise a échoué. Le travail en attente reste en mémoire ; réessayez cette opération."); }
-    finally { setOperation(null); }
-  }
   async function recoverProject(intent: "reconnect" | "retry-project") {
     if (operation || queries.project.isFetching || !sync.online || (typeof navigator !== "undefined" && !navigator.onLine)) return;
     setOperation(intent);setRecoveryError(null);
@@ -104,27 +86,10 @@ export function DossierDashboard({ projectId, applicationHome = false }: { proje
       <div><span>Revue technique</span><strong>{reviewText}</strong>{reservations !== null && <small>{reservations} point(s) d’attention calculé(s) · {review?.auditToDocument} point(s) à documenter</small>}</div>
       <div><span>Synchronisation</span><strong>{syncText}</strong><small>Les lectures et la revue sont suivies séparément.</small></div>
     </div>
-    <div className="dossier-notices">
-      {!access.known ? <Notice title={`${project.code} · Droits à vérifier`} text="Les droits du dossier ne sont pas encore connus." /> : !access.canWrite && <Notice title={`${project.code} · Consultation uniquement`} text={access.lock && !access.holdsLock && access.mayEdit ? lockedHint(access.lock) : READ_ONLY_HINT} />}
-      {queries.project.isError && <Notice title={`${project.code} · Dossier à actualiser`} text={`La dernière lecture réussie du ${dateLabel(queries.project.dataUpdatedAt)} est conservée.`} />}
-      {sync.localSaveError && <Notice title={`${project.code} · Sauvegarde non confirmée`} text="Des modifications sont encore en mémoire. Leur conservation sur cet appareil n’est pas confirmée ; réessayez la sauvegarde avant de fermer cette page." />}
-      {!connected && <Notice title={`${project.code} · Connexion en attente`} text="Les copies déjà lues restent visibles avec leurs dates. Le retour du réseau ne confirme ni une sauvegarde, ni une nouvelle lecture." />}
-      {sync.conflicts > 0 && <Notice title={`${project.code} · Versions à comparer`} text="Vos modifications attendent une décision explicite. Aucune version n’est remplacée automatiquement." />}
-      {queries.steps.isError && <Notice title={`${project.code} · Avancement à actualiser`} text={steps ? "La dernière liste des étapes est conservée ; sa lecture actuelle n’est pas confirmée." : "L’avancement est indisponible. Aucune étape terminée ni prochaine étape n’est déduite de cette absence."} />}
-      {queries.programme.isError && <Notice title={`${project.code} · Programme à actualiser`} text={programme ? "La dernière lecture du programme est conservée avec sa date. Son actualisation a échoué." : "Le programme est indisponible. Aucune surface cible n’est déduite de cette absence."} />}
-      {queries.review.isError && <Notice title={`${project.code} · Revue indisponible`} text={review ? "La dernière lecture de la revue est conservée avec sa date. Son état actuel n’est pas confirmé." : "La revue technique n’a pas pu être lue. Aucun résultat technique n’est déduit de cette absence."} />}
-      {review?.reviewStale && <Notice title={`${project.code} · Revue technique à actualiser`} text="Les données ont évolué depuis la revue. Une nouvelle revue conserve les réserves à examiner." />}
-      {steps?.some((s) => s.stale || s.staleRetainedCount > 0) && <Notice title={`${project.code} · Choix à réexaminer`} text="Des informations amont ont changé. Consultez les étapes signalées dans le Parcours pour réexaminer leurs choix." />}
-      {recoveryError && <p role="alert" className="dossier-notice">{recoveryError}</p>}
-    </div>
     {compare && <div className="dossier-comparison" ref={comparison} tabIndex={-1}><ConflictPanel projectId={projectId} />{sync.conflicts === 0 && <p role="status">Aucun conflit à examiner dans ce dossier.</p>}</div>}
     <div className="dossier-grid">
       <section className="panel dossier-overview" data-project-id={projectId} aria-labelledby="dossier-overview-heading">
         <div className="dossier-card-heading"><h2 id="dossier-overview-heading">Vue d’ensemble</h2><p>{dossierSubtitle(queries)}</p></div>
-        <div className="dossier-primary-action" aria-busy={action.disabled && !!operation}>
-          <div><strong>{action.href ? "Prochaine action" : "À reprendre"}</strong><p id="dossier-action-purpose">{action.detail}</p></div>
-          {action.href ? <Link className="button-primary" to={action.href} aria-describedby="dossier-action-purpose">{action.label}<Icon name="arrow-right" size={18} /></Link> : <button type="button" className="button-primary" disabled={action.disabled || !!operation} aria-describedby="dossier-action-purpose" onClick={() => action.intent && void recover(action.intent)}>{action.label}</button>}
-        </div>
         <figure className="dossier-preview">
           {queries.preview.data?.svg ? <div className="dossier-preview-svg" role="img" aria-label="Aperçu conceptuel du modèle de ce dossier" dangerouslySetInnerHTML={{ __html: queries.preview.data.svg }} /> : <div className="dossier-preview-placeholder"><Icon name="cube" size={38} /><p>{queries.preview.data ? "Aucun modèle dessiné pour l’instant. L’aperçu apparaîtra après les premiers éléments dans l’Atelier." : resourceLabel(queries.preview, connected)}</p></div>}
           <figcaption><span>Aperçu conceptuel</span>{queries.preview.data?.svg && <span>Généré le {dateLabel(queries.preview.data.generatedAt)} · cette date concerne uniquement l’aperçu.</span>}</figcaption>
@@ -136,7 +101,7 @@ export function DossierDashboard({ projectId, applicationHome = false }: { proje
           <div><dt>Parcours</dt><dd>{done === null ? resourceLabel(queries.steps, connected) : `${done} / 21 étapes`}</dd></div>
         </dl>
         <ResourceReadings queries={queries} connected={connected} />
-        <footer className="dossier-card-footer"><p>{reference ? "Programme de référence · Non enregistré" : !programme ? queries.programme.isError ? "Programme indisponible" : "Chargement du programme…" : "Informations du dossier"}<small translate="no">{project.code} — {project.name}</small></p><Link className="button-secondary" to={moduleLink("atelier")}><Icon name="cube" size={18} />Ouvrir l’Atelier</Link></footer>
+
       </section>
       {applicationHome ? <aside className="panel workspace-dossier-aside"><Icon name="folder" size={26} /><h2>Votre dossier de reprise</h2><p>Cette carte reprend la vue d’ensemble du dernier dossier consulté. Les informations et les actions concernent ce même dossier.</p><p>Choisissez un autre projet dans la barre latérale pour ouvrir son accueil et le retrouver ici à votre retour.</p><button type="button" className="button-secondary" onClick={openProjects}>Choisir un projet</button></aside> : <aside className="panel dossier-journey" aria-labelledby="dossier-journey-heading"><h2 id="dossier-journey-heading">Mon parcours</h2><p>21 étapes pour structurer le projet</p>
         {steps ? <><p>{progressText}</p><progress aria-label="Étapes terminées" max={21} value={done ?? 0} /><ol className="dossier-phases">{[...new Set(steps.map((s) => s.phase))].map((phase) => {
@@ -155,7 +120,6 @@ export function DossierDashboard({ projectId, applicationHome = false }: { proje
   </>;
 }
 
-function Notice({ title, text }: { title: string; text: string }) { return <section className="dossier-notice" role="status"><h3>{title}</h3><p>{text}</p></section>; }
 type ReadableQuery = DossierQueries[keyof DossierQueries];
 export function ResourceNote({ query, connected, onRetry, label }: { query: ReadableQuery; connected: boolean; onRetry: () => void; label: string }) {
   return <div className="resource-note"><span>{resourceLabel(query, connected)}{query.data !== undefined && query.dataUpdatedAt ? ` · ${dateLabel(query.dataUpdatedAt)}` : ""}</span>{(query.isError || !!query.data && (!connected || query.isStale)) && <button type="button" className="link-button" disabled={!connected || query.isFetching} onClick={onRetry}>Actualiser {label}</button>}</div>;

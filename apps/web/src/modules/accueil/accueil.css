@@ -95,11 +95,6 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
 .dossier-card-heading { margin-bottom: 18px; }
 .dossier-card-heading h2 { font-size: 24px; margin-bottom: 8px; }
 .dossier-card-heading p { color: var(--muted); margin: 0; font-size: 13px; }
-.dossier-primary-action { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 18px; padding: 16px; border: 1px solid #cdddcf; background: #f2f6ef; border-radius: 9px; }
-.dossier-primary-action > div { flex: 1; min-width: 0; }
-.dossier-primary-action strong { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-.dossier-primary-action p { font-size: 13px; line-height: 1.5; margin: 5px 0 0; overflow-wrap: anywhere; }
-.dossier-primary-action .button-primary { flex-shrink: 0; max-width: 48%; justify-content: center; min-height: 46px; white-space: normal; text-align: center; }
 .fadi-home button:disabled, .fadi-dialog button:disabled { opacity: .65; cursor: default; }
 .dossier-preview { margin: 0; border: 1px solid #e1e7dd; border-radius: 10px; overflow: hidden; background: #f5f6f0; }
 .dossier-preview-svg { display: flex; justify-content: center; align-items: center; min-height: 240px; }
@@ -121,10 +116,6 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
 .dossier-readings dt { font-weight: 600; }
 .dossier-readings dd { margin: 0; }
 .dossier-readings .resource-note { margin: 0; }
-.dossier-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; }
-.dossier-card-footer p { margin: 0; font-size: 13px; }
-.dossier-card-footer small { display: block; margin-top: 3px; font-size: 11px; }
-.dossier-card-footer .button-secondary { font-size: 13px; flex-shrink: 0; min-height: 44px; }
 .dossier-journey, .workspace-dossier-aside { padding: 22px; min-width: 0; }
 .dossier-journey > p, .workspace-dossier-aside p { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
 .workspace-dossier-aside h2 { font-size: 18px; margin-top: 16px; }
@@ -191,8 +182,8 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
 .search-results small { display: block; }
 .fadi-home summary:focus-visible, .fadi-dialog summary:focus-visible { outline: 3px solid #1683df; outline-offset: 3px; }
 @media (min-width: 1700px) { .dossier-grid { grid-template-columns: minmax(0, 1fr) 330px; } }
-@media (max-width: 1280px) { .fadi-home { padding: 26px 26px 36px; } .dossier-grid { grid-template-columns: minmax(0, 1fr) 270px; gap: 18px; } .dossier-overview { padding: 19px; } .dossier-primary-action { flex-wrap: wrap; } .dossier-primary-action > div { flex-basis: 220px; } .dossier-primary-action .button-primary { max-width: 100%; } }
-@media (max-width: 1100px) { .dossier-grid { grid-template-columns: minmax(0, 1fr); } .dossier-modules > div { grid-template-columns: minmax(0, 1fr); } .workspace-dossier-aside { display: none; } .dossier-primary-action { flex-wrap: nowrap; } }
+@media (max-width: 1280px) { .fadi-home { padding: 26px 26px 36px; } .dossier-grid { grid-template-columns: minmax(0, 1fr) 270px; gap: 18px; } .dossier-overview { padding: 19px; } }
+@media (max-width: 1100px) { .dossier-grid { grid-template-columns: minmax(0, 1fr); } .dossier-modules > div { grid-template-columns: minmax(0, 1fr); } .workspace-dossier-aside { display: none; } }
 @media (max-width: 700px) {
   .app-shell.fadi-shell, .app-shell.fadi-shell[data-sidebar="expanded"] { grid-template-columns: 60px minmax(0, 1fr); --sidebar-width: 60px; }
   .app-shell.fadi-shell[data-sidebar="expanded"] { --sidebar-width: 240px; }
@@ -213,9 +204,6 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
   .dossier-status-strip { grid-template-columns: minmax(0, 1fr); }
   .dossier-status-strip > div { padding: 11px 13px; }
   .dossier-overview { padding: 18px; }
-  .dossier-primary-action { flex-direction: column; align-items: stretch; padding: 13px; gap: 13px; }
-  .dossier-primary-action > div { flex-basis: auto; }
-  .dossier-primary-action .button-primary { width: 100%; max-width: none; min-height: 48px; padding: 12px; }
   .dossier-preview-placeholder { min-height: 210px; padding: 24px 14px; }
   .dossier-preview-svg { min-height: 190px; }
   .dossier-facts { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 14px 0; }
@@ -224,8 +212,6 @@ body:not(.atelier-immersive) .fadi-shell .fadi-topbar { display: flex; flex-wrap
   .dossier-facts dd { font-size: 14px; }
   .dossier-facts small { margin-top: 2px; }
   .dossier-readings dl > div { grid-template-columns: 1fr; gap: 5px; }
-  .dossier-card-footer { flex-direction: column; align-items: stretch; }
-  .dossier-card-footer .button-secondary { justify-content: center; }
   .dossier-resources, .workspace-entry > div { grid-template-columns: minmax(0, 1fr); }
   .workspace-entry-actions { justify-content: flex-start; }
   .workspace-entry-actions > * { min-height: 44px; }
