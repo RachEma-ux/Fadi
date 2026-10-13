@@ -1373,14 +1373,14 @@ await page2.waitForSelector(".shared-projects", { timeout: 10000 });
 check("partage : « Projets partagés avec vous » — P.TEST, lecteur, partagé par le propriétaire", new RegExp(`P\\.TEST.*lecteur · partagé par ${email}`).test((await page2.locator(".shared-projects").textContent()).replace(/\s+/g, " ")));
 // Notifications dans l'application : l'accès reçu est signalé au second compte (cloche, compteur), consulté à l'ouverture ; aucun courriel.
 await page2.waitForSelector(".notification-count", { timeout: 15000 });
-check("notifications : la cloche du second compte compte 1 non lue (accès reçu)", (await page2.locator(".notification-count").textContent()) === "1" && /1 non lue/.test(await page2.locator(".notification-bell > button").getAttribute("aria-label")));
+check("notifications : la cloche du second compte compte 1 non lue (accès reçu)", (await page2.locator(".notification-bell > button").getAttribute("data-unread-count")) === "1" && /1 non lue/.test(await page2.locator(".notification-bell > button").getAttribute("aria-label")));
 await page2.locator(".notification-bell > button").click();
 await page2.waitForSelector(".notification-list li", { timeout: 10000 });
 check("notifications : « X vous a donné accès à P.TEST — Étude test migration (lecteur) », mention « aucun courriel n’est envoyé »", new RegExp(`${email} vous a donné accès à P\\.TEST — Étude test migration \\(lecteur\\)\\.`).test(await page2.locator('.notification-list li[data-kind="acces"]').textContent()) && /aucun courriel n’est envoyé/.test(await page2.locator(".notification-popover").textContent()), await page2.locator(".notification-list").textContent());
-await page2.waitForFunction(() => !document.querySelector(".notification-count"), null, { timeout: 10000 });
+await page2.waitForFunction(() => document.querySelector(".notification-bell > button")?.getAttribute("data-unread-count") === "0", null, { timeout: 10000 });
 const popoverBox = await page2.locator(".notification-popover").boundingBox();
 if (popoverBox) await page2.screenshot({ path: `${OUT}/notifications-desktop.png`, clip: { x: Math.max(0, popoverBox.x - 60), y: 0, width: Math.min(1280 - Math.max(0, popoverBox.x - 60), popoverBox.width + 120), height: popoverBox.y + popoverBox.height + 16 } });
-check("notifications : consultées → plus de compteur (date de consultation conservée par compte)", (await page2.locator(".notification-count").count()) === 0);
+check("notifications : consultées → plus de compteur (date de consultation conservée par compte)", (await page2.locator(".notification-bell > button").getAttribute("data-unread-count")) === "0");
 await page2.keyboard.press("Escape");
 await page2.locator('.shared-projects a:has-text("Étude test migration")').click();
 await page2.waitForSelector(`.fadi-home[data-home="project"] .dossier-overview[data-project-id="${testPid}"]`, { timeout: 15000 });
