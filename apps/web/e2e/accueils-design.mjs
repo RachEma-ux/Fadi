@@ -143,6 +143,20 @@ try {
   check("cockpit : six phases et 21 étapes provenant du Parcours", await page.locator(".cockpit-phase").count() === 6 && await page.locator(".cockpit-step").count() === 21);
   check("cockpit : statuts réels respectés", (await page.locator(".cockpit-step").nth(1).getAttribute("aria-label")).includes("Terminé"));
   await axe("cockpit-desktop");
+  // R2 : écriture effective, puis relecture serveur et retour aux deux accueils.
+  await page.locator(".cockpit-step").first().click();
+  const editor = page.locator(".cockpit-planning-editor");
+  await editor.locator('input[type="date"]').first().fill("2026-11-02");
+  await editor.locator('input[type="date"]').nth(1).fill("2026-11-06");
+  await editor.locator('input[type="text"]').fill("Architecte principal");
+  await editor.locator("textarea").fill("Confirmer le relevé du site.");
+  await editor.getByRole("button", { name: "Enregistrer le suivi" }).click();
+  await editor.getByText("Planning enregistré sur le serveur.").waitFor();
+  const serverPlanning = await api("get", `/projects/${b.id}/planning`);
+  check("R2 : échéances, responsable et action enregistrés par l'API", serverPlanning.steps["1"].startDate === "2026-11-02" && serverPlanning.steps["1"].endDate === "2026-11-06" && serverPlanning.steps["1"].responsible === "Architecte principal");
+  await page.reload();
+  await page.locator(".cockpit-step").first().click();
+  check("R2 : saisie persistante après rechargement", await page.locator(".cockpit-planning-editor textarea").inputValue() === "Confirmer le relevé du site.");
   await page.getByRole("button", { name: "Vue tableau" }).click();
   check("cockpit : tableau simple des 21 étapes", await page.locator(".cockpit-table tbody tr").count() === 21);
   await page.getByRole("button", { name: "Masquer le panneau de pilotage" }).click();
