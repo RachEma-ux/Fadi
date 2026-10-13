@@ -1,4 +1,4 @@
-import type { ProjectPlanning, ProjectPlanningSteps } from "../../lib/api";
+import type { ProjectPlanning, ProjectPlanningStep, ProjectPlanningSteps } from "../../lib/api";
 import { LOCALE } from "../../lib/i18n";
 import { COCKPIT_PHASES } from "./roadmap";
 
@@ -28,7 +28,7 @@ function shortDate(date: string) { return new Intl.DateTimeFormat(LOCALE, { day:
 
 export function stepRange(steps: ProjectPlanningSteps, first: number, last: number): PhaseDates | null {
   const ranges = Array.from({ length: last - first + 1 }, (_, n) => steps[String(first + n)])
-    .filter((v) => !!v?.startDate && !!v?.endDate && v.endDate >= v.startDate);
+    .filter((v): v is ProjectPlanningStep => Boolean(v && v.startDate && v.endDate && v.endDate >= v.startDate));
   if (!ranges.length) return null;
   const start = ranges.reduce((a, b) => a < b.startDate! ? a : b.startDate!, ranges[0]!.startDate!);
   const end = ranges.reduce((a, b) => a > b.endDate! ? a : b.endDate!, ranges[0]!.endDate!);
