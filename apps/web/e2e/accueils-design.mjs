@@ -103,7 +103,19 @@ try {
   await page.keyboard.press("Enter");
   const menu = page.getByRole("menu", { name: "Projets", exact: true });
   await menu.waitFor();
-  check("Projets : les trois dossiers sont des liens natifs dans le sous-menu", (await menu.getByRole("menuitem").filter({ hasText: "P.ACC." }).count()) === 3 && await menu.getByRole("menuitem").filter({ hasText: a.code }).evaluate((el) => el.tagName === "A"));
+  // Le menu se monte immédiatement mais la liste provient d'une requête React Query.
+  // Attendre ses trois liens natifs exacts (pas seulement le conteneur) avant
+  // d'évaluer leur nombre : aucun projet n'est simulé et l'assertion reste stricte.
+  const expectedProjectLinks = [a, b, c].map((project) => dossierPath(project.id));
+  await page.waitForFunction((hrefs) => {
+    const items = [...document.querySelectorAll('#projects-menu a[role="menuitem"]')];
+    return hrefs.every((href) => items.some((item) => item.getAttribute("href") === href));
+  }, expectedProjectLinks, { timeout: 20000 }).catch(() => undefined);
+  const actualProjectLinks = await menu.locator('a[role="menuitem"]').evaluateAll((items) => items.map((el) => el.getAttribute("href")));
+  check("Projets : les trois dossiers sont des liens natifs dans le sous-menu",
+    (await menu.getByRole("menuitem").filter({ hasText: "P.ACC." }).count()) === 3 &&
+    expectedProjectLinks.every((href) => actualProjectLinks.includes(href)),
+    JSON.stringify({ expectedProjectLinks, actualProjectLinks }));
   check("Collaboration reste hors du sous-menu Projets", await menu.getByRole("menuitem", { name: "Collaboration", exact: true }).count() === 0);
   await page.keyboard.press("Escape");
   check("Échap ferme le sous-menu et rend le focus à Projets", !(await menu.isVisible()) && await selector.evaluate((el) => el === document.activeElement));
