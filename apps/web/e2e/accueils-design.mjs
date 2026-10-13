@@ -155,6 +155,7 @@ try {
   const serverPlanning = await api("get", `/projects/${b.id}/planning`);
   check("R2 : échéances, responsable et action enregistrés par l'API", serverPlanning.steps["1"].startDate === "2026-11-02" && serverPlanning.steps["1"].endDate === "2026-11-06" && serverPlanning.steps["1"].responsible === "Architecte principal");
   await page.reload();
+  await page.locator(".cockpit-baseline-summary").waitFor();
   await page.locator(".cockpit-step").first().click();
   check("R2 : saisie persistante après rechargement", await page.locator(".cockpit-planning-editor textarea").inputValue() === "Confirmer le relevé du site.");
   await page.getByRole("button", { name: "Vue tableau" }).click();
