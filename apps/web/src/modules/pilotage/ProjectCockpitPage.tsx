@@ -5,6 +5,9 @@ import { api, type ParcoursStep } from "../../lib/api";
 import { denied } from "../accueil/dossier-data";
 import { useAuth } from "../../lib/auth-context";
 import { rememberDossier } from "../../lib/last-dossier";
+import { resolveProjectAccess } from "../../lib/access";
+import { LOCALE } from "../../lib/i18n";
+import { StepPlanningEditor, PlanningBaselineControl } from "./PlanningEditor";
 import { RoadmapPreview } from "./RoadmapPreview";
 import { COCKPIT_CAPABILITIES, cockpitCapabilityHref, cockpitCapabilityLabel } from "./capabilities";
 import { COCKPIT_PHASES, COCKPIT_STATUS_LABEL, cockpitPhaseProgress, cockpitPhaseStatus, cockpitStepStatus, cockpitSteps } from "./roadmap";
@@ -34,6 +37,13 @@ export function ProjectCockpitPage() {
     staleTime: 60_000,
     retry: (count, error) => !denied(error) && count < 1,
   });
+  const planQuery = useQuery({
+    queryKey: ["project-planning", projectId],
+    queryFn: () => api.getProjectPlanning(projectId),
+    enabled: !!project.data && !denied(project.error),
+    staleTime: 30_000,
+    retry: (count, error) => !denied(error) && count < 1,
+  });
   const [view, setView] = useState<View>("board");
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
@@ -57,6 +67,11 @@ export function ProjectCockpitPage() {
   // Never display stale cached detail from a different project.
   const steps = project.data && !denied(project.error) && !denied(stepsQuery.error) ? cockpitSteps(stepsQuery.data) : null;
   const selected: ParcoursStep | null = steps?.find((step) => step.number === selectedNumber) ?? null;
+  const plan = !denied(planQuery.error) && planQuery.data?.projectId === projectId ? planQuery.data : null;
+  const access = resolveProjectAccess(project.data?.role, project.data?.editingLock ?? null, user?.id, Date.now(), project.error);
+  const referenceProtected = project.data?.exampleMode === "reference";
+  const planned = (number: number) => plan?.steps[String(number)];
+  const friendly = (date: string) => new Date(date + "T00:00:00Z").toLocaleDateString(LOCALE, { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
   const done = steps?.filter((step) => step.status === "termine").length ?? null;
   const reexamine = steps?.filter((step) => step.stale || step.staleRetainedCount > 0).length ?? null;
   const projectRoot = `/projets/${encodeURIComponent(projectId)}`;
@@ -83,6 +98,9 @@ export function ProjectCockpitPage() {
       </div>
     </div>
     {project.isError && <p role="status" className="cockpit-note">Le dossier affiché provient de la dernière copie accessible. Son actualité n’a pas pu être vérifiée. <button type="button" onClick={() => void project.refetch()}>Réessayer</button></p>}
+    {planQuery.isError && <p role="status" className="cockpit-note">Planning : dernière lecture indisponible. {plan ? "Une copie précédente est affichée ; vérifiez son actualité." : "Aucune échéance n’est considérée comme enregistrée."} <button type="button" onClick={() => void planQuery.refetch()}>Réessayer</button></p>}
+    {planQuery.isPending && <p role="status" className="cockpit-note">Chargement des données de pilotage…</p>}
+    {plan && <PlanningBaselineControl key={projectId} projectId={projectId} plan={plan} canWrite={access.canWrite} referenceProtected={referenceProtected} />}
     {stepsQuery.isError && steps && <p role="status" className="cockpit-note">Les étapes affichées proviennent d’une lecture précédente. Réessayez pour confirmer leur état actuel.</p>}
     {!steps && <p role="status" className="cockpit-note">{stepsQuery.isFetching || stepsQuery.isPending ? "Chargement de l’avancement du Parcours…" : "La liste complète des 21 étapes est indisponible. Les statuts ne sont pas déduits des valeurs manquantes."} {stepsQuery.isError && <button type="button" onClick={() => void stepsQuery.refetch()}>Réessayer</button>}</p>}
     <div className="cockpit-stage-shell">
@@ -103,7 +121,7 @@ export function ProjectCockpitPage() {
                   <div className="cockpit-phase-steps">
                     {own.length ? own.map((step) => <button key={step.number} type="button" className={`cockpit-step${selectedNumber === step.number ? " selected" : ""}`} onClick={() => select(step.number)} aria-label={`Étape ${pad(step.number)} : ${step.title}, ${COCKPIT_STATUS_LABEL[cockpitStepStatus(step.status)]}`}>
                       <span className="cockpit-step-no">{pad(step.number)}</span>
-                      <span className="cockpit-step-title">{step.title}<small>{step.stale || step.staleRetainedCount > 0 ? "À réexaminer" : "Ouvrir le suivi de l’étape"}</small></span>
+                      <span className="cockpit-step-title">{step.title}<small>{step.stale || step.staleRetainedCount > 0 ? "À réexaminer" : planned(step.number)?.endDate ? "Échéance : " + friendly(planned(step.number)!.endDate!) : "Ouvrir le suivi de l’étape"}</small></span>
                       <Status status={cockpitStepStatus(step.status)} />
                     </button>) : <p className="cockpit-note">Étapes non évaluées.</p>}
                   </div>
@@ -119,14 +137,17 @@ export function ProjectCockpitPage() {
             </div>
           </> : <section className="cockpit-table" aria-label="Tableau de pilotage des 21 étapes">
             <h2>Tableau de pilotage</h2>
-            <p className="cockpit-note">Les statuts proviennent du Parcours. Les responsables, échéances et prochaines actions personnalisées ne sont pas encore enregistrés par le module de planification.</p>
-            <table><thead><tr><th>Étape</th><th>Phase</th><th>Statut</th><th>Action</th></tr></thead>
+            <p className="cockpit-note">Statuts issus du Parcours. Dates, responsables et actions proviennent du planning métier enregistré sur le serveur, lorsqu’il existe.</p>
+            <div className="cockpit-table-scroll"><table><thead><tr><th>Étape</th><th>Phase</th><th>Statut</th><th>Échéance</th><th>Responsable</th><th>Prochaine action</th><th>Accès</th></tr></thead>
             <tbody>{steps?.map((step) => <tr key={step.number}>
               <td>{pad(step.number)} · {step.title}{(step.stale || step.staleRetainedCount > 0) && <small> · À réexaminer</small>}</td>
               <td>{step.phase}</td>
-              <td>{COCKPIT_STATUS_LABEL[cockpitStepStatus(step.status)]}</td>
-              <td><Link to={stepHref(step.number)}>Ouvrir l’étape</Link></td>
-            </tr>) ?? <tr><td colSpan={4}>Les étapes ne sont pas disponibles.</td></tr>}</tbody></table>
+              <td data-label="Statut">{COCKPIT_STATUS_LABEL[cockpitStepStatus(step.status)]}</td>
+              <td data-label="Échéance">{planned(step.number)?.endDate ? friendly(planned(step.number)!.endDate!) : "—"}</td>
+              <td data-label="Responsable">{planned(step.number)?.responsible || "—"}</td>
+              <td data-label="Prochaine action">{planned(step.number)?.nextAction || "—"}</td>
+              <td data-label="Accès"><button type="button" className="cockpit-action" onClick={() => select(step.number)}>Piloter</button> <Link to={stepHref(step.number)}>Parcours</Link></td>
+            </tr>) ?? <tr><td colSpan={7}>Les étapes ne sont pas disponibles.</td></tr>}</tbody></table></div>
           </section>}
         </div>
       </div>
@@ -142,8 +163,9 @@ export function ProjectCockpitPage() {
             <dt>Statut métier</dt><dd>{COCKPIT_STATUS_LABEL[cockpitStepStatus(selected.status)]}</dd>
             <dt>Objectif de l’étape</dt><dd>{selected.goal || "Non renseigné"}</dd>
             <dt>Livrable attendu</dt><dd>{selected.deliverable || "Non renseigné"}</dd>
-            <dt>Responsable / échéance</dt><dd>Non planifiés dans ce module</dd>
+            <dt>Référence de planning</dt><dd>{plan?.baseline ? "Version " + plan.baseline.version : "Non validée"}</dd>
           </dl>
+          {plan ? <StepPlanningEditor key={`${projectId}:${selected.number}`} projectId={projectId} stepNumber={selected.number} plan={plan} canWrite={access.canWrite} referenceProtected={referenceProtected} /> : <p className="cockpit-note">Planning non accessible : l’édition attend la lecture du serveur.</p>}
           <Link className="cockpit-action primary" to={stepHref(selected.number)}>Ouvrir l’étape {pad(selected.number)} →</Link>
         </div> : <p className="cockpit-note">Sélectionnez une étape pour consulter ses informations métier réelles et accéder à son formulaire.</p>}
         <h3 style={{ marginTop: 22 }}>Outils du projet</h3>
@@ -158,7 +180,7 @@ export function ProjectCockpitPage() {
       </aside>}
     </div>
     <div className="cockpit-viewfoot">
-      <p className="cockpit-note">Calendrier de 12 semaines purement illustratif · Aucun engagement enregistré. Les états de progression viennent de Fadi.</p>
+      <p className="cockpit-note">{plan?.baseline ? `Référence V${plan.baseline.version} figée · Prévisions éditables indépendamment.` : plan && Object.keys(plan.steps).length ? "Planning prévisionnel sauvegardé, non validé." : "Exemple indicatif sur 12 semaines tant qu’aucun calendrier n’est renseigné."} Les statuts viennent de Parcours.</p>
       {view === "board" && <div className="cockpit-zoom" role="group" aria-label="Zoom de la feuille de route">
         <button type="button" disabled={zoom <= 60} aria-label="Réduire le zoom" onClick={() => setZoom((current) => Math.max(60, current - 10))}>−</button>
         <output>{zoom}%</output>
