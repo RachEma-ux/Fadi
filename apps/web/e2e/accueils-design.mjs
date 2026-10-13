@@ -40,7 +40,7 @@ async function api(method, path, data) {
 }
 const dossierPath = (id) => `/projets/${id}`;
 const overview = (id) => page.locator(`.dossier-overview[data-project-id="${id}"]`);
-const primary = (id) => overview(id).locator(".dossier-primary-action");
+const bell = () => page.locator(".notification-bell > button");
 async function openHome(id) {
   await page.goto(`${BASE}${id ? dossierPath(id) : "/accueil"}`);
   await page.locator(`[data-home="${id ? "project" : "application"}"]`).waitFor();
@@ -55,29 +55,19 @@ async function axe(label) {
   const serious = violations.filter((v) => ["critical", "serious"].includes(v.impact));
   check(`accessibilité · ${label} : aucune violation critique ou sérieuse`, serious.length === 0, serious.map((v) => v.id).join(", "));
 }
-async function checkComposition(id, label, mobile = false) {
+async function checkComposition(id, label) {
   const geometry = await overview(id).evaluate((card) => {
-    const action = card.querySelector(".dossier-primary-action"), preview = card.querySelector(".dossier-preview");
-    const control = action?.querySelector("a,button"), rail = document.querySelector(".app-sidebar");
-    if (!action || !preview || !control || !rail) return null;
-    const a = action.getBoundingClientRect(), p = preview.getBoundingClientRect(), c = control.getBoundingClientRect(), r = rail.getBoundingClientRect();
-    const style = getComputedStyle(action);
-    return {
-      sourceOrder: !!(action.compareDocumentPosition(preview) & Node.DOCUMENT_POSITION_FOLLOWING),
-      beforePreview: a.bottom <= p.top + 2, controlHeight: c.height,
-      railVisible: getComputedStyle(rail).display !== "none" && r.width > 0 && r.height > 0,
-      noPageOverflow: document.documentElement.scrollWidth <= innerWidth + 1,
-      buttonWidth: c.width, availableWidth: action.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
-    };
+    const preview = card.querySelector(".dossier-preview"), rail = document.querySelector(".app-sidebar");
+    if (!preview || !rail) return null;
+    const rect = rail.getBoundingClientRect();
+    return { extraBlocks: !!card.querySelector(".dossier-primary-action, .dossier-card-footer"),
+      previewVisible: preview.getBoundingClientRect().width > 0,
+      railVisible: rect.width > 0 && rect.height > 0,
+      noOverflow: document.documentElement.scrollWidth <= innerWidth + 1 };
   });
-  check(`${label} : action dans la carte avant l’aperçu, ordre source et visuel conservé`, geometry?.sourceOrder && geometry.beforePreview);
-  check(`${label} : barre verticale visible et page sans débordement horizontal`, geometry.railVisible && geometry.noPageOverflow);
-  if (mobile) check(`${label} : action pleine largeur et cible tactile d’au moins 44 px`, geometry.controlHeight >= 44 && geometry.buttonWidth >= geometry.availableWidth - 2);
-  await page.screenshot({ path: join(OUT, `${label}.png`), fullPage: true });
-  // Compact visual evidence remains readable through the normal CI job log;
-  // full-resolution, full-page captures stay in the downloadable artefact.
-  const diagnostic = await page.screenshot({ type: "jpeg", quality: 40, fullPage: false });
-  console.log(`FADI_CAPTURE:${label}:${diagnostic.toString("base64")}:END_FADI_CAPTURE`);
+  check(label + " : aucun bloc « Prochaine action » ni pied « Informations du dossier »", !!geometry && !geometry.extraBlocks && geometry.previewVisible);
+  check(label + " : barre verticale conservée sans débordement horizontal", !!geometry?.railVisible && !!geometry.noOverflow);
+  await page.screenshot({ path: join(OUT, label + ".png"), fullPage: true });
 }
 async function register(target, email) {
   await target.goto(`${BASE}/inscription`);
@@ -122,8 +112,8 @@ try {
   check("sélection : destination native vers l’accueil du dossier", await aLink.getAttribute("href") === dossierPath(a.id));
   await aLink.click();
   await page.waitForURL(`${BASE}${dossierPath(a.id)}`);
-  await primary(a.id).getByRole("link", { name: "Commencer le Parcours", exact: true }).waitFor();
-  check("dossier vierge confirmé : Commencer le Parcours mène à 01", (await primary(a.id).getByRole("link").getAttribute("href")) === `${dossierPath(a.id)}?module=parcours&etape=1`);
+  await overview(a.id).waitFor();
+  check("dossier vierge : action retirée de la carte", await overview(a.id).locator(".dossier-primary-action").count() === 0);
   check("dossier vierge : parcelle non renseignée, sans surface zéro présentée comme un relevé", (await overview(a.id).locator(".dossier-facts > div").first().textContent()).includes("Parcelle non renseignée"));
   check("aperçu absent : aucune date de génération d’image annoncée", !(await overview(a.id).locator(".dossier-preview figcaption").textContent()).includes("Généré le"));
   check("accueil du projet : identité explicite, sans salut de l’application", (await page.locator(".fadi-topbar-title h1").textContent()).includes(a.code) && !(await page.locator('[data-home="project"]').textContent()).includes("Bienvenue dans Fadi"));
@@ -131,13 +121,13 @@ try {
 
   await selector.click();
   await menu.getByRole("menuitem").filter({ hasText: b.code }).click();
-  const continueLink = primary(b.id).getByRole("link", { name: "Poursuivre le Parcours", exact: true });
+  const continueLink = page.locator(".dossier-journey .dossier-all-steps");
   await continueLink.waitFor();
-  check("travail non séquentiel : la reprise vise l’étape 09 réellement en cours", await continueLink.getAttribute("href") === `${dossierPath(b.id)}?module=parcours&etape=9`);
+  check("l’accès aux 21 étapes reste disponible", await continueLink.getAttribute("href") === `${dossierPath(b.id)}?module=parcours`);
   const stepsBefore = await api("get", `/projects/${b.id}/steps`);
   await checkComposition(b.id, "projet-desktop");
   await axe("projet-desktop");
-  await continueLink.click();
+  await page.goto(`${BASE}${dossierPath(b.id)}?module=parcours&etape=9`);
   await page.waitForURL((url) => url.pathname === dossierPath(b.id) && url.searchParams.get("module") === "parcours" && url.searchParams.get("etape") === "9");
   await page.locator(".top-stage").filter({ hasText: "ÉTAPE 09" }).waitFor();
   check("reprise : le vrai Parcours est ouvert, pas un dialogue d’étape", await page.locator("dialog[open]").count() === 0);
@@ -153,7 +143,7 @@ try {
   check("Accueil ne duplique ni le parcours complet ni les modules et documents du dossier", await page.locator(".overview-step,.module-nav,.dossier-journey,.dossier-modules,.dossier-resources").count() === 0);
   await page.reload();
   await overview(b.id).waitFor();
-  check("rechargement d’Accueil : même dossier et action toujours explicitement rattachée", (await primary(b.id).getByRole("link").getAttribute("href")).startsWith(`${dossierPath(b.id)}?module=parcours`));
+  check("rechargement d’Accueil : même dossier sans commande dupliquée", await overview(b.id).count() === 1 && await overview(b.id).locator(".dossier-primary-action").count() === 0);
   await checkComposition(b.id, "application-desktop");
   await axe("application-desktop");
 
@@ -186,7 +176,7 @@ try {
   await readings.getByRole("button", { name: "Actualiser programme", exact: true }).click();
   await programmeReading.filter({ hasText: "Actualisation impossible" }).waitFor();
   check("actualisation échouée : valeur du programme et date de sa dernière lecture conservées", !!programmeDate && (await programmeReading.textContent()).endsWith(programmeDate) && await overview(b.id).locator(".dossier-facts > div").nth(1).textContent() === programmeFact);
-  check("échec d'une ressource : l’aperçu conserve sa propre date et le Parcours reste accessible", await previewReading.textContent() === previewDate && await primary(b.id).getByRole("link", { name: "Poursuivre le Parcours", exact: true }).count() === 1);
+  check("échec d’une ressource : l’aperçu garde sa propre date", await previewReading.textContent() === previewDate);
   await page.unroute(programmeUrl);
   await readings.getByRole("button", { name: "Actualiser programme", exact: true }).click();
   await programmeReading.filter({ hasText: "Dernière lecture réussie" }).waitFor();
@@ -205,14 +195,14 @@ try {
       try { const value = JSON.parse(localStorage.getItem(key)); return value?.projectId === projectId && value?.currentWork === work; } catch { return false; }
     }), { projectId: b.id, work });
     await openHome();
-    const workLink = primary(b.id).getByRole("link", { name: actionLabel, exact: true });
+    const workLink = overview(b.id);
     await workLink.waitFor();
-    check(`travail explicitement consulté · ${work} : reprise du même module et du même dossier`, await workLink.getAttribute("href") === `${dossierPath(b.id)}?${query}`);
+    check(`travail explicitement consulté · ${work} : la commande de la carte est bien supprimée`, await workLink.locator(".dossier-primary-action").count() === 0);
   }
   await page.goto(`${BASE}${dossierPath(b.id)}?module=parcours&etape=9`);
   await page.locator(".top-stage").filter({ hasText: "ÉTAPE 09" }).waitFor();
   await openHome();
-  await primary(b.id).getByRole("link", { name: "Poursuivre le Parcours", exact: true }).waitFor();
+  await overview(b.id).waitFor();
 
   // Première lecture retenue, puis échec explicite : jamais 0/21 à partir d’une absence de réponse.
   let releaseSteps;
@@ -229,17 +219,18 @@ try {
     else await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "ci_read_failure" }) });
   });
   await openHome(c.id);
-  await primary(c.id).getByRole("button", { name: /Chargement du Parcours/ }).waitFor();
-  check("chargement : action en attente et aucun faux compteur 0/21", await primary(c.id).getByRole("button").isDisabled() && !/0\s*\/\s*21/.test(await overview(c.id).textContent()));
-  check("programme en chargement : le pied de carte ne le déclare pas indisponible", (await overview(c.id).locator(".dossier-card-footer").textContent()).includes("Chargement du programme…") && !(await overview(c.id).locator(".dossier-facts").textContent()).includes("Information indisponible"));
+  await overview(c.id).waitFor();
+  check("chargement : aucun faux compteur 0/21", !/0\s*\/\s*21/.test(await overview(c.id).textContent()));
+  check("programme en chargement : pas de fausse donnée indisponible", !(await overview(c.id).locator(".dossier-facts").textContent()).includes("Information indisponible"));
   releaseSteps();
-  const retrySteps = primary(c.id).getByRole("button", { name: "Réessayer l’avancement", exact: true });
+  const retrySteps = page.locator(".notification-bell .notification-alerts button").filter({ hasText: "Actualiser l’avancement" });
+  await bell().click();
   await retrySteps.waitFor();
   check("lecture échouée : reprise explicite, pas de dossier vide inventé", !/0\s*\/\s*21/.test(await overview(c.id).textContent()));
   stepsAvailable = true;
   await retrySteps.click();
   await primary(c.id).getByRole("link", { name: "Commencer le Parcours", exact: true }).waitFor();
-  check("reprise réussie : le vrai dossier vide peut alors proposer l’étape 01", (await primary(c.id).getByRole("link").getAttribute("href")).endsWith("&etape=1"));
+  check("reprise réussie : avertissement d’avancement retiré", await page.locator('[data-alert-id="steps-read"]').count() === 0);
   await page.unroute(stepsUrl);
   await page.unroute(initialProgrammeUrl);
 
@@ -253,8 +244,8 @@ try {
     await route.fulfill({ response, json: data });
   });
   await openHome(unknown.id);
-  await primary(unknown.id).getByRole("button", { name: "Vérifier l’accès au dossier", exact: true }).waitFor();
-  check("rôle inconnu : pas d’action d’écriture ou de progression supposée autorisée", await primary(unknown.id).getByRole("link").count() === 0);
+  await overview(unknown.id).waitFor();
+  check("rôle inconnu : pas de commande de progression dans la carte", await overview(unknown.id).locator(".dossier-primary-action").count() === 0);
   await page.unroute(projectUrl);
 
   // L'identité du dossier elle-même peut manquer : l'action doit reprendre
@@ -273,7 +264,7 @@ try {
   check("dossier non lu : la reprise prioritaire relit le dossier, sans inventer une vue d’ensemble", await retryDossier.getAttribute("class") === "button-primary" && await page.locator(".dossier-overview").count() === 0);
   dossierResponse = 0;
   await retryDossier.click();
-  await primary(recovery.id).getByRole("link", { name: "Commencer le Parcours", exact: true }).waitFor();
+  await overview(recovery.id).waitFor();
   check("reprise de la lecture : le dossier demandé est effectivement ouvert", new URL(page.url()).pathname === dossierPath(recovery.id));
 
   dossierResponse = 404;
@@ -301,7 +292,7 @@ try {
 
   await page.setViewportSize({ width: 390, height: 844 });
   await openHome(b.id);
-  await primary(b.id).getByRole("link").waitFor();
+  await overview(b.id).waitFor();
   await checkComposition(b.id, "projet-mobile", true);
   await axe("projet-mobile");
   await selector.click();

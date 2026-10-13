@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "react-router-dom";
 import { api } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
+import { useLastDossier } from "../../lib/last-dossier";
 import { shownName } from "../../lib/user-display";
 import { Icon } from "../../components/Icon";
 import { ChoixLangue } from "../../components/ChoixLangue";
@@ -15,6 +16,7 @@ import { denied } from "./dossier-data";
 
 export function HomeTopbar({ projectId }: { projectId?: string }) {
   const { user } = useAuth();
+  const last = useLastDossier(user?.id);
   const location = useLocation();
   const [dialog, setDialog] = useState<"search" | "history" | "status" | "name" | null>(null);
   const project = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId!), enabled: !!projectId, staleTime: 30_000, retry: (count, e) => !denied(e) && count < 1 });
@@ -35,7 +37,7 @@ export function HomeTopbar({ projectId }: { projectId?: string }) {
       <button type="button" className="topbar-icon" title={projectId ? "Rechercher dans ce projet" : "Rechercher un projet"} aria-label={projectId ? "Rechercher dans ce projet" : "Rechercher un projet"} onClick={() => setDialog("search")}><Icon name="search" /></button>
       <button type="button" className="topbar-icon history-trigger" title={projectId ? "Historique du Dossier" : "Historique de la plateforme"} aria-label={projectId ? "Historique du Dossier" : "Historique de la plateforme"} onClick={() => setDialog("history")}>H</button>
       <button type="button" className="topbar-state" onClick={() => setDialog("status")} title={projectId ? "Consulter les données, les droits et la synchronisation de ce dossier" : "Consulter la connexion et les données de votre espace de travail"}>{projectId ? "État du Dossier" : "État de la plateforme"}</button>
-      <ChoixLangue /><NotificationBell />
+      <ChoixLangue /><NotificationBell projectId={projectId ?? (appHome ? last?.projectId : undefined)} />
     </div>
     {dialog === "search" && <SearchDialog key={projectId ?? "platform"} projectId={projectId} onClose={() => setDialog(null)} />}
     {dialog === "history" && <HistoryDialog key={projectId ?? "platform"} projectId={projectId} onClose={() => setDialog(null)} />}

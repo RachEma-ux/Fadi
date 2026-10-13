@@ -4034,3 +4034,23 @@ fieldset.access-fieldset:disabled {
   justify-content: flex-end;
   margin-bottom: 0.5rem;
 }
+
+
+
+/* Alertes actives dans la cloche : visibles et actionnables sans bandeaux de page. */
+.notification-bell > button { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
+.notification-popover .notification-alerts h2,
+.notification-popover .notification-incoming h2 { font-size: 14px; line-height: 1.4; color: var(--ink); margin: 0 0 10px; }
+.notification-alerts { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.notification-alerts > p { margin: 0 0 8px; font-size: 12px; }
+.notification-alert-list li { border-left: 3px solid #a07827; background: #fffaf0; gap: 7px; }
+.notification-alert-list li strong { font-size: 12.5px; color: #594522; }
+.notification-alert-list li p { margin: 0; font-size: 12px; color: #544830; line-height: 1.5; overflow-wrap: anywhere; }
+.notification-alert-list li .link-button { padding: 6px 0; min-height: 38px; text-align: left; color: var(--ink); font-weight: 600; text-decoration: underline; align-self: flex-start; }
+.notification-alert-list li a { align-self: flex-start; padding: 6px 0; min-height: 38px; font-weight: 600; }
+.notification-recovery { margin: 8px 0; font-size: 12px; color: var(--ink); }
+.notification-popover .notification-incoming p { margin: 5px 0 10px; }
+@media (max-width: 700px) {
+  .notification-popover { max-height: min(70dvh, 600px); width: min(420px, calc(100vw - 75px)); }
+  .notification-alert-list li { padding: 10px; }
+}
