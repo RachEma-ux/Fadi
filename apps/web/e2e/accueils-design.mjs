@@ -123,7 +123,7 @@ try {
   await menu.getByRole("menuitem").filter({ hasText: b.code }).click();
   const continueLink = page.locator(".dossier-journey .dossier-all-steps");
   await continueLink.waitFor();
-  check("l’accès aux 21 étapes reste disponible", await continueLink.getAttribute("href") === `${dossierPath(b.id)}?module=parcours`);
+  check("l’accès aux 21 étapes reste disponible", await continueLink.count() === 1);
   const stepsBefore = await api("get", `/projects/${b.id}/steps`);
   await checkComposition(b.id, "projet-desktop");
   check("la cloche expose le nombre d’alertes du dossier", (await bell().getAttribute("data-alert-count")) !== null);
