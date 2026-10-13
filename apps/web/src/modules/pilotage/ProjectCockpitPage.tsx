@@ -8,6 +8,8 @@ import { rememberDossier } from "../../lib/last-dossier";
 import { resolveProjectAccess } from "../../lib/access";
 import { LOCALE } from "../../lib/i18n";
 import { StepPlanningEditor, PlanningBaselineControl } from "./PlanningEditor";
+import { StepToolActions } from "./StepToolActions";
+import { primaryStepTool, type StepToolContext } from "./step-tools";
 import { RoadmapPreview } from "./RoadmapPreview";
 import { COCKPIT_CAPABILITIES, cockpitCapabilityHref, cockpitCapabilityLabel } from "./capabilities";
 import { COCKPIT_PHASES, COCKPIT_STATUS_LABEL, cockpitPhaseProgress, cockpitPhaseStatus, cockpitStepStatus, cockpitSteps } from "./roadmap";
@@ -48,6 +50,15 @@ export function ProjectCockpitPage() {
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
   const [zoom, setZoom] = useState(100);
+  // La présence d'un cas appliqué est vérifiée depuis la véritable API
+  // Programmation uniquement lorsqu'une étape concernée est sélectionnée.
+  const programmeQuery = useQuery({
+    queryKey: ["programme", projectId],
+    queryFn: () => api.getProgramme(projectId),
+    enabled: !!project.data && !denied(project.error) && selectedNumber !== null && selectedNumber >= 7 && selectedNumber <= 12,
+    staleTime: 60_000,
+    retry: (count, error) => !denied(error) && count < 1,
+  });
   const { user } = useAuth();
   const recordedProject = useRef<string | null>(null);
   useEffect(() => {
@@ -70,6 +81,16 @@ export function ProjectCockpitPage() {
   const plan = !denied(planQuery.error) && planQuery.data?.projectId === projectId ? planQuery.data : null;
   const access = resolveProjectAccess(project.data?.role, project.data?.editingLock ?? null, user?.id, Date.now(), project.error);
   const referenceProtected = project.data?.exampleMode === "reference";
+  const programmeRequired = selectedNumber !== null && selectedNumber >= 7 && selectedNumber <= 12;
+  const toolContext: StepToolContext = {
+    programme: !programmeRequired || programmeQuery.isPending || programmeQuery.isError
+      ? "unknown" : programmeQuery.data?.programmeCase ? "applied" : "missing",
+    modele: !steps ? "unknown" : (steps.find((step) => step.number === 10)?.model?.roomCount ?? 0) > 0 ? "zones" : "missing",
+    editing: !access.known ? "unknown" : access.canWrite && !referenceProtected ? "allowed" : "read-only",
+  };
+  // Les liens rapides s'appuient seulement sur les accès sans prérequis ;
+  // une vue avancée bloquée n'est jamais rendue comme un lien actif.
+  const quickTool = (number: number) => primaryStepTool(projectId, number, toolContext);
   const planned = (number: number) => plan?.steps[String(number)];
   const friendly = (date: string) => new Date(date + "T00:00:00Z").toLocaleDateString(LOCALE, { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
   const done = steps?.filter((step) => step.status === "termine").length ?? null;
@@ -119,11 +140,13 @@ export function ProjectCockpitPage() {
                     <p>Étapes {pad(phase.first)}–{pad(phase.last)} · {COCKPIT_STATUS_LABEL[status]}</p>
                   </header>
                   <div className="cockpit-phase-steps">
-                    {own.length ? own.map((step) => <button key={step.number} type="button" className={`cockpit-step${selectedNumber === step.number ? " selected" : ""}`} onClick={() => select(step.number)} aria-label={`Étape ${pad(step.number)} : ${step.title}, ${COCKPIT_STATUS_LABEL[cockpitStepStatus(step.status)]}`}>
+                    {own.length ? own.map((step) => <div key={step.number} className="cockpit-step-entry"><button type="button" className={`cockpit-step${selectedNumber === step.number ? " selected" : ""}`} onClick={() => select(step.number)} aria-label={`Étape ${pad(step.number)} : ${step.title}, ${COCKPIT_STATUS_LABEL[cockpitStepStatus(step.status)]}`}>
                       <span className="cockpit-step-no">{pad(step.number)}</span>
                       <span className="cockpit-step-title">{step.title}<small>{step.stale || step.staleRetainedCount > 0 ? "À réexaminer" : planned(step.number)?.endDate ? "Échéance : " + friendly(planned(step.number)!.endDate!) : "Ouvrir le suivi de l’étape"}</small></span>
                       <Status status={cockpitStepStatus(step.status)} />
-                    </button>) : <p className="cockpit-note">Étapes non évaluées.</p>}
+                    </button>
+                    {quickTool(step.number)?.href && <Link className="cockpit-step-shortcut" to={quickTool(step.number)!.href!} aria-label={`${quickTool(step.number)!.label} — étape ${pad(step.number)}`} title={quickTool(step.number)!.detail}>↗</Link>}
+                    </div>) : <p className="cockpit-note">Étapes non évaluées.</p>}
                   </div>
                   <div className="cockpit-phase-foot">
                     {count === null ? "Progression indisponible" : `${count} / ${phase.last - phase.first + 1} étapes terminées`}
@@ -146,7 +169,7 @@ export function ProjectCockpitPage() {
               <td data-label="Échéance">{planned(step.number)?.endDate ? friendly(planned(step.number)!.endDate!) : "—"}</td>
               <td data-label="Responsable">{planned(step.number)?.responsible || "—"}</td>
               <td data-label="Prochaine action">{planned(step.number)?.nextAction || "—"}</td>
-              <td data-label="Accès"><button type="button" className="cockpit-action" onClick={() => select(step.number)}>Piloter</button> <Link to={stepHref(step.number)}>Parcours</Link></td>
+              <td data-label="Accès"><button type="button" className="cockpit-action" onClick={() => select(step.number)}>Piloter</button> {quickTool(step.number)?.href && <Link className="cockpit-table-tool" to={quickTool(step.number)!.href!} title={quickTool(step.number)!.detail}>{quickTool(step.number)!.label} ↗</Link>}</td>
             </tr>) ?? <tr><td colSpan={7}>Les étapes ne sont pas disponibles.</td></tr>}</tbody></table></div>
           </section>}
         </div>
@@ -165,6 +188,7 @@ export function ProjectCockpitPage() {
             <dt>Livrable attendu</dt><dd>{selected.deliverable || "Non renseigné"}</dd>
             <dt>Référence de planning</dt><dd>{plan?.baseline ? "Version " + plan.baseline.version : "Non validée"}</dd>
           </dl>
+          <StepToolActions projectId={projectId} stepNumber={selected.number} context={toolContext} />
           {plan ? <StepPlanningEditor key={`${projectId}:${selected.number}`} projectId={projectId} stepNumber={selected.number} plan={plan} canWrite={access.canWrite} referenceProtected={referenceProtected} /> : <p className="cockpit-note">Planning non accessible : l’édition attend la lecture du serveur.</p>}
           <Link className="cockpit-action primary" to={stepHref(selected.number)}>Ouvrir l’étape {pad(selected.number)} →</Link>
         </div> : <p className="cockpit-note">Sélectionnez une étape pour consulter ses informations métier réelles et accéder à son formulaire.</p>}
