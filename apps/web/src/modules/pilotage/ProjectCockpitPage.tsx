@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { api, type ParcoursStep } from "../../lib/api";
 import { denied } from "../accueil/dossier-data";
 import { RoadmapPreview } from "./RoadmapPreview";
+import { COCKPIT_CAPABILITIES, cockpitCapabilityHref, cockpitCapabilityLabel } from "./capabilities";
 import { COCKPIT_PHASES, COCKPIT_STATUS_LABEL, cockpitPhaseProgress, cockpitPhaseStatus, cockpitStepStatus, cockpitSteps } from "./roadmap";
 import "./pilotage.css";
 
@@ -129,12 +130,13 @@ export function ProjectCockpitPage() {
         </div> : <p className="cockpit-note">Sélectionnez une étape pour consulter ses informations métier réelles et accéder à son formulaire.</p>}
         <h3 style={{ marginTop: 22 }}>Outils du projet</h3>
         <div className="cockpit-tool-list">
-          <Link to={`${projectRoot}?module=parcours`}>Parcours — 21 étapes <span>→</span></Link>
-          <Link to={`${projectRoot}?module=atelier`}>Atelier 2D/3D <span>→</span></Link>
-          <Link to={`${projectRoot}?module=analyses`}>Analyses disponibles <span>→</span></Link>
-          <span title="À connecter à la persistance projet">Planning collaboratif · À développer</span>
+          {COCKPIT_CAPABILITIES.map((capability) => {
+            const href = cockpitCapabilityHref(projectId, capability);
+            return href ? <Link key={capability.key} to={href} title={capability.note}>{capability.label}<small>{cockpitCapabilityLabel(capability.state)}</small></Link>
+              : <span key={capability.key} title={capability.note}>{capability.label}<small>{cockpitCapabilityLabel(capability.state)}</small></span>;
+          })}
         </div>
-        <p className="cockpit-note">Les KPI métier non vérifiés et le calendrier de projet personnalisé ne sont pas considérés comme disponibles.</p>
+        <p className="cockpit-note">Les fonctions annoncées comme « à développer » ne disposent d’aucune action active. Aucun résultat métier n’est inventé.</p>
       </aside>}
     </div>
     <div className="cockpit-viewfoot">
