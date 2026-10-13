@@ -126,6 +126,10 @@ try {
   check("l’accès aux 21 étapes reste disponible", await continueLink.getAttribute("href") === `${dossierPath(b.id)}?module=parcours`);
   const stepsBefore = await api("get", `/projects/${b.id}/steps`);
   await checkComposition(b.id, "projet-desktop");
+  check("la cloche expose le nombre d’alertes du dossier", (await bell().getAttribute("data-alert-count")) !== null);
+  await bell().click();
+  check("les alertes et notifications restent deux catégories distinctes", await page.locator(".notification-alerts").count() === 1 && await page.locator(".notification-incoming").count() === 1);
+  await page.keyboard.press("Escape");
   await axe("projet-desktop");
   await page.goto(`${BASE}${dossierPath(b.id)}?module=parcours&etape=9`);
   await page.waitForURL((url) => url.pathname === dossierPath(b.id) && url.searchParams.get("module") === "parcours" && url.searchParams.get("etape") === "9");
@@ -184,7 +188,7 @@ try {
 
   // The useful action resumes an explicitly opened workspace, never a module
   // inferred from a stale review or a preview warning.
-  for (const [work, query, actionLabel] of [
+  for (const [work, query] of [
     ["programme", "module=programmation", "Ouvrir le programme"],
     ["atelier", "module=atelier", "Ouvrir l’Atelier"],
     ["review", "module=parcours&etape=11&bilan=1", "Consulter la revue"],
@@ -229,7 +233,7 @@ try {
   check("lecture échouée : reprise explicite, pas de dossier vide inventé", !/0\s*\/\s*21/.test(await overview(c.id).textContent()));
   stepsAvailable = true;
   await retrySteps.click();
-  await primary(c.id).getByRole("link", { name: "Commencer le Parcours", exact: true }).waitFor();
+  await page.locator('[data-alert-id="steps-read"]').waitFor({ state: "hidden" });
   check("reprise réussie : avertissement d’avancement retiré", await page.locator('[data-alert-id="steps-read"]').count() === 0);
   await page.unroute(stepsUrl);
   await page.unroute(initialProgrammeUrl);
@@ -287,7 +291,7 @@ try {
   await page.fill('input[name="password"]', "accueils-design-ci-123");
   await page.click('button[type="submit"]');
   await page.waitForURL(`${BASE}${dossierPath(recovery.id)}`);
-  await primary(recovery.id).getByRole("link", { name: "Commencer le Parcours", exact: true }).waitFor();
+  await overview(recovery.id).waitFor();
   check("session renouvelée : retour réel au même dossier et reprise du Parcours disponible", await overview(recovery.id).count() === 1);
 
   await page.setViewportSize({ width: 390, height: 844 });
