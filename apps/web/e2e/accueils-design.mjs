@@ -138,6 +138,7 @@ try {
   check("planning : accès au pilotage du dossier courant", (await cockpitEntry.getAttribute("href")) === `${dossierPath(b.id)}/pilotage`);
   await cockpitEntry.click();
   await page.waitForURL(`${BASE}${dossierPath(b.id)}/pilotage`);
+  await page.locator(".cockpit-step").nth(20).waitFor();
   check("cockpit : contexte du projet conservé dans l'en-tête", (await page.locator(".fadi-topbar-title h1").textContent()).includes(b.code));
   check("cockpit : six phases et 21 étapes provenant du Parcours", await page.locator(".cockpit-phase").count() === 6 && await page.locator(".cockpit-step").count() === 21);
   check("cockpit : statuts réels respectés", (await page.locator(".cockpit-step").nth(1).getAttribute("aria-label")).includes("Terminé"));
