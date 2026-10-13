@@ -21,7 +21,7 @@ export function RoadmapPreview({ projectId, steps, loading = false }: RoadmapPre
     retry: (count, error) => !denied(error) && count < 1,
   });
   const readable = !denied(planQuery.error);
-  const fetching = planQuery.isPending;
+  const fetching = planQuery.isPending && !planQuery.isError;
   const failed = !readable || (!planQuery.data && planQuery.isError);
   const timeline = planningTimeline(readable ? planQuery.data : null);
   const illustrative = timeline.mode === "example" && !fetching && !failed;
