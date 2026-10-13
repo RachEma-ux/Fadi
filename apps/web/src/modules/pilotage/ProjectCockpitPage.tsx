@@ -64,7 +64,6 @@ export function ProjectCockpitPage() {
 
   if (project.isPending) return <main className="cockpit-page"><p role="status">Chargement du projet…</p></main>;
   if (!project.data || denied(project.error)) return <main className="cockpit-page"><p role="alert">Projet introuvable ou accès refusé.</p><Link to="/projets">Retour aux projets</Link></main>;
-  if (project.isError) return <main className="cockpit-page"><p role="alert">Impossible de vérifier les informations de ce projet.</p><button type="button" onClick={() => void project.refetch()}>Réessayer</button></main>;
 
   function select(number: number) {
     setSelectedNumber(number);
@@ -83,6 +82,8 @@ export function ProjectCockpitPage() {
         <button type="button" className="cockpit-action" aria-label={panelOpen ? "Masquer le panneau de pilotage" : "Afficher le panneau de pilotage"} aria-expanded={panelOpen} onClick={() => setPanelOpen(!panelOpen)}>☷</button>
       </div>
     </div>
+    {project.isError && <p role="status" className="cockpit-note">Le dossier affiché provient de la dernière copie accessible. Son actualité n’a pas pu être vérifiée. <button type="button" onClick={() => void project.refetch()}>Réessayer</button></p>}
+    {stepsQuery.isError && steps && <p role="status" className="cockpit-note">Les étapes affichées proviennent d’une lecture précédente. Réessayez pour confirmer leur état actuel.</p>}
     {!steps && <p role="status" className="cockpit-note">{stepsQuery.isFetching || stepsQuery.isPending ? "Chargement de l’avancement du Parcours…" : "La liste complète des 21 étapes est indisponible. Les statuts ne sont pas déduits des valeurs manquantes."} {stepsQuery.isError && <button type="button" onClick={() => void stepsQuery.refetch()}>Réessayer</button>}</p>}
     <div className="cockpit-stage-shell">
       <div className="cockpit-stage-viewport">
