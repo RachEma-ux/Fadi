@@ -97,10 +97,10 @@ export interface ResolvedStepTool {
 }
 
 export function toolHref(projectId: string, module: NonNullable<ToolDefinition["route"]>, stepNumber: number, vue?: ToolDefinition["vue"]): string {
-  const root = \`/projets/\${encodeURIComponent(projectId)}\`;
-  if (module === "parcours") return \`\${root}?module=parcours&etape=\${stepNumber}\`;
+  const root = `/projets/${encodeURIComponent(projectId)}`;
+  if (module === "parcours") return `${root}?module=parcours&etape=${stepNumber}`;
   // ProjectShell ne lit « vue » que pour le module Programmation.
-  return \`\${root}?module=\${module}\${vue ? \`&vue=\${vue}\` : ""}\`;
+  return `${root}?module=${module}${vue ? `&vue=${vue}` : ""}`;
 }
 
 export function resolveStepTools(projectId: string, stepNumber: number, context: StepToolContext): ResolvedStepTool[] {
