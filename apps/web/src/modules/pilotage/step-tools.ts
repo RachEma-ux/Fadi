@@ -41,11 +41,11 @@ const STEP_TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     detail: "Outil Parcelle intégré au dossier : géométrie, bornes et sources. Certaines fonctions restent celles du prototype actuel.",
   },
   {
-    key: "programmation", label: "Ouvrir la programmation", first: 4, last: 9, state: "available",
+    key: "programmation", label: "Ouvrir la programmation", first: 4, last: 8, state: "available",
     route: "programmation", detail: "Répartition, besoins, surfaces et cas de programme du projet.",
   },
   {
-    key: "hypotheses", label: "Registre des hypothèses du programme", first: 7, last: 9, state: "limited",
+    key: "hypotheses", label: "Registre des hypothèses du programme", first: 7, last: 8, state: "limited",
     route: "programmation", vue: "hypotheses", prerequisite: "programme",
     detail: "Cette vue dépend d'un cas de programme appliqué ; les confirmations exigent leurs preuves.",
     preparation: "Appliquer un cas de programme avant de consulter ses hypothèses.",
