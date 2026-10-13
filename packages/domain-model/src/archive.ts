@@ -431,7 +431,7 @@ function archivePlanningOf(input: unknown): ArchivePlanning | null {
   const int = (n: unknown): n is number => Number.isSafeInteger(n) && (n as number) >= 0 && (n as number) < 1000000;
   const date = (v: unknown): v is string | null => {
     if (v === null) return true;
-    if (typeof v !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(v)) return false;
+    if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
     const t = new Date(v + "T00:00:00Z");
     return Number.isFinite(t.getTime()) && t.toISOString().slice(0, 10) === v;
   };
