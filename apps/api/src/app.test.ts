@@ -2161,5 +2161,22 @@ describe("R2 · planning métier, versions et accès au dossier", () => {
     expect(v2.body.baseline.steps["1"].startDate).toBe("2026-12-01");
     expect((await alice.get(endpoint + "/baselines")).body).toHaveLength(2);
     expect((await alice.get(endpoint + "/baselines/1")).body.steps["1"].startDate).toBe("2026-11-02");
+
+    // Project copies and exported JSON must retain planning and historical baselines.
+    const archive = await alice.get(`/projects/${p.id}/archive`);
+    expect(archive.status).toBe(200);
+    expect(archive.body.planning.baselines).toHaveLength(2);
+    const imported = await alice.post("/projects/import").send(archive.body);
+    expect(imported.status).toBe(201);
+    const importedId = imported.body.projects[0].id;
+    expect((await alice.get(`/projects/${importedId}/planning`)).body.baseline.version).toBe(2);
+    expect((await alice.get(`/projects/${importedId}/planning/baselines/1`)).body.steps["1"].startDate).toBe("2026-11-02");
+
+    const copied = await alice.post(`/projects/${p.id}/copies`).send({ name: "Copie du planning" });
+    expect(copied.status).toBe(201);
+    expect((await alice.get(`/projects/${copied.body.id}/planning`)).body.steps["1"].startDate).toBe("2026-12-01");
+
+    const invalidArchive = { ...archive.body, planning: { ...archive.body.planning, steps: { "23": step(0) } } };
+    expect((await alice.post("/projects/import").send(invalidArchive)).status).toBe(422);
   });
 });
