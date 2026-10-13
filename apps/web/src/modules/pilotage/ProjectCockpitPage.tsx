@@ -99,7 +99,7 @@ export function ProjectCockpitPage() {
     </div>
     {project.isError && <p role="status" className="cockpit-note">Le dossier affiché provient de la dernière copie accessible. Son actualité n’a pas pu être vérifiée. <button type="button" onClick={() => void project.refetch()}>Réessayer</button></p>}
     {planQuery.isError && <p role="status" className="cockpit-note">Planning : dernière lecture indisponible. {plan ? "Une copie précédente est affichée ; vérifiez son actualité." : "Aucune échéance n’est considérée comme enregistrée."} <button type="button" onClick={() => void planQuery.refetch()}>Réessayer</button></p>}
-    {planQuery.isPending && <p role="status" className="cockpit-note">Chargement des données de pilotage…</p>}
+    {planQuery.isPending && !planQuery.isError && <p role="status" className="cockpit-note">Chargement des données de pilotage…</p>}
     {plan && <PlanningBaselineControl key={projectId} projectId={projectId} plan={plan} canWrite={access.canWrite} referenceProtected={referenceProtected} />}
     {stepsQuery.isError && steps && <p role="status" className="cockpit-note">Les étapes affichées proviennent d’une lecture précédente. Réessayez pour confirmer leur état actuel.</p>}
     {!steps && <p role="status" className="cockpit-note">{stepsQuery.isFetching || stepsQuery.isPending ? "Chargement de l’avancement du Parcours…" : "La liste complète des 21 étapes est indisponible. Les statuts ne sont pas déduits des valeurs manquantes."} {stepsQuery.isError && <button type="button" onClick={() => void stepsQuery.refetch()}>Réessayer</button>}</p>}
