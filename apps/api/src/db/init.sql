@@ -66,6 +66,29 @@ CREATE TABLE IF NOT EXISTS project_steps (
 );
 CREATE INDEX IF NOT EXISTS project_steps_project_id_idx ON project_steps (project_id);
 
+-- R2 · Planning métier par projet : champs indépendants du Parcours et version CAS.
+CREATE TABLE IF NOT EXISTS project_plans (
+  project_id text PRIMARY KEY REFERENCES projects (id) ON DELETE CASCADE,
+  revision integer NOT NULL DEFAULT 1,
+  steps jsonb NOT NULL DEFAULT '{}'::jsonb,
+  baseline_version integer NOT NULL DEFAULT 0,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  updated_by text REFERENCES users (id) ON DELETE SET NULL
+);
+
+-- Les références de planning sont des instantanés immuables (une version = une ligne).
+CREATE TABLE IF NOT EXISTS project_plan_baselines (
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  version integer NOT NULL,
+  steps jsonb NOT NULL,
+  source_revision integer NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  created_by text REFERENCES users (id) ON DELETE SET NULL,
+  PRIMARY KEY (project_id, version)
+);
+CREATE INDEX IF NOT EXISTS project_plan_baselines_project_idx
+  ON project_plan_baselines (project_id, version);
+
 -- Répartition programmatique (module Programmation), une ligne par projet,
 -- créée à la première modification ; voir schema.ts.
 CREATE TABLE IF NOT EXISTS programme_repartitions (
