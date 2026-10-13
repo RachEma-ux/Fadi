@@ -1,8 +1,10 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { api, type ParcoursStep } from "../../lib/api";
 import { denied } from "../accueil/dossier-data";
+import { useAuth } from "../../lib/auth-context";
+import { rememberDossier } from "../../lib/last-dossier";
 import { RoadmapPreview } from "./RoadmapPreview";
 import { COCKPIT_CAPABILITIES, cockpitCapabilityHref, cockpitCapabilityLabel } from "./capabilities";
 import { COCKPIT_PHASES, COCKPIT_STATUS_LABEL, cockpitPhaseProgress, cockpitPhaseStatus, cockpitStepStatus, cockpitSteps } from "./roadmap";
@@ -36,6 +38,21 @@ export function ProjectCockpitPage() {
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
   const [zoom, setZoom] = useState(100);
+  const { user } = useAuth();
+  const recordedProject = useRef<string | null>(null);
+  useEffect(() => {
+    setSelectedNumber(null);
+    setView("board");
+    setPanelOpen(true);
+  }, [projectId]);
+  useEffect(() => {
+    // Opening a cockpit directly counts as consulting this project, without
+    // replacing a deliberately selected Atelier / Programme work context.
+    if (user && project.data?.id === projectId && !denied(project.error) && recordedProject.current !== `${user.id}:${projectId}`) {
+      recordedProject.current = `${user.id}:${projectId}`;
+      rememberDossier(user.id, projectId);
+    }
+  }, [user?.id, projectId, project.data?.id, project.error]);
 
   // Never display stale cached detail from a different project.
   const steps = project.data && !denied(project.error) && !denied(stepsQuery.error) ? cockpitSteps(stepsQuery.data) : null;
