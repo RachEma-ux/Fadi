@@ -12,7 +12,7 @@ type View = "board" | "table";
 const pad = (value: number) => String(value).padStart(2, "0");
 
 function Status({ status }: { status: "done" | "doing" | "todo" | "unavailable" }) {
-  return <span className={`cockpit-dot cockpit-dot-${status}`} title={COCKPIT_STATUS_LABEL[status]} aria-label={COCKPIT_STATUS_LABEL[status]} />;
+  return <span className={`cockpit-dot cockpit-dot-${status}`} title={COCKPIT_STATUS_LABEL[status]} aria-hidden="true" />;
 }
 
 /** Native React integration; no iframe, shadow application or localStorage authority. */
@@ -71,7 +71,7 @@ export function ProjectCockpitPage() {
       <div className="cockpit-stage-viewport">
         <div className="cockpit-stage" style={{ zoom: view === "board" ? zoom / 100 : 1 }}>
           {view === "board" ? <>
-            <div className="cockpit-phase-strip" aria-label="Six phases du Parcours">
+            <div className="cockpit-phase-strip" role="group" aria-label="Six phases du Parcours">
               {COCKPIT_PHASES.map((phase, index) => {
                 const status = cockpitPhaseStatus(steps, phase.first, phase.last);
                 const count = cockpitPhaseProgress(steps, phase.first, phase.last);
@@ -141,7 +141,7 @@ export function ProjectCockpitPage() {
     </div>
     <div className="cockpit-viewfoot">
       <p className="cockpit-note">Calendrier de 12 semaines purement illustratif · Aucun engagement enregistré. Les états de progression viennent de Fadi.</p>
-      {view === "board" && <div className="cockpit-zoom" aria-label="Zoom de la feuille de route">
+      {view === "board" && <div className="cockpit-zoom" role="group" aria-label="Zoom de la feuille de route">
         <button type="button" disabled={zoom <= 60} aria-label="Réduire le zoom" onClick={() => setZoom((current) => Math.max(60, current - 10))}>−</button>
         <output>{zoom}%</output>
         <button type="button" disabled={zoom >= 130} aria-label="Augmenter le zoom" onClick={() => setZoom((current) => Math.min(130, current + 10))}>+</button>
