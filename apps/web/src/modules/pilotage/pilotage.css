@@ -42,7 +42,7 @@
 .cockpit-phase-head { background:var(--phase-soft); border-top:5px solid var(--phase-color); min-height:100px; padding:13px 15px; }
 .cockpit-phase-head small { display:block; font-size:10px; color:#50666a; letter-spacing:.06em; font-weight:700; }
 .cockpit-phase-head h3 { font-size:16px; margin:8px 0 5px; color:#20323b; }
-.cockpit-phase-head p { margin:0; font-size:11px; color:#60757a; }
+.cockpit-phase-head p { margin:0; font-size:11px; color:#50666a; }
 .cockpit-phase-steps { padding:12px; }
 .cockpit-step { display:flex; align-items:flex-start; gap:9px; text-align:left; width:100%; min-height:56px; border:1px solid #edf0ed; border-radius:7px; padding:9px 7px; margin-bottom:6px; background:#fff; color:#20323b; }
 .cockpit-step:hover,.cockpit-step.selected { border-color:var(--phase-color); background:#f9fcfa; }
@@ -61,12 +61,12 @@
 .cockpit-board-planning .cockpit-preview-week-head { grid-template-columns:230px repeat(12,minmax(0,1fr)); }
 .cockpit-table { width:min(100%,1250px); min-width:780px; background:#fff; border:1px solid #e1e7e1; border-radius:9px; padding:18px; }
 .cockpit-table table { border-collapse:collapse; width:100%; font-size:12px; }
-.cockpit-table th { background:#f2f6f3; padding:12px; text-align:left; color:#62757a; }
+.cockpit-table th { background:#f2f6f3; padding:12px; text-align:left; color:#50666a; }
 .cockpit-table td { padding:10px 12px; border-bottom:1px solid #edf0ed; }
 .cockpit-table td a { text-underline-offset:3px; }
 .cockpit-side-panel { width:285px; flex:none; border-left:1px solid #dfe6e2; padding:22px 18px; background:#fff; }
 .cockpit-side-panel h3 { margin:0 0 8px; font-size:17px; }
-.cockpit-side-panel p { font-size:12px; color:#60767b; }
+.cockpit-side-panel p { font-size:12px; color:#50666a; }
 .cockpit-side-panel .cockpit-summary { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:15px 0 22px; }
 .cockpit-side-panel .cockpit-summary div { background:#f4f7f5; border:1px solid #e9efec; border-radius:8px; padding:12px; }
 .cockpit-side-panel .cockpit-summary strong { display:block; font-size:23px; }
