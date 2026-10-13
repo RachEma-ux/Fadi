@@ -102,6 +102,38 @@ export const projectSteps = pgTable("project_steps", {
   index("project_steps_project_id_idx").on(t.projectId),
 ]);
 
+/** R2 : données de pilotage séparées des 21 statuts de Parcours. */
+export interface ProjectPlanningStep {
+  startDate: string | null;
+  endDate: string | null;
+  responsible: string;
+  nextAction: string;
+}
+export type ProjectPlanningSteps = Record<string, ProjectPlanningStep>;
+
+/** Brouillon courant : révision CAS globale, sans mutation des fiches Parcours. */
+export const projectPlans = pgTable("project_plans", {
+  projectId: text("project_id").primaryKey().references(() => projects.id, { onDelete: "cascade" }),
+  revision: integer("revision").notNull().default(1),
+  steps: jsonb("steps").notNull().$type<ProjectPlanningSteps>(),
+  baselineVersion: integer("baseline_version").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedBy: text("updated_by").references(() => users.id, { onDelete: "set null" }),
+});
+
+/** Chaque référence validée est immuable et consultable après les suivantes. */
+export const projectPlanBaselines = pgTable("project_plan_baselines", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  steps: jsonb("steps").notNull().$type<ProjectPlanningSteps>(),
+  sourceRevision: integer("source_revision").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+}, (t) => [
+  primaryKey({ columns: [t.projectId, t.version] }),
+  index("project_plan_baselines_project_idx").on(t.projectId, t.version),
+]);
+
 /**
  * Répartition programmatique du projet (module Programmation) : type de
  * bâtiment, surface de référence, position dans la fourchette et ratios
