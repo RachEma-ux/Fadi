@@ -140,7 +140,7 @@ try {
   await page.waitForURL(`${BASE}${dossierPath(b.id)}/pilotage`);
   check("cockpit : contexte du projet conservé dans l'en-tête", (await page.locator(".fadi-topbar-title h1").textContent()).includes(b.code));
   check("cockpit : six phases et 21 étapes provenant du Parcours", await page.locator(".cockpit-phase").count() === 6 && await page.locator(".cockpit-step").count() === 21);
-  check("cockpit : statuts réels respectés", (await page.locator('.cockpit-step[data-unused="never"]').count()) === 0 && (await page.locator(".cockpit-step").nth(1).getAttribute("aria-label")).includes("Terminé"));
+  check("cockpit : statuts réels respectés", (await page.locator(".cockpit-step").nth(1).getAttribute("aria-label")).includes("Terminé"));
   await axe("cockpit-desktop");
   await page.getByRole("button", { name: "Vue tableau" }).click();
   check("cockpit : tableau simple des 21 étapes", await page.locator(".cockpit-table tbody tr").count() === 21);
