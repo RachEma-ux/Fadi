@@ -63,14 +63,14 @@ const STEP_TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     preparationRoute: "programmation",
   },
   {
-    key: "analyses", label: "Consulter les analyses métier", first: 13, last: 19, state: "limited",
-    route: "analyses",
-    detail: "Contrôles et quantités dans leur domaine calculable. Aucun certificat réglementaire global n'est fourni.",
-  },
-  {
     key: "documents", label: "Ouvrir les documents du projet", first: 17, last: 21,
     state: "limited", route: "documents",
     detail: "Catalogue, productions et état de fraîcheur ; les pièces non produites restent annoncées comme telles.",
+  },
+  {
+    key: "analyses", label: "Consulter les analyses métier", first: 13, last: 19, state: "limited",
+    route: "analyses",
+    detail: "Contrôles et quantités dans leur domaine calculable. Aucun certificat réglementaire global n'est fourni.",
   },
   {
     key: "collaboration", label: "Consulter la collaboration", first: 20, last: 21, state: "limited",
