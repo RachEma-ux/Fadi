@@ -372,6 +372,22 @@ try {
   await overview(b.id).waitFor();
   await checkComposition(b.id, "projet-mobile", true);
   await axe("projet-mobile");
+  // R3 mobile : les raccourcis restent tactiles sans empiéter sur les cartes,
+  // le panneau reste sous la feuille de route et aucune barre n'élargit la page.
+  await page.goto(`${BASE}${dossierPath(b.id)}/pilotage`);
+  await page.locator(".cockpit-step-shortcut").nth(20).waitFor();
+  const mobileCockpit = await page.evaluate(() => ({
+    phases: document.querySelectorAll(".cockpit-phase").length,
+    shortcuts: document.querySelectorAll(".cockpit-step-shortcut").length,
+    noOverflow: document.documentElement.scrollWidth <= window.innerWidth + 1,
+    shortcutWidth: document.querySelector(".cockpit-step-shortcut")?.getBoundingClientRect().width ?? 0,
+  }));
+  check("R3 mobile : six phases, 21 accès tactiles, aucun débordement global", mobileCockpit.phases === 6 && mobileCockpit.shortcuts === 21 && mobileCockpit.noOverflow && mobileCockpit.shortcutWidth >= 40, JSON.stringify(mobileCockpit));
+  await page.locator(".cockpit-step").nth(9).click();
+  await page.locator(".cockpit-step-tools").waitFor();
+  await axe("cockpit-mobile");
+  await page.screenshot({ path: join(OUT, "cockpit-mobile-r3.png"), fullPage: true });
+  await openHome(b.id);
   await selector.click();
   await menu.waitFor();
   const menuBounds = await menu.boundingBox(), railBounds = await page.locator(".app-sidebar").boundingBox();
