@@ -456,14 +456,15 @@ function archivePlanningOf(input: unknown): ArchivePlanning | null {
     }
     return output;
   };
-  if (!int(input["revision"]) || !int(input["baselineVersion"]) || input["revision"] < 1 ||
-    !Array.isArray(input["baselines"]) || input["baselines"].length !== input["baselineVersion"]) {
+  const revision = input["revision"], baselineVersion = input["baselineVersion"], rawBaselines = input["baselines"];
+  if (!int(revision) || !int(baselineVersion) || revision < 1 ||
+    !Array.isArray(rawBaselines) || rawBaselines.length !== baselineVersion) {
     throw new ArchiveError("Versions du planning de l'archive invalides.");
   }
   const steps = parseSteps(input["steps"]);
-  const baselines: ArchivePlanning["baselines"] = input["baselines"].map((entry, index) => {
+  const baselines: ArchivePlanning["baselines"] = rawBaselines.map((entry, index) => {
     if (!isRecord(entry) || entry["version"] !== index + 1 || !int(entry["sourceRevision"]) ||
-      entry["sourceRevision"] > input["revision"] || typeof entry["createdAt"] !== "string" ||
+      entry["sourceRevision"] > revision || typeof entry["createdAt"] !== "string" ||
       !Number.isFinite(Date.parse(entry["createdAt"])) ||
       (entry["createdBy"] !== null && (typeof entry["createdBy"] !== "string" || entry["createdBy"].length > 128))) {
       throw new ArchiveError("Historique des références du planning invalide.");
@@ -475,7 +476,7 @@ function archivePlanningOf(input: unknown): ArchivePlanning | null {
     }
     return { version: index + 1, sourceRevision: entry["sourceRevision"] as number, createdAt: entry["createdAt"] as string, createdBy: entry["createdBy"] as string | null, steps: snapshot };
   });
-  return { revision: input["revision"], baselineVersion: input["baselineVersion"], steps, baselines };
+  return { revision, baselineVersion, steps, baselines };
 }
 
 function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly ParcoursStepDefinition[]): ProjectArchive {
