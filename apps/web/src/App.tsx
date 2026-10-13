@@ -15,6 +15,7 @@ import { CollaborationPage } from "./routes/CollaborationPage";
 // Les pages lourdes (projet ouvert avec ses sept modules, bibliothèque des bâtiments) sont chargées à leur première ouverture ;
 // l'enveloppe (connexion, accueil, liste des projets) reste légère. Le moteur de l'Atelier est lui-même un morceau séparé.
 const ProjectShell = lazy(() => import("./routes/ProjectShell").then((m) => ({ default: m.ProjectShell })));
+const ProjectCockpitPage = lazy(() => import("./modules/pilotage/ProjectCockpitPage").then((m) => ({ default: m.ProjectCockpitPage })));
 const BuildingLibraryPage = lazy(() => import("./modules/bibliotheque/BuildingLibraryPage").then((m) => ({ default: m.BuildingLibraryPage })));
 const BuildingCasePage = lazy(() => import("./modules/bibliotheque/BuildingLibraryPage").then((m) => ({ default: m.BuildingCasePage })));
 
@@ -61,6 +62,7 @@ export function App() {
               </Suspense>
             }
           />
+          <Route path="/projets/:projectId/pilotage" element={<Suspense fallback={<Loading />}><ProjectCockpitPage /></Suspense>} />
           <Route path="/harmonie" element={<HarmoniePage />} />
           <Route
             path="/bibliotheque/batiments"

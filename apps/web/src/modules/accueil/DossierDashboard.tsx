@@ -9,6 +9,7 @@ import { useWorkspaceNavigation } from "../../lib/workspace-navigation";
 import { useDossierQueries, type DossierQueries, dateLabel, denied, resourceLabel, dossierSubtitle } from "./dossier-data";
 import { completeParcoursList } from "./dossier-state";
 import { useDossierSync } from "./use-dossier-sync";
+import { RoadmapPreview } from "../pilotage/RoadmapPreview";
 
 export function DossierDashboard({ projectId, applicationHome = false }: { projectId: string; applicationHome?: boolean }) {
   const queries = useDossierQueries(projectId);
@@ -88,6 +89,7 @@ export function DossierDashboard({ projectId, applicationHome = false }: { proje
     </div>
     {compare && <div className="dossier-comparison" ref={comparison} tabIndex={-1}><ConflictPanel projectId={projectId} />{sync.conflicts === 0 && <p role="status">Aucun conflit à examiner dans ce dossier.</p>}</div>}
     <div className="dossier-grid">
+      <div className="dossier-primary">
       <section className="panel dossier-overview" data-project-id={projectId} aria-labelledby="dossier-overview-heading">
         <div className="dossier-card-heading"><h2 id="dossier-overview-heading">Vue d’ensemble</h2><p>{dossierSubtitle(queries)}</p></div>
         <figure className="dossier-preview">
@@ -103,6 +105,8 @@ export function DossierDashboard({ projectId, applicationHome = false }: { proje
         <ResourceReadings queries={queries} connected={connected} />
 
       </section>
+      <RoadmapPreview projectId={projectId} steps={steps} loading={queries.steps.isPending || queries.steps.isFetching} />
+      </div>
       {applicationHome ? <aside className="panel workspace-dossier-aside"><Icon name="folder" size={26} /><h2>Votre dossier de reprise</h2><p>Cette carte reprend la vue d’ensemble du dernier dossier consulté. Les informations et les actions concernent ce même dossier.</p><p>Choisissez un autre projet dans la barre latérale pour ouvrir son accueil et le retrouver ici à votre retour.</p><button type="button" className="button-secondary" onClick={openProjects}>Choisir un projet</button></aside> : <aside className="panel dossier-journey" aria-labelledby="dossier-journey-heading"><h2 id="dossier-journey-heading">Mon parcours</h2><p>21 étapes pour structurer le projet</p>
         {steps ? <><p>{progressText}</p><progress aria-label="Étapes terminées" max={21} value={done ?? 0} /><ol className="dossier-phases">{[...new Set(steps.map((s) => s.phase))].map((phase) => {
           const own = steps.filter((s) => s.phase === phase);

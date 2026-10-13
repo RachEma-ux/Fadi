@@ -131,6 +131,26 @@ try {
   check("les alertes et notifications restent deux catégories distinctes", await page.locator(".notification-alerts").count() === 1 && await page.locator(".notification-incoming").count() === 1);
   await page.keyboard.press("Escape");
   await axe("projet-desktop");
+
+  // Cockpit natif : le même dossier, sans iframe, et les étapes réelles.
+  const cockpitEntry = page.locator(".cockpit-preview-open");
+  await cockpitEntry.waitFor();
+  check("planning : accès au pilotage du dossier courant", (await cockpitEntry.getAttribute("href")) === `${dossierPath(b.id)}/pilotage`);
+  await cockpitEntry.click();
+  await page.waitForURL(`${BASE}${dossierPath(b.id)}/pilotage`);
+  await page.locator(".cockpit-step").nth(20).waitFor();
+  check("cockpit : contexte du projet conservé dans l'en-tête", (await page.locator(".fadi-topbar-title h1").textContent()).includes(b.code));
+  check("cockpit : six phases et 21 étapes provenant du Parcours", await page.locator(".cockpit-phase").count() === 6 && await page.locator(".cockpit-step").count() === 21);
+  check("cockpit : statuts réels respectés", (await page.locator(".cockpit-step").nth(1).getAttribute("aria-label")).includes("Terminé"));
+  await axe("cockpit-desktop");
+  await page.getByRole("button", { name: "Vue tableau" }).click();
+  check("cockpit : tableau simple des 21 étapes", await page.locator(".cockpit-table tbody tr").count() === 21);
+  await page.getByRole("button", { name: "Masquer le panneau de pilotage" }).click();
+  check("cockpit : panneau masqué à la demande", await page.locator(".cockpit-side-panel").count() === 0);
+  await page.getByRole("button", { name: "Afficher le panneau de pilotage" }).click();
+  check("cockpit : panneau réaffiché", await page.locator(".cockpit-side-panel").count() === 1);
+  await page.getByRole("link", { name: "Retour à l’accueil du projet" }).click();
+  await overview(b.id).waitFor();
   await page.goto(`${BASE}${dossierPath(b.id)}?module=parcours&etape=9`);
   await page.waitForURL((url) => url.pathname === dossierPath(b.id) && url.searchParams.get("module") === "parcours" && url.searchParams.get("etape") === "9");
   await page.locator(".top-stage").filter({ hasText: "ÉTAPE 09" }).waitFor();
