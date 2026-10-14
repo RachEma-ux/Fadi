@@ -1,0 +1,107 @@
+name: Layout 142 complete regression
+on:
+  push:
+    branches: [ci/layout-142-regression]
+    paths: [.github/workflows/layout-142-regression.yml]
+permissions:
+  contents: read
+jobs:
+  recipes:
+    name: Existing recipes ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: fadi
+          POSTGRES_PASSWORD: fadi_ci_password
+          POSTGRES_DB: fadi_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U fadi"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      SOURCE_SHA: 169c23f12d3c121965e5de90180723f3077fe8cd
+      DATABASE_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_e2e
+      WEB_ORIGIN: http://localhost:3001
+      WEB_DIST: apps/web/dist
+      PORT: "3001"
+      AUTH_RATE_LIMIT: "500"
+      API_RATE_LIMIT: "5000"
+      BASE_URL: http://localhost:3001
+      SHARD: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 169c23f12d3c121965e5de90180723f3077fe8cd
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run db:migrate && npm run build
+      - name: Inventory the exact recipes from the unmodified CI workflow
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          mkdir -p release-checks
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, json, os
+          text = Path('.github/workflows/ci.yml').read_text()
+          paths = list(dict.fromkeys(re.findall(r'node (apps/web/e2e/[\w.-]+\.mjs)', text)))
+          assert len(paths) == 47, 'CI recipe inventory changed; review the partition'
+          weights = {'parcours-scenario.mjs': 300, 'atelier-complements.mjs': 300, 'planche-outils.mjs': 120}
+          groups = [[] for _ in range(6)]
+          totals = [0] * 6
+          for path in sorted(paths, key=lambda p: -weights.get(Path(p).name, 45)):
+              target = min(range(6), key=lambda i: totals[i])
+              groups[target].append(path)
+              totals[target] += weights.get(Path(path).name, 45)
+          flat = [path for group in groups for path in group]
+          assert len(flat) == len(set(flat)) == len(paths) and set(flat) == set(paths)
+          shard = int(os.environ['SHARD'])
+          Path('release-checks/inventory.json').write_text(json.dumps({'source_sha': os.environ['SOURCE_SHA'], 'all_recipes': paths, 'groups': groups, 'shard': shard}, indent=2))
+          Path('release-checks/recipes.txt').write_text('\n'.join(groups[shard]) + '\n')
+          print(Path('release-checks/recipes.txt').read_text())
+          PY
+      - name: Start production application on an isolated CI database
+        run: |
+          nohup node apps/api/dist/server.js > release-checks/api.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3001/health && break; sleep 1; done
+          curl -fsS http://localhost:3001/health
+      - name: Execute every assigned recipe without dropping failures
+        run: |
+          set -o pipefail
+          failed=0
+          while IFS= read -r recipe; do
+            name=$(basename "$recipe" .mjs)
+            export OUT="release-checks/captures/$name"
+            mkdir -p "$OUT"
+            if node "$recipe" 2>&1 | tee "release-checks/$name.log"; then
+              printf '%s\t0\n' "$recipe" >> release-checks/results.tsv
+            else
+              code=$?
+              printf '%s\t%s\n' "$recipe" "$code" >> release-checks/results.tsv
+              failed=1
+            fi
+          done < release-checks/recipes.txt
+          cat release-checks/results.tsv
+          exit "$failed"
+      - name: Verify backup and restore of this populated test database
+        if: always()
+        env:
+          PGPASSWORD: fadi_ci_password
+        run: |
+          set -o pipefail
+          sh scripts/verify-restore.sh localhost fadi fadi_e2e fadi_restore_check 2>&1 | tee release-checks/restore.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: layout-142-regression-${{ matrix.shard }}-${{ github.run_id }}
+          path: release-checks/
+          retention-days: 7
