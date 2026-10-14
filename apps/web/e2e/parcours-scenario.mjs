@@ -1099,10 +1099,28 @@ await page.goto(`${exampleUrl}?module=parcours&etape=8`);
 await page.waitForSelector(".step-comments");
 await page.locator(".step-comments > summary").click();
 check("étape 08 : pli « Commentaires (0) » vide", /Commentaires \(0\)/.test(await page.locator(".step-comments > summary").textContent()) && /Aucun commentaire sur cette étape/.test(await page.locator(".step-comments").textContent()));
-await page.locator(".step-comments textarea").fill("Vérifier la hauteur sous plafond avec le BET.");
+const texteCommentaire = "Vérifier la hauteur sous plafond avec le BET.";
+await page.locator(".step-comments textarea").fill(texteCommentaire);
+// Vérifier séparément l'écriture serveur et le rafraîchissement visible :
+// un clic seul ne prouve pas que le commentaire est enregistré.
+const publication = page.waitForResponse(
+  (r) => r.request().method() === "POST" && new URL(r.url()).pathname === `/projects/${examplePid}/collaboration/comments`,
+  { timeout: 15000 },
+);
 await page.locator('.step-comments button:has-text("Publier le commentaire")').click();
-await page.waitForFunction(() => /Commentaires \(1\)/.test(document.querySelector(".step-comments > summary")?.textContent || ""), null, { timeout: 10000 });
-check("étape 08 : « Publier le commentaire » → « Commentaires (1) », auteur et date", (await page.locator(".step-comments .comment-meta").first().textContent()).includes(email) && (await page.locator(".step-comments .comment > p").first().textContent()) === "Vérifier la hauteur sous plafond avec le BET.");
+const reponsePublication = await publication;
+const commentaireCree = await reponsePublication.json().catch(() => null);
+check("étape 08 : commentaire accepté et enregistré par le serveur", reponsePublication.ok() && commentaireCree?.id && commentaireCree.stepNumber === 8 && commentaireCree.body === texteCommentaire, `${reponsePublication.status()} · ${JSON.stringify(commentaireCree).slice(0, 240)}`);
+const commentaireVisible = await page.waitForFunction(
+  () => /Commentaires \(1\)/.test(document.querySelector(".step-comments > summary")?.textContent || ""),
+  null, { timeout: 10000 },
+).then(() => true, () => false);
+if (!commentaireVisible) {
+  const enBase = await page.request.get(`${BASE}/projects/${examplePid}/collaboration/comments?step=8`);
+  const erreurUi = await page.locator(".step-comments .h7-error").textContent().catch(() => "");
+  throw new Error(`Étape 08 : commentaire accepté mais non affiché : API ${enBase.status()} · ${(await enBase.text()).slice(0, 300)} · interface ${erreurUi}`);
+}
+check("étape 08 : « Publier le commentaire » → « Commentaires (1) », auteur et date", (await page.locator(".step-comments .comment-meta").first().textContent()).includes(email) && (await page.locator(".step-comments .comment > p").first().textContent()) === texteCommentaire);
 // Réponse en fil : rattachée au commentaire d'origine, comptée, affichée en retrait.
 await page.locator('.step-comments button:has-text("Répondre")').first().click();
 await page.locator(".step-comments .comment-reply-form textarea").fill("Vu avec le BET : 3,20 m confirmés.");
