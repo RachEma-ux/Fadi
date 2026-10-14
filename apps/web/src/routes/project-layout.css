@@ -62,12 +62,12 @@
 .fadi-shell .project-shell .atelier-n {
   width: 100%;
   min-width: 0;
-  height: var(--atelier-workspace-height, max(520px, calc(100dvh - 350px)));
-  min-height: 520px;
+  height: var(--atelier-workspace-height, max(360px, calc(100dvh - 300px)));
+  min-height: 360px;
 }
 .fadi-shell .project-shell .module-content-parcours > .atelier-n {
   width: calc(100% - 2 * var(--project-page-gutter));
-  margin: var(--project-page-top) var(--project-page-gutter) 45px;
+  margin: var(--project-page-top) var(--project-page-gutter) 18px;
 }
 /* Long role descriptions must not impose the select's intrinsic width on its
    grid track. Keep the form readable and the journal's own table-scroll intact. */
@@ -111,4 +111,90 @@
   .fadi-shell .module-nav :focus-visible {
     outline-offset: -3px;
   }
+}
+
+/* Embedded Atelier: keep every status and action, but do not stack four
+   metadata lines above an editor that already has a project header. */
+body.atelier-workspace .fadi-shell .project-header {
+  padding-block: 8px;
+}
+body.atelier-workspace .fadi-shell .project-header-meta {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+body.atelier-workspace .fadi-shell .atelier-stage-header {
+  min-height: 60px;
+  padding-block: 8px;
+}
+/* The project identity is already visible in the shared main header. The
+   stage number/title remain in the Atelier strip, including steps 10 and 11. */
+body.atelier-workspace .fadi-shell .top-stage-project {
+  display: none;
+}
+body.atelier-workspace .fadi-shell .atelier-n .planche {
+  min-height: 0;
+}
+/* A deliberately moved viewport toolbar must not disappear behind the
+   persistent application rail. Dialogs and opened menus still take priority. */
+body.atelier-workspace .barre-actions,
+body.atelier-workspace .planche-barre-outils {
+  z-index: 26;
+}
+body.atelier-workspace .planche-panneau,
+body.atelier-workspace .planche-grille,
+body.atelier-workspace .planche-haut:has([aria-expanded="true"]) {
+  z-index: 40;
+}
+
+/* Unlike overflow:hidden, clip cannot be scrolled by focusing a child. The
+   nested tool/panel scrollers remain scrollable; the model's coordinate frame
+   and the retained application rail must not drift sideways on touch screens. */
+body.atelier-workspace .atelier-n,
+body.atelier-workspace .planche,
+body.atelier-workspace .planche-vue-cadre,
+body.atelier-workspace .planche-vue {
+  overflow: clip;
+}
+
+body.atelier-workspace .atelier-n-barre:has(details[open]) { z-index: 40; }
+body.atelier-workspace .atelier-n-barre > details > .exports-liste,
+body.atelier-workspace .atelier-n-barre .barre-plan-liste {
+  max-height: var(--atelier-menu-max-height, 50dvh);
+  overflow-y: auto;
+}
+@media (max-width: 760px) {
+  body.atelier-workspace .barre-actions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+  body.atelier-workspace .barre-actions > *,
+  body.atelier-workspace .barre-actions .barre-groupe > * { flex: none; }
+  body.atelier-workspace .planche-outils {
+    bottom: max(calc(var(--volet-h, 40px) + 8px), var(--actions-reserve-bas, 0px));
+  }
+  body.atelier-workspace .planche-colonne {
+    max-height: calc(100% - var(--actions-reserve-bas, 0px) - 16px);
+  }
+  body.atelier-workspace .planche-options-outil,
+  body.atelier-workspace .planche-profiles,
+  body.atelier-workspace .planche-piece-edition {
+    max-height: min(35vh, 35%);
+    overflow-y: auto;
+  }
+}
+
+body.atelier-workspace .planche-recherche-fond { z-index: 50; }
+
+@media (max-width: 760px) {
+  /* Menus must open below the scrolled mode strip, never over Planche/3D. */
+  body.atelier-workspace .atelier-n > .atelier-n-barre > details[open] > div,
+  body.atelier-workspace .atelier-n > .atelier-n-barre .barre-plan-liste {
+    top: var(--atelier-menu-top);
+  }
+  /* This legacy button sits in the visually hidden live status. Mobile help
+     is already available through the visible ? / Instructeur control. */
+  body.atelier-workspace .planche-bas .planche-volet-bascule { display: none; }
 }

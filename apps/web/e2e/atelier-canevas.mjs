@@ -309,8 +309,18 @@ await page.waitForSelector('[data-panneau-flottant="navigation"]');
 check("clavier : le focus entre dans le panneau ouvert", await page.evaluate(() => !!document.activeElement?.closest('[data-panneau-flottant="navigation"]')));
 await page.keyboard.press("Escape");
 check("clavier : Échap ferme le panneau et rend le focus à son icône", (await page.locator('[data-panneau-flottant="navigation"]').count()) === 0 && (await page.evaluate(() => document.activeElement?.getAttribute("data-panneau-icone"))) === "navigation");
-const horsVue = await page.locator(".canevas-colonne .canevas-icone").evaluateAll((els) => els.filter((e) => { const r = e.getBoundingClientRect(); return r.bottom > window.innerHeight || r.top < 0; }).length);
-check("colonne de panneaux : toutes les icônes visibles (desktop)", horsVue === 0, `${horsVue} hors de la vue`);
+const icones = page.locator(".canevas-colonne .canevas-icone");
+const inaccessibles = [];
+for (let i = 0; i < await icones.count(); i++) {
+  const icone = icones.nth(i);
+  await icone.scrollIntoViewIfNeeded();
+  const accessible = await icone.evaluate((e) => {
+    const r = e.getBoundingClientRect(), cible = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    return r.top >= 0 && r.bottom <= innerHeight && r.width >= 44 && r.height >= 44 && !!cible && e.contains(cible);
+  });
+  if (!accessible) inaccessibles.push(await icone.getAttribute("data-panneau-icone"));
+}
+check("colonne défilante de panneaux : chaque icône accessible dans le gabarit intégré, cible ≥ 44 px", inaccessibles.length === 0, inaccessibles.join(", "));
 await axe("disposition Canevas (desktop)");
 
 // 6. Mobile (390 × 844, tactile) : panneau en surcouche, barre d'outils toujours accessible.

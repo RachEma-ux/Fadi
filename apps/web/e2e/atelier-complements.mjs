@@ -1572,9 +1572,11 @@ await page.waitForSelector(".plan2d");
   const avant = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "solide" && o.params.role === "marche-helicoidale").length;
   const ok = await choisirOutil("escalier hélicoïdal", "Escalier hélicoïdal", "escalier-helicoidal");
   for (const [k, v] of [["rayonInterieurHelice", "0.1"], ["balayageHelice", "270"], ["hauteurHelice", "3"], ["contremarchesHelice", "15"], ["epaisseurMarche", "0.05"]]) await page.locator(`#outil-${k}`).fill(v);
-  const z = await page.locator(".plan2d").boundingBox();
-  await cliquerDessin(".plan2d", z.x + z.width * 0.7, z.y + z.height * 0.85);
-  await cliquerDessin(".plan2d", z.x + z.width * 0.75, z.y + z.height * 0.85);
+  const z = await boiteStable(".plan2d");
+  // Le champ de précision apparaît en bas à droite après le premier point.
+  // Tracer au centre de la zone visible, et non sous ce formulaire flottant.
+  await cliquerDessin(".plan2d", z.x + z.width * 0.7, z.y + z.height * 0.5);
+  await cliquerDessin(".plan2d", z.x + z.width * 0.75, z.y + z.height * 0.5);
   let apres = avant;
   for (let k = 0; k < 30 && apres === avant; k++) {
     apres = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "solide" && o.params.role === "marche-helicoidale").length;
