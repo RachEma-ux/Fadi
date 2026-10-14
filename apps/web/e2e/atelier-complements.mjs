@@ -7,7 +7,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/atelier-complements.mjs
  */
 import { readFileSync } from "node:fs";
-import { allerEnPlan, choisirAffichage, ouvrirExports, ouvrirImports } from "./lib-barre.mjs";
+import { allerEnPlan, choisirAffichage, ouvrirExports, ouvrirImports, ouvrirReglages, fermerMenus, ecarterBarreActions } from "./lib-barre.mjs";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
 
@@ -24,6 +24,8 @@ const check = (nom, ok, detail = "") => {
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? undefined });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage();
+// Les coordonnées projetées ne doivent jamais cliquer la barre flottante.
+await ecarterBarreActions(page);
 const erreursPage = [];
 page.on("pageerror", (e) => erreursPage.push(e.message));
 page.on("dialog", (d) => void d.accept());
@@ -98,6 +100,20 @@ const choisirOutil = async (requete, libelle, id = null) => {
     if (ok) return true;
   }
   return false;
+};
+
+/** Vérifier la vraie cible avant les clics géométriques : jamais un bouton superposé. */
+const dansDessin = async (selecteur, x, y) => page.evaluate(([sel, x, y]) => {
+  const canvas = document.querySelector(sel);
+  const target = document.elementFromPoint(x, y);
+  return !!canvas && !!target && (target === canvas || canvas.contains(target));
+}, [selecteur, x, y]);
+const cliquerDessin = async (selecteur, x, y) => {
+  if (!(await dansDessin(selecteur, x, y))) throw new Error(`Cible du dessin masquée ou hors écran : ${selecteur} (${x}, ${y})`);
+  await page.mouse.move(x, y);
+  // L'aperçu d'accrochage est mis à jour avant de valider le point.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+  await page.mouse.click(x, y);
 };
 
 const email = `complements-${Date.now()}@example.com`;
@@ -1494,13 +1510,20 @@ await page.waitForSelector(".plan2d");
 {
   await page.keyboard.press("Escape");
   await attendreEnregistre().catch(() => {});
+  // Ce test vise une courbure libre, pas le verrou polaire. Dans le gabarit
+  // intégré, la flèche de l'arc est plus petite et entrait dans son rayon.
+  await ouvrirReglages(page);
+  const polaire = page.locator('[data-accrochage="orthogonal"]');
+  const polaireAvant = await polaire.isChecked();
+  await polaire.uncheck();
+  await fermerMenus(page);
   const avant = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "mur" && o.params.renflement).length;
   const ok = await choisirOutil("mur courbe", "Mur courbe");
   await page.locator("#outil-epaisseur").fill("0.2");
   await page.locator("#outil-hauteur").fill("3");
   const z = await page.locator(".plan2d").boundingBox();
   for (const [fx, fy] of [[0.2, 0.85], [0.4, 0.85], [0.3, 0.8]]) {
-    await page.mouse.click(z.x + z.width * fx, z.y + z.height * fy);
+    await cliquerDessin(".plan2d", z.x + z.width * fx, z.y + z.height * fy);
     await page.waitForTimeout(150);
   }
   const aideMur = (await page.locator(".etat-aide, .etat-erreur").first().textContent().catch(() => "")) ?? "";
@@ -1514,7 +1537,7 @@ await page.waitForSelector(".plan2d");
   // Fenêtre posée sur l'arc (D-095) : clic sur le point de passage de l'arc.
   const courbes = new Set(Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "mur" && o.params.renflement).map((o) => o.id));
   const okF = await choisirOutil("fenêtre", "Fenêtre", "fenetre");
-  await page.mouse.click(z.x + z.width * 0.3, z.y + z.height * 0.8);
+  await cliquerDessin(".plan2d", z.x + z.width * 0.3, z.y + z.height * 0.8);
   let fen = null;
   for (let k = 0; k < 30 && !fen; k++) {
     fen = Object.values((await modele(pid)).modele.objets).find((o) => o.classe === "fenetre" && courbes.has(o.params.murHoteId)) ?? null;
@@ -1523,6 +1546,9 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Escape");
   const vide = fen ? await page.locator(`.plan2d [data-objet="${fen.id}"]`).count() : 0;
   check("fenêtre posée sur un mur courbe, dessinée au plan", okF && !!fen && Math.abs(fen.params.position - 0.5) < 0.1 && vide === 1, `outil ${okF} · ${fen?.id} · ${fen?.params.position} · ${vide}`);
+  await ouvrirReglages(page);
+  await polaire.setChecked(polaireAvant);
+  await fermerMenus(page);
 }
 
 // Repère de saisie (D-091) : posé en deux clics, affiché, retiré par « Repère global ».
@@ -1547,8 +1573,8 @@ await page.waitForSelector(".plan2d");
   const ok = await choisirOutil("escalier hélicoïdal", "Escalier hélicoïdal", "escalier-helicoidal");
   for (const [k, v] of [["rayonInterieurHelice", "0.1"], ["balayageHelice", "270"], ["hauteurHelice", "3"], ["contremarchesHelice", "15"], ["epaisseurMarche", "0.05"]]) await page.locator(`#outil-${k}`).fill(v);
   const z = await page.locator(".plan2d").boundingBox();
-  await page.mouse.click(z.x + z.width * 0.7, z.y + z.height * 0.85);
-  await page.mouse.click(z.x + z.width * 0.75, z.y + z.height * 0.85);
+  await cliquerDessin(".plan2d", z.x + z.width * 0.7, z.y + z.height * 0.85);
+  await cliquerDessin(".plan2d", z.x + z.width * 0.75, z.y + z.height * 0.85);
   let apres = avant;
   for (let k = 0; k < 30 && apres === avant; k++) {
     apres = Object.values((await modele(pid)).modele.objets).filter((o) => o.classe === "solide" && o.params.role === "marche-helicoidale").length;
@@ -2057,14 +2083,33 @@ await page.waitForSelector(".plan2d");
   await page.waitForTimeout(500);
   const ok = await choisirOutil("mesurer", "Mesurer");
   const z = ((await modele(pid)).modele.niveaux[murA.niveauId]?.elevation ?? 0) + 3;
-  const coins = await page.evaluate(([cx, cy, z]) => {
+  const projeterCoins = () => page.evaluate(([cx, cy, z]) => {
     const v = window.fadiMesures3D.versEcran;
     const c = v({ x: cx, y: cy, z });
     return [v({ x: cx - 0.5, y: cy - 0.5, z }), v({ x: cx + 0.5, y: cy + 0.5, z })].map((q) => (q && c ? { x: q.x + Math.sign(c.x - q.x) * 4, y: q.y + Math.sign(c.y - q.y) * 4 } : null));
   }, [cx, cy, z]);
-  const c3 = await page.locator(".vue3d-canevas").boundingBox();
+  // Le cadrage peut placer le dessus du poteau sous les réglages 3D.
+  // Panoramique par le geste réel (bouton droit), sans cacher les commandes
+  // ni changer le modèle ou la tolérance de la mesure attendue.
+  let coins = await projeterCoins();
+  let c3 = await page.locator(".vue3d-canevas").boundingBox();
+  for (let essai = 0; essai < 3; essai++) {
+    if (!c3 || coins.some(q => !q)) throw new Error("Coins du poteau non projetables");
+    const libres = await Promise.all(coins.map(q => dansDessin(".vue3d-canevas", c3.x + q.x, c3.y + q.y)));
+    if (libres.every(Boolean)) break;
+    const x = c3.x + c3.width * 0.2;
+    const y = c3.y + c3.height * 0.55;
+    if (!(await dansDessin(".vue3d-canevas", x, y))) throw new Error("Zone de panoramique 3D masquée");
+    await page.mouse.move(x, y);
+    await page.mouse.down({ button: "right" });
+    await page.mouse.move(x, y + Math.min(100, c3.height * 0.25), { steps: 12 });
+    await page.mouse.up({ button: "right" });
+    await page.waitForTimeout(300);
+    coins = await projeterCoins();
+    c3 = await page.locator(".vue3d-canevas").boundingBox();
+  }
   for (const q of coins) if (q && c3) {
-    await page.mouse.click(c3.x + q.x, c3.y + q.y);
+    await cliquerDessin(".vue3d-canevas", c3.x + q.x, c3.y + q.y);
     await page.waitForTimeout(300);
   }
   const d = await page.evaluate(() => window.fadiMesures3D?.mesure3d ?? null);
