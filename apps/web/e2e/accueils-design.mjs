@@ -187,7 +187,25 @@ try {
   await page.waitForURL(`${BASE}${dossierPath(b.id)}?module=programmation`);
   await page.locator('.module-nav button[aria-current="page"]').filter({ hasText: "Programmation" }).waitFor();
   check("R3 : raccourci réellement connecté au module Programmation", (await page.locator('.module-nav button[aria-current="page"]').textContent()) === "Programmation");
-  await page.goto(`${BASE}${dossierPath(b.id)}/pilotage`);
+  // Onglet demandé : toujours entre Accueil du projet et Projets et sources.
+  const projectTabs = page.getByRole("navigation", { name: "Modules du projet" });
+  const orderedTabs = await projectTabs.locator(":scope > button, :scope > a").allTextContents();
+  const roadmapTab = projectTabs.getByRole("link", { name: "Feuille de route", exact: true });
+  check("R4 navigation : Feuille de route occupe exactement la deuxième position",
+    orderedTabs.slice(0, 3).every((item, i) => item.trim() === ["Accueil du projet", "Feuille de route", "Projets et sources"][i]) &&
+    await roadmapTab.getAttribute("href") === `${dossierPath(b.id)}/pilotage`);
+  await roadmapTab.click();
+  await page.waitForURL(`${BASE}${dossierPath(b.id)}/pilotage`);
+  await page.locator(".cockpit-step").nth(20).waitFor();
+  check("R4 navigation : onglet actif sur la feuille de route et contexte projet conservé",
+    await page.getByRole("navigation", { name: "Modules du projet" })
+      .getByRole("link", { name: "Feuille de route", exact: true }).getAttribute("aria-current") === "page" &&
+    (await page.locator(".cockpit-code").textContent()) === b.code);
+  await page.getByRole("navigation", { name: "Modules du projet" }).getByRole("button", { name: "Parcours", exact: true }).click();
+  await page.waitForURL(`${BASE}${dossierPath(b.id)}?module=parcours`);
+  check("R4 navigation : retour depuis le cockpit à Parcours sur le même dossier",
+    await page.locator('.module-nav button[aria-current="page"]').textContent() === "Parcours");
+  await page.getByRole("navigation", { name: "Modules du projet" }).getByRole("link", { name: "Feuille de route" }).click();
   await page.locator(".cockpit-step").nth(20).waitFor();
   // R2 : écriture effective, puis relecture serveur et retour aux deux accueils.
   await page.locator(".cockpit-step").first().click();
@@ -384,6 +402,20 @@ try {
   await overview(b.id).waitFor();
   await checkComposition(b.id, "projet-mobile", true);
   await axe("projet-mobile");
+  await page.goto(`${BASE}${dossierPath(b.id)}?module=parcours`);
+  const mobileNav = page.getByRole("navigation", { name: "Modules du projet" });
+  await mobileNav.getByRole("link", { name: "Feuille de route" }).waitFor();
+  const tabsMobile = await mobileNav.locator(":scope > button, :scope > a").allTextContents();
+  const mobileTabsMeasure = await mobileNav.evaluate((nav) => {
+    const tab = nav.querySelector(".module-nav-pilotage");
+    const box = tab?.getBoundingClientRect(), container = nav.getBoundingClientRect();
+    return { visible: !!box && box.left >= container.left && box.right <= container.right,
+      width: box?.width ?? 0, pageOverflow: document.documentElement.scrollWidth > innerWidth + 1 };
+  });
+  check("R4 mobile : Feuille de route visible en deuxième position, sans débordement de page",
+    tabsMobile[0]?.trim() === "Accueil du projet" && tabsMobile[1]?.trim() === "Feuille de route" &&
+    tabsMobile[2]?.trim() === "Projets et sources" && mobileTabsMeasure.visible &&
+    mobileTabsMeasure.width >= 44 && !mobileTabsMeasure.pageOverflow, JSON.stringify(mobileTabsMeasure));
   // R3 mobile : les raccourcis restent tactiles sans empiéter sur les cartes,
   // le panneau reste sous la feuille de route et aucune barre n'élargit la page.
   await page.goto(`${BASE}${dossierPath(b.id)}/pilotage`);
