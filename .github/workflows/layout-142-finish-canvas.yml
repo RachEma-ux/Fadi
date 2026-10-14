@@ -1,0 +1,66 @@
+name: Apply reviewed canvas regression follow-up
+on:
+  push:
+    branches: [fix/project-layout-full-width]
+    paths: [.github/workflows/layout-142-finish-canvas.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/project-layout-full-width
+          fetch-depth: 2
+      - name: Apply guarded source and recipe changes
+        run: |
+          test "$(git rev-parse HEAD^)" = c97fca1a9587a5c8bb7c36242d706c4f84b1a1ea
+          python3 - <<'PY'
+          from pathlib import Path
+          from hashlib import sha1
+          def blob(data): return sha1(f'blob {len(data)}\0'.encode()+data).hexdigest()
+          p=Path('apps/web/e2e/atelier-complements.mjs')
+          assert blob(p.read_bytes()) == 'f35c456a6cf960bf35f8063ee2e9add284722240'
+          s=p.read_text()
+          a='''  // Un point du canevas qui touche une surface (sonde de la scène), puis le clic d'annotation.
+            const cible = await page.evaluate(([w, h]) => {
+              for (let i = 1; i < 12; i++) for (let j = 1; j < 12; j++) { const x = (w * i) / 12; const y = (h * j) / 12; if (window.fadiMesures3D?.sonder?.(x, y)) return { x, y }; }
+              return null;
+            }, [can.width, can.height]);'''
+          b='''  // La scène contient des essais éloignés : une grille grossière peut passer
+            // entre toutes les surfaces après cadrage. Affiner la sonde sur les pixels
+            // réellement accessibles, sans cliquer une commande superposée au canevas.
+            await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+            const cible = await page.evaluate(() => {
+              const canvas = document.querySelector(".vue3d-canevas");
+              const r = canvas.getBoundingClientRect();
+              for (const divisions of [12, 24, 48, 96]) {
+                for (let i = 1; i < divisions; i++) for (let j = 1; j < divisions; j++) {
+                  const x = r.width * i / divisions, y = r.height * j / divisions;
+                  if (document.elementFromPoint(r.left + x, r.top + y) === canvas && window.fadiMesures3D?.sonder?.(x, y)) return { x, y };
+                }
+              }
+              return null;
+            });'''
+          assert s.count(a)==1
+          s=s.replace(a,b).replace('    await page.mouse.click(can.x + cible.x, can.y + cible.y);\n    annotee =','    await cliquerDessin(".vue3d-canevas", can.x + cible.x, can.y + cible.y);\n    annotee =')
+          p.write_text(s)
+          assert blob(p.read_bytes()) == '59271642dd03304be23ff9674b61db9085c09a19'
+          p=Path('apps/web/src/routes/project-layout.css')
+          assert blob(p.read_bytes()) == 'b3eafc8acb02106c607e2325e0851e7eb8851828'
+          p.write_text(p.read_text()+'''\n/* A group of section-box sliders can exceed an embedded drawing's width.
+             Keep its last control reachable without scrolling the page or the model. */
+          body.atelier-workspace .vue3d-commandes > .vue3d-ligne {
+            max-width: 100%;
+            overflow-x: auto;
+          }
+          ''')
+          assert blob(p.read_bytes()) == '13635586c28f95f0a7cde948a093bb021f672bb8'
+          PY
+          node --check apps/web/e2e/atelier-complements.mjs
+          git diff --check
+          git rm .github/workflows/layout-142-finish-canvas.yml
+          git add apps/web/src/routes/project-layout.css apps/web/e2e/atelier-complements.mjs
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix(layout): retain narrow-canvas section controls and precise annotation targets'
+          git push origin HEAD:refs/heads/fix/project-layout-full-width
