@@ -392,8 +392,36 @@ check("téléphone 3D : toucher un mur le sélectionne", !!murTel && (await pt3.
 const cdp = await tel.newCDPSession(pt3);
 const n0Tel = await pt3.evaluate(() => window.fadiMesures3D.rendus.length);
 const toucher = (type, points) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: points.map(([x, y], id) => ({ x: cTel.x + x, y: cTel.y + y, id })) });
-await toucher("touchStart", [[100, 200]]);
-for (let k = 1; k <= 12; k++) await toucher("touchMove", [[100 + k * 10, 200]]);
+// L'Atelier embarqué a désormais des commandes flottantes au-dessus du
+// canevas. Une coordonnée fixe (100, 200) peut toucher ces commandes au lieu
+// du moteur 3D : vérifier une vraie trajectoire tactile accessible, avec
+// elementFromPoint(), sans simuler d'appel au moteur ni supprimer le geste.
+const trajectoireOrbite = await pt3.evaluate(() => {
+  const canvas = document.querySelector(".vue3d-canevas");
+  if (!canvas) return null;
+  const box = canvas.getBoundingClientRect();
+  const dx = Math.min(120, Math.max(65, box.width * 0.3));
+  const yCandidates = [0.65, 0.55, 0.75, 0.46, 0.82, 0.35].map((f) => box.height * f);
+  const xCandidates = [0.14, 0.22, 0.08, 0.30].map((f) => box.width * f);
+  const handles = ["x", "y", "z", "r", "c"].map((a) => window.fadiMesures3D?.localiserPoignee?.(a)).filter(Boolean);
+  const visible = (x, y) => {
+    const px = box.left + x, py = box.top + y;
+    return px > 8 && py > 8 && px < innerWidth - 8 && py < innerHeight - 8 &&
+      document.elementFromPoint(px, py) === canvas &&
+      handles.every((h) => Math.hypot(x - h.x, y - h.y) > 32);
+  };
+  for (const y of yCandidates) for (const x of xCandidates) {
+    if (x + dx >= box.width - 8 || y >= box.height - 8) continue;
+    if (Array.from({ length: 13 }, (_, k) => visible(x + dx * k / 12, y)).every(Boolean)) {
+      return { x, y, dx, canvasWidth: box.width, canvasHeight: box.height };
+    }
+  }
+  return null;
+});
+check("téléphone 3D : trajectoire d'orbite réellement visible hors des commandes flottantes", !!trajectoireOrbite, JSON.stringify(trajectoireOrbite));
+const debutOrbite = [trajectoireOrbite.x, trajectoireOrbite.y];
+await toucher("touchStart", [debutOrbite]);
+for (let k = 1; k <= 12; k++) await toucher("touchMove", [[debutOrbite[0] + trajectoireOrbite.dx * k / 12, debutOrbite[1]]]);
 await toucher("touchEnd", []);
 await pt3.waitForTimeout(200);
 const n1Tel = await pt3.evaluate(() => window.fadiMesures3D.rendus.length);
