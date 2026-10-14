@@ -198,3 +198,10 @@ body.atelier-workspace .planche-recherche-fond { z-index: 50; }
      is already available through the visible ? / Instructeur control. */
   body.atelier-workspace .planche-bas .planche-volet-bascule { display: none; }
 }
+
+/* A group of section-box sliders can exceed an embedded drawing's width.
+   Keep its last control reachable without scrolling the page or the model. */
+body.atelier-workspace .vue3d-commandes > .vue3d-ligne {
+  max-width: 100%;
+  overflow-x: auto;
+}

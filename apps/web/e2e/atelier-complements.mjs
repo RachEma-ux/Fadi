@@ -1009,13 +1009,23 @@ await page.waitForSelector(".plan2d");
   await page.locator("[data-annoter]").click();
   const can = await page.locator(".vue3d canvas").first().boundingBox();
   let annotee = false;
-  // Un point du canevas qui touche une surface (sonde de la scène), puis le clic d'annotation.
-  const cible = await page.evaluate(([w, h]) => {
-    for (let i = 1; i < 12; i++) for (let j = 1; j < 12; j++) { const x = (w * i) / 12; const y = (h * j) / 12; if (window.fadiMesures3D?.sonder?.(x, y)) return { x, y }; }
+  // La scène contient des essais éloignés : une grille grossière peut passer
+  // entre toutes les surfaces après cadrage. Affiner la sonde sur les pixels
+  // réellement accessibles, sans cliquer une commande superposée au canevas.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const cible = await page.evaluate(() => {
+    const canvas = document.querySelector(".vue3d-canevas");
+    const r = canvas.getBoundingClientRect();
+    for (const divisions of [12, 24, 48, 96]) {
+      for (let i = 1; i < divisions; i++) for (let j = 1; j < divisions; j++) {
+        const x = r.width * i / divisions, y = r.height * j / divisions;
+        if (document.elementFromPoint(r.left + x, r.top + y) === canvas && window.fadiMesures3D?.sonder?.(x, y)) return { x, y };
+      }
+    }
     return null;
-  }, [can.width, can.height]);
+  });
   if (cible) {
-    await page.mouse.click(can.x + cible.x, can.y + cible.y);
+    await cliquerDessin(".vue3d-canevas", can.x + cible.x, can.y + cible.y);
     annotee = await page.locator("[data-annotation-texte]").isVisible().catch(() => false);
   }
   if (annotee) {
