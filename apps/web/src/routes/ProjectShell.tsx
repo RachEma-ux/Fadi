@@ -22,6 +22,7 @@ import { LOCALE } from "../lib/i18n";
 import { useAuth } from "../lib/auth-context";
 import { rememberDossier } from "../lib/last-dossier";
 import { DossierDashboard } from "../modules/accueil/DossierDashboard";
+import { ProjectModuleNav } from "./ProjectModuleNav";
 import { denied } from "../modules/accueil/dossier-data";
 
 // Le moteur de l'Atelier (scripts, markup, feuille de style) n'est chargé qu'à la première ouverture de l'Atelier.
@@ -133,14 +134,12 @@ export function ProjectShell() {
 
       <ConflictPanel projectId={projectId} />
 
-      <nav aria-label="Modules du projet" className="module-nav">
-        <button type="button" onClick={() => setSearchParams(new URLSearchParams())}>Accueil du projet</button>
-        {MODULES.map((m) => (
-          <button key={m.id} type="button" aria-current={m.id === activeModule ? "page" : undefined} onClick={() => selectModule(m.id)}>
-            {m.label}
-          </button>
-        ))}
-      </nav>
+      <ProjectModuleNav
+        projectId={projectId}
+        activeModule={activeModule}
+        onHome={() => setSearchParams(new URLSearchParams())}
+        onModule={selectModule}
+      />
 
       <main className={`module-content${activeModule === "parcours" || activeModule === "atelier" ? " module-content-parcours" : ""}`}>
         {/* Le module Parcours porte son propre bandeau (« Parcours du projet », prototype) et sa mise en page : pas de titre de module. */}
