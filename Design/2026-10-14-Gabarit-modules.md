@@ -25,6 +25,20 @@ L'ouverture de l'Atelier, directement ou par les étapes 10 / 11, n'active plus 
 - La recette vérifie également l'absence de débordement horizontal global et la conservation des 21 étapes et de leurs statuts.
 - Workflow dédié `Project layout` : résultats JSON et captures conservés sept jours. Le workflow CI existant reste responsable du typage, des tests généraux, du build et des autres recettes.
 
-## État de livraison
+## Diagnostic des tests spécialisés avant fusion
 
-Implémentation préparée pour une branche dédiée. Ce document décrit les modifications et les contrôles à exécuter ; il ne déclare pas les résultats de CI par anticipation. Les résultats font autorité dans les exécutions GitHub Actions liées au commit. Aucun déploiement du site de démonstration n'est déclenché par ce document.
+La recette de mise en page sur `a383fa4555725b8643ffe8ea6ed91c8b65fd9fff` a réussi ses 593 contrôles : [exécution 38537550502](https://github.com/RachEma-ux/Fadi/actions/runs/38537550502). La CI générale a ensuite relevé quatre échecs dans `atelier-complements.mjs`.
+
+Le [diagnostic instrumenté 38541564868](https://github.com/RachEma-ux/Fadi/actions/runs/38541564868), sans modification du code applicatif ni des assertions, a établi les causes suivantes :
+
+- Mur courbe : le point de flèche était repris par l'accrochage polaire sur la corde. Le refus « Point aligné avec les extrémités » était cohérent ; la fenêtre suivante échouait parce que son mur n'avait pas été créé.
+- Escalier hélicoïdal : le deuxième clic atteignait `div.barre-actions`, pas le dessin.
+- Mesure 3D : le premier clic atteignait le bouton « Visite à hauteur d'œil », ce qui changeait effectivement le mode au lieu de mesurer le coin du poteau.
+
+La recette est adaptée au gabarit intégré : utilisation de l'aide existante `ecarterBarreActions`, accrochage polaire désactivé puis restauré explicitement pour la courbure libre, panoramique réel au bouton droit pour dégager les points 3D et vérification de la cible DOM avant les clics. Les assertions de création du mur, de fenêtre à mi-arc, des quinze marches et de diagonale exacte de √2 m sont conservées. Aucune modification des outils ou du moteur géométrique n'en découle.
+
+## Livraison
+
+PR : [#142](https://github.com/RachEma-ux/Fadi/pull/142). Le propriétaire a demandé la fusion et le déploiement le 14 octobre 2026. Les résultats complets de CI rattachés au dernier commit doivent être vérifiés avant fusion ; ce document ne les déclare pas par anticipation.
+
+L'URL `condo-discovered-status-horse.trycloudflare.com` provenait du [Builder Deploy 38529381813](https://github.com/RachEma-ux/Fadi/actions/runs/38529381813), dont l'artefact `app_url.txt` porte cette adresse. Cette démonstration a été arrêtée le 14 octobre 2026 à 08:11 UTC. Relancer ce mécanisme produit une nouvelle URL et une nouvelle base temporaire, pas une mise à jour durable ni une restauration des dossiers de l'ancienne session. L'hébergement permanent relève de `docs/deploiement.md`.
