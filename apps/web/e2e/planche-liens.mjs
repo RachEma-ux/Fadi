@@ -10,6 +10,7 @@
 import { mkdirSync } from "node:fs";
 import { chromium, devices } from "playwright";
 import { ecarterBarreActions } from "./lib-barre.mjs";
+import { revelerPointPlanche } from "./lib-canvas-targets.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures/planche-liens";
@@ -206,12 +207,14 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   await page.keyboard.press("Escape");
   check("seconde ligne tracée à l'écart : le premier lien tient", (await liens()) === 1, String(await liens()));
   await page.keyboard.press("p");
+  const restaurerVue = await revelerPointPlanche(page, { x: 1, y: -2.5, z: 0 });
   await cliquer({ x: 1, y: -2.5, z: 0 });
   await page.locator('[data-planche-option-valeur="lien:independant"]').click();
   await vue.focus();
   await page.keyboard.press("ArrowUp");
   await saisir("1");
   check("option « Indépendante » : surface créée, aucun nouveau lien", (await liens()) === 1 && (await etat()).faces >= 2, `${await liens()} lien(s), ${(await etat()).faces} face(s), ${await consigne()}`);
+  await restaurerVue();
   // L-02 : dans un groupe, la restriction « racine seulement » est dite.
   await page.keyboard.press("Escape");
   await page.keyboard.press(" ");

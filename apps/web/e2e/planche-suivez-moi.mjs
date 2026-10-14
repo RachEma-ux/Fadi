@@ -177,6 +177,12 @@ function aides(page) {
   const a = await etat();
   const percee = await page.evaluate(() => Object.values(window.fadiPlanche.modele().racine.faces).filter((f) => f.trous.length === 1).length);
   check("préparation : chemin + profil percé (une face à un trou, son bouchon, le sol)", a.faces === 3 && percee === 1, JSON.stringify({ faces: a.faces, percee }));
+  // Zoom optique réel : la couronne du profil doit être plus large que le rayon
+  // d’accrochage de 10 px dans le canevas intégré (dimensions du profil inchangées).
+  await vue.focus();
+  await page.keyboard.press("z");
+  await saisir("20");
+  await page.keyboard.press("Escape");
   // Chemin présélectionné, outil par son raccourci Maj+F.
   await page.keyboard.press(" ");
   await vue.focus();

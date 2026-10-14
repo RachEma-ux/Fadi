@@ -9,6 +9,7 @@
  */
 import { chromium } from "playwright";
 import { ecarterBarreActions } from "./lib-barre.mjs";
+import { revelerPointPlanche } from "./lib-canvas-targets.mjs";
 const BASE = process.env.BASE_URL ?? "http://localhost:3001";
 const OUT = process.env.OUT ?? "docs/atelier/captures";
 const resultats = [];
@@ -205,12 +206,14 @@ const delta = (a, b) => ({ faces: b.faces - a.faces, aretes: b.aretes - a.aretes
   await vider(); await rect({ x: 0, y: 0, z: 0 }, "4;3"); await outil("ligne", "l"); await cliquer({ x: 5, y: -2, z: 0 }); await survoler({ x: 8, y: -2, z: 0 }); await cliquer({ x: 8, y: -2, z: 0 }); await page.keyboard.press("Escape");
   const a = await etat();
   if (await outil("gomme", "e")) {
+    const restaurerVue = await revelerPointPlanche(page, { x: 6.5, y: -2, z: 0 });
     await cliquer({ x: 6.5, y: -2, z: 0 }); let b = await etat(); note("gomme", "clic sur une arête libre : arête effacée (1 pas)", b.aretes === a.aretes - 1 && b.pas === a.pas + 1, JSON.stringify(delta(a, b)));
     await cliquer({ x: 2, y: 0, z: 0 }); const c = await etat(); note("gomme", "clic sur une arête de face : l'arête ET la face disparaissent", c.aretes === b.aretes - 1 && c.faces === b.faces - 1, JSON.stringify(delta(b, c)));
     await cliquer({ x: 2, y: 1.5, z: 0 }); const d = await etat(); note("gomme", "clic sur une face seule / dans le vide : rien", d.aretes === c.aretes && d.faces === c.faces);
     const p0 = await ecran({ x: -0.5, y: 1.5, z: 0 }); const p1 = await ecran({ x: 4.5, y: 1.5, z: 0 });
     await page.mouse.move(p0.x, p0.y); await page.mouse.down(); await page.mouse.move(p1.x, p1.y, { steps: 20 }); await page.mouse.up(); await page.waitForTimeout(80);
     const e = await etat(); note("gomme", "glisser à travers 2 arêtes : effacées au relâchement, un seul pas", e.aretes === d.aretes - 2 && e.pas === d.pas + 1, JSON.stringify(delta(d, e)));
+    await restaurerVue();
   }
 }
 // ——— 12. Sélection
@@ -233,10 +236,15 @@ const delta = (a, b) => ({ faces: b.faces - a.faces, aretes: b.aretes - a.aretes
     e = await etat(); note("selection", "cadre droite → gauche (croisée) touchant le rectangle : éléments touchés sélectionnés", e.selection.length >= 1, String(e.selection.length));
     await cliquer({ x: 7, y: 1, z: 0 }); const avant = await etat(); await page.keyboard.press("Delete"); e = await etat();
     note("selection", "Suppr : la face sélectionnée est effacée (1 pas)", e.faces === avant.faces - 1 && e.pas === avant.pas + 1, JSON.stringify(delta(avant, e)));
+    // Un zoom réel rend le déplacement au micron vérifiable malgré la quantification
+    // des coordonnées de pointeur du navigateur ; le seuil attendu reste 1e-6 m.
+    await page.locator("[data-planche-vue]").focus();
+    await page.keyboard.press("z"); await saisir("20"); await page.keyboard.press("Escape");
     await cliquer({ x: 2, y: 0, z: 0 }); const c = await ecran({ x: 4, y: 0, z: 0 }); const d = await ecran({ x: 5, y: -1, z: 0 });
     await page.mouse.move(c.x, c.y, { steps: 3 }); await page.mouse.down(); await page.mouse.move(d.x, d.y, { steps: 8 }); await page.mouse.up(); await page.waitForTimeout(60);
     const s = await sommets(); note("selection", "poignée d'extrémité glissée (4;0) → (5;-1)", s.some((p) => Math.abs(p.x - 5) < 1e-6 && Math.abs(p.y + 1) < 1e-6), JSON.stringify(s.map((p) => `${p.x};${p.y}`)));
     await page.keyboard.press("Escape"); e = await etat(); note("selection", "Échap : sélection vidée", e.selection.length === 0);
+    await page.keyboard.press("z"); await saisir("35"); await page.keyboard.press("Escape");
   }
 }
 // ——— 13. Lasso
