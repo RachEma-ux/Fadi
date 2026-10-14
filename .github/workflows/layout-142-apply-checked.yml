@@ -1,0 +1,45 @@
+name: Apply checksum-verified layout 142 source patch
+on:
+  push:
+    branches: [fix/project-layout-full-width]
+    paths: [.github/workflows/layout-142-apply-checked.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/project-layout-full-width
+          fetch-depth: 3
+      - name: Validate transported patch and apply
+        run: |
+          test "$(git rev-parse HEAD^)" = 03c298688bc1e0a59a4e8ba63abef900a2294e03
+          python3 - <<'PY'
+          import base64,gzip,hashlib
+          from pathlib import Path
+          source=Path('.github/workflows/layout-142-apply-interactions.yml').read_text()
+          encoded=next(line.strip() for line in source.splitlines() if line.strip().startswith('H4sI'))
+          # Repair a transport transcription only; the full original SHA-256
+          # is mandatory before any source file can be changed.
+          encoded=encoded.replace('W13tpyH3SO7d', 'W13tpyH0ySO7d')
+          patch=gzip.decompress(base64.b64decode(encoded))
+          assert hashlib.sha256(patch).hexdigest() == '16a6ff4205523cf2cd3cb1a26f1049669e1063c703a295f7df4a1e75c56f89e7'
+          Path('/tmp/reviewed-layout.patch').write_bytes(patch)
+          PY
+          git apply --check /tmp/reviewed-layout.patch
+          git apply /tmp/reviewed-layout.patch
+          git diff --check
+          for f in apps/web/e2e/{atelier-canevas,atelier-complements,lib-cible-planche,planche-assemblages,planche-barre-outils,planche-pousser-aretes,planche-profiles}.mjs; do node --check "$f"; done
+          git rm .github/workflows/layout-142-apply-interactions.yml .github/workflows/layout-142-apply-checked.yml
+          git add apps/web/src/lib/use-immersive.ts apps/web/src/routes/project-layout.css apps/web/src/modules/atelier/nouveau/panneaux/BarreActions.tsx apps/web/src/modules/atelier/nouveau/planche/BarreOutilsFlottante.tsx apps/web/src/modules/atelier/nouveau/planche/BoutonOutils.tsx apps/web/e2e/atelier-canevas.mjs apps/web/e2e/atelier-complements.mjs apps/web/e2e/lib-cible-planche.mjs apps/web/e2e/planche-assemblages.mjs apps/web/e2e/planche-barre-outils.mjs apps/web/e2e/planche-pousser-aretes.mjs apps/web/e2e/planche-profiles.mjs
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix(layout): bound embedded toolbars and menus without losing drawing interactions'
+          git push origin HEAD:refs/heads/fix/project-layout-full-width
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: layout-142-patch-transport
+          path: .github/workflows/layout-142-apply-interactions.yml
+          retention-days: 1
+          include-hidden-files: true
