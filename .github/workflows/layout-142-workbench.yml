@@ -1,0 +1,33 @@
+name: Layout 142 isolated workbench
+on:
+  push:
+    branches: [ci/layout-142-diagnostic]
+    paths: [.github/workflows/layout-142-workbench.yml]
+permissions:
+  contents: read
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: e3031ab896f262191fee9b70020a77faae04a3bc
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - name: Package locked JavaScript dependencies for the isolated reproduction environment
+        run: |
+          mkdir -p workbench/debs
+          tar -czf workbench/node-deps.tar.gz node_modules
+          git rev-parse HEAD > workbench/source-sha.txt
+      - name: Obtain matching Debian 13 database packages (no database contents)
+        run: |
+          docker run --rm -v "$PWD/workbench/debs:/out" debian:trixie-slim sh -ec 'apt-get update -qq; apt-get -y --download-only install postgresql-17 postgresql-17-postgis-3; cp /var/cache/apt/archives/*.deb /out/'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: layout-offline-workbench-${{ github.run_id }}
+          path: workbench/
+          compression-level: 0
+          retention-days: 1
