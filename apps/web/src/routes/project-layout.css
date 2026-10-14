@@ -69,6 +69,23 @@
   width: calc(100% - 2 * var(--project-page-gutter));
   margin: var(--project-page-top) var(--project-page-gutter) 45px;
 }
+/* Long role descriptions must not impose the select's intrinsic width on its
+   grid track. Keep the form readable and the journal's own table-scroll intact. */
+.fadi-shell .project-shell .members-invite > *,
+.fadi-shell .project-shell .members-invite input,
+.fadi-shell .project-shell .members-invite select {
+  min-width: 0;
+  max-width: 100%;
+}
+.fadi-shell .project-shell .members-invite input,
+.fadi-shell .project-shell .members-invite select {
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .fadi-shell .project-shell .members-invite {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 @media (min-width: 1200px) {
   .fadi-shell .project-shell .fadi-home[data-home="project"] .dossier-grid {
     grid-template-columns: minmax(0, 1fr) clamp(306px, 22%, 380px);
