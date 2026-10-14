@@ -203,10 +203,21 @@ const delta = (a, b) => ({ faces: b.faces - a.faces, aretes: b.aretes - a.aretes
 }
 // ——— 11. Gomme
 {
-  await vider(); await rect({ x: 0, y: 0, z: 0 }, "4;3"); await outil("ligne", "l"); await cliquer({ x: 5, y: -2, z: 0 }); await survoler({ x: 8, y: -2, z: 0 }); await cliquer({ x: 8, y: -2, z: 0 }); await page.keyboard.press("Escape");
+  await vider();
+  await rect({ x: 0, y: 0, z: 0 }, "4;3");
+  await outil("ligne", "l");
+  // Rendre la zone de création accessible AVANT de tracer l'arête. En gabarit
+  // embarqué, les outils flottants peuvent bloquer l'extrémité du segment ;
+  // un panoramique fait réellement apparaître la zone sans masquer l'interface.
+  const restaurerVue = await revelerPointPlanche(page, { x: 6.5, y: -2, z: 0 });
+  await cliquer({ x: 5, y: -2, z: 0 });
+  await survoler({ x: 8, y: -2, z: 0 });
+  await cliquer({ x: 8, y: -2, z: 0 });
+  await page.keyboard.press("Escape");
   const a = await etat();
+  note("gomme", "précondition : une arête libre distincte du rectangle est créée", a.faces === 1 && a.aretes === 5, JSON.stringify(a));
   if (await outil("gomme", "e")) {
-    const restaurerVue = await revelerPointPlanche(page, { x: 6.5, y: -2, z: 0 });
+    await revelerPointPlanche(page, { x: 6.5, y: -2, z: 0 });
     await cliquer({ x: 6.5, y: -2, z: 0 }); let b = await etat(); note("gomme", "clic sur une arête libre : arête effacée (1 pas)", b.aretes === a.aretes - 1 && b.pas === a.pas + 1, JSON.stringify(delta(a, b)));
     await cliquer({ x: 2, y: 0, z: 0 }); const c = await etat(); note("gomme", "clic sur une arête de face : l'arête ET la face disparaissent", c.aretes === b.aretes - 1 && c.faces === b.faces - 1, JSON.stringify(delta(b, c)));
     await cliquer({ x: 2, y: 1.5, z: 0 }); const d = await etat(); note("gomme", "clic sur une face seule / dans le vide : rien", d.aretes === c.aretes && d.faces === c.faces);
