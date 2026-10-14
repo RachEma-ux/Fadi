@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, type ParcoursStep } from "../../lib/api";
 import { denied } from "../accueil/dossier-data";
 import { useAuth } from "../../lib/auth-context";
 import { rememberDossier } from "../../lib/last-dossier";
 import { resolveProjectAccess } from "../../lib/access";
+import { ProjectModuleNav } from "../../routes/ProjectModuleNav";
 import { LOCALE } from "../../lib/i18n";
 import { StepPlanningEditor, PlanningBaselineControl } from "./PlanningEditor";
 import { StepToolActions } from "./StepToolActions";
@@ -27,6 +28,7 @@ function Status({ status }: { status: "done" | "doing" | "todo" | "unavailable" 
 /** Native React integration; no iframe, shadow application or localStorage authority. */
 export function ProjectCockpitPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
   if (!projectId) throw new Error("Identifiant du projet manquant");
   const project = useQuery({
     queryKey: ["project", projectId],
@@ -133,7 +135,14 @@ export function ProjectCockpitPage() {
     setPanelOpen(true);
   }
 
-  return <main className="cockpit-page">
+  return <>
+    <ProjectModuleNav
+      projectId={projectId}
+      activeModule="pilotage"
+      onHome={() => navigate(`/projets/${encodeURIComponent(projectId)}`)}
+      onModule={(module) => navigate(`/projets/${encodeURIComponent(projectId)}?module=${module}`)}
+    />
+    <main className="cockpit-page">
     <div className="cockpit-header">
       <div className="cockpit-identity">
         <strong className="cockpit-code" translate="no">{project.data.code}</strong>
@@ -241,5 +250,6 @@ export function ProjectCockpitPage() {
         <button type="button" disabled={zoom >= 130} aria-label="Augmenter le zoom" onClick={() => setZoom((current) => Math.min(130, current + 10))}>+</button>
       </div>}
     </div>
-  </main>;
+    </main>
+  </>;
 }
