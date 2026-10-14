@@ -54,3 +54,13 @@ Les valeurs de type `null` sont affichées « Non évalué », **jamais zéro**.
 ## Hors périmètre
 
 Révision réglementaire automatique ; validation de dimensionnement structurel ; estimation financière non sourcée ; création de nouveaux modules et stockage persistant supplémentaire. Leur état reste celui déclaré par les modules métier, sans KPI substitutif.
+
+## Correction de navigation du projet (14 octobre 2026)
+
+L'accès natif `/projets/:projectId/pilotage` existe depuis R1, mais le composant `ProjectShell` omettait l'onglet correspondant dans la barre « Modules du projet ». Cette omission explique l'absence observée dans l'interface Parcours.
+
+L'onglet **Feuille de route** est ajouté **immédiatement après Accueil du projet**, avant **Projets et sources**. Il réutilise la navigation React Router, conserve l'identifiant du dossier, et affiche la même barre avec l'onglet actif dans le cockpit lui-même.
+
+Il ne s'agit pas d'un huitième module métier : les sept modules de `MODULES` ne changent pas. Le rendu mobile conserve l'ordre des onglets dans une rangée défilante et un contrôle e2e vérifie leur ordre, l'activation et la navigation sur téléphone.
+
+**Déploiement :** une fusion GitHub ne prouve pas que l'instance accessible via un tunnel Cloudflare exécute le nouveau commit. Sa mise à jour doit être contrôlée séparément auprès de l'hébergement/serveur.
