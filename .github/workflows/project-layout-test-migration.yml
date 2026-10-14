@@ -1,0 +1,68 @@
+name: Project layout test migration
+# One-off, branch-scoped source edit. Deletes itself in the resulting commit.
+on:
+  push:
+    branches: [fix/project-layout-full-width]
+    paths: [.github/workflows/project-layout-test-migration.yml]
+permissions:
+  contents: read
+jobs:
+  migrate:
+    if: github.repository == 'RachEma-ux/Fadi' && github.ref == 'refs/heads/fix/project-layout-full-width'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Replace only the two superseded layout assertions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          path = Path('apps/web/e2e/parcours-scenario.mjs')
+          original = path.read_bytes()
+          blob = hashlib.sha1(f'blob {len(original)}\0'.encode() + original).hexdigest()
+          assert blob == '5798ad80a41f3c9eae5d1e44225a5a383ee3917c', 'Source changed: reconcile before editing'
+          source = original.decode('utf-8')
+          prefixes = ['check("étape 10 (référence) : page ', 'check("téléphone étape 10 : bandeau ']
+          lines = source.splitlines(keepends=True)
+          for prefix in prefixes:
+              matches = [i for i, line in enumerate(lines) if line.startswith(prefix)]
+              assert len(matches) == 1, f'Expected exactly one assertion: {prefix}'
+              i = matches[0]
+              line = lines[i]
+              old_marker = '(await page.evaluate(() => document.body.classList.contains("atelier-immersive")))'
+              assert old_marker in line
+              line = line.replace(old_marker, '(await page.evaluate(() => document.body.classList.contains("atelier-workspace") && !document.body.classList.contains("atelier-immersive")))')
+              if 'référence' in prefix:
+                  old_sidebar = '!(await page.locator(".app-sidebar").isVisible())'
+                  assert old_sidebar in line
+                  line = line.replace(old_sidebar, '(await page.locator(".app-sidebar").isVisible()) && (await page.locator(".fadi-topbar").isVisible()) && (await page.locator(".module-nav").isVisible())')
+                  line = line.replace('enveloppe de Fadi effacée', 'enveloppe de Fadi et barre des modules conservées')
+              else:
+                  old_nav = '!(await page.locator(".module-nav").isVisible())'
+                  old_width = '(await page.locator(".atelier-n").evaluate((e) => Math.round(e.getBoundingClientRect().width))) >= 380'
+                  assert old_nav in line and old_width in line
+                  line = line.replace(old_nav, '(await page.locator(".module-nav").isVisible()) && (await page.locator(".fadi-topbar").isVisible()) && (await page.locator(".app-sidebar").isVisible())')
+                  line = line.replace(old_width, '(await page.locator(".atelier-n").evaluate((e) => { const workspace = document.getElementById("workspace-content"); const bounds = workspace.getBoundingClientRect(); const gutter = parseFloat(getComputedStyle(workspace).getPropertyValue("--project-page-gutter")); const editor = e.getBoundingClientRect(); return Math.abs(editor.left - bounds.left - gutter) <= 2 && Math.abs(bounds.right - editor.right - gutter) <= 2; }))')
+                  line = line.replace('enveloppe effacée, dessin sur toute la largeur', 'navigation commune conservée, dessin sur toute la largeur utile entre les marges')
+              assert line != lines[i]
+              lines[i] = line
+          updated = ''.join(lines)
+          updated = updated.replace('// Référence, étape 10 : la page est l\'Atelier Architectural (bandeau du prototype, enveloppe effacée)', '// Référence, étape 10 : Atelier Architectural dans le gabarit commun (navigation conservée)')
+          updated = updated.replace('// Étape 10 sur téléphone : la page est l\'Atelier Architectural (bandeau, barre d\'outils, dessin), enveloppe effacée.', '// Étape 10 sur téléphone : Atelier Architectural, navigation commune conservée, dessin dans la largeur utile.')
+          path.write_bytes(updated.encode('utf-8'))
+          Path('.github/workflows/project-layout-test-migration.yml').unlink()
+          PY
+          node --check apps/web/e2e/parcours-scenario.mjs
+          git diff --check
+          git diff --stat
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/web/e2e/parcours-scenario.mjs .github/workflows/project-layout-test-migration.yml
+          git commit -m 'test(layout): assert visible project navigation in desktop and mobile Atelier'
+          # A normal fast-forward push only: concurrent edits are never overwritten.
+          git push origin HEAD:refs/heads/fix/project-layout-full-width
