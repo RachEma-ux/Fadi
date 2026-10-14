@@ -1,0 +1,97 @@
+/* Project pages share the Roadmap's full-width workspace. Application /accueil,
+   authentication pages and readable form widths deliberately remain unchanged. */
+#workspace-content {
+  --project-page-gutter: 30px;
+  --project-page-top: 26px;
+}
+.fadi-shell .project-shell {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.fadi-shell .module-nav {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 14px var(--project-page-gutter);
+}
+.fadi-shell .module-nav > * {
+  min-height: 44px;
+}
+.fadi-shell .project-shell > .project-header {
+  padding-inline: var(--project-page-gutter);
+}
+.fadi-shell .project-shell > .access-banner,
+.fadi-shell .project-shell > .offline-banner {
+  margin-inline: var(--project-page-gutter);
+}
+.fadi-shell .project-shell .module-content,
+.fadi-shell .project-shell .fadi-home[data-home="project"],
+.fadi-shell .cockpit-page {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: var(--project-page-top) var(--project-page-gutter) 45px;
+}
+.fadi-shell .project-shell .module-content-parcours {
+  padding: 0;
+}
+.fadi-shell .project-shell .overview,
+.fadi-shell .project-shell .work {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  padding: var(--project-page-top) var(--project-page-gutter) 45px;
+}
+.fadi-shell .project-shell .step-detail {
+  min-width: 0;
+  max-width: none;
+}
+.fadi-shell .project-shell .dossier-grid,
+.fadi-shell .project-shell .module-content > * {
+  min-width: 0;
+}
+.fadi-shell .project-shell .atelier-stage-header {
+  padding-inline: var(--project-page-gutter);
+}
+/* The editor is a project workspace, not an implicit full-screen route.
+   useImmersive measures the actual header stack, including wrapped navigation. */
+.fadi-shell .project-shell .atelier-n {
+  width: 100%;
+  min-width: 0;
+  height: var(--atelier-workspace-height, max(520px, calc(100dvh - 350px)));
+  min-height: 520px;
+}
+.fadi-shell .project-shell .module-content-parcours > .atelier-n {
+  width: calc(100% - 2 * var(--project-page-gutter));
+  margin: var(--project-page-top) var(--project-page-gutter) 45px;
+}
+@media (min-width: 1200px) {
+  .fadi-shell .project-shell .fadi-home[data-home="project"] .dossier-grid {
+    grid-template-columns: minmax(0, 1fr) clamp(306px, 22%, 380px);
+  }
+}
+@media (max-width: 700px) {
+  #workspace-content {
+    --project-page-gutter: 14px;
+    --project-page-top: 18px;
+  }
+  /* Only this strip scrolls sideways. Keep every module keyboard-accessible;
+     the active item is revealed without changing the page's vertical scroll. */
+  .fadi-shell .module-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding-block: 12px;
+  }
+  .fadi-shell .module-nav > * {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .fadi-shell .module-nav :focus-visible {
+    outline-offset: -3px;
+  }
+}
