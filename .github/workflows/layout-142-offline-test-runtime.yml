@@ -1,0 +1,37 @@
+name: Layout 142 offline test runtime
+on:
+  push:
+    branches: [ci/layout-142-diagnostic]
+    paths: [.github/workflows/layout-142-offline-test-runtime.yml]
+permissions:
+  contents: read
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 169c23f12d3c121965e5de90180723f3077fe8cd
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund && npm run build
+      - name: Archive only source and test dependencies, never credentials
+        run: |
+          mkdir -p /tmp/fadi-runtime
+          git archive HEAD | gzip -1 > /tmp/fadi-runtime/source.tar.gz
+          tar -czf /tmp/fadi-runtime/dependencies.tar.gz node_modules apps/web/dist apps/api/dist
+          printf '%s\n' "$(git rev-parse HEAD)" > /tmp/fadi-runtime/source-sha.txt
+      - name: Export the same clean PostGIS image as CI (no database or accounts)
+        run: |
+          docker pull postgis/postgis:16-3.4
+          cid=$(docker create postgis/postgis:16-3.4)
+          docker export "$cid" | gzip -1 > /tmp/fadi-runtime/postgis-rootfs.tar.gz
+          docker rm "$cid"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: layout-142-offline-runtime
+          path: /tmp/fadi-runtime/
+          compression-level: 0
+          retention-days: 1
