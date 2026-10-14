@@ -1371,7 +1371,22 @@ h3 {
   padding: 14px 28px;
   background: #eef3f0;
 }
-.module-nav button[aria-current="page"] {
+/* La Feuille de route est une route native distincte des sept modules.
+   Même apparence et cible tactile que leurs boutons, sans faux module. */
+.module-nav .module-nav-pilotage {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem;
+  border: 1px solid #b7c9c0;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-decoration: none;
+}
+.module-nav button[aria-current="page"],
+.module-nav .module-nav-pilotage[aria-current="page"] {
   background: var(--forest-900);
   color: white;
   border-color: var(--forest-900);
@@ -3166,7 +3181,8 @@ button.h7-chip.h7-goto:hover {
   .module-nav::-webkit-scrollbar {
     display: none;
   }
-  .module-nav button {
+  .module-nav button,
+  .module-nav .module-nav-pilotage {
     flex: 0 0 auto;
     white-space: nowrap;
     scroll-snap-align: start;
