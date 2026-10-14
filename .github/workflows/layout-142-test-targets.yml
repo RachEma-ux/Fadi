@@ -1,0 +1,115 @@
+name: Apply layout 142 test targets
+on:
+  push:
+    branches: [fix/project-layout-full-width]
+    paths: [.github/workflows/layout-142-test-targets.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/project-layout-full-width
+      - name: Apply only the reviewed test changes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from hashlib import sha1
+          p = Path('apps/web/e2e/atelier-complements.mjs')
+          raw = p.read_bytes()
+          assert sha1(f'blob {len(raw)}\0'.encode() + raw).hexdigest() == 'a38c75ae79336e1afa058142ce3650ac974e5d58', 'Test changed since diagnosis; stop rather than overwrite'
+          s = raw.decode()
+          def replace(a, b):
+              global s
+              assert s.count(a) == 1, a[:100]
+              s = s.replace(a, b)
+          replace('import { allerEnPlan, choisirAffichage, ouvrirExports, ouvrirImports } from "./lib-barre.mjs";', 'import { allerEnPlan, choisirAffichage, ouvrirExports, ouvrirImports, ouvrirReglages, fermerMenus, ecarterBarreActions } from "./lib-barre.mjs";')
+          replace('const page = await ctx.newPage();\nconst erreursPage = [];', 'const page = await ctx.newPage();\n// Les coordonnées projetées ne doivent jamais cliquer la barre flottante.\nawait ecarterBarreActions(page);\nconst erreursPage = [];')
+          helper = '''/** Vérifier la vraie cible avant les clics géométriques : jamais un bouton superposé. */
+          const dansDessin = async (selecteur, x, y) => page.evaluate(([sel, x, y]) => {
+            const canvas = document.querySelector(sel);
+            const target = document.elementFromPoint(x, y);
+            return !!canvas && !!target && (target === canvas || canvas.contains(target));
+          }, [selecteur, x, y]);
+          const cliquerDessin = async (selecteur, x, y) => {
+            if (!(await dansDessin(selecteur, x, y))) throw new Error(`Cible du dessin masquée ou hors écran : ${selecteur} (${x}, ${y})`);
+            await page.mouse.move(x, y);
+            // L'aperçu d'accrochage est mis à jour avant de valider le point.
+            await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+            await page.mouse.click(x, y);
+          };
+
+          '''
+          anchor = 'const email = `complements-${Date.now()}@example.com`;'
+          replace(anchor, helper + anchor)
+          replace('// Mur courbe tracé au plan (D-086).\n{\n  await page.keyboard.press("Escape");\n  await attendreEnregistre().catch(() => {});', '''// Mur courbe tracé au plan (D-086).
+          {
+            await page.keyboard.press("Escape");
+            await attendreEnregistre().catch(() => {});
+            // Ce test vise une courbure libre, pas le verrou polaire. Dans le gabarit
+            // intégré, la flèche de l'arc est plus petite et entrait dans son rayon.
+            await ouvrirReglages(page);
+            const polaire = page.locator('[data-accrochage="orthogonal"]');
+            const polaireAvant = await polaire.isChecked();
+            await polaire.uncheck();
+            await fermerMenus(page);''')
+          start = s.index('// Mur courbe tracé au plan (D-086).')
+          end = s.index('// Repère de saisie (D-091)', start)
+          b = s[start:end].replace('await page.mouse.click(z.x + z.width * fx, z.y + z.height * fy);', 'await cliquerDessin(".plan2d", z.x + z.width * fx, z.y + z.height * fy);').replace('await page.mouse.click(z.x + z.width * 0.3, z.y + z.height * 0.8);', 'await cliquerDessin(".plan2d", z.x + z.width * 0.3, z.y + z.height * 0.8);')
+          assert b.endswith('}\n\n')
+          b = b[:-3] + '  await ouvrirReglages(page);\n  await polaire.setChecked(polaireAvant);\n  await fermerMenus(page);\n}\n\n'
+          s = s[:start] + b + s[end:]
+          start = s.index('// Escalier hélicoïdal au plan (D-092).')
+          end = s.index('// Hachure associée à une pièce (D-092)', start)
+          b = s[start:end]
+          for fx in ['0.7', '0.75']:
+              b = b.replace(f'await page.mouse.click(z.x + z.width * {fx}, z.y + z.height * 0.85);', f'await cliquerDessin(".plan2d", z.x + z.width * {fx}, z.y + z.height * 0.85);')
+          s = s[:start] + b + s[end:]
+          start = s.index('// Accrochage 3D (D-127)')
+          end = s.index('// Chaîne jointive fermée proposée comme profil (D-126)', start)
+          b = s[start:end].replace('const coins = await page.evaluate(([cx, cy, z]) => {', 'const projeterCoins = () => page.evaluate(([cx, cy, z]) => {')
+          a = '''  const c3 = await page.locator(".vue3d-canevas").boundingBox();
+            for (const q of coins) if (q && c3) {
+              await page.mouse.click(c3.x + q.x, c3.y + q.y);
+              await page.waitForTimeout(300);
+            }'''
+          revised = '''  // Le cadrage peut placer le dessus du poteau sous les réglages 3D.
+            // Panoramique par le geste réel (bouton droit), sans cacher les commandes
+            // ni changer le modèle ou la tolérance de la mesure attendue.
+            let coins = await projeterCoins();
+            let c3 = await page.locator(".vue3d-canevas").boundingBox();
+            for (let essai = 0; essai < 3; essai++) {
+              if (!c3 || coins.some(q => !q)) throw new Error("Coins du poteau non projetables");
+              const libres = await Promise.all(coins.map(q => dansDessin(".vue3d-canevas", c3.x + q.x, c3.y + q.y)));
+              if (libres.every(Boolean)) break;
+              const x = c3.x + c3.width * 0.2;
+              const y = c3.y + c3.height * 0.55;
+              if (!(await dansDessin(".vue3d-canevas", x, y))) throw new Error("Zone de panoramique 3D masquée");
+              await page.mouse.move(x, y);
+              await page.mouse.down({ button: "right" });
+              await page.mouse.move(x, y + Math.min(100, c3.height * 0.25), { steps: 12 });
+              await page.mouse.up({ button: "right" });
+              await page.waitForTimeout(300);
+              coins = await projeterCoins();
+              c3 = await page.locator(".vue3d-canevas").boundingBox();
+            }
+            for (const q of coins) if (q && c3) {
+              await cliquerDessin(".vue3d-canevas", c3.x + q.x, c3.y + q.y);
+              await page.waitForTimeout(300);
+            }'''
+          assert b.count(a) == 1, '3D block mismatch'
+          b = b.replace(a, revised)
+          s = s[:start] + b + s[end:]
+          p.write_text(s)
+          PY
+          node --check apps/web/e2e/atelier-complements.mjs
+          git diff --check
+          git diff --stat
+      - name: Commit the test patch and remove this one-shot workflow
+        run: |
+          git rm .github/workflows/layout-142-test-targets.yml
+          git add apps/web/e2e/atelier-complements.mjs
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'test(layout): target the canvas instead of overlaid controls'
+          git push origin HEAD:refs/heads/fix/project-layout-full-width
