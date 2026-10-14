@@ -8,7 +8,7 @@ permissions:
 jobs:
   bundle:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,17 +17,12 @@ jobs:
         with:
           node-version: 22
       - run: npm ci --no-audit --no-fund
-      - name: Package locked JavaScript dependencies for the isolated reproduction environment
+      - name: Package workspace-local dependencies omitted from the root bundle
         run: |
-          mkdir -p workbench/debs
-          tar -czf workbench/node-deps.tar.gz node_modules
-          git rev-parse HEAD > workbench/source-sha.txt
-      - name: Obtain matching Debian 13 database packages (no database contents)
-        run: |
-          docker run --rm -v "$PWD/workbench/debs:/out" debian:trixie-slim sh -ec 'apt-get update -qq; apt-get -y --download-only install postgresql-17 postgresql-17-postgis-3; cp /var/cache/apt/archives/*.deb /out/'
+          find apps packages -type d -name node_modules -prune -print0 | tar --null -czf workspace-deps.tar.gz -T -
       - uses: actions/upload-artifact@v4
         with:
-          name: layout-offline-workbench-${{ github.run_id }}
-          path: workbench/
+          name: layout-workspace-deps-${{ github.run_id }}
+          path: workspace-deps.tar.gz
           compression-level: 0
           retention-days: 1
