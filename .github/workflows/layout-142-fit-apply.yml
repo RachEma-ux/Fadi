@@ -1,0 +1,115 @@
+name: Apply reviewed measured-canvas corrections
+on:
+  push:
+    branches: [ci/layout-142-diagnostic]
+    paths: [.github/workflows/layout-142-fit-apply.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/project-layout-full-width
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply only the reviewed correction to the inspected revision
+        run: |
+          test "$(git rev-parse HEAD)" = 74e93c4770d5f29c34463f5d161b9f8cb9a41c53
+          cat > apps/web/e2e/lib-canvas-targets.mjs <<'JS'
+          /** Reveal a world point through real camera gestures; never force a click through
+           * a floating control, hide UI, alter geometry or replace a business assertion.
+           * The returned callback reverses only the camera pans made by this helper. */
+          export async function revelerPointPlanche(page, point) {
+            const pans = [];
+            const snapshot = () => page.evaluate((q) => {
+              const canvas = document.querySelector('[data-planche-vue] canvas');
+              const p = window.fadiPlanche;
+              if (!canvas || !p) throw new Error('Planche non prête');
+              const r = canvas.getBoundingClientRect();
+              const screen = p.versEcran(q);
+              if (!screen) throw new Error('Point derrière la caméra');
+              const target = {x: r.x + screen.x, y: r.y + screen.y};
+              const free = (x, y) => x >= 8 && y >= 8 && x <= innerWidth - 8 && y <= innerHeight - 8 && document.elementFromPoint(x, y) === canvas;
+              const spots = [];
+              for (const fy of [0.35, 0.25, 0.45, 0.55, 0.15, 0.65]) {
+                for (const fx of [0.5, 0.4, 0.6, 0.3, 0.7]) {
+                  const x = r.x + r.width * fx, y = r.y + r.height * fy;
+                  if ([[0,0],[-12,0],[12,0],[0,-12],[0,12]].every(([dx,dy]) => free(x+dx,y+dy))) spots.push({x,y});
+                }
+              }
+              return {target, visible: free(target.x,target.y), spots, pas: p.pas(),
+                hit: document.elementFromPoint(target.x,target.y)?.outerHTML?.slice(0,250)};
+            }, point);
+            const pan = async (dx, dy) => {
+              const before = await snapshot();
+              const start = before.spots.find(s => s.x + dx >= 8 && s.y + dy >= 8 && s.x + dx <= page.viewportSize().width - 8 && s.y + dy <= page.viewportSize().height - 8);
+              if (!start) throw new Error('Aucune zone libre pour le panoramique de recette');
+              await page.mouse.move(start.x,start.y);
+              await page.keyboard.down('Shift');
+              try {
+                await page.mouse.down({button:'middle'});
+                await page.mouse.move(start.x+dx,start.y+dy,{steps:8});
+                await page.mouse.up({button:'middle'});
+              } finally {
+                await page.keyboard.up('Shift');
+              }
+              await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+              const after = await snapshot();
+              if (after.pas !== before.pas) throw new Error('Le panoramique a modifié le modèle');
+            };
+            for (let attempt = 0; attempt < 5; attempt++) {
+              const state = await snapshot();
+              if (state.visible) return async () => {
+                for (const [dx,dy] of [...pans].reverse()) await pan(-dx,-dy);
+              };
+              const aim = state.spots[0];
+              if (!aim) throw new Error('Aucune surface de dessin accessible');
+              const dx = Math.max(-180,Math.min(180,aim.x-state.target.x));
+              const dy = Math.max(-140,Math.min(140,aim.y-state.target.y));
+              await pan(dx,dy);
+              pans.push([dx,dy]);
+            }
+            throw new Error(`Point toujours masqué après panoramique : ${JSON.stringify(await snapshot())}`);
+          }
+          JS
+          python3 - <<'PY'
+          from pathlib import Path
+          def edit(path, replacements):
+              p=Path(path); s=p.read_text()
+              for a,b in replacements:
+                  assert s.count(a)==1, (path,a[:100])
+                  s=s.replace(a,b)
+              p.write_text(s)
+          edit('apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx', [
+              ('  const [taille, setTaille] = useState({ w: 800, h: 600 });', '  // No synthetic viewport: the first fit must use the measured embedded canvas.\n  const [taille, setTaille] = useState({ w: 0, h: 0 });'),
+              ('if (!ui.niveauId || cadreInitial.current === ui.niveauId || taille.w < 10) return;', 'if (!ui.niveauId || cadreInitial.current === ui.niveauId || taille.w < 10 || taille.h < 10) return;')])
+          helper='import { revelerPointPlanche } from "./lib-canvas-targets.mjs";'
+          edit('apps/web/e2e/planche-liens.mjs', [
+              ('import { ecarterBarreActions } from "./lib-barre.mjs";', 'import { ecarterBarreActions } from "./lib-barre.mjs";\n'+helper),
+              ('  await page.keyboard.press("p");\n  await cliquer({ x: 1, y: -2.5, z: 0 });','  await page.keyboard.press("p");\n  const restaurerVue = await revelerPointPlanche(page, { x: 1, y: -2.5, z: 0 });\n  await cliquer({ x: 1, y: -2.5, z: 0 });'),
+              ('  // L-02 : dans un groupe, la restriction « racine seulement » est dite.','  await restaurerVue();\n  // L-02 : dans un groupe, la restriction « racine seulement » est dite.')])
+          edit('apps/web/e2e/planche.mjs', [
+              ('import { allerEnPlan, ecarterBarreActions } from "./lib-barre.mjs";', 'import { allerEnPlan, ecarterBarreActions } from "./lib-barre.mjs";\n'+helper),
+              ('await mesurer("Pousser/Tirer : rectangle 4 × 3 tiré de 2,7 m au champ Mesures",', 'const restaurerVueLot3 = await revelerPointPlanche(page, { x: 8, y: 2, z: 0 });\nawait mesurer("Pousser/Tirer : rectangle 4 × 3 tiré de 2,7 m au champ Mesures",'),
+              ('const boiteLot3 = await etat();', 'await restaurerVueLot3();\nconst boiteLot3 = await etat();')])
+          edit('apps/web/e2e/planche-outils.mjs', [
+              ('import { ecarterBarreActions } from "./lib-barre.mjs";', 'import { ecarterBarreActions } from "./lib-barre.mjs";\n'+helper),
+              ('  if (await outil("gomme", "e")) {\n    await cliquer', '  if (await outil("gomme", "e")) {\n    const restaurerVue = await revelerPointPlanche(page, { x: 6.5, y: -2, z: 0 });\n    await cliquer'),
+              ('  }\n}\n// ——— 12. Sélection', '    await restaurerVue();\n  }\n}\n// ——— 12. Sélection'),
+              ('    await cliquer({ x: 2, y: 0, z: 0 }); const c = await ecran({ x: 4, y: 0, z: 0 }); const d = await ecran({ x: 5, y: -1, z: 0 });', '    // Un zoom réel rend le déplacement au micron vérifiable malgré la quantification\n    // des coordonnées de pointeur du navigateur ; le seuil attendu reste 1e-6 m.\n    await page.locator("[data-planche-vue]").focus();\n    await page.keyboard.press("z"); await saisir("20"); await page.keyboard.press("Escape");\n    await cliquer({ x: 2, y: 0, z: 0 }); const c = await ecran({ x: 4, y: 0, z: 0 }); const d = await ecran({ x: 5, y: -1, z: 0 });'),
+              ('note("selection", "Échap : sélection vidée", e.selection.length === 0);', 'note("selection", "Échap : sélection vidée", e.selection.length === 0);\n    await page.keyboard.press("z"); await saisir("35"); await page.keyboard.press("Escape");')])
+          edit('apps/web/e2e/planche-suivez-moi.mjs', [
+              ('  // Chemin présélectionné, outil par son raccourci Maj+F.', '  // Zoom optique réel : la couronne du profil doit être plus large que le rayon\n  // d’accrochage de 10 px dans le canevas intégré (dimensions du profil inchangées).\n  await vue.focus();\n  await page.keyboard.press("z");\n  await saisir("20");\n  await page.keyboard.press("Escape");\n  // Chemin présélectionné, outil par son raccourci Maj+F.')])
+          PY
+          for file in lib-canvas-targets planche-liens planche planche-outils planche-suivez-moi; do node --check "apps/web/e2e/$file.mjs"; done
+          git diff --check
+      - run: npm ci --no-audit --no-fund && npm run typecheck
+      - name: Commit the verified patch without modifying any acceptance assertion
+        run: |
+          git add apps/web/e2e/lib-canvas-targets.mjs apps/web/e2e/planche-liens.mjs apps/web/e2e/planche.mjs apps/web/e2e/planche-outils.mjs apps/web/e2e/planche-suivez-moi.mjs apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix(layout): fit the measured canvas and aim real gestures at visible geometry'
+          git push origin HEAD:refs/heads/fix/project-layout-full-width
