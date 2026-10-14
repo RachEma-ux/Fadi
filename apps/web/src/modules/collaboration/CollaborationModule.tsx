@@ -41,7 +41,15 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
   const add = useMutation({
     mutationKey: MUTATION_KEYS.comment,
     mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null),
-    onSuccess: (_c, v) => {
+    onSuccess: (created, v) => {
+      // Afficher uniquement le commentaire réellement accepté par l'API.
+      // L'invalidation réseau reste nécessaire pour synchroniser les autres fils,
+      // mais ne doit pas retarder l'affichage du commentaire sur son étape.
+      if (v.stepNumber !== null) {
+        queryClient.setQueryData<ProjectComment[]>(["comments", v.projectId, v.stepNumber], (existing) =>
+          existing ? (existing.some((c) => c.id === created.id) ? existing : [...existing, created]) : existing,
+        );
+      }
       if (v.parentId) {
         setReplyDraft("");
         setReplyTo(null);
