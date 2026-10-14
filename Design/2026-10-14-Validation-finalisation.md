@@ -17,3 +17,9 @@ Les anciens résultats ne valident pas automatiquement une nouvelle révision. L
 ## Déploiement
 
 L'ancienne démonstration Cloudflare était temporaire. Une nouvelle démonstration éventuelle doit être identifiée comme telle, avec sa durée, sa nouvelle URL et l'absence de restauration implicite de l'ancienne base. Elle ne constitue pas un hébergement permanent. Aucune base de travail existante ne doit être effacée ou remplacée pour cette vérification.
+
+## Relance contrôlée des validations — 14 octobre 2026
+
+Les workflows du commit `fcd7203dfd9082af9d0f240b50a996c50ec2b763` ont été marqués `action_required` car le commit provenait de `github-actions[bot]` ; aucun de ces deux runs n'a exécuté de job. Leur relance directe via GitHub Actions a renvoyé `403: This workflow run cannot be retried`.
+
+Ce commit de documentation déclenche de nouveaux contrôles sur **la même version du code applicatif**. La mise en page sera fusionnée dans `main` seulement après validation du commit courant par les workflows `CI` et `Project layout`. La dernière révision de code n'est pas considérée comme testée au seul motif qu'une version antérieure a passé sa recette.
