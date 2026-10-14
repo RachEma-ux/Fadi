@@ -9,6 +9,8 @@ import { resolveProjectAccess } from "../../lib/access";
 import { LOCALE } from "../../lib/i18n";
 import { StepPlanningEditor, PlanningBaselineControl } from "./PlanningEditor";
 import { StepToolActions } from "./StepToolActions";
+import { buildPilotageKpis, localCivilDay } from "./kpi-model";
+import { PilotageKpiOverview, PhaseKpiIndicators, StepKpiEvidence } from "./KpiPanels";
 import { primaryStepTool, type StepToolContext } from "./step-tools";
 import { RoadmapPreview } from "./RoadmapPreview";
 import { COCKPIT_CAPABILITIES, cockpitCapabilityHref, cockpitCapabilityLabel } from "./capabilities";
@@ -44,6 +46,22 @@ export function ProjectCockpitPage() {
     queryFn: () => api.getProjectPlanning(projectId),
     enabled: !!project.data && !denied(project.error),
     staleTime: 30_000,
+    retry: (count, error) => !denied(error) && count < 1,
+  });
+  // Les analyses et documents possèdent leurs propres empreintes et révisions.
+  // Une erreur de lecture ne peut jamais être interprétée comme « 0 défaut ».
+  const documentsQuery = useQuery({
+    queryKey: ["documents", projectId],
+    queryFn: () => api.getDocuments(projectId),
+    enabled: !!project.data && !denied(project.error),
+    staleTime: 60_000,
+    retry: (count, error) => !denied(error) && count < 1,
+  });
+  const analysesQuery = useQuery({
+    queryKey: ["analyses", projectId],
+    queryFn: () => api.getAnalyses(projectId),
+    enabled: !!project.data && !denied(project.error),
+    staleTime: 60_000,
     retry: (count, error) => !denied(error) && count < 1,
   });
   const [view, setView] = useState<View>("board");
@@ -95,6 +113,15 @@ export function ProjectCockpitPage() {
   const friendly = (date: string) => new Date(date + "T00:00:00Z").toLocaleDateString(LOCALE, { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
   const done = steps?.filter((step) => step.status === "termine").length ?? null;
   const reexamine = steps?.filter((step) => step.stale || step.staleRetainedCount > 0).length ?? null;
+  const kpiSnapshot = buildPilotageKpis({
+    steps,
+    planning: planQuery.isError ? null : plan,
+    documents: documentsQuery.isError ? null : documentsQuery.data ?? null,
+    analyses: analysesQuery.isError ? null : analysesQuery.data ?? null,
+    projectId,
+    projectRevision: project.data?.modelRevision ?? null,
+    today: localCivilDay(new Date()),
+  });
   const projectRoot = `/projets/${encodeURIComponent(projectId)}`;
   const stepHref = (number: number) => `${projectRoot}?module=parcours&etape=${number}`;
 
@@ -122,6 +149,7 @@ export function ProjectCockpitPage() {
     {planQuery.isError && <p role="status" className="cockpit-note">Planning : dernière lecture indisponible. {plan ? "Une copie précédente est affichée ; vérifiez son actualité." : "Aucune échéance n’est considérée comme enregistrée."} <button type="button" onClick={() => void planQuery.refetch()}>Réessayer</button></p>}
     {planQuery.isPending && !planQuery.isError && <p role="status" className="cockpit-note">Chargement des données de pilotage…</p>}
     {plan && <PlanningBaselineControl key={projectId} projectId={projectId} plan={plan} canWrite={access.canWrite} referenceProtected={referenceProtected} />}
+    <PilotageKpiOverview snapshot={kpiSnapshot} projectId={projectId} />
     {stepsQuery.isError && steps && <p role="status" className="cockpit-note">Les étapes affichées proviennent d’une lecture précédente. Réessayez pour confirmer leur état actuel.</p>}
     {!steps && <p role="status" className="cockpit-note">{stepsQuery.isFetching || stepsQuery.isPending ? "Chargement de l’avancement du Parcours…" : "La liste complète des 21 étapes est indisponible. Les statuts ne sont pas déduits des valeurs manquantes."} {stepsQuery.isError && <button type="button" onClick={() => void stepsQuery.refetch()}>Réessayer</button>}</p>}
     <div className="cockpit-stage-shell">
@@ -151,6 +179,7 @@ export function ProjectCockpitPage() {
                   <div className="cockpit-phase-foot">
                     {count === null ? "Progression indisponible" : `${count} / ${phase.last - phase.first + 1} étapes terminées`}
                     {count !== null && <progress value={count} max={phase.last - phase.first + 1} aria-label={`Progression de la phase ${phase.name}`} />}
+                    <PhaseKpiIndicators phase={kpiSnapshot.phases[index]!} />
                   </div>
                 </section>;
               })}
@@ -188,6 +217,7 @@ export function ProjectCockpitPage() {
             <dt>Livrable attendu</dt><dd>{selected.deliverable || "Non renseigné"}</dd>
             <dt>Référence de planning</dt><dd>{plan?.baseline ? "Version " + plan.baseline.version : "Non validée"}</dd>
           </dl>
+          <StepKpiEvidence data={kpiSnapshot.steps?.find((kpi) => kpi.number === selected.number) ?? null} projectId={projectId} />
           <StepToolActions projectId={projectId} stepNumber={selected.number} context={toolContext} />
           {plan ? <StepPlanningEditor key={`${projectId}:${selected.number}`} projectId={projectId} stepNumber={selected.number} plan={plan} canWrite={access.canWrite} referenceProtected={referenceProtected} /> : <p className="cockpit-note">Planning non accessible : l’édition attend la lecture du serveur.</p>}
           <Link className="cockpit-action primary" to={stepHref(selected.number)}>Ouvrir l’étape {pad(selected.number)} →</Link>
