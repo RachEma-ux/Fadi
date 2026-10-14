@@ -166,9 +166,8 @@ body.atelier-workspace .atelier-n-barre .barre-plan-liste {
 }
 @media (max-width: 760px) {
   body.atelier-workspace .barre-actions {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
+    flex-wrap: wrap;
+    overflow: visible;
   }
   body.atelier-workspace .barre-actions > *,
   body.atelier-workspace .barre-actions .barre-groupe > * { flex: none; }
@@ -204,4 +203,37 @@ body.atelier-workspace .planche-recherche-fond { z-index: 50; }
 body.atelier-workspace .vue3d-commandes > .vue3d-ligne {
   max-width: 100%;
   overflow-x: auto;
+}
+
+/* Embedded dialogs and menus must scroll within the editor, not ask the
+   clipped model viewport to scroll their submit buttons into view. */
+body.atelier-workspace .planche-recherche-fond {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+body.atelier-workspace .planche-recherche {
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+body.atelier-workspace .planche-menu-liste {
+  max-height: max(120px, calc(var(--atelier-workspace-height, 520px) - 128px));
+  max-width: calc(100vw - 32px);
+}
+body.atelier-workspace .atelier-n-gauche summary,
+body.atelier-workspace .atelier-n-droite summary {
+  min-height: 28px;
+  padding-block: 4px;
+  box-sizing: border-box;
+}
+@media (max-width: 760px) {
+  body.atelier-workspace .atelier-n-gauche summary,
+  body.atelier-workspace .atelier-n-droite summary { min-height: 44px; }
 }
