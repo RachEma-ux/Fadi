@@ -26,7 +26,7 @@ jobs:
           --health-cmd "pg_isready -U fadi"
           --health-interval 10s --health-timeout 5s --health-retries 5
     env:
-      SOURCE_SHA: c97fca1a9587a5c8bb7c36242d706c4f84b1a1ea
+      SOURCE_SHA: e3031ab896f262191fee9b70020a77faae04a3bc
       DATABASE_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_e2e
       WEB_ORIGIN: http://localhost:3001
       WEB_DIST: apps/web/dist
@@ -38,7 +38,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: c97fca1a9587a5c8bb7c36242d706c4f84b1a1ea
+          ref: e3031ab896f262191fee9b70020a77faae04a3bc
+      - name: Preserve exact reviewed source for recovery after interruption
+        if: matrix.shard == 0
+        run: git archive --format=tar.gz -o source.tar.gz HEAD
+      - uses: actions/upload-artifact@v4
+        if: matrix.shard == 0
+        with:
+          name: layout-source-${{ github.run_id }}
+          path: source.tar.gz
+          retention-days: 7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
