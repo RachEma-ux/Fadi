@@ -26,7 +26,7 @@ jobs:
           --health-cmd "pg_isready -U fadi"
           --health-interval 10s --health-timeout 5s --health-retries 5
     env:
-      SOURCE_SHA: 169c23f12d3c121965e5de90180723f3077fe8cd
+      SOURCE_SHA: c97fca1a9587a5c8bb7c36242d706c4f84b1a1ea
       DATABASE_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_e2e
       WEB_ORIGIN: http://localhost:3001
       WEB_DIST: apps/web/dist
@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 169c23f12d3c121965e5de90180723f3077fe8cd
+          ref: c97fca1a9587a5c8bb7c36242d706c4f84b1a1ea
       - uses: actions/setup-node@v4
         with:
           node-version: 22
