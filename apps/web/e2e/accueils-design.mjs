@@ -153,6 +153,13 @@ try {
   await page.locator(".cockpit-step").nth(20).waitFor();
   check("cockpit : contexte du projet conservé dans l'en-tête", (await page.locator(".fadi-topbar-title h1").textContent()).includes(b.code));
   check("cockpit : six phases et 21 étapes provenant du Parcours", await page.locator(".cockpit-phase").count() === 6 && await page.locator(".cockpit-step").count() === 21);
+  await page.locator(".cockpit-kpi-overview").waitFor();
+  check("R4 : synthèse de pilotage calculée depuis les étapes réelles",
+    (await page.locator(".cockpit-kpi-totals > div").count()) === 4 &&
+    (await page.locator(".cockpit-kpi-totals > div strong").first().textContent()) === "1 / 21" &&
+    (await page.locator(".cockpit-kpi-phase").count()) === 6);
+  check("R4 : états d’étape distincts de la certification technique",
+    (await page.locator(".cockpit-kpi-overview").textContent()).includes("pas une certification de résultat"));
   check("cockpit : statuts réels respectés", (await page.locator(".cockpit-step").nth(1).getAttribute("aria-label")).includes("Terminé"));
   // R3 : chaque carte offre un raccourci métier réel, distinct de son
   // bouton de sélection ; aucune vue à prérequis manquants n'est activée.
@@ -165,6 +172,7 @@ try {
     (await quicks.nth(17).getAttribute("href")) === `${dossierPath(b.id)}?module=documents`);
   await page.locator(".cockpit-step").nth(9).click();
   await page.locator(".cockpit-step-tools").waitFor();
+  check("R4 : KPI de l’étape sélectionnée", await page.locator(".cockpit-kpi-step").count() === 1 && (await page.locator(".cockpit-kpi-step").getAttribute("aria-label"))?.includes("10"));
   const appliedProgramme = await api("get", `/projects/${b.id}/programme`);
   if (!appliedProgramme.programmeCase) {
     await page.locator(".cockpit-step-tool-blocked").filter({ hasText: "Comparer le programme au modèle dessiné" }).waitFor();
@@ -192,6 +200,10 @@ try {
   await editor.getByText("Planning enregistré sur le serveur.").waitFor();
   const serverPlanning = await api("get", `/projects/${b.id}/planning`);
   check("R2 : échéances, responsable et action enregistrés par l'API", serverPlanning.steps["1"].startDate === "2026-11-02" && serverPlanning.steps["1"].endDate === "2026-11-06" && serverPlanning.steps["1"].responsible === "Architecte principal");
+  await page.waitForFunction(() => document.querySelectorAll(".cockpit-kpi-totals strong")[1]?.textContent?.trim() === "1 / 21", null, { timeout: 20000 });
+  check("R4 : indicateurs du planning actualisés après sauvegarde R2",
+    (await page.locator(".cockpit-kpi-totals > div strong").nth(1).textContent()) === "1 / 21" &&
+    (await page.locator(".cockpit-kpi-totals > div strong").nth(2).textContent()) === "1 / 21");
   await page.reload();
   await page.locator(".cockpit-baseline-summary").waitFor();
   await page.locator(".cockpit-step").first().click();
