@@ -23,13 +23,22 @@ const modules = [
   ["programmation", "Programmation"], ["atelier", "Atelier architectural"],
   ["analyses", "Analyses métier"], ["documents", "Documents"], ["collaboration", "Collaboration"],
 ];
+// Wait for the actual populated cards, not merely the module title or loading
+// message. Every measured element must reach both shared content gutters.
+const contentSelectors = {
+  accueil: ".dossier-status-strip", pilotage: ".cockpit-header",
+  "projets-sources": ".parcelle-tool", parcours: ".overview-grid",
+  programmation: ".programme-case", atelier: ".atelier-n",
+  analyses: ".analyses-module > .biz-card", documents: ".documents-module > .biz-card",
+  collaboration: ".collaboration-module > .biz-card",
+};
 function check(name, ok, details) {
   checks.push({ name, ok: !!ok, details });
   console.log(`${ok ? "PASS" : "FAIL"} ${name}${ok || details === undefined ? "" : " " + JSON.stringify(details)}`);
 }
 async function settled() {
   await page.waitForFunction(() => ![...document.querySelectorAll('main [role="status"]')]
-    .some((element) => /^Chargement/.test(element.textContent?.trim() ?? "")));
+    .some((element) => /^(Chargement|Lecture des (documents|membres)|Lecture du journal|Calcul des analyses)/.test(element.textContent?.trim() ?? "")));
   await page.evaluate(async () => { await document.fonts.ready; await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))); window.scrollTo(0, 0); });
 }
 async function measure(label, module, width, expanded) {
@@ -39,7 +48,7 @@ async function measure(label, module, width, expanded) {
   check(label + ": neuf modules dans le même ordre", JSON.stringify(labels) === JSON.stringify(modules.map((entry) => entry[1])), labels);
   const active = await nav.locator('[aria-current="page"]').allTextContents();
   check(label + ": module actif exact", JSON.stringify(active) === JSON.stringify([modules.find((entry) => entry[0] === module)?.[1]]), active);
-  const data = await page.evaluate((module) => {
+  const data = await page.evaluate(({ module, selector }) => {
     const box = (element) => {
       if (!element) return null;
       const r = element.getBoundingClientRect();
@@ -47,23 +56,22 @@ async function measure(label, module, width, expanded) {
     };
     const nav = document.querySelector(".module-nav"), workspace = document.querySelector("#workspace-content");
     const main = document.querySelector(module === "pilotage" ? ".cockpit-page" : ".project-shell");
-    const content = document.querySelector(module === "accueil" ? ".dossier-status-strip" : module === "atelier" ? ".atelier-n" : module === "parcours" ? ".overview-grid" : module === "pilotage" ? ".cockpit-header" : ".module-content");
+    const content = [...document.querySelectorAll(selector)].map(box);
     const gutter = parseFloat(getComputedStyle(workspace).getPropertyValue("--project-page-gutter"));
-    const plainMain = !["accueil", "atelier", "parcours", "pilotage"].includes(module);
-    return { topbar: box(document.querySelector(".fadi-topbar")), nav: box(nav), workspace: box(workspace), main: box(main), content: box(content),
-      expectedInset: plainMain ? 0 : gutter, gutter, sidebar: box(document.querySelector(".app-sidebar")),
+    return { topbar: box(document.querySelector(".fadi-topbar")), nav: box(nav), workspace: box(workspace), main: box(main), content,
+      gutter, sidebar: box(document.querySelector(".app-sidebar")),
       railState: document.querySelector(".fadi-shell")?.getAttribute("data-sidebar"),
       immersive: document.body.classList.contains("atelier-immersive"),
       documentWidth: document.documentElement.scrollWidth, viewport: innerWidth,
       overflow: document.documentElement.scrollWidth > innerWidth + 1 ? [...document.querySelectorAll("main *")]
         .filter((element) => element.getBoundingClientRect().right > innerWidth + 1)
         .slice(0, 15).map((element) => ({ tag: element.tagName, class: String(element.className), rect: box(element) })) : [] };
-  }, module);
+  }, { module, selector: contentSelectors[module] });
   measurements.push({ label, ...data });
   const near = (a, b) => Math.abs(a - b) <= 2;
   check(label + ": navigation immédiatement sous l'en-tête", data.topbar?.height > 0 && data.nav?.height > 0 && near(data.nav.top, data.topbar.bottom), data);
   check(label + ": gabarit pleine largeur", data.main && near(data.main.left, data.workspace.left) && near(data.main.right, data.workspace.right), data);
-  check(label + ": contenu étendu entre les marges communes", data.content && near(data.content.left, data.workspace.left + data.expectedInset) && near(data.content.right, data.workspace.right - data.expectedInset), data);
+  check(label + ": cartes chargées et étendues entre les marges communes", data.content.length > 0 && data.content.every((card) => card.height > 0 && near(card.left, data.workspace.left + data.gutter) && near(card.right, data.workspace.right - data.gutter)), data);
   check(label + ": barre latérale conservée", data.sidebar?.width > 0 && data.sidebar?.height > 0 && data.railState === (expanded ? "expanded" : "collapsed"), data);
   check(label + ": aucun débordement horizontal de la page", data.documentWidth <= data.viewport + 1, data.overflow);
   check(label + ": aucun plein écran automatique", !data.immersive);
@@ -98,11 +106,11 @@ try {
       try {
         await page.goto(url(module));
         await page.locator(".module-nav").waitFor({ state: "visible" });
+        await page.locator(contentSelectors[module]).first().waitFor({ state: "visible" });
         if (module === "accueil") await page.locator(".dossier-overview").waitFor();
         else if (module === "atelier") await page.locator(".atelier-n-travail").waitFor();
-        else if (module === "parcours") await page.locator(".overview-grid").waitFor();
-        else if (module === "pilotage") await page.locator(".cockpit-header").waitFor();
-        else await page.locator(".module-content > h2").waitFor();
+        else if (module === "collaboration") await page.locator(".members-invite").waitFor();
+        else if (module === "projets-sources") await page.waitForFunction(() => document.querySelector(".parcelle-tool iframe")?.contentWindow?.ParcoursParcel?.ready);
         if (expanded) await page.locator(".sidebar-toggle").click();
         await settled();
         await measure(label, module, width, expanded);
@@ -133,6 +141,7 @@ try {
   await page.waitForURL(url("documents"));
   await nav.getByRole("button", { name: "Collaboration", exact: true }).click();
   await page.waitForURL(url("collaboration"));
+  await page.locator(".members-invite").waitFor();
   await settled();
   check("mobile : onglet actif révélé dans la barre", await nav.evaluate((element) => {
     const item = element.querySelector('[aria-current="page"]').getBoundingClientRect();
@@ -156,6 +165,7 @@ try {
   check("accueil général : aucune barre de modules ajoutée", await page.locator(".module-nav").count() === 0);
   check("accueil général : largeur de lecture inchangée", await page.locator('.fadi-home[data-home="application"]').evaluate((element) => getComputedStyle(element).maxWidth === "1440px"));
   const finalStepsResponse = await page.request.get(`${BASE}/projects/${projectId}/steps`);
+  if (!finalStepsResponse.ok()) throw new Error("Relecture des étapes de la référence de test impossible");
   const finalSteps = await finalStepsResponse.json();
   const signature = (steps) => steps.map((step) => [step.number, step.title, step.phase, step.status]);
   check("21 étapes et données métier inchangées par la navigation", finalSteps.length === 21 && JSON.stringify(signature(initialSteps)) === JSON.stringify(signature(finalSteps)));
