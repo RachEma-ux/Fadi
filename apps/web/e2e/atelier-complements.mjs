@@ -1870,7 +1870,7 @@ await page.waitForSelector(".plan2d");
   ]);
   await ouvrir(pid);
   await selectionner("dalle-aj");
-  const b = await zoomerSur('.plan2d [data-objet="dalle-aj"]', 250);
+  await zoomerSur('.plan2d [data-objet="dalle-aj"]', 250);
   // Palette ouverte sans Échap : la sélection (la dalle) est gardée.
   await page.mouse.move(2, 2);
   await page.evaluate(() => document.activeElement?.blur?.());
@@ -1880,18 +1880,36 @@ await page.waitForSelector(".plan2d");
   await page.keyboard.press("Enter");
   const outilOk = await page.waitForFunction(() => (document.querySelector(".plan2d")?.getAttribute("aria-label") ?? "").endsWith("outil ajuster"), null, { timeout: 5000 }).then(() => true, () => false);
   let contour = null;
-  if (b && outilOk) {
-    await page.mouse.click(b.x + b.width / 2, b.y - b.height / 3);
-    await page.waitForFunction(() => /côté de la forme/.test(document.querySelector(".etat-aide")?.textContent ?? ""), null, { timeout: 5000 }).catch(() => {});
-    await page.mouse.click(b.x + b.width * 0.8, b.y + b.height / 2);
-    for (let k = 0; k < 30 && !contour; k++) {
-      const c = (await modele(pid)).modele.objets["dalle-aj"]?.params.contour;
-      if (c && Math.min(...c.map((q) => q.x)) > ax - 199) contour = c;
-      else await page.waitForTimeout(500);
+  let premiereEtape = false;
+  if (outilOk) {
+    // L'ouverture de la palette (focus et défilement de la page du projet)
+    // peut déplacer le canevas : les coordonnées prises AVANT la palette
+    // ne sont plus valables. Pointer la ligne réelle, au milieu de la dalle,
+    // où elle est prioritaire sur le contour de cette surface.
+    await page.locator('.plan2d [data-objet="ligne-aj"]').scrollIntoViewIfNeeded();
+    const limite = await boiteStable('.plan2d [data-objet="ligne-aj"]');
+    if (limite) {
+      await cliquerDessin(".plan2d", limite.x + limite.width / 2, limite.y + limite.height / 2);
+      premiereEtape = await page.waitForFunction(
+        () => /côté de la forme/.test(document.querySelector(".etat-aide")?.textContent ?? ""),
+        null, { timeout: 5000 },
+      ).then(() => true, () => false);
+    }
+    if (premiereEtape) {
+      const b = await boiteStable('.plan2d [data-objet="dalle-aj"]');
+      if (b) {
+        // Le côté est cliqué dans le plan à droite de la ligne de coupe.
+        await cliquerDessin(".plan2d", b.x + b.width * 0.8, b.y + b.height / 2);
+        for (let k = 0; k < 30 && !contour; k++) {
+          const c = (await modele(pid)).modele.objets["dalle-aj"]?.params.contour;
+          if (c && Math.min(...c.map((q) => q.x)) > ax - 199) contour = c;
+          else await page.waitForTimeout(500);
+        }
+      }
     }
   }
   const xs = (contour ?? []).map((q) => Math.round((q.x - ax) * 1e6) / 1e6);
-  check("ajuster une dalle : coupée par la ligne, côté désigné gardé", r0.status === 200 && Math.min(...xs) === -198 && Math.max(...xs) === -196, `${r0.status} · ${JSON.stringify(xs)} · ${await page.locator(".etat-aide").textContent()}`);
+  check("ajuster une dalle : coupée par la ligne, côté désigné gardé", r0.status === 200 && outilOk && premiereEtape && Math.min(...xs) === -198 && Math.max(...xs) === -196, `${r0.status} · outil ${outilOk} · limite ${premiereEtape} · ${JSON.stringify(xs)} · ${await page.locator(".etat-aide").textContent()}`);
   await page.keyboard.press("Escape");
 }
 
