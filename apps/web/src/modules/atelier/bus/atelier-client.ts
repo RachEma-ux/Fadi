@@ -241,6 +241,11 @@ export class AtelierClient {
 
   /** Décision explicite sur un lot en conflit ou refusé : le garder en le rejouant, ou l'abandonner. */
   async decider(requestId: string, decision: "rejouer" | "abandonner"): Promise<void> {
+    // Un conflit est affiché dès qu'il est identifié, alors que l'envoi qui
+    // l'a détecté peut encore terminer sa relecture et sa sauvegarde locale.
+    // Ne pas refuser la décision de l'utilisateur dans cet intervalle :
+    // attendre la fin de cet envoi avant de toucher au lot ou à IndexedDB.
+    if (this.envoi) await this.envoi;
     if (this.repriseEnCours || this.instantane.envoiEnCours) throw new ErreurCommande("precondition", "", "Attendez le résultat de l’opération en cours dans ce dossier.");
     const lot = this.instantane.lots.find((l) => l.enveloppe.requestId === requestId);
     if (!lot) return;
