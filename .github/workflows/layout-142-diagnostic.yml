@@ -1,0 +1,93 @@
+name: Layout 142 diagnostic
+on:
+  push:
+    branches: [ci/layout-142-diagnostic]
+    paths: [.github/workflows/layout-142-diagnostic.yml]
+permissions:
+  contents: read
+jobs:
+  atelier-targets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: fadi
+          POSTGRES_PASSWORD: fadi_ci_password
+          POSTGRES_DB: fadi_layout_diagnostic
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U fadi"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_layout_diagnostic
+      WEB_ORIGIN: http://localhost:3001
+      WEB_DIST: apps/web/dist
+      PORT: "3001"
+      AUTH_RATE_LIMIT: "500"
+      API_RATE_LIMIT: "5000"
+      BASE_URL: http://localhost:3001
+      OUT: atelier-captures/layout-diagnostic
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run db:migrate && npm run build
+      - name: Instrument test hit targets without changing application or assertions
+        run: |
+          mkdir -p "$OUT"
+          git archive --format=tar.gz a383fa4555725b8643ffe8ea6ed91c8b65fd9fff > "$OUT/source-a383fa4.tar.gz" || git archive --format=tar.gz HEAD > "$OUT/source-a383fa4.tar.gz"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('apps/web/e2e/atelier-complements.mjs')
+          s = p.read_text()
+          anchor = 'const erreursPage = [];'
+          assert s.count(anchor) == 1
+          diagnostic = r'''
+          let diagnosticPhase = null;
+          let diagnosticClick = 0;
+          const rawClick = page.mouse.click.bind(page.mouse);
+          page.mouse.click = async (x, y, options) => {
+            if (diagnosticPhase) {
+              const data = await page.evaluate(([x, y]) => {
+                const box = (e) => e ? { x: e.getBoundingClientRect().x, y: e.getBoundingClientRect().y, width: e.getBoundingClientRect().width, height: e.getBoundingClientRect().height } : null;
+                const hit = document.elementFromPoint(x, y);
+                return { x, y, scrollY, viewport: [innerWidth, innerHeight], hit: hit ? { tag: hit.tagName, cls: String(hit.className.baseVal ?? hit.className), text: hit.textContent?.slice(0, 100), canvas: !!hit.closest('.plan2d, .vue3d-canevas') } : null, editor: box(document.querySelector('.atelier-n')), plan: box(document.querySelector('.plan2d')), viewBox: document.querySelector('.plan2d')?.getAttribute('viewBox'), canvas: box(document.querySelector('.vue3d-canevas')), help: document.querySelector('.atelier-n-etat')?.textContent, snaps: [...document.querySelectorAll('[data-accrochage], [data-snap]')].map(e => e.outerHTML.slice(0, 350)) };
+              }, [x, y]);
+              console.log('LAYOUT_DIAGNOSTIC', diagnosticPhase, JSON.stringify(data));
+              await page.screenshot({ path: `${OUT}/${diagnosticPhase}-${++diagnosticClick}.png` });
+            }
+            const value = await rawClick(x, y, options);
+            if (diagnosticPhase) console.log('LAYOUT_AFTER_CLICK', diagnosticPhase, await page.locator('.atelier-n-etat').textContent());
+            return value;
+          };
+          '''
+          s = s.replace(anchor, diagnostic + '\n' + anchor)
+          for marker, phase in [('// Mur courbe tracé au plan (D-086).', 'curve'), ('// Repère de saisie (D-091)', None), ('// Escalier hélicoïdal au plan (D-092).', 'spiral'), ('// Hachure associée à une pièce (D-092)', None), ('// Accrochage 3D (D-127)', 'snap3d'), ('// Chaîne jointive fermée proposée comme profil (D-126)', None)]:
+              assert s.count(marker) == 1, marker
+              value = 'null' if phase is None else repr(phase)
+              s = s.replace(marker, f'diagnosticPhase = {value};\n' + marker)
+          p.write_text(s)
+          PY
+      - name: Start isolated production application
+        run: |
+          nohup node apps/api/dist/server.js > api.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3001/health && break; sleep 1; done
+          curl -fsS http://localhost:3001/health
+      - name: Reproduce specialized checks with canvas diagnostics
+        run: |
+          set -o pipefail
+          node apps/web/e2e/atelier-complements.mjs 2>&1 | tee diagnostic.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: layout-142-diagnostic-${{ github.run_id }}
+          path: |
+            atelier-captures/layout-diagnostic/
+            diagnostic.log
+            api.log
+          retention-days: 7
