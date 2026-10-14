@@ -154,7 +154,33 @@ try {
   check("cockpit : contexte du projet conservé dans l'en-tête", (await page.locator(".fadi-topbar-title h1").textContent()).includes(b.code));
   check("cockpit : six phases et 21 étapes provenant du Parcours", await page.locator(".cockpit-phase").count() === 6 && await page.locator(".cockpit-step").count() === 21);
   check("cockpit : statuts réels respectés", (await page.locator(".cockpit-step").nth(1).getAttribute("aria-label")).includes("Terminé"));
+  // R3 : chaque carte offre un raccourci métier réel, distinct de son
+  // bouton de sélection ; aucune vue à prérequis manquants n'est activée.
+  const quicks = page.locator(".cockpit-step-shortcut");
+  check("R3 : 21 raccourcis métier distincts et natifs dans le bon dossier", await quicks.count() === 21 &&
+    (await quicks.nth(0).getAttribute("href")) === `${dossierPath(b.id)}?module=projets-sources` &&
+    (await quicks.nth(4).getAttribute("href")) === `${dossierPath(b.id)}?module=programmation` &&
+    (await quicks.nth(9).getAttribute("href")) === `${dossierPath(b.id)}?module=atelier` &&
+    (await quicks.nth(13).getAttribute("href")) === `${dossierPath(b.id)}?module=analyses` &&
+    (await quicks.nth(17).getAttribute("href")) === `${dossierPath(b.id)}?module=documents`);
+  await page.locator(".cockpit-step").nth(9).click();
+  await page.locator(".cockpit-step-tools").waitFor();
+  const appliedProgramme = await api("get", `/projects/${b.id}/programme`);
+  if (!appliedProgramme.programmeCase) {
+    await page.locator(".cockpit-step-tool-blocked").filter({ hasText: "Comparer le programme au modèle dessiné" }).waitFor();
+    check("R3 : comparaison sans cas appliqué bloquée, avec recours vers Programmation",
+      (await page.locator(".cockpit-step-tool-blocked").filter({ hasText: "Comparer le programme au modèle dessiné" }).locator("a").count()) === 1 &&
+      (await page.locator(".cockpit-step-tool-blocked").filter({ hasText: "Comparer le programme au modèle dessiné" }).locator("a").getAttribute("href")) === `${dossierPath(b.id)}?module=programmation`);
+  }
+  check("R3 : Atelier de l’étape 10 reste accessible dans le panneau",
+    (await page.locator(".cockpit-step-tools a").filter({ hasText: "Ouvrir l’Atelier architectural" }).getAttribute("href")) === `${dossierPath(b.id)}?module=atelier`);
   await axe("cockpit-desktop");
+  await quicks.nth(4).click();
+  await page.waitForURL(`${BASE}${dossierPath(b.id)}?module=programmation`);
+  await page.locator('.module-nav button[aria-current="page"]').filter({ hasText: "Programmation" }).waitFor();
+  check("R3 : raccourci réellement connecté au module Programmation", (await page.locator('.module-nav button[aria-current="page"]').textContent()) === "Programmation");
+  await page.goto(`${BASE}${dossierPath(b.id)}/pilotage`);
+  await page.locator(".cockpit-step").nth(20).waitFor();
   // R2 : écriture effective, puis relecture serveur et retour aux deux accueils.
   await page.locator(".cockpit-step").first().click();
   const editor = page.locator(".cockpit-planning-editor");
@@ -346,6 +372,22 @@ try {
   await overview(b.id).waitFor();
   await checkComposition(b.id, "projet-mobile", true);
   await axe("projet-mobile");
+  // R3 mobile : les raccourcis restent tactiles sans empiéter sur les cartes,
+  // le panneau reste sous la feuille de route et aucune barre n'élargit la page.
+  await page.goto(`${BASE}${dossierPath(b.id)}/pilotage`);
+  await page.locator(".cockpit-step-shortcut").nth(20).waitFor();
+  const mobileCockpit = await page.evaluate(() => ({
+    phases: document.querySelectorAll(".cockpit-phase").length,
+    shortcuts: document.querySelectorAll(".cockpit-step-shortcut").length,
+    noOverflow: document.documentElement.scrollWidth <= window.innerWidth + 1,
+    shortcutWidth: document.querySelector(".cockpit-step-shortcut")?.getBoundingClientRect().width ?? 0,
+  }));
+  check("R3 mobile : six phases, 21 accès tactiles, aucun débordement global", mobileCockpit.phases === 6 && mobileCockpit.shortcuts === 21 && mobileCockpit.noOverflow && mobileCockpit.shortcutWidth >= 40, JSON.stringify(mobileCockpit));
+  await page.locator(".cockpit-step").nth(9).click();
+  await page.locator(".cockpit-step-tools").waitFor();
+  await axe("cockpit-mobile");
+  await page.screenshot({ path: join(OUT, "cockpit-mobile-r3.png"), fullPage: true });
+  await openHome(b.id);
   await selector.click();
   await menu.waitFor();
   const menuBounds = await menu.boundingBox(), railBounds = await page.locator(".app-sidebar").boundingBox();
