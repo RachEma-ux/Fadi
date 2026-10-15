@@ -232,10 +232,23 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   const sommet = await (async () => { const b = await page.locator("[data-planche-vue] canvas").first().boundingBox(); const e = await page.evaluate(() => window.fadiPlanche.versEcran({ x: 7, y: 3, z: 0 })); return { x: b.x + e.x, y: b.y + e.y }; })();
   await page.waitForTimeout(700);
   await page.mouse.dblclick(sommet.x, sommet.y);
-  await page.waitForTimeout(100);
+  await page.waitForFunction(() => window.fadiPlanche?.dans() !== undefined, null, { timeout: 10000 });
+  // La barre flottante et l'enveloppe intégrée peuvent couvrir le milieu
+  // de la nouvelle arête. Le rendre accessible en déplaçant réellement
+  // la caméra (sans cliquer à travers les panneaux ni modifier le modèle).
+  await revelerPointPlanche(page, { x: 7, y: 3, z: 0 });
+  await vue.focus();
   await page.keyboard.press("p");
-  await cliquer({ x: 7, y: 3, z: 0 });
-  check("L-02 : dans un groupe, la consigne dit « racine de la Planche seulement »", /racine de la Planche seulement/.test(await consigne()), `${await consigne()} dans=${await page.evaluate(() => window.fadiPlanche.dans() ?? null)}`);
+  for (const x of [7, 6.6, 7.4]) {
+    await cliquer({ x, y: 3, z: 0 });
+    const etape = await page.evaluate(() => window.fadiPlanche.etatOutil()?.etape ?? null);
+    if (etape === 2) break;
+  }
+  const dansGroupe = await page.evaluate(() => window.fadiPlanche.dans() ?? null);
+  const consigneGroupe = await consigne();
+  check("L-02 : dans un groupe, la consigne dit « racine de la Planche seulement »",
+    dansGroupe !== null && /racine de la Planche seulement/.test(consigneGroupe),
+    `${consigneGroupe} dans=${dansGroupe} étape=${await page.evaluate(() => window.fadiPlanche.etatOutil()?.etape ?? null)}`);
   check("aucune commande envoyée (brouillon local)", s.commandes.length === 0, String(s.commandes.length));
   check("aucune erreur JavaScript", s.erreurs.length === 0, s.erreurs.join(" | "));
   await ctx.close();
