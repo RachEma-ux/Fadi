@@ -206,19 +206,43 @@ const delta = (a, b) => ({ faces: b.faces - a.faces, aretes: b.aretes - a.aretes
   await vider();
   await rect({ x: 0, y: 0, z: 0 }, "4;3");
   await outil("ligne", "l");
-  // Rendre la zone de création accessible AVANT de tracer l'arête. En gabarit
-  // embarqué, les outils flottants peuvent bloquer l'extrémité du segment ;
-  // un panoramique fait réellement apparaître la zone sans masquer l'interface.
-  const restaurerVue = await revelerPointPlanche(page, { x: 6.5, y: -2, z: 0 });
-  await cliquer({ x: 5, y: -2, z: 0 });
-  await survoler({ x: 8, y: -2, z: 0 });
-  await cliquer({ x: 8, y: -2, z: 0 });
+  // Vérifier les DEUX extrémités et la trajectoire : le test précédent
+  // ne contrôlait que le milieu, et un contrôle flottant interceptait un clic.
+  // Choisir un vrai segment libre accessible à la souris, sans masquer l'UI.
+  const choisirSegment = () => page.evaluate(() => {
+    const canvas = document.querySelector("[data-planche-vue] canvas");
+    const modele = window.fadiPlanche;
+    if (!canvas || !modele) throw new Error("Planche non prête");
+    const rect = canvas.getBoundingClientRect();
+    const accessible = ({ x, y }) => {
+      const point = modele.versEcran({ x, y, z: 0 });
+      if (!point) return false;
+      const px = rect.left + point.x, py = rect.top + point.y;
+      return [[0,0],[-12,0],[12,0],[0,-12],[0,12]].every(([dx,dy]) =>
+        px+dx >= 8 && py+dy >= 8 && px+dx <= innerWidth-8 && py+dy <= innerHeight-8 &&
+        document.elementFromPoint(px+dx,py+dy) === canvas);
+    };
+    // Tous ces segments sont à l'écart de la face rectangulaire (0..4 × 0..3).
+    const candidats = [[-5,-2,-2,-2], [5,-2,8,-2], [-5,5,-2,5], [5,5,8,5], [-5,-5,-2,-5], [5,-5,8,-5]];
+    for (const [x0,y0,x1,y1] of candidats) {
+      if (![0,0.25,0.5,0.75,1].every(t => accessible({ x:x0+(x1-x0)*t, y:y0+(y1-y0)*t }))) continue;
+      return { debut:{x:x0,y:y0,z:0}, fin:{x:x1,y:y1,z:0},
+        milieu:{x:(x0+x1)/2,y:(y0+y1)/2,z:0} };
+    }
+    return null;
+  });
+  let segment = await choisirSegment();
+  const restaurerVue = segment ? async () => {} : await revelerPointPlanche(page, { x: 6.5, y: -2, z: 0 });
+  segment ??= await choisirSegment();
+  if (!segment) throw new Error("Aucun segment libre entièrement accessible pour tester la gomme");
+  await cliquer(segment.debut);
+  await survoler(segment.fin);
+  await cliquer(segment.fin);
   await page.keyboard.press("Escape");
   const a = await etat();
   note("gomme", "précondition : une arête libre distincte du rectangle est créée", a.faces === 1 && a.aretes === 5, JSON.stringify(a));
   if (await outil("gomme", "e")) {
-    await revelerPointPlanche(page, { x: 6.5, y: -2, z: 0 });
-    await cliquer({ x: 6.5, y: -2, z: 0 }); let b = await etat(); note("gomme", "clic sur une arête libre : arête effacée (1 pas)", b.aretes === a.aretes - 1 && b.pas === a.pas + 1, JSON.stringify(delta(a, b)));
+    await cliquer(segment.milieu); let b = await etat(); note("gomme", "clic sur une arête libre : arête effacée (1 pas)", b.aretes === a.aretes - 1 && b.pas === a.pas + 1, JSON.stringify(delta(a, b)));
     await cliquer({ x: 2, y: 0, z: 0 }); const c = await etat(); note("gomme", "clic sur une arête de face : l'arête ET la face disparaissent", c.aretes === b.aretes - 1 && c.faces === b.faces - 1, JSON.stringify(delta(b, c)));
     await cliquer({ x: 2, y: 1.5, z: 0 }); const d = await etat(); note("gomme", "clic sur une face seule / dans le vide : rien", d.aretes === c.aretes && d.faces === c.faces);
     const p0 = await ecran({ x: -0.5, y: 1.5, z: 0 }); const p1 = await ecran({ x: 4.5, y: 1.5, z: 0 });
