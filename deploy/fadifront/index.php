@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login
     $blocked = (int)($_SESSION['blocked_until'] ?? 0);
     $validCsrf = hash_equals((string)$csrf, (string)($_POST['csrf'] ?? ''));
     // bcrypt hash of demonstration password "1234"; never rely on this as a strong password.
-    $passHash = '$2y$12$uSdsvqtK40l8F6f6e8higejC4adf52b2dO6InFUl66/fITOGn8zjm';
+    $passHash = '$2y$12$3dFieRcjCCJUXy6zSKatouEyX7XawWAgHtyjLyPMsD1KaqY/Tot2O';
     $valid = $validCsrf && hash_equals('admin', (string)($_POST['username'] ?? ''))
         && password_verify((string)($_POST['password'] ?? ''), $passHash);
     if (time() >= $blocked && $valid) {

@@ -4,7 +4,7 @@ on:
     branches: [feat/fadifront-infomaniak]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   web:
     runs-on: ubuntu-latest
@@ -30,6 +30,28 @@ jobs:
           test -f fadifront-deploy/front.html
           test -f fadifront-deploy/index.php
           test -f fadifront-deploy/.htaccess
+      - name: Publish ready-to-deploy static files to separate Git branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          temp_dir="$(mktemp -d)"
+          cd "$temp_dir"
+          git init -b fadifront-static-deploy
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch --depth=1 origin fadifront-static-deploy; then
+            git checkout -b fadifront-static-deploy --track origin/fadifront-static-deploy
+          fi
+          # Operates only inside the new temporary checkout, never the source.
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf -- {} +
+          cp -a "$GITHUB_WORKSPACE/fadifront-deploy/." .
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "deploy: built FadiFront from ${GITHUB_SHA::12}"
+            git push origin HEAD:refs/heads/fadifront-static-deploy
+          fi
       - name: Upload Infomaniak deployment files
         uses: actions/upload-artifact@v4
         with:
