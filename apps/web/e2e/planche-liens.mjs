@@ -216,34 +216,80 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   check("option « Indépendante » : surface créée, aucun nouveau lien", (await liens()) === 1 && (await etat()).faces >= 2, `${await liens()} lien(s), ${(await etat()).faces} face(s), ${await consigne()}`);
   await restaurerVue();
   // L-02 : dans un groupe, la restriction « racine seulement » est dite.
+  // Dessiner une arête isolée réellement accessible, puis la suivre par ID.
+  // Une coordonnée estimée peut viser le vide après regroupement ou être
+  // interceptée par une barre flottante : cela ne doit pas invalider le test métier.
   await page.keyboard.press("Escape");
   await page.keyboard.press(" ");
   await vue.focus();
+  const candidatsL02 = [
+    [6, 3, 8, 3], [-5, 4, -3, 4], [5, 5, 7, 5],
+    [-5, -4, -3, -4], [6, -5, 8, -5], [-6, 1, -4, 1],
+  ];
+  const accessibleL02 = (q) => page.evaluate((point) => {
+    const canvas = document.querySelector("[data-planche-vue] canvas");
+    const e = window.fadiPlanche.versEcran(point);
+    if (!canvas || !e) return false;
+    const b = canvas.getBoundingClientRect();
+    const x = b.x + e.x, y = b.y + e.y;
+    return [[0,0],[-12,0],[12,0],[0,-12],[0,12]].every(([dx,dy]) =>
+      x+dx >= 8 && y+dy >= 8 && x+dx <= innerWidth-8 && y+dy <= innerHeight-8 &&
+      document.elementFromPoint(x+dx, y+dy) === canvas);
+  }, q);
+  const choisirSegmentL02 = async () => {
+    for (const [x0,y0,x1,y1] of candidatsL02) {
+      const a = { x:x0, y:y0, z:0 }, b = { x:x1, y:y1, z:0 };
+      const mid = { x:(x0+x1)/2, y:(y0+y1)/2, z:0 };
+      if ((await accessibleL02(a)) && (await accessibleL02(b)) && (await accessibleL02(mid))) return { a, b };
+    }
+    return null;
+  };
+  let cibleL02 = await choisirSegmentL02();
+  if (!cibleL02) {
+    await revelerPointPlanche(page, { x: 7, y: 3, z: 0 });
+    cibleL02 = await choisirSegmentL02();
+  }
+  if (!cibleL02) throw new Error("L-02 : aucun segment isolé entièrement accessible dans la Planche");
+  const avantL02 = await page.evaluate(() => Object.keys(window.fadiPlanche.modele().racine.aretes));
   await page.keyboard.press("l");
-  await cliquer({ x: 6, y: 3, z: 0 });
-  await survoler({ x: 7, y: 3, z: 0 });
+  await cliquer(cibleL02.a);
+  await survoler(cibleL02.b);
   await saisir("2");
   await page.keyboard.press("Escape");
+  const areteL02 = await page.evaluate((ids) => {
+    const c = window.fadiPlanche.modele().racine;
+    const ajoutes = Object.values(c.aretes).filter((a) => !ids.includes(a.id));
+    if (ajoutes.length !== 1) return { erreur: "Arêtes nouvelles : " + ajoutes.length };
+    const e = ajoutes[0], a = c.sommets[e.a]?.position, b = c.sommets[e.b]?.position;
+    if (!a || !b) return { erreur: "Sommets introuvables" };
+    return { id: e.id, milieu: { x:(a.x+b.x)/2, y:(a.y+b.y)/2, z:(a.z+b.z)/2 } };
+  }, avantL02);
+  if (!areteL02.id) throw new Error("L-02 : tracé de l'arête témoin échoué : " + JSON.stringify(areteL02));
   await page.keyboard.press(" ");
   await vue.focus();
-  await cliquer({ x: 7, y: 3, z: 0 });
+  await revelerPointPlanche(page, areteL02.milieu);
+  await cliquer(areteL02.milieu);
+  const selectionL02 = await page.evaluate(() => window.fadiPlanche.selection());
+  if (selectionL02.length !== 1 || selectionL02[0] !== areteL02.id)
+    throw new Error("L-02 : l'arête créée n'est pas sélectionnée : " + JSON.stringify({ attendu:areteL02.id, selectionL02 }));
   await page.keyboard.press("Control+g");
   await page.waitForTimeout(80);
-  const sommet = await (async () => { const b = await page.locator("[data-planche-vue] canvas").first().boundingBox(); const e = await page.evaluate(() => window.fadiPlanche.versEcran({ x: 7, y: 3, z: 0 })); return { x: b.x + e.x, y: b.y + e.y }; })();
-  await page.waitForTimeout(700);
-  await page.mouse.dblclick(sommet.x, sommet.y);
+  await revelerPointPlanche(page, areteL02.milieu);
+  const milieuEcranL02 = await aides(page).ecran(areteL02.milieu);
+  await page.mouse.dblclick(milieuEcranL02.x, milieuEcranL02.y);
   await page.waitForFunction(() => window.fadiPlanche?.dans() !== undefined, null, { timeout: 10000 });
-  // La barre flottante et l'enveloppe intégrée peuvent couvrir le milieu
-  // de la nouvelle arête. Le rendre accessible en déplaçant réellement
-  // la caméra (sans cliquer à travers les panneaux ni modifier le modèle).
-  await revelerPointPlanche(page, { x: 7, y: 3, z: 0 });
+  const groupeL02 = await page.evaluate((id) => {
+    const p = window.fadiPlanche, m = p.modele(), dans = p.dans();
+    const occ = m.racine.occurrences[dans];
+    const def = occ && m.definitions[occ.definition];
+    return { dans, aretes: Object.keys(def?.contenu.aretes ?? {}), attendue: id };
+  }, areteL02.id);
+  if (!groupeL02.aretes.includes(areteL02.id))
+    throw new Error("L-02 : arête témoin absente du groupe : " + JSON.stringify(groupeL02));
+  await revelerPointPlanche(page, areteL02.milieu);
   await vue.focus();
   await page.keyboard.press("p");
-  for (const x of [7, 6.6, 7.4]) {
-    await cliquer({ x, y: 3, z: 0 });
-    const etape = await page.evaluate(() => window.fadiPlanche.etatOutil()?.etape ?? null);
-    if (etape === 2) break;
-  }
+  await cliquer(areteL02.milieu);
   const dansGroupe = await page.evaluate(() => window.fadiPlanche.dans() ?? null);
   const consigneGroupe = await consigne();
   check("L-02 : dans un groupe, la consigne dit « racine de la Planche seulement »",
