@@ -262,7 +262,7 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
     if (ajoutes.length !== 1) return { erreur: "Arêtes nouvelles : " + ajoutes.length };
     const e = ajoutes[0], a = c.sommets[e.a]?.position, b = c.sommets[e.b]?.position;
     if (!a || !b) return { erreur: "Sommets introuvables" };
-    return { id: e.id, milieu: { x:(a.x+b.x)/2, y:(a.y+b.y)/2, z:(a.z+b.z)/2 } };
+    return { id: e.id, a, b, milieu: { x:(a.x+b.x)/2, y:(a.y+b.y)/2, z:(a.z+b.z)/2 } };
   }, avantL02);
   if (!areteL02.id) throw new Error("L-02 : tracé de l'arête témoin échoué : " + JSON.stringify(areteL02));
   await page.keyboard.press(" ");
@@ -289,7 +289,66 @@ const message = (page) => page.locator("[data-planche-etat]").first().textConten
   await revelerPointPlanche(page, areteL02.milieu);
   await vue.focus();
   await page.keyboard.press("p");
-  await cliquer(areteL02.milieu);
+  // Une projection valide ne garantit pas que l'arête soit réellement visée :
+  // un mur plus proche peut intercepter le rayon du moteur CAD. Chercher le
+  // survol de l'ID attendu par de vrais mouvements de souris, sans accès
+  // direct aux méthodes d'outil ni contournement des interactions.
+  const viserAreteL02 = async () => {
+    const zones = await page.evaluate(({ a, b }) => {
+      const canvas = document.querySelector("[data-planche-vue] canvas");
+      const P = window.fadiPlanche;
+      const bounds = canvas.getBoundingClientRect();
+      const A = P.versEcran(a), B = P.versEcran(b);
+      if (!A || !B) throw new Error("L-02 : extrémités non projetables");
+      const dx = B.x-A.x, dy=B.y-A.y, long=Math.hypot(dx,dy);
+      const nx=long>0?-dy/long:0, ny=long>0?dx/long:1;
+      const positions=[];
+      for (const offset of [0,3,-3,6,-6]) {
+        for (const t of [0.5,0.35,0.65,0.2,0.8]) {
+          const x=bounds.x+A.x+dx*t+nx*offset;
+          const y=bounds.y+A.y+dy*t+ny*offset;
+          if (x<12 || y<12 || x>innerWidth-12 || y>innerHeight-12) continue;
+          if (document.elementFromPoint(x,y)!==canvas) continue;
+          positions.push({x,y,t,offset});
+        }
+      }
+      return positions;
+    }, {a:areteL02.a,b:areteL02.b});
+    for (const point of zones) {
+      await page.mouse.move(point.x,point.y,{steps:3});
+      await page.waitForTimeout(30);
+      const survol = await page.evaluate(() => {
+        const P=window.fadiPlanche;
+        return {outil:P.outil(),dans:P.dans(),arete:P.etatOutil()?.survolArete??null,etape:P.etatOutil()?.etape??null};
+      });
+      if (survol.outil!=="pousser-tirer" || survol.dans===undefined) throw new Error("L-02 : contexte ou outil perdu pendant le survol");
+      if (survol.arete!==areteL02.id || survol.etape!==1) continue;
+      await page.mouse.click(point.x,point.y);
+      await page.waitForTimeout(60);
+      const acquis=await page.evaluate(() => window.fadiPlanche.etatOutil());
+      if (acquis?.etape!==2 || !acquis.aretes?.includes(areteL02.id))
+        throw new Error("L-02 : le moteur CAD a perdu l'arête vérifiée au clic : "+JSON.stringify({point,survol,etape:acquis?.etape,aretes:acquis?.aretes}));
+      return true;
+    }
+    return false;
+  };
+  let acquisL02=await viserAreteL02();
+  // Si la géométrie voisine masque le segment, changer la vue avec une orbite
+  // utilisateur réelle. L'historique et les assertions métier restent intacts.
+  for (let tentative=0; !acquisL02 && tentative<3; tentative++) {
+    const avantPan=(await etat()).pas;
+    const origine=await aides(page).ecran(areteL02.milieu);
+    if (!origine) throw new Error("L-02 : impossible de positionner l'orbite");
+    await page.mouse.move(origine.x,origine.y);
+    await page.mouse.down({button:"middle"});
+    await page.mouse.move(origine.x+(tentative%2===0?75:-125),origine.y+35,{steps:12});
+    await page.mouse.up({button:"middle"});
+    await page.waitForTimeout(100);
+    if ((await etat()).pas!==avantPan) throw new Error("L-02 : l'orbite a modifié le modèle");
+    await revelerPointPlanche(page,areteL02.milieu);
+    acquisL02=await viserAreteL02();
+  }
+  if (!acquisL02) throw new Error("L-02 : arête interne réelle inaccessible au pointeur CAD après vérification et orbites");
   const dansGroupe = await page.evaluate(() => window.fadiPlanche.dans() ?? null);
   const consigneGroupe = await consigne();
   check("L-02 : dans un groupe, la consigne dit « racine de la Planche seulement »",
