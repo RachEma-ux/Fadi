@@ -1,0 +1,25 @@
+name: Backup monitoring validation
+
+on:
+  pull_request:
+    paths:
+      - "scripts/backup-offsite-with-healthchecks.sh"
+      - "scripts/test-backup-offsite-with-healthchecks.sh"
+      - ".github/workflows/backup-monitoring.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-monitoring:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valider la syntaxe Bash
+        run: |
+          bash -n scripts/backup-offsite-with-healthchecks.sh
+          bash -n scripts/test-backup-offsite-with-healthchecks.sh
+      - name: Vérifier les états du service et les contrôles de sécurité
+        run: sudo bash scripts/test-backup-offsite-with-healthchecks.sh
