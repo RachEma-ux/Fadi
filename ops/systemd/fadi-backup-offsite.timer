@@ -1,0 +1,11 @@
+[Unit]
+Description=Fadi - sauvegarde externe quotidienne (activation manuelle requise)
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+RandomizedDelaySec=15m
+Unit=fadi-backup-offsite.service
+
+[Install]
+WantedBy=timers.target
