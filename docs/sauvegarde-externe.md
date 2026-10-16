@@ -6,7 +6,7 @@
 
 Le dépôt existant possède déjà un service `backup` qui crée un `pg_dump -Fc` quotidien dans le volume Docker `fadi-backups`, conservé 14 jours. Le script `scripts/backup-offsite-restic.sh` déclenche un nouveau dump cohérent et sauvegarde le volume local **ainsi que `.env.deploy`** dans un dépôt externe chiffré Restic. Le mot de passe Restic est distinct du mot de passe PostgreSQL ; le dépôt distant ne doit jamais être publiquement partagé.
 
-Au 16 octobre 2026, **kDrive 1,0 To** et **Swiss Backup Swift 1,0 To** ont été confirmés séparément. L'espace `Fadi-Serv-Backup` (Swift Keystone v3) est opérationnel : authentification 201, dépôt Restic initialisé, un snapshot reçu, téléchargement et déchiffrement de l'archive validés, puis **restauration PostgreSQL/PostGIS isolée réussie** (`RESTAURATION POSTGRESQL ISOLEE OK`, après attente complète d'initialisation PostGIS). **La sauvegarde automatique planifiée n'est pas encore activée.**
+Au 16 octobre 2026, **kDrive 1,0 To** et **Swiss Backup Swift 1,0 To** ont été confirmés séparément. L'espace `Fadi-Serv-Backup` (Swift Keystone v3) est opérationnel : authentification 201, dépôt Restic initialisé, un snapshot reçu, téléchargement et déchiffrement de l'archive validés, puis **restauration PostgreSQL/PostGIS isolée réussie** (`RESTAURATION POSTGRESQL ISOLEE OK`, après attente complète d'initialisation PostGIS). **Le service automatique a passé son test manuel le 16 octobre 2026** (`Result=success`, `ExecMainStatus=0`, snapshot `322f0e6c`, deux snapshots vérifiés par `restic check`). **Le timer systemd est maintenant actif et activé au démarrage (`active`, `enabled`)**, d'après les commandes exécutées sur Fadi-Serv. Première exécution prévue le 17 octobre 2026 à 03:26:55 UTC. **Alertes externes et rétention distante non encore configurées.**
 
 Pour Swiss Backup, Infomaniak documente **Restic + OpenStack Swift** ; des espaces Cloud S3 existent également. Choisir le protocole **au moment de la création de l'appareil** et ne jamais inventer un endpoint.
 
@@ -65,6 +65,24 @@ sudo systemctl list-timers fadi-backup-offsite.timer --all
 En cas d'échec, ne pas activer le timer ; conserver les dumps locaux, analyser les journaux et corriger. La tâche systemd fonctionne indépendamment du téléphone Android. Vérifier la zone horaire du VPS via `timedatectl`.
 
 **Important :** le journal systemd ne constitue pas une alerte externe. La supervision de l'absence de snapshot et des échecs doit être configurée avant de déclarer le système entièrement prêt.
+
+## Surveillance externe : conception retenue, activation à autoriser
+
+Un timer `systemd` `active` et `enabled` garantit uniquement sa programmation, pas la réussite des sauvegardes futures. Il reste à disposer d'une **alerte hors VPS** quand :
+
+- une sauvegarde échoue ;
+- une exécution attendue n'a pas lieu ;
+- une sauvegarde se termine mais le snapshot externe n'est pas mis à jour.
+
+Option suggérée : un service de contrôle de tâches planifiées compatible avec un **ping HTTPS de fin d'exécution**, une échéance quotidienne et un délai de grâce. À titre d'exemple, Healthchecks.io peut notifier par courriel en cas de `/fail` ou d'absence de ping : https://healthchecks.io/docs/monitoring_cron_jobs/
+
+**Validation indispensable avant activation** : choix et accord du responsable sur le fournisseur des alertes, canal de réception et conservation d'une URL de ping privée dans un fichier `root:root 0600` sur le VPS. Ne jamais publier l'URL, l'identifiant ni un mot de passe dans GitHub. Aucun ping externe n'est installé dans la configuration actuelle.
+
+Tester la supervision avec un échec volontaire d'une **tâche de test**, distincte des sauvegardes réelles, puis vérifier qu'un signal est effectivement reçu. Ne jamais provoquer une erreur sur la base de production pour tester les alertes.
+
+## Politique de conservation distante à valider
+
+Proposition initiale (à dimensionner par les statistiques de croissance du dépôt et le quota de 1 To) : **14 sauvegardes quotidiennes, 8 hebdomadaires et 12 mensuelles**, avec contrôle mensuel de récupération. Restic applique la déduplication ; un quota de 1 To reste néanmoins fini. Ne pas exécuter `restic forget` ni `restic prune` automatiquement avant un inventaire des snapshots, un essai `--dry-run` et l'approbation du responsable. Le volume local reste sur une rétention indépendante de 14 jours.
 
 ## Contrôles d'exploitation
 
