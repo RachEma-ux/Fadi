@@ -9,6 +9,15 @@ log() { printf 'FADI_OFFSITE_BACKUP: %s\n' "$*"; }
 [[ $(id -u) -eq 0 ]] || fail 'Exécuter sous root via systemd, pour accéder aux volumes Docker.'
 [[ -n ${RESTIC_REPOSITORY:-} ]] || fail 'RESTIC_REPOSITORY manquant.'
 [[ -n ${RESTIC_PASSWORD_FILE:-} && -f ${RESTIC_PASSWORD_FILE:-} ]] || fail 'RESTIC_PASSWORD_FILE manquant.'
+# Le secret Swift est conservé dans un fichier séparé, jamais dans EnvironmentFile.
+swift_password_file=${FADI_SWIFT_PASSWORD_FILE:-/etc/fadi/swift-password}
+[[ -f "$swift_password_file" ]] || fail 'Fichier de mot de passe Swift absent.'
+[[ $(stat -c '%u' "$swift_password_file") == 0 ]] || fail 'Le secret Swift doit appartenir à root.'
+swift_mode=$(stat -c '%a' "$swift_password_file")
+(( (8#$swift_mode & 077) == 0 )) || fail 'Le secret Swift ne doit être accessible ni au groupe ni aux autres.'
+export OS_PASSWORD
+OS_PASSWORD=$(<"$swift_password_file")
+[[ -n "$OS_PASSWORD" ]] || fail 'Mot de passe Swift vide.'
 [[ $(stat -c '%u' "$RESTIC_PASSWORD_FILE") == 0 ]] || fail 'Le secret Restic doit appartenir à root.'
 pass_mode=$(stat -c '%a' "$RESTIC_PASSWORD_FILE")
 (( (8#$pass_mode & 077) == 0 )) || fail 'Le secret Restic ne doit être accessible ni au groupe ni aux autres.'
