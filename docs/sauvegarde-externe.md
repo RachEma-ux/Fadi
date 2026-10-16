@@ -6,7 +6,7 @@
 
 Le dépôt existant possède déjà un service `backup` qui crée un `pg_dump -Fc` quotidien dans le volume Docker `fadi-backups`, conservé 14 jours. Le script `scripts/backup-offsite-restic.sh` déclenche un nouveau dump cohérent et sauvegarde le volume local **ainsi que `.env.deploy`** dans un dépôt externe chiffré Restic. Le mot de passe Restic est distinct du mot de passe PostgreSQL ; le dépôt distant ne doit jamais être publiquement partagé.
 
-Au 16 octobre 2026, une capture d'écran confirme **1,0 To de kDrive**, mais ne démontre **ni un stockage Swiss Backup**, ni l'autorisation d'automatiser les transferts via WebDAV. La documentation Infomaniak exclut WebDAV pour my kSuite/my kSuite+ (ik.me), kSuite Free et kSuite Standard. **Ne pas activer `rclone` pour kDrive tant que l'offre précise n'est pas confirmée.**
+Au 16 octobre 2026, **kDrive 1,0 To** et **Swiss Backup Swift 1,0 To** ont été confirmés séparément. L'espace `Fadi-Serv-Backup` (Swift Keystone v3) est opérationnel : authentification 201, dépôt Restic initialisé, un snapshot reçu, téléchargement et déchiffrement de l'archive validés, puis **restauration PostgreSQL/PostGIS isolée réussie** (`RESTAURATION POSTGRESQL ISOLEE OK`, après attente complète d'initialisation PostGIS). **La sauvegarde automatique planifiée n'est pas encore activée.**
 
 Pour Swiss Backup, Infomaniak documente **Restic + OpenStack Swift** ; des espaces Cloud S3 existent également. Choisir le protocole **au moment de la création de l'appareil** et ne jamais inventer un endpoint.
 
@@ -25,6 +25,46 @@ Références :
 6. Tester une exécution manuelle et vérifier les snapshots, le journal, ainsi qu'une **restauration de contrôle dans un emplacement isolé**. Vérifier `pg_restore --list` puis restaurer dans une base de contrôle, jamais dans la base `fadi` en production.
 7. Après un premier test réussi, installer les unités `ops/systemd/fadi-backup-offsite.service` et `ops/systemd/fadi-backup-offsite.timer` dans `/etc/systemd/system/`, puis activer le timer. Les journaux doivent être surveillés et une alerte doit être déclenchée en cas d'échec.
 8. Définir une politique de rétention distante, testée avant toute suppression : sauvegardes quotidiennes, hebdomadaires et mensuelles, avec verrouillage/immutabilité si le fournisseur le permet. **Le script ne lance volontairement aucun `forget` ni `prune` automatique avant validation.**
+
+## Installation et premier essai sur Fadi-Serv (sans modifier l'application)
+
+Le script et les unités systemd sont conservés dans la branche de préparation `ops/fadi-cloud-environment`. La branche de production n'est pas modifiée : seuls les fichiers d'exploitation sont copiés après inspection.
+
+```bash
+set -euo pipefail
+cd /mnt/data/fadi/app
+git fetch origin ops/fadi-cloud-environment
+
+git show FETCH_HEAD:scripts/backup-offsite-restic.sh |
+  sudo install -m 0700 /dev/stdin /usr/local/sbin/fadi-backup-offsite
+git show FETCH_HEAD:ops/systemd/fadi-backup-offsite.service |
+  sudo install -m 0644 /dev/stdin /etc/systemd/system/fadi-backup-offsite.service
+git show FETCH_HEAD:ops/systemd/fadi-backup-offsite.timer |
+  sudo install -m 0644 /dev/stdin /etc/systemd/system/fadi-backup-offsite.timer
+
+sudo bash -n /usr/local/sbin/fadi-backup-offsite
+sudo systemctl daemon-reload
+sudo systemd-analyze verify /etc/systemd/system/fadi-backup-offsite.service /etc/systemd/system/fadi-backup-offsite.timer
+```
+
+**Ne pas activer le timer directement.** Tester d'abord manuellement le service :
+
+```bash
+sudo systemctl start fadi-backup-offsite.service
+sudo systemctl show fadi-backup-offsite.service -p Result -p ExecMainStatus
+sudo journalctl -u fadi-backup-offsite.service -n 45 --no-pager
+```
+
+Vérifier un nouveau snapshot dans le dépôt Swift et effectuer une récupération de contrôle. Si le test réussit, activer la minuterie :
+
+```bash
+sudo systemctl enable --now fadi-backup-offsite.timer
+sudo systemctl list-timers fadi-backup-offsite.timer --all
+```
+
+En cas d'échec, ne pas activer le timer ; conserver les dumps locaux, analyser les journaux et corriger. La tâche systemd fonctionne indépendamment du téléphone Android. Vérifier la zone horaire du VPS via `timedatectl`.
+
+**Important :** le journal systemd ne constitue pas une alerte externe. La supervision de l'absence de snapshot et des échecs doit être configurée avant de déclarer le système entièrement prêt.
 
 ## Contrôles d'exploitation
 
