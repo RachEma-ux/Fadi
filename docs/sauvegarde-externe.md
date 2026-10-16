@@ -19,7 +19,7 @@ Références :
 
 1. Vérifier le produit, la capacité, la destination géographique, les limitations, les coûts, les versions et les droits. Obtenir un compte/jeton **dédié uniquement aux sauvegardes de Fadi**.
 2. Installer Restic depuis une source vérifiée (par exemple le paquet Ubuntu) sur le VPS ; **ne pas mettre de clés dans GitHub**.
-3. Conserver un fichier `/etc/fadi/restic.env` appartenant à root avec permissions `0600` (variables `RESTIC_REPOSITORY`, `RESTIC_PASSWORD_FILE` et identifiants du fournisseur). Ce fichier est lu par systemd ; les valeurs de secrets ne doivent pas apparaître dans les logs ou les conversations.
+3. Créer `/etc/fadi/restic.env` (`root:root`, `0600`) avec **uniquement les paramètres non secrets** (`RESTIC_REPOSITORY`, `RESTIC_PASSWORD_FILE`, `OS_AUTH_URL`, `OS_USERNAME`, `OS_PROJECT_NAME`, région, domaines). Stocker **séparément** le mot de passe Swift dans `/etc/fadi/swift-password` (`root:root`, `0600`) et référencer `FADI_SWIFT_PASSWORD_FILE=/etc/fadi/swift-password`. Le script exporte le mot de passe seulement durant l'exécution de Restic. Ne jamais le publier dans les logs ou dans ChatGPT.
 4. Créer un fichier `/etc/fadi/restic-password` appartenant à root avec permissions `0600`. Conserver **au moins deux copies chiffrées indépendantes** de ce mot de passe **hors du VPS** : sa perte rend les archives illisibles.
 5. Initialiser **explicitement** le dépôt Restic externe avec ces paramètres. **Ne jamais réinitialiser un dépôt déjà existant.**
 6. Tester une exécution manuelle et vérifier les snapshots, le journal, ainsi qu'une **restauration de contrôle dans un emplacement isolé**. Vérifier `pg_restore --list` puis restaurer dans une base de contrôle, jamais dans la base `fadi` en production.
