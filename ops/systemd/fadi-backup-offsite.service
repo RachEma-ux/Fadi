@@ -15,7 +15,7 @@ EnvironmentFile=/etc/fadi/restic.env
 Environment=RESTIC_CACHE_DIR=/mnt/data/fadi/restic-cache
 ExecStartPre=/usr/bin/mkdir -p /mnt/data/fadi/restic-cache
 ExecStartPre=/usr/bin/chmod 0700 /mnt/data/fadi/restic-cache
-ExecStart=/bin/bash /mnt/data/fadi/app/scripts/backup-offsite-restic.sh
+ExecStart=/usr/local/sbin/fadi-backup-offsite
 TimeoutStartSec=3h
 NoNewPrivileges=true
 
