@@ -80,6 +80,31 @@ Option suggérée : un service de contrôle de tâches planifiées compatible av
 
 Tester la supervision avec un échec volontaire d'une **tâche de test**, distincte des sauvegardes réelles, puis vérifier qu'un signal est effectivement reçu. Ne jamais provoquer une erreur sur la base de production pour tester les alertes.
 
+### Option prête à activer : Healthchecks.io (nécessite l'accord du responsable)
+
+Le wrapper facultatif `scripts/backup-offsite-with-healthchecks.sh` a été ajouté à la PR, **mais n'est pas installé sur le VPS** : le service courant reste sur `/usr/local/sbin/fadi-backup-offsite`.
+
+La supervision à distance utilise uniquement trois signaux HTTPS (`/start`, succès et `/fail`) vers un contrôleur externe. Aucun contenu PostgreSQL n'est transmis, mais le prestataire recevra le moment d'exécution et l'état du job. Sa configuration est donc soumise à approbation.
+
+Si Healthchecks.io est accepté :
+
+1. Créer un seul contrôle `Fadi-SwissBackup` avec période 24 h et délai de grâce 4 h ; activer une notification e-mail vers une boîte contrôlée par le responsable.
+2. Dans le VPS, installer le wrapper dans `/usr/local/sbin/fadi-backup-offsite-monitored` (root:root, mode 0700). La commande recommandée utilise `git show FETCH_HEAD:scripts/backup-offsite-with-healthchecks.sh | sudo install -m 0700 /dev/stdin /usr/local/sbin/fadi-backup-offsite-monitored`.
+3. Conserver l'URL secrète unique `https://hc-ping.com/<uuid>` dans `/etc/fadi/healthchecks-url` (root:root, 0600), sans la passer sur une ligne de commande ni l'envoyer dans ChatGPT.
+4. Ajouter une surcharge de service `/etc/systemd/system/fadi-backup-offsite.service.d/10-healthchecks.conf` contenant :
+
+   ```ini
+   [Service]
+   ExecStart=
+   ExecStart=/usr/local/sbin/fadi-backup-offsite-monitored
+   ```
+
+5. Valider `bash -n`, `systemd-analyze verify` et une exécution manuelle `sudo systemctl start fadi-backup-offsite.service`. Vérifier que le site Healthchecks.io a reçu un signal de succès et que `ExecMainStatus=0` apparaît dans systemd.
+6. Tester la notification d'échec à l'aide d'un **contrôle Healthchecks de test**, non lié à la tâche de production. Ne jamais déclencher un échec artificiel de sauvegarde Fadi.
+7. Après la première exécution planifiée, contrôler l'heure du nouveau snapshot et la réception du signal de succès.
+
+**Ne pas activer cette surcharge** tant que le choix du fournisseur d'alertes, l'adresse de notification et la méthode de récupération des identifiants ne sont pas validés.
+
 ## Politique de conservation distante à valider
 
 Proposition initiale (à dimensionner par les statistiques de croissance du dépôt et le quota de 1 To) : **14 sauvegardes quotidiennes, 8 hebdomadaires et 12 mensuelles**, avec contrôle mensuel de récupération. Restic applique la déduplication ; un quota de 1 To reste néanmoins fini. Ne pas exécuter `restic forget` ni `restic prune` automatiquement avant un inventaire des snapshots, un essai `--dry-run` et l'approbation du responsable. Le volume local reste sur une rétention indépendante de 14 jours.
