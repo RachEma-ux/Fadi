@@ -1,6 +1,6 @@
 # Fadi — sauvegarde hors VPS avec Restic
 
-**État : préparation uniquement.** Les fichiers de cette branche ne modifient pas le VPS tant qu'ils ne sont pas déployés, que les identifiants n'ont pas été installés et que le service n'a pas été activé.
+**État au 16 octobre 2026 :** la sauvegarde Fadi-Serv → Swiss Backup Swift fonctionne, un test de restauration PostgreSQL a réussi, et le timer quotidien est `active` et `enabled` sur le VPS. **La supervision externe Healthchecks.io est uniquement préparée dans cette branche ; son compte, son ping secret et son intégration email ne sont pas encore configurés sur le VPS.**
 
 ## Sources et décisions
 
@@ -80,18 +80,21 @@ Option suggérée : un service de contrôle de tâches planifiées compatible av
 
 Tester la supervision avec un échec volontaire d'une **tâche de test**, distincte des sauvegardes réelles, puis vérifier qu'un signal est effectivement reçu. Ne jamais provoquer une erreur sur la base de production pour tester les alertes.
 
-### Option prête à activer : Healthchecks.io (nécessite l'accord du responsable)
+### Option prête à activer : Healthchecks.io (autorisation donnée le 16 octobre 2026)
 
-Le wrapper facultatif `scripts/backup-offsite-with-healthchecks.sh` a été ajouté à la PR, **mais n'est pas installé sur le VPS** : le service courant reste sur `/usr/local/sbin/fadi-backup-offsite`.
+Le propriétaire a expressément autorisé Healthchecks.io pour les alertes de sauvegarde par e-mail. Le wrapper `scripts/backup-offsite-with-healthchecks.sh` a été ajouté à la PR **mais n'est pas installé sur le VPS** : le service courant reste sur `/usr/local/sbin/fadi-backup-offsite`. Les tests de simulation du wrapper sont dans `scripts/test-backup-offsite-with-healthchecks.sh`, et une GitHub Action dédiée les exécute sans envoyer de pings réels.
+
 
 La supervision à distance utilise uniquement trois signaux HTTPS (`/start`, succès et `/fail`) vers un contrôleur externe. Aucun contenu PostgreSQL n'est transmis, mais le prestataire recevra le moment d'exécution et l'état du job. Sa configuration est donc soumise à approbation.
 
 Si Healthchecks.io est accepté :
 
-1. Créer un seul contrôle `Fadi-SwissBackup` avec période 24 h et délai de grâce 4 h ; activer une notification e-mail vers une boîte contrôlée par le responsable.
-2. Dans le VPS, installer le wrapper dans `/usr/local/sbin/fadi-backup-offsite-monitored` (root:root, mode 0700). La commande recommandée utilise `git show FETCH_HEAD:scripts/backup-offsite-with-healthchecks.sh | sudo install -m 0700 /dev/stdin /usr/local/sbin/fadi-backup-offsite-monitored`.
-3. Conserver l'URL secrète unique `https://hc-ping.com/<uuid>` dans `/etc/fadi/healthchecks-url` (root:root, 0600), sans la passer sur une ligne de commande ni l'envoyer dans ChatGPT.
-4. Ajouter une surcharge de service `/etc/systemd/system/fadi-backup-offsite.service.d/10-healthchecks.conf` contenant :
+1. Dans https://healthchecks.io/, se connecter (ou créer un compte gratuit). Dans *Checks*, créer un seul contrôle nommé `Fadi-SwissBackup` ; choisir **OnCalendar** `*-*-* 03:15:00`, fuseau **UTC**, **Grace Time = 4 h**. Le timer Fadi-Serv utilise `OnCalendar=*-*-* 03:15:00` et un retard aléatoire maximal de 15 minutes, le service a un timeout de 3 h. Une alternative équivalente si l'interface OnCalendar n'apparaît pas est le mode Cron `15 3 * * *` en UTC, même délai de grâce. L'intervalle simple 24 h est moins fidèle aux horaires exacts.
+2. Dans *Integrations*, ajouter et valider une intégration **Email**, puis l'activer sur le contrôle `Fadi-SwissBackup` (vérifier qu'elle est sur `ON`). Tester l'intégration par une notification de démonstration ou un contrôle de test, pas par une corruption volontaire de sauvegarde.
+3. Copier l'URL UUID de ping de ce contrôle dans un gestionnaire privé. **Ne jamais la publier dans ChatGPT, une capture lisible ou GitHub**.
+4. Dans le VPS, installer le wrapper dans `/usr/local/sbin/fadi-backup-offsite-monitored` (root:root, mode 0700). La commande recommandée utilise `git show FETCH_HEAD:scripts/backup-offsite-with-healthchecks.sh | sudo install -m 0700 /dev/stdin /usr/local/sbin/fadi-backup-offsite-monitored`.
+5. Conserver l'URL secrète unique `https://hc-ping.com/<uuid>` dans `/etc/fadi/healthchecks-url` (root:root, 0600), sans la passer sur une ligne de commande ni l'envoyer dans ChatGPT.
+6. Ajouter une surcharge de service `/etc/systemd/system/fadi-backup-offsite.service.d/10-healthchecks.conf` contenant :
 
    ```ini
    [Service]
@@ -99,11 +102,11 @@ Si Healthchecks.io est accepté :
    ExecStart=/usr/local/sbin/fadi-backup-offsite-monitored
    ```
 
-5. Valider `bash -n`, `systemd-analyze verify` et une exécution manuelle `sudo systemctl start fadi-backup-offsite.service`. Vérifier que le site Healthchecks.io a reçu un signal de succès et que `ExecMainStatus=0` apparaît dans systemd.
-6. Tester la notification d'échec à l'aide d'un **contrôle Healthchecks de test**, non lié à la tâche de production. Ne jamais déclencher un échec artificiel de sauvegarde Fadi.
-7. Après la première exécution planifiée, contrôler l'heure du nouveau snapshot et la réception du signal de succès.
+7. Valider `bash -n`, `systemd-analyze verify` et une exécution manuelle `sudo systemctl start fadi-backup-offsite.service`. Vérifier que le site Healthchecks.io a reçu un signal de succès et que `ExecMainStatus=0` apparaît dans systemd.
+8. Tester la notification d'échec à l'aide d'un **contrôle Healthchecks de test**, non lié à la tâche de production. Ne jamais déclencher un échec artificiel de sauvegarde Fadi.
+9. Après la première exécution planifiée, contrôler l'heure du nouveau snapshot et la réception du signal de succès.
 
-**Ne pas activer cette surcharge** tant que le choix du fournisseur d'alertes, l'adresse de notification et la méthode de récupération des identifiants ne sont pas validés.
+**Ne pas activer cette surcharge** avant la création du contrôle, la vérification de son canal e-mail et l'enregistrement confidentiel de l'URL. Le compte Healthchecks.io et l'adresse de notification restent gérés par le propriétaire.
 
 ## Politique de conservation distante à valider
 
