@@ -50,10 +50,10 @@ et acceptée.
 | --- | --- | --- |
 | Entrées DA du référentiel | 324 | Exigences V4, annexe B |
 | Entrées à l'étape cible P1 / P2 / P3 | 146 / 124 / 54 | annexe B (colonne « Étape cible ») |
-| Entrées retenues par le cahier Atelier (P1 Fadi) | 138 | `atelier-drawall.md` §5.1 |
+| Entrées retenues par le cahier Atelier (P1 Fadi) | 138 | Inventaire historique Fadi à rapprocher des fiches `docs/atelier/fiches/` |
 | Fiches DA à l'état « disponible » | 71 | `docs/atelier/fiches/`, D-174 |
 | Fiches Planche à l'état « disponible » | 35 | `docs/planche/fiches/`, D-174 |
-| Modules DrawAll touchés | M01–M05, M11, M12 (partiel), M16, M17 (partiel) | `atelier-drawall.md` §2.1 |
+| Modules Fadi étudiés à l'origine | Atelier, Documents, Analyses métier, Collaboration, Projets et sources | Cartographie historique à revérifier sur le code Fadi |
 | Modules non ouverts | M06, M07, M08, M09, M10, M13, M14, M15 | cahier Atelier §2.2 |
 | Ontologies activables par projet | `building.architecture`, `drawing`, `annotation`, `planche` ; `building.structure` réduite au poteau | cahier Atelier §2.1, D-172 |
 
@@ -126,7 +126,7 @@ des commandes au contrat suivant, les contrats précédents restent acceptés co
 
 ## 5. Lots P2, livrables, estimation
 
-Estimation calibrée comme `atelier-drawall.md` §6.2 : une journée = session continue livrée verte (typecheck,
+Estimation du chantier Atelier Fadi (source historique désormais retirée du dépôt) : une journée = session continue livrée verte (typecheck,
 tests, build, scénario e2e, CI). P1 a coûté 23,5 jours estimés pour 138 entrées à densité « formulaires + géométrie
 paramétrique » ; P2 ajoute des domaines à densité plus forte (noyau exact, solveur, connectivité), d'où une
 productivité comptée aux deux tiers de P1. **Aucune journée n'est engagée avant la validation du cahier.**
@@ -188,7 +188,7 @@ IFC de l'ontologie dans `matrice-echanges.md` avec rapport de fidélité sur cor
 
 ## Annexe B — Contrôle de couverture des 270 entrées P1 et P2
 
-Générée depuis l'annexe B des Exigences V4 (colonne « Étape cible ») et `atelier-drawall.md` §5.1 (entrées retenues).
+Inventaire historique de 270 capacités P1/P2 du chantier Atelier ; les entrées doivent être vérifiées sur les fiches Fadi et le code actuel plutôt que sur le référentiel d'une autre application.
 Chaque entrée P1 ou P2 a une destination ; les 54 entrées P3 ne figurent pas ici (§3.2).
 
 | ID | Libellé | Module | Étape | Destination |
