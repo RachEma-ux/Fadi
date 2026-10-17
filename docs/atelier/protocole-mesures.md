@@ -1,6 +1,6 @@
 # Protocole de mesures T17 (apprentissage) et T18 (performance) — à l'usage du maître d'ouvrage
 
-Les exigences T17 « apprentissage mesuré » et T18 « performance et diagnostic » de DrawAll V4.1 ne peuvent pas être
+Les exigences historiques T17 « apprentissage mesuré » et T18 « performance et diagnostic » de l'Atelier Fadi ne peuvent pas être
 prouvées par la CI : la première demande des utilisateurs réels, la seconde vos appareils. Ce protocole dit
 **quoi mesurer, comment, et comment consigner**, pour que les chiffres soient comparables d'une session à l'autre.
 Les seuils d'acceptation sont à fixer par vous : aucun chiffre n'est annoncé à l'avance (R14).
