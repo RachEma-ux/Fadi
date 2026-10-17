@@ -65,8 +65,7 @@ are three distinct reference systems, explicitly tagged — never silently mixed
 tests on their invariants. It intentionally does not yet carry persistence, validation rules or UI — those
 belong to Lot 2 onward, once the backend exists to enforce them server-side too.
 
-The building model itself is being rebuilt on the DrawAll V4.1 contracts (`docs/drawall/`, decisions D1–D6;
-specification `docs/atelier-cahier-des-charges.md`): `packages/atelier-model` is the pure package that owns the
+The building model uses the Fadi Atelier contracts (see `docs/atelier-cahier-des-charges.md` and the existing Fadi decisions), pending the decontamination review tracked in Issue #147: `packages/atelier-model` is the pure package that owns the
 `building.architecture` ontology (storeys, walls, doors, windows, openings, slabs, roofs, stairs, rooms, spaces,
 zones; the column of `building.structure`; sketches, generic solids and annotations), the identities
 definition / occurrence / representation, typed properties with units and provenance, the typed commands and
