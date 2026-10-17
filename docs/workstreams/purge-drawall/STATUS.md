@@ -4,7 +4,7 @@ Mis à jour : 2026-10-17 (UTC).
 
 ## État
 
-**En cours — inventaire exhaustif exécuté et premières références non fonctionnelles nettoyées.** Purge de fonctionnalités toujours en attente de cadrage.
+**En cours — la portée fonctionnelle est désormais décidée : conserver toutes les fonctions industrielles et toutes les règles normatives de dessin comme capacités natives Fadi.** Purge des seules références et artefacts propres au produit DrawAll.
 
 ## Faits vérifiés
 
@@ -20,8 +20,12 @@ Mis à jour : 2026-10-17 (UTC).
 ## Points ouverts
 
 - Classer le rapport automatique et les liens dépendants avant suppression des trois documents uniquement consacrés à l'autre produit ; l'audit est réalisé.
-- Décider du retrait des fonctions industrielles introduites dans Fadi lors des phases P2 : mécanique, tôlerie, MEP, etc., après cartographie.
+- Adapter et vérifier l'intégration **native Fadi** de toutes les fonctions industrielles et règles normatives de dessin P1/P2, avec traçabilité, cahiers, décisions et tests ; aucune suppression de ces fonctions.
 - Éviter de confondre réécriture du nom DrawAll et suppression effective des dépendances.
+
+## Décision métier validée
+
+- Le 17 octobre 2026, conservation explicite des fonctionnalités industrielles et des règles normatives de dessin, quelle que soit leur provenance documentaire ; élimination uniquement des dépendances à l'autre application. Les normes externes officielles gardent leur identification et attribution.
 
 ## Liens de suivi
 
