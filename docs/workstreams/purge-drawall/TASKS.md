@@ -3,8 +3,8 @@
 ## À faire
 
 - [ ] PURGE-02 — Inspecter les occurrences dans le code et les fichiers avec l'audit complet exécuté par GitHub Actions ; classer les résultats.
-- [ ] PURGE-03 — Établir la matrice de suppression : artefacts exclusivement DrawAll / références historiques / dépendances logicielles / fonctionnalités Fadi à maintenir ou retirer.
-- [ ] PURGE-04 — Faire confirmer la frontière entre purge documentaire et suppression fonctionnelle avant tout retrait de moteurs, API, ontologies ou migrations.
+- [ ] PURGE-03 — Établir la matrice **RETIRER les artefacts DrawAll / ADAPTER les cahiers Fadi / CONSERVER toutes les fonctions et règles de dessin / MIGRER les identifiants avec compatibilité**.
+- [x] PURGE-04 — Décision prise : préserver toutes les fonctions industrielles et règles normatives de dessin ; seule leur intégration native Fadi est à réaliser.
 - [ ] PURGE-05 — Terminer le nettoyage documentaire et fonctionnel validé ; **premier lot déjà effectué** : suppression de 4 fichiers explicitement interproduits et réécriture des liens entrants / commentaires concernés, uniquement dans Fadi.
 - [ ] PURGE-06 — Vérifier types, build, tests, E2E et état des projets persistés avant fusion et déploiement.
 
@@ -22,7 +22,12 @@
 
 ## Bloqué
 
-- Suppression de code Fadi encore actif : impact fonctionnel et périmètre des fonctionnalités à retirer non arbitrés.
+- Aucune suppression fonctionnelle autorisée ou nécessaire ; la migration des identifiants DA et les contrats normatifs Fadi exigent encore une analyse des usages et des tests.
+
+## Décisions confirmées
+
+- Toutes les fonctions industrielles et les règles normatives de dessin sont conservées comme capacités natives Fadi (décision du 17 octobre 2026).
+- Aucun lien actif à DrawAll, aucune modification du dépôt DrawAll.
 
 ## Critères de sortie
 
