@@ -8,6 +8,8 @@ Planche (`docs/planche/cahier-planche.md`) restent inchangés : ce document s'y 
 Documents de référence historiques retirés de Fadi dans le cadre de l'Issue #147 (référentiel de l'autre application). Les contrats encore applicables à Fadi doivent être audités dans `docs/architecture.md` et `docs/atelier/decisions.md` (et non présumés normatifs à partir d'un autre produit).
 Dossier de recette P1 : `docs/atelier/recette.md` ; journal des décisions : `docs/atelier/decisions.md` (D-174 : acceptation de P1).
 
+> **Décision Fadi du 17 octobre 2026, Issue #147.** Les ontologies et outils P2 (mécanique, structure, bois, tôlerie, réseaux/MEP, formes libres, coordination, fabrication et échanges) sont **conservés comme parties natives de Fadi**. Les règles normatives de dessin, symboles, unités, tolérances et exigences d'échange demeurent applicables selon leurs sources officielles, indépendamment du produit DrawAll. La nomenclature ancienne `DA-…` n'est qu'un identifiant historique de traçabilité jusqu'à une migration sûre ; conserver les tests et les objets existants.
+
 ## 0. Mode d'emploi
 
 Même mode d'emploi que le cahier Atelier §0 : un lot à la fois, acceptation du maître d'ouvrage entre deux lots
