@@ -15,14 +15,14 @@ Mis à jour : 2026-10-17 (UTC).
 - 3 documents produits DrawAll isolés sous `docs/drawall/`, et `docs/atelier-drawall.md` présente une proposition de reconstruction Fadi selon DrawAll.
 - Environ 269 fiches `DA-` contiennent également des spécifications/recettes de fonctions Fadi ; des modules de code actifs reprennent certaines ontologies industrielles.
 - Un inventaire automatique a été exécuté sur GitHub (1261 fichiers scannés, 494 touchés, 2267 lignes) ; artefact `fadi-drawall-inventory` du workflow de la PR #148.
-- Cinq occurrences de nom « DrawAll » dans des commentaires/générateur/README de code actif ont été retirées sur la branche, sans suppression de fonctionnalités. Les trois documents autonomes `docs/drawall/` sont encore présents tant que les liens entrants n'ont pas été traités.
+- Cinq occurrences nominales dans les sources ont été corrigées et un garde-fou CI vérifie les sources Fadi. **Les trois documents `docs/drawall/` et `docs/atelier-drawall.md` sont désormais supprimés de la branche Fadi uniquement**, avec mise à jour des principaux liens entrants. Le dépôt DrawAll est inchangé.
 - La suppression d'une référence historique et celle d'une fonction actuellement utilisée sont deux opérations différentes.
 
 ## Prochaine action
 
 1. Examiner le rapport `fadi-drawall-inventory`, notamment les 180 fichiers de code (majoritairement des identifiants `DA-...`) et les 269 fiches ; suivre l'audit dans l'Issue #147.
 2. Établir la matrice `RETIRER / ADAPTER / CONSERVER (Fadi) / ARBITRER` à la granularité fichier/fonction et relever les liens entrants vers les trois documents purs DrawAll.
-3. Faire confirmer si la purge doit également retirer les fonctionnalités industrielles déjà intégrées à Fadi (P2 mécanique/bois/tôlerie/MEP), malgré leur présence active dans l'Atelier.
+3. Faire confirmer si la purge doit aussi **supprimer des fonctionnalités industrielles existantes dans Fadi** (P2 mécanique/bois/tôlerie/MEP) ou uniquement leur origine et couplage à DrawAll. Cette décision détermine les suppressions d'API, schéma, outils et migrations.
 4. Effectuer la purge documentaire et fonctionnelle validée, réparer les consommateurs, lancer CI complète et ouvrir la revue de fusion.
 
 ## Tests et preuves
