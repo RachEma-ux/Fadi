@@ -22,8 +22,12 @@ Mis à jour : 2026-10-17 (UTC).
 
 1. Examiner le rapport `fadi-drawall-inventory`, notamment les 180 fichiers de code (majoritairement des identifiants `DA-...`) et les 269 fiches ; suivre l'audit dans l'Issue #147.
 2. Établir la matrice `RETIRER / ADAPTER / CONSERVER (Fadi) / ARBITRER` à la granularité fichier/fonction et relever les liens entrants vers les trois documents purs DrawAll.
-3. Faire confirmer si la purge doit aussi **supprimer des fonctionnalités industrielles existantes dans Fadi** (P2 mécanique/bois/tôlerie/MEP) ou uniquement leur origine et couplage à DrawAll. Cette décision détermine les suppressions d'API, schéma, outils et migrations.
+3. **Décision reçue** : toutes les fonctions industrielles et les règles normatives de dessin sont conservées comme natives à Fadi. Adapter les cahiers, décisions, tests et intégrations ; inventorier les identifiants avant toute migration compatible.
 4. Effectuer la purge documentaire et fonctionnelle validée, réparer les consommateurs, lancer CI complète et ouvrir la revue de fusion.
+
+## Décision de reprise
+
+- 17 octobre 2026 : l'utilisateur confirme explicitement le maintien des fonctions industrielles **et** des règles normatives de dessin comme capacités natives Fadi ; aucun lien DrawAll et aucun changement au dépôt DrawAll. Ne pas rouvrir cette question comme une incertitude.
 
 ## Tests et preuves
 
@@ -35,7 +39,7 @@ Mis à jour : 2026-10-17 (UTC).
 
 - L'effacement global de `docs/atelier/` ou `packages/atelier-model/` casserait des composants Fadi et perdrait l'historique d'acceptation.
 - Des imports, routes, modèles persistés et migrations pourraient encore dépendre des fonctionnalités industrielles ; non vérifié.
-- Limite de périmètre fonctionnel à faire confirmer avant suppression destructrice.
+- Périmètre fonctionnel clarifié : interdiction de supprimer les fonctions industrielles ou règles normatives de dessin. Les éventuels changements d'identifiants exigent des tests de compatibilité.
 
 ## Arrêt sûr
 
