@@ -36,7 +36,7 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
   demande d'acceptation ; un contrôle qui n'a pas pu tourner est déclaré.
 - Jamais de secret, de `node_modules`, de `dist/` ni du HTML de référence dans un commit.
 
-## Chantier Atelier (DrawAll V4.1)
+## Chantier Atelier Fadi — suivi historique
 
 - Cahier des charges : `docs/atelier-cahier-des-charges.md` (règles R1–R20, contrats, lots, organisation).
 - Suivi historique Atelier : `docs/atelier/decisions.md` et cahier `docs/atelier-cahier-des-charges.md` ; les références au produit distinct ont été retirées du dépôt (Issue #147).
