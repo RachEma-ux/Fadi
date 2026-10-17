@@ -1,7 +1,9 @@
 # Chantier Atelier Architecture (DrawAll V4.1) — dossier de suivi
 
-Documents de pilotage : `docs/atelier-cahier-des-charges.md` (exécution), `docs/atelier-drawall.md`
-(proposition acceptée), `docs/drawall/` (référentiel DrawAll V4.1).
+> **Décision Fadi — 17 octobre 2026 (Issue #147).** Les capacités de dessin et les fonctions industrielles (mécanique, structure, bois, tôlerie, MEP, etc.) restent natives à Fadi. Les normes techniques restent référencées selon leur organisme d'origine ; les éléments propres au produit DrawAll sont exclus du référentiel opérationnel Fadi. Les fiches historiques `DA-...` ne sont pas supprimées sans remplacement sûr de leur traçabilité et de leurs tests.
+
+
+Documents de pilotage Fadi : `docs/atelier-cahier-des-charges.md` (historique d'exécution), `docs/atelier/decisions.md` (décisions Fadi), `docs/atelier/recette.md` (recette). Les références propres à l'autre produit sont isolées dans le suivi de décontamination (Issue #147).
 
 | Emplacement | Contenu | Tenu par |
 | --- | --- | --- |

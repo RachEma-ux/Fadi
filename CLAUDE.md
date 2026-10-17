@@ -36,10 +36,10 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
   demande d'acceptation ; un contrôle qui n'a pas pu tourner est déclaré.
 - Jamais de secret, de `node_modules`, de `dist/` ni du HTML de référence dans un commit.
 
-## Chantier Atelier (DrawAll V4.1)
+## Chantier Atelier Fadi — suivi historique
 
 - Cahier des charges : `docs/atelier-cahier-des-charges.md` (règles R1–R20, contrats, lots, organisation).
-- Proposition acceptée : `docs/atelier-drawall.md`. Référentiel : `docs/drawall/`.
+- Suivi historique Atelier : `docs/atelier/decisions.md` et cahier `docs/atelier-cahier-des-charges.md` ; les références au produit distinct ont été retirées du dépôt (Issue #147).
 - Lots P1 (Atelier 0–9, Planche 1–7) acceptés le 8 octobre 2026 (D-174). Étape P2 : cahier `docs/atelier-cahier-p2.md`
   **validé** (D-176), lots **P2-0 et P2-1 livrés et acceptés** (`docs/atelier/lots/p2-lot-0.md`, `p2-lot-1.md`,
   D-182, D-183), lot **P2-2 livré** (`p2-lot-2.md`, D-184 : porte P1 → P2 passée sur bâtiment + mécanique), lot **P2-3 livré** (`p2-lot-3.md`, D-185 : ontologie `structure`), lot **P2-4 livré** (`p2-lot-4.md`, D-186 : ontologies `timber` et `sheetmetal`), lot **P2-5 livré** (`p2-lot-5.md`, D-187 : ontologie `mep`), lot **P2-6 livré** (`p2-lot-6.md`, D-188 : bâtiment P2, surfaces libres, coordination, cinématique, inerties), lot **P2-7 livré** (`p2-lot-7.md`, D-189 : annotations de fabrication, isométriques, feuilles gabarits, perçages / ferraillage / débit, nuages de points), lot **P2-8 livré** (`p2-lot-8.md`, D-190 : graphes de génération contrôlée, règles par ontologie, dossier de recette P2 `docs/atelier/recette-p2.md` — **P2 livré en entier ; lots P2-2 à P2-8 acceptés le 9 octobre 2026, D-193 : 125 fiches « disponible », P2 clos, aucune suite engagée**). La

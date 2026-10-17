@@ -922,7 +922,7 @@ export const api = {
   importExample: (exampleId: string) =>
     request<Project>(`/examples/${exampleId}/import`, { method: "POST" }),
 
-  // --- Atelier typé (chantier DrawAll, cahier des charges §5.4) ---
+  // --- Atelier Fadi typé (cahier des charges §5.4) ---
   getAtelierModelARevision: (projectId: string, revision: number) => request<AtelierModelResponse & { revisionCourante: number; lectureSeule: true }>(`/projects/${projectId}/atelier/model?revision=${revision}`),
   getAtelierHistoriqueObjet: (projectId: string, objetId: string) => request<{ objetId: string; existe: boolean; classe: string | null; entrees: { journalId: string; revision: number; kind: string; label: string; action: "cree" | "modifie" | "supprime"; auteur: string | null; date: string; successeurs: string[] }[] }>(`/projects/${projectId}/atelier/objets/${encodeURIComponent(objetId)}/historique`),
   getAtelierReferencesExternes: (projectId: string, traits = true) => request<{ revision: number; references: ReferenceExterneEtat[] }>(`/projects/${projectId}/atelier/references-externes${traits ? "" : "?traits=non"}`),

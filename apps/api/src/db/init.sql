@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS project_members (
 CREATE INDEX IF NOT EXISTS project_members_user_idx ON project_members (user_id);
 
 -- ---------------------------------------------------------------------------
--- Modèle typé de l'Atelier (chantier DrawAll V4.1, cahier des charges §5.5).
+-- Modèle typé de l'Atelier Fadi (cahier des charges §5.5).
 -- Section « atelier » : propriété du module Atelier ; miroir de schema.ts.
 -- ---------------------------------------------------------------------------
 

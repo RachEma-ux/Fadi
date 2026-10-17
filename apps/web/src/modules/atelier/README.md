@@ -2,7 +2,7 @@
 
 Responsabilité : modèle du bâtiment, dessin, sélection, édition et vues.
 
-Depuis la bascule (lot 4 du chantier DrawAll V4.1, `docs/atelier-cahier-des-charges.md`), l'Atelier est reconstruit
+Depuis la bascule de l'Atelier Fadi (lot 4, `docs/atelier-cahier-des-charges.md`), l'Atelier est reconstruit
 sur le modèle typé de `packages/atelier-model` : un seul Atelier dans le produit, ouvert par `?module=atelier` et aux
 étapes 10 / 11. L'ancien moteur extrait du prototype (Design Atelier V14-3) et son magasin clé / valeur ont été
 supprimés ; les projets qui n'avaient que lui ont été repris dans le modèle typé par la migration de bascule

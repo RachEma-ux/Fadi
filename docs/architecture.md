@@ -65,8 +65,7 @@ are three distinct reference systems, explicitly tagged — never silently mixed
 tests on their invariants. It intentionally does not yet carry persistence, validation rules or UI — those
 belong to Lot 2 onward, once the backend exists to enforce them server-side too.
 
-The building model itself is being rebuilt on the DrawAll V4.1 contracts (`docs/drawall/`, decisions D1–D6;
-specification `docs/atelier-cahier-des-charges.md`): `packages/atelier-model` is the pure package that owns the
+The building model uses the Fadi Atelier contracts (see `docs/atelier-cahier-des-charges.md` and the existing Fadi decisions), pending the decontamination review tracked in Issue #147: `packages/atelier-model` is the pure package that owns the
 `building.architecture` ontology (storeys, walls, doors, windows, openings, slabs, roofs, stairs, rooms, spaces,
 zones; the column of `building.structure`; sketches, generic solids and annotations), the identities
 definition / occurrence / representation, typed properties with units and provenance, the typed commands and
@@ -93,7 +92,7 @@ building's physical data: panning the 3D view must never touch the model's revis
 
 `packages/domain-model` also carries a small, generic, tested `CommandHistory` (do/undo/redo over an
 application-defined `Command<TState>`) as the mechanical skeleton for this rule. The Atelier commands
-themselves follow the transactional cycle of the DrawAll Architecture V4 §6: the client sends an intention
+themselves follow the transactional cycle described in Fadi's Atelier command contracts: the client sends an intention
 (contract version, commands, targets, `requestId`, `baseRevision`); the server re-reads the role, validates
 units, types and preconditions, applies the same pure reducers on a consistent snapshot under the project row
 lock, records the business changes, the journal entry (with its inverse) and the outbox events in one
@@ -111,7 +110,7 @@ views, documents and the Harmonie review « à recalculer ».
 | UI state | Zustand |
 | Server data loading/cache | TanStack Query |
 | Model changes | Reversible business commands + transactional validation |
-| Architectural rendering | 3D: three.js on WebGL2 by default (DrawAll decision D2), WebGPU only behind a setting with automatic fallback, frame budget measured and published, never promised; 2D plan and technical views: SVG / Canvas 2D in TypeScript from `core-geometry` |
+| Architectural rendering | 3D: three.js on WebGL2 by default (historical rendering choice recorded in the Fadi Atelier decisions), WebGPU only behind a setting with automatic fallback, frame budget measured and published, never promised; 2D plan and technical views: SVG / Canvas 2D in TypeScript from `core-geometry` |
 | Background computation | Web Workers |
 | Server | Node.js, TypeScript, Express, REST API |
 | Database | PostgreSQL + Drizzle |
@@ -205,7 +204,7 @@ AI assistance may explain an anomaly, propose a variant, or prepare a change —
 goes through the same controlled, reversible commands as a human-initiated one, and stays reversible. No
 AI-initiated write bypasses the command/undo system.
 
-### The rebuilt Atelier after lots 5–8 (DrawAll V4.1)
+### The rebuilt Fadi Atelier after lots 5–8
 
 All of it is pure code in `packages/atelier-model` (no React, no DOM, no three.js), executed identically in the
 browser (preview) and on the server (files, checks), and every write goes through the command service:
@@ -251,18 +250,16 @@ Lots, decisions and acceptance records: `docs/atelier/lots/`, `docs/atelier/deci
 | 3. Application pilote | Modular interface, local + server save, rendering preserved | Full workflow usable on P.118 |
 | 4. Continuité du travail | Sync, conflicts, rights and restore | Network-loss and concurrent-edit scenarios handled |
 | 5. Mise en production | Remaining functions migrated, exports, monitoring, deployment | Functional, mobile and documentation sign-off |
-| 6. Atelier DrawAll V4.1 | Lots 0–9 of `docs/atelier-cahier-des-charges.md`: capability sheets and measurements, typed model, transactional command API, new Atelier (2D, architecture objects, 3D WebGL2), switch (old engine deleted), derived documents and quantities, IFC / DXF / PDF exchanges, versions / variants / publications, scripts and controlled-loop assistant, final acceptance | Each lot accepted by the owner on its verifiable points; one Atelier in the product after the switch |
+| 6. Atelier Fadi — modèle typé | Lots 0–9 of `docs/atelier-cahier-des-charges.md`: capability sheets and measurements, typed model, transactional command API, new Atelier (2D, architecture objects, 3D WebGL2), switch (old engine deleted), derived documents and quantities, IFC / DXF / PDF exchanges, versions / variants / publications, scripts and controlled-loop assistant, final acceptance | Each lot accepted by the owner on its verifiable points; one Atelier in the product after the switch |
 
 Budget and schedule are set after Lot 1, from identified tasks and verified dependencies — not guessed up
 front.
 
-The Atelier Architectural is being rebuilt on the DrawAll V4.1 contracts (typed transactional commands,
-definition / occurrence / representation identities, `building.architecture` ontology, WebGL2 rendering, named
-versions and variants, IFC 4.3 exchange matrix): `docs/atelier-drawall.md` is the accepted proposal (clean
-rebuild in a new module, one Atelier in the product, the extracted engine deleted at the switch, P.118 imported
-one way) and `docs/atelier-cahier-des-charges.md` the execution specification. The amendments to this plan listed
-in the proposal's section 10 are applied by its lot 0; until then the sections above describe the repository as
-it stands.
+The Fadi Atelier is built on typed transactional commands, definition / occurrence / representation identities,
+`building.architecture`, WebGL2 views, versions and variants, and an IFC 4.3 exchange matrix. The authoritative
+Fadi execution specification is `docs/atelier-cahier-des-charges.md`, with historical decisions recorded in
+`docs/atelier/decisions.md` and proof in `docs/atelier/recette.md`. The former cross-product proposal was
+removed from the working tree during decontamination (Issue #147); it is not a normative source for new Fadi work.
 
 ### Where this repository stands
 
@@ -277,14 +274,14 @@ typed, idempotent commands journalled per project in `atelier_commands`, revisio
 a stale lot, server-side undo / redo through the journal's inverses, `projects.model_revision` advancing with
 each lot), step files, produced documents and comments. Project import covers the P.118 example and the
 prototype's own exports (archive module, read in v1 and v2). The prototype's Atelier engine, first
-encapsulated unchanged, was replaced by the rebuilt Atelier at the DrawAll V4.1 switch-over (Atelier lot 4,
+encapsulated unchanged, was replaced by the rebuilt Atelier at the Fadi Atelier lot 4 switch-over (
 `docs/atelier/lots/lot-4.md`); its key/value store was migrated into the typed model and dropped.
 `packages/domain-model` carries the entity types, the frames, and the business logic as pure functions
 (Harmonie rules and staleness, site zoning, programme library, model analysis, design review, Harmony engine
 tables, business checks, documents) — the API executes them server-side, the client only renders.
 
 Lot 3 is the pilot as it stands: the seven modules have real screens (Projets et sources, Parcours with the 21
-real steps and tools, Programmation, Atelier — rebuilt on the typed model since the DrawAll V4.1 switch-over —, Analyses
+real steps and tools, Programmation, Atelier — rebuilt on the typed model since the Fadi Atelier switch-over —, Analyses
 métier, Documents, Collaboration). The conformity matrix (`docs/migration/matrix.md`) is the authoritative
 record of what is ported, with what decision, which proof (domain / API tests, the Playwright scenario,
 captures) and which limits remain. The e2e scenario runs the full workflow on P.118 (import, steps, Atelier

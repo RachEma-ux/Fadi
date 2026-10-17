@@ -1,4 +1,4 @@
-# Dossier de recette — Atelier Architecture (DrawAll V4.1), lots 0 à 9
+# Dossier de recette — Atelier architectural Fadi, lots 0 à 9
 
 Établi le 4 octobre 2026 par le chef de projet (exécution continue décidée en D-010). Ce dossier dit **ce qui est
 livré, où en est la preuve, ce que vous pouvez vérifier vous-même, et ce qu'il vous reste à décider**. Rien n'y était
