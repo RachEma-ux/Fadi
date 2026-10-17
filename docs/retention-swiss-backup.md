@@ -1,6 +1,6 @@
 # Rétention Restic sur Swiss Backup — politique proposée
 
-**État au 17 octobre 2026 : proposition documentée ; simulation seule, aucune purge autorisée ni programmée.**
+**État au 17 octobre 2026 : simulation exécutée et réussie sur Fadi-Serv ; aucune purge réalisée ni programmée.**
 
 ## Contexte confirmé
 
@@ -51,6 +51,16 @@ sudo /usr/local/sbin/fadi-restic-retention-audit
 Ne pas passer `RESTIC_PASSWORD` ni `OS_PASSWORD` en arguments. Ne pas publier les fichiers de configuration ni les secrets. Le script affiche seulement des métadonnées et des statistiques, pas les secrets.
 
 **Pour l'instant :** vérifier l'affichage final `FADI_RETENTION_DRY_RUN_OK` et recopier les tableaux `keep` / `remove` de la simulation. Vérifier en particulier que les snapshots de restauration testés et les sauvegardes les plus récentes sont conservés.
+
+## Résultat de l'audit réel — 17 octobre 2026
+
+L'utilisateur a exécuté `/usr/local/sbin/fadi-restic-retention-audit` sur le VPS et confirmé la sortie `FADI_RETENTION_DRY_RUN_OK : aucune suppression effectuée.`
+
+La capture de la simulation affiche **deux groupes de snapshots** (un groupe avec `1 snapshots`, un autre avec `keep 4 snapshots`) : **aucune section de suppression n'apparaît**. Le second groupe contient les snapshots identifiés `322f0e6c`, `f5dce11a`, `e98c8d5b` et `544462d7`. Le groupe initial d'une seule archive est probablement distinct parce que le premier transfert manuel ne comprenait que le volume `/backups`, tandis que le service automatisé inclut aussi le fichier `.env.deploy`. Cette différence de chemins est cohérente avec `--group-by host,paths` ; confirmer avec `restic snapshots` si une décision d'effacement devient nécessaire.
+
+**Bilan de cette simulation** : cinq snapshots apparaissaient lors du contrôle d'intégrité précédent, et la simulation en répartit cinq entre deux groupes (1 + 4) ; tous sont conservés par la politique proposée, aucun n'est identifié comme supprimable à ce stade. Le journal complet des statistiques `restic stats --mode raw-data` n'a pas été transmis : **occupation réelle du dépôt et rythme de croissance encore à quantifier**.
+
+**Décision de sécurité** : conserver les archives et laisser le timer quotidien opérationnel, avec surveillance Healthchecks. Ne pas programmer de purge réelle tant que l'historique n'est pas suffisamment représentatif et qu'une revue `forget --dry-run` ne montre pas précisément les snapshots à retirer. La politique proposée reste prête mais **non appliquée**.
 
 ## Phase B — Décision après audit
 
