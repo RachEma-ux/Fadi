@@ -1,5 +1,8 @@
 # Cahier des charges — mode « Planche » de l'Atelier
 
+> **Décision de conservation native Fadi (17 octobre 2026, Issue #147).** Toutes les règles techniques et normatives de dessin de la Planche (cotation, précision, unités, géométrie, symboles, hachures, calques et échanges) sont conservées dans Fadi. Les normes externes restent citées avec leurs versions et sources réelles ; aucune règle n'est dépendante du produit DrawAll. Les éventuels identifiants hérités ne seront migrés qu'avec contrôle de compatibilité.
+
+
 **Version 1 — 6 octobre 2026.** Maître d'ouvrage : le propriétaire du dépôt. Rédigé par le chef de projet à partir
 des décisions du maître d'ouvrage du 6 octobre 2026 et des relevés en direct de SketchUp pour le Web du même jour.
 
