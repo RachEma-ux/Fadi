@@ -111,8 +111,7 @@ Permanent hosting (stable URL, persistent PostGIS database, daily backups, verif
 `scripts/verify-restore.sh` (also run by CI on the scenario's database). What the repository cannot contain is a
 machine or hosting account and a domain name.
 
-Atelier rebuild (DrawAll V4.1): `docs/atelier-drawall.md` is the accepted proposal (clean rebuild, one Atelier, P.118
-imported one way), `docs/atelier-cahier-des-charges.md` the execution specification for Claude Code (rules, contracts,
+Atelier Fadi (architecture et historique) : `docs/atelier-cahier-des-charges.md` est le cahier d'exécution du chantier, avec décisions dans `docs/atelier/decisions.md` (règles et contrats,
 lots, acceptance, team organisation), `docs/atelier/` the
 follow-up folder (capability sheets, decisions, measurements, lot reports). `CLAUDE.md` is the entry point for Claude Code. P1 lots (Atelier 0–9, Planche 1–7) were accepted on 8 October 2026 (D-174); `docs/atelier-cahier-p2.md` is the
 P2 specification (structure, mechanical, timber, sheet metal, MEP, surfaces, coordination), validated on 8 October 2026 (D-176);
