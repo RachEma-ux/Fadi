@@ -1,0 +1,58 @@
+name: Continuité de développement
+
+on:
+  pull_request:
+    paths:
+      - "docs/continuity/**"
+      - "docs/workstreams/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - "README.md"
+      - "scripts/continuity.mjs"
+      - "scripts/check-continuity.mjs"
+      - "scripts/check-continuity.test.mjs"
+      - ".github/workflows/continuity.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/continuity/**"
+      - "docs/workstreams/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - "README.md"
+      - "scripts/continuity.mjs"
+      - "scripts/check-continuity.mjs"
+      - "scripts/check-continuity.test.mjs"
+      - ".github/workflows/continuity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  continuity-check:
+    name: Continuité — docs, checkpoints et tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests unitaires des règles de reprise
+        run: node --test scripts/check-continuity.test.mjs
+      - name: Vérifier tous les dossiers de chantier
+        run: node scripts/check-continuity.mjs
+      - name: Vérifier les checkpoints des chantiers modifiés (PR seulement)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch origin "$BASE_REF"
+          node scripts/check-continuity.mjs --changed-base "origin/$BASE_REF"
