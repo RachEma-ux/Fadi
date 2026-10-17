@@ -298,7 +298,7 @@ export const projectMembers = pgTable("project_members", {
 }, (t) => [primaryKey({ columns: [t.projectId, t.userId] }), index("project_members_user_idx").on(t.userId)]);
 
 // ---------------------------------------------------------------------------
-// Modèle typé de l'Atelier (chantier DrawAll V4.1, cahier des charges §5.5) —
+// Modèle typé de l'Atelier Fadi (cahier des charges §5.5) —
 // propriété du module Atelier. Une ligne par entité du modèle
 // (`@parcours/atelier-model`, contrat `modele-atelier/1`), toutes scopées par
 // projet ; les paramètres canoniques restent du JSON typé (repère local, mètres),
