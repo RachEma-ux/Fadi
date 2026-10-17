@@ -80,6 +80,10 @@ Une preuve (commit, CI, journal, fichier, capture ou revue) doit accompagner `V�
 
 Les contrôles structurels valident la présence et la forme ; ils **ne peuvent pas prouver** que les faits inscrits sont vrais ou à jour. La revue humaine de ces faits reste obligatoire.
 
+## Protection GitHub
+
+Le protocole de reprise est vérifié en CI, mais `main` était **non protégé** lors de l'audit du 17 octobre 2026. Un administrateur devra configurer le ruleset GitHub adapté (pull requests obligatoires, checks requis et interdiction des force-push) ; ce n'est pas effectué par les commits de cette PR. Voir [les réglages à appliquer](GITHUB-SETTINGS.md).
+
 ## Sécurité et exploitation
 
 Dépôt public : ne jamais inscrire dans les fichiers de chantier des clés SSH, URLs de ping secrètes, mots de passe, données personnelles de projets ou détails privés de clients. Préférer des références à des fichiers secrets protégés plutôt que leur contenu. Les sauvegardes Restic/Swiss Backup et la CI/CD ont leurs propres dossiers et PR ; les répliquer ici uniquement par lien et état vérifiable.
