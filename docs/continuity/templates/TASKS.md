@@ -6,7 +6,7 @@
 
 ## En cours
 
-- Aucune.
+- Aucune tâche engagée à la création.
 
 ## Terminé
 
