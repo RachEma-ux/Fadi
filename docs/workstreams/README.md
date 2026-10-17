@@ -6,6 +6,7 @@ Chaque **chantier** dispose d'un dossier de contexte et d'un point de reprise ; 
 
 | Chantier | État constaté | Dossier | Suivi |
 | --- | --- | --- | --- |
+| Purge DrawAll hors Fadi | **Audit et arbitrage en cours** ; aucun changement au dépôt DrawAll | [purge-drawall/](purge-drawall/CONTEXT.md) | [Issue #147](https://github.com/RachEma-ux/Fadi/issues/147) |
 | Architecture WebApp | **À définir** : périmètre futur non décidé | [architecture-webapp/](architecture-webapp/CONTEXT.md) | Nouveau suivi métier à ouvrir après le cadrage ; la présente structure est créée par [Issue #144](https://github.com/RachEma-ux/Fadi/issues/144) |
 | Exploitation / sauvegarde Fadi-Serv | Travaux d'exploitation déjà suivis ailleurs, sans duplication | [Déploiement](../deploiement.md) | [PR #143](https://github.com/RachEma-ux/Fadi/pull/143) (état à revérifier) |
 | Interface gabarits pleine largeur | PR existante indépendante | Aucune nouvelle fiche avant décision | [PR #142](https://github.com/RachEma-ux/Fadi/pull/142) (état à revérifier) |
