@@ -1,4 +1,4 @@
-# Cahier des charges — Atelier Architecture selon DrawAll V4.1
+# Cahier des charges — Atelier architectural de Fadi (version historique P1)
 
 **Document d'exécution pour Claude Code (chef de projet et équipiers).** Version 1.0 — 3 octobre 2026.
 Maître d'ouvrage : le propriétaire du dépôt. Il valide chaque lot ; rien n'est « disponible » sans sa validation.
@@ -51,7 +51,7 @@ Prompts par lot et prompts d'équipiers : annexe E.
 
 ## 1. Objet
 
-Reconstruire l'Atelier Architectural de Fadi comme la *lecture bâtiment* de DrawAll : l'ontologie
+Reconstituer l'Atelier architectural de Fadi selon ses contrats bâtiment propres : l'ontologie
 `building.architecture` portée par les contrats de l'Architecture V4 (identités définition / occurrence /
 représentation, commandes typées transactionnelles et idempotentes, références topologiques « à réparer »,
 documents dérivés rattachés à une révision, versions nommées et variantes, travail local explicite) et par les
@@ -77,8 +77,8 @@ l'assistant à boucle contrôlée — chacun avec sa fiche de capacité, sa preu
   construction, hachure), solide générique (extrusion d'un contour), référence de plan. **`annotation`** (M11) :
   cotation, texte, étiquette. **Projet** : parcelle, emprise, calques, hypothèses, sources, structure déclarée.
 - Les 138 entrées de capacité du chantier Atelier historique, à vérifier dans les fiches `docs/atelier/fiches/` et les lots Fadi ; aucun référentiel externe n'est désormais normatif.
-- Les modules DrawAll M01–M05 → module Fadi *Atelier* ; M11 → *Documents* (et vues dans l'Atelier) ; M12 →
-  *Analyses métier* ; M16 → *Collaboration* ; M17 → *Projets et sources* / *Documents*.
+- Cartographie Fadi : géométrie et modélisation → *Atelier* ; production de vues → *Documents* ; contrôle →
+  *Analyses métier* ; permissions et échanges → *Collaboration* et *Projets et sources*.
 
 ### 2.2 Dehors (ne pas commencer, ne pas « préparer »)
 
@@ -751,7 +751,7 @@ non justifiée échoue. La CI appelle `run.mjs`.
 
 **Relecture croisée (fin de lot) :**
 
-> Lance trois équipiers relecteurs sur la branche `lot/{N}` : « conformité DrawAll » (règles R1–R20, fiches,
+> Lance trois équipiers relecteurs sur la branche `lot/{N}` : « conformité aux contrats de l'Atelier Fadi » (règles R1–R20, fiches,
 > décisions D1–D6), « sécurité et droits » (validation des entrées, autorisation par ressource, secrets, limites),
 > « accessibilité et mobile » (clavier, axe-core, 390 px et 980 px). Chacun livre ses constats classés 🔴 / 🟠 / 🟡
 > avec fichier, ligne, motif et correctif. Corrige les 🔴 et 🟠 avant de demander l'acceptation.
