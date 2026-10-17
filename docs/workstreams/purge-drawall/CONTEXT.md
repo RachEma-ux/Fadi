@@ -25,5 +25,12 @@ Séparer définitivement **Fadi** de **DrawAll**, autre application possédant s
 
 ## Hypothèses et questions ouvertes
 
-- « Élément relatif à DrawAll » recouvre-t-il également les **fonctionnalités Fadi déjà exposées** (mécanique, tôlerie, réseaux, ontologies P2), ou seulement les documents, noms et liaisons à l'autre dépôt ? La frontière métier doit être arbitrée sur une matrice de fonctionnalités, sans déduire qu'une fonctionnalité est étrangère à Fadi du seul préfixe `DA-`.
-- La provenance et la licence des fichiers repris doivent être confirmées avant d'affirmer leur appartenance exclusive à l'autre application.
+- La décision de conservation des fonctions et normes est prise. Restent à auditer : les dépendances implicites, les références historiques et les licences applicables, puis la migration non destructive des identifiants et cahiers.
+
+## Décision de périmètre — maître d'ouvrage, 17 octobre 2026
+
+- **Conserver intégralement les fonctionnalités industrielles présentes dans Fadi**, notamment mécanique, assemblages, structure, bois, tôlerie, réseaux/MEP, géométrie et outils CAO ; leur statut devient **natif Fadi** et non dépendant de l'application distincte.
+- **Conserver toutes les règles normatives de dessin applicables à Fadi**, avec leurs exigences, unités, tolérances, représentations, symboles, vérifications et références normatives pertinentes. Ne pas confondre norme technique (p. ex. IFC, ISO, conventions de cotation) et produit DrawAll.
+- Adapter les cahiers Atelier, Planche et P2, les décisions, les identifiants et les tests à une définition **autonome et documentée dans Fadi**, tout en conservant les faits historiques et les sources légitimes des normes ; aucune réattribution mensongère d'origine ou de licence.
+- Purger toute référence ou dépendance *au produit DrawAll* dans la documentation opérationnelle et le code Fadi. Toute transformation des identifiants `DA-...` devra être précédée d'un inventaire de leurs usages dans les données, exports, API et tests, avec compatibilité de migration.
+- Ne supprimer **aucune fonction industrielle ni règle de dessin** et ne modifier en aucun cas le dépôt DrawAll.
