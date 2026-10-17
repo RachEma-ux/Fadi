@@ -6,8 +6,7 @@ acceptés (D-182, D-183, D-193) ; P2 est clos, aucun lot suivant n'est engagé. 
 Planche (`docs/planche/cahier-planche.md`) restent inchangés : ce document s'y ajoute, il ne les modifie pas.**
 
 Documents de référence historiques retirés de Fadi dans le cadre de l'Issue #147 (référentiel de l'autre application). Les contrats encore applicables à Fadi doivent être audités dans `docs/architecture.md` et `docs/atelier/decisions.md` (et non présumés normatifs à partir d'un autre produit).
-D1–D6), proposition acceptée `docs/atelier-drawall.md`, dossier de recette P1 `docs/atelier/recette.md`,
-journal des décisions `docs/atelier/decisions.md` (D-174 : acceptation de P1).
+Dossier de recette P1 : `docs/atelier/recette.md` ; journal des décisions : `docs/atelier/decisions.md` (D-174 : acceptation de P1).
 
 ## 0. Mode d'emploi
 
