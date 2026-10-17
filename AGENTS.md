@@ -23,3 +23,11 @@
   visible named button, never replaced by a hidden gesture.
 - Run npm run typecheck, npm test and npm run build for relevant code changes. Report checks that could not run.
 - Never commit secrets, node_modules or build outputs.
+
+## Continuité des sessions et des agents
+
+- Lire `docs/continuity/README.md` et le dernier `docs/workstreams/<chantier>/HANDOFF.md` **avant de reprendre** un chantier existant. Lire ensuite `STATUS.md`, `TASKS.md`, `CONTEXT.md`, l'Issue et la PR correspondantes, et vérifier le code/la CI actuelle. La mémoire d'une session IA n'est pas une preuve.
+- Suivre le cycle **Issue → branche courte → PR → preuves → STATUS/HANDOFF → revue** ; ne pas créer de branche permanente par module. Ne pas écraser un état de reprise existant.
+- Tout changement dans `docs/workstreams/<chantier>/` doit actualiser **`STATUS.md` et `HANDOFF.md` dans la même PR**. Consigner une décision structurante dans son journal déjà existant, ou une nouvelle ADR si aucun journal canonique ne couvre le sujet.
+- Distinguer `À définir`, `Implémenté`, `Vérifié`, `Accepté` et `Bloqué`; chaque état « Vérifié » doit citer une preuve concrète (commit, test, rapport, revue). Avant une opération irréversible, enregistrer un checkpoint sur GitHub.
+- Ces consignes complètent les règles précédentes et **ne constituent pas une autorisation** de modifier l'architecture cible, fusionner une PR ou déployer Fadi sans accord.
