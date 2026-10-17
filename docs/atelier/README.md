@@ -1,7 +1,6 @@
 # Chantier Atelier Architecture (DrawAll V4.1) — dossier de suivi
 
-Documents de pilotage : `docs/atelier-cahier-des-charges.md` (exécution), `docs/atelier-drawall.md`
-(proposition acceptée), `docs/drawall/` (référentiel DrawAll V4.1).
+Documents de pilotage Fadi : `docs/atelier-cahier-des-charges.md` (historique d'exécution), `docs/atelier/decisions.md` (décisions Fadi), `docs/atelier/recette.md` (recette). Les références propres à l'autre produit sont isolées dans le suivi de décontamination (Issue #147).
 
 | Emplacement | Contenu | Tenu par |
 | --- | --- | --- |
