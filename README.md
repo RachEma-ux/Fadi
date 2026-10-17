@@ -6,6 +6,12 @@ application is bilingual French / English (French is the source language; Englis
 bar, the sign-in pages or Settings, see "Languages" below); this file and `docs/architecture.md` are the developer entry
 points.
 
+## Reprise du développement entre sessions IA
+
+Le cadre de continuité de Fadi (ChatGPT, Claude Code, Codex et contributeurs) est décrit dans [`docs/continuity/README.md`](docs/continuity/README.md). Voir [l'index des chantiers](docs/workstreams/README.md) et commencer par `HANDOFF.md` puis `STATUS.md` pour reprendre sans confondre hypothèses et résultats vérifiés. La nouvelle session doit revalider GitHub HEAD, Issues, PR et CI. Le système ne conserve pas automatiquement le raisonnement caché de l'agent.
+
+Outils locaux sans dépendance : `node scripts/continuity.mjs status architecture-webapp`, `node scripts/continuity.mjs init <slug> <issue-number>`, `node scripts/check-continuity.mjs`. Les tâches passent par Issue → branche → PR → checkpoint ; la mise en production demeure explicitement séparée.
+
 ## Status
 
 The migration is a working modular monolith with the seven modules of the brief, each with real screens and
