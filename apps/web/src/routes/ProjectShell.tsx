@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, ROLE_LABEL } from "../lib/api";
@@ -25,8 +25,7 @@ import { DossierDashboard } from "../modules/accueil/DossierDashboard";
 import { ProjectModuleNav } from "./ProjectModuleNav";
 import { denied } from "../modules/accueil/dossier-data";
 
-// Le moteur de l'Atelier (scripts, markup, feuille de style) n'est chargé qu'à la première ouverture de l'Atelier.
-// L'Atelier architectural (modèle typé, lots 3a–4) : three.js n'est chargé qu'à l'ouverture de la vue 3D.
+// Le moteur de l'Atelier n'est chargé qu'à sa première ouverture ; three.js à l'ouverture de la vue 3D.
 const AtelierNouveau = lazy(() => import("../modules/atelier/nouveau/AtelierNouveau").then((m) => ({ default: m.AtelierNouveau })));
 
 export function ProjectShell() {
@@ -37,18 +36,16 @@ export function ProjectShell() {
   const projectQuery = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), refetchInterval: 60_000, staleTime: 30_000, retry: (count, error) => !denied(error) && count < 1 });
   const [lockMessage, setLockMessage] = useState<string | null>(null);
   const stepsQuery = useQuery({ queryKey: ["steps", projectId], queryFn: () => api.listSteps(projectId) });
-  // Empreinte du modèle dessiné (détail technique, montré ici plutôt que sur l'accueil) : même lecture que l'aperçu conceptuel.
+  // Empreinte du modèle dessiné : même lecture que l'aperçu conceptuel.
   const previewQuery = useQuery({ queryKey: ["concept-preview", projectId], queryFn: () => api.getConceptPreview(projectId), enabled: !!projectQuery.data && !denied(projectQuery.error), staleTime: 5 * 60_000 });
   const online = useOnline();
   const access = useProjectAccess(projectId);
   const { user } = useAuth();
-  // Un message porté par la navigation (copie de travail créée, projet importé…) : le Parcours affiche le sien, les autres modules celui-ci.
   const location = useLocation();
   const navigate = useNavigate();
   const notice = (location.state as { notice?: string } | null)?.notice ?? null;
 
-  // Le module ouvert vit dans l'URL (`?module=`), comme l'étape (`?etape=`) et la vue (`?vue=`) : les liens
-  // entre modules (« Comparer au modèle dessiné », « Ouvrir l’Atelier »…) et le rechargement le respectent.
+  // Le module, l'étape et la vue vivent dans l'URL : liens directs et rechargement les respectent.
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedModule = searchParams.get("module");
   const activeModule = requestedModule && MODULES.some((m) => m.id === requestedModule) ? requestedModule : searchParams.has("etape") ? "parcours" : "accueil";
@@ -57,12 +54,12 @@ export function ProjectShell() {
   const recordedEntry = useRef<string | null>(null);
   useEffect(() => {
     if (user && projectQuery.data?.id === projectId && !denied(projectQuery.error) && recordedEntry.current !== `${user.id}:${location.key}`) {
-      recordedEntry.current = `${user.id}:${location.key}`;
       const currentWork = activeModule === "accueil" ? undefined : requestedReview ? "review" : activeModule === "programmation" ? "programme" : activeModule === "atelier" ? "atelier" : "parcours";
       rememberDossier(user.id, projectId, activeModule === "parcours" ? requestedStep : undefined, currentWork);
+      recordedEntry.current = `${user.id}:${location.key}`;
     }
   }, [user?.id, projectId, projectQuery.data?.id, projectQuery.error, activeModule, requestedStep, requestedReview, location.key]);
-  // Module Atelier : page de l'Atelier Architectural (enveloppe effacée), comme aux étapes 10 / 11.
+  // Ajuster le dessin sans masquer l'en-tête ou les modules du projet.
   useImmersive(activeModule === "atelier");
   const programmeView = searchParams.get("vue");
   function selectModule(id: string) {
@@ -71,16 +68,29 @@ export function ProjectShell() {
     setSearchParams(next);
   }
 
-  if (activeModule === "accueil") {
-    return <main className="fadi-home" data-home="project"><DossierDashboard key={projectId} projectId={projectId} /></main>;
+  // Une seule enveloppe pour tous les états, accueil compris. La navigation
+  // précède toujours les métadonnées, alertes et contenus spécifiques au module.
+  function renderPage(content: ReactNode) {
+    return <div className="project-shell" data-project-module={activeModule}>
+      <ProjectModuleNav
+        projectId={projectId!}
+        activeModule={activeModule}
+        onHome={() => setSearchParams(new URLSearchParams())}
+        onModule={selectModule}
+      />
+      {content}
+    </div>;
   }
 
+  if (activeModule === "accueil") {
+    return renderPage(<main className="fadi-home" data-home="project"><DossierDashboard key={projectId} projectId={projectId} /></main>);
+  }
   if (projectQuery.isLoading) {
-    return <p role="status">Chargement du projet…</p>;
+    return renderPage(<main className="module-content"><p role="status">Chargement du projet…</p></main>);
   }
   if (!projectQuery.data || denied(projectQuery.error)) {
-    return (
-      <main>
+    return renderPage(
+      <main className="module-content">
         <p role="alert">Projet introuvable, ou vous n'y avez pas accès.</p>
         <Link to="/projets">Retour aux projets</Link>
       </main>
@@ -90,8 +100,8 @@ export function ProjectShell() {
   const project = projectQuery.data;
   const descriptor = MODULES.find((m) => m.id === activeModule);
 
-  return (
-    <div className="project-shell">
+  return renderPage(
+    <>
       <header className="project-header">
         <span className="project-header-meta">
           <span title={previewQuery.data?.nativeHash ? `Empreinte du modèle dessiné (révision ${project.modelRevision})` : undefined}>
@@ -110,53 +120,32 @@ export function ProjectShell() {
         </span>
       </header>
 
-      {lockMessage && (
-        <p className="access-banner" role="alert">
-          {lockMessage}
-        </p>
-      )}
-
+      {lockMessage && <p className="access-banner" role="alert">{lockMessage}</p>}
       {!access.canWrite && (
         <p className="access-banner" role="status">
           {access.lock && !access.holdsLock && access.mayEdit ? lockedHint(access.lock) : READ_ONLY_HINT}{" "}
-          <button type="button" className="link-button" onClick={() => selectModule("collaboration")}>
-            Voir le partage
-          </button>
+          <button type="button" className="link-button" onClick={() => selectModule("collaboration")}>Voir le partage</button>
         </p>
       )}
-
       {(!online || projectQuery.isError) && (
         <p className="offline-banner" role="status">
           Lecture hors-ligne : données lues le {new Date(projectQuery.dataUpdatedAt).toLocaleString(LOCALE)}. Le dessin de l’Atelier s’enregistre localement ; les formulaires et arbitrages attendront
           le retour du réseau.
         </p>
       )}
-
       <ConflictPanel projectId={projectId} />
 
-      <ProjectModuleNav
-        projectId={projectId}
-        activeModule={activeModule}
-        onHome={() => setSearchParams(new URLSearchParams())}
-        onModule={selectModule}
-      />
-
       <main className={`module-content${activeModule === "parcours" || activeModule === "atelier" ? " module-content-parcours" : ""}`}>
-        {/* Le module Parcours porte son propre bandeau (« Parcours du projet », prototype) et sa mise en page : pas de titre de module. */}
         {activeModule === "parcours" && <ParcoursModule projectId={projectId} />}
-
         {activeModule !== "parcours" && notice && <HarmonieToast text={notice} onDone={() => navigate(`${location.pathname}${location.search}`, { replace: true, state: null })} />}
-
         {activeModule === "atelier" && (
           <>
-            {/* Module Atelier : la page de l'Atelier Architectural (bandeau du prototype, enveloppe effacée) ; « ← » ramène au parcours. */}
             <StageStrip title="Atelier Architectural" stage={null} subtitle={`${project.code} — ${project.name}`} onBack={() => selectModule("parcours")} onHome={() => navigate("/projets")} />
             <Suspense fallback={<p role="status">Chargement de l’Atelier…</p>}>
               <AtelierNouveau projectId={projectId} readOnly={!access.canWrite} protectedReference={project.exampleMode === "reference"} code={project.code} nomProjet={project.name} />
             </Suspense>
           </>
         )}
-
         {activeModule === "projets-sources" && (
           <>
             <h2>Projets et sources</h2>
@@ -165,51 +154,21 @@ export function ProjectShell() {
             <ProjectSources projectId={projectId} stepTitle={(n) => stepsQuery.data?.find((s) => s.number === n)?.title ?? ""} />
           </>
         )}
-
         {activeModule === "programmation" && (
           <>
             <h2>Programmation</h2>
-            {programmeView === "modele" ? (
-              <ProgrammeModelLinksPage projectId={projectId} />
-            ) : programmeView === "hypotheses" ? (
-              <ProgrammeHypothesesPage projectId={projectId} />
-            ) : (
-              <>
-                <ProgrammeRepartition projectId={projectId} />
-                <ProgrammeTransfer projectId={projectId} />
-              </>
+            {programmeView === "modele" ? <ProgrammeModelLinksPage projectId={projectId} /> : programmeView === "hypotheses" ? <ProgrammeHypothesesPage projectId={projectId} /> : (
+              <><ProgrammeRepartition projectId={projectId} /><ProgrammeTransfer projectId={projectId} /></>
             )}
           </>
         )}
-
-        {activeModule === "analyses" && (
-          <>
-            <h2>Analyses métier</h2>
-            <AnalysesModule projectId={projectId} />
-          </>
-        )}
-
-        {activeModule === "documents" && (
-          <>
-            <h2>Documents</h2>
-            <DocumentsModule projectId={projectId} />
-          </>
-        )}
-
-        {activeModule === "collaboration" && (
-          <>
-            <h2>Collaboration</h2>
-            <CollaborationModule projectId={projectId} />
-          </>
-        )}
-
+        {activeModule === "analyses" && <><h2>Analyses métier</h2><AnalysesModule projectId={projectId} /></>}
+        {activeModule === "documents" && <><h2>Documents</h2><DocumentsModule projectId={projectId} /></>}
+        {activeModule === "collaboration" && <><h2>Collaboration</h2><CollaborationModule projectId={projectId} /></>}
         {!["parcours", "atelier", "programmation", "projets-sources", "analyses", "documents", "collaboration"].includes(activeModule) && descriptor && (
-          <>
-            <h2>{descriptor.label}</h2>
-            <p>{descriptor.status}</p>
-          </>
+          <><h2>{descriptor.label}</h2><p>{descriptor.status}</p></>
         )}
       </main>
-    </div>
+    </>
   );
 }

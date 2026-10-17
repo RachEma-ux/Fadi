@@ -1,0 +1,239 @@
+/* Project pages share the Roadmap's full-width workspace. Application /accueil,
+   authentication pages and readable form widths deliberately remain unchanged. */
+#workspace-content {
+  --project-page-gutter: 30px;
+  --project-page-top: 26px;
+}
+.fadi-shell .project-shell {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.fadi-shell .module-nav {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 14px var(--project-page-gutter);
+}
+.fadi-shell .module-nav > * {
+  min-height: 44px;
+}
+.fadi-shell .project-shell > .project-header {
+  padding-inline: var(--project-page-gutter);
+}
+.fadi-shell .project-shell > .access-banner,
+.fadi-shell .project-shell > .offline-banner {
+  margin-inline: var(--project-page-gutter);
+}
+.fadi-shell .project-shell .module-content,
+.fadi-shell .project-shell .fadi-home[data-home="project"],
+.fadi-shell .cockpit-page {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: var(--project-page-top) var(--project-page-gutter) 45px;
+}
+.fadi-shell .project-shell .module-content-parcours {
+  padding: 0;
+}
+.fadi-shell .project-shell .overview,
+.fadi-shell .project-shell .work {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  padding: var(--project-page-top) var(--project-page-gutter) 45px;
+}
+.fadi-shell .project-shell .step-detail {
+  min-width: 0;
+  max-width: none;
+}
+.fadi-shell .project-shell .dossier-grid,
+.fadi-shell .project-shell .module-content > * {
+  min-width: 0;
+}
+.fadi-shell .project-shell .atelier-stage-header {
+  padding-inline: var(--project-page-gutter);
+}
+/* The editor is a project workspace, not an implicit full-screen route.
+   useImmersive measures the actual header stack, including wrapped navigation. */
+.fadi-shell .project-shell .atelier-n {
+  width: 100%;
+  min-width: 0;
+  height: var(--atelier-workspace-height, max(360px, calc(100dvh - 300px)));
+  min-height: 360px;
+}
+.fadi-shell .project-shell .module-content-parcours > .atelier-n {
+  width: calc(100% - 2 * var(--project-page-gutter));
+  margin: var(--project-page-top) var(--project-page-gutter) 18px;
+}
+/* Long role descriptions must not impose the select's intrinsic width on its
+   grid track. Keep the form readable and the journal's own table-scroll intact. */
+.fadi-shell .project-shell .members-invite > *,
+.fadi-shell .project-shell .members-invite input,
+.fadi-shell .project-shell .members-invite select {
+  min-width: 0;
+  max-width: 100%;
+}
+.fadi-shell .project-shell .members-invite input,
+.fadi-shell .project-shell .members-invite select {
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .fadi-shell .project-shell .members-invite {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (min-width: 1200px) {
+  .fadi-shell .project-shell .fadi-home[data-home="project"] .dossier-grid {
+    grid-template-columns: minmax(0, 1fr) clamp(306px, 22%, 380px);
+  }
+}
+@media (max-width: 700px) {
+  #workspace-content {
+    --project-page-gutter: 14px;
+    --project-page-top: 18px;
+  }
+  /* Only this strip scrolls sideways. Keep every module keyboard-accessible;
+     the active item is revealed without changing the page's vertical scroll. */
+  .fadi-shell .module-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding-block: 12px;
+  }
+  .fadi-shell .module-nav > * {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .fadi-shell .module-nav :focus-visible {
+    outline-offset: -3px;
+  }
+}
+
+/* Embedded Atelier: keep every status and action, but do not stack four
+   metadata lines above an editor that already has a project header. */
+body.atelier-workspace .fadi-shell .project-header {
+  padding-block: 8px;
+}
+body.atelier-workspace .fadi-shell .project-header-meta {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+body.atelier-workspace .fadi-shell .atelier-stage-header {
+  min-height: 60px;
+  padding-block: 8px;
+}
+/* The project identity is already visible in the shared main header. The
+   stage number/title remain in the Atelier strip, including steps 10 and 11. */
+body.atelier-workspace .fadi-shell .top-stage-project {
+  display: none;
+}
+body.atelier-workspace .fadi-shell .atelier-n .planche {
+  min-height: 0;
+}
+/* A deliberately moved viewport toolbar must not disappear behind the
+   persistent application rail. Dialogs and opened menus still take priority. */
+body.atelier-workspace .barre-actions,
+body.atelier-workspace .planche-barre-outils {
+  z-index: 26;
+}
+body.atelier-workspace .planche-panneau,
+body.atelier-workspace .planche-grille,
+body.atelier-workspace .planche-haut:has([aria-expanded="true"]) {
+  z-index: 40;
+}
+
+/* Unlike overflow:hidden, clip cannot be scrolled by focusing a child. The
+   nested tool/panel scrollers remain scrollable; the model's coordinate frame
+   and the retained application rail must not drift sideways on touch screens. */
+body.atelier-workspace .atelier-n,
+body.atelier-workspace .planche,
+body.atelier-workspace .planche-vue-cadre,
+body.atelier-workspace .planche-vue {
+  overflow: clip;
+}
+
+body.atelier-workspace .atelier-n-barre:has(details[open]) { z-index: 40; }
+body.atelier-workspace .atelier-n-barre > details > .exports-liste,
+body.atelier-workspace .atelier-n-barre .barre-plan-liste {
+  max-height: var(--atelier-menu-max-height, 50dvh);
+  overflow-y: auto;
+}
+@media (max-width: 760px) {
+  body.atelier-workspace .barre-actions {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+  body.atelier-workspace .barre-actions > *,
+  body.atelier-workspace .barre-actions .barre-groupe > * { flex: none; }
+  body.atelier-workspace .planche-outils {
+    bottom: max(calc(var(--volet-h, 40px) + 8px), var(--actions-reserve-bas, 0px));
+  }
+  body.atelier-workspace .planche-colonne {
+    max-height: calc(100% - var(--actions-reserve-bas, 0px) - 16px);
+  }
+  body.atelier-workspace .planche-options-outil,
+  body.atelier-workspace .planche-profiles,
+  body.atelier-workspace .planche-piece-edition {
+    max-height: min(35vh, 35%);
+    overflow-y: auto;
+  }
+}
+
+body.atelier-workspace .planche-recherche-fond { z-index: 50; }
+
+@media (max-width: 760px) {
+  /* Menus must open below the scrolled mode strip, never over Planche/3D. */
+  body.atelier-workspace .atelier-n > .atelier-n-barre > details[open] > div,
+  body.atelier-workspace .atelier-n > .atelier-n-barre .barre-plan-liste {
+    top: var(--atelier-menu-top);
+  }
+  /* This legacy button sits in the visually hidden live status. Mobile help
+     is already available through the visible ? / Instructeur control. */
+  body.atelier-workspace .planche-bas .planche-volet-bascule { display: none; }
+}
+
+/* A group of section-box sliders can exceed an embedded drawing's width.
+   Keep its last control reachable without scrolling the page or the model. */
+body.atelier-workspace .vue3d-commandes > .vue3d-ligne {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Embedded dialogs and menus must scroll within the editor, not ask the
+   clipped model viewport to scroll their submit buttons into view. */
+body.atelier-workspace .planche-recherche-fond {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+body.atelier-workspace .planche-recherche {
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+body.atelier-workspace .planche-menu-liste {
+  max-height: max(120px, calc(var(--atelier-workspace-height, 520px) - 128px));
+  max-width: calc(100vw - 32px);
+}
+body.atelier-workspace .atelier-n-gauche summary,
+body.atelier-workspace .atelier-n-droite summary {
+  min-height: 28px;
+  padding-block: 4px;
+  box-sizing: border-box;
+}
+@media (max-width: 760px) {
+  body.atelier-workspace .atelier-n-gauche summary,
+  body.atelier-workspace .atelier-n-droite summary { min-height: 44px; }
+}

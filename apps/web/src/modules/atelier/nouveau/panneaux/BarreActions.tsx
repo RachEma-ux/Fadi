@@ -106,6 +106,13 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
   const replacer = useCallback(() => {
     const el = racine.current;
     if (!el) return;
+    const w = el.ownerDocument.defaultView ?? window;
+    const ref = reference?.current;
+    // One locally scrolling row on narrow embedded workspaces. Wrapping a
+    // fullscreen-sized toolbar over the tool rails makes their buttons unusable.
+    if (ref && w.matchMedia("(max-width: 760px)").matches) {
+      el.style.maxWidth = `${Math.max(44, Math.min(ref.getBoundingClientRect().width, zoneDe(el).largeur) - 8)}px`;
+    } else el.style.removeProperty("max-width");
     const m = etatUi.get().barreActions;
     if (m) {
       const b = borner(m, tailleDe(el), zoneDe(el));
@@ -114,7 +121,7 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
       const d = calculerDefaut();
       if (d) setDefaut((prev) => (prev && prev.x === d.x && prev.y === d.y ? prev : d));
     }
-  }, [calculerDefaut]);
+  }, [calculerDefaut, reference]);
 
   const memorisee = ui.barreActions !== null;
   useLayoutEffect(() => {
@@ -137,6 +144,7 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
     const ref = reference?.current;
     const observateur = ref && typeof w.ResizeObserver === "function" ? new w.ResizeObserver(() => replacer()) : null;
     if (ref) {
+      observateur?.observe(el);
       observateur?.observe(ref);
       // Les réserves (pied, colonne) changent de taille avec l'outil actif : la position par défaut les suit.
       for (const sel of [reserveBas, reserveDroite]) for (const el of sel ? Array.from(ref.querySelectorAll(sel)) : []) observateur?.observe(el);
@@ -186,8 +194,18 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
     memoriser(borner({ x: p.x + pas.x, y: p.y + pas.y }, tailleDe(el), zoneDe(el)));
   };
 
-  if (!ui.barreActionsVisible) return null;
   const pos = glisser ?? ui.barreActions ?? defaut;
+  useLayoutEffect(() => {
+    const ref = reference?.current;
+    const el = racine.current;
+    if (!ref) return;
+    const reserve = ui.barreActionsVisible && !memorisee && el && pos
+      ? Math.max(0, ref.getBoundingClientRect().bottom - pos.y + 4) : 0;
+    ref.style.setProperty("--actions-reserve-bas", `${reserve}px`);
+    return () => { ref.style.removeProperty("--actions-reserve-bas"); };
+  }, [pos?.x, pos?.y, ui.barreActionsVisible, memorisee, reference, fenetreCle]);
+
+  if (!ui.barreActionsVisible) return null;
   const style = pos ? { left: `${pos.x}px`, top: `${pos.y}px`, right: "auto", bottom: "auto" } : undefined;
   const bouton = (a: ActionBarre) => (
     <button key={a.id} type="button" onClick={a.onClick} disabled={a.disabled} aria-pressed={a.pressed} title={a.titre ?? a.libelle} aria-label={a.texte ? a.libelle : undefined} data-action={a.id} {...a.attributs}>

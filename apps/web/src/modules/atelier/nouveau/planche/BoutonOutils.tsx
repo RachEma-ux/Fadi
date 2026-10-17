@@ -55,6 +55,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
   const [deplies, setDeplies] = useState<ReadonlySet<string>>(() => new Set());
   // Téléphone : la liste sort en surcouche fixe, posée juste sous le bouton (la barre du haut défile, D-192).
   const [hautTelephone, setHautTelephone] = useState<number | null>(null);
+  const [hauteurListe, setHauteurListe] = useState<number | null>(null);
   const racine = useRef<HTMLDivElement | null>(null);
   const bouton = useRef<HTMLButtonElement | null>(null);
   const champ = useRef<HTMLInputElement | null>(null);
@@ -95,6 +96,24 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
       w.removeEventListener("pointerdown", surClic, true);
       w.removeEventListener("keydown", surTouche, true);
     };
+  }, [ouvert]);
+
+  // Bounds are relative to the actual embedded drawing, not an assumed
+  // fullscreen window. Keep the last menu commands reachable by local scroll.
+  useEffect(() => {
+    if (!ouvert) return;
+    const w = racine.current?.ownerDocument.defaultView ?? window;
+    const positionner = () => {
+      const b = bouton.current?.getBoundingClientRect();
+      const zone = racine.current?.closest(".planche")?.getBoundingClientRect();
+      if (!b) return;
+      setHautTelephone(w.matchMedia("(max-width: 760px)").matches ? Math.round(b.bottom + 4) : null);
+      setHauteurListe(Math.max(88, Math.floor(Math.min(w.innerHeight, zone?.bottom ?? w.innerHeight) - b.bottom - 12)));
+    };
+    positionner();
+    w.addEventListener("resize", positionner);
+    w.addEventListener("scroll", positionner, { passive: true });
+    return () => { w.removeEventListener("resize", positionner); w.removeEventListener("scroll", positionner); };
   }, [ouvert]);
 
   const ouvrir = (clavier: boolean) => {
@@ -208,7 +227,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
         <span aria-hidden="true" className="planche-outils-chevron">▾</span>
       </button>
       {ouvert && (
-        <div className="planche-outils-liste" style={hautTelephone !== null ? { top: `${hautTelephone}px`, maxHeight: `calc(100vh - ${hautTelephone + 8}px)` } : undefined} data-planche-outils-liste>
+        <div className="planche-outils-liste" style={{ ...(hautTelephone !== null ? { top: `${hautTelephone}px` } : {}), ...(hauteurListe !== null ? { maxHeight: `${hauteurListe}px` } : {}) }} data-planche-outils-liste>
           <div className="planche-outils-recherche">
             <span aria-hidden="true">⌕</span>
             <input
