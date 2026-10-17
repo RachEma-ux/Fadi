@@ -1,0 +1,32 @@
+name: Audit isolation DrawAll (Fadi uniquement)
+
+on:
+  pull_request:
+    paths:
+      - "scripts/audit-drawall-in-fadi.mjs"
+      - "docs/workstreams/purge-drawall/**"
+      - ".github/workflows/audit-drawall.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Vérifier la syntaxe du script d'inventaire
+        run: node --check scripts/audit-drawall-in-fadi.mjs
+      - name: Recenser les occurrences dans Fadi uniquement (aucune suppression)
+        run: node scripts/audit-drawall-in-fadi.mjs audit-drawall/fadi-report.json
+      - name: Publier un rapport consultable en vue de la purge
+        uses: actions/upload-artifact@v4
+        with:
+          name: fadi-drawall-inventory
+          path: audit-drawall/fadi-report.json
+          retention-days: 30
