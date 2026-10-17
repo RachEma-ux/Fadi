@@ -3,6 +3,10 @@
 Lis d'abord `AGENTS.md` (règles du dépôt, non négociables). Si la tâche touche l'Atelier architectural, lis
 ensuite `docs/atelier-cahier-des-charges.md` et suis son mode d'emploi (section 0).
 
+## Continuité entre sessions
+
+Avant d'exécuter une tâche sur un chantier déjà engagé, lis [`docs/continuity/README.md`](docs/continuity/README.md) et son dossier `docs/workstreams/<chantier>/` : `HANDOFF.md` (point de reprise), `STATUS.md` (preuves), `TASKS.md` et `CONTEXT.md`. Vérifie la branche, le HEAD, les Issues/PR et la CI en direct ; ne suppose pas que la mémoire d'une précédente session Claude/ChatGPT/Codex décrit l'état actuel. Pousse des checkpoints réguliers dans GitHub, sans inventer l'architecture cible ni déclarer un lot accepté sans décision explicite. `AGENTS.md` reste prioritaire.
+
 ## Projet
 
 Application web bilingue français / anglais (D-163 ; le français est la langue source, l'anglais vient du dictionnaire
