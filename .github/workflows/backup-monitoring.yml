@@ -5,6 +5,8 @@ on:
     paths:
       - "scripts/backup-offsite-with-healthchecks.sh"
       - "scripts/test-backup-offsite-with-healthchecks.sh"
+      - "scripts/audit-offsite-retention.sh"
+      - "docs/retention-swiss-backup.md"
       - ".github/workflows/backup-monitoring.yml"
   workflow_dispatch:
 
@@ -21,5 +23,18 @@ jobs:
         run: |
           bash -n scripts/backup-offsite-with-healthchecks.sh
           bash -n scripts/test-backup-offsite-with-healthchecks.sh
+          bash -n scripts/audit-offsite-retention.sh
       - name: Vérifier les états du service et les contrôles de sécurité
         run: sudo bash scripts/test-backup-offsite-with-healthchecks.sh
+      - name: Contrôle statique du mode de simulation Restic
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s = Path("scripts/audit-offsite-retention.sh").read_text()
+          assert s.count("restic forget \\\n") == 1, "Un seul appel forget attendu"
+          block = s.split("restic forget \\\n", 1)[1].split("\n\nprintf", 1)[0]
+          for flag in ("--dry-run", "--tag fadi,postgres", "--keep-last 5", "--keep-daily 14", "--keep-weekly 8", "--keep-monthly 12", "--group-by host,paths"):
+              assert flag in block, f"Option manquante : {flag}"
+          assert "--prune" not in block and "unsafe-allow-remove-all" not in block
+          print("FADI_RETENTION_AUDIT_STATIC_OK")
+          PY
