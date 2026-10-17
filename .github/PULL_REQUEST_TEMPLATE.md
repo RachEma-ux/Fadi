@@ -1,6 +1,6 @@
 ## Objet et traçabilité
 
-- Issue liée : Closes #<!-- numéro si cette PR termine réellement l'Issue ; sinon mentionner "Refs #..." -->
+- Issue liée : Refs #NN (remplacer NN ; utiliser `Closes #NN` uniquement si cette PR termine effectivement l'Issue).
 - Chantier : `docs/workstreams/<slug>/` (ou expliquer pourquoi non applicable).
 - Source de vérité / décisions : liens vers `AGENTS.md`, `docs/architecture.md` et cahiers/ADR pertinents.
 
