@@ -11,7 +11,7 @@ le produit final doit contenir **un seul Atelier**, sans mode « classique ». L
 cohabitation avec pont (conversion aller-retour, bascule par projet) ; elle n'est plus proposée.
 
 **Document d'exécution :** `docs/atelier-cahier-des-charges.md` (règles, contrats techniques, tâches par lot,
-critères d'acceptation, organisation en équipe) ; les trois documents DrawAll sont versionnés dans `docs/drawall/`.
+critères d'acceptation, organisation en équipe) ; les trois documents propres à l'autre application ont été retirés de Fadi (Issue #147) ; leur absence n'altère pas l'historique Git.
 
 ## 1. En bref
 
