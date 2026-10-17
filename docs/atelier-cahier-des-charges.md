@@ -10,9 +10,8 @@ En cas de contradiction entre documents, l'ordre d'autorité est :
 1. `AGENTS.md` (règles du dépôt — jamais négociables) ;
 2. ce cahier des charges ;
 3. `docs/atelier-drawall.md` (proposition : architecture cible, périmètre, couverture DA / T) ;
-4. `docs/architecture.md` et `docs/atelier/decisions.md` : seules références internes actives de Fadi ; les références au produit externe sont retirées (voir Issue #147 pour la traçabilité) ;
-5. `docs/architecture.md` (plan du dépôt, amendé par le lot 0) et `docs/migration/matrix.md` (état de
-   l'existant).
+4. `docs/architecture.md` (plan du dépôt) et `docs/atelier/decisions.md` (décisions historiques du chantier Fadi) ;
+5. `docs/migration/matrix.md` (état de l'existant). Les anciennes références au produit distinct ont été retirées de cet ordre (Issue #147).
 
 Une contradiction non résolue par cet ordre est une **décision du maître d'ouvrage** (section 10) : on s'arrête
 et on demande ; on n'invente pas.
