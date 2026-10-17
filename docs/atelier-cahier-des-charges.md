@@ -3,15 +3,14 @@
 **Document d'exécution pour Claude Code (chef de projet et équipiers).** Version 1.0 — 3 octobre 2026.
 Maître d'ouvrage : le propriétaire du dépôt. Il valide chaque lot ; rien n'est « disponible » sans sa validation.
 
-Il concrétise la proposition acceptée `docs/atelier-drawall.md` (ligne « reconstruction complète, sans pont ») et
-la rend exécutable : règles, contrats techniques, lots, tâches, critères d'acceptation, organisation du travail.
+Ce cahier Fadi fixe les règles, contrats techniques, lots, tâches, critères d'acceptation et organisation du travail pour l'Atelier. La traçabilité des décisions d'origine est conservée dans `docs/atelier/decisions.md` ; le contrat d'origine d'une application distincte n'est plus une source normative.
 En cas de contradiction entre documents, l'ordre d'autorité est :
 
 1. `AGENTS.md` (règles du dépôt — jamais négociables) ;
 2. ce cahier des charges ;
-3. `docs/atelier-drawall.md` (proposition : architecture cible, périmètre, couverture DA / T) ;
-4. `docs/architecture.md` (plan du dépôt) et `docs/atelier/decisions.md` (décisions historiques du chantier Fadi) ;
-5. `docs/migration/matrix.md` (état de l'existant). Les anciennes références au produit distinct ont été retirées de cet ordre (Issue #147).
+3. `docs/architecture.md` (architecture du dépôt Fadi) ;
+4. `docs/atelier/decisions.md` et `docs/atelier/recette.md` (décisions et preuves Fadi) ;
+5. `docs/migration/matrix.md` (état de l'existant). L'ancienne proposition liée à l'application distincte a été retirée de cette liste (Issue #147).
 
 Une contradiction non résolue par cet ordre est une **décision du maître d'ouvrage** (section 10) : on s'arrête
 et on demande ; on n'invente pas.
@@ -20,8 +19,7 @@ et on demande ; on n'invente pas.
 
 ## 0. Mode d'emploi
 
-**Ordre de lecture avant la première action :** `CLAUDE.md` → `AGENTS.md` → ce document → `docs/atelier-drawall.md`
-→ `docs/architecture.md` → `docs/migration/matrix.md` (section 3, l'Atelier actuel) →
+**Ordre de lecture avant la première action :** `CLAUDE.md` → `AGENTS.md` → ce document → `docs/architecture.md` → `docs/migration/matrix.md` (section 3, l'Atelier actuel) →
 `apps/web/src/modules/atelier/README.md`.
 
 **Unité de travail : le lot.** Les lots s'exécutent dans l'ordre 0 → 1 → 2 → 3a → 3b → 4, puis 5 → 6 → 7 → 8
@@ -78,8 +76,7 @@ l'assistant à boucle contrôlée — chacun avec sa fiche de capacité, sa preu
   **`drawing`** (M01 / M02) : esquisse (ligne, polyligne, arc, cercle, rectangle, polygone, spline, ligne de
   construction, hachure), solide générique (extrusion d'un contour), référence de plan. **`annotation`** (M11) :
   cotation, texte, étiquette. **Projet** : parcelle, emprise, calques, hypothèses, sources, structure déclarée.
-- Les entrées DA retenues (138 sur 324) et les exigences T01–T20 selon `docs/atelier-drawall.md` §5, avec leur
-  lot cible.
+- Les 138 entrées de capacité du chantier Atelier historique, à vérifier dans les fiches `docs/atelier/fiches/` et les lots Fadi ; aucun référentiel externe n'est désormais normatif.
 - Les modules DrawAll M01–M05 → module Fadi *Atelier* ; M11 → *Documents* (et vues dans l'Atelier) ; M12 →
   *Analyses métier* ; M16 → *Collaboration* ; M17 → *Projets et sources* / *Documents*.
 
@@ -437,7 +434,7 @@ dit ce que le maître d'ouvrage peut constater lui-même sur l'instance de démo
 
 | Tâche | Contenu | Propriétaire |
 | --- | --- | --- |
-| L0.1 | `CLAUDE.md` à jour (déjà créé), `docs/atelier/README.md`, `decisions.md`, gabarit de fiche ; amendements de `docs/architecture.md` listés dans `docs/atelier-drawall.md` §10 reportés | chef de projet |
+| L0.1 | `CLAUDE.md` à jour (déjà créé), `docs/atelier/README.md`, `decisions.md`, gabarit de fiche ; état des amendements vérifié à partir du journal Fadi et de `docs/architecture.md` | chef de projet |
 | L0.2 | Fiches de capacité des entrées des lots 1 à 3 (DA-01, DA-02, DA-03 retenues, DA-04-01 / 07, DA-05 retenues, DA-06-07 / 08, DA-07 du lot 3, DA-17-16, DA-18-03 / 04, DA-21-01 / 02 / 04 / 05 / 06 / 07) — état « spécifiée » | équipiers « fiches » (par catégorie) |
 | L0.3 | Maquette de l'Atelier (cinq repères, ordinateur 1536 px et téléphone 390 px, niveaux Essentiel et Complet, palette, inspecteur, panneau problèmes), en HTML statique sous `docs/atelier/maquette/` avec captures ; **soumise au maître d'ouvrage** | équipier « maquette » |
 | L0.4 | Banc de mesures : three.js WebGL2 sur une scène équivalente à P.118 (≈ 220 murs, 210 ouvertures, 120 poteaux, 967 solides, 6 niveaux) — temps d'ouverture, budget de trame p95 en orbite, sélection ; taille et temps d'initialisation des WASM candidats (OCCT, web-ifc) ; booléens de maillage manifold-3d ; Yjs (mémoire, granularité) ; quotas navigateur. Résultats dans `docs/atelier/p0-mesures.md` avec le banc déclaré | équipier « mesures » |
@@ -554,8 +551,7 @@ qu'un utilisateur ; une proposition de l'assistant n'écrit rien sans accord ; t
 
 ### Lot 9 — Recette finale (1 j)
 
-Scénario complet (tous les contrôles, tous les essais de l'Architecture V4 §12 — tableau en
-`docs/atelier-drawall.md` §5.3), captures, matrice, protocole de mesures T17 / T18 à l'usage du maître d'ouvrage,
+Scénario complet des contrôles Atelier Fadi (voir `docs/atelier/recette.md` et les essais de `apps/web/e2e/`), captures, matrice, protocole de mesures T17 / T18 à l'usage du maître d'ouvrage,
 aide située relue, `docs/architecture.md` et `README.md` à jour, dossier de recette `docs/atelier/recette.md`.
 
 ### Lot optionnel — Noyau exact OCCT (2 à 3 j, après arbitrage de licence)
@@ -684,7 +680,7 @@ sections par lot), `maquette/`, `lots/lot-N.md`, `matrice-echanges.md` (lot 6), 
 
 Gabarit : `docs/atelier/fiches/_gabarit.md` (champs de la méthode de l'Exigences V4 : identité, situation,
 entrées et unités, comportement, données et dépendances, résultats, cas limites, compatibilité, validation,
-état). Exemple rédigé : `docs/atelier-drawall.md`, annexe A (DA-07-01 Murs). États : à spécifier → spécifiée →
+état). Exemple de fiche conservé : `docs/atelier/fiches/DA-07-01.md` (Murs). États : à spécifier → spécifiée →
 prototype → vérifiée → disponible (ce dernier par le maître d'ouvrage).
 
 ## Annexe B — Catalogue initial des commandes (contrat `atelier-commands/1`)
