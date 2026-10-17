@@ -46,6 +46,6 @@ Ces modifications ne doivent pas affecter le comportement exécuté. Vérifier t
 
 ## Limites d'interprétation
 
-**La demande « purger toute référence DrawAll » est distincte d'une autorisation de détruire toutes les fonctionnalités industrielles de Fadi**, si elles sont devenues des outils utilisés et des données persistées. Confirmer le périmètre fonctionnel avant modification d'API/schéma/moteur et avant toute migration de base.
+**Décision prise le 17 octobre 2026 : les fonctionnalités industrielles et les règles normatives de dessin doivent toutes être conservées comme capacités natives Fadi.** Purger les artefacts externes, corriger les cahiers et enlever les dépendances DrawAll, sans retirer les outils, les modèles persistés ni les règles techniques. Préserver l'identification légitime des normes officielles et les licences ; toute migration de code ou d'identifiants nécessite compatibilité et tests.
 
 **Le dépôt DrawAll n'est jamais une destination de modification dans cette opération.** GitHub `main` et Fadi-Serv sont préservés tant que la PR de nettoyage n'est pas testée, revue et fusionnée.
