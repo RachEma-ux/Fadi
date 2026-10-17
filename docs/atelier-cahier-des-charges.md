@@ -17,6 +17,9 @@ et on demande ; on n'invente pas.
 
 ---
 
+
+> **Périmètre natif Fadi — décision du 17 octobre 2026 (Issue #147).** Toutes les fonctions industrielles intégrées à l'Atelier Fadi et toutes les règles techniques/normatives de dessin sont **conservées** comme fonctionnalités et règles propres à Fadi. Ce cahier définit leurs comportements sans référence normative au produit DrawAll. Les identifiants historiques `DA-...` demeurent des clés de traçabilité provisoires tant que leur remplacement compatible avec les exports, données et tests n'est pas validé. Les normes externes et leurs versions restent créditées à leurs organismes ; aucun emprunt ne doit être présenté comme une norme créée par Fadi. Toute évolution doit disposer d'une fiche Fadi, de critères de vérification et de tests.
+
 ## 0. Mode d'emploi
 
 **Ordre de lecture avant la première action :** `CLAUDE.md` → `AGENTS.md` → ce document → `docs/architecture.md` → `docs/migration/matrix.md` (section 3, l'Atelier actuel) →
