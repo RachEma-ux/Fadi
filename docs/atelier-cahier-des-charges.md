@@ -10,9 +10,7 @@ En cas de contradiction entre documents, l'ordre d'autorité est :
 1. `AGENTS.md` (règles du dépôt — jamais négociables) ;
 2. ce cahier des charges ;
 3. `docs/atelier-drawall.md` (proposition : architecture cible, périmètre, couverture DA / T) ;
-4. `docs/drawall/DrawAll_v4.1_Architecture.md`, `docs/drawall/DrawAll_v4.1_Concept.md`,
-   `docs/drawall/DrawAll_v4.1_Exigences_Sources.md` (le référentiel DrawAll ; l'annexe D de l'Exigences est
-   normative : décisions D1–D6) ;
+4. `docs/architecture.md` et `docs/atelier/decisions.md` : seules références internes actives de Fadi ; les références au produit externe sont retirées (voir Issue #147 pour la traçabilité) ;
 5. `docs/architecture.md` (plan du dépôt, amendé par le lot 0) et `docs/migration/matrix.md` (état de
    l'existant).
 
@@ -24,7 +22,7 @@ et on demande ; on n'invente pas.
 ## 0. Mode d'emploi
 
 **Ordre de lecture avant la première action :** `CLAUDE.md` → `AGENTS.md` → ce document → `docs/atelier-drawall.md`
-→ `docs/drawall/*.md` → `docs/architecture.md` → `docs/migration/matrix.md` (section 3, l'Atelier actuel) →
+→ `docs/architecture.md` → `docs/migration/matrix.md` (section 3, l'Atelier actuel) →
 `apps/web/src/modules/atelier/README.md`.
 
 **Unité de travail : le lot.** Les lots s'exécutent dans l'ordre 0 → 1 → 2 → 3a → 3b → 4, puis 5 → 6 → 7 → 8
