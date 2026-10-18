@@ -70,3 +70,11 @@ PR154 tête76e43d1 : CI39117137782 maintenant **échec**, validate/image réussi
 Questions Q-M003-D01..D07 toujours ouvertes sans réponse au dernier relevé. Prochaine reprise : lire #166/HEAD/CI puis contrats et125 références à rapprocher ; sur accord explicite seulement, engager le sous-lot borné. Aucun déploiement, migration, service, règle administrative ou fusion exécuté.
 
 Le suivi de cette réserve a été poursuivi : [contrat A2](../../ai-team/reports/mission-003/A2/CI154-SNAPSHOT-CONTRAT.md) et [protocole A5](../../ai-team/reports/mission-003/A5/CI154-NON-REGRESSION.md) effectivement livrés. Lecture non atomique possible statiquement, cause runtime non démontrée. Aucun scénario/simulation exécuté ; prochaine étape mutatrice uniquement après accord de lot/M02, sans modifier l’oracle+1.
+
+## Checkpoint supplémentaire — portée continue du programme #156 (18 octobre 2026)
+
+Instruction utilisateur : **Codex ne doit pas s'arrêter à Mission 004**. Le lot A3-DB-1/2 est seulement le premier sous-ensemble de code autorisé. Le programme complet reste M00–M30 et les 630 IDs Studio, avec file de sous-tâches READY, WAITING_FOR_OWNER, WAITING_FOR_DEPENDENCY et VERIFIED ; poursuivre les READY après chaque PR et chaque question.
+
+Les instructions ont été corrigées dans `CODEX-MISSION-004-PROMPT.md` (section 8), `CODEX-START-HERE.md` (section 15), `AGENTS.md` et [#166](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249593276). **La lecture effective du nouvel ordre par Codex n'est pas encore attestée par `[CODEX-ACK][PROGRAM-156-CONTINUOUS]` lors de ce checkpoint.** Les contrôles documentaires des prochains commits sont à relever au SHA exact ; aucune exécution nouvelle de code n'est revendiquée par ce checkpoint.
+
+La règle « ne rien abandonner » signifie conserver preuves, dépendances et prochaine action ; elle **ne** contourne **pas** les autorisations sensibles et ne garantit pas l'exécution Cloud après expiration de la session. Le contrôle horaire surveille GitHub ; il ne redémarre pas Codex.

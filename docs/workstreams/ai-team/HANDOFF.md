@@ -74,3 +74,11 @@ PR154 tête76e43d1 : CI39117137782 maintenant **échec**, validate/image réussi
 Questions Q-M003-D01..D07 toujours ouvertes sans réponse au dernier relevé. Prochaine reprise : lire #166/HEAD/CI puis contrats et125 références à rapprocher ; sur accord explicite seulement, engager le sous-lot borné. Aucun déploiement, migration, service, règle administrative ou fusion exécuté.
 
 Le suivi de cette réserve a été poursuivi : [contrat A2](../../ai-team/reports/mission-003/A2/CI154-SNAPSHOT-CONTRAT.md) et [protocole A5](../../ai-team/reports/mission-003/A5/CI154-NON-REGRESSION.md) effectivement livrés. Lecture non atomique possible statiquement, cause runtime non démontrée. Aucun scénario/simulation exécuté ; prochaine étape mutatrice uniquement après accord de lot/M02, sans modifier l’oracle+1.
+
+## Nouvelle instruction prioritaire de reprise — Programme continu #156
+
+**LIRE EN PREMIER :** [CODEX-MISSION-004-PROMPT.md](../../ai-team/CODEX-MISSION-004-PROMPT.md), **section 8**, et [la directive GitHub #166](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249593276). Le titre Mission 004 ne limite **jamais** le programme : reprendre **toutes les missions M00–M30 et les 630 tâches** selon les entrées et autorisations. Après A3-DB-1/2 ou une PR de ce lot, ne pas attendre la fusion/revue si des tâches READY indépendantes existent.
+
+**Prochain geste exact d'une session Codex :** revalider SHA, HEAD/main, états CI/PR et les statuts des 31 missions ; publier `[CODEX-ACK][PROGRAM-156-CONTINUOUS]` dans #166 ; engager ou poursuivre A3-DB-1/2 dans le strict périmètre autorisé ; exécuter successivement les autres tâches READY (M08, M11/M12/M13, M15/M26, M29, M01–M09 documentaires) ; poser toute question dans #166 puis continuer ailleurs. Ne pas déclarer le programme achevé après la seule Mission 004.
+
+**À la limite de session :** STATUS/HANDOFF mis à jour ensemble, SHA/diff/tests/PR/questions, liste exhaustive des READY et blocages, prompt exact de reprise, et message `[CODEX-HANDOFF][NEXT-READY]` dans #166. Un HANDOFF n'est pas un processus Cloud actif. Les limites fusion, production, administration, base réelle, données sensibles et tests destructifs persistent.
