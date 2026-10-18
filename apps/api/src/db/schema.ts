@@ -627,6 +627,7 @@ export const studioVariants = pgTable("studio_variants", {
   studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   headRevisionId: text("head_revision_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [uniqueIndex("studio_variants_study_id_unique").on(t.studyId, t.id)]);
 
 /** Append-only : une réponse historique n'est jamais reconstruite depuis le head actuel. */
@@ -639,7 +640,7 @@ export const studioRevisions = pgTable("studio_revisions", {
   envelope: jsonb("envelope").$type<StudioEnvelope | null>(),
   requestId: text("request_id").notNull(),
   payloadHash: text("payload_hash").notNull(),
-  source: text("source").$type<"authenticated-session" | "study-initialization">().notNull(),
+  source: text("source").$type<"authenticated-session" | "study-initialization" | "variant-initialization">().notNull(),
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   response: jsonb("response").$type<StudioContext>().notNull(),
