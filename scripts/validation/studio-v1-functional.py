@@ -130,6 +130,14 @@ def main():
                         if attempt == 44:
                             raise
                         time.sleep(1)
+                checked([
+                    sys.executable, str(apply_script), str(path), '--reattest-own-restart',
+                ], label='same-resource post-restart endpoint attestation')
+                manifest = json.loads(path.read_text())
+                for line in Path(manifest['runtimeEnvFile']).read_text().splitlines():
+                    key, value = line.split('=', 1)
+                    if key in allowed:
+                        env[key] = value
                 api = start_api()
                 ready('http://127.0.0.1:3001/health', 'restarted API')
             recipe = subprocess.run(

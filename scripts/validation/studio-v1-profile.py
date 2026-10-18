@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Provision only a NEW, labelled, local Studio validation database. Never touches existing resources."""
-import json,os,secrets,subprocess,time,hashlib
+import json,os,secrets,subprocess,time,hashlib,socket
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 ENV={k:v for k,v in os.environ.items() if not k.startswith(('DOCKER_','PG'))}
@@ -17,7 +17,9 @@ def main():
  if docker('ps','-a','--filter','name=^/'+name+'$','--format','{{.ID}}'):raise RuntimeError('Resource exists')
  if docker('volume','ls','--filter','name=^'+vol+'$','--format','{{.Name}}'):raise RuntimeError('Volume exists')
  docker('volume','create','--label','fadi.programme=156','--label','fadi.validation=studio-v1','--label','fadi.run='+run,vol)
- docker('run','-d','--name',name,'--label','fadi.programme=156','--label','fadi.validation=studio-v1','--label','fadi.run='+run,'--env-file',str(envfile),'-p','127.0.0.1::5432','-v',vol+':/var/lib/postgresql/data',image)
+ with socket.socket() as reservation:
+  reservation.bind(('127.0.0.1',0)); fixed_port=reservation.getsockname()[1]
+ docker('run','-d','--name',name,'--label','fadi.programme=156','--label','fadi.validation=studio-v1','--label','fadi.run='+run,'--env-file',str(envfile),'-p','127.0.0.1:'+str(fixed_port)+':5432','-v',vol+':/var/lib/postgresql/data',image)
  for _ in range(45):
   try:docker('exec',name,'pg_isready','-U','postgres','-d',db);break
   except RuntimeError:time.sleep(1)
