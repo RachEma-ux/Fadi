@@ -19,7 +19,7 @@ Ce document transmet un **contexte de travail explicite** entre ChatGPT, Codex e
 1. [`AGENTS.md`](../../AGENTS.md) — règles de développement Fadi et permissions.
 2. [`docs/continuity/README.md`](../continuity/README.md) — protocole de reprise, statuts et hiérarchie des sources.
 3. [`docs/architecture.md`](../architecture.md) — architecture métier et technique de référence ; toute modification exige un arbitrage.
-4. [`docs/workstreams/README.md`](../workstreams/README.md), puis le `CONTEXT.md`, `TASKS.md`, `STATUS.md` et `HANDOFF.md` du chantier concerné.
+4. [`docs/workstreams/README.md`](../workstreams/README.md), puis le dernier `HANDOFF.md`, suivi de `STATUS.md`, `TASKS.md` et `CONTEXT.md` du chantier concerné.
 5. Issues, PR, commits, contrôles CI et cahiers/décisions métier existants — preuves et états réels.
 
 **En cas de divergence :** ne pas trancher silencieusement. Marquer le point « Bloqué », citer les sources contradictoires et demander une décision. Les documents `STATUS.md` et `HANDOFF.md` d'un chantier restent les points de reprise canoniques ; ce fichier sert uniquement de **passerelle transversale**.
@@ -84,8 +84,8 @@ Une fois un état confirmé, le reporter dans l'Issue ou le chantier corresponda
 
 1. **ChatGPT / responsable :** formuler la mission, son périmètre, les permissions et les critères d'acceptation ; ne transmettre dans GitHub que le résumé non sensible nécessaire.
 2. **Codex :** lire les sources de la section 2, vérifier `main`, le chantier, les Issues/PR ouvertes et les contrôles CI ; signaler les écarts entre le présent document et l'état actuel.
-3. **Exécution autorisée :** utiliser le cycle **Issue → branche courte → PR → preuves → revue** ; ne jamais pousser directement dans `main`.
-4. **Checkpoint :** actualiser les documents du chantier, spécialement `STATUS.md` et `HANDOFF.md` dans la même PR en cas de modification de `docs/workstreams/<chantier>/`.
+3. **Exécution autorisée :** utiliser le cycle **Issue → branche courte → PR → preuves → STATUS/HANDOFF → revue** ; ne jamais pousser directement dans `main`.
+4. **Checkpoint :** actualiser le checkpoint du chantier, avec `STATUS.md` et `HANDOFF.md` avant revue ; si `docs/workstreams/<chantier>/` est modifié, ces deux fichiers sont actualisés dans la même PR conformément à `AGENTS.md`.
 5. **Relais :** mettre à jour ce fichier **seulement** lorsqu'un changement transverse ChatGPT–Codex le justifie, sans recopier les cahiers, décisions ou journaux existants.
 6. **Approbation :** la CI verte prouve une vérification technique, **pas** l'acceptation métier. Toute fusion exige les autorisations prévues ; production, migrations sensibles et changements de sauvegardes exigent une validation explicite.
 
