@@ -55,11 +55,6 @@ def main():
 
     preflight()
     manifest = json.loads(path.read_text())
-    checked([
-        sys.executable, str(apply_script), str(path),
-        str(ROOT / 'apps/api/src/db/studio-v1.sql'),
-    ], label='pinned additive Studio schema verification/application')
-    manifest = json.loads(path.read_text())
     run = manifest['runId']
     env = dict(SAFE_ENV)
     allowed = {'DATABASE_URL', 'NODE_ENV', 'MIGRATE_ON_START', 'PORT', 'WEB_ORIGIN', 'HOST'}

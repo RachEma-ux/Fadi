@@ -42,16 +42,20 @@ def main():
  import re
  init=re.sub(r"^UPDATE projects SET example_mode = 'reference' WHERE source_example_id IS NOT NULL AND example_mode IS NULL;\n",'',init,flags=re.M)
  sqltext=re.sub(r'--[^\n]*','',init)
+ # Dollar-quoted bodies (Studio immutability trigger) are one CREATE FUNCTION statement, not separate statements.
+ sqltext=re.sub(r'\$\$.*?\$\$','$$$$',sqltext,flags=re.S)
  starts=[z.strip().split(None,1)[0].upper() for z in sqltext.split(';') if z.strip()]
  assert set(starts)<= {'CREATE','ALTER'},set(starts)
  sql("CREATE SCHEMA studio_validation AUTHORIZATION studio_owner; CREATE TABLE studio_validation.identity(run_id text PRIMARY KEY); INSERT INTO studio_validation.identity VALUES ('"+run+"');")
  assert sql('SELECT run_id FROM studio_validation.identity;')==run
  sql('CREATE EXTENSION IF NOT EXISTS postgis; GRANT USAGE,CREATE ON SCHEMA public TO studio_owner; SET ROLE studio_owner; '+init+' RESET ROLE;')
  sql('GRANT USAGE ON SCHEMA public TO studio_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO studio_app; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO studio_app; ALTER DEFAULT PRIVILEGES FOR ROLE studio_owner IN SCHEMA public GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO studio_app;')
+ # Studio schema now lives in init.sql (owner decision D-A, #166): require its three tables after bootstrap.
+ assert sql("SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename IN ('studio_studies','studio_variants','studio_revisions');")=='3'
  identity=sql("SELECT current_database(),current_setting('server_version_num'),postgis_lib_version(),(SELECT rolsuper FROM pg_roles WHERE rolname='studio_app');");assert identity.split('|')[-1]=='f'
  dsn='postgresql://'+role+':'+appsecret+'@127.0.0.1:'+str(port)+'/'+db
  runtime=state/'runtime.env';runtime.write_text('DATABASE_URL='+dsn+'\nNODE_ENV=development\nMIGRATE_ON_START=0\nPORT=3001\nWEB_ORIGIN=http://127.0.0.1:5173\n');os.chmod(runtime,0o600)
- manifest={'runId':run,'container':name,'volume':vol,'database':db,'role':role,'host':'127.0.0.1','port':port,'image':image,'imageId':info['Image'],'commitSha':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),'identity':identity,'runtimeEnvFile':str(runtime),'bootstrapInitSha256':hashlib.sha256(init.encode()).hexdigest(),'studioSchemaApplied':False,'guardStatus':'DB1/2 trust registry empty: Vitest real DB intentionally refused; profile provisioner independently checks new container/base/role. Not DB3.','retainedForDemo':True}
+ manifest={'runId':run,'container':name,'volume':vol,'database':db,'role':role,'host':'127.0.0.1','port':port,'image':image,'imageId':info['Image'],'commitSha':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),'identity':identity,'runtimeEnvFile':str(runtime),'bootstrapInitSha256':hashlib.sha256(init.encode()).hexdigest(),'studioSchemaApplied':True,'guardStatus':'DB1/2 trust registry empty: Vitest real DB intentionally refused; profile provisioner independently checks new container/base/role. Not DB3.','retainedForDemo':True}
  profile={'kind':'fadi-studio-v1-disposable','runId':run,'expiresAt':int(time.time()*1000)+24*3600*1000,'uiBaseUrl':'http://127.0.0.1:5173','apiBaseUrl':'http://127.0.0.1:3001','disposable':True,'production':False,'testDatabaseSafe':True,'databaseName':db,'attestedBy':'A6','evidencePath':str(state/'manifest.json')}; (state/'test-profile.json').write_text(json.dumps(profile,indent=2)+'\n'); os.chmod(state/'test-profile.json',0o600)
  (state/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');os.chmod(state/'manifest.json',0o600);print(str(state/'manifest.json'))
 if __name__=='__main__':main()
