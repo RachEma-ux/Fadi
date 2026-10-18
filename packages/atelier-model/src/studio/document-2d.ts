@@ -74,6 +74,17 @@ function finite(value: unknown, path: string): number {
   return value;
 }
 
+function array(value: unknown, path: string): unknown[] {
+  if (!Array.isArray(value)) fail(path, "tableau attendu");
+  const keys = Reflect.ownKeys(value);
+  if (keys.length !== value.length + 1) fail(path, "tableau dense sans propriétés supplémentaires attendu");
+  for (let i = 0; i < value.length; i++) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, String(i));
+    if (!descriptor || !("value" in descriptor) || !descriptor.enumerable) fail(path, "élément JSON attendu");
+  }
+  return value;
+}
+
 function point(value: unknown, path: string): StudioPoint {
   const p = record(value, ["x", "y"], path);
   return { x: finite(p.x, `${path}.x`), y: finite(p.y, `${path}.y`) };
@@ -108,8 +119,7 @@ export function validateStudioDocument(value: unknown): StudioDocument {
   if (d.schemaVersion !== "studio-document/1") fail("document.schemaVersion", "version non prise en charge");
   if (d.units !== "m") fail("document.units", "unité m attendue");
   if (d.frame !== "local-2d") fail("document.frame", "repère local-2d attendu");
-  if (!Array.isArray(d.objects)) fail("document.objects", "tableau attendu");
-  const objects = d.objects.map((o: unknown, i: number) => shape(o, `document.objects[${i}]`));
+  const objects = array(d.objects, "document.objects").map((o, i) => shape(o, `document.objects[${i}]`));
   const ids = new Set<string>();
   for (const o of objects) {
     if (ids.has(o.id)) fail("document.objects", "identifiant dupliqué");
@@ -122,13 +132,14 @@ export function newStudioDocument(id: string): StudioDocument {
   return { id: identifier(id, "document.id"), schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects: [] };
 }
 
-/** Validate all commands before applying any; both document and caller inputs remain unchanged. */
+/** Apply to a private clone; a rejected lot never mutates document or caller inputs. */
 export function applyStudioCommands(document: StudioDocument, commands: readonly StudioCommand[]): StudioDocument {
   const next = validateStudioDocument(document);
-  if (!Array.isArray(commands) || commands.length === 0) fail("commands", "au moins une commande attendue");
-  for (let i = 0; i < commands.length; i++) {
+  const batch = array(commands, "commands");
+  if (batch.length === 0) fail("commands", "au moins une commande attendue");
+  for (let i = 0; i < batch.length; i++) {
     const path = `commands[${i}]`;
-    const c = record(commands[i], ["toolId", "params"], path);
+    const c = record(batch[i], ["toolId", "params"], path);
     if (c.toolId === "studio.dessin.ligne" || c.toolId === "studio.dessin.rectangle") {
       const o = shape(c.params, `${path}.params`);
       if ((c.toolId === "studio.dessin.ligne" && o.type !== "line") || (c.toolId === "studio.dessin.rectangle" && o.type !== "rectangle")) fail(path, "outil incompatible avec la géométrie");
