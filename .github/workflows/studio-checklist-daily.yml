@@ -5,6 +5,8 @@ on:
     paths:
       - "scripts/update-studio-daily.py"
       - "scripts/test-update-studio-daily.py"
+      - "scripts/test-fadi-dashboard.py"
+      - "Studio/Fadi_Dashboard_Horaire.html"
       - "Studio/Fadi_Studio_Checklist_Interactive_V1_1.html"
       - "Studio/Fadi_Studio_Daily_Status.json"
       - ".github/workflows/studio-checklist-daily.yml"
@@ -29,7 +31,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Tests sans réseau
-        run: python3 scripts/test-update-studio-daily.py -v
+        run: |
+          python3 scripts/test-update-studio-daily.py -v
+          python3 scripts/test-fadi-dashboard.py -v
       - name: Vérifier les 630 tâches et les trois validations
         run: python3 scripts/update-studio-daily.py --offline --dry-run
 
