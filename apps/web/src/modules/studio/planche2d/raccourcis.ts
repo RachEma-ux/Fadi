@@ -12,7 +12,7 @@ export type IdCommandeEditeur =
   | "annuler" | "retablir" | "annuler-trace" | "enregistrer" | "tout-selectionner"
   | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d"
   | "accrochage-sommets" | "accrochage-grille"
-  | "exporter-svg" | "exporter-dxf"
+  | "exporter-svg" | "exporter-dxf" | "exporter-ifc"
   | "outils" | "palette";
 export type GroupeCommande = "edition" | "vue" | "accrochage" | "export" | "catalogue";
 export type BarreStudio = StudioToolGroup | GroupeCommande;
@@ -20,7 +20,7 @@ export type IconeCommande =
   | "studio-undo" | "studio-redo" | "studio-cancel" | "studio-save" | "studio-select-all"
   | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d"
   | "studio-snap-vertex" | "studio-snap-grid"
-  | "studio-export-svg" | "studio-export-dxf"
+  | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc"
   | "studio-catalog" | "studio-palette";
 
 export interface CommandeEditeur {
@@ -37,7 +37,7 @@ export interface CommandeEditeur {
   /** Bascule (bouton enfoncé ou non) : accrochages. */
   readonly bascule?: boolean;
   /** Téléchargement par un lien (export) plutôt qu'une action de la page. */
-  readonly telechargement?: "svg" | "dxf";
+  readonly telechargement?: "svg" | "dxf" | "ifc";
   /** Le raccourci reste actif quand le focus est dans un champ de saisie. */
   readonly dansUnChamp?: boolean;
 }
@@ -59,6 +59,8 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "accrochage-grille", libelleFR: "Accrocher à la grille", raccourci: "F9", iconeSymbolique: "studio-snap-grid", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "exporter-svg", libelleFR: "Exporter SVG", raccourci: "Shift+V", iconeSymbolique: "studio-export-svg", groupe: "export", ecrit: false, telechargement: "svg" },
   { id: "exporter-dxf", libelleFR: "Exporter DXF", raccourci: "Shift+X", iconeSymbolique: "studio-export-dxf", groupe: "export", ecrit: false, telechargement: "dxf" },
+  // IFC4X3 des seuls objets extrudés (Maj+I : I comme IFC, libre et non réservé).
+  { id: "exporter-ifc", libelleFR: "Exporter IFC", raccourci: "Shift+I", iconeSymbolique: "studio-export-ifc", groupe: "export", ecrit: false, telechargement: "ifc" },
   { id: "outils", libelleFR: "Outils", raccourci: "Shift+O", iconeSymbolique: "studio-catalog", groupe: "catalogue", ecrit: false },
   { id: "palette", libelleFR: "Palette de commandes", raccourci: "Ctrl+K", iconeSymbolique: "studio-palette", groupe: "catalogue", ecrit: false, dansUnChamp: true },
 ] as const);

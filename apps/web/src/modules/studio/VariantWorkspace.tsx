@@ -5,7 +5,7 @@
  * Vue : zoom à la molette centré sur le pointeur, boutons et touches de zoom, panoramique (bouton du milieu, Espace +
  * glisser, deux doigts). Sélection multiple : clic, Maj + clic, rectangle fenêtre / capture, Ctrl+A, Échap ; glisser la
  * sélection produit une commande `studio.dessin.deplacer` par objet au relâchement (aperçu pendant le geste), accrochage
- * aux sommets et à la grille. Catalogue « Outils » et palette (Ctrl+K) lus dans le registre ; exports SVG / DXF par
+ * aux sommets et à la grille. Catalogue « Outils » et palette (Ctrl+K) lus dans le registre ; exports SVG / DXF / IFC par
  * lien de téléchargement. Monté par `StudioShell` ; une révision historique (`?revision=`) s'ouvre en lecture seule.
  * Le serveur reste seul juge du droit d'écriture (`canWrite`). Annuler ne porte que sur les modifications non
  * enregistrées : aucune annulation côté serveur n'est simulée. La vue n'est jamais une donnée du document.
@@ -448,6 +448,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
   const liens: Partial<Record<IdCommandeEditeur, string>> = {
     "exporter-svg": studioExportUrl(projectId, studyId, variantId, "svg", revisionId),
     "exporter-dxf": studioExportUrl(projectId, studyId, variantId, "dxf", revisionId),
+    "exporter-ifc": studioExportUrl(projectId, studyId, variantId, "ifc", revisionId),
   };
   function runCommand(id: CommandeEditeur["id"]) {
     switch (id) {
@@ -468,7 +469,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
       case "vue-3d": return setVue3d(v => !v);
       case "accrochage-sommets": return setAccrocheSommets(v => !v);
       case "accrochage-grille": return setAccrocheGrille(v => !v);
-      case "exporter-svg": case "exporter-dxf":
+      case "exporter-svg": case "exporter-dxf": case "exporter-ifc":
         // Le lien de la barre télécharge (même origine, cookie de session) : le raccourci le suit.
         shell.current?.querySelector<HTMLAnchorElement>(`a[data-studio-commande="${id}"][href]`)?.click();
         return;
@@ -477,7 +478,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
     }
   }
   function surLien(id: IdCommandeEditeur) {
-    if ((id === "exporter-svg" || id === "exporter-dxf") && commands.length) setInfo("L’export porte sur la révision enregistrée affichée, pas sur les modifications non enregistrées.");
+    if ((id === "exporter-svg" || id === "exporter-dxf" || id === "exporter-ifc") && commands.length) setInfo("L’export porte sur la révision enregistrée affichée, pas sur les modifications non enregistrées.");
   }
   const formesChoisies = drawing ? formesSelectionnees(drawing, selectionIds) : [];
   const toolAvailable = (t: StudioToolEntry) => {

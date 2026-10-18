@@ -53,6 +53,7 @@ export type IconName =
   | "studio-snap-grid"
   | "studio-export-svg"
   | "studio-export-dxf"
+  | "studio-export-ifc"
   | "studio-catalog"
   | "studio-palette"
   | "studio-extrude"
@@ -110,6 +111,8 @@ const PATHS: Record<IconName, string> = {
   "studio-snap-grid": "M3 3h18v18H3ZM9 3v18M15 3v18M3 9h18M3 15h18M13 13h4v4h-4Z",
   "studio-export-svg": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 11c2-3 6 3 8 0M17 15v6M14 18l3 3 3-3",
   "studio-export-dxf": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 9h6M8 12h3M11 9v6M17 15v6M14 18l3 3 3-3",
+  // Fichier, petit volume (cube en perspective) et flèche de téléchargement : export IFC (modèle 3D).
+  "studio-export-ifc": "M6 3h8l4 4v6M14 3v4h4M6 3v18h6M8 10l3-2 3 2v4l-3 2-3-2ZM8 10l3 2 3-2M11 12v4M17 15v6M14 18l3 3 3-3",
   "studio-catalog": "M4 4h7v7H4ZM13 4h7v7h-7ZM4 13h7v7H4ZM13 16.5h7M16.5 13v7",
   "studio-palette": "M3 5h18v14H3ZM3 9h18M6 13l3 2-3 2M11 17h5",
   "studio-extrude": "M4 20h11l5-4H9l-5 4ZM9 16V6M12 3 9 6 6 3M15 20V10M20 16V6",

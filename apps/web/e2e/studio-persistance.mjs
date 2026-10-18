@@ -226,6 +226,25 @@ if (PHASE === 'reopen') {
   check('export : anonyme 401', (await anonymous('GET', `${exportPath}?format=svg`)).status === 401);
   check('export : étude d\'un autre projet 404', (await owner('GET', `${elsewhere}/variants/${foreignStudy.body?.variant?.id}/export?format=svg`)).status === 404);
 
+  // Export IFC après extrusion déclarée par commande : la ligne avec épaisseur devient un IfcWall, le rectangle un
+  // IfcBuildingElementProxy ; rien d'autre n'est exporté en 3D (la cote est comptée, non exportée).
+  const extruded = await owner('POST', `${variantPath(ev)}/commands`, {
+    contractVersion: 'studio-commands/1', requestId: `recette-${randomUUID()}`, baseRevisionId: drawn.body.revision.id,
+    commands: [
+      { toolId: 'studio.objet.extruder', params: { ids: ['l-export'], base: 0, height: 2.5, thickness: 0.2 } },
+      { toolId: 'studio.objet.extruder', params: { ids: ['r-export'], base: 0, height: 1 } },
+    ],
+  });
+  check('extrusion enregistrée par commande', extruded.status === 200 && extruded.body.revision.document.objects.find((o) => o.id === 'l-export')?.extrusion?.thickness === 0.2, JSON.stringify(extruded.body).slice(0, 300));
+  const ifc = await owner('GET', `${exportPath}?format=ifc`);
+  const ifcTail = extruded.body?.revision?.id?.slice(-8);
+  check('export IFC : 200, application/x-step, pièce jointe .ifc', ifc.status === 200 && ifc.headers.get('content-type') === 'application/x-step' && ifc.headers.get('content-disposition') === `attachment; filename="etude-d-export-variante-initiale-${ifcTail}.ifc"` && ifc.headers.get('x-studio-revision') === extruded.body?.revision?.id, `${ifc.status} ${ifc.headers.get('content-type')} ${ifc.headers.get('content-disposition')}`);
+  check('export IFC : en-tête ISO-10303-21, IFC4X3_ADD2, un IFCWALL, un proxy, calques, rien d\'inventé', ifc.text.startsWith('ISO-10303-21;\nHEADER;') && ifc.text.includes("FILE_SCHEMA(('IFC4X3_ADD2'));") && count(ifc.text, /=IFCWALL\(/g) === 1 && count(ifc.text, /=IFCBUILDINGELEMENTPROXY\(/g) === 1 && count(ifc.text, /=IFCEXTRUDEDAREASOLID\(/g) === 2 && count(ifc.text, /=IFCPRESENTATIONLAYERWITHSTYLE\(/g) === 2 && !ifc.text.includes('IFCMAPCONVERSION') && !ifc.text.includes('IFCPOSTALADDRESS') && ifc.text.includes("IFCPROPERTYSINGLEVALUE('DimensionsNotExported',$,IFCINTEGER(1),$)") && ifc.text.endsWith('END-ISO-10303-21;\n'), String(ifc.text).slice(0, 400));
+  const ifcAgain = await owner('GET', `${exportPath}?format=ifc`);
+  check('export IFC : déterministe (même révision, même fichier)', ifcAgain.status === 200 && digest(ifcAgain.text) === digest(ifc.text));
+  const oldIfc = await owner('GET', `${exportPath}?format=ifc&revision=${drawn.body.revision.id}`);
+  check('export IFC d\'une révision sans extrusion : aucun élément 3D', oldIfc.status === 200 && count(oldIfc.text, /=IFCWALL\(/g) === 0 && count(oldIfc.text, /=IFCBUILDINGELEMENTPROXY\(/g) === 0 && oldIfc.text.includes("IFCPROPERTYSINGLEVALUE('NonExtrudedObjects',$,IFCINTEGER(2),$)"));
+
   if (STATE) writeFileSync(STATE, JSON.stringify({ ...s, owner: ownerCredentials, headRevisionId: head.body.revision.id, initialRevisionId: created.body.revision.id, documentSha256: digest(head.body.revision.document), variantIds: expectedOrder, revisionIds: ids, exportStudy: { studyId: ev.studyId, variantId: ev.variantId, svgSha256: digest(svg.text) } }), { mode: 0o600 });
 }
 if (failures) { console.log(`${failures} vérification(s) en échec`); process.exit(1); }
