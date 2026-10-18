@@ -141,11 +141,13 @@ export type ProjectPlanningInput = ProjectPlanningStep & { expectedRevision: num
 export interface NotificationItem {
   id: string;
   at: string;
-  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou" | "peremption";
+  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou" | "peremption" | "commentaire-studio";
   projectId: string;
   projectCode: string;
   projectName: string;
   stepNumber: number | null;
+  /** Variante Studio commentée (`commentaire-studio` seulement). */
+  studio?: { studyId: string; variantId: string };
   text: string;
   /** Postérieure à votre dernière consultation. */
   unread: boolean;
@@ -768,6 +770,12 @@ export interface StudioComment {
   mine: boolean;
 }
 export interface StudioCommentInput { body: string; revisionId?: string; objectIds?: string[]; parentId?: string; requestId?: string }
+/** Étapes du Parcours rattachées à une étude Studio (`available` : étapes du projet, libellés des définitions). */
+export interface StudioStudySteps {
+  steps: { number: number; createdAt: string }[];
+  available: { number: number; title: string; phase: string }[];
+  canWrite: boolean;
+}
 export const api = {
   studioStudies: (p: string) => request<{ studies: StudioStudySummary[] }>(studioRoot(p)),
   createStudioStudy: (p: string, name: string, requestId?: string) => request<StudioContext>(studioRoot(p), { method: "POST", body: JSON.stringify(requestId ? { name, requestId } : { name }) }),
@@ -787,6 +795,12 @@ export const api = {
   createStudioComment: (p: string, s: string, v: string, input: StudioCommentInput) => request<StudioComment & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/comments`, { method: "POST", body: JSON.stringify(input) }),
   deleteStudioComment: (p: string, s: string, v: string, id: string) => request<void>(`${studioVariantPath(p, s, v)}/comments/${encodeURIComponent(id)}`, { method: "DELETE" }),
   studioCommands: (p: string, s: string, v: string, envelope: StudioEnvelope) => request<StudioContext & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/commands`, { method: "POST", body: JSON.stringify(envelope) }),
+  /** Étapes du Parcours rattachées à l'étude et étapes du projet proposées (libellés relus du serveur). */
+  studioStudySteps: (p: string, s: string) => request<StudioStudySteps>(`${studioStudyPath(p, s)}/steps`),
+  /** Remplace la liste complète des étapes rattachées (idempotent) ; droit de modification requis. */
+  setStudioStudySteps: (p: string, s: string, steps: number[]) => request<StudioStudySteps>(`${studioStudyPath(p, s)}/steps`, { method: "PUT", body: JSON.stringify({ steps }) }),
+  /** Études Studio rattachées à une étape du Parcours. */
+  studioStudiesOfStep: (p: string, step: number) => request<{ studies: { id: string; name: string }[] }>(`/projects/${encodeURIComponent(p)}/studio/steps/${step}/studies`),
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email: string, password: string) =>

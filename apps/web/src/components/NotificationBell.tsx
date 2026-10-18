@@ -14,10 +14,13 @@ import { LOCALE } from "../lib/i18n";
 import { useDossierQueries, denied, dateLabel } from "../modules/accueil/dossier-data";
 import { useDossierSync } from "../modules/accueil/use-dossier-sync";
 import { dossierAlerts, type DossierAlert, type DossierAlertCommand } from "../modules/accueil/dossier-alerts";
+import { cheminVarianteStudio } from "../modules/studio/routes-studio";
 
-const KIND_LABEL: Record<NotificationItem["kind"], string> = { acces: "Accès", commentaire: "Commentaire", reservation: "Réservation", modification: "Modification", verrou: "Verrou", peremption: "Document périmé" };
+const KIND_LABEL: Record<NotificationItem["kind"], string> = { acces: "Accès", commentaire: "Commentaire", reservation: "Réservation", modification: "Modification", verrou: "Verrou", peremption: "Document périmé", "commentaire-studio": "Commentaire Studio" };
 
 function targetOf(n: NotificationItem): string {
+  // Commentaire d'une variante Studio : la variante, panneau des commentaires ouvert.
+  if (n.kind === "commentaire-studio" && n.studio) return cheminVarianteStudio(n.projectId, n.studio.studyId, n.studio.variantId, null, { commentaires: true });
   if (n.kind === "commentaire") return n.stepNumber ? "/projets/" + n.projectId + "?module=parcours&etape=" + n.stepNumber : "/projets/" + n.projectId + "?module=collaboration";
   if (n.kind === "reservation") return "/projets/" + n.projectId + "?module=collaboration";
   if (n.kind === "modification" || n.kind === "verrou") return "/projets/" + n.projectId + "?module=atelier";

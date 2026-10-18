@@ -9045,5 +9045,17 @@
 "Fichier DXF illisible : seul le DXF ASCII (R12 ou suivant) est lu.": "Unreadable DXF file: only ASCII DXF (R12 or later) is read.",
 "Lecture du fichier impossible.": "The file could not be read.",
 "Import DXF ajouté au brouillon : {0} objet(s). Enregistrez pour l’envoyer au serveur.": "DXF import added to the draft: {0} object(s). Save to send it to the server.",
-"Enregistrement partiel : {0} lot(s) sur {1} enregistré(s), la suite est refusée. Le brouillon restant est conservé ; rechargez la version serveur.": "Partial save: {0} of {1} batch(es) saved, the rest was refused. The remaining draft is kept; reload the server version."
+"Enregistrement partiel : {0} lot(s) sur {1} enregistré(s), la suite est refusée. Le brouillon restant est conservé ; rechargez la version serveur.": "Partial save: {0} of {1} batch(es) saved, the rest was refused. The remaining draft is kept; reload the server version.",
+"Études Studio liées": "Linked Studio studies",
+"Étapes du Parcours liées": "Linked Parcours steps",
+"Chargement des étapes du Parcours…": "Loading Parcours steps…",
+"Étapes du Parcours indisponibles.": "Parcours steps unavailable.",
+"Étapes liées enregistrées.": "Linked steps saved.",
+"Enregistrement des étapes liées non confirmé. Réessayez.": "Saving the linked steps was not confirmed. Try again.",
+"Aucune étape du Parcours dans ce projet.": "No Parcours step in this project.",
+"Enregistrer les étapes liées": "Save linked steps",
+"Lecture seule : les liens vers le Parcours sont réservés aux membres autorisés à modifier ce projet.": "Read-only: links to the Parcours are reserved for members allowed to edit this project.",
+"Étape(s) absente(s) du Parcours de ce projet.": "Step(s) missing from this project’s Parcours.",
+"Commentaire Studio": "Studio comment",
+"{0} a commenté la variante « {1} » de l’étude Studio « {2} » ({3}) : « {4} »": "{0} commented on variant “{1}” of Studio study “{2}” ({3}): “{4}”"
 }

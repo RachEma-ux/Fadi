@@ -215,6 +215,60 @@ try {
   await b.page.locator("[data-studio-lecture-seule]").waitFor();
   check("lecteur : la variante s'ouvre en lecture seule", await b.page.getByRole("toolbar", { name: "Outils de dessin" }).getByRole("button", { name: "Enregistrer", exact: true }).isDisabled());
 
+  // Étapes du Parcours liées : choix multiple sur la page de l'étude (libellés du serveur, ceux des étapes du projet),
+  // enregistrées par la route Studio ; le lecteur voit sans modifier.
+  await page.goto(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}`);
+  const choixEtapes = page.locator("[data-studio-etapes-liees] [data-studio-etape]");
+  await page.waitForFunction(() => document.querySelectorAll("[data-studio-etapes-liees] [data-studio-etape]").length === 21);
+  const etapesProjet = await a.api("get", `/projects/${pA.id}/steps`);
+  const libelles = await choixEtapes.evaluateAll((els) => els.map((e) => e.textContent.replace(/\s+/g, " ").trim()));
+  check("étapes liées : les 21 étapes du projet proposées avec leurs libellés du Parcours (numéro, titre, phase)", libelles.length === 21 && etapesProjet.every((s, i) => libelles[i] === `${String(s.number).padStart(2, "0")} ${s.title} ${s.phase}`), `${libelles[0]} | ${etapesProjet[0]?.title}`);
+  check("étapes liées : aucune cochée au départ, enregistrement inactif", (await page.locator("[data-studio-etapes-liees] input:checked").count()) === 0 && (await page.locator("[data-studio-enregistrer-etapes]").isDisabled()));
+  await page.locator('[data-studio-etape="2"] input').check();
+  await page.locator('[data-studio-etape="5"] input').check();
+  await page.locator("[data-studio-enregistrer-etapes]").click();
+  await page.locator("[data-studio-etapes-liees] [role=status]").filter({ hasText: "Étapes liées enregistrées." }).waitFor();
+  const liees = await a.api("get", `/projects/${pA.id}/studio/studies/${studyId}/steps`);
+  check("étapes liées : 02 et 05 enregistrées côté serveur", JSON.stringify(liees.steps.map((x) => x.number)) === "[2,5]");
+  await page.reload();
+  await page.locator('[data-studio-etape="5"] input:checked').waitFor();
+  check("étapes liées : l'actualisation relit 02 et 05 cochées", (await page.locator("[data-studio-etapes-liees] input:checked").count()) === 2);
+  await b.page.goto(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}`);
+  await b.page.locator("[data-studio-etapes-lecture-seule]").waitFor();
+  check("étapes liées : le lecteur voit les étapes cochées sans pouvoir modifier", (await b.page.locator("[data-studio-etapes-liees] input:checked").count()) === 2 && (await b.page.locator("[data-studio-etapes-liees] input").first().isDisabled()) && (await b.page.locator("[data-studio-enregistrer-etapes]").count()) === 0);
+
+  // Étape du Parcours : bloc « Études Studio liées » seulement sur une étape liée ; le lien ouvre l'étude dans Studio.
+  const etudesDeLEtape = (n) => page.waitForResponse((r) => new URL(r.url()).pathname === `/projects/${pA.id}/studio/steps/${n}/studies`);
+  let reponseEtape = etudesDeLEtape(3);
+  await page.goto(`${BASE}/projets/${pA.id}?module=parcours&etape=3`);
+  await reponseEtape;
+  await page.locator(".step-comments").waitFor();
+  check("étape 03 non liée : aucun bloc « Études Studio liées »", (await page.locator("[data-studio-etudes-liees]").count()) === 0);
+  reponseEtape = etudesDeLEtape(2);
+  await page.goto(`${BASE}/projets/${pA.id}?module=parcours&etape=2`);
+  await reponseEtape;
+  const bloc = page.locator('[data-studio-etudes-liees="2"]');
+  await bloc.waitFor();
+  check("étape 02 liée : bloc « Études Studio liées » avec l'étude nommée", (await bloc.locator("h3").textContent()) === "Études Studio liées" && (await bloc.locator(`a[data-studio-etude-liee="${studyId}"]`).textContent()) === "Implantation nord");
+  await page.screenshot({ path: join(OUT, "parcours-etudes-studio-liees.png") });
+  await bloc.locator("a").click();
+  await page.waitForURL(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}`);
+  await page.locator(`[data-studio-etude="${studyId}"]`).waitFor();
+  check("étape 02 → étude Studio : la page de l'étude s'ouvre", true);
+
+  // Notification : un commentaire du lecteur sur la variante est signalé au propriétaire ; le lien ouvre la variante,
+  // panneau des commentaires ouvert (?commentaires=ouverts).
+  await b.api("post", `/projects/${pA.id}/studio/studies/${studyId}/variants/${variantId}/comments`, { body: "Remarque du lecteur sur la variante" });
+  await page.goto(`${BASE}/accueil`);
+  await page.locator(".notification-bell > button").click();
+  const note = page.locator('.notification-incoming .notification-list li[data-kind="commentaire-studio"]').first();
+  await note.waitFor();
+  check("notification : commentaire Studio du lecteur signalé au propriétaire", (await note.textContent()).includes(`${emailB} a commenté la variante « Variante nord » de l’étude Studio « Implantation nord » (P.STU.A) : « Remarque du lecteur sur la variante »`), await note.textContent());
+  await note.locator("a").click();
+  await page.waitForURL(`${base}?commentaires=ouverts`);
+  await page.locator("#studio-commentaires").waitFor();
+  check("notification → variante, panneau des commentaires ouvert", (await page.locator("[data-studio-basculer-commentaires]").getAttribute("aria-pressed")) === "true" && (await page.locator("#studio-commentaires").textContent()).includes("Remarque du lecteur sur la variante"));
+
   // Planche 2D : ligne, cote associative accrochée, déplacement (la cote suit), suppression (cote « à résoudre »),
   // calque créé puis masqué, annuler / rétablir, enregistrement (un seul lot, même requestId au nouvel essai),
   // actualisation identique, conflit de révision sans écrasement.

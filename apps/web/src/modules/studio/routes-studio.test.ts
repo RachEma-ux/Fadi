@@ -26,15 +26,23 @@ describe("adresses de Studio", () => {
   });
 
   it("variante : version courante sans paramètre, révision historique par ?revision=, aller-retour exact", () => {
-    const base = { vue: "variante", projectId: "p_1", studyId: "s_2", variantId: "v_3" };
+    const base = { vue: "variante", projectId: "p_1", studyId: "s_2", variantId: "v_3", commentaires: false };
     expect(lire(cheminVarianteStudio("p_1", "s_2", "v_3"))).toEqual({ ...base, revisionId: null });
     expect(cheminVarianteStudio("p_1", "s_2", "v_3")).not.toContain("?");
     expect(lire(cheminVarianteStudio("p_1", "s_2", "v_3", "studio_revision_4"))).toEqual({ ...base, revisionId: "studio_revision_4" });
   });
 
+  it("variante : commentaires=ouverts ouvre le panneau des commentaires, seul ou avec une révision, aller-retour exact", () => {
+    const base = { vue: "variante", projectId: "p_1", studyId: "s_2", variantId: "v_3" };
+    expect(cheminVarianteStudio("p_1", "s_2", "v_3", null, { commentaires: true })).toBe("/studio/projets/p_1/etudes/s_2/variantes/v_3?commentaires=ouverts");
+    expect(lire(cheminVarianteStudio("p_1", "s_2", "v_3", null, { commentaires: true }))).toEqual({ ...base, revisionId: null, commentaires: true });
+    expect(lire(cheminVarianteStudio("p_1", "s_2", "v_3", "r_4", { commentaires: true }))).toEqual({ ...base, revisionId: "r_4", commentaires: true });
+    expect(cheminVarianteStudio("p_1", "s_2", "v_3", null, { commentaires: false })).not.toContain("?");
+  });
+
   it("variante : paramètre répété, vide, non admis ou étranger → adresse non reconnue", () => {
     const chemin = "/studio/projets/p_1/etudes/s_2/variantes/v_3";
-    for (const q of ["?revision=a&revision=b", "?revision=", "?revision=..%2Fx", "?domaine=dessin", "?planche=2d", "?vue=x", "?revision=a&x=1"]) {
+    for (const q of ["?revision=a&revision=b", "?revision=", "?revision=..%2Fx", "?domaine=dessin", "?planche=2d", "?vue=x", "?revision=a&x=1", "?commentaires=", "?commentaires=1", "?commentaires=ouverts&commentaires=ouverts", "?commentaires=fermes"]) {
       expect(lireRouteStudio(chemin, q).vue).toBe("inconnue");
     }
     expect(lireRouteStudio("/studio/projets/p_1/etudes/s_2/variantes").vue).toBe("inconnue");

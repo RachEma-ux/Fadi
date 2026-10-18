@@ -675,3 +675,18 @@ export const studioComments = pgTable("studio_comments", {
   index("studio_comments_variant_idx").on(t.variantId, t.createdAt),
   uniqueIndex("studio_comments_variant_id_unique").on(t.variantId, t.id),
 ]);
+
+/**
+ * Étapes du Parcours auxquelles une étude Studio est rattachée (lien de lecture, facultatif) : une ligne par étude et
+ * par numéro d'étape (`project_steps.step_number`, 1 à 21) du même projet, vérifiée par le serveur à l'écriture.
+ * Le lien ne modifie ni l'étape ni l'étude ; il disparaît avec l'étude (cascade).
+ */
+export const studioStudySteps = pgTable("studio_study_steps", {
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  stepNumber: integer("step_number").notNull(),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("studio_study_steps_unique").on(t.studyId, t.stepNumber),
+  index("studio_study_steps_step_idx").on(t.stepNumber),
+]);

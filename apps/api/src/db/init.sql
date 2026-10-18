@@ -561,3 +561,13 @@ CREATE TABLE IF NOT EXISTS studio_comments (
 CREATE INDEX IF NOT EXISTS studio_comments_variant_idx ON studio_comments(variant_id, created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS studio_comments_request_unique ON studio_comments(variant_id, request_id)
   WHERE request_id IS NOT NULL;
+-- Rattachement facultatif d'une étude Studio à des étapes du Parcours du même projet (numéro d'étape de
+-- project_steps, vérifié par le serveur). Table nouvelle, additive : aucune étape ni aucune étude n'est réécrite.
+CREATE TABLE IF NOT EXISTS studio_study_steps (
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  step_number integer NOT NULL,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT studio_study_steps_unique UNIQUE(study_id, step_number)
+);
+CREATE INDEX IF NOT EXISTS studio_study_steps_step_idx ON studio_study_steps(step_number);

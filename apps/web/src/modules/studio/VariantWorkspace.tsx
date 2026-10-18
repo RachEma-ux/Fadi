@@ -91,9 +91,10 @@ function rectContenu(svg: SVGSVGElement): Rect {
   return { left: b.left + svg.clientLeft, top: b.top + svg.clientTop, width: svg.clientWidth || b.width, height: svg.clientHeight || b.height };
 }
 
-export interface VariantWorkspaceProps { projectId: string; studyId: string; variantId: string; revisionId: string | null }
+/** `commentairesOuverts` : panneau des commentaires ouvert à l'arrivée (adresse `?commentaires=ouverts`, lien de notification). */
+export interface VariantWorkspaceProps { projectId: string; studyId: string; variantId: string; revisionId: string | null; commentairesOuverts?: boolean }
 
-export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: VariantWorkspaceProps) {
+export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false }: VariantWorkspaceProps) {
   const client = useQueryClient();
   const [context, setContext] = useState<StudioContext | null>(null);
   const [brouillon, setBrouillon] = useState<Brouillon | null>(null);
@@ -121,7 +122,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId }: 
   const [values, setValues] = useState<Valeurs>({ x: 0, y: 0, a: 4, b: 3, dx: 1, dy: 0, offset: 0.5 });
   const [extrusion, setExtrusion] = useState<ValeursExtrusion>(VALEURS_VIDES);
   const [vue3d, setVue3d] = useState(false);
-  const [commentaires, setCommentaires] = useState(false);
+  const [commentaires, setCommentaires] = useState(commentairesOuverts);
   const envelope = useRef<PlanEnvoi | null>(null);
   const alive = useRef(true), dirty = useRef(false), saving = useRef(false);
   const clavier = useRef<(e: KeyboardEvent) => void>(() => {});

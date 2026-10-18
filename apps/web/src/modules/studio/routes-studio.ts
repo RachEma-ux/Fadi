@@ -3,7 +3,8 @@
  * sous `/projets` (l'entrée Projets ne s'allume pas), identifiants opaques vérifiés par le serveur. Une adresse ou un
  * paramètre inconnu donne un écran explicite, jamais un repli silencieux. Pur : ni React ni DOM.
  *
- * Paramètres admis : `revision` sur une variante (une seule fois), qui ouvre cette révision en lecture seule ; `de` et
+ * Paramètres admis : `revision` sur une variante (une seule fois), qui ouvre cette révision en lecture seule ;
+ * `commentaires=ouverts` sur une variante (une seule fois, seule valeur admise), qui ouvre son panneau de commentaires ; `de` et
  * `a` sur la comparaison d'une étude (`…/etudes/:s/comparer`), chacun au plus une fois, de la forme
  * `variantId` (tête) ou `variantId:revisionId`.
  */
@@ -18,11 +19,13 @@ export type RouteStudio =
   | { vue: "projet"; projectId: string }
   | { vue: "etude"; projectId: string; studyId: string }
   | { vue: "comparer"; projectId: string; studyId: string; de: CoteComparaisonStudio | null; a: CoteComparaisonStudio | null }
-  | { vue: "variante"; projectId: string; studyId: string; variantId: string; revisionId: string | null }
+  | { vue: "variante"; projectId: string; studyId: string; variantId: string; revisionId: string | null; commentaires: boolean }
   | { vue: "inconnue"; chemin: string };
 
 /** Identifiant opaque admis dans un segment ou un paramètre : jamais interprété comme un nom de fichier. */
 const ID = /^[A-Za-z0-9_-]{1,128}$/;
+/** Seule valeur admise de `commentaires` : ouvre le panneau des commentaires de la variante (lien d'une notification). */
+const COMMENTAIRES_OUVERTS = "ouverts";
 
 export const estRouteStudio = (pathname: string): boolean => pathname === RACINE_STUDIO || pathname.startsWith(`${RACINE_STUDIO}/`);
 
@@ -52,12 +55,14 @@ export function lireRouteStudio(pathname: string, search = ""): RouteStudio {
     return { vue: "comparer", projectId, studyId, de, a };
   }
   if (ids.length !== 6 || variantes !== "variantes" || !ID.test(variantId)) return inconnue;
-  if (cles.some((k) => k !== "revision")) return inconnue;
+  if (cles.some((k) => k !== "revision" && k !== "commentaires")) return inconnue;
   const revisions = params.getAll("revision");
   if (revisions.length > 1) return inconnue;
   const revisionId = revisions[0] ?? null;
   if (revisionId !== null && !ID.test(revisionId)) return inconnue;
-  return { vue: "variante", projectId, studyId, variantId, revisionId };
+  const commentaires = params.getAll("commentaires");
+  if (commentaires.length > 1 || (commentaires.length === 1 && commentaires[0] !== COMMENTAIRES_OUVERTS)) return inconnue;
+  return { vue: "variante", projectId, studyId, variantId, revisionId, commentaires: commentaires.length === 1 };
 }
 
 /** Valeur d'un côté (`undefined` = mal formé ou répété ; `null` = absent). */
@@ -85,7 +90,11 @@ export const cheminProjetStudio =(projectId: string): string => `${RACINE_STUDIO
 
 export const cheminEtudeStudio = (projectId: string, studyId: string): string => `${cheminProjetStudio(projectId)}/etudes/${encodeURIComponent(studyId)}`;
 
-export function cheminVarianteStudio(projectId: string, studyId: string, variantId: string, revisionId: string | null = null): string {
+export function cheminVarianteStudio(projectId: string, studyId: string, variantId: string, revisionId: string | null = null, options: { commentaires?: boolean } = {}): string {
   const base = `${cheminEtudeStudio(projectId, studyId)}/variantes/${encodeURIComponent(variantId)}`;
-  return revisionId === null ? base : `${base}?${new URLSearchParams({ revision: revisionId })}`;
+  const q = new URLSearchParams();
+  if (revisionId !== null) q.set("revision", revisionId);
+  if (options.commentaires) q.set("commentaires", COMMENTAIRES_OUVERTS);
+  const s = q.toString();
+  return s ? `${base}?${s}` : base;
 }
