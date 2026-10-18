@@ -26,6 +26,10 @@ function controler(fichiers) {
 
 const S = "apps/web/src/modules/studio";
 const base = {
+  // Le contrôle exige au moins un paquet pur muni de son manifeste (EMPTY_SCOPE sinon).
+  "packages/pur/manifest.json": JSON.stringify({ name: "@parcours/pur", allowedDependencies: [] }),
+  "packages/pur/package.json": JSON.stringify({ name: "@parcours/pur" }),
+  "packages/pur/src/index.ts": "export const pur = 1;\n",
   "apps/web/src/modules/atelier/nouveau/interne.ts": "export const y = 1;\n",
   "apps/web/src/modules/parcours/ParcoursModule.tsx": "export const p = 1;\n",
   "apps/web/src/routes/ProjectShell.tsx": "export const s = 1;\n",
