@@ -1,3 +1,4 @@
+import { pointVisiblePlanche } from "./lib-cible-planche.mjs";
 /**
  * Recette des outils Profilé (lot L12, D-215), bureau 1536 px et téléphone 390 px :
  * - un catalogue **d'essai** est importé dans l'Atelier (colonne `source` : « Données d'essai, non contractuelles ») ;
@@ -75,11 +76,8 @@ async function preparer(contexte, avecCatalogue = true) {
 
 /** Aides liées à une page : projection, état du brouillon (aires 3D par Newell), gestes. */
 function aides(page) {
-  const ecran = async (q) => {
-    const b = await page.locator("[data-planche-vue] canvas").first().boundingBox();
-    const e = await page.evaluate((x) => window.fadiPlanche.versEcran(x), q);
-    return e && { x: b.x + e.x, y: b.y + e.y };
-  };
+  const ecran = (q) => pointVisiblePlanche(page, q);
+
   const etat = () =>
     page.evaluate(() => {
       const P = window.fadiPlanche;
@@ -203,6 +201,10 @@ const piecesDe = (page) =>
   const src = await page.locator("[data-planche-info-source]").textContent().catch(() => "");
   check("Info entité : désignation et source de la pièce", /Données d'essai/.test(src ?? "") && /Rect essai/.test((await page.locator("[data-planche-info-piece]").textContent().catch(() => "")) ?? ""), src);
   await page.keyboard.press("Escape");
+  // Fermer explicitement le panneau consulté : Échap quitte la sélection, pas
+  // Info entité. Sinon sa hauteur change au premier clic et recouvre le second
+  // clic de la face dans l'espace de dessin intégré, plus court.
+  await page.locator('[data-planche-panneau="info-entite"] .canevas-fermer').click();
   // Profilés depuis arêtes : rectangle d'arêtes à l'écart, sélection des 4 arêtes, section saisie.
   await vue.focus();
   await page.keyboard.press("l");

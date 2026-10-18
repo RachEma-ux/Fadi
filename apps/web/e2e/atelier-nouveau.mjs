@@ -376,6 +376,9 @@ await pt3.locator('.barre-mode button:has-text("3D")').tap();
 await pt3.waitForFunction(() => (window.fadiMesures3D?.triangles ?? 0) > 0, null, { timeout: 30000 });
 await pt3.locator('.vue3d-commandes select[aria-label="Présentation"]').selectOption({ label: "Niveau actif" });
 await pt3.waitForTimeout(400);
+// En page projet, la vue peut commencer sous l'en-tête et la navigation.
+// Placer le canevas réellement dans la fenêtre avant les gestes tactiles.
+await pt3.locator(".vue3d-canevas").scrollIntoViewIfNeeded();
 const murTel = await pt3.evaluate(() => {
   const groupe = [...document.querySelectorAll(".nav-objets details")].find((d) => d.querySelector("summary").textContent.trim().startsWith("Mur"));
   const ids = groupe ? [...groupe.querySelectorAll("button[data-objet]")].map((b) => b.dataset.objet) : [];
@@ -392,13 +395,55 @@ check("téléphone 3D : toucher un mur le sélectionne", !!murTel && (await pt3.
 const cdp = await tel.newCDPSession(pt3);
 const n0Tel = await pt3.evaluate(() => window.fadiMesures3D.rendus.length);
 const toucher = (type, points) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: points.map(([x, y], id) => ({ x: cTel.x + x, y: cTel.y + y, id })) });
-await toucher("touchStart", [[100, 200]]);
-for (let k = 1; k <= 12; k++) await toucher("touchMove", [[100 + k * 10, 200]]);
+// Le canevas embarqué peut être partiellement hors écran et les commandes
+// flottantes recouvrent une partie de sa surface. Trouver un geste CONTINU
+// sur les pixels effectivement atteignables, sans appeler le moteur 3D.
+const trajectoireOrbite = await pt3.evaluate(() => {
+  const canvas = document.querySelector(".vue3d-canevas");
+  if (!canvas) return null;
+  const box = canvas.getBoundingClientRect();
+  const left = Math.ceil(Math.max(12, box.left + 12));
+  const right = Math.floor(Math.min(innerWidth - 12, box.right - 12));
+  const top = Math.ceil(Math.max(12, box.top + 12));
+  const bottom = Math.floor(Math.min(innerHeight - 12, box.bottom - 12));
+  const handles = ["x", "y", "z", "r", "c"].map((a) => window.fadiMesures3D?.localiserPoignee?.(a)).filter(Boolean);
+  const libre = (px, py) =>
+    document.elementFromPoint(px, py) === canvas &&
+    handles.every((h) => Math.hypot(px - box.left - h.x, py - box.top - h.y) > 32);
+  // Chercher d'abord une orbite horizontale, puis verticale si les boutons
+  // rendent la largeur utilisable trop courte. Aucun point ne traverse une commande.
+  for (const longueur of [120, 96, 72, 48]) {
+    for (const [dx, dy] of [[longueur, 0], [0, longueur]]) {
+      for (let py = top; py + dy <= bottom; py += 12) {
+        for (let px = left; px + dx <= right; px += 12) {
+          if (Array.from({ length: 13 }, (_, k) => libre(px + dx * k / 12, py + dy * k / 12)).every(Boolean)) {
+            return { x: px - box.left, y: py - box.top, dx, dy };
+          }
+        }
+      }
+    }
+  }
+  return null;
+});
+check("téléphone 3D : trajectoire d'orbite réellement visible hors des commandes flottantes", !!trajectoireOrbite, JSON.stringify(trajectoireOrbite));
+if (!trajectoireOrbite) {
+  const geo = await pt3.evaluate(() => {
+    const box = document.querySelector(".vue3d-canevas")?.getBoundingClientRect();
+    return { viewport: [innerWidth, innerHeight], canvas: box && { left: box.left, top: box.top, width: box.width, height: box.height },
+      centre: box && document.elementFromPoint(Math.max(0, Math.min(innerWidth - 1, box.left + box.width / 2)), Math.max(0, Math.min(innerHeight - 1, box.top + box.height / 2)))?.className };
+  });
+  throw new Error(`Aucune trajectoire tactile libre dans la vue 3D : ${JSON.stringify(geo)}`);
+}
+const pointOrbite = (t) => [trajectoireOrbite.x + trajectoireOrbite.dx * t, trajectoireOrbite.y + trajectoireOrbite.dy * t];
+await toucher("touchStart", [pointOrbite(0)]);
+for (let k = 1; k <= 12; k++) await toucher("touchMove", [pointOrbite(k / 12)]);
 await toucher("touchEnd", []);
 await pt3.waitForTimeout(200);
 const n1Tel = await pt3.evaluate(() => window.fadiMesures3D.rendus.length);
-await toucher("touchStart", [[150, 250], [250, 250]]);
-for (let k = 1; k <= 10; k++) await toucher("touchMove", [[150 - k * 6, 250], [250 + k * 6, 250]]);
+// Deux doigts : partir au centre du MÊME couloir libre, puis les écarter.
+// Cela évite que le test de zoom appuie sur un contrôle flottant ou hors écran.
+await toucher("touchStart", [pointOrbite(0.4), pointOrbite(0.6)]);
+for (let k = 1; k <= 10; k++) await toucher("touchMove", [pointOrbite(0.4 - 0.03 * k), pointOrbite(0.6 + 0.03 * k)]);
 await toucher("touchEnd", []);
 await pt3.waitForTimeout(200);
 const n2Tel = await pt3.evaluate(() => window.fadiMesures3D.rendus.length);

@@ -116,6 +116,7 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
     const w = el.ownerDocument.defaultView ?? window;
     const vv = w.visualViewport;
     w.addEventListener("resize", replacer);
+    w.addEventListener("scroll", replacer, { passive: true });
     w.addEventListener("orientationchange", replacer);
     vv?.addEventListener("resize", replacer);
     vv?.addEventListener("scroll", replacer);
@@ -130,6 +131,7 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
     }
     return () => {
       w.removeEventListener("resize", replacer);
+      w.removeEventListener("scroll", replacer);
       w.removeEventListener("orientationchange", replacer);
       vv?.removeEventListener("resize", replacer);
       vv?.removeEventListener("scroll", replacer);

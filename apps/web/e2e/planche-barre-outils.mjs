@@ -239,7 +239,7 @@ const rendues = await p.locator("[data-barre-outils]").evaluateAll((els) => els.
 check("téléphone : une seule barre, la dernière affichée (Rectangle)", rendues.join(",") === "rectangle", rendues.join(","));
 const bt = await boite(p, "[data-barre-outils]");
 const volet = await boite(p, "[data-planche-volet]");
-check("téléphone : barre rangée en bas, juste au-dessus du volet, sur toute la largeur, entière dans l'écran", dansEcran(bt, vpt) && !!volet && bt.y + bt.height <= volet.y + 1 && bt.y + bt.height >= volet.y - 12 && bt.width >= vpt.width - 12, `${JSON.stringify(bt)} / volet ${JSON.stringify(volet)}`);
+check("téléphone : barre rangée en bas, juste au-dessus du volet, sur toute la largeur utile (barre latérale conservée), entière dans l'écran", dansEcran(bt, vpt) && !!volet && bt.y + bt.height <= volet.y + 1 && bt.y + bt.height >= volet.y - 12 && bt.width >= volet.width - 12 && bt.x >= volet.x && bt.x + bt.width <= volet.x + volet.width, `${JSON.stringify(bt)} / volet ${JSON.stringify(volet)}`);
 check("téléphone : position « docquee »", (await p.locator("[data-barre-outils]").getAttribute("data-position")) === "docquee");
 const petits = await p.locator("[data-barre-outils] button:visible").evaluateAll((els) => els.filter((e) => { const q = e.getBoundingClientRect(); return q.width < 43.5 || q.height < 43.5; }).length);
 check("téléphone : cibles ≥ 44 px", petits === 0, `${petits} trop petites`);

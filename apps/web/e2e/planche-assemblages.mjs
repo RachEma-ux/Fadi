@@ -1,3 +1,4 @@
+import { pointVisiblePlanche } from "./lib-cible-planche.mjs";
 /**
  * Recette des assemblages de pièces (lot L13, D-216), bureau 1536 px :
  * - cadre de quatre pièces posées sans onglet sur un rectangle d'arêtes, puis recoupées deux à deux par l'outil Onglet
@@ -72,11 +73,8 @@ async function preparer(contexte, avecCatalogue = true) {
 
 /** Aides liées à une page : projection, état du brouillon (aires 3D par Newell), gestes. */
 function aides(page) {
-  const ecran = async (q) => {
-    const b = await page.locator("[data-planche-vue] canvas").first().boundingBox();
-    const e = await page.evaluate((x) => window.fadiPlanche.versEcran(x), q);
-    return e && { x: b.x + e.x, y: b.y + e.y };
-  };
+  const ecran = (q) => pointVisiblePlanche(page, q);
+
   const etat = () =>
     page.evaluate(() => {
       const P = window.fadiPlanche;

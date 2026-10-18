@@ -847,6 +847,12 @@
     right: 0.5rem;
     top: calc(48px + 0.5rem);
     width: auto;
+    /* Keep the last panel control out of the mobile bottom drawer. If the
+       viewport is short, this column scrolls instead of covering the drawer. */
+    max-height: calc(100% - var(--volet-h, 10rem) - 48px - 1.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
     margin: 0;
     padding: 0;
     gap: 0.5rem;
@@ -855,19 +861,28 @@
     box-shadow: none;
     align-items: flex-end;
   }
+  .planche-colonne::-webkit-scrollbar {
+    display: none;
+  }
   .planche-colonne .canevas-icone {
+    flex: 0 0 auto;
+    box-sizing: border-box;
     flex-direction: row-reverse;
     align-items: center;
+    justify-content: flex-end;
     gap: 0.5rem;
-    min-height: 0;
+    min-width: 44px;
+    min-height: 44px;
     padding: 0;
     border: 0;
     background: transparent;
   }
   .planche-colonne .canevas-picto {
     display: flex;
+    flex: 0 0 44px;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
     width: 44px;
     height: 44px;
     background: var(--flottant-fond);
