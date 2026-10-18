@@ -739,10 +739,10 @@ const studioRoot = (p: string) => `/projects/${encodeURIComponent(p)}/studio/stu
 const studioStudyPath = (p: string, s: string) => `${studioRoot(p)}/${encodeURIComponent(s)}`;
 const studioVariantPath = (p: string, s: string, v: string) => `${studioStudyPath(p, s)}/variants/${encodeURIComponent(v)}`;
 /**
- * Adresse d'export d'une variante (pièce jointe SVG ou DXF produite par le serveur, même origine : le cookie de session
+ * Adresse d'export d'une variante (pièce jointe SVG, DXF ou IFC produite par le serveur, même origine : le cookie de session
  * suit le lien). Sans `revisionId`, le serveur exporte la tête ; avec, la révision historique affichée.
  */
-export function studioExportUrl(p: string, s: string, v: string, format: "svg" | "dxf", revisionId?: string | null): string {
+export function studioExportUrl(p: string, s: string, v: string, format: "svg" | "dxf" | "ifc", revisionId?: string | null): string {
   return `${studioVariantPath(p, s, v)}/export?format=${format}${revisionId ? `&revision=${encodeURIComponent(revisionId)}` : ""}`;
 }
 export const api = {
