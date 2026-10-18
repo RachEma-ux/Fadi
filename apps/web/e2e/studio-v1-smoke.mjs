@@ -32,8 +32,14 @@ try {
   assert.equal(await page.locator('.overview-step').count(), 21);
   report.checks.push({ name: 'existing Parcours exposes 21 steps on the same project', result: 'passed' });
   await page.getByRole('navigation', { name: 'Modules du projet' }).getByRole('button', { name: 'Atelier architectural', exact: true }).click();
-  await page.locator('.atelier-n .plan2d').waitFor();
-  report.checks.push({ name: 'existing Atelier mounts through its original project navigation', result: 'passed' });
+  await page.locator('.atelier-n').waitFor();
+  const emptyHeading = page.getByRole('heading', { name: "Ce projet n'a pas encore de modèle dessiné", exact: true });
+  await emptyHeading.waitFor();
+  await page.getByRole('button', { name: 'Créer le niveau', exact: true }).waitFor();
+  assert.equal(await page.locator('.atelier-n .plan2d').count(), 0, 'This deliberately empty project has no native model');
+  assert.equal(await page.getByRole('alert').count(), 0);
+  report.checks.push({ name: 'existing Atelier mounts its explicit valid empty-model state through original navigation', result: 'passed' });
+  report.limits.push('Atelier empty-model state checked only; no level created and no native plan drawing functionality exercised');
   await page.screenshot({ path: resolve(out, 'existing-atelier-seam.png') });
   await page.goto(`${profile.uiBaseUrl}/studio/projets/${state.projectId}/etudes/${state.studyId}/variantes/${state.variantId}`);
   await page.getByRole('heading', { name: state.studyName, exact: true }).waitFor();
@@ -47,6 +53,7 @@ try {
   report.result = 'passed';
 } catch (e) {
   report.result = 'failed'; report.failure = { name: e.name, message: e.message }; report.pageErrors = errors; process.exitCode = 1;
+  for (const [index, page] of c.pages().entries()) await page.screenshot({ path: resolve(out, `failure-existing-seam-${index}.png`) }).catch(() => {});
 } finally {
   await c.close(); await browser.close();
   writeFileSync(resolve(out, 'report-existing-seam.json'), JSON.stringify(report, null, 2));
