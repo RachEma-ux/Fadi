@@ -1,0 +1,34 @@
+{
+  "mission": "003",
+  "nouvelle_extraction": true,
+  "sources": [
+    {
+      "path": "Studio/Fadi_Studio_Definition_Officielle_Reference_V2_1.docx",
+      "git_blob": "e1d61ca38809e1faac6111c5ffb0881619b9a6dc",
+      "sha256": "5ad8bb2bc78c7eada33cfdaed571131b8966c6a4a4584786966acae9efd1c958",
+      "bytes": 44361,
+      "verification": "Lecture binaire/calcul ; source non modifiée"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx",
+      "git_blob": "ce7cf463e34c92c0178fa0c0b495569a13c7fe32",
+      "sha256": "98479152a8fd31b5871bc8bb3fe72aeeb5beb5929190b04a0e9ff167dbf91b5d",
+      "bytes": 106478,
+      "verification": "Lecture binaire/calcul ; source non modifiée"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Plan_Implementation_V1_0.md",
+      "git_blob": "db5588eca8980efcd7276c1cc2182b9070c6eb38",
+      "sha256": "4976191179bafa59cbc3a24fef9c28c9f50dcc7fa9a0bd8573dc075586659ce3",
+      "bytes": 57937,
+      "verification": "Lecture binaire/calcul ; source non modifiée"
+    },
+    {
+      "path": "Studio/Fadi_Studio_Checklist_Execution_V1_0.md",
+      "git_blob": "24a5e04346ed7605b82b7079d6259b378ca6bf64",
+      "sha256": "305790676143c0981d4f547edbd0b573bfc85c87a98e027178daa72b57822b46",
+      "bytes": 100486,
+      "verification": "Lecture binaire/calcul ; source non modifiée"
+    }
+  ]
+}

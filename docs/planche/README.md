@@ -13,7 +13,7 @@ d'inventé, commandes inversibles, repères explicites).
   (D-156), navigation configurable (D-157), partage et droits.
 - **Calcul pur** dans `packages/planche-model` (aucune dépendance d'interface, R6) ; rendu three.js dans `apps/web`
   à partir du lot 2.
-- Booléens de **maillage** par manifold-3d (Apache-2.0, D-013) ; OCCT non ouvert.
+- Booléens de **maillage** de la Planche par manifold-3d (Apache-2.0, D-013). Le noyau exact séparé de Fadi est livré selon D-177/D-182/D-183 ; cela ne transforme pas ces booléens de maillage en opérations exactes.
 
 ## Contenu du dossier
 
@@ -29,6 +29,8 @@ Relevés : `outils-dessin.md`, `outils-modification.md`, `complements-modificati
 en direct).
 
 ## État
+
+**Lecture actuelle — Mission 003, M06.** D-174 consigne l’acceptation du 8 octobre 2026 des lots Planche 1–7 et Atelier 0–9, avec leurs limites. Le tableau ci-dessous conserve le relevé historique de leurs livraisons et attentes de CI ; ses mentions « acceptation en attente » ne rouvrent pas D-174. Les lots ultérieurs et leurs décisions restent dans `docs/atelier/decisions.md` et les comptes rendus `lots/`. Cette mise à jour documentaire ne vaut pas une nouvelle recette ou acceptation Studio.
 
 | Lot | Contenu | État |
 | --- | --- | --- |

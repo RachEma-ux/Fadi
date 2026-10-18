@@ -12,36 +12,1156 @@
   "execution_contract": "docs/ai-team/CODEX-START-HERE.md",
   "mapping_note": "Les plages 1-based couvrent les tâches de la version source verrouillée, sans modifier leurs identifiants ni leur texte. Dépendances par livrable, non par clôture globale de mission.",
   "missions": [
-    {"id":"M00","title":"Coordination et registre complet","owner":"A0","priority":"P1","issue":156,"source_ranges":[],"inputs":[]},
-    {"id":"M01","title":"Cloud, SHA et démarrage reproductible","owner":"A6","priority":"P1","issue":157,"source_ranges":[],"inputs":["M00:référence et autorisations"]},
-    {"id":"M02","title":"Sécurisation des bases de tests","owner":"A5","priority":"P1","issue":157,"source_ranges":[],"inputs":["M01:cible jetable identifiée avant essais","M00:autorisation du correctif avant code"]},
-    {"id":"M03","title":"Protections administratives de main","owner":"A6","priority":"P1","issue":146,"source_ranges":[],"inputs":["M00:référence GitHub","M04:noms réels des checks avant activation"]},
-    {"id":"M04","title":"CI, reproductibilité et preuves courantes","owner":"A5","priority":"P1/P3","issue":157,"source_ranges":[],"inputs":["M01:environnement","M02:protection prouvée avant essais en base"]},
-    {"id":"M05","title":"Contrats Atelier et compatibilité","owner":"A2","priority":"P2","issue":158,"source_ranges":[],"inputs":["M00:SHA et périmètre"]},
-    {"id":"M06","title":"Documents, statuts et relais cohérents","owner":"A0","priority":"P2","issue":158,"source_ranges":[],"inputs":["M00:états GitHub","M05:version contractuelle pour les textes concernés"]},
-    {"id":"M07","title":"Frontières et dépendances natives","owner":"A2","priority":"P2","issue":151,"source_ranges":[],"inputs":["M00:relecture PR 152 avant modification"]},
-    {"id":"M08","title":"Isolation technique et documentaire","owner":"A2","priority":"P2","issue":147,"source_ranges":[],"inputs":["M00:inventaire et décision de conservation"]},
-    {"id":"M09","title":"CSP et vulnérabilités des dépendances","owner":"A5","priority":"P2","issue":157,"source_ranges":[],"inputs":["M01:environnement pour essais","M02:garde avant tests avec données"]},
-    {"id":"M10","title":"Jalons Fadi production et sauvegardes","owner":"A6","priority":"P1","issue":149,"source_ranges":[],"inputs":["M08:preuves applicables de décontamination","M04:preuves du candidat avant déploiement"]},
-    {"id":"M11","title":"Studio sources, périmètre et G0","owner":"A1","priority":"P0 Studio","issue":159,"source_ranges":[[1,86],[202,215],[1313,1356]],"inputs":["M00:références identifiées"]},
-    {"id":"M12","title":"Studio qualification des 141 fiches","owner":"A1","priority":"P0 Studio","issue":159,"source_ranges":[[1052,1312]],"inputs":["M11:REF-01 et REF-02 accessibles"]},
-    {"id":"M13","title":"Studio navigation, architecture et G1","owner":"A2","priority":"P0 Studio","issue":159,"source_ranges":[[87,201],[216,224],[911,926]],"inputs":["M11:cadrage G0","M12:exigences pertinentes","M07:carte actuelle des frontières"]},
-    {"id":"M14","title":"Studio décisions, POC G2 et G3","owner":"A2","priority":"P0 Studio","issue":159,"source_ranges":[[225,243],[1021,1051]],"inputs":["M13:contrats du sous-ensemble","M15:corpus et protocole pour le POC","M00:autorisation spécifique du POC"]},
-    {"id":"M15","title":"Studio X, mesures et risques transversaux","owner":"A5","priority":"P0 transversal","issue":160,"source_ranges":[[447,496],[788,797],[927,943]],"inputs":["M11:sources pour préparation","M02:cible sûre avant exécution en base"]},
-    {"id":"M16","title":"Studio lot I intégration native","owner":"A4","priority":"P0 Studio","issue":160,"source_ranges":[[254,312]],"inputs":["M13:contrat navigation approuvé","M14:G3 du lot I","M17:contrat de contexte stable"]},
-    {"id":"M17","title":"Studio A.1 données durables","owner":"A2","priority":"P0 Studio","issue":160,"source_ranges":[[313,328]],"inputs":["M14:DEC-01/02/03/12/18 applicables et G3","M13:autorités de données"]},
-    {"id":"M18","title":"Studio A.2 planche 2D autonome","owner":"A3","priority":"P0 Studio","issue":160,"source_ranges":[[329,342]],"inputs":["M17:modèle document 2D","M14:G3 du sous-lot","M15:corpus 2D"]},
-    {"id":"M19","title":"Studio A.3 planche 3D autonome","owner":"A3","priority":"P0 Studio","issue":160,"source_ranges":[[343,356]],"inputs":["M17:modèle spatial","M14:G3 du sous-lot","M15:corpus 3D"]},
-    {"id":"M20","title":"Studio A.4/A.5 association et commandes","owner":"A2","priority":"P0 Studio","issue":160,"source_ranges":[[357,395]],"inputs":["M17:contrats durables","M18:édition 2D","M19:édition 3D","M14:G3 applicable","M24/M27:preuves aval pour les seuls critères finaux concernés"]},
-    {"id":"M21","title":"Studio B Registry, Manager et chargement","owner":"A4","priority":"P0 Studio","issue":160,"source_ranges":[[396,446]],"inputs":["M17:contrats d’outils stables","M14:DEC-04/05/06/07/14/18 applicables","M15:protocole cache et mémoire"]},
-    {"id":"M22","title":"Studio C indexation et rendu incrémental","owner":"A2","priority":"P1 Studio","issue":161,"source_ranges":[[497,530]],"inputs":["M17/M20:contrats géométrie et effets","M15:oracle et mesures","M14:DEC-08/09/10/13/17 applicables"]},
-    {"id":"M23","title":"Studio D workers, mémoire et reprise","owner":"A6","priority":"P1 Studio","issue":161,"source_ranges":[[531,570]],"inputs":["M17/M20:job et révision","M21:chargement","M15:instrumentation","M14:DEC-11/13 applicables"]},
-    {"id":"M24","title":"Studio E dossier métier et publication","owner":"A1","priority":"P1 Studio","issue":162,"source_ranges":[[571,645]],"inputs":["M17–M21:capacités A/B nécessaires","M14:DEC-16 et contrats applicables","M22/M23:sous-ensembles nécessaires à la charge"]},
-    {"id":"M25","title":"Studio F capacités avancées conditionnelles","owner":"A2","priority":"P2 conditionnel","issue":163,"source_ranges":[[646,674]],"inputs":["M11:périmètre d’option explicite","M14:DEC et accord propres à chaque option","M15:preuves propres"]},
-    {"id":"M26","title":"Studio scénarios et critères éliminatoires","owner":"A5","priority":"P0/P1 Studio","issue":162,"source_ranges":[[771,787],[798,812],[970,1020]],"inputs":["M12:attendus pour préparer","M15:corpus","M02:base sûre","M16–M25:capacités du scénario à exécuter"]},
-    {"id":"M27","title":"Studio migration et exploitation sans perte","owner":"A6","priority":"P1 Studio","issue":164,"source_ranges":[[813,861]],"inputs":["M17:schémas décidés","M13:autorité pendant coexistence","M02:environnement de simulation sûr","M00:accord avant migration sensible"]},
-    {"id":"M28","title":"Studio R, G4 et mise en service","owner":"A6","priority":"Livraison","issue":164,"source_ranges":[[244,253],[675,717]],"inputs":["M24:dossier métier candidat","M26:recettes applicables","M27:restauration prouvée","M00:acceptation G4 et déploiement distinct"]},
-    {"id":"M29","title":"Studio pilotage GitHub et checkpoints","owner":"A0","priority":"Transversal","issue":156,"source_ranges":[[862,910]],"inputs":["M00:protocole commun","M11:sources du chantier"]},
-    {"id":"M30","title":"Studio séquence, jalons et clôture","owner":"A0","priority":"Transversal","issue":156,"source_ranges":[[718,770],[944,969]],"inputs":["M11:pilote pour planifier","M14:autorisations par sous-ensemble","M16–M28:preuves du jalon concerné"]}
-  ]
+    {
+      "id": "M00",
+      "title": "Coordination et registre complet",
+      "owner": "A0",
+      "priority": "P1",
+      "issue": 156,
+      "source_ranges": [],
+      "inputs": [],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "Originaux transférés, coordination et registre actualisés ; programme non clos.",
+        "responsable": "A0",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/README.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A0",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Contrôler réponses #166, puis poursuivre les seules tâches autorisées."
+        },
+        "suite": "Contrôler réponses #166, puis poursuivre les seules tâches autorisées."
+      }
+    },
+    {
+      "id": "M01",
+      "title": "Cloud, SHA et démarrage reproductible",
+      "owner": "A6",
+      "priority": "P1",
+      "issue": 157,
+      "source_ranges": [],
+      "inputs": [
+        "M00:référence et autorisations"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "Diagnostic runtime18/API/DB vérifié ; démarrage effectif non démontré.",
+        "responsable": "A6",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A6",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Obtenir M002-D04 pour reprise bornée, sans migration implicite."
+        },
+        "suite": "Obtenir M002-D04 pour reprise bornée, sans migration implicite."
+      }
+    },
+    {
+      "id": "M02",
+      "title": "Sécurisation des bases de tests",
+      "owner": "A5",
+      "priority": "P1",
+      "issue": 157,
+      "source_ranges": [],
+      "inputs": [
+        "M01:cible jetable identifiée avant essais",
+        "M00:autorisation du correctif avant code"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "Spécification proposée,16 refus et2 cas positifs ; aucune garde implémentée.",
+        "responsable": "A5",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A5/A5-M02-M09-M15-M26.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A5",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Soumettre M002-D03 DB-1/DB-2 ; réserver DB-3 à une cible jetable attestée."
+        },
+        "suite": "Soumettre M002-D03 DB-1/DB-2 ; réserver DB-3 à une cible jetable attestée."
+      }
+    },
+    {
+      "id": "M03",
+      "title": "Protections administratives de main",
+      "owner": "A6",
+      "priority": "P1",
+      "issue": 146,
+      "source_ranges": [],
+      "inputs": [
+        "M00:référence GitHub",
+        "M04:noms réels des checks avant activation"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "Bloqué",
+        "constat": "Configuration candidate PR152 relue ; main protected=false, activation interdite sans accord.",
+        "responsable": "A6",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Configuration candidate PR152 relue ; main protected=false, activation interdite sans accord.",
+          "responsable": "A6",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Choisir politique de revue M002-D05, puis autorisation administrative explicite."
+        },
+        "suite": "Choisir politique de revue M002-D05, puis autorisation administrative explicite."
+      }
+    },
+    {
+      "id": "M04",
+      "title": "CI, reproductibilité et preuves courantes",
+      "owner": "A5",
+      "priority": "P1/P3",
+      "issue": 157,
+      "source_ranges": [],
+      "inputs": [
+        "M01:environnement",
+        "M02:protection prouvée avant essais en base"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "A6 contribue preuves CI exactes et écarts Node/Chromium ; A5 conserve propriété qualité.",
+        "responsable": "A5",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A5",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Relever CI au SHA documentaire final ; séparer reproduction locale sûre de CI distante."
+        },
+        "suite": "Relever CI au SHA documentaire final ; séparer reproduction locale sûre de CI distante."
+      }
+    },
+    {
+      "id": "M05",
+      "title": "Contrats Atelier et compatibilité",
+      "owner": "A2",
+      "priority": "P2",
+      "issue": 158,
+      "source_ranges": [],
+      "inputs": [
+        "M00:SHA et périmètre"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "Contrats v2/v3 et collision echelle qualifiés statiquement ; résolution non codée.",
+        "responsable": "A2",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/M05-M07-M08-CONTRATS.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A2",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Arbitrer compatibilité/alias avant lot A3 ; conserver documents et historique."
+        },
+        "suite": "Arbitrer compatibilité/alias avant lot A3 ; conserver documents et historique."
+      }
+    },
+    {
+      "id": "M06",
+      "title": "Documents, statuts et relais cohérents",
+      "owner": "A0",
+      "priority": "P2",
+      "issue": 158,
+      "source_ranges": [],
+      "inputs": [
+        "M00:états GitHub",
+        "M05:version contractuelle pour les textes concernés"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "Corrections documentaires ciblées et relais PR154 enregistrés ; revues/acceptations non closes.",
+        "responsable": "A0",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/M06-DOCUMENTATION.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A0",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Revoir ordre M002-D06 ; poursuivre inventaire documentaire sans réécrire décisions."
+        },
+        "suite": "Revoir ordre M002-D06 ; poursuivre inventaire documentaire sans réécrire décisions."
+      }
+    },
+    {
+      "id": "M07",
+      "title": "Frontières et dépendances natives",
+      "owner": "A2",
+      "priority": "P2",
+      "issue": 151,
+      "source_ranges": [],
+      "inputs": [
+        "M00:relecture PR 152 avant modification"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "Carte25 imports,1 dynamique,2 CSS ; PR152 réutilisée, frontières candidates.",
+        "responsable": "A2",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/M05-M07-M08-CONTRATS.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A2",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Revue de PR152 puis autorisation distincte pour nouveaux contrôles applicatifs."
+        },
+        "suite": "Revue de PR152 puis autorisation distincte pour nouveaux contrôles applicatifs."
+      }
+    },
+    {
+      "id": "M08",
+      "title": "Isolation technique et documentaire",
+      "owner": "A2",
+      "priority": "P2",
+      "issue": 147,
+      "source_ranges": [],
+      "inputs": [
+        "M00:inventaire et décision de conservation"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "43 fichiers/133 occurrences relus :23 nominaux et20 autres documents/méta ;445 fichiers restants non qualifiés sémantiquement.",
+        "responsable": "A2",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/isolation-nominal-review.json",
+          "docs/ai-team/reports/mission-003/A2/isolation-extra-docs-review.json"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A2",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Qualifier les176 fichiers code puis269 fiches historiques avec leur rôle ; aucune purge automatique."
+        },
+        "suite": "Qualifier les176 fichiers code puis269 fiches historiques avec leur rôle ; aucune purge automatique."
+      }
+    },
+    {
+      "id": "M09",
+      "title": "CSP et vulnérabilités des dépendances",
+      "owner": "A5",
+      "priority": "P2",
+      "issue": 157,
+      "source_ranges": [],
+      "inputs": [
+        "M01:environnement pour essais",
+        "M02:garde avant tests avec données"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "CSP et triage dépendances spécifiés ; aucun scan vulnérabilité effectif nouveau.",
+        "responsable": "A5",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A5/A5-M02-M09-M15-M26.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A5",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Valider périmètre CSP et protocole scan ; implémentation après accord."
+        },
+        "suite": "Valider périmètre CSP et protocole scan ; implémentation après accord."
+      }
+    },
+    {
+      "id": "M10",
+      "title": "Jalons Fadi production et sauvegardes",
+      "owner": "A6",
+      "priority": "P1",
+      "issue": 149,
+      "source_ranges": [],
+      "inputs": [
+        "M08:preuves applicables de décontamination",
+        "M04:preuves du candidat avant déploiement"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "Preuves #149 et sauvegarde d2107ead relues ; aucun nouveau déploiement ni restauration.",
+        "responsable": "A6",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A6",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Compléter seulement preuves manquantes de reprise ; ne pas répéter jalon déjà accepté."
+        },
+        "suite": "Compléter seulement preuves manquantes de reprise ; ne pas répéter jalon déjà accepté."
+      }
+    },
+    {
+      "id": "M11",
+      "title": "Studio sources, périmètre et G0",
+      "owner": "A1",
+      "priority": "P0 Studio",
+      "issue": 159,
+      "source_ranges": [
+        [
+          1,
+          86
+        ],
+        [
+          202,
+          215
+        ],
+        [
+          1313,
+          1356
+        ]
+      ],
+      "inputs": [
+        "M00:références identifiées"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "G0/pilote proposés ; sources exactes, conflit de référentiel explicite.",
+        "responsable": "A1",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A1",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+        },
+        "suite": "M002-D01/D02 : ratifier périmètre/pilote et exclusions nouvelles, sans rouvrir D179."
+      }
+    },
+    {
+      "id": "M12",
+      "title": "Studio qualification des 141 fiches",
+      "owner": "A1",
+      "priority": "P0 Studio",
+      "issue": 159,
+      "source_ranges": [
+        [
+          1052,
+          1312
+        ]
+      ],
+      "inputs": [
+        "M11:REF-01 et REF-02 accessibles"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "141 fiches individuelles préparées et extraction revue ; conformité Studio non démontrée.",
+        "responsable": "A1",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A1/studio-141-fiches.json"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A1",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Instruire les contrats et preuves candidats après arbitrage du sous-ensemble."
+        },
+        "suite": "Instruire les contrats et preuves candidats après arbitrage du sous-ensemble."
+      }
+    },
+    {
+      "id": "M13",
+      "title": "Studio navigation, architecture et G1",
+      "owner": "A2",
+      "priority": "P0 Studio",
+      "issue": 159,
+      "source_ranges": [
+        [
+          87,
+          201
+        ],
+        [
+          216,
+          224
+        ],
+        [
+          911,
+          926
+        ]
+      ],
+      "inputs": [
+        "M11:cadrage G0",
+        "M12:exigences pertinentes",
+        "M07:carte actuelle des frontières"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "A4 contribue contrat navigation et9 NAV ; G1 non accepté.",
+        "responsable": "A2",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A2",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+        },
+        "suite": "M002-D07 : décider contrat routes/contexte et responsabilités ; A2 reste responsable M13."
+      }
+    },
+    {
+      "id": "M14",
+      "title": "Studio décisions, POC G2 et G3",
+      "owner": "A2",
+      "priority": "P0 Studio",
+      "issue": 159,
+      "source_ranges": [
+        [
+          225,
+          243
+        ],
+        [
+          1021,
+          1051
+        ]
+      ],
+      "inputs": [
+        "M13:contrats du sous-ensemble",
+        "M15:corpus et protocole pour le POC",
+        "M00:autorisation spécifique du POC"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "18 dossiers DEC proposés ; G2/G3 bloqués, aucun POC exécuté.",
+        "responsable": "A2",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A1/studio-18-decisions.json"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A2",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Prioriser DEC01/02/03/12/18 et autorisation POC distincte sur corpus sûr."
+        },
+        "suite": "Prioriser DEC01/02/03/12/18 et autorisation POC distincte sur corpus sûr."
+      }
+    },
+    {
+      "id": "M15",
+      "title": "Studio X, mesures et risques transversaux",
+      "owner": "A5",
+      "priority": "P0 transversal",
+      "issue": 160,
+      "source_ranges": [
+        [
+          447,
+          496
+        ],
+        [
+          788,
+          797
+        ],
+        [
+          927,
+          943
+        ]
+      ],
+      "inputs": [
+        "M11:sources pour préparation",
+        "M02:cible sûre avant exécution en base"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "Sept corpus décrits et oracles prescrits ; fixtures et mesures non produits.",
+        "responsable": "A5",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A5/corpus-S1-S7.csv"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A5",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Définir périmètre de création de fixtures synthétiques et lot X autorisable."
+        },
+        "suite": "Définir périmètre de création de fixtures synthétiques et lot X autorisable."
+      }
+    },
+    {
+      "id": "M16",
+      "title": "Studio lot I intégration native",
+      "owner": "A4",
+      "priority": "P0 Studio",
+      "issue": 160,
+      "source_ranges": [
+        [
+          254,
+          312
+        ]
+      ],
+      "inputs": [
+        "M13:contrat navigation approuvé",
+        "M14:G3 du lot I",
+        "M17:contrat de contexte stable"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "Bloqué",
+        "constat": "Lot I préparé ; G3/contrat adopté/autorisation code absents.",
+        "responsable": "A4",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/LOT-I.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Lot I préparé ; G3/contrat adopté/autorisation code absents.",
+          "responsable": "A4",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Décider M002-D07 puis G3 du lot et autoriser A3 pour réalisation bornée."
+        },
+        "suite": "Décider M002-D07 puis G3 du lot et autoriser A3 pour réalisation bornée."
+      }
+    },
+    {
+      "id": "M17",
+      "title": "Studio A.1 données durables",
+      "owner": "A2",
+      "priority": "P0 Studio",
+      "issue": 160,
+      "source_ranges": [
+        [
+          313,
+          328
+        ]
+      ],
+      "inputs": [
+        "M14:DEC-01/02/03/12/18 applicables et G3",
+        "M13:autorités de données"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "Bloqué",
+        "constat": "Contrats de données candidats ; DEC critiques et schémas approuvés absents.",
+        "responsable": "A2",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/LOT-A.1.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Contrats de données candidats ; DEC critiques et schémas approuvés absents.",
+          "responsable": "A2",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Instruire DEC01/02/03/12/18 et valider autorités avant code/migration."
+        },
+        "suite": "Instruire DEC01/02/03/12/18 et valider autorités avant code/migration."
+      }
+    },
+    {
+      "id": "M18",
+      "title": "Studio A.2 planche 2D autonome",
+      "owner": "A3",
+      "priority": "P0 Studio",
+      "issue": 160,
+      "source_ranges": [
+        [
+          329,
+          342
+        ]
+      ],
+      "inputs": [
+        "M17:modèle document 2D",
+        "M14:G3 du sous-lot",
+        "M15:corpus 2D"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "Bloqué",
+        "constat": "Planche2D autonome spécifiée ; code non autorisé.",
+        "responsable": "A3",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/LOT-A.2.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Planche2D autonome spécifiée ; code non autorisé.",
+          "responsable": "A3",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Après A.1 et G3 applicables, autoriser un sous-ensemble 2D terminable."
+        },
+        "suite": "Après A.1 et G3 applicables, autoriser un sous-ensemble 2D terminable."
+      }
+    },
+    {
+      "id": "M19",
+      "title": "Studio A.3 planche 3D autonome",
+      "owner": "A3",
+      "priority": "P0 Studio",
+      "issue": 160,
+      "source_ranges": [
+        [
+          343,
+          356
+        ]
+      ],
+      "inputs": [
+        "M17:modèle spatial",
+        "M14:G3 du sous-lot",
+        "M15:corpus 3D"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "Bloqué",
+        "constat": "Planche3D autonome spécifiée ; code non autorisé.",
+        "responsable": "A3",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/LOT-A.3.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Planche3D autonome spécifiée ; code non autorisé.",
+          "responsable": "A3",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Après A.1 et G3 applicables, autoriser un sous-ensemble 3D terminable."
+        },
+        "suite": "Après A.1 et G3 applicables, autoriser un sous-ensemble 3D terminable."
+      }
+    },
+    {
+      "id": "M20",
+      "title": "Studio A.4/A.5 association et commandes",
+      "owner": "A2",
+      "priority": "P0 Studio",
+      "issue": 160,
+      "source_ranges": [
+        [
+          357,
+          395
+        ]
+      ],
+      "inputs": [
+        "M17:contrats durables",
+        "M18:édition 2D",
+        "M19:édition 3D",
+        "M14:G3 applicable",
+        "M24/M27:preuves aval pour les seuls critères finaux concernés"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "Bloqué",
+        "constat": "Association/commandes/historique spécifiés ; identités et preuves topologiques ouvertes.",
+        "responsable": "A2",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Association/commandes/historique spécifiés ; identités et preuves topologiques ouvertes.",
+          "responsable": "A2",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Décider contrats puis réaliser après A.2/A.3 selon dépendances exactes."
+        },
+        "suite": "Décider contrats puis réaliser après A.2/A.3 selon dépendances exactes."
+      }
+    },
+    {
+      "id": "M21",
+      "title": "Studio B Registry, Manager et chargement",
+      "owner": "A4",
+      "priority": "P0 Studio",
+      "issue": 160,
+      "source_ranges": [
+        [
+          396,
+          446
+        ]
+      ],
+      "inputs": [
+        "M17:contrats d’outils stables",
+        "M14:DEC-04/05/06/07/14/18 applicables",
+        "M15:protocole cache et mémoire"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "Bloqué",
+        "constat": "Registry/Manager proposé ; aucun catalogue Studio implémenté.",
+        "responsable": "A4",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A4/M21-MANAGER-PREPARATION.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Registry/Manager proposé ; aucun catalogue Studio implémenté.",
+          "responsable": "A4",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "DEC04/05/06/07/14/18, alias echelle et autorisation du lot B."
+        },
+        "suite": "DEC04/05/06/07/14/18, alias echelle et autorisation du lot B."
+      }
+    },
+    {
+      "id": "M22",
+      "title": "Studio C indexation et rendu incrémental",
+      "owner": "A2",
+      "priority": "P1 Studio",
+      "issue": 161,
+      "source_ranges": [
+        [
+          497,
+          530
+        ]
+      ],
+      "inputs": [
+        "M17/M20:contrats géométrie et effets",
+        "M15:oracle et mesures",
+        "M14:DEC-08/09/10/13/17 applicables"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "Bloqué",
+        "constat": "Dossier indexation/rendu prêt à revue ; oracle et décisions ouverts.",
+        "responsable": "A2",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/LOT-C.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Dossier indexation/rendu prêt à revue ; oracle et décisions ouverts.",
+          "responsable": "A2",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Stabiliser contrats, DEC08/09/10/13/17 et mesures avant optimisation."
+        },
+        "suite": "Stabiliser contrats, DEC08/09/10/13/17 et mesures avant optimisation."
+      }
+    },
+    {
+      "id": "M23",
+      "title": "Studio D workers, mémoire et reprise",
+      "owner": "A6",
+      "priority": "P1 Studio",
+      "issue": 161,
+      "source_ranges": [
+        [
+          531,
+          570
+        ]
+      ],
+      "inputs": [
+        "M17/M20:job et révision",
+        "M21:chargement",
+        "M15:instrumentation",
+        "M14:DEC-11/13 applicables"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "Bloqué",
+        "constat": "Dossier workers/mémoire préparé ; aucun traitement lancé.",
+        "responsable": "A6",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/LOT-D.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Dossier workers/mémoire préparé ; aucun traitement lancé.",
+          "responsable": "A6",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "DEC11/13, contrats jobs/révision et instrumentation avant lot D."
+        },
+        "suite": "DEC11/13, contrats jobs/révision et instrumentation avant lot D."
+      }
+    },
+    {
+      "id": "M24",
+      "title": "Studio E dossier métier et publication",
+      "owner": "A1",
+      "priority": "P1 Studio",
+      "issue": 162,
+      "source_ranges": [
+        [
+          571,
+          645
+        ]
+      ],
+      "inputs": [
+        "M17–M21:capacités A/B nécessaires",
+        "M14:DEC-16 et contrats applicables",
+        "M22/M23:sous-ensembles nécessaires à la charge"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "Bloqué",
+        "constat": "BIM/documents/publication cadrés ; parcours terminables non démontrés.",
+        "responsable": "A1",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/LOT-E.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "BIM/documents/publication cadrés ; parcours terminables non démontrés.",
+          "responsable": "A1",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Compléter données/modèles/commandes ; DEC16 et tests du dossier approuvé."
+        },
+        "suite": "Compléter données/modèles/commandes ; DEC16 et tests du dossier approuvé."
+      }
+    },
+    {
+      "id": "M25",
+      "title": "Studio F capacités avancées conditionnelles",
+      "owner": "A2",
+      "priority": "P2 conditionnel",
+      "issue": 163,
+      "source_ranges": [
+        [
+          646,
+          674
+        ]
+      ],
+      "inputs": [
+        "M11:périmètre d’option explicite",
+        "M14:DEC et accord propres à chaque option",
+        "M15:preuves propres"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "À définir",
+        "constat": "Options avancées conservées, non supprimées ni implémentées par préparation.",
+        "responsable": "A2",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/LOT-F.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Options avancées conservées, non supprimées ni implémentées par préparation.",
+          "responsable": "A2",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "M002-D02 et décisions propres à chaque option ; ne pas bloquer artificiellement les études précoces."
+        },
+        "suite": "M002-D02 et décisions propres à chaque option ; ne pas bloquer artificiellement les études précoces."
+      }
+    },
+    {
+      "id": "M26",
+      "title": "Studio scénarios et critères éliminatoires",
+      "owner": "A5",
+      "priority": "P0/P1 Studio",
+      "issue": 162,
+      "source_ranges": [
+        [
+          771,
+          787
+        ],
+        [
+          798,
+          812
+        ],
+        [
+          970,
+          1020
+        ]
+      ],
+      "inputs": [
+        "M12:attendus pour préparer",
+        "M15:corpus",
+        "M02:base sûre",
+        "M16–M25:capacités du scénario à exécuter"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "38 oracles et liens TEST/NAV proposés ; tous non exécutés.",
+        "responsable": "A5",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A5/studio-38-oracles.csv"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A5",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Construire corpus autorisés puis exécuter uniquement sur capacités/cibles autorisées."
+        },
+        "suite": "Construire corpus autorisés puis exécuter uniquement sur capacités/cibles autorisées."
+      }
+    },
+    {
+      "id": "M27",
+      "title": "Studio migration et exploitation sans perte",
+      "owner": "A6",
+      "priority": "P1 Studio",
+      "issue": 164,
+      "source_ranges": [
+        [
+          813,
+          861
+        ]
+      ],
+      "inputs": [
+        "M17:schémas décidés",
+        "M13:autorité pendant coexistence",
+        "M02:environnement de simulation sûr",
+        "M00:accord avant migration sensible"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "Bloqué",
+        "constat": "Migration/retour arrière spécifiés ; aucun inventaire client ni migration exécutés.",
+        "responsable": "A6",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/LOT-R.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Migration/retour arrière spécifiés ; aucun inventaire client ni migration exécutés.",
+          "responsable": "A6",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Schémas décidés puis simulation autorisée sur copie isolée ; accords sensibles séparés."
+        },
+        "suite": "Schémas décidés puis simulation autorisée sur copie isolée ; accords sensibles séparés."
+      }
+    },
+    {
+      "id": "M28",
+      "title": "Studio R, G4 et mise en service",
+      "owner": "A6",
+      "priority": "Livraison",
+      "issue": 164,
+      "source_ranges": [
+        [
+          244,
+          253
+        ],
+        [
+          675,
+          717
+        ]
+      ],
+      "inputs": [
+        "M24:dossier métier candidat",
+        "M26:recettes applicables",
+        "M27:restauration prouvée",
+        "M00:acceptation G4 et déploiement distinct"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "Bloqué",
+        "constat": "G4/mise en service non acceptés ; candidat Studio non livré.",
+        "responsable": "A6",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/A2/LOT-R.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "G4/mise en service non acceptés ; candidat Studio non livré.",
+          "responsable": "A6",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Obtenir preuves M24/M26/M27 puis décision G4 et déploiement distinct."
+        },
+        "suite": "Obtenir preuves M24/M26/M27 puis décision G4 et déploiement distinct."
+      }
+    },
+    {
+      "id": "M29",
+      "title": "Studio pilotage GitHub et checkpoints",
+      "owner": "A0",
+      "priority": "Transversal",
+      "issue": 156,
+      "source_ranges": [
+        [
+          862,
+          910
+        ]
+      ],
+      "inputs": [
+        "M00:protocole commun",
+        "M11:sources du chantier"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "Archive, registre, rapports et checkpoints suivis dans #156/#165 ; protocole #166 intégré.",
+        "responsable": "A0",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/README.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A0",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Maintenir réponses, CI exacte et STATUS/HANDOFF ensemble à chaque reprise."
+        },
+        "suite": "Maintenir réponses, CI exacte et STATUS/HANDOFF ensemble à chaque reprise."
+      }
+    },
+    {
+      "id": "M30",
+      "title": "Studio séquence, jalons et clôture",
+      "owner": "A0",
+      "priority": "Transversal",
+      "issue": 156,
+      "source_ranges": [
+        [
+          718,
+          770
+        ],
+        [
+          944,
+          969
+        ]
+      ],
+      "inputs": [
+        "M11:pilote pour planifier",
+        "M14:autorisations par sous-ensemble",
+        "M16–M28:preuves du jalon concerné"
+      ],
+      "execution": {
+        "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
+        "statut": "En cours",
+        "constat": "Séquence, portes et dossiers décision préparés ; aucun jalon produit déclaré terminé.",
+        "responsable": "A0",
+        "preuves": [
+          "docs/ai-team/reports/mission-003/DECISIONS-M002-D01-D08.md"
+        ],
+        "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
+        "tests": "Contrôles documentaires seulement dans cette mission ; exceptions CI distantes explicitement référencées dans rapport A6.",
+        "cloturee": false,
+        "acceptation_metier": false,
+        "blocage": {
+          "cause": "Preuves/accords aval encore requis pour clore cette mission entière.",
+          "responsable": "A0",
+          "essais_effectues": "Lecture et préparation/revues croisées ; détails dans les preuves liées.",
+          "prochaine_action": "Soumettre décisions nécessaires, maintenir missions bloquées et suivre preuves des jalons."
+        },
+        "suite": "Soumettre décisions nécessaires, maintenir missions bloquées et suivre preuves des jalons."
+      }
+    }
+  ],
+  "tracking_registry": "docs/workstreams/studio/task-register.json",
+  "execution_note": "Champs execution ajoutés sans changement des31 IDs, propriétaires, plages, dépendances ou textes de référence ; aucune mission close."
 }

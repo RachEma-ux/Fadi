@@ -1,0 +1,266 @@
+{
+  "mission": "Mission003 préparation #156",
+  "reference_reprise": "a09c11d397c8527987c3d1c4410ebb2eb240a819",
+  "note": "Nouveaux livrables, distincts des originaux Mission002 ; fichiers de génération non publiés ; aucune acceptation métier",
+  "files": [
+    {
+      "path": "docs/ai-team/reports/mission-003/A1/M11-M12-M14-preparation.md",
+      "agent": "A1",
+      "bytes": 19022,
+      "sha256": "6b781c5e2b8e41a874fce28e98b11033cddd7b4e53a3324b479616dede54fba5"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A1/gates-et-pilote.json",
+      "agent": "A1",
+      "bytes": 3539,
+      "sha256": "8d625c37cc0fd0d538b9035340b4f6c5e4c72ca73d804bcd01ad7e992e8eb69a"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A1/sources-provenance.json",
+      "agent": "A1",
+      "bytes": 1362,
+      "sha256": "7dea4593c0642663e3141d0d6f37941d89211bffab9718bc73321dec8a71693e"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A1/studio-141-fiches.json",
+      "agent": "A1",
+      "bytes": 555734,
+      "sha256": "a424643b7fefc4d4b995905146d6dbade66f98606b00aa395f29b811e07ec312"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A1/studio-18-decisions.json",
+      "agent": "A1",
+      "bytes": 35179,
+      "sha256": "b83c6a3a17878b00998c8aa28d504b5b904164aade615c50bc0e3bb8e4deb130"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A1/validation-141-fiches.json",
+      "agent": "A1",
+      "bytes": 978,
+      "sha256": "84647284d1c8bb9cee476f24960040edd8e838203703ae82e61c5c082edcca57"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/M05-M07-M08-CONTRATS.md",
+      "agent": "A2",
+      "bytes": 11393,
+      "sha256": "925af4ac2c735fc3eaecb639e61e0bf18d2c451f86c848cdc0f439845cf7e35e"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/module-edges.json",
+      "agent": "A2",
+      "bytes": 5997,
+      "sha256": "1ee9db84751c568cdb7c6484c6ce5ce6b8dea8398f96f38afacad378392645a7"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/isolation-triage.json",
+      "agent": "A2",
+      "bytes": 186634,
+      "sha256": "babbbc441156e9bcf64ca583da47d80a474627c1109344780138deaca825fdf9"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/isolation-nominal-review.json",
+      "agent": "A2",
+      "bytes": 99529,
+      "sha256": "fb503a137b4a88cdef9eeb86c8c2cba1ca5861b4abec75f150dbe6379d9ba1d9"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/lot-requirements-index.json",
+      "agent": "A2",
+      "bytes": 7470,
+      "sha256": "5e6eb493f7b9681959f1de71fb9bd4fc7887ede2ef4491688ab98f748053e55f"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/review-A1-DEC.json",
+      "agent": "A2",
+      "bytes": 530,
+      "sha256": "13e45eaf0253a981f6017ba32de6ecfcd54a28293c4b0b31552ea7e3fe474676"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-I.md",
+      "agent": "A2",
+      "bytes": 8720,
+      "sha256": "5cd3c86f26c90a495235c5d35b8c19d698549b285fd0b1c795556369d45eed54"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-X.md",
+      "agent": "A2",
+      "bytes": 19012,
+      "sha256": "074a9929763178ac4a7a013574ee40d9914f159a63925dabe5f475e32235ea16"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.1.md",
+      "agent": "A2",
+      "bytes": 13013,
+      "sha256": "7b1e77bda632aa63d34596c5c9c98372adf8708065722497d32726f7ad60d30a"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.2.md",
+      "agent": "A2",
+      "bytes": 9971,
+      "sha256": "f07be9bd6b449b0bed65bc81942055b2212a1ef326f5ae6dacc0a544e35ea4b0"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.3.md",
+      "agent": "A2",
+      "bytes": 12301,
+      "sha256": "44a46d3a0b15d752b22ef5ef4d7fca5c737e1262ef58cbabf3717176d6db921b"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
+      "agent": "A2",
+      "bytes": 14506,
+      "sha256": "0c8b061a17a635b6ebe9bb3c593d14706489c28f334e4ff45e87a9018f60575b"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-B.md",
+      "agent": "A2",
+      "bytes": 13445,
+      "sha256": "d7a8d5aa56581d6f7386048a6146f2807edbac24b4013c5e8a42721376c6f188"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-C.md",
+      "agent": "A2",
+      "bytes": 9963,
+      "sha256": "415c97de50efc82801d397532dc98b405bf9a11424db7fafb401b2f04d5619d7"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-D.md",
+      "agent": "A2",
+      "bytes": 9000,
+      "sha256": "a7480f779449daa7c5376e0f9ef845da92000d93c02b935d81a61e6e2adc7355"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-E.md",
+      "agent": "A2",
+      "bytes": 16834,
+      "sha256": "0053520c0aed65f9f42e47db05f648c4f895d206f90f1e95ae2e24fe1acdf5fc"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-F.md",
+      "agent": "A2",
+      "bytes": 9592,
+      "sha256": "613cc957754c3800900fb99f4839157e61e6ef6c639e980a3e7f7c6ff41b7633"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/LOT-R.md",
+      "agent": "A2",
+      "bytes": 18206,
+      "sha256": "0979da3165d0283357b8714272e55070d2699f07befcce506ed9cb5cda2b180d"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A4/CONTRAT-NAV-CANDIDAT.md",
+      "agent": "A4",
+      "bytes": 13285,
+      "sha256": "2d6280fa99ac2ed4cdff7cd90f5baa32bb482554d898581229497272b7a29667"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A4/NAV-FICHES.md",
+      "agent": "A4",
+      "bytes": 15591,
+      "sha256": "31c910e3499b7f3ca7ef8654076bbd53bd4dbdc1a601278fb37ef3a3411cc6ba"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A4/M21-MANAGER-PREPARATION.md",
+      "agent": "A4",
+      "bytes": 8887,
+      "sha256": "b7386a0d0a96c5c58e2995dd76c58993c46fb8955e15fb7b58c7f1ce275ba378"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A4/PR-COMPROMIS-ET-CHECKPOINT.md",
+      "agent": "A4",
+      "bytes": 8637,
+      "sha256": "ff1e1859e848eac90df3b24e0dce4a97cffa5d7841f8cd0f82a02a8bdc278674"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A4/REVUE-CROISEE-141-FICHES.md",
+      "agent": "A4",
+      "bytes": 4282,
+      "sha256": "015e9433984565f159a2c2c875462fd1e0a3cc432476721a2301adfc4e60b792"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A5/A5-M02-M09-M15-M26.md",
+      "agent": "A5",
+      "bytes": 27327,
+      "sha256": "f3752a870e3c22432e8e194823e2d72a9d5605b0324343eb12ccb26316a6326e"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A5/studio-38-oracles.csv",
+      "agent": "A5",
+      "bytes": 36739,
+      "sha256": "13df7f31cf5af499c188af3d820353c24985681d6a1ebfe7a9a8fefad2940763"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A5/corpus-S1-S7.csv",
+      "agent": "A5",
+      "bytes": 3776,
+      "sha256": "7806bf187a95021daa5b99174a2482dc9031824c0feaa37d27e272ae059ffbd9"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A5/liens-141-vers-38.csv",
+      "agent": "A5",
+      "bytes": 35765,
+      "sha256": "97c9ec60ca3f0649fad92d03bf8d2fbafba303d44f082ceaaeadf7a51d112077"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A5/revue-141-fiches-A1.json",
+      "agent": "A5",
+      "bytes": 767,
+      "sha256": "85f52f1adc14b4add8b5032e6a7e83608f4e8b9a2e1122a79a3d22666aa638b0"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A5/qualification-originaux.json",
+      "agent": "A5",
+      "bytes": 699,
+      "sha256": "d6ec5f8ea7cd4f7a8ca05c93aa71f6780976f8909e436edb4ff78aadb440edc0"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A6/RAPPORT-A6-M01-M03-M04-M10.md",
+      "agent": "A6",
+      "bytes": 12520,
+      "sha256": "bc323c573abcdd52157b6a91c81ac2da377bd68664daf0ed98e3f4295ec0c869"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A6/preuves-bornees.json",
+      "agent": "A6",
+      "bytes": 5290,
+      "sha256": "a588ebd525e951e743032f9792e6dc84686ac21aa307ee1e748a42b4f81c9336"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A6/extraits-ci.txt",
+      "agent": "A6",
+      "bytes": 1692,
+      "sha256": "832ce1385b45c06e7e5f61fd14e18918504b8c177678ef4c4170a6bba30af868"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/review-M06.json",
+      "agent": "A2",
+      "bytes": 2177,
+      "sha256": "bac4200be1cd1a54d366f86bff281bbf7e5028ca893c7f4e31c4c74ae3f15147"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A5/liens-141-vers-NAV.csv",
+      "agent": "A5",
+      "bytes": 485,
+      "sha256": "f1350d50479c7bea003cbb7221995febba27f324e714d81c7f30a2c5eff5e2a4"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A1/review-register-M003.json",
+      "agent": "A1",
+      "bytes": 6039,
+      "sha256": "cfca1293cd07d09f4a0e7b03fa0a34d5387011e479ddd117f0f060b1d633d178"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A2/isolation-extra-docs-review.json",
+      "agent": "A2",
+      "bytes": 82524,
+      "sha256": "e89af23b6ae578cd9b2b666187aea330cdea8ba4d63de4390a043dbca632af87"
+    },
+    {
+      "path": "docs/ai-team/reports/mission-003/A5/security-review-M003.json",
+      "agent": "A5",
+      "bytes": 17333,
+      "sha256": "d337c166bd69c153d0362a9858b1e5843fd0b3addb9b050aa17334339c542027"
+    }
+  ],
+  "reference_instructions_actualisee": "a3cc3c32cfcaa38d9d3117f63644499f9f061f4b"
+}
