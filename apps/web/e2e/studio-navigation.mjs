@@ -235,6 +235,8 @@ try {
   check("étapes liées : l'actualisation relit 02 et 05 cochées", (await page.locator("[data-studio-etapes-liees] input:checked").count()) === 2);
   await b.page.goto(`${BASE}/studio/projets/${pA.id}/etudes/${studyId}`);
   await b.page.locator("[data-studio-etapes-lecture-seule]").waitFor();
+  // Les liens arrivent par une requête : attendre qu'ils soient affichés avant de les compter.
+  await b.page.locator("[data-studio-etapes-liees] input:checked").nth(1).waitFor({ timeout: 15000 }).catch(() => {});
   check("étapes liées : le lecteur voit les étapes cochées sans pouvoir modifier", (await b.page.locator("[data-studio-etapes-liees] input:checked").count()) === 2 && (await b.page.locator("[data-studio-etapes-liees] input").first().isDisabled()) && (await b.page.locator("[data-studio-enregistrer-etapes]").count()) === 0);
 
   // Étape du Parcours : bloc « Études Studio liées » seulement sur une étape liée ; le lien ouvre l'étude dans Studio.
