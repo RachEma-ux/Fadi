@@ -32,13 +32,14 @@ mkdirSync(OUT, { recursive: true, mode: 0o700 });
 const statePath = resolve(OUT, 'private-state.json');
 const phase = process.env.PHASE ?? 'initial';
 assert(['initial', 'reopen'].includes(phase));
+const browserErrors = [];
 const report = { runId: profile.runId, phase, date: new Date().toISOString(), attestationSha256: createHash('sha256').update(readFileSync(profilePath)).digest('hex'), checks: [], limits: ['Disposable synthetic fixtures only; no production', 'API equality corroborates persistence reads; database restart evidence belongs to A6'] };
 const check = (name, fn) => { fn(); report.checks.push({ name, result: 'passed' }); };
 const docHash = (doc) => createHash('sha256').update(JSON.stringify(doc)).digest('hex');
 const { chromium } = await import('playwright');
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const contexts = [];
-async function context() { const c = await browser.newContext({ viewport: { width: 1440, height: 1000 } }); contexts.push(c); return c; }
+async function context() { const c = await browser.newContext({ viewport: { width: 1440, height: 1000 } }); contexts.push(c); c.on('page', (p) => { p.on('pageerror', (e) => browserErrors.push({ kind: 'pageerror', message: e.message.slice(0, 240) })); p.on('console', (m) => { if (m.type() === 'error') browserErrors.push({ kind: 'console', message: m.text().slice(0, 240) }); }); }); return c; }
 async function api(c, method, path, data) {
   assert(expiry > Date.now(), 'Attestation expired during recipe');
   const response = await c.request[method](`${API}${path}`, data === undefined ? {} : { data });
@@ -74,6 +75,20 @@ async function reopen(s) {
   const page = await c.newPage(); await page.goto(`${UI}/studio/projets/${s.projectId}/etudes/${s.studyId}/variantes/${s.variantId}`);
   await page.getByRole('heading', { name: s.studyName, exact: true }).waitFor();
   await page.screenshot({ path: resolve(OUT, `studio-${phase}.png`) });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('group', { name: 'Planche de dessin 2D', exact: true }).waitFor();
+  const fitsMobile = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+  check('mobile layout does not overflow the document', () => assert(fitsMobile, 'Mobile document must fit viewport'));
+  await page.screenshot({ path: resolve(OUT, `studio-${phase}-mobile-fr.png`) });
+  await page.evaluate(() => localStorage.setItem('fadi.langue', 'en'));
+  await page.reload();
+  await page.getByRole('toolbar', { name: 'Drawing tools', exact: true }).waitFor();
+  await page.getByRole('group', { name: '2D drawing board', exact: true }).waitFor();
+  await page.getByRole('heading', { name: s.studyName, exact: true }).waitFor();
+  check('English mobile interface and unmodified study data are available', () => assert(s.studyName));
+  const afterPresentation = await getState(c, s);
+  check('mobile and language changes do not mutate document or revision', () => assert.deepEqual(afterPresentation.revision, actual.revision));
+  await page.screenshot({ path: resolve(OUT, `studio-${phase}-mobile-en.png`) });
   report.documentSha256 = docHash(actual.revision.document);
   report.studyId = s.studyId;
   report.revisionId = actual.revision.id;
@@ -159,10 +174,12 @@ try {
     await owner.close();
     await reopen(s);
   }
+  check('no browser console or page errors', () => assert.deepEqual(browserErrors, []));
   report.result = 'passed';
 } catch (error) {
   report.result = 'failed';
   report.failure = { name: error.name, message: error.message };
+  report.browserErrors = browserErrors;
   process.exitCode = 1;
 } finally {
   for (const c of contexts) await c.close().catch(() => {});
@@ -186,8 +203,15 @@ async function exerciseStudioUI(page, projectId) {
   const tool = (name) => tools.getByRole('button', { name: new RegExp('^' + name + '(?: |$)') });
   const numeric = async (pairs) => { for (const [name, value] of pairs) await props.getByLabel(name, { exact: true }).fill(String(value)); };
   await tool('Ligne').click();
-  await numeric([['X', 1], ['Y', 1], ['X final', 5], ['Y final', 1]]);
-  await props.getByRole('button', { name: 'Ajouter au dessin', exact: true }).click();
+  const board = page.getByRole('group', { name: 'Planche de dessin 2D', exact: true });
+  for (const world of [{ x: 1, y: 1 }, { x: 5, y: 1 }]) {
+    const screen = await board.evaluate((svg, point) => { const p = new DOMPoint(point.x, point.y).matrixTransform(svg.getScreenCTM()); return { x: p.x, y: p.y }; }, world);
+    await page.mouse.click(screen.x, screen.y);
+  }
+  const drawn = page.locator('svg [role="button"][aria-label^="Ligne "] line');
+  assert.equal(await drawn.count(), 1, 'Two real pointer clicks create a line');
+  assert.notEqual(await drawn.getAttribute('x1'), await drawn.getAttribute('x2'), 'Gesture creates two distinct points');
+  check('line drawn through two real board pointer clicks', () => assert.equal(commandRequests.length, 0));
   await tool('Rectangle').click();
   await numeric([['X', 7], ['Y', 3], ['Largeur', 3], ['Hauteur', 2]]);
   await props.getByRole('button', { name: 'Ajouter au dessin', exact: true }).click();
