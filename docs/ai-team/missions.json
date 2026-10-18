@@ -42,7 +42,7 @@
           "essais_effectues": "Coordination des sept rôles réellement exécutée ; code DB et preuves documentaires consolidés, aucun programme clos.",
           "prochaine_action": "Intégrer les nouvelles pièces stabilisées, contrôler les décisions166 puis publier checkpoint et CI au SHA exact ; aucune clôture globale."
         },
-        "suite": "203 définitions revues/intégrées,20 compléments ciblés et2rapprochementsM05/M07 disponibles. Vérifier nouvelles pièces/décisions166 puis prochaine action indépendante ; checkpoints sur172, pas165 close.",
+        "suite": "PROV/ADR intégrés (49doc/G0) et CI169/171 réconciliées/vérifiées. Lire nouvelles réponses/livrables166 puis delta autorisé réellement prêt ; pas de répétition des203/22préparations et pas de fusion/admin/codeStudio implicite.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -224,7 +224,8 @@
           "docs/ai-team/reports/mission-004/A6/CI-169-observation.json",
           "docs/ai-team/reports/mission-004/README.md",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/CI-169-171-RECONCILIEES-A0.json"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "Simulation pure DB1/2 seulement si M02/M04 ; contrôles documentaires pour les autres sous-tâches ; aucune recette Studio/DB3.",
@@ -236,7 +237,7 @@
           "essais_effectues": "DB-1/2 implémenté et vérifié uniquement en simulation : PR169/a15d650,129tests/types/build/CI pure réussis ; DB3 non réalisé.",
           "prochaine_action": "Réutiliser conditions DB3 et garde DB1/2 ; préparer réception de la cible seulement lorsqu’elle est identifiée."
         },
-        "suite": "Réutiliser conditions DB3 et garde DB1/2 ; préparer réception de la cible seulement lorsqu’elle est identifiée.",
+        "suite": "DB1/2 réconcilié à9b34dca,129tests purs/types/build et quatrechecks réussis. Garder DB3 distinct et bloqué avant cible attestée/accord ; aucune connexion réelle.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -405,7 +406,8 @@
           "docs/ai-team/reports/reprise-496dcfc/A6/CI-DOC-CONTEXT-PROOFS.json",
           "docs/ai-team/reports/reprise-496dcfc/CI-REVUE-A0.json",
           "docs/ai-team/reports/reprise-496dcfc/README.md",
-          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json"
+          "docs/ai-team/reports/reprise-496dcfc/A1/M00-READY-M00-M30-A1.json",
+          "docs/ai-team/reports/reprise-496dcfc/CI-169-171-RECONCILIEES-A0.json"
         ],
         "reference_code": "a4caaab0e6665480f09febe3914c960b424b6b47",
         "tests": "14tests documentaires/couverture630/continuité ; CI165/fa9 pure réussie. DB1/2 :129simulés àa15 historiques sans rerun. CLASSIF1 :492purs/types/build à5e. Aucun test API/E2E ou DB3 exécuté.",
@@ -417,7 +419,7 @@
           "essais_effectues": "CI169 pure réussie au SHA a15d650, jobsDB skipped ; échec CI154 historique conservé ; versions Node/Chromium qualifiées.",
           "prochaine_action": "Consigner les conclusions des CI au SHA exact et conserver les skips ; avant toute fusion, satisfaire les conditions DB/services distinctes décrites par A6."
         },
-        "suite": "Consigner les conclusions des CI au SHA exact et conserver les skips ; avant toute fusion, satisfaire les conditions DB/services distinctes décrites par A6.",
+        "suite": "CI169/9b34dca et171/25bca79 réconciliées, jobs purs129/492 et types/build réussis, jobs DBskipped. Avant toute fusion, politique de revue et conditions DB/services/mainpush distinctes ; aucun accord administratif implicite.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -1107,7 +1109,7 @@
           "essais_effectues": "D01/D02 retenus ; dossierG0 finalisé et revu A2/A4/A5 ; conditions documentaires par ID vérifiées, pas gate passée.",
           "prochaine_action": "Ne pas refaire G0 : acte6250109830 et delta4 existent ; conserver CADDEC03 personnes inconnues."
         },
-        "suite": "Ne pas refaire G0 : acte6250109830 et delta4 existent ; conserver CADDEC03 personnes inconnues.",
+        "suite": "PROV03..05 vérifiées documentairement au SHA817/b679 ; G0 cadrage acquis. Conserver personnes/disponibilités inconnues, pas nouvelle ratification automatique.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -1330,7 +1332,7 @@
           "essais_effectues": "D07 retenu pour spécifications, NAV et maquettes desktop/mobile/états sources complétés ;24conditions documentaires revues, aucune route réalisée.",
           "prochaine_action": "Revue indexG1-01..04 reçue, rattacher le résultat délégué au dossier exact lorsqu’il arrive ; pas de gate accepté par existence de pièces."
         },
-        "suite": "REP02..09/ADR04/COEX02 vérifiés documentairement ; cinqCOEX restent En cours. Recevoir propositionADR01/02 annoncée Claude6251022689, rapprocher addendumA4 et réservesA2/A5 avant décision.",
+        "suite": "ADR01/02 reçues/revues et vérifiées documentairement ; ADR Proposé et ADR03 non décidé, question6251292271 publiée avec réserves. Lire réponse avant adoption, COEX reste questions distinctes.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -2735,7 +2737,7 @@
           "essais_effectues": "Checkpoints et registre uniques maintenus ;30conditions documentaires vérifiées, branche temporaire de sauvegarde si165CI incompatible.",
           "prochaine_action": "Consigner les remises au checkpoint unique. Mission002 :19inventoriés,14archivés ;5référencés sans duplication. Anciens fichiers autonomesINV/IF/AC/DEC non retrouvés, aucune information déclarée perdue par simple soustraction."
         },
-        "suite": "Conserver provenance16copies upstream, revues203 et chaîne42→44→44 ; helper amont non exécuté et deux liens README normalisés vers source322. Recevoir nouvelles pièces plutôt que recréer des originaux.",
+        "suite": "PROV/ADR intégrés (49doc/G0) et CI169/171 réconciliées/vérifiées. Lire nouvelles réponses/livrables166 puis delta autorisé réellement prêt ; pas de répétition des203/22préparations et pas de fusion/admin/codeStudio implicite.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -2852,7 +2854,7 @@
           "essais_effectues": "31missions et630IDs conservés ; file READY/WAITING explicite, zéro mission entière close.",
           "prochaine_action": "File de préparation revue et consolidée ; reprendre la prochaine sous-tâche devenueREADY après décision/pièce nouvelle, sans promettre de relance automatique."
         },
-        "suite": "Suites documentaires recensées exécutées ; lire nouvelles réponses/livrables166 puis agir selon déclencheurs exacts du registre.31 missions restent ouvertes, aucun travail automatique en arrière-plan.",
+        "suite": "PROV/ADR intégrés (49doc/G0) et CI169/171 réconciliées/vérifiées. Lire nouvelles réponses/livrables166 puis delta autorisé réellement prêt ; pas de répétition des203/22préparations et pas de fusion/admin/codeStudio implicite.",
         "historique": [
           {
             "checkpoint": "Mission003 documentaire après a3cc3c32cfcaa38d9d3117f63644499f9f061f4b",
@@ -2909,20 +2911,23 @@
   "execution_note": "Champs execution ajoutés sans changement des31 IDs, propriétaires, plages, dépendances ou textes de référence ; aucune mission close.",
   "checkpoint_203": {
     "reference_main": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
-    "checkpoint_documentaire_precedent": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+    "checkpoint_documentaire_precedent": "0e0b386b4ac2711ee394d9907da943f050600b42",
     "PR_continuation": 172,
     "registre_unique": "docs/workstreams/studio/task-register.json",
     "definitions_revues": 203,
-    "clotures_documentaires_supplementaires": 10,
+    "clotures_documentaires_supplementaires": 15,
     "missions_ouvertes": 31,
-    "P630": 44,
+    "P630": 49,
     "PDEV": null,
     "preuves": [
       "docs/ai-team/reports/reprise-496dcfc/203-INTEGRATION-A0.json",
       "docs/ai-team/reports/reprise-496dcfc/COEX-INTEGRATION-A0.json",
-      "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json"
+      "docs/ai-team/reports/reprise-496dcfc/RESIDUELS-CONSOLIDATION-A0.json",
+      "docs/ai-team/reports/reprise-496dcfc/PROV-ADR-INTEGRATION-A0.json"
     ],
     "limite": "Les états globaux des31 missions et les anciennes références de preuve restent conservés ; aucune mission close.",
-    "preparations_residuelles": 22
+    "preparations_residuelles": 22,
+    "PR169_SHA": "9b34dca9de8c3d1432d6f19315e4f0049d8bfd01",
+    "PR171_SHA": "25bca793c483bcb99c5254a86efabbd1f8b29015"
   }
 }

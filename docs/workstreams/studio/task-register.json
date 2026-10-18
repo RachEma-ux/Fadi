@@ -11,7 +11,7 @@
     "path": "docs/ai-team/reports/mission-002-originals/A1-630-taches.csv",
     "sha256": "eb47f0c8b273718e537160a84eb00a626acf541fce690ef65c0a08cb3f2db894"
   },
-  "note": "630 IDs/textes/propriétaires conservés ;203 définitions revues individuellement,10 obligations documentaires REP/COEX/ADR vérifiées après revues indépendantes. Zéro case source/HTML cochée, aucune capacité Studio acceptée.",
+  "note": "630IDs/textes/propriétaires inchangés ;203 définitions revues et15obligations documentaires supplémentaires vérifiées dans cette continuation. ADR Proposé, G1–G4 ouverts ; zéro case source/HTML cochée.",
   "tasks": [
     {
       "id": "SRC-01",
@@ -43472,11 +43472,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À faire",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Contrôle documentaire daté ; aucun NAV ou nouveau test applicatif exécuté par Codex. PROV05 vérifie MD/HTML à cet état, pas toute évolution future."
       },
       "preuves": [
         {
@@ -43515,6 +43515,39 @@
           "auteur": "A4",
           "date_UTC": "2026-10-18",
           "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+        },
+        {
+          "type": "adr_proposee",
+          "fichier": "docs/continuity/decisions/ADR-STUDIO-NAV-01.md",
+          "section": "ADR-01",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6251022689",
+          "constat": "ADR-STUDIO-NAV-01 ouverte au statut Proposé dans docs/continuity/decisions selon le modèle ADR, sans remplacer DEC-01..18 ni les décisions Atelier/déléguées.",
+          "limite": "Condition documentaire seulement ; aucune conformité Studio, aucune case source cochée, aucune décision prise ; revue A1/A2/A5 et intégration A0 requises."
+        },
+        {
+          "type": "revue_independante_PROV_ADR",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-PROV-ADR-A5.json",
+          "sha256": "2e5c12a3d789405602415a1ff7bf93464095e82bbc4adc65eaf2df32d4ea62e0",
+          "date_UTC": "2026-10-18",
+          "reference_source": "b6794c64c7ff98fadf62868331f4297631201069",
+          "limite": "Obligation documentaire seulement ; ADR Proposé, ADR03/ROUTE09/COEX et G1–G4 restent ouverts. Aucun test métier exécuté."
+        },
+        {
+          "type": "revue_independante_PROV_ADR",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A2/REVUE-CLAUDE-ADR-NAV-A2.json",
+          "sha256": "ba942b9357cea4e2138d175a2d803fce97d694f5a36f731a77ab29e3335c6f85",
+          "date_UTC": "2026-10-18",
+          "reference_source": "b6794c64c7ff98fadf62868331f4297631201069",
+          "limite": "Obligation documentaire seulement ; ADR Proposé, ADR03/ROUTE09/COEX et G1–G4 restent ouverts. Aucun test métier exécuté."
+        },
+        {
+          "type": "revue_independante_PROV_ADR",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-CLAUDE-ADR-NAV-A4.json",
+          "sha256": "e7608392164a26115600f4b39033fb7c1fc8e813c21481c8984a4f75533bb103",
+          "date_UTC": "2026-10-18",
+          "reference_source": "b6794c64c7ff98fadf62868331f4297631201069",
+          "limite": "Obligation documentaire seulement ; ADR Proposé, ADR03/ROUTE09/COEX et G1–G4 restent ouverts. Aucun test métier exécuté."
         }
       ],
       "github": {
@@ -43524,16 +43557,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": "Nom/chemin canonique à réserver par A0 ; exemple ADR-STUDIO-NAV-01 n’est pas décision adoptée.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Qualification individuelle A2 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Rassembler index G1/NAV et COEX dans candidat ADR, sans prétendre décision prise."
+        "essais_effectues": "Lecture indépendante des sources Git, obligations et revue spécialisée puis QA. Les anciens états/digest du delta amont sont historiques, non réappliqués.",
+        "deblocage": null
       },
-      "suite": "Recevoir l’ADR proposée annoncée par Claude6251022689 ; réconcilier l’addendum A4/A2 avant revue et décision, sans ADR concurrente.",
+      "suite": "ADR demeure Proposé. Instruire ADR03/ROUTE09 après réserves A2/A4/A5 et questions COEX ; ouvrir le code seulement après autorisation/portes applicables, pas par cette vérification documentaire.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -43565,12 +43598,19 @@
           "statut": "À faire",
           "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/RESIDUEL-PICKING-ADR-NAV-A4.json",
           "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+        },
+        {
+          "origine": "Remise b6794c6, revues A1/A2/A4/A5, intégration A0 actualisée",
+          "ancien_statut": "À faire",
+          "statut": "Vérifié",
+          "date_UTC": "2026-10-18",
+          "limite": "Ne pas réappliquer anciens deltas REP/COEX ou accepter ADR03/G1."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Complément ciblé disponible, obligation source encore ouverte",
-        "fichier": "docs/ai-team/reports/reprise-496dcfc/A4/RESIDUEL-PICKING-ADR-NAV-A4.json",
-        "prochaine_action": "Recevoir l’ADR proposée annoncée par Claude6251022689 ; réconcilier l’addendum A4/A2 avant revue et décision, sans ADR concurrente."
+        "etat": "Obligation documentaire vérifiée ; aucune décision produit adoptée",
+        "fichier": "docs/ai-team/reports/claude-m11-prov/README.md",
+        "prochaine_action": "ADR demeure Proposé. Instruire ADR03/ROUTE09 après réserves A2/A4/A5 et questions COEX ; ouvrir le code seulement après autorisation/portes applicables, pas par cette vérification documentaire."
       },
       "definition_203": {
         "source_commit": "6b6139007c532d06a54ca99578967c7a451c321b",
@@ -43610,11 +43650,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Contrôle documentaire daté ; aucun NAV ou nouveau test applicatif exécuté par Codex. PROV05 vérifie MD/HTML à cet état, pas toute évolution future."
       },
       "preuves": [
         {
@@ -43653,6 +43693,39 @@
           "auteur": "A4",
           "date_UTC": "2026-10-18",
           "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+        },
+        {
+          "type": "adr_proposee",
+          "fichier": "docs/continuity/decisions/ADR-STUDIO-NAV-01.md",
+          "section": "ADR-02",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6251022689",
+          "constat": "Routes (§1), contexte (§2), droits (§3), mobile/plein écran (§4), coexistence Atelier avec règles COEX-05/06 accueillies sous réserve (§5), tests NAV-001..009 (§6) et risques (§7) documentés avec sources au 817bd36.",
+          "limite": "Condition documentaire seulement ; aucune conformité Studio, aucune case source cochée, aucune décision prise ; revue A1/A2/A5 et intégration A0 requises."
+        },
+        {
+          "type": "revue_independante_PROV_ADR",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-PROV-ADR-A5.json",
+          "sha256": "2e5c12a3d789405602415a1ff7bf93464095e82bbc4adc65eaf2df32d4ea62e0",
+          "date_UTC": "2026-10-18",
+          "reference_source": "b6794c64c7ff98fadf62868331f4297631201069",
+          "limite": "Obligation documentaire seulement ; ADR Proposé, ADR03/ROUTE09/COEX et G1–G4 restent ouverts. Aucun test métier exécuté."
+        },
+        {
+          "type": "revue_independante_PROV_ADR",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A2/REVUE-CLAUDE-ADR-NAV-A2.json",
+          "sha256": "ba942b9357cea4e2138d175a2d803fce97d694f5a36f731a77ab29e3335c6f85",
+          "date_UTC": "2026-10-18",
+          "reference_source": "b6794c64c7ff98fadf62868331f4297631201069",
+          "limite": "Obligation documentaire seulement ; ADR Proposé, ADR03/ROUTE09/COEX et G1–G4 restent ouverts. Aucun test métier exécuté."
+        },
+        {
+          "type": "revue_independante_PROV_ADR",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A4/REVUE-CLAUDE-ADR-NAV-A4.json",
+          "sha256": "e7608392164a26115600f4b39033fb7c1fc8e813c21481c8984a4f75533bb103",
+          "date_UTC": "2026-10-18",
+          "reference_source": "b6794c64c7ff98fadf62868331f4297631201069",
+          "limite": "Obligation documentaire seulement ; ADR Proposé, ADR03/ROUTE09/COEX et G1–G4 restent ouverts. Aucun test métier exécuté."
         }
       ],
       "github": {
@@ -43662,16 +43735,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": "Routes finales, masquage erreurs/focus et interfaces physiques encore ouverts.",
+        "cause": null,
         "responsable": "A2",
-        "essais_effectues": "Qualification individuelle A2 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Réemployer CONTRAT-NAV-M004/NAV-M004 et M21 ; enregistrer seulement lacunes et options dans ADR."
+        "essais_effectues": "Lecture indépendante des sources Git, obligations et revue spécialisée puis QA. Les anciens états/digest du delta amont sont historiques, non réappliqués.",
+        "deblocage": null
       },
-      "suite": "Recevoir la proposition Claude, comparer les lacunes physiques aux contrats NAV/M21 existants puis faire arbitrer ; aucun nouveau choix de route implicite.",
+      "suite": "ADR demeure Proposé. Instruire ADR03/ROUTE09 après réserves A2/A4/A5 et questions COEX ; ouvrir le code seulement après autorisation/portes applicables, pas par cette vérification documentaire.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -43703,12 +43776,19 @@
           "statut": "En cours",
           "preuve": "docs/ai-team/reports/reprise-496dcfc/A4/RESIDUEL-PICKING-ADR-NAV-A4.json",
           "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+        },
+        {
+          "origine": "Remise b6794c6, revues A1/A2/A4/A5, intégration A0 actualisée",
+          "ancien_statut": "En cours",
+          "statut": "Vérifié",
+          "date_UTC": "2026-10-18",
+          "limite": "Ne pas réappliquer anciens deltas REP/COEX ou accepter ADR03/G1."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Complément ciblé disponible, obligation source encore ouverte",
-        "fichier": "docs/ai-team/reports/reprise-496dcfc/A4/RESIDUEL-PICKING-ADR-NAV-A4.json",
-        "prochaine_action": "Recevoir la proposition Claude, comparer les lacunes physiques aux contrats NAV/M21 existants puis faire arbitrer ; aucun nouveau choix de route implicite."
+        "etat": "Obligation documentaire vérifiée ; aucune décision produit adoptée",
+        "fichier": "docs/ai-team/reports/claude-m11-prov/README.md",
+        "prochaine_action": "ADR demeure Proposé. Instruire ADR03/ROUTE09 après réserves A2/A4/A5 et questions COEX ; ouvrir le code seulement après autorisation/portes applicables, pas par cette vérification documentaire."
       },
       "definition_203": {
         "source_commit": "6b6139007c532d06a54ca99578967c7a451c321b",
@@ -64601,11 +64681,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Contrôle documentaire daté ; aucun NAV ou nouveau test applicatif exécuté par Codex. PROV05 vérifie MD/HTML à cet état, pas toute évolution future."
       },
       "preuves": [
         {
@@ -64635,6 +64715,31 @@
           "auteur": "A1",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "controle_documentaire",
+          "fichier": "docs/ai-team/reports/claude-m11-prov/PROV-03-05.md",
+          "section": "PROV-03",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6251022689",
+          "constat": "Toutes les occurrences de 5cf61d1 dans docs/ et Studio/ relues : aucune ne le présente comme HEAD actuel ; distinction 5cf61d1/817bd36 mesurée par blobs.",
+          "limite": "Condition documentaire seulement ; aucune conformité Studio, aucune case source cochée, aucune décision prise ; revue A1/A2/A5 et intégration A0 requises."
+        },
+        {
+          "type": "revue_independante_PROV_ADR",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-PROV-ADR-A5.json",
+          "sha256": "2e5c12a3d789405602415a1ff7bf93464095e82bbc4adc65eaf2df32d4ea62e0",
+          "date_UTC": "2026-10-18",
+          "reference_source": "b6794c64c7ff98fadf62868331f4297631201069",
+          "limite": "Obligation documentaire seulement ; ADR Proposé, ADR03/ROUTE09/COEX et G1–G4 restent ouverts. Aucun test métier exécuté."
+        },
+        {
+          "type": "revue_independante_PROV_ADR",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/REVUE-CLAUDE-PROV-A1.json",
+          "sha256": "5e6a465ce3e10ce7c16be66391bd28254488e028591859ee0d818508d1162bdf",
+          "date_UTC": "2026-10-18",
+          "reference_source": "b6794c64c7ff98fadf62868331f4297631201069",
+          "limite": "Obligation documentaire seulement ; ADR Proposé, ADR03/ROUTE09/COEX et G1–G4 restent ouverts. Aucun test métier exécuté."
         }
       ],
       "github": {
@@ -64644,16 +64749,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": "Réalisation/accord aval reste distinct du dossier préparé",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "Qualification individuelle A1 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Réemployer table provenance jointe sans présenterREP01 testactuel."
+        "essais_effectues": "Lecture indépendante des sources Git, obligations et revue spécialisée puis QA. Les anciens états/digest du delta amont sont historiques, non réappliqués.",
+        "deblocage": null
       },
-      "suite": "Réemployer table provenance jointe sans présenterREP01 testactuel.",
+      "suite": "Conserver la provenance au SHA817/b679 ; requalifier uniquement sur changement de source/registre. Aucune future synchronisation HTML garantie par ce contrôle.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -64678,12 +64783,19 @@
           "statut": "En cours",
           "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
           "limite": "Préparation seulement ; aucun test exécuté, clôture ou accord implicite."
+        },
+        {
+          "origine": "Remise b6794c6, revues A1/A2/A4/A5, intégration A0 actualisée",
+          "ancien_statut": "En cours",
+          "statut": "Vérifié",
+          "date_UTC": "2026-10-18",
+          "limite": "Ne pas réappliquer anciens deltas REP/COEX ou accepter ADR03/G1."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Définition et qualification individuelles revues ; obligation source encore ouverte",
-        "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
-        "prochaine_action": "Réemployer table provenance jointe sans présenterREP01 testactuel."
+        "etat": "Obligation documentaire vérifiée ; aucune décision produit adoptée",
+        "fichier": "docs/ai-team/reports/claude-m11-prov/README.md",
+        "prochaine_action": "Conserver la provenance au SHA817/b679 ; requalifier uniquement sur changement de source/registre. Aucune future synchronisation HTML garantie par ce contrôle."
       },
       "definition_203": {
         "source_commit": "6b6139007c532d06a54ca99578967c7a451c321b",
@@ -64721,11 +64833,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Contrôle documentaire daté ; aucun NAV ou nouveau test applicatif exécuté par Codex. PROV05 vérifie MD/HTML à cet état, pas toute évolution future."
       },
       "preuves": [
         {
@@ -64755,6 +64867,31 @@
           "auteur": "A1",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "controle_documentaire",
+          "fichier": "docs/ai-team/reports/claude-m11-prov/PROV-03-05.md",
+          "section": "PROV-04",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6251022689",
+          "constat": "Les 10 chemins sources de l’annexe D du Plan existent au 817bd36, REF-01/REF-02 aux empreintes déclarées ; occurrences de 3bcda929 toutes historiques ; requalification REP-09 séparée.",
+          "limite": "Condition documentaire seulement ; aucune conformité Studio, aucune case source cochée, aucune décision prise ; revue A1/A2/A5 et intégration A0 requises."
+        },
+        {
+          "type": "revue_independante_PROV_ADR",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-PROV-ADR-A5.json",
+          "sha256": "2e5c12a3d789405602415a1ff7bf93464095e82bbc4adc65eaf2df32d4ea62e0",
+          "date_UTC": "2026-10-18",
+          "reference_source": "b6794c64c7ff98fadf62868331f4297631201069",
+          "limite": "Obligation documentaire seulement ; ADR Proposé, ADR03/ROUTE09/COEX et G1–G4 restent ouverts. Aucun test métier exécuté."
+        },
+        {
+          "type": "revue_independante_PROV_ADR",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/REVUE-CLAUDE-PROV-A1.json",
+          "sha256": "5e6a465ce3e10ce7c16be66391bd28254488e028591859ee0d818508d1162bdf",
+          "date_UTC": "2026-10-18",
+          "reference_source": "b6794c64c7ff98fadf62868331f4297631201069",
+          "limite": "Obligation documentaire seulement ; ADR Proposé, ADR03/ROUTE09/COEX et G1–G4 restent ouverts. Aucun test métier exécuté."
         }
       ],
       "github": {
@@ -64764,16 +64901,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": "Réalisation/accord aval reste distinct du dossier préparé",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "Qualification individuelle A1 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Joindre couple source/révision à tout futur résultat, sans renommer documents."
+        "essais_effectues": "Lecture indépendante des sources Git, obligations et revue spécialisée puis QA. Les anciens états/digest du delta amont sont historiques, non réappliqués.",
+        "deblocage": null
       },
-      "suite": "Joindre couple source/révision à tout futur résultat, sans renommer documents.",
+      "suite": "Conserver la provenance au SHA817/b679 ; requalifier uniquement sur changement de source/registre. Aucune future synchronisation HTML garantie par ce contrôle.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -64798,12 +64935,19 @@
           "statut": "En cours",
           "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
           "limite": "Préparation seulement ; aucun test exécuté, clôture ou accord implicite."
+        },
+        {
+          "origine": "Remise b6794c6, revues A1/A2/A4/A5, intégration A0 actualisée",
+          "ancien_statut": "En cours",
+          "statut": "Vérifié",
+          "date_UTC": "2026-10-18",
+          "limite": "Ne pas réappliquer anciens deltas REP/COEX ou accepter ADR03/G1."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Définition et qualification individuelles revues ; obligation source encore ouverte",
-        "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
-        "prochaine_action": "Joindre couple source/révision à tout futur résultat, sans renommer documents."
+        "etat": "Obligation documentaire vérifiée ; aucune décision produit adoptée",
+        "fichier": "docs/ai-team/reports/claude-m11-prov/README.md",
+        "prochaine_action": "Conserver la provenance au SHA817/b679 ; requalifier uniquement sur changement de source/registre. Aucune future synchronisation HTML garantie par ce contrôle."
       },
       "definition_203": {
         "source_commit": "6b6139007c532d06a54ca99578967c7a451c321b",
@@ -64841,11 +64985,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Non applicable",
+        "portee": "Contrôle documentaire daté ; aucun NAV ou nouveau test applicatif exécuté par Codex. PROV05 vérifie MD/HTML à cet état, pas toute évolution future."
       },
       "preuves": [
         {
@@ -64875,6 +65019,31 @@
           "auteur": "A1",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "controle_documentaire",
+          "fichier": "docs/ai-team/reports/claude-m11-prov/PROV-03-05.md",
+          "section": "PROV-05",
+          "reference_code": "817bd36e7d4b1ab60ab9c00309509c7cdfed0798",
+          "auteur": "Claude Code (hors équipe Codex), annonce #166 6251022689",
+          "constat": "Checklist V1.0 (24a5e04) et suivi V1.1 (2311cb4) comparés par script : 630 IDs identiques, même ordre, libellés identiques, aucune renumérotation ; garde check_missions.py vérifiée.",
+          "limite": "Condition documentaire seulement ; aucune conformité Studio, aucune case source cochée, aucune décision prise ; revue A1/A2/A5 et intégration A0 requises."
+        },
+        {
+          "type": "revue_independante_PROV_ADR",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A5/REVUE-CLAUDE-PROV-ADR-A5.json",
+          "sha256": "2e5c12a3d789405602415a1ff7bf93464095e82bbc4adc65eaf2df32d4ea62e0",
+          "date_UTC": "2026-10-18",
+          "reference_source": "b6794c64c7ff98fadf62868331f4297631201069",
+          "limite": "Obligation documentaire seulement ; ADR Proposé, ADR03/ROUTE09/COEX et G1–G4 restent ouverts. Aucun test métier exécuté."
+        },
+        {
+          "type": "revue_independante_PROV_ADR",
+          "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/REVUE-CLAUDE-PROV-A1.json",
+          "sha256": "5e6a465ce3e10ce7c16be66391bd28254488e028591859ee0d818508d1162bdf",
+          "date_UTC": "2026-10-18",
+          "reference_source": "b6794c64c7ff98fadf62868331f4297631201069",
+          "limite": "Obligation documentaire seulement ; ADR Proposé, ADR03/ROUTE09/COEX et G1–G4 restent ouverts. Aucun test métier exécuté."
         }
       ],
       "github": {
@@ -64884,16 +65053,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": "Réalisation/accord aval reste distinct du dossier préparé",
+        "cause": null,
         "responsable": "A1",
-        "essais_effectues": "Qualification individuelle A1 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "À chaque future modification autorisée checklist, fournir diff IDs/textes/raisons, sans renuméroter."
+        "essais_effectues": "Lecture indépendante des sources Git, obligations et revue spécialisée puis QA. Les anciens états/digest du delta amont sont historiques, non réappliqués.",
+        "deblocage": null
       },
-      "suite": "À chaque future modification autorisée checklist, fournir diff IDs/textes/raisons, sans renuméroter.",
+      "suite": "Conserver la provenance au SHA817/b679 ; requalifier uniquement sur changement de source/registre. Aucune future synchronisation HTML garantie par ce contrôle.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -64918,12 +65087,19 @@
           "statut": "En cours",
           "preuve": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
           "limite": "Préparation seulement ; aucun test exécuté, clôture ou accord implicite."
+        },
+        {
+          "origine": "Remise b6794c6, revues A1/A2/A4/A5, intégration A0 actualisée",
+          "ancien_statut": "En cours",
+          "statut": "Vérifié",
+          "date_UTC": "2026-10-18",
+          "limite": "Ne pas réappliquer anciens deltas REP/COEX ou accepter ADR03/G1."
         }
       ],
       "preparation_documentaire": {
-        "etat": "Définition et qualification individuelles revues ; obligation source encore ouverte",
-        "fichier": "docs/ai-team/reports/reprise-496dcfc/A1/203-QUALIFICATION-A1.json",
-        "prochaine_action": "À chaque future modification autorisée checklist, fournir diff IDs/textes/raisons, sans renuméroter."
+        "etat": "Obligation documentaire vérifiée ; aucune décision produit adoptée",
+        "fichier": "docs/ai-team/reports/claude-m11-prov/README.md",
+        "prochaine_action": "Conserver la provenance au SHA817/b679 ; requalifier uniquement sur changement de source/registre. Aucune future synchronisation HTML garantie par ce contrôle."
       },
       "definition_203": {
         "source_commit": "6b6139007c532d06a54ca99578967c7a451c321b",
@@ -64956,9 +65132,9 @@
       "raison": "DEV_SCOPE et baseline du périmètre accepté non établis ; ne pas inventer un dénominateur."
     },
     "P630": {
-      "V630": 44,
+      "V630": 49,
       "denominateur": 630,
-      "pourcentage": 7.0,
+      "pourcentage": 7.8,
       "IDs": [
         "SRC-01",
         "SRC-02",
@@ -65001,13 +65177,18 @@
         "G0-01",
         "G0-02",
         "G0-03",
+        "ADR-01",
+        "ADR-02",
         "ADR-04",
         "PROV-01",
-        "PROV-02"
+        "PROV-02",
+        "PROV-03",
+        "PROV-04",
+        "PROV-05"
       ],
-      "limite": "42 obligations documentaires Vérifié et2 Accepté cadrageG0 seulement ; aucune fonctionnalité Studio acceptée. Pas un taux de développement.",
+      "limite": "47 obligations documentaires vérifiées et2 acceptations de cadrageG0 uniquement ; aucun logiciel Studio ou ADR03 accepté. Pas un taux de développement.",
       "mapping_barre": {
-        "Vérifié documentaire": 42,
+        "Vérifié documentaire": 47,
         "Accepté cadrage documentaire G0": 2
       }
     }
@@ -65054,6 +65235,6 @@
     ],
     "G1_G4_acceptes": false
   },
-  "checkpoint_documentaire_precedent": "2076e18ed6b5bf7d48e95bbee6bf389a32ff3bde",
+  "checkpoint_documentaire_precedent": "0e0b386b4ac2711ee394d9907da943f050600b42",
   "note_reprise": "PR165 fusionnée par une autre session à817bd36 ; continuation documentaire PR172. Réécriture contrôlée A0, aucun helper amont exécuté. G1–G4 non acceptés."
 }

@@ -38,4 +38,8 @@ G0 accepté pour cadrage documentaire uniquement ; orientationsDEC01/03 retenues
 
 ## Continuation après fusion externe165
 
-Main817bd36 intègre la documentation165 par une autre session ; continuation sur la même branche, PR172 en brouillon. Le checkpoint courant remplace les chiffres historiques précédents :203 définitions revues, dix obligations documentaires REP/COEX/ADR supplémentaires vérifiées, P63044/630=7,0%, PDEVN/D.42 Vérifié documentaire et2 Accepté G0 uniquement ; G1–G4 ouverts. Les réserves COEX et propositions ne deviennent pas décisions. Lire STATUS/HANDOFF ensemble pour les comptes et prochaines opérations exacts.
+Main817bd36 intègre la documentation165 par une autre session ; continuation sur la même branche, PR172 en brouillon. Le checkpoint courant remplace les chiffres historiques précédents :203 définitions revues, quinze obligations documentaires REP/COEX/PROV/ADR supplémentaires vérifiées, P63049/630=7,8%, PDEVN/D.47 Vérifié documentaire et2 Accepté G0 uniquement ; G1–G4 ouverts. Les réserves COEX et propositions ne deviennent pas décisions. Lire STATUS/HANDOFF ensemble pour les comptes et prochaines opérations exacts.
+
+## Réconciliation des lots autorisés
+
+PR169=9b34dca et PR171=25bca79 intègrent main817 dans leurs branches, sans fusion versmain. Fichiers des lots conservés, seul conflit ci.yml résolu après revues A5/A6 ;129/492 tests purs, types/build et contrôles CI réussis aux nouveauxSHA. Les jobs DB restent skipped. ADR-STUDIO-NAV-01 reste Proposé ; questionADR03 publiée6251292271, G1–G4 ouverts. Lire les preuves exactes dans STATUS/HANDOFF.
