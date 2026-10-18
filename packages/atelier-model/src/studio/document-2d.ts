@@ -116,20 +116,20 @@ function shape(value: unknown, path: string): StudioShape {
 
 export function validateStudioDocument(value: unknown): StudioDocument {
   const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document");
-  if (d.schemaVersion !== "studio-document/1") fail("document.schemaVersion", "version non prise en charge");
-  if (d.units !== "m") fail("document.units", "unité m attendue");
-  if (d.frame !== "local-2d") fail("document.frame", "repère local-2d attendu");
-  const objects = array(d.objects, "document.objects").map((o, i) => shape(o, `document.objects[${i}]`));
+  if (d.schemaVersion !== "studio-document/1") fail("studioDocument.schemaVersion", "version non prise en charge");
+  if (d.units !== "m") fail("studioDocument.units", "unité m attendue");
+  if (d.frame !== "local-2d") fail("studioDocument.frame", "repère local-2d attendu");
+  const objects = array(d.objects, "studioDocument.objects").map((o, i) => shape(o, `studioDocument.objects[${i}]`));
   const ids = new Set<string>();
   for (const o of objects) {
-    if (ids.has(o.id)) fail("document.objects", "identifiant dupliqué");
+    if (ids.has(o.id)) fail("studioDocument.objects", "identifiant dupliqué");
     ids.add(o.id);
   }
-  return { id: identifier(d.id, "document.id"), schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects };
+  return { id: identifier(d.id, "studioDocument.id"), schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects };
 }
 
 export function newStudioDocument(id: string): StudioDocument {
-  return { id: identifier(id, "document.id"), schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects: [] };
+  return { id: identifier(id, "studioDocument.id"), schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects: [] };
 }
 
 /** Apply to a private clone; a rejected lot never mutates document or caller inputs. */

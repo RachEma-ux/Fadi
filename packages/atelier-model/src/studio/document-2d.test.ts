@@ -122,6 +122,9 @@ describe("Registry Studio minimal", () => {
     }
     for (const tool of STUDIO_TOOLS) {
       expect(tool.agentExposure).toBe("none");
+      expect(tool.contractVersion).toBe(STUDIO_CONTRACT);
+      expect(tool.refusalCodes).toEqual(["studio-invalid"]);
+      expect(Object.isFrozen(tool.refusalCodes)).toBe(true);
       expect(tool.supportsDryRun).toBe(true);
       expect(tool.libelleFR.trim()).not.toBe("");
       expect(JSON.parse(JSON.stringify(tool.inputSchema))).toEqual(tool.inputSchema);
@@ -129,6 +132,9 @@ describe("Registry Studio minimal", () => {
       expect(Object.isFrozen(tool)).toBe(true);
       expect(Object.isFrozen(tool.inputSchema)).toBe(true);
     }
+    const idPattern = new RegExp(STUDIO_DOCUMENT_SCHEMA.properties.id.pattern);
+    for (const id of ["valid", " a ", "opaque/é-2"]) expect(idPattern.test(id)).toBe(true);
+    for (const id of ["", " ", "a\0b", "a\n\0b"]) expect(idPattern.test(id)).toBe(false);
     expect(Object.isFrozen(STUDIO_TOOLS)).toBe(true);
     expect(Object.isFrozen(STUDIO_DOCUMENT_SCHEMA.properties.objects.items.oneOf)).toBe(true);
   });
