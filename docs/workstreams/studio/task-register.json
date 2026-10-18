@@ -54745,7 +54745,13 @@
     "navigation9": "docs/ai-team/reports/mission-004/A4/NAV-M004.json",
     "oracles38": "docs/ai-team/reports/mission-004/A5/studio-38-oracles-M004.csv",
     "historique": "docs/ai-team/reports/mission-003/README.md",
-    "acte_G0": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json"
+    "acte_G0": "docs/ai-team/reports/reprise-496dcfc/A1/G0-ACTE-ACCEPTATION-DOCUMENTAIRE.json",
+    "G1_complements_v2": "docs/ai-team/reports/reprise-496dcfc/A1/G1-COMPLEMENTS-M17-M24-DEC01-DEC03-v2.md",
+    "G1_trace_11_fonctions_v2": "docs/ai-team/reports/reprise-496dcfc/A1/G1-ONZE-FONCTIONS-TRACABILITE-A1-v2.json",
+    "G1_instruction_A0": "docs/ai-team/reports/reprise-496dcfc/G1-DOSSIER-ARBITRAGE-A0.md",
+    "NAV_delta_G1": "docs/ai-team/reports/reprise-496dcfc/A4/NAV-DELTA-G1-v2.json",
+    "corpus_lacunes_S1_S7": "docs/ai-team/reports/reprise-496dcfc/A5/R5-M15-M26-LACUNES-CORPUS-A5.json",
+    "POC_G2_proposition_non_autorisee": "docs/ai-team/reports/reprise-496dcfc/G2-PERIMETRE-A0-PROPOSE.md"
   },
   "gate_G0": {
     "statut": "Accepté",
@@ -54763,5 +54769,7 @@
       "migration/rollback"
     ],
     "G1_G4_acceptes": false
-  }
+  },
+  "checkpoint_documentaire_precedent": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+  "note_reprise": "Métadonnées de préparation enrichies, aucune clôture ou acceptation individuelle supplémentaire ; P630 reste34/630 documentaire/cadrage, PDEV N/D. Les PR169/171 sont non fusionnées."
 }
