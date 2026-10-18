@@ -181,7 +181,18 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
       - run: npm run db:migrate
-      - run: npm test
+      - name: Tests des paquets purs et du web
+        run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
+      - name: Garde DB-1/2 — tests simulés sans base
+        run: npm run test:db-guard
+      # Garde DB fermée (registre d'autorités vide, DB-3 non autorisé, #157) : les suites API qui exigent une base
+      # attestée sont refusées au chargement. Elles ne sont ni contournées ni déclarées réussies : le contrôle exige
+      # que seule la liste fermée soit refusée, par la garde seule, et que tout le reste passe.
+      - name: Tests API hors base — suites DB-3 déclarées non exécutées
+        run: |
+          npx --workspace=@fadi/api vitest run --reporter=default --reporter=json --outputFile=../../api-vitest.json || true
+          node --test scripts/check-api-tests-db3.test.mjs
+          node scripts/check-api-tests-db3.mjs api-vitest.json
       - run: npm run build
       # Corpus IFC (lot 6, D-006 : conformité testée, jamais « certifiée ») : petit modèle comparé à sa référence,
       # P.118 exporté, puis relu par web-ifc, importé en représentations et réexporté ; chaque fichier validé par
@@ -254,6 +265,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/parcours-scenario.mjs 2>&1 | tee -a e2e.log
+      # Studio (D-0/D-A, #166) : schéma créé par db:migrate ; étude, commandes, rejeu, refus et historique par l'API réelle.
+      - name: Recette Studio par l'API — étude, commandes, rejeu, conflits, droits, historique (apps/web/e2e/studio-persistance.mjs)
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-persistance.mjs 2>&1 | tee -a e2e.log
       - name: Recette du nouvel Atelier (apps/web/e2e/atelier-nouveau.mjs)
         run: |
           set -o pipefail
