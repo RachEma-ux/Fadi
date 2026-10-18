@@ -501,7 +501,7 @@ CREATE TABLE IF NOT EXISTS studio_revisions (
   request_id text NOT NULL,
   payload_hash text NOT NULL CHECK (payload_hash ~ '^[0-9a-f]{64}$'),
   source text NOT NULL CONSTRAINT studio_revisions_source_check
-    CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization')),
+    CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization', 'variant-derivation')),
   author_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   created_at timestamptz NOT NULL DEFAULT now(),
   response jsonb NOT NULL,
@@ -511,9 +511,10 @@ CREATE TABLE IF NOT EXISTS studio_revisions (
     REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED
 );
 -- Le nom explicite reprend celui que PostgreSQL donnait à l'ancien CHECK anonyme : recréé à chaque application.
+-- 'variant-derivation' : révision initiale d'une variante dérivée (copie du document d'une révision de la même étude).
 ALTER TABLE studio_revisions DROP CONSTRAINT IF EXISTS studio_revisions_source_check,
   ADD CONSTRAINT studio_revisions_source_check
-  CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization')) NOT VALID;
+  CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization', 'variant-derivation')) NOT VALID;
 ALTER TABLE studio_studies DROP CONSTRAINT IF EXISTS studio_studies_initial_variant,
   ADD CONSTRAINT studio_studies_initial_variant FOREIGN KEY(id, initial_variant_id)
   REFERENCES studio_variants(study_id, id) DEFERRABLE INITIALLY DEFERRED NOT VALID;
@@ -571,3 +572,19 @@ CREATE TABLE IF NOT EXISTS studio_study_steps (
   CONSTRAINT studio_study_steps_unique UNIQUE(study_id, step_number)
 );
 CREATE INDEX IF NOT EXISTS studio_study_steps_step_idx ON studio_study_steps(step_number);
+-- Cycle de vie des études et variantes Studio : renommage (updated_at, created_at conservé), archivage sans
+-- suppression (archived_at ; NULL = active) et provenance d'une variante dérivée (variante et révision sources, de la
+-- même étude — vérifié par le serveur ; la paire de colonnes est renseignée ensemble ou pas du tout). Colonnes
+-- nullables ajoutées sans réécrire les lignes existantes ; contraintes recréées à chaque application, NOT VALID.
+ALTER TABLE studio_studies ADD COLUMN IF NOT EXISTS updated_at timestamptz;
+ALTER TABLE studio_studies ADD COLUMN IF NOT EXISTS archived_at timestamptz;
+ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS updated_at timestamptz;
+ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS archived_at timestamptz;
+ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS derived_from_variant_id text;
+ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS derived_from_revision_id text;
+ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derived_from_pair,
+  ADD CONSTRAINT studio_variants_derived_from_pair
+  CHECK ((derived_from_variant_id IS NULL) = (derived_from_revision_id IS NULL)) NOT VALID;
+ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derived_from_revision,
+  ADD CONSTRAINT studio_variants_derived_from_revision FOREIGN KEY(derived_from_variant_id, derived_from_revision_id)
+  REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED NOT VALID;

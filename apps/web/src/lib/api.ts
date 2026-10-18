@@ -724,17 +724,28 @@ export interface StudioContext {
   variant: { id: string; name: string; studyId: string; headRevisionId: string };
   revision: { id: string; parentRevisionId: string | null; document: StudioDocument };
   canWrite: boolean;
+  /** Lecture d'une variante : étude ou variante archivée (alors `canWrite` faux). */
+  archived?: boolean;
+  /** Variante dérivée : variante et révision sources (création et lecture), null sinon. */
+  derivedFrom?: StudioProvenance | null;
 }
+/** Provenance d'une variante dérivée (même étude). */
+export interface StudioProvenance { variantId: string; revisionId: string }
 /** Étude de Studio telle que la liste du projet la renvoie. */
-export interface StudioStudySummary { id: string; name: string; initialVariantId: string; createdAt: string }
+export interface StudioStudySummary { id: string; name: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean }
 /** Variante d'une étude : sa tête de révision est tenue par le serveur. */
-export interface StudioVariantSummary { id: string; name: string; headRevisionId: string }
+export interface StudioVariantSummary { id: string; name: string; headRevisionId: string; archived: boolean; derivedFrom: StudioProvenance | null }
 /** Étude ouverte : ses variantes et le droit d'écriture relu par le serveur (qui reste seul juge). */
 export interface StudioStudyDetail {
-  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string };
+  study: { id: string; name: string; projectId: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean };
   variants: StudioVariantSummary[];
+  /** Écriture dans l'étude : droit de modification et étude active. */
   canWrite: boolean;
+  /** Droit de modification seul (désarchiver une étude archivée). */
+  canManage: boolean;
 }
+/** Source d'une dérivation : variante de l'étude et révision (tête si absente). */
+export interface StudioDerivation { fromVariantId: string; fromRevisionId?: string }
 /** Entête d'une révision (historique append-only, de la plus récente à la plus ancienne). */
 export interface StudioRevisionSummary { id: string; parentRevisionId: string | null; source: string; authorId: string; createdAt: string }
 /** Comparaison de deux révisions d'une étude : côtés résolus (tête explicite) et différence pure du modèle. */
@@ -746,6 +757,7 @@ export interface StudioComparison {
 const studioRoot = (p: string) => `/projects/${encodeURIComponent(p)}/studio/studies`;
 const studioStudyPath = (p: string, s: string) => `${studioRoot(p)}/${encodeURIComponent(s)}`;
 const studioVariantPath = (p: string, s: string, v: string) => `${studioStudyPath(p, s)}/variants/${encodeURIComponent(v)}`;
+const studioArchives = (archives?: boolean) => (archives ? "?archives=1" : "");
 /**
  * Adresse d'export d'une variante (pièce jointe SVG, DXF ou IFC produite par le serveur, même origine : le cookie de session
  * suit le lien). Sans `revisionId`, le serveur exporte la tête ; avec, la révision historique affichée.
@@ -777,12 +789,18 @@ export interface StudioStudySteps {
   canWrite: boolean;
 }
 export const api = {
-  studioStudies: (p: string) => request<{ studies: StudioStudySummary[] }>(studioRoot(p)),
+  /** Études du projet ; `archives` : archivées comprises. */
+  studioStudies: (p: string, archives?: boolean) => request<{ studies: StudioStudySummary[] }>(`${studioRoot(p)}${studioArchives(archives)}`),
   createStudioStudy: (p: string, name: string, requestId?: string) => request<StudioContext>(studioRoot(p), { method: "POST", body: JSON.stringify(requestId ? { name, requestId } : { name }) }),
-  studioStudy: (p: string, s: string) => request<StudioStudyDetail>(studioStudyPath(p, s)),
-  studioVariants: (p: string, s: string) => request<{ variants: StudioVariantSummary[] }>(`${studioStudyPath(p, s)}/variants`),
-  /** Nouvelle variante : document vide, révision initiale et tête créées par le serveur. */
-  createStudioVariant: (p: string, s: string, name: string, requestId?: string) => request<StudioContext>(`${studioStudyPath(p, s)}/variants`, { method: "POST", body: JSON.stringify(requestId ? { name, requestId } : { name }) }),
+  studioStudy: (p: string, s: string, archives?: boolean) => request<StudioStudyDetail>(`${studioStudyPath(p, s)}${studioArchives(archives)}`),
+  studioVariants: (p: string, s: string, archives?: boolean) => request<{ variants: StudioVariantSummary[] }>(`${studioStudyPath(p, s)}/variants${studioArchives(archives)}`),
+  /** Nouvelle variante : document vide, ou copie d'une révision d'une variante de l'étude (`from`, dérivation). */
+  createStudioVariant: (p: string, s: string, name: string, requestId?: string, from?: StudioDerivation) => request<StudioContext>(`${studioStudyPath(p, s)}/variants`, { method: "POST", body: JSON.stringify({ name, ...(requestId ? { requestId } : {}), ...(from ?? {}) }) }),
+  renameStudioStudy: (p: string, s: string, name: string) => request<StudioStudyDetail>(studioStudyPath(p, s), { method: "PATCH", body: JSON.stringify({ name }) }),
+  /** Archive (sans suppression) ou désarchive une étude. */
+  setStudioStudyArchived: (p: string, s: string, archived: boolean) => request<StudioStudyDetail>(`${studioStudyPath(p, s)}/${archived ? "archive" : "unarchive"}`, { method: "POST" }),
+  renameStudioVariant: (p: string, s: string, v: string, name: string) => request<{ variant: StudioVariantSummary; studyArchived: boolean }>(studioVariantPath(p, s, v), { method: "PATCH", body: JSON.stringify({ name }) }),
+  setStudioVariantArchived: (p: string, s: string, v: string, archived: boolean) => request<{ variant: StudioVariantSummary; studyArchived: boolean }>(`${studioVariantPath(p, s, v)}/${archived ? "archive" : "unarchive"}`, { method: "POST" }),
   studioContext: (p: string, s: string, v: string) => request<StudioContext>(studioVariantPath(p, s, v)),
   studioRevisions: (p: string, s: string, v: string) => request<{ revisions: StudioRevisionSummary[] }>(`${studioVariantPath(p, s, v)}/revisions`),
   /** Révision historique : toujours en lecture seule (`canWrite` faux côté serveur). */

@@ -6,7 +6,8 @@
  * Paramètres admis : `revision` sur une variante (une seule fois), qui ouvre cette révision en lecture seule ;
  * `commentaires=ouverts` sur une variante (une seule fois, seule valeur admise), qui ouvre son panneau de commentaires ; `de` et
  * `a` sur la comparaison d'une étude (`…/etudes/:s/comparer`), chacun au plus une fois, de la forme
- * `variantId` (tête) ou `variantId:revisionId`.
+ * `variantId` (tête) ou `variantId:revisionId` ; `archives=1` sur un projet ou une étude (une seule fois, seule valeur
+ * admise), qui affiche aussi les études ou les variantes archivées.
  */
 
 export const RACINE_STUDIO = "/studio";
@@ -16,8 +17,8 @@ export interface CoteComparaisonStudio { variantId: string; revisionId: string |
 
 export type RouteStudio =
   | { vue: "accueil" }
-  | { vue: "projet"; projectId: string }
-  | { vue: "etude"; projectId: string; studyId: string }
+  | { vue: "projet"; projectId: string; archives: boolean }
+  | { vue: "etude"; projectId: string; studyId: string; archives: boolean }
   | { vue: "comparer"; projectId: string; studyId: string; de: CoteComparaisonStudio | null; a: CoteComparaisonStudio | null }
   | { vue: "variante"; projectId: string; studyId: string; variantId: string; revisionId: string | null; commentaires: boolean }
   | { vue: "inconnue"; chemin: string };
@@ -26,6 +27,16 @@ export type RouteStudio =
 const ID = /^[A-Za-z0-9_-]{1,128}$/;
 /** Seule valeur admise de `commentaires` : ouvre le panneau des commentaires de la variante (lien d'une notification). */
 const COMMENTAIRES_OUVERTS = "ouverts";
+/** Seule valeur admise de `archives` : affiche aussi les archives (projet : études ; étude : variantes). */
+const ARCHIVES_AFFICHEES = "1";
+
+/** `archives` seul admis, au plus une fois, valeur `1` ; `undefined` = adresse non reconnue. */
+function lireArchives(params: URLSearchParams): boolean | undefined {
+  if ([...params.keys()].some((k) => k !== "archives")) return undefined;
+  const valeurs = params.getAll("archives");
+  if (valeurs.length === 0) return false;
+  return valeurs.length === 1 && valeurs[0] === ARCHIVES_AFFICHEES ? true : undefined;
+}
 
 export const estRouteStudio = (pathname: string): boolean => pathname === RACINE_STUDIO || pathname.startsWith(`${RACINE_STUDIO}/`);
 
@@ -45,9 +56,15 @@ export function lireRouteStudio(pathname: string, search = ""): RouteStudio {
   }
   const [projets, projectId = "", etudes, studyId = "", variantes, variantId = ""] = ids;
   if (projets !== "projets" || !ID.test(projectId)) return inconnue;
-  if (ids.length === 2) return cles.length ? inconnue : { vue: "projet", projectId };
+  if (ids.length === 2) {
+    const archives = lireArchives(params);
+    return archives === undefined ? inconnue : { vue: "projet", projectId, archives };
+  }
   if (etudes !== "etudes" || !ID.test(studyId)) return inconnue;
-  if (ids.length === 4) return cles.length ? inconnue : { vue: "etude", projectId, studyId };
+  if (ids.length === 4) {
+    const archives = lireArchives(params);
+    return archives === undefined ? inconnue : { vue: "etude", projectId, studyId, archives };
+  }
   if (ids.length === 5 && etudes === "etudes" && ids[4] === "comparer") {
     if (cles.some((k) => k !== "de" && k !== "a")) return inconnue;
     const de = lireCote(params.getAll("de")), a = lireCote(params.getAll("a"));
@@ -86,9 +103,13 @@ export function cheminComparaisonStudio(projectId: string, studyId: string, de: 
   return s ? `${base}?${s}` : base;
 }
 
-export const cheminProjetStudio =(projectId: string): string => `${RACINE_STUDIO}/projets/${encodeURIComponent(projectId)}`;
+const avecArchives = (base: string, archives: boolean) => (archives ? `${base}?archives=${ARCHIVES_AFFICHEES}` : base);
 
-export const cheminEtudeStudio = (projectId: string, studyId: string): string => `${cheminProjetStudio(projectId)}/etudes/${encodeURIComponent(studyId)}`;
+export const cheminProjetStudio = (projectId: string, options: { archives?: boolean } = {}): string =>
+  avecArchives(`${RACINE_STUDIO}/projets/${encodeURIComponent(projectId)}`, !!options.archives);
+
+export const cheminEtudeStudio = (projectId: string, studyId: string, options: { archives?: boolean } = {}): string =>
+  avecArchives(`${cheminProjetStudio(projectId)}/etudes/${encodeURIComponent(studyId)}`, !!options.archives);
 
 export function cheminVarianteStudio(projectId: string, studyId: string, variantId: string, revisionId: string | null = null, options: { commentaires?: boolean } = {}): string {
   const base = `${cheminEtudeStudio(projectId, studyId)}/variantes/${encodeURIComponent(variantId)}`;
