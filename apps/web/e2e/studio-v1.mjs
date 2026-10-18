@@ -36,6 +36,7 @@ assert(['initial', 'reopen'].includes(phase));
 const runtimeCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 const recipeSha256 = createHash('sha256').update(readFileSync(new URL(import.meta.url))).digest('hex');
 const browserErrors = [];
+const failedResponses = [];
 const report = { runtimeCommit, recipeSha256, runId: profile.runId, phase, date: new Date().toISOString(), attestationSha256: createHash('sha256').update(readFileSync(profilePath)).digest('hex'), checks: [], limits: ['Disposable synthetic fixtures only; no production', 'API equality corroborates persistence reads; database restart evidence belongs to A6'] };
 const check = (name, fn) => { fn(); report.checks.push({ name, result: 'passed' }); };
 const docHash = (doc) => createHash('sha256').update(JSON.stringify(doc)).digest('hex');
@@ -43,7 +44,7 @@ const { chromium } = await import('playwright');
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 report.browserVersion = browser.version();
 const contexts = [];
-async function context() { const c = await browser.newContext({ viewport: { width: 1440, height: 1000 } }); contexts.push(c); c.on('page', (p) => { p.on('pageerror', (e) => browserErrors.push({ kind: 'pageerror', message: e.message.slice(0, 240) })); p.on('console', (m) => { if (m.type() === 'error') browserErrors.push({ kind: 'console', message: m.text().slice(0, 240) }); }); }); return c; }
+async function context() { const c = await browser.newContext({ viewport: { width: 1440, height: 1000 } }); contexts.push(c); c.on('page', (p) => { p.on('response', (r) => { if (r.status() >= 400) failedResponses.push({ status: r.status(), pathname: new URL(r.url()).pathname }); }); p.on('pageerror', (e) => browserErrors.push({ kind: 'pageerror', message: e.message.slice(0, 240) })); p.on('console', (m) => { if (m.type() === 'error') browserErrors.push({ kind: 'console', message: m.text().slice(0, 240) }); }); }); return c; }
 async function api(c, method, path, data) {
   assert(expiry > Date.now(), 'Attestation expired during recipe');
   const response = await c.request[method](`${API}${path}`, data === undefined ? {} : { data });
@@ -184,6 +185,12 @@ try {
   report.result = 'failed';
   report.failure = { name: error.name, message: error.message };
   report.browserErrors = browserErrors;
+  report.failedResponses = failedResponses;
+  for (const [index, c] of contexts.entries()) {
+    for (const [pageIndex, page] of c.pages().entries()) {
+      await page.screenshot({ path: resolve(OUT, `failure-${phase}-${index}-${pageIndex}.png`) }).catch(() => {});
+    }
+  }
   process.exitCode = 1;
 } finally {
   for (const c of contexts) await c.close().catch(() => {});
@@ -243,8 +250,21 @@ async function exerciseStudioUI(page, projectId) {
   check('save ACK comes from one real API command batch', () => assert.equal(commandRequests.length, 1));
   await page.reload();
   await page.getByRole('heading', { name: 'Étude QA Studio', exact: true }).waitFor();
-  await page.locator(`svg [role="button"][aria-label="Ligne ${lineId}"]`).waitFor();
-  await page.locator(`svg [role="button"][aria-label="Rectangle ${rectangleId}"]`).waitFor();
+  const reloadedLine = page.locator(`svg [role="button"][aria-label="Ligne ${lineId}"] line`);
+  const reloadedRectangle = page.locator(`svg [role="button"][aria-label="Rectangle ${rectangleId}"] rect`);
+  await reloadedLine.waitFor({ state: 'attached' });
+  await reloadedRectangle.waitFor({ state: 'attached' });
+  const rendered = await reloadedLine.evaluate((line) => {
+    const style = getComputedStyle(line); const matrix = line.getScreenCTM(); const box = line.getBoundingClientRect();
+    return { x1: line.x1.baseVal.value, y1: line.y1.baseVal.value, x2: line.x2.baseVal.value, y2: line.y2.baseVal.value, stroke: style.stroke, strokeWidth: parseFloat(style.strokeWidth), opacity: parseFloat(style.opacity), display: style.display, visibility: style.visibility, ctm: matrix ? { a: matrix.a, d: matrix.d } : null, width: box.width };
+  });
+  check('reloaded horizontal line has exact coordinates and a nonzero visible rendered stroke', () => {
+    assert.deepEqual([rendered.x1, rendered.y1, rendered.x2, rendered.y2], [3, 3, 8, 3]);
+    assert(rendered.stroke !== 'none' && rendered.strokeWidth > 0 && rendered.opacity > 0 && rendered.width > 0);
+    assert(rendered.display !== 'none' && rendered.visibility === 'visible' && rendered.ctm && rendered.ctm.a !== 0 && rendered.ctm.d !== 0);
+  });
+  const rectGeometry = await reloadedRectangle.evaluate((rect) => [rect.x.baseVal.value, rect.y.baseVal.value, rect.width.baseVal.value, rect.height.baseVal.value]);
+  check('reloaded rectangle has exact rendered geometry', () => assert.deepEqual(rectGeometry, [7, 3, 3, 2]));
   await page.screenshot({ path: resolve(OUT, 'studio-initial-reloaded.png') });
   return { lineId, rectangleId };
 }
